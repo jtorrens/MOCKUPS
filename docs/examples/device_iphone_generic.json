@@ -1,0 +1,44 @@
+{
+  "id": "device_iphone_generic",
+  "production_id": "production_demo",
+  "name": "Generic iPhone",
+  "manufacturer": "Apple",
+  "model": "Generic modern iPhone",
+  "os_family": "ios",
+  "frame_asset_id": "media_asset_iphone_frame",
+  "metrics": {
+    "canvas": {
+      "width": 1290,
+      "height": 2796
+    },
+    "screen": {
+      "x": 0,
+      "y": 0,
+      "width": 1290,
+      "height": 2796
+    },
+    "viewport": {
+      "x": 0,
+      "y": 0,
+      "width": 1290,
+      "height": 2796
+    },
+    "safeArea": {
+      "top": 177,
+      "right": 0,
+      "bottom": 102,
+      "left": 0
+    },
+    "statusBar": {
+      "height": 177
+    },
+    "dynamicIsland": {
+      "x": 462,
+      "y": 33,
+      "width": 366,
+      "height": 111
+    },
+    "cornerRadius": 165,
+    "pixelRatio": 3
+  }
+}

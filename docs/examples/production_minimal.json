@@ -1,0 +1,40 @@
+{
+  "production": {
+    "id": "production_demo",
+    "name": "Demo Production"
+  },
+  "theme_refs": ["theme_ios_light"],
+  "device_refs": ["device_iphone_generic"],
+  "actors": [
+    {
+      "id": "actor_alex",
+      "production_id": "production_demo",
+      "display_name": "Alex",
+      "default_device_id": "device_iphone_generic",
+      "default_theme_id": "theme_ios_light"
+    }
+  ],
+  "shots": [
+    {
+      "id": "shot_001",
+      "production_id": "production_demo",
+      "name": "Phone insert",
+      "duration_frames": 150,
+      "fps": 30
+    }
+  ],
+  "screen_instances": [
+    {
+      "id": "screen_instance_001",
+      "shot_id": "shot_001",
+      "screen_template_id": "template_lock_default",
+      "screen_type": "lock_screen",
+      "owner_actor_id": "actor_alex",
+      "device_id": "device_iphone_generic",
+      "theme_id": "theme_ios_light",
+      "start_frame": 0,
+      "end_frame": 150,
+      "layer_order": 0
+    }
+  ]
+}

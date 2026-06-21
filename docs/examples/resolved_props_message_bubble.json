@@ -1,0 +1,44 @@
+{
+  "frame": 210,
+  "fps": 30,
+  "id": "message_002",
+  "direction": "outgoing",
+  "text": "Two minutes away.",
+  "visibleText": "Two minutes",
+  "actor": {
+    "id": "actor_alex",
+    "displayName": "Alex",
+    "avatarUri": "assets/alex-avatar.png"
+  },
+  "style": {
+    "backgroundColor": "#0B84FF",
+    "textColor": "#FFFFFF",
+    "fontFamily": "SF Pro Text",
+    "fontSize": 17,
+    "borderRadius": 18,
+    "paddingX": 14,
+    "paddingY": 9
+  },
+  "layout": {
+    "maxWidth": 860,
+    "alignment": "right",
+    "showTail": true,
+    "groupPosition": "single"
+  },
+  "timing": {
+    "startFrame": 195,
+    "enterDurationFrames": 10,
+    "writeOnStartFrame": 195,
+    "writeOnDurationFrames": 30,
+    "exitFrame": null
+  },
+  "animation": {
+    "enter": {
+      "type": "spring",
+      "progress": 1,
+      "translateY": 0,
+      "opacity": 1
+    },
+    "writeOnProgress": 0.5
+  }
+}

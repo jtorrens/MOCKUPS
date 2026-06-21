@@ -1,0 +1,99 @@
+{
+  "production_id": "production_demo",
+  "shot": {
+    "id": "shot_lock_to_chat",
+    "name": "Lock notification to chat",
+    "duration_frames": 300,
+    "fps": 30
+  },
+  "references": {
+    "conversation_id": "conversation_alex_sam",
+    "notification_id": "notification_message_001"
+  },
+  "screen_instances": [
+    {
+      "id": "screen_instance_lock",
+      "shot_id": "shot_lock_to_chat",
+      "screen_template_id": "template_lock_default",
+      "screen_type": "lock_screen",
+      "owner_actor_id": "actor_alex",
+      "device_id": "device_iphone_generic",
+      "device_state_id": "device_state_locked_morning",
+      "theme_id": "theme_ios_light",
+      "start_frame": 0,
+      "end_frame": 165,
+      "layer_order": 0,
+      "data_ref_json": {
+        "type": "notification",
+        "notification_id": "notification_message_001"
+      },
+      "transform_json": {
+        "x": 0,
+        "y": 0,
+        "scale": 1,
+        "rotation_degrees": 0
+      },
+      "props_json": {},
+      "transition_out_json": {
+        "type": "unlock_to_app",
+        "duration_frames": 15
+      }
+    },
+    {
+      "id": "screen_instance_chat",
+      "shot_id": "shot_lock_to_chat",
+      "screen_template_id": "template_chat_default",
+      "screen_type": "chat",
+      "owner_actor_id": "actor_alex",
+      "device_id": "device_iphone_generic",
+      "device_state_id": "device_state_unlocked_morning",
+      "theme_id": "theme_ios_light",
+      "start_frame": 150,
+      "end_frame": 300,
+      "layer_order": 1,
+      "data_ref_json": {
+        "type": "conversation",
+        "conversation_id": "conversation_alex_sam"
+      },
+      "transform_json": {
+        "x": 0,
+        "y": 0,
+        "scale": 1,
+        "rotation_degrees": 0
+      },
+      "props_json": {
+        "show_keyboard": false
+      },
+      "transition_in_json": {
+        "type": "unlock_to_app",
+        "duration_frames": 15
+      }
+    }
+  ],
+  "screen_events": [
+    {
+      "id": "screen_event_notification_appears",
+      "screen_instance_id": "screen_instance_lock",
+      "event_type": "notification_appears",
+      "start_frame": 75,
+      "duration_frames": 12,
+      "target_id": "notification_message_001",
+      "animation_preset_id": "animation_notification_slide",
+      "payload_json": {
+        "notification_id": "notification_message_001"
+      }
+    },
+    {
+      "id": "screen_event_unlock",
+      "screen_instance_id": "screen_instance_lock",
+      "event_type": "unlock_gesture",
+      "start_frame": 150,
+      "duration_frames": 15,
+      "target_id": "screen_instance_chat",
+      "animation_preset_id": "animation_unlock_default",
+      "payload_json": {
+        "destination_screen_instance_id": "screen_instance_chat"
+      }
+    }
+  ]
+}

@@ -1,0 +1,107 @@
+{
+  "frame": 210,
+  "fps": 30,
+  "screenInstanceId": "screen_instance_chat",
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "width": 1290,
+    "height": 2796,
+    "safeArea": {
+      "top": 177,
+      "right": 0,
+      "bottom": 102,
+      "left": 0
+    }
+  },
+  "theme": {
+    "id": "theme_ios_light",
+    "fonts": {
+      "family": "SF Pro Text",
+      "bodySize": 17
+    },
+    "colors": {
+      "background": "#FFFFFF",
+      "textPrimary": "#000000"
+    },
+    "chatBubbles": {
+      "outgoingBackground": "#0B84FF",
+      "outgoingText": "#FFFFFF",
+      "incomingBackground": "#E9E9EB",
+      "incomingText": "#000000",
+      "radius": 18
+    }
+  },
+  "device": {
+    "id": "device_iphone_generic",
+    "osFamily": "ios",
+    "pixelRatio": 3,
+    "statusBarHeight": 177,
+    "cornerRadius": 165
+  },
+  "ownerActor": {
+    "id": "actor_alex",
+    "displayName": "Alex",
+    "avatar": {
+      "assetId": "media_asset_alex_avatar",
+      "uri": "assets/alex-avatar.png"
+    }
+  },
+  "header": {
+    "title": "Sam",
+    "subtitle": "online",
+    "avatar": {
+      "assetId": "media_asset_sam_avatar",
+      "uri": "assets/sam-avatar.png"
+    }
+  },
+  "messages": [
+    {
+      "id": "message_001",
+      "direction": "incoming",
+      "text": "Are you nearby?",
+      "visibleText": "Are you nearby?",
+      "sender": {
+        "id": "actor_sam",
+        "displayName": "Sam"
+      },
+      "timing": {
+        "startFrame": 165,
+        "enterDurationFrames": 10
+      }
+    },
+    {
+      "id": "message_002",
+      "direction": "outgoing",
+      "text": "Two minutes away.",
+      "visibleText": "Two minutes",
+      "sender": {
+        "id": "actor_alex",
+        "displayName": "Alex"
+      },
+      "timing": {
+        "startFrame": 195,
+        "enterDurationFrames": 10,
+        "writeOnStartFrame": 195,
+        "writeOnDurationFrames": 30
+      }
+    }
+  ],
+  "events": [
+    {
+      "id": "screen_event_scroll_001",
+      "type": "scroll_moves",
+      "startFrame": 200,
+      "durationFrames": 12,
+      "targetId": "message_002",
+      "payload": {
+        "offsetY": -84
+      }
+    }
+  ],
+  "props": {
+    "showStatusBar": true,
+    "showKeyboard": false,
+    "messageGrouping": "bySender"
+  }
+}

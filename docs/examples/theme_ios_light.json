@@ -1,0 +1,59 @@
+{
+  "id": "theme_ios_light",
+  "production_id": "production_demo",
+  "name": "iOS Light",
+  "family": "ios",
+  "version": "1.0.0",
+  "tokens": {
+    "fonts": {
+      "family": "SF Pro Text",
+      "bodySize": 17,
+      "captionSize": 13,
+      "weightRegular": 400,
+      "weightSemibold": 600
+    },
+    "colors": {
+      "background": "#FFFFFF",
+      "textPrimary": "#000000",
+      "textSecondary": "#6E6E73",
+      "accent": "#007AFF"
+    },
+    "statusBar": {
+      "foreground": "#000000",
+      "background": "transparent"
+    },
+    "chatBubbles": {
+      "outgoingBackground": "#0B84FF",
+      "outgoingText": "#FFFFFF",
+      "incomingBackground": "#E9E9EB",
+      "incomingText": "#000000",
+      "paddingX": 14,
+      "paddingY": 9
+    },
+    "notifications": {
+      "background": "rgba(245,245,247,0.92)",
+      "titleColor": "#000000",
+      "bodyColor": "#3A3A3C",
+      "backdropBlur": 24
+    },
+    "spacing": {
+      "xs": 4,
+      "sm": 8,
+      "md": 16,
+      "lg": 24
+    },
+    "radii": {
+      "bubble": 18,
+      "notification": 16,
+      "card": 12
+    },
+    "shadows": {
+      "notification": {
+        "color": "rgba(0,0,0,0.18)",
+        "offsetX": 0,
+        "offsetY": 4,
+        "blur": 18
+      }
+    }
+  }
+}
