@@ -1,7 +1,8 @@
 {
-  "frame": 210,
+  "frame": 60,
   "fps": 30,
   "screenInstanceId": "screen_instance_chat",
+  "themeMode": "light",
   "viewport": {
     "x": 0,
     "y": 0,
@@ -18,18 +19,82 @@
     "id": "theme_ios_light",
     "fonts": {
       "family": "SF Pro Text",
-      "bodySize": 17
+      "bodySize": 17,
+      "bodyLineHeight": 21.25
     },
     "colors": {
       "background": "#FFFFFF",
       "textPrimary": "#000000"
+    },
+    "statusBar": {
+      "foreground": "#000000",
+      "background": "transparent",
+      "iconScale": 1
+    },
+    "layout": {
+      "screenGutter": 24
+    },
+    "header": {
+      "height": 96,
+      "background": "#FFFFFF",
+      "separatorColor": "#D1D1D6",
+      "separatorWidth": 1
+    },
+    "messages": {
+      "spacing": 6,
+      "groupSpacing": 12
+    },
+    "typography": {
+      "message": {
+        "fontFamily": "SF Pro Text",
+        "fontSize": 17,
+        "lineHeight": 21.25,
+        "fontWeight": 400
+      },
+      "headerTitle": {
+        "fontFamily": "SF Pro Text",
+        "fontSize": 17,
+        "lineHeight": 22,
+        "fontWeight": 600
+      },
+      "headerSubtitle": {
+        "fontFamily": "SF Pro Text",
+        "fontSize": 13,
+        "lineHeight": 16,
+        "fontWeight": 400
+      }
     },
     "chatBubbles": {
       "outgoingBackground": "#0B84FF",
       "outgoingText": "#FFFFFF",
       "incomingBackground": "#E9E9EB",
       "incomingText": "#000000",
-      "radius": 18
+      "paddingX": 14,
+      "paddingY": 9,
+      "radius": 18,
+      "maxWidthRatio": 0.6667,
+      "tail": {
+        "style": "rounded_wedge",
+        "width": 8,
+        "height": 12
+      },
+      "shadow": {
+        "color": "rgba(0,0,0,0)",
+        "offsetX": 0,
+        "offsetY": 0,
+        "blur": 0
+      }
+    },
+    "avatars": {
+      "defaultSize": 32,
+      "headerSize": 56,
+      "gap": 8
+    },
+    "cursor": {
+      "style": "bar",
+      "width": 2,
+      "color": "#007AFF",
+      "blinkFrames": 15
     }
   },
   "device": {
@@ -37,7 +102,19 @@
     "osFamily": "ios",
     "pixelRatio": 3,
     "statusBarHeight": 177,
-    "cornerRadius": 165
+    "cornerRadius": 165,
+    "defaultScreenScale": 1
+  },
+  "deviceState": {
+    "time": "09:41",
+    "batteryLevel": 0.86,
+    "batteryCharging": false,
+    "signalBars": 4,
+    "networkLabel": "5G",
+    "wifiEnabled": true,
+    "wifiIconState": "connected",
+    "orientation": "portrait",
+    "locked": false
   },
   "ownerActor": {
     "id": "actor_alex",
@@ -63,10 +140,27 @@
       "visibleText": "Are you nearby?",
       "sender": {
         "id": "actor_sam",
+        "participantId": "participant_sam",
         "displayName": "Sam"
       },
+      "media": {
+        "assetId": "media_asset_sam_avatar",
+        "uri": "assets/sam-avatar.png",
+        "window": {
+          "width": 180,
+          "height": 120,
+          "offsetX": 0,
+          "offsetY": 0
+        },
+        "transform": {
+          "scale": 1,
+          "translateX": 0,
+          "translateY": 0,
+          "rotationDegrees": 0
+        }
+      },
       "timing": {
-        "startFrame": 165,
+        "startFrame": 15,
         "enterDurationFrames": 10
       }
     },
@@ -74,15 +168,16 @@
       "id": "message_002",
       "direction": "outgoing",
       "text": "Two minutes away.",
-      "visibleText": "Two minutes",
+      "visibleText": "Two minu",
       "sender": {
         "id": "actor_alex",
+        "participantId": "participant_alex",
         "displayName": "Alex"
       },
       "timing": {
-        "startFrame": 195,
+        "startFrame": 45,
         "enterDurationFrames": 10,
-        "writeOnStartFrame": 195,
+        "writeOnStartFrame": 45,
         "writeOnDurationFrames": 30
       }
     }
@@ -91,7 +186,7 @@
     {
       "id": "screen_event_scroll_001",
       "type": "scroll_moves",
-      "startFrame": 200,
+      "startFrame": 50,
       "durationFrames": 12,
       "targetId": "message_002",
       "payload": {
@@ -100,8 +195,11 @@
     }
   ],
   "props": {
+    "showHeader": true,
     "showStatusBar": true,
     "showKeyboard": false,
-    "messageGrouping": "bySender"
+    "initialScroll": "bottom",
+    "messageGrouping": "bySender",
+    "debugShowBounds": false
   }
 }

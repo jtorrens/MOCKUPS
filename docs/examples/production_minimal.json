@@ -5,6 +5,15 @@
   },
   "theme_refs": ["theme_ios_light"],
   "device_refs": ["device_iphone_generic"],
+  "screen_template_refs": ["template_lock_default"],
+  "episodes": [
+    {
+      "id": "episode_demo_001",
+      "production_id": "production_demo",
+      "name": "Episode 1",
+      "sort_order": 0
+    }
+  ],
   "actors": [
     {
       "id": "actor_alex",
@@ -18,6 +27,8 @@
     {
       "id": "shot_001",
       "production_id": "production_demo",
+      "episode_id": "episode_demo_001",
+      "owner_actor_id": "actor_alex",
       "name": "Phone insert",
       "duration_frames": 150,
       "fps": 30
@@ -29,12 +40,29 @@
       "shot_id": "shot_001",
       "screen_template_id": "template_lock_default",
       "screen_type": "lock_screen",
+      "module_id": "lock_screen",
+      "module_schema_version": 1,
       "owner_actor_id": "actor_alex",
-      "device_id": "device_iphone_generic",
-      "theme_id": "theme_ios_light",
+      "device_id": null,
+      "device_state_id": null,
+      "theme_id": null,
+      "theme_mode": "light",
       "start_frame": 0,
       "end_frame": 150,
-      "layer_order": 0
+      "layer_order": 0,
+      "data_ref_json": null,
+      "module_data_json": {},
+      "module_config_json": {},
+      "module_tokens_override_json": {},
+      "transform_json": {
+        "x": 0,
+        "y": 0,
+        "scale": 1,
+        "rotation_degrees": 0
+      },
+      "props_json": {},
+      "transition_in_json": null,
+      "transition_out_json": null
     }
   ]
 }

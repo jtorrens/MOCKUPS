@@ -1,0 +1,1158 @@
+import type { z } from "zod";
+import {
+  ActorSchema,
+  AnimationPresetSchema,
+  AppSchema,
+  ChatModuleConfigSchema,
+  ChatModuleDataSchema,
+  DeviceSchema,
+  DeviceStateSchema,
+  EpisodeSchema,
+  JsonObjectSchema,
+  MediaAssetSchema,
+  ModuleThemeConfigSchema,
+  ProductionSchema,
+  RenderPresetSchema,
+  ScreenTemplateSchema,
+  ScreenInstanceSchema,
+  ShotSchema,
+  ThemeSchema,
+  type JsonObject,
+} from "../domain/schemas/index.js";
+import {
+  mergeTokenObjects,
+  resolveGlobalThemeTokens,
+  resolveModuleThemeTokens,
+  resolveShot,
+} from "../domain/resolvers/index.js";
+import { ChatScreenModule } from "../visual/modules/screens/ChatScreenModule.js";
+import { RenderableNodeSchema } from "../visual/renderable/schema.js";
+import { SQLiteRepository } from "../persistence/sqlite/SQLiteRepository.js";
+import type { SQLiteDatabase } from "../persistence/sqlite/createDatabase.js";
+import {
+  readNullableJson,
+  readOptionalJson,
+  readRequiredJson,
+  stringifyJsonObject,
+} from "../persistence/sqlite/json.js";
+
+type Row = Record<string, unknown>;
+type FieldKind = "string" | "number" | "json";
+
+export interface AppFieldDefinition {
+  column: string;
+  label: string;
+  kind: FieldKind;
+  nullable?: boolean;
+  readonly?: boolean;
+}
+
+export interface AppTableDefinition {
+  id: string;
+  label: string;
+  table: string;
+  titleColumn: string;
+  fields: AppFieldDefinition[];
+  jsonFields: string[];
+  optionalScalars?: string[];
+}
+
+export interface DebugSelection {
+  productionId: string;
+  shotId: string;
+  screenInstanceId: string;
+  frame: number;
+}
+
+export interface DebugSaveRequest extends DebugSelection {
+  fields: {
+    moduleData: unknown;
+    moduleConfig: unknown;
+    moduleTokensOverride: unknown;
+    themeTokens: unknown;
+    deviceMetrics: unknown;
+    deviceState: unknown;
+  };
+}
+
+export function zodMessage(error: z.ZodError): string {
+  return error.issues
+    .map((issue) => `${issue.path.join(".") || "value"}: ${issue.message}`)
+    .join("\n");
+}
+
+export function asObject(value: unknown, label: string): JsonObject {
+  const result = JsonObjectSchema.safeParse(value);
+  if (!result.success) {
+    throw new Error(`${label}\n${zodMessage(result.error)}`);
+  }
+  return result.data;
+}
+
+function nullsToUndefined(row: Row, fields: string[] = []): Row {
+  const copy = { ...row };
+  for (const field of fields) {
+    if (copy[field] === null) {
+      delete copy[field];
+    }
+  }
+  return copy;
+}
+
+function isObject(value: unknown): value is Row {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+export function parseScreenInstance(row: Row) {
+  return ScreenInstanceSchema.parse({
+    ...row,
+    data_ref_json: readNullableJson(row, "data_ref_json"),
+    module_data_json: readOptionalJson(row, "module_data_json"),
+    module_config_json: readOptionalJson(row, "module_config_json"),
+    module_tokens_override_json: readOptionalJson(
+      row,
+      "module_tokens_override_json",
+    ),
+    transform_json: readRequiredJson(row, "transform_json"),
+    props_json: readRequiredJson(row, "props_json"),
+    transition_in_json: readNullableJson(row, "transition_in_json"),
+    transition_out_json: readNullableJson(row, "transition_out_json"),
+  });
+}
+
+export const APP_TABLES = [
+  {
+    id: "productions",
+    label: "Productions",
+    table: "productions",
+    titleColumn: "name",
+    jsonFields: ["settings_json", "metadata_json"],
+    optionalScalars: ["slug", "created_at", "updated_at"],
+    fields: [
+      { column: "id", label: "ID", kind: "string", readonly: true },
+      { column: "name", label: "Name", kind: "string" },
+      { column: "slug", label: "Slug", kind: "string", nullable: true },
+      { column: "settings_json", label: "Project settings", kind: "json" },
+      { column: "metadata_json", label: "Project notes", kind: "json" },
+    ],
+  },
+  {
+    id: "episodes",
+    label: "Episodes",
+    table: "episodes",
+    titleColumn: "name",
+    jsonFields: ["metadata_json"],
+    optionalScalars: ["sort_order"],
+    fields: [
+      { column: "id", label: "ID", kind: "string", readonly: true },
+      { column: "production_id", label: "Production ID", kind: "string" },
+      { column: "name", label: "Name", kind: "string" },
+      { column: "sort_order", label: "Sort order", kind: "number" },
+      { column: "metadata_json", label: "Episode notes", kind: "json" },
+    ],
+  },
+  {
+    id: "shots",
+    label: "Shots",
+    table: "shots",
+    titleColumn: "name",
+    jsonFields: ["canvas_json", "metadata_json"],
+    optionalScalars: ["episode_id", "owner_actor_id", "sort_order"],
+    fields: [
+      { column: "id", label: "ID", kind: "string", readonly: true },
+      { column: "production_id", label: "Production ID", kind: "string" },
+      { column: "episode_id", label: "Episode ID", kind: "string", nullable: true },
+      {
+        column: "owner_actor_id",
+        label: "Owner actor",
+        kind: "string",
+        nullable: true,
+      },
+      { column: "name", label: "Name", kind: "string" },
+      { column: "sort_order", label: "Sort order", kind: "number" },
+      { column: "duration_frames", label: "Duration frames", kind: "number" },
+      { column: "fps", label: "FPS", kind: "number" },
+      {
+        column: "render_preset_id",
+        label: "Render preset ID",
+        kind: "string",
+        nullable: true,
+      },
+      { column: "canvas_json", label: "Canvas setup", kind: "json" },
+      { column: "metadata_json", label: "Shot notes", kind: "json" },
+    ],
+  },
+  {
+    id: "screen_instances",
+    label: "Screen Instances",
+    table: "screen_instances",
+    titleColumn: "id",
+    jsonFields: [
+      "data_ref_json",
+      "module_data_json",
+      "module_config_json",
+      "module_tokens_override_json",
+      "transform_json",
+      "props_json",
+      "transition_in_json",
+      "transition_out_json",
+    ],
+    fields: [
+      { column: "id", label: "ID", kind: "string", readonly: true },
+      { column: "shot_id", label: "Shot ID", kind: "string" },
+      {
+        column: "screen_template_id",
+        label: "Screen template ID",
+        kind: "string",
+      },
+      { column: "screen_type", label: "Screen type", kind: "string" },
+      { column: "module_id", label: "Module ID", kind: "string" },
+      {
+        column: "module_schema_version",
+        label: "Module schema version",
+        kind: "number",
+      },
+      {
+        column: "device_state_id",
+        label: "Device state",
+        kind: "string",
+        nullable: true,
+      },
+      {
+        column: "theme_mode",
+        label: "Theme mode",
+        kind: "string",
+        nullable: true,
+      },
+      { column: "start_frame", label: "Start frame", kind: "number" },
+      { column: "end_frame", label: "End frame", kind: "number" },
+      { column: "layer_order", label: "Layer order", kind: "number" },
+      {
+        column: "module_data_json",
+        label: "Module content",
+        kind: "json",
+      },
+      {
+        column: "module_config_json",
+        label: "Module behavior",
+        kind: "json",
+      },
+      {
+        column: "module_tokens_override_json",
+        label: "Local style overrides",
+        kind: "json",
+      },
+      { column: "transform_json", label: "Screen transform", kind: "json" },
+    ],
+  },
+  {
+    id: "actors",
+    label: "Actors",
+    table: "actors",
+    titleColumn: "display_name",
+    jsonFields: ["metadata_json"],
+    fields: [
+      { column: "id", label: "ID", kind: "string", readonly: true },
+      { column: "production_id", label: "Production ID", kind: "string" },
+      { column: "display_name", label: "Display name", kind: "string" },
+      {
+        column: "short_name",
+        label: "Short name",
+        kind: "string",
+        nullable: true,
+      },
+      {
+        column: "avatar_asset_id",
+        label: "Avatar asset ID",
+        kind: "string",
+        nullable: true,
+      },
+      {
+        column: "default_device_id",
+        label: "Default device ID",
+        kind: "string",
+        nullable: true,
+      },
+      {
+        column: "default_theme_id",
+        label: "Default theme ID",
+        kind: "string",
+        nullable: true,
+      },
+      { column: "metadata_json", label: "Actor notes", kind: "json" },
+    ],
+  },
+  {
+    id: "themes",
+    label: "Themes",
+    table: "themes",
+    titleColumn: "name",
+    jsonFields: ["tokens_json"],
+    fields: [
+      { column: "id", label: "ID", kind: "string", readonly: true },
+      { column: "production_id", label: "Production ID", kind: "string" },
+      { column: "name", label: "Name", kind: "string" },
+      { column: "family", label: "Family", kind: "string" },
+      { column: "version", label: "Version", kind: "string" },
+      { column: "tokens_json", label: "Theme tokens", kind: "json" },
+    ],
+  },
+  {
+    id: "module_theme_configs",
+    label: "Module Theme Configs",
+    table: "module_theme_configs",
+    titleColumn: "name",
+    jsonFields: ["tokens_json", "metadata_json"],
+    fields: [
+      { column: "id", label: "ID", kind: "string", readonly: true },
+      { column: "production_id", label: "Production ID", kind: "string" },
+      { column: "theme_id", label: "Theme ID", kind: "string" },
+      { column: "module_id", label: "Module ID", kind: "string" },
+      {
+        column: "module_schema_version",
+        label: "Module schema version",
+        kind: "number",
+      },
+      { column: "name", label: "Name", kind: "string" },
+      { column: "tokens_json", label: "Module design tokens", kind: "json" },
+      { column: "metadata_json", label: "Module theme notes", kind: "json" },
+    ],
+  },
+  {
+    id: "devices",
+    label: "Devices",
+    table: "devices",
+    titleColumn: "name",
+    jsonFields: ["metrics_json"],
+    fields: [
+      { column: "id", label: "ID", kind: "string", readonly: true },
+      { column: "production_id", label: "Production ID", kind: "string" },
+      { column: "name", label: "Name", kind: "string" },
+      { column: "manufacturer", label: "Manufacturer", kind: "string" },
+      { column: "model", label: "Model", kind: "string" },
+      { column: "os_family", label: "OS family", kind: "string" },
+      {
+        column: "frame_asset_id",
+        label: "Frame asset ID",
+        kind: "string",
+        nullable: true,
+      },
+      { column: "metrics_json", label: "Device metrics", kind: "json" },
+    ],
+  },
+  {
+    id: "device_states",
+    label: "Device States",
+    table: "device_states",
+    titleColumn: "name",
+    jsonFields: ["state_json"],
+    fields: [
+      { column: "id", label: "ID", kind: "string", readonly: true },
+      { column: "production_id", label: "Production ID", kind: "string" },
+      { column: "device_id", label: "Device ID", kind: "string" },
+      { column: "name", label: "Name", kind: "string" },
+      { column: "state_json", label: "Device state", kind: "json" },
+    ],
+  },
+  {
+    id: "media_assets",
+    label: "Media Assets",
+    table: "media_assets",
+    titleColumn: "name",
+    jsonFields: ["dimensions_json", "metadata_json"],
+    fields: [
+      { column: "id", label: "ID", kind: "string", readonly: true },
+      { column: "production_id", label: "Production ID", kind: "string" },
+      { column: "name", label: "Name", kind: "string" },
+      { column: "asset_type", label: "Type", kind: "string" },
+      { column: "uri", label: "URI", kind: "string" },
+      { column: "mime_type", label: "MIME type", kind: "string" },
+      {
+        column: "checksum",
+        label: "Checksum",
+        kind: "string",
+        nullable: true,
+      },
+      { column: "dimensions_json", label: "Asset dimensions", kind: "json" },
+      { column: "metadata_json", label: "Asset notes", kind: "json" },
+    ],
+  },
+  {
+    id: "render_presets",
+    label: "Render Presets",
+    table: "render_presets",
+    titleColumn: "name",
+    jsonFields: ["codec_json", "color_json", "quality_json", "export_json"],
+    fields: [
+      { column: "id", label: "ID", kind: "string", readonly: true },
+      { column: "production_id", label: "Production ID", kind: "string" },
+      { column: "name", label: "Name", kind: "string" },
+      { column: "width", label: "Width", kind: "number" },
+      { column: "height", label: "Height", kind: "number" },
+      { column: "fps", label: "FPS", kind: "number" },
+      { column: "format", label: "Format", kind: "string" },
+      { column: "codec_json", label: "Codec settings", kind: "json" },
+      { column: "color_json", label: "Color settings", kind: "json" },
+      { column: "quality_json", label: "Quality settings", kind: "json" },
+      { column: "export_json", label: "Export settings", kind: "json" },
+    ],
+  },
+  {
+    id: "apps",
+    label: "Apps",
+    table: "apps",
+    titleColumn: "name",
+    jsonFields: ["config_json", "metadata_json"],
+    fields: [
+      { column: "id", label: "ID", kind: "string", readonly: true },
+      { column: "production_id", label: "Production ID", kind: "string" },
+      { column: "name", label: "Name", kind: "string" },
+      { column: "bundle_key", label: "Bundle key", kind: "string" },
+      { column: "app_type", label: "App type", kind: "string" },
+      {
+        column: "icon_asset_id",
+        label: "Icon asset ID",
+        kind: "string",
+        nullable: true,
+      },
+      { column: "config_json", label: "App settings", kind: "json" },
+      { column: "metadata_json", label: "App notes", kind: "json" },
+    ],
+  },
+  {
+    id: "animation_presets",
+    label: "Animation Presets",
+    table: "animation_presets",
+    titleColumn: "name",
+    jsonFields: ["parameters_json"],
+    fields: [
+      { column: "id", label: "ID", kind: "string", readonly: true },
+      { column: "production_id", label: "Production ID", kind: "string" },
+      { column: "name", label: "Name", kind: "string" },
+      { column: "animation_type", label: "Animation type", kind: "string" },
+      { column: "version", label: "Version", kind: "string" },
+      { column: "parameters_json", label: "Animation parameters", kind: "json" },
+    ],
+  },
+  {
+    id: "screen_templates",
+    label: "Screen Templates",
+    table: "screen_templates",
+    titleColumn: "name",
+    jsonFields: ["default_props_json", "config_json"],
+    fields: [
+      { column: "id", label: "ID", kind: "string", readonly: true },
+      { column: "production_id", label: "Production ID", kind: "string" },
+      { column: "name", label: "Name", kind: "string" },
+      { column: "screen_type", label: "Screen type", kind: "string" },
+      { column: "module_key", label: "Module key", kind: "string" },
+      { column: "version", label: "Version", kind: "string" },
+      {
+        column: "default_props_json",
+        label: "Default properties",
+        kind: "json",
+      },
+      { column: "config_json", label: "Template settings", kind: "json" },
+    ],
+  },
+] satisfies AppTableDefinition[];
+
+const PARSERS = {
+  productions: ProductionSchema,
+  episodes: EpisodeSchema,
+  shots: ShotSchema,
+  screen_instances: ScreenInstanceSchema,
+  actors: ActorSchema,
+  themes: ThemeSchema,
+  module_theme_configs: ModuleThemeConfigSchema,
+  devices: DeviceSchema,
+  device_states: DeviceStateSchema,
+  media_assets: MediaAssetSchema,
+  render_presets: RenderPresetSchema,
+  apps: AppSchema,
+  animation_presets: AnimationPresetSchema,
+  screen_templates: ScreenTemplateSchema,
+} as const;
+
+function tableDefinition(tableId: string): AppTableDefinition {
+  const definition = APP_TABLES.find((table) => table.id === tableId);
+  if (!definition) {
+    throw new Error(`Unknown table ${tableId}`);
+  }
+  return definition;
+}
+
+function decodeAppRow(row: Row, definition: AppTableDefinition): Row {
+  const decoded = { ...row };
+  for (const field of definition.jsonFields) {
+    decoded[field] =
+      definition.id === "screen_instances" &&
+      ["data_ref_json", "transition_in_json", "transition_out_json"].includes(
+        field,
+      )
+        ? readNullableJson(row, field)
+        : readOptionalJson(row, field) ?? {};
+  }
+  return nullsToUndefined(decoded, definition.optionalScalars);
+}
+
+function encodeValue(
+  value: unknown,
+  field: AppFieldDefinition,
+  definition: AppTableDefinition,
+): string | number | null {
+  if (field.kind === "json") {
+    if (value === undefined || value === null) {
+      return null;
+    }
+    return stringifyJsonObject(
+      asObject(value, field.column),
+      `${definition.table}.${field.column}`,
+    );
+  }
+  if (field.kind === "number") {
+    if (value === "" || value === null || value === undefined) {
+      return field.nullable ? null : 0;
+    }
+    const numberValue = Number(value);
+    if (!Number.isFinite(numberValue)) {
+      throw new Error(`${field.label} must be a number`);
+    }
+    return numberValue;
+  }
+  if (value === "" || value === null || value === undefined) {
+    return field.nullable ? null : "";
+  }
+  return String(value);
+}
+
+function validateAppRow(
+  tableId: string,
+  value: Row,
+): Row {
+  if (tableId === "screen_instances") {
+    return ScreenInstanceSchema.parse(value) as Row;
+  }
+  const parser = PARSERS[tableId as keyof typeof PARSERS];
+  if (!parser) {
+    return value;
+  }
+  return parser.parse(value) as Row;
+}
+
+export function listDebugOptions(database: SQLiteDatabase) {
+  const productions = database
+    .prepare("SELECT id, name FROM productions ORDER BY name, id")
+    .all();
+  const episodes = database
+    .prepare(
+      "SELECT id, production_id AS productionId, name, sort_order AS sortOrder FROM episodes ORDER BY production_id, sort_order, name, id",
+    )
+    .all();
+  const shots = database
+    .prepare(
+      "SELECT id, production_id AS productionId, episode_id AS episodeId, owner_actor_id AS ownerActorId, name, duration_frames AS durationFrames, fps FROM shots ORDER BY production_id, episode_id, sort_order, name, id",
+    )
+    .all();
+  const screenInstances = database
+    .prepare(
+      "SELECT id, shot_id AS shotId, screen_type AS screenType, module_id AS moduleId, start_frame AS startFrame, end_frame AS endFrame, layer_order AS layerOrder FROM screen_instances ORDER BY shot_id, layer_order, id",
+    )
+    .all();
+
+  return { productions, episodes, shots, screenInstances };
+}
+
+export function loadDebugPayload(
+  database: SQLiteDatabase,
+  selection: DebugSelection,
+) {
+  const repository = new SQLiteRepository(database);
+  const rawScreen = database
+    .prepare("SELECT * FROM screen_instances WHERE id = ?")
+    .get(selection.screenInstanceId) as Row | undefined;
+  if (!rawScreen) {
+    throw new Error(`Unknown screen instance ${selection.screenInstanceId}`);
+  }
+  const screenInstance = parseScreenInstance(rawScreen);
+  if (screenInstance.shot_id !== selection.shotId) {
+    throw new Error("Selected screen instance does not belong to selected shot");
+  }
+  const shot = repository.getShot(selection.shotId);
+  const ownerActorId = shot?.owner_actor_id ?? screenInstance.owner_actor_id;
+  const ownerActor = ownerActorId ? repository.getActor(ownerActorId) : undefined;
+  const themeId = screenInstance.theme_id ?? ownerActor?.default_theme_id;
+  const deviceId = screenInstance.device_id ?? ownerActor?.default_device_id;
+  const theme = themeId ? repository.getTheme(themeId) : undefined;
+  const device = deviceId ? repository.getDevice(deviceId) : undefined;
+  const deviceState = screenInstance.device_state_id
+    ? repository.getDeviceState(screenInstance.device_state_id)
+    : undefined;
+  if (!theme || !device || !deviceState) {
+    throw new Error("Selected screen instance requires theme, device and state");
+  }
+
+  const warnings: string[] = [];
+  let resolvedScreen: unknown = null;
+  let renderable: unknown = null;
+  try {
+    const resolvedShot = resolveShot({
+      repository,
+      productionId: selection.productionId,
+      shotId: selection.shotId,
+      shotFrame: selection.frame,
+    });
+    const selectedResolved = resolvedShot.active_screen_instances.find(
+      (screen) => screen.screen_instance_id === selection.screenInstanceId,
+    );
+    if (!selectedResolved) {
+      warnings.push(
+        `Screen instance is inactive at frame ${selection.frame} (${screenInstance.start_frame}–${screenInstance.end_frame - 1}).`,
+      );
+    } else {
+      resolvedScreen =
+        selectedResolved.resolved_props ?? selectedResolved.resolved_context;
+      if (
+        selectedResolved.screen_type === "chat" &&
+        selectedResolved.resolved_props
+      ) {
+        renderable = RenderableNodeSchema.parse(
+          ChatScreenModule.render(selectedResolved.resolved_props),
+        );
+      } else {
+        warnings.push(
+          `No visual module renderer is implemented for ${selectedResolved.screen_type}.`,
+        );
+      }
+    }
+  } catch (error) {
+    warnings.push(error instanceof Error ? error.message : String(error));
+  }
+
+  return {
+    selection,
+    screenInstance: {
+      id: screenInstance.id,
+      screenType: screenInstance.screen_type,
+      moduleId: screenInstance.module_id,
+      moduleSchemaVersion: screenInstance.module_schema_version,
+      startFrame: screenInstance.start_frame,
+      endFrame: screenInstance.end_frame,
+    },
+    editable: {
+      moduleData: screenInstance.module_data_json ?? {},
+      moduleConfig: screenInstance.module_config_json ?? {},
+      moduleTokensOverride:
+        screenInstance.module_tokens_override_json ?? {},
+      themeTokens: theme.tokens_json,
+      deviceMetrics: device.metrics_json,
+      deviceState: deviceState.state_json,
+    },
+    resolvedScreen,
+    renderable,
+    warnings,
+  };
+}
+
+export function saveDebugPayload(
+  database: SQLiteDatabase,
+  request: DebugSaveRequest,
+) {
+  const rawScreen = database
+    .prepare("SELECT * FROM screen_instances WHERE id = ?")
+    .get(request.screenInstanceId) as Row | undefined;
+  if (!rawScreen) {
+    throw new Error(`Unknown screen instance ${request.screenInstanceId}`);
+  }
+  const screenInstance = parseScreenInstance(rawScreen);
+  const repository = new SQLiteRepository(database);
+  const shot = repository.getShot(request.shotId);
+  const ownerActorId = shot?.owner_actor_id ?? screenInstance.owner_actor_id;
+  const ownerActor = ownerActorId ? repository.getActor(ownerActorId) : undefined;
+  const themeId = screenInstance.theme_id ?? ownerActor?.default_theme_id;
+  const deviceId = screenInstance.device_id ?? ownerActor?.default_device_id;
+  if (!themeId || !deviceId) {
+    throw new Error("Selected screen instance cannot resolve theme/device");
+  }
+  if (!screenInstance.device_state_id) {
+    throw new Error("Selected screen instance has no device state");
+  }
+
+  const moduleData =
+    screenInstance.module_id === "core.chat"
+      ? ChatModuleDataSchema.parse(request.fields.moduleData)
+      : asObject(request.fields.moduleData, "module_data_json");
+  const moduleConfig =
+    screenInstance.module_id === "core.chat"
+      ? ChatModuleConfigSchema.parse(request.fields.moduleConfig)
+      : asObject(request.fields.moduleConfig, "module_config_json");
+  const moduleTokensOverride = asObject(
+    request.fields.moduleTokensOverride,
+    "module_tokens_override_json",
+  );
+  const themeTokens = asObject(request.fields.themeTokens, "theme.tokens_json");
+  const deviceMetrics = asObject(
+    request.fields.deviceMetrics,
+    "device.metrics_json",
+  );
+  const deviceState = asObject(
+    request.fields.deviceState,
+    "device_state.state_json",
+  );
+
+  const currentTheme = database
+    .prepare("SELECT * FROM themes WHERE id = ?")
+    .get(themeId) as Row;
+  ThemeSchema.parse({
+    ...currentTheme,
+    tokens_json: themeTokens,
+  });
+  const currentDevice = database
+    .prepare("SELECT * FROM devices WHERE id = ?")
+    .get(deviceId) as Row;
+  DeviceSchema.parse({
+    ...currentDevice,
+    metrics_json: deviceMetrics,
+  });
+  const currentDeviceState = database
+    .prepare("SELECT * FROM device_states WHERE id = ?")
+    .get(screenInstance.device_state_id) as Row;
+  DeviceStateSchema.parse({
+    ...currentDeviceState,
+    state_json: deviceState,
+  });
+
+  const save = database.transaction(() => {
+    database
+      .prepare(
+        `UPDATE screen_instances
+         SET module_data_json = ?, module_config_json = ?, module_tokens_override_json = ?
+         WHERE id = ?`,
+      )
+      .run(
+        stringifyJsonObject(moduleData, "module_data_json"),
+        stringifyJsonObject(moduleConfig, "module_config_json"),
+        stringifyJsonObject(
+          moduleTokensOverride,
+          "module_tokens_override_json",
+        ),
+        screenInstance.id,
+      );
+    database
+      .prepare("UPDATE themes SET tokens_json = ? WHERE id = ?")
+      .run(
+        stringifyJsonObject(themeTokens, "theme.tokens_json"),
+        themeId,
+      );
+    database
+      .prepare("UPDATE devices SET metrics_json = ? WHERE id = ?")
+      .run(
+        stringifyJsonObject(deviceMetrics, "device.metrics_json"),
+        deviceId,
+      );
+    database
+      .prepare("UPDATE device_states SET state_json = ? WHERE id = ?")
+      .run(
+        stringifyJsonObject(deviceState, "device_state.state_json"),
+        screenInstance.device_state_id,
+      );
+  });
+  save();
+
+  return loadDebugPayload(database, request);
+}
+
+export function listAppRecords(database: SQLiteDatabase) {
+  return Object.fromEntries(
+    APP_TABLES.map((definition) => {
+      const rows = database
+        .prepare(
+          `SELECT * FROM ${definition.table} ORDER BY ${definition.titleColumn}, id`,
+        )
+        .all() as Row[];
+      return [
+        definition.id,
+        rows.map((row) => decodeAppRow(row, definition)),
+      ];
+    }),
+  );
+}
+
+function getThemeMode(themeTokens: Row, requestedMode: unknown): "light" | "dark" {
+  if (requestedMode === "light" || requestedMode === "dark") {
+    return requestedMode;
+  }
+  const defaultMode = themeTokens.defaultMode;
+  return defaultMode === "dark" ? "dark" : "light";
+}
+
+function loadInheritedJson(database: SQLiteDatabase) {
+  const inherited: Record<string, Record<string, Record<string, Row>>> = {};
+  const setInherited = (
+    tableId: string,
+    recordId: string,
+    field: string,
+    value: Row,
+  ) => {
+    inherited[tableId] ??= {};
+    inherited[tableId][recordId] ??= {};
+    inherited[tableId][recordId][field] = value;
+  };
+
+  const themes = database
+    .prepare("SELECT * FROM themes")
+    .all() as Row[];
+  const themeById = new Map(
+    themes.map((row) => {
+      const theme = ThemeSchema.parse({
+        ...row,
+        tokens_json: readRequiredJson(row, "tokens_json"),
+      });
+      return [theme.id, theme] as const;
+    }),
+  );
+  const actorRows = database.prepare("SELECT * FROM actors").all() as Row[];
+  const actorById = new Map(
+    actorRows.map((row) => [
+      String(row.id),
+      ActorSchema.parse({
+        ...nullsToUndefined(row, [
+          "short_name",
+          "avatar_asset_id",
+          "default_device_id",
+          "default_theme_id",
+        ]),
+        metadata_json: readOptionalJson(row, "metadata_json"),
+      }),
+    ]),
+  );
+  const shotRows = database.prepare("SELECT * FROM shots").all() as Row[];
+  const shotById = new Map(
+    shotRows.map((row) => [
+      String(row.id),
+      ShotSchema.parse({
+        ...nullsToUndefined(row, [
+          "episode_id",
+          "owner_actor_id",
+          "sort_order",
+          "render_preset_id",
+        ]),
+        canvas_json: readOptionalJson(row, "canvas_json"),
+        metadata_json: readOptionalJson(row, "metadata_json"),
+      }),
+    ]),
+  );
+
+  const moduleConfigs = database
+    .prepare("SELECT * FROM module_theme_configs")
+    .all() as Row[];
+  for (const row of moduleConfigs) {
+    const config = ModuleThemeConfigSchema.parse({
+      ...row,
+      tokens_json: readRequiredJson(row, "tokens_json"),
+      metadata_json: readOptionalJson(row, "metadata_json") ?? {},
+    });
+    const theme = themeById.get(config.theme_id);
+    if (!theme) continue;
+    const themeMode = getThemeMode(theme.tokens_json, undefined);
+    const defaultTokens =
+      config.metadata_json && isObject(config.metadata_json.default_tokens_json)
+        ? config.metadata_json.default_tokens_json
+        : config.tokens_json;
+    setInherited(
+      "module_theme_configs",
+      config.id,
+      "tokens_json",
+      mergeTokenObjects(resolveGlobalThemeTokens(theme, themeMode), defaultTokens),
+    );
+  }
+
+  const screenRows = database
+    .prepare("SELECT * FROM screen_instances")
+    .all() as Row[];
+  for (const row of screenRows) {
+    const screen = parseScreenInstance(row);
+    if (!screen.module_id || !screen.module_schema_version) {
+      continue;
+    }
+    const shot = shotById.get(screen.shot_id);
+    const owner = actorById.get(shot?.owner_actor_id ?? screen.owner_actor_id);
+    const themeId = screen.theme_id ?? owner?.default_theme_id;
+    if (!themeId) continue;
+    const theme = themeById.get(themeId);
+    if (!theme) continue;
+    const themeMode = getThemeMode(theme.tokens_json, screen.theme_mode);
+    const moduleConfig = database
+      .prepare(
+        `SELECT * FROM module_theme_configs
+         WHERE theme_id = ? AND module_id = ? AND module_schema_version = ?
+         ORDER BY name, id
+         LIMIT 1`,
+      )
+      .get(
+        themeId,
+        screen.module_id,
+        screen.module_schema_version,
+      ) as Row | undefined;
+    const globalTokens = resolveGlobalThemeTokens(theme, themeMode);
+    const moduleTokens = moduleConfig
+      ? resolveModuleThemeTokens(
+          readRequiredJson(moduleConfig, "tokens_json"),
+          themeMode,
+        )
+      : {};
+    setInherited(
+      "screen_instances",
+      screen.id,
+      "module_tokens_override_json",
+      mergeTokenObjects(globalTokens, moduleTokens),
+    );
+  }
+
+  return inherited;
+}
+
+export function loadAppState(database: SQLiteDatabase) {
+  return {
+    tables: APP_TABLES,
+    records: listAppRecords(database),
+    options: listDebugOptions(database),
+    inheritedJson: loadInheritedJson(database),
+  };
+}
+
+export interface AppUpdateRequest {
+  tableId: string;
+  recordId: string;
+  patch: Record<string, unknown>;
+}
+
+export interface AppCreateRequest {
+  tableId: "productions" | "episodes" | "shots";
+  parent?: {
+    productionId?: string;
+    episodeId?: string;
+  };
+  name?: string;
+}
+
+function slugifyIdPart(value: string): string {
+  return (
+    value
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "")
+      .slice(0, 40) || "new"
+  );
+}
+
+function uniqueId(prefix: string, name: string): string {
+  return `${prefix}_${slugifyIdPart(name)}_${Date.now().toString(36)}`;
+}
+
+function nextSortOrder(
+  database: SQLiteDatabase,
+  table: string,
+  parentColumn: string,
+  parentId: string,
+): number {
+  const row = database
+    .prepare(
+      `SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_sort_order FROM ${table} WHERE ${parentColumn} = ?`,
+    )
+    .get(parentId) as { next_sort_order?: number } | undefined;
+  return Number(row?.next_sort_order ?? 0);
+}
+
+function firstScalar(
+  database: SQLiteDatabase,
+  query: string,
+  ...params: unknown[]
+): string | null {
+  const row = database.prepare(query).get(...params) as
+    | Record<string, unknown>
+    | undefined;
+  const value = row ? Object.values(row)[0] : undefined;
+  return typeof value === "string" ? value : null;
+}
+
+export function createAppRecord(
+  database: SQLiteDatabase,
+  request: AppCreateRequest,
+) {
+  if (request.tableId === "productions") {
+    const name = request.name?.trim() || "New production";
+    const id = uniqueId("production", name);
+    database
+      .prepare(
+        `INSERT INTO productions (id, name, slug, settings_json, metadata_json)
+         VALUES (?, ?, ?, ?, ?)`,
+      )
+      .run(id, name, slugifyIdPart(name), "{}", "{}");
+    const record = decodeAppRow(
+      database.prepare("SELECT * FROM productions WHERE id = ?").get(id) as Row,
+      tableDefinition("productions"),
+    );
+    return { tableId: "productions", record, state: loadAppState(database) };
+  }
+
+  if (request.tableId === "episodes") {
+    const productionId = request.parent?.productionId;
+    if (!productionId) {
+      throw new Error("Creating an episode requires a productionId parent.");
+    }
+    const production = database
+      .prepare("SELECT id FROM productions WHERE id = ?")
+      .get(productionId);
+    if (!production) {
+      throw new Error(`Production ${productionId} not found`);
+    }
+    const sortOrder = nextSortOrder(
+      database,
+      "episodes",
+      "production_id",
+      productionId,
+    );
+    const name = request.name?.trim() || `Episode ${sortOrder + 1}`;
+    const id = uniqueId("episode", name);
+    database
+      .prepare(
+        `INSERT INTO episodes (id, production_id, name, sort_order, metadata_json)
+         VALUES (?, ?, ?, ?, ?)`,
+      )
+      .run(id, productionId, name, sortOrder, "{}");
+    const record = decodeAppRow(
+      database.prepare("SELECT * FROM episodes WHERE id = ?").get(id) as Row,
+      tableDefinition("episodes"),
+    );
+    return { tableId: "episodes", record, state: loadAppState(database) };
+  }
+
+  const episodeId = request.parent?.episodeId;
+  if (!episodeId) {
+    throw new Error("Creating a shot requires an episodeId parent.");
+  }
+  const episode = database
+    .prepare("SELECT id, production_id FROM episodes WHERE id = ?")
+    .get(episodeId) as Row | undefined;
+  if (!episode) {
+    throw new Error(`Episode ${episodeId} not found`);
+  }
+  const productionId = String(episode.production_id);
+  const sortOrder = nextSortOrder(database, "shots", "episode_id", episodeId);
+  const name = request.name?.trim() || `Shot ${sortOrder + 1}`;
+  const id = uniqueId("shot", name);
+  const renderPresetId = firstScalar(
+    database,
+    "SELECT id FROM render_presets WHERE production_id = ? ORDER BY name, id LIMIT 1",
+    productionId,
+  );
+  const ownerActorId = firstScalar(
+    database,
+    "SELECT id FROM actors WHERE production_id = ? ORDER BY display_name, id LIMIT 1",
+    productionId,
+  );
+  const fpsRow = renderPresetId
+    ? (database
+        .prepare("SELECT fps FROM render_presets WHERE id = ?")
+        .get(renderPresetId) as { fps?: number } | undefined)
+    : undefined;
+  const fps = Number(fpsRow?.fps ?? 30);
+  database
+    .prepare(
+      `INSERT INTO shots (
+        id,
+        production_id,
+        episode_id,
+        owner_actor_id,
+        name,
+        sort_order,
+        duration_frames,
+        fps,
+        render_preset_id,
+        canvas_json,
+        metadata_json
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    .run(
+      id,
+      productionId,
+      episodeId,
+      ownerActorId,
+      name,
+      sortOrder,
+      fps * 4,
+      fps,
+      renderPresetId,
+      "{}",
+      "{}",
+    );
+  const record = decodeAppRow(
+    database.prepare("SELECT * FROM shots WHERE id = ?").get(id) as Row,
+    tableDefinition("shots"),
+  );
+  return { tableId: "shots", record, state: loadAppState(database) };
+}
+
+export function updateAppRecord(
+  database: SQLiteDatabase,
+  request: AppUpdateRequest,
+) {
+  const definition = tableDefinition(request.tableId);
+  const existingRow = database
+    .prepare(`SELECT * FROM ${definition.table} WHERE id = ?`)
+    .get(request.recordId) as Row | undefined;
+  if (!existingRow) {
+    throw new Error(`Record ${request.recordId} not found in ${definition.id}`);
+  }
+  const existing = decodeAppRow(existingRow, definition);
+  const allowed = new Map(
+    definition.fields
+      .filter((field) => !field.readonly)
+      .map((field) => [field.column, field]),
+  );
+  const encoded: Record<string, string | number | null> = {};
+  const decodedPatch: Row = {};
+  for (const [column, value] of Object.entries(request.patch)) {
+    const field = allowed.get(column);
+    if (!field) {
+      throw new Error(`Field ${column} is not editable on ${definition.id}`);
+    }
+    encoded[column] = encodeValue(value, field, definition);
+    decodedPatch[column] =
+      field.kind === "json"
+        ? asObject(value, field.column)
+        : encoded[column];
+  }
+
+  if (Object.keys(encoded).length === 0) {
+    return {
+      record: existing,
+      records: listAppRecords(database)[definition.id],
+    };
+  }
+
+  const candidate = validateAppRow(definition.id, {
+    ...existing,
+    ...decodedPatch,
+  });
+  const assignments = Object.keys(encoded)
+    .map((column) => `${column} = ?`)
+    .join(", ");
+  database
+    .prepare(`UPDATE ${definition.table} SET ${assignments} WHERE id = ?`)
+    .run(...Object.values(encoded), request.recordId);
+
+  const savedRow = database
+    .prepare(`SELECT * FROM ${definition.table} WHERE id = ?`)
+    .get(request.recordId) as Row;
+  const saved = decodeAppRow(savedRow, definition);
+  validateAppRow(definition.id, saved);
+
+  return {
+    record: candidate,
+    saved,
+    records: listAppRecords(database)[definition.id],
+  };
+}

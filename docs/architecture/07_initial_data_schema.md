@@ -1,6 +1,6 @@
 # Initial data schema
 
-This is the first persistence-oriented schema for MOCKUPS. It is a design target for later TypeScript/Zod schemas and SQLite migrations, not an implementation.
+This is the persistence-oriented schema for MOCKUPS. The initial SQLite implementation now exists; module-contract fields added in schema version 2 are additive and preserve the original compatibility path.
 
 ## Storage boundary
 
@@ -14,6 +14,7 @@ JSON column names use a `_json` suffix below. Resolvers parse these values and e
 Production
  ├─ Resources
  │   ├─ Themes
+ │   ├─ ModuleThemeConfigs
  │   ├─ Devices
  │   ├─ DeviceStates
  │   ├─ Actors
@@ -45,13 +46,21 @@ Production
 - Relationships: owns every production-scoped entity.
 - Must not contain: individual screen props, message content, or shot timing.
 
+### `episodes`
+
+- Purpose: editorial container inside one production.
+- SQL/stable fields: `id`, `production_id`, `name`, `sort_order`.
+- JSON/flexible fields: `metadata_json`.
+- Relationships: belongs to one production; owns many shots.
+- Must not contain: screen-instance timing, module content, render output, or reusable production resources.
+
 ### `shots`
 
-- Purpose: central unit requested for preview and final rendering.
-- SQL/stable fields: `id`, `production_id`, `name`, `sort_order`, `duration_frames`, `fps`, `render_preset_id`.
+- Purpose: central device-screen action sequence requested for preview and final rendering.
+- SQL/stable fields: `id`, `production_id`, `episode_id`, `owner_actor_id`, `name`, `sort_order`, `duration_frames`, `fps`, `render_preset_id`.
 - JSON/flexible fields: `canvas_json`, `metadata_json`.
-- Relationships: belongs to one production and optionally one render preset; owns many screen instances.
-- Must not contain: a single mandatory chat/device reference or detailed UI drawing rules.
+- Relationships: belongs to one production, optionally belongs to one episode, references one owner actor, and optionally references one render preset; owns many screen instances.
+- Must not contain: a single mandatory chat/device reference, detailed UI drawing rules, or placement into an external UHD/video plate.
 
 ### `screen_templates`
 
@@ -63,13 +72,15 @@ Production
 
 ### `screen_instances`
 
-- Purpose: core bridge between shots and visual modules; places a configured screen in a shot.
-- SQL/stable fields: `id`, `shot_id`, `screen_template_id`, `screen_type`, `owner_actor_id`, `device_id`, `device_state_id`, `theme_id`, `start_frame`, `end_frame`, `layer_order`.
-- JSON/flexible fields: `data_ref_json`, `transform_json`, `props_json`, `transition_in_json`, `transition_out_json`.
-- Relationships: belongs to a shot and references a template, owner actor, device, optional device state, and theme; owns screen events.
+- Purpose: runtime container and persistence boundary for a versioned screen module.
+- SQL/stable fields: `id`, `shot_id`, `screen_template_id`, `screen_type`, `module_id`, `module_schema_version`, `owner_actor_id`, `device_id`, `device_state_id`, `theme_id`, `theme_mode`, `start_frame`, `end_frame`, `layer_order`.
+- JSON/flexible fields: `module_data_json`, `module_config_json`, `module_tokens_override_json`, `transform_json`; compatibility fields are `data_ref_json`, `props_json`, `transition_in_json`, `transition_out_json`.
+- Relationships: belongs to a shot and references a template plus optional screen-level overrides for owner/device/theme context; owns screen events. By default, owner comes from the shot, and device/theme come from that actor's defaults. Module-internal references remain inside versioned module JSON and are validated by the selected module.
 - Must not contain: detailed drawing logic or copied theme/device records.
 
-`screen_type` is a stable discriminator such as `chat`, `lock_screen`, `notification_stack`, `incoming_call`, `in_call`, `home_screen`, or `custom_app`. `data_ref_json` identifies the narrative source, for example `{ "type": "conversation", "conversation_id": "conversation_001" }`. `props_json` contains template-specific configuration. `transform_json` positions or transforms the rendered screen inside the shot. Transition JSON holds instance-level entrance and exit configuration.
+`screen_type` is a broad discriminator; `module_id` + `module_schema_version` select the exact module contract. `module_data_json` holds shot content, `module_config_json` behavior, and `module_tokens_override_json` local visual exceptions. `transform_json` transforms the device-screen render inside the shot's device render space. `core.chat` now requires these module fields and has no runtime fallback to `data_ref_json` or `props_json`.
+
+SQLite schema version 2 adds the six module/mode columns without deleting or rewriting legacy data. New/seeded Chat instances store complete module JSON. Existing databases with legacy Chat rows should later receive a one-way transactional migration/export before deprecated columns or tables are physically removed.
 
 ### `screen_events`
 
@@ -79,7 +90,7 @@ Production
 - Relationships: belongs to one screen instance and may reference an animation preset; `target_id` identifies the affected narrative or visual item within resolved data.
 - Must not contain: complete screen state, theme defaults, or module drawing code.
 
-Event types include notification appearing, unlock gesture, incoming call accepted, message write-on starting, scroll movement, keyboard appearing, and app transition. Frames are evaluated deterministically relative to the parent shot unless a later schema explicitly defines another frame space.
+Canonical initial event types include `notification_appears`, `unlock_gesture`, `incoming_call_accepted`, `message_write_on_starts`, `scroll_moves`, `keyboard_appears`, and `app_transition`. Event `start_frame` is relative to the parent screen instance. ShotBuilder derives the local frame from the requested shot frame before module rendering.
 
 ### `themes`
 
@@ -89,7 +100,29 @@ Event types include notification appearing, unlock gesture, incoming call accept
 - Relationships: belongs to a production; referenced by actors and screen instances.
 - Must not contain: shot-specific timing or message content.
 
-`tokens_json` may contain font, bubble, notification, and status-bar tokens; colors; spacing; radii; shadows; and component defaults.
+`tokens_json` may contain logical-unit typography/layout/component tokens, installed font selection, base values, `modes.light`, `modes.dark`, and `defaultMode`. The resolver merges base + selected mode + local overrides. See `08_visual_tokens_layout_contract.md`.
+
+Global theme tokens should not own every internal module-specific design value. Chat bubble geometry, message spacing, chat header defaults, cursor behavior, and similar module internals belong in `module_theme_configs.tokens_json`.
+
+### `module_theme_configs`
+
+- Purpose: reusable module-specific design defaults for one theme and one module/schema version.
+- SQL/stable fields: `id`, `production_id`, `theme_id`, `module_id`, `module_schema_version`, `name`.
+- JSON/flexible fields: `tokens_json`, `metadata_json`.
+- Relationships: belongs to a production and theme; selected by screen instances through their `theme_id`, `module_id`, and `module_schema_version`.
+- Must not contain: shot content, device geometry, live device state, or per-instance exceptions.
+
+Resolution order is:
+
+```text
+theme.tokens_json
+  → theme mode tokens
+  → module_theme_configs.tokens_json
+  → module theme mode tokens
+  → screen_instances.module_tokens_override_json
+```
+
+For the initial fixture, `module_theme_configs` contains one Chat config for `theme_ios_light` + `core.chat` schema version 1.
 
 ### `devices`
 
@@ -99,13 +132,13 @@ Event types include notification appearing, unlock gesture, incoming call accept
 - Relationships: belongs to a production; may reference a media asset for its frame; referenced by actors and screen instances.
 - Must not contain: actor-specific content or shot-specific transforms.
 
-`metrics_json` may contain canvas size, screen bounds, viewport, safe areas, status-bar height, notch/dynamic-island geometry, corner radius, and pixel ratio.
+`metrics_json` may contain logical `designSpace`, internal pixel `renderSize`, `scaleToPixels`, canvas/screen/viewport bounds, safe areas, status-bar area, notch/dynamic-island geometry, corner radius, pixel ratio, and default screen scale.
 
 ### `device_states`
 
 - Purpose: reusable state layered onto device metrics for a particular presentation condition.
 - SQL/stable fields: `id`, `production_id`, `device_id`, `name`.
-- JSON/flexible fields: `state_json` for time, battery, signal, network, orientation, lock state, and transient hardware UI.
+- JSON/flexible fields: `state_json` for time/date, battery, signal, network label, Wi-Fi state/icon, focus mode, orientation, lock state, and transient hardware UI.
 - Relationships: belongs to a production and device; referenced by screen instances.
 - Must not contain: base device geometry, narrative content, or shot transforms.
 
@@ -129,9 +162,11 @@ Event types include notification appearing, unlock gesture, incoming call accept
 
 - Purpose: registry of production-owned images, video, audio, fonts, and other files.
 - SQL/stable fields: `id`, `production_id`, `name`, `asset_type`, `uri`, `mime_type`, `checksum`.
-- JSON/flexible fields: `dimensions_json`, `metadata_json`.
+- JSON/flexible fields: `dimensions_json`, `metadata_json` including reusable/one-off usage scope where needed.
 - Relationships: belongs to a production; referenced through `media_asset_id` or role-specific asset IDs.
-- Must not contain: binary data duplicated into narrative records or per-shot transforms.
+- Must not contain: heavy binary data duplicated into SQLite or per-component transforms. Prefer project-relative URIs. Small inline SVG may be considered later.
+
+Modules use asset IDs with a media window (logical width/height/offsets) and an asset transform (ratio scale, translation, rotation). OS/app icon tokens are resolved through a separate theme/OS/mode-aware icon map rather than treated as user media.
 
 ### `animation_presets`
 
@@ -147,15 +182,19 @@ Event types include notification appearing, unlock gesture, incoming call accept
 - SQL/stable fields: `id`, `production_id`, `name`, `width`, `height`, `fps`, `format`.
 - JSON/flexible fields: `codec_json`, `color_json`, `quality_json`, `export_json`.
 - Relationships: belongs to a production; referenced by shots.
-- Must not contain: screen layout, narrative content, or module props.
+- Must not contain: screen layout, narrative content, module props, or external video-plate placement. It may define output scale/size, format, codec, alpha, color, and quality.
 
 ### `conversations`
 
 - Purpose: ordered message context and participant grouping for chat-like screens.
 - SQL/stable fields: `id`, `production_id`, `name`, `app_id`, `owner_actor_id`, `target_actor_id`.
-- JSON/flexible fields: `participant_ids_json`, `metadata_json`.
-- Relationships: belongs to a production; may reference an app and actors; owns messages; referenced from `data_ref_json`.
+- JSON/flexible fields: `metadata_json`.
+- Relationships: belongs to a production; may reference an app and actors; owns messages; referenced from `data_ref_json`. Group membership is a stable relationship represented by a support table such as `conversation_participants(conversation_id, actor_id, sort_order, role)`.
 - Must not contain: device metrics, screen transforms, or message rows embedded as the canonical copy.
+
+Participant IDs must not be stored only as a canonical JSON list. A JSON projection may be emitted in resolved props, but SQL owns participant identity, membership, order, and role.
+
+Deprecation note: these normalized relationships remain physically available for historical/import compatibility, but Chat runtime does not read them. `core.chat` owns versioned `participants[]`, header, and messages in `module_data_json`; participants may reference production actors, group membership is represented directly, and every message uses `senderParticipantId`.
 
 ### `messages`
 
@@ -164,6 +203,8 @@ Event types include notification appearing, unlock gesture, incoming call accept
 - JSON/flexible fields: `style_override_json`, `animation_override_json`, `layout_override_json`, `metadata_json`.
 - Relationships: belongs to a conversation; references a sender actor and optional media asset.
 - Must not contain: normal theme font, color, padding, or radius values unless they are intentional one-off overrides.
+
+Message timing fields are relative to the screen-instance/conversation timeline supplied by the resolver, not absolute shot frames. This keeps conversation data reusable when a screen instance starts at a different shot frame.
 
 > Warning: Do not store normal bubble colors on messages. Store them in the theme and use `style_override_json` only for exceptions.
 
@@ -193,4 +234,4 @@ Event types include notification appearing, unlock gesture, incoming call accept
 
 ## Resolution guidance
 
-Resolvers validate that references remain inside the same production, apply template/theme/device defaults, then apply instance and item overrides. They return self-contained camelCase props. Visual modules must never interpret SQL rows or retrieve missing references themselves.
+Resolvers validate references remain inside the same production, including actor/media IDs inside module JSON and event targets. They convert shot frames to local frames and return self-contained camelCase props. For Chat, module config and token overrides are canonical; legacy conversation/message records are not consulted.

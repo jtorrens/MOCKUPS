@@ -4,10 +4,44 @@
   "name": "iOS Light",
   "family": "ios",
   "version": "1.0.0",
-  "tokens": {
+  "tokens_json": {
+    "defaultMode": "light",
+    "fontSelection": {
+      "family": "SF Pro Text",
+      "style": "normal",
+      "weight": 400,
+      "source": "installed_system_font"
+    },
+    "modes": {
+      "light": {
+        "colors": {
+          "background": "#FFFFFF",
+          "textPrimary": "#000000",
+          "textSecondary": "#6E6E73",
+          "accent": "#007AFF"
+        },
+        "statusBar": {
+          "foreground": "#000000",
+          "background": "transparent"
+        }
+      },
+      "dark": {
+        "colors": {
+          "background": "#000000",
+          "textPrimary": "#FFFFFF",
+          "textSecondary": "#98989D",
+          "accent": "#0A84FF"
+        },
+        "statusBar": {
+          "foreground": "#FFFFFF",
+          "background": "transparent"
+        }
+      }
+    },
     "fonts": {
       "family": "SF Pro Text",
       "bodySize": 17,
+      "bodyLineHeight": 21.25,
       "captionSize": 13,
       "weightRegular": 400,
       "weightSemibold": 600
@@ -20,15 +54,8 @@
     },
     "statusBar": {
       "foreground": "#000000",
-      "background": "transparent"
-    },
-    "chatBubbles": {
-      "outgoingBackground": "#0B84FF",
-      "outgoingText": "#FFFFFF",
-      "incomingBackground": "#E9E9EB",
-      "incomingText": "#000000",
-      "paddingX": 14,
-      "paddingY": 9
+      "background": "transparent",
+      "iconScale": 1
     },
     "notifications": {
       "background": "rgba(245,245,247,0.92)",
@@ -43,7 +70,6 @@
       "lg": 24
     },
     "radii": {
-      "bubble": 18,
       "notification": 16,
       "card": 12
     },

@@ -1,2 +1,9 @@
 .DS_Store
 **/.DS_Store
+node_modules/
+dist/
+*.sqlite
+*.sqlite3
+*.db
+*.db-wal
+*.db-shm

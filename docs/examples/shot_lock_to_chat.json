@@ -2,12 +2,14 @@
   "production_id": "production_demo",
   "shot": {
     "id": "shot_lock_to_chat",
+    "production_id": "production_demo",
+    "episode_id": "episode_demo_001",
+    "owner_actor_id": "actor_alex",
     "name": "Lock notification to chat",
     "duration_frames": 300,
     "fps": 30
   },
   "references": {
-    "conversation_id": "conversation_alex_sam",
     "notification_id": "notification_message_001"
   },
   "screen_instances": [
@@ -16,10 +18,13 @@
       "shot_id": "shot_lock_to_chat",
       "screen_template_id": "template_lock_default",
       "screen_type": "lock_screen",
+      "module_id": "lock_screen",
+      "module_schema_version": 1,
       "owner_actor_id": "actor_alex",
-      "device_id": "device_iphone_generic",
+      "device_id": null,
       "device_state_id": "device_state_locked_morning",
-      "theme_id": "theme_ios_light",
+      "theme_id": null,
+      "theme_mode": "light",
       "start_frame": 0,
       "end_frame": 165,
       "layer_order": 0,
@@ -27,6 +32,11 @@
         "type": "notification",
         "notification_id": "notification_message_001"
       },
+      "module_data_json": {
+        "notificationRef": "notification_message_001"
+      },
+      "module_config_json": {},
+      "module_tokens_override_json": {},
       "transform_json": {
         "x": 0,
         "y": 0,
@@ -34,6 +44,7 @@
         "rotation_degrees": 0
       },
       "props_json": {},
+      "transition_in_json": null,
       "transition_out_json": {
         "type": "unlock_to_app",
         "duration_frames": 15
@@ -44,30 +55,106 @@
       "shot_id": "shot_lock_to_chat",
       "screen_template_id": "template_chat_default",
       "screen_type": "chat",
+      "module_id": "core.chat",
+      "module_schema_version": 1,
       "owner_actor_id": "actor_alex",
-      "device_id": "device_iphone_generic",
+      "device_id": null,
       "device_state_id": "device_state_unlocked_morning",
-      "theme_id": "theme_ios_light",
+      "theme_id": null,
+      "theme_mode": "light",
       "start_frame": 150,
       "end_frame": 300,
       "layer_order": 1,
-      "data_ref_json": {
-        "type": "conversation",
-        "conversation_id": "conversation_alex_sam"
+      "data_ref_json": null,
+      "module_data_json": {
+        "schemaVersion": 1,
+        "participants": [
+          {
+            "id": "participant_alex",
+            "displayName": "Alex",
+            "actorId": "actor_alex",
+            "avatarAssetId": "media_asset_alex_avatar",
+            "role": "owner"
+          },
+          {
+            "id": "participant_sam",
+            "displayName": "Sam",
+            "actorId": "actor_sam",
+            "avatarAssetId": "media_asset_sam_avatar",
+            "role": "participant"
+          },
+          {
+            "id": "participant_taylor",
+            "displayName": "Taylor",
+            "role": "participant"
+          }
+        ],
+        "header": {
+          "title": "Sam",
+          "subtitle": "online",
+          "avatarParticipantId": "participant_sam",
+          "iconToken": "chat.header.contact"
+        },
+        "messages": [
+          {
+            "id": "message_001",
+            "senderParticipantId": "participant_sam",
+            "type": "text",
+            "text": "Are you nearby?",
+            "mediaAssetId": "media_asset_sam_avatar",
+            "media": {
+              "window": {
+                "width": 180,
+                "height": 120,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "transform": {
+                "scale": 1,
+                "translateX": 0,
+                "translateY": 0,
+                "rotationDegrees": 0
+              }
+            },
+            "startFrame": 15,
+            "enterDurationFrames": 10
+          },
+          {
+            "id": "message_002",
+            "senderParticipantId": "participant_alex",
+            "type": "text",
+            "text": "Two minutes away.",
+            "startFrame": 45,
+            "enterDurationFrames": 10,
+            "textReveal": {
+              "mode": "simple_write_on",
+              "startFrame": 45,
+              "durationFrames": 30
+            }
+          }
+        ]
       },
+      "module_config_json": {
+        "showHeader": true,
+        "showStatusBar": true,
+        "showKeyboard": false,
+        "initialScroll": "bottom",
+        "messageGrouping": "bySender",
+        "debugShowBounds": false
+      },
+      "module_tokens_override_json": {},
       "transform_json": {
         "x": 0,
         "y": 0,
         "scale": 1,
         "rotation_degrees": 0
       },
-      "props_json": {
-        "show_keyboard": false
-      },
+      "props_json": {},
       "transition_in_json": {
         "type": "unlock_to_app",
         "duration_frames": 15
-      }
+      },
+      "transition_out_json": null
     }
   ],
   "screen_events": [

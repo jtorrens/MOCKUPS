@@ -6,7 +6,17 @@
   "model": "Generic modern iPhone",
   "os_family": "ios",
   "frame_asset_id": "media_asset_iphone_frame",
-  "metrics": {
+  "metrics_json": {
+    "designSpace": {
+      "width": 430,
+      "height": 932,
+      "unit": "logical"
+    },
+    "renderSize": {
+      "width": 1290,
+      "height": 2796
+    },
+    "scaleToPixels": 3,
     "canvas": {
       "width": 1290,
       "height": 2796
@@ -30,6 +40,9 @@
       "left": 0
     },
     "statusBar": {
+      "x": 0,
+      "y": 0,
+      "width": 1290,
       "height": 177
     },
     "dynamicIsland": {
@@ -39,6 +52,7 @@
       "height": 111
     },
     "cornerRadius": 165,
-    "pixelRatio": 3
+    "pixelRatio": 3,
+    "defaultScreenScale": 1
   }
 }
