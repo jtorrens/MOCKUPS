@@ -18,6 +18,7 @@ interface JsonArrayEditorProps {
   restoreStrategy: "remove" | "set";
   allowObjectStructuralEdits: boolean;
   allowArrayStructuralEdits: boolean;
+  groupContext?: string;
   onRootChange: (nextValue: JsonValue) => void;
 }
 
@@ -30,6 +31,7 @@ export function JsonArrayEditor({
   restoreStrategy,
   allowObjectStructuralEdits,
   allowArrayStructuralEdits,
+  groupContext,
   onRootChange,
 }: JsonArrayEditorProps) {
   const [newKind, setNewKind] = useState("object");
@@ -79,6 +81,7 @@ export function JsonArrayEditor({
             restoreStrategy={restoreStrategy}
             allowObjectStructuralEdits={allowObjectStructuralEdits}
             allowArrayStructuralEdits={allowArrayStructuralEdits}
+            groupContext={groupContext}
             onRootChange={onRootChange}
           />
           {allowArrayStructuralEdits ? (

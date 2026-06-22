@@ -28,6 +28,18 @@ const HIERARCHY_TABLE_IDS = new Set([
   "screen_instances",
 ]);
 
+const APPS_TABLE_IDS = new Set(["apps", "screen_templates"]);
+
+const PRODUCTION_DATA_TABLE_IDS = new Set([
+  "actors",
+  "themes",
+  "devices",
+  "device_states",
+  "media_assets",
+  "render_presets",
+  "animation_presets",
+]);
+
 function tableById(tables: AppTableDefinition[]) {
   return new Map(tables.map((table) => [table.id, table]));
 }
@@ -114,6 +126,20 @@ function EmptyPanel({ children }: { children: string }) {
   return <div className="empty-record-list compact-empty">{children}</div>;
 }
 
+function recordButtonClass(
+  tableId: string,
+  recordId: string,
+  activeTableId: string,
+  selectedRecordIds: Record<string, string>,
+) {
+  const classes = [];
+  if (selectedRecordIds[tableId] === recordId) classes.push("active");
+  if (activeTableId === tableId && selectedRecordIds[tableId] === recordId) {
+    classes.push("editing");
+  }
+  return classes.join(" ");
+}
+
 export function ProjectTree({
   tables,
   activeTableId,
@@ -125,18 +151,17 @@ export function ProjectTree({
   onRecordSelect,
   onCreateRecord,
 }: ProjectTreeProps) {
-  const [browserTab, setBrowserTab] = useState<"project" | "library">("project");
+  const [browserTab, setBrowserTab] = useState<"project" | "apps" | "data">(
+    "project",
+  );
   const tablesById = tableById(tables);
-  const resourceTables = tables.filter((table) => !HIERARCHY_TABLE_IDS.has(table.id));
-  const activeResourceTable = resourceTables.find(
-    (table) => table.id === activeTableId,
-  ) ?? resourceTables[0];
-  const activeResourceRecords = activeResourceTable
-    ? (records[activeResourceTable.id] ?? [])
-    : [];
   const selectedProductionId = selectedRecordIds.productions;
   const selectedEpisodeId = selectedRecordIds.episodes;
   const selectedShotId = selectedRecordIds.shots;
+  const selectedScreenId = selectedRecordIds.screen_instances;
+  const selectedScreen = options.screenInstances.find(
+    (instance) => instance.id === selectedScreenId,
+  );
   const productionEpisodes = options.episodes.filter(
     (episode) => episode.productionId === selectedProductionId,
   );
@@ -146,10 +171,53 @@ export function ProjectTree({
   const shotInstances = options.screenInstances.filter(
     (instance) => instance.shotId === selectedShotId,
   );
+  const moduleThemeConfigRecords = (records.module_theme_configs ?? []).filter(
+    (record) =>
+      record.production_id === selectedProductionId &&
+      (!selectedScreen?.moduleId || record.module_id === selectedScreen.moduleId),
+  );
+  const appsTables = tables.filter((table) => APPS_TABLE_IDS.has(table.id));
+  const dataTables = tables.filter((table) =>
+    PRODUCTION_DATA_TABLE_IDS.has(table.id),
+  );
+
+  function recordsForSelectedProduction(tableId: string) {
+    return (records[tableId] ?? []).filter(
+      (record) =>
+        !Object.hasOwn(record, "production_id") ||
+        record.production_id === selectedProductionId,
+    );
+  }
 
   function select(tableId: string, recordId: string) {
     onTableChange(tableId);
     onRecordSelect(tableId, recordId);
+  }
+
+  function renderRecordButtons(table: AppTableDefinition, tableRecords: AppRecord[]) {
+    return tableRecords.length === 0 ? (
+      <EmptyPanel>No records yet.</EmptyPanel>
+    ) : (
+      <div className="hierarchy-list">
+        {tableRecords.map((record) => (
+          <button
+            key={record.id}
+            type="button"
+            data-testid={`record-${record.id}`}
+            className={recordButtonClass(
+              table.id,
+              record.id,
+              activeTableId,
+              selectedRecordIds,
+            )}
+            onClick={() => select(table.id, record.id)}
+          >
+            <strong>{recordTitle(table, record)}</strong>
+            <small>{record.id}</small>
+          </button>
+        ))}
+      </div>
+    );
   }
 
   return (
@@ -166,41 +234,23 @@ export function ProjectTree({
         <button
           type="button"
           role="tab"
-          className={browserTab === "library" ? "active" : ""}
-          onClick={() => setBrowserTab("library")}
+          className={browserTab === "apps" ? "active" : ""}
+          onClick={() => setBrowserTab("apps")}
         >
-          Library
+          Apps
+        </button>
+        <button
+          type="button"
+          role="tab"
+          className={browserTab === "data" ? "active" : ""}
+          onClick={() => setBrowserTab("data")}
+        >
+          Production data
         </button>
       </div>
 
       {browserTab === "project" ? (
         <div className="hierarchy-browser">
-          <BrowserPanel
-            title="Productions"
-            subtitle="Project"
-            count={options.productions.length}
-            canAdd
-            busy={busyAction}
-            onAdd={() => onCreateRecord("productions")}
-          >
-            <div className="hierarchy-list">
-              {options.productions.map((production) => (
-                <button
-                  key={production.id}
-                  type="button"
-                  data-testid={`record-${production.id}`}
-                  className={
-                    selectedRecordIds.productions === production.id ? "active" : ""
-                  }
-                  onClick={() => select("productions", production.id)}
-                >
-                  <strong>{production.name}</strong>
-                  <small>{production.id}</small>
-                </button>
-              ))}
-            </div>
-          </BrowserPanel>
-
           <BrowserPanel
             title="Episodes"
             subtitle="Selected production"
@@ -218,9 +268,12 @@ export function ProjectTree({
                     key={episode.id}
                     type="button"
                     data-testid={`record-${episode.id}`}
-                    className={
-                      selectedRecordIds.episodes === episode.id ? "active" : ""
-                    }
+                    className={recordButtonClass(
+                      "episodes",
+                      episode.id,
+                      activeTableId,
+                      selectedRecordIds,
+                    )}
                     onClick={() => select("episodes", episode.id)}
                   >
                     <strong>{episode.name}</strong>
@@ -248,7 +301,12 @@ export function ProjectTree({
                     key={shot.id}
                     type="button"
                     data-testid={`record-${shot.id}`}
-                    className={selectedRecordIds.shots === shot.id ? "active" : ""}
+                    className={recordButtonClass(
+                      "shots",
+                      shot.id,
+                      activeTableId,
+                      selectedRecordIds,
+                    )}
                     onClick={() => select("shots", shot.id)}
                   >
                     <strong>{shot.name}</strong>
@@ -276,11 +334,12 @@ export function ProjectTree({
                     key={instance.id}
                     type="button"
                     data-testid={`record-${instance.id}`}
-                    className={
-                      selectedRecordIds.screen_instances === instance.id
-                        ? "active"
-                        : ""
-                    }
+                    className={recordButtonClass(
+                      "screen_instances",
+                      instance.id,
+                      activeTableId,
+                      selectedRecordIds,
+                    )}
                     onClick={() => select("screen_instances", instance.id)}
                   >
                     <strong>{instance.screenType}</strong>
@@ -292,53 +351,71 @@ export function ProjectTree({
               <EmptyPanel>Select a shot first.</EmptyPanel>
             )}
           </BrowserPanel>
+
+          <BrowserPanel
+            title="Module Theme Configs"
+            subtitle="Selected screen module"
+            count={moduleThemeConfigRecords.length}
+            canAdd={false}
+          >
+            {selectedScreenId ? (
+              tablesById.get("module_theme_configs") ? (
+                renderRecordButtons(
+                  tablesById.get("module_theme_configs")!,
+                  moduleThemeConfigRecords,
+                )
+              ) : null
+            ) : (
+              <EmptyPanel>Select a screen first.</EmptyPanel>
+            )}
+          </BrowserPanel>
+        </div>
+      ) : browserTab === "apps" ? (
+        <div className="library-browser">
+          <div className="hierarchy-browser two-column-browser">
+            {appsTables.map((table) => (
+              <BrowserPanel
+                key={table.id}
+                title={table.label}
+                subtitle="Selected production"
+                count={recordsForSelectedProduction(table.id).length}
+                canAdd={false}
+              >
+                {renderRecordButtons(table, recordsForSelectedProduction(table.id))}
+              </BrowserPanel>
+            ))}
+          </div>
         </div>
       ) : (
         <div className="library-browser">
           <div className="resource-table-list" role="tablist">
-            {resourceTables.map((table) => (
-              <button
-                key={table.id}
-                type="button"
-                role="tab"
-                data-testid={`tab-${table.id}`}
-                className={table.id === activeTableId ? "active" : ""}
-                onClick={() => onTableChange(table.id)}
-              >
-                {table.label}
-                <span>{records[table.id]?.length ?? 0}</span>
-              </button>
-            ))}
+            {dataTables.map((table) => {
+              const tableRecords = recordsForSelectedProduction(table.id);
+              return (
+                <button
+                  key={table.id}
+                  type="button"
+                  role="tab"
+                  data-testid={`tab-${table.id}`}
+                  className={table.id === activeTableId ? "active" : ""}
+                  onClick={() => onTableChange(table.id)}
+                >
+                  {table.label}
+                  <span>{tableRecords.length}</span>
+                </button>
+              );
+            })}
           </div>
           <div className="record-list resource-record-list">
-            {activeResourceTable ? (
-              activeResourceRecords.length === 0 ? (
-                <div className="empty-record-list">No records yet.</div>
-              ) : (
-                activeResourceRecords.map((record) => (
-                  <button
-                    key={record.id}
-                    type="button"
-                    data-testid={`record-${record.id}`}
-                    className={
-                      selectedRecordIds[activeResourceTable.id] === record.id
-                        ? "active"
-                        : ""
-                    }
-                    onClick={() => select(activeResourceTable.id, record.id)}
-                  >
-                    <strong>
-                      {recordTitle(
-                        tablesById.get(activeResourceTable.id) ??
-                          activeResourceTable,
-                        record,
-                      )}
-                    </strong>
-                    <small>{record.id}</small>
-                  </button>
-                ))
-              )
-            ) : null}
+            {dataTables
+              .find((table) => table.id === activeTableId)
+              ? renderRecordButtons(
+                  dataTables.find((table) => table.id === activeTableId)!,
+                  recordsForSelectedProduction(activeTableId),
+                )
+              : (
+                <EmptyPanel>Select a production data table.</EmptyPanel>
+              )}
           </div>
         </div>
       )}

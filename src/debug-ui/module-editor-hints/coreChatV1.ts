@@ -66,32 +66,88 @@ export const coreChatV1EditorHints: ModuleEditorHintContract = {
       },
     },
     tokens_json: {
-      "typography.message.fontFamily": { label: "Message font family" },
-      "typography.message.fontSize": { label: "Message font size" },
-      "typography.message.lineHeight": { label: "Message line height" },
-      "typography.message.fontWeight": { label: "Message font weight" },
-      "typography.headerTitle.fontFamily": { label: "Header title font family" },
-      "typography.headerTitle.fontSize": { label: "Header title font size" },
-      "typography.headerTitle.lineHeight": { label: "Header title line height" },
-      "typography.headerTitle.fontWeight": { label: "Header title font weight" },
+      "typography.message.fontFamily": {
+        label: "Message font family",
+        widget: "font",
+      },
+      "typography.message.fontSize": {
+        label: "Message font size",
+        widget: "number",
+        min: 1,
+        step: 1,
+      },
+      "typography.message.lineHeight": {
+        label: "Message line height",
+        widget: "number",
+        min: 1,
+        step: 1,
+      },
+      "typography.message.fontWeight": {
+        label: "Message font weight",
+        widget: "select",
+      },
+      "typography.headerTitle.fontFamily": {
+        label: "Header title font family",
+        widget: "font",
+      },
+      "typography.headerTitle.fontSize": {
+        label: "Header title font size",
+        widget: "number",
+        min: 1,
+        step: 1,
+      },
+      "typography.headerTitle.lineHeight": {
+        label: "Header title line height",
+        widget: "number",
+        min: 1,
+        step: 1,
+      },
+      "typography.headerTitle.fontWeight": {
+        label: "Header title font weight",
+        widget: "select",
+      },
       "typography.headerSubtitle.fontFamily": {
         label: "Header subtitle font family",
+        widget: "font",
       },
       "typography.headerSubtitle.fontSize": {
         label: "Header subtitle font size",
+        widget: "number",
+        min: 1,
+        step: 1,
       },
       "typography.headerSubtitle.lineHeight": {
         label: "Header subtitle line height",
+        widget: "number",
+        min: 1,
+        step: 1,
       },
       "typography.headerSubtitle.fontWeight": {
         label: "Header subtitle font weight",
+        widget: "select",
       },
     },
     module_tokens_override_json: {
-      "typography.message.fontFamily": { label: "Message font family" },
-      "typography.message.fontSize": { label: "Message font size" },
-      "typography.message.lineHeight": { label: "Message line height" },
-      "typography.message.fontWeight": { label: "Message font weight" },
+      "typography.message.fontFamily": {
+        label: "Message font family",
+        widget: "font",
+      },
+      "typography.message.fontSize": {
+        label: "Message font size",
+        widget: "number",
+        min: 1,
+        step: 1,
+      },
+      "typography.message.lineHeight": {
+        label: "Message line height",
+        widget: "number",
+        min: 1,
+        step: 1,
+      },
+      "typography.message.fontWeight": {
+        label: "Message font weight",
+        widget: "select",
+      },
     },
   },
 };

@@ -2,7 +2,9 @@
 
 ## Current state
 
-Initial architecture/data schema documentation, the visual token/layout contract, and the foundational module contracts are complete and reviewed. TypeScript/Zod schemas, in-memory and SQLite repository paths, renderer-agnostic visual modules/layout, a minimal Remotion proof of concept, SQLite persistence, the first local core app shell, a generic structured JSON tree/value editor, module theme configs, module-scoped editor hint contracts, and a first Project/Library browser now exist. The shell is still local/dev-only and not a final production editor; no Electron shell, export pipeline, asset manager, font picker, deep duplicate/cascade delete workflow, or specialized Chat content editor has been implemented.
+Initial architecture/data schema documentation, the visual token/layout contract, and the foundational module contracts are complete and reviewed. TypeScript/Zod schemas, in-memory and SQLite repository paths, renderer-agnostic visual modules/layout, a minimal Remotion proof of concept, SQLite persistence, the first local core app shell, a generic structured JSON tree/value editor, module theme configs, module-scoped editor hint contracts, a Project/Library browser, a persistence audit/check, and a minimal Electron development shell now exist. The shell is still local/dev-only and not a final production editor; no export pipeline, asset manager, deep duplicate/cascade delete workflow, packaging/installer, or specialized Chat content editor has been implemented.
+
+The current app shell is now substantially more usable for authoring: it has a production-first layout, project/library tabs, resizable left/editor/preview panels, independent panel scrolling, responsive preview fitting, screen-instance and screen-template editors organized by conceptual tabs, module-theme-config token editors grouped by friendly labels, inherited/override rows with restore behavior, installed-font discovery where available, and typed controls for number/text/color/font/select values.
 
 The accepted foundation is production-scoped and shot-centered, where productions contain episodes, episodes contain shots, and a shot is a device-screen action sequence rather than external plate placement. A shot now has an owner actor that supplies the default device and theme for its screen instances. Chat uses versioned module-owned data/config/token-override JSON as its sole runtime source.
 
@@ -69,9 +71,23 @@ The accepted foundation is production-scoped and shot-centered, where production
 - Exposed Module Theme Configs as a core app-shell tab.
 - Added inherited JSON parent data to the app API for `module_theme_configs.tokens_json` and `screen_instances.module_tokens_override_json`.
 - Updated the structured JSON editor to mark differing inherited overrides in amber and offer a Restore inherited action.
-- Added accepted decisions D031–D036 covering Chat typography, episode hierarchy, shot owner runtime defaults, Chat text+media messages, Project/Library browser direction, and extensible module editor hint contracts.
+- Added accepted decisions D031–D038 covering Chat typography, episode hierarchy, shot owner runtime defaults, Chat text+media messages, Project/Library browser direction, extensible module editor hint contracts, non-destructive SQLite startup/validation, and the minimal Electron shell boundary.
+- Audited the SQLite save path. Current UI autosave reaches backend validation and SQLite writes; `app:persistence-check` verifies scalar and JSON edits survive database reopen and are used by preview resolution.
+- Fixed a persistence-risk bug: `validate:sqlite` now uses isolated in-memory SQLite instead of reseeding `data/mockups-dev.sqlite`.
+- Made `db:seed` non-destructive when the development database already has productions, and added explicit destructive `db:reset` for restoring fixture data.
+- Added a minimal Electron shell that loads the existing Vite app/debug server workflow with `contextIsolation` enabled, renderer Node integration disabled, and a narrow `window.mockupsNative` preload boundary for future native file/font APIs.
+- Added a production switcher and production action modal shell; production add is implemented, while deep duplicate/delete remains intentionally deferred.
+- Reworked the app layout into resizable left navigation/editor and right preview panes with independent scrolling and preview scaling that fits both width and height.
+- Removed read-only resolver/adapter inspector panels from the main preview surface to prioritize authoring and visual feedback.
+- Added tabbed editors for screen instances: General, Content, Behavior, and Overrides. Content has nested module-data tabs such as Participants, Header, and Messages.
+- Added tabbed editors for screen templates: General, Behavior, and Overrides. Templates expose reusable module behavior defaults and token bindings/fixed overrides without shot-specific content.
+- Added tabbed module theme config editing: Design and Theme. Design tabs follow token groups; nested conceptual groups render as sections only when they contain multiple rows.
+- Added a token/override editor that shows Property, Token/Internal Path, and Override columns. Property labels are friendly and compacted by group; the Token column intentionally stays internal.
+- Added typed override controls for booleans, numbers, text, colors, font families, and font styles/weights.
+- Added installed-font discovery through `queryLocalFonts` when available and through Electron's narrow `mockups:listFonts` bridge on macOS, with fallback font families/styles.
+- Added accepted decisions D039–D041 covering production-owned workspace/templates, screen-template inheritance, and structured editor label/group conventions.
 
 ## Next
 
-- Review the Project/Library browser visually, then choose: screen-instance creation flow, deep duplicate/delete policy, specialized Chat content editor, font picker, asset picker, or Electron shell.
+- Review the current app shell visually and choose the next workflow: screen-instance creation, asset registration/native file picker, module-specific Chat content editor, production duplicate/delete policy, or Electron menu/package polish.
 - Create an Architecture Question before changing any accepted decision.

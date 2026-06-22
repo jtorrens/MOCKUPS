@@ -21,10 +21,11 @@ Production
  │   ├─ Calls
  │   └─ CustomDataSources
  │
- └─ Shots
-     └─ ScreenInstances
-         ├─ Versioned module data/config/token overrides
-         └─ ScreenEvents
+ └─ Episodes
+     └─ Shots
+         └─ ScreenInstances
+             ├─ Versioned module data/config/token overrides
+             └─ ScreenEvents
 ```
 
 ## Main entities

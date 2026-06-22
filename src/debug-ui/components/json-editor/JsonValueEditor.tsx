@@ -1,3 +1,4 @@
+import { fontStylesForFamily, useSystemFontCatalog } from "./systemFonts.js";
 import type { JsonUiHints } from "./uiHints.js";
 import { hintForPath } from "./uiHints.js";
 import {
@@ -14,6 +15,10 @@ interface JsonValueEditorProps {
   onChange: (nextValue: JsonValue) => void;
 }
 
+function isHexColor(value: string): boolean {
+  return /^#[0-9a-fA-F]{6}$/.test(value);
+}
+
 export function JsonValueEditor({
   path,
   value,
@@ -22,6 +27,8 @@ export function JsonValueEditor({
 }: JsonValueEditorProps) {
   const hint = hintForPath(hints, path, value);
   const widget = hint.widget;
+  const { families, stylesByFamily } = useSystemFontCatalog();
+  const key = String(path[path.length - 1] ?? "");
 
   if (widget === "select" && hint.options?.length) {
     return (
@@ -39,19 +46,56 @@ export function JsonValueEditor({
     );
   }
 
+  if (widget === "font") {
+    return (
+      <select
+        className="json-value-control"
+        value={String(value ?? "")}
+        onChange={(event) => onChange(event.target.value)}
+      >
+        {families.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
+    );
+  }
+
+  if (/fontWeight$/i.test(key)) {
+    const family = typeof value === "string" ? undefined : undefined;
+    const options = fontStylesForFamily(stylesByFamily, family);
+    return (
+      <select
+        className="json-value-control"
+        value={String(value ?? "")}
+        onChange={(event) => onChange(event.target.value)}
+      >
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
+    );
+  }
+
   if (widget === "color" && typeof value === "string") {
     return (
       <span className="json-color-pair">
         <input
           aria-label="Color picker"
           type="color"
-          value={/^#[0-9a-fA-F]{6}$/.test(value) ? value : "#000000"}
+          value={isHexColor(value) ? value : "#000000"}
           onChange={(event) => onChange(event.target.value)}
         />
         <input
           className="json-value-control"
           value={value}
-          onChange={(event) => onChange(event.target.value)}
+          onChange={(event) => {
+            const next = event.target.value;
+            onChange(isHexColor(next) ? next.toLowerCase() : next);
+          }}
         />
       </span>
     );

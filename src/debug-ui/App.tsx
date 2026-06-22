@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type PointerEvent as ReactPointerEvent } from "react";
 import {
   createAppRecord,
   getAppState,
@@ -63,6 +63,9 @@ export function App() {
   const [busyProjectAction, setBusyProjectAction] = useState(false);
   const [requestError, setRequestError] = useState("");
   const [refreshCounter, setRefreshCounter] = useState(0);
+  const [isProductionModalOpen, setProductionModalOpen] = useState(false);
+  const [navigationWidth, setNavigationWidth] = useState(380);
+  const [authoringWidth, setAuthoringWidth] = useState(1040);
 
   useEffect(() => {
     void getAppState()
@@ -171,6 +174,44 @@ export function App() {
     }
   }
 
+  function selectProduction(productionId: string) {
+    if (!state || !selection) return;
+    const episode = state.options.episodes.find(
+      (candidate) => candidate.productionId === productionId,
+    );
+    const shot = state.options.shots.find(
+      (candidate) =>
+        candidate.episodeId === episode?.id ||
+        candidate.productionId === productionId,
+    );
+    const instance = state.options.screenInstances.find(
+      (candidate) => candidate.shotId === shot?.id,
+    );
+
+    setSelectedRecordIds((current) => ({
+      ...current,
+      productions: productionId,
+      episodes: episode?.id ?? "",
+      shots: shot?.id ?? "",
+      screen_instances: instance?.id ?? "",
+    }));
+    setActiveTableId("productions");
+
+    if (shot && instance) {
+      setSelection({
+        productionId,
+        shotId: shot.id,
+        screenInstanceId: instance.id,
+        frame: instance.startFrame,
+      });
+    } else {
+      setSelection({
+        ...selection,
+        productionId,
+      });
+    }
+  }
+
   function updateRecords(tableId: string, records: AppRecord[]) {
     if (!state) return;
     setState({
@@ -261,6 +302,43 @@ export function App() {
       .finally(() => setBusyProjectAction(false));
   }
 
+  function handleCreateProductionFromModal() {
+    handleCreateRecord("productions");
+    setProductionModalOpen(false);
+  }
+
+  function beginHorizontalResize(
+    startEvent: ReactPointerEvent,
+    options: {
+      currentWidth: number;
+      minWidth: number;
+      maxWidth: number;
+      onChange: (nextWidth: number) => void;
+    },
+  ) {
+    startEvent.preventDefault();
+    const startX = startEvent.clientX;
+    const startWidth = options.currentWidth;
+
+    function move(event: PointerEvent) {
+      const nextWidth = Math.min(
+        options.maxWidth,
+        Math.max(options.minWidth, startWidth + event.clientX - startX),
+      );
+      options.onChange(nextWidth);
+    }
+
+    function stop() {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", stop);
+      document.body.classList.remove("is-resizing-panels");
+    }
+
+    document.body.classList.add("is-resizing-panels");
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", stop);
+  }
+
   if (!state || !selection) {
     return (
       <main className="loading-screen">
@@ -272,56 +350,172 @@ export function App() {
 
   return (
     <main className="core-app-shell">
-      <section className="left-app-panel">
-        <header className="app-header">
-          <div>
-            <span className="eyebrow">MOCKUPS · core app shell</span>
-            <h1>Data workspace</h1>
-            <p>
-              Edit core tables with validated autosave. Preview remains
-              calculated output.
-            </p>
-          </div>
-        </header>
-        {requestError ? (
-          <div className="alert error" role="alert">
-            {requestError}
+      <section
+        className="left-app-panel"
+        style={{ width: authoringWidth }}
+      >
+        {isProductionModalOpen ? (
+          <div
+            className="modal-backdrop"
+            role="presentation"
+            onMouseDown={() => setProductionModalOpen(false)}
+          >
+            <section
+              className="panel production-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Production actions"
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <div className="panel-heading">
+                <div>
+                  <span className="eyebrow">Production actions</span>
+                  <h2>Manage productions</h2>
+                </div>
+                <button
+                  type="button"
+                  className="ghost-button"
+                  onClick={() => setProductionModalOpen(false)}
+                >
+                  Close
+                </button>
+              </div>
+              <div className="production-action-list">
+                <button
+                  type="button"
+                  disabled={busyProjectAction}
+                  onClick={handleCreateProductionFromModal}
+                >
+                  Add production
+                </button>
+                <button
+                  type="button"
+                  disabled
+                  title="Duplicate will copy the full production tree in a later pass."
+                >
+                  Duplicate selected production
+                </button>
+                <button
+                  type="button"
+                  disabled
+                  title="Delete is disabled until cascade rules and backups are confirmed."
+                >
+                  Delete selected production
+                </button>
+              </div>
+            </section>
           </div>
         ) : null}
-        <ProjectTree
-          tables={state.tables}
-          activeTableId={activeTableId}
-          records={state.records}
-          options={state.options}
-          selectedRecordIds={selectedRecordIds}
-          busyAction={busyProjectAction}
-          onTableChange={setActiveTableId}
-          onRecordSelect={(tableId, recordId) => {
-            setSelectedRecordIds({
-              ...selectedRecordIds,
-              [tableId]: recordId,
-            });
-            selectContextFromRecord(tableId, recordId);
-          }}
-          onCreateRecord={handleCreateRecord}
-        />
-        {activeTable ? (
-          <RecordEditor
-            table={activeTable}
-            record={selectedRecord}
-            records={state.records}
-            inheritedFields={
-              selectedRecord
-                ? state.inheritedJson[activeTable.id]?.[selectedRecord.id] ?? {}
-                : {}
-            }
-            onRecordsChanged={(records) => updateRecords(activeTable.id, records)}
-            onRecordSaved={(record) =>
-              refreshAppStateAfterSave(activeTable.id, record)
+        <div className="authoring-workspace">
+          <aside
+            className="navigation-rail"
+            style={{ width: navigationWidth }}
+          >
+            <header className="app-header">
+              <div>
+                <span className="eyebrow">MOCKUPS · core app shell</span>
+                <h1>Production workspace</h1>
+                <p>
+                  Production setup, episodes, shots, screens and module data.
+                </p>
+              </div>
+              <div className="production-switcher">
+                <label>
+                  Production
+                  <select
+                    data-testid="top-production-select"
+                    value={selection.productionId}
+                    onChange={(event) => selectProduction(event.target.value)}
+                  >
+                    {state.options.productions.map((production) => (
+                      <option key={production.id} value={production.id}>
+                        {production.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  className="production-menu-button"
+                  aria-label="Production actions"
+                  onClick={() => setProductionModalOpen(true)}
+                >
+                  …
+                </button>
+              </div>
+            </header>
+            {requestError ? (
+              <div className="alert error" role="alert">
+                {requestError}
+              </div>
+            ) : null}
+            <ProjectTree
+              tables={state.tables}
+              activeTableId={activeTableId}
+              records={state.records}
+              options={state.options}
+              selectedRecordIds={selectedRecordIds}
+              busyAction={busyProjectAction}
+              onTableChange={setActiveTableId}
+              onRecordSelect={(tableId, recordId) => {
+                setSelectedRecordIds({
+                  ...selectedRecordIds,
+                  [tableId]: recordId,
+                });
+                selectContextFromRecord(tableId, recordId);
+              }}
+              onCreateRecord={handleCreateRecord}
+            />
+          </aside>
+          <div
+            className="panel-resizer"
+            role="separator"
+            aria-label="Resize navigation and editor panels"
+            onPointerDown={(event) =>
+              beginHorizontalResize(event, {
+                currentWidth: navigationWidth,
+                minWidth: 280,
+                maxWidth: Math.max(320, authoringWidth - 420),
+                onChange: setNavigationWidth,
+              })
             }
           />
-        ) : null}
+          <div className="editor-workspace">
+            {activeTable ? (
+              <RecordEditor
+                table={activeTable}
+                record={selectedRecord}
+                records={state.records}
+                inheritedFields={
+                  selectedRecord
+                    ? state.inheritedJson[activeTable.id]?.[selectedRecord.id] ?? {}
+                    : {}
+                }
+                onRecordsChanged={(records) =>
+                  updateRecords(activeTable.id, records)
+                }
+                onRecordSaved={(record) =>
+                  refreshAppStateAfterSave(activeTable.id, record)
+                }
+              />
+            ) : null}
+          </div>
+        </div>
       </section>
+
+      <div
+        className="panel-resizer"
+        role="separator"
+        aria-label="Resize editor and preview panels"
+        onPointerDown={(event) =>
+          beginHorizontalResize(event, {
+            currentWidth: authoringWidth,
+            minWidth: Math.max(720, navigationWidth + 360),
+            maxWidth: Math.max(760, window.innerWidth - 420),
+            onChange: setAuthoringWidth,
+          })
+        }
+      />
 
       <AppPreviewPanel
         options={state.options}

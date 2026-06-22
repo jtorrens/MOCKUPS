@@ -1,5 +1,4 @@
 import type { DebugOptions, DebugPayload, DebugSelection } from "../api/client.js";
-import { InspectorPanel } from "./InspectorPanel.js";
 import { PreviewPanel } from "./PreviewPanel.js";
 
 interface AppPreviewPanelProps {
@@ -219,20 +218,6 @@ export function AppPreviewPanel({
         renderable={payload?.renderable ?? null}
         frame={selection.frame}
       />
-      <div className="preview-inspectors">
-        <InspectorPanel
-          eyebrow="Resolver output"
-          title="Resolved props / module input"
-          value={payload?.resolvedScreen ?? null}
-          testId="resolved-output"
-        />
-        <InspectorPanel
-          eyebrow="Adapter input"
-          title="RenderableNode tree"
-          value={payload?.renderable ?? null}
-          testId="renderable-output"
-        />
-      </div>
     </aside>
   );
 }

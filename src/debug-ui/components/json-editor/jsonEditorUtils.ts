@@ -96,18 +96,35 @@ export function setAtPath(
   if (Array.isArray(value)) {
     const copy = [...value];
     if (typeof head === "number") {
-      copy[head] = setAtPath(copy[head] ?? null, tail, nextValue);
+      copy[head] = setAtPath(
+        copy[head] ?? containerForPath(tail),
+        tail,
+        nextValue,
+      );
     }
     return copy;
   }
   if (isJsonObject(value)) {
     const copy = { ...value };
     if (typeof head === "string") {
-      copy[head] = setAtPath(copy[head] ?? null, tail, nextValue);
+      copy[head] = setAtPath(
+        copy[head] ?? containerForPath(tail),
+        tail,
+        nextValue,
+      );
     }
     return copy;
   }
-  return value;
+  return setAtPath(containerForHead(head), path, nextValue);
+}
+
+function containerForPath(path: JsonPath): JsonValue {
+  const [head] = path;
+  return containerForHead(head);
+}
+
+function containerForHead(head: string | number | undefined): JsonValue {
+  return typeof head === "number" ? [] : {};
 }
 
 export function deleteAtPath(value: JsonValue, path: JsonPath): JsonValue {

@@ -4,10 +4,11 @@ import type {
   JsonObject,
   ResolvedChatScreenProps,
   ScreenInstance,
+  ScreenTemplate,
   ScreenType,
 } from "../schemas/index.js";
 import { requireRecord } from "./helpers.js";
-import { resolveChatScreen } from "./resolveChatScreen.js";
+import { mergeTokenObjects, resolveChatScreen } from "./resolveChatScreen.js";
 
 const LightweightDataReferenceSchema = z.discriminatedUnion("type", [
   z.object({
@@ -57,6 +58,59 @@ function resolveLightweightDataReference(
     type: reference.type,
     notification,
     app,
+  };
+}
+
+function jsonObjectAt(
+  value: JsonObject | undefined,
+  key: string,
+): JsonObject {
+  const candidate = value?.[key];
+  return typeof candidate === "object" &&
+    candidate !== null &&
+    !Array.isArray(candidate)
+    ? (candidate as JsonObject)
+    : {};
+}
+
+function inheritedScreenInstanceFromTemplate(
+  screenTemplate: ScreenTemplate,
+  screenInstance: ScreenInstance,
+): ScreenInstance {
+  const templateConfig = screenTemplate.config_json ?? {};
+  const templateModuleData = jsonObjectAt(templateConfig, "module_data_json");
+  const templateModuleConfig = jsonObjectAt(
+    templateConfig,
+    "module_config_json",
+  );
+  const templateTokenOverrides = jsonObjectAt(
+    templateConfig,
+    "module_tokens_override_json",
+  );
+  const templateTransform = jsonObjectAt(templateConfig, "transform_json");
+
+  return {
+    ...screenInstance,
+    module_data_json: mergeTokenObjects(
+      templateModuleData,
+      screenInstance.module_data_json ?? {},
+    ),
+    module_config_json: mergeTokenObjects(
+      templateModuleConfig,
+      screenInstance.module_config_json ?? {},
+    ),
+    module_tokens_override_json: mergeTokenObjects(
+      templateTokenOverrides,
+      screenInstance.module_tokens_override_json ?? {},
+    ),
+    transform_json: mergeTokenObjects(
+      templateTransform,
+      screenInstance.transform_json,
+    ),
+    props_json: mergeTokenObjects(
+      screenTemplate.default_props_json ?? {},
+      screenInstance.props_json,
+    ),
   };
 }
 
@@ -131,6 +185,10 @@ export function resolveScreenInstance({
       `Screen template ${screenTemplate.id} type does not match instance ${screenInstance.id}`,
     );
   }
+  const effectiveScreenInstance = inheritedScreenInstanceFromTemplate(
+    screenTemplate,
+    screenInstance,
+  );
 
   const base: ResolvedScreenInstance = {
     screen_instance_id: screenInstance.id,
@@ -138,7 +196,7 @@ export function resolveScreenInstance({
     shot_frame: shotFrame,
     local_frame: localFrame,
     layer_order: screenInstance.layer_order,
-    transform: screenInstance.transform_json,
+    transform: effectiveScreenInstance.transform_json,
   };
 
   if (screenInstance.screen_type === "chat") {
@@ -151,7 +209,7 @@ export function resolveScreenInstance({
       ...base,
       resolved_props: resolveChatScreen({
         repository,
-        screenInstance,
+        screenInstance: effectiveScreenInstance,
         ownerActor,
         device,
         deviceState,
@@ -184,8 +242,7 @@ export function resolveScreenInstance({
         payload: event.payload_json,
       })),
       props: {
-        ...screenTemplate.default_props_json,
-        ...screenInstance.props_json,
+        ...effectiveScreenInstance.props_json,
       },
     },
   };

@@ -239,7 +239,19 @@ export function createExampleDataset(): RepositoryDataset {
         show_status_bar: true,
         message_grouping: "bySender",
       },
-      config_json: {},
+      config_json: {
+        module_id: "core.chat",
+        module_schema_version: 1,
+        module_config_json: {
+          showHeader: true,
+          showStatusBar: true,
+          showKeyboard: false,
+          initialScroll: "keep_latest_visible",
+          messageGrouping: "bySender",
+          debugShowBounds: false,
+        },
+        module_tokens_override_json: {},
+      },
     },
   ]);
 

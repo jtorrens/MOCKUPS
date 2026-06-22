@@ -103,6 +103,11 @@ function isObject(value: unknown): value is Row {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function jsonObjectAt(value: Row | undefined, key: string): Row {
+  const candidate = value?.[key];
+  return isObject(candidate) ? candidate : {};
+}
+
 export function parseScreenInstance(row: Row) {
   return ScreenInstanceSchema.parse({
     ...row,
@@ -842,6 +847,19 @@ function loadInheritedJson(database: SQLiteDatabase) {
       }),
     ]),
   );
+  const templateRows = database
+    .prepare("SELECT * FROM screen_templates")
+    .all() as Row[];
+  const templateById = new Map(
+    templateRows.map((row) => {
+      const template = ScreenTemplateSchema.parse({
+        ...row,
+        default_props_json: readOptionalJson(row, "default_props_json"),
+        config_json: readOptionalJson(row, "config_json"),
+      });
+      return [template.id, template] as const;
+    }),
+  );
 
   const moduleConfigs = database
     .prepare("SELECT * FROM module_theme_configs")
@@ -872,6 +890,45 @@ function loadInheritedJson(database: SQLiteDatabase) {
     .all() as Row[];
   for (const row of screenRows) {
     const screen = parseScreenInstance(row);
+    const template = templateById.get(screen.screen_template_id);
+    const templateConfig = template?.config_json ?? {};
+    const templateModuleData = jsonObjectAt(
+      templateConfig,
+      "module_data_json",
+    );
+    const templateModuleConfig = jsonObjectAt(
+      templateConfig,
+      "module_config_json",
+    );
+    const templateTokenOverrides = jsonObjectAt(
+      templateConfig,
+      "module_tokens_override_json",
+    );
+    const templateTransform = jsonObjectAt(templateConfig, "transform_json");
+    if (Object.keys(templateModuleData).length) {
+      setInherited(
+        "screen_instances",
+        screen.id,
+        "module_data_json",
+        templateModuleData,
+      );
+    }
+    if (Object.keys(templateModuleConfig).length) {
+      setInherited(
+        "screen_instances",
+        screen.id,
+        "module_config_json",
+        templateModuleConfig,
+      );
+    }
+    if (Object.keys(templateTransform).length) {
+      setInherited(
+        "screen_instances",
+        screen.id,
+        "transform_json",
+        templateTransform,
+      );
+    }
     if (!screen.module_id || !screen.module_schema_version) {
       continue;
     }
@@ -905,7 +962,10 @@ function loadInheritedJson(database: SQLiteDatabase) {
       "screen_instances",
       screen.id,
       "module_tokens_override_json",
-      mergeTokenObjects(globalTokens, moduleTokens),
+      mergeTokenObjects(
+        mergeTokenObjects(globalTokens, moduleTokens),
+        templateTokenOverrides,
+      ),
     );
   }
 

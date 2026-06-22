@@ -105,11 +105,26 @@ These values may reuse global color/typography concepts, but the stored data sha
 
 Module theme configs are reusable Library resources. They are not part of the Project hierarchy of episodes/shots/screens, though a selected screen instance resolves through one of them based on its theme/module/schema context.
 
-The generic JSON tree can edit module config tokens, but module-specific editor hints should provide friendly labels and widgets. For example, `core.chat@1` exposes Chat typography and message/header token labels without requiring the generic JSON tree to know Chat semantics directly.
+The structured editor can edit module config tokens, but module-specific editor hints should provide friendly labels, widgets, collapsed row summaries, and grouping cues. For example, `core.chat@1` exposes Chat typography and message/header token labels without requiring the generic JSON tree to know Chat semantics directly.
+
+Current editor conventions:
+
+- Tabs and groups use friendly names, e.g. `Header Title`, `Chat Bubbles`, and `Message`.
+- The visible property label omits the active group prefix, e.g. inside `Typography → Header Title`, the rows show `Font family`, `Font size`, `Line height`, and `Font weight`.
+- The token/path column intentionally keeps the internal token path so the user can see which stored token is being changed.
+- A conceptual group is only rendered as a section when it has multiple rows; single-field groups stay as direct rows.
+- Raw JSON is treated as a fallback/recovery path, not the primary authoring surface.
+- Color values use color controls plus a hex field; font family and style controls prefer installed system fonts when the runtime can discover them.
 
 ## Screen instance overrides
 
 `screen_instances.module_tokens_override_json` stores local exceptions for one instance of one module. It should stay sparse. If a value is removed from the override JSON, resolution falls back to the inherited global/module value.
+
+## Screen template overrides
+
+`screen_templates.config_json.module_tokens_override_json` is the reusable template layer between module theme config defaults and screen instance local overrides. It remains abstract: empty override means "resolve the token later from the selected shot owner/device/theme context"; a filled override freezes that value for screen instances inheriting the template unless the instance overrides it again.
+
+Screen templates use the same token/override editor conventions as module theme configs and screen instance overrides, but they do not expose shot-specific content such as actual Chat messages, timings, or actors.
 
 ## Override detection
 

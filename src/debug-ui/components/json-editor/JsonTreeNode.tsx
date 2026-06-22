@@ -2,6 +2,7 @@ import { useState } from "react";
 import { JsonArrayEditor } from "./JsonArrayEditor.js";
 import { JsonObjectEditor } from "./JsonObjectEditor.js";
 import { JsonValueEditor } from "./JsonValueEditor.js";
+import { compactLabelForGroup, groupFromPathSegment } from "./labels.js";
 import { hintForPath, type JsonUiHint, type JsonUiHints } from "./uiHints.js";
 import {
   isJsonObject,
@@ -24,6 +25,7 @@ interface JsonTreeNodeProps {
   restoreStrategy: "remove" | "set";
   allowObjectStructuralEdits: boolean;
   allowArrayStructuralEdits: boolean;
+  groupContext?: string;
   onRootChange: (nextValue: JsonValue) => void;
 }
 
@@ -87,9 +89,13 @@ function displayLabel(
   path: JsonPath,
   fallbackLabel: string,
   value: JsonValue,
+  groupContext?: string,
 ): string {
   if (typeof path[path.length - 1] === "number") return fallbackLabel;
-  return hintForPath(hints, path, value).label ?? humanizeKey(fallbackLabel);
+  return compactLabelForGroup(
+    hintForPath(hints, path, value).label ?? humanizeKey(fallbackLabel),
+    groupFromPathSegment(path[0]) ?? groupContext,
+  );
 }
 
 export function JsonTreeNode({
@@ -102,6 +108,7 @@ export function JsonTreeNode({
   restoreStrategy,
   allowObjectStructuralEdits,
   allowArrayStructuralEdits,
+  groupContext,
   onRootChange,
 }: JsonTreeNodeProps) {
   const [isOpen, setIsOpen] = useState(path.length < 2);
@@ -110,7 +117,7 @@ export function JsonTreeNode({
   const isOverride =
     path.length > 0 && hasInherited && !deepEqualJson(value, inheritedValue);
   const hint = hintForPath(hints, path, value);
-  const visibleLabel = displayLabel(hints, path, label, value);
+  const visibleLabel = displayLabel(hints, path, label, value, groupContext);
   const visibleSummary = collapsedSummary(value, hint);
 
   function restoreInherited() {
@@ -140,18 +147,6 @@ export function JsonTreeNode({
           <em>
             array · {nodeSummary(value)}
           </em>
-          {isOverride ? (
-            <button
-              type="button"
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                restoreInherited();
-              }}
-            >
-              Restore inherited
-            </button>
-          ) : null}
         </summary>
         <JsonArrayEditor
           rootValue={rootValue}
@@ -162,6 +157,7 @@ export function JsonTreeNode({
           restoreStrategy={restoreStrategy}
           allowObjectStructuralEdits={allowObjectStructuralEdits}
           allowArrayStructuralEdits={allowArrayStructuralEdits}
+          groupContext={groupContext}
           onRootChange={onRootChange}
         />
       </details>
@@ -187,18 +183,6 @@ export function JsonTreeNode({
           <em>
             object · {nodeSummary(value)}
           </em>
-          {isOverride ? (
-            <button
-              type="button"
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                restoreInherited();
-              }}
-            >
-              Restore inherited
-            </button>
-          ) : null}
         </summary>
         <JsonObjectEditor
           rootValue={rootValue}
@@ -209,6 +193,7 @@ export function JsonTreeNode({
           restoreStrategy={restoreStrategy}
           allowObjectStructuralEdits={allowObjectStructuralEdits}
           allowArrayStructuralEdits={allowArrayStructuralEdits}
+          groupContext={groupContext}
           onRootChange={onRootChange}
         />
       </details>

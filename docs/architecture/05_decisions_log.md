@@ -367,3 +367,91 @@ Implications:
 - `core.chat@1` can describe participants/messages without making the JSON editor Chat-specific.
 - Future modules can add their own editor hints independently.
 - A specialized module editor may later replace the generic tree for a module while preserving the same canonical JSON storage.
+
+## D037 — Normal startup and validation must not reseed persistent SQLite data
+
+Status: accepted
+
+The local SQLite database is user-editable project state. Normal app startup, browser debug startup, Electron startup, app build, and validation commands must not overwrite an existing edited database. Destructive reseeding is only allowed through an explicit reset command.
+
+Implications:
+- `createDatabase` may create/migrate schema but must not seed data.
+- `npm run app`, `npm run debug`, `npm run app:build`, and Electron startup must not call destructive seed logic.
+- `npm run db:seed` may initialize an empty database but must not overwrite existing productions.
+- `npm run db:reset` is the explicit destructive command for restoring the fixture dataset.
+- Validation that needs seeded data must use isolated in-memory or temporary SQLite databases.
+
+## D038 — Electron wraps the existing app shell through a safe native boundary
+
+Status: accepted
+
+Electron is introduced as a minimal desktop shell around the existing app/debug workflow. It must not make visual modules or React components access SQLite directly. Native capabilities are exposed only through a preload/context-bridge API.
+
+Implications:
+- The existing browser/Vite workflow remains available.
+- The Electron development shell uses the same local SQLite persistence path through the existing debug server.
+- Renderer Node integration stays disabled and context isolation stays enabled.
+- Future file/font pickers should extend the narrow preload API instead of enabling broad Node access.
+
+## D039 — Production-owned workspace and abstract screen templates
+
+Status: accepted
+
+All authoring data belongs to a production. The app should not present Apps, Screen Templates, Shots, or Screen Instances as unrelated global tables. The UI should start from the selected production, then expose production setup/library data and the episode/shot/screen hierarchy underneath it.
+
+Implications:
+- The top-level app shell selects one production first.
+- Production actions are grouped separately from the episode/shot tree.
+- Project navigation is organized as `Episodes -> Shots -> Screens -> per-screen module theme/data`.
+- Apps and Screen Templates are production-owned library records, not global assets.
+- Other tables such as actors, themes, devices, device states, media assets, render presets, and animation presets are production-owned setup data.
+- Future production duplication can copy the full production tree and its library/setup records.
+
+Screen Templates remain abstract. They should store token bindings and optional fixed overrides, not resolved pixel/color values tied to a specific actor, device, or theme mode.
+
+Implications:
+- A template property can expose a token label plus an empty override field.
+- Empty override means "resolve this token later from the shot owner/device/theme context".
+- A filled override means "use this fixed value for every inheriting screen instance unless the instance overrides it again".
+- Screen Instances can show inherited template values and, once attached to a shot, may also show resolved render values.
+
+## D040 — Screen instances inherit module defaults from screen templates
+
+Status: accepted
+
+Screen Templates are the reusable base layer for Screen Instances. A template can provide module data defaults, behavior defaults, token overrides, and transform defaults. A Screen Instance stores shot-specific content and sparse overrides on top of that template.
+
+Resolution order for a screen instance is:
+
+```text
+screen_template.config_json.module_data_json
+  → screen_instance.module_data_json
+
+screen_template.config_json.module_config_json
+  → screen_instance.module_config_json
+
+screen_template.config_json.module_tokens_override_json
+  → screen_instance.module_tokens_override_json
+
+screen_template.config_json.transform_json
+  → screen_instance.transform_json
+```
+
+Implications:
+- The renderer receives the merged/effective screen instance.
+- The editor can show inherited template values and let the instance override individual fields.
+- Local instance override documents should remain sparse where possible.
+- Shot-specific content such as actual message text, timing, actors, and media can still live in `screen_instance.module_data_json`.
+
+## D041 — Structured editors use friendly labels while preserving token paths
+
+Status: accepted
+
+The local app shell should expose module/template/theme JSON through structured editors rather than raw JSON-first forms. Editor tabs and conceptual groups use friendly labels derived from module hints or normalized JSON keys, while the token/path column may keep the internal JSON path visible so users can understand exactly which token or field is being edited.
+
+Implications:
+- Tabs and group labels should display `Header Title`, `Chat Bubbles`, and `Message`, not raw keys such as `headerTitle`, `chatBubbles`, or `message`.
+- When a field is already inside a conceptual group, its visible property label should not repeat the group prefix. For example, inside `Typography → Header Title`, labels should read `Font family`, `Font size`, `Line height`, and `Font weight`.
+- A visual group should only be created when it contains more than one editable row. Single-field groups should render as a normal row to avoid unnecessary UI nesting.
+- The internal token/path column can intentionally remain raw, such as `headerTitle.fontSize`, because it identifies the stored token.
+- Raw JSON editing is a recovery/fallback surface for invalid JSON or advanced inspection, not the primary editing mode.

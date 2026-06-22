@@ -11,6 +11,7 @@ export type JsonWidget =
   | "number"
   | "checkbox"
   | "color"
+  | "font"
   | "select"
   | "textarea";
 

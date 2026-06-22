@@ -7,7 +7,6 @@ import {
   ResolvedChatScreenPropsSchema,
 } from "../../domain/schemas/index.js";
 import { createDatabase } from "./createDatabase.js";
-import { developmentDatabasePath } from "./paths.js";
 import { seedExampleDataset } from "./seedExampleDataset.js";
 import { SQLiteRepository } from "./SQLiteRepository.js";
 
@@ -31,7 +30,7 @@ function resolveChatAtFrame(repository: SQLiteRepository | ReturnType<typeof loa
   return ResolvedChatScreenPropsSchema.parse(chatInstance.resolved_props);
 }
 
-const database = createDatabase(developmentDatabasePath);
+const database = createDatabase(":memory:");
 
 try {
   seedExampleDataset(database);
@@ -180,7 +179,7 @@ try {
     "Invalid Chat module_data_json must fail loudly",
   );
 
-  console.log(`✓ schema and seed validated at ${developmentDatabasePath}`);
+  console.log("✓ schema and seed validated in isolated in-memory SQLite");
   console.log("✓ all 21 required domain tables exist");
   console.log("✓ module_theme_configs exists and seeds core.chat tokens");
   console.log("✓ screen_instances module contract columns and schema v5 exist");

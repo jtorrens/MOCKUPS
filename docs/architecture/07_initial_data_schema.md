@@ -1,6 +1,6 @@
 # Initial data schema
 
-This is the persistence-oriented schema for MOCKUPS. The initial SQLite implementation now exists; module-contract fields added in schema version 2 are additive and preserve the original compatibility path.
+This is the persistence-oriented schema for MOCKUPS. The initial SQLite implementation now exists. Additive schema migrations currently bring existing databases to schema version 5: module contract fields, module theme configs, episodes, shot episode links, and shot owner actors.
 
 ## Storage boundary
 
@@ -31,9 +31,10 @@ Production
  │   ├─ Calls
  │   └─ DataSources
  │
- └─ Shots
-     └─ ScreenInstances
-         └─ ScreenEvents
+ └─ Episodes
+     └─ Shots
+         └─ ScreenInstances
+             └─ ScreenEvents
 ```
 
 ## Entity schemas
@@ -80,7 +81,7 @@ Production
 
 `screen_type` is a broad discriminator; `module_id` + `module_schema_version` select the exact module contract. `module_data_json` holds shot content, `module_config_json` behavior, and `module_tokens_override_json` local visual exceptions. `transform_json` transforms the device-screen render inside the shot's device render space. `core.chat` now requires these module fields and has no runtime fallback to `data_ref_json` or `props_json`.
 
-SQLite schema version 2 adds the six module/mode columns without deleting or rewriting legacy data. New/seeded Chat instances store complete module JSON. Existing databases with legacy Chat rows should later receive a one-way transactional migration/export before deprecated columns or tables are physically removed.
+SQLite schema version 5 includes the module/mode columns, `module_theme_configs`, `episodes`, `shots.episode_id`, and `shots.owner_actor_id` without deleting or rewriting legacy data. New/seeded Chat instances store complete module JSON. Existing databases with legacy Chat rows should later receive a one-way transactional migration/export before deprecated columns or tables are physically removed.
 
 ### `screen_events`
 

@@ -13,6 +13,7 @@
     "remotion:check": "remotion compositions src/remotion/index.ts",
     "db:init": "tsx src/persistence/sqlite/initializeDevelopmentDatabase.ts",
     "db:seed": "tsx src/persistence/sqlite/seedDevelopmentDatabase.ts",
+    "db:reset": "tsx src/persistence/sqlite/resetDevelopmentDatabase.ts",
     "validate:sqlite": "tsx src/persistence/sqlite/validateSQLiteRepository.ts",
     "debug:server": "tsx src/debug-server/server.ts",
     "debug:ui": "vite",
@@ -22,6 +23,9 @@
     "app": "npm run debug",
     "app:check": "npm run debug:check",
     "app:build": "npm run debug:build",
+    "app:persistence-check": "tsx src/debug-server/checkPersistence.ts",
+    "electron": "concurrently -k -n api,ui,electron -c blue,magenta,green \"npm run debug:server\" \"npm run debug:ui\" \"tsx src/electron/startElectron.ts\"",
+    "electron:check": "tsx src/electron/checkElectronSetup.ts",
     "test": "npm run typecheck && npm run validate:examples && npm run validate:resolver && npm run validate:visual && npm run validate:sqlite"
   },
   "dependencies": {
@@ -37,6 +41,7 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "concurrently": "^10.0.3",
+    "electron": "^42.4.1",
     "tsx": "4.22.4",
     "typescript": "6.0.3",
     "vite": "^8.0.16"
