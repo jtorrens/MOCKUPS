@@ -49,19 +49,19 @@
         "fontFamily": "SF Pro Text",
         "fontSize": 17,
         "lineHeight": 21.25,
-        "fontWeight": 400
+        "fontWeight": "Regular"
       },
       "headerTitle": {
         "fontFamily": "SF Pro Text",
         "fontSize": 17,
         "lineHeight": 22,
-        "fontWeight": 600
+        "fontWeight": "Semibold"
       },
       "headerSubtitle": {
         "fontFamily": "SF Pro Text",
         "fontSize": 13,
         "lineHeight": 16,
-        "fontWeight": 400
+        "fontWeight": "Regular"
       }
     },
     "chatBubbles": {

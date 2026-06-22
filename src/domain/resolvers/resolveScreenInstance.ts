@@ -4,11 +4,10 @@ import type {
   JsonObject,
   ResolvedChatScreenProps,
   ScreenInstance,
-  ScreenTemplate,
   ScreenType,
 } from "../schemas/index.js";
 import { requireRecord } from "./helpers.js";
-import { mergeTokenObjects, resolveChatScreen } from "./resolveChatScreen.js";
+import { resolveChatScreen } from "./resolveChatScreen.js";
 
 const LightweightDataReferenceSchema = z.discriminatedUnion("type", [
   z.object({
@@ -61,59 +60,6 @@ function resolveLightweightDataReference(
   };
 }
 
-function jsonObjectAt(
-  value: JsonObject | undefined,
-  key: string,
-): JsonObject {
-  const candidate = value?.[key];
-  return typeof candidate === "object" &&
-    candidate !== null &&
-    !Array.isArray(candidate)
-    ? (candidate as JsonObject)
-    : {};
-}
-
-function inheritedScreenInstanceFromTemplate(
-  screenTemplate: ScreenTemplate,
-  screenInstance: ScreenInstance,
-): ScreenInstance {
-  const templateConfig = screenTemplate.config_json ?? {};
-  const templateModuleData = jsonObjectAt(templateConfig, "module_data_json");
-  const templateModuleConfig = jsonObjectAt(
-    templateConfig,
-    "module_config_json",
-  );
-  const templateTokenOverrides = jsonObjectAt(
-    templateConfig,
-    "module_tokens_override_json",
-  );
-  const templateTransform = jsonObjectAt(templateConfig, "transform_json");
-
-  return {
-    ...screenInstance,
-    module_data_json: mergeTokenObjects(
-      templateModuleData,
-      screenInstance.module_data_json ?? {},
-    ),
-    module_config_json: mergeTokenObjects(
-      templateModuleConfig,
-      screenInstance.module_config_json ?? {},
-    ),
-    module_tokens_override_json: mergeTokenObjects(
-      templateTokenOverrides,
-      screenInstance.module_tokens_override_json ?? {},
-    ),
-    transform_json: mergeTokenObjects(
-      templateTransform,
-      screenInstance.transform_json,
-    ),
-    props_json: mergeTokenObjects(
-      screenTemplate.default_props_json ?? {},
-      screenInstance.props_json,
-    ),
-  };
-}
-
 export interface ResolvedScreenInstance {
   screen_instance_id: string;
   screen_type: ScreenType;
@@ -152,10 +98,10 @@ export function resolveScreenInstance({
     "Actor",
     shotOwnerActorId ?? screenInstance.owner_actor_id,
   );
-  const screenTemplate = requireRecord(
-    repository.getScreenTemplate(screenInstance.screen_template_id),
-    "ScreenTemplate",
-    screenInstance.screen_template_id,
+  const app = requireRecord(
+    repository.getApp(screenInstance.app_id),
+    "App",
+    screenInstance.app_id,
   );
   const deviceId = screenInstance.device_id ?? ownerActor.default_device_id;
   const themeId = screenInstance.theme_id ?? ownerActor.default_theme_id;
@@ -180,23 +126,13 @@ export function resolveScreenInstance({
     : undefined;
   const events = repository.getScreenEventsForInstance(screenInstance.id);
 
-  if (screenTemplate.screen_type !== screenInstance.screen_type) {
-    throw new Error(
-      `Screen template ${screenTemplate.id} type does not match instance ${screenInstance.id}`,
-    );
-  }
-  const effectiveScreenInstance = inheritedScreenInstanceFromTemplate(
-    screenTemplate,
-    screenInstance,
-  );
-
   const base: ResolvedScreenInstance = {
     screen_instance_id: screenInstance.id,
     screen_type: screenInstance.screen_type,
     shot_frame: shotFrame,
     local_frame: localFrame,
     layer_order: screenInstance.layer_order,
-    transform: effectiveScreenInstance.transform_json,
+    transform: screenInstance.transform_json,
   };
 
   if (screenInstance.screen_type === "chat") {
@@ -209,8 +145,9 @@ export function resolveScreenInstance({
       ...base,
       resolved_props: resolveChatScreen({
         repository,
-        screenInstance: effectiveScreenInstance,
+        screenInstance,
         ownerActor,
+        app,
         device,
         deviceState,
         theme,
@@ -224,10 +161,10 @@ export function resolveScreenInstance({
     ...base,
     resolved_context: {
       ownerActorId: ownerActor.id,
+      appId: app.id,
       deviceId: device.id,
       deviceStateId: deviceState?.id ?? null,
       themeId: theme.id,
-      screenTemplateId: screenTemplate.id,
       dataRef: screenInstance.data_ref_json,
       data: resolveLightweightDataReference(
         repository,
@@ -242,7 +179,7 @@ export function resolveScreenInstance({
         payload: event.payload_json,
       })),
       props: {
-        ...effectiveScreenInstance.props_json,
+        ...screenInstance.props_json,
       },
     },
   };

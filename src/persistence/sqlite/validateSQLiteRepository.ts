@@ -81,7 +81,6 @@ try {
     "productions",
     "episodes",
     "shots",
-    "screen_templates",
     "screen_instances",
     "screen_events",
     "themes",
@@ -113,6 +112,7 @@ try {
   );
   const moduleThemeConfig = sqliteRepository.getModuleThemeConfig(
     "theme_ios_light",
+    "app_messages",
     "core.chat",
     1,
   );
@@ -130,6 +130,7 @@ try {
   const requiredModuleColumns = [
     "module_id",
     "module_schema_version",
+    "app_id",
     "theme_mode",
     "module_data_json",
     "module_config_json",
@@ -142,8 +143,8 @@ try {
     "screen_instances must contain all module contract columns",
   );
   assert(
-    Number(database.pragma("user_version", { simple: true })) === 5,
-    "SQLite schema version must be 5",
+    Number(database.pragma("user_version", { simple: true })) === 6,
+    "SQLite schema version must be 6",
   );
 
   database.exec("BEGIN");
@@ -182,7 +183,7 @@ try {
   console.log("✓ schema and seed validated in isolated in-memory SQLite");
   console.log("✓ all 21 required domain tables exist");
   console.log("✓ module_theme_configs exists and seeds core.chat tokens");
-  console.log("✓ screen_instances module contract columns and schema v5 exist");
+  console.log("✓ screen_instances module contract columns and schema v6 exist");
   console.log("✓ SQLiteRepository resolved ChatScreen props with Zod");
   console.log("✓ SQLite and in-memory chat props are equivalent");
   console.log("✓ Chat module JSON and sender-based output validated");

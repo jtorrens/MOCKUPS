@@ -76,10 +76,17 @@ function isHexColor(value: string): boolean {
   return /^#[0-9a-fA-F]{6}$/.test(value);
 }
 
-function widgetForRow(hint: JsonUiHint, key: string, value: JsonValue) {
+function widgetForRow(
+  hint: JsonUiHint,
+  key: string,
+  value: JsonValue,
+  groupContext?: string,
+) {
   if (hint.widget) return hint.widget;
-  if (/fontFamily$/i.test(key)) return "font";
-  if (/fontWeight$/i.test(key)) return "select";
+  if (/fontFamily$/i.test(key) || (key === "family" && /font|fonts/i.test(groupContext ?? ""))) {
+    return "font";
+  }
+  if (/Weight$/i.test(key)) return "select";
   if (typeof value === "number") return "number";
   if (typeof value === "boolean") return "checkbox";
   if (typeof value === "string" && isHexColor(value)) return "color";
@@ -108,6 +115,18 @@ function withCurrentOption(options: string[], value: string) {
   return [value, ...options];
 }
 
+function isFontWeightKey(key: string) {
+  return /fontWeight$/i.test(key) || /Weight$/i.test(key);
+}
+
+function isFontFamilyKey(key: string, groupContext?: string) {
+  return (
+    /fontFamily$/i.test(key) ||
+    key.endsWith(".family") ||
+    (key === "family" && /font|fonts/i.test(groupContext ?? ""))
+  );
+}
+
 export function TokenOverrideEditor({
   rootValue,
   inheritedRoot,
@@ -131,11 +150,36 @@ export function TokenOverrideEditor({
 
   function fontFamilyForWeight(path: JsonPath): string | undefined {
     const parentPath = path.slice(0, -1);
-    const fontFamilyPath = [...parentPath, "fontFamily"];
-    const localFamily = getAtPath(rootValue, fontFamilyPath);
-    if (typeof localFamily === "string" && localFamily) return localFamily;
-    const inheritedFamily = getAtPath(inheritedRoot, fontFamilyPath);
-    return typeof inheritedFamily === "string" ? inheritedFamily : undefined;
+    for (const familyKey of ["fontFamily", "family"]) {
+      const fontFamilyPath = [...parentPath, familyKey];
+      const localFamily = getAtPath(rootValue, fontFamilyPath);
+      if (typeof localFamily === "string" && localFamily) return localFamily;
+      const inheritedFamily = getAtPath(inheritedRoot, fontFamilyPath);
+      if (typeof inheritedFamily === "string" && inheritedFamily) {
+        return inheritedFamily;
+      }
+    }
+    return undefined;
+  }
+
+  function setFontFamilyOverride(path: JsonPath, family: string) {
+    const parentPath = path.slice(0, -1);
+    const inheritedParent = getAtPath(inheritedRoot, parentPath);
+    const localParent = getAtPath(rootValue, parentPath);
+    const sourceParent = isJsonObject(localParent)
+      ? localParent
+      : isJsonObject(inheritedParent)
+        ? inheritedParent
+        : {};
+    const options = fontStylesForFamily(stylesByFamily, family);
+    const fallback = options[0] ?? "Regular";
+    let nextRoot = setAtPath(rootValue, path, family);
+    for (const [key, value] of Object.entries(sourceParent)) {
+      if (!isFontWeightKey(key)) continue;
+      if (typeof value === "string" && options.includes(value)) continue;
+      nextRoot = setAtPath(nextRoot, [...parentPath, key], fallback);
+    }
+    onRootChange(nextRoot);
   }
 
   function renderRow(row: TokenRow, groupKey?: string) {
@@ -149,12 +193,12 @@ export function TokenOverrideEditor({
       groupKey ?? groupContext,
     );
     const key = pathLabel(row.path);
-    const widget = widgetForRow(hint, key, row.value);
+    const widget = widgetForRow(hint, key, row.value, groupKey ?? groupContext);
     const stringValue = hasOverride ? tokenDisplayValue(overrideValue) : "";
     const selectOptions = withCurrentOption(
       widget === "font"
           ? families
-        : /fontWeight$/i.test(key)
+        : isFontWeightKey(key)
           ? fontStylesForFamily(stylesByFamily, fontFamilyForWeight(row.path))
           : hint.options ?? [],
       stringValue,
@@ -200,6 +244,10 @@ export function TokenOverrideEditor({
                 const raw = event.target.value;
                 if (raw === "") {
                   restoreValue(row.path, row.value);
+                  return;
+                }
+                if (widget === "font" && isFontFamilyKey(key, groupKey ?? groupContext)) {
+                  setFontFamilyOverride(row.path, raw);
                   return;
                 }
                 onRootChange(setAtPath(rootValue, row.path, raw));

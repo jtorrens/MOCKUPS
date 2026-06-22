@@ -32,22 +32,11 @@ export const ScreenEventTypeSchema = z.enum([
   "app_transition",
 ]);
 
-export const ScreenTemplateSchema = z.object({
-  id: IdSchema,
-  production_id: IdSchema,
-  name: z.string().min(1),
-  screen_type: ScreenTypeSchema,
-  module_key: z.string().min(1),
-  version: z.string().min(1),
-  default_props_json: JsonObjectSchema.optional(),
-  config_json: JsonObjectSchema.optional(),
-});
-
 export const ScreenInstanceSchema = z
   .object({
     id: IdSchema,
     shot_id: IdSchema,
-    screen_template_id: IdSchema,
+    app_id: IdSchema,
     screen_type: ScreenTypeSchema,
     module_id: IdSchema.nullable().optional(),
     module_schema_version: PositiveIntegerSchema.nullable().optional(),
@@ -137,6 +126,5 @@ export const ScreenEventSchema = z.object({
 
 export type ScreenType = z.infer<typeof ScreenTypeSchema>;
 export type ScreenEventType = z.infer<typeof ScreenEventTypeSchema>;
-export type ScreenTemplate = z.infer<typeof ScreenTemplateSchema>;
 export type ScreenInstance = z.infer<typeof ScreenInstanceSchema>;
 export type ScreenEvent = z.infer<typeof ScreenEventSchema>;

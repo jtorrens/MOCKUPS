@@ -6,6 +6,11 @@ import {
   type AppTableDefinition,
 } from "../api/client.js";
 import { JsonTreeEditor } from "./json-editor/JsonTreeEditor.js";
+import {
+  hasModeColorOverrides,
+  ModeColorEditor,
+} from "./json-editor/ModeColorEditor.js";
+import { isJsonObject, type JsonValue } from "./json-editor/jsonEditorUtils.js";
 import { friendlyGroupLabel } from "./json-editor/labels.js";
 
 type SaveState = "saved" | "dirty" | "invalid" | "saving" | "failed";
@@ -118,6 +123,24 @@ function relationOptionsForField(
       })) ?? [],
     };
   }
+  if (field.column === "app_id") {
+    return {
+      allowEmpty: Boolean(field.nullable),
+      options: records.apps?.map((item) => ({
+        value: item.id,
+        label: titleForRecord(item, "name"),
+      })) ?? [],
+    };
+  }
+  if (field.column === "theme_id") {
+    return {
+      allowEmpty: Boolean(field.nullable),
+      options: records.themes?.map((item) => ({
+        value: item.id,
+        label: titleForRecord(item, "name"),
+      })) ?? [],
+    };
+  }
   if (field.column === "owner_actor_id") {
     return {
       allowEmpty: Boolean(field.nullable),
@@ -184,15 +207,19 @@ export function RecordEditor({
   const [screenTab, setScreenTab] = useState<
     "general" | "content" | "behavior" | "overrides"
   >("general");
-  const [screenTemplateTab, setScreenTemplateTab] = useState<
-    "general" | "behavior" | "overrides"
-  >("general");
   const [contentTab, setContentTab] = useState("participants");
-  const [moduleThemeTab, setModuleThemeTab] = useState<"design" | "theme">(
+  const [appTab, setAppTab] = useState<"general" | "tokens" | "colors" | "notes">(
+    "general",
+  );
+  const [appTokenGroup, setAppTokenGroup] = useState("");
+  const [themeTab, setThemeTab] = useState<"general" | "tokens" | "colors">(
+    "general",
+  );
+  const [themeTokenGroup, setThemeTokenGroup] = useState("");
+  const [moduleThemeTab, setModuleThemeTab] = useState<"design" | "colors" | "settings">(
     "design",
   );
   const [moduleDesignGroup, setModuleDesignGroup] = useState("");
-  const [moduleNotesGroup, setModuleNotesGroup] = useState("notes");
 
   useEffect(() => {
     const nextDrafts = Object.fromEntries(
@@ -204,11 +231,13 @@ export function RecordEditor({
     );
     setErrors({});
     setScreenTab("general");
-    setScreenTemplateTab("general");
     setContentTab("participants");
     setModuleThemeTab("design");
+    setAppTab("general");
+    setAppTokenGroup("");
+    setThemeTab("general");
+    setThemeTokenGroup("");
     setModuleDesignGroup("");
-    setModuleNotesGroup("notes");
   }, [record?.id, table.id]);
 
   const editableFields = useMemo(
@@ -288,15 +317,63 @@ export function RecordEditor({
     }
   }
 
+  function setJsonDraft(column: string, value: JsonValue) {
+    setDrafts({
+      ...drafts,
+      [column]: stringifyJson(value),
+    });
+  }
+
   function hasObjectContent(raw: string | undefined) {
     return Object.keys(parsedObject(raw ?? "{}")).length > 0;
+  }
+
+  function explicitLocalDiffers(local: unknown, inherited: unknown): boolean {
+    if (local && typeof local === "object" && !Array.isArray(local)) {
+      return Object.entries(local as Record<string, unknown>).some(
+        ([key, value]) =>
+          explicitLocalDiffers(
+            value,
+            inherited && typeof inherited === "object" && !Array.isArray(inherited)
+              ? (inherited as Record<string, unknown>)[key]
+              : undefined,
+          ),
+      );
+    }
+    if (Array.isArray(local)) {
+      return JSON.stringify(local) !== JSON.stringify(inherited);
+    }
+    return JSON.stringify(local) !== JSON.stringify(inherited);
+  }
+
+  function explicitLocalOverridesInherited(
+    local: unknown,
+    inherited: unknown,
+  ): boolean {
+    if (inherited === undefined) return false;
+    if (local && typeof local === "object" && !Array.isArray(local)) {
+      if (!inherited || typeof inherited !== "object" || Array.isArray(inherited)) {
+        return false;
+      }
+      return Object.entries(local as Record<string, unknown>).some(
+        ([key, value]) =>
+          explicitLocalOverridesInherited(
+            value,
+            (inherited as Record<string, unknown>)[key],
+          ),
+      );
+    }
+    if (Array.isArray(local)) {
+      return Array.isArray(inherited) &&
+        JSON.stringify(local) !== JSON.stringify(inherited);
+    }
+    return JSON.stringify(local) !== JSON.stringify(inherited);
   }
 
   function differsFromInherited(column: string) {
     const inherited = inheritedFields[column];
     if (!inherited) return hasObjectContent(drafts[column]);
-    return JSON.stringify(parsedObject(drafts[column] ?? "{}")) !==
-      JSON.stringify(inherited);
+    return explicitLocalDiffers(parsedObject(drafts[column] ?? "{}"), inherited);
   }
 
   function rawForJsonGroup(column: string, groupKey: string) {
@@ -339,66 +416,35 @@ export function RecordEditor({
     });
   }
 
-  function rawForModuleNotesGroup(groupKey: string) {
-    const metadata = parsedObject(drafts.metadata_json ?? "{}");
-    const defaultTokens =
-      metadata.default_tokens_json &&
-      typeof metadata.default_tokens_json === "object" &&
-      !Array.isArray(metadata.default_tokens_json)
-        ? (metadata.default_tokens_json as Record<string, unknown>)
-        : {};
-    if (groupKey === "notes") {
-      const { default_tokens_json: _defaultTokens, ...notes } = metadata;
-      return stringifyJson(notes);
-    }
-    const value = defaultTokens[groupKey];
-    return stringifyJson(
-      value && typeof value === "object" && !Array.isArray(value) ? value : {},
-    );
-  }
-
-  function updateModuleNotesGroup(groupKey: string, nextRawText: string) {
-    const metadata = parsedObject(drafts.metadata_json ?? "{}");
-    const nextRoot = parsedObject(nextRawText);
-    if (groupKey === "notes") {
-      setDrafts({
-        ...drafts,
-        metadata_json: stringifyJson({
-          ...nextRoot,
-          ...(metadata.default_tokens_json
-            ? { default_tokens_json: metadata.default_tokens_json }
-            : {}),
-        }),
-      });
-      return;
-    }
-    const defaultTokens =
-      metadata.default_tokens_json &&
-      typeof metadata.default_tokens_json === "object" &&
-      !Array.isArray(metadata.default_tokens_json)
-        ? (metadata.default_tokens_json as Record<string, unknown>)
-        : {};
-    setDrafts({
-      ...drafts,
-      metadata_json: stringifyJson({
-        ...metadata,
-        default_tokens_json: {
-          ...defaultTokens,
-          [groupKey]: nextRoot,
-        },
-      }),
-    });
-  }
-
   function defaultGroupValue(groupKey: string) {
     return groupKey === "messages" || groupKey === "participants" ? [] : {};
+  }
+
+  function tokenEditorGroups(
+    root: Record<string, unknown>,
+    inheritedRoot?: unknown,
+  ) {
+    const inherited = isJsonObject(inheritedRoot as JsonValue)
+      ? (inheritedRoot as Record<string, unknown>)
+      : {};
+    return Array.from(
+      new Set([...Object.keys(root), ...Object.keys(inherited)]),
+    ).filter((group) => {
+      const value = root[group] ?? inherited[group];
+      return (
+        group !== "modes" &&
+        group !== "colors" &&
+        value !== null &&
+        typeof value === "object" &&
+        !Array.isArray(value)
+      );
+    });
   }
 
   function renderField(field: AppFieldDefinition, rawOverride?: {
     rawText: string;
     onRawTextChange: (nextRawText: string) => void;
-    inheritedValue?: Record<string, unknown>;
-    screenTemplateSection?: "behavior" | "overrides";
+    inheritedValue?: Record<string, unknown> | null;
     groupContext?: string;
     hideLabel?: boolean;
   }) {
@@ -431,10 +477,11 @@ export function RecordEditor({
             disabled={field.readonly}
             rawText={rawOverride?.rawText ?? drafts[field.column] ?? ""}
             inheritedValue={
-              rawOverride?.inheritedValue ?? inheritedFields[field.column]
+              rawOverride && Object.hasOwn(rawOverride, "inheritedValue")
+                ? rawOverride.inheritedValue ?? undefined
+                : inheritedFields[field.column]
             }
             restoreStrategy={restoreStrategyForField(table, field)}
-            screenTemplateSection={rawOverride?.screenTemplateSection}
             groupContext={rawOverride?.groupContext}
             allowArrayStructuralEdits={allowArrayStructuralEditsForField(
               table,
@@ -529,6 +576,243 @@ export function RecordEditor({
     );
   }
 
+  if (table.id === "apps") {
+    const configField = fieldsByColumn.get("config_json");
+    const metadataField = fieldsByColumn.get("metadata_json");
+    const appConfigRoot = parsedObject(drafts.config_json ?? "{}");
+    const appTokenRoot = isJsonObject(appConfigRoot.tokens_json as JsonValue)
+      ? (appConfigRoot.tokens_json as Record<string, unknown>)
+      : appConfigRoot;
+    const inheritedAppRoot = inheritedFields.config_json;
+    const appTokenGroups = tokenEditorGroups(appTokenRoot, inheritedAppRoot);
+    const activeAppTokenGroup =
+      appTokenGroup && appTokenGroups.includes(appTokenGroup)
+        ? appTokenGroup
+        : appTokenGroups[0] ?? "";
+
+    function updateAppTokenRoot(nextValue: JsonValue) {
+      const nextConfig = Object.hasOwn(appConfigRoot, "tokens_json")
+        ? { ...appConfigRoot, tokens_json: nextValue }
+        : nextValue;
+      setJsonDraft("config_json", nextConfig);
+    }
+
+    return (
+      <section className="panel record-editor">
+        <div className="panel-heading">
+          <div>
+            <span className="eyebrow">App editor</span>
+            <h2>{String(record[table.titleColumn] ?? record.id)}</h2>
+          </div>
+          <span className="record-id">{record.id}</span>
+        </div>
+        <div className="editor-tabs">
+          <TabButton
+            active={appTab === "general"}
+            onClick={() => setAppTab("general")}
+          >
+            General
+          </TabButton>
+          <TabButton
+            active={appTab === "tokens"}
+            warning={explicitLocalOverridesInherited(appTokenRoot, inheritedAppRoot)}
+            onClick={() => setAppTab("tokens")}
+          >
+            Tokens
+          </TabButton>
+          <TabButton
+            active={appTab === "colors"}
+            warning={explicitLocalOverridesInherited(
+              appTokenRoot.modes,
+              isJsonObject(inheritedAppRoot as JsonValue)
+                ? (inheritedAppRoot as Record<string, unknown>).modes
+                : undefined,
+            )}
+            onClick={() => setAppTab("colors")}
+          >
+            Colors
+          </TabButton>
+          <TabButton
+            active={appTab === "notes"}
+            onClick={() => setAppTab("notes")}
+          >
+            Notes
+          </TabButton>
+        </div>
+        {appTab === "general" ? (
+          <div className="field-stack">
+            {renderFields([
+              "id",
+              "production_id",
+              "name",
+              "bundle_key",
+              "app_type",
+              "icon_asset_id",
+            ])}
+          </div>
+        ) : null}
+        {appTab === "tokens" && configField ? (
+          <div className="nested-editor-stack">
+            {appTokenGroups.length ? (
+              <div className="editor-tabs subtle-tabs">
+                {appTokenGroups.map((group) => (
+                  <TabButton
+                    key={group}
+                    active={activeAppTokenGroup === group}
+                    onClick={() => setAppTokenGroup(group)}
+                  >
+                    {friendlyGroupLabel(group)}
+                  </TabButton>
+                ))}
+              </div>
+            ) : null}
+            <div className="field-stack single-column">
+              {activeAppTokenGroup
+                ? renderField(configField, {
+                    hideLabel: true,
+                    rawText: stringifyJson(
+                      appTokenRoot[activeAppTokenGroup] &&
+                        typeof appTokenRoot[activeAppTokenGroup] === "object" &&
+                        !Array.isArray(appTokenRoot[activeAppTokenGroup])
+                        ? (appTokenRoot[activeAppTokenGroup] as Record<string, unknown>)
+                        : {},
+                    ),
+                    groupContext: activeAppTokenGroup,
+                    inheritedValue:
+                      inheritedAppRoot &&
+                      typeof inheritedAppRoot === "object" &&
+                      !Array.isArray(inheritedAppRoot) &&
+                      inheritedAppRoot[activeAppTokenGroup] &&
+                      typeof inheritedAppRoot[activeAppTokenGroup] === "object" &&
+                      !Array.isArray(inheritedAppRoot[activeAppTokenGroup])
+                        ? (inheritedAppRoot[
+                            activeAppTokenGroup
+                          ] as Record<string, unknown>)
+                        : null,
+                    onRawTextChange: (nextRawText) =>
+                      updateAppTokenRoot({
+                        ...appTokenRoot,
+                        [activeAppTokenGroup]: parsedObject(nextRawText),
+                      } as JsonValue),
+                  })
+                : renderField(configField, {
+                    hideLabel: true,
+                    rawText: stringifyJson(appTokenRoot),
+                    onRawTextChange: (nextRawText) =>
+                      updateAppTokenRoot(parsedObject(nextRawText) as JsonValue),
+                  })}
+            </div>
+          </div>
+        ) : null}
+        {appTab === "colors" ? (
+          <ModeColorEditor
+            rootValue={appTokenRoot as JsonValue}
+            inheritedRoot={inheritedAppRoot as JsonValue | undefined}
+            onRootChange={updateAppTokenRoot}
+          />
+        ) : null}
+        {appTab === "notes" && metadataField ? (
+          <div className="field-stack single-column">
+            {renderField(metadataField, {
+              hideLabel: true,
+              rawText: drafts.metadata_json ?? "{}",
+              onRawTextChange: (nextRawText) =>
+                setDrafts({ ...drafts, metadata_json: nextRawText }),
+            })}
+          </div>
+        ) : null}
+      </section>
+    );
+  }
+
+  if (table.id === "themes") {
+    const tokensField = fieldsByColumn.get("tokens_json");
+    const themeTokenRoot = parsedObject(drafts.tokens_json ?? "{}");
+    const themeTokenGroups = tokenEditorGroups(themeTokenRoot);
+    const activeThemeTokenGroup =
+      themeTokenGroup && themeTokenGroups.includes(themeTokenGroup)
+        ? themeTokenGroup
+        : themeTokenGroups[0] ?? "";
+
+    return (
+      <section className="panel record-editor">
+        <div className="panel-heading">
+          <div>
+            <span className="eyebrow">Theme editor</span>
+            <h2>{String(record[table.titleColumn] ?? record.id)}</h2>
+          </div>
+          <span className="record-id">{record.id}</span>
+        </div>
+        <div className="editor-tabs">
+          <TabButton
+            active={themeTab === "general"}
+            onClick={() => setThemeTab("general")}
+          >
+            General
+          </TabButton>
+          <TabButton
+            active={themeTab === "tokens"}
+            onClick={() => setThemeTab("tokens")}
+          >
+            Tokens
+          </TabButton>
+          <TabButton
+            active={themeTab === "colors"}
+            onClick={() => setThemeTab("colors")}
+          >
+            Colors
+          </TabButton>
+        </div>
+        {themeTab === "general" ? (
+          <div className="field-stack">
+            {renderFields(["id", "production_id", "name", "family", "version"])}
+          </div>
+        ) : null}
+        {themeTab === "tokens" && tokensField ? (
+          <div className="nested-editor-stack">
+            {themeTokenGroups.length ? (
+              <div className="editor-tabs subtle-tabs">
+                {themeTokenGroups.map((group) => (
+                  <TabButton
+                    key={group}
+                    active={activeThemeTokenGroup === group}
+                    onClick={() => setThemeTokenGroup(group)}
+                  >
+                    {friendlyGroupLabel(group)}
+                  </TabButton>
+                ))}
+              </div>
+            ) : null}
+            <div className="field-stack single-column">
+              {activeThemeTokenGroup
+                ? renderField(tokensField, {
+                    hideLabel: true,
+                    rawText: rawForJsonGroupValue(
+                      "tokens_json",
+                      activeThemeTokenGroup,
+                    ),
+                    groupContext: activeThemeTokenGroup,
+                    onRawTextChange: (nextRawText) =>
+                      updateJsonGroupValue(
+                        "tokens_json",
+                        activeThemeTokenGroup,
+                        nextRawText,
+                      ),
+                  })
+                : renderField(tokensField)}
+            </div>
+          </div>
+        ) : null}
+        {themeTab === "colors" && tokensField ? (
+          <ModeColorEditor
+            rootValue={themeTokenRoot as JsonValue}
+            onRootChange={(nextValue) => setJsonDraft("tokens_json", nextValue)}
+          />
+        ) : null}
+      </section>
+    );
+  }
+
   if (table.id === "screen_instances") {
     const moduleDataField = fieldsByColumn.get("module_data_json");
     const moduleConfigField = fieldsByColumn.get("module_config_json");
@@ -587,7 +871,7 @@ export function RecordEditor({
             {renderFields([
               "id",
               "shot_id",
-              "screen_template_id",
+              "app_id",
               "screen_type",
               "module_id",
               "module_schema_version",
@@ -641,107 +925,16 @@ export function RecordEditor({
     );
   }
 
-  if (table.id === "screen_templates") {
-    const configField = fieldsByColumn.get("config_json");
-
-    return (
-      <section className="panel record-editor">
-        <div className="panel-heading">
-          <div>
-            <span className="eyebrow">Screen template editor</span>
-            <h2>{String(record[table.titleColumn] ?? record.id)}</h2>
-          </div>
-          <span className="record-id">{record.id}</span>
-        </div>
-        <div className="editor-tabs">
-          <TabButton
-            active={screenTemplateTab === "general"}
-            warning={hasObjectContent(drafts.default_props_json)}
-            onClick={() => setScreenTemplateTab("general")}
-          >
-            General
-          </TabButton>
-          <TabButton
-            active={screenTemplateTab === "behavior"}
-            warning={configGroupHasContent("module_config_json")}
-            onClick={() => setScreenTemplateTab("behavior")}
-          >
-            Behavior
-          </TabButton>
-          <TabButton
-            active={screenTemplateTab === "overrides"}
-            warning={configGroupHasContent("module_tokens_override_json")}
-            onClick={() => setScreenTemplateTab("overrides")}
-          >
-            Overrides
-          </TabButton>
-        </div>
-        {screenTemplateTab === "general" ? (
-          <div className="field-stack">
-            {renderFields([
-              "id",
-              "production_id",
-              "name",
-              "screen_type",
-              "module_key",
-              "version",
-              "default_props_json",
-            ])}
-          </div>
-        ) : null}
-        {screenTemplateTab === "behavior" && configField ? (
-          <div className="field-stack single-column">
-            {renderField(configField, {
-              rawText: drafts.config_json ?? "{}",
-              hideLabel: true,
-              screenTemplateSection: "behavior",
-              onRawTextChange: (nextRawText) =>
-                setDrafts({
-                  ...drafts,
-                  config_json: nextRawText,
-                }),
-            })}
-          </div>
-        ) : null}
-        {screenTemplateTab === "overrides" && configField ? (
-          <div className="field-stack single-column">
-            {renderField(configField, {
-              rawText: drafts.config_json ?? "{}",
-              hideLabel: true,
-              screenTemplateSection: "overrides",
-              onRawTextChange: (nextRawText) =>
-                setDrafts({
-                  ...drafts,
-                  config_json: nextRawText,
-                }),
-            })}
-          </div>
-        ) : null}
-      </section>
-    );
-  }
-
   if (table.id === "module_theme_configs") {
     const tokensField = fieldsByColumn.get("tokens_json");
     const tokenRoot = parsedObject(drafts.tokens_json ?? "{}");
-    const designGroups = Object.keys(tokenRoot);
+    const designGroups = Object.keys(tokenRoot).filter(
+      (group) => group !== "modes",
+    );
     const activeDesignGroup =
       moduleDesignGroup && designGroups.includes(moduleDesignGroup)
         ? moduleDesignGroup
         : designGroups[0] ?? "";
-    const metadataRoot = parsedObject(drafts.metadata_json ?? "{}");
-    const defaultTokenRoot =
-      metadataRoot.default_tokens_json &&
-      typeof metadataRoot.default_tokens_json === "object" &&
-      !Array.isArray(metadataRoot.default_tokens_json)
-        ? (metadataRoot.default_tokens_json as Record<string, unknown>)
-        : {};
-    const defaultTokenGroups = Object.keys(defaultTokenRoot);
-    const activeNotesGroup =
-      moduleNotesGroup === "notes" || defaultTokenGroups.includes(moduleNotesGroup)
-        ? moduleNotesGroup
-        : "notes";
-
     return (
       <section className="panel record-editor">
         <div className="panel-heading">
@@ -760,10 +953,20 @@ export function RecordEditor({
             Design
           </TabButton>
           <TabButton
-            active={moduleThemeTab === "theme"}
-            onClick={() => setModuleThemeTab("theme")}
+            active={moduleThemeTab === "colors"}
+            warning={hasModeColorOverrides(
+              tokenRoot as JsonValue,
+              inheritedFields.tokens_json as JsonValue | undefined,
+            )}
+            onClick={() => setModuleThemeTab("colors")}
           >
-            Theme
+            Colors
+          </TabButton>
+          <TabButton
+            active={moduleThemeTab === "settings"}
+            onClick={() => setModuleThemeTab("settings")}
+          >
+            Settings
           </TabButton>
         </div>
         {moduleThemeTab === "design" && tokensField ? (
@@ -774,10 +977,10 @@ export function RecordEditor({
                   <TabButton
                     key={group}
                     active={activeDesignGroup === group}
-                    warning={
-                      JSON.stringify(tokenRoot[group]) !==
-                      JSON.stringify(inheritedFields.tokens_json?.[group])
-                    }
+                    warning={explicitLocalDiffers(
+                      tokenRoot[group],
+                      inheritedFields.tokens_json?.[group],
+                    )}
                     onClick={() => setModuleDesignGroup(group)}
                   >
                     {friendlyGroupLabel(group)}
@@ -812,50 +1015,51 @@ export function RecordEditor({
             </div>
           </div>
         ) : null}
-        {moduleThemeTab === "theme" ? (
+        {moduleThemeTab === "colors" && tokensField ? (
+          <ModeColorEditor
+            rootValue={tokenRoot as JsonValue}
+            inheritedRoot={inheritedFields.tokens_json as JsonValue | undefined}
+            onRootChange={(nextValue) => setJsonDraft("tokens_json", nextValue)}
+          />
+        ) : null}
+        {moduleThemeTab === "settings" ? (
           <div className="nested-editor-stack">
             <div className="field-stack">
               {renderFields([
                 "id",
                 "production_id",
                 "theme_id",
+                "app_id",
                 "module_id",
                 "module_schema_version",
                 "name",
               ])}
             </div>
             {fieldsByColumn.get("metadata_json") ? (
-              <div className="nested-editor-stack">
-                <div className="editor-tabs subtle-tabs">
-                  {["notes", ...defaultTokenGroups]
-                    .filter((value, index, all) => value && all.indexOf(value) === index)
-                    .map((group) => (
-                      <TabButton
-                        key={group}
-                        active={activeNotesGroup === group}
-                        warning={
-                          group !== "notes" &&
-                          Boolean(
-                            parsedObject(drafts.metadata_json ?? "{}")
-                              .default_tokens_json,
-                          )
-                        }
-                        onClick={() => setModuleNotesGroup(group)}
-                      >
-                        {group === "notes" ? "Notes" : friendlyGroupLabel(group)}
-                      </TabButton>
-                    ))}
-                </div>
-                <div className="field-stack single-column">
-                  {renderField(fieldsByColumn.get("metadata_json")!, {
-                    rawText: rawForModuleNotesGroup(activeNotesGroup),
-                    hideLabel: true,
-                    groupContext:
-                      activeNotesGroup === "notes" ? undefined : activeNotesGroup,
-                    onRawTextChange: (nextRawText) =>
-                      updateModuleNotesGroup(activeNotesGroup, nextRawText),
-                  })}
-                </div>
+              <div className="field-stack single-column">
+                {renderField(fieldsByColumn.get("metadata_json")!, {
+                  rawText: stringifyJson(
+                    Object.fromEntries(
+                      Object.entries(parsedObject(drafts.metadata_json ?? "{}")).filter(
+                        ([key]) => key !== "default_tokens_json",
+                      ),
+                    ),
+                  ),
+                  hideLabel: true,
+                  onRawTextChange: (nextRawText) => {
+                    const current = parsedObject(drafts.metadata_json ?? "{}");
+                    const nextNotes = parsedObject(nextRawText);
+                    setDrafts({
+                      ...drafts,
+                      metadata_json: stringifyJson({
+                        ...nextNotes,
+                        ...(current.default_tokens_json
+                          ? { default_tokens_json: current.default_tokens_json }
+                          : {}),
+                      }),
+                    });
+                  },
+                })}
               </div>
             ) : null}
           </div>

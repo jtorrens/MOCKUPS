@@ -22,14 +22,7 @@ function chooseInitialSelection(state: AppState): DebugSelection {
       candidate.episodeId === episode?.id ||
       candidate.productionId === production?.id,
   );
-  const screen =
-    state.options.screenInstances.find(
-      (candidate) =>
-        candidate.shotId === shot?.id && candidate.moduleId === "core.chat",
-    ) ??
-    state.options.screenInstances.find(
-      (candidate) => candidate.shotId === shot?.id,
-    );
+  const screen = choosePreviewScreenForShot(state, shot?.id);
   if (!production || !shot || !screen) {
     throw new Error("Development database has no selectable screen instance");
   }
@@ -39,6 +32,28 @@ function chooseInitialSelection(state: AppState): DebugSelection {
     screenInstanceId: screen.id,
     frame: Math.max(screen.startFrame, Math.min(210, screen.endFrame - 1)),
   };
+}
+
+function choosePreviewScreenForShot(
+  state: AppState,
+  shotId: string | undefined,
+) {
+  return (
+    state.options.screenInstances.find(
+      (candidate) => candidate.shotId === shotId && candidate.moduleId === "core.chat",
+    ) ??
+    state.options.screenInstances.find((candidate) => candidate.shotId === shotId)
+  );
+}
+
+function previewFrameForScreen(
+  screen: NonNullable<ReturnType<typeof choosePreviewScreenForShot>>,
+  fallbackFrame = 210,
+) {
+  return Math.max(
+    screen.startFrame,
+    Math.min(fallbackFrame, screen.endFrame - 1),
+  );
 }
 
 function initialSelectedRecords(state: AppState) {
@@ -109,15 +124,13 @@ export function App() {
           candidate.episodeId === episode?.id ||
           candidate.productionId === recordId,
       );
-      const instance = state.options.screenInstances.find(
-        (candidate) => candidate.shotId === shot?.id,
-      );
+      const instance = choosePreviewScreenForShot(state, shot?.id);
       if (shot && instance) {
         setSelection({
           productionId: recordId,
           shotId: shot.id,
           screenInstanceId: instance.id,
-          frame: instance.startFrame,
+          frame: previewFrameForScreen(instance),
         });
       }
     }
@@ -128,15 +141,13 @@ export function App() {
       const shot = state.options.shots.find(
         (candidate) => candidate.episodeId === recordId,
       );
-      const instance = state.options.screenInstances.find(
-        (candidate) => candidate.shotId === shot?.id,
-      );
+      const instance = choosePreviewScreenForShot(state, shot?.id);
       if (episode && shot && instance) {
         setSelection({
           productionId: episode.productionId,
           shotId: shot.id,
           screenInstanceId: instance.id,
-          frame: instance.startFrame,
+          frame: previewFrameForScreen(instance),
         });
       }
     }
@@ -144,9 +155,7 @@ export function App() {
       const shot = state.options.shots.find(
         (candidate) => candidate.id === recordId,
       );
-      const instance = state.options.screenInstances.find(
-        (candidate) => candidate.shotId === recordId,
-      );
+      const instance = choosePreviewScreenForShot(state, recordId);
       if (shot && instance) {
         setSelection({
           productionId: shot.productionId,
@@ -184,9 +193,7 @@ export function App() {
         candidate.episodeId === episode?.id ||
         candidate.productionId === productionId,
     );
-    const instance = state.options.screenInstances.find(
-      (candidate) => candidate.shotId === shot?.id,
-    );
+    const instance = choosePreviewScreenForShot(state, shot?.id);
 
     setSelectedRecordIds((current) => ({
       ...current,
@@ -202,7 +209,7 @@ export function App() {
         productionId,
         shotId: shot.id,
         screenInstanceId: instance.id,
-        frame: instance.startFrame,
+        frame: previewFrameForScreen(instance),
       });
     } else {
       setSelection({
@@ -272,15 +279,13 @@ export function App() {
         : {}),
     }));
     if (tableId === "shots") {
-      const firstInstance = nextState.options.screenInstances.find(
-        (candidate) => candidate.shotId === record.id,
-      );
+      const firstInstance = choosePreviewScreenForShot(nextState, record.id);
       if (firstInstance) {
         setSelection({
           productionId: String(record.production_id),
           shotId: record.id,
           screenInstanceId: firstInstance.id,
-          frame: firstInstance.startFrame,
+          frame: previewFrameForScreen(firstInstance),
         });
       }
     }
@@ -347,6 +352,23 @@ export function App() {
       </main>
     );
   }
+
+  const selectedProduction = state.options.productions.find(
+    (production) => production.id === selection.productionId,
+  );
+  const selectedShot = state.options.shots.find(
+    (shot) => shot.id === selection.shotId,
+  );
+  const selectedEpisode = state.options.episodes.find(
+    (episode) => episode.id === selectedShot?.episodeId,
+  );
+  const selectedScreenInstance = state.options.screenInstances.find(
+    (instance) => instance.id === selection.screenInstanceId,
+  );
+  const selectedScreenLabel =
+    selectedScreenInstance?.moduleId?.replace(/^core\./, "") ??
+    selectedScreenInstance?.screenType ??
+    "Screen";
 
   return (
     <main className="core-app-shell">
@@ -481,6 +503,19 @@ export function App() {
             }
           />
           <div className="editor-workspace">
+            <div className="workspace-breadcrumb">
+              <span className="breadcrumb-home">⌂</span>
+              <span>{selectedProduction?.name ?? "Production"}</span>
+              <span>›</span>
+              <span>{selectedEpisode?.name ?? "Episode"}</span>
+              <span>›</span>
+              <span>{selectedShot?.name ?? "Shot"}</span>
+              <span>›</span>
+              <strong>{selectedScreenLabel}</strong>
+              <button type="button" disabled title="Module workspace will be wired in a later pass">
+                Open in Module ↗
+              </button>
+            </div>
             {activeTable ? (
               <RecordEditor
                 table={activeTable}

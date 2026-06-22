@@ -105,12 +105,17 @@ function applyAdditiveV5Migration(database: SQLiteDatabase): void {
   database.pragma("user_version = 5");
 }
 
+function applyBreakingV6Marker(database: SQLiteDatabase): void {
+  database.pragma("user_version = 6");
+}
+
 export function applyInitialSchema(database: SQLiteDatabase): void {
   database.exec(readFileSync(schemaPath, "utf8"));
   applyAdditiveV2Migration(database);
   applyAdditiveV3Migration(database);
   applyAdditiveV4Migration(database);
   applyAdditiveV5Migration(database);
+  applyBreakingV6Marker(database);
   database.pragma("foreign_keys = ON");
 }
 

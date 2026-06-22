@@ -41,6 +41,7 @@ export interface DebugOptions {
   screenInstances: {
     id: string;
     shotId: string;
+    appId?: string;
     screenType: string;
     moduleId?: string;
     startFrame: number;

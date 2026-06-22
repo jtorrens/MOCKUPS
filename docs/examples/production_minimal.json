@@ -5,7 +5,7 @@
   },
   "theme_refs": ["theme_ios_light"],
   "device_refs": ["device_iphone_generic"],
-  "screen_template_refs": ["template_lock_default"],
+  "app_refs": ["app_messages"],
   "episodes": [
     {
       "id": "episode_demo_001",
@@ -38,7 +38,7 @@
     {
       "id": "screen_instance_001",
       "shot_id": "shot_001",
-      "screen_template_id": "template_lock_default",
+      "app_id": "app_messages",
       "screen_type": "lock_screen",
       "module_id": "lock_screen",
       "module_schema_version": 1,

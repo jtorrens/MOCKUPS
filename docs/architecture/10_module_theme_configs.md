@@ -8,14 +8,17 @@ MOCKUPS now separates reusable visual language from module-specific design defau
 themes.tokens_json
   → shared/global theme language
 
+apps.config_json.tokens_json
+  → app-level defaults for one app/product context
+
 module_theme_configs.tokens_json
-  → module-specific defaults for one theme + module + schema version
+  → module-specific defaults for one theme + app + module + schema version
 
 screen_instances.module_tokens_override_json
   → local exceptions for one screen instance
 ```
 
-This keeps the global Theme tab from becoming the place where every internal Chat setting is edited. A global theme may own typography, base colors, surfaces, accents, shared status-bar appearance, and light/dark base modes. Chat-specific values such as bubble geometry, tails, message spacing, cursor behavior, and chat header defaults belong to the Chat module theme config.
+This keeps the global Theme tab from becoming the place where every internal Chat setting is edited. A global theme may own broad typography, base colors, surfaces, accents, shared status-bar appearance, and light/dark base modes. An App owns generic product-level defaults such as wallpaper/background roles, accent colors, app icon references, shared app surfaces, and app-wide typography tokens. Chat-specific values such as message/header typography roles, bubble geometry, tails, message spacing, cursor behavior, and chat header defaults belong to the Chat module theme config.
 
 ## Data model
 
@@ -27,6 +30,7 @@ module_theme_configs
 id
 production_id
 theme_id
+app_id
 module_id
 module_schema_version
 name
@@ -37,10 +41,10 @@ metadata_json
 The lookup key used by the resolver is:
 
 ```text
-theme_id + module_id + module_schema_version
+theme_id + app_id + module_id + module_schema_version
 ```
 
-There may be more than one named config for a theme/module in the future. The current implementation seeds one default Chat config for `theme_ios_light` + `core.chat` schema version `1`.
+There may be more than one named config for a theme/app/module in the future. The current implementation seeds one default Chat config for `theme_ios_light` + `app_messages` + `core.chat` schema version `1`.
 
 ## Token resolution order
 
@@ -49,9 +53,12 @@ For a screen instance, module tokens resolve in this order:
 ```text
 1. global theme tokens
 2. selected global theme mode overrides
-3. module theme config tokens for theme_id + module_id + module_schema_version
-4. selected module theme config mode overrides, if present
-5. screen_instance.module_tokens_override_json
+3. app tokens for app_id
+4. selected app mode overrides, if present
+5. module theme config tokens for theme_id + app_id + module_id + module_schema_version
+6. selected module theme config mode overrides, if present
+7. screen_instance.module_tokens_override_json
+8. selected screen instance override mode tokens, if present
 ```
 
 The result is a render-ready module token object passed to the visual module pipeline. Visual modules still do not access SQLite, repositories, or raw persistence rows.
@@ -60,7 +67,7 @@ The result is a render-ready module token object passed to the visual module pip
 
 The selected mode comes from `screen_instances.theme_mode` when present, otherwise from `themes.tokens_json.defaultMode`, otherwise `light`.
 
-Both global themes and module theme configs may define:
+Themes, apps, module theme configs, and sparse instance overrides may define:
 
 ```json
 {
@@ -71,7 +78,7 @@ Both global themes and module theme configs may define:
 }
 ```
 
-Global mode overrides are merged before module config tokens. Module mode overrides are merged after base module config tokens.
+Global mode overrides are merged before app tokens. App mode overrides are merged before module config tokens. Module mode overrides are merged after base module config tokens. Instance mode overrides are merged last. The editor should keep light and dark values visible together for color roles; the resolver selects one mode only at render time.
 
 ## Global theme tokens
 
@@ -101,9 +108,11 @@ Module theme configs should contain values that only make sense inside one modul
 
 These values may reuse global color/typography concepts, but the stored data shape remains ordinary JSON.
 
+Mode-aware module colors should be centralized in a `Colors` editor with Light and Dark columns, rather than scattered through Header, Bubbles, Cursor, and other design groups. Non-color values remain in conceptual groups such as Layout, Header, Typography, Chat Bubbles, Avatars, Radii, and Cursor.
+
 ## Editor placement
 
-Module theme configs are reusable Library resources. They are not part of the Project hierarchy of episodes/shots/screens, though a selected screen instance resolves through one of them based on its theme/module/schema context.
+Module theme configs are reusable Library resources. They are not part of the Project hierarchy of episodes/shots/screens, though a selected screen instance resolves through one of them based on its theme/app/module/schema context.
 
 The structured editor can edit module config tokens, but module-specific editor hints should provide friendly labels, widgets, collapsed row summaries, and grouping cues. For example, `core.chat@1` exposes Chat typography and message/header token labels without requiring the generic JSON tree to know Chat semantics directly.
 
@@ -114,24 +123,20 @@ Current editor conventions:
 - The token/path column intentionally keeps the internal token path so the user can see which stored token is being changed.
 - A conceptual group is only rendered as a section when it has multiple rows; single-field groups stay as direct rows.
 - Raw JSON is treated as a fallback/recovery path, not the primary authoring surface.
-- Color values use color controls plus a hex field; font family and style controls prefer installed system fonts when the runtime can discover them.
+- Color values use color controls plus a hex field; font family and weight-variant controls prefer installed system fonts when the runtime can discover them.
 
 ## Screen instance overrides
 
-`screen_instances.module_tokens_override_json` stores local exceptions for one instance of one module. It should stay sparse. If a value is removed from the override JSON, resolution falls back to the inherited global/module value.
+`screen_instances.module_tokens_override_json` stores local exceptions for one instance of one module. It should stay sparse. If a value is removed from the override JSON, resolution falls back to the inherited theme/app/module value.
 
-## Screen template overrides
-
-`screen_templates.config_json.module_tokens_override_json` is the reusable template layer between module theme config defaults and screen instance local overrides. It remains abstract: empty override means "resolve the token later from the selected shot owner/device/theme context"; a filled override freezes that value for screen instances inheriting the template unless the instance overrides it again.
-
-Screen templates use the same token/override editor conventions as module theme configs and screen instance overrides, but they do not expose shot-specific content such as actual Chat messages, timings, or actors.
+Screen Template overrides are no longer an active layer. If a future workflow needs to use one screen as a starting point, the user duplicates an existing screen/screen instance and edits the duplicate.
 
 ## Override detection
 
 The app API provides inherited parent JSON for fields that support inheritance:
 
-- `module_theme_configs.tokens_json` receives resolved global theme tokens plus its seeded module defaults as its parent.
-- `screen_instances.module_tokens_override_json` receives resolved global + module theme config tokens as its parent.
+- `module_theme_configs.tokens_json` receives inherited theme + app tokens plus its seeded module defaults as its parent.
+- `screen_instances.module_tokens_override_json` receives inherited theme + app + module theme config tokens as its parent.
 
 The JSON editor compares paths using deep JSON equality:
 

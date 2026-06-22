@@ -43,12 +43,13 @@ CREATE TABLE IF NOT EXISTS module_theme_configs (
   id TEXT PRIMARY KEY,
   production_id TEXT NOT NULL REFERENCES productions(id) ON DELETE CASCADE,
   theme_id TEXT NOT NULL REFERENCES themes(id) ON DELETE CASCADE,
+  app_id TEXT NOT NULL REFERENCES apps(id) ON DELETE CASCADE,
   module_id TEXT NOT NULL,
   module_schema_version INTEGER NOT NULL CHECK (module_schema_version > 0),
   name TEXT NOT NULL,
   tokens_json TEXT NOT NULL,
   metadata_json TEXT,
-  UNIQUE (theme_id, module_id, module_schema_version, name)
+  UNIQUE (theme_id, app_id, module_id, module_schema_version, name)
 );
 
 CREATE TABLE IF NOT EXISTS devices (
@@ -127,17 +128,6 @@ CREATE TABLE IF NOT EXISTS shots (
   render_preset_id TEXT REFERENCES render_presets(id) ON DELETE SET NULL,
   canvas_json TEXT,
   metadata_json TEXT
-);
-
-CREATE TABLE IF NOT EXISTS screen_templates (
-  id TEXT PRIMARY KEY,
-  production_id TEXT NOT NULL REFERENCES productions(id) ON DELETE CASCADE,
-  name TEXT NOT NULL,
-  screen_type TEXT NOT NULL,
-  module_key TEXT NOT NULL,
-  version TEXT NOT NULL,
-  default_props_json TEXT,
-  config_json TEXT
 );
 
 CREATE TABLE IF NOT EXISTS conversations (
@@ -222,7 +212,7 @@ CREATE TABLE IF NOT EXISTS data_sources (
 CREATE TABLE IF NOT EXISTS screen_instances (
   id TEXT PRIMARY KEY,
   shot_id TEXT NOT NULL REFERENCES shots(id) ON DELETE CASCADE,
-  screen_template_id TEXT NOT NULL REFERENCES screen_templates(id) ON DELETE RESTRICT,
+  app_id TEXT NOT NULL REFERENCES apps(id) ON DELETE RESTRICT,
   screen_type TEXT NOT NULL,
   module_id TEXT,
   module_schema_version INTEGER CHECK (module_schema_version > 0),
@@ -257,10 +247,10 @@ CREATE TABLE IF NOT EXISTS screen_events (
 
 CREATE INDEX IF NOT EXISTS idx_shots_production ON shots(production_id, sort_order);
 CREATE INDEX IF NOT EXISTS idx_episodes_production ON episodes(production_id, sort_order);
-CREATE INDEX IF NOT EXISTS idx_module_theme_configs_lookup ON module_theme_configs(theme_id, module_id, module_schema_version);
+CREATE INDEX IF NOT EXISTS idx_module_theme_configs_lookup ON module_theme_configs(theme_id, app_id, module_id, module_schema_version);
 CREATE INDEX IF NOT EXISTS idx_screen_instances_shot ON screen_instances(shot_id, layer_order);
 CREATE INDEX IF NOT EXISTS idx_screen_events_instance ON screen_events(screen_instance_id, start_frame);
 CREATE INDEX IF NOT EXISTS idx_conversation_participants_conversation ON conversation_participants(conversation_id, sort_order);
 CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id, sort_order);
 
-PRAGMA user_version = 5;
+PRAGMA user_version = 6;

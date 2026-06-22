@@ -13,7 +13,6 @@ import {
   ProductionSchema,
   ScreenEventSchema,
   ScreenInstanceSchema,
-  ScreenTemplateSchema,
   ShotSchema,
   ThemeSchema,
   type Actor,
@@ -29,7 +28,6 @@ import {
   type Production,
   type ScreenEvent,
   type ScreenInstance,
-  type ScreenTemplate,
   type Shot,
   type Theme,
 } from "../../domain/schemas/index.js";
@@ -158,15 +156,6 @@ export class SQLiteRepository implements DomainRepository {
     );
   }
 
-  getScreenTemplate(id: string): ScreenTemplate | undefined {
-    return this.getOne(
-      "SELECT * FROM screen_templates WHERE id = ?",
-      id,
-      ScreenTemplateSchema,
-      { optional: ["default_props_json", "config_json"] },
-    );
-  }
-
   getTheme(id: string): Theme | undefined {
     return this.getOne("SELECT * FROM themes WHERE id = ?", id, ThemeSchema, {
       required: ["tokens_json"],
@@ -175,17 +164,18 @@ export class SQLiteRepository implements DomainRepository {
 
   getModuleThemeConfig(
     themeId: string,
+    appId: string,
     moduleId: string,
     moduleSchemaVersion: number,
   ): ModuleThemeConfig | undefined {
     const row = this.database
       .prepare(
         `SELECT * FROM module_theme_configs
-         WHERE theme_id = ? AND module_id = ? AND module_schema_version = ?
+         WHERE theme_id = ? AND app_id = ? AND module_id = ? AND module_schema_version = ?
          ORDER BY name, id
          LIMIT 1`,
       )
-      .get(themeId, moduleId, moduleSchemaVersion) as Row | undefined;
+      .get(themeId, appId, moduleId, moduleSchemaVersion) as Row | undefined;
     return row
       ? ModuleThemeConfigSchema.parse(
           decodeRow(row, {

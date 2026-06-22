@@ -6,7 +6,6 @@ import type {
 } from "../../api/client.js";
 import { JsonTreeNode } from "./JsonTreeNode.js";
 import { RawJsonEditor } from "./RawJsonEditor.js";
-import { ScreenTemplateConfigEditor } from "./ScreenTemplateConfigEditor.js";
 import { TokenOverrideEditor } from "./TokenOverrideEditor.js";
 import { buildJsonUiHints } from "./uiHints.js";
 import {
@@ -26,7 +25,6 @@ interface JsonTreeEditorProps {
   testId?: string;
   inheritedValue?: Record<string, unknown>;
   restoreStrategy?: "remove" | "set";
-  screenTemplateSection?: "behavior" | "overrides";
   groupContext?: string;
   allowObjectStructuralEdits?: boolean;
   allowArrayStructuralEdits?: boolean;
@@ -43,7 +41,6 @@ export function JsonTreeEditor({
   testId,
   inheritedValue,
   restoreStrategy = "remove",
-  screenTemplateSection,
   groupContext,
   allowObjectStructuralEdits = false,
   allowArrayStructuralEdits = false,
@@ -75,11 +72,11 @@ export function JsonTreeEditor({
     field.column === "tokens_json" &&
     parsed.ok &&
     isJsonObject(inheritedValue as JsonValue);
-  const canUseScreenTemplateConfigEditor =
-    table.id === "screen_templates" &&
+  const canUseAppInheritedTokenEditor =
+    table.id === "apps" &&
     field.column === "config_json" &&
-    parsed.ok;
-
+    parsed.ok &&
+    isJsonObject(inheritedValue as JsonValue);
   return (
     <div
       className={`json-tree-editor ${parsed.ok ? "mode-tree" : "mode-raw"}`}
@@ -121,12 +118,14 @@ export function JsonTreeEditor({
           restoreMode={restoreStrategy}
           onRootChange={setTreeValue}
         />
-      ) : canUseScreenTemplateConfigEditor ? (
-        <ScreenTemplateConfigEditor
+      ) : canUseAppInheritedTokenEditor ? (
+        <TokenOverrideEditor
           rootValue={parsed.value}
-          record={record}
-          records={records}
-          section={screenTemplateSection}
+          inheritedRoot={inheritedValue as JsonValue}
+          hints={hints}
+          inheritedColumnLabel="Inherited from theme"
+          groupContext={groupContext}
+          restoreMode={restoreStrategy}
           onRootChange={setTreeValue}
         />
       ) : (

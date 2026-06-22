@@ -14,7 +14,6 @@ import type {
   Production,
   ScreenEvent,
   ScreenInstance,
-  ScreenTemplate,
   Shot,
   Theme,
 } from "../schemas/index.js";
@@ -23,7 +22,6 @@ export interface RepositoryDataset {
   productions: Production[];
   episodes: Episode[];
   shots: Shot[];
-  screenTemplates: ScreenTemplate[];
   screenInstances: ScreenInstance[];
   screenEvents: ScreenEvent[];
   themes: Theme[];
@@ -45,10 +43,10 @@ export interface DomainRepository {
   getShot(id: string): Shot | undefined;
   getScreenInstancesForShot(shotId: string): ScreenInstance[];
   getScreenEventsForInstance(screenInstanceId: string): ScreenEvent[];
-  getScreenTemplate(id: string): ScreenTemplate | undefined;
   getTheme(id: string): Theme | undefined;
   getModuleThemeConfig(
     themeId: string,
+    appId: string,
     moduleId: string,
     moduleSchemaVersion: number,
   ): ModuleThemeConfig | undefined;

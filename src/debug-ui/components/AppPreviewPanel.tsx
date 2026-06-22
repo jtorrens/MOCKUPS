@@ -10,6 +10,27 @@ interface AppPreviewPanelProps {
   error?: string;
 }
 
+function choosePreviewScreenForShot(
+  options: DebugOptions,
+  shotId: string | undefined,
+) {
+  return (
+    options.screenInstances.find(
+      (candidate) => candidate.shotId === shotId && candidate.moduleId === "core.chat",
+    ) ?? options.screenInstances.find((candidate) => candidate.shotId === shotId)
+  );
+}
+
+function previewFrameForScreen(
+  screen: NonNullable<ReturnType<typeof choosePreviewScreenForShot>>,
+  fallbackFrame = 210,
+) {
+  return Math.max(
+    screen.startFrame,
+    Math.min(fallbackFrame, screen.endFrame - 1),
+  );
+}
+
 export function AppPreviewPanel({
   options,
   selection,
@@ -61,15 +82,13 @@ export function AppPreviewPanel({
                     candidate.episodeId === episode?.id ||
                     candidate.productionId === productionId,
                 );
-                const instance = options.screenInstances.find(
-                  (candidate) => candidate.shotId === shot?.id,
-                );
+                const instance = choosePreviewScreenForShot(options, shot?.id);
                 if (shot && instance) {
                   onSelectionChange({
                     productionId,
                     shotId: shot.id,
                     screenInstanceId: instance.id,
-                    frame: instance.startFrame,
+                    frame: previewFrameForScreen(instance),
                   });
                 }
               }}
@@ -91,15 +110,13 @@ export function AppPreviewPanel({
                 const shot = options.shots.find(
                   (candidate) => candidate.episodeId === episodeId,
                 );
-                const instance = options.screenInstances.find(
-                  (candidate) => candidate.shotId === shot?.id,
-                );
+                const instance = choosePreviewScreenForShot(options, shot?.id);
                 if (shot && instance) {
                   onSelectionChange({
                     productionId: shot.productionId,
                     shotId: shot.id,
                     screenInstanceId: instance.id,
-                    frame: instance.startFrame,
+                    frame: previewFrameForScreen(instance),
                   });
                 }
               }}
@@ -118,15 +135,13 @@ export function AppPreviewPanel({
               value={selection.shotId}
               onChange={(event) => {
                 const shotId = event.target.value;
-                const instance = options.screenInstances.find(
-                  (candidate) => candidate.shotId === shotId,
-                );
+                const instance = choosePreviewScreenForShot(options, shotId);
                 if (instance) {
                   onSelectionChange({
                     ...selection,
                     shotId,
                     screenInstanceId: instance.id,
-                    frame: instance.startFrame,
+                    frame: previewFrameForScreen(instance),
                   });
                 }
               }}

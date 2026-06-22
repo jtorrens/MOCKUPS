@@ -27,7 +27,6 @@ import {
   ResolvedChatScreenPropsSchema,
   ScreenEventSchema,
   ScreenInstanceSchema,
-  ScreenTemplateSchema,
   ShotSchema,
   ThemeSchema,
 } from "../../schemas/index.js";
@@ -53,14 +52,41 @@ export function createExampleDataset(): RepositoryDataset {
     shotExample.screen_events,
   );
   const theme = ThemeSchema.parse(themeExample);
+  const app = AppSchema.parse({
+    id: "app_messages",
+    production_id: production.id,
+    name: "Messages",
+    bundle_key: "messages",
+    app_type: "chat",
+    config_json: {
+      tokens_json: {
+        wallpaper: {
+          kind: "solid",
+        },
+        modes: {
+          light: {
+            colors: {
+              navigationBackground: "#F7F7F7",
+            },
+          },
+          dark: {
+            colors: {
+              navigationBackground: "#1C1C1E",
+            },
+          },
+        },
+      },
+    },
+    metadata_json: {
+      note: "App-level reusable defaults inherited by Messages screens.",
+    },
+  });
   const chatModuleThemeConfigTokens = {
     layout: {
       screenGutter: 24,
     },
     header: {
       height: 96,
-      background: "#FFFFFF",
-      separatorColor: "#D1D1D6",
       separatorWidth: 1,
     },
     messages: {
@@ -69,29 +95,22 @@ export function createExampleDataset(): RepositoryDataset {
     },
     typography: {
       message: {
-        fontFamily: "SF Pro Text",
         fontSize: 17,
         lineHeight: 21.25,
-        fontWeight: 400,
+        fontWeight: "Regular",
       },
       headerTitle: {
-        fontFamily: "SF Pro Text",
         fontSize: 17,
         lineHeight: 22,
-        fontWeight: 600,
+        fontWeight: "Semibold",
       },
       headerSubtitle: {
-        fontFamily: "SF Pro Text",
         fontSize: 13,
         lineHeight: 16,
-        fontWeight: 400,
+        fontWeight: "Regular",
       },
     },
     chatBubbles: {
-      outgoingBackground: "#0B84FF",
-      outgoingText: "#FFFFFF",
-      incomingBackground: "#E9E9EB",
-      incomingText: "#000000",
       paddingX: 14,
       paddingY: 9,
       maxWidthRatio: 0.6667,
@@ -101,7 +120,6 @@ export function createExampleDataset(): RepositoryDataset {
         height: 12,
       },
       shadow: {
-        color: "rgba(0,0,0,0)",
         offsetX: 0,
         offsetY: 0,
         blur: 0,
@@ -118,14 +136,52 @@ export function createExampleDataset(): RepositoryDataset {
     cursor: {
       style: "bar",
       width: 2,
-      color: "#007AFF",
       blinkFrames: 15,
+    },
+    modes: {
+      light: {
+        header: {
+          background: "#FFFFFF",
+          separatorColor: "#D1D1D6",
+        },
+        cursor: {
+          color: "#007AFF",
+        },
+        chatBubbles: {
+          outgoingBackground: "#0B84FF",
+          outgoingText: "#FFFFFF",
+          incomingBackground: "#E9E9EB",
+          incomingText: "#000000",
+          shadow: {
+            color: "rgba(0,0,0,0)",
+          },
+        },
+      },
+      dark: {
+        header: {
+          background: "#1C1C1E",
+          separatorColor: "#38383A",
+        },
+        cursor: {
+          color: "#0A84FF",
+        },
+        chatBubbles: {
+          outgoingBackground: "#0A84FF",
+          outgoingText: "#FFFFFF",
+          incomingBackground: "#2C2C2E",
+          incomingText: "#FFFFFF",
+          shadow: {
+            color: "rgba(0,0,0,0)",
+          },
+        },
+      },
     },
   };
   const chatModuleThemeConfig = ModuleThemeConfigSchema.parse({
     id: "module_theme_config_ios_light_core_chat",
     production_id: production.id,
     theme_id: theme.id,
+    app_id: app.id,
     module_id: "core.chat",
     module_schema_version: 1,
     name: "iOS Light Chat defaults",
@@ -216,55 +272,6 @@ export function createExampleDataset(): RepositoryDataset {
     },
   ]);
 
-  const screenTemplates = ScreenTemplateSchema.array().parse([
-    {
-      id: "template_lock_default",
-      production_id: production.id,
-      name: "Default lock screen",
-      screen_type: "lock_screen",
-      module_key: "LockScreen",
-      version: "1.0.0",
-      default_props_json: {},
-      config_json: {},
-    },
-    {
-      id: "template_chat_default",
-      production_id: production.id,
-      name: "Default chat screen",
-      screen_type: "chat",
-      module_key: "ChatScreen",
-      version: "1.0.0",
-      default_props_json: {
-        show_header: true,
-        show_status_bar: true,
-        message_grouping: "bySender",
-      },
-      config_json: {
-        module_id: "core.chat",
-        module_schema_version: 1,
-        module_config_json: {
-          showHeader: true,
-          showStatusBar: true,
-          showKeyboard: false,
-          initialScroll: "keep_latest_visible",
-          messageGrouping: "bySender",
-          debugShowBounds: false,
-        },
-        module_tokens_override_json: {},
-      },
-    },
-  ]);
-
-  const app = AppSchema.parse({
-    id: "app_messages",
-    production_id: production.id,
-    name: "Messages",
-    bundle_key: "messages",
-    app_type: "chat",
-    config_json: {},
-    metadata_json: {},
-  });
-
   const animationPresets = AnimationPresetSchema.array().parse([
     {
       id: "animation_notification_slide",
@@ -303,7 +310,6 @@ export function createExampleDataset(): RepositoryDataset {
     productions: [production],
     episodes: [episode],
     shots: [shot],
-    screenTemplates,
     screenInstances,
     screenEvents,
     themes: [theme],

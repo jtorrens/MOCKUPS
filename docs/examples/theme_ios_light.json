@@ -6,12 +6,6 @@
   "version": "1.0.0",
   "tokens_json": {
     "defaultMode": "light",
-    "fontSelection": {
-      "family": "SF Pro Text",
-      "style": "normal",
-      "weight": 400,
-      "source": "installed_system_font"
-    },
     "modes": {
       "light": {
         "colors": {
@@ -43,8 +37,8 @@
       "bodySize": 17,
       "bodyLineHeight": 21.25,
       "captionSize": 13,
-      "weightRegular": 400,
-      "weightSemibold": 600
+      "weight": "Regular",
+      "source": "installed_system_font"
     },
     "colors": {
       "background": "#FFFFFF",

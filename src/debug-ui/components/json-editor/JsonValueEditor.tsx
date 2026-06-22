@@ -4,40 +4,128 @@ import { hintForPath } from "./uiHints.js";
 import {
   coercePrimitiveValue,
   defaultJsonValue,
+  getAtPath,
+  isJsonObject,
+  setAtPath,
   type JsonPath,
   type JsonValue,
 } from "./jsonEditorUtils.js";
 
 interface JsonValueEditorProps {
+  rootValue: JsonValue;
   path: JsonPath;
   value: JsonValue;
   hints: JsonUiHints;
+  groupContext?: string;
   onChange: (nextValue: JsonValue) => void;
+  onRootChange?: (nextValue: JsonValue) => void;
 }
 
 function isHexColor(value: string): boolean {
   return /^#[0-9a-fA-F]{6}$/.test(value);
 }
 
+function withCurrentOption(options: string[], value: JsonValue) {
+  const current = value === null || value === undefined ? "" : String(value);
+  if (!current || options.includes(current)) return options;
+  return [current, ...options];
+}
+
+function fontFamilyForPath(rootValue: JsonValue, path: JsonPath): string | undefined {
+  for (let length = path.length - 1; length >= 0; length -= 1) {
+    const parentPath = path.slice(0, length);
+    const parent = getAtPath(rootValue, parentPath);
+    if (!isJsonObject(parent)) continue;
+    const explicitFamily = parent.fontFamily ?? parent.family;
+    if (typeof explicitFamily === "string" && explicitFamily.trim()) {
+      return explicitFamily;
+    }
+  }
+  return undefined;
+}
+
+function isFontStyleKey(key: string, parent: string) {
+  return key === "style" && /font|type/i.test(parent);
+}
+
+function isFontWeightKey(key: string, parent: string, groupContext?: string) {
+  return (
+    /fontWeight$/i.test(key) ||
+    /Weight$/i.test(key) ||
+    (key === "weight" && /font/i.test(parent || groupContext || ""))
+  );
+}
+
+function isFontFamilyKey(key: string, parent: string, groupContext?: string) {
+  return (
+    /fontFamily$/i.test(key) ||
+    (key === "family" && /font|fonts/i.test(parent || groupContext || ""))
+  );
+}
+
+function firstAvailableFontStyle(
+  stylesByFamily: Map<string, string[]>,
+  family: string,
+) {
+  return fontStylesForFamily(stylesByFamily, family)[0] ?? "Regular";
+}
+
+function withCompatibleSiblingWeights(
+  rootValue: JsonValue,
+  path: JsonPath,
+  family: string,
+  stylesByFamily: Map<string, string[]>,
+) {
+  const parentPath = path.slice(0, -1);
+  const parent = getAtPath(rootValue, parentPath);
+  if (!isJsonObject(parent)) return rootValue;
+  const options = fontStylesForFamily(stylesByFamily, family);
+  const fallback = firstAvailableFontStyle(stylesByFamily, family);
+  let nextRoot = rootValue;
+  for (const [key, value] of Object.entries(parent)) {
+    if (!isFontWeightKey(key, String(parentPath[parentPath.length - 1] ?? ""))) {
+      continue;
+    }
+    if (typeof value === "string" && options.includes(value)) {
+      continue;
+    }
+    nextRoot = setAtPath(nextRoot, [...parentPath, key], fallback);
+  }
+  return nextRoot;
+}
+
 export function JsonValueEditor({
+  rootValue,
   path,
   value,
   hints,
+  groupContext,
   onChange,
+  onRootChange,
 }: JsonValueEditorProps) {
   const hint = hintForPath(hints, path, value);
   const widget = hint.widget;
   const { families, stylesByFamily } = useSystemFontCatalog();
   const key = String(path[path.length - 1] ?? "");
+  const parent = String(path[path.length - 2] ?? "");
 
-  if (widget === "select" && hint.options?.length) {
+  const dynamicSelectOptions =
+    hint.options ??
+    (isFontStyleKey(key, parent) || isFontWeightKey(key, parent, groupContext)
+      ? fontStylesForFamily(stylesByFamily, fontFamilyForPath(rootValue, path))
+      : []);
+
+  const resolvedWidget =
+    widget || (isFontFamilyKey(key, parent, groupContext) ? "font" : undefined);
+
+  if (resolvedWidget === "select" && dynamicSelectOptions.length) {
     return (
       <select
         className="json-value-control"
         value={String(value ?? "")}
         onChange={(event) => onChange(event.target.value)}
       >
-        {hint.options.map((option) => (
+        {withCurrentOption(dynamicSelectOptions, value).map((option) => (
           <option key={option} value={option}>
             {option}
           </option>
@@ -46,12 +134,25 @@ export function JsonValueEditor({
     );
   }
 
-  if (widget === "font") {
+  if (resolvedWidget === "font") {
     return (
       <select
         className="json-value-control"
         value={String(value ?? "")}
-        onChange={(event) => onChange(event.target.value)}
+        onChange={(event) => {
+          const nextFamily = event.target.value;
+          if (onRootChange && isFontFamilyKey(key, parent, groupContext)) {
+            const nextRoot = withCompatibleSiblingWeights(
+              setAtPath(rootValue, path, nextFamily),
+              path,
+              nextFamily,
+              stylesByFamily,
+            );
+            onRootChange(nextRoot);
+            return;
+          }
+          onChange(nextFamily);
+        }}
       >
         {families.map((option) => (
           <option key={option} value={option}>
@@ -62,9 +163,11 @@ export function JsonValueEditor({
     );
   }
 
-  if (/fontWeight$/i.test(key)) {
-    const family = typeof value === "string" ? undefined : undefined;
-    const options = fontStylesForFamily(stylesByFamily, family);
+  if (isFontWeightKey(key, parent, groupContext) || isFontStyleKey(key, parent)) {
+    const options = withCurrentOption(
+      fontStylesForFamily(stylesByFamily, fontFamilyForPath(rootValue, path)),
+      value,
+    );
     return (
       <select
         className="json-value-control"

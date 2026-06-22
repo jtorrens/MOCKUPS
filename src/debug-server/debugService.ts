@@ -13,7 +13,6 @@ import {
   ModuleThemeConfigSchema,
   ProductionSchema,
   RenderPresetSchema,
-  ScreenTemplateSchema,
   ScreenInstanceSchema,
   ShotSchema,
   ThemeSchema,
@@ -21,6 +20,7 @@ import {
 } from "../domain/schemas/index.js";
 import {
   mergeTokenObjects,
+  moduleTypographyDefaultsFromFonts,
   resolveGlobalThemeTokens,
   resolveModuleThemeTokens,
   resolveShot,
@@ -101,11 +101,6 @@ function nullsToUndefined(row: Row, fields: string[] = []): Row {
 
 function isObject(value: unknown): value is Row {
   return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function jsonObjectAt(value: Row | undefined, key: string): Row {
-  const candidate = value?.[key];
-  return isObject(candidate) ? candidate : {};
 }
 
 export function parseScreenInstance(row: Row) {
@@ -205,11 +200,7 @@ export const APP_TABLES = [
     fields: [
       { column: "id", label: "ID", kind: "string", readonly: true },
       { column: "shot_id", label: "Shot ID", kind: "string" },
-      {
-        column: "screen_template_id",
-        label: "Screen template ID",
-        kind: "string",
-      },
+      { column: "app_id", label: "App", kind: "string" },
       { column: "screen_type", label: "Screen type", kind: "string" },
       { column: "module_id", label: "Module ID", kind: "string" },
       {
@@ -312,6 +303,7 @@ export const APP_TABLES = [
       { column: "id", label: "ID", kind: "string", readonly: true },
       { column: "production_id", label: "Production ID", kind: "string" },
       { column: "theme_id", label: "Theme ID", kind: "string" },
+      { column: "app_id", label: "App", kind: "string" },
       { column: "module_id", label: "Module ID", kind: "string" },
       {
         column: "module_schema_version",
@@ -439,27 +431,6 @@ export const APP_TABLES = [
       { column: "parameters_json", label: "Animation parameters", kind: "json" },
     ],
   },
-  {
-    id: "screen_templates",
-    label: "Screen Templates",
-    table: "screen_templates",
-    titleColumn: "name",
-    jsonFields: ["default_props_json", "config_json"],
-    fields: [
-      { column: "id", label: "ID", kind: "string", readonly: true },
-      { column: "production_id", label: "Production ID", kind: "string" },
-      { column: "name", label: "Name", kind: "string" },
-      { column: "screen_type", label: "Screen type", kind: "string" },
-      { column: "module_key", label: "Module key", kind: "string" },
-      { column: "version", label: "Version", kind: "string" },
-      {
-        column: "default_props_json",
-        label: "Default properties",
-        kind: "json",
-      },
-      { column: "config_json", label: "Template settings", kind: "json" },
-    ],
-  },
 ] satisfies AppTableDefinition[];
 
 const PARSERS = {
@@ -476,7 +447,6 @@ const PARSERS = {
   render_presets: RenderPresetSchema,
   apps: AppSchema,
   animation_presets: AnimationPresetSchema,
-  screen_templates: ScreenTemplateSchema,
 } as const;
 
 function tableDefinition(tableId: string): AppTableDefinition {
@@ -561,7 +531,7 @@ export function listDebugOptions(database: SQLiteDatabase) {
     .all();
   const screenInstances = database
     .prepare(
-      "SELECT id, shot_id AS shotId, screen_type AS screenType, module_id AS moduleId, start_frame AS startFrame, end_frame AS endFrame, layer_order AS layerOrder FROM screen_instances ORDER BY shot_id, layer_order, id",
+      "SELECT id, shot_id AS shotId, app_id AS appId, screen_type AS screenType, module_id AS moduleId, start_frame AS startFrame, end_frame AS endFrame, layer_order AS layerOrder FROM screen_instances ORDER BY shot_id, layer_order, id",
     )
     .all();
 
@@ -805,7 +775,7 @@ function loadInheritedJson(database: SQLiteDatabase) {
   };
 
   const themes = database
-    .prepare("SELECT * FROM themes")
+    .prepare("SELECT * FROM themes ORDER BY production_id, name, id")
     .all() as Row[];
   const themeById = new Map(
     themes.map((row) => {
@@ -847,19 +817,35 @@ function loadInheritedJson(database: SQLiteDatabase) {
       }),
     ]),
   );
-  const templateRows = database
-    .prepare("SELECT * FROM screen_templates")
-    .all() as Row[];
-  const templateById = new Map(
-    templateRows.map((row) => {
-      const template = ScreenTemplateSchema.parse({
-        ...row,
-        default_props_json: readOptionalJson(row, "default_props_json"),
+  const appRows = database.prepare("SELECT * FROM apps").all() as Row[];
+  const appById = new Map(
+    appRows.map((row) => [
+      String(row.id),
+      AppSchema.parse({
+        ...nullsToUndefined(row, ["icon_asset_id"]),
         config_json: readOptionalJson(row, "config_json"),
-      });
-      return [template.id, template] as const;
-    }),
+        metadata_json: readOptionalJson(row, "metadata_json"),
+      }),
+    ]),
   );
+  const firstThemeByProductionId = new Map<string, JsonObject>();
+  for (const theme of themeById.values()) {
+    if (!firstThemeByProductionId.has(theme.production_id)) {
+      firstThemeByProductionId.set(
+        theme.production_id,
+        resolveGlobalThemeTokens(
+          theme,
+          getThemeMode(theme.tokens_json, undefined),
+        ),
+      );
+    }
+  }
+  for (const app of appById.values()) {
+    const inheritedThemeTokens = firstThemeByProductionId.get(app.production_id);
+    if (inheritedThemeTokens) {
+      setInherited("apps", app.id, "config_json", inheritedThemeTokens);
+    }
+  }
 
   const moduleConfigs = database
     .prepare("SELECT * FROM module_theme_configs")
@@ -871,8 +857,21 @@ function loadInheritedJson(database: SQLiteDatabase) {
       metadata_json: readOptionalJson(row, "metadata_json") ?? {},
     });
     const theme = themeById.get(config.theme_id);
+    const app = appById.get(config.app_id);
     if (!theme) continue;
     const themeMode = getThemeMode(theme.tokens_json, undefined);
+    const appConfig = app?.config_json && isObject(app.config_json)
+      ? app.config_json
+      : {};
+    const appTokens = isObject(appConfig.tokens_json)
+      ? appConfig.tokens_json
+      : appConfig;
+    const genericTokens = mergeTokenObjects(
+      resolveGlobalThemeTokens(theme, themeMode),
+      resolveModuleThemeTokens(appTokens, themeMode),
+    );
+    const moduleDefaultsFromGenericTokens =
+      moduleTypographyDefaultsFromFonts(genericTokens);
     const defaultTokens =
       config.metadata_json && isObject(config.metadata_json.default_tokens_json)
         ? config.metadata_json.default_tokens_json
@@ -881,7 +880,10 @@ function loadInheritedJson(database: SQLiteDatabase) {
       "module_theme_configs",
       config.id,
       "tokens_json",
-      mergeTokenObjects(resolveGlobalThemeTokens(theme, themeMode), defaultTokens),
+      mergeTokenObjects(
+        mergeTokenObjects(genericTokens, moduleDefaultsFromGenericTokens),
+        defaultTokens,
+      ),
     );
   }
 
@@ -890,45 +892,6 @@ function loadInheritedJson(database: SQLiteDatabase) {
     .all() as Row[];
   for (const row of screenRows) {
     const screen = parseScreenInstance(row);
-    const template = templateById.get(screen.screen_template_id);
-    const templateConfig = template?.config_json ?? {};
-    const templateModuleData = jsonObjectAt(
-      templateConfig,
-      "module_data_json",
-    );
-    const templateModuleConfig = jsonObjectAt(
-      templateConfig,
-      "module_config_json",
-    );
-    const templateTokenOverrides = jsonObjectAt(
-      templateConfig,
-      "module_tokens_override_json",
-    );
-    const templateTransform = jsonObjectAt(templateConfig, "transform_json");
-    if (Object.keys(templateModuleData).length) {
-      setInherited(
-        "screen_instances",
-        screen.id,
-        "module_data_json",
-        templateModuleData,
-      );
-    }
-    if (Object.keys(templateModuleConfig).length) {
-      setInherited(
-        "screen_instances",
-        screen.id,
-        "module_config_json",
-        templateModuleConfig,
-      );
-    }
-    if (Object.keys(templateTransform).length) {
-      setInherited(
-        "screen_instances",
-        screen.id,
-        "transform_json",
-        templateTransform,
-      );
-    }
     if (!screen.module_id || !screen.module_schema_version) {
       continue;
     }
@@ -938,20 +901,33 @@ function loadInheritedJson(database: SQLiteDatabase) {
     if (!themeId) continue;
     const theme = themeById.get(themeId);
     if (!theme) continue;
+    const app = appById.get(screen.app_id);
+    if (!app) continue;
     const themeMode = getThemeMode(theme.tokens_json, screen.theme_mode);
     const moduleConfig = database
       .prepare(
         `SELECT * FROM module_theme_configs
-         WHERE theme_id = ? AND module_id = ? AND module_schema_version = ?
+         WHERE theme_id = ? AND app_id = ? AND module_id = ? AND module_schema_version = ?
          ORDER BY name, id
          LIMIT 1`,
       )
       .get(
         themeId,
+        screen.app_id,
         screen.module_id,
         screen.module_schema_version,
       ) as Row | undefined;
+    const appConfig = app.config_json && isObject(app.config_json)
+      ? app.config_json
+      : {};
+    const appTokens = isObject(appConfig.tokens_json)
+      ? appConfig.tokens_json
+      : appConfig;
     const globalTokens = resolveGlobalThemeTokens(theme, themeMode);
+    const resolvedAppTokens = resolveModuleThemeTokens(appTokens, themeMode);
+    const genericTokens = mergeTokenObjects(globalTokens, resolvedAppTokens);
+    const moduleDefaultsFromGenericTokens =
+      moduleTypographyDefaultsFromFonts(genericTokens);
     const moduleTokens = moduleConfig
       ? resolveModuleThemeTokens(
           readRequiredJson(moduleConfig, "tokens_json"),
@@ -963,8 +939,8 @@ function loadInheritedJson(database: SQLiteDatabase) {
       screen.id,
       "module_tokens_override_json",
       mergeTokenObjects(
-        mergeTokenObjects(globalTokens, moduleTokens),
-        templateTokenOverrides,
+        mergeTokenObjects(genericTokens, moduleDefaultsFromGenericTokens),
+        moduleTokens,
       ),
     );
   }

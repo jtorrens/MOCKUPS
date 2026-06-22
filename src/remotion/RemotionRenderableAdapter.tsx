@@ -22,6 +22,34 @@ function numberValue(value: unknown): number | undefined {
   return typeof value === "number" ? value : undefined;
 }
 
+function cssFontWeight(value: unknown): CSSProperties["fontWeight"] | undefined {
+  if (typeof value === "number") return value;
+  if (typeof value !== "string") return undefined;
+  const normalized = value.toLowerCase().replace(/[\s_-]+/g, "");
+  if (normalized.includes("thin")) return 100;
+  if (normalized.includes("extralight") || normalized.includes("ultralight")) {
+    return 200;
+  }
+  if (normalized.includes("light")) return 300;
+  if (
+    normalized.includes("regular") ||
+    normalized.includes("normal") ||
+    normalized.includes("book")
+  ) {
+    return 400;
+  }
+  if (normalized.includes("medium")) return 500;
+  if (normalized.includes("semibold") || normalized.includes("demibold")) {
+    return 600;
+  }
+  if (normalized.includes("bold")) return 700;
+  if (normalized.includes("extrabold") || normalized.includes("ultrabold")) {
+    return 800;
+  }
+  if (normalized.includes("black") || normalized.includes("heavy")) return 900;
+  return value as CSSProperties["fontWeight"];
+}
+
 function boxStyle(
   box: RenderableBox | undefined,
   parentOrigin: { x: number; y: number },
@@ -63,7 +91,7 @@ function nodeStyle(
     color,
     fontFamily: stringValue(style.fontFamily) ?? "Arial, sans-serif",
     fontSize: numberValue(style.fontSize),
-    fontWeight: numberValue(style.fontWeight),
+    fontWeight: cssFontWeight(style.fontWeight),
     lineHeight: numberValue(style.lineHeight)
       ? `${numberValue(style.lineHeight)}px`
       : undefined,

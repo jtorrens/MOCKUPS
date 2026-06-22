@@ -14,6 +14,17 @@ export function readNumber(
   return typeof source[key] === "number" ? source[key] : fallback;
 }
 
+export function readFontWeight(
+  source: Record<string, unknown>,
+  key: string,
+  fallback: string | number,
+): string | number {
+  const value = source[key];
+  return typeof value === "string" || typeof value === "number"
+    ? value
+    : fallback;
+}
+
 export function readObject(
   source: Record<string, unknown>,
   key: string,

@@ -168,7 +168,7 @@ Fast structural layout may use approximate renderer-agnostic measurement. Previe
 
 Implications:
 - Preview/export cannot diverge in final line breaking.
-- Themes select installed font family/style/weight; no production font whitelist/table is introduced.
+- Themes select installed font family and named weight variants; no production font whitelist/table is introduced.
 
 ## D018 — Modules own animation interpretation and visual behavior
 
@@ -290,7 +290,7 @@ Status: accepted
 
 Implications:
 - Local overrides do not belong in the reusable global theme or reusable module theme config.
-- Removing an override should return the screen instance to inherited global/module defaults.
+- Removing an override should return the screen instance to inherited theme/app/module defaults.
 
 ## D030 — JSON editors visualize inherited override state
 
@@ -393,31 +393,25 @@ Implications:
 - Renderer Node integration stays disabled and context isolation stays enabled.
 - Future file/font pickers should extend the narrow preload API instead of enabling broad Node access.
 
-## D039 — Production-owned workspace and abstract screen templates
+## D039 — Production-owned workspace
 
 Status: accepted
 
-All authoring data belongs to a production. The app should not present Apps, Screen Templates, Shots, or Screen Instances as unrelated global tables. The UI should start from the selected production, then expose production setup/library data and the episode/shot/screen hierarchy underneath it.
+All authoring data belongs to a production. The app should not present Apps, Shots, or Screen Instances as unrelated global tables. The UI should start from the selected production, then expose production setup/library data and the episode/shot/screen hierarchy underneath it.
 
 Implications:
 - The top-level app shell selects one production first.
 - Production actions are grouped separately from the episode/shot tree.
 - Project navigation is organized as `Episodes -> Shots -> Screens -> per-screen module theme/data`.
-- Apps and Screen Templates are production-owned library records, not global assets.
+- Apps and module theme configs are production-owned library records, not global assets.
 - Other tables such as actors, themes, devices, device states, media assets, render presets, and animation presets are production-owned setup data.
 - Future production duplication can copy the full production tree and its library/setup records.
 
-Screen Templates remain abstract. They should store token bindings and optional fixed overrides, not resolved pixel/color values tied to a specific actor, device, or theme mode.
-
-Implications:
-- A template property can expose a token label plus an empty override field.
-- Empty override means "resolve this token later from the shot owner/device/theme context".
-- A filled override means "use this fixed value for every inheriting screen instance unless the instance overrides it again".
-- Screen Instances can show inherited template values and, once attached to a shot, may also show resolved render values.
+Superseded note: the earlier Screen Template layer has been removed from the active architecture. See D042.
 
 ## D040 — Screen instances inherit module defaults from screen templates
 
-Status: accepted
+Status: superseded by D042
 
 Screen Templates are the reusable base layer for Screen Instances. A template can provide module data defaults, behavior defaults, token overrides, and transform defaults. A Screen Instance stores shot-specific content and sparse overrides on top of that template.
 
@@ -447,7 +441,7 @@ Implications:
 
 Status: accepted
 
-The local app shell should expose module/template/theme JSON through structured editors rather than raw JSON-first forms. Editor tabs and conceptual groups use friendly labels derived from module hints or normalized JSON keys, while the token/path column may keep the internal JSON path visible so users can understand exactly which token or field is being edited.
+The local app shell should expose app/module/theme JSON through structured editors rather than raw JSON-first forms. Editor tabs and conceptual groups use friendly labels derived from module hints or normalized JSON keys, while the token/path column may keep the internal JSON path visible so users can understand exactly which token or field is being edited.
 
 Implications:
 - Tabs and group labels should display `Header Title`, `Chat Bubbles`, and `Message`, not raw keys such as `headerTitle`, `chatBubbles`, or `message`.
@@ -455,3 +449,43 @@ Implications:
 - A visual group should only be created when it contains more than one editable row. Single-field groups should render as a normal row to avoid unnecessary UI nesting.
 - The internal token/path column can intentionally remain raw, such as `headerTitle.fontSize`, because it identifies the stored token.
 - Raw JSON editing is a recovery/fallback surface for invalid JSON or advanced inspection, not the primary editing mode.
+- App, Theme, and Module token editors should share the same broad structure: General/Settings for identity, Tokens grouped by concept, and Colors as the central mode-aware color editor.
+
+## D042 — Runtime token inheritance is Theme → App → Screen/Module → Screen Instance
+
+Status: accepted
+
+The active architecture removes Screen Templates and does not add App Theme Configs or Screen Presets. Reusable app defaults live directly on `apps.config_json.tokens_json`; reusable module/screen defaults live in `module_theme_configs.tokens_json` scoped by `theme_id + app_id + module_id + module_schema_version`; shot-specific content and sparse local exceptions live on `screen_instances`.
+
+Runtime token resolution is:
+
+```text
+theme tokens
+  → selected theme mode tokens
+  → app tokens
+  → selected app mode tokens
+  → module/screen tokens
+  → selected module/screen mode tokens
+  → screen instance overrides
+  → selected screen instance override mode tokens
+```
+
+Color values may be mode-aware at App, Module, and Screen Instance levels. The editor should present mode-aware colors together with Light and Dark columns instead of scattering them through every conceptual group. The resolver collapses to one mode only in the final shot/screen render context.
+
+Implications:
+- `screen_instances` reference an `app_id` directly and no longer reference `screen_template_id`.
+- `module_theme_configs` reference `app_id` directly.
+- If a user wants to reuse a previous setup as a starting point, they duplicate an existing screen/screen instance and edit the duplicate.
+- This is a design-stage breaking change; local development databases can be explicitly reset, but normal app startup must not reseed or overwrite edited data.
+
+## D043 — Design tokens are authored in logical units and scaled for device render space
+
+Status: accepted
+
+Theme, App, and Module numeric visual tokens are authored in logical design units. Device metrics define the mapping to render pixels through `scaleToPixels` or the ratio between `renderSize` and `designSpace`. The resolver scales design-unit tokens before visual modules receive renderable props.
+
+Implications:
+- A Chat `fontSize` of `17` in a 430-point iPhone design space resolves to `51px` for a 1290-pixel render size.
+- Spacing, padding, line heights, header heights, radii, avatar sizes, tail geometry, and shadow dimensions scale with the device.
+- Ratios such as `maxWidthRatio` and frame counts are not scaled. Font weight variants are named font-face selections from the active family and are not scaled.
+- The UI should present authored token values in design units; preview/render uses resolved scaled values.

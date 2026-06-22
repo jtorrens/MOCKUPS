@@ -210,9 +210,12 @@ export function JsonTreeNode({
         <strong>{visibleLabel}</strong>
       </span>
       <JsonValueEditor
+        rootValue={rootValue}
         path={path}
         value={value}
         hints={hints}
+        groupContext={groupContext}
+        onRootChange={onRootChange}
         onChange={(nextValue) =>
           onRootChange(setAtPath(rootValue, path, nextValue))
         }

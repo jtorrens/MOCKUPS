@@ -1,5 +1,6 @@
 import type { ResolvedChatScreenProps } from "../../../domain/schemas/index.js";
 import {
+  readFontWeight,
   readNumber,
   readObject,
   readString,
@@ -92,10 +93,10 @@ export const ChatHeaderModule: VisualModule<ChatHeaderModuleInput> = {
         ),
         fontSize: readNumber(headerTitleTypography, "fontSize", 17),
         lineHeight: readNumber(headerTitleTypography, "lineHeight", 22),
-        fontWeight: readNumber(
+        fontWeight: readFontWeight(
           headerTitleTypography,
           "fontWeight",
-          readNumber(input.fonts, "weightSemibold", 600),
+          readFontWeight(input.fonts, "weight", "Regular"),
         ),
       },
       metadata: {
@@ -108,10 +109,10 @@ export const ChatHeaderModule: VisualModule<ChatHeaderModuleInput> = {
           ),
           fontSize: readNumber(headerSubtitleTypography, "fontSize", 13),
           lineHeight: readNumber(headerSubtitleTypography, "lineHeight", 16),
-          fontWeight: readNumber(
+          fontWeight: readFontWeight(
             headerSubtitleTypography,
             "fontWeight",
-            readNumber(input.fonts, "weightRegular", 400),
+            readFontWeight(input.fonts, "weight", "Regular"),
           ),
         },
       },

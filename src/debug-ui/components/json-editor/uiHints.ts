@@ -137,6 +137,20 @@ export function hintForPath(
   if (exact) return exact;
 
   const key = String(path[path.length - 1] ?? "");
+  const parent = String(path[path.length - 2] ?? "");
+  if (/fontFamily$/i.test(key) || (key === "family" && /font|fonts/i.test(parent))) {
+    return { widget: "font" };
+  }
+  if (key === "style" && /font|type/i.test(parent)) {
+    return { widget: "select" };
+  }
+  if (
+    /fontWeight$/i.test(key) ||
+    /Weight$/i.test(key) ||
+    (key === "weight" && /font/i.test(parent))
+  ) {
+    return { widget: "select" };
+  }
   if (
     typeof value === "string" &&
     /^#[0-9a-fA-F]{6}$/.test(value) &&

@@ -16,7 +16,7 @@
     "fontFamily": "SF Pro Text",
     "fontSize": 17,
     "lineHeight": 21.25,
-    "fontWeight": 400,
+    "fontWeight": "Regular",
     "borderRadius": 18,
     "paddingX": 14,
     "paddingY": 9,

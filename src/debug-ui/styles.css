@@ -231,8 +231,8 @@ body {
 
 .tab-list,
 .project-tree-panel {
-  border-right: 1px solid #242936;
-  background: rgba(10, 12, 18, 0.35);
+  border-right: 1px solid #293041;
+  background: rgba(12, 15, 22, 0.48);
 }
 
 .tab-list button,
@@ -294,10 +294,10 @@ body {
   flex-direction: row;
   width: 100%;
   gap: 4px;
-  border: 1px solid #252b38;
+  border: 1px solid #293041;
   border-radius: 14px;
   padding: 4px;
-  background: rgba(8, 10, 15, 0.52);
+  background: rgba(10, 13, 20, 0.58);
   overflow-x: auto;
 }
 
@@ -315,7 +315,127 @@ body {
 
 .workspace-tabs button.active {
   color: white;
-  background: #252b3a;
+  background: #262d3d;
+}
+
+.project-tree-view {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-height: 0;
+  overflow: auto;
+  padding: 4px 2px 8px;
+}
+
+.tree-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1px solid #2b3344;
+  border-radius: 12px;
+  padding: 8px 9px;
+  color: #cfd6e6;
+  background: rgba(18, 22, 31, 0.94);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.tree-node {
+  border: 1px solid #2b3344;
+  border-radius: 13px;
+  background: rgba(17, 21, 30, 0.72);
+}
+
+.tree-node summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  cursor: default;
+  list-style: none;
+  padding: 7px;
+}
+
+.tree-node summary::-webkit-details-marker {
+  display: none;
+}
+
+.tree-children {
+  display: grid;
+  gap: 6px;
+  border-top: 1px solid #293041;
+  margin-left: 12px;
+  padding: 7px 7px 8px 10px;
+}
+
+.tree-children.compact {
+  border-top: 0;
+  margin: 4px 0 0 14px;
+  padding: 0 0 0 8px;
+}
+
+.tree-leaf-with-children {
+  display: grid;
+  gap: 4px;
+}
+
+.tree-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.project-tree-view button {
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 8px 9px;
+  color: #c6cede;
+  background: transparent;
+  text-align: left;
+}
+
+.project-tree-view button.active {
+  border-color: #46506a;
+  color: white;
+  background: #202636;
+}
+
+.project-tree-view button.editing {
+  border-color: #7785ff;
+  color: #ffffff;
+  background:
+    linear-gradient(135deg, rgba(95, 111, 241, 0.36), rgba(95, 111, 241, 0.14)),
+    #202636;
+  box-shadow: inset 3px 0 0 #91a0ff;
+}
+
+.project-tree-view button strong,
+.project-tree-view button small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-tree-view button strong {
+  font-size: 12px;
+}
+
+.project-tree-view button small {
+  margin-top: 3px;
+  color: #7f899c;
+  font-size: 10px;
+}
+
+.project-tree-view .mini-action {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  text-align: center;
 }
 
 .hierarchy-browser {
@@ -331,9 +451,9 @@ body {
 
 .hierarchy-panel {
   overflow: hidden;
-  border: 1px solid #242a38;
+  border: 1px solid #303748;
   border-radius: 14px;
-  background: rgba(9, 12, 18, 0.62);
+  background: rgba(24, 28, 39, 0.76);
 }
 
 .hierarchy-panel summary {
@@ -523,7 +643,11 @@ body {
 }
 
 .record-editor {
+  display: flex;
+  flex-direction: column;
   margin-top: 0;
+  min-height: 100%;
+  height: 100%;
   max-height: 100%;
   overflow: hidden auto;
   padding: 20px;
@@ -590,8 +714,8 @@ body {
 
 .subtle-tabs {
   margin-bottom: 12px;
-  border-color: #202634;
-  background: rgba(8, 10, 15, 0.34);
+  border-color: #293041;
+  background: rgba(12, 15, 23, 0.46);
 }
 
 .nested-editor-stack {
@@ -985,10 +1109,10 @@ body {
 }
 
 .token-override-row {
-  border: 1px solid #202634;
+  border: 1px solid #293041;
   border-radius: 10px;
   padding: 9px;
-  background: rgba(13, 16, 24, 0.8);
+  background: rgba(13, 16, 24, 0.82);
 }
 
 .token-override-row.has-override {
@@ -999,10 +1123,10 @@ body {
 .token-override-group {
   display: grid;
   gap: 7px;
-  border: 1px solid #202634;
+  border: 1px solid #293041;
   border-radius: 12px;
   padding: 10px;
-  background: rgba(8, 10, 15, 0.28);
+  background: rgba(12, 15, 23, 0.46);
 }
 
 .token-override-group h4 {
@@ -1052,6 +1176,87 @@ body {
   padding: 0 9px;
   color: #e8e9ee;
   background: #0f1219;
+}
+
+.mode-color-editor {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  max-height: 640px;
+  overflow: auto;
+  padding: 10px;
+}
+
+.record-editor > .mode-color-editor {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+}
+
+.mode-color-group {
+  display: grid;
+  gap: 7px;
+  border: 1px solid #293041;
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(12, 15, 23, 0.46);
+}
+
+.mode-color-group h4 {
+  margin: 0 0 2px;
+  color: #f0f3fb;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
+.mode-color-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) minmax(190px, 1.1fr) minmax(170px, 1fr) minmax(170px, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid #293041;
+  border-radius: 10px;
+  padding: 9px;
+  background: rgba(13, 16, 24, 0.82);
+}
+
+.mode-color-row.has-override {
+  border-color: #896a24;
+  background: rgba(64, 45, 9, 0.42);
+}
+
+.mode-color-header {
+  border: 0;
+  padding: 0 8px 4px;
+  color: #778096;
+  background: transparent;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.mode-color-row strong {
+  color: #c8d0e0;
+  font-size: 12px;
+}
+
+.mode-color-row code {
+  overflow: hidden;
+  color: #9ea9bd;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mode-color-row .restore-button {
+  height: 32px;
+  border: 1px solid #30384a;
+  border-radius: 8px;
+  color: #cad2e4;
+  background: #171b25;
+  font-size: 12px;
 }
 
 .screen-template-config-editor {
@@ -1279,9 +1484,9 @@ button:disabled {
 }
 
 .panel {
-  border: 1px solid #242936;
+  border: 1px solid #2a3141;
   border-radius: 16px;
-  background: rgba(20, 23, 31, 0.92);
+  background: rgba(23, 27, 37, 0.94);
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.18);
 }
 
@@ -1516,6 +1721,582 @@ dd {
   border-color: #655426;
   color: #ebc967;
   background: #201b10;
+}
+
+/* Concept B / Inspector-first light pass.
+   This intentionally overrides the darker debug shell styles above while we
+   converge on the production authoring UX. */
+:root {
+  color: #16181d;
+  background: #f6f7f9;
+}
+
+body {
+  background:
+    radial-gradient(circle at 70% 0%, rgba(55, 91, 255, 0.08), transparent 34rem),
+    #f6f7f9;
+}
+
+.core-app-shell {
+  background: #f6f7f9;
+}
+
+.left-app-panel {
+  border-right: 1px solid #dde1e8;
+  background: #fbfcfd;
+}
+
+.authoring-workspace {
+  gap: 0;
+}
+
+.navigation-rail {
+  padding: 22px;
+  border-right: 1px solid #dde1e8;
+  background: #fbfcfd;
+}
+
+.editor-workspace {
+  padding: 22px;
+  background: #f6f7f9;
+}
+
+.workspace-breadcrumb {
+  position: sticky;
+  top: 0;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 46px;
+  margin-bottom: 14px;
+  border: 1px solid #dfe3eb;
+  border-radius: 14px;
+  padding: 8px 10px;
+  color: #343946;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 24px rgba(21, 30, 50, 0.06);
+  font-size: 13px;
+}
+
+.workspace-breadcrumb strong {
+  color: #111318;
+}
+
+.workspace-breadcrumb .breadcrumb-home {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid #dfe3eb;
+  border-radius: 9px;
+  color: #20242c;
+  background: #ffffff;
+}
+
+.workspace-breadcrumb button {
+  margin-left: auto;
+  border: 1px solid #dfe3eb;
+  color: #20242c;
+  background: #ffffff;
+  font-size: 12px;
+}
+
+.right-preview-shell {
+  border-left: 1px solid #dde1e8;
+  padding: 22px;
+  background: #fbfcfd;
+}
+
+.panel-resizer {
+  width: 10px;
+  flex-basis: 10px;
+  background: #f0f2f5;
+}
+
+.panel-resizer::before {
+  top: 0;
+  bottom: 0;
+  left: 4px;
+  width: 1px;
+  background: #dde1e8;
+}
+
+.panel-resizer:hover::before,
+.is-resizing-panels .panel-resizer::before {
+  width: 2px;
+  background: #3b66ff;
+}
+
+.app-header {
+  padding: 0;
+}
+
+.app-header h1 {
+  color: #111318;
+  font-size: 20px;
+  letter-spacing: -0.03em;
+}
+
+.app-header p {
+  display: none;
+}
+
+.eyebrow {
+  color: #717887;
+  font-size: 11px;
+}
+
+.production-switcher {
+  margin-top: 10px;
+}
+
+label {
+  color: #626a78;
+}
+
+select,
+input,
+input[type="number"],
+textarea {
+  border: 1px solid #d9dee7;
+  color: #15171c;
+  background: #ffffff;
+}
+
+select:focus,
+input:focus,
+textarea:focus {
+  border-color: #8fa2ff;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 102, 255, 0.1);
+}
+
+button {
+  color: #ffffff;
+  background: #345dff;
+}
+
+.production-menu-button,
+.ghost-button,
+.mini-action,
+.mode-color-row .restore-button,
+.json-restore-button {
+  border: 1px solid #d9dee7;
+  color: #22262f;
+  background: #ffffff;
+}
+
+.panel {
+  border: 1px solid #dfe3eb;
+  background: #ffffff;
+  box-shadow: 0 16px 45px rgba(21, 30, 50, 0.07);
+}
+
+.panel-heading {
+  border-bottom: 1px solid #edf0f4;
+  margin: -2px -2px 16px;
+  padding: 2px 2px 16px;
+}
+
+.panel h2,
+.panel h3,
+.panel-heading h2 {
+  color: #12141a;
+}
+
+.record-id,
+.frame-badge,
+.status-dot,
+.validation-chip,
+.read-only-chip {
+  border-color: #dfe3eb;
+  color: #667085;
+  background: #f7f8fa;
+}
+
+.project-browser {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.workspace-tabs {
+  position: static;
+  gap: 6px;
+  border: 1px solid #dfe3eb;
+  background: #f1f3f6;
+}
+
+.workspace-tabs button {
+  color: #687082;
+}
+
+.workspace-tabs button.active {
+  color: #12141a;
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(21, 30, 50, 0.08);
+}
+
+.project-tree-view {
+  gap: 14px;
+  padding: 10px 0 0;
+}
+
+.tree-toolbar {
+  border: 0;
+  padding: 12px 2px 6px;
+  color: #20242c;
+  background: transparent;
+  font-size: 15px;
+}
+
+.tree-node {
+  border: 0;
+  background: transparent;
+}
+
+.tree-node summary {
+  padding: 0;
+}
+
+.tree-children {
+  gap: 8px;
+  border-top: 0;
+  margin-left: 20px;
+  padding: 8px 0 0 10px;
+  border-left: 1px solid #e2e6ee;
+}
+
+.tree-children.compact {
+  margin: 6px 0 0 20px;
+  padding-left: 10px;
+  border-left: 1px solid #e2e6ee;
+}
+
+.project-tree-view button,
+.record-list button,
+.resource-table-list button {
+  border: 1px solid transparent;
+  color: #2c323d;
+  background: transparent;
+}
+
+.project-tree-view button:not(.mini-action),
+.hierarchy-list button,
+.record-list button {
+  border-color: #e1e5ec;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(21, 30, 50, 0.04);
+}
+
+.project-tree-view button.active,
+.record-list button.active,
+.resource-table-list button.active,
+.project-tree button.active {
+  border-color: #dfe3eb;
+  color: #15171c;
+  background: #f7f8fb;
+}
+
+.project-tree-view button.editing,
+.record-list button.editing,
+.resource-table-list button.editing,
+.hierarchy-list button.editing {
+  border-color: #8fa2ff;
+  color: #111318;
+  background:
+    linear-gradient(135deg, rgba(52, 93, 255, 0.1), rgba(52, 93, 255, 0.02)),
+    #ffffff;
+  box-shadow:
+    inset 3px 0 0 #345dff,
+    0 1px 5px rgba(21, 30, 50, 0.08);
+}
+
+.project-tree-view button small,
+.hierarchy-list button small {
+  color: #7b8494;
+}
+
+.library-browser,
+.resource-table-list,
+.record-list {
+  border-color: #e1e5ec;
+  background: #ffffff;
+}
+
+.record-editor {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+.record-editor > .panel-heading {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  margin: 0 0 12px;
+  border: 1px solid #dfe3eb;
+  border-radius: 16px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+}
+
+.record-editor > .editor-tabs:not(.subtle-tabs) {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.record-editor > .editor-tabs:not(.subtle-tabs) button {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-height: 72px;
+  border: 1px solid #dfe3eb;
+  border-radius: 14px;
+  padding: 16px 18px;
+  color: #1d2129;
+  background: #ffffff;
+  text-align: left;
+  box-shadow: 0 2px 8px rgba(21, 30, 50, 0.04);
+}
+
+.record-editor > .editor-tabs:not(.subtle-tabs) button::after {
+  content: "›";
+  align-self: center;
+  color: #14171d;
+  font-size: 24px;
+  font-weight: 400;
+}
+
+.record-editor > .editor-tabs:not(.subtle-tabs) button.active::after {
+  content: "⌃";
+  font-size: 18px;
+}
+
+.record-editor > .editor-tabs:not(.subtle-tabs) button.active {
+  border-color: #dce1ea;
+  background: #ffffff;
+}
+
+.record-editor > .editor-tabs:not(.subtle-tabs) button.has-warning {
+  color: #e66a00;
+}
+
+.record-editor > .editor-tabs:not(.subtle-tabs) button.has-warning::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  align-self: center;
+  justify-self: end;
+  border-radius: 999px;
+  background: #ff7a00;
+}
+
+.subtle-tabs {
+  gap: 6px;
+  border: 1px solid #dfe3eb;
+  background: #f1f3f6;
+}
+
+.subtle-tabs button,
+.editor-tabs.subtle-tabs button {
+  border: 0;
+  color: #687082;
+  background: transparent;
+}
+
+.subtle-tabs button.active,
+.editor-tabs.subtle-tabs button.active {
+  color: #12141a;
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(21, 30, 50, 0.08);
+}
+
+.nested-editor-stack,
+.field-stack.single-column,
+.field-stack {
+  border: 1px solid #dfe3eb;
+  border-radius: 16px;
+  padding: 14px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(21, 30, 50, 0.04);
+}
+
+.nested-editor-stack .field-stack,
+.nested-editor-stack .field-stack.single-column {
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+.app-field {
+  border-color: #e2e6ee;
+  background: #ffffff;
+}
+
+.app-field span {
+  color: #222731;
+}
+
+.app-field code {
+  color: #7b8494;
+}
+
+.app-field input,
+.app-field select,
+.app-field textarea,
+.token-override-input input,
+.token-override-input select,
+.json-color-pair input[type="text"] {
+  border-color: #d9dee7;
+  color: #15171c;
+  background: #ffffff;
+}
+
+.json-tree-node {
+  border-color: #e2e6ee;
+  background: #ffffff;
+}
+
+.json-tree-node summary {
+  background: #f9fafb;
+}
+
+.token-override-editor,
+.mode-color-editor {
+  gap: 12px;
+  max-height: none;
+  padding: 0;
+}
+
+.token-override-head,
+.mode-color-header {
+  color: #667085;
+}
+
+.token-override-group,
+.mode-color-group {
+  border-color: #dfe3eb;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(21, 30, 50, 0.04);
+}
+
+.token-override-group h4,
+.mode-color-group h4 {
+  color: #171a21;
+  font-size: 15px;
+}
+
+.token-override-row,
+.mode-color-row {
+  border-width: 0 0 1px;
+  border-color: #edf0f4;
+  border-radius: 0;
+  background: transparent;
+}
+
+.token-override-row:last-child,
+.mode-color-row:last-child {
+  border-bottom: 0;
+}
+
+.token-override-row.has-override,
+.mode-color-row.has-override {
+  border-color: #ffd7ad;
+  border-radius: 10px;
+  background: #fff7ed;
+}
+
+.token-override-row strong,
+.mode-color-row strong {
+  color: #1d2129;
+}
+
+.token-override-row code,
+.mode-color-row code {
+  color: #7b8494;
+}
+
+.token-override-row code small {
+  color: #8a94a6;
+}
+
+.json-color-pair input[type="color"] {
+  border-color: #d9dee7;
+  background: #ffffff;
+}
+
+.preview-context {
+  order: 2;
+  padding: 14px;
+}
+
+.preview-context .panel-heading {
+  display: none;
+}
+
+.preview-context label:not(:last-child) {
+  display: none;
+}
+
+.preview-select-grid {
+  grid-template-columns: 1fr;
+}
+
+.right-preview-shell .preview-panel {
+  order: 1;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+.right-preview-shell .preview-panel .panel-heading {
+  margin: 0 0 14px;
+  border-bottom: 0;
+  padding: 0;
+}
+
+.preview-viewport-host {
+  border: 0;
+  border-radius: 34px;
+  background:
+    linear-gradient(145deg, rgba(0, 0, 0, 0.09), transparent 26%),
+    #ffffff;
+}
+
+.preview-viewport {
+  border: 10px solid #111111;
+  border-radius: 56px;
+  background: #ffffff;
+  box-shadow:
+    0 20px 50px rgba(17, 24, 39, 0.16),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+}
+
+.empty-state {
+  color: #7b8494;
+}
+
+.alert.error {
+  border-color: #ffd0d5;
+  color: #b4232e;
+  background: #fff1f3;
+}
+
+.alert.warning {
+  border-color: #ffdca8;
+  color: #b35600;
+  background: #fff8ed;
 }
 
 .loading-screen {

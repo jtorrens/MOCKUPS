@@ -5,6 +5,7 @@ import {
   ChatModuleDataSchema,
   ResolvedChatScreenPropsSchema,
   type Actor,
+  type App,
   type ChatParticipant,
   type Device,
   type DeviceState,
@@ -22,6 +23,20 @@ const CHAT_MODULE_ID = "core.chat";
 const CHAT_MODULE_SCHEMA_VERSION = 1;
 
 const DeviceMetricsSchema = z.object({
+  designSpace: z
+    .object({
+      width: z.number().positive(),
+      height: z.number().positive(),
+      unit: z.string().optional(),
+    })
+    .optional(),
+  renderSize: z
+    .object({
+      width: z.number().positive(),
+      height: z.number().positive(),
+    })
+    .optional(),
+  scaleToPixels: z.number().positive().optional(),
   viewport: z.object({
     x: z.number(),
     y: z.number(),
@@ -102,6 +117,58 @@ export function resolveThemeModeTokens(
   return envelope.modes?.[themeMode] ?? {};
 }
 
+function numericToken(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+function stringToken(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value : undefined;
+}
+
+function fontWeightToken(value: unknown): string | number | undefined {
+  if (typeof value === "string" && value.trim()) return value;
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  return undefined;
+}
+
+export function moduleTypographyDefaultsFromFonts(
+  tokens: Record<string, unknown>,
+): Record<string, unknown> {
+  const fonts = isObject(tokens.fonts) ? tokens.fonts : {};
+  const fontFamily = stringToken(fonts.family);
+  const bodySize = numericToken(fonts.bodySize);
+  const bodyLineHeight = numericToken(fonts.bodyLineHeight);
+  const captionSize = numericToken(fonts.captionSize);
+  const weight = fontWeightToken(fonts.weight);
+
+  if (!fontFamily && bodySize === undefined && captionSize === undefined) {
+    return {};
+  }
+
+  return {
+    typography: {
+      message: {
+        ...(fontFamily ? { fontFamily } : {}),
+        ...(bodySize !== undefined ? { fontSize: bodySize } : {}),
+        ...(bodyLineHeight !== undefined ? { lineHeight: bodyLineHeight } : {}),
+        ...(weight !== undefined ? { fontWeight: weight } : {}),
+      },
+      headerTitle: {
+        ...(fontFamily ? { fontFamily } : {}),
+        ...(bodySize !== undefined ? { fontSize: bodySize } : {}),
+        ...(bodyLineHeight !== undefined ? { lineHeight: bodyLineHeight } : {}),
+        ...(weight !== undefined ? { fontWeight: weight } : {}),
+      },
+      headerSubtitle: {
+        ...(fontFamily ? { fontFamily } : {}),
+        ...(captionSize !== undefined ? { fontSize: captionSize } : {}),
+        ...(captionSize !== undefined ? { lineHeight: captionSize * 1.2308 } : {}),
+        ...(weight !== undefined ? { fontWeight: weight } : {}),
+      },
+    },
+  };
+}
+
 export function resolveGlobalThemeTokens(
   theme: Theme,
   themeMode: "light" | "dark",
@@ -116,6 +183,100 @@ export function resolveModuleThemeTokens(
   tokens: Record<string, unknown>,
   themeMode: "light" | "dark",
 ): Record<string, unknown> {
+  return mergeTokenObjects(tokens, resolveThemeModeTokens(tokens, themeMode));
+}
+
+const DESIGN_UNIT_TOKEN_PATHS = [
+  ["fonts", "bodySize"],
+  ["fonts", "bodyLineHeight"],
+  ["fonts", "captionSize"],
+  ["layout", "screenGutter"],
+  ["header", "height"],
+  ["header", "separatorWidth"],
+  ["messages", "spacing"],
+  ["messages", "groupSpacing"],
+  ["typography", "message", "fontSize"],
+  ["typography", "message", "lineHeight"],
+  ["typography", "headerTitle", "fontSize"],
+  ["typography", "headerTitle", "lineHeight"],
+  ["typography", "headerSubtitle", "fontSize"],
+  ["typography", "headerSubtitle", "lineHeight"],
+  ["chatBubbles", "paddingX"],
+  ["chatBubbles", "paddingY"],
+  ["chatBubbles", "tail", "width"],
+  ["chatBubbles", "tail", "height"],
+  ["chatBubbles", "shadow", "offsetX"],
+  ["chatBubbles", "shadow", "offsetY"],
+  ["chatBubbles", "shadow", "blur"],
+  ["avatars", "defaultSize"],
+  ["avatars", "headerSize"],
+  ["avatars", "gap"],
+  ["radii", "bubble"],
+  ["cursor", "width"],
+] as const;
+
+function getNestedValue(
+  value: Record<string, unknown>,
+  path: readonly string[],
+): unknown {
+  return path.reduce<unknown>(
+    (current, key) => (isObject(current) ? current[key] : undefined),
+    value,
+  );
+}
+
+function setNestedValue(
+  value: Record<string, unknown>,
+  path: readonly string[],
+  nextValue: unknown,
+): Record<string, unknown> {
+  if (path.length === 0) return value;
+  const [key, ...rest] = path;
+  if (!key) return value;
+  if (rest.length === 0) {
+    return { ...value, [key]: nextValue };
+  }
+  const child = isObject(value[key]) ? value[key] : {};
+  return {
+    ...value,
+    [key]: setNestedValue(child, rest, nextValue),
+  };
+}
+
+function scaleDesignTokensForRender(
+  tokens: Record<string, unknown>,
+  scale: number,
+): Record<string, unknown> {
+  if (scale === 1) return tokens;
+  let scaled = tokens;
+  for (const path of DESIGN_UNIT_TOKEN_PATHS) {
+    const value = getNestedValue(scaled, path);
+    if (typeof value === "number") {
+      scaled = setNestedValue(scaled, path, value * scale);
+    }
+  }
+  return scaled;
+}
+
+function renderScaleFromMetrics(
+  metrics: z.infer<typeof DeviceMetricsSchema>,
+): number {
+  if (metrics.scaleToPixels) {
+    return metrics.scaleToPixels;
+  }
+  if (metrics.designSpace && metrics.renderSize) {
+    return metrics.renderSize.width / metrics.designSpace.width;
+  }
+  return metrics.pixelRatio;
+}
+
+function resolveAppTokens(
+  app: App,
+  themeMode: "light" | "dark",
+): Record<string, unknown> {
+  const config = app.config_json ?? {};
+  const tokens =
+    isObject(config.tokens_json) ? config.tokens_json : config;
   return mergeTokenObjects(tokens, resolveThemeModeTokens(tokens, themeMode));
 }
 
@@ -156,6 +317,7 @@ export interface ResolveChatScreenInput {
   repository: DomainRepository;
   screenInstance: ScreenInstance;
   ownerActor: Actor;
+  app: App;
   device: Device;
   deviceState: DeviceState;
   theme: Theme;
@@ -167,6 +329,7 @@ export function resolveChatScreen({
   repository,
   screenInstance,
   ownerActor,
+  app,
   device,
   deviceState,
   theme,
@@ -238,28 +401,42 @@ export function resolveChatScreen({
     screenInstance.theme_mode ?? themeEnvelope.defaultMode ?? "light";
   const moduleThemeConfig = repository.getModuleThemeConfig(
     theme.id,
+    app.id,
     screenInstance.module_id,
     screenInstance.module_schema_version,
   );
   if (!moduleThemeConfig) {
     throw new Error(
-      `No module theme config for theme ${theme.id}, module ${screenInstance.module_id}, schema ${screenInstance.module_schema_version}`,
+      `No module theme config for theme ${theme.id}, app ${app.id}, module ${screenInstance.module_id}, schema ${screenInstance.module_schema_version}`,
     );
   }
   const globalThemeTokens = resolveGlobalThemeTokens(theme, themeMode);
+  const appTokens = resolveAppTokens(app, themeMode);
   const moduleThemeTokens = resolveModuleThemeTokens(
     moduleThemeConfig.tokens_json,
     themeMode,
   );
+  const genericTokens = mergeTokenObjects(globalThemeTokens, appTokens);
+  const moduleDefaultsFromGenericTokens =
+    moduleTypographyDefaultsFromFonts(genericTokens);
   const inheritedModuleTokens = mergeTokenObjects(
-    globalThemeTokens,
+    mergeTokenObjects(genericTokens, moduleDefaultsFromGenericTokens),
     moduleThemeTokens,
+  );
+  const instanceOverrideTokens = resolveModuleThemeTokens(
+    screenInstance.module_tokens_override_json ?? {},
+    themeMode,
   );
   const mergedThemeTokens = mergeTokenObjects(
     inheritedModuleTokens,
-    screenInstance.module_tokens_override_json ?? {},
+    instanceOverrideTokens,
   );
-  const themeTokens = ChatThemeSchema.parse(mergedThemeTokens);
+  const renderScale = renderScaleFromMetrics(metrics);
+  const scaledThemeTokens = scaleDesignTokensForRender(
+    mergedThemeTokens,
+    renderScale,
+  );
+  const themeTokens = ChatThemeSchema.parse(scaledThemeTokens);
 
   const messages = moduleData.messages.map((message) => {
     const sender = participants.get(message.senderParticipantId);
@@ -278,7 +455,7 @@ export function resolveChatScreen({
       message,
       sender,
       direction,
-      themeTokens: mergedThemeTokens,
+      themeTokens: scaledThemeTokens,
       localFrame,
       fps,
       viewportWidth: metrics.viewport.width,

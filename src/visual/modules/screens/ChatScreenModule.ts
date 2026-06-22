@@ -3,6 +3,7 @@ import {
   type ResolvedChatScreenProps,
 } from "../../../domain/schemas/index.js";
 import {
+  readFontWeight,
   readNumber,
   readObject,
   readString,
@@ -66,10 +67,10 @@ function createMessageBubbleInput(
         "lineHeight",
         readNumber(input.theme.fonts, "bodyLineHeight", 21.25),
       ),
-      fontWeight: readNumber(
+      fontWeight: readFontWeight(
         messageTypography,
         "fontWeight",
-        readNumber(input.theme.fonts, "weightRegular", 400),
+        readFontWeight(input.theme.fonts, "weight", "Regular"),
       ),
       borderRadius: readNumber(chatTokens, "radius", 18),
       paddingX: readNumber(chatTokens, "paddingX", 14),

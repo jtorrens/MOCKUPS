@@ -37,7 +37,7 @@ const ProductionMinimalExampleSchema = z.object({
   production: ProductionSchema,
   theme_refs: z.array(IdSchema).min(1),
   device_refs: z.array(IdSchema).min(1),
-  screen_template_refs: z.array(IdSchema).min(1),
+  app_refs: z.array(IdSchema).min(1),
   episodes: z.array(EpisodeSchema).min(1),
   actors: z.array(ActorSchema).min(1),
   shots: z.array(ShotSchema).min(1),

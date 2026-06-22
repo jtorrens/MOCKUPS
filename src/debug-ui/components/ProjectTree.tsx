@@ -21,14 +21,7 @@ interface ProjectTreeProps {
   ) => void;
 }
 
-const HIERARCHY_TABLE_IDS = new Set([
-  "productions",
-  "episodes",
-  "shots",
-  "screen_instances",
-]);
-
-const APPS_TABLE_IDS = new Set(["apps", "screen_templates"]);
+const APPS_TABLE_IDS = new Set(["apps", "module_theme_configs"]);
 
 const PRODUCTION_DATA_TABLE_IDS = new Set([
   "actors",
@@ -126,6 +119,65 @@ function EmptyPanel({ children }: { children: string }) {
   return <div className="empty-record-list compact-empty">{children}</div>;
 }
 
+function TreeActions({
+  canAdd,
+  busy,
+  onAdd,
+}: {
+  canAdd?: boolean;
+  busy?: boolean;
+  onAdd?: () => void;
+}) {
+  return (
+    <span className="tree-actions">
+      <ActionButton disabled={!canAdd || busy} title="Add" onClick={onAdd}>
+        ＋
+      </ActionButton>
+      <ActionButton disabled title="Duplicate will copy child records in a later pass">
+        ⧉
+      </ActionButton>
+      <ActionButton disabled title="Delete is disabled until cascade policy is confirmed">
+        ⌫
+      </ActionButton>
+    </span>
+  );
+}
+
+function TreeButton({
+  tableId,
+  recordId,
+  activeTableId,
+  selectedRecordIds,
+  title,
+  meta,
+  onClick,
+}: {
+  tableId: string;
+  recordId: string;
+  activeTableId: string;
+  selectedRecordIds: Record<string, string>;
+  title: string;
+  meta?: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      data-testid={`record-${recordId}`}
+      className={recordButtonClass(
+        tableId,
+        recordId,
+        activeTableId,
+        selectedRecordIds,
+      )}
+      onClick={onClick}
+    >
+      <strong>{title}</strong>
+      {meta ? <small>{meta}</small> : null}
+    </button>
+  );
+}
+
 function recordButtonClass(
   tableId: string,
   recordId: string,
@@ -180,6 +232,8 @@ export function ProjectTree({
   const dataTables = tables.filter((table) =>
     PRODUCTION_DATA_TABLE_IDS.has(table.id),
   );
+  const appRecords = recordsForSelectedProduction("apps");
+  const moduleConfigRecords = recordsForSelectedProduction("module_theme_configs");
 
   function recordsForSelectedProduction(tableId: string) {
     return (records[tableId] ?? []).filter(
@@ -220,6 +274,183 @@ export function ProjectTree({
     );
   }
 
+  function screenTitle(instance: DebugOptions["screenInstances"][number]) {
+    return instance.moduleId?.replace(/^core\./, "") ?? instance.screenType;
+  }
+
+  function renderProjectTree() {
+    if (!selectedProductionId) {
+      return <EmptyPanel>Select a production first.</EmptyPanel>;
+    }
+    return (
+      <div className="project-tree-view">
+        <div className="tree-toolbar">
+          <span>Episodes</span>
+          <TreeActions
+            canAdd={Boolean(selectedProductionId)}
+            busy={busyAction}
+            onAdd={() =>
+              onCreateRecord("episodes", { productionId: selectedProductionId })
+            }
+          />
+        </div>
+        {productionEpisodes.length === 0 ? (
+          <EmptyPanel>No episodes yet.</EmptyPanel>
+        ) : (
+          productionEpisodes.map((episode) => {
+            const shots = options.shots.filter(
+              (shot) => shot.episodeId === episode.id,
+            );
+            return (
+              <details key={episode.id} className="tree-node" open>
+                <summary>
+                  <TreeButton
+                    tableId="episodes"
+                    recordId={episode.id}
+                    activeTableId={activeTableId}
+                    selectedRecordIds={selectedRecordIds}
+                    title={episode.name}
+                    meta={`${shots.length} shot${shots.length === 1 ? "" : "s"}`}
+                    onClick={() => select("episodes", episode.id)}
+                  />
+                  <TreeActions
+                    canAdd
+                    busy={busyAction}
+                    onAdd={() => onCreateRecord("shots", { episodeId: episode.id })}
+                  />
+                </summary>
+                <div className="tree-children">
+                  {shots.length === 0 ? (
+                    <EmptyPanel>No shots yet.</EmptyPanel>
+                  ) : (
+                    shots.map((shot) => {
+                      const screens = options.screenInstances.filter(
+                        (instance) => instance.shotId === shot.id,
+                      );
+                      return (
+                        <details key={shot.id} className="tree-node" open>
+                          <summary>
+                            <TreeButton
+                              tableId="shots"
+                              recordId={shot.id}
+                              activeTableId={activeTableId}
+                              selectedRecordIds={selectedRecordIds}
+                              title={shot.name}
+                              meta={`${shot.durationFrames}f · ${screens.length} screen${screens.length === 1 ? "" : "s"}`}
+                              onClick={() => select("shots", shot.id)}
+                            />
+                            <TreeActions />
+                          </summary>
+                          <div className="tree-children">
+                            {screens.length === 0 ? (
+                              <EmptyPanel>No screens yet.</EmptyPanel>
+                            ) : (
+                              screens.map((instance) => (
+                                <div key={instance.id} className="tree-leaf-with-children">
+                                  <TreeButton
+                                    tableId="screen_instances"
+                                    recordId={instance.id}
+                                    activeTableId={activeTableId}
+                                    selectedRecordIds={selectedRecordIds}
+                                    title={screenTitle(instance)}
+                                    meta={`${instance.startFrame}–${instance.endFrame}f`}
+                                    onClick={() => select("screen_instances", instance.id)}
+                                  />
+                                  {tablesById.get("module_theme_configs") ? (
+                                    <div className="tree-children compact">
+                                      {moduleConfigRecords
+                                        .filter(
+                                          (config) =>
+                                            config.app_id === instance.appId &&
+                                            config.module_id === instance.moduleId,
+                                        )
+                                        .map((config) => (
+                                          <TreeButton
+                                            key={config.id}
+                                            tableId="module_theme_configs"
+                                            recordId={config.id}
+                                            activeTableId={activeTableId}
+                                            selectedRecordIds={selectedRecordIds}
+                                            title={String(config.name ?? "Module config")}
+                                            meta="Module theme"
+                                            onClick={() =>
+                                              select("module_theme_configs", config.id)
+                                            }
+                                          />
+                                        ))}
+                                    </div>
+                                  ) : null}
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </details>
+                      );
+                    })
+                  )}
+                </div>
+              </details>
+            );
+          })
+        )}
+      </div>
+    );
+  }
+
+  function renderAppsTree() {
+    return (
+      <div className="project-tree-view">
+        <div className="tree-toolbar">
+          <span>Apps / Modules</span>
+          <TreeActions />
+        </div>
+        {appRecords.length === 0 ? (
+          <EmptyPanel>No apps yet.</EmptyPanel>
+        ) : (
+          appRecords.map((app) => {
+            const configs = moduleConfigRecords.filter(
+              (config) => config.app_id === app.id,
+            );
+            return (
+              <details key={app.id} className="tree-node" open>
+                <summary>
+                  <TreeButton
+                    tableId="apps"
+                    recordId={app.id}
+                    activeTableId={activeTableId}
+                    selectedRecordIds={selectedRecordIds}
+                    title={String(app.name ?? app.id)}
+                    meta={String(app.app_type ?? "app")}
+                    onClick={() => select("apps", app.id)}
+                  />
+                  <TreeActions />
+                </summary>
+                <div className="tree-children">
+                  {configs.length === 0 ? (
+                    <EmptyPanel>No module configs yet.</EmptyPanel>
+                  ) : (
+                    configs.map((config) => (
+                      <TreeButton
+                        key={config.id}
+                        tableId="module_theme_configs"
+                        recordId={config.id}
+                        activeTableId={activeTableId}
+                        selectedRecordIds={selectedRecordIds}
+                        title={String(config.name ?? "Module config")}
+                        meta={String(config.module_id ?? "module")}
+                        onClick={() => select("module_theme_configs", config.id)}
+                      />
+                    ))
+                  )}
+                </div>
+              </details>
+            );
+          })
+        )}
+      </div>
+    );
+  }
+
   return (
     <section className="panel project-browser">
       <div className="workspace-tabs" role="tablist" aria-label="Workspace">
@@ -250,142 +481,9 @@ export function ProjectTree({
       </div>
 
       {browserTab === "project" ? (
-        <div className="hierarchy-browser">
-          <BrowserPanel
-            title="Episodes"
-            subtitle="Selected production"
-            count={productionEpisodes.length}
-            canAdd={Boolean(selectedProductionId)}
-            busy={busyAction}
-            onAdd={() =>
-              onCreateRecord("episodes", { productionId: selectedProductionId })
-            }
-          >
-            {selectedProductionId ? (
-              <div className="hierarchy-list">
-                {productionEpisodes.map((episode) => (
-                  <button
-                    key={episode.id}
-                    type="button"
-                    data-testid={`record-${episode.id}`}
-                    className={recordButtonClass(
-                      "episodes",
-                      episode.id,
-                      activeTableId,
-                      selectedRecordIds,
-                    )}
-                    onClick={() => select("episodes", episode.id)}
-                  >
-                    <strong>{episode.name}</strong>
-                    <small>{episode.id}</small>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <EmptyPanel>Select a production first.</EmptyPanel>
-            )}
-          </BrowserPanel>
-
-          <BrowserPanel
-            title="Shots"
-            subtitle="Selected episode"
-            count={episodeShots.length}
-            canAdd={Boolean(selectedEpisodeId)}
-            busy={busyAction}
-            onAdd={() => onCreateRecord("shots", { episodeId: selectedEpisodeId })}
-          >
-            {selectedEpisodeId ? (
-              <div className="hierarchy-list">
-                {episodeShots.map((shot) => (
-                  <button
-                    key={shot.id}
-                    type="button"
-                    data-testid={`record-${shot.id}`}
-                    className={recordButtonClass(
-                      "shots",
-                      shot.id,
-                      activeTableId,
-                      selectedRecordIds,
-                    )}
-                    onClick={() => select("shots", shot.id)}
-                  >
-                    <strong>{shot.name}</strong>
-                    <small>
-                      {shot.durationFrames}f · {shot.fps}fps
-                    </small>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <EmptyPanel>Select an episode first.</EmptyPanel>
-            )}
-          </BrowserPanel>
-
-          <BrowserPanel
-            title="Screens"
-            subtitle="Selected shot"
-            count={shotInstances.length}
-            canAdd={false}
-          >
-            {selectedShotId ? (
-              <div className="hierarchy-list">
-                {shotInstances.map((instance) => (
-                  <button
-                    key={instance.id}
-                    type="button"
-                    data-testid={`record-${instance.id}`}
-                    className={recordButtonClass(
-                      "screen_instances",
-                      instance.id,
-                      activeTableId,
-                      selectedRecordIds,
-                    )}
-                    onClick={() => select("screen_instances", instance.id)}
-                  >
-                    <strong>{instance.screenType}</strong>
-                    <small>{instance.moduleId ?? "legacy"}</small>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <EmptyPanel>Select a shot first.</EmptyPanel>
-            )}
-          </BrowserPanel>
-
-          <BrowserPanel
-            title="Module Theme Configs"
-            subtitle="Selected screen module"
-            count={moduleThemeConfigRecords.length}
-            canAdd={false}
-          >
-            {selectedScreenId ? (
-              tablesById.get("module_theme_configs") ? (
-                renderRecordButtons(
-                  tablesById.get("module_theme_configs")!,
-                  moduleThemeConfigRecords,
-                )
-              ) : null
-            ) : (
-              <EmptyPanel>Select a screen first.</EmptyPanel>
-            )}
-          </BrowserPanel>
-        </div>
+        renderProjectTree()
       ) : browserTab === "apps" ? (
-        <div className="library-browser">
-          <div className="hierarchy-browser two-column-browser">
-            {appsTables.map((table) => (
-              <BrowserPanel
-                key={table.id}
-                title={table.label}
-                subtitle="Selected production"
-                count={recordsForSelectedProduction(table.id).length}
-                canAdd={false}
-              >
-                {renderRecordButtons(table, recordsForSelectedProduction(table.id))}
-              </BrowserPanel>
-            ))}
-          </div>
-        </div>
+        renderAppsTree()
       ) : (
         <div className="library-browser">
           <div className="resource-table-list" role="tablist">

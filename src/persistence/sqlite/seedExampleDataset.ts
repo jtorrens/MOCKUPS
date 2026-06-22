@@ -14,14 +14,13 @@ const DELETE_ORDER = [
   "conversations",
   "shots",
   "episodes",
-  "screen_templates",
   "render_presets",
   "animation_presets",
+  "module_theme_configs",
   "apps",
   "actors",
   "device_states",
   "devices",
-  "module_theme_configs",
   "themes",
   "media_assets",
   "productions",
@@ -108,22 +107,6 @@ function seedRecords(
   );
   insertRows(
     database,
-    "module_theme_configs",
-    [
-      "id",
-      "production_id",
-      "theme_id",
-      "module_id",
-      "module_schema_version",
-      "name",
-      "tokens_json",
-      "metadata_json",
-    ],
-    dataset.moduleThemeConfigs,
-    new Set(["tokens_json", "metadata_json"]),
-  );
-  insertRows(
-    database,
     "devices",
     [
       "id",
@@ -179,6 +162,23 @@ function seedRecords(
   );
   insertRows(
     database,
+    "module_theme_configs",
+    [
+      "id",
+      "production_id",
+      "theme_id",
+      "app_id",
+      "module_id",
+      "module_schema_version",
+      "name",
+      "tokens_json",
+      "metadata_json",
+    ],
+    dataset.moduleThemeConfigs,
+    new Set(["tokens_json", "metadata_json"]),
+  );
+  insertRows(
+    database,
     "animation_presets",
     [
       "id",
@@ -216,22 +216,6 @@ function seedRecords(
     ],
     dataset.shots,
     new Set(["canvas_json", "metadata_json"]),
-  );
-  insertRows(
-    database,
-    "screen_templates",
-    [
-      "id",
-      "production_id",
-      "name",
-      "screen_type",
-      "module_key",
-      "version",
-      "default_props_json",
-      "config_json",
-    ],
-    dataset.screenTemplates,
-    new Set(["default_props_json", "config_json"]),
   );
   insertRows(
     database,
@@ -312,7 +296,7 @@ function seedRecords(
     [
       "id",
       "shot_id",
-      "screen_template_id",
+      "app_id",
       "screen_type",
       "module_id",
       "module_schema_version",

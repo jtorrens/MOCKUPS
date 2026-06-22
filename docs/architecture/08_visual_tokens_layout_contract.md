@@ -7,7 +7,8 @@ This contract assigns every visual/layout value to one canonical source. Resolve
 | Canonical source | Owns | Must not own |
 | --- | --- | --- |
 | `theme.tokens_json` | Reusable global visual language, mode variants, typography/font selection, base colors/surfaces/accent, shared status bar defaults, broad spacing/radius/shadow scales | Device geometry, live device state, shot timing, narrative content, module-internal component design |
-| `module_theme_configs.tokens_json` | Module-specific defaults for one theme + module + schema version, such as Chat bubble geometry, message spacing, Chat typography, header defaults, cursor behavior, and module-specific colors | Shot content, device geometry, live state, or one-off screen instance exceptions |
+| `apps.config_json.tokens_json` | Reusable app-level defaults such as generic app typography, wallpaper roles, app icon references, shared surfaces, inherited color overrides using the same token path, and genuinely new app color roles such as navigation background | Shot content, module-specific roles such as Chat message/header tokens, duplicated inherited roles such as `appBackground` / `appAccent`, module-specific internals, device geometry, or per-instance exceptions |
+| `module_theme_configs.tokens_json` | Module-specific defaults for one theme + app + module + schema version, such as Chat bubble geometry, message spacing, Chat typography, header defaults, cursor behavior, and module-specific mode colors | Shot content, device geometry, live state, or one-off screen instance exceptions |
 | `device.metrics_json` | Logical design space, internal pixel render size, geometry, and scale mapping | Actor content, component styling, external plate placement |
 | `device_states.state_json` | Live status values displayed by the device | Base geometry or reusable style |
 | `screen_instance.module_config_json` | Module-owned behavior/visibility for one screen instance | Shot content, canonical theme values, or device geometry |
@@ -19,24 +20,32 @@ This contract assigns every visual/layout value to one canonical source. Resolve
 
 Reusable global visual values belong in `theme.tokens_json`:
 
-- `fonts`: families, sizes, weights, and line heights.
+- `fonts`: installed family, text sizes, line heights, and one generic named
+  `weight` variant.
 - `colors`: screen and text colors.
 - `statusBar`: foreground/background and icon scale.
 - `notifications`: background, blur, radius, and related component defaults.
 
-Tokens use logical design-space units. Ratio values such as `maxWidthRatio` use the inclusive range `0..1`. A theme is reusable across shots and actors.
+Tokens use logical design-space units unless explicitly documented otherwise. Ratio values such as `maxWidthRatio` use the inclusive range `0..1`. A theme is reusable across shots and actors.
 
-A theme may define base tokens, `modes.light`, `modes.dark`, and `defaultMode`. It also stores the selected installed font family/style/weight. Resolution order is:
+A theme may define base tokens, `modes.light`, `modes.dark`, and `defaultMode`. It also stores the selected installed font family and a generic named weight variant. Resolution order is:
 
 ```text
 theme base tokens
   → theme modes[selected theme_mode]
+  → app base tokens
+  → app modes[selected theme_mode]
+  → module theme config base tokens
+  → module theme config modes[selected theme_mode]
   → screen_instance.module_tokens_override_json
+  → screen instance modes[selected theme_mode]
 ```
 
-The future theme editor selects these installed fonts through a font picker. There is no production font whitelist/table; the project assumes selected fonts are installed on the render machines.
+The theme editor selects installed font families through a font picker. Weight fields are named variants exposed by the selected family, for example `Regular`, `Semibold`, or the closest family-specific equivalent. If a family changes and a previous variant no longer exists, the editor falls back to the first available variant. There is no production font whitelist/table; the project assumes selected fonts are installed on the render machines.
 
-Module-specific values belong in `module_theme_configs.tokens_json`. For Chat, this includes message list gutter, header height/background/separator, message spacing/grouping distances, message/header typography, bubble colors/padding/radius/tails/shadows, avatar sizes/gaps, cursor behavior, and future chat media defaults.
+Mode-aware color values may exist in Theme, App, Module, and sparse Screen Instance overrides. The editor should keep both light and dark columns available at authoring time; the resolver collapses to one mode only for preview/render. Module-specific values belong in `module_theme_configs.tokens_json`. For Chat, this includes message list gutter, header height/background/separator, message spacing/grouping distances, message/header typography, bubble colors/padding/radius/tails/shadows, avatar sizes/gaps, cursor behavior, and future chat media defaults.
+
+Before a module receives renderable props, the resolver scales design-unit token values to the selected device render space using `device.metrics_json.scaleToPixels`, or the render/design width ratio when needed. For the seeded iPhone fixture, 430 logical points render at 1290 pixels, so a Chat message `fontSize` of `17` resolves to `51px`. Numeric values that are not design units, such as `maxWidthRatio` and frame counts, are not scaled. Font weight variants are named font-face selections and are not scaled.
 
 ## Device metrics and state
 
@@ -53,9 +62,12 @@ Known values are normalized to camelCase by resolvers. Precedence is:
 ```text
 theme base tokens
   → selected theme mode tokens
+  → app base tokens
+  → selected app mode tokens
   → module theme config base tokens
   → selected module theme config mode tokens
   → screen_instance.module_tokens_override_json
+  → selected screen instance override mode tokens
 ```
 
 Device metrics and live device state remain separate inputs and are not replaced by theme tokens.

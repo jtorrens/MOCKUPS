@@ -11,7 +11,7 @@ const MessageThemeSchema = z.object({
     family: z.string().min(1),
     bodySize: z.number().positive(),
     bodyLineHeight: z.number().positive(),
-    weightRegular: z.number().positive().optional(),
+    weight: z.union([z.string().min(1), z.number().positive()]).optional(),
   }),
   typography: z
     .object({
@@ -20,7 +20,7 @@ const MessageThemeSchema = z.object({
           fontFamily: z.string().min(1).optional(),
           fontSize: z.number().positive().optional(),
           lineHeight: z.number().positive().optional(),
-          fontWeight: z.number().positive().optional(),
+          fontWeight: z.union([z.string().min(1), z.number().positive()]).optional(),
         })
         .optional(),
     })
@@ -140,7 +140,7 @@ export function resolveMessageBubble({
       lineHeight:
         messageTypography?.lineHeight ?? themeTokens.fonts.bodyLineHeight,
       fontWeight:
-        messageTypography?.fontWeight ?? themeTokens.fonts.weightRegular ?? 400,
+        messageTypography?.fontWeight ?? themeTokens.fonts.weight ?? "Regular",
       borderRadius: themeTokens.radii.bubble,
       paddingX: themeTokens.chatBubbles.paddingX,
       paddingY: themeTokens.chatBubbles.paddingY,

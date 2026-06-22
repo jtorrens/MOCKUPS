@@ -143,7 +143,7 @@ export const ResolvedMessageBubblePropsSchema = z.object({
     fontFamily: z.string().min(1),
     fontSize: z.number().positive(),
     lineHeight: z.number().positive(),
-    fontWeight: z.number().positive().optional(),
+    fontWeight: z.union([z.string().min(1), z.number().positive()]).optional(),
     borderRadius: z.number().min(0),
     paddingX: z.number().min(0),
     paddingY: z.number().min(0),

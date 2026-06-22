@@ -70,7 +70,7 @@ const bubbleNodes =
 const receivedBubble = bubbleNodes.find((child) => child.role === "incoming");
 const sentBubble = bubbleNodes.find((child) => child.role === "outgoing");
 const layoutMetadata = tree.metadata?.layout;
-assert(headerNode?.box?.height === 96, "Header must use the resolved height token");
+assert(headerNode?.box?.height === 288, "Header must use the scaled height token");
 assert(tree.box, "ChatScreen root must have a box");
 assert(statusNode?.box, "StatusBar must have a box");
 assert(headerNode?.box, "ChatHeader must have a box");
@@ -122,16 +122,16 @@ const messageTextNodes = collectNodes(tree).filter(
   (node) => node.role === "message_text",
 );
 assert(
-  messageTextNodes.every((node) => node.style?.fontWeight === 400),
+  messageTextNodes.every((node) => node.style?.fontWeight === "Regular"),
   "Message text nodes must receive Chat typography font weight",
 );
 const headerTitleNode = collectNodes(tree).find(
   (node) => node.id === "chat_header:title",
 );
 assert(
-  headerTitleNode?.style?.fontSize === 17 &&
-    headerTitleNode.style.fontWeight === 600,
-  "Chat header title must receive Chat typography tokens",
+  headerTitleNode?.style?.fontSize === 51 &&
+    headerTitleNode.style.fontWeight === "Semibold",
+  "Chat header title must receive scaled Chat typography tokens",
 );
 const statusIndicators = statusNode?.children?.find(
   (child) => child.type === "status_indicators",

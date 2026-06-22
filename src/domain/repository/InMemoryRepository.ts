@@ -9,7 +9,6 @@ import type {
   ModuleThemeConfig,
   Notification,
   Production,
-  ScreenTemplate,
   Shot,
   Theme,
 } from "../schemas/index.js";
@@ -24,7 +23,6 @@ export class InMemoryRepository implements DomainRepository {
   readonly #productions: Map<string, Production>;
   readonly #episodes: Map<string, Episode>;
   readonly #shots: Map<string, Shot>;
-  readonly #screenTemplates: Map<string, ScreenTemplate>;
   readonly #themes: Map<string, Theme>;
   readonly #moduleThemeConfigs: Map<string, ModuleThemeConfig>;
   readonly #devices: Map<string, Device>;
@@ -40,7 +38,6 @@ export class InMemoryRepository implements DomainRepository {
     this.#productions = indexById(dataset.productions);
     this.#episodes = indexById(dataset.episodes);
     this.#shots = indexById(dataset.shots);
-    this.#screenTemplates = indexById(dataset.screenTemplates);
     this.#themes = indexById(dataset.themes);
     this.#moduleThemeConfigs = indexById(dataset.moduleThemeConfigs);
     this.#devices = indexById(dataset.devices);
@@ -72,22 +69,20 @@ export class InMemoryRepository implements DomainRepository {
       .sort((a, b) => a.start_frame - b.start_frame);
   }
 
-  getScreenTemplate(id: string) {
-    return this.#screenTemplates.get(id);
-  }
-
   getTheme(id: string) {
     return this.#themes.get(id);
   }
 
   getModuleThemeConfig(
     themeId: string,
+    appId: string,
     moduleId: string,
     moduleSchemaVersion: number,
   ) {
     return [...this.#moduleThemeConfigs.values()].find(
       (config) =>
         config.theme_id === themeId &&
+        config.app_id === appId &&
         config.module_id === moduleId &&
         config.module_schema_version === moduleSchemaVersion,
     );
