@@ -53,9 +53,50 @@ export function AppPreviewPanel({
   const screenInstances = options.screenInstances.filter(
     (instance) => instance.shotId === selection.shotId,
   );
+  const selectedInstance = options.screenInstances.find(
+    (instance) => instance.id === selection.screenInstanceId,
+  );
+  const previewTitle =
+    selectedInstance?.moduleId?.replace(/^core\./, "") ??
+    selectedInstance?.screenType ??
+    "Preview";
 
   return (
     <aside className="right-preview-shell">
+      <section className="preview-header-card">
+        <div>
+          <h2>Preview</h2>
+          <p>
+            {previewTitle}
+            {selectedInstance?.moduleId ? ` · ${selectedInstance.moduleId}` : ""}
+          </p>
+        </div>
+        <select
+          aria-label="Preview screen"
+          value={selection.screenInstanceId}
+          onChange={(event) => {
+            const instance = screenInstances.find(
+              (candidate) => candidate.id === event.target.value,
+            );
+            if (instance) {
+              onSelectionChange({
+                ...selection,
+                screenInstanceId: instance.id,
+                frame: Math.max(
+                  instance.startFrame,
+                  Math.min(selection.frame, instance.endFrame - 1),
+                ),
+              });
+            }
+          }}
+        >
+          {screenInstances.map((instance) => (
+            <option key={instance.id} value={instance.id}>
+              {instance.moduleId?.replace(/^core\./, "") ?? instance.screenType}
+            </option>
+          ))}
+        </select>
+      </section>
       <section className="panel preview-context">
         <div className="panel-heading">
           <div>
@@ -189,11 +230,11 @@ export function AppPreviewPanel({
                 type="range"
                 min={0}
                 max={Math.max(0, (selectedShot?.durationFrames ?? 1) - 1)}
-                value={selection.frame}
-                onChange={(event) =>
-                  onSelectionChange({
-                    ...selection,
-                    frame: Number(event.target.value),
+              value={selection.frame}
+              onChange={(event) =>
+                onSelectionChange({
+                  ...selection,
+                  frame: Number(event.target.value),
                   })
                 }
               />

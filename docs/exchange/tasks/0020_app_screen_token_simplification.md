@@ -360,3 +360,86 @@ If any command fails because fixtures intentionally changed, update fixtures/con
 - Duplication policy is documented but not implemented.
 - Existing preview still works after resetting/reseeding the design-stage database.
 - Documentation and response file are updated.
+
+## Implementation status / UI handoff — 2026-06-22
+
+This phase was implemented as a breaking design-stage pass and then iterated through the local app shell UI.
+
+### Architecture/model state
+
+- The active inheritance direction is Theme → App → Screen/Module → Screen Instance.
+- `Screen Template` is removed from the active authoring model.
+- `Screen Preset` was not introduced.
+- `apps.config_json.tokens_json` is the App-level reusable token/default layer.
+- `module_theme_configs.tokens_json` is the Screen/Module reusable token/default layer, scoped by app/module/theme/schema.
+- `screen_instances.module_tokens_override_json` remains the sparse local visual exception layer.
+- Mode-aware colors are kept as reusable light/dark values until preview/render resolves one mode.
+- Authored numeric design tokens stay in logical design units and are scaled through device metrics at render/preview resolution.
+
+### App-shell UI state
+
+- The UI now follows an inspector-first / Figma-collections-like direction.
+- The left workspace no longer mixes top tabs with trees. `Project`, `Apps`, and `Production data` are accordion cards with their trees inside.
+- The central editor uses accordion cards instead of permanently stacked panels.
+- Token/design subgroups use compact accordion cards with logical icons and friendly labels.
+- Color roles are centralized into `Colors` sections where possible and grouped by concept.
+- Redundant table-style headers such as `Property / Override` were removed where the context is already obvious.
+- Panel backgrounds and borders were softened toward a light inspector UI; preview remains in the right pane.
+
+### Module content editor
+
+The screen-instance editor now labels shot-specific module payloads as `Module Content`.
+
+Important nuance:
+
+```text
+Current storage:
+  screen_instances.module_data_json
+
+Conceptual ownership:
+  module instance content for the module attached to that screen instance
+```
+
+This is not App-level data. If the project later introduces an explicit `module_instances` table, this content editor should move there conceptually; for this phase it remains stored on `screen_instances`.
+
+For `core.chat@1`:
+
+- `participants` render as structured content cards, not raw JSON.
+- `messages` render as structured content cards, not raw JSON.
+- collapsed participants summarize display name, role, and linked actor where available;
+- collapsed messages summarize sender, message kind, text/media summary, and frame timing;
+- row controls allow add, duplicate, delete, and move for array-like content;
+- fields use module editor hints for friendly labels and widgets such as textarea/select.
+
+### Editor behavior fixes from this phase
+
+- JSON strings that contain serialized JSON are unwrapped before structured rendering where safe.
+- Root JSON arrays can be edited when a grouped editor is editing a module-data group such as `messages`.
+- Group-context hints are applied to nested paths, so editing `messages[].text` still resolves the `messages.[].text` hint even when only the `messages` array is mounted.
+- Content inputs/selects/textareas were restyled so editable fields do not look disabled.
+- Collapsed content row summaries were restored after the accordion UI pass.
+
+### Validation performed
+
+The following checks were run repeatedly during the phase:
+
+```text
+npm run typecheck
+npm run debug:build
+npm run debug:check
+git diff --check
+```
+
+Broader validation should still be run before treating this as a release checkpoint:
+
+```text
+npm test
+npm run validate:examples
+npm run validate:resolver
+npm run validate:visual
+npm run validate:sqlite
+npm run app:check
+npm run app:build
+npm run remotion:check
+npm run electron:check
+```

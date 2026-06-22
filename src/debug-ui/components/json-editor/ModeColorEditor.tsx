@@ -30,6 +30,18 @@ interface ColorRole {
   inheritedDarkValue?: string;
 }
 
+function groupIcon(label: string): string {
+  const normalized = label.toLowerCase();
+  if (normalized.includes("app")) return "▣";
+  if (normalized.includes("header") || normalized.includes("navigation")) return "▤";
+  if (normalized.includes("chat") || normalized.includes("bubble")) return "☰";
+  if (normalized.includes("status")) return "▥";
+  if (normalized.includes("cursor")) return "⌁";
+  if (normalized.includes("text") || normalized.includes("typography")) return "T";
+  if (normalized.includes("surface") || normalized.includes("background")) return "▧";
+  return "◐";
+}
+
 function isHexColor(value: unknown): value is string {
   return typeof value === "string" && /^#[0-9a-fA-F]{6}$/.test(value);
 }
@@ -210,16 +222,14 @@ export function ModeColorEditor({
 
   return (
     <div className="mode-color-editor">
-      <div className="mode-color-row mode-color-header">
-        <strong>Property</strong>
-        <code>Token</code>
-        <span>Light</span>
-        <span>Dark</span>
-        <span />
-      </div>
       {colorGroups.map((group) => (
         <section key={group.group} className="mode-color-group">
-          <h4>{group.label}</h4>
+          <h4>
+            <span className="editor-group-icon" aria-hidden="true">
+              {groupIcon(group.label)}
+            </span>
+            {group.label}
+          </h4>
           {group.paths.map((rolePath) => {
             const key = pathLabel(rolePath);
             const hasOverride = hasRoleOverride(rolePath);
@@ -256,36 +266,37 @@ export function ModeColorEditor({
                     mode === "light"
                       ? role.inheritedLightValue
                       : role.inheritedDarkValue;
+                  const displayValue = value || inherited || "";
+                  const canPickColor = isHexColor(displayValue);
                   return (
                     <span
                       key={mode}
                       className="json-color-pair token-color-pair"
                     >
-                      <input
-                        aria-label={`${key} ${mode} color picker`}
-                        type="color"
-                        value={
-                          isHexColor(value)
-                            ? value
-                            : isHexColor(inherited)
-                              ? inherited
-                              : "#000000"
-                        }
-                        onChange={(event) =>
-                          updateColor(mode, role.rolePath, event.target.value)
-                        }
-                      />
-                      <input
-                        aria-label={`${key} ${mode} value`}
-                        type="text"
-                        placeholder={
-                          inherited ? `Inherit ${inherited}` : "Inherit"
-                        }
-                        value={value}
-                        onChange={(event) =>
-                          updateColor(mode, role.rolePath, event.target.value)
-                        }
-                      />
+                      {canPickColor ? (
+                        <>
+                          <input
+                            aria-label={`${key} ${mode} color picker`}
+                            type="color"
+                            value={displayValue}
+                            onChange={(event) =>
+                              updateColor(mode, role.rolePath, event.target.value)
+                            }
+                          />
+                        </>
+                      ) : (
+                        <input
+                          aria-label={`${key} ${mode} value`}
+                          type="text"
+                          placeholder={
+                            inherited ? `Inherit ${inherited}` : "Inherit"
+                          }
+                          value={value}
+                          onChange={(event) =>
+                            updateColor(mode, role.rolePath, event.target.value)
+                          }
+                        />
+                      )}
                     </span>
                   );
                 })}
@@ -295,8 +306,8 @@ export function ModeColorEditor({
                     className="restore-button"
                     onClick={() => restoreRole(role.rolePath)}
                   >
-                    Restore
-                  </button>
+                  ↺
+                </button>
                 ) : (
                   <span />
                 )}

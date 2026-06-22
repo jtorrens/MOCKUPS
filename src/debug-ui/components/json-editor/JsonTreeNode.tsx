@@ -93,7 +93,8 @@ function displayLabel(
 ): string {
   if (typeof path[path.length - 1] === "number") return fallbackLabel;
   return compactLabelForGroup(
-    hintForPath(hints, path, value).label ?? humanizeKey(fallbackLabel),
+    hintForPath(hints, path, value, groupContext).label ??
+      humanizeKey(fallbackLabel),
     groupFromPathSegment(path[0]) ?? groupContext,
   );
 }
@@ -116,7 +117,7 @@ export function JsonTreeNode({
   const inheritedValue = hasInherited ? getAtPath(inheritedRoot!, path) : null;
   const isOverride =
     path.length > 0 && hasInherited && !deepEqualJson(value, inheritedValue);
-  const hint = hintForPath(hints, path, value);
+  const hint = hintForPath(hints, path, value, groupContext);
   const visibleLabel = displayLabel(hints, path, label, value, groupContext);
   const visibleSummary = collapsedSummary(value, hint);
 

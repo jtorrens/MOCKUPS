@@ -131,9 +131,16 @@ export function hintForPath(
   hints: JsonUiHints,
   path: JsonPath,
   value: JsonValue,
+  groupContext?: string,
 ): JsonUiHint {
   const normalized = normalizedHintPath(path);
-  const exact = hints[normalized] ?? hints[String(path[path.length - 1] ?? "")];
+  const contextNormalized = groupContext
+    ? `${groupContext}.${normalized}`
+    : normalized;
+  const exact =
+    hints[contextNormalized] ??
+    hints[normalized] ??
+    hints[String(path[path.length - 1] ?? "")];
   if (exact) return exact;
 
   const key = String(path[path.length - 1] ?? "");

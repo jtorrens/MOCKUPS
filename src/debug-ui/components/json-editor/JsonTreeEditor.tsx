@@ -5,12 +5,15 @@ import type {
   AppTableDefinition,
 } from "../../api/client.js";
 import { JsonTreeNode } from "./JsonTreeNode.js";
+import { JsonArrayEditor } from "./JsonArrayEditor.js";
+import { JsonObjectEditor } from "./JsonObjectEditor.js";
 import { RawJsonEditor } from "./RawJsonEditor.js";
 import { TokenOverrideEditor } from "./TokenOverrideEditor.js";
 import { buildJsonUiHints } from "./uiHints.js";
 import {
   isJsonObject,
   parseJsonObject,
+  parseJsonValue,
   stringifyJson,
   type JsonValue,
 } from "./jsonEditorUtils.js";
@@ -46,7 +49,10 @@ export function JsonTreeEditor({
   allowArrayStructuralEdits = false,
   onRawTextChange,
 }: JsonTreeEditorProps) {
-  const parsed = useMemo(() => parseJsonObject(rawText), [rawText]);
+  const parsed = useMemo(
+    () => (groupContext ? parseJsonValue(rawText) : parseJsonObject(rawText)),
+    [groupContext, rawText],
+  );
   const hints = useMemo(
     () => buildJsonUiHints(table, field, record),
     [field, record, table],
@@ -128,13 +134,46 @@ export function JsonTreeEditor({
           restoreMode={restoreStrategy}
           onRootChange={setTreeValue}
         />
+      ) : groupContext && Array.isArray(parsed.value) ? (
+        <div
+          className="json-tree json-tree-inline-root json-tree-array-root"
+          aria-label={`${field.label} tree editor`}
+        >
+          <JsonArrayEditor
+            rootValue={parsed.value}
+            inheritedRoot={inheritedValue as JsonValue | undefined}
+            path={[]}
+            value={parsed.value}
+            hints={hints}
+            restoreStrategy={restoreStrategy}
+            allowObjectStructuralEdits={allowObjectStructuralEdits}
+            allowArrayStructuralEdits={allowArrayStructuralEdits}
+            groupContext={groupContext}
+            onRootChange={setTreeValue}
+          />
+        </div>
+      ) : groupContext && isJsonObject(parsed.value) ? (
+        <div className="json-tree json-tree-inline-root" aria-label={`${field.label} tree editor`}>
+          <JsonObjectEditor
+            rootValue={parsed.value}
+            inheritedRoot={inheritedValue as JsonValue | undefined}
+            path={[]}
+            value={parsed.value}
+            hints={hints}
+            restoreStrategy={restoreStrategy}
+            allowObjectStructuralEdits={allowObjectStructuralEdits}
+            allowArrayStructuralEdits={allowArrayStructuralEdits}
+            groupContext={groupContext}
+            onRootChange={setTreeValue}
+          />
+        </div>
       ) : (
         <div className="json-tree" aria-label={`${field.label} tree editor`}>
           <JsonTreeNode
             rootValue={parsed.value}
             inheritedRoot={inheritedValue as JsonValue | undefined}
             path={[]}
-            label={field.label}
+            label={groupContext ?? field.label}
             value={parsed.value}
             hints={hints}
             restoreStrategy={restoreStrategy}

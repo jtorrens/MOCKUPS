@@ -17,13 +17,27 @@ export function isJsonObject(
 export function parseJsonObject(
   raw: string,
 ): { ok: true; value: JsonValue } | { ok: false; error: string } {
+  const parsed = parseJsonValue(raw);
+  if (!parsed.ok) return parsed;
+  if (!isJsonObject(parsed.value)) {
+    return { ok: false, error: "JSON field root must be an object." };
+  }
+  return parsed;
+}
+
+export function parseJsonValue(
+  raw: string,
+): { ok: true; value: JsonValue } | { ok: false; error: string } {
   try {
     const value = JSON.parse(raw) as unknown;
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+        return parseJsonValue(trimmed);
+      }
+    }
     if (!isJsonCompatible(value)) {
       return { ok: false, error: "Value must be JSON-compatible." };
-    }
-    if (!isJsonObject(value)) {
-      return { ok: false, error: "JSON field root must be an object." };
     }
     return { ok: true, value };
   } catch (error) {

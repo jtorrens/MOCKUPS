@@ -103,7 +103,7 @@ export function JsonValueEditor({
   onChange,
   onRootChange,
 }: JsonValueEditorProps) {
-  const hint = hintForPath(hints, path, value);
+  const hint = hintForPath(hints, path, value, groupContext);
   const widget = hint.widget;
   const { families, stylesByFamily } = useSystemFontCatalog();
   const key = String(path[path.length - 1] ?? "");

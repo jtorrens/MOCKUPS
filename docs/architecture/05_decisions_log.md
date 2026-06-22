@@ -489,3 +489,19 @@ Implications:
 - Spacing, padding, line heights, header heights, radii, avatar sizes, tail geometry, and shadow dimensions scale with the device.
 - Ratios such as `maxWidthRatio` and frame counts are not scaled. Font weight variants are named font-face selections from the active family and are not scaled.
 - The UI should present authored token values in design units; preview/render uses resolved scaled values.
+
+## D044 — App shell uses inspector-first accordions and module-instance content editors
+
+Status: accepted
+
+The local authoring shell is moving toward an inspector-first, Figma-collections-like UI. The left workspace uses accordion sections rather than mixing tabs and trees. The central editor uses accordion cards for major areas and grouped cards for nested token/content concepts.
+
+Shot-specific module payloads are presented as `Module Content` in the screen-instance editor. Physically, the current design-stage model still stores this data in `screen_instances.module_data_json`; conceptually, it is the content for the module instance attached to that screen instance. If a future explicit `module_instances` table is introduced, this UI responsibility should move there without changing the authoring concept.
+
+Implications:
+- `Module Content` is not App data and should not be presented as App-level configuration.
+- Chat participants and messages are edited through structured content cards, not as raw JSON strings.
+- Collapsed content rows should show useful summaries such as participant display name/role or message sender/type/text/timing.
+- Major Project/App/Production Data areas use accordion sections with trees inside, avoiding mixed tab/tree metaphors.
+- Token and color editors use friendly group labels and logical icons; raw/internal token names remain useful only where they identify a token path.
+- Raw JSON remains a fallback/recovery surface, not the normal UI for module content.

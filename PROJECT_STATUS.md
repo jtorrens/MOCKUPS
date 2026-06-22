@@ -2,9 +2,9 @@
 
 ## Current state
 
-Initial architecture/data schema documentation, the visual token/layout contract, and the foundational module contracts are complete and reviewed. TypeScript/Zod schemas, in-memory and SQLite repository paths, renderer-agnostic visual modules/layout, a minimal Remotion proof of concept, SQLite persistence, the first local core app shell, a generic structured JSON tree/value editor, module theme configs, module-scoped editor hint contracts, a Project/Library browser, a persistence audit/check, and a minimal Electron development shell now exist. The shell is still local/dev-only and not a final production editor; no export pipeline, asset manager, deep duplicate/cascade delete workflow, packaging/installer, or specialized Chat content editor has been implemented.
+Initial architecture/data schema documentation, the visual token/layout contract, and the foundational module contracts are complete and reviewed. TypeScript/Zod schemas, in-memory and SQLite repository paths, renderer-agnostic visual modules/layout, a minimal Remotion proof of concept, SQLite persistence, the first local core app shell, structured JSON/token editors, module theme configs, module-scoped editor hint contracts, a production-first Project/App/Production Data browser, a persistence audit/check, and a minimal Electron development shell now exist. The shell is still local/dev-only and not a final production editor; no export pipeline, asset manager, deep duplicate/cascade delete workflow, packaging/installer, or final module-instance persistence split has been implemented.
 
-The current app shell is now substantially more usable for authoring: it has a production-first layout, project/library tabs, resizable left/editor/preview panels, independent panel scrolling, responsive preview fitting, screen-instance and screen-template editors organized by conceptual tabs, module-theme-config token editors grouped by friendly labels, inherited/override rows with restore behavior, installed-font discovery where available, and typed controls for number/text/color/font/select values.
+The current app shell is now substantially more usable for authoring: it has a production-first layout, accordion-based Project/App/Production Data navigation, resizable left/editor/preview panels, independent panel scrolling, responsive preview fitting, screen-instance editors organized by conceptual accordion cards, module-theme-config token editors grouped by friendly labels, inherited/override rows with restore behavior, installed-font discovery where available, typed controls for number/text/color/font/select values, centralized mode-aware color editors, and structured Chat `Module Content` cards for participants and messages.
 
 The accepted foundation is production-scoped and shot-centered, where productions contain episodes, episodes contain shots, and a shot is a device-screen action sequence rather than external plate placement. A shot now has an owner actor that supplies the default device and theme for its screen instances. Chat uses versioned module-owned data/config/token-override JSON as its sole runtime source.
 
@@ -79,15 +79,20 @@ The accepted foundation is production-scoped and shot-centered, where production
 - Added a production switcher and production action modal shell; production add is implemented, while deep duplicate/delete remains intentionally deferred.
 - Reworked the app layout into resizable left navigation/editor and right preview panes with independent scrolling and preview scaling that fits both width and height.
 - Removed read-only resolver/adapter inspector panels from the main preview surface to prioritize authoring and visual feedback.
-- Added tabbed editors for screen instances: General, Content, Behavior, and Overrides. Content has nested module-data tabs such as Participants, Header, and Messages.
-- Added tabbed editors for screen templates: General, Behavior, and Overrides. Templates expose reusable module behavior defaults and token bindings/fixed overrides without shot-specific content.
+- Added accordion editors for screen instances: General, Module Content, Behavior, and Overrides. Module Content has nested module-data groups such as Participants, Header, and Messages.
+- Removed Screen Templates from the active authoring model; the previous screen-template inheritance decision is superseded by direct Theme → App → Screen/Module → Screen Instance inheritance.
 - Added tabbed module theme config editing: Design and Theme. Design tabs follow token groups; nested conceptual groups render as sections only when they contain multiple rows.
 - Added a token/override editor that shows Property, Token/Internal Path, and Override columns. Property labels are friendly and compacted by group; the Token column intentionally stays internal.
 - Added typed override controls for booleans, numbers, text, colors, font families, and font styles/weights.
 - Added installed-font discovery through `queryLocalFonts` when available and through Electron's narrow `mockups:listFonts` bridge on macOS, with fallback font families/styles.
 - Added accepted decisions D039–D041 covering production-owned workspace/templates, screen-template inheritance, and structured editor label/group conventions.
+- Added accepted decisions D042–D044 covering removal of Screen Templates from active runtime/editor inheritance, logical design-unit scaling, and the inspector-first accordion/module-content UI direction.
+- Added App-level token/default editing through existing App records and centralized mode-aware color editing for Theme/App/Module levels.
+- Reworked the left workspace into accordion sections for Project, Apps, and Production Data, each containing its own hierarchy/tree.
+- Reworked Chat screen-instance `module_data_json` presentation as `Module Content`: participants and messages now render as structured content cards with friendly labels, typed widgets, useful collapsed summaries, and add/duplicate/delete/reorder controls.
+- Fixed grouped JSON/content editing for root arrays, double-serialized JSON strings, and group-context module editor hints.
 
 ## Next
 
-- Review the current app shell visually and choose the next workflow: screen-instance creation, asset registration/native file picker, module-specific Chat content editor, production duplicate/delete policy, or Electron menu/package polish.
+- Review the current app shell visually and choose the next workflow: explicit module-instance persistence split, screen-instance creation, asset registration/native file picker, production duplicate/delete policy, stronger UI smoke tests for content editing, or Electron menu/package polish.
 - Create an Architecture Question before changing any accepted decision.

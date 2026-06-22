@@ -41,6 +41,21 @@ interface TokenRowGroup {
   renderAsGroup: boolean;
 }
 
+function groupIcon(label: string): string {
+  const normalized = label.toLowerCase();
+  if (normalized.includes("typography") || normalized.includes("font")) return "T";
+  if (normalized.includes("color")) return "◐";
+  if (normalized.includes("header")) return "▤";
+  if (normalized.includes("message") || normalized.includes("bubble")) return "☰";
+  if (normalized.includes("spacing") || normalized.includes("padding")) return "↔";
+  if (normalized.includes("radius") || normalized.includes("radii")) return "◜";
+  if (normalized.includes("shadow") || normalized.includes("elevation")) return "◒";
+  if (normalized.includes("status")) return "▥";
+  if (normalized.includes("cursor")) return "⌁";
+  if (normalized.includes("wallpaper") || normalized.includes("background")) return "▧";
+  return "◇";
+}
+
 function flattenPrimitiveTokens(value: JsonValue, path: JsonPath = []): TokenRow[] {
   if (Array.isArray(value)) {
     return value.flatMap((entry, index) =>
@@ -334,15 +349,15 @@ export function TokenOverrideEditor({
 
   return (
     <div className="token-override-editor">
-      <div className="token-override-head">
-        <span>Property</span>
-        <span>{inheritedColumnLabel}</span>
-        <span>Override</span>
-      </div>
       {groupedRows(rows).map((group) =>
         group.renderAsGroup ? (
           <section key={group.key} className="token-override-group">
-            <h4>{group.label}</h4>
+            <h4>
+              <span className="editor-group-icon" aria-hidden="true">
+                {groupIcon(group.label)}
+              </span>
+              {group.label}
+            </h4>
             {group.rows.map((row) => renderRow(row, group.key))}
           </section>
         ) : (
