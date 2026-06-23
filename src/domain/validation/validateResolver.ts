@@ -21,13 +21,17 @@ const chatScreenInstance = repository
   .getScreenInstancesForShot(shotExample.shot.id)
   .find((instance) => instance.screen_type === "chat");
 assert(chatScreenInstance, "Fixture must contain a Chat screen instance");
+const chatModuleInstance = repository.getPrimaryModuleInstanceForScreenInstance(
+  chatScreenInstance.id,
+);
+assert(chatModuleInstance, "Fixture must contain a Chat module instance");
 assert(
-  chatScreenInstance.module_id === "core.chat" &&
-    chatScreenInstance.module_schema_version === 1,
+  chatModuleInstance.module_id === "core.chat" &&
+    chatModuleInstance.module_schema_version === 1,
   "Chat must use core.chat module schema version 1",
 );
 const canonicalChatData = ChatModuleDataSchema.parse(
-  chatScreenInstance.module_data_json,
+  chatModuleInstance.content_json,
 );
 assert(
   chatScreenInstance.data_ref_json === null,

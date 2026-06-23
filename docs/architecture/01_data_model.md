@@ -24,7 +24,7 @@ Production
  └─ Episodes
      └─ Shots
          └─ ScreenInstances
-             ├─ App-linked versioned module data/config/token overrides
+             ├─ ModuleInstances
              └─ ScreenEvents
 ```
 
@@ -35,7 +35,8 @@ Production
 - `shots`: device-screen action sequences, with duration, frame rate, output settings, and optional render preset. They belong to an episode and do not define placement in an external video plate.
 - `apps`: reusable app identity, icon, branding, and app-level token defaults inherited by screens.
 - `module_theme_configs`: reusable screen/module design defaults scoped by production, theme, app, module, and module schema version.
-- `screen_instances`: runtime containers for versioned screen modules. Each supplies `app_id`, `module_id`, `module_schema_version`, owner/device/state/theme/mode context, timing, `module_data_json`, `module_config_json`, `module_tokens_override_json`, and transform.
+- `screen_instances`: runtime containers for versioned screen modules. Each supplies `app_id`, `module_id`, `module_schema_version`, owner/device/state/theme/mode context, timing, layer order, and transform.
+- `module_instances`: concrete module payloads attached to screen instances. Each stores versioned module content in `content_json` and per-instance behavior in `behavior_json`.
 - `screen_events`: frame-timed changes within a screen instance, such as a notification appearing or a message being sent.
 - `themes`: style tokens and visual defaults; suitable for reusable style packs.
 - `devices`: device identity and physical/display metrics; suitable for device packs.
@@ -44,7 +45,7 @@ Production
 - `media_assets`: production-owned images, video, audio, fonts, and other referenced files.
 - `animation_presets`: reusable timing, easing, and transition configuration.
 - `render_presets`: output dimensions, frame rate, codec/export, color, and quality settings.
-- `conversations` / `messages`: deprecated compatibility structures still present in the initial SQLite schema; canonical Chat runtime content now lives in `screen_instances.module_data_json`.
+- `conversations` / `messages`: deprecated compatibility structures still present in the initial SQLite schema; canonical Chat runtime content now lives in `module_instances.content_json`.
 - `notifications`: notification content, source app, owner, payload, and timing metadata.
 - `calls`: incoming or active call data, participants, state, and timing metadata.
 - `data_sources`: custom or imported datasets referenced by screen instances.
@@ -59,10 +60,9 @@ The active visual-token inheritance model is:
 Theme
   → App
   → Screen / Module
-  → Screen Instance
   → selected render mode
 ```
 
-App and screen/module layers may store mode-aware light/dark color values. They remain reusable defaults until a shot/screen render context selects one mode. A screen instance may override one or both modes locally, but shot-specific content remains in `module_data_json`.
+App and screen/module layers may store mode-aware light/dark color values. They remain reusable defaults until a shot/screen render context selects one mode. Screen/module instances do not carry visual token overrides in the active model; shot-specific module content remains in `module_instances.content_json` and behavior remains in `module_instances.behavior_json`.
 
 A shot is not tied to one chat or one device. It may contain any number of screen instances sequentially or in overlapping layers, but its output space is the device screen—not an UHD/video plate. See `09_foundational_module_contracts.md`; debug/editor tooling must edit module-owned JSON rather than deprecated Chat tables.

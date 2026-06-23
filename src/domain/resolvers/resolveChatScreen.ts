@@ -9,6 +9,7 @@ import {
   type ChatParticipant,
   type Device,
   type DeviceState,
+  type ModuleInstance,
   type ResolvedChatScreenProps,
   type ScreenInstance,
   type Theme,
@@ -316,6 +317,7 @@ function resolveParticipant(
 export interface ResolveChatScreenInput {
   repository: DomainRepository;
   screenInstance: ScreenInstance;
+  moduleInstance: ModuleInstance;
   ownerActor: Actor;
   app: App;
   device: Device;
@@ -328,6 +330,7 @@ export interface ResolveChatScreenInput {
 export function resolveChatScreen({
   repository,
   screenInstance,
+  moduleInstance,
   ownerActor,
   app,
   device,
@@ -336,28 +339,26 @@ export function resolveChatScreen({
   localFrame,
   fps,
 }: ResolveChatScreenInput): ResolvedChatScreenProps {
-  if (screenInstance.module_id !== CHAT_MODULE_ID) {
+  if (moduleInstance.module_id !== CHAT_MODULE_ID) {
     throw new Error(
-      `Chat screen instance ${screenInstance.id} requires module_id ${CHAT_MODULE_ID}`,
+      `Chat module instance ${moduleInstance.id} requires module_id ${CHAT_MODULE_ID}`,
     );
   }
-  if (
-    screenInstance.module_schema_version !== CHAT_MODULE_SCHEMA_VERSION
-  ) {
+  if (moduleInstance.module_schema_version !== CHAT_MODULE_SCHEMA_VERSION) {
     throw new Error(
-      `Chat screen instance ${screenInstance.id} requires module schema version ${CHAT_MODULE_SCHEMA_VERSION}`,
+      `Chat module instance ${moduleInstance.id} requires module schema version ${CHAT_MODULE_SCHEMA_VERSION}`,
     );
   }
 
   const moduleData = ChatModuleDataSchema.parse(
-    screenInstance.module_data_json,
+    moduleInstance.content_json,
   );
   const moduleConfig = ChatModuleConfigSchema.parse(
-    screenInstance.module_config_json,
+    moduleInstance.behavior_json,
   );
-  if (moduleData.schemaVersion !== screenInstance.module_schema_version) {
+  if (moduleData.schemaVersion !== moduleInstance.module_schema_version) {
     throw new Error(
-      `Chat module data schemaVersion does not match screen instance ${screenInstance.id}`,
+      `Chat module data schemaVersion does not match module instance ${moduleInstance.id}`,
     );
   }
 
@@ -402,12 +403,12 @@ export function resolveChatScreen({
   const moduleThemeConfig = repository.getModuleThemeConfig(
     theme.id,
     app.id,
-    screenInstance.module_id,
-    screenInstance.module_schema_version,
+    moduleInstance.module_id,
+    moduleInstance.module_schema_version,
   );
   if (!moduleThemeConfig) {
     throw new Error(
-      `No module theme config for theme ${theme.id}, app ${app.id}, module ${screenInstance.module_id}, schema ${screenInstance.module_schema_version}`,
+      `No module theme config for theme ${theme.id}, app ${app.id}, module ${moduleInstance.module_id}, schema ${moduleInstance.module_schema_version}`,
     );
   }
   const globalThemeTokens = resolveGlobalThemeTokens(theme, themeMode);
@@ -423,14 +424,7 @@ export function resolveChatScreen({
     mergeTokenObjects(genericTokens, moduleDefaultsFromGenericTokens),
     moduleThemeTokens,
   );
-  const instanceOverrideTokens = resolveModuleThemeTokens(
-    screenInstance.module_tokens_override_json ?? {},
-    themeMode,
-  );
-  const mergedThemeTokens = mergeTokenObjects(
-    inheritedModuleTokens,
-    instanceOverrideTokens,
-  );
+  const mergedThemeTokens = inheritedModuleTokens;
   const renderScale = renderScaleFromMetrics(metrics);
   const scaledThemeTokens = scaleDesignTokensForRender(
     mergedThemeTokens,

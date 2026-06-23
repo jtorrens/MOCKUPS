@@ -6,6 +6,7 @@ import type {
   DeviceState,
   Episode,
   MediaAsset,
+  ModuleInstance,
   ModuleThemeConfig,
   Notification,
   Production,
@@ -25,6 +26,7 @@ export class InMemoryRepository implements DomainRepository {
   readonly #shots: Map<string, Shot>;
   readonly #themes: Map<string, Theme>;
   readonly #moduleThemeConfigs: Map<string, ModuleThemeConfig>;
+  readonly #moduleInstances: Map<string, ModuleInstance>;
   readonly #devices: Map<string, Device>;
   readonly #deviceStates: Map<string, DeviceState>;
   readonly #actors: Map<string, Actor>;
@@ -40,6 +42,7 @@ export class InMemoryRepository implements DomainRepository {
     this.#shots = indexById(dataset.shots);
     this.#themes = indexById(dataset.themes);
     this.#moduleThemeConfigs = indexById(dataset.moduleThemeConfigs);
+    this.#moduleInstances = indexById(dataset.moduleInstances);
     this.#devices = indexById(dataset.devices);
     this.#deviceStates = indexById(dataset.deviceStates);
     this.#actors = indexById(dataset.actors);
@@ -61,6 +64,16 @@ export class InMemoryRepository implements DomainRepository {
     return this.#dataset.screenInstances
       .filter((instance) => instance.shot_id === shotId)
       .sort((a, b) => a.layer_order - b.layer_order);
+  }
+
+  getModuleInstancesForScreenInstance(screenInstanceId: string) {
+    return this.#dataset.moduleInstances
+      .filter((instance) => instance.screen_instance_id === screenInstanceId)
+      .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+  }
+
+  getPrimaryModuleInstanceForScreenInstance(screenInstanceId: string) {
+    return this.getModuleInstancesForScreenInstance(screenInstanceId)[0];
   }
 
   getScreenEventsForInstance(screenInstanceId: string) {

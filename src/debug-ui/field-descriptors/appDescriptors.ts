@@ -1,0 +1,49 @@
+import type { FieldDescriptor } from "./types.js";
+
+export const appConfigDescriptors: FieldDescriptor[] = [
+  {
+    canonicalPath: "app.tokens.wallpaper.kind",
+    storagePath: ["tokens_json", "wallpaper", "kind"],
+    label: "Kind",
+    section: "Tokens",
+    area: "tokens",
+    group: "Wallpaper",
+    property: "kind",
+    widget: "select",
+    options: ["solid", "image", "video"],
+  },
+  {
+    canonicalPath: "app.tokens.colors.navigationBackground.light",
+    storagePath: ["tokens_json", "modes", "light", "colors", "navigationBackground"],
+    label: "Navigation background",
+    section: "Colors",
+    area: "colors",
+    group: "App Colors",
+    role: "Navigation",
+    property: "background",
+    widget: "color",
+  },
+  {
+    canonicalPath: "app.tokens.colors.navigationBackground.dark",
+    storagePath: ["tokens_json", "modes", "dark", "colors", "navigationBackground"],
+    label: "Navigation background",
+    section: "Colors",
+    area: "colors",
+    group: "App Colors",
+    role: "Navigation",
+    property: "background",
+    widget: "color",
+  },
+];
+
+export const appMetadataDescriptors: FieldDescriptor[] = [
+  {
+    canonicalPath: "app.notes.note",
+    storagePath: ["note"],
+    label: "Note",
+    section: "Notes",
+    area: "notes",
+    property: "note",
+    widget: "textarea",
+  },
+];

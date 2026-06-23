@@ -1,10 +1,10 @@
 # Initial data schema
 
-This is the persistence-oriented schema for MOCKUPS. The initial SQLite implementation now exists. The current design-stage schema is version 6 and intentionally breaks from the earlier Screen Template layer: app identity/defaults and module-specific defaults are now direct runtime layers.
+This is the persistence-oriented schema for MOCKUPS. The initial SQLite implementation now exists. The current design-stage schema is version 7 and intentionally breaks from the earlier Screen Template layer: app identity/defaults and module-specific defaults are now direct runtime layers, and explicit module instances own per-shot content/behavior.
 
 ## Storage boundary
 
-SQL/stable fields hold IDs, names, relationships, ordering, frame timings, core type discriminators, and references to apps, assets, themes, devices, and actors. JSON/flexible fields hold visual tokens, app defaults, device metrics, module props, event payloads, animation parameters, style/layout overrides, and module-specific configuration.
+SQL/stable fields hold IDs, names, relationships, ordering, frame timings, core type discriminators, and references to apps, assets, themes, devices, and actors. JSON/flexible fields hold visual tokens, app defaults, device metrics, module content/behavior, event payloads, animation parameters, transforms, and module-specific configuration.
 
 JSON column names use a `_json` suffix below. Resolvers parse these values and emit camelCase resolved props for visual modules.
 
@@ -33,6 +33,7 @@ Production
  └─ Episodes
      └─ Shots
          └─ ScreenInstances
+             ├─ ModuleInstances
              └─ ScreenEvents
 ```
 
@@ -64,15 +65,25 @@ Production
 
 ### `screen_instances`
 
-- Purpose: runtime container and persistence boundary for a versioned screen module.
+- Purpose: runtime container for placing a versioned screen module inside a shot.
 - SQL/stable fields: `id`, `shot_id`, `app_id`, `screen_type`, `module_id`, `module_schema_version`, `owner_actor_id`, `device_id`, `device_state_id`, `theme_id`, `theme_mode`, `start_frame`, `end_frame`, `layer_order`.
-- JSON/flexible fields: `module_data_json`, `module_config_json`, `module_tokens_override_json`, `transform_json`; compatibility fields are `data_ref_json`, `props_json`, `transition_in_json`, `transition_out_json`.
-- Relationships: belongs to a shot and references an app plus optional screen-level overrides for owner/device/theme context; owns screen events. By default, owner comes from the shot, and device/theme come from that actor's defaults. Module-internal references remain inside versioned module JSON and are validated by the selected module.
+- JSON/flexible fields: `transform_json`; compatibility fields are `data_ref_json`, `props_json`, `transition_in_json`, `transition_out_json`, `module_data_json`, `module_config_json`, and `module_tokens_override_json`.
+- Relationships: belongs to a shot and references an app plus optional screen-level overrides for owner/device/theme context; owns module instances and screen events. By default, owner comes from the shot, and device/theme come from that actor's defaults. Module-internal references remain inside versioned module instance JSON and are validated by the selected module.
 - Must not contain: detailed drawing logic or copied theme/device records.
 
-`screen_type` is a broad discriminator; `module_id` + `module_schema_version` select the exact module contract. `module_data_json` holds shot content, `module_config_json` behavior, and `module_tokens_override_json` local visual exceptions. `transform_json` transforms the device-screen render inside the shot's device render space. `core.chat` now requires these module fields and has no runtime fallback to `data_ref_json` or `props_json`.
+`screen_type` is a broad discriminator; `module_id` + `module_schema_version` select the exact module contract. `transform_json` transforms the device-screen render inside the shot's device render space. `core.chat` now reads content/behavior from `module_instances` and has no runtime fallback to `data_ref_json` or `props_json`.
 
-SQLite schema version 6 includes `screen_instances.app_id`, removes the active `screen_templates` table, and scopes `module_theme_configs` by `theme_id + app_id + module_id + module_schema_version`. This is a design-stage breaking schema: local development databases may be reset explicitly with `npm run db:reset`; normal app startup must not reseed or overwrite edited data.
+SQLite schema version 7 includes `screen_instances.app_id`, explicit `module_instances`, removes the active `screen_templates` table, and scopes `module_theme_configs` by `theme_id + app_id + module_id + module_schema_version`. This is a design-stage breaking schema: local development databases may be reset explicitly with `npm run db:reset`; normal app startup must not reseed or overwrite edited data.
+
+### `module_instances`
+
+- Purpose: concrete module payload and behavior for a module attached to one screen instance.
+- SQL/stable fields: `id`, `screen_instance_id`, `module_id`, `module_schema_version`, `sort_order`.
+- JSON/flexible fields: `content_json`, `behavior_json`, `metadata_json`.
+- Relationships: belongs to one screen instance. One screen instance may own more than one module instance if a future module composition requires it.
+- Must not contain: reusable visual design defaults, copied theme/app/module tokens, device geometry, or render output.
+
+For `core.chat@1`, `content_json` owns participants, header, messages, timings, media references, and sender IDs. `behavior_json` owns per-shot behavior such as `showHeader`, `showStatusBar`, `showKeyboard`, `initialScroll`, and `messageGrouping`.
 
 ### `screen_events`
 
@@ -110,11 +121,10 @@ Resolution order is:
 theme.tokens_json
   → app.config_json tokens_json
   → module_theme_configs.tokens_json
-  → screen_instances.module_tokens_override_json
   → selected mode collapse for render
 ```
 
-App, module, and instance JSON may contain `modes.light` and `modes.dark` color values. These are not collapsed until render/preview resolution. For the initial fixture, `module_theme_configs` contains one Chat config for `theme_ios_light` + `app_messages` + `core.chat` schema version 1.
+App and module JSON may contain `modes.light` and `modes.dark` color values. These are not collapsed until render/preview resolution. For the initial fixture, `module_theme_configs` contains one Chat config for `theme_ios_light` + `app_messages` + `core.chat` schema version 1.
 
 ### `devices`
 
@@ -188,7 +198,7 @@ Modules use asset IDs with a media window (logical width/height/offsets) and an 
 
 Participant IDs must not be stored only as a canonical JSON list. A JSON projection may be emitted in resolved props, but SQL owns participant identity, membership, order, and role.
 
-Deprecation note: these normalized relationships remain physically available for historical/import compatibility, but Chat runtime does not read them. `core.chat` owns versioned `participants[]`, header, and messages in `module_data_json`; participants may reference production actors, group membership is represented directly, and every message uses `senderParticipantId`.
+Deprecation note: these normalized relationships remain physically available for historical/import compatibility, but Chat runtime does not read them. `core.chat` owns versioned `participants[]`, header, and messages in `module_instances.content_json`; participants may reference production actors, group membership is represented directly, and every message uses `senderParticipantId`.
 
 ### `messages`
 

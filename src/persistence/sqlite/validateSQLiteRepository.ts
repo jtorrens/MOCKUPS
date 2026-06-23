@@ -48,19 +48,24 @@ try {
     .getScreenInstancesForShot("shot_lock_to_chat")
     .find((instance) => instance.screen_type === "chat");
   assert(sqliteChatInstance, "SQLite Chat screen instance must exist");
+  const sqliteModuleInstance =
+    sqliteRepository.getPrimaryModuleInstanceForScreenInstance(
+      sqliteChatInstance.id,
+    );
+  assert(sqliteModuleInstance, "SQLite Chat module instance must exist");
   const moduleData = ChatModuleDataSchema.parse(
-    sqliteChatInstance.module_data_json,
+    sqliteModuleInstance.content_json,
   );
   assert(
-    sqliteChatInstance.module_id === "core.chat" &&
-      sqliteChatInstance.module_schema_version === 1 &&
+    sqliteModuleInstance.module_id === "core.chat" &&
+      sqliteModuleInstance.module_schema_version === 1 &&
       sqliteChatInstance.data_ref_json === null,
-    "SQLite Chat instance must use canonical core.chat module JSON",
+    "SQLite Chat module instance must use canonical core.chat module JSON",
   );
   assert(
     moduleData.messages.length === sqliteChat.messages.length &&
       sqliteChat.messages[1]?.visibleText === "Two minu",
-    "SQLite Chat messages and write-on output must come from module_data_json",
+    "SQLite Chat messages and write-on output must come from module instance content_json",
   );
   const legacyRowCount =
     Number(
@@ -82,6 +87,7 @@ try {
     "episodes",
     "shots",
     "screen_instances",
+    "module_instances",
     "screen_events",
     "themes",
     "module_theme_configs",
@@ -127,24 +133,41 @@ try {
       }[]
     ).map((column) => column.name),
   );
-  const requiredModuleColumns = [
+  const requiredScreenColumns = [
     "module_id",
     "module_schema_version",
     "app_id",
     "theme_mode",
-    "module_data_json",
-    "module_config_json",
-    "module_tokens_override_json",
+  ];
+  assert(
+    requiredScreenColumns.every((column) =>
+      screenInstanceColumns.has(column),
+    ),
+    "screen_instances must contain screen/module reference columns",
+  );
+  const moduleInstanceColumns = new Set(
+    (
+      database.pragma("table_info(module_instances)") as {
+        name: string;
+      }[]
+    ).map((column) => column.name),
+  );
+  const requiredModuleColumns = [
+    "screen_instance_id",
+    "module_id",
+    "module_schema_version",
+    "content_json",
+    "behavior_json",
   ];
   assert(
     requiredModuleColumns.every((column) =>
-      screenInstanceColumns.has(column),
+      moduleInstanceColumns.has(column),
     ),
-    "screen_instances must contain all module contract columns",
+    "module_instances must contain content/behavior module contract columns",
   );
   assert(
-    Number(database.pragma("user_version", { simple: true })) === 6,
-    "SQLite schema version must be 6",
+    Number(database.pragma("user_version", { simple: true })) === 7,
+    "SQLite schema version must be 7",
   );
 
   database.exec("BEGIN");
@@ -166,10 +189,12 @@ try {
   try {
     database
       .prepare(
-        "UPDATE screen_instances SET module_data_json = ? WHERE id = ?",
+        "UPDATE module_instances SET content_json = ? WHERE id = ?",
       )
-      .run("{invalid", "screen_instance_chat");
-    sqliteRepository.getScreenInstancesForShot("shot_lock_to_chat");
+      .run("{invalid", "screen_instance_chat:module");
+    sqliteRepository.getPrimaryModuleInstanceForScreenInstance(
+      "screen_instance_chat",
+    );
   } catch {
     invalidModuleJsonFailed = true;
   } finally {
@@ -177,19 +202,19 @@ try {
   }
   assert(
     invalidModuleJsonFailed,
-    "Invalid Chat module_data_json must fail loudly",
+    "Invalid Chat module instance content_json must fail loudly",
   );
 
   console.log("✓ schema and seed validated in isolated in-memory SQLite");
-  console.log("✓ all 21 required domain tables exist");
+  console.log("✓ all required domain tables exist");
   console.log("✓ module_theme_configs exists and seeds core.chat tokens");
-  console.log("✓ screen_instances module contract columns and schema v6 exist");
+  console.log("✓ screen_instances references and module_instances content/behavior columns exist in schema v7");
   console.log("✓ SQLiteRepository resolved ChatScreen props with Zod");
   console.log("✓ SQLite and in-memory chat props are equivalent");
-  console.log("✓ Chat module JSON and sender-based output validated");
+  console.log("✓ Chat module instance JSON and sender-based output validated");
   console.log("✓ legacy Chat tables are physically present but contain no fixture rows");
   console.log("✓ invalid JSON TEXT fails loudly");
-  console.log("✓ invalid Chat module_data_json fails loudly");
+  console.log("✓ invalid Chat module instance content_json fails loudly");
   console.log("SQLite persistence validation succeeded.");
 } finally {
   database.close();

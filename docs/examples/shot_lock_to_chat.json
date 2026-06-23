@@ -32,11 +32,6 @@
         "type": "notification",
         "notification_id": "notification_message_001"
       },
-      "module_data_json": {
-        "notificationRef": "notification_message_001"
-      },
-      "module_config_json": {},
-      "module_tokens_override_json": {},
       "transform_json": {
         "x": 0,
         "y": 0,
@@ -66,7 +61,40 @@
       "end_frame": 300,
       "layer_order": 1,
       "data_ref_json": null,
-      "module_data_json": {
+      "transform_json": {
+        "x": 0,
+        "y": 0,
+        "scale": 1,
+        "rotation_degrees": 0
+      },
+      "props_json": {},
+      "transition_in_json": {
+        "type": "unlock_to_app",
+        "duration_frames": 15
+      },
+      "transition_out_json": null
+    }
+  ],
+  "module_instances": [
+    {
+      "id": "screen_instance_lock:module",
+      "screen_instance_id": "screen_instance_lock",
+      "module_id": "lock_screen",
+      "module_schema_version": 1,
+      "sort_order": 0,
+      "content_json": {
+        "notificationRef": "notification_message_001"
+      },
+      "behavior_json": {},
+      "metadata_json": {}
+    },
+    {
+      "id": "screen_instance_chat:module",
+      "screen_instance_id": "screen_instance_chat",
+      "module_id": "core.chat",
+      "module_schema_version": 1,
+      "sort_order": 0,
+      "content_json": {
         "schemaVersion": 1,
         "participants": [
           {
@@ -134,7 +162,7 @@
           }
         ]
       },
-      "module_config_json": {
+      "behavior_json": {
         "showHeader": true,
         "showStatusBar": true,
         "showKeyboard": false,
@@ -142,19 +170,7 @@
         "messageGrouping": "bySender",
         "debugShowBounds": false
       },
-      "module_tokens_override_json": {},
-      "transform_json": {
-        "x": 0,
-        "y": 0,
-        "scale": 1,
-        "rotation_degrees": 0
-      },
-      "props_json": {},
-      "transition_in_json": {
-        "type": "unlock_to_app",
-        "duration_frames": 15
-      },
-      "transition_out_json": null
+      "metadata_json": {}
     }
   ],
   "screen_events": [

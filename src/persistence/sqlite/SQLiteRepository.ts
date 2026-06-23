@@ -8,6 +8,7 @@ import {
   DeviceStateSchema,
   MediaAssetSchema,
   MessageSchema,
+  ModuleInstanceSchema,
   ModuleThemeConfigSchema,
   NotificationSchema,
   ProductionSchema,
@@ -23,6 +24,7 @@ import {
   type DeviceState,
   type MediaAsset,
   type Message,
+  type ModuleInstance,
   type ModuleThemeConfig,
   type Notification,
   type Production,
@@ -145,6 +147,25 @@ export class SQLiteRepository implements DomainRepository {
         ],
       },
     );
+  }
+
+  getModuleInstancesForScreenInstance(screenInstanceId: string): ModuleInstance[] {
+    return this.getMany(
+      "SELECT * FROM module_instances WHERE screen_instance_id = ? ORDER BY sort_order, id",
+      screenInstanceId,
+      ModuleInstanceSchema,
+      {
+        required: ["content_json", "behavior_json"],
+        optional: ["metadata_json"],
+        optionalScalars: ["sort_order"],
+      },
+    );
+  }
+
+  getPrimaryModuleInstanceForScreenInstance(
+    screenInstanceId: string,
+  ): ModuleInstance | undefined {
+    return this.getModuleInstancesForScreenInstance(screenInstanceId)[0];
   }
 
   getScreenEventsForInstance(screenInstanceId: string): ScreenEvent[] {

@@ -49,6 +49,7 @@ try {
     "episodes",
     "shots",
     "screen_instances",
+    "module_instances",
     "actors",
     "themes",
     "module_theme_configs",
@@ -73,7 +74,7 @@ try {
   const shots = state.options.shots as ShotOption[];
   const screenInstances =
     state.options.screenInstances as ScreenInstanceOption[];
-  const screenInstanceRecords = state.records.screen_instances as AppRecord[];
+  const moduleInstanceRecords = state.records.module_instances as AppRecord[];
   const moduleThemeConfigRecords = state.records
     .module_theme_configs as AppRecord[];
 
@@ -108,12 +109,6 @@ try {
       ?.tokens_json,
     "Module theme config tokens must expose inherited global theme tokens",
   );
-  assert(
-    state.inheritedJson.screen_instances?.[screen.id]
-      ?.module_tokens_override_json,
-    "Screen instance token overrides must expose inherited module tokens",
-  );
-
   const payload = loadDebugPayload(database, {
     productionId: production.id,
     shotId: shot.id,
@@ -127,27 +122,27 @@ try {
   let invalidJsonFailed = false;
   try {
     updateAppRecord(database, {
-      tableId: "screen_instances",
-      recordId: screen.id,
-      patch: { module_config_json: "{" },
+      tableId: "module_instances",
+      recordId: `${screen.id}:module`,
+      patch: { behavior_json: "{" },
     });
   } catch {
     invalidJsonFailed = true;
   }
   assert(invalidJsonFailed, "Malformed JSON must be rejected");
 
-  const screenRecord = screenInstanceRecords.find(
-    (record) => record.id === screen.id,
+  const moduleRecord = moduleInstanceRecords.find(
+    (record) => record.screen_instance_id === screen.id,
   );
-  assert(screenRecord, "Screen instance app record must exist");
+  assert(moduleRecord, "Module instance app record must exist");
   const moduleConfig = {
-    ...(screenRecord.module_config_json as Record<string, unknown>),
+    ...(moduleRecord.behavior_json as Record<string, unknown>),
     debugShowBounds: true,
   };
   updateAppRecord(database, {
-    tableId: "screen_instances",
-    recordId: screen.id,
-    patch: { module_config_json: moduleConfig },
+    tableId: "module_instances",
+    recordId: moduleRecord.id,
+    patch: { behavior_json: moduleConfig },
   });
   const savedPayload = loadDebugPayload(database, {
     productionId: production.id,

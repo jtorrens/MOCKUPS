@@ -1,4 +1,5 @@
 import type { AppFieldDefinition, AppTableDefinition } from "../../api/client.js";
+import { fieldDescriptorHintsForContext } from "../../field-descriptors/registry.js";
 import { moduleJsonUiHintsForRecord } from "../../module-editor-hints/registry.js";
 import {
   normalizedHintPath,
@@ -18,6 +19,13 @@ export type JsonWidget =
 export type JsonUiHint = {
   widget?: JsonWidget;
   label?: string;
+  canonicalPath?: string;
+  storagePath?: JsonPath;
+  section?: string;
+  area?: string;
+  group?: string;
+  role?: string;
+  property?: string;
   summaryKeys?: string[];
   options?: string[];
   min?: number;
@@ -91,6 +99,11 @@ export function buildJsonUiHints(
 ): JsonUiHints {
   const hints: JsonUiHints = {
     ...COMMON_HINTS,
+    ...fieldDescriptorHintsForContext({
+      tableId: table.id,
+      fieldColumn: field.column,
+      record,
+    }),
     ...moduleJsonUiHintsForRecord(table.id, field.column, record),
   };
   if (table.id === "screen_instances" && field.column === "transform_json") {

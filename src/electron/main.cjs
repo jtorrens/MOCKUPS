@@ -1,13 +1,51 @@
 const { app, BrowserWindow, dialog, ipcMain, session } = require("electron");
 const { execFile } = require("node:child_process");
+const fs = require("node:fs");
 const path = require("node:path");
 
 const appUrl = process.env.MOCKUPS_ELECTRON_URL || "http://127.0.0.1:4173";
 
+function windowStatePath() {
+  return path.join(app.getPath("userData"), "window-state.json");
+}
+
+function readWindowState() {
+  try {
+    const parsed = JSON.parse(fs.readFileSync(windowStatePath(), "utf8"));
+    if (!parsed || typeof parsed !== "object") return {};
+    return parsed;
+  } catch {
+    return {};
+  }
+}
+
+function writeWindowState(window) {
+  if (window.isDestroyed()) return;
+  try {
+    const bounds = window.getBounds();
+    fs.writeFileSync(
+      windowStatePath(),
+      JSON.stringify(
+        {
+          ...bounds,
+          maximized: window.isMaximized(),
+        },
+        null,
+        2,
+      ),
+    );
+  } catch {
+    // Layout persistence is a convenience; never block shutdown/startup for it.
+  }
+}
+
 function createWindow() {
+  const state = readWindowState();
   const window = new BrowserWindow({
-    width: 1440,
-    height: 1000,
+    x: typeof state.x === "number" ? state.x : undefined,
+    y: typeof state.y === "number" ? state.y : undefined,
+    width: typeof state.width === "number" ? state.width : 1440,
+    height: typeof state.height === "number" ? state.height : 1000,
     minWidth: 1180,
     minHeight: 760,
     title: "MOCKUPS",
@@ -19,6 +57,12 @@ function createWindow() {
       sandbox: false,
     },
   });
+
+  if (state.maximized) {
+    window.maximize();
+  }
+
+  window.on("close", () => writeWindowState(window));
 
   void window.loadURL(appUrl);
 }

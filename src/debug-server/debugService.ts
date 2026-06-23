@@ -10,6 +10,7 @@ import {
   EpisodeSchema,
   JsonObjectSchema,
   MediaAssetSchema,
+  ModuleInstanceSchema,
   ModuleThemeConfigSchema,
   ProductionSchema,
   RenderPresetSchema,
@@ -68,7 +69,6 @@ export interface DebugSaveRequest extends DebugSelection {
   fields: {
     moduleData: unknown;
     moduleConfig: unknown;
-    moduleTokensOverride: unknown;
     themeTokens: unknown;
     deviceMetrics: unknown;
     deviceState: unknown;
@@ -117,6 +117,15 @@ export function parseScreenInstance(row: Row) {
     props_json: readRequiredJson(row, "props_json"),
     transition_in_json: readNullableJson(row, "transition_in_json"),
     transition_out_json: readNullableJson(row, "transition_out_json"),
+  });
+}
+
+export function parseModuleInstance(row: Row) {
+  return ModuleInstanceSchema.parse({
+    ...row,
+    content_json: readRequiredJson(row, "content_json"),
+    behavior_json: readRequiredJson(row, "behavior_json"),
+    metadata_json: readOptionalJson(row, "metadata_json"),
   });
 }
 
@@ -189,9 +198,6 @@ export const APP_TABLES = [
     titleColumn: "id",
     jsonFields: [
       "data_ref_json",
-      "module_data_json",
-      "module_config_json",
-      "module_tokens_override_json",
       "transform_json",
       "props_json",
       "transition_in_json",
@@ -223,22 +229,32 @@ export const APP_TABLES = [
       { column: "start_frame", label: "Start frame", kind: "number" },
       { column: "end_frame", label: "End frame", kind: "number" },
       { column: "layer_order", label: "Layer order", kind: "number" },
-      {
-        column: "module_data_json",
-        label: "Module content",
-        kind: "json",
-      },
-      {
-        column: "module_config_json",
-        label: "Module behavior",
-        kind: "json",
-      },
-      {
-        column: "module_tokens_override_json",
-        label: "Local style overrides",
-        kind: "json",
-      },
       { column: "transform_json", label: "Screen transform", kind: "json" },
+    ],
+  },
+  {
+    id: "module_instances",
+    label: "Module Instances",
+    table: "module_instances",
+    titleColumn: "id",
+    jsonFields: ["content_json", "behavior_json", "metadata_json"],
+    fields: [
+      { column: "id", label: "ID", kind: "string", readonly: true },
+      {
+        column: "screen_instance_id",
+        label: "Screen instance",
+        kind: "string",
+      },
+      { column: "module_id", label: "Module ID", kind: "string" },
+      {
+        column: "module_schema_version",
+        label: "Module schema version",
+        kind: "number",
+      },
+      { column: "sort_order", label: "Sort order", kind: "number" },
+      { column: "content_json", label: "Module content", kind: "json" },
+      { column: "behavior_json", label: "Module behavior", kind: "json" },
+      { column: "metadata_json", label: "Module instance notes", kind: "json" },
     ],
   },
   {
@@ -438,6 +454,7 @@ const PARSERS = {
   episodes: EpisodeSchema,
   shots: ShotSchema,
   screen_instances: ScreenInstanceSchema,
+  module_instances: ModuleInstanceSchema,
   actors: ActorSchema,
   themes: ThemeSchema,
   module_theme_configs: ModuleThemeConfigSchema,
@@ -563,6 +580,8 @@ export function loadDebugPayload(
   const deviceState = screenInstance.device_state_id
     ? repository.getDeviceState(screenInstance.device_state_id)
     : undefined;
+  const moduleInstance =
+    repository.getPrimaryModuleInstanceForScreenInstance(screenInstance.id);
   if (!theme || !device || !deviceState) {
     throw new Error("Selected screen instance requires theme, device and state");
   }
@@ -615,10 +634,8 @@ export function loadDebugPayload(
       endFrame: screenInstance.end_frame,
     },
     editable: {
-      moduleData: screenInstance.module_data_json ?? {},
-      moduleConfig: screenInstance.module_config_json ?? {},
-      moduleTokensOverride:
-        screenInstance.module_tokens_override_json ?? {},
+      moduleData: moduleInstance?.content_json ?? {},
+      moduleConfig: moduleInstance?.behavior_json ?? {},
       themeTokens: theme.tokens_json,
       deviceMetrics: device.metrics_json,
       deviceState: deviceState.state_json,
@@ -652,19 +669,23 @@ export function saveDebugPayload(
   if (!screenInstance.device_state_id) {
     throw new Error("Selected screen instance has no device state");
   }
+  const moduleInstance = repository.getPrimaryModuleInstanceForScreenInstance(
+    screenInstance.id,
+  );
+  if (!moduleInstance) {
+    throw new Error(
+      `Selected screen instance ${screenInstance.id} has no module instance`,
+    );
+  }
 
   const moduleData =
-    screenInstance.module_id === "core.chat"
+    moduleInstance.module_id === "core.chat"
       ? ChatModuleDataSchema.parse(request.fields.moduleData)
-      : asObject(request.fields.moduleData, "module_data_json");
+      : asObject(request.fields.moduleData, "content_json");
   const moduleConfig =
-    screenInstance.module_id === "core.chat"
+    moduleInstance.module_id === "core.chat"
       ? ChatModuleConfigSchema.parse(request.fields.moduleConfig)
-      : asObject(request.fields.moduleConfig, "module_config_json");
-  const moduleTokensOverride = asObject(
-    request.fields.moduleTokensOverride,
-    "module_tokens_override_json",
-  );
+      : asObject(request.fields.moduleConfig, "behavior_json");
   const themeTokens = asObject(request.fields.themeTokens, "theme.tokens_json");
   const deviceMetrics = asObject(
     request.fields.deviceMetrics,
@@ -700,18 +721,14 @@ export function saveDebugPayload(
   const save = database.transaction(() => {
     database
       .prepare(
-        `UPDATE screen_instances
-         SET module_data_json = ?, module_config_json = ?, module_tokens_override_json = ?
+        `UPDATE module_instances
+         SET content_json = ?, behavior_json = ?
          WHERE id = ?`,
       )
       .run(
-        stringifyJsonObject(moduleData, "module_data_json"),
-        stringifyJsonObject(moduleConfig, "module_config_json"),
-        stringifyJsonObject(
-          moduleTokensOverride,
-          "module_tokens_override_json",
-        ),
-        screenInstance.id,
+        stringifyJsonObject(moduleData, "content_json"),
+        stringifyJsonObject(moduleConfig, "behavior_json"),
+        moduleInstance.id,
       );
     database
       .prepare("UPDATE themes SET tokens_json = ? WHERE id = ?")
@@ -883,64 +900,6 @@ function loadInheritedJson(database: SQLiteDatabase) {
       mergeTokenObjects(
         mergeTokenObjects(genericTokens, moduleDefaultsFromGenericTokens),
         defaultTokens,
-      ),
-    );
-  }
-
-  const screenRows = database
-    .prepare("SELECT * FROM screen_instances")
-    .all() as Row[];
-  for (const row of screenRows) {
-    const screen = parseScreenInstance(row);
-    if (!screen.module_id || !screen.module_schema_version) {
-      continue;
-    }
-    const shot = shotById.get(screen.shot_id);
-    const owner = actorById.get(shot?.owner_actor_id ?? screen.owner_actor_id);
-    const themeId = screen.theme_id ?? owner?.default_theme_id;
-    if (!themeId) continue;
-    const theme = themeById.get(themeId);
-    if (!theme) continue;
-    const app = appById.get(screen.app_id);
-    if (!app) continue;
-    const themeMode = getThemeMode(theme.tokens_json, screen.theme_mode);
-    const moduleConfig = database
-      .prepare(
-        `SELECT * FROM module_theme_configs
-         WHERE theme_id = ? AND app_id = ? AND module_id = ? AND module_schema_version = ?
-         ORDER BY name, id
-         LIMIT 1`,
-      )
-      .get(
-        themeId,
-        screen.app_id,
-        screen.module_id,
-        screen.module_schema_version,
-      ) as Row | undefined;
-    const appConfig = app.config_json && isObject(app.config_json)
-      ? app.config_json
-      : {};
-    const appTokens = isObject(appConfig.tokens_json)
-      ? appConfig.tokens_json
-      : appConfig;
-    const globalTokens = resolveGlobalThemeTokens(theme, themeMode);
-    const resolvedAppTokens = resolveModuleThemeTokens(appTokens, themeMode);
-    const genericTokens = mergeTokenObjects(globalTokens, resolvedAppTokens);
-    const moduleDefaultsFromGenericTokens =
-      moduleTypographyDefaultsFromFonts(genericTokens);
-    const moduleTokens = moduleConfig
-      ? resolveModuleThemeTokens(
-          readRequiredJson(moduleConfig, "tokens_json"),
-          themeMode,
-        )
-      : {};
-    setInherited(
-      "screen_instances",
-      screen.id,
-      "module_tokens_override_json",
-      mergeTokenObjects(
-        mergeTokenObjects(genericTokens, moduleDefaultsFromGenericTokens),
-        moduleTokens,
       ),
     );
   }

@@ -24,6 +24,7 @@ import {
   DeviceSchema,
   EpisodeSchema,
   IdSchema,
+  ModuleInstanceSchema,
   ProductionSchema,
   ResolvedChatScreenPropsSchema,
   ResolvedMessageBubblePropsSchema,
@@ -42,6 +43,7 @@ const ProductionMinimalExampleSchema = z.object({
   actors: z.array(ActorSchema).min(1),
   shots: z.array(ShotSchema).min(1),
   screen_instances: z.array(ScreenInstanceSchema).min(1),
+  module_instances: z.array(ModuleInstanceSchema).min(1),
 });
 
 const ShotLockToChatExampleSchema = z
@@ -52,6 +54,7 @@ const ShotLockToChatExampleSchema = z
       notification_id: IdSchema,
     }),
     screen_instances: z.array(ScreenInstanceSchema).min(2),
+    module_instances: z.array(ModuleInstanceSchema).min(2),
     screen_events: z.array(ScreenEventSchema).min(2),
   })
   .superRefine((value, context) => {
@@ -90,29 +93,45 @@ const ShotLockToChatExampleSchema = z
     const chatInstance = value.screen_instances.find(
       (instance) => instance.screen_type === "chat",
     );
-    if (chatInstance?.module_data_json) {
-      const result = ChatModuleDataSchema.safeParse(
-        chatInstance.module_data_json,
-      );
-      if (!result.success) {
+    const chatModuleInstance = value.module_instances.find(
+      (instance) => instance.screen_instance_id === chatInstance?.id,
+    );
+    value.module_instances.forEach((instance, index) => {
+      if (!screenInstanceIds.has(instance.screen_instance_id)) {
         context.addIssue({
           code: "custom",
-          message: "chat module_data_json must match ChatModuleDataSchema",
-          path: ["screen_instances", "module_data_json"],
+          message: "module instance must reference a listed screen instance",
+          path: ["module_instances", index, "screen_instance_id"],
         });
       }
-    }
-    if (chatInstance?.module_config_json) {
-      const result = ChatModuleConfigSchema.safeParse(
-        chatInstance.module_config_json,
+    });
+    if (chatModuleInstance) {
+      const dataResult = ChatModuleDataSchema.safeParse(
+        chatModuleInstance.content_json,
       );
-      if (!result.success) {
+      if (!dataResult.success) {
         context.addIssue({
           code: "custom",
-          message: "chat module_config_json must match ChatModuleConfigSchema",
-          path: ["screen_instances", "module_config_json"],
+          message: "chat content_json must match ChatModuleDataSchema",
+          path: ["module_instances", "content_json"],
         });
       }
+      const configResult = ChatModuleConfigSchema.safeParse(
+        chatModuleInstance.behavior_json,
+      );
+      if (!configResult.success) {
+        context.addIssue({
+          code: "custom",
+          message: "chat behavior_json must match ChatModuleConfigSchema",
+          path: ["module_instances", "behavior_json"],
+        });
+      }
+    } else {
+      context.addIssue({
+        code: "custom",
+        message: "chat screen instance must have a module instance",
+        path: ["module_instances"],
+      });
     }
     if (chatInstance?.data_ref_json !== null) {
       context.addIssue({

@@ -10,7 +10,7 @@ The working model should become:
 Theme
   → App
   → Screen / Module
-  → Screen Instance
+  → Module Instance content/behavior at render time
 ```
 
 Do not add `App Theme Config`.
@@ -99,14 +99,24 @@ The screen/module owns module-specific design defaults:
 
 Represents one screen inside one shot.
 
-It owns:
+It owns structural shot placement:
 
-- shot-specific module data;
-- per-shot module config;
-- local overrides of App or Screen/Module token roles;
 - frame timing;
 - transform/layering;
 - owner/device/theme/mode context through the shot/screen context.
+
+It does not own reusable visual overrides. Visual values flow from Theme → App → Screen/Module defaults.
+
+### Module Instance
+
+Represents the concrete module attached to a screen instance in a shot.
+
+It owns:
+
+- shot-specific module content, such as Chat participants, header copy, messages, timing and media;
+- per-shot module behavior, such as `showHeader`, `showKeyboard`, `showStatusBar`, `initialScroll`, or `messageGrouping`.
+
+It does not own visual overrides for colors, typography, spacing, radii, shadows, or other reusable design tokens.
 
 ## Important color/token clarification
 
@@ -149,7 +159,10 @@ Screen / Module
   defines screen/module roles/defaults, including light/dark color values
 
 Screen Instance
-  provides data + local overrides, including optional light/dark color overrides
+  provides placement/timing/render context
+
+Module Instance
+  provides shot-specific content and behavior
 
 Render context
   selects one mode and resolves roles/tokens into concrete values
@@ -172,7 +185,6 @@ If the implementation keeps the current `modes.light` / `modes.dark` envelope, t
 
 - App color roles can store light and dark values.
 - Screen/Module color roles can store light and dark values.
-- Screen Instance overrides can override one or both modes.
 - The resolver does not collapse to a single mode until render/preview resolution.
 
 ## Remove Screen Template
@@ -240,7 +252,6 @@ Update token resolution to include the App layer:
 theme tokens
   → app tokens/defaults
   → module/screen tokens/defaults
-  → screen instance overrides
   → selected mode collapse for render
 ```
 
@@ -275,7 +286,8 @@ Update the app shell to reflect the simplified model:
 
 - Apps remain in the Apps workspace.
 - Screen Templates are removed.
-- Screen Instances edit App/Module/Data/Overrides directly.
+- Screen Instances edit structural placement/timing/context.
+- Module Instances edit module content and behavior.
 - App records expose structured app tokens/defaults.
 - Module Theme Configs continue to expose module/screen-specific design tokens.
 
@@ -296,7 +308,6 @@ Property | Token | Light | Dark | Restore
 However, keep the conceptual rule clear:
 
 - App and Screen/Module levels define reusable token roles/defaults and may define both light and dark color values.
-- Screen Instance may carry local exceptions where necessary, including one-mode-only exceptions.
 - Render/preview resolution selects the active mode and collapses the inherited mode-aware set to concrete values.
 
 ### Duplication
@@ -306,7 +317,7 @@ Do not implement duplicate/delete actions in this phase unless explicitly reques
 Document the policy:
 
 - Episode: create/delete, no duplicate.
-- Shot duplication: duplicate child screen instances and their module JSON; preserve references to reusable resources; allow moving duplicate to another episode later.
+- Shot duplication: duplicate child screen instances and their module instances; preserve references to reusable resources; allow moving duplicate to another episode later.
 - Screen duplication: a future workflow may duplicate a screen/screen instance directly, but the normal workflow is duplication through shot duplication.
 - Production duplication: copy reusable Library resources but not episodes, shots, or screen instances.
 
@@ -353,7 +364,7 @@ If any command fails because fixtures intentionally changed, update fixtures/con
 - `Screen Template` is no longer a primary runtime/editor concept.
 - No `Screen Preset` replacement is added.
 - App records now carry meaningful app-level tokens/defaults.
-- Screen/module token resolution inherits from Theme → App → Screen/Module → Screen Instance.
+- Screen/module token resolution inherits from Theme → App → Screen/Module. Screen/Module Instances do not own visual overrides.
 - Screen instances no longer depend on `screen_template_id`.
 - App shell no longer shows Screen Templates as a main resource.
 - Color editing is more centralized and mode-aware where concrete mode values are edited.
@@ -372,7 +383,9 @@ This phase was implemented as a breaking design-stage pass and then iterated thr
 - `Screen Preset` was not introduced.
 - `apps.config_json.tokens_json` is the App-level reusable token/default layer.
 - `module_theme_configs.tokens_json` is the Screen/Module reusable token/default layer, scoped by app/module/theme/schema.
-- `screen_instances.module_tokens_override_json` remains the sparse local visual exception layer.
+- `module_instances.content_json` is the shot-specific module content layer.
+- `module_instances.behavior_json` is the per-shot module behavior layer.
+- App/screen/module instances no longer expose visual token override layers.
 - Mode-aware colors are kept as reusable light/dark values until preview/render resolves one mode.
 - Authored numeric design tokens stay in logical design units and are scaled through device metrics at render/preview resolution.
 
@@ -394,13 +407,21 @@ Important nuance:
 
 ```text
 Current storage:
-  screen_instances.module_data_json
+  module_instances.content_json
 
 Conceptual ownership:
   module instance content for the module attached to that screen instance
 ```
 
-This is not App-level data. If the project later introduces an explicit `module_instances` table, this content editor should move there conceptually; for this phase it remains stored on `screen_instances`.
+This is not App-level data, and it is no longer stored on `screen_instances`.
+
+Per-instance behavior is stored separately:
+
+```text
+module_instances.behavior_json
+```
+
+Visual design tokens are not stored as per-instance overrides. They come from Theme/App/Module Theme Config resolution.
 
 For `core.chat@1`:
 

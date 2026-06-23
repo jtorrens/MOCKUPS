@@ -11,7 +11,11 @@ function moduleContextFromRecord(
   record: Record<string, unknown> | undefined,
 ): { moduleId: string; schemaVersion: number } | undefined {
   if (!record) return undefined;
-  if (tableId !== "screen_instances" && tableId !== "module_theme_configs") {
+  if (
+    tableId !== "screen_instances" &&
+    tableId !== "module_instances" &&
+    tableId !== "module_theme_configs"
+  ) {
     return undefined;
   }
   const moduleId = record.module_id;
@@ -33,6 +37,12 @@ function moduleFieldForJsonField(
       fieldColumn === "module_tokens_override_json")
   ) {
     return fieldColumn;
+  }
+  if (
+    tableId === "module_instances" &&
+    (fieldColumn === "content_json" || fieldColumn === "behavior_json")
+  ) {
+    return fieldColumn === "content_json" ? "module_data_json" : "module_config_json";
   }
   if (
     tableId === "module_theme_configs" &&
@@ -59,4 +69,3 @@ export function moduleJsonUiHintsForRecord(
   );
   return contract?.fields[moduleField] ?? {};
 }
-

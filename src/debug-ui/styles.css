@@ -3059,3 +3059,298 @@ button {
   font-size: 24px;
   font-weight: 800;
 }
+
+/* Current inspector shell polish: re-applied after safe CSS restore. */
+:root {
+  color: #15171c;
+  background: #ffffff;
+}
+
+body,
+.core-app-shell {
+  background: #ffffff;
+}
+
+.panel-resizer::before {
+  background: #dfe3eb;
+}
+
+.right-preview-shell .preview-panel {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+.preview-viewport-host {
+  display: grid;
+  min-height: 0;
+  flex: 1 1 auto;
+  place-items: center;
+  overflow: hidden;
+  padding: 18px;
+}
+
+.preview-viewport {
+  position: relative;
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+
+.preview-scale {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
+}
+
+/* Shared field rows. */
+.inspector-field-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) minmax(190px, 1.15fr) minmax(210px, 1.1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.inspector-field-label,
+.inspector-field-meta,
+.inspector-field-control,
+.inspector-field-restore {
+  min-width: 0;
+}
+
+.inspector-field-restore {
+  display: grid;
+  justify-content: end;
+}
+
+.inspector-restore-button {
+  display: inline-grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid #d9dee7;
+  border-radius: 999px;
+  padding: 0;
+  color: #22262f;
+  background: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.inspector-restore-button:hover {
+  border-color: #aeb8c8;
+  background: #f8fafc;
+}
+
+.token-override-row.inspector-field-row,
+.mode-color-row.inspector-field-row {
+  grid-template-columns: minmax(150px, 1fr) minmax(190px, 1.1fr) minmax(220px, 1.2fr) auto;
+}
+
+.content-field-row.inspector-field-row {
+  grid-template-columns: minmax(150px, 0.8fr) minmax(0, 1.4fr);
+}
+
+.mode-color-controls {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(120px, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.record-editor .field-stack,
+.record-editor .field-stack.single-column,
+.record-editor .editor-section-body.field-stack,
+.record-editor .editor-section-body.field-stack.single-column {
+  display: flex !important;
+  flex-direction: column !important;
+  grid-template-columns: none !important;
+  align-items: stretch !important;
+}
+
+.record-editor .app-field.inspector-field-row {
+  display: grid !important;
+  grid-template-columns: 150px minmax(0, 1fr) !important;
+  width: 100% !important;
+  padding: 0 10px !important;
+  box-sizing: border-box !important;
+}
+
+.record-editor .app-field.inspector-field-row .inspector-field-control {
+  display: grid;
+  max-width: 520px;
+  gap: 6px;
+}
+
+.record-editor .app-field.inspector-field-row .inspector-field-label {
+  padding-left: 8px;
+}
+
+.record-editor .app-field.inspector-field-row .inspector-field-label span {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+}
+
+.record-editor .app-field.json-primitive-row {
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  padding: 0 10px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.record-editor .app-field.json-primitive-row.json-override {
+  border-radius: 10px !important;
+  background: #fff7ed !important;
+}
+
+.record-editor .json-tree-editor .app-field.json-primitive-row .inspector-field-label {
+  padding-left: 8px;
+  color: #475467;
+}
+
+.record-editor .editor-section-body.nested-editor-stack,
+.record-editor .editor-section-body:has(> .editor-subsection-card),
+.record-editor .editor-section-body:has(> .mode-color-editor),
+.record-editor .editor-section-body:has(> .token-override-editor) {
+  padding-bottom: 18px !important;
+}
+
+/* Left workspace browser as nested cards. */
+.project-browser .project-tree-view {
+  display: grid;
+  gap: 10px;
+  padding: 10px 0 0;
+}
+
+.project-browser .tree-node,
+.project-browser .tree-leaf-with-children {
+  overflow: hidden;
+  border: 1px solid #dfe5ee;
+  border-radius: 13px;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(21, 30, 50, 0.045);
+}
+
+.project-browser .tree-node summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+  padding: 5px;
+  list-style: none;
+}
+
+.project-browser .tree-node summary::-webkit-details-marker {
+  display: none;
+}
+
+.project-browser .tree-node summary::after {
+  content: "›";
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  color: #475467;
+  background: transparent;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.project-browser .tree-node[open] > summary::after {
+  content: "⌄";
+  font-size: 14px;
+}
+
+.project-browser .tree-node > summary > button:not(.mini-action),
+.project-browser .tree-leaf-with-children > button:not(.mini-action) {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.project-browser .tree-children,
+.project-browser .tree-children.compact {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  border: 0;
+  padding: 6px 10px 10px 18px;
+  background: linear-gradient(90deg, #f4f6fa 0 1px, transparent 1px) 8px 0 / 1px 100% no-repeat;
+}
+
+.project-browser .tree-children.compact {
+  padding-top: 0;
+}
+
+.project-browser .tree-children > .tree-node,
+.project-browser .tree-children > .tree-leaf-with-children,
+.project-browser .tree-children > button:not(.mini-action) {
+  background: #fbfcfe !important;
+}
+
+.project-browser .project-tree-view button:not(.mini-action) {
+  min-height: 42px;
+  border-radius: 10px;
+  padding: 8px 9px;
+}
+
+.project-browser .workspace-accordion-trigger {
+  grid-template-columns: 30px minmax(0, 1fr) auto auto !important;
+}
+
+.project-browser .workspace-accordion-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: end;
+}
+
+.project-browser .workspace-accordion-actions .tree-actions {
+  display: inline-flex;
+}
+
+.project-browser .workspace-accordion-actions .mini-action {
+  border: 0 !important;
+  border-radius: 8px;
+  color: #475467;
+  background: transparent !important;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1;
+  box-shadow: none !important;
+}
+
+.project-browser .workspace-accordion-actions .mini-action:hover:not(:disabled) {
+  color: #1d2129;
+  background: #f2f4f7 !important;
+}
+
+.project-browser .workspace-accordion-actions .mini-action:disabled {
+  opacity: 0.28;
+}
+
+.project-browser .workspace-accordion-card.editing .workspace-accordion-copy strong,
+.project-tree-view button.editing .tree-record-copy strong,
+.record-list button.editing strong {
+  color: #2554d8;
+}
+
+.project-browser .workspace-accordion-card.editing .workspace-accordion-icon,
+.project-tree-view button.editing .tree-record-icon {
+  border-color: #aebcff;
+  color: #2554d8;
+  background: #eef2ff;
+}
+
+.project-browser .workspace-accordion-icon,
+.project-browser .tree-section-title > span {
+  border: 0 !important;
+  background: transparent !important;
+}

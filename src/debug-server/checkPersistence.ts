@@ -31,18 +31,18 @@ updateAppRecord(database, {
   patch: { name: scalarName },
 });
 
-const screenRecord = database
-  .prepare("SELECT module_config_json FROM screen_instances WHERE id = ?")
-  .get("screen_instance_chat") as { module_config_json: string };
-const moduleConfig = JSON.parse(screenRecord.module_config_json) as Record<
+const moduleRecord = database
+  .prepare("SELECT behavior_json FROM module_instances WHERE screen_instance_id = ?")
+  .get("screen_instance_chat") as { behavior_json: string };
+const moduleConfig = JSON.parse(moduleRecord.behavior_json) as Record<
   string,
   unknown
 >;
 updateAppRecord(database, {
-  tableId: "screen_instances",
-  recordId: "screen_instance_chat",
+  tableId: "module_instances",
+  recordId: "screen_instance_chat:module",
   patch: {
-    module_config_json: {
+    behavior_json: {
       ...moduleConfig,
       showKeyboard: true,
       debugShowBounds: true,
@@ -63,10 +63,10 @@ try {
   );
 
   const persistedScreen = database
-    .prepare("SELECT module_config_json FROM screen_instances WHERE id = ?")
-    .get("screen_instance_chat") as { module_config_json: string };
+    .prepare("SELECT behavior_json FROM module_instances WHERE screen_instance_id = ?")
+    .get("screen_instance_chat") as { behavior_json: string };
   const persistedConfig = JSON.parse(
-    persistedScreen.module_config_json,
+    persistedScreen.behavior_json,
   ) as Record<string, unknown>;
   assert(
     persistedConfig.showKeyboard === true &&
@@ -86,7 +86,7 @@ try {
   assert(
     props.props?.showKeyboard === true &&
       props.props.debugShowBounds === true,
-    "Preview did not use persisted module_config_json values",
+    "Preview did not use persisted module instance behavior values",
   );
 
   console.log("✓ scalar edit persisted after SQLite reopen");

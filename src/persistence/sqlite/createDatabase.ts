@@ -109,6 +109,50 @@ function applyBreakingV6Marker(database: SQLiteDatabase): void {
   database.pragma("user_version = 6");
 }
 
+function applyAdditiveV7Migration(database: SQLiteDatabase): void {
+  database.exec(`
+    CREATE TABLE IF NOT EXISTS module_instances (
+      id TEXT PRIMARY KEY,
+      screen_instance_id TEXT NOT NULL REFERENCES screen_instances(id) ON DELETE CASCADE,
+      module_id TEXT NOT NULL,
+      module_schema_version INTEGER NOT NULL CHECK (module_schema_version > 0),
+      sort_order INTEGER CHECK (sort_order >= 0),
+      content_json TEXT NOT NULL,
+      behavior_json TEXT NOT NULL,
+      metadata_json TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_module_instances_screen
+      ON module_instances(screen_instance_id, sort_order, id);
+  `);
+  database.exec(`
+    INSERT OR IGNORE INTO module_instances (
+      id,
+      screen_instance_id,
+      module_id,
+      module_schema_version,
+      sort_order,
+      content_json,
+      behavior_json,
+      metadata_json
+    )
+    SELECT
+      id || ':module',
+      id,
+      COALESCE(module_id, screen_type),
+      COALESCE(module_schema_version, 1),
+      0,
+      COALESCE(module_data_json, '{}'),
+      COALESCE(module_config_json, '{}'),
+      '{}'
+    FROM screen_instances
+    WHERE module_id IS NOT NULL
+      AND module_schema_version IS NOT NULL
+      AND module_data_json IS NOT NULL
+      AND module_config_json IS NOT NULL;
+  `);
+  database.pragma("user_version = 7");
+}
+
 export function applyInitialSchema(database: SQLiteDatabase): void {
   database.exec(readFileSync(schemaPath, "utf8"));
   applyAdditiveV2Migration(database);
@@ -116,6 +160,7 @@ export function applyInitialSchema(database: SQLiteDatabase): void {
   applyAdditiveV4Migration(database);
   applyAdditiveV5Migration(database);
   applyBreakingV6Marker(database);
+  applyAdditiveV7Migration(database);
   database.pragma("foreign_keys = ON");
 }
 

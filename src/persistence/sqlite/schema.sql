@@ -234,6 +234,17 @@ CREATE TABLE IF NOT EXISTS screen_instances (
   transition_out_json TEXT
 );
 
+CREATE TABLE IF NOT EXISTS module_instances (
+  id TEXT PRIMARY KEY,
+  screen_instance_id TEXT NOT NULL REFERENCES screen_instances(id) ON DELETE CASCADE,
+  module_id TEXT NOT NULL,
+  module_schema_version INTEGER NOT NULL CHECK (module_schema_version > 0),
+  sort_order INTEGER CHECK (sort_order >= 0),
+  content_json TEXT NOT NULL,
+  behavior_json TEXT NOT NULL,
+  metadata_json TEXT
+);
+
 CREATE TABLE IF NOT EXISTS screen_events (
   id TEXT PRIMARY KEY,
   screen_instance_id TEXT NOT NULL REFERENCES screen_instances(id) ON DELETE CASCADE,
@@ -249,8 +260,9 @@ CREATE INDEX IF NOT EXISTS idx_shots_production ON shots(production_id, sort_ord
 CREATE INDEX IF NOT EXISTS idx_episodes_production ON episodes(production_id, sort_order);
 CREATE INDEX IF NOT EXISTS idx_module_theme_configs_lookup ON module_theme_configs(theme_id, app_id, module_id, module_schema_version);
 CREATE INDEX IF NOT EXISTS idx_screen_instances_shot ON screen_instances(shot_id, layer_order);
+CREATE INDEX IF NOT EXISTS idx_module_instances_screen ON module_instances(screen_instance_id, sort_order, id);
 CREATE INDEX IF NOT EXISTS idx_screen_events_instance ON screen_events(screen_instance_id, start_frame);
 CREATE INDEX IF NOT EXISTS idx_conversation_participants_conversation ON conversation_participants(conversation_id, sort_order);
 CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id, sort_order);
 
-PRAGMA user_version = 6;
+PRAGMA user_version = 7;

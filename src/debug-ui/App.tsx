@@ -12,6 +12,35 @@ import { AppPreviewPanel } from "./components/AppPreviewPanel.js";
 import { ProjectTree } from "./components/ProjectTree.js";
 import { RecordEditor } from "./components/RecordEditor.js";
 
+const LAYOUT_STORAGE_KEY = "mockups.debugUi.layout.v1";
+
+interface StoredLayout {
+  navigationWidth?: number;
+  authoringWidth?: number;
+}
+
+function readStoredLayout(): StoredLayout {
+  try {
+    const raw = window.localStorage.getItem(LAYOUT_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as StoredLayout;
+    return typeof parsed === "object" && parsed !== null ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function storedPanelWidth(
+  key: keyof StoredLayout,
+  fallback: number,
+  min: number,
+  max: number,
+) {
+  const value = readStoredLayout()[key];
+  if (typeof value !== "number" || !Number.isFinite(value)) return fallback;
+  return Math.min(max, Math.max(min, value));
+}
+
 function chooseInitialSelection(state: AppState): DebugSelection {
   const production = state.options.productions[0];
   const episode = state.options.episodes.find(
@@ -79,8 +108,12 @@ export function App() {
   const [requestError, setRequestError] = useState("");
   const [refreshCounter, setRefreshCounter] = useState(0);
   const [isProductionModalOpen, setProductionModalOpen] = useState(false);
-  const [navigationWidth, setNavigationWidth] = useState(380);
-  const [authoringWidth, setAuthoringWidth] = useState(1040);
+  const [navigationWidth, setNavigationWidth] = useState(() =>
+    storedPanelWidth("navigationWidth", 380, 280, 720),
+  );
+  const [authoringWidth, setAuthoringWidth] = useState(() =>
+    storedPanelWidth("authoringWidth", 1040, 720, 1800),
+  );
 
   useEffect(() => {
     void getAppState()
@@ -103,6 +136,13 @@ export function App() {
       .catch((error: Error) => setPreviewError(error.message))
       .finally(() => setBusyPreview(false));
   }, [selection, refreshCounter]);
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      LAYOUT_STORAGE_KEY,
+      JSON.stringify({ navigationWidth, authoringWidth }),
+    );
+  }, [authoringWidth, navigationWidth]);
 
   const activeTable = state?.tables.find((table) => table.id === activeTableId);
   const selectedRecord = useMemo(() => {
@@ -178,6 +218,28 @@ export function App() {
           shotId: shot.id,
           screenInstanceId: instance.id,
           frame: Math.max(instance.startFrame, Math.min(selection.frame, instance.endFrame - 1)),
+        });
+      }
+    }
+    if (tableId === "module_instances") {
+      const moduleInstance = state.records.module_instances?.find(
+        (candidate) => candidate.id === recordId,
+      );
+      const instance = state.options.screenInstances.find(
+        (candidate) => candidate.id === moduleInstance?.screen_instance_id,
+      );
+      const shot = state.options.shots.find(
+        (candidate) => candidate.id === instance?.shotId,
+      );
+      if (instance && shot) {
+        setSelection({
+          productionId: shot.productionId,
+          shotId: shot.id,
+          screenInstanceId: instance.id,
+          frame: Math.max(
+            instance.startFrame,
+            Math.min(selection.frame, instance.endFrame - 1),
+          ),
         });
       }
     }

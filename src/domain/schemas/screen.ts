@@ -86,29 +86,44 @@ export const ScreenInstanceSchema = z
         path: ["data_ref_json"],
       });
     }
-    const dataResult = ChatModuleDataSchema.safeParse(value.module_data_json);
+  });
+
+export const ModuleInstanceSchema = z
+  .object({
+    id: IdSchema,
+    screen_instance_id: IdSchema,
+    module_id: IdSchema,
+    module_schema_version: PositiveIntegerSchema,
+    sort_order: z.number().int().optional(),
+    content_json: JsonObjectSchema,
+    behavior_json: JsonObjectSchema,
+    metadata_json: JsonObjectSchema.nullable().optional(),
+  })
+  .superRefine((value, context) => {
+    if (value.module_id !== "core.chat") {
+      return;
+    }
+    if (value.module_schema_version !== 1) {
+      context.addIssue({
+        code: "custom",
+        message: "Chat module instances require module_schema_version 1",
+        path: ["module_schema_version"],
+      });
+    }
+    const dataResult = ChatModuleDataSchema.safeParse(value.content_json);
     if (!dataResult.success) {
       context.addIssue({
         code: "custom",
-        message: "Chat screen instance requires valid module_data_json",
-        path: ["module_data_json"],
+        message: "Chat module instance requires valid content_json",
+        path: ["content_json"],
       });
     }
-    const configResult = ChatModuleConfigSchema.safeParse(
-      value.module_config_json,
-    );
+    const configResult = ChatModuleConfigSchema.safeParse(value.behavior_json);
     if (!configResult.success) {
       context.addIssue({
         code: "custom",
-        message: "Chat screen instance requires valid module_config_json",
-        path: ["module_config_json"],
-      });
-    }
-    if (!value.module_tokens_override_json) {
-      context.addIssue({
-        code: "custom",
-        message: "Chat screen instance requires module_tokens_override_json",
-        path: ["module_tokens_override_json"],
+        message: "Chat module instance requires valid behavior_json",
+        path: ["behavior_json"],
       });
     }
   });
@@ -127,4 +142,5 @@ export const ScreenEventSchema = z.object({
 export type ScreenType = z.infer<typeof ScreenTypeSchema>;
 export type ScreenEventType = z.infer<typeof ScreenEventTypeSchema>;
 export type ScreenInstance = z.infer<typeof ScreenInstanceSchema>;
+export type ModuleInstance = z.infer<typeof ModuleInstanceSchema>;
 export type ScreenEvent = z.infer<typeof ScreenEventSchema>;

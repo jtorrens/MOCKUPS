@@ -5,6 +5,7 @@ import { stringifyJsonObject } from "./json.js";
 
 const DELETE_ORDER = [
   "screen_events",
+  "module_instances",
   "screen_instances",
   "data_sources",
   "calls",
@@ -328,6 +329,22 @@ function seedRecords(
       "transition_in_json",
       "transition_out_json",
     ]),
+  );
+  insertRows(
+    database,
+    "module_instances",
+    [
+      "id",
+      "screen_instance_id",
+      "module_id",
+      "module_schema_version",
+      "sort_order",
+      "content_json",
+      "behavior_json",
+      "metadata_json",
+    ],
+    dataset.moduleInstances,
+    new Set(["content_json", "behavior_json", "metadata_json"]),
   );
   insertRows(
     database,

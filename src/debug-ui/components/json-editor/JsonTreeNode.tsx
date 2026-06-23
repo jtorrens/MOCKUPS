@@ -2,6 +2,10 @@ import { useState } from "react";
 import { JsonArrayEditor } from "./JsonArrayEditor.js";
 import { JsonObjectEditor } from "./JsonObjectEditor.js";
 import { JsonValueEditor } from "./JsonValueEditor.js";
+import {
+  InspectorFieldRow,
+  InspectorRestoreButton,
+} from "../inspector/InspectorFieldRow.js";
 import { compactLabelForGroup, groupFromPathSegment } from "./labels.js";
 import { hintForPath, type JsonUiHint, type JsonUiHints } from "./uiHints.js";
 import {
@@ -202,34 +206,33 @@ export function JsonTreeNode({
   }
 
   return (
-    <div
-      className={`json-tree-node json-primitive-row ${
+    <InspectorFieldRow
+      className={`app-field json-primitive-row ${
         isOverride ? "json-override" : ""
       }`}
-    >
-      <span className="json-node-label">
-        <strong>{visibleLabel}</strong>
-      </span>
-      <JsonValueEditor
-        rootValue={rootValue}
-        path={path}
-        value={value}
-        hints={hints}
-        groupContext={groupContext}
-        onRootChange={onRootChange}
-        onChange={(nextValue) =>
-          onRootChange(setAtPath(rootValue, path, nextValue))
-        }
-      />
-      {isOverride ? (
-        <button
-          className="json-restore-button"
-          type="button"
-          onClick={restoreInherited}
-        >
-          Restore inherited
-        </button>
-      ) : null}
-    </div>
+      state={isOverride ? "override" : "default"}
+      label={<span>{visibleLabel}</span>}
+      control={
+        <JsonValueEditor
+          rootValue={rootValue}
+          path={path}
+          value={value}
+          hints={hints}
+          groupContext={groupContext}
+          onRootChange={onRootChange}
+          onChange={(nextValue) =>
+            onRootChange(setAtPath(rootValue, path, nextValue))
+          }
+        />
+      }
+      restore={
+        isOverride ? (
+          <InspectorRestoreButton
+            label={`Restore ${visibleLabel}`}
+            onClick={restoreInherited}
+          />
+        ) : undefined
+      }
+    />
   );
 }

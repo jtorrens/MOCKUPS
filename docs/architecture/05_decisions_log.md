@@ -208,7 +208,7 @@ Chat module data contains participants, and every message references `senderPart
 
 Implications:
 - Group chats do not depend on a single owner/target pair.
-- `core.chat` schema version 1 uses `screen_instances.module_data_json` as its canonical runtime source.
+- `core.chat` schema version 1 uses `module_instances.content_json` as its canonical runtime source.
 - Central conversation/message tables may remain physically present but are deprecated and not read by Chat runtime.
 
 ## D022 — Module schema versions are independent from app schema versions
@@ -233,7 +233,7 @@ Implications:
 
 ## D024 — Module data, config, and token overrides are separate
 
-Status: accepted
+Status: superseded by D045
 
 `module_data_json` stores shot content, `module_config_json` stores instance behavior, and `module_tokens_override_json` stores intentional local visual exceptions. Theme tokens remain the reusable canonical design source.
 
@@ -275,7 +275,7 @@ Implications:
 
 Status: accepted
 
-Module theme config JSON may reference, copy, or override compatible global theme values. Resolution merges global theme tokens, selected global mode, module theme config tokens, selected module mode, then instance overrides.
+Module theme config JSON may reference, copy, or override compatible global theme values. Resolution merges global theme tokens, selected global mode, app tokens, selected app mode, module theme config tokens, and selected module mode.
 
 Implications:
 - Modules receive a render-ready merged token object.
@@ -284,7 +284,7 @@ Implications:
 
 ## D029 — Screen instance token overrides remain local exceptions
 
-Status: accepted
+Status: superseded by D045
 
 `screen_instances.module_tokens_override_json` remains the canonical place for one-off per-shot/per-instance visual exceptions.
 
@@ -342,7 +342,7 @@ Status: accepted
 Chat message `type` describes the message family, not an exclusive payload switch. A message may contain text and attached media together, such as an image/video with a caption or accompanying text.
 
 Implications:
-- `module_data_json.messages[]` may include both `text` and `mediaAssetId`/`media`.
+- `module_instances.content_json.messages[]` may include both `text` and `mediaAssetId`/`media`.
 - The Chat editor must expose media fields as optional attachments, not as mutually exclusive alternatives to text.
 - Resolved Chat props preserve both `text`/`visibleText` and `media` when both are present.
 
@@ -451,11 +451,11 @@ Implications:
 - Raw JSON editing is a recovery/fallback surface for invalid JSON or advanced inspection, not the primary editing mode.
 - App, Theme, and Module token editors should share the same broad structure: General/Settings for identity, Tokens grouped by concept, and Colors as the central mode-aware color editor.
 
-## D042 — Runtime token inheritance is Theme → App → Screen/Module → Screen Instance
+## D042 — Runtime token inheritance is Theme → App → Screen/Module
 
 Status: accepted
 
-The active architecture removes Screen Templates and does not add App Theme Configs or Screen Presets. Reusable app defaults live directly on `apps.config_json.tokens_json`; reusable module/screen defaults live in `module_theme_configs.tokens_json` scoped by `theme_id + app_id + module_id + module_schema_version`; shot-specific content and sparse local exceptions live on `screen_instances`.
+The active architecture removes Screen Templates and does not add App Theme Configs or Screen Presets. Reusable app defaults live directly on `apps.config_json.tokens_json`; reusable module/screen defaults live in `module_theme_configs.tokens_json` scoped by `theme_id + app_id + module_id + module_schema_version`.
 
 Runtime token resolution is:
 
@@ -466,15 +466,14 @@ theme tokens
   → selected app mode tokens
   → module/screen tokens
   → selected module/screen mode tokens
-  → screen instance overrides
-  → selected screen instance override mode tokens
 ```
 
-Color values may be mode-aware at App, Module, and Screen Instance levels. The editor should present mode-aware colors together with Light and Dark columns instead of scattering them through every conceptual group. The resolver collapses to one mode only in the final shot/screen render context.
+Color values may be mode-aware at App and Module levels. The editor should present mode-aware colors together with Light and Dark columns instead of scattering them through every conceptual group. The resolver collapses to one mode only in the final shot/screen render context.
 
 Implications:
 - `screen_instances` reference an `app_id` directly and no longer reference `screen_template_id`.
 - `module_theme_configs` reference `app_id` directly.
+- Screen/app/module instances do not carry visual overrides for colors, fonts, spacing, radii, shadows, or layout tokens.
 - If a user wants to reuse a previous setup as a starting point, they duplicate an existing screen/screen instance and edit the duplicate.
 - This is a design-stage breaking change; local development databases can be explicitly reset, but normal app startup must not reseed or overwrite edited data.
 
@@ -496,12 +495,70 @@ Status: accepted
 
 The local authoring shell is moving toward an inspector-first, Figma-collections-like UI. The left workspace uses accordion sections rather than mixing tabs and trees. The central editor uses accordion cards for major areas and grouped cards for nested token/content concepts.
 
-Shot-specific module payloads are presented as `Module Content` in the screen-instance editor. Physically, the current design-stage model still stores this data in `screen_instances.module_data_json`; conceptually, it is the content for the module instance attached to that screen instance. If a future explicit `module_instances` table is introduced, this UI responsibility should move there without changing the authoring concept.
+Shot-specific module payloads are presented as `Module Content` in the module-instance editor. The active design-stage model stores this data in `module_instances.content_json`, with per-instance runtime behavior in `module_instances.behavior_json`.
 
 Implications:
 - `Module Content` is not App data and should not be presented as App-level configuration.
+- `Screen Instance` remains responsible for placement, timing, transform, layer order, app/module reference, device/theme/mode context, and shot ownership.
+- `Module Instance` remains responsible for the module payload and behavior attached to that screen instance.
 - Chat participants and messages are edited through structured content cards, not as raw JSON strings.
 - Collapsed content rows should show useful summaries such as participant display name/role or message sender/type/text/timing.
 - Major Project/App/Production Data areas use accordion sections with trees inside, avoiding mixed tab/tree metaphors.
 - Token and color editors use friendly group labels and logical icons; raw/internal token names remain useful only where they identify a token path.
 - Raw JSON remains a fallback/recovery surface, not the normal UI for module content.
+
+## D045 — Module instances own content and behavior; instances do not own visual token overrides
+
+Status: accepted
+
+The design-stage model now has an explicit `module_instances` table. A screen instance may have one or more module instances, ordered by `sort_order`. The primary Chat case uses one module instance per chat screen instance.
+
+Canonical module-instance fields:
+
+```text
+module_instances.content_json
+module_instances.behavior_json
+module_instances.metadata_json
+```
+
+`content_json` stores shot-specific module data such as Chat participants, header copy, messages, timings, and media references. `behavior_json` stores per-shot behavior such as showing the header, showing the keyboard, status bar visibility, initial scroll, and message grouping.
+
+Per-instance visual overrides are removed from the active editor/resolver model. Visual values are reusable defaults resolved from:
+
+```text
+Theme → App → Module Theme Config → selected mode
+```
+
+Implications:
+- The Chat resolver reads `ChatModuleDataSchema` from `module_instances.content_json`.
+- The Chat resolver reads `ChatModuleConfigSchema` from `module_instances.behavior_json`.
+- `screen_instances.module_data_json`, `screen_instances.module_config_json`, and `screen_instances.module_tokens_override_json` remain only as legacy/migration compatibility columns.
+- The UI should not show an Overrides section for Screen Instances or Module Instances.
+- Reset/seed paths should create module-instance rows directly.
+
+## D046 — Field descriptors provide canonical UI paths without bloating stored JSON
+
+Status: accepted
+
+Stored JSON should remain compact and domain-oriented. The app should not store labels, canonical paths, section names, or UI metadata beside every value.
+
+Instead, editor code owns a field-descriptor catalog that maps storage paths to canonical conceptual paths:
+
+```text
+storage: typography.message.fontSize
+canonical: module.design.typography.message.size
+
+storage: module_instances.content_json.messages[].text
+canonical: moduleInstance.content.messages[].text
+
+storage: apps.id
+canonical: app.general.id
+```
+
+Descriptors may also define section, area, group, role, property, label, widget, options, numeric constraints, and collapsed-summary hints.
+
+Implications:
+- JSON documents stay light and readable.
+- The UI can derive a consistent inspector structure from `section → group → role → property`.
+- Scalar SQL fields and JSON fields can share one naming grammar.
+- Future UI unification should render fields from descriptors rather than each editor inventing labels, grouping, restore buttons, and row layout separately.

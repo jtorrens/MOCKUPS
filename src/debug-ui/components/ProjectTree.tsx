@@ -21,8 +21,6 @@ interface ProjectTreeProps {
   ) => void;
 }
 
-const APPS_TABLE_IDS = new Set(["apps", "module_theme_configs"]);
-
 const PRODUCTION_DATA_TABLE_IDS = new Set([
   "actors",
   "themes",
@@ -68,53 +66,6 @@ function ActionButton({
   );
 }
 
-function BrowserPanel({
-  title,
-  subtitle,
-  count,
-  canAdd,
-  busy,
-  children,
-  onAdd,
-}: {
-  title: string;
-  subtitle: string;
-  count: number;
-  canAdd?: boolean;
-  busy?: boolean;
-  children: ReactNode;
-  onAdd?: () => void;
-}) {
-  return (
-    <details className="hierarchy-panel" open>
-      <summary>
-        <div>
-          <span className="eyebrow">{subtitle}</span>
-          <strong>
-            {title} <small>{count}</small>
-          </strong>
-        </div>
-        <div className="hierarchy-actions">
-          <ActionButton
-            disabled={!canAdd || busy}
-            title={canAdd ? `Add ${title.toLowerCase()}` : "Select a parent first"}
-            onClick={onAdd}
-          >
-            ＋
-          </ActionButton>
-          <ActionButton disabled title="Duplicate will copy child records in a later pass">
-            ⧉
-          </ActionButton>
-          <ActionButton disabled title="Delete is disabled until cascade policy is confirmed">
-            ⌫
-          </ActionButton>
-        </div>
-      </summary>
-      <div className="hierarchy-panel-body">{children}</div>
-    </details>
-  );
-}
-
 function EmptyPanel({ children }: { children: string }) {
   return <div className="empty-record-list compact-empty">{children}</div>;
 }
@@ -131,7 +82,7 @@ function TreeActions({
   return (
     <span className="tree-actions">
       <ActionButton disabled={!canAdd || busy} title="Add" onClick={onAdd}>
-        ＋
+        +
       </ActionButton>
       <ActionButton disabled title="Duplicate will copy child records in a later pass">
         ⧉
@@ -237,7 +188,10 @@ function TreeButton({
         activeTableId,
         selectedRecordIds,
       )}
-      onClick={onClick}
+      onClick={(event) => {
+        event.stopPropagation();
+        onClick();
+      }}
     >
       {icon ? (
         <span className="tree-record-icon" aria-hidden="true">
@@ -278,36 +232,19 @@ export function ProjectTree({
   onCreateRecord,
 }: ProjectTreeProps) {
   const [browserTab, setBrowserTab] = useState<"" | "project" | "apps" | "data">(
-    "project",
+    "",
   );
   const tablesById = tableById(tables);
   const selectedProductionId = selectedRecordIds.productions;
-  const selectedEpisodeId = selectedRecordIds.episodes;
-  const selectedShotId = selectedRecordIds.shots;
-  const selectedScreenId = selectedRecordIds.screen_instances;
-  const selectedScreen = options.screenInstances.find(
-    (instance) => instance.id === selectedScreenId,
-  );
   const productionEpisodes = options.episodes.filter(
     (episode) => episode.productionId === selectedProductionId,
   );
-  const episodeShots = options.shots.filter(
-    (shot) => shot.episodeId === selectedEpisodeId,
-  );
-  const shotInstances = options.screenInstances.filter(
-    (instance) => instance.shotId === selectedShotId,
-  );
-  const moduleThemeConfigRecords = (records.module_theme_configs ?? []).filter(
-    (record) =>
-      record.production_id === selectedProductionId &&
-      (!selectedScreen?.moduleId || record.module_id === selectedScreen.moduleId),
-  );
-  const appsTables = tables.filter((table) => APPS_TABLE_IDS.has(table.id));
   const dataTables = tables.filter((table) =>
     PRODUCTION_DATA_TABLE_IDS.has(table.id),
   );
   const appRecords = recordsForSelectedProduction("apps");
   const moduleConfigRecords = recordsForSelectedProduction("module_theme_configs");
+  const moduleInstanceRecords = records.module_instances ?? [];
 
   function recordsForSelectedProduction(tableId: string) {
     return (records[tableId] ?? []).filter(
@@ -322,45 +259,8 @@ export function ProjectTree({
     onRecordSelect(tableId, recordId);
   }
 
-  function renderRecordButtons(table: AppTableDefinition, tableRecords: AppRecord[]) {
-    return tableRecords.length === 0 ? (
-      <EmptyPanel>No records yet.</EmptyPanel>
-    ) : (
-      <div className="hierarchy-list">
-        {tableRecords.map((record) => (
-          <button
-            key={record.id}
-            type="button"
-            data-testid={`record-${record.id}`}
-            className={recordButtonClass(
-              table.id,
-              record.id,
-              activeTableId,
-              selectedRecordIds,
-            )}
-            onClick={() => select(table.id, record.id)}
-          >
-            <strong>{recordTitle(table, record)}</strong>
-            <small>{record.id}</small>
-          </button>
-        ))}
-      </div>
-    );
-  }
-
   function screenTitle(instance: DebugOptions["screenInstances"][number]) {
     return instance.moduleId?.replace(/^core\./, "") ?? instance.screenType;
-  }
-
-  function sectionLabel(icon: string, title: string) {
-    return (
-      <span className="tree-section-title">
-        <span aria-hidden="true">
-          <TreeIcon name={icon} />
-        </span>
-        {title}
-      </span>
-    );
   }
 
   function renderProjectTree() {
@@ -369,16 +269,6 @@ export function ProjectTree({
     }
     return (
       <div className="project-tree-view">
-        <div className="tree-toolbar">
-          {sectionLabel("episode", "Episodes")}
-          <TreeActions
-            canAdd={Boolean(selectedProductionId)}
-            busy={busyAction}
-            onAdd={() =>
-              onCreateRecord("episodes", { productionId: selectedProductionId })
-            }
-          />
-        </div>
         {productionEpisodes.length === 0 ? (
           <EmptyPanel>No episodes yet.</EmptyPanel>
         ) : (
@@ -387,7 +277,7 @@ export function ProjectTree({
               (shot) => shot.episodeId === episode.id,
             );
             return (
-              <details key={episode.id} className="tree-node" open>
+              <details key={episode.id} className="tree-node">
                 <summary>
                   <TreeButton
                     tableId="episodes"
@@ -414,7 +304,7 @@ export function ProjectTree({
                         (instance) => instance.shotId === shot.id,
                       );
                       return (
-                        <details key={shot.id} className="tree-node" open>
+                        <details key={shot.id} className="tree-node">
                           <summary>
                             <TreeButton
                               tableId="shots"
@@ -444,26 +334,29 @@ export function ProjectTree({
                                     meta={`${instance.startFrame}–${instance.endFrame}f`}
                                     onClick={() => select("screen_instances", instance.id)}
                                   />
-                                  {tablesById.get("module_theme_configs") ? (
+                                  {tablesById.get("module_instances") ? (
                                     <div className="tree-children compact">
-                                      {moduleConfigRecords
+                                      {moduleInstanceRecords
                                         .filter(
-                                          (config) =>
-                                            config.app_id === instance.appId &&
-                                            config.module_id === instance.moduleId,
+                                          (moduleInstance) =>
+                                            moduleInstance.screen_instance_id ===
+                                            instance.id,
                                         )
-                                        .map((config) => (
+                                        .map((moduleInstance) => (
                                           <TreeButton
-                                            key={config.id}
-                                            tableId="module_theme_configs"
-                                            recordId={config.id}
+                                            key={moduleInstance.id}
+                                            tableId="module_instances"
+                                            recordId={moduleInstance.id}
                                             activeTableId={activeTableId}
                                             selectedRecordIds={selectedRecordIds}
                                             icon="module"
-                                            title={String(config.name ?? "Module config")}
-                                            meta="Module theme"
+                                            title={String(
+                                              moduleInstance.module_id ??
+                                                "Module instance",
+                                            )}
+                                            meta="Module content"
                                             onClick={() =>
-                                              select("module_theme_configs", config.id)
+                                              select("module_instances", moduleInstance.id)
                                             }
                                           />
                                         ))}
@@ -489,10 +382,6 @@ export function ProjectTree({
   function renderAppsTree() {
     return (
       <div className="project-tree-view">
-        <div className="tree-toolbar">
-          {sectionLabel("app", "Apps / Modules")}
-          <TreeActions />
-        </div>
         {appRecords.length === 0 ? (
           <EmptyPanel>No apps yet.</EmptyPanel>
         ) : (
@@ -501,7 +390,7 @@ export function ProjectTree({
               (config) => config.app_id === app.id,
             );
             return (
-              <details key={app.id} className="tree-node" open>
+              <details key={app.id} className="tree-node">
                 <summary>
                   <TreeButton
                     tableId="apps"
@@ -545,17 +434,12 @@ export function ProjectTree({
   function renderDataTree() {
     return (
       <div className="project-tree-view">
-        <div className="tree-toolbar">
-          {sectionLabel("data", "Production data")}
-          <TreeActions />
-        </div>
         {dataTables.map((table) => {
           const tableRecords = recordsForSelectedProduction(table.id);
           return (
             <details
               key={table.id}
               className="tree-node"
-              open={table.id === activeTableId}
             >
               <summary>
                 <button
@@ -563,7 +447,10 @@ export function ProjectTree({
                   role="tab"
                   data-testid={`tab-${table.id}`}
                   className={table.id === activeTableId ? "active editing" : ""}
-                  onClick={() => onTableChange(table.id)}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onTableChange(table.id);
+                  }}
                 >
                   <span className="tree-record-icon" aria-hidden="true">
                     <TreeIcon name="data" />
@@ -610,15 +497,27 @@ export function ProjectTree({
     title: string,
     subtitle: string,
     children: ReactNode,
+    actions?: ReactNode,
   ) {
     const active = browserTab === id;
+    const isEditingProject = id === "project" && activeTableId === "productions";
+    const handleOpen = () => {
+      setBrowserTab(active ? "" : id);
+      if (!active && id === "project" && selectedProductionId) {
+        select("productions", selectedProductionId);
+      }
+    };
     return (
-      <section className={`workspace-accordion-card ${active ? "active" : ""}`}>
+      <section
+        className={`workspace-accordion-card ${active ? "active" : ""} ${
+          isEditingProject ? "editing" : ""
+        }`}
+      >
         <button
           type="button"
           className="workspace-accordion-trigger"
           aria-expanded={active}
-          onClick={() => setBrowserTab(active ? "" : id)}
+          onClick={handleOpen}
         >
           <span className="workspace-accordion-icon" aria-hidden="true">
             <TreeIcon name={icon} />
@@ -627,6 +526,14 @@ export function ProjectTree({
             <strong>{title}</strong>
             <small>{subtitle}</small>
           </span>
+          {actions ? (
+            <span
+              className="workspace-accordion-actions"
+              onClick={(event) => event.stopPropagation()}
+            >
+              {actions}
+            </span>
+          ) : null}
         </button>
         {active ? <div className="workspace-accordion-body">{children}</div> : null}
       </section>
@@ -642,6 +549,13 @@ export function ProjectTree({
           "Project",
           "Episodes, shots, screens and modules",
           renderProjectTree(),
+          <TreeActions
+            canAdd={Boolean(selectedProductionId)}
+            busy={busyAction}
+            onAdd={() =>
+              onCreateRecord("episodes", { productionId: selectedProductionId })
+            }
+          />,
         )}
         {renderWorkspaceAccordion(
           "apps",
@@ -649,6 +563,7 @@ export function ProjectTree({
           "Apps",
           "Apps and module defaults",
           renderAppsTree(),
+          <TreeActions />,
         )}
         {renderWorkspaceAccordion(
           "data",

@@ -11,8 +11,8 @@ This contract assigns every visual/layout value to one canonical source. Resolve
 | `module_theme_configs.tokens_json` | Module-specific defaults for one theme + app + module + schema version, such as Chat bubble geometry, message spacing, Chat typography, header defaults, cursor behavior, and module-specific mode colors | Shot content, device geometry, live state, or one-off screen instance exceptions |
 | `device.metrics_json` | Logical design space, internal pixel render size, geometry, and scale mapping | Actor content, component styling, external plate placement |
 | `device_states.state_json` | Live status values displayed by the device | Base geometry or reusable style |
-| `screen_instance.module_config_json` | Module-owned behavior/visibility for one screen instance | Shot content, canonical theme values, or device geometry |
-| `screen_instance.module_tokens_override_json` | Intentional local visual exceptions | Reusable design defaults |
+| `module_instances.content_json` | Shot-specific module content such as Chat participants, header, messages, timings, and media references | Reusable visual defaults, device geometry, or render output |
+| `module_instances.behavior_json` | Module-owned behavior/visibility for one module instance | Shot placement, canonical theme values, reusable design defaults, or device geometry |
 | Resolved props | Final values needed by a module for its frame | Database references that still require lookup |
 | Renderable metadata | Diagnostics, approximation warnings, provenance, and debug timing | Required canonical style/layout configuration |
 
@@ -37,13 +37,11 @@ theme base tokens
   → app modes[selected theme_mode]
   → module theme config base tokens
   → module theme config modes[selected theme_mode]
-  → screen_instance.module_tokens_override_json
-  → screen instance modes[selected theme_mode]
 ```
 
 The theme editor selects installed font families through a font picker. Weight fields are named variants exposed by the selected family, for example `Regular`, `Semibold`, or the closest family-specific equivalent. If a family changes and a previous variant no longer exists, the editor falls back to the first available variant. There is no production font whitelist/table; the project assumes selected fonts are installed on the render machines.
 
-Mode-aware color values may exist in Theme, App, Module, and sparse Screen Instance overrides. The editor should keep both light and dark columns available at authoring time; the resolver collapses to one mode only for preview/render. Module-specific values belong in `module_theme_configs.tokens_json`. For Chat, this includes message list gutter, header height/background/separator, message spacing/grouping distances, message/header typography, bubble colors/padding/radius/tails/shadows, avatar sizes/gaps, cursor behavior, and future chat media defaults.
+Mode-aware color values may exist in Theme, App, and Module defaults. The editor should keep both light and dark columns available at authoring time; the resolver collapses to one mode only for preview/render. Module-specific values belong in `module_theme_configs.tokens_json`. For Chat, this includes message list gutter, header height/background/separator, message spacing/grouping distances, message/header typography, bubble colors/padding/radius/tails/shadows, avatar sizes/gaps, cursor behavior, and future chat media defaults.
 
 Before a module receives renderable props, the resolver scales design-unit token values to the selected device render space using `device.metrics_json.scaleToPixels`, or the render/design width ratio when needed. For the seeded iPhone fixture, 430 logical points render at 1290 pixels, so a Chat message `fontSize` of `17` resolves to `51px`. Numeric values that are not design units, such as `maxWidthRatio` and frame counts, are not scaled. Font weight variants are named font-face selections and are not scaled.
 
@@ -53,9 +51,11 @@ Before a module receives renderable props, the resolver scales design-unit token
 
 `device_states.state_json` owns live display state: time/date, battery level and charging, signal strength, network label, Wi-Fi enabled/icon state, focus mode, orientation, and lock state.
 
-## Screen-instance module config and overrides
+## Module-instance content and behavior
 
-`screen_instance.module_config_json` contains module behavior such as `showHeader`, `showKeyboard`, `initialScroll`, `messageGrouping`, debug flags, and module defaults. `module_tokens_override_json` holds local gutter/header/bubble exceptions. `core.chat` reads only these canonical sources; it does not merge legacy `props_json`.
+`module_instances.content_json` contains shot-specific module content. For Chat, this includes participants, header data, messages, text/media references, sender IDs, and frame timings.
+
+`module_instances.behavior_json` contains module behavior such as `showHeader`, `showKeyboard`, `showStatusBar`, `initialScroll`, `messageGrouping`, and debug flags. `core.chat` reads only these canonical module-instance sources for content/behavior; it does not merge legacy `props_json`.
 
 Known values are normalized to camelCase by resolvers. Precedence is:
 
@@ -66,8 +66,6 @@ theme base tokens
   → selected app mode tokens
   → module theme config base tokens
   → selected module theme config mode tokens
-  → screen_instance.module_tokens_override_json
-  → selected screen instance override mode tokens
 ```
 
 Device metrics and live device state remain separate inputs and are not replaced by theme tokens.

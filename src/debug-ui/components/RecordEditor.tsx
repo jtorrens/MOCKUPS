@@ -7,6 +7,7 @@ import {
 } from "../api/client.js";
 import { JsonTreeEditor } from "./json-editor/JsonTreeEditor.js";
 import { JsonValueEditor } from "./json-editor/JsonValueEditor.js";
+import { InspectorFieldRow } from "./inspector/InspectorFieldRow.js";
 import {
   hasModeColorOverrides,
   ModeColorEditor,
@@ -83,12 +84,6 @@ function restoreStrategyForField(
   field: AppFieldDefinition,
 ): "remove" | "set" {
   if (
-    table.id === "screen_instances" &&
-    field.column === "module_tokens_override_json"
-  ) {
-    return "remove";
-  }
-  if (
     table.id === "module_theme_configs" &&
     field.column === "tokens_json"
   ) {
@@ -101,7 +96,7 @@ function allowArrayStructuralEditsForField(
   table: AppTableDefinition,
   field: AppFieldDefinition,
 ): boolean {
-  return table.id === "screen_instances" && field.column === "module_data_json";
+  return table.id === "module_instances" && field.column === "content_json";
 }
 
 function titleForRecord(record: AppRecord, fallbackColumn: string) {
@@ -647,15 +642,16 @@ export function RecordEditor({
   function renderContentGroupEditor(
     field: AppFieldDefinition,
     groupKey: string,
+    column = "module_data_json",
   ) {
-    const root = parsedObject(drafts.module_data_json ?? "{}");
+    const root = parsedObject(drafts[column] ?? "{}");
     const groupValue = normalizeGroupValue(root[groupKey], defaultGroupValue(groupKey));
     const hints = buildJsonUiHints(table, field, record);
 
     function updateGroupValue(nextValue: JsonValue) {
       setDrafts({
         ...drafts,
-        module_data_json: stringifyJson({
+        [column]: stringifyJson({
           ...root,
           [groupKey]: nextValue,
         }),
@@ -668,18 +664,24 @@ export function RecordEditor({
 
     function renderPrimitiveRow(path: JsonPath, label: string, value: JsonValue) {
       return (
-        <label className="content-field-row" key={path.join(".") || label}>
-          <span>{contentFieldLabel(hints, groupKey, path, label, value)}</span>
-          <JsonValueEditor
-            rootValue={groupValue}
-            path={path}
-            value={value}
-            hints={hints}
-            groupContext={groupKey}
-            onChange={(nextValue) => updateAtPath(path, nextValue)}
-            onRootChange={updateGroupValue}
-          />
-        </label>
+        <InspectorFieldRow
+          key={path.join(".") || label}
+          className="content-field-row"
+          label={
+            <span>{contentFieldLabel(hints, groupKey, path, label, value)}</span>
+          }
+          control={
+            <JsonValueEditor
+              rootValue={groupValue}
+              path={path}
+              value={value}
+              hints={hints}
+              groupContext={groupKey}
+              onChange={(nextValue) => updateAtPath(path, nextValue)}
+              onRootChange={updateGroupValue}
+            />
+          }
+        />
       );
     }
 
@@ -874,6 +876,60 @@ export function RecordEditor({
       record,
       records,
     );
+    if (field.kind !== "json") {
+      const control = relationSelect && relationSelect.options.length > 0 ? (
+        <select
+          data-testid={`field-${field.column}`}
+          disabled={field.readonly}
+          value={drafts[field.column] ?? ""}
+          onChange={(event) =>
+            setDrafts({
+              ...drafts,
+              [field.column]: event.target.value,
+            })
+          }
+        >
+          {relationSelect.allowEmpty ? (
+            <option value="">Inherited/default</option>
+          ) : null}
+          {relationSelect.options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <input
+          data-testid={`field-${field.column}`}
+          disabled={field.readonly}
+          type={field.kind === "number" ? "number" : "text"}
+          value={drafts[field.column] ?? ""}
+          onChange={(event) =>
+            setDrafts({
+              ...drafts,
+              [field.column]: event.target.value,
+            })
+          }
+        />
+      );
+
+      return (
+        <InspectorFieldRow
+          key={field.column}
+          className={`app-field app-field-${field.kind} state-${state} ${
+            field.readonly ? "is-readonly" : ""
+          }`}
+          state={state === "invalid" || state === "failed" ? "invalid" : "default"}
+          label={<span>{field.label}</span>}
+          control={
+            <>
+              {control}
+              {error ? <strong>{error}</strong> : null}
+            </>
+          }
+        />
+      );
+    }
     return (
       <div
         key={field.column}
@@ -884,10 +940,7 @@ export function RecordEditor({
         }`}
       >
         {rawOverride?.hideLabel || field.kind === "json" ? null : (
-          <span>
-            {field.label}
-            <em>{field.readonly ? "Read only" : state}</em>
-          </span>
+          <span>{field.label}</span>
         )}
         {field.kind === "json" ? (
           <JsonTreeEditor
@@ -963,6 +1016,45 @@ export function RecordEditor({
       .map((column) => fieldsByColumn.get(column))
       .filter((field): field is AppFieldDefinition => Boolean(field))
       .map((field) => renderField(field));
+  }
+
+  function renderFlatJsonObjectEditor(
+    column: string,
+    omitKeys: string[] = [],
+  ) {
+    const root = parsedObject(drafts[column] ?? "{}");
+    const visibleEntries = Object.entries(root).filter(
+      ([key]) => !omitKeys.includes(key),
+    );
+    if (visibleEntries.length === 0) {
+      return <div className="empty-record-list compact-empty">No fields yet.</div>;
+    }
+    return (
+      <div className="flat-json-fields">
+        {visibleEntries.map(([key, value]) => {
+          const jsonValue = normalizeGroupValue(value, "");
+          return (
+            <InspectorFieldRow
+              key={key}
+              className="app-field flat-json-row"
+              label={<span>{friendlyGroupLabel(key)}</span>}
+              control={
+                <JsonValueEditor
+                  rootValue={root as JsonValue}
+                  path={[key]}
+                  value={jsonValue}
+                  hints={buildJsonUiHints(table, fieldsByColumn.get(column)!, record)}
+                  onRootChange={(nextRoot) => setJsonDraft(column, nextRoot)}
+                  onChange={(nextValue) =>
+                    setJsonDraft(column, setAtPath(root as JsonValue, [key], nextValue))
+                  }
+                />
+              }
+            />
+          );
+        })}
+      </div>
+    );
   }
 
   function configGroupHasContent(groupKey: string) {
@@ -1159,12 +1251,7 @@ export function RecordEditor({
             </TabButton>
             {appTab === "notes" && metadataField ? (
               <div className="editor-section-body field-stack single-column">
-                {renderField(metadataField, {
-                  hideLabel: true,
-                  rawText: drafts.metadata_json ?? "{}",
-                  onRawTextChange: (nextRawText) =>
-                    setDrafts({ ...drafts, metadata_json: nextRawText }),
-                })}
+                {renderFlatJsonObjectEditor("metadata_json")}
               </div>
             ) : null}
           </div>
@@ -1251,20 +1338,95 @@ export function RecordEditor({
     );
   }
 
-  if (table.id === "screen_instances") {
-    const moduleDataField = fieldsByColumn.get("module_data_json");
-    const moduleConfigField = fieldsByColumn.get("module_config_json");
-    const overrideField = fieldsByColumn.get("module_tokens_override_json");
+  if (table.id === "module_instances") {
+    const contentField = fieldsByColumn.get("content_json");
+    const behaviorField = fieldsByColumn.get("behavior_json");
     const contentGroups = ["participants", "header", "messages"].filter(
-      (group) => group in parsedObject(drafts.module_data_json ?? "{}"),
+      (group) => group in parsedObject(drafts.content_json ?? "{}"),
     );
     const safeContentGroups = contentGroups.length
       ? contentGroups
       : ["participants", "header", "messages"];
     const activeContentTab = safeContentGroups.includes(contentTab)
       ? contentTab
-      : safeContentGroups[0];
+      : "";
 
+    return (
+      <section className="panel record-editor">
+        <div className="panel-heading">
+          <div>
+            <span className="eyebrow">Module instance editor</span>
+            <h2>{String(record[table.titleColumn] ?? record.id)}</h2>
+          </div>
+          <span className="record-id">{record.id}</span>
+        </div>
+        <div className="editor-sections">
+          <div className="editor-section-card">
+            <TabButton
+              active={screenTab === "general"}
+              onClick={() => setScreenTab(screenTab === "general" ? "" : "general")}
+            >
+              Generales
+            </TabButton>
+            {screenTab === "general" ? (
+              <div className="editor-section-body field-stack">
+                {renderFields([
+                  "id",
+                  "screen_instance_id",
+                  "module_id",
+                  "module_schema_version",
+                  "sort_order",
+                ])}
+              </div>
+            ) : null}
+          </div>
+          <div className="editor-section-card">
+            <TabButton
+              active={screenTab === "content"}
+              onClick={() => setScreenTab(screenTab === "content" ? "" : "content")}
+            >
+              Module Content
+            </TabButton>
+            {screenTab === "content" && contentField ? (
+              <div className="editor-section-body nested-editor-stack">
+                {safeContentGroups.map((group) => (
+                  <SubgroupAccordion
+                    key={group}
+                    group={group}
+                    activeGroup={activeContentTab}
+                    onToggle={setContentTab}
+                  >
+                    {renderContentGroupEditor(contentField, group, "content_json")}
+                  </SubgroupAccordion>
+                ))}
+              </div>
+            ) : null}
+          </div>
+          <div className="editor-section-card">
+            <TabButton
+              active={screenTab === "behavior"}
+              onClick={() => setScreenTab(screenTab === "behavior" ? "" : "behavior")}
+            >
+              Behavior
+            </TabButton>
+            {screenTab === "behavior" && behaviorField ? (
+              <div className="editor-section-body field-stack single-column">
+                {renderField(behaviorField, {
+                  hideLabel: true,
+                  rawText: drafts.behavior_json ?? "{}",
+                  groupContext: "behavior",
+                  onRawTextChange: (nextRawText) =>
+                    setDrafts({ ...drafts, behavior_json: nextRawText }),
+                })}
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (table.id === "screen_instances") {
     return (
       <section className="panel record-editor">
         <div className="panel-heading">
@@ -1299,61 +1461,6 @@ export function RecordEditor({
                   "layer_order",
                   "transform_json",
                 ])}
-              </div>
-            ) : null}
-          </div>
-          <div className="editor-section-card">
-            <TabButton
-              active={screenTab === "content"}
-              warning={differsFromInherited("module_data_json")}
-              onClick={() => setScreenTab(screenTab === "content" ? "" : "content")}
-            >
-              Module Content
-            </TabButton>
-            {screenTab === "content" && moduleDataField ? (
-              <div className="editor-section-body nested-editor-stack">
-                <div className="editor-tabs subtle-tabs">
-                  {safeContentGroups.map((group) => (
-                    <TabButton
-                      key={group}
-                      active={activeContentTab === group}
-                      onClick={() => setContentTab(group)}
-                    >
-                      {friendlyGroupLabel(group)}
-                    </TabButton>
-                  ))}
-                </div>
-                <div className="field-stack single-column">
-                  {renderContentGroupEditor(moduleDataField, activeContentTab)}
-                </div>
-              </div>
-            ) : null}
-          </div>
-          <div className="editor-section-card">
-            <TabButton
-              active={screenTab === "behavior"}
-              warning={differsFromInherited("module_config_json")}
-              onClick={() => setScreenTab(screenTab === "behavior" ? "" : "behavior")}
-            >
-              Behavior
-            </TabButton>
-            {screenTab === "behavior" && moduleConfigField ? (
-              <div className="editor-section-body field-stack single-column">
-                {renderField(moduleConfigField)}
-              </div>
-            ) : null}
-          </div>
-          <div className="editor-section-card">
-            <TabButton
-              active={screenTab === "overrides"}
-              warning={hasObjectContent(drafts.module_tokens_override_json)}
-              onClick={() => setScreenTab(screenTab === "overrides" ? "" : "overrides")}
-            >
-              Overrides
-            </TabButton>
-            {screenTab === "overrides" && overrideField ? (
-              <div className="editor-section-body field-stack single-column">
-                {renderField(overrideField)}
               </div>
             ) : null}
           </div>
@@ -1471,29 +1578,9 @@ export function RecordEditor({
                 </div>
                 {fieldsByColumn.get("metadata_json") ? (
                   <div className="field-stack single-column">
-                    {renderField(fieldsByColumn.get("metadata_json")!, {
-                      rawText: stringifyJson(
-                        Object.fromEntries(
-                          Object.entries(parsedObject(drafts.metadata_json ?? "{}")).filter(
-                            ([key]) => key !== "default_tokens_json",
-                          ),
-                        ),
-                      ),
-                      hideLabel: true,
-                      onRawTextChange: (nextRawText) => {
-                        const current = parsedObject(drafts.metadata_json ?? "{}");
-                        const nextNotes = parsedObject(nextRawText);
-                        setDrafts({
-                          ...drafts,
-                          metadata_json: stringifyJson({
-                            ...nextNotes,
-                            ...(current.default_tokens_json
-                              ? { default_tokens_json: current.default_tokens_json }
-                              : {}),
-                          }),
-                        });
-                      },
-                    })}
+                    {renderFlatJsonObjectEditor("metadata_json", [
+                      "default_tokens_json",
+                    ])}
                   </div>
                 ) : null}
               </div>
@@ -1513,8 +1600,15 @@ export function RecordEditor({
         </div>
         <span className="record-id">{record.id}</span>
       </div>
-      <div className="field-stack">
-        {table.fields.map((field) => renderField(field))}
+      <div className="editor-sections">
+        <div className="editor-section-card">
+          <TabButton active={true} onClick={() => undefined}>
+            General
+          </TabButton>
+          <div className="editor-section-body field-stack">
+            {table.fields.map((field) => renderField(field))}
+          </div>
+        </div>
       </div>
     </section>
   );

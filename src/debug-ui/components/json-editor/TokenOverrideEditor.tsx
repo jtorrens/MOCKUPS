@@ -1,5 +1,9 @@
 import { fontStylesForFamily, useSystemFontCatalog } from "./systemFonts.js";
 import {
+  InspectorFieldRow,
+  InspectorRestoreButton,
+} from "../inspector/InspectorFieldRow.js";
+import {
   compactLabelForGroup,
   friendlyGroupLabel,
   friendlyPathLeafLabel,
@@ -220,18 +224,21 @@ export function TokenOverrideEditor({
     );
 
     return (
-      <div
+      <InspectorFieldRow
         key={key}
         className={`token-override-row ${hasOverride ? "has-override" : ""}`}
-      >
-        <strong>{label}</strong>
-        <code title={key}>
-          {key}
-          {showInheritedValue ? (
-            <small>{tokenDisplayValue(row.value)}</small>
-          ) : null}
-        </code>
-        <div className="token-override-input">
+        state={hasOverride ? "override" : "default"}
+        label={<strong>{label}</strong>}
+        meta={
+          <code title={key}>
+            {key}
+            {showInheritedValue ? (
+              <small>{tokenDisplayValue(row.value)}</small>
+            ) : null}
+          </code>
+        }
+        control={
+          <div className="token-override-input">
           {widget === "checkbox" ? (
             <select
               aria-label={`${label} override`}
@@ -333,17 +340,17 @@ export function TokenOverrideEditor({
               }}
             />
           )}
-          {hasOverride ? (
-            <button
-              type="button"
-              className="json-restore-button"
+          </div>
+        }
+        restore={
+          hasOverride ? (
+            <InspectorRestoreButton
+              label={`Restore ${label}`}
               onClick={() => restoreValue(row.path, row.value)}
-            >
-              Restore
-            </button>
-          ) : null}
-        </div>
-      </div>
+            />
+          ) : undefined
+        }
+      />
     );
   }
 

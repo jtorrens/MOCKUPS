@@ -5,10 +5,12 @@
 Implemented the design-stage simplification around the active model:
 
 ```text
-Theme → App → Screen/Module → Screen Instance
+Theme → App → Screen/Module
 ```
 
 The local app shell was also pushed toward an inspector-first, Figma-collections-like UI with accordion cards, friendlier token groups, centralized color editing, and structured module-content editing for Chat participants/messages.
+
+Follow-up clarification implemented in this checkpoint: visual overrides at App Instance / Module Instance / Screen Instance level are removed from the active model. Explicit `module_instances` now own per-shot module content and behavior.
 
 This remains a design-stage breaking phase. Compatibility with older local SQLite data was not preserved as a priority; explicit `db:reset` remains the safe path when the local fixture state needs to be regenerated.
 
@@ -18,9 +20,13 @@ This remains a design-stage breaking phase. Compatibility with older local SQLit
 - Did not introduce `Screen Preset` or `App Theme Config`.
 - App-level reusable defaults now live on existing App records.
 - Module/screen reusable defaults remain in module theme configs.
-- Screen-instance visual exceptions remain sparse local overrides.
-- Mode-aware colors can exist at Theme, App, Module, and Screen Instance levels and are collapsed only at render/preview resolution.
+- Added explicit `module_instances` as the persistence/runtime layer for module payloads.
+- `module_instances.content_json` stores shot-specific module content.
+- `module_instances.behavior_json` stores per-shot module behavior.
+- Per-instance visual token overrides are no longer active.
+- Mode-aware colors can exist at Theme, App, and Module levels and are collapsed only at render/preview resolution.
 - Numeric visual tokens are authored in logical design units and scaled through selected device metrics for preview/render.
+- Added a field-descriptor layer that maps compact storage paths to canonical UI paths without duplicating metadata in stored JSON.
 
 ## UI outcome
 
@@ -38,16 +44,16 @@ This remains a design-stage breaking phase. Compatibility with older local SQLit
 
 ## Module Content editor
 
-The screen-instance editor now presents `module_data_json` as `Module Content`.
+The module-instance editor now presents `content_json` as `Module Content`.
 
 This is an important conceptual distinction:
 
 ```text
-physical storage today:
-  screen_instances.module_data_json
+module_instances.content_json
+  shot-specific content for the module attached to one screen instance
 
-product concept:
-  content for the module instance attached to this screen instance
+module_instances.behavior_json
+  per-shot behavior for that same module instance
 ```
 
 For `core.chat@1`:
@@ -85,12 +91,34 @@ Main implementation:
 - `src/debug-ui/components/json-editor/jsonEditorUtils.ts`
 - `src/debug-ui/components/json-editor/uiHints.ts`
 - `src/debug-ui/styles.css`
+- `src/domain/schemas/screen.ts`
+- `src/domain/repository/types.ts`
+- `src/domain/repository/InMemoryRepository.ts`
+- `src/domain/repository/fixtures/exampleDataset.ts`
+- `src/domain/resolvers/resolveChatScreen.ts`
+- `src/domain/resolvers/resolveScreenInstance.ts`
+- `src/persistence/sqlite/schema.sql`
+- `src/persistence/sqlite/createDatabase.ts`
+- `src/persistence/sqlite/SQLiteRepository.ts`
+- `src/persistence/sqlite/seedExampleDataset.ts`
+- `src/persistence/sqlite/validateSQLiteRepository.ts`
+- `src/debug-server/debugService.ts`
+- `src/debug-server/checkDebugService.ts`
+- `src/debug-server/checkPersistence.ts`
+- `src/debug-ui/field-descriptors/*`
 
 Documentation:
 
 - `docs/exchange/tasks/0020_app_screen_token_simplification.md`
 - `docs/exchange/responses/0020_app_screen_token_simplification_response.md`
 - `docs/architecture/05_decisions_log.md`
+- `docs/architecture/01_data_model.md`
+- `docs/architecture/02_render_architecture.md`
+- `docs/architecture/04_shot_builder.md`
+- `docs/architecture/07_initial_data_schema.md`
+- `docs/architecture/08_visual_tokens_layout_contract.md`
+- `docs/architecture/09_foundational_module_contracts.md`
+- `docs/architecture/10_module_theme_configs.md`
 - `PROJECT_STATUS.md`
 
 ## Validation run
@@ -99,14 +127,20 @@ The following checks passed during the final pass:
 
 ```text
 npm run typecheck
+npm run validate:examples
+npm run validate:resolver
+npm run validate:visual
+npm run validate:sqlite
+npm run app:check
+npm run app:persistence-check
 npm run debug:build
 npm run debug:check
-git diff --check
 ```
 
 ## Follow-ups
 
-- Decide whether to introduce an explicit `module_instances` entity/table later. The UI concept already treats `Module Content` as module-instance content, but storage remains on `screen_instances.module_data_json`.
+- Build the unified inspector renderer on top of field descriptors so sections, groups, labels, widgets, restore buttons, and row layout come from one grammar.
+- Add first-class create/duplicate/delete workflows for module instances where needed.
 - Continue refining the left tree actions for add/duplicate/delete workflows.
 - Add stronger browser/UI smoke tests for editing Chat participants/messages through the new content-card editor.
 - Run the broader project validation suite before a release-style checkpoint.

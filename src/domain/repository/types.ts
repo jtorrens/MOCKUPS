@@ -9,6 +9,7 @@ import type {
   Episode,
   MediaAsset,
   Message,
+  ModuleInstance,
   ModuleThemeConfig,
   Notification,
   Production,
@@ -23,6 +24,7 @@ export interface RepositoryDataset {
   episodes: Episode[];
   shots: Shot[];
   screenInstances: ScreenInstance[];
+  moduleInstances: ModuleInstance[];
   screenEvents: ScreenEvent[];
   themes: Theme[];
   moduleThemeConfigs: ModuleThemeConfig[];
@@ -42,6 +44,10 @@ export interface DomainRepository {
   getProduction(id: string): Production | undefined;
   getShot(id: string): Shot | undefined;
   getScreenInstancesForShot(shotId: string): ScreenInstance[];
+  getModuleInstancesForScreenInstance(screenInstanceId: string): ModuleInstance[];
+  getPrimaryModuleInstanceForScreenInstance(
+    screenInstanceId: string,
+  ): ModuleInstance | undefined;
   getScreenEventsForInstance(screenInstanceId: string): ScreenEvent[];
   getTheme(id: string): Theme | undefined;
   getModuleThemeConfig(

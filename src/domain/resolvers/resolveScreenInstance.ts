@@ -141,11 +141,17 @@ export function resolveScreenInstance({
         `Chat screen instance ${screenInstance.id} requires a resolved device state`,
       );
     }
+    const moduleInstance = requireRecord(
+      repository.getPrimaryModuleInstanceForScreenInstance(screenInstance.id),
+      "ModuleInstance",
+      screenInstance.id,
+    );
     return {
       ...base,
       resolved_props: resolveChatScreen({
         repository,
         screenInstance,
+        moduleInstance,
         ownerActor,
         app,
         device,

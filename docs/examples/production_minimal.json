@@ -51,9 +51,6 @@
       "end_frame": 150,
       "layer_order": 0,
       "data_ref_json": null,
-      "module_data_json": {},
-      "module_config_json": {},
-      "module_tokens_override_json": {},
       "transform_json": {
         "x": 0,
         "y": 0,
@@ -63,6 +60,18 @@
       "props_json": {},
       "transition_in_json": null,
       "transition_out_json": null
+    }
+  ],
+  "module_instances": [
+    {
+      "id": "screen_instance_001:module",
+      "screen_instance_id": "screen_instance_001",
+      "module_id": "lock_screen",
+      "module_schema_version": 1,
+      "sort_order": 0,
+      "content_json": {},
+      "behavior_json": {},
+      "metadata_json": {}
     }
   ]
 }

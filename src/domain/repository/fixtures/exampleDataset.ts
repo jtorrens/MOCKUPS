@@ -21,6 +21,7 @@ import {
   DeviceStateSchema,
   EpisodeSchema,
   MediaAssetSchema,
+  ModuleInstanceSchema,
   ModuleThemeConfigSchema,
   NotificationSchema,
   ProductionSchema,
@@ -46,7 +47,15 @@ export function createExampleDataset(): RepositoryDataset {
   });
   const shot = ShotSchema.parse(shotExample.shot);
   const screenInstances = ScreenInstanceSchema.array().parse(
-    shotExample.screen_instances,
+    shotExample.screen_instances.map((instance) => ({
+      ...instance,
+      module_data_json: null,
+      module_config_json: null,
+      module_tokens_override_json: null,
+    })),
+  );
+  const moduleInstances = ModuleInstanceSchema.array().parse(
+    shotExample.module_instances,
   );
   const screenEvents = ScreenEventSchema.array().parse(
     shotExample.screen_events,
@@ -311,6 +320,7 @@ export function createExampleDataset(): RepositoryDataset {
     episodes: [episode],
     shots: [shot],
     screenInstances,
+    moduleInstances,
     screenEvents,
     themes: [theme],
     moduleThemeConfigs: [chatModuleThemeConfig],

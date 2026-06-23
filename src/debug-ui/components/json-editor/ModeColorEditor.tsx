@@ -13,6 +13,10 @@ import {
   friendlyGroupLabel,
   friendlyPathLeafLabel,
 } from "./labels.js";
+import {
+  InspectorFieldRow,
+  InspectorRestoreButton,
+} from "../inspector/InspectorFieldRow.js";
 
 interface ModeColorEditorProps {
   rootValue: JsonValue;
@@ -251,15 +255,19 @@ export function ModeColorEditor({
               ),
             };
             return (
-              <div
+              <InspectorFieldRow
                 key={key}
                 className={`mode-color-row ${hasOverride ? "has-override" : ""}`}
-              >
-                <strong>
-                  {compactLabelForGroup(roleLabel(role.rolePath), group.group)}
-                </strong>
-                <code title={key}>{key}</code>
-                {(["light", "dark"] as const).map((mode) => {
+                state={hasOverride ? "override" : "default"}
+                label={
+                  <strong>
+                    {compactLabelForGroup(roleLabel(role.rolePath), group.group)}
+                  </strong>
+                }
+                meta={<code title={key}>{key}</code>}
+                control={
+                  <div className="mode-color-controls">
+                    {(["light", "dark"] as const).map((mode) => {
                   const value =
                     mode === "light" ? role.lightValue : role.darkValue;
                   const inherited =
@@ -300,18 +308,17 @@ export function ModeColorEditor({
                     </span>
                   );
                 })}
-                {hasOverride ? (
-                  <button
-                    type="button"
-                    className="restore-button"
-                    onClick={() => restoreRole(role.rolePath)}
-                  >
-                  ↺
-                </button>
-                ) : (
-                  <span />
-                )}
-              </div>
+                  </div>
+                }
+                restore={
+                  hasOverride ? (
+                    <InspectorRestoreButton
+                      label={`Restore ${key}`}
+                      onClick={() => restoreRole(role.rolePath)}
+                    />
+                  ) : undefined
+                }
+              />
             );
           })}
         </section>

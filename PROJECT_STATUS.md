@@ -2,11 +2,11 @@
 
 ## Current state
 
-Initial architecture/data schema documentation, the visual token/layout contract, and the foundational module contracts are complete and reviewed. TypeScript/Zod schemas, in-memory and SQLite repository paths, renderer-agnostic visual modules/layout, a minimal Remotion proof of concept, SQLite persistence, the first local core app shell, structured JSON/token editors, module theme configs, module-scoped editor hint contracts, a production-first Project/App/Production Data browser, a persistence audit/check, and a minimal Electron development shell now exist. The shell is still local/dev-only and not a final production editor; no export pipeline, asset manager, deep duplicate/cascade delete workflow, packaging/installer, or final module-instance persistence split has been implemented.
+Initial architecture/data schema documentation, the visual token/layout contract, and the foundational module contracts are complete and reviewed. TypeScript/Zod schemas, in-memory and SQLite repository paths, renderer-agnostic visual modules/layout, a minimal Remotion proof of concept, SQLite persistence, the first local core app shell, structured JSON/token editors, module theme configs, module-scoped editor hint contracts, a production-first Project/App/Production Data browser, a persistence audit/check, a minimal Electron development shell, and explicit module-instance persistence now exist. The shell is still local/dev-only and not a final production editor; no export pipeline, asset manager, deep duplicate/cascade delete workflow, packaging/installer, or final module-instance creation workflow has been implemented.
 
 The current app shell is now substantially more usable for authoring: it has a production-first layout, accordion-based Project/App/Production Data navigation, resizable left/editor/preview panels, independent panel scrolling, responsive preview fitting, screen-instance editors organized by conceptual accordion cards, module-theme-config token editors grouped by friendly labels, inherited/override rows with restore behavior, installed-font discovery where available, typed controls for number/text/color/font/select values, centralized mode-aware color editors, and structured Chat `Module Content` cards for participants and messages.
 
-The accepted foundation is production-scoped and shot-centered, where productions contain episodes, episodes contain shots, and a shot is a device-screen action sequence rather than external plate placement. A shot now has an owner actor that supplies the default device and theme for its screen instances. Chat uses versioned module-owned data/config/token-override JSON as its sole runtime source.
+The accepted foundation is production-scoped and shot-centered, where productions contain episodes, episodes contain shots, and a shot is a device-screen action sequence rather than external plate placement. A shot now has an owner actor that supplies the default device and theme for its screen instances. Chat uses versioned `module_instances.content_json` and `module_instances.behavior_json` as its runtime source. Visual values are resolved from Theme → App → Module Theme Config; per-shot visual token overrides are no longer part of the active model.
 
 ## Completed
 
@@ -41,8 +41,9 @@ The accepted foundation is production-scoped and shot-centered, where production
 - Added the target `screen_instances` module fields to Zod/examples and an additive SQLite schema-v2 migration without removing legacy fields.
 - Added Chat module data/config schemas and a portable screen-module input/output contract; task 0012 subsequently made them canonical at runtime.
 - Added light/dark theme-mode examples and merged selected mode plus local token overrides in the current Chat resolver.
-- Made `core.chat` schema version 1 canonical: participants, header, messages, timings, senderParticipantId, and optional media references resolve from `screen_instances.module_data_json`.
-- Made `module_config_json` the canonical Chat behavior source and retained `module_tokens_override_json` as the canonical local visual override source.
+- Made `core.chat` schema version 1 canonical: participants, header, messages, timings, senderParticipantId, and optional media references resolve from module-owned JSON.
+- Added explicit `module_instances`; Chat content now resolves from `module_instances.content_json` and per-shot behavior resolves from `module_instances.behavior_json`.
+- Removed per-instance visual token overrides from the active resolver/editor model; visual values now resolve from reusable Theme → App → Module Theme Config layers.
 - Removed the Chat runtime fallback to `data_ref_json`, conversations, conversation participants, messages, and generic props; legacy SQLite tables remain physically present but the canonical fixture seeds no Chat rows into them.
 - Added resolver/SQLite validation proving senderParticipantId direction and operation without legacy Chat records; Remotion continues through the same canonical resolver path.
 - Added a local React/Vite debug calibration UI with production/shot/screen selection, frame calibration, SQLite-backed preview, six validated editable JSON sources, and read-only resolved/RenderableNode inspectors.
@@ -69,7 +70,7 @@ The accepted foundation is production-scoped and shot-centered, where production
 - Moved practical Chat-specific design defaults out of global `themes.tokens_json` and into `module_theme_configs.tokens_json` while preserving current visual output.
 - Updated Chat token resolution to merge global theme tokens, selected theme mode, module theme config tokens, selected module config mode, and screen-instance token overrides.
 - Exposed Module Theme Configs as a core app-shell tab.
-- Added inherited JSON parent data to the app API for `module_theme_configs.tokens_json` and `screen_instances.module_tokens_override_json`.
+- Added inherited JSON parent data to the app API for `module_theme_configs.tokens_json`.
 - Updated the structured JSON editor to mark differing inherited overrides in amber and offer a Restore inherited action.
 - Added accepted decisions D031–D038 covering Chat typography, episode hierarchy, shot owner runtime defaults, Chat text+media messages, Project/Library browser direction, extensible module editor hint contracts, non-destructive SQLite startup/validation, and the minimal Electron shell boundary.
 - Audited the SQLite save path. Current UI autosave reaches backend validation and SQLite writes; `app:persistence-check` verifies scalar and JSON edits survive database reopen and are used by preview resolution.
@@ -89,10 +90,13 @@ The accepted foundation is production-scoped and shot-centered, where production
 - Added accepted decisions D042–D044 covering removal of Screen Templates from active runtime/editor inheritance, logical design-unit scaling, and the inspector-first accordion/module-content UI direction.
 - Added App-level token/default editing through existing App records and centralized mode-aware color editing for Theme/App/Module levels.
 - Reworked the left workspace into accordion sections for Project, Apps, and Production Data, each containing its own hierarchy/tree.
-- Reworked Chat screen-instance `module_data_json` presentation as `Module Content`: participants and messages now render as structured content cards with friendly labels, typed widgets, useful collapsed summaries, and add/duplicate/delete/reorder controls.
+- Reworked Chat module-instance `content_json` presentation as `Module Content`: participants and messages now render as structured content cards with friendly labels, typed widgets, useful collapsed summaries, and add/duplicate/delete/reorder controls.
 - Fixed grouped JSON/content editing for root arrays, double-serialized JSON strings, and group-context module editor hints.
+- Added SQLite schema v7 `module_instances`, in-memory/SQLite repository accessors, seed/reset support, and resolver validation for the new module-instance boundary.
+- Added the first field-descriptor catalog for canonical UI paths such as `app.general.id`, `module.design.typography.message.size`, and `moduleInstance.content.messages[].text` without storing that metadata inside JSON values.
+- Added the first shared inspector field primitive (`InspectorFieldRow` / `InspectorRestoreButton`) and migrated token overrides, mode colors, and module-content primitive rows onto it as the first UI-unification step.
 
 ## Next
 
-- Review the current app shell visually and choose the next workflow: explicit module-instance persistence split, screen-instance creation, asset registration/native file picker, production duplicate/delete policy, stronger UI smoke tests for content editing, or Electron menu/package polish.
+- Review the current app shell visually and choose the next workflow: continue unifying accordion sections around field descriptors, module-instance creation/duplication UI, screen-instance creation, asset registration/native file picker, production duplicate/delete policy, stronger UI smoke tests for content editing, or Electron menu/package polish.
 - Create an Architecture Question before changing any accepted decision.
