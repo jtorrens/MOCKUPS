@@ -17,6 +17,7 @@ import {
   InspectorFieldRow,
   InspectorRestoreButton,
 } from "../inspector/InspectorFieldRow.js";
+import { ColorValueEditor } from "./ColorValueEditor.js";
 
 interface ModeColorEditorProps {
   rootValue: JsonValue;
@@ -40,39 +41,15 @@ function groupIcon(label: string): string {
   if (normalized.includes("header") || normalized.includes("navigation")) return "▤";
   if (normalized.includes("chat") || normalized.includes("bubble")) return "☰";
   if (normalized.includes("status")) return "▥";
+  if (normalized.includes("notification")) return "◌";
   if (normalized.includes("cursor")) return "⌁";
   if (normalized.includes("text") || normalized.includes("typography")) return "T";
   if (normalized.includes("surface") || normalized.includes("background")) return "▧";
   return "◐";
 }
 
-function isHexColor(value: unknown): value is string {
+function isHexColor(value: unknown): boolean {
   return typeof value === "string" && /^#[0-9a-fA-F]{6}$/.test(value);
-}
-
-function rgbaToHexAndAlpha(value: string): { hex: string; alpha: number } | null {
-  const match = value
-    .trim()
-    .match(/^rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(0|1|0?\.\d+)\s*\)$/i);
-  if (!match) return null;
-  const [, red, green, blue, alpha] = match;
-  const channels = [red, green, blue].map((channel) =>
-    Math.max(0, Math.min(255, Number(channel))),
-  );
-  return {
-    hex: `#${channels
-      .map((channel) => channel.toString(16).padStart(2, "0"))
-      .join("")}`,
-    alpha: Math.max(0, Math.min(1, Number(alpha))),
-  };
-}
-
-function hexToRgba(hex: string, alpha: number) {
-  const normalized = hex.replace("#", "");
-  const red = Number.parseInt(normalized.slice(0, 2), 16);
-  const green = Number.parseInt(normalized.slice(2, 4), 16);
-  const blue = Number.parseInt(normalized.slice(4, 6), 16);
-  return `rgba(${red},${green},${blue},${Math.max(0, Math.min(1, alpha))})`;
 }
 
 function isColorRolePath(path: JsonPath): boolean {
@@ -159,6 +136,7 @@ function groupOrder(group: string): number {
     bubbles: 30,
     messages: 35,
     statusbar: 40,
+    notifications: 45,
     cursor: 50,
   };
   return order[normalized] ?? 100;
@@ -309,58 +287,22 @@ export function ModeColorEditor({
                       ? role.inheritedLightValue
                       : role.inheritedDarkValue;
                   const displayValue = value || inherited || "";
-                  const alphaColor =
-                    typeof displayValue === "string"
-                      ? rgbaToHexAndAlpha(displayValue)
-                      : null;
+                  const isRgbaColor = displayValue.startsWith("rgba(");
                   const canPickColor = isHexColor(displayValue);
                   return (
                     <span
                       key={mode}
                       className="json-color-pair token-color-pair"
                     >
-                      {alphaColor ? (
-                        <span className="json-alpha-color-pair">
-                          <input
-                            aria-label={`${key} ${mode} color picker`}
-                            type="color"
-                            value={alphaColor.hex}
-                            onChange={(event) =>
-                              updateColor(
-                                mode,
-                                role.rolePath,
-                                hexToRgba(event.target.value, alphaColor.alpha),
-                              )
-                            }
-                          />
-                          <input
-                            aria-label={`${key} ${mode} alpha`}
-                            className="json-value-control"
-                            type="number"
-                            min={0}
-                            max={1}
-                            step={0.01}
-                            value={String(alphaColor.alpha)}
-                            onChange={(event) =>
-                              updateColor(
-                                mode,
-                                role.rolePath,
-                                hexToRgba(alphaColor.hex, Number(event.target.value)),
-                              )
-                            }
-                          />
-                        </span>
-                      ) : canPickColor ? (
-                        <>
-                          <input
-                            aria-label={`${key} ${mode} color picker`}
-                            type="color"
-                            value={displayValue}
-                            onChange={(event) =>
-                              updateColor(mode, role.rolePath, event.target.value)
-                            }
-                          />
-                        </>
+                      {canPickColor || isRgbaColor ? (
+                        <ColorValueEditor
+                          value={displayValue}
+                          alpha={isRgbaColor}
+                          label={`${key} ${mode}`}
+                          onChange={(nextValue) =>
+                            updateColor(mode, role.rolePath, nextValue)
+                          }
+                        />
                       ) : (
                         <input
                           aria-label={`${key} ${mode} value`}

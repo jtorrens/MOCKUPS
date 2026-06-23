@@ -720,6 +720,54 @@ export function RecordEditor({
     return groupKey === "messages" || groupKey === "participants" ? [] : {};
   }
 
+  function editorValueForThemeTokenGroup(
+    themeTokenRoot: Record<string, JsonValue>,
+    groupKey: string,
+  ): JsonValue {
+    const value = themeTokenRoot[groupKey] ?? defaultGroupValue(groupKey);
+    if (!isJsonObject(value)) return value;
+    if (groupKey === "fonts") {
+      const { source: _source, ...visibleValue } = value;
+      return visibleValue;
+    }
+    if (groupKey === "notifications") {
+      const {
+        background: _background,
+        titleColor: _titleColor,
+        bodyColor: _bodyColor,
+        ...visibleValue
+      } = value;
+      return visibleValue;
+    }
+    return value;
+  }
+
+  function updateThemeTokenGroupValue(
+    themeTokenRoot: Record<string, JsonValue>,
+    groupKey: string,
+    nextRawText: string,
+  ) {
+    const fallback = defaultGroupValue(groupKey);
+    const parsedValue = parsedJsonValue(nextRawText, fallback);
+    const originalValue = themeTokenRoot[groupKey];
+    const nextValue =
+      groupKey === "fonts" && isJsonObject(parsedValue)
+        ? {
+            ...(isJsonObject(originalValue) ? originalValue : {}),
+            ...parsedValue,
+            source:
+              isJsonObject(originalValue) && typeof originalValue.source === "string"
+                ? originalValue.source
+                : "installed_system_font",
+          }
+        : parsedValue;
+
+    setJsonDraft("tokens_json", {
+      ...themeTokenRoot,
+      [groupKey]: nextValue,
+    });
+  }
+
   function isPrimitiveContentValue(value: JsonValue) {
     return (
       value === null ||
@@ -2223,8 +2271,24 @@ export function RecordEditor({
     const darkMode = isJsonObject(modes.dark)
       ? (modes.dark as Record<string, JsonValue>)
       : {};
+    const legacyNotifications = isJsonObject(root.notifications as JsonValue)
+      ? (root.notifications as Record<string, JsonValue>)
+      : {};
+    const visibleNotifications = {
+      ...legacyNotifications,
+    };
+    delete visibleNotifications.background;
+    delete visibleNotifications.titleColor;
+    delete visibleNotifications.bodyColor;
+    const lightNotifications = isJsonObject(lightMode.notifications)
+      ? (lightMode.notifications as Record<string, JsonValue>)
+      : {};
+    const darkNotifications = isJsonObject(darkMode.notifications)
+      ? (darkMode.notifications as Record<string, JsonValue>)
+      : {};
     return {
       ...root,
+      notifications: visibleNotifications,
       statusBar: normalizeThemeChromeGroup("statusBar", root.statusBar),
       navigationBar: normalizeThemeChromeGroup("navigationBar", root.navigationBar),
       modes: {
@@ -2236,6 +2300,20 @@ export function RecordEditor({
             "navigationBar",
             lightMode.navigationBar,
           ),
+          notifications: {
+            background:
+              lightNotifications.background ??
+              legacyNotifications.background ??
+              "rgba(245,245,247,0.92)",
+            titleColor:
+              lightNotifications.titleColor ??
+              legacyNotifications.titleColor ??
+              "#000000",
+            bodyColor:
+              lightNotifications.bodyColor ??
+              legacyNotifications.bodyColor ??
+              "#3A3A3C",
+          },
         },
         dark: {
           ...darkMode,
@@ -2245,45 +2323,23 @@ export function RecordEditor({
             darkMode.navigationBar,
             true,
           ),
+          notifications: {
+            background:
+              darkNotifications.background ??
+              legacyNotifications.background ??
+              "rgba(44,44,46,0.92)",
+            titleColor:
+              darkNotifications.titleColor ??
+              legacyNotifications.titleColor ??
+              "#FFFFFF",
+            bodyColor:
+              darkNotifications.bodyColor ??
+              legacyNotifications.bodyColor ??
+              "#D1D1D6",
+          },
         },
       },
     } as Record<string, JsonValue>;
-  }
-
-  function rgbaToColorAlpha(value: unknown, dark = false) {
-    const raw =
-      typeof value === "string"
-        ? value
-        : dark
-          ? "rgba(0,0,0,0)"
-          : "rgba(255,255,255,0)";
-    const match = raw
-      .trim()
-      .match(/^rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(0|1|0?\.\d+)\s*\)$/i);
-    if (!match) {
-      return {
-        color: /^#[0-9a-f]{6}$/i.test(raw) ? raw : dark ? "#000000" : "#ffffff",
-        alpha: raw === "transparent" ? 0 : 1,
-      };
-    }
-    const [, red, green, blue, alpha] = match;
-    const color = [red, green, blue]
-      .map((channel) =>
-        Math.max(0, Math.min(255, Number(channel))).toString(16).padStart(2, "0"),
-      )
-      .join("");
-    return {
-      color: `#${color}`,
-      alpha: Math.max(0, Math.min(1, Number(alpha))),
-    };
-  }
-
-  function colorAlphaToRgba(color: string, alpha: number) {
-    const normalized = color.replace("#", "");
-    const red = Number.parseInt(normalized.slice(0, 2), 16);
-    const green = Number.parseInt(normalized.slice(2, 4), 16);
-    const blue = Number.parseInt(normalized.slice(4, 6), 16);
-    return `rgba(${red},${green},${blue},${Math.max(0, Math.min(1, alpha))})`;
   }
 
   function renderThemeChromeGroup(
@@ -2302,8 +2358,6 @@ export function RecordEditor({
             "android-gesture",
             "android-3-button",
           ];
-    const background = rgbaToColorAlpha(group.background);
-
     function updateChrome(path: JsonPath, nextValue: JsonValue) {
       setJsonDraft(
         "tokens_json",
@@ -2327,51 +2381,6 @@ export function RecordEditor({
                 </option>
               ))}
             </select>
-          }
-        />
-        <InspectorFieldRow
-          className="app-field"
-          label={<span>Background</span>}
-          control={
-            <span className="json-alpha-color-pair">
-              <input
-                aria-label={`${groupKey} background color`}
-                type="color"
-                value={background.color}
-                onChange={(event) =>
-                  updateChrome(
-                    ["background"],
-                    colorAlphaToRgba(event.target.value, background.alpha),
-                  )
-                }
-              />
-              <input
-                aria-label={`${groupKey} background alpha`}
-                className="json-value-control"
-                type="number"
-                min={0}
-                max={1}
-                step={0.01}
-                value={String(background.alpha)}
-                onChange={(event) =>
-                  updateChrome(
-                    ["background"],
-                    colorAlphaToRgba(background.color, Number(event.target.value)),
-                  )
-                }
-              />
-            </span>
-          }
-        />
-        <InspectorFieldRow
-          className="app-field"
-          label={<span>Foreground</span>}
-          control={
-            <input
-              type="color"
-              value={String(group.foreground ?? "#000000")}
-              onChange={(event) => updateChrome(["foreground"], event.target.value)}
-            />
           }
         />
         <InspectorFieldRow
@@ -2573,16 +2582,16 @@ export function RecordEditor({
                     activeGroup={activeThemeTokenGroup}
                     onToggle={setThemeTokenGroup}
                   >
-                    <div className="field-stack single-column">
+                    <div className="field-stack single-column theme-token-group-editor">
                       {renderField(tokensField, {
                         hideLabel: true,
                         rawText: stringifyJson(
-                          themeTokenRoot[group] ?? defaultGroupValue(group),
+                          editorValueForThemeTokenGroup(themeTokenRoot, group),
                         ),
                         groupContext: group,
                         onRawTextChange: (nextRawText) =>
-                          updateJsonGroupValue(
-                            "tokens_json",
+                          updateThemeTokenGroupValue(
+                            themeTokenRoot,
                             group,
                             nextRawText,
                           ),

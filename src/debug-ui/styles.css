@@ -230,6 +230,55 @@ body {
   padding: 2px !important;
 }
 
+.color-value-editor {
+  position: relative;
+  display: inline-grid;
+  grid-template-columns: auto auto;
+  gap: 6px;
+  align-items: center;
+  justify-content: start;
+}
+
+.color-swatch-button {
+  display: grid;
+  width: 34px;
+  height: 30px;
+  border: 1px solid #cfd6e2;
+  border-radius: 8px;
+  padding: 3px;
+  background: #ffffff;
+  place-items: stretch;
+}
+
+.color-swatch-button span {
+  border-radius: 5px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+
+.color-alpha-input {
+  width: 46px !important;
+  min-width: 46px !important;
+  height: 30px !important;
+  padding: 0 6px !important;
+  font-size: 11px !important;
+  text-align: right;
+}
+
+.color-picker-popover {
+  position: fixed;
+  z-index: 1200;
+  border: 1px solid #cfd6e2;
+  border-radius: 12px;
+  padding: 10px;
+  background: #ffffff;
+  box-shadow: 0 12px 28px rgba(21, 30, 50, 0.16);
+}
+
+.color-picker-popover .react-colorful {
+  width: 180px;
+  height: 150px;
+}
+
 .entity-browser,
 .project-browser {
   min-height: 260px;
@@ -693,6 +742,7 @@ body {
 }
 
 .record-editor {
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   margin-top: 0;
@@ -3607,4 +3657,45 @@ body,
 .project-browser .tree-section-title > span {
   border: 0 !important;
   background: transparent !important;
+}
+
+.editor-workspace .record-editor {
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+}
+
+.record-editor .theme-token-group-editor {
+  border: 0 !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.record-editor .theme-token-group-editor > .app-field-frameless,
+.record-editor .theme-token-group-editor .json-tree-editor,
+.record-editor .theme-token-group-editor .json-tree,
+.record-editor .theme-token-group-editor .json-tree-node,
+.record-editor .theme-token-group-editor .json-tree-group {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.record-editor .theme-token-group-editor .json-tree {
+  padding: 0 !important;
+}
+
+.record-editor .theme-token-group-editor .json-tree-node summary,
+.record-editor .theme-token-group-editor .json-tree-group summary {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.record-editor .theme-token-group-editor .json-primitive-row {
+  border: 0 !important;
+  padding-inline: 10px !important;
 }

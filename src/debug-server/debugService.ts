@@ -990,6 +990,11 @@ function defaultThemeTokens(family: "ios" | "android") {
           foreground: lightText,
           background: "rgba(255,255,255,0)",
         },
+        notifications: {
+          background: isAndroid ? "rgba(255,255,255,0.94)" : "rgba(245,245,247,0.92)",
+          titleColor: lightText,
+          bodyColor: isAndroid ? "#49454F" : "#3A3A3C",
+        },
       },
       dark: {
         colors: {
@@ -1007,6 +1012,11 @@ function defaultThemeTokens(family: "ios" | "android") {
           type: isAndroid ? "android-gesture" : "ios-home-indicator",
           foreground: darkText,
           background: "rgba(0,0,0,0)",
+        },
+        notifications: {
+          background: isAndroid ? "rgba(28,27,31,0.94)" : "rgba(44,44,46,0.92)",
+          titleColor: darkText,
+          bodyColor: isAndroid ? "#CAC4D0" : "#D1D1D6",
         },
       },
     },
@@ -1037,9 +1047,6 @@ function defaultThemeTokens(family: "ios" | "android") {
       iconScale: 1,
     },
     notifications: {
-      background: isAndroid ? "rgba(255,255,255,0.94)" : "rgba(245,245,247,0.92)",
-      titleColor: lightText,
-      bodyColor: isAndroid ? "#49454F" : "#3A3A3C",
       backdropBlur: isAndroid ? 16 : 24,
     },
     spacing: {

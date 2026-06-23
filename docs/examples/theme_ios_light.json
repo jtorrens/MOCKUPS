@@ -23,6 +23,11 @@
           "type": "ios-home-indicator",
           "foreground": "#000000",
           "background": "rgba(255,255,255,0)"
+        },
+        "notifications": {
+          "background": "rgba(245,245,247,0.92)",
+          "titleColor": "#000000",
+          "bodyColor": "#3A3A3C"
         }
       },
       "dark": {
@@ -41,6 +46,11 @@
           "type": "ios-home-indicator",
           "foreground": "#FFFFFF",
           "background": "rgba(0,0,0,0)"
+        },
+        "notifications": {
+          "background": "rgba(44,44,46,0.92)",
+          "titleColor": "#FFFFFF",
+          "bodyColor": "#D1D1D6"
         }
       }
     },
@@ -71,9 +81,6 @@
       "iconScale": 1
     },
     "notifications": {
-      "background": "rgba(245,245,247,0.92)",
-      "titleColor": "#000000",
-      "bodyColor": "#3A3A3C",
       "backdropBlur": 24
     },
     "spacing": {

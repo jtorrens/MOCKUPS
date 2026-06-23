@@ -1,4 +1,5 @@
 import { fontStylesForFamily, useSystemFontCatalog } from "./systemFonts.js";
+import { ColorValueEditor } from "./ColorValueEditor.js";
 import type { JsonUiHints } from "./uiHints.js";
 import { hintForPath } from "./uiHints.js";
 import {
@@ -21,47 +22,14 @@ interface JsonValueEditorProps {
   onRootChange?: (nextValue: JsonValue) => void;
 }
 
-function isHexColor(value: string): boolean {
-  return /^#[0-9a-fA-F]{6}$/.test(value);
-}
-
-function rgbaToHexAndAlpha(value: string): { hex: string; alpha: number } | null {
-  const match = value
-    .trim()
-    .match(/^rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(0|1|0?\.\d+)\s*\)$/i);
-  if (!match) return null;
-  const [, red, green, blue, alpha] = match;
-  const channels = [red, green, blue].map((channel) =>
-    Math.max(0, Math.min(255, Number(channel))),
-  );
-  return {
-    hex: `#${channels
-      .map((channel) => channel.toString(16).padStart(2, "0"))
-      .join("")}`,
-    alpha: Math.max(0, Math.min(1, Number(alpha))),
-  };
-}
-
-function hexToRgb(hex: string) {
-  const normalized = hex.replace("#", "");
-  return {
-    red: Number.parseInt(normalized.slice(0, 2), 16),
-    green: Number.parseInt(normalized.slice(2, 4), 16),
-    blue: Number.parseInt(normalized.slice(4, 6), 16),
-  };
-}
-
-function rgbaString(hex: string, alpha: number) {
-  const { red, green, blue } = hexToRgb(hex);
-  return `rgba(${red},${green},${blue},${Math.max(0, Math.min(1, alpha))})`;
-}
-
 function isAlphaColorField(key: string, parent: string, groupContext?: string) {
+  const context = `${parent} ${groupContext ?? ""}`;
   return (
-    key === "background" &&
-    /(statusbar|statusBar|navigationbar|navigationBar)/i.test(
-      parent || groupContext || "",
-    )
+    (key === "background" &&
+      /(statusbar|statusBar|navigationbar|navigationBar|notification|notifications)/i.test(
+        context,
+      )) ||
+    (key === "color" && /(shadow|shadows)/i.test(context))
   );
 }
 
@@ -246,55 +214,13 @@ export function JsonValueEditor({
     typeof value === "string" &&
     (widget === "color" || isAlphaColorField(key, parent, groupContext))
   ) {
-    const alphaColor = isAlphaColorField(key, parent, groupContext)
-      ? rgbaToHexAndAlpha(value) ?? {
-          hex: isHexColor(value) ? value : "#ffffff",
-          alpha: value === "transparent" ? 0 : 1,
-        }
-      : null;
-    if (alphaColor) {
-      return (
-        <span className="json-alpha-color-pair">
-          <input
-            aria-label="Color picker"
-            type="color"
-            value={alphaColor.hex}
-            onChange={(event) =>
-              onChange(rgbaString(event.target.value, alphaColor.alpha))
-            }
-          />
-          <input
-            aria-label="Alpha"
-            className="json-value-control"
-            type="number"
-            min={0}
-            max={1}
-            step={0.01}
-            value={String(alphaColor.alpha)}
-            onChange={(event) =>
-              onChange(rgbaString(alphaColor.hex, Number(event.target.value)))
-            }
-          />
-        </span>
-      );
-    }
     return (
-      <span className="json-color-pair">
-        <input
-          aria-label="Color picker"
-          type="color"
-          value={isHexColor(value) ? value : "#000000"}
-          onChange={(event) => onChange(event.target.value)}
-        />
-        <input
-          className="json-value-control"
-          value={value}
-          onChange={(event) => {
-            const next = event.target.value;
-            onChange(isHexColor(next) ? next.toLowerCase() : next);
-          }}
-        />
-      </span>
+      <ColorValueEditor
+        value={value}
+        alpha={isAlphaColorField(key, parent, groupContext)}
+        label={key}
+        onChange={onChange}
+      />
     );
   }
 

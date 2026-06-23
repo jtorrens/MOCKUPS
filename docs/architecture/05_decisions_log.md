@@ -562,3 +562,33 @@ Implications:
 - The UI can derive a consistent inspector structure from `section → group → role → property`.
 - Scalar SQL fields and JSON fields can share one naming grammar.
 - Future UI unification should render fields from descriptors rather than each editor inventing labels, grouping, restore buttons, and row layout separately.
+
+## D047 — Theme colors are mode-aware; Theme tokens keep only non-color shared values
+
+Status: accepted
+
+The Theme editor separates chromatic values from non-color tokens.
+
+Mode-dependent colors live under:
+
+```text
+themes.tokens_json.modes.light.*
+themes.tokens_json.modes.dark.*
+```
+
+and are edited from the `Colors` surface with Light/Dark columns. This includes generic app colors, status/navigation bar colors, and notification colors such as notification background, title color, and body color.
+
+Theme `Tokens` keeps non-color shared values such as:
+
+- font family, sizes, line heights, and weight;
+- notification blur;
+- spacing;
+- radii;
+- shadows, with shadow color still edited as an alpha color control because it belongs to the shadow token itself.
+
+Internal helper fields such as `fonts.source` are preserved in stored JSON but hidden from normal authoring UI.
+
+Implications:
+- A group like `Notifications` should not duplicate color fields already present in `Colors`.
+- Alpha-capable colors use a swatch plus compact alpha editor in the UI, and may render a richer picker overlay.
+- Theme fields do not show inherited/override state because Theme is the top of the design-token chain.
