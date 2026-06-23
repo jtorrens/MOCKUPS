@@ -216,12 +216,20 @@ function relationOptionsForField(
     };
   }
   if (field.column === "episode_id") {
+    const productionId = record?.production_id;
     return {
-      allowEmpty: Boolean(field.nullable),
-      options: records.episodes?.map((item) => ({
-        value: item.id,
-        label: titleForRecord(item, "name"),
-      })) ?? [],
+      allowEmpty: table.id === "shots" ? false : Boolean(field.nullable),
+      options: records.episodes
+        ?.filter(
+          (item) =>
+            !productionId ||
+            !Object.hasOwn(item, "production_id") ||
+            item.production_id === productionId,
+        )
+        .map((item) => ({
+          value: item.id,
+          label: titleForRecord(item, "name"),
+        })) ?? [],
     };
   }
   if (field.column === "app_id") {
@@ -276,6 +284,21 @@ function relationOptionsForField(
         value: item.id,
         label: titleForRecord(item, "name"),
       })) ?? [],
+    };
+  }
+  if (field.column === "frame_asset_id") {
+    return {
+      allowEmpty: true,
+      options: records.media_assets
+        ?.filter(
+          (item) =>
+            !item.asset_type ||
+            item.asset_type === "image",
+        )
+        .map((item) => ({
+          value: item.id,
+          label: titleForRecord(item, "name"),
+        })) ?? [],
     };
   }
   if (field.column === "default_device_id") {
@@ -2015,7 +2038,197 @@ export function RecordEditor({
     );
   }
 
+  const movCodecOptions = [
+    { value: "prores_422_proxy", label: "ProRes 422 Proxy" },
+    { value: "prores_422_lt", label: "ProRes 422 LT" },
+    { value: "prores_422", label: "ProRes 422" },
+    { value: "prores_422_hq", label: "ProRes 422 HQ" },
+    { value: "prores_4444", label: "ProRes 4444 (alpha)" },
+    { value: "prores_4444_xq", label: "ProRes 4444 XQ (alpha)" },
+    { value: "h264_low", label: "H.264 Low" },
+    { value: "h264_medium", label: "H.264 Medium" },
+    { value: "h264_high", label: "H.264 High" },
+  ];
+  const imageCodecOptions = [
+    { value: "png", label: "PNG" },
+    { value: "exr", label: "EXR" },
+  ];
+
+  function renderPresetPayload(format: string, codec: string) {
+    const isImage = format === "image";
+    const hasAlpha =
+      codec === "prores_4444" ||
+      codec === "prores_4444_xq" ||
+      codec === "prores_4444_alpha" ||
+      codec === "png" ||
+      codec === "exr";
+    return {
+      codec_json: { codec },
+      color_json: {
+        colorSpace: codec === "exr" ? "linear" : isImage ? "srgb" : "rec709",
+        alpha: hasAlpha,
+      },
+      quality_json: { profile: codec },
+      export_json: {
+        extension: isImage ? codec : "mov",
+        sequence: isImage,
+        ffmpegArgs: ffmpegArgsForRenderPreset(format, codec),
+      },
+    };
+  }
+
+  function ffmpegArgsForRenderPreset(format: string, codec: string) {
+    if (format === "image") {
+      if (codec === "exr") return "-compression zip -pix_fmt rgba64le";
+      return "-compression_level 6 -pix_fmt rgba";
+    }
+    if (codec === "prores_422_proxy") return "-c:v prores_ks -profile:v 0 -pix_fmt yuv422p10le";
+    if (codec === "prores_422_lt") return "-c:v prores_ks -profile:v 1 -pix_fmt yuv422p10le";
+    if (codec === "prores_422") return "-c:v prores_ks -profile:v 2 -pix_fmt yuv422p10le";
+    if (codec === "prores_422_hq") return "-c:v prores_ks -profile:v 3 -pix_fmt yuv422p10le";
+    if (codec === "prores_4444" || codec === "prores_4444_alpha") {
+      return "-c:v prores_ks -profile:v 4 -pix_fmt yuva444p10le";
+    }
+    if (codec === "prores_4444_xq") return "-c:v prores_ks -profile:v 5 -pix_fmt yuva444p10le";
+    if (codec === "h264_low") return "-c:v libx264 -preset medium -crf 28 -pix_fmt yuv420p";
+    if (codec === "h264_medium") return "-c:v libx264 -preset medium -crf 23 -pix_fmt yuv420p";
+    if (codec === "h264_high") return "-c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p";
+    return "";
+  }
+
+  function renderPresetCodec() {
+    const format = drafts.format === "image" ? "image" : "mov";
+    const codecRoot = parsedObject(drafts.codec_json ?? "{}");
+    const options = format === "image" ? imageCodecOptions : movCodecOptions;
+    const current =
+      typeof codecRoot.codec === "string" &&
+      options.some((option) => option.value === codecRoot.codec)
+        ? codecRoot.codec
+        : options[0].value;
+
+    function updateCodec(nextCodec: string, nextFormat = format) {
+      const payload = renderPresetPayload(nextFormat, nextCodec);
+      setDrafts({
+        ...drafts,
+        format: nextFormat,
+        codec_json: stringifyJson(payload.codec_json),
+        color_json: stringifyJson(payload.color_json),
+        quality_json: stringifyJson(payload.quality_json),
+        export_json: stringifyJson(payload.export_json),
+      });
+    }
+
+    return (
+      <InspectorFieldRow
+        key="render_preset_codec"
+        className="app-field app-field-string"
+        label={<span>{format === "image" ? "Image type" : "Codec"}</span>}
+        control={
+          <select
+            value={current}
+            onChange={(event) => updateCodec(event.target.value)}
+          >
+            {options.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        }
+      />
+    );
+  }
+
+  function renderRenderPresetField(field: AppFieldDefinition) {
+    if (
+      [
+        "production_id",
+        "width",
+        "height",
+        "fps",
+        "color_json",
+        "quality_json",
+      ].includes(field.column)
+    ) {
+      return null;
+    }
+    if (field.column === "codec_json") {
+      return renderPresetCodec();
+    }
+    if (field.column === "format") {
+      const format = drafts.format === "image" ? "image" : "mov";
+      return (
+        <InspectorFieldRow
+          key={field.column}
+          className="app-field app-field-string"
+          label={<span>Format</span>}
+          control={
+            <select
+              value={format}
+              onChange={(event) => {
+                const nextFormat = event.target.value;
+                const nextCodec = nextFormat === "image" ? "png" : "prores_422_hq";
+                const payload = renderPresetPayload(nextFormat, nextCodec);
+                setDrafts({
+                  ...drafts,
+                  format: nextFormat,
+                  codec_json: stringifyJson(payload.codec_json),
+                  color_json: stringifyJson(payload.color_json),
+                  quality_json: stringifyJson(payload.quality_json),
+                  export_json: stringifyJson(payload.export_json),
+                });
+              }}
+            >
+              <option value="mov">MOV</option>
+              <option value="image">Image</option>
+            </select>
+          }
+        />
+      );
+    }
+    if (field.column === "export_json") {
+      const exportRoot = parsedObject(drafts.export_json ?? "{}");
+      const ffmpegArgs =
+        typeof exportRoot.ffmpegArgs === "string"
+          ? exportRoot.ffmpegArgs
+          : "";
+      return (
+        <InspectorFieldRow
+          key={field.column}
+          className="app-field app-field-string"
+          label={<span>FFmpeg args</span>}
+          control={
+            <textarea
+              data-testid="field-ffmpeg_args"
+              value={ffmpegArgs}
+              onChange={(event) =>
+                setJsonDraft("export_json", {
+                  ...exportRoot,
+                  ffmpegArgs: event.target.value,
+                })
+              }
+              rows={2}
+            />
+          }
+        />
+      );
+    }
+    return renderField(field);
+  }
+
   function renderGenericField(field: AppFieldDefinition) {
+    if (table.id === "render_presets") {
+      return renderRenderPresetField(field);
+    }
+    if (
+      table.id === "devices" &&
+      ["production_id", "manufacturer", "model", "os_family"].includes(field.column)
+    ) {
+      return null;
+    }
+    if (table.id === "devices" && field.column === "metrics_json") {
+      return renderDeviceMetricsField(field);
+    }
     if (table.id === "actors" && field.column === "production_id") {
       return null;
     }
@@ -2026,7 +2239,6 @@ export function RecordEditor({
       table.id === "shots" &&
       [
         "production_id",
-        "episode_id",
         "sort_order",
         "render_preset_id",
       ].includes(field.column)
@@ -2144,6 +2356,64 @@ export function RecordEditor({
             />
           );
         })}
+      </div>
+    );
+  }
+
+  function primitiveJsonPaths(
+    value: JsonValue,
+    path: JsonPath = [],
+  ): { path: JsonPath; value: JsonValue }[] {
+    if (Array.isArray(value)) {
+      return value.flatMap((entry, index) =>
+        primitiveJsonPaths(entry, [...path, index]),
+      );
+    }
+    if (isJsonObject(value)) {
+      return Object.entries(value).flatMap(([key, entry]) =>
+        primitiveJsonPaths(entry, [...path, key]),
+      );
+    }
+    return [{ path, value }];
+  }
+
+  function metricLabel(path: JsonPath) {
+    return path
+      .map((segment) =>
+        typeof segment === "number"
+          ? String(segment)
+          : friendlyGroupLabel(String(segment)),
+      )
+      .join(" · ");
+  }
+
+  function renderDeviceMetricsField(field: AppFieldDefinition) {
+    const root = parsedJsonValue(drafts[field.column] ?? "{}", {}) as JsonValue;
+    const entries = primitiveJsonPaths(root).filter((entry) => entry.path.length > 0);
+    if (entries.length === 0) return null;
+    return (
+      <div key={field.column} className="flat-json-field-group">
+        <div className="flat-json-fields">
+          {entries.map(({ path, value }) => (
+            <InspectorFieldRow
+              key={path.join(".")}
+              className="app-field flat-json-row"
+              label={<span>{metricLabel(path)}</span>}
+              control={
+                <JsonValueEditor
+                  rootValue={root}
+                  path={path}
+                  value={value}
+                  hints={buildJsonUiHints(table, field, record)}
+                  onRootChange={(nextRoot) => setJsonDraft(field.column, nextRoot)}
+                  onChange={(nextValue) =>
+                    setJsonDraft(field.column, setAtPath(root, path, nextValue))
+                  }
+                />
+              }
+            />
+          ))}
+        </div>
       </div>
     );
   }

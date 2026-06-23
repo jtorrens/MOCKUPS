@@ -592,3 +592,22 @@ Implications:
 - A group like `Notifications` should not duplicate color fields already present in `Colors`.
 - Alpha-capable colors use a swatch plus compact alpha editor in the UI, and may render a richer picker overlay.
 - Theme fields do not show inherited/override state because Theme is the top of the design-token chain.
+
+## D048 — Generic production UI baseline is closed for this phase
+
+Status: accepted
+
+The generic authoring UI now covers the reusable production-level tables enough to move focus to concrete Apps and Modules.
+
+This phase establishes:
+
+- Devices are production data records with user-facing `name`, `frame_asset_id`, and editable metrics. Manufacturer/model/OS family remain internal implementation fields for now.
+- Development seed creates a small baseline device catalog: three iPhone models and three common Android models.
+- Shots expose an editable `Episode` dropdown so a duplicated shot can be moved between episodes.
+- Render Presets describe output/export behavior, not shot timing or dimensions. Width, height, and fps remain internal SQL placeholders until the schema is simplified; final values come from the Shot/render context.
+- Render Presets expose `Format`, codec/image type, and editable `FFmpeg args`. Derived codec/color/quality/export JSON remains stored under the preset.
+- The left production tree supports add/duplicate/delete where the operation is currently safe: shots, themes, devices, and render presets. Production and episode duplication remain intentionally disabled until their cascade semantics are designed.
+
+Implications:
+- The next phase should focus on app-specific and module-specific editors, starting from the now-stable generic shell.
+- Schema cleanup can later remove placeholder render-preset dimensions/fps once render orchestration is mature.

@@ -92,13 +92,18 @@ export interface DebugPayload {
 }
 
 export interface AppCreateRequest {
-  tableId: "productions" | "episodes" | "shots" | "themes";
+  tableId: "productions" | "episodes" | "shots" | "themes" | "devices" | "render_presets";
   parent?: {
     productionId?: string;
     episodeId?: string;
   };
   name?: string;
   family?: "ios" | "android";
+}
+
+export interface AppRecordActionRequest {
+  tableId: "shots" | "themes" | "devices" | "render_presets";
+  recordId: string;
 }
 
 async function readResponse<T>(response: Response): Promise<T> {
@@ -135,6 +140,32 @@ export async function createAppRecord(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(request),
+    }),
+  );
+}
+
+export async function duplicateAppRecord(
+  request: AppRecordActionRequest,
+): Promise<{ state: AppState; record: AppRecord; tableId: string }> {
+  return readResponse(
+    await fetch("/api/app/record/duplicate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
+    }),
+  );
+}
+
+export async function deleteAppRecord(
+  request: AppRecordActionRequest,
+): Promise<{ state: AppState; tableId: string; deletedRecordId: string }> {
+  const query = new URLSearchParams({
+    tableId: request.tableId,
+    recordId: request.recordId,
+  });
+  return readResponse(
+    await fetch(`/api/app/record?${query}`, {
+      method: "DELETE",
     }),
   );
 }

@@ -7,8 +7,11 @@ import {
   loadDebugPayload,
   saveDebugPayload,
   createAppRecord,
+  deleteAppRecord,
+  duplicateAppRecord,
   updateAppRecord,
   type AppCreateRequest,
+  type AppRecordActionRequest,
   type AppUpdateRequest,
   type DebugSaveRequest,
   type DebugSelection,
@@ -59,6 +62,19 @@ const server = createServer(async (request, response) => {
     if (request.method === "POST" && url.pathname === "/api/app/record") {
       const body = (await readJson(request)) as AppCreateRequest;
       sendJson(response, 200, createAppRecord(database, body));
+      return;
+    }
+    if (request.method === "POST" && url.pathname === "/api/app/record/duplicate") {
+      const body = (await readJson(request)) as AppRecordActionRequest;
+      sendJson(response, 200, duplicateAppRecord(database, body));
+      return;
+    }
+    if (request.method === "DELETE" && url.pathname === "/api/app/record") {
+      const body: AppRecordActionRequest = {
+        tableId: url.searchParams.get("tableId") as AppRecordActionRequest["tableId"],
+        recordId: url.searchParams.get("recordId") ?? "",
+      };
+      sendJson(response, 200, deleteAppRecord(database, body));
       return;
     }
     if (request.method === "GET" && url.pathname === "/api/app/preview") {

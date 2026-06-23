@@ -180,7 +180,7 @@ export const APP_TABLES = [
     fields: [
       { column: "id", label: "ID", kind: "string", readonly: true },
       { column: "production_id", label: "Production ID", kind: "string" },
-      { column: "episode_id", label: "Episode ID", kind: "string", nullable: true },
+      { column: "episode_id", label: "Episode", kind: "string", nullable: true },
       {
         column: "owner_actor_id",
         label: "Owner actor",
@@ -938,13 +938,18 @@ export interface AppUpdateRequest {
 }
 
 export interface AppCreateRequest {
-  tableId: "productions" | "episodes" | "shots" | "themes";
+  tableId: "productions" | "episodes" | "shots" | "themes" | "devices" | "render_presets";
   parent?: {
     productionId?: string;
     episodeId?: string;
   };
   name?: string;
   family?: "ios" | "android";
+}
+
+export interface AppRecordActionRequest {
+  tableId: "shots" | "themes" | "devices" | "render_presets";
+  recordId: string;
 }
 
 function slugifyIdPart(value: string): string {
@@ -1100,6 +1105,81 @@ function firstScalar(
   return typeof value === "string" ? value : null;
 }
 
+function defaultDeviceMetrics(width: number, height: number, scale = 3) {
+  const designWidth = Math.round(width / scale);
+  const designHeight = Math.round(height / scale);
+  const statusBarHeight = Math.round(height * 0.063);
+  const safeBottom = Math.round(height * 0.036);
+  return {
+    designSpace: {
+      width: designWidth,
+      height: designHeight,
+      unit: "logical",
+    },
+    renderSize: { width, height },
+    scaleToPixels: scale,
+    canvas: { width, height },
+    screen: { x: 0, y: 0, width, height },
+    viewport: { x: 0, y: 0, width, height },
+    safeArea: {
+      top: statusBarHeight,
+      right: 0,
+      bottom: safeBottom,
+      left: 0,
+    },
+    statusBar: {
+      x: 0,
+      y: 0,
+      width,
+      height: statusBarHeight,
+    },
+    cornerRadius: Math.round(width * 0.12),
+    pixelRatio: scale,
+    defaultScreenScale: 1,
+  };
+}
+
+function defaultRenderPresetPayload(format = "mov", codec = "prores_422_hq") {
+  const isImage = format === "image";
+  const hasAlpha =
+    codec === "prores_4444" ||
+    codec === "prores_4444_alpha" ||
+    codec === "png" ||
+    codec === "exr";
+  return {
+    codec_json: { codec },
+    color_json: {
+      colorSpace: codec === "exr" ? "linear" : isImage ? "srgb" : "rec709",
+      alpha: hasAlpha,
+    },
+    quality_json: { profile: codec },
+    export_json: {
+      extension: isImage ? codec : "mov",
+      sequence: isImage,
+      ffmpegArgs: ffmpegArgsForRenderPreset(format, codec),
+    },
+  };
+}
+
+function ffmpegArgsForRenderPreset(format: string, codec: string) {
+  if (format === "image") {
+    if (codec === "exr") return "-compression zip -pix_fmt rgba64le";
+    return "-compression_level 6 -pix_fmt rgba";
+  }
+  if (codec === "prores_422_proxy") return "-c:v prores_ks -profile:v 0 -pix_fmt yuv422p10le";
+  if (codec === "prores_422_lt") return "-c:v prores_ks -profile:v 1 -pix_fmt yuv422p10le";
+  if (codec === "prores_422") return "-c:v prores_ks -profile:v 2 -pix_fmt yuv422p10le";
+  if (codec === "prores_422_hq") return "-c:v prores_ks -profile:v 3 -pix_fmt yuv422p10le";
+  if (codec === "prores_4444" || codec === "prores_4444_alpha") {
+    return "-c:v prores_ks -profile:v 4 -pix_fmt yuva444p10le";
+  }
+  if (codec === "prores_4444_xq") return "-c:v prores_ks -profile:v 5 -pix_fmt yuva444p10le";
+  if (codec === "h264_low") return "-c:v libx264 -preset medium -crf 28 -pix_fmt yuv420p";
+  if (codec === "h264_medium") return "-c:v libx264 -preset medium -crf 23 -pix_fmt yuv420p";
+  if (codec === "h264_high") return "-c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p";
+  return "";
+}
+
 export function createAppRecord(
   database: SQLiteDatabase,
   request: AppCreateRequest,
@@ -1187,6 +1267,91 @@ export function createAppRecord(
     return { tableId: "themes", record, state: loadAppState(database) };
   }
 
+  if (request.tableId === "devices") {
+    const productionId = request.parent?.productionId;
+    if (!productionId) {
+      throw new Error("Creating a device requires a productionId parent.");
+    }
+    const production = database
+      .prepare("SELECT id FROM productions WHERE id = ?")
+      .get(productionId);
+    if (!production) {
+      throw new Error(`Production ${productionId} not found`);
+    }
+    const name = request.name?.trim() || "New device";
+    const id = uniqueId("device", name);
+    database
+      .prepare(
+        `INSERT INTO devices (id, production_id, name, manufacturer, model, os_family, metrics_json, frame_asset_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        id,
+        productionId,
+        name,
+        "Custom",
+        name,
+        "custom",
+        stringifyJsonObject(defaultDeviceMetrics(1080, 2340), "devices.metrics_json"),
+        null,
+      );
+    const record = decodeAppRow(
+      database.prepare("SELECT * FROM devices WHERE id = ?").get(id) as Row,
+      tableDefinition("devices"),
+    );
+    return { tableId: "devices", record, state: loadAppState(database) };
+  }
+
+  if (request.tableId === "render_presets") {
+    const productionId = request.parent?.productionId;
+    if (!productionId) {
+      throw new Error("Creating a render preset requires a productionId parent.");
+    }
+    const production = database
+      .prepare("SELECT id, default_fps FROM productions WHERE id = ?")
+      .get(productionId) as Row | undefined;
+    if (!production) {
+      throw new Error(`Production ${productionId} not found`);
+    }
+    const name = request.name?.trim() || "New Render Preset";
+    const id = uniqueId("render_preset", name);
+    const payload = defaultRenderPresetPayload();
+    database
+      .prepare(
+        `INSERT INTO render_presets (
+          id,
+          production_id,
+          name,
+          width,
+          height,
+          fps,
+          format,
+          codec_json,
+          color_json,
+          quality_json,
+          export_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        id,
+        productionId,
+        name,
+        1,
+        1,
+        1,
+        "mov",
+        stringifyJsonObject(payload.codec_json, "render_presets.codec_json"),
+        stringifyJsonObject(payload.color_json, "render_presets.color_json"),
+        stringifyJsonObject(payload.quality_json, "render_presets.quality_json"),
+        stringifyJsonObject(payload.export_json, "render_presets.export_json"),
+      );
+    const record = decodeAppRow(
+      database.prepare("SELECT * FROM render_presets WHERE id = ?").get(id) as Row,
+      tableDefinition("render_presets"),
+    );
+    return { tableId: "render_presets", record, state: loadAppState(database) };
+  }
+
   const episodeId = request.parent?.episodeId;
   if (!episodeId) {
     throw new Error("Creating a shot requires an episodeId parent.");
@@ -1259,6 +1424,261 @@ export function createAppRecord(
     tableDefinition("shots"),
   );
   return { tableId: "shots", record, state: loadAppState(database) };
+}
+
+function copyName(value: unknown) {
+  const name = typeof value === "string" && value.trim() ? value.trim() : "Copy";
+  return `${name} Copy`;
+}
+
+function duplicateSimpleRecord(
+  database: SQLiteDatabase,
+  tableId: "themes" | "devices" | "render_presets",
+  recordId: string,
+) {
+  const definition = tableDefinition(tableId);
+  const existing = database
+    .prepare(`SELECT * FROM ${definition.table} WHERE id = ?`)
+    .get(recordId) as Row | undefined;
+  if (!existing) {
+    throw new Error(`Record ${recordId} not found in ${tableId}`);
+  }
+  const name = copyName(existing.name);
+  const id = uniqueId(
+    tableId === "themes"
+      ? "theme"
+      : tableId === "devices"
+        ? "device"
+        : "render_preset",
+    name,
+  );
+  const columns = Object.keys(existing);
+  const next: Row = {
+    ...existing,
+    id,
+    name,
+  };
+  database
+    .prepare(
+      `INSERT INTO ${definition.table} (${columns.join(", ")})
+       VALUES (${columns.map(() => "?").join(", ")})`,
+    )
+    .run(...columns.map((column) => next[column]));
+  return decodeAppRow(
+    database.prepare(`SELECT * FROM ${definition.table} WHERE id = ?`).get(id) as Row,
+    definition,
+  );
+}
+
+function duplicateShotRecord(database: SQLiteDatabase, recordId: string) {
+  return database.transaction(() => {
+    const existing = database
+      .prepare("SELECT * FROM shots WHERE id = ?")
+      .get(recordId) as Row | undefined;
+    if (!existing) {
+      throw new Error(`Record ${recordId} not found in shots`);
+    }
+    const episodeId = String(existing.episode_id ?? "");
+    const productionId = String(existing.production_id);
+    const name = copyName(existing.name);
+    const id = uniqueId("shot", name);
+    const sortOrder = episodeId
+      ? nextSortOrder(database, "shots", "episode_id", episodeId)
+      : Number(existing.sort_order ?? 0) + 1;
+    database
+      .prepare(
+        `INSERT INTO shots (
+          id,
+          production_id,
+          episode_id,
+          owner_actor_id,
+          name,
+          slug,
+          version,
+          sort_order,
+          duration_frames,
+          fps,
+          render_preset_id,
+          canvas_json,
+          metadata_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        id,
+        productionId,
+        existing.episode_id ?? null,
+        existing.owner_actor_id ?? null,
+        name,
+        `${slugifyIdPart(String(existing.slug ?? existing.name ?? "shot"))}_copy`,
+        existing.version ?? 1,
+        sortOrder,
+        existing.duration_frames,
+        existing.fps,
+        existing.render_preset_id ?? null,
+        existing.canvas_json ?? "{}",
+        existing.metadata_json ?? "{}",
+      );
+
+    const screenIdMap = new Map<string, string>();
+    const screens = database
+      .prepare("SELECT * FROM screen_instances WHERE shot_id = ? ORDER BY layer_order, id")
+      .all(recordId) as Row[];
+    for (const screen of screens) {
+      const oldScreenId = String(screen.id);
+      const newScreenId = uniqueId("screen", `${id}_${oldScreenId}`);
+      screenIdMap.set(oldScreenId, newScreenId);
+      database
+        .prepare(
+          `INSERT INTO screen_instances (
+            id,
+            shot_id,
+            app_id,
+            screen_type,
+            module_id,
+            module_schema_version,
+            owner_actor_id,
+            device_id,
+            device_state_id,
+            device_state_json,
+            theme_id,
+            theme_mode,
+            start_frame,
+            end_frame,
+            layer_order,
+            data_ref_json,
+            module_data_json,
+            module_config_json,
+            module_tokens_override_json,
+            transform_json,
+            props_json,
+            transition_in_json,
+            transition_out_json
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .run(
+          newScreenId,
+          id,
+          screen.app_id,
+          screen.screen_type,
+          screen.module_id ?? null,
+          screen.module_schema_version ?? null,
+          screen.owner_actor_id,
+          screen.device_id ?? null,
+          screen.device_state_id ?? null,
+          screen.device_state_json ?? null,
+          screen.theme_id ?? null,
+          screen.theme_mode ?? null,
+          screen.start_frame,
+          screen.end_frame,
+          screen.layer_order,
+          screen.data_ref_json ?? null,
+          screen.module_data_json ?? null,
+          screen.module_config_json ?? null,
+          screen.module_tokens_override_json ?? null,
+          screen.transform_json ?? "{}",
+          screen.props_json ?? "{}",
+          screen.transition_in_json ?? null,
+          screen.transition_out_json ?? null,
+        );
+    }
+
+    for (const [oldScreenId, newScreenId] of screenIdMap) {
+      const modules = database
+        .prepare("SELECT * FROM module_instances WHERE screen_instance_id = ? ORDER BY sort_order, id")
+        .all(oldScreenId) as Row[];
+      for (const moduleInstance of modules) {
+        database
+          .prepare(
+            `INSERT INTO module_instances (
+              id,
+              screen_instance_id,
+              module_id,
+              module_schema_version,
+              sort_order,
+              content_json,
+              behavior_json,
+              metadata_json
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          )
+          .run(
+            uniqueId("module_instance", `${newScreenId}_${moduleInstance.id}`),
+            newScreenId,
+            moduleInstance.module_id,
+            moduleInstance.module_schema_version,
+            moduleInstance.sort_order ?? null,
+            moduleInstance.content_json,
+            moduleInstance.behavior_json,
+            moduleInstance.metadata_json ?? null,
+          );
+      }
+
+      const events = database
+        .prepare("SELECT * FROM screen_events WHERE screen_instance_id = ? ORDER BY start_frame, id")
+        .all(oldScreenId) as Row[];
+      for (const event of events) {
+        database
+          .prepare(
+            `INSERT INTO screen_events (
+              id,
+              screen_instance_id,
+              event_type,
+              start_frame,
+              duration_frames,
+              target_id,
+              animation_preset_id,
+              payload_json
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          )
+          .run(
+            uniqueId("screen_event", `${newScreenId}_${event.id}`),
+            newScreenId,
+            event.event_type,
+            event.start_frame,
+            event.duration_frames,
+            event.target_id ?? null,
+            event.animation_preset_id ?? null,
+            event.payload_json,
+          );
+      }
+    }
+
+    return decodeAppRow(
+      database.prepare("SELECT * FROM shots WHERE id = ?").get(id) as Row,
+      tableDefinition("shots"),
+    );
+  })();
+}
+
+export function duplicateAppRecord(
+  database: SQLiteDatabase,
+  request: AppRecordActionRequest,
+) {
+  const record =
+    request.tableId === "shots"
+      ? duplicateShotRecord(database, request.recordId)
+      : duplicateSimpleRecord(database, request.tableId, request.recordId);
+  return { tableId: request.tableId, record, state: loadAppState(database) };
+}
+
+export function deleteAppRecord(
+  database: SQLiteDatabase,
+  request: AppRecordActionRequest,
+) {
+  const definition = tableDefinition(request.tableId);
+  const existing = database
+    .prepare(`SELECT id FROM ${definition.table} WHERE id = ?`)
+    .get(request.recordId);
+  if (!existing) {
+    throw new Error(`Record ${request.recordId} not found in ${request.tableId}`);
+  }
+  database
+    .prepare(`DELETE FROM ${definition.table} WHERE id = ?`)
+    .run(request.recordId);
+  return {
+    tableId: request.tableId,
+    deletedRecordId: request.recordId,
+    state: loadAppState(database),
+  };
 }
 
 export function updateAppRecord(

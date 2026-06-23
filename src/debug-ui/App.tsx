@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState, type PointerEvent as ReactPointerEvent } from "react";
 import {
   createAppRecord,
+  deleteAppRecord,
+  duplicateAppRecord,
   getAppState,
   getPreviewPayload,
   type AppRecord,
@@ -357,7 +359,7 @@ export function App() {
   }
 
   function performCreateRecord(
-    tableId: "productions" | "episodes" | "shots" | "themes",
+    tableId: "productions" | "episodes" | "shots" | "themes" | "devices" | "render_presets",
     parent?: { productionId?: string; episodeId?: string },
     options?: { family?: "ios" | "android" },
   ) {
@@ -378,7 +380,7 @@ export function App() {
   }
 
   function handleCreateRecord(
-    tableId: "productions" | "episodes" | "shots" | "themes",
+    tableId: "productions" | "episodes" | "shots" | "themes" | "devices" | "render_presets",
     parent?: { productionId?: string; episodeId?: string },
   ) {
     if (tableId === "themes") {
@@ -396,6 +398,45 @@ export function App() {
   function handleCreateThemeFromModal(family: "ios" | "android") {
     performCreateRecord("themes", themeCreateParent ?? undefined, { family });
     setThemeCreateParent(null);
+  }
+
+  function handleDuplicateRecord(
+    tableId: "shots" | "themes" | "devices" | "render_presets",
+    recordId: string,
+  ) {
+    setBusyProjectAction(true);
+    setRequestError("");
+    void duplicateAppRecord({ tableId, recordId })
+      .then((result) => {
+        setState(result.state);
+        syncSelectionForCreatedRecord(result.state, result.tableId, result.record);
+        setRefreshCounter((value) => value + 1);
+      })
+      .catch((error: Error) => setRequestError(error.message))
+      .finally(() => setBusyProjectAction(false));
+  }
+
+  function handleDeleteRecord(
+    tableId: "shots" | "themes" | "devices" | "render_presets",
+    recordId: string,
+  ) {
+    setBusyProjectAction(true);
+    setRequestError("");
+    void deleteAppRecord({ tableId, recordId })
+      .then((result) => {
+        setState(result.state);
+        const nextSelected = initialSelectedRecords(result.state);
+        setSelectedRecordIds(nextSelected);
+        setActiveTableId(tableId);
+        try {
+          setSelection(chooseInitialSelection(result.state));
+        } catch {
+          setSelection(null);
+        }
+        setRefreshCounter((value) => value + 1);
+      })
+      .catch((error: Error) => setRequestError(error.message))
+      .finally(() => setBusyProjectAction(false));
   }
 
   function beginHorizontalResize(
@@ -624,6 +665,8 @@ export function App() {
                 selectContextFromRecord(tableId, recordId);
               }}
               onCreateRecord={handleCreateRecord}
+              onDuplicateRecord={handleDuplicateRecord}
+              onDeleteRecord={handleDeleteRecord}
             />
           </aside>
           <div

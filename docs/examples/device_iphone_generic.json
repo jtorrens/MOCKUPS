@@ -1,9 +1,9 @@
 {
   "id": "device_iphone_generic",
   "production_id": "production_demo",
-  "name": "Generic iPhone",
+  "name": "iPhone 15 Pro Max",
   "manufacturer": "Apple",
-  "model": "Generic modern iPhone",
+  "model": "iPhone 15 Pro Max",
   "os_family": "ios",
   "frame_asset_id": "media_asset_iphone_frame",
   "metrics_json": {

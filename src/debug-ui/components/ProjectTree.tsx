@@ -16,8 +16,16 @@ interface ProjectTreeProps {
   onTableChange: (tableId: string) => void;
   onRecordSelect: (tableId: string, recordId: string) => void;
   onCreateRecord: (
-    tableId: "productions" | "episodes" | "shots" | "themes",
+    tableId: "productions" | "episodes" | "shots" | "themes" | "devices" | "render_presets",
     parent?: { productionId?: string; episodeId?: string },
+  ) => void;
+  onDuplicateRecord: (
+    tableId: "shots" | "themes" | "devices" | "render_presets",
+    recordId: string,
+  ) => void;
+  onDeleteRecord: (
+    tableId: "shots" | "themes" | "devices" | "render_presets",
+    recordId: string,
   ) => void;
 }
 
@@ -96,22 +104,34 @@ function EmptyPanel({ children }: { children: string }) {
 
 function TreeActions({
   canAdd,
+  canDuplicate,
+  canDelete,
   busy,
   onAdd,
+  onDuplicate,
+  onDelete,
 }: {
   canAdd?: boolean;
+  canDuplicate?: boolean;
+  canDelete?: boolean;
   busy?: boolean;
   onAdd?: () => void;
+  onDuplicate?: () => void;
+  onDelete?: () => void;
 }) {
   return (
     <span className="tree-actions">
       <ActionButton disabled={!canAdd || busy} title="Add" onClick={onAdd}>
         +
       </ActionButton>
-      <ActionButton disabled title="Duplicate will copy child records in a later pass">
+      <ActionButton
+        disabled={!canDuplicate || busy}
+        title="Duplicate"
+        onClick={onDuplicate}
+      >
         ⧉
       </ActionButton>
-      <ActionButton disabled title="Delete is disabled until cascade policy is confirmed">
+      <ActionButton disabled={!canDelete || busy} title="Delete" onClick={onDelete}>
         ⌫
       </ActionButton>
     </span>
@@ -254,6 +274,8 @@ export function ProjectTree({
   onTableChange,
   onRecordSelect,
   onCreateRecord,
+  onDuplicateRecord,
+  onDeleteRecord,
 }: ProjectTreeProps) {
   const [browserTab, setBrowserTab] = useState<"" | "project" | "apps" | "data">(
     "",
@@ -291,6 +313,16 @@ export function ProjectTree({
   function select(tableId: string, recordId: string) {
     onTableChange(tableId);
     onRecordSelect(tableId, recordId);
+  }
+
+  function confirmDelete(
+    tableId: "shots" | "themes" | "devices" | "render_presets",
+    recordId: string,
+    label: string,
+  ) {
+    if (window.confirm(`Delete “${label}”? This cannot be undone.`)) {
+      onDeleteRecord(tableId, recordId);
+    }
   }
 
   function toggleDataTable(tableId: string, tableRecords: AppRecord[]) {
@@ -378,7 +410,15 @@ export function ProjectTree({
                               meta={`${durationFrames}f · ${screens.length} screen${screens.length === 1 ? "" : "s"}`}
                               onClick={() => select("shots", shot.id)}
                             />
-                            <TreeActions />
+                            <TreeActions
+                              canDuplicate
+                              canDelete
+                              busy={busyAction}
+                              onDuplicate={() => onDuplicateRecord("shots", shot.id)}
+                              onDelete={() =>
+                                confirmDelete("shots", shot.id, renderName)
+                              }
+                            />
                           </summary>
                           <div className="tree-children">
                             {screens.length === 0 ? (
@@ -533,15 +573,35 @@ export function ProjectTree({
                     </small>
                   </span>
                 </button>
-                {table.id === "themes" ? (
+                {table.id === "themes" || table.id === "devices" || table.id === "render_presets" ? (
                   <TreeActions
                     canAdd={Boolean(selectedProductionId)}
+                    canDuplicate={Boolean(selectedRecordIds[table.id])}
+                    canDelete={Boolean(selectedRecordIds[table.id])}
                     busy={busyAction}
                     onAdd={() =>
-                      onCreateRecord("themes", {
+                      onCreateRecord(table.id as "themes" | "devices" | "render_presets", {
                         productionId: selectedProductionId,
                       })
                     }
+                    onDuplicate={() =>
+                      onDuplicateRecord(
+                        table.id as "themes" | "devices" | "render_presets",
+                        selectedRecordIds[table.id],
+                      )
+                    }
+                    onDelete={() => {
+                      const selected = tableRecords.find(
+                        (record) => record.id === selectedRecordIds[table.id],
+                      );
+                      if (selected) {
+                        confirmDelete(
+                          table.id as "themes" | "devices" | "render_presets",
+                          selected.id,
+                          recordTitle(table, selected),
+                        );
+                      }
+                    }}
                   />
                 ) : null}
               </summary>
