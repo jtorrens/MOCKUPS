@@ -50,6 +50,31 @@ function isHexColor(value: unknown): value is string {
   return typeof value === "string" && /^#[0-9a-fA-F]{6}$/.test(value);
 }
 
+function rgbaToHexAndAlpha(value: string): { hex: string; alpha: number } | null {
+  const match = value
+    .trim()
+    .match(/^rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(0|1|0?\.\d+)\s*\)$/i);
+  if (!match) return null;
+  const [, red, green, blue, alpha] = match;
+  const channels = [red, green, blue].map((channel) =>
+    Math.max(0, Math.min(255, Number(channel))),
+  );
+  return {
+    hex: `#${channels
+      .map((channel) => channel.toString(16).padStart(2, "0"))
+      .join("")}`,
+    alpha: Math.max(0, Math.min(1, Number(alpha))),
+  };
+}
+
+function hexToRgba(hex: string, alpha: number) {
+  const normalized = hex.replace("#", "");
+  const red = Number.parseInt(normalized.slice(0, 2), 16);
+  const green = Number.parseInt(normalized.slice(2, 4), 16);
+  const blue = Number.parseInt(normalized.slice(4, 6), 16);
+  return `rgba(${red},${green},${blue},${Math.max(0, Math.min(1, alpha))})`;
+}
+
 function isColorRolePath(path: JsonPath): boolean {
   const key = String(path[path.length - 1] ?? "");
   return /(color|background|text|accent|surface|separator)$/i.test(key);
@@ -234,6 +259,15 @@ export function ModeColorEditor({
             </span>
             {group.label}
           </h4>
+          <div className="mode-color-header-row" aria-hidden="true">
+            <span />
+            <span />
+            <span className="mode-color-header-modes">
+              <strong>Light</strong>
+              <strong>Dark</strong>
+            </span>
+            <span />
+          </div>
           {group.paths.map((rolePath) => {
             const key = pathLabel(rolePath);
             const hasOverride = hasRoleOverride(rolePath);
@@ -275,13 +309,48 @@ export function ModeColorEditor({
                       ? role.inheritedLightValue
                       : role.inheritedDarkValue;
                   const displayValue = value || inherited || "";
+                  const alphaColor =
+                    typeof displayValue === "string"
+                      ? rgbaToHexAndAlpha(displayValue)
+                      : null;
                   const canPickColor = isHexColor(displayValue);
                   return (
                     <span
                       key={mode}
                       className="json-color-pair token-color-pair"
                     >
-                      {canPickColor ? (
+                      {alphaColor ? (
+                        <span className="json-alpha-color-pair">
+                          <input
+                            aria-label={`${key} ${mode} color picker`}
+                            type="color"
+                            value={alphaColor.hex}
+                            onChange={(event) =>
+                              updateColor(
+                                mode,
+                                role.rolePath,
+                                hexToRgba(event.target.value, alphaColor.alpha),
+                              )
+                            }
+                          />
+                          <input
+                            aria-label={`${key} ${mode} alpha`}
+                            className="json-value-control"
+                            type="number"
+                            min={0}
+                            max={1}
+                            step={0.01}
+                            value={String(alphaColor.alpha)}
+                            onChange={(event) =>
+                              updateColor(
+                                mode,
+                                role.rolePath,
+                                hexToRgba(alphaColor.hex, Number(event.target.value)),
+                              )
+                            }
+                          />
+                        </span>
+                      ) : canPickColor ? (
                         <>
                           <input
                             aria-label={`${key} ${mode} color picker`}

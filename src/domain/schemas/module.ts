@@ -36,7 +36,12 @@ export const ChatParticipantSchema = z.object({
 });
 
 export const TextRevealSchema = z.object({
-  mode: z.enum(["none", "simple_write_on"]),
+  mode: z.enum([
+    "none",
+    "simple_write_on",
+    "natural_write_on",
+    "waiting_dots",
+  ]),
   startFrame: NonNegativeIntegerSchema,
   durationFrames: NonNegativeIntegerSchema,
 });
@@ -54,10 +59,15 @@ export const ChatModuleMessageSchema = z
     mediaAssetId: IdSchema.optional(),
     media: z
       .object({
+        type: z.enum(["none", "image", "video"]).optional(),
+        filePath: z.string().optional(),
         window: MediaWindowSchema,
         transform: AssetTransformSchema,
       })
+      .partial({ window: true, transform: true })
       .optional(),
+    showBubbleBackground: z.boolean().default(true),
+    textScale: z.number().positive().default(1),
     startFrame: NonNegativeIntegerSchema,
     enterDurationFrames: NonNegativeIntegerSchema.default(0),
     exitFrame: NonNegativeIntegerSchema.optional(),
@@ -75,10 +85,15 @@ export const ChatModuleMessageSchema = z
         path: ["text"],
       });
     }
-    if (value.media && !value.mediaAssetId) {
+    if (
+      value.media &&
+      value.media.type !== "none" &&
+      !value.media.filePath &&
+      !value.mediaAssetId
+    ) {
       context.addIssue({
         code: "custom",
-        message: "media window/transform requires mediaAssetId",
+        message: "media requires mediaAssetId or media.filePath",
         path: ["mediaAssetId"],
       });
     }

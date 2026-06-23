@@ -39,16 +39,21 @@ export function createExampleDataset(): RepositoryDataset {
     id: "episode_demo_001",
     production_id: production.id,
     name: "Episode 1",
+    slug: "episode-1",
     sort_order: 0,
     metadata_json: {
-      source: "initial_fixture",
       note: "Default episode container for demo shots.",
     },
   });
+  const resolvedChat = ResolvedChatScreenPropsSchema.parse(resolvedChatExample);
   const shot = ShotSchema.parse(shotExample.shot);
   const screenInstances = ScreenInstanceSchema.array().parse(
     shotExample.screen_instances.map((instance) => ({
       ...instance,
+      device_state_json:
+        instance.device_state_id === "device_state_locked_morning"
+          ? { ...resolvedChat.deviceState, locked: true }
+          : resolvedChat.deviceState,
       module_data_json: null,
       module_config_json: null,
       module_tokens_override_json: null,
@@ -202,7 +207,6 @@ export function createExampleDataset(): RepositoryDataset {
     },
   });
   const device = DeviceSchema.parse(deviceExample);
-  const resolvedChat = ResolvedChatScreenPropsSchema.parse(resolvedChatExample);
   const otherMessage = resolvedChat.messages.find(
     (message) => message.sender.id !== resolvedChat.ownerActor.id,
   );

@@ -7,7 +7,10 @@ import {
 } from "../api/client.js";
 import { JsonTreeEditor } from "./json-editor/JsonTreeEditor.js";
 import { JsonValueEditor } from "./json-editor/JsonValueEditor.js";
-import { InspectorFieldRow } from "./inspector/InspectorFieldRow.js";
+import {
+  InspectorFieldRow,
+  InspectorRestoreButton,
+} from "./inspector/InspectorFieldRow.js";
 import {
   hasModeColorOverrides,
   ModeColorEditor,
@@ -32,6 +35,100 @@ interface RecordEditorProps {
   inheritedFields?: Record<string, Record<string, unknown>>;
   onRecordsChanged: (records: AppRecord[]) => void;
   onRecordSaved: (record: AppRecord) => void;
+}
+
+function ParticipantDisplayNameInput({
+  value,
+  inheritedValue,
+  onCommit,
+}: {
+  value: string;
+  inheritedValue: string;
+  onCommit: (nextValue: string) => void;
+}) {
+  const [draft, setDraft] = useState(value);
+  const hasOverride = Boolean(inheritedValue) && draft !== inheritedValue;
+
+  useEffect(() => {
+    setDraft(value);
+  }, [value]);
+
+  function commit() {
+    if (draft !== value) {
+      onCommit(draft);
+    }
+  }
+
+  return (
+    <InspectorFieldRow
+      className={`content-field-row ${hasOverride ? "json-override" : ""}`}
+      state={hasOverride ? "override" : "default"}
+      label={<span>Display name</span>}
+      meta={inheritedValue ? <code>{`User: ${inheritedValue}`}</code> : null}
+      control={
+        <input
+          className="json-value-control"
+          value={draft}
+          onBlur={commit}
+          onChange={(event) => {
+            setDraft(event.target.value);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.currentTarget.blur();
+            }
+          }}
+        />
+      }
+      restore={
+        hasOverride ? (
+          <InspectorRestoreButton
+            label="Restore user display name"
+            onClick={() => {
+              setDraft(inheritedValue);
+              onCommit(inheritedValue);
+            }}
+          />
+        ) : null
+      }
+    />
+  );
+}
+
+function DeferredTextInput({
+  className = "json-value-control",
+  value,
+  onCommit,
+}: {
+  className?: string;
+  value: string;
+  onCommit: (nextValue: string) => void;
+}) {
+  const [draft, setDraft] = useState(value);
+
+  useEffect(() => {
+    setDraft(value);
+  }, [value]);
+
+  function commit() {
+    if (draft !== value) {
+      onCommit(draft);
+    }
+  }
+
+  return (
+    <input
+      className={className}
+      value={draft}
+      onBlur={commit}
+      onChange={(event) => setDraft(event.target.value)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") {
+          event.currentTarget.blur();
+        }
+      }}
+    />
+  );
 }
 
 function stringifyJson(value: unknown): string {
@@ -172,6 +269,33 @@ function relationOptionsForField(
       })) ?? [],
     };
   }
+  if (field.column === "avatar_asset_id") {
+    return {
+      allowEmpty: true,
+      options: records.media_assets?.map((item) => ({
+        value: item.id,
+        label: titleForRecord(item, "name"),
+      })) ?? [],
+    };
+  }
+  if (field.column === "default_device_id") {
+    return {
+      allowEmpty: true,
+      options: records.devices?.map((item) => ({
+        value: item.id,
+        label: titleForRecord(item, "name"),
+      })) ?? [],
+    };
+  }
+  if (field.column === "default_theme_id") {
+    return {
+      allowEmpty: true,
+      options: records.themes?.map((item) => ({
+        value: item.id,
+        label: titleForRecord(item, "name"),
+      })) ?? [],
+    };
+  }
   if (table.id === "screen_instances" && field.column === "theme_mode") {
     const shot = records.shots?.find((item) => item.id === record?.shot_id);
     const owner = records.actors?.find(
@@ -232,6 +356,18 @@ function sectionMeta(label: string) {
       icon: "⚙",
       subtitle: "Runtime behavior for this screen",
     },
+    "device state": {
+      icon: "▥",
+      subtitle: "Screen-specific time, battery, network and lock state",
+    },
+    transform: {
+      icon: "⌖",
+      subtitle: "Screen placement inside the shot canvas",
+    },
+    transition: {
+      icon: "⇄",
+      subtitle: "How this screen overlaps into the next one",
+    },
     overrides: {
       icon: "↺",
       subtitle: "Local style overrides against inherited tokens",
@@ -280,6 +416,10 @@ function sectionMeta(label: string) {
       icon: "☰",
       subtitle: "Message list spacing and behavior",
     },
+    participants: {
+      icon: "♙",
+      subtitle: "Linked users, display names and participant roles",
+    },
     chatbubbles: {
       icon: "☵",
       subtitle: "Incoming and outgoing bubble tokens",
@@ -316,7 +456,14 @@ export function RecordEditor({
   const [states, setStates] = useState<Record<string, SaveState>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [screenTab, setScreenTab] = useState<
-    "" | "general" | "content" | "behavior" | "overrides"
+    | ""
+    | "general"
+    | "content"
+    | "behavior"
+    | "overrides"
+    | "deviceState"
+    | "transform"
+    | "transition"
   >("");
   const [contentTab, setContentTab] = useState("participants");
   const [appTab, setAppTab] = useState<"" | "general" | "tokens" | "colors" | "notes">(
@@ -331,6 +478,7 @@ export function RecordEditor({
     "",
   );
   const [moduleDesignGroup, setModuleDesignGroup] = useState("");
+  const [genericTab, setGenericTab] = useState<"" | "general">("general");
   const [openContentItems, setOpenContentItems] = useState<Record<string, boolean>>(
     {},
   );
@@ -352,6 +500,7 @@ export function RecordEditor({
     setThemeTab("");
     setThemeTokenGroup("");
     setModuleDesignGroup("");
+    setGenericTab("general");
     setOpenContentItems({});
   }, [record?.id, table.id]);
 
@@ -597,21 +746,18 @@ export function RecordEditor({
       }
       if (groupKey === "messages") {
         const text = typeof value.text === "string" ? value.text : "";
-        const sender =
-          typeof value.senderParticipantId === "string"
-            ? value.senderParticipantId
-            : "";
-        const type = typeof value.type === "string" ? value.type : "";
+        const direction = value.type === "system" ? "sistema" : "mensaje";
         const start = typeof value.startFrame === "number" ? value.startFrame : null;
-        const duration =
-          typeof value.durationFrames === "number" ? value.durationFrames : null;
+        const duration = typeof value.enterDurationFrames === "number"
+          ? value.enterDurationFrames
+          : null;
         const timing =
           start !== null && duration !== null ? `${start}–${start + duration}f` : "";
         const mediaSummary: string = value.media
           ? contentSummary(value.media as JsonValue)
           : "";
         return truncateContentSummary(
-          [sender, type, text || mediaSummary, timing]
+          [direction, text || mediaSummary, timing]
             .filter(Boolean)
             .join(" · "),
         );
@@ -660,6 +806,489 @@ export function RecordEditor({
 
     function updateAtPath(path: JsonPath, nextValue: JsonValue) {
       updateGroupValue(setAtPath(groupValue, path, nextValue));
+    }
+
+    function actorDisplayName(actorId: unknown) {
+      const actor = records.actors?.find((item) => item.id === actorId);
+      return String(actor?.display_name ?? "");
+    }
+
+    function participantsArray() {
+      const participants = root.participants;
+      return Array.isArray(participants)
+        ? participants.filter(isJsonObject)
+        : [];
+    }
+
+    function participantById(participantId: unknown) {
+      return participantsArray().find((participant) => participant.id === participantId);
+    }
+
+    function participantDisplayName(participant: Record<string, JsonValue> | undefined) {
+      if (!participant) return "";
+      if (typeof participant.displayName === "string" && participant.displayName) {
+        return participant.displayName;
+      }
+      return actorDisplayName(participant.actorId);
+    }
+
+    function ownerParticipant() {
+      return (
+        participantsArray().find((participant) => participant.role === "owner") ??
+        participantsArray()[0]
+      );
+    }
+
+    function firstReceivedParticipant() {
+      return (
+        participantsArray().find((participant) => participant.role !== "owner") ??
+        ownerParticipant()
+      );
+    }
+
+    function participantOptions(options = participantsArray()) {
+      return options.map((participant, index) => {
+        const value = String(participant.id ?? `participant_${index + 1}`);
+        const label = participantDisplayName(participant) || value;
+        return { value, label };
+      });
+    }
+
+    function messageDirection(message: Record<string, JsonValue>) {
+      if (message.type === "system") return "system";
+      const sender = participantById(message.senderParticipantId);
+      return sender?.role === "owner" ? "sent" : "received";
+    }
+
+    function defaultParticipantItem(index: number): Record<string, JsonValue> {
+      return {
+        id: `participant_${index + 1}`,
+        displayName: "",
+        actorId: "",
+        role: "participant",
+      };
+    }
+
+    function defaultMessageItem(index: number): Record<string, JsonValue> {
+      const sender = firstReceivedParticipant() ?? ownerParticipant();
+      return {
+        id: `message_${String(index + 1).padStart(3, "0")}`,
+        senderParticipantId: String(sender?.id ?? ""),
+        type: "text",
+        text: "",
+        showBubbleBackground: true,
+        textScale: 1,
+        media: {
+          type: "none",
+        },
+        startFrame: 0,
+        enterDurationFrames: 10,
+        textReveal: {
+          mode: "simple_write_on",
+          startFrame: 0,
+          durationFrames: 30,
+        },
+      };
+    }
+
+    function updateObjectPath(basePath: JsonPath, leafPath: JsonPath, nextValue: JsonValue) {
+      updateAtPath([...basePath, ...leafPath], nextValue);
+    }
+
+    function renderParticipantFields(
+      participant: Record<string, JsonValue>,
+      index: number,
+    ) {
+      const actorId = String(participant.actorId ?? "");
+      const inheritedDisplayName = actorDisplayName(actorId);
+      const displayName = String(
+        participant.displayName ?? inheritedDisplayName ?? "",
+      );
+      return (
+        <div className="content-card-fields">
+          <InspectorFieldRow
+            className="content-field-row"
+            label={<span>User</span>}
+            control={
+              <select
+                className="json-value-control"
+                value={actorId}
+                onChange={(event) => {
+                  const nextActorId = event.target.value;
+                  const nextDisplayName = actorDisplayName(nextActorId);
+                  updateGroupValue(
+                    setAtPath(
+                      setAtPath(groupValue, [index, "actorId"], nextActorId),
+                      [index, "displayName"],
+                      nextDisplayName,
+                    ),
+                  );
+                }}
+              >
+                <option value="">No linked user</option>
+                {records.actors?.map((actor) => (
+                  <option key={String(actor.id)} value={String(actor.id)}>
+                    {titleForRecord(actor, "display_name")}
+                  </option>
+                ))}
+              </select>
+            }
+          />
+          <ParticipantDisplayNameInput
+            value={displayName}
+            inheritedValue={inheritedDisplayName}
+            onCommit={(nextValue) => updateAtPath([index, "displayName"], nextValue)}
+          />
+          <InspectorFieldRow
+            className="content-field-row"
+            label={<span>Role</span>}
+            control={
+              <select
+                className="json-value-control"
+                value={String(participant.role ?? "participant")}
+                onChange={(event) =>
+                  updateAtPath([index, "role"], event.target.value)
+                }
+              >
+                <option value="owner">Owner</option>
+                <option value="participant">Participant</option>
+                <option value="system">System</option>
+              </select>
+            }
+          />
+        </div>
+      );
+    }
+
+    function renderHeaderFields(header: Record<string, JsonValue>) {
+      const avatarParticipant = participantById(header.avatarParticipantId);
+      const inheritedTitle = participantDisplayName(avatarParticipant);
+      const title = String(header.title ?? inheritedTitle ?? "");
+      const hasTitleOverride = Boolean(inheritedTitle) && title !== inheritedTitle;
+      return (
+        <div className="content-card-fields">
+          <InspectorFieldRow
+            className={`content-field-row ${hasTitleOverride ? "json-override" : ""}`}
+            state={hasTitleOverride ? "override" : "default"}
+            label={<span>Title</span>}
+            meta={inheritedTitle ? <code>{`User: ${inheritedTitle}`}</code> : null}
+            control={
+              <DeferredTextInput
+                value={title}
+                onCommit={(nextValue) => updateAtPath(["title"], nextValue)}
+              />
+            }
+            restore={
+              hasTitleOverride ? (
+                <InspectorRestoreButton
+                  label="Restore user title"
+                  onClick={() => updateAtPath(["title"], inheritedTitle)}
+                />
+              ) : null
+            }
+          />
+          <InspectorFieldRow
+            className="content-field-row"
+            label={<span>Subtitle</span>}
+            control={
+              <DeferredTextInput
+                value={String(header.subtitle ?? "")}
+                onCommit={(nextValue) => updateAtPath(["subtitle"], nextValue)}
+              />
+            }
+          />
+        </div>
+      );
+    }
+
+    function renderMessageFields(
+      message: Record<string, JsonValue>,
+      index: number,
+    ) {
+      const direction = messageDirection(message);
+      const media = isJsonObject(message.media) ? message.media : {};
+      const mediaWindow = isJsonObject(media.window) ? media.window : {};
+      const mediaTransform = isJsonObject(media.transform) ? media.transform : {};
+      const textReveal = isJsonObject(message.textReveal) ? message.textReveal : {};
+      const mediaType = String(media.type ?? (message.mediaAssetId ? "image" : "none"));
+      const receivedOptions = participantOptions(
+        participantsArray().filter((participant) => participant.role !== "owner"),
+      );
+      const senderId = String(message.senderParticipantId ?? "");
+
+      function updateMessage(nextMessage: JsonValue) {
+        updateAtPath([index], nextMessage);
+      }
+
+      function setMessagePath(path: JsonPath, nextValue: JsonValue) {
+        updateObjectPath([index], path, nextValue);
+      }
+
+      function setDirection(nextDirection: string) {
+        const owner = ownerParticipant();
+        const received = firstReceivedParticipant();
+        if (nextDirection === "system") {
+          updateMessage({
+            ...message,
+            type: "system",
+            senderParticipantId: String(owner?.id ?? senderId),
+          });
+          return;
+        }
+        if (nextDirection === "sent") {
+          updateMessage({
+            ...message,
+            type: "text",
+            senderParticipantId: String(owner?.id ?? senderId),
+          });
+          return;
+        }
+        updateMessage({
+          ...message,
+          type: "text",
+          senderParticipantId: String(received?.id ?? senderId),
+        });
+      }
+
+      function setMediaType(nextType: string) {
+        if (nextType === "none") {
+          const { mediaAssetId: _mediaAssetId, ...messageWithoutAsset } = message;
+          updateMessage({
+            ...messageWithoutAsset,
+            media: { type: "none" },
+          });
+          return;
+        }
+        const { mediaAssetId: _mediaAssetId, ...messageWithoutAsset } = message;
+        updateMessage({
+          ...messageWithoutAsset,
+          type: messageWithoutAsset.type === "system" ? "text" : messageWithoutAsset.type,
+          media: {
+            type: nextType,
+            filePath: String(media.filePath ?? ""),
+            window: {
+              width: Number(mediaWindow.width ?? 360),
+              height: Number(mediaWindow.height ?? 240),
+              offsetX: Number(mediaWindow.offsetX ?? 0),
+              offsetY: Number(mediaWindow.offsetY ?? 0),
+            },
+            transform: {
+              scale: Number(mediaTransform.scale ?? 1),
+              translateX: Number(mediaTransform.translateX ?? 0),
+              translateY: Number(mediaTransform.translateY ?? 0),
+              rotationDegrees: Number(mediaTransform.rotationDegrees ?? 0),
+            },
+          },
+        });
+      }
+
+      function setConversationMediaPath(nextPath: string) {
+        const { mediaAssetId: _mediaAssetId, ...messageWithoutAsset } = message;
+        updateMessage({
+          ...messageWithoutAsset,
+          media: {
+            ...media,
+            type: mediaType === "none" ? "image" : mediaType,
+            filePath: nextPath,
+          },
+        });
+      }
+
+      return (
+        <div className="content-card-fields">
+          <InspectorFieldRow
+            className="content-field-row"
+            label={<span>Type</span>}
+            control={
+              <select
+                className="json-value-control"
+                value={direction}
+                onChange={(event) => setDirection(event.target.value)}
+              >
+                <option value="received">Recibido</option>
+                <option value="sent">Enviado</option>
+                <option value="system">Sistema</option>
+              </select>
+            }
+          />
+          {direction === "received" ? (
+            <div className="content-nested-panel">
+              <InspectorFieldRow
+                className="content-field-row"
+                label={<span>Participant</span>}
+                control={
+                  <select
+                    className="json-value-control"
+                    value={senderId}
+                    onChange={(event) =>
+                      setMessagePath(["senderParticipantId"], event.target.value)
+                    }
+                  >
+                    {receivedOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                }
+              />
+            </div>
+          ) : null}
+          <InspectorFieldRow
+            className="content-field-row"
+            label={<span>Show bubble background</span>}
+            control={
+              <input
+                type="checkbox"
+                checked={message.showBubbleBackground !== false}
+                onChange={(event) =>
+                  setMessagePath(["showBubbleBackground"], event.target.checked)
+                }
+              />
+            }
+          />
+          <InspectorFieldRow
+            className="content-field-row"
+            label={<span>Text scale</span>}
+            control={
+              <input
+                className="json-value-control"
+                type="number"
+                step="0.05"
+                value={Number(message.textScale ?? 1)}
+                onChange={(event) =>
+                  setMessagePath(["textScale"], Number(event.target.value))
+                }
+              />
+            }
+          />
+          <InspectorFieldRow
+            className="content-field-row"
+            label={<span>Message text</span>}
+            control={
+              <DeferredTextInput
+                value={String(message.text ?? "")}
+                onCommit={(nextValue) => setMessagePath(["text"], nextValue)}
+              />
+            }
+          />
+          <details className="content-nested-card" open>
+            <summary>
+              <span>Media</span>
+              <small>{mediaType}</small>
+            </summary>
+            <div className="content-card-fields">
+              <InspectorFieldRow
+                className="content-field-row"
+                label={<span>Type</span>}
+                control={
+                  <select
+                    className="json-value-control"
+                    value={mediaType}
+                    onChange={(event) => setMediaType(event.target.value)}
+                  >
+                    <option value="none">None</option>
+                    <option value="image">Image</option>
+                    <option value="video">Video</option>
+                  </select>
+                }
+              />
+              {mediaType === "image" || mediaType === "video" ? (
+                <>
+                  <InspectorFieldRow
+                    className="content-field-row"
+                    label={<span>File path</span>}
+                    control={
+                      <div className="media-file-control">
+                        <DeferredTextInput
+                          value={String(media.filePath ?? "")}
+                          onCommit={setConversationMediaPath}
+                        />
+                        <input
+                          type="file"
+                          accept={mediaType === "image" ? "image/*" : "video/*"}
+                          onChange={(event) => {
+                            const file = event.currentTarget.files?.[0] as
+                              | (File & { path?: string })
+                              | undefined;
+                            if (file) {
+                              setConversationMediaPath(file.path ?? file.name);
+                            }
+                          }}
+                        />
+                      </div>
+                    }
+                  />
+                  {([
+                    ["Container width", ["media", "window", "width"], 360],
+                    ["Container height", ["media", "window", "height"], 240],
+                    ["Crop X offset", ["media", "window", "offsetX"], 0],
+                    ["Crop Y offset", ["media", "window", "offsetY"], 0],
+                    ["Media scale", ["media", "transform", "scale"], 1],
+                    ["Media X offset", ["media", "transform", "translateX"], 0],
+                    ["Media Y offset", ["media", "transform", "translateY"], 0],
+                  ] as Array<[string, JsonPath, number]>).map(([label, path, fallback]) => (
+                    <InspectorFieldRow
+                      key={String(label)}
+                      className="content-field-row"
+                      label={<span>{String(label)}</span>}
+                      control={
+                        <input
+                          className="json-value-control"
+                          type="number"
+                          step={String(label).includes("scale") ? "0.05" : "1"}
+                          value={Number(
+                            path.reduce<JsonValue>(
+                              (current, part) =>
+                                isJsonObject(current) && typeof part === "string"
+                                  ? current[part] ?? null
+                                  : null,
+                              message,
+                            ) ?? fallback,
+                          )}
+                          onChange={(event) =>
+                            setMessagePath(
+                              path as JsonPath,
+                              Number(event.target.value),
+                            )
+                          }
+                        />
+                      }
+                    />
+                  ))}
+                </>
+              ) : null}
+            </div>
+          </details>
+          <InspectorFieldRow
+            className="content-field-row"
+            label={<span>Text reveal mode</span>}
+            control={
+              <select
+                className="json-value-control"
+                value={String(textReveal.mode ?? "simple_write_on")}
+                onChange={(event) =>
+                  updateMessage({
+                    ...message,
+                    textReveal: {
+                      startFrame: Number(
+                        textReveal.startFrame ?? message.startFrame ?? 0,
+                      ),
+                      durationFrames: Number(textReveal.durationFrames ?? 30),
+                      ...textReveal,
+                      mode: event.target.value,
+                    },
+                  })
+                }
+              >
+                <option value="simple_write_on">Simple write down</option>
+                <option value="natural_write_on">Write down natural</option>
+                <option value="waiting_dots">Waiting dots animation</option>
+              </select>
+            }
+          />
+        </div>
+      );
     }
 
     function renderPrimitiveRow(path: JsonPath, label: string, value: JsonValue) {
@@ -726,7 +1355,13 @@ export function RecordEditor({
     }
 
     function addArrayItem() {
-      const nextItem = defaultJsonValue("object");
+      const nextIndex = Array.isArray(groupValue) ? groupValue.length : 0;
+      const nextItem =
+        groupKey === "messages"
+          ? defaultMessageItem(nextIndex)
+          : groupKey === "participants"
+            ? defaultParticipantItem(nextIndex)
+            : defaultJsonValue("object");
       updateGroupValue(Array.isArray(groupValue) ? [...groupValue, nextItem] : [nextItem]);
     }
 
@@ -809,11 +1444,17 @@ export function RecordEditor({
                   </div>
                 </div>
                 {isOpen ? (
-                  <div className="content-card-fields">
-                    {isJsonObject(entryValue)
-                      ? renderObjectFields(entryValue, [index])
-                      : renderNestedValue([index], `[${index}]`, entryValue)}
-                  </div>
+                  groupKey === "participants" && isJsonObject(entryValue) ? (
+                    renderParticipantFields(entryValue, index)
+                  ) : groupKey === "messages" && isJsonObject(entryValue) ? (
+                    renderMessageFields(entryValue, index)
+                  ) : (
+                    <div className="content-card-fields">
+                      {isJsonObject(entryValue)
+                        ? renderObjectFields(entryValue, [index])
+                        : renderNestedValue([index], `[${index}]`, entryValue)}
+                    </div>
+                  )
                 ) : null}
               </section>
             );
@@ -826,6 +1467,13 @@ export function RecordEditor({
     }
 
     if (isJsonObject(groupValue)) {
+      if (groupKey === "header") {
+        return (
+          <div className="content-object-editor">
+            {renderHeaderFields(groupValue)}
+          </div>
+        );
+      }
       return (
         <div className="content-object-editor">
           {renderObjectFields(groupValue, [])}
@@ -877,31 +1525,45 @@ export function RecordEditor({
       records,
     );
     if (field.kind !== "json") {
-      const control = relationSelect && relationSelect.options.length > 0 ? (
-        <select
-          data-testid={`field-${field.column}`}
-          disabled={field.readonly}
-          value={drafts[field.column] ?? ""}
-          onChange={(event) =>
-            setDrafts({
-              ...drafts,
-              [field.column]: event.target.value,
-            })
-          }
-        >
-          {relationSelect.allowEmpty ? (
-            <option value="">Inherited/default</option>
-          ) : null}
-          {relationSelect.options.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      ) : (
+      const selectedRelationLabel = relationSelect?.options.find(
+        (option) => option.value === (drafts[field.column] ?? ""),
+      )?.label;
+      const control = field.readonly ? (
         <input
           data-testid={`field-${field.column}`}
-          disabled={field.readonly}
+          disabled
+          type="text"
+          value={selectedRelationLabel ?? drafts[field.column] ?? ""}
+        />
+      ) : relationSelect && relationSelect.options.length > 0 ? (
+          <select
+            data-testid={`field-${field.column}`}
+            value={drafts[field.column] ?? ""}
+            onChange={(event) =>
+              setDrafts({
+                ...drafts,
+                [field.column]: event.target.value,
+              })
+            }
+          >
+            {relationSelect.allowEmpty ? (
+              <option value="">
+                {["avatar_asset_id", "default_device_id", "default_theme_id"].includes(
+                  field.column,
+                )
+                  ? "None"
+                  : "Inherited/default"}
+              </option>
+            ) : null}
+            {relationSelect.options.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        ) : (
+        <input
+          data-testid={`field-${field.column}`}
           type={field.kind === "number" ? "number" : "text"}
           value={drafts[field.column] ?? ""}
           onChange={(event) =>
@@ -1015,7 +1677,388 @@ export function RecordEditor({
     return columns
       .map((column) => fieldsByColumn.get(column))
       .filter((field): field is AppFieldDefinition => Boolean(field))
+      .filter((field) => field.column !== "id")
       .map((field) => renderField(field));
+  }
+
+  function projectDefaultFps() {
+    if (table.id !== "shots") return undefined;
+    const production = records.productions?.find(
+      (item) => item.id === record?.production_id,
+    );
+    const fps = Number(production?.default_fps);
+    return Number.isFinite(fps) && fps > 0 ? fps : undefined;
+  }
+
+  function shotHasFpsOverride() {
+    const inheritedFps = projectDefaultFps();
+    const currentFps = Number(drafts.fps ?? record?.fps);
+    return (
+      inheritedFps !== undefined &&
+      Number.isFinite(currentFps) &&
+      currentFps !== inheritedFps
+    );
+  }
+
+  function shotCalculatedDurationFrames() {
+    if (table.id !== "shots") return undefined;
+    const screens = records.screen_instances?.filter(
+      (item) => item.shot_id === record?.id,
+    );
+    if (!screens?.length) return undefined;
+    const lastFrame = Math.max(
+      ...screens.map((item) => Number(item.end_frame ?? 0)),
+    );
+    return Number.isFinite(lastFrame) && lastFrame > 0 ? lastFrame : undefined;
+  }
+
+  function shotOwnerDeviceName() {
+    if (table.id !== "shots") return undefined;
+    const owner = records.actors?.find(
+      (item) => item.id === (drafts.owner_actor_id || record?.owner_actor_id),
+    );
+    const device = records.devices?.find(
+      (item) => item.id === owner?.default_device_id,
+    );
+    return device ? titleForRecord(device, "name") : "No default device";
+  }
+
+  function renderShotName() {
+    const production = records.productions?.find(
+      (item) => item.id === record?.production_id,
+    );
+    const episode = records.episodes?.find(
+      (item) => item.id === record?.episode_id,
+    );
+    const productionSlug = String(production?.slug ?? production?.name ?? "production");
+    const episodeSlug = String(episode?.slug ?? episode?.name ?? "episode");
+    const shotSlug = String(drafts.slug ?? record?.slug ?? record?.name ?? "shot");
+    const version = Number(drafts.version ?? record?.version ?? 1);
+    const versionSlug = String(Number.isFinite(version) ? version : 1).padStart(2, "0");
+    return `${productionSlug}_${episodeSlug}_${shotSlug}_v${versionSlug}`;
+  }
+
+  function renderShotFpsField(field: AppFieldDefinition) {
+    const inheritedFps = projectDefaultFps();
+    const currentFps = Number(drafts[field.column] ?? record?.[field.column]);
+    const hasOverride =
+      inheritedFps !== undefined &&
+      Number.isFinite(currentFps) &&
+      currentFps !== inheritedFps;
+    const state = states[field.column] ?? "saved";
+    const error = errors[field.column];
+    return (
+      <InspectorFieldRow
+        key={field.column}
+        className={`app-field app-field-${field.kind} state-${state} ${
+          hasOverride ? "json-override" : ""
+        }`}
+        state={
+          state === "invalid" || state === "failed"
+            ? "invalid"
+            : hasOverride
+              ? "override"
+              : "default"
+        }
+        label={<span>{field.label}</span>}
+        meta={
+          inheritedFps !== undefined ? (
+            <code>{`Project default: ${inheritedFps}`}</code>
+          ) : null
+        }
+        control={
+          <>
+            <input
+              data-testid={`field-${field.column}`}
+              type="number"
+              value={drafts[field.column] ?? ""}
+              onChange={(event) =>
+                setDrafts({
+                  ...drafts,
+                  [field.column]: event.target.value,
+                })
+              }
+            />
+            {error ? <strong>{error}</strong> : null}
+          </>
+        }
+        restore={
+          hasOverride && inheritedFps !== undefined ? (
+            <InspectorRestoreButton
+              label="Restore project FPS"
+              onClick={() =>
+                setDrafts({
+                  ...drafts,
+                  [field.column]: String(inheritedFps),
+                })
+              }
+            />
+          ) : null
+        }
+      />
+    );
+  }
+
+  function renderShotDurationField(field: AppFieldDefinition) {
+    const calculatedDuration = shotCalculatedDurationFrames();
+    return (
+      <InspectorFieldRow
+        key={field.column}
+        className="app-field app-field-number is-readonly"
+        label={<span>{field.label}</span>}
+        meta={
+          calculatedDuration !== undefined ? (
+            <code>Calculated from screens</code>
+          ) : null
+        }
+        control={
+          <input
+            disabled
+            value={String(calculatedDuration ?? record?.duration_frames ?? "")}
+          />
+        }
+      />
+    );
+  }
+
+  function renderShotOwnerDeviceField() {
+    return (
+      <InspectorFieldRow
+        key="owner_device"
+        className="app-field app-field-string is-readonly"
+        label={<span>Device</span>}
+        control={<input disabled value={shotOwnerDeviceName() ?? ""} />}
+      />
+    );
+  }
+
+  function nextScreenInstance() {
+    if (table.id !== "screen_instances") return undefined;
+    const startFrame = Number(drafts.start_frame ?? record?.start_frame ?? 0);
+    return records.screen_instances
+      ?.filter(
+        (item) =>
+          item.shot_id === record?.shot_id &&
+          item.id !== record?.id &&
+          Number(item.start_frame) >= startFrame,
+      )
+      .sort((left, right) => {
+        const frameDelta = Number(left.start_frame) - Number(right.start_frame);
+        return frameDelta || String(left.id).localeCompare(String(right.id));
+      })[0];
+  }
+
+  function transitionOverlapFrames() {
+    if (table.id !== "screen_instances") return 0;
+    const next = nextScreenInstance();
+    if (!next) return 0;
+    const currentEnd = Number(drafts.end_frame ?? record?.end_frame ?? 0);
+    const nextStart = Number(next.start_frame ?? 0);
+    const overlap = currentEnd - nextStart;
+    return Number.isFinite(overlap) && overlap > 0 ? overlap : 0;
+  }
+
+  function renderScreenTransitionField() {
+    const root = parsedObject(drafts.transition_out_json ?? "{}");
+    const type =
+      root.type === "dissolve" || root.type === "overlay"
+        ? String(root.type)
+        : "overlay";
+    const overlap = transitionOverlapFrames();
+    return (
+      <>
+        <InspectorFieldRow
+          key="transition_type"
+          className="app-field app-field-string"
+          label={<span>Transition</span>}
+          control={
+            <select
+              value={type}
+              onChange={(event) =>
+                setDrafts({
+                  ...drafts,
+                  transition_out_json: stringifyJson({
+                    ...root,
+                    type: event.target.value,
+                    duration_frames: overlap,
+                  }),
+                })
+              }
+            >
+              <option value="overlay">Overlay</option>
+              <option value="dissolve">Dissolve</option>
+            </select>
+          }
+        />
+        <InspectorFieldRow
+          key="transition_duration"
+          className="app-field app-field-number is-readonly"
+          label={<span>Duration frames</span>}
+          meta={<code>Calculated from screen overlap</code>}
+          control={<input disabled value={String(overlap)} />}
+        />
+      </>
+    );
+  }
+
+  function actorInitials() {
+    const displayName = String(drafts.display_name ?? record?.display_name ?? "");
+    const shortName = String(drafts.short_name ?? record?.short_name ?? "");
+    const source = shortName || displayName;
+    const words = source
+      .split(/\s+/)
+      .map((word) => word.trim())
+      .filter(Boolean);
+    if (words.length === 0) return "?";
+    return words
+      .slice(0, 2)
+      .map((word) => word[0]?.toUpperCase() ?? "")
+      .join("");
+  }
+
+  function actorColor() {
+    const root = parsedObject(drafts.metadata_json ?? "{}");
+    return typeof root.color === "string" && /^#[0-9a-f]{6}$/i.test(root.color)
+      ? root.color
+      : "#64748b";
+  }
+
+  function setActorColor(nextColor: string) {
+    const root = parsedObject(drafts.metadata_json ?? "{}");
+    setDrafts({
+      ...drafts,
+      metadata_json: stringifyJson({
+        ...root,
+        color: nextColor,
+      }),
+    });
+  }
+
+  function renderActorColorField() {
+    const color = actorColor();
+    return (
+      <InspectorFieldRow
+        key="actor_color"
+        className="app-field app-field-string actor-color-field"
+        label={<span>Color</span>}
+        control={
+          <div className="actor-color-control">
+            <span
+              className="actor-color-preview"
+              style={{ backgroundColor: color }}
+              aria-hidden="true"
+            >
+              {actorInitials()}
+            </span>
+            <input
+              aria-label="Actor color"
+              type="color"
+              value={color}
+              onChange={(event) => setActorColor(event.target.value)}
+            />
+            <input
+              aria-label="Actor color hex"
+              value={color}
+              onChange={(event) => setActorColor(event.target.value)}
+            />
+          </div>
+        }
+      />
+    );
+  }
+
+  function renderGenericField(field: AppFieldDefinition) {
+    if (table.id === "actors" && field.column === "production_id") {
+      return null;
+    }
+    if (table.id === "actors" && field.column === "metadata_json") {
+      return renderActorColorField();
+    }
+    if (
+      table.id === "shots" &&
+      [
+        "production_id",
+        "episode_id",
+        "sort_order",
+        "render_preset_id",
+      ].includes(field.column)
+    ) {
+      return null;
+    }
+    if (table.id === "shots" && field.column === "fps") {
+      return renderShotFpsField(field);
+    }
+    if (table.id === "shots" && field.column === "duration_frames") {
+      return renderShotDurationField(field);
+    }
+    if (table.id === "shots" && field.column === "owner_actor_id") {
+      return (
+        <>
+          {renderField(field)}
+          {renderShotOwnerDeviceField()}
+        </>
+      );
+    }
+    if (table.id === "shots" && field.column === "version") {
+      return (
+        <>
+          {renderField(field)}
+          <InspectorFieldRow
+            key="render_name"
+            className="app-field app-field-string is-readonly"
+            label={<span>Render name</span>}
+            control={<input disabled value={renderShotName()} />}
+          />
+        </>
+      );
+    }
+    if (
+      table.id === "episodes" &&
+      (field.column === "production_id" || field.column === "sort_order")
+    ) {
+      return null;
+    }
+    if (field.column === "id") return null;
+    if (field.kind === "json") {
+      const root = parsedObject(drafts[field.column] ?? "{}");
+      const visibleKeys = Object.keys(root).filter((key) => key !== "source");
+      if (Object.keys(root).length === 0 || visibleKeys.length === 0) {
+        if (table.id === "shots" && field.column === "metadata_json") {
+          return (
+            <div key={field.column} className="flat-json-field-group">
+              <InspectorFieldRow
+                className="app-field flat-json-row"
+                label={<span>Note</span>}
+                control={
+                  <JsonValueEditor
+                    rootValue={{} as JsonValue}
+                    path={["note"]}
+                    value=""
+                    hints={buildJsonUiHints(table, field, record)}
+                    onRootChange={(nextRoot) =>
+                      setJsonDraft(field.column, nextRoot)
+                    }
+                    onChange={(nextValue) =>
+                      setJsonDraft(
+                        field.column,
+                        setAtPath({} as JsonValue, ["note"], nextValue),
+                      )
+                    }
+                  />
+                }
+              />
+            </div>
+          );
+        }
+        return null;
+      }
+      return (
+        <div key={field.column} className="flat-json-field-group">
+          {renderFlatJsonObjectEditor(field.column, ["source"])}
+        </div>
+      );
+    }
+    return renderField(field);
   }
 
   function renderFlatJsonObjectEditor(
@@ -1125,6 +2168,230 @@ export function RecordEditor({
     );
   }
 
+  function normalizeChromeBackground(value: unknown, dark = false) {
+    if (value === "transparent" || value === undefined || value === null) {
+      return dark ? "rgba(0,0,0,0)" : "rgba(255,255,255,0)";
+    }
+    return value;
+  }
+
+  function themeChromeDefaults(
+    groupKey: "statusBar" | "navigationBar",
+    dark = false,
+  ): Record<string, JsonValue> {
+    const family = String(drafts.family ?? record?.family ?? "ios").toLowerCase();
+    const isAndroid = family === "android";
+    const foreground = dark ? "#FFFFFF" : "#000000";
+    if (groupKey === "statusBar") {
+      return {
+        type: isAndroid ? "android-default" : "ios-default",
+        foreground,
+        background: normalizeChromeBackground(undefined, dark) as string,
+        iconScale: 1,
+      };
+    }
+    return {
+      type: isAndroid ? "android-gesture" : "ios-home-indicator",
+      foreground,
+      background: normalizeChromeBackground(undefined, dark) as string,
+      iconScale: 1,
+    };
+  }
+
+  function normalizeThemeChromeGroup(
+    groupKey: "statusBar" | "navigationBar",
+    value: unknown,
+    dark = false,
+  ) {
+    const root = isJsonObject(value as JsonValue)
+      ? (value as Record<string, JsonValue>)
+      : {};
+    return {
+      ...themeChromeDefaults(groupKey, dark),
+      ...root,
+      background: normalizeChromeBackground(root.background, dark) as JsonValue,
+    };
+  }
+
+  function normalizedThemeTokenRoot(root: Record<string, unknown>) {
+    const modes = isJsonObject(root.modes as JsonValue)
+      ? (root.modes as Record<string, JsonValue>)
+      : {};
+    const lightMode = isJsonObject(modes.light)
+      ? (modes.light as Record<string, JsonValue>)
+      : {};
+    const darkMode = isJsonObject(modes.dark)
+      ? (modes.dark as Record<string, JsonValue>)
+      : {};
+    return {
+      ...root,
+      statusBar: normalizeThemeChromeGroup("statusBar", root.statusBar),
+      navigationBar: normalizeThemeChromeGroup("navigationBar", root.navigationBar),
+      modes: {
+        ...modes,
+        light: {
+          ...lightMode,
+          statusBar: normalizeThemeChromeGroup("statusBar", lightMode.statusBar),
+          navigationBar: normalizeThemeChromeGroup(
+            "navigationBar",
+            lightMode.navigationBar,
+          ),
+        },
+        dark: {
+          ...darkMode,
+          statusBar: normalizeThemeChromeGroup("statusBar", darkMode.statusBar, true),
+          navigationBar: normalizeThemeChromeGroup(
+            "navigationBar",
+            darkMode.navigationBar,
+            true,
+          ),
+        },
+      },
+    } as Record<string, JsonValue>;
+  }
+
+  function rgbaToColorAlpha(value: unknown, dark = false) {
+    const raw =
+      typeof value === "string"
+        ? value
+        : dark
+          ? "rgba(0,0,0,0)"
+          : "rgba(255,255,255,0)";
+    const match = raw
+      .trim()
+      .match(/^rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(0|1|0?\.\d+)\s*\)$/i);
+    if (!match) {
+      return {
+        color: /^#[0-9a-f]{6}$/i.test(raw) ? raw : dark ? "#000000" : "#ffffff",
+        alpha: raw === "transparent" ? 0 : 1,
+      };
+    }
+    const [, red, green, blue, alpha] = match;
+    const color = [red, green, blue]
+      .map((channel) =>
+        Math.max(0, Math.min(255, Number(channel))).toString(16).padStart(2, "0"),
+      )
+      .join("");
+    return {
+      color: `#${color}`,
+      alpha: Math.max(0, Math.min(1, Number(alpha))),
+    };
+  }
+
+  function colorAlphaToRgba(color: string, alpha: number) {
+    const normalized = color.replace("#", "");
+    const red = Number.parseInt(normalized.slice(0, 2), 16);
+    const green = Number.parseInt(normalized.slice(2, 4), 16);
+    const blue = Number.parseInt(normalized.slice(4, 6), 16);
+    return `rgba(${red},${green},${blue},${Math.max(0, Math.min(1, alpha))})`;
+  }
+
+  function renderThemeChromeGroup(
+    tokenRoot: Record<string, JsonValue>,
+    groupKey: "statusBar" | "navigationBar",
+  ) {
+    const group = isJsonObject(tokenRoot[groupKey])
+      ? (tokenRoot[groupKey] as Record<string, JsonValue>)
+      : themeChromeDefaults(groupKey);
+    const typeOptions =
+      groupKey === "statusBar"
+        ? ["dummy-status-bar", "ios-default", "android-default"]
+        : [
+            "dummy-navigation-bar",
+            "ios-home-indicator",
+            "android-gesture",
+            "android-3-button",
+          ];
+    const background = rgbaToColorAlpha(group.background);
+
+    function updateChrome(path: JsonPath, nextValue: JsonValue) {
+      setJsonDraft(
+        "tokens_json",
+        setAtPath(tokenRoot as JsonValue, [groupKey, ...path], nextValue),
+      );
+    }
+
+    return (
+      <div className="theme-chrome-editor">
+        <InspectorFieldRow
+          className="app-field"
+          label={<span>Type</span>}
+          control={
+            <select
+              value={String(group.type ?? typeOptions[0])}
+              onChange={(event) => updateChrome(["type"], event.target.value)}
+            >
+              {typeOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          }
+        />
+        <InspectorFieldRow
+          className="app-field"
+          label={<span>Background</span>}
+          control={
+            <span className="json-alpha-color-pair">
+              <input
+                aria-label={`${groupKey} background color`}
+                type="color"
+                value={background.color}
+                onChange={(event) =>
+                  updateChrome(
+                    ["background"],
+                    colorAlphaToRgba(event.target.value, background.alpha),
+                  )
+                }
+              />
+              <input
+                aria-label={`${groupKey} background alpha`}
+                className="json-value-control"
+                type="number"
+                min={0}
+                max={1}
+                step={0.01}
+                value={String(background.alpha)}
+                onChange={(event) =>
+                  updateChrome(
+                    ["background"],
+                    colorAlphaToRgba(background.color, Number(event.target.value)),
+                  )
+                }
+              />
+            </span>
+          }
+        />
+        <InspectorFieldRow
+          className="app-field"
+          label={<span>Foreground</span>}
+          control={
+            <input
+              type="color"
+              value={String(group.foreground ?? "#000000")}
+              onChange={(event) => updateChrome(["foreground"], event.target.value)}
+            />
+          }
+        />
+        <InspectorFieldRow
+          className="app-field"
+          label={<span>Icon scale</span>}
+          control={
+            <input
+              type="number"
+              step="0.05"
+              value={Number(group.iconScale ?? 1)}
+              onChange={(event) =>
+                updateChrome(["iconScale"], Number(event.target.value))
+              }
+            />
+          }
+        />
+      </div>
+    );
+  }
+
   if (table.id === "apps") {
     const configField = fieldsByColumn.get("config_json");
     const metadataField = fieldsByColumn.get("metadata_json");
@@ -1161,7 +2428,7 @@ export function RecordEditor({
               General
             </TabButton>
             {appTab === "general" ? (
-              <div className="editor-section-body field-stack">
+              <div className="editor-section-body field-stack direct-field-stack">
                 {renderFields([
                   "id",
                   "production_id",
@@ -1262,7 +2529,9 @@ export function RecordEditor({
 
   if (table.id === "themes") {
     const tokensField = fieldsByColumn.get("tokens_json");
-    const themeTokenRoot = parsedObject(drafts.tokens_json ?? "{}");
+    const themeTokenRoot = normalizedThemeTokenRoot(
+      parsedObject(drafts.tokens_json ?? "{}"),
+    );
     const themeTokenGroups = tokenEditorGroups(themeTokenRoot);
     const activeThemeTokenGroup =
       themeTokenGroup && themeTokenGroups.includes(themeTokenGroup)
@@ -1284,8 +2553,8 @@ export function RecordEditor({
               General
             </TabButton>
             {themeTab === "general" ? (
-              <div className="editor-section-body field-stack">
-                {renderFields(["id", "production_id", "name", "family", "version"])}
+              <div className="editor-section-body field-stack direct-field-stack">
+                {renderFields(["id", "name", "family", "version"])}
               </div>
             ) : null}
           </div>
@@ -1295,7 +2564,9 @@ export function RecordEditor({
             </TabButton>
             {themeTab === "tokens" && tokensField ? (
               <div className="editor-section-body nested-editor-stack">
-                {themeTokenGroups.map((group) => (
+                {themeTokenGroups
+                  .filter((group) => group !== "statusBar" && group !== "navigationBar")
+                  .map((group) => (
                   <SubgroupAccordion
                     key={group}
                     group={group}
@@ -1305,7 +2576,9 @@ export function RecordEditor({
                     <div className="field-stack single-column">
                       {renderField(tokensField, {
                         hideLabel: true,
-                        rawText: rawForJsonGroupValue("tokens_json", group),
+                        rawText: stringifyJson(
+                          themeTokenRoot[group] ?? defaultGroupValue(group),
+                        ),
                         groupContext: group,
                         onRawTextChange: (nextRawText) =>
                           updateJsonGroupValue(
@@ -1315,6 +2588,16 @@ export function RecordEditor({
                           ),
                       })}
                     </div>
+                  </SubgroupAccordion>
+                ))}
+                {(["statusBar", "navigationBar"] as const).map((group) => (
+                  <SubgroupAccordion
+                    key={group}
+                    group={group}
+                    activeGroup={activeThemeTokenGroup}
+                    onToggle={setThemeTokenGroup}
+                  >
+                    {renderThemeChromeGroup(themeTokenRoot, group)}
                   </SubgroupAccordion>
                 ))}
               </div>
@@ -1351,6 +2634,96 @@ export function RecordEditor({
       ? contentTab
       : "";
 
+    function updateBehaviorValue(path: JsonPath, nextValue: JsonValue) {
+      const root = parsedObject(drafts.behavior_json ?? "{}");
+      setDrafts({
+        ...drafts,
+        behavior_json: stringifyJson(setAtPath(root as JsonValue, path, nextValue)),
+      });
+    }
+
+    function renderModuleBehaviorFields() {
+      const root = parsedObject(drafts.behavior_json ?? "{}");
+      return (
+        <>
+          {[
+            ["Show header", "showHeader", true],
+            ["Show status bar", "showStatusBar", true],
+            ["Show keyboard", "showKeyboard", false],
+          ].map(([label, key, fallback]) => (
+            <InspectorFieldRow
+              key={String(key)}
+              className="app-field app-field-boolean"
+              label={<span>{String(label)}</span>}
+              control={
+                <input
+                  type="checkbox"
+                  checked={Boolean(root[String(key)] ?? fallback)}
+                  onChange={(event) =>
+                    updateBehaviorValue([String(key)], event.target.checked)
+                  }
+                />
+              }
+            />
+          ))}
+          <InspectorFieldRow
+            key="initialScroll"
+            className="app-field app-field-string"
+            label={<span>Initial scroll</span>}
+            control={
+              <select
+                value={String(root.initialScroll ?? "bottom")}
+                onChange={(event) =>
+                  updateBehaviorValue(["initialScroll"], event.target.value)
+                }
+              >
+                <option value="top">Top</option>
+                <option value="bottom">Bottom</option>
+                <option value="preserve">Preserve</option>
+              </select>
+            }
+          />
+        </>
+      );
+    }
+
+    function contentGroupHasWarning(group: string) {
+      const contentRoot = parsedObject(drafts.content_json ?? "{}");
+      const participants = contentRoot.participants;
+      if (group === "header") {
+        const headerValue = contentRoot.header as JsonValue;
+        if (!isJsonObject(headerValue) || !Array.isArray(participants)) {
+          return false;
+        }
+        const header = headerValue;
+        const participant = (participants as JsonValue[])
+          .filter(isJsonObject)
+          .find((item) => item.id === header.avatarParticipantId);
+        const inheritedName = participant
+          ? String(
+              participant.displayName ??
+                records.actors?.find((item) => item.id === participant.actorId)
+                  ?.display_name ??
+                "",
+            )
+          : "";
+        return Boolean(inheritedName) && String(header.title ?? "") !== inheritedName;
+      }
+      if (group !== "participants") return false;
+      if (!Array.isArray(participants)) return false;
+      return participants.some((participant) => {
+        if (!isJsonObject(participant)) return false;
+        const actor = records.actors?.find(
+          (item) => item.id === participant.actorId,
+        );
+        const inheritedName = String(actor?.display_name ?? "");
+        return (
+          Boolean(inheritedName) &&
+          String(participant.displayName ?? "") !== inheritedName
+        );
+      });
+    }
+
     return (
       <section className="panel record-editor">
         <div className="panel-heading">
@@ -1361,25 +2734,6 @@ export function RecordEditor({
           <span className="record-id">{record.id}</span>
         </div>
         <div className="editor-sections">
-          <div className="editor-section-card">
-            <TabButton
-              active={screenTab === "general"}
-              onClick={() => setScreenTab(screenTab === "general" ? "" : "general")}
-            >
-              Generales
-            </TabButton>
-            {screenTab === "general" ? (
-              <div className="editor-section-body field-stack">
-                {renderFields([
-                  "id",
-                  "screen_instance_id",
-                  "module_id",
-                  "module_schema_version",
-                  "sort_order",
-                ])}
-              </div>
-            ) : null}
-          </div>
           <div className="editor-section-card">
             <TabButton
               active={screenTab === "content"}
@@ -1394,6 +2748,7 @@ export function RecordEditor({
                     key={group}
                     group={group}
                     activeGroup={activeContentTab}
+                    warning={contentGroupHasWarning(group)}
                     onToggle={setContentTab}
                   >
                     {renderContentGroupEditor(contentField, group, "content_json")}
@@ -1410,14 +2765,8 @@ export function RecordEditor({
               Behavior
             </TabButton>
             {screenTab === "behavior" && behaviorField ? (
-              <div className="editor-section-body field-stack single-column">
-                {renderField(behaviorField, {
-                  hideLabel: true,
-                  rawText: drafts.behavior_json ?? "{}",
-                  groupContext: "behavior",
-                  onRawTextChange: (nextRawText) =>
-                    setDrafts({ ...drafts, behavior_json: nextRawText }),
-                })}
+              <div className="editor-section-body field-stack direct-field-stack">
+                {renderModuleBehaviorFields()}
               </div>
             ) : null}
           </div>
@@ -1427,6 +2776,8 @@ export function RecordEditor({
   }
 
   if (table.id === "screen_instances") {
+    const deviceStateField = fieldsByColumn.get("device_state_json");
+    const transformField = fieldsByColumn.get("transform_json");
     return (
       <section className="panel record-editor">
         <div className="panel-heading">
@@ -1440,27 +2791,75 @@ export function RecordEditor({
           <div className="editor-section-card">
             <TabButton
               active={screenTab === "general"}
-              warning={differsFromInherited("transform_json")}
               onClick={() => setScreenTab(screenTab === "general" ? "" : "general")}
             >
               Generales
             </TabButton>
             {screenTab === "general" ? (
-              <div className="editor-section-body field-stack">
+              <div className="editor-section-body field-stack direct-field-stack">
                 {renderFields([
-                  "id",
-                  "shot_id",
                   "app_id",
-                  "screen_type",
-                  "module_id",
-                  "module_schema_version",
-                  "device_state_id",
                   "theme_mode",
                   "start_frame",
                   "end_frame",
-                  "layer_order",
-                  "transform_json",
                 ])}
+              </div>
+            ) : null}
+          </div>
+          <div className="editor-section-card">
+            <TabButton
+              active={screenTab === "transform"}
+              onClick={() =>
+                setScreenTab(screenTab === "transform" ? "" : "transform")
+              }
+            >
+              Transform
+            </TabButton>
+            {screenTab === "transform" && transformField ? (
+              <div className="editor-section-body field-stack single-column json-section-stack">
+                {renderField(transformField, {
+                  hideLabel: true,
+                  rawText: drafts.transform_json ?? "{}",
+                  groupContext: "transform",
+                  onRawTextChange: (nextRawText) =>
+                    setDrafts({ ...drafts, transform_json: nextRawText }),
+                })}
+              </div>
+            ) : null}
+          </div>
+          <div className="editor-section-card">
+            <TabButton
+              active={screenTab === "transition"}
+              onClick={() =>
+                setScreenTab(screenTab === "transition" ? "" : "transition")
+              }
+            >
+              Transition
+            </TabButton>
+            {screenTab === "transition" ? (
+              <div className="editor-section-body field-stack direct-field-stack">
+                {renderScreenTransitionField()}
+              </div>
+            ) : null}
+          </div>
+          <div className="editor-section-card">
+            <TabButton
+              active={screenTab === "deviceState"}
+              onClick={() =>
+                setScreenTab(screenTab === "deviceState" ? "" : "deviceState")
+              }
+            >
+              Device State
+            </TabButton>
+            {screenTab === "deviceState" && deviceStateField ? (
+              <div className="editor-section-body field-stack single-column json-section-stack">
+                {renderField(deviceStateField, {
+                  hideLabel: true,
+                  rawText: drafts.device_state_json ?? "{}",
+                  groupContext: "deviceState",
+                  onRawTextChange: (nextRawText) =>
+                    setDrafts({ ...drafts, device_state_json: nextRawText }),
+                })}
               </div>
             ) : null}
           </div>
@@ -1565,7 +2964,7 @@ export function RecordEditor({
             </TabButton>
             {moduleThemeTab === "settings" ? (
               <div className="editor-section-body nested-editor-stack">
-                <div className="field-stack">
+                <div className="field-stack direct-field-stack">
                   {renderFields([
                     "id",
                     "production_id",
@@ -1602,12 +3001,20 @@ export function RecordEditor({
       </div>
       <div className="editor-sections">
         <div className="editor-section-card">
-          <TabButton active={true} onClick={() => undefined}>
+          <TabButton
+            active={genericTab === "general"}
+            warning={table.id === "shots" && shotHasFpsOverride()}
+            onClick={() =>
+              setGenericTab(genericTab === "general" ? "" : "general")
+            }
+          >
             General
           </TabButton>
-          <div className="editor-section-body field-stack">
-            {table.fields.map((field) => renderField(field))}
-          </div>
+          {genericTab === "general" ? (
+            <div className="editor-section-body field-stack direct-field-stack">
+              {table.fields.map((field) => renderGenericField(field))}
+            </div>
+          ) : null}
         </div>
       </div>
     </section>

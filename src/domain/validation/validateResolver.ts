@@ -99,8 +99,8 @@ assert(
 );
 assert(
   chatProps.messages[0]?.text === "Are you nearby?" &&
-    chatProps.messages[0]?.media?.assetId === "media_asset_sam_avatar",
-  "Chat messages may resolve text and media together",
+    chatProps.messages[0]?.media?.uri === "assets/conversations/sam-nearby.jpg",
+  "Chat messages may resolve text and conversation-specific media paths together",
 );
 assert(
   chatProps.messages[1]?.sender.participantId ===

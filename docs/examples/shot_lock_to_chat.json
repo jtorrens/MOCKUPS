@@ -6,6 +6,8 @@
     "episode_id": "episode_demo_001",
     "owner_actor_id": "actor_alex",
     "name": "Lock notification to chat",
+    "slug": "lock-notification-to-chat",
+    "version": 1,
     "duration_frames": 300,
     "fps": 30
   },
@@ -23,6 +25,17 @@
       "owner_actor_id": "actor_alex",
       "device_id": null,
       "device_state_id": "device_state_locked_morning",
+      "device_state_json": {
+        "time": "09:41",
+        "batteryLevel": 0.86,
+        "batteryCharging": false,
+        "signalBars": 4,
+        "networkLabel": "5G",
+        "wifiEnabled": true,
+        "wifiIconState": "connected",
+        "orientation": "portrait",
+        "locked": true
+      },
       "theme_id": null,
       "theme_mode": "light",
       "start_frame": 0,
@@ -55,6 +68,17 @@
       "owner_actor_id": "actor_alex",
       "device_id": null,
       "device_state_id": "device_state_unlocked_morning",
+      "device_state_json": {
+        "time": "09:41",
+        "batteryLevel": 0.86,
+        "batteryCharging": false,
+        "signalBars": 4,
+        "networkLabel": "5G",
+        "wifiEnabled": true,
+        "wifiIconState": "connected",
+        "orientation": "portrait",
+        "locked": false
+      },
       "theme_id": null,
       "theme_mode": "light",
       "start_frame": 150,
@@ -129,8 +153,9 @@
             "senderParticipantId": "participant_sam",
             "type": "text",
             "text": "Are you nearby?",
-            "mediaAssetId": "media_asset_sam_avatar",
             "media": {
+              "type": "image",
+              "filePath": "assets/conversations/sam-nearby.jpg",
               "window": {
                 "width": 180,
                 "height": 120,

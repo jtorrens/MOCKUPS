@@ -50,8 +50,9 @@ const ResolvedChatMessageSchema = z.object({
   }),
   media: z
     .object({
-      assetId: IdSchema,
+      assetId: IdSchema.optional(),
       uri: z.string().min(1),
+      type: z.enum(["image", "video"]).optional(),
       window: JsonObjectSchema.optional(),
       transform: JsonObjectSchema.optional(),
     })

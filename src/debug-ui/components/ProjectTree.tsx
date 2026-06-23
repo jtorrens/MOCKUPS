@@ -16,7 +16,7 @@ interface ProjectTreeProps {
   onTableChange: (tableId: string) => void;
   onRecordSelect: (tableId: string, recordId: string) => void;
   onCreateRecord: (
-    tableId: "productions" | "episodes" | "shots",
+    tableId: "productions" | "episodes" | "shots" | "themes",
     parent?: { productionId?: string; episodeId?: string },
   ) => void;
 }
@@ -25,7 +25,6 @@ const PRODUCTION_DATA_TABLE_IDS = new Set([
   "actors",
   "themes",
   "devices",
-  "device_states",
   "media_assets",
   "render_presets",
   "animation_presets",
@@ -37,6 +36,31 @@ function tableById(tables: AppTableDefinition[]) {
 
 function recordTitle(table: AppTableDefinition, record: AppRecord): string {
   return String(record[table.titleColumn] ?? record.id);
+}
+
+function shotRenderName(
+  production: DebugOptions["productions"][number] | undefined,
+  episode: DebugOptions["episodes"][number] | undefined,
+  shot: DebugOptions["shots"][number],
+) {
+  const productionSlug = String(
+    production?.slug ?? production?.name ?? "production",
+  );
+  const episodeSlug = String(episode?.slug ?? episode?.name ?? "episode");
+  const shotSlug = String(shot.slug ?? shot.name ?? "shot");
+  const version = String(shot.version ?? 1).padStart(2, "0");
+  return `${productionSlug}_${episodeSlug}_${shotSlug}_v${version}`;
+}
+
+function shotDurationFromScreens(
+  shot: DebugOptions["shots"][number],
+  screens: DebugOptions["screenInstances"],
+) {
+  if (screens.length === 0) return shot.durationFrames;
+  const duration = Math.max(...screens.map((screen) => screen.endFrame));
+  return Number.isFinite(duration) && duration > 0
+    ? duration
+    : shot.durationFrames;
 }
 
 function ActionButton({
@@ -234,10 +258,20 @@ export function ProjectTree({
   const [browserTab, setBrowserTab] = useState<"" | "project" | "apps" | "data">(
     "",
   );
+  const [openDataTables, setOpenDataTables] = useState<Record<string, boolean>>(
+    {},
+  );
   const tablesById = tableById(tables);
   const selectedProductionId = selectedRecordIds.productions;
-  const productionEpisodes = options.episodes.filter(
-    (episode) => episode.productionId === selectedProductionId,
+  const productionEpisodes = [
+    ...options.episodes.filter(
+      (episode) => episode.productionId === selectedProductionId,
+    ),
+  ].sort((left, right) =>
+    left.name.localeCompare(right.name, undefined, {
+      numeric: true,
+      sensitivity: "base",
+    }),
   );
   const dataTables = tables.filter((table) =>
     PRODUCTION_DATA_TABLE_IDS.has(table.id),
@@ -259,6 +293,23 @@ export function ProjectTree({
     onRecordSelect(tableId, recordId);
   }
 
+  function toggleDataTable(tableId: string, tableRecords: AppRecord[]) {
+    setOpenDataTables((current) => ({
+      ...current,
+      [tableId]: !current[tableId],
+    }));
+    const selectedRecordId = selectedRecordIds[tableId];
+    const selectedRecordExists = tableRecords.some(
+      (record) => record.id === selectedRecordId,
+    );
+    const recordToSelect = selectedRecordExists
+      ? selectedRecordId
+      : tableRecords[0]?.id;
+    if (recordToSelect) {
+      select(tableId, String(recordToSelect));
+    }
+  }
+
   function screenTitle(instance: DebugOptions["screenInstances"][number]) {
     return instance.moduleId?.replace(/^core\./, "") ?? instance.screenType;
   }
@@ -273,8 +324,17 @@ export function ProjectTree({
           <EmptyPanel>No episodes yet.</EmptyPanel>
         ) : (
           productionEpisodes.map((episode) => {
-            const shots = options.shots.filter(
-              (shot) => shot.episodeId === episode.id,
+            const production = options.productions.find(
+              (item) => item.id === selectedProductionId,
+            );
+            const shots = [
+              ...options.shots.filter((shot) => shot.episodeId === episode.id),
+            ].sort((left, right) =>
+              shotRenderName(production, episode, left).localeCompare(
+                shotRenderName(production, episode, right),
+                undefined,
+                { numeric: true, sensitivity: "base" },
+              ),
             );
             return (
               <details key={episode.id} className="tree-node">
@@ -303,6 +363,8 @@ export function ProjectTree({
                       const screens = options.screenInstances.filter(
                         (instance) => instance.shotId === shot.id,
                       );
+                      const renderName = shotRenderName(production, episode, shot);
+                      const durationFrames = shotDurationFromScreens(shot, screens);
                       return (
                         <details key={shot.id} className="tree-node">
                           <summary>
@@ -312,8 +374,8 @@ export function ProjectTree({
                               activeTableId={activeTableId}
                               selectedRecordIds={selectedRecordIds}
                               icon="shot"
-                              title={shot.name}
-                              meta={`${shot.durationFrames}f · ${screens.length} screen${screens.length === 1 ? "" : "s"}`}
+                              title={renderName}
+                              meta={`${durationFrames}f · ${screens.length} screen${screens.length === 1 ? "" : "s"}`}
                               onClick={() => select("shots", shot.id)}
                             />
                             <TreeActions />
@@ -402,7 +464,6 @@ export function ProjectTree({
                     meta={String(app.app_type ?? "app")}
                     onClick={() => select("apps", app.id)}
                   />
-                  <TreeActions />
                 </summary>
                 <div className="tree-children">
                   {configs.length === 0 ? (
@@ -440,16 +501,25 @@ export function ProjectTree({
             <details
               key={table.id}
               className="tree-node"
+              open={Boolean(openDataTables[table.id])}
+              onToggle={(event) => {
+                const isOpen = event.currentTarget.open;
+                setOpenDataTables((current) =>
+                  current[table.id] === isOpen
+                    ? current
+                    : { ...current, [table.id]: isOpen },
+                );
+              }}
             >
               <summary>
                 <button
                   type="button"
                   role="tab"
                   data-testid={`tab-${table.id}`}
-                  className={table.id === activeTableId ? "active editing" : ""}
+                  className=""
                   onClick={(event) => {
                     event.stopPropagation();
-                    onTableChange(table.id);
+                    toggleDataTable(table.id, tableRecords);
                   }}
                 >
                   <span className="tree-record-icon" aria-hidden="true">
@@ -463,7 +533,17 @@ export function ProjectTree({
                     </small>
                   </span>
                 </button>
-                <TreeActions />
+                {table.id === "themes" ? (
+                  <TreeActions
+                    canAdd={Boolean(selectedProductionId)}
+                    busy={busyAction}
+                    onAdd={() =>
+                      onCreateRecord("themes", {
+                        productionId: selectedProductionId,
+                      })
+                    }
+                  />
+                ) : null}
               </summary>
               <div className="tree-children">
                 {tableRecords.length === 0 ? (
@@ -563,7 +643,6 @@ export function ProjectTree({
           "Apps",
           "Apps and module defaults",
           renderAppsTree(),
-          <TreeActions />,
         )}
         {renderWorkspaceAccordion(
           "data",

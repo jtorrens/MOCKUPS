@@ -117,13 +117,21 @@ export function resolveScreenInstance({
     deviceId,
   );
   const theme = requireRecord(repository.getTheme(themeId), "Theme", themeId);
-  const deviceState = screenInstance.device_state_id
-    ? requireRecord(
-        repository.getDeviceState(screenInstance.device_state_id),
-        "DeviceState",
-        screenInstance.device_state_id,
-      )
-    : undefined;
+  const deviceState = screenInstance.device_state_json
+    ? {
+        id: `${screenInstance.id}:device_state`,
+        production_id: ownerActor.production_id,
+        device_id: device.id,
+        name: "Screen instance device state",
+        state_json: screenInstance.device_state_json,
+      }
+    : screenInstance.device_state_id
+      ? requireRecord(
+          repository.getDeviceState(screenInstance.device_state_id),
+          "DeviceState",
+          screenInstance.device_state_id,
+        )
+      : undefined;
   const events = repository.getScreenEventsForInstance(screenInstance.id);
 
   const base: ResolvedScreenInstance = {

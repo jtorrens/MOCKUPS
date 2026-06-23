@@ -26,7 +26,7 @@ export const coreChatV1ContentDescriptors: FieldDescriptor[] = [
     section: "Module Content",
     area: "content",
     group: "Messages",
-    summaryKeys: ["text", "mediaAssetId", "type", "id"],
+    summaryKeys: ["text", "media.filePath", "type", "id"],
   },
   {
     canonicalPath: "moduleInstance.content.messages[].text",

@@ -1,7 +1,9 @@
 {
   "production": {
     "id": "production_demo",
-    "name": "Demo Production"
+    "name": "Demo Production",
+    "slug": "demo-production",
+    "default_fps": 30
   },
   "theme_refs": ["theme_ios_light"],
   "device_refs": ["device_iphone_generic"],
@@ -11,6 +13,7 @@
       "id": "episode_demo_001",
       "production_id": "production_demo",
       "name": "Episode 1",
+      "slug": "episode-1",
       "sort_order": 0
     }
   ],
@@ -30,6 +33,8 @@
       "episode_id": "episode_demo_001",
       "owner_actor_id": "actor_alex",
       "name": "Phone insert",
+      "slug": "phone-insert",
+      "version": 1,
       "duration_frames": 150,
       "fps": 30
     }
@@ -45,6 +50,17 @@
       "owner_actor_id": "actor_alex",
       "device_id": null,
       "device_state_id": null,
+      "device_state_json": {
+        "time": "09:41",
+        "batteryLevel": 0.86,
+        "batteryCharging": false,
+        "signalBars": 4,
+        "networkLabel": "5G",
+        "wifiEnabled": true,
+        "wifiIconState": "connected",
+        "orientation": "portrait",
+        "locked": false
+      },
       "theme_id": null,
       "theme_mode": "light",
       "start_frame": 0,

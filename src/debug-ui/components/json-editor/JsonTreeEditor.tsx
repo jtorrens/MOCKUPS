@@ -85,7 +85,9 @@ export function JsonTreeEditor({
     isJsonObject(inheritedValue as JsonValue);
   return (
     <div
-      className={`json-tree-editor ${parsed.ok ? "mode-tree" : "mode-raw"}`}
+      className={`json-tree-editor ${parsed.ok ? "mode-tree" : "mode-raw"} ${
+        groupContext ? `json-context-${groupContext}` : ""
+      }`}
       data-testid={parsed.ok ? testId : undefined}
     >
       {!parsed.ok ? (

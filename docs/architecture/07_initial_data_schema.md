@@ -1,6 +1,6 @@
 # Initial data schema
 
-This is the persistence-oriented schema for MOCKUPS. The initial SQLite implementation now exists. The current design-stage schema is version 7 and intentionally breaks from the earlier Screen Template layer: app identity/defaults and module-specific defaults are now direct runtime layers, and explicit module instances own per-shot content/behavior.
+This is the persistence-oriented schema for MOCKUPS. The initial SQLite implementation now exists. The current design-stage schema is version 9 and intentionally breaks from the earlier Screen Template layer: app identity/defaults and module-specific defaults are now direct runtime layers, and explicit module instances own per-shot content/behavior.
 
 ## Storage boundary
 
@@ -16,7 +16,6 @@ Production
  │   ├─ Themes
  │   ├─ ModuleThemeConfigs
  │   ├─ Devices
- │   ├─ DeviceStates
  │   ├─ Actors
  │   ├─ Apps
  │   ├─ MediaAssets
@@ -42,7 +41,7 @@ Production
 ### `productions`
 
 - Purpose: root scope for all reusable resources, narrative data, and shots.
-- SQL/stable fields: `id`, `name`, `slug`, `created_at`, `updated_at`.
+- SQL/stable fields: `id`, `name`, `slug`, `default_fps`, `created_at`, `updated_at`.
 - JSON/flexible fields: `settings_json`, `metadata_json`.
 - Relationships: owns every production-scoped entity.
 - Must not contain: individual screen props, message content, or shot timing.
@@ -50,7 +49,7 @@ Production
 ### `episodes`
 
 - Purpose: editorial container inside one production.
-- SQL/stable fields: `id`, `production_id`, `name`, `sort_order`.
+- SQL/stable fields: `id`, `production_id`, `name`, `slug`, `sort_order`.
 - JSON/flexible fields: `metadata_json`.
 - Relationships: belongs to one production; owns many shots.
 - Must not contain: screen-instance timing, module content, render output, or reusable production resources.
@@ -58,7 +57,7 @@ Production
 ### `shots`
 
 - Purpose: central device-screen action sequence requested for preview and final rendering.
-- SQL/stable fields: `id`, `production_id`, `episode_id`, `owner_actor_id`, `name`, `sort_order`, `duration_frames`, `fps`, `render_preset_id`.
+- SQL/stable fields: `id`, `production_id`, `episode_id`, `owner_actor_id`, `name`, `slug`, `version`, `sort_order`, `duration_frames`, `fps`, `render_preset_id`.
 - JSON/flexible fields: `canvas_json`, `metadata_json`.
 - Relationships: belongs to one production, optionally belongs to one episode, references one owner actor, and optionally references one render preset; owns many screen instances.
 - Must not contain: a single mandatory chat/device reference, detailed UI drawing rules, or placement into an external UHD/video plate.
@@ -67,13 +66,13 @@ Production
 
 - Purpose: runtime container for placing a versioned screen module inside a shot.
 - SQL/stable fields: `id`, `shot_id`, `app_id`, `screen_type`, `module_id`, `module_schema_version`, `owner_actor_id`, `device_id`, `device_state_id`, `theme_id`, `theme_mode`, `start_frame`, `end_frame`, `layer_order`.
-- JSON/flexible fields: `transform_json`; compatibility fields are `data_ref_json`, `props_json`, `transition_in_json`, `transition_out_json`, `module_data_json`, `module_config_json`, and `module_tokens_override_json`.
+- JSON/flexible fields: `device_state_json`, `transform_json`; compatibility fields are `data_ref_json`, `props_json`, `transition_in_json`, `transition_out_json`, `module_data_json`, `module_config_json`, and `module_tokens_override_json`.
 - Relationships: belongs to a shot and references an app plus optional screen-level overrides for owner/device/theme context; owns module instances and screen events. By default, owner comes from the shot, and device/theme come from that actor's defaults. Module-internal references remain inside versioned module instance JSON and are validated by the selected module.
 - Must not contain: detailed drawing logic or copied theme/device records.
 
 `screen_type` is a broad discriminator; `module_id` + `module_schema_version` select the exact module contract. `transform_json` transforms the device-screen render inside the shot's device render space. `core.chat` now reads content/behavior from `module_instances` and has no runtime fallback to `data_ref_json` or `props_json`.
 
-SQLite schema version 7 includes `screen_instances.app_id`, explicit `module_instances`, removes the active `screen_templates` table, and scopes `module_theme_configs` by `theme_id + app_id + module_id + module_schema_version`. This is a design-stage breaking schema: local development databases may be reset explicitly with `npm run db:reset`; normal app startup must not reseed or overwrite edited data.
+SQLite schema version 9 includes `screen_instances.app_id`, explicit `module_instances`, production default FPS, episode/shot render slugs, inline `screen_instances.device_state_json`, removes the active `screen_templates` table, and scopes `module_theme_configs` by `theme_id + app_id + module_id + module_schema_version`. This is a design-stage breaking schema: local development databases may be reset explicitly with `npm run db:reset`; normal app startup must not reseed or overwrite edited data.
 
 ### `module_instances`
 
@@ -136,12 +135,12 @@ App and module JSON may contain `modes.light` and `modes.dark` color values. The
 
 `metrics_json` may contain logical `designSpace`, internal pixel `renderSize`, `scaleToPixels`, canvas/screen/viewport bounds, safe areas, status-bar area, notch/dynamic-island geometry, corner radius, pixel ratio, and default screen scale.
 
-### `device_states`
+### `device_states` deprecated compatibility table
 
-- Purpose: reusable state layered onto device metrics for a particular presentation condition.
+- Purpose: legacy/import compatibility for reusable state layered onto device metrics. Active screen editing stores state inline on `screen_instances.device_state_json`.
 - SQL/stable fields: `id`, `production_id`, `device_id`, `name`.
 - JSON/flexible fields: `state_json` for time/date, battery, signal, network label, Wi-Fi state/icon, focus mode, orientation, lock state, and transient hardware UI.
-- Relationships: belongs to a production and device; referenced by screen instances.
+- Relationships: belongs to a production and device; may be referenced by legacy screen instances.
 - Must not contain: base device geometry, narrative content, or shot transforms.
 
 ### `actors`

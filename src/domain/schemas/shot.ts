@@ -12,6 +12,8 @@ export const ShotSchema = z.object({
   episode_id: IdSchema.nullable().optional(),
   owner_actor_id: IdSchema.nullable().optional(),
   name: z.string().min(1),
+  slug: z.string().min(1).optional(),
+  version: NonNegativeIntegerSchema.optional(),
   sort_order: NonNegativeIntegerSchema.optional(),
   duration_frames: PositiveIntegerSchema,
   fps: PositiveIntegerSchema,

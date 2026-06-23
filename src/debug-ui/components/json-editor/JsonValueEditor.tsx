@@ -25,6 +25,56 @@ function isHexColor(value: string): boolean {
   return /^#[0-9a-fA-F]{6}$/.test(value);
 }
 
+function rgbaToHexAndAlpha(value: string): { hex: string; alpha: number } | null {
+  const match = value
+    .trim()
+    .match(/^rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(0|1|0?\.\d+)\s*\)$/i);
+  if (!match) return null;
+  const [, red, green, blue, alpha] = match;
+  const channels = [red, green, blue].map((channel) =>
+    Math.max(0, Math.min(255, Number(channel))),
+  );
+  return {
+    hex: `#${channels
+      .map((channel) => channel.toString(16).padStart(2, "0"))
+      .join("")}`,
+    alpha: Math.max(0, Math.min(1, Number(alpha))),
+  };
+}
+
+function hexToRgb(hex: string) {
+  const normalized = hex.replace("#", "");
+  return {
+    red: Number.parseInt(normalized.slice(0, 2), 16),
+    green: Number.parseInt(normalized.slice(2, 4), 16),
+    blue: Number.parseInt(normalized.slice(4, 6), 16),
+  };
+}
+
+function rgbaString(hex: string, alpha: number) {
+  const { red, green, blue } = hexToRgb(hex);
+  return `rgba(${red},${green},${blue},${Math.max(0, Math.min(1, alpha))})`;
+}
+
+function isAlphaColorField(key: string, parent: string, groupContext?: string) {
+  return (
+    key === "background" &&
+    /(statusbar|statusBar|navigationbar|navigationBar)/i.test(
+      parent || groupContext || "",
+    )
+  );
+}
+
+function chromeTypeOptions(context?: string) {
+  if (/navigationbar|navigationBar/i.test(context ?? "")) {
+    return ["dummy-navigation-bar", "ios-home-indicator", "android-gesture", "android-3-button"];
+  }
+  if (/statusbar|statusBar/i.test(context ?? "")) {
+    return ["dummy-status-bar", "ios-default", "android-default"];
+  }
+  return [];
+}
+
 function withCurrentOption(options: string[], value: JsonValue) {
   const current = value === null || value === undefined ? "" : String(value);
   if (!current || options.includes(current)) return options;
@@ -109,14 +159,23 @@ export function JsonValueEditor({
   const key = String(path[path.length - 1] ?? "");
   const parent = String(path[path.length - 2] ?? "");
 
-  const dynamicSelectOptions =
-    hint.options ??
-    (isFontStyleKey(key, parent) || isFontWeightKey(key, parent, groupContext)
+  const parentChromeOptions = key === "type" ? chromeTypeOptions(parent) : [];
+  const contextChromeOptions =
+    key === "type" ? chromeTypeOptions(groupContext) : [];
+  const chromeOptions = parentChromeOptions.length
+    ? parentChromeOptions
+    : contextChromeOptions;
+  const fontOptions =
+    isFontStyleKey(key, parent) || isFontWeightKey(key, parent, groupContext)
       ? fontStylesForFamily(stylesByFamily, fontFamilyForPath(rootValue, path))
-      : []);
+      : [];
+  const dynamicSelectOptions =
+    hint.options ?? (chromeOptions.length ? chromeOptions : fontOptions);
 
   const resolvedWidget =
-    widget || (isFontFamilyKey(key, parent, groupContext) ? "font" : undefined);
+    widget ||
+    (dynamicSelectOptions.length ? "select" : undefined) ||
+    (isFontFamilyKey(key, parent, groupContext) ? "font" : undefined);
 
   if (resolvedWidget === "select" && dynamicSelectOptions.length) {
     return (
@@ -183,7 +242,42 @@ export function JsonValueEditor({
     );
   }
 
-  if (widget === "color" && typeof value === "string") {
+  if (
+    typeof value === "string" &&
+    (widget === "color" || isAlphaColorField(key, parent, groupContext))
+  ) {
+    const alphaColor = isAlphaColorField(key, parent, groupContext)
+      ? rgbaToHexAndAlpha(value) ?? {
+          hex: isHexColor(value) ? value : "#ffffff",
+          alpha: value === "transparent" ? 0 : 1,
+        }
+      : null;
+    if (alphaColor) {
+      return (
+        <span className="json-alpha-color-pair">
+          <input
+            aria-label="Color picker"
+            type="color"
+            value={alphaColor.hex}
+            onChange={(event) =>
+              onChange(rgbaString(event.target.value, alphaColor.alpha))
+            }
+          />
+          <input
+            aria-label="Alpha"
+            className="json-value-control"
+            type="number"
+            min={0}
+            max={1}
+            step={0.01}
+            value={String(alphaColor.alpha)}
+            onChange={(event) =>
+              onChange(rgbaString(alphaColor.hex, Number(event.target.value)))
+            }
+          />
+        </span>
+      );
+    }
     return (
       <span className="json-color-pair">
         <input

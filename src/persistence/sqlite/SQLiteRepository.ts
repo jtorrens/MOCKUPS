@@ -111,7 +111,7 @@ export class SQLiteRepository implements DomainRepository {
       ProductionSchema,
       {
         optional: ["settings_json", "metadata_json"],
-        optionalScalars: ["slug", "created_at", "updated_at"],
+        optionalScalars: ["slug", "default_fps", "created_at", "updated_at"],
       },
     );
   }
@@ -119,7 +119,14 @@ export class SQLiteRepository implements DomainRepository {
   getShot(id: string): Shot | undefined {
     return this.getOne("SELECT * FROM shots WHERE id = ?", id, ShotSchema, {
       optional: ["canvas_json", "metadata_json"],
-      optionalScalars: ["episode_id", "owner_actor_id", "sort_order"],
+        optionalScalars: [
+          "episode_id",
+          "owner_actor_id",
+          "slug",
+          "version",
+          "sort_order",
+          "render_preset_id",
+        ],
     });
   }
 
@@ -134,6 +141,7 @@ export class SQLiteRepository implements DomainRepository {
           "module_data_json",
           "module_config_json",
           "module_tokens_override_json",
+          "device_state_json",
         ],
         optionalScalars: [
           "module_id",

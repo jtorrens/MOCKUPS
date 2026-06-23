@@ -19,7 +19,7 @@ export const coreChatV1EditorHints: ModuleEditorHintContract = {
       },
       "messages.[]": {
         label: "Message",
-        summaryKeys: ["text", "mediaAssetId", "type", "id"],
+        summaryKeys: ["text", "media.filePath", "type", "id"],
       },
       "messages.[].id": { label: "Message ID" },
       "messages.[].type": {
@@ -29,8 +29,13 @@ export const coreChatV1EditorHints: ModuleEditorHintContract = {
       },
       "messages.[].senderParticipantId": { label: "Sender" },
       "messages.[].text": { label: "Message text", widget: "textarea" },
-      "messages.[].mediaAssetId": { label: "Attached media asset" },
       "messages.[].media": { label: "Attached media" },
+      "messages.[].media.type": {
+        label: "Media type",
+        widget: "select",
+        options: ["none", "image", "video"],
+      },
+      "messages.[].media.filePath": { label: "Media file path" },
       "messages.[].media.window": { label: "Media crop/window" },
       "messages.[].media.window.width": { label: "Media window width" },
       "messages.[].media.window.height": { label: "Media window height" },

@@ -15,8 +15,14 @@
           "accent": "#007AFF"
         },
         "statusBar": {
+          "type": "ios-default",
           "foreground": "#000000",
-          "background": "transparent"
+          "background": "rgba(255,255,255,0)"
+        },
+        "navigationBar": {
+          "type": "ios-home-indicator",
+          "foreground": "#000000",
+          "background": "rgba(255,255,255,0)"
         }
       },
       "dark": {
@@ -27,8 +33,14 @@
           "accent": "#0A84FF"
         },
         "statusBar": {
+          "type": "ios-default",
           "foreground": "#FFFFFF",
-          "background": "transparent"
+          "background": "rgba(0,0,0,0)"
+        },
+        "navigationBar": {
+          "type": "ios-home-indicator",
+          "foreground": "#FFFFFF",
+          "background": "rgba(0,0,0,0)"
         }
       }
     },
@@ -47,8 +59,15 @@
       "accent": "#007AFF"
     },
     "statusBar": {
+      "type": "ios-default",
       "foreground": "#000000",
-      "background": "transparent",
+      "background": "rgba(255,255,255,0)",
+      "iconScale": 1
+    },
+    "navigationBar": {
+      "type": "ios-home-indicator",
+      "foreground": "#000000",
+      "background": "rgba(255,255,255,0)",
       "iconScale": 1
     },
     "notifications": {

@@ -166,8 +166,8 @@ try {
     "module_instances must contain content/behavior module contract columns",
   );
   assert(
-    Number(database.pragma("user_version", { simple: true })) === 7,
-    "SQLite schema version must be 7",
+    Number(database.pragma("user_version", { simple: true })) === 9,
+    "SQLite schema version must be 9",
   );
 
   database.exec("BEGIN");
@@ -208,7 +208,7 @@ try {
   console.log("✓ schema and seed validated in isolated in-memory SQLite");
   console.log("✓ all required domain tables exist");
   console.log("✓ module_theme_configs exists and seeds core.chat tokens");
-  console.log("✓ screen_instances references and module_instances content/behavior columns exist in schema v7");
+  console.log("✓ screen_instances references and module_instances content/behavior columns exist in schema v9");
   console.log("✓ SQLiteRepository resolved ChatScreen props with Zod");
   console.log("✓ SQLite and in-memory chat props are equivalent");
   console.log("✓ Chat module instance JSON and sender-based output validated");

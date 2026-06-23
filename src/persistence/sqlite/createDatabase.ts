@@ -63,6 +63,7 @@ function applyAdditiveV4Migration(database: SQLiteDatabase): void {
       id TEXT PRIMARY KEY,
       production_id TEXT NOT NULL REFERENCES productions(id) ON DELETE CASCADE,
       name TEXT NOT NULL,
+      slug TEXT,
       sort_order INTEGER CHECK (sort_order >= 0),
       metadata_json TEXT
     );
@@ -79,6 +80,21 @@ function applyAdditiveV4Migration(database: SQLiteDatabase): void {
   );
   if (!existingShotColumns.has("episode_id")) {
     database.exec("ALTER TABLE shots ADD COLUMN episode_id TEXT");
+  }
+  const existingEpisodeColumns = new Set(
+    (
+      database.pragma("table_info(episodes)") as {
+        name: string;
+      }[]
+    ).map((column) => column.name),
+  );
+  if (!existingEpisodeColumns.has("slug")) {
+    database.exec("ALTER TABLE episodes ADD COLUMN slug TEXT");
+    database.exec(`
+      UPDATE episodes
+      SET slug = lower(replace(trim(name), ' ', '-'))
+      WHERE slug IS NULL OR trim(slug) = ''
+    `);
   }
   database.exec(`
     CREATE INDEX IF NOT EXISTS idx_shots_episode
@@ -153,6 +169,67 @@ function applyAdditiveV7Migration(database: SQLiteDatabase): void {
   database.pragma("user_version = 7");
 }
 
+function applyAdditiveV8Migration(database: SQLiteDatabase): void {
+  const productionColumns = new Set(
+    (
+      database.pragma("table_info(productions)") as {
+        name: string;
+      }[]
+    ).map((column) => column.name),
+  );
+  if (!productionColumns.has("default_fps")) {
+    database.exec(
+      "ALTER TABLE productions ADD COLUMN default_fps INTEGER NOT NULL DEFAULT 30 CHECK (default_fps > 0)",
+    );
+  }
+
+  const shotColumns = new Set(
+    (
+      database.pragma("table_info(shots)") as {
+        name: string;
+      }[]
+    ).map((column) => column.name),
+  );
+  if (!shotColumns.has("slug")) {
+    database.exec("ALTER TABLE shots ADD COLUMN slug TEXT");
+    database.exec(`
+      UPDATE shots
+      SET slug = lower(replace(trim(name), ' ', '-'))
+      WHERE slug IS NULL OR trim(slug) = ''
+    `);
+  }
+  if (!shotColumns.has("version")) {
+    database.exec(
+      "ALTER TABLE shots ADD COLUMN version INTEGER NOT NULL DEFAULT 1 CHECK (version >= 0)",
+    );
+  }
+  database.pragma("user_version = 8");
+}
+
+function applyAdditiveV9Migration(database: SQLiteDatabase): void {
+  const screenInstanceColumns = new Set(
+    (
+      database.pragma("table_info(screen_instances)") as {
+        name: string;
+      }[]
+    ).map((column) => column.name),
+  );
+  if (!screenInstanceColumns.has("device_state_json")) {
+    database.exec("ALTER TABLE screen_instances ADD COLUMN device_state_json TEXT");
+    database.exec(`
+      UPDATE screen_instances
+      SET device_state_json = (
+        SELECT device_states.state_json
+        FROM device_states
+        WHERE device_states.id = screen_instances.device_state_id
+      )
+      WHERE device_state_json IS NULL
+        AND device_state_id IS NOT NULL
+    `);
+  }
+  database.pragma("user_version = 9");
+}
+
 export function applyInitialSchema(database: SQLiteDatabase): void {
   database.exec(readFileSync(schemaPath, "utf8"));
   applyAdditiveV2Migration(database);
@@ -161,6 +238,8 @@ export function applyInitialSchema(database: SQLiteDatabase): void {
   applyAdditiveV5Migration(database);
   applyBreakingV6Marker(database);
   applyAdditiveV7Migration(database);
+  applyAdditiveV8Migration(database);
+  applyAdditiveV9Migration(database);
   database.pragma("foreign_keys = ON");
 }
 

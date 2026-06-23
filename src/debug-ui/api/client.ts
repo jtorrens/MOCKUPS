@@ -22,11 +22,17 @@ export interface AppTableDefinition {
 export type AppRecord = Record<string, unknown> & { id: string };
 
 export interface DebugOptions {
-  productions: { id: string; name: string }[];
+  productions: {
+    id: string;
+    name: string;
+    slug?: string | null;
+    defaultFps?: number | null;
+  }[];
   episodes: {
     id: string;
     productionId: string;
     name: string;
+    slug?: string | null;
     sortOrder?: number;
   }[];
   shots: {
@@ -35,6 +41,8 @@ export interface DebugOptions {
     episodeId?: string | null;
     ownerActorId?: string | null;
     name: string;
+    slug?: string | null;
+    version?: number | null;
     durationFrames: number;
     fps: number;
   }[];
@@ -84,12 +92,13 @@ export interface DebugPayload {
 }
 
 export interface AppCreateRequest {
-  tableId: "productions" | "episodes" | "shots";
+  tableId: "productions" | "episodes" | "shots" | "themes";
   parent?: {
     productionId?: string;
     episodeId?: string;
   };
   name?: string;
+  family?: "ios" | "android";
 }
 
 async function readResponse<T>(response: Response): Promise<T> {

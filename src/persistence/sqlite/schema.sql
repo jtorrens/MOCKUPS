@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS productions (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   slug TEXT,
+  default_fps INTEGER NOT NULL DEFAULT 30 CHECK (default_fps > 0),
   created_at TEXT,
   updated_at TEXT,
   settings_json TEXT,
@@ -26,6 +27,7 @@ CREATE TABLE IF NOT EXISTS episodes (
   id TEXT PRIMARY KEY,
   production_id TEXT NOT NULL REFERENCES productions(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
+  slug TEXT,
   sort_order INTEGER CHECK (sort_order >= 0),
   metadata_json TEXT
 );
@@ -122,6 +124,8 @@ CREATE TABLE IF NOT EXISTS shots (
   episode_id TEXT REFERENCES episodes(id) ON DELETE SET NULL,
   owner_actor_id TEXT REFERENCES actors(id) ON DELETE SET NULL,
   name TEXT NOT NULL,
+  slug TEXT,
+  version INTEGER NOT NULL DEFAULT 1 CHECK (version >= 0),
   sort_order INTEGER CHECK (sort_order >= 0),
   duration_frames INTEGER NOT NULL CHECK (duration_frames > 0),
   fps INTEGER NOT NULL CHECK (fps > 0),
@@ -219,6 +223,7 @@ CREATE TABLE IF NOT EXISTS screen_instances (
   owner_actor_id TEXT NOT NULL REFERENCES actors(id) ON DELETE RESTRICT,
   device_id TEXT REFERENCES devices(id) ON DELETE SET NULL,
   device_state_id TEXT REFERENCES device_states(id) ON DELETE SET NULL,
+  device_state_json TEXT,
   theme_id TEXT REFERENCES themes(id) ON DELETE SET NULL,
   theme_mode TEXT CHECK (theme_mode IS NULL OR theme_mode IN ('light', 'dark')),
   start_frame INTEGER NOT NULL CHECK (start_frame >= 0),
@@ -265,4 +270,4 @@ CREATE INDEX IF NOT EXISTS idx_screen_events_instance ON screen_events(screen_in
 CREATE INDEX IF NOT EXISTS idx_conversation_participants_conversation ON conversation_participants(conversation_id, sort_order);
 CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id, sort_order);
 
-PRAGMA user_version = 7;
+PRAGMA user_version = 9;

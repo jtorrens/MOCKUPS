@@ -113,6 +113,7 @@ export function parseScreenInstance(row: Row) {
       row,
       "module_tokens_override_json",
     ),
+    device_state_json: readOptionalJson(row, "device_state_json"),
     transform_json: readRequiredJson(row, "transform_json"),
     props_json: readRequiredJson(row, "props_json"),
     transition_in_json: readNullableJson(row, "transition_in_json"),
@@ -141,6 +142,7 @@ export const APP_TABLES = [
       { column: "id", label: "ID", kind: "string", readonly: true },
       { column: "name", label: "Name", kind: "string" },
       { column: "slug", label: "Slug", kind: "string", nullable: true },
+      { column: "default_fps", label: "Default FPS", kind: "number" },
       { column: "settings_json", label: "Project settings", kind: "json" },
       { column: "metadata_json", label: "Project notes", kind: "json" },
     ],
@@ -151,11 +153,12 @@ export const APP_TABLES = [
     table: "episodes",
     titleColumn: "name",
     jsonFields: ["metadata_json"],
-    optionalScalars: ["sort_order"],
+    optionalScalars: ["slug", "sort_order"],
     fields: [
       { column: "id", label: "ID", kind: "string", readonly: true },
       { column: "production_id", label: "Production ID", kind: "string" },
       { column: "name", label: "Name", kind: "string" },
+      { column: "slug", label: "Slug", kind: "string", nullable: true },
       { column: "sort_order", label: "Sort order", kind: "number" },
       { column: "metadata_json", label: "Episode notes", kind: "json" },
     ],
@@ -166,7 +169,14 @@ export const APP_TABLES = [
     table: "shots",
     titleColumn: "name",
     jsonFields: ["canvas_json", "metadata_json"],
-    optionalScalars: ["episode_id", "owner_actor_id", "sort_order"],
+    optionalScalars: [
+      "episode_id",
+      "owner_actor_id",
+      "slug",
+      "version",
+      "sort_order",
+      "render_preset_id",
+    ],
     fields: [
       { column: "id", label: "ID", kind: "string", readonly: true },
       { column: "production_id", label: "Production ID", kind: "string" },
@@ -178,6 +188,8 @@ export const APP_TABLES = [
         nullable: true,
       },
       { column: "name", label: "Name", kind: "string" },
+      { column: "slug", label: "Slug", kind: "string", nullable: true },
+      { column: "version", label: "Version", kind: "number" },
       { column: "sort_order", label: "Sort order", kind: "number" },
       { column: "duration_frames", label: "Duration frames", kind: "number" },
       { column: "fps", label: "FPS", kind: "number" },
@@ -198,6 +210,7 @@ export const APP_TABLES = [
     titleColumn: "id",
     jsonFields: [
       "data_ref_json",
+      "device_state_json",
       "transform_json",
       "props_json",
       "transition_in_json",
@@ -206,7 +219,7 @@ export const APP_TABLES = [
     fields: [
       { column: "id", label: "ID", kind: "string", readonly: true },
       { column: "shot_id", label: "Shot ID", kind: "string" },
-      { column: "app_id", label: "App", kind: "string" },
+      { column: "app_id", label: "App", kind: "string", readonly: true },
       { column: "screen_type", label: "Screen type", kind: "string" },
       { column: "module_id", label: "Module ID", kind: "string" },
       {
@@ -220,6 +233,7 @@ export const APP_TABLES = [
         kind: "string",
         nullable: true,
       },
+      { column: "device_state_json", label: "Device state", kind: "json" },
       {
         column: "theme_mode",
         label: "Theme mode",
@@ -230,6 +244,7 @@ export const APP_TABLES = [
       { column: "end_frame", label: "End frame", kind: "number" },
       { column: "layer_order", label: "Layer order", kind: "number" },
       { column: "transform_json", label: "Screen transform", kind: "json" },
+      { column: "transition_out_json", label: "Transition", kind: "json" },
     ],
   },
   {
@@ -304,7 +319,7 @@ export const APP_TABLES = [
       { column: "id", label: "ID", kind: "string", readonly: true },
       { column: "production_id", label: "Production ID", kind: "string" },
       { column: "name", label: "Name", kind: "string" },
-      { column: "family", label: "Family", kind: "string" },
+      { column: "family", label: "Family", kind: "string", readonly: true },
       { column: "version", label: "Version", kind: "string" },
       { column: "tokens_json", label: "Theme tokens", kind: "json" },
     ],
@@ -534,16 +549,16 @@ function validateAppRow(
 
 export function listDebugOptions(database: SQLiteDatabase) {
   const productions = database
-    .prepare("SELECT id, name FROM productions ORDER BY name, id")
+    .prepare("SELECT id, name, slug, default_fps AS defaultFps FROM productions ORDER BY name, id")
     .all();
   const episodes = database
     .prepare(
-      "SELECT id, production_id AS productionId, name, sort_order AS sortOrder FROM episodes ORDER BY production_id, sort_order, name, id",
+      "SELECT id, production_id AS productionId, name, slug, sort_order AS sortOrder FROM episodes ORDER BY production_id, name COLLATE NOCASE, id",
     )
     .all();
   const shots = database
     .prepare(
-      "SELECT id, production_id AS productionId, episode_id AS episodeId, owner_actor_id AS ownerActorId, name, duration_frames AS durationFrames, fps FROM shots ORDER BY production_id, episode_id, sort_order, name, id",
+      "SELECT id, production_id AS productionId, episode_id AS episodeId, owner_actor_id AS ownerActorId, name, slug, version, duration_frames AS durationFrames, fps FROM shots ORDER BY production_id, episode_id, name COLLATE NOCASE, id",
     )
     .all();
   const screenInstances = database
@@ -577,9 +592,17 @@ export function loadDebugPayload(
   const deviceId = screenInstance.device_id ?? ownerActor?.default_device_id;
   const theme = themeId ? repository.getTheme(themeId) : undefined;
   const device = deviceId ? repository.getDevice(deviceId) : undefined;
-  const deviceState = screenInstance.device_state_id
-    ? repository.getDeviceState(screenInstance.device_state_id)
-    : undefined;
+  const deviceState = screenInstance.device_state_json
+    ? {
+        id: `${screenInstance.id}:device_state`,
+        production_id: shot?.production_id ?? selection.productionId,
+        device_id: deviceId ?? "",
+        name: "Screen instance device state",
+        state_json: screenInstance.device_state_json,
+      }
+    : screenInstance.device_state_id
+      ? repository.getDeviceState(screenInstance.device_state_id)
+      : undefined;
   const moduleInstance =
     repository.getPrimaryModuleInstanceForScreenInstance(screenInstance.id);
   if (!theme || !device || !deviceState) {
@@ -666,9 +689,7 @@ export function saveDebugPayload(
   if (!themeId || !deviceId) {
     throw new Error("Selected screen instance cannot resolve theme/device");
   }
-  if (!screenInstance.device_state_id) {
-    throw new Error("Selected screen instance has no device state");
-  }
+  const currentDeviceState = screenInstance.device_state_json ?? {};
   const moduleInstance = repository.getPrimaryModuleInstanceForScreenInstance(
     screenInstance.id,
   );
@@ -710,13 +731,7 @@ export function saveDebugPayload(
     ...currentDevice,
     metrics_json: deviceMetrics,
   });
-  const currentDeviceState = database
-    .prepare("SELECT * FROM device_states WHERE id = ?")
-    .get(screenInstance.device_state_id) as Row;
-  DeviceStateSchema.parse({
-    ...currentDeviceState,
-    state_json: deviceState,
-  });
+  asObject(currentDeviceState, "screen_instance.device_state_json");
 
   const save = database.transaction(() => {
     database
@@ -743,10 +758,10 @@ export function saveDebugPayload(
         deviceId,
       );
     database
-      .prepare("UPDATE device_states SET state_json = ? WHERE id = ?")
+      .prepare("UPDATE screen_instances SET device_state_json = ? WHERE id = ?")
       .run(
-        stringifyJsonObject(deviceState, "device_state.state_json"),
-        screenInstance.device_state_id,
+        stringifyJsonObject(deviceState, "screen_instance.device_state_json"),
+        screenInstance.id,
       );
   });
   save();
@@ -923,12 +938,13 @@ export interface AppUpdateRequest {
 }
 
 export interface AppCreateRequest {
-  tableId: "productions" | "episodes" | "shots";
+  tableId: "productions" | "episodes" | "shots" | "themes";
   parent?: {
     productionId?: string;
     episodeId?: string;
   };
   name?: string;
+  family?: "ios" | "android";
 }
 
 function slugifyIdPart(value: string): string {
@@ -940,6 +956,111 @@ function slugifyIdPart(value: string): string {
       .replace(/^_+|_+$/g, "")
       .slice(0, 40) || "new"
   );
+}
+
+function defaultThemeTokens(family: "ios" | "android") {
+  const isAndroid = family === "android";
+  const fontFamily = isAndroid ? "Roboto" : "SF Pro Text";
+  const lightBackground = isAndroid ? "#FFFFFF" : "#FFFFFF";
+  const darkBackground = isAndroid ? "#101114" : "#000000";
+  const lightText = isAndroid ? "#1D1B20" : "#000000";
+  const darkText = isAndroid ? "#E6E1E5" : "#FFFFFF";
+  const lightSecondary = isAndroid ? "#625B71" : "#6E6E73";
+  const darkSecondary = isAndroid ? "#CAC4D0" : "#98989D";
+  const lightAccent = isAndroid ? "#6750A4" : "#007AFF";
+  const darkAccent = isAndroid ? "#D0BCFF" : "#0A84FF";
+
+  return {
+    defaultMode: "light",
+    modes: {
+      light: {
+        colors: {
+          background: lightBackground,
+          textPrimary: lightText,
+          textSecondary: lightSecondary,
+          accent: lightAccent,
+        },
+        statusBar: {
+          type: isAndroid ? "android-default" : "ios-default",
+          foreground: lightText,
+          background: "rgba(255,255,255,0)",
+        },
+        navigationBar: {
+          type: isAndroid ? "android-gesture" : "ios-home-indicator",
+          foreground: lightText,
+          background: "rgba(255,255,255,0)",
+        },
+      },
+      dark: {
+        colors: {
+          background: darkBackground,
+          textPrimary: darkText,
+          textSecondary: darkSecondary,
+          accent: darkAccent,
+        },
+        statusBar: {
+          type: isAndroid ? "android-default" : "ios-default",
+          foreground: darkText,
+          background: "rgba(0,0,0,0)",
+        },
+        navigationBar: {
+          type: isAndroid ? "android-gesture" : "ios-home-indicator",
+          foreground: darkText,
+          background: "rgba(0,0,0,0)",
+        },
+      },
+    },
+    fonts: {
+      family: fontFamily,
+      bodySize: 17,
+      bodyLineHeight: 21.25,
+      captionSize: 13,
+      weight: "Regular",
+      source: "installed_system_font",
+    },
+    colors: {
+      background: lightBackground,
+      textPrimary: lightText,
+      textSecondary: lightSecondary,
+      accent: lightAccent,
+    },
+    statusBar: {
+      type: isAndroid ? "android-default" : "ios-default",
+      foreground: lightText,
+      background: "rgba(255,255,255,0)",
+      iconScale: 1,
+    },
+    navigationBar: {
+      type: isAndroid ? "android-gesture" : "ios-home-indicator",
+      foreground: lightText,
+      background: "rgba(255,255,255,0)",
+      iconScale: 1,
+    },
+    notifications: {
+      background: isAndroid ? "rgba(255,255,255,0.94)" : "rgba(245,245,247,0.92)",
+      titleColor: lightText,
+      bodyColor: isAndroid ? "#49454F" : "#3A3A3C",
+      backdropBlur: isAndroid ? 16 : 24,
+    },
+    spacing: {
+      xs: 4,
+      sm: 8,
+      md: 16,
+      lg: 24,
+    },
+    radii: {
+      notification: isAndroid ? 20 : 16,
+      card: isAndroid ? 16 : 12,
+    },
+    shadows: {
+      notification: {
+        color: "rgba(0,0,0,0.18)",
+        offsetX: 0,
+        offsetY: 4,
+        blur: 18,
+      },
+    },
+  };
 }
 
 function uniqueId(prefix: string, name: string): string {
@@ -981,10 +1102,10 @@ export function createAppRecord(
     const id = uniqueId("production", name);
     database
       .prepare(
-        `INSERT INTO productions (id, name, slug, settings_json, metadata_json)
-         VALUES (?, ?, ?, ?, ?)`,
+        `INSERT INTO productions (id, name, slug, default_fps, settings_json, metadata_json)
+         VALUES (?, ?, ?, ?, ?, ?)`,
       )
-      .run(id, name, slugifyIdPart(name), "{}", "{}");
+      .run(id, name, slugifyIdPart(name), 30, "{}", "{}");
     const record = decodeAppRow(
       database.prepare("SELECT * FROM productions WHERE id = ?").get(id) as Row,
       tableDefinition("productions"),
@@ -1011,17 +1132,52 @@ export function createAppRecord(
     );
     const name = request.name?.trim() || `Episode ${sortOrder + 1}`;
     const id = uniqueId("episode", name);
+    const slug = slugifyIdPart(name);
     database
       .prepare(
-        `INSERT INTO episodes (id, production_id, name, sort_order, metadata_json)
-         VALUES (?, ?, ?, ?, ?)`,
+        `INSERT INTO episodes (id, production_id, name, slug, sort_order, metadata_json)
+         VALUES (?, ?, ?, ?, ?, ?)`,
       )
-      .run(id, productionId, name, sortOrder, "{}");
+      .run(id, productionId, name, slug, sortOrder, "{}");
     const record = decodeAppRow(
       database.prepare("SELECT * FROM episodes WHERE id = ?").get(id) as Row,
       tableDefinition("episodes"),
     );
     return { tableId: "episodes", record, state: loadAppState(database) };
+  }
+
+  if (request.tableId === "themes") {
+    const productionId = request.parent?.productionId;
+    if (!productionId) {
+      throw new Error("Creating a theme requires a productionId parent.");
+    }
+    const production = database
+      .prepare("SELECT id FROM productions WHERE id = ?")
+      .get(productionId);
+    if (!production) {
+      throw new Error(`Production ${productionId} not found`);
+    }
+    const family = request.family === "android" ? "android" : "ios";
+    const name = request.name?.trim() || `${family === "ios" ? "iOS" : "Android"} Theme`;
+    const id = uniqueId("theme", name);
+    database
+      .prepare(
+        `INSERT INTO themes (id, production_id, name, family, version, tokens_json)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        id,
+        productionId,
+        name,
+        family,
+        "1.0.0",
+        stringifyJsonObject(defaultThemeTokens(family), "theme.tokens_json"),
+      );
+    const record = decodeAppRow(
+      database.prepare("SELECT * FROM themes WHERE id = ?").get(id) as Row,
+      tableDefinition("themes"),
+    );
+    return { tableId: "themes", record, state: loadAppState(database) };
   }
 
   const episodeId = request.parent?.episodeId;
@@ -1035,9 +1191,13 @@ export function createAppRecord(
     throw new Error(`Episode ${episodeId} not found`);
   }
   const productionId = String(episode.production_id);
+  const production = database
+    .prepare("SELECT default_fps FROM productions WHERE id = ?")
+    .get(productionId) as { default_fps?: number } | undefined;
   const sortOrder = nextSortOrder(database, "shots", "episode_id", episodeId);
   const name = request.name?.trim() || `Shot ${sortOrder + 1}`;
   const id = uniqueId("shot", name);
+  const slug = slugifyIdPart(name);
   const renderPresetId = firstScalar(
     database,
     "SELECT id FROM render_presets WHERE production_id = ? ORDER BY name, id LIMIT 1",
@@ -1053,7 +1213,7 @@ export function createAppRecord(
         .prepare("SELECT fps FROM render_presets WHERE id = ?")
         .get(renderPresetId) as { fps?: number } | undefined)
     : undefined;
-  const fps = Number(fpsRow?.fps ?? 30);
+  const fps = Number(fpsRow?.fps ?? production?.default_fps ?? 30);
   database
     .prepare(
       `INSERT INTO shots (
@@ -1062,13 +1222,15 @@ export function createAppRecord(
         episode_id,
         owner_actor_id,
         name,
+        slug,
+        version,
         sort_order,
         duration_frames,
         fps,
         render_preset_id,
         canvas_json,
         metadata_json
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       id,
@@ -1076,6 +1238,8 @@ export function createAppRecord(
       episodeId,
       ownerActorId,
       name,
+      slug,
+      1,
       sortOrder,
       fps * 4,
       fps,
@@ -1138,6 +1302,24 @@ export function updateAppRecord(
   database
     .prepare(`UPDATE ${definition.table} SET ${assignments} WHERE id = ?`)
     .run(...Object.values(encoded), request.recordId);
+
+  if (
+    definition.id === "screen_instances" &&
+    (Object.hasOwn(encoded, "start_frame") ||
+      Object.hasOwn(encoded, "end_frame"))
+  ) {
+    const screenRows = database
+      .prepare(
+        `SELECT id FROM screen_instances
+         WHERE shot_id = ?
+         ORDER BY start_frame, end_frame, id`,
+      )
+      .all(String(existing.shot_id)) as { id: string }[];
+    const updateLayer = database.prepare(
+      "UPDATE screen_instances SET layer_order = ? WHERE id = ?",
+    );
+    screenRows.forEach((row, index) => updateLayer.run(index, row.id));
+  }
 
   const savedRow = database
     .prepare(`SELECT * FROM ${definition.table} WHERE id = ?`)

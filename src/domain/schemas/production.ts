@@ -5,6 +5,7 @@ export const ProductionSchema = z.object({
   id: IdSchema,
   name: z.string().min(1),
   slug: z.string().min(1).optional(),
+  default_fps: z.number().int().positive().optional(),
   created_at: z.string().min(1).optional(),
   updated_at: z.string().min(1).optional(),
   settings_json: JsonObjectSchema.optional(),

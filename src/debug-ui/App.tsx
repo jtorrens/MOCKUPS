@@ -108,6 +108,9 @@ export function App() {
   const [requestError, setRequestError] = useState("");
   const [refreshCounter, setRefreshCounter] = useState(0);
   const [isProductionModalOpen, setProductionModalOpen] = useState(false);
+  const [themeCreateParent, setThemeCreateParent] = useState<{
+    productionId?: string;
+  } | null>(null);
   const [navigationWidth, setNavigationWidth] = useState(() =>
     storedPanelWidth("navigationWidth", 380, 280, 720),
   );
@@ -353,13 +356,18 @@ export function App() {
     }
   }
 
-  function handleCreateRecord(
-    tableId: "productions" | "episodes" | "shots",
+  function performCreateRecord(
+    tableId: "productions" | "episodes" | "shots" | "themes",
     parent?: { productionId?: string; episodeId?: string },
+    options?: { family?: "ios" | "android" },
   ) {
     setBusyProjectAction(true);
     setRequestError("");
-    void createAppRecord({ tableId, parent })
+    void createAppRecord({
+      tableId,
+      parent,
+      ...(options?.family ? { family: options.family } : {}),
+    })
       .then((result) => {
         setState(result.state);
         syncSelectionForCreatedRecord(result.state, result.tableId, result.record);
@@ -369,9 +377,25 @@ export function App() {
       .finally(() => setBusyProjectAction(false));
   }
 
+  function handleCreateRecord(
+    tableId: "productions" | "episodes" | "shots" | "themes",
+    parent?: { productionId?: string; episodeId?: string },
+  ) {
+    if (tableId === "themes") {
+      setThemeCreateParent({ productionId: parent?.productionId });
+      return;
+    }
+    performCreateRecord(tableId, parent);
+  }
+
   function handleCreateProductionFromModal() {
-    handleCreateRecord("productions");
+    performCreateRecord("productions");
     setProductionModalOpen(false);
+  }
+
+  function handleCreateThemeFromModal(family: "ios" | "android") {
+    performCreateRecord("themes", themeCreateParent ?? undefined, { family });
+    setThemeCreateParent(null);
   }
 
   function beginHorizontalResize(
@@ -485,6 +509,57 @@ export function App() {
                   title="Delete is disabled until cascade rules and backups are confirmed."
                 >
                   Delete selected production
+                </button>
+              </div>
+            </section>
+          </div>
+        ) : null}
+        {themeCreateParent ? (
+          <div
+            className="modal-backdrop"
+            role="presentation"
+            onMouseDown={() => setThemeCreateParent(null)}
+          >
+            <section
+              className="panel production-modal theme-family-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Choose theme base"
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <div className="panel-heading">
+                <div>
+                  <span className="eyebrow">New theme</span>
+                  <h2>Choose a starting point</h2>
+                </div>
+                <button
+                  type="button"
+                  className="ghost-button"
+                  onClick={() => setThemeCreateParent(null)}
+                >
+                  Cancel
+                </button>
+              </div>
+              <p className="modal-help">
+                This only seeds sensible defaults. The family becomes read-only
+                metadata afterwards.
+              </p>
+              <div className="theme-family-actions">
+                <button
+                  type="button"
+                  disabled={busyProjectAction}
+                  onClick={() => handleCreateThemeFromModal("ios")}
+                >
+                  <strong>iOS</strong>
+                  <span>SF Pro, iOS status bar and home indicator defaults.</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={busyProjectAction}
+                  onClick={() => handleCreateThemeFromModal("android")}
+                >
+                  <strong>Android</strong>
+                  <span>Roboto, Android status/navigation defaults.</span>
                 </button>
               </div>
             </section>

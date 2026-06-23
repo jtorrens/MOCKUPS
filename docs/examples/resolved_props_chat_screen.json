@@ -28,7 +28,7 @@
     },
     "statusBar": {
       "foreground": "#000000",
-      "background": "transparent",
+      "background": "rgba(255,255,255,0)",
       "iconScale": 1
     },
     "layout": {
@@ -144,8 +144,8 @@
         "displayName": "Sam"
       },
       "media": {
-        "assetId": "media_asset_sam_avatar",
-        "uri": "assets/sam-avatar.png",
+        "uri": "assets/conversations/sam-nearby.jpg",
+        "type": "image",
         "window": {
           "width": 180,
           "height": 120,

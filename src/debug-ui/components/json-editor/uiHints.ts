@@ -59,6 +59,16 @@ const COMMON_HINTS: JsonUiHints = {
     widget: "select",
     options: ["none", "bySender"],
   },
+  "statusBar.type": {
+    label: "Status bar type",
+    widget: "select",
+    options: ["ios-default", "android-default"],
+  },
+  "navigationBar.type": {
+    label: "Navigation bar type",
+    widget: "select",
+    options: ["ios-home-indicator", "android-gesture", "android-3-button"],
+  },
   "modes.light.colors.background": { label: "Background", widget: "color" },
   "modes.light.colors.textPrimary": { label: "Primary text", widget: "color" },
   "modes.light.colors.textSecondary": {

@@ -461,6 +461,7 @@ export function resolveChatScreen({
           message.mediaAssetId,
         )
       : undefined;
+    const mediaUri = message.media?.filePath ?? mediaAsset?.uri;
 
     return {
       id: bubble.id,
@@ -472,11 +473,12 @@ export function resolveChatScreen({
         participantId: sender.participantId,
         displayName: bubble.actor.displayName,
       },
-      ...(mediaAsset
+      ...(mediaUri
         ? {
             media: {
-              assetId: mediaAsset.id,
-              uri: mediaAsset.uri,
+              ...(mediaAsset ? { assetId: mediaAsset.id } : {}),
+              uri: mediaUri,
+              ...(message.media?.type ? { type: message.media.type } : {}),
               ...(message.media?.window
                 ? { window: message.media.window }
                 : {}),
