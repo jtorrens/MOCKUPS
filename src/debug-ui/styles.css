@@ -924,9 +924,7 @@ body {
 }
 
 .inspector-field-row.record-editor-field em,
-.inspector-field-row.app-field em,
-.record-editor-field em,
-.app-field em {
+.record-editor-field em {
   color: var(--editor-chip-color, #778096);
   font-style: normal;
   text-transform: uppercase;
@@ -935,24 +933,16 @@ body {
 }
 
 .inspector-field-row.record-editor-field strong,
-.inspector-field-row.app-field strong,
-.record-editor-field strong,
-.app-field strong {
+.record-editor-field strong {
   color: #ff8d9a;
 }
 
 .inspector-field-row.record-editor-field input,
 .inspector-field-row.record-editor-field select,
 .inspector-field-row.record-editor-field textarea,
-.inspector-field-row.app-field input,
-.inspector-field-row.app-field select,
-.inspector-field-row.app-field textarea,
 .record-editor-field input,
 .record-editor-field select,
-.record-editor-field textarea,
-.app-field input,
-.app-field select,
-.app-field textarea {
+.record-editor-field textarea {
   width: 100%;
   border: 1px solid #303646;
   border-radius: 9px;
@@ -962,20 +952,14 @@ body {
 
 .inspector-field-row.record-editor-field input,
 .inspector-field-row.record-editor-field select,
-.inspector-field-row.app-field input,
-.inspector-field-row.app-field select,
 .record-editor-field input,
-.record-editor-field select,
-.app-field input,
-.app-field select {
+.record-editor-field select {
   height: 42px;
   padding: 0 11px;
 }
 
 .inspector-field-row.record-editor-field textarea,
-.inspector-field-row.app-field textarea,
-.record-editor-field textarea,
-.app-field textarea {
+.record-editor-field textarea {
   min-height: 240px;
   resize: vertical;
   padding: 12px;
@@ -987,23 +971,15 @@ body {
 .inspector-field-row.record-editor-field input:disabled,
 .inspector-field-row.record-editor-field select:disabled,
 .inspector-field-row.record-editor-field textarea:disabled,
-.inspector-field-row.app-field input:disabled,
-.inspector-field-row.app-field select:disabled,
-.inspector-field-row.app-field textarea:disabled,
 .record-editor-field input:disabled,
 .record-editor-field select:disabled,
-.record-editor-field textarea:disabled,
-.app-field input:disabled,
-.app-field select:disabled,
-.app-field textarea:disabled {
+.record-editor-field textarea:disabled {
   color: #7e8799;
   background: #0b0e14;
 }
 
 .inspector-field-row.record-editor-field strong,
-.inspector-field-row.app-field strong,
-.record-editor-field strong,
-.app-field strong {
+.record-editor-field strong {
   display: block;
   margin-top: 6px;
   font-family: "SFMono-Regular", Consolas, monospace;
@@ -2463,9 +2439,7 @@ body {
 }
 
 .inspector-field-row.record-editor-field,
-.inspector-field-row.app-field,
-.record-editor-field,
-.app-field {
+.record-editor-field {
   display: block;
   min-width: 0;
   border-color: var(--editor-surface-border-color, #e2e6ee);
@@ -2473,9 +2447,7 @@ body {
 }
 
 .inspector-field-row.record-editor-field span,
-.inspector-field-row.app-field span,
-.record-editor-field span,
-.app-field span {
+.record-editor-field span {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2485,24 +2457,16 @@ body {
 }
 
 .inspector-field-row.record-editor-field code,
-.inspector-field-row.app-field code,
-.record-editor-field code,
-.app-field code {
+.record-editor-field code {
   color: var(--editor-code-color, #7b8494);
 }
 
 .inspector-field-row.record-editor-field input,
 .inspector-field-row.record-editor-field select,
 .inspector-field-row.record-editor-field textarea,
-.inspector-field-row.app-field input,
-.inspector-field-row.app-field select,
-.inspector-field-row.app-field textarea,
 .record-editor-field input,
 .record-editor-field select,
 .record-editor-field textarea,
-.app-field input,
-.app-field select,
-.app-field textarea,
 .token-override-input input,
 .token-override-input select,
 .json-color-pair input[type="text"] {
@@ -2615,7 +2579,6 @@ body {
   font-weight: 600;
 }
 
-.app-field textarea,
 .json-panel textarea,
 .inspector-panel pre,
 .json-tree-node,
@@ -2630,7 +2593,6 @@ body {
   color: var(--editor-alert-error-color, #b4232e);
 }
 
-.app-field,
 .json-tree-node,
 .json-panel,
 .inspector-panel,
@@ -2641,9 +2603,6 @@ body {
   border-color: var(--editor-surface-border-color, #dfe3eb);
 }
 
-.app-field input,
-.app-field select,
-.app-field textarea,
 .json-tree-node input,
 .json-tree-node select,
 .json-tree-node textarea,
@@ -2671,16 +2630,11 @@ body {
   border-color: var(--editor-chip-border-color, #dfe3eb);
 }
 
-.app-field,
 .json-editor-field,
 .json-primitive-row,
 .json-tree-node {
   border-color: var(--editor-row-separator, #edf0f4) !important;
   box-shadow: var(--editor-surface-shadow, 0 1px 5px rgba(21, 30, 50, 0.05));
-}
-
-.app-field {
-  border-radius: 12px;
 }
 
 .json-editor-field,
@@ -2705,8 +2659,6 @@ body {
   background: var(--editor-surface-background, #ffffff) !important;
 }
 
-.app-field pre,
-.app-field code,
 .json-tree-node code,
 .token-override-row code,
 .mode-color-row code {
@@ -2714,7 +2666,6 @@ body {
 }
 
 /* Final inspector-surface pass: central editor uses elevation, not hard borders. */
-.editor-workspace .app-field,
 .editor-workspace .json-tree-editor,
 .editor-workspace .json-tree-node,
 .editor-workspace .json-tree-group,
@@ -2758,24 +2709,16 @@ body {
 }
 
 .editor-workspace .inspector-field-row.record-editor-field,
-.editor-workspace .inspector-field-row.app-field,
-.editor-workspace .record-editor-field,
-.editor-workspace .app-field {
+.editor-workspace .record-editor-field {
   padding: 13px;
 }
 
 .editor-workspace .inspector-field-row.record-editor-field input,
 .editor-workspace .inspector-field-row.record-editor-field select,
 .editor-workspace .inspector-field-row.record-editor-field textarea,
-.editor-workspace .inspector-field-row.app-field input,
-.editor-workspace .inspector-field-row.app-field select,
-.editor-workspace .inspector-field-row.app-field textarea,
 .editor-workspace .record-editor-field input,
 .editor-workspace .record-editor-field select,
 .editor-workspace .record-editor-field textarea,
-.editor-workspace .app-field input,
-.editor-workspace .app-field select,
-.editor-workspace .app-field textarea,
 .editor-workspace .json-tree-node input,
 .editor-workspace .json-tree-node select,
 .editor-workspace .json-tree-node textarea,
@@ -2797,19 +2740,7 @@ body {
 .editor-workspace .inspector-field-row.record-editor-field.is-readonly textarea:disabled,
 .editor-workspace .inspector-field-row.record-editor-field input:disabled,
 .editor-workspace .inspector-field-row.record-editor-field select:disabled,
-.editor-workspace .inspector-field-row.record-editor-field textarea:disabled,
-.editor-workspace .inspector-field-row.app-field.is-readonly input:disabled,
-.editor-workspace .inspector-field-row.app-field.is-readonly select:disabled,
-.editor-workspace .inspector-field-row.app-field.is-readonly textarea:disabled,
-.editor-workspace .inspector-field-row.app-field input:disabled,
-.editor-workspace .inspector-field-row.app-field select:disabled,
-.editor-workspace .inspector-field-row.app-field textarea:disabled,
-.editor-workspace .app-field.is-readonly input:disabled,
-.editor-workspace .app-field.is-readonly select:disabled,
-.editor-workspace .app-field.is-readonly textarea:disabled,
-.editor-workspace .app-field input:disabled,
-.editor-workspace .app-field select:disabled,
-.editor-workspace .app-field textarea:disabled {
+.editor-workspace .inspector-field-row.record-editor-field textarea:disabled {
   border-color: var(--field-readonly-border-color, #e5e9f0) !important;
   color: var(--field-readonly-color, #667085) !important;
   background: var(--field-readonly-background, #fbfcfd) !important;
@@ -2819,12 +2750,8 @@ body {
 
 .editor-workspace .inspector-field-row.record-editor-field input::placeholder,
 .editor-workspace .inspector-field-row.record-editor-field textarea::placeholder,
-.editor-workspace .inspector-field-row.app-field input::placeholder,
-.editor-workspace .inspector-field-row.app-field textarea::placeholder,
 .editor-workspace .record-editor-field input::placeholder,
 .editor-workspace .record-editor-field textarea::placeholder,
-.editor-workspace .app-field input::placeholder,
-.editor-workspace .app-field textarea::placeholder,
 .editor-workspace .json-tree-node input::placeholder,
 .editor-workspace .json-tree-node textarea::placeholder,
 .editor-workspace .json-value-control::placeholder,
@@ -2838,15 +2765,9 @@ body {
 .editor-workspace .inspector-field-row.record-editor-field input:focus,
 .editor-workspace .inspector-field-row.record-editor-field select:focus,
 .editor-workspace .inspector-field-row.record-editor-field textarea:focus,
-.editor-workspace .inspector-field-row.app-field input:focus,
-.editor-workspace .inspector-field-row.app-field select:focus,
-.editor-workspace .inspector-field-row.app-field textarea:focus,
 .editor-workspace .record-editor-field input:focus,
 .editor-workspace .record-editor-field select:focus,
 .editor-workspace .record-editor-field textarea:focus,
-.editor-workspace .app-field input:focus,
-.editor-workspace .app-field select:focus,
-.editor-workspace .app-field textarea:focus,
 .editor-workspace .json-tree-node input:focus,
 .editor-workspace .json-tree-node select:focus,
 .editor-workspace .json-tree-node textarea:focus,
@@ -2910,10 +2831,7 @@ body {
 
 .editor-workspace .record-editor-field-string,
 .editor-workspace .record-editor-field-number,
-.editor-workspace .record-editor-field-frameless,
-.editor-workspace .app-field-string,
-.editor-workspace .app-field-number,
-.editor-workspace .app-field-frameless {
+.editor-workspace .record-editor-field-frameless {
   border-color: transparent !important;
   background: transparent !important;
   box-shadow: none !important;
@@ -3067,16 +2985,14 @@ body,
   box-shadow: none !important;
 }
 
-.record-editor .editor-section-body.record-editor-json-stack > .record-editor-field-frameless,
-.record-editor .editor-section-body.record-editor-json-stack > .app-field-frameless {
+.record-editor .editor-section-body.record-editor-json-stack > .record-editor-field-frameless {
   border: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
   padding: 0 !important;
 }
 
-.record-editor .inspector-field-row.record-editor-field .inspector-field-label span,
-.record-editor .inspector-field-row.app-field .inspector-field-label span {
+.record-editor .inspector-field-row.record-editor-field .inspector-field-label span {
   color: var(--field-label-color, #475467);
   font-size: 12px;
   font-weight: 600;
@@ -3085,13 +3001,7 @@ body,
 
 .record-editor .inspector-field-row.record-editor-field.is-readonly input:disabled,
 .record-editor .inspector-field-row.record-editor-field.is-readonly select:disabled,
-.record-editor .inspector-field-row.record-editor-field.is-readonly textarea:disabled,
-.record-editor .inspector-field-row.app-field.is-readonly input:disabled,
-.record-editor .inspector-field-row.app-field.is-readonly select:disabled,
-.record-editor .inspector-field-row.app-field.is-readonly textarea:disabled,
-.record-editor .app-field.is-readonly input:disabled,
-.record-editor .app-field.is-readonly select:disabled,
-.record-editor .app-field.is-readonly textarea:disabled {
+.record-editor .inspector-field-row.record-editor-field.is-readonly textarea:disabled {
   border-color: var(--field-readonly-border-color, #e5e9f0) !important;
   color: var(--field-readonly-color, #667085) !important;
   background: var(--field-readonly-background, #fbfcfd) !important;
@@ -3101,8 +3011,7 @@ body,
 
 .record-editor input[type="checkbox"],
 .record-editor-content-field-row input[type="checkbox"],
-.record-editor-field input[type="checkbox"],
-.app-field input[type="checkbox"] {
+.record-editor-field input[type="checkbox"] {
   width: 16px !important;
   min-width: 16px !important;
   height: 16px !important;
@@ -3224,8 +3133,7 @@ body,
   font-size: 11px;
 }
 
-.record-editor .inspector-field-row.record-editor-field.json-override,
-.record-editor .inspector-field-row.app-field.json-override {
+.record-editor .inspector-field-row.record-editor-field.json-override {
   border: var(--override-border, 1px solid #e4ad68) !important;
   border-radius: 12px !important;
   padding: 8px 10px !important;
@@ -3233,8 +3141,7 @@ body,
   box-shadow: var(--override-shadow, 0 2px 6px rgba(180, 83, 9, 0.07)) !important;
 }
 
-.record-editor .inspector-field-row.record-editor-field.json-override .inspector-field-label span,
-.record-editor .inspector-field-row.app-field.json-override .inspector-field-label span {
+.record-editor .inspector-field-row.record-editor-field.json-override .inspector-field-label span {
   color: var(--override-color, #b45309);
 }
 
@@ -3265,8 +3172,7 @@ body,
   padding-top: 10px;
 }
 
-.record-editor .record-editor-direct-fields .flat-json-row.record-editor-field,
-.record-editor .record-editor-direct-fields .flat-json-row.app-field {
+.record-editor .record-editor-direct-fields .flat-json-row.record-editor-field {
   border: 0 !important;
   border-radius: 0 !important;
   padding: 0 10px !important;
@@ -3275,9 +3181,7 @@ body,
 }
 
 .record-editor .flat-json-fields .flat-json-row.record-editor-field,
-.record-editor .flat-json-fields .flat-json-row.app-field,
-.record-editor .theme-chrome-editor .record-editor-field,
-.record-editor .theme-chrome-editor .app-field {
+.record-editor .theme-chrome-editor .record-editor-field {
   border: 0 !important;
   border-radius: 0 !important;
   padding: 0 10px !important;
@@ -3285,8 +3189,7 @@ body,
   box-shadow: none !important;
 }
 
-.record-editor .inspector-field-row.record-editor-field,
-.record-editor .inspector-field-row.app-field {
+.record-editor .inspector-field-row.record-editor-field {
   display: grid !important;
   grid-template-columns: 150px minmax(0, 1fr) !important;
   width: 100% !important;
@@ -3294,27 +3197,23 @@ body,
   box-sizing: border-box !important;
 }
 
-.record-editor .inspector-field-row.record-editor-field .inspector-field-control,
-.record-editor .inspector-field-row.app-field .inspector-field-control {
+.record-editor .inspector-field-row.record-editor-field .inspector-field-control {
   display: grid;
   max-width: 520px;
   gap: 6px;
 }
 
-.record-editor .inspector-field-row.record-editor-field .inspector-field-label,
-.record-editor .inspector-field-row.app-field .inspector-field-label {
+.record-editor .inspector-field-row.record-editor-field .inspector-field-label {
   padding-left: 8px;
 }
 
-.record-editor .inspector-field-row.record-editor-field .inspector-field-label span,
-.record-editor .inspector-field-row.app-field .inspector-field-label span {
+.record-editor .inspector-field-row.record-editor-field .inspector-field-label span {
   display: grid;
   gap: 3px;
   margin: 0;
 }
 
-.record-editor .json-editor-field.json-primitive-row,
-.record-editor .app-field.json-primitive-row {
+.record-editor .json-editor-field.json-primitive-row {
   margin: 0 !important;
   border: 0 !important;
   border-radius: 0 !important;
@@ -3323,14 +3222,12 @@ body,
   box-shadow: none !important;
 }
 
-.record-editor .json-editor-field.json-primitive-row.json-override,
-.record-editor .app-field.json-primitive-row.json-override {
+.record-editor .json-editor-field.json-primitive-row.json-override {
   border-radius: 10px !important;
   background: var(--override-background, #fff7ed) !important;
 }
 
-.record-editor .json-tree-editor .json-editor-field.json-primitive-row .inspector-field-label,
-.record-editor .json-tree-editor .app-field.json-primitive-row .inspector-field-label {
+.record-editor .json-tree-editor .json-editor-field.json-primitive-row .inspector-field-label {
   padding-left: 8px;
   color: var(--field-label-color, #475467);
 }
@@ -3786,7 +3683,6 @@ body,
 }
 
 .record-editor .theme-token-group-editor > .record-editor-field-frameless,
-.record-editor .theme-token-group-editor > .app-field-frameless,
 .record-editor .theme-token-group-editor .json-tree-editor,
 .record-editor .theme-token-group-editor .json-tree,
 .record-editor .theme-token-group-editor .json-tree-node,
