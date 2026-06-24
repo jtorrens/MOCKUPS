@@ -10,9 +10,9 @@ import {
   type DebugPayload,
   type DebugSelection,
 } from "./api/client.js";
-import { AppPreviewPanel } from "./components/AppPreviewPanel.js";
 import { ProjectTree } from "./components/ProjectTree.js";
 import { RecordEditor } from "./components/RecordEditor.js";
+import { RightPreviewShell } from "./preview/index.js";
 
 const LAYOUT_STORAGE_KEY = "mockups.debugUi.layout.v1";
 
@@ -732,7 +732,7 @@ export function App() {
         }
       />
 
-      <AppPreviewPanel
+      <RightPreviewShell
         options={state.options}
         selection={selection}
         payload={preview}

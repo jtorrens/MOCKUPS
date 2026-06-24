@@ -100,7 +100,7 @@ Owns only the visual surface that displays the resolved renderable tree:
 - `.preview-scale`
 - `.preview-phone-frame`
 
-The preview subsystem is grouped under `src/debug-ui/preview/` and exported through `src/debug-ui/preview/index.ts`. The right panel shell is implemented by `RightPreviewShell`; the legacy `AppPreviewPanel` export is only a compatibility wrapper. The render surface is implemented by `src/debug-ui/preview/RenderSurface.tsx`. It may scale for browser display and draw the optional phone frame overlay, but it must not add padding/border to the renderable coordinate system.
+The preview subsystem is grouped under `src/debug-ui/preview/` and exported through `src/debug-ui/preview/index.ts`. The right panel shell is implemented by `RightPreviewShell`, which is the app-facing preview boundary. The render surface is implemented by `src/debug-ui/preview/RenderSurface.tsx`. It may scale for browser display and draw the optional phone frame overlay, but it must not add padding/border to the renderable coordinate system.
 
 ## Known cascade risk areas
 
