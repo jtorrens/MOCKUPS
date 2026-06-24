@@ -28,11 +28,11 @@
 
 .preview-options-summary {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  gap: 10px;
+  grid-template-columns: 38px minmax(0, 1fr) auto auto;
+  gap: 12px;
   align-items: center;
-  min-height: 58px;
-  padding: 12px 14px;
+  min-height: 64px;
+  padding: 13px 16px;
   cursor: pointer;
   list-style: none;
 }
@@ -56,6 +56,17 @@
 .preview-options-card[open] > .preview-options-summary::after {
   content: "⌃";
   font-size: var(--accordion-chevron-open-size, 17px);
+}
+
+.preview-options-icon {
+  display: inline-grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 10px;
+  color: #1d2129;
+  font-size: 20px;
+  line-height: 1;
 }
 
 .preview-options-summary h2 {
