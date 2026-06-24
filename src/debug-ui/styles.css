@@ -562,56 +562,7 @@ body {
   user-select: none;
 }
 
-/* UI LAYER: Legacy app header, generic panels, and early browser/editor rules. */
-
-.app-header {
-  display: grid;
-  gap: 14px;
-  margin-bottom: 0;
-  padding: 10px 2px 0;
-}
-
-.app-header h1 {
-  margin: 0;
-  font-size: 28px;
-  letter-spacing: -0.035em;
-}
-
-.app-header p {
-  margin: 7px 0 0;
-  color: #9298a8;
-}
-
-.production-switcher {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px;
-  align-items: end;
-}
-
-.production-switcher label {
-  display: block;
-  color: var(--topbar-label-color, #626a78);
-  font-size: var(--topbar-label-font-size, 11px);
-  font-weight: var(--topbar-label-font-weight, 600);
-}
-
-.production-menu-button,
-.ghost-button {
-  border: var(--topbar-menu-button-border, 1px solid #30384a);
-  color: var(--topbar-menu-button-color, #d9e0ef);
-  background: var(--topbar-menu-button-background, #171b25);
-}
-
-.production-menu-button {
-  width: var(--topbar-select-height, 35px);
-  height: var(--topbar-select-height, 35px);
-  margin-bottom: 0;
-  padding: 0;
-  font-size: var(--topbar-menu-button-font-size, 20px);
-  line-height: 1;
-  border-radius: var(--topbar-menu-button-radius, 10px);
-}
+/* Shared modal and overlay utilities used by the navigation header workflows. */
 
 .modal-backdrop {
   position: fixed;
