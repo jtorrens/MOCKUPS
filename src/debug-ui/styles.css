@@ -2107,30 +2107,26 @@ body {
   min-width: 86px;
 }
 
-label {
+.navigation-rail-header label,
+.ui-theme-switcher {
   color: var(--topbar-label-color, #626a78);
 }
 
-select,
-input,
-input[type="number"],
-textarea {
+.navigation-rail-header select,
+.navigation-rail-header input,
+.navigation-rail-header input[type="number"],
+.navigation-rail-header textarea {
   border: 1px solid var(--topbar-select-border, #d9dee7);
   color: var(--topbar-select-color, #15171c);
   background: var(--topbar-select-background, #ffffff);
 }
 
-select:focus,
-input:focus,
-textarea:focus {
+.navigation-rail-header select:focus,
+.navigation-rail-header input:focus,
+.navigation-rail-header textarea:focus {
   border-color: var(--topbar-select-focus-border, #8fa2ff);
   outline: none;
   box-shadow: var(--topbar-select-focus-shadow, 0 0 0 3px rgba(59, 102, 255, 0.1));
-}
-
-button {
-  color: #ffffff;
-  background: #345dff;
 }
 
 .production-menu-button,
