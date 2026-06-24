@@ -7,6 +7,17 @@
   --accordion-chevron-size: 24px;
   --accordion-chevron-open-size: 17px;
   --accordion-chevron-weight: 450;
+  --card-header-icon-size: 30px;
+  --card-header-icon-radius: 10px;
+  --card-header-icon-border: 1px solid #dfe3eb;
+  --card-header-icon-background: #fbfcfd;
+  --card-header-icon-font-size: 20px;
+  --card-header-icon-font-weight: 700;
+  --card-header-font-family: inherit;
+  --card-header-title-font-size: 15px;
+  --card-header-title-font-weight: 760;
+  --card-header-summary-font-size: 12px;
+  --card-header-summary-font-weight: 500;
   color: #e8e9ee;
   background: #0d0f14;
   font-family:
@@ -2420,18 +2431,25 @@ button {
 }
 
 .editor-section-card > button .tab-icon {
-  width: 30px;
-  height: 30px;
-  border-radius: 10px;
-  font-size: 20px;
+  width: var(--card-header-icon-size, 30px);
+  height: var(--card-header-icon-size, 30px);
+  border: var(--card-header-icon-border, 1px solid #dfe3eb);
+  border-radius: var(--card-header-icon-radius, 10px);
+  background: var(--card-header-icon-background, #fbfcfd);
+  font-size: var(--card-header-icon-font-size, 20px);
+  font-weight: var(--card-header-icon-font-weight, 700);
 }
 
 .editor-section-card > button .tab-copy > span {
-  font-size: 15px;
+  font-family: var(--card-header-font-family, inherit);
+  font-size: var(--card-header-title-font-size, 15px);
+  font-weight: var(--card-header-title-font-weight, 760);
 }
 
 .editor-section-card > button .tab-copy small {
-  font-size: 12px;
+  font-family: var(--card-header-font-family, inherit);
+  font-size: var(--card-header-summary-font-size, 12px);
+  font-weight: var(--card-header-summary-font-weight, 500);
 }
 
 .editor-section-body {
@@ -2574,15 +2592,15 @@ button {
 
 .tab-icon {
   display: grid;
-  width: 34px;
-  height: 34px;
+  width: var(--card-header-icon-size, 30px);
+  height: var(--card-header-icon-size, 30px);
   place-items: center;
-  border: 1px solid #dfe3eb;
-  border-radius: 11px;
+  border: var(--card-header-icon-border, 1px solid #dfe3eb);
+  border-radius: var(--card-header-icon-radius, 10px);
   color: #15171c;
-  background: #fbfcfd;
-  font-size: 18px;
-  font-weight: 700;
+  background: var(--card-header-icon-background, #fbfcfd);
+  font-size: var(--card-header-icon-font-size, 20px);
+  font-weight: var(--card-header-icon-font-weight, 700);
 }
 
 .tab-copy {
@@ -2592,15 +2610,17 @@ button {
 
 .tab-copy > span {
   color: #12141a;
-  font-size: 16px;
-  font-weight: 760;
+  font-family: var(--card-header-font-family, inherit);
+  font-size: var(--card-header-title-font-size, 15px);
+  font-weight: var(--card-header-title-font-weight, 760);
   letter-spacing: -0.015em;
 }
 
 .tab-copy small {
   color: #667085;
-  font-size: 13px;
-  font-weight: 500;
+  font-family: var(--card-header-font-family, inherit);
+  font-size: var(--card-header-summary-font-size, 12px);
+  font-weight: var(--card-header-summary-font-weight, 500);
 }
 
 .record-editor > .editor-tabs:not(.subtle-tabs) button::after {

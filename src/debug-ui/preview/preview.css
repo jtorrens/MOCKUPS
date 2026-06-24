@@ -60,19 +60,24 @@
 
 .preview-options-icon {
   display: inline-grid;
-  width: 30px;
-  height: 30px;
+  width: var(--card-header-icon-size, 30px);
+  height: var(--card-header-icon-size, 30px);
   place-items: center;
-  border-radius: 10px;
+  border: var(--card-header-icon-border, 1px solid #dfe3eb);
+  border-radius: var(--card-header-icon-radius, 10px);
   color: #1d2129;
-  font-size: 20px;
+  background: var(--card-header-icon-background, #fbfcfd);
+  font-size: var(--card-header-icon-font-size, 20px);
+  font-weight: var(--card-header-icon-font-weight, 700);
   line-height: 1;
 }
 
 .preview-options-summary h2 {
   margin: 0;
   color: #12141a;
-  font-size: 19px;
+  font-family: var(--card-header-font-family, inherit);
+  font-size: var(--card-header-title-font-size, 15px);
+  font-weight: var(--card-header-title-font-weight, 760);
   letter-spacing: -0.025em;
 }
 
@@ -80,7 +85,9 @@
   overflow: hidden;
   margin: 3px 0 0;
   color: #626a78;
-  font-size: 12px;
+  font-family: var(--card-header-font-family, inherit);
+  font-size: var(--card-header-summary-font-size, 12px);
+  font-weight: var(--card-header-summary-font-weight, 500);
   line-height: 1.35;
   text-overflow: ellipsis;
   white-space: nowrap;

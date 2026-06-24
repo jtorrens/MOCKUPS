@@ -14,6 +14,17 @@ The transitional global stylesheet exposes a small set of CSS variables in `:roo
 - `--accordion-chevron-size`: closed accordion chevron size.
 - `--accordion-chevron-open-size`: open accordion chevron size.
 - `--accordion-chevron-weight`: accordion chevron weight.
+- `--card-header-icon-size`: card header icon frame size.
+- `--card-header-icon-radius`: card header icon frame radius.
+- `--card-header-icon-border`: card header icon frame border.
+- `--card-header-icon-background`: card header icon frame background.
+- `--card-header-icon-font-size`: card header glyph size.
+- `--card-header-icon-font-weight`: card header glyph weight.
+- `--card-header-font-family`: card header title and summary family.
+- `--card-header-title-font-size`: card header title size.
+- `--card-header-title-font-weight`: card header title weight.
+- `--card-header-summary-font-size`: card header summary size.
+- `--card-header-summary-font-weight`: card header summary weight.
 
 New panel/card work should prefer these tokens over local hardcoded values.
 
