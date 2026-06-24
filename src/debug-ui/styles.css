@@ -2894,8 +2894,8 @@ button {
 .app-field {
   display: block;
   min-width: 0;
-  border-color: #e2e6ee;
-  background: #ffffff;
+  border-color: var(--editor-surface-border-color, #e2e6ee);
+  background: var(--editor-surface-background, #ffffff);
 }
 
 .app-field span {
@@ -2904,11 +2904,11 @@ button {
   justify-content: space-between;
   gap: 8px;
   margin-bottom: 7px;
-  color: #222731;
+  color: var(--editor-text-color, #222731);
 }
 
 .app-field code {
-  color: #7b8494;
+  color: var(--editor-code-color, #7b8494);
 }
 
 .app-field input,
@@ -2917,19 +2917,19 @@ button {
 .token-override-input input,
 .token-override-input select,
 .json-color-pair input[type="text"] {
-  border-color: #d9dee7;
-  color: #15171c;
-  background: #ffffff;
+  border-color: var(--editor-input-border-color, #d9dee7);
+  color: var(--editor-input-color, #15171c);
+  background: var(--editor-input-background, #ffffff);
 }
 
 /* UI LAYER: JSON and token editor refinements. */
 .json-tree-node {
-  border-color: #e2e6ee;
-  background: #ffffff;
+  border-color: var(--editor-surface-border-color, #e2e6ee);
+  background: var(--editor-surface-background, #ffffff);
 }
 
 .json-tree-node summary {
-  background: #f9fafb;
+  background: var(--editor-header-surface-background, #f9fafb);
 }
 
 .token-override-editor,
@@ -2974,7 +2974,7 @@ button {
 .token-override-row,
 .mode-color-row {
   border-width: 0 0 1px;
-  border-color: #edf0f4;
+  border-color: var(--editor-row-separator, #edf0f4);
   border-radius: 0;
   background: transparent;
 }
@@ -2986,9 +2986,9 @@ button {
 
 .token-override-row.has-override,
 .mode-color-row.has-override {
-  border-color: #ffd7ad;
+  border-color: var(--editor-warning-border-color, #ffd7ad);
   border-radius: 10px;
-  background: #fff7ed;
+  background: var(--editor-warning-background, #fff7ed);
 }
 
 .token-override-row strong,
@@ -3006,8 +3006,8 @@ button {
 }
 
 .json-color-pair input[type="color"] {
-  border-color: #d9dee7;
-  background: #ffffff;
+  border-color: var(--editor-input-border-color, #d9dee7);
+  background: var(--editor-input-background, #ffffff);
 }
 
 .empty-state {
@@ -3032,17 +3032,17 @@ button {
   width: 28px;
   height: 28px;
   place-items: center;
-  border: 1px solid #d9dee7;
+  border: var(--restore-button-border, 1px solid #d9dee7);
   border-radius: 999px;
   padding: 0;
-  color: #22262f;
-  background: #ffffff;
+  color: var(--restore-button-color, #22262f);
+  background: var(--restore-button-background, #ffffff);
   font-size: 15px;
   line-height: 1;
 }
 
 .token-color-pair small {
-  color: #7b8494;
+  color: var(--editor-code-color, #7b8494);
   font-size: 11px;
   font-weight: 600;
 }
@@ -3052,14 +3052,14 @@ button {
 .inspector-panel pre,
 .json-tree-node,
 .json-tree-node summary {
-  color: #15171c;
-  background: #ffffff;
-  border-color: #dfe3eb;
+  color: var(--editor-text-color, #15171c);
+  background: var(--editor-surface-background, #ffffff);
+  border-color: var(--editor-surface-border-color, #dfe3eb);
 }
 
 .json-editor-error,
 .field-error {
-  color: #b4232e;
+  color: var(--editor-alert-error-color, #b4232e);
 }
 
 .app-field,
@@ -3073,9 +3073,9 @@ button {
 .resource-browser,
 .tab-list,
 .project-tree-panel {
-  color: #15171c;
-  background: #ffffff !important;
-  border-color: #dfe3eb;
+  color: var(--editor-text-color, #15171c);
+  background: var(--editor-surface-background, #ffffff) !important;
+  border-color: var(--editor-surface-border-color, #dfe3eb);
 }
 
 .app-field input,
@@ -3090,18 +3090,18 @@ button {
 .template-config-grid select,
 .json-panel textarea,
 .inspector-panel pre {
-  color: #15171c !important;
-  background: #ffffff !important;
-  border-color: #d9dee7 !important;
+  color: var(--editor-input-color, #15171c) !important;
+  background: var(--editor-input-background, #ffffff) !important;
+  border-color: var(--editor-input-border-color, #d9dee7) !important;
 }
 
 .json-tree-node summary,
 .template-editor-heading,
 .hierarchy-panel summary,
 .hierarchy-panel-body {
-  color: #15171c;
-  background: #f8fafc !important;
-  border-color: #e5e9f0;
+  color: var(--editor-text-color, #15171c);
+  background: var(--editor-header-surface-background, #f8fafc) !important;
+  border-color: var(--editor-header-surface-border-color, #e5e9f0);
 }
 
 .read-only-chip,
@@ -3117,8 +3117,8 @@ button {
 .app-field,
 .json-primitive-row,
 .json-tree-node {
-  border-color: #edf0f4 !important;
-  box-shadow: 0 1px 5px rgba(21, 30, 50, 0.05);
+  border-color: var(--editor-row-separator, #edf0f4) !important;
+  box-shadow: var(--editor-surface-shadow, 0 1px 5px rgba(21, 30, 50, 0.05));
 }
 
 .app-field {
