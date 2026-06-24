@@ -31,6 +31,11 @@ type LocalFont = {
 
 type QueryLocalFonts = () => Promise<LocalFont[]>;
 
+type FontCatalogState = {
+  status: "idle" | "loading" | "ready" | "failed";
+  fonts: LocalFont[];
+};
+
 declare global {
   interface Window {
     queryLocalFonts?: QueryLocalFonts;
@@ -51,31 +56,80 @@ function styleFromFont(font: LocalFont): string | undefined {
   return stripped || undefined;
 }
 
+let catalogState: FontCatalogState = {
+  status: "idle",
+  fonts: [],
+};
+let loadingPromise: Promise<LocalFont[]> | null = null;
+const subscribers = new Set<() => void>();
+
+function notifySubscribers() {
+  for (const subscriber of subscribers) {
+    subscriber();
+  }
+}
+
+async function requestLocalFonts() {
+  const [browserFonts, nativeFonts] = await Promise.all([
+    window.queryLocalFonts?.().catch(() => []) ?? Promise.resolve([]),
+    window.mockupsNative?.listFonts?.().catch(() => []) ?? Promise.resolve([]),
+  ]);
+  return [...browserFonts, ...nativeFonts];
+}
+
+function loadSharedFontCatalog() {
+  if (catalogState.status === "ready") {
+    return Promise.resolve(catalogState.fonts);
+  }
+  if (loadingPromise) return loadingPromise;
+
+  catalogState = { ...catalogState, status: "loading" };
+  notifySubscribers();
+
+  loadingPromise = requestLocalFonts()
+    .then((fonts) => {
+      catalogState = {
+        status: "ready",
+        fonts,
+      };
+      notifySubscribers();
+      return fonts;
+    })
+    .catch(() => {
+      catalogState = {
+        status: "failed",
+        fonts: [],
+      };
+      notifySubscribers();
+      return [];
+    })
+    .finally(() => {
+      loadingPromise = null;
+    });
+
+  return loadingPromise;
+}
+
+export function resetSystemFontCatalogCacheForTests() {
+  catalogState = { status: "idle", fonts: [] };
+  loadingPromise = null;
+  notifySubscribers();
+}
+
 export function useSystemFontCatalog() {
-  const [localFonts, setLocalFonts] = useState<LocalFont[]>([]);
+  const [state, setState] = useState(catalogState);
 
   useEffect(() => {
-    let cancelled = false;
-    async function loadFonts() {
-      const [browserFonts, nativeFonts] = await Promise.all([
-        window.queryLocalFonts?.().catch(() => []) ?? Promise.resolve([]),
-        window.mockupsNative?.listFonts?.().catch(() => []) ?? Promise.resolve([]),
-      ]);
-      return [...browserFonts, ...nativeFonts];
-    }
-    void loadFonts()
-      .then((fonts) => {
-        if (!cancelled) setLocalFonts(fonts);
-      })
-      .catch(() => {
-        if (!cancelled) setLocalFonts([]);
-      });
+    const subscriber = () => setState(catalogState);
+    subscribers.add(subscriber);
+    void loadSharedFontCatalog();
     return () => {
-      cancelled = true;
+      subscribers.delete(subscriber);
     };
   }, []);
 
   return useMemo(() => {
+    const localFonts = state.fonts;
     const families = Array.from(
       new Set([
         ...localFonts.map((font) => font.family).filter(Boolean),
@@ -92,8 +146,8 @@ export function useSystemFontCatalog() {
       stylesByFamily.set(font.family, Array.from(new Set(styles)).sort());
     }
 
-    return { families, stylesByFamily };
-  }, [localFonts]);
+    return { families, stylesByFamily, status: state.status };
+  }, [state]);
 }
 
 export function fontStylesForFamily(

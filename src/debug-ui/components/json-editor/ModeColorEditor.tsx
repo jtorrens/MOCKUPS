@@ -22,6 +22,7 @@ import { ColorValueEditor } from "./ColorValueEditor.js";
 interface ModeColorEditorProps {
   rootValue: JsonValue;
   inheritedRoot?: JsonValue;
+  hiddenGroups?: string[];
   onRootChange: (nextValue: JsonValue) => void;
 }
 
@@ -57,6 +58,18 @@ function isColorRolePath(path: JsonPath): boolean {
   return /(color|background|text|accent|surface|separator)$/i.test(key);
 }
 
+function isAlphaColorRolePath(path: JsonPath): boolean {
+  const key = String(path[path.length - 1] ?? "");
+  const context = path.map((segment) => String(segment)).join(".");
+  return (
+    (key === "background" &&
+      /(notification|notifications|statusbar|statusBar|navigationbar|navigationBar)/i.test(
+        context,
+      )) ||
+    (key === "color" && /(shadow|shadows)/i.test(context))
+  );
+}
+
 function flattenColorPaths(value: JsonValue, path: JsonPath = []): JsonPath[] {
   if (Array.isArray(value)) {
     return value.flatMap((entry, index) =>
@@ -78,13 +91,20 @@ function modeRoot(root: JsonValue, mode: "light" | "dark"): JsonValue {
   return isJsonObject(candidate) ? candidate : {};
 }
 
-function uniqueRolePaths(rootValue: JsonValue, inheritedRoot?: JsonValue) {
+function uniqueRolePaths(
+  rootValue: JsonValue,
+  inheritedRoot?: JsonValue,
+  hiddenGroups: string[] = [],
+) {
+  const hidden = new Set(hiddenGroups.map((group) => group.toLowerCase()));
   const keys = new Set<string>();
   const paths: JsonPath[] = [];
   for (const root of [rootValue, inheritedRoot]) {
     if (!root) continue;
     for (const mode of ["light", "dark"] as const) {
       for (const rolePath of flattenColorPaths(modeRoot(root, mode))) {
+        const group = roleGroup(rolePath).toLowerCase();
+        if (hidden.has(group)) continue;
         const key = pathLabel(rolePath);
         if (!keys.has(key)) {
           keys.add(key);
@@ -163,9 +183,10 @@ function groupedRolePaths(paths: JsonPath[]) {
 export function hasModeColorOverrides(
   rootValue: JsonValue,
   inheritedRoot?: JsonValue,
+  hiddenGroups: string[] = [],
 ) {
   if (!inheritedRoot) return false;
-  return uniqueRolePaths(rootValue, inheritedRoot).some((rolePath) =>
+  return uniqueRolePaths(rootValue, inheritedRoot, hiddenGroups).some((rolePath) =>
     (["light", "dark"] as const).some((mode) => {
       const inheritedValue = inheritedColorAt(inheritedRoot, mode, rolePath);
       if (!inheritedValue) return false;
@@ -179,9 +200,12 @@ export function hasModeColorOverrides(
 export function ModeColorEditor({
   rootValue,
   inheritedRoot,
+  hiddenGroups = [],
   onRootChange,
 }: ModeColorEditorProps) {
-  const colorGroups = groupedRolePaths(uniqueRolePaths(rootValue, inheritedRoot));
+  const colorGroups = groupedRolePaths(
+    uniqueRolePaths(rootValue, inheritedRoot, hiddenGroups),
+  );
 
   function updateColor(mode: "light" | "dark", rolePath: JsonPath, raw: string) {
     if (!raw) {
@@ -288,16 +312,17 @@ export function ModeColorEditor({
                       : role.inheritedDarkValue;
                   const displayValue = value || inherited || "";
                   const isRgbaColor = displayValue.startsWith("rgba(");
+                  const isAlphaColor = isRgbaColor || isAlphaColorRolePath(role.rolePath);
                   const canPickColor = isHexColor(displayValue);
                   return (
                     <span
                       key={mode}
                       className="json-color-pair token-color-pair"
                     >
-                      {canPickColor || isRgbaColor ? (
+                      {canPickColor || isAlphaColor ? (
                         <ColorValueEditor
                           value={displayValue}
-                          alpha={isRgbaColor}
+                          alpha={isAlphaColor}
                           label={`${key} ${mode}`}
                           onChange={(nextValue) =>
                             updateColor(mode, role.rolePath, nextValue)

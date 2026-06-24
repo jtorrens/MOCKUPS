@@ -7,7 +7,7 @@ This contract assigns every visual/layout value to one canonical source. Resolve
 | Canonical source | Owns | Must not own |
 | --- | --- | --- |
 | `theme.tokens_json` | Reusable global visual language, mode variants, typography/font selection, base colors/surfaces/accent, shared status bar defaults, broad spacing/radius/shadow scales | Device geometry, live device state, shot timing, narrative content, module-internal component design |
-| `apps.config_json.tokens_json` | Reusable app-level defaults such as generic app typography, solid/image wallpaper roles with `0–1` opacity, app icon references, shared surfaces, inherited color overrides using the same token path, and genuinely new app color roles such as navigation background | Shot content, module-specific roles such as Chat message/header tokens, duplicated inherited roles such as `appBackground` / `appAccent`, module-specific internals, device geometry, or per-instance exceptions |
+| `apps.config_json.tokens_json` | Reusable app-level defaults such as generic app typography, solid/image wallpaper roles with `0–1` opacity, app icon references, shared surfaces, and inherited color overrides using the same token path | Shot content, module-specific roles such as Chat message/header tokens, visual status/navigation bar tokens, duplicated inherited roles such as `appBackground` / `appAccent`, module-specific internals, device geometry, or per-instance exceptions |
 | `module_theme_configs.tokens_json` | Module-specific defaults for one theme + app + module + schema version, such as Chat bubble geometry, message spacing, Chat typography, header defaults, cursor behavior, and module-specific mode colors | Shot content, device geometry, live state, or one-off screen instance exceptions |
 | `device.metrics_json` | Logical design space, internal pixel render size, geometry, and scale mapping | Actor content, component styling, external plate placement |
 | `device_states.state_json` | Live status values displayed by the device | Base geometry or reusable style |
@@ -25,7 +25,10 @@ Reusable global visual values belong in `theme.tokens_json`:
   `weight` variant.
 - `colors`: screen and text colors.
 - `statusBar`: foreground/background and icon scale.
-- `notifications`: background, blur, radius, and related component defaults.
+- `notifications`: non-color notification defaults such as blur, radius, and
+  related component behavior. Notification background/title/body colors live in
+  `modes.light.notifications` and `modes.dark.notifications` and are edited from
+  the Colors surface.
 
 Tokens use logical design-space units unless explicitly documented otherwise. Ratio values such as `maxWidthRatio` use the inclusive range `0..1`. A theme is reusable across shots and actors.
 

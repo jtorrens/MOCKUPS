@@ -3577,6 +3577,15 @@ body,
   box-shadow: none !important;
 }
 
+.record-editor .flat-json-fields .flat-json-row.app-field,
+.record-editor .theme-chrome-editor .app-field {
+  border: 0 !important;
+  border-radius: 0 !important;
+  padding: 0 10px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
 .record-editor .app-field.inspector-field-row {
   display: grid !important;
   grid-template-columns: 150px minmax(0, 1fr) !important;

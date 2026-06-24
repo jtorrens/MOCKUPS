@@ -1,4 +1,5 @@
 export function friendlyGroupLabel(group: string): string {
+  if (/^fonts$/i.test(group.trim())) return "Typography";
   return group
     .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
     .replace(/[_-]+/g, " ")
@@ -24,6 +25,8 @@ export function compactLabelForGroup(
   const prefixes = [
     friendlyGroupLabel(group),
     singularFriendlyGroupLabel(group),
+    /^fonts$/i.test(group.trim()) ? "Fonts" : "",
+    /^fonts$/i.test(group.trim()) ? "Font" : "",
   ].filter(Boolean);
   let compact = label;
   for (const prefix of prefixes) {

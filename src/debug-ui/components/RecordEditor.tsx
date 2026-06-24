@@ -15,6 +15,7 @@ import {
   hasModeColorOverrides,
   ModeColorEditor,
 } from "./json-editor/ModeColorEditor.js";
+import { ColorValueEditor } from "./json-editor/ColorValueEditor.js";
 import {
   cloneJson,
   defaultJsonValue,
@@ -569,7 +570,7 @@ function sectionMeta(label: string) {
     },
     fonts: {
       icon: "T",
-      subtitle: "Font family, sizes and text weights",
+      subtitle: "Family, sizes and text weights",
     },
     typography: {
       icon: "T",
@@ -953,6 +954,61 @@ export function RecordEditor({
       return visibleValue;
     }
     return value;
+  }
+
+  function visibleTokenGroupValue(value: unknown, groupKey: string): JsonValue {
+    if (!isJsonObject(value as JsonValue)) return (value ?? defaultGroupValue(groupKey)) as JsonValue;
+    const root = value as Record<string, JsonValue>;
+    if (groupKey === "notifications") {
+      const {
+        background: _background,
+        titleColor: _titleColor,
+        bodyColor: _bodyColor,
+        ...visibleValue
+      } = root;
+      return visibleValue;
+    }
+    const { source: _source, ...visibleValue } = root;
+    return visibleValue;
+  }
+
+  function editorValueForTokenGroup(
+    tokenRoot: Record<string, unknown>,
+    groupKey: string,
+  ): JsonValue {
+    const value = tokenRoot[groupKey] ?? defaultGroupValue(groupKey);
+    return visibleTokenGroupValue(value, groupKey);
+  }
+
+  function inheritedValueForTokenGroup(
+    tokenRoot: unknown,
+    groupKey: string,
+  ): Record<string, unknown> | null {
+    if (!isJsonObject(tokenRoot as JsonValue)) return null;
+    const value = (tokenRoot as Record<string, JsonValue>)[groupKey];
+    if (!isJsonObject(value)) return null;
+    const visibleValue = visibleTokenGroupValue(value, groupKey);
+    return isJsonObject(visibleValue) ? visibleValue : null;
+  }
+
+  function mergeTokenGroupWithInternalFields(
+    originalValue: unknown,
+    nextVisibleValue: JsonValue,
+  ): JsonValue {
+    const original = isJsonObject(originalValue as JsonValue)
+      ? (originalValue as Record<string, JsonValue>)
+      : {};
+    const nextVisible = isJsonObject(nextVisibleValue)
+      ? (nextVisibleValue as Record<string, JsonValue>)
+      : {};
+    const internalFields: Record<string, JsonValue> = {};
+    if (Object.hasOwn(original, "source")) {
+      internalFields.source = original.source;
+    }
+    return {
+      ...internalFields,
+      ...nextVisible,
+    };
   }
 
   function updateThemeTokenGroupValue(
@@ -1792,6 +1848,33 @@ export function RecordEditor({
         !Array.isArray(value)
       );
     });
+  }
+
+  function stripAppStatusAndNavigationTokens(value: unknown): Record<string, JsonValue> {
+    const source = isJsonObject(value as JsonValue)
+      ? cloneJson(value as JsonValue)
+      : ({} as JsonValue);
+    const root = isJsonObject(source) ? source : {};
+    delete root.statusBar;
+    delete root.navigationBar;
+    delete root.shadows;
+    if (isJsonObject(root.notifications)) {
+      delete root.notifications.background;
+      delete root.notifications.titleColor;
+      delete root.notifications.bodyColor;
+    }
+    const modes = isJsonObject(root.modes) ? root.modes : {};
+    for (const mode of ["light", "dark"] as const) {
+      const modeRoot = isJsonObject(modes[mode]) ? modes[mode] : undefined;
+      if (!modeRoot) continue;
+      delete modeRoot.statusBar;
+      delete modeRoot.navigationBar;
+      const colors = isJsonObject(modeRoot.colors) ? modeRoot.colors : undefined;
+      if (colors) {
+        delete colors.navigationBackground;
+      }
+    }
+    return root;
   }
 
   function renderField(field: AppFieldDefinition, rawOverride?: {
@@ -3124,6 +3207,17 @@ export function RecordEditor({
             />
           }
         />
+        <InspectorFieldRow
+          className="app-field"
+          label={<span>Background</span>}
+          control={
+            <ColorValueEditor
+              value={String(group.background ?? "rgba(255,255,255,0)")}
+              alpha
+              onChange={(nextValue) => updateChrome(["background"], nextValue)}
+            />
+          }
+        />
       </div>
     );
   }
@@ -3136,17 +3230,19 @@ export function RecordEditor({
     const appTokenRoot = isJsonObject(appConfigRoot.tokens_json as JsonValue)
       ? (appConfigRoot.tokens_json as Record<string, unknown>)
       : appConfigRoot;
-    const inheritedAppRoot = inheritedFields.config_json;
-    const appTokenGroups = tokenEditorGroups(appTokenRoot, inheritedAppRoot);
+    const appEditorTokenRoot = stripAppStatusAndNavigationTokens(appTokenRoot);
+    const inheritedAppRoot = stripAppStatusAndNavigationTokens(inheritedFields.config_json);
+    const appTokenGroups = tokenEditorGroups(appEditorTokenRoot, inheritedAppRoot);
     const activeAppTokenGroup =
       appTokenGroup && appTokenGroups.includes(appTokenGroup)
         ? appTokenGroup
         : "";
 
     function updateAppTokenRoot(nextValue: JsonValue) {
+      const cleanNextValue = stripAppStatusAndNavigationTokens(nextValue);
       const nextConfig = Object.hasOwn(appConfigRoot, "tokens_json")
-        ? { ...appConfigRoot, tokens_json: nextValue }
-        : nextValue;
+        ? { ...appConfigRoot, tokens_json: cleanNextValue }
+        : cleanNextValue;
       setJsonDraft("config_json", nextConfig);
     }
 
@@ -3493,7 +3589,7 @@ export function RecordEditor({
           <div className="editor-section-card">
             <TabButton
               active={appTab === "tokens"}
-              warning={explicitLocalOverridesInherited(appTokenRoot, inheritedAppRoot)}
+              warning={explicitLocalOverridesInherited(appEditorTokenRoot, inheritedAppRoot)}
               onClick={() => setAppTab(appTab === "tokens" ? "" : "tokens")}
             >
               Tokens
@@ -3510,31 +3606,27 @@ export function RecordEditor({
                     {group === "wallpaper" ? (
                       renderAppWallpaperEditor()
                     ) : (
-                      <div className="field-stack single-column">
+                      <div className="field-stack single-column theme-token-group-editor">
                         {renderField(configField, {
                           hideLabel: true,
                           rawText: stringifyJson(
-                            appTokenRoot[group] &&
-                              typeof appTokenRoot[group] === "object" &&
-                              !Array.isArray(appTokenRoot[group])
-                              ? (appTokenRoot[group] as Record<string, unknown>)
-                              : {},
+                            editorValueForTokenGroup(appEditorTokenRoot, group),
                           ),
                           groupContext: group,
-                          inheritedValue:
-                            inheritedAppRoot &&
-                            typeof inheritedAppRoot === "object" &&
-                            !Array.isArray(inheritedAppRoot) &&
-                            inheritedAppRoot[group] &&
-                            typeof inheritedAppRoot[group] === "object" &&
-                            !Array.isArray(inheritedAppRoot[group])
-                              ? (inheritedAppRoot[group] as Record<string, unknown>)
-                              : null,
-                          onRawTextChange: (nextRawText) =>
+                          inheritedValue: inheritedValueForTokenGroup(
+                            inheritedAppRoot,
+                            group,
+                          ),
+                          onRawTextChange: (nextRawText) => {
+                            const nextVisibleValue = parsedObject(nextRawText);
                             updateAppTokenRoot({
-                              ...appTokenRoot,
-                              [group]: parsedObject(nextRawText),
-                            } as JsonValue),
+                              ...appEditorTokenRoot,
+                              [group]: mergeTokenGroupWithInternalFields(
+                                appEditorTokenRoot[group],
+                                nextVisibleValue as JsonValue,
+                              ),
+                            } as JsonValue);
+                          },
                         })}
                       </div>
                     )}
@@ -3546,11 +3638,10 @@ export function RecordEditor({
           <div className="editor-section-card">
             <TabButton
               active={appTab === "colors"}
-              warning={explicitLocalOverridesInherited(
-                appTokenRoot.modes,
-                isJsonObject(inheritedAppRoot as JsonValue)
-                  ? (inheritedAppRoot as Record<string, unknown>).modes
-                  : undefined,
+              warning={hasModeColorOverrides(
+                appEditorTokenRoot as JsonValue,
+                inheritedAppRoot as JsonValue | undefined,
+                ["wallpaper"],
               )}
               onClick={() => setAppTab(appTab === "colors" ? "" : "colors")}
             >
@@ -3559,8 +3650,9 @@ export function RecordEditor({
             {appTab === "colors" ? (
               <div className="editor-section-body">
                 <ModeColorEditor
-                  rootValue={appTokenRoot as JsonValue}
+                  rootValue={appEditorTokenRoot as JsonValue}
                   inheritedRoot={inheritedAppRoot as JsonValue | undefined}
+                  hiddenGroups={["wallpaper"]}
                   onRootChange={updateAppTokenRoot}
                 />
               </div>

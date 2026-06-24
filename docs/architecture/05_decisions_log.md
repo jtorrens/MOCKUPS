@@ -169,6 +169,7 @@ Fast structural layout may use approximate renderer-agnostic measurement. Previe
 Implications:
 - Preview/export cannot diverge in final line breaking.
 - Themes select installed font family and named weight variants; no production font whitelist/table is introduced.
+- The renderer UI keeps one shared in-memory font catalog cache per session. All font pickers reuse the same lazy-loaded system-font list and the same in-flight load promise.
 
 ## D018 — Modules own animation interpretation and visual behavior
 
@@ -615,3 +616,33 @@ This phase establishes:
 Implications:
 - The next phase should focus on app-specific and module-specific editors, starting from the now-stable generic shell.
 - Schema cleanup can later remove placeholder render-preset dimensions/fps once render orchestration is mature.
+
+## D049 — Typography is the visible UI nomenclature for type controls
+
+Status: accepted
+
+The editor uses `Typography` as the user-facing card/section label for all type controls. Stored JSON may still use `fonts` for generic base tokens such as family, size, line height, and weight, while `typography` remains available for module-specific text roles such as message, header title, and subtitle.
+
+The UI therefore treats `fonts` as an internal/raw key and presents it as `Typography` in cards, accordions, and grouped field labels. This keeps the interface coherent without forcing a noisy schema rename during the current design phase.
+
+The renderer UI also keeps one shared in-memory font catalog cache per session. All font pickers reuse the same lazy-loaded system-font list and the same in-flight load promise.
+
+## D050 — App does not own status/navigation bar visual tokens
+
+Status: accepted
+
+Apps do not define visual `statusBar` or `navigationBar` tokens. Those values remain Theme-owned and are only concretized once the render context knows the shot owner, device, theme, and mode.
+
+Per-page visibility is still authored at the module instance behavior level, for example `module_instances.behavior_json.showStatusBar`. This keeps page-specific behavior close to the concrete screen while avoiding app-level one-off visual overrides.
+
+The App editor therefore filters inherited Theme status/navigation tokens out of App Tokens and App Colors. App color roles should stay generic or genuinely app-specific, and should not duplicate navigation/status chrome that belongs to Theme/device resolution.
+
+## D051 — App Wallpaper owns its own color UI; App does not expose inherited Shadows
+
+Status: accepted
+
+App wallpaper color is edited only inside the Wallpaper card, even though it is stored as mode-aware data under `modes.light.wallpaper.color` and `modes.dark.wallpaper.color`. The App Colors surface filters the `wallpaper` group to avoid showing the same values twice.
+
+App-level Shadows are hidden from the editor for now. Current shadow tokens are only used for broad Theme-level notification defaults or module-specific component shadows such as Chat bubbles. App should inherit Theme shadows instead of creating production one-offs.
+
+Global Theme `spacing` is currently a broad scale and is not directly consumed by the Chat render path. The Chat render uses module-level layout/message spacing tokens such as `layout.screenGutter` and `messages.spacing`.

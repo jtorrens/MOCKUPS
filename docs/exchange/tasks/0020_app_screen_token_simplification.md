@@ -63,7 +63,6 @@ The App owns reusable app-level tokens/defaults inherited by its screens:
 - app accent behavior;
 - app icon references;
 - shared app surfaces;
-- header/navigation conventions;
 - badge styles;
 - shared app-specific color roles.
 
@@ -124,9 +123,10 @@ It does not own visual overrides for colors, typography, spacing, radii, shadows
 Correction after review: App and Screen/Module levels do need mode-aware color values.
 
 For example, a WhatsApp-like App may override inherited `colors.background` or
-`colors.accent` using the same token path, and may define genuinely new app
-roles such as `colors.navigationBackground`. It should not duplicate inherited
-roles as `appBackground` / `appAccent`. A Chat Screen/Module may define reusable
+`colors.accent` using the same token path. It should not duplicate inherited
+roles as `appBackground` / `appAccent`. It should also not own visual status bar
+or navigation bar tokens; those are resolved from Theme and device/mode context.
+A Chat Screen/Module may define reusable
 received/sent bubble colors for light and dark. Those values should apply to
 every shot using that app/module unless a lower level overrides them.
 

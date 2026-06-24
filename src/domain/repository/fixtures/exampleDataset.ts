@@ -83,16 +83,10 @@ export function createExampleDataset(): RepositoryDataset {
             wallpaper: {
               color: "#FFFFFF",
             },
-            colors: {
-              navigationBackground: "#F7F7F7",
-            },
           },
           dark: {
             wallpaper: {
               color: "#000000",
-            },
-            colors: {
-              navigationBackground: "#1C1C1E",
             },
           },
         },

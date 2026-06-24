@@ -51,28 +51,6 @@ export const appConfigDescriptors: FieldDescriptor[] = [
     group: "Wallpaper",
     property: "filePath",
   },
-  {
-    canonicalPath: "app.tokens.colors.navigationBackground.light",
-    storagePath: ["tokens_json", "modes", "light", "colors", "navigationBackground"],
-    label: "Navigation background",
-    section: "Colors",
-    area: "colors",
-    group: "App Colors",
-    role: "Navigation",
-    property: "background",
-    widget: "color",
-  },
-  {
-    canonicalPath: "app.tokens.colors.navigationBackground.dark",
-    storagePath: ["tokens_json", "modes", "dark", "colors", "navigationBackground"],
-    label: "Navigation background",
-    section: "Colors",
-    area: "colors",
-    group: "App Colors",
-    role: "Navigation",
-    property: "background",
-    widget: "color",
-  },
 ];
 
 export const appMetadataDescriptors: FieldDescriptor[] = [
