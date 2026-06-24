@@ -22,6 +22,13 @@ The transitional global stylesheet exposes a small set of CSS variables in `:roo
 - `--panel-resizer-background`: draggable panel gutter background.
 - `--panel-resizer-line`: draggable panel gutter separator line.
 - `--panel-resizer-accent`: draggable panel gutter active/hover line.
+- `--control-border`: shared compact control border.
+- `--control-background`: shared compact control background.
+- `--control-color`: shared compact control text color.
+- `--control-muted-color`: shared compact control label/muted text color.
+- `--pill-border`: shared metadata/status pill border.
+- `--pill-background`: shared metadata/status pill background.
+- `--pill-color`: shared metadata/status pill text color.
 - `--accordion-chevron-size`: closed accordion chevron size.
 - `--accordion-chevron-open-size`: open accordion chevron size.
 - `--accordion-chevron-weight`: accordion chevron weight.
@@ -70,6 +77,9 @@ The transitional global stylesheet exposes a small set of CSS variables in `:roo
 - `--preview-viewport-radius`: preview viewport host radius.
 - `--preview-viewport-background`: preview viewport host background.
 - `--preview-viewport-shadow`: preview viewport host shadow.
+- `--preview-frame-color`: optional preview device frame color.
+- `--preview-frame-shadow`: optional preview device frame shadow.
+- `--preview-frame-inner-highlight`: optional preview device frame inner highlight.
 - `--status-chip-border`: shared status chip border.
 - `--status-chip-radius`: shared status chip radius.
 - `--status-chip-padding`: shared status chip padding.
@@ -102,7 +112,7 @@ The transitional global stylesheet exposes a small set of CSS variables in `:roo
 
 New panel/card work should prefer these tokens over local hardcoded values.
 
-The app shell also supports an experimental UI-token mode switch with `data-ui-theme="light|dark"` on `<html>`. The dark set currently covers only the shared card/subcard tokens above; fields, tables, inputs, and legacy shell colors are intentionally not dark-mode complete yet.
+The app shell also supports an experimental UI-token mode switch with `data-ui-theme="light|dark"` on `<html>`. The dark set intentionally uses a lower-contrast neutral grey palette, closer to grading/compositing tools such as DaVinci Resolve or Nuke than to a black IDE theme. It currently covers shell surfaces, shared cards/subcards, preview chrome, status chips, feedback cards, and compact controls; fields, tables, and legacy editor internals are intentionally not dark-mode complete yet.
 
 ### 1. Global shell
 

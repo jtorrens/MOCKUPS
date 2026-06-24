@@ -105,7 +105,7 @@
 .preview-options-body label {
   display: grid;
   gap: 6px;
-  color: #667085;
+  color: var(--control-muted-color, #667085);
   font-size: 11px;
   font-weight: 650;
 }
@@ -114,9 +114,9 @@
 .preview-options-body input[type="number"] {
   height: 34px;
   margin: 0;
-  border-color: #d8dee8;
-  color: #343b48;
-  background: #ffffff;
+  border: var(--control-border, 1px solid #d8dee8);
+  color: var(--control-color, #343b48);
+  background: var(--control-background, #ffffff);
   font-size: 12px;
 }
 
@@ -136,10 +136,10 @@
   align-items: center;
   min-height: 24px;
   padding: 3px 8px;
-  border: 1px solid #d8dee8;
+  border: var(--pill-border, 1px solid #d8dee8);
   border-radius: 999px;
-  background: #f7f9fc;
-  color: #343b48;
+  background: var(--pill-background, #f7f9fc);
+  color: var(--pill-color, #343b48);
   font-size: 11px;
   line-height: 1.2;
   white-space: nowrap;
@@ -156,7 +156,7 @@
   align-items: center;
   gap: 6px;
   min-height: 32px;
-  color: #343b48;
+  color: var(--control-color, #343b48);
   font-size: 12px;
   white-space: nowrap;
 }
@@ -170,10 +170,10 @@
 .preview-render-button {
   min-height: 32px;
   padding: 0 10px;
-  border: 1px solid #d8dee8;
+  border: var(--control-border, 1px solid #d8dee8);
   border-radius: 10px;
-  background: #ffffff;
-  color: #343b48;
+  background: var(--control-background, #ffffff);
+  color: var(--control-color, #343b48);
   font-size: 12px;
   cursor: pointer;
 }
@@ -285,13 +285,16 @@
   z-index: 20;
   pointer-events: none;
   box-sizing: border-box;
-  border: var(--preview-frame-border, 10px) solid #111111;
+  border: var(--preview-frame-border, 10px) solid var(--preview-frame-color, #111111);
   border-radius: var(--preview-frame-radius, 56px);
   box-shadow:
-    0 var(--preview-frame-shadow-y, 10px)
-      var(--preview-frame-shadow-blur, 28px) rgba(17, 24, 39, 0.18),
-    0 2px 8px rgba(17, 24, 39, 0.1),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+    var(
+      --preview-frame-shadow,
+      0 var(--preview-frame-shadow-y, 10px)
+        var(--preview-frame-shadow-blur, 28px) rgba(17, 24, 39, 0.18),
+      0 2px 8px rgba(17, 24, 39, 0.1)
+    ),
+    var(--preview-frame-inner-highlight, inset 0 0 0 1px rgba(255, 255, 255, 0.28));
 }
 
 .preview-output-card,

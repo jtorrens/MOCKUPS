@@ -15,6 +15,13 @@
   --panel-resizer-background: #f0f2f5;
   --panel-resizer-line: #dfe3eb;
   --panel-resizer-accent: #3b66ff;
+  --control-border: 1px solid #d8dee8;
+  --control-background: #ffffff;
+  --control-color: #343b48;
+  --control-muted-color: #667085;
+  --pill-border: 1px solid #d8dee8;
+  --pill-background: #f7f9fc;
+  --pill-color: #343b48;
   --accordion-chevron-size: 24px;
   --accordion-chevron-open-size: 17px;
   --accordion-chevron-weight: 450;
@@ -63,6 +70,12 @@
   --preview-viewport-radius: 16px;
   --preview-viewport-background: #ffffff;
   --preview-viewport-shadow: 0 2px 8px rgba(21, 30, 50, 0.045);
+  --preview-frame-color: #111111;
+  --preview-frame-shadow:
+    0 var(--preview-frame-shadow-y, 8px)
+      var(--preview-frame-shadow-blur, 28px) rgba(17, 24, 39, 0.18),
+    0 2px 8px rgba(17, 24, 39, 0.1);
+  --preview-frame-inner-highlight: inset 0 0 0 1px rgba(255, 255, 255, 0.28);
   --status-chip-border: 1px solid #dfe3eb;
   --status-chip-radius: 999px;
   --status-chip-padding: 7px 10px;
@@ -101,51 +114,64 @@
 }
 
 :root[data-ui-theme="dark"] {
-  --app-shell-background: #0f141d;
-  --left-panel-background: #111822;
-  --left-panel-border: 1px solid #283141;
-  --navigation-panel-background: #111822;
-  --navigation-panel-border: 1px solid #283141;
-  --editor-panel-background: #0f141d;
-  --right-panel-background: #111822;
-  --right-panel-border: 1px solid #283141;
-  --panel-resizer-background: #1a2230;
-  --panel-resizer-line: #303746;
-  --panel-resizer-accent: #5d7dff;
-  --card-border: 1px solid #303746;
-  --card-background: #151a23;
-  --card-shadow: 0 2px 10px rgba(0, 0, 0, 0.28);
-  --card-header-background: #151a23;
-  --card-header-title-color: #f5f7fb;
-  --card-header-summary-color: #a3adbd;
-  --card-header-icon-color: #f5f7fb;
-  --card-header-chevron-color: #d7dde8;
-  --card-body-border: 1px solid #293140;
-  --card-header-icon-border: 1px solid #3a4353;
-  --card-header-icon-background: #1e2530;
-  --subcard-border: 1px solid #343d4d;
-  --subcard-background: #171d27;
-  --preview-viewport-border: 1px solid #303746;
-  --preview-viewport-background: #10151e;
-  --preview-viewport-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-  --status-chip-border: 1px solid #3a4353;
-  --status-chip-color: #a3adbd;
-  --status-chip-background: #1e2530;
-  --status-chip-dot-live-shadow: 0 0 12px rgba(75, 216, 137, 0.48);
-  --feedback-card-border: 1px solid #3a4353;
-  --feedback-card-background: #171d27;
-  --feedback-card-color: #c4cbd6;
-  --feedback-card-title-color: #f5f7fb;
-  --feedback-card-muted-color: #a3adbd;
-  --feedback-card-success-border-color: #24563a;
-  --feedback-card-success-background: #10251b;
-  --feedback-card-success-link-color: #73d99a;
-  --feedback-card-error-border-color: #6b2c38;
-  --feedback-card-error-background: #2a1318;
-  --feedback-card-error-color: #ff9aa8;
-  --feedback-card-warning-border-color: #6b4b1f;
-  --feedback-card-warning-background: #2b1f10;
-  --feedback-card-warning-color: #ffd08a;
+  --app-shell-background: #2b2d30;
+  --left-panel-background: #303236;
+  --left-panel-border: 1px solid #464950;
+  --navigation-panel-background: #303236;
+  --navigation-panel-border: 1px solid #464950;
+  --editor-panel-background: #2b2d30;
+  --right-panel-background: #303236;
+  --right-panel-border: 1px solid #464950;
+  --panel-resizer-background: #383a3f;
+  --panel-resizer-line: #50545c;
+  --panel-resizer-accent: #7f8fad;
+  --control-border: 1px solid #565a62;
+  --control-background: #383a3f;
+  --control-color: #e0ded8;
+  --control-muted-color: #aaa69d;
+  --pill-border: 1px solid #51555d;
+  --pill-background: #393b40;
+  --pill-color: #dfddd6;
+  --card-border: 1px solid #4a4d54;
+  --card-background: #34363b;
+  --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  --card-header-background: #34363b;
+  --card-header-title-color: #ece9e2;
+  --card-header-summary-color: #aaa69d;
+  --card-header-icon-color: #ece9e2;
+  --card-header-chevron-color: #d4d0c7;
+  --card-body-border: 1px solid #44474e;
+  --card-header-icon-border: 1px solid #565a62;
+  --card-header-icon-background: #3b3d43;
+  --subcard-border: 1px solid #50535b;
+  --subcard-background: #383a40;
+  --preview-viewport-border: 1px solid #4a4d54;
+  --preview-viewport-background: #2f3135;
+  --preview-viewport-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  --preview-frame-color: #1b1b1b;
+  --preview-frame-shadow:
+    0 var(--preview-frame-shadow-y, 8px)
+      var(--preview-frame-shadow-blur, 28px) rgba(0, 0, 0, 0.22),
+    0 2px 8px rgba(0, 0, 0, 0.14);
+  --preview-frame-inner-highlight: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+  --status-chip-border: 1px solid #565a62;
+  --status-chip-color: #aaa69d;
+  --status-chip-background: #383a3f;
+  --status-chip-dot-live-shadow: 0 0 10px rgba(75, 216, 137, 0.32);
+  --feedback-card-border: 1px solid #565a62;
+  --feedback-card-background: #383a40;
+  --feedback-card-color: #d8d5ce;
+  --feedback-card-title-color: #ece9e2;
+  --feedback-card-muted-color: #aaa69d;
+  --feedback-card-success-border-color: #4a6a55;
+  --feedback-card-success-background: #303b34;
+  --feedback-card-success-link-color: #9bc8a9;
+  --feedback-card-error-border-color: #78565a;
+  --feedback-card-error-background: #413235;
+  --feedback-card-error-color: #e8a1a8;
+  --feedback-card-warning-border-color: #756342;
+  --feedback-card-warning-background: #40392b;
+  --feedback-card-warning-color: #ddc489;
 }
 
 * {
@@ -159,7 +185,7 @@ body {
   overflow: hidden;
   background:
     radial-gradient(circle at 75% 0%, rgba(77, 99, 255, 0.12), transparent 34rem),
-    #0d0f14;
+    var(--app-shell-background, #0d0f14);
 }
 
 .core-app-shell {
