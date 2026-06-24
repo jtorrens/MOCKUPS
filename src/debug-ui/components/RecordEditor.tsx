@@ -18,6 +18,7 @@ import {
   EditorSubsectionCard,
 } from "../editor-ui/EditorSectionCard.js";
 import { EditorSections } from "../editor-ui/EditorSections.js";
+import { DeferredTextInput } from "../editor-ui/DeferredTextInput.js";
 import { AppEditor } from "../editors/AppEditor.js";
 import { GenericRecordEditor } from "../editors/GenericRecordEditor.js";
 import { ModuleInstanceEditor } from "../editors/ModuleInstanceEditor.js";
@@ -39,6 +40,7 @@ import {
   messageDirectionFromSenderRole,
 } from "../editors/chat/chatContentModel.js";
 import { ChatContentArrayEditor } from "../editors/chat/ChatContentArrayEditor.js";
+import { ChatHeaderFieldsEditor } from "../editors/chat/ChatHeaderFieldsEditor.js";
 import {
   hasModeColorOverrides,
   ModeColorEditor,
@@ -280,42 +282,6 @@ function ParticipantDisplayNameInput({
           />
         ) : null
       }
-    />
-  );
-}
-
-function DeferredTextInput({
-  className = "json-value-control",
-  value,
-  onCommit,
-}: {
-  className?: string;
-  value: string;
-  onCommit: (nextValue: string) => void;
-}) {
-  const [draft, setDraft] = useState(value);
-
-  useEffect(() => {
-    setDraft(value);
-  }, [value]);
-
-  function commit() {
-    if (draft !== value) {
-      onCommit(draft);
-    }
-  }
-
-  return (
-    <input
-      className={className}
-      value={draft}
-      onBlur={commit}
-      onChange={(event) => setDraft(event.target.value)}
-      onKeyDown={(event) => {
-        if (event.key === "Enter") {
-          event.currentTarget.blur();
-        }
-      }}
     />
   );
 }
@@ -1094,41 +1060,12 @@ export function RecordEditor({
     function renderHeaderFields(header: Record<string, JsonValue>) {
       const avatarParticipant = participantById(header.avatarParticipantId);
       const inheritedTitle = participantDisplayName(avatarParticipant);
-      const title = String(header.title ?? inheritedTitle ?? "");
-      const hasTitleOverride = Boolean(inheritedTitle) && title !== inheritedTitle;
       return (
-        <div className="record-editor-content-fields">
-          <InspectorFieldRow
-            className={`record-editor-content-field-row ${hasTitleOverride ? "json-override" : ""}`}
-            state={hasTitleOverride ? "override" : "default"}
-            label={<span>Title</span>}
-            meta={inheritedTitle ? <code>{`User: ${inheritedTitle}`}</code> : null}
-            control={
-              <DeferredTextInput
-                value={title}
-                onCommit={(nextValue) => updateAtPath(["title"], nextValue)}
-              />
-            }
-            restore={
-              hasTitleOverride ? (
-                <InspectorRestoreButton
-                  label="Restore user title"
-                  onClick={() => updateAtPath(["title"], inheritedTitle)}
-                />
-              ) : null
-            }
-          />
-          <InspectorFieldRow
-            className="record-editor-content-field-row"
-            label={<span>Subtitle</span>}
-            control={
-              <DeferredTextInput
-                value={String(header.subtitle ?? "")}
-                onCommit={(nextValue) => updateAtPath(["subtitle"], nextValue)}
-              />
-            }
-          />
-        </div>
+        <ChatHeaderFieldsEditor
+          header={header}
+          inheritedTitle={inheritedTitle}
+          onChange={(key, value) => updateAtPath([key], value)}
+        />
       );
     }
 
