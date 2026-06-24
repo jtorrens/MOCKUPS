@@ -6,6 +6,17 @@ The app is in a transitional state: older dark debug-shell styles still exist, t
 
 ## Layer ownership
 
+### Shared UI tokens
+
+The transitional global stylesheet exposes a small set of CSS variables in `:root` for values that must stay consistent across left, central, and preview panels:
+
+- `--app-panel-padding`: outer panel gutter.
+- `--accordion-chevron-size`: closed accordion chevron size.
+- `--accordion-chevron-open-size`: open accordion chevron size.
+- `--accordion-chevron-weight`: accordion chevron weight.
+
+New panel/card work should prefer these tokens over local hardcoded values.
+
 ### 1. Global shell
 
 Owns document defaults, full-window layout, resize gutters, and the main three zones:

@@ -2,6 +2,7 @@
    Transitional note: newer inspector-first styles override many of these
    defaults later in the file. Do not remove this block without a visual pass. */
 :root {
+  /* UI tokens shared by shell, central editor, left browser, and preview. */
   --app-panel-padding: 22px;
   --accordion-chevron-size: 24px;
   --accordion-chevron-open-size: 17px;
