@@ -551,6 +551,7 @@ export function App() {
               <div className="production-action-list">
                 <button
                   type="button"
+                  className="app-modal-action-button"
                   disabled={busyProjectAction}
                   onClick={handleCreateProductionFromModal}
                 >
@@ -558,6 +559,7 @@ export function App() {
                 </button>
                 <button
                   type="button"
+                  className="app-modal-action-button"
                   disabled
                   title="Duplicate will copy the full production tree in a later pass."
                 >
@@ -565,6 +567,7 @@ export function App() {
                 </button>
                 <button
                   type="button"
+                  className="app-modal-action-button"
                   disabled
                   title="Delete is disabled until cascade rules and backups are confirmed."
                 >
@@ -607,6 +610,7 @@ export function App() {
               <div className="theme-family-actions">
                 <button
                   type="button"
+                  className="app-modal-choice-button"
                   disabled={busyProjectAction}
                   onClick={() => handleCreateThemeFromModal("ios")}
                 >
@@ -615,6 +619,7 @@ export function App() {
                 </button>
                 <button
                   type="button"
+                  className="app-modal-choice-button"
                   disabled={busyProjectAction}
                   onClick={() => handleCreateThemeFromModal("android")}
                 >
@@ -729,7 +734,12 @@ export function App() {
               <span>{selectedShot?.name ?? "Shot"}</span>
               <span>›</span>
               <strong>{selectedScreenLabel}</strong>
-              <button type="button" disabled title="Module workspace will be wired in a later pass">
+              <button
+                type="button"
+                className="workspace-breadcrumb-action"
+                disabled
+                title="Module workspace will be wired in a later pass"
+              >
                 Open in Module ↗
               </button>
             </div>

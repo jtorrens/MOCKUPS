@@ -717,9 +717,15 @@ body {
   gap: 10px;
 }
 
-.production-action-list button {
+.app-modal-action-button {
   width: 100%;
+  border: var(--editor-button-border, 1px solid #d9dee7);
+  border-radius: 10px;
+  padding: 11px 17px;
+  color: var(--editor-button-color, #22262f);
+  background: var(--editor-button-background, #ffffff);
   text-align: left;
+  font-weight: 650;
 }
 
 .modal-help {
@@ -734,7 +740,7 @@ body {
   gap: 10px;
 }
 
-.theme-family-actions button {
+.app-modal-choice-button {
   display: grid;
   gap: 4px;
   width: 100%;
@@ -746,17 +752,17 @@ body {
   text-align: left;
 }
 
-.theme-family-actions button:hover {
+.app-modal-choice-button:hover {
   border-color: #bfc7d4;
   border-color: var(--card-body-border, #bfc7d4);
   background: var(--editor-surface-background, #f8fafc);
 }
 
-.theme-family-actions button strong {
+.app-modal-choice-button strong {
   font-size: 14px;
 }
 
-.theme-family-actions button span {
+.app-modal-choice-button span {
   color: #667085;
   font-size: 12px;
 }
@@ -1781,7 +1787,7 @@ body {
   background: var(--editor-surface-background, #ffffff);
 }
 
-.workspace-breadcrumb button {
+.workspace-breadcrumb-action {
   margin-left: auto;
   border: var(--editor-button-border, 1px solid #dfe3eb);
   color: var(--editor-button-color, #20242c);

@@ -141,14 +141,6 @@
   background: var(--editor-surface-background, #ffffff);
 }
 
-.left-panel-shell .workspace-breadcrumb button {
-  margin-left: auto;
-  border: var(--editor-button-border, 1px solid #dfe3eb);
-  color: var(--editor-button-color, #20242c);
-  background: var(--editor-button-background, #ffffff);
-  font-size: 12px;
-}
-
 .left-panel-shell .app-header {
   padding: 0;
 }
@@ -252,50 +244,9 @@
   padding: 18px;
 }
 
-.left-panel-shell .production-action-list {
-  display: grid;
-  gap: 10px;
-}
-
-.left-panel-shell .production-action-list button {
-  width: 100%;
-  text-align: left;
-}
-
 .left-panel-shell .modal-help {
   margin: 0 0 14px;
   color: #667085;
   font-size: 13px;
   line-height: 1.45;
-}
-
-.left-panel-shell .theme-family-actions {
-  display: grid;
-  gap: 10px;
-}
-
-.left-panel-shell .theme-family-actions button {
-  display: grid;
-  gap: 4px;
-  width: 100%;
-  border: var(--card-border, 1px solid #d7dde8);
-  border-radius: 14px;
-  padding: 14px;
-  color: var(--card-header-title-color, #15171c);
-  background: var(--card-background, #ffffff);
-  text-align: left;
-}
-
-.left-panel-shell .theme-family-actions button:hover {
-  border-color: var(--card-body-border, #bfc7d4);
-  background: var(--editor-surface-background, #f8fafc);
-}
-
-.left-panel-shell .theme-family-actions button strong {
-  font-size: 14px;
-}
-
-.left-panel-shell .theme-family-actions button span {
-  color: #667085;
-  font-size: 12px;
 }
