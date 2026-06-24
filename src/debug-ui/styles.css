@@ -731,7 +731,6 @@ body {
   background: var(--browser-row-active-background, #171b26);
 }
 
-.record-list button.editing,
 .record-list button.editing {
   border-color: var(--browser-row-editing-border-color, #6b78ff);
   color: var(--browser-row-editing-color, #ffffff);
