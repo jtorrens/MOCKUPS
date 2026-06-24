@@ -18,6 +18,7 @@ import {
   EditorSubsectionCard,
 } from "../editor-ui/EditorSectionCard.js";
 import { EditorSections } from "../editor-ui/EditorSections.js";
+import { AppEditor } from "../editors/AppEditor.js";
 import { GenericRecordEditor } from "../editors/GenericRecordEditor.js";
 import { ModuleInstanceEditor } from "../editors/ModuleInstanceEditor.js";
 import { ModuleThemeConfigEditor } from "../editors/ModuleThemeConfigEditor.js";
@@ -3473,107 +3474,80 @@ export function RecordEditor({
     }
 
     return (
-      <section className="record-editor">
-        <EditorHeader
-          eyebrow="App editor"
-          title={String(record[table.titleColumn] ?? record.id)}
-        />
-        <EditorSections>
-          <EditorSectionCard>
-            <TabButton active={appTab === "general"} onClick={() => setAppTab(appTab === "general" ? "" : "general")}>
-              General
-            </TabButton>
-            {appTab === "general" ? (
-              <div className="editor-section-body record-editor-field-stack record-editor-direct-fields">
-                {renderFields(["id", "name"])}
-                {renderAppIconFields()}
-              </div>
-            ) : null}
-          </EditorSectionCard>
-          <EditorSectionCard>
-            <TabButton
-              active={appTab === "tokens"}
-              warning={explicitLocalOverridesInherited(appEditorTokenRoot, inheritedAppRoot)}
-              onClick={() => setAppTab(appTab === "tokens" ? "" : "tokens")}
-            >
-              Tokens
-            </TabButton>
-            {appTab === "tokens" && configField ? (
-              <div className="editor-section-body record-editor-nested-stack">
-                {appTokenGroups.map((group) => (
-                  <SubgroupAccordion
-                    key={group}
-                    group={group}
-                    activeGroup={activeAppTokenGroup}
-                    onToggle={setAppTokenGroup}
-                  >
-                    {group === "wallpaper" ? (
-                      renderAppWallpaperEditor()
-                    ) : (
-                      <div className="record-editor-field-stack record-editor-single-column theme-token-group-editor">
-                        {renderField(configField, {
-                          hideLabel: true,
-                          rawText: stringifyJson(
-                            editorValueForTokenGroup(appEditorTokenRoot, group),
-                          ),
-                          groupContext: group,
-                          inheritedValue: inheritedValueForTokenGroup(
-                            inheritedAppRoot,
-                            group,
-                          ),
-                          onRawTextChange: (nextRawText) => {
-                            const nextVisibleValue = parsedObject(nextRawText);
-                            updateAppTokenRoot({
-                              ...appEditorTokenRoot,
-                              [group]: mergeTokenGroupWithInternalFields(
-                                appEditorTokenRoot[group],
-                                nextVisibleValue as JsonValue,
-                              ),
-                            } as JsonValue);
-                          },
-                        })}
-                      </div>
-                    )}
-                  </SubgroupAccordion>
-                ))}
-              </div>
-            ) : null}
-          </EditorSectionCard>
-          <EditorSectionCard>
-            <TabButton
-              active={appTab === "colors"}
-              warning={hasModeColorOverrides(
-                appEditorTokenRoot as JsonValue,
-                inheritedAppRoot as JsonValue | undefined,
-                ["wallpaper"],
-              )}
-              onClick={() => setAppTab(appTab === "colors" ? "" : "colors")}
-            >
-              Colors
-            </TabButton>
-            {appTab === "colors" ? (
-              <div className="editor-section-body">
-                <ModeColorEditor
-                  rootValue={appEditorTokenRoot as JsonValue}
-                  inheritedRoot={inheritedAppRoot as JsonValue | undefined}
-                  hiddenGroups={["wallpaper"]}
-                  onRootChange={updateAppTokenRoot}
-                />
-              </div>
-            ) : null}
-          </EditorSectionCard>
-          <EditorSectionCard>
-            <TabButton active={appTab === "notes"} onClick={() => setAppTab(appTab === "notes" ? "" : "notes")}>
-              Notes
-            </TabButton>
-            {appTab === "notes" && metadataField ? (
-              <div className="editor-section-body record-editor-field-stack record-editor-single-column">
-                {renderFlatJsonObjectEditor("metadata_json")}
-              </div>
-            ) : null}
-          </EditorSectionCard>
-        </EditorSections>
-      </section>
+      <AppEditor
+        table={table}
+        record={record}
+        activeTab={appTab}
+        tokensFieldExists={Boolean(configField)}
+        notesFieldExists={Boolean(metadataField)}
+        tokensWarning={explicitLocalOverridesInherited(
+          appEditorTokenRoot,
+          inheritedAppRoot,
+        )}
+        colorsWarning={hasModeColorOverrides(
+          appEditorTokenRoot as JsonValue,
+          inheritedAppRoot as JsonValue | undefined,
+          ["wallpaper"],
+        )}
+        renderGeneral={() => (
+          <>
+            {renderFields(["id", "name"])}
+            {renderAppIconFields()}
+          </>
+        )}
+        renderTokens={() =>
+          configField
+            ? appTokenGroups.map((group) => (
+                <SubgroupAccordion
+                  key={group}
+                  group={group}
+                  activeGroup={activeAppTokenGroup}
+                  onToggle={setAppTokenGroup}
+                >
+                  {group === "wallpaper" ? (
+                    renderAppWallpaperEditor()
+                  ) : (
+                    <div className="record-editor-field-stack record-editor-single-column theme-token-group-editor">
+                      {renderField(configField, {
+                        hideLabel: true,
+                        rawText: stringifyJson(
+                          editorValueForTokenGroup(appEditorTokenRoot, group),
+                        ),
+                        groupContext: group,
+                        inheritedValue: inheritedValueForTokenGroup(
+                          inheritedAppRoot,
+                          group,
+                        ),
+                        onRawTextChange: (nextRawText) => {
+                          const nextVisibleValue = parsedObject(nextRawText);
+                          updateAppTokenRoot({
+                            ...appEditorTokenRoot,
+                            [group]: mergeTokenGroupWithInternalFields(
+                              appEditorTokenRoot[group],
+                              nextVisibleValue as JsonValue,
+                            ),
+                          } as JsonValue);
+                        },
+                      })}
+                    </div>
+                  )}
+                </SubgroupAccordion>
+              ))
+            : null
+        }
+        renderColors={() => (
+          <ModeColorEditor
+            rootValue={appEditorTokenRoot as JsonValue}
+            inheritedRoot={inheritedAppRoot as JsonValue | undefined}
+            hiddenGroups={["wallpaper"]}
+            onRootChange={updateAppTokenRoot}
+          />
+        )}
+        renderNotes={() =>
+          metadataField ? renderFlatJsonObjectEditor("metadata_json") : null
+        }
+        setActiveTab={setAppTab}
+      />
     );
   }
 
