@@ -13,6 +13,7 @@ import {
 import { ProjectTree } from "./components/ProjectTree.js";
 import { RecordEditor } from "./components/RecordEditor.js";
 import { RightPreviewShell } from "./preview/index.js";
+import "./panels/LeftPanel.css";
 
 const LAYOUT_STORAGE_KEY = "mockups.debugUi.layout.v1";
 const UI_THEME_STORAGE_KEY = "mockups.debugUi.theme.v1";
@@ -518,7 +519,7 @@ export function App() {
   return (
     <main className="core-app-shell">
       <section
-        className="left-app-panel"
+        className="left-panel-shell"
         style={{ width: authoringWidth }}
       >
         {isProductionModalOpen ? (
