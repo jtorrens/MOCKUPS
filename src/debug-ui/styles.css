@@ -3013,21 +3013,6 @@ body,
   padding: 0 !important;
 }
 
-.record-editor .json-section-stack .json-tree-editor.json-context-transform,
-.record-editor .json-section-stack .json-tree-editor.json-context-deviceState,
-.record-editor .editor-section-body .json-tree-editor.json-context-deviceState {
-  border: 0 !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-.record-editor .json-section-stack .json-tree-editor.json-context-transform .json-tree,
-.record-editor .json-section-stack .json-tree-editor.json-context-deviceState .json-tree,
-.record-editor .editor-section-body .json-tree-editor.json-context-deviceState .json-tree {
-  padding: 0 !important;
-}
-
 .record-editor .app-field.inspector-field-row .inspector-field-label span {
   color: var(--field-label-color, #475467);
   font-size: 12px;
