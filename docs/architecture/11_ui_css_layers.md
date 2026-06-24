@@ -14,6 +14,15 @@ The transitional global stylesheet exposes a small set of CSS variables in `:roo
 - `--accordion-chevron-size`: closed accordion chevron size.
 - `--accordion-chevron-open-size`: open accordion chevron size.
 - `--accordion-chevron-weight`: accordion chevron weight.
+- `--card-border`: shared top-level card border.
+- `--card-radius`: shared top-level card radius.
+- `--card-background`: shared top-level card background.
+- `--card-shadow`: shared top-level card shadow.
+- `--card-header-icon-column`: card header icon column width.
+- `--card-header-gap`: card header grid gap.
+- `--card-header-min-height`: card header minimum height.
+- `--card-header-padding-block`: card header vertical padding.
+- `--card-header-padding-inline`: card header horizontal padding.
 - `--card-header-icon-size`: card header icon frame size.
 - `--card-header-icon-radius`: card header icon frame radius.
 - `--card-header-icon-border`: card header icon frame border.

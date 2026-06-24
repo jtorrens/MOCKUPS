@@ -20,19 +20,21 @@
   flex: none;
   order: 0;
   width: 100%;
-  border: 1px solid #dfe3eb;
-  border-radius: 16px;
-  background: #ffffff;
-  box-shadow: 0 2px 8px rgba(21, 30, 50, 0.045);
+  border: var(--card-border, 1px solid #dfe3eb);
+  border-radius: var(--card-radius, 14px);
+  background: var(--card-background, #ffffff);
+  box-shadow: var(--card-shadow, 0 2px 8px rgba(21, 30, 50, 0.04));
 }
 
 .preview-options-summary {
   display: grid;
-  grid-template-columns: 38px minmax(0, 1fr) auto auto;
-  gap: 12px;
+  grid-template-columns:
+    var(--card-header-icon-column, 38px) minmax(0, 1fr) auto auto;
+  gap: var(--card-header-gap, 12px);
   align-items: center;
-  min-height: 64px;
-  padding: 13px 16px;
+  min-height: var(--card-header-min-height, 64px);
+  padding: var(--card-header-padding-block, 13px)
+    var(--card-header-padding-inline, 16px);
   cursor: pointer;
   list-style: none;
 }

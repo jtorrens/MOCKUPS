@@ -7,6 +7,15 @@
   --accordion-chevron-size: 24px;
   --accordion-chevron-open-size: 17px;
   --accordion-chevron-weight: 450;
+  --card-border: 1px solid #dfe3eb;
+  --card-radius: 14px;
+  --card-background: #ffffff;
+  --card-shadow: 0 2px 8px rgba(21, 30, 50, 0.04);
+  --card-header-icon-column: 38px;
+  --card-header-gap: 12px;
+  --card-header-min-height: 64px;
+  --card-header-padding-block: 13px;
+  --card-header-padding-inline: 16px;
   --card-header-icon-size: 30px;
   --card-header-icon-radius: 10px;
   --card-header-icon-border: 1px solid #dfe3eb;
@@ -2396,24 +2405,25 @@ button {
 
 .editor-section-card {
   overflow: hidden;
-  border: 1px solid #dfe3eb;
-  border-radius: 14px;
-  background: #ffffff;
-  box-shadow: 0 2px 8px rgba(21, 30, 50, 0.04);
+  border: var(--card-border, 1px solid #dfe3eb);
+  border-radius: var(--card-radius, 14px);
+  background: var(--card-background, #ffffff);
+  box-shadow: var(--card-shadow, 0 2px 8px rgba(21, 30, 50, 0.04));
 }
 
 .editor-section-card > button {
   display: grid;
-  grid-template-columns: 38px minmax(0, 1fr) auto;
-  gap: 12px;
+  grid-template-columns: var(--card-header-icon-column, 38px) minmax(0, 1fr) auto;
+  gap: var(--card-header-gap, 12px);
   align-items: center;
   width: 100%;
-  min-height: 64px;
+  min-height: var(--card-header-min-height, 64px);
   border: 0 !important;
   border-radius: 0 !important;
-  padding: 13px 16px;
+  padding: var(--card-header-padding-block, 13px)
+    var(--card-header-padding-inline, 16px);
   color: #1d2129 !important;
-  background: #ffffff !important;
+  background: var(--card-background, #ffffff) !important;
   text-align: left;
   box-shadow: none !important;
 }
