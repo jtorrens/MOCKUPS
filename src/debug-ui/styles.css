@@ -1077,61 +1077,8 @@ body {
   font-size: 11px;
 }
 
-.record-editor {
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  margin-top: 0;
-  min-height: 100%;
-  height: 100%;
-  max-height: 100%;
-  overflow: hidden auto;
-  padding: 20px;
-}
-
-.record-id {
-  max-width: 280px;
-  overflow: hidden;
-  border: 1px solid #293041;
-  border-radius: 999px;
-  padding: 7px 11px;
-  color: #8d96aa;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: "SFMono-Regular", Consolas, monospace;
-  font-size: 11px;
-}
-
-.field-stack {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.field-stack.single-column {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.nested-editor-stack {
-  display: grid;
-  gap: 12px;
-}
-
-.app-field {
-  display: block;
-  min-width: 0;
-}
-
-.app-field span {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 7px;
-}
-
 .app-field em {
-  color: #778096;
+  color: var(--editor-chip-color, #778096);
   font-style: normal;
   text-transform: uppercase;
   font-size: 10px;
@@ -1139,7 +1086,7 @@ body {
 }
 
 .app-field.state-dirty em {
-  color: #f0cb6d;
+  color: var(--editor-warning-color, #f0cb6d);
 }
 
 .app-field.state-saving em {
@@ -2873,9 +2820,17 @@ button {
 }
 
 .record-editor > .panel-heading .record-id {
+  max-width: 280px;
+  overflow: hidden;
+  border-radius: 999px;
+  padding: 7px 11px;
   border: var(--editor-record-id-border, 1px solid #dfe3eb);
   color: var(--editor-record-id-color, #667085);
   background: var(--editor-record-id-background, #f7f8fa);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 11px;
 }
 
 .tab-icon {
@@ -2914,11 +2869,19 @@ button {
 .nested-editor-stack,
 .field-stack.single-column,
 .field-stack {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   border: 1px solid #dfe3eb;
   border-radius: 16px;
   padding: 14px;
   background: #ffffff;
   box-shadow: 0 2px 8px rgba(21, 30, 50, 0.04);
+}
+
+.nested-editor-stack,
+.field-stack.single-column {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .nested-editor-stack .field-stack,
@@ -2929,11 +2892,18 @@ button {
 }
 
 .app-field {
+  display: block;
+  min-width: 0;
   border-color: #e2e6ee;
   background: #ffffff;
 }
 
 .app-field span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 7px;
   color: #222731;
 }
 
