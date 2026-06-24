@@ -41,6 +41,7 @@ import {
 } from "../editors/chat/chatContentModel.js";
 import { ChatContentArrayEditor } from "../editors/chat/ChatContentArrayEditor.js";
 import { ChatHeaderFieldsEditor } from "../editors/chat/ChatHeaderFieldsEditor.js";
+import { ChatParticipantFieldsEditor } from "../editors/chat/ChatParticipantFieldsEditor.js";
 import {
   hasModeColorOverrides,
   ModeColorEditor,
@@ -226,64 +227,6 @@ interface RecordEditorProps {
   inheritedFields?: Record<string, Record<string, unknown>>;
   onRecordsChanged: (records: AppRecord[]) => void;
   onRecordSaved: (record: AppRecord) => void;
-}
-
-function ParticipantDisplayNameInput({
-  value,
-  inheritedValue,
-  onCommit,
-}: {
-  value: string;
-  inheritedValue: string;
-  onCommit: (nextValue: string) => void;
-}) {
-  const [draft, setDraft] = useState(value);
-  const hasOverride = Boolean(inheritedValue) && draft !== inheritedValue;
-
-  useEffect(() => {
-    setDraft(value);
-  }, [value]);
-
-  function commit() {
-    if (draft !== value) {
-      onCommit(draft);
-    }
-  }
-
-  return (
-    <InspectorFieldRow
-      className={`record-editor-content-field-row ${hasOverride ? "json-override" : ""}`}
-      state={hasOverride ? "override" : "default"}
-      label={<span>Display name</span>}
-      meta={inheritedValue ? <code>{`User: ${inheritedValue}`}</code> : null}
-      control={
-        <input
-          className="json-value-control"
-          value={draft}
-          onBlur={commit}
-          onChange={(event) => {
-            setDraft(event.target.value);
-          }}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              event.currentTarget.blur();
-            }
-          }}
-        />
-      }
-      restore={
-        hasOverride ? (
-          <InspectorRestoreButton
-            label="Restore user display name"
-            onClick={() => {
-              setDraft(inheritedValue);
-              onCommit(inheritedValue);
-            }}
-          />
-        ) : null
-      }
-    />
-  );
 }
 
 function stringifyJson(value: unknown): string {
@@ -1002,58 +945,28 @@ export function RecordEditor({
         participant.displayName ?? inheritedDisplayName ?? "",
       );
       return (
-        <div className="record-editor-content-fields">
-          <InspectorFieldRow
-            className="record-editor-content-field-row"
-            label={<span>User</span>}
-            control={
-              <select
-                className="json-value-control"
-                value={actorId}
-                onChange={(event) => {
-                  const nextActorId = event.target.value;
-                  const nextDisplayName = actorDisplayName(nextActorId);
-                  updateGroupValue(
-                    setAtPath(
-                      setAtPath(groupValue, [index, "actorId"], nextActorId),
-                      [index, "displayName"],
-                      nextDisplayName,
-                    ),
-                  );
-                }}
-              >
-                <option value="">No linked user</option>
-                {records.actors?.map((actor) => (
-                  <option key={String(actor.id)} value={String(actor.id)}>
-                    {titleForRecord(actor, "display_name")}
-                  </option>
-                ))}
-              </select>
-            }
-          />
-          <ParticipantDisplayNameInput
-            value={displayName}
-            inheritedValue={inheritedDisplayName}
-            onCommit={(nextValue) => updateAtPath([index, "displayName"], nextValue)}
-          />
-          <InspectorFieldRow
-            className="record-editor-content-field-row"
-            label={<span>Role</span>}
-            control={
-              <select
-                className="json-value-control"
-                value={String(participant.role ?? "participant")}
-                onChange={(event) =>
-                  updateAtPath([index, "role"], event.target.value)
-                }
-              >
-                <option value="owner">Owner</option>
-                <option value="participant">Participant</option>
-                <option value="system">System</option>
-              </select>
-            }
-          />
-        </div>
+        <ChatParticipantFieldsEditor
+          participant={participant}
+          actorOptions={records.actors ?? []}
+          actorId={actorId}
+          displayName={displayName}
+          inheritedDisplayName={inheritedDisplayName}
+          actorTitleForRecord={(actor) => titleForRecord(actor, "display_name")}
+          onActorChange={(nextActorId) => {
+            const nextDisplayName = actorDisplayName(nextActorId);
+            updateGroupValue(
+              setAtPath(
+                setAtPath(groupValue, [index, "actorId"], nextActorId),
+                [index, "displayName"],
+                nextDisplayName,
+              ),
+            );
+          }}
+          onDisplayNameChange={(nextValue) =>
+            updateAtPath([index, "displayName"], nextValue)
+          }
+          onRoleChange={(nextRole) => updateAtPath([index, "role"], nextRole)}
+        />
       );
     }
 
