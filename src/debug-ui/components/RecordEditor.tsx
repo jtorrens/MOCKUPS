@@ -32,12 +32,10 @@ import type {
   ThemeEditorTab,
 } from "../editors/editorTabs.js";
 import {
-  contentSummary,
   defaultMessageItem,
   defaultGroupValue,
   defaultParticipantItem,
   firstReceivedParticipant,
-  isPrimitiveContentValue,
   mediaNumberFieldsForMessage,
   messageDirectionFromSenderRole,
   messageWithDirection,
@@ -54,6 +52,7 @@ import { ChatContentArrayEditor } from "../editors/chat/ChatContentArrayEditor.j
 import { ChatHeaderFieldsEditor } from "../editors/chat/ChatHeaderFieldsEditor.js";
 import { ChatParticipantFieldsEditor } from "../editors/chat/ChatParticipantFieldsEditor.js";
 import { ChatMessageFieldsEditor } from "../editors/chat/ChatMessageFieldsEditor.js";
+import { ChatNestedValueEditor } from "../editors/chat/ChatNestedValueEditor.js";
 import {
   hasModeColorOverrides,
   ModeColorEditor,
@@ -68,7 +67,7 @@ import {
   type JsonValue,
 } from "./json-editor/jsonEditorUtils.js";
 import { friendlyGroupLabel } from "./json-editor/labels.js";
-import { buildJsonUiHints, hintForPath } from "./json-editor/uiHints.js";
+import { buildJsonUiHints } from "./json-editor/uiHints.js";
 
 type SaveState = "saved" | "dirty" | "invalid" | "saving" | "failed";
 
@@ -859,16 +858,6 @@ export function RecordEditor({
     });
   }
 
-  function contentFieldLabel(
-    hints: ReturnType<typeof buildJsonUiHints>,
-    groupKey: string,
-    path: JsonPath,
-    fallback: string,
-    value: JsonValue,
-  ) {
-    return hintForPath(hints, path, value, groupKey).label ?? friendlyGroupLabel(fallback);
-  }
-
   function renderContentGroupEditor(
     field: AppFieldDefinition,
     groupKey: string,
@@ -1060,60 +1049,19 @@ export function RecordEditor({
       );
     }
 
-    function renderPrimitiveRow(path: JsonPath, label: string, value: JsonValue) {
-      return (
-        <InspectorFieldRow
-          key={path.join(".") || label}
-          className="record-editor-content-field-row"
-          label={
-            <span>{contentFieldLabel(hints, groupKey, path, label, value)}</span>
-          }
-          control={
-            <JsonValueEditor
-              rootValue={groupValue}
-              path={path}
-              value={value}
-              hints={hints}
-              groupContext={groupKey}
-              onChange={(nextValue) => updateAtPath(path, nextValue)}
-              onRootChange={updateGroupValue}
-            />
-          }
-        />
-      );
-    }
-
     function renderNestedValue(path: JsonPath, label: string, value: JsonValue): ReactNode {
-      if (isPrimitiveContentValue(value)) {
-        return renderPrimitiveRow(path, label, value);
-      }
-      if (Array.isArray(value)) {
-        return (
-          <details className="record-editor-content-nested-card" key={path.join(".") || label}>
-            <summary>
-              <span>{contentFieldLabel(hints, groupKey, path, label, value)}</span>
-              <small>{value.length} items</small>
-            </summary>
-            <div className="record-editor-content-fields">
-              {value.map((entry, index) =>
-                renderNestedValue([...path, index], `[${index}]`, entry),
-              )}
-            </div>
-          </details>
-        );
-      }
       return (
-        <details className="record-editor-content-nested-card" key={path.join(".") || label}>
-          <summary>
-            <span>{contentFieldLabel(hints, groupKey, path, label, value)}</span>
-            <small>{contentSummary(value, groupKey)}</small>
-          </summary>
-          <div className="record-editor-content-fields">
-            {Object.entries(value).map(([key, entryValue]) =>
-              renderNestedValue([...path, key], key, entryValue),
-            )}
-          </div>
-        </details>
+        <ChatNestedValueEditor
+          key={path.join(".") || label}
+          rootValue={groupValue}
+          groupKey={groupKey}
+          path={path}
+          label={label}
+          value={value}
+          hints={hints}
+          onPathChange={updateAtPath}
+          onRootChange={updateGroupValue}
+        />
       );
     }
 
@@ -1218,7 +1166,7 @@ export function RecordEditor({
 
     return (
       <div className="record-editor-content-object-editor">
-        {renderPrimitiveRow([], friendlyGroupLabel(groupKey), groupValue)}
+        {renderNestedValue([], friendlyGroupLabel(groupKey), groupValue)}
       </div>
     );
   }
