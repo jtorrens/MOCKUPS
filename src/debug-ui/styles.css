@@ -2138,11 +2138,13 @@ body {
   gap: var(--editor-section-gap, 8px);
 }
 
-.editor-card {
+.editor-section-card,
+.editor-subsection-card {
   overflow: hidden;
 }
 
-.editor-card > button {
+.editor-section-card > button,
+.editor-subsection-card > button {
   display: grid;
   align-items: center;
   width: 100%;
