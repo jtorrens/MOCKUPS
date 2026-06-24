@@ -110,6 +110,16 @@ The transitional global stylesheet exposes a small set of CSS variables in `:roo
 - `--editor-row-separator`: central editor token/JSON row separator.
 - `--editor-input-border-color`: central editor input/control border color.
 - `--editor-input-background`: central editor input/control background.
+- `--editor-input-color`: central editor editable field text color.
+- `--editor-input-placeholder-color`: central editor editable field placeholder color.
+- `--editor-input-focus-border-color`: central editor editable field focus border color.
+- `--editor-input-focus-shadow`: central editor editable field focus ring.
+- `--editor-button-border`: central editor secondary/action button border.
+- `--editor-button-background`: central editor secondary/action button background.
+- `--editor-button-color`: central editor secondary/action button text color.
+- `--editor-button-hover-border-color`: central editor secondary/action button hover border.
+- `--editor-button-hover-background`: central editor secondary/action button hover background.
+- `--editor-button-disabled-opacity`: central editor disabled button opacity.
 - `--editor-chip-color`: central editor chip text color.
 - `--editor-chip-background`: central editor chip background.
 - `--editor-chip-border-color`: central editor chip border color.

@@ -103,6 +103,16 @@
   --editor-row-separator: 1px solid #f1f3f6;
   --editor-input-border-color: #cfd6e2;
   --editor-input-background: #f7f8fb;
+  --editor-input-color: #15171c;
+  --editor-input-placeholder-color: #8a94a6;
+  --editor-input-focus-border-color: #8fa2ff;
+  --editor-input-focus-shadow: 0 0 0 3px rgba(59, 102, 255, 0.1);
+  --editor-button-border: 1px solid #d9dee7;
+  --editor-button-background: #ffffff;
+  --editor-button-color: #22262f;
+  --editor-button-hover-border-color: #aeb8c8;
+  --editor-button-hover-background: #f8fafc;
+  --editor-button-disabled-opacity: 0.55;
   --editor-chip-color: #667085;
   --editor-chip-background: #f7f8fa;
   --editor-chip-border-color: #dfe3eb;
@@ -212,6 +222,16 @@
   --editor-row-separator: 1px solid #464950;
   --editor-input-border-color: #565a62;
   --editor-input-background: #383a3f;
+  --editor-input-color: #e0ded8;
+  --editor-input-placeholder-color: #8f8b84;
+  --editor-input-focus-border-color: #7f8fad;
+  --editor-input-focus-shadow: 0 0 0 3px rgba(127, 143, 173, 0.16);
+  --editor-button-border: 1px solid #565a62;
+  --editor-button-background: #383a3f;
+  --editor-button-color: #e0ded8;
+  --editor-button-hover-border-color: #6a6e77;
+  --editor-button-hover-background: #404248;
+  --editor-button-disabled-opacity: 0.45;
   --editor-chip-color: #aaa69d;
   --editor-chip-background: #383a3f;
   --editor-chip-border-color: #565a62;
@@ -3270,8 +3290,75 @@ button {
 .editor-workspace .json-color-pair input,
 .editor-workspace .json-panel textarea {
   border-color: var(--editor-input-border-color, #cfd6e2) !important;
+  color: var(--editor-input-color, #15171c) !important;
   background: var(--editor-input-background, #f7f8fb) !important;
   box-shadow: none !important;
+}
+
+.editor-workspace .app-field input::placeholder,
+.editor-workspace .app-field textarea::placeholder,
+.editor-workspace .json-tree-node input::placeholder,
+.editor-workspace .json-tree-node textarea::placeholder,
+.editor-workspace .json-value-control::placeholder,
+.editor-workspace .json-value-textarea::placeholder,
+.editor-workspace .json-add-row input::placeholder,
+.editor-workspace .token-override-input input::placeholder,
+.editor-workspace .json-panel textarea::placeholder {
+  color: var(--editor-input-placeholder-color, #8a94a6);
+}
+
+.editor-workspace .app-field input:focus,
+.editor-workspace .app-field select:focus,
+.editor-workspace .app-field textarea:focus,
+.editor-workspace .json-tree-node input:focus,
+.editor-workspace .json-tree-node select:focus,
+.editor-workspace .json-tree-node textarea:focus,
+.editor-workspace .json-value-control:focus,
+.editor-workspace .json-value-textarea:focus,
+.editor-workspace .json-add-row input:focus,
+.editor-workspace .token-override-input input:focus,
+.editor-workspace .token-override-input select:focus,
+.editor-workspace .json-color-pair input:focus,
+.editor-workspace .json-panel textarea:focus {
+  border-color: var(--editor-input-focus-border-color, #8fa2ff) !important;
+  box-shadow: var(--editor-input-focus-shadow, 0 0 0 3px rgba(59, 102, 255, 0.1)) !important;
+  outline: none;
+}
+
+.editor-workspace .content-card-actions button,
+.editor-workspace .content-add-button,
+.editor-workspace .compact-button,
+.editor-workspace .json-row-actions button,
+.editor-workspace .json-add-row button,
+.editor-workspace .json-editor-toolbar button,
+.editor-workspace .mode-color-row .restore-button,
+.editor-workspace .json-restore-button {
+  border: var(--editor-button-border, 1px solid #d9dee7) !important;
+  color: var(--editor-button-color, #22262f) !important;
+  background: var(--editor-button-background, #ffffff) !important;
+}
+
+.editor-workspace .content-card-actions button:hover:not(:disabled),
+.editor-workspace .content-add-button:hover:not(:disabled),
+.editor-workspace .compact-button:hover:not(:disabled),
+.editor-workspace .json-row-actions button:hover:not(:disabled),
+.editor-workspace .json-add-row button:hover:not(:disabled),
+.editor-workspace .json-editor-toolbar button:hover:not(:disabled),
+.editor-workspace .mode-color-row .restore-button:hover:not(:disabled),
+.editor-workspace .json-restore-button:hover:not(:disabled) {
+  border-color: var(--editor-button-hover-border-color, #aeb8c8) !important;
+  background: var(--editor-button-hover-background, #f8fafc) !important;
+}
+
+.editor-workspace .content-card-actions button:disabled,
+.editor-workspace .content-add-button:disabled,
+.editor-workspace .compact-button:disabled,
+.editor-workspace .json-row-actions button:disabled,
+.editor-workspace .json-add-row button:disabled,
+.editor-workspace .json-editor-toolbar button:disabled,
+.editor-workspace .mode-color-row .restore-button:disabled,
+.editor-workspace .json-restore-button:disabled {
+  opacity: var(--editor-button-disabled-opacity, 0.55);
 }
 
 .editor-workspace .json-override,
