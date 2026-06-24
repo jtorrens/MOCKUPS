@@ -1147,7 +1147,7 @@ body {
 .record-editor-content-nested-card > summary,
 .record-editor-content-item-topbar {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 12px;
   align-items: center;
   min-height: 48px;
@@ -1189,8 +1189,8 @@ body {
 
 .record-editor-content-item-header {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 10px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
   align-items: center;
   width: 100%;
   border: 0;
@@ -1206,11 +1206,27 @@ body {
 
 .record-editor-content-chevron {
   display: grid;
-  width: 20px;
+  width: 24px;
   color: var(--content-card-chevron-color, #111318);
   place-items: center;
-  font-size: var(--subcard-chevron-size, 20px);
+  font-size: var(--accordion-chevron-size, 24px);
   font-weight: var(--accordion-chevron-weight, 450);
+}
+
+.record-editor-content-chevron-button {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 8px;
+  padding: 0;
+  color: var(--content-card-chevron-color, #111318);
+  background: transparent;
+  place-items: center;
+}
+
+.record-editor-content-chevron-button:hover {
+  background: var(--editor-button-hover-background, #f8fafc);
 }
 
 .record-editor-content-nested-card > summary > small {
@@ -1220,18 +1236,18 @@ body {
 
 .record-editor-content-actions {
   display: flex;
-  gap: 5px;
+  gap: 6px;
 }
 
 .record-editor-content-action {
-  --ui-icon-button-size: 28px;
+  --ui-icon-button-size: 32px;
   --ui-icon-button-border: 0;
-  --ui-icon-button-radius: 8px;
+  --ui-icon-button-radius: 9px;
   --ui-icon-button-background: transparent;
   --ui-icon-button-color: var(--editor-button-color, #343946);
   --ui-icon-button-hover-background: var(--editor-button-hover-background, #f8fafc);
   padding: 0;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
 }
 

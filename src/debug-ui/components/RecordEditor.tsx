@@ -1768,9 +1768,6 @@ export function RecordEditor({
                     <span>
                       [{index}] {contentSummary(entryValue, groupKey)}
                     </span>
-                    <span className="record-editor-content-chevron" aria-hidden="true">
-                      {isOpen ? "⌃" : "›"}
-                    </span>
                   </button>
                   <div className="record-editor-content-actions">
                     <button
@@ -1804,6 +1801,22 @@ export function RecordEditor({
                       ⌫
                     </button>
                   </div>
+                  <button
+                    type="button"
+                    className="record-editor-content-chevron-button"
+                    aria-label={isOpen ? "Collapse item" : "Expand item"}
+                    aria-expanded={isOpen}
+                    onClick={() =>
+                      setOpenContentItems((current) => ({
+                        ...current,
+                        [openKey]: !current[openKey],
+                      }))
+                    }
+                  >
+                    <span className="record-editor-content-chevron" aria-hidden="true">
+                      {isOpen ? "⌃" : "›"}
+                    </span>
+                  </button>
                 </div>
                 {isOpen ? (
                   groupKey === "participants" && isJsonObject(entryValue) ? (
