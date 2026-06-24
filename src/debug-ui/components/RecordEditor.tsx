@@ -38,6 +38,7 @@ import {
   isPrimitiveContentValue,
   messageDirectionFromSenderRole,
 } from "../editors/chat/chatContentModel.js";
+import { ChatContentArrayEditor } from "../editors/chat/ChatContentArrayEditor.js";
 import {
   hasModeColorOverrides,
   ModeColorEditor,
@@ -1552,102 +1553,34 @@ export function RecordEditor({
 
     if (Array.isArray(groupValue)) {
       return (
-        <div className="record-editor-content-array-editor">
-          {groupValue.map((entryValue, index) => {
-            const stableId = isJsonObject(entryValue) && typeof entryValue.id === "string"
-              ? entryValue.id
-              : String(index);
-            const openKey = `${record?.id ?? "record"}:${groupKey}:${stableId}`;
-            const isOpen = Boolean(openContentItems[openKey]);
-            return (
-              <section
-                className={`record-editor-content-item-card ${isOpen ? "open" : ""}`}
-                key={stableId}
-              >
-                <div className="record-editor-content-item-topbar">
-                  <button
-                    type="button"
-                    className="record-editor-content-item-header"
-                    aria-expanded={isOpen}
-                    onClick={() =>
-                      toggleExclusiveContentItem(groupKey, openKey, isOpen)
-                    }
-                  >
-                    <span>
-                      [{index}] {contentSummary(entryValue, groupKey)}
-                    </span>
-                  </button>
-                  <div className="record-editor-content-actions">
-                    <button
-                      type="button"
-                      className="record-editor-content-action ui-icon-button"
-                      disabled={index === 0}
-                      onClick={() => moveArrayItem(index, -1)}
-                    >
-                      ↑
-                    </button>
-                    <button
-                      type="button"
-                      className="record-editor-content-action ui-icon-button"
-                      disabled={index === groupValue.length - 1}
-                      onClick={() => moveArrayItem(index, 1)}
-                    >
-                      ↓
-                    </button>
-                    <button
-                      type="button"
-                      className="record-editor-content-action ui-icon-button"
-                      onClick={() => duplicateArrayItem(index)}
-                    >
-                      ⧉
-                    </button>
-                    <button
-                      type="button"
-                      className="record-editor-content-action ui-icon-button"
-                      onClick={() => deleteArrayItem(index)}
-                    >
-                      ⌫
-                    </button>
+        <ChatContentArrayEditor
+          groupKey={groupKey}
+          recordId={record?.id}
+          value={groupValue}
+          openItems={openContentItems}
+          onToggleItem={toggleExclusiveContentItem}
+          onMoveItem={moveArrayItem}
+          onDuplicateItem={duplicateArrayItem}
+          onDeleteItem={deleteArrayItem}
+          onAddItem={addArrayItem}
+          renderItemContent={(entryValue, index, isOpen) =>
+            isOpen ? (
+              <>
+                {groupKey === "participants" && isJsonObject(entryValue) ? (
+                  renderParticipantFields(entryValue, index)
+                ) : groupKey === "messages" && isJsonObject(entryValue) ? (
+                  renderMessageFields(entryValue, index)
+                ) : (
+                  <div className="record-editor-content-fields">
+                    {isJsonObject(entryValue)
+                      ? renderObjectFields(entryValue, [index])
+                      : renderNestedValue([index], `[${index}]`, entryValue)}
                   </div>
-                  <button
-                    type="button"
-                    className="record-editor-content-chevron-button"
-                    aria-label={isOpen ? "Collapse item" : "Expand item"}
-                    aria-expanded={isOpen}
-                    onClick={() =>
-                      toggleExclusiveContentItem(groupKey, openKey, isOpen)
-                    }
-                  >
-                    <span
-                      className={`record-editor-content-chevron ${
-                        isOpen ? "is-open" : ""
-                      }`}
-                      aria-hidden="true"
-                    >
-                      ›
-                    </span>
-                  </button>
-                </div>
-                {isOpen ? (
-                  groupKey === "participants" && isJsonObject(entryValue) ? (
-                    renderParticipantFields(entryValue, index)
-                  ) : groupKey === "messages" && isJsonObject(entryValue) ? (
-                    renderMessageFields(entryValue, index)
-                  ) : (
-                    <div className="record-editor-content-fields">
-                      {isJsonObject(entryValue)
-                        ? renderObjectFields(entryValue, [index])
-                        : renderNestedValue([index], `[${index}]`, entryValue)}
-                    </div>
-                  )
-                ) : null}
-              </section>
-            );
-          })}
-          <button type="button" className="record-editor-content-add-button" onClick={addArrayItem}>
-            Add {friendlyGroupLabel(groupKey).replace(/s$/i, "")}
-          </button>
-        </div>
+                )}
+              </>
+            ) : null
+          }
+        />
       );
     }
 
