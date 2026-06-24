@@ -154,6 +154,21 @@ The transitional global stylesheet exposes a small set of CSS variables in `:roo
 - `--workspace-breadcrumb-color`: workspace breadcrumb text color.
 - `--workspace-breadcrumb-strong-color`: workspace breadcrumb emphasized text color.
 - `--workspace-breadcrumb-shadow`: workspace breadcrumb shadow.
+- `--content-card-border`: module content item card border.
+- `--content-card-radius`: module content item card radius.
+- `--content-card-background`: module content item card background.
+- `--content-card-shadow`: module content item card shadow.
+- `--content-card-title-color`: module content item title color.
+- `--content-card-summary-color`: module content item summary color.
+- `--content-card-chevron-color`: module content item chevron color.
+- `--content-card-body-border`: module content item body separator.
+- `--content-nested-border-color`: module content nested panel guide border color.
+- `--content-field-label-color`: module content field label color.
+- `--content-field-control-border-color`: module content field control border color.
+- `--content-field-control-background`: module content field control background.
+- `--content-field-control-color`: module content field control text color.
+- `--content-field-focus-border-color`: module content field focus border color.
+- `--content-field-focus-shadow`: module content field focus ring.
 - `--preview-viewport-padding`: preview viewport host padding.
 - `--preview-viewport-border`: preview viewport host border.
 - `--preview-viewport-radius`: preview viewport host radius.

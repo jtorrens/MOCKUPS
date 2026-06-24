@@ -147,6 +147,21 @@
   --workspace-breadcrumb-color: #343946;
   --workspace-breadcrumb-strong-color: #111318;
   --workspace-breadcrumb-shadow: 0 8px 24px rgba(21, 30, 50, 0.06);
+  --content-card-border: var(--editor-subsection-border);
+  --content-card-radius: var(--editor-subsection-radius);
+  --content-card-background: var(--editor-subsection-background);
+  --content-card-shadow: var(--editor-surface-shadow);
+  --content-card-title-color: var(--editor-text-color);
+  --content-card-summary-color: var(--field-label-color);
+  --content-card-chevron-color: var(--card-header-chevron-color);
+  --content-card-body-border: var(--field-separator-border);
+  --content-nested-border-color: #e5eaf2;
+  --content-field-label-color: var(--field-label-color);
+  --content-field-control-border-color: var(--editor-input-border-color);
+  --content-field-control-background: var(--editor-input-background);
+  --content-field-control-color: var(--editor-input-color);
+  --content-field-focus-border-color: var(--editor-input-focus-border-color);
+  --content-field-focus-shadow: var(--editor-input-focus-shadow);
   --preview-viewport-padding: 18px;
   --preview-viewport-border: 1px solid #dfe3eb;
   --preview-viewport-radius: 16px;
@@ -294,6 +309,7 @@
   --workspace-breadcrumb-color: #d8d5ce;
   --workspace-breadcrumb-strong-color: #ece9e2;
   --workspace-breadcrumb-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
+  --content-nested-border-color: #464950;
   --preview-viewport-border: 1px solid #4a4d54;
   --preview-viewport-background: #2f3135;
   --preview-viewport-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
@@ -1362,10 +1378,10 @@ body {
 .content-item-card,
 .content-nested-card {
   overflow: hidden;
-  border: 1px solid #cfd6e2;
-  border-radius: 12px;
-  background: #ffffff;
-  box-shadow: 0 2px 6px rgba(21, 30, 50, 0.04);
+  border: var(--content-card-border, 1px solid #cfd6e2);
+  border-radius: var(--content-card-radius, 12px);
+  background: var(--content-card-background, #ffffff);
+  box-shadow: var(--content-card-shadow, 0 2px 6px rgba(21, 30, 50, 0.04));
 }
 
 .content-item-card > summary,
@@ -1377,7 +1393,7 @@ body {
   align-items: center;
   min-height: 48px;
   padding: 10px 12px;
-  color: #1d2129;
+  color: var(--content-card-title-color, #1d2129);
   cursor: pointer;
   list-style: none;
 }
@@ -1392,7 +1408,7 @@ body {
 .content-item-header::before {
   content: "›";
   width: 18px;
-  color: #111318;
+  color: var(--content-card-chevron-color, #111318);
   font-size: 20px;
 }
 
@@ -1422,13 +1438,13 @@ body {
   width: 100%;
   border: 0;
   padding: 0;
-  color: #1d2129;
+  color: var(--content-card-title-color, #1d2129);
   background: transparent;
   text-align: left;
 }
 
 .content-nested-card > summary > small {
-  color: #667085;
+  color: var(--content-card-summary-color, #667085);
   font-size: 11px;
 }
 
@@ -1439,10 +1455,10 @@ body {
 
 .content-card-actions button,
 .content-add-button {
-  border: 1px solid #d9dee7;
+  border: var(--editor-button-border, 1px solid #d9dee7);
   border-radius: 8px;
-  color: #343946;
-  background: #ffffff;
+  color: var(--editor-button-color, #343946);
+  background: var(--editor-button-background, #ffffff);
 }
 
 .content-card-actions button {
@@ -1452,7 +1468,7 @@ body {
 }
 
 .content-card-fields {
-  border-top: 1px solid #edf0f4;
+  border-top: var(--content-card-body-border, 1px solid #edf0f4);
   padding: 12px;
 }
 
@@ -1460,7 +1476,7 @@ body {
   display: grid;
   gap: 10px;
   padding: 2px 0 4px 14px;
-  border-left: 2px solid #e5eaf2;
+  border-left: 2px solid var(--content-nested-border-color, #e5eaf2);
 }
 
 .media-file-control {
@@ -1480,11 +1496,11 @@ body {
 
 .compact-button {
   min-height: 30px;
-  border: 1px solid #cfd6e2;
+  border: var(--editor-button-border, 1px solid #cfd6e2);
   border-radius: 8px;
   padding: 0 10px;
-  color: #303848;
-  background: #ffffff;
+  color: var(--editor-button-color, #303848);
+  background: var(--editor-button-background, #ffffff);
   font-size: 12px;
   font-weight: 650;
 }
@@ -1503,7 +1519,7 @@ body {
 
 .content-field-row > span {
   padding-top: 8px;
-  color: #475467;
+  color: var(--content-field-label-color, #475467);
   font-size: 12px;
   font-weight: 700;
 }
@@ -1521,9 +1537,9 @@ body {
 .content-field-row select,
 .content-field-row input,
 .content-field-row textarea {
-  color: #15171c !important;
-  background: #ffffff !important;
-  border-color: #bfc7d4 !important;
+  color: var(--content-field-control-color, #15171c) !important;
+  background: var(--content-field-control-background, #ffffff) !important;
+  border-color: var(--content-field-control-border-color, #bfc7d4) !important;
   opacity: 1 !important;
 }
 
@@ -1532,8 +1548,8 @@ body {
 .content-field-row select:focus,
 .content-field-row input:focus,
 .content-field-row textarea:focus {
-  border-color: #8f9db3 !important;
-  box-shadow: 0 0 0 3px rgba(99, 114, 240, 0.12) !important;
+  border-color: var(--content-field-focus-border-color, #8f9db3) !important;
+  box-shadow: var(--content-field-focus-shadow, 0 0 0 3px rgba(99, 114, 240, 0.12)) !important;
   outline: none;
 }
 
