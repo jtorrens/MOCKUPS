@@ -33,6 +33,20 @@
   --card-header-title-font-weight: 760;
   --card-header-summary-font-size: 12px;
   --card-header-summary-font-weight: 500;
+  --subcard-border: 1px solid #cfd6e2;
+  --subcard-radius: 12px;
+  --subcard-background: #ffffff;
+  --subcard-header-icon-column: 30px;
+  --subcard-header-gap: 10px;
+  --subcard-header-min-height: 54px;
+  --subcard-header-padding-block: 10px;
+  --subcard-header-padding-inline: 12px;
+  --subcard-header-icon-size: 24px;
+  --subcard-header-icon-radius: 8px;
+  --subcard-header-icon-font-size: 16px;
+  --subcard-header-title-font-size: 13px;
+  --subcard-chevron-size: 20px;
+  --subcard-chevron-open-size: 15px;
   color: #e8e9ee;
   background: #0d0f14;
   font-family:
@@ -2478,46 +2492,48 @@ button {
 
 .editor-subsection-card {
   overflow: hidden;
-  border: 1px solid #cfd6e2;
-  border-radius: 12px;
-  background: #ffffff;
+  border: var(--subcard-border, 1px solid #cfd6e2);
+  border-radius: var(--subcard-radius, 12px);
+  background: var(--subcard-background, #ffffff);
 }
 
 .editor-subsection-card > button {
   display: grid;
-  grid-template-columns: 30px minmax(0, 1fr) auto;
-  gap: 10px;
+  grid-template-columns:
+    var(--subcard-header-icon-column, 30px) minmax(0, 1fr) auto;
+  gap: var(--subcard-header-gap, 10px);
   align-items: center;
   width: 100%;
-  min-height: 54px;
+  min-height: var(--subcard-header-min-height, 54px);
   border: 0;
   border-radius: 0;
-  padding: 10px 12px;
-  color: #1d2129;
-  background: #ffffff;
+  padding: var(--subcard-header-padding-block, 10px)
+    var(--subcard-header-padding-inline, 12px);
+  color: var(--card-header-title-color, #12141a);
+  background: var(--subcard-background, #ffffff);
   text-align: left;
 }
 
 .editor-subsection-card > button::after {
   content: "›";
-  color: #111318;
-  font-size: 20px;
+  color: var(--card-header-chevron-color, #111318);
+  font-size: var(--subcard-chevron-size, 20px);
 }
 
 .editor-subsection-card > button.active::after {
   content: "⌃";
-  font-size: 15px;
+  font-size: var(--subcard-chevron-open-size, 15px);
 }
 
 .editor-subsection-card .tab-icon {
-  width: 24px;
-  height: 24px;
-  border-radius: 8px;
-  font-size: 16px;
+  width: var(--subcard-header-icon-size, 24px);
+  height: var(--subcard-header-icon-size, 24px);
+  border-radius: var(--subcard-header-icon-radius, 8px);
+  font-size: var(--subcard-header-icon-font-size, 16px);
 }
 
 .editor-subsection-card .tab-copy > span {
-  font-size: 13px;
+  font-size: var(--subcard-header-title-font-size, 13px);
 }
 
 .editor-subsection-card .tab-copy small {
@@ -2525,7 +2541,7 @@ button {
 }
 
 .editor-subsection-body {
-  border-top: 1px solid #edf0f4;
+  border-top: var(--card-body-border, 1px solid #edf0f4);
   padding: 12px;
 }
 

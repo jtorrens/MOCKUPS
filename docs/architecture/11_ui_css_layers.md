@@ -40,6 +40,20 @@ The transitional global stylesheet exposes a small set of CSS variables in `:roo
 - `--card-header-title-font-weight`: card header title weight.
 - `--card-header-summary-font-size`: card header summary size.
 - `--card-header-summary-font-weight`: card header summary weight.
+- `--subcard-border`: compact nested card border.
+- `--subcard-radius`: compact nested card radius.
+- `--subcard-background`: compact nested card background.
+- `--subcard-header-icon-column`: compact nested card icon column width.
+- `--subcard-header-gap`: compact nested card header grid gap.
+- `--subcard-header-min-height`: compact nested card header minimum height.
+- `--subcard-header-padding-block`: compact nested card header vertical padding.
+- `--subcard-header-padding-inline`: compact nested card header horizontal padding.
+- `--subcard-header-icon-size`: compact nested card icon frame size.
+- `--subcard-header-icon-radius`: compact nested card icon frame radius.
+- `--subcard-header-icon-font-size`: compact nested card glyph size.
+- `--subcard-header-title-font-size`: compact nested card title size.
+- `--subcard-chevron-size`: compact nested card closed chevron size.
+- `--subcard-chevron-open-size`: compact nested card open chevron size.
 
 New panel/card work should prefer these tokens over local hardcoded values.
 
