@@ -951,6 +951,8 @@ body {
   align-items: center;
 }
 
+.json-add-button,
+.json-action-button,
 .json-add-row button,
 .json-row-actions button {
   border: 1px solid #30384a;
@@ -1279,12 +1281,15 @@ body {
   padding-top: 7px;
 }
 
+.json-action-button,
 .json-row-actions button {
   min-width: 30px;
   padding: 6px 8px;
   color: #97a1b6;
 }
 
+.json-action-button:hover,
+.json-add-button:hover,
 .json-row-actions button:hover,
 .json-add-row button:hover {
   border-color: #566079;
@@ -1320,8 +1325,8 @@ body {
 
 .json-value-control,
 .json-value-textarea,
-.json-add-row input,
-.json-add-row select,
+.json-add-input,
+.json-add-select,
 .json-null-editor select {
   border: 1px solid #303646;
   border-radius: 8px;
@@ -1330,8 +1335,8 @@ body {
 }
 
 .json-value-control,
-.json-add-row input,
-.json-add-row select,
+.json-add-input,
+.json-add-select,
 .json-null-editor select {
   min-width: 150px;
   height: 34px;
@@ -2439,7 +2444,8 @@ body {
 .editor-workspace .json-tree-node textarea,
 .editor-workspace .json-value-control,
 .editor-workspace .json-value-textarea,
-.editor-workspace .json-add-row input,
+.editor-workspace .json-add-input,
+.editor-workspace .json-add-select,
 .editor-workspace .token-override-input input,
 .editor-workspace .token-override-input select,
 .editor-workspace .json-color-pair input {
@@ -2470,7 +2476,7 @@ body {
 .editor-workspace .json-tree-node textarea::placeholder,
 .editor-workspace .json-value-control::placeholder,
 .editor-workspace .json-value-textarea::placeholder,
-.editor-workspace .json-add-row input::placeholder,
+.editor-workspace .json-add-input::placeholder,
 .editor-workspace .token-override-input input::placeholder {
   color: var(--editor-input-placeholder-color, #8a94a6);
 }
@@ -2486,7 +2492,8 @@ body {
 .editor-workspace .json-tree-node textarea:focus,
 .editor-workspace .json-value-control:focus,
 .editor-workspace .json-value-textarea:focus,
-.editor-workspace .json-add-row input:focus,
+.editor-workspace .json-add-input:focus,
+.editor-workspace .json-add-select:focus,
 .editor-workspace .token-override-input input:focus,
 .editor-workspace .token-override-input select:focus,
 .editor-workspace .json-color-pair input:focus {
@@ -2497,6 +2504,8 @@ body {
 
 .editor-workspace .record-editor-content-add-button,
 .editor-workspace .record-editor-compact-button,
+.editor-workspace .json-action-button,
+.editor-workspace .json-add-button,
 .editor-workspace .json-row-actions button,
 .editor-workspace .json-add-row button {
   border: var(--editor-button-border, 1px solid #d9dee7) !important;
@@ -2506,6 +2515,8 @@ body {
 
 .editor-workspace .record-editor-content-add-button:hover:not(:disabled),
 .editor-workspace .record-editor-compact-button:hover:not(:disabled),
+.editor-workspace .json-action-button:hover:not(:disabled),
+.editor-workspace .json-add-button:hover:not(:disabled),
 .editor-workspace .json-row-actions button:hover:not(:disabled),
 .editor-workspace .json-add-row button:hover:not(:disabled) {
   border-color: var(--editor-button-hover-border-color, #aeb8c8) !important;
@@ -2514,6 +2525,8 @@ body {
 
 .editor-workspace .record-editor-content-add-button:disabled,
 .editor-workspace .record-editor-compact-button:disabled,
+.editor-workspace .json-action-button:disabled,
+.editor-workspace .json-add-button:disabled,
 .editor-workspace .json-row-actions button:disabled,
 .editor-workspace .json-add-row button:disabled {
   opacity: var(--editor-button-disabled-opacity, 0.55);

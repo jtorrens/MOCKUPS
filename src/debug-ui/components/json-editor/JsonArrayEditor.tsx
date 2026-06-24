@@ -88,6 +88,7 @@ export function JsonArrayEditor({
             <div className="json-row-actions">
               <button
                 type="button"
+                className="json-action-button"
                 aria-label={`Move item ${index + 1} up`}
                 title="Move up"
                 disabled={index === 0}
@@ -97,6 +98,7 @@ export function JsonArrayEditor({
               </button>
               <button
                 type="button"
+                className="json-action-button"
                 aria-label={`Move item ${index + 1} down`}
                 title="Move down"
                 disabled={index === value.length - 1}
@@ -104,10 +106,18 @@ export function JsonArrayEditor({
               >
                 ↓
               </button>
-              <button type="button" onClick={() => duplicateItem(index)}>
+              <button
+                type="button"
+                className="json-action-button"
+                onClick={() => duplicateItem(index)}
+              >
                 Duplicate
               </button>
-              <button type="button" onClick={() => deleteItem(index)}>
+              <button
+                type="button"
+                className="json-action-button"
+                onClick={() => deleteItem(index)}
+              >
                 Delete
               </button>
             </div>
@@ -117,6 +127,7 @@ export function JsonArrayEditor({
       {allowArrayStructuralEdits ? (
         <div className="json-add-row">
           <select
+            className="json-add-select"
             aria-label="New array item type"
             value={newKind}
             onChange={(event) => setNewKind(event.target.value)}
@@ -128,7 +139,7 @@ export function JsonArrayEditor({
             <option value="array">array</option>
             <option value="null">null</option>
           </select>
-          <button type="button" onClick={addItem}>
+          <button type="button" className="json-add-button" onClick={addItem}>
             Add item
           </button>
         </div>

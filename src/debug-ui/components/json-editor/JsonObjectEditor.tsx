@@ -90,10 +90,18 @@ export function JsonObjectEditor({
           />
           {allowObjectStructuralEdits ? (
             <div className="json-row-actions">
-              <button type="button" onClick={() => renameKey(key)}>
+              <button
+                type="button"
+                className="json-action-button"
+                onClick={() => renameKey(key)}
+              >
                 Rename
               </button>
-              <button type="button" onClick={() => deleteKey(key)}>
+              <button
+                type="button"
+                className="json-action-button"
+                onClick={() => deleteKey(key)}
+              >
                 Delete
               </button>
             </div>
@@ -103,12 +111,14 @@ export function JsonObjectEditor({
       {allowObjectStructuralEdits ? (
         <div className="json-add-row">
           <input
+            className="json-add-input"
             aria-label="New object key"
             placeholder="newKey"
             value={newKey}
             onChange={(event) => setNewKey(event.target.value)}
           />
           <select
+            className="json-add-select"
             aria-label="New key value type"
             value={newKind}
             onChange={(event) => setNewKind(event.target.value)}
@@ -120,7 +130,7 @@ export function JsonObjectEditor({
             <option value="array">array</option>
             <option value="null">null</option>
           </select>
-          <button type="button" onClick={addKey}>
+          <button type="button" className="json-add-button" onClick={addKey}>
             Add key
           </button>
         </div>
