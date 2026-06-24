@@ -38,6 +38,7 @@ The transitional global stylesheet exposes a small set of CSS variables in `:roo
 - `--restore-button-hover-border-color`: shared restore button hover border.
 - `--restore-button-hover-background`: shared restore button hover background.
 - `--override-border`: shared dirty/override field border.
+- `--override-border-color`: shared dirty/override field border color for border-color-only rules.
 - `--override-background`: shared dirty/override field background.
 - `--override-color`: shared dirty/override text/icon color.
 - `--override-shadow`: shared dirty/override field shadow.
@@ -100,6 +101,18 @@ The transitional global stylesheet exposes a small set of CSS variables in `:roo
 - `--editor-subsection-background`: central editor nested subsection background.
 - `--editor-subsection-body-border`: central editor nested subsection body separator.
 - `--editor-subsection-body-padding`: central editor nested subsection body padding.
+- `--editor-text-color`: central editor default text color.
+- `--editor-surface-border-color`: central editor nested surface border color.
+- `--editor-surface-background`: central editor nested surface background.
+- `--editor-surface-shadow`: central editor nested surface elevation.
+- `--editor-header-surface-border-color`: central editor nested header border color.
+- `--editor-header-surface-background`: central editor nested header background.
+- `--editor-row-separator`: central editor token/JSON row separator.
+- `--editor-input-border-color`: central editor input/control border color.
+- `--editor-input-background`: central editor input/control background.
+- `--editor-chip-color`: central editor chip text color.
+- `--editor-chip-background`: central editor chip background.
+- `--editor-chip-border-color`: central editor chip border color.
 - `--preview-viewport-padding`: preview viewport host padding.
 - `--preview-viewport-border`: preview viewport host border.
 - `--preview-viewport-radius`: preview viewport host radius.

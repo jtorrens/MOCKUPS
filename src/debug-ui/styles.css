@@ -31,6 +31,7 @@
   --restore-button-hover-border-color: #aeb8c8;
   --restore-button-hover-background: #f8fafc;
   --override-border: 1px solid #e4ad68;
+  --override-border-color: #e4ad68;
   --override-background: #fff7ed;
   --override-color: #b45309;
   --override-shadow: 0 2px 6px rgba(180, 83, 9, 0.07);
@@ -93,6 +94,18 @@
   --editor-subsection-background: var(--subcard-background);
   --editor-subsection-body-border: var(--card-body-border);
   --editor-subsection-body-padding: 12px;
+  --editor-text-color: #15171c;
+  --editor-surface-border-color: #cfd6e2;
+  --editor-surface-background: #ffffff;
+  --editor-surface-shadow: 0 2px 6px rgba(21, 30, 50, 0.04);
+  --editor-header-surface-border-color: #dde3ec;
+  --editor-header-surface-background: #ffffff;
+  --editor-row-separator: 1px solid #f1f3f6;
+  --editor-input-border-color: #cfd6e2;
+  --editor-input-background: #f7f8fb;
+  --editor-chip-color: #667085;
+  --editor-chip-background: #f7f8fa;
+  --editor-chip-border-color: #dfe3eb;
   --preview-viewport-padding: 18px;
   --preview-viewport-border: 1px solid #dfe3eb;
   --preview-viewport-radius: 16px;
@@ -169,6 +182,7 @@
   --restore-button-hover-border-color: #6a6e77;
   --restore-button-hover-background: #404248;
   --override-border: 1px solid #8b7248;
+  --override-border-color: #8b7248;
   --override-background: #40382b;
   --override-color: #e0bf76;
   --override-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
@@ -189,6 +203,18 @@
   --card-header-icon-background: #3b3d43;
   --subcard-border: 1px solid #50535b;
   --subcard-background: #383a40;
+  --editor-text-color: #e0ded8;
+  --editor-surface-border-color: #50535b;
+  --editor-surface-background: #34363b;
+  --editor-surface-shadow: 0 2px 6px rgba(0, 0, 0, 0.14);
+  --editor-header-surface-border-color: #565a62;
+  --editor-header-surface-background: #383a3f;
+  --editor-row-separator: 1px solid #464950;
+  --editor-input-border-color: #565a62;
+  --editor-input-background: #383a3f;
+  --editor-chip-color: #aaa69d;
+  --editor-chip-background: #383a3f;
+  --editor-chip-border-color: #565a62;
   --preview-viewport-border: 1px solid #4a4d54;
   --preview-viewport-background: #2f3135;
   --preview-viewport-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
@@ -3136,9 +3162,9 @@ button {
 .dirty-indicator,
 .status-dot,
 .frame-badge {
-  color: #667085;
-  background: #f7f8fa !important;
-  border-color: #dfe3eb;
+  color: var(--editor-chip-color, #667085);
+  background: var(--editor-chip-background, #f7f8fa) !important;
+  border-color: var(--editor-chip-border-color, #dfe3eb);
 }
 
 .app-field,
@@ -3173,8 +3199,8 @@ button {
 .token-override-group,
 .token-override-row,
 .mode-color-row {
-  color: #15171c;
-  background: #ffffff !important;
+  color: var(--editor-text-color, #15171c);
+  background: var(--editor-surface-background, #ffffff) !important;
 }
 
 .app-field pre,
@@ -3198,9 +3224,9 @@ button {
 .editor-workspace .field-stack,
 .editor-workspace .field-stack.single-column,
 .editor-workspace .nested-editor-stack {
-  border-color: #cfd6e2 !important;
-  background: #ffffff !important;
-  box-shadow: 0 2px 6px rgba(21, 30, 50, 0.04) !important;
+  border-color: var(--editor-surface-border-color, #cfd6e2) !important;
+  background: var(--editor-surface-background, #ffffff) !important;
+  box-shadow: var(--editor-surface-shadow, 0 2px 6px rgba(21, 30, 50, 0.04)) !important;
 }
 
 .editor-workspace .json-tree-group summary,
@@ -3208,15 +3234,15 @@ button {
 .editor-workspace .template-editor-heading,
 .editor-workspace .hierarchy-panel summary,
 .editor-workspace .hierarchy-panel-body {
-  border-color: #dde3ec !important;
-  background: #ffffff !important;
+  border-color: var(--editor-header-surface-border-color, #dde3ec) !important;
+  background: var(--editor-header-surface-background, #ffffff) !important;
 }
 
 .editor-workspace .json-primitive-row,
 .editor-workspace .token-override-row,
 .editor-workspace .mode-color-row {
   box-shadow: none !important;
-  border-bottom: 1px solid #f1f3f6 !important;
+  border-bottom: var(--editor-row-separator, 1px solid #f1f3f6) !important;
 }
 
 .editor-workspace .json-primitive-row {
@@ -3243,17 +3269,17 @@ button {
 .editor-workspace .token-override-input select,
 .editor-workspace .json-color-pair input,
 .editor-workspace .json-panel textarea {
-  border-color: #cfd6e2 !important;
-  background: #f7f8fb !important;
+  border-color: var(--editor-input-border-color, #cfd6e2) !important;
+  background: var(--editor-input-background, #f7f8fb) !important;
   box-shadow: none !important;
 }
 
 .editor-workspace .json-override,
 .editor-workspace .token-override-row.has-override,
 .editor-workspace .mode-color-row.has-override {
-  border-color: #e4ad68 !important;
-  background: #fff7ed !important;
-  box-shadow: 0 2px 6px rgba(180, 83, 9, 0.07) !important;
+  border-color: var(--override-border-color, #e4ad68) !important;
+  background: var(--override-background, #fff7ed) !important;
+  box-shadow: var(--override-shadow, 0 2px 6px rgba(180, 83, 9, 0.07)) !important;
 }
 
 .editor-workspace .app-field-string,
