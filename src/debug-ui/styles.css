@@ -1,3 +1,6 @@
+/* UI LAYER: Legacy global shell baseline.
+   Transitional note: newer inspector-first styles override many of these
+   defaults later in the file. Do not remove this block without a visual pass. */
 :root {
   color: #e8e9ee;
   background: #0d0f14;
@@ -108,6 +111,8 @@ body {
   cursor: col-resize;
   user-select: none;
 }
+
+/* UI LAYER: Legacy app header, generic panels, and early browser/editor rules. */
 
 .app-header {
   display: grid;
@@ -2046,7 +2051,8 @@ dd {
   background: #201b10;
 }
 
-/* Concept B / Inspector-first light pass.
+/* UI LAYER: Inspector-first light theme override.
+   Concept B / Inspector-first light pass.
    This intentionally overrides the darker debug shell styles above while we
    converge on the production authoring UX. */
 :root {
@@ -2263,6 +2269,7 @@ button {
   box-shadow: 0 1px 4px rgba(21, 30, 50, 0.08);
 }
 
+/* UI LAYER: Shared accordion/card shell used by browser and editor sections. */
 .workspace-accordions {
   display: grid;
   gap: 10px;
@@ -2609,6 +2616,7 @@ button {
   background: #ffffff;
 }
 
+/* UI LAYER: Central record editor and section navigation. */
 .record-editor {
   border: 0;
   background: transparent;
@@ -2806,6 +2814,7 @@ button {
   background: #ffffff;
 }
 
+/* UI LAYER: JSON and token editor refinements. */
 .json-tree-node {
   border-color: #e2e6ee;
   background: #ffffff;
@@ -2891,6 +2900,7 @@ button {
   background: #ffffff;
 }
 
+/* UI LAYER: Preview shell controls, context, and feedback. */
 .preview-context {
   order: 2;
   padding: 14px;
@@ -3231,7 +3241,8 @@ button {
   font-weight: 800;
 }
 
-/* Current inspector shell polish: re-applied after safe CSS restore. */
+/* UI LAYER: Current inspector shell polish.
+   Re-applied after safe CSS restore; this is the current winning shell layer. */
 :root {
   color: #15171c;
   background: #ffffff;
@@ -3275,6 +3286,7 @@ body,
   transform-origin: top left;
 }
 
+/* UI LAYER: Shared field system. */
 /* Shared field rows. */
 .inspector-field-row {
   display: grid;
@@ -3654,6 +3666,7 @@ body,
   padding-bottom: 18px !important;
 }
 
+/* UI LAYER: Left project browser as nested cards. */
 /* Left workspace browser as nested cards. */
 .project-browser .project-tree-view {
   display: grid;
@@ -3830,6 +3843,8 @@ body,
   padding-inline: 10px !important;
 }
 
+/* UI LAYER: Render surface and external phone-frame overlay.
+   Must not add layout padding/border to the renderable coordinate system. */
 .preview-phone-frame {
   position: absolute;
   inset: 0;

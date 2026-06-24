@@ -658,3 +658,14 @@ Chat message layout uses `message.direction` to decide visual alignment:
 - `system` aligns center.
 
 `senderParticipantId` identifies who the message belongs to and may still drive labels, avatars, participant-specific state, and future metadata, but it no longer decides horizontal placement. This lets a conversation represent sent/received/system messages directly without coupling alignment to a participant role heuristic.
+
+## D053 — UI CSS is organized by ownership layers
+
+Status: accepted
+
+The debug UI CSS is currently transitional, with older debug-shell styles and newer inspector-first styles coexisting. New CSS must be placed under an explicit ownership layer: global shell, left browser, central editor, shared field system, JSON/token editors, preview shell, or render surface.
+
+Implications:
+- Future cleanup should consolidate selectors by layer rather than relying on late-file overrides.
+- Render surface styles must remain separate from preview shell chrome.
+- Shared field rows should become the default path for editor inputs.
