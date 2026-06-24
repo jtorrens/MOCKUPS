@@ -48,14 +48,14 @@
   height: 24px;
   place-items: center;
   color: #475467;
-  font-size: 20px;
-  font-weight: 700;
+  font-size: var(--accordion-chevron-size, 24px);
+  font-weight: var(--accordion-chevron-weight, 450);
   line-height: 1;
 }
 
 .preview-options-card[open] > .preview-options-summary::after {
-  content: "⌄";
-  font-size: 15px;
+  content: "⌃";
+  font-size: var(--accordion-chevron-open-size, 17px);
 }
 
 .preview-options-summary h2 {

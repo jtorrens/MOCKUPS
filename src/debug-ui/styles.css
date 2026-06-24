@@ -3,6 +3,9 @@
    defaults later in the file. Do not remove this block without a visual pass. */
 :root {
   --app-panel-padding: 22px;
+  --accordion-chevron-size: 24px;
+  --accordion-chevron-open-size: 17px;
+  --accordion-chevron-weight: 450;
   color: #e8e9ee;
   background: #0d0f14;
   font-family:
@@ -2406,13 +2409,13 @@ button {
 .editor-section-card > button::after {
   content: "›";
   color: #111318;
-  font-size: 24px;
-  font-weight: 450;
+  font-size: var(--accordion-chevron-size, 24px);
+  font-weight: var(--accordion-chevron-weight, 450);
 }
 
 .editor-section-card > button.active::after {
   content: "⌃";
-  font-size: 17px;
+  font-size: var(--accordion-chevron-open-size, 17px);
 }
 
 .editor-section-card > button .tab-icon {
@@ -2603,13 +2606,13 @@ button {
   content: "›";
   align-self: center;
   color: #14171d;
-  font-size: 24px;
-  font-weight: 400;
+  font-size: var(--accordion-chevron-size, 24px);
+  font-weight: var(--accordion-chevron-weight, 450);
 }
 
 .record-editor > .editor-tabs:not(.subtle-tabs) button.active::after {
   content: "⌃";
-  font-size: 18px;
+  font-size: var(--accordion-chevron-open-size, 17px);
 }
 
 .record-editor > .editor-tabs:not(.subtle-tabs) button.active {
