@@ -88,6 +88,18 @@ The transitional global stylesheet exposes a small set of CSS variables in `:roo
 - `--subcard-header-title-font-size`: compact nested card title size.
 - `--subcard-chevron-size`: compact nested card closed chevron size.
 - `--subcard-chevron-open-size`: compact nested card open chevron size.
+- `--editor-section-gap`: central editor top-level section spacing.
+- `--editor-section-border`: central editor top-level section border.
+- `--editor-section-radius`: central editor top-level section radius.
+- `--editor-section-background`: central editor top-level section background.
+- `--editor-section-shadow`: central editor top-level section shadow.
+- `--editor-section-body-border`: central editor top-level section body separator.
+- `--editor-section-body-padding`: central editor top-level section body padding.
+- `--editor-subsection-border`: central editor nested subsection border.
+- `--editor-subsection-radius`: central editor nested subsection radius.
+- `--editor-subsection-background`: central editor nested subsection background.
+- `--editor-subsection-body-border`: central editor nested subsection body separator.
+- `--editor-subsection-body-padding`: central editor nested subsection body padding.
 - `--preview-viewport-padding`: preview viewport host padding.
 - `--preview-viewport-border`: preview viewport host border.
 - `--preview-viewport-radius`: preview viewport host radius.

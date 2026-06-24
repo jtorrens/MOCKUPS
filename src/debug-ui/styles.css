@@ -81,6 +81,18 @@
   --subcard-header-title-font-size: 13px;
   --subcard-chevron-size: 20px;
   --subcard-chevron-open-size: 15px;
+  --editor-section-gap: 8px;
+  --editor-section-border: var(--card-border);
+  --editor-section-radius: var(--card-radius);
+  --editor-section-background: var(--card-background);
+  --editor-section-shadow: var(--card-shadow);
+  --editor-section-body-border: var(--card-body-border);
+  --editor-section-body-padding: 14px;
+  --editor-subsection-border: var(--subcard-border);
+  --editor-subsection-radius: var(--subcard-radius);
+  --editor-subsection-background: var(--subcard-background);
+  --editor-subsection-body-border: var(--card-body-border);
+  --editor-subsection-body-padding: 12px;
   --preview-viewport-padding: 18px;
   --preview-viewport-border: 1px solid #dfe3eb;
   --preview-viewport-radius: 16px;
@@ -2579,15 +2591,15 @@ button {
 
 .editor-sections {
   display: grid;
-  gap: 8px;
+  gap: var(--editor-section-gap, 8px);
 }
 
 .editor-section-card {
   overflow: hidden;
-  border: var(--card-border, 1px solid #dfe3eb);
-  border-radius: var(--card-radius, 14px);
-  background: var(--card-background, #ffffff);
-  box-shadow: var(--card-shadow, 0 2px 8px rgba(21, 30, 50, 0.04));
+  border: var(--editor-section-border, var(--card-border, 1px solid #dfe3eb));
+  border-radius: var(--editor-section-radius, var(--card-radius, 14px));
+  background: var(--editor-section-background, var(--card-background, #ffffff));
+  box-shadow: var(--editor-section-shadow, var(--card-shadow, 0 2px 8px rgba(21, 30, 50, 0.04)));
 }
 
 .editor-section-card > button {
@@ -2645,15 +2657,15 @@ button {
 }
 
 .editor-section-body {
-  border-top: var(--card-body-border, 1px solid #edf0f4);
-  padding: 14px;
+  border-top: var(--editor-section-body-border, var(--card-body-border, 1px solid #edf0f4));
+  padding: var(--editor-section-body-padding, 14px);
 }
 
 .editor-subsection-card {
   overflow: hidden;
-  border: var(--subcard-border, 1px solid #cfd6e2);
-  border-radius: var(--subcard-radius, 12px);
-  background: var(--subcard-background, #ffffff);
+  border: var(--editor-subsection-border, var(--subcard-border, 1px solid #cfd6e2));
+  border-radius: var(--editor-subsection-radius, var(--subcard-radius, 12px));
+  background: var(--editor-subsection-background, var(--subcard-background, #ffffff));
 }
 
 .editor-subsection-card > button {
@@ -2669,7 +2681,7 @@ button {
   padding: var(--subcard-header-padding-block, 10px)
     var(--subcard-header-padding-inline, 12px);
   color: var(--card-header-title-color, #12141a);
-  background: var(--subcard-background, #ffffff);
+  background: var(--editor-subsection-background, var(--subcard-background, #ffffff));
   text-align: left;
 }
 
@@ -2700,8 +2712,8 @@ button {
 }
 
 .editor-subsection-body {
-  border-top: var(--card-body-border, 1px solid #edf0f4);
-  padding: 12px;
+  border-top: var(--editor-subsection-body-border, var(--card-body-border, 1px solid #edf0f4));
+  padding: var(--editor-subsection-body-padding, 12px);
 }
 
 .project-tree-view button.active,
