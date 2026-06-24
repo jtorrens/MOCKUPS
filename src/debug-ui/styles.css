@@ -31,7 +31,7 @@
   --topbar-select-padding: 0 12px;
   --topbar-select-focus-border: #8fa2ff;
   --topbar-select-focus-shadow: 0 0 0 3px rgba(59, 102, 255, 0.1);
-  --topbar-menu-button-border: 1px solid #d9dee7;
+  --topbar-menu-button-border: 0;
   --topbar-menu-button-background: #ffffff;
   --topbar-menu-button-color: #22262f;
   --topbar-menu-button-radius: 10px;
@@ -81,8 +81,8 @@
   --card-header-padding-inline: 16px;
   --card-header-icon-size: 30px;
   --card-header-icon-radius: 10px;
-  --card-header-icon-border: 1px solid #dfe3eb;
-  --card-header-icon-background: #fbfcfd;
+  --card-header-icon-border: 0;
+  --card-header-icon-background: transparent;
   --card-header-icon-font-size: 20px;
   --card-header-icon-font-weight: 700;
   --card-header-font-family: inherit;
@@ -141,8 +141,8 @@
   --editor-chip-border-color: #dfe3eb;
   --editor-group-header-color: #667085;
   --editor-group-title-color: #171a21;
-  --editor-group-icon-border: 1px solid #dfe3eb;
-  --editor-group-icon-background: #f8fafc;
+  --editor-group-icon-border: 0;
+  --editor-group-icon-background: transparent;
   --editor-group-icon-color: #343946;
   --editor-code-color: #7b8494;
   --editor-code-muted-color: #8a94a6;
@@ -185,15 +185,15 @@
   --browser-row-editing-border-color: #8fa2ff;
   --browser-row-editing-accent-color: #345dff;
   --browser-row-muted-color: #7b8494;
-  --project-tree-node-border: var(--browser-card-border-color, #dfe5ee);
+  --project-tree-node-border: 1px solid var(--browser-card-border-color, #dfe5ee);
   --project-tree-node-background: var(--browser-card-background, #ffffff);
   --project-tree-level-0-background: var(--project-tree-node-background, #ffffff);
-  --project-tree-level-1-background: var(--project-tree-node-background, #ffffff);
-  --project-tree-level-2-background: var(--project-tree-node-background, #ffffff);
-  --project-tree-level-3-background: var(--project-tree-node-background, #ffffff);
-  --project-tree-level-4-background: var(--project-tree-node-background, #ffffff);
+  --project-tree-level-1-background: #f8fafc;
+  --project-tree-level-2-background: #f5f7fb;
+  --project-tree-level-3-background: #f2f5f9;
+  --project-tree-level-4-background: #eef2f7;
   --project-tree-node-radius: 13px;
-  --project-tree-row-border: var(--browser-row-surface-border-color, #e1e5ec);
+  --project-tree-row-border: transparent;
   --project-tree-row-background: transparent;
   --project-tree-row-level-0-background: var(--project-tree-level-0-background);
   --project-tree-row-level-1-background: var(--project-tree-level-1-background);
@@ -216,7 +216,7 @@
   --project-tree-button-editing-background: var(--browser-row-editing-background, #ffffff);
   --project-tree-button-editing-accent: var(--browser-row-editing-accent-color, #345dff);
   --project-browser-tree-children-border: #e2e6ee;
-  --project-mini-action-border: var(--browser-row-surface-border-color, #e1e5ec);
+  --project-mini-action-border: 0;
   --project-mini-action-color: var(--browser-row-color, #2c323d);
   --project-mini-action-background: transparent;
   --browser-action-color: #475467;
@@ -312,7 +312,7 @@
   --topbar-select-padding: 0 12px;
   --topbar-select-focus-border: var(--editor-input-focus-border-color);
   --topbar-select-focus-shadow: var(--editor-input-focus-shadow);
-  --topbar-menu-button-border: var(--editor-button-border);
+  --topbar-menu-button-border: 0;
   --topbar-menu-button-background: var(--editor-button-background);
   --topbar-menu-button-color: var(--editor-button-color);
   --topbar-menu-button-radius: 10px;
@@ -370,8 +370,8 @@
   --card-header-icon-color: #ece9e2;
   --card-header-chevron-color: #d4d0c7;
   --card-body-border: 1px solid #44474e;
-  --card-header-icon-border: 1px solid #565a62;
-  --card-header-icon-background: #3b3d43;
+  --card-header-icon-border: 0;
+  --card-header-icon-background: transparent;
   --subcard-border: 1px solid #50535b;
   --subcard-background: #383a40;
   --editor-text-color: #e0ded8;
@@ -399,8 +399,8 @@
   --editor-chip-border-color: #565a62;
   --editor-group-header-color: #aaa69d;
   --editor-group-title-color: #ece9e2;
-  --editor-group-icon-border: 1px solid #565a62;
-  --editor-group-icon-background: #383a3f;
+  --editor-group-icon-border: 0;
+  --editor-group-icon-background: transparent;
   --editor-group-icon-color: #d4d0c7;
   --editor-code-color: #aaa69d;
   --editor-code-muted-color: #8f8b84;
@@ -436,19 +436,19 @@
   --browser-row-active-background: #383a3f;
   --browser-row-active-border-color: #565a62;
   --browser-row-editing-color: #ece9e2;
-  --browser-row-editing-background: linear-gradient(135deg, rgba(127, 143, 173, 0.22), rgba(127, 143, 173, 0.06)), #383a3f;
-  --browser-row-editing-border-color: #7f8fad;
-  --browser-row-editing-accent-color: #7f8fad;
+  --browser-row-editing-background: linear-gradient(135deg, rgba(52, 93, 255, 0.24), rgba(52, 93, 255, 0.06)), #383a3f;
+  --browser-row-editing-border-color: #8fa2ff;
+  --browser-row-editing-accent-color: #345dff;
   --browser-row-muted-color: #aaa69d;
-  --project-tree-node-border: var(--browser-card-border-color, #50535b);
+  --project-tree-node-border: 1px solid var(--browser-card-border-color, #50535b);
   --project-tree-node-background: var(--browser-card-background, #34363b);
   --project-tree-level-0-background: var(--project-tree-node-background, #34363b);
-  --project-tree-level-1-background: var(--project-tree-node-background, #34363b);
-  --project-tree-level-2-background: var(--project-tree-node-background, #34363b);
-  --project-tree-level-3-background: var(--project-tree-node-background, #34363b);
-  --project-tree-level-4-background: var(--project-tree-node-background, #34363b);
+  --project-tree-level-1-background: #303238;
+  --project-tree-level-2-background: #2c2e33;
+  --project-tree-level-3-background: #292b30;
+  --project-tree-level-4-background: #26282d;
   --project-tree-node-radius: 13px;
-  --project-tree-row-border: var(--browser-row-surface-border-color, #50535b);
+  --project-tree-row-border: transparent;
   --project-tree-row-background: transparent;
   --project-tree-row-level-0-background: var(--project-tree-level-0-background);
   --project-tree-row-level-1-background: var(--project-tree-level-1-background);
@@ -466,12 +466,12 @@
   --project-tree-button-active-color: var(--browser-row-active-color, #ece9e2);
   --project-tree-button-active-background: var(--browser-row-active-background, #383a3f);
   --project-tree-button-muted-color: var(--browser-row-muted-color, #aaa69d);
-  --project-tree-button-editing-border: var(--browser-row-editing-border-color, #7f8fad);
+  --project-tree-button-editing-border: var(--browser-row-editing-border-color, #8fa2ff);
   --project-tree-button-editing-color: var(--browser-row-editing-color, #ece9e2);
-  --project-tree-button-editing-background: var(--browser-row-editing-background, linear-gradient(135deg, rgba(127, 143, 173, 0.22), rgba(127, 143, 173, 0.06)), #383a3f);
-  --project-tree-button-editing-accent: var(--browser-row-editing-accent-color, #7f8fad);
+  --project-tree-button-editing-background: var(--browser-row-editing-background, linear-gradient(135deg, rgba(52, 93, 255, 0.24), rgba(52, 93, 255, 0.06)), #383a3f);
+  --project-tree-button-editing-accent: var(--browser-row-editing-accent-color, #345dff);
   --project-browser-tree-children-border: #50535b;
-  --project-mini-action-border: var(--browser-row-surface-border-color, #565a62);
+  --project-mini-action-border: 0;
   --project-mini-action-color: var(--browser-row-color, #ece9e2);
   --project-mini-action-background: transparent;
   --browser-action-color: #aaa69d;
@@ -830,12 +830,16 @@ body {
 }
 
 .mini-action {
+  display: grid;
   width: 28px;
   height: 28px;
+  place-items: center;
   border: var(--project-mini-action-border, var(--browser-row-surface-border-color, #e1e5ec));
   border-radius: 8px;
+  padding: 0;
   color: var(--project-mini-action-color, var(--browser-row-color, #2c323d));
   background: var(--project-mini-action-background, transparent);
+  line-height: 1;
 }
 
 .mini-action:disabled {
@@ -1994,6 +1998,8 @@ body {
 }
 
 .production-menu-button {
+  display: grid;
+  place-items: center;
   border: var(--topbar-menu-button-border, 1px solid #d9dee7);
   color: var(--topbar-menu-button-color, #22262f);
   background: var(--topbar-menu-button-background, #ffffff);
@@ -2001,7 +2007,9 @@ body {
   height: var(--topbar-select-height, 35px);
   min-height: var(--topbar-select-height, 35px);
   border-radius: var(--topbar-menu-button-radius, 10px);
+  padding: 0;
   font-size: var(--topbar-menu-button-font-size, 20px);
+  line-height: 1;
 }
 
 .production-menu-button:hover:not(:disabled) {
@@ -2053,10 +2061,10 @@ body {
   width: 22px;
   height: 22px;
   place-items: center;
-  border: var(--card-header-icon-border, 1px solid #dfe3eb);
-  border-radius: 7px;
+  border: 0;
+  border-radius: 0;
   color: var(--card-header-icon-color, #343946);
-  background: var(--card-header-icon-background, #f8fafc);
+  background: transparent;
   font-size: 15px;
 }
 
@@ -2200,14 +2208,12 @@ body {
   padding: var(--editor-subsection-body-padding, 12px);
 }
 
-.project-browser-root .project-tree-record.active,
 .record-list button.active {
   border-color: var(--browser-row-active-border-color, #dfe3eb);
   color: var(--browser-row-active-color, #15171c);
   background: var(--browser-row-active-background, #f7f8fb);
 }
 
-.project-browser-root .project-tree-record.editing,
 .record-list button.editing {
   border-color: var(--browser-row-editing-border-color, #8fa2ff);
   color: var(--browser-row-editing-color, #111318);
@@ -2391,14 +2397,18 @@ body {
 }
 
 .editor-group-icon {
+  display: grid;
   width: 24px;
   height: 24px;
   flex: 0 0 auto;
+  place-items: center;
   border: var(--editor-group-icon-border, 1px solid #dfe3eb);
   border-radius: 8px;
   color: var(--editor-group-icon-color, #343946);
   background: var(--editor-group-icon-background, #f8fafc);
   font-size: 12px;
+  line-height: 1;
+  text-align: center;
 }
 
 .token-override-row,
@@ -3145,6 +3155,12 @@ body,
   padding: var(--project-tree-node-padding);
 }
 
+.project-browser-root .project-tree-card.project-tree-data-record-card {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
 .project-browser-root .project-tree-summary {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
@@ -3169,22 +3185,22 @@ body,
 .project-browser-root .project-tree-summary::after {
   content: "›";
   display: grid;
-  width: 24px;
-  height: 24px;
+  width: var(--card-header-chevron-size, 26px);
+  height: var(--card-header-chevron-size, 26px);
   place-items: center;
   border-radius: 999px;
-  border: 1px solid var(--project-tree-chevron-border-color, var(--project-tree-row-border, transparent));
-  box-shadow: var(--project-tree-chevron-shadow, none);
-  color: var(--browser-chevron-color, #475467);
-  background: var(--project-tree-chevron-background, transparent);
-  font-size: 18px;
-  font-weight: 800;
+  border: 0;
+  box-shadow: none;
+  color: var(--card-header-chevron-color, #111318);
+  background: transparent;
+  font-size: var(--accordion-chevron-size, 24px);
+  font-weight: var(--accordion-chevron-weight, 450);
   line-height: 1;
 }
 
 .project-browser-root .project-tree-card[open] > .project-tree-summary::after {
-  content: "⌄";
-  font-size: 14px;
+  content: "⌃";
+  font-size: var(--accordion-chevron-open-size, 17px);
 }
 
 .project-browser-root .project-tree-card[open] > .project-tree-summary {
@@ -3217,18 +3233,18 @@ body,
 
 .project-browser-root .project-tree-row.active,
 .project-browser-root .project-tree-record.active {
-  border-color: var(--project-tree-button-active-border, var(--browser-row-active-border-color, #dfe3eb));
+  border-color: transparent;
   color: var(--project-tree-button-active-color, var(--browser-row-active-color, #15171c));
-  background: var(--project-tree-button-active-background, var(--browser-row-active-background, #f7f8fb));
-  box-shadow: var(--project-tree-row-active-shadow, none);
+  background: transparent;
+  box-shadow: none;
 }
 
 .project-browser-root .project-tree-row.editing,
 .project-browser-root .project-tree-record.editing {
-  border-color: var(--project-tree-button-editing-border, var(--browser-row-editing-border-color, #8fa2ff));
+  border-color: transparent;
   color: var(--project-tree-button-editing-color, var(--browser-row-editing-color, #111318));
-  background: var(--project-tree-button-editing-background, var(--browser-row-editing-background, #ffffff));
-  box-shadow: inset 3px 0 0 var(--project-tree-button-editing-accent, var(--browser-row-editing-accent-color, #345dff));
+  background: transparent;
+  box-shadow: none;
 }
 
 .project-browser-root .project-tree-row .tree-record-copy strong,

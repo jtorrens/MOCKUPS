@@ -640,21 +640,26 @@ export function ProjectTree({
                     <EmptyPanel>No module configs yet.</EmptyPanel>
                   ) : (
                     configs.map((config) => (
-                      <TreeButton
+                      <div
                         key={config.id}
-                        tableId="module_theme_configs"
-                        recordId={config.id}
-                        activeTableId={activeTableId}
-                        selectedRecordIds={selectedRecordIds}
-                        icon="module"
-                        title={String(config.name ?? "Module config")}
-                        meta={String(config.module_id ?? "module")}
-                        onClick={() =>
-                          select("module_theme_configs", config.id)
-                        }
-                        className={rowLevelClass(2)}
-                        asRecord
-                      />
+                        className={`project-tree-card project-tree-leaf ${cardLevelClass(1)}`}
+                        data-tree-level="1"
+                      >
+                        <TreeButton
+                          tableId="module_theme_configs"
+                          recordId={config.id}
+                          activeTableId={activeTableId}
+                          selectedRecordIds={selectedRecordIds}
+                          icon="module"
+                          title={String(config.name ?? "Module config")}
+                          meta={String(config.module_id ?? "module")}
+                          onClick={() =>
+                            select("module_theme_configs", config.id)
+                          }
+                          className={rowLevelClass(2)}
+                          asRecord
+                        />
+                      </div>
                     ))
                   )}
                 </div>
@@ -750,19 +755,23 @@ export function ProjectTree({
                   <EmptyPanel>No records yet.</EmptyPanel>
                 ) : (
                   tableRecords.map((record) => (
-                    <TreeButton
+                    <div
                       key={record.id}
-                      tableId={table.id}
-                      recordId={record.id}
-                      activeTableId={activeTableId}
-                      selectedRecordIds={selectedRecordIds}
-                      icon={productionDataIcon(table.id)}
-                      title={recordTitle(table, record)}
-                      meta={String(record.id)}
-                      onClick={() => select(table.id, record.id)}
-                      className={rowLevelClass(1)}
-                      asRecord
-                    />
+                      className={`project-tree-card project-tree-leaf project-tree-data-record-card ${cardLevelClass(1)}`}
+                      data-tree-level="1"
+                    >
+                      <TreeButton
+                        tableId={table.id}
+                        recordId={record.id}
+                        activeTableId={activeTableId}
+                        selectedRecordIds={selectedRecordIds}
+                        title={recordTitle(table, record)}
+                        meta={String(record.id)}
+                        onClick={() => select(table.id, record.id)}
+                        className={rowLevelClass(1)}
+                        asRecord
+                      />
+                    </div>
                   ))
                 )}
               </div>
