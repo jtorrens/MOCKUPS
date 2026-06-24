@@ -11,6 +11,12 @@ import {
   InspectorFieldRow,
   InspectorRestoreButton,
 } from "./inspector/InspectorFieldRow.js";
+import { EditorHeader } from "../editor-ui/EditorHeader.js";
+import {
+  EditorSectionCard,
+  EditorSubsectionCard,
+} from "../editor-ui/EditorSectionCard.js";
+import { EditorSections } from "../editor-ui/EditorSections.js";
 import {
   hasModeColorOverrides,
   ModeColorEditor,
@@ -3061,7 +3067,7 @@ export function RecordEditor({
   }) {
     const active = activeGroup === group;
     return (
-      <div className="editor-subsection-card">
+      <EditorSubsectionCard>
         <TabButton
           active={active}
           warning={warning}
@@ -3070,7 +3076,7 @@ export function RecordEditor({
           {friendlyGroupLabel(group)}
         </TabButton>
         {active ? <div className="editor-subsection-body">{children}</div> : null}
-      </div>
+      </EditorSubsectionCard>
     );
   }
 
@@ -3615,14 +3621,12 @@ export function RecordEditor({
 
     return (
       <section className="record-editor">
-        <div className="record-editor-heading">
-          <div>
-            <span className="record-editor-eyebrow">App editor</span>
-            <h2>{String(record[table.titleColumn] ?? record.id)}</h2>
-          </div>
-        </div>
-        <div className="editor-sections">
-          <div className="editor-section-card">
+        <EditorHeader
+          eyebrow="App editor"
+          title={String(record[table.titleColumn] ?? record.id)}
+        />
+        <EditorSections>
+          <EditorSectionCard>
             <TabButton active={appTab === "general"} onClick={() => setAppTab(appTab === "general" ? "" : "general")}>
               General
             </TabButton>
@@ -3632,8 +3636,8 @@ export function RecordEditor({
                 {renderAppIconFields()}
               </div>
             ) : null}
-          </div>
-          <div className="editor-section-card">
+          </EditorSectionCard>
+          <EditorSectionCard>
             <TabButton
               active={appTab === "tokens"}
               warning={explicitLocalOverridesInherited(appEditorTokenRoot, inheritedAppRoot)}
@@ -3681,8 +3685,8 @@ export function RecordEditor({
                 ))}
               </div>
             ) : null}
-          </div>
-          <div className="editor-section-card">
+          </EditorSectionCard>
+          <EditorSectionCard>
             <TabButton
               active={appTab === "colors"}
               warning={hasModeColorOverrides(
@@ -3704,8 +3708,8 @@ export function RecordEditor({
                 />
               </div>
             ) : null}
-          </div>
-          <div className="editor-section-card">
+          </EditorSectionCard>
+          <EditorSectionCard>
             <TabButton active={appTab === "notes"} onClick={() => setAppTab(appTab === "notes" ? "" : "notes")}>
               Notes
             </TabButton>
@@ -3714,8 +3718,8 @@ export function RecordEditor({
                 {renderFlatJsonObjectEditor("metadata_json")}
               </div>
             ) : null}
-          </div>
-        </div>
+          </EditorSectionCard>
+        </EditorSections>
       </section>
     );
   }
@@ -3733,14 +3737,12 @@ export function RecordEditor({
 
     return (
       <section className="record-editor">
-        <div className="record-editor-heading">
-          <div>
-            <span className="record-editor-eyebrow">Theme editor</span>
-            <h2>{String(record[table.titleColumn] ?? record.id)}</h2>
-          </div>
-        </div>
-        <div className="editor-sections">
-          <div className="editor-section-card">
+        <EditorHeader
+          eyebrow="Theme editor"
+          title={String(record[table.titleColumn] ?? record.id)}
+        />
+        <EditorSections>
+          <EditorSectionCard>
             <TabButton active={themeTab === "general"} onClick={() => setThemeTab(themeTab === "general" ? "" : "general")}>
               General
             </TabButton>
@@ -3749,8 +3751,8 @@ export function RecordEditor({
                 {renderFields(["id", "name", "family", "version"])}
               </div>
             ) : null}
-          </div>
-          <div className="editor-section-card">
+          </EditorSectionCard>
+          <EditorSectionCard>
             <TabButton active={themeTab === "tokens"} onClick={() => setThemeTab(themeTab === "tokens" ? "" : "tokens")}>
               Tokens
             </TabButton>
@@ -3794,8 +3796,8 @@ export function RecordEditor({
                 ))}
               </div>
             ) : null}
-          </div>
-          <div className="editor-section-card">
+          </EditorSectionCard>
+          <EditorSectionCard>
             <TabButton active={themeTab === "colors"} onClick={() => setThemeTab(themeTab === "colors" ? "" : "colors")}>
               Colors
             </TabButton>
@@ -3807,8 +3809,8 @@ export function RecordEditor({
                 />
               </div>
             ) : null}
-          </div>
-        </div>
+          </EditorSectionCard>
+        </EditorSections>
       </section>
     );
   }
@@ -3918,14 +3920,12 @@ export function RecordEditor({
 
     return (
       <section className="record-editor">
-        <div className="record-editor-heading">
-          <div>
-            <span className="record-editor-eyebrow">Module instance editor</span>
-            <h2>{String(record[table.titleColumn] ?? record.id)}</h2>
-          </div>
-        </div>
-        <div className="editor-sections">
-          <div className="editor-section-card">
+        <EditorHeader
+          eyebrow="Module instance editor"
+          title={String(record[table.titleColumn] ?? record.id)}
+        />
+        <EditorSections>
+          <EditorSectionCard>
             <TabButton
               active={screenTab === "content"}
               onClick={() => setScreenTab(screenTab === "content" ? "" : "content")}
@@ -3947,8 +3947,8 @@ export function RecordEditor({
                 ))}
               </div>
             ) : null}
-          </div>
-          <div className="editor-section-card">
+          </EditorSectionCard>
+          <EditorSectionCard>
             <TabButton
               active={screenTab === "behavior"}
               onClick={() => setScreenTab(screenTab === "behavior" ? "" : "behavior")}
@@ -3960,8 +3960,8 @@ export function RecordEditor({
                 {renderModuleBehaviorFields()}
               </div>
             ) : null}
-          </div>
-        </div>
+          </EditorSectionCard>
+        </EditorSections>
       </section>
     );
   }
@@ -3971,14 +3971,12 @@ export function RecordEditor({
     const transformField = fieldsByColumn.get("transform_json");
     return (
       <section className="record-editor">
-        <div className="record-editor-heading">
-          <div>
-            <span className="record-editor-eyebrow">Screen instance editor</span>
-            <h2>{String(record[table.titleColumn] ?? record.id)}</h2>
-          </div>
-        </div>
-        <div className="editor-sections">
-          <div className="editor-section-card">
+        <EditorHeader
+          eyebrow="Screen instance editor"
+          title={String(record[table.titleColumn] ?? record.id)}
+        />
+        <EditorSections>
+          <EditorSectionCard>
             <TabButton
               active={screenTab === "general"}
               onClick={() => setScreenTab(screenTab === "general" ? "" : "general")}
@@ -3995,8 +3993,8 @@ export function RecordEditor({
                 ])}
               </div>
             ) : null}
-          </div>
-          <div className="editor-section-card">
+          </EditorSectionCard>
+          <EditorSectionCard>
             <TabButton
               active={screenTab === "transform"}
               onClick={() =>
@@ -4016,8 +4014,8 @@ export function RecordEditor({
                 })}
               </div>
             ) : null}
-          </div>
-          <div className="editor-section-card">
+          </EditorSectionCard>
+          <EditorSectionCard>
             <TabButton
               active={screenTab === "transition"}
               onClick={() =>
@@ -4031,8 +4029,8 @@ export function RecordEditor({
                 {renderScreenTransitionField()}
               </div>
             ) : null}
-          </div>
-          <div className="editor-section-card">
+          </EditorSectionCard>
+          <EditorSectionCard>
             <TabButton
               active={screenTab === "deviceState"}
               onClick={() =>
@@ -4052,8 +4050,8 @@ export function RecordEditor({
                 })}
               </div>
             ) : null}
-          </div>
-        </div>
+          </EditorSectionCard>
+        </EditorSections>
       </section>
     );
   }
@@ -4070,14 +4068,12 @@ export function RecordEditor({
         : "";
     return (
       <section className="record-editor">
-        <div className="record-editor-heading">
-          <div>
-            <span className="record-editor-eyebrow">Screen module editor</span>
-            <h2>{String(record[table.titleColumn] ?? record.id)}</h2>
-          </div>
-        </div>
-        <div className="editor-sections">
-          <div className="editor-section-card">
+        <EditorHeader
+          eyebrow="Screen module editor"
+          title={String(record[table.titleColumn] ?? record.id)}
+        />
+        <EditorSections>
+          <EditorSectionCard>
             <TabButton
               active={moduleThemeTab === "design"}
               warning={differsFromInherited("tokens_json")}
@@ -4122,8 +4118,8 @@ export function RecordEditor({
                 ))}
               </div>
             ) : null}
-          </div>
-          <div className="editor-section-card">
+          </EditorSectionCard>
+          <EditorSectionCard>
             <TabButton
               active={moduleThemeTab === "colors"}
               warning={hasModeColorOverrides(
@@ -4143,8 +4139,8 @@ export function RecordEditor({
                 />
               </div>
             ) : null}
-          </div>
-          <div className="editor-section-card">
+          </EditorSectionCard>
+          <EditorSectionCard>
             <TabButton
               active={moduleThemeTab === "settings"}
               onClick={() => setModuleThemeTab(moduleThemeTab === "settings" ? "" : "settings")}
@@ -4173,24 +4169,20 @@ export function RecordEditor({
                 ) : null}
               </div>
             ) : null}
-          </div>
-        </div>
+          </EditorSectionCard>
+        </EditorSections>
       </section>
     );
   }
 
   return (
     <section className="record-editor">
-      <div className="record-editor-heading">
-        <div>
-          <span className="record-editor-eyebrow">
-            {table.id === "productions" ? "Production Editor" : "Record editor"}
-          </span>
-          <h2>{String(record[table.titleColumn] ?? record.id)}</h2>
-        </div>
-      </div>
-      <div className="editor-sections">
-        <div className="editor-section-card">
+      <EditorHeader
+        eyebrow={table.id === "productions" ? "Production Editor" : "Record editor"}
+        title={String(record[table.titleColumn] ?? record.id)}
+      />
+      <EditorSections>
+        <EditorSectionCard>
           <TabButton
             active={genericTab === "general"}
             warning={table.id === "shots" && shotHasFpsOverride()}
@@ -4205,8 +4197,8 @@ export function RecordEditor({
               {table.fields.map((field) => renderGenericField(field))}
             </div>
           ) : null}
-        </div>
-      </div>
+        </EditorSectionCard>
+      </EditorSections>
     </section>
   );
 }
