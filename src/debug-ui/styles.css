@@ -3231,6 +3231,12 @@ body,
   outline: 0;
 }
 
+.project-browser-root .project-tree-row.project-tree-row-no-icon,
+.project-browser-root .project-tree-record.project-tree-row-no-icon {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+
 .project-browser-root .project-tree-row.active,
 .project-browser-root .project-tree-record.active {
   border-color: transparent;

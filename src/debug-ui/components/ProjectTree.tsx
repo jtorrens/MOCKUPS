@@ -306,6 +306,7 @@ function TreeButton({
         recordButtonClass(tableId, recordId, activeTableId, selectedRecordIds),
         isRow ? "project-tree-record" : null,
         isRow ? "project-tree-row" : null,
+        !icon ? "project-tree-row-no-icon" : null,
         className,
       ]
         .filter(Boolean)
