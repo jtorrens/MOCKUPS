@@ -639,15 +639,10 @@ body {
   position: static;
 }
 
-.navigation-rail .hierarchy-browser,
 .navigation-rail .two-column-browser {
   grid-template-columns: 1fr;
   min-height: 0;
   overflow: hidden auto;
-}
-
-.navigation-rail .hierarchy-panel-body {
-  max-height: min(190px, 28vh);
 }
 
 .navigation-rail .resource-table-list,
@@ -657,8 +652,7 @@ body {
 
 .tab-list,
 .record-list,
-.project-tree-panel,
-.resource-browser {
+.project-tree-panel {
   max-height: 360px;
   overflow: auto;
   padding: 12px;
@@ -706,8 +700,7 @@ body {
 
 .record-list button.editing,
 .project-tree button.editing,
-.resource-table-list button.editing,
-.hierarchy-list button.editing {
+.resource-table-list button.editing {
   border-color: #6b78ff;
   color: #ffffff;
   background:
@@ -716,8 +709,7 @@ body {
   box-shadow: inset 3px 0 0 #8190ff;
 }
 
-.project-tree,
-.resource-browser {
+.project-tree {
   display: grid;
   gap: 8px;
 }
@@ -873,55 +865,8 @@ body {
   text-align: center;
 }
 
-.hierarchy-browser {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(190px, 1fr));
-  gap: 10px;
-  overflow: auto;
-}
-
 .two-column-browser {
   grid-template-columns: repeat(2, minmax(240px, 1fr));
-}
-
-.hierarchy-panel {
-  overflow: hidden;
-  border: 1px solid #303748;
-  border-radius: 14px;
-  background: rgba(24, 28, 39, 0.76);
-}
-
-.hierarchy-panel summary {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-  min-height: 70px;
-  cursor: pointer;
-  list-style: none;
-  padding: 12px;
-}
-
-.hierarchy-panel summary::-webkit-details-marker {
-  display: none;
-}
-
-.hierarchy-panel summary strong {
-  display: block;
-  margin-top: 4px;
-  color: #f0f3fb;
-  font-size: 15px;
-}
-
-.hierarchy-panel summary small {
-  margin-left: 6px;
-  color: #707a8f;
-  font-weight: 500;
-}
-
-.hierarchy-actions {
-  display: flex;
-  gap: 5px;
 }
 
 .mini-action {
@@ -938,60 +883,6 @@ body {
   opacity: 0.35;
 }
 
-.hierarchy-panel-body {
-  max-height: 250px;
-  overflow: auto;
-  border-top: 1px solid #202634;
-  padding: 8px;
-}
-
-.hierarchy-list {
-  display: grid;
-  gap: 6px;
-}
-
-.hierarchy-list button {
-  border: 1px solid transparent;
-  border-radius: 10px;
-  padding: 10px;
-  color: #b9c2d4;
-  background: transparent;
-  text-align: left;
-}
-
-.hierarchy-list button.active {
-  border-color: #38415a;
-  color: white;
-  background: #171b26;
-}
-
-.hierarchy-list button.editing {
-  border-color: #6b78ff;
-  color: #ffffff;
-  background:
-    linear-gradient(135deg, rgba(82, 101, 232, 0.34), rgba(82, 101, 232, 0.12)),
-    #171b26;
-  box-shadow: inset 3px 0 0 #8190ff;
-}
-
-.hierarchy-list button strong,
-.hierarchy-list button small {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.hierarchy-list button strong {
-  font-size: 13px;
-}
-
-.hierarchy-list button small {
-  margin-top: 5px;
-  color: #727b8d;
-  font-family: "SFMono-Regular", Consolas, monospace;
-  font-size: 10px;
-}
 
 .library-browser {
   display: grid;
@@ -1124,10 +1015,6 @@ body {
   line-height: 1.55;
 }
 
-.app-field-json {
-  grid-column: span 2;
-}
-
 .app-field input:disabled,
 .app-field select:disabled,
 .app-field textarea:disabled {
@@ -1149,7 +1036,6 @@ body {
   background: #0d1017;
 }
 
-.json-editor-toolbar,
 .json-add-row,
 .json-row-actions,
 .json-primitive-row,
@@ -1161,20 +1047,6 @@ body {
   align-items: center;
 }
 
-.json-editor-toolbar {
-  justify-content: space-between;
-  gap: 12px;
-  border-bottom: 1px solid #252b38;
-  padding: 10px;
-  background: rgba(14, 17, 25, 0.92);
-}
-
-.json-editor-toolbar div {
-  display: flex;
-  gap: 6px;
-}
-
-.json-editor-toolbar button,
 .json-add-row button,
 .json-row-actions button {
   border: 1px solid #30384a;
@@ -1182,18 +1054,6 @@ body {
   color: #c8d0e0;
   background: #171b25;
   font-size: 11px;
-}
-
-.json-editor-toolbar button.active {
-  border-color: #6372f0;
-  color: white;
-  background: #5265e8;
-}
-
-.json-editor-toolbar span {
-  color: #778096;
-  font-family: "SFMono-Regular", Consolas, monospace;
-  font-size: 10px;
 }
 
 .json-tree {
@@ -1486,8 +1346,7 @@ body {
 }
 
 .json-row-actions button:hover,
-.json-add-row button:hover,
-.json-editor-toolbar button:hover {
+.json-add-row button:hover {
   border-color: #566079;
 }
 
@@ -1951,7 +1810,6 @@ button:disabled {
 }
 
 .selection-panel,
-.context-panel,
 .json-panel,
 .inspector-panel {
   padding: 20px;
@@ -2021,16 +1879,6 @@ input[type="range"] {
   text-align: center;
 }
 
-.context-panel {
-  background:
-    linear-gradient(145deg, rgba(82, 101, 232, 0.1), transparent 44%),
-    rgba(20, 23, 31, 0.92);
-}
-
-.context-panel h2 {
-  font-size: 30px;
-}
-
 dl {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2059,21 +1907,8 @@ dd {
   font-size: 13px;
 }
 
-.context-note {
-  max-width: 540px;
-  color: #949cad;
-  line-height: 1.6;
-}
-
 .section-title {
   margin: 34px 0 14px;
-}
-
-.editor-grid,
-.inspector-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
 }
 
 .json-panel h3,
@@ -2527,7 +2362,6 @@ button {
 }
 
 .project-tree-view button:not(.mini-action),
-.hierarchy-list button,
 .record-list button {
   border-color: #e1e5ec;
   background: #ffffff;
@@ -2721,8 +2555,7 @@ button {
 
 .project-tree-view button.editing,
 .record-list button.editing,
-.resource-table-list button.editing,
-.hierarchy-list button.editing {
+.resource-table-list button.editing {
   border-color: #8fa2ff;
   color: #111318;
   background:
@@ -2733,8 +2566,7 @@ button {
     0 1px 5px rgba(21, 30, 50, 0.08);
 }
 
-.project-tree-view button small,
-.hierarchy-list button small {
+.project-tree-view button small {
   color: #7b8494;
 }
 
@@ -3018,12 +2850,9 @@ button {
 
 .app-field,
 .json-tree-node,
-.hierarchy-panel,
-.context-panel,
 .json-panel,
 .inspector-panel,
 .selection-panel,
-.resource-browser,
 .tab-list,
 .project-tree-panel {
   color: var(--editor-text-color, #15171c);
@@ -3047,9 +2876,7 @@ button {
   border-color: var(--editor-input-border-color, #d9dee7) !important;
 }
 
-.json-tree-node summary,
-.hierarchy-panel summary,
-.hierarchy-panel-body {
+.json-tree-node summary {
   color: var(--editor-text-color, #15171c);
   background: var(--editor-header-surface-background, #f8fafc) !important;
   border-color: var(--editor-header-surface-border-color, #e5e9f0);
@@ -3076,19 +2903,12 @@ button {
   border-radius: 12px;
 }
 
-.app-field-json {
-  overflow: hidden;
-  border-radius: 12px;
-}
-
 .json-primitive-row,
 .json-tree-node {
   border-radius: 10px;
 }
 
 .token-override-editor,
-.app-field-json,
-.app-field-json > *,
 .field-stack,
 .field-stack.single-column,
 .nested-editor-stack,
@@ -3128,9 +2948,7 @@ button {
 }
 
 .editor-workspace .json-tree-group summary,
-.editor-workspace .json-tree-node summary,
-.editor-workspace .hierarchy-panel summary,
-.editor-workspace .hierarchy-panel-body {
+.editor-workspace .json-tree-node summary {
   border-color: var(--editor-header-surface-border-color, #dde3ec) !important;
   background: var(--editor-header-surface-background, #ffffff) !important;
 }
@@ -3220,7 +3038,6 @@ button {
 .editor-workspace .compact-button,
 .editor-workspace .json-row-actions button,
 .editor-workspace .json-add-row button,
-.editor-workspace .json-editor-toolbar button,
 .editor-workspace .mode-color-row .restore-button,
 .editor-workspace .json-restore-button {
   border: var(--editor-button-border, 1px solid #d9dee7) !important;
@@ -3233,7 +3050,6 @@ button {
 .editor-workspace .compact-button:hover:not(:disabled),
 .editor-workspace .json-row-actions button:hover:not(:disabled),
 .editor-workspace .json-add-row button:hover:not(:disabled),
-.editor-workspace .json-editor-toolbar button:hover:not(:disabled),
 .editor-workspace .mode-color-row .restore-button:hover:not(:disabled),
 .editor-workspace .json-restore-button:hover:not(:disabled) {
   border-color: var(--editor-button-hover-border-color, #aeb8c8) !important;
@@ -3245,7 +3061,6 @@ button {
 .editor-workspace .compact-button:disabled,
 .editor-workspace .json-row-actions button:disabled,
 .editor-workspace .json-add-row button:disabled,
-.editor-workspace .json-editor-toolbar button:disabled,
 .editor-workspace .mode-color-row .restore-button:disabled,
 .editor-workspace .json-restore-button:disabled {
   opacity: var(--editor-button-disabled-opacity, 0.55);
