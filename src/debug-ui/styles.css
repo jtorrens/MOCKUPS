@@ -1612,41 +1612,17 @@ textarea {
   font: inherit;
 }
 
-.app-shell {
-  width: min(1540px, calc(100% - 56px));
-  margin: 0 auto;
-  padding: 42px 0 80px;
-}
-
-.hero,
 .panel-heading,
-.hero-actions,
 .frame-control > div {
   display: flex;
   align-items: center;
 }
 
-.hero {
-  justify-content: space-between;
-  margin-bottom: 26px;
-}
-
-.hero h1,
 .panel h2,
 .panel h3,
 .section-title h2 {
   margin: 0;
   letter-spacing: -0.035em;
-}
-
-.hero h1 {
-  font-size: 42px;
-  font-weight: 650;
-}
-
-.hero p {
-  margin: 8px 0 0;
-  color: #9298a8;
 }
 
 .eyebrow {
@@ -1659,13 +1635,7 @@ textarea {
   text-transform: uppercase;
 }
 
-.hero-actions {
-  gap: 14px;
-}
-
-.dirty-indicator,
 .status-dot,
-.frame-badge,
 .validation-chip,
 .read-only-chip {
   border: 1px solid #292e3a;
@@ -1674,12 +1644,6 @@ textarea {
   color: #8f96a6;
   background: #151820;
   font-size: 12px;
-}
-
-.dirty-indicator.active {
-  border-color: #735f2d;
-  color: #f2ca6b;
-  background: #211c12;
 }
 
 .status-dot::before {
@@ -1808,10 +1772,6 @@ dd {
   color: #dfe2eb;
   font-family: "SFMono-Regular", Consolas, monospace;
   font-size: 13px;
-}
-
-.section-title {
-  margin: 34px 0 14px;
 }
 
 .json-panel h3,
