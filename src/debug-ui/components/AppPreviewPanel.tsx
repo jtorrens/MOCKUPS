@@ -1,13 +1,8 @@
 import { useState } from "react";
-import {
-  renderPreviewFrame,
-  type DebugOptions,
-  type DebugPayload,
-  type DebugSelection,
-  type RenderFrameResult,
-} from "../api/client.js";
+import type { DebugOptions, DebugPayload, DebugSelection } from "../api/client.js";
 import { PreviewPanel } from "../preview/PreviewPanel.js";
 import type { PreviewFit } from "../preview/previewSizing.js";
+import { usePreviewFrameRender } from "../preview/usePreviewFrameRender.js";
 import { PreviewOptionsCard } from "./PreviewOptionsCard.js";
 import { PreviewOutputStack } from "./PreviewOutputStack.js";
 
@@ -31,30 +26,8 @@ export function AppPreviewPanel({
   const [showPhoneFrame, setShowPhoneFrame] = useState(true);
   const [previewOptionsOpen, setPreviewOptionsOpen] = useState(true);
   const [previewFit, setPreviewFit] = useState<PreviewFit | null>(null);
-  const [renderBusy, setRenderBusy] = useState(false);
-  const [renderResult, setRenderResult] = useState<RenderFrameResult | null>(null);
-  const [renderError, setRenderError] = useState("");
-
-  function renderFramePng() {
-    setRenderBusy(true);
-    setRenderError("");
-    void renderPreviewFrame({
-      ...selection,
-      includeFrame: showPhoneFrame,
-    })
-      .then((result) => {
-        const separator = result.url.includes("?") ? "&" : "?";
-        setRenderResult({
-          ...result,
-          url: `${result.url}${separator}t=${Date.now()}`,
-        });
-      })
-      .catch((error: Error) => {
-        setRenderResult(null);
-        setRenderError(error.message);
-      })
-      .finally(() => setRenderBusy(false));
-  }
+  const { renderBusy, renderError, renderFramePng, renderResult } =
+    usePreviewFrameRender(selection, showPhoneFrame);
 
   return (
     <aside className="right-preview-shell">

@@ -388,9 +388,11 @@ const server = createServer(async (request, response) => {
         url.searchParams.get("path") ?? "",
       );
       const stats = statSync(filePath);
+      const filename = path.basename(filePath).replace(/"/g, "");
       response.writeHead(200, {
         "Content-Type": "image/png",
         "Content-Length": stats.size,
+        "Content-Disposition": `inline; filename="${filename}"`,
         "Cache-Control": "no-store",
       });
       createReadStream(filePath).pipe(response);

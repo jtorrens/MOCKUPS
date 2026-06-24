@@ -53,7 +53,7 @@ The preview shell contract is intentionally strict:
 - Device chrome, borders, shadows, debug overlays, and preview controls live outside the renderable coordinate system.
 - Preview shell borders or overlays must never be included in module layout calculations.
 - Export PNG resolution is the device render size multiplied by the selected output scale, currently read from the screen-instance transform scale.
-- Debug frame PNGs are written under the production media root when configured, using `renders/frames/<production>_<episode>_<shot>_vNN_fNNNNNN.png`; the browser preview header reports both render size and preview zoom.
+- Debug frame PNGs are written under the production media root when configured, using `renders/frames/<production>_<episode>_<shot>_vNN_fNNNNNN.png`; the browser response also exposes that frame-specific filename for open/save flows. The browser preview header reports both render size and preview zoom.
 
 `src/debug-ui/preview/RenderSurface.tsx` is the browser-only pure preview surface: it receives a `RenderableNode`, display fit, and optional external frame flag, then paints only the scaled renderable plus chrome overlay. `PreviewPanel` owns measurement, headers, controls, and state; `RenderSurface` owns the visual surface. `src/visual/adapters/react/RenderableReactAdapter.tsx` is the shared adapter used by both the debug preview and Remotion. `npm run render:frame` renders the canonical check frame to `out/current-frame.png` so preview/render parity can be checked visually. `npm run validate:preview` checks the preview-fit math so display zoom cannot silently change render dimensions.
 
