@@ -37,7 +37,12 @@ import {
   defaultGroupValue,
   defaultParticipantItem,
   isPrimitiveContentValue,
+  mediaNumberFieldsForMessage,
   messageDirectionFromSenderRole,
+  messageWithDirection,
+  messageWithMediaPath,
+  messageWithMediaType,
+  messageWithTextRevealMode,
 } from "../editors/chat/chatContentModel.js";
 import { ChatContentArrayEditor } from "../editors/chat/ChatContentArrayEditor.js";
 import { ChatHeaderFieldsEditor } from "../editors/chat/ChatHeaderFieldsEditor.js";
@@ -989,8 +994,6 @@ export function RecordEditor({
     ) {
       const direction = messageDirection(message);
       const media = isJsonObject(message.media) ? message.media : {};
-      const mediaWindow = isJsonObject(media.window) ? media.window : {};
-      const mediaTransform = isJsonObject(media.transform) ? media.transform : {};
       const textReveal = isJsonObject(message.textReveal) ? message.textReveal : {};
       const mediaType = String(media.type ?? (message.mediaAssetId ? "image" : "none"));
       const receivedOptions = participantOptions(
@@ -1009,74 +1012,23 @@ export function RecordEditor({
       function setDirection(nextDirection: string) {
         const owner = ownerParticipant();
         const received = firstReceivedParticipant();
-        if (nextDirection === "system") {
-          updateMessage({
-            ...message,
-            direction: "system",
-            type: "system",
-            senderParticipantId: String(owner?.id ?? senderId),
-          });
-          return;
-        }
-        if (nextDirection === "sent") {
-          updateMessage({
-            ...message,
-            direction: "outgoing",
-            type: "text",
-            senderParticipantId: String(owner?.id ?? senderId),
-          });
-          return;
-        }
-        updateMessage({
-          ...message,
-          direction: "incoming",
-          type: "text",
-          senderParticipantId: String(received?.id ?? senderId),
-        });
+        updateMessage(
+          messageWithDirection(
+            message,
+            nextDirection,
+            String(owner?.id ?? ""),
+            String(received?.id ?? ""),
+            senderId,
+          ),
+        );
       }
 
       function setMediaType(nextType: string) {
-        if (nextType === "none") {
-          const { mediaAssetId: _mediaAssetId, ...messageWithoutAsset } = message;
-          updateMessage({
-            ...messageWithoutAsset,
-            media: { type: "none" },
-          });
-          return;
-        }
-        const { mediaAssetId: _mediaAssetId, ...messageWithoutAsset } = message;
-        updateMessage({
-          ...messageWithoutAsset,
-          type: messageWithoutAsset.type === "system" ? "text" : messageWithoutAsset.type,
-          media: {
-            type: nextType,
-            filePath: String(media.filePath ?? ""),
-            window: {
-              width: Number(mediaWindow.width ?? 360),
-              height: Number(mediaWindow.height ?? 240),
-              offsetX: Number(mediaWindow.offsetX ?? 0),
-              offsetY: Number(mediaWindow.offsetY ?? 0),
-            },
-            transform: {
-              scale: Number(mediaTransform.scale ?? 1),
-              translateX: Number(mediaTransform.translateX ?? 0),
-              translateY: Number(mediaTransform.translateY ?? 0),
-              rotationDegrees: Number(mediaTransform.rotationDegrees ?? 0),
-            },
-          },
-        });
+        updateMessage(messageWithMediaType(message, nextType));
       }
 
       function setConversationMediaPath(nextPath: string) {
-        const { mediaAssetId: _mediaAssetId, ...messageWithoutAsset } = message;
-        updateMessage({
-          ...messageWithoutAsset,
-          media: {
-            ...media,
-            type: mediaType === "none" ? "image" : mediaType,
-            filePath: nextPath,
-          },
-        });
+        updateMessage(messageWithMediaPath(message, mediaType, nextPath));
       }
 
       return (
@@ -1091,28 +1043,7 @@ export function RecordEditor({
           mediaType={mediaType}
           mediaFilePath={String(media.filePath ?? "")}
           canBrowseMedia={Boolean(mockupsNative()?.pickFile)}
-          mediaNumberFields={([
-              ["Container width", ["media", "window", "width"], 360],
-              ["Container height", ["media", "window", "height"], 240],
-              ["Crop X offset", ["media", "window", "offsetX"], 0],
-              ["Crop Y offset", ["media", "window", "offsetY"], 0],
-              ["Media scale", ["media", "transform", "scale"], 1],
-              ["Media X offset", ["media", "transform", "translateX"], 0],
-              ["Media Y offset", ["media", "transform", "translateY"], 0],
-            ] as Array<[string, JsonPath, number]>).map(([label, path, fallback]) => ({
-              label,
-              path,
-              fallback,
-              value: Number(
-                path.reduce<JsonValue>(
-                  (current, part) =>
-                    isJsonObject(current) && typeof part === "string"
-                      ? current[part] ?? null
-                      : null,
-                  message,
-                ) ?? fallback,
-              ),
-            }))}
+          mediaNumberFields={mediaNumberFieldsForMessage(message)}
           onDirectionChange={setDirection}
           onSenderChange={(nextSenderId) =>
             setMessagePath(["senderParticipantId"], nextSenderId)
@@ -1125,15 +1056,7 @@ export function RecordEditor({
           }
           onTextChange={(nextText) => setMessagePath(["text"], nextText)}
           onTextRevealModeChange={(mode) =>
-            updateMessage({
-              ...message,
-              textReveal: {
-                startFrame: Number(textReveal.startFrame ?? message.startFrame ?? 0),
-                durationFrames: Number(textReveal.durationFrames ?? 30),
-                ...textReveal,
-                mode,
-              },
-            })
+            updateMessage(messageWithTextRevealMode(message, mode))
           }
           onMediaTypeChange={setMediaType}
           onMediaFilePathChange={(nextPath) =>

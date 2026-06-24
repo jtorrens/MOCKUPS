@@ -1,4 +1,15 @@
-import { isJsonObject, type JsonValue } from "../../components/json-editor/jsonEditorUtils.js";
+import {
+  isJsonObject,
+  type JsonPath,
+  type JsonValue,
+} from "../../components/json-editor/jsonEditorUtils.js";
+
+export interface ChatMediaNumberField {
+  label: string;
+  path: JsonPath;
+  value: number;
+  fallback: number;
+}
 
 export function defaultGroupValue(groupKey: string): JsonValue {
   return groupKey === "messages" || groupKey === "participants" ? [] : {};
@@ -102,4 +113,135 @@ export function defaultMessageItem(
       durationFrames: 30,
     },
   };
+}
+
+export function messageWithDirection(
+  message: Record<string, JsonValue>,
+  nextDirection: string,
+  ownerParticipantId: string,
+  receivedParticipantId: string,
+  currentSenderId: string,
+): Record<string, JsonValue> {
+  if (nextDirection === "system") {
+    return {
+      ...message,
+      direction: "system",
+      type: "system",
+      senderParticipantId: ownerParticipantId || currentSenderId,
+    };
+  }
+  if (nextDirection === "sent") {
+    return {
+      ...message,
+      direction: "outgoing",
+      type: "text",
+      senderParticipantId: ownerParticipantId || currentSenderId,
+    };
+  }
+  return {
+    ...message,
+    direction: "incoming",
+    type: "text",
+    senderParticipantId: receivedParticipantId || currentSenderId,
+  };
+}
+
+export function messageWithMediaType(
+  message: Record<string, JsonValue>,
+  nextType: string,
+): Record<string, JsonValue> {
+  const { mediaAssetId: _mediaAssetId, ...messageWithoutAsset } = message;
+  if (nextType === "none") {
+    return {
+      ...messageWithoutAsset,
+      media: { type: "none" },
+    };
+  }
+
+  const media = isJsonObject(message.media) ? message.media : {};
+  const mediaWindow = isJsonObject(media.window) ? media.window : {};
+  const mediaTransform = isJsonObject(media.transform) ? media.transform : {};
+
+  return {
+    ...messageWithoutAsset,
+    type: messageWithoutAsset.type === "system" ? "text" : messageWithoutAsset.type,
+    media: {
+      type: nextType,
+      filePath: String(media.filePath ?? ""),
+      window: {
+        width: Number(mediaWindow.width ?? 360),
+        height: Number(mediaWindow.height ?? 240),
+        offsetX: Number(mediaWindow.offsetX ?? 0),
+        offsetY: Number(mediaWindow.offsetY ?? 0),
+      },
+      transform: {
+        scale: Number(mediaTransform.scale ?? 1),
+        translateX: Number(mediaTransform.translateX ?? 0),
+        translateY: Number(mediaTransform.translateY ?? 0),
+        rotationDegrees: Number(mediaTransform.rotationDegrees ?? 0),
+      },
+    },
+  };
+}
+
+export function messageWithMediaPath(
+  message: Record<string, JsonValue>,
+  mediaType: string,
+  filePath: string,
+): Record<string, JsonValue> {
+  const { mediaAssetId: _mediaAssetId, ...messageWithoutAsset } = message;
+  const media = isJsonObject(message.media) ? message.media : {};
+  return {
+    ...messageWithoutAsset,
+    media: {
+      ...media,
+      type: mediaType === "none" ? "image" : mediaType,
+      filePath,
+    },
+  };
+}
+
+export function messageWithTextRevealMode(
+  message: Record<string, JsonValue>,
+  mode: string,
+): Record<string, JsonValue> {
+  const textReveal = isJsonObject(message.textReveal) ? message.textReveal : {};
+  return {
+    ...message,
+    textReveal: {
+      startFrame: Number(textReveal.startFrame ?? message.startFrame ?? 0),
+      durationFrames: Number(textReveal.durationFrames ?? 30),
+      ...textReveal,
+      mode,
+    },
+  };
+}
+
+export function mediaNumberFieldsForMessage(
+  message: Record<string, JsonValue>,
+): ChatMediaNumberField[] {
+  return (
+    [
+      ["Container width", ["media", "window", "width"], 360],
+      ["Container height", ["media", "window", "height"], 240],
+      ["Crop X offset", ["media", "window", "offsetX"], 0],
+      ["Crop Y offset", ["media", "window", "offsetY"], 0],
+      ["Media scale", ["media", "transform", "scale"], 1],
+      ["Media X offset", ["media", "transform", "translateX"], 0],
+      ["Media Y offset", ["media", "transform", "translateY"], 0],
+    ] as Array<[string, JsonPath, number]>
+  ).map(([label, path, fallback]) => ({
+    label,
+    path,
+    fallback,
+    value: Number(
+      path.reduce<JsonValue>(
+        (current, part) =>
+          isJsonObject(current) && typeof part === "string"
+            ? current[part] ?? null
+            : null,
+        message,
+      ) ?? fallback,
+    ),
+  }));
 }
