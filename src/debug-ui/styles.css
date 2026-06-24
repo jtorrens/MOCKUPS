@@ -635,35 +635,25 @@ body {
   overflow: hidden;
 }
 
-.navigation-rail .two-column-browser {
-  grid-template-columns: 1fr;
-  min-height: 0;
-  overflow: hidden auto;
-}
-
-.navigation-rail .resource-table-list,
 .navigation-rail .record-list {
   grid-template-columns: 1fr;
 }
 
 .tab-list,
-.record-list,
-.project-tree-panel {
+.record-list {
   max-height: 360px;
   overflow: auto;
   padding: 12px;
 }
 
-.tab-list,
-.project-tree-panel {
+.tab-list {
   border-right: 1px solid #293041;
   background: rgba(12, 15, 22, 0.48);
 }
 
 .tab-list button,
 .record-list button,
-.project-tree button,
-.resource-table-list button {
+.project-tree button {
   width: 100%;
   border: 1px solid transparent;
   border-radius: 10px;
@@ -687,16 +677,14 @@ body {
 
 .tab-list button.active,
 .record-list button.active,
-.project-tree button.active,
-.resource-table-list button.active {
+.project-tree button.active {
   border-color: #38415a;
   color: #ffffff;
   background: #171b26;
 }
 
 .record-list button.editing,
-.project-tree button.editing,
-.resource-table-list button.editing {
+.project-tree button.editing {
   border-color: #6b78ff;
   color: #ffffff;
   background:
@@ -830,10 +818,6 @@ body {
   text-align: center;
 }
 
-.two-column-browser {
-  grid-template-columns: repeat(2, minmax(240px, 1fr));
-}
-
 .mini-action {
   width: 28px;
   height: 28px;
@@ -848,11 +832,6 @@ body {
   opacity: 0.35;
 }
 
-
-.library-browser {
-  display: grid;
-  gap: 10px;
-}
 
 .compact-empty {
   padding: 10px;
@@ -870,8 +849,7 @@ body {
   display: none;
 }
 
-.project-tree button,
-.resource-table-list button {
+.project-tree button {
   margin: 3px 0;
 }
 
@@ -892,23 +870,6 @@ body {
 
 .tree-leaf {
   color: #c5ccdc;
-}
-
-.resource-table-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 6px;
-}
-
-.resource-table-list button {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 12px;
-}
-
-.resource-table-list button span {
-  color: #6f778a;
 }
 
 .record-list {
@@ -2127,8 +2088,7 @@ button {
 }
 
 .project-tree-view button,
-.record-list button,
-.resource-table-list button {
+.record-list button {
   border: 1px solid transparent;
   color: #2c323d;
   background: transparent;
@@ -2319,7 +2279,6 @@ button {
 
 .project-tree-view button.active,
 .record-list button.active,
-.resource-table-list button.active,
 .project-tree button.active {
   border-color: #dfe3eb;
   color: #15171c;
@@ -2327,8 +2286,7 @@ button {
 }
 
 .project-tree-view button.editing,
-.record-list button.editing,
-.resource-table-list button.editing {
+.record-list button.editing {
   border-color: #8fa2ff;
   color: #111318;
   background:
@@ -2343,8 +2301,6 @@ button {
   color: #7b8494;
 }
 
-.library-browser,
-.resource-table-list,
 .record-list {
   border-color: #e1e5ec;
   background: #ffffff;
@@ -2624,8 +2580,7 @@ button {
 .json-panel,
 .inspector-panel,
 .selection-panel,
-.tab-list,
-.project-tree-panel {
+.tab-list {
   color: var(--editor-text-color, #15171c);
   background: var(--editor-surface-background, #ffffff) !important;
   border-color: var(--editor-surface-border-color, #dfe3eb);
