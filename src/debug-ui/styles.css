@@ -162,6 +162,14 @@
   --content-field-control-color: var(--editor-input-color);
   --content-field-focus-border-color: var(--editor-input-focus-border-color);
   --content-field-focus-shadow: var(--editor-input-focus-shadow);
+  --avatar-swatch-border: var(--media-preview-border);
+  --avatar-swatch-text-color: #ffffff;
+  --avatar-preview-border: var(--media-preview-border);
+  --avatar-preview-radius: 16px;
+  --avatar-preview-text-color: #ffffff;
+  --avatar-preview-inner-highlight: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+  --avatar-helper-color: var(--media-preview-color);
+  --app-icon-preview-radius: 36px;
   --preview-viewport-padding: 18px;
   --preview-viewport-border: 1px solid #dfe3eb;
   --preview-viewport-radius: 16px;
@@ -310,6 +318,7 @@
   --workspace-breadcrumb-strong-color: #ece9e2;
   --workspace-breadcrumb-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
   --content-nested-border-color: #464950;
+  --avatar-preview-inner-highlight: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
   --preview-viewport-border: 1px solid #4a4d54;
   --preview-viewport-background: #2f3135;
   --preview-viewport-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
@@ -3691,9 +3700,9 @@ body,
   display: grid;
   width: 32px;
   height: 32px;
-  border: 1px solid #cfd6e2;
+  border: var(--avatar-swatch-border, 1px solid #cfd6e2);
   border-radius: 999px;
-  color: #ffffff;
+  color: var(--avatar-swatch-text-color, #ffffff);
   place-items: center;
   font-size: 11px;
   font-weight: 800;
@@ -3719,24 +3728,24 @@ body,
   width: 160px;
   aspect-ratio: 1;
   overflow: hidden;
-  border: 1px solid #cfd6e2;
-  border-radius: 16px;
-  color: #ffffff;
+  border: var(--avatar-preview-border, 1px solid #cfd6e2);
+  border-radius: var(--avatar-preview-radius, 16px);
+  color: var(--avatar-preview-text-color, #ffffff);
   background-repeat: no-repeat;
   background-position: center;
   place-items: center;
   font-size: 34px;
   font-weight: 800;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+  box-shadow: var(--avatar-preview-inner-highlight, inset 0 0 0 1px rgba(255, 255, 255, 0.22));
 }
 
 .actor-avatar-frame small {
-  color: #667085;
+  color: var(--avatar-helper-color, #667085);
   font-size: 11px;
 }
 
 .app-icon-frame .actor-avatar-preview {
-  border-radius: 36px;
+  border-radius: var(--app-icon-preview-radius, 36px);
 }
 
 .wallpaper-editor {

@@ -169,6 +169,14 @@ The transitional global stylesheet exposes a small set of CSS variables in `:roo
 - `--content-field-control-color`: module content field control text color.
 - `--content-field-focus-border-color`: module content field focus border color.
 - `--content-field-focus-shadow`: module content field focus ring.
+- `--avatar-swatch-border`: actor/app avatar color swatch border.
+- `--avatar-swatch-text-color`: actor/app avatar color swatch text color.
+- `--avatar-preview-border`: actor/app avatar preview border.
+- `--avatar-preview-radius`: actor avatar preview radius.
+- `--avatar-preview-text-color`: actor/app avatar preview fallback text color.
+- `--avatar-preview-inner-highlight`: actor/app avatar preview inner highlight.
+- `--avatar-helper-color`: actor/app avatar helper text color.
+- `--app-icon-preview-radius`: app icon preview radius.
 - `--preview-viewport-padding`: preview viewport host padding.
 - `--preview-viewport-border`: preview viewport host border.
 - `--preview-viewport-radius`: preview viewport host radius.
