@@ -923,6 +923,7 @@ body {
   font-size: 11px;
 }
 
+.inspector-field-row.app-field em,
 .app-field em {
   color: var(--editor-chip-color, #778096);
   font-style: normal;
@@ -931,10 +932,14 @@ body {
   letter-spacing: 0.08em;
 }
 
+.inspector-field-row.app-field strong,
 .app-field strong {
   color: #ff8d9a;
 }
 
+.inspector-field-row.app-field input,
+.inspector-field-row.app-field select,
+.inspector-field-row.app-field textarea,
 .app-field input,
 .app-field select,
 .app-field textarea {
@@ -945,12 +950,15 @@ body {
   background: #0f1219;
 }
 
+.inspector-field-row.app-field input,
+.inspector-field-row.app-field select,
 .app-field input,
 .app-field select {
   height: 42px;
   padding: 0 11px;
 }
 
+.inspector-field-row.app-field textarea,
 .app-field textarea {
   min-height: 240px;
   resize: vertical;
@@ -960,6 +968,9 @@ body {
   line-height: 1.55;
 }
 
+.inspector-field-row.app-field input:disabled,
+.inspector-field-row.app-field select:disabled,
+.inspector-field-row.app-field textarea:disabled,
 .app-field input:disabled,
 .app-field select:disabled,
 .app-field textarea:disabled {
@@ -967,6 +978,7 @@ body {
   background: #0b0e14;
 }
 
+.inspector-field-row.app-field strong,
 .app-field strong {
   display: block;
   margin-top: 6px;
@@ -2385,6 +2397,7 @@ body {
   padding: 0;
 }
 
+.inspector-field-row.app-field,
 .app-field {
   display: block;
   min-width: 0;
@@ -2392,6 +2405,7 @@ body {
   background: var(--editor-surface-background, #ffffff);
 }
 
+.inspector-field-row.app-field span,
 .app-field span {
   display: flex;
   align-items: center;
@@ -2401,10 +2415,14 @@ body {
   color: var(--editor-text-color, #222731);
 }
 
+.inspector-field-row.app-field code,
 .app-field code {
   color: var(--editor-code-color, #7b8494);
 }
 
+.inspector-field-row.app-field input,
+.inspector-field-row.app-field select,
+.inspector-field-row.app-field textarea,
 .app-field input,
 .app-field select,
 .app-field textarea,
@@ -2657,10 +2675,14 @@ body {
   padding-inline: 0;
 }
 
+.editor-workspace .inspector-field-row.app-field,
 .editor-workspace .app-field {
   padding: 13px;
 }
 
+.editor-workspace .inspector-field-row.app-field input,
+.editor-workspace .inspector-field-row.app-field select,
+.editor-workspace .inspector-field-row.app-field textarea,
 .editor-workspace .app-field input,
 .editor-workspace .app-field select,
 .editor-workspace .app-field textarea,
@@ -2680,6 +2702,12 @@ body {
   box-shadow: none !important;
 }
 
+.editor-workspace .inspector-field-row.app-field.is-readonly input:disabled,
+.editor-workspace .inspector-field-row.app-field.is-readonly select:disabled,
+.editor-workspace .inspector-field-row.app-field.is-readonly textarea:disabled,
+.editor-workspace .inspector-field-row.app-field input:disabled,
+.editor-workspace .inspector-field-row.app-field select:disabled,
+.editor-workspace .inspector-field-row.app-field textarea:disabled,
 .editor-workspace .app-field.is-readonly input:disabled,
 .editor-workspace .app-field.is-readonly select:disabled,
 .editor-workspace .app-field.is-readonly textarea:disabled,
@@ -2693,6 +2721,8 @@ body {
   cursor: default;
 }
 
+.editor-workspace .inspector-field-row.app-field input::placeholder,
+.editor-workspace .inspector-field-row.app-field textarea::placeholder,
 .editor-workspace .app-field input::placeholder,
 .editor-workspace .app-field textarea::placeholder,
 .editor-workspace .json-tree-node input::placeholder,
@@ -2705,6 +2735,9 @@ body {
   color: var(--editor-input-placeholder-color, #8a94a6);
 }
 
+.editor-workspace .inspector-field-row.app-field input:focus,
+.editor-workspace .inspector-field-row.app-field select:focus,
+.editor-workspace .inspector-field-row.app-field textarea:focus,
 .editor-workspace .app-field input:focus,
 .editor-workspace .app-field select:focus,
 .editor-workspace .app-field textarea:focus,
@@ -2921,13 +2954,16 @@ body,
   padding: 0 !important;
 }
 
-.record-editor .app-field.inspector-field-row .inspector-field-label span {
+.record-editor .inspector-field-row.app-field .inspector-field-label span {
   color: var(--field-label-color, #475467);
   font-size: 12px;
   font-weight: 600;
   line-height: 1.25;
 }
 
+.record-editor .inspector-field-row.app-field.is-readonly input:disabled,
+.record-editor .inspector-field-row.app-field.is-readonly select:disabled,
+.record-editor .inspector-field-row.app-field.is-readonly textarea:disabled,
 .record-editor .app-field.is-readonly input:disabled,
 .record-editor .app-field.is-readonly select:disabled,
 .record-editor .app-field.is-readonly textarea:disabled {
@@ -3062,7 +3098,7 @@ body,
   font-size: 11px;
 }
 
-.record-editor .app-field.inspector-field-row.json-override {
+.record-editor .inspector-field-row.app-field.json-override {
   border: var(--override-border, 1px solid #e4ad68) !important;
   border-radius: 12px !important;
   padding: 8px 10px !important;
@@ -3070,7 +3106,7 @@ body,
   box-shadow: var(--override-shadow, 0 2px 6px rgba(180, 83, 9, 0.07)) !important;
 }
 
-.record-editor .app-field.inspector-field-row.json-override .inspector-field-label span {
+.record-editor .inspector-field-row.app-field.json-override .inspector-field-label span {
   color: var(--override-color, #b45309);
 }
 
@@ -3118,7 +3154,7 @@ body,
   box-shadow: none !important;
 }
 
-.record-editor .app-field.inspector-field-row {
+.record-editor .inspector-field-row.app-field {
   display: grid !important;
   grid-template-columns: 150px minmax(0, 1fr) !important;
   width: 100% !important;
@@ -3126,17 +3162,17 @@ body,
   box-sizing: border-box !important;
 }
 
-.record-editor .app-field.inspector-field-row .inspector-field-control {
+.record-editor .inspector-field-row.app-field .inspector-field-control {
   display: grid;
   max-width: 520px;
   gap: 6px;
 }
 
-.record-editor .app-field.inspector-field-row .inspector-field-label {
+.record-editor .inspector-field-row.app-field .inspector-field-label {
   padding-left: 8px;
 }
 
-.record-editor .app-field.inspector-field-row .inspector-field-label span {
+.record-editor .inspector-field-row.app-field .inspector-field-label span {
   display: grid;
   gap: 3px;
   margin: 0;
