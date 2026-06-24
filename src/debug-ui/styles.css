@@ -2730,8 +2730,21 @@ button {
   gap: var(--editor-section-gap, 8px);
 }
 
-.editor-section-card {
+.editor-card {
   overflow: hidden;
+}
+
+.editor-card > button {
+  display: grid;
+  align-items: center;
+  width: 100%;
+  border: 0 !important;
+  border-radius: 0 !important;
+  text-align: left;
+  box-shadow: none !important;
+}
+
+.editor-section-card {
   border: var(--editor-section-border, var(--card-border, 1px solid #dfe3eb));
   border-radius: var(--editor-section-radius, var(--card-radius, 14px));
   background: var(--editor-section-background, var(--card-background, #ffffff));
@@ -2739,20 +2752,13 @@ button {
 }
 
 .editor-section-card > button {
-  display: grid;
   grid-template-columns: var(--card-header-icon-column, 38px) minmax(0, 1fr) auto;
   gap: var(--card-header-gap, 12px);
-  align-items: center;
-  width: 100%;
   min-height: var(--card-header-min-height, 64px);
-  border: 0 !important;
-  border-radius: 0 !important;
   padding: var(--card-header-padding-block, 13px)
     var(--card-header-padding-inline, 16px);
   color: var(--card-header-title-color, #12141a) !important;
   background: var(--card-header-background, #ffffff) !important;
-  text-align: left;
-  box-shadow: none !important;
 }
 
 .editor-section-card > button::after {
@@ -2798,27 +2804,20 @@ button {
 }
 
 .editor-subsection-card {
-  overflow: hidden;
   border: var(--editor-subsection-border, var(--subcard-border, 1px solid #cfd6e2));
   border-radius: var(--editor-subsection-radius, var(--subcard-radius, 12px));
   background: var(--editor-subsection-background, var(--subcard-background, #ffffff));
 }
 
 .editor-subsection-card > button {
-  display: grid;
   grid-template-columns:
     var(--subcard-header-icon-column, 30px) minmax(0, 1fr) auto;
   gap: var(--subcard-header-gap, 10px);
-  align-items: center;
-  width: 100%;
   min-height: var(--subcard-header-min-height, 54px);
-  border: 0;
-  border-radius: 0;
   padding: var(--subcard-header-padding-block, 10px)
     var(--subcard-header-padding-inline, 12px);
   color: var(--card-header-title-color, #12141a);
   background: var(--editor-subsection-background, var(--subcard-background, #ffffff));
-  text-align: left;
 }
 
 .editor-subsection-card > button::after {

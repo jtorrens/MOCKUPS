@@ -254,13 +254,14 @@ This layer may indicate selection/editing state, but should not own central edit
 Owns the editor card, sections, subsection cards, tabs/accordions, and direct field stacks:
 
 - `.record-editor`
+- `.editor-card` as the shared central editor card shell
 - `.editor-section-*`
 - `.editor-subsection-*`
 - `.field-stack`
 - `.nested-editor-stack`
 - `.flat-json-*`
 
-This layer should call into the shared field system for actual rows and controls.
+Top-level editor sections and nested subcards should both include `.editor-card`; section/subsection classes are variants, not separate card systems. This layer should call into the shared field system for actual rows and controls.
 
 ### 4. Shared field system
 

@@ -3021,7 +3021,7 @@ export function RecordEditor({
   }) {
     const active = activeGroup === group;
     return (
-      <div className="editor-subsection-card">
+      <div className="editor-card editor-subsection-card">
         <TabButton
           active={active}
           warning={warning}
@@ -3583,7 +3583,7 @@ export function RecordEditor({
           <span className="record-id">{record.id}</span>
         </div>
         <div className="editor-sections">
-          <div className="editor-section-card">
+          <div className="editor-card editor-section-card">
             <TabButton active={appTab === "general"} onClick={() => setAppTab(appTab === "general" ? "" : "general")}>
               General
             </TabButton>
@@ -3594,7 +3594,7 @@ export function RecordEditor({
               </div>
             ) : null}
           </div>
-          <div className="editor-section-card">
+          <div className="editor-card editor-section-card">
             <TabButton
               active={appTab === "tokens"}
               warning={explicitLocalOverridesInherited(appEditorTokenRoot, inheritedAppRoot)}
@@ -3643,7 +3643,7 @@ export function RecordEditor({
               </div>
             ) : null}
           </div>
-          <div className="editor-section-card">
+          <div className="editor-card editor-section-card">
             <TabButton
               active={appTab === "colors"}
               warning={hasModeColorOverrides(
@@ -3666,7 +3666,7 @@ export function RecordEditor({
               </div>
             ) : null}
           </div>
-          <div className="editor-section-card">
+          <div className="editor-card editor-section-card">
             <TabButton active={appTab === "notes"} onClick={() => setAppTab(appTab === "notes" ? "" : "notes")}>
               Notes
             </TabButton>
@@ -3702,7 +3702,7 @@ export function RecordEditor({
           <span className="record-id">{record.id}</span>
         </div>
         <div className="editor-sections">
-          <div className="editor-section-card">
+          <div className="editor-card editor-section-card">
             <TabButton active={themeTab === "general"} onClick={() => setThemeTab(themeTab === "general" ? "" : "general")}>
               General
             </TabButton>
@@ -3712,7 +3712,7 @@ export function RecordEditor({
               </div>
             ) : null}
           </div>
-          <div className="editor-section-card">
+          <div className="editor-card editor-section-card">
             <TabButton active={themeTab === "tokens"} onClick={() => setThemeTab(themeTab === "tokens" ? "" : "tokens")}>
               Tokens
             </TabButton>
@@ -3757,7 +3757,7 @@ export function RecordEditor({
               </div>
             ) : null}
           </div>
-          <div className="editor-section-card">
+          <div className="editor-card editor-section-card">
             <TabButton active={themeTab === "colors"} onClick={() => setThemeTab(themeTab === "colors" ? "" : "colors")}>
               Colors
             </TabButton>
@@ -3888,7 +3888,7 @@ export function RecordEditor({
           <span className="record-id">{record.id}</span>
         </div>
         <div className="editor-sections">
-          <div className="editor-section-card">
+          <div className="editor-card editor-section-card">
             <TabButton
               active={screenTab === "content"}
               onClick={() => setScreenTab(screenTab === "content" ? "" : "content")}
@@ -3911,7 +3911,7 @@ export function RecordEditor({
               </div>
             ) : null}
           </div>
-          <div className="editor-section-card">
+          <div className="editor-card editor-section-card">
             <TabButton
               active={screenTab === "behavior"}
               onClick={() => setScreenTab(screenTab === "behavior" ? "" : "behavior")}
@@ -3942,7 +3942,7 @@ export function RecordEditor({
           <span className="record-id">{record.id}</span>
         </div>
         <div className="editor-sections">
-          <div className="editor-section-card">
+          <div className="editor-card editor-section-card">
             <TabButton
               active={screenTab === "general"}
               onClick={() => setScreenTab(screenTab === "general" ? "" : "general")}
@@ -3960,7 +3960,7 @@ export function RecordEditor({
               </div>
             ) : null}
           </div>
-          <div className="editor-section-card">
+          <div className="editor-card editor-section-card">
             <TabButton
               active={screenTab === "transform"}
               onClick={() =>
@@ -3981,7 +3981,7 @@ export function RecordEditor({
               </div>
             ) : null}
           </div>
-          <div className="editor-section-card">
+          <div className="editor-card editor-section-card">
             <TabButton
               active={screenTab === "transition"}
               onClick={() =>
@@ -3996,7 +3996,7 @@ export function RecordEditor({
               </div>
             ) : null}
           </div>
-          <div className="editor-section-card">
+          <div className="editor-card editor-section-card">
             <TabButton
               active={screenTab === "deviceState"}
               onClick={() =>
@@ -4042,7 +4042,7 @@ export function RecordEditor({
           <span className="record-id">{record.id}</span>
         </div>
         <div className="editor-sections">
-          <div className="editor-section-card">
+          <div className="editor-card editor-section-card">
             <TabButton
               active={moduleThemeTab === "design"}
               warning={differsFromInherited("tokens_json")}
@@ -4088,7 +4088,7 @@ export function RecordEditor({
               </div>
             ) : null}
           </div>
-          <div className="editor-section-card">
+          <div className="editor-card editor-section-card">
             <TabButton
               active={moduleThemeTab === "colors"}
               warning={hasModeColorOverrides(
@@ -4109,7 +4109,7 @@ export function RecordEditor({
               </div>
             ) : null}
           </div>
-          <div className="editor-section-card">
+          <div className="editor-card editor-section-card">
             <TabButton
               active={moduleThemeTab === "settings"}
               onClick={() => setModuleThemeTab(moduleThemeTab === "settings" ? "" : "settings")}
@@ -4156,7 +4156,7 @@ export function RecordEditor({
         <span className="record-id">{record.id}</span>
       </div>
       <div className="editor-sections">
-        <div className="editor-section-card">
+        <div className="editor-card editor-section-card">
           <TabButton
             active={genericTab === "general"}
             warning={table.id === "shots" && shotHasFpsOverride()}
