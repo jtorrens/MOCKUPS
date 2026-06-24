@@ -2,6 +2,7 @@
    Transitional note: newer inspector-first styles override many of these
    defaults later in the file. Do not remove this block without a visual pass. */
 :root {
+  --app-panel-padding: 22px;
   color: #e8e9ee;
   background: #0d0f14;
   font-family:
@@ -1748,7 +1749,6 @@ button:disabled {
 }
 
 .selection-panel,
-.preview-panel,
 .context-panel,
 .json-panel,
 .inspector-panel {
