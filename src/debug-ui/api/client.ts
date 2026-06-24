@@ -77,6 +77,15 @@ export interface DebugSelection {
 
 export interface DebugPayload {
   selection: DebugSelection;
+  previewContext?: {
+    deviceId: string;
+    deviceName: string;
+    themeId: string;
+    themeName: string;
+    themeMode: "light" | "dark";
+    ownerActorId?: string | null;
+    ownerActorName?: string | null;
+  };
   screenInstance: {
     id: string;
     screenType: string;

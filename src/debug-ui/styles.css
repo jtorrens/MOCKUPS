@@ -2917,6 +2917,27 @@ button {
   font-size: 13px;
 }
 
+.preview-header-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.preview-header-meta span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 8px;
+  border: 1px solid #d8dee8;
+  border-radius: 999px;
+  background: #f7f9fc;
+  color: #343b48;
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
 .preview-header-card select {
   width: auto;
   min-width: 150px;
@@ -3810,4 +3831,49 @@ body,
 .record-editor .theme-token-group-editor .json-primitive-row {
   border: 0 !important;
   padding-inline: 10px !important;
+}
+
+/* Preview frame overlay: never affects renderable size or position. */
+.preview-viewport {
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+.preview-phone-frame {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  box-sizing: border-box;
+  border: var(--preview-frame-border, 10px) solid #111111;
+  border-radius: var(--preview-frame-radius, 56px);
+  box-shadow:
+    0 var(--preview-frame-shadow-y, 10px)
+      var(--preview-frame-shadow-blur, 28px) rgba(17, 24, 39, 0.18),
+    0 2px 8px rgba(17, 24, 39, 0.1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+}
+
+.preview-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.preview-frame-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  color: #343b48;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.preview-frame-toggle input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
 }

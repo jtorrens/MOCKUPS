@@ -42,23 +42,32 @@ export function layoutMessageBubble({
     ),
   );
   const bubbleHeight = measurement.height + props.style.paddingY * 2;
-  const alignment =
-    props.direction === "outgoing"
-      ? "right"
-      : props.direction === "system"
-        ? "center"
-        : "left";
+  const alignment = props.layout.alignment;
   const bubbleX =
     alignment === "right"
       ? messageArea.x + messageArea.width - bubbleWidth
       : alignment === "center"
         ? messageArea.x + (messageArea.width - bubbleWidth) / 2
         : messageArea.x + avatarReserve;
+  const roundedBubbleWidth = Math.round(bubbleWidth);
+  const roundedBubbleHeight = Math.round(bubbleHeight);
+  const roundedBubbleX =
+    alignment === "right"
+      ? Math.round(messageArea.x + messageArea.width) - roundedBubbleWidth
+      : alignment === "center"
+        ? Math.round(messageArea.x + (messageArea.width - roundedBubbleWidth) / 2)
+        : Math.round(bubbleX);
   const bubbleBox = {
-    x: Math.round(bubbleX),
+    x: Math.max(
+      Math.round(messageArea.x),
+      Math.min(
+        roundedBubbleX,
+        Math.round(messageArea.x + messageArea.width) - roundedBubbleWidth,
+      ),
+    ),
     y: Math.round(y),
-    width: Math.round(bubbleWidth),
-    height: Math.round(bubbleHeight),
+    width: roundedBubbleWidth,
+    height: roundedBubbleHeight,
   };
   const textBox = {
     x: Math.round(bubbleBox.x + props.style.paddingX),

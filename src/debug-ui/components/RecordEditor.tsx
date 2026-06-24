@@ -1172,7 +1172,11 @@ export function RecordEditor({
     }
 
     function messageDirection(message: Record<string, JsonValue>) {
-      if (message.type === "system") return "system";
+      if (message.direction === "system" || message.type === "system") {
+        return "system";
+      }
+      if (message.direction === "outgoing") return "sent";
+      if (message.direction === "incoming") return "received";
       const sender = participantById(message.senderParticipantId);
       return sender?.role === "owner" ? "sent" : "received";
     }
@@ -1191,6 +1195,7 @@ export function RecordEditor({
       return {
         id: `message_${String(index + 1).padStart(3, "0")}`,
         senderParticipantId: String(sender?.id ?? ""),
+        direction: "incoming",
         type: "text",
         text: "",
         showBubbleBackground: true,
@@ -1347,6 +1352,7 @@ export function RecordEditor({
         if (nextDirection === "system") {
           updateMessage({
             ...message,
+            direction: "system",
             type: "system",
             senderParticipantId: String(owner?.id ?? senderId),
           });
@@ -1355,6 +1361,7 @@ export function RecordEditor({
         if (nextDirection === "sent") {
           updateMessage({
             ...message,
+            direction: "outgoing",
             type: "text",
             senderParticipantId: String(owner?.id ?? senderId),
           });
@@ -1362,6 +1369,7 @@ export function RecordEditor({
         }
         updateMessage({
           ...message,
+          direction: "incoming",
           type: "text",
           senderParticipantId: String(received?.id ?? senderId),
         });

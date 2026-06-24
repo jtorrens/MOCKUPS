@@ -646,3 +646,15 @@ App wallpaper color is edited only inside the Wallpaper card, even though it is 
 App-level Shadows are hidden from the editor for now. Current shadow tokens are only used for broad Theme-level notification defaults or module-specific component shadows such as Chat bubbles. App should inherit Theme shadows instead of creating production one-offs.
 
 Global Theme `spacing` is currently a broad scale and is not directly consumed by the Chat render path. The Chat render uses module-level layout/message spacing tokens such as `layout.screenGutter` and `messages.spacing`.
+
+## D052 — Chat message direction is explicit content, not inferred from sender
+
+Status: accepted
+
+Chat message layout uses `message.direction` to decide visual alignment:
+
+- `incoming` aligns left;
+- `outgoing` aligns right;
+- `system` aligns center.
+
+`senderParticipantId` identifies who the message belongs to and may still drive labels, avatars, participant-specific state, and future metadata, but it no longer decides horizontal placement. This lets a conversation represent sent/received/system messages directly without coupling alignment to a participant role heuristic.

@@ -87,6 +87,8 @@ function nodeStyle(
   const backgroundRepeat = stringValue(style.backgroundRepeat);
   const color = stringValue(style.textColor ?? style.color ?? style.foreground);
   const borderRadius = numberValue(style.borderRadius ?? style.cornerRadius);
+  const borderColor = stringValue(style.borderColor);
+  const borderWidth = numberValue(style.borderWidth);
   const opacity = node.transform?.opacity;
   const separatorWidth = numberValue(style.separatorWidth);
   return {
@@ -108,6 +110,10 @@ function nodeStyle(
     opacity,
     boxSizing: "border-box",
     boxShadow: shadowValue(style.shadow),
+    border:
+      borderColor && borderWidth
+        ? `${borderWidth}px solid ${borderColor}`
+        : undefined,
     borderBottom:
       separatorWidth && separatorWidth > 0
         ? `${separatorWidth}px solid ${stringValue(style.separatorColor) ?? "transparent"}`

@@ -72,16 +72,13 @@ export function layoutChatScreen({
   const messageListTop = rootBox.y + statusBarHeight + headerHeight;
   const messageListBottom =
     rootBox.y + rootBox.height - props.viewport.safeArea.bottom;
+  const messageListLeft = rootBox.x + props.viewport.safeArea.left + screenGutter;
+  const messageListRight =
+    rootBox.x + rootBox.width - props.viewport.safeArea.right - screenGutter;
   const messageListBox = {
-    x: rootBox.x + props.viewport.safeArea.left + screenGutter,
+    x: messageListLeft,
     y: messageListTop,
-    width: Math.max(
-      1,
-      rootBox.width -
-        props.viewport.safeArea.left -
-        props.viewport.safeArea.right -
-        screenGutter * 2,
-    ),
+    width: Math.max(1, messageListRight - messageListLeft),
     height: Math.max(0, messageListBottom - messageListTop),
   };
 

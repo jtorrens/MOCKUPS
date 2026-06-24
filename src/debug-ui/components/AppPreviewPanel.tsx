@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { DebugOptions, DebugPayload, DebugSelection } from "../api/client.js";
 import { PreviewPanel } from "./PreviewPanel.js";
 
@@ -39,6 +40,7 @@ export function AppPreviewPanel({
   onSelectionChange,
   error,
 }: AppPreviewPanelProps) {
+  const [showPhoneFrame, setShowPhoneFrame] = useState(true);
   const episodes = options.episodes.filter(
     (episode) => episode.productionId === selection.productionId,
   );
@@ -60,6 +62,7 @@ export function AppPreviewPanel({
     selectedInstance?.moduleId?.replace(/^core\./, "") ??
     selectedInstance?.screenType ??
     "Preview";
+  const previewContext = payload?.previewContext;
 
   return (
     <aside className="right-preview-shell">
@@ -70,32 +73,52 @@ export function AppPreviewPanel({
             {previewTitle}
             {selectedInstance?.moduleId ? ` · ${selectedInstance.moduleId}` : ""}
           </p>
+          {previewContext ? (
+            <div className="preview-header-meta" aria-label="Resolved preview context">
+              <span title={previewContext.deviceId}>
+                Device: {previewContext.deviceName}
+              </span>
+              <span title={previewContext.themeId}>
+                Theme: {previewContext.themeName} · {previewContext.themeMode}
+              </span>
+            </div>
+          ) : null}
         </div>
-        <select
-          aria-label="Preview screen"
-          value={selection.screenInstanceId}
-          onChange={(event) => {
-            const instance = screenInstances.find(
-              (candidate) => candidate.id === event.target.value,
-            );
-            if (instance) {
-              onSelectionChange({
-                ...selection,
-                screenInstanceId: instance.id,
-                frame: Math.max(
-                  instance.startFrame,
-                  Math.min(selection.frame, instance.endFrame - 1),
-                ),
-              });
-            }
-          }}
-        >
-          {screenInstances.map((instance) => (
-            <option key={instance.id} value={instance.id}>
-              {instance.moduleId?.replace(/^core\./, "") ?? instance.screenType}
-            </option>
-          ))}
-        </select>
+        <div className="preview-header-controls">
+          <label className="preview-frame-toggle">
+            <input
+              type="checkbox"
+              checked={showPhoneFrame}
+              onChange={(event) => setShowPhoneFrame(event.target.checked)}
+            />
+            Border
+          </label>
+          <select
+            aria-label="Preview screen"
+            value={selection.screenInstanceId}
+            onChange={(event) => {
+              const instance = screenInstances.find(
+                (candidate) => candidate.id === event.target.value,
+              );
+              if (instance) {
+                onSelectionChange({
+                  ...selection,
+                  screenInstanceId: instance.id,
+                  frame: Math.max(
+                    instance.startFrame,
+                    Math.min(selection.frame, instance.endFrame - 1),
+                  ),
+                });
+              }
+            }}
+          >
+            {screenInstances.map((instance) => (
+              <option key={instance.id} value={instance.id}>
+                {instance.moduleId?.replace(/^core\./, "") ?? instance.screenType}
+              </option>
+            ))}
+          </select>
+        </div>
       </section>
       <section className="panel preview-context">
         <div className="panel-heading">
@@ -273,6 +296,7 @@ export function AppPreviewPanel({
       <PreviewPanel
         renderable={payload?.renderable ?? null}
         frame={selection.frame}
+        showPhoneFrame={showPhoneFrame}
       />
     </aside>
   );

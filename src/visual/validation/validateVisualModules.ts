@@ -91,6 +91,11 @@ assert(
 );
 const messageListBox = layoutMetadata.messageListBox;
 assert(
+  messageListBox.x === 72 &&
+    messageListBox.x + messageListBox.width === 1218,
+  "Message list must use the scaled screen gutter",
+);
+assert(
   receivedBubble?.style?.tailStyle === "rounded_wedge",
   "Message bubble must use the resolved tail style token",
 );
@@ -110,6 +115,11 @@ for (const bubble of bubbleNodes) {
 assert(
   receivedBubble.box.x < sentBubble.box.x,
   "Received bubbles must align left of sent bubbles",
+);
+assert(
+  sentBubble.box.x + sentBubble.box.width ===
+    messageListBox.x + messageListBox.width,
+  "Sent bubble must align to the scaled message-list right edge",
 );
 assert(
   receivedBubble.box.y + receivedBubble.box.height <= sentBubble.box.y,
@@ -186,6 +196,40 @@ assert(
       overflowMessageListBox.y + overflowMessageListBox.height,
   "Keep-latest-visible policy must leave the final bubble inside the list area",
 );
+const zeroGutterProps = ResolvedChatScreenPropsSchema.parse({
+  ...chatProps,
+  theme: {
+    ...chatProps.theme,
+    layout: {
+      ...chatProps.theme.layout,
+      screenGutter: 0,
+    },
+  },
+});
+const zeroGutterTree = RenderableNodeSchema.parse(
+  chatModule.render(zeroGutterProps),
+);
+const zeroGutterLayout = zeroGutterTree.metadata?.layout;
+const zeroGutterMessageListBox = isRecord(zeroGutterLayout)
+  ? zeroGutterLayout.messageListBox
+  : undefined;
+const zeroGutterSentBubble = zeroGutterTree.children?.find(
+  (child) => child.type === "message_bubble" && child.role === "outgoing",
+);
+assert(
+  isBox(zeroGutterMessageListBox) && zeroGutterSentBubble?.box,
+  "Zero-gutter validation must expose message-list and sent bubble boxes",
+);
+assert(
+  zeroGutterSentBubble.box.x + zeroGutterSentBubble.box.width <=
+    zeroGutterMessageListBox.x + zeroGutterMessageListBox.width,
+  "Zero-gutter sent bubble must not overflow the message-list right edge",
+);
+assert(
+  zeroGutterSentBubble.box.x + zeroGutterSentBubble.box.width ===
+    zeroGutterMessageListBox.x + zeroGutterMessageListBox.width,
+  "Zero-gutter sent bubble must align to the message-list right edge",
+);
 assert(
   Object.keys(visualModuleRegistry).sort().join(",") ===
     "avatar,chat_header,chat_screen,message_bubble,status_bar",
@@ -201,6 +245,7 @@ console.log("✓ visual tree uses resolved layout, tail, and Wi-Fi tokens");
 console.log("✓ sent/received bounds, stacking, text, and avatar boxes validated");
 console.log("✓ repeated rendering produced an identical tree");
 console.log("✓ deterministic overflow keeps the latest message visible");
+console.log("✓ zero-gutter sent bubble aligns to the right edge without clipping");
 console.log(
   `layout: chat_screen ${tree.box.x},${tree.box.y} ${tree.box.width}x${tree.box.height}`,
 );

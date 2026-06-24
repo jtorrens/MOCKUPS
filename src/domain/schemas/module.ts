@@ -50,6 +50,7 @@ export const ChatModuleMessageSchema = z
   .object({
     id: IdSchema,
     senderParticipantId: IdSchema,
+    direction: z.enum(["incoming", "outgoing", "system"]).optional(),
     /**
      * Message family. Media is not exclusive with text: a text message may also
      * include mediaAssetId/media to represent an attachment with a caption.

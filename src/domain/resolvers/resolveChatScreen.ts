@@ -461,11 +461,12 @@ export function resolveChatScreen({
       );
     }
     const direction =
-      message.type === "system"
+      message.direction ??
+      (message.type === "system"
         ? "system"
         : sender.participantId === ownerParticipant.participantId
           ? "outgoing"
-          : "incoming";
+          : "incoming");
     const bubble = resolveMessageBubble({
       message,
       sender,

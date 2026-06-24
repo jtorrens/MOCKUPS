@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { useEffect, useRef, useState } from "react";
 import { RemotionRenderableAdapter } from "../../remotion/RemotionRenderableAdapter.js";
 import type { RenderableNode } from "../../visual/renderable/types.js";
@@ -5,9 +6,14 @@ import type { RenderableNode } from "../../visual/renderable/types.js";
 interface PreviewPanelProps {
   renderable: RenderableNode | null;
   frame: number;
+  showPhoneFrame: boolean;
 }
 
-export function PreviewPanel({ renderable, frame }: PreviewPanelProps) {
+export function PreviewPanel({
+  renderable,
+  frame,
+  showPhoneFrame,
+}: PreviewPanelProps) {
   const viewportHostRef = useRef<HTMLDivElement | null>(null);
   const [availableSize, setAvailableSize] = useState({
     width: 322,
@@ -70,6 +76,20 @@ export function PreviewPanel({ renderable, frame }: PreviewPanelProps) {
               No renderable output for this instance/frame.
             </div>
           )}
+          {renderable && showPhoneFrame ? (
+            <div
+              aria-hidden="true"
+              className="preview-phone-frame"
+              style={
+                {
+                  "--preview-frame-border": `${Math.max(1, 10 * scale)}px`,
+                  "--preview-frame-radius": `${56 * scale}px`,
+                  "--preview-frame-shadow-y": `${10 * scale}px`,
+                  "--preview-frame-shadow-blur": `${28 * scale}px`,
+                } as CSSProperties
+              }
+            />
+          ) : null}
         </div>
       </div>
     </section>

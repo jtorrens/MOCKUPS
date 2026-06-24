@@ -657,6 +657,7 @@ export function loadDebugPayload(
   if (!theme || !device || !deviceState) {
     throw new Error("Selected screen instance requires theme, device and state");
   }
+  const themeMode = getThemeMode(theme.tokens_json, screenInstance.theme_mode);
 
   const warnings: string[] = [];
   let resolvedScreen: unknown = null;
@@ -700,6 +701,15 @@ export function loadDebugPayload(
 
   return {
     selection,
+    previewContext: {
+      deviceId: device.id,
+      deviceName: device.name,
+      themeId: theme.id,
+      themeName: theme.name,
+      themeMode,
+      ownerActorId: ownerActor?.id ?? null,
+      ownerActorName: ownerActor?.display_name ?? null,
+    },
     screenInstance: {
       id: screenInstance.id,
       screenType: screenInstance.screen_type,

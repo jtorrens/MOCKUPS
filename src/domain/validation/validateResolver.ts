@@ -95,7 +95,7 @@ assert(
 assert(
   chatProps.messages[0]?.direction === "incoming" &&
     chatProps.messages[1]?.direction === "outgoing",
-  "senderParticipantId must determine incoming/outgoing direction",
+  "message.direction must determine incoming/outgoing/system alignment",
 );
 assert(
   chatProps.messages[0]?.text === "Are you nearby?" &&
@@ -125,7 +125,7 @@ console.log("✓ lock frame resolved at shot frame 75");
 console.log("✓ lock/chat overlap resolved at shot frame 150");
 console.log("✓ chat props validated during write-on at shot frame 210");
 console.log("✓ Chat resolved without legacy conversation/message records");
-console.log("✓ senderParticipantId determined incoming/outgoing direction");
+console.log("✓ message.direction determined incoming/outgoing/system alignment");
 console.log("✓ text and media can coexist on one Chat message");
 console.log("✓ completed write-on validated at shot frame 240");
 console.log("In-memory repository and resolver validation succeeded.");
