@@ -1,8 +1,5 @@
-/* UI LAYER: Legacy global shell baseline.
-   Transitional note: newer inspector-first styles override many of these
-   defaults later in the file. Do not remove this block without a visual pass. */
+/* UI LAYER: Global UI tokens shared by shell, editor, browser, and preview. */
 :root {
-  /* UI tokens shared by shell, central editor, left browser, and preview. */
   --app-panel-padding: 22px;
   --app-shell-background: #ffffff;
   --left-panel-background: #fbfcfd;
@@ -538,9 +535,6 @@ body {
   min-width: 1180px;
   height: 100vh;
   overflow: hidden;
-  background:
-    radial-gradient(circle at 75% 0%, rgba(77, 99, 255, 0.12), transparent 34rem),
-    var(--app-shell-background, #0d0f14);
 }
 
 .ui-glyph {
@@ -1613,25 +1607,6 @@ button:disabled {
   background: #201b10;
 }
 
-/* UI LAYER: Inspector-first light theme override.
-   Concept B / Inspector-first light pass.
-   This intentionally overrides the darker debug shell styles above while we
-   converge on the production authoring UX. */
-:root {
-  color: #16181d;
-  background: var(--app-shell-background, #f6f7f9);
-}
-
-body {
-  background:
-    radial-gradient(circle at 70% 0%, rgba(55, 91, 255, 0.08), transparent 34rem),
-    var(--app-shell-background, #f6f7f9);
-}
-
-.core-app-shell {
-  background: var(--app-shell-background, #f6f7f9);
-}
-
 .left-app-panel {
   min-height: 0;
   border-right: var(--left-panel-border, 1px solid #dde1e8);
@@ -2536,8 +2511,7 @@ body {
   font-weight: 800;
 }
 
-/* UI LAYER: Current inspector shell polish.
-   Re-applied after safe CSS restore; this is the current winning shell layer. */
+/* UI LAYER: Shell background. */
 :root {
   color: #15171c;
   background: var(--app-shell-background, #ffffff);
