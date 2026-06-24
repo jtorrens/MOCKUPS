@@ -31,6 +31,11 @@ import type {
   ThemeEditorTab,
 } from "../editors/editorTabs.js";
 import {
+  contentSummary,
+  defaultGroupValue,
+  isPrimitiveContentValue,
+} from "../editors/chat/chatContentModel.js";
+import {
   hasModeColorOverrides,
   ModeColorEditor,
 } from "./json-editor/ModeColorEditor.js";
@@ -796,10 +801,6 @@ export function RecordEditor({
     });
   }
 
-  function defaultGroupValue(groupKey: string) {
-    return groupKey === "messages" || groupKey === "participants" ? [] : {};
-  }
-
   function productionIdForCurrentRecord() {
     if (!record) return "";
     if (table.id === "productions") return record.id;
@@ -931,61 +932,6 @@ export function RecordEditor({
       ...themeTokenRoot,
       [groupKey]: nextValue,
     });
-  }
-
-  function isPrimitiveContentValue(value: JsonValue) {
-    return (
-      value === null ||
-      typeof value === "string" ||
-      typeof value === "number" ||
-      typeof value === "boolean"
-    );
-  }
-
-  function truncateContentSummary(value: string) {
-    const normalized = value.replace(/\s+/g, " ").trim();
-    return normalized.length > 96 ? `${normalized.slice(0, 93)}…` : normalized;
-  }
-
-  function contentSummary(value: JsonValue, groupKey?: string): string {
-    if (isJsonObject(value)) {
-      if (groupKey === "participants") {
-        const name = typeof value.displayName === "string" ? value.displayName : "";
-        const role = typeof value.role === "string" ? value.role : "";
-        const actor = typeof value.actorId === "string" ? value.actorId : "";
-        return truncateContentSummary(
-          [name, role, actor ? `actor ${actor}` : ""].filter(Boolean).join(" · "),
-        );
-      }
-      if (groupKey === "messages") {
-        const text = typeof value.text === "string" ? value.text : "";
-        const direction = value.type === "system" ? "sistema" : "mensaje";
-        const start = typeof value.startFrame === "number" ? value.startFrame : null;
-        const duration = typeof value.enterDurationFrames === "number"
-          ? value.enterDurationFrames
-          : null;
-        const timing =
-          start !== null && duration !== null ? `${start}–${start + duration}f` : "";
-        const mediaSummary: string = value.media
-          ? contentSummary(value.media as JsonValue)
-          : "";
-        return truncateContentSummary(
-          [direction, text || mediaSummary, timing]
-            .filter(Boolean)
-            .join(" · "),
-        );
-      }
-      for (const key of ["displayName", "text", "title", "name", "role", "type", "id"]) {
-        const candidate = value[key];
-        if (typeof candidate === "string" && candidate.trim()) {
-          return truncateContentSummary(candidate);
-        }
-      }
-      return `${Object.keys(value).length} fields`;
-    }
-    if (Array.isArray(value)) return `${value.length} items`;
-    if (value === null) return "Empty";
-    return String(value);
   }
 
   function contentFieldLabel(
