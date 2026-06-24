@@ -1112,48 +1112,6 @@ body {
   grid-template-columns: minmax(0, 1fr);
 }
 
-.editor-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 0 0 16px;
-  border: 1px solid #252b38;
-  border-radius: 14px;
-  padding: 5px;
-  background: rgba(8, 10, 15, 0.52);
-}
-
-.editor-tabs button {
-  border: 1px solid transparent;
-  border-radius: 10px;
-  padding: 8px 13px;
-  color: #99a3b8;
-  background: transparent;
-  font-size: 12px;
-  white-space: nowrap;
-}
-
-.editor-tabs button.active {
-  border-color: #3d465e;
-  color: #ffffff;
-  background: #252b3a;
-}
-
-.editor-tabs button.has-warning {
-  color: #ffd778;
-}
-
-.editor-tabs button.active.has-warning {
-  border-color: rgba(137, 106, 36, 0.68);
-  background: rgba(82, 59, 12, 0.8);
-}
-
-.subtle-tabs {
-  margin-bottom: 12px;
-  border-color: #293041;
-  background: rgba(12, 15, 23, 0.46);
-}
-
 .nested-editor-stack {
   display: grid;
   gap: 12px;
@@ -2920,31 +2878,6 @@ button {
   background: var(--editor-record-id-background, #f7f8fa);
 }
 
-.record-editor > .editor-tabs:not(.subtle-tabs) {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
-  margin-bottom: 10px;
-  border: 0;
-  padding: 0;
-  background: transparent;
-}
-
-.record-editor > .editor-tabs:not(.subtle-tabs) button {
-  display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) auto;
-  gap: 14px;
-  align-items: center;
-  min-height: 86px;
-  border: var(--card-border, 1px solid #dfe3eb);
-  border-radius: var(--card-radius, 14px);
-  padding: 16px 18px;
-  color: var(--card-header-title-color, #1d2129);
-  background: var(--card-background, #ffffff);
-  text-align: left;
-  box-shadow: var(--card-shadow, 0 2px 8px rgba(21, 30, 50, 0.04));
-}
-
 .tab-icon {
   display: grid;
   width: var(--card-header-icon-size, 30px);
@@ -2976,87 +2909,6 @@ button {
   font-family: var(--card-header-font-family, inherit);
   font-size: var(--card-header-summary-font-size, 12px);
   font-weight: var(--card-header-summary-font-weight, 500);
-}
-
-.record-editor > .editor-tabs:not(.subtle-tabs) button::after {
-  content: "›";
-  align-self: center;
-  color: var(--card-header-chevron-color, #14171d);
-  font-size: var(--accordion-chevron-size, 24px);
-  font-weight: var(--accordion-chevron-weight, 450);
-}
-
-.record-editor > .editor-tabs:not(.subtle-tabs) button.active::after {
-  content: "⌃";
-  font-size: var(--accordion-chevron-open-size, 17px);
-}
-
-.record-editor > .editor-tabs:not(.subtle-tabs) button.active {
-  border-color: var(--editor-header-surface-border-color, #dce1ea);
-  background: var(--card-background, #ffffff);
-  box-shadow:
-    0 8px 26px rgba(21, 30, 50, 0.08),
-    inset 0 0 0 1px rgba(52, 93, 255, 0.08);
-}
-
-.record-editor > .editor-tabs:not(.subtle-tabs) button.has-warning {
-  color: var(--editor-warning-color, #e66a00);
-}
-
-.record-editor > .editor-tabs:not(.subtle-tabs) button.has-warning::before {
-  content: none;
-}
-
-.record-editor > .editor-tabs:not(.subtle-tabs) button.has-warning .tab-icon {
-  border-color: var(--editor-warning-border-color, #ffd4a3);
-  color: var(--editor-warning-color, #d05f00);
-  background: var(--editor-warning-background, #fff4e8);
-}
-
-.record-editor > .editor-tabs:not(.subtle-tabs) button.has-warning .tab-copy small {
-  color: var(--editor-warning-color, #d05f00);
-}
-
-.subtle-tabs {
-  gap: 6px;
-  border: 1px solid #dfe3eb;
-  background: #f1f3f6;
-}
-
-.subtle-tabs button,
-.editor-tabs.subtle-tabs button {
-  border: 0;
-  color: #687082;
-  background: transparent;
-}
-
-.subtle-tabs .tab-icon,
-.editor-tabs.subtle-tabs .tab-icon {
-  display: none;
-}
-
-.subtle-tabs .tab-copy,
-.editor-tabs.subtle-tabs .tab-copy {
-  display: block;
-}
-
-.subtle-tabs .tab-copy > span,
-.editor-tabs.subtle-tabs .tab-copy > span {
-  color: inherit;
-  font-size: 12px;
-  font-weight: 650;
-}
-
-.subtle-tabs .tab-copy small,
-.editor-tabs.subtle-tabs .tab-copy small {
-  display: none;
-}
-
-.subtle-tabs button.active,
-.editor-tabs.subtle-tabs button.active {
-  color: #12141a;
-  background: #ffffff;
-  box-shadow: 0 1px 4px rgba(21, 30, 50, 0.08);
 }
 
 .nested-editor-stack,
