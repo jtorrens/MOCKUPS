@@ -2936,13 +2936,13 @@ button {
   gap: 14px;
   align-items: center;
   min-height: 86px;
-  border: 1px solid #dfe3eb;
-  border-radius: 14px;
+  border: var(--card-border, 1px solid #dfe3eb);
+  border-radius: var(--card-radius, 14px);
   padding: 16px 18px;
-  color: #1d2129;
-  background: #ffffff;
+  color: var(--card-header-title-color, #1d2129);
+  background: var(--card-background, #ffffff);
   text-align: left;
-  box-shadow: 0 2px 8px rgba(21, 30, 50, 0.04);
+  box-shadow: var(--card-shadow, 0 2px 8px rgba(21, 30, 50, 0.04));
 }
 
 .tab-icon {
@@ -2952,7 +2952,7 @@ button {
   place-items: center;
   border: var(--card-header-icon-border, 1px solid #dfe3eb);
   border-radius: var(--card-header-icon-radius, 10px);
-  color: #15171c;
+  color: var(--card-header-icon-color, #15171c);
   background: var(--card-header-icon-background, #fbfcfd);
   font-size: var(--card-header-icon-font-size, 20px);
   font-weight: var(--card-header-icon-font-weight, 700);
@@ -2964,7 +2964,7 @@ button {
 }
 
 .tab-copy > span {
-  color: #12141a;
+  color: var(--card-header-title-color, #12141a);
   font-family: var(--card-header-font-family, inherit);
   font-size: var(--card-header-title-font-size, 15px);
   font-weight: var(--card-header-title-font-weight, 760);
@@ -2972,7 +2972,7 @@ button {
 }
 
 .tab-copy small {
-  color: #667085;
+  color: var(--card-header-summary-color, #667085);
   font-family: var(--card-header-font-family, inherit);
   font-size: var(--card-header-summary-font-size, 12px);
   font-weight: var(--card-header-summary-font-weight, 500);
@@ -2981,7 +2981,7 @@ button {
 .record-editor > .editor-tabs:not(.subtle-tabs) button::after {
   content: "›";
   align-self: center;
-  color: #14171d;
+  color: var(--card-header-chevron-color, #14171d);
   font-size: var(--accordion-chevron-size, 24px);
   font-weight: var(--accordion-chevron-weight, 450);
 }
@@ -2992,8 +2992,8 @@ button {
 }
 
 .record-editor > .editor-tabs:not(.subtle-tabs) button.active {
-  border-color: #dce1ea;
-  background: #ffffff;
+  border-color: var(--editor-header-surface-border-color, #dce1ea);
+  background: var(--card-background, #ffffff);
   box-shadow:
     0 8px 26px rgba(21, 30, 50, 0.08),
     inset 0 0 0 1px rgba(52, 93, 255, 0.08);
