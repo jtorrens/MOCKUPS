@@ -57,6 +57,8 @@ The transitional global stylesheet exposes a small set of CSS variables in `:roo
 
 New panel/card work should prefer these tokens over local hardcoded values.
 
+The app shell also supports an experimental UI-token mode switch with `data-ui-theme="light|dark"` on `<html>`. The dark set currently covers only the shared card/subcard tokens above; fields, tables, inputs, and legacy shell colors are intentionally not dark-mode complete yet.
+
 ### 1. Global shell
 
 Owns document defaults, full-window layout, resize gutters, and the main three zones:

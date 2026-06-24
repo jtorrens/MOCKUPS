@@ -15,6 +15,9 @@ import { RecordEditor } from "./components/RecordEditor.js";
 import { RightPreviewShell } from "./preview/index.js";
 
 const LAYOUT_STORAGE_KEY = "mockups.debugUi.layout.v1";
+const UI_THEME_STORAGE_KEY = "mockups.debugUi.theme.v1";
+
+type UiThemeMode = "light" | "dark";
 
 interface StoredLayout {
   navigationWidth?: number;
@@ -29,6 +32,15 @@ function readStoredLayout(): StoredLayout {
     return typeof parsed === "object" && parsed !== null ? parsed : {};
   } catch {
     return {};
+  }
+}
+
+function readStoredUiTheme(): UiThemeMode {
+  try {
+    const value = window.localStorage.getItem(UI_THEME_STORAGE_KEY);
+    return value === "dark" ? "dark" : "light";
+  } catch {
+    return "light";
   }
 }
 
@@ -119,6 +131,7 @@ export function App() {
   const [authoringWidth, setAuthoringWidth] = useState(() =>
     storedPanelWidth("authoringWidth", 1040, 720, 1800),
   );
+  const [uiTheme, setUiTheme] = useState<UiThemeMode>(() => readStoredUiTheme());
 
   useEffect(() => {
     void getAppState()
@@ -148,6 +161,11 @@ export function App() {
       JSON.stringify({ navigationWidth, authoringWidth }),
     );
   }, [authoringWidth, navigationWidth]);
+
+  useEffect(() => {
+    document.documentElement.dataset.uiTheme = uiTheme;
+    window.localStorage.setItem(UI_THEME_STORAGE_KEY, uiTheme);
+  }, [uiTheme]);
 
   const activeTable = state?.tables.find((table) => table.id === activeTableId);
   const selectedRecord = useMemo(() => {
@@ -620,6 +638,19 @@ export function App() {
                 </p>
               </div>
               <div className="production-switcher">
+                <label className="ui-theme-switcher">
+                  UI
+                  <select
+                    aria-label="UI theme"
+                    value={uiTheme}
+                    onChange={(event) =>
+                      setUiTheme(event.target.value === "dark" ? "dark" : "light")
+                    }
+                  >
+                    <option value="light">Light</option>
+                    <option value="dark">Dark</option>
+                  </select>
+                </label>
                 <label>
                   Production
                   <select

@@ -55,6 +55,22 @@
   font-synthesis: none;
 }
 
+:root[data-ui-theme="dark"] {
+  --card-border: 1px solid #303746;
+  --card-background: #151a23;
+  --card-shadow: 0 2px 10px rgba(0, 0, 0, 0.28);
+  --card-header-background: #151a23;
+  --card-header-title-color: #f5f7fb;
+  --card-header-summary-color: #a3adbd;
+  --card-header-icon-color: #f5f7fb;
+  --card-header-chevron-color: #d7dde8;
+  --card-body-border: 1px solid #293140;
+  --card-header-icon-border: 1px solid #3a4353;
+  --card-header-icon-background: #1e2530;
+  --subcard-border: 1px solid #343d4d;
+  --subcard-background: #171d27;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -2129,7 +2145,15 @@ body {
 }
 
 .production-switcher {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: end;
   margin-top: 10px;
+}
+
+.ui-theme-switcher {
+  min-width: 86px;
 }
 
 label {
