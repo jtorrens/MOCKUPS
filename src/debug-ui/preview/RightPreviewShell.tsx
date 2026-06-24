@@ -1,4 +1,5 @@
 import { useState } from "react";
+import "./preview.css";
 import { PreviewOptionsCard } from "./PreviewOptionsCard.js";
 import { PreviewOutputStack } from "./PreviewOutputStack.js";
 import { PreviewPanel } from "./PreviewPanel.js";

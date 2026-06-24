@@ -1,0 +1,319 @@
+/* UI LAYER: Preview shell controls, context, and feedback. */
+.right-preview-shell {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 360px;
+  height: 100vh;
+  max-height: 100vh;
+  flex-direction: column;
+  gap: 14px;
+  overflow: hidden auto;
+  border-left: 1px solid #dde1e8;
+  padding: 22px;
+  background: #fbfcfd;
+}
+
+.preview-options-card {
+  overflow: hidden;
+  flex: none;
+  order: 0;
+  border: 1px solid #dfe3eb;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(21, 30, 50, 0.045);
+}
+
+.preview-options-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 10px;
+  align-items: center;
+  min-height: 58px;
+  padding: 12px 14px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.preview-options-summary::-webkit-details-marker {
+  display: none;
+}
+
+.preview-options-summary::after {
+  content: "›";
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  color: #475467;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.preview-options-card[open] > .preview-options-summary::after {
+  content: "⌄";
+  font-size: 15px;
+}
+
+.preview-options-summary h2 {
+  margin: 0;
+  color: #12141a;
+  font-size: 19px;
+  letter-spacing: -0.025em;
+}
+
+.preview-options-summary p {
+  overflow: hidden;
+  margin: 3px 0 0;
+  color: #626a78;
+  font-size: 12px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preview-options-body {
+  display: grid;
+  gap: 12px;
+  border-top: 1px solid #edf0f4;
+  padding: 12px 14px 14px;
+}
+
+.preview-options-body label {
+  display: grid;
+  gap: 6px;
+  color: #667085;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.preview-options-body select,
+.preview-options-body input[type="number"] {
+  height: 34px;
+  margin: 0;
+  border-color: #d8dee8;
+  color: #343b48;
+  background: #ffffff;
+  font-size: 12px;
+}
+
+.preview-options-body input[type="range"] {
+  margin: 0;
+}
+
+.preview-header-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.preview-header-meta span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 8px;
+  border: 1px solid #d8dee8;
+  border-radius: 999px;
+  background: #f7f9fc;
+  color: #343b48;
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.preview-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.preview-frame-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  color: #343b48;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.preview-frame-toggle input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+}
+
+.preview-render-button {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid #d8dee8;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #343b48;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.preview-render-button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.preview-select-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.preview-frame-field {
+  grid-column: 1 / -1;
+}
+
+.frame-inline {
+  display: grid;
+  grid-template-columns: 1fr 78px;
+  gap: 8px;
+  align-items: center;
+}
+
+.right-preview-shell .preview-panel {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  order: 1;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+.right-preview-shell .preview-panel .panel-heading {
+  display: none;
+}
+
+.right-preview-shell .inspector-panel {
+  padding: 16px;
+}
+
+.preview-viewport-host {
+  display: grid;
+  min-height: 0;
+  flex: 1 1 auto;
+  place-items: center;
+  overflow: hidden;
+  padding: 18px;
+  border: 1px solid #dfe3eb;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(21, 30, 50, 0.045);
+}
+
+.preview-viewport {
+  position: relative;
+  overflow: hidden;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* UI LAYER: Render surface and external phone-frame overlay.
+   Must not add layout padding/border to the renderable coordinate system. */
+.preview-scale {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
+}
+
+.preview-phone-frame {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  box-sizing: border-box;
+  border: var(--preview-frame-border, 10px) solid #111111;
+  border-radius: var(--preview-frame-radius, 56px);
+  box-shadow:
+    0 var(--preview-frame-shadow-y, 10px)
+      var(--preview-frame-shadow-blur, 28px) rgba(17, 24, 39, 0.18),
+    0 2px 8px rgba(17, 24, 39, 0.1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+}
+
+.preview-output-card,
+.preview-message-card {
+  display: grid;
+  flex: none;
+  gap: 6px;
+  order: 0;
+  border: 1px solid #d8dee8;
+  border-radius: 14px;
+  padding: 11px 12px;
+  background: #ffffff;
+  color: #343b48;
+  font-size: 12px;
+  box-shadow: 0 1px 4px rgba(21, 30, 50, 0.035);
+}
+
+.preview-output-card {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  border-color: #b7ebc6;
+  background: #f5fff8;
+}
+
+.preview-output-card div,
+.preview-output-card p,
+.preview-output-card span,
+.preview-message-card div {
+  overflow: hidden;
+  margin: 0;
+  text-overflow: ellipsis;
+}
+
+.preview-output-card div {
+  display: grid;
+  gap: 2px;
+}
+
+.preview-output-card strong,
+.preview-message-card strong {
+  color: #1d2129;
+  font-size: 12px;
+}
+
+.preview-output-card span,
+.preview-output-card p {
+  color: #5e6a62;
+  white-space: nowrap;
+}
+
+.preview-output-card p {
+  grid-column: 1 / -1;
+  font-size: 11px;
+}
+
+.preview-output-card a {
+  justify-self: end;
+  color: #176b35;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.preview-message-card.error {
+  border-color: #ffd0d5;
+  background: #fff1f3;
+  color: #b4232e;
+}
+
+.preview-message-card.warning {
+  border-color: #ffdca8;
+  background: #fff8ed;
+  color: #b35600;
+}

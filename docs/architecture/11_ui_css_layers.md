@@ -2,7 +2,7 @@
 
 This document maps the current debug UI CSS ownership. It is intentionally a stabilization aid, not a final design-system spec.
 
-The app is in a transitional state: older dark debug-shell styles still exist, then newer inspector-first light styles override them later in `src/debug-ui/styles.css`. Future cleanup should consolidate these layers gradually, with visual checks after each small move.
+The app is in a transitional state: older dark debug-shell styles still exist, then newer inspector-first light styles override them later in `src/debug-ui/styles.css`. The preview subsystem has started moving out of the monolithic stylesheet into `src/debug-ui/preview/preview.css`. Future cleanup should consolidate these layers gradually, with visual checks after each small move.
 
 ## Layer ownership
 
@@ -15,7 +15,6 @@ Owns document defaults, full-window layout, resize gutters, and the main three z
 - `.authoring-workspace`
 - `.navigation-rail`
 - `.editor-workspace`
-- `.right-preview-shell`
 - `.panel-resizer`
 
 This layer must not style individual record fields or renderable content.
@@ -77,7 +76,7 @@ This layer should eventually reuse the shared field system more strictly.
 
 ### 6. Preview shell
 
-Owns preview panel chrome, selection controls, status chips, PNG render feedback, and container sizing:
+Owns preview panel chrome, selection controls, status chips, PNG render feedback, and container sizing. These rules live in `src/debug-ui/preview/preview.css`, imported by `RightPreviewShell`.
 
 - `.right-preview-shell`
 - `.preview-header-card`
@@ -100,7 +99,7 @@ Owns only the visual surface that displays the resolved renderable tree:
 - `.preview-scale`
 - `.preview-phone-frame`
 
-The preview subsystem is grouped under `src/debug-ui/preview/` and exported through `src/debug-ui/preview/index.ts`. The right panel shell is implemented by `RightPreviewShell`, and `RightPreviewShellProps` in `src/debug-ui/preview/types.ts` is the app-facing preview contract. The render surface is implemented by `src/debug-ui/preview/RenderSurface.tsx`. It may scale for browser display and draw the optional phone frame overlay, but it must not add padding/border to the renderable coordinate system.
+The preview subsystem is grouped under `src/debug-ui/preview/` and exported through `src/debug-ui/preview/index.ts`. The right panel shell is implemented by `RightPreviewShell`, `src/debug-ui/preview/preview.css` owns its CSS, and `RightPreviewShellProps` in `src/debug-ui/preview/types.ts` is the app-facing preview contract. The render surface is implemented by `src/debug-ui/preview/RenderSurface.tsx`. It may scale for browser display and draw the optional phone frame overlay, but it must not add padding/border to the renderable coordinate system.
 
 ## Known cascade risk areas
 
@@ -108,10 +107,6 @@ These selectors currently appear in multiple historical blocks and should be con
 
 - `:root`
 - `body`
-- `.right-preview-shell`
-- `.preview-viewport-host`
-- `.preview-viewport`
-- `.preview-scale`
 - `.project-tree-view`
 - `.record-list`
 - `.record-editor`
