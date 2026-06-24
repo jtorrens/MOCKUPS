@@ -6,6 +6,11 @@ export {
 } from "./RightPreviewShell.js";
 export { RenderSurface, renderSurfaceMetrics } from "./RenderSurface.js";
 export { usePreviewFrameRender } from "./usePreviewFrameRender.js";
+export {
+  buildPreviewOptionsViewModel,
+  choosePreviewScreenForShot,
+  previewFrameForScreen,
+} from "./previewSelection.js";
 export { calculatePreviewFit } from "./previewSizing.js";
 export type { PreviewFit, PreviewFitInput } from "./previewSizing.js";
 export type { RightPreviewShellProps } from "./types.js";
