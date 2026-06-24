@@ -669,3 +669,31 @@ Implications:
 - Future cleanup should consolidate selectors by layer rather than relying on late-file overrides.
 - Render surface styles must remain separate from preview shell chrome.
 - Shared field rows should become the default path for editor inputs.
+
+## D054 — Editor architecture phase 1 closes with explicit component boundaries
+
+Status: accepted
+
+The first editor-architecture refactor phase is closed on branch `refactor/editor-architecture-phase-1`. The goal of this phase was not to redesign the UI, but to reduce the amount of implicit behavior trapped inside `RecordEditor` and make future module-specific work safer.
+
+Current boundaries:
+
+- `src/debug-ui/editor-ui/` owns shared editor chrome primitives: editor headers, section/card wrappers, section buttons, section collections, and deferred text input behavior.
+- `src/debug-ui/editors/` owns entity-level editor shells such as App, Theme, Screen Instance, Module Instance, Module Theme Config, and the generic record fallback.
+- `src/debug-ui/editors/chat/` owns Chat module content editing and its content model helpers: participants, header, messages, nested values, message media, and array/card behavior.
+- `src/debug-ui/components/RecordEditor.tsx` remains the central coordinator for persistence, table dispatch, generic field rendering, token/group editing, and remaining entity-specific exceptions.
+
+This creates an OOP-like separation inside React without introducing an external plugin/module system yet. App/module-specific editors can vary in behavior while still reusing the same editor UI primitives and design tokens for analogous concepts.
+
+Verification used during the phase:
+
+- Each extraction microphase was checked with `npm run typecheck`.
+- Whitespace/patch sanity was checked with `git diff --check`.
+- The branch was committed and pushed after stable milestones.
+
+Remaining work for the next architecture pass:
+
+- Extract the generic field-rendering engine from `RecordEditor`, especially `renderField`, `renderGenericField`, flat JSON editing, device metrics, theme chrome groups, and token group rendering.
+- Decide whether the next clean boundary should be a `FieldRenderer`/`RecordFieldRenderer` service or entity-specific field handler modules.
+- Keep production-specific editors such as Production, Shot, Actor, Device, and Render Preset lightweight until the field engine split is clear.
+- Continue removing transitional CSS only after the owning component/layer is clear, so cleanup does not silently break panel styling again.
