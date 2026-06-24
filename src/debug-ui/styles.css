@@ -1127,15 +1127,15 @@ body {
   padding: 0 2px 6px;
 }
 
-.content-array-editor,
+.record-editor-content-array-editor,
 .content-object-editor,
-.content-card-fields {
+.record-editor-content-fields {
   display: grid;
   gap: 10px;
 }
 
-.content-item-card,
-.content-nested-card {
+.record-editor-content-item-card,
+.record-editor-content-nested-card {
   overflow: hidden;
   border: var(--content-card-border, 1px solid #cfd6e2);
   border-radius: var(--content-card-radius, 12px);
@@ -1143,9 +1143,9 @@ body {
   box-shadow: var(--content-card-shadow, 0 2px 6px rgba(21, 30, 50, 0.04));
 }
 
-.content-item-card > summary,
-.content-nested-card > summary,
-.content-item-topbar {
+.record-editor-content-item-card > summary,
+.record-editor-content-nested-card > summary,
+.record-editor-content-item-topbar {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 12px;
@@ -1157,30 +1157,30 @@ body {
   list-style: none;
 }
 
-.content-item-card > summary::-webkit-details-marker,
-.content-nested-card > summary::-webkit-details-marker {
+.record-editor-content-item-card > summary::-webkit-details-marker,
+.record-editor-content-nested-card > summary::-webkit-details-marker {
   display: none;
 }
 
-.content-item-card > summary::before,
-.content-nested-card > summary::before,
-.content-item-header::before {
+.record-editor-content-item-card > summary::before,
+.record-editor-content-nested-card > summary::before,
+.record-editor-content-item-header::before {
   content: "›";
   width: 18px;
   color: var(--content-card-chevron-color, #111318);
   font-size: 20px;
 }
 
-.content-item-card[open] > summary::before,
-.content-nested-card[open] > summary::before,
-.content-item-header[aria-expanded="true"]::before {
+.record-editor-content-item-card[open] > summary::before,
+.record-editor-content-nested-card[open] > summary::before,
+.record-editor-content-item-header[aria-expanded="true"]::before {
   content: "⌃";
   font-size: 15px;
 }
 
-.content-item-card > summary > span,
-.content-nested-card > summary > span,
-.content-item-header > span {
+.record-editor-content-item-card > summary > span,
+.record-editor-content-nested-card > summary > span,
+.record-editor-content-item-header > span {
   grid-column: 2;
   overflow: hidden;
   font-size: 13px;
@@ -1189,7 +1189,7 @@ body {
   white-space: nowrap;
 }
 
-.content-item-header {
+.record-editor-content-item-header {
   display: grid;
   grid-template-columns: 18px minmax(0, 1fr);
   gap: 6px;
@@ -1202,36 +1202,36 @@ body {
   text-align: left;
 }
 
-.content-nested-card > summary > small {
+.record-editor-content-nested-card > summary > small {
   color: var(--content-card-summary-color, #667085);
   font-size: 11px;
 }
 
-.content-card-actions {
+.record-editor-content-actions {
   display: flex;
   gap: 5px;
 }
 
-.content-card-actions button,
-.content-add-button {
+.record-editor-content-actions button,
+.record-editor-content-add-button {
   border: var(--editor-button-border, 1px solid #d9dee7);
   border-radius: 8px;
   color: var(--editor-button-color, #343946);
   background: var(--editor-button-background, #ffffff);
 }
 
-.content-card-actions button {
+.record-editor-content-actions button {
   min-width: 28px;
   height: 28px;
   padding: 0 7px;
 }
 
-.content-card-fields {
+.record-editor-content-fields {
   border-top: var(--content-card-body-border, 1px solid #edf0f4);
   padding: 12px;
 }
 
-.content-nested-panel {
+.record-editor-content-nested-panel {
   display: grid;
   gap: 10px;
   padding: 2px 0 4px 14px;
@@ -1268,7 +1268,7 @@ body {
   opacity: 0.45;
 }
 
-.content-field-row {
+.record-editor-content-field-row {
   display: grid;
   grid-template-columns: minmax(150px, 0.8fr) minmax(0, 1.4fr);
   gap: 12px;
@@ -1276,14 +1276,14 @@ body {
   padding: 2px 0;
 }
 
-.content-field-row > span {
+.record-editor-content-field-row > span {
   padding-top: 8px;
   color: var(--content-field-label-color, #475467);
   font-size: 12px;
   font-weight: 700;
 }
 
-.content-add-button {
+.record-editor-content-add-button {
   justify-self: start;
   min-height: 34px;
   padding: 0 12px;
@@ -1291,22 +1291,22 @@ body {
   font-weight: 750;
 }
 
-.content-field-row .json-value-control,
-.content-field-row .json-value-textarea,
-.content-field-row select,
-.content-field-row input,
-.content-field-row textarea {
+.record-editor-content-field-row .json-value-control,
+.record-editor-content-field-row .json-value-textarea,
+.record-editor-content-field-row select,
+.record-editor-content-field-row input,
+.record-editor-content-field-row textarea {
   color: var(--content-field-control-color, #15171c) !important;
   background: var(--content-field-control-background, #ffffff) !important;
   border-color: var(--content-field-control-border-color, #bfc7d4) !important;
   opacity: 1 !important;
 }
 
-.content-field-row .json-value-control:focus,
-.content-field-row .json-value-textarea:focus,
-.content-field-row select:focus,
-.content-field-row input:focus,
-.content-field-row textarea:focus {
+.record-editor-content-field-row .json-value-control:focus,
+.record-editor-content-field-row .json-value-textarea:focus,
+.record-editor-content-field-row select:focus,
+.record-editor-content-field-row input:focus,
+.record-editor-content-field-row textarea:focus {
   border-color: var(--content-field-focus-border-color, #8f9db3) !important;
   box-shadow: var(--content-field-focus-shadow, 0 0 0 3px rgba(99, 114, 240, 0.12)) !important;
   outline: none;
@@ -2816,8 +2816,8 @@ body {
   outline: none;
 }
 
-.editor-workspace .content-card-actions button,
-.editor-workspace .content-add-button,
+.editor-workspace .record-editor-content-actions button,
+.editor-workspace .record-editor-content-add-button,
 .editor-workspace .compact-button,
 .editor-workspace .json-row-actions button,
 .editor-workspace .json-add-row button {
@@ -2826,8 +2826,8 @@ body {
   background: var(--editor-button-background, #ffffff) !important;
 }
 
-.editor-workspace .content-card-actions button:hover:not(:disabled),
-.editor-workspace .content-add-button:hover:not(:disabled),
+.editor-workspace .record-editor-content-actions button:hover:not(:disabled),
+.editor-workspace .record-editor-content-add-button:hover:not(:disabled),
 .editor-workspace .compact-button:hover:not(:disabled),
 .editor-workspace .json-row-actions button:hover:not(:disabled),
 .editor-workspace .json-add-row button:hover:not(:disabled) {
@@ -2835,8 +2835,8 @@ body {
   background: var(--editor-button-hover-background, #f8fafc) !important;
 }
 
-.editor-workspace .content-card-actions button:disabled,
-.editor-workspace .content-add-button:disabled,
+.editor-workspace .record-editor-content-actions button:disabled,
+.editor-workspace .record-editor-content-add-button:disabled,
 .editor-workspace .compact-button:disabled,
 .editor-workspace .json-row-actions button:disabled,
 .editor-workspace .json-add-row button:disabled {
@@ -2946,7 +2946,7 @@ body,
   grid-template-columns: minmax(150px, 1fr) minmax(190px, 1.1fr) minmax(220px, 1.2fr) auto;
 }
 
-.content-field-row.inspector-field-row {
+.record-editor-content-field-row.inspector-field-row {
   grid-template-columns: minmax(150px, 0.8fr) minmax(0, 1.4fr);
 }
 
@@ -3043,7 +3043,7 @@ body,
 }
 
 .record-editor input[type="checkbox"],
-.content-field-row input[type="checkbox"],
+.record-editor-content-field-row input[type="checkbox"],
 .record-editor-field input[type="checkbox"],
 .app-field input[type="checkbox"] {
   width: 16px !important;
@@ -3181,7 +3181,7 @@ body,
   color: var(--override-color, #b45309);
 }
 
-.record-editor .content-field-row.json-override {
+.record-editor .record-editor-content-field-row.json-override {
   border: var(--override-border, 1px solid #e4ad68) !important;
   border-radius: 12px !important;
   padding: 8px 10px !important;

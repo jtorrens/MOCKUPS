@@ -222,7 +222,7 @@ function ParticipantDisplayNameInput({
 
   return (
     <InspectorFieldRow
-      className={`content-field-row ${hasOverride ? "json-override" : ""}`}
+      className={`record-editor-content-field-row ${hasOverride ? "json-override" : ""}`}
       state={hasOverride ? "override" : "default"}
       label={<span>Display name</span>}
       meta={inheritedValue ? <code>{`User: ${inheritedValue}`}</code> : null}
@@ -1227,9 +1227,9 @@ export function RecordEditor({
         participant.displayName ?? inheritedDisplayName ?? "",
       );
       return (
-        <div className="content-card-fields">
+        <div className="record-editor-content-fields">
           <InspectorFieldRow
-            className="content-field-row"
+            className="record-editor-content-field-row"
             label={<span>User</span>}
             control={
               <select
@@ -1262,7 +1262,7 @@ export function RecordEditor({
             onCommit={(nextValue) => updateAtPath([index, "displayName"], nextValue)}
           />
           <InspectorFieldRow
-            className="content-field-row"
+            className="record-editor-content-field-row"
             label={<span>Role</span>}
             control={
               <select
@@ -1288,9 +1288,9 @@ export function RecordEditor({
       const title = String(header.title ?? inheritedTitle ?? "");
       const hasTitleOverride = Boolean(inheritedTitle) && title !== inheritedTitle;
       return (
-        <div className="content-card-fields">
+        <div className="record-editor-content-fields">
           <InspectorFieldRow
-            className={`content-field-row ${hasTitleOverride ? "json-override" : ""}`}
+            className={`record-editor-content-field-row ${hasTitleOverride ? "json-override" : ""}`}
             state={hasTitleOverride ? "override" : "default"}
             label={<span>Title</span>}
             meta={inheritedTitle ? <code>{`User: ${inheritedTitle}`}</code> : null}
@@ -1310,7 +1310,7 @@ export function RecordEditor({
             }
           />
           <InspectorFieldRow
-            className="content-field-row"
+            className="record-editor-content-field-row"
             label={<span>Subtitle</span>}
             control={
               <DeferredTextInput
@@ -1420,9 +1420,9 @@ export function RecordEditor({
       }
 
       return (
-        <div className="content-card-fields">
+        <div className="record-editor-content-fields">
           <InspectorFieldRow
-            className="content-field-row"
+            className="record-editor-content-field-row"
             label={<span>Type</span>}
             control={
               <select
@@ -1437,9 +1437,9 @@ export function RecordEditor({
             }
           />
           {direction === "received" ? (
-            <div className="content-nested-panel">
+            <div className="record-editor-content-nested-panel">
               <InspectorFieldRow
-                className="content-field-row"
+                className="record-editor-content-field-row"
                 label={<span>Participant</span>}
                 control={
                   <select
@@ -1460,7 +1460,7 @@ export function RecordEditor({
             </div>
           ) : null}
           <InspectorFieldRow
-            className="content-field-row"
+            className="record-editor-content-field-row"
             label={<span>Show bubble background</span>}
             control={
               <input
@@ -1473,7 +1473,7 @@ export function RecordEditor({
             }
           />
           <InspectorFieldRow
-            className="content-field-row"
+            className="record-editor-content-field-row"
             label={<span>Text scale</span>}
             control={
               <input
@@ -1488,7 +1488,7 @@ export function RecordEditor({
             }
           />
           <InspectorFieldRow
-            className="content-field-row"
+            className="record-editor-content-field-row"
             label={<span>Message text</span>}
             control={
               <DeferredTextInput
@@ -1497,14 +1497,14 @@ export function RecordEditor({
               />
             }
           />
-          <details className="content-nested-card" open>
+          <details className="record-editor-content-nested-card" open>
             <summary>
               <span>Media</span>
               <small>{mediaType}</small>
             </summary>
-            <div className="content-card-fields">
+            <div className="record-editor-content-fields">
               <InspectorFieldRow
-                className="content-field-row"
+                className="record-editor-content-field-row"
                 label={<span>Type</span>}
                 control={
                   <select
@@ -1521,7 +1521,7 @@ export function RecordEditor({
               {mediaType === "image" || mediaType === "video" ? (
                 <>
                   <InspectorFieldRow
-                    className="content-field-row"
+                    className="record-editor-content-field-row"
                     label={<span>File path</span>}
                     control={
                       <div className="media-file-control">
@@ -1579,7 +1579,7 @@ export function RecordEditor({
                   ] as Array<[string, JsonPath, number]>).map(([label, path, fallback]) => (
                     <InspectorFieldRow
                       key={String(label)}
-                      className="content-field-row"
+                      className="record-editor-content-field-row"
                       label={<span>{String(label)}</span>}
                       control={
                         <input
@@ -1610,7 +1610,7 @@ export function RecordEditor({
             </div>
           </details>
           <InspectorFieldRow
-            className="content-field-row"
+            className="record-editor-content-field-row"
             label={<span>Text reveal mode</span>}
             control={
               <select
@@ -1644,7 +1644,7 @@ export function RecordEditor({
       return (
         <InspectorFieldRow
           key={path.join(".") || label}
-          className="content-field-row"
+          className="record-editor-content-field-row"
           label={
             <span>{contentFieldLabel(hints, groupKey, path, label, value)}</span>
           }
@@ -1669,12 +1669,12 @@ export function RecordEditor({
       }
       if (Array.isArray(value)) {
         return (
-          <details className="content-nested-card" key={path.join(".") || label}>
+          <details className="record-editor-content-nested-card" key={path.join(".") || label}>
             <summary>
               <span>{contentFieldLabel(hints, groupKey, path, label, value)}</span>
               <small>{value.length} items</small>
             </summary>
-            <div className="content-card-fields">
+            <div className="record-editor-content-fields">
               {value.map((entry, index) =>
                 renderNestedValue([...path, index], `[${index}]`, entry),
               )}
@@ -1683,12 +1683,12 @@ export function RecordEditor({
         );
       }
       return (
-        <details className="content-nested-card" key={path.join(".") || label}>
+        <details className="record-editor-content-nested-card" key={path.join(".") || label}>
           <summary>
             <span>{contentFieldLabel(hints, groupKey, path, label, value)}</span>
             <small>{contentSummary(value, groupKey)}</small>
           </summary>
-          <div className="content-card-fields">
+          <div className="record-editor-content-fields">
             {Object.entries(value).map(([key, entryValue]) =>
               renderNestedValue([...path, key], key, entryValue),
             )}
@@ -1741,7 +1741,7 @@ export function RecordEditor({
 
     if (Array.isArray(groupValue)) {
       return (
-        <div className="content-array-editor">
+        <div className="record-editor-content-array-editor">
           {groupValue.map((entryValue, index) => {
             const stableId = isJsonObject(entryValue) && typeof entryValue.id === "string"
               ? entryValue.id
@@ -1750,13 +1750,13 @@ export function RecordEditor({
             const isOpen = Boolean(openContentItems[openKey]);
             return (
               <section
-                className={`content-item-card ${isOpen ? "open" : ""}`}
+                className={`record-editor-content-item-card ${isOpen ? "open" : ""}`}
                 key={stableId}
               >
-                <div className="content-item-topbar">
+                <div className="record-editor-content-item-topbar">
                   <button
                     type="button"
-                    className="content-item-header"
+                    className="record-editor-content-item-header"
                     aria-expanded={isOpen}
                     onClick={() =>
                       setOpenContentItems((current) => ({
@@ -1769,7 +1769,7 @@ export function RecordEditor({
                       [{index}] {contentSummary(entryValue, groupKey)}
                     </span>
                   </button>
-                  <div className="content-card-actions">
+                  <div className="record-editor-content-actions">
                     <button
                       type="button"
                       disabled={index === 0}
@@ -1798,7 +1798,7 @@ export function RecordEditor({
                   ) : groupKey === "messages" && isJsonObject(entryValue) ? (
                     renderMessageFields(entryValue, index)
                   ) : (
-                    <div className="content-card-fields">
+                    <div className="record-editor-content-fields">
                       {isJsonObject(entryValue)
                         ? renderObjectFields(entryValue, [index])
                         : renderNestedValue([index], `[${index}]`, entryValue)}
@@ -1808,7 +1808,7 @@ export function RecordEditor({
               </section>
             );
           })}
-          <button type="button" className="content-add-button" onClick={addArrayItem}>
+          <button type="button" className="record-editor-content-add-button" onClick={addArrayItem}>
             Add {friendlyGroupLabel(groupKey).replace(/s$/i, "")}
           </button>
         </div>
