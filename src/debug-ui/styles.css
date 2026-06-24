@@ -22,6 +22,18 @@
   --control-background: #ffffff;
   --control-color: #343b48;
   --control-muted-color: #667085;
+  --topbar-label-color: #626a78;
+  --topbar-select-height: 35px;
+  --topbar-select-background: var(--control-background);
+  --topbar-select-color: var(--control-color);
+  --topbar-select-border: var(--control-border);
+  --topbar-select-focus-border: #8fa2ff;
+  --topbar-select-focus-shadow: 0 0 0 3px rgba(59, 102, 255, 0.1);
+  --topbar-menu-button-border: 1px solid #d9dee7;
+  --topbar-menu-button-background: #ffffff;
+  --topbar-menu-button-color: #22262f;
+  --topbar-menu-button-hover-background: #f8fafc;
+  --topbar-menu-button-hover-border: #aeb8c8;
   --pill-border: 1px solid #d8dee8;
   --pill-background: #f7f9fc;
   --pill-color: #343b48;
@@ -251,6 +263,19 @@
 }
 
 :root[data-ui-theme="dark"] {
+  --topbar-label-color: #b3b5bb;
+  --topbar-select-height: 35px;
+  --topbar-select-background: var(--control-background);
+  --topbar-select-color: var(--control-color);
+  --topbar-select-border: var(--control-border);
+  --topbar-select-focus-border: var(--editor-input-focus-border-color);
+  --topbar-select-focus-shadow: var(--editor-input-focus-shadow);
+  --topbar-menu-button-border: var(--editor-button-border);
+  --topbar-menu-button-background: var(--editor-button-background);
+  --topbar-menu-button-color: var(--editor-button-color);
+  --topbar-menu-button-hover-background: var(--editor-button-hover-background);
+  --topbar-menu-button-hover-border: var(--editor-button-hover-border-color);
+
   --app-shell-background: #2b2d30;
   --left-panel-background: #303236;
   --left-panel-border: 1px solid #464950;
@@ -450,19 +475,22 @@ body {
   gap: 16px;
   align-items: start;
   height: 100%;
+  min-height: 0;
   overflow: hidden;
 }
 
 .navigation-rail {
   position: sticky;
   top: 0;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   min-width: 260px;
   max-width: min(560px, 48vw);
-  gap: 12px;
   height: 100%;
-  overflow: hidden auto;
-  align-content: start;
+  overflow: hidden;
+  align-items: stretch;
+  min-height: 0;
+  padding: 0;
 }
 
 .editor-workspace {
@@ -551,13 +579,14 @@ body {
 
 .production-switcher label {
   display: block;
+  color: var(--topbar-label-color, #626a78);
 }
 
 .production-menu-button,
 .ghost-button {
-  border: 1px solid #30384a;
-  color: #d9e0ef;
-  background: #171b25;
+  border: var(--topbar-menu-button-border, 1px solid #30384a);
+  color: var(--topbar-menu-button-color, #d9e0ef);
+  background: var(--topbar-menu-button-background, #171b25);
 }
 
 .production-menu-button {
@@ -1929,8 +1958,10 @@ body {
 }
 
 .left-app-panel {
+  min-height: 0;
   border-right: var(--left-panel-border, 1px solid #dde1e8);
   background: var(--left-panel-background, #fbfcfd);
+  overflow: hidden;
 }
 
 .authoring-workspace {
@@ -1938,17 +1969,14 @@ body {
 }
 
 .navigation-rail {
-  padding: 22px;
+  padding: 0;
   border-right: var(--navigation-panel-border, 1px solid #dde1e8);
   background: var(--navigation-panel-background, #fbfcfd);
-  scrollbar-color: var(--scrollbar-thumb-background, #cfd6e2)
-    var(--scrollbar-track-background, transparent);
-  scrollbar-width: thin;
-  overflow: auto;
+  overflow: hidden;
 }
 
 .navigation-rail::-webkit-scrollbar {
-  width: 10px;
+  width: 0;
 }
 
 .navigation-rail::-webkit-scrollbar-track {
@@ -1962,6 +1990,49 @@ body {
 }
 
 .navigation-rail::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover-background, #aeb8c8);
+}
+
+.navigation-rail-header {
+  flex: 0 0 auto;
+  border-bottom: none;
+  padding: 22px 22px 14px;
+  background: var(--navigation-panel-background, #fbfcfd);
+}
+
+.navigation-rail-divider {
+  flex: 0 0 auto;
+  height: 0;
+  margin: 0;
+  border-top: var(--editor-row-separator, 1px solid #e2e6ee);
+  background: transparent;
+}
+
+.navigation-rail-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 16px 22px 22px;
+  scrollbar-color: var(--scrollbar-thumb-background, #cfd6e2)
+    var(--scrollbar-track-background, transparent);
+  scrollbar-width: thin;
+}
+
+.navigation-rail-content::-webkit-scrollbar {
+  width: 10px;
+}
+
+.navigation-rail-content::-webkit-scrollbar-track {
+  background: var(--scrollbar-track-background, transparent);
+}
+
+.navigation-rail-content::-webkit-scrollbar-thumb {
+  border: 3px solid var(--navigation-panel-background, #fbfcfd);
+  border-radius: 999px;
+  background: var(--scrollbar-thumb-background, #cfd6e2);
+}
+
+.navigation-rail-content::-webkit-scrollbar-thumb:hover {
   background: var(--scrollbar-thumb-hover-background, #aeb8c8);
 }
 
@@ -2059,29 +2130,34 @@ body {
   margin-top: 10px;
 }
 
+.production-switcher select {
+  height: var(--topbar-select-height, 35px);
+  line-height: 1.25;
+}
+
 .ui-theme-switcher {
   min-width: 86px;
 }
 
 label {
-  color: #626a78;
+  color: var(--topbar-label-color, #626a78);
 }
 
 select,
 input,
 input[type="number"],
 textarea {
-  border: 1px solid #d9dee7;
-  color: #15171c;
-  background: #ffffff;
+  border: 1px solid var(--topbar-select-border, #d9dee7);
+  color: var(--topbar-select-color, #15171c);
+  background: var(--topbar-select-background, #ffffff);
 }
 
 select:focus,
 input:focus,
 textarea:focus {
-  border-color: #8fa2ff;
+  border-color: var(--topbar-select-focus-border, #8fa2ff);
   outline: none;
-  box-shadow: 0 0 0 3px rgba(59, 102, 255, 0.1);
+  box-shadow: var(--topbar-select-focus-shadow, 0 0 0 3px rgba(59, 102, 255, 0.1));
 }
 
 button {
@@ -2093,9 +2169,23 @@ button {
 .ghost-button,
 .mini-action,
 .mode-color-row .restore-button {
-  border: 1px solid #d9dee7;
-  color: #22262f;
-  background: #ffffff;
+  border: var(--topbar-menu-button-border, #d9dee7);
+  color: var(--topbar-menu-button-color, #22262f);
+  background: var(--topbar-menu-button-background, #ffffff);
+}
+
+.production-menu-button {
+  border: var(--topbar-menu-button-border, 1px solid #d9dee7);
+  color: var(--topbar-menu-button-color, #22262f);
+  background: var(--topbar-menu-button-background, #ffffff);
+  width: 42px;
+  height: var(--topbar-select-height, 35px);
+  min-height: var(--topbar-select-height, 35px);
+}
+
+.production-menu-button:hover:not(:disabled) {
+  border-color: var(--topbar-menu-button-hover-border, #aeb8c8);
+  background: var(--topbar-menu-button-hover-background, #f8fafc);
 }
 
 .panel {

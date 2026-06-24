@@ -629,76 +629,81 @@ export function App() {
             className="navigation-rail"
             style={{ width: navigationWidth }}
           >
-            <header className="app-header">
-              <div>
-                <span className="eyebrow">MOCKUPS · core app shell</span>
-                <h1>Production workspace</h1>
-                <p>
-                  Production setup, episodes, shots, screens and module data.
-                </p>
-              </div>
-              <div className="production-switcher">
-                <label className="ui-theme-switcher">
-                  UI
-                  <select
-                    aria-label="UI theme"
-                    value={uiTheme}
-                    onChange={(event) =>
-                      setUiTheme(event.target.value === "dark" ? "dark" : "light")
-                    }
+            <div className="navigation-rail-header">
+              <header className="app-header">
+                <div>
+                  <span className="eyebrow">MOCKUPS · core app shell</span>
+                  <h1>Production workspace</h1>
+                  <p>
+                    Production setup, episodes, shots, screens and module data.
+                  </p>
+                </div>
+                <div className="production-switcher">
+                  <label className="ui-theme-switcher">
+                    UI
+                    <select
+                      aria-label="UI theme"
+                      value={uiTheme}
+                      onChange={(event) =>
+                        setUiTheme(event.target.value === "dark" ? "dark" : "light")
+                      }
+                    >
+                      <option value="light">Light</option>
+                      <option value="dark">Dark</option>
+                    </select>
+                  </label>
+                  <label>
+                    Production
+                    <select
+                      data-testid="top-production-select"
+                      value={selection.productionId}
+                      onChange={(event) => selectProduction(event.target.value)}
+                    >
+                      {state.options.productions.map((production) => (
+                        <option key={production.id} value={production.id}>
+                          {production.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <button
+                    type="button"
+                    className="production-menu-button"
+                    aria-label="Production actions"
+                    onClick={() => setProductionModalOpen(true)}
                   >
-                    <option value="light">Light</option>
-                    <option value="dark">Dark</option>
-                  </select>
-                </label>
-                <label>
-                  Production
-                  <select
-                    data-testid="top-production-select"
-                    value={selection.productionId}
-                    onChange={(event) => selectProduction(event.target.value)}
-                  >
-                    {state.options.productions.map((production) => (
-                      <option key={production.id} value={production.id}>
-                        {production.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <button
-                  type="button"
-                  className="production-menu-button"
-                  aria-label="Production actions"
-                  onClick={() => setProductionModalOpen(true)}
-                >
-                  …
-                </button>
-              </div>
-            </header>
-            {requestError ? (
-              <div className="alert error" role="alert">
-                {requestError}
-              </div>
-            ) : null}
-            <ProjectTree
-              tables={state.tables}
-              activeTableId={activeTableId}
-              records={state.records}
-              options={state.options}
-              selectedRecordIds={selectedRecordIds}
-              busyAction={busyProjectAction}
-              onTableChange={setActiveTableId}
-              onRecordSelect={(tableId, recordId) => {
-                setSelectedRecordIds({
-                  ...selectedRecordIds,
-                  [tableId]: recordId,
-                });
-                selectContextFromRecord(tableId, recordId);
-              }}
-              onCreateRecord={handleCreateRecord}
-              onDuplicateRecord={handleDuplicateRecord}
-              onDeleteRecord={handleDeleteRecord}
-            />
+                    …
+                  </button>
+                </div>
+              </header>
+              {requestError ? (
+                <div className="alert error" role="alert">
+                  {requestError}
+                </div>
+              ) : null}
+            </div>
+            <div className="navigation-rail-divider" aria-hidden="true" />
+            <div className="navigation-rail-content">
+              <ProjectTree
+                tables={state.tables}
+                activeTableId={activeTableId}
+                records={state.records}
+                options={state.options}
+                selectedRecordIds={selectedRecordIds}
+                busyAction={busyProjectAction}
+                onTableChange={setActiveTableId}
+                onRecordSelect={(tableId, recordId) => {
+                  setSelectedRecordIds({
+                    ...selectedRecordIds,
+                    [tableId]: recordId,
+                  });
+                  selectContextFromRecord(tableId, recordId);
+                }}
+                onCreateRecord={handleCreateRecord}
+                onDuplicateRecord={handleDuplicateRecord}
+                onDeleteRecord={handleDeleteRecord}
+              />
+            </div>
           </aside>
           <div
             className="panel-resizer"
