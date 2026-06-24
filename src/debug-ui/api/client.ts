@@ -100,6 +100,19 @@ export interface DebugPayload {
   warnings: string[];
 }
 
+export interface RenderFrameResult {
+  url: string;
+  filePath: string;
+  outputHeight: number;
+  outputScale: number;
+  outputWidth: number;
+  selection: DebugSelection;
+}
+
+export interface RenderFrameRequest extends DebugSelection {
+  includeFrame?: boolean;
+}
+
 export interface AppCreateRequest {
   tableId: "productions" | "episodes" | "shots" | "themes" | "devices" | "render_presets";
   parent?: {
@@ -189,4 +202,16 @@ export async function getPreviewPayload(
     frame: String(selection.frame),
   });
   return readResponse(await fetch(`/api/app/preview?${query}`));
+}
+
+export async function renderPreviewFrame(
+  request: RenderFrameRequest,
+): Promise<RenderFrameResult> {
+  return readResponse(
+    await fetch("/api/app/render-frame", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
+    }),
+  );
 }

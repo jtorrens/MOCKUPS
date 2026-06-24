@@ -1,8 +1,13 @@
 import { createServer } from "node:http";
+import { execFile } from "node:child_process";
 import { createReadStream, statSync } from "node:fs";
+import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { promisify } from "node:util";
 import { createDatabase } from "../persistence/sqlite/createDatabase.js";
 import { developmentDatabasePath } from "../persistence/sqlite/paths.js";
+import type { RenderableNode } from "../visual/renderable/types.js";
+import { RenderableNodeSchema } from "../visual/renderable/schema.js";
 import {
   listDebugOptions,
   loadAppState,
@@ -21,6 +26,14 @@ import {
 
 const PORT = 4174;
 const database = createDatabase(developmentDatabasePath);
+const execFileAsync = promisify(execFile);
+const renderOutputDir = path.resolve("out");
+const currentFramePng = path.join(renderOutputDir, "current-frame.png");
+const currentFrameProps = path.join(renderOutputDir, "current-frame-props.json");
+
+function absoluteServerUrl(request: import("node:http").IncomingMessage) {
+  return `http://${request.headers.host ?? `127.0.0.1:${PORT}`}`;
+}
 
 function mediaContentType(filePath: string) {
   const extension = path.extname(filePath).toLowerCase();
@@ -87,6 +100,120 @@ function sendJson(
   response.end(JSON.stringify(value));
 }
 
+function extractCssUrl(value: unknown) {
+  if (typeof value !== "string") return "";
+  const trimmed = value.trim();
+  const match = /^url\((['"]?)(.*?)\1\)$/i.exec(trimmed);
+  return match?.[2] ?? "";
+}
+
+function cssUrl(value: string) {
+  return `url("${value.replace(/"/g, '\\"')}")`;
+}
+
+function absolutizeRenderableUrls(
+  node: RenderableNode,
+  origin: string,
+): RenderableNode {
+  const backgroundUrl = extractCssUrl(node.style?.backgroundImage);
+  const nextStyle =
+    backgroundUrl && node.style && backgroundUrl.startsWith("/api/")
+      ? {
+          ...node.style,
+          backgroundImage: cssUrl(new URL(backgroundUrl, origin).toString()),
+        }
+      : node.style;
+  return {
+    ...node,
+    ...(nextStyle ? { style: nextStyle } : {}),
+    ...(node.children
+      ? {
+          children: node.children.map((child) =>
+            absolutizeRenderableUrls(child, origin),
+          ),
+        }
+      : {}),
+  };
+}
+
+function readOutputScale(selection: DebugSelection) {
+  const row = database
+    .prepare("SELECT transform_json FROM screen_instances WHERE id = ?")
+    .get(selection.screenInstanceId) as { transform_json?: string } | undefined;
+  if (!row?.transform_json) return 1;
+  try {
+    const transform = JSON.parse(row.transform_json) as unknown;
+    if (
+      transform &&
+      typeof transform === "object" &&
+      !Array.isArray(transform) &&
+      typeof (transform as Record<string, unknown>).scale === "number" &&
+      Number.isFinite((transform as Record<string, number>).scale) &&
+      (transform as Record<string, number>).scale > 0
+    ) {
+      return (transform as Record<string, number>).scale;
+    }
+  } catch {
+    return 1;
+  }
+  return 1;
+}
+
+async function renderCurrentFramePng(
+  request: import("node:http").IncomingMessage,
+  selection: DebugSelection & { includeFrame?: boolean },
+) {
+  const payload = loadDebugPayload(database, selection);
+  if (!payload.renderable) {
+    throw new Error("Selected preview has no renderable output");
+  }
+  await mkdir(renderOutputDir, { recursive: true });
+  const renderable = absolutizeRenderableUrls(
+    RenderableNodeSchema.parse(payload.renderable),
+    absoluteServerUrl(request),
+  );
+  const outputScale = readOutputScale(selection);
+  const outputWidth = Math.round((renderable.box?.width ?? 1) * outputScale);
+  const outputHeight = Math.round((renderable.box?.height ?? 1) * outputScale);
+  await writeFile(
+    currentFrameProps,
+    JSON.stringify(
+      {
+        includeFrame: selection.includeFrame === true,
+        renderable,
+      },
+      null,
+      2,
+    ),
+    "utf8",
+  );
+  await execFileAsync(
+    path.resolve("node_modules/.bin/remotion"),
+    [
+      "still",
+      "src/remotion/index.ts",
+      "ChatScreenPreview",
+      currentFramePng,
+      "--frame=0",
+      "--overwrite",
+      `--scale=${outputScale}`,
+      `--props=${currentFrameProps}`,
+    ],
+    {
+      cwd: process.cwd(),
+      maxBuffer: 1024 * 1024 * 8,
+    },
+  );
+  return {
+    url: "/api/render-output/current-frame.png",
+    filePath: currentFramePng,
+    outputHeight,
+    outputScale,
+    outputWidth,
+    selection,
+  };
+}
+
 async function readJson(request: import("node:http").IncomingMessage) {
   const chunks: Buffer[] = [];
   for await (const chunk of request) {
@@ -140,6 +267,23 @@ const server = createServer(async (request, response) => {
         frame: Number(url.searchParams.get("frame")),
       };
       sendJson(response, 200, loadDebugPayload(database, selection));
+      return;
+    }
+    if (request.method === "POST" && url.pathname === "/api/app/render-frame") {
+      const selection = (await readJson(request)) as DebugSelection & {
+        includeFrame?: boolean;
+      };
+      sendJson(response, 200, await renderCurrentFramePng(request, selection));
+      return;
+    }
+    if (request.method === "GET" && url.pathname === "/api/render-output/current-frame.png") {
+      const stats = statSync(currentFramePng);
+      response.writeHead(200, {
+        "Content-Type": "image/png",
+        "Content-Length": stats.size,
+        "Cache-Control": "no-store",
+      });
+      createReadStream(currentFramePng).pipe(response);
       return;
     }
     if (request.method === "GET" && url.pathname === "/api/media") {

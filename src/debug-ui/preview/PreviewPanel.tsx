@@ -1,12 +1,19 @@
 import { useEffect, useRef, useState } from "react";
-import { RemotionRenderableAdapter } from "../../remotion/RemotionRenderableAdapter.js";
+import { RenderableReactAdapter } from "../../visual/adapters/react/RenderableReactAdapter.js";
 import type { RenderableNode } from "../../visual/renderable/types.js";
 import { DeviceFrameOverlay } from "./DeviceFrameOverlay.js";
+import { calculatePreviewFit } from "./previewSizing.js";
 
 interface PreviewPanelProps {
   renderable: RenderableNode | null;
   frame: number;
   showPhoneFrame: boolean;
+}
+
+function numberValue(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value)
+    ? value
+    : undefined;
 }
 
 export function PreviewPanel({
@@ -21,13 +28,16 @@ export function PreviewPanel({
   });
   const width = renderable?.box?.width ?? 1290;
   const height = renderable?.box?.height ?? 2796;
-  const scale = Math.min(
-    availableSize.width / width,
-    availableSize.height / height,
-    1,
-  );
-  const previewWidth = Math.max(1, Math.round(width * scale));
-  const previewHeight = Math.max(1, Math.round(height * scale));
+  const cornerRadius =
+    numberValue(renderable?.style?.cornerRadius) ??
+    numberValue(renderable?.style?.borderRadius) ??
+    0;
+  const fit = calculatePreviewFit({
+    availableWidth: availableSize.width,
+    availableHeight: availableSize.height,
+    renderWidth: width,
+    renderHeight: height,
+  });
 
   useEffect(() => {
     const element = viewportHostRef.current;
@@ -55,8 +65,8 @@ export function PreviewPanel({
         <div
           className="preview-viewport"
           style={{
-            width: previewWidth,
-            height: previewHeight,
+            width: fit.width,
+            height: fit.height,
           }}
         >
           {renderable ? (
@@ -66,17 +76,21 @@ export function PreviewPanel({
               style={{
                 width,
                 height,
-                transform: `scale(${scale})`,
+                transform: `scale(${fit.scale})`,
               }}
             >
-              <RemotionRenderableAdapter tree={renderable} />
+              <RenderableReactAdapter tree={renderable} />
             </div>
           ) : (
             <div className="empty-state">
               No renderable output for this instance/frame.
             </div>
           )}
-          <DeviceFrameOverlay scale={scale} visible={Boolean(renderable) && showPhoneFrame} />
+          <DeviceFrameOverlay
+            cornerRadius={cornerRadius}
+            scale={fit.scale}
+            visible={Boolean(renderable) && showPhoneFrame}
+          />
         </div>
       </div>
     </section>

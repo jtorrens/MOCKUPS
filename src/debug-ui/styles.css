@@ -3866,3 +3866,35 @@ body,
   height: 14px;
   margin: 0;
 }
+
+.preview-render-button {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid #d8dee8;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #343b48;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.preview-render-button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.alert.success.preview-render-result {
+  display: grid;
+  gap: 4px;
+  border-color: #b7ebc6;
+  background: #effdf3;
+  color: #176b35;
+  font-size: 12px;
+}
+
+.preview-render-result span {
+  overflow: hidden;
+  color: #5e6a62;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -1,5 +1,10 @@
 import { useState } from "react";
-import type { DebugOptions, DebugPayload, DebugSelection } from "../api/client.js";
+import {
+  renderPreviewFrame,
+  type DebugOptions,
+  type DebugPayload,
+  type DebugSelection,
+} from "../api/client.js";
 import { PreviewPanel } from "../preview/PreviewPanel.js";
 
 interface AppPreviewPanelProps {
@@ -41,6 +46,15 @@ export function AppPreviewPanel({
   error,
 }: AppPreviewPanelProps) {
   const [showPhoneFrame, setShowPhoneFrame] = useState(true);
+  const [renderBusy, setRenderBusy] = useState(false);
+  const [renderResult, setRenderResult] = useState<{
+    url: string;
+    filePath: string;
+    outputHeight: number;
+    outputScale: number;
+    outputWidth: number;
+  } | null>(null);
+  const [renderError, setRenderError] = useState("");
   const episodes = options.episodes.filter(
     (episode) => episode.productionId === selection.productionId,
   );
@@ -93,6 +107,35 @@ export function AppPreviewPanel({
             />
             Border
           </label>
+          <button
+            className="preview-render-button"
+            type="button"
+            disabled={renderBusy || !payload?.renderable}
+            onClick={() => {
+              setRenderBusy(true);
+              setRenderError("");
+              void renderPreviewFrame({
+                ...selection,
+                includeFrame: showPhoneFrame,
+              })
+                .then((result) => {
+                  setRenderResult({
+                    url: `${result.url}?t=${Date.now()}`,
+                    filePath: result.filePath,
+                    outputHeight: result.outputHeight,
+                    outputScale: result.outputScale,
+                    outputWidth: result.outputWidth,
+                  });
+                })
+                .catch((error: Error) => {
+                  setRenderResult(null);
+                  setRenderError(error.message);
+                })
+                .finally(() => setRenderBusy(false));
+            }}
+          >
+            {renderBusy ? "Rendering…" : "PNG"}
+          </button>
           <select
             aria-label="Preview screen"
             value={selection.screenInstanceId}
@@ -283,6 +326,23 @@ export function AppPreviewPanel({
       {error ? (
         <div className="alert error" role="alert">
           {error}
+        </div>
+      ) : null}
+      {renderError ? (
+        <div className="alert error" role="alert">
+          {renderError}
+        </div>
+      ) : null}
+      {renderResult ? (
+        <div className="alert success preview-render-result">
+          <a href={renderResult.url} target="_blank" rel="noreferrer">
+            Open PNG
+          </a>
+          <span>
+            {renderResult.outputWidth}×{renderResult.outputHeight} · scale{" "}
+            {renderResult.outputScale}
+          </span>
+          <span title={renderResult.filePath}>{renderResult.filePath}</span>
         </div>
       ) : null}
       {payload?.warnings.length ? (

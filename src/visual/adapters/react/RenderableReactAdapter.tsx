@@ -2,9 +2,9 @@ import type { CSSProperties, ReactNode } from "react";
 import type {
   RenderableBox,
   RenderableNode,
-} from "../visual/renderable/types.js";
+} from "../../renderable/types.js";
 
-export interface RemotionRenderableAdapterProps {
+export interface RenderableReactAdapterProps {
   tree: RenderableNode;
 }
 
@@ -212,8 +212,8 @@ function RenderNode({
   );
 }
 
-export const RemotionRenderableAdapter = ({
+export const RenderableReactAdapter = ({
   tree,
-}: RemotionRenderableAdapterProps) => {
+}: RenderableReactAdapterProps) => {
   return <RenderNode node={tree} parentOrigin={{ x: 0, y: 0 }} />;
 };
