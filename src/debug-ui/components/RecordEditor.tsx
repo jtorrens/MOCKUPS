@@ -19,6 +19,7 @@ import {
 } from "../editor-ui/EditorSectionCard.js";
 import { EditorSections } from "../editor-ui/EditorSections.js";
 import { GenericRecordEditor } from "../editors/GenericRecordEditor.js";
+import { ModuleInstanceEditor } from "../editors/ModuleInstanceEditor.js";
 import {
   hasModeColorOverrides,
   ModeColorEditor,
@@ -3769,50 +3770,35 @@ export function RecordEditor({
     }
 
     return (
-      <section className="record-editor">
-        <EditorHeader
-          eyebrow="Module instance editor"
-          title={String(record[table.titleColumn] ?? record.id)}
-        />
-        <EditorSections>
-          <EditorSectionCard>
-            <TabButton
-              active={screenTab === "content"}
-              onClick={() => setScreenTab(screenTab === "content" ? "" : "content")}
-            >
-              Module Content
-            </TabButton>
-            {screenTab === "content" && contentField ? (
-              <div className="editor-section-body record-editor-nested-stack">
-                {safeContentGroups.map((group) => (
-                  <SubgroupAccordion
-                    key={group}
-                    group={group}
-                    activeGroup={activeContentTab}
-                    warning={contentGroupHasWarning(group)}
-                    onToggle={setContentTab}
-                  >
-                    {renderContentGroupEditor(contentField, group, "content_json")}
-                  </SubgroupAccordion>
-                ))}
-              </div>
-            ) : null}
-          </EditorSectionCard>
-          <EditorSectionCard>
-            <TabButton
-              active={screenTab === "behavior"}
-              onClick={() => setScreenTab(screenTab === "behavior" ? "" : "behavior")}
-            >
-              Behavior
-            </TabButton>
-            {screenTab === "behavior" && behaviorField ? (
-              <div className="editor-section-body record-editor-field-stack record-editor-direct-fields">
-                {renderModuleBehaviorFields()}
-              </div>
-            ) : null}
-          </EditorSectionCard>
-        </EditorSections>
-      </section>
+      <ModuleInstanceEditor
+        table={table}
+        record={record}
+        activeTab={screenTab}
+        activeContentTab={activeContentTab}
+        contentFieldExists={Boolean(contentField)}
+        behaviorFieldExists={Boolean(behaviorField)}
+        contentGroups={safeContentGroups}
+        contentGroupHasWarning={contentGroupHasWarning}
+        renderContentGroup={(group) =>
+          contentField
+            ? renderContentGroupEditor(contentField, group, "content_json")
+            : null
+        }
+        renderBehaviorFields={renderModuleBehaviorFields}
+        renderSubgroupAccordion={(group, activeGroup, warning, onToggle, children) => (
+          <SubgroupAccordion
+            key={group}
+            group={group}
+            activeGroup={activeGroup}
+            warning={warning}
+            onToggle={onToggle}
+          >
+            {children}
+          </SubgroupAccordion>
+        )}
+        setActiveTab={setScreenTab}
+        setContentTab={setContentTab}
+      />
     );
   }
 
