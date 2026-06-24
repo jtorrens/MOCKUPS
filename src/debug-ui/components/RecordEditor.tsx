@@ -746,7 +746,7 @@ export function RecordEditor({
 
   if (!record) {
     return (
-      <section className="panel record-editor empty-record">
+      <section className="record-editor record-editor-empty">
         No records in this table yet.
       </section>
     );
@@ -2878,7 +2878,7 @@ export function RecordEditor({
       ([key]) => !omitKeys.includes(key),
     );
     if (visibleEntries.length === 0) {
-      return <div className="empty-record-list compact-empty">No fields yet.</div>;
+      return <div className="record-editor-empty-message">No fields yet.</div>;
     }
     return (
       <div className="flat-json-fields">
@@ -3574,13 +3574,13 @@ export function RecordEditor({
     }
 
     return (
-      <section className="panel record-editor">
-        <div className="panel-heading">
+      <section className="record-editor">
+        <div className="record-editor-heading">
           <div>
-            <span className="eyebrow">App editor</span>
+            <span className="record-editor-eyebrow">App editor</span>
             <h2>{String(record[table.titleColumn] ?? record.id)}</h2>
           </div>
-          <span className="record-id">{record.id}</span>
+          <span className="record-editor-id">{record.id}</span>
         </div>
         <div className="editor-sections">
           <div className="editor-card editor-section-card">
@@ -3693,13 +3693,13 @@ export function RecordEditor({
         : "";
 
     return (
-      <section className="panel record-editor">
-        <div className="panel-heading">
+      <section className="record-editor">
+        <div className="record-editor-heading">
           <div>
-            <span className="eyebrow">Theme editor</span>
+            <span className="record-editor-eyebrow">Theme editor</span>
             <h2>{String(record[table.titleColumn] ?? record.id)}</h2>
           </div>
-          <span className="record-id">{record.id}</span>
+          <span className="record-editor-id">{record.id}</span>
         </div>
         <div className="editor-sections">
           <div className="editor-card editor-section-card">
@@ -3879,13 +3879,13 @@ export function RecordEditor({
     }
 
     return (
-      <section className="panel record-editor">
-        <div className="panel-heading">
+      <section className="record-editor">
+        <div className="record-editor-heading">
           <div>
-            <span className="eyebrow">Module instance editor</span>
+            <span className="record-editor-eyebrow">Module instance editor</span>
             <h2>{String(record[table.titleColumn] ?? record.id)}</h2>
           </div>
-          <span className="record-id">{record.id}</span>
+          <span className="record-editor-id">{record.id}</span>
         </div>
         <div className="editor-sections">
           <div className="editor-card editor-section-card">
@@ -3933,13 +3933,13 @@ export function RecordEditor({
     const deviceStateField = fieldsByColumn.get("device_state_json");
     const transformField = fieldsByColumn.get("transform_json");
     return (
-      <section className="panel record-editor">
-        <div className="panel-heading">
+      <section className="record-editor">
+        <div className="record-editor-heading">
           <div>
-            <span className="eyebrow">Screen instance editor</span>
+            <span className="record-editor-eyebrow">Screen instance editor</span>
             <h2>{String(record[table.titleColumn] ?? record.id)}</h2>
           </div>
-          <span className="record-id">{record.id}</span>
+          <span className="record-editor-id">{record.id}</span>
         </div>
         <div className="editor-sections">
           <div className="editor-card editor-section-card">
@@ -4033,13 +4033,13 @@ export function RecordEditor({
         ? moduleDesignGroup
         : "";
     return (
-      <section className="panel record-editor">
-        <div className="panel-heading">
+      <section className="record-editor">
+        <div className="record-editor-heading">
           <div>
-            <span className="eyebrow">Screen module editor</span>
+            <span className="record-editor-eyebrow">Screen module editor</span>
             <h2>{String(record[table.titleColumn] ?? record.id)}</h2>
           </div>
-          <span className="record-id">{record.id}</span>
+          <span className="record-editor-id">{record.id}</span>
         </div>
         <div className="editor-sections">
           <div className="editor-card editor-section-card">
@@ -4145,15 +4145,15 @@ export function RecordEditor({
   }
 
   return (
-    <section className="panel record-editor">
-      <div className="panel-heading">
+    <section className="record-editor">
+      <div className="record-editor-heading">
         <div>
-          <span className="eyebrow">
+          <span className="record-editor-eyebrow">
             {table.id === "productions" ? "Production Editor" : "Record editor"}
           </span>
           <h2>{String(record[table.titleColumn] ?? record.id)}</h2>
         </div>
-        <span className="record-id">{record.id}</span>
+        <span className="record-editor-id">{record.id}</span>
       </div>
       <div className="editor-sections">
         <div className="editor-card editor-section-card">
