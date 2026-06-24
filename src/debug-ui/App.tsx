@@ -669,7 +669,7 @@ export function App() {
                   </label>
                   <button
                     type="button"
-                    className="production-menu-button"
+                    className="production-menu-button ui-icon-button"
                     aria-label="Production actions"
                     onClick={() => setProductionModalOpen(true)}
                   >

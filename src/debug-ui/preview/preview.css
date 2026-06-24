@@ -82,17 +82,13 @@
 }
 
 .preview-options-icon {
-  display: inline-grid;
-  width: var(--card-header-icon-size, 30px);
-  height: var(--card-header-icon-size, 30px);
-  place-items: center;
-  border: var(--card-header-icon-border, 1px solid #dfe3eb);
-  border-radius: var(--card-header-icon-radius, 10px);
-  color: var(--card-header-icon-color, #1d2129);
-  background: var(--card-header-icon-background, #fbfcfd);
-  font-size: var(--card-header-icon-font-size, 20px);
-  font-weight: var(--card-header-icon-font-weight, 700);
-  line-height: 1;
+  --ui-glyph-size: var(--card-header-icon-size, 30px);
+  --ui-glyph-border: var(--card-header-icon-border, 0);
+  --ui-glyph-radius: var(--card-header-icon-radius, 10px);
+  --ui-glyph-color: var(--card-header-icon-color, #1d2129);
+  --ui-glyph-background: var(--card-header-icon-background, transparent);
+  --ui-glyph-font-size: var(--card-header-icon-font-size, 20px);
+  --ui-glyph-font-weight: var(--card-header-icon-font-weight, 700);
 }
 
 .preview-options-summary h2 {

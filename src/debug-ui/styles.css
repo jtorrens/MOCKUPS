@@ -61,6 +61,19 @@
   --media-preview-border: 1px solid #cfd6e2;
   --media-preview-background: #f2f4f7;
   --media-preview-color: #667085;
+  --ui-glyph-size: 24px;
+  --ui-glyph-border: 0;
+  --ui-glyph-radius: 0;
+  --ui-glyph-background: transparent;
+  --ui-glyph-color: currentColor;
+  --ui-glyph-font-size: 16px;
+  --ui-glyph-font-weight: 700;
+  --ui-icon-button-size: 28px;
+  --ui-icon-button-border: 0;
+  --ui-icon-button-radius: 8px;
+  --ui-icon-button-background: transparent;
+  --ui-icon-button-color: currentColor;
+  --ui-icon-button-hover-background: transparent;
   --accordion-chevron-size: 24px;
   --accordion-chevron-open-size: 17px;
   --accordion-chevron-weight: 450;
@@ -361,6 +374,13 @@
   --media-preview-border: 1px solid #50535b;
   --media-preview-background: #383a3f;
   --media-preview-color: #aaa69d;
+  --ui-glyph-border: 0;
+  --ui-glyph-background: transparent;
+  --ui-glyph-color: currentColor;
+  --ui-icon-button-border: 0;
+  --ui-icon-button-background: transparent;
+  --ui-icon-button-color: currentColor;
+  --ui-icon-button-hover-background: transparent;
   --card-border: 1px solid #4a4d54;
   --card-background: #34363b;
   --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
@@ -529,6 +549,44 @@ body {
   background:
     radial-gradient(circle at 75% 0%, rgba(77, 99, 255, 0.12), transparent 34rem),
     var(--app-shell-background, #0d0f14);
+}
+
+.ui-glyph {
+  display: grid;
+  width: var(--ui-glyph-size, 24px);
+  height: var(--ui-glyph-size, 24px);
+  place-items: center;
+  border: var(--ui-glyph-border, 0);
+  border-radius: var(--ui-glyph-radius, 0);
+  color: var(--ui-glyph-color, currentColor);
+  background: var(--ui-glyph-background, transparent);
+  font-size: var(--ui-glyph-font-size, 16px);
+  font-weight: var(--ui-glyph-font-weight, 700);
+  line-height: 1;
+  text-align: center;
+}
+
+.ui-glyph svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.ui-icon-button {
+  display: grid;
+  width: var(--ui-icon-button-size, 28px);
+  height: var(--ui-icon-button-size, 28px);
+  place-items: center;
+  border: var(--ui-icon-button-border, 0);
+  border-radius: var(--ui-icon-button-radius, 8px);
+  padding: 0;
+  color: var(--ui-icon-button-color, currentColor);
+  background: var(--ui-icon-button-background, transparent);
+  line-height: 1;
+}
+
+.ui-icon-button:hover:not(:disabled) {
+  background: var(--ui-icon-button-hover-background, transparent);
 }
 
 .core-app-shell {
@@ -830,16 +888,11 @@ body {
 }
 
 .mini-action {
-  display: grid;
-  width: 28px;
-  height: 28px;
-  place-items: center;
-  border: var(--project-mini-action-border, var(--browser-row-surface-border-color, #e1e5ec));
-  border-radius: 8px;
-  padding: 0;
-  color: var(--project-mini-action-color, var(--browser-row-color, #2c323d));
-  background: var(--project-mini-action-background, transparent);
-  line-height: 1;
+  --ui-icon-button-size: 28px;
+  --ui-icon-button-border: var(--project-mini-action-border, 0);
+  --ui-icon-button-radius: 8px;
+  --ui-icon-button-color: var(--project-mini-action-color, var(--browser-row-color, #2c323d));
+  --ui-icon-button-background: var(--project-mini-action-background, transparent);
 }
 
 .mini-action:disabled {
@@ -1998,18 +2051,15 @@ body {
 }
 
 .production-menu-button {
-  display: grid;
-  place-items: center;
-  border: var(--topbar-menu-button-border, 1px solid #d9dee7);
-  color: var(--topbar-menu-button-color, #22262f);
-  background: var(--topbar-menu-button-background, #ffffff);
+  --ui-icon-button-size: var(--topbar-select-height, 35px);
+  --ui-icon-button-border: var(--topbar-menu-button-border, 0);
+  --ui-icon-button-radius: var(--topbar-menu-button-radius, 10px);
+  --ui-icon-button-color: var(--topbar-menu-button-color, #22262f);
+  --ui-icon-button-background: var(--topbar-menu-button-background, #ffffff);
   width: var(--topbar-select-height, 35px);
   height: var(--topbar-select-height, 35px);
   min-height: var(--topbar-select-height, 35px);
-  border-radius: var(--topbar-menu-button-radius, 10px);
-  padding: 0;
   font-size: var(--topbar-menu-button-font-size, 20px);
-  line-height: 1;
 }
 
 .production-menu-button:hover:not(:disabled) {
@@ -2057,15 +2107,9 @@ body {
 }
 
 .project-browser-root .tree-record-icon {
-  display: grid;
-  width: 22px;
-  height: 22px;
-  place-items: center;
-  border: 0;
-  border-radius: 0;
-  color: var(--card-header-icon-color, #343946);
-  background: transparent;
-  font-size: 15px;
+  --ui-glyph-size: 22px;
+  --ui-glyph-color: var(--card-header-icon-color, #343946);
+  --ui-glyph-font-size: 15px;
 }
 
 .project-browser-root .tree-record-copy {
@@ -2131,14 +2175,13 @@ body {
 }
 
 .editor-section-card > button .tab-icon {
-  width: var(--card-header-icon-size, 30px);
-  height: var(--card-header-icon-size, 30px);
-  border: var(--card-header-icon-border, 1px solid #dfe3eb);
-  border-radius: var(--card-header-icon-radius, 10px);
-  color: var(--card-header-icon-color, #1d2129);
-  background: var(--card-header-icon-background, #fbfcfd);
-  font-size: var(--card-header-icon-font-size, 20px);
-  font-weight: var(--card-header-icon-font-weight, 700);
+  --ui-glyph-size: var(--card-header-icon-size, 30px);
+  --ui-glyph-border: var(--card-header-icon-border, 0);
+  --ui-glyph-radius: var(--card-header-icon-radius, 10px);
+  --ui-glyph-color: var(--card-header-icon-color, #1d2129);
+  --ui-glyph-background: var(--card-header-icon-background, transparent);
+  --ui-glyph-font-size: var(--card-header-icon-font-size, 20px);
+  --ui-glyph-font-weight: var(--card-header-icon-font-weight, 700);
 }
 
 .editor-section-card > button .tab-copy > span {
@@ -2189,10 +2232,9 @@ body {
 }
 
 .editor-subsection-card .tab-icon {
-  width: var(--subcard-header-icon-size, 24px);
-  height: var(--subcard-header-icon-size, 24px);
-  border-radius: var(--subcard-header-icon-radius, 8px);
-  font-size: var(--subcard-header-icon-font-size, 16px);
+  --ui-glyph-size: var(--subcard-header-icon-size, 24px);
+  --ui-glyph-radius: var(--subcard-header-icon-radius, 8px);
+  --ui-glyph-font-size: var(--subcard-header-icon-font-size, 16px);
 }
 
 .editor-subsection-card .tab-copy > span {
@@ -2275,16 +2317,13 @@ body {
 }
 
 .tab-icon {
-  display: grid;
-  width: var(--card-header-icon-size, 30px);
-  height: var(--card-header-icon-size, 30px);
-  place-items: center;
-  border: var(--card-header-icon-border, 1px solid #dfe3eb);
-  border-radius: var(--card-header-icon-radius, 10px);
-  color: var(--card-header-icon-color, #15171c);
-  background: var(--card-header-icon-background, #fbfcfd);
-  font-size: var(--card-header-icon-font-size, 20px);
-  font-weight: var(--card-header-icon-font-weight, 700);
+  --ui-glyph-size: var(--card-header-icon-size, 30px);
+  --ui-glyph-border: var(--card-header-icon-border, 0);
+  --ui-glyph-radius: var(--card-header-icon-radius, 10px);
+  --ui-glyph-color: var(--card-header-icon-color, #15171c);
+  --ui-glyph-background: var(--card-header-icon-background, transparent);
+  --ui-glyph-font-size: var(--card-header-icon-font-size, 20px);
+  --ui-glyph-font-weight: var(--card-header-icon-font-weight, 700);
 }
 
 .tab-copy {
@@ -2397,18 +2436,13 @@ body {
 }
 
 .editor-group-icon {
-  display: grid;
-  width: 24px;
-  height: 24px;
+  --ui-glyph-size: 24px;
+  --ui-glyph-border: var(--editor-group-icon-border, 0);
+  --ui-glyph-radius: 8px;
+  --ui-glyph-color: var(--editor-group-icon-color, #343946);
+  --ui-glyph-background: var(--editor-group-icon-background, transparent);
+  --ui-glyph-font-size: 12px;
   flex: 0 0 auto;
-  place-items: center;
-  border: var(--editor-group-icon-border, 1px solid #dfe3eb);
-  border-radius: 8px;
-  color: var(--editor-group-icon-color, #343946);
-  background: var(--editor-group-icon-background, #f8fafc);
-  font-size: 12px;
-  line-height: 1;
-  text-align: center;
 }
 
 .token-override-row,
@@ -3537,10 +3571,11 @@ body,
   background: var(--browser-editing-icon-background, #eef2ff);
 }
 
-.project-browser-root .workspace-accordion-icon,
+.project-browser-root .workspace-accordion-icon {
+  --ui-glyph-size: 19px;
+}
+
 .project-browser-root .workspace-accordion-icon svg {
-  width: 19px;
-  height: 19px;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.8;

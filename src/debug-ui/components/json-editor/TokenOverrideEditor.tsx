@@ -360,7 +360,7 @@ export function TokenOverrideEditor({
         group.renderAsGroup ? (
           <section key={group.key} className="token-override-group">
             <h4>
-              <span className="editor-group-icon" aria-hidden="true">
+              <span className="editor-group-icon ui-glyph" aria-hidden="true">
                 {groupIcon(group.label)}
               </span>
               {group.label}

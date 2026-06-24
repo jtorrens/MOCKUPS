@@ -101,7 +101,7 @@ function ActionButton({
   return (
     <button
       type="button"
-      className="mini-action"
+      className="mini-action ui-icon-button"
       disabled={disabled}
       title={title}
       onClick={(event) => {
@@ -318,7 +318,7 @@ function TreeButton({
       }}
     >
       {icon ? (
-        <span className="tree-record-icon" aria-hidden="true">
+        <span className="tree-record-icon ui-glyph" aria-hidden="true">
           <TreeIcon name={icon} />
         </span>
       ) : null}
@@ -703,7 +703,7 @@ export function ProjectTree({
                     toggleDataTable(table.id, tableRecords);
                   }}
                 >
-                  <span className="tree-record-icon" aria-hidden="true">
+                  <span className="tree-record-icon ui-glyph" aria-hidden="true">
                     <TreeIcon name={productionDataIcon(table.id)} />
                   </span>
                   <span className="tree-record-copy">
@@ -812,7 +812,7 @@ export function ProjectTree({
           aria-expanded={active}
           onClick={handleOpen}
         >
-          <span className="workspace-accordion-icon" aria-hidden="true">
+          <span className="workspace-accordion-icon ui-glyph" aria-hidden="true">
             <TreeIcon name={icon} />
           </span>
           <span className="workspace-accordion-copy">

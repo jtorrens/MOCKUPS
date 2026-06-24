@@ -221,18 +221,15 @@
 }
 
 .left-panel-shell .production-menu-button {
-  display: grid;
-  place-items: center;
-  border: var(--topbar-menu-button-border, 1px solid #d9dee7);
-  color: var(--topbar-menu-button-color, #22262f);
-  background: var(--topbar-menu-button-background, #ffffff);
+  --ui-icon-button-size: var(--topbar-select-height, 35px);
+  --ui-icon-button-border: var(--topbar-menu-button-border, 0);
+  --ui-icon-button-radius: var(--topbar-menu-button-radius, 10px);
+  --ui-icon-button-color: var(--topbar-menu-button-color, #22262f);
+  --ui-icon-button-background: var(--topbar-menu-button-background, #ffffff);
   width: var(--topbar-select-height, 35px);
   height: var(--topbar-select-height, 35px);
   min-height: var(--topbar-select-height, 35px);
-  border-radius: var(--topbar-menu-button-radius, 10px);
-  padding: 0;
   font-size: var(--topbar-menu-button-font-size, 20px);
-  line-height: 1;
 }
 
 .left-panel-shell .production-menu-button:hover:not(:disabled) {

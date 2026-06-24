@@ -256,7 +256,7 @@ export function ModeColorEditor({
       {colorGroups.map((group) => (
         <section key={group.group} className="mode-color-group">
           <h4>
-            <span className="editor-group-icon" aria-hidden="true">
+            <span className="editor-group-icon ui-glyph" aria-hidden="true">
               {groupIcon(group.label)}
             </span>
             {group.label}

@@ -2995,7 +2995,7 @@ export function RecordEditor({
         className={`${active ? "active" : ""} ${warning ? "has-warning" : ""}`}
         onClick={onClick}
       >
-        <span className="tab-icon" aria-hidden="true">
+        <span className="tab-icon ui-glyph" aria-hidden="true">
           {meta.icon}
         </span>
         <span className="tab-copy">

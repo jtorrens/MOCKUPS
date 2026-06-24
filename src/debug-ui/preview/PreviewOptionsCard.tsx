@@ -77,7 +77,7 @@ export function PreviewOptionsCard({
       onToggle={(event) => onOpenChange(event.currentTarget.open)}
     >
       <summary className="preview-options-summary">
-        <span className="preview-options-icon" aria-hidden="true">
+        <span className="preview-options-icon ui-glyph" aria-hidden="true">
           ▣
         </span>
         <div>
