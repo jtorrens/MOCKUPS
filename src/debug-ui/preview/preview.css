@@ -49,7 +49,7 @@
   width: 24px;
   height: 24px;
   place-items: center;
-  color: #475467;
+  color: var(--card-header-chevron-color, #111318);
   font-size: var(--accordion-chevron-size, 24px);
   font-weight: var(--accordion-chevron-weight, 450);
   line-height: 1;
@@ -67,7 +67,7 @@
   place-items: center;
   border: var(--card-header-icon-border, 1px solid #dfe3eb);
   border-radius: var(--card-header-icon-radius, 10px);
-  color: #1d2129;
+  color: var(--card-header-icon-color, #1d2129);
   background: var(--card-header-icon-background, #fbfcfd);
   font-size: var(--card-header-icon-font-size, 20px);
   font-weight: var(--card-header-icon-font-weight, 700);
@@ -76,7 +76,7 @@
 
 .preview-options-summary h2 {
   margin: 0;
-  color: #12141a;
+  color: var(--card-header-title-color, #12141a);
   font-family: var(--card-header-font-family, inherit);
   font-size: var(--card-header-title-font-size, 15px);
   font-weight: var(--card-header-title-font-weight, 760);
@@ -86,7 +86,7 @@
 .preview-options-summary p {
   overflow: hidden;
   margin: 3px 0 0;
-  color: #626a78;
+  color: var(--card-header-summary-color, #667085);
   font-family: var(--card-header-font-family, inherit);
   font-size: var(--card-header-summary-font-size, 12px);
   font-weight: var(--card-header-summary-font-weight, 500);
@@ -98,7 +98,7 @@
 .preview-options-body {
   display: grid;
   gap: 12px;
-  border-top: 1px solid #edf0f4;
+  border-top: var(--card-body-border, 1px solid #edf0f4);
   padding: 12px 14px 14px;
 }
 

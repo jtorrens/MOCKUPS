@@ -18,6 +18,12 @@ The transitional global stylesheet exposes a small set of CSS variables in `:roo
 - `--card-radius`: shared top-level card radius.
 - `--card-background`: shared top-level card background.
 - `--card-shadow`: shared top-level card shadow.
+- `--card-header-background`: card header background.
+- `--card-header-title-color`: card header title color.
+- `--card-header-summary-color`: card header summary color.
+- `--card-header-icon-color`: card header glyph color.
+- `--card-header-chevron-color`: card header chevron color.
+- `--card-body-border`: card body separator border.
 - `--card-header-icon-column`: card header icon column width.
 - `--card-header-gap`: card header grid gap.
 - `--card-header-min-height`: card header minimum height.

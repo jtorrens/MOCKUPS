@@ -11,6 +11,12 @@
   --card-radius: 14px;
   --card-background: #ffffff;
   --card-shadow: 0 2px 8px rgba(21, 30, 50, 0.04);
+  --card-header-background: #ffffff;
+  --card-header-title-color: #12141a;
+  --card-header-summary-color: #667085;
+  --card-header-icon-color: #1d2129;
+  --card-header-chevron-color: #111318;
+  --card-body-border: 1px solid #edf0f4;
   --card-header-icon-column: 38px;
   --card-header-gap: 12px;
   --card-header-min-height: 64px;
@@ -2422,15 +2428,15 @@ button {
   border-radius: 0 !important;
   padding: var(--card-header-padding-block, 13px)
     var(--card-header-padding-inline, 16px);
-  color: #1d2129 !important;
-  background: var(--card-background, #ffffff) !important;
+  color: var(--card-header-title-color, #12141a) !important;
+  background: var(--card-header-background, #ffffff) !important;
   text-align: left;
   box-shadow: none !important;
 }
 
 .editor-section-card > button::after {
   content: "›";
-  color: #111318;
+  color: var(--card-header-chevron-color, #111318);
   font-size: var(--accordion-chevron-size, 24px);
   font-weight: var(--accordion-chevron-weight, 450);
 }
@@ -2445,25 +2451,28 @@ button {
   height: var(--card-header-icon-size, 30px);
   border: var(--card-header-icon-border, 1px solid #dfe3eb);
   border-radius: var(--card-header-icon-radius, 10px);
+  color: var(--card-header-icon-color, #1d2129);
   background: var(--card-header-icon-background, #fbfcfd);
   font-size: var(--card-header-icon-font-size, 20px);
   font-weight: var(--card-header-icon-font-weight, 700);
 }
 
 .editor-section-card > button .tab-copy > span {
+  color: var(--card-header-title-color, #12141a);
   font-family: var(--card-header-font-family, inherit);
   font-size: var(--card-header-title-font-size, 15px);
   font-weight: var(--card-header-title-font-weight, 760);
 }
 
 .editor-section-card > button .tab-copy small {
+  color: var(--card-header-summary-color, #667085);
   font-family: var(--card-header-font-family, inherit);
   font-size: var(--card-header-summary-font-size, 12px);
   font-weight: var(--card-header-summary-font-weight, 500);
 }
 
 .editor-section-body {
-  border-top: 1px solid #edf0f4;
+  border-top: var(--card-body-border, 1px solid #edf0f4);
   padding: 14px;
 }
 
