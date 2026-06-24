@@ -63,6 +63,24 @@
   --status-chip-dot-live-color: #4bd889;
   --status-chip-dot-busy-color: #7b88ff;
   --status-chip-dot-live-shadow: 0 0 12px rgba(75, 216, 137, 0.7);
+  --feedback-card-border: 1px solid #d8dee8;
+  --feedback-card-radius: 14px;
+  --feedback-card-padding: 11px 12px;
+  --feedback-card-background: #ffffff;
+  --feedback-card-color: #343b48;
+  --feedback-card-title-color: #1d2129;
+  --feedback-card-muted-color: #5e6a62;
+  --feedback-card-font-size: 12px;
+  --feedback-card-shadow: 0 1px 4px rgba(21, 30, 50, 0.035);
+  --feedback-card-success-border-color: #b7ebc6;
+  --feedback-card-success-background: #f5fff8;
+  --feedback-card-success-link-color: #176b35;
+  --feedback-card-error-border-color: #ffd0d5;
+  --feedback-card-error-background: #fff1f3;
+  --feedback-card-error-color: #b4232e;
+  --feedback-card-warning-border-color: #ffdca8;
+  --feedback-card-warning-background: #fff8ed;
+  --feedback-card-warning-color: #b35600;
   color: #e8e9ee;
   background: #0d0f14;
   font-family:
@@ -92,6 +110,20 @@
   --status-chip-color: #a3adbd;
   --status-chip-background: #1e2530;
   --status-chip-dot-live-shadow: 0 0 12px rgba(75, 216, 137, 0.48);
+  --feedback-card-border: 1px solid #3a4353;
+  --feedback-card-background: #171d27;
+  --feedback-card-color: #c4cbd6;
+  --feedback-card-title-color: #f5f7fb;
+  --feedback-card-muted-color: #a3adbd;
+  --feedback-card-success-border-color: #24563a;
+  --feedback-card-success-background: #10251b;
+  --feedback-card-success-link-color: #73d99a;
+  --feedback-card-error-border-color: #6b2c38;
+  --feedback-card-error-background: #2a1318;
+  --feedback-card-error-color: #ff9aa8;
+  --feedback-card-warning-border-color: #6b4b1f;
+  --feedback-card-warning-background: #2b1f10;
+  --feedback-card-warning-color: #ffd08a;
 }
 
 * {

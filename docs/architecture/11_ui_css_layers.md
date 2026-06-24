@@ -70,6 +70,24 @@ The transitional global stylesheet exposes a small set of CSS variables in `:roo
 - `--status-chip-dot-live-color`: shared status chip live dot color.
 - `--status-chip-dot-busy-color`: shared status chip busy dot color.
 - `--status-chip-dot-live-shadow`: shared status chip live dot glow.
+- `--feedback-card-border`: preview feedback card border.
+- `--feedback-card-radius`: preview feedback card radius.
+- `--feedback-card-padding`: preview feedback card padding.
+- `--feedback-card-background`: preview feedback card background.
+- `--feedback-card-color`: preview feedback card text color.
+- `--feedback-card-title-color`: preview feedback card title color.
+- `--feedback-card-muted-color`: preview feedback card secondary text color.
+- `--feedback-card-font-size`: preview feedback card font size.
+- `--feedback-card-shadow`: preview feedback card shadow.
+- `--feedback-card-success-border-color`: preview success feedback border.
+- `--feedback-card-success-background`: preview success feedback background.
+- `--feedback-card-success-link-color`: preview success feedback link color.
+- `--feedback-card-error-border-color`: preview error feedback border.
+- `--feedback-card-error-background`: preview error feedback background.
+- `--feedback-card-error-color`: preview error feedback text color.
+- `--feedback-card-warning-border-color`: preview warning feedback border.
+- `--feedback-card-warning-background`: preview warning feedback background.
+- `--feedback-card-warning-color`: preview warning feedback text color.
 
 New panel/card work should prefer these tokens over local hardcoded values.
 

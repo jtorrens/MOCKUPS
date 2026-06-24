@@ -300,20 +300,23 @@
   flex: none;
   gap: 6px;
   order: 0;
-  border: 1px solid #d8dee8;
-  border-radius: 14px;
-  padding: 11px 12px;
-  background: #ffffff;
-  color: #343b48;
-  font-size: 12px;
-  box-shadow: 0 1px 4px rgba(21, 30, 50, 0.035);
+  border: var(--feedback-card-border, 1px solid #d8dee8);
+  border-radius: var(--feedback-card-radius, 14px);
+  padding: var(--feedback-card-padding, 11px 12px);
+  background: var(--feedback-card-background, #ffffff);
+  color: var(--feedback-card-color, #343b48);
+  font-size: var(--feedback-card-font-size, 12px);
+  box-shadow: var(
+    --feedback-card-shadow,
+    0 1px 4px rgba(21, 30, 50, 0.035)
+  );
 }
 
 .preview-output-card {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  border-color: #b7ebc6;
-  background: #f5fff8;
+  border-color: var(--feedback-card-success-border-color, #b7ebc6);
+  background: var(--feedback-card-success-background, #f5fff8);
 }
 
 .preview-output-card div,
@@ -332,13 +335,13 @@
 
 .preview-output-card strong,
 .preview-message-card strong {
-  color: #1d2129;
+  color: var(--feedback-card-title-color, #1d2129);
   font-size: 12px;
 }
 
 .preview-output-card span,
 .preview-output-card p {
-  color: #5e6a62;
+  color: var(--feedback-card-muted-color, #5e6a62);
   white-space: nowrap;
 }
 
@@ -349,19 +352,19 @@
 
 .preview-output-card a {
   justify-self: end;
-  color: #176b35;
+  color: var(--feedback-card-success-link-color, #176b35);
   font-weight: 700;
   text-decoration: none;
 }
 
 .preview-message-card.error {
-  border-color: #ffd0d5;
-  background: #fff1f3;
-  color: #b4232e;
+  border-color: var(--feedback-card-error-border-color, #ffd0d5);
+  background: var(--feedback-card-error-background, #fff1f3);
+  color: var(--feedback-card-error-color, #b4232e);
 }
 
 .preview-message-card.warning {
-  border-color: #ffdca8;
-  background: #fff8ed;
-  color: #b35600;
+  border-color: var(--feedback-card-warning-border-color, #ffdca8);
+  background: var(--feedback-card-warning-background, #fff8ed);
+  color: var(--feedback-card-warning-color, #b35600);
 }
