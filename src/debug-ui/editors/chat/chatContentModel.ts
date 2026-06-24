@@ -57,3 +57,49 @@ export function contentSummary(value: JsonValue, groupKey?: string): string {
   if (value === null) return "Empty";
   return String(value);
 }
+
+export function messageDirectionFromSenderRole(
+  message: Record<string, JsonValue>,
+  senderRole?: unknown,
+) {
+  if (message.direction === "system" || message.type === "system") {
+    return "system";
+  }
+  if (message.direction === "outgoing") return "sent";
+  if (message.direction === "incoming") return "received";
+  return senderRole === "owner" ? "sent" : "received";
+}
+
+export function defaultParticipantItem(index: number): Record<string, JsonValue> {
+  return {
+    id: `participant_${index + 1}`,
+    displayName: "",
+    actorId: "",
+    role: "participant",
+  };
+}
+
+export function defaultMessageItem(
+  index: number,
+  senderParticipantId = "",
+): Record<string, JsonValue> {
+  return {
+    id: `message_${String(index + 1).padStart(3, "0")}`,
+    senderParticipantId,
+    direction: "incoming",
+    type: "text",
+    text: "",
+    showBubbleBackground: true,
+    textScale: 1,
+    media: {
+      type: "none",
+    },
+    startFrame: 0,
+    enterDurationFrames: 10,
+    textReveal: {
+      mode: "simple_write_on",
+      startFrame: 0,
+      durationFrames: 30,
+    },
+  };
+}

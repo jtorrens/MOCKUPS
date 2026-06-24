@@ -32,8 +32,11 @@ import type {
 } from "../editors/editorTabs.js";
 import {
   contentSummary,
+  defaultMessageItem,
   defaultGroupValue,
+  defaultParticipantItem,
   isPrimitiveContentValue,
+  messageDirectionFromSenderRole,
 } from "../editors/chat/chatContentModel.js";
 import {
   hasModeColorOverrides,
@@ -1014,45 +1017,8 @@ export function RecordEditor({
     }
 
     function messageDirection(message: Record<string, JsonValue>) {
-      if (message.direction === "system" || message.type === "system") {
-        return "system";
-      }
-      if (message.direction === "outgoing") return "sent";
-      if (message.direction === "incoming") return "received";
       const sender = participantById(message.senderParticipantId);
-      return sender?.role === "owner" ? "sent" : "received";
-    }
-
-    function defaultParticipantItem(index: number): Record<string, JsonValue> {
-      return {
-        id: `participant_${index + 1}`,
-        displayName: "",
-        actorId: "",
-        role: "participant",
-      };
-    }
-
-    function defaultMessageItem(index: number): Record<string, JsonValue> {
-      const sender = firstReceivedParticipant() ?? ownerParticipant();
-      return {
-        id: `message_${String(index + 1).padStart(3, "0")}`,
-        senderParticipantId: String(sender?.id ?? ""),
-        direction: "incoming",
-        type: "text",
-        text: "",
-        showBubbleBackground: true,
-        textScale: 1,
-        media: {
-          type: "none",
-        },
-        startFrame: 0,
-        enterDurationFrames: 10,
-        textReveal: {
-          mode: "simple_write_on",
-          startFrame: 0,
-          durationFrames: 30,
-        },
-      };
+      return messageDirectionFromSenderRole(message, sender?.role);
     }
 
     function updateObjectPath(basePath: JsonPath, leafPath: JsonPath, nextValue: JsonValue) {
@@ -1549,7 +1515,10 @@ export function RecordEditor({
       const nextIndex = Array.isArray(groupValue) ? groupValue.length : 0;
       const nextItem =
         groupKey === "messages"
-          ? defaultMessageItem(nextIndex)
+          ? defaultMessageItem(
+              nextIndex,
+              String((firstReceivedParticipant() ?? ownerParticipant())?.id ?? ""),
+            )
           : groupKey === "participants"
             ? defaultParticipantItem(nextIndex)
             : defaultJsonValue("object");
