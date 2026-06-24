@@ -31,28 +31,8 @@ import type {
   ScreenInstanceTab,
   ThemeEditorTab,
 } from "../editors/editorTabs.js";
-import {
-  defaultMessageItem,
-  defaultGroupValue,
-  defaultParticipantItem,
-  firstReceivedParticipant,
-  mediaNumberFieldsForMessage,
-  messageDirectionFromSenderRole,
-  messageWithDirection,
-  messageWithMediaPath,
-  messageWithMediaType,
-  messageWithTextRevealMode,
-  ownerParticipant,
-  participantById,
-  participantDisplayName,
-  participantOptions,
-  participantsFromContentRoot,
-} from "../editors/chat/chatContentModel.js";
-import { ChatContentArrayEditor } from "../editors/chat/ChatContentArrayEditor.js";
-import { ChatHeaderFieldsEditor } from "../editors/chat/ChatHeaderFieldsEditor.js";
-import { ChatParticipantFieldsEditor } from "../editors/chat/ChatParticipantFieldsEditor.js";
-import { ChatMessageFieldsEditor } from "../editors/chat/ChatMessageFieldsEditor.js";
-import { ChatNestedValueEditor } from "../editors/chat/ChatNestedValueEditor.js";
+import { defaultGroupValue } from "../editors/chat/chatContentModel.js";
+import { ChatContentGroupEditor } from "../editors/chat/ChatContentGroupEditor.js";
 import {
   hasModeColorOverrides,
   ModeColorEditor,
@@ -877,297 +857,30 @@ export function RecordEditor({
       });
     }
 
-    function updateAtPath(path: JsonPath, nextValue: JsonValue) {
-      updateGroupValue(setAtPath(groupValue, path, nextValue));
-    }
-
-    function actorDisplayName(actorId: unknown) {
-      const actor = records.actors?.find((item) => item.id === actorId);
-      return String(actor?.display_name ?? "");
-    }
-
-    function participantsArray() {
-      return participantsFromContentRoot(root);
-    }
-
-    function participantLabel(participant: Record<string, JsonValue> | undefined) {
-      return participantDisplayName(participant, actorDisplayName);
-    }
-
-    function messageDirection(message: Record<string, JsonValue>) {
-      const sender = participantById(participantsArray(), message.senderParticipantId);
-      return messageDirectionFromSenderRole(message, sender?.role);
-    }
-
-    function updateObjectPath(basePath: JsonPath, leafPath: JsonPath, nextValue: JsonValue) {
-      updateAtPath([...basePath, ...leafPath], nextValue);
-    }
-
-    function renderParticipantFields(
-      participant: Record<string, JsonValue>,
-      index: number,
-    ) {
-      const actorId = String(participant.actorId ?? "");
-      const inheritedDisplayName = actorDisplayName(actorId);
-      const displayName = String(
-        participant.displayName ?? inheritedDisplayName ?? "",
-      );
-      return (
-        <ChatParticipantFieldsEditor
-          participant={participant}
-          actorOptions={records.actors ?? []}
-          actorId={actorId}
-          displayName={displayName}
-          inheritedDisplayName={inheritedDisplayName}
-          actorTitleForRecord={(actor) => titleForRecord(actor, "display_name")}
-          onActorChange={(nextActorId) => {
-            const nextDisplayName = actorDisplayName(nextActorId);
-            updateGroupValue(
-              setAtPath(
-                setAtPath(groupValue, [index, "actorId"], nextActorId),
-                [index, "displayName"],
-                nextDisplayName,
-              ),
-            );
-          }}
-          onDisplayNameChange={(nextValue) =>
-            updateAtPath([index, "displayName"], nextValue)
-          }
-          onRoleChange={(nextRole) => updateAtPath([index, "role"], nextRole)}
-        />
-      );
-    }
-
-    function renderHeaderFields(header: Record<string, JsonValue>) {
-      const avatarParticipant = participantById(
-        participantsArray(),
-        header.avatarParticipantId,
-      );
-      const inheritedTitle = participantLabel(avatarParticipant);
-      return (
-        <ChatHeaderFieldsEditor
-          header={header}
-          inheritedTitle={inheritedTitle}
-          onChange={(key, value) => updateAtPath([key], value)}
-        />
-      );
-    }
-
-    function renderMessageFields(
-      message: Record<string, JsonValue>,
-      index: number,
-    ) {
-      const direction = messageDirection(message);
-      const media = isJsonObject(message.media) ? message.media : {};
-      const textReveal = isJsonObject(message.textReveal) ? message.textReveal : {};
-      const mediaType = String(media.type ?? (message.mediaAssetId ? "image" : "none"));
-      const receivedOptions = participantOptions(
-        participantsArray().filter((participant) => participant.role !== "owner"),
-        participantLabel,
-      );
-      const senderId = String(message.senderParticipantId ?? "");
-
-      function updateMessage(nextMessage: JsonValue) {
-        updateAtPath([index], nextMessage);
-      }
-
-      function setMessagePath(path: JsonPath, nextValue: JsonValue) {
-        updateObjectPath([index], path, nextValue);
-      }
-
-      function setDirection(nextDirection: string) {
-        const participants = participantsArray();
-        const owner = ownerParticipant(participants);
-        const received = firstReceivedParticipant(participants);
-        updateMessage(
-          messageWithDirection(
-            message,
-            nextDirection,
-            String(owner?.id ?? ""),
-            String(received?.id ?? ""),
-            senderId,
-          ),
-        );
-      }
-
-      function setMediaType(nextType: string) {
-        updateMessage(messageWithMediaType(message, nextType));
-      }
-
-      function setConversationMediaPath(nextPath: string) {
-        updateMessage(messageWithMediaPath(message, mediaType, nextPath));
-      }
-
-      return (
-        <ChatMessageFieldsEditor
-          direction={direction}
-          senderId={senderId}
-          receivedOptions={receivedOptions}
-          showBubbleBackground={message.showBubbleBackground !== false}
-          textScale={Number(message.textScale ?? 1)}
-          text={String(message.text ?? "")}
-          textRevealMode={String(textReveal.mode ?? "simple_write_on")}
-          mediaType={mediaType}
-          mediaFilePath={String(media.filePath ?? "")}
-          canBrowseMedia={Boolean(mockupsNative()?.pickFile)}
-          mediaNumberFields={mediaNumberFieldsForMessage(message)}
-          onDirectionChange={setDirection}
-          onSenderChange={(nextSenderId) =>
-            setMessagePath(["senderParticipantId"], nextSenderId)
-          }
-          onShowBubbleBackgroundChange={(showBubbleBackground) =>
-            setMessagePath(["showBubbleBackground"], showBubbleBackground)
-          }
-          onTextScaleChange={(textScale) =>
-            setMessagePath(["textScale"], textScale)
-          }
-          onTextChange={(nextText) => setMessagePath(["text"], nextText)}
-          onTextRevealModeChange={(mode) =>
-            updateMessage(messageWithTextRevealMode(message, mode))
-          }
-          onMediaTypeChange={setMediaType}
-          onMediaFilePathChange={(nextPath) =>
-            setConversationMediaPath(
-              relativePathFromRoot(nextPath, productionMediaRoot()),
-            )
-          }
-          onBrowseMedia={() => {
-            void (async () => {
-              const [filePath] =
-                await (mockupsNative()?.pickFile?.() ?? Promise.resolve([]));
-              if (filePath) {
-                setConversationMediaPath(
-                  relativePathFromRoot(filePath, productionMediaRoot()),
-                );
-              }
-            })();
-          }}
-          onMediaNumberFieldChange={(path, nextValue) =>
-            setMessagePath(path, nextValue)
-          }
-        />
-      );
-    }
-
-    function renderNestedValue(path: JsonPath, label: string, value: JsonValue): ReactNode {
-      return (
-        <ChatNestedValueEditor
-          key={path.join(".") || label}
-          rootValue={groupValue}
-          groupKey={groupKey}
-          path={path}
-          label={label}
-          value={value}
-          hints={hints}
-          onPathChange={updateAtPath}
-          onRootChange={updateGroupValue}
-        />
-      );
-    }
-
-    function renderObjectFields(value: Record<string, JsonValue>, basePath: JsonPath) {
-      return Object.entries(value).map(([key, entryValue]) =>
-        renderNestedValue([...basePath, key], key, entryValue),
-      );
-    }
-
-    function addArrayItem() {
-      const nextIndex = Array.isArray(groupValue) ? groupValue.length : 0;
-      const participants = participantsArray();
-      const nextItem =
-        groupKey === "messages"
-          ? defaultMessageItem(
-              nextIndex,
-              String(
-                (
-                  firstReceivedParticipant(participants) ??
-                  ownerParticipant(participants)
-                )?.id ?? "",
-              ),
-            )
-          : groupKey === "participants"
-            ? defaultParticipantItem(nextIndex)
-            : defaultJsonValue("object");
-      updateGroupValue(Array.isArray(groupValue) ? [...groupValue, nextItem] : [nextItem]);
-    }
-
-    function duplicateArrayItem(index: number) {
-      if (!Array.isArray(groupValue)) return;
-      updateGroupValue([
-        ...groupValue.slice(0, index + 1),
-        cloneJson(groupValue[index]),
-        ...groupValue.slice(index + 1),
-      ]);
-    }
-
-    function deleteArrayItem(index: number) {
-      if (!Array.isArray(groupValue)) return;
-      updateGroupValue(groupValue.filter((_, candidateIndex) => candidateIndex !== index));
-    }
-
-    function moveArrayItem(index: number, direction: -1 | 1) {
-      if (!Array.isArray(groupValue)) return;
-      const targetIndex = index + direction;
-      if (targetIndex < 0 || targetIndex >= groupValue.length) return;
-      const nextValue = [...groupValue];
-      const current = nextValue[index];
-      nextValue[index] = nextValue[targetIndex];
-      nextValue[targetIndex] = current;
-      updateGroupValue(nextValue);
-    }
-
-    if (Array.isArray(groupValue)) {
-      return (
-        <ChatContentArrayEditor
-          groupKey={groupKey}
-          recordId={record?.id}
-          value={groupValue}
-          openItems={openContentItems}
-          onToggleItem={toggleExclusiveContentItem}
-          onMoveItem={moveArrayItem}
-          onDuplicateItem={duplicateArrayItem}
-          onDeleteItem={deleteArrayItem}
-          onAddItem={addArrayItem}
-          renderItemContent={(entryValue, index, isOpen) =>
-            isOpen ? (
-              <>
-                {groupKey === "participants" && isJsonObject(entryValue) ? (
-                  renderParticipantFields(entryValue, index)
-                ) : groupKey === "messages" && isJsonObject(entryValue) ? (
-                  renderMessageFields(entryValue, index)
-                ) : (
-                  <div className="record-editor-content-fields">
-                    {isJsonObject(entryValue)
-                      ? renderObjectFields(entryValue, [index])
-                      : renderNestedValue([index], `[${index}]`, entryValue)}
-                  </div>
-                )}
-              </>
-            ) : null
-          }
-        />
-      );
-    }
-
-    if (isJsonObject(groupValue)) {
-      if (groupKey === "header") {
-        return (
-          <div className="record-editor-content-object-editor">
-            {renderHeaderFields(groupValue)}
-          </div>
-        );
-      }
-      return (
-        <div className="record-editor-content-object-editor">
-          {renderObjectFields(groupValue, [])}
-        </div>
-      );
-    }
-
     return (
-      <div className="record-editor-content-object-editor">
-        {renderNestedValue([], friendlyGroupLabel(groupKey), groupValue)}
-      </div>
+      <ChatContentGroupEditor
+        actors={records.actors ?? []}
+        actorTitleForRecord={(actor) => titleForRecord(actor, "display_name")}
+        canBrowseMedia={Boolean(mockupsNative()?.pickFile)}
+        groupKey={groupKey}
+        groupValue={groupValue}
+        hints={hints}
+        normalizeMediaPath={(filePath) =>
+          relativePathFromRoot(filePath, productionMediaRoot())
+        }
+        onBrowseMedia={async () => {
+          const [filePath] =
+            await (mockupsNative()?.pickFile?.() ?? Promise.resolve([]));
+          return filePath
+            ? relativePathFromRoot(filePath, productionMediaRoot())
+            : undefined;
+        }}
+        onGroupValueChange={updateGroupValue}
+        onToggleItem={toggleExclusiveContentItem}
+        openItems={openContentItems}
+        recordId={record?.id}
+        root={root}
+      />
     );
   }
 
