@@ -4,16 +4,7 @@ import { EditorHeader } from "../editor-ui/EditorHeader.js";
 import { EditorSectionButton } from "../editor-ui/EditorSectionButton.js";
 import { EditorSectionCard } from "../editor-ui/EditorSectionCard.js";
 import { EditorSections } from "../editor-ui/EditorSections.js";
-
-type ScreenInstanceTab =
-  | ""
-  | "general"
-  | "content"
-  | "behavior"
-  | "overrides"
-  | "deviceState"
-  | "transform"
-  | "transition";
+import type { ScreenInstanceTab } from "./editorTabs.js";
 
 interface ScreenInstanceEditorProps {
   table: AppTableDefinition;

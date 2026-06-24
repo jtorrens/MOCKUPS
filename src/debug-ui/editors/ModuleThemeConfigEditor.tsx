@@ -4,8 +4,7 @@ import { EditorHeader } from "../editor-ui/EditorHeader.js";
 import { EditorSectionButton } from "../editor-ui/EditorSectionButton.js";
 import { EditorSectionCard } from "../editor-ui/EditorSectionCard.js";
 import { EditorSections } from "../editor-ui/EditorSections.js";
-
-type ModuleThemeTab = "" | "design" | "colors" | "settings";
+import type { ModuleThemeTab } from "./editorTabs.js";
 
 interface ModuleThemeConfigEditorProps {
   table: AppTableDefinition;

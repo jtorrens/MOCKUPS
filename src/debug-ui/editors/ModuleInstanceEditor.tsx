@@ -4,11 +4,12 @@ import { EditorHeader } from "../editor-ui/EditorHeader.js";
 import { EditorSectionButton } from "../editor-ui/EditorSectionButton.js";
 import { EditorSectionCard } from "../editor-ui/EditorSectionCard.js";
 import { EditorSections } from "../editor-ui/EditorSections.js";
+import type { ScreenInstanceTab } from "./editorTabs.js";
 
 interface ModuleInstanceEditorProps {
   table: AppTableDefinition;
   record: AppRecord;
-  activeTab: "" | "general" | "content" | "behavior" | "overrides" | "deviceState" | "transform" | "transition";
+  activeTab: ScreenInstanceTab;
   activeContentTab: string;
   contentFieldExists: boolean;
   behaviorFieldExists: boolean;
@@ -23,7 +24,7 @@ interface ModuleInstanceEditorProps {
     onToggle: (group: string) => void,
     children: ReactNode,
   ) => ReactNode;
-  setActiveTab: (tab: ModuleInstanceEditorProps["activeTab"]) => void;
+  setActiveTab: (tab: ScreenInstanceTab) => void;
   setContentTab: (tab: string) => void;
 }
 

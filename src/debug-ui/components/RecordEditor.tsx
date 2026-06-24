@@ -24,6 +24,12 @@ import { ModuleInstanceEditor } from "../editors/ModuleInstanceEditor.js";
 import { ModuleThemeConfigEditor } from "../editors/ModuleThemeConfigEditor.js";
 import { ScreenInstanceEditor } from "../editors/ScreenInstanceEditor.js";
 import { ThemeEditor } from "../editors/ThemeEditor.js";
+import type {
+  AppEditorTab,
+  ModuleThemeTab,
+  ScreenInstanceTab,
+  ThemeEditorTab,
+} from "../editors/editorTabs.js";
 import {
   hasModeColorOverrides,
   ModeColorEditor,
@@ -529,28 +535,13 @@ export function RecordEditor({
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [states, setStates] = useState<Record<string, SaveState>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [screenTab, setScreenTab] = useState<
-    | ""
-    | "general"
-    | "content"
-    | "behavior"
-    | "overrides"
-    | "deviceState"
-    | "transform"
-    | "transition"
-  >("");
+  const [screenTab, setScreenTab] = useState<ScreenInstanceTab>("");
   const [contentTab, setContentTab] = useState("participants");
-  const [appTab, setAppTab] = useState<"" | "general" | "tokens" | "colors" | "notes">(
-    "",
-  );
+  const [appTab, setAppTab] = useState<AppEditorTab>("");
   const [appTokenGroup, setAppTokenGroup] = useState("");
-  const [themeTab, setThemeTab] = useState<"" | "general" | "tokens" | "colors">(
-    "",
-  );
+  const [themeTab, setThemeTab] = useState<ThemeEditorTab>("");
   const [themeTokenGroup, setThemeTokenGroup] = useState("");
-  const [moduleThemeTab, setModuleThemeTab] = useState<"" | "design" | "colors" | "settings">(
-    "",
-  );
+  const [moduleThemeTab, setModuleThemeTab] = useState<ModuleThemeTab>("");
   const [moduleDesignGroup, setModuleDesignGroup] = useState("");
   const [genericTab, setGenericTab] = useState<"" | "general">("general");
   const [openContentItems, setOpenContentItems] = useState<Record<string, boolean>>(
