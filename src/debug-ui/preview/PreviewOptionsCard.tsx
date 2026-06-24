@@ -118,7 +118,7 @@ export function PreviewOptionsCard({
           <h2>Preview</h2>
           <p>{previewSummary}</p>
         </div>
-        <span className={`status-dot ${busy ? "busy" : ""}`}>
+        <span className={`preview-status-dot ${busy ? "busy" : ""}`}>
           {busy ? "Resolving" : "Live"}
         </span>
       </summary>

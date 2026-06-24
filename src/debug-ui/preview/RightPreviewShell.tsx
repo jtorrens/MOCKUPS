@@ -47,7 +47,6 @@ export function RightPreviewShell({
 
       <PreviewPanel
         renderable={payload?.renderable ?? null}
-        frame={selection.frame}
         onFitChange={setPreviewFit}
         showPhoneFrame={showPhoneFrame}
       />

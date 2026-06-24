@@ -5,14 +5,12 @@ import { calculatePreviewFit, type PreviewFit } from "./previewSizing.js";
 
 interface PreviewPanelProps {
   renderable: RenderableNode | null;
-  frame: number;
   onFitChange?: (fit: PreviewFit) => void;
   showPhoneFrame: boolean;
 }
 
 export function PreviewPanel({
   renderable,
-  frame,
   onFitChange,
   showPhoneFrame,
 }: PreviewPanelProps) {
@@ -47,14 +45,7 @@ export function PreviewPanel({
   }, [fit.height, fit.scale, fit.width, onFitChange]);
 
   return (
-    <section className="panel preview-panel">
-      <div className="panel-heading">
-        <div>
-          <span className="eyebrow">RenderableNode → Remotion adapter</span>
-          <h2>Preview</h2>
-        </div>
-        <span className="frame-badge">Frame {frame}</span>
-      </div>
+    <section className="preview-panel">
       <div className="preview-viewport-host" ref={viewportHostRef}>
         <RenderSurface
           fit={fit}
