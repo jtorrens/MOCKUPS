@@ -29,6 +29,22 @@ The transitional global stylesheet exposes a small set of CSS variables in `:roo
 - `--pill-border`: shared metadata/status pill border.
 - `--pill-background`: shared metadata/status pill background.
 - `--pill-color`: shared metadata/status pill text color.
+- `--field-label-color`: shared editor field label color.
+- `--field-readonly-color`: shared read-only field value color.
+- `--field-readonly-background`: shared read-only field background.
+- `--restore-button-border`: shared restore button border.
+- `--restore-button-background`: shared restore button background.
+- `--restore-button-color`: shared restore button glyph color.
+- `--restore-button-hover-border-color`: shared restore button hover border.
+- `--restore-button-hover-background`: shared restore button hover background.
+- `--override-border`: shared dirty/override field border.
+- `--override-background`: shared dirty/override field background.
+- `--override-color`: shared dirty/override text/icon color.
+- `--override-shadow`: shared dirty/override field shadow.
+- `--field-separator-border`: shared editor field group separator.
+- `--media-preview-border`: shared media/wallpaper preview border.
+- `--media-preview-background`: shared media/wallpaper preview empty background.
+- `--media-preview-color`: shared media/wallpaper preview helper text color.
 - `--accordion-chevron-size`: closed accordion chevron size.
 - `--accordion-chevron-open-size`: open accordion chevron size.
 - `--accordion-chevron-weight`: accordion chevron weight.
