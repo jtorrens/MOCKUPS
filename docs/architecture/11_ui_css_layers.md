@@ -125,6 +125,20 @@ The transitional global stylesheet exposes a small set of CSS variables in `:roo
 - `--editor-chip-color`: central editor chip text color.
 - `--editor-chip-background`: central editor chip background.
 - `--editor-chip-border-color`: central editor chip border color.
+- `--editor-group-header-color`: central editor token/JSON group header color.
+- `--editor-group-title-color`: central editor token/JSON group title color.
+- `--editor-group-icon-border`: central editor token/JSON group icon border.
+- `--editor-group-icon-background`: central editor token/JSON group icon background.
+- `--editor-group-icon-color`: central editor token/JSON group icon color.
+- `--editor-code-color`: central editor token/JSON code helper color.
+- `--editor-code-muted-color`: central editor token/JSON secondary code helper color.
+- `--editor-empty-color`: central editor empty-state text color.
+- `--editor-alert-error-border-color`: central editor error alert border color.
+- `--editor-alert-error-background`: central editor error alert background.
+- `--editor-alert-error-color`: central editor error alert text color.
+- `--editor-alert-warning-border-color`: central editor warning alert border color.
+- `--editor-alert-warning-background`: central editor warning alert background.
+- `--editor-alert-warning-color`: central editor warning alert text color.
 - `--preview-viewport-padding`: preview viewport host padding.
 - `--preview-viewport-border`: preview viewport host border.
 - `--preview-viewport-radius`: preview viewport host radius.
