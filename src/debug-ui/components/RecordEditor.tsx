@@ -18,6 +18,7 @@ import {
   EditorSubsectionCard,
 } from "../editor-ui/EditorSectionCard.js";
 import { EditorSections } from "../editor-ui/EditorSections.js";
+import { GenericRecordEditor } from "../editors/GenericRecordEditor.js";
 import {
   hasModeColorOverrides,
   ModeColorEditor,
@@ -4025,29 +4026,13 @@ export function RecordEditor({
   }
 
   return (
-    <section className="record-editor">
-      <EditorHeader
-        eyebrow={table.id === "productions" ? "Production Editor" : "Record editor"}
-        title={String(record[table.titleColumn] ?? record.id)}
-      />
-      <EditorSections>
-        <EditorSectionCard>
-          <TabButton
-            active={genericTab === "general"}
-            warning={table.id === "shots" && shotHasFpsOverride()}
-            onClick={() =>
-              setGenericTab(genericTab === "general" ? "" : "general")
-            }
-          >
-            General
-          </TabButton>
-          {genericTab === "general" ? (
-            <div className="editor-section-body record-editor-field-stack record-editor-direct-fields">
-              {table.fields.map((field) => renderGenericField(field))}
-            </div>
-          ) : null}
-        </EditorSectionCard>
-      </EditorSections>
-    </section>
+    <GenericRecordEditor
+      table={table}
+      record={record}
+      activeTab={genericTab}
+      renderGenericField={renderGenericField}
+      setActiveTab={setGenericTab}
+      showGeneralWarning={table.id === "shots" && shotHasFpsOverride()}
+    />
   );
 }
