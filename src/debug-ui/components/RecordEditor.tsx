@@ -1768,10 +1768,14 @@ export function RecordEditor({
                     <span>
                       [{index}] {contentSummary(entryValue, groupKey)}
                     </span>
+                    <span className="record-editor-content-chevron" aria-hidden="true">
+                      {isOpen ? "⌃" : "›"}
+                    </span>
                   </button>
                   <div className="record-editor-content-actions">
                     <button
                       type="button"
+                      className="record-editor-content-action ui-icon-button"
                       disabled={index === 0}
                       onClick={() => moveArrayItem(index, -1)}
                     >
@@ -1779,15 +1783,24 @@ export function RecordEditor({
                     </button>
                     <button
                       type="button"
+                      className="record-editor-content-action ui-icon-button"
                       disabled={index === groupValue.length - 1}
                       onClick={() => moveArrayItem(index, 1)}
                     >
                       ↓
                     </button>
-                    <button type="button" onClick={() => duplicateArrayItem(index)}>
+                    <button
+                      type="button"
+                      className="record-editor-content-action ui-icon-button"
+                      onClick={() => duplicateArrayItem(index)}
+                    >
                       ⧉
                     </button>
-                    <button type="button" onClick={() => deleteArrayItem(index)}>
+                    <button
+                      type="button"
+                      className="record-editor-content-action ui-icon-button"
+                      onClick={() => deleteArrayItem(index)}
+                    >
                       ⌫
                     </button>
                   </div>

@@ -1163,8 +1163,7 @@ body {
 }
 
 .record-editor-content-item-card > summary::before,
-.record-editor-content-nested-card > summary::before,
-.record-editor-content-item-header::before {
+.record-editor-content-nested-card > summary::before {
   content: "›";
   width: 18px;
   color: var(--content-card-chevron-color, #111318);
@@ -1172,8 +1171,7 @@ body {
 }
 
 .record-editor-content-item-card[open] > summary::before,
-.record-editor-content-nested-card[open] > summary::before,
-.record-editor-content-item-header[aria-expanded="true"]::before {
+.record-editor-content-nested-card[open] > summary::before {
   content: "⌃";
   font-size: 15px;
 }
@@ -1191,8 +1189,8 @@ body {
 
 .record-editor-content-item-header {
   display: grid;
-  grid-template-columns: 18px minmax(0, 1fr);
-  gap: 6px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
   align-items: center;
   width: 100%;
   border: 0;
@@ -1200,6 +1198,19 @@ body {
   color: var(--content-card-title-color, #1d2129);
   background: transparent;
   text-align: left;
+}
+
+.record-editor-content-item-header > span {
+  grid-column: auto;
+}
+
+.record-editor-content-chevron {
+  display: grid;
+  width: 20px;
+  color: var(--content-card-chevron-color, #111318);
+  place-items: center;
+  font-size: var(--subcard-chevron-size, 20px);
+  font-weight: var(--accordion-chevron-weight, 450);
 }
 
 .record-editor-content-nested-card > summary > small {
@@ -1212,18 +1223,23 @@ body {
   gap: 5px;
 }
 
-.record-editor-content-actions button,
+.record-editor-content-action {
+  --ui-icon-button-size: 28px;
+  --ui-icon-button-border: 0;
+  --ui-icon-button-radius: 8px;
+  --ui-icon-button-background: transparent;
+  --ui-icon-button-color: var(--editor-button-color, #343946);
+  --ui-icon-button-hover-background: var(--editor-button-hover-background, #f8fafc);
+  padding: 0;
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .record-editor-content-add-button {
   border: var(--editor-button-border, 1px solid #d9dee7);
   border-radius: 8px;
   color: var(--editor-button-color, #343946);
   background: var(--editor-button-background, #ffffff);
-}
-
-.record-editor-content-actions button {
-  min-width: 28px;
-  height: 28px;
-  padding: 0 7px;
 }
 
 .record-editor-content-fields {
@@ -2816,7 +2832,6 @@ body {
   outline: none;
 }
 
-.editor-workspace .record-editor-content-actions button,
 .editor-workspace .record-editor-content-add-button,
 .editor-workspace .compact-button,
 .editor-workspace .json-row-actions button,
@@ -2826,7 +2841,6 @@ body {
   background: var(--editor-button-background, #ffffff) !important;
 }
 
-.editor-workspace .record-editor-content-actions button:hover:not(:disabled),
 .editor-workspace .record-editor-content-add-button:hover:not(:disabled),
 .editor-workspace .compact-button:hover:not(:disabled),
 .editor-workspace .json-row-actions button:hover:not(:disabled),
@@ -2835,11 +2849,24 @@ body {
   background: var(--editor-button-hover-background, #f8fafc) !important;
 }
 
-.editor-workspace .record-editor-content-actions button:disabled,
 .editor-workspace .record-editor-content-add-button:disabled,
 .editor-workspace .compact-button:disabled,
 .editor-workspace .json-row-actions button:disabled,
 .editor-workspace .json-add-row button:disabled {
+  opacity: var(--editor-button-disabled-opacity, 0.55);
+}
+
+.editor-workspace .record-editor-content-action {
+  border: 0 !important;
+  color: var(--editor-button-color, #22262f) !important;
+  background: transparent !important;
+}
+
+.editor-workspace .record-editor-content-action:hover:not(:disabled) {
+  background: var(--editor-button-hover-background, #f8fafc) !important;
+}
+
+.editor-workspace .record-editor-content-action:disabled {
   opacity: var(--editor-button-disabled-opacity, 0.55);
 }
 
