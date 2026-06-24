@@ -726,8 +726,7 @@ body {
 }
 
 .tab-list button,
-.record-list button,
-.project-tree button {
+.record-list button {
   width: 100%;
   border: 1px solid var(--browser-row-border-color, transparent);
   border-radius: 10px;
@@ -750,24 +749,18 @@ body {
 }
 
 .tab-list button.active,
-.record-list button.active,
-.project-tree button.active {
+.record-list button.active {
   border-color: var(--browser-row-active-border-color, #38415a);
   color: var(--browser-row-active-color, #ffffff);
   background: var(--browser-row-active-background, #171b26);
 }
 
 .record-list button.editing,
-.project-tree button.editing {
+.record-list button.editing {
   border-color: var(--browser-row-editing-border-color, #6b78ff);
   color: var(--browser-row-editing-color, #ffffff);
   background: var(--browser-row-editing-background, #171b26);
   box-shadow: inset 3px 0 0 var(--browser-row-editing-accent-color, #8190ff);
-}
-
-.project-tree {
-  display: grid;
-  gap: 8px;
 }
 
 .project-tree-view {
@@ -890,31 +883,6 @@ body {
 
 .compact-empty {
   padding: 10px;
-}
-
-.project-tree details {
-  margin-top: 6px;
-}
-
-.project-tree summary {
-  list-style: none;
-}
-
-.project-tree summary::-webkit-details-marker {
-  display: none;
-}
-
-.project-tree button {
-  margin: 3px 0;
-}
-
-.project-tree button span {
-  display: block;
-  margin-bottom: 3px;
-  color: #6f778a;
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
 }
 
 .tree-children {
@@ -1544,17 +1512,6 @@ body {
   background: rgba(64, 45, 9, 0.42);
 }
 
-.mode-color-header {
-  border: 0;
-  padding: 0 8px 4px;
-  color: #778096;
-  background: transparent;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
 .mode-color-row strong {
   color: #c8d0e0;
   font-size: 12px;
@@ -1567,15 +1524,6 @@ body {
   font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.mode-color-row .restore-button {
-  height: 32px;
-  border: 1px solid #30384a;
-  border-radius: 8px;
-  color: #cad2e4;
-  background: #171b25;
-  font-size: 12px;
 }
 
 .json-editor-error {
@@ -2076,8 +2024,7 @@ body {
 
 .production-menu-button,
 .ghost-button,
-.mini-action,
-.mode-color-row .restore-button {
+.mini-action {
   border: var(--topbar-menu-button-border, #d9dee7);
   color: var(--topbar-menu-button-color, #22262f);
   background: var(--topbar-menu-button-background, #ffffff);
@@ -2335,8 +2282,7 @@ body {
 }
 
 .project-tree-view button.active,
-.record-list button.active,
-.project-tree button.active {
+.record-list button.active {
   border-color: var(--browser-row-active-border-color, #dfe3eb);
   color: var(--browser-row-active-color, #15171c);
   background: var(--browser-row-active-background, #f7f8fb);
@@ -2509,10 +2455,6 @@ body {
   padding: 0;
 }
 
-.mode-color-header {
-  color: var(--editor-group-header-color, #667085);
-}
-
 .token-override-group,
 .mode-color-group {
   border-color: var(--editor-surface-border-color, #dfe3eb);
@@ -2593,20 +2535,6 @@ body {
   border-color: var(--editor-alert-warning-border-color, #ffdca8);
   color: var(--editor-alert-warning-color, #b35600);
   background: var(--editor-alert-warning-background, #fff8ed);
-}
-
-.mode-color-row .restore-button {
-  display: inline-grid;
-  width: 28px;
-  height: 28px;
-  place-items: center;
-  border: var(--restore-button-border, 1px solid #d9dee7);
-  border-radius: 999px;
-  padding: 0;
-  color: var(--restore-button-color, #22262f);
-  background: var(--restore-button-background, #ffffff);
-  font-size: 15px;
-  line-height: 1;
 }
 
 .token-color-pair small {
@@ -2816,8 +2744,7 @@ body {
 .editor-workspace .content-add-button,
 .editor-workspace .compact-button,
 .editor-workspace .json-row-actions button,
-.editor-workspace .json-add-row button,
-.editor-workspace .mode-color-row .restore-button {
+.editor-workspace .json-add-row button {
   border: var(--editor-button-border, 1px solid #d9dee7) !important;
   color: var(--editor-button-color, #22262f) !important;
   background: var(--editor-button-background, #ffffff) !important;
@@ -2827,8 +2754,7 @@ body {
 .editor-workspace .content-add-button:hover:not(:disabled),
 .editor-workspace .compact-button:hover:not(:disabled),
 .editor-workspace .json-row-actions button:hover:not(:disabled),
-.editor-workspace .json-add-row button:hover:not(:disabled),
-.editor-workspace .mode-color-row .restore-button:hover:not(:disabled) {
+.editor-workspace .json-add-row button:hover:not(:disabled) {
   border-color: var(--editor-button-hover-border-color, #aeb8c8) !important;
   background: var(--editor-button-hover-background, #f8fafc) !important;
 }
@@ -2837,8 +2763,7 @@ body {
 .editor-workspace .content-add-button:disabled,
 .editor-workspace .compact-button:disabled,
 .editor-workspace .json-row-actions button:disabled,
-.editor-workspace .json-add-row button:disabled,
-.editor-workspace .mode-color-row .restore-button:disabled {
+.editor-workspace .json-add-row button:disabled {
   opacity: var(--editor-button-disabled-opacity, 0.55);
 }
 
