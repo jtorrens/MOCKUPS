@@ -20,6 +20,7 @@ import {
 import { EditorSections } from "../editor-ui/EditorSections.js";
 import { GenericRecordEditor } from "../editors/GenericRecordEditor.js";
 import { ModuleInstanceEditor } from "../editors/ModuleInstanceEditor.js";
+import { ModuleThemeConfigEditor } from "../editors/ModuleThemeConfigEditor.js";
 import { ScreenInstanceEditor } from "../editors/ScreenInstanceEditor.js";
 import {
   hasModeColorOverrides,
@@ -3855,111 +3856,83 @@ export function RecordEditor({
         ? moduleDesignGroup
         : "";
     return (
-      <section className="record-editor">
-        <EditorHeader
-          eyebrow="Screen module editor"
-          title={String(record[table.titleColumn] ?? record.id)}
-        />
-        <EditorSections>
-          <EditorSectionCard>
-            <TabButton
-              active={moduleThemeTab === "design"}
-              warning={differsFromInherited("tokens_json")}
-              onClick={() => setModuleThemeTab(moduleThemeTab === "design" ? "" : "design")}
-            >
-              Design
-            </TabButton>
-            {moduleThemeTab === "design" && tokensField ? (
-              <div className="editor-section-body record-editor-nested-stack">
-                {designGroups.map((group) => (
-                  <SubgroupAccordion
-                    key={group}
-                    group={group}
-                    activeGroup={activeDesignGroup}
-                    warning={explicitLocalDiffers(
-                      tokenRoot[group],
-                      inheritedFields.tokens_json?.[group],
-                    )}
-                    onToggle={setModuleDesignGroup}
-                  >
-                    <div className="record-editor-field-stack record-editor-single-column">
-                      {renderField(tokensField, {
-                        rawText: rawForJsonGroupValue("tokens_json", group),
-                        hideLabel: true,
-                        groupContext: group,
-                        inheritedValue:
-                          inheritedFields.tokens_json &&
-                          typeof inheritedFields.tokens_json === "object"
-                            ? (inheritedFields.tokens_json[
-                                group
-                              ] as Record<string, unknown>)
-                            : undefined,
-                        onRawTextChange: (nextRawText) =>
-                          updateJsonGroupValue(
-                            "tokens_json",
-                            group,
-                            nextRawText,
-                          ),
-                      })}
-                    </div>
-                  </SubgroupAccordion>
-                ))}
-              </div>
-            ) : null}
-          </EditorSectionCard>
-          <EditorSectionCard>
-            <TabButton
-              active={moduleThemeTab === "colors"}
-              warning={hasModeColorOverrides(
-                tokenRoot as JsonValue,
-                inheritedFields.tokens_json as JsonValue | undefined,
-              )}
-              onClick={() => setModuleThemeTab(moduleThemeTab === "colors" ? "" : "colors")}
-            >
-              Colors
-            </TabButton>
-            {moduleThemeTab === "colors" && tokensField ? (
-              <div className="editor-section-body">
-                <ModeColorEditor
-                  rootValue={tokenRoot as JsonValue}
-                  inheritedRoot={inheritedFields.tokens_json as JsonValue | undefined}
-                  onRootChange={(nextValue) => setJsonDraft("tokens_json", nextValue)}
-                />
-              </div>
-            ) : null}
-          </EditorSectionCard>
-          <EditorSectionCard>
-            <TabButton
-              active={moduleThemeTab === "settings"}
-              onClick={() => setModuleThemeTab(moduleThemeTab === "settings" ? "" : "settings")}
-            >
-              Settings
-            </TabButton>
-            {moduleThemeTab === "settings" ? (
-              <div className="editor-section-body record-editor-nested-stack">
-                <div className="record-editor-field-stack record-editor-direct-fields">
-                  {renderFields([
-                    "id",
-                    "production_id",
-                    "theme_id",
-                    "app_id",
-                    "module_id",
-                    "module_schema_version",
-                    "name",
-                  ])}
-                </div>
-                {fieldsByColumn.get("metadata_json") ? (
+      <ModuleThemeConfigEditor
+        table={table}
+        record={record}
+        activeTab={moduleThemeTab}
+        designFieldExists={Boolean(tokensField)}
+        colorsFieldExists={Boolean(tokensField)}
+        designWarning={differsFromInherited("tokens_json")}
+        colorsWarning={hasModeColorOverrides(
+          tokenRoot as JsonValue,
+          inheritedFields.tokens_json as JsonValue | undefined,
+        )}
+        renderDesign={() =>
+          tokensField
+            ? designGroups.map((group) => (
+                <SubgroupAccordion
+                  key={group}
+                  group={group}
+                  activeGroup={activeDesignGroup}
+                  warning={explicitLocalDiffers(
+                    tokenRoot[group],
+                    inheritedFields.tokens_json?.[group],
+                  )}
+                  onToggle={setModuleDesignGroup}
+                >
                   <div className="record-editor-field-stack record-editor-single-column">
-                    {renderFlatJsonObjectEditor("metadata_json", [
-                      "default_tokens_json",
-                    ])}
+                    {renderField(tokensField, {
+                      rawText: rawForJsonGroupValue("tokens_json", group),
+                      hideLabel: true,
+                      groupContext: group,
+                      inheritedValue:
+                        inheritedFields.tokens_json &&
+                        typeof inheritedFields.tokens_json === "object"
+                          ? (inheritedFields.tokens_json[
+                              group
+                            ] as Record<string, unknown>)
+                          : undefined,
+                      onRawTextChange: (nextRawText) =>
+                        updateJsonGroupValue("tokens_json", group, nextRawText),
+                    })}
                   </div>
-                ) : null}
+                </SubgroupAccordion>
+              ))
+            : null
+        }
+        renderColors={() =>
+          tokensField ? (
+            <ModeColorEditor
+              rootValue={tokenRoot as JsonValue}
+              inheritedRoot={inheritedFields.tokens_json as JsonValue | undefined}
+              onRootChange={(nextValue) => setJsonDraft("tokens_json", nextValue)}
+            />
+          ) : null
+        }
+        renderSettings={() => (
+          <>
+            <div className="record-editor-field-stack record-editor-direct-fields">
+              {renderFields([
+                "id",
+                "production_id",
+                "theme_id",
+                "app_id",
+                "module_id",
+                "module_schema_version",
+                "name",
+              ])}
+            </div>
+            {fieldsByColumn.get("metadata_json") ? (
+              <div className="record-editor-field-stack record-editor-single-column">
+                {renderFlatJsonObjectEditor("metadata_json", [
+                  "default_tokens_json",
+                ])}
               </div>
             ) : null}
-          </EditorSectionCard>
-        </EditorSections>
-      </section>
+          </>
+        )}
+        setActiveTab={setModuleThemeTab}
+      />
     );
   }
 
