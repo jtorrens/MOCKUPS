@@ -42,6 +42,16 @@ function tableById(tables: AppTableDefinition[]) {
   return new Map(tables.map((table) => [table.id, table]));
 }
 
+function productionDataIcon(tableId: string) {
+  if (tableId === "actors") return "actor";
+  if (tableId === "themes") return "theme";
+  if (tableId === "devices") return "device";
+  if (tableId === "media_assets") return "media";
+  if (tableId === "render_presets") return "render";
+  if (tableId === "animation_presets") return "animation";
+  return "data";
+}
+
 function recordTitle(table: AppTableDefinition, record: AppRecord): string {
   return String(record[table.titleColumn] ?? record.id);
 }
@@ -192,6 +202,57 @@ function TreeIcon({ name }: { name: string }) {
         <path d="M5 6c0-1.7 3.1-3 7-3s7 1.3 7 3-3.1 3-7 3-7-1.3-7-3Z" />
         <path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6" />
         <path d="M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6" />
+      </svg>
+    );
+  }
+  if (name === "actor") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="8" r="4" />
+        <path d="M4.5 20c1.4-4 4-6 7.5-6s6.1 2 7.5 6" />
+      </svg>
+    );
+  }
+  if (name === "theme") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 4a8 8 0 1 0 0 16h1.4a2 2 0 0 0 1.5-3.3 1.7 1.7 0 0 1 1.3-2.7H18a6 6 0 0 0-6-10Z" />
+        <circle cx="8.2" cy="10" r=".8" />
+        <circle cx="11" cy="7.8" r=".8" />
+        <circle cx="14.2" cy="9" r=".8" />
+      </svg>
+    );
+  }
+  if (name === "device") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="7" y="3" width="10" height="18" rx="2.5" />
+        <path d="M10.5 18h3" />
+      </svg>
+    );
+  }
+  if (name === "media") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="4" y="5" width="16" height="14" rx="2" />
+        <path d="m7 16 3.2-3.2 2.3 2.3L15.5 12 20 16" />
+        <circle cx="8.5" cy="9" r="1" />
+      </svg>
+    );
+  }
+  if (name === "render") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M5 5h14v10H5z" />
+        <path d="M8 19h8M12 15v4M9 8l3 2 3-2" />
+      </svg>
+    );
+  }
+  if (name === "animation") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 12h3l2-5 4 10 2-5h5" />
+        <path d="M4 5h16M4 19h16" />
       </svg>
     );
   }
@@ -563,7 +624,7 @@ export function ProjectTree({
                   }}
                 >
                   <span className="tree-record-icon" aria-hidden="true">
-                    <TreeIcon name="data" />
+                    <TreeIcon name={productionDataIcon(table.id)} />
                   </span>
                   <span className="tree-record-copy">
                     <strong>{table.label}</strong>
@@ -616,7 +677,7 @@ export function ProjectTree({
                       recordId={record.id}
                       activeTableId={activeTableId}
                       selectedRecordIds={selectedRecordIds}
-                      icon="data"
+                      icon={productionDataIcon(table.id)}
                       title={recordTitle(table, record)}
                       meta={String(record.id)}
                       onClick={() => select(table.id, record.id)}

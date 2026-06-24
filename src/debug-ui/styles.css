@@ -153,6 +153,9 @@
   --browser-row-color: #2c323d;
   --browser-row-background: transparent;
   --browser-row-border-color: transparent;
+  --browser-row-surface-background: #ffffff;
+  --browser-row-surface-border-color: #e1e5ec;
+  --browser-row-surface-shadow: 0 1px 2px rgba(21, 30, 50, 0.04);
   --browser-row-active-color: #15171c;
   --browser-row-active-background: #f7f8fb;
   --browser-row-active-border-color: #dfe3eb;
@@ -161,6 +164,12 @@
   --browser-row-editing-border-color: #8fa2ff;
   --browser-row-editing-accent-color: #345dff;
   --browser-row-muted-color: #7b8494;
+  --browser-card-background: #ffffff;
+  --browser-card-border-color: #dfe5ee;
+  --browser-card-shadow: 0 1px 3px rgba(21, 30, 50, 0.045);
+  --browser-nested-card-background: #fbfcfe;
+  --browser-tree-guide-background: linear-gradient(90deg, #f4f6fa 0 1px, transparent 1px) 8px 0 / 1px 100% no-repeat;
+  --browser-chevron-color: #475467;
   --content-card-border: var(--editor-subsection-border);
   --content-card-radius: var(--editor-subsection-radius);
   --content-card-background: var(--editor-subsection-background);
@@ -337,6 +346,9 @@
   --browser-row-color: #d8d5ce;
   --browser-row-background: transparent;
   --browser-row-border-color: transparent;
+  --browser-row-surface-background: #34363b;
+  --browser-row-surface-border-color: #50535b;
+  --browser-row-surface-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
   --browser-row-active-color: #ece9e2;
   --browser-row-active-background: #383a3f;
   --browser-row-active-border-color: #565a62;
@@ -345,6 +357,12 @@
   --browser-row-editing-border-color: #7f8fad;
   --browser-row-editing-accent-color: #7f8fad;
   --browser-row-muted-color: #aaa69d;
+  --browser-card-background: #34363b;
+  --browser-card-border-color: #50535b;
+  --browser-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.16);
+  --browser-nested-card-background: #383a40;
+  --browser-tree-guide-background: linear-gradient(90deg, #50535b 0 1px, transparent 1px) 8px 0 / 1px 100% no-repeat;
+  --browser-chevron-color: #aaa69d;
   --content-nested-border-color: #464950;
   --avatar-preview-inner-highlight: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
   --preview-viewport-border: 1px solid #4a4d54;
@@ -2116,9 +2134,9 @@ button {
 
 .project-tree-view button:not(.mini-action),
 .record-list button {
-  border-color: #e1e5ec;
-  background: #ffffff;
-  box-shadow: 0 1px 2px rgba(21, 30, 50, 0.04);
+  border-color: var(--browser-row-surface-border-color, #e1e5ec);
+  background: var(--browser-row-surface-background, #ffffff);
+  box-shadow: var(--browser-row-surface-shadow, 0 1px 2px rgba(21, 30, 50, 0.04));
 }
 
 .project-tree-view button:not(.mini-action) {
@@ -2133,10 +2151,10 @@ button {
   width: 22px;
   height: 22px;
   place-items: center;
-  border: 1px solid #dfe3eb;
+  border: var(--card-header-icon-border, 1px solid #dfe3eb);
   border-radius: 7px;
-  color: #343946;
-  background: #f8fafc;
+  color: var(--card-header-icon-color, #343946);
+  background: var(--card-header-icon-background, #f8fafc);
   font-size: 15px;
 }
 
@@ -3254,10 +3272,10 @@ body,
 .project-browser .tree-node,
 .project-browser .tree-leaf-with-children {
   overflow: hidden;
-  border: 1px solid #dfe5ee;
+  border: 1px solid var(--browser-card-border-color, #dfe5ee);
   border-radius: 13px;
-  background: #ffffff;
-  box-shadow: 0 1px 3px rgba(21, 30, 50, 0.045);
+  background: var(--browser-card-background, #ffffff);
+  box-shadow: var(--browser-card-shadow, 0 1px 3px rgba(21, 30, 50, 0.045));
 }
 
 .project-browser .tree-node summary {
@@ -3281,7 +3299,7 @@ body,
   place-items: center;
   border: 0;
   border-radius: 999px;
-  color: #475467;
+  color: var(--browser-chevron-color, #475467);
   background: transparent;
   font-size: 18px;
   font-weight: 800;
@@ -3307,7 +3325,7 @@ body,
   margin: 0;
   border: 0;
   padding: 6px 10px 10px 18px;
-  background: linear-gradient(90deg, #f4f6fa 0 1px, transparent 1px) 8px 0 / 1px 100% no-repeat;
+  background: var(--browser-tree-guide-background, linear-gradient(90deg, #f4f6fa 0 1px, transparent 1px) 8px 0 / 1px 100% no-repeat);
 }
 
 .project-browser .tree-children.compact {
@@ -3317,7 +3335,7 @@ body,
 .project-browser .tree-children > .tree-node,
 .project-browser .tree-children > .tree-leaf-with-children,
 .project-browser .tree-children > button:not(.mini-action) {
-  background: #fbfcfe !important;
+  background: var(--browser-nested-card-background, #fbfcfe) !important;
 }
 
 .project-browser .project-tree-view button:not(.mini-action) {
