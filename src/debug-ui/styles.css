@@ -27,13 +27,19 @@
   --topbar-select-background: var(--control-background);
   --topbar-select-color: var(--control-color);
   --topbar-select-border: var(--control-border);
+  --topbar-select-radius: 10px;
+  --topbar-select-padding: 0 12px;
   --topbar-select-focus-border: #8fa2ff;
   --topbar-select-focus-shadow: 0 0 0 3px rgba(59, 102, 255, 0.1);
   --topbar-menu-button-border: 1px solid #d9dee7;
   --topbar-menu-button-background: #ffffff;
   --topbar-menu-button-color: #22262f;
+  --topbar-menu-button-radius: 10px;
+  --topbar-menu-button-font-size: 20px;
   --topbar-menu-button-hover-background: #f8fafc;
   --topbar-menu-button-hover-border: #aeb8c8;
+  --topbar-label-font-size: 11px;
+  --topbar-label-font-weight: 600;
   --pill-border: 1px solid #d8dee8;
   --pill-background: #f7f9fc;
   --pill-color: #343b48;
@@ -268,13 +274,19 @@
   --topbar-select-background: var(--control-background);
   --topbar-select-color: var(--control-color);
   --topbar-select-border: var(--control-border);
+  --topbar-select-radius: 10px;
+  --topbar-select-padding: 0 12px;
   --topbar-select-focus-border: var(--editor-input-focus-border-color);
   --topbar-select-focus-shadow: var(--editor-input-focus-shadow);
   --topbar-menu-button-border: var(--editor-button-border);
   --topbar-menu-button-background: var(--editor-button-background);
   --topbar-menu-button-color: var(--editor-button-color);
+  --topbar-menu-button-radius: 10px;
+  --topbar-menu-button-font-size: 20px;
   --topbar-menu-button-hover-background: var(--editor-button-hover-background);
   --topbar-menu-button-hover-border: var(--editor-button-hover-border-color);
+  --topbar-label-font-size: 12px;
+  --topbar-label-font-weight: 600;
 
   --app-shell-background: #2b2d30;
   --left-panel-background: #303236;
@@ -580,6 +592,8 @@ body {
 .production-switcher label {
   display: block;
   color: var(--topbar-label-color, #626a78);
+  font-size: var(--topbar-label-font-size, 11px);
+  font-weight: var(--topbar-label-font-weight, 600);
 }
 
 .production-menu-button,
@@ -590,12 +604,13 @@ body {
 }
 
 .production-menu-button {
-  width: 42px;
-  height: 42px;
+  width: var(--topbar-select-height, 35px);
+  height: var(--topbar-select-height, 35px);
   margin-bottom: 0;
   padding: 0;
-  font-size: 22px;
+  font-size: var(--topbar-menu-button-font-size, 20px);
   line-height: 1;
+  border-radius: var(--topbar-menu-button-radius, 10px);
 }
 
 .modal-backdrop {
@@ -2133,6 +2148,8 @@ body {
 .production-switcher select {
   height: var(--topbar-select-height, 35px);
   line-height: 1.25;
+  border-radius: var(--topbar-select-radius, 10px);
+  padding: var(--topbar-select-padding, 0 12px);
 }
 
 .ui-theme-switcher {
@@ -2178,9 +2195,11 @@ button {
   border: var(--topbar-menu-button-border, 1px solid #d9dee7);
   color: var(--topbar-menu-button-color, #22262f);
   background: var(--topbar-menu-button-background, #ffffff);
-  width: 42px;
+  width: var(--topbar-select-height, 35px);
   height: var(--topbar-select-height, 35px);
   min-height: var(--topbar-select-height, 35px);
+  border-radius: var(--topbar-menu-button-radius, 10px);
+  font-size: var(--topbar-menu-button-font-size, 20px);
 }
 
 .production-menu-button:hover:not(:disabled) {
