@@ -4,6 +4,17 @@
 :root {
   /* UI tokens shared by shell, central editor, left browser, and preview. */
   --app-panel-padding: 22px;
+  --app-shell-background: #ffffff;
+  --left-panel-background: #fbfcfd;
+  --left-panel-border: 1px solid #dde1e8;
+  --navigation-panel-background: #fbfcfd;
+  --navigation-panel-border: 1px solid #dde1e8;
+  --editor-panel-background: #ffffff;
+  --right-panel-background: #fbfcfd;
+  --right-panel-border: 1px solid #dde1e8;
+  --panel-resizer-background: #f0f2f5;
+  --panel-resizer-line: #dfe3eb;
+  --panel-resizer-accent: #3b66ff;
   --accordion-chevron-size: 24px;
   --accordion-chevron-open-size: 17px;
   --accordion-chevron-weight: 450;
@@ -90,6 +101,17 @@
 }
 
 :root[data-ui-theme="dark"] {
+  --app-shell-background: #0f141d;
+  --left-panel-background: #111822;
+  --left-panel-border: 1px solid #283141;
+  --navigation-panel-background: #111822;
+  --navigation-panel-border: 1px solid #283141;
+  --editor-panel-background: #0f141d;
+  --right-panel-background: #111822;
+  --right-panel-border: 1px solid #283141;
+  --panel-resizer-background: #1a2230;
+  --panel-resizer-line: #303746;
+  --panel-resizer-accent: #5d7dff;
   --card-border: 1px solid #303746;
   --card-background: #151a23;
   --card-shadow: 0 2px 10px rgba(0, 0, 0, 0.28);
@@ -2085,22 +2107,22 @@ dd {
    converge on the production authoring UX. */
 :root {
   color: #16181d;
-  background: #f6f7f9;
+  background: var(--app-shell-background, #f6f7f9);
 }
 
 body {
   background:
     radial-gradient(circle at 70% 0%, rgba(55, 91, 255, 0.08), transparent 34rem),
-    #f6f7f9;
+    var(--app-shell-background, #f6f7f9);
 }
 
 .core-app-shell {
-  background: #f6f7f9;
+  background: var(--app-shell-background, #f6f7f9);
 }
 
 .left-app-panel {
-  border-right: 1px solid #dde1e8;
-  background: #fbfcfd;
+  border-right: var(--left-panel-border, 1px solid #dde1e8);
+  background: var(--left-panel-background, #fbfcfd);
 }
 
 .authoring-workspace {
@@ -2109,13 +2131,13 @@ body {
 
 .navigation-rail {
   padding: 22px;
-  border-right: 1px solid #dde1e8;
-  background: #fbfcfd;
+  border-right: var(--navigation-panel-border, 1px solid #dde1e8);
+  background: var(--navigation-panel-background, #fbfcfd);
 }
 
 .editor-workspace {
   padding: 22px;
-  background: #f6f7f9;
+  background: var(--editor-panel-background, #f6f7f9);
 }
 
 .workspace-breadcrumb {
@@ -2163,7 +2185,7 @@ body {
 .panel-resizer {
   width: 10px;
   flex-basis: 10px;
-  background: #f0f2f5;
+  background: var(--panel-resizer-background, #f0f2f5);
 }
 
 .panel-resizer::before {
@@ -2171,13 +2193,13 @@ body {
   bottom: 0;
   left: 4px;
   width: 1px;
-  background: #dde1e8;
+  background: var(--panel-resizer-line, #dde1e8);
 }
 
 .panel-resizer:hover::before,
 .is-resizing-panels .panel-resizer::before {
   width: 2px;
-  background: #3b66ff;
+  background: var(--panel-resizer-accent, #3b66ff);
 }
 
 .app-header {
@@ -3198,16 +3220,16 @@ button {
    Re-applied after safe CSS restore; this is the current winning shell layer. */
 :root {
   color: #15171c;
-  background: #ffffff;
+  background: var(--app-shell-background, #ffffff);
 }
 
 body,
 .core-app-shell {
-  background: #ffffff;
+  background: var(--app-shell-background, #ffffff);
 }
 
 .panel-resizer::before {
-  background: #dfe3eb;
+  background: var(--panel-resizer-line, #dfe3eb);
 }
 
 /* UI LAYER: Shared field system. */

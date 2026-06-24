@@ -11,6 +11,17 @@ The app is in a transitional state: older dark debug-shell styles still exist, t
 The transitional global stylesheet exposes a small set of CSS variables in `:root` for values that must stay consistent across left, central, and preview panels:
 
 - `--app-panel-padding`: outer panel gutter.
+- `--app-shell-background`: full application shell background.
+- `--left-panel-background`: left production selector panel background.
+- `--left-panel-border`: left production selector panel divider.
+- `--navigation-panel-background`: left navigation/tree panel background.
+- `--navigation-panel-border`: left navigation/tree panel divider.
+- `--editor-panel-background`: central editor panel background.
+- `--right-panel-background`: right preview panel background.
+- `--right-panel-border`: right preview panel divider.
+- `--panel-resizer-background`: draggable panel gutter background.
+- `--panel-resizer-line`: draggable panel gutter separator line.
+- `--panel-resizer-accent`: draggable panel gutter active/hover line.
 - `--accordion-chevron-size`: closed accordion chevron size.
 - `--accordion-chevron-open-size`: open accordion chevron size.
 - `--accordion-chevron-weight`: accordion chevron weight.

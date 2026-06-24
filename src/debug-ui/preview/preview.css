@@ -10,9 +10,9 @@
   flex-direction: column;
   gap: 14px;
   overflow: hidden auto;
-  border-left: 1px solid #dde1e8;
+  border-left: var(--right-panel-border, 1px solid #dde1e8);
   padding: var(--app-panel-padding, 22px);
-  background: #fbfcfd;
+  background: var(--right-panel-background, #fbfcfd);
 }
 
 .preview-options-card {
