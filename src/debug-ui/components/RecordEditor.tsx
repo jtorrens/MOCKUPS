@@ -23,6 +23,7 @@ import { GenericRecordEditor } from "../editors/GenericRecordEditor.js";
 import { ModuleInstanceEditor } from "../editors/ModuleInstanceEditor.js";
 import { ModuleThemeConfigEditor } from "../editors/ModuleThemeConfigEditor.js";
 import { ScreenInstanceEditor } from "../editors/ScreenInstanceEditor.js";
+import { ThemeEditor } from "../editors/ThemeEditor.js";
 import {
   hasModeColorOverrides,
   ModeColorEditor,
@@ -3563,31 +3564,21 @@ export function RecordEditor({
         : "";
 
     return (
-      <section className="record-editor">
-        <EditorHeader
-          eyebrow="Theme editor"
-          title={String(record[table.titleColumn] ?? record.id)}
-        />
-        <EditorSections>
-          <EditorSectionCard>
-            <TabButton active={themeTab === "general"} onClick={() => setThemeTab(themeTab === "general" ? "" : "general")}>
-              General
-            </TabButton>
-            {themeTab === "general" ? (
-              <div className="editor-section-body record-editor-field-stack record-editor-direct-fields">
-                {renderFields(["id", "name", "family", "version"])}
-              </div>
-            ) : null}
-          </EditorSectionCard>
-          <EditorSectionCard>
-            <TabButton active={themeTab === "tokens"} onClick={() => setThemeTab(themeTab === "tokens" ? "" : "tokens")}>
-              Tokens
-            </TabButton>
-            {themeTab === "tokens" && tokensField ? (
-              <div className="editor-section-body record-editor-nested-stack">
-                {themeTokenGroups
-                  .filter((group) => group !== "statusBar" && group !== "navigationBar")
-                  .map((group) => (
+      <ThemeEditor
+        table={table}
+        record={record}
+        activeTab={themeTab}
+        tokensFieldExists={Boolean(tokensField)}
+        renderGeneral={() => renderFields(["id", "name", "family", "version"])}
+        renderTokens={() =>
+          tokensField ? (
+            <>
+              {themeTokenGroups
+                .filter(
+                  (group) =>
+                    group !== "statusBar" && group !== "navigationBar",
+                )
+                .map((group) => (
                   <SubgroupAccordion
                     key={group}
                     group={group}
@@ -3611,34 +3602,29 @@ export function RecordEditor({
                     </div>
                   </SubgroupAccordion>
                 ))}
-                {(["statusBar", "navigationBar"] as const).map((group) => (
-                  <SubgroupAccordion
-                    key={group}
-                    group={group}
-                    activeGroup={activeThemeTokenGroup}
-                    onToggle={setThemeTokenGroup}
-                  >
-                    {renderThemeChromeGroup(themeTokenRoot, group)}
-                  </SubgroupAccordion>
-                ))}
-              </div>
-            ) : null}
-          </EditorSectionCard>
-          <EditorSectionCard>
-            <TabButton active={themeTab === "colors"} onClick={() => setThemeTab(themeTab === "colors" ? "" : "colors")}>
-              Colors
-            </TabButton>
-            {themeTab === "colors" && tokensField ? (
-              <div className="editor-section-body">
-                <ModeColorEditor
-                  rootValue={themeTokenRoot as JsonValue}
-                  onRootChange={(nextValue) => setJsonDraft("tokens_json", nextValue)}
-                />
-              </div>
-            ) : null}
-          </EditorSectionCard>
-        </EditorSections>
-      </section>
+              {(["statusBar", "navigationBar"] as const).map((group) => (
+                <SubgroupAccordion
+                  key={group}
+                  group={group}
+                  activeGroup={activeThemeTokenGroup}
+                  onToggle={setThemeTokenGroup}
+                >
+                  {renderThemeChromeGroup(themeTokenRoot, group)}
+                </SubgroupAccordion>
+              ))}
+            </>
+          ) : null
+        }
+        renderColors={() =>
+          tokensField ? (
+            <ModeColorEditor
+              rootValue={themeTokenRoot as JsonValue}
+              onRootChange={(nextValue) => setJsonDraft("tokens_json", nextValue)}
+            />
+          ) : null
+        }
+        setActiveTab={setThemeTab}
+      />
     );
   }
 
