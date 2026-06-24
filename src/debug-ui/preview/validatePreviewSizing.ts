@@ -1,4 +1,5 @@
 import { calculatePreviewFit } from "./previewSizing.js";
+import { renderSurfaceMetrics } from "./RenderSurface.js";
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) {
@@ -107,6 +108,17 @@ const deviceHeight = 2796;
     fitWithSameRenderable.height,
     fitWithoutShell.height,
     "External phone frame overlay must not change renderable fit height",
+  );
+}
+
+{
+  const metrics = renderSurfaceMetrics(null);
+  assertEqual(metrics.width, deviceWidth, "RenderSurface fallback width");
+  assertEqual(metrics.height, deviceHeight, "RenderSurface fallback height");
+  assertEqual(
+    metrics.cornerRadius,
+    0,
+    "RenderSurface fallback frame radius is external chrome only",
   );
 }
 
