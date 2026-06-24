@@ -2976,13 +2976,10 @@ button {
 }
 
 .preview-viewport {
-  border: 10px solid #111111;
-  border-radius: 56px;
-  background: #ffffff;
-  box-shadow:
-    0 10px 28px rgba(17, 24, 39, 0.18),
-    0 2px 8px rgba(17, 24, 39, 0.1),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .empty-state {
@@ -3831,14 +3828,6 @@ body,
 .record-editor .theme-token-group-editor .json-primitive-row {
   border: 0 !important;
   padding-inline: 10px !important;
-}
-
-/* Preview frame overlay: never affects renderable size or position. */
-.preview-viewport {
-  border: 0 !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  background: transparent !important;
 }
 
 .preview-phone-frame {

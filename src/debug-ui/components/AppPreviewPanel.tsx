@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { DebugOptions, DebugPayload, DebugSelection } from "../api/client.js";
-import { PreviewPanel } from "./PreviewPanel.js";
+import { PreviewPanel } from "../preview/PreviewPanel.js";
 
 interface AppPreviewPanelProps {
   options: DebugOptions;

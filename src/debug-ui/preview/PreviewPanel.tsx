@@ -1,7 +1,7 @@
-import type { CSSProperties } from "react";
 import { useEffect, useRef, useState } from "react";
 import { RemotionRenderableAdapter } from "../../remotion/RemotionRenderableAdapter.js";
 import type { RenderableNode } from "../../visual/renderable/types.js";
+import { DeviceFrameOverlay } from "./DeviceFrameOverlay.js";
 
 interface PreviewPanelProps {
   renderable: RenderableNode | null;
@@ -76,20 +76,7 @@ export function PreviewPanel({
               No renderable output for this instance/frame.
             </div>
           )}
-          {renderable && showPhoneFrame ? (
-            <div
-              aria-hidden="true"
-              className="preview-phone-frame"
-              style={
-                {
-                  "--preview-frame-border": `${Math.max(1, 10 * scale)}px`,
-                  "--preview-frame-radius": `${56 * scale}px`,
-                  "--preview-frame-shadow-y": `${10 * scale}px`,
-                  "--preview-frame-shadow-blur": `${28 * scale}px`,
-                } as CSSProperties
-              }
-            />
-          ) : null}
+          <DeviceFrameOverlay scale={scale} visible={Boolean(renderable) && showPhoneFrame} />
         </div>
       </div>
     </section>
