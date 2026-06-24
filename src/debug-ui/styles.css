@@ -1610,12 +1610,6 @@ body {
   padding: 10px;
 }
 
-.record-editor > .mode-color-editor {
-  flex: 1 1 auto;
-  min-height: 0;
-  max-height: none;
-}
-
 .mode-color-group {
   display: grid;
   gap: 7px;
@@ -3636,12 +3630,6 @@ body,
 .project-browser .tree-section-title > span {
   border: 0 !important;
   background: transparent !important;
-}
-
-.editor-workspace .record-editor {
-  min-height: 0 !important;
-  height: auto !important;
-  max-height: none !important;
 }
 
 .record-editor .theme-token-group-editor {
