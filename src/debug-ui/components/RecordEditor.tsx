@@ -36,6 +36,7 @@ import {
   defaultMessageItem,
   defaultGroupValue,
   defaultParticipantItem,
+  firstReceivedParticipant,
   isPrimitiveContentValue,
   mediaNumberFieldsForMessage,
   messageDirectionFromSenderRole,
@@ -43,6 +44,11 @@ import {
   messageWithMediaPath,
   messageWithMediaType,
   messageWithTextRevealMode,
+  ownerParticipant,
+  participantById,
+  participantDisplayName,
+  participantOptions,
+  participantsFromContentRoot,
 } from "../editors/chat/chatContentModel.js";
 import { ChatContentArrayEditor } from "../editors/chat/ChatContentArrayEditor.js";
 import { ChatHeaderFieldsEditor } from "../editors/chat/ChatHeaderFieldsEditor.js";
@@ -892,48 +898,15 @@ export function RecordEditor({
     }
 
     function participantsArray() {
-      const participants = root.participants;
-      return Array.isArray(participants)
-        ? participants.filter(isJsonObject)
-        : [];
+      return participantsFromContentRoot(root);
     }
 
-    function participantById(participantId: unknown) {
-      return participantsArray().find((participant) => participant.id === participantId);
-    }
-
-    function participantDisplayName(participant: Record<string, JsonValue> | undefined) {
-      if (!participant) return "";
-      if (typeof participant.displayName === "string" && participant.displayName) {
-        return participant.displayName;
-      }
-      return actorDisplayName(participant.actorId);
-    }
-
-    function ownerParticipant() {
-      return (
-        participantsArray().find((participant) => participant.role === "owner") ??
-        participantsArray()[0]
-      );
-    }
-
-    function firstReceivedParticipant() {
-      return (
-        participantsArray().find((participant) => participant.role !== "owner") ??
-        ownerParticipant()
-      );
-    }
-
-    function participantOptions(options = participantsArray()) {
-      return options.map((participant, index) => {
-        const value = String(participant.id ?? `participant_${index + 1}`);
-        const label = participantDisplayName(participant) || value;
-        return { value, label };
-      });
+    function participantLabel(participant: Record<string, JsonValue> | undefined) {
+      return participantDisplayName(participant, actorDisplayName);
     }
 
     function messageDirection(message: Record<string, JsonValue>) {
-      const sender = participantById(message.senderParticipantId);
+      const sender = participantById(participantsArray(), message.senderParticipantId);
       return messageDirectionFromSenderRole(message, sender?.role);
     }
 
@@ -977,8 +950,11 @@ export function RecordEditor({
     }
 
     function renderHeaderFields(header: Record<string, JsonValue>) {
-      const avatarParticipant = participantById(header.avatarParticipantId);
-      const inheritedTitle = participantDisplayName(avatarParticipant);
+      const avatarParticipant = participantById(
+        participantsArray(),
+        header.avatarParticipantId,
+      );
+      const inheritedTitle = participantLabel(avatarParticipant);
       return (
         <ChatHeaderFieldsEditor
           header={header}
@@ -998,6 +974,7 @@ export function RecordEditor({
       const mediaType = String(media.type ?? (message.mediaAssetId ? "image" : "none"));
       const receivedOptions = participantOptions(
         participantsArray().filter((participant) => participant.role !== "owner"),
+        participantLabel,
       );
       const senderId = String(message.senderParticipantId ?? "");
 
@@ -1010,8 +987,9 @@ export function RecordEditor({
       }
 
       function setDirection(nextDirection: string) {
-        const owner = ownerParticipant();
-        const received = firstReceivedParticipant();
+        const participants = participantsArray();
+        const owner = ownerParticipant(participants);
+        const received = firstReceivedParticipant(participants);
         updateMessage(
           messageWithDirection(
             message,
@@ -1147,11 +1125,17 @@ export function RecordEditor({
 
     function addArrayItem() {
       const nextIndex = Array.isArray(groupValue) ? groupValue.length : 0;
+      const participants = participantsArray();
       const nextItem =
         groupKey === "messages"
           ? defaultMessageItem(
               nextIndex,
-              String((firstReceivedParticipant() ?? ownerParticipant())?.id ?? ""),
+              String(
+                (
+                  firstReceivedParticipant(participants) ??
+                  ownerParticipant(participants)
+                )?.id ?? "",
+              ),
             )
           : groupKey === "participants"
             ? defaultParticipantItem(nextIndex)

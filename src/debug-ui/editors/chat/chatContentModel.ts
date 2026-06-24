@@ -11,6 +11,11 @@ export interface ChatMediaNumberField {
   fallback: number;
 }
 
+export interface ChatParticipantOption {
+  value: string;
+  label: string;
+}
+
 export function defaultGroupValue(groupKey: string): JsonValue {
   return groupKey === "messages" || groupKey === "participants" ? [] : {};
 }
@@ -244,4 +249,57 @@ export function mediaNumberFieldsForMessage(
       ) ?? fallback,
     ),
   }));
+}
+
+export function participantsFromContentRoot(
+  root: Record<string, unknown>,
+): Array<Record<string, JsonValue>> {
+  return Array.isArray(root.participants)
+    ? root.participants.filter(isJsonObject)
+    : [];
+}
+
+export function participantById(
+  participants: Array<Record<string, JsonValue>>,
+  participantId: unknown,
+) {
+  return participants.find((participant) => participant.id === participantId);
+}
+
+export function participantDisplayName(
+  participant: Record<string, JsonValue> | undefined,
+  actorDisplayName: (actorId: unknown) => string,
+) {
+  if (!participant) return "";
+  if (typeof participant.displayName === "string" && participant.displayName) {
+    return participant.displayName;
+  }
+  return actorDisplayName(participant.actorId);
+}
+
+export function ownerParticipant(participants: Array<Record<string, JsonValue>>) {
+  return (
+    participants.find((participant) => participant.role === "owner") ??
+    participants[0]
+  );
+}
+
+export function firstReceivedParticipant(
+  participants: Array<Record<string, JsonValue>>,
+) {
+  return (
+    participants.find((participant) => participant.role !== "owner") ??
+    ownerParticipant(participants)
+  );
+}
+
+export function participantOptions(
+  participants: Array<Record<string, JsonValue>>,
+  displayNameForParticipant: (participant: Record<string, JsonValue>) => string,
+): ChatParticipantOption[] {
+  return participants.map((participant, index) => {
+    const value = String(participant.id ?? `participant_${index + 1}`);
+    const label = displayNameForParticipant(participant) || value;
+    return { value, label };
+  });
 }
