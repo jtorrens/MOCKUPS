@@ -185,13 +185,47 @@
   --browser-row-editing-border-color: #8fa2ff;
   --browser-row-editing-accent-color: #345dff;
   --browser-row-muted-color: #7b8494;
+  --project-tree-node-border: var(--browser-card-border-color, #dfe5ee);
+  --project-tree-node-background: var(--browser-card-background, #ffffff);
+  --project-tree-level-0-background: var(--project-tree-node-background, #ffffff);
+  --project-tree-level-1-background: var(--project-tree-node-background, #ffffff);
+  --project-tree-level-2-background: var(--project-tree-node-background, #ffffff);
+  --project-tree-level-3-background: var(--project-tree-node-background, #ffffff);
+  --project-tree-level-4-background: var(--project-tree-node-background, #ffffff);
+  --project-tree-node-radius: 13px;
+  --project-tree-row-border: var(--browser-row-surface-border-color, #e1e5ec);
+  --project-tree-row-background: transparent;
+  --project-tree-row-level-0-background: var(--project-tree-level-0-background);
+  --project-tree-row-level-1-background: var(--project-tree-level-1-background);
+  --project-tree-row-level-2-background: var(--project-tree-level-2-background);
+  --project-tree-row-level-3-background: var(--project-tree-level-3-background);
+  --project-tree-row-level-4-background: var(--project-tree-level-4-background);
+  --project-tree-row-active-shadow: none;
+  --project-tree-children-top-border: var(--browser-row-surface-border-color, #e1e5ec);
+  --project-tree-children-left-border: #293041;
+  --project-tree-chevron-border-color: var(--browser-row-surface-border-color, #e1e5ec);
+  --project-tree-chevron-shadow: 0 1px 2px rgba(21, 30, 50, 0.07);
+  --project-tree-chevron-background: var(--browser-row-surface-background, #ffffff);
+  --project-tree-button-color: var(--browser-row-color, #2c323d);
+  --project-tree-button-active-border: var(--browser-row-active-border-color, #dfe3eb);
+  --project-tree-button-active-color: var(--browser-row-active-color, #15171c);
+  --project-tree-button-active-background: var(--browser-row-active-background, #f7f8fb);
+  --project-tree-button-muted-color: var(--browser-row-muted-color, #7b8494);
+  --project-tree-button-editing-border: var(--browser-row-editing-border-color, #8fa2ff);
+  --project-tree-button-editing-color: var(--browser-row-editing-color, #111318);
+  --project-tree-button-editing-background: var(--browser-row-editing-background, #ffffff);
+  --project-tree-button-editing-accent: var(--browser-row-editing-accent-color, #345dff);
+  --project-browser-tree-children-border: #e2e6ee;
+  --project-mini-action-border: var(--browser-row-surface-border-color, #e1e5ec);
+  --project-mini-action-color: var(--browser-row-color, #2c323d);
+  --project-mini-action-background: transparent;
   --browser-action-color: #475467;
   --browser-action-hover-color: #1d2129;
   --browser-action-hover-background: #f2f4f7;
   --browser-editing-label-color: #2554d8;
   --browser-editing-icon-border-color: #aebcff;
   --browser-editing-icon-background: #eef2ff;
-  --browser-card-background: #ffffff;
+  --browser-card-background: var(--card-background, #ffffff);
   --browser-card-border-color: #dfe5ee;
   --browser-card-shadow: 0 1px 3px rgba(21, 30, 50, 0.045);
   --browser-nested-card-background: #fbfcfe;
@@ -406,13 +440,47 @@
   --browser-row-editing-border-color: #7f8fad;
   --browser-row-editing-accent-color: #7f8fad;
   --browser-row-muted-color: #aaa69d;
+  --project-tree-node-border: var(--browser-card-border-color, #50535b);
+  --project-tree-node-background: var(--browser-card-background, #34363b);
+  --project-tree-level-0-background: var(--project-tree-node-background, #34363b);
+  --project-tree-level-1-background: var(--project-tree-node-background, #34363b);
+  --project-tree-level-2-background: var(--project-tree-node-background, #34363b);
+  --project-tree-level-3-background: var(--project-tree-node-background, #34363b);
+  --project-tree-level-4-background: var(--project-tree-node-background, #34363b);
+  --project-tree-node-radius: 13px;
+  --project-tree-row-border: var(--browser-row-surface-border-color, #50535b);
+  --project-tree-row-background: transparent;
+  --project-tree-row-level-0-background: var(--project-tree-level-0-background);
+  --project-tree-row-level-1-background: var(--project-tree-level-1-background);
+  --project-tree-row-level-2-background: var(--project-tree-level-2-background);
+  --project-tree-row-level-3-background: var(--project-tree-level-3-background);
+  --project-tree-row-level-4-background: var(--project-tree-level-4-background);
+  --project-tree-row-active-shadow: none;
+  --project-tree-children-top-border: var(--browser-row-surface-border-color, #50535b);
+  --project-tree-children-left-border: #272d3b;
+  --project-tree-chevron-border-color: var(--browser-row-surface-border-color, #50535b);
+  --project-tree-chevron-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --project-tree-chevron-background: var(--browser-row-surface-background, #34363b);
+  --project-tree-button-color: var(--browser-row-color, #ece9e2);
+  --project-tree-button-active-border: var(--browser-row-active-border-color, #565a62);
+  --project-tree-button-active-color: var(--browser-row-active-color, #ece9e2);
+  --project-tree-button-active-background: var(--browser-row-active-background, #383a3f);
+  --project-tree-button-muted-color: var(--browser-row-muted-color, #aaa69d);
+  --project-tree-button-editing-border: var(--browser-row-editing-border-color, #7f8fad);
+  --project-tree-button-editing-color: var(--browser-row-editing-color, #ece9e2);
+  --project-tree-button-editing-background: var(--browser-row-editing-background, linear-gradient(135deg, rgba(127, 143, 173, 0.22), rgba(127, 143, 173, 0.06)), #383a3f);
+  --project-tree-button-editing-accent: var(--browser-row-editing-accent-color, #7f8fad);
+  --project-browser-tree-children-border: #50535b;
+  --project-mini-action-border: var(--browser-row-surface-border-color, #565a62);
+  --project-mini-action-color: var(--browser-row-color, #ece9e2);
+  --project-mini-action-background: transparent;
   --browser-action-color: #aaa69d;
   --browser-action-hover-color: #ece9e2;
   --browser-action-hover-background: #404248;
   --browser-editing-label-color: #b8c4dc;
   --browser-editing-icon-border-color: #7f8fad;
   --browser-editing-icon-background: #404248;
-  --browser-card-background: #34363b;
+  --browser-card-background: var(--card-background, #34363b);
   --browser-card-border-color: #50535b;
   --browser-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.16);
   --browser-nested-card-background: #383a40;
@@ -673,7 +741,7 @@ body {
   overflow: hidden;
 }
 
-.project-browser {
+.project-browser:not(.project-browser-root) {
   display: grid;
   grid-template-columns: 154px minmax(0, 1fr);
   align-items: start;
@@ -682,7 +750,7 @@ body {
   padding: 12px;
 }
 
-.navigation-rail .project-browser {
+.navigation-rail .project-browser:not(.project-browser-root) {
   grid-template-columns: 1fr;
   overflow: hidden;
 }
@@ -740,7 +808,7 @@ body {
   box-shadow: inset 3px 0 0 var(--browser-row-editing-accent-color, #8190ff);
 }
 
-.project-tree-view {
+.project-browser-root .project-tree-view {
   display: grid;
   align-content: start;
   gap: 8px;
@@ -749,94 +817,12 @@ body {
   padding: 4px 2px 8px;
 }
 
-.tree-node {
-  border: 1px solid #2b3344;
-  border-radius: 13px;
-  background: rgba(17, 21, 30, 0.72);
-}
-
-.tree-node summary {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px;
-  align-items: center;
-  cursor: default;
-  list-style: none;
-  padding: 7px;
-}
-
-.tree-node summary::-webkit-details-marker {
-  display: none;
-}
-
-.tree-children {
-  display: grid;
-  gap: 6px;
-  border-top: 1px solid #293041;
-  margin-left: 12px;
-  padding: 7px 7px 8px 10px;
-}
-
-.tree-children.compact {
-  border-top: 0;
-  margin: 4px 0 0 14px;
-  padding: 0 0 0 8px;
-}
-
-.tree-leaf-with-children {
-  display: grid;
-  gap: 4px;
-}
-
 .tree-actions {
   display: flex;
   gap: 4px;
 }
 
-.project-tree-view button {
-  width: 100%;
-  border: 1px solid transparent;
-  border-radius: 10px;
-  padding: 8px 9px;
-  color: #c6cede;
-  background: transparent;
-  text-align: left;
-}
-
-.project-tree-view button.active {
-  border-color: #46506a;
-  color: white;
-  background: #202636;
-}
-
-.project-tree-view button.editing {
-  border-color: #7785ff;
-  color: #ffffff;
-  background:
-    linear-gradient(135deg, rgba(95, 111, 241, 0.36), rgba(95, 111, 241, 0.14)),
-    #202636;
-  box-shadow: inset 3px 0 0 #91a0ff;
-}
-
-.project-tree-view button strong,
-.project-tree-view button small {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.project-tree-view button strong {
-  font-size: 12px;
-}
-
-.project-tree-view button small {
-  margin-top: 3px;
-  color: #7f899c;
-  font-size: 10px;
-}
-
-.project-tree-view .mini-action {
+.project-browser-root .project-tree-view .mini-action {
   width: 26px;
   height: 26px;
   padding: 0;
@@ -846,10 +832,10 @@ body {
 .mini-action {
   width: 28px;
   height: 28px;
-  border: 1px solid #30384a;
+  border: var(--project-mini-action-border, var(--browser-row-surface-border-color, #e1e5ec));
   border-radius: 8px;
-  color: #cad2e4;
-  background: #171b25;
+  color: var(--project-mini-action-color, var(--browser-row-color, #2c323d));
+  background: var(--project-mini-action-background, transparent);
 }
 
 .mini-action:disabled {
@@ -860,12 +846,6 @@ body {
 
 .compact-empty {
   padding: 10px;
-}
-
-.tree-children {
-  margin-left: 14px;
-  border-left: 1px solid #272d3b;
-  padding-left: 10px;
 }
 
 .record-list {
@@ -2056,63 +2036,19 @@ body {
   background: #f7f8fa;
 }
 
-.project-browser {
+.left-panel-shell .project-browser-root {
   padding: 0;
   border: 0;
   background: transparent;
   box-shadow: none;
 }
 
-.project-tree-view {
-  gap: 14px;
-  padding: 8px 0 0;
+.left-panel-shell .project-browser-root .project-tree-view {
+  gap: 10px;
+  padding: 10px 0 0;
 }
 
-.tree-node {
-  border: 0;
-  background: transparent;
-}
-
-.tree-node summary {
-  padding: 0;
-}
-
-.tree-children {
-  gap: 8px;
-  border-top: 0;
-  margin-left: 20px;
-  padding: 8px 0 0 10px;
-  border-left: 1px solid #e2e6ee;
-}
-
-.tree-children.compact {
-  margin: 6px 0 0 20px;
-  padding-left: 10px;
-  border-left: 1px solid #e2e6ee;
-}
-
-.project-tree-view button,
-.record-list button {
-  border: 1px solid transparent;
-  color: var(--browser-row-color, #2c323d);
-  background: var(--browser-row-background, transparent);
-}
-
-.project-tree-view button:not(.mini-action),
-.record-list button {
-  border-color: var(--browser-row-surface-border-color, #e1e5ec);
-  background: var(--browser-row-surface-background, #ffffff);
-  box-shadow: var(--browser-row-surface-shadow, 0 1px 2px rgba(21, 30, 50, 0.04));
-}
-
-.project-tree-view button:not(.mini-action) {
-  display: grid;
-  grid-template-columns: 24px minmax(0, 1fr);
-  gap: 9px;
-  align-items: center;
-}
-
-.tree-record-icon {
+.project-browser-root .tree-record-icon {
   display: grid;
   width: 22px;
   height: 22px;
@@ -2124,11 +2060,11 @@ body {
   font-size: 15px;
 }
 
-.tree-record-copy {
+.project-browser-root .tree-record-copy {
   min-width: 0;
 }
 
-.tree-record-icon svg {
+.project-browser-root .tree-record-icon svg {
   width: 19px;
   height: 19px;
   fill: none;
@@ -2264,24 +2200,24 @@ body {
   padding: var(--editor-subsection-body-padding, 12px);
 }
 
-.project-tree-view button.active,
+.project-browser-root .project-tree-record.active,
 .record-list button.active {
   border-color: var(--browser-row-active-border-color, #dfe3eb);
   color: var(--browser-row-active-color, #15171c);
   background: var(--browser-row-active-background, #f7f8fb);
 }
 
-.project-tree-view button.editing,
+.project-browser-root .project-tree-record.editing,
 .record-list button.editing {
   border-color: var(--browser-row-editing-border-color, #8fa2ff);
   color: var(--browser-row-editing-color, #111318);
   background: var(--browser-row-editing-background, #ffffff);
   box-shadow:
-    inset 3px 0 0 var(--browser-row-editing-accent-color, #345dff),
-    0 1px 5px rgba(21, 30, 50, 0.08);
+    inset 3px 0 0 var(--browser-row-editing-accent-color, #345dff);
 }
 
-.project-tree-view button small {
+.project-browser-root .project-tree-record .tree-record-copy small,
+.record-list button small {
   color: var(--browser-row-muted-color, #7b8494);
 }
 
@@ -3168,103 +3104,292 @@ body,
   padding-bottom: 18px !important;
 }
 
+.record-editor .nested-editor-stack,
+.record-editor .editor-section-body.nested-editor-stack {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
 /* UI LAYER: Left project browser as nested cards. */
 /* Left workspace browser as nested cards. */
-.project-browser .project-tree-view {
+.project-browser-root .project-tree-view {
   display: grid;
   gap: 10px;
   padding: 10px 0 0;
 }
 
-.project-browser .tree-node,
-.project-browser .tree-leaf-with-children {
+.project-browser-root .project-tree-card {
+  --project-tree-node-padding: 0;
+  --project-tree-row-radius: 11px;
+  --project-tree-summary-padding-block: 7px;
+  --project-tree-summary-padding-inline: 10px;
+  --project-tree-summary-col-gap: 8px;
   overflow: hidden;
-  border: 1px solid var(--browser-card-border-color, #dfe5ee);
-  border-radius: 13px;
-  background: var(--browser-card-background, #ffffff);
+  border: var(--project-tree-node-border, var(--browser-card-border-color, #dfe5ee));
+  border-radius: var(--project-tree-node-radius, 13px);
+  background: var(
+    --project-tree-node-current-background,
+    var(--project-tree-node-background, var(--browser-card-background, #ffffff)),
+  );
   box-shadow: var(--browser-card-shadow, 0 1px 3px rgba(21, 30, 50, 0.045));
+  margin: 0;
 }
 
-.project-browser .tree-node summary {
+.project-browser-root .project-tree-card.project-tree-branch {
+  padding: 0;
+}
+
+.project-browser-root .project-tree-card.project-tree-leaf {
+  padding: var(--project-tree-node-padding);
+}
+
+.project-browser-root .project-tree-summary {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
-  gap: 8px;
+  gap: var(--project-tree-summary-col-gap);
   align-items: center;
-  padding: 5px;
   list-style: none;
+  padding: var(--project-tree-summary-padding-block) var(--project-tree-summary-padding-inline);
+  border: 0;
+  background: var(
+    --project-tree-summary-background,
+    var(--project-tree-node-current-background,
+    var(--project-tree-node-background, var(--browser-card-background, #ffffff)))
+  );
+  box-shadow: none;
+  min-height: 52px;
 }
 
-.project-browser .tree-node summary::-webkit-details-marker {
+.project-browser-root .project-tree-summary::-webkit-details-marker {
   display: none;
 }
 
-.project-browser .tree-node summary::after {
+.project-browser-root .project-tree-summary::after {
   content: "›";
   display: grid;
   width: 24px;
   height: 24px;
   place-items: center;
-  border: 0;
   border-radius: 999px;
+  border: 1px solid var(--project-tree-chevron-border-color, var(--project-tree-row-border, transparent));
+  box-shadow: var(--project-tree-chevron-shadow, none);
   color: var(--browser-chevron-color, #475467);
-  background: transparent;
+  background: var(--project-tree-chevron-background, transparent);
   font-size: 18px;
   font-weight: 800;
   line-height: 1;
 }
 
-.project-browser .tree-node[open] > summary::after {
+.project-browser-root .project-tree-card[open] > .project-tree-summary::after {
   content: "⌄";
   font-size: 14px;
 }
 
-.project-browser .tree-node > summary > button:not(.mini-action),
-.project-browser .tree-leaf-with-children > button:not(.mini-action) {
-  border: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
+.project-browser-root .project-tree-card[open] > .project-tree-summary {
+  background: var(
+    --project-tree-summary-background,
+    var(--project-tree-node-current-background,
+    var(--project-tree-node-background, var(--browser-card-background, #ffffff)))
+  );
 }
 
-.project-browser .tree-children,
-.project-browser .tree-children.compact {
+.project-browser-root .project-tree-row,
+.project-browser-root .project-tree-record {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid var(--project-tree-row-border, transparent);
+  border-radius: var(--project-tree-row-radius);
+  padding: 8px 9px;
+  color: var(--project-tree-button-color, var(--browser-row-color, #2c323d));
+  background: var(
+    --project-tree-row-current-background,
+    var(--project-tree-row-background, transparent),
+  );
+  text-align: left;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 9px;
+  align-items: center;
+  outline: 0;
+}
+
+.project-browser-root .project-tree-row.active,
+.project-browser-root .project-tree-record.active {
+  border-color: var(--project-tree-button-active-border, var(--browser-row-active-border-color, #dfe3eb));
+  color: var(--project-tree-button-active-color, var(--browser-row-active-color, #15171c));
+  background: var(--project-tree-button-active-background, var(--browser-row-active-background, #f7f8fb));
+  box-shadow: var(--project-tree-row-active-shadow, none);
+}
+
+.project-browser-root .project-tree-row.editing,
+.project-browser-root .project-tree-record.editing {
+  border-color: var(--project-tree-button-editing-border, var(--browser-row-editing-border-color, #8fa2ff));
+  color: var(--project-tree-button-editing-color, var(--browser-row-editing-color, #111318));
+  background: var(--project-tree-button-editing-background, var(--browser-row-editing-background, #ffffff));
+  box-shadow: inset 3px 0 0 var(--project-tree-button-editing-accent, var(--browser-row-editing-accent-color, #345dff));
+}
+
+.project-browser-root .project-tree-row .tree-record-copy strong,
+.project-browser-root .project-tree-row .tree-record-copy small,
+.project-browser-root .project-tree-record .tree-record-copy strong,
+.project-browser-root .project-tree-record .tree-record-copy small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-browser-root .project-tree-row .tree-record-copy strong,
+.project-browser-root .project-tree-record .tree-record-copy strong {
+  font-size: 12px;
+}
+
+.project-browser-root .project-tree-row .tree-record-copy small,
+.project-browser-root .project-tree-record .tree-record-copy small {
+  margin-top: 3px;
+  color: var(--project-tree-button-muted-color, var(--browser-row-muted-color, #7b8494));
+  font-size: 10px;
+}
+
+.project-browser-root .project-tree-children {
   display: grid;
   gap: 8px;
   margin: 0;
-  border: 0;
-  padding: 6px 10px 10px 18px;
-  background: var(--browser-tree-guide-background, linear-gradient(90deg, #f4f6fa 0 1px, transparent 1px) 8px 0 / 1px 100% no-repeat);
+  padding: 8px 10px 10px 18px;
+  background: var(
+    --project-tree-children-background,
+    var(--project-tree-node-current-background,
+    var(--project-tree-node-background, var(--browser-card-background, #ffffff)))
+  );
 }
 
-.project-browser .tree-children.compact {
+.project-browser-root .project-tree-children.compact {
   padding-top: 0;
+  border-top: 0;
+  margin: 4px 0 0 0;
+  padding-left: 8px;
 }
 
-.project-browser .tree-children > .tree-node,
-.project-browser .tree-children > .tree-leaf-with-children,
-.project-browser .tree-children > button:not(.mini-action) {
-  background: var(--browser-nested-card-background, #fbfcfe) !important;
+.project-browser-root .project-tree-children .project-tree-card {
+  margin: 0;
 }
 
-.project-browser .project-tree-view button:not(.mini-action) {
-  min-height: 42px;
-  border-radius: 10px;
-  padding: 8px 9px;
+.project-browser-root .project-tree-card[data-tree-level="0"],
+.project-browser-root .project-tree-card.project-tree-level-0 {
+  --project-tree-node-current-background: var(
+    --project-tree-level-0-background,
+    var(--project-tree-node-background, var(--browser-card-background, #ffffff))
+  );
 }
 
-.project-browser .workspace-accordions {
+.project-browser-root .project-tree-card[data-tree-level="1"],
+.project-browser-root .project-tree-card.project-tree-level-1 {
+  --project-tree-node-current-background: var(
+    --project-tree-level-1-background,
+    var(--project-tree-node-background, var(--browser-card-background, #ffffff))
+  );
+}
+
+.project-browser-root .project-tree-card[data-tree-level="2"],
+.project-browser-root .project-tree-card.project-tree-level-2 {
+  --project-tree-node-current-background: var(
+    --project-tree-level-2-background,
+    var(--project-tree-node-background, var(--browser-card-background, #ffffff))
+  );
+}
+
+.project-browser-root .project-tree-card[data-tree-level="3"],
+.project-browser-root .project-tree-card.project-tree-level-3 {
+  --project-tree-node-current-background: var(
+    --project-tree-level-3-background,
+    var(--project-tree-node-background, var(--browser-card-background, #ffffff))
+  );
+}
+
+.project-browser-root .project-tree-card[data-tree-level="4"],
+.project-browser-root .project-tree-card.project-tree-level-4 {
+  --project-tree-node-current-background: var(
+    --project-tree-level-4-background,
+    var(--project-tree-node-background, var(--browser-card-background, #ffffff))
+  );
+}
+
+.project-browser-root .project-tree-card[data-tree-level="0"] > .project-tree-children,
+.project-browser-root .project-tree-card.project-tree-level-0 > .project-tree-children {
+  --project-tree-children-background: var(--project-tree-level-1-background);
+}
+
+.project-browser-root .project-tree-card[data-tree-level="1"] > .project-tree-children,
+.project-browser-root .project-tree-card.project-tree-level-1 > .project-tree-children {
+  --project-tree-children-background: var(--project-tree-level-2-background);
+}
+
+.project-browser-root .project-tree-card[data-tree-level="2"] > .project-tree-children,
+.project-browser-root .project-tree-card.project-tree-level-2 > .project-tree-children {
+  --project-tree-children-background: var(--project-tree-level-3-background);
+}
+
+.project-browser-root .project-tree-card[data-tree-level="3"] > .project-tree-children,
+.project-browser-root .project-tree-card.project-tree-level-3 > .project-tree-children {
+  --project-tree-children-background: var(--project-tree-level-4-background);
+}
+
+.project-browser-root .project-tree-row.project-tree-row-level-0,
+.project-browser-root .project-tree-record.project-tree-row-level-0 {
+  --project-tree-row-current-background: var(
+    --project-tree-row-level-0-background,
+    var(--project-tree-row-background, transparent)
+  );
+}
+
+.project-browser-root .project-tree-row.project-tree-row-level-1,
+.project-browser-root .project-tree-record.project-tree-row-level-1 {
+  --project-tree-row-current-background: var(
+    --project-tree-row-level-1-background,
+    var(--project-tree-row-background, transparent)
+  );
+}
+
+.project-browser-root .project-tree-row.project-tree-row-level-2,
+.project-browser-root .project-tree-record.project-tree-row-level-2 {
+  --project-tree-row-current-background: var(
+    --project-tree-row-level-2-background,
+    var(--project-tree-row-background, transparent)
+  );
+}
+
+.project-browser-root .project-tree-row.project-tree-row-level-3,
+.project-browser-root .project-tree-record.project-tree-row-level-3 {
+  --project-tree-row-current-background: var(
+    --project-tree-row-level-3-background,
+    var(--project-tree-row-background, transparent)
+  );
+}
+
+.project-browser-root .project-tree-row.project-tree-row-level-4,
+.project-browser-root .project-tree-record.project-tree-row-level-4 {
+  --project-tree-row-current-background: var(
+    --project-tree-row-level-4-background,
+    var(--project-tree-row-background, transparent)
+  );
+}
+
+.project-browser-root .workspace-accordions {
   display: grid;
   gap: 8px;
 }
 
-.project-browser .workspace-accordion-card {
+.project-browser-root .workspace-accordion-card {
   overflow: hidden;
-  border: var(--card-border, 1px solid #dfe3eb);
+  border: var(--content-card-border, var(--card-border, 1px solid #dfe3eb));
   border-radius: var(--card-radius, 14px);
-  background: var(--card-background, #ffffff);
-  box-shadow: var(--card-shadow, 0 2px 8px rgba(21, 30, 50, 0.04));
+  background: var(--content-card-background, var(--card-background, #ffffff));
+  box-shadow: var(--editor-subsection-shadow, var(--card-shadow, 0 16px 45px rgba(21, 30, 50, 0.07)));
 }
 
-.project-browser .workspace-accordion-trigger {
+.project-browser-root .workspace-accordion-trigger {
   display: grid;
   grid-template-columns: 30px minmax(0, 1fr) auto auto !important;
   gap: var(--card-header-gap, 12px);
@@ -3276,60 +3401,79 @@ body,
   padding: var(--card-header-padding-block, 13px)
     var(--card-header-padding-inline, 16px);
   color: var(--card-header-title-color, #12141a) !important;
-  background: var(--card-header-background, #ffffff) !important;
+  background: var(--content-card-background, var(--card-background, #ffffff)) !important;
   text-align: left;
   box-shadow: none !important;
 }
 
-.project-browser .workspace-accordion-trigger[aria-expanded="true"] {
-  color: var(--card-header-title-color, #12141a) !important;
-  background: var(--card-header-background, #ffffff) !important;
+.project-browser-root .workspace-accordion-trigger::after {
+  content: "›";
+  display: grid;
+  place-items: center;
+  width: var(--card-header-chevron-size, 26px);
+  height: var(--card-header-chevron-size, 26px);
+  border-radius: 999px;
+  color: var(--card-header-chevron-color, #111318);
+  font-size: var(--accordion-chevron-size, 24px);
+  font-weight: var(--accordion-chevron-weight, 450);
+  line-height: 1;
 }
 
-.project-browser .workspace-accordion-copy {
+.project-browser-root .workspace-accordion-trigger[aria-expanded="true"] {
+  color: var(--card-header-title-color, #12141a) !important;
+  background: var(--content-card-background, var(--card-background, #ffffff)) !important;
+}
+
+.project-browser-root .workspace-accordion-trigger[aria-expanded="true"]::after {
+  content: "⌃";
+  font-size: var(--accordion-chevron-open-size, 17px);
+}
+
+.project-browser-root .workspace-accordion-copy {
   display: grid;
   gap: 4px;
   min-width: 0;
 }
 
-.project-browser .workspace-accordion-copy strong,
-.project-browser .workspace-accordion-copy small {
+.project-browser-root .workspace-accordion-copy strong,
+.project-browser-root .workspace-accordion-copy small {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.project-browser .workspace-accordion-copy strong {
+.project-browser-root .workspace-accordion-copy strong {
   color: var(--card-header-title-color, #12141a);
   font-family: var(--card-header-font-family, inherit);
   font-size: var(--card-header-title-font-size, 15px);
   font-weight: var(--card-header-title-font-weight, 760);
 }
 
-.project-browser .workspace-accordion-copy small {
+.project-browser-root .workspace-accordion-copy small {
   color: var(--card-header-summary-color, #667085);
   font-family: var(--card-header-font-family, inherit);
   font-size: var(--card-header-summary-font-size, 12px);
   font-weight: var(--card-header-summary-font-weight, 500);
 }
 
-.project-browser .workspace-accordion-body {
-  border-top: var(--card-body-border, 1px solid #edf0f4);
+.project-browser-root .workspace-accordion-body {
+  border-top: 0;
+  background: var(--content-card-background, var(--card-background, #ffffff));
   padding: 12px;
 }
 
-.project-browser .workspace-accordion-actions {
+.project-browser-root .workspace-accordion-actions {
   display: inline-flex;
   align-items: center;
   justify-content: end;
 }
 
-.project-browser .workspace-accordion-actions .tree-actions {
+.project-browser-root .workspace-accordion-actions .tree-actions {
   display: inline-flex;
 }
 
-.project-browser .workspace-accordion-actions .mini-action {
+.project-browser-root .workspace-accordion-actions .mini-action {
   border: 0 !important;
   border-radius: 8px;
   color: var(--browser-action-color, #475467);
@@ -3340,30 +3484,30 @@ body,
   box-shadow: none !important;
 }
 
-.project-browser .workspace-accordion-actions .mini-action:hover:not(:disabled) {
+.project-browser-root .workspace-accordion-actions .mini-action:hover:not(:disabled) {
   color: var(--browser-action-hover-color, #1d2129);
   background: var(--browser-action-hover-background, #f2f4f7) !important;
 }
 
-.project-browser .workspace-accordion-actions .mini-action:disabled {
+.project-browser-root .workspace-accordion-actions .mini-action:disabled {
   opacity: 0.28;
 }
 
-.project-browser .workspace-accordion-card.editing .workspace-accordion-copy strong,
-.project-tree-view button.editing .tree-record-copy strong,
+.project-browser-root .workspace-accordion-card.editing .workspace-accordion-copy strong,
+.project-browser-root .project-tree-record.editing .tree-record-copy strong,
 .record-list button.editing strong {
   color: var(--browser-editing-label-color, #2554d8);
 }
 
-.project-browser .workspace-accordion-card.editing .workspace-accordion-icon,
-.project-tree-view button.editing .tree-record-icon {
+.project-browser-root .workspace-accordion-card.editing .workspace-accordion-icon,
+.project-browser-root .project-tree-record.editing .tree-record-icon {
   border-color: var(--browser-editing-icon-border-color, #aebcff);
   color: var(--browser-editing-label-color, #2554d8);
   background: var(--browser-editing-icon-background, #eef2ff);
 }
 
-.project-browser .workspace-accordion-icon,
-.project-browser .workspace-accordion-icon svg {
+.project-browser-root .workspace-accordion-icon,
+.project-browser-root .workspace-accordion-icon svg {
   width: 19px;
   height: 19px;
   fill: none;

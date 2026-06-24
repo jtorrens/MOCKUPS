@@ -16,7 +16,13 @@ interface ProjectTreeProps {
   onTableChange: (tableId: string) => void;
   onRecordSelect: (tableId: string, recordId: string) => void;
   onCreateRecord: (
-    tableId: "productions" | "episodes" | "shots" | "themes" | "devices" | "render_presets",
+    tableId:
+      | "productions"
+      | "episodes"
+      | "shots"
+      | "themes"
+      | "devices"
+      | "render_presets",
     parent?: { productionId?: string; episodeId?: string },
   ) => void;
   onDuplicateRecord: (
@@ -141,7 +147,11 @@ function TreeActions({
       >
         ⧉
       </ActionButton>
-      <ActionButton disabled={!canDelete || busy} title="Delete" onClick={onDelete}>
+      <ActionButton
+        disabled={!canDelete || busy}
+        title="Delete"
+        onClick={onDelete}
+      >
         ⌫
       </ActionButton>
     </span>
@@ -272,6 +282,8 @@ function TreeButton({
   icon,
   title,
   meta,
+  className,
+  asRecord,
   onClick,
 }: {
   tableId: string;
@@ -281,18 +293,24 @@ function TreeButton({
   icon?: string;
   title: string;
   meta?: string;
+  className?: string;
+  asRecord?: boolean;
   onClick: () => void;
 }) {
+  const isRow = asRecord !== false;
   return (
     <button
       type="button"
       data-testid={`record-${recordId}`}
-      className={recordButtonClass(
-        tableId,
-        recordId,
-        activeTableId,
-        selectedRecordIds,
-      )}
+      className={[
+        recordButtonClass(tableId, recordId, activeTableId, selectedRecordIds),
+        isRow ? "project-tree-record" : null,
+        isRow ? "project-tree-row" : null,
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .trim()}
       onClick={(event) => {
         event.stopPropagation();
         onClick();
@@ -338,9 +356,9 @@ export function ProjectTree({
   onDuplicateRecord,
   onDeleteRecord,
 }: ProjectTreeProps) {
-  const [browserTab, setBrowserTab] = useState<"" | "project" | "apps" | "data">(
-    "",
-  );
+  const [browserTab, setBrowserTab] = useState<
+    "" | "project" | "apps" | "data"
+  >("");
   const [openDataTables, setOpenDataTables] = useState<Record<string, boolean>>(
     {},
   );
@@ -360,8 +378,15 @@ export function ProjectTree({
     PRODUCTION_DATA_TABLE_IDS.has(table.id),
   );
   const appRecords = recordsForSelectedProduction("apps");
-  const moduleConfigRecords = recordsForSelectedProduction("module_theme_configs");
+  const moduleConfigRecords = recordsForSelectedProduction(
+    "module_theme_configs",
+  );
   const moduleInstanceRecords = records.module_instances ?? [];
+
+  const cardLevelClass = (level: number) =>
+    `project-tree-level-${Math.min(level, 4)}`;
+  const rowLevelClass = (level: number) =>
+    `project-tree-row-level-${Math.min(level, 4)}`;
 
   function recordsForSelectedProduction(tableId: string) {
     return (records[tableId] ?? []).filter(
@@ -430,8 +455,12 @@ export function ProjectTree({
               ),
             );
             return (
-              <details key={episode.id} className="tree-node">
-                <summary>
+              <details
+                key={episode.id}
+                className={`project-tree-card project-tree-branch ${cardLevelClass(0)}`}
+                data-tree-level="0"
+              >
+                <summary className="project-tree-summary">
                   <TreeButton
                     tableId="episodes"
                     recordId={episode.id}
@@ -441,14 +470,18 @@ export function ProjectTree({
                     title={episode.name}
                     meta={`${shots.length} shot${shots.length === 1 ? "" : "s"}`}
                     onClick={() => select("episodes", episode.id)}
+                    asRecord
+                    className={rowLevelClass(1)}
                   />
                   <TreeActions
                     canAdd
                     busy={busyAction}
-                    onAdd={() => onCreateRecord("shots", { episodeId: episode.id })}
+                    onAdd={() =>
+                      onCreateRecord("shots", { episodeId: episode.id })
+                    }
                   />
                 </summary>
-                <div className="tree-children">
+                <div className="project-tree-children">
                   {shots.length === 0 ? (
                     <EmptyPanel>No shots yet.</EmptyPanel>
                   ) : (
@@ -456,11 +489,22 @@ export function ProjectTree({
                       const screens = options.screenInstances.filter(
                         (instance) => instance.shotId === shot.id,
                       );
-                      const renderName = shotRenderName(production, episode, shot);
-                      const durationFrames = shotDurationFromScreens(shot, screens);
+                      const renderName = shotRenderName(
+                        production,
+                        episode,
+                        shot,
+                      );
+                      const durationFrames = shotDurationFromScreens(
+                        shot,
+                        screens,
+                      );
                       return (
-                        <details key={shot.id} className="tree-node">
-                          <summary>
+                        <details
+                          key={shot.id}
+                          className={`project-tree-card project-tree-branch ${cardLevelClass(1)}`}
+                          data-tree-level="1"
+                        >
+                          <summary className="project-tree-summary">
                             <TreeButton
                               tableId="shots"
                               recordId={shot.id}
@@ -470,23 +514,31 @@ export function ProjectTree({
                               title={renderName}
                               meta={`${durationFrames}f · ${screens.length} screen${screens.length === 1 ? "" : "s"}`}
                               onClick={() => select("shots", shot.id)}
+                              asRecord
+                              className={rowLevelClass(2)}
                             />
                             <TreeActions
                               canDuplicate
                               canDelete
                               busy={busyAction}
-                              onDuplicate={() => onDuplicateRecord("shots", shot.id)}
+                              onDuplicate={() =>
+                                onDuplicateRecord("shots", shot.id)
+                              }
                               onDelete={() =>
                                 confirmDelete("shots", shot.id, renderName)
                               }
                             />
                           </summary>
-                          <div className="tree-children">
+                          <div className="project-tree-children">
                             {screens.length === 0 ? (
                               <EmptyPanel>No screens yet.</EmptyPanel>
                             ) : (
                               screens.map((instance) => (
-                                <div key={instance.id} className="tree-leaf-with-children">
+                                <div
+                                  key={instance.id}
+                                  className={`project-tree-card project-tree-branch project-tree-leaf ${cardLevelClass(2)}`}
+                                  data-tree-level="2"
+                                >
                                   <TreeButton
                                     tableId="screen_instances"
                                     recordId={instance.id}
@@ -495,10 +547,14 @@ export function ProjectTree({
                                     icon="screen"
                                     title={screenTitle(instance)}
                                     meta={`${instance.startFrame}–${instance.endFrame}f`}
-                                    onClick={() => select("screen_instances", instance.id)}
+                                    onClick={() =>
+                                      select("screen_instances", instance.id)
+                                    }
+                                    asRecord
+                                    className={rowLevelClass(3)}
                                   />
                                   {tablesById.get("module_instances") ? (
-                                    <div className="tree-children compact">
+                                    <div className="project-tree-children compact">
                                       {moduleInstanceRecords
                                         .filter(
                                           (moduleInstance) =>
@@ -511,7 +567,9 @@ export function ProjectTree({
                                             tableId="module_instances"
                                             recordId={moduleInstance.id}
                                             activeTableId={activeTableId}
-                                            selectedRecordIds={selectedRecordIds}
+                                            selectedRecordIds={
+                                              selectedRecordIds
+                                            }
                                             icon="module"
                                             title={String(
                                               moduleInstance.module_id ??
@@ -519,8 +577,13 @@ export function ProjectTree({
                                             )}
                                             meta="Module content"
                                             onClick={() =>
-                                              select("module_instances", moduleInstance.id)
+                                              select(
+                                                "module_instances",
+                                                moduleInstance.id,
+                                              )
                                             }
+                                            className={rowLevelClass(4)}
+                                            asRecord
                                           />
                                         ))}
                                     </div>
@@ -553,8 +616,12 @@ export function ProjectTree({
               (config) => config.app_id === app.id,
             );
             return (
-              <details key={app.id} className="tree-node">
-                <summary>
+              <details
+                key={app.id}
+                className={`project-tree-card project-tree-branch ${cardLevelClass(0)}`}
+                data-tree-level="0"
+              >
+                <summary className="project-tree-summary">
                   <TreeButton
                     tableId="apps"
                     recordId={app.id}
@@ -564,9 +631,11 @@ export function ProjectTree({
                     title={String(app.name ?? app.id)}
                     meta={String(app.app_type ?? "app")}
                     onClick={() => select("apps", app.id)}
+                    className={rowLevelClass(1)}
+                    asRecord
                   />
                 </summary>
-                <div className="tree-children">
+                <div className="project-tree-children">
                   {configs.length === 0 ? (
                     <EmptyPanel>No module configs yet.</EmptyPanel>
                   ) : (
@@ -580,7 +649,11 @@ export function ProjectTree({
                         icon="module"
                         title={String(config.name ?? "Module config")}
                         meta={String(config.module_id ?? "module")}
-                        onClick={() => select("module_theme_configs", config.id)}
+                        onClick={() =>
+                          select("module_theme_configs", config.id)
+                        }
+                        className={rowLevelClass(2)}
+                        asRecord
                       />
                     ))
                   )}
@@ -601,7 +674,8 @@ export function ProjectTree({
           return (
             <details
               key={table.id}
-              className="tree-node"
+              className={`project-tree-card project-tree-branch project-browser-data-table ${cardLevelClass(0)}`}
+              data-tree-level="0"
               open={Boolean(openDataTables[table.id])}
               onToggle={(event) => {
                 const isOpen = event.currentTarget.open;
@@ -612,12 +686,12 @@ export function ProjectTree({
                 );
               }}
             >
-              <summary>
+              <summary className="project-tree-summary">
                 <button
                   type="button"
                   role="tab"
                   data-testid={`tab-${table.id}`}
-                  className=""
+                  className={`project-tree-record project-tree-row ${rowLevelClass(0)}`}
                   onClick={(event) => {
                     event.stopPropagation();
                     toggleDataTable(table.id, tableRecords);
@@ -634,16 +708,21 @@ export function ProjectTree({
                     </small>
                   </span>
                 </button>
-                {table.id === "themes" || table.id === "devices" || table.id === "render_presets" ? (
+                {table.id === "themes" ||
+                table.id === "devices" ||
+                table.id === "render_presets" ? (
                   <TreeActions
                     canAdd={Boolean(selectedProductionId)}
                     canDuplicate={Boolean(selectedRecordIds[table.id])}
                     canDelete={Boolean(selectedRecordIds[table.id])}
                     busy={busyAction}
                     onAdd={() =>
-                      onCreateRecord(table.id as "themes" | "devices" | "render_presets", {
-                        productionId: selectedProductionId,
-                      })
+                      onCreateRecord(
+                        table.id as "themes" | "devices" | "render_presets",
+                        {
+                          productionId: selectedProductionId,
+                        },
+                      )
                     }
                     onDuplicate={() =>
                       onDuplicateRecord(
@@ -666,7 +745,7 @@ export function ProjectTree({
                   />
                 ) : null}
               </summary>
-              <div className="tree-children">
+              <div className="project-tree-children">
                 {tableRecords.length === 0 ? (
                   <EmptyPanel>No records yet.</EmptyPanel>
                 ) : (
@@ -681,6 +760,8 @@ export function ProjectTree({
                       title={recordTitle(table, record)}
                       meta={String(record.id)}
                       onClick={() => select(table.id, record.id)}
+                      className={rowLevelClass(1)}
+                      asRecord
                     />
                   ))
                 )}
@@ -701,7 +782,8 @@ export function ProjectTree({
     actions?: ReactNode,
   ) {
     const active = browserTab === id;
-    const isEditingProject = id === "project" && activeTableId === "productions";
+    const isEditingProject =
+      id === "project" && activeTableId === "productions";
     const handleOpen = () => {
       setBrowserTab(active ? "" : id);
       if (!active && id === "project" && selectedProductionId) {
@@ -736,42 +818,48 @@ export function ProjectTree({
             </span>
           ) : null}
         </button>
-        {active ? <div className="workspace-accordion-body">{children}</div> : null}
+        {active ? (
+          <div className="workspace-accordion-body">{children}</div>
+        ) : null}
       </section>
     );
   }
 
   return (
-    <section className="panel project-browser">
-      <div className="workspace-accordions" aria-label="Workspace">
-        {renderWorkspaceAccordion(
-          "project",
-          "project",
-          "Project",
-          "Episodes, shots, screens and modules",
-          renderProjectTree(),
-          <TreeActions
-            canAdd={Boolean(selectedProductionId)}
-            busy={busyAction}
-            onAdd={() =>
-              onCreateRecord("episodes", { productionId: selectedProductionId })
-            }
-          />,
-        )}
-        {renderWorkspaceAccordion(
-          "apps",
-          "app",
-          "Apps",
-          "Apps and module defaults",
-          renderAppsTree(),
-        )}
-        {renderWorkspaceAccordion(
-          "data",
-          "data",
-          "Production data",
-          "Actors, devices, themes and assets",
-          renderDataTree(),
-        )}
+    <section className="panel project-browser project-browser-root">
+      <div className="project-tree-view">
+        <div className="workspace-accordions" aria-label="Workspace">
+          {renderWorkspaceAccordion(
+            "project",
+            "project",
+            "Project",
+            "Episodes, shots, screens and modules",
+            renderProjectTree(),
+            <TreeActions
+              canAdd={Boolean(selectedProductionId)}
+              busy={busyAction}
+              onAdd={() =>
+                onCreateRecord("episodes", {
+                  productionId: selectedProductionId,
+                })
+              }
+            />,
+          )}
+          {renderWorkspaceAccordion(
+            "apps",
+            "app",
+            "Apps",
+            "Apps and module defaults",
+            renderAppsTree(),
+          )}
+          {renderWorkspaceAccordion(
+            "data",
+            "data",
+            "Production data",
+            "Actors, devices, themes and assets",
+            renderDataTree(),
+          )}
+        </div>
       </div>
     </section>
   );
