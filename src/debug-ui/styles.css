@@ -1548,11 +1548,6 @@ textarea {
   font: inherit;
 }
 
-.frame-control > div {
-  display: flex;
-  align-items: center;
-}
-
 .eyebrow {
   display: block;
   margin-bottom: 6px;
@@ -1561,32 +1556,6 @@ textarea {
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-}
-
-.status-dot,
-.validation-chip,
-.read-only-chip {
-  border: 1px solid #292e3a;
-  border-radius: 999px;
-  padding: 7px 10px;
-  color: #8f96a6;
-  background: #151820;
-  font-size: 12px;
-}
-
-.status-dot::before {
-  content: "";
-  display: inline-block;
-  width: 7px;
-  height: 7px;
-  margin-right: 7px;
-  border-radius: 50%;
-  background: #4bd889;
-  box-shadow: 0 0 12px rgba(75, 216, 137, 0.7);
-}
-
-.status-dot.busy::before {
-  background: #7b88ff;
 }
 
 button {
@@ -1622,18 +1591,9 @@ input[type="number"] {
   background: #0f1219;
 }
 
-.frame-control > div {
-  gap: 10px;
-}
-
 input[type="range"] {
   width: 100%;
   accent-color: #7180ff;
-}
-
-.frame-control input[type="number"] {
-  width: 86px;
-  flex: none;
 }
 
 .empty-state {
@@ -1643,44 +1603,6 @@ input[type="range"] {
   padding: 30px;
   color: #737b8e;
   text-align: center;
-}
-
-dl {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  margin: 28px 0;
-}
-
-dl div {
-  border-top: 1px solid #2a303d;
-  padding-top: 12px;
-}
-
-dt {
-  margin-bottom: 5px;
-  color: #737b8e;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-dd {
-  margin: 0;
-  color: #dfe2eb;
-  font-family: "SFMono-Regular", Consolas, monospace;
-  font-size: 13px;
-}
-
-.validation-chip.invalid {
-  border-color: #793943;
-  color: #ff919d;
-  background: #251419;
-}
-
-.read-only-chip {
-  color: #86a1ff;
 }
 
 .field-error {
@@ -1975,15 +1897,6 @@ body {
 .production-menu-button:hover:not(:disabled) {
   border-color: var(--topbar-menu-button-hover-border, #aeb8c8);
   background: var(--topbar-menu-button-hover-background, #f8fafc);
-}
-
-.record-id,
-.status-dot,
-.validation-chip,
-.read-only-chip {
-  border-color: #dfe3eb;
-  color: #667085;
-  background: #f7f8fa;
 }
 
 .project-browser-root {
@@ -2430,14 +2343,6 @@ body {
   color: var(--editor-text-color, #15171c);
   background: var(--editor-header-surface-background, #f8fafc) !important;
   border-color: var(--editor-header-surface-border-color, #e5e9f0);
-}
-
-.read-only-chip,
-.validation-chip,
-.status-dot {
-  color: var(--editor-chip-color, #667085);
-  background: var(--editor-chip-background, #f7f8fa) !important;
-  border-color: var(--editor-chip-border-color, #dfe3eb);
 }
 
 .json-editor-field,
