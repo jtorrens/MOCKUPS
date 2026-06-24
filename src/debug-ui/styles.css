@@ -1217,7 +1217,7 @@ body {
 
 .record-editor-content-chevron.is-open {
   font-size: var(--accordion-chevron-size, 24px);
-  transform: rotate(90deg);
+  transform: rotate(-90deg);
 }
 
 .record-editor-content-chevron-button {
