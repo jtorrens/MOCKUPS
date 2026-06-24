@@ -1531,7 +1531,7 @@ export function RecordEditor({
                         />
                         <button
                           type="button"
-                          className="secondary-button compact-button"
+                          className="record-editor-compact-button"
                           disabled={!mockupsNative()?.pickFile}
                           onClick={() => {
                             void (async () => {
@@ -2451,7 +2451,7 @@ export function RecordEditor({
               />
               <button
                 type="button"
-                className="secondary-button compact-button"
+                className="record-editor-compact-button"
                 disabled={!mockupsNative()?.pickFile}
                 onClick={() => {
                   void chooseAvatarFile();
@@ -2596,7 +2596,7 @@ export function RecordEditor({
               />
               <button
                 type="button"
-                className="secondary-button compact-button"
+                className="record-editor-compact-button"
                 disabled={!mockupsNative()?.pickDirectory}
                 onClick={() => {
                   void chooseDirectory();
@@ -3351,7 +3351,7 @@ export function RecordEditor({
                 />
                 <button
                   type="button"
-                  className="secondary-button compact-button"
+                  className="record-editor-compact-button"
                   disabled={!mockupsNative()?.pickFile}
                   onClick={() => {
                     void chooseAppIconFile();
@@ -3553,7 +3553,7 @@ export function RecordEditor({
                     />
                     <button
                       type="button"
-                      className="secondary-button compact-button"
+                      className="record-editor-compact-button"
                       disabled={!mockupsNative()?.pickFile}
                       onClick={() => {
                         void chooseWallpaperFile();

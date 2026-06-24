@@ -529,20 +529,20 @@ export function App() {
             onMouseDown={() => setProductionModalOpen(false)}
           >
             <section
-              className="panel production-modal"
+              className="app-modal-card production-modal"
               role="dialog"
               aria-modal="true"
               aria-label="Production actions"
               onMouseDown={(event) => event.stopPropagation()}
             >
-              <div className="panel-heading">
+              <div className="app-modal-heading">
                 <div>
                   <span className="eyebrow">Production actions</span>
                   <h2>Manage productions</h2>
                 </div>
                 <button
                   type="button"
-                  className="ghost-button"
+                  className="app-modal-close-button"
                   onClick={() => setProductionModalOpen(false)}
                 >
                   Close
@@ -581,20 +581,20 @@ export function App() {
             onMouseDown={() => setThemeCreateParent(null)}
           >
             <section
-              className="panel production-modal theme-family-modal"
+              className="app-modal-card production-modal theme-family-modal"
               role="dialog"
               aria-modal="true"
               aria-label="Choose theme base"
               onMouseDown={(event) => event.stopPropagation()}
             >
-              <div className="panel-heading">
+              <div className="app-modal-heading">
                 <div>
                   <span className="eyebrow">New theme</span>
                   <h2>Choose a starting point</h2>
                 </div>
                 <button
                   type="button"
-                  className="ghost-button"
+                  className="app-modal-close-button"
                   onClick={() => setThemeCreateParent(null)}
                 >
                   Cancel

@@ -213,7 +213,6 @@
 }
 
 .left-panel-shell .production-menu-button,
-.left-panel-shell .ghost-button,
 .left-panel-shell .mini-action {
   border: var(--topbar-menu-button-border, #d9dee7);
   color: var(--topbar-menu-button-color, #22262f);

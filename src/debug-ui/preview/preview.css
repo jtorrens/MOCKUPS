@@ -74,11 +74,12 @@
   font-size: var(--accordion-chevron-size, 24px);
   font-weight: var(--accordion-chevron-weight, 450);
   line-height: 1;
+  transform-origin: center;
+  transition: transform 120ms ease;
 }
 
 .preview-options-card[open] > .preview-options-summary::after {
-  content: "⌃";
-  font-size: var(--accordion-chevron-open-size, 17px);
+  transform: rotate(-90deg);
 }
 
 .preview-options-icon {

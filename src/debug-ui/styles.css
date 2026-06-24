@@ -75,7 +75,6 @@
   --ui-icon-button-color: currentColor;
   --ui-icon-button-hover-background: transparent;
   --accordion-chevron-size: 24px;
-  --accordion-chevron-open-size: 17px;
   --accordion-chevron-weight: 450;
   --card-border: 1px solid #dfe3eb;
   --card-radius: 14px;
@@ -116,7 +115,6 @@
   --subcard-header-icon-font-size: 16px;
   --subcard-header-title-font-size: 13px;
   --subcard-chevron-size: 20px;
-  --subcard-chevron-open-size: 15px;
   --editor-section-gap: 8px;
   --editor-section-border: var(--card-border);
   --editor-section-radius: var(--card-radius);
@@ -676,6 +674,44 @@ body {
   padding: 18px;
 }
 
+.app-modal-card {
+  border: var(--card-border, 1px solid #dfe3eb);
+  border-radius: var(--card-radius, 12px);
+  color: var(--card-title-color, #12141a);
+  background: var(--card-background, #ffffff);
+  box-shadow: var(--card-shadow, 0 16px 45px rgba(21, 30, 50, 0.07));
+}
+
+.app-modal-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin: -2px -2px 16px;
+  border-bottom: var(--editor-heading-border, 1px solid #edf0f4);
+  padding: 2px 2px 16px;
+}
+
+.app-modal-heading h2 {
+  margin: 0;
+  color: var(--card-header-title-color, #12141a);
+}
+
+.app-modal-close-button {
+  border: var(--topbar-menu-button-border, #d9dee7);
+  border-radius: var(--topbar-menu-button-radius, 10px);
+  padding: 8px 12px;
+  color: var(--topbar-menu-button-color, #22262f);
+  background: var(--topbar-menu-button-background, #ffffff);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.app-modal-close-button:hover:not(:disabled) {
+  border-color: var(--topbar-menu-button-hover-border, #aeb8c8);
+  background: var(--topbar-menu-button-hover-background, #f8fafc);
+}
+
 .production-action-list {
   display: grid;
   gap: 10px;
@@ -1120,7 +1156,6 @@ body {
   box-shadow: var(--content-card-shadow, 0 2px 6px rgba(21, 30, 50, 0.04));
 }
 
-.record-editor-content-item-card > summary,
 .record-editor-content-nested-card > summary,
 .record-editor-content-item-topbar {
   display: grid;
@@ -1134,29 +1169,28 @@ body {
   list-style: none;
 }
 
-.record-editor-content-item-card > summary::-webkit-details-marker,
 .record-editor-content-nested-card > summary::-webkit-details-marker {
   display: none;
 }
 
-.record-editor-content-item-card > summary::before,
-.record-editor-content-nested-card > summary::before {
+.record-editor-content-nested-card > summary::after {
   content: "›";
-  width: 18px;
+  display: grid;
+  width: 24px;
   color: var(--content-card-chevron-color, #111318);
-  font-size: 20px;
+  font-size: var(--accordion-chevron-size, 24px);
+  font-weight: var(--accordion-chevron-weight, 450);
+  place-items: center;
+  transform-origin: center;
+  transition: transform 120ms ease;
 }
 
-.record-editor-content-item-card[open] > summary::before,
-.record-editor-content-nested-card[open] > summary::before {
-  content: "⌃";
-  font-size: 15px;
+.record-editor-content-nested-card[open] > summary::after {
+  transform: rotate(-90deg);
 }
 
-.record-editor-content-item-card > summary > span,
 .record-editor-content-nested-card > summary > span,
 .record-editor-content-item-header > span {
-  grid-column: 2;
   overflow: hidden;
   font-size: 13px;
   font-weight: 750;
@@ -1269,7 +1303,7 @@ body {
   max-width: 190px;
 }
 
-.compact-button {
+.record-editor-compact-button {
   min-height: 30px;
   border: var(--editor-button-border, 1px solid #cfd6e2);
   border-radius: 8px;
@@ -1280,7 +1314,7 @@ body {
   font-weight: 650;
 }
 
-.compact-button:disabled {
+.record-editor-compact-button:disabled {
   opacity: 0.45;
 }
 
@@ -2092,7 +2126,6 @@ body {
 }
 
 .production-menu-button,
-.ghost-button,
 .mini-action {
   border: var(--topbar-menu-button-border, #d9dee7);
   color: var(--topbar-menu-button-color, #22262f);
@@ -2223,11 +2256,12 @@ body {
   color: var(--card-header-chevron-color, #111318);
   font-size: var(--accordion-chevron-size, 24px);
   font-weight: var(--accordion-chevron-weight, 450);
+  transform-origin: center;
+  transition: transform 120ms ease;
 }
 
 .editor-section-card > button.active::after {
-  content: "⌃";
-  font-size: var(--accordion-chevron-open-size, 17px);
+  transform: rotate(-90deg);
 }
 
 .editor-section-card > button .tab-icon {
@@ -2280,11 +2314,12 @@ body {
   content: "›";
   color: var(--card-header-chevron-color, #111318);
   font-size: var(--subcard-chevron-size, 20px);
+  transform-origin: center;
+  transition: transform 120ms ease;
 }
 
 .editor-subsection-card > button.active::after {
-  content: "⌃";
-  font-size: var(--subcard-chevron-open-size, 15px);
+  transform: rotate(-90deg);
 }
 
 .editor-subsection-card .tab-icon {
@@ -2771,7 +2806,7 @@ body {
 }
 
 .editor-workspace .record-editor-content-add-button,
-.editor-workspace .compact-button,
+.editor-workspace .record-editor-compact-button,
 .editor-workspace .json-row-actions button,
 .editor-workspace .json-add-row button {
   border: var(--editor-button-border, 1px solid #d9dee7) !important;
@@ -2780,7 +2815,7 @@ body {
 }
 
 .editor-workspace .record-editor-content-add-button:hover:not(:disabled),
-.editor-workspace .compact-button:hover:not(:disabled),
+.editor-workspace .record-editor-compact-button:hover:not(:disabled),
 .editor-workspace .json-row-actions button:hover:not(:disabled),
 .editor-workspace .json-add-row button:hover:not(:disabled) {
   border-color: var(--editor-button-hover-border-color, #aeb8c8) !important;
@@ -2788,7 +2823,7 @@ body {
 }
 
 .editor-workspace .record-editor-content-add-button:disabled,
-.editor-workspace .compact-button:disabled,
+.editor-workspace .record-editor-compact-button:disabled,
 .editor-workspace .json-row-actions button:disabled,
 .editor-workspace .json-add-row button:disabled {
   opacity: var(--editor-button-disabled-opacity, 0.55);
@@ -3317,11 +3352,12 @@ body,
   font-size: var(--accordion-chevron-size, 24px);
   font-weight: var(--accordion-chevron-weight, 450);
   line-height: 1;
+  transform-origin: center;
+  transition: transform 120ms ease;
 }
 
 .project-browser-root .project-tree-card[open] > .project-tree-summary::after {
-  content: "⌃";
-  font-size: var(--accordion-chevron-open-size, 17px);
+  transform: rotate(-90deg);
 }
 
 .project-browser-root .project-tree-card[open] > .project-tree-summary {
@@ -3560,6 +3596,8 @@ body,
   font-size: var(--accordion-chevron-size, 24px);
   font-weight: var(--accordion-chevron-weight, 450);
   line-height: 1;
+  transform-origin: center;
+  transition: transform 120ms ease;
 }
 
 .project-browser-root .workspace-accordion-trigger[aria-expanded="true"] {
@@ -3568,8 +3606,7 @@ body,
 }
 
 .project-browser-root .workspace-accordion-trigger[aria-expanded="true"]::after {
-  content: "⌃";
-  font-size: var(--accordion-chevron-open-size, 17px);
+  transform: rotate(-90deg);
 }
 
 .project-browser-root .workspace-accordion-copy {
