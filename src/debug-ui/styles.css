@@ -2353,6 +2353,9 @@ body {
   font-weight: var(--card-header-summary-font-weight, 500);
 }
 
+.record-editor-nested-stack,
+.record-editor-field-stack.record-editor-single-column,
+.record-editor-field-stack,
 .nested-editor-stack,
 .field-stack.single-column,
 .field-stack {
@@ -2366,11 +2369,15 @@ body {
   box-shadow: var(--editor-surface-shadow, 0 2px 8px rgba(21, 30, 50, 0.04));
 }
 
+.record-editor-nested-stack,
+.record-editor-field-stack.record-editor-single-column,
 .nested-editor-stack,
 .field-stack.single-column {
   grid-template-columns: minmax(0, 1fr);
 }
 
+.record-editor-nested-stack .record-editor-field-stack,
+.record-editor-nested-stack .record-editor-field-stack.record-editor-single-column,
 .nested-editor-stack .field-stack,
 .nested-editor-stack .field-stack.single-column {
   border: 0;
@@ -2586,6 +2593,9 @@ body {
 }
 
 .token-override-editor,
+.record-editor-field-stack,
+.record-editor-field-stack.record-editor-single-column,
+.record-editor-nested-stack,
 .field-stack,
 .field-stack.single-column,
 .nested-editor-stack,
@@ -2616,6 +2626,9 @@ body {
 .editor-workspace .mode-color-group,
 .editor-workspace .token-override-row,
 .editor-workspace .mode-color-row,
+.editor-workspace .record-editor-field-stack,
+.editor-workspace .record-editor-field-stack.record-editor-single-column,
+.editor-workspace .record-editor-nested-stack,
 .editor-workspace .field-stack,
 .editor-workspace .field-stack.single-column,
 .editor-workspace .nested-editor-stack {
@@ -2867,17 +2880,17 @@ body,
   gap: 8px;
 }
 
-.record-editor .field-stack,
-.record-editor .field-stack.single-column,
-.record-editor .editor-section-body.field-stack,
-.record-editor .editor-section-body.field-stack.single-column {
+.record-editor .record-editor-field-stack,
+.record-editor .record-editor-field-stack.record-editor-single-column,
+.record-editor .editor-section-body.record-editor-field-stack,
+.record-editor .editor-section-body.record-editor-field-stack.record-editor-single-column {
   display: flex !important;
   flex-direction: column !important;
   grid-template-columns: none !important;
   align-items: stretch !important;
 }
 
-.record-editor .editor-section-body.direct-field-stack {
+.record-editor .editor-section-body.record-editor-direct-fields {
   border-width: 1px 0 0 !important;
   border-radius: 0 !important;
   padding: 14px !important;
@@ -2885,7 +2898,7 @@ body,
   box-shadow: none !important;
 }
 
-.record-editor .field-stack.direct-field-stack:not(.editor-section-body) {
+.record-editor .record-editor-field-stack.record-editor-direct-fields:not(.editor-section-body) {
   border: 0 !important;
   border-radius: 0 !important;
   padding: 0 !important;
@@ -2893,7 +2906,7 @@ body,
   box-shadow: none !important;
 }
 
-.record-editor .editor-section-body.json-section-stack {
+.record-editor .editor-section-body.record-editor-json-stack {
   border-width: 1px 0 0 !important;
   border-radius: 0 !important;
   padding: 14px !important;
@@ -2901,7 +2914,7 @@ body,
   box-shadow: none !important;
 }
 
-.record-editor .editor-section-body.json-section-stack > .app-field-frameless {
+.record-editor .editor-section-body.record-editor-json-stack > .app-field-frameless {
   border: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
@@ -3083,12 +3096,12 @@ body,
   min-width: 0;
 }
 
-.record-editor .direct-field-stack .flat-json-field-group {
+.record-editor .record-editor-direct-fields .flat-json-field-group {
   border-top: var(--field-separator-border, 1px solid #edf0f4);
   padding-top: 10px;
 }
 
-.record-editor .direct-field-stack .flat-json-row.app-field {
+.record-editor .record-editor-direct-fields .flat-json-row.app-field {
   border: 0 !important;
   border-radius: 0 !important;
   padding: 0 10px !important;
@@ -3148,15 +3161,15 @@ body,
   color: var(--field-label-color, #475467);
 }
 
-.record-editor .editor-section-body.nested-editor-stack,
+.record-editor .editor-section-body.record-editor-nested-stack,
 .record-editor .editor-section-body:has(> .editor-subsection-card),
 .record-editor .editor-section-body:has(> .mode-color-editor),
 .record-editor .editor-section-body:has(> .token-override-editor) {
   padding-bottom: 18px !important;
 }
 
-.record-editor .nested-editor-stack,
-.record-editor .editor-section-body.nested-editor-stack {
+.record-editor .record-editor-nested-stack,
+.record-editor .editor-section-body.record-editor-nested-stack {
   border: 0 !important;
   border-radius: 0 !important;
   background: transparent !important;

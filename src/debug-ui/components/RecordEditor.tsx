@@ -3471,7 +3471,7 @@ export function RecordEditor({
       }
 
       return (
-        <div className="field-stack single-column wallpaper-editor">
+        <div className="record-editor-field-stack record-editor-single-column wallpaper-editor">
           <InspectorFieldRow
             className="app-field app-field-string"
             label={<span>Kind</span>}
@@ -3587,7 +3587,7 @@ export function RecordEditor({
               General
             </TabButton>
             {appTab === "general" ? (
-              <div className="editor-section-body field-stack direct-field-stack">
+              <div className="editor-section-body record-editor-field-stack record-editor-direct-fields">
                 {renderFields(["id", "name"])}
                 {renderAppIconFields()}
               </div>
@@ -3602,7 +3602,7 @@ export function RecordEditor({
               Tokens
             </TabButton>
             {appTab === "tokens" && configField ? (
-              <div className="editor-section-body nested-editor-stack">
+              <div className="editor-section-body record-editor-nested-stack">
                 {appTokenGroups.map((group) => (
                   <SubgroupAccordion
                     key={group}
@@ -3613,7 +3613,7 @@ export function RecordEditor({
                     {group === "wallpaper" ? (
                       renderAppWallpaperEditor()
                     ) : (
-                      <div className="field-stack single-column theme-token-group-editor">
+                      <div className="record-editor-field-stack record-editor-single-column theme-token-group-editor">
                         {renderField(configField, {
                           hideLabel: true,
                           rawText: stringifyJson(
@@ -3670,7 +3670,7 @@ export function RecordEditor({
               Notes
             </TabButton>
             {appTab === "notes" && metadataField ? (
-              <div className="editor-section-body field-stack single-column">
+              <div className="editor-section-body record-editor-field-stack record-editor-single-column">
                 {renderFlatJsonObjectEditor("metadata_json")}
               </div>
             ) : null}
@@ -3705,7 +3705,7 @@ export function RecordEditor({
               General
             </TabButton>
             {themeTab === "general" ? (
-              <div className="editor-section-body field-stack direct-field-stack">
+              <div className="editor-section-body record-editor-field-stack record-editor-direct-fields">
                 {renderFields(["id", "name", "family", "version"])}
               </div>
             ) : null}
@@ -3715,7 +3715,7 @@ export function RecordEditor({
               Tokens
             </TabButton>
             {themeTab === "tokens" && tokensField ? (
-              <div className="editor-section-body nested-editor-stack">
+              <div className="editor-section-body record-editor-nested-stack">
                 {themeTokenGroups
                   .filter((group) => group !== "statusBar" && group !== "navigationBar")
                   .map((group) => (
@@ -3725,7 +3725,7 @@ export function RecordEditor({
                     activeGroup={activeThemeTokenGroup}
                     onToggle={setThemeTokenGroup}
                   >
-                    <div className="field-stack single-column theme-token-group-editor">
+                    <div className="record-editor-field-stack record-editor-single-column theme-token-group-editor">
                       {renderField(tokensField, {
                         hideLabel: true,
                         rawText: stringifyJson(
@@ -3893,7 +3893,7 @@ export function RecordEditor({
               Module Content
             </TabButton>
             {screenTab === "content" && contentField ? (
-              <div className="editor-section-body nested-editor-stack">
+              <div className="editor-section-body record-editor-nested-stack">
                 {safeContentGroups.map((group) => (
                   <SubgroupAccordion
                     key={group}
@@ -3916,7 +3916,7 @@ export function RecordEditor({
               Behavior
             </TabButton>
             {screenTab === "behavior" && behaviorField ? (
-              <div className="editor-section-body field-stack direct-field-stack">
+              <div className="editor-section-body record-editor-field-stack record-editor-direct-fields">
                 {renderModuleBehaviorFields()}
               </div>
             ) : null}
@@ -3946,7 +3946,7 @@ export function RecordEditor({
               Generales
             </TabButton>
             {screenTab === "general" ? (
-              <div className="editor-section-body field-stack direct-field-stack">
+              <div className="editor-section-body record-editor-field-stack record-editor-direct-fields">
                 {renderFields([
                   "app_id",
                   "theme_mode",
@@ -3966,7 +3966,7 @@ export function RecordEditor({
               Transform
             </TabButton>
             {screenTab === "transform" && transformField ? (
-              <div className="editor-section-body field-stack single-column json-section-stack">
+              <div className="editor-section-body record-editor-field-stack record-editor-single-column record-editor-json-stack">
                 {renderField(transformField, {
                   hideLabel: true,
                   rawText: drafts.transform_json ?? "{}",
@@ -3987,7 +3987,7 @@ export function RecordEditor({
               Transition
             </TabButton>
             {screenTab === "transition" ? (
-              <div className="editor-section-body field-stack direct-field-stack">
+              <div className="editor-section-body record-editor-field-stack record-editor-direct-fields">
                 {renderScreenTransitionField()}
               </div>
             ) : null}
@@ -4002,7 +4002,7 @@ export function RecordEditor({
               Device State
             </TabButton>
             {screenTab === "deviceState" && deviceStateField ? (
-              <div className="editor-section-body field-stack single-column json-section-stack">
+              <div className="editor-section-body record-editor-field-stack record-editor-single-column record-editor-json-stack">
                 {renderField(deviceStateField, {
                   hideLabel: true,
                   rawText: drafts.device_state_json ?? "{}",
@@ -4046,7 +4046,7 @@ export function RecordEditor({
               Design
             </TabButton>
             {moduleThemeTab === "design" && tokensField ? (
-              <div className="editor-section-body nested-editor-stack">
+              <div className="editor-section-body record-editor-nested-stack">
                 {designGroups.map((group) => (
                   <SubgroupAccordion
                     key={group}
@@ -4058,7 +4058,7 @@ export function RecordEditor({
                     )}
                     onToggle={setModuleDesignGroup}
                   >
-                    <div className="field-stack single-column">
+                    <div className="record-editor-field-stack record-editor-single-column">
                       {renderField(tokensField, {
                         rawText: rawForJsonGroupValue("tokens_json", group),
                         hideLabel: true,
@@ -4112,8 +4112,8 @@ export function RecordEditor({
               Settings
             </TabButton>
             {moduleThemeTab === "settings" ? (
-              <div className="editor-section-body nested-editor-stack">
-                <div className="field-stack direct-field-stack">
+              <div className="editor-section-body record-editor-nested-stack">
+                <div className="record-editor-field-stack record-editor-direct-fields">
                   {renderFields([
                     "id",
                     "production_id",
@@ -4125,7 +4125,7 @@ export function RecordEditor({
                   ])}
                 </div>
                 {fieldsByColumn.get("metadata_json") ? (
-                  <div className="field-stack single-column">
+                  <div className="record-editor-field-stack record-editor-single-column">
                     {renderFlatJsonObjectEditor("metadata_json", [
                       "default_tokens_json",
                     ])}
@@ -4161,7 +4161,7 @@ export function RecordEditor({
             General
           </TabButton>
           {genericTab === "general" ? (
-            <div className="editor-section-body field-stack direct-field-stack">
+            <div className="editor-section-body record-editor-field-stack record-editor-direct-fields">
               {table.fields.map((field) => renderGenericField(field))}
             </div>
           ) : null}
