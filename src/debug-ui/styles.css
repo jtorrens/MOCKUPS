@@ -52,6 +52,17 @@
   --preview-viewport-radius: 16px;
   --preview-viewport-background: #ffffff;
   --preview-viewport-shadow: 0 2px 8px rgba(21, 30, 50, 0.045);
+  --status-chip-border: 1px solid #dfe3eb;
+  --status-chip-radius: 999px;
+  --status-chip-padding: 7px 10px;
+  --status-chip-color: #667085;
+  --status-chip-background: #f7f8fa;
+  --status-chip-font-size: 12px;
+  --status-chip-dot-size: 7px;
+  --status-chip-dot-gap: 7px;
+  --status-chip-dot-live-color: #4bd889;
+  --status-chip-dot-busy-color: #7b88ff;
+  --status-chip-dot-live-shadow: 0 0 12px rgba(75, 216, 137, 0.7);
   color: #e8e9ee;
   background: #0d0f14;
   font-family:
@@ -77,6 +88,10 @@
   --preview-viewport-border: 1px solid #303746;
   --preview-viewport-background: #10151e;
   --preview-viewport-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  --status-chip-border: 1px solid #3a4353;
+  --status-chip-color: #a3adbd;
+  --status-chip-background: #1e2530;
+  --status-chip-dot-live-shadow: 0 0 12px rgba(75, 216, 137, 0.48);
 }
 
 * {

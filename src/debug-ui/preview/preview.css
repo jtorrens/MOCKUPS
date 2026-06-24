@@ -203,28 +203,31 @@
 .preview-status-dot {
   display: inline-flex;
   align-items: center;
-  border: 1px solid #dfe3eb;
-  border-radius: 999px;
-  padding: 7px 10px;
-  color: #667085;
-  background: #f7f8fa;
-  font-size: 12px;
+  border: var(--status-chip-border, 1px solid #dfe3eb);
+  border-radius: var(--status-chip-radius, 999px);
+  padding: var(--status-chip-padding, 7px 10px);
+  color: var(--status-chip-color, #667085);
+  background: var(--status-chip-background, #f7f8fa);
+  font-size: var(--status-chip-font-size, 12px);
   white-space: nowrap;
 }
 
 .preview-status-dot::before {
   content: "";
   display: inline-block;
-  width: 7px;
-  height: 7px;
-  margin-right: 7px;
+  width: var(--status-chip-dot-size, 7px);
+  height: var(--status-chip-dot-size, 7px);
+  margin-right: var(--status-chip-dot-gap, 7px);
   border-radius: 50%;
-  background: #4bd889;
-  box-shadow: 0 0 12px rgba(75, 216, 137, 0.7);
+  background: var(--status-chip-dot-live-color, #4bd889);
+  box-shadow: var(
+    --status-chip-dot-live-shadow,
+    0 0 12px rgba(75, 216, 137, 0.7)
+  );
 }
 
 .preview-status-dot.busy::before {
-  background: #7b88ff;
+  background: var(--status-chip-dot-busy-color, #7b88ff);
 }
 
 .preview-panel {

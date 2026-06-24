@@ -59,6 +59,17 @@ The transitional global stylesheet exposes a small set of CSS variables in `:roo
 - `--preview-viewport-radius`: preview viewport host radius.
 - `--preview-viewport-background`: preview viewport host background.
 - `--preview-viewport-shadow`: preview viewport host shadow.
+- `--status-chip-border`: shared status chip border.
+- `--status-chip-radius`: shared status chip radius.
+- `--status-chip-padding`: shared status chip padding.
+- `--status-chip-color`: shared status chip text color.
+- `--status-chip-background`: shared status chip background.
+- `--status-chip-font-size`: shared status chip font size.
+- `--status-chip-dot-size`: shared status chip dot size.
+- `--status-chip-dot-gap`: shared status chip dot gap.
+- `--status-chip-dot-live-color`: shared status chip live dot color.
+- `--status-chip-dot-busy-color`: shared status chip busy dot color.
+- `--status-chip-dot-live-shadow`: shared status chip live dot glow.
 
 New panel/card work should prefer these tokens over local hardcoded values.
 
