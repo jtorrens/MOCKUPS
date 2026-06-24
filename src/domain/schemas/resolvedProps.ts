@@ -25,7 +25,7 @@ const ResolvedActorSchema = z.object({
   displayName: z.string().min(1),
   avatar: z
     .object({
-      assetId: IdSchema,
+      assetId: IdSchema.optional(),
       uri: z.string().min(1),
     })
     .optional(),
@@ -82,6 +82,7 @@ export const ResolvedChatScreenPropsSchema = z.object({
     id: IdSchema,
     fonts: JsonObjectSchema,
     colors: JsonObjectSchema,
+    wallpaper: JsonObjectSchema.optional(),
     statusBar: JsonObjectSchema,
     layout: JsonObjectSchema,
     header: JsonObjectSchema,
@@ -116,7 +117,7 @@ export const ResolvedChatScreenPropsSchema = z.object({
     subtitle: z.string().optional(),
     avatar: z
       .object({
-        assetId: IdSchema,
+        assetId: IdSchema.optional(),
         uri: z.string().min(1),
       })
       .optional(),

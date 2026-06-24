@@ -7,12 +7,13 @@ This contract assigns every visual/layout value to one canonical source. Resolve
 | Canonical source | Owns | Must not own |
 | --- | --- | --- |
 | `theme.tokens_json` | Reusable global visual language, mode variants, typography/font selection, base colors/surfaces/accent, shared status bar defaults, broad spacing/radius/shadow scales | Device geometry, live device state, shot timing, narrative content, module-internal component design |
-| `apps.config_json.tokens_json` | Reusable app-level defaults such as generic app typography, wallpaper roles, app icon references, shared surfaces, inherited color overrides using the same token path, and genuinely new app color roles such as navigation background | Shot content, module-specific roles such as Chat message/header tokens, duplicated inherited roles such as `appBackground` / `appAccent`, module-specific internals, device geometry, or per-instance exceptions |
+| `apps.config_json.tokens_json` | Reusable app-level defaults such as generic app typography, solid/image wallpaper roles with `0–1` opacity, app icon references, shared surfaces, inherited color overrides using the same token path, and genuinely new app color roles such as navigation background | Shot content, module-specific roles such as Chat message/header tokens, duplicated inherited roles such as `appBackground` / `appAccent`, module-specific internals, device geometry, or per-instance exceptions |
 | `module_theme_configs.tokens_json` | Module-specific defaults for one theme + app + module + schema version, such as Chat bubble geometry, message spacing, Chat typography, header defaults, cursor behavior, and module-specific mode colors | Shot content, device geometry, live state, or one-off screen instance exceptions |
 | `device.metrics_json` | Logical design space, internal pixel render size, geometry, and scale mapping | Actor content, component styling, external plate placement |
 | `device_states.state_json` | Live status values displayed by the device | Base geometry or reusable style |
 | `module_instances.content_json` | Shot-specific module content such as Chat participants, header, messages, timings, and media references | Reusable visual defaults, device geometry, or render output |
 | `module_instances.behavior_json` | Module-owned behavior/visibility for one module instance | Shot placement, canonical theme values, reusable design defaults, or device geometry |
+| `module_instances.animation_json` | Per-frame changes to module parameter values | Visual token overrides, reusable transition presets, or base content |
 | Resolved props | Final values needed by a module for its frame | Database references that still require lookup |
 | Renderable metadata | Diagnostics, approximation warnings, provenance, and debug timing | Required canonical style/layout configuration |
 
@@ -55,7 +56,7 @@ Before a module receives renderable props, the resolver scales design-unit token
 
 `module_instances.content_json` contains shot-specific module content. For Chat, this includes participants, header data, messages, text/media references, sender IDs, and frame timings.
 
-`module_instances.behavior_json` contains module behavior such as `showHeader`, `showKeyboard`, `showStatusBar`, `initialScroll`, `messageGrouping`, and debug flags. `core.chat` reads only these canonical module-instance sources for content/behavior; it does not merge legacy `props_json`.
+`module_instances.behavior_json` contains module behavior such as `showHeader`, `showKeyboard`, `showStatusBar`, `initialScroll`, `messageGrouping`, and debug flags. `module_instances.animation_json` is reserved for module parameter keyframes, such as changing text/status/subtitle values over time. `core.chat` reads only these canonical module-instance sources for content/behavior; it does not merge legacy `props_json`.
 
 Known values are normalized to camelCase by resolvers. Precedence is:
 

@@ -28,6 +28,166 @@ import { buildJsonUiHints, hintForPath } from "./json-editor/uiHints.js";
 
 type SaveState = "saved" | "dirty" | "invalid" | "saving" | "failed";
 
+interface MockupsNativeBridge {
+  pickFile?: () => Promise<string[]>;
+  pickDirectory?: () => Promise<string[]>;
+  mediaDataUrl?: (filePath: string, rootPath: string) => Promise<string>;
+}
+
+function mockupsNative() {
+  return (window as Window & { mockupsNative?: MockupsNativeBridge }).mockupsNative;
+}
+
+function normalizeFilesystemPath(value: string) {
+  return value.replace(/\\/g, "/").replace(/\/+$/g, "");
+}
+
+function relativePathFromRoot(filePath: string, rootPath: string) {
+  const normalizedFile = normalizeFilesystemPath(filePath);
+  const normalizedRoot = normalizeFilesystemPath(rootPath);
+  if (!normalizedRoot) return normalizedFile;
+  if (normalizedFile === normalizedRoot) return "";
+  if (normalizedFile.startsWith(`${normalizedRoot}/`)) {
+    return normalizedFile.slice(normalizedRoot.length + 1);
+  }
+  return normalizedFile;
+}
+
+function mediaPreviewUrl(filePath: string, rootPath: string) {
+  const trimmedPath = filePath.trim();
+  if (!trimmedPath) return "";
+  if (/^(data:|file:|https?:)/i.test(trimmedPath)) return trimmedPath;
+  const isAbsolutePath = trimmedPath.startsWith("/");
+  const resolvedPath =
+    rootPath && !isAbsolutePath
+      ? `${normalizeFilesystemPath(rootPath)}/${trimmedPath}`
+      : trimmedPath;
+  if (resolvedPath.startsWith("/")) {
+    return `file://${encodeURI(resolvedPath)}`;
+  }
+  return resolvedPath;
+}
+
+function cssUrl(value: string) {
+  return `url("${value.replace(/"/g, '\\"')}")`;
+}
+
+function ActorAvatarPreview({
+  filePath,
+  mediaRoot,
+  scale,
+  offsetX,
+  offsetY,
+  useInitials,
+  backgroundColor,
+  textColor,
+  initials,
+}: {
+  filePath: string;
+  mediaRoot: string;
+  scale: number;
+  offsetX: number;
+  offsetY: number;
+  useInitials: boolean;
+  backgroundColor: string;
+  textColor: string;
+  initials: string;
+}) {
+  const [previewUrl, setPreviewUrl] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    setPreviewUrl("");
+    if (useInitials || !filePath.trim()) return () => undefined;
+    const fallbackUrl = mediaPreviewUrl(filePath, mediaRoot);
+    const loader = mockupsNative()?.mediaDataUrl;
+    if (!loader) {
+      setPreviewUrl(fallbackUrl);
+      return () => undefined;
+    }
+    void loader(filePath, mediaRoot)
+      .then((nextUrl) => {
+        if (!cancelled) setPreviewUrl(nextUrl || fallbackUrl);
+      })
+      .catch(() => {
+        if (!cancelled) setPreviewUrl(fallbackUrl);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [filePath, mediaRoot, useInitials]);
+
+  const shouldShowInitials = useInitials || !previewUrl;
+  return (
+    <div
+      className="actor-avatar-preview"
+      style={
+        shouldShowInitials
+          ? {
+              backgroundColor,
+              color: textColor,
+            }
+          : {
+              backgroundImage: cssUrl(previewUrl),
+              backgroundSize: `${Math.max(0.01, scale) * 100}%`,
+              backgroundPosition: `calc(50% + ${offsetX}px) calc(50% + ${offsetY}px)`,
+            }
+      }
+    >
+      {shouldShowInitials ? initials : null}
+    </div>
+  );
+}
+
+function MediaCoverPreview({
+  filePath,
+  mediaRoot,
+  fallbackLabel,
+}: {
+  filePath: string;
+  mediaRoot: string;
+  fallbackLabel: string;
+}) {
+  const [previewUrl, setPreviewUrl] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    setPreviewUrl("");
+    if (!filePath.trim()) return () => undefined;
+    const fallbackUrl = mediaPreviewUrl(filePath, mediaRoot);
+    const loader = mockupsNative()?.mediaDataUrl;
+    if (!loader) {
+      setPreviewUrl(fallbackUrl);
+      return () => undefined;
+    }
+    void loader(filePath, mediaRoot)
+      .then((nextUrl) => {
+        if (!cancelled) setPreviewUrl(nextUrl || fallbackUrl);
+      })
+      .catch(() => {
+        if (!cancelled) setPreviewUrl(fallbackUrl);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [filePath, mediaRoot]);
+
+  return (
+    <div
+      className="media-cover-preview"
+      style={
+        previewUrl
+          ? {
+              backgroundImage: cssUrl(previewUrl),
+            }
+          : undefined
+      }
+    >
+      {!previewUrl ? fallbackLabel : null}
+    </div>
+  );
+}
+
 interface RecordEditorProps {
   table: AppTableDefinition;
   record: AppRecord | undefined;
@@ -743,6 +903,36 @@ export function RecordEditor({
     return groupKey === "messages" || groupKey === "participants" ? [] : {};
   }
 
+  function productionIdForCurrentRecord() {
+    if (!record) return "";
+    if (table.id === "productions") return record.id;
+    if (typeof record.production_id === "string") return record.production_id;
+    if (table.id === "module_instances") {
+      const screen = records.screen_instances?.find(
+        (item) => item.id === record.screen_instance_id,
+      );
+      const shot = records.shots?.find((item) => item.id === screen?.shot_id);
+      return typeof shot?.production_id === "string" ? shot.production_id : "";
+    }
+    if (table.id === "screen_instances") {
+      const shot = records.shots?.find((item) => item.id === record.shot_id);
+      return typeof shot?.production_id === "string" ? shot.production_id : "";
+    }
+    return "";
+  }
+
+  function productionMediaRoot() {
+    const production = records.productions?.find(
+      (item) => item.id === productionIdForCurrentRecord(),
+    );
+    const settings = production?.settings_json;
+    if (!settings || typeof settings !== "object" || Array.isArray(settings)) {
+      return "";
+    }
+    const mediaRoot = (settings as Record<string, unknown>).mediaRoot;
+    return typeof mediaRoot === "string" ? mediaRoot : "";
+  }
+
   function editorValueForThemeTokenGroup(
     themeTokenRoot: Record<string, JsonValue>,
     groupKey: string,
@@ -1275,6 +1465,25 @@ export function RecordEditor({
                           value={String(media.filePath ?? "")}
                           onCommit={setConversationMediaPath}
                         />
+                        <button
+                          type="button"
+                          className="secondary-button compact-button"
+                          disabled={!mockupsNative()?.pickFile}
+                          onClick={() => {
+                            void (async () => {
+                              const [filePath] =
+                                await (mockupsNative()?.pickFile?.() ??
+                                  Promise.resolve([]));
+                              if (filePath) {
+                                setConversationMediaPath(
+                                  relativePathFromRoot(filePath, productionMediaRoot()),
+                                );
+                              }
+                            })();
+                          }}
+                        >
+                          Browse…
+                        </button>
                         <input
                           type="file"
                           accept={mediaType === "image" ? "image/*" : "video/*"}
@@ -1283,7 +1492,12 @@ export function RecordEditor({
                               | (File & { path?: string })
                               | undefined;
                             if (file) {
-                              setConversationMediaPath(file.path ?? file.name);
+                              setConversationMediaPath(
+                                relativePathFromRoot(
+                                  file.path ?? file.name,
+                                  productionMediaRoot(),
+                                ),
+                              );
                             }
                           }}
                         />
@@ -2005,6 +2219,33 @@ export function RecordEditor({
     });
   }
 
+  function actorAvatar() {
+    const root = parsedObject(drafts.metadata_json ?? "{}");
+    const avatar = root.avatar;
+    return avatar && typeof avatar === "object" && !Array.isArray(avatar)
+      ? (avatar as Record<string, unknown>)
+      : {};
+  }
+
+  function setActorAvatarPatch(patch: Record<string, unknown>) {
+    const root = parsedObject(drafts.metadata_json ?? "{}");
+    const avatar = actorAvatar();
+    setDrafts({
+      ...drafts,
+      metadata_json: stringifyJson({
+        ...root,
+        avatar: {
+          baseSize: 640,
+          scale: 1,
+          offsetX: 0,
+          offsetY: 0,
+          ...avatar,
+          ...patch,
+        },
+      }),
+    });
+  }
+
   function renderActorColorField() {
     const color = actorColor();
     return (
@@ -2035,6 +2276,216 @@ export function RecordEditor({
           </div>
         }
       />
+    );
+  }
+
+  function renderActorAvatarFields() {
+    const avatar = actorAvatar();
+    const filePath = typeof avatar.filePath === "string" ? avatar.filePath : "";
+    const scale = typeof avatar.scale === "number" ? avatar.scale : 1;
+    const offsetX = typeof avatar.offsetX === "number" ? avatar.offsetX : 0;
+    const offsetY = typeof avatar.offsetY === "number" ? avatar.offsetY : 0;
+    const useInitials = avatar.useInitials === true;
+    const textColor =
+      typeof avatar.textColor === "string" && /^#[0-9a-f]{6}$/i.test(avatar.textColor)
+        ? avatar.textColor
+        : "#ffffff";
+    const mediaRoot = productionMediaRoot();
+
+    async function chooseAvatarFile() {
+      const [selectedPath] = await (mockupsNative()?.pickFile?.() ?? Promise.resolve([]));
+      if (selectedPath) {
+        setActorAvatarPatch({
+          filePath: relativePathFromRoot(selectedPath, mediaRoot),
+        });
+      }
+    }
+
+    return (
+      <>
+        <InspectorFieldRow
+          key="actor_avatar_use_initials"
+          className="app-field app-field-boolean"
+          label={<span>Use initials</span>}
+          control={
+            <input
+              type="checkbox"
+              checked={useInitials}
+              onChange={(event) =>
+                setActorAvatarPatch({ useInitials: event.target.checked })
+              }
+            />
+          }
+        />
+        <InspectorFieldRow
+          key="actor_avatar_file"
+          className="app-field app-field-string"
+          label={<span>Avatar image</span>}
+          control={
+            <div className="media-file-control actor-avatar-file-control">
+              <DeferredTextInput
+                value={filePath}
+                onCommit={(nextValue) => setActorAvatarPatch({ filePath: nextValue })}
+              />
+              <button
+                type="button"
+                className="secondary-button compact-button"
+                disabled={!mockupsNative()?.pickFile}
+                onClick={() => {
+                  void chooseAvatarFile();
+                }}
+              >
+                Browse…
+              </button>
+            </div>
+          }
+        />
+        <InspectorFieldRow
+          key="actor_avatar_text_color"
+          className="app-field app-field-string actor-color-field"
+          label={<span>Avatar text color</span>}
+          control={
+            <div className="actor-color-control">
+              <span
+                className="actor-color-preview"
+                style={{ backgroundColor: textColor, color: actorColor() }}
+                aria-hidden="true"
+              >
+                Aa
+              </span>
+              <input
+                aria-label="Avatar text color"
+                type="color"
+                value={textColor}
+                onChange={(event) =>
+                  setActorAvatarPatch({ textColor: event.target.value })
+                }
+              />
+              <input
+                aria-label="Avatar text color hex"
+                value={textColor}
+                onChange={(event) =>
+                  setActorAvatarPatch({ textColor: event.target.value })
+                }
+              />
+            </div>
+          }
+        />
+        <div className="actor-avatar-frame" aria-label="Avatar crop frame">
+          <ActorAvatarPreview
+            filePath={filePath}
+            mediaRoot={mediaRoot}
+            scale={scale}
+            offsetX={offsetX}
+            offsetY={offsetY}
+            useInitials={useInitials}
+            backgroundColor={actorColor()}
+            textColor={textColor}
+            initials={actorInitials()}
+          />
+          <small>Base avatar frame: 640×640</small>
+        </div>
+        <InspectorFieldRow
+          key="actor_avatar_scale"
+          className="app-field app-field-number"
+          label={<span>Avatar scale</span>}
+          control={
+            <input
+              type="number"
+              step={0.01}
+              min={0.01}
+              value={String(scale)}
+              onChange={(event) =>
+                setActorAvatarPatch({ scale: Number(event.target.value) })
+              }
+            />
+          }
+        />
+        <InspectorFieldRow
+          key="actor_avatar_offset_x"
+          className="app-field app-field-number"
+          label={<span>Avatar offset X</span>}
+          control={
+            <input
+              type="number"
+              step={1}
+              value={String(offsetX)}
+              onChange={(event) =>
+                setActorAvatarPatch({ offsetX: Number(event.target.value) })
+              }
+            />
+          }
+        />
+        <InspectorFieldRow
+          key="actor_avatar_offset_y"
+          className="app-field app-field-number"
+          label={<span>Avatar offset Y</span>}
+          control={
+            <input
+              type="number"
+              step={1}
+              value={String(offsetY)}
+              onChange={(event) =>
+                setActorAvatarPatch({ offsetY: Number(event.target.value) })
+              }
+            />
+          }
+        />
+      </>
+    );
+  }
+
+  function renderActorMetadataFields() {
+    return (
+      <div className="flat-json-field-group">
+        {renderActorColorField()}
+        {renderActorAvatarFields()}
+      </div>
+    );
+  }
+
+  function renderProductionSettingsField(field: AppFieldDefinition) {
+    const root = parsedObject(drafts[field.column] ?? "{}");
+    const mediaRoot = typeof root.mediaRoot === "string" ? root.mediaRoot : "";
+    async function chooseDirectory() {
+      const [directory] = await (mockupsNative()?.pickDirectory?.() ?? Promise.resolve([]));
+      if (directory) {
+        setJsonDraft(field.column, {
+          ...root,
+          mediaRoot: directory,
+        });
+      }
+    }
+    return (
+      <div key={field.column} className="flat-json-field-group">
+        <InspectorFieldRow
+          className="app-field flat-json-row"
+          label={<span>Media root</span>}
+          control={
+            <div className="media-file-control">
+              <DeferredTextInput
+                value={mediaRoot}
+                onCommit={(nextValue) =>
+                  setJsonDraft(field.column, {
+                    ...root,
+                    mediaRoot: nextValue,
+                  })
+                }
+              />
+              <button
+                type="button"
+                className="secondary-button compact-button"
+                disabled={!mockupsNative()?.pickDirectory}
+                onClick={() => {
+                  void chooseDirectory();
+                }}
+              >
+                Browse…
+              </button>
+            </div>
+          }
+        />
+      </div>
     );
   }
 
@@ -2217,6 +2668,9 @@ export function RecordEditor({
   }
 
   function renderGenericField(field: AppFieldDefinition) {
+    if (table.id === "productions" && field.column === "settings_json") {
+      return renderProductionSettingsField(field);
+    }
     if (table.id === "render_presets") {
       return renderRenderPresetField(field);
     }
@@ -2232,8 +2686,11 @@ export function RecordEditor({
     if (table.id === "actors" && field.column === "production_id") {
       return null;
     }
+    if (table.id === "actors" && field.column === "avatar_asset_id") {
+      return null;
+    }
     if (table.id === "actors" && field.column === "metadata_json") {
-      return renderActorColorField();
+      return renderActorMetadataFields();
     }
     if (
       table.id === "shots" &&
@@ -2675,6 +3132,7 @@ export function RecordEditor({
     const configField = fieldsByColumn.get("config_json");
     const metadataField = fieldsByColumn.get("metadata_json");
     const appConfigRoot = parsedObject(drafts.config_json ?? "{}");
+    const appMetadataRoot = parsedObject(drafts.metadata_json ?? "{}");
     const appTokenRoot = isJsonObject(appConfigRoot.tokens_json as JsonValue)
       ? (appConfigRoot.tokens_json as Record<string, unknown>)
       : appConfigRoot;
@@ -2690,6 +3148,325 @@ export function RecordEditor({
         ? { ...appConfigRoot, tokens_json: nextValue }
         : nextValue;
       setJsonDraft("config_json", nextConfig);
+    }
+
+    function appInitials() {
+      const source = String(drafts.name ?? record?.name ?? "");
+      const words = source
+        .split(/\s+/)
+        .map((word) => word.trim())
+        .filter(Boolean);
+      if (words.length === 0) return "?";
+      return words
+        .slice(0, 2)
+        .map((word) => word[0]?.toUpperCase() ?? "")
+        .join("");
+    }
+
+    function appIcon() {
+      const icon = appMetadataRoot.icon;
+      return icon && typeof icon === "object" && !Array.isArray(icon)
+        ? (icon as Record<string, unknown>)
+        : {};
+    }
+
+    function setAppIconPatch(patch: Record<string, unknown>) {
+      const icon = appIcon();
+      setJsonDraft("metadata_json", {
+        ...appMetadataRoot,
+        icon: {
+          baseSize: 640,
+          scale: 1,
+          offsetX: 0,
+          offsetY: 0,
+          ...icon,
+          ...patch,
+        },
+      });
+    }
+
+    function renderAppIconFields() {
+      const icon = appIcon();
+      const filePath = typeof icon.filePath === "string" ? icon.filePath : "";
+      const scale = typeof icon.scale === "number" ? icon.scale : 1;
+      const offsetX = typeof icon.offsetX === "number" ? icon.offsetX : 0;
+      const offsetY = typeof icon.offsetY === "number" ? icon.offsetY : 0;
+      const mediaRoot = productionMediaRoot();
+
+      async function chooseAppIconFile() {
+        const [selectedPath] = await (mockupsNative()?.pickFile?.() ?? Promise.resolve([]));
+        if (selectedPath) {
+          setAppIconPatch({
+            filePath: relativePathFromRoot(selectedPath, mediaRoot),
+          });
+        }
+      }
+
+      return (
+        <>
+          <InspectorFieldRow
+            key="app_icon_file"
+            className="app-field app-field-string"
+            label={<span>App icon image</span>}
+            control={
+              <div className="media-file-control actor-avatar-file-control">
+                <DeferredTextInput
+                  value={filePath}
+                  onCommit={(nextValue) => setAppIconPatch({ filePath: nextValue })}
+                />
+                <button
+                  type="button"
+                  className="secondary-button compact-button"
+                  disabled={!mockupsNative()?.pickFile}
+                  onClick={() => {
+                    void chooseAppIconFile();
+                  }}
+                >
+                  Browse…
+                </button>
+              </div>
+            }
+          />
+          <div className="actor-avatar-frame app-icon-frame" aria-label="App icon crop frame">
+            <ActorAvatarPreview
+              filePath={filePath}
+              mediaRoot={mediaRoot}
+              scale={scale}
+              offsetX={offsetX}
+              offsetY={offsetY}
+              useInitials={false}
+              backgroundColor="#f2f4f7"
+              textColor="#475467"
+              initials={appInitials()}
+            />
+            <small>Base icon frame: 640×640</small>
+          </div>
+          <InspectorFieldRow
+            key="app_icon_scale"
+            className="app-field app-field-number"
+            label={<span>Icon scale</span>}
+            control={
+              <input
+                type="number"
+                step={0.01}
+                min={0.01}
+                value={String(scale)}
+                onChange={(event) =>
+                  setAppIconPatch({ scale: Number(event.target.value) })
+                }
+              />
+            }
+          />
+          <InspectorFieldRow
+            key="app_icon_offset_x"
+            className="app-field app-field-number"
+            label={<span>Icon offset X</span>}
+            control={
+              <input
+                type="number"
+                step={1}
+                value={String(offsetX)}
+                onChange={(event) =>
+                  setAppIconPatch({ offsetX: Number(event.target.value) })
+                }
+              />
+            }
+          />
+          <InspectorFieldRow
+            key="app_icon_offset_y"
+            className="app-field app-field-number"
+            label={<span>Icon offset Y</span>}
+            control={
+              <input
+                type="number"
+                step={1}
+                value={String(offsetY)}
+                onChange={(event) =>
+                  setAppIconPatch({ offsetY: Number(event.target.value) })
+                }
+              />
+            }
+          />
+        </>
+      );
+    }
+
+    function appWallpaper() {
+      const wallpaper = appTokenRoot.wallpaper;
+      return wallpaper && typeof wallpaper === "object" && !Array.isArray(wallpaper)
+        ? (wallpaper as Record<string, unknown>)
+        : {};
+    }
+
+    function appWallpaperModeColor(mode: "light" | "dark") {
+      const modes = appTokenRoot.modes;
+      const modeRoot =
+        modes && typeof modes === "object" && !Array.isArray(modes)
+          ? (modes as Record<string, unknown>)[mode]
+          : undefined;
+      const modeObject =
+        modeRoot && typeof modeRoot === "object" && !Array.isArray(modeRoot)
+          ? (modeRoot as Record<string, unknown>)
+          : {};
+      const wallpaper =
+        modeObject.wallpaper &&
+        typeof modeObject.wallpaper === "object" &&
+        !Array.isArray(modeObject.wallpaper)
+          ? (modeObject.wallpaper as Record<string, unknown>)
+          : {};
+      const color = wallpaper.color;
+      return typeof color === "string" && color.trim()
+        ? color
+        : mode === "light"
+          ? "#f7f7f7"
+          : "#000000";
+    }
+
+    function updateAppWallpaper(path: JsonPath, nextValue: JsonValue) {
+      updateAppTokenRoot(
+        setAtPath(appTokenRoot as JsonValue, ["wallpaper", ...path], nextValue),
+      );
+    }
+
+    function updateAppWallpaperModeColor(mode: "light" | "dark", nextColor: string) {
+      updateAppTokenRoot(
+        setAtPath(
+          appTokenRoot as JsonValue,
+          ["modes", mode, "wallpaper", "color"],
+          nextColor,
+        ),
+      );
+    }
+
+    function renderAppWallpaperEditor() {
+      const wallpaper = appWallpaper();
+      const kind = String(wallpaper.kind ?? "solid");
+      const opacity =
+        typeof wallpaper.opacity === "number" && Number.isFinite(wallpaper.opacity)
+          ? wallpaper.opacity
+          : 1;
+      const image =
+        wallpaper.image && typeof wallpaper.image === "object" && !Array.isArray(wallpaper.image)
+          ? (wallpaper.image as Record<string, unknown>)
+          : {};
+      const filePath = typeof image.filePath === "string" ? image.filePath : "";
+      const mediaRoot = productionMediaRoot();
+
+      async function chooseWallpaperFile() {
+        const [selectedPath] = await (mockupsNative()?.pickFile?.() ?? Promise.resolve([]));
+        if (selectedPath) {
+          updateAppWallpaper(
+            ["image"],
+            {
+              filePath: relativePathFromRoot(selectedPath, mediaRoot),
+              fit: "cover",
+              position: "center",
+            },
+          );
+        }
+      }
+
+      return (
+        <div className="field-stack single-column wallpaper-editor">
+          <InspectorFieldRow
+            className="app-field app-field-string"
+            label={<span>Kind</span>}
+            control={
+              <select
+                value={kind === "image" ? "image" : "solid"}
+                onChange={(event) =>
+                  updateAppWallpaper(["kind"], event.target.value)
+                }
+              >
+                <option value="solid">solid</option>
+                <option value="image">image</option>
+              </select>
+            }
+          />
+          <InspectorFieldRow
+            className="app-field app-field-number"
+            label={<span>Opacity</span>}
+            control={
+              <input
+                type="number"
+                min={0}
+                max={1}
+                step={0.01}
+                value={String(opacity)}
+                onChange={(event) =>
+                  updateAppWallpaper(["opacity"], Number(event.target.value))
+                }
+              />
+            }
+          />
+          {kind === "image" ? (
+            <>
+              <InspectorFieldRow
+                className="app-field app-field-string"
+                label={<span>Image</span>}
+                control={
+                  <div className="media-file-control actor-avatar-file-control">
+                    <DeferredTextInput
+                      value={filePath}
+                      onCommit={(nextValue) =>
+                        updateAppWallpaper(["image"], {
+                          filePath: nextValue,
+                          fit: "cover",
+                          position: "center",
+                        })
+                      }
+                    />
+                    <button
+                      type="button"
+                      className="secondary-button compact-button"
+                      disabled={!mockupsNative()?.pickFile}
+                      onClick={() => {
+                        void chooseWallpaperFile();
+                      }}
+                    >
+                      Browse…
+                    </button>
+                  </div>
+                }
+              />
+              <div className="wallpaper-preview-frame">
+                <MediaCoverPreview
+                  filePath={filePath}
+                  mediaRoot={mediaRoot}
+                  fallbackLabel="No wallpaper image"
+                />
+                <small>Fit: cover · Position: center</small>
+              </div>
+            </>
+          ) : (
+            <div className="wallpaper-color-grid">
+              <div className="wallpaper-color-heading" />
+              <div className="wallpaper-color-heading">Light</div>
+              <div className="wallpaper-color-heading">Dark</div>
+              <span>Color</span>
+              {(["light", "dark"] as const).map((mode) => (
+                <div key={mode} className="actor-color-control compact-color-control">
+                  <input
+                    aria-label={`Wallpaper ${mode} color`}
+                    type="color"
+                    value={appWallpaperModeColor(mode)}
+                    onChange={(event) =>
+                      updateAppWallpaperModeColor(mode, event.target.value)
+                    }
+                  />
+                  <input
+                    aria-label={`Wallpaper ${mode} hex`}
+                    value={appWallpaperModeColor(mode)}
+                    onChange={(event) =>
+                      updateAppWallpaperModeColor(mode, event.target.value)
+                    }
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
     }
 
     return (
@@ -2708,14 +3485,8 @@ export function RecordEditor({
             </TabButton>
             {appTab === "general" ? (
               <div className="editor-section-body field-stack direct-field-stack">
-                {renderFields([
-                  "id",
-                  "production_id",
-                  "name",
-                  "bundle_key",
-                  "app_type",
-                  "icon_asset_id",
-                ])}
+                {renderFields(["id", "name"])}
+                {renderAppIconFields()}
               </div>
             ) : null}
           </div>
@@ -2736,33 +3507,37 @@ export function RecordEditor({
                     activeGroup={activeAppTokenGroup}
                     onToggle={setAppTokenGroup}
                   >
-                    <div className="field-stack single-column">
-                      {renderField(configField, {
-                        hideLabel: true,
-                        rawText: stringifyJson(
-                          appTokenRoot[group] &&
-                            typeof appTokenRoot[group] === "object" &&
-                            !Array.isArray(appTokenRoot[group])
-                            ? (appTokenRoot[group] as Record<string, unknown>)
-                            : {},
-                        ),
-                        groupContext: group,
-                        inheritedValue:
-                          inheritedAppRoot &&
-                          typeof inheritedAppRoot === "object" &&
-                          !Array.isArray(inheritedAppRoot) &&
-                          inheritedAppRoot[group] &&
-                          typeof inheritedAppRoot[group] === "object" &&
-                          !Array.isArray(inheritedAppRoot[group])
-                            ? (inheritedAppRoot[group] as Record<string, unknown>)
-                            : null,
-                        onRawTextChange: (nextRawText) =>
-                          updateAppTokenRoot({
-                            ...appTokenRoot,
-                            [group]: parsedObject(nextRawText),
-                          } as JsonValue),
-                      })}
-                    </div>
+                    {group === "wallpaper" ? (
+                      renderAppWallpaperEditor()
+                    ) : (
+                      <div className="field-stack single-column">
+                        {renderField(configField, {
+                          hideLabel: true,
+                          rawText: stringifyJson(
+                            appTokenRoot[group] &&
+                              typeof appTokenRoot[group] === "object" &&
+                              !Array.isArray(appTokenRoot[group])
+                              ? (appTokenRoot[group] as Record<string, unknown>)
+                              : {},
+                          ),
+                          groupContext: group,
+                          inheritedValue:
+                            inheritedAppRoot &&
+                            typeof inheritedAppRoot === "object" &&
+                            !Array.isArray(inheritedAppRoot) &&
+                            inheritedAppRoot[group] &&
+                            typeof inheritedAppRoot[group] === "object" &&
+                            !Array.isArray(inheritedAppRoot[group])
+                              ? (inheritedAppRoot[group] as Record<string, unknown>)
+                              : null,
+                          onRawTextChange: (nextRawText) =>
+                            updateAppTokenRoot({
+                              ...appTokenRoot,
+                              [group]: parsedObject(nextRawText),
+                            } as JsonValue),
+                        })}
+                      </div>
+                    )}
                   </SubgroupAccordion>
                 ))}
               </div>
@@ -3273,7 +4048,9 @@ export function RecordEditor({
     <section className="panel record-editor">
       <div className="panel-heading">
         <div>
-          <span className="eyebrow">Record editor</span>
+          <span className="eyebrow">
+            {table.id === "productions" ? "Production Editor" : "Record editor"}
+          </span>
           <h2>{String(record[table.titleColumn] ?? record.id)}</h2>
         </div>
         <span className="record-id">{record.id}</span>

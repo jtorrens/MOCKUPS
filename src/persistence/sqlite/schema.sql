@@ -247,6 +247,7 @@ CREATE TABLE IF NOT EXISTS module_instances (
   sort_order INTEGER CHECK (sort_order >= 0),
   content_json TEXT NOT NULL,
   behavior_json TEXT NOT NULL,
+  animation_json TEXT NOT NULL DEFAULT '{"schemaVersion":1,"tracks":[]}',
   metadata_json TEXT
 );
 
@@ -270,4 +271,4 @@ CREATE INDEX IF NOT EXISTS idx_screen_events_instance ON screen_events(screen_in
 CREATE INDEX IF NOT EXISTS idx_conversation_participants_conversation ON conversation_participants(conversation_id, sort_order);
 CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id, sort_order);
 
-PRAGMA user_version = 9;
+PRAGMA user_version = 10;

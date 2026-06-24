@@ -56,6 +56,7 @@ const secondTree = RenderableNodeSchema.parse(chatModule.render(chatProps));
 
 assert(tree.type === "chat_screen", "Root node must be chat_screen");
 const childTypes = tree.children?.map((child) => child.type) ?? [];
+assert(childTypes[0] === "wallpaper", "Wallpaper must render as the back layer");
 assert(childTypes.includes("status_bar"), "Tree must contain status_bar");
 assert(childTypes.includes("chat_header"), "Tree must contain chat_header");
 assert(
@@ -65,6 +66,7 @@ assert(
 );
 const headerNode = tree.children?.find((child) => child.type === "chat_header");
 const statusNode = tree.children?.find((child) => child.type === "status_bar");
+const wallpaperNode = tree.children?.find((child) => child.type === "wallpaper");
 const bubbleNodes =
   tree.children?.filter((child) => child.type === "message_bubble") ?? [];
 const receivedBubble = bubbleNodes.find((child) => child.role === "incoming");
@@ -72,6 +74,15 @@ const sentBubble = bubbleNodes.find((child) => child.role === "outgoing");
 const layoutMetadata = tree.metadata?.layout;
 assert(headerNode?.box?.height === 288, "Header must use the scaled height token");
 assert(tree.box, "ChatScreen root must have a box");
+assert(
+  wallpaperNode?.box?.width === tree.box.width &&
+    wallpaperNode.box.height === tree.box.height,
+  "Wallpaper must cover the full chat screen",
+);
+assert(
+  wallpaperNode.transform?.opacity === 1,
+  "Wallpaper must receive app-level opacity",
+);
 assert(statusNode?.box, "StatusBar must have a box");
 assert(headerNode?.box, "ChatHeader must have a box");
 assert(
@@ -184,6 +195,7 @@ assert(
 console.log("✓ resolved chat props rendered at shot frame 210 / local frame 60");
 console.log("✓ renderable tree validated recursively with Zod");
 console.log("✓ ChatScreen composed status bar, header, and message bubbles");
+console.log("✓ app wallpaper rendered as the back layer");
 console.log("✓ registry contains all five required module names");
 console.log("✓ visual tree uses resolved layout, tail, and Wi-Fi tokens");
 console.log("✓ sent/received bounds, stacking, text, and avatar boxes validated");
@@ -192,7 +204,7 @@ console.log("✓ deterministic overflow keeps the latest message visible");
 console.log(
   `layout: chat_screen ${tree.box.x},${tree.box.y} ${tree.box.width}x${tree.box.height}`,
 );
-for (const child of [statusNode, headerNode, ...bubbleNodes]) {
+for (const child of [wallpaperNode, statusNode, headerNode, ...bubbleNodes]) {
   if (child?.box) {
     console.log(
       `  ${child.type}${child.role ? ` ${child.role}` : ""} ${child.box.x},${child.box.y} ${child.box.width}x${child.box.height}`,

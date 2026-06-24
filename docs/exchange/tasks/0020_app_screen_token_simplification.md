@@ -10,7 +10,7 @@ The working model should become:
 Theme
   → App
   → Screen / Module
-  → Module Instance content/behavior at render time
+  → Module Instance content/behavior/parameter animation at render time
 ```
 
 Do not add `App Theme Config`.
@@ -59,6 +59,7 @@ The App owns reusable app-level tokens/defaults inherited by its screens:
 
 - generic app typography defaults that are still app-wide, not module roles;
 - app wallpaper/background roles;
+- wallpaper supports `solid` or `image`, shared decimal `opacity` (`0–1`), light/dark solid colors, and direct production-relative image media rendered cover/center;
 - app accent behavior;
 - app icon references;
 - shared app surfaces;
@@ -385,6 +386,7 @@ This phase was implemented as a breaking design-stage pass and then iterated thr
 - `module_theme_configs.tokens_json` is the Screen/Module reusable token/default layer, scoped by app/module/theme/schema.
 - `module_instances.content_json` is the shot-specific module content layer.
 - `module_instances.behavior_json` is the per-shot module behavior layer.
+- `module_instances.animation_json` is the per-shot module parameter animation layer.
 - App/screen/module instances no longer expose visual token override layers.
 - Mode-aware colors are kept as reusable light/dark values until preview/render resolves one mode.
 - Authored numeric design tokens stay in logical design units and are scaled through device metrics at render/preview resolution.
@@ -422,6 +424,14 @@ module_instances.behavior_json
 ```
 
 Visual design tokens are not stored as per-instance overrides. They come from Theme/App/Module Theme Config resolution.
+
+Parameter animation is reserved as a separate module-instance layer:
+
+```text
+module_instances.animation_json
+```
+
+This layer stores timeline/keyframe changes to module parameter values. It is intentionally separate from visual `animation_presets`: presets are for entrances, exits, fades, slides, and other reusable visual transitions; `animation_json` is for value changes such as a Chat message text being rewritten, a header subtitle changing, or a message status changing. Text reveal modes such as `writeDown` define how the current text is shown; parameter animation defines what the current text value is at a given frame.
 
 For `core.chat@1`:
 

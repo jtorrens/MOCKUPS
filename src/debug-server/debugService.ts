@@ -28,6 +28,7 @@ import {
 } from "../domain/resolvers/index.js";
 import { ChatScreenModule } from "../visual/modules/screens/ChatScreenModule.js";
 import { RenderableNodeSchema } from "../visual/renderable/schema.js";
+import type { RenderableNode } from "../visual/renderable/types.js";
 import { SQLiteRepository } from "../persistence/sqlite/SQLiteRepository.js";
 import type { SQLiteDatabase } from "../persistence/sqlite/createDatabase.js";
 import {
@@ -38,6 +39,52 @@ import {
 } from "../persistence/sqlite/json.js";
 
 type Row = Record<string, unknown>;
+
+function extractCssUrl(value: unknown) {
+  if (typeof value !== "string") return "";
+  const trimmed = value.trim();
+  const match = /^url\((['"]?)(.*?)\1\)$/i.exec(trimmed);
+  return match?.[2] ?? "";
+}
+
+function cssUrl(value: string) {
+  return `url("${value.replace(/"/g, '\\"')}")`;
+}
+
+function previewMediaUrl(productionId: string, filePath: string) {
+  if (
+    !filePath ||
+    /^(data:|blob:|https?:|\/api\/media)/i.test(filePath)
+  ) {
+    return filePath;
+  }
+  return `/api/media?productionId=${encodeURIComponent(productionId)}&path=${encodeURIComponent(filePath)}`;
+}
+
+function rewriteRenderableMediaUrls(
+  node: RenderableNode,
+  productionId: string,
+): RenderableNode {
+  const backgroundUrl = extractCssUrl(node.style?.backgroundImage);
+  const nextStyle =
+    backgroundUrl && node.style
+      ? {
+          ...node.style,
+          backgroundImage: cssUrl(previewMediaUrl(productionId, backgroundUrl)),
+        }
+      : node.style;
+  return {
+    ...node,
+    ...(nextStyle ? { style: nextStyle } : {}),
+    ...(node.children
+      ? {
+          children: node.children.map((child) =>
+            rewriteRenderableMediaUrls(child, productionId),
+          ),
+        }
+      : {}),
+  };
+}
 type FieldKind = "string" | "number" | "json";
 
 export interface AppFieldDefinition {
@@ -126,6 +173,7 @@ export function parseModuleInstance(row: Row) {
     ...row,
     content_json: readRequiredJson(row, "content_json"),
     behavior_json: readRequiredJson(row, "behavior_json"),
+    animation_json: readRequiredJson(row, "animation_json"),
     metadata_json: readOptionalJson(row, "metadata_json"),
   });
 }
@@ -143,8 +191,8 @@ export const APP_TABLES = [
       { column: "name", label: "Name", kind: "string" },
       { column: "slug", label: "Slug", kind: "string", nullable: true },
       { column: "default_fps", label: "Default FPS", kind: "number" },
-      { column: "settings_json", label: "Project settings", kind: "json" },
-      { column: "metadata_json", label: "Project notes", kind: "json" },
+      { column: "settings_json", label: "Production settings", kind: "json" },
+      { column: "metadata_json", label: "Production notes", kind: "json" },
     ],
   },
   {
@@ -252,7 +300,7 @@ export const APP_TABLES = [
     label: "Module Instances",
     table: "module_instances",
     titleColumn: "id",
-    jsonFields: ["content_json", "behavior_json", "metadata_json"],
+    jsonFields: ["content_json", "behavior_json", "animation_json", "metadata_json"],
     fields: [
       { column: "id", label: "ID", kind: "string", readonly: true },
       {
@@ -269,6 +317,7 @@ export const APP_TABLES = [
       { column: "sort_order", label: "Sort order", kind: "number" },
       { column: "content_json", label: "Module content", kind: "json" },
       { column: "behavior_json", label: "Module behavior", kind: "json" },
+      { column: "animation_json", label: "Module animation", kind: "json" },
       { column: "metadata_json", label: "Module instance notes", kind: "json" },
     ],
   },
@@ -633,8 +682,11 @@ export function loadDebugPayload(
         selectedResolved.screen_type === "chat" &&
         selectedResolved.resolved_props
       ) {
-        renderable = RenderableNodeSchema.parse(
+        const rawRenderable = RenderableNodeSchema.parse(
           ChatScreenModule.render(selectedResolved.resolved_props),
+        );
+        renderable = RenderableNodeSchema.parse(
+          rewriteRenderableMediaUrls(rawRenderable, selection.productionId),
         );
       } else {
         warnings.push(
@@ -1192,7 +1244,7 @@ export function createAppRecord(
         `INSERT INTO productions (id, name, slug, default_fps, settings_json, metadata_json)
          VALUES (?, ?, ?, ?, ?, ?)`,
       )
-      .run(id, name, slugifyIdPart(name), 30, "{}", "{}");
+      .run(id, name, slugifyIdPart(name), 30, stringifyJsonObject({ mediaRoot: "" }, "productions.settings_json"), "{}");
     const record = decodeAppRow(
       database.prepare("SELECT * FROM productions WHERE id = ?").get(id) as Row,
       tableDefinition("productions"),
@@ -1597,8 +1649,9 @@ function duplicateShotRecord(database: SQLiteDatabase, recordId: string) {
               sort_order,
               content_json,
               behavior_json,
+              animation_json,
               metadata_json
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           )
           .run(
             uniqueId("module_instance", `${newScreenId}_${moduleInstance.id}`),
@@ -1608,6 +1661,7 @@ function duplicateShotRecord(database: SQLiteDatabase, recordId: string) {
             moduleInstance.sort_order ?? null,
             moduleInstance.content_json,
             moduleInstance.behavior_json,
+            moduleInstance.animation_json ?? '{"schemaVersion":1,"tracks":[]}',
             moduleInstance.metadata_json ?? null,
           );
       }

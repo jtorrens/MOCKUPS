@@ -110,6 +110,10 @@
         "notificationRef": "notification_message_001"
       },
       "behavior_json": {},
+      "animation_json": {
+        "schemaVersion": 1,
+        "tracks": []
+      },
       "metadata_json": {}
     },
     {
@@ -194,6 +198,10 @@
         "initialScroll": "bottom",
         "messageGrouping": "bySender",
         "debugShowBounds": false
+      },
+      "animation_json": {
+        "schemaVersion": 1,
+        "tracks": []
       },
       "metadata_json": {}
     }

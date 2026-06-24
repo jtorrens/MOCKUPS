@@ -1,4 +1,6 @@
 import { createServer } from "node:http";
+import { createReadStream, statSync } from "node:fs";
+import path from "node:path";
 import { createDatabase } from "../persistence/sqlite/createDatabase.js";
 import { developmentDatabasePath } from "../persistence/sqlite/paths.js";
 import {
@@ -19,6 +21,59 @@ import {
 
 const PORT = 4174;
 const database = createDatabase(developmentDatabasePath);
+
+function mediaContentType(filePath: string) {
+  const extension = path.extname(filePath).toLowerCase();
+  if (extension === ".jpg" || extension === ".jpeg") return "image/jpeg";
+  if (extension === ".webp") return "image/webp";
+  if (extension === ".gif") return "image/gif";
+  if (extension === ".svg") return "image/svg+xml";
+  if (extension === ".avif") return "image/avif";
+  return "image/png";
+}
+
+function productionMediaRoot(productionId: string) {
+  const row = database
+    .prepare("SELECT settings_json FROM productions WHERE id = ?")
+    .get(productionId) as { settings_json: string } | undefined;
+  if (!row) return "";
+  try {
+    const settings = JSON.parse(row.settings_json) as unknown;
+    if (
+      settings &&
+      typeof settings === "object" &&
+      !Array.isArray(settings) &&
+      typeof (settings as Record<string, unknown>).mediaRoot === "string"
+    ) {
+      return (settings as Record<string, string>).mediaRoot;
+    }
+  } catch {
+    return "";
+  }
+  return "";
+}
+
+function resolveProductionMediaPath(productionId: string, requestedPath: string) {
+  const mediaRoot = productionMediaRoot(productionId);
+  if (!mediaRoot && path.isAbsolute(requestedPath)) {
+    return path.resolve(requestedPath);
+  }
+  if (!mediaRoot) {
+    throw new Error("Production media root is not set");
+  }
+  const rootPath = path.resolve(mediaRoot);
+  const resolvedPath = path.isAbsolute(requestedPath)
+    ? path.resolve(requestedPath)
+    : path.resolve(rootPath, requestedPath);
+  const relativePath = path.relative(rootPath, resolvedPath);
+  if (
+    relativePath.startsWith("..") ||
+    path.isAbsolute(relativePath)
+  ) {
+    throw new Error("Media path is outside production media root");
+  }
+  return resolvedPath;
+}
 
 function sendJson(
   response: import("node:http").ServerResponse,
@@ -85,6 +140,27 @@ const server = createServer(async (request, response) => {
         frame: Number(url.searchParams.get("frame")),
       };
       sendJson(response, 200, loadDebugPayload(database, selection));
+      return;
+    }
+    if (request.method === "GET" && url.pathname === "/api/media") {
+      const productionId = url.searchParams.get("productionId") ?? "";
+      const requestedPath = url.searchParams.get("path") ?? "";
+      if (!productionId || !requestedPath) {
+        sendJson(response, 400, { error: "Missing productionId or path" });
+        return;
+      }
+      const filePath = resolveProductionMediaPath(productionId, requestedPath);
+      const stats = statSync(filePath);
+      if (!stats.isFile()) {
+        sendJson(response, 404, { error: "Media file not found" });
+        return;
+      }
+      response.writeHead(200, {
+        "Content-Type": mediaContentType(filePath),
+        "Content-Length": stats.size,
+        "Cache-Control": "no-store",
+      });
+      createReadStream(filePath).pipe(response);
       return;
     }
     if (request.method === "GET" && url.pathname === "/api/debug") {

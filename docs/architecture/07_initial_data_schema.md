@@ -1,10 +1,10 @@
 # Initial data schema
 
-This is the persistence-oriented schema for MOCKUPS. The initial SQLite implementation now exists. The current design-stage schema is version 9 and intentionally breaks from the earlier Screen Template layer: app identity/defaults and module-specific defaults are now direct runtime layers, and explicit module instances own per-shot content/behavior.
+This is the persistence-oriented schema for MOCKUPS. The initial SQLite implementation now exists. The current design-stage schema is version 10 and intentionally breaks from the earlier Screen Template layer: app identity/defaults and module-specific defaults are now direct runtime layers, and explicit module instances own per-shot content, behavior, and parameter animation.
 
 ## Storage boundary
 
-SQL/stable fields hold IDs, names, relationships, ordering, frame timings, core type discriminators, and references to apps, assets, themes, devices, and actors. JSON/flexible fields hold visual tokens, app defaults, device metrics, module content/behavior, event payloads, animation parameters, transforms, and module-specific configuration.
+SQL/stable fields hold IDs, names, relationships, ordering, frame timings, core type discriminators, and references to apps, assets, themes, devices, and actors. JSON/flexible fields hold visual tokens, app defaults, device metrics, module content/behavior/parameter animation, event payloads, visual animation preset parameters, transforms, and module-specific configuration.
 
 JSON column names use a `_json` suffix below. Resolvers parse these values and emit camelCase resolved props for visual modules.
 
@@ -72,17 +72,17 @@ Production
 
 `screen_type` is a broad discriminator; `module_id` + `module_schema_version` select the exact module contract. `transform_json` transforms the device-screen render inside the shot's device render space. `core.chat` now reads content/behavior from `module_instances` and has no runtime fallback to `data_ref_json` or `props_json`.
 
-SQLite schema version 9 includes `screen_instances.app_id`, explicit `module_instances`, production default FPS, episode/shot render slugs, inline `screen_instances.device_state_json`, removes the active `screen_templates` table, and scopes `module_theme_configs` by `theme_id + app_id + module_id + module_schema_version`. This is a design-stage breaking schema: local development databases may be reset explicitly with `npm run db:reset`; normal app startup must not reseed or overwrite edited data.
+SQLite schema version 10 includes `screen_instances.app_id`, explicit `module_instances`, `module_instances.animation_json`, production default FPS, episode/shot render slugs, inline `screen_instances.device_state_json`, removes the active `screen_templates` table, and scopes `module_theme_configs` by `theme_id + app_id + module_id + module_schema_version`. This is a design-stage breaking schema: local development databases may be reset explicitly with `npm run db:reset`; normal app startup must not reseed or overwrite edited data.
 
 ### `module_instances`
 
 - Purpose: concrete module payload and behavior for a module attached to one screen instance.
 - SQL/stable fields: `id`, `screen_instance_id`, `module_id`, `module_schema_version`, `sort_order`.
-- JSON/flexible fields: `content_json`, `behavior_json`, `metadata_json`.
+- JSON/flexible fields: `content_json`, `behavior_json`, `animation_json`, `metadata_json`.
 - Relationships: belongs to one screen instance. One screen instance may own more than one module instance if a future module composition requires it.
 - Must not contain: reusable visual design defaults, copied theme/app/module tokens, device geometry, or render output.
 
-For `core.chat@1`, `content_json` owns participants, header, messages, timings, media references, and sender IDs. `behavior_json` owns per-shot behavior such as `showHeader`, `showStatusBar`, `showKeyboard`, `initialScroll`, and `messageGrouping`.
+For `core.chat@1`, `content_json` owns participants, header, messages, timings, media references, and sender IDs. `behavior_json` owns per-shot behavior such as `showHeader`, `showStatusBar`, `showKeyboard`, `initialScroll`, and `messageGrouping`. `animation_json` is reserved for per-frame changes to module parameters, such as changing a header subtitle, message text, or message status at specific frames. This is separate from reveal modes like `writeDown`, which define how the current text value is displayed.
 
 ### `screen_events`
 
@@ -159,7 +159,7 @@ App and module JSON may contain `modes.light` and `modes.dark` color values. The
 - Relationships: belongs to a production; may reference an icon media asset; referenced by screen instances, module theme configs, notifications, calls, and data sources.
 - Must not contain: shot placement, actor credentials, or renderer-specific code.
 
-`config_json.tokens_json` stores app-level reusable defaults inherited by screens, such as generic app typography, wallpaper roles, icon references, shared surfaces, and mode-aware app colors. If an app wants to change a generic inherited role such as `colors.background` or `colors.accent`, it should override that same token path. New app-specific roles should be genuinely new, such as `colors.navigationBackground`, not duplicated as `appBackground` / `appAccent`.
+`config_json.tokens_json` stores app-level reusable defaults inherited by screens, such as generic app typography, wallpaper roles, icon references, shared surfaces, and mode-aware app colors. App wallpaper supports `kind: "solid" | "image"` and a shared decimal `opacity` in the `0–1` range. Solid wallpapers store mode colors under `modes.light.wallpaper.color` and `modes.dark.wallpaper.color`; image wallpapers store direct production-relative media at `wallpaper.image.filePath` and render as centered cover/crop. If an app wants to change a generic inherited role such as `colors.background` or `colors.accent`, it should override that same token path. New app-specific roles should be genuinely new, such as `colors.navigationBackground`, not duplicated as `appBackground` / `appAccent`.
 
 ### `media_assets`
 

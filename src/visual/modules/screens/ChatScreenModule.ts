@@ -15,6 +15,14 @@ import { renderMessageBubbleWithLayout } from "../atomic/MessageBubbleModule.js"
 import { StatusBarModule } from "../atomic/StatusBarModule.js";
 import type { VisualModule } from "../types.js";
 
+function cssUrl(value: string) {
+  return `url("${value.replace(/"/g, '\\"')}")`;
+}
+
+function clampOpacity(value: number) {
+  return Math.max(0, Math.min(1, value));
+}
+
 function createMessageBubbleInput(
   input: ResolvedChatScreenProps,
   message: ResolvedChatScreenProps["messages"][number],
@@ -112,10 +120,37 @@ export const ChatScreenModule: VisualModule<ResolvedChatScreenProps> = {
   render(input): RenderableNode {
     const children: RenderableNode[] = [];
     const screenGutter = readNumber(input.theme.layout, "screenGutter", 24);
+    const wallpaper = readObject(input.theme, "wallpaper");
+    const wallpaperKind = readString(wallpaper, "kind", "solid");
+    const wallpaperOpacity = clampOpacity(readNumber(wallpaper, "opacity", 1));
     const messageInputs = input.messages.map((message) =>
       createMessageBubbleInput(input, message),
     );
     const layout = layoutChatScreen({ props: input, messages: messageInputs });
+    const wallpaperImage = readObject(wallpaper, "image");
+    const wallpaperUri = readString(wallpaperImage, "filePath", "");
+    children.push({
+      id: `${input.screenInstanceId}:wallpaper`,
+      type: "wallpaper",
+      role: "background",
+      box: layout.rootBox,
+      transform: { opacity: wallpaperOpacity },
+      style:
+        wallpaperKind === "image" && wallpaperUri
+          ? {
+              backgroundImage: cssUrl(wallpaperUri),
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+            }
+          : {
+              backgroundColor: readString(
+                wallpaper,
+                "color",
+                readString(input.theme.colors, "background", "#FFFFFF"),
+              ),
+            },
+    });
     if (layout.statusBarBox) {
       children.push(
         {

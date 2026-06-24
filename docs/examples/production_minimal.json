@@ -87,6 +87,10 @@
       "sort_order": 0,
       "content_json": {},
       "behavior_json": {},
+      "animation_json": {
+        "schemaVersion": 1,
+        "tracks": []
+      },
       "metadata_json": {}
     }
   ]

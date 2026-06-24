@@ -125,6 +125,22 @@ function applyBreakingV6Marker(database: SQLiteDatabase): void {
   database.pragma("user_version = 6");
 }
 
+function ensureModuleInstanceAnimationColumn(database: SQLiteDatabase): void {
+  const moduleInstanceColumns = new Set(
+    (
+      database.pragma("table_info(module_instances)") as {
+        name: string;
+      }[]
+    ).map((column) => column.name),
+  );
+  if (!moduleInstanceColumns.has("animation_json")) {
+    database.exec(
+      `ALTER TABLE module_instances
+       ADD COLUMN animation_json TEXT NOT NULL DEFAULT '{"schemaVersion":1,"tracks":[]}'`,
+    );
+  }
+}
+
 function applyAdditiveV7Migration(database: SQLiteDatabase): void {
   database.exec(`
     CREATE TABLE IF NOT EXISTS module_instances (
@@ -135,11 +151,13 @@ function applyAdditiveV7Migration(database: SQLiteDatabase): void {
       sort_order INTEGER CHECK (sort_order >= 0),
       content_json TEXT NOT NULL,
       behavior_json TEXT NOT NULL,
+      animation_json TEXT NOT NULL DEFAULT '{"schemaVersion":1,"tracks":[]}',
       metadata_json TEXT
     );
     CREATE INDEX IF NOT EXISTS idx_module_instances_screen
       ON module_instances(screen_instance_id, sort_order, id);
   `);
+  ensureModuleInstanceAnimationColumn(database);
   database.exec(`
     INSERT OR IGNORE INTO module_instances (
       id,
@@ -149,6 +167,7 @@ function applyAdditiveV7Migration(database: SQLiteDatabase): void {
       sort_order,
       content_json,
       behavior_json,
+      animation_json,
       metadata_json
     )
     SELECT
@@ -159,6 +178,7 @@ function applyAdditiveV7Migration(database: SQLiteDatabase): void {
       0,
       COALESCE(module_data_json, '{}'),
       COALESCE(module_config_json, '{}'),
+      '{"schemaVersion":1,"tracks":[]}',
       '{}'
     FROM screen_instances
     WHERE module_id IS NOT NULL
@@ -230,6 +250,11 @@ function applyAdditiveV9Migration(database: SQLiteDatabase): void {
   database.pragma("user_version = 9");
 }
 
+function applyAdditiveV10Migration(database: SQLiteDatabase): void {
+  ensureModuleInstanceAnimationColumn(database);
+  database.pragma("user_version = 10");
+}
+
 export function applyInitialSchema(database: SQLiteDatabase): void {
   database.exec(readFileSync(schemaPath, "utf8"));
   applyAdditiveV2Migration(database);
@@ -240,6 +265,7 @@ export function applyInitialSchema(database: SQLiteDatabase): void {
   applyAdditiveV7Migration(database);
   applyAdditiveV8Migration(database);
   applyAdditiveV9Migration(database);
+  applyAdditiveV10Migration(database);
   database.pragma("foreign_keys = ON");
 }
 

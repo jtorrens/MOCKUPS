@@ -42,7 +42,7 @@ module_instances.content_json
   → ResolvedChatScreenProps
 ```
 
-`module_instances.behavior_json` is the sole per-instance behavior source. Visual design tokens are resolved from Theme → App → Module Theme Config and are not overridden at app/module instance level. Chat resolution has no `data_ref_json`/conversation/message fallback.
+`module_instances.behavior_json` is the sole per-instance behavior source. `module_instances.animation_json` is the reserved per-instance parameter-animation source. Visual design tokens are resolved from Theme → App → Module Theme Config and are not overridden at app/module instance level. Chat resolution has no `data_ref_json`/conversation/message fallback.
 
 Preview and final render should use the same resolvers, resolved props, module registry, and visual modules. Rendering must be frame-based and deterministic: the same production data, shot, frame, assets, and configuration must produce the same output, without wall-clock time, hidden mutable state, or live network dependencies.
 

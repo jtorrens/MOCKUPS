@@ -1160,13 +1160,32 @@ body {
 
 .media-file-control {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 8px;
   align-items: center;
 }
 
+.actor-avatar-file-control {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
 .media-file-control input[type="file"] {
   max-width: 190px;
+}
+
+.compact-button {
+  min-height: 30px;
+  border: 1px solid #cfd6e2;
+  border-radius: 8px;
+  padding: 0 10px;
+  color: #303848;
+  background: #ffffff;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.compact-button:disabled {
+  opacity: 0.45;
 }
 
 .content-field-row {
@@ -2932,9 +2951,7 @@ button {
 .preview-viewport-host {
   border: 0;
   border-radius: 34px;
-  background:
-    linear-gradient(145deg, rgba(0, 0, 0, 0.09), transparent 26%),
-    #ffffff;
+  background: #ffffff;
 }
 
 .preview-viewport {
@@ -2942,7 +2959,8 @@ button {
   border-radius: 56px;
   background: #ffffff;
   box-shadow:
-    0 20px 50px rgba(17, 24, 39, 0.16),
+    0 10px 28px rgba(17, 24, 39, 0.18),
+    0 2px 8px rgba(17, 24, 39, 0.1),
     inset 0 0 0 1px rgba(255, 255, 255, 0.28);
 }
 
@@ -3423,6 +3441,91 @@ body,
   min-width: 42px !important;
   height: 30px !important;
   padding: 2px !important;
+}
+
+.actor-avatar-frame {
+  display: grid;
+  gap: 6px;
+  max-width: 220px;
+  padding: 0 10px;
+}
+
+.actor-avatar-preview {
+  display: grid;
+  width: 160px;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 1px solid #cfd6e2;
+  border-radius: 16px;
+  color: #ffffff;
+  background-repeat: no-repeat;
+  background-position: center;
+  place-items: center;
+  font-size: 34px;
+  font-weight: 800;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+}
+
+.actor-avatar-frame small {
+  color: #667085;
+  font-size: 11px;
+}
+
+.app-icon-frame .actor-avatar-preview {
+  border-radius: 36px;
+}
+
+.wallpaper-editor {
+  gap: 12px;
+}
+
+.wallpaper-color-grid {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.55fr) minmax(160px, 1fr) minmax(160px, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 0 10px;
+}
+
+.wallpaper-color-heading {
+  color: #667085;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.compact-color-control {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.wallpaper-preview-frame {
+  display: grid;
+  gap: 6px;
+  padding: 0 10px;
+}
+
+.media-cover-preview {
+  display: grid;
+  width: min(100%, 320px);
+  aspect-ratio: 16 / 9;
+  align-items: center;
+  justify-items: center;
+  overflow: hidden;
+  border: 1px solid #cfd6e2;
+  border-radius: 16px;
+  color: #667085;
+  background-color: #f2f4f7;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.wallpaper-preview-frame small {
+  color: #667085;
+  font-size: 11px;
 }
 
 .record-editor .app-field.inspector-field-row.state-override,

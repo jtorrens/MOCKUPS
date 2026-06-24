@@ -74,6 +74,40 @@ ipcMain.handle("mockups:pickFile", async () => {
   return result.canceled ? [] : result.filePaths;
 });
 
+ipcMain.handle("mockups:pickDirectory", async () => {
+  const result = await dialog.showOpenDialog({
+    properties: ["openDirectory"],
+  });
+  return result.canceled ? [] : result.filePaths;
+});
+
+ipcMain.handle("mockups:mediaDataUrl", async (_event, filePath, rootPath) => {
+  if (typeof filePath !== "string" || !filePath.trim()) {
+    return "";
+  }
+  if (/^(data:|https?:|file:)/i.test(filePath)) {
+    return filePath;
+  }
+  const normalizedRoot =
+    typeof rootPath === "string" && rootPath.trim() ? rootPath : "";
+  const resolvedPath = path.isAbsolute(filePath)
+    ? filePath
+    : path.resolve(normalizedRoot || process.cwd(), filePath);
+  const extension = path.extname(resolvedPath).toLowerCase();
+  const mimeType =
+    extension === ".jpg" || extension === ".jpeg"
+      ? "image/jpeg"
+      : extension === ".webp"
+        ? "image/webp"
+        : extension === ".gif"
+          ? "image/gif"
+          : extension === ".svg"
+            ? "image/svg+xml"
+            : "image/png";
+  const bytes = await fs.promises.readFile(resolvedPath);
+  return `data:${mimeType};base64,${bytes.toString("base64")}`;
+});
+
 ipcMain.handle("mockups:listFonts", async () => {
   if (process.platform === "darwin") {
     return new Promise((resolve) => {

@@ -81,6 +81,10 @@ function nodeStyle(
 ): CSSProperties {
   const style = node.style ?? {};
   const backgroundColor = stringValue(style.backgroundColor ?? style.background);
+  const backgroundImage = stringValue(style.backgroundImage);
+  const backgroundSize = stringValue(style.backgroundSize);
+  const backgroundPosition = stringValue(style.backgroundPosition);
+  const backgroundRepeat = stringValue(style.backgroundRepeat);
   const color = stringValue(style.textColor ?? style.color ?? style.foreground);
   const borderRadius = numberValue(style.borderRadius ?? style.cornerRadius);
   const opacity = node.transform?.opacity;
@@ -88,6 +92,10 @@ function nodeStyle(
   return {
     ...boxStyle(node.box, parentOrigin),
     backgroundColor,
+    backgroundImage,
+    backgroundSize,
+    backgroundPosition,
+    backgroundRepeat,
     color,
     fontFamily: stringValue(style.fontFamily) ?? "Arial, sans-serif",
     fontSize: numberValue(style.fontSize),

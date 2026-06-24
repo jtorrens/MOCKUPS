@@ -36,7 +36,7 @@ Production
 - `apps`: reusable app identity, icon, branding, and app-level token defaults inherited by screens.
 - `module_theme_configs`: reusable screen/module design defaults scoped by production, theme, app, module, and module schema version.
 - `screen_instances`: runtime containers for versioned screen modules. Each supplies `app_id`, `module_id`, `module_schema_version`, owner/device/state/theme/mode context, timing, layer order, and transform.
-- `module_instances`: concrete module payloads attached to screen instances. Each stores versioned module content in `content_json` and per-instance behavior in `behavior_json`.
+- `module_instances`: concrete module payloads attached to screen instances. Each stores versioned module content in `content_json`, per-instance behavior in `behavior_json`, and per-frame module parameter changes in `animation_json`.
 - `screen_events`: frame-timed changes within a screen instance, such as a notification appearing or a message being sent.
 - `themes`: style tokens and visual defaults; suitable for reusable style packs.
 - `devices`: device identity and physical/display metrics; suitable for device packs.
@@ -63,6 +63,6 @@ Theme
   → selected render mode
 ```
 
-App and screen/module layers may store mode-aware light/dark color values. They remain reusable defaults until a shot/screen render context selects one mode. Screen/module instances do not carry visual token overrides in the active model; shot-specific module content remains in `module_instances.content_json` and behavior remains in `module_instances.behavior_json`.
+App and screen/module layers may store mode-aware light/dark color values. They remain reusable defaults until a shot/screen render context selects one mode. Screen/module instances do not carry visual token overrides in the active model; shot-specific module content remains in `module_instances.content_json`, behavior remains in `module_instances.behavior_json`, and parameter animation remains in `module_instances.animation_json`.
 
 A shot is not tied to one chat or one device. It may contain any number of screen instances sequentially or in overlapping layers, but its output space is the device screen—not an UHD/video plate. See `09_foundational_module_contracts.md`; debug/editor tooling must edit module-owned JSON rather than deprecated Chat tables.

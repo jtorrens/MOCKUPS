@@ -15,7 +15,7 @@ module_theme_configs.tokens_json
   → module-specific defaults for one theme + app + module + schema version
 ```
 
-This keeps the global Theme tab from becoming the place where every internal Chat setting is edited. A global theme may own broad typography, base colors, surfaces, accents, shared status-bar appearance, and light/dark base modes. An App owns generic product-level defaults such as wallpaper/background roles, accent colors, app icon references, shared app surfaces, and app-wide typography tokens. Chat-specific values such as message/header typography roles, bubble geometry, tails, message spacing, cursor behavior, and chat header defaults belong to the Chat module theme config.
+This keeps the global Theme tab from becoming the place where every internal Chat setting is edited. A global theme may own broad typography, base colors, surfaces, accents, shared status-bar appearance, and light/dark base modes. An App owns generic product-level defaults such as solid/image wallpaper roles with decimal `0–1` opacity, accent colors, direct app icon media/crop metadata, shared app surfaces, and app-wide typography tokens. Chat-specific values such as message/header typography roles, bubble geometry, tails, message spacing, cursor behavior, and chat header defaults belong to the Chat module theme config.
 
 ## Data model
 
@@ -122,14 +122,15 @@ Current editor conventions:
 
 ## Module instances and visual override policy
 
-Module instances own per-shot module content and behavior:
+Module instances own per-shot module content, behavior, and parameter animation:
 
 ```text
 module_instances.content_json
 module_instances.behavior_json
+module_instances.animation_json
 ```
 
-They do not own reusable visual design defaults or sparse local visual exceptions. Colors, typography, spacing, radii, shadows, layout, and other visual design values are edited at Theme/App/Module Theme Config level.
+They do not own reusable visual design defaults or sparse local visual exceptions. `animation_json` changes module parameter values over time; it is not a visual token override layer. Colors, typography, spacing, radii, shadows, layout, and other visual design values are edited at Theme/App/Module Theme Config level.
 
 Screen Template overrides are no longer an active layer. If a future workflow needs to use one screen as a starting point, the user duplicates an existing screen/screen instance and edits the duplicate.
 

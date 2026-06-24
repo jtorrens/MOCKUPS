@@ -76,14 +76,21 @@ export function createExampleDataset(): RepositoryDataset {
       tokens_json: {
         wallpaper: {
           kind: "solid",
+          opacity: 1,
         },
         modes: {
           light: {
+            wallpaper: {
+              color: "#FFFFFF",
+            },
             colors: {
               navigationBackground: "#F7F7F7",
             },
           },
           dark: {
+            wallpaper: {
+              color: "#000000",
+            },
             colors: {
               navigationBackground: "#1C1C1E",
             },
@@ -93,6 +100,13 @@ export function createExampleDataset(): RepositoryDataset {
     },
     metadata_json: {
       note: "App-level reusable defaults inherited by Messages screens.",
+      icon: {
+        baseSize: 640,
+        filePath: "",
+        scale: 1,
+        offsetX: 0,
+        offsetY: 0,
+      },
     },
   });
   const chatModuleThemeConfigTokens = {
@@ -225,6 +239,17 @@ export function createExampleDataset(): RepositoryDataset {
     {
       ...productionExample.actors[0],
       avatar_asset_id: ownerAvatar.assetId,
+      metadata_json: {
+        avatar: {
+          baseSize: 640,
+          filePath: ownerAvatar.uri,
+          useInitials: false,
+          textColor: "#ffffff",
+          scale: 1,
+          offsetX: 0,
+          offsetY: 0,
+        },
+      },
     },
     {
       id: otherMessage.sender.id,
@@ -234,7 +259,17 @@ export function createExampleDataset(): RepositoryDataset {
       avatar_asset_id: otherAvatar.assetId,
       default_device_id: device.id,
       default_theme_id: theme.id,
-      metadata_json: {},
+      metadata_json: {
+        avatar: {
+          baseSize: 640,
+          filePath: otherAvatar.uri,
+          useInitials: false,
+          textColor: "#ffffff",
+          scale: 1,
+          offsetX: 0,
+          offsetY: 0,
+        },
+      },
     },
   ]);
 

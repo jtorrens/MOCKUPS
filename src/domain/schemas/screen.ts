@@ -11,6 +11,7 @@ import {
   ChatModuleDataSchema,
   ThemeModeSchema,
 } from "./module.js";
+import { ModuleParameterAnimationSchema } from "./animation.js";
 
 export const ScreenTypeSchema = z.enum([
   "chat",
@@ -98,6 +99,7 @@ export const ModuleInstanceSchema = z
     sort_order: z.number().int().optional(),
     content_json: JsonObjectSchema,
     behavior_json: JsonObjectSchema,
+    animation_json: ModuleParameterAnimationSchema,
     metadata_json: JsonObjectSchema.nullable().optional(),
   })
   .superRefine((value, context) => {

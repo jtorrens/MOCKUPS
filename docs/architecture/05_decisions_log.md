@@ -495,7 +495,7 @@ Status: accepted
 
 The local authoring shell is moving toward an inspector-first, Figma-collections-like UI. The left workspace uses accordion sections rather than mixing tabs and trees. The central editor uses accordion cards for major areas and grouped cards for nested token/content concepts.
 
-Shot-specific module payloads are presented as `Module Content` in the module-instance editor. The active design-stage model stores this data in `module_instances.content_json`, with per-instance runtime behavior in `module_instances.behavior_json`.
+Shot-specific module payloads are presented as `Module Content` in the module-instance editor. The active design-stage model stores this data in `module_instances.content_json`, with per-instance runtime behavior in `module_instances.behavior_json` and per-frame parameter animation in `module_instances.animation_json`.
 
 Implications:
 - `Module Content` is not App data and should not be presented as App-level configuration.
@@ -518,10 +518,13 @@ Canonical module-instance fields:
 ```text
 module_instances.content_json
 module_instances.behavior_json
+module_instances.animation_json
 module_instances.metadata_json
 ```
 
-`content_json` stores shot-specific module data such as Chat participants, header copy, messages, timings, and media references. `behavior_json` stores per-shot behavior such as showing the header, showing the keyboard, status bar visibility, initial scroll, and message grouping.
+`content_json` stores shot-specific module data such as Chat participants, header copy, messages, timings, and media references. `behavior_json` stores per-shot behavior such as showing the header, showing the keyboard, status bar visibility, initial scroll, and message grouping. `animation_json` stores per-shot module parameter animation: timeline/keyframe changes to values such as header subtitle, message status, or message text.
+
+`animation_json` is intentionally separate from `animation_presets`. Presets remain reserved for reusable visual entrances/exits/transitions if needed. Parameter animation changes what value a module field has on a frame; reveal modes such as `writeDown` change how an existing text value is displayed.
 
 Per-instance visual overrides are removed from the active editor/resolver model. Visual values are reusable defaults resolved from:
 
@@ -532,6 +535,7 @@ Theme → App → Module Theme Config → selected mode
 Implications:
 - The Chat resolver reads `ChatModuleDataSchema` from `module_instances.content_json`.
 - The Chat resolver reads `ChatModuleConfigSchema` from `module_instances.behavior_json`.
+- Future timeline resolution will read module parameter keyframes from `module_instances.animation_json`.
 - `screen_instances.module_data_json`, `screen_instances.module_config_json`, and `screen_instances.module_tokens_override_json` remain only as legacy/migration compatibility columns.
 - The UI should not show an Overrides section for Screen Instances or Module Instances.
 - Reset/seed paths should create module-instance rows directly.

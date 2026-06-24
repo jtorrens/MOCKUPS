@@ -294,6 +294,16 @@ function productionRenderPresets(dataset: RepositoryDataset) {
   ];
 }
 
+function productionRecords(dataset: RepositoryDataset) {
+  return dataset.productions.map((production) => ({
+    ...production,
+    settings_json: {
+      mediaRoot: "",
+      ...(production.settings_json ?? {}),
+    },
+  }));
+}
+
 function seedRecords(
   database: SQLiteDatabase,
   dataset: RepositoryDataset,
@@ -311,7 +321,7 @@ function seedRecords(
       "settings_json",
       "metadata_json",
     ],
-    dataset.productions,
+    productionRecords(dataset),
     new Set(["settings_json", "metadata_json"]),
   );
   insertRows(
@@ -596,10 +606,11 @@ function seedRecords(
       "sort_order",
       "content_json",
       "behavior_json",
+      "animation_json",
       "metadata_json",
     ],
     dataset.moduleInstances,
-    new Set(["content_json", "behavior_json", "metadata_json"]),
+    new Set(["content_json", "behavior_json", "animation_json", "metadata_json"]),
   );
   insertRows(
     database,

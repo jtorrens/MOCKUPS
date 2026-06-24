@@ -38,10 +38,12 @@ The target module-instance JSON boundary is:
 
 ```text
 id, screen_instance_id, module_id, module_schema_version, sort_order
-content_json, behavior_json, metadata_json
+content_json, behavior_json, animation_json, metadata_json
 ```
 
-`content_json` is shot-specific content created by the module editor. `behavior_json` is instance behavior. Reusable global design remains in the theme; reusable app defaults live in `apps.config_json.tokens_json`; reusable module-specific design defaults live in `module_theme_configs`. Per-instance visual token overrides are not part of the active model. For Chat these are now the only active runtime sources. Legacy narrative Chat tables and legacy screen-instance module JSON columns remain physically present only as deprecated structures.
+`content_json` is shot-specific content created by the module editor. `behavior_json` is instance behavior. `animation_json` is the module-instance timeline for parameter value changes, stored separately from both base content and behavior. Reusable global design remains in the theme; reusable app defaults live in `apps.config_json.tokens_json`; reusable module-specific design defaults live in `module_theme_configs`. Per-instance visual token overrides are not part of the active model. For Chat these are now the only active runtime sources. Legacy narrative Chat tables and legacy screen-instance module JSON columns remain physically present only as deprecated structures.
+
+Parameter animation is not the same thing as `animation_presets`. Presets, if used, remain suitable for visual transitions such as entrances, exits, fades, slides, and app/screen movement. `module_instances.animation_json` is for data/value changes over frames, for example a Chat header subtitle changing, a message status changing, or a message text being replaced. Text reveal modes such as `writeDown` or `writeDownNatural` describe how the current text is displayed; keyframed parameter animation describes what the text value is at a given frame.
 
 Module schema versions are independent from the app/SQLite schema version. A host must locate `module_id`, select exactly the supported `module_schema_version`, and validate both JSON documents with that module's schemas. Missing modules and unsupported versions fail clearly without modifying stored JSON.
 
@@ -118,7 +120,7 @@ Normal output is the device render resolution. A render preset may change output
 
 ## Themes, text, assets, and icons
 
-A theme stores base global tokens, named modes such as `light` and `dark`, `defaultMode`, and the installed font family plus generic named weight selected through font pickers. Apps store generic app-level reusable defaults such as wallpaper/background roles, accent colors, icon references, shared surfaces, and app-wide typography tokens. Module theme configs store module-specific values such as Chat message/header typography roles, bubble geometry, message spacing, chat header defaults, cursor behavior, and future module-local design defaults. App and module color tokens can carry light and dark values; the resolver collapses them only for the selected render mode. The shot selects the owner actor; that actor supplies default device and theme for the plane. The screen instance may still select `theme_mode` from the selected theme's available modes, and may carry explicit context overrides when needed. Modules receive only the merged tokens. No production font whitelist/table is required.
+A theme stores base global tokens, named modes such as `light` and `dark`, `defaultMode`, and the installed font family plus generic named weight selected through font pickers. Apps store generic app-level reusable defaults such as wallpaper/background roles, accent colors, direct app icon media/crop metadata, shared surfaces, and app-wide typography tokens. App wallpaper is either solid mode-aware color or direct image media rendered cover/center, with opacity stored as a decimal `0–1` layer value. Module theme configs store module-specific values such as Chat message/header typography roles, bubble geometry, message spacing, chat header defaults, cursor behavior, and future module-local design defaults. App and module color tokens can carry light and dark values; the resolver collapses them only for the selected render mode. The shot selects the owner actor; that actor supplies default device and theme for the plane. The screen instance may still select `theme_mode` from the selected theme's available modes, and may carry explicit context overrides when needed. Modules receive only the merged tokens. No production font whitelist/table is required.
 
 Text measurement has two modes: an approximate renderer-agnostic mode for fast structural work, and a final renderer-assisted mode shared by preview and export. Manual line breaks are preserved before wrapping; reveal operations should segment grapheme clusters where possible.
 
@@ -128,7 +130,7 @@ OS/app iconography uses theme/OS/mode-aware icon tokens and is separate from con
 
 ## Module editors and debug boundaries
 
-Module editors edit only module-instance content/behavior and are independent of final owner, device, and theme. They may provide a temporary preview context; the shot/screen instance supplies final runtime context.
+Module editors edit only module-instance content, behavior, and parameter animation. They are independent of final owner, device, and theme. They may provide a temporary preview context; the shot/screen instance supplies final runtime context.
 
 The generic JSON tree editor is a fallback editing surface, not the final UX for every module. Module-specific editor hint contracts may provide path labels, widgets, collapsed row summaries, and safe structural affordances for a given `module_id` + `module_schema_version`. `core.chat@1` is the first registered contract. A future specialized module editor may replace the generic tree for a module while keeping the same stored JSON shape.
 

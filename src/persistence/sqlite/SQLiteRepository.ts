@@ -163,7 +163,7 @@ export class SQLiteRepository implements DomainRepository {
       screenInstanceId,
       ModuleInstanceSchema,
       {
-        required: ["content_json", "behavior_json"],
+        required: ["content_json", "behavior_json", "animation_json"],
         optional: ["metadata_json"],
         optionalScalars: ["sort_order"],
       },

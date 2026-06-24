@@ -71,6 +71,7 @@ const DeviceStateValuesSchema = z.object({
 const ChatThemeSchema = z.object({
   fonts: z.record(z.string(), z.unknown()),
   colors: z.record(z.string(), z.unknown()),
+  wallpaper: z.record(z.string(), z.unknown()).optional(),
   statusBar: z.record(z.string(), z.unknown()),
   layout: z.record(z.string(), z.unknown()),
   header: z.record(z.string(), z.unknown()),
@@ -292,7 +293,10 @@ function resolveParticipant(
         participant.actorId,
       )
     : undefined;
-  const avatarAssetId = participant.avatarAssetId ?? actor?.avatar_asset_id;
+  const directAvatarUri = actorAvatarUri(actor);
+  const avatarAssetId = directAvatarUri
+    ? undefined
+    : participant.avatarAssetId ?? actor?.avatar_asset_id;
   const avatar = avatarAssetId
     ? requireRecord(
         repository.getMediaAsset(avatarAssetId),
@@ -309,9 +313,26 @@ function resolveParticipant(
     participantId: participant.id,
     ...(actor ? { actorId: actor.id } : {}),
     displayName,
-    ...(avatar ? { avatarUri: avatar.uri } : {}),
+    ...(directAvatarUri || avatar ? { avatarUri: directAvatarUri ?? avatar?.uri } : {}),
     role: participant.role,
   };
+}
+
+function actorAvatarUri(actor: Actor | undefined) {
+  const metadata = actor?.metadata_json;
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+    return undefined;
+  }
+  const avatar = metadata.avatar;
+  if (!avatar || typeof avatar !== "object" || Array.isArray(avatar)) {
+    return undefined;
+  }
+  const avatarRecord = avatar as Record<string, unknown>;
+  if (avatarRecord.useInitials === true) {
+    return undefined;
+  }
+  const filePath = avatarRecord.filePath;
+  return typeof filePath === "string" && filePath.trim() ? filePath : undefined;
 }
 
 export interface ResolveChatScreenInput {
@@ -506,24 +527,11 @@ export function resolveChatScreen({
 
   const ownerAvatar = ownerParticipant.avatarUri
     ? {
-        assetId:
-          moduleData.participants.find(
-            (participant) => participant.id === ownerParticipant.participantId,
-          )?.avatarAssetId ?? ownerActor.avatar_asset_id,
         uri: ownerParticipant.avatarUri,
       }
     : undefined;
   const headerAvatar = headerAvatarParticipant?.avatarUri
     ? {
-        assetId:
-          moduleData.participants.find(
-            (participant) =>
-              participant.id === headerAvatarParticipant.participantId,
-          )?.avatarAssetId ??
-          (headerAvatarParticipant.actorId
-            ? repository.getActor(headerAvatarParticipant.actorId)
-                ?.avatar_asset_id
-            : undefined),
         uri: headerAvatarParticipant.avatarUri,
       }
     : undefined;
@@ -557,12 +565,12 @@ export function resolveChatScreen({
     ownerActor: {
       id: ownerActor.id,
       displayName: ownerActor.display_name,
-      ...(ownerAvatar?.assetId ? { avatar: ownerAvatar } : {}),
+      ...(ownerAvatar?.uri ? { avatar: ownerAvatar } : {}),
     },
     header: {
       title: moduleData.header.title,
       subtitle: moduleData.header.subtitle,
-      ...(headerAvatar?.assetId ? { avatar: headerAvatar } : {}),
+      ...(headerAvatar?.uri ? { avatar: headerAvatar } : {}),
     },
     messages,
     events: repository

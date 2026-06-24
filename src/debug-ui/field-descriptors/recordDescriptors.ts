@@ -17,22 +17,6 @@ export const appRecordDescriptors: FieldDescriptor[] = [
     area: "general",
     property: "name",
   },
-  {
-    canonicalPath: "app.general.bundleKey",
-    storagePath: ["bundle_key"],
-    label: "Bundle key",
-    section: "General",
-    area: "general",
-    property: "bundleKey",
-  },
-  {
-    canonicalPath: "app.general.iconAssetId",
-    storagePath: ["icon_asset_id"],
-    label: "Icon asset",
-    section: "General",
-    area: "general",
-    property: "iconAssetId",
-  },
 ];
 
 export const moduleThemeConfigRecordDescriptors: FieldDescriptor[] = [
