@@ -247,11 +247,14 @@
   flex: 1 1 auto;
   place-items: center;
   overflow: hidden;
-  padding: 18px;
-  border: 1px solid #dfe3eb;
-  border-radius: 16px;
-  background: #ffffff;
-  box-shadow: 0 2px 8px rgba(21, 30, 50, 0.045);
+  padding: var(--preview-viewport-padding, 18px);
+  border: var(--preview-viewport-border, 1px solid #dfe3eb);
+  border-radius: var(--preview-viewport-radius, 16px);
+  background: var(--preview-viewport-background, #ffffff);
+  box-shadow: var(
+    --preview-viewport-shadow,
+    0 2px 8px rgba(21, 30, 50, 0.045)
+  );
 }
 
 .preview-viewport {

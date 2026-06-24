@@ -47,6 +47,11 @@
   --subcard-header-title-font-size: 13px;
   --subcard-chevron-size: 20px;
   --subcard-chevron-open-size: 15px;
+  --preview-viewport-padding: 18px;
+  --preview-viewport-border: 1px solid #dfe3eb;
+  --preview-viewport-radius: 16px;
+  --preview-viewport-background: #ffffff;
+  --preview-viewport-shadow: 0 2px 8px rgba(21, 30, 50, 0.045);
   color: #e8e9ee;
   background: #0d0f14;
   font-family:
@@ -69,6 +74,9 @@
   --card-header-icon-background: #1e2530;
   --subcard-border: 1px solid #343d4d;
   --subcard-background: #171d27;
+  --preview-viewport-border: 1px solid #303746;
+  --preview-viewport-background: #10151e;
+  --preview-viewport-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
 * {
