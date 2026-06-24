@@ -15,6 +15,9 @@
   --panel-resizer-background: #f0f2f5;
   --panel-resizer-line: #dfe3eb;
   --panel-resizer-accent: #3b66ff;
+  --scrollbar-track-background: transparent;
+  --scrollbar-thumb-background: #cfd6e2;
+  --scrollbar-thumb-hover-background: #aeb8c8;
   --control-border: 1px solid #d8dee8;
   --control-background: #ffffff;
   --control-color: #343b48;
@@ -259,6 +262,9 @@
   --panel-resizer-background: #383a3f;
   --panel-resizer-line: #50545c;
   --panel-resizer-accent: #7f8fad;
+  --scrollbar-track-background: transparent;
+  --scrollbar-thumb-background: #565a62;
+  --scrollbar-thumb-hover-background: #6a6e77;
   --control-border: 1px solid #565a62;
   --control-background: #383a3f;
   --control-color: #e0ded8;
@@ -464,6 +470,27 @@ body {
   height: 100%;
   min-width: 0;
   overflow: hidden auto;
+  scrollbar-color: var(--scrollbar-thumb-background, #cfd6e2)
+    var(--scrollbar-track-background, transparent);
+  scrollbar-width: thin;
+}
+
+.editor-workspace::-webkit-scrollbar {
+  width: 10px;
+}
+
+.editor-workspace::-webkit-scrollbar-track {
+  background: var(--scrollbar-track-background, transparent);
+}
+
+.editor-workspace::-webkit-scrollbar-thumb {
+  border: 3px solid var(--editor-panel-background, #ffffff);
+  border-radius: 999px;
+  background: var(--scrollbar-thumb-background, #cfd6e2);
+}
+
+.editor-workspace::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover-background, #aeb8c8);
 }
 
 .panel-resizer {
@@ -1988,7 +2015,7 @@ body {
 }
 
 .app-header h1 {
-  color: #111318;
+  color: var(--card-header-title-color, #111318);
   font-size: 20px;
   letter-spacing: -0.03em;
 }
@@ -1998,7 +2025,7 @@ body {
 }
 
 .eyebrow {
-  color: #717887;
+  color: var(--card-header-summary-color, #717887);
   font-size: 11px;
 }
 
