@@ -66,6 +66,99 @@ function productionMediaRoot(productionId: string) {
   return "";
 }
 
+function safeFilePart(value: unknown, fallback: string) {
+  const source = typeof value === "string" && value.trim() ? value : fallback;
+  return source
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 80) || fallback;
+}
+
+function frameFileName(selection: DebugSelection) {
+  const row = database
+    .prepare(
+      `SELECT
+        p.slug AS productionSlug,
+        p.name AS productionName,
+        e.slug AS episodeSlug,
+        e.name AS episodeName,
+        s.slug AS shotSlug,
+        s.name AS shotName,
+        s.version AS shotVersion
+      FROM shots s
+      JOIN productions p ON p.id = s.production_id
+      LEFT JOIN episodes e ON e.id = s.episode_id
+      WHERE s.id = ?`,
+    )
+    .get(selection.shotId) as
+    | {
+        productionSlug?: string | null;
+        productionName?: string | null;
+        episodeSlug?: string | null;
+        episodeName?: string | null;
+        shotSlug?: string | null;
+        shotName?: string | null;
+        shotVersion?: number | null;
+      }
+    | undefined;
+  const production = safeFilePart(
+    row?.productionSlug ?? row?.productionName,
+    selection.productionId,
+  );
+  const episode = safeFilePart(row?.episodeSlug ?? row?.episodeName, "episode");
+  const shot = safeFilePart(row?.shotSlug ?? row?.shotName, selection.shotId);
+  const version = String(row?.shotVersion ?? 1).padStart(2, "0");
+  const frame = String(selection.frame).padStart(6, "0");
+  return `${production}_${episode}_${shot}_v${version}_f${frame}.png`;
+}
+
+function renderFrameOutputPath(selection: DebugSelection) {
+  const mediaRoot = productionMediaRoot(selection.productionId);
+  const root = mediaRoot
+    ? path.resolve(mediaRoot)
+    : path.join(renderOutputDir, "renders", selection.productionId);
+  const directory = path.join(root, "renders", "frames");
+  const filePath = path.join(directory, frameFileName(selection));
+  return {
+    directory,
+    filePath,
+    relativeFilePath: path.relative(root, filePath),
+  };
+}
+
+function assertReadableRenderOutputPath(filePath: string) {
+  const resolved = path.resolve(filePath);
+  const outputRelative = path.relative(renderOutputDir, resolved);
+  if (!outputRelative.startsWith("..") && !path.isAbsolute(outputRelative)) {
+    return resolved;
+  }
+  const productions = database
+    .prepare("SELECT settings_json FROM productions")
+    .all() as { settings_json: string }[];
+  for (const production of productions) {
+    try {
+      const settings = JSON.parse(production.settings_json) as unknown;
+      const mediaRoot =
+        settings &&
+        typeof settings === "object" &&
+        !Array.isArray(settings) &&
+        typeof (settings as Record<string, unknown>).mediaRoot === "string"
+          ? (settings as Record<string, string>).mediaRoot
+          : "";
+      if (!mediaRoot) continue;
+      const rootRelative = path.relative(path.resolve(mediaRoot), resolved);
+      if (!rootRelative.startsWith("..") && !path.isAbsolute(rootRelative)) {
+        return resolved;
+      }
+    } catch {
+      // Ignore malformed settings while checking readable render outputs.
+    }
+  }
+  throw new Error("Render output path is outside allowed output roots");
+}
+
 function resolveProductionMediaPath(productionId: string, requestedPath: string) {
   const mediaRoot = productionMediaRoot(productionId);
   if (!mediaRoot && path.isAbsolute(requestedPath)) {
@@ -168,6 +261,8 @@ async function renderCurrentFramePng(
     throw new Error("Selected preview has no renderable output");
   }
   await mkdir(renderOutputDir, { recursive: true });
+  const output = renderFrameOutputPath(selection);
+  await mkdir(output.directory, { recursive: true });
   const renderable = absolutizeRenderableUrls(
     RenderableNodeSchema.parse(payload.renderable),
     absoluteServerUrl(request),
@@ -193,7 +288,7 @@ async function renderCurrentFramePng(
       "still",
       "src/remotion/index.ts",
       "ChatScreenPreview",
-      currentFramePng,
+      output.filePath,
       "--frame=0",
       "--overwrite",
       `--scale=${outputScale}`,
@@ -205,11 +300,13 @@ async function renderCurrentFramePng(
     },
   );
   return {
-    url: "/api/render-output/current-frame.png",
-    filePath: currentFramePng,
+    url: `/api/render-output/frame.png?path=${encodeURIComponent(output.filePath)}`,
+    filePath: output.filePath,
+    includeFrame: selection.includeFrame === true,
     outputHeight,
     outputScale,
     outputWidth,
+    relativeFilePath: output.relativeFilePath,
     selection,
   };
 }
@@ -284,6 +381,19 @@ const server = createServer(async (request, response) => {
         "Cache-Control": "no-store",
       });
       createReadStream(currentFramePng).pipe(response);
+      return;
+    }
+    if (request.method === "GET" && url.pathname === "/api/render-output/frame.png") {
+      const filePath = assertReadableRenderOutputPath(
+        url.searchParams.get("path") ?? "",
+      );
+      const stats = statSync(filePath);
+      response.writeHead(200, {
+        "Content-Type": "image/png",
+        "Content-Length": stats.size,
+        "Cache-Control": "no-store",
+      });
+      createReadStream(filePath).pipe(response);
       return;
     }
     if (request.method === "GET" && url.pathname === "/api/media") {

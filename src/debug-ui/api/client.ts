@@ -103,9 +103,11 @@ export interface DebugPayload {
 export interface RenderFrameResult {
   url: string;
   filePath: string;
+  includeFrame: boolean;
   outputHeight: number;
   outputScale: number;
   outputWidth: number;
+  relativeFilePath?: string;
   selection: DebugSelection;
 }
 

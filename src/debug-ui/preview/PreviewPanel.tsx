@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { RenderableReactAdapter } from "../../visual/adapters/react/RenderableReactAdapter.js";
 import type { RenderableNode } from "../../visual/renderable/types.js";
 import { DeviceFrameOverlay } from "./DeviceFrameOverlay.js";
-import { calculatePreviewFit } from "./previewSizing.js";
+import { calculatePreviewFit, type PreviewFit } from "./previewSizing.js";
 
 interface PreviewPanelProps {
   renderable: RenderableNode | null;
   frame: number;
+  onFitChange?: (fit: PreviewFit) => void;
   showPhoneFrame: boolean;
 }
 
@@ -19,6 +20,7 @@ function numberValue(value: unknown): number | undefined {
 export function PreviewPanel({
   renderable,
   frame,
+  onFitChange,
   showPhoneFrame,
 }: PreviewPanelProps) {
   const viewportHostRef = useRef<HTMLDivElement | null>(null);
@@ -51,6 +53,10 @@ export function PreviewPanel({
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
+
+  useEffect(() => {
+    onFitChange?.(fit);
+  }, [fit.height, fit.scale, fit.width, onFitChange]);
 
   return (
     <section className="panel preview-panel">

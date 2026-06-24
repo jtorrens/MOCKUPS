@@ -4,8 +4,10 @@ import {
   type DebugOptions,
   type DebugPayload,
   type DebugSelection,
+  type RenderFrameResult,
 } from "../api/client.js";
 import { PreviewPanel } from "../preview/PreviewPanel.js";
+import type { PreviewFit } from "../preview/previewSizing.js";
 
 interface AppPreviewPanelProps {
   options: DebugOptions;
@@ -46,14 +48,9 @@ export function AppPreviewPanel({
   error,
 }: AppPreviewPanelProps) {
   const [showPhoneFrame, setShowPhoneFrame] = useState(true);
+  const [previewFit, setPreviewFit] = useState<PreviewFit | null>(null);
   const [renderBusy, setRenderBusy] = useState(false);
-  const [renderResult, setRenderResult] = useState<{
-    url: string;
-    filePath: string;
-    outputHeight: number;
-    outputScale: number;
-    outputWidth: number;
-  } | null>(null);
+  const [renderResult, setRenderResult] = useState<RenderFrameResult | null>(null);
   const [renderError, setRenderError] = useState("");
   const episodes = options.episodes.filter(
     (episode) => episode.productionId === selection.productionId,
@@ -95,6 +92,15 @@ export function AppPreviewPanel({
               <span title={previewContext.themeId}>
                 Theme: {previewContext.themeName} · {previewContext.themeMode}
               </span>
+              {payload?.renderable ? (
+                <span>
+                  Render: {payload.renderable.box?.width ?? 1290}×
+                  {payload.renderable.box?.height ?? 2796}
+                </span>
+              ) : null}
+              {previewFit ? (
+                <span>Zoom: {previewFit.scale.toFixed(3)}×</span>
+              ) : null}
             </div>
           ) : null}
         </div>
@@ -105,7 +111,7 @@ export function AppPreviewPanel({
               checked={showPhoneFrame}
               onChange={(event) => setShowPhoneFrame(event.target.checked)}
             />
-            Border
+            Frame
           </label>
           <button
             className="preview-render-button"
@@ -119,12 +125,10 @@ export function AppPreviewPanel({
                 includeFrame: showPhoneFrame,
               })
                 .then((result) => {
+                  const separator = result.url.includes("?") ? "&" : "?";
                   setRenderResult({
-                    url: `${result.url}?t=${Date.now()}`,
-                    filePath: result.filePath,
-                    outputHeight: result.outputHeight,
-                    outputScale: result.outputScale,
-                    outputWidth: result.outputWidth,
+                    ...result,
+                    url: `${result.url}${separator}t=${Date.now()}`,
                   });
                 })
                 .catch((error: Error) => {
@@ -340,9 +344,11 @@ export function AppPreviewPanel({
           </a>
           <span>
             {renderResult.outputWidth}×{renderResult.outputHeight} · scale{" "}
-            {renderResult.outputScale}
+            {renderResult.outputScale} · {renderResult.includeFrame ? "with frame" : "no frame"}
           </span>
-          <span title={renderResult.filePath}>{renderResult.filePath}</span>
+          <span title={renderResult.filePath}>
+            {renderResult.relativeFilePath ?? renderResult.filePath}
+          </span>
         </div>
       ) : null}
       {payload?.warnings.length ? (
@@ -356,6 +362,7 @@ export function AppPreviewPanel({
       <PreviewPanel
         renderable={payload?.renderable ?? null}
         frame={selection.frame}
+        onFitChange={setPreviewFit}
         showPhoneFrame={showPhoneFrame}
       />
     </aside>
