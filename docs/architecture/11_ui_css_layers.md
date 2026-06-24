@@ -32,6 +32,7 @@ The transitional global stylesheet exposes a small set of CSS variables in `:roo
 - `--field-label-color`: shared editor field label color.
 - `--field-readonly-color`: shared read-only field value color.
 - `--field-readonly-background`: shared read-only field background.
+- `--field-readonly-border-color`: shared read-only field border color.
 - `--restore-button-border`: shared restore button border.
 - `--restore-button-background`: shared restore button background.
 - `--restore-button-color`: shared restore button glyph color.
@@ -114,6 +115,7 @@ The transitional global stylesheet exposes a small set of CSS variables in `:roo
 - `--editor-input-placeholder-color`: central editor editable field placeholder color.
 - `--editor-input-focus-border-color`: central editor editable field focus border color.
 - `--editor-input-focus-shadow`: central editor editable field focus ring.
+- `--editor-accent-color`: central editor form control accent color.
 - `--editor-button-border`: central editor secondary/action button border.
 - `--editor-button-background`: central editor secondary/action button background.
 - `--editor-button-color`: central editor secondary/action button text color.

@@ -23,8 +23,9 @@
   --pill-background: #f7f9fc;
   --pill-color: #343b48;
   --field-label-color: #475467;
-  --field-readonly-color: #15171c;
-  --field-readonly-background: #ffffff;
+  --field-readonly-color: #667085;
+  --field-readonly-background: #fbfcfd;
+  --field-readonly-border-color: #e5e9f0;
   --restore-button-border: 1px solid #d9dee7;
   --restore-button-background: #ffffff;
   --restore-button-color: #22262f;
@@ -107,6 +108,7 @@
   --editor-input-placeholder-color: #8a94a6;
   --editor-input-focus-border-color: #8fa2ff;
   --editor-input-focus-shadow: 0 0 0 3px rgba(59, 102, 255, 0.1);
+  --editor-accent-color: #6372f0;
   --editor-button-border: 1px solid #d9dee7;
   --editor-button-background: #ffffff;
   --editor-button-color: #22262f;
@@ -184,8 +186,9 @@
   --pill-background: #393b40;
   --pill-color: #dfddd6;
   --field-label-color: #b9b5ad;
-  --field-readonly-color: #e0ded8;
-  --field-readonly-background: #34363b;
+  --field-readonly-color: #aaa69d;
+  --field-readonly-background: #303236;
+  --field-readonly-border-color: #464950;
   --restore-button-border: 1px solid #565a62;
   --restore-button-background: #383a3f;
   --restore-button-color: #dfddd6;
@@ -226,6 +229,7 @@
   --editor-input-placeholder-color: #8f8b84;
   --editor-input-focus-border-color: #7f8fad;
   --editor-input-focus-shadow: 0 0 0 3px rgba(127, 143, 173, 0.16);
+  --editor-accent-color: #7f8fad;
   --editor-button-border: 1px solid #565a62;
   --editor-button-background: #383a3f;
   --editor-button-color: #e0ded8;
@@ -3295,6 +3299,19 @@ button {
   box-shadow: none !important;
 }
 
+.editor-workspace .app-field.is-readonly input:disabled,
+.editor-workspace .app-field.is-readonly select:disabled,
+.editor-workspace .app-field.is-readonly textarea:disabled,
+.editor-workspace .app-field input:disabled,
+.editor-workspace .app-field select:disabled,
+.editor-workspace .app-field textarea:disabled {
+  border-color: var(--field-readonly-border-color, #e5e9f0) !important;
+  color: var(--field-readonly-color, #667085) !important;
+  background: var(--field-readonly-background, #fbfcfd) !important;
+  opacity: 1;
+  cursor: default;
+}
+
 .editor-workspace .app-field input::placeholder,
 .editor-workspace .app-field textarea::placeholder,
 .editor-workspace .json-tree-node input::placeholder,
@@ -3557,8 +3574,9 @@ body,
 .record-editor .app-field.is-readonly input:disabled,
 .record-editor .app-field.is-readonly select:disabled,
 .record-editor .app-field.is-readonly textarea:disabled {
-  color: var(--field-readonly-color, #15171c) !important;
-  background: var(--field-readonly-background, #ffffff) !important;
+  border-color: var(--field-readonly-border-color, #e5e9f0) !important;
+  color: var(--field-readonly-color, #667085) !important;
+  background: var(--field-readonly-background, #fbfcfd) !important;
   opacity: 1;
   cursor: default;
 }
@@ -3571,7 +3589,7 @@ body,
   height: 16px !important;
   justify-self: start;
   align-self: center;
-  accent-color: #6372f0;
+  accent-color: var(--editor-accent-color, #6372f0);
 }
 
 .actor-color-control {
