@@ -1,19 +1,10 @@
 import { useState } from "react";
-import type { DebugOptions, DebugPayload, DebugSelection } from "../api/client.js";
 import { PreviewOptionsCard } from "./PreviewOptionsCard.js";
 import { PreviewOutputStack } from "./PreviewOutputStack.js";
 import { PreviewPanel } from "./PreviewPanel.js";
 import type { PreviewFit } from "./previewSizing.js";
+import type { RightPreviewShellProps } from "./types.js";
 import { usePreviewFrameRender } from "./usePreviewFrameRender.js";
-
-export interface RightPreviewShellProps {
-  options: DebugOptions;
-  selection: DebugSelection;
-  payload: DebugPayload | null;
-  busy: boolean;
-  onSelectionChange: (selection: DebugSelection) => void;
-  error?: string;
-}
 
 export function RightPreviewShell({
   options,

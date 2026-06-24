@@ -2995,9 +2995,10 @@ button {
   place-items: center;
   overflow: hidden;
   padding: 18px;
-  border: 0;
-  border-radius: 34px;
+  border: 1px solid #dfe3eb;
+  border-radius: 16px;
   background: #ffffff;
+  box-shadow: 0 2px 8px rgba(21, 30, 50, 0.045);
 }
 
 .preview-viewport {
