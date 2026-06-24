@@ -923,10 +923,6 @@ body {
   padding-left: 10px;
 }
 
-.tree-leaf {
-  color: #c5ccdc;
-}
-
 .record-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -957,16 +953,6 @@ body {
   letter-spacing: 0.08em;
 }
 
-.app-field.state-dirty em {
-  color: var(--editor-warning-color, #f0cb6d);
-}
-
-.app-field.state-saving em {
-  color: #94a2ff;
-}
-
-.app-field.state-invalid em,
-.app-field.state-failed em,
 .app-field strong {
   color: #ff8d9a;
 }
@@ -1619,8 +1605,7 @@ textarea {
 }
 
 .panel h2,
-.panel h3,
-.section-title h2 {
+.panel h3 {
   margin: 0;
   letter-spacing: -0.035em;
 }
@@ -2133,7 +2118,6 @@ body {
 }
 
 .record-id,
-.frame-badge,
 .status-dot,
 .validation-chip,
 .read-only-chip {
@@ -2681,9 +2665,7 @@ body {
 
 .read-only-chip,
 .validation-chip,
-.dirty-indicator,
-.status-dot,
-.frame-badge {
+.status-dot {
   color: var(--editor-chip-color, #667085);
   background: var(--editor-chip-background, #f7f8fa) !important;
   border-color: var(--editor-chip-border-color, #dfe3eb);
@@ -3187,7 +3169,6 @@ body,
   font-size: 11px;
 }
 
-.record-editor .app-field.inspector-field-row.state-override,
 .record-editor .app-field.inspector-field-row.json-override {
   border: var(--override-border, 1px solid #e4ad68) !important;
   border-radius: 12px !important;
@@ -3196,12 +3177,10 @@ body,
   box-shadow: var(--override-shadow, 0 2px 6px rgba(180, 83, 9, 0.07)) !important;
 }
 
-.record-editor .app-field.inspector-field-row.state-override .inspector-field-label span,
 .record-editor .app-field.inspector-field-row.json-override .inspector-field-label span {
   color: var(--override-color, #b45309);
 }
 
-.record-editor .content-field-row.state-override,
 .record-editor .content-field-row.json-override {
   border: var(--override-border, 1px solid #e4ad68) !important;
   border-radius: 12px !important;
