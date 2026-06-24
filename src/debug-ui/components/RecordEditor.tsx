@@ -1819,7 +1819,7 @@ export function RecordEditor({
                       }`}
                       aria-hidden="true"
                     >
-                      {isOpen ? "⌃" : "›"}
+                      ›
                     </span>
                   </button>
                 </div>

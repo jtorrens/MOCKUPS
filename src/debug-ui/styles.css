@@ -1211,10 +1211,13 @@ body {
   place-items: center;
   font-size: var(--accordion-chevron-size, 24px);
   font-weight: var(--accordion-chevron-weight, 450);
+  transform-origin: center;
+  transition: transform 120ms ease;
 }
 
 .record-editor-content-chevron.is-open {
   font-size: var(--accordion-chevron-size, 24px);
+  transform: rotate(90deg);
 }
 
 .record-editor-content-chevron-button {
