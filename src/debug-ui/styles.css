@@ -175,9 +175,6 @@
   --editor-heading-backdrop-filter: blur(12px);
   --editor-heading-title-color: #12141a;
   --editor-heading-eyebrow-color: #667085;
-  --editor-record-id-border: 1px solid #dfe3eb;
-  --editor-record-id-background: #f7f8fa;
-  --editor-record-id-color: #667085;
   --workspace-breadcrumb-border: 1px solid #dfe3eb;
   --workspace-breadcrumb-radius: 14px;
   --workspace-breadcrumb-background: rgba(255, 255, 255, 0.92);
@@ -438,9 +435,6 @@
   --editor-heading-background: rgba(52, 54, 59, 0.92);
   --editor-heading-title-color: #ece9e2;
   --editor-heading-eyebrow-color: #aaa69d;
-  --editor-record-id-border: 1px solid #565a62;
-  --editor-record-id-background: #383a3f;
-  --editor-record-id-color: #aaa69d;
   --workspace-breadcrumb-border: 1px solid #4a4d54;
   --workspace-breadcrumb-background: rgba(52, 54, 59, 0.92);
   --workspace-breadcrumb-color: #d8d5ce;
@@ -2304,34 +2298,29 @@ body {
   position: sticky;
   top: 0;
   z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
   margin: 0 0 12px;
   border: var(--editor-heading-border, 1px solid #dfe3eb);
   border-radius: var(--editor-heading-radius, 16px);
-  padding: 14px 16px;
+  padding: var(--editor-heading-padding, 10px 14px);
   background: var(--editor-heading-background, rgba(255, 255, 255, 0.92));
   backdrop-filter: var(--editor-heading-backdrop-filter, blur(12px));
 }
 
 .record-editor > .record-editor-heading h2 {
+  margin: 0;
   color: var(--editor-heading-title-color, #12141a);
+  font-size: var(--editor-heading-title-font-size, 18px);
+  line-height: var(--editor-heading-title-line-height, 1.16);
 }
 
 .record-editor > .record-editor-heading .record-editor-eyebrow {
   color: var(--editor-heading-eyebrow-color, #667085);
-}
-
-.record-editor > .record-editor-heading .record-editor-id {
-  max-width: 280px;
-  overflow: hidden;
-  border-radius: 999px;
-  padding: 7px 11px;
-  border: var(--editor-record-id-border, 1px solid #dfe3eb);
-  color: var(--editor-record-id-color, #667085);
-  background: var(--editor-record-id-background, #f7f8fa);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: "SFMono-Regular", Consolas, monospace;
-  font-size: 11px;
+  font-size: var(--editor-heading-eyebrow-font-size, 11px);
+  line-height: var(--editor-heading-eyebrow-line-height, 1.2);
 }
 
 .tab-icon {

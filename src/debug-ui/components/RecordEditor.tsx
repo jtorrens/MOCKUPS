@@ -3580,7 +3580,6 @@ export function RecordEditor({
             <span className="record-editor-eyebrow">App editor</span>
             <h2>{String(record[table.titleColumn] ?? record.id)}</h2>
           </div>
-          <span className="record-editor-id">{record.id}</span>
         </div>
         <div className="editor-sections">
           <div className="editor-section-card">
@@ -3699,7 +3698,6 @@ export function RecordEditor({
             <span className="record-editor-eyebrow">Theme editor</span>
             <h2>{String(record[table.titleColumn] ?? record.id)}</h2>
           </div>
-          <span className="record-editor-id">{record.id}</span>
         </div>
         <div className="editor-sections">
           <div className="editor-section-card">
@@ -3885,7 +3883,6 @@ export function RecordEditor({
             <span className="record-editor-eyebrow">Module instance editor</span>
             <h2>{String(record[table.titleColumn] ?? record.id)}</h2>
           </div>
-          <span className="record-editor-id">{record.id}</span>
         </div>
         <div className="editor-sections">
           <div className="editor-section-card">
@@ -3939,7 +3936,6 @@ export function RecordEditor({
             <span className="record-editor-eyebrow">Screen instance editor</span>
             <h2>{String(record[table.titleColumn] ?? record.id)}</h2>
           </div>
-          <span className="record-editor-id">{record.id}</span>
         </div>
         <div className="editor-sections">
           <div className="editor-section-card">
@@ -4039,7 +4035,6 @@ export function RecordEditor({
             <span className="record-editor-eyebrow">Screen module editor</span>
             <h2>{String(record[table.titleColumn] ?? record.id)}</h2>
           </div>
-          <span className="record-editor-id">{record.id}</span>
         </div>
         <div className="editor-sections">
           <div className="editor-section-card">
@@ -4153,7 +4148,6 @@ export function RecordEditor({
           </span>
           <h2>{String(record[table.titleColumn] ?? record.id)}</h2>
         </div>
-        <span className="record-editor-id">{record.id}</span>
       </div>
       <div className="editor-sections">
         <div className="editor-section-card">
