@@ -236,18 +236,6 @@
   background: var(--topbar-menu-button-hover-background, #f8fafc);
 }
 
-/* Keep left-panel overlay panels with explicit chrome only. */
-.left-panel-shell .panel.production-modal,
-.left-panel-shell .panel.theme-family-modal {
-  border: var(--content-card-border, var(--card-border, 1px solid #dfe3eb));
-  border-radius: var(--card-radius, 14px);
-  background: var(--content-card-background, var(--card-background, #ffffff));
-  box-shadow: var(
-    --editor-subsection-shadow,
-    var(--card-shadow, 0 16px 45px rgba(21, 30, 50, 0.07))
-  );
-}
-
 .left-panel-shell .modal-backdrop {
   position: fixed;
   z-index: 50;

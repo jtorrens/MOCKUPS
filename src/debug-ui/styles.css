@@ -823,79 +823,6 @@ body {
   height: 150px;
 }
 
-.entity-browser,
-.project-browser {
-  min-height: 260px;
-  overflow: hidden;
-}
-
-.project-browser:not(.project-browser-root) {
-  display: grid;
-  grid-template-columns: 154px minmax(0, 1fr);
-  align-items: start;
-  gap: 12px;
-  min-height: 0;
-  padding: 12px;
-}
-
-.navigation-rail .project-browser:not(.project-browser-root) {
-  grid-template-columns: 1fr;
-  overflow: hidden;
-}
-
-.navigation-rail .record-list {
-  grid-template-columns: 1fr;
-}
-
-.tab-list,
-.record-list {
-  max-height: 360px;
-  overflow: auto;
-  padding: 12px;
-}
-
-.tab-list {
-  border-right: 1px solid #293041;
-  background: rgba(12, 15, 22, 0.48);
-}
-
-.tab-list button,
-.record-list button {
-  width: 100%;
-  border: 1px solid var(--browser-row-border-color, transparent);
-  border-radius: 10px;
-  padding: 10px;
-  color: var(--browser-row-color, #aeb6c8);
-  background: var(--browser-row-background, transparent);
-  text-align: left;
-}
-
-.tab-list button {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 4px;
-  font-size: 13px;
-}
-
-.tab-list button span {
-  color: #6f778a;
-}
-
-.tab-list button.active,
-.record-list button.active {
-  border-color: var(--browser-row-active-border-color, #38415a);
-  color: var(--browser-row-active-color, #ffffff);
-  background: var(--browser-row-active-background, #171b26);
-}
-
-.record-list button.editing {
-  border-color: var(--browser-row-editing-border-color, #6b78ff);
-  color: var(--browser-row-editing-color, #ffffff);
-  background: var(--browser-row-editing-background, #171b26);
-  box-shadow: inset 3px 0 0 var(--browser-row-editing-accent-color, #8190ff);
-}
-
 .project-browser-root .project-tree-view {
   display: grid;
   align-content: start;
@@ -935,28 +862,6 @@ body {
 
 .compact-empty {
   padding: 10px;
-}
-
-.record-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  align-content: start;
-  gap: 8px;
-}
-
-.record-list button strong,
-.record-list button small {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.record-list button small {
-  margin-top: 5px;
-  color: #727b8d;
-  font-family: "SFMono-Regular", Consolas, monospace;
-  font-size: 11px;
 }
 
 .inspector-field-row.record-editor-field em,
@@ -1643,16 +1548,9 @@ textarea {
   font: inherit;
 }
 
-.panel-heading,
 .frame-control > div {
   display: flex;
   align-items: center;
-}
-
-.panel h2,
-.panel h3 {
-  margin: 0;
-  letter-spacing: -0.035em;
 }
 
 .eyebrow {
@@ -1704,35 +1602,6 @@ button {
 button:disabled {
   cursor: default;
   opacity: 0.38;
-}
-
-.panel {
-  border: var(--card-border, 1px solid #2a3141);
-  border-radius: 16px;
-  background: var(--card-background, #34363b);
-  box-shadow: var(--card-shadow, 0 18px 50px rgba(0, 0, 0, 0.18));
-}
-
-.selection-panel,
-.json-panel,
-.inspector-panel {
-  padding: 20px;
-}
-
-.panel-heading {
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 18px;
-}
-
-.panel-heading.compact {
-  margin-bottom: 12px;
-}
-
-.selection-grid {
-  display: grid;
-  grid-template-columns: 1fr 1.2fr 1.25fr 1.65fr;
-  gap: 14px;
 }
 
 label {
@@ -1804,36 +1673,6 @@ dd {
   font-size: 13px;
 }
 
-.json-panel h3,
-.inspector-panel h3 {
-  font-size: 17px;
-}
-
-.json-panel textarea {
-  width: 100%;
-  min-height: 340px;
-  resize: vertical;
-  border: 1px solid #2c3240;
-  border-radius: 10px;
-  padding: 14px;
-  outline: none;
-  color: #cdd4e4;
-  background: #0b0e14;
-  font-family: "SFMono-Regular", Consolas, monospace;
-  font-size: 12px;
-  line-height: 1.55;
-  tab-size: 2;
-}
-
-.json-panel textarea:focus {
-  border-color: #6979f5;
-  box-shadow: 0 0 0 3px rgba(105, 121, 245, 0.12);
-}
-
-.json-panel.has-error {
-  border-color: #6b3038;
-}
-
 .validation-chip.invalid {
   border-color: #793943;
   color: #ff919d;
@@ -1844,8 +1683,7 @@ dd {
   color: #86a1ff;
 }
 
-.field-error,
-.inspector-panel pre {
+.field-error {
   margin: 10px 0 0;
   white-space: pre-wrap;
   word-break: break-word;
@@ -1856,16 +1694,6 @@ dd {
 
 .field-error {
   color: #ff8b98;
-}
-
-.inspector-panel pre {
-  max-height: 590px;
-  overflow: auto;
-  border: 1px solid #2c3240;
-  border-radius: 10px;
-  padding: 14px;
-  color: #aeb8cc;
-  background: #0b0e14;
 }
 
 .alert {
@@ -2149,24 +1977,6 @@ body {
   background: var(--topbar-menu-button-hover-background, #f8fafc);
 }
 
-.panel {
-  border: var(--card-border, 1px solid #dfe3eb);
-  background: var(--card-background, #ffffff);
-  box-shadow: var(--card-shadow, 0 16px 45px rgba(21, 30, 50, 0.07));
-}
-
-.panel-heading {
-  border-bottom: var(--editor-heading-border, 1px solid #edf0f4);
-  margin: -2px -2px 16px;
-  padding: 2px 2px 16px;
-}
-
-.panel h2,
-.panel h3,
-.panel-heading h2 {
-  color: var(--card-header-title-color, #12141a);
-}
-
 .record-id,
 .status-dot,
 .validation-chip,
@@ -2341,28 +2151,8 @@ body {
   padding: var(--editor-subsection-body-padding, 12px);
 }
 
-.record-list button.active {
-  border-color: var(--browser-row-active-border-color, #dfe3eb);
-  color: var(--browser-row-active-color, #15171c);
-  background: var(--browser-row-active-background, #f7f8fb);
-}
-
-.record-list button.editing {
-  border-color: var(--browser-row-editing-border-color, #8fa2ff);
-  color: var(--browser-row-editing-color, #111318);
-  background: var(--browser-row-editing-background, #ffffff);
-  box-shadow:
-    inset 3px 0 0 var(--browser-row-editing-accent-color, #345dff);
-}
-
-.project-browser-root .project-tree-record .tree-record-copy small,
-.record-list button small {
+.project-browser-root .project-tree-record .tree-record-copy small {
   color: var(--browser-row-muted-color, #7b8494);
-}
-
-.record-list {
-  border-color: var(--browser-row-surface-border-color, #e1e5ec);
-  background: var(--browser-row-surface-background, #ffffff);
 }
 
 /* UI LAYER: Central record editor and section navigation. */
@@ -2607,8 +2397,6 @@ body {
   font-weight: 600;
 }
 
-.json-panel textarea,
-.inspector-panel pre,
 .json-tree-node,
 .json-tree-node summary {
   color: var(--editor-text-color, #15171c);
@@ -2621,11 +2409,7 @@ body {
   color: var(--editor-alert-error-color, #b4232e);
 }
 
-.json-tree-node,
-.json-panel,
-.inspector-panel,
-.selection-panel,
-.tab-list {
+.json-tree-node {
   color: var(--editor-text-color, #15171c);
   background: var(--editor-surface-background, #ffffff) !important;
   border-color: var(--editor-surface-border-color, #dfe3eb);
@@ -2636,9 +2420,7 @@ body {
 .json-tree-node textarea,
 .json-color-pair input,
 .token-override-input input,
-.token-override-input select,
-.json-panel textarea,
-.inspector-panel pre {
+.token-override-input select {
   color: var(--editor-input-color, #15171c) !important;
   background: var(--editor-input-background, #ffffff) !important;
   border-color: var(--editor-input-border-color, #d9dee7) !important;
@@ -2749,8 +2531,7 @@ body {
 .editor-workspace .json-add-row input,
 .editor-workspace .token-override-input input,
 .editor-workspace .token-override-input select,
-.editor-workspace .json-color-pair input,
-.editor-workspace .json-panel textarea {
+.editor-workspace .json-color-pair input {
   border-color: var(--editor-input-border-color, #cfd6e2) !important;
   color: var(--editor-input-color, #15171c) !important;
   background: var(--editor-input-background, #f7f8fb) !important;
@@ -2779,8 +2560,7 @@ body {
 .editor-workspace .json-value-control::placeholder,
 .editor-workspace .json-value-textarea::placeholder,
 .editor-workspace .json-add-row input::placeholder,
-.editor-workspace .token-override-input input::placeholder,
-.editor-workspace .json-panel textarea::placeholder {
+.editor-workspace .token-override-input input::placeholder {
   color: var(--editor-input-placeholder-color, #8a94a6);
 }
 
@@ -2798,8 +2578,7 @@ body {
 .editor-workspace .json-add-row input:focus,
 .editor-workspace .token-override-input input:focus,
 .editor-workspace .token-override-input select:focus,
-.editor-workspace .json-color-pair input:focus,
-.editor-workspace .json-panel textarea:focus {
+.editor-workspace .json-color-pair input:focus {
   border-color: var(--editor-input-focus-border-color, #8fa2ff) !important;
   box-shadow: var(--editor-input-focus-shadow, 0 0 0 3px rgba(59, 102, 255, 0.1)) !important;
   outline: none;
@@ -3674,8 +3453,7 @@ body,
 }
 
 .project-browser-root .workspace-accordion-card.editing .workspace-accordion-copy strong,
-.project-browser-root .project-tree-record.editing .tree-record-copy strong,
-.record-list button.editing strong {
+.project-browser-root .project-tree-record.editing .tree-record-copy strong {
   color: var(--browser-editing-label-color, #2554d8);
 }
 
