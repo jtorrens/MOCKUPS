@@ -1941,6 +1941,28 @@ body {
   padding: 22px;
   border-right: var(--navigation-panel-border, 1px solid #dde1e8);
   background: var(--navigation-panel-background, #fbfcfd);
+  scrollbar-color: var(--scrollbar-thumb-background, #cfd6e2)
+    var(--scrollbar-track-background, transparent);
+  scrollbar-width: thin;
+  overflow: auto;
+}
+
+.navigation-rail::-webkit-scrollbar {
+  width: 10px;
+}
+
+.navigation-rail::-webkit-scrollbar-track {
+  background: var(--scrollbar-track-background, transparent);
+}
+
+.navigation-rail::-webkit-scrollbar-thumb {
+  border: 3px solid var(--navigation-panel-background, #fbfcfd);
+  border-radius: 999px;
+  background: var(--scrollbar-thumb-background, #cfd6e2);
+}
+
+.navigation-rail::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover-background, #aeb8c8);
 }
 
 .editor-workspace {

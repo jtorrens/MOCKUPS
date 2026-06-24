@@ -13,6 +13,27 @@
   border-left: var(--right-panel-border, 1px solid #dde1e8);
   padding: var(--app-panel-padding, 22px);
   background: var(--right-panel-background, #fbfcfd);
+  scrollbar-color: var(--scrollbar-thumb-background, #cfd6e2)
+    var(--scrollbar-track-background, transparent);
+  scrollbar-width: thin;
+}
+
+.right-preview-shell::-webkit-scrollbar {
+  width: 10px;
+}
+
+.right-preview-shell::-webkit-scrollbar-track {
+  background: var(--scrollbar-track-background, transparent);
+}
+
+.right-preview-shell::-webkit-scrollbar-thumb {
+  border: 3px solid var(--right-panel-background, #fbfcfd);
+  border-radius: 999px;
+  background: var(--scrollbar-thumb-background, #cfd6e2);
+}
+
+.right-preview-shell::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover-background, #aeb8c8);
 }
 
 .preview-options-card {
