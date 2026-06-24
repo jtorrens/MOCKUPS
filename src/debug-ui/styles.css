@@ -3353,8 +3353,72 @@ body,
   padding: 8px 9px;
 }
 
+.project-browser .workspace-accordions {
+  display: grid;
+  gap: 8px;
+}
+
+.project-browser .workspace-accordion-card {
+  overflow: hidden;
+  border: var(--card-border, 1px solid #dfe3eb);
+  border-radius: var(--card-radius, 14px);
+  background: var(--card-background, #ffffff);
+  box-shadow: var(--card-shadow, 0 2px 8px rgba(21, 30, 50, 0.04));
+}
+
 .project-browser .workspace-accordion-trigger {
+  display: grid;
   grid-template-columns: 30px minmax(0, 1fr) auto auto !important;
+  gap: var(--card-header-gap, 12px);
+  align-items: center;
+  width: 100%;
+  min-height: var(--card-header-min-height, 64px);
+  border: 0 !important;
+  border-radius: 0 !important;
+  padding: var(--card-header-padding-block, 13px)
+    var(--card-header-padding-inline, 16px);
+  color: var(--card-header-title-color, #12141a) !important;
+  background: var(--card-header-background, #ffffff) !important;
+  text-align: left;
+  box-shadow: none !important;
+}
+
+.project-browser .workspace-accordion-trigger[aria-expanded="true"] {
+  color: var(--card-header-title-color, #12141a) !important;
+  background: var(--card-header-background, #ffffff) !important;
+}
+
+.project-browser .workspace-accordion-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.project-browser .workspace-accordion-copy strong,
+.project-browser .workspace-accordion-copy small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-browser .workspace-accordion-copy strong {
+  color: var(--card-header-title-color, #12141a);
+  font-family: var(--card-header-font-family, inherit);
+  font-size: var(--card-header-title-font-size, 15px);
+  font-weight: var(--card-header-title-font-weight, 760);
+}
+
+.project-browser .workspace-accordion-copy small {
+  color: var(--card-header-summary-color, #667085);
+  font-family: var(--card-header-font-family, inherit);
+  font-size: var(--card-header-summary-font-size, 12px);
+  font-weight: var(--card-header-summary-font-weight, 500);
+}
+
+.project-browser .workspace-accordion-body {
+  border-top: var(--card-body-border, 1px solid #edf0f4);
+  padding: 12px;
 }
 
 .project-browser .workspace-accordion-actions {
@@ -3404,6 +3468,16 @@ body,
 .project-browser .tree-section-title > span {
   border: 0 !important;
   background: transparent !important;
+}
+
+.project-browser .workspace-accordion-icon svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .record-editor .theme-token-group-editor {
