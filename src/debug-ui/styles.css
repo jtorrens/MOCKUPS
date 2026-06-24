@@ -2851,6 +2851,9 @@ body {
   box-shadow: var(--override-shadow, 0 2px 6px rgba(180, 83, 9, 0.07)) !important;
 }
 
+.editor-workspace .record-editor-field-string,
+.editor-workspace .record-editor-field-number,
+.editor-workspace .record-editor-field-frameless,
 .editor-workspace .app-field-string,
 .editor-workspace .app-field-number,
 .editor-workspace .app-field-frameless {
@@ -3007,6 +3010,7 @@ body,
   box-shadow: none !important;
 }
 
+.record-editor .editor-section-body.record-editor-json-stack > .record-editor-field-frameless,
 .record-editor .editor-section-body.record-editor-json-stack > .app-field-frameless {
   border: 0 !important;
   background: transparent !important;
@@ -3721,6 +3725,7 @@ body,
   box-shadow: none !important;
 }
 
+.record-editor .theme-token-group-editor > .record-editor-field-frameless,
 .record-editor .theme-token-group-editor > .app-field-frameless,
 .record-editor .theme-token-group-editor .json-tree-editor,
 .record-editor .theme-token-group-editor .json-tree,

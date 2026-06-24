@@ -1954,7 +1954,7 @@ export function RecordEditor({
       return (
         <InspectorFieldRow
           key={field.column}
-          className={`record-editor-field app-field-${field.kind} state-${state} ${
+          className={`record-editor-field record-editor-field-${field.kind} state-${state} ${
             field.readonly ? "is-readonly" : ""
           }`}
           state={state === "invalid" || state === "failed" ? "invalid" : "default"}
@@ -1971,9 +1971,9 @@ export function RecordEditor({
     return (
       <div
         key={field.column}
-        className={`record-editor-field app-field-${field.kind} state-${state} ${
+        className={`record-editor-field record-editor-field-${field.kind} state-${state} ${
           rawOverride?.hideLabel && field.kind === "json"
-            ? "app-field-frameless"
+            ? "record-editor-field-frameless"
             : ""
         }`}
       >
@@ -2126,7 +2126,7 @@ export function RecordEditor({
     return (
       <InspectorFieldRow
         key={field.column}
-        className={`record-editor-field app-field-${field.kind} state-${state} ${
+        className={`record-editor-field record-editor-field-${field.kind} state-${state} ${
           hasOverride ? "json-override" : ""
         }`}
         state={
@@ -2180,7 +2180,7 @@ export function RecordEditor({
     return (
       <InspectorFieldRow
         key={field.column}
-        className="record-editor-field app-field-number is-readonly"
+        className="record-editor-field record-editor-field-number is-readonly"
         label={<span>{field.label}</span>}
         meta={
           calculatedDuration !== undefined ? (
@@ -2201,7 +2201,7 @@ export function RecordEditor({
     return (
       <InspectorFieldRow
         key="owner_device"
-        className="record-editor-field app-field-string is-readonly"
+        className="record-editor-field record-editor-field-string is-readonly"
         label={<span>Device</span>}
         control={<input disabled value={shotOwnerDeviceName() ?? ""} />}
       />
@@ -2245,7 +2245,7 @@ export function RecordEditor({
       <>
         <InspectorFieldRow
           key="transition_type"
-          className="record-editor-field app-field-string"
+          className="record-editor-field record-editor-field-string"
           label={<span>Transition</span>}
           control={
             <select
@@ -2268,7 +2268,7 @@ export function RecordEditor({
         />
         <InspectorFieldRow
           key="transition_duration"
-          className="record-editor-field app-field-number is-readonly"
+          className="record-editor-field record-editor-field-number is-readonly"
           label={<span>Duration frames</span>}
           meta={<code>Calculated from screen overlap</code>}
           control={<input disabled value={String(overlap)} />}
@@ -2342,7 +2342,7 @@ export function RecordEditor({
     return (
       <InspectorFieldRow
         key="actor_color"
-        className="record-editor-field app-field-string actor-color-field"
+        className="record-editor-field record-editor-field-string actor-color-field"
         label={<span>Color</span>}
         control={
           <div className="actor-color-control">
@@ -2396,7 +2396,7 @@ export function RecordEditor({
       <>
         <InspectorFieldRow
           key="actor_avatar_use_initials"
-          className="record-editor-field app-field-boolean"
+          className="record-editor-field record-editor-field-boolean"
           label={<span>Use initials</span>}
           control={
             <input
@@ -2410,7 +2410,7 @@ export function RecordEditor({
         />
         <InspectorFieldRow
           key="actor_avatar_file"
-          className="record-editor-field app-field-string"
+          className="record-editor-field record-editor-field-string"
           label={<span>Avatar image</span>}
           control={
             <div className="media-file-control actor-avatar-file-control">
@@ -2433,7 +2433,7 @@ export function RecordEditor({
         />
         <InspectorFieldRow
           key="actor_avatar_text_color"
-          className="record-editor-field app-field-string actor-color-field"
+          className="record-editor-field record-editor-field-string actor-color-field"
           label={<span>Avatar text color</span>}
           control={
             <div className="actor-color-control">
@@ -2478,7 +2478,7 @@ export function RecordEditor({
         </div>
         <InspectorFieldRow
           key="actor_avatar_scale"
-          className="record-editor-field app-field-number"
+          className="record-editor-field record-editor-field-number"
           label={<span>Avatar scale</span>}
           control={
             <input
@@ -2494,7 +2494,7 @@ export function RecordEditor({
         />
         <InspectorFieldRow
           key="actor_avatar_offset_x"
-          className="record-editor-field app-field-number"
+          className="record-editor-field record-editor-field-number"
           label={<span>Avatar offset X</span>}
           control={
             <input
@@ -2509,7 +2509,7 @@ export function RecordEditor({
         />
         <InspectorFieldRow
           key="actor_avatar_offset_y"
-          className="record-editor-field app-field-number"
+          className="record-editor-field record-editor-field-number"
           label={<span>Avatar offset Y</span>}
           control={
             <input
@@ -2663,7 +2663,7 @@ export function RecordEditor({
     return (
       <InspectorFieldRow
         key="render_preset_codec"
-        className="record-editor-field app-field-string"
+        className="record-editor-field record-editor-field-string"
         label={<span>{format === "image" ? "Image type" : "Codec"}</span>}
         control={
           <select
@@ -2702,7 +2702,7 @@ export function RecordEditor({
       return (
         <InspectorFieldRow
           key={field.column}
-          className="record-editor-field app-field-string"
+          className="record-editor-field record-editor-field-string"
           label={<span>Format</span>}
           control={
             <select
@@ -2737,7 +2737,7 @@ export function RecordEditor({
       return (
         <InspectorFieldRow
           key={field.column}
-          className="record-editor-field app-field-string"
+          className="record-editor-field record-editor-field-string"
           label={<span>FFmpeg args</span>}
           control={
             <textarea
@@ -2813,7 +2813,7 @@ export function RecordEditor({
           {renderField(field)}
           <InspectorFieldRow
             key="render_name"
-            className="record-editor-field app-field-string is-readonly"
+            className="record-editor-field record-editor-field-string is-readonly"
             label={<span>Render name</span>}
             control={<input disabled value={renderShotName()} />}
           />
@@ -3310,7 +3310,7 @@ export function RecordEditor({
         <>
           <InspectorFieldRow
             key="app_icon_file"
-            className="record-editor-field app-field-string"
+            className="record-editor-field record-editor-field-string"
             label={<span>App icon image</span>}
             control={
               <div className="media-file-control actor-avatar-file-control">
@@ -3347,7 +3347,7 @@ export function RecordEditor({
           </div>
           <InspectorFieldRow
             key="app_icon_scale"
-            className="record-editor-field app-field-number"
+            className="record-editor-field record-editor-field-number"
             label={<span>Icon scale</span>}
             control={
               <input
@@ -3363,7 +3363,7 @@ export function RecordEditor({
           />
           <InspectorFieldRow
             key="app_icon_offset_x"
-            className="record-editor-field app-field-number"
+            className="record-editor-field record-editor-field-number"
             label={<span>Icon offset X</span>}
             control={
               <input
@@ -3378,7 +3378,7 @@ export function RecordEditor({
           />
           <InspectorFieldRow
             key="app_icon_offset_y"
-            className="record-editor-field app-field-number"
+            className="record-editor-field record-editor-field-number"
             label={<span>Icon offset Y</span>}
             control={
               <input
@@ -3473,7 +3473,7 @@ export function RecordEditor({
       return (
         <div className="record-editor-field-stack record-editor-single-column wallpaper-editor">
           <InspectorFieldRow
-            className="record-editor-field app-field-string"
+            className="record-editor-field record-editor-field-string"
             label={<span>Kind</span>}
             control={
               <select
@@ -3488,7 +3488,7 @@ export function RecordEditor({
             }
           />
           <InspectorFieldRow
-            className="record-editor-field app-field-number"
+            className="record-editor-field record-editor-field-number"
             label={<span>Opacity</span>}
             control={
               <input
@@ -3506,7 +3506,7 @@ export function RecordEditor({
           {kind === "image" ? (
             <>
               <InspectorFieldRow
-                className="record-editor-field app-field-string"
+                className="record-editor-field record-editor-field-string"
                 label={<span>Image</span>}
                 control={
                   <div className="media-file-control actor-avatar-file-control">
@@ -3805,7 +3805,7 @@ export function RecordEditor({
           ].map(([label, key, fallback]) => (
             <InspectorFieldRow
               key={String(key)}
-              className="record-editor-field app-field-boolean"
+              className="record-editor-field record-editor-field-boolean"
               label={<span>{String(label)}</span>}
               control={
                 <input
@@ -3820,7 +3820,7 @@ export function RecordEditor({
           ))}
           <InspectorFieldRow
             key="initialScroll"
-            className="record-editor-field app-field-string"
+            className="record-editor-field record-editor-field-string"
             label={<span>Initial scroll</span>}
             control={
               <select
