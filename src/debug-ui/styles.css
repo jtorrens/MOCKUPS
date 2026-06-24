@@ -1823,52 +1823,6 @@ body {
   font-size: 12px;
 }
 
-.screen-template-config-editor {
-  display: grid;
-  gap: 12px;
-  padding: 10px;
-}
-
-.template-editor-section {
-  overflow: hidden;
-  border: 1px solid #242a38;
-  border-radius: 12px;
-  background: rgba(8, 10, 15, 0.44);
-}
-
-.template-editor-heading {
-  display: grid;
-  gap: 4px;
-  border-bottom: 1px solid #202634;
-  padding: 12px;
-}
-
-.template-editor-heading strong {
-  color: #f0f3fb;
-  font-size: 13px;
-}
-
-.template-editor-heading span {
-  color: #778096;
-  font-size: 12px;
-}
-
-.template-config-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  padding: 12px;
-}
-
-.template-config-grid label {
-  display: grid;
-  gap: 7px;
-}
-
-.template-config-grid select {
-  margin: 0;
-}
-
 .json-editor-error {
   display: block;
   margin: 8px 10px 10px;
@@ -3065,7 +3019,6 @@ button {
 .app-field,
 .json-tree-node,
 .hierarchy-panel,
-.template-editor-section,
 .context-panel,
 .json-panel,
 .inspector-panel,
@@ -3087,7 +3040,6 @@ button {
 .json-color-pair input,
 .token-override-input input,
 .token-override-input select,
-.template-config-grid select,
 .json-panel textarea,
 .inspector-panel pre {
   color: var(--editor-input-color, #15171c) !important;
@@ -3096,7 +3048,6 @@ button {
 }
 
 .json-tree-node summary,
-.template-editor-heading,
 .hierarchy-panel summary,
 .hierarchy-panel-body {
   color: var(--editor-text-color, #15171c);
@@ -3178,7 +3129,6 @@ button {
 
 .editor-workspace .json-tree-group summary,
 .editor-workspace .json-tree-node summary,
-.editor-workspace .template-editor-heading,
 .editor-workspace .hierarchy-panel summary,
 .editor-workspace .hierarchy-panel-body {
   border-color: var(--editor-header-surface-border-color, #dde3ec) !important;
