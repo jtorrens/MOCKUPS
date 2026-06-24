@@ -745,23 +745,6 @@ body {
   padding: 4px 2px 8px;
 }
 
-.tree-toolbar {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  border: 1px solid #2b3344;
-  border-radius: 12px;
-  padding: 8px 9px;
-  color: #cfd6e6;
-  background: rgba(18, 22, 31, 0.94);
-  font-size: 12px;
-  font-weight: 750;
-}
-
 .tree-node {
   border: 1px solid #2b3344;
   border-radius: 13px;
@@ -2094,14 +2077,6 @@ button {
   padding: 8px 0 0;
 }
 
-.tree-toolbar {
-  border: 0;
-  padding: 12px 2px 6px;
-  color: #20242c;
-  background: transparent;
-  font-size: 15px;
-}
-
 .tree-node {
   border: 0;
   background: transparent;
@@ -2162,24 +2137,7 @@ button {
   min-width: 0;
 }
 
-.tree-section-title {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-}
-
-.tree-section-title > span {
-  display: grid;
-  width: 28px;
-  height: 28px;
-  place-items: center;
-  border: 1px solid #dfe3eb;
-  border-radius: 9px;
-  background: #ffffff;
-}
-
-.tree-record-icon svg,
-.tree-section-title svg {
+.tree-record-icon svg {
   width: 19px;
   height: 19px;
   fill: none;
@@ -3456,11 +3414,6 @@ body,
 }
 
 .project-browser .workspace-accordion-icon,
-.project-browser .tree-section-title > span {
-  border: 0 !important;
-  background: transparent !important;
-}
-
 .project-browser .workspace-accordion-icon svg {
   width: 19px;
   height: 19px;
