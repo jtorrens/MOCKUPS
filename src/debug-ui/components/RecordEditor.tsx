@@ -688,6 +688,21 @@ export function RecordEditor({
     setOpenContentItems({});
   }, [record?.id, table.id]);
 
+  function toggleExclusiveContentItem(groupKey: string, openKey: string, isOpen: boolean) {
+    const groupPrefix = `${record?.id ?? "record"}:${groupKey}:`;
+    setOpenContentItems((current) => {
+      const nextEntries = Object.entries(current).filter(
+        ([key]) => !key.startsWith(groupPrefix),
+      );
+      return isOpen
+        ? Object.fromEntries(nextEntries)
+        : {
+            ...Object.fromEntries(nextEntries),
+            [openKey]: true,
+          };
+    });
+  }
+
   const editableFields = useMemo(
     () => table.fields.filter((field) => !field.readonly),
     [table],
@@ -1759,10 +1774,7 @@ export function RecordEditor({
                     className="record-editor-content-item-header"
                     aria-expanded={isOpen}
                     onClick={() =>
-                      setOpenContentItems((current) => ({
-                        ...current,
-                        [openKey]: !current[openKey],
-                      }))
+                      toggleExclusiveContentItem(groupKey, openKey, isOpen)
                     }
                   >
                     <span>
@@ -1807,10 +1819,7 @@ export function RecordEditor({
                     aria-label={isOpen ? "Collapse item" : "Expand item"}
                     aria-expanded={isOpen}
                     onClick={() =>
-                      setOpenContentItems((current) => ({
-                        ...current,
-                        [openKey]: !current[openKey],
-                      }))
+                      toggleExclusiveContentItem(groupKey, openKey, isOpen)
                     }
                   >
                     <span

@@ -96,10 +96,13 @@
 }
 
 .left-panel-shell .editor-workspace {
+  display: flex;
   flex: 1 1 520px;
+  flex-direction: column;
   min-width: 0;
+  min-height: 0;
   height: 100%;
-  overflow: hidden auto;
+  overflow: hidden;
   padding: 22px;
   scrollbar-color: var(--scrollbar-thumb-background, #cfd6e2)
     var(--scrollbar-track-background, transparent);
