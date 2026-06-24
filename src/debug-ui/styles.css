@@ -132,6 +132,21 @@
   --editor-alert-warning-border-color: #ffdca8;
   --editor-alert-warning-background: #fff8ed;
   --editor-alert-warning-color: #b35600;
+  --editor-heading-border: 1px solid #dfe3eb;
+  --editor-heading-radius: 16px;
+  --editor-heading-background: rgba(255, 255, 255, 0.92);
+  --editor-heading-backdrop-filter: blur(12px);
+  --editor-heading-title-color: #12141a;
+  --editor-heading-eyebrow-color: #667085;
+  --editor-record-id-border: 1px solid #dfe3eb;
+  --editor-record-id-background: #f7f8fa;
+  --editor-record-id-color: #667085;
+  --workspace-breadcrumb-border: 1px solid #dfe3eb;
+  --workspace-breadcrumb-radius: 14px;
+  --workspace-breadcrumb-background: rgba(255, 255, 255, 0.92);
+  --workspace-breadcrumb-color: #343946;
+  --workspace-breadcrumb-strong-color: #111318;
+  --workspace-breadcrumb-shadow: 0 8px 24px rgba(21, 30, 50, 0.06);
   --preview-viewport-padding: 18px;
   --preview-viewport-border: 1px solid #dfe3eb;
   --preview-viewport-radius: 16px;
@@ -267,6 +282,18 @@
   --editor-alert-warning-border-color: #756342;
   --editor-alert-warning-background: #40392b;
   --editor-alert-warning-color: #ddc489;
+  --editor-heading-border: 1px solid #4a4d54;
+  --editor-heading-background: rgba(52, 54, 59, 0.92);
+  --editor-heading-title-color: #ece9e2;
+  --editor-heading-eyebrow-color: #aaa69d;
+  --editor-record-id-border: 1px solid #565a62;
+  --editor-record-id-background: #383a3f;
+  --editor-record-id-color: #aaa69d;
+  --workspace-breadcrumb-border: 1px solid #4a4d54;
+  --workspace-breadcrumb-background: rgba(52, 54, 59, 0.92);
+  --workspace-breadcrumb-color: #d8d5ce;
+  --workspace-breadcrumb-strong-color: #ece9e2;
+  --workspace-breadcrumb-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
   --preview-viewport-border: 1px solid #4a4d54;
   --preview-viewport-background: #2f3135;
   --preview-viewport-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
@@ -2297,18 +2324,18 @@ body {
   gap: 12px;
   min-height: 46px;
   margin-bottom: 14px;
-  border: 1px solid #dfe3eb;
-  border-radius: 14px;
+  border: var(--workspace-breadcrumb-border, 1px solid #dfe3eb);
+  border-radius: var(--workspace-breadcrumb-radius, 14px);
   padding: 8px 10px;
-  color: #343946;
-  background: rgba(255, 255, 255, 0.92);
+  color: var(--workspace-breadcrumb-color, #343946);
+  background: var(--workspace-breadcrumb-background, rgba(255, 255, 255, 0.92));
   backdrop-filter: blur(12px);
-  box-shadow: 0 8px 24px rgba(21, 30, 50, 0.06);
+  box-shadow: var(--workspace-breadcrumb-shadow, 0 8px 24px rgba(21, 30, 50, 0.06));
   font-size: 13px;
 }
 
 .workspace-breadcrumb strong {
-  color: #111318;
+  color: var(--workspace-breadcrumb-strong-color, #111318);
 }
 
 .workspace-breadcrumb .breadcrumb-home {
@@ -2316,17 +2343,17 @@ body {
   width: 28px;
   height: 28px;
   place-items: center;
-  border: 1px solid #dfe3eb;
+  border: var(--workspace-breadcrumb-border, 1px solid #dfe3eb);
   border-radius: 9px;
-  color: #20242c;
-  background: #ffffff;
+  color: var(--workspace-breadcrumb-strong-color, #20242c);
+  background: var(--editor-surface-background, #ffffff);
 }
 
 .workspace-breadcrumb button {
   margin-left: auto;
-  border: 1px solid #dfe3eb;
-  color: #20242c;
-  background: #ffffff;
+  border: var(--editor-button-border, 1px solid #dfe3eb);
+  color: var(--editor-button-color, #20242c);
+  background: var(--editor-button-background, #ffffff);
   font-size: 12px;
 }
 
@@ -2842,11 +2869,25 @@ button {
   top: 0;
   z-index: 4;
   margin: 0 0 12px;
-  border: 1px solid #dfe3eb;
-  border-radius: 16px;
+  border: var(--editor-heading-border, 1px solid #dfe3eb);
+  border-radius: var(--editor-heading-radius, 16px);
   padding: 14px 16px;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(12px);
+  background: var(--editor-heading-background, rgba(255, 255, 255, 0.92));
+  backdrop-filter: var(--editor-heading-backdrop-filter, blur(12px));
+}
+
+.record-editor > .panel-heading h2 {
+  color: var(--editor-heading-title-color, #12141a);
+}
+
+.record-editor > .panel-heading .eyebrow {
+  color: var(--editor-heading-eyebrow-color, #667085);
+}
+
+.record-editor > .panel-heading .record-id {
+  border: var(--editor-record-id-border, 1px solid #dfe3eb);
+  color: var(--editor-record-id-color, #667085);
+  background: var(--editor-record-id-background, #f7f8fa);
 }
 
 .record-editor > .editor-tabs:not(.subtle-tabs) {

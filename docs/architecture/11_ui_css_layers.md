@@ -139,6 +139,21 @@ The transitional global stylesheet exposes a small set of CSS variables in `:roo
 - `--editor-alert-warning-border-color`: central editor warning alert border color.
 - `--editor-alert-warning-background`: central editor warning alert background.
 - `--editor-alert-warning-color`: central editor warning alert text color.
+- `--editor-heading-border`: central editor sticky heading border.
+- `--editor-heading-radius`: central editor sticky heading radius.
+- `--editor-heading-background`: central editor sticky heading background.
+- `--editor-heading-backdrop-filter`: central editor sticky heading backdrop filter.
+- `--editor-heading-title-color`: central editor sticky heading title color.
+- `--editor-heading-eyebrow-color`: central editor sticky heading eyebrow color.
+- `--editor-record-id-border`: central editor record id pill border.
+- `--editor-record-id-background`: central editor record id pill background.
+- `--editor-record-id-color`: central editor record id pill text color.
+- `--workspace-breadcrumb-border`: workspace breadcrumb border.
+- `--workspace-breadcrumb-radius`: workspace breadcrumb radius.
+- `--workspace-breadcrumb-background`: workspace breadcrumb background.
+- `--workspace-breadcrumb-color`: workspace breadcrumb text color.
+- `--workspace-breadcrumb-strong-color`: workspace breadcrumb emphasized text color.
+- `--workspace-breadcrumb-shadow`: workspace breadcrumb shadow.
 - `--preview-viewport-padding`: preview viewport host padding.
 - `--preview-viewport-border`: preview viewport host border.
 - `--preview-viewport-radius`: preview viewport host radius.
