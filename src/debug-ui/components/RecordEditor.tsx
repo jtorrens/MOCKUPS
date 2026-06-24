@@ -1813,7 +1813,12 @@ export function RecordEditor({
                       }))
                     }
                   >
-                    <span className="record-editor-content-chevron" aria-hidden="true">
+                    <span
+                      className={`record-editor-content-chevron ${
+                        isOpen ? "is-open" : ""
+                      }`}
+                      aria-hidden="true"
+                    >
                       {isOpen ? "⌃" : "›"}
                     </span>
                   </button>

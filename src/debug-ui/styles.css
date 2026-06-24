@@ -1213,6 +1213,10 @@ body {
   font-weight: var(--accordion-chevron-weight, 450);
 }
 
+.record-editor-content-chevron.is-open {
+  font-size: var(--accordion-chevron-size, 24px);
+}
+
 .record-editor-content-chevron-button {
   display: grid;
   width: 30px;
