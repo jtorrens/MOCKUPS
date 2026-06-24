@@ -81,6 +81,7 @@ Owns preview panel chrome, selection controls, status chips, PNG render feedback
 
 - `.right-preview-shell`
 - `.preview-header-card`
+- `.preview-options-*`
 - `.preview-header-meta`
 - `.preview-header-controls`
 - `.preview-context`

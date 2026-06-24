@@ -2849,31 +2849,92 @@ button {
 }
 
 /* UI LAYER: Preview shell controls, context, and feedback. */
-.preview-context {
+.preview-options-card {
+  overflow: hidden;
   flex: none;
-  order: 2;
-  padding: 14px;
-}
-
-.preview-header-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
   order: 0;
+  border: 1px solid #dfe3eb;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(21, 30, 50, 0.045);
 }
 
-.preview-header-card h2 {
+.preview-options-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 10px;
+  align-items: center;
+  min-height: 58px;
+  padding: 12px 14px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.preview-options-summary::-webkit-details-marker {
+  display: none;
+}
+
+.preview-options-summary::after {
+  content: "›";
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  color: #475467;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.preview-options-card[open] > .preview-options-summary::after {
+  content: "⌄";
+  font-size: 15px;
+}
+
+.preview-options-summary h2 {
   margin: 0;
   color: #12141a;
-  font-size: 20px;
+  font-size: 19px;
   letter-spacing: -0.025em;
 }
 
-.preview-header-card p {
-  margin: 4px 0 0;
+.preview-options-summary p {
+  overflow: hidden;
+  margin: 3px 0 0;
   color: #626a78;
-  font-size: 13px;
+  font-size: 12px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preview-options-body {
+  display: grid;
+  gap: 12px;
+  border-top: 1px solid #edf0f4;
+  padding: 12px 14px 14px;
+}
+
+.preview-options-body label {
+  display: grid;
+  gap: 6px;
+  color: #667085;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.preview-options-body select,
+.preview-options-body input[type="number"] {
+  height: 34px;
+  margin: 0;
+  border-color: #d8dee8;
+  color: #343b48;
+  background: #ffffff;
+  font-size: 12px;
+}
+
+.preview-options-body input[type="range"] {
+  margin: 0;
 }
 
 .preview-header-meta {
@@ -2897,23 +2958,14 @@ button {
   white-space: nowrap;
 }
 
-.preview-header-card select {
-  width: auto;
-  min-width: 150px;
-  height: 38px;
-  margin: 0;
-}
-
-.preview-context .panel-heading {
-  display: none;
-}
-
-.preview-context label:not(:last-child) {
-  display: none;
-}
-
 .preview-select-grid {
-  grid-template-columns: 1fr;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.preview-frame-field {
+  grid-column: 1 / -1;
 }
 
 .right-preview-shell .preview-panel {
