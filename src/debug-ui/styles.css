@@ -150,6 +150,17 @@
   --workspace-breadcrumb-color: #343946;
   --workspace-breadcrumb-strong-color: #111318;
   --workspace-breadcrumb-shadow: 0 8px 24px rgba(21, 30, 50, 0.06);
+  --browser-row-color: #2c323d;
+  --browser-row-background: transparent;
+  --browser-row-border-color: transparent;
+  --browser-row-active-color: #15171c;
+  --browser-row-active-background: #f7f8fb;
+  --browser-row-active-border-color: #dfe3eb;
+  --browser-row-editing-color: #111318;
+  --browser-row-editing-background: linear-gradient(135deg, rgba(52, 93, 255, 0.1), rgba(52, 93, 255, 0.02)), #ffffff;
+  --browser-row-editing-border-color: #8fa2ff;
+  --browser-row-editing-accent-color: #345dff;
+  --browser-row-muted-color: #7b8494;
   --content-card-border: var(--editor-subsection-border);
   --content-card-radius: var(--editor-subsection-radius);
   --content-card-background: var(--editor-subsection-background);
@@ -323,6 +334,17 @@
   --workspace-breadcrumb-color: #d8d5ce;
   --workspace-breadcrumb-strong-color: #ece9e2;
   --workspace-breadcrumb-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
+  --browser-row-color: #d8d5ce;
+  --browser-row-background: transparent;
+  --browser-row-border-color: transparent;
+  --browser-row-active-color: #ece9e2;
+  --browser-row-active-background: #383a3f;
+  --browser-row-active-border-color: #565a62;
+  --browser-row-editing-color: #ece9e2;
+  --browser-row-editing-background: linear-gradient(135deg, rgba(127, 143, 173, 0.22), rgba(127, 143, 173, 0.06)), #383a3f;
+  --browser-row-editing-border-color: #7f8fad;
+  --browser-row-editing-accent-color: #7f8fad;
+  --browser-row-muted-color: #aaa69d;
   --content-nested-border-color: #464950;
   --avatar-preview-inner-highlight: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
   --preview-viewport-border: 1px solid #4a4d54;
@@ -655,11 +677,11 @@ body {
 .record-list button,
 .project-tree button {
   width: 100%;
-  border: 1px solid transparent;
+  border: 1px solid var(--browser-row-border-color, transparent);
   border-radius: 10px;
   padding: 10px;
-  color: #aeb6c8;
-  background: transparent;
+  color: var(--browser-row-color, #aeb6c8);
+  background: var(--browser-row-background, transparent);
   text-align: left;
 }
 
@@ -678,19 +700,17 @@ body {
 .tab-list button.active,
 .record-list button.active,
 .project-tree button.active {
-  border-color: #38415a;
-  color: #ffffff;
-  background: #171b26;
+  border-color: var(--browser-row-active-border-color, #38415a);
+  color: var(--browser-row-active-color, #ffffff);
+  background: var(--browser-row-active-background, #171b26);
 }
 
 .record-list button.editing,
 .project-tree button.editing {
-  border-color: #6b78ff;
-  color: #ffffff;
-  background:
-    linear-gradient(135deg, rgba(82, 101, 232, 0.34), rgba(82, 101, 232, 0.12)),
-    #171b26;
-  box-shadow: inset 3px 0 0 #8190ff;
+  border-color: var(--browser-row-editing-border-color, #6b78ff);
+  color: var(--browser-row-editing-color, #ffffff);
+  background: var(--browser-row-editing-background, #171b26);
+  box-shadow: inset 3px 0 0 var(--browser-row-editing-accent-color, #8190ff);
 }
 
 .project-tree {
@@ -2090,8 +2110,8 @@ button {
 .project-tree-view button,
 .record-list button {
   border: 1px solid transparent;
-  color: #2c323d;
-  background: transparent;
+  color: var(--browser-row-color, #2c323d);
+  background: var(--browser-row-background, transparent);
 }
 
 .project-tree-view button:not(.mini-action),
@@ -2280,25 +2300,23 @@ button {
 .project-tree-view button.active,
 .record-list button.active,
 .project-tree button.active {
-  border-color: #dfe3eb;
-  color: #15171c;
-  background: #f7f8fb;
+  border-color: var(--browser-row-active-border-color, #dfe3eb);
+  color: var(--browser-row-active-color, #15171c);
+  background: var(--browser-row-active-background, #f7f8fb);
 }
 
 .project-tree-view button.editing,
 .record-list button.editing {
-  border-color: #8fa2ff;
-  color: #111318;
-  background:
-    linear-gradient(135deg, rgba(52, 93, 255, 0.1), rgba(52, 93, 255, 0.02)),
-    #ffffff;
+  border-color: var(--browser-row-editing-border-color, #8fa2ff);
+  color: var(--browser-row-editing-color, #111318);
+  background: var(--browser-row-editing-background, #ffffff);
   box-shadow:
-    inset 3px 0 0 #345dff,
+    inset 3px 0 0 var(--browser-row-editing-accent-color, #345dff),
     0 1px 5px rgba(21, 30, 50, 0.08);
 }
 
 .project-tree-view button small {
-  color: #7b8494;
+  color: var(--browser-row-muted-color, #7b8494);
 }
 
 .record-list {
