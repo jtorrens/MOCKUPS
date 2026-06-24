@@ -132,6 +132,9 @@
   --editor-alert-warning-border-color: #ffdca8;
   --editor-alert-warning-background: #fff8ed;
   --editor-alert-warning-color: #b35600;
+  --editor-warning-color: var(--override-color);
+  --editor-warning-border-color: var(--override-border-color);
+  --editor-warning-background: var(--override-background);
   --editor-heading-border: 1px solid #dfe3eb;
   --editor-heading-radius: 16px;
   --editor-heading-background: rgba(255, 255, 255, 0.92);
@@ -305,6 +308,9 @@
   --editor-alert-warning-border-color: #756342;
   --editor-alert-warning-background: #40392b;
   --editor-alert-warning-color: #ddc489;
+  --editor-warning-color: var(--override-color);
+  --editor-warning-border-color: var(--override-border-color);
+  --editor-warning-background: var(--override-background);
   --editor-heading-border: 1px solid #4a4d54;
   --editor-heading-background: rgba(52, 54, 59, 0.92);
   --editor-heading-title-color: #ece9e2;
@@ -2995,7 +3001,7 @@ button {
 }
 
 .record-editor > .editor-tabs:not(.subtle-tabs) button.has-warning {
-  color: #e66a00;
+  color: var(--editor-warning-color, #e66a00);
 }
 
 .record-editor > .editor-tabs:not(.subtle-tabs) button.has-warning::before {
@@ -3003,13 +3009,13 @@ button {
 }
 
 .record-editor > .editor-tabs:not(.subtle-tabs) button.has-warning .tab-icon {
-  border-color: #ffd4a3;
-  color: #d05f00;
-  background: #fff4e8;
+  border-color: var(--editor-warning-border-color, #ffd4a3);
+  color: var(--editor-warning-color, #d05f00);
+  background: var(--editor-warning-background, #fff4e8);
 }
 
 .record-editor > .editor-tabs:not(.subtle-tabs) button.has-warning .tab-copy small {
-  color: #d05f00;
+  color: var(--editor-warning-color, #d05f00);
 }
 
 .subtle-tabs {
@@ -3826,8 +3832,9 @@ body,
 
 .record-editor .editor-section-card > button.has-warning .tab-icon,
 .record-editor .editor-subsection-card > button.has-warning .tab-icon {
-  color: var(--override-color, #b45309);
-  background: var(--override-background, #fff7ed);
+  border-color: var(--editor-warning-border-color, #e4ad68);
+  color: var(--editor-warning-color, #b45309);
+  background: var(--editor-warning-background, #fff7ed);
 }
 
 .record-editor .flat-json-field-group,

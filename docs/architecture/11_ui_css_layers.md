@@ -139,6 +139,9 @@ The transitional global stylesheet exposes a small set of CSS variables in `:roo
 - `--editor-alert-warning-border-color`: central editor warning alert border color.
 - `--editor-alert-warning-background`: central editor warning alert background.
 - `--editor-alert-warning-color`: central editor warning alert text color.
+- `--editor-warning-color`: central editor override/warning text/icon color.
+- `--editor-warning-border-color`: central editor override/warning border color.
+- `--editor-warning-background`: central editor override/warning background.
 - `--editor-heading-border`: central editor sticky heading border.
 - `--editor-heading-radius`: central editor sticky heading radius.
 - `--editor-heading-background`: central editor sticky heading background.
