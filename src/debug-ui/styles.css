@@ -1105,7 +1105,7 @@ body {
 }
 
 .record-editor-content-array-editor,
-.content-object-editor,
+.record-editor-content-object-editor,
 .record-editor-content-fields {
   display: grid;
   gap: 10px;
@@ -2408,10 +2408,7 @@ body {
 
 .record-editor-nested-stack,
 .record-editor-field-stack.record-editor-single-column,
-.record-editor-field-stack,
-.nested-editor-stack,
-.field-stack.single-column,
-.field-stack {
+.record-editor-field-stack {
   display: grid;
   gap: 14px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2423,16 +2420,12 @@ body {
 }
 
 .record-editor-nested-stack,
-.record-editor-field-stack.record-editor-single-column,
-.nested-editor-stack,
-.field-stack.single-column {
+.record-editor-field-stack.record-editor-single-column {
   grid-template-columns: minmax(0, 1fr);
 }
 
 .record-editor-nested-stack .record-editor-field-stack,
-.record-editor-nested-stack .record-editor-field-stack.record-editor-single-column,
-.nested-editor-stack .field-stack,
-.nested-editor-stack .field-stack.single-column {
+.record-editor-nested-stack .record-editor-field-stack.record-editor-single-column {
   border: 0;
   box-shadow: none;
   padding: 0;
@@ -2647,9 +2640,6 @@ body {
 .record-editor-field-stack,
 .record-editor-field-stack.record-editor-single-column,
 .record-editor-nested-stack,
-.field-stack,
-.field-stack.single-column,
-.nested-editor-stack,
 .mode-color-editor,
 .mode-color-group,
 .token-override-group,
@@ -2677,10 +2667,7 @@ body {
 .editor-workspace .mode-color-row,
 .editor-workspace .record-editor-field-stack,
 .editor-workspace .record-editor-field-stack.record-editor-single-column,
-.editor-workspace .record-editor-nested-stack,
-.editor-workspace .field-stack,
-.editor-workspace .field-stack.single-column,
-.editor-workspace .nested-editor-stack {
+.editor-workspace .record-editor-nested-stack {
   border-color: var(--editor-surface-border-color, #cfd6e2) !important;
   background: var(--editor-surface-background, #ffffff) !important;
   box-shadow: var(--editor-surface-shadow, 0 2px 6px rgba(21, 30, 50, 0.04)) !important;

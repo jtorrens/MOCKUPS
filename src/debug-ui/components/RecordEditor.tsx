@@ -1849,20 +1849,20 @@ export function RecordEditor({
     if (isJsonObject(groupValue)) {
       if (groupKey === "header") {
         return (
-          <div className="content-object-editor">
+          <div className="record-editor-content-object-editor">
             {renderHeaderFields(groupValue)}
           </div>
         );
       }
       return (
-        <div className="content-object-editor">
+        <div className="record-editor-content-object-editor">
           {renderObjectFields(groupValue, [])}
         </div>
       );
     }
 
     return (
-      <div className="content-object-editor">
+      <div className="record-editor-content-object-editor">
         {renderPrimitiveRow([], friendlyGroupLabel(groupKey), groupValue)}
       </div>
     );
