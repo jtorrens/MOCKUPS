@@ -1,10 +1,12 @@
 import { useState } from "react";
 import type { DebugOptions, DebugPayload, DebugSelection } from "../api/client.js";
-import { PreviewPanel } from "../preview/PreviewPanel.js";
-import type { PreviewFit } from "../preview/previewSizing.js";
-import { usePreviewFrameRender } from "../preview/usePreviewFrameRender.js";
-import { PreviewOptionsCard } from "./PreviewOptionsCard.js";
-import { PreviewOutputStack } from "./PreviewOutputStack.js";
+import {
+  PreviewOptionsCard,
+  PreviewOutputStack,
+  PreviewPanel,
+  type PreviewFit,
+  usePreviewFrameRender,
+} from "../preview/index.js";
 
 interface AppPreviewPanelProps {
   options: DebugOptions;

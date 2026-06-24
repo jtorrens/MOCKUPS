@@ -1,5 +1,5 @@
 import type { DebugOptions, DebugPayload, DebugSelection } from "../api/client.js";
-import type { PreviewFit } from "../preview/previewSizing.js";
+import type { PreviewFit } from "./previewSizing.js";
 
 interface PreviewOptionsCardProps {
   busy: boolean;
