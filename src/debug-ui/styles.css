@@ -1646,11 +1646,6 @@ body {
   color: #7c8498;
 }
 
-.preview-context {
-  flex: none;
-  padding: 16px;
-}
-
 .preview-select-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -1662,37 +1657,6 @@ body {
   grid-template-columns: 1fr 78px;
   gap: 8px;
   align-items: center;
-}
-
-.right-preview-shell .preview-panel,
-.right-preview-shell .inspector-panel {
-  padding: 16px;
-}
-
-.right-preview-shell .preview-panel {
-  display: flex;
-  min-height: 0;
-  flex: 1 1 auto;
-  flex-direction: column;
-}
-
-.right-preview-shell .preview-panel .panel-heading {
-  flex: none;
-}
-
-.preview-viewport-host {
-  display: grid;
-  flex: 1 1 auto;
-  min-height: 240px;
-  width: 100%;
-  height: 100%;
-  min-width: 240px;
-  place-items: center;
-  overflow: hidden;
-}
-
-.right-preview-shell .preview-viewport {
-  max-width: 100%;
 }
 
 .preview-inspectors {
@@ -1879,22 +1843,6 @@ input[type="range"] {
   grid-template-columns: 390px 1fr;
   gap: 18px;
   margin-top: 18px;
-}
-
-.preview-viewport {
-  position: relative;
-  margin: 0 auto;
-  overflow: hidden;
-  border: 1px solid #363d4d;
-  border-radius: 22px;
-  background: #050609;
-}
-
-.preview-scale {
-  position: absolute;
-  top: 0;
-  left: 0;
-  transform-origin: top left;
 }
 
 .empty-state {
@@ -2902,6 +2850,7 @@ button {
 
 /* UI LAYER: Preview shell controls, context, and feedback. */
 .preview-context {
+  flex: none;
   order: 2;
   padding: 14px;
 }
@@ -2968,6 +2917,10 @@ button {
 }
 
 .right-preview-shell .preview-panel {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
   order: 1;
   border: 0;
   background: transparent;
@@ -2979,13 +2932,26 @@ button {
   display: none;
 }
 
+.right-preview-shell .inspector-panel {
+  padding: 16px;
+}
+
 .preview-viewport-host {
+  display: grid;
+  min-height: 0;
+  flex: 1 1 auto;
+  place-items: center;
+  overflow: hidden;
+  padding: 18px;
   border: 0;
   border-radius: 34px;
   background: #ffffff;
 }
 
 .preview-viewport {
+  position: relative;
+  overflow: hidden;
+  flex: 0 0 auto;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -3255,35 +3221,6 @@ body,
 
 .panel-resizer::before {
   background: #dfe3eb;
-}
-
-.right-preview-shell .preview-panel {
-  display: flex;
-  min-height: 0;
-  flex: 1 1 auto;
-  flex-direction: column;
-}
-
-.preview-viewport-host {
-  display: grid;
-  min-height: 0;
-  flex: 1 1 auto;
-  place-items: center;
-  overflow: hidden;
-  padding: 18px;
-}
-
-.preview-viewport {
-  position: relative;
-  overflow: hidden;
-  flex: 0 0 auto;
-}
-
-.preview-scale {
-  position: absolute;
-  top: 0;
-  left: 0;
-  transform-origin: top left;
 }
 
 /* UI LAYER: Shared field system. */
@@ -3845,6 +3782,13 @@ body,
 
 /* UI LAYER: Render surface and external phone-frame overlay.
    Must not add layout padding/border to the renderable coordinate system. */
+.preview-scale {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
+}
+
 .preview-phone-frame {
   position: absolute;
   inset: 0;
