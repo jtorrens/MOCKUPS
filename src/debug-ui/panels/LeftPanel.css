@@ -237,9 +237,9 @@
 }
 
 .left-panel-shell .panel {
-  border: 1px solid #dfe3eb;
-  background: #ffffff;
-  box-shadow: 0 16px 45px rgba(21, 30, 50, 0.07);
+  border: var(--card-border, 1px solid #dfe3eb);
+  background: var(--card-background, #ffffff);
+  box-shadow: var(--card-shadow, 0 16px 45px rgba(21, 30, 50, 0.07));
 }
 
 .left-panel-shell .modal-backdrop {
@@ -284,17 +284,17 @@
   display: grid;
   gap: 4px;
   width: 100%;
-  border: 1px solid #d7dde8;
+  border: var(--card-border, 1px solid #d7dde8);
   border-radius: 14px;
   padding: 14px;
-  color: #15171c;
-  background: #ffffff;
+  color: var(--card-header-title-color, #15171c);
+  background: var(--card-background, #ffffff);
   text-align: left;
 }
 
 .left-panel-shell .theme-family-actions button:hover {
-  border-color: #bfc7d4;
-  background: #f8fafc;
+  border-color: var(--card-body-border, #bfc7d4);
+  background: var(--editor-surface-background, #f8fafc);
 }
 
 .left-panel-shell .theme-family-actions button strong {
