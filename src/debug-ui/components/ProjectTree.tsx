@@ -101,7 +101,7 @@ function ActionButton({
   return (
     <button
       type="button"
-      className="mini-action ui-icon-button"
+      className="project-tree-action-button ui-icon-button"
       disabled={disabled}
       title={title}
       onClick={(event) => {
@@ -115,7 +115,7 @@ function ActionButton({
 }
 
 function EmptyPanel({ children }: { children: string }) {
-  return <div className="empty-record-list compact-empty">{children}</div>;
+  return <div className="project-tree-empty">{children}</div>;
 }
 
 function TreeActions({
@@ -836,7 +836,7 @@ export function ProjectTree({
   }
 
   return (
-    <section className="panel project-browser project-browser-root">
+    <section className="project-browser-root">
       <div className="project-tree-view">
         <div className="workspace-accordions" aria-label="Workspace">
           {renderWorkspaceAccordion(

@@ -880,14 +880,15 @@ body {
   gap: 4px;
 }
 
-.project-browser-root .project-tree-view .mini-action {
+.project-browser-root .project-tree-view .project-tree-action-button {
   width: 26px;
   height: 26px;
   padding: 0;
   text-align: center;
 }
 
-.mini-action {
+.mini-action,
+.project-tree-action-button {
   --ui-icon-button-size: 28px;
   --ui-icon-button-border: var(--project-mini-action-border, 0);
   --ui-icon-button-radius: 8px;
@@ -895,7 +896,8 @@ body {
   --ui-icon-button-background: var(--project-mini-action-background, transparent);
 }
 
-.mini-action:disabled {
+.mini-action:disabled,
+.project-tree-action-button:disabled {
   cursor: not-allowed;
   opacity: 0.35;
 }
@@ -2094,7 +2096,7 @@ body {
   background: #f7f8fa;
 }
 
-.left-panel-shell .project-browser-root {
+.project-browser-root {
   padding: 0;
   border: 0;
   background: transparent;
@@ -2114,6 +2116,11 @@ body {
 
 .project-browser-root .tree-record-copy {
   min-width: 0;
+}
+
+.project-browser-root .project-tree-empty {
+  padding: 10px;
+  color: var(--browser-row-muted-color, #7b8494);
 }
 
 .project-browser-root .tree-record-icon svg {
@@ -3538,7 +3545,7 @@ body,
   display: inline-flex;
 }
 
-.project-browser-root .workspace-accordion-actions .mini-action {
+.project-browser-root .workspace-accordion-actions .project-tree-action-button {
   border: 0 !important;
   border-radius: 8px;
   color: var(--browser-action-color, #475467);
@@ -3549,12 +3556,12 @@ body,
   box-shadow: none !important;
 }
 
-.project-browser-root .workspace-accordion-actions .mini-action:hover:not(:disabled) {
+.project-browser-root .workspace-accordion-actions .project-tree-action-button:hover:not(:disabled) {
   color: var(--browser-action-hover-color, #1d2129);
   background: var(--browser-action-hover-background, #f2f4f7) !important;
 }
 
-.project-browser-root .workspace-accordion-actions .mini-action:disabled {
+.project-browser-root .workspace-accordion-actions .project-tree-action-button:disabled {
   opacity: 0.28;
 }
 
