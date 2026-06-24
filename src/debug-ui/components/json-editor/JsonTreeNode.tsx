@@ -207,7 +207,7 @@ export function JsonTreeNode({
 
   return (
     <InspectorFieldRow
-      className={`app-field json-primitive-row ${
+      className={`json-editor-field json-primitive-row ${
         isOverride ? "json-override" : ""
       }`}
       state={isOverride ? "override" : "default"}
