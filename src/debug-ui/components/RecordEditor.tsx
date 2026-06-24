@@ -20,6 +20,7 @@ import {
 import { EditorSections } from "../editor-ui/EditorSections.js";
 import { GenericRecordEditor } from "../editors/GenericRecordEditor.js";
 import { ModuleInstanceEditor } from "../editors/ModuleInstanceEditor.js";
+import { ScreenInstanceEditor } from "../editors/ScreenInstanceEditor.js";
 import {
   hasModeColorOverrides,
   ModeColorEditor,
@@ -3806,89 +3807,40 @@ export function RecordEditor({
     const deviceStateField = fieldsByColumn.get("device_state_json");
     const transformField = fieldsByColumn.get("transform_json");
     return (
-      <section className="record-editor">
-        <EditorHeader
-          eyebrow="Screen instance editor"
-          title={String(record[table.titleColumn] ?? record.id)}
-        />
-        <EditorSections>
-          <EditorSectionCard>
-            <TabButton
-              active={screenTab === "general"}
-              onClick={() => setScreenTab(screenTab === "general" ? "" : "general")}
-            >
-              Generales
-            </TabButton>
-            {screenTab === "general" ? (
-              <div className="editor-section-body record-editor-field-stack record-editor-direct-fields">
-                {renderFields([
-                  "app_id",
-                  "theme_mode",
-                  "start_frame",
-                  "end_frame",
-                ])}
-              </div>
-            ) : null}
-          </EditorSectionCard>
-          <EditorSectionCard>
-            <TabButton
-              active={screenTab === "transform"}
-              onClick={() =>
-                setScreenTab(screenTab === "transform" ? "" : "transform")
-              }
-            >
-              Transform
-            </TabButton>
-            {screenTab === "transform" && transformField ? (
-              <div className="editor-section-body record-editor-field-stack record-editor-single-column record-editor-json-stack">
-                {renderField(transformField, {
-                  hideLabel: true,
-                  rawText: drafts.transform_json ?? "{}",
-                  groupContext: "transform",
-                  onRawTextChange: (nextRawText) =>
-                    setDrafts({ ...drafts, transform_json: nextRawText }),
-                })}
-              </div>
-            ) : null}
-          </EditorSectionCard>
-          <EditorSectionCard>
-            <TabButton
-              active={screenTab === "transition"}
-              onClick={() =>
-                setScreenTab(screenTab === "transition" ? "" : "transition")
-              }
-            >
-              Transition
-            </TabButton>
-            {screenTab === "transition" ? (
-              <div className="editor-section-body record-editor-field-stack record-editor-direct-fields">
-                {renderScreenTransitionField()}
-              </div>
-            ) : null}
-          </EditorSectionCard>
-          <EditorSectionCard>
-            <TabButton
-              active={screenTab === "deviceState"}
-              onClick={() =>
-                setScreenTab(screenTab === "deviceState" ? "" : "deviceState")
-              }
-            >
-              Device State
-            </TabButton>
-            {screenTab === "deviceState" && deviceStateField ? (
-              <div className="editor-section-body record-editor-field-stack record-editor-single-column record-editor-json-stack">
-                {renderField(deviceStateField, {
-                  hideLabel: true,
-                  rawText: drafts.device_state_json ?? "{}",
-                  groupContext: "deviceState",
-                  onRawTextChange: (nextRawText) =>
-                    setDrafts({ ...drafts, device_state_json: nextRawText }),
-                })}
-              </div>
-            ) : null}
-          </EditorSectionCard>
-        </EditorSections>
-      </section>
+      <ScreenInstanceEditor
+        table={table}
+        record={record}
+        activeTab={screenTab}
+        transformFieldExists={Boolean(transformField)}
+        deviceStateFieldExists={Boolean(deviceStateField)}
+        renderGeneralFields={() =>
+          renderFields(["app_id", "theme_mode", "start_frame", "end_frame"])
+        }
+        renderTransformFields={() =>
+          transformField
+            ? renderField(transformField, {
+                hideLabel: true,
+                rawText: drafts.transform_json ?? "{}",
+                groupContext: "transform",
+                onRawTextChange: (nextRawText) =>
+                  setDrafts({ ...drafts, transform_json: nextRawText }),
+              })
+            : null
+        }
+        renderTransitionFields={renderScreenTransitionField}
+        renderDeviceStateFields={() =>
+          deviceStateField
+            ? renderField(deviceStateField, {
+                hideLabel: true,
+                rawText: drafts.device_state_json ?? "{}",
+                groupContext: "deviceState",
+                onRawTextChange: (nextRawText) =>
+                  setDrafts({ ...drafts, device_state_json: nextRawText }),
+              })
+            : null
+        }
+        setActiveTab={setScreenTab}
+      />
     );
   }
 
