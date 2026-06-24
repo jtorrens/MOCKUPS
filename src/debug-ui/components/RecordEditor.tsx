@@ -42,6 +42,7 @@ import {
 import { ChatContentArrayEditor } from "../editors/chat/ChatContentArrayEditor.js";
 import { ChatHeaderFieldsEditor } from "../editors/chat/ChatHeaderFieldsEditor.js";
 import { ChatParticipantFieldsEditor } from "../editors/chat/ChatParticipantFieldsEditor.js";
+import { ChatMessageMediaEditor } from "../editors/chat/ChatMessageMediaEditor.js";
 import {
   hasModeColorOverrides,
   ModeColorEditor,
@@ -1156,118 +1157,53 @@ export function RecordEditor({
               />
             }
           />
-          <details className="record-editor-content-nested-card" open>
-            <summary>
-              <span>Media</span>
-              <small>{mediaType}</small>
-            </summary>
-            <div className="record-editor-content-fields">
-              <InspectorFieldRow
-                className="record-editor-content-field-row"
-                label={<span>Type</span>}
-                control={
-                  <select
-                    className="json-value-control"
-                    value={mediaType}
-                    onChange={(event) => setMediaType(event.target.value)}
-                  >
-                    <option value="none">None</option>
-                    <option value="image">Image</option>
-                    <option value="video">Video</option>
-                  </select>
+          <ChatMessageMediaEditor
+            mediaType={mediaType}
+            filePath={String(media.filePath ?? "")}
+            canBrowse={Boolean(mockupsNative()?.pickFile)}
+            numberFields={([
+              ["Container width", ["media", "window", "width"], 360],
+              ["Container height", ["media", "window", "height"], 240],
+              ["Crop X offset", ["media", "window", "offsetX"], 0],
+              ["Crop Y offset", ["media", "window", "offsetY"], 0],
+              ["Media scale", ["media", "transform", "scale"], 1],
+              ["Media X offset", ["media", "transform", "translateX"], 0],
+              ["Media Y offset", ["media", "transform", "translateY"], 0],
+            ] as Array<[string, JsonPath, number]>).map(([label, path, fallback]) => ({
+              label,
+              path,
+              fallback,
+              value: Number(
+                path.reduce<JsonValue>(
+                  (current, part) =>
+                    isJsonObject(current) && typeof part === "string"
+                      ? current[part] ?? null
+                      : null,
+                  message,
+                ) ?? fallback,
+              ),
+            }))}
+            onMediaTypeChange={setMediaType}
+            onFilePathChange={(nextPath) =>
+              setConversationMediaPath(
+                relativePathFromRoot(nextPath, productionMediaRoot()),
+              )
+            }
+            onBrowseFile={() => {
+              void (async () => {
+                const [filePath] =
+                  await (mockupsNative()?.pickFile?.() ?? Promise.resolve([]));
+                if (filePath) {
+                  setConversationMediaPath(
+                    relativePathFromRoot(filePath, productionMediaRoot()),
+                  );
                 }
-              />
-              {mediaType === "image" || mediaType === "video" ? (
-                <>
-                  <InspectorFieldRow
-                    className="record-editor-content-field-row"
-                    label={<span>File path</span>}
-                    control={
-                      <div className="media-file-control">
-                        <DeferredTextInput
-                          value={String(media.filePath ?? "")}
-                          onCommit={setConversationMediaPath}
-                        />
-                        <button
-                          type="button"
-                          className="record-editor-compact-button"
-                          disabled={!mockupsNative()?.pickFile}
-                          onClick={() => {
-                            void (async () => {
-                              const [filePath] =
-                                await (mockupsNative()?.pickFile?.() ??
-                                  Promise.resolve([]));
-                              if (filePath) {
-                                setConversationMediaPath(
-                                  relativePathFromRoot(filePath, productionMediaRoot()),
-                                );
-                              }
-                            })();
-                          }}
-                        >
-                          Browse…
-                        </button>
-                        <input
-                          type="file"
-                          accept={mediaType === "image" ? "image/*" : "video/*"}
-                          onChange={(event) => {
-                            const file = event.currentTarget.files?.[0] as
-                              | (File & { path?: string })
-                              | undefined;
-                            if (file) {
-                              setConversationMediaPath(
-                                relativePathFromRoot(
-                                  file.path ?? file.name,
-                                  productionMediaRoot(),
-                                ),
-                              );
-                            }
-                          }}
-                        />
-                      </div>
-                    }
-                  />
-                  {([
-                    ["Container width", ["media", "window", "width"], 360],
-                    ["Container height", ["media", "window", "height"], 240],
-                    ["Crop X offset", ["media", "window", "offsetX"], 0],
-                    ["Crop Y offset", ["media", "window", "offsetY"], 0],
-                    ["Media scale", ["media", "transform", "scale"], 1],
-                    ["Media X offset", ["media", "transform", "translateX"], 0],
-                    ["Media Y offset", ["media", "transform", "translateY"], 0],
-                  ] as Array<[string, JsonPath, number]>).map(([label, path, fallback]) => (
-                    <InspectorFieldRow
-                      key={String(label)}
-                      className="record-editor-content-field-row"
-                      label={<span>{String(label)}</span>}
-                      control={
-                        <input
-                          className="json-value-control"
-                          type="number"
-                          step={String(label).includes("scale") ? "0.05" : "1"}
-                          value={Number(
-                            path.reduce<JsonValue>(
-                              (current, part) =>
-                                isJsonObject(current) && typeof part === "string"
-                                  ? current[part] ?? null
-                                  : null,
-                              message,
-                            ) ?? fallback,
-                          )}
-                          onChange={(event) =>
-                            setMessagePath(
-                              path as JsonPath,
-                              Number(event.target.value),
-                            )
-                          }
-                        />
-                      }
-                    />
-                  ))}
-                </>
-              ) : null}
-            </div>
-          </details>
+              })();
+            }}
+            onNumberFieldChange={(path, nextValue) =>
+              setMessagePath(path, nextValue)
+            }
+          />
           <InspectorFieldRow
             className="record-editor-content-field-row"
             label={<span>Text reveal mode</span>}
