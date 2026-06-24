@@ -1558,40 +1558,11 @@ textarea {
 
 button {
   border: 0;
-  border-radius: 10px;
-  padding: 11px 17px;
-  color: white;
-  background: #5265e8;
   cursor: pointer;
-  font-weight: 650;
 }
 
 button:disabled {
   cursor: default;
-  opacity: 0.38;
-}
-
-label {
-  color: #8e95a5;
-  font-size: 12px;
-  font-weight: 650;
-}
-
-select,
-input[type="number"] {
-  width: 100%;
-  height: 42px;
-  margin-top: 7px;
-  border: 1px solid #303646;
-  border-radius: 9px;
-  padding: 0 11px;
-  color: #e8e9ee;
-  background: #0f1219;
-}
-
-input[type="range"] {
-  width: 100%;
-  accent-color: #7180ff;
 }
 
 .empty-state {
