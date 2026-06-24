@@ -952,9 +952,7 @@ body {
 }
 
 .json-add-button,
-.json-action-button,
-.json-add-row button,
-.json-row-actions button {
+.json-action-button {
   border: 1px solid #30384a;
   padding: 7px 10px;
   color: #c8d0e0;
@@ -1281,17 +1279,14 @@ body {
   padding-top: 7px;
 }
 
-.json-action-button,
-.json-row-actions button {
+.json-action-button {
   min-width: 30px;
   padding: 6px 8px;
   color: #97a1b6;
 }
 
 .json-action-button:hover,
-.json-add-button:hover,
-.json-row-actions button:hover,
-.json-add-row button:hover {
+.json-add-button:hover {
   border-color: #566079;
 }
 
@@ -1313,14 +1308,6 @@ body {
 
 .json-override > summary {
   color: #ffd778;
-}
-
-.json-tree-group summary button {
-  border: 1px solid #8a6b25;
-  padding: 6px 9px;
-  color: #ffd778;
-  background: rgba(82, 59, 12, 0.8);
-  font-size: 11px;
 }
 
 .json-value-control,
@@ -2505,9 +2492,7 @@ body {
 .editor-workspace .record-editor-content-add-button,
 .editor-workspace .record-editor-compact-button,
 .editor-workspace .json-action-button,
-.editor-workspace .json-add-button,
-.editor-workspace .json-row-actions button,
-.editor-workspace .json-add-row button {
+.editor-workspace .json-add-button {
   border: var(--editor-button-border, 1px solid #d9dee7) !important;
   color: var(--editor-button-color, #22262f) !important;
   background: var(--editor-button-background, #ffffff) !important;
@@ -2516,9 +2501,7 @@ body {
 .editor-workspace .record-editor-content-add-button:hover:not(:disabled),
 .editor-workspace .record-editor-compact-button:hover:not(:disabled),
 .editor-workspace .json-action-button:hover:not(:disabled),
-.editor-workspace .json-add-button:hover:not(:disabled),
-.editor-workspace .json-row-actions button:hover:not(:disabled),
-.editor-workspace .json-add-row button:hover:not(:disabled) {
+.editor-workspace .json-add-button:hover:not(:disabled) {
   border-color: var(--editor-button-hover-border-color, #aeb8c8) !important;
   background: var(--editor-button-hover-background, #f8fafc) !important;
 }
@@ -2526,9 +2509,7 @@ body {
 .editor-workspace .record-editor-content-add-button:disabled,
 .editor-workspace .record-editor-compact-button:disabled,
 .editor-workspace .json-action-button:disabled,
-.editor-workspace .json-add-button:disabled,
-.editor-workspace .json-row-actions button:disabled,
-.editor-workspace .json-add-row button:disabled {
+.editor-workspace .json-add-button:disabled {
   opacity: var(--editor-button-disabled-opacity, 0.55);
 }
 
