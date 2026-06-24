@@ -86,6 +86,8 @@ Owns preview panel chrome, selection controls, status chips, PNG render feedback
 - `.preview-header-controls`
 - `.preview-context`
 - `.preview-render-*`
+- `.preview-output-*`
+- `.preview-message-*`
 - `.preview-viewport-host`
 
 This layer measures and presents the preview but must not mutate render coordinates.

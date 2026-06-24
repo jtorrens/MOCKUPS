@@ -322,32 +322,38 @@ export function AppPreviewPanel({
       </details>
 
       {error ? (
-        <div className="alert error" role="alert">
+        <div className="preview-message-card error" role="alert">
+          <strong>Preview error</strong>
           {error}
         </div>
       ) : null}
       {renderError ? (
-        <div className="alert error" role="alert">
+        <div className="preview-message-card error" role="alert">
+          <strong>PNG render error</strong>
           {renderError}
         </div>
       ) : null}
       {renderResult ? (
-        <div className="alert success preview-render-result">
-          <a href={renderResult.url} target="_blank" rel="noreferrer">
-            Open PNG
-          </a>
-          <span>
+        <div className="preview-output-card">
+          <div>
+            <strong>PNG rendered</strong>
+            <span>
+              {renderResult.relativeFilePath ?? renderResult.filePath}
+            </span>
+          </div>
+          <p>
             {renderResult.outputWidth}×{renderResult.outputHeight} · scale{" "}
             {renderResult.outputScale} ·{" "}
             {renderResult.includeFrame ? "with frame" : "no frame"}
-          </span>
-          <span title={renderResult.filePath}>
-            {renderResult.relativeFilePath ?? renderResult.filePath}
-          </span>
+          </p>
+          <a href={renderResult.url} target="_blank" rel="noreferrer">
+            Open PNG
+          </a>
         </div>
       ) : null}
       {payload?.warnings.length ? (
-        <div className="alert warning" data-testid="warnings">
+        <div className="preview-message-card warning" data-testid="warnings">
+          <strong>Preview warnings</strong>
           {payload.warnings.map((warning) => (
             <div key={warning}>{warning}</div>
           ))}
