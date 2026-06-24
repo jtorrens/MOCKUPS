@@ -42,7 +42,7 @@ import {
 import { ChatContentArrayEditor } from "../editors/chat/ChatContentArrayEditor.js";
 import { ChatHeaderFieldsEditor } from "../editors/chat/ChatHeaderFieldsEditor.js";
 import { ChatParticipantFieldsEditor } from "../editors/chat/ChatParticipantFieldsEditor.js";
-import { ChatMessageMediaEditor } from "../editors/chat/ChatMessageMediaEditor.js";
+import { ChatMessageFieldsEditor } from "../editors/chat/ChatMessageFieldsEditor.js";
 import {
   hasModeColorOverrides,
   ModeColorEditor,
@@ -1080,88 +1080,18 @@ export function RecordEditor({
       }
 
       return (
-        <div className="record-editor-content-fields">
-          <InspectorFieldRow
-            className="record-editor-content-field-row"
-            label={<span>Type</span>}
-            control={
-              <select
-                className="json-value-control"
-                value={direction}
-                onChange={(event) => setDirection(event.target.value)}
-              >
-                <option value="received">Recibido</option>
-                <option value="sent">Enviado</option>
-                <option value="system">Sistema</option>
-              </select>
-            }
-          />
-          {direction === "received" ? (
-            <div className="record-editor-content-nested-panel">
-              <InspectorFieldRow
-                className="record-editor-content-field-row"
-                label={<span>Participant</span>}
-                control={
-                  <select
-                    className="json-value-control"
-                    value={senderId}
-                    onChange={(event) =>
-                      setMessagePath(["senderParticipantId"], event.target.value)
-                    }
-                  >
-                    {receivedOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                }
-              />
-            </div>
-          ) : null}
-          <InspectorFieldRow
-            className="record-editor-content-field-row"
-            label={<span>Show bubble background</span>}
-            control={
-              <input
-                type="checkbox"
-                checked={message.showBubbleBackground !== false}
-                onChange={(event) =>
-                  setMessagePath(["showBubbleBackground"], event.target.checked)
-                }
-              />
-            }
-          />
-          <InspectorFieldRow
-            className="record-editor-content-field-row"
-            label={<span>Text scale</span>}
-            control={
-              <input
-                className="json-value-control"
-                type="number"
-                step="0.05"
-                value={Number(message.textScale ?? 1)}
-                onChange={(event) =>
-                  setMessagePath(["textScale"], Number(event.target.value))
-                }
-              />
-            }
-          />
-          <InspectorFieldRow
-            className="record-editor-content-field-row"
-            label={<span>Message text</span>}
-            control={
-              <DeferredTextInput
-                value={String(message.text ?? "")}
-                onCommit={(nextValue) => setMessagePath(["text"], nextValue)}
-              />
-            }
-          />
-          <ChatMessageMediaEditor
-            mediaType={mediaType}
-            filePath={String(media.filePath ?? "")}
-            canBrowse={Boolean(mockupsNative()?.pickFile)}
-            numberFields={([
+        <ChatMessageFieldsEditor
+          direction={direction}
+          senderId={senderId}
+          receivedOptions={receivedOptions}
+          showBubbleBackground={message.showBubbleBackground !== false}
+          textScale={Number(message.textScale ?? 1)}
+          text={String(message.text ?? "")}
+          textRevealMode={String(textReveal.mode ?? "simple_write_on")}
+          mediaType={mediaType}
+          mediaFilePath={String(media.filePath ?? "")}
+          canBrowseMedia={Boolean(mockupsNative()?.pickFile)}
+          mediaNumberFields={([
               ["Container width", ["media", "window", "width"], 360],
               ["Container height", ["media", "window", "height"], 240],
               ["Crop X offset", ["media", "window", "offsetX"], 0],
@@ -1183,55 +1113,49 @@ export function RecordEditor({
                 ) ?? fallback,
               ),
             }))}
-            onMediaTypeChange={setMediaType}
-            onFilePathChange={(nextPath) =>
-              setConversationMediaPath(
-                relativePathFromRoot(nextPath, productionMediaRoot()),
-              )
-            }
-            onBrowseFile={() => {
-              void (async () => {
-                const [filePath] =
-                  await (mockupsNative()?.pickFile?.() ?? Promise.resolve([]));
-                if (filePath) {
-                  setConversationMediaPath(
-                    relativePathFromRoot(filePath, productionMediaRoot()),
-                  );
-                }
-              })();
-            }}
-            onNumberFieldChange={(path, nextValue) =>
-              setMessagePath(path, nextValue)
-            }
-          />
-          <InspectorFieldRow
-            className="record-editor-content-field-row"
-            label={<span>Text reveal mode</span>}
-            control={
-              <select
-                className="json-value-control"
-                value={String(textReveal.mode ?? "simple_write_on")}
-                onChange={(event) =>
-                  updateMessage({
-                    ...message,
-                    textReveal: {
-                      startFrame: Number(
-                        textReveal.startFrame ?? message.startFrame ?? 0,
-                      ),
-                      durationFrames: Number(textReveal.durationFrames ?? 30),
-                      ...textReveal,
-                      mode: event.target.value,
-                    },
-                  })
-                }
-              >
-                <option value="simple_write_on">Simple write down</option>
-                <option value="natural_write_on">Write down natural</option>
-                <option value="waiting_dots">Waiting dots animation</option>
-              </select>
-            }
-          />
-        </div>
+          onDirectionChange={setDirection}
+          onSenderChange={(nextSenderId) =>
+            setMessagePath(["senderParticipantId"], nextSenderId)
+          }
+          onShowBubbleBackgroundChange={(showBubbleBackground) =>
+            setMessagePath(["showBubbleBackground"], showBubbleBackground)
+          }
+          onTextScaleChange={(textScale) =>
+            setMessagePath(["textScale"], textScale)
+          }
+          onTextChange={(nextText) => setMessagePath(["text"], nextText)}
+          onTextRevealModeChange={(mode) =>
+            updateMessage({
+              ...message,
+              textReveal: {
+                startFrame: Number(textReveal.startFrame ?? message.startFrame ?? 0),
+                durationFrames: Number(textReveal.durationFrames ?? 30),
+                ...textReveal,
+                mode,
+              },
+            })
+          }
+          onMediaTypeChange={setMediaType}
+          onMediaFilePathChange={(nextPath) =>
+            setConversationMediaPath(
+              relativePathFromRoot(nextPath, productionMediaRoot()),
+            )
+          }
+          onBrowseMedia={() => {
+            void (async () => {
+              const [filePath] =
+                await (mockupsNative()?.pickFile?.() ?? Promise.resolve([]));
+              if (filePath) {
+                setConversationMediaPath(
+                  relativePathFromRoot(filePath, productionMediaRoot()),
+                );
+              }
+            })();
+          }}
+          onMediaNumberFieldChange={(path, nextValue) =>
+            setMessagePath(path, nextValue)
+          }
+        />
       );
     }
 
