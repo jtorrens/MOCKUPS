@@ -432,7 +432,7 @@
   --browser-row-surface-background: #34363b;
   --browser-row-surface-border-color: #50535b;
   --browser-row-surface-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
-  --browser-row-active-color: #ece9e2;
+  --browser-row-active-color: #8fa2ff;
   --browser-row-active-background: #383a3f;
   --browser-row-active-border-color: #565a62;
   --browser-row-editing-color: #ece9e2;
@@ -477,7 +477,7 @@
   --browser-action-color: #aaa69d;
   --browser-action-hover-color: #ece9e2;
   --browser-action-hover-background: #404248;
-  --browser-editing-label-color: #b8c4dc;
+  --browser-editing-label-color: #345dff;
   --browser-editing-icon-border-color: #7f8fad;
   --browser-editing-icon-background: #404248;
   --browser-card-background: var(--card-background, #34363b);
@@ -3159,6 +3159,15 @@ body,
   border: 0;
   background: transparent;
   box-shadow: none;
+}
+
+.project-browser-root .project-tree-card.project-browser-data-table > .project-tree-children {
+  gap: 0;
+}
+
+.project-browser-root .project-tree-data-record-card + .project-tree-data-record-card {
+  border-top: 1px solid var(--project-tree-children-top-border, var(--browser-row-surface-border-color, #e1e5ec));
+  padding-top: 6px;
 }
 
 .project-browser-root .project-tree-summary {
