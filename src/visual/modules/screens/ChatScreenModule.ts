@@ -57,6 +57,7 @@ function createMessageBubbleInput(
     direction: message.direction,
     text: message.text,
     visibleText: message.visibleText,
+    status: message.status,
     actor: {
       id: message.sender.id,
       displayName: message.sender.displayName,
