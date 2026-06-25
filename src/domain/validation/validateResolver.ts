@@ -103,9 +103,9 @@ assert(
   "Chat messages may resolve text and conversation-specific media paths together",
 );
 assert(
-  chatProps.messages[1]?.sender.participantId ===
-    canonicalChatData.messages[1]?.senderParticipantId,
-  "Resolved message must retain its senderParticipantId",
+  chatProps.messages[1]?.sender.id ===
+    canonicalChatData.messages[1]?.actorId,
+  "Resolved message must retain its actorId",
 );
 
 const completedFrame = resolveShot({ ...commonInput, shotFrame: 240 });

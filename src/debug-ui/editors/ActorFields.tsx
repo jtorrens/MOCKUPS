@@ -52,11 +52,51 @@ function actorInitials({
     .join("");
 }
 
-function actorColor(drafts: Record<string, string>) {
+const actorThemeModes = ["light", "dark"] as const;
+
+function isHexColor(value: unknown): value is string {
+  return typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value);
+}
+
+function actorModeColor(
+  drafts: Record<string, string>,
+  mode: (typeof actorThemeModes)[number] = "light",
+  field: "color" | "avatarTextColor" = "color",
+) {
   const root = parsedObject(drafts.metadata_json ?? "{}");
-  return typeof root.color === "string" && /^#[0-9a-f]{6}$/i.test(root.color)
-    ? root.color
-    : "#64748b";
+  const modes = root.modes;
+  const modeRoot =
+    modes && typeof modes === "object" && !Array.isArray(modes)
+      ? (modes as Record<string, unknown>)[mode]
+      : undefined;
+  if (modeRoot && typeof modeRoot === "object" && !Array.isArray(modeRoot)) {
+    const value = (modeRoot as Record<string, unknown>)[field];
+    if (isHexColor(value)) {
+      return value;
+    }
+  }
+  if (field === "color" && isHexColor(root.color)) {
+    return root.color;
+  }
+  const avatar = root.avatar;
+  if (
+    field === "avatarTextColor" &&
+    avatar &&
+    typeof avatar === "object" &&
+    !Array.isArray(avatar) &&
+    isHexColor((avatar as Record<string, unknown>).textColor)
+  ) {
+    return (avatar as Record<string, string>).textColor;
+  }
+  return field === "color" ? "#64748b" : "#ffffff";
+}
+
+function actorColor(drafts: Record<string, string>) {
+  return actorModeColor(drafts, "light", "color");
+}
+
+function actorAvatarTextColor(drafts: Record<string, string>) {
+  return actorModeColor(drafts, "light", "avatarTextColor");
 }
 
 function actorAvatar(drafts: Record<string, string>) {
@@ -67,18 +107,36 @@ function actorAvatar(drafts: Record<string, string>) {
     : {};
 }
 
-function setActorColor({
+function setActorModeColor({
   drafts,
   setMetadataRaw,
+  mode,
+  field,
   nextColor,
 }: Pick<ActorFieldsContext, "drafts" | "setMetadataRaw"> & {
+  mode: (typeof actorThemeModes)[number];
+  field: "color" | "avatarTextColor";
   nextColor: string;
 }) {
   const root = parsedObject(drafts.metadata_json ?? "{}");
+  const modes =
+    root.modes && typeof root.modes === "object" && !Array.isArray(root.modes)
+      ? { ...(root.modes as Record<string, unknown>) }
+      : {};
+  const modeRoot =
+    modes[mode] && typeof modes[mode] === "object" && !Array.isArray(modes[mode])
+      ? { ...(modes[mode] as Record<string, unknown>) }
+      : {};
   setMetadataRaw(
     stringifyJson({
       ...root,
-      color: nextColor,
+      modes: {
+        ...modes,
+        [mode]: {
+          ...modeRoot,
+          [field]: nextColor,
+        },
+      },
     }),
   );
 }
@@ -108,40 +166,76 @@ function setActorAvatarPatch({
 }
 
 function ActorColorField(context: ActorFieldsContext) {
-  const color = actorColor(context.drafts);
   const initials = actorInitials(context);
+  const rows = [
+    { field: "color" as const, label: "Actor color" },
+    { field: "avatarTextColor" as const, label: "Avatar text color" },
+  ];
   return (
-    <InspectorFieldRow
-      key="actor_color"
-      className="record-editor-field record-editor-field-string actor-color-field"
-      label={<span>Color</span>}
-      control={
-        <div className="actor-color-control">
-          <span
-            className="actor-color-preview"
-            style={{ backgroundColor: color }}
-            aria-hidden="true"
-          >
-            {initials}
-          </span>
-          <input
-            aria-label="Actor color"
-            type="color"
-            value={color}
-            onChange={(event) =>
-              setActorColor({ ...context, nextColor: event.target.value })
-            }
-          />
-          <input
-            aria-label="Actor color hex"
-            value={color}
-            onChange={(event) =>
-              setActorColor({ ...context, nextColor: event.target.value })
-            }
-          />
-        </div>
-      }
-    />
+    <>
+      {rows.map((row) => (
+        <InspectorFieldRow
+          key={`actor_${row.field}`}
+          className="record-editor-field record-editor-field-string actor-color-field"
+          label={<span>{row.label}</span>}
+          control={
+            <div className="actor-color-control actor-mode-color-grid">
+              {actorThemeModes.map((mode) => {
+                const color = actorModeColor(context.drafts, mode, row.field);
+                const previewBackground =
+                  row.field === "color"
+                    ? color
+                    : actorModeColor(context.drafts, mode, "color");
+                const previewText =
+                  row.field === "avatarTextColor"
+                    ? color
+                    : actorModeColor(context.drafts, mode, "avatarTextColor");
+                return (
+                  <label key={mode} className="actor-mode-color-cell">
+                    <span className="actor-mode-color-label">{mode}</span>
+                    <span
+                      className="actor-color-preview"
+                      style={{
+                        backgroundColor: previewBackground,
+                        color: previewText,
+                      }}
+                      aria-hidden="true"
+                    >
+                      {row.field === "color" ? initials : "Aa"}
+                    </span>
+                    <input
+                      aria-label={`${row.label} ${mode}`}
+                      type="color"
+                      value={color}
+                      onChange={(event) =>
+                        setActorModeColor({
+                          ...context,
+                          mode,
+                          field: row.field,
+                          nextColor: event.target.value,
+                        })
+                      }
+                    />
+                    <input
+                      aria-label={`${row.label} ${mode} hex`}
+                      value={color}
+                      onChange={(event) =>
+                        setActorModeColor({
+                          ...context,
+                          mode,
+                          field: row.field,
+                          nextColor: event.target.value,
+                        })
+                      }
+                    />
+                  </label>
+                );
+              })}
+            </div>
+          }
+        />
+      ))}
+    </>
   );
 }
 
@@ -152,10 +246,7 @@ function ActorAvatarFields(context: ActorFieldsContext) {
   const offsetX = typeof avatar.offsetX === "number" ? avatar.offsetX : 0;
   const offsetY = typeof avatar.offsetY === "number" ? avatar.offsetY : 0;
   const useInitials = avatar.useInitials === true;
-  const textColor =
-    typeof avatar.textColor === "string" && /^#[0-9a-f]{6}$/i.test(avatar.textColor)
-      ? avatar.textColor
-      : "#ffffff";
+  const textColor = actorAvatarTextColor(context.drafts);
   const backgroundColor = actorColor(context.drafts);
   const initials = actorInitials(context);
   const AvatarPreview = context.AvatarPreview;
@@ -207,33 +298,6 @@ function ActorAvatarFields(context: ActorFieldsContext) {
             >
               Browse…
             </button>
-          </div>
-        }
-      />
-      <InspectorFieldRow
-        key="actor_avatar_text_color"
-        className="record-editor-field record-editor-field-string actor-color-field"
-        label={<span>Avatar text color</span>}
-        control={
-          <div className="actor-color-control">
-            <span
-              className="actor-color-preview"
-              style={{ backgroundColor: textColor, color: backgroundColor }}
-              aria-hidden="true"
-            >
-              Aa
-            </span>
-            <input
-              aria-label="Avatar text color"
-              type="color"
-              value={textColor}
-              onChange={(event) => patchAvatar({ textColor: event.target.value })}
-            />
-            <input
-              aria-label="Avatar text color hex"
-              value={textColor}
-              onChange={(event) => patchAvatar({ textColor: event.target.value })}
-            />
           </div>
         }
       />

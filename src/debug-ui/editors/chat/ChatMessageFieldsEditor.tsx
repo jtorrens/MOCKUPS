@@ -3,7 +3,7 @@ import { InspectorFieldRow } from "../../components/inspector/InspectorFieldRow.
 import type { JsonPath, JsonValue } from "../../components/json-editor/jsonEditorUtils.js";
 import { ChatMessageMediaEditor } from "./ChatMessageMediaEditor.js";
 
-interface ParticipantOption {
+interface ActorOption {
   value: string;
   label: string;
 }
@@ -17,8 +17,8 @@ interface MediaNumberField {
 
 interface ChatMessageFieldsEditorProps {
   direction: string;
-  senderId: string;
-  receivedOptions: ParticipantOption[];
+  actorId: string;
+  actorOptions: ActorOption[];
   startFrame: number;
   writeOnDurationFrames: number;
   showBubbleBackground: boolean;
@@ -30,7 +30,7 @@ interface ChatMessageFieldsEditorProps {
   canBrowseMedia: boolean;
   mediaNumberFields: MediaNumberField[];
   onDirectionChange: (direction: string) => void;
-  onSenderChange: (senderId: string) => void;
+  onActorChange: (actorId: string) => void;
   onStartFrameChange: (frame: number) => void;
   onWriteOnDurationFramesChange: (frameCount: number) => void;
   onShowBubbleBackgroundChange: (show: boolean) => void;
@@ -45,8 +45,8 @@ interface ChatMessageFieldsEditorProps {
 
 export function ChatMessageFieldsEditor({
   direction,
-  senderId,
-  receivedOptions,
+  actorId,
+  actorOptions,
   startFrame,
   writeOnDurationFrames,
   showBubbleBackground,
@@ -58,7 +58,7 @@ export function ChatMessageFieldsEditor({
   canBrowseMedia,
   mediaNumberFields,
   onDirectionChange,
-  onSenderChange,
+  onActorChange,
   onStartFrameChange,
   onWriteOnDurationFramesChange,
   onShowBubbleBackgroundChange,
@@ -87,22 +87,22 @@ export function ChatMessageFieldsEditor({
           </select>
         }
       />
-      {direction === "received" ? (
+      {direction !== "system" ? (
         <div className="record-editor-content-nested-panel">
           <InspectorFieldRow
             className="record-editor-content-field-row"
-            label={<span>Participant</span>}
+            label={<span>Actor</span>}
             control={
               <select
                 className="json-value-control"
-                value={senderId}
-                onChange={(event) => onSenderChange(event.target.value)}
+                value={actorId}
+                onChange={(event) => onActorChange(event.target.value)}
               >
-                {!receivedOptions.some((option) => option.value === senderId) &&
-                senderId ? (
-                  <option value={senderId}>Current participant</option>
+                {!actorOptions.some((option) => option.value === actorId) &&
+                actorId ? (
+                  <option value={actorId}>Current actor</option>
                 ) : null}
-                {receivedOptions.map((option) => (
+                {actorOptions.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>

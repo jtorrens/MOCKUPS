@@ -95,10 +95,6 @@ function sectionMeta(label: string) {
       icon: "☰",
       subtitle: "Message list spacing and behavior",
     },
-    participants: {
-      icon: "♙",
-      subtitle: "Linked users, display names and participant roles",
-    },
     chatbubbles: {
       icon: "☵",
       subtitle: "Incoming and outgoing bubble tokens",

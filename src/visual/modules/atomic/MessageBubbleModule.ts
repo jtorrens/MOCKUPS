@@ -133,8 +133,8 @@ export function renderMessageBubbleWithLayout(
         maxBubbleWidth: layout.maxBubbleWidth,
         alignment: layout.alignment,
         tokenSources: {
-          style: "theme.tokens_json.chatBubbles/typography/avatars",
-          layout: "theme.tokens_json.chatBubbles/avatars",
+          style: "theme.tokens_json.chatBubbles/typography",
+          layout: "theme.tokens_json.chatBubbles",
         },
       },
     };

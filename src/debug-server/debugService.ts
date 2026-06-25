@@ -93,9 +93,14 @@ function rewriteRenderableMediaUrls(
           : {}),
       }
     : node.style;
+  const assetUri =
+    node.asset?.type === "image" && typeof node.asset.uri === "string"
+      ? previewMediaUrl(productionId, node.asset.uri)
+      : undefined;
   return {
     ...node,
     ...(nextStyle ? { style: nextStyle } : {}),
+    ...(assetUri ? { asset: { type: "image", uri: assetUri } } : {}),
     ...(node.children
       ? {
           children: node.children.map((child) =>
@@ -1270,7 +1275,13 @@ function defaultThemeTokens(family: "ios" | "android") {
       card: isAndroid ? 16 : 12,
     },
     shadows: {
-      notification: {
+      avatar: {
+        color: "rgba(0,0,0,0.18)",
+        offsetX: 0,
+        offsetY: 4,
+        blur: 18,
+      },
+      elevated: {
         color: "rgba(0,0,0,0.18)",
         offsetX: 0,
         offsetY: 4,

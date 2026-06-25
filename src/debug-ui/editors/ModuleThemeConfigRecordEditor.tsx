@@ -15,7 +15,10 @@ import { ModuleFunctionalConfigFields } from "./ModuleFunctionalConfigFields.js"
 import { parsedObject } from "./recordJsonUtils.js";
 import type { RawJsonFieldOverride } from "./RecordFieldRenderer.js";
 import type { ModuleThemeTab } from "./editorTabs.js";
-import { stripModuleSystemOwnedTokens } from "./recordTokenUtils.js";
+import {
+  normalizeCoreChatModuleTokensForEditor,
+  stripModuleSystemOwnedTokens,
+} from "./recordTokenUtils.js";
 
 interface ModuleThemeConfigRecordEditorProps {
   table: AppTableDefinition;
@@ -74,6 +77,20 @@ function differsFromInherited(
   return explicitLocalDiffers(parsedObject(drafts[column] ?? "{}"), inherited);
 }
 
+function moduleEditorTokenRoot(
+  record: AppRecord,
+  value: unknown,
+): Record<string, JsonValue> {
+  const stripped = stripModuleSystemOwnedTokens(value);
+  return record.module_id === "core.chat"
+    ? normalizeCoreChatModuleTokensForEditor(stripped)
+    : stripped;
+}
+
+function stringifyJson(value: unknown): string {
+  return JSON.stringify(value, null, 2);
+}
+
 export function ModuleThemeConfigRecordEditor({
   table,
   record,
@@ -92,20 +109,22 @@ export function ModuleThemeConfigRecordEditor({
   setJsonDraft,
 }: ModuleThemeConfigRecordEditorProps) {
   const tokensField = fieldsByColumn.get("tokens_json");
-  const tokenRoot = stripModuleSystemOwnedTokens(
+  const tokenRoot = moduleEditorTokenRoot(
+    record,
     parsedObject(drafts.tokens_json ?? "{}"),
   );
   const inheritedTokenRoot =
     inheritedFields.tokens_json &&
     typeof inheritedFields.tokens_json === "object" &&
     !Array.isArray(inheritedFields.tokens_json)
-      ? stripModuleSystemOwnedTokens(
-          inheritedFields.tokens_json as Record<string, unknown>,
-        )
+      ? moduleEditorTokenRoot(record, inheritedFields.tokens_json)
       : undefined;
   const designGroups = Object.keys(tokenRoot).filter(
     (group) =>
-      group !== "modes" && group !== "textInputBar" && group !== "keyboard",
+      group !== "modes" &&
+      group !== "textInputBar" &&
+      group !== "keyboard" &&
+      group !== "avatars",
   );
   const selectableDesignGroups = [...designGroups, "controls"];
   const controlsWarning =
@@ -145,14 +164,17 @@ export function ModuleThemeConfigRecordEditor({
               >
                 <div className="record-editor-field-stack record-editor-single-column">
                   {renderField(tokensField, {
-                    rawText: rawForJsonGroupValue("tokens_json", group),
+                    rawText: stringifyJson(tokenRoot[group] ?? {}),
                     hideLabel: true,
                     groupContext: group,
                     inheritedValue: inheritedTokenRoot?.[group] as
                       | Record<string, unknown>
                       | undefined,
                     onRawTextChange: (nextRawText) =>
-                      updateJsonGroupValue("tokens_json", group, nextRawText),
+                      setJsonDraft("tokens_json", {
+                        ...tokenRoot,
+                        [group]: parsedObject(nextRawText),
+                      } as JsonValue),
                   })}
                 </div>
               </EditorSubsectionAccordion>

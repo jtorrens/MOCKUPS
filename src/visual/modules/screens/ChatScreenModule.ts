@@ -26,6 +26,17 @@ function clampOpacity(value: number) {
   return Math.max(0, Math.min(1, value));
 }
 
+function headerBackgroundColor(input: ResolvedChatScreenProps) {
+  return (
+    input.header.backgroundColor ??
+    readString(
+      input.theme.header,
+      "background",
+      readString(input.theme.colors, "background", "#FFFFFF"),
+    )
+  );
+}
+
 function createMessageBubbleInput(
   input: ResolvedChatScreenProps,
   message: ResolvedChatScreenProps["messages"][number],
@@ -35,7 +46,6 @@ function createMessageBubbleInput(
   const tailTokens = readObject(chatTokens, "tail");
   const typographyTokens = input.theme.typography;
   const messageTypography = readObject(typographyTokens ?? {}, "message");
-  const avatarTokens = input.theme.avatars;
   const actorAvatar = outgoing
     ? input.ownerActor.avatar?.uri
     : input.header.avatar?.uri;
@@ -90,7 +100,7 @@ function createMessageBubbleInput(
       tailWidth: readNumber(tailTokens, "width", 0),
       tailHeight: readNumber(tailTokens, "height", 0),
       shadow: readObject(chatTokens, "shadow"),
-      avatarSize: readNumber(avatarTokens, "defaultSize", 32),
+      avatarSize: readNumber(chatTokens, "avatarSize", 32),
     },
     layout: message.layout ?? {
       maxWidth: Math.round(
@@ -104,7 +114,7 @@ function createMessageBubbleInput(
             : "left",
       showTail: message.direction !== "system",
       groupPosition: "single",
-      avatarGap: readNumber(avatarTokens, "gap", 8),
+      avatarGap: readNumber(chatTokens, "avatarGap", 8),
     },
     timing: {
       startFrame: message.timing.startFrame,
@@ -175,6 +185,30 @@ export const ChatScreenModule: VisualModule<ResolvedChatScreenProps> = {
               ),
             },
     });
+
+    if (layout.headerBox) {
+      const statusBarHeight = layout.statusBarBox?.height ?? 0;
+      children.push({
+        id: `${input.screenInstanceId}:chat_header_bleed`,
+        type: "chat_header_background",
+        role: "conversation_header_background",
+        frame: input.frame,
+        box: {
+          x: layout.headerBox.x,
+          y: layout.rootBox.y,
+          width: layout.headerBox.width,
+          height: statusBarHeight + layout.headerBox.height,
+        },
+        style: {
+          backgroundColor: headerBackgroundColor(input),
+        },
+        metadata: {
+          layoutAffectsHeader: false,
+          note: "Visual bleed fills behind the status bar without changing header layout.",
+        },
+      });
+    }
+
     if (layout.statusBarBox) {
       children.push(
         {
@@ -200,9 +234,9 @@ export const ChatScreenModule: VisualModule<ResolvedChatScreenProps> = {
             header: input.header,
             colors: input.theme.colors,
             fonts: input.theme.fonts,
+            shadows: input.theme.shadows,
             typography: input.theme.typography,
             headerTokens: input.theme.header,
-            avatarTokens: input.theme.avatars,
             screenGutter,
           }),
           box: layout.headerBox,

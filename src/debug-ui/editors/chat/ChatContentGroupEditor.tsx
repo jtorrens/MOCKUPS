@@ -13,22 +13,14 @@ import { ChatContentArrayEditor } from "./ChatContentArrayEditor.js";
 import { ChatHeaderFieldsEditor } from "./ChatHeaderFieldsEditor.js";
 import { ChatMessageFieldsEditor } from "./ChatMessageFieldsEditor.js";
 import { ChatNestedValueEditor } from "./ChatNestedValueEditor.js";
-import { ChatParticipantFieldsEditor } from "./ChatParticipantFieldsEditor.js";
 import {
+  actorOptions,
   defaultMessageItem,
-  defaultParticipantItem,
-  firstReceivedParticipant,
   mediaNumberFieldsForMessage,
-  messageDirectionFromSenderRole,
   messageWithDirection,
   messageWithMediaPath,
   messageWithMediaType,
   messageWithTextRevealMode,
-  ownerParticipant,
-  participantById,
-  participantDisplayName,
-  participantOptions,
-  participantsFromContentRoot,
 } from "./chatContentModel.js";
 
 interface ChatContentGroupEditorProps {
@@ -38,8 +30,6 @@ interface ChatContentGroupEditorProps {
   hints: JsonUiHints;
   openItems: Record<string, boolean>;
   recordId?: unknown;
-  root: Record<string, unknown>;
-  actorTitleForRecord: (actor: AppRecord) => string;
   canBrowseMedia: boolean;
   normalizeMediaPath: (filePath: string) => string;
   onBrowseMedia: () => Promise<string | undefined>;
@@ -54,8 +44,6 @@ export function ChatContentGroupEditor({
   hints,
   openItems,
   recordId,
-  root,
-  actorTitleForRecord,
   canBrowseMedia,
   normalizeMediaPath,
   onBrowseMedia,
@@ -71,17 +59,12 @@ export function ChatContentGroupEditor({
     return String(actor?.display_name ?? "");
   }
 
-  function participantsArray() {
-    return participantsFromContentRoot(root);
-  }
-
-  function participantLabel(participant: Record<string, JsonValue> | undefined) {
-    return participantDisplayName(participant, actorDisplayName);
-  }
-
   function messageDirection(message: Record<string, JsonValue>) {
-    const sender = participantById(participantsArray(), message.senderParticipantId);
-    return messageDirectionFromSenderRole(message, sender?.role);
+    if (message.direction === "system" || message.type === "system") {
+      return "system";
+    }
+    if (message.direction === "outgoing") return "sent";
+    return "received";
   }
 
   function updateObjectPath(
@@ -92,52 +75,28 @@ export function ChatContentGroupEditor({
     updateAtPath([...basePath, ...leafPath], nextValue);
   }
 
-  function renderParticipantFields(
-    participant: Record<string, JsonValue>,
-    index: number,
-  ) {
-    const actorId = String(participant.actorId ?? "");
-    const inheritedDisplayName = actorDisplayName(actorId);
-    const displayName = String(
-      participant.displayName ?? inheritedDisplayName ?? "",
-    );
-    return (
-      <ChatParticipantFieldsEditor
-        participant={participant}
-        actorOptions={actors}
-        actorId={actorId}
-        displayName={displayName}
-        inheritedDisplayName={inheritedDisplayName}
-        actorTitleForRecord={actorTitleForRecord}
-        onActorChange={(nextActorId) => {
-          const nextDisplayName = actorDisplayName(nextActorId);
-          onGroupValueChange(
-            setAtPath(
-              setAtPath(groupValue, [index, "actorId"], nextActorId),
-              [index, "displayName"],
-              nextDisplayName,
-            ),
-          );
-        }}
-        onDisplayNameChange={(nextValue) =>
-          updateAtPath([index, "displayName"], nextValue)
-        }
-        onRoleChange={(nextRole) => updateAtPath([index, "role"], nextRole)}
-      />
-    );
-  }
-
   function renderHeaderFields(header: Record<string, JsonValue>) {
-    const avatarParticipant = participantById(
-      participantsArray(),
-      header.avatarParticipantId,
-    );
-    const inheritedTitle = participantLabel(avatarParticipant);
+    const inheritedTitle = actorDisplayName(header.actorId);
+    const headerActorOptions = actorOptions(actors);
     return (
       <ChatHeaderFieldsEditor
         header={header}
         inheritedTitle={inheritedTitle}
-        onChange={(key, value) => updateAtPath([key], value)}
+        actorOptions={headerActorOptions}
+        onChange={(key, value) => {
+          if (key !== "actorId") {
+            updateAtPath([key], value);
+            return;
+          }
+          const nextTitle = actorDisplayName(value);
+          onGroupValueChange(
+            setAtPath(
+              setAtPath(groupValue, ["actorId"], value),
+              ["title"],
+              nextTitle,
+            ),
+          );
+        }}
       />
     );
   }
@@ -150,22 +109,19 @@ export function ChatContentGroupEditor({
     const media = isJsonObject(message.media) ? message.media : {};
     const textReveal = isJsonObject(message.textReveal) ? message.textReveal : {};
     const mediaType = String(media.type ?? (message.mediaAssetId ? "image" : "none"));
-    const receivedOptions = participantOptions(
-      participantsArray().filter((participant) => participant.role !== "owner"),
-      participantLabel,
-    );
-    const senderId = String(message.senderParticipantId ?? "");
-    const senderParticipant = participantById(participantsArray(), senderId);
-    const receivedOptionsWithCurrentSender =
-      senderId && !receivedOptions.some((option) => option.value === senderId)
+    const messageActorOptions = actorOptions(actors);
+    const currentActorId = String(message.actorId ?? "");
+    const actorOptionsWithCurrentActor =
+      currentActorId &&
+      !messageActorOptions.some((option) => option.value === currentActorId)
         ? [
             {
-              value: senderId,
-              label: participantLabel(senderParticipant) || senderId,
+              value: currentActorId,
+              label: actorDisplayName(currentActorId) || currentActorId,
             },
-            ...receivedOptions,
+            ...messageActorOptions,
           ]
-        : receivedOptions;
+        : messageActorOptions;
     const startFrame = Number(message.startFrame ?? 0);
     const writeOnDurationFrames = Number(textReveal.durationFrames ?? 30);
 
@@ -178,16 +134,15 @@ export function ChatContentGroupEditor({
     }
 
     function setDirection(nextDirection: string) {
-      const participants = participantsArray();
-      const owner = ownerParticipant(participants);
-      const received = firstReceivedParticipant(participants);
       updateMessage(
         messageWithDirection(
           message,
           nextDirection,
-          String(owner?.id ?? ""),
-          String(received?.id ?? ""),
-          senderId,
+          messageActorOptions[0]?.value ?? "",
+          messageActorOptions.find((option) => option.value !== currentActorId)?.value ??
+            messageActorOptions[0]?.value ??
+            "",
+          currentActorId,
         ),
       );
     }
@@ -203,8 +158,8 @@ export function ChatContentGroupEditor({
     return (
       <ChatMessageFieldsEditor
         direction={direction}
-        senderId={senderId}
-        receivedOptions={receivedOptionsWithCurrentSender}
+        actorId={currentActorId}
+        actorOptions={actorOptionsWithCurrentActor}
         startFrame={startFrame}
         writeOnDurationFrames={writeOnDurationFrames}
         showBubbleBackground={message.showBubbleBackground !== false}
@@ -216,8 +171,8 @@ export function ChatContentGroupEditor({
         canBrowseMedia={canBrowseMedia}
         mediaNumberFields={mediaNumberFieldsForMessage(message)}
         onDirectionChange={setDirection}
-        onSenderChange={(nextSenderId) =>
-          setMessagePath(["senderParticipantId"], nextSenderId)
+        onActorChange={(nextActorId) =>
+          setMessagePath(["actorId"], nextActorId)
         }
         onStartFrameChange={(nextFrame) =>
           updateMessage({
@@ -285,21 +240,11 @@ export function ChatContentGroupEditor({
 
   function addArrayItem() {
     const nextIndex = Array.isArray(groupValue) ? groupValue.length : 0;
-    const participants = participantsArray();
+    const firstActorId = String(actors[0]?.id ?? "");
     const nextItem =
       groupKey === "messages"
-        ? defaultMessageItem(
-            nextIndex,
-            String(
-              (
-                firstReceivedParticipant(participants) ??
-                ownerParticipant(participants)
-              )?.id ?? "",
-            ),
-          )
-        : groupKey === "participants"
-          ? defaultParticipantItem(nextIndex)
-          : defaultJsonValue("object");
+        ? defaultMessageItem(nextIndex, firstActorId)
+        : defaultJsonValue("object");
     onGroupValueChange(
       Array.isArray(groupValue) ? [...groupValue, nextItem] : [nextItem],
     );
@@ -347,9 +292,7 @@ export function ChatContentGroupEditor({
         renderItemContent={(entryValue, index, isOpen) =>
           isOpen ? (
             <>
-              {groupKey === "participants" && isJsonObject(entryValue) ? (
-                renderParticipantFields(entryValue, index)
-              ) : groupKey === "messages" && isJsonObject(entryValue) ? (
+              {groupKey === "messages" && isJsonObject(entryValue) ? (
                 renderMessageFields(entryValue, index)
               ) : (
                 <div className="record-editor-content-fields">

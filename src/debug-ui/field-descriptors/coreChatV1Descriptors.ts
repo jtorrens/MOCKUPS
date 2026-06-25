@@ -2,24 +2,6 @@ import type { FieldDescriptor } from "./types.js";
 
 export const coreChatV1ContentDescriptors: FieldDescriptor[] = [
   {
-    canonicalPath: "moduleInstance.content.participants[]",
-    storagePath: ["participants", 0],
-    label: "Participant",
-    section: "Module Content",
-    area: "content",
-    group: "Participants",
-    summaryKeys: ["displayName", "role", "id"],
-  },
-  {
-    canonicalPath: "moduleInstance.content.participants[].displayName",
-    storagePath: ["participants", 0, "displayName"],
-    label: "Display name",
-    section: "Module Content",
-    area: "content",
-    group: "Participants",
-    property: "displayName",
-  },
-  {
     canonicalPath: "moduleInstance.content.messages[]",
     storagePath: ["messages", 0],
     label: "Message",
@@ -27,6 +9,15 @@ export const coreChatV1ContentDescriptors: FieldDescriptor[] = [
     area: "content",
     group: "Messages",
     summaryKeys: ["text", "media.filePath", "type", "id"],
+  },
+  {
+    canonicalPath: "moduleInstance.content.messages[].actorId",
+    storagePath: ["messages", 0, "actorId"],
+    label: "Actor",
+    section: "Module Content",
+    area: "content",
+    group: "Messages",
+    property: "actorId",
   },
   {
     canonicalPath: "moduleInstance.content.messages[].text",

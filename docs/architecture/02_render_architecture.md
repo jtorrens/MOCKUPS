@@ -37,8 +37,8 @@ For `core.chat` schema version 1, the canonical content flow is:
 ```text
 module_instances.content_json
   → ChatModuleDataSchema
-  → participant/actor/asset resolution
-  → message.direction alignment + senderParticipantId identity
+  → actor/asset resolution
+  → message.direction alignment + actorId identity
   → ResolvedChatScreenProps
 ```
 

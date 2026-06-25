@@ -118,7 +118,13 @@
       "card": 12
     },
     "shadows": {
-      "notification": {
+      "avatar": {
+        "color": "rgba(0,0,0,0.18)",
+        "offsetX": 0,
+        "offsetY": 4,
+        "blur": 18
+      },
+      "elevated": {
         "color": "rgba(0,0,0,0.18)",
         "offsetX": 0,
         "offsetY": 4,

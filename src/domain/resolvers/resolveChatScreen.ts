@@ -11,7 +11,6 @@ import {
   ResolvedChatScreenPropsSchema,
   type Actor,
   type App,
-  type ChatParticipant,
   type Device,
   type DeviceState,
   type ModuleInstance,
@@ -22,7 +21,7 @@ import {
 import { requireRecord } from "./helpers.js";
 import {
   resolveMessageBubble,
-  type ResolvedChatParticipant,
+  type ResolvedChatActor,
 } from "./resolveMessageBubble.js";
 
 const CHAT_MODULE_ID = "core.chat";
@@ -87,6 +86,7 @@ const ChatThemeSchema = z.object({
   chatBubbles: z.record(z.string(), z.unknown()),
   avatars: z.record(z.string(), z.unknown()),
   cursor: z.record(z.string(), z.unknown()),
+  shadows: z.record(z.string(), z.unknown()).optional(),
   radii: z.object({ bubble: z.number().min(0) }),
 });
 
@@ -486,6 +486,35 @@ function iconItemsForState(
   );
 }
 
+function resolveIconItems(
+  rawItems: unknown,
+  iconTheme:
+    | {
+        asset_root: string;
+        mapping_json: Record<string, unknown>;
+      }
+    | undefined,
+) {
+  if (typeof rawItems === "string") {
+    return iconItemsForState(
+      rawItems
+        .split(",")
+        .map((token) => token.trim())
+        .filter(Boolean)
+        .map((token, index) => ({ token, order: (index + 1) * 10 })),
+      [],
+      iconTheme,
+    );
+  }
+  return iconItemsForState(rawItems, [], iconTheme);
+}
+
+function iconItemsSource(primary: unknown, fallback: unknown): unknown {
+  return Array.isArray(primary) && primary.length === 0
+    ? fallback
+    : primary ?? fallback;
+}
+
 function resolveTextInputBarDefinition(
   behaviorTextInputBar: unknown,
   iconTheme?: {
@@ -737,6 +766,80 @@ export function resolveModuleThemeTokens(
   return mergeTokenObjects(tokens, resolveThemeModeTokens(tokens, themeMode));
 }
 
+function normalizeChatVisualTokenGroups(
+  tokens: Record<string, unknown>,
+): Record<string, unknown> {
+  const header = isObject(tokens.header) ? tokens.header : {};
+  const chatBubbles = isObject(tokens.chatBubbles) ? tokens.chatBubbles : {};
+  const avatars = isObject(tokens.avatars) ? tokens.avatars : {};
+  const shadows = isObject(tokens.shadows) ? tokens.shadows : {};
+  const headerAvatarSize = numberValue(
+    header.avatarSize,
+    numberValue(avatars.headerSize, 56),
+  );
+  const headerLeftIconTokens =
+    typeof header.leftIconTokens === "string" && header.leftIconTokens.trim()
+      ? header.leftIconTokens
+      : "nav_chevron_left";
+  const headerRightIconTokens =
+    typeof header.rightIconTokens === "string" && header.rightIconTokens.trim()
+      ? header.rightIconTokens
+      : "media_camera, phone_call";
+  const bubbleAvatarSize = numberValue(
+    chatBubbles.avatarSize,
+    numberValue(avatars.defaultSize, 32),
+  );
+  const bubbleAvatarGap = numberValue(
+    chatBubbles.avatarGap,
+    numberValue(avatars.gap, 8),
+  );
+  return {
+    ...tokens,
+    header: {
+      ...header,
+      avatarSize: headerAvatarSize,
+      avatarCornerRadius: numberValue(
+        header.avatarCornerRadius,
+        Math.round(headerAvatarSize * 0.22),
+      ),
+      subtitleBottomPadding: numberValue(header.subtitleBottomPadding, 10),
+      elementGap: numberValue(header.elementGap, numberValue(avatars.gap, 8)),
+      sidePadding: numberValue(
+        header.sidePadding,
+        numberValue(header.elementGap, numberValue(avatars.gap, 8)),
+      ),
+      leftIconTokens: headerLeftIconTokens,
+      rightIconTokens: headerRightIconTokens,
+    },
+    chatBubbles: {
+      ...chatBubbles,
+      avatarSize: bubbleAvatarSize,
+      avatarGap: bubbleAvatarGap,
+    },
+    avatars: {
+      ...avatars,
+      defaultSize: bubbleAvatarSize,
+      gap: bubbleAvatarGap,
+      headerSize: headerAvatarSize,
+    },
+    shadows: {
+      ...shadows,
+      avatar: isObject(shadows.avatar)
+        ? shadows.avatar
+        : isObject(shadows.elevated)
+          ? shadows.elevated
+        : isObject(shadows.notification)
+          ? shadows.notification
+          : {
+              color: "rgba(0,0,0,0.18)",
+              offsetX: 0,
+              offsetY: 4,
+              blur: 18,
+            },
+    },
+  };
+}
+
 const DESIGN_UNIT_TOKEN_PATHS = [
   ["fonts", "bodySize"],
   ["fonts", "bodyLineHeight"],
@@ -744,6 +847,13 @@ const DESIGN_UNIT_TOKEN_PATHS = [
   ["layout", "screenGutter"],
   ["header", "height"],
   ["header", "separatorWidth"],
+  ["header", "elementGap"],
+  ["header", "sidePadding"],
+  ["header", "iconSize"],
+  ["header", "avatarSize"],
+  ["header", "avatarCornerRadius"],
+  ["header", "avatarBorderWidth"],
+  ["header", "subtitleBottomPadding"],
   ["messages", "spacing"],
   ["messages", "groupSpacing"],
   ["typography", "message", "fontSize"],
@@ -754,6 +864,8 @@ const DESIGN_UNIT_TOKEN_PATHS = [
   ["typography", "headerSubtitle", "lineHeight"],
   ["chatBubbles", "paddingX"],
   ["chatBubbles", "paddingY"],
+  ["chatBubbles", "avatarSize"],
+  ["chatBubbles", "avatarGap"],
   ["chatBubbles", "tail", "width"],
   ["chatBubbles", "tail", "height"],
   ["chatBubbles", "shadow", "offsetX"],
@@ -888,21 +1000,20 @@ function stripModuleThemeSystemOwnedTokens(
   return next;
 }
 
-function resolveParticipant(
+function resolveChatActor(
   repository: DomainRepository,
-  participant: ChatParticipant,
-): ResolvedChatParticipant {
-  const actor = participant.actorId
-    ? requireRecord(
-        repository.getActor(participant.actorId),
-        "Actor",
-        participant.actorId,
-      )
-    : undefined;
+  actorId: string,
+  themeMode: "light" | "dark",
+): ResolvedChatActor {
+  const actor = requireRecord(
+    repository.getActor(actorId),
+    "Actor",
+    actorId,
+  );
   const directAvatarUri = actorAvatarUri(actor);
   const avatarAssetId = directAvatarUri
     ? undefined
-    : participant.avatarAssetId ?? actor?.avatar_asset_id;
+    : actor.avatar_asset_id;
   const avatar = avatarAssetId
     ? requireRecord(
         repository.getMediaAsset(avatarAssetId),
@@ -910,18 +1021,46 @@ function resolveParticipant(
         avatarAssetId,
       )
     : undefined;
-  const displayName = participant.displayName ?? actor?.display_name;
-  if (!displayName) {
-    throw new Error(`Chat participant ${participant.id} has no display name`);
-  }
 
   return {
-    participantId: participant.id,
-    ...(actor ? { actorId: actor.id } : {}),
-    displayName,
+    id: actor.id,
+    displayName: actor.display_name,
     ...(directAvatarUri || avatar ? { avatarUri: directAvatarUri ?? avatar?.uri } : {}),
-    role: participant.role,
+    ...(actorMetadataColor(actor, themeMode, "color") ? {
+      color: actorMetadataColor(actor, themeMode, "color"),
+    } : {}),
+    ...(actorMetadataColor(actor, themeMode, "avatarTextColor") ? {
+      avatarTextColor: actorMetadataColor(actor, themeMode, "avatarTextColor"),
+    } : {}),
   };
+}
+
+function actorMetadataColor(
+  actor: Actor | undefined,
+  themeMode: "light" | "dark",
+  field: "color" | "avatarTextColor",
+) {
+  const metadata = actor?.metadata_json;
+  if (!isObject(metadata)) {
+    return undefined;
+  }
+  const modes = metadata.modes;
+  if (isObject(modes) && isObject(modes[themeMode])) {
+    const modeValue = modes[themeMode]?.[field];
+    if (typeof modeValue === "string" && modeValue.trim()) {
+      return modeValue;
+    }
+  }
+  if (field === "color") {
+    return typeof metadata.color === "string" && metadata.color.trim()
+      ? metadata.color
+      : undefined;
+  }
+  const avatar = metadata.avatar;
+  if (isObject(avatar) && typeof avatar.textColor === "string" && avatar.textColor.trim()) {
+    return avatar.textColor;
+  }
+  return undefined;
 }
 
 function actorAvatarUri(actor: Actor | undefined) {
@@ -986,44 +1125,16 @@ export function resolveChatScreen({
     );
   }
 
-  const participants = new Map(
-    moduleData.participants.map((participant) => {
-      const resolved = resolveParticipant(repository, participant);
-      return [resolved.participantId, resolved] as const;
-    }),
-  );
-  const ownerParticipant = [...participants.values()].find(
-    (participant) => participant.role === "owner",
-  );
-  if (!ownerParticipant) {
-    throw new Error(`Chat screen instance ${screenInstance.id} has no owner`);
-  }
-  if (
-    ownerParticipant.actorId &&
-    ownerParticipant.actorId !== ownerActor.id
-  ) {
-    throw new Error(
-      `Chat owner participant does not match screen owner ${ownerActor.id}`,
-    );
-  }
-
-  const headerAvatarParticipant = moduleData.header.avatarParticipantId
-    ? participants.get(moduleData.header.avatarParticipantId)
-    : undefined;
-  if (
-    moduleData.header.avatarParticipantId &&
-    !headerAvatarParticipant
-  ) {
-    throw new Error(
-      `Chat header references missing participant ${moduleData.header.avatarParticipantId}`,
-    );
-  }
-
-  const metrics = DeviceMetricsSchema.parse(device.metrics_json);
-  const state = DeviceStateValuesSchema.parse(deviceState.state_json);
   const themeEnvelope = ThemeEnvelopeSchema.parse(theme.tokens_json);
   const themeMode =
     screenInstance.theme_mode ?? themeEnvelope.defaultMode ?? "light";
+  const ownerChatActor = resolveChatActor(repository, ownerActor.id, themeMode);
+  const headerActor = moduleData.header.actorId
+    ? resolveChatActor(repository, moduleData.header.actorId, themeMode)
+    : undefined;
+
+  const metrics = DeviceMetricsSchema.parse(device.metrics_json);
+  const state = DeviceStateValuesSchema.parse(deviceState.state_json);
   const moduleThemeConfig = repository.getModuleThemeConfig(
     theme.id,
     app.id,
@@ -1056,7 +1167,8 @@ export function resolveChatScreen({
     mergedThemeTokens,
     renderScale,
   );
-  const themeTokens = ChatThemeSchema.parse(scaledThemeTokens);
+  const normalizedThemeTokens = normalizeChatVisualTokenGroups(scaledThemeTokens);
+  const themeTokens = ChatThemeSchema.parse(normalizedThemeTokens);
   const statusBar = theme.status_bar_id
     ? repository.getStatusBar(theme.status_bar_id)
     : undefined;
@@ -1066,6 +1178,17 @@ export function resolveChatScreen({
   const iconTheme = theme.icon_theme_id
     ? repository.getIconTheme(theme.icon_theme_id)
     : undefined;
+  const resolvedHeaderTokens = {
+    ...themeTokens.header,
+    leftItems: resolveIconItems(
+      iconItemsSource(themeTokens.header.leftItems, themeTokens.header.leftIconTokens),
+      iconTheme,
+    ),
+    rightItems: resolveIconItems(
+      iconItemsSource(themeTokens.header.rightItems, themeTokens.header.rightIconTokens),
+      iconTheme,
+    ),
+  };
   const effectiveStatusBar = resolveStatusBarDefinition(
     statusBar?.config_json,
     moduleConfig.statusBar,
@@ -1084,24 +1207,26 @@ export function resolveChatScreen({
     renderScale,
   );
   const resolvedMessages = moduleData.messages.map((message) => {
-    const sender = participants.get(message.senderParticipantId);
-    if (!sender) {
-      throw new Error(
-        `Chat message ${message.id} references missing participant ${message.senderParticipantId}`,
-      );
-    }
     const direction =
       message.direction ??
       (message.type === "system"
         ? "system"
-        : sender.participantId === ownerParticipant.participantId
+        : message.actorId === ownerActor.id
           ? "outgoing"
           : "incoming");
+    const sender =
+      direction === "system"
+        ? ownerChatActor
+        : resolveChatActor(
+            repository,
+            message.actorId ?? ownerActor.id,
+            themeMode,
+          );
     const bubble = resolveMessageBubble({
       message,
       sender,
       direction,
-      themeTokens: scaledThemeTokens,
+      themeTokens: normalizedThemeTokens,
       localFrame,
       fps,
       viewportWidth: metrics.viewport.width,
@@ -1122,7 +1247,6 @@ export function resolveChatScreen({
       visibleText: bubble.visibleText,
       sender: {
         id: bubble.actor.id,
-        participantId: sender.participantId,
         displayName: bubble.actor.displayName,
       },
       ...(mediaUri
@@ -1213,14 +1337,14 @@ export function resolveChatScreen({
       : message,
   );
 
-  const ownerAvatar = ownerParticipant.avatarUri
+  const ownerAvatar = ownerChatActor.avatarUri
     ? {
-        uri: ownerParticipant.avatarUri,
+        uri: ownerChatActor.avatarUri,
       }
     : undefined;
-  const headerAvatar = headerAvatarParticipant?.avatarUri
+  const headerAvatar = headerActor?.avatarUri
     ? {
-        uri: headerAvatarParticipant.avatarUri,
+        uri: headerActor.avatarUri,
       }
     : undefined;
 
@@ -1236,6 +1360,7 @@ export function resolveChatScreen({
     theme: {
       id: theme.id,
       ...themeTokens,
+      header: resolvedHeaderTokens,
       chatBubbles: {
         ...themeTokens.chatBubbles,
         radius: themeTokens.radii.bubble,
@@ -1262,6 +1387,9 @@ export function resolveChatScreen({
     header: {
       title: moduleData.header.title,
       subtitle: moduleData.header.subtitle,
+      ...(moduleData.header.useContactColor && headerActor?.color
+        ? { backgroundColor: headerActor.color }
+        : {}),
       ...(headerAvatar?.uri ? { avatar: headerAvatar } : {}),
     },
     messages,

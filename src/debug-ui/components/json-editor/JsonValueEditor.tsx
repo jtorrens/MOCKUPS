@@ -1,9 +1,9 @@
 import { fontStylesForFamily, useSystemFontCatalog } from "./systemFonts.js";
+import { DeferredNumberInput } from "../../editor-ui/DeferredNumberInput.js";
 import { ColorValueEditor } from "./ColorValueEditor.js";
 import type { JsonUiHints } from "./uiHints.js";
 import { hintForPath } from "./uiHints.js";
 import {
-  coercePrimitiveValue,
   defaultJsonValue,
   getAtPath,
   isJsonObject,
@@ -239,14 +239,13 @@ export function JsonValueEditor({
 
   if (typeof value === "number") {
     return (
-      <input
+      <DeferredNumberInput
         className="json-value-control"
-        type="number"
         min={hint.min}
         max={hint.max}
         step={hint.step ?? "any"}
-        value={String(value)}
-        onChange={(event) => onChange(coercePrimitiveValue(event.target.value, value))}
+        value={value}
+        onCommit={(nextValue) => onChange(nextValue)}
       />
     );
   }

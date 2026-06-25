@@ -5,18 +5,6 @@ export const coreChatV1EditorHints: ModuleEditorHintContract = {
   schemaVersion: 1,
   fields: {
     module_data_json: {
-      "participants.[]": {
-        label: "Participant",
-        summaryKeys: ["displayName", "role", "id"],
-      },
-      "participants.[].id": { label: "Participant ID" },
-      "participants.[].displayName": { label: "Display name" },
-      "participants.[].actorId": { label: "Linked actor" },
-      "participants.[].role": {
-        label: "Role",
-        widget: "select",
-        options: ["owner", "participant", "system"],
-      },
       "messages.[]": {
         label: "Message",
         summaryKeys: ["text", "media.filePath", "type", "id"],
@@ -27,7 +15,7 @@ export const coreChatV1EditorHints: ModuleEditorHintContract = {
         widget: "select",
         options: ["text", "media", "system"],
       },
-      "messages.[].senderParticipantId": { label: "Sender" },
+      "messages.[].actorId": { label: "Actor" },
       "messages.[].text": { label: "Message text", widget: "textarea" },
       "messages.[].media": { label: "Attached media" },
       "messages.[].media.type": {
@@ -130,6 +118,76 @@ export const coreChatV1EditorHints: ModuleEditorHintContract = {
       "typography.headerSubtitle.fontWeight": {
         label: "Header subtitle font weight",
         widget: "select",
+      },
+      "header.elementGap": {
+        label: "Element gap",
+        widget: "number",
+        min: 0,
+        step: 1,
+      },
+      "header.sidePadding": {
+        label: "Side padding",
+        widget: "number",
+        min: 0,
+        step: 1,
+      },
+      "header.iconSize": {
+        label: "Icon size",
+        widget: "number",
+        min: 0,
+        step: 1,
+      },
+      "header.leftIconTokens": {
+        label: "Left icon tokens",
+        widget: "text",
+      },
+      "header.rightIconTokens": {
+        label: "Right icon tokens",
+        widget: "text",
+      },
+      "header.subtitleBottomPadding": {
+        label: "Subtitle bottom padding",
+        widget: "number",
+        min: 0,
+        step: 1,
+      },
+      "header.avatarSize": {
+        label: "Avatar size",
+        widget: "number",
+        min: 0,
+        step: 1,
+      },
+      "header.avatarCornerRadius": {
+        label: "Avatar corner radius",
+        widget: "number",
+        min: 0,
+        step: 1,
+      },
+      "header.avatarBorderWidth": {
+        label: "Avatar border width",
+        widget: "number",
+        min: 0,
+        step: 1,
+      },
+      "header.avatarShadow": {
+        label: "Avatar shadow",
+        widget: "checkbox",
+      },
+      "header.avatarBorderColor": {
+        label: "Avatar border color",
+        widget: "color",
+      },
+      "chatBubbles.avatarSize": {
+        label: "Message avatar size",
+        widget: "number",
+        min: 0,
+        step: 1,
+      },
+      "chatBubbles.avatarGap": {
+        label: "Message avatar gap",
+        widget: "number",
+        min: 0,
+        step: 1,
       },
     },
     module_tokens_override_json: {

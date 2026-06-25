@@ -225,9 +225,14 @@ function absolutizeRenderableUrls(
           : {}),
       }
     : node.style;
+  const assetUri =
+    node.asset?.type === "image" && typeof node.asset.uri === "string"
+      ? absolutize(node.asset.uri)
+      : undefined;
   return {
     ...node,
     ...(nextStyle ? { style: nextStyle } : {}),
+    ...(assetUri ? { asset: { type: "image", uri: assetUri } } : {}),
     ...(node.children
       ? {
           children: node.children.map((child) =>

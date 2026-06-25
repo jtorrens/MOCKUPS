@@ -40,8 +40,6 @@ const COMMON_HINTS: JsonUiHints = {
   type: { label: "Type" },
   text: { label: "Text" },
   displayName: { label: "Display name" },
-  participantId: { label: "Participant" },
-  senderParticipantId: { label: "Sender" },
   actorId: { label: "Actor" },
   avatarUrl: { label: "Avatar URL" },
   defaultMode: {

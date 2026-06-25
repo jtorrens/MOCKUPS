@@ -259,6 +259,16 @@ export function createExampleDataset(): RepositoryDataset {
     header: {
       height: 96,
       separatorWidth: 1,
+      elementGap: 8,
+      sidePadding: 8,
+      iconSize: 24,
+      leftIconTokens: "nav_chevron_left",
+      rightIconTokens: "media_camera, phone_call",
+      avatarSize: 56,
+      avatarCornerRadius: 12,
+      avatarBorderWidth: 0,
+      avatarShadow: false,
+      subtitleBottomPadding: 10,
     },
     messages: {
       spacing: 6,
@@ -285,6 +295,8 @@ export function createExampleDataset(): RepositoryDataset {
       paddingX: 14,
       paddingY: 9,
       maxWidthRatio: 0.6667,
+      avatarSize: 32,
+      avatarGap: 8,
       tail: {
         style: "rounded_wedge",
         width: 8,
@@ -295,11 +307,6 @@ export function createExampleDataset(): RepositoryDataset {
         offsetY: 0,
         blur: 0,
       },
-    },
-    avatars: {
-      defaultSize: 32,
-      headerSize: 56,
-      gap: 8,
     },
     textInputBar: {
       placeholder: "Mensaje",
@@ -350,6 +357,7 @@ export function createExampleDataset(): RepositoryDataset {
         header: {
           background: "#FFFFFF",
           separatorColor: "#D1D1D6",
+          avatarBorderColor: "#FFFFFF",
         },
         chatBubbles: {
           outgoingBackground: "#0B84FF",
@@ -365,6 +373,7 @@ export function createExampleDataset(): RepositoryDataset {
         header: {
           background: "#1C1C1E",
           separatorColor: "#38383A",
+          avatarBorderColor: "#1C1C1E",
         },
         chatBubbles: {
           outgoingBackground: "#0A84FF",
@@ -413,11 +422,20 @@ export function createExampleDataset(): RepositoryDataset {
       ...productionExample.actors[0],
       avatar_asset_id: ownerAvatar.assetId,
       metadata_json: {
+        modes: {
+          light: {
+            color: "#64748b",
+            avatarTextColor: "#ffffff",
+          },
+          dark: {
+            color: "#475569",
+            avatarTextColor: "#ffffff",
+          },
+        },
         avatar: {
           baseSize: 640,
           filePath: ownerAvatar.uri,
           useInitials: false,
-          textColor: "#ffffff",
           scale: 1,
           offsetX: 0,
           offsetY: 0,
@@ -433,11 +451,20 @@ export function createExampleDataset(): RepositoryDataset {
       default_device_id: device.id,
       default_theme_id: theme.id,
       metadata_json: {
+        modes: {
+          light: {
+            color: "#3b82f6",
+            avatarTextColor: "#ffffff",
+          },
+          dark: {
+            color: "#60a5fa",
+            avatarTextColor: "#0f172a",
+          },
+        },
         avatar: {
           baseSize: 640,
           filePath: otherAvatar.uri,
           useInitials: false,
-          textColor: "#ffffff",
           scale: 1,
           offsetX: 0,
           offsetY: 0,

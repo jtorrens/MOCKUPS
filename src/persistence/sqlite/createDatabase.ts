@@ -481,6 +481,97 @@ function applyAdditiveV14Migration(database: SQLiteDatabase): void {
   database.pragma("user_version = 14");
 }
 
+function applyAdditiveV15Migration(database: SQLiteDatabase): void {
+  const rows = database
+    .prepare(
+      `SELECT id, content_json
+       FROM module_instances
+       WHERE module_id = 'core.chat'`,
+    )
+    .all() as { id: string; content_json: string }[];
+  const update = database.prepare(
+    "UPDATE module_instances SET content_json = ? WHERE id = ?",
+  );
+
+  for (const row of rows) {
+    let content: Record<string, unknown>;
+    try {
+      content = JSON.parse(row.content_json) as Record<string, unknown>;
+    } catch {
+      continue;
+    }
+    const participants = Array.isArray(content.participants)
+      ? content.participants.filter(
+          (item): item is Record<string, unknown> =>
+            item !== null && typeof item === "object" && !Array.isArray(item),
+        )
+      : [];
+    if (participants.length === 0) {
+      continue;
+    }
+    const actorByParticipantId = new Map<string, string>();
+    for (const participant of participants) {
+      if (
+        typeof participant.id === "string" &&
+        typeof participant.actorId === "string" &&
+        participant.actorId.trim()
+      ) {
+        actorByParticipantId.set(participant.id, participant.actorId);
+      }
+    }
+
+    const header =
+      content.header !== null &&
+      typeof content.header === "object" &&
+      !Array.isArray(content.header)
+        ? { ...(content.header as Record<string, unknown>) }
+        : {};
+    const headerParticipantId = header.avatarParticipantId;
+    if (
+      typeof headerParticipantId === "string" &&
+      actorByParticipantId.has(headerParticipantId)
+    ) {
+      header.actorId = actorByParticipantId.get(headerParticipantId);
+    }
+    if (header.useParticipantColor === true) {
+      header.useContactColor = true;
+    }
+    delete header.avatarParticipantId;
+    delete header.useParticipantColor;
+
+    const messages = Array.isArray(content.messages)
+      ? content.messages.map((message) => {
+          if (
+            message === null ||
+            typeof message !== "object" ||
+            Array.isArray(message)
+          ) {
+            return message;
+          }
+          const nextMessage = { ...(message as Record<string, unknown>) };
+          const senderParticipantId = nextMessage.senderParticipantId;
+          if (
+            typeof senderParticipantId === "string" &&
+            actorByParticipantId.has(senderParticipantId)
+          ) {
+            nextMessage.actorId = actorByParticipantId.get(senderParticipantId);
+          }
+          delete nextMessage.senderParticipantId;
+          return nextMessage;
+        })
+      : content.messages;
+
+    const nextContent: Record<string, unknown> = {
+      ...content,
+      header,
+      messages,
+    };
+    delete nextContent.participants;
+    update.run(JSON.stringify(nextContent), row.id);
+  }
+  database.pragma("user_version = 15");
+}
+
 export function applyInitialSchema(database: SQLiteDatabase): void {
   database.exec(readFileSync(schemaPath, "utf8"));
   applyAdditiveV2Migration(database);
@@ -496,6 +587,7 @@ export function applyInitialSchema(database: SQLiteDatabase): void {
   applyAdditiveV12Migration(database);
   applyAdditiveV13Migration(database);
   applyAdditiveV14Migration(database);
+  applyAdditiveV15Migration(database);
   database.pragma("foreign_keys = ON");
 }
 

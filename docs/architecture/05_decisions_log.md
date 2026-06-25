@@ -201,16 +201,23 @@ Implications:
 - One module document can be previewed in temporary contexts.
 - Themes contain light/dark modes and modules receive already merged tokens for the selected mode.
 
-## D021 — Chat participants are module-owned
+## D021 — Chat content references production actors directly
 
 Status: accepted
 
-Chat module data contains participants, and every message references `senderParticipantId`. Participants may reference reusable production actors.
+Chat module data references reusable production actors directly for header and
+message content. The earlier `participants` layer is deprecated for the current
+design because message direction already carries the incoming/outgoing/system
+role and production actors provide display names, avatars, devices, themes, and
+per-mode actor colors.
 
 Implications:
-- Group chats do not depend on a single owner/target pair.
-- `core.chat` schema version 1 uses `module_instances.content_json` as its canonical runtime source.
-- Central conversation/message tables may remain physically present but are deprecated and not read by Chat runtime.
+- Group chats can still be represented by assigning different actor IDs to
+  individual messages.
+- `core.chat` schema version 1 uses `module_instances.content_json` as its
+  canonical runtime source for header and message content.
+- Central conversation/message/participant tables may remain physically present
+  during the design phase, but are deprecated and not read by Chat runtime.
 
 ## D022 — Module schema versions are independent from app schema versions
 
@@ -365,7 +372,7 @@ Status: accepted
 The generic JSON tree editor remains a fallback surface. Module-specific UI hints are registered by `module_id` and `module_schema_version`, so each module can provide friendly labels, widgets, collapsed row summaries, and safe structural affordances without hardcoding module behavior into the generic tree.
 
 Implications:
-- `core.chat@1` can describe participants/messages without making the JSON editor Chat-specific.
+- `core.chat@1` can describe header/messages/actor references without making the JSON editor Chat-specific.
 - Future modules can add their own editor hints independently.
 - A specialized module editor may later replace the generic tree for a module while preserving the same canonical JSON storage.
 
@@ -502,8 +509,8 @@ Implications:
 - `Module Content` is not App data and should not be presented as App-level configuration.
 - `Screen Instance` remains responsible for placement, timing, transform, layer order, app/module reference, device/theme/mode context, and shot ownership.
 - `Module Instance` remains responsible for the module payload and behavior attached to that screen instance.
-- Chat participants and messages are edited through structured content cards, not as raw JSON strings.
-- Collapsed content rows should show useful summaries such as participant display name/role or message sender/type/text/timing.
+- Chat header and messages are edited through structured content cards, not as raw JSON strings.
+- Collapsed content rows should show useful summaries such as actor, direction, message type, text, and timing.
 - Major Project/App/Production Data areas use accordion sections with trees inside, avoiding mixed tab/tree metaphors.
 - Token and color editors use friendly group labels and logical icons; raw/internal token names remain useful only where they identify a token path.
 - Raw JSON remains a fallback/recovery surface, not the normal UI for module content.
@@ -523,7 +530,7 @@ module_instances.animation_json
 module_instances.metadata_json
 ```
 
-`content_json` stores shot-specific module data such as Chat participants, header copy, messages, timings, and media references. `behavior_json` stores per-shot behavior such as showing the header, showing the keyboard, status bar visibility, initial scroll, and message grouping. `animation_json` stores per-shot module parameter animation: timeline/keyframe changes to values such as header subtitle, message status, or message text.
+`content_json` stores shot-specific module data such as Chat header copy, actor references, message direction, messages, timings, and media references. `behavior_json` stores per-shot behavior such as showing the header, showing the keyboard, status bar visibility, initial scroll, and message grouping. `animation_json` stores per-shot module parameter animation: timeline/keyframe changes to values such as header subtitle, message status, or message text.
 
 `animation_json` is intentionally separate from `animation_presets`. Presets remain reserved for reusable visual entrances/exits/transitions if needed. Parameter animation changes what value a module field has on a frame; reveal modes such as `writeDown` change how an existing text value is displayed.
 
@@ -657,7 +664,7 @@ Chat message layout uses `message.direction` to decide visual alignment:
 - `outgoing` aligns right;
 - `system` aligns center.
 
-`senderParticipantId` identifies who the message belongs to and may still drive labels, avatars, participant-specific state, and future metadata, but it no longer decides horizontal placement. This lets a conversation represent sent/received/system messages directly without coupling alignment to a participant role heuristic.
+`actorId` identifies who the message belongs to and may still drive labels, avatars, actor-specific state, and future metadata, but it does not decide horizontal placement. This lets a conversation represent sent/received/system messages directly without coupling alignment to a participant role heuristic.
 
 ## D053 — UI CSS is organized by ownership layers
 
@@ -697,7 +704,7 @@ Current boundaries:
 - `src/debug-ui/editors/MediaPreviews.tsx` owns reusable media preview components for avatars, app icons, and wallpaper images.
 - `src/debug-ui/editors/recordJsonUtils.ts`, `recordTokenUtils.ts`, and `recordProductionUtils.ts` own shared pure helpers for parsed JSON, normalized JSON values, token groups, App token filtering, and production media-root lookup.
 - `src/debug-ui/editors/jsonGroupDrafts.ts` owns draft read/write helpers for editing one JSON group inside a wider JSON column.
-- `src/debug-ui/editors/chat/` owns Chat module content editing and its content model helpers: participants, header, messages, nested values, message media, array/card behavior, and content override-warning rules.
+- `src/debug-ui/editors/chat/` owns Chat module content editing and its content model helpers: header, messages, actor references, nested values, message media, array/card behavior, and content warning rules.
 - `src/debug-ui/components/RecordEditor.tsx` remains the central shell: it prepares draft/autosave state, tab state, media root, render services, JSON group helpers, and delegates table routing to `RecordEditorDispatcher`.
 
 This creates an OOP-like separation inside React without introducing an external plugin/module system yet. App/module-specific editors can vary in behavior while still reusing the same editor UI primitives and design tokens for analogous concepts.
@@ -714,3 +721,39 @@ Remaining work for the next architecture pass:
 - Continue shrinking `renderGenericField` into a dispatcher over domain-specific handlers.
 - Keep new table-specific editors lightweight and prop-driven. They should receive records, drafts, and change callbacks rather than owning persistence.
 - Continue removing transitional CSS only after the owning component/layer is clear, so cleanup does not silently break panel styling again.
+
+## D055 — Editor-specific behavior must reuse shared editor UI primitives
+
+Status: accepted
+
+The debug editor keeps a fixed separation between shared visual language and
+domain-specific editor behavior.
+
+Shared primitives live in `src/debug-ui/editor-ui/` and own reusable editor
+chrome such as headers, cards, accordions, chevrons, glyph containers, deferred
+inputs, and shared row/field composition. Table, app, and module editors may
+decide which fields, groups, cards, rows, and actions exist, but they should not
+create new local visual systems for cards, fields, buttons, icons, or accordions.
+
+If a new visual pattern is needed by more than one editor, it should be promoted
+to the shared editor UI layer first. Editor-specific code should express domain
+meaning and update JSON/records; shared UI components and shared tokens should
+express how analogous controls look.
+
+Implications:
+- New Chat, App, Theme, Status Bar, Navigation Bar, Keyboard, Text Input, Icon
+  Theme, or future module editors must reuse shared editor UI primitives unless a
+  genuinely unique interaction requires a new primitive.
+- Colors, borders, shadows, radii, typography, selected states, override states,
+  icon chrome, scrollbars, and control styling must read from shared UI tokens.
+- Final preview/render behavior remains separate from debug editor UI. Values
+  that affect output must flow through schemas, resolvers, resolved props, and
+  visual modules.
+- Before adding UI, decide whether a value is content, behavior, a module
+  default, a theme token, device/state data, or renderer logic. Do not move
+  values between instance and module levels unless that placement rule requires
+  it.
+
+Reference docs:
+- `docs/architecture/12_editor_encapsulation_contract.md`
+- `docs/architecture/13_keyboard_text_input_audit.md`

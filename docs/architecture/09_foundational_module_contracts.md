@@ -95,20 +95,23 @@ Renderer integrations such as Remotion only adapt the resulting tree.
 
 ## Chat-owned data
 
-Chat module data contains participants, header data, messages, media references, message timings, and `senderParticipantId`. A participant may reference a reusable production actor but has module-local identity, so group chats do not depend on an owner/target pair.
+Chat module data contains header data, messages, media references, message
+timings, message direction, and direct production actor references. The previous
+module-local `participants` layer is deprecated for the current design:
+`direction` carries the visual role (`incoming`, `outgoing`, `system`) and
+`actorId` points to the production actor when a sender/contact is needed.
 
 ```text
 module_instances.content_json
-  participants[]
   header
-  messages[] → senderParticipantId, text, optional media attachment, timings
+  messages[] → actorId, direction, text, optional media attachment, timings
 
 module_instances.behavior_json
   showHeader, showKeyboard, initialScroll
   messageGrouping, debug, behavior defaults
 ```
 
-`core.chat` schema version 1 now resolves directly from this module JSON. Direction is derived from participant ownership: owner sender → outgoing, non-owner sender → incoming, and system type → system. Participants may reference actors or carry a module-local display name, so group chats are native. Optional media uses `mediaAssetId` plus a logical media window/transform and may coexist with message text, for example an image/video with a caption or accompanying text.
+`core.chat` schema version 1 now resolves directly from this module JSON. Direction is explicit per message. Non-system messages reference production actors through `actorId`; system messages may omit actor identity. Optional media uses `mediaAssetId` or a direct file path plus a logical media window/transform and may coexist with message text, for example an image/video with a caption or accompanying text.
 
 There is no runtime fallback to `data_ref_json`, `conversations`, `conversation_participants`, `messages`, or generic `props_json`. Those SQLite structures may remain until a later cleanup/migration task, but debug/editor tooling must not write them.
 

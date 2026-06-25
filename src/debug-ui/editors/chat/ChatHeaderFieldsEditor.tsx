@@ -25,13 +25,12 @@ export function ChatHeaderFieldsEditor({
   const hasTitleOverride = Boolean(inheritedTitle) && title !== inheritedTitle;
 
   return (
-    <div className="record-editor-content-fields">
+    <div className="record-editor-field-stack record-editor-direct-fields">
       <InspectorFieldRow
-        className="record-editor-content-field-row"
+        className="record-editor-field record-editor-field-string"
         label={<span>Actor</span>}
         control={
           <select
-            className="json-value-control"
             value={String(header.actorId ?? "")}
             onChange={(event) =>
               onChange("actorId", event.target.value)
@@ -51,14 +50,13 @@ export function ChatHeaderFieldsEditor({
         }
       />
       <InspectorFieldRow
-        className={`record-editor-content-field-row ${
+        className={`record-editor-field record-editor-field-string ${
           hasTitleOverride ? "json-override" : ""
         }`}
         state={hasTitleOverride ? "override" : "default"}
         label={<span>Title</span>}
         control={
           <DeferredTextInput
-            className="json-value-control"
             value={title}
             onCommit={(nextValue) => onChange("title", nextValue)}
           />
@@ -73,26 +71,18 @@ export function ChatHeaderFieldsEditor({
         }
       />
       <InspectorFieldRow
-        className="record-editor-content-field-row"
+        className="record-editor-field record-editor-field-string"
         label={<span>Subtitle</span>}
         control={
           <DeferredTextInput
-            className="json-value-control"
             value={String(header.subtitle ?? "")}
             onCommit={(nextValue) => onChange("subtitle", nextValue)}
           />
         }
       />
       <InspectorFieldRow
-        className="record-editor-content-field-row"
-        label={
-          <span>
-            <span>Use actor color</span>
-            <div className="record-editor-field-note">
-              Header background uses selected actor color
-            </div>
-          </span>
-        }
+        className="record-editor-field record-editor-field-boolean"
+        label={<span>Use actor color</span>}
         control={
           <input
             type="checkbox"

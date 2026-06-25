@@ -27,14 +27,6 @@ export const ModuleMediaReferenceSchema = z.object({
   transform: AssetTransformSchema,
 });
 
-export const ChatParticipantSchema = z.object({
-  id: IdSchema,
-  displayName: z.string().min(1).optional(),
-  actorId: IdSchema.optional(),
-  avatarAssetId: IdSchema.optional(),
-  role: z.enum(["owner", "participant"]),
-});
-
 export const TextRevealSchema = z.object({
   mode: z.enum([
     "none",
@@ -49,7 +41,7 @@ export const TextRevealSchema = z.object({
 export const ChatModuleMessageSchema = z
   .object({
     id: IdSchema,
-    senderParticipantId: IdSchema,
+    actorId: IdSchema.optional(),
     direction: z.enum(["incoming", "outgoing", "system"]).optional(),
     /**
      * Message family. Media is not exclusive with text: a text message may also
@@ -103,54 +95,22 @@ export const ChatModuleMessageSchema = z
 export const ChatModuleDataSchema = z
   .object({
     schemaVersion: z.literal(1),
-    participants: z.array(ChatParticipantSchema).min(1),
     header: z.object({
       title: z.string().min(1),
       subtitle: z.string().optional(),
-      avatarParticipantId: IdSchema.optional(),
+      actorId: IdSchema.optional(),
       iconToken: z.string().min(1).optional(),
+      useContactColor: z.boolean().optional(),
     }),
     messages: z.array(ChatModuleMessageSchema),
   })
   .superRefine((value, context) => {
-    const participantIds = new Set(
-      value.participants.map((participant) => participant.id),
-    );
-    const ownerParticipants = value.participants.filter(
-      (participant) => participant.role === "owner",
-    );
-    if (ownerParticipants.length !== 1) {
-      context.addIssue({
-        code: "custom",
-        message: "Chat module data requires exactly one owner participant",
-        path: ["participants"],
-      });
-    }
-    value.participants.forEach((participant, index) => {
-      if (!participant.actorId && !participant.displayName) {
-        context.addIssue({
-          code: "custom",
-          message: "participant requires actorId or displayName",
-          path: ["participants", index],
-        });
-      }
-    });
-    if (
-      value.header.avatarParticipantId &&
-      !participantIds.has(value.header.avatarParticipantId)
-    ) {
-      context.addIssue({
-        code: "custom",
-        message: "header.avatarParticipantId must reference a participant",
-        path: ["header", "avatarParticipantId"],
-      });
-    }
     value.messages.forEach((message, index) => {
-      if (!participantIds.has(message.senderParticipantId)) {
+      if (message.type !== "system" && message.direction !== "system" && !message.actorId) {
         context.addIssue({
           code: "custom",
-          message: "senderParticipantId must reference a participant",
-          path: ["messages", index, "senderParticipantId"],
+          message: "non-system messages require actorId",
+          path: ["messages", index, "actorId"],
         });
       }
     });
@@ -173,7 +133,6 @@ export const ChatModuleConfigSchema = z.object({
 
 export type ThemeMode = z.infer<typeof ThemeModeSchema>;
 export type ModuleMediaReference = z.infer<typeof ModuleMediaReferenceSchema>;
-export type ChatParticipant = z.infer<typeof ChatParticipantSchema>;
 export type ChatModuleMessage = z.infer<typeof ChatModuleMessageSchema>;
 export type ChatModuleData = z.infer<typeof ChatModuleDataSchema>;
 export type ChatModuleConfig = z.infer<typeof ChatModuleConfigSchema>;

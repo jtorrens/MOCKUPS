@@ -1,4 +1,5 @@
 import { fontStylesForFamily, useSystemFontCatalog } from "./systemFonts.js";
+import { DeferredNumberInput } from "../../editor-ui/DeferredNumberInput.js";
 import {
   InspectorFieldRow,
   InspectorRestoreButton,
@@ -319,13 +320,27 @@ export function TokenOverrideEditor({
                 }}
               />
             </span>
+          ) : widget === "number" ? (
+            <DeferredNumberInput
+              ariaLabel={`${label} override`}
+              max={hint.max}
+              min={hint.min}
+              placeholder="Inherit"
+              step={hint.step ?? "any"}
+              value={
+                hasOverride && typeof overrideValue === "number"
+                  ? overrideValue
+                  : ""
+              }
+              onEmptyCommit={() => restoreValue(row.path, row.value)}
+              onCommit={(nextValue) =>
+                onRootChange(setAtPath(rootValue, row.path, nextValue))
+              }
+            />
           ) : (
             <input
               aria-label={`${label} override`}
-              type={widget === "number" ? "number" : "text"}
-              min={hint.min}
-              max={hint.max}
-              step={hint.step ?? (widget === "number" ? "any" : undefined)}
+              type="text"
               placeholder="Inherit"
               value={stringValue}
               onChange={(event) => {

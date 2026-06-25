@@ -96,7 +96,8 @@ Module theme configs should contain values that only make sense inside one modul
 - `messages.groupSpacing`;
 - `typography` for message text and Chat header text;
 - `chatBubbles` colors, padding, width ratio, shadow, and tail geometry;
-- `avatars` chat sizes/gaps;
+- `header` avatar size/mask/border/shadow and header icon layout;
+- `chatBubbles` message avatar size/gap;
 - `radii.bubble`;
 - `cursor` typing/reveal tokens;
 - future chat media message defaults.

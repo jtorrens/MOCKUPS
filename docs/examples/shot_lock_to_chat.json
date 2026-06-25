@@ -124,37 +124,17 @@
       "sort_order": 0,
       "content_json": {
         "schemaVersion": 1,
-        "participants": [
-          {
-            "id": "participant_alex",
-            "displayName": "Alex",
-            "actorId": "actor_alex",
-            "avatarAssetId": "media_asset_alex_avatar",
-            "role": "owner"
-          },
-          {
-            "id": "participant_sam",
-            "displayName": "Sam",
-            "actorId": "actor_sam",
-            "avatarAssetId": "media_asset_sam_avatar",
-            "role": "participant"
-          },
-          {
-            "id": "participant_taylor",
-            "displayName": "Taylor",
-            "role": "participant"
-          }
-        ],
         "header": {
           "title": "Sam",
           "subtitle": "online",
-          "avatarParticipantId": "participant_sam",
-          "iconToken": "chat.header.contact"
+          "actorId": "actor_sam",
+          "iconToken": "chat.header.contact",
+          "useContactColor": true
         },
         "messages": [
           {
             "id": "message_001",
-            "senderParticipantId": "participant_sam",
+            "actorId": "actor_sam",
             "direction": "incoming",
             "type": "text",
             "text": "Are you nearby?",
@@ -179,7 +159,7 @@
           },
           {
             "id": "message_002",
-            "senderParticipantId": "participant_alex",
+            "actorId": "actor_alex",
             "direction": "outgoing",
             "type": "text",
             "text": "Two minutes away.",

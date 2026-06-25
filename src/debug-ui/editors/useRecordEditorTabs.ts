@@ -16,7 +16,7 @@ export function useRecordEditorTabs({
   tableId,
 }: RecordEditorTabsOptions) {
   const [screenTab, setScreenTab] = useState<ScreenInstanceTab>("");
-  const [contentTab, setContentTab] = useState("participants");
+  const [contentTab, setContentTab] = useState("header");
   const [appTab, setAppTab] = useState<AppEditorTab>("");
   const [appTokenGroup, setAppTokenGroup] = useState("");
   const [themeTab, setThemeTab] = useState<ThemeEditorTab>("");
@@ -36,7 +36,7 @@ export function useRecordEditorTabs({
 
   useEffect(() => {
     setScreenTab("");
-    setContentTab("participants");
+    setContentTab("header");
     setModuleThemeTab("");
     setAppTab("");
     setAppTokenGroup("");

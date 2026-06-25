@@ -5,7 +5,7 @@ import {
 } from "../components/json-editor/jsonEditorUtils.js";
 
 function defaultTokenGroupValue(groupKey: string): JsonValue {
-  return groupKey === "messages" || groupKey === "participants" ? [] : {};
+  return groupKey === "messages" ? [] : {};
 }
 
 export function tokenEditorGroups(
@@ -76,6 +76,101 @@ export function stripModuleSystemOwnedTokens(
     if (!modeRoot) continue;
     delete modeRoot.cursor;
   }
+  return root;
+}
+
+function numberValue(value: unknown, fallback: number): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function modeRoot(root: Record<string, JsonValue>, mode: "light" | "dark") {
+  const modes = isJsonObject(root.modes) ? root.modes : {};
+  const currentMode = isJsonObject(modes[mode]) ? modes[mode] : {};
+  const header = isJsonObject(currentMode.header) ? currentMode.header : {};
+  return { modes, currentMode, header };
+}
+
+export function normalizeCoreChatModuleTokensForEditor(
+  value: unknown,
+): Record<string, JsonValue> {
+  const source = isJsonObject(value as JsonValue)
+    ? cloneJson(value as JsonValue)
+    : ({} as JsonValue);
+  const root = isJsonObject(source) ? source : {};
+  const header = isJsonObject(root.header) ? root.header : {};
+  const chatBubbles = isJsonObject(root.chatBubbles) ? root.chatBubbles : {};
+  const avatars = isJsonObject(root.avatars) ? root.avatars : {};
+  const light = modeRoot(root, "light");
+  const dark = modeRoot(root, "dark");
+  root.modes = {
+    ...light.modes,
+    light: {
+      ...light.currentMode,
+      header: {
+        ...light.header,
+        avatarBorderColor:
+          typeof light.header.avatarBorderColor === "string"
+            ? light.header.avatarBorderColor
+            : "#ffffff",
+      },
+    },
+    dark: {
+      ...dark.currentMode,
+      header: {
+        ...dark.header,
+        avatarBorderColor:
+          typeof dark.header.avatarBorderColor === "string"
+            ? dark.header.avatarBorderColor
+            : "#1c1c1e",
+      },
+    },
+  };
+  root.header = {
+    ...header,
+    avatarSize: numberValue(
+      header.avatarSize,
+      numberValue(avatars.headerSize, 56),
+    ),
+    avatarCornerRadius: numberValue(
+      header.avatarCornerRadius,
+      Math.round(
+        numberValue(header.avatarSize, numberValue(avatars.headerSize, 56)) *
+          0.22,
+      ),
+    ),
+    avatarBorderWidth: numberValue(header.avatarBorderWidth, 0),
+    avatarShadow: header.avatarShadow === true,
+    subtitleBottomPadding: numberValue(header.subtitleBottomPadding, 10),
+    elementGap: numberValue(
+      header.elementGap,
+      numberValue(avatars.gap, 8),
+    ),
+    sidePadding: numberValue(
+      header.sidePadding,
+      numberValue(header.elementGap, numberValue(avatars.gap, 8)),
+    ),
+    iconSize: numberValue(header.iconSize, 24),
+    leftIconTokens:
+      typeof header.leftIconTokens === "string"
+        ? header.leftIconTokens
+        : "nav_chevron_left",
+    rightIconTokens:
+      typeof header.rightIconTokens === "string"
+        ? header.rightIconTokens
+        : "media_camera, phone_call",
+  };
+  root.chatBubbles = {
+    ...chatBubbles,
+    avatarSize: numberValue(
+      chatBubbles.avatarSize,
+      numberValue(avatars.defaultSize, 32),
+    ),
+    avatarGap: numberValue(
+      chatBubbles.avatarGap,
+      numberValue(avatars.gap, 8),
+    ),
+  };
+  delete root.avatars;
   return root;
 }
 

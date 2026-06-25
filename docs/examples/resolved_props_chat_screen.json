@@ -31,6 +31,14 @@
       "background": "rgba(255,255,255,0)",
       "iconScale": 1
     },
+    "navigationBar": {
+      "foreground": "#000000",
+      "background": "rgba(255,255,255,0)",
+      "height": 102,
+      "itemSize": 27,
+      "gap": 42,
+      "sidePadding": 42
+    },
     "layout": {
       "screenGutter": 24
     },
@@ -140,7 +148,6 @@
       "visibleText": "Are you nearby?",
       "sender": {
         "id": "actor_sam",
-        "participantId": "participant_sam",
         "displayName": "Sam"
       },
       "media": {
@@ -171,7 +178,6 @@
       "visibleText": "Two minu",
       "sender": {
         "id": "actor_alex",
-        "participantId": "participant_alex",
         "displayName": "Alex"
       },
       "timing": {

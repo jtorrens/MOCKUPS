@@ -33,6 +33,8 @@ const MessageThemeSchema = z.object({
     paddingX: z.number().min(0),
     paddingY: z.number().min(0),
     maxWidthRatio: z.number().min(0).max(1),
+    avatarSize: z.number().min(0).optional(),
+    avatarGap: z.number().min(0).optional(),
     tail: z.object({
       style: z.string().min(1),
       width: z.number().min(0),
@@ -49,12 +51,12 @@ const MessageThemeSchema = z.object({
   }),
 });
 
-export interface ResolvedChatParticipant {
-  participantId: string;
-  actorId?: string;
+export interface ResolvedChatActor {
+  id: string;
   displayName: string;
   avatarUri?: string;
-  role: "owner" | "participant";
+  color?: string;
+  avatarTextColor?: string;
 }
 
 function resolveVisibleText(
@@ -86,7 +88,7 @@ function resolveVisibleText(
 
 export interface ResolveMessageBubbleInput {
   message: ChatModuleMessage;
-  sender: ResolvedChatParticipant;
+  sender: ResolvedChatActor;
   direction: "incoming" | "outgoing" | "system";
   themeTokens: Record<string, unknown>;
   localFrame: number;
@@ -128,7 +130,7 @@ export function resolveMessageBubble({
     text: message.text ?? "",
     visibleText: resolveVisibleText(message, localFrame, direction),
     actor: {
-      id: sender.actorId ?? sender.participantId,
+      id: sender.id,
       displayName: sender.displayName,
       ...(sender.avatarUri ? { avatarUri: sender.avatarUri } : {}),
     },
@@ -152,7 +154,8 @@ export function resolveMessageBubble({
       tailWidth: themeTokens.chatBubbles.tail.width,
       tailHeight: themeTokens.chatBubbles.tail.height,
       shadow: themeTokens.chatBubbles.shadow,
-      avatarSize: themeTokens.avatars.defaultSize,
+      avatarSize:
+        themeTokens.chatBubbles.avatarSize ?? themeTokens.avatars.defaultSize,
       ...message.styleOverride,
     },
     layout: {
@@ -166,7 +169,7 @@ export function resolveMessageBubble({
           : "left",
       showTail: direction !== "system",
       groupPosition: "single",
-      avatarGap: themeTokens.avatars.gap,
+      avatarGap: themeTokens.chatBubbles.avatarGap ?? themeTokens.avatars.gap,
       ...message.layoutOverride,
     },
     timing: {

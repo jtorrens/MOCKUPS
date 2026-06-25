@@ -6,6 +6,10 @@ export interface AvatarModuleInput {
   size: number;
   label?: string;
   frame: number;
+  cornerRadius?: number;
+  borderWidth?: number;
+  borderColor?: string;
+  shadow?: Record<string, unknown>;
 }
 
 export const AvatarModule: VisualModule<AvatarModuleInput> = {
@@ -18,7 +22,18 @@ export const AvatarModule: VisualModule<AvatarModuleInput> = {
       role: "contact_avatar",
       frame: input.frame,
       box: { x: 0, y: 0, width: input.size, height: input.size },
-      style: { shape: "circle", overflow: "clip" },
+      style: {
+        shape: "circle",
+        overflow: "clip",
+        ...(input.cornerRadius !== undefined
+          ? { borderRadius: input.cornerRadius }
+          : {}),
+        ...(input.borderWidth !== undefined
+          ? { borderWidth: input.borderWidth }
+          : {}),
+        ...(input.borderColor ? { borderColor: input.borderColor } : {}),
+        ...(input.shadow ? { shadow: input.shadow } : {}),
+      },
       asset: { type: "image", uri: input.uri },
       metadata: { label: input.label ?? null },
     };

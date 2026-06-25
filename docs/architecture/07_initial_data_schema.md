@@ -82,7 +82,7 @@ SQLite schema version 10 includes `screen_instances.app_id`, explicit `module_in
 - Relationships: belongs to one screen instance. One screen instance may own more than one module instance if a future module composition requires it.
 - Must not contain: reusable visual design defaults, copied theme/app/module tokens, device geometry, or render output.
 
-For `core.chat@1`, `content_json` owns participants, header, messages, timings, media references, and sender IDs. `behavior_json` owns per-shot behavior such as `showHeader`, `showStatusBar`, `showKeyboard`, `initialScroll`, and `messageGrouping`. `animation_json` is reserved for per-frame changes to module parameters, such as changing a header subtitle, message text, or message status at specific frames. This is separate from reveal modes like `writeDown`, which define how the current text value is displayed.
+For `core.chat@1`, `content_json` owns header, messages, timings, media references, message direction, and direct production actor IDs. `behavior_json` owns per-shot behavior such as `showHeader`, `showStatusBar`, `showKeyboard`, `initialScroll`, and `messageGrouping`. `animation_json` is reserved for per-frame changes to module parameters, such as changing a header subtitle, message text, or message status at specific frames. This is separate from reveal modes like `writeDown`, which define how the current text value is displayed.
 
 ### `screen_events`
 
@@ -197,7 +197,7 @@ Modules use asset IDs with a media window (logical width/height/offsets) and an 
 
 Participant IDs must not be stored only as a canonical JSON list. A JSON projection may be emitted in resolved props, but SQL owns participant identity, membership, order, and role.
 
-Deprecation note: these normalized relationships remain physically available for historical/import compatibility, but Chat runtime does not read them. `core.chat` owns versioned `participants[]`, header, and messages in `module_instances.content_json`; participants may reference production actors, group membership is represented directly, and every message uses `senderParticipantId`.
+Deprecation note: these normalized relationships remain physically available for historical/import compatibility, but Chat runtime does not read them. `core.chat` owns versioned header and messages in `module_instances.content_json`; messages reference production actors directly through `actorId`, while `direction` carries the visual incoming/outgoing/system role.
 
 ### `messages`
 

@@ -45,7 +45,6 @@ const ResolvedChatMessageSchema = z.object({
   visibleText: z.string(),
   sender: z.object({
     id: IdSchema,
-    participantId: IdSchema,
     displayName: z.string().min(1),
   }),
   media: z
@@ -93,6 +92,7 @@ export const ResolvedChatScreenPropsSchema = z.object({
     chatBubbles: JsonObjectSchema,
     avatars: JsonObjectSchema,
     cursor: JsonObjectSchema,
+    shadows: JsonObjectSchema.optional(),
   }),
   device: z.object({
     id: IdSchema,
@@ -121,6 +121,7 @@ export const ResolvedChatScreenPropsSchema = z.object({
   header: z.object({
     title: z.string().min(1),
     subtitle: z.string().optional(),
+    backgroundColor: z.string().min(1).optional(),
     avatar: z
       .object({
         assetId: IdSchema.optional(),

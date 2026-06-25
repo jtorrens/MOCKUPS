@@ -153,7 +153,6 @@ export function ModuleInstanceRecordEditor({
     return (
       <ChatContentGroupEditor
         actors={records.actors ?? []}
-        actorTitleForRecord={(actor) => titleForRecord(actor, "display_name")}
         canBrowseMedia={Boolean(nativeBridge?.pickFile)}
         groupKey={groupKey}
         groupValue={groupValue}
@@ -168,19 +167,18 @@ export function ModuleInstanceRecordEditor({
         onToggleItem={toggleExclusiveContentItem}
         openItems={openContentItems}
         recordId={record.id}
-        root={root}
       />
     );
   }
 
   const contentField = fieldsByColumn.get("content_json");
   const behaviorField = fieldsByColumn.get("behavior_json");
-  const contentGroups = ["participants", "header", "messages"].filter(
+  const contentGroups = ["header", "messages"].filter(
     (group) => group in parsedObject(drafts.content_json ?? "{}"),
   );
   const safeContentGroups = contentGroups.length
     ? contentGroups
-    : ["participants", "header", "messages"];
+    : ["header", "messages"];
   const resolvedActiveContentTab = safeContentGroups.includes(activeContentTab)
     ? activeContentTab
     : "";

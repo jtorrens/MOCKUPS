@@ -87,8 +87,8 @@ function nodeStyle(
   const backgroundRepeat = stringValue(style.backgroundRepeat);
   const color = stringValue(style.textColor ?? style.color ?? style.foreground);
   const borderRadius = numberValue(style.borderRadius ?? style.cornerRadius);
-  const borderColor = stringValue(style.borderColor);
-  const borderWidth = numberValue(style.borderWidth);
+  const borderColor = node.type === "avatar" ? undefined : stringValue(style.borderColor);
+  const borderWidth = node.type === "avatar" ? undefined : numberValue(style.borderWidth);
   const opacity = node.transform?.opacity;
   const separatorWidth = numberValue(style.separatorWidth);
   return {
@@ -370,12 +370,18 @@ function inlineCursorFromChildren(node: RenderableNode) {
 function nodeContent(node: RenderableNode): ReactNode {
   if (node.type === "avatar") {
     const label = stringValue(node.metadata?.label) ?? "?";
+    const radius = numberValue(node.style?.borderRadius);
+    const avatarUri = stringValue(node.asset?.uri);
+    const borderColor = stringValue(node.style?.borderColor);
+    const borderWidth = numberValue(node.style?.borderWidth);
     return (
       <div
         style={{
+          position: "relative",
           width: "100%",
           height: "100%",
-          borderRadius: "50%",
+          borderRadius: radius !== undefined ? `${radius}px` : "50%",
+          overflow: "hidden",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -386,7 +392,37 @@ function nodeContent(node: RenderableNode): ReactNode {
         }}
         title={node.asset?.uri}
       >
-        {Array.from(label)[0]?.toUpperCase() ?? "?"}
+        {avatarUri ? (
+          <img
+            alt={label}
+            draggable={false}
+            src={avatarUri}
+            style={{
+              display: "block",
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              position: "relative",
+              zIndex: 0,
+            }}
+          />
+        ) : (
+          Array.from(label)[0]?.toUpperCase() ?? "?"
+        )}
+        {borderColor && borderWidth && borderWidth > 0 ? (
+          <span
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              inset: 0,
+              border: `${borderWidth}px solid ${borderColor}`,
+              borderRadius: "inherit",
+              boxSizing: "border-box",
+              pointerEvents: "none",
+              zIndex: 1,
+            }}
+          />
+        ) : null}
       </div>
     );
   }
@@ -415,6 +451,13 @@ function nodeContent(node: RenderableNode): ReactNode {
     return <span title={token}>{iconTokenLabel(token)}</span>;
   }
   if (node.type === "text_input_bar_item") {
+    const token = stringValue(node.metadata?.token) ?? node.text ?? "";
+    if (stringValue(node.style?.maskImage)) {
+      return <span title={token} />;
+    }
+    return <span title={token}>{iconTokenLabel(token)}</span>;
+  }
+  if (node.type === "chat_header_icon") {
     const token = stringValue(node.metadata?.token) ?? node.text ?? "";
     if (stringValue(node.style?.maskImage)) {
       return <span title={token} />;
@@ -683,7 +726,50 @@ function RenderNode({
                               ? "contain"
                               : undefined,
                           }
-                      : node.type === "text_input_bar"
+                        : node.type === "chat_header_icon"
+                          ? {
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              width: numberValue(node.style?.fontSize),
+                              height: numberValue(node.style?.lineHeight),
+                              fontSize: numberValue(node.style?.fontSize),
+                              lineHeight: numberValue(node.style?.lineHeight)
+                                ? `${numberValue(node.style?.lineHeight)}px`
+                                : undefined,
+                              backgroundColor: stringValue(node.style?.maskImage)
+                                ? "currentColor"
+                                : undefined,
+                              maskImage: stringValue(node.style?.maskImage),
+                              maskPosition: stringValue(node.style?.maskImage)
+                                ? "center"
+                                : undefined,
+                              maskRepeat: stringValue(node.style?.maskImage)
+                                ? "no-repeat"
+                                : undefined,
+                              maskSize: stringValue(node.style?.maskImage)
+                                ? "contain"
+                                : undefined,
+                              WebkitMaskImage: stringValue(
+                                node.style?.WebkitMaskImage,
+                              ),
+                              WebkitMaskPosition: stringValue(
+                                node.style?.WebkitMaskImage,
+                              )
+                                ? "center"
+                                : undefined,
+                              WebkitMaskRepeat: stringValue(
+                                node.style?.WebkitMaskImage,
+                              )
+                                ? "no-repeat"
+                                : undefined,
+                              WebkitMaskSize: stringValue(
+                                node.style?.WebkitMaskImage,
+                              )
+                                ? "contain"
+                                : undefined,
+                            }
+                        : node.type === "text_input_bar"
                         ? {
                             display: "flex",
                             alignItems: "center",
