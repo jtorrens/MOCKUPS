@@ -6,13 +6,10 @@ import {
   type AppTableDefinition,
 } from "../api/client.js";
 import { EditorHeader } from "../editor-ui/EditorHeader.js";
-import { EditorSectionButton as TabButton } from "../editor-ui/EditorSectionButton.js";
-import {
-  EditorSectionCard,
-  EditorSubsectionCard,
-} from "../editor-ui/EditorSectionCard.js";
+import { EditorSectionCard } from "../editor-ui/EditorSectionCard.js";
 import { EditorSections } from "../editor-ui/EditorSections.js";
 import { DeferredTextInput } from "../editor-ui/DeferredTextInput.js";
+import { EditorSubsectionAccordion } from "../editor-ui/EditorSubsectionAccordion.js";
 import { AppEditor } from "../editors/AppEditor.js";
 import { renderGenericField as renderGenericFieldFromDispatcher } from "../editors/GenericFieldDispatcher.js";
 import { GenericRecordEditor } from "../editors/GenericRecordEditor.js";
@@ -81,7 +78,6 @@ import {
   type JsonPath,
   type JsonValue,
 } from "./json-editor/jsonEditorUtils.js";
-import { friendlyGroupLabel } from "./json-editor/labels.js";
 import { buildJsonUiHints } from "./json-editor/uiHints.js";
 
 type SaveState = "saved" | "dirty" | "invalid" | "saving" | "failed";
@@ -552,34 +548,6 @@ export function RecordEditor({
     );
   }
 
-  function SubgroupAccordion({
-    group,
-    activeGroup,
-    warning,
-    onToggle,
-    children,
-  }: {
-    group: string;
-    activeGroup: string;
-    warning?: boolean;
-    onToggle: (group: string) => void;
-    children: ReactNode;
-  }) {
-    const active = activeGroup === group;
-    return (
-      <EditorSubsectionCard>
-        <TabButton
-          active={active}
-          warning={warning}
-          onClick={() => onToggle(active ? "" : group)}
-        >
-          {friendlyGroupLabel(group)}
-        </TabButton>
-        {active ? <div className="editor-subsection-body">{children}</div> : null}
-      </EditorSubsectionCard>
-    );
-  }
-
   if (table.id === "apps") {
     const configField = fieldsByColumn.get("config_json");
     const metadataField = fieldsByColumn.get("metadata_json");
@@ -640,7 +608,7 @@ export function RecordEditor({
         renderTokens={() =>
           configField
             ? appTokenGroups.map((group) => (
-                <SubgroupAccordion
+                <EditorSubsectionAccordion
                   key={group}
                   group={group}
                   activeGroup={activeAppTokenGroup}
@@ -680,7 +648,7 @@ export function RecordEditor({
                       })}
                     </div>
                   )}
-                </SubgroupAccordion>
+                </EditorSubsectionAccordion>
               ))
             : null
         }
@@ -728,7 +696,7 @@ export function RecordEditor({
                     group !== "statusBar" && group !== "navigationBar",
                 )
                 .map((group) => (
-                  <SubgroupAccordion
+                  <EditorSubsectionAccordion
                     key={group}
                     group={group}
                     activeGroup={activeThemeTokenGroup}
@@ -749,10 +717,10 @@ export function RecordEditor({
                           ),
                       })}
                     </div>
-                  </SubgroupAccordion>
+                  </EditorSubsectionAccordion>
                 ))}
               {(["statusBar", "navigationBar"] as const).map((group) => (
-                <SubgroupAccordion
+                <EditorSubsectionAccordion
                   key={group}
                   group={group}
                   activeGroup={activeThemeTokenGroup}
@@ -766,7 +734,7 @@ export function RecordEditor({
                       setJsonDraft("tokens_json", nextRoot)
                     }
                   />
-                </SubgroupAccordion>
+                </EditorSubsectionAccordion>
               ))}
             </>
           ) : null
@@ -830,7 +798,7 @@ export function RecordEditor({
           />
         )}
         renderSubgroupAccordion={(group, activeGroup, warning, onToggle, children) => (
-          <SubgroupAccordion
+          <EditorSubsectionAccordion
             key={group}
             group={group}
             activeGroup={activeGroup}
@@ -838,7 +806,7 @@ export function RecordEditor({
             onToggle={onToggle}
           >
             {children}
-          </SubgroupAccordion>
+          </EditorSubsectionAccordion>
         )}
         setActiveTab={setScreenTab}
         setContentTab={setContentTab}
@@ -924,7 +892,7 @@ export function RecordEditor({
         renderDesign={() =>
           tokensField
             ? designGroups.map((group) => (
-                <SubgroupAccordion
+                <EditorSubsectionAccordion
                   key={group}
                   group={group}
                   activeGroup={activeDesignGroup}
@@ -950,7 +918,7 @@ export function RecordEditor({
                         updateJsonGroupValue("tokens_json", group, nextRawText),
                     })}
                   </div>
-                </SubgroupAccordion>
+                </EditorSubsectionAccordion>
               ))
             : null
         }
