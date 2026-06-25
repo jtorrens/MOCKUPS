@@ -541,6 +541,13 @@ function nodeContent(node: RenderableNode): ReactNode {
   if (node.type === "message_bubble_tail") {
     return messageBubbleTailNode(node);
   }
+  if (node.type === "message_bubble_status_icon") {
+    const token = stringValue(node.metadata?.token) ?? node.text ?? "";
+    if (stringValue(node.style?.maskImage)) {
+      return <span title={token} />;
+    }
+    return <span title={token}>{node.text}</span>;
+  }
   if (node.type === "keyboard_bottom_item") {
     const token = stringValue(node.metadata?.token) ?? node.text ?? "";
     if (stringValue(node.style?.maskImage)) {
@@ -978,6 +985,41 @@ function RenderNode({
                 "currentColor",
               overflow: "visible",
               pointerEvents: "none",
+            }
+        : node.type === "message_bubble_status"
+          ? {
+              display: "block",
+              overflow: "visible",
+              pointerEvents: "none",
+            }
+        : node.type === "message_bubble_status_text"
+          ? {
+              display: "block",
+              whiteSpace: "nowrap",
+              overflow: "visible",
+            }
+        : node.type === "message_bubble_status_icon"
+          ? {
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: stringValue(node.style?.maskImage)
+                ? "currentColor"
+                : undefined,
+              maskImage: stringValue(node.style?.maskImage),
+              maskPosition: stringValue(node.style?.maskImage) ? "center" : undefined,
+              maskRepeat: stringValue(node.style?.maskImage) ? "no-repeat" : undefined,
+              maskSize: stringValue(node.style?.maskImage) ? "contain" : undefined,
+              WebkitMaskImage: stringValue(node.style?.WebkitMaskImage),
+              WebkitMaskPosition: stringValue(node.style?.WebkitMaskImage)
+                ? "center"
+                : undefined,
+              WebkitMaskRepeat: stringValue(node.style?.WebkitMaskImage)
+                ? "no-repeat"
+                : undefined,
+              WebkitMaskSize: stringValue(node.style?.WebkitMaskImage)
+                ? "contain"
+                : undefined,
             }
         : node.type === "text"
           ? {

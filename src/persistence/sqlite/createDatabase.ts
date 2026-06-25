@@ -572,6 +572,126 @@ function applyAdditiveV15Migration(database: SQLiteDatabase): void {
   database.pragma("user_version = 15");
 }
 
+function defaultChatBubbleStatusConfig(): Record<string, unknown> {
+  return {
+    showText: true,
+    showTicks: true,
+    size: 11,
+    gap: 3,
+    offsetX: -8,
+    offsetY: -5,
+    tickSingleIconToken: "message_check",
+    tickDoubleIconToken: "message_done_all",
+    textColor: "#7A7A7A",
+    sentColor: "#7A7A7A",
+    deliveredColor: "#7A7A7A",
+    readColor: "#34B7F1",
+    failedColor: "#D92D20",
+  };
+}
+
+function mergeChatBubbleStatusDefaults(tokens: Record<string, unknown>) {
+  const chatBubbles =
+    tokens.chatBubbles &&
+    typeof tokens.chatBubbles === "object" &&
+    !Array.isArray(tokens.chatBubbles)
+      ? { ...(tokens.chatBubbles as Record<string, unknown>) }
+      : {};
+  const status =
+    chatBubbles.status &&
+    typeof chatBubbles.status === "object" &&
+    !Array.isArray(chatBubbles.status)
+      ? { ...(chatBubbles.status as Record<string, unknown>) }
+      : {};
+  const modes =
+    tokens.modes &&
+    typeof tokens.modes === "object" &&
+    !Array.isArray(tokens.modes)
+      ? { ...(tokens.modes as Record<string, unknown>) }
+      : {};
+  function mergeModeStatus(
+    mode: "light" | "dark",
+    defaults: Record<string, unknown>,
+  ) {
+    const modeRoot =
+      modes[mode] && typeof modes[mode] === "object" && !Array.isArray(modes[mode])
+        ? { ...(modes[mode] as Record<string, unknown>) }
+        : {};
+    const modeBubbles =
+      modeRoot.chatBubbles &&
+      typeof modeRoot.chatBubbles === "object" &&
+      !Array.isArray(modeRoot.chatBubbles)
+        ? { ...(modeRoot.chatBubbles as Record<string, unknown>) }
+        : {};
+    const modeStatus =
+      modeBubbles.status &&
+      typeof modeBubbles.status === "object" &&
+      !Array.isArray(modeBubbles.status)
+        ? { ...(modeBubbles.status as Record<string, unknown>) }
+        : {};
+    return {
+      ...modeRoot,
+      chatBubbles: {
+        ...modeBubbles,
+        status: {
+          ...defaults,
+          ...modeStatus,
+        },
+      },
+    };
+  }
+  return {
+    ...tokens,
+    chatBubbles: {
+      ...chatBubbles,
+      status: {
+        ...defaultChatBubbleStatusConfig(),
+        ...status,
+      },
+    },
+    modes: {
+      ...modes,
+      light: mergeModeStatus("light", {
+        textColor: "#7A7A7A",
+        sentColor: "#7A7A7A",
+        deliveredColor: "#7A7A7A",
+        readColor: "#34B7F1",
+        failedColor: "#D92D20",
+      }),
+      dark: mergeModeStatus("dark", {
+        textColor: "#A1A1A6",
+        sentColor: "#A1A1A6",
+        deliveredColor: "#A1A1A6",
+        readColor: "#53C7FF",
+        failedColor: "#FF6B5F",
+      }),
+    },
+  };
+}
+
+function applyAdditiveV16Migration(database: SQLiteDatabase): void {
+  const rows = database
+    .prepare(
+      `SELECT id, tokens_json
+       FROM module_theme_configs
+       WHERE module_id = 'core.chat'`,
+    )
+    .all() as { id: string; tokens_json: string }[];
+  const update = database.prepare(
+    "UPDATE module_theme_configs SET tokens_json = ? WHERE id = ?",
+  );
+  for (const row of rows) {
+    let tokens: Record<string, unknown>;
+    try {
+      tokens = JSON.parse(row.tokens_json) as Record<string, unknown>;
+    } catch {
+      continue;
+    }
+    update.run(JSON.stringify(mergeChatBubbleStatusDefaults(tokens)), row.id);
+  }
+  database.pragma("user_version = 16");
+}
+
 export function applyInitialSchema(database: SQLiteDatabase): void {
   database.exec(readFileSync(schemaPath, "utf8"));
   applyAdditiveV2Migration(database);
@@ -588,6 +708,7 @@ export function applyInitialSchema(database: SQLiteDatabase): void {
   applyAdditiveV13Migration(database);
   applyAdditiveV14Migration(database);
   applyAdditiveV15Migration(database);
+  applyAdditiveV16Migration(database);
   database.pragma("foreign_keys = ON");
 }
 

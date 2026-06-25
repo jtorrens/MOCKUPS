@@ -61,6 +61,14 @@ export const ChatModuleMessageSchema = z
       .optional(),
     showBubbleBackground: z.boolean().default(true),
     textScale: z.number().positive().default(1),
+    status: z
+      .object({
+        text: z.string().optional(),
+        deliveryStatus: z
+          .enum(["none", "sent", "delivered", "read", "failed"])
+          .default("none"),
+      })
+      .optional(),
     startFrame: NonNegativeIntegerSchema,
     enterDurationFrames: NonNegativeIntegerSchema.default(0),
     exitFrame: NonNegativeIntegerSchema.optional(),

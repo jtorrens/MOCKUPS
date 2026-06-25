@@ -24,6 +24,8 @@ interface ChatMessageFieldsEditorProps {
   showBubbleBackground: boolean;
   textScale: number;
   text: string;
+  statusText: string;
+  deliveryStatus: string;
   textRevealMode: string;
   mediaType: string;
   mediaFilePath: string;
@@ -36,6 +38,8 @@ interface ChatMessageFieldsEditorProps {
   onShowBubbleBackgroundChange: (show: boolean) => void;
   onTextScaleChange: (scale: number) => void;
   onTextChange: (text: string) => void;
+  onStatusTextChange: (text: string) => void;
+  onDeliveryStatusChange: (status: string) => void;
   onTextRevealModeChange: (mode: string) => void;
   onMediaTypeChange: (mediaType: string) => void;
   onMediaFilePathChange: (filePath: string) => void;
@@ -52,6 +56,8 @@ export function ChatMessageFieldsEditor({
   showBubbleBackground,
   textScale,
   text,
+  statusText,
+  deliveryStatus,
   textRevealMode,
   mediaType,
   mediaFilePath,
@@ -64,6 +70,8 @@ export function ChatMessageFieldsEditor({
   onShowBubbleBackgroundChange,
   onTextScaleChange,
   onTextChange,
+  onStatusTextChange,
+  onDeliveryStatusChange,
   onTextRevealModeChange,
   onMediaTypeChange,
   onMediaFilePathChange,
@@ -177,6 +185,33 @@ export function ChatMessageFieldsEditor({
             value={text}
             onCommit={onTextChange}
           />
+        }
+      />
+      <InspectorFieldRow
+        className="record-editor-content-field-row"
+        label={<span>Status text</span>}
+        control={
+          <DeferredTextInput
+            value={statusText}
+            onCommit={onStatusTextChange}
+          />
+        }
+      />
+      <InspectorFieldRow
+        className="record-editor-content-field-row"
+        label={<span>Delivery status</span>}
+        control={
+          <select
+            className="json-value-control"
+            value={deliveryStatus}
+            onChange={(event) => onDeliveryStatusChange(event.target.value)}
+          >
+            <option value="none">None</option>
+            <option value="sent">Sent</option>
+            <option value="delivered">Delivered</option>
+            <option value="read">Read</option>
+            <option value="failed">Failed</option>
+          </select>
         }
       />
       <ChatMessageMediaEditor

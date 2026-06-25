@@ -107,6 +107,7 @@ export function ChatContentGroupEditor({
   ) {
     const direction = messageDirection(message);
     const media = isJsonObject(message.media) ? message.media : {};
+    const status = isJsonObject(message.status) ? message.status : {};
     const textReveal = isJsonObject(message.textReveal) ? message.textReveal : {};
     const mediaType = String(media.type ?? (message.mediaAssetId ? "image" : "none"));
     const messageActorOptions = actorOptions(actors);
@@ -165,6 +166,8 @@ export function ChatContentGroupEditor({
         showBubbleBackground={message.showBubbleBackground !== false}
         textScale={Number(message.textScale ?? 1)}
         text={String(message.text ?? "")}
+        statusText={String(status.text ?? "")}
+        deliveryStatus={String(status.deliveryStatus ?? "none")}
         textRevealMode={String(textReveal.mode ?? "simple_write_on")}
         mediaType={mediaType}
         mediaFilePath={String(media.filePath ?? "")}
@@ -194,6 +197,10 @@ export function ChatContentGroupEditor({
           setMessagePath(["textScale"], textScale)
         }
         onTextChange={(nextText) => setMessagePath(["text"], nextText)}
+        onStatusTextChange={(nextText) => setMessagePath(["status", "text"], nextText)}
+        onDeliveryStatusChange={(deliveryStatus) =>
+          setMessagePath(["status", "deliveryStatus"], deliveryStatus)
+        }
         onTextRevealModeChange={(mode) =>
           updateMessage(messageWithTextRevealMode(message, mode))
         }

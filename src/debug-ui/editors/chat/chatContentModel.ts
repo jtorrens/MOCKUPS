@@ -90,6 +90,10 @@ export function defaultMessageItem(
     text: "",
     showBubbleBackground: true,
     textScale: 1,
+    status: {
+      text: "",
+      deliveryStatus: "none",
+    },
     media: {
       type: "none",
     },

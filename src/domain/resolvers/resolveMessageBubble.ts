@@ -40,6 +40,25 @@ const MessageThemeSchema = z.object({
     avatarSize: z.number().min(0).optional(),
     avatarGap: z.number().min(0).optional(),
     shadowEnabled: z.boolean().optional(),
+    status: z
+      .object({
+        showText: z.boolean().optional(),
+        showTicks: z.boolean().optional(),
+        size: z.number().min(0).optional(),
+        gap: z.number().min(0).optional(),
+        offsetX: z.number().optional(),
+        offsetY: z.number().optional(),
+        tickSingleIconToken: z.string().optional(),
+        tickDoubleIconToken: z.string().optional(),
+        tickSingleIconUri: z.string().optional(),
+        tickDoubleIconUri: z.string().optional(),
+        textColor: z.string().optional(),
+        sentColor: z.string().optional(),
+        deliveredColor: z.string().optional(),
+        readColor: z.string().optional(),
+        failedColor: z.string().optional(),
+      })
+      .optional(),
     tail: z.object({
       style: z.string().min(1),
       verticalPosition: z.enum(["top", "bottom"]).optional(),
@@ -64,6 +83,19 @@ export interface ResolvedChatActor {
   avatarUri?: string;
   color?: string;
   avatarTextColor?: string;
+}
+
+function messageStatus(message: ChatModuleMessage) {
+  return isRecord(message.status)
+    ? (message.status as Record<string, unknown>)
+    : {};
+}
+
+function statusDeliveryValue(value: unknown) {
+  return typeof value === "string" &&
+    ["none", "sent", "delivered", "read", "failed"].includes(value)
+    ? value
+    : "none";
 }
 
 function resolveVisibleText(
@@ -115,6 +147,18 @@ export function resolveMessageBubble({
   const themeTokens = MessageThemeSchema.parse(rawThemeTokens);
   const messageTypography = themeTokens.typography?.message;
   const isOutgoing = direction === "outgoing";
+  const rawStatus = messageStatus(message);
+  const statusText = typeof rawStatus.text === "string" ? rawStatus.text : "";
+  const deliveryStatus = statusDeliveryValue(rawStatus.deliveryStatus);
+  const statusTokens = themeTokens.chatBubbles.status ?? {};
+  const statusColor =
+    deliveryStatus === "read"
+      ? statusTokens.readColor
+      : deliveryStatus === "failed"
+        ? statusTokens.failedColor
+        : deliveryStatus === "delivered"
+          ? statusTokens.deliveredColor
+          : statusTokens.sentColor;
   const enterProgress =
     message.enterDurationFrames === 0
       ? Number(localFrame >= message.startFrame)
@@ -136,6 +180,10 @@ export function resolveMessageBubble({
     direction,
     text: message.text ?? "",
     visibleText: resolveVisibleText(message, localFrame, direction),
+    status: {
+      text: statusText,
+      deliveryStatus,
+    },
     actor: {
       id: sender.id,
       displayName: sender.displayName,
@@ -164,6 +212,20 @@ export function resolveMessageBubble({
       tailHeight: themeTokens.chatBubbles.tail.height,
       tailScale: themeTokens.chatBubbles.tail.scale ?? 1,
       shadowEnabled: themeTokens.chatBubbles.shadowEnabled === true,
+      status: {
+        showText: statusTokens.showText !== false,
+        showTicks: statusTokens.showTicks !== false,
+        size: statusTokens.size ?? 11,
+        gap: statusTokens.gap ?? 3,
+        offsetX: statusTokens.offsetX ?? -8,
+        offsetY: statusTokens.offsetY ?? -5,
+        textColor: statusTokens.textColor ?? statusColor ?? themeTokens.chatBubbles.incomingText,
+        tickColor: statusColor ?? statusTokens.textColor ?? themeTokens.chatBubbles.incomingText,
+        tickSingleIconToken: statusTokens.tickSingleIconToken ?? "message_check",
+        tickDoubleIconToken: statusTokens.tickDoubleIconToken ?? "message_done_all",
+        tickSingleIconUri: statusTokens.tickSingleIconUri ?? "",
+        tickDoubleIconUri: statusTokens.tickDoubleIconUri ?? "",
+      },
       shadow: isRecord(themeTokens.shadows?.elevated)
         ? themeTokens.shadows.elevated
         : isRecord(themeTokens.shadows?.avatar)

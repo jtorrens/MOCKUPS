@@ -22,6 +22,137 @@ function cursorBlinkOpacity(frame: number, blinkFrames: number) {
   return frame % cycle < Math.max(1, blinkFrames) * 3 ? 1 : 0.28;
 }
 
+function readRecord(value: unknown): Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function readString(value: unknown, fallback = "") {
+  return typeof value === "string" ? value : fallback;
+}
+
+function readNumber(value: unknown, fallback: number) {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function maskUrl(value: string) {
+  return value ? `url("${value.replace(/"/g, '\\"')}")` : undefined;
+}
+
+function messageStatusNode(
+  input: ResolvedMessageBubbleProps,
+  layout: MessageBubbleLayout,
+): RenderableNode | undefined {
+  const status = readRecord(input.status);
+  const statusStyle = readRecord(input.style.status);
+  const deliveryStatus = readString(status.deliveryStatus, "none");
+  const text = readString(status.text);
+  const showText = statusStyle.showText !== false && text.trim().length > 0;
+  const showTicks =
+    input.direction === "outgoing" &&
+    statusStyle.showTicks !== false &&
+    deliveryStatus !== "none";
+  if (!showText && !showTicks) return undefined;
+
+  const size = readNumber(statusStyle.size, 11);
+  const gap = readNumber(statusStyle.gap, 3);
+  const offsetX = readNumber(statusStyle.offsetX, -8);
+  const offsetY = readNumber(statusStyle.offsetY, -5);
+  const lineHeight = Math.round(size * 1.15);
+  const textWidth = showText ? Math.ceil(Array.from(text).length * size * 0.54) : 0;
+  const isDoubleTick = deliveryStatus === "delivered" || deliveryStatus === "read";
+  const tickWidth = showTicks ? Math.ceil(size * (isDoubleTick ? 1.45 : 1)) : 0;
+  const totalWidth =
+    textWidth + tickWidth + (showText && showTicks ? Math.max(0, gap) : 0);
+  const statusBox = {
+    x: Math.round(layout.bubbleBox.x + layout.bubbleBox.width + offsetX - totalWidth),
+    y: Math.round(layout.bubbleBox.y + layout.bubbleBox.height + offsetY - lineHeight),
+    width: Math.max(1, totalWidth),
+    height: lineHeight,
+  };
+  const children: RenderableNode[] = [];
+  let cursorX = statusBox.x;
+  if (showText) {
+    children.push({
+      id: `${input.id}:status:text`,
+      type: "message_bubble_status_text",
+      role: "status_text",
+      frame: input.frame,
+      box: {
+        x: cursorX,
+        y: statusBox.y,
+        width: Math.max(1, textWidth),
+        height: lineHeight,
+      },
+      text,
+      style: {
+        color: readString(statusStyle.textColor, input.style.textColor),
+        fontFamily: input.style.fontFamily,
+        fontSize: size,
+        lineHeight,
+        fontWeight: input.style.fontWeight,
+      },
+    });
+    cursorX += textWidth + (showTicks ? Math.max(0, gap) : 0);
+  }
+  if (showTicks) {
+    const iconUri = readString(
+      isDoubleTick ? statusStyle.tickDoubleIconUri : statusStyle.tickSingleIconUri,
+    );
+    const token = readString(
+      isDoubleTick ? statusStyle.tickDoubleIconToken : statusStyle.tickSingleIconToken,
+      isDoubleTick ? "message_done_all" : "message_check",
+    );
+    children.push({
+      id: `${input.id}:status:ticks`,
+      type: "message_bubble_status_icon",
+      role: deliveryStatus,
+      frame: input.frame,
+      box: {
+        x: cursorX,
+        y: statusBox.y + Math.round((lineHeight - size) / 2),
+        width: Math.max(1, tickWidth),
+        height: size,
+      },
+      text: isDoubleTick ? "✓✓" : "✓",
+      style: {
+        color: readString(statusStyle.tickColor, input.style.textColor),
+        fontSize: size,
+        lineHeight: size,
+        ...(iconUri
+          ? {
+              maskImage: maskUrl(iconUri),
+              WebkitMaskImage: maskUrl(iconUri),
+            }
+          : {}),
+      },
+      metadata: {
+        token,
+        deliveryStatus,
+      },
+    });
+  }
+  return {
+    id: `${input.id}:status`,
+    type: "message_bubble_status",
+    role: deliveryStatus,
+    frame: input.frame,
+    box: statusBox,
+    style: {
+      backgroundColor: "transparent",
+      overflow: "visible",
+    },
+    children,
+    metadata: {
+      anchor: "bubble.bottomRight",
+      offsetX,
+      offsetY,
+      deliveryStatus,
+    },
+  };
+}
+
 function tailNode(
   input: ResolvedMessageBubbleProps,
   layout: MessageBubbleLayout,
@@ -140,6 +271,10 @@ export function renderMessageBubbleWithLayout(
           box: layout.avatarBox,
         },
       );
+    }
+    const status = messageStatusNode(input, layout);
+    if (status) {
+      children.push(status);
     }
     children.push({
       id: `${input.id}:text`,

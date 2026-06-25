@@ -17,6 +17,13 @@ export const coreChatV1EditorHints: ModuleEditorHintContract = {
       },
       "messages.[].actorId": { label: "Actor" },
       "messages.[].text": { label: "Message text", widget: "textarea" },
+      "messages.[].status": { label: "Bubble status" },
+      "messages.[].status.text": { label: "Status text" },
+      "messages.[].status.deliveryStatus": {
+        label: "Delivery status",
+        widget: "select",
+        options: ["none", "sent", "delivered", "read", "failed"],
+      },
       "messages.[].media": { label: "Attached media" },
       "messages.[].media.type": {
         label: "Media type",
@@ -220,6 +227,42 @@ export const coreChatV1EditorHints: ModuleEditorHintContract = {
         widget: "number",
         min: 0.01,
         step: 0.05,
+      },
+      "chatBubbles.status.showText": {
+        label: "Show status text",
+        widget: "checkbox",
+      },
+      "chatBubbles.status.showTicks": {
+        label: "Show ticks",
+        widget: "checkbox",
+      },
+      "chatBubbles.status.size": {
+        label: "Status size",
+        widget: "number",
+        min: 0,
+        step: 1,
+      },
+      "chatBubbles.status.gap": {
+        label: "Status gap",
+        widget: "number",
+        min: 0,
+        step: 1,
+      },
+      "chatBubbles.status.offsetX": {
+        label: "Status X offset",
+        widget: "number",
+        step: 1,
+      },
+      "chatBubbles.status.offsetY": {
+        label: "Status Y offset",
+        widget: "number",
+        step: 1,
+      },
+      "chatBubbles.status.tickSingleIconToken": {
+        label: "Single tick token",
+      },
+      "chatBubbles.status.tickDoubleIconToken": {
+        label: "Double tick token",
       },
     },
     module_tokens_override_json: {

@@ -841,6 +841,34 @@ function normalizeChatVisualTokenGroups(
   };
 }
 
+function withBubbleStatusIconUris(
+  tokens: Record<string, unknown>,
+  iconTheme?: {
+    asset_root: string;
+    mapping_json: Record<string, unknown>;
+  },
+) {
+  const chatBubbles = isObject(tokens.chatBubbles) ? tokens.chatBubbles : {};
+  const status = isObject(chatBubbles.status) ? chatBubbles.status : {};
+  const tickSingleIconToken = stringValue(status.tickSingleIconToken);
+  const tickDoubleIconToken = stringValue(status.tickDoubleIconToken);
+  return {
+    ...tokens,
+    chatBubbles: {
+      ...chatBubbles,
+      status: {
+        ...status,
+        ...(tickSingleIconToken
+          ? { tickSingleIconUri: iconUriForToken(tickSingleIconToken, iconTheme) }
+          : {}),
+        ...(tickDoubleIconToken
+          ? { tickDoubleIconUri: iconUriForToken(tickDoubleIconToken, iconTheme) }
+          : {}),
+      },
+    },
+  };
+}
+
 const DESIGN_UNIT_TOKEN_PATHS = [
   ["fonts", "bodySize"],
   ["fonts", "bodyLineHeight"],
@@ -869,6 +897,10 @@ const DESIGN_UNIT_TOKEN_PATHS = [
   ["chatBubbles", "avatarGap"],
   ["chatBubbles", "tail", "width"],
   ["chatBubbles", "tail", "height"],
+  ["chatBubbles", "status", "size"],
+  ["chatBubbles", "status", "gap"],
+  ["chatBubbles", "status", "offsetX"],
+  ["chatBubbles", "status", "offsetY"],
   ["shadows", "elevated", "offsetX"],
   ["shadows", "elevated", "offsetY"],
   ["shadows", "elevated", "blur"],
@@ -1175,7 +1207,6 @@ export function resolveChatScreen({
     renderScale,
   );
   const normalizedThemeTokens = normalizeChatVisualTokenGroups(scaledThemeTokens);
-  const themeTokens = ChatThemeSchema.parse(normalizedThemeTokens);
   const statusBar = theme.status_bar_id
     ? repository.getStatusBar(theme.status_bar_id)
     : undefined;
@@ -1185,6 +1216,9 @@ export function resolveChatScreen({
   const iconTheme = theme.icon_theme_id
     ? repository.getIconTheme(theme.icon_theme_id)
     : undefined;
+  const themeTokens = ChatThemeSchema.parse(
+    withBubbleStatusIconUris(normalizedThemeTokens, iconTheme),
+  );
   const resolvedHeaderTokens = {
     ...themeTokens.header,
     leftItems: resolveIconItems(
@@ -1252,6 +1286,7 @@ export function resolveChatScreen({
       direction: bubble.direction,
       text: bubble.text,
       visibleText: bubble.visibleText,
+      status: bubble.status,
       sender: {
         id: bubble.actor.id,
         displayName: bubble.actor.displayName,

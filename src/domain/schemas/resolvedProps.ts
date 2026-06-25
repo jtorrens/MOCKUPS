@@ -43,6 +43,7 @@ const ResolvedChatMessageSchema = z.object({
   direction: z.enum(["incoming", "outgoing", "system"]),
   text: z.string(),
   visibleText: z.string(),
+  status: JsonObjectSchema.optional(),
   sender: z.object({
     id: IdSchema,
     displayName: z.string().min(1),
@@ -141,6 +142,7 @@ export const ResolvedMessageBubblePropsSchema = z.object({
   direction: z.enum(["incoming", "outgoing", "system"]),
   text: z.string(),
   visibleText: z.string(),
+  status: JsonObjectSchema.optional(),
   actor: z.object({
     id: IdSchema,
     displayName: z.string().min(1),
@@ -164,6 +166,7 @@ export const ResolvedMessageBubblePropsSchema = z.object({
     shadowEnabled: z.boolean(),
     shadow: JsonObjectSchema,
     avatarSize: z.number().min(0),
+    status: JsonObjectSchema.optional(),
   }),
   layout: z.object({
     maxWidth: z.number().positive(),
