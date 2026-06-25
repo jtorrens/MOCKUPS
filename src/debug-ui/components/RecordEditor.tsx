@@ -55,6 +55,7 @@ import {
   shotHasFpsOverride,
 } from "../editors/ShotFields.js";
 import { renderRenderPresetField } from "../editors/RenderPresetFields.js";
+import { ProductionSettingsField } from "../editors/ProductionFields.js";
 import {
   hasModeColorOverrides,
   ModeColorEditor,
@@ -1048,54 +1049,16 @@ export function RecordEditor({
     );
   }
 
-  function renderProductionSettingsField(field: AppFieldDefinition) {
-    const root = parsedObject(drafts[field.column] ?? "{}");
-    const mediaRoot = typeof root.mediaRoot === "string" ? root.mediaRoot : "";
-    async function chooseDirectory() {
-      const [directory] = await (mockupsNative()?.pickDirectory?.() ?? Promise.resolve([]));
-      if (directory) {
-        setJsonDraft(field.column, {
-          ...root,
-          mediaRoot: directory,
-        });
-      }
-    }
-    return (
-      <div key={field.column} className="flat-json-field-group">
-        <InspectorFieldRow
-          className="record-editor-field flat-json-row"
-          label={<span>Media root</span>}
-          control={
-            <div className="media-file-control">
-              <DeferredTextInput
-                value={mediaRoot}
-                onCommit={(nextValue) =>
-                  setJsonDraft(field.column, {
-                    ...root,
-                    mediaRoot: nextValue,
-                  })
-                }
-              />
-              <button
-                type="button"
-                className="record-editor-compact-button"
-                disabled={!mockupsNative()?.pickDirectory}
-                onClick={() => {
-                  void chooseDirectory();
-                }}
-              >
-                Browse…
-              </button>
-            </div>
-          }
-        />
-      </div>
-    );
-  }
-
   function renderGenericField(field: AppFieldDefinition) {
     if (table.id === "productions" && field.column === "settings_json") {
-      return renderProductionSettingsField(field);
+      return (
+        <ProductionSettingsField
+          field={field}
+          rawValue={drafts[field.column] ?? "{}"}
+          nativeBridge={mockupsNative()}
+          onChange={setJsonDraft}
+        />
+      );
     }
     if (table.id === "render_presets") {
       return renderRenderPresetField({
