@@ -5,7 +5,6 @@ import {
   type AppRecord,
   type AppTableDefinition,
 } from "../api/client.js";
-import { JsonTreeEditor } from "./json-editor/JsonTreeEditor.js";
 import { JsonValueEditor } from "./json-editor/JsonValueEditor.js";
 import {
   InspectorFieldRow,
@@ -33,6 +32,11 @@ import type {
 } from "../editors/editorTabs.js";
 import { defaultGroupValue } from "../editors/chat/chatContentModel.js";
 import { ChatContentGroupEditor } from "../editors/chat/ChatContentGroupEditor.js";
+import {
+  RecordFieldRenderer,
+  titleForRecord,
+  type RawJsonFieldOverride,
+} from "../editors/RecordFieldRenderer.js";
 import {
   hasModeColorOverrides,
   ModeColorEditor,
@@ -263,174 +267,6 @@ function parseValue(
     ok: true,
     value: raw === "" && field.nullable ? null : raw,
   };
-}
-
-function restoreStrategyForField(
-  table: AppTableDefinition,
-  field: AppFieldDefinition,
-): "remove" | "set" {
-  if (
-    table.id === "module_theme_configs" &&
-    field.column === "tokens_json"
-  ) {
-    return "set";
-  }
-  return "remove";
-}
-
-function allowArrayStructuralEditsForField(
-  table: AppTableDefinition,
-  field: AppFieldDefinition,
-): boolean {
-  return table.id === "module_instances" && field.column === "content_json";
-}
-
-function titleForRecord(record: AppRecord, fallbackColumn: string) {
-  return String(record[fallbackColumn] ?? record.name ?? record.id);
-}
-
-function relationOptionsForField(
-  table: AppTableDefinition,
-  field: AppFieldDefinition,
-  record: AppRecord | undefined,
-  records: Record<string, AppRecord[]>,
-): { options: { value: string; label: string }[]; allowEmpty: boolean } | undefined {
-  if (field.column === "production_id") {
-    return {
-      allowEmpty: Boolean(field.nullable),
-      options: records.productions?.map((item) => ({
-        value: item.id,
-        label: titleForRecord(item, "name"),
-      })) ?? [],
-    };
-  }
-  if (field.column === "episode_id") {
-    const productionId = record?.production_id;
-    return {
-      allowEmpty: table.id === "shots" ? false : Boolean(field.nullable),
-      options: records.episodes
-        ?.filter(
-          (item) =>
-            !productionId ||
-            !Object.hasOwn(item, "production_id") ||
-            item.production_id === productionId,
-        )
-        .map((item) => ({
-          value: item.id,
-          label: titleForRecord(item, "name"),
-        })) ?? [],
-    };
-  }
-  if (field.column === "app_id") {
-    return {
-      allowEmpty: Boolean(field.nullable),
-      options: records.apps?.map((item) => ({
-        value: item.id,
-        label: titleForRecord(item, "name"),
-      })) ?? [],
-    };
-  }
-  if (field.column === "theme_id") {
-    return {
-      allowEmpty: Boolean(field.nullable),
-      options: records.themes?.map((item) => ({
-        value: item.id,
-        label: titleForRecord(item, "name"),
-      })) ?? [],
-    };
-  }
-  if (field.column === "owner_actor_id") {
-    return {
-      allowEmpty: Boolean(field.nullable),
-      options: records.actors?.map((item) => ({
-        value: item.id,
-        label: titleForRecord(item, "display_name"),
-      })) ?? [],
-    };
-  }
-  if (field.column === "device_state_id") {
-    return {
-      allowEmpty: Boolean(field.nullable),
-      options: records.device_states?.map((item) => ({
-        value: item.id,
-        label: titleForRecord(item, "name"),
-      })) ?? [],
-    };
-  }
-  if (field.column === "render_preset_id") {
-    return {
-      allowEmpty: Boolean(field.nullable),
-      options: records.render_presets?.map((item) => ({
-        value: item.id,
-        label: titleForRecord(item, "name"),
-      })) ?? [],
-    };
-  }
-  if (field.column === "avatar_asset_id") {
-    return {
-      allowEmpty: true,
-      options: records.media_assets?.map((item) => ({
-        value: item.id,
-        label: titleForRecord(item, "name"),
-      })) ?? [],
-    };
-  }
-  if (field.column === "frame_asset_id") {
-    return {
-      allowEmpty: true,
-      options: records.media_assets
-        ?.filter(
-          (item) =>
-            !item.asset_type ||
-            item.asset_type === "image",
-        )
-        .map((item) => ({
-          value: item.id,
-          label: titleForRecord(item, "name"),
-        })) ?? [],
-    };
-  }
-  if (field.column === "default_device_id") {
-    return {
-      allowEmpty: true,
-      options: records.devices?.map((item) => ({
-        value: item.id,
-        label: titleForRecord(item, "name"),
-      })) ?? [],
-    };
-  }
-  if (field.column === "default_theme_id") {
-    return {
-      allowEmpty: true,
-      options: records.themes?.map((item) => ({
-        value: item.id,
-        label: titleForRecord(item, "name"),
-      })) ?? [],
-    };
-  }
-  if (table.id === "screen_instances" && field.column === "theme_mode") {
-    const shot = records.shots?.find((item) => item.id === record?.shot_id);
-    const owner = records.actors?.find(
-      (item) => item.id === (shot?.owner_actor_id ?? record?.owner_actor_id),
-    );
-    const themeId = record?.theme_id ?? owner?.default_theme_id;
-    const theme = records.themes?.find((item) => item.id === themeId);
-    const tokens = theme?.tokens_json;
-    const modes =
-      typeof tokens === "object" &&
-      tokens !== null &&
-      !Array.isArray(tokens) &&
-      typeof (tokens as Record<string, unknown>).modes === "object" &&
-      (tokens as Record<string, unknown>).modes !== null &&
-      !Array.isArray((tokens as Record<string, unknown>).modes)
-        ? Object.keys((tokens as Record<string, unknown>).modes as object)
-        : ["light", "dark"];
-    return {
-      allowEmpty: false,
-      options: modes.map((mode) => ({ value: mode, label: mode })),
-    };
-  }
-  return undefined;
 }
 
 export function RecordEditor({
@@ -932,167 +768,26 @@ export function RecordEditor({
     return root;
   }
 
-  function renderField(field: AppFieldDefinition, rawOverride?: {
-    rawText: string;
-    onRawTextChange: (nextRawText: string) => void;
-    inheritedValue?: Record<string, unknown> | null;
-    groupContext?: string;
-    hideLabel?: boolean;
-  }) {
-    const state = states[field.column] ?? "saved";
-    const error = errors[field.column];
-    const relationSelect = relationOptionsForField(
-      table,
-      field,
-      record,
-      records,
-    );
-    if (field.kind !== "json") {
-      const selectedRelationLabel = relationSelect?.options.find(
-        (option) => option.value === (drafts[field.column] ?? ""),
-      )?.label;
-      const control = field.readonly ? (
-        <input
-          data-testid={`field-${field.column}`}
-          disabled
-          type="text"
-          value={selectedRelationLabel ?? drafts[field.column] ?? ""}
-        />
-      ) : relationSelect && relationSelect.options.length > 0 ? (
-          <select
-            data-testid={`field-${field.column}`}
-            value={drafts[field.column] ?? ""}
-            onChange={(event) =>
-              setDrafts({
-                ...drafts,
-                [field.column]: event.target.value,
-              })
-            }
-          >
-            {relationSelect.allowEmpty ? (
-              <option value="">
-                {["avatar_asset_id", "default_device_id", "default_theme_id"].includes(
-                  field.column,
-                )
-                  ? "None"
-                  : "Inherited/default"}
-              </option>
-            ) : null}
-            {relationSelect.options.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        ) : (
-        <input
-          data-testid={`field-${field.column}`}
-          type={field.kind === "number" ? "number" : "text"}
-          value={drafts[field.column] ?? ""}
-          onChange={(event) =>
-            setDrafts({
-              ...drafts,
-              [field.column]: event.target.value,
-            })
-          }
-        />
-      );
-
-      return (
-        <InspectorFieldRow
-          key={field.column}
-          className={`record-editor-field record-editor-field-${field.kind} state-${state} ${
-            field.readonly ? "is-readonly" : ""
-          }`}
-          state={state === "invalid" || state === "failed" ? "invalid" : "default"}
-          label={<span>{field.label}</span>}
-          control={
-            <>
-              {control}
-              {error ? <strong>{error}</strong> : null}
-            </>
-          }
-        />
-      );
-    }
+  function renderField(field: AppFieldDefinition, rawOverride?: RawJsonFieldOverride) {
     return (
-      <div
+      <RecordFieldRenderer
         key={field.column}
-        className={`record-editor-field record-editor-field-${field.kind} state-${state} ${
-          rawOverride?.hideLabel && field.kind === "json"
-            ? "record-editor-field-frameless"
-            : ""
-        }`}
-      >
-        {rawOverride?.hideLabel || field.kind === "json" ? null : (
-          <span>{field.label}</span>
-        )}
-        {field.kind === "json" ? (
-          <JsonTreeEditor
-            table={table}
-            field={field}
-            record={record}
-            records={records}
-            testId={`field-${field.column}`}
-            disabled={field.readonly}
-            rawText={rawOverride?.rawText ?? drafts[field.column] ?? ""}
-            inheritedValue={
-              rawOverride && Object.hasOwn(rawOverride, "inheritedValue")
-                ? rawOverride.inheritedValue ?? undefined
-                : inheritedFields[field.column]
-            }
-            restoreStrategy={restoreStrategyForField(table, field)}
-            groupContext={rawOverride?.groupContext}
-            allowArrayStructuralEdits={allowArrayStructuralEditsForField(
-              table,
-              field,
-            )}
-            onRawTextChange={
-              rawOverride?.onRawTextChange ??
-              ((nextRawText) =>
-                setDrafts({
-                  ...drafts,
-                  [field.column]: nextRawText,
-                }))
-            }
-          />
-        ) : relationSelect && relationSelect.options.length > 0 ? (
-          <select
-            data-testid={`field-${field.column}`}
-            disabled={field.readonly}
-            value={drafts[field.column] ?? ""}
-            onChange={(event) =>
-              setDrafts({
-                ...drafts,
-                [field.column]: event.target.value,
-              })
-            }
-          >
-            {relationSelect.allowEmpty ? (
-              <option value="">Inherited/default</option>
-            ) : null}
-            {relationSelect.options.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <input
-            data-testid={`field-${field.column}`}
-            disabled={field.readonly}
-            type={field.kind === "number" ? "number" : "text"}
-            value={drafts[field.column] ?? ""}
-            onChange={(event) =>
-              setDrafts({
-                ...drafts,
-                [field.column]: event.target.value,
-              })
-            }
-          />
-        )}
-        {error ? <strong>{error}</strong> : null}
-      </div>
+        table={table}
+        field={field}
+        record={record}
+        records={records}
+        drafts={drafts}
+        state={states[field.column] ?? "saved"}
+        error={errors[field.column]}
+        inheritedValue={inheritedFields[field.column]}
+        rawOverride={rawOverride}
+        onDraftChange={(column, value) =>
+          setDrafts({
+            ...drafts,
+            [column]: value,
+          })
+        }
+      />
     );
   }
 
