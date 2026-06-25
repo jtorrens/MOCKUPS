@@ -32,11 +32,32 @@ CREATE TABLE IF NOT EXISTS episodes (
   metadata_json TEXT
 );
 
+CREATE TABLE IF NOT EXISTS icon_themes (
+  id TEXT PRIMARY KEY,
+  production_id TEXT NOT NULL REFERENCES productions(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  family TEXT NOT NULL,
+  asset_root TEXT NOT NULL,
+  mapping_json TEXT NOT NULL,
+  metadata_json TEXT
+);
+
+CREATE TABLE IF NOT EXISTS status_bars (
+  id TEXT PRIMARY KEY,
+  production_id TEXT NOT NULL REFERENCES productions(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  family TEXT NOT NULL,
+  config_json TEXT NOT NULL,
+  metadata_json TEXT
+);
+
 CREATE TABLE IF NOT EXISTS themes (
   id TEXT PRIMARY KEY,
   production_id TEXT NOT NULL REFERENCES productions(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   family TEXT NOT NULL,
+  icon_theme_id TEXT REFERENCES icon_themes(id) ON DELETE SET NULL,
+  status_bar_id TEXT REFERENCES status_bars(id) ON DELETE SET NULL,
   version TEXT NOT NULL,
   tokens_json TEXT NOT NULL
 );
@@ -264,6 +285,8 @@ CREATE TABLE IF NOT EXISTS screen_events (
 
 CREATE INDEX IF NOT EXISTS idx_shots_production ON shots(production_id, sort_order);
 CREATE INDEX IF NOT EXISTS idx_episodes_production ON episodes(production_id, sort_order);
+CREATE INDEX IF NOT EXISTS idx_icon_themes_production ON icon_themes(production_id, name);
+CREATE INDEX IF NOT EXISTS idx_status_bars_production ON status_bars(production_id, name);
 CREATE INDEX IF NOT EXISTS idx_module_theme_configs_lookup ON module_theme_configs(theme_id, app_id, module_id, module_schema_version);
 CREATE INDEX IF NOT EXISTS idx_screen_instances_shot ON screen_instances(shot_id, layer_order);
 CREATE INDEX IF NOT EXISTS idx_module_instances_screen ON module_instances(screen_instance_id, sort_order, id);
@@ -271,4 +294,4 @@ CREATE INDEX IF NOT EXISTS idx_screen_events_instance ON screen_events(screen_in
 CREATE INDEX IF NOT EXISTS idx_conversation_participants_conversation ON conversation_participants(conversation_id, sort_order);
 CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id, sort_order);
 
-PRAGMA user_version = 10;
+PRAGMA user_version = 12;

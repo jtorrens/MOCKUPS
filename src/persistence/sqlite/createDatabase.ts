@@ -255,6 +255,65 @@ function applyAdditiveV10Migration(database: SQLiteDatabase): void {
   database.pragma("user_version = 10");
 }
 
+function applyAdditiveV11Migration(database: SQLiteDatabase): void {
+  database.exec(`
+    CREATE TABLE IF NOT EXISTS icon_themes (
+      id TEXT PRIMARY KEY,
+      production_id TEXT NOT NULL REFERENCES productions(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      family TEXT NOT NULL,
+      asset_root TEXT NOT NULL,
+      mapping_json TEXT NOT NULL,
+      metadata_json TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_icon_themes_production
+      ON icon_themes(production_id, name);
+  `);
+
+  const themeColumns = new Set(
+    (
+      database.pragma("table_info(themes)") as {
+        name: string;
+      }[]
+    ).map((column) => column.name),
+  );
+  if (!themeColumns.has("icon_theme_id")) {
+    database.exec(
+      "ALTER TABLE themes ADD COLUMN icon_theme_id TEXT REFERENCES icon_themes(id) ON DELETE SET NULL",
+    );
+  }
+  database.pragma("user_version = 11");
+}
+
+function applyAdditiveV12Migration(database: SQLiteDatabase): void {
+  database.exec(`
+    CREATE TABLE IF NOT EXISTS status_bars (
+      id TEXT PRIMARY KEY,
+      production_id TEXT NOT NULL REFERENCES productions(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      family TEXT NOT NULL,
+      config_json TEXT NOT NULL,
+      metadata_json TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_status_bars_production
+      ON status_bars(production_id, name);
+  `);
+
+  const themeColumns = new Set(
+    (
+      database.pragma("table_info(themes)") as {
+        name: string;
+      }[]
+    ).map((column) => column.name),
+  );
+  if (!themeColumns.has("status_bar_id")) {
+    database.exec(
+      "ALTER TABLE themes ADD COLUMN status_bar_id TEXT REFERENCES status_bars(id) ON DELETE SET NULL",
+    );
+  }
+  database.pragma("user_version = 12");
+}
+
 export function applyInitialSchema(database: SQLiteDatabase): void {
   database.exec(readFileSync(schemaPath, "utf8"));
   applyAdditiveV2Migration(database);
@@ -266,6 +325,8 @@ export function applyInitialSchema(database: SQLiteDatabase): void {
   applyAdditiveV8Migration(database);
   applyAdditiveV9Migration(database);
   applyAdditiveV10Migration(database);
+  applyAdditiveV11Migration(database);
+  applyAdditiveV12Migration(database);
   database.pragma("foreign_keys = ON");
 }
 

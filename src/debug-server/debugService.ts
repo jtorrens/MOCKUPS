@@ -8,6 +8,7 @@ import {
   DeviceSchema,
   DeviceStateSchema,
   EpisodeSchema,
+  IconThemeSchema,
   JsonObjectSchema,
   MediaAssetSchema,
   ModuleInstanceSchema,
@@ -16,6 +17,7 @@ import {
   RenderPresetSchema,
   ScreenInstanceSchema,
   ShotSchema,
+  StatusBarSchema,
   ThemeSchema,
   type JsonObject,
 } from "../domain/schemas/index.js";
@@ -359,16 +361,70 @@ export const APP_TABLES = [
     ],
   },
   {
+    id: "icon_themes",
+    label: "Icon Themes",
+    table: "icon_themes",
+    titleColumn: "name",
+    jsonFields: ["mapping_json", "metadata_json"],
+    fields: [
+      { column: "id", label: "ID", kind: "string", readonly: true },
+      {
+        column: "production_id",
+        label: "Production ID",
+        kind: "string",
+        readonly: true,
+      },
+      { column: "name", label: "Name", kind: "string" },
+      { column: "family", label: "Family", kind: "string" },
+      { column: "asset_root", label: "Asset root", kind: "string" },
+      { column: "mapping_json", label: "Icon mapping", kind: "json" },
+      { column: "metadata_json", label: "Icon theme notes", kind: "json" },
+    ],
+  },
+  {
+    id: "status_bars",
+    label: "Status Bars",
+    table: "status_bars",
+    titleColumn: "name",
+    jsonFields: ["config_json", "metadata_json"],
+    fields: [
+      { column: "id", label: "ID", kind: "string", readonly: true },
+      {
+        column: "production_id",
+        label: "Production ID",
+        kind: "string",
+        readonly: true,
+      },
+      { column: "name", label: "Name", kind: "string" },
+      { column: "family", label: "Family", kind: "string" },
+      { column: "config_json", label: "Status bar config", kind: "json" },
+      { column: "metadata_json", label: "Status bar notes", kind: "json" },
+    ],
+  },
+  {
     id: "themes",
     label: "Themes",
     table: "themes",
     titleColumn: "name",
     jsonFields: ["tokens_json"],
+    optionalScalars: ["icon_theme_id", "status_bar_id"],
     fields: [
       { column: "id", label: "ID", kind: "string", readonly: true },
       { column: "production_id", label: "Production ID", kind: "string" },
       { column: "name", label: "Name", kind: "string" },
       { column: "family", label: "Family", kind: "string", readonly: true },
+      {
+        column: "icon_theme_id",
+        label: "Icon theme",
+        kind: "string",
+        nullable: true,
+      },
+      {
+        column: "status_bar_id",
+        label: "Status bar",
+        kind: "string",
+        nullable: true,
+      },
       { column: "version", label: "Version", kind: "string" },
       { column: "tokens_json", label: "Theme tokens", kind: "json" },
     ],
@@ -520,6 +576,8 @@ const PARSERS = {
   screen_instances: ScreenInstanceSchema,
   module_instances: ModuleInstanceSchema,
   actors: ActorSchema,
+  icon_themes: IconThemeSchema,
+  status_bars: StatusBarSchema,
   themes: ThemeSchema,
   module_theme_configs: ModuleThemeConfigSchema,
   devices: DeviceSchema,
@@ -783,7 +841,7 @@ export function saveDebugPayload(
     .prepare("SELECT * FROM themes WHERE id = ?")
     .get(themeId) as Row;
   ThemeSchema.parse({
-    ...currentTheme,
+    ...nullsToUndefined(currentTheme, ["icon_theme_id", "status_bar_id"]),
     tokens_json: themeTokens,
   });
   const currentDevice = database
@@ -874,7 +932,7 @@ function loadInheritedJson(database: SQLiteDatabase) {
   const themeById = new Map(
     themes.map((row) => {
       const theme = ThemeSchema.parse({
-        ...row,
+        ...nullsToUndefined(row, ["icon_theme_id", "status_bar_id"]),
         tokens_json: readRequiredJson(row, "tokens_json"),
       });
       return [theme.id, theme] as const;
@@ -1000,7 +1058,15 @@ export interface AppUpdateRequest {
 }
 
 export interface AppCreateRequest {
-  tableId: "productions" | "episodes" | "shots" | "themes" | "devices" | "render_presets";
+  tableId:
+    | "productions"
+    | "episodes"
+    | "shots"
+    | "icon_themes"
+    | "status_bars"
+    | "themes"
+    | "devices"
+    | "render_presets";
   parent?: {
     productionId?: string;
     episodeId?: string;
@@ -1010,7 +1076,13 @@ export interface AppCreateRequest {
 }
 
 export interface AppRecordActionRequest {
-  tableId: "shots" | "themes" | "devices" | "render_presets";
+  tableId:
+    | "shots"
+    | "icon_themes"
+    | "status_bars"
+    | "themes"
+    | "devices"
+    | "render_presets";
   recordId: string;
 }
 
@@ -1134,6 +1206,88 @@ function defaultThemeTokens(family: "ios" | "android") {
         blur: 18,
       },
     },
+  };
+}
+
+function defaultIconThemeMapping() {
+  return {
+    tokens: {},
+    notes: {
+      source: "material-rounded-basic",
+      usage:
+        "Logical icon tokens resolve to SVG filenames in this production icon theme.",
+    },
+  };
+}
+
+function defaultStatusBarConfig() {
+  return {
+    schemaVersion: 2,
+    layout: {
+      height: 54,
+      itemSize: 18,
+      gap: 6,
+      sidePadding: 24,
+    },
+    items: [
+      {
+        id: "time",
+        label: "Time",
+        kind: "text",
+        value: "9:41",
+        zone: "left",
+        order: 10,
+      },
+      {
+        id: "carrier",
+        label: "Carrier",
+        kind: "text",
+        value: "",
+        zone: "off",
+        order: 20,
+      },
+      {
+        id: "signal",
+        label: "Signal",
+        kind: "generatedSignal",
+        value: 4,
+        zone: "right",
+        order: 10,
+      },
+      {
+        id: "wifi",
+        label: "Wi‑Fi",
+        kind: "iconToken",
+        token: "status_wifi",
+        zone: "right",
+        order: 20,
+      },
+      {
+        id: "soundOff",
+        label: "Sound Off",
+        kind: "iconToken",
+        token: "media_volume_off",
+        zone: "off",
+        order: 30,
+      },
+      {
+        id: "bluetooth",
+        label: "Bluetooth",
+        kind: "iconToken",
+        token: "status_bluetooth",
+        zone: "off",
+        order: 40,
+      },
+      {
+        id: "battery",
+        label: "Battery",
+        kind: "generatedBattery",
+        value: 85,
+        charging: false,
+        zone: "right",
+        order: 50,
+      },
+    ],
   };
 }
 
@@ -1329,6 +1483,86 @@ export function createAppRecord(
     return { tableId: "themes", record, state: loadAppState(database) };
   }
 
+  if (request.tableId === "icon_themes") {
+    const productionId = request.parent?.productionId;
+    if (!productionId) {
+      throw new Error("Creating an icon theme requires a productionId parent.");
+    }
+    const production = database
+      .prepare("SELECT id FROM productions WHERE id = ?")
+      .get(productionId);
+    if (!production) {
+      throw new Error(`Production ${productionId} not found`);
+    }
+    const name = request.name?.trim() || "Material Rounded Basic";
+    const id = uniqueId("icon_theme", name);
+    database
+      .prepare(
+        `INSERT INTO icon_themes (
+          id,
+          production_id,
+          name,
+          family,
+          asset_root,
+          mapping_json,
+          metadata_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        id,
+        productionId,
+        name,
+        "material-rounded",
+        "ASSETS/icon-themes/material-rounded-basic",
+        stringifyJsonObject(defaultIconThemeMapping(), "icon_themes.mapping_json"),
+        "{}",
+      );
+    const record = decodeAppRow(
+      database.prepare("SELECT * FROM icon_themes WHERE id = ?").get(id) as Row,
+      tableDefinition("icon_themes"),
+    );
+    return { tableId: "icon_themes", record, state: loadAppState(database) };
+  }
+
+  if (request.tableId === "status_bars") {
+    const productionId = request.parent?.productionId;
+    if (!productionId) {
+      throw new Error("Creating a status bar requires a productionId parent.");
+    }
+    const production = database
+      .prepare("SELECT id FROM productions WHERE id = ?")
+      .get(productionId);
+    if (!production) {
+      throw new Error(`Production ${productionId} not found`);
+    }
+    const name = request.name?.trim() || "New Status Bar";
+    const id = uniqueId("status_bar", name);
+    database
+      .prepare(
+        `INSERT INTO status_bars (
+          id,
+          production_id,
+          name,
+          family,
+          config_json,
+          metadata_json
+        ) VALUES (?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        id,
+        productionId,
+        name,
+        "ios",
+        stringifyJsonObject(defaultStatusBarConfig(), "status_bars.config_json"),
+        "{}",
+      );
+    const record = decodeAppRow(
+      database.prepare("SELECT * FROM status_bars WHERE id = ?").get(id) as Row,
+      tableDefinition("status_bars"),
+    );
+    return { tableId: "status_bars", record, state: loadAppState(database) };
+  }
+
   if (request.tableId === "devices") {
     const productionId = request.parent?.productionId;
     if (!productionId) {
@@ -1495,7 +1729,12 @@ function copyName(value: unknown) {
 
 function duplicateSimpleRecord(
   database: SQLiteDatabase,
-  tableId: "themes" | "devices" | "render_presets",
+  tableId:
+    | "icon_themes"
+    | "status_bars"
+    | "themes"
+    | "devices"
+    | "render_presets",
   recordId: string,
 ) {
   const definition = tableDefinition(tableId);
@@ -1507,7 +1746,11 @@ function duplicateSimpleRecord(
   }
   const name = copyName(existing.name);
   const id = uniqueId(
-    tableId === "themes"
+    tableId === "icon_themes"
+      ? "icon_theme"
+      : tableId === "status_bars"
+        ? "status_bar"
+      : tableId === "themes"
       ? "theme"
       : tableId === "devices"
         ? "device"

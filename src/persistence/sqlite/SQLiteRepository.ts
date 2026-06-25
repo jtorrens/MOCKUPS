@@ -188,6 +188,7 @@ export class SQLiteRepository implements DomainRepository {
   getTheme(id: string): Theme | undefined {
     return this.getOne("SELECT * FROM themes WHERE id = ?", id, ThemeSchema, {
       required: ["tokens_json"],
+      optionalScalars: ["icon_theme_id", "status_bar_id"],
     });
   }
 

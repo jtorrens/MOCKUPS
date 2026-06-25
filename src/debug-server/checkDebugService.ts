@@ -51,6 +51,8 @@ try {
     "screen_instances",
     "module_instances",
     "actors",
+    "icon_themes",
+    "status_bars",
     "themes",
     "module_theme_configs",
     "devices",

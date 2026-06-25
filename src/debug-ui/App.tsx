@@ -378,7 +378,15 @@ export function App() {
   }
 
   function performCreateRecord(
-    tableId: "productions" | "episodes" | "shots" | "themes" | "devices" | "render_presets",
+    tableId:
+      | "productions"
+      | "episodes"
+      | "shots"
+      | "icon_themes"
+      | "status_bars"
+      | "themes"
+      | "devices"
+      | "render_presets",
     parent?: { productionId?: string; episodeId?: string },
     options?: { family?: "ios" | "android" },
   ) {
@@ -399,7 +407,15 @@ export function App() {
   }
 
   function handleCreateRecord(
-    tableId: "productions" | "episodes" | "shots" | "themes" | "devices" | "render_presets",
+    tableId:
+      | "productions"
+      | "episodes"
+      | "shots"
+      | "icon_themes"
+      | "status_bars"
+      | "themes"
+      | "devices"
+      | "render_presets",
     parent?: { productionId?: string; episodeId?: string },
   ) {
     if (tableId === "themes") {
@@ -420,7 +436,13 @@ export function App() {
   }
 
   function handleDuplicateRecord(
-    tableId: "shots" | "themes" | "devices" | "render_presets",
+    tableId:
+      | "shots"
+      | "icon_themes"
+      | "status_bars"
+      | "themes"
+      | "devices"
+      | "render_presets",
     recordId: string,
   ) {
     setBusyProjectAction(true);
@@ -436,7 +458,13 @@ export function App() {
   }
 
   function handleDeleteRecord(
-    tableId: "shots" | "themes" | "devices" | "render_presets",
+    tableId:
+      | "shots"
+      | "icon_themes"
+      | "status_bars"
+      | "themes"
+      | "devices"
+      | "render_presets",
     recordId: string,
   ) {
     setBusyProjectAction(true);

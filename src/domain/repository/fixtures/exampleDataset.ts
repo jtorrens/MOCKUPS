@@ -29,6 +29,7 @@ import {
   ScreenEventSchema,
   ScreenInstanceSchema,
   ShotSchema,
+  StatusBarSchema,
   ThemeSchema,
 } from "../../schemas/index.js";
 import type { RepositoryDataset } from "../types.js";
@@ -65,7 +66,87 @@ export function createExampleDataset(): RepositoryDataset {
   const screenEvents = ScreenEventSchema.array().parse(
     shotExample.screen_events,
   );
-  const theme = ThemeSchema.parse(themeExample);
+  const statusBar = StatusBarSchema.parse({
+    id: "status_bar_ios_default",
+    production_id: production.id,
+    name: "iOS Default Status Bar",
+    family: "ios",
+    config_json: {
+      schemaVersion: 2,
+      layout: {
+        height: 54,
+        itemSize: 18,
+        gap: 6,
+        sidePadding: 24,
+      },
+      items: [
+        {
+          id: "time",
+          label: "Time",
+          kind: "text",
+          value: "9:41",
+          zone: "left",
+          order: 10,
+        },
+        {
+          id: "carrier",
+          label: "Carrier",
+          kind: "text",
+          value: "",
+          zone: "off",
+          order: 20,
+        },
+        {
+          id: "signal",
+          label: "Signal",
+          kind: "generatedSignal",
+          value: 4,
+          zone: "right",
+          order: 10,
+        },
+        {
+          id: "wifi",
+          label: "Wi‑Fi",
+          kind: "iconToken",
+          token: "status_wifi",
+          zone: "right",
+          order: 20,
+        },
+        {
+          id: "soundOff",
+          label: "Sound Off",
+          kind: "iconToken",
+          token: "media_volume_off",
+          zone: "off",
+          order: 30,
+        },
+        {
+          id: "bluetooth",
+          label: "Bluetooth",
+          kind: "iconToken",
+          token: "status_bluetooth",
+          zone: "off",
+          order: 40,
+        },
+        {
+          id: "battery",
+          label: "Battery",
+          kind: "generatedBattery",
+          value: 85,
+          charging: false,
+          zone: "right",
+          order: 50,
+        },
+      ],
+    },
+    metadata_json: {
+      note: "Reusable status bar composition. Icon shapes resolve through the selected theme icon theme.",
+    },
+  });
+  const theme = ThemeSchema.parse({
+    ...themeExample,
+    status_bar_id: statusBar.id,
+  });
   const app = AppSchema.parse({
     id: "app_messages",
     production_id: production.id,
@@ -355,6 +436,8 @@ export function createExampleDataset(): RepositoryDataset {
     screenInstances,
     moduleInstances,
     screenEvents,
+    iconThemes: [],
+    statusBars: [statusBar],
     themes: [theme],
     moduleThemeConfigs: [chatModuleThemeConfig],
     devices: [device],

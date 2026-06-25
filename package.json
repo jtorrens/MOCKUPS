@@ -16,6 +16,7 @@
     "db:init": "tsx src/persistence/sqlite/initializeDevelopmentDatabase.ts",
     "db:seed": "tsx src/persistence/sqlite/seedDevelopmentDatabase.ts",
     "db:reset": "tsx src/persistence/sqlite/resetDevelopmentDatabase.ts",
+    "icon-theme:import": "tsx src/icon-themes/importDevelopmentIconTheme.ts",
     "validate:sqlite": "tsx src/persistence/sqlite/validateSQLiteRepository.ts",
     "debug:server": "tsx src/debug-server/server.ts",
     "debug:ui": "vite",

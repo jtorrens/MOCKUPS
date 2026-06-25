@@ -20,23 +20,39 @@ interface ProjectTreeProps {
       | "productions"
       | "episodes"
       | "shots"
+      | "icon_themes"
+      | "status_bars"
       | "themes"
       | "devices"
       | "render_presets",
     parent?: { productionId?: string; episodeId?: string },
   ) => void;
   onDuplicateRecord: (
-    tableId: "shots" | "themes" | "devices" | "render_presets",
+    tableId:
+      | "shots"
+      | "icon_themes"
+      | "status_bars"
+      | "themes"
+      | "devices"
+      | "render_presets",
     recordId: string,
   ) => void;
   onDeleteRecord: (
-    tableId: "shots" | "themes" | "devices" | "render_presets",
+    tableId:
+      | "shots"
+      | "icon_themes"
+      | "status_bars"
+      | "themes"
+      | "devices"
+      | "render_presets",
     recordId: string,
   ) => void;
 }
 
 const PRODUCTION_DATA_TABLE_IDS = new Set([
   "actors",
+  "icon_themes",
+  "status_bars",
   "themes",
   "devices",
   "media_assets",
@@ -50,6 +66,8 @@ function tableById(tables: AppTableDefinition[]) {
 
 function productionDataIcon(tableId: string) {
   if (tableId === "actors") return "actor";
+  if (tableId === "icon_themes") return "icon";
+  if (tableId === "status_bars") return "status";
   if (tableId === "themes") return "theme";
   if (tableId === "devices") return "device";
   if (tableId === "media_assets") return "media";
@@ -233,6 +251,22 @@ function TreeIcon({ name }: { name: string }) {
       </svg>
     );
   }
+  if (name === "icon") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M7 4h10l3 3v10l-3 3H7l-3-3V7l3-3Z" />
+        <path d="M9 12h6M12 9v6" />
+      </svg>
+    );
+  }
+  if (name === "status") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M5 8h14M7 12h2M11 12h2M15 12h2" />
+        <rect x="4" y="5" width="16" height="12" rx="2.5" />
+      </svg>
+    );
+  }
   if (name === "device") {
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -403,7 +437,13 @@ export function ProjectTree({
   }
 
   function confirmDelete(
-    tableId: "shots" | "themes" | "devices" | "render_presets",
+    tableId:
+      | "shots"
+      | "icon_themes"
+      | "status_bars"
+      | "themes"
+      | "devices"
+      | "render_presets",
     recordId: string,
     label: string,
   ) {
@@ -714,7 +754,9 @@ export function ProjectTree({
                     </small>
                   </span>
                 </button>
-                {table.id === "themes" ||
+                {table.id === "icon_themes" ||
+                table.id === "status_bars" ||
+                table.id === "themes" ||
                 table.id === "devices" ||
                 table.id === "render_presets" ? (
                   <TreeActions
@@ -724,7 +766,12 @@ export function ProjectTree({
                     busy={busyAction}
                     onAdd={() =>
                       onCreateRecord(
-                        table.id as "themes" | "devices" | "render_presets",
+                        table.id as
+                          | "icon_themes"
+                          | "status_bars"
+                          | "themes"
+                          | "devices"
+                          | "render_presets",
                         {
                           productionId: selectedProductionId,
                         },
@@ -732,7 +779,12 @@ export function ProjectTree({
                     }
                     onDuplicate={() =>
                       onDuplicateRecord(
-                        table.id as "themes" | "devices" | "render_presets",
+                        table.id as
+                          | "icon_themes"
+                          | "status_bars"
+                          | "themes"
+                          | "devices"
+                          | "render_presets",
                         selectedRecordIds[table.id],
                       )
                     }
@@ -742,7 +794,12 @@ export function ProjectTree({
                       );
                       if (selected) {
                         confirmDelete(
-                          table.id as "themes" | "devices" | "render_presets",
+                          table.id as
+                            | "icon_themes"
+                            | "status_bars"
+                            | "themes"
+                            | "devices"
+                            | "render_presets",
                           selected.id,
                           recordTitle(table, selected),
                         );

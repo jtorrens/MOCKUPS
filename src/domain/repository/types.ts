@@ -7,6 +7,7 @@ import type {
   Device,
   DeviceState,
   Episode,
+  IconTheme,
   MediaAsset,
   Message,
   ModuleInstance,
@@ -16,6 +17,7 @@ import type {
   ScreenEvent,
   ScreenInstance,
   Shot,
+  StatusBar,
   Theme,
 } from "../schemas/index.js";
 
@@ -26,6 +28,8 @@ export interface RepositoryDataset {
   screenInstances: ScreenInstance[];
   moduleInstances: ModuleInstance[];
   screenEvents: ScreenEvent[];
+  iconThemes: IconTheme[];
+  statusBars: StatusBar[];
   themes: Theme[];
   moduleThemeConfigs: ModuleThemeConfig[];
   devices: Device[];

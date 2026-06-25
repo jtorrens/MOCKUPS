@@ -85,7 +85,16 @@ export function ThemeRecordEditor({
       record={record}
       activeTab={activeTab}
       tokensFieldExists={Boolean(tokensField)}
-      renderGeneral={() => renderFields(["id", "name", "family", "version"])}
+      renderGeneral={() =>
+        renderFields([
+          "id",
+          "name",
+          "family",
+          "icon_theme_id",
+          "status_bar_id",
+          "version",
+        ])
+      }
       renderTokens={() =>
         tokensField ? (
           <>
@@ -116,7 +125,7 @@ export function ThemeRecordEditor({
                   </div>
                 </EditorSubsectionAccordion>
               ))}
-            {(["statusBar", "navigationBar"] as const).map((group) => (
+            {(["navigationBar"] as const).map((group) => (
               <EditorSubsectionAccordion
                 key={group}
                 group={group}

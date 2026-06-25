@@ -6,9 +6,11 @@ import type {
 } from "../api/client.js";
 import { AppRecordEditor } from "./AppRecordEditor.js";
 import { GenericRecordEditor } from "./GenericRecordEditor.js";
+import { IconThemeRecordEditor } from "./IconThemeRecordEditor.js";
 import { ModuleInstanceRecordEditor } from "./ModuleInstanceRecordEditor.js";
 import { ModuleThemeConfigRecordEditor } from "./ModuleThemeConfigRecordEditor.js";
 import { ScreenInstanceRecordEditor } from "./ScreenInstanceRecordEditor.js";
+import { StatusBarRecordEditor } from "./StatusBarRecordEditor.js";
 import { ThemeRecordEditor } from "./ThemeRecordEditor.js";
 import { shotHasFpsOverride } from "./ShotFields.js";
 import type { createJsonGroupDrafts } from "./jsonGroupDrafts.js";
@@ -97,6 +99,37 @@ export function RecordEditorDispatcher({
         renderField={renderField}
         setActiveTab={tabs.setThemeTab}
         setActiveTokenGroup={tabs.setThemeTokenGroup}
+        setJsonDraft={setJsonDraft}
+      />
+    );
+  }
+
+  if (table.id === "icon_themes") {
+    return (
+      <IconThemeRecordEditor
+        table={table}
+        record={record}
+        drafts={drafts}
+        activeTab={tabs.iconThemeTab}
+        mediaRoot={mediaRoot}
+        nativeBridge={nativeBridge}
+        renderField={renderField}
+        setActiveTab={tabs.setIconThemeTab}
+        setJsonDraft={setJsonDraft}
+      />
+    );
+  }
+
+  if (table.id === "status_bars") {
+    return (
+      <StatusBarRecordEditor
+        table={table}
+        record={record}
+        records={records}
+        drafts={drafts}
+        activeTab={tabs.statusBarTab}
+        renderField={renderField}
+        setActiveTab={tabs.setStatusBarTab}
         setJsonDraft={setJsonDraft}
       />
     );

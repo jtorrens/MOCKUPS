@@ -116,7 +116,15 @@ export interface RenderFrameRequest extends DebugSelection {
 }
 
 export interface AppCreateRequest {
-  tableId: "productions" | "episodes" | "shots" | "themes" | "devices" | "render_presets";
+  tableId:
+    | "productions"
+    | "episodes"
+    | "shots"
+    | "icon_themes"
+    | "status_bars"
+    | "themes"
+    | "devices"
+    | "render_presets";
   parent?: {
     productionId?: string;
     episodeId?: string;
@@ -126,7 +134,13 @@ export interface AppCreateRequest {
 }
 
 export interface AppRecordActionRequest {
-  tableId: "shots" | "themes" | "devices" | "render_presets";
+  tableId:
+    | "shots"
+    | "icon_themes"
+    | "status_bars"
+    | "themes"
+    | "devices"
+    | "render_presets";
   recordId: string;
 }
 
