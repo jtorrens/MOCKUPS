@@ -13,6 +13,7 @@ import {
 import { ProjectTree } from "./components/ProjectTree.js";
 import { RecordEditor } from "./components/RecordEditor.js";
 import { RightPreviewShell } from "./preview/index.js";
+import "./AppShell.css";
 import "./panels/LeftPanel.css";
 
 const LAYOUT_STORAGE_KEY = "mockups.debugUi.layout.v1";
