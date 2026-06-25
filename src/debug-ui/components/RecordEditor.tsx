@@ -62,6 +62,7 @@ import {
   AppIconFields,
   AppWallpaperEditor,
 } from "../editors/AppMediaFields.js";
+import { ModuleBehaviorFields } from "../editors/ModuleBehaviorFields.js";
 import {
   hasModeColorOverrides,
   ModeColorEditor,
@@ -1324,59 +1325,6 @@ export function RecordEditor({
       ? contentTab
       : "";
 
-    function updateBehaviorValue(path: JsonPath, nextValue: JsonValue) {
-      const root = parsedObject(drafts.behavior_json ?? "{}");
-      setDrafts({
-        ...drafts,
-        behavior_json: stringifyJson(setAtPath(root as JsonValue, path, nextValue)),
-      });
-    }
-
-    function renderModuleBehaviorFields() {
-      const root = parsedObject(drafts.behavior_json ?? "{}");
-      return (
-        <>
-          {[
-            ["Show header", "showHeader", true],
-            ["Show status bar", "showStatusBar", true],
-            ["Show keyboard", "showKeyboard", false],
-          ].map(([label, key, fallback]) => (
-            <InspectorFieldRow
-              key={String(key)}
-              className="record-editor-field record-editor-field-boolean"
-              label={<span>{String(label)}</span>}
-              control={
-                <input
-                  type="checkbox"
-                  checked={Boolean(root[String(key)] ?? fallback)}
-                  onChange={(event) =>
-                    updateBehaviorValue([String(key)], event.target.checked)
-                  }
-                />
-              }
-            />
-          ))}
-          <InspectorFieldRow
-            key="initialScroll"
-            className="record-editor-field record-editor-field-string"
-            label={<span>Initial scroll</span>}
-            control={
-              <select
-                value={String(root.initialScroll ?? "bottom")}
-                onChange={(event) =>
-                  updateBehaviorValue(["initialScroll"], event.target.value)
-                }
-              >
-                <option value="top">Top</option>
-                <option value="bottom">Bottom</option>
-                <option value="preserve">Preserve</option>
-              </select>
-            }
-          />
-        </>
-      );
-    }
-
     function contentGroupHasWarning(group: string) {
       const contentRoot = parsedObject(drafts.content_json ?? "{}");
       const participants = contentRoot.participants;
@@ -1429,7 +1377,17 @@ export function RecordEditor({
             ? renderContentGroupEditor(contentField, group, "content_json")
             : null
         }
-        renderBehaviorFields={renderModuleBehaviorFields}
+        renderBehaviorFields={() => (
+          <ModuleBehaviorFields
+            rawValue={drafts.behavior_json ?? "{}"}
+            onRawChange={(nextRaw) =>
+              setDrafts({
+                ...drafts,
+                behavior_json: nextRaw,
+              })
+            }
+          />
+        )}
         renderSubgroupAccordion={(group, activeGroup, warning, onToggle, children) => (
           <SubgroupAccordion
             key={group}
