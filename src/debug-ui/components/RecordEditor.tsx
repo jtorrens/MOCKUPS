@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   updateAppRecord,
   type AppFieldDefinition,
@@ -10,7 +10,6 @@ import { EditorSectionCard } from "../editor-ui/EditorSectionCard.js";
 import { EditorSections } from "../editor-ui/EditorSections.js";
 import { DeferredTextInput } from "../editor-ui/DeferredTextInput.js";
 import { AppRecordEditor } from "../editors/AppRecordEditor.js";
-import { renderGenericField as renderGenericFieldFromDispatcher } from "../editors/GenericFieldDispatcher.js";
 import { GenericRecordEditor } from "../editors/GenericRecordEditor.js";
 import { ModuleInstanceRecordEditor } from "../editors/ModuleInstanceRecordEditor.js";
 import { ModuleThemeConfigRecordEditor } from "../editors/ModuleThemeConfigRecordEditor.js";
@@ -23,27 +22,10 @@ import type {
   ThemeEditorTab,
 } from "../editors/editorTabs.js";
 import { defaultGroupValue } from "../editors/chat/chatContentModel.js";
-import {
-  RecordFieldRenderer,
-  type RawJsonFieldOverride,
-} from "../editors/RecordFieldRenderer.js";
-import {
-  DeviceMetricsField,
-  FlatJsonObjectEditor,
-} from "../editors/FlatJsonFieldEditors.js";
-import {
-  parsedJsonValue,
-  parsedObject,
-} from "../editors/recordJsonUtils.js";
 import { shotHasFpsOverride } from "../editors/ShotFields.js";
 import { productionMediaRootForRecord } from "../editors/recordProductionUtils.js";
 import { useJsonGroupDrafts } from "../editors/useJsonGroupDrafts.js";
-import {
-  cloneJson,
-  defaultJsonValue,
-  type JsonPath,
-  type JsonValue,
-} from "./json-editor/jsonEditorUtils.js";
+import { useRecordEditorRenderServices } from "../editors/useRecordEditorRenderServices.js";
 
 type SaveState = "saved" | "dirty" | "invalid" | "saving" | "failed";
 
@@ -232,118 +214,37 @@ export function RecordEditor({
   }
 
   const fieldsByColumn = new Map(table.fields.map((field) => [field.column, field]));
-
-  function setJsonDraft(column: string, value: JsonValue) {
-    setDrafts({
-      ...drafts,
-      [column]: stringifyJson(value),
-    });
-  }
+  const productionMediaRoot = productionMediaRootForRecord({
+    table,
+    record,
+    records,
+  });
+  const {
+    renderField,
+    renderFields,
+    renderFlatJsonObjectEditor,
+    renderGenericField,
+    setJsonDraft,
+  } = useRecordEditorRenderServices({
+    table,
+    record,
+    records,
+    fieldsByColumn,
+    drafts,
+    states,
+    errors,
+    inheritedFields,
+    nativeBridge: mockupsNative(),
+    productionMediaRoot,
+    relativePathFromRoot,
+    setDrafts,
+  });
 
   const { rawForJsonGroupValue, updateJsonGroupValue } = useJsonGroupDrafts({
     drafts,
     defaultGroupValue,
     setDrafts,
   });
-
-  function productionMediaRoot() {
-    return productionMediaRootForRecord({ table, record, records });
-  }
-
-  function renderField(field: AppFieldDefinition, rawOverride?: RawJsonFieldOverride) {
-    return (
-      <RecordFieldRenderer
-        key={field.column}
-        table={table}
-        field={field}
-        record={record}
-        records={records}
-        drafts={drafts}
-        state={states[field.column] ?? "saved"}
-        error={errors[field.column]}
-        inheritedValue={inheritedFields[field.column]}
-        rawOverride={rawOverride}
-        onDraftChange={(column, value) =>
-          setDrafts({
-            ...drafts,
-            [column]: value,
-          })
-        }
-      />
-    );
-  }
-
-  function renderFields(columns: string[]) {
-    return columns
-      .map((column) => fieldsByColumn.get(column))
-      .filter((field): field is AppFieldDefinition => Boolean(field))
-      .filter((field) => field.column !== "id")
-      .map((field) => renderField(field));
-  }
-
-  function renderGenericField(field: AppFieldDefinition) {
-    return renderGenericFieldFromDispatcher({
-      table,
-      field,
-      record,
-      records,
-      drafts,
-      states,
-      errors,
-      nativeBridge: mockupsNative(),
-      productionMediaRoot: productionMediaRoot(),
-      relativePathFromRoot,
-      setDrafts,
-      setJsonDraft,
-      renderField,
-      renderFlatJsonObjectEditor,
-      renderDeviceMetricsField,
-    });
-  }
-
-  function renderFlatJsonObjectEditor(
-    column: string,
-    omitKeys: string[] = [],
-  ) {
-    const field = fieldsByColumn.get(column);
-    if (!field) return null;
-    const root = parsedObject(drafts[column] ?? "{}");
-    return (
-      <FlatJsonObjectEditor
-        table={table}
-        field={field}
-        record={record}
-        root={root}
-        omitKeys={omitKeys}
-        onRootChange={(nextRoot) => setJsonDraft(column, nextRoot)}
-      />
-    );
-  }
-
-  function renderDeviceMetricsField(field: AppFieldDefinition) {
-    const root = parsedJsonValue(drafts[field.column] ?? "{}", {}) as JsonValue;
-    return (
-      <DeviceMetricsField
-        key={field.column}
-        table={table}
-        field={field}
-        record={record}
-        root={root}
-        onRootChange={(nextRoot) => setJsonDraft(field.column, nextRoot)}
-      />
-    );
-  }
-
-  function configGroupHasContent(groupKey: string) {
-    const config = parsedObject(drafts.config_json ?? "{}");
-    const value = config[groupKey];
-    return (
-      value !== null &&
-      typeof value === "object" &&
-      !Array.isArray(value) &&
-      Object.keys(value as Record<string, unknown>).length > 0
-    );
-  }
 
   if (table.id === "apps") {
     return (
@@ -355,7 +256,7 @@ export function RecordEditor({
         inheritedFields={inheritedFields}
         activeTab={appTab}
         activeTokenGroup={appTokenGroup}
-        mediaRoot={productionMediaRoot()}
+        mediaRoot={productionMediaRoot}
         nativeBridge={mockupsNative()}
         relativePathFromRoot={relativePathFromRoot}
         renderFields={renderFields}
@@ -396,7 +297,7 @@ export function RecordEditor({
         drafts={drafts}
         activeTab={screenTab}
         activeContentTab={contentTab}
-        mediaRoot={productionMediaRoot()}
+        mediaRoot={productionMediaRoot}
         nativeBridge={mockupsNative()}
         relativePathFromRoot={relativePathFromRoot}
         setDrafts={setDrafts}
