@@ -67,6 +67,7 @@ import {
   ActorAvatarPreview,
   MediaCoverPreview,
 } from "../editors/MediaPreviews.js";
+import { useJsonGroupDrafts } from "../editors/useJsonGroupDrafts.js";
 import {
   hasModeColorOverrides,
   ModeColorEditor,
@@ -346,44 +347,11 @@ export function RecordEditor({
     return explicitLocalDiffers(parsedObject(drafts[column] ?? "{}"), inherited);
   }
 
-  function rawForJsonGroup(column: string, groupKey: string) {
-    const root = parsedObject(drafts[column] ?? "{}");
-    return stringifyJson({ [groupKey]: root[groupKey] ?? defaultGroupValue(groupKey) });
-  }
-
-  function updateJsonGroup(column: string, groupKey: string, nextRawText: string) {
-    const root = parsedObject(drafts[column] ?? "{}");
-    const nextGroupRoot = parsedObject(nextRawText);
-    setDrafts({
-      ...drafts,
-      [column]: stringifyJson({
-        ...root,
-        [groupKey]: nextGroupRoot[groupKey] ?? defaultGroupValue(groupKey),
-      }),
-    });
-  }
-
-  function rawForJsonGroupValue(column: string, groupKey: string) {
-    const root = parsedObject(drafts[column] ?? "{}");
-    const value = root[groupKey];
-    return stringifyJson(normalizeGroupValue(value, defaultGroupValue(groupKey)));
-  }
-
-  function updateJsonGroupValue(
-    column: string,
-    groupKey: string,
-    nextRawText: string,
-  ) {
-    const root = parsedObject(drafts[column] ?? "{}");
-    const fallback = defaultGroupValue(groupKey);
-    setDrafts({
-      ...drafts,
-      [column]: stringifyJson({
-        ...root,
-        [groupKey]: parsedJsonValue(nextRawText, fallback),
-      }),
-    });
-  }
+  const { rawForJsonGroupValue, updateJsonGroupValue } = useJsonGroupDrafts({
+    drafts,
+    defaultGroupValue,
+    setDrafts,
+  });
 
   function productionMediaRoot() {
     return productionMediaRootForRecord({ table, record, records });
