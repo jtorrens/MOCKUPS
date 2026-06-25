@@ -150,6 +150,23 @@ function groupedRows(rows: TokenRow[]): TokenRowGroup[] {
   }));
 }
 
+function mergedTokenShape(inherited: JsonValue, local: JsonValue): JsonValue {
+  if (isJsonObject(inherited) || isJsonObject(local)) {
+    const inheritedObject = isJsonObject(inherited) ? inherited : {};
+    const localObject = isJsonObject(local) ? local : {};
+    const keys = new Set([
+      ...Object.keys(inheritedObject),
+      ...Object.keys(localObject),
+    ]);
+    const merged: Record<string, JsonValue> = {};
+    for (const key of keys) {
+      merged[key] = mergedTokenShape(inheritedObject[key], localObject[key]);
+    }
+    return merged;
+  }
+  return local === undefined ? inherited : local;
+}
+
 function withCurrentOption(options: string[], value: string) {
   if (!value || options.includes(value)) return options;
   return [value, ...options];
@@ -177,7 +194,8 @@ export function TokenOverrideEditor({
   restoreMode = "remove",
   onRootChange,
 }: TokenOverrideEditorProps) {
-  const rows = flattenPrimitiveTokens(inheritedRoot);
+  const displayRoot = mergedTokenShape(inheritedRoot, rootValue);
+  const rows = flattenPrimitiveTokens(displayRoot);
   const { families, stylesByFamily } = useSystemFontCatalog();
 
   function restoreValue(path: JsonPath, inheritedValue: JsonValue) {
