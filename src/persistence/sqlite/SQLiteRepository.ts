@@ -6,6 +6,7 @@ import {
   ConversationSchema,
   DeviceSchema,
   DeviceStateSchema,
+  IconThemeSchema,
   MediaAssetSchema,
   MessageSchema,
   ModuleInstanceSchema,
@@ -15,6 +16,7 @@ import {
   ScreenEventSchema,
   ScreenInstanceSchema,
   ShotSchema,
+  StatusBarSchema,
   ThemeSchema,
   type Actor,
   type App,
@@ -22,6 +24,7 @@ import {
   type ConversationParticipant,
   type Device,
   type DeviceState,
+  type IconTheme,
   type MediaAsset,
   type Message,
   type ModuleInstance,
@@ -31,6 +34,7 @@ import {
   type ScreenEvent,
   type ScreenInstance,
   type Shot,
+  type StatusBar,
   type Theme,
 } from "../../domain/schemas/index.js";
 import type { SQLiteDatabase } from "./createDatabase.js";
@@ -182,6 +186,24 @@ export class SQLiteRepository implements DomainRepository {
       screenInstanceId,
       ScreenEventSchema,
       { required: ["payload_json"] },
+    );
+  }
+
+  getIconTheme(id: string): IconTheme | undefined {
+    return this.getOne(
+      "SELECT * FROM icon_themes WHERE id = ?",
+      id,
+      IconThemeSchema,
+      { required: ["mapping_json"], optional: ["metadata_json"] },
+    );
+  }
+
+  getStatusBar(id: string): StatusBar | undefined {
+    return this.getOne(
+      "SELECT * FROM status_bars WHERE id = ?",
+      id,
+      StatusBarSchema,
+      { required: ["config_json"], optional: ["metadata_json"] },
     );
   }
 

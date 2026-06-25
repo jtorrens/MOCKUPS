@@ -53,6 +53,8 @@ export interface DomainRepository {
     screenInstanceId: string,
   ): ModuleInstance | undefined;
   getScreenEventsForInstance(screenInstanceId: string): ScreenEvent[];
+  getIconTheme(id: string): IconTheme | undefined;
+  getStatusBar(id: string): StatusBar | undefined;
   getTheme(id: string): Theme | undefined;
   getModuleThemeConfig(
     themeId: string,

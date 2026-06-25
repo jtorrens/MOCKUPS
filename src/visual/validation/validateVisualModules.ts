@@ -154,13 +154,16 @@ assert(
     headerTitleNode.style.fontWeight === "Semibold",
   "Chat header title must receive scaled Chat typography tokens",
 );
-const statusIndicators = statusNode?.children?.find(
-  (child) => child.type === "status_indicators",
+const statusItems =
+  statusNode?.children?.flatMap((child) => child.children ?? []) ?? [];
+const wifiStatusItem = statusItems.find(
+  (child) =>
+    child.type === "status_bar_item" && child.metadata?.id === "wifi",
 );
 assert(
-  statusIndicators?.metadata?.wifiEnabled === true &&
-    statusIndicators.metadata.wifiIconState === "connected",
-  "Status bar must receive explicit Wi-Fi state",
+  wifiStatusItem?.metadata?.token === "status_wifi" &&
+    wifiStatusItem.role === "iconToken",
+  "Status bar must receive configured Wi-Fi icon item",
 );
 assert(
   JSON.stringify(tree) === JSON.stringify(secondTree),

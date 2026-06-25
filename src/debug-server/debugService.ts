@@ -68,13 +68,30 @@ function rewriteRenderableMediaUrls(
   productionId: string,
 ): RenderableNode {
   const backgroundUrl = extractCssUrl(node.style?.backgroundImage);
-  const nextStyle =
-    backgroundUrl && node.style
-      ? {
-          ...node.style,
-          backgroundImage: cssUrl(previewMediaUrl(productionId, backgroundUrl)),
-        }
-      : node.style;
+  const maskUrl = extractCssUrl(node.style?.maskImage);
+  const webkitMaskUrl = extractCssUrl(node.style?.WebkitMaskImage);
+  const nextStyle = node.style
+    ? {
+        ...node.style,
+        ...(backgroundUrl
+          ? {
+              backgroundImage: cssUrl(
+                previewMediaUrl(productionId, backgroundUrl),
+              ),
+            }
+          : {}),
+        ...(maskUrl
+          ? { maskImage: cssUrl(previewMediaUrl(productionId, maskUrl)) }
+          : {}),
+        ...(webkitMaskUrl
+          ? {
+              WebkitMaskImage: cssUrl(
+                previewMediaUrl(productionId, webkitMaskUrl),
+              ),
+            }
+          : {}),
+      }
+    : node.style;
   return {
     ...node,
     ...(nextStyle ? { style: nextStyle } : {}),

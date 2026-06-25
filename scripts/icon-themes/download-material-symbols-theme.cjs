@@ -1,14 +1,30 @@
 #!/usr/bin/env node
 
 /**
- * Descarga un subset básico de Material Symbols Outlined en SVG
+ * Descarga un subset básico de Material Symbols en SVG
  * y lo copia en estructura plana con nombres semánticos propios.
  *
- * Uso:
- *   node scripts/icon-themes/download-material-outlined-basic-flat.cjs
+ * Compatible con proyectos que usan:
+ *   "type": "module"
  *
- * Resultado:
- *   assets/icon-themes/material-outlined-basic/*.svg
+ * Por eso este archivo debe tener extensión .cjs.
+ *
+ * Uso:
+ *   node scripts/icon-themes/download-material-symbols-theme.cjs --style rounded --weight 600
+ *
+ * Opciones:
+ *   --style rounded|outlined|sharp
+ *   --weight 100|200|300|400|500|600|700
+ *   --out <folderName>
+ *   --keep-existing
+ *
+ * Ejemplos:
+ *   node scripts/icon-themes/download-material-symbols-theme.cjs --style rounded --weight 600
+ *   node scripts/icon-themes/download-material-symbols-theme.cjs --style outlined --weight 400
+ *   node scripts/icon-themes/download-material-symbols-theme.cjs --style rounded --weight 700 --out material-rounded-bold
+ *
+ * Resultado por defecto:
+ *   assets/icon-themes/material-rounded-600/*.svg
  */
 
 const fs = require("fs");
@@ -16,16 +32,11 @@ const path = require("path");
 const os = require("os");
 const { execFileSync } = require("child_process");
 
-const PACKAGE_NAME = "@material-symbols/svg-400";
-const THEME_NAME = "material-outlined-basic";
-const STYLE = "outlined";
-
-const projectRoot = process.cwd();
-
-const outputDir = path.join(projectRoot, "assets", "icon-themes", THEME_NAME);
-const licenseDir = path.join(projectRoot, "assets", "icon-themes", "_licenses");
+const VALID_STYLES = new Set(["rounded", "outlined", "sharp"]);
+const VALID_WEIGHTS = new Set(["100", "200", "300", "400", "500", "600", "700"]);
 
 const ICONS = [
+  // Navigation
   { key: "nav_home", material: "home" },
   { key: "nav_back", material: "arrow_back" },
   { key: "nav_forward", material: "arrow_forward" },
@@ -37,6 +48,7 @@ const ICONS = [
   { key: "nav_chevron_left", material: "chevron_left" },
   { key: "nav_chevron_right", material: "chevron_right" },
 
+  // Android navigation bar
   { key: "android_nav_back", material: "arrow_back_ios_new" },
   { key: "android_nav_back_alt", material: "arrow_back" },
   { key: "android_nav_home", material: "circle" },
@@ -44,6 +56,7 @@ const ICONS = [
   { key: "android_nav_gesture_bar", material: "horizontal_rule" },
   { key: "android_nav_keyboard_hide", material: "keyboard_hide" },
 
+  // System
   { key: "system_settings", material: "settings" },
   { key: "system_search", material: "search" },
   { key: "system_notifications", material: "notifications" },
@@ -60,6 +73,7 @@ const ICONS = [
   { key: "system_edit", material: "edit" },
   { key: "system_delete", material: "delete" },
 
+  // Status bar
   { key: "status_wifi", material: "wifi" },
   { key: "status_bluetooth", material: "bluetooth" },
   { key: "status_signal", material: "signal_cellular_alt" },
@@ -76,6 +90,7 @@ const ICONS = [
   { key: "status_airplane", material: "airplane_mode_active" },
   { key: "status_do_not_disturb", material: "do_not_disturb_on" },
 
+  // Mobile network / data type labels
   { key: "network_5g", material: "5g" },
   { key: "network_4g", material: "4g_mobiledata" },
   { key: "network_4g_plus", material: "4g_plus_mobiledata" },
@@ -85,6 +100,7 @@ const ICONS = [
   { key: "network_edge", material: "e_mobiledata" },
   { key: "network_gprs", material: "g_mobiledata" },
 
+  // Phone / chat
   { key: "phone_call", material: "call" },
   { key: "phone_hangup", material: "call_end" },
   { key: "phone_in_talk", material: "phone_in_talk" },
@@ -97,6 +113,7 @@ const ICONS = [
   { key: "contact_group", material: "group" },
   { key: "contact_contacts", material: "contacts" },
 
+  // Media
   { key: "media_camera", material: "photo_camera" },
   { key: "media_image", material: "image" },
   { key: "media_video", material: "videocam" },
@@ -107,6 +124,7 @@ const ICONS = [
   { key: "media_pause", material: "pause" },
   { key: "media_stop", material: "stop" },
 
+  // Apps / OS
   { key: "app_calendar", material: "calendar_month" },
   { key: "app_clock", material: "schedule" },
   { key: "app_mail", material: "mail" },
@@ -119,21 +137,98 @@ const ICONS = [
   { key: "app_share", material: "share" }
 ];
 
+function parseArgs(argv) {
+  const args = {
+    style: "rounded",
+    weight: "600",
+    out: null,
+    keepExisting: false
+  };
+
+  for (let i = 0; i < argv.length; i++) {
+    const token = argv[i];
+
+    if (token === "--style") {
+      args.style = argv[++i];
+    } else if (token.startsWith("--style=")) {
+      args.style = token.slice("--style=".length);
+    } else if (token === "--weight") {
+      args.weight = String(argv[++i]);
+    } else if (token.startsWith("--weight=")) {
+      args.weight = String(token.slice("--weight=".length));
+    } else if (token === "--out") {
+      args.out = argv[++i];
+    } else if (token.startsWith("--out=")) {
+      args.out = token.slice("--out=".length);
+    } else if (token === "--keep-existing") {
+      args.keepExisting = true;
+    } else if (token === "--help" || token === "-h") {
+      printHelpAndExit();
+    } else {
+      throw new Error(`Argumento no reconocido: ${token}`);
+    }
+  }
+
+  args.style = String(args.style || "").toLowerCase();
+  args.weight = String(args.weight || "");
+
+  if (!VALID_STYLES.has(args.style)) {
+    throw new Error(`--style debe ser uno de: ${[...VALID_STYLES].join(", ")}`);
+  }
+
+  if (!VALID_WEIGHTS.has(args.weight)) {
+    throw new Error(`--weight debe ser uno de: ${[...VALID_WEIGHTS].join(", ")}`);
+  }
+
+  if (!args.out) {
+    args.out = `material-${args.style}-${args.weight}`;
+  }
+
+  return args;
+}
+
+function printHelpAndExit() {
+  console.log(`
+Uso:
+  node scripts/icon-themes/download-material-symbols-theme.cjs --style rounded --weight 600
+
+Opciones:
+  --style rounded|outlined|sharp
+  --weight 100|200|300|400|500|600|700
+  --out <folderName>
+  --keep-existing
+
+Ejemplos:
+  node scripts/icon-themes/download-material-symbols-theme.cjs --style rounded --weight 600
+  node scripts/icon-themes/download-material-symbols-theme.cjs --style outlined --weight 400
+  node scripts/icon-themes/download-material-symbols-theme.cjs --style rounded --weight 700 --out material-rounded-bold
+`);
+  process.exit(0);
+}
+
 function ensureDir(dir) {
   fs.mkdirSync(dir, { recursive: true });
 }
 
 function removeDirIfExists(dir) {
-  if (fs.existsSync(dir)) fs.rmSync(dir, { recursive: true, force: true });
+  if (fs.existsSync(dir)) {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 }
 
 function walk(dir, out = []) {
   if (!fs.existsSync(dir)) return out;
+
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) walk(full, out);
-    else out.push(full);
+
+    if (entry.isDirectory()) {
+      walk(full, out);
+    } else {
+      out.push(full);
+    }
   }
+
   return out;
 }
 
@@ -141,29 +236,36 @@ function normalizePath(p) {
   return p.replace(/\\/g, "/").toLowerCase();
 }
 
-function scoreCandidate(file, materialName) {
+function scoreCandidate(file, materialName, style) {
   const p = normalizePath(file);
   const base = path.basename(file, ".svg").toLowerCase();
+
   let score = 0;
 
   if (!p.endsWith(".svg")) return -9999;
 
   if (
-    p.includes(`/${STYLE}/`) ||
-    p.includes(`-${STYLE}`) ||
-    p.includes(`_${STYLE}`) ||
-    p.includes(`/materialsymbols${STYLE}/`)
-  ) score += 100;
-  else score -= 100;
+    p.includes(`/${style}/`) ||
+    p.includes(`-${style}`) ||
+    p.includes(`_${style}`) ||
+    p.includes(`/materialsymbols${style}/`)
+  ) {
+    score += 100;
+  } else {
+    score -= 100;
+  }
 
   for (const otherStyle of ["rounded", "outlined", "sharp"]) {
-    if (otherStyle === STYLE) continue;
+    if (otherStyle === style) continue;
+
     if (
       p.includes(`/${otherStyle}/`) ||
       p.includes(`-${otherStyle}`) ||
       p.includes(`_${otherStyle}`) ||
       p.includes(`/materialsymbols${otherStyle}/`)
-    ) score -= 150;
+    ) {
+      score -= 150;
+    }
   }
 
   if (base === materialName) score += 120;
@@ -180,9 +282,12 @@ function scoreCandidate(file, materialName) {
   return score;
 }
 
-function findBestSvg(allSvgFiles, materialName) {
+function findBestSvg(allSvgFiles, materialName, style) {
   const candidates = allSvgFiles
-    .map((file) => ({ file, score: scoreCandidate(file, materialName) }))
+    .map((file) => ({
+      file,
+      score: scoreCandidate(file, materialName, style)
+    }))
     .filter((item) => item.score > 0)
     .sort((a, b) => b.score - a.score);
 
@@ -199,14 +304,17 @@ function makeSvgTintable(svg) {
     .replace(/stroke="black"/gi, 'stroke="currentColor"');
 }
 
-function copyLicense(extractedRoot) {
+function copyLicense(extractedRoot, licenseDir) {
   const files = walk(extractedRoot);
   const license = files.find((file) => path.basename(file).toLowerCase() === "license");
 
   ensureDir(licenseDir);
 
   if (license) {
-    fs.copyFileSync(license, path.join(licenseDir, "material-symbols-apache-2.0.txt"));
+    fs.copyFileSync(
+      license,
+      path.join(licenseDir, "material-symbols-apache-2.0.txt")
+    );
   } else {
     fs.writeFileSync(
       path.join(licenseDir, "material-symbols-license-note.txt"),
@@ -220,19 +328,52 @@ function copyLicense(extractedRoot) {
   }
 }
 
-function writeReadme() {
-  const readme = `# Material Outlined Basic Icon Theme
+function styleTitle(style) {
+  return style.charAt(0).toUpperCase() + style.slice(1);
+}
 
-Generated from \`${PACKAGE_NAME}\`.
+function writeReadme({ outputDir, packageName, themeName, style, weight }) {
+  const title = styleTitle(style);
 
-Flat semantic subset of Material Symbols Outlined icons for the MOCKUPS app.
+  const readme = `# ${themeName}
 
-Examples:
+Generated from \`${packageName}\`.
+
+Flat semantic subset of Material Symbols ${title} icons at weight ${weight} for the MOCKUPS app.
+
+## Flat structure
+
+All icons are written directly in this folder:
+
 - \`nav_back.svg\`
 - \`status_wifi.svg\`
 - \`status_signal_4.svg\`
 - \`network_5g.svg\`
 - \`android_nav_home.svg\`
+
+All generated Material themes should keep the same semantic filenames so the app can switch themes by changing only the theme folder.
+
+## Suggested presets
+
+- \`material-rounded-400\`: regular rounded
+- \`material-rounded-600\`: semibold rounded, good default for mobile OS mockups
+- \`material-rounded-700\`: bold rounded
+- \`material-outlined-400\`: regular outlined
+- \`material-outlined-600\`: semibold outlined
+
+## Mobile signal composition
+
+For a realistic status bar, compose signal strength and network type separately:
+
+- \`status_signal_4.svg\`
+- \`network_5g.svg\`
+
+or:
+
+- \`status_signal_3.svg\`
+- \`network_lte.svg\`
+
+## Tinting
 
 SVGs are normalized to use \`currentColor\` when possible.
 `;
@@ -241,42 +382,71 @@ SVGs are normalized to use \`currentColor\` when possible.
 }
 
 function main() {
-  removeDirIfExists(outputDir);
+  const args = parseArgs(process.argv.slice(2));
+
+  const packageName = `@material-symbols/svg-${args.weight}`;
+  const projectRoot = process.cwd();
+  const outputDir = path.join(projectRoot, "assets", "icon-themes", args.out);
+  const licenseDir = path.join(projectRoot, "assets", "icon-themes", "_licenses");
+
+  if (!args.keepExisting) {
+    removeDirIfExists(outputDir);
+  }
+
   ensureDir(outputDir);
 
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "material-symbols-"));
 
   try {
+    console.log(`Style: ${args.style}`);
+    console.log(`Weight: ${args.weight}`);
+    console.log(`Package: ${packageName}`);
     console.log(`Output folder: ${outputDir}`);
-    console.log(`Downloading ${PACKAGE_NAME}@latest...`);
+    console.log("");
+    console.log(`Downloading ${packageName}@latest...`);
 
     execFileSync(
       "npm",
-      ["pack", `${PACKAGE_NAME}@latest`, "--pack-destination", tmpDir],
+      ["pack", `${packageName}@latest`, "--pack-destination", tmpDir],
       { stdio: "inherit" }
     );
 
     const tgz = fs.readdirSync(tmpDir).find((name) => name.endsWith(".tgz"));
-    if (!tgz) throw new Error("No se encontró el .tgz descargado por npm pack.");
+
+    if (!tgz) {
+      throw new Error("No se encontró el .tgz descargado por npm pack.");
+    }
 
     console.log("Extracting package...");
 
-    execFileSync("tar", ["-xzf", path.join(tmpDir, tgz), "-C", tmpDir], { stdio: "inherit" });
+    execFileSync(
+      "tar",
+      ["-xzf", path.join(tmpDir, tgz), "-C", tmpDir],
+      { stdio: "inherit" }
+    );
 
     const extractedRoot = path.join(tmpDir, "package");
-    if (!fs.existsSync(extractedRoot)) throw new Error("No se encontró la carpeta extraída.");
 
-    const allSvgFiles = walk(extractedRoot).filter((file) => file.toLowerCase().endsWith(".svg"));
+    if (!fs.existsSync(extractedRoot)) {
+      throw new Error("No se encontró la carpeta extraída del paquete npm.");
+    }
+
+    const allSvgFiles = walk(extractedRoot).filter((file) =>
+      file.toLowerCase().endsWith(".svg")
+    );
+
     console.log(`Found ${allSvgFiles.length} SVG files in downloaded package.`);
 
-    if (allSvgFiles.length === 0) throw new Error("No se encontraron SVG dentro del paquete.");
+    if (allSvgFiles.length === 0) {
+      throw new Error("No se encontraron SVG dentro del paquete.");
+    }
 
     const missing = [];
     const copied = [];
 
     for (const item of ICONS) {
       const { key, material } = item;
-      const source = findBestSvg(allSvgFiles, material);
+      const source = findBestSvg(allSvgFiles, material, args.style);
 
       if (!source) {
         missing.push(`${key} -> ${material}`);
@@ -297,14 +467,21 @@ function main() {
       });
     }
 
-    copyLicense(extractedRoot);
-    writeReadme();
+    copyLicense(extractedRoot, licenseDir);
+
+    writeReadme({
+      outputDir,
+      packageName,
+      themeName: args.out,
+      style: args.style,
+      weight: Number(args.weight)
+    });
 
     const manifest = {
-      name: THEME_NAME,
-      source: PACKAGE_NAME,
-      style: STYLE,
-      weight: 400,
+      name: args.out,
+      source: packageName,
+      style: args.style,
+      weight: Number(args.weight),
       generatedAt: new Date().toISOString(),
       structure: "flat",
       count: copied.length,
@@ -312,7 +489,11 @@ function main() {
       missing
     };
 
-    fs.writeFileSync(path.join(outputDir, "manifest.json"), JSON.stringify(manifest, null, 2), "utf8");
+    fs.writeFileSync(
+      path.join(outputDir, "manifest.json"),
+      JSON.stringify(manifest, null, 2),
+      "utf8"
+    );
 
     console.log("");
     console.log(`Copied ${copied.length} icons.`);
@@ -323,7 +504,12 @@ function main() {
     if (missing.length > 0) {
       console.log("");
       console.log("Missing icons:");
-      for (const item of missing) console.log(`- ${item}`);
+      for (const item of missing) {
+        console.log(`- ${item}`);
+      }
+      console.log("");
+      console.log("Puede que algún nombre haya cambiado en Material Symbols.");
+      console.log("Revisa manifest.json y ajusta el mapa ICONS si hace falta.");
     }
   } finally {
     removeDirIfExists(tmpDir);

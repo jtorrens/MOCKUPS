@@ -111,6 +111,7 @@ export const ResolvedChatScreenPropsSchema = z.object({
     orientation: z.enum(["portrait", "landscape"]),
     locked: z.boolean(),
   }),
+  statusBar: JsonObjectSchema.optional(),
   ownerActor: ResolvedActorSchema,
   header: z.object({
     title: z.string().min(1),

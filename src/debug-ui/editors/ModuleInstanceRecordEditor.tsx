@@ -8,7 +8,10 @@ import { EditorSubsectionAccordion } from "../editor-ui/EditorSubsectionAccordio
 import type { JsonValue } from "../components/json-editor/jsonEditorUtils.js";
 import { buildJsonUiHints } from "../components/json-editor/uiHints.js";
 import { ModuleInstanceEditor } from "./ModuleInstanceEditor.js";
-import { ModuleBehaviorFields } from "./ModuleBehaviorFields.js";
+import {
+  ModuleBehaviorFields,
+  type StatusBarBehaviorItem,
+} from "./ModuleBehaviorFields.js";
 import { titleForRecord } from "./RecordFieldRenderer.js";
 import type { ScreenInstanceTab } from "./editorTabs.js";
 import {
@@ -43,6 +46,47 @@ interface ModuleInstanceRecordEditorProps {
 
 function stringifyJson(value: unknown): string {
   return JSON.stringify(value ?? {}, null, 2);
+}
+
+function statusBarItemsForBehavior(
+  records: Record<string, AppRecord[]>,
+): StatusBarBehaviorItem[] {
+  const statusBar = records.status_bars?.[0];
+  const rawConfig = statusBar?.config_json;
+  const config =
+    typeof rawConfig === "string"
+      ? parsedObject(rawConfig)
+      : rawConfig && typeof rawConfig === "object" && !Array.isArray(rawConfig)
+        ? (rawConfig as Record<string, unknown>)
+        : {};
+  const rawItems = Array.isArray(config.items) ? config.items : [];
+  const items: StatusBarBehaviorItem[] = [];
+  for (const rawItem of rawItems) {
+    const item =
+      rawItem && typeof rawItem === "object" && !Array.isArray(rawItem)
+        ? (rawItem as Record<string, unknown>)
+        : {};
+    const id = typeof item.id === "string" ? item.id : "";
+    const label = typeof item.label === "string" ? item.label : id;
+    const kind = typeof item.kind === "string" ? item.kind : "iconToken";
+    const zone = typeof item.zone === "string" ? item.zone : "off";
+    if (!id || !label) continue;
+    if (zone === "off") continue;
+    items.push({
+      id,
+      label,
+      kind,
+      value:
+        typeof item.value === "string" ||
+        typeof item.value === "number" ||
+        typeof item.value === "boolean"
+          ? item.value
+          : undefined,
+      charging: item.charging === true,
+      zone,
+    });
+  }
+  return items;
 }
 
 export function ModuleInstanceRecordEditor({
@@ -163,6 +207,7 @@ export function ModuleInstanceRecordEditor({
       renderBehaviorFields={() => (
         <ModuleBehaviorFields
           rawValue={drafts.behavior_json ?? "{}"}
+          statusBarItems={statusBarItemsForBehavior(records)}
           onRawChange={(nextRaw) =>
             setDrafts({
               ...drafts,

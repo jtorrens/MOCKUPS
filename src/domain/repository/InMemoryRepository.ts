@@ -5,12 +5,14 @@ import type {
   Device,
   DeviceState,
   Episode,
+  IconTheme,
   MediaAsset,
   ModuleInstance,
   ModuleThemeConfig,
   Notification,
   Production,
   Shot,
+  StatusBar,
   Theme,
 } from "../schemas/index.js";
 import type { DomainRepository, RepositoryDataset } from "./types.js";
@@ -24,6 +26,8 @@ export class InMemoryRepository implements DomainRepository {
   readonly #productions: Map<string, Production>;
   readonly #episodes: Map<string, Episode>;
   readonly #shots: Map<string, Shot>;
+  readonly #iconThemes: Map<string, IconTheme>;
+  readonly #statusBars: Map<string, StatusBar>;
   readonly #themes: Map<string, Theme>;
   readonly #moduleThemeConfigs: Map<string, ModuleThemeConfig>;
   readonly #moduleInstances: Map<string, ModuleInstance>;
@@ -40,6 +44,8 @@ export class InMemoryRepository implements DomainRepository {
     this.#productions = indexById(dataset.productions);
     this.#episodes = indexById(dataset.episodes);
     this.#shots = indexById(dataset.shots);
+    this.#iconThemes = indexById(dataset.iconThemes);
+    this.#statusBars = indexById(dataset.statusBars);
     this.#themes = indexById(dataset.themes);
     this.#moduleThemeConfigs = indexById(dataset.moduleThemeConfigs);
     this.#moduleInstances = indexById(dataset.moduleInstances);
@@ -80,6 +86,14 @@ export class InMemoryRepository implements DomainRepository {
     return this.#dataset.screenEvents
       .filter((event) => event.screen_instance_id === screenInstanceId)
       .sort((a, b) => a.start_frame - b.start_frame);
+  }
+
+  getIconTheme(id: string) {
+    return this.#iconThemes.get(id);
+  }
+
+  getStatusBar(id: string) {
+    return this.#statusBars.get(id);
   }
 
   getTheme(id: string) {

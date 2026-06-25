@@ -158,7 +158,7 @@ export const ChatScreenModule: VisualModule<ResolvedChatScreenProps> = {
             frame: input.frame,
             viewport: input.viewport,
             statusBarHeight: input.device.statusBarHeight,
-            state: input.deviceState,
+            statusBar: input.statusBar,
             tokens: input.theme.statusBar,
           }),
           box: layout.statusBarBox,

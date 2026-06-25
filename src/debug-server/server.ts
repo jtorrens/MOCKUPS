@@ -209,13 +209,22 @@ function absolutizeRenderableUrls(
   origin: string,
 ): RenderableNode {
   const backgroundUrl = extractCssUrl(node.style?.backgroundImage);
-  const nextStyle =
-    backgroundUrl && node.style && backgroundUrl.startsWith("/api/")
-      ? {
-          ...node.style,
-          backgroundImage: cssUrl(new URL(backgroundUrl, origin).toString()),
-        }
-      : node.style;
+  const maskUrl = extractCssUrl(node.style?.maskImage);
+  const webkitMaskUrl = extractCssUrl(node.style?.WebkitMaskImage);
+  const absolutize = (url: string) =>
+    url.startsWith("/api/") ? new URL(url, origin).toString() : url;
+  const nextStyle = node.style
+    ? {
+        ...node.style,
+        ...(backgroundUrl
+          ? { backgroundImage: cssUrl(absolutize(backgroundUrl)) }
+          : {}),
+        ...(maskUrl ? { maskImage: cssUrl(absolutize(maskUrl)) } : {}),
+        ...(webkitMaskUrl
+          ? { WebkitMaskImage: cssUrl(absolutize(webkitMaskUrl)) }
+          : {}),
+      }
+    : node.style;
   return {
     ...node,
     ...(nextStyle ? { style: nextStyle } : {}),

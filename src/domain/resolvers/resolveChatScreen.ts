@@ -97,6 +97,14 @@ function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function stringValue(value: unknown, fallback = "") {
+  return typeof value === "string" ? value : fallback;
+}
+
+function numberValue(value: unknown, fallback: number) {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
 export function mergeTokenObjects(
   base: Record<string, unknown>,
   override: Record<string, unknown>,
@@ -109,6 +117,71 @@ export function mergeTokenObjects(
         : value;
   }
   return merged;
+}
+
+function resolveStatusBarDefinition(
+  statusBarConfig: Record<string, unknown> | undefined,
+  behaviorStatusBar: unknown,
+  iconTheme?: {
+    asset_root: string;
+    mapping_json: Record<string, unknown>;
+  },
+) {
+  const layout = isObject(statusBarConfig?.layout)
+    ? statusBarConfig.layout
+    : {};
+  const rawItems = Array.isArray(statusBarConfig?.items)
+    ? statusBarConfig.items
+    : [];
+  const behaviorRoot = isObject(behaviorStatusBar) ? behaviorStatusBar : {};
+  const behaviorItems = isObject(behaviorRoot.items) ? behaviorRoot.items : {};
+  const items: Record<string, unknown>[] = [];
+  for (const rawItem of rawItems) {
+    if (!isObject(rawItem)) continue;
+    const id = stringValue(rawItem.id);
+    const label = stringValue(rawItem.label, id);
+    const kind = stringValue(rawItem.kind, "iconToken");
+    const token = stringValue(rawItem.token);
+    const zone = stringValue(rawItem.zone, "off");
+    const order = numberValue(rawItem.order, 0);
+    if (!id || zone === "off") continue;
+    const override = isObject(behaviorItems[id]) ? behaviorItems[id] : {};
+    const enabled =
+      typeof override.enabled === "boolean" ? override.enabled : true;
+    if (!enabled) continue;
+    const iconToken =
+      token && isObject(iconTheme?.mapping_json.tokens)
+        ? iconTheme.mapping_json.tokens[token]
+        : undefined;
+    const iconFile = isObject(iconToken) ? stringValue(iconToken.file) : "";
+    items.push({
+      id,
+      label,
+      kind,
+      token,
+      zone,
+      order,
+      value:
+        "value" in override
+          ? override.value
+          : "value" in rawItem
+            ? rawItem.value
+            : undefined,
+      charging:
+        typeof override.charging === "boolean"
+          ? override.charging
+          : rawItem.charging === true,
+      ...(kind === "iconToken" && iconFile
+        ? {
+            iconUri: `${iconTheme?.asset_root.replace(/\/+$/g, "")}/${iconFile}`,
+          }
+        : {}),
+    });
+  }
+  return {
+    layout,
+    items,
+  };
 }
 
 export function resolveThemeModeTokens(
@@ -452,6 +525,17 @@ export function resolveChatScreen({
     renderScale,
   );
   const themeTokens = ChatThemeSchema.parse(scaledThemeTokens);
+  const statusBar = theme.status_bar_id
+    ? repository.getStatusBar(theme.status_bar_id)
+    : undefined;
+  const iconTheme = theme.icon_theme_id
+    ? repository.getIconTheme(theme.icon_theme_id)
+    : undefined;
+  const effectiveStatusBar = resolveStatusBarDefinition(
+    statusBar?.config_json,
+    moduleConfig.statusBar,
+    iconTheme,
+  );
 
   const messages = moduleData.messages.map((message) => {
     const sender = participants.get(message.senderParticipantId);
@@ -563,6 +647,7 @@ export function resolveChatScreen({
       defaultScreenScale: metrics.defaultScreenScale,
     },
     deviceState: state,
+    statusBar: effectiveStatusBar,
     ownerActor: {
       id: ownerActor.id,
       displayName: ownerActor.display_name,

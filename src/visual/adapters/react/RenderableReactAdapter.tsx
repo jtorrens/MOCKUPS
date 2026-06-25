@@ -133,6 +133,107 @@ function statusIndicatorText(node: RenderableNode): string {
   return `${"▮".repeat(signalBars)}  ${wifi}  ${battery}%`;
 }
 
+function generatedBatteryNode(node: RenderableNode): ReactNode {
+  const metadata = node.metadata ?? {};
+  const level = Math.max(0, Math.min(100, numberValue(metadata.value) ?? 0));
+  const charging = metadata.charging === true;
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+      }}
+      title={`Battery ${level}%${charging ? " charging" : ""}`}
+    >
+      <span
+        style={{
+          position: "relative",
+          display: "inline-block",
+          width: "1.55em",
+          height: "0.72em",
+          border: "0.11em solid currentColor",
+          borderRadius: "0.18em",
+          boxSizing: "border-box",
+        }}
+      >
+        <span
+          style={{
+            position: "absolute",
+            left: "0.11em",
+            top: "0.11em",
+            bottom: "0.11em",
+            width: `calc(${level}% - 0.22em)`,
+            maxWidth: "calc(100% - 0.22em)",
+            borderRadius: "0.08em",
+            background: "currentColor",
+          }}
+        />
+        <span
+          style={{
+            position: "absolute",
+            right: "-0.26em",
+            top: "0.2em",
+            width: "0.16em",
+            height: "0.24em",
+            borderRadius: "0 0.08em 0.08em 0",
+            background: "currentColor",
+          }}
+        />
+        {charging ? (
+          <span
+            style={{
+              position: "absolute",
+              left: "50%",
+              top: "50%",
+              display: "block",
+              width: "0.5em",
+              height: "0.82em",
+              background: "#34c759",
+              clipPath:
+                "polygon(58% 0, 18% 48%, 45% 48%, 32% 100%, 84% 38%, 56% 38%)",
+              filter: "drop-shadow(0 0 0.04em rgba(0, 0, 0, 0.36))",
+              transform: "translate(-50%, -50%)",
+            }}
+          />
+        ) : null}
+      </span>
+    </span>
+  );
+}
+
+function generatedSignalNode(node: RenderableNode): ReactNode {
+  const bars = Math.max(0, Math.min(4, numberValue(node.metadata?.value) ?? 0));
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "flex-end",
+        gap: "0.12em",
+        height: "0.85em",
+      }}
+      title={`Signal ${bars}`}
+    >
+      {[1, 2, 3, 4].map((bar) => (
+        <span
+          key={bar}
+          style={{
+            width: "0.18em",
+            height: `${bar * 22}%`,
+            borderRadius: "0.06em",
+            background: "currentColor",
+            opacity: bar <= bars ? 1 : 0.24,
+          }}
+        />
+      ))}
+    </span>
+  );
+}
+
+function iconTokenLabel(token: string) {
+  const parts = token.split("_").filter(Boolean);
+  return parts.at(-1)?.slice(0, 2).toUpperCase() ?? "IC";
+}
+
 function nodeContent(node: RenderableNode): ReactNode {
   if (node.type === "avatar") {
     const label = stringValue(node.metadata?.label) ?? "?";
@@ -159,6 +260,17 @@ function nodeContent(node: RenderableNode): ReactNode {
   if (node.type === "status_indicators") {
     return statusIndicatorText(node);
   }
+  if (node.type === "status_bar_item") {
+    if (node.role === "generatedBattery") return generatedBatteryNode(node);
+    if (node.role === "generatedSignal") return generatedSignalNode(node);
+    if (node.role === "iconToken") {
+      const token = stringValue(node.metadata?.token) ?? node.text ?? "";
+      if (stringValue(node.style?.maskImage)) {
+        return <span title={token} />;
+      }
+      return <span title={token}>{iconTokenLabel(token)}</span>;
+    }
+  }
   if (node.children?.some((child) => child.type === "text")) {
     return null;
   }
@@ -184,10 +296,61 @@ function RenderNode({
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "0 48px",
-          fontSize: 42,
+          paddingLeft: numberValue(node.style?.paddingX) ?? 48,
+          paddingRight: numberValue(node.style?.paddingX) ?? 48,
+          fontSize: numberValue(node.style?.fontSize) ?? 42,
+          lineHeight: numberValue(node.style?.lineHeight)
+            ? `${numberValue(node.style?.lineHeight)}px`
+            : undefined,
           fontWeight: 600,
         }
+      : node.type === "status_bar_zone"
+        ? {
+            display: "flex",
+            alignItems: "center",
+            justifyContent:
+              stringValue(node.style?.justifyContent) === "flex-start"
+                ? "flex-start"
+                : "flex-end",
+            gap: numberValue(node.style?.gap) ?? 6,
+            minWidth: 0,
+            flex: "1 1 0",
+          }
+        : node.type === "status_bar_item"
+          ? {
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              minWidth: stringValue(node.style?.maskImage)
+                ? numberValue(node.style?.fontSize)
+                : 0,
+              width: stringValue(node.style?.maskImage)
+                ? numberValue(node.style?.fontSize)
+                : undefined,
+              height: numberValue(node.style?.lineHeight),
+              fontSize: numberValue(node.style?.fontSize),
+              lineHeight: numberValue(node.style?.lineHeight)
+                ? `${numberValue(node.style?.lineHeight)}px`
+                : undefined,
+              whiteSpace: "nowrap",
+              backgroundColor: stringValue(node.style?.maskImage)
+                ? "currentColor"
+                : undefined,
+              maskImage: stringValue(node.style?.maskImage),
+              maskPosition: stringValue(node.style?.maskImage) ? "center" : undefined,
+              maskRepeat: stringValue(node.style?.maskImage) ? "no-repeat" : undefined,
+              maskSize: stringValue(node.style?.maskImage) ? "contain" : undefined,
+              WebkitMaskImage: stringValue(node.style?.WebkitMaskImage),
+              WebkitMaskPosition: stringValue(node.style?.WebkitMaskImage)
+                ? "center"
+                : undefined,
+              WebkitMaskRepeat: stringValue(node.style?.WebkitMaskImage)
+                ? "no-repeat"
+                : undefined,
+              WebkitMaskSize: stringValue(node.style?.WebkitMaskImage)
+                ? "contain"
+                : undefined,
+            }
       : node.type === "message_bubble"
         ? { display: "block" }
         : node.type === "text"
