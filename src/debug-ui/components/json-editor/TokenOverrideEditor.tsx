@@ -94,7 +94,21 @@ function parseOverride(raw: string, inheritedValue: JsonValue): JsonValue | null
 }
 
 function isHexColor(value: string): boolean {
-  return /^#[0-9a-fA-F]{6}$/.test(value);
+  return /^#[0-9a-fA-F]{6}$/.test(value.trim());
+}
+
+function isRgbColor(value: string): boolean {
+  return /^rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\)$/i.test(
+    value.trim(),
+  );
+}
+
+function isRgbaColor(value: string): boolean {
+  return value.trim().toLowerCase().startsWith("rgba(");
+}
+
+function isColorLikeKey(key: string) {
+  return /color|background|text|accent|foreground/i.test(key);
 }
 
 function widgetForRow(
@@ -110,7 +124,12 @@ function widgetForRow(
   if (/Weight$/i.test(key)) return "select";
   if (typeof value === "number") return "number";
   if (typeof value === "boolean") return "checkbox";
-  if (typeof value === "string" && isHexColor(value)) return "color";
+  if (
+    typeof value === "string" &&
+    (isHexColor(value) || isRgbColor(value) || isRgbaColor(value) || isColorLikeKey(key))
+  ) {
+    return "color";
+  }
   return "text";
 }
 
@@ -289,6 +308,7 @@ export function TokenOverrideEditor({
               <ColorValueEditor
                 label={`${label} override`}
                 value={stringValue || row.value}
+                alpha={isRgbaColor(String(stringValue || row.value))}
                 onChange={(nextColor) =>
                   onRootChange(setAtPath(rootValue, row.path, nextColor))
                 }

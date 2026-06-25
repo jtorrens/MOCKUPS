@@ -181,7 +181,6 @@ export function hintForPath(
   }
   if (
     typeof value === "string" &&
-    /^#[0-9a-fA-F]{6}$/.test(value) &&
     /color|background|text|accent|foreground/i.test(key)
   ) {
     return { widget: "color" };

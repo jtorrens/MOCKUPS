@@ -50,14 +50,7 @@ function groupIcon(label: string): string {
 }
 
 function isHexColor(value: unknown): boolean {
-  return typeof value === "string" && /^#[0-9a-fA-F]{6}$/.test(value);
-}
-
-function isRgbColor(value: unknown): boolean {
-  return (
-    typeof value === "string" &&
-    /^rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\)$/i.test(value.trim())
-  );
+  return typeof value === "string" && /^#[0-9a-fA-F]{6}$/.test(value.trim());
 }
 
 function isColorRolePath(path: JsonPath): boolean {
@@ -323,34 +316,19 @@ export function ModeColorEditor({
                     .toLowerCase()
                     .startsWith("rgba(");
                   const isAlphaColor = isRgbaColor || isAlphaColorRolePath(role.rolePath);
-                  const canPickColor = isHexColor(displayValue) || isRgbColor(displayValue);
                   return (
                     <span
                       key={mode}
                       className="json-color-pair token-color-pair"
                     >
-                      {canPickColor || isAlphaColor ? (
-                        <ColorValueEditor
-                          value={displayValue}
-                          alpha={isAlphaColor}
-                          label={`${key} ${mode}`}
-                          onChange={(nextValue) =>
-                            updateColor(mode, role.rolePath, nextValue)
-                          }
-                        />
-                      ) : (
-                        <input
-                          aria-label={`${key} ${mode} value`}
-                          type="text"
-                          placeholder={
-                            inherited ? `Inherit ${inherited}` : "Inherit"
-                          }
-                          value={value}
-                          onChange={(event) =>
-                            updateColor(mode, role.rolePath, event.target.value)
-                          }
-                        />
-                      )}
+                      <ColorValueEditor
+                        value={displayValue || "#000000"}
+                        alpha={isAlphaColor}
+                        label={`${key} ${mode}`}
+                        onChange={(nextValue) =>
+                          updateColor(mode, role.rolePath, nextValue)
+                        }
+                      />
                     </span>
                   );
                 })}
