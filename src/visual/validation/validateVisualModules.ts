@@ -109,6 +109,17 @@ assert(
   "Message bubble must use the resolved tail style token",
 );
 assert(
+  receivedBubble?.style?.tailVerticalPosition === "bottom" &&
+    receivedBubble.style.tailScale === 1,
+  "Message bubble must expose resolved tail position and scale tokens",
+);
+assert(
+  receivedBubble &&
+    collectNodes(receivedBubble).some((child) => child.type === "message_bubble_shape") &&
+    collectNodes(receivedBubble).some((child) => child.type === "message_bubble_tail"),
+  "Message bubble with a tail must render a tail node",
+);
+assert(
   receivedBubble?.box && sentBubble?.box,
   "Received and sent bubbles must have boxes",
 );

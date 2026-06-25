@@ -207,7 +207,7 @@ export function TokenOverrideEditor({
     const overrideValue = hasLocalValue ? getAtPath(rootValue, row.path) : null;
     const hasOverride =
       hasLocalValue && !deepEqualJson(overrideValue, row.value);
-    const hint = hintForPath(hints, row.path, row.value);
+    const hint = hintForPath(hints, row.path, row.value, groupContext);
     const label = compactLabelForGroup(
       hint.label ?? friendlyPathLeafLabel(row.path),
       groupKey ?? groupContext,

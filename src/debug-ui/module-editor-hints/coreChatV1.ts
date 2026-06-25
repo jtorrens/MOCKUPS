@@ -189,6 +189,38 @@ export const coreChatV1EditorHints: ModuleEditorHintContract = {
         min: 0,
         step: 1,
       },
+      "chatBubbles.shadowEnabled": {
+        label: "Bubble / avatar shadow",
+        widget: "checkbox",
+      },
+      "chatBubbles.tail.style": {
+        label: "Tail style",
+        widget: "select",
+        options: ["rounded_wedge", "simple_triangle", "curved_hook", "cut_corner"],
+      },
+      "chatBubbles.tail.verticalPosition": {
+        label: "Tail position",
+        widget: "select",
+        options: ["bottom", "top"],
+      },
+      "chatBubbles.tail.width": {
+        label: "Tail width",
+        widget: "number",
+        min: 0,
+        step: 1,
+      },
+      "chatBubbles.tail.height": {
+        label: "Tail height",
+        widget: "number",
+        min: 0,
+        step: 1,
+      },
+      "chatBubbles.tail.scale": {
+        label: "Tail scale",
+        widget: "number",
+        min: 0.01,
+        step: 0.05,
+      },
     },
     module_tokens_override_json: {
       "typography.message.fontFamily": {

@@ -635,6 +635,46 @@
       ],
       "file": "app_share.svg",
       "source": "icons/share-2.svg"
+    },
+    {
+      "semanticName": "network_5g",
+      "file": "network_5g.svg",
+      "source": "generated/5G"
+    },
+    {
+      "semanticName": "network_4g",
+      "file": "network_4g.svg",
+      "source": "generated/4G"
+    },
+    {
+      "semanticName": "network_4g_plus",
+      "file": "network_4g_plus.svg",
+      "source": "generated/4G+"
+    },
+    {
+      "semanticName": "network_3g",
+      "file": "network_3g.svg",
+      "source": "generated/3G"
+    },
+    {
+      "semanticName": "network_lte",
+      "file": "network_lte.svg",
+      "source": "generated/LTE"
+    },
+    {
+      "semanticName": "network_lte_plus",
+      "file": "network_lte_plus.svg",
+      "source": "generated/LTE+"
+    },
+    {
+      "semanticName": "network_edge",
+      "file": "network_edge.svg",
+      "source": "generated/E"
+    },
+    {
+      "semanticName": "network_gprs",
+      "file": "network_gprs.svg",
+      "source": "generated/G"
     }
   ],
   "generated": [

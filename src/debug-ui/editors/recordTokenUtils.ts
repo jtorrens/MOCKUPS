@@ -70,11 +70,17 @@ export function stripModuleSystemOwnedTokens(
     : ({} as JsonValue);
   const root = isJsonObject(source) ? source : {};
   delete root.cursor;
+  if (isJsonObject(root.chatBubbles)) {
+    delete root.chatBubbles.shadow;
+  }
   const modes = isJsonObject(root.modes) ? root.modes : {};
   for (const mode of ["light", "dark"] as const) {
     const modeRoot = isJsonObject(modes[mode]) ? modes[mode] : undefined;
     if (!modeRoot) continue;
     delete modeRoot.cursor;
+    if (isJsonObject(modeRoot.chatBubbles)) {
+      delete modeRoot.chatBubbles.shadow;
+    }
   }
   return root;
 }
@@ -169,6 +175,31 @@ export function normalizeCoreChatModuleTokensForEditor(
       chatBubbles.avatarGap,
       numberValue(avatars.gap, 8),
     ),
+    shadowEnabled: chatBubbles.shadowEnabled === true,
+    tail: {
+      ...(isJsonObject(chatBubbles.tail) ? chatBubbles.tail : {}),
+      style:
+        isJsonObject(chatBubbles.tail) && typeof chatBubbles.tail.style === "string"
+          ? chatBubbles.tail.style
+          : "rounded_wedge",
+      verticalPosition:
+        isJsonObject(chatBubbles.tail) &&
+        chatBubbles.tail.verticalPosition === "top"
+          ? "top"
+          : "bottom",
+      width: numberValue(
+        isJsonObject(chatBubbles.tail) ? chatBubbles.tail.width : undefined,
+        8,
+      ),
+      height: numberValue(
+        isJsonObject(chatBubbles.tail) ? chatBubbles.tail.height : undefined,
+        12,
+      ),
+      scale: numberValue(
+        isJsonObject(chatBubbles.tail) ? chatBubbles.tail.scale : undefined,
+        1,
+      ),
+    },
   };
   delete root.avatars;
   return root;

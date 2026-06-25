@@ -410,6 +410,9 @@ export function ProjectTree({
   const [openDataTables, setOpenDataTables] = useState<Record<string, boolean>>(
     {},
   );
+  const [openTreeBranches, setOpenTreeBranches] = useState<
+    Record<string, boolean>
+  >({});
   const tablesById = tableById(tables);
   const selectedProductionId = selectedRecordIds.productions;
   const productionEpisodes = [
@@ -447,6 +450,26 @@ export function ProjectTree({
   function select(tableId: string, recordId: string) {
     onTableChange(tableId);
     onRecordSelect(tableId, recordId);
+  }
+
+  function branchKey(tableId: string, recordId: string) {
+    return `${tableId}:${recordId}`;
+  }
+
+  function setBranchOpen(tableId: string, recordId: string, open: boolean) {
+    const key = branchKey(tableId, recordId);
+    setOpenTreeBranches((current) =>
+      current[key] === open ? current : { ...current, [key]: open },
+    );
+  }
+
+  function isBranchOpen(tableId: string, recordId: string) {
+    return Boolean(openTreeBranches[branchKey(tableId, recordId)]);
+  }
+
+  function selectAndOpen(tableId: string, recordId: string) {
+    select(tableId, recordId);
+    setBranchOpen(tableId, recordId, true);
   }
 
   function confirmDelete(
@@ -514,6 +537,10 @@ export function ProjectTree({
                 key={episode.id}
                 className={`project-tree-card project-tree-branch ${cardLevelClass(0)}`}
                 data-tree-level="0"
+                open={isBranchOpen("episodes", episode.id)}
+                onToggle={(event) =>
+                  setBranchOpen("episodes", episode.id, event.currentTarget.open)
+                }
               >
                 <summary className="project-tree-summary">
                   <TreeButton
@@ -524,7 +551,7 @@ export function ProjectTree({
                     icon="episode"
                     title={episode.name}
                     meta={`${shots.length} shot${shots.length === 1 ? "" : "s"}`}
-                    onClick={() => select("episodes", episode.id)}
+                    onClick={() => selectAndOpen("episodes", episode.id)}
                     asRecord
                     className={rowLevelClass(1)}
                   />
@@ -558,6 +585,10 @@ export function ProjectTree({
                           key={shot.id}
                           className={`project-tree-card project-tree-branch ${cardLevelClass(1)}`}
                           data-tree-level="1"
+                          open={isBranchOpen("shots", shot.id)}
+                          onToggle={(event) =>
+                            setBranchOpen("shots", shot.id, event.currentTarget.open)
+                          }
                         >
                           <summary className="project-tree-summary">
                             <TreeButton
@@ -568,7 +599,7 @@ export function ProjectTree({
                               icon="shot"
                               title={renderName}
                               meta={`${durationFrames}f · ${screens.length} screen${screens.length === 1 ? "" : "s"}`}
-                              onClick={() => select("shots", shot.id)}
+                              onClick={() => selectAndOpen("shots", shot.id)}
                               asRecord
                               className={rowLevelClass(2)}
                             />
@@ -675,6 +706,10 @@ export function ProjectTree({
                 key={app.id}
                 className={`project-tree-card project-tree-branch ${cardLevelClass(0)}`}
                 data-tree-level="0"
+                open={isBranchOpen("apps", app.id)}
+                onToggle={(event) =>
+                  setBranchOpen("apps", app.id, event.currentTarget.open)
+                }
               >
                 <summary className="project-tree-summary">
                   <TreeButton
@@ -685,7 +720,7 @@ export function ProjectTree({
                     icon="app"
                     title={String(app.name ?? app.id)}
                     meta={String(app.app_type ?? "app")}
-                    onClick={() => select("apps", app.id)}
+                    onClick={() => selectAndOpen("apps", app.id)}
                     className={rowLevelClass(1)}
                     asRecord
                   />

@@ -97,8 +97,14 @@ function createMessageBubbleInput(
       paddingX: readNumber(chatTokens, "paddingX", 14),
       paddingY: readNumber(chatTokens, "paddingY", 9),
       tailStyle: readString(tailTokens, "style", "none"),
+      tailVerticalPosition:
+        readString(tailTokens, "verticalPosition", "bottom") === "top"
+          ? "top"
+          : "bottom",
       tailWidth: readNumber(tailTokens, "width", 0),
       tailHeight: readNumber(tailTokens, "height", 0),
+      tailScale: readNumber(tailTokens, "scale", 1),
+      shadowEnabled: chatTokens.shadowEnabled === true,
       shadow: readObject(chatTokens, "shadow"),
       avatarSize: readNumber(chatTokens, "avatarSize", 32),
     },

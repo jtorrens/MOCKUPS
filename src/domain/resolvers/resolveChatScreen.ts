@@ -771,6 +771,7 @@ function normalizeChatVisualTokenGroups(
 ): Record<string, unknown> {
   const header = isObject(tokens.header) ? tokens.header : {};
   const chatBubbles = isObject(tokens.chatBubbles) ? tokens.chatBubbles : {};
+  const { shadow: _chatBubbleShadow, ...visibleChatBubbles } = chatBubbles;
   const avatars = isObject(tokens.avatars) ? tokens.avatars : {};
   const shadows = isObject(tokens.shadows) ? tokens.shadows : {};
   const headerAvatarSize = numberValue(
@@ -812,7 +813,7 @@ function normalizeChatVisualTokenGroups(
       rightIconTokens: headerRightIconTokens,
     },
     chatBubbles: {
-      ...chatBubbles,
+      ...visibleChatBubbles,
       avatarSize: bubbleAvatarSize,
       avatarGap: bubbleAvatarGap,
     },
@@ -868,9 +869,15 @@ const DESIGN_UNIT_TOKEN_PATHS = [
   ["chatBubbles", "avatarGap"],
   ["chatBubbles", "tail", "width"],
   ["chatBubbles", "tail", "height"],
-  ["chatBubbles", "shadow", "offsetX"],
-  ["chatBubbles", "shadow", "offsetY"],
-  ["chatBubbles", "shadow", "blur"],
+  ["shadows", "elevated", "offsetX"],
+  ["shadows", "elevated", "offsetY"],
+  ["shadows", "elevated", "blur"],
+  ["shadows", "avatar", "offsetX"],
+  ["shadows", "avatar", "offsetY"],
+  ["shadows", "avatar", "blur"],
+  ["shadows", "notification", "offsetX"],
+  ["shadows", "notification", "offsetY"],
+  ["shadows", "notification", "blur"],
   ["avatars", "defaultSize"],
   ["avatars", "headerSize"],
   ["avatars", "gap"],
@@ -1347,6 +1354,11 @@ export function resolveChatScreen({
         uri: headerActor.avatarUri,
       }
     : undefined;
+  const systemShadow = isObject(themeTokens.shadows?.elevated)
+    ? themeTokens.shadows.elevated
+    : isObject(themeTokens.shadows?.avatar)
+      ? themeTokens.shadows.avatar
+      : {};
 
   return ResolvedChatScreenPropsSchema.parse({
     frame: localFrame,
@@ -1364,6 +1376,7 @@ export function resolveChatScreen({
       chatBubbles: {
         ...themeTokens.chatBubbles,
         radius: themeTokens.radii.bubble,
+        shadow: systemShadow,
       },
     },
     device: {

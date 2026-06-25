@@ -6,6 +6,10 @@ import {
 } from "../schemas/index.js";
 import { clamp } from "./helpers.js";
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 const MessageThemeSchema = z.object({
   fonts: z.object({
     family: z.string().min(1),
@@ -35,13 +39,16 @@ const MessageThemeSchema = z.object({
     maxWidthRatio: z.number().min(0).max(1),
     avatarSize: z.number().min(0).optional(),
     avatarGap: z.number().min(0).optional(),
+    shadowEnabled: z.boolean().optional(),
     tail: z.object({
       style: z.string().min(1),
+      verticalPosition: z.enum(["top", "bottom"]).optional(),
       width: z.number().min(0),
       height: z.number().min(0),
+      scale: z.number().positive().optional(),
     }),
-    shadow: z.record(z.string(), z.unknown()),
   }),
+  shadows: z.record(z.string(), z.unknown()).optional(),
   radii: z.object({
     bubble: z.number().min(0),
   }),
@@ -151,9 +158,19 @@ export function resolveMessageBubble({
       paddingX: themeTokens.chatBubbles.paddingX,
       paddingY: themeTokens.chatBubbles.paddingY,
       tailStyle: themeTokens.chatBubbles.tail.style,
+      tailVerticalPosition:
+        themeTokens.chatBubbles.tail.verticalPosition ?? "bottom",
       tailWidth: themeTokens.chatBubbles.tail.width,
       tailHeight: themeTokens.chatBubbles.tail.height,
-      shadow: themeTokens.chatBubbles.shadow,
+      tailScale: themeTokens.chatBubbles.tail.scale ?? 1,
+      shadowEnabled: themeTokens.chatBubbles.shadowEnabled === true,
+      shadow: isRecord(themeTokens.shadows?.elevated)
+        ? themeTokens.shadows.elevated
+        : isRecord(themeTokens.shadows?.avatar)
+          ? themeTokens.shadows.avatar
+          : isRecord(themeTokens.shadows?.notification)
+            ? themeTokens.shadows.notification
+            : {},
       avatarSize:
         themeTokens.chatBubbles.avatarSize ?? themeTokens.avatars.defaultSize,
       ...message.styleOverride,

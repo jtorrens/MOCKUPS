@@ -22,6 +22,56 @@ function cursorBlinkOpacity(frame: number, blinkFrames: number) {
   return frame % cycle < Math.max(1, blinkFrames) * 3 ? 1 : 0.28;
 }
 
+function tailNode(
+  input: ResolvedMessageBubbleProps,
+  layout: MessageBubbleLayout,
+): RenderableNode | undefined {
+  if (!input.layout.showTail || input.direction === "system") return undefined;
+  if (input.style.tailStyle === "none") return undefined;
+  const scale = Math.max(0.01, input.style.tailScale);
+  const width = Math.round(input.style.tailWidth * scale);
+  const height = Math.round(input.style.tailHeight * scale);
+  if (width <= 0 || height <= 0) return undefined;
+  const side = input.direction === "outgoing" ? "right" : "left";
+  const vertical = input.style.tailVerticalPosition;
+  const alignTailToBubbleEdge = input.style.tailStyle === "cut_corner";
+  const x =
+    side === "right"
+      ? layout.bubbleBox.x + layout.bubbleBox.width - Math.ceil(width * 0.34)
+      : layout.bubbleBox.x - Math.floor(width * 0.66);
+  const y =
+    vertical === "top"
+      ? alignTailToBubbleEdge
+        ? layout.bubbleBox.y
+        : layout.bubbleBox.y + Math.round(input.style.borderRadius * 0.35)
+      : alignTailToBubbleEdge
+        ? layout.bubbleBox.y + layout.bubbleBox.height - height
+        : layout.bubbleBox.y +
+          layout.bubbleBox.height -
+          height -
+          Math.round(input.style.borderRadius * 0.18);
+  return {
+    id: `${input.id}:tail`,
+    type: "message_bubble_tail",
+    role: `${side}_${vertical}`,
+    frame: input.frame,
+    box: { x, y, width, height },
+    style: {
+      backgroundColor: input.style.backgroundColor,
+      tailStyle: input.style.tailStyle,
+      side,
+      vertical,
+      borderRadius: Math.max(1, Math.round(input.style.borderRadius * 0.35)),
+    },
+    metadata: {
+      side,
+      vertical,
+      scale,
+      style: input.style.tailStyle,
+    },
+  };
+}
+
 export function renderMessageBubbleWithLayout(
   input: ResolvedMessageBubbleProps,
   layout: MessageBubbleLayout,
@@ -36,7 +86,46 @@ export function renderMessageBubbleWithLayout(
         ? cursorConfig.blinkFrames
         : 15;
     const cursorOpacity = cursorBlinkOpacity(input.frame, cursorBlinkFrames);
-    const children: RenderableNode[] = [];
+    const tail = tailNode(input, layout);
+    const shapeChildren: RenderableNode[] = [
+      {
+        id: `${input.id}:shape:body`,
+        type: "message_bubble_body",
+        role: input.direction,
+        frame: input.frame,
+        box: {
+          x: layout.bubbleBox.x,
+          y: layout.bubbleBox.y,
+          width: layout.bubbleBox.width,
+          height: layout.bubbleBox.height,
+        },
+        style: {
+          backgroundColor: input.style.backgroundColor,
+          borderRadius: input.style.borderRadius,
+        },
+      },
+    ];
+    if (tail) {
+      shapeChildren.push(tail);
+    }
+    const children: RenderableNode[] = [
+      {
+        id: `${input.id}:shape`,
+        type: "message_bubble_shape",
+        role: input.direction,
+        frame: input.frame,
+        box: {
+          x: layout.bubbleBox.x,
+          y: layout.bubbleBox.y,
+          width: layout.bubbleBox.width,
+          height: layout.bubbleBox.height,
+        },
+        style: {
+          shadow: input.style.shadowEnabled ? input.style.shadow : {},
+        },
+        children: shapeChildren,
+      },
+    ];
     if (input.actor.avatarUri && layout.avatarBox) {
       children.push(
         {
@@ -46,6 +135,7 @@ export function renderMessageBubbleWithLayout(
             size: input.style.avatarSize,
             label: input.actor.displayName,
             frame: input.frame,
+            ...(input.style.shadowEnabled ? { shadow: input.style.shadow } : {}),
           }),
           box: layout.avatarBox,
         },
@@ -99,7 +189,7 @@ export function renderMessageBubbleWithLayout(
         opacity: animationOpacity(input.animation),
       },
       style: {
-        backgroundColor: input.style.backgroundColor,
+        backgroundColor: "transparent",
         textColor: input.style.textColor,
         fontFamily: input.style.fontFamily,
         fontSize: input.style.fontSize,
@@ -110,9 +200,11 @@ export function renderMessageBubbleWithLayout(
         paddingY: input.style.paddingY,
         showTail: input.layout.showTail,
         tailStyle: input.style.tailStyle,
+        tailVerticalPosition: input.style.tailVerticalPosition,
         tailWidth: input.style.tailWidth,
         tailHeight: input.style.tailHeight,
-        shadow: input.style.shadow,
+        tailScale: input.style.tailScale,
+        shadow: {},
       },
       text: input.visibleText,
       children,
@@ -127,6 +219,8 @@ export function renderMessageBubbleWithLayout(
           style: input.style.tailStyle,
           width: input.style.tailWidth,
           height: input.style.tailHeight,
+          verticalPosition: input.style.tailVerticalPosition,
+          scale: input.style.tailScale,
           path: "not_computed_renderer_agnostic_stub",
         },
         measurement: layout.measurement,

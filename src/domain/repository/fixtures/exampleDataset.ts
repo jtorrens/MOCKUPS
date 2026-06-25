@@ -297,15 +297,13 @@ export function createExampleDataset(): RepositoryDataset {
       maxWidthRatio: 0.6667,
       avatarSize: 32,
       avatarGap: 8,
+      shadowEnabled: false,
       tail: {
         style: "rounded_wedge",
+        verticalPosition: "bottom",
         width: 8,
         height: 12,
-      },
-      shadow: {
-        offsetX: 0,
-        offsetY: 0,
-        blur: 0,
+        scale: 1,
       },
     },
     textInputBar: {
@@ -364,9 +362,6 @@ export function createExampleDataset(): RepositoryDataset {
           outgoingText: "#FFFFFF",
           incomingBackground: "#E9E9EB",
           incomingText: "#000000",
-          shadow: {
-            color: "rgba(0,0,0,0)",
-          },
         },
       },
       dark: {
@@ -380,9 +375,6 @@ export function createExampleDataset(): RepositoryDataset {
           outgoingText: "#FFFFFF",
           incomingBackground: "#2C2C2E",
           incomingText: "#FFFFFF",
-          shadow: {
-            color: "rgba(0,0,0,0)",
-          },
         },
       },
     },

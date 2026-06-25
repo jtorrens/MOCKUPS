@@ -80,6 +80,7 @@ function nodeStyle(
   parentOrigin: { x: number; y: number },
 ): CSSProperties {
   const style = node.style ?? {};
+  const shadow = shadowValue(style.shadow);
   const backgroundColor = stringValue(style.backgroundColor ?? style.background);
   const backgroundImage = stringValue(style.backgroundImage);
   const backgroundSize = stringValue(style.backgroundSize);
@@ -106,10 +107,20 @@ function nodeStyle(
       ? `${numberValue(style.lineHeight)}px`
       : undefined,
     borderRadius,
-    overflow: stringValue(style.overflow) as CSSProperties["overflow"],
+    overflow:
+      node.type === "avatar"
+        ? "visible"
+        : (stringValue(style.overflow) as CSSProperties["overflow"]),
     opacity,
     boxSizing: "border-box",
-    boxShadow: shadowValue(style.shadow),
+    boxShadow:
+      node.type === "avatar" || node.type === "message_bubble_shape"
+        ? undefined
+        : shadow,
+    filter:
+      node.type === "message_bubble_shape" && shadow
+        ? `drop-shadow(${shadow})`
+        : undefined,
     border:
       borderColor && borderWidth
         ? `${borderWidth}px solid ${borderColor}`
@@ -333,6 +344,77 @@ function generatedNavigationButtonNode(node: RenderableNode): ReactNode {
   );
 }
 
+function tailSvgPath(style: unknown, side: unknown, vertical: unknown) {
+  const tailStyle = stringValue(style) ?? "rounded_wedge";
+  const tailSide = side === "left" ? "left" : "right";
+  const tailVertical = vertical === "top" ? "top" : "bottom";
+  const left = tailSide === "left";
+  const top = tailVertical === "top";
+
+  if (tailStyle === "simple_triangle") {
+    if (left && top) return "M 100 0 L 0 0 L 100 100 Z";
+    if (!left && top) return "M 0 0 L 100 0 L 0 100 Z";
+    if (left && !top) return "M 100 0 L 0 100 L 100 100 Z";
+    return "M 0 0 L 100 100 L 0 100 Z";
+  }
+
+  if (tailStyle === "cut_corner") {
+    if (left && top) return "M 100 0 L 0 0 L 100 100 Z";
+    if (!left && top) return "M 0 0 L 100 0 L 0 100 Z";
+    if (left && !top) return "M 100 0 L 0 100 L 100 100 Z";
+    return "M 0 0 L 100 100 L 0 100 Z";
+  }
+
+  if (tailStyle === "curved_hook") {
+    if (left && top) {
+      return "M 100 100 C 68 78 42 38 0 0 C 42 7 76 23 100 0 Z";
+    }
+    if (!left && top) {
+      return "M 0 100 C 32 78 58 38 100 0 C 58 7 24 23 0 0 Z";
+    }
+    if (left && !top) {
+      return "M 100 0 C 68 22 42 62 0 100 C 42 93 76 77 100 100 Z";
+    }
+    return "M 0 0 C 32 22 58 62 100 100 C 58 93 24 77 0 100 Z";
+  }
+
+  if (left && top) {
+    return "M 100 100 C 76 74 42 30 0 0 L 100 0 Z";
+  }
+  if (!left && top) {
+    return "M 0 100 C 24 74 58 30 100 0 L 0 0 Z";
+  }
+  if (left && !top) {
+    return "M 100 0 C 76 26 42 70 0 100 L 100 100 Z";
+  }
+  return "M 0 0 C 24 26 58 70 100 100 L 0 100 Z";
+}
+
+function messageBubbleTailNode(node: RenderableNode): ReactNode {
+  return (
+    <svg
+      viewBox="0 0 100 100"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+      style={{
+        display: "block",
+        width: "100%",
+        height: "100%",
+        overflow: "visible",
+      }}
+    >
+      <path
+        d={tailSvgPath(
+          node.style?.tailStyle,
+          node.style?.side,
+          node.style?.vertical,
+        )}
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
 function iconTokenLabel(token: string) {
   const parts = token.split("_").filter(Boolean);
   return parts.at(-1)?.slice(0, 2).toUpperCase() ?? "IC";
@@ -374,13 +456,26 @@ function nodeContent(node: RenderableNode): ReactNode {
     const avatarUri = stringValue(node.asset?.uri);
     const borderColor = stringValue(node.style?.borderColor);
     const borderWidth = numberValue(node.style?.borderWidth);
+    const avatarRadius = radius !== undefined ? `${radius}px` : "50%";
+    const avatarShadow = shadowValue(node.style?.shadow);
     return (
       <div
         style={{
           position: "relative",
           width: "100%",
           height: "100%",
-          borderRadius: radius !== undefined ? `${radius}px` : "50%",
+          borderRadius: avatarRadius,
+          overflow: "visible",
+          filter: avatarShadow ? `drop-shadow(${avatarShadow})` : undefined,
+        }}
+        title={node.asset?.uri}
+      >
+      <div
+        style={{
+          position: "relative",
+          width: "100%",
+          height: "100%",
+          borderRadius: "inherit",
           overflow: "hidden",
           display: "flex",
           alignItems: "center",
@@ -390,7 +485,6 @@ function nodeContent(node: RenderableNode): ReactNode {
           fontWeight: 700,
           fontSize: "45%",
         }}
-        title={node.asset?.uri}
       >
         {avatarUri ? (
           <img
@@ -424,6 +518,7 @@ function nodeContent(node: RenderableNode): ReactNode {
           />
         ) : null}
       </div>
+      </div>
     );
   }
   if (node.type === "status_indicators") {
@@ -442,6 +537,9 @@ function nodeContent(node: RenderableNode): ReactNode {
   }
   if (node.type === "navigation_bar_item") {
     return generatedNavigationButtonNode(node);
+  }
+  if (node.type === "message_bubble_tail") {
+    return messageBubbleTailNode(node);
   }
   if (node.type === "keyboard_bottom_item") {
     const token = stringValue(node.metadata?.token) ?? node.text ?? "";
@@ -866,7 +964,21 @@ function RenderNode({
                                     flex: "0 0 auto",
                                   }
       : node.type === "message_bubble"
-        ? { display: "block" }
+        ? { display: "block", overflow: "visible" }
+        : node.type === "message_bubble_shape"
+          ? { display: "block", overflow: "visible" }
+          : node.type === "message_bubble_body"
+            ? { display: "block" }
+        : node.type === "message_bubble_tail"
+          ? {
+              display: "block",
+              backgroundColor: "transparent",
+              color:
+                stringValue(node.style?.backgroundColor ?? node.style?.background) ??
+                "currentColor",
+              overflow: "visible",
+              pointerEvents: "none",
+            }
         : node.type === "text"
           ? {
               whiteSpace: "pre-wrap",
