@@ -10,7 +10,7 @@ import { EditorSectionCard } from "../editor-ui/EditorSectionCard.js";
 import { EditorSections } from "../editor-ui/EditorSections.js";
 import { DeferredTextInput } from "../editor-ui/DeferredTextInput.js";
 import { EditorSubsectionAccordion } from "../editor-ui/EditorSubsectionAccordion.js";
-import { AppEditor } from "../editors/AppEditor.js";
+import { AppRecordEditor } from "../editors/AppRecordEditor.js";
 import { renderGenericField as renderGenericFieldFromDispatcher } from "../editors/GenericFieldDispatcher.js";
 import { GenericRecordEditor } from "../editors/GenericRecordEditor.js";
 import { ModuleInstanceEditor } from "../editors/ModuleInstanceEditor.js";
@@ -44,29 +44,17 @@ import {
 } from "../editors/recordJsonUtils.js";
 import {
   editorValueForThemeTokenGroup,
-  editorValueForTokenGroup,
-  inheritedValueForTokenGroup,
-  mergeTokenGroupWithInternalFields,
   nextThemeTokenGroupValue,
-  stripAppStatusAndNavigationTokens,
   tokenEditorGroups,
 } from "../editors/recordTokenUtils.js";
 import { shotHasFpsOverride } from "../editors/ShotFields.js";
 import { ScreenTransitionFields } from "../editors/ScreenInstanceFields.js";
-import {
-  AppIconFields,
-  AppWallpaperEditor,
-} from "../editors/AppMediaFields.js";
 import { ModuleBehaviorFields } from "../editors/ModuleBehaviorFields.js";
 import {
   normalizedThemeTokenRoot,
   ThemeChromeGroupEditor,
 } from "../editors/ThemeFields.js";
 import { productionMediaRootForRecord } from "../editors/recordProductionUtils.js";
-import {
-  ActorAvatarPreview,
-  MediaCoverPreview,
-} from "../editors/MediaPreviews.js";
 import { useJsonGroupDrafts } from "../editors/useJsonGroupDrafts.js";
 import {
   hasModeColorOverrides,
@@ -75,7 +63,6 @@ import {
 import {
   cloneJson,
   defaultJsonValue,
-  isJsonObject,
   type JsonPath,
   type JsonValue,
 } from "./json-editor/jsonEditorUtils.js";
@@ -317,30 +304,6 @@ export function RecordEditor({
     return JSON.stringify(local) !== JSON.stringify(inherited);
   }
 
-  function explicitLocalOverridesInherited(
-    local: unknown,
-    inherited: unknown,
-  ): boolean {
-    if (inherited === undefined) return false;
-    if (local && typeof local === "object" && !Array.isArray(local)) {
-      if (!inherited || typeof inherited !== "object" || Array.isArray(inherited)) {
-        return false;
-      }
-      return Object.entries(local as Record<string, unknown>).some(
-        ([key, value]) =>
-          explicitLocalOverridesInherited(
-            value,
-            (inherited as Record<string, unknown>)[key],
-          ),
-      );
-    }
-    if (Array.isArray(local)) {
-      return Array.isArray(inherited) &&
-        JSON.stringify(local) !== JSON.stringify(inherited);
-    }
-    return JSON.stringify(local) !== JSON.stringify(inherited);
-  }
-
   function differsFromInherited(column: string) {
     const inherited = inheritedFields[column];
     if (!inherited) return hasObjectContent(drafts[column]);
@@ -517,121 +480,24 @@ export function RecordEditor({
   }
 
   if (table.id === "apps") {
-    const configField = fieldsByColumn.get("config_json");
-    const metadataField = fieldsByColumn.get("metadata_json");
-    const appConfigRoot = parsedObject(drafts.config_json ?? "{}");
-    const appMetadataRoot = parsedObject(drafts.metadata_json ?? "{}");
-    const appTokenRoot = isJsonObject(appConfigRoot.tokens_json as JsonValue)
-      ? (appConfigRoot.tokens_json as Record<string, unknown>)
-      : appConfigRoot;
-    const appEditorTokenRoot = stripAppStatusAndNavigationTokens(appTokenRoot);
-    const inheritedAppRoot = stripAppStatusAndNavigationTokens(inheritedFields.config_json);
-    const appTokenGroups = tokenEditorGroups(appEditorTokenRoot, inheritedAppRoot);
-    const activeAppTokenGroup =
-      appTokenGroup && appTokenGroups.includes(appTokenGroup)
-        ? appTokenGroup
-        : "";
-
-    function updateAppTokenRoot(nextValue: JsonValue) {
-      const cleanNextValue = stripAppStatusAndNavigationTokens(nextValue);
-      const nextConfig = Object.hasOwn(appConfigRoot, "tokens_json")
-        ? { ...appConfigRoot, tokens_json: cleanNextValue }
-        : cleanNextValue;
-      setJsonDraft("config_json", nextConfig);
-    }
-
     return (
-      <AppEditor
+      <AppRecordEditor
         table={table}
         record={record}
+        fieldsByColumn={fieldsByColumn}
+        drafts={drafts}
+        inheritedFields={inheritedFields}
         activeTab={appTab}
-        tokensFieldExists={Boolean(configField)}
-        notesFieldExists={Boolean(metadataField)}
-        tokensWarning={explicitLocalOverridesInherited(
-          appEditorTokenRoot,
-          inheritedAppRoot,
-        )}
-        colorsWarning={hasModeColorOverrides(
-          appEditorTokenRoot as JsonValue,
-          inheritedAppRoot as JsonValue | undefined,
-          ["wallpaper"],
-        )}
-        renderGeneral={() => (
-          <>
-            {renderFields(["id", "name"])}
-            <AppIconFields
-              record={record}
-              drafts={drafts}
-              metadataRoot={appMetadataRoot}
-              mediaRoot={productionMediaRoot()}
-              nativeBridge={mockupsNative()}
-              relativePathFromRoot={relativePathFromRoot}
-              AvatarPreview={ActorAvatarPreview}
-              onMetadataRootChange={(nextRoot) =>
-                setJsonDraft("metadata_json", nextRoot)
-              }
-            />
-          </>
-        )}
-        renderTokens={() =>
-          configField
-            ? appTokenGroups.map((group) => (
-                <EditorSubsectionAccordion
-                  key={group}
-                  group={group}
-                  activeGroup={activeAppTokenGroup}
-                  onToggle={setAppTokenGroup}
-                >
-                  {group === "wallpaper" ? (
-                    <AppWallpaperEditor
-                      appTokenRoot={appTokenRoot}
-                      mediaRoot={productionMediaRoot()}
-                      nativeBridge={mockupsNative()}
-                      relativePathFromRoot={relativePathFromRoot}
-                      MediaCoverPreview={MediaCoverPreview}
-                      onTokenRootChange={updateAppTokenRoot}
-                    />
-                  ) : (
-                    <div className="record-editor-field-stack record-editor-single-column theme-token-group-editor">
-                      {renderField(configField, {
-                        hideLabel: true,
-                        rawText: stringifyJson(
-                          editorValueForTokenGroup(appEditorTokenRoot, group),
-                        ),
-                        groupContext: group,
-                        inheritedValue: inheritedValueForTokenGroup(
-                          inheritedAppRoot,
-                          group,
-                        ),
-                        onRawTextChange: (nextRawText) => {
-                          const nextVisibleValue = parsedObject(nextRawText);
-                          updateAppTokenRoot({
-                            ...appEditorTokenRoot,
-                            [group]: mergeTokenGroupWithInternalFields(
-                              appEditorTokenRoot[group],
-                              nextVisibleValue as JsonValue,
-                            ),
-                          } as JsonValue);
-                        },
-                      })}
-                    </div>
-                  )}
-                </EditorSubsectionAccordion>
-              ))
-            : null
-        }
-        renderColors={() => (
-          <ModeColorEditor
-            rootValue={appEditorTokenRoot as JsonValue}
-            inheritedRoot={inheritedAppRoot as JsonValue | undefined}
-            hiddenGroups={["wallpaper"]}
-            onRootChange={updateAppTokenRoot}
-          />
-        )}
-        renderNotes={() =>
-          metadataField ? renderFlatJsonObjectEditor("metadata_json") : null
-        }
+        activeTokenGroup={appTokenGroup}
+        mediaRoot={productionMediaRoot()}
+        nativeBridge={mockupsNative()}
+        relativePathFromRoot={relativePathFromRoot}
+        renderFields={renderFields}
+        renderField={renderField}
+        renderFlatJsonObjectEditor={renderFlatJsonObjectEditor}
         setActiveTab={setAppTab}
+        setActiveTokenGroup={setAppTokenGroup}
+        setJsonDraft={setJsonDraft}
       />
     );
   }
