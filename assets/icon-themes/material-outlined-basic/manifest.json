@@ -1,0 +1,516 @@
+{
+  "name": "material-outlined-basic",
+  "source": "@material-symbols/svg-400",
+  "style": "outlined",
+  "weight": 400,
+  "generatedAt": "2026-06-25T07:26:16.266Z",
+  "structure": "flat",
+  "count": 84,
+  "icons": [
+    {
+      "semanticName": "nav_home",
+      "materialName": "home",
+      "file": "nav_home.svg",
+      "source": "outlined/home.svg"
+    },
+    {
+      "semanticName": "nav_back",
+      "materialName": "arrow_back",
+      "file": "nav_back.svg",
+      "source": "outlined/arrow_back.svg"
+    },
+    {
+      "semanticName": "nav_forward",
+      "materialName": "arrow_forward",
+      "file": "nav_forward.svg",
+      "source": "outlined/arrow_forward.svg"
+    },
+    {
+      "semanticName": "nav_close",
+      "materialName": "close",
+      "file": "nav_close.svg",
+      "source": "outlined/close.svg"
+    },
+    {
+      "semanticName": "nav_menu",
+      "materialName": "menu",
+      "file": "nav_menu.svg",
+      "source": "outlined/menu.svg"
+    },
+    {
+      "semanticName": "nav_more_horizontal",
+      "materialName": "more_horiz",
+      "file": "nav_more_horizontal.svg",
+      "source": "outlined/more_horiz.svg"
+    },
+    {
+      "semanticName": "nav_more_vertical",
+      "materialName": "more_vert",
+      "file": "nav_more_vertical.svg",
+      "source": "outlined/more_vert.svg"
+    },
+    {
+      "semanticName": "nav_expand_more",
+      "materialName": "expand_more",
+      "file": "nav_expand_more.svg",
+      "source": "outlined/10k-fill.svg"
+    },
+    {
+      "semanticName": "nav_chevron_left",
+      "materialName": "chevron_left",
+      "file": "nav_chevron_left.svg",
+      "source": "outlined/chevron_left.svg"
+    },
+    {
+      "semanticName": "nav_chevron_right",
+      "materialName": "chevron_right",
+      "file": "nav_chevron_right.svg",
+      "source": "outlined/chevron_right.svg"
+    },
+    {
+      "semanticName": "android_nav_back",
+      "materialName": "arrow_back_ios_new",
+      "file": "android_nav_back.svg",
+      "source": "outlined/arrow_back_ios_new.svg"
+    },
+    {
+      "semanticName": "android_nav_back_alt",
+      "materialName": "arrow_back",
+      "file": "android_nav_back_alt.svg",
+      "source": "outlined/arrow_back.svg"
+    },
+    {
+      "semanticName": "android_nav_home",
+      "materialName": "circle",
+      "file": "android_nav_home.svg",
+      "source": "outlined/circle.svg"
+    },
+    {
+      "semanticName": "android_nav_recents",
+      "materialName": "crop_square",
+      "file": "android_nav_recents.svg",
+      "source": "outlined/crop_square.svg"
+    },
+    {
+      "semanticName": "android_nav_gesture_bar",
+      "materialName": "horizontal_rule",
+      "file": "android_nav_gesture_bar.svg",
+      "source": "outlined/horizontal_rule.svg"
+    },
+    {
+      "semanticName": "android_nav_keyboard_hide",
+      "materialName": "keyboard_hide",
+      "file": "android_nav_keyboard_hide.svg",
+      "source": "outlined/keyboard_hide.svg"
+    },
+    {
+      "semanticName": "system_settings",
+      "materialName": "settings",
+      "file": "system_settings.svg",
+      "source": "outlined/settings.svg"
+    },
+    {
+      "semanticName": "system_search",
+      "materialName": "search",
+      "file": "system_search.svg",
+      "source": "outlined/search.svg"
+    },
+    {
+      "semanticName": "system_notifications",
+      "materialName": "notifications",
+      "file": "system_notifications.svg",
+      "source": "outlined/notifications.svg"
+    },
+    {
+      "semanticName": "system_lock",
+      "materialName": "lock",
+      "file": "system_lock.svg",
+      "source": "outlined/lock.svg"
+    },
+    {
+      "semanticName": "system_unlock",
+      "materialName": "lock_open",
+      "file": "system_unlock.svg",
+      "source": "outlined/lock_open.svg"
+    },
+    {
+      "semanticName": "system_visibility",
+      "materialName": "visibility",
+      "file": "system_visibility.svg",
+      "source": "outlined/visibility.svg"
+    },
+    {
+      "semanticName": "system_visibility_off",
+      "materialName": "visibility_off",
+      "file": "system_visibility_off.svg",
+      "source": "outlined/visibility_off.svg"
+    },
+    {
+      "semanticName": "system_info",
+      "materialName": "info",
+      "file": "system_info.svg",
+      "source": "outlined/info.svg"
+    },
+    {
+      "semanticName": "system_warning",
+      "materialName": "warning",
+      "file": "system_warning.svg",
+      "source": "outlined/warning.svg"
+    },
+    {
+      "semanticName": "system_error",
+      "materialName": "error",
+      "file": "system_error.svg",
+      "source": "outlined/error.svg"
+    },
+    {
+      "semanticName": "system_check",
+      "materialName": "check",
+      "file": "system_check.svg",
+      "source": "outlined/check.svg"
+    },
+    {
+      "semanticName": "system_add",
+      "materialName": "add",
+      "file": "system_add.svg",
+      "source": "outlined/add.svg"
+    },
+    {
+      "semanticName": "system_remove",
+      "materialName": "remove",
+      "file": "system_remove.svg",
+      "source": "outlined/remove.svg"
+    },
+    {
+      "semanticName": "system_edit",
+      "materialName": "edit",
+      "file": "system_edit.svg",
+      "source": "outlined/edit.svg"
+    },
+    {
+      "semanticName": "system_delete",
+      "materialName": "delete",
+      "file": "system_delete.svg",
+      "source": "outlined/delete.svg"
+    },
+    {
+      "semanticName": "status_wifi",
+      "materialName": "wifi",
+      "file": "status_wifi.svg",
+      "source": "outlined/wifi.svg"
+    },
+    {
+      "semanticName": "status_bluetooth",
+      "materialName": "bluetooth",
+      "file": "status_bluetooth.svg",
+      "source": "outlined/bluetooth.svg"
+    },
+    {
+      "semanticName": "status_signal",
+      "materialName": "signal_cellular_alt",
+      "file": "status_signal.svg",
+      "source": "outlined/signal_cellular_alt.svg"
+    },
+    {
+      "semanticName": "status_signal_0",
+      "materialName": "signal_cellular_0_bar",
+      "file": "status_signal_0.svg",
+      "source": "outlined/signal_cellular_0_bar.svg"
+    },
+    {
+      "semanticName": "status_signal_1",
+      "materialName": "signal_cellular_1_bar",
+      "file": "status_signal_1.svg",
+      "source": "outlined/signal_cellular_1_bar.svg"
+    },
+    {
+      "semanticName": "status_signal_2",
+      "materialName": "signal_cellular_2_bar",
+      "file": "status_signal_2.svg",
+      "source": "outlined/signal_cellular_2_bar.svg"
+    },
+    {
+      "semanticName": "status_signal_3",
+      "materialName": "signal_cellular_3_bar",
+      "file": "status_signal_3.svg",
+      "source": "outlined/signal_cellular_3_bar.svg"
+    },
+    {
+      "semanticName": "status_signal_4",
+      "materialName": "signal_cellular_4_bar",
+      "file": "status_signal_4.svg",
+      "source": "outlined/signal_cellular_4_bar.svg"
+    },
+    {
+      "semanticName": "status_signal_off",
+      "materialName": "signal_cellular_off",
+      "file": "status_signal_off.svg",
+      "source": "outlined/signal_cellular_off.svg"
+    },
+    {
+      "semanticName": "status_no_sim",
+      "materialName": "sim_card_alert",
+      "file": "status_no_sim.svg",
+      "source": "outlined/10k-fill.svg"
+    },
+    {
+      "semanticName": "status_battery_full",
+      "materialName": "battery_full",
+      "file": "status_battery_full.svg",
+      "source": "outlined/battery_full.svg"
+    },
+    {
+      "semanticName": "status_battery_charging",
+      "materialName": "battery_charging_full",
+      "file": "status_battery_charging.svg",
+      "source": "outlined/battery_charging_full.svg"
+    },
+    {
+      "semanticName": "status_battery_alert",
+      "materialName": "battery_alert",
+      "file": "status_battery_alert.svg",
+      "source": "outlined/battery_alert.svg"
+    },
+    {
+      "semanticName": "status_airplane",
+      "materialName": "airplane_mode_active",
+      "file": "status_airplane.svg",
+      "source": "outlined/10k-fill.svg"
+    },
+    {
+      "semanticName": "status_do_not_disturb",
+      "materialName": "do_not_disturb_on",
+      "file": "status_do_not_disturb.svg",
+      "source": "outlined/do_not_disturb_on.svg"
+    },
+    {
+      "semanticName": "network_5g",
+      "materialName": "5g",
+      "file": "network_5g.svg",
+      "source": "outlined/5g.svg"
+    },
+    {
+      "semanticName": "network_4g",
+      "materialName": "4g_mobiledata",
+      "file": "network_4g.svg",
+      "source": "outlined/4g_mobiledata.svg"
+    },
+    {
+      "semanticName": "network_4g_plus",
+      "materialName": "4g_plus_mobiledata",
+      "file": "network_4g_plus.svg",
+      "source": "outlined/4g_plus_mobiledata.svg"
+    },
+    {
+      "semanticName": "network_3g",
+      "materialName": "3g_mobiledata",
+      "file": "network_3g.svg",
+      "source": "outlined/3g_mobiledata.svg"
+    },
+    {
+      "semanticName": "network_lte",
+      "materialName": "lte_mobiledata",
+      "file": "network_lte.svg",
+      "source": "outlined/lte_mobiledata.svg"
+    },
+    {
+      "semanticName": "network_lte_plus",
+      "materialName": "lte_plus_mobiledata",
+      "file": "network_lte_plus.svg",
+      "source": "outlined/lte_plus_mobiledata.svg"
+    },
+    {
+      "semanticName": "network_edge",
+      "materialName": "e_mobiledata",
+      "file": "network_edge.svg",
+      "source": "outlined/e_mobiledata.svg"
+    },
+    {
+      "semanticName": "network_gprs",
+      "materialName": "g_mobiledata",
+      "file": "network_gprs.svg",
+      "source": "outlined/g_mobiledata.svg"
+    },
+    {
+      "semanticName": "phone_call",
+      "materialName": "call",
+      "file": "phone_call.svg",
+      "source": "outlined/call.svg"
+    },
+    {
+      "semanticName": "phone_hangup",
+      "materialName": "call_end",
+      "file": "phone_hangup.svg",
+      "source": "outlined/call_end.svg"
+    },
+    {
+      "semanticName": "phone_in_talk",
+      "materialName": "phone_in_talk",
+      "file": "phone_in_talk.svg",
+      "source": "outlined/phone_in_talk.svg"
+    },
+    {
+      "semanticName": "chat_bubble",
+      "materialName": "chat",
+      "file": "chat_bubble.svg",
+      "source": "outlined/chat.svg"
+    },
+    {
+      "semanticName": "chat_sms",
+      "materialName": "sms",
+      "file": "chat_sms.svg",
+      "source": "outlined/sms.svg"
+    },
+    {
+      "semanticName": "chat_send",
+      "materialName": "send",
+      "file": "chat_send.svg",
+      "source": "outlined/send.svg"
+    },
+    {
+      "semanticName": "chat_attach",
+      "materialName": "attach_file",
+      "file": "chat_attach.svg",
+      "source": "outlined/attach_file.svg"
+    },
+    {
+      "semanticName": "chat_emoji",
+      "materialName": "emoji_emotions",
+      "file": "chat_emoji.svg",
+      "source": "outlined/10k-fill.svg"
+    },
+    {
+      "semanticName": "contact_person",
+      "materialName": "person",
+      "file": "contact_person.svg",
+      "source": "outlined/person.svg"
+    },
+    {
+      "semanticName": "contact_group",
+      "materialName": "group",
+      "file": "contact_group.svg",
+      "source": "outlined/group.svg"
+    },
+    {
+      "semanticName": "contact_contacts",
+      "materialName": "contacts",
+      "file": "contact_contacts.svg",
+      "source": "outlined/contacts.svg"
+    },
+    {
+      "semanticName": "media_camera",
+      "materialName": "photo_camera",
+      "file": "media_camera.svg",
+      "source": "outlined/photo_camera.svg"
+    },
+    {
+      "semanticName": "media_image",
+      "materialName": "image",
+      "file": "media_image.svg",
+      "source": "outlined/image.svg"
+    },
+    {
+      "semanticName": "media_video",
+      "materialName": "videocam",
+      "file": "media_video.svg",
+      "source": "outlined/videocam.svg"
+    },
+    {
+      "semanticName": "media_mic",
+      "materialName": "mic",
+      "file": "media_mic.svg",
+      "source": "outlined/mic.svg"
+    },
+    {
+      "semanticName": "media_volume",
+      "materialName": "volume_up",
+      "file": "media_volume.svg",
+      "source": "outlined/volume_up.svg"
+    },
+    {
+      "semanticName": "media_volume_off",
+      "materialName": "volume_off",
+      "file": "media_volume_off.svg",
+      "source": "outlined/volume_off.svg"
+    },
+    {
+      "semanticName": "media_play",
+      "materialName": "play_arrow",
+      "file": "media_play.svg",
+      "source": "outlined/play_arrow.svg"
+    },
+    {
+      "semanticName": "media_pause",
+      "materialName": "pause",
+      "file": "media_pause.svg",
+      "source": "outlined/pause.svg"
+    },
+    {
+      "semanticName": "media_stop",
+      "materialName": "stop",
+      "file": "media_stop.svg",
+      "source": "outlined/stop.svg"
+    },
+    {
+      "semanticName": "app_calendar",
+      "materialName": "calendar_month",
+      "file": "app_calendar.svg",
+      "source": "outlined/calendar_month.svg"
+    },
+    {
+      "semanticName": "app_clock",
+      "materialName": "schedule",
+      "file": "app_clock.svg",
+      "source": "outlined/schedule.svg"
+    },
+    {
+      "semanticName": "app_mail",
+      "materialName": "mail",
+      "file": "app_mail.svg",
+      "source": "outlined/mail.svg"
+    },
+    {
+      "semanticName": "app_map",
+      "materialName": "map",
+      "file": "app_map.svg",
+      "source": "outlined/map.svg"
+    },
+    {
+      "semanticName": "app_location",
+      "materialName": "location_on",
+      "file": "app_location.svg",
+      "source": "outlined/location_on.svg"
+    },
+    {
+      "semanticName": "app_language",
+      "materialName": "language",
+      "file": "app_language.svg",
+      "source": "outlined/language.svg"
+    },
+    {
+      "semanticName": "app_folder",
+      "materialName": "folder",
+      "file": "app_folder.svg",
+      "source": "outlined/folder.svg"
+    },
+    {
+      "semanticName": "app_download",
+      "materialName": "download",
+      "file": "app_download.svg",
+      "source": "outlined/download.svg"
+    },
+    {
+      "semanticName": "app_upload",
+      "materialName": "upload",
+      "file": "app_upload.svg",
+      "source": "outlined/upload.svg"
+    },
+    {
+      "semanticName": "app_share",
+      "materialName": "share",
+      "file": "app_share.svg",
+      "source": "outlined/share.svg"
+    }
+  ],
+  "missing": []
+}
