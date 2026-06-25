@@ -1,5 +1,6 @@
 import { AvatarModule } from "./atomic/AvatarModule.js";
 import { ChatHeaderModule } from "./atomic/ChatHeaderModule.js";
+import { KeyboardModule } from "./atomic/KeyboardModule.js";
 import { MessageBubbleModule } from "./atomic/MessageBubbleModule.js";
 import { StatusBarModule } from "./atomic/StatusBarModule.js";
 import { NavigationBarModule } from "./atomic/NavigationBarModule.js";
@@ -10,6 +11,7 @@ export const visualModuleRegistry = {
   message_bubble: MessageBubbleModule,
   status_bar: StatusBarModule,
   navigation_bar: NavigationBarModule,
+  keyboard: KeyboardModule,
   chat_header: ChatHeaderModule,
   avatar: AvatarModule,
 } as const;

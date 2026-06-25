@@ -1176,6 +1176,14 @@ function defaultThemeTokens(family: "ios" | "android") {
           foreground: lightText,
           background: "rgba(255,255,255,0)",
         },
+        keyboard: {
+          background: isAndroid ? "#E7E3EC" : "#D1D5DB",
+          keyBackground: "#FFFFFF",
+          specialKeyBackground: isAndroid ? "#D0CBD8" : "#AEB4BE",
+          pressedKeyBackground: isAndroid ? "#C2BBCB" : "#8E8E93",
+          popoverBackground: "#FFFFFF",
+          text: lightText,
+        },
         notifications: {
           background: isAndroid ? "rgba(255,255,255,0.94)" : "rgba(245,245,247,0.92)",
           titleColor: lightText,
@@ -1198,6 +1206,14 @@ function defaultThemeTokens(family: "ios" | "android") {
           type: isAndroid ? "android-gesture" : "ios-home-indicator",
           foreground: darkText,
           background: "rgba(0,0,0,0)",
+        },
+        keyboard: {
+          background: isAndroid ? "#211F26" : "#2C2C2E",
+          keyBackground: isAndroid ? "#3B383F" : "#636366",
+          specialKeyBackground: isAndroid ? "#4A4650" : "#3A3A3C",
+          pressedKeyBackground: isAndroid ? "#5F5967" : "#8E8E93",
+          popoverBackground: isAndroid ? "#3B383F" : "#636366",
+          text: darkText,
         },
         notifications: {
           background: isAndroid ? "rgba(28,27,31,0.94)" : "rgba(44,44,46,0.92)",
@@ -1231,6 +1247,14 @@ function defaultThemeTokens(family: "ios" | "android") {
       foreground: lightText,
       background: "rgba(255,255,255,0)",
       iconScale: 1,
+    },
+    keyboard: {
+      background: isAndroid ? "#E7E3EC" : "#D1D5DB",
+      keyBackground: "#FFFFFF",
+      specialKeyBackground: isAndroid ? "#D0CBD8" : "#AEB4BE",
+      pressedKeyBackground: isAndroid ? "#C2BBCB" : "#8E8E93",
+      popoverBackground: "#FFFFFF",
+      text: lightText,
     },
     notifications: {
       backdropBlur: isAndroid ? 16 : 24,

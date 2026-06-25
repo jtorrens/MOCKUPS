@@ -378,6 +378,33 @@ function nodeContent(node: RenderableNode): ReactNode {
   if (node.type === "navigation_bar_item") {
     return generatedNavigationButtonNode(node);
   }
+  if (node.type === "keyboard_bottom_item") {
+    const token = stringValue(node.metadata?.token) ?? node.text ?? "";
+    if (stringValue(node.style?.maskImage)) {
+      return <span title={token} />;
+    }
+    return <span title={token}>{iconTokenLabel(token)}</span>;
+  }
+  if (node.type === "keyboard_key_popover") {
+    return (
+      <>
+        <span>{node.text}</span>
+        <span
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            left: "50%",
+            bottom: "-0.32em",
+            width: "0.72em",
+            height: "0.44em",
+            borderRadius: "0 0 0.22em 0.22em",
+            background: "inherit",
+            transform: "translateX(-50%)",
+          }}
+        />
+      </>
+    );
+  }
   if (node.children?.some((child) => child.type === "text")) {
     return null;
   }
@@ -473,6 +500,126 @@ function RenderNode({
                   ? `${numberValue(node.style?.lineHeight)}px`
                   : undefined,
               }
+            : node.type === "keyboard"
+              ? {
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "flex-end",
+                  paddingTop: numberValue(node.style?.paddingTop),
+                  paddingLeft: numberValue(node.style?.paddingX),
+                  paddingRight: numberValue(node.style?.paddingX),
+                  paddingBottom: numberValue(node.style?.paddingBottom),
+                  gap: numberValue(node.style?.rowGap),
+                }
+              : node.type === "keyboard_row"
+                ? {
+                    display: "flex",
+                    alignItems: "center",
+                    gap: numberValue(node.style?.gap),
+                    height: numberValue(node.style?.keyHeight),
+                    width: "100%",
+                  }
+                : node.type === "keyboard_key"
+                  ? {
+                      position: "relative",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flex: `${numberValue(node.style?.weight) ?? 1} 1 0`,
+                      height: "100%",
+                      minWidth: 0,
+                      boxShadow:
+                        "0 0.06em 0.08em rgba(0, 0, 0, 0.18), 0 0.01em 0 rgba(255, 255, 255, 0.32) inset",
+                      whiteSpace: "nowrap",
+                      overflow: "visible",
+                    }
+                  : node.type === "keyboard_key_popover"
+                    ? {
+                        position: "absolute",
+                        left: "50%",
+                        bottom: "calc(100% + 0.18em)",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: `${(numberValue(node.style?.widthRatio) ?? 0.86) * 100}%`,
+                        minWidth: "1.5em",
+                        height: "2.18em",
+                        boxShadow: "0 0.16em 0.34em rgba(0, 0, 0, 0.26)",
+                        transform: "translateX(-50%)",
+                        zIndex: 2,
+                        pointerEvents: "none",
+                        whiteSpace: "nowrap",
+                      }
+                  : node.type === "keyboard_bottom_utility"
+                    ? {
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        height: numberValue(node.style?.height),
+                        paddingLeft: numberValue(node.style?.paddingX),
+                        paddingRight: numberValue(node.style?.paddingX),
+                        flex: "0 0 auto",
+                      }
+                    : node.type === "keyboard_bottom_zone"
+                      ? {
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent:
+                            stringValue(node.style?.justifyContent) === "flex-start"
+                              ? "flex-start"
+                              : "flex-end",
+                          gap: numberValue(node.style?.gap),
+                          flex: "1 1 0",
+                          minWidth: 0,
+                        }
+                      : node.type === "keyboard_bottom_item"
+                        ? {
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            minWidth: stringValue(node.style?.maskImage)
+                              ? numberValue(node.style?.fontSize)
+                              : 0,
+                            width: stringValue(node.style?.maskImage)
+                              ? numberValue(node.style?.fontSize)
+                              : undefined,
+                            height: numberValue(node.style?.lineHeight),
+                            fontSize: numberValue(node.style?.fontSize),
+                            lineHeight: numberValue(node.style?.lineHeight)
+                              ? `${numberValue(node.style?.lineHeight)}px`
+                              : undefined,
+                            backgroundColor: stringValue(node.style?.maskImage)
+                              ? "currentColor"
+                              : undefined,
+                            maskImage: stringValue(node.style?.maskImage),
+                            maskPosition: stringValue(node.style?.maskImage)
+                              ? "center"
+                              : undefined,
+                            maskRepeat: stringValue(node.style?.maskImage)
+                              ? "no-repeat"
+                              : undefined,
+                            maskSize: stringValue(node.style?.maskImage)
+                              ? "contain"
+                              : undefined,
+                            WebkitMaskImage: stringValue(
+                              node.style?.WebkitMaskImage,
+                            ),
+                            WebkitMaskPosition: stringValue(
+                              node.style?.WebkitMaskImage,
+                            )
+                              ? "center"
+                              : undefined,
+                            WebkitMaskRepeat: stringValue(
+                              node.style?.WebkitMaskImage,
+                            )
+                              ? "no-repeat"
+                              : undefined,
+                            WebkitMaskSize: stringValue(
+                              node.style?.WebkitMaskImage,
+                            )
+                              ? "contain"
+                              : undefined,
+                          }
       : node.type === "message_bubble"
         ? { display: "block" }
         : node.type === "text"

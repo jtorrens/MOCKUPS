@@ -55,6 +55,36 @@ function normalizeThemeChromeGroup(
   };
 }
 
+function themeKeyboardDefaults(dark = false): Record<string, JsonValue> {
+  return dark
+    ? {
+        background: "#2C2C2E",
+        keyBackground: "#636366",
+        specialKeyBackground: "#3A3A3C",
+        pressedKeyBackground: "#8E8E93",
+        popoverBackground: "#636366",
+        text: "#FFFFFF",
+      }
+    : {
+        background: "#D1D5DB",
+        keyBackground: "#FFFFFF",
+        specialKeyBackground: "#AEB4BE",
+        pressedKeyBackground: "#8E8E93",
+        popoverBackground: "#FFFFFF",
+        text: "#000000",
+      };
+}
+
+function normalizeThemeKeyboardGroup(value: unknown, dark = false) {
+  const root = isJsonObject(value as JsonValue)
+    ? (value as Record<string, JsonValue>)
+    : {};
+  return {
+    ...themeKeyboardDefaults(dark),
+    ...root,
+  };
+}
+
 export function normalizedThemeTokenRoot({
   root,
   family,
@@ -95,6 +125,7 @@ export function normalizedThemeTokenRoot({
       family,
       root.navigationBar,
     ),
+    keyboard: normalizeThemeKeyboardGroup(root.keyboard),
     modes: {
       ...modes,
       light: {
@@ -109,6 +140,7 @@ export function normalizedThemeTokenRoot({
           family,
           lightMode.navigationBar,
         ),
+        keyboard: normalizeThemeKeyboardGroup(lightMode.keyboard),
         notifications: {
           background:
             lightNotifications.background ??
@@ -138,6 +170,7 @@ export function normalizedThemeTokenRoot({
           darkMode.navigationBar,
           true,
         ),
+        keyboard: normalizeThemeKeyboardGroup(darkMode.keyboard, true),
         notifications: {
           background:
             darkNotifications.background ??

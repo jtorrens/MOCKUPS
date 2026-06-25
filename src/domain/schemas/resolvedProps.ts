@@ -85,6 +85,7 @@ export const ResolvedChatScreenPropsSchema = z.object({
     wallpaper: JsonObjectSchema.optional(),
     statusBar: JsonObjectSchema,
     navigationBar: JsonObjectSchema,
+    keyboard: JsonObjectSchema.optional(),
     layout: JsonObjectSchema,
     header: JsonObjectSchema,
     messages: JsonObjectSchema,
@@ -114,6 +115,7 @@ export const ResolvedChatScreenPropsSchema = z.object({
   }),
   statusBar: JsonObjectSchema.optional(),
   navigationBar: JsonObjectSchema.optional(),
+  keyboard: JsonObjectSchema.optional(),
   ownerActor: ResolvedActorSchema,
   header: z.object({
     title: z.string().min(1),

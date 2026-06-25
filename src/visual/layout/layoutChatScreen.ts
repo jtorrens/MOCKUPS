@@ -40,6 +40,7 @@ export function layoutChatScreen({
 }: LayoutChatScreenInput): ChatScreenLayout {
   const showStatusBar = props.props.showStatusBar !== false;
   const showNavigationBar = props.props.showNavigationBar !== false;
+  const showKeyboard = props.props.showKeyboard === true;
   const showHeader = props.props.showHeader !== false;
   const screenGutter = readNumber(props.theme.layout, "screenGutter", 24);
   const headerHeight = showHeader
@@ -63,6 +64,16 @@ export function layoutChatScreen({
   const navigationBarHeight =
     showNavigationBar && typeof navigationBarLayout.height === "number"
       ? navigationBarLayout.height
+      : 0;
+  const keyboardLayout =
+    typeof props.keyboard?.layout === "object" &&
+    props.keyboard.layout !== null &&
+    !Array.isArray(props.keyboard.layout)
+      ? (props.keyboard.layout as Record<string, unknown>)
+      : {};
+  const keyboardHeight =
+    showKeyboard && typeof keyboardLayout.height === "number"
+      ? keyboardLayout.height
       : 0;
   const statusBarBox = showStatusBar
     ? {
@@ -89,10 +100,20 @@ export function layoutChatScreen({
           height: navigationBarHeight,
         }
       : undefined;
+  const keyboardBox =
+    showKeyboard && keyboardHeight > 0
+      ? {
+          x: rootBox.x,
+          y: rootBox.y + rootBox.height - navigationBarHeight - keyboardHeight,
+          width: rootBox.width,
+          height: keyboardHeight,
+        }
+      : undefined;
   const messageListTop = rootBox.y + statusBarHeight + headerHeight;
   const messageListBottom =
     rootBox.y +
     rootBox.height -
+    keyboardHeight -
     navigationBarHeight -
     props.viewport.safeArea.bottom;
   const messageListLeft = rootBox.x + props.viewport.safeArea.left + screenGutter;
@@ -140,6 +161,7 @@ export function layoutChatScreen({
     rootBox,
     ...(statusBarBox ? { statusBarBox } : {}),
     ...(navigationBarBox ? { navigationBarBox } : {}),
+    ...(keyboardBox ? { keyboardBox } : {}),
     ...(headerBox ? { headerBox } : {}),
     messageListBox,
     messages: translatedLayouts,

@@ -24,6 +24,14 @@
           "foreground": "#000000",
           "background": "rgba(255,255,255,0)"
         },
+        "keyboard": {
+          "background": "#D1D5DB",
+          "keyBackground": "#FFFFFF",
+          "specialKeyBackground": "#AEB4BE",
+          "pressedKeyBackground": "#8E8E93",
+          "popoverBackground": "#FFFFFF",
+          "text": "#000000"
+        },
         "notifications": {
           "background": "rgba(245,245,247,0.92)",
           "titleColor": "#000000",
@@ -46,6 +54,14 @@
           "type": "ios-home-indicator",
           "foreground": "#FFFFFF",
           "background": "rgba(0,0,0,0)"
+        },
+        "keyboard": {
+          "background": "#2C2C2E",
+          "keyBackground": "#636366",
+          "specialKeyBackground": "#3A3A3C",
+          "pressedKeyBackground": "#8E8E93",
+          "popoverBackground": "#636366",
+          "text": "#FFFFFF"
         },
         "notifications": {
           "background": "rgba(44,44,46,0.92)",
@@ -79,6 +95,14 @@
       "foreground": "#000000",
       "background": "rgba(255,255,255,0)",
       "iconScale": 1
+    },
+    "keyboard": {
+      "background": "#D1D5DB",
+      "keyBackground": "#FFFFFF",
+      "specialKeyBackground": "#AEB4BE",
+      "pressedKeyBackground": "#8E8E93",
+      "popoverBackground": "#FFFFFF",
+      "text": "#000000"
     },
     "notifications": {
       "backdropBlur": 24

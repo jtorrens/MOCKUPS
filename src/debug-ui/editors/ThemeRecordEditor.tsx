@@ -92,6 +92,7 @@ export function ThemeRecordEditor({
           "family",
           "icon_theme_id",
           "status_bar_id",
+          "navigation_bar_id",
           "version",
         ])
       }

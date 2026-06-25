@@ -1,6 +1,10 @@
 import shotExample from "../../../docs/examples/shot_lock_to_chat.json" with {
   type: "json",
 };
+import {
+  parseKeyboardRows,
+  STANDARD_IOS_KEYBOARD_LAYOUT,
+} from "../../domain/keyboards/standardKeyboardLayout.js";
 import { loadExampleRepository } from "../../domain/repository/fixtureLoader.js";
 import { resolveShot } from "../../domain/resolvers/index.js";
 import { ResolvedChatScreenPropsSchema } from "../../domain/schemas/index.js";
@@ -238,9 +242,47 @@ assert(
     zeroGutterMessageListBox.x + zeroGutterMessageListBox.width,
   "Zero-gutter sent bubble must align to the message-list right edge",
 );
+const keyboardProps = ResolvedChatScreenPropsSchema.parse({
+  ...chatProps,
+  props: {
+    ...chatProps.props,
+    showKeyboard: true,
+    keyboard: {
+      pressedKey: "A",
+    },
+  },
+  keyboard: {
+    ...chatProps.keyboard,
+    mode: "shift",
+    pressedKey: "A",
+    rows: parseKeyboardRows(STANDARD_IOS_KEYBOARD_LAYOUT, "shift", "es"),
+  },
+});
+const keyboardTree = RenderableNodeSchema.parse(chatModule.render(keyboardProps));
+const keyboardNode = keyboardTree.children?.find(
+  (child) => child.type === "keyboard",
+);
+const keyboardRows = collectNodes(keyboardTree).filter(
+  (node) => node.type === "keyboard_row",
+);
+const keyboardKeys = collectNodes(keyboardTree).filter(
+  (node) => node.type === "keyboard_key",
+);
+const keyboardPopover = collectNodes(keyboardTree).find(
+  (node) => node.type === "keyboard_key_popover",
+);
+assert(keyboardNode?.box, "Keyboard must render a box when showKeyboard=true");
+assert(
+  keyboardRows.length >= 4 && keyboardKeys.length > 20,
+  "Keyboard must render rows and generated key nodes",
+);
+assert(
+  keyboardNode.metadata?.mode === "shift" && keyboardPopover?.text === "A",
+  "Keyboard must infer shift mode and render the Apple-style key popover",
+);
 assert(
   Object.keys(visualModuleRegistry).sort().join(",") ===
-    "avatar,chat_header,chat_screen,message_bubble,navigation_bar,status_bar",
+    "avatar,chat_header,chat_screen,keyboard,message_bubble,navigation_bar,status_bar",
   "Registry must contain all required visual modules",
 );
 
@@ -248,7 +290,7 @@ console.log("✓ resolved chat props rendered at shot frame 210 / local frame 60
 console.log("✓ renderable tree validated recursively with Zod");
 console.log("✓ ChatScreen composed status bar, navigation bar, header, and message bubbles");
 console.log("✓ app wallpaper rendered as the back layer");
-console.log("✓ registry contains all six required module names");
+console.log("✓ registry contains all seven required module names");
 console.log("✓ visual tree uses resolved layout, tail, and Wi-Fi tokens");
 console.log("✓ sent/received bounds, stacking, text, and avatar boxes validated");
 console.log("✓ repeated rendering produced an identical tree");

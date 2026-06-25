@@ -1,4 +1,9 @@
 import { z } from "zod";
+import {
+  parseKeyboardRows,
+  STANDARD_IOS_KEYBOARD_LAYOUT,
+  type KeyboardMode,
+} from "../keyboards/standardKeyboardLayout.js";
 import type { DomainRepository } from "../repository/types.js";
 import {
   ChatModuleConfigSchema,
@@ -74,6 +79,7 @@ const ChatThemeSchema = z.object({
   wallpaper: z.record(z.string(), z.unknown()).optional(),
   statusBar: z.record(z.string(), z.unknown()),
   navigationBar: z.record(z.string(), z.unknown()),
+  keyboard: z.record(z.string(), z.unknown()).optional(),
   layout: z.record(z.string(), z.unknown()),
   header: z.record(z.string(), z.unknown()),
   messages: z.record(z.string(), z.unknown()),
@@ -234,6 +240,188 @@ function resolveNavigationBarDefinition(
   return {
     layout,
     items,
+  };
+}
+
+function emojiHash(value: string) {
+  let hash = 0;
+  for (const character of value) {
+    hash = (hash * 31 + (character.codePointAt(0) ?? 0)) >>> 0;
+  }
+  return hash;
+}
+
+function withExtraEmojis(
+  rows: ReturnType<typeof parseKeyboardRows>,
+  extraEmojis: string[],
+) {
+  const uniqueExtraEmojis = [...new Set(extraEmojis.map((emoji) => emoji.trim()))];
+  const emojiSlots = rows.flatMap((row, rowIndex) =>
+    row.flatMap((key, keyIndex) =>
+      key.kind === "character" && /\p{Extended_Pictographic}/u.test(key.label)
+        ? [{ rowIndex, keyIndex }]
+        : [],
+    ),
+  );
+  if (!emojiSlots.length || !uniqueExtraEmojis.length) return rows;
+  const seed = emojiHash(uniqueExtraEmojis.join(""));
+  const replacementBySlot = new Map<string, string>();
+  for (const [extraIndex, emoji] of uniqueExtraEmojis.entries()) {
+    const slot = emojiSlots[(seed + extraIndex * 7) % emojiSlots.length];
+    replacementBySlot.set(`${slot.rowIndex}:${slot.keyIndex}`, emoji);
+  }
+  return rows.map((row, rowIndex) =>
+    row.map((key, keyIndex) => {
+      const emoji = replacementBySlot.get(`${rowIndex}:${keyIndex}`);
+      return emoji
+        ? {
+            ...key,
+            id: emoji,
+            label: emoji,
+          }
+        : key;
+    }),
+  );
+}
+
+function keyboardModeForPressedKey(value: string): KeyboardMode {
+  if (/\p{Extended_Pictographic}/u.test(value)) return "emoji";
+  if (/^[A-ZÁÉÍÓÚÜÑ]$/u.test(value)) return "shift";
+  if (/^[0-9]$/u.test(value)) return "numeric";
+  if (/^[¿?¡!.,;:'"()[\]{}#%^*+=_/\\|~<>€£¥·-]$/u.test(value)) {
+    return "symbols";
+  }
+  return "lowercase";
+}
+
+function resolveKeyboardDefinition(
+  behaviorKeyboard: unknown,
+  iconTheme?: {
+    asset_root: string;
+    mapping_json: Record<string, unknown>;
+  },
+  scale = 1,
+) {
+  const behaviorRoot = isObject(behaviorKeyboard) ? behaviorKeyboard : {};
+  const pressedKey =
+    typeof behaviorRoot.pressedKey === "string"
+      ? behaviorRoot.pressedKey
+      : undefined;
+  const inferredMode = pressedKey
+    ? keyboardModeForPressedKey(pressedKey)
+    : undefined;
+  const requestedMode =
+    inferredMode ??
+    stringValue(behaviorRoot.mode, STANDARD_IOS_KEYBOARD_LAYOUT.defaultMode);
+  const language = stringValue(
+    behaviorRoot.language,
+    STANDARD_IOS_KEYBOARD_LAYOUT.defaultLanguage,
+  );
+  const mode = (
+    requestedMode in STANDARD_IOS_KEYBOARD_LAYOUT.modes
+      ? requestedMode
+      : STANDARD_IOS_KEYBOARD_LAYOUT.defaultMode
+  ) as KeyboardMode;
+  const designLayout = {
+    height: 336,
+    topPadding: 8,
+    sidePadding: 6,
+    bottomPadding: 8,
+    bottomUtilityHeight: 34,
+    bottomUtilitySidePadding: 24,
+    bottomIconSize: 22,
+    rowGap: 8,
+    keyGap: 6,
+    keyHeight: 42,
+    keyRadius: 7,
+    fontSize: 18,
+  };
+  const layout = Object.fromEntries(
+    Object.entries(designLayout).map(([key, value]) => [key, value * scale]),
+  );
+  const rawBottomItems = Array.isArray(behaviorRoot.bottomItems)
+    ? behaviorRoot.bottomItems
+    : [
+        {
+          id: "globe",
+          label: "Globe",
+          kind: "iconToken",
+          token: "app_language",
+          zone: "left",
+          order: 10,
+        },
+        {
+          id: "dictation",
+          label: "Dictation",
+          kind: "iconToken",
+          token: "media_mic",
+          zone: "right",
+          order: 10,
+        },
+      ];
+  const bottomItems: Record<string, unknown>[] = [];
+  for (const rawItem of rawBottomItems) {
+    if (!isObject(rawItem)) continue;
+    const id = stringValue(rawItem.id);
+    const token = stringValue(rawItem.token);
+    const zone = stringValue(rawItem.zone, "off");
+    if (!id || !token || zone === "off") continue;
+    const iconToken = isObject(iconTheme?.mapping_json.tokens)
+      ? iconTheme.mapping_json.tokens[token]
+      : undefined;
+    const iconFile = isObject(iconToken) ? stringValue(iconToken.file) : "";
+    bottomItems.push({
+      id,
+      label: stringValue(rawItem.label, id),
+      kind: "iconToken",
+      token,
+      zone,
+      order: numberValue(rawItem.order, 0),
+      ...(iconFile
+        ? {
+            iconUri: `${iconTheme?.asset_root.replace(/\/+$/g, "")}/${iconFile}`,
+          }
+        : {}),
+    });
+  }
+  const configuredExtraEmojis = Array.isArray(behaviorRoot.extraEmojis)
+    ? behaviorRoot.extraEmojis.filter(
+        (emoji): emoji is string => typeof emoji === "string" && emoji.trim() !== "",
+      )
+    : [];
+  const pressedEmoji =
+    pressedKey && /\p{Extended_Pictographic}/u.test(pressedKey)
+      ? [pressedKey]
+      : [];
+  const extraEmojis = [...pressedEmoji, ...configuredExtraEmojis];
+  const parsedRows = parseKeyboardRows(
+    STANDARD_IOS_KEYBOARD_LAYOUT,
+    mode,
+    language,
+  );
+  const rows =
+    mode === "emoji" && extraEmojis.length
+      ? withExtraEmojis(parsedRows, extraEmojis)
+      : parsedRows;
+  return {
+    id: STANDARD_IOS_KEYBOARD_LAYOUT.id,
+    name: STANDARD_IOS_KEYBOARD_LAYOUT.name,
+    language,
+    mode,
+    pressedKey,
+    modes: Object.fromEntries(
+      Object.entries(STANDARD_IOS_KEYBOARD_LAYOUT.modes).map(([key, value]) => [
+        key,
+        {
+          id: value.id,
+          label: value.label,
+          rowsText: value.rowsText,
+        },
+      ]),
+    ),
+    layout,
+    rows,
+    bottomItems,
   };
 }
 
@@ -604,6 +792,11 @@ export function resolveChatScreen({
     navigationBar?.config_json,
     renderScale,
   );
+  const effectiveKeyboard = resolveKeyboardDefinition(
+    moduleConfig.keyboard,
+    iconTheme,
+    renderScale,
+  );
 
   const messages = moduleData.messages.map((message) => {
     const sender = participants.get(message.senderParticipantId);
@@ -717,6 +910,7 @@ export function resolveChatScreen({
     deviceState: state,
     statusBar: effectiveStatusBar,
     navigationBar: effectiveNavigationBar,
+    keyboard: effectiveKeyboard,
     ownerActor: {
       id: ownerActor.id,
       displayName: ownerActor.display_name,
@@ -743,6 +937,7 @@ export function resolveChatScreen({
       showStatusBar: moduleConfig.showStatusBar,
       showNavigationBar: moduleConfig.showNavigationBar,
       showKeyboard: moduleConfig.showKeyboard,
+      keyboard: moduleConfig.keyboard ?? {},
       initialScroll: moduleConfig.initialScroll,
       messageGrouping: moduleConfig.messageGrouping,
       debugShowBounds: moduleConfig.debugShowBounds,
