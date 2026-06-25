@@ -30,7 +30,10 @@ import type {
   ScreenInstanceTab,
   ThemeEditorTab,
 } from "../editors/editorTabs.js";
-import { defaultGroupValue } from "../editors/chat/chatContentModel.js";
+import {
+  chatContentGroupHasWarning,
+  defaultGroupValue,
+} from "../editors/chat/chatContentModel.js";
 import { ChatContentGroupEditor } from "../editors/chat/ChatContentGroupEditor.js";
 import {
   RecordFieldRenderer,
@@ -1325,43 +1328,6 @@ export function RecordEditor({
       ? contentTab
       : "";
 
-    function contentGroupHasWarning(group: string) {
-      const contentRoot = parsedObject(drafts.content_json ?? "{}");
-      const participants = contentRoot.participants;
-      if (group === "header") {
-        const headerValue = contentRoot.header as JsonValue;
-        if (!isJsonObject(headerValue) || !Array.isArray(participants)) {
-          return false;
-        }
-        const header = headerValue;
-        const participant = (participants as JsonValue[])
-          .filter(isJsonObject)
-          .find((item) => item.id === header.avatarParticipantId);
-        const inheritedName = participant
-          ? String(
-              participant.displayName ??
-                records.actors?.find((item) => item.id === participant.actorId)
-                  ?.display_name ??
-                "",
-            )
-          : "";
-        return Boolean(inheritedName) && String(header.title ?? "") !== inheritedName;
-      }
-      if (group !== "participants") return false;
-      if (!Array.isArray(participants)) return false;
-      return participants.some((participant) => {
-        if (!isJsonObject(participant)) return false;
-        const actor = records.actors?.find(
-          (item) => item.id === participant.actorId,
-        );
-        const inheritedName = String(actor?.display_name ?? "");
-        return (
-          Boolean(inheritedName) &&
-          String(participant.displayName ?? "") !== inheritedName
-        );
-      });
-    }
-
     return (
       <ModuleInstanceEditor
         table={table}
@@ -1371,7 +1337,13 @@ export function RecordEditor({
         contentFieldExists={Boolean(contentField)}
         behaviorFieldExists={Boolean(behaviorField)}
         contentGroups={safeContentGroups}
-        contentGroupHasWarning={contentGroupHasWarning}
+        contentGroupHasWarning={(group) =>
+          chatContentGroupHasWarning({
+            group,
+            contentRoot: parsedObject(drafts.content_json ?? "{}"),
+            actors: records.actors ?? [],
+          })
+        }
         renderContentGroup={(group) =>
           contentField
             ? renderContentGroupEditor(contentField, group, "content_json")

@@ -222,6 +222,47 @@ export function messageWithTextRevealMode(
   };
 }
 
+export function chatContentGroupHasWarning({
+  group,
+  contentRoot,
+  actors,
+}: {
+  group: string;
+  contentRoot: Record<string, unknown>;
+  actors: Record<string, unknown>[];
+}) {
+  const participants = contentRoot.participants;
+  if (group === "header") {
+    const headerValue = contentRoot.header as JsonValue;
+    if (!isJsonObject(headerValue) || !Array.isArray(participants)) {
+      return false;
+    }
+    const header = headerValue;
+    const participant = (participants as JsonValue[])
+      .filter(isJsonObject)
+      .find((item) => item.id === header.avatarParticipantId);
+    const inheritedName = participant
+      ? String(
+          participant.displayName ??
+            actors.find((item) => item.id === participant.actorId)?.display_name ??
+            "",
+        )
+      : "";
+    return Boolean(inheritedName) && String(header.title ?? "") !== inheritedName;
+  }
+  if (group !== "participants") return false;
+  if (!Array.isArray(participants)) return false;
+  return participants.some((participant) => {
+    if (!isJsonObject(participant)) return false;
+    const actor = actors.find((item) => item.id === participant.actorId);
+    const inheritedName = String(actor?.display_name ?? "");
+    return (
+      Boolean(inheritedName) &&
+      String(participant.displayName ?? "") !== inheritedName
+    );
+  });
+}
+
 export function mediaNumberFieldsForMessage(
   message: Record<string, JsonValue>,
 ): ChatMediaNumberField[] {
