@@ -20,7 +20,7 @@
 .color-value-editor {
   position: relative;
   display: inline-grid;
-  grid-template-columns: auto auto;
+  grid-template-columns: auto minmax(0, 180px);
   gap: 6px;
   align-items: center;
   justify-content: start;
@@ -54,6 +54,26 @@
   font-size: 11px !important;
   box-shadow: none !important;
   text-align: right;
+}
+
+.color-text-input {
+  width: 180px !important;
+  min-width: 150px !important;
+  height: 30px !important;
+  border: var(--editor-input-border, 1px solid #cfd6e2) !important;
+  border-radius: 8px !important;
+  padding: 0 8px !important;
+  color: var(--editor-input-color, #15171c) !important;
+  background: var(--editor-input-background, #f7f8fb) !important;
+  font-family: "SFMono-Regular", Consolas, monospace !important;
+  font-size: 11px !important;
+  box-shadow: none !important;
+}
+
+.color-text-input:focus {
+  border-color: var(--editor-input-focus-border-color, #8fa2ff) !important;
+  box-shadow: var(--editor-input-focus-shadow, 0 0 0 3px rgba(59, 102, 255, 0.1)) !important;
+  outline: none;
 }
 
 .color-alpha-input:focus {

@@ -53,6 +53,13 @@ function isHexColor(value: unknown): boolean {
   return typeof value === "string" && /^#[0-9a-fA-F]{6}$/.test(value);
 }
 
+function isRgbColor(value: unknown): boolean {
+  return (
+    typeof value === "string" &&
+    /^rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\)$/i.test(value.trim())
+  );
+}
+
 function isColorRolePath(path: JsonPath): boolean {
   const key = String(path[path.length - 1] ?? "");
   return /(color|background|text|accent|surface|separator)$/i.test(key);
@@ -311,9 +318,12 @@ export function ModeColorEditor({
                       ? role.inheritedLightValue
                       : role.inheritedDarkValue;
                   const displayValue = value || inherited || "";
-                  const isRgbaColor = displayValue.startsWith("rgba(");
+                  const isRgbaColor = displayValue
+                    .trim()
+                    .toLowerCase()
+                    .startsWith("rgba(");
                   const isAlphaColor = isRgbaColor || isAlphaColorRolePath(role.rolePath);
-                  const canPickColor = isHexColor(displayValue);
+                  const canPickColor = isHexColor(displayValue) || isRgbColor(displayValue);
                   return (
                     <span
                       key={mode}

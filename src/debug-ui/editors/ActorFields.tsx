@@ -1,6 +1,7 @@
 import type { ComponentType } from "react";
 import type { AppRecord } from "../api/client.js";
 import { DeferredTextInput } from "../editor-ui/DeferredTextInput.js";
+import { ColorValueEditor } from "../components/json-editor/ColorValueEditor.js";
 import { InspectorFieldRow } from "../components/inspector/InspectorFieldRow.js";
 import { parsedObject } from "./recordJsonUtils.js";
 
@@ -203,28 +204,15 @@ function ActorColorField(context: ActorFieldsContext) {
                     >
                       {row.field === "color" ? initials : "Aa"}
                     </span>
-                    <input
-                      aria-label={`${row.label} ${mode}`}
-                      type="color"
+                    <ColorValueEditor
+                      label={`${row.label} ${mode}`}
                       value={color}
-                      onChange={(event) =>
+                      onChange={(nextColor) =>
                         setActorModeColor({
                           ...context,
                           mode,
                           field: row.field,
-                          nextColor: event.target.value,
-                        })
-                      }
-                    />
-                    <input
-                      aria-label={`${row.label} ${mode} hex`}
-                      value={color}
-                      onChange={(event) =>
-                        setActorModeColor({
-                          ...context,
-                          mode,
-                          field: row.field,
-                          nextColor: event.target.value,
+                          nextColor,
                         })
                       }
                     />

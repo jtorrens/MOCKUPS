@@ -10,7 +10,35 @@ interface ColorValueEditorProps {
 }
 
 function isHexColor(value: string): boolean {
-  return /^#[0-9a-fA-F]{6}$/.test(value);
+  return /^#[0-9a-fA-F]{6}$/.test(value.trim());
+}
+
+function rgbToHex(value: string): string | null {
+  const match = value
+    .trim()
+    .match(/^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/i);
+  if (!match) return null;
+  const [, red, green, blue] = match;
+  const channels = [red, green, blue].map((channel) =>
+    Math.max(0, Math.min(255, Number(channel))),
+  );
+  return `#${channels
+    .map((channel) => channel.toString(16).padStart(2, "0"))
+    .join("")}`;
+}
+
+function hexToRgbString(hex: string): string {
+  return `rgb(${Number.parseInt(hex.slice(1, 3), 16)}, ${Number.parseInt(
+    hex.slice(3, 5),
+    16,
+  )}, ${Number.parseInt(hex.slice(5, 7), 16)})`;
+}
+
+function normalizePlainColorInput(value: string): string | null {
+  const trimmed = value.trim();
+  if (isHexColor(trimmed)) return trimmed.toLowerCase();
+  const rgbHex = rgbToHex(trimmed);
+  return rgbHex ? hexToRgbString(rgbHex) : null;
 }
 
 function hexToRgba(hex: string, alpha = 1) {
@@ -52,6 +80,8 @@ function normalizeColor(value: string, alpha: boolean) {
     return rgbaToHexAndAlpha(value) ? value : "rgba(255, 255, 255, 0)";
   }
   if (isHexColor(value)) return value.toLowerCase();
+  const rgbHex = rgbToHex(value);
+  if (rgbHex) return rgbHex;
   return rgbaToHexAndAlpha(value)?.hex ?? "#000000";
 }
 
@@ -75,10 +105,15 @@ export function ColorValueEditor({
   onChange,
 }: ColorValueEditorProps) {
   const [open, setOpen] = useState(false);
+  const [draftValue, setDraftValue] = useState(value);
   const [popoverRect, setPopoverRect] = useState({ top: 0, left: 0 });
   const rootRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const normalized = normalizeColor(value, alpha);
+
+  useEffect(() => {
+    setDraftValue(value);
+  }, [value]);
 
   useEffect(() => {
     function onPointerDown(event: PointerEvent) {
@@ -107,6 +142,25 @@ export function ColorValueEditor({
     setOpen((current) => !current);
   }
 
+  function changePickerColor(nextValue: string) {
+    setDraftValue(nextValue);
+    onChange(nextValue);
+  }
+
+  function changePlainColorText(nextValue: string) {
+    setDraftValue(nextValue);
+    const normalizedInput = normalizePlainColorInput(nextValue);
+    if (normalizedInput) {
+      onChange(normalizedInput);
+    }
+  }
+
+  function resetInvalidPlainColorText() {
+    if (!normalizePlainColorInput(draftValue)) {
+      setDraftValue(value);
+    }
+  }
+
   return (
     <div className="color-value-editor" ref={rootRef}>
       <button
@@ -128,7 +182,18 @@ export function ColorValueEditor({
           value={String(alphaValue(value))}
           onChange={(event) => onChange(withAlpha(value, Number(event.target.value)))}
         />
-      ) : null}
+      ) : (
+        <input
+          aria-label={`${label} color value`}
+          className="color-text-input"
+          type="text"
+          spellCheck={false}
+          placeholder="#000000 or rgb(0, 0, 0)"
+          value={draftValue}
+          onBlur={resetInvalidPlainColorText}
+          onChange={(event) => changePlainColorText(event.target.value)}
+        />
+      )}
       {open
         ? createPortal(
             <div
@@ -137,9 +202,9 @@ export function ColorValueEditor({
               style={{ top: popoverRect.top, left: popoverRect.left }}
             >
               {alpha ? (
-                <RgbaStringColorPicker color={normalized} onChange={onChange} />
+                <RgbaStringColorPicker color={normalized} onChange={changePickerColor} />
               ) : (
-                <HexColorPicker color={normalized} onChange={onChange} />
+                <HexColorPicker color={normalized} onChange={changePickerColor} />
               )}
             </div>,
             document.body,

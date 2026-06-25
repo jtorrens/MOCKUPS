@@ -1,5 +1,6 @@
 import { fontStylesForFamily, useSystemFontCatalog } from "./systemFonts.js";
 import { DeferredNumberInput } from "../../editor-ui/DeferredNumberInput.js";
+import { ColorValueEditor } from "./ColorValueEditor.js";
 import {
   InspectorFieldRow,
   InspectorRestoreButton,
@@ -285,39 +286,12 @@ export function TokenOverrideEditor({
             </select>
           ) : widget === "color" && typeof row.value === "string" ? (
             <span className="json-color-pair token-color-pair">
-              <input
-                aria-label={`${label} color picker`}
-                type="color"
-                value={
-                  isHexColor(stringValue)
-                    ? stringValue
-                    : isHexColor(row.value)
-                      ? row.value
-                      : "#000000"
+              <ColorValueEditor
+                label={`${label} override`}
+                value={stringValue || row.value}
+                onChange={(nextColor) =>
+                  onRootChange(setAtPath(rootValue, row.path, nextColor))
                 }
-                onChange={(event) =>
-                  onRootChange(setAtPath(rootValue, row.path, event.target.value))
-                }
-              />
-              <input
-                aria-label={`${label} override`}
-                type="text"
-                placeholder="Inherit"
-                value={stringValue}
-                onChange={(event) => {
-                  const raw = event.target.value;
-                  if (raw === "") {
-                    restoreValue(row.path, row.value);
-                    return;
-                  }
-                  onRootChange(
-                    setAtPath(
-                      rootValue,
-                      row.path,
-                      isHexColor(raw) ? raw.toLowerCase() : raw,
-                    ),
-                  );
-                }}
               />
             </span>
           ) : widget === "number" ? (

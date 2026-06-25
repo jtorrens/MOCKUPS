@@ -2,6 +2,7 @@ import type { ComponentType } from "react";
 import type { AppRecord } from "../api/client.js";
 import { DeferredTextInput } from "../editor-ui/DeferredTextInput.js";
 import { InspectorFieldRow } from "../components/inspector/InspectorFieldRow.js";
+import { ColorValueEditor } from "../components/json-editor/ColorValueEditor.js";
 import {
   setAtPath,
   type JsonPath,
@@ -356,20 +357,10 @@ export function AppWallpaperEditor({
           <span>Color</span>
           {(["light", "dark"] as const).map((mode) => (
             <div key={mode} className="actor-color-control compact-color-control">
-              <input
-                aria-label={`Wallpaper ${mode} color`}
-                type="color"
+              <ColorValueEditor
+                label={`Wallpaper ${mode}`}
                 value={appWallpaperModeColor(appTokenRoot, mode)}
-                onChange={(event) =>
-                  updateAppWallpaperModeColor(mode, event.target.value)
-                }
-              />
-              <input
-                aria-label={`Wallpaper ${mode} hex`}
-                value={appWallpaperModeColor(appTokenRoot, mode)}
-                onChange={(event) =>
-                  updateAppWallpaperModeColor(mode, event.target.value)
-                }
+                onChange={(nextColor) => updateAppWallpaperModeColor(mode, nextColor)}
               />
             </div>
           ))}
