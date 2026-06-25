@@ -682,6 +682,7 @@ Current boundaries:
 - `src/debug-ui/editor-ui/EditorSubsectionAccordion.tsx` owns reusable nested accordion chrome used by App, Theme, Module, and Module Theme groups.
 - `src/debug-ui/editors/` owns entity-level editor shells such as App, Theme, Screen Instance, Module Instance, Module Theme Config, and the generic record fallback.
 - `src/debug-ui/editors/AppRecordEditor.tsx` owns App-specific editor composition: App icon fields, App token filtering, wallpaper editing, App color surfaces, notes, and App token override warnings.
+- `src/debug-ui/editors/ThemeRecordEditor.tsx` owns Theme-specific editor composition: Theme token normalization, token group editing, status/navigation chrome groups, and mode color editing.
 - `src/debug-ui/editors/RecordFieldRenderer.tsx` owns base field rendering: plain inputs, relation dropdowns, readonly controls, and raw JSON tree entry points.
 - `src/debug-ui/editors/GenericFieldDispatcher.tsx` owns the fallback table/field dispatch rules for generic records.
 - `src/debug-ui/editors/FlatJsonFieldEditors.tsx` owns flat JSON object fields and device metric JSON paths.
@@ -690,7 +691,7 @@ Current boundaries:
 - `src/debug-ui/editors/recordJsonUtils.ts`, `recordTokenUtils.ts`, and `recordProductionUtils.ts` own shared pure helpers for parsed JSON, normalized JSON values, token groups, App token filtering, and production media-root lookup.
 - `src/debug-ui/editors/useJsonGroupDrafts.ts` owns draft read/write helpers for editing one JSON group inside a wider JSON column.
 - `src/debug-ui/editors/chat/` owns Chat module content editing and its content model helpers: participants, header, messages, nested values, message media, array/card behavior, and content override-warning rules.
-- `src/debug-ui/components/RecordEditor.tsx` remains the central coordinator for persistence, table dispatch, editor composition, Theme/Module Theme token-group editing, and any remaining cross-entity glue.
+- `src/debug-ui/components/RecordEditor.tsx` remains the central coordinator for persistence, table dispatch, Module Theme token-group editing, and any remaining cross-entity glue.
 
 This creates an OOP-like separation inside React without introducing an external plugin/module system yet. App/module-specific editors can vary in behavior while still reusing the same editor UI primitives and design tokens for analogous concepts.
 
@@ -702,7 +703,7 @@ Verification used during the phase:
 
 Remaining work for the next architecture pass:
 
-- Continue extracting the remaining domain field handlers from `RecordEditor`, especially Module Theme token groups, Theme token groups, and any remaining top-level editor composition glue.
+- Continue extracting the remaining domain field handlers from `RecordEditor`, especially Module Theme token groups and any remaining top-level editor composition glue.
 - Continue shrinking `renderGenericField` into a dispatcher over domain-specific handlers.
 - Keep new table-specific editors lightweight and prop-driven. They should receive records, drafts, and change callbacks rather than owning persistence.
 - Continue removing transitional CSS only after the owning component/layer is clear, so cleanup does not silently break panel styling again.

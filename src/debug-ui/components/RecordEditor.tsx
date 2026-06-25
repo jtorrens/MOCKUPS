@@ -16,7 +16,7 @@ import { GenericRecordEditor } from "../editors/GenericRecordEditor.js";
 import { ModuleInstanceEditor } from "../editors/ModuleInstanceEditor.js";
 import { ModuleThemeConfigEditor } from "../editors/ModuleThemeConfigEditor.js";
 import { ScreenInstanceEditor } from "../editors/ScreenInstanceEditor.js";
-import { ThemeEditor } from "../editors/ThemeEditor.js";
+import { ThemeRecordEditor } from "../editors/ThemeRecordEditor.js";
 import type {
   AppEditorTab,
   ModuleThemeTab,
@@ -42,18 +42,9 @@ import {
   parsedJsonValue,
   parsedObject,
 } from "../editors/recordJsonUtils.js";
-import {
-  editorValueForThemeTokenGroup,
-  nextThemeTokenGroupValue,
-  tokenEditorGroups,
-} from "../editors/recordTokenUtils.js";
 import { shotHasFpsOverride } from "../editors/ShotFields.js";
 import { ScreenTransitionFields } from "../editors/ScreenInstanceFields.js";
 import { ModuleBehaviorFields } from "../editors/ModuleBehaviorFields.js";
-import {
-  normalizedThemeTokenRoot,
-  ThemeChromeGroupEditor,
-} from "../editors/ThemeFields.js";
 import { productionMediaRootForRecord } from "../editors/recordProductionUtils.js";
 import { useJsonGroupDrafts } from "../editors/useJsonGroupDrafts.js";
 import {
@@ -320,24 +311,6 @@ export function RecordEditor({
     return productionMediaRootForRecord({ table, record, records });
   }
 
-  function updateThemeTokenGroupValue(
-    themeTokenRoot: Record<string, JsonValue>,
-    groupKey: string,
-    nextRawText: string,
-  ) {
-    const fallback = defaultGroupValue(groupKey);
-    const parsedValue = parsedJsonValue(nextRawText, fallback);
-
-    setJsonDraft("tokens_json", {
-      ...themeTokenRoot,
-      [groupKey]: nextThemeTokenGroupValue({
-        themeTokenRoot,
-        groupKey,
-        parsedValue,
-      }),
-    });
-  }
-
   function renderContentGroupEditor(
     field: AppFieldDefinition,
     groupKey: string,
@@ -503,85 +476,19 @@ export function RecordEditor({
   }
 
   if (table.id === "themes") {
-    const tokensField = fieldsByColumn.get("tokens_json");
-    const themeTokenRoot = normalizedThemeTokenRoot({
-      root: parsedObject(drafts.tokens_json ?? "{}"),
-      family: String(drafts.family ?? record?.family ?? "ios"),
-    });
-    const themeTokenGroups = tokenEditorGroups(themeTokenRoot);
-    const activeThemeTokenGroup =
-      themeTokenGroup && themeTokenGroups.includes(themeTokenGroup)
-        ? themeTokenGroup
-        : "";
-
     return (
-      <ThemeEditor
+      <ThemeRecordEditor
         table={table}
         record={record}
+        fieldsByColumn={fieldsByColumn}
+        drafts={drafts}
         activeTab={themeTab}
-        tokensFieldExists={Boolean(tokensField)}
-        renderGeneral={() => renderFields(["id", "name", "family", "version"])}
-        renderTokens={() =>
-          tokensField ? (
-            <>
-              {themeTokenGroups
-                .filter(
-                  (group) =>
-                    group !== "statusBar" && group !== "navigationBar",
-                )
-                .map((group) => (
-                  <EditorSubsectionAccordion
-                    key={group}
-                    group={group}
-                    activeGroup={activeThemeTokenGroup}
-                    onToggle={setThemeTokenGroup}
-                  >
-                    <div className="record-editor-field-stack record-editor-single-column theme-token-group-editor">
-                      {renderField(tokensField, {
-                        hideLabel: true,
-                        rawText: stringifyJson(
-                          editorValueForThemeTokenGroup(themeTokenRoot, group),
-                        ),
-                        groupContext: group,
-                        onRawTextChange: (nextRawText) =>
-                          updateThemeTokenGroupValue(
-                            themeTokenRoot,
-                            group,
-                            nextRawText,
-                          ),
-                      })}
-                    </div>
-                  </EditorSubsectionAccordion>
-                ))}
-              {(["statusBar", "navigationBar"] as const).map((group) => (
-                <EditorSubsectionAccordion
-                  key={group}
-                  group={group}
-                  activeGroup={activeThemeTokenGroup}
-                  onToggle={setThemeTokenGroup}
-                >
-                  <ThemeChromeGroupEditor
-                    tokenRoot={themeTokenRoot}
-                    groupKey={group}
-                    family={String(drafts.family ?? record?.family ?? "ios")}
-                    onTokenRootChange={(nextRoot) =>
-                      setJsonDraft("tokens_json", nextRoot)
-                    }
-                  />
-                </EditorSubsectionAccordion>
-              ))}
-            </>
-          ) : null
-        }
-        renderColors={() =>
-          tokensField ? (
-            <ModeColorEditor
-              rootValue={themeTokenRoot as JsonValue}
-              onRootChange={(nextValue) => setJsonDraft("tokens_json", nextValue)}
-            />
-          ) : null
-        }
+        activeTokenGroup={themeTokenGroup}
+        renderFields={renderFields}
+        renderField={renderField}
         setActiveTab={setThemeTab}
+        setActiveTokenGroup={setThemeTokenGroup}
+        setJsonDraft={setJsonDraft}
       />
     );
   }
