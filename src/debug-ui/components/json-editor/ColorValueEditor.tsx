@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { HexColorPicker, RgbaStringColorPicker } from "react-colorful";
+import { RgbaStringColorPicker } from "react-colorful";
 
 interface ColorValueEditorProps {
   value: string;
@@ -168,6 +168,7 @@ export function ColorValueEditor({
         className="color-swatch-button"
         aria-label={`${label} picker`}
         onClick={toggleOpen}
+        hidden={!alpha}
       >
         <span style={{ background: displaySwatch(value, alpha) }} />
       </button>
@@ -183,16 +184,25 @@ export function ColorValueEditor({
           onChange={(event) => onChange(withAlpha(value, Number(event.target.value)))}
         />
       ) : (
-        <input
-          aria-label={`${label} color value`}
-          className="color-text-input"
-          type="text"
-          spellCheck={false}
-          placeholder="#000000 or rgb(0, 0, 0)"
-          value={draftValue}
-          onBlur={resetInvalidPlainColorText}
-          onChange={(event) => changePlainColorText(event.target.value)}
-        />
+        <>
+          <input
+            aria-label={`${label} system picker`}
+            className="color-native-input"
+            type="color"
+            value={normalized}
+            onChange={(event) => changePickerColor(event.target.value)}
+          />
+          <input
+            aria-label={`${label} color value`}
+            className="color-text-input"
+            type="text"
+            spellCheck={false}
+            placeholder="#000000 or rgb(0, 0, 0)"
+            value={draftValue}
+            onBlur={resetInvalidPlainColorText}
+            onChange={(event) => changePlainColorText(event.target.value)}
+          />
+        </>
       )}
       {open
         ? createPortal(
@@ -201,11 +211,7 @@ export function ColorValueEditor({
               ref={popoverRef}
               style={{ top: popoverRect.top, left: popoverRect.left }}
             >
-              {alpha ? (
-                <RgbaStringColorPicker color={normalized} onChange={changePickerColor} />
-              ) : (
-                <HexColorPicker color={normalized} onChange={changePickerColor} />
-              )}
+              <RgbaStringColorPicker color={normalized} onChange={changePickerColor} />
             </div>,
             document.body,
           )
