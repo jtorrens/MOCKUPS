@@ -45,7 +45,7 @@ interface RecordEditorRenderServicesOptions {
   setDrafts: Dispatch<SetStateAction<Record<string, string>>>;
 }
 
-export function useRecordEditorRenderServices({
+export function createRecordEditorRenderServices({
   table,
   record,
   records,

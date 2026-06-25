@@ -15,7 +15,7 @@ interface JsonGroupDraftsOptions {
   setDrafts: (nextDrafts: Record<string, string>) => void;
 }
 
-export function useJsonGroupDrafts({
+export function createJsonGroupDrafts({
   drafts,
   defaultGroupValue,
   setDrafts,

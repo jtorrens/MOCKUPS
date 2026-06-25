@@ -16,10 +16,10 @@ import { ThemeRecordEditor } from "../editors/ThemeRecordEditor.js";
 import { defaultGroupValue } from "../editors/chat/chatContentModel.js";
 import { shotHasFpsOverride } from "../editors/ShotFields.js";
 import { productionMediaRootForRecord } from "../editors/recordProductionUtils.js";
-import { useJsonGroupDrafts } from "../editors/useJsonGroupDrafts.js";
+import { createJsonGroupDrafts } from "../editors/jsonGroupDrafts.js";
 import { useRecordDraftAutosave } from "../editors/useRecordDraftAutosave.js";
 import { useRecordEditorTabs } from "../editors/useRecordEditorTabs.js";
-import { useRecordEditorRenderServices } from "../editors/useRecordEditorRenderServices.js";
+import { createRecordEditorRenderServices } from "../editors/recordEditorRenderServices.js";
 
 interface MockupsNativeBridge {
   pickFile?: () => Promise<string[]>;
@@ -93,6 +93,11 @@ export function RecordEditor({
     tableId: table.id,
   });
 
+  const fieldsByColumn = useMemo(
+    () => new Map(table.fields.map((field) => [field.column, field])),
+    [table.fields],
+  );
+
   if (!record) {
     return (
       <section className="record-editor record-editor-empty">
@@ -101,10 +106,6 @@ export function RecordEditor({
     );
   }
 
-  const fieldsByColumn = useMemo(
-    () => new Map(table.fields.map((field) => [field.column, field])),
-    [table.fields],
-  );
   const productionMediaRoot = productionMediaRootForRecord({
     table,
     record,
@@ -116,7 +117,7 @@ export function RecordEditor({
     renderFlatJsonObjectEditor,
     renderGenericField,
     setJsonDraft,
-  } = useRecordEditorRenderServices({
+  } = createRecordEditorRenderServices({
     table,
     record,
     records,
@@ -131,7 +132,7 @@ export function RecordEditor({
     setDrafts,
   });
 
-  const { rawForJsonGroupValue, updateJsonGroupValue } = useJsonGroupDrafts({
+  const { rawForJsonGroupValue, updateJsonGroupValue } = createJsonGroupDrafts({
     drafts,
     defaultGroupValue,
     setDrafts,
