@@ -5,6 +5,7 @@ import type {
   AppTableDefinition,
   DebugOptions,
 } from "../api/client.js";
+import "./ProjectTree.css";
 
 interface ProjectTreeProps {
   tables: AppTableDefinition[];
