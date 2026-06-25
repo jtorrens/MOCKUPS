@@ -14,7 +14,7 @@ import { renderGenericField as renderGenericFieldFromDispatcher } from "../edito
 import { GenericRecordEditor } from "../editors/GenericRecordEditor.js";
 import { ModuleInstanceRecordEditor } from "../editors/ModuleInstanceRecordEditor.js";
 import { ModuleThemeConfigRecordEditor } from "../editors/ModuleThemeConfigRecordEditor.js";
-import { ScreenInstanceEditor } from "../editors/ScreenInstanceEditor.js";
+import { ScreenInstanceRecordEditor } from "../editors/ScreenInstanceRecordEditor.js";
 import { ThemeRecordEditor } from "../editors/ThemeRecordEditor.js";
 import type {
   AppEditorTab,
@@ -36,7 +36,6 @@ import {
   parsedObject,
 } from "../editors/recordJsonUtils.js";
 import { shotHasFpsOverride } from "../editors/ShotFields.js";
-import { ScreenTransitionFields } from "../editors/ScreenInstanceFields.js";
 import { productionMediaRootForRecord } from "../editors/recordProductionUtils.js";
 import { useJsonGroupDrafts } from "../editors/useJsonGroupDrafts.js";
 import {
@@ -408,53 +407,17 @@ export function RecordEditor({
   }
 
   if (table.id === "screen_instances") {
-    const deviceStateField = fieldsByColumn.get("device_state_json");
-    const transformField = fieldsByColumn.get("transform_json");
     return (
-      <ScreenInstanceEditor
+      <ScreenInstanceRecordEditor
         table={table}
         record={record}
+        records={records}
+        fieldsByColumn={fieldsByColumn}
+        drafts={drafts}
         activeTab={screenTab}
-        transformFieldExists={Boolean(transformField)}
-        deviceStateFieldExists={Boolean(deviceStateField)}
-        renderGeneralFields={() =>
-          renderFields(["app_id", "theme_mode", "start_frame", "end_frame"])
-        }
-        renderTransformFields={() =>
-          transformField
-            ? renderField(transformField, {
-                hideLabel: true,
-                rawText: drafts.transform_json ?? "{}",
-                groupContext: "transform",
-                onRawTextChange: (nextRawText) =>
-                  setDrafts({ ...drafts, transform_json: nextRawText }),
-              })
-            : null
-        }
-        renderTransitionFields={() => (
-          <ScreenTransitionFields
-            records={records}
-            record={record}
-            drafts={drafts}
-            setDraftValue={(column, value) =>
-              setDrafts({
-                ...drafts,
-                [column]: value,
-              })
-            }
-          />
-        )}
-        renderDeviceStateFields={() =>
-          deviceStateField
-            ? renderField(deviceStateField, {
-                hideLabel: true,
-                rawText: drafts.device_state_json ?? "{}",
-                groupContext: "deviceState",
-                onRawTextChange: (nextRawText) =>
-                  setDrafts({ ...drafts, device_state_json: nextRawText }),
-              })
-            : null
-        }
+        renderFields={renderFields}
+        renderField={renderField}
+        setDrafts={setDrafts}
         setActiveTab={setScreenTab}
       />
     );
