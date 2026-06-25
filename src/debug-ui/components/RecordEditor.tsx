@@ -50,6 +50,11 @@ import {
   parsedObject,
 } from "../editors/recordJsonUtils.js";
 import {
+  editorValueForThemeTokenGroup,
+  editorValueForTokenGroup,
+  inheritedValueForTokenGroup,
+  mergeTokenGroupWithInternalFields,
+  nextThemeTokenGroupValue,
   stripAppStatusAndNavigationTokens,
   tokenEditorGroups,
 } from "../editors/recordTokenUtils.js";
@@ -555,83 +560,6 @@ export function RecordEditor({
     return typeof mediaRoot === "string" ? mediaRoot : "";
   }
 
-  function editorValueForThemeTokenGroup(
-    themeTokenRoot: Record<string, JsonValue>,
-    groupKey: string,
-  ): JsonValue {
-    const value = themeTokenRoot[groupKey] ?? defaultGroupValue(groupKey);
-    if (!isJsonObject(value)) return value;
-    if (groupKey === "fonts") {
-      const { source: _source, ...visibleValue } = value;
-      return visibleValue;
-    }
-    if (groupKey === "notifications") {
-      const {
-        background: _background,
-        titleColor: _titleColor,
-        bodyColor: _bodyColor,
-        ...visibleValue
-      } = value;
-      return visibleValue;
-    }
-    return value;
-  }
-
-  function visibleTokenGroupValue(value: unknown, groupKey: string): JsonValue {
-    if (!isJsonObject(value as JsonValue)) return (value ?? defaultGroupValue(groupKey)) as JsonValue;
-    const root = value as Record<string, JsonValue>;
-    if (groupKey === "notifications") {
-      const {
-        background: _background,
-        titleColor: _titleColor,
-        bodyColor: _bodyColor,
-        ...visibleValue
-      } = root;
-      return visibleValue;
-    }
-    const { source: _source, ...visibleValue } = root;
-    return visibleValue;
-  }
-
-  function editorValueForTokenGroup(
-    tokenRoot: Record<string, unknown>,
-    groupKey: string,
-  ): JsonValue {
-    const value = tokenRoot[groupKey] ?? defaultGroupValue(groupKey);
-    return visibleTokenGroupValue(value, groupKey);
-  }
-
-  function inheritedValueForTokenGroup(
-    tokenRoot: unknown,
-    groupKey: string,
-  ): Record<string, unknown> | null {
-    if (!isJsonObject(tokenRoot as JsonValue)) return null;
-    const value = (tokenRoot as Record<string, JsonValue>)[groupKey];
-    if (!isJsonObject(value)) return null;
-    const visibleValue = visibleTokenGroupValue(value, groupKey);
-    return isJsonObject(visibleValue) ? visibleValue : null;
-  }
-
-  function mergeTokenGroupWithInternalFields(
-    originalValue: unknown,
-    nextVisibleValue: JsonValue,
-  ): JsonValue {
-    const original = isJsonObject(originalValue as JsonValue)
-      ? (originalValue as Record<string, JsonValue>)
-      : {};
-    const nextVisible = isJsonObject(nextVisibleValue)
-      ? (nextVisibleValue as Record<string, JsonValue>)
-      : {};
-    const internalFields: Record<string, JsonValue> = {};
-    if (Object.hasOwn(original, "source")) {
-      internalFields.source = original.source;
-    }
-    return {
-      ...internalFields,
-      ...nextVisible,
-    };
-  }
-
   function updateThemeTokenGroupValue(
     themeTokenRoot: Record<string, JsonValue>,
     groupKey: string,
@@ -639,22 +567,14 @@ export function RecordEditor({
   ) {
     const fallback = defaultGroupValue(groupKey);
     const parsedValue = parsedJsonValue(nextRawText, fallback);
-    const originalValue = themeTokenRoot[groupKey];
-    const nextValue =
-      groupKey === "fonts" && isJsonObject(parsedValue)
-        ? {
-            ...(isJsonObject(originalValue) ? originalValue : {}),
-            ...parsedValue,
-            source:
-              isJsonObject(originalValue) && typeof originalValue.source === "string"
-                ? originalValue.source
-                : "installed_system_font",
-          }
-        : parsedValue;
 
     setJsonDraft("tokens_json", {
       ...themeTokenRoot,
-      [groupKey]: nextValue,
+      [groupKey]: nextThemeTokenGroupValue({
+        themeTokenRoot,
+        groupKey,
+        parsedValue,
+      }),
     });
   }
 
