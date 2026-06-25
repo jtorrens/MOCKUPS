@@ -681,6 +681,7 @@ Current boundaries:
 - `src/debug-ui/editor-ui/` owns shared editor chrome primitives: editor headers, section/card wrappers, section buttons, section collections, and deferred text input behavior.
 - `src/debug-ui/editors/` owns entity-level editor shells such as App, Theme, Screen Instance, Module Instance, Module Theme Config, and the generic record fallback.
 - `src/debug-ui/editors/RecordFieldRenderer.tsx` owns base field rendering: plain inputs, relation dropdowns, readonly controls, and raw JSON tree entry points.
+- `src/debug-ui/editors/GenericFieldDispatcher.tsx` owns the fallback table/field dispatch rules for generic records.
 - `src/debug-ui/editors/FlatJsonFieldEditors.tsx` owns flat JSON object fields and device metric JSON paths.
 - `src/debug-ui/editors/ShotFields.tsx`, `RenderPresetFields.tsx`, `ProductionFields.tsx`, `ScreenInstanceFields.tsx`, `ActorFields.tsx`, `AppMediaFields.tsx`, `ThemeFields.tsx`, and `ModuleBehaviorFields.tsx` own their table-specific field exceptions.
 - `src/debug-ui/editors/MediaPreviews.tsx` owns reusable media preview components for avatars, app icons, and wallpaper images.
@@ -698,7 +699,7 @@ Verification used during the phase:
 
 Remaining work for the next architecture pass:
 
-- Continue extracting the remaining domain field handlers from `RecordEditor`, especially App token root composition, Module Theme token groups, and generic table dispatch glue.
+- Continue extracting the remaining domain field handlers from `RecordEditor`, especially App token root composition, Module Theme token groups, and JSON group draft helpers.
 - Continue shrinking `renderGenericField` into a dispatcher over domain-specific handlers.
 - Keep new table-specific editors lightweight and prop-driven. They should receive records, drafts, and change callbacks rather than owning persistence.
 - Continue removing transitional CSS only after the owning component/layer is clear, so cleanup does not silently break panel styling again.
