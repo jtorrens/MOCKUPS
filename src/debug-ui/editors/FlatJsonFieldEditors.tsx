@@ -12,40 +12,7 @@ import {
 import { friendlyGroupLabel } from "../components/json-editor/labels.js";
 import { buildJsonUiHints } from "../components/json-editor/uiHints.js";
 import { InspectorFieldRow } from "../components/inspector/InspectorFieldRow.js";
-
-function looksLikeJson(value: string) {
-  const trimmed = value.trim();
-  return trimmed.startsWith("{") || trimmed.startsWith("[");
-}
-
-function parsedJsonValue(raw: string, fallback: JsonValue): JsonValue {
-  try {
-    const value = JSON.parse(raw) as unknown;
-    if (typeof value === "string" && looksLikeJson(value)) {
-      return parsedJsonValue(value, fallback);
-    }
-    if (
-      value === null ||
-      typeof value === "string" ||
-      typeof value === "number" ||
-      typeof value === "boolean" ||
-      Array.isArray(value) ||
-      typeof value === "object"
-    ) {
-      return value as JsonValue;
-    }
-    return fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function normalizeGroupValue(value: unknown, fallback: JsonValue): JsonValue {
-  if (typeof value === "string" && looksLikeJson(value)) {
-    return parsedJsonValue(value, fallback);
-  }
-  return (value as JsonValue | undefined) ?? fallback;
-}
+import { normalizeGroupValue } from "./recordJsonUtils.js";
 
 interface FlatJsonObjectEditorProps {
   table: AppTableDefinition;

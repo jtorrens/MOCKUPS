@@ -42,6 +42,11 @@ import {
   FlatJsonObjectEditor,
 } from "../editors/FlatJsonFieldEditors.js";
 import {
+  normalizeGroupValue,
+  parsedJsonValue,
+  parsedObject,
+} from "../editors/recordJsonUtils.js";
+import {
   hasModeColorOverrides,
   ModeColorEditor,
 } from "./json-editor/ModeColorEditor.js";
@@ -398,54 +403,6 @@ export function RecordEditor({
   }
 
   const fieldsByColumn = new Map(table.fields.map((field) => [field.column, field]));
-
-  function parsedObject(raw: string): Record<string, unknown> {
-    try {
-      const value = JSON.parse(raw) as unknown;
-      if (typeof value === "string") {
-        return parsedObject(value);
-      }
-      return value && typeof value === "object" && !Array.isArray(value)
-        ? (value as Record<string, unknown>)
-        : {};
-    } catch {
-      return {};
-    }
-  }
-
-  function parsedJsonValue(raw: string, fallback: JsonValue): JsonValue {
-    try {
-      const value = JSON.parse(raw) as unknown;
-      if (typeof value === "string" && looksLikeJson(value)) {
-        return parsedJsonValue(value, fallback);
-      }
-      if (
-        value === null ||
-        typeof value === "string" ||
-        typeof value === "number" ||
-        typeof value === "boolean" ||
-        Array.isArray(value) ||
-        typeof value === "object"
-      ) {
-        return value as JsonValue;
-      }
-      return fallback;
-    } catch {
-      return fallback;
-    }
-  }
-
-  function looksLikeJson(value: string) {
-    const trimmed = value.trim();
-    return trimmed.startsWith("{") || trimmed.startsWith("[");
-  }
-
-  function normalizeGroupValue(value: unknown, fallback: JsonValue): JsonValue {
-    if (typeof value === "string" && looksLikeJson(value)) {
-      return parsedJsonValue(value, fallback);
-    }
-    return (value as JsonValue | undefined) ?? fallback;
-  }
 
   function setJsonDraft(column: string, value: JsonValue) {
     setDrafts({
