@@ -336,6 +336,15 @@
   opacity: 0.45;
 }
 
+.editor-workspace .record-editor-field-string,
+.editor-workspace .record-editor-field-number,
+.editor-workspace .record-editor-field-frameless {
+  border-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0;
+}
+
 .inspector-restore-button:hover {
   border-color: var(--restore-button-hover-border-color, #aeb8c8);
   background: var(--restore-button-hover-background, #f8fafc);

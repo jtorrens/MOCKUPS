@@ -1140,15 +1140,6 @@ button:disabled {
   color: var(--editor-alert-error-color, #b4232e);
 }
 
-.editor-workspace .record-editor-field-string,
-.editor-workspace .record-editor-field-number,
-.editor-workspace .record-editor-field-frameless {
-  border-color: transparent !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  padding: 0;
-}
-
 .loading-screen {
   display: grid;
   min-height: 100vh;
