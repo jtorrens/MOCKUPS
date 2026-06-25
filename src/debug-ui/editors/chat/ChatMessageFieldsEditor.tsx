@@ -19,6 +19,8 @@ interface ChatMessageFieldsEditorProps {
   direction: string;
   senderId: string;
   receivedOptions: ParticipantOption[];
+  startFrame: number;
+  writeOnDurationFrames: number;
   showBubbleBackground: boolean;
   textScale: number;
   text: string;
@@ -29,6 +31,8 @@ interface ChatMessageFieldsEditorProps {
   mediaNumberFields: MediaNumberField[];
   onDirectionChange: (direction: string) => void;
   onSenderChange: (senderId: string) => void;
+  onStartFrameChange: (frame: number) => void;
+  onWriteOnDurationFramesChange: (frameCount: number) => void;
   onShowBubbleBackgroundChange: (show: boolean) => void;
   onTextScaleChange: (scale: number) => void;
   onTextChange: (text: string) => void;
@@ -43,6 +47,8 @@ export function ChatMessageFieldsEditor({
   direction,
   senderId,
   receivedOptions,
+  startFrame,
+  writeOnDurationFrames,
   showBubbleBackground,
   textScale,
   text,
@@ -53,6 +59,8 @@ export function ChatMessageFieldsEditor({
   mediaNumberFields,
   onDirectionChange,
   onSenderChange,
+  onStartFrameChange,
+  onWriteOnDurationFramesChange,
   onShowBubbleBackgroundChange,
   onTextScaleChange,
   onTextChange,
@@ -90,6 +98,10 @@ export function ChatMessageFieldsEditor({
                 value={senderId}
                 onChange={(event) => onSenderChange(event.target.value)}
               >
+                {!receivedOptions.some((option) => option.value === senderId) &&
+                senderId ? (
+                  <option value={senderId}>Current participant</option>
+                ) : null}
                 {receivedOptions.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
@@ -100,6 +112,36 @@ export function ChatMessageFieldsEditor({
           />
         </div>
       ) : null}
+      <InspectorFieldRow
+        className="record-editor-content-field-row"
+        label={<span>Start frame</span>}
+        control={
+          <input
+            className="json-value-control"
+            type="number"
+            min={0}
+            step={1}
+            value={startFrame}
+            onChange={(event) => onStartFrameChange(Number(event.target.value))}
+          />
+        }
+      />
+      <InspectorFieldRow
+        className="record-editor-content-field-row"
+        label={<span>Write-on duration</span>}
+        control={
+          <input
+            className="json-value-control"
+            type="number"
+            min={0}
+            step={1}
+            value={writeOnDurationFrames}
+            onChange={(event) =>
+              onWriteOnDurationFramesChange(Number(event.target.value))
+            }
+          />
+        }
+      />
       <InspectorFieldRow
         className="record-editor-content-field-row"
         label={<span>Show bubble background</span>}
@@ -129,7 +171,13 @@ export function ChatMessageFieldsEditor({
       <InspectorFieldRow
         className="record-editor-content-field-row"
         label={<span>Message text</span>}
-        control={<DeferredTextInput value={text} onCommit={onTextChange} />}
+        control={
+          <DeferredTextInput
+            multiline
+            value={text}
+            onCommit={onTextChange}
+          />
+        }
       />
       <ChatMessageMediaEditor
         mediaType={mediaType}

@@ -17,10 +17,25 @@ function animationOpacity(
   return typeof enter.opacity === "number" ? enter.opacity : undefined;
 }
 
+function cursorBlinkOpacity(frame: number, blinkFrames: number) {
+  const cycle = Math.max(1, blinkFrames) * 4;
+  return frame % cycle < Math.max(1, blinkFrames) * 3 ? 1 : 0.28;
+}
+
 export function renderMessageBubbleWithLayout(
   input: ResolvedMessageBubbleProps,
   layout: MessageBubbleLayout,
 ): RenderableNode {
+    const cursorConfig =
+      typeof input.animation.cursor === "object" && input.animation.cursor !== null
+        ? (input.animation.cursor as Record<string, unknown>)
+        : {};
+    const cursorVisible = cursorConfig.visible === true;
+    const cursorBlinkFrames =
+      typeof cursorConfig.blinkFrames === "number" && cursorConfig.blinkFrames > 0
+        ? cursorConfig.blinkFrames
+        : 15;
+    const cursorOpacity = cursorBlinkOpacity(input.frame, cursorBlinkFrames);
     const children: RenderableNode[] = [];
     if (input.actor.avatarUri && layout.avatarBox) {
       children.push(
@@ -50,6 +65,28 @@ export function renderMessageBubbleWithLayout(
         lineHeight: input.style.lineHeight,
         fontWeight: input.style.fontWeight,
       },
+      children:
+        cursorVisible && input.direction === "outgoing"
+          ? [
+              {
+                id: `${input.id}:text:cursor`,
+                type: "message_text_cursor",
+                role: "cursor",
+                frame: input.frame,
+                style: {
+                  background:
+                    typeof cursorConfig.color === "string"
+                      ? cursorConfig.color
+                      : input.style.textColor,
+                  width:
+                    typeof cursorConfig.width === "number"
+                      ? cursorConfig.width
+                      : 2,
+                  opacity: cursorOpacity,
+                },
+              },
+            ]
+          : undefined,
     });
 
     return {

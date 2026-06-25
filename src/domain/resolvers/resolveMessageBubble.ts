@@ -60,8 +60,12 @@ export interface ResolvedChatParticipant {
 function resolveVisibleText(
   message: ChatModuleMessage,
   localFrame: number,
+  direction: "incoming" | "outgoing" | "system",
 ): string {
   const text = message.text ?? "";
+  if (direction === "system") {
+    return text;
+  }
   const reveal = message.textReveal;
   if (!reveal || reveal.mode === "none") {
     return text;
@@ -110,7 +114,7 @@ export function resolveMessageBubble({
         );
   const reveal = message.textReveal;
   const writeOnProgress =
-    reveal?.mode === "simple_write_on"
+    direction !== "system" && reveal?.mode === "simple_write_on"
       ? reveal.durationFrames === 0
         ? Number(localFrame >= reveal.startFrame)
         : clamp((localFrame - reveal.startFrame) / reveal.durationFrames)
@@ -122,7 +126,7 @@ export function resolveMessageBubble({
     id: message.id,
     direction,
     text: message.text ?? "",
-    visibleText: resolveVisibleText(message, localFrame),
+    visibleText: resolveVisibleText(message, localFrame, direction),
     actor: {
       id: sender.actorId ?? sender.participantId,
       displayName: sender.displayName,
@@ -169,9 +173,13 @@ export function resolveMessageBubble({
       startFrame: message.startFrame,
       enterDurationFrames: message.enterDurationFrames,
       writeOnStartFrame:
-        reveal?.mode === "simple_write_on" ? reveal.startFrame : null,
+        direction !== "system" && reveal?.mode === "simple_write_on"
+          ? reveal.startFrame
+          : null,
       writeOnDurationFrames:
-        reveal?.mode === "simple_write_on" ? reveal.durationFrames : null,
+        direction !== "system" && reveal?.mode === "simple_write_on"
+          ? reveal.durationFrames
+          : null,
       exitFrame: message.exitFrame ?? null,
     },
     animation: {

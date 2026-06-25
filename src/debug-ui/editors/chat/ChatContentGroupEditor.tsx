@@ -155,6 +155,19 @@ export function ChatContentGroupEditor({
       participantLabel,
     );
     const senderId = String(message.senderParticipantId ?? "");
+    const senderParticipant = participantById(participantsArray(), senderId);
+    const receivedOptionsWithCurrentSender =
+      senderId && !receivedOptions.some((option) => option.value === senderId)
+        ? [
+            {
+              value: senderId,
+              label: participantLabel(senderParticipant) || senderId,
+            },
+            ...receivedOptions,
+          ]
+        : receivedOptions;
+    const startFrame = Number(message.startFrame ?? 0);
+    const writeOnDurationFrames = Number(textReveal.durationFrames ?? 30);
 
     function updateMessage(nextMessage: JsonValue) {
       updateAtPath([index], nextMessage);
@@ -191,7 +204,9 @@ export function ChatContentGroupEditor({
       <ChatMessageFieldsEditor
         direction={direction}
         senderId={senderId}
-        receivedOptions={receivedOptions}
+        receivedOptions={receivedOptionsWithCurrentSender}
+        startFrame={startFrame}
+        writeOnDurationFrames={writeOnDurationFrames}
         showBubbleBackground={message.showBubbleBackground !== false}
         textScale={Number(message.textScale ?? 1)}
         text={String(message.text ?? "")}
@@ -203,6 +218,19 @@ export function ChatContentGroupEditor({
         onDirectionChange={setDirection}
         onSenderChange={(nextSenderId) =>
           setMessagePath(["senderParticipantId"], nextSenderId)
+        }
+        onStartFrameChange={(nextFrame) =>
+          updateMessage({
+            ...message,
+            startFrame: nextFrame,
+            textReveal: {
+              ...textReveal,
+              startFrame: nextFrame,
+            },
+          })
+        }
+        onWriteOnDurationFramesChange={(nextFrameCount) =>
+          setMessagePath(["textReveal", "durationFrames"], nextFrameCount)
         }
         onShowBubbleBackgroundChange={(showBubbleBackground) =>
           setMessagePath(["showBubbleBackground"], showBubbleBackground)

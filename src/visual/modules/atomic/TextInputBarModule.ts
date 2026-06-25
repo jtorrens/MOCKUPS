@@ -69,6 +69,11 @@ function itemNode({
   };
 }
 
+function cursorBlinkOpacity(frame: number, blinkFrames: number) {
+  const cycle = Math.max(1, blinkFrames) * 4;
+  return frame % cycle < Math.max(1, blinkFrames) * 3 ? 1 : 0.28;
+}
+
 export const TextInputBarModule: VisualModule<TextInputBarModuleInput> = {
   type: "text_input_bar",
   version: 1,
@@ -85,11 +90,18 @@ export const TextInputBarModule: VisualModule<TextInputBarModuleInput> = {
     const gap = readNumber(layout, "gap", 8);
     const fieldHeight = readNumber(layout, "fieldHeight", 40);
     const fieldPaddingX = readNumber(layout, "fieldPaddingX", 14);
+    const fieldPaddingY = readNumber(layout, "fieldPaddingY", 6);
     const fieldRadius = readNumber(layout, "fieldRadius", 20);
     const iconSize = readNumber(layout, "iconSize", 24);
     const fontSize = readNumber(layout, "fontSize", 17);
     const lineHeight = readNumber(layout, "lineHeight", fontSize * 1.25);
-    const cursorWidth = readNumber(layout, "cursorWidth", 2);
+    const cursorWidth = readNumber(
+      cursorTokens,
+      "width",
+      readNumber(layout, "cursorWidth", 2),
+    );
+    const blinkFrames = Math.max(1, readNumber(cursorTokens, "blinkFrames", 15));
+    const cursorOpacity = cursorBlinkOpacity(input.frame, blinkFrames);
     const foreground = readString(colors, "textPrimary", "#000000");
     const mutedForeground = readString(colors, "textSecondary", "#6B7280");
     const fieldBackground = readString(
@@ -165,9 +177,10 @@ export const TextInputBarModule: VisualModule<TextInputBarModuleInput> = {
             borderColor: fieldBorderColor,
             borderWidth: Math.max(1, cursorWidth * 0.5),
             paddingX: fieldPaddingX,
+            paddingY: fieldPaddingY,
             height: fieldHeight,
             fontSize,
-            lineHeight: fontSize * 1.25,
+            lineHeight,
             whiteSpace: "pre-wrap",
             cursorColor: readString(cursorTokens, "color", foreground),
             cursorWidth,
@@ -193,6 +206,7 @@ export const TextInputBarModule: VisualModule<TextInputBarModuleInput> = {
                     style: {
                       background: readString(cursorTokens, "color", foreground),
                       width: cursorWidth,
+                      opacity: cursorOpacity,
                     },
                   },
                 ]

@@ -54,6 +54,9 @@ export function PreviewOptionsCard({
     selection,
     showFrame,
   });
+  const relativeModuleFrame = selectedInstance
+    ? Math.max(0, selection.frame - selectedInstance.startFrame)
+    : 0;
 
   function updateScreenInstance(screenInstanceId: string) {
     const instance = screenInstances.find(
@@ -228,7 +231,7 @@ export function PreviewOptionsCard({
             </select>
           </label>
           <label className="preview-frame-field">
-            Frame
+            Frame <span className="preview-frame-relative">rel {relativeModuleFrame}</span>
             <div className="frame-inline">
               <input
                 aria-label="Frame slider"

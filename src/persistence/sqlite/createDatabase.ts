@@ -343,6 +343,144 @@ function applyAdditiveV13Migration(database: SQLiteDatabase): void {
   database.pragma("user_version = 13");
 }
 
+function defaultTextInputBarConfig(): Record<string, unknown> {
+  return {
+    placeholder: "Mensaje",
+    cursorVisible: true,
+    iconSets: {
+      left: {
+        idle: [
+          { token: "chat_emoji", order: 10 },
+          { token: "chat_attach", order: 20 },
+        ],
+        typing: [{ token: "chat_emoji", order: 10 }],
+      },
+      right: {
+        idle: [
+          { token: "media_camera", order: 10 },
+          { token: "media_mic", order: 20 },
+        ],
+        typing: [{ token: "chat_send", order: 10, color: "#007AFF" }],
+      },
+    },
+  };
+}
+
+function defaultKeyboardConfig(): Record<string, unknown> {
+  return {
+    language: "es",
+    bottomItems: [
+      {
+        id: "app_language",
+        label: "app_language",
+        kind: "iconToken",
+        token: "app_language",
+        zone: "left",
+        order: 10,
+      },
+      {
+        id: "media_mic",
+        label: "media_mic",
+        kind: "iconToken",
+        token: "media_mic",
+        zone: "right",
+        order: 10,
+      },
+    ],
+  };
+}
+
+function cleanTextInputBarConfig(value: unknown): Record<string, unknown> {
+  const config =
+    value && typeof value === "object" && !Array.isArray(value)
+      ? { ...(value as Record<string, unknown>) }
+      : {};
+  delete config.text;
+  delete config.state;
+  return config;
+}
+
+function cleanKeyboardConfig(value: unknown): Record<string, unknown> {
+  const config =
+    value && typeof value === "object" && !Array.isArray(value)
+      ? { ...(value as Record<string, unknown>) }
+      : {};
+  delete config.mode;
+  delete config.pressedKey;
+  return config;
+}
+
+function applyAdditiveV14Migration(database: SQLiteDatabase): void {
+  const legacy = database
+    .prepare(
+      `SELECT behavior_json
+       FROM module_instances
+       WHERE module_id = 'core.chat'
+       ORDER BY id
+       LIMIT 1`,
+    )
+    .get() as { behavior_json?: string } | undefined;
+  const legacyBehavior = (() => {
+    try {
+      return legacy?.behavior_json
+        ? (JSON.parse(legacy.behavior_json) as Record<string, unknown>)
+        : {};
+    } catch {
+      return {};
+    }
+  })();
+  const fallbackTextInputBar = {
+    ...defaultTextInputBarConfig(),
+    ...cleanTextInputBarConfig(legacyBehavior.textInputBar),
+  };
+  const fallbackKeyboard = {
+    ...defaultKeyboardConfig(),
+    ...cleanKeyboardConfig(legacyBehavior.keyboard),
+  };
+
+  const rows = database
+    .prepare(
+      `SELECT id, tokens_json
+       FROM module_theme_configs
+       WHERE module_id = 'core.chat'`,
+    )
+    .all() as { id: string; tokens_json: string }[];
+  const update = database.prepare(
+    "UPDATE module_theme_configs SET tokens_json = ? WHERE id = ?",
+  );
+  for (const row of rows) {
+    let tokens: Record<string, unknown>;
+    try {
+      tokens = JSON.parse(row.tokens_json) as Record<string, unknown>;
+    } catch {
+      tokens = {};
+    }
+    const nextTokens = {
+      ...tokens,
+      textInputBar:
+        tokens.textInputBar &&
+        typeof tokens.textInputBar === "object" &&
+        !Array.isArray(tokens.textInputBar)
+          ? {
+              ...fallbackTextInputBar,
+              ...cleanTextInputBarConfig(tokens.textInputBar),
+            }
+          : fallbackTextInputBar,
+      keyboard:
+        tokens.keyboard &&
+        typeof tokens.keyboard === "object" &&
+        !Array.isArray(tokens.keyboard)
+          ? {
+              ...fallbackKeyboard,
+              ...cleanKeyboardConfig(tokens.keyboard),
+            }
+          : fallbackKeyboard,
+    };
+    update.run(JSON.stringify(nextTokens), row.id);
+  }
+  database.pragma("user_version = 14");
+}
+
 export function applyInitialSchema(database: SQLiteDatabase): void {
   database.exec(readFileSync(schemaPath, "utf8"));
   applyAdditiveV2Migration(database);
@@ -357,6 +495,7 @@ export function applyInitialSchema(database: SQLiteDatabase): void {
   applyAdditiveV11Migration(database);
   applyAdditiveV12Migration(database);
   applyAdditiveV13Migration(database);
+  applyAdditiveV14Migration(database);
   database.pragma("foreign_keys = ON");
 }
 

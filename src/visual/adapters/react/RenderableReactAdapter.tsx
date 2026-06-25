@@ -338,6 +338,35 @@ function iconTokenLabel(token: string) {
   return parts.at(-1)?.slice(0, 2).toUpperCase() ?? "IC";
 }
 
+function inlineCursorFromChildren(node: RenderableNode) {
+  const cursorNode = node.children?.find(
+    (child) =>
+      child.type === "text_input_bar_cursor" || child.type === "message_text_cursor",
+  );
+  if (!cursorNode) return null;
+  const cursorWidth = Math.max(1, numberValue(cursorNode.style?.width) ?? 2);
+  const cursorColor =
+    stringValue(cursorNode.style?.backgroundColor ?? cursorNode.style?.background) ??
+    "currentColor";
+  return (
+    <span
+      aria-hidden="true"
+      style={{
+        display: "inline-block",
+        width: cursorWidth,
+        height: "1.05em",
+        minWidth: cursorWidth,
+        marginLeft: "0.01em",
+        background: cursorColor,
+        borderRadius: Math.min(cursorWidth * 0.5, 2),
+        verticalAlign: "text-bottom",
+        opacity: numberValue(cursorNode.style?.opacity) ?? 1,
+        flex: "0 0 auto",
+      }}
+    />
+  );
+}
+
 function nodeContent(node: RenderableNode): ReactNode {
   if (node.type === "avatar") {
     const label = stringValue(node.metadata?.label) ?? "?";
@@ -412,6 +441,22 @@ function nodeContent(node: RenderableNode): ReactNode {
       </>
     );
   }
+  if (node.type === "text_input_bar_field") {
+    return (
+      <>
+        {node.text}
+        {inlineCursorFromChildren(node)}
+      </>
+    );
+  }
+  if (node.type === "text" && node.role === "message_text") {
+    return (
+      <>
+        {node.text}
+        {inlineCursorFromChildren(node)}
+      </>
+    );
+  }
   if (node.children?.some((child) => child.type === "text")) {
     return null;
   }
@@ -431,6 +476,17 @@ function RenderNode({
   const hasPositionlessChildren = node.children?.some(
     (child) => child.box === undefined,
   );
+  const inlineCursorChildTypes = new Set([
+    "text_input_bar_cursor",
+    "message_text_cursor",
+  ]);
+  const shouldInlineOwnChildren =
+    node.type === "text_input_bar_field" ||
+    (node.type === "text" && node.role === "message_text");
+  const renderChildren =
+    shouldInlineOwnChildren
+      ? node.children?.filter((child) => !inlineCursorChildTypes.has(child.type))
+      : node.children;
   const semanticStyle: CSSProperties =
     node.type === "status_bar"
     || node.type === "navigation_bar"
@@ -698,31 +754,48 @@ function RenderNode({
                             : node.type === "text_input_bar_field"
                               ? {
                                   position: "relative",
-                                  display: "flex",
-                                  alignItems: "center",
+                                  display: "block",
                                   flex: "1 1 auto",
                                   minWidth: 0,
                                   height: numberValue(node.style?.height),
                                   paddingLeft: numberValue(node.style?.paddingX),
                                   paddingRight: numberValue(node.style?.paddingX),
+                                  paddingTop: numberValue(node.style?.paddingY),
+                                  paddingBottom: numberValue(node.style?.paddingY),
                                   overflow: "hidden",
                                   whiteSpace:
                                     stringValue(node.style?.whiteSpace) ??
                                     "pre-wrap",
+                                  lineHeight: numberValue(node.style?.lineHeight)
+                                    ? `${numberValue(node.style?.lineHeight)}px`
+                                    : undefined,
                                 }
                               : node.type === "text_input_bar_cursor"
                                 ? {
                                     display: "inline-block",
                                     width: numberValue(node.style?.width),
                                     height: "1.1em",
-                                    marginLeft: "0.08em",
+                                    marginLeft: "0.02em",
                                     borderRadius: 999,
                                     flex: "0 0 auto",
                                   }
       : node.type === "message_bubble"
         ? { display: "block" }
         : node.type === "text"
-          ? { whiteSpace: "pre-wrap", overflow: "hidden" }
+          ? {
+              whiteSpace: "pre-wrap",
+              overflow: "hidden",
+              display: "inline",
+            }
+          : node.type === "message_text_cursor"
+            ? {
+                display: "inline-block",
+                width: numberValue(node.style?.width),
+                height: "1.1em",
+                marginLeft: "0.02em",
+                borderRadius: 999,
+                verticalAlign: "text-bottom",
+              }
           : {};
 
   return (
@@ -736,7 +809,7 @@ function RenderNode({
       }}
     >
       {nodeContent(node)}
-      {node.children?.map((child) => (
+      {renderChildren?.map((child) => (
         <RenderNode key={child.id} node={child} parentOrigin={currentOrigin} />
       ))}
     </div>

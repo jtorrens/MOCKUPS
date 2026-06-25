@@ -7,6 +7,8 @@ import {
 
 interface TextInputBarBehaviorFieldsProps {
   textInputBarRoot: Record<string, JsonValue>;
+  showTextInputBar?: boolean;
+  showVisibilityToggle?: boolean;
   updateBehaviorValue: (path: JsonPath, nextValue: JsonValue) => void;
 }
 
@@ -62,6 +64,8 @@ function iconSetItems(
 
 export function TextInputBarBehaviorFields({
   textInputBarRoot,
+  showTextInputBar = true,
+  showVisibilityToggle = true,
   updateBehaviorValue,
 }: TextInputBarBehaviorFieldsProps) {
   const updateIconSet = (
@@ -77,51 +81,24 @@ export function TextInputBarBehaviorFields({
 
   return (
     <>
-      <InspectorFieldRow
-        key="textInputState"
-        className="record-editor-field record-editor-field-string"
-        label={<span>Input state</span>}
-        control={
-          <select
-            value={String(
-              typeof textInputBarRoot.state === "string"
-                ? textInputBarRoot.state
-                : "idle",
-            )}
-            onChange={(event) =>
-              updateBehaviorValue(
-                ["textInputBar", "state"],
-                event.target.value as JsonValue,
-              )
-            }
-          >
-            <option value="idle">Idle</option>
-            <option value="typing">Typing</option>
-          </select>
-        }
-      />
-      <InspectorFieldRow
-        key="textInputText"
-        className="record-editor-field record-editor-field-string"
-        label={<span>Input text</span>}
-        control={
-          <textarea
-            value={String(
-              typeof textInputBarRoot.text === "string"
-                ? textInputBarRoot.text
-                : "",
-            )}
-            rows={2}
-            placeholder="Texto visible en la caja"
-            onChange={(event) =>
-              updateBehaviorValue(
-                ["textInputBar", "text"],
-                event.target.value as JsonValue,
-              )
-            }
-          />
-        }
-      />
+      {showVisibilityToggle ? (
+        <InspectorFieldRow
+          key="showTextInputBar"
+          className="record-editor-field record-editor-field-boolean"
+          label={<span>Show text input bar</span>}
+          control={
+            <input
+              type="checkbox"
+              checked={showTextInputBar}
+              onChange={(event) =>
+                updateBehaviorValue(["showTextInputBar"], event.target.checked)
+              }
+            />
+          }
+        />
+      ) : null}
+      {showTextInputBar ? (
+        <>
       <InspectorFieldRow
         key="textInputPlaceholder"
         className="record-editor-field record-editor-field-string"
@@ -178,6 +155,8 @@ export function TextInputBarBehaviorFields({
           />
         )),
       )}
+        </>
+      ) : null}
     </>
   );
 }

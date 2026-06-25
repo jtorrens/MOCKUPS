@@ -323,7 +323,7 @@ function resolveKeyboardDefinition(
       ? requestedMode
       : STANDARD_IOS_KEYBOARD_LAYOUT.defaultMode
   ) as KeyboardMode;
-  const bottomUtilityHeight = options.hasTextInputBar ? 0 : 34;
+  const bottomUtilityHeight = 34;
   const designLayout = {
     topPadding: 8,
     sidePadding: 6,
@@ -374,7 +374,7 @@ function resolveKeyboardDefinition(
         },
       ];
   const bottomItems: Record<string, unknown>[] = [];
-  for (const rawItem of options.hasTextInputBar ? [] : rawBottomItems) {
+  for (const rawItem of rawBottomItems) {
     if (!isObject(rawItem)) continue;
     const id = stringValue(rawItem.id);
     const token = stringValue(rawItem.token);
@@ -493,9 +493,11 @@ function resolveTextInputBarDefinition(
     mapping_json: Record<string, unknown>;
   },
   scale = 1,
+  viewportWidth = 390 * scale,
 ) {
   const root = isObject(behaviorTextInputBar) ? behaviorTextInputBar : {};
   const text = stringValue(root.text, stringValue(root.draftText));
+  const measureText = text;
   const rawState = stringValue(root.state, text ? "typing" : "idle");
   const state = rawState === "typing" ? "typing" : "idle";
   const rawIconSets = isObject(root.iconSets) ? root.iconSets : {};
@@ -515,16 +517,57 @@ function resolveTextInputBarDefinition(
     ],
     typing: [{ token: "chat_send", order: 10, color: "#007AFF" }],
   };
+  const leftItems = iconItemsForState(
+    rawLeftSets[state],
+    defaultLeftItems[state],
+    iconTheme,
+  );
+  const rightItems = iconItemsForState(
+    rawRightSets[state],
+    defaultRightItems[state],
+    iconTheme,
+  );
   const baseFontSize = 17;
-  const explicitLineCount = Math.max(1, text.split("\n").length);
-  const estimatedCharsPerLine = Math.max(8, Math.floor(32 / scale));
+  const cursorWidth = 2;
+  const designViewportWidth = viewportWidth / Math.max(scale, 0.0001);
+  const designPaddingX = 8;
+  const designGap = 8;
+  const designFieldPaddingX = 14;
+  const designFieldPaddingY = 6;
+  const designIconSize = 20;
+  const leftZoneWidth =
+    leftItems.length * designIconSize +
+    Math.max(0, leftItems.length - 1) * designGap;
+  const rightZoneWidth =
+    rightItems.length * designIconSize +
+    Math.max(0, rightItems.length - 1) * designGap;
+  const estimatedFieldWidth = Math.max(
+    120,
+    designViewportWidth -
+      designPaddingX * 2 -
+      leftZoneWidth -
+      rightZoneWidth -
+      designGap * 2,
+  );
+  const estimatedTextWidth = Math.max(
+    64,
+    estimatedFieldWidth - designFieldPaddingX * 2,
+  );
+  const explicitLineCount = Math.max(1, measureText.split("\n").length);
+  const estimatedCharsPerLine = Math.max(
+    8,
+    Math.floor(estimatedTextWidth / (baseFontSize * 0.56)),
+  );
   const visualLineCount = Math.max(
     explicitLineCount,
-    Math.ceil(Math.max(1, Array.from(text || " ").length) / estimatedCharsPerLine),
+    Math.ceil(
+      Math.max(1, Array.from(measureText || " ").length) / estimatedCharsPerLine,
+    ),
   );
   const lineCount = Math.min(4, visualLineCount);
   const lineHeight = baseFontSize * 1.25;
-  const fieldHeight = Math.max(40, 40 + (lineCount - 1) * lineHeight);
+  const fieldHeight =
+    lineCount * lineHeight + designFieldPaddingY * 2;
   const designLayout = {
     paddingX: 8,
     paddingY: 6,
@@ -533,10 +576,11 @@ function resolveTextInputBarDefinition(
     lineCount,
     lineHeight,
     fieldPaddingX: 14,
+    fieldPaddingY: designFieldPaddingY,
     fieldRadius: 20,
     iconSize: 20,
     fontSize: baseFontSize,
-    cursorWidth: 2,
+    cursorWidth,
   };
   const height = designLayout.paddingY * 2 + designLayout.fieldHeight;
   const layout = Object.fromEntries(
@@ -551,17 +595,58 @@ function resolveTextInputBarDefinition(
     state,
     cursorVisible: root.cursorVisible !== false,
     layout,
-    leftItems: iconItemsForState(
-      rawLeftSets[state],
-      defaultLeftItems[state],
-      iconTheme,
-    ),
-    rightItems: iconItemsForState(
-      rawRightSets[state],
-      defaultRightItems[state],
-      iconTheme,
-    ),
+    leftItems,
+    rightItems,
   };
+}
+
+function isActiveWriteOnMessage(
+  message: {
+    direction: "incoming" | "outgoing" | "system";
+    text: string;
+    visibleText: string;
+    timing: {
+      writeOnStartFrame?: number;
+      writeOnDurationFrames?: number;
+    };
+  },
+  localFrame: number,
+) {
+  const startFrame = message.timing.writeOnStartFrame;
+  const durationFrames = message.timing.writeOnDurationFrames;
+  if (
+    message.direction !== "outgoing" ||
+    startFrame === undefined ||
+    durationFrames === undefined ||
+    durationFrames <= 0
+  ) {
+    return false;
+  }
+  return localFrame >= startFrame && localFrame < startFrame + durationFrames;
+}
+
+function pressedKeyFromWriteOnState(text: string, visibleText: string) {
+  const fullCharacters = Array.from(text);
+  if (!fullCharacters.length) return undefined;
+  const visibleCharacters = Array.from(visibleText);
+  if (visibleCharacters.length > 0) {
+    return normalizeKeyboardDisplayKey(visibleCharacters.at(-1) ?? "");
+  }
+  return normalizeKeyboardDisplayKey(fullCharacters[0] ?? "");
+}
+
+function normalizeKeyboardDisplayKey(value: string) {
+  return value
+    .replace(/[áàäâ]/g, "a")
+    .replace(/[ÁÀÄÂ]/g, "A")
+    .replace(/[éèëê]/g, "e")
+    .replace(/[ÉÈËÊ]/g, "E")
+    .replace(/[íìïî]/g, "i")
+    .replace(/[ÍÌÏÎ]/g, "I")
+    .replace(/[óòöô]/g, "o")
+    .replace(/[ÓÒÖÔ]/g, "O")
+    .replace(/[úùüû]/g, "u")
+    .replace(/[ÚÙÜÛ]/g, "U");
 }
 
 export function resolveThemeModeTokens(
@@ -628,10 +713,21 @@ export function resolveGlobalThemeTokens(
   theme: Theme,
   themeMode: "light" | "dark",
 ): Record<string, unknown> {
-  return mergeTokenObjects(
+  const merged = mergeTokenObjects(
     theme.tokens_json,
     resolveThemeModeTokens(theme.tokens_json, themeMode),
   );
+  const cursor = isObject(merged.cursor) ? merged.cursor : {};
+  return {
+    ...merged,
+    cursor: {
+      style: "bar",
+      width: 2,
+      blinkFrames: 15,
+      color: themeMode === "dark" ? "#0A84FF" : "#007AFF",
+      ...cursor,
+    },
+  };
 }
 
 export function resolveModuleThemeTokens(
@@ -735,6 +831,63 @@ function resolveAppTokens(
   return mergeTokenObjects(tokens, resolveThemeModeTokens(tokens, themeMode));
 }
 
+function chatModuleConfig(
+  moduleTokens: Record<string, unknown>,
+  screenInstance: ScreenInstance,
+  moduleInstance: ModuleInstance,
+): Record<string, unknown> {
+  const screenBase =
+    screenInstance.module_config_json &&
+    isObject(screenInstance.module_config_json)
+      ? screenInstance.module_config_json
+      : {};
+  const behavior =
+    moduleInstance.behavior_json && isObject(moduleInstance.behavior_json)
+      ? moduleInstance.behavior_json
+      : {};
+  const textInputBar =
+    isObject(moduleTokens.textInputBar)
+      ? moduleTokens.textInputBar
+      : isObject(screenBase.textInputBar)
+        ? screenBase.textInputBar
+        : isObject(behavior.textInputBar)
+          ? behavior.textInputBar
+          : undefined;
+  const keyboard =
+    isObject(moduleTokens.keyboard)
+      ? moduleTokens.keyboard
+      : isObject(screenBase.keyboard)
+        ? screenBase.keyboard
+        : isObject(behavior.keyboard)
+          ? behavior.keyboard
+          : undefined;
+
+  return {
+    ...behavior,
+    ...(textInputBar ? { textInputBar } : {}),
+    ...(keyboard ? { keyboard } : {}),
+  };
+}
+
+function stripModuleThemeSystemOwnedTokens(
+  tokens: Record<string, unknown>,
+): Record<string, unknown> {
+  const next: Record<string, unknown> = { ...tokens };
+  delete next.cursor;
+  if (isObject(next.modes)) {
+    const modes = { ...(next.modes as Record<string, unknown>) };
+    for (const mode of ["light", "dark"] as const) {
+      if (isObject(modes[mode])) {
+        const modeRoot = { ...(modes[mode] as Record<string, unknown>) };
+        delete modeRoot.cursor;
+        modes[mode] = modeRoot;
+      }
+    }
+    next.modes = modes;
+  }
+  return next;
+}
+
 function resolveParticipant(
   repository: DomainRepository,
   participant: ChatParticipant,
@@ -827,9 +980,6 @@ export function resolveChatScreen({
   const moduleData = ChatModuleDataSchema.parse(
     moduleInstance.content_json,
   );
-  const moduleConfig = ChatModuleConfigSchema.parse(
-    moduleInstance.behavior_json,
-  );
   if (moduleData.schemaVersion !== moduleInstance.module_schema_version) {
     throw new Error(
       `Chat module data schemaVersion does not match module instance ${moduleInstance.id}`,
@@ -887,9 +1037,11 @@ export function resolveChatScreen({
   }
   const globalThemeTokens = resolveGlobalThemeTokens(theme, themeMode);
   const appTokens = resolveAppTokens(app, themeMode);
-  const moduleThemeTokens = resolveModuleThemeTokens(
-    moduleThemeConfig.tokens_json,
-    themeMode,
+  const moduleThemeTokens = stripModuleThemeSystemOwnedTokens(
+    resolveModuleThemeTokens(moduleThemeConfig.tokens_json, themeMode),
+  );
+  const moduleConfig = ChatModuleConfigSchema.parse(
+    chatModuleConfig(moduleThemeTokens, screenInstance, moduleInstance),
   );
   const genericTokens = mergeTokenObjects(globalThemeTokens, appTokens);
   const moduleDefaultsFromGenericTokens =
@@ -931,19 +1083,7 @@ export function resolveChatScreen({
     navigationBar?.config_json,
     renderScale,
   );
-  const effectiveKeyboard = resolveKeyboardDefinition(
-    moduleConfig.keyboard,
-    iconTheme,
-    renderScale,
-    { hasTextInputBar: moduleConfig.showTextInputBar },
-  );
-  const effectiveTextInputBar = resolveTextInputBarDefinition(
-    moduleConfig.textInputBar,
-    iconTheme,
-    renderScale,
-  );
-
-  const messages = moduleData.messages.map((message) => {
+  const resolvedMessages = moduleData.messages.map((message) => {
     const sender = participants.get(message.senderParticipantId);
     if (!sender) {
       throw new Error(
@@ -1016,6 +1156,63 @@ export function resolveChatScreen({
     };
   });
 
+  const activeComposerMessage = [...resolvedMessages]
+    .reverse()
+    .find((message) => isActiveWriteOnMessage(message, localFrame));
+
+  const runtimeShowTextInputBar =
+    moduleConfig.showTextInputBar === true && activeComposerMessage !== undefined;
+  const runtimeShowKeyboard =
+    moduleConfig.showKeyboard === true && runtimeShowTextInputBar;
+  const runtimePressedKey = activeComposerMessage
+    ? pressedKeyFromWriteOnState(
+        activeComposerMessage.text,
+        activeComposerMessage.visibleText,
+      )
+    : undefined;
+
+  const effectiveKeyboard = resolveKeyboardDefinition(
+    {
+      ...(isObject(moduleConfig.keyboard) ? moduleConfig.keyboard : {}),
+      ...(runtimePressedKey ? { pressedKey: runtimePressedKey } : {}),
+    },
+    iconTheme,
+    renderScale,
+    { hasTextInputBar: runtimeShowTextInputBar },
+  );
+  const effectiveTextInputBar = resolveTextInputBarDefinition(
+    {
+      ...(isObject(moduleConfig.textInputBar) ? moduleConfig.textInputBar : {}),
+      ...(activeComposerMessage
+        ? {
+            text: activeComposerMessage.visibleText,
+            state: "typing",
+          }
+        : {
+            text: "",
+            state: "idle",
+          }),
+    },
+    iconTheme,
+    renderScale,
+    metrics.viewport.width,
+  );
+
+  const messages = resolvedMessages.map((message) =>
+    activeComposerMessage &&
+    runtimeShowTextInputBar &&
+    message.id === activeComposerMessage.id
+      ? {
+          ...message,
+          visibleText: "",
+          animation: {
+            ...(isObject(message.animation) ? message.animation : {}),
+            hideUntilWriteComplete: true,
+          },
+        }
+      : message,
+  );
+
   const ownerAvatar = ownerParticipant.avatarUri
     ? {
         uri: ownerParticipant.avatarUri,
@@ -1082,8 +1279,8 @@ export function resolveChatScreen({
       showHeader: moduleConfig.showHeader,
       showStatusBar: moduleConfig.showStatusBar,
       showNavigationBar: moduleConfig.showNavigationBar,
-      showKeyboard: moduleConfig.showKeyboard,
-      showTextInputBar: moduleConfig.showTextInputBar,
+      showKeyboard: runtimeShowKeyboard,
+      showTextInputBar: runtimeShowTextInputBar,
       textInputBar: moduleConfig.textInputBar ?? {},
       keyboard: moduleConfig.keyboard ?? {},
       initialScroll: moduleConfig.initialScroll,

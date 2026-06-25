@@ -11,9 +11,11 @@ import {
 } from "../components/json-editor/ModeColorEditor.js";
 import type { JsonValue } from "../components/json-editor/jsonEditorUtils.js";
 import { ModuleThemeConfigEditor } from "./ModuleThemeConfigEditor.js";
+import { ModuleFunctionalConfigFields } from "./ModuleFunctionalConfigFields.js";
 import { parsedObject } from "./recordJsonUtils.js";
 import type { RawJsonFieldOverride } from "./RecordFieldRenderer.js";
 import type { ModuleThemeTab } from "./editorTabs.js";
+import { stripModuleSystemOwnedTokens } from "./recordTokenUtils.js";
 
 interface ModuleThemeConfigRecordEditorProps {
   table: AppTableDefinition;
@@ -90,18 +92,27 @@ export function ModuleThemeConfigRecordEditor({
   setJsonDraft,
 }: ModuleThemeConfigRecordEditorProps) {
   const tokensField = fieldsByColumn.get("tokens_json");
-  const tokenRoot = parsedObject(drafts.tokens_json ?? "{}");
+  const tokenRoot = stripModuleSystemOwnedTokens(
+    parsedObject(drafts.tokens_json ?? "{}"),
+  );
   const inheritedTokenRoot =
     inheritedFields.tokens_json &&
     typeof inheritedFields.tokens_json === "object" &&
     !Array.isArray(inheritedFields.tokens_json)
-      ? (inheritedFields.tokens_json as Record<string, unknown>)
+      ? stripModuleSystemOwnedTokens(
+          inheritedFields.tokens_json as Record<string, unknown>,
+        )
       : undefined;
   const designGroups = Object.keys(tokenRoot).filter(
-    (group) => group !== "modes",
+    (group) =>
+      group !== "modes" && group !== "textInputBar" && group !== "keyboard",
   );
+  const selectableDesignGroups = [...designGroups, "controls"];
+  const controlsWarning =
+    explicitLocalDiffers(tokenRoot.textInputBar, inheritedTokenRoot?.textInputBar) ||
+    explicitLocalDiffers(tokenRoot.keyboard, inheritedTokenRoot?.keyboard);
   const resolvedActiveDesignGroup =
-    activeDesignGroup && designGroups.includes(activeDesignGroup)
+    activeDesignGroup && selectableDesignGroups.includes(activeDesignGroup)
       ? activeDesignGroup
       : "";
 
@@ -119,7 +130,9 @@ export function ModuleThemeConfigRecordEditor({
       )}
       renderDesign={() =>
         tokensField
-          ? designGroups.map((group) => (
+          ? (
+            <>
+              {designGroups.map((group) => (
               <EditorSubsectionAccordion
                 key={group}
                 group={group}
@@ -143,7 +156,28 @@ export function ModuleThemeConfigRecordEditor({
                   })}
                 </div>
               </EditorSubsectionAccordion>
-            ))
+              ))}
+              <EditorSubsectionAccordion
+                key="controls"
+                group="controls"
+                activeGroup={resolvedActiveDesignGroup}
+                warning={controlsWarning}
+                onToggle={setActiveDesignGroup}
+              >
+                <div className="record-editor-field-stack record-editor-single-column">
+                  <ModuleFunctionalConfigFields
+                    rawValue={JSON.stringify(tokenRoot, null, 2)}
+                    onRawChange={(nextRaw) =>
+                      setJsonDraft(
+                        "tokens_json",
+                        parsedObject(nextRaw) as JsonValue,
+                      )
+                    }
+                  />
+                </div>
+              </EditorSubsectionAccordion>
+            </>
+          )
           : null
       }
       renderColors={() =>

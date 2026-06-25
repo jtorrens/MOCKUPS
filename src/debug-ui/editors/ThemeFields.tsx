@@ -1,5 +1,4 @@
 import { InspectorFieldRow } from "../components/inspector/InspectorFieldRow.js";
-import { ColorValueEditor } from "../components/json-editor/ColorValueEditor.js";
 import {
   isJsonObject,
   setAtPath,
@@ -8,6 +7,24 @@ import {
 } from "../components/json-editor/jsonEditorUtils.js";
 
 export type ThemeChromeGroupKey = "statusBar" | "navigationBar";
+
+function themeCursorDefaults(): Record<string, JsonValue> {
+  return {
+    style: "bar",
+    width: 2,
+    blinkFrames: 15,
+  };
+}
+
+function normalizeThemeCursorGroup(value: unknown) {
+  const root = isJsonObject(value as JsonValue)
+    ? (value as Record<string, JsonValue>)
+    : {};
+  return {
+    ...themeCursorDefaults(),
+    ...root,
+  };
+}
 
 function normalizeChromeBackground(value: unknown, dark = false) {
   if (value === "transparent" || value === undefined || value === null) {
@@ -126,6 +143,7 @@ export function normalizedThemeTokenRoot({
       root.navigationBar,
     ),
     keyboard: normalizeThemeKeyboardGroup(root.keyboard),
+    cursor: normalizeThemeCursorGroup(root.cursor),
     modes: {
       ...modes,
       light: {
@@ -141,6 +159,13 @@ export function normalizedThemeTokenRoot({
           lightMode.navigationBar,
         ),
         keyboard: normalizeThemeKeyboardGroup(lightMode.keyboard),
+        cursor: {
+          color:
+            isJsonObject(lightMode.cursor) &&
+            typeof lightMode.cursor.color === "string"
+              ? lightMode.cursor.color
+              : "#007AFF",
+        },
         notifications: {
           background:
             lightNotifications.background ??
@@ -171,6 +196,13 @@ export function normalizedThemeTokenRoot({
           true,
         ),
         keyboard: normalizeThemeKeyboardGroup(darkMode.keyboard, true),
+        cursor: {
+          color:
+            isJsonObject(darkMode.cursor) &&
+            typeof darkMode.cursor.color === "string"
+              ? darkMode.cursor.color
+              : "#0A84FF",
+        },
         notifications: {
           background:
             darkNotifications.background ??
@@ -188,6 +220,61 @@ export function normalizedThemeTokenRoot({
       },
     },
   } as Record<string, JsonValue>;
+}
+
+interface ThemeCursorGroupEditorProps {
+  tokenRoot: Record<string, JsonValue>;
+  onTokenRootChange: (nextRoot: JsonValue) => void;
+}
+
+export function ThemeCursorGroupEditor({
+  tokenRoot,
+  onTokenRootChange,
+}: ThemeCursorGroupEditorProps) {
+  const group = isJsonObject(tokenRoot.cursor)
+    ? (tokenRoot.cursor as Record<string, JsonValue>)
+    : themeCursorDefaults();
+
+  function updateCursor(path: JsonPath, nextValue: JsonValue) {
+    onTokenRootChange(
+      setAtPath(tokenRoot as JsonValue, ["cursor", ...path], nextValue),
+    );
+  }
+
+  return (
+    <div className="theme-chrome-editor">
+      <InspectorFieldRow
+        className="record-editor-field"
+        label={<span>Width</span>}
+        control={
+          <input
+            type="number"
+            min={1}
+            step={1}
+            value={Number(group.width ?? 2)}
+            onChange={(event) =>
+              updateCursor(["width"], Number(event.target.value))
+            }
+          />
+        }
+      />
+      <InspectorFieldRow
+        className="record-editor-field"
+        label={<span>Blink frames</span>}
+        control={
+          <input
+            type="number"
+            min={1}
+            step={1}
+            value={Number(group.blinkFrames ?? 15)}
+            onChange={(event) =>
+              updateCursor(["blinkFrames"], Number(event.target.value))
+            }
+          />
+        }
+      />
+    </div>
+  );
 }
 
 interface ThemeChromeGroupEditorProps {
@@ -251,17 +338,6 @@ export function ThemeChromeGroupEditor({
             onChange={(event) =>
               updateChrome(["iconScale"], Number(event.target.value))
             }
-          />
-        }
-      />
-      <InspectorFieldRow
-        className="record-editor-field"
-        label={<span>Background</span>}
-        control={
-          <ColorValueEditor
-            value={String(group.background ?? "rgba(255,255,255,0)")}
-            alpha
-            onChange={(nextValue) => updateChrome(["background"], nextValue)}
           />
         }
       />

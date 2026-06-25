@@ -114,6 +114,23 @@ function createMessageBubbleInput(
       exitFrame: null,
     },
     animation: message.animation ?? {},
+    ...(message.direction === "outgoing"
+      ? {
+          animation: {
+            ...(message.animation ?? {}),
+            cursor: {
+              color: readString(input.theme.cursor, "color", "#007AFF"),
+              width: readNumber(input.theme.cursor, "width", 2),
+              blinkFrames: readNumber(input.theme.cursor, "blinkFrames", 15),
+              visible:
+                typeof message.timing.writeOnStartFrame === "number" &&
+                typeof message.timing.writeOnDurationFrames === "number" &&
+                message.visibleText.length > 0 &&
+                message.visibleText.length < message.text.length,
+            },
+          },
+        }
+      : {}),
   });
 }
 
@@ -126,9 +143,13 @@ export const ChatScreenModule: VisualModule<ResolvedChatScreenProps> = {
     const wallpaper = readObject(input.theme, "wallpaper");
     const wallpaperKind = readString(wallpaper, "kind", "solid");
     const wallpaperOpacity = clampOpacity(readNumber(wallpaper, "opacity", 1));
-    const messageInputs = input.messages.map((message) =>
-      createMessageBubbleInput(input, message),
-    );
+    const messageInputs = input.messages
+      .map((message) => createMessageBubbleInput(input, message))
+      .filter((message) => {
+        return typeof message.animation?.hideUntilWriteComplete === "boolean"
+          ? message.animation.hideUntilWriteComplete !== true
+          : true;
+      });
     const layout = layoutChatScreen({ props: input, messages: messageInputs });
     const wallpaperImage = readObject(wallpaper, "image");
     const wallpaperUri = readString(wallpaperImage, "filePath", "");

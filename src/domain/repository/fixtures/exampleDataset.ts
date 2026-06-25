@@ -301,22 +301,55 @@ export function createExampleDataset(): RepositoryDataset {
       headerSize: 56,
       gap: 8,
     },
+    textInputBar: {
+      placeholder: "Mensaje",
+      cursorVisible: true,
+      iconSets: {
+        left: {
+          idle: [
+            { token: "chat_emoji", order: 10 },
+            { token: "chat_attach", order: 20 },
+          ],
+          typing: [{ token: "chat_emoji", order: 10 }],
+        },
+        right: {
+          idle: [
+            { token: "media_camera", order: 10 },
+            { token: "media_mic", order: 20 },
+          ],
+          typing: [{ token: "chat_send", order: 10, color: "#007AFF" }],
+        },
+      },
+    },
+    keyboard: {
+      language: "es",
+      bottomItems: [
+        {
+          id: "app_language",
+          label: "app_language",
+          kind: "iconToken",
+          token: "app_language",
+          zone: "left",
+          order: 10,
+        },
+        {
+          id: "media_mic",
+          label: "media_mic",
+          kind: "iconToken",
+          token: "media_mic",
+          zone: "right",
+          order: 10,
+        },
+      ],
+    },
     radii: {
       bubble: 18,
-    },
-    cursor: {
-      style: "bar",
-      width: 2,
-      blinkFrames: 15,
     },
     modes: {
       light: {
         header: {
           background: "#FFFFFF",
           separatorColor: "#D1D1D6",
-        },
-        cursor: {
-          color: "#007AFF",
         },
         chatBubbles: {
           outgoingBackground: "#0B84FF",
@@ -332,9 +365,6 @@ export function createExampleDataset(): RepositoryDataset {
         header: {
           background: "#1C1C1E",
           separatorColor: "#38383A",
-        },
-        cursor: {
-          color: "#0A84FF",
         },
         chatBubbles: {
           outgoingBackground: "#0A84FF",

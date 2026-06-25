@@ -38,6 +38,8 @@ export function stripAppStatusAndNavigationTokens(
   const root = isJsonObject(source) ? source : {};
   delete root.statusBar;
   delete root.navigationBar;
+  delete root.keyboard;
+  delete root.cursor;
   delete root.shadows;
   if (isJsonObject(root.notifications)) {
     delete root.notifications.background;
@@ -50,10 +52,29 @@ export function stripAppStatusAndNavigationTokens(
     if (!modeRoot) continue;
     delete modeRoot.statusBar;
     delete modeRoot.navigationBar;
+    delete modeRoot.keyboard;
+    delete modeRoot.cursor;
     const colors = isJsonObject(modeRoot.colors) ? modeRoot.colors : undefined;
     if (colors) {
       delete colors.navigationBackground;
     }
+  }
+  return root;
+}
+
+export function stripModuleSystemOwnedTokens(
+  value: unknown,
+): Record<string, JsonValue> {
+  const source = isJsonObject(value as JsonValue)
+    ? cloneJson(value as JsonValue)
+    : ({} as JsonValue);
+  const root = isJsonObject(source) ? source : {};
+  delete root.cursor;
+  const modes = isJsonObject(root.modes) ? root.modes : {};
+  for (const mode of ["light", "dark"] as const) {
+    const modeRoot = isJsonObject(modes[mode]) ? modes[mode] : undefined;
+    if (!modeRoot) continue;
+    delete modeRoot.cursor;
   }
   return root;
 }

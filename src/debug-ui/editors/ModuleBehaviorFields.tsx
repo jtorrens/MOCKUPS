@@ -5,8 +5,7 @@ import {
   type JsonPath,
   type JsonValue,
 } from "../components/json-editor/jsonEditorUtils.js";
-import { KeyboardBehaviorFields } from "./module-behavior/KeyboardBehaviorFields.js";
-import { TextInputBarBehaviorFields } from "./module-behavior/TextInputBarBehaviorFields.js";
+import { ModuleBehaviorCard } from "./module-behavior/ModuleBehaviorCard.js";
 import { parsedObject } from "./recordJsonUtils.js";
 
 function stringifyJson(value: unknown): string {
@@ -41,18 +40,11 @@ export function ModuleBehaviorFields({
   statusBarItems = [],
   onRawChange,
 }: ModuleBehaviorFieldsProps) {
+  const [statusBarOpen, setStatusBarOpen] = useState(false);
   const root = parsedObject(rawValue);
   const rawStatusBar = root.statusBar as JsonValue;
-  const rawKeyboard = root.keyboard as JsonValue;
-  const rawTextInputBar = root.textInputBar as JsonValue;
   const statusBarRoot = isJsonObject(rawStatusBar)
     ? (rawStatusBar as Record<string, JsonValue>)
-    : {};
-  const keyboardRoot = isJsonObject(rawKeyboard)
-    ? (rawKeyboard as Record<string, JsonValue>)
-    : {};
-  const textInputBarRoot = isJsonObject(rawTextInputBar)
-    ? (rawTextInputBar as Record<string, JsonValue>)
     : {};
   const statusBarItemOverrides = isJsonObject(statusBarRoot.items)
     ? (statusBarRoot.items as Record<string, JsonValue>)
@@ -103,24 +95,15 @@ export function ModuleBehaviorFields({
           </select>
         }
       />
-      {root.showTextInputBar === true ? (
-        <TextInputBarBehaviorFields
-          textInputBarRoot={textInputBarRoot}
-          updateBehaviorValue={updateBehaviorValue}
-        />
-      ) : null}
-      {root.showKeyboard === true ? (
-        <KeyboardBehaviorFields
-          keyboardRoot={keyboardRoot}
-          updateBehaviorValue={updateBehaviorValue}
-        />
-      ) : null}
       {statusBarItems.length ? (
-        <section className="module-behavior-status-bar">
-          <header>
-            <strong>Status bar items</strong>
-            <small>Runtime values for this module instance</small>
-          </header>
+        <ModuleBehaviorCard
+          title="Status bar items"
+          summary="Runtime item visibility and generated values"
+          icon="▥"
+          open={statusBarOpen}
+          onToggle={() => setStatusBarOpen((current) => !current)}
+        >
+          <section className="module-behavior-status-bar">
           <div className="module-behavior-status-header">
             <span>Item</span>
             <span>On</span>
@@ -200,8 +183,10 @@ export function ModuleBehaviorFields({
               </div>
             );
           })}
-        </section>
+          </section>
+        </ModuleBehaviorCard>
       ) : null}
     </>
   );
 }
+import { useState } from "react";

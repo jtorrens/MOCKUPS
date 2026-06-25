@@ -211,6 +211,13 @@
   grid-column: 1 / -1;
 }
 
+.preview-frame-relative {
+  margin-left: 6px;
+  color: var(--card-summary-text-color, #667085);
+  font-size: 12px;
+  font-weight: 500;
+}
+
 .frame-inline {
   display: grid;
   grid-template-columns: 1fr 78px;

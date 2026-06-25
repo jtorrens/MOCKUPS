@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 
 interface DeferredTextInputProps {
   className?: string;
+  multiline?: boolean;
   value: string;
   onCommit: (nextValue: string) => void;
 }
 
 export function DeferredTextInput({
   className = "json-value-control",
+  multiline = false,
   value,
   onCommit,
 }: DeferredTextInputProps) {
@@ -21,6 +23,18 @@ export function DeferredTextInput({
     if (draft !== value) {
       onCommit(draft);
     }
+  }
+
+  if (multiline) {
+    return (
+      <textarea
+        className={className}
+        value={draft}
+        rows={4}
+        onBlur={commit}
+        onChange={(event) => setDraft(event.target.value)}
+      />
+    );
   }
 
   return (

@@ -13,6 +13,7 @@ import {
 import {
   normalizedThemeTokenRoot,
   ThemeChromeGroupEditor,
+  ThemeCursorGroupEditor,
 } from "./ThemeFields.js";
 import { ThemeEditor } from "./ThemeEditor.js";
 import {
@@ -101,7 +102,11 @@ export function ThemeRecordEditor({
           <>
             {themeTokenGroups
               .filter(
-                (group) => group !== "statusBar" && group !== "navigationBar",
+                (group) =>
+                  group !== "statusBar" &&
+                  group !== "navigationBar" &&
+                  group !== "keyboard" &&
+                  group !== "cursor",
               )
               .map((group) => (
                 <EditorSubsectionAccordion
@@ -143,6 +148,19 @@ export function ThemeRecordEditor({
                 />
               </EditorSubsectionAccordion>
             ))}
+            <EditorSubsectionAccordion
+              key="cursor"
+              group="cursor"
+              activeGroup={resolvedActiveTokenGroup}
+              onToggle={setActiveTokenGroup}
+            >
+              <ThemeCursorGroupEditor
+                tokenRoot={themeTokenRoot}
+                onTokenRootChange={(nextRoot) =>
+                  setJsonDraft("tokens_json", nextRoot)
+                }
+              />
+            </EditorSubsectionAccordion>
           </>
         ) : null
       }
