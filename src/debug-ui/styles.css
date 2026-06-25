@@ -535,6 +535,7 @@ body {
   min-width: 1180px;
   height: 100vh;
   overflow: hidden;
+  background: var(--app-shell-background, #ffffff);
 }
 
 .ui-glyph {
@@ -584,6 +585,7 @@ body {
   margin: 0;
   padding: 0;
   overflow: hidden;
+  background: var(--app-shell-background, #ffffff);
 }
 
 .is-resizing-panels {
@@ -742,7 +744,7 @@ button:disabled {
   min-height: 330px;
   place-items: center;
   padding: 30px;
-  color: #737b8e;
+  color: var(--editor-empty-color, #7b8494);
   text-align: center;
 }
 
@@ -755,10 +757,6 @@ button:disabled {
   line-height: 1.5;
 }
 
-.field-error {
-  color: #ff8b98;
-}
-
 .alert {
   margin-top: 16px;
   border: 1px solid;
@@ -768,9 +766,9 @@ button:disabled {
 }
 
 .alert.error {
-  border-color: #6b3038;
-  color: #ff9ca7;
-  background: #201217;
+  border-color: var(--editor-alert-error-border-color, #ffd0d5);
+  color: var(--editor-alert-error-color, #b4232e);
+  background: var(--editor-alert-error-background, #fff1f3);
 }
 
 .alert.success {
@@ -780,9 +778,9 @@ button:disabled {
 }
 
 .alert.warning {
-  border-color: #655426;
-  color: #ebc967;
-  background: #201b10;
+  border-color: var(--editor-alert-warning-border-color, #ffdca8);
+  color: var(--editor-alert-warning-color, #b35600);
+  background: var(--editor-alert-warning-background, #fff8ed);
 }
 
 .panel-resizer {
@@ -811,22 +809,6 @@ button:disabled {
   background: var(--panel-resizer-accent, #3b66ff);
 }
 
-.empty-state {
-  color: var(--editor-empty-color, #7b8494);
-}
-
-.alert.error {
-  border-color: var(--editor-alert-error-border-color, #ffd0d5);
-  color: var(--editor-alert-error-color, #b4232e);
-  background: var(--editor-alert-error-background, #fff1f3);
-}
-
-.alert.warning {
-  border-color: var(--editor-alert-warning-border-color, #ffdca8);
-  color: var(--editor-alert-warning-color, #b35600);
-  background: var(--editor-alert-warning-background, #fff8ed);
-}
-
 .field-error {
   color: var(--editor-alert-error-color, #b4232e);
 }
@@ -850,19 +832,4 @@ button:disabled {
   background: var(--editor-accent-color, #5265e8);
   font-size: 24px;
   font-weight: 800;
-}
-
-/* UI LAYER: Shell background. */
-:root {
-  color: #15171c;
-  background: var(--app-shell-background, #ffffff);
-}
-
-body,
-.core-app-shell {
-  background: var(--app-shell-background, #ffffff);
-}
-
-.panel-resizer::before {
-  background: var(--panel-resizer-line, #dfe3eb);
 }
