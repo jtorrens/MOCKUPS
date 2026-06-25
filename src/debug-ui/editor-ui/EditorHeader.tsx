@@ -1,5 +1,6 @@
 import "./EditorSystem.css";
 import "./EditorContent.css";
+import "./EditorJson.css";
 
 interface EditorHeaderProps {
   title: string;
