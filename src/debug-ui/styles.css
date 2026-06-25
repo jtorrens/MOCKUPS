@@ -991,154 +991,6 @@ body {
   padding: 0 2px 6px;
 }
 
-.record-editor-content-array-editor,
-.record-editor-content-object-editor,
-.record-editor-content-fields {
-  display: grid;
-  gap: 10px;
-}
-
-.record-editor-content-item-card,
-.record-editor-content-nested-card {
-  overflow: hidden;
-  border: var(--content-card-border, 1px solid #cfd6e2);
-  border-radius: var(--content-card-radius, 12px);
-  background: var(--content-card-background, #ffffff);
-  box-shadow: var(--content-card-shadow, 0 2px 6px rgba(21, 30, 50, 0.04));
-}
-
-.record-editor-content-nested-card > summary,
-.record-editor-content-item-topbar {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  gap: 12px;
-  align-items: center;
-  min-height: 48px;
-  padding: 10px 12px;
-  color: var(--content-card-title-color, #1d2129);
-  cursor: pointer;
-  list-style: none;
-}
-
-.record-editor-content-nested-card > summary::-webkit-details-marker {
-  display: none;
-}
-
-.record-editor-content-nested-card > summary::after {
-  content: "›";
-  display: grid;
-  width: 24px;
-  color: var(--content-card-chevron-color, #111318);
-  font-size: var(--accordion-chevron-size, 24px);
-  font-weight: var(--accordion-chevron-weight, 450);
-  place-items: center;
-  transform-origin: center;
-  transition: transform 120ms ease;
-}
-
-.record-editor-content-nested-card[open] > summary::after {
-  transform: rotate(-90deg);
-}
-
-.record-editor-content-nested-card > summary > span,
-.record-editor-content-item-header > span {
-  overflow: hidden;
-  font-size: 13px;
-  font-weight: 750;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.record-editor-content-item-header {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 0;
-  align-items: center;
-  width: 100%;
-  border: 0;
-  padding: 0;
-  color: var(--content-card-title-color, #1d2129);
-  background: transparent;
-  text-align: left;
-}
-
-.record-editor-content-item-header > span {
-  grid-column: auto;
-}
-
-.record-editor-content-chevron {
-  display: grid;
-  width: 24px;
-  color: var(--content-card-chevron-color, #111318);
-  place-items: center;
-  font-size: var(--accordion-chevron-size, 24px);
-  font-weight: var(--accordion-chevron-weight, 450);
-  transform-origin: center;
-  transition: transform 120ms ease;
-}
-
-.record-editor-content-chevron.is-open {
-  font-size: var(--accordion-chevron-size, 24px);
-  transform: rotate(-90deg);
-}
-
-.record-editor-content-chevron-button {
-  display: grid;
-  width: 30px;
-  height: 30px;
-  border: 0;
-  border-radius: 8px;
-  padding: 0;
-  color: var(--content-card-chevron-color, #111318);
-  background: transparent;
-  place-items: center;
-}
-
-.record-editor-content-chevron-button:hover {
-  background: var(--editor-button-hover-background, #f8fafc);
-}
-
-.record-editor-content-nested-card > summary > small {
-  color: var(--content-card-summary-color, #667085);
-  font-size: 11px;
-}
-
-.record-editor-content-actions {
-  display: flex;
-  gap: 6px;
-}
-
-.record-editor-content-action {
-  --ui-icon-button-size: 32px;
-  --ui-icon-button-border: 0;
-  --ui-icon-button-radius: 9px;
-  --ui-icon-button-background: transparent;
-  --ui-icon-button-color: var(--editor-button-color, #343946);
-  --ui-icon-button-hover-background: var(--editor-button-hover-background, #f8fafc);
-  padding: 0;
-  font-size: 15px;
-  font-weight: 700;
-}
-
-.record-editor-content-add-button {
-  border: var(--editor-button-border, 1px solid #d9dee7);
-  border-radius: 8px;
-  color: var(--editor-button-color, #343946);
-  background: var(--editor-button-background, #ffffff);
-}
-
-.record-editor-content-fields {
-  border-top: var(--content-card-body-border, 1px solid #edf0f4);
-  padding: 12px;
-}
-
-.record-editor-content-nested-panel {
-  display: grid;
-  gap: 10px;
-  padding: 2px 0 4px 14px;
-  border-left: 2px solid var(--content-nested-border-color, #e5eaf2);
-}
-
 .media-file-control {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
@@ -1167,58 +1019,6 @@ body {
 
 .record-editor-compact-button:disabled {
   opacity: 0.45;
-}
-
-.record-editor-content-field-row {
-  display: grid;
-  grid-template-columns: minmax(150px, 0.8fr) minmax(0, 1.4fr);
-  gap: 12px;
-  align-items: start;
-  padding: 2px 0;
-}
-
-.record-editor-content-field-row > span {
-  padding-top: 8px;
-  color: var(--content-field-label-color, #475467);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.record-editor-field-note {
-  margin-top: 4px;
-  color: var(--control-muted-color, #6b7280);
-  font-size: 11px;
-  font-weight: 500;
-  line-height: 1.2;
-}
-
-.record-editor-content-add-button {
-  justify-self: start;
-  min-height: 34px;
-  padding: 0 12px;
-  font-size: 12px;
-  font-weight: 750;
-}
-
-.record-editor-content-field-row .json-value-control,
-.record-editor-content-field-row .json-value-textarea,
-.record-editor-content-field-row select,
-.record-editor-content-field-row input,
-.record-editor-content-field-row textarea {
-  color: var(--content-field-control-color, #15171c) !important;
-  background: var(--content-field-control-background, #ffffff) !important;
-  border-color: var(--content-field-control-border-color, #bfc7d4) !important;
-  opacity: 1 !important;
-}
-
-.record-editor-content-field-row .json-value-control:focus,
-.record-editor-content-field-row .json-value-textarea:focus,
-.record-editor-content-field-row select:focus,
-.record-editor-content-field-row input:focus,
-.record-editor-content-field-row textarea:focus {
-  border-color: var(--content-field-focus-border-color, #8f9db3) !important;
-  box-shadow: var(--content-field-focus-shadow, 0 0 0 3px rgba(99, 114, 240, 0.12)) !important;
-  outline: none;
 }
 
 .json-row-actions {
@@ -2214,7 +2014,6 @@ button:disabled {
   outline: none;
 }
 
-.editor-workspace .record-editor-content-add-button,
 .editor-workspace .record-editor-compact-button,
 .editor-workspace .json-action-button,
 .editor-workspace .json-add-button {
@@ -2223,7 +2022,6 @@ button:disabled {
   background: var(--editor-button-background, #ffffff) !important;
 }
 
-.editor-workspace .record-editor-content-add-button:hover:not(:disabled),
 .editor-workspace .record-editor-compact-button:hover:not(:disabled),
 .editor-workspace .json-action-button:hover:not(:disabled),
 .editor-workspace .json-add-button:hover:not(:disabled) {
@@ -2231,24 +2029,9 @@ button:disabled {
   background: var(--editor-button-hover-background, #f8fafc) !important;
 }
 
-.editor-workspace .record-editor-content-add-button:disabled,
 .editor-workspace .record-editor-compact-button:disabled,
 .editor-workspace .json-action-button:disabled,
 .editor-workspace .json-add-button:disabled {
-  opacity: var(--editor-button-disabled-opacity, 0.55);
-}
-
-.editor-workspace .record-editor-content-action {
-  border: 0 !important;
-  color: var(--editor-button-color, #22262f) !important;
-  background: transparent !important;
-}
-
-.editor-workspace .record-editor-content-action:hover:not(:disabled) {
-  background: var(--editor-button-hover-background, #f8fafc) !important;
-}
-
-.editor-workspace .record-editor-content-action:disabled {
   opacity: var(--editor-button-disabled-opacity, 0.55);
 }
 
@@ -2364,7 +2147,6 @@ body,
 }
 
 .record-editor input[type="checkbox"],
-.record-editor-content-field-row input[type="checkbox"],
 .record-editor-field input[type="checkbox"] {
   width: 16px !important;
   min-width: 16px !important;
@@ -2518,14 +2300,6 @@ body,
 
 .record-editor .inspector-field-row.record-editor-field.json-override .inspector-field-label span {
   color: var(--override-color, #b45309);
-}
-
-.record-editor .record-editor-content-field-row.json-override {
-  border: var(--override-border, 1px solid #e4ad68) !important;
-  border-radius: 12px !important;
-  padding: 8px 10px !important;
-  background: var(--override-background, #fff7ed) !important;
-  box-shadow: var(--override-shadow, 0 2px 6px rgba(180, 83, 9, 0.07)) !important;
 }
 
 .record-editor .editor-section-card > button.has-warning .tab-icon,
