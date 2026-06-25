@@ -1252,6 +1252,14 @@ body {
   font-weight: 700;
 }
 
+.record-editor-field-note {
+  margin-top: 4px;
+  color: var(--control-muted-color, #6b7280);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
 .record-editor-content-add-button {
   justify-self: start;
   min-height: 34px;
@@ -2718,6 +2726,27 @@ body,
   gap: 8px;
   align-items: center;
   justify-content: start;
+}
+
+.actor-mode-color-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+  max-width: 520px;
+}
+
+.actor-mode-color-cell {
+  display: grid;
+  grid-template-columns: auto 32px 42px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+
+.actor-mode-color-label {
+  min-width: 34px;
+  color: var(--field-label-color, #667085);
+  font-size: var(--field-label-font-size, 11px);
+  text-transform: capitalize;
 }
 
 .actor-color-preview {
