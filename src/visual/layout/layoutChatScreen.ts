@@ -41,6 +41,7 @@ export function layoutChatScreen({
   const showStatusBar = props.props.showStatusBar !== false;
   const showNavigationBar = props.props.showNavigationBar !== false;
   const showKeyboard = props.props.showKeyboard === true;
+  const showTextInputBar = props.props.showTextInputBar === true;
   const showHeader = props.props.showHeader !== false;
   const screenGutter = readNumber(props.theme.layout, "screenGutter", 24);
   const headerHeight = showHeader
@@ -74,6 +75,16 @@ export function layoutChatScreen({
   const keyboardHeight =
     showKeyboard && typeof keyboardLayout.height === "number"
       ? keyboardLayout.height
+      : 0;
+  const textInputBarLayout =
+    typeof props.textInputBar?.layout === "object" &&
+    props.textInputBar.layout !== null &&
+    !Array.isArray(props.textInputBar.layout)
+      ? (props.textInputBar.layout as Record<string, unknown>)
+      : {};
+  const textInputBarHeight =
+    showTextInputBar && typeof textInputBarLayout.height === "number"
+      ? textInputBarLayout.height
       : 0;
   const statusBarBox = showStatusBar
     ? {
@@ -109,10 +120,25 @@ export function layoutChatScreen({
           height: keyboardHeight,
         }
       : undefined;
+  const textInputBarBox =
+    showTextInputBar && textInputBarHeight > 0
+      ? {
+          x: rootBox.x,
+          y:
+            rootBox.y +
+            rootBox.height -
+            navigationBarHeight -
+            keyboardHeight -
+            textInputBarHeight,
+          width: rootBox.width,
+          height: textInputBarHeight,
+        }
+      : undefined;
   const messageListTop = rootBox.y + statusBarHeight + headerHeight;
   const messageListBottom =
     rootBox.y +
     rootBox.height -
+    textInputBarHeight -
     keyboardHeight -
     navigationBarHeight -
     props.viewport.safeArea.bottom;
@@ -162,6 +188,7 @@ export function layoutChatScreen({
     ...(statusBarBox ? { statusBarBox } : {}),
     ...(navigationBarBox ? { navigationBarBox } : {}),
     ...(keyboardBox ? { keyboardBox } : {}),
+    ...(textInputBarBox ? { textInputBarBox } : {}),
     ...(headerBox ? { headerBox } : {}),
     messageListBox,
     messages: translatedLayouts,

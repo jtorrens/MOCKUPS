@@ -163,6 +163,8 @@ export const ChatModuleConfigSchema = z.object({
   statusBar: JsonObjectSchema.optional(),
   keyboard: JsonObjectSchema.optional(),
   showKeyboard: z.boolean().default(false),
+  textInputBar: JsonObjectSchema.optional(),
+  showTextInputBar: z.boolean().default(false),
   initialScroll: z.enum(["top", "bottom", "preserve"]).default("bottom"),
   messageGrouping: z.enum(["none", "bySender"]).default("bySender"),
   debugShowBounds: z.boolean().default(false),

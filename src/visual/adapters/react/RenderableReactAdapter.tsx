@@ -385,6 +385,13 @@ function nodeContent(node: RenderableNode): ReactNode {
     }
     return <span title={token}>{iconTokenLabel(token)}</span>;
   }
+  if (node.type === "text_input_bar_item") {
+    const token = stringValue(node.metadata?.token) ?? node.text ?? "";
+    if (stringValue(node.style?.maskImage)) {
+      return <span title={token} />;
+    }
+    return <span title={token}>{iconTokenLabel(token)}</span>;
+  }
   if (node.type === "keyboard_key_popover") {
     return (
       <>
@@ -620,6 +627,98 @@ function RenderNode({
                               ? "contain"
                               : undefined,
                           }
+                      : node.type === "text_input_bar"
+                        ? {
+                            display: "flex",
+                            alignItems: "center",
+                            gap: numberValue(node.style?.gap),
+                            paddingLeft: numberValue(node.style?.paddingX),
+                            paddingRight: numberValue(node.style?.paddingX),
+                            paddingTop: numberValue(node.style?.paddingY),
+                            paddingBottom: numberValue(node.style?.paddingY),
+                            fontSize: numberValue(node.style?.fontSize),
+                            lineHeight: numberValue(node.style?.lineHeight)
+                              ? `${numberValue(node.style?.lineHeight)}px`
+                              : undefined,
+                          }
+                        : node.type === "text_input_bar_icon_zone"
+                          ? {
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent:
+                                node.role === "right"
+                                  ? "flex-end"
+                                  : "flex-start",
+                              gap: numberValue(node.style?.gap),
+                              flex: "0 0 auto",
+                            }
+                          : node.type === "text_input_bar_item"
+                            ? {
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                width: numberValue(node.style?.fontSize),
+                                height: numberValue(node.style?.lineHeight),
+                                fontSize: numberValue(node.style?.fontSize),
+                                lineHeight: numberValue(node.style?.lineHeight)
+                                  ? `${numberValue(node.style?.lineHeight)}px`
+                                  : undefined,
+                                backgroundColor: stringValue(node.style?.maskImage)
+                                  ? "currentColor"
+                                  : undefined,
+                                maskImage: stringValue(node.style?.maskImage),
+                                maskPosition: stringValue(node.style?.maskImage)
+                                  ? "center"
+                                  : undefined,
+                                maskRepeat: stringValue(node.style?.maskImage)
+                                  ? "no-repeat"
+                                  : undefined,
+                                maskSize: stringValue(node.style?.maskImage)
+                                  ? "contain"
+                                  : undefined,
+                                WebkitMaskImage: stringValue(
+                                  node.style?.WebkitMaskImage,
+                                ),
+                                WebkitMaskPosition: stringValue(
+                                  node.style?.WebkitMaskImage,
+                                )
+                                  ? "center"
+                                  : undefined,
+                                WebkitMaskRepeat: stringValue(
+                                  node.style?.WebkitMaskImage,
+                                )
+                                  ? "no-repeat"
+                                  : undefined,
+                                WebkitMaskSize: stringValue(
+                                  node.style?.WebkitMaskImage,
+                                )
+                                  ? "contain"
+                                  : undefined,
+                              }
+                            : node.type === "text_input_bar_field"
+                              ? {
+                                  position: "relative",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  flex: "1 1 auto",
+                                  minWidth: 0,
+                                  height: numberValue(node.style?.height),
+                                  paddingLeft: numberValue(node.style?.paddingX),
+                                  paddingRight: numberValue(node.style?.paddingX),
+                                  overflow: "hidden",
+                                  whiteSpace:
+                                    stringValue(node.style?.whiteSpace) ??
+                                    "pre-wrap",
+                                }
+                              : node.type === "text_input_bar_cursor"
+                                ? {
+                                    display: "inline-block",
+                                    width: numberValue(node.style?.width),
+                                    height: "1.1em",
+                                    marginLeft: "0.08em",
+                                    borderRadius: 999,
+                                    flex: "0 0 auto",
+                                  }
       : node.type === "message_bubble"
         ? { display: "block" }
         : node.type === "text"

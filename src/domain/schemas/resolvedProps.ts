@@ -116,6 +116,7 @@ export const ResolvedChatScreenPropsSchema = z.object({
   statusBar: JsonObjectSchema.optional(),
   navigationBar: JsonObjectSchema.optional(),
   keyboard: JsonObjectSchema.optional(),
+  textInputBar: JsonObjectSchema.optional(),
   ownerActor: ResolvedActorSchema,
   header: z.object({
     title: z.string().min(1),

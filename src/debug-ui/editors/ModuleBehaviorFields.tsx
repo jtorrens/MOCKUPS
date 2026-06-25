@@ -5,6 +5,8 @@ import {
   type JsonPath,
   type JsonValue,
 } from "../components/json-editor/jsonEditorUtils.js";
+import { KeyboardBehaviorFields } from "./module-behavior/KeyboardBehaviorFields.js";
+import { TextInputBarBehaviorFields } from "./module-behavior/TextInputBarBehaviorFields.js";
 import { parsedObject } from "./recordJsonUtils.js";
 
 function stringifyJson(value: unknown): string {
@@ -42,11 +44,15 @@ export function ModuleBehaviorFields({
   const root = parsedObject(rawValue);
   const rawStatusBar = root.statusBar as JsonValue;
   const rawKeyboard = root.keyboard as JsonValue;
+  const rawTextInputBar = root.textInputBar as JsonValue;
   const statusBarRoot = isJsonObject(rawStatusBar)
     ? (rawStatusBar as Record<string, JsonValue>)
     : {};
   const keyboardRoot = isJsonObject(rawKeyboard)
     ? (rawKeyboard as Record<string, JsonValue>)
+    : {};
+  const textInputBarRoot = isJsonObject(rawTextInputBar)
+    ? (rawTextInputBar as Record<string, JsonValue>)
     : {};
   const statusBarItemOverrides = isJsonObject(statusBarRoot.items)
     ? (statusBarRoot.items as Record<string, JsonValue>)
@@ -62,6 +68,7 @@ export function ModuleBehaviorFields({
         ["Show header", "showHeader", true],
         ["Show status bar", "showStatusBar", true],
         ["Show navigation bar", "showNavigationBar", true],
+        ["Show text input bar", "showTextInputBar", false],
         ["Show keyboard", "showKeyboard", false],
       ].map(([label, key, fallback]) => (
         <InspectorFieldRow
@@ -96,79 +103,17 @@ export function ModuleBehaviorFields({
           </select>
         }
       />
+      {root.showTextInputBar === true ? (
+        <TextInputBarBehaviorFields
+          textInputBarRoot={textInputBarRoot}
+          updateBehaviorValue={updateBehaviorValue}
+        />
+      ) : null}
       {root.showKeyboard === true ? (
-        <>
-          <InspectorFieldRow
-            key="keyboardMode"
-            className="record-editor-field record-editor-field-string"
-            label={<span>Keyboard mode</span>}
-            control={
-              <select
-                value={String(
-                  typeof keyboardRoot.mode === "string"
-                    ? keyboardRoot.mode
-                    : "lowercase",
-                )}
-                onChange={(event) =>
-                  updateBehaviorValue(
-                    ["keyboard", "mode"],
-                    event.target.value as JsonValue,
-                  )
-                }
-              >
-                <option value="lowercase">Minúsculas</option>
-                <option value="shift">Mayúsculas</option>
-                <option value="numeric">Números</option>
-                <option value="symbols">Símbolos</option>
-                <option value="emoji">Emoji</option>
-              </select>
-            }
-          />
-          <InspectorFieldRow
-            key="keyboardLanguage"
-            className="record-editor-field record-editor-field-string"
-            label={<span>Keyboard language</span>}
-            control={
-              <select
-                value={String(
-                  typeof keyboardRoot.language === "string"
-                    ? keyboardRoot.language
-                    : "es",
-                )}
-                onChange={(event) =>
-                  updateBehaviorValue(
-                    ["keyboard", "language"],
-                    event.target.value as JsonValue,
-                  )
-                }
-              >
-                <option value="es">Español</option>
-                <option value="en">English</option>
-              </select>
-            }
-          />
-          <InspectorFieldRow
-            key="keyboardPressedKey"
-            className="record-editor-field record-editor-field-string"
-            label={<span>Pressed key</span>}
-            control={
-              <input
-                value={String(
-                  typeof keyboardRoot.pressedKey === "string"
-                    ? keyboardRoot.pressedKey
-                    : "",
-                )}
-                placeholder="a, ñ, intro, backspace…"
-                onChange={(event) =>
-                  updateBehaviorValue(
-                    ["keyboard", "pressedKey"],
-                    event.target.value as JsonValue,
-                  )
-                }
-              />
-            }
-          />
-        </>
+        <KeyboardBehaviorFields
+          keyboardRoot={keyboardRoot}
+          updateBehaviorValue={updateBehaviorValue}
+        />
       ) : null}
       {statusBarItems.length ? (
         <section className="module-behavior-status-bar">

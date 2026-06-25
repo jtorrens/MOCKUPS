@@ -57,6 +57,7 @@ export const KeyboardModule: VisualModule<KeyboardModuleInput> = {
     const keyHeight = readNumber(layout, "keyHeight", 42);
     const keyRadius = readNumber(layout, "keyRadius", 7);
     const fontSize = readNumber(layout, "fontSize", 18);
+    const emojiFontScale = readNumber(layout, "emojiFontScale", 0.75);
     const bottomIconSize = readNumber(layout, "bottomIconSize", fontSize);
     const background = readString(keyboardTokens, "background", "#D1D5DB");
     const keyBackground = readString(keyboardTokens, "keyBackground", "#FFFFFF");
@@ -112,6 +113,11 @@ export const KeyboardModule: VisualModule<KeyboardModuleInput> = {
             const kind = readString(key, "kind", "character");
             const label = readString(key, "label", "");
             const pressed = pressedKey !== "" && (pressedKey === id || pressedKey === label);
+            const keyFontSize =
+              kind === "emoji" ||
+              (kind === "character" && /\p{Extended_Pictographic}/u.test(label))
+                ? fontSize * emojiFontScale
+                : fontSize;
             return {
               id: `keyboard:row:${rowIndex}:key:${id}`,
               type: "keyboard_key",
@@ -125,8 +131,8 @@ export const KeyboardModule: VisualModule<KeyboardModuleInput> = {
                     : specialKeyBackground,
                 color: textColor,
                 borderRadius: keyRadius,
-                fontSize,
-                lineHeight: fontSize,
+                fontSize: keyFontSize,
+                lineHeight: keyFontSize,
                 weight: readNumber(key, "weight", 1),
               },
               metadata: {

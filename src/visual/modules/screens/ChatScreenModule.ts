@@ -15,6 +15,7 @@ import { KeyboardModule } from "../atomic/KeyboardModule.js";
 import { renderMessageBubbleWithLayout } from "../atomic/MessageBubbleModule.js";
 import { NavigationBarModule } from "../atomic/NavigationBarModule.js";
 import { StatusBarModule } from "../atomic/StatusBarModule.js";
+import { TextInputBarModule } from "../atomic/TextInputBarModule.js";
 import type { VisualModule } from "../types.js";
 
 function cssUrl(value: string) {
@@ -200,6 +201,18 @@ export const ChatScreenModule: VisualModule<ResolvedChatScreenProps> = {
       );
     }
 
+    if (layout.textInputBarBox) {
+      children.push({
+        ...TextInputBarModule.render({
+          frame: input.frame,
+          viewport: input.viewport,
+          textInputBar: input.textInputBar,
+          tokens: input.theme,
+        }),
+        box: layout.textInputBarBox,
+      });
+    }
+
     if (layout.keyboardBox) {
       children.push({
         ...KeyboardModule.render({
@@ -247,6 +260,7 @@ export const ChatScreenModule: VisualModule<ResolvedChatScreenProps> = {
         events: input.events,
         layout: {
           messageListBox: layout.messageListBox,
+          textInputBarBox: layout.textInputBarBox,
           keyboardBox: layout.keyboardBox,
           navigationBarBox: layout.navigationBarBox,
           overflow: layout.overflow,

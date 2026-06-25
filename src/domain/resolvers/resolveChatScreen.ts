@@ -301,6 +301,7 @@ function resolveKeyboardDefinition(
     mapping_json: Record<string, unknown>;
   },
   scale = 1,
+  options: { hasTextInputBar?: boolean } = {},
 ) {
   const behaviorRoot = isObject(behaviorKeyboard) ? behaviorKeyboard : {};
   const pressedKey =
@@ -322,12 +323,12 @@ function resolveKeyboardDefinition(
       ? requestedMode
       : STANDARD_IOS_KEYBOARD_LAYOUT.defaultMode
   ) as KeyboardMode;
+  const bottomUtilityHeight = options.hasTextInputBar ? 0 : 34;
   const designLayout = {
-    height: 336,
     topPadding: 8,
     sidePadding: 6,
     bottomPadding: 8,
-    bottomUtilityHeight: 34,
+    bottomUtilityHeight,
     bottomUtilitySidePadding: 24,
     bottomIconSize: 22,
     rowGap: 8,
@@ -335,9 +336,22 @@ function resolveKeyboardDefinition(
     keyHeight: 42,
     keyRadius: 7,
     fontSize: 18,
+    emojiFontScale: 0.6,
   };
+  const rowCount = STANDARD_IOS_KEYBOARD_LAYOUT.modes[mode]?.rowsText
+    .trim()
+    .split("\n").length ?? 4;
+  const height =
+    designLayout.topPadding +
+    designLayout.bottomPadding +
+    rowCount * designLayout.keyHeight +
+    Math.max(0, rowCount - 1) * designLayout.rowGap +
+    designLayout.bottomUtilityHeight;
   const layout = Object.fromEntries(
-    Object.entries(designLayout).map(([key, value]) => [key, value * scale]),
+    Object.entries({ height, ...designLayout }).map(([key, value]) => [
+      key,
+      value * scale,
+    ]),
   );
   const rawBottomItems = Array.isArray(behaviorRoot.bottomItems)
     ? behaviorRoot.bottomItems
@@ -360,7 +374,7 @@ function resolveKeyboardDefinition(
         },
       ];
   const bottomItems: Record<string, unknown>[] = [];
-  for (const rawItem of rawBottomItems) {
+  for (const rawItem of options.hasTextInputBar ? [] : rawBottomItems) {
     if (!isObject(rawItem)) continue;
     const id = stringValue(rawItem.id);
     const token = stringValue(rawItem.token);
@@ -422,6 +436,131 @@ function resolveKeyboardDefinition(
     layout,
     rows,
     bottomItems,
+  };
+}
+
+function iconUriForToken(
+  token: string,
+  iconTheme?: {
+    asset_root: string;
+    mapping_json: Record<string, unknown>;
+  },
+) {
+  if (!token || !isObject(iconTheme?.mapping_json.tokens)) return "";
+  const iconToken = iconTheme.mapping_json.tokens[token];
+  const iconFile = isObject(iconToken) ? stringValue(iconToken.file) : "";
+  return iconFile
+    ? `${iconTheme?.asset_root.replace(/\/+$/g, "")}/${iconFile}`
+    : "";
+}
+
+function iconItemsForState(
+  rawItems: unknown,
+  fallbackItems: Record<string, unknown>[],
+  iconTheme:
+    | {
+        asset_root: string;
+        mapping_json: Record<string, unknown>;
+      }
+    | undefined,
+) {
+  const items = Array.isArray(rawItems) ? rawItems : fallbackItems;
+  const resolvedItems: Record<string, unknown>[] = [];
+  items.forEach((rawItem, index) => {
+    const item = typeof rawItem === "string" ? { token: rawItem } : rawItem;
+    if (!isObject(item)) return;
+    const token = stringValue(item.token);
+    if (!token) return;
+    const iconUri = iconUriForToken(token, iconTheme);
+    resolvedItems.push({
+      id: stringValue(item.id, token),
+      token,
+      label: stringValue(item.label, token),
+      order: numberValue(item.order, index * 10),
+      color: stringValue(item.color),
+      ...(iconUri ? { iconUri } : {}),
+    });
+  });
+  return resolvedItems.sort(
+    (left, right) => numberValue(left.order, 0) - numberValue(right.order, 0),
+  );
+}
+
+function resolveTextInputBarDefinition(
+  behaviorTextInputBar: unknown,
+  iconTheme?: {
+    asset_root: string;
+    mapping_json: Record<string, unknown>;
+  },
+  scale = 1,
+) {
+  const root = isObject(behaviorTextInputBar) ? behaviorTextInputBar : {};
+  const text = stringValue(root.text, stringValue(root.draftText));
+  const rawState = stringValue(root.state, text ? "typing" : "idle");
+  const state = rawState === "typing" ? "typing" : "idle";
+  const rawIconSets = isObject(root.iconSets) ? root.iconSets : {};
+  const rawLeftSets = isObject(rawIconSets.left) ? rawIconSets.left : {};
+  const rawRightSets = isObject(rawIconSets.right) ? rawIconSets.right : {};
+  const defaultLeftItems = {
+    idle: [
+      { token: "chat_emoji", order: 10 },
+      { token: "chat_attach", order: 20 },
+    ],
+    typing: [{ token: "chat_emoji", order: 10 }],
+  };
+  const defaultRightItems = {
+    idle: [
+      { token: "media_camera", order: 10 },
+      { token: "media_mic", order: 20 },
+    ],
+    typing: [{ token: "chat_send", order: 10, color: "#007AFF" }],
+  };
+  const baseFontSize = 17;
+  const explicitLineCount = Math.max(1, text.split("\n").length);
+  const estimatedCharsPerLine = Math.max(8, Math.floor(32 / scale));
+  const visualLineCount = Math.max(
+    explicitLineCount,
+    Math.ceil(Math.max(1, Array.from(text || " ").length) / estimatedCharsPerLine),
+  );
+  const lineCount = Math.min(4, visualLineCount);
+  const lineHeight = baseFontSize * 1.25;
+  const fieldHeight = Math.max(40, 40 + (lineCount - 1) * lineHeight);
+  const designLayout = {
+    paddingX: 8,
+    paddingY: 6,
+    gap: 8,
+    fieldHeight,
+    lineCount,
+    lineHeight,
+    fieldPaddingX: 14,
+    fieldRadius: 20,
+    iconSize: 20,
+    fontSize: baseFontSize,
+    cursorWidth: 2,
+  };
+  const height = designLayout.paddingY * 2 + designLayout.fieldHeight;
+  const layout = Object.fromEntries(
+    Object.entries({ height, ...designLayout }).map(([key, value]) => [
+      key,
+      value * scale,
+    ]),
+  );
+  return {
+    text,
+    placeholder: stringValue(root.placeholder, "Mensaje"),
+    state,
+    cursorVisible: root.cursorVisible !== false,
+    layout,
+    leftItems: iconItemsForState(
+      rawLeftSets[state],
+      defaultLeftItems[state],
+      iconTheme,
+    ),
+    rightItems: iconItemsForState(
+      rawRightSets[state],
+      defaultRightItems[state],
+      iconTheme,
+    ),
   };
 }
 
@@ -796,6 +935,12 @@ export function resolveChatScreen({
     moduleConfig.keyboard,
     iconTheme,
     renderScale,
+    { hasTextInputBar: moduleConfig.showTextInputBar },
+  );
+  const effectiveTextInputBar = resolveTextInputBarDefinition(
+    moduleConfig.textInputBar,
+    iconTheme,
+    renderScale,
   );
 
   const messages = moduleData.messages.map((message) => {
@@ -911,6 +1056,7 @@ export function resolveChatScreen({
     statusBar: effectiveStatusBar,
     navigationBar: effectiveNavigationBar,
     keyboard: effectiveKeyboard,
+    textInputBar: effectiveTextInputBar,
     ownerActor: {
       id: ownerActor.id,
       displayName: ownerActor.display_name,
@@ -937,6 +1083,8 @@ export function resolveChatScreen({
       showStatusBar: moduleConfig.showStatusBar,
       showNavigationBar: moduleConfig.showNavigationBar,
       showKeyboard: moduleConfig.showKeyboard,
+      showTextInputBar: moduleConfig.showTextInputBar,
+      textInputBar: moduleConfig.textInputBar ?? {},
       keyboard: moduleConfig.keyboard ?? {},
       initialScroll: moduleConfig.initialScroll,
       messageGrouping: moduleConfig.messageGrouping,

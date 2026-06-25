@@ -4,6 +4,7 @@ import { KeyboardModule } from "./atomic/KeyboardModule.js";
 import { MessageBubbleModule } from "./atomic/MessageBubbleModule.js";
 import { StatusBarModule } from "./atomic/StatusBarModule.js";
 import { NavigationBarModule } from "./atomic/NavigationBarModule.js";
+import { TextInputBarModule } from "./atomic/TextInputBarModule.js";
 import { ChatScreenModule } from "./screens/ChatScreenModule.js";
 
 export const visualModuleRegistry = {
@@ -11,6 +12,7 @@ export const visualModuleRegistry = {
   message_bubble: MessageBubbleModule,
   status_bar: StatusBarModule,
   navigation_bar: NavigationBarModule,
+  text_input_bar: TextInputBarModule,
   keyboard: KeyboardModule,
   chat_header: ChatHeaderModule,
   avatar: AvatarModule,

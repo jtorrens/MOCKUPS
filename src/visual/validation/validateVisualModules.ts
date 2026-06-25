@@ -280,9 +280,72 @@ assert(
   keyboardNode.metadata?.mode === "shift" && keyboardPopover?.text === "A",
   "Keyboard must infer shift mode and render the Apple-style key popover",
 );
+const textInputProps = ResolvedChatScreenPropsSchema.parse({
+  ...chatProps,
+  props: {
+    ...chatProps.props,
+    showTextInputBar: true,
+    textInputBar: {
+      text: "Hola",
+      state: "typing",
+    },
+  },
+  textInputBar: {
+    ...(chatProps.textInputBar ?? {}),
+    text: "Hola",
+    state: "typing",
+    layout: {
+      height: 56,
+      paddingX: 8,
+      paddingY: 6,
+      gap: 8,
+      fieldHeight: 40,
+      fieldPaddingX: 14,
+      fieldRadius: 20,
+      iconSize: 24,
+      fontSize: 17,
+      cursorWidth: 2,
+    },
+    leftItems: [{ id: "emoji", token: "chat_emoji", order: 10 }],
+    rightItems: [
+      {
+        id: "send",
+        token: "chat_send",
+        order: 10,
+        color: "#007AFF",
+      },
+    ],
+    cursorVisible: true,
+  },
+});
+const textInputTree = RenderableNodeSchema.parse(
+  chatModule.render(textInputProps),
+);
+const textInputNode = collectNodes(textInputTree).find(
+  (node) => node.type === "text_input_bar",
+);
+const textInputField = collectNodes(textInputTree).find(
+  (node) => node.type === "text_input_bar_field",
+);
+const textInputCursor = collectNodes(textInputTree).find(
+  (node) => node.type === "text_input_bar_cursor",
+);
+const textInputSend = collectNodes(textInputTree).find(
+  (node) =>
+    node.type === "text_input_bar_item" && node.metadata?.token === "chat_send",
+);
+assert(textInputNode?.box, "Text input bar must render a box when enabled");
+assert(
+  textInputField?.text === "Hola" && textInputCursor,
+  "Text input bar must render draft text with cursor",
+);
+assert(
+  textInputSend?.style?.color === "#007AFF",
+  "Text input bar must support state-specific colored icons",
+);
 assert(
   Object.keys(visualModuleRegistry).sort().join(",") ===
-    "avatar,chat_header,chat_screen,keyboard,message_bubble,navigation_bar,status_bar",
+    "avatar,chat_header,chat_screen,keyboard,message_bubble,navigation_bar,status_bar,text_input_bar",
   "Registry must contain all required visual modules",
 );
 
@@ -296,6 +359,7 @@ console.log("✓ sent/received bounds, stacking, text, and avatar boxes validate
 console.log("✓ repeated rendering produced an identical tree");
 console.log("✓ deterministic overflow keeps the latest message visible");
 console.log("✓ zero-gutter sent bubble aligns to the right edge without clipping");
+console.log("✓ text input bar renders state-specific icons, draft text, and cursor");
 console.log(
   `layout: chat_screen ${tree.box.x},${tree.box.y} ${tree.box.width}x${tree.box.height}`,
 );
