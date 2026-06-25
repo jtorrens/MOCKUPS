@@ -57,6 +57,7 @@ import {
 import { renderRenderPresetField } from "../editors/RenderPresetFields.js";
 import { ProductionSettingsField } from "../editors/ProductionFields.js";
 import { ScreenTransitionFields } from "../editors/ScreenInstanceFields.js";
+import { ActorMetadataFields } from "../editors/ActorFields.js";
 import {
   hasModeColorOverrides,
   ModeColorEditor,
@@ -723,264 +724,6 @@ export function RecordEditor({
       .map((field) => renderField(field));
   }
 
-  function actorInitials() {
-    const displayName = String(drafts.display_name ?? record?.display_name ?? "");
-    const shortName = String(drafts.short_name ?? record?.short_name ?? "");
-    const source = shortName || displayName;
-    const words = source
-      .split(/\s+/)
-      .map((word) => word.trim())
-      .filter(Boolean);
-    if (words.length === 0) return "?";
-    return words
-      .slice(0, 2)
-      .map((word) => word[0]?.toUpperCase() ?? "")
-      .join("");
-  }
-
-  function actorColor() {
-    const root = parsedObject(drafts.metadata_json ?? "{}");
-    return typeof root.color === "string" && /^#[0-9a-f]{6}$/i.test(root.color)
-      ? root.color
-      : "#64748b";
-  }
-
-  function setActorColor(nextColor: string) {
-    const root = parsedObject(drafts.metadata_json ?? "{}");
-    setDrafts({
-      ...drafts,
-      metadata_json: stringifyJson({
-        ...root,
-        color: nextColor,
-      }),
-    });
-  }
-
-  function actorAvatar() {
-    const root = parsedObject(drafts.metadata_json ?? "{}");
-    const avatar = root.avatar;
-    return avatar && typeof avatar === "object" && !Array.isArray(avatar)
-      ? (avatar as Record<string, unknown>)
-      : {};
-  }
-
-  function setActorAvatarPatch(patch: Record<string, unknown>) {
-    const root = parsedObject(drafts.metadata_json ?? "{}");
-    const avatar = actorAvatar();
-    setDrafts({
-      ...drafts,
-      metadata_json: stringifyJson({
-        ...root,
-        avatar: {
-          baseSize: 640,
-          scale: 1,
-          offsetX: 0,
-          offsetY: 0,
-          ...avatar,
-          ...patch,
-        },
-      }),
-    });
-  }
-
-  function renderActorColorField() {
-    const color = actorColor();
-    return (
-      <InspectorFieldRow
-        key="actor_color"
-        className="record-editor-field record-editor-field-string actor-color-field"
-        label={<span>Color</span>}
-        control={
-          <div className="actor-color-control">
-            <span
-              className="actor-color-preview"
-              style={{ backgroundColor: color }}
-              aria-hidden="true"
-            >
-              {actorInitials()}
-            </span>
-            <input
-              aria-label="Actor color"
-              type="color"
-              value={color}
-              onChange={(event) => setActorColor(event.target.value)}
-            />
-            <input
-              aria-label="Actor color hex"
-              value={color}
-              onChange={(event) => setActorColor(event.target.value)}
-            />
-          </div>
-        }
-      />
-    );
-  }
-
-  function renderActorAvatarFields() {
-    const avatar = actorAvatar();
-    const filePath = typeof avatar.filePath === "string" ? avatar.filePath : "";
-    const scale = typeof avatar.scale === "number" ? avatar.scale : 1;
-    const offsetX = typeof avatar.offsetX === "number" ? avatar.offsetX : 0;
-    const offsetY = typeof avatar.offsetY === "number" ? avatar.offsetY : 0;
-    const useInitials = avatar.useInitials === true;
-    const textColor =
-      typeof avatar.textColor === "string" && /^#[0-9a-f]{6}$/i.test(avatar.textColor)
-        ? avatar.textColor
-        : "#ffffff";
-    const mediaRoot = productionMediaRoot();
-
-    async function chooseAvatarFile() {
-      const [selectedPath] = await (mockupsNative()?.pickFile?.() ?? Promise.resolve([]));
-      if (selectedPath) {
-        setActorAvatarPatch({
-          filePath: relativePathFromRoot(selectedPath, mediaRoot),
-        });
-      }
-    }
-
-    return (
-      <>
-        <InspectorFieldRow
-          key="actor_avatar_use_initials"
-          className="record-editor-field record-editor-field-boolean"
-          label={<span>Use initials</span>}
-          control={
-            <input
-              type="checkbox"
-              checked={useInitials}
-              onChange={(event) =>
-                setActorAvatarPatch({ useInitials: event.target.checked })
-              }
-            />
-          }
-        />
-        <InspectorFieldRow
-          key="actor_avatar_file"
-          className="record-editor-field record-editor-field-string"
-          label={<span>Avatar image</span>}
-          control={
-            <div className="media-file-control actor-avatar-file-control">
-              <DeferredTextInput
-                value={filePath}
-                onCommit={(nextValue) => setActorAvatarPatch({ filePath: nextValue })}
-              />
-              <button
-                type="button"
-                className="record-editor-compact-button"
-                disabled={!mockupsNative()?.pickFile}
-                onClick={() => {
-                  void chooseAvatarFile();
-                }}
-              >
-                Browse…
-              </button>
-            </div>
-          }
-        />
-        <InspectorFieldRow
-          key="actor_avatar_text_color"
-          className="record-editor-field record-editor-field-string actor-color-field"
-          label={<span>Avatar text color</span>}
-          control={
-            <div className="actor-color-control">
-              <span
-                className="actor-color-preview"
-                style={{ backgroundColor: textColor, color: actorColor() }}
-                aria-hidden="true"
-              >
-                Aa
-              </span>
-              <input
-                aria-label="Avatar text color"
-                type="color"
-                value={textColor}
-                onChange={(event) =>
-                  setActorAvatarPatch({ textColor: event.target.value })
-                }
-              />
-              <input
-                aria-label="Avatar text color hex"
-                value={textColor}
-                onChange={(event) =>
-                  setActorAvatarPatch({ textColor: event.target.value })
-                }
-              />
-            </div>
-          }
-        />
-        <div className="actor-avatar-frame" aria-label="Avatar crop frame">
-          <ActorAvatarPreview
-            filePath={filePath}
-            mediaRoot={mediaRoot}
-            scale={scale}
-            offsetX={offsetX}
-            offsetY={offsetY}
-            useInitials={useInitials}
-            backgroundColor={actorColor()}
-            textColor={textColor}
-            initials={actorInitials()}
-          />
-          <small>Base avatar frame: 640×640</small>
-        </div>
-        <InspectorFieldRow
-          key="actor_avatar_scale"
-          className="record-editor-field record-editor-field-number"
-          label={<span>Avatar scale</span>}
-          control={
-            <input
-              type="number"
-              step={0.01}
-              min={0.01}
-              value={String(scale)}
-              onChange={(event) =>
-                setActorAvatarPatch({ scale: Number(event.target.value) })
-              }
-            />
-          }
-        />
-        <InspectorFieldRow
-          key="actor_avatar_offset_x"
-          className="record-editor-field record-editor-field-number"
-          label={<span>Avatar offset X</span>}
-          control={
-            <input
-              type="number"
-              step={1}
-              value={String(offsetX)}
-              onChange={(event) =>
-                setActorAvatarPatch({ offsetX: Number(event.target.value) })
-              }
-            />
-          }
-        />
-        <InspectorFieldRow
-          key="actor_avatar_offset_y"
-          className="record-editor-field record-editor-field-number"
-          label={<span>Avatar offset Y</span>}
-          control={
-            <input
-              type="number"
-              step={1}
-              value={String(offsetY)}
-              onChange={(event) =>
-                setActorAvatarPatch({ offsetY: Number(event.target.value) })
-              }
-            />
-          }
-        />
-      </>
-    );
-  }
-
-  function renderActorMetadataFields() {
-    return (
-      <div className="flat-json-field-group">
-        {renderActorColorField()}
-        {renderActorAvatarFields()}
-      </div>
-    );
-  }
-
   function renderGenericField(field: AppFieldDefinition) {
     if (table.id === "productions" && field.column === "settings_json") {
       return (
@@ -1017,7 +760,22 @@ export function RecordEditor({
       return null;
     }
     if (table.id === "actors" && field.column === "metadata_json") {
-      return renderActorMetadataFields();
+      return (
+        <ActorMetadataFields
+          record={record}
+          drafts={drafts}
+          mediaRoot={productionMediaRoot()}
+          nativeBridge={mockupsNative()}
+          relativePathFromRoot={relativePathFromRoot}
+          AvatarPreview={ActorAvatarPreview}
+          setMetadataRaw={(nextRaw) =>
+            setDrafts({
+              ...drafts,
+              metadata_json: nextRaw,
+            })
+          }
+        />
+      );
     }
     if (table.id === "shots") {
       const shotField = renderShotSpecialField({
