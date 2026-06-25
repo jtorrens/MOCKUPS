@@ -144,6 +144,14 @@
   background: var(--editor-surface-background, #ffffff);
 }
 
+.left-panel-shell .workspace-breadcrumb-action {
+  margin-left: auto;
+  border: var(--editor-button-border, 1px solid #dfe3eb);
+  color: var(--editor-button-color, #20242c);
+  background: var(--editor-button-background, #ffffff);
+  font-size: 12px;
+}
+
 .left-panel-shell .app-header {
   padding: 0;
 }
