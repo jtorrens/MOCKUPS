@@ -51,6 +51,10 @@ import {
   tokenEditorGroups,
 } from "../editors/recordTokenUtils.js";
 import {
+  renderShotSpecialField,
+  shotHasFpsOverride,
+} from "../editors/ShotFields.js";
+import {
   hasModeColorOverrides,
   ModeColorEditor,
 } from "./json-editor/ModeColorEditor.js";
@@ -716,157 +720,6 @@ export function RecordEditor({
       .map((field) => renderField(field));
   }
 
-  function projectDefaultFps() {
-    if (table.id !== "shots") return undefined;
-    const production = records.productions?.find(
-      (item) => item.id === record?.production_id,
-    );
-    const fps = Number(production?.default_fps);
-    return Number.isFinite(fps) && fps > 0 ? fps : undefined;
-  }
-
-  function shotHasFpsOverride() {
-    const inheritedFps = projectDefaultFps();
-    const currentFps = Number(drafts.fps ?? record?.fps);
-    return (
-      inheritedFps !== undefined &&
-      Number.isFinite(currentFps) &&
-      currentFps !== inheritedFps
-    );
-  }
-
-  function shotCalculatedDurationFrames() {
-    if (table.id !== "shots") return undefined;
-    const screens = records.screen_instances?.filter(
-      (item) => item.shot_id === record?.id,
-    );
-    if (!screens?.length) return undefined;
-    const lastFrame = Math.max(
-      ...screens.map((item) => Number(item.end_frame ?? 0)),
-    );
-    return Number.isFinite(lastFrame) && lastFrame > 0 ? lastFrame : undefined;
-  }
-
-  function shotOwnerDeviceName() {
-    if (table.id !== "shots") return undefined;
-    const owner = records.actors?.find(
-      (item) => item.id === (drafts.owner_actor_id || record?.owner_actor_id),
-    );
-    const device = records.devices?.find(
-      (item) => item.id === owner?.default_device_id,
-    );
-    return device ? titleForRecord(device, "name") : "No default device";
-  }
-
-  function renderShotName() {
-    const production = records.productions?.find(
-      (item) => item.id === record?.production_id,
-    );
-    const episode = records.episodes?.find(
-      (item) => item.id === record?.episode_id,
-    );
-    const productionSlug = String(production?.slug ?? production?.name ?? "production");
-    const episodeSlug = String(episode?.slug ?? episode?.name ?? "episode");
-    const shotSlug = String(drafts.slug ?? record?.slug ?? record?.name ?? "shot");
-    const version = Number(drafts.version ?? record?.version ?? 1);
-    const versionSlug = String(Number.isFinite(version) ? version : 1).padStart(2, "0");
-    return `${productionSlug}_${episodeSlug}_${shotSlug}_v${versionSlug}`;
-  }
-
-  function renderShotFpsField(field: AppFieldDefinition) {
-    const inheritedFps = projectDefaultFps();
-    const currentFps = Number(drafts[field.column] ?? record?.[field.column]);
-    const hasOverride =
-      inheritedFps !== undefined &&
-      Number.isFinite(currentFps) &&
-      currentFps !== inheritedFps;
-    const state = states[field.column] ?? "saved";
-    const error = errors[field.column];
-    return (
-      <InspectorFieldRow
-        key={field.column}
-        className={`record-editor-field record-editor-field-${field.kind} state-${state} ${
-          hasOverride ? "json-override" : ""
-        }`}
-        state={
-          state === "invalid" || state === "failed"
-            ? "invalid"
-            : hasOverride
-              ? "override"
-              : "default"
-        }
-        label={<span>{field.label}</span>}
-        meta={
-          inheritedFps !== undefined ? (
-            <code>{`Project default: ${inheritedFps}`}</code>
-          ) : null
-        }
-        control={
-          <>
-            <input
-              data-testid={`field-${field.column}`}
-              type="number"
-              value={drafts[field.column] ?? ""}
-              onChange={(event) =>
-                setDrafts({
-                  ...drafts,
-                  [field.column]: event.target.value,
-                })
-              }
-            />
-            {error ? <strong>{error}</strong> : null}
-          </>
-        }
-        restore={
-          hasOverride && inheritedFps !== undefined ? (
-            <InspectorRestoreButton
-              label="Restore project FPS"
-              onClick={() =>
-                setDrafts({
-                  ...drafts,
-                  [field.column]: String(inheritedFps),
-                })
-              }
-            />
-          ) : null
-        }
-      />
-    );
-  }
-
-  function renderShotDurationField(field: AppFieldDefinition) {
-    const calculatedDuration = shotCalculatedDurationFrames();
-    return (
-      <InspectorFieldRow
-        key={field.column}
-        className="record-editor-field record-editor-field-number is-readonly"
-        label={<span>{field.label}</span>}
-        meta={
-          calculatedDuration !== undefined ? (
-            <code>Calculated from screens</code>
-          ) : null
-        }
-        control={
-          <input
-            disabled
-            value={String(calculatedDuration ?? record?.duration_frames ?? "")}
-          />
-        }
-      />
-    );
-  }
-
-  function renderShotOwnerDeviceField() {
-    return (
-      <InspectorFieldRow
-        key="owner_device"
-        className="record-editor-field record-editor-field-string is-readonly"
-        label={<span>Device</span>}
-        control={<input disabled value={shotOwnerDeviceName() ?? ""} />}
-      />
-    );
-  }
-
   function nextScreenInstance() {
     if (table.id !== "screen_instances") return undefined;
     const startFrame = Number(drafts.start_frame ?? record?.start_frame ?? 0);
@@ -1442,42 +1295,22 @@ export function RecordEditor({
     if (table.id === "actors" && field.column === "metadata_json") {
       return renderActorMetadataFields();
     }
-    if (
-      table.id === "shots" &&
-      [
-        "production_id",
-        "sort_order",
-        "render_preset_id",
-      ].includes(field.column)
-    ) {
-      return null;
-    }
-    if (table.id === "shots" && field.column === "fps") {
-      return renderShotFpsField(field);
-    }
-    if (table.id === "shots" && field.column === "duration_frames") {
-      return renderShotDurationField(field);
-    }
-    if (table.id === "shots" && field.column === "owner_actor_id") {
-      return (
-        <>
-          {renderField(field)}
-          {renderShotOwnerDeviceField()}
-        </>
-      );
-    }
-    if (table.id === "shots" && field.column === "version") {
-      return (
-        <>
-          {renderField(field)}
-          <InspectorFieldRow
-            key="render_name"
-            className="record-editor-field record-editor-field-string is-readonly"
-            label={<span>Render name</span>}
-            control={<input disabled value={renderShotName()} />}
-          />
-        </>
-      );
+    if (table.id === "shots") {
+      const shotField = renderShotSpecialField({
+        field,
+        records,
+        record,
+        drafts,
+        states,
+        errors,
+        setDraftValue: (column, value) =>
+          setDrafts({
+            ...drafts,
+            [column]: value,
+          }),
+        renderField,
+      });
+      if (shotField !== undefined) return shotField;
     }
     if (
       table.id === "episodes" &&
@@ -2568,7 +2401,14 @@ export function RecordEditor({
       activeTab={genericTab}
       renderGenericField={renderGenericField}
       setActiveTab={setGenericTab}
-      showGeneralWarning={table.id === "shots" && shotHasFpsOverride()}
+      showGeneralWarning={
+        table.id === "shots" &&
+        shotHasFpsOverride({
+          records,
+          record,
+          drafts,
+        })
+      }
     />
   );
 }
