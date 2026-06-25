@@ -1,3 +1,5 @@
+import "./EditorSystem.css";
+
 interface EditorHeaderProps {
   title: string;
   eyebrow: string;
