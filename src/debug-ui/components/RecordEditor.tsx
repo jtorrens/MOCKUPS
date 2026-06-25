@@ -38,6 +38,10 @@ import {
   type RawJsonFieldOverride,
 } from "../editors/RecordFieldRenderer.js";
 import {
+  DeviceMetricsField,
+  FlatJsonObjectEditor,
+} from "../editors/FlatJsonFieldEditors.js";
+import {
   hasModeColorOverrides,
   ModeColorEditor,
 } from "./json-editor/ModeColorEditor.js";
@@ -1615,96 +1619,32 @@ export function RecordEditor({
     column: string,
     omitKeys: string[] = [],
   ) {
+    const field = fieldsByColumn.get(column);
+    if (!field) return null;
     const root = parsedObject(drafts[column] ?? "{}");
-    const visibleEntries = Object.entries(root).filter(
-      ([key]) => !omitKeys.includes(key),
-    );
-    if (visibleEntries.length === 0) {
-      return <div className="record-editor-empty-message">No fields yet.</div>;
-    }
     return (
-      <div className="flat-json-fields">
-        {visibleEntries.map(([key, value]) => {
-          const jsonValue = normalizeGroupValue(value, "");
-          return (
-            <InspectorFieldRow
-              key={key}
-              className="record-editor-field flat-json-row"
-              label={<span>{friendlyGroupLabel(key)}</span>}
-              control={
-                <JsonValueEditor
-                  rootValue={root as JsonValue}
-                  path={[key]}
-                  value={jsonValue}
-                  hints={buildJsonUiHints(table, fieldsByColumn.get(column)!, record)}
-                  onRootChange={(nextRoot) => setJsonDraft(column, nextRoot)}
-                  onChange={(nextValue) =>
-                    setJsonDraft(column, setAtPath(root as JsonValue, [key], nextValue))
-                  }
-                />
-              }
-            />
-          );
-        })}
-      </div>
+      <FlatJsonObjectEditor
+        table={table}
+        field={field}
+        record={record}
+        root={root}
+        omitKeys={omitKeys}
+        onRootChange={(nextRoot) => setJsonDraft(column, nextRoot)}
+      />
     );
-  }
-
-  function primitiveJsonPaths(
-    value: JsonValue,
-    path: JsonPath = [],
-  ): { path: JsonPath; value: JsonValue }[] {
-    if (Array.isArray(value)) {
-      return value.flatMap((entry, index) =>
-        primitiveJsonPaths(entry, [...path, index]),
-      );
-    }
-    if (isJsonObject(value)) {
-      return Object.entries(value).flatMap(([key, entry]) =>
-        primitiveJsonPaths(entry, [...path, key]),
-      );
-    }
-    return [{ path, value }];
-  }
-
-  function metricLabel(path: JsonPath) {
-    return path
-      .map((segment) =>
-        typeof segment === "number"
-          ? String(segment)
-          : friendlyGroupLabel(String(segment)),
-      )
-      .join(" · ");
   }
 
   function renderDeviceMetricsField(field: AppFieldDefinition) {
     const root = parsedJsonValue(drafts[field.column] ?? "{}", {}) as JsonValue;
-    const entries = primitiveJsonPaths(root).filter((entry) => entry.path.length > 0);
-    if (entries.length === 0) return null;
     return (
-      <div key={field.column} className="flat-json-field-group">
-        <div className="flat-json-fields">
-          {entries.map(({ path, value }) => (
-            <InspectorFieldRow
-              key={path.join(".")}
-              className="record-editor-field flat-json-row"
-              label={<span>{metricLabel(path)}</span>}
-              control={
-                <JsonValueEditor
-                  rootValue={root}
-                  path={path}
-                  value={value}
-                  hints={buildJsonUiHints(table, field, record)}
-                  onRootChange={(nextRoot) => setJsonDraft(field.column, nextRoot)}
-                  onChange={(nextValue) =>
-                    setJsonDraft(field.column, setAtPath(root, path, nextValue))
-                  }
-                />
-              }
-            />
-          ))}
-        </div>
-      </div>
+      <DeviceMetricsField
+        key={field.column}
+        table={table}
+        field={field}
+        record={record}
+        root={root}
+        onRootChange={(nextRoot) => setJsonDraft(field.column, nextRoot)}
+      />
     );
   }
 
