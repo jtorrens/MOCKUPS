@@ -14,7 +14,7 @@ import { AppRecordEditor } from "../editors/AppRecordEditor.js";
 import { renderGenericField as renderGenericFieldFromDispatcher } from "../editors/GenericFieldDispatcher.js";
 import { GenericRecordEditor } from "../editors/GenericRecordEditor.js";
 import { ModuleInstanceEditor } from "../editors/ModuleInstanceEditor.js";
-import { ModuleThemeConfigEditor } from "../editors/ModuleThemeConfigEditor.js";
+import { ModuleThemeConfigRecordEditor } from "../editors/ModuleThemeConfigRecordEditor.js";
 import { ScreenInstanceEditor } from "../editors/ScreenInstanceEditor.js";
 import { ThemeRecordEditor } from "../editors/ThemeRecordEditor.js";
 import type {
@@ -47,10 +47,6 @@ import { ScreenTransitionFields } from "../editors/ScreenInstanceFields.js";
 import { ModuleBehaviorFields } from "../editors/ModuleBehaviorFields.js";
 import { productionMediaRootForRecord } from "../editors/recordProductionUtils.js";
 import { useJsonGroupDrafts } from "../editors/useJsonGroupDrafts.js";
-import {
-  hasModeColorOverrides,
-  ModeColorEditor,
-} from "./json-editor/ModeColorEditor.js";
 import {
   cloneJson,
   defaultJsonValue,
@@ -271,34 +267,6 @@ export function RecordEditor({
       ...drafts,
       [column]: stringifyJson(value),
     });
-  }
-
-  function hasObjectContent(raw: string | undefined) {
-    return Object.keys(parsedObject(raw ?? "{}")).length > 0;
-  }
-
-  function explicitLocalDiffers(local: unknown, inherited: unknown): boolean {
-    if (local && typeof local === "object" && !Array.isArray(local)) {
-      return Object.entries(local as Record<string, unknown>).some(
-        ([key, value]) =>
-          explicitLocalDiffers(
-            value,
-            inherited && typeof inherited === "object" && !Array.isArray(inherited)
-              ? (inherited as Record<string, unknown>)[key]
-              : undefined,
-          ),
-      );
-    }
-    if (Array.isArray(local)) {
-      return JSON.stringify(local) !== JSON.stringify(inherited);
-    }
-    return JSON.stringify(local) !== JSON.stringify(inherited);
-  }
-
-  function differsFromInherited(column: string) {
-    const inherited = inheritedFields[column];
-    if (!inherited) return hasObjectContent(drafts[column]);
-    return explicitLocalDiffers(parsedObject(drafts[column] ?? "{}"), inherited);
   }
 
   const { rawForJsonGroupValue, updateJsonGroupValue } = useJsonGroupDrafts({
@@ -609,92 +577,23 @@ export function RecordEditor({
   }
 
   if (table.id === "module_theme_configs") {
-    const tokensField = fieldsByColumn.get("tokens_json");
-    const tokenRoot = parsedObject(drafts.tokens_json ?? "{}");
-    const designGroups = Object.keys(tokenRoot).filter(
-      (group) => group !== "modes",
-    );
-    const activeDesignGroup =
-      moduleDesignGroup && designGroups.includes(moduleDesignGroup)
-        ? moduleDesignGroup
-        : "";
     return (
-      <ModuleThemeConfigEditor
+      <ModuleThemeConfigRecordEditor
         table={table}
         record={record}
+        fieldsByColumn={fieldsByColumn}
+        drafts={drafts}
+        inheritedFields={inheritedFields}
         activeTab={moduleThemeTab}
-        designFieldExists={Boolean(tokensField)}
-        colorsFieldExists={Boolean(tokensField)}
-        designWarning={differsFromInherited("tokens_json")}
-        colorsWarning={hasModeColorOverrides(
-          tokenRoot as JsonValue,
-          inheritedFields.tokens_json as JsonValue | undefined,
-        )}
-        renderDesign={() =>
-          tokensField
-            ? designGroups.map((group) => (
-                <EditorSubsectionAccordion
-                  key={group}
-                  group={group}
-                  activeGroup={activeDesignGroup}
-                  warning={explicitLocalDiffers(
-                    tokenRoot[group],
-                    inheritedFields.tokens_json?.[group],
-                  )}
-                  onToggle={setModuleDesignGroup}
-                >
-                  <div className="record-editor-field-stack record-editor-single-column">
-                    {renderField(tokensField, {
-                      rawText: rawForJsonGroupValue("tokens_json", group),
-                      hideLabel: true,
-                      groupContext: group,
-                      inheritedValue:
-                        inheritedFields.tokens_json &&
-                        typeof inheritedFields.tokens_json === "object"
-                          ? (inheritedFields.tokens_json[
-                              group
-                            ] as Record<string, unknown>)
-                          : undefined,
-                      onRawTextChange: (nextRawText) =>
-                        updateJsonGroupValue("tokens_json", group, nextRawText),
-                    })}
-                  </div>
-                </EditorSubsectionAccordion>
-              ))
-            : null
-        }
-        renderColors={() =>
-          tokensField ? (
-            <ModeColorEditor
-              rootValue={tokenRoot as JsonValue}
-              inheritedRoot={inheritedFields.tokens_json as JsonValue | undefined}
-              onRootChange={(nextValue) => setJsonDraft("tokens_json", nextValue)}
-            />
-          ) : null
-        }
-        renderSettings={() => (
-          <>
-            <div className="record-editor-field-stack record-editor-direct-fields">
-              {renderFields([
-                "id",
-                "production_id",
-                "theme_id",
-                "app_id",
-                "module_id",
-                "module_schema_version",
-                "name",
-              ])}
-            </div>
-            {fieldsByColumn.get("metadata_json") ? (
-              <div className="record-editor-field-stack record-editor-single-column">
-                {renderFlatJsonObjectEditor("metadata_json", [
-                  "default_tokens_json",
-                ])}
-              </div>
-            ) : null}
-          </>
-        )}
+        activeDesignGroup={moduleDesignGroup}
+        renderFields={renderFields}
+        renderField={renderField}
+        renderFlatJsonObjectEditor={renderFlatJsonObjectEditor}
+        rawForJsonGroupValue={rawForJsonGroupValue}
+        updateJsonGroupValue={updateJsonGroupValue}
         setActiveTab={setModuleThemeTab}
+        setActiveDesignGroup={setModuleDesignGroup}
+        setJsonDraft={setJsonDraft}
       />
     );
   }
