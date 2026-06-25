@@ -5,11 +5,6 @@ import {
   type AppRecord,
   type AppTableDefinition,
 } from "../api/client.js";
-import { JsonValueEditor } from "./json-editor/JsonValueEditor.js";
-import {
-  InspectorFieldRow,
-  InspectorRestoreButton,
-} from "./inspector/InspectorFieldRow.js";
 import { EditorHeader } from "../editor-ui/EditorHeader.js";
 import { EditorSectionButton as TabButton } from "../editor-ui/EditorSectionButton.js";
 import {
@@ -19,6 +14,7 @@ import {
 import { EditorSections } from "../editor-ui/EditorSections.js";
 import { DeferredTextInput } from "../editor-ui/DeferredTextInput.js";
 import { AppEditor } from "../editors/AppEditor.js";
+import { renderGenericField as renderGenericFieldFromDispatcher } from "../editors/GenericFieldDispatcher.js";
 import { GenericRecordEditor } from "../editors/GenericRecordEditor.js";
 import { ModuleInstanceEditor } from "../editors/ModuleInstanceEditor.js";
 import { ModuleThemeConfigEditor } from "../editors/ModuleThemeConfigEditor.js";
@@ -58,14 +54,8 @@ import {
   stripAppStatusAndNavigationTokens,
   tokenEditorGroups,
 } from "../editors/recordTokenUtils.js";
-import {
-  renderShotSpecialField,
-  shotHasFpsOverride,
-} from "../editors/ShotFields.js";
-import { renderRenderPresetField } from "../editors/RenderPresetFields.js";
-import { ProductionSettingsField } from "../editors/ProductionFields.js";
+import { shotHasFpsOverride } from "../editors/ShotFields.js";
 import { ScreenTransitionFields } from "../editors/ScreenInstanceFields.js";
-import { ActorMetadataFields } from "../editors/ActorFields.js";
 import {
   AppIconFields,
   AppWallpaperEditor,
@@ -88,7 +78,6 @@ import {
   cloneJson,
   defaultJsonValue,
   isJsonObject,
-  setAtPath,
   type JsonPath,
   type JsonValue,
 } from "./json-editor/jsonEditorUtils.js";
@@ -500,122 +489,23 @@ export function RecordEditor({
   }
 
   function renderGenericField(field: AppFieldDefinition) {
-    if (table.id === "productions" && field.column === "settings_json") {
-      return (
-        <ProductionSettingsField
-          field={field}
-          rawValue={drafts[field.column] ?? "{}"}
-          nativeBridge={mockupsNative()}
-          onChange={setJsonDraft}
-        />
-      );
-    }
-    if (table.id === "render_presets") {
-      return renderRenderPresetField({
-        field,
-        drafts,
-        setDrafts,
-        setJsonDraft,
-        renderField,
-      });
-    }
-    if (
-      table.id === "devices" &&
-      ["production_id", "manufacturer", "model", "os_family"].includes(field.column)
-    ) {
-      return null;
-    }
-    if (table.id === "devices" && field.column === "metrics_json") {
-      return renderDeviceMetricsField(field);
-    }
-    if (table.id === "actors" && field.column === "production_id") {
-      return null;
-    }
-    if (table.id === "actors" && field.column === "avatar_asset_id") {
-      return null;
-    }
-    if (table.id === "actors" && field.column === "metadata_json") {
-      return (
-        <ActorMetadataFields
-          record={record}
-          drafts={drafts}
-          mediaRoot={productionMediaRoot()}
-          nativeBridge={mockupsNative()}
-          relativePathFromRoot={relativePathFromRoot}
-          AvatarPreview={ActorAvatarPreview}
-          setMetadataRaw={(nextRaw) =>
-            setDrafts({
-              ...drafts,
-              metadata_json: nextRaw,
-            })
-          }
-        />
-      );
-    }
-    if (table.id === "shots") {
-      const shotField = renderShotSpecialField({
-        field,
-        records,
-        record,
-        drafts,
-        states,
-        errors,
-        setDraftValue: (column, value) =>
-          setDrafts({
-            ...drafts,
-            [column]: value,
-          }),
-        renderField,
-      });
-      if (shotField !== undefined) return shotField;
-    }
-    if (
-      table.id === "episodes" &&
-      (field.column === "production_id" || field.column === "sort_order")
-    ) {
-      return null;
-    }
-    if (field.column === "id") return null;
-    if (field.kind === "json") {
-      const root = parsedObject(drafts[field.column] ?? "{}");
-      const visibleKeys = Object.keys(root).filter((key) => key !== "source");
-      if (Object.keys(root).length === 0 || visibleKeys.length === 0) {
-        if (table.id === "shots" && field.column === "metadata_json") {
-          return (
-            <div key={field.column} className="flat-json-field-group">
-              <InspectorFieldRow
-                className="record-editor-field flat-json-row"
-                label={<span>Note</span>}
-                control={
-                  <JsonValueEditor
-                    rootValue={{} as JsonValue}
-                    path={["note"]}
-                    value=""
-                    hints={buildJsonUiHints(table, field, record)}
-                    onRootChange={(nextRoot) =>
-                      setJsonDraft(field.column, nextRoot)
-                    }
-                    onChange={(nextValue) =>
-                      setJsonDraft(
-                        field.column,
-                        setAtPath({} as JsonValue, ["note"], nextValue),
-                      )
-                    }
-                  />
-                }
-              />
-            </div>
-          );
-        }
-        return null;
-      }
-      return (
-        <div key={field.column} className="flat-json-field-group">
-          {renderFlatJsonObjectEditor(field.column, ["source"])}
-        </div>
-      );
-    }
-    return renderField(field);
+    return renderGenericFieldFromDispatcher({
+      table,
+      field,
+      record,
+      records,
+      drafts,
+      states,
+      errors,
+      nativeBridge: mockupsNative(),
+      productionMediaRoot: productionMediaRoot(),
+      relativePathFromRoot,
+      setDrafts,
+      setJsonDraft,
+      renderField,
+      renderFlatJsonObjectEditor,
+      renderDeviceMetricsField,
+    });
   }
 
   function renderFlatJsonObjectEditor(
