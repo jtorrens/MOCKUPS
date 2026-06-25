@@ -9,11 +9,10 @@ import { EditorHeader } from "../editor-ui/EditorHeader.js";
 import { EditorSectionCard } from "../editor-ui/EditorSectionCard.js";
 import { EditorSections } from "../editor-ui/EditorSections.js";
 import { DeferredTextInput } from "../editor-ui/DeferredTextInput.js";
-import { EditorSubsectionAccordion } from "../editor-ui/EditorSubsectionAccordion.js";
 import { AppRecordEditor } from "../editors/AppRecordEditor.js";
 import { renderGenericField as renderGenericFieldFromDispatcher } from "../editors/GenericFieldDispatcher.js";
 import { GenericRecordEditor } from "../editors/GenericRecordEditor.js";
-import { ModuleInstanceEditor } from "../editors/ModuleInstanceEditor.js";
+import { ModuleInstanceRecordEditor } from "../editors/ModuleInstanceRecordEditor.js";
 import { ModuleThemeConfigRecordEditor } from "../editors/ModuleThemeConfigRecordEditor.js";
 import { ScreenInstanceEditor } from "../editors/ScreenInstanceEditor.js";
 import { ThemeRecordEditor } from "../editors/ThemeRecordEditor.js";
@@ -23,14 +22,9 @@ import type {
   ScreenInstanceTab,
   ThemeEditorTab,
 } from "../editors/editorTabs.js";
-import {
-  chatContentGroupHasWarning,
-  defaultGroupValue,
-} from "../editors/chat/chatContentModel.js";
-import { ChatContentGroupEditor } from "../editors/chat/ChatContentGroupEditor.js";
+import { defaultGroupValue } from "../editors/chat/chatContentModel.js";
 import {
   RecordFieldRenderer,
-  titleForRecord,
   type RawJsonFieldOverride,
 } from "../editors/RecordFieldRenderer.js";
 import {
@@ -38,13 +32,11 @@ import {
   FlatJsonObjectEditor,
 } from "../editors/FlatJsonFieldEditors.js";
 import {
-  normalizeGroupValue,
   parsedJsonValue,
   parsedObject,
 } from "../editors/recordJsonUtils.js";
 import { shotHasFpsOverride } from "../editors/ShotFields.js";
 import { ScreenTransitionFields } from "../editors/ScreenInstanceFields.js";
-import { ModuleBehaviorFields } from "../editors/ModuleBehaviorFields.js";
 import { productionMediaRootForRecord } from "../editors/recordProductionUtils.js";
 import { useJsonGroupDrafts } from "../editors/useJsonGroupDrafts.js";
 import {
@@ -53,7 +45,6 @@ import {
   type JsonPath,
   type JsonValue,
 } from "./json-editor/jsonEditorUtils.js";
-import { buildJsonUiHints } from "./json-editor/uiHints.js";
 
 type SaveState = "saved" | "dirty" | "invalid" | "saving" | "failed";
 
@@ -156,9 +147,6 @@ export function RecordEditor({
   const [moduleThemeTab, setModuleThemeTab] = useState<ModuleThemeTab>("");
   const [moduleDesignGroup, setModuleDesignGroup] = useState("");
   const [genericTab, setGenericTab] = useState<"" | "general">("general");
-  const [openContentItems, setOpenContentItems] = useState<Record<string, boolean>>(
-    {},
-  );
 
   useEffect(() => {
     const nextDrafts = Object.fromEntries(
@@ -178,23 +166,7 @@ export function RecordEditor({
     setThemeTokenGroup("");
     setModuleDesignGroup("");
     setGenericTab("general");
-    setOpenContentItems({});
   }, [record?.id, table.id]);
-
-  function toggleExclusiveContentItem(groupKey: string, openKey: string, isOpen: boolean) {
-    const groupPrefix = `${record?.id ?? "record"}:${groupKey}:`;
-    setOpenContentItems((current) => {
-      const nextEntries = Object.entries(current).filter(
-        ([key]) => !key.startsWith(groupPrefix),
-      );
-      return isOpen
-        ? Object.fromEntries(nextEntries)
-        : {
-            ...Object.fromEntries(nextEntries),
-            [openKey]: true,
-          };
-    });
-  }
 
   const editableFields = useMemo(
     () => table.fields.filter((field) => !field.readonly),
@@ -277,52 +249,6 @@ export function RecordEditor({
 
   function productionMediaRoot() {
     return productionMediaRootForRecord({ table, record, records });
-  }
-
-  function renderContentGroupEditor(
-    field: AppFieldDefinition,
-    groupKey: string,
-    column = "module_data_json",
-  ) {
-    const root = parsedObject(drafts[column] ?? "{}");
-    const groupValue = normalizeGroupValue(root[groupKey], defaultGroupValue(groupKey));
-    const hints = buildJsonUiHints(table, field, record);
-
-    function updateGroupValue(nextValue: JsonValue) {
-      setDrafts({
-        ...drafts,
-        [column]: stringifyJson({
-          ...root,
-          [groupKey]: nextValue,
-        }),
-      });
-    }
-
-    return (
-      <ChatContentGroupEditor
-        actors={records.actors ?? []}
-        actorTitleForRecord={(actor) => titleForRecord(actor, "display_name")}
-        canBrowseMedia={Boolean(mockupsNative()?.pickFile)}
-        groupKey={groupKey}
-        groupValue={groupValue}
-        hints={hints}
-        normalizeMediaPath={(filePath) =>
-          relativePathFromRoot(filePath, productionMediaRoot())
-        }
-        onBrowseMedia={async () => {
-          const [filePath] =
-            await (mockupsNative()?.pickFile?.() ?? Promise.resolve([]));
-          return filePath
-            ? relativePathFromRoot(filePath, productionMediaRoot())
-            : undefined;
-        }}
-        onGroupValueChange={updateGroupValue}
-        onToggleItem={toggleExclusiveContentItem}
-        openItems={openContentItems}
-        recordId={record?.id}
-        root={root}
-      />
-    );
   }
 
   function renderField(field: AppFieldDefinition, rawOverride?: RawJsonFieldOverride) {
@@ -462,63 +388,21 @@ export function RecordEditor({
   }
 
   if (table.id === "module_instances") {
-    const contentField = fieldsByColumn.get("content_json");
-    const behaviorField = fieldsByColumn.get("behavior_json");
-    const contentGroups = ["participants", "header", "messages"].filter(
-      (group) => group in parsedObject(drafts.content_json ?? "{}"),
-    );
-    const safeContentGroups = contentGroups.length
-      ? contentGroups
-      : ["participants", "header", "messages"];
-    const activeContentTab = safeContentGroups.includes(contentTab)
-      ? contentTab
-      : "";
-
     return (
-      <ModuleInstanceEditor
+      <ModuleInstanceRecordEditor
         table={table}
         record={record}
+        records={records}
+        fieldsByColumn={fieldsByColumn}
+        drafts={drafts}
         activeTab={screenTab}
-        activeContentTab={activeContentTab}
-        contentFieldExists={Boolean(contentField)}
-        behaviorFieldExists={Boolean(behaviorField)}
-        contentGroups={safeContentGroups}
-        contentGroupHasWarning={(group) =>
-          chatContentGroupHasWarning({
-            group,
-            contentRoot: parsedObject(drafts.content_json ?? "{}"),
-            actors: records.actors ?? [],
-          })
-        }
-        renderContentGroup={(group) =>
-          contentField
-            ? renderContentGroupEditor(contentField, group, "content_json")
-            : null
-        }
-        renderBehaviorFields={() => (
-          <ModuleBehaviorFields
-            rawValue={drafts.behavior_json ?? "{}"}
-            onRawChange={(nextRaw) =>
-              setDrafts({
-                ...drafts,
-                behavior_json: nextRaw,
-              })
-            }
-          />
-        )}
-        renderSubgroupAccordion={(group, activeGroup, warning, onToggle, children) => (
-          <EditorSubsectionAccordion
-            key={group}
-            group={group}
-            activeGroup={activeGroup}
-            warning={warning}
-            onToggle={onToggle}
-          >
-            {children}
-          </EditorSubsectionAccordion>
-        )}
+        activeContentTab={contentTab}
+        mediaRoot={productionMediaRoot()}
+        nativeBridge={mockupsNative()}
+        relativePathFromRoot={relativePathFromRoot}
+        setDrafts={setDrafts}
         setActiveTab={setScreenTab}
-        setContentTab={setContentTab}
+        setActiveContentTab={setContentTab}
       />
     );
   }
