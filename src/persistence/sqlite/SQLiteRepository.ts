@@ -11,6 +11,7 @@ import {
   MessageSchema,
   ModuleInstanceSchema,
   ModuleThemeConfigSchema,
+  NavigationBarSchema,
   NotificationSchema,
   ProductionSchema,
   ScreenEventSchema,
@@ -29,6 +30,7 @@ import {
   type Message,
   type ModuleInstance,
   type ModuleThemeConfig,
+  type NavigationBar,
   type Notification,
   type Production,
   type ScreenEvent,
@@ -207,10 +209,19 @@ export class SQLiteRepository implements DomainRepository {
     );
   }
 
+  getNavigationBar(id: string): NavigationBar | undefined {
+    return this.getOne(
+      "SELECT * FROM navigation_bars WHERE id = ?",
+      id,
+      NavigationBarSchema,
+      { required: ["config_json"], optional: ["metadata_json"] },
+    );
+  }
+
   getTheme(id: string): Theme | undefined {
     return this.getOne("SELECT * FROM themes WHERE id = ?", id, ThemeSchema, {
       required: ["tokens_json"],
-      optionalScalars: ["icon_theme_id", "status_bar_id"],
+      optionalScalars: ["icon_theme_id", "status_bar_id", "navigation_bar_id"],
     });
   }
 

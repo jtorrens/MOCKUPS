@@ -384,6 +384,7 @@ export function App() {
       | "shots"
       | "icon_themes"
       | "status_bars"
+      | "navigation_bars"
       | "themes"
       | "devices"
       | "render_presets",
@@ -413,6 +414,7 @@ export function App() {
       | "shots"
       | "icon_themes"
       | "status_bars"
+      | "navigation_bars"
       | "themes"
       | "devices"
       | "render_presets",
@@ -440,6 +442,7 @@ export function App() {
       | "shots"
       | "icon_themes"
       | "status_bars"
+      | "navigation_bars"
       | "themes"
       | "devices"
       | "render_presets",
@@ -462,6 +465,7 @@ export function App() {
       | "shots"
       | "icon_themes"
       | "status_bars"
+      | "navigation_bars"
       | "themes"
       | "devices"
       | "render_presets",

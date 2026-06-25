@@ -122,6 +122,7 @@ export interface AppCreateRequest {
     | "shots"
     | "icon_themes"
     | "status_bars"
+    | "navigation_bars"
     | "themes"
     | "devices"
     | "render_presets";
@@ -138,6 +139,7 @@ export interface AppRecordActionRequest {
     | "shots"
     | "icon_themes"
     | "status_bars"
+    | "navigation_bars"
     | "themes"
     | "devices"
     | "render_presets";

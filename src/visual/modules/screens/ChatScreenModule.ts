@@ -12,6 +12,7 @@ import { layoutChatScreen } from "../../layout/index.js";
 import type { RenderableNode } from "../../renderable/types.js";
 import { ChatHeaderModule } from "../atomic/ChatHeaderModule.js";
 import { renderMessageBubbleWithLayout } from "../atomic/MessageBubbleModule.js";
+import { NavigationBarModule } from "../atomic/NavigationBarModule.js";
 import { StatusBarModule } from "../atomic/StatusBarModule.js";
 import type { VisualModule } from "../types.js";
 
@@ -198,6 +199,18 @@ export const ChatScreenModule: VisualModule<ResolvedChatScreenProps> = {
       );
     }
 
+    if (layout.navigationBarBox) {
+      children.push({
+        ...NavigationBarModule.render({
+          frame: input.frame,
+          viewport: input.viewport,
+          navigationBar: input.navigationBar,
+          tokens: input.theme.navigationBar,
+        }),
+        box: layout.navigationBarBox,
+      });
+    }
+
     return {
       id: input.screenInstanceId,
       type: "chat_screen",
@@ -221,6 +234,7 @@ export const ChatScreenModule: VisualModule<ResolvedChatScreenProps> = {
         events: input.events,
         layout: {
           messageListBox: layout.messageListBox,
+          navigationBarBox: layout.navigationBarBox,
           overflow: layout.overflow,
           strategy: "renderer_agnostic_chat_layout_v1",
           tokenSource: "theme.tokens_json.layout/header/messages",

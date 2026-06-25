@@ -39,6 +39,7 @@ export function layoutChatScreen({
   messages,
 }: LayoutChatScreenInput): ChatScreenLayout {
   const showStatusBar = props.props.showStatusBar !== false;
+  const showNavigationBar = props.props.showNavigationBar !== false;
   const showHeader = props.props.showHeader !== false;
   const screenGutter = readNumber(props.theme.layout, "screenGutter", 24);
   const headerHeight = showHeader
@@ -53,6 +54,16 @@ export function layoutChatScreen({
     height: props.viewport.height,
   };
   const statusBarHeight = showStatusBar ? props.device.statusBarHeight : 0;
+  const navigationBarLayout =
+    typeof props.navigationBar?.layout === "object" &&
+    props.navigationBar.layout !== null &&
+    !Array.isArray(props.navigationBar.layout)
+      ? (props.navigationBar.layout as Record<string, unknown>)
+      : {};
+  const navigationBarHeight =
+    showNavigationBar && typeof navigationBarLayout.height === "number"
+      ? navigationBarLayout.height
+      : 0;
   const statusBarBox = showStatusBar
     ? {
         x: rootBox.x,
@@ -69,9 +80,21 @@ export function layoutChatScreen({
         height: headerHeight,
       }
     : undefined;
+  const navigationBarBox =
+    showNavigationBar && navigationBarHeight > 0
+      ? {
+          x: rootBox.x,
+          y: rootBox.y + rootBox.height - navigationBarHeight,
+          width: rootBox.width,
+          height: navigationBarHeight,
+        }
+      : undefined;
   const messageListTop = rootBox.y + statusBarHeight + headerHeight;
   const messageListBottom =
-    rootBox.y + rootBox.height - props.viewport.safeArea.bottom;
+    rootBox.y +
+    rootBox.height -
+    navigationBarHeight -
+    props.viewport.safeArea.bottom;
   const messageListLeft = rootBox.x + props.viewport.safeArea.left + screenGutter;
   const messageListRight =
     rootBox.x + rootBox.width - props.viewport.safeArea.right - screenGutter;
@@ -116,6 +139,7 @@ export function layoutChatScreen({
   return {
     rootBox,
     ...(statusBarBox ? { statusBarBox } : {}),
+    ...(navigationBarBox ? { navigationBarBox } : {}),
     ...(headerBox ? { headerBox } : {}),
     messageListBox,
     messages: translatedLayouts,

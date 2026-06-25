@@ -58,6 +58,7 @@ assert(tree.type === "chat_screen", "Root node must be chat_screen");
 const childTypes = tree.children?.map((child) => child.type) ?? [];
 assert(childTypes[0] === "wallpaper", "Wallpaper must render as the back layer");
 assert(childTypes.includes("status_bar"), "Tree must contain status_bar");
+assert(childTypes.includes("navigation_bar"), "Tree must contain navigation_bar");
 assert(childTypes.includes("chat_header"), "Tree must contain chat_header");
 assert(
   childTypes.filter((type) => type === "message_bubble").length ===
@@ -66,6 +67,9 @@ assert(
 );
 const headerNode = tree.children?.find((child) => child.type === "chat_header");
 const statusNode = tree.children?.find((child) => child.type === "status_bar");
+const navigationNode = tree.children?.find(
+  (child) => child.type === "navigation_bar",
+);
 const wallpaperNode = tree.children?.find((child) => child.type === "wallpaper");
 const bubbleNodes =
   tree.children?.filter((child) => child.type === "message_bubble") ?? [];
@@ -84,6 +88,7 @@ assert(
   "Wallpaper must receive app-level opacity",
 );
 assert(statusNode?.box, "StatusBar must have a box");
+assert(navigationNode?.box, "NavigationBar must have a box");
 assert(headerNode?.box, "ChatHeader must have a box");
 assert(
   isRecord(layoutMetadata) && isBox(layoutMetadata.messageListBox),
@@ -235,15 +240,15 @@ assert(
 );
 assert(
   Object.keys(visualModuleRegistry).sort().join(",") ===
-    "avatar,chat_header,chat_screen,message_bubble,status_bar",
+    "avatar,chat_header,chat_screen,message_bubble,navigation_bar,status_bar",
   "Registry must contain all required visual modules",
 );
 
 console.log("✓ resolved chat props rendered at shot frame 210 / local frame 60");
 console.log("✓ renderable tree validated recursively with Zod");
-console.log("✓ ChatScreen composed status bar, header, and message bubbles");
+console.log("✓ ChatScreen composed status bar, navigation bar, header, and message bubbles");
 console.log("✓ app wallpaper rendered as the back layer");
-console.log("✓ registry contains all five required module names");
+console.log("✓ registry contains all six required module names");
 console.log("✓ visual tree uses resolved layout, tail, and Wi-Fi tokens");
 console.log("✓ sent/received bounds, stacking, text, and avatar boxes validated");
 console.log("✓ repeated rendering produced an identical tree");

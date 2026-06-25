@@ -98,13 +98,13 @@ export const StatusBarModule: VisualModule<StatusBarModuleInput> = {
     const foreground = readString(input.tokens, "foreground", "#000000");
     const background = readString(input.tokens, "background", "transparent");
     const layout = asRecord(input.statusBar?.layout);
-    const baseHeight = readNumber(layout, "height", input.statusBarHeight);
-    const layoutScale = baseHeight > 0 ? input.statusBarHeight / baseHeight : 1;
-    const itemSize =
-      readNumber(layout, "itemSize", Math.max(10, baseHeight * 0.34)) *
-      layoutScale;
-    const gap = readNumber(layout, "gap", 6) * layoutScale;
-    const sidePadding = readNumber(layout, "sidePadding", 24) * layoutScale;
+    const itemSize = readNumber(
+      layout,
+      "itemSize",
+      Math.max(10, input.statusBarHeight * 0.34),
+    );
+    const gap = readNumber(layout, "gap", 6);
+    const sidePadding = readNumber(layout, "sidePadding", 24);
     const items = statusBarItems(input);
     return {
       id: "status_bar",

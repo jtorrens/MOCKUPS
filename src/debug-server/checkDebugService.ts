@@ -53,6 +53,7 @@ try {
     "actors",
     "icon_themes",
     "status_bars",
+    "navigation_bars",
     "themes",
     "module_theme_configs",
     "devices",

@@ -22,6 +22,7 @@ interface ProjectTreeProps {
       | "shots"
       | "icon_themes"
       | "status_bars"
+      | "navigation_bars"
       | "themes"
       | "devices"
       | "render_presets",
@@ -32,6 +33,7 @@ interface ProjectTreeProps {
       | "shots"
       | "icon_themes"
       | "status_bars"
+      | "navigation_bars"
       | "themes"
       | "devices"
       | "render_presets",
@@ -42,6 +44,7 @@ interface ProjectTreeProps {
       | "shots"
       | "icon_themes"
       | "status_bars"
+      | "navigation_bars"
       | "themes"
       | "devices"
       | "render_presets",
@@ -53,6 +56,7 @@ const PRODUCTION_DATA_TABLE_IDS = new Set([
   "actors",
   "icon_themes",
   "status_bars",
+  "navigation_bars",
   "themes",
   "devices",
   "media_assets",
@@ -68,6 +72,7 @@ function productionDataIcon(tableId: string) {
   if (tableId === "actors") return "actor";
   if (tableId === "icon_themes") return "icon";
   if (tableId === "status_bars") return "status";
+  if (tableId === "navigation_bars") return "navigation";
   if (tableId === "themes") return "theme";
   if (tableId === "devices") return "device";
   if (tableId === "media_assets") return "media";
@@ -267,6 +272,14 @@ function TreeIcon({ name }: { name: string }) {
       </svg>
     );
   }
+  if (name === "navigation") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="4" y="5" width="16" height="14" rx="2.5" />
+        <path d="M8 16h8M8 12l2.5-2.5L13 12M16 9.5v5" />
+      </svg>
+    );
+  }
   if (name === "device") {
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -441,6 +454,7 @@ export function ProjectTree({
       | "shots"
       | "icon_themes"
       | "status_bars"
+      | "navigation_bars"
       | "themes"
       | "devices"
       | "render_presets",
@@ -756,6 +770,7 @@ export function ProjectTree({
                 </button>
                 {table.id === "icon_themes" ||
                 table.id === "status_bars" ||
+                table.id === "navigation_bars" ||
                 table.id === "themes" ||
                 table.id === "devices" ||
                 table.id === "render_presets" ? (
@@ -769,6 +784,7 @@ export function ProjectTree({
                         table.id as
                           | "icon_themes"
                           | "status_bars"
+                          | "navigation_bars"
                           | "themes"
                           | "devices"
                           | "render_presets",
@@ -782,6 +798,7 @@ export function ProjectTree({
                         table.id as
                           | "icon_themes"
                           | "status_bars"
+                          | "navigation_bars"
                           | "themes"
                           | "devices"
                           | "render_presets",
@@ -797,6 +814,7 @@ export function ProjectTree({
                           table.id as
                             | "icon_themes"
                             | "status_bars"
+                            | "navigation_bars"
                             | "themes"
                             | "devices"
                             | "render_presets",

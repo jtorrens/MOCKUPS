@@ -23,6 +23,7 @@ const DELETE_ORDER = [
   "device_states",
   "devices",
   "themes",
+  "navigation_bars",
   "status_bars",
   "icon_themes",
   "media_assets",
@@ -374,6 +375,20 @@ function seedRecords(
   );
   insertRows(
     database,
+    "navigation_bars",
+    [
+      "id",
+      "production_id",
+      "name",
+      "family",
+      "config_json",
+      "metadata_json",
+    ],
+    dataset.navigationBars,
+    new Set(["config_json", "metadata_json"]),
+  );
+  insertRows(
+    database,
     "themes",
     [
       "id",
@@ -383,6 +398,7 @@ function seedRecords(
       "version",
       "icon_theme_id",
       "status_bar_id",
+      "navigation_bar_id",
       "tokens_json",
     ],
     dataset.themes,

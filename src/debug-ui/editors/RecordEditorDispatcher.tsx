@@ -9,6 +9,7 @@ import { GenericRecordEditor } from "./GenericRecordEditor.js";
 import { IconThemeRecordEditor } from "./IconThemeRecordEditor.js";
 import { ModuleInstanceRecordEditor } from "./ModuleInstanceRecordEditor.js";
 import { ModuleThemeConfigRecordEditor } from "./ModuleThemeConfigRecordEditor.js";
+import { NavigationBarRecordEditor } from "./NavigationBarRecordEditor.js";
 import { ScreenInstanceRecordEditor } from "./ScreenInstanceRecordEditor.js";
 import { StatusBarRecordEditor } from "./StatusBarRecordEditor.js";
 import { ThemeRecordEditor } from "./ThemeRecordEditor.js";
@@ -130,6 +131,20 @@ export function RecordEditorDispatcher({
         activeTab={tabs.statusBarTab}
         renderField={renderField}
         setActiveTab={tabs.setStatusBarTab}
+        setJsonDraft={setJsonDraft}
+      />
+    );
+  }
+
+  if (table.id === "navigation_bars") {
+    return (
+      <NavigationBarRecordEditor
+        table={table}
+        record={record}
+        drafts={drafts}
+        activeTab={tabs.navigationBarTab}
+        renderField={renderField}
+        setActiveTab={tabs.setNavigationBarTab}
         setJsonDraft={setJsonDraft}
       />
     );

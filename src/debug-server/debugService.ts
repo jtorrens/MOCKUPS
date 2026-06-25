@@ -13,6 +13,7 @@ import {
   MediaAssetSchema,
   ModuleInstanceSchema,
   ModuleThemeConfigSchema,
+  NavigationBarSchema,
   ProductionSchema,
   RenderPresetSchema,
   ScreenInstanceSchema,
@@ -419,12 +420,32 @@ export const APP_TABLES = [
     ],
   },
   {
+    id: "navigation_bars",
+    label: "Navigation Bars",
+    table: "navigation_bars",
+    titleColumn: "name",
+    jsonFields: ["config_json", "metadata_json"],
+    fields: [
+      { column: "id", label: "ID", kind: "string", readonly: true },
+      {
+        column: "production_id",
+        label: "Production ID",
+        kind: "string",
+        readonly: true,
+      },
+      { column: "name", label: "Name", kind: "string" },
+      { column: "family", label: "Family", kind: "string" },
+      { column: "config_json", label: "Navigation bar config", kind: "json" },
+      { column: "metadata_json", label: "Navigation bar notes", kind: "json" },
+    ],
+  },
+  {
     id: "themes",
     label: "Themes",
     table: "themes",
     titleColumn: "name",
     jsonFields: ["tokens_json"],
-    optionalScalars: ["icon_theme_id", "status_bar_id"],
+    optionalScalars: ["icon_theme_id", "status_bar_id", "navigation_bar_id"],
     fields: [
       { column: "id", label: "ID", kind: "string", readonly: true },
       { column: "production_id", label: "Production ID", kind: "string" },
@@ -439,6 +460,12 @@ export const APP_TABLES = [
       {
         column: "status_bar_id",
         label: "Status bar",
+        kind: "string",
+        nullable: true,
+      },
+      {
+        column: "navigation_bar_id",
+        label: "Navigation bar",
         kind: "string",
         nullable: true,
       },
@@ -595,6 +622,7 @@ const PARSERS = {
   actors: ActorSchema,
   icon_themes: IconThemeSchema,
   status_bars: StatusBarSchema,
+  navigation_bars: NavigationBarSchema,
   themes: ThemeSchema,
   module_theme_configs: ModuleThemeConfigSchema,
   devices: DeviceSchema,
@@ -1081,6 +1109,7 @@ export interface AppCreateRequest {
     | "shots"
     | "icon_themes"
     | "status_bars"
+    | "navigation_bars"
     | "themes"
     | "devices"
     | "render_presets";
@@ -1097,6 +1126,7 @@ export interface AppRecordActionRequest {
     | "shots"
     | "icon_themes"
     | "status_bars"
+    | "navigation_bars"
     | "themes"
     | "devices"
     | "render_presets";
@@ -1303,6 +1333,43 @@ function defaultStatusBarConfig() {
         charging: false,
         zone: "right",
         order: 50,
+      },
+    ],
+  };
+}
+
+function defaultNavigationBarConfig() {
+  return {
+    schemaVersion: 1,
+    layout: {
+      height: 34,
+      itemSize: 18,
+      sidePadding: 40,
+      strokeWidth: 2,
+      cornerRadius: 3,
+      filled: false,
+    },
+    items: [
+      {
+        id: "back",
+        label: "Back",
+        kind: "generatedBack",
+        zone: "left",
+        order: 10,
+      },
+      {
+        id: "home",
+        label: "Home",
+        kind: "generatedHome",
+        zone: "center",
+        order: 10,
+      },
+      {
+        id: "recents",
+        label: "Recents",
+        kind: "generatedRecents",
+        zone: "right",
+        order: 10,
       },
     ],
   };
@@ -1580,6 +1647,48 @@ export function createAppRecord(
     return { tableId: "status_bars", record, state: loadAppState(database) };
   }
 
+  if (request.tableId === "navigation_bars") {
+    const productionId = request.parent?.productionId;
+    if (!productionId) {
+      throw new Error("Creating a navigation bar requires a productionId parent.");
+    }
+    const production = database
+      .prepare("SELECT id FROM productions WHERE id = ?")
+      .get(productionId);
+    if (!production) {
+      throw new Error(`Production ${productionId} not found`);
+    }
+    const name = request.name?.trim() || "New Navigation Bar";
+    const id = uniqueId("navigation_bar", name);
+    database
+      .prepare(
+        `INSERT INTO navigation_bars (
+          id,
+          production_id,
+          name,
+          family,
+          config_json,
+          metadata_json
+        ) VALUES (?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        id,
+        productionId,
+        name,
+        "ios",
+        stringifyJsonObject(
+          defaultNavigationBarConfig(),
+          "navigation_bars.config_json",
+        ),
+        "{}",
+      );
+    const record = decodeAppRow(
+      database.prepare("SELECT * FROM navigation_bars WHERE id = ?").get(id) as Row,
+      tableDefinition("navigation_bars"),
+    );
+    return { tableId: "navigation_bars", record, state: loadAppState(database) };
+  }
+
   if (request.tableId === "devices") {
     const productionId = request.parent?.productionId;
     if (!productionId) {
@@ -1749,6 +1858,7 @@ function duplicateSimpleRecord(
   tableId:
     | "icon_themes"
     | "status_bars"
+    | "navigation_bars"
     | "themes"
     | "devices"
     | "render_presets",
@@ -1767,6 +1877,8 @@ function duplicateSimpleRecord(
       ? "icon_theme"
       : tableId === "status_bars"
         ? "status_bar"
+      : tableId === "navigation_bars"
+        ? "navigation_bar"
       : tableId === "themes"
       ? "theme"
       : tableId === "devices"

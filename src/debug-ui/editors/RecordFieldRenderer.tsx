@@ -135,6 +135,23 @@ function relationOptionsForField(
         })) ?? [],
     };
   }
+  if (field.column === "navigation_bar_id") {
+    const productionId = record?.production_id;
+    return {
+      allowEmpty: true,
+      options: records.navigation_bars
+        ?.filter(
+          (item) =>
+            !productionId ||
+            !Object.hasOwn(item, "production_id") ||
+            item.production_id === productionId,
+        )
+        .map((item) => ({
+          value: item.id,
+          label: titleForRecord(item, "name"),
+        })) ?? [],
+    };
+  }
   if (field.column === "owner_actor_id") {
     return {
       allowEmpty: Boolean(field.nullable),

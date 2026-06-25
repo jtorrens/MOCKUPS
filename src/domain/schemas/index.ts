@@ -11,6 +11,7 @@ export * from "./episode.js";
 export * from "./iconTheme.js";
 export * from "./module.js";
 export * from "./moduleThemeConfig.js";
+export * from "./navigationBar.js";
 export * from "./notification.js";
 export * from "./production.js";
 export * from "./render.js";

@@ -91,6 +91,7 @@ try {
     "screen_events",
     "icon_themes",
     "status_bars",
+    "navigation_bars",
     "themes",
     "module_theme_configs",
     "devices",
@@ -184,8 +185,12 @@ try {
     "themes must contain the selected status_bar_id column",
   );
   assert(
-    Number(database.pragma("user_version", { simple: true })) === 12,
-    "SQLite schema version must be 12",
+    themeColumns.has("navigation_bar_id"),
+    "themes must contain the selected navigation_bar_id column",
+  );
+  assert(
+    Number(database.pragma("user_version", { simple: true })) === 13,
+    "SQLite schema version must be 13",
   );
 
   database.exec("BEGIN");
@@ -226,7 +231,7 @@ try {
   console.log("✓ schema and seed validated in isolated in-memory SQLite");
   console.log("✓ all required domain tables exist");
   console.log("✓ module_theme_configs exists and seeds core.chat tokens");
-  console.log("✓ screen_instances references and module_instances content/behavior/animation columns exist in schema v12");
+  console.log("✓ screen_instances references and module_instances content/behavior/animation columns exist in schema v13");
   console.log("✓ SQLiteRepository resolved ChatScreen props with Zod");
   console.log("✓ SQLite and in-memory chat props are equivalent");
   console.log("✓ Chat module instance JSON and sender-based output validated");

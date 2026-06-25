@@ -12,6 +12,7 @@ import type {
   Message,
   ModuleInstance,
   ModuleThemeConfig,
+  NavigationBar,
   Notification,
   Production,
   ScreenEvent,
@@ -30,6 +31,7 @@ export interface RepositoryDataset {
   screenEvents: ScreenEvent[];
   iconThemes: IconTheme[];
   statusBars: StatusBar[];
+  navigationBars: NavigationBar[];
   themes: Theme[];
   moduleThemeConfigs: ModuleThemeConfig[];
   devices: Device[];
@@ -55,6 +57,7 @@ export interface DomainRepository {
   getScreenEventsForInstance(screenInstanceId: string): ScreenEvent[];
   getIconTheme(id: string): IconTheme | undefined;
   getStatusBar(id: string): StatusBar | undefined;
+  getNavigationBar(id: string): NavigationBar | undefined;
   getTheme(id: string): Theme | undefined;
   getModuleThemeConfig(
     themeId: string,

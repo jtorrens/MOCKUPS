@@ -73,6 +73,7 @@ const ChatThemeSchema = z.object({
   colors: z.record(z.string(), z.unknown()),
   wallpaper: z.record(z.string(), z.unknown()).optional(),
   statusBar: z.record(z.string(), z.unknown()),
+  navigationBar: z.record(z.string(), z.unknown()),
   layout: z.record(z.string(), z.unknown()),
   header: z.record(z.string(), z.unknown()),
   messages: z.record(z.string(), z.unknown()),
@@ -126,10 +127,17 @@ function resolveStatusBarDefinition(
     asset_root: string;
     mapping_json: Record<string, unknown>;
   },
+  scale = 1,
 ) {
-  const layout = isObject(statusBarConfig?.layout)
+  const rawLayout = isObject(statusBarConfig?.layout)
     ? statusBarConfig.layout
     : {};
+  const layout = { ...rawLayout };
+  for (const key of ["height", "itemSize", "gap", "sidePadding"]) {
+    if (typeof layout[key] === "number") {
+      layout[key] = layout[key] * scale;
+    }
+  }
   const rawItems = Array.isArray(statusBarConfig?.items)
     ? statusBarConfig.items
     : [];
@@ -176,6 +184,51 @@ function resolveStatusBarDefinition(
             iconUri: `${iconTheme?.asset_root.replace(/\/+$/g, "")}/${iconFile}`,
           }
         : {}),
+    });
+  }
+  return {
+    layout,
+    items,
+  };
+}
+
+function resolveNavigationBarDefinition(
+  navigationBarConfig: Record<string, unknown> | undefined,
+  scale = 1,
+) {
+  const rawLayout = isObject(navigationBarConfig?.layout)
+    ? navigationBarConfig.layout
+    : {};
+  const layout = { ...rawLayout };
+  for (const key of [
+    "height",
+    "itemSize",
+    "sidePadding",
+    "strokeWidth",
+    "cornerRadius",
+  ]) {
+    if (typeof layout[key] === "number") {
+      layout[key] = layout[key] * scale;
+    }
+  }
+  const rawItems = Array.isArray(navigationBarConfig?.items)
+    ? navigationBarConfig.items
+    : [];
+  const items: Record<string, unknown>[] = [];
+  for (const rawItem of rawItems) {
+    if (!isObject(rawItem)) continue;
+    const id = stringValue(rawItem.id);
+    const label = stringValue(rawItem.label, id);
+    const kind = stringValue(rawItem.kind, "generatedHome");
+    const zone = stringValue(rawItem.zone, "off");
+    const order = numberValue(rawItem.order, 0);
+    if (!id || zone === "off") continue;
+    items.push({
+      id,
+      label,
+      kind,
+      zone,
+      order,
     });
   }
   return {
@@ -528,6 +581,9 @@ export function resolveChatScreen({
   const statusBar = theme.status_bar_id
     ? repository.getStatusBar(theme.status_bar_id)
     : undefined;
+  const navigationBar = theme.navigation_bar_id
+    ? repository.getNavigationBar(theme.navigation_bar_id)
+    : undefined;
   const iconTheme = theme.icon_theme_id
     ? repository.getIconTheme(theme.icon_theme_id)
     : undefined;
@@ -535,6 +591,18 @@ export function resolveChatScreen({
     statusBar?.config_json,
     moduleConfig.statusBar,
     iconTheme,
+    renderScale,
+  );
+  const effectiveStatusBarLayout = isObject(effectiveStatusBar.layout)
+    ? effectiveStatusBar.layout
+    : {};
+  const statusBarHeight = numberValue(
+    effectiveStatusBarLayout.height,
+    metrics.statusBar.height,
+  );
+  const effectiveNavigationBar = resolveNavigationBarDefinition(
+    navigationBar?.config_json,
+    renderScale,
   );
 
   const messages = moduleData.messages.map((message) => {
@@ -642,12 +710,13 @@ export function resolveChatScreen({
       id: device.id,
       osFamily: device.os_family,
       pixelRatio: metrics.pixelRatio,
-      statusBarHeight: metrics.statusBar.height,
+      statusBarHeight,
       cornerRadius: metrics.cornerRadius,
       defaultScreenScale: metrics.defaultScreenScale,
     },
     deviceState: state,
     statusBar: effectiveStatusBar,
+    navigationBar: effectiveNavigationBar,
     ownerActor: {
       id: ownerActor.id,
       displayName: ownerActor.display_name,
@@ -672,6 +741,7 @@ export function resolveChatScreen({
     props: {
       showHeader: moduleConfig.showHeader,
       showStatusBar: moduleConfig.showStatusBar,
+      showNavigationBar: moduleConfig.showNavigationBar,
       showKeyboard: moduleConfig.showKeyboard,
       initialScroll: moduleConfig.initialScroll,
       messageGrouping: moduleConfig.messageGrouping,

@@ -229,6 +229,110 @@ function generatedSignalNode(node: RenderableNode): ReactNode {
   );
 }
 
+function roundedPolygonPath(
+  points: Array<{ x: number; y: number }>,
+  radius: number,
+) {
+  if (points.length < 3 || radius <= 0) {
+    return `M ${points.map((point) => `${point.x} ${point.y}`).join(" L ")} Z`;
+  }
+  const rounded = points.map((point, index) => {
+    const previous = points[(index - 1 + points.length) % points.length];
+    const next = points[(index + 1) % points.length];
+    const previousVector = {
+      x: previous.x - point.x,
+      y: previous.y - point.y,
+    };
+    const nextVector = {
+      x: next.x - point.x,
+      y: next.y - point.y,
+    };
+    const previousLength = Math.hypot(previousVector.x, previousVector.y);
+    const nextLength = Math.hypot(nextVector.x, nextVector.y);
+    const offset = Math.min(radius, previousLength * 0.42, nextLength * 0.42);
+    const previousPoint = {
+      x: point.x + (previousVector.x / previousLength) * offset,
+      y: point.y + (previousVector.y / previousLength) * offset,
+    };
+    const nextPoint = {
+      x: point.x + (nextVector.x / nextLength) * offset,
+      y: point.y + (nextVector.y / nextLength) * offset,
+    };
+    return { corner: point, previousPoint, nextPoint };
+  });
+  const [first, ...rest] = rounded;
+  return [
+    `M ${first.previousPoint.x} ${first.previousPoint.y}`,
+    `Q ${first.corner.x} ${first.corner.y} ${first.nextPoint.x} ${first.nextPoint.y}`,
+    ...rest.flatMap((point) => [
+      `L ${point.previousPoint.x} ${point.previousPoint.y}`,
+      `Q ${point.corner.x} ${point.corner.y} ${point.nextPoint.x} ${point.nextPoint.y}`,
+    ]),
+    "Z",
+  ].join(" ");
+}
+
+function generatedNavigationButtonNode(node: RenderableNode): ReactNode {
+  const metadata = node.metadata ?? {};
+  const filled = metadata.filled === true;
+  const strokeWidth = numberValue(metadata.strokeWidth) ?? 2;
+  const cornerRadius = numberValue(metadata.cornerRadius) ?? 3;
+  const role = String(node.role ?? "generatedHome");
+  const backTrianglePath = roundedPolygonPath(
+    [
+      { x: 64, y: 20 },
+      { x: 28, y: 50 },
+      { x: 64, y: 80 },
+    ],
+    cornerRadius,
+  );
+  const common = {
+    vectorEffect: "non-scaling-stroke",
+    stroke: "currentColor",
+    strokeWidth,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+  };
+  return (
+    <svg
+      viewBox="0 0 100 100"
+      aria-hidden="true"
+      style={{
+        display: "block",
+        width: "1em",
+        height: "1em",
+        overflow: "visible",
+      }}
+    >
+      {role === "generatedBack" ? (
+        <path
+          d={backTrianglePath}
+          fill={filled ? "currentColor" : "none"}
+          {...common}
+        />
+      ) : role === "generatedRecents" ? (
+        <rect
+          x="28"
+          y="28"
+          width="44"
+          height="44"
+          rx={cornerRadius}
+          fill={filled ? "currentColor" : "none"}
+          {...common}
+        />
+      ) : (
+        <circle
+          cx="50"
+          cy="50"
+          r="23"
+          fill={filled ? "currentColor" : "none"}
+          {...common}
+        />
+      )}
+    </svg>
+  );
+}
+
 function iconTokenLabel(token: string) {
   const parts = token.split("_").filter(Boolean);
   return parts.at(-1)?.slice(0, 2).toUpperCase() ?? "IC";
@@ -271,6 +375,9 @@ function nodeContent(node: RenderableNode): ReactNode {
       return <span title={token}>{iconTokenLabel(token)}</span>;
     }
   }
+  if (node.type === "navigation_bar_item") {
+    return generatedNavigationButtonNode(node);
+  }
   if (node.children?.some((child) => child.type === "text")) {
     return null;
   }
@@ -292,6 +399,7 @@ function RenderNode({
   );
   const semanticStyle: CSSProperties =
     node.type === "status_bar"
+    || node.type === "navigation_bar"
       ? {
           display: "flex",
           alignItems: "center",
@@ -304,13 +412,15 @@ function RenderNode({
             : undefined,
           fontWeight: 600,
         }
-      : node.type === "status_bar_zone"
+      : node.type === "status_bar_zone" || node.type === "navigation_bar_zone"
         ? {
             display: "flex",
             alignItems: "center",
             justifyContent:
               stringValue(node.style?.justifyContent) === "flex-start"
                 ? "flex-start"
+                : stringValue(node.style?.justifyContent) === "center"
+                  ? "center"
                 : "flex-end",
             gap: numberValue(node.style?.gap) ?? 6,
             minWidth: 0,
@@ -351,6 +461,18 @@ function RenderNode({
                 ? "contain"
                 : undefined,
             }
+          : node.type === "navigation_bar_item"
+            ? {
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: numberValue(node.style?.fontSize),
+                height: numberValue(node.style?.lineHeight),
+                fontSize: numberValue(node.style?.fontSize),
+                lineHeight: numberValue(node.style?.lineHeight)
+                  ? `${numberValue(node.style?.lineHeight)}px`
+                  : undefined,
+              }
       : node.type === "message_bubble"
         ? { display: "block" }
         : node.type === "text"

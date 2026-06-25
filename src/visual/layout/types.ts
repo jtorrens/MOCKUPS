@@ -26,6 +26,7 @@ export interface ChatMessageLayout {
 export interface ChatScreenLayout {
   rootBox: RenderableBox;
   statusBarBox?: RenderableBox;
+  navigationBarBox?: RenderableBox;
   headerBox?: RenderableBox;
   messageListBox: RenderableBox;
   messages: ChatMessageLayout[];

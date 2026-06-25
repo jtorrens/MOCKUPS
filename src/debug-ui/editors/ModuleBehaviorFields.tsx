@@ -57,6 +57,7 @@ export function ModuleBehaviorFields({
       {[
         ["Show header", "showHeader", true],
         ["Show status bar", "showStatusBar", true],
+        ["Show navigation bar", "showNavigationBar", true],
         ["Show keyboard", "showKeyboard", false],
       ].map(([label, key, fallback]) => (
         <InspectorFieldRow

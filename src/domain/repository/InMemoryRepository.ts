@@ -9,6 +9,7 @@ import type {
   MediaAsset,
   ModuleInstance,
   ModuleThemeConfig,
+  NavigationBar,
   Notification,
   Production,
   Shot,
@@ -28,6 +29,7 @@ export class InMemoryRepository implements DomainRepository {
   readonly #shots: Map<string, Shot>;
   readonly #iconThemes: Map<string, IconTheme>;
   readonly #statusBars: Map<string, StatusBar>;
+  readonly #navigationBars: Map<string, NavigationBar>;
   readonly #themes: Map<string, Theme>;
   readonly #moduleThemeConfigs: Map<string, ModuleThemeConfig>;
   readonly #moduleInstances: Map<string, ModuleInstance>;
@@ -46,6 +48,7 @@ export class InMemoryRepository implements DomainRepository {
     this.#shots = indexById(dataset.shots);
     this.#iconThemes = indexById(dataset.iconThemes);
     this.#statusBars = indexById(dataset.statusBars);
+    this.#navigationBars = indexById(dataset.navigationBars);
     this.#themes = indexById(dataset.themes);
     this.#moduleThemeConfigs = indexById(dataset.moduleThemeConfigs);
     this.#moduleInstances = indexById(dataset.moduleInstances);
@@ -94,6 +97,10 @@ export class InMemoryRepository implements DomainRepository {
 
   getStatusBar(id: string) {
     return this.#statusBars.get(id);
+  }
+
+  getNavigationBar(id: string) {
+    return this.#navigationBars.get(id);
   }
 
   getTheme(id: string) {

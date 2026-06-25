@@ -29,6 +29,9 @@ export function useRecordEditorTabs({
   const [statusBarTab, setStatusBarTab] = useState<"" | "general" | "config">(
     "config",
   );
+  const [navigationBarTab, setNavigationBarTab] = useState<
+    "" | "general" | "config"
+  >("config");
   const [genericTab, setGenericTab] = useState<"" | "general">("general");
 
   useEffect(() => {
@@ -42,6 +45,9 @@ export function useRecordEditorTabs({
     setModuleDesignGroup("");
     setIconThemeTab(tableId === "icon_themes" ? "tokens" : "general");
     setStatusBarTab(tableId === "status_bars" ? "config" : "general");
+    setNavigationBarTab(
+      tableId === "navigation_bars" ? "config" : "general",
+    );
     setGenericTab("general");
   }, [recordId, tableId]);
 
@@ -51,6 +57,7 @@ export function useRecordEditorTabs({
     contentTab,
     genericTab,
     iconThemeTab,
+    navigationBarTab,
     statusBarTab,
     moduleDesignGroup,
     moduleThemeTab,
@@ -60,6 +67,7 @@ export function useRecordEditorTabs({
     setContentTab,
     setGenericTab,
     setIconThemeTab,
+    setNavigationBarTab,
     setStatusBarTab,
     setModuleDesignGroup,
     setModuleThemeTab,

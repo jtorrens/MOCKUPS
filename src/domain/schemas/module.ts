@@ -159,6 +159,7 @@ export const ChatModuleDataSchema = z
 export const ChatModuleConfigSchema = z.object({
   showHeader: z.boolean().default(true),
   showStatusBar: z.boolean().default(true),
+  showNavigationBar: z.boolean().default(true),
   statusBar: JsonObjectSchema.optional(),
   showKeyboard: z.boolean().default(false),
   initialScroll: z.enum(["top", "bottom", "preserve"]).default("bottom"),

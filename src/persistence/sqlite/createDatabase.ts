@@ -314,6 +314,35 @@ function applyAdditiveV12Migration(database: SQLiteDatabase): void {
   database.pragma("user_version = 12");
 }
 
+function applyAdditiveV13Migration(database: SQLiteDatabase): void {
+  database.exec(`
+    CREATE TABLE IF NOT EXISTS navigation_bars (
+      id TEXT PRIMARY KEY,
+      production_id TEXT NOT NULL REFERENCES productions(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      family TEXT NOT NULL,
+      config_json TEXT NOT NULL,
+      metadata_json TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_navigation_bars_production
+      ON navigation_bars(production_id, name);
+  `);
+
+  const themeColumns = new Set(
+    (
+      database.pragma("table_info(themes)") as {
+        name: string;
+      }[]
+    ).map((column) => column.name),
+  );
+  if (!themeColumns.has("navigation_bar_id")) {
+    database.exec(
+      "ALTER TABLE themes ADD COLUMN navigation_bar_id TEXT REFERENCES navigation_bars(id) ON DELETE SET NULL",
+    );
+  }
+  database.pragma("user_version = 13");
+}
+
 export function applyInitialSchema(database: SQLiteDatabase): void {
   database.exec(readFileSync(schemaPath, "utf8"));
   applyAdditiveV2Migration(database);
@@ -327,6 +356,7 @@ export function applyInitialSchema(database: SQLiteDatabase): void {
   applyAdditiveV10Migration(database);
   applyAdditiveV11Migration(database);
   applyAdditiveV12Migration(database);
+  applyAdditiveV13Migration(database);
   database.pragma("foreign_keys = ON");
 }
 
