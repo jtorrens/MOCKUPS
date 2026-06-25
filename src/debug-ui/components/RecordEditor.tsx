@@ -67,10 +67,13 @@ import {
 } from "../editors/AppMediaFields.js";
 import { ModuleBehaviorFields } from "../editors/ModuleBehaviorFields.js";
 import {
+  normalizedThemeTokenRoot,
+  ThemeChromeGroupEditor,
+} from "../editors/ThemeFields.js";
+import {
   hasModeColorOverrides,
   ModeColorEditor,
 } from "./json-editor/ModeColorEditor.js";
-import { ColorValueEditor } from "./json-editor/ColorValueEditor.js";
 import {
   cloneJson,
   defaultJsonValue,
@@ -923,202 +926,6 @@ export function RecordEditor({
     );
   }
 
-  function normalizeChromeBackground(value: unknown, dark = false) {
-    if (value === "transparent" || value === undefined || value === null) {
-      return dark ? "rgba(0,0,0,0)" : "rgba(255,255,255,0)";
-    }
-    return value;
-  }
-
-  function themeChromeDefaults(
-    groupKey: "statusBar" | "navigationBar",
-    dark = false,
-  ): Record<string, JsonValue> {
-    const family = String(drafts.family ?? record?.family ?? "ios").toLowerCase();
-    const isAndroid = family === "android";
-    const foreground = dark ? "#FFFFFF" : "#000000";
-    if (groupKey === "statusBar") {
-      return {
-        type: isAndroid ? "android-default" : "ios-default",
-        foreground,
-        background: normalizeChromeBackground(undefined, dark) as string,
-        iconScale: 1,
-      };
-    }
-    return {
-      type: isAndroid ? "android-gesture" : "ios-home-indicator",
-      foreground,
-      background: normalizeChromeBackground(undefined, dark) as string,
-      iconScale: 1,
-    };
-  }
-
-  function normalizeThemeChromeGroup(
-    groupKey: "statusBar" | "navigationBar",
-    value: unknown,
-    dark = false,
-  ) {
-    const root = isJsonObject(value as JsonValue)
-      ? (value as Record<string, JsonValue>)
-      : {};
-    return {
-      ...themeChromeDefaults(groupKey, dark),
-      ...root,
-      background: normalizeChromeBackground(root.background, dark) as JsonValue,
-    };
-  }
-
-  function normalizedThemeTokenRoot(root: Record<string, unknown>) {
-    const modes = isJsonObject(root.modes as JsonValue)
-      ? (root.modes as Record<string, JsonValue>)
-      : {};
-    const lightMode = isJsonObject(modes.light)
-      ? (modes.light as Record<string, JsonValue>)
-      : {};
-    const darkMode = isJsonObject(modes.dark)
-      ? (modes.dark as Record<string, JsonValue>)
-      : {};
-    const legacyNotifications = isJsonObject(root.notifications as JsonValue)
-      ? (root.notifications as Record<string, JsonValue>)
-      : {};
-    const visibleNotifications = {
-      ...legacyNotifications,
-    };
-    delete visibleNotifications.background;
-    delete visibleNotifications.titleColor;
-    delete visibleNotifications.bodyColor;
-    const lightNotifications = isJsonObject(lightMode.notifications)
-      ? (lightMode.notifications as Record<string, JsonValue>)
-      : {};
-    const darkNotifications = isJsonObject(darkMode.notifications)
-      ? (darkMode.notifications as Record<string, JsonValue>)
-      : {};
-    return {
-      ...root,
-      notifications: visibleNotifications,
-      statusBar: normalizeThemeChromeGroup("statusBar", root.statusBar),
-      navigationBar: normalizeThemeChromeGroup("navigationBar", root.navigationBar),
-      modes: {
-        ...modes,
-        light: {
-          ...lightMode,
-          statusBar: normalizeThemeChromeGroup("statusBar", lightMode.statusBar),
-          navigationBar: normalizeThemeChromeGroup(
-            "navigationBar",
-            lightMode.navigationBar,
-          ),
-          notifications: {
-            background:
-              lightNotifications.background ??
-              legacyNotifications.background ??
-              "rgba(245,245,247,0.92)",
-            titleColor:
-              lightNotifications.titleColor ??
-              legacyNotifications.titleColor ??
-              "#000000",
-            bodyColor:
-              lightNotifications.bodyColor ??
-              legacyNotifications.bodyColor ??
-              "#3A3A3C",
-          },
-        },
-        dark: {
-          ...darkMode,
-          statusBar: normalizeThemeChromeGroup("statusBar", darkMode.statusBar, true),
-          navigationBar: normalizeThemeChromeGroup(
-            "navigationBar",
-            darkMode.navigationBar,
-            true,
-          ),
-          notifications: {
-            background:
-              darkNotifications.background ??
-              legacyNotifications.background ??
-              "rgba(44,44,46,0.92)",
-            titleColor:
-              darkNotifications.titleColor ??
-              legacyNotifications.titleColor ??
-              "#FFFFFF",
-            bodyColor:
-              darkNotifications.bodyColor ??
-              legacyNotifications.bodyColor ??
-              "#D1D1D6",
-          },
-        },
-      },
-    } as Record<string, JsonValue>;
-  }
-
-  function renderThemeChromeGroup(
-    tokenRoot: Record<string, JsonValue>,
-    groupKey: "statusBar" | "navigationBar",
-  ) {
-    const group = isJsonObject(tokenRoot[groupKey])
-      ? (tokenRoot[groupKey] as Record<string, JsonValue>)
-      : themeChromeDefaults(groupKey);
-    const typeOptions =
-      groupKey === "statusBar"
-        ? ["dummy-status-bar", "ios-default", "android-default"]
-        : [
-            "dummy-navigation-bar",
-            "ios-home-indicator",
-            "android-gesture",
-            "android-3-button",
-          ];
-    function updateChrome(path: JsonPath, nextValue: JsonValue) {
-      setJsonDraft(
-        "tokens_json",
-        setAtPath(tokenRoot as JsonValue, [groupKey, ...path], nextValue),
-      );
-    }
-
-    return (
-      <div className="theme-chrome-editor">
-        <InspectorFieldRow
-          className="record-editor-field"
-          label={<span>Type</span>}
-          control={
-            <select
-              value={String(group.type ?? typeOptions[0])}
-              onChange={(event) => updateChrome(["type"], event.target.value)}
-            >
-              {typeOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          }
-        />
-        <InspectorFieldRow
-          className="record-editor-field"
-          label={<span>Icon scale</span>}
-          control={
-            <input
-              type="number"
-              step="0.05"
-              value={Number(group.iconScale ?? 1)}
-              onChange={(event) =>
-                updateChrome(["iconScale"], Number(event.target.value))
-              }
-            />
-          }
-        />
-        <InspectorFieldRow
-          className="record-editor-field"
-          label={<span>Background</span>}
-          control={
-            <ColorValueEditor
-              value={String(group.background ?? "rgba(255,255,255,0)")}
-              alpha
-              onChange={(nextValue) => updateChrome(["background"], nextValue)}
-            />
-          }
-        />
-      </div>
-    );
-  }
-
   if (table.id === "apps") {
     const configField = fieldsByColumn.get("config_json");
     const metadataField = fieldsByColumn.get("metadata_json");
@@ -1241,9 +1048,10 @@ export function RecordEditor({
 
   if (table.id === "themes") {
     const tokensField = fieldsByColumn.get("tokens_json");
-    const themeTokenRoot = normalizedThemeTokenRoot(
-      parsedObject(drafts.tokens_json ?? "{}"),
-    );
+    const themeTokenRoot = normalizedThemeTokenRoot({
+      root: parsedObject(drafts.tokens_json ?? "{}"),
+      family: String(drafts.family ?? record?.family ?? "ios"),
+    });
     const themeTokenGroups = tokenEditorGroups(themeTokenRoot);
     const activeThemeTokenGroup =
       themeTokenGroup && themeTokenGroups.includes(themeTokenGroup)
@@ -1296,7 +1104,14 @@ export function RecordEditor({
                   activeGroup={activeThemeTokenGroup}
                   onToggle={setThemeTokenGroup}
                 >
-                  {renderThemeChromeGroup(themeTokenRoot, group)}
+                  <ThemeChromeGroupEditor
+                    tokenRoot={themeTokenRoot}
+                    groupKey={group}
+                    family={String(drafts.family ?? record?.family ?? "ios")}
+                    onTokenRootChange={(nextRoot) =>
+                      setJsonDraft("tokens_json", nextRoot)
+                    }
+                  />
                 </SubgroupAccordion>
               ))}
             </>
