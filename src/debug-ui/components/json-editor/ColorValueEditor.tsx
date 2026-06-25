@@ -163,26 +163,27 @@ export function ColorValueEditor({
 
   return (
     <div className="color-value-editor" ref={rootRef}>
-      <button
-        type="button"
-        className="color-swatch-button"
-        aria-label={`${label} picker`}
-        onClick={toggleOpen}
-        hidden={!alpha}
-      >
-        <span style={{ background: displaySwatch(value, alpha) }} />
-      </button>
       {alpha ? (
-        <input
-          aria-label={`${label} alpha`}
-          className="color-alpha-input"
-          type="number"
-          min={0}
-          max={1}
-          step={0.01}
-          value={String(alphaValue(value))}
-          onChange={(event) => onChange(withAlpha(value, Number(event.target.value)))}
-        />
+        <>
+          <button
+            type="button"
+            className="color-swatch-button"
+            aria-label={`${label} picker`}
+            onClick={toggleOpen}
+          >
+            <span style={{ background: displaySwatch(value, alpha) }} />
+          </button>
+          <input
+            aria-label={`${label} alpha`}
+            className="color-alpha-input"
+            type="number"
+            min={0}
+            max={1}
+            step={0.01}
+            value={String(alphaValue(value))}
+            onChange={(event) => onChange(withAlpha(value, Number(event.target.value)))}
+          />
+        </>
       ) : (
         <>
           <input
