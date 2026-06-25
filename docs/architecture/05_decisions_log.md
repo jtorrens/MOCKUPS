@@ -686,6 +686,7 @@ Current boundaries:
 - `src/debug-ui/editors/ModuleThemeConfigRecordEditor.tsx` owns Module Theme Config composition: design token group accordions, inherited token warnings, mode colors, and settings/metadata fields.
 - `src/debug-ui/editors/ModuleInstanceRecordEditor.tsx` owns Module Instance composition: content group accordions, Chat content group editing, media browsing paths, exclusive row expansion, content warnings, and behavior fields.
 - `src/debug-ui/editors/ScreenInstanceRecordEditor.tsx` owns Screen Instance composition: general timing/app fields, transform JSON, transition fields, and device-state JSON.
+- `src/debug-ui/editors/RecordEditorDispatcher.tsx` owns table-to-editor dispatch. It receives prepared drafts, tab state, render services, media context, and routes each table to the correct editor composition component.
 - `src/debug-ui/editors/RecordFieldRenderer.tsx` owns base field rendering: plain inputs, relation dropdowns, readonly controls, and raw JSON tree entry points.
 - `src/debug-ui/editors/recordEditorRenderServices.tsx` owns shared field-render services: base field rendering, grouped field lists, generic field dispatch, flat JSON object editors, device metrics fields, and JSON draft writes.
 - `src/debug-ui/editors/useRecordDraftAutosave.ts` owns draft initialization, per-field validation, dirty/saving/saved/error state, and debounced persistence through the debug API.
@@ -697,7 +698,7 @@ Current boundaries:
 - `src/debug-ui/editors/recordJsonUtils.ts`, `recordTokenUtils.ts`, and `recordProductionUtils.ts` own shared pure helpers for parsed JSON, normalized JSON values, token groups, App token filtering, and production media-root lookup.
 - `src/debug-ui/editors/jsonGroupDrafts.ts` owns draft read/write helpers for editing one JSON group inside a wider JSON column.
 - `src/debug-ui/editors/chat/` owns Chat module content editing and its content model helpers: participants, header, messages, nested values, message media, array/card behavior, and content override-warning rules.
-- `src/debug-ui/components/RecordEditor.tsx` remains the central coordinator for table dispatch and editor wiring.
+- `src/debug-ui/components/RecordEditor.tsx` remains the central shell: it prepares draft/autosave state, tab state, media root, render services, JSON group helpers, and delegates table routing to `RecordEditorDispatcher`.
 
 This creates an OOP-like separation inside React without introducing an external plugin/module system yet. App/module-specific editors can vary in behavior while still reusing the same editor UI primitives and design tokens for analogous concepts.
 

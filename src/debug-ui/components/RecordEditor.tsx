@@ -7,14 +7,8 @@ import { EditorHeader } from "../editor-ui/EditorHeader.js";
 import { EditorSectionCard } from "../editor-ui/EditorSectionCard.js";
 import { EditorSections } from "../editor-ui/EditorSections.js";
 import { DeferredTextInput } from "../editor-ui/DeferredTextInput.js";
-import { AppRecordEditor } from "../editors/AppRecordEditor.js";
-import { GenericRecordEditor } from "../editors/GenericRecordEditor.js";
-import { ModuleInstanceRecordEditor } from "../editors/ModuleInstanceRecordEditor.js";
-import { ModuleThemeConfigRecordEditor } from "../editors/ModuleThemeConfigRecordEditor.js";
-import { ScreenInstanceRecordEditor } from "../editors/ScreenInstanceRecordEditor.js";
-import { ThemeRecordEditor } from "../editors/ThemeRecordEditor.js";
 import { defaultGroupValue } from "../editors/chat/chatContentModel.js";
-import { shotHasFpsOverride } from "../editors/ShotFields.js";
+import { RecordEditorDispatcher } from "../editors/RecordEditorDispatcher.js";
 import { productionMediaRootForRecord } from "../editors/recordProductionUtils.js";
 import { createJsonGroupDrafts } from "../editors/jsonGroupDrafts.js";
 import { useRecordDraftAutosave } from "../editors/useRecordDraftAutosave.js";
@@ -69,26 +63,7 @@ export function RecordEditor({
     onRecordsChanged,
     onRecordSaved,
   });
-  const {
-    appTab,
-    appTokenGroup,
-    contentTab,
-    genericTab,
-    moduleDesignGroup,
-    moduleThemeTab,
-    screenTab,
-    setAppTab,
-    setAppTokenGroup,
-    setContentTab,
-    setGenericTab,
-    setModuleDesignGroup,
-    setModuleThemeTab,
-    setScreenTab,
-    setThemeTab,
-    setThemeTokenGroup,
-    themeTab,
-    themeTokenGroup,
-  } = useRecordEditorTabs({
+  const tabs = useRecordEditorTabs({
     recordId: record?.id,
     tableId: table.id,
   });
@@ -111,13 +86,7 @@ export function RecordEditor({
     record,
     records,
   });
-  const {
-    renderField,
-    renderFields,
-    renderFlatJsonObjectEditor,
-    renderGenericField,
-    setJsonDraft,
-  } = createRecordEditorRenderServices({
+  const renderServices = createRecordEditorRenderServices({
     table,
     record,
     records,
@@ -132,127 +101,27 @@ export function RecordEditor({
     setDrafts,
   });
 
-  const { rawForJsonGroupValue, updateJsonGroupValue } = createJsonGroupDrafts({
+  const jsonGroupDrafts = createJsonGroupDrafts({
     drafts,
     defaultGroupValue,
     setDrafts,
   });
 
-  if (table.id === "apps") {
-    return (
-      <AppRecordEditor
-        table={table}
-        record={record}
-        fieldsByColumn={fieldsByColumn}
-        drafts={drafts}
-        inheritedFields={inheritedFields}
-        activeTab={appTab}
-        activeTokenGroup={appTokenGroup}
-        mediaRoot={productionMediaRoot}
-        nativeBridge={mockupsNative()}
-        relativePathFromRoot={relativePathFromRoot}
-        renderFields={renderFields}
-        renderField={renderField}
-        renderFlatJsonObjectEditor={renderFlatJsonObjectEditor}
-        setActiveTab={setAppTab}
-        setActiveTokenGroup={setAppTokenGroup}
-        setJsonDraft={setJsonDraft}
-      />
-    );
-  }
-
-  if (table.id === "themes") {
-    return (
-      <ThemeRecordEditor
-        table={table}
-        record={record}
-        fieldsByColumn={fieldsByColumn}
-        drafts={drafts}
-        activeTab={themeTab}
-        activeTokenGroup={themeTokenGroup}
-        renderFields={renderFields}
-        renderField={renderField}
-        setActiveTab={setThemeTab}
-        setActiveTokenGroup={setThemeTokenGroup}
-        setJsonDraft={setJsonDraft}
-      />
-    );
-  }
-
-  if (table.id === "module_instances") {
-    return (
-      <ModuleInstanceRecordEditor
-        table={table}
-        record={record}
-        records={records}
-        fieldsByColumn={fieldsByColumn}
-        drafts={drafts}
-        activeTab={screenTab}
-        activeContentTab={contentTab}
-        mediaRoot={productionMediaRoot}
-        nativeBridge={mockupsNative()}
-        relativePathFromRoot={relativePathFromRoot}
-        setDrafts={setDrafts}
-        setActiveTab={setScreenTab}
-        setActiveContentTab={setContentTab}
-      />
-    );
-  }
-
-  if (table.id === "screen_instances") {
-    return (
-      <ScreenInstanceRecordEditor
-        table={table}
-        record={record}
-        records={records}
-        fieldsByColumn={fieldsByColumn}
-        drafts={drafts}
-        activeTab={screenTab}
-        renderFields={renderFields}
-        renderField={renderField}
-        setDrafts={setDrafts}
-        setActiveTab={setScreenTab}
-      />
-    );
-  }
-
-  if (table.id === "module_theme_configs") {
-    return (
-      <ModuleThemeConfigRecordEditor
-        table={table}
-        record={record}
-        fieldsByColumn={fieldsByColumn}
-        drafts={drafts}
-        inheritedFields={inheritedFields}
-        activeTab={moduleThemeTab}
-        activeDesignGroup={moduleDesignGroup}
-        renderFields={renderFields}
-        renderField={renderField}
-        renderFlatJsonObjectEditor={renderFlatJsonObjectEditor}
-        rawForJsonGroupValue={rawForJsonGroupValue}
-        updateJsonGroupValue={updateJsonGroupValue}
-        setActiveTab={setModuleThemeTab}
-        setActiveDesignGroup={setModuleDesignGroup}
-        setJsonDraft={setJsonDraft}
-      />
-    );
-  }
-
   return (
-    <GenericRecordEditor
+    <RecordEditorDispatcher
       table={table}
       record={record}
-      activeTab={genericTab}
-      renderGenericField={renderGenericField}
-      setActiveTab={setGenericTab}
-      showGeneralWarning={
-        table.id === "shots" &&
-        shotHasFpsOverride({
-          records,
-          record,
-          drafts,
-        })
-      }
+      records={records}
+      fieldsByColumn={fieldsByColumn}
+      drafts={drafts}
+      inheritedFields={inheritedFields}
+      jsonGroupDrafts={jsonGroupDrafts}
+      mediaRoot={productionMediaRoot}
+      nativeBridge={mockupsNative()}
+      relativePathFromRoot={relativePathFromRoot}
+      renderServices={renderServices}
+      setDrafts={setDrafts}
+      tabs={tabs}
     />
   );
 }
