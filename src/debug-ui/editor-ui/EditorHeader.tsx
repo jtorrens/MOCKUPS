@@ -2,6 +2,7 @@ import "./EditorSystem.css";
 import "./EditorContent.css";
 import "./EditorJson.css";
 import "./EditorMedia.css";
+import "./EditorBehavior.css";
 
 interface EditorHeaderProps {
   title: string;
