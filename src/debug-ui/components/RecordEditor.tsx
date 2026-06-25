@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import {
   type AppRecord,
   type AppTableDefinition,
@@ -13,17 +13,12 @@ import { ModuleInstanceRecordEditor } from "../editors/ModuleInstanceRecordEdito
 import { ModuleThemeConfigRecordEditor } from "../editors/ModuleThemeConfigRecordEditor.js";
 import { ScreenInstanceRecordEditor } from "../editors/ScreenInstanceRecordEditor.js";
 import { ThemeRecordEditor } from "../editors/ThemeRecordEditor.js";
-import type {
-  AppEditorTab,
-  ModuleThemeTab,
-  ScreenInstanceTab,
-  ThemeEditorTab,
-} from "../editors/editorTabs.js";
 import { defaultGroupValue } from "../editors/chat/chatContentModel.js";
 import { shotHasFpsOverride } from "../editors/ShotFields.js";
 import { productionMediaRootForRecord } from "../editors/recordProductionUtils.js";
 import { useJsonGroupDrafts } from "../editors/useJsonGroupDrafts.js";
 import { useRecordDraftAutosave } from "../editors/useRecordDraftAutosave.js";
+import { useRecordEditorTabs } from "../editors/useRecordEditorTabs.js";
 import { useRecordEditorRenderServices } from "../editors/useRecordEditorRenderServices.js";
 
 interface MockupsNativeBridge {
@@ -74,27 +69,29 @@ export function RecordEditor({
     onRecordsChanged,
     onRecordSaved,
   });
-  const [screenTab, setScreenTab] = useState<ScreenInstanceTab>("");
-  const [contentTab, setContentTab] = useState("participants");
-  const [appTab, setAppTab] = useState<AppEditorTab>("");
-  const [appTokenGroup, setAppTokenGroup] = useState("");
-  const [themeTab, setThemeTab] = useState<ThemeEditorTab>("");
-  const [themeTokenGroup, setThemeTokenGroup] = useState("");
-  const [moduleThemeTab, setModuleThemeTab] = useState<ModuleThemeTab>("");
-  const [moduleDesignGroup, setModuleDesignGroup] = useState("");
-  const [genericTab, setGenericTab] = useState<"" | "general">("general");
-
-  useEffect(() => {
-    setScreenTab("");
-    setContentTab("participants");
-    setModuleThemeTab("");
-    setAppTab("");
-    setAppTokenGroup("");
-    setThemeTab("");
-    setThemeTokenGroup("");
-    setModuleDesignGroup("");
-    setGenericTab("general");
-  }, [record?.id, table.id]);
+  const {
+    appTab,
+    appTokenGroup,
+    contentTab,
+    genericTab,
+    moduleDesignGroup,
+    moduleThemeTab,
+    screenTab,
+    setAppTab,
+    setAppTokenGroup,
+    setContentTab,
+    setGenericTab,
+    setModuleDesignGroup,
+    setModuleThemeTab,
+    setScreenTab,
+    setThemeTab,
+    setThemeTokenGroup,
+    themeTab,
+    themeTokenGroup,
+  } = useRecordEditorTabs({
+    recordId: record?.id,
+    tableId: table.id,
+  });
 
   if (!record) {
     return (
@@ -104,7 +101,10 @@ export function RecordEditor({
     );
   }
 
-  const fieldsByColumn = new Map(table.fields.map((field) => [field.column, field]));
+  const fieldsByColumn = useMemo(
+    () => new Map(table.fields.map((field) => [field.column, field])),
+    [table.fields],
+  );
   const productionMediaRoot = productionMediaRootForRecord({
     table,
     record,

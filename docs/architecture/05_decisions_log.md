@@ -689,6 +689,7 @@ Current boundaries:
 - `src/debug-ui/editors/RecordFieldRenderer.tsx` owns base field rendering: plain inputs, relation dropdowns, readonly controls, and raw JSON tree entry points.
 - `src/debug-ui/editors/useRecordEditorRenderServices.tsx` owns shared field-render services: base field rendering, grouped field lists, generic field dispatch, flat JSON object editors, device metrics fields, and JSON draft writes.
 - `src/debug-ui/editors/useRecordDraftAutosave.ts` owns draft initialization, per-field validation, dirty/saving/saved/error state, and debounced persistence through the debug API.
+- `src/debug-ui/editors/useRecordEditorTabs.ts` owns editor tab/group state and reset behavior when the active table/record changes.
 - `src/debug-ui/editors/GenericFieldDispatcher.tsx` owns the fallback table/field dispatch rules for generic records.
 - `src/debug-ui/editors/FlatJsonFieldEditors.tsx` owns flat JSON object fields and device metric JSON paths.
 - `src/debug-ui/editors/ShotFields.tsx`, `RenderPresetFields.tsx`, `ProductionFields.tsx`, `ScreenInstanceFields.tsx`, `ActorFields.tsx`, `AppMediaFields.tsx`, `ThemeFields.tsx`, and `ModuleBehaviorFields.tsx` own their table-specific field exceptions.
@@ -696,7 +697,7 @@ Current boundaries:
 - `src/debug-ui/editors/recordJsonUtils.ts`, `recordTokenUtils.ts`, and `recordProductionUtils.ts` own shared pure helpers for parsed JSON, normalized JSON values, token groups, App token filtering, and production media-root lookup.
 - `src/debug-ui/editors/useJsonGroupDrafts.ts` owns draft read/write helpers for editing one JSON group inside a wider JSON column.
 - `src/debug-ui/editors/chat/` owns Chat module content editing and its content model helpers: participants, header, messages, nested values, message media, array/card behavior, and content override-warning rules.
-- `src/debug-ui/components/RecordEditor.tsx` remains the central coordinator for table dispatch, tab/group state, and editor wiring.
+- `src/debug-ui/components/RecordEditor.tsx` remains the central coordinator for table dispatch and editor wiring.
 
 This creates an OOP-like separation inside React without introducing an external plugin/module system yet. App/module-specific editors can vary in behavior while still reusing the same editor UI primitives and design tokens for analogous concepts.
 
