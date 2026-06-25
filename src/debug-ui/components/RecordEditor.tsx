@@ -75,6 +75,7 @@ import {
   normalizedThemeTokenRoot,
   ThemeChromeGroupEditor,
 } from "../editors/ThemeFields.js";
+import { productionMediaRootForRecord } from "../editors/recordProductionUtils.js";
 import {
   hasModeColorOverrides,
   ModeColorEditor,
@@ -530,34 +531,8 @@ export function RecordEditor({
     });
   }
 
-  function productionIdForCurrentRecord() {
-    if (!record) return "";
-    if (table.id === "productions") return record.id;
-    if (typeof record.production_id === "string") return record.production_id;
-    if (table.id === "module_instances") {
-      const screen = records.screen_instances?.find(
-        (item) => item.id === record.screen_instance_id,
-      );
-      const shot = records.shots?.find((item) => item.id === screen?.shot_id);
-      return typeof shot?.production_id === "string" ? shot.production_id : "";
-    }
-    if (table.id === "screen_instances") {
-      const shot = records.shots?.find((item) => item.id === record.shot_id);
-      return typeof shot?.production_id === "string" ? shot.production_id : "";
-    }
-    return "";
-  }
-
   function productionMediaRoot() {
-    const production = records.productions?.find(
-      (item) => item.id === productionIdForCurrentRecord(),
-    );
-    const settings = production?.settings_json;
-    if (!settings || typeof settings !== "object" || Array.isArray(settings)) {
-      return "";
-    }
-    const mediaRoot = (settings as Record<string, unknown>).mediaRoot;
-    return typeof mediaRoot === "string" ? mediaRoot : "";
+    return productionMediaRootForRecord({ table, record, records });
   }
 
   function updateThemeTokenGroupValue(
