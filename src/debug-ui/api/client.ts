@@ -125,6 +125,7 @@ export interface AppCreateRequest {
     | "navigation_bars"
     | "themes"
     | "devices"
+    | "palette_colors"
     | "production_fonts"
     | "render_presets";
   parent?: {
@@ -143,6 +144,7 @@ export interface AppRecordActionRequest {
     | "navigation_bars"
     | "themes"
     | "devices"
+    | "palette_colors"
     | "production_fonts"
     | "render_presets";
   recordId: string;

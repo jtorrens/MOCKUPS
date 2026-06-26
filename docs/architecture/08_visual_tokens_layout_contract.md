@@ -43,7 +43,20 @@ theme base tokens
   → module theme config modes[selected theme_mode]
 ```
 
-The theme editor selects installed font families through a font picker. Weight fields are named variants exposed by the selected family, for example `Regular`, `Semibold`, or the closest family-specific equivalent. If a family changes and a previous variant no longer exists, the editor falls back to the first available variant. There is no production font whitelist/table; the project assumes selected fonts are installed on the render machines.
+The theme and app editors should select from approved production font families.
+Importing a family may use installed system fonts as a source, but the approved
+family is copied into the production root and registered in `production_fonts`.
+Weight fields are named variants exposed by that approved family, for example
+`Regular`, `Semibold`, `Bold`, or a variable-font entry. If a family changes and
+a previous variant no longer exists, the editor falls back to the first
+available variant from the copied family files.
+
+Color authoring is moving toward the same approved-resource model. The
+production-scoped `palette_colors` table stores primitive RGB colors only:
+`token -> #RRGGBB`. Theme, app, and module tokens remain the semantic layer and
+should reference palette tokens rather than raw RGB values once the color-picker
+UI is migrated. Alpha is not part of the primitive palette; transparent fields
+store a palette token plus a separate numeric `0–1` alpha.
 
 Mode-aware color values may exist in Theme, App, and Module defaults. The editor should keep both light and dark columns available at authoring time; the resolver collapses to one mode only for preview/render. Module-specific values belong in `module_theme_configs.tokens_json`. For Chat, this includes message list gutter, header height/background/separator/icon/avatar defaults, message spacing/grouping distances, message/header typography, bubble colors/padding/radius/tails/shadows, bubble avatar size/gap, cursor behavior, and future chat media defaults.
 

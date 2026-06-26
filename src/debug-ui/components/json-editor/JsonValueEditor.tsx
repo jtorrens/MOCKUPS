@@ -1,6 +1,11 @@
-import { fontStylesForFamily, useSystemFontCatalog } from "./systemFonts.js";
+import { useSystemFontCatalog } from "./systemFonts.js";
 import { DeferredNumberInput } from "../../editor-ui/DeferredNumberInput.js";
 import { ColorValueEditor } from "./ColorValueEditor.js";
+import {
+  fontStylesForFamily,
+  productionFontIdForFamily,
+  type ProductionFontCatalog,
+} from "./productionFonts.js";
 import type { JsonUiHints } from "./uiHints.js";
 import { hintForPath } from "./uiHints.js";
 import {
@@ -18,6 +23,7 @@ interface JsonValueEditorProps {
   value: JsonValue;
   hints: JsonUiHints;
   groupContext?: string;
+  productionFontCatalog?: ProductionFontCatalog;
   onChange: (nextValue: JsonValue) => void;
   onRootChange?: (nextValue: JsonValue) => void;
 }
@@ -82,23 +88,36 @@ function isFontFamilyKey(key: string, parent: string, groupContext?: string) {
 }
 
 function firstAvailableFontStyle(
+  productionFontCatalog: ProductionFontCatalog | undefined,
   stylesByFamily: Map<string, string[]>,
   family: string,
 ) {
-  return fontStylesForFamily(stylesByFamily, family)[0] ?? "Regular";
+  return (
+    fontStylesForFamily(productionFontCatalog, stylesByFamily, family)[0] ??
+    "Regular"
+  );
 }
 
 function withCompatibleSiblingWeights(
   rootValue: JsonValue,
   path: JsonPath,
   family: string,
+  productionFontCatalog: ProductionFontCatalog | undefined,
   stylesByFamily: Map<string, string[]>,
 ) {
   const parentPath = path.slice(0, -1);
   const parent = getAtPath(rootValue, parentPath);
   if (!isJsonObject(parent)) return rootValue;
-  const options = fontStylesForFamily(stylesByFamily, family);
-  const fallback = firstAvailableFontStyle(stylesByFamily, family);
+  const options = fontStylesForFamily(
+    productionFontCatalog,
+    stylesByFamily,
+    family,
+  );
+  const fallback = firstAvailableFontStyle(
+    productionFontCatalog,
+    stylesByFamily,
+    family,
+  );
   let nextRoot = rootValue;
   for (const [key, value] of Object.entries(parent)) {
     if (!isFontWeightKey(key, String(parentPath[parentPath.length - 1] ?? ""))) {
@@ -112,18 +131,40 @@ function withCompatibleSiblingWeights(
   return nextRoot;
 }
 
+function withProductionFontMetadata(
+  rootValue: JsonValue,
+  path: JsonPath,
+  family: string,
+  productionFontCatalog: ProductionFontCatalog | undefined,
+) {
+  const productionFontId = productionFontIdForFamily(
+    productionFontCatalog,
+    family,
+  );
+  if (!productionFontId) return rootValue;
+  const parentPath = path.slice(0, -1);
+  return setAtPath(
+    setAtPath(rootValue, [...parentPath, "productionFontId"], productionFontId),
+    [...parentPath, "source"],
+    "production_font_family",
+  );
+}
+
 export function JsonValueEditor({
   rootValue,
   path,
   value,
   hints,
   groupContext,
+  productionFontCatalog,
   onChange,
   onRootChange,
 }: JsonValueEditorProps) {
   const hint = hintForPath(hints, path, value, groupContext);
   const widget = hint.widget;
   const { families, stylesByFamily } = useSystemFontCatalog();
+  const approvedFamilies = productionFontCatalog?.families ?? [];
+  const fontFamilies = productionFontCatalog ? approvedFamilies : families;
   const key = String(path[path.length - 1] ?? "");
   const parent = String(path[path.length - 2] ?? "");
 
@@ -135,7 +176,11 @@ export function JsonValueEditor({
     : contextChromeOptions;
   const fontOptions =
     isFontStyleKey(key, parent) || isFontWeightKey(key, parent, groupContext)
-      ? fontStylesForFamily(stylesByFamily, fontFamilyForPath(rootValue, path))
+      ? fontStylesForFamily(
+          productionFontCatalog,
+          stylesByFamily,
+          fontFamilyForPath(rootValue, path),
+        )
       : [];
   const dynamicSelectOptions =
     hint.options ?? (chromeOptions.length ? chromeOptions : fontOptions);
@@ -170,9 +215,15 @@ export function JsonValueEditor({
           const nextFamily = event.target.value;
           if (onRootChange && isFontFamilyKey(key, parent, groupContext)) {
             const nextRoot = withCompatibleSiblingWeights(
-              setAtPath(rootValue, path, nextFamily),
+              withProductionFontMetadata(
+                setAtPath(rootValue, path, nextFamily),
+                path,
+                nextFamily,
+                productionFontCatalog,
+              ),
               path,
               nextFamily,
+              productionFontCatalog,
               stylesByFamily,
             );
             onRootChange(nextRoot);
@@ -181,7 +232,7 @@ export function JsonValueEditor({
           onChange(nextFamily);
         }}
       >
-        {families.map((option) => (
+        {fontFamilies.map((option) => (
           <option key={option} value={option}>
             {option}
           </option>
@@ -192,7 +243,11 @@ export function JsonValueEditor({
 
   if (isFontWeightKey(key, parent, groupContext) || isFontStyleKey(key, parent)) {
     const options = withCurrentOption(
-      fontStylesForFamily(stylesByFamily, fontFamilyForPath(rootValue, path)),
+      fontStylesForFamily(
+        productionFontCatalog,
+        stylesByFamily,
+        fontFamilyForPath(rootValue, path),
+      ),
       value,
     );
     return (

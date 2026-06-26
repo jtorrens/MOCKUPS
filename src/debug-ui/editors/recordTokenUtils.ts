@@ -269,7 +269,11 @@ export function editorValueForThemeTokenGroup(
   const value = themeTokenRoot[groupKey] ?? defaultTokenGroupValue(groupKey);
   if (!isJsonObject(value)) return value;
   if (groupKey === "fonts") {
-    const { source: _source, ...visibleValue } = value;
+    const {
+      source: _source,
+      productionFontId: _productionFontId,
+      ...visibleValue
+    } = value;
     return visibleValue;
   }
   if (groupKey === "notifications") {
@@ -301,7 +305,11 @@ export function visibleTokenGroupValue(
     } = root;
     return visibleValue;
   }
-  const { source: _source, ...visibleValue } = root;
+  const {
+    source: _source,
+    productionFontId: _productionFontId,
+    ...visibleValue
+  } = root;
   return visibleValue;
 }
 
@@ -338,6 +346,9 @@ export function mergeTokenGroupWithInternalFields(
   if (Object.hasOwn(original, "source")) {
     internalFields.source = original.source;
   }
+  if (Object.hasOwn(original, "productionFontId")) {
+    internalFields.productionFontId = original.productionFontId;
+  }
   return {
     ...internalFields,
     ...nextVisible,
@@ -354,14 +365,22 @@ export function nextThemeTokenGroupValue({
   parsedValue: JsonValue;
 }) {
   const originalValue = themeTokenRoot[groupKey];
-  return groupKey === "fonts" && isJsonObject(parsedValue)
-    ? {
-        ...(isJsonObject(originalValue) ? originalValue : {}),
-        ...parsedValue,
-        source:
-          isJsonObject(originalValue) && typeof originalValue.source === "string"
-            ? originalValue.source
-            : "installed_system_font",
-      }
-    : parsedValue;
+  if (groupKey !== "fonts" || !isJsonObject(parsedValue)) {
+    return parsedValue;
+  }
+  const nextValue: Record<string, JsonValue> = {
+    ...(isJsonObject(originalValue) ? originalValue : {}),
+    ...parsedValue,
+    source:
+      isJsonObject(originalValue) && typeof originalValue.source === "string"
+        ? originalValue.source
+        : "production_font_family",
+  };
+  if (
+    isJsonObject(originalValue) &&
+    typeof originalValue.productionFontId === "string"
+  ) {
+    nextValue.productionFontId = originalValue.productionFontId;
+  }
+  return nextValue;
 }

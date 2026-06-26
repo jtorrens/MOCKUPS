@@ -27,6 +27,7 @@ const DELETE_ORDER = [
   "status_bars",
   "icon_themes",
   "production_fonts",
+  "palette_colors",
   "media_assets",
   "productions",
 ] as const;
@@ -352,13 +353,18 @@ function seedRecords(
       "id",
       "production_id",
       "family",
-      "style",
-      "file_path",
+      "files_json",
       "source_path",
-      "postscript_name",
       "metadata_json",
     ],
     dataset.productionFonts,
+    new Set(["files_json", "metadata_json"]),
+  );
+  insertRows(
+    database,
+    "palette_colors",
+    ["id", "production_id", "token", "value_hex", "metadata_json"],
+    dataset.paletteColors,
     new Set(["metadata_json"]),
   );
   insertRows(

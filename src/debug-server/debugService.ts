@@ -15,6 +15,7 @@ import {
   ModuleThemeConfigSchema,
   NavigationBarSchema,
   ProductionSchema,
+  PaletteColorSchema,
   ProductionFontSchema,
   RenderPresetSchema,
   ScreenInstanceSchema,
@@ -616,12 +617,31 @@ export const APP_TABLES = [
     ],
   },
   {
+    id: "palette_colors",
+    label: "Palette Colors",
+    table: "palette_colors",
+    titleColumn: "token",
+    jsonFields: ["metadata_json"],
+    fields: [
+      { column: "id", label: "ID", kind: "string", readonly: true },
+      {
+        column: "production_id",
+        label: "Production ID",
+        kind: "string",
+        readonly: true,
+      },
+      { column: "token", label: "Token", kind: "string" },
+      { column: "value_hex", label: "RGB / HEX", kind: "string" },
+      { column: "metadata_json", label: "Palette notes", kind: "json" },
+    ],
+  },
+  {
     id: "production_fonts",
     label: "Production Fonts",
     table: "production_fonts",
     titleColumn: "family",
-    jsonFields: ["metadata_json"],
-    optionalScalars: ["source_path", "postscript_name"],
+    jsonFields: ["files_json", "metadata_json"],
+    optionalScalars: ["source_path"],
     fields: [
       { column: "id", label: "ID", kind: "string", readonly: true },
       {
@@ -631,17 +651,10 @@ export const APP_TABLES = [
         readonly: true,
       },
       { column: "family", label: "Family", kind: "string" },
-      { column: "style", label: "Style", kind: "string" },
-      { column: "file_path", label: "Font file", kind: "string" },
+      { column: "files_json", label: "Font files", kind: "json" },
       {
         column: "source_path",
-        label: "Source path",
-        kind: "string",
-        nullable: true,
-      },
-      {
-        column: "postscript_name",
-        label: "PostScript name",
+        label: "Source directory",
         kind: "string",
         nullable: true,
       },
@@ -722,6 +735,7 @@ const PARSERS = {
   devices: DeviceSchema,
   device_states: DeviceStateSchema,
   media_assets: MediaAssetSchema,
+  palette_colors: PaletteColorSchema,
   production_fonts: ProductionFontSchema,
   render_presets: RenderPresetSchema,
   apps: AppSchema,
@@ -1207,6 +1221,7 @@ export interface AppCreateRequest {
     | "navigation_bars"
     | "themes"
     | "devices"
+    | "palette_colors"
     | "production_fonts"
     | "render_presets";
   parent?: {
@@ -1225,6 +1240,7 @@ export interface AppRecordActionRequest {
     | "navigation_bars"
     | "themes"
     | "devices"
+    | "palette_colors"
     | "production_fonts"
     | "render_presets";
   recordId: string;
@@ -1863,27 +1879,67 @@ export function createAppRecord(
       throw new Error(`Production ${productionId} not found`);
     }
     const family = request.name?.trim() || "New Font";
-    const style = "Regular";
-    const id = uniqueId("font", `${family} ${style}`);
+    const id = uniqueId("font", family);
     database
       .prepare(
         `INSERT INTO production_fonts (
           id,
           production_id,
           family,
-          style,
-          file_path,
+          files_json,
           source_path,
-          postscript_name,
           metadata_json
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?)`,
       )
-      .run(id, productionId, family, style, `fonts/${family}/${family}-${style}.ttf`, null, null, "{}");
+      .run(id, productionId, family, '{"files":[]}', null, "{}");
     const record = decodeAppRow(
       database.prepare("SELECT * FROM production_fonts WHERE id = ?").get(id) as Row,
       tableDefinition("production_fonts"),
     );
     return { tableId: "production_fonts", record, state: loadAppState(database) };
+  }
+
+  if (request.tableId === "palette_colors") {
+    const productionId = request.parent?.productionId;
+    if (!productionId) {
+      throw new Error("Creating a palette color requires a productionId parent.");
+    }
+    const production = database
+      .prepare("SELECT id FROM productions WHERE id = ?")
+      .get(productionId);
+    if (!production) {
+      throw new Error(`Production ${productionId} not found`);
+    }
+    const token = slugifyIdPart(request.name?.trim() || "new_color").replace(
+      /-/g,
+      "_",
+    );
+    const id = uniqueId("palette", token);
+    database
+      .prepare(
+        `INSERT INTO palette_colors (
+          id,
+          production_id,
+          token,
+          value_hex,
+          metadata_json
+        ) VALUES (?, ?, ?, ?, ?)`,
+      )
+      .run(
+        id,
+        productionId,
+        token,
+        "#FFFFFF",
+        stringifyJsonObject(
+          { note: "Production palette primitive color." },
+          "palette_colors.metadata_json",
+        ),
+      );
+    const record = decodeAppRow(
+      database.prepare("SELECT * FROM palette_colors WHERE id = ?").get(id) as Row,
+      tableDefinition("palette_colors"),
+    );
+    return { tableId: "palette_colors", record, state: loadAppState(database) };
   }
 
   if (request.tableId === "render_presets") {
@@ -2023,6 +2079,7 @@ function duplicateSimpleRecord(
     | "navigation_bars"
     | "themes"
     | "devices"
+    | "palette_colors"
     | "production_fonts"
     | "render_presets",
   recordId: string,
@@ -2035,7 +2092,11 @@ function duplicateSimpleRecord(
     throw new Error(`Record ${recordId} not found in ${tableId}`);
   }
   const nameSource =
-    tableId === "production_fonts" ? existing.family : existing.name;
+    tableId === "production_fonts"
+      ? existing.family
+      : tableId === "palette_colors"
+        ? existing.token
+        : existing.name;
   const name = copyName(nameSource);
   const id = uniqueId(
     tableId === "icon_themes"
@@ -2048,6 +2109,8 @@ function duplicateSimpleRecord(
       ? "theme"
       : tableId === "devices"
         ? "device"
+      : tableId === "palette_colors"
+        ? "palette"
       : tableId === "production_fonts"
         ? "font"
         : "render_preset",
@@ -2057,7 +2120,11 @@ function duplicateSimpleRecord(
   const next: Row = {
     ...existing,
     id,
-    ...(tableId === "production_fonts" ? { family: name } : { name }),
+    ...(tableId === "production_fonts"
+      ? { family: name }
+      : tableId === "palette_colors"
+        ? { token: slugifyIdPart(name).replace(/-/g, "_") }
+        : { name }),
   };
   database
     .prepare(

@@ -8,6 +8,7 @@ import { EditorSectionCard } from "../editor-ui/EditorSectionCard.js";
 import { EditorSections } from "../editor-ui/EditorSections.js";
 import { DeferredTextInput } from "../editor-ui/DeferredTextInput.js";
 import { defaultGroupValue } from "../editors/chat/chatContentModel.js";
+import { createProductionFontCatalog } from "./json-editor/productionFonts.js";
 import { RecordEditorDispatcher } from "../editors/RecordEditorDispatcher.js";
 import { productionMediaRootForRecord } from "../editors/recordProductionUtils.js";
 import { createJsonGroupDrafts } from "../editors/jsonGroupDrafts.js";
@@ -69,6 +70,10 @@ export function RecordEditor({
     recordId: record?.id,
     tableId: table.id,
   });
+  const productionFontCatalog = useMemo(
+    () => createProductionFontCatalog(records),
+    [records],
+  );
 
   const fieldsByColumn = useMemo(
     () => new Map(table.fields.map((field) => [field.column, field])),
@@ -101,6 +106,7 @@ export function RecordEditor({
     productionMediaRoot,
     relativePathFromRoot,
     setDrafts,
+    productionFontCatalog,
   });
 
   const jsonGroupDrafts = createJsonGroupDrafts({

@@ -17,6 +17,7 @@ import {
   stringifyJson,
   type JsonValue,
 } from "./jsonEditorUtils.js";
+import type { ProductionFontCatalog } from "./productionFonts.js";
 
 interface JsonTreeEditorProps {
   table: AppTableDefinition;
@@ -31,6 +32,7 @@ interface JsonTreeEditorProps {
   groupContext?: string;
   allowObjectStructuralEdits?: boolean;
   allowArrayStructuralEdits?: boolean;
+  productionFontCatalog?: ProductionFontCatalog;
   onRawTextChange: (nextRawText: string) => void;
 }
 
@@ -47,6 +49,7 @@ export function JsonTreeEditor({
   groupContext,
   allowObjectStructuralEdits = false,
   allowArrayStructuralEdits = false,
+  productionFontCatalog,
   onRawTextChange,
 }: JsonTreeEditorProps) {
   const parsed = useMemo(
@@ -104,6 +107,7 @@ export function JsonTreeEditor({
           inheritedRoot={inheritedValue as JsonValue}
           hints={hints}
           groupContext={groupContext}
+          productionFontCatalog={productionFontCatalog}
           onRootChange={setTreeValue}
         />
       ) : canUseInheritedOverrideEditor ? (
@@ -114,6 +118,7 @@ export function JsonTreeEditor({
           inheritedColumnLabel="Inherited from template"
           groupContext={groupContext}
           restoreMode={restoreStrategy}
+          productionFontCatalog={productionFontCatalog}
           onRootChange={setTreeValue}
         />
       ) : canUseModuleThemeTokenEditor ? (
@@ -124,6 +129,7 @@ export function JsonTreeEditor({
           inheritedColumnLabel="Inherited"
           groupContext={groupContext}
           restoreMode={restoreStrategy}
+          productionFontCatalog={productionFontCatalog}
           onRootChange={setTreeValue}
         />
       ) : canUseAppInheritedTokenEditor ? (
@@ -134,6 +140,7 @@ export function JsonTreeEditor({
           inheritedColumnLabel="Inherited from theme"
           groupContext={groupContext}
           restoreMode={restoreStrategy}
+          productionFontCatalog={productionFontCatalog}
           onRootChange={setTreeValue}
         />
       ) : groupContext && Array.isArray(parsed.value) ? (
@@ -151,6 +158,7 @@ export function JsonTreeEditor({
             allowObjectStructuralEdits={allowObjectStructuralEdits}
             allowArrayStructuralEdits={allowArrayStructuralEdits}
             groupContext={groupContext}
+            productionFontCatalog={productionFontCatalog}
             onRootChange={setTreeValue}
           />
         </div>
@@ -166,6 +174,7 @@ export function JsonTreeEditor({
             allowObjectStructuralEdits={allowObjectStructuralEdits}
             allowArrayStructuralEdits={allowArrayStructuralEdits}
             groupContext={groupContext}
+            productionFontCatalog={productionFontCatalog}
             onRootChange={setTreeValue}
           />
         </div>
@@ -182,6 +191,7 @@ export function JsonTreeEditor({
             allowObjectStructuralEdits={allowObjectStructuralEdits}
             allowArrayStructuralEdits={allowArrayStructuralEdits}
             groupContext={groupContext}
+            productionFontCatalog={productionFontCatalog}
             onRootChange={setTreeValue}
           />
         </div>

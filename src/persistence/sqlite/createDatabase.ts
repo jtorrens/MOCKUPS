@@ -8,6 +8,34 @@ const schemaPath = fileURLToPath(new URL("./schema.sql", import.meta.url));
 
 export type SQLiteDatabase = Database.Database;
 
+const IOS_SEED_PALETTE_COLORS = [
+  ["white", "#FFFFFF"],
+  ["black", "#000000"],
+  ["blue", "#007AFF"],
+  ["blue_bright", "#0A84FF"],
+  ["gray_medium", "#6E6E73"],
+  ["gray_medium_bright", "#98989D"],
+  ["gray", "#8E8E93"],
+  ["gray_deep", "#3A3A3C"],
+  ["gray_soft", "#D1D1D6"],
+  ["off_white", "#F5F5F7"],
+  ["keyboard_light_background", "#D1D5DB"],
+  ["keyboard_light_special", "#AEB4BE"],
+  ["keyboard_dark_background", "#2C2C2E"],
+  ["keyboard_dark_key", "#636366"],
+] as const;
+
+const PALETTE_TOKEN_RENAMES = {
+  ios_blue: "blue",
+  ios_blue_bright: "blue_bright",
+  ios_text_secondary: "gray_medium",
+  ios_text_secondary_dark: "gray_medium_bright",
+  ios_gray: "gray",
+  ios_gray_deep: "gray_deep",
+  ios_gray_soft: "gray_soft",
+  ios_surface_light: "off_white",
+} as const;
+
 const SCREEN_INSTANCE_V2_COLUMNS = {
   module_id: "TEXT",
   module_schema_version: "INTEGER",
@@ -698,17 +726,178 @@ function applyAdditiveV17Migration(database: SQLiteDatabase): void {
       id TEXT PRIMARY KEY,
       production_id TEXT NOT NULL REFERENCES productions(id) ON DELETE CASCADE,
       family TEXT NOT NULL,
-      style TEXT NOT NULL,
-      file_path TEXT NOT NULL,
+      files_json TEXT NOT NULL,
       source_path TEXT,
-      postscript_name TEXT,
       metadata_json TEXT,
-      UNIQUE (production_id, family, style)
+      UNIQUE (production_id, family)
     );
     CREATE INDEX IF NOT EXISTS idx_production_fonts_lookup
-      ON production_fonts(production_id, family, style);
+      ON production_fonts(production_id, family);
   `);
   database.pragma("user_version = 17");
+}
+
+function applyAdditiveV18Migration(database: SQLiteDatabase): void {
+  const columns = new Set(
+    (
+      database.pragma("table_info(production_fonts)") as {
+        name: string;
+      }[]
+    ).map((column) => column.name),
+  );
+  if (columns.has("files_json") && !columns.has("style")) {
+    database.pragma("user_version = 18");
+    return;
+  }
+  const legacyRows = database
+    .prepare("SELECT * FROM production_fonts ORDER BY production_id, family, style")
+    .all() as {
+    id: string;
+    production_id: string;
+    family: string;
+    style?: string | null;
+    file_path?: string | null;
+    source_path?: string | null;
+    postscript_name?: string | null;
+    metadata_json?: string | null;
+  }[];
+  database.exec(`
+    DROP INDEX IF EXISTS idx_production_fonts_lookup;
+    CREATE TABLE IF NOT EXISTS production_fonts_v18 (
+      id TEXT PRIMARY KEY,
+      production_id TEXT NOT NULL REFERENCES productions(id) ON DELETE CASCADE,
+      family TEXT NOT NULL,
+      files_json TEXT NOT NULL,
+      source_path TEXT,
+      metadata_json TEXT,
+      UNIQUE (production_id, family)
+    );
+  `);
+  const grouped = new Map<
+    string,
+    {
+      id: string;
+      productionId: string;
+      family: string;
+      sourcePath: string | null;
+      files: Record<string, unknown>[];
+      metadata: Record<string, unknown>;
+    }
+  >();
+  for (const row of legacyRows) {
+    const key = `${row.production_id}:${row.family}`;
+    const current =
+      grouped.get(key) ??
+      {
+        id: row.id,
+        productionId: row.production_id,
+        family: row.family,
+        sourcePath: row.source_path ?? null,
+        files: [],
+        metadata: {},
+      };
+    if (row.metadata_json) {
+      try {
+        current.metadata = {
+          ...current.metadata,
+          ...(JSON.parse(row.metadata_json) as Record<string, unknown>),
+        };
+      } catch {
+        // Keep malformed metadata out of the migrated family record.
+      }
+    }
+    if (row.file_path) {
+      current.files.push({
+        style: row.style ?? "Regular",
+        filePath: row.file_path,
+        ...(row.source_path ? { sourcePath: row.source_path } : {}),
+        ...(row.postscript_name ? { postscriptName: row.postscript_name } : {}),
+      });
+    }
+    grouped.set(key, current);
+  }
+  const insert = database.prepare(
+    `INSERT INTO production_fonts_v18 (
+      id,
+      production_id,
+      family,
+      files_json,
+      source_path,
+      metadata_json
+    ) VALUES (?, ?, ?, ?, ?, ?)`,
+  );
+  for (const family of grouped.values()) {
+    insert.run(
+      family.id,
+      family.productionId,
+      family.family,
+      JSON.stringify({ files: family.files }),
+      family.sourcePath,
+      JSON.stringify(family.metadata),
+    );
+  }
+  database.exec(`
+    DROP TABLE production_fonts;
+    ALTER TABLE production_fonts_v18 RENAME TO production_fonts;
+    CREATE INDEX IF NOT EXISTS idx_production_fonts_lookup
+      ON production_fonts(production_id, family);
+  `);
+  database.pragma("user_version = 18");
+}
+
+function applyAdditiveV19Migration(database: SQLiteDatabase): void {
+  database.exec(`
+    CREATE TABLE IF NOT EXISTS palette_colors (
+      id TEXT PRIMARY KEY,
+      production_id TEXT NOT NULL REFERENCES productions(id) ON DELETE CASCADE,
+      token TEXT NOT NULL,
+      value_hex TEXT NOT NULL CHECK (value_hex GLOB '#[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]'),
+      metadata_json TEXT,
+      UNIQUE (production_id, token)
+    );
+    CREATE INDEX IF NOT EXISTS idx_palette_colors_lookup
+      ON palette_colors(production_id, token);
+  `);
+  const productions = database
+    .prepare("SELECT id FROM productions ORDER BY id")
+    .all() as { id: string }[];
+  const count = database.prepare(
+    "SELECT COUNT(*) AS total FROM palette_colors WHERE production_id = ?",
+  );
+  const insert = database.prepare(
+    `INSERT OR IGNORE INTO palette_colors (
+      id,
+      production_id,
+      token,
+      value_hex,
+      metadata_json
+    ) VALUES (?, ?, ?, ?, ?)`,
+  );
+  for (const production of productions) {
+    const total = Number(
+      (count.get(production.id) as { total: number | bigint }).total,
+    );
+    if (total > 0) continue;
+    for (const [token, valueHex] of IOS_SEED_PALETTE_COLORS) {
+      insert.run(
+        `palette_${production.id}_${token}`,
+        production.id,
+        token,
+        valueHex,
+        JSON.stringify({
+          source: "ios_seed_theme",
+          note: "Primitive color seeded from the original iOS theme values.",
+        }),
+      );
+    }
+  }
+  const rename = database.prepare(
+    "UPDATE OR IGNORE palette_colors SET token = ? WHERE token = ?",
+  );
+  for (const [oldToken, nextToken] of Object.entries(PALETTE_TOKEN_RENAMES)) {
+    rename.run(nextToken, oldToken);
+  }
+  database.pragma("user_version = 19");
 }
 
 export function applyInitialSchema(database: SQLiteDatabase): void {
@@ -729,6 +918,8 @@ export function applyInitialSchema(database: SQLiteDatabase): void {
   applyAdditiveV15Migration(database);
   applyAdditiveV16Migration(database);
   applyAdditiveV17Migration(database);
+  applyAdditiveV18Migration(database);
+  applyAdditiveV19Migration(database);
   database.pragma("foreign_keys = ON");
 }
 

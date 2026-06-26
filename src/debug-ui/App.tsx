@@ -388,6 +388,7 @@ export function App() {
       | "navigation_bars"
       | "themes"
       | "devices"
+      | "palette_colors"
       | "production_fonts"
       | "render_presets",
     parent?: { productionId?: string; episodeId?: string },
@@ -419,6 +420,7 @@ export function App() {
       | "navigation_bars"
       | "themes"
       | "devices"
+      | "palette_colors"
       | "production_fonts"
       | "render_presets",
     parent?: { productionId?: string; episodeId?: string },
@@ -448,6 +450,7 @@ export function App() {
       | "navigation_bars"
       | "themes"
       | "devices"
+      | "palette_colors"
       | "production_fonts"
       | "render_presets",
     recordId: string,
@@ -472,6 +475,7 @@ export function App() {
       | "navigation_bars"
       | "themes"
       | "devices"
+      | "palette_colors"
       | "production_fonts"
       | "render_presets",
     recordId: string,

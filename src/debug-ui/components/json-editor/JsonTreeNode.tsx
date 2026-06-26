@@ -18,6 +18,7 @@ import {
   type JsonPath,
   type JsonValue,
 } from "./jsonEditorUtils.js";
+import type { ProductionFontCatalog } from "./productionFonts.js";
 
 interface JsonTreeNodeProps {
   rootValue: JsonValue;
@@ -30,6 +31,7 @@ interface JsonTreeNodeProps {
   allowObjectStructuralEdits: boolean;
   allowArrayStructuralEdits: boolean;
   groupContext?: string;
+  productionFontCatalog?: ProductionFontCatalog;
   onRootChange: (nextValue: JsonValue) => void;
 }
 
@@ -114,6 +116,7 @@ export function JsonTreeNode({
   allowObjectStructuralEdits,
   allowArrayStructuralEdits,
   groupContext,
+  productionFontCatalog,
   onRootChange,
 }: JsonTreeNodeProps) {
   const [isOpen, setIsOpen] = useState(path.length < 2);
@@ -163,6 +166,7 @@ export function JsonTreeNode({
           allowObjectStructuralEdits={allowObjectStructuralEdits}
           allowArrayStructuralEdits={allowArrayStructuralEdits}
           groupContext={groupContext}
+          productionFontCatalog={productionFontCatalog}
           onRootChange={onRootChange}
         />
       </details>
@@ -199,6 +203,7 @@ export function JsonTreeNode({
           allowObjectStructuralEdits={allowObjectStructuralEdits}
           allowArrayStructuralEdits={allowArrayStructuralEdits}
           groupContext={groupContext}
+          productionFontCatalog={productionFontCatalog}
           onRootChange={onRootChange}
         />
       </details>
@@ -219,6 +224,7 @@ export function JsonTreeNode({
           value={value}
           hints={hints}
           groupContext={groupContext}
+          productionFontCatalog={productionFontCatalog}
           onRootChange={onRootChange}
           onChange={(nextValue) =>
             onRootChange(setAtPath(rootValue, path, nextValue))

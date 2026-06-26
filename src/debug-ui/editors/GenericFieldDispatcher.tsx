@@ -5,6 +5,7 @@ import {
   type AppTableDefinition,
 } from "../api/client.js";
 import { JsonValueEditor } from "../components/json-editor/JsonValueEditor.js";
+import { DeferredTextInput } from "../editor-ui/DeferredTextInput.js";
 import {
   setAtPath,
   type JsonValue,
@@ -82,6 +83,36 @@ export function renderGenericField(
       setJsonDraft,
       renderField,
     });
+  }
+  if (table.id === "palette_colors" && field.column === "value_hex") {
+    const value = drafts[field.column] ?? "";
+    return (
+      <InspectorFieldRow
+        key={field.column}
+        className={`record-editor-field record-editor-field-string palette-color-value-field state-${states[field.column] ?? "saved"}`}
+        state={errors[field.column] ? "invalid" : "default"}
+        label={<span>{field.label}</span>}
+        control={
+          <div className="palette-color-value-control">
+            <DeferredTextInput
+              ariaLabel={field.label}
+              value={value}
+              onCommit={(nextValue) =>
+                setDrafts({
+                  ...drafts,
+                  [field.column]: nextValue.toUpperCase(),
+                })
+              }
+            />
+            <span
+              className="palette-color-editor-swatch"
+              style={{ backgroundColor: value || "transparent" }}
+              aria-hidden="true"
+            />
+          </div>
+        }
+      />
+    );
   }
   if (
     table.id === "devices" &&

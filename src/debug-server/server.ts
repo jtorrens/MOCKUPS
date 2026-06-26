@@ -2,7 +2,7 @@ import { createServer } from "node:http";
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import { createReadStream, statSync } from "node:fs";
-import { copyFile, mkdir, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import { createDatabase } from "../persistence/sqlite/createDatabase.js";
@@ -122,6 +122,12 @@ function inferFontNameParts(sourcePath: string) {
     family: titleCaseFilePart(segments.slice(0, -1).join(" ")),
     style: titleCaseFilePart(segments[segments.length - 1] ?? "Regular"),
   };
+}
+
+function isFontFile(filePath: string) {
+  return [".ttf", ".otf", ".woff", ".woff2"].includes(
+    path.extname(filePath).toLowerCase(),
+  );
 }
 
 function frameFileName(selection: DebugSelection) {
@@ -245,8 +251,7 @@ async function importProductionFont({
   if (!mediaRoot) {
     throw new Error("Production media root is not set");
   }
-  const extension = path.extname(sourcePath).toLowerCase();
-  if (![".ttf", ".otf", ".woff", ".woff2"].includes(extension)) {
+  if (!isFontFile(sourcePath)) {
     throw new Error("Choose a .ttf, .otf, .woff or .woff2 font file");
   }
   const existing = database
@@ -259,48 +264,73 @@ async function importProductionFont({
   const conflict = database
     .prepare(
       `SELECT id FROM production_fonts
-       WHERE production_id = ? AND family = ? AND style = ? AND id <> ?`,
+       WHERE production_id = ? AND family = ? AND id <> ?`,
     )
-    .get(productionId, inferred.family, inferred.style, recordId);
+    .get(productionId, inferred.family, recordId);
   if (conflict) {
-    throw new Error(`Font ${inferred.family} ${inferred.style} already exists`);
+    throw new Error(`Font family ${inferred.family} already exists`);
   }
   const rootPath = path.resolve(mediaRoot);
   const sourceResolved = path.resolve(sourcePath);
-  const fileName = path.basename(sourcePath);
-  const relativeFilePath = path.posix.join(
-    "fonts",
-    safeRelativePathPart(inferred.family, "font"),
-    fileName,
-  );
-  const destination = path.resolve(rootPath, relativeFilePath);
-  const relativeDestination = path.relative(rootPath, destination);
-  if (relativeDestination.startsWith("..") || path.isAbsolute(relativeDestination)) {
-    throw new Error("Font destination is outside production media root");
-  }
-  await mkdir(path.dirname(destination), { recursive: true });
-  if (sourceResolved !== destination) {
-    await copyFile(sourceResolved, destination);
+  const sourceDirectory = path.dirname(sourceResolved);
+  const siblingNames = await readdir(sourceDirectory);
+  const sourceFamilyKey = inferred.family.toLowerCase();
+  const familyFiles = siblingNames
+    .map((fileName) => path.join(sourceDirectory, fileName))
+    .filter(isFontFile)
+    .map((filePath) => ({
+      filePath,
+      ...inferFontNameParts(filePath),
+    }))
+    .filter((font) => font.family.toLowerCase() === sourceFamilyKey)
+    .sort(
+      (left, right) =>
+        left.style.localeCompare(right.style) ||
+        path.basename(left.filePath).localeCompare(path.basename(right.filePath)),
+    );
+  const filesToCopy =
+    familyFiles.length > 0
+      ? familyFiles
+      : [{ filePath: sourceResolved, ...inferred }];
+  const copiedFiles: Record<string, unknown>[] = [];
+  for (const fontFile of filesToCopy) {
+    const fileName = path.basename(fontFile.filePath);
+    const relativeFilePath = path.posix.join(
+      "fonts",
+      safeRelativePathPart(inferred.family, "font"),
+      fileName,
+    );
+    const destination = path.resolve(rootPath, relativeFilePath);
+    const relativeDestination = path.relative(rootPath, destination);
+    if (relativeDestination.startsWith("..") || path.isAbsolute(relativeDestination)) {
+      throw new Error("Font destination is outside production media root");
+    }
+    await mkdir(path.dirname(destination), { recursive: true });
+    if (path.resolve(fontFile.filePath) !== destination) {
+      await copyFile(fontFile.filePath, destination);
+    }
+    copiedFiles.push({
+      style: fontFile.style,
+      filePath: relativeFilePath,
+    });
   }
   const metadataJson = JSON.stringify({
     importedAt: new Date().toISOString(),
-    sourceFileName: fileName,
+    importedFiles: copiedFiles.length,
   });
   database
     .prepare(
       `UPDATE production_fonts
        SET family = ?,
-           style = ?,
-           file_path = ?,
+           files_json = ?,
            source_path = ?,
            metadata_json = ?
        WHERE id = ?`,
     )
     .run(
       inferred.family,
-      inferred.style,
-      relativeFilePath,
-      sourceResolved,
+      JSON.stringify({ files: copiedFiles }),
+      sourceDirectory,
       metadataJson,
       recordId,
     );

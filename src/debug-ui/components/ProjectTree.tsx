@@ -26,6 +26,7 @@ interface ProjectTreeProps {
       | "navigation_bars"
       | "themes"
       | "devices"
+      | "palette_colors"
       | "production_fonts"
       | "render_presets",
     parent?: { productionId?: string; episodeId?: string },
@@ -38,6 +39,7 @@ interface ProjectTreeProps {
       | "navigation_bars"
       | "themes"
       | "devices"
+      | "palette_colors"
       | "production_fonts"
       | "render_presets",
     recordId: string,
@@ -50,6 +52,7 @@ interface ProjectTreeProps {
       | "navigation_bars"
       | "themes"
       | "devices"
+      | "palette_colors"
       | "production_fonts"
       | "render_presets",
     recordId: string,
@@ -64,6 +67,7 @@ const PRODUCTION_DATA_TABLE_IDS = new Set([
   "themes",
   "devices",
   "media_assets",
+  "palette_colors",
   "production_fonts",
   "render_presets",
   "animation_presets",
@@ -81,6 +85,7 @@ function productionDataIcon(tableId: string) {
   if (tableId === "themes") return "theme";
   if (tableId === "devices") return "device";
   if (tableId === "media_assets") return "media";
+  if (tableId === "palette_colors") return "color";
   if (tableId === "production_fonts") return "typography";
   if (tableId === "render_presets") return "render";
   if (tableId === "animation_presets") return "animation";
@@ -342,6 +347,7 @@ function TreeButton({
   icon,
   title,
   meta,
+  swatchColor,
   className,
   asRecord,
   onClick,
@@ -353,6 +359,7 @@ function TreeButton({
   icon?: string;
   title: string;
   meta?: string;
+  swatchColor?: string;
   className?: string;
   asRecord?: boolean;
   onClick: () => void;
@@ -386,6 +393,13 @@ function TreeButton({
         <strong>{title}</strong>
         {meta ? <small>{meta}</small> : null}
       </span>
+      {swatchColor ? (
+        <span
+          className="tree-record-color-swatch"
+          style={{ backgroundColor: swatchColor }}
+          aria-hidden="true"
+        />
+      ) : null}
     </button>
   );
 }
@@ -493,6 +507,7 @@ export function ProjectTree({
       | "navigation_bars"
       | "themes"
       | "devices"
+      | "palette_colors"
       | "production_fonts"
       | "render_presets",
     recordId: string,
@@ -822,6 +837,7 @@ export function ProjectTree({
                 table.id === "navigation_bars" ||
                 table.id === "themes" ||
                 table.id === "devices" ||
+                table.id === "palette_colors" ||
                 table.id === "production_fonts" ||
                 table.id === "render_presets" ? (
                   <TreeActions
@@ -837,6 +853,7 @@ export function ProjectTree({
                           | "navigation_bars"
                           | "themes"
                           | "devices"
+                          | "palette_colors"
                           | "production_fonts"
                           | "render_presets",
                         {
@@ -852,6 +869,7 @@ export function ProjectTree({
                           | "navigation_bars"
                           | "themes"
                           | "devices"
+                          | "palette_colors"
                           | "production_fonts"
                           | "render_presets",
                         selectedRecordIds[table.id],
@@ -869,6 +887,7 @@ export function ProjectTree({
                             | "navigation_bars"
                             | "themes"
                             | "devices"
+                            | "palette_colors"
                             | "production_fonts"
                             | "render_presets",
                           selected.id,
@@ -896,6 +915,11 @@ export function ProjectTree({
                         selectedRecordIds={selectedRecordIds}
                         title={recordTitle(table, record)}
                         meta={String(record.id)}
+                        swatchColor={
+                          table.id === "palette_colors"
+                            ? String(record.value_hex ?? "")
+                            : undefined
+                        }
                         onClick={() => select(table.id, record.id)}
                         className={rowLevelClass(1)}
                         asRecord

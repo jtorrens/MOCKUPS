@@ -168,7 +168,10 @@ Fast structural layout may use approximate renderer-agnostic measurement. Previe
 
 Implications:
 - Preview/export cannot diverge in final line breaking.
-- Themes select installed font family and named weight variants; no production font whitelist/table is introduced.
+- Themes and apps select approved production font families. Named weight variants
+  are resolved from the copied files registered for that approved family.
+  Development-only system font discovery may be used only to import/copy a
+  family into the production root.
 - The renderer UI keeps one shared in-memory font catalog cache per session. All font pickers reuse the same lazy-loaded system-font list and the same in-flight load promise.
 
 ## D018 — Modules own animation interpretation and visual behavior
@@ -758,20 +761,37 @@ Reference docs:
 - `docs/architecture/12_editor_encapsulation_contract.md`
 - `docs/architecture/13_keyboard_text_input_audit.md`
 
-## D056 — Production fonts are approved, copied, and referenced relatively
+## D056 — Production font families are approved, copied, and referenced relatively
 
 Status: accepted
 
 Fonts used by render/preview should be production-approved assets, not implicit
 dependencies on whichever fonts are installed on the workstation. The app now
-has a production-scoped `production_fonts` table. Importing a font copies the
-font file into the production root and stores a relative `file_path`, while
-`source_path` remains optional provenance/debug information.
+has a production-scoped `production_fonts` table where each row approves a
+complete font family, not one weight at a time. Importing one font file scans
+the same source directory for the rest of that family, copies every detected
+variant into the production root, and stores relative paths under `files_json`.
+`source_path` remains optional provenance/debug information for the source
+directory.
 
 This keeps productions portable across Mac/PC and prepares the next pass:
-font pickers should list only approved production fonts, and text measurement
-for bubbles should use the same approved font files that final rendering uses.
+font pickers should list only approved production families, expose the copied
+variants/weights for the selected family, and text measurement for bubbles
+should use the same approved font files that final rendering uses.
 
-The same pattern is expected later for color governance: production-approved
-mode palettes should replace arbitrary one-off color picking where consistency
-matters.
+## D057 — Production palettes define primitive colors before semantic tokens
+
+Status: accepted
+
+Color governance follows the same approval pattern as production fonts, but the
+palette layer is intentionally lower-level than theme/app/module tokens. A
+production owns a `palette_colors` table of primitive RGB colors such as
+`white`, `black`, `blue`, or `keyboard_dark_key`. Each row stores a token
+and a concrete `#RRGGBB` value.
+
+Theme, app, and module JSON will later store semantic roles that reference
+these primitive palette tokens, for example `text.alert = blue` or
+`header.background = white`. The palette itself does not know about
+dark/light modes, components, or usage semantics. Fields that need transparency
+store the palette token separately from a numeric alpha value in the `0–1`
+range.

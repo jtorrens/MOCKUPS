@@ -59,6 +59,8 @@ try {
     "devices",
     "device_states",
     "media_assets",
+    "palette_colors",
+    "production_fonts",
     "render_presets",
   ];
   assert(

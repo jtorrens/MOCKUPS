@@ -1,6 +1,6 @@
 # Initial data schema
 
-This is the persistence-oriented schema for MOCKUPS. The initial SQLite implementation now exists. The current design-stage schema is version 17 and intentionally breaks from the earlier Screen Template layer: app identity/defaults and module-specific defaults are now direct runtime layers, and explicit module instances own per-shot content, behavior, and parameter animation.
+This is the persistence-oriented schema for MOCKUPS. The initial SQLite implementation now exists. The current design-stage schema is version 18 and intentionally breaks from the earlier Screen Template layer: app identity/defaults and module-specific defaults are now direct runtime layers, and explicit module instances own per-shot content, behavior, and parameter animation.
 
 ## Storage boundary
 
@@ -73,7 +73,7 @@ Production
 
 `screen_type` is a broad discriminator; `module_id` + `module_schema_version` select the exact module contract. `transform_json` transforms the device-screen render inside the shot's device render space. `core.chat` now reads content/behavior from `module_instances` and has no runtime fallback to `data_ref_json` or `props_json`.
 
-SQLite schema version 17 includes `screen_instances.app_id`, explicit `module_instances`, `module_instances.animation_json`, production default FPS, episode/shot render slugs, inline `screen_instances.device_state_json`, production-scoped approved fonts, removes the active `screen_templates` table, and scopes `module_theme_configs` by `theme_id + app_id + module_id + module_schema_version`. This is a design-stage breaking schema: local development databases may be reset explicitly with `npm run db:reset`; normal app startup must not reseed or overwrite edited data.
+SQLite schema version 18 includes `screen_instances.app_id`, explicit `module_instances`, `module_instances.animation_json`, production default FPS, episode/shot render slugs, inline `screen_instances.device_state_json`, production-scoped approved font families, removes the active `screen_templates` table, and scopes `module_theme_configs` by `theme_id + app_id + module_id + module_schema_version`. This is a design-stage breaking schema: local development databases may be reset explicitly with `npm run db:reset`; normal app startup must not reseed or overwrite edited data.
 
 ### `module_instances`
 
@@ -174,13 +174,27 @@ Modules use asset IDs with a media window (logical width/height/offsets) and an 
 
 ### `production_fonts`
 
-- Purpose: approved portable font registry for one production.
-- SQL/stable fields: `id`, `production_id`, `family`, `style`, `file_path`, `source_path`, `postscript_name`.
-- JSON/flexible fields: `metadata_json`.
-- Relationships: belongs to a production. Font pickers and future text measurement should resolve against this approved set rather than arbitrary host-installed fonts.
+- Purpose: approved portable font-family registry for one production.
+- SQL/stable fields: `id`, `production_id`, `family`, `source_path`.
+- JSON/flexible fields: `files_json`, `metadata_json`.
+- Relationships: belongs to a production. Font pickers and future text measurement should resolve against this approved family set rather than arbitrary host-installed fonts.
 - Must not contain: binary font data duplicated into SQLite or shot/module-specific typography choices.
 
-`file_path` is always relative to the production media root and points to the copied font file under the production folder, for example `fonts/Oswald/Oswald-Regular.ttf`. `source_path` is optional provenance/debug information and may be an absolute path from the importing workstation. This keeps a production portable across machines: moving or duplicating the production only requires changing the production root.
+`files_json.files[]` stores the copied variants for the approved family, for example `{ "style": "Regular", "filePath": "fonts/Oswald/Oswald-Regular.ttf" }`. `filePath` is always relative to the production media root. `source_path` is optional provenance/debug information for the imported source directory and may be an absolute path from the importing workstation. This keeps a production portable across machines: moving or duplicating the production only requires changing the production root.
+
+### `palette_colors`
+
+- Purpose: approved primitive RGB color registry for one production.
+- SQL/stable fields: `id`, `production_id`, `token`, `value_hex`.
+- JSON/flexible fields: `metadata_json`.
+- Relationships: belongs to a production. Theme/app/module semantic color tokens should eventually reference these primitive palette tokens instead of storing raw RGB/HEX directly.
+- Must not contain: component semantics, dark/light mode roles, alpha values, or per-shot overrides.
+
+`token` names primitive colors such as `blue`, `white`, or `keyboard_dark_key`.
+Semantic roles remain in theme/app/module JSON, for example
+`theme.text.alert = blue`. Alpha/transparency is intentionally separate
+from the primitive color; fields that need transparency should store a palette
+token plus a numeric alpha value in the `0–1` range.
 
 ### `animation_presets`
 

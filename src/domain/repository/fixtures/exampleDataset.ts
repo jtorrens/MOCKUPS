@@ -25,6 +25,7 @@ import {
   ModuleThemeConfigSchema,
   NavigationBarSchema,
   NotificationSchema,
+  PaletteColorSchema,
   ProductionFontSchema,
   ProductionSchema,
   ResolvedChatScreenPropsSchema,
@@ -35,6 +36,23 @@ import {
   ThemeSchema,
 } from "../../schemas/index.js";
 import type { RepositoryDataset } from "../types.js";
+
+const IOS_SEED_PALETTE_COLORS = [
+  ["white", "#FFFFFF"],
+  ["black", "#000000"],
+  ["blue", "#007AFF"],
+  ["blue_bright", "#0A84FF"],
+  ["gray_medium", "#6E6E73"],
+  ["gray_medium_bright", "#98989D"],
+  ["gray", "#8E8E93"],
+  ["gray_deep", "#3A3A3C"],
+  ["gray_soft", "#D1D1D6"],
+  ["off_white", "#F5F5F7"],
+  ["keyboard_light_background", "#D1D5DB"],
+  ["keyboard_light_special", "#AEB4BE"],
+  ["keyboard_dark_background", "#2C2C2E"],
+  ["keyboard_dark_key", "#636366"],
+] as const;
 
 export function createExampleDataset(): RepositoryDataset {
   const production = ProductionSchema.parse(productionExample.production);
@@ -216,6 +234,18 @@ export function createExampleDataset(): RepositoryDataset {
     status_bar_id: statusBar.id,
     navigation_bar_id: navigationBar.id,
   });
+  const paletteColors = PaletteColorSchema.array().parse(
+    IOS_SEED_PALETTE_COLORS.map(([token, valueHex]) => ({
+      id: `palette_${production.id}_${token}`,
+      production_id: production.id,
+      token,
+      value_hex: valueHex,
+      metadata_json: {
+        source: "ios_seed_theme",
+        note: "Primitive color seeded from the original iOS theme values.",
+      },
+    })),
+  );
   const app = AppSchema.parse({
     id: "app_messages",
     production_id: production.id,
@@ -530,10 +560,16 @@ export function createExampleDataset(): RepositoryDataset {
       id: "font_oswald_regular",
       production_id: production.id,
       family: "Oswald",
-      style: "Regular",
-      file_path: "fonts/Oswald/Oswald-Regular.ttf",
+      files_json: {
+        files: [
+          {
+            style: "Regular",
+            filePath: "fonts/Oswald/Oswald-Regular.ttf",
+          },
+        ],
+      },
       metadata_json: {
-        note: "Demo production font placeholder. Add the font file in a real production root.",
+        note: "Demo production font family placeholder. Add the font family files in a real production root.",
       },
     },
   ]);
@@ -607,6 +643,7 @@ export function createExampleDataset(): RepositoryDataset {
     animationPresets,
     apps: [app],
     mediaAssets,
+    paletteColors,
     productionFonts,
     conversations: [],
     conversationParticipants: [],

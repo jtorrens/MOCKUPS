@@ -8,6 +8,7 @@ import {
   type JsonValue,
 } from "./jsonEditorUtils.js";
 import { JsonTreeNode } from "./JsonTreeNode.js";
+import type { ProductionFontCatalog } from "./productionFonts.js";
 
 interface JsonArrayEditorProps {
   rootValue: JsonValue;
@@ -19,6 +20,7 @@ interface JsonArrayEditorProps {
   allowObjectStructuralEdits: boolean;
   allowArrayStructuralEdits: boolean;
   groupContext?: string;
+  productionFontCatalog?: ProductionFontCatalog;
   onRootChange: (nextValue: JsonValue) => void;
 }
 
@@ -32,6 +34,7 @@ export function JsonArrayEditor({
   allowObjectStructuralEdits,
   allowArrayStructuralEdits,
   groupContext,
+  productionFontCatalog,
   onRootChange,
 }: JsonArrayEditorProps) {
   const [newKind, setNewKind] = useState("object");
@@ -82,6 +85,7 @@ export function JsonArrayEditor({
             allowObjectStructuralEdits={allowObjectStructuralEdits}
             allowArrayStructuralEdits={allowArrayStructuralEdits}
             groupContext={groupContext}
+            productionFontCatalog={productionFontCatalog}
             onRootChange={onRootChange}
           />
           {allowArrayStructuralEdits ? (

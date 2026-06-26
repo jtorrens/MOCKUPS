@@ -14,6 +14,7 @@ import type {
   ModuleThemeConfig,
   NavigationBar,
   Notification,
+  PaletteColor,
   Production,
   ProductionFont,
   ScreenEvent,
@@ -41,6 +42,7 @@ export interface RepositoryDataset {
   animationPresets: AnimationPreset[];
   apps: App[];
   mediaAssets: MediaAsset[];
+  paletteColors: PaletteColor[];
   productionFonts: ProductionFont[];
   conversations: Conversation[];
   conversationParticipants: ConversationParticipant[];
@@ -71,6 +73,7 @@ export interface DomainRepository {
   getDeviceState(id: string): DeviceState | undefined;
   getActor(id: string): Actor | undefined;
   getMediaAsset(id: string): MediaAsset | undefined;
+  getPaletteColors(productionId: string): PaletteColor[];
   getProductionFonts(productionId: string): ProductionFont[];
   getConversation(id: string): Conversation | undefined;
   getConversationParticipants(conversationId: string): ConversationParticipant[];

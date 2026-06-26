@@ -4,6 +4,7 @@ import {
   type AppTableDefinition,
 } from "../api/client.js";
 import { JsonTreeEditor } from "../components/json-editor/JsonTreeEditor.js";
+import type { ProductionFontCatalog } from "../components/json-editor/productionFonts.js";
 import { InspectorFieldRow } from "../components/inspector/InspectorFieldRow.js";
 
 export type FieldSaveState =
@@ -256,6 +257,7 @@ interface RecordFieldRendererProps {
   error: string | undefined;
   inheritedValue: unknown;
   rawOverride?: RawJsonFieldOverride;
+  productionFontCatalog?: ProductionFontCatalog;
   onDraftChange: (column: string, value: string) => void;
 }
 
@@ -269,6 +271,7 @@ export function RecordFieldRenderer({
   error,
   inheritedValue,
   rawOverride,
+  productionFontCatalog,
   onDraftChange,
 }: RecordFieldRendererProps) {
   const relationSelect = relationOptionsForField(
@@ -368,6 +371,7 @@ export function RecordFieldRenderer({
           table,
           field,
         )}
+        productionFontCatalog={productionFontCatalog}
         onRawTextChange={
           rawOverride?.onRawTextChange ??
           ((nextRawText) => onDraftChange(field.column, nextRawText))

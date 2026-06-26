@@ -1,9 +1,14 @@
 import { useState } from "react";
-import { fontStylesForFamily, useSystemFontCatalog } from "./systemFonts.js";
+import { useSystemFontCatalog } from "./systemFonts.js";
 import { DeferredNumberInput } from "../../editor-ui/DeferredNumberInput.js";
 import { DeferredTextInput } from "../../editor-ui/DeferredTextInput.js";
 import { EditorSubsectionAccordion } from "../../editor-ui/EditorSubsectionAccordion.js";
 import { ColorValueEditor } from "./ColorValueEditor.js";
+import {
+  fontStylesForFamily,
+  productionFontIdForFamily,
+  type ProductionFontCatalog,
+} from "./productionFonts.js";
 import {
   InspectorFieldRow,
   InspectorRestoreButton,
@@ -35,6 +40,7 @@ interface TokenOverrideEditorProps {
   inheritedColumnLabel?: string;
   groupContext?: string;
   restoreMode?: "remove" | "set";
+  productionFontCatalog?: ProductionFontCatalog;
   onRootChange: (nextValue: JsonValue) => void;
 }
 
@@ -73,7 +79,9 @@ function flattenPrimitiveTokens(value: JsonValue, path: JsonPath = []): TokenRow
   }
   if (isJsonObject(value)) {
     return Object.entries(value).flatMap(([key, entry]) =>
-      flattenPrimitiveTokens(entry, [...path, key]),
+      key === "productionFontId" || key === "source"
+        ? []
+        : flattenPrimitiveTokens(entry, [...path, key]),
     );
   }
   return [{ path, value }];
@@ -230,11 +238,14 @@ export function TokenOverrideEditor({
   inheritedColumnLabel = "Token / inherited",
   groupContext,
   restoreMode = "remove",
+  productionFontCatalog,
   onRootChange,
 }: TokenOverrideEditorProps) {
   const displayRoot = mergedTokenShape(inheritedRoot, rootValue);
   const rows = flattenPrimitiveTokens(displayRoot);
   const { families, stylesByFamily } = useSystemFontCatalog();
+  const approvedFamilies = productionFontCatalog?.families ?? [];
+  const fontFamilies = productionFontCatalog ? approvedFamilies : families;
   const [activeTokenGroup, setActiveTokenGroup] = useState("");
 
   function restoreValue(path: JsonPath, inheritedValue: JsonValue) {
@@ -268,9 +279,24 @@ export function TokenOverrideEditor({
       : isJsonObject(inheritedParent)
         ? inheritedParent
         : {};
-    const options = fontStylesForFamily(stylesByFamily, family);
+    const options = fontStylesForFamily(
+      productionFontCatalog,
+      stylesByFamily,
+      family,
+    );
     const fallback = options[0] ?? "Regular";
     let nextRoot = setAtPath(rootValue, path, family);
+    const productionFontId = productionFontIdForFamily(
+      productionFontCatalog,
+      family,
+    );
+    if (productionFontId) {
+      nextRoot = setAtPath(
+        setAtPath(nextRoot, [...parentPath, "productionFontId"], productionFontId),
+        [...parentPath, "source"],
+        "production_font_family",
+      );
+    }
     for (const [key, value] of Object.entries(sourceParent)) {
       if (!isFontWeightKey(key)) continue;
       if (typeof value === "string" && options.includes(value)) continue;
@@ -305,9 +331,13 @@ export function TokenOverrideEditor({
     const inheritedDisplayValue = tokenDisplayValue(baselineValue);
     const selectOptions = withCurrentOption(
       widget === "font"
-          ? families
+          ? fontFamilies
         : isFontWeightKey(key)
-          ? fontStylesForFamily(stylesByFamily, fontFamilyForWeight(row.path))
+          ? fontStylesForFamily(
+              productionFontCatalog,
+              stylesByFamily,
+              fontFamilyForWeight(row.path),
+            )
           : hint.options ?? [],
       stringValue,
     );

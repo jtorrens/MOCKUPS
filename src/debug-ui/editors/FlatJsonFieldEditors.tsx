@@ -13,6 +13,7 @@ import { friendlyGroupLabel } from "../components/json-editor/labels.js";
 import { buildJsonUiHints } from "../components/json-editor/uiHints.js";
 import { InspectorFieldRow } from "../components/inspector/InspectorFieldRow.js";
 import { normalizeGroupValue } from "./recordJsonUtils.js";
+import type { ProductionFontCatalog } from "../components/json-editor/productionFonts.js";
 
 interface FlatJsonObjectEditorProps {
   table: AppTableDefinition;
@@ -20,6 +21,7 @@ interface FlatJsonObjectEditorProps {
   record: AppRecord | undefined;
   root: Record<string, unknown>;
   omitKeys?: string[];
+  productionFontCatalog?: ProductionFontCatalog;
   onRootChange: (nextRoot: JsonValue) => void;
 }
 
@@ -29,6 +31,7 @@ export function FlatJsonObjectEditor({
   record,
   root,
   omitKeys = [],
+  productionFontCatalog,
   onRootChange,
 }: FlatJsonObjectEditorProps) {
   const visibleEntries = Object.entries(root).filter(
@@ -52,6 +55,7 @@ export function FlatJsonObjectEditor({
                 path={[key]}
                 value={jsonValue}
                 hints={buildJsonUiHints(table, field, record)}
+                productionFontCatalog={productionFontCatalog}
                 onRootChange={onRootChange}
                 onChange={(nextValue) =>
                   onRootChange(setAtPath(root as JsonValue, [key], nextValue))
@@ -97,6 +101,7 @@ interface DeviceMetricsFieldProps {
   field: AppFieldDefinition;
   record: AppRecord | undefined;
   root: JsonValue;
+  productionFontCatalog?: ProductionFontCatalog;
   onRootChange: (nextRoot: JsonValue) => void;
 }
 
@@ -105,6 +110,7 @@ export function DeviceMetricsField({
   field,
   record,
   root,
+  productionFontCatalog,
   onRootChange,
 }: DeviceMetricsFieldProps) {
   const entries = primitiveJsonPaths(root).filter((entry) => entry.path.length > 0);
@@ -123,6 +129,7 @@ export function DeviceMetricsField({
                 path={path}
                 value={value}
                 hints={buildJsonUiHints(table, field, record)}
+                productionFontCatalog={productionFontCatalog}
                 onRootChange={onRootChange}
                 onChange={(nextValue) =>
                   onRootChange(setAtPath(root, path, nextValue))

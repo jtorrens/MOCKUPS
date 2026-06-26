@@ -68,8 +68,8 @@ export function ProductionFontRecordEditor({
     <section className="record-editor">
       <EditorHeader
         eyebrow="Production Font Editor"
-        title={`${String(record.family ?? "Font")} ${String(record.style ?? "")}`.trim()}
-        summary="Approved font copied into the production root"
+        title={String(record.family ?? "Font family")}
+        summary="Approved font family copied into the production root"
       />
       <EditorSections>
         <EditorSectionCard>
@@ -87,7 +87,7 @@ export function ProductionFontRecordEditor({
                 disabled={!nativeBridge?.pickFile || importing}
                 onClick={chooseFontFile}
               >
-                {importing ? "Importing…" : "Import font file…"}
+                {importing ? "Importing…" : "Import font family…"}
               </button>
               {error ? <p className="record-editor-field-error">{error}</p> : null}
               {fields.map((field) => renderGenericField(field))}

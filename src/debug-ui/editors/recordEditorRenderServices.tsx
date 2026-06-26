@@ -21,6 +21,7 @@ import {
   stringifyJson,
   type JsonValue,
 } from "../components/json-editor/jsonEditorUtils.js";
+import type { ProductionFontCatalog } from "../components/json-editor/productionFonts.js";
 
 type SaveState = "saved" | "dirty" | "invalid" | "saving" | "failed";
 
@@ -43,6 +44,7 @@ interface RecordEditorRenderServicesOptions {
   productionMediaRoot: string;
   relativePathFromRoot: (filePath: string, rootPath: string) => string;
   setDrafts: Dispatch<SetStateAction<Record<string, string>>>;
+  productionFontCatalog?: ProductionFontCatalog;
 }
 
 export function createRecordEditorRenderServices({
@@ -58,6 +60,7 @@ export function createRecordEditorRenderServices({
   productionMediaRoot,
   relativePathFromRoot,
   setDrafts,
+  productionFontCatalog,
 }: RecordEditorRenderServicesOptions) {
   function setJsonDraft(column: string, value: JsonValue) {
     setDrafts({
@@ -82,6 +85,7 @@ export function createRecordEditorRenderServices({
         error={errors[field.column]}
         inheritedValue={inheritedFields[field.column]}
         rawOverride={rawOverride}
+        productionFontCatalog={productionFontCatalog}
         onDraftChange={(column, value) =>
           setDrafts({
             ...drafts,
@@ -115,6 +119,7 @@ export function createRecordEditorRenderServices({
         root={root}
         omitKeys={omitKeys}
         onRootChange={(nextRoot) => setJsonDraft(column, nextRoot)}
+        productionFontCatalog={productionFontCatalog}
       />
     );
   }
@@ -129,6 +134,7 @@ export function createRecordEditorRenderServices({
         record={record}
         root={root}
         onRootChange={(nextRoot) => setJsonDraft(field.column, nextRoot)}
+        productionFontCatalog={productionFontCatalog}
       />
     );
   }

@@ -11,6 +11,7 @@ import type {
   ModuleThemeConfig,
   NavigationBar,
   Notification,
+  PaletteColor,
   Production,
   ProductionFont,
   Shot,
@@ -39,6 +40,7 @@ export class InMemoryRepository implements DomainRepository {
   readonly #actors: Map<string, Actor>;
   readonly #apps: Map<string, App>;
   readonly #mediaAssets: Map<string, MediaAsset>;
+  readonly #paletteColors: Map<string, PaletteColor>;
   readonly #productionFonts: Map<string, ProductionFont>;
   readonly #conversations: Map<string, Conversation>;
   readonly #notifications: Map<string, Notification>;
@@ -59,6 +61,7 @@ export class InMemoryRepository implements DomainRepository {
     this.#actors = indexById(dataset.actors);
     this.#apps = indexById(dataset.apps);
     this.#mediaAssets = indexById(dataset.mediaAssets);
+    this.#paletteColors = indexById(dataset.paletteColors);
     this.#productionFonts = indexById(dataset.productionFonts);
     this.#conversations = indexById(dataset.conversations);
     this.#notifications = indexById(dataset.notifications);
@@ -141,14 +144,16 @@ export class InMemoryRepository implements DomainRepository {
     return this.#mediaAssets.get(id);
   }
 
+  getPaletteColors(productionId: string) {
+    return [...this.#paletteColors.values()]
+      .filter((color) => color.production_id === productionId)
+      .sort((left, right) => left.token.localeCompare(right.token));
+  }
+
   getProductionFonts(productionId: string) {
     return [...this.#productionFonts.values()]
       .filter((font) => font.production_id === productionId)
-      .sort(
-        (left, right) =>
-          left.family.localeCompare(right.family) ||
-          left.style.localeCompare(right.style),
-      );
+      .sort((left, right) => left.family.localeCompare(right.family));
   }
 
   getConversation(id: string) {

@@ -13,6 +13,7 @@ export * from "./module.js";
 export * from "./moduleThemeConfig.js";
 export * from "./navigationBar.js";
 export * from "./notification.js";
+export * from "./paletteColor.js";
 export * from "./production.js";
 export * from "./productionFont.js";
 export * from "./render.js";

@@ -13,6 +13,7 @@ import {
   ModuleThemeConfigSchema,
   NavigationBarSchema,
   NotificationSchema,
+  PaletteColorSchema,
   ProductionSchema,
   ProductionFontSchema,
   ScreenEventSchema,
@@ -33,6 +34,7 @@ import {
   type ModuleThemeConfig,
   type NavigationBar,
   type Notification,
+  type PaletteColor,
   type Production,
   type ProductionFont,
   type ScreenEvent,
@@ -281,14 +283,24 @@ export class SQLiteRepository implements DomainRepository {
     );
   }
 
+  getPaletteColors(productionId: string): PaletteColor[] {
+    return this.getMany(
+      "SELECT * FROM palette_colors WHERE production_id = ? ORDER BY token COLLATE NOCASE, id",
+      productionId,
+      PaletteColorSchema,
+      { optional: ["metadata_json"] },
+    );
+  }
+
   getProductionFonts(productionId: string): ProductionFont[] {
     return this.getMany(
-      "SELECT * FROM production_fonts WHERE production_id = ? ORDER BY family COLLATE NOCASE, style COLLATE NOCASE, id",
+      "SELECT * FROM production_fonts WHERE production_id = ? ORDER BY family COLLATE NOCASE, id",
       productionId,
       ProductionFontSchema,
       {
+        required: ["files_json"],
         optional: ["metadata_json"],
-        optionalScalars: ["source_path", "postscript_name"],
+        optionalScalars: ["source_path"],
       },
     );
   }
