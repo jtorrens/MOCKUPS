@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   deleteAtPathAndPrune,
   getAtPath,
@@ -18,6 +19,7 @@ import {
   InspectorRestoreButton,
 } from "../inspector/InspectorFieldRow.js";
 import { ColorValueEditor } from "./ColorValueEditor.js";
+import { EditorSubsectionAccordion } from "../../editor-ui/EditorSubsectionAccordion.js";
 
 interface ModeColorEditorProps {
   rootValue: JsonValue;
@@ -34,19 +36,6 @@ interface ColorRole {
   darkValue: string;
   inheritedLightValue?: string;
   inheritedDarkValue?: string;
-}
-
-function groupIcon(label: string): string {
-  const normalized = label.toLowerCase();
-  if (normalized.includes("app")) return "▣";
-  if (normalized.includes("header") || normalized.includes("navigation")) return "▤";
-  if (normalized.includes("chat") || normalized.includes("bubble")) return "☰";
-  if (normalized.includes("status")) return "▥";
-  if (normalized.includes("notification")) return "◌";
-  if (normalized.includes("cursor")) return "⌁";
-  if (normalized.includes("text") || normalized.includes("typography")) return "T";
-  if (normalized.includes("surface") || normalized.includes("background")) return "▧";
-  return "◐";
 }
 
 function isHexColor(value: unknown): boolean {
@@ -203,6 +192,7 @@ export function ModeColorEditor({
   hiddenGroups = [],
   onRootChange,
 }: ModeColorEditorProps) {
+  const [activeGroup, setActiveGroup] = useState("");
   const colorGroups = groupedRolePaths(
     uniqueRolePaths(rootValue, inheritedRoot, hiddenGroups),
   );
@@ -243,6 +233,10 @@ export function ModeColorEditor({
     return hasModeOverride("light", rolePath) || hasModeOverride("dark", rolePath);
   }
 
+  function hasGroupOverride(paths: JsonPath[]) {
+    return paths.some(hasRoleOverride);
+  }
+
   if (colorGroups.length === 0) {
     return (
       <div className="empty-record-list compact-empty">
@@ -254,13 +248,13 @@ export function ModeColorEditor({
   return (
     <div className="mode-color-editor">
       {colorGroups.map((group) => (
-        <section key={group.group} className="mode-color-group">
-          <h4>
-            <span className="editor-group-icon ui-glyph" aria-hidden="true">
-              {groupIcon(group.label)}
-            </span>
-            {group.label}
-          </h4>
+        <EditorSubsectionAccordion
+          key={group.group}
+          group={group.label}
+          activeGroup={activeGroup}
+          warning={hasGroupOverride(group.paths)}
+          onToggle={setActiveGroup}
+        >
           <div className="mode-color-header-row" aria-hidden="true">
             <span />
             <span />
@@ -304,34 +298,35 @@ export function ModeColorEditor({
                 control={
                   <div className="mode-color-controls">
                     {(["light", "dark"] as const).map((mode) => {
-                  const value =
-                    mode === "light" ? role.lightValue : role.darkValue;
-                  const inherited =
-                    mode === "light"
-                      ? role.inheritedLightValue
-                      : role.inheritedDarkValue;
-                  const displayValue = value || inherited || "";
-                  const isRgbaColor = displayValue
-                    .trim()
-                    .toLowerCase()
-                    .startsWith("rgba(");
-                  const isAlphaColor = isRgbaColor || isAlphaColorRolePath(role.rolePath);
-                  return (
-                    <span
-                      key={mode}
-                      className="json-color-pair token-color-pair"
-                    >
-                      <ColorValueEditor
-                        value={displayValue || "#000000"}
-                        alpha={isAlphaColor}
-                        label={`${key} ${mode}`}
-                        onChange={(nextValue) =>
-                          updateColor(mode, role.rolePath, nextValue)
-                        }
-                      />
-                    </span>
-                  );
-                })}
+                      const value =
+                        mode === "light" ? role.lightValue : role.darkValue;
+                      const inherited =
+                        mode === "light"
+                          ? role.inheritedLightValue
+                          : role.inheritedDarkValue;
+                      const displayValue = value || inherited || "";
+                      const isRgbaColor = displayValue
+                        .trim()
+                        .toLowerCase()
+                        .startsWith("rgba(");
+                      const isAlphaColor =
+                        isRgbaColor || isAlphaColorRolePath(role.rolePath);
+                      return (
+                        <span
+                          key={mode}
+                          className="json-color-pair token-color-pair"
+                        >
+                          <ColorValueEditor
+                            value={displayValue || "#000000"}
+                            alpha={isAlphaColor}
+                            label={`${key} ${mode}`}
+                            onChange={(nextValue) =>
+                              updateColor(mode, role.rolePath, nextValue)
+                            }
+                          />
+                        </span>
+                      );
+                    })}
                   </div>
                 }
                 restore={
@@ -345,7 +340,7 @@ export function ModeColorEditor({
               />
             );
           })}
-        </section>
+        </EditorSubsectionAccordion>
       ))}
     </div>
   );

@@ -20,7 +20,7 @@
 .color-value-editor {
   position: relative;
   display: inline-grid;
-  grid-template-columns: auto minmax(0, 180px);
+  grid-template-columns: auto 96px;
   gap: 6px;
   align-items: center;
   justify-content: start;
@@ -79,8 +79,8 @@
 }
 
 .color-text-input {
-  width: 180px !important;
-  min-width: 150px !important;
+  width: 96px !important;
+  min-width: 96px !important;
   height: 30px !important;
   border: var(--editor-input-border, 1px solid #cfd6e2) !important;
   border-radius: 8px !important;
@@ -822,6 +822,16 @@
 .record-editor .editor-section-body:has(> .mode-color-editor),
 .record-editor .editor-section-body:has(> .token-override-editor) {
   padding-bottom: 18px !important;
+}
+
+.record-editor .mode-color-editor {
+  display: grid;
+  gap: var(--editor-section-gap, 8px);
+  border: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible;
 }
 
 .record-editor .theme-token-group-editor {
