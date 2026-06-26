@@ -6,6 +6,7 @@ import type {
 } from "../api/client.js";
 import { EditorSubsectionAccordion } from "../editor-ui/EditorSubsectionAccordion.js";
 import { ModeColorEditor } from "../components/json-editor/ModeColorEditor.js";
+import { createPaletteColorCatalog } from "../components/json-editor/paletteColors.js";
 import {
   stringifyJson,
   type JsonValue,
@@ -28,6 +29,7 @@ import type { ThemeEditorTab } from "./editorTabs.js";
 interface ThemeRecordEditorProps {
   table: AppTableDefinition;
   record: AppRecord;
+  records: Record<string, AppRecord[]>;
   fieldsByColumn: Map<string, AppFieldDefinition>;
   drafts: Record<string, string>;
   activeTab: ThemeEditorTab;
@@ -45,6 +47,7 @@ interface ThemeRecordEditorProps {
 export function ThemeRecordEditor({
   table,
   record,
+  records,
   fieldsByColumn,
   drafts,
   activeTab,
@@ -57,6 +60,10 @@ export function ThemeRecordEditor({
 }: ThemeRecordEditorProps) {
   const tokensField = fieldsByColumn.get("tokens_json");
   const family = String(drafts.family ?? record?.family ?? "ios");
+  const paletteCatalog = createPaletteColorCatalog(
+    records,
+    typeof record.production_id === "string" ? record.production_id : undefined,
+  );
   const themeTokenRoot = normalizedThemeTokenRoot({
     root: parsedObject(drafts.tokens_json ?? "{}"),
     family,
@@ -168,6 +175,7 @@ export function ThemeRecordEditor({
         tokensField ? (
           <ModeColorEditor
             rootValue={themeTokenRoot as JsonValue}
+            paletteCatalog={paletteCatalog}
             onRootChange={(nextValue) => setJsonDraft("tokens_json", nextValue)}
           />
         ) : null

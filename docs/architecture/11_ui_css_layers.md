@@ -280,7 +280,8 @@ New editors should prefer this layer instead of custom row markup.
 
 ### 5. JSON and token editors
 
-Owns generic tree editing, token overrides, mode-aware color rows, color pickers, and module-content JSON structures:
+Owns generic tree editing, token overrides, mode-aware color rows, palette
+swatch color pickers, and module-content JSON structures:
 
 - `.json-tree-*`
 - `.json-array-*`
@@ -288,6 +289,7 @@ Owns generic tree editing, token overrides, mode-aware color rows, color pickers
 - `.token-override-*`
 - `.mode-color-*`
 - `.color-value-editor`
+- `.palette-picker-*`
 
 This layer should eventually reuse the shared field system more strictly.
 

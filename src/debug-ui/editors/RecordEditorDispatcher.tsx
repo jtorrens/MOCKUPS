@@ -76,6 +76,7 @@ export function RecordEditorDispatcher({
       <AppRecordEditor
         table={table}
         record={record}
+        records={records}
         fieldsByColumn={fieldsByColumn}
         drafts={drafts}
         inheritedFields={inheritedFields}
@@ -99,6 +100,7 @@ export function RecordEditorDispatcher({
       <ThemeRecordEditor
         table={table}
         record={record}
+        records={records}
         fieldsByColumn={fieldsByColumn}
         drafts={drafts}
         activeTab={tabs.themeTab}
@@ -216,6 +218,7 @@ export function RecordEditorDispatcher({
       <ModuleThemeConfigRecordEditor
         table={table}
         record={record}
+        records={records}
         fieldsByColumn={fieldsByColumn}
         drafts={drafts}
         inheritedFields={inheritedFields}

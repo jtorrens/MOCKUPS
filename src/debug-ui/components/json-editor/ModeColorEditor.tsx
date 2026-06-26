@@ -19,12 +19,14 @@ import {
   InspectorRestoreButton,
 } from "../inspector/InspectorFieldRow.js";
 import { ColorValueEditor } from "./ColorValueEditor.js";
+import type { PaletteColorCatalog } from "./paletteColors.js";
 import { EditorSubsectionAccordion } from "../../editor-ui/EditorSubsectionAccordion.js";
 
 interface ModeColorEditorProps {
   rootValue: JsonValue;
   inheritedRoot?: JsonValue;
   hiddenGroups?: string[];
+  paletteCatalog?: PaletteColorCatalog;
   onRootChange: (nextValue: JsonValue) => void;
 }
 
@@ -190,6 +192,7 @@ export function ModeColorEditor({
   rootValue,
   inheritedRoot,
   hiddenGroups = [],
+  paletteCatalog,
   onRootChange,
 }: ModeColorEditorProps) {
   const [activeGroup, setActiveGroup] = useState("");
@@ -320,6 +323,7 @@ export function ModeColorEditor({
                             value={displayValue || "#000000"}
                             alpha={isAlphaColor}
                             label={`${key} ${mode}`}
+                            paletteCatalog={paletteCatalog}
                             onChange={(nextValue) =>
                               updateColor(mode, role.rolePath, nextValue)
                             }

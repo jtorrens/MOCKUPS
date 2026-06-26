@@ -9,6 +9,7 @@ import {
   hasModeColorOverrides,
   ModeColorEditor,
 } from "../components/json-editor/ModeColorEditor.js";
+import { createPaletteColorCatalog } from "../components/json-editor/paletteColors.js";
 import type { JsonValue } from "../components/json-editor/jsonEditorUtils.js";
 import { ModuleThemeConfigEditor } from "./ModuleThemeConfigEditor.js";
 import { ModuleFunctionalConfigFields } from "./ModuleFunctionalConfigFields.js";
@@ -23,6 +24,7 @@ import {
 interface ModuleThemeConfigRecordEditorProps {
   table: AppTableDefinition;
   record: AppRecord;
+  records: Record<string, AppRecord[]>;
   fieldsByColumn: Map<string, AppFieldDefinition>;
   drafts: Record<string, string>;
   inheritedFields: Record<string, unknown>;
@@ -94,6 +96,7 @@ function stringifyJson(value: unknown): string {
 export function ModuleThemeConfigRecordEditor({
   table,
   record,
+  records,
   fieldsByColumn,
   drafts,
   inheritedFields,
@@ -109,6 +112,15 @@ export function ModuleThemeConfigRecordEditor({
   setJsonDraft,
 }: ModuleThemeConfigRecordEditorProps) {
   const tokensField = fieldsByColumn.get("tokens_json");
+  const themeRecord = (records.themes ?? []).find(
+    (theme) => theme.id === record.theme_id,
+  );
+  const paletteCatalog = createPaletteColorCatalog(
+    records,
+    typeof themeRecord?.production_id === "string"
+      ? themeRecord.production_id
+      : undefined,
+  );
   const tokenRoot = moduleEditorTokenRoot(
     record,
     parsedObject(drafts.tokens_json ?? "{}"),
@@ -207,6 +219,7 @@ export function ModuleThemeConfigRecordEditor({
           <ModeColorEditor
             rootValue={tokenRoot as JsonValue}
             inheritedRoot={inheritedFields.tokens_json as JsonValue | undefined}
+            paletteCatalog={paletteCatalog}
             onRootChange={(nextValue) => setJsonDraft("tokens_json", nextValue)}
           />
         ) : null

@@ -802,3 +802,9 @@ If a direct theme HEX has no primitive match during the migration, it is mapped
 to `red` intentionally so unresolved palette coverage is immediately visible.
 The runtime resolver converts palette token strings back to HEX before
 preview/render.
+
+The editor color control now follows the same rule: mode-aware RGB color fields
+use a compact production-palette swatch selector and store the selected palette
+token. Swatches are visually contiguous to make small color differences easier
+to compare. Fields that still require transparency keep the same palette
+selection UI with an enabled `0–1` alpha slider.

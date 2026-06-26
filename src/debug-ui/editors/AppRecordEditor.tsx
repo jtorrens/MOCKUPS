@@ -9,6 +9,7 @@ import {
   hasModeColorOverrides,
   ModeColorEditor,
 } from "../components/json-editor/ModeColorEditor.js";
+import { createPaletteColorCatalog } from "../components/json-editor/paletteColors.js";
 import {
   isJsonObject,
   stringifyJson,
@@ -38,6 +39,7 @@ interface AppNativeBridge {
 interface AppRecordEditorProps {
   table: AppTableDefinition;
   record: AppRecord;
+  records: Record<string, AppRecord[]>;
   fieldsByColumn: Map<string, AppFieldDefinition>;
   drafts: Record<string, string>;
   inheritedFields: Record<string, unknown>;
@@ -85,6 +87,7 @@ function explicitLocalOverridesInherited(
 export function AppRecordEditor({
   table,
   record,
+  records,
   fieldsByColumn,
   drafts,
   inheritedFields,
@@ -104,6 +107,10 @@ export function AppRecordEditor({
   const metadataField = fieldsByColumn.get("metadata_json");
   const appConfigRoot = parsedObject(drafts.config_json ?? "{}");
   const appMetadataRoot = parsedObject(drafts.metadata_json ?? "{}");
+  const paletteCatalog = createPaletteColorCatalog(
+    records,
+    typeof record.production_id === "string" ? record.production_id : undefined,
+  );
   const appTokenRoot = isJsonObject(appConfigRoot.tokens_json as JsonValue)
     ? (appConfigRoot.tokens_json as Record<string, unknown>)
     : appConfigRoot;
@@ -213,6 +220,7 @@ export function AppRecordEditor({
           rootValue={appEditorTokenRoot as JsonValue}
           inheritedRoot={inheritedAppRoot as JsonValue | undefined}
           hiddenGroups={["wallpaper"]}
+          paletteCatalog={paletteCatalog}
           onRootChange={updateAppTokenRoot}
         />
       )}
