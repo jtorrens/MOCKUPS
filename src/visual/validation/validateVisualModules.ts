@@ -149,9 +149,26 @@ assert(
   "Received bubbles must align left of sent bubbles",
 );
 assert(
-  sentBubble.box.x + sentBubble.box.width ===
-    messageAreaBox.x + messageAreaBox.width,
-  "Sent bubble must align to the scaled message-area right edge",
+  Math.min(
+    receivedBubble.box.x,
+    ...collectNodes(receivedBubble)
+      .filter(
+        (node) =>
+          (node.type === "message_bubble_tail" || node.type === "avatar") &&
+          node.box,
+      )
+      .map((node) => node.box!.x),
+  ) === messageAreaBox.x,
+  "Received avatar/bubble/tail unit must align to the scaled message-area left edge",
+);
+assert(
+  Math.max(
+    sentBubble.box.x + sentBubble.box.width,
+    ...collectNodes(sentBubble)
+      .filter((node) => node.type === "message_bubble_tail" && node.box)
+      .map((node) => node.box!.x + node.box!.width),
+  ) === messageAreaBox.x + messageAreaBox.width,
+  "Sent bubble plus tail must align to the scaled message-area right edge",
 );
 assert(
   receivedBubble.box.y + receivedBubble.box.height <= sentBubble.box.y,
@@ -252,19 +269,30 @@ const zeroGutterMessageListBox = isRecord(zeroGutterLayout)
 const zeroGutterSentBubble = collectNodes(zeroGutterTree).find(
   (child) => child.type === "message_bubble" && child.role === "outgoing",
 );
+const zeroGutterSentBubbleRight = zeroGutterSentBubble
+  ? Math.max(
+      zeroGutterSentBubble.box?.x ?? 0,
+      zeroGutterSentBubble.box
+        ? zeroGutterSentBubble.box.x + zeroGutterSentBubble.box.width
+        : 0,
+      ...collectNodes(zeroGutterSentBubble)
+        .filter((node) => node.type === "message_bubble_tail" && node.box)
+        .map((node) => node.box!.x + node.box!.width),
+    )
+  : 0;
 assert(
   isBox(zeroGutterMessageListBox) && zeroGutterSentBubble?.box,
   "Zero-gutter validation must expose message-list and sent bubble boxes",
 );
 assert(
-  zeroGutterSentBubble.box.x + zeroGutterSentBubble.box.width <=
+  zeroGutterSentBubbleRight <=
     zeroGutterMessageListBox.x + zeroGutterMessageListBox.width,
-  "Zero-gutter sent bubble must not overflow the message-list right edge",
+  "Zero-gutter sent bubble plus tail must not overflow the message-list right edge",
 );
 assert(
-  zeroGutterSentBubble.box.x + zeroGutterSentBubble.box.width ===
+  zeroGutterSentBubbleRight ===
     zeroGutterMessageListBox.x + zeroGutterMessageListBox.width,
-  "Zero-gutter sent bubble must align to the message-list right edge",
+  "Zero-gutter sent bubble plus tail must align to the message-list right edge",
 );
 const keyboardProps = ResolvedChatScreenPropsSchema.parse({
   ...chatProps,

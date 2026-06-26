@@ -9,11 +9,13 @@ import type {
   ChatMessageLayout,
   ChatScreenLayout,
   MessageBubbleLayout,
+  TextMeasurer,
 } from "./types.js";
 
 export interface LayoutChatScreenInput {
   props: ResolvedChatScreenProps;
   messages: ResolvedMessageBubbleProps[];
+  measurer?: TextMeasurer;
 }
 
 function translateMessageLayout(
@@ -43,6 +45,7 @@ function stringValue(value: unknown) {
 export function layoutChatScreen({
   props,
   messages,
+  measurer,
 }: LayoutChatScreenInput): ChatScreenLayout {
   const showStatusBar = props.props.showStatusBar !== false;
   const showNavigationBar = props.props.showNavigationBar !== false;
@@ -176,6 +179,7 @@ export function layoutChatScreen({
     const layout = layoutMessageBubble({
       props: message,
       messageArea: messageAreaBox,
+      measurer,
       y: cursorY,
     });
     cursorY += layout.bubbleBox.height;

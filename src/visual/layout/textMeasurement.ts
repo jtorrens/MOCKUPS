@@ -1,10 +1,13 @@
-import type { TextMeasurement } from "./types.js";
+import type { TextMeasurement, TextMeasurer, TextMeasureStyle } from "./types.js";
 
 export interface MeasureTextApproximateInput {
   text: string;
+  fontFamily?: string;
   fontSize: number;
+  fontWeight?: string | number;
   lineHeight: number;
   maxWidth: number;
+  measurer?: TextMeasurer;
 }
 
 const FALLBACK_AVERAGE_GLYPH_WIDTH_RATIO = 0.48;
@@ -30,20 +33,42 @@ function measureLineWidth(text: string, fontSize: number) {
   );
 }
 
-function wrapLineWidths(text: string, fontSize: number, maxWidth: number) {
+function measuredLineWidth(
+  text: string,
+  fontSize: number,
+  style: TextMeasureStyle | undefined,
+  measurer: TextMeasurer | undefined,
+) {
+  if (style && measurer) {
+    const measured = measurer.measureLineWidth(text, style);
+    if (typeof measured === "number" && Number.isFinite(measured)) {
+      return measured;
+    }
+  }
+  return measureLineWidth(text, fontSize);
+}
+
+function wrapLineWidths(
+  text: string,
+  fontSize: number,
+  maxWidth: number,
+  style: TextMeasureStyle | undefined,
+  measurer: TextMeasurer | undefined,
+) {
   const widths: number[] = [];
   let currentWidth = 0;
-  let currentCharacters = 0;
+  let currentText = "";
   for (const character of Array.from(text || " ")) {
-    const characterWidth = glyphWidthRatio(character) * fontSize;
-    if (currentCharacters > 0 && currentWidth + characterWidth > maxWidth) {
+    const nextText = `${currentText}${character}`;
+    const nextWidth = measuredLineWidth(nextText, fontSize, style, measurer);
+    if (currentText.length > 0 && nextWidth > maxWidth) {
       widths.push(currentWidth);
-      currentWidth = characterWidth;
-      currentCharacters = 1;
+      currentText = character;
+      currentWidth = measuredLineWidth(currentText, fontSize, style, measurer);
       continue;
     }
-    currentWidth += characterWidth;
-    currentCharacters += 1;
+    currentText = nextText;
+    currentWidth = nextWidth;
   }
   widths.push(currentWidth);
   return widths;
@@ -51,14 +76,20 @@ function wrapLineWidths(text: string, fontSize: number, maxWidth: number) {
 
 export function measureTextApproximate({
   text,
+  fontFamily,
   fontSize,
+  fontWeight,
   lineHeight,
   maxWidth,
+  measurer,
 }: MeasureTextApproximateInput): TextMeasurement {
   const averageGlyphWidth = fontSize * FALLBACK_AVERAGE_GLYPH_WIDTH_RATIO;
+  const style = fontFamily
+    ? { fontFamily, fontSize, ...(fontWeight ? { fontWeight } : {}) }
+    : undefined;
   const explicitLines = String(text || " ").split("\n");
   const wrappedWidths = explicitLines.flatMap((line) =>
-    wrapLineWidths(line, fontSize, maxWidth),
+    wrapLineWidths(line, fontSize, maxWidth, style, measurer),
   );
   const lineCount = Math.max(1, wrappedWidths.length);
   const maxCharsPerLine = Math.max(
@@ -68,7 +99,9 @@ export function measureTextApproximate({
   const measuredWidth = Math.max(
     1,
     ...wrappedWidths,
-    ...explicitLines.map((line) => measureLineWidth(line, fontSize)),
+    ...explicitLines.map((line) =>
+      measuredLineWidth(line, fontSize, style, measurer),
+    ),
   );
 
   return {
@@ -77,6 +110,9 @@ export function measureTextApproximate({
     lineCount,
     maxCharsPerLine,
     averageGlyphWidth,
-    strategy: "average_glyph_width",
+    strategy:
+      style && measurer?.measureLineWidth("M", style) !== undefined
+        ? "font_metrics"
+        : "average_glyph_width",
   };
 }

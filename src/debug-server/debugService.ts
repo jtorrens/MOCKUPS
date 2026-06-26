@@ -37,6 +37,10 @@ import type { RenderableNode } from "../visual/renderable/types.js";
 import { SQLiteRepository } from "../persistence/sqlite/SQLiteRepository.js";
 import type { SQLiteDatabase } from "../persistence/sqlite/createDatabase.js";
 import {
+  createProductionTextMeasurer,
+  productionFontFaceSources,
+} from "./productionTextMeasurer.js";
+import {
   readNullableJson,
   readOptionalJson,
   readRequiredJson,
@@ -83,9 +87,41 @@ function previewMediaFrameUrl({
   return `/api/media-frame?productionId=${encodeURIComponent(productionId)}&path=${encodeURIComponent(filePath)}&frame=${encodeURIComponent(String(Math.max(0, Math.floor(frame))))}&fps=${encodeURIComponent(String(fps > 0 ? fps : 30))}`;
 }
 
+function fontWeightForStyle(style: string) {
+  const normalized = style.toLowerCase().replace(/[\s_-]+/g, "");
+  if (normalized.includes("thin")) return 100;
+  if (normalized.includes("extralight") || normalized.includes("ultralight")) {
+    return 200;
+  }
+  if (normalized.includes("light")) return 300;
+  if (normalized.includes("medium")) return 500;
+  if (normalized.includes("semibold") || normalized.includes("demibold")) {
+    return 600;
+  }
+  if (normalized.includes("extrabold") || normalized.includes("ultrabold")) {
+    return 800;
+  }
+  if (normalized.includes("black") || normalized.includes("heavy")) return 900;
+  if (normalized.includes("bold")) return 700;
+  return 400;
+}
+
+function productionFontFaceMetadata(
+  database: SQLiteDatabase,
+  productionId: string,
+) {
+  return productionFontFaceSources(database, productionId).map((face) => ({
+    family: face.family,
+    style: /italic/i.test(face.style) ? "italic" : "normal",
+    uri: previewMediaUrl(productionId, face.relativeFilePath),
+    weight: fontWeightForStyle(face.style),
+  }));
+}
+
 function rewriteRenderableMediaUrls(
   node: RenderableNode,
   productionId: string,
+  database: SQLiteDatabase,
 ): RenderableNode {
   const backgroundUrl = extractCssUrl(node.style?.backgroundImage);
   const maskUrl = extractCssUrl(node.style?.maskImage);
@@ -141,6 +177,14 @@ function rewriteRenderableMediaUrls(
       : "";
   return {
     ...node,
+    ...(node.type === "chat_screen"
+      ? {
+          metadata: {
+            ...(node.metadata ?? {}),
+            fontFaces: productionFontFaceMetadata(database, productionId),
+          },
+        }
+      : {}),
     ...(nextStyle || videoPosterUrl
       ? {
           style: {
@@ -161,7 +205,7 @@ function rewriteRenderableMediaUrls(
     ...(node.children
       ? {
           children: node.children.map((child) =>
-            rewriteRenderableMediaUrls(child, productionId),
+            rewriteRenderableMediaUrls(child, productionId, database),
           ),
         }
       : {}),
@@ -896,10 +940,19 @@ export function loadDebugPayload(
         selectedResolved.resolved_props
       ) {
         const rawRenderable = RenderableNodeSchema.parse(
-          ChatScreenModule.render(selectedResolved.resolved_props),
+          ChatScreenModule.render(selectedResolved.resolved_props, {
+            measurer: createProductionTextMeasurer(
+              database,
+              selection.productionId,
+            ),
+          }),
         );
         renderable = RenderableNodeSchema.parse(
-          rewriteRenderableMediaUrls(rawRenderable, selection.productionId),
+          rewriteRenderableMediaUrls(
+            rawRenderable,
+            selection.productionId,
+            database,
+          ),
         );
       } else {
         warnings.push(

@@ -6,7 +6,17 @@ export interface TextMeasurement {
   lineCount: number;
   maxCharsPerLine: number;
   averageGlyphWidth: number;
-  strategy: "average_glyph_width";
+  strategy: "average_glyph_width" | "font_metrics";
+}
+
+export interface TextMeasureStyle {
+  fontFamily: string;
+  fontSize: number;
+  fontWeight?: string | number;
+}
+
+export interface TextMeasurer {
+  measureLineWidth(text: string, style: TextMeasureStyle): number | undefined;
 }
 
 export interface MessageBubbleLayout {

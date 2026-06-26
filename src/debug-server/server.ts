@@ -49,6 +49,10 @@ function mediaContentType(filePath: string) {
   if (extension === ".mp4" || extension === ".m4v") return "video/mp4";
   if (extension === ".mov") return "video/quicktime";
   if (extension === ".webm") return "video/webm";
+  if (extension === ".ttf") return "font/ttf";
+  if (extension === ".otf") return "font/otf";
+  if (extension === ".woff") return "font/woff";
+  if (extension === ".woff2") return "font/woff2";
   return "image/png";
 }
 
@@ -449,12 +453,31 @@ function absolutizeRenderableUrls(
     typeof node.metadata?.uri === "string"
       ? absolutize(node.metadata.uri)
       : undefined;
+  const metadataFontFaces = Array.isArray(node.metadata?.fontFaces)
+    ? node.metadata.fontFaces.map((fontFace) =>
+        fontFace &&
+        typeof fontFace === "object" &&
+        !Array.isArray(fontFace) &&
+        typeof (fontFace as Record<string, unknown>).uri === "string"
+          ? {
+              ...(fontFace as Record<string, unknown>),
+              uri: absolutize(String((fontFace as Record<string, unknown>).uri)),
+            }
+          : fontFace,
+      )
+    : undefined;
   return {
     ...node,
     ...(nextStyle ? { style: nextStyle } : {}),
     ...(assetUri ? { asset: { type: "image", uri: assetUri } } : {}),
-    ...(metadataUri
-      ? { metadata: { ...node.metadata, uri: metadataUri } }
+    ...(metadataUri || metadataFontFaces
+      ? {
+          metadata: {
+            ...node.metadata,
+            ...(metadataUri ? { uri: metadataUri } : {}),
+            ...(metadataFontFaces ? { fontFaces: metadataFontFaces } : {}),
+          },
+        }
       : {}),
     ...(node.children
       ? {

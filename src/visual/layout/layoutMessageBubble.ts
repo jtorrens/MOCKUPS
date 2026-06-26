@@ -1,11 +1,12 @@
 import type { ResolvedMessageBubbleProps } from "../../domain/schemas/index.js";
 import type { RenderableBox } from "../renderable/types.js";
 import { measureTextApproximate } from "./textMeasurement.js";
-import type { MessageBubbleLayout } from "./types.js";
+import type { MessageBubbleLayout, TextMeasurer } from "./types.js";
 
 export interface LayoutMessageBubbleInput {
   props: ResolvedMessageBubbleProps;
   messageArea: RenderableBox;
+  measurer?: TextMeasurer;
   y: number;
 }
 
@@ -21,6 +22,22 @@ function readNumber(value: unknown, fallback: number) {
 
 function readString(value: unknown, fallback = "") {
   return typeof value === "string" ? value : fallback;
+}
+
+function tailProtrusion(props: ResolvedMessageBubbleProps) {
+  if (!props.layout.showTail || props.direction === "system") {
+    return { left: 0, right: 0 };
+  }
+  if (props.style.tailStyle === "none") {
+    return { left: 0, right: 0 };
+  }
+  const width = Math.round(
+    props.style.tailWidth * Math.max(0.01, props.style.tailScale),
+  );
+  if (width <= 0) return { left: 0, right: 0 };
+  return props.direction === "outgoing"
+    ? { left: 0, right: width - Math.ceil(width * 0.34) }
+    : { left: Math.floor(width * 0.66), right: 0 };
 }
 
 function measureStatus(props: ResolvedMessageBubbleProps) {
@@ -65,6 +82,7 @@ function measureStatus(props: ResolvedMessageBubbleProps) {
 export function layoutMessageBubble({
   props,
   messageArea,
+  measurer,
   y,
 }: LayoutMessageBubbleInput): MessageBubbleLayout {
   const hasReceivedAvatar =
@@ -83,9 +101,12 @@ export function layoutMessageBubble({
   );
   const measurement = measureTextApproximate({
     text: props.visibleText,
+    fontFamily: props.style.fontFamily,
     fontSize: props.style.fontSize,
+    fontWeight: props.style.fontWeight,
     lineHeight: props.style.lineHeight,
     maxWidth: maxTextWidth,
+    measurer,
   });
   const mediaWindow = readRecord(props.media?.window);
   const rawMediaWidth = props.media
@@ -130,17 +151,22 @@ export function layoutMessageBubble({
   );
   const bubbleHeight = contentHeight + props.style.paddingY * 2;
   const alignment = props.layout.alignment;
+  const tailReserve = tailProtrusion(props);
+  const leftUnitReserve = Math.max(avatarReserve, tailReserve.left);
+  const rightUnitReserve = tailReserve.right;
   const bubbleX =
     alignment === "right"
-      ? messageArea.x + messageArea.width - bubbleWidth
+      ? messageArea.x + messageArea.width - rightUnitReserve - bubbleWidth
       : alignment === "center"
         ? messageArea.x + (messageArea.width - bubbleWidth) / 2
-        : messageArea.x + avatarReserve;
+        : messageArea.x + leftUnitReserve;
   const roundedBubbleWidth = Math.round(bubbleWidth);
   const roundedBubbleHeight = Math.round(bubbleHeight);
   const roundedBubbleX =
     alignment === "right"
-      ? Math.round(messageArea.x + messageArea.width) - roundedBubbleWidth
+      ? Math.round(messageArea.x + messageArea.width) -
+        Math.round(rightUnitReserve) -
+        roundedBubbleWidth
       : alignment === "center"
         ? Math.round(messageArea.x + (messageArea.width - roundedBubbleWidth) / 2)
         : Math.round(bubbleX);

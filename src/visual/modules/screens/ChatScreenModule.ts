@@ -9,6 +9,7 @@ import {
   readString,
 } from "../../renderable/helpers.js";
 import { layoutChatScreen } from "../../layout/index.js";
+import type { TextMeasurer } from "../../layout/types.js";
 import type { RenderableNode } from "../../renderable/types.js";
 import { ChatHeaderModule } from "../atomic/ChatHeaderModule.js";
 import { KeyboardModule } from "../atomic/KeyboardModule.js";
@@ -189,10 +190,15 @@ function hasStartedAtFrame(message: ReturnType<typeof createMessageBubbleInput>)
   return message.timing.startFrame <= message.frame;
 }
 
+export interface RenderChatScreenOptions {
+  measurer?: TextMeasurer;
+}
+
 export const ChatScreenModule: VisualModule<ResolvedChatScreenProps> = {
   type: "chat_screen",
   version: 1,
-  render(input): RenderableNode {
+  render(input, context): RenderableNode {
+    const options = (context ?? {}) as RenderChatScreenOptions;
     const children: RenderableNode[] = [];
     const screenGutter = readNumber(input.theme.layout, "screenGutter", 24);
     const wallpaper = readObject(input.theme, "wallpaper");
@@ -206,7 +212,11 @@ export const ChatScreenModule: VisualModule<ResolvedChatScreenProps> = {
           ? message.animation.hideUntilWriteComplete !== true
           : true;
       });
-    const layout = layoutChatScreen({ props: input, messages: messageInputs });
+    const layout = layoutChatScreen({
+      props: input,
+      messages: messageInputs,
+      measurer: options.measurer,
+    });
     const wallpaperImage = readObject(wallpaper, "image");
     const wallpaperUri = readString(wallpaperImage, "filePath", "");
     children.push({

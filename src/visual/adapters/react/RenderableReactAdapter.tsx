@@ -8,10 +8,18 @@ export interface RenderableReactAdapterProps {
   tree: RenderableNode;
 }
 
+function cssString(value: unknown): string {
+  return String(value ?? "").replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+}
+
 function asRecord(value: unknown): Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : {};
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function stringValue(value: unknown): string | undefined {
@@ -20,6 +28,27 @@ function stringValue(value: unknown): string | undefined {
 
 function numberValue(value: unknown): number | undefined {
   return typeof value === "number" ? value : undefined;
+}
+
+function fontFaceCss(tree: RenderableNode) {
+  const fontFaces = Array.isArray(tree.metadata?.fontFaces)
+    ? tree.metadata.fontFaces
+    : [];
+  return fontFaces
+    .filter(isRecord)
+    .map((fontFace) => {
+      const family = stringValue(fontFace.family);
+      const uri = stringValue(fontFace.uri);
+      if (!family || !uri) return "";
+      const weight =
+        typeof fontFace.weight === "number" || typeof fontFace.weight === "string"
+          ? fontFace.weight
+          : 400;
+      const style = stringValue(fontFace.style) ?? "normal";
+      return `@font-face{font-family:"${cssString(family)}";src:url("${cssString(uri)}");font-weight:${weight};font-style:${cssString(style)};font-display:block;}`;
+    })
+    .filter(Boolean)
+    .join("\n");
 }
 
 function cssFontWeight(value: unknown): CSSProperties["fontWeight"] | undefined {
@@ -1111,5 +1140,11 @@ function RenderNode({
 export const RenderableReactAdapter = ({
   tree,
 }: RenderableReactAdapterProps) => {
-  return <RenderNode node={tree} parentOrigin={{ x: 0, y: 0 }} />;
+  const css = fontFaceCss(tree);
+  return (
+    <>
+      {css ? <style>{css}</style> : null}
+      <RenderNode node={tree} parentOrigin={{ x: 0, y: 0 }} />
+    </>
+  );
 };
