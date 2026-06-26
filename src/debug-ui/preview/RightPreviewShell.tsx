@@ -1,5 +1,6 @@
 import { useState } from "react";
 import "./preview.css";
+import { PreviewNavigationCard } from "./PreviewNavigationCard.js";
 import { PreviewOptionsCard } from "./PreviewOptionsCard.js";
 import { PreviewOutputStack } from "./PreviewOutputStack.js";
 import { PreviewPanel } from "./PreviewPanel.js";
@@ -11,7 +12,6 @@ export function RightPreviewShell({
   options,
   selection,
   payload,
-  busy,
   onSelectionChange,
   error,
 }: RightPreviewShellProps) {
@@ -24,7 +24,6 @@ export function RightPreviewShell({
   return (
     <aside className="right-preview-shell">
       <PreviewOptionsCard
-        busy={busy}
         onFrameToggle={setShowPhoneFrame}
         onOpenChange={setPreviewOptionsOpen}
         onRenderPng={renderFramePng}
@@ -36,6 +35,12 @@ export function RightPreviewShell({
         renderBusy={renderBusy}
         selection={selection}
         showFrame={showPhoneFrame}
+      />
+
+      <PreviewNavigationCard
+        onSelectionChange={onSelectionChange}
+        options={options}
+        selection={selection}
       />
 
       <PreviewOutputStack

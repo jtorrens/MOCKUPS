@@ -923,7 +923,6 @@ export function App() {
         options={state.options}
         selection={selection}
         payload={preview}
-        busy={busyPreview}
         error={previewError}
         onSelectionChange={(nextSelection) => {
           setSelection(nextSelection);

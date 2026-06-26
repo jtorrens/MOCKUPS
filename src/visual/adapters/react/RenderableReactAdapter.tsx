@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import type {
   RenderableBox,
   RenderableNode,
@@ -24,6 +24,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function stringValue(value: unknown): string | undefined {
   return typeof value === "string" ? value : undefined;
+}
+
+function extractCssUrl(value: unknown) {
+  if (typeof value !== "string") return "";
+  const match = /^url\((['"]?)(.*?)\1\)$/i.exec(value.trim());
+  return match?.[2] ?? "";
 }
 
 function numberValue(value: unknown): number | undefined {
@@ -125,7 +131,8 @@ function nodeStyle(
   return {
     ...boxStyle(node.box, parentOrigin),
     backgroundColor,
-    backgroundImage,
+    backgroundImage:
+      node.type === "message_bubble_media_image" ? undefined : backgroundImage,
     backgroundSize,
     backgroundPosition,
     backgroundRepeat,
@@ -485,6 +492,44 @@ function inlineCursorFromChildren(node: RenderableNode) {
   );
 }
 
+function StableBackgroundImage({ node }: { node: RenderableNode }) {
+  const requestedBackground = stringValue(node.style?.backgroundImage);
+  const requestedUrl = extractCssUrl(requestedBackground);
+  const [visibleBackground, setVisibleBackground] = useState(requestedBackground);
+
+  useEffect(() => {
+    if (!requestedBackground || !requestedUrl) {
+      setVisibleBackground(requestedBackground);
+      return undefined;
+    }
+    let cancelled = false;
+    const image = new Image();
+    image.onload = () => {
+      if (!cancelled) setVisibleBackground(requestedBackground);
+    };
+    image.src = requestedUrl;
+    return () => {
+      cancelled = true;
+    };
+  }, [requestedBackground, requestedUrl]);
+
+  if (!visibleBackground) return null;
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        position: "absolute",
+        inset: 0,
+        backgroundImage: visibleBackground,
+        backgroundPosition: stringValue(node.style?.backgroundPosition) ?? "center",
+        backgroundRepeat: stringValue(node.style?.backgroundRepeat) ?? "no-repeat",
+        backgroundSize: stringValue(node.style?.backgroundSize) ?? "cover",
+        pointerEvents: "none",
+      }}
+    />
+  );
+}
+
 function nodeContent(node: RenderableNode): ReactNode {
   if (node.type === "message_bubble_media_image") {
     const mediaType = stringValue(node.metadata?.type) ?? "image";
@@ -493,7 +538,8 @@ function nodeContent(node: RenderableNode): ReactNode {
     const scale = numberValue(node.metadata?.scale) ?? 1;
     const translateX = numberValue(node.metadata?.translateX) ?? 0;
     const translateY = numberValue(node.metadata?.translateY) ?? 0;
-    if (mediaType !== "video" || !uri || hasPosterBackground) return node.text;
+    if (hasPosterBackground) return <StableBackgroundImage node={node} />;
+    if (mediaType !== "video" || !uri) return node.text;
     return (
       <video
         aria-hidden="true"

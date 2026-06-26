@@ -7,7 +7,6 @@ import {
 } from "./previewSelection.js";
 
 interface PreviewOptionsCardProps {
-  busy: boolean;
   onFrameToggle: (showFrame: boolean) => void;
   onOpenChange: (open: boolean) => void;
   onRenderPng: () => void;
@@ -22,7 +21,6 @@ interface PreviewOptionsCardProps {
 }
 
 export function PreviewOptionsCard({
-  busy,
   onFrameToggle,
   onOpenChange,
   onRenderPng,
@@ -37,7 +35,6 @@ export function PreviewOptionsCard({
 }: PreviewOptionsCardProps) {
   const {
     episodes,
-    maxFrame,
     previewContext,
     previewSummary,
     previewTitle,
@@ -54,10 +51,6 @@ export function PreviewOptionsCard({
     selection,
     showFrame,
   });
-  const relativeModuleFrame = selectedInstance
-    ? Math.max(0, selection.frame - selectedInstance.startFrame)
-    : 0;
-
   function updateScreenInstance(screenInstanceId: string) {
     const instance = screenInstances.find(
       (candidate) => candidate.id === screenInstanceId,
@@ -87,9 +80,6 @@ export function PreviewOptionsCard({
           <h2>Preview</h2>
           <p>{previewSummary}</p>
         </div>
-        <span className={`preview-status-dot ${busy ? "busy" : ""}`}>
-          {busy ? "Resolving" : "Live"}
-        </span>
       </summary>
       <div className="preview-options-body">
         <div className="preview-header-meta" aria-label="Resolved preview context">
@@ -229,38 +219,6 @@ export function PreviewOptionsCard({
                 </option>
               ))}
             </select>
-          </label>
-          <label className="preview-frame-field">
-            Frame <span className="preview-frame-relative">rel {relativeModuleFrame}</span>
-            <div className="frame-inline">
-              <input
-                aria-label="Frame slider"
-                type="range"
-                min={0}
-                max={maxFrame}
-                value={selection.frame}
-                onChange={(event) =>
-                  onSelectionChange({
-                    ...selection,
-                    frame: Number(event.target.value),
-                  })
-                }
-              />
-              <input
-                aria-label="Frame number"
-                data-testid="frame-input"
-                type="number"
-                min={0}
-                max={maxFrame}
-                value={selection.frame}
-                onChange={(event) =>
-                  onSelectionChange({
-                    ...selection,
-                    frame: Number(event.target.value),
-                  })
-                }
-              />
-            </div>
           </label>
         </div>
       </div>

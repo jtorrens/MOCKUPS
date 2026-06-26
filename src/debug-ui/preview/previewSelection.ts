@@ -71,7 +71,6 @@ export function buildPreviewOptionsViewModel({
     previewContext
       ? `${previewContext.themeName} · ${previewContext.themeMode}`
       : undefined,
-    `f${selection.frame}`,
     `zoom ${zoomText}`,
     showFrame ? "frame on" : "frame off",
   ]
