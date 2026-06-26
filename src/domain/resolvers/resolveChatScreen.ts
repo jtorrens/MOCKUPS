@@ -14,6 +14,7 @@ import {
   type Device,
   type DeviceState,
   type ModuleInstance,
+  type PaletteColor,
   type ResolvedChatScreenProps,
   type ScreenInstance,
   type Theme,
@@ -700,6 +701,31 @@ function fontWeightToken(value: unknown): string | number | undefined {
   return undefined;
 }
 
+function paletteMapForColors(colors: PaletteColor[]) {
+  return new Map(colors.map((color) => [color.token, color.value_hex]));
+}
+
+function resolvePaletteTokenReferences(
+  value: unknown,
+  palette: Map<string, string>,
+): unknown {
+  if (Array.isArray(value)) {
+    return value.map((entry) => resolvePaletteTokenReferences(entry, palette));
+  }
+  if (isObject(value)) {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, entry]) => [
+        key,
+        resolvePaletteTokenReferences(entry, palette),
+      ]),
+    );
+  }
+  if (typeof value === "string") {
+    return palette.get(value) ?? value;
+  }
+  return value;
+}
+
 export function moduleTypographyDefaultsFromFonts(
   tokens: Record<string, unknown>,
 ): Record<string, unknown> {
@@ -1262,7 +1288,13 @@ export function resolveChatScreen({
     mergeTokenObjects(genericTokens, moduleDefaultsFromGenericTokens),
     moduleThemeTokens,
   );
-  const mergedThemeTokens = inheritedModuleTokens;
+  const palette = paletteMapForColors(
+    repository.getPaletteColors(theme.production_id),
+  );
+  const mergedThemeTokens = resolvePaletteTokenReferences(
+    inheritedModuleTokens,
+    palette,
+  ) as Record<string, unknown>;
   const renderScale = renderScaleFromMetrics(metrics);
   const scaledThemeTokens = scaleDesignTokensForRender(
     mergedThemeTokens,

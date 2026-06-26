@@ -11,6 +11,7 @@ export type SQLiteDatabase = Database.Database;
 const IOS_SEED_PALETTE_COLORS = [
   ["white", "#FFFFFF"],
   ["black", "#000000"],
+  ["red", "#FA0000"],
   ["blue", "#007AFF"],
   ["blue_bright", "#0A84FF"],
   ["gray_medium", "#6E6E73"],
@@ -36,6 +37,86 @@ const PALETTE_TOKEN_RENAMES = {
   ios_surface_light: "off_white",
 } as const;
 
+const THEME_HEX_TO_PALETTE_TOKEN = new Map(
+  IOS_SEED_PALETTE_COLORS.map(([token, valueHex]) => [
+    valueHex.toUpperCase(),
+    token,
+  ]),
+);
+const PALETTE_HEX_VALUES = new Set(
+  IOS_SEED_PALETTE_COLORS.map(([, valueHex]) => valueHex.toUpperCase()),
+);
+
+function themeColorTokenForValue(value: string) {
+  return THEME_HEX_TO_PALETTE_TOKEN.get(value.toUpperCase()) ?? "red";
+}
+
+function convertThemeColorsToPaletteTokens(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((entry) => convertThemeColorsToPaletteTokens(entry));
+  }
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, entry]) => [
+        key,
+        convertThemeColorsToPaletteTokens(entry),
+      ]),
+    );
+  }
+  if (typeof value === "string" && /^#[0-9a-fA-F]{6}$/.test(value)) {
+    return themeColorTokenForValue(value);
+  }
+  return value;
+}
+
+function normalizeHexColorToPalette(value: string) {
+  const normalized = value.toUpperCase();
+  return PALETTE_HEX_VALUES.has(normalized) ? normalized : "#FA0000";
+}
+
+function componentToHex(value: number) {
+  return Math.max(0, Math.min(255, Math.round(value)))
+    .toString(16)
+    .padStart(2, "0")
+    .toUpperCase();
+}
+
+function normalizeRgbLikeColorToPalette(value: string) {
+  const match =
+    /^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})(?:\s*,\s*([0-9.]+))?\s*\)$/i.exec(
+      value.trim(),
+    );
+  if (!match) return value;
+  const [, r, g, b, alpha] = match;
+  const hex = `#${componentToHex(Number(r))}${componentToHex(Number(g))}${componentToHex(Number(b))}`;
+  if (PALETTE_HEX_VALUES.has(hex)) return value;
+  return alpha === undefined
+    ? "rgb(250,0,0)"
+    : `rgba(250,0,0,${alpha})`;
+}
+
+function normalizePhysicalColorsToPalette(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((entry) => normalizePhysicalColorsToPalette(entry));
+  }
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, entry]) => [
+        key,
+        normalizePhysicalColorsToPalette(entry),
+      ]),
+    );
+  }
+  if (typeof value !== "string") return value;
+  if (/^#[0-9a-fA-F]{6}$/.test(value)) {
+    return normalizeHexColorToPalette(value);
+  }
+  if (/^rgba?\(/i.test(value.trim())) {
+    return normalizeRgbLikeColorToPalette(value);
+  }
+  return value;
+}
+
 const SCREEN_INSTANCE_V2_COLUMNS = {
   module_id: "TEXT",
   module_schema_version: "INTEGER",
@@ -44,6 +125,62 @@ const SCREEN_INSTANCE_V2_COLUMNS = {
   module_config_json: "TEXT",
   module_tokens_override_json: "TEXT",
 } as const;
+
+const COLOR_NORMALIZATION_JSON_COLUMNS = [
+  ["productions", "settings_json"],
+  ["productions", "metadata_json"],
+  ["media_assets", "dimensions_json"],
+  ["media_assets", "metadata_json"],
+  ["palette_colors", "metadata_json"],
+  ["production_fonts", "files_json"],
+  ["production_fonts", "metadata_json"],
+  ["icon_themes", "mapping_json"],
+  ["icon_themes", "metadata_json"],
+  ["status_bars", "config_json"],
+  ["status_bars", "metadata_json"],
+  ["navigation_bars", "config_json"],
+  ["navigation_bars", "metadata_json"],
+  ["themes", "tokens_json"],
+  ["module_theme_configs", "tokens_json"],
+  ["module_theme_configs", "metadata_json"],
+  ["devices", "metrics_json"],
+  ["device_states", "state_json"],
+  ["actors", "metadata_json"],
+  ["apps", "config_json"],
+  ["apps", "metadata_json"],
+  ["animation_presets", "parameters_json"],
+  ["render_presets", "codec_json"],
+  ["render_presets", "color_json"],
+  ["render_presets", "quality_json"],
+  ["render_presets", "export_json"],
+  ["shots", "canvas_json"],
+  ["shots", "metadata_json"],
+  ["conversations", "metadata_json"],
+  ["conversation_participants", "metadata_json"],
+  ["messages", "style_override_json"],
+  ["messages", "animation_override_json"],
+  ["messages", "layout_override_json"],
+  ["messages", "metadata_json"],
+  ["notifications", "payload_json"],
+  ["notifications", "style_override_json"],
+  ["notifications", "metadata_json"],
+  ["calls", "metadata_json"],
+  ["data_sources", "config_json"],
+  ["data_sources", "metadata_json"],
+  ["screen_instances", "data_ref_json"],
+  ["screen_instances", "device_state_json"],
+  ["screen_instances", "module_data_json"],
+  ["screen_instances", "module_config_json"],
+  ["screen_instances", "module_tokens_override_json"],
+  ["screen_instances", "transform_json"],
+  ["screen_instances", "props_json"],
+  ["screen_instances", "transition_in_json"],
+  ["screen_instances", "transition_out_json"],
+  ["module_instances", "content_json"],
+  ["module_instances", "behavior_json"],
+  ["module_instances", "animation_json"],
+  ["module_instances", "metadata_json"],
+] as const;
 
 function applyAdditiveV2Migration(database: SQLiteDatabase): void {
   const existingColumns = new Set(
@@ -900,6 +1037,70 @@ function applyAdditiveV19Migration(database: SQLiteDatabase): void {
   database.pragma("user_version = 19");
 }
 
+function applyAdditiveV20Migration(database: SQLiteDatabase): void {
+  const rows = database
+    .prepare("SELECT id, tokens_json FROM themes ORDER BY id")
+    .all() as { id: string; tokens_json: string }[];
+  const update = database.prepare(
+    "UPDATE themes SET tokens_json = ? WHERE id = ?",
+  );
+  for (const row of rows) {
+    try {
+      const tokens = JSON.parse(row.tokens_json) as Record<string, unknown>;
+      update.run(
+        JSON.stringify(convertThemeColorsToPaletteTokens(tokens)),
+        row.id,
+      );
+    } catch {
+      // Malformed JSON is handled by validation paths; skip migration here.
+    }
+  }
+  database.pragma("user_version = 20");
+}
+
+function applyAdditiveV21Migration(database: SQLiteDatabase): void {
+  const existingColumns = new Map<string, Set<string>>();
+  function columnsForTable(tableName: string) {
+    const cached = existingColumns.get(tableName);
+    if (cached) return cached;
+    const columns = new Set(
+      (
+        database.pragma(`table_info(${tableName})`) as {
+          name: string;
+        }[]
+      ).map((column) => column.name),
+    );
+    existingColumns.set(tableName, columns);
+    return columns;
+  }
+
+  for (const [tableName, columnName] of COLOR_NORMALIZATION_JSON_COLUMNS) {
+    if (!columnsForTable(tableName).has(columnName)) continue;
+    const rows = database
+      .prepare(
+        `SELECT id, ${columnName} AS json_value FROM ${tableName} WHERE ${columnName} IS NOT NULL`,
+      )
+      .all() as { id: string; json_value: string }[];
+    if (rows.length === 0) continue;
+    const update = database.prepare(
+      `UPDATE ${tableName} SET ${columnName} = ? WHERE id = ?`,
+    );
+    for (const row of rows) {
+      try {
+        const parsed = JSON.parse(row.json_value) as unknown;
+        const normalized = normalizePhysicalColorsToPalette(parsed);
+        const nextJson = JSON.stringify(normalized);
+        if (nextJson !== row.json_value) {
+          update.run(nextJson, row.id);
+        }
+      } catch {
+        // Leave malformed JSON untouched; validation paths should surface it.
+      }
+    }
+  }
+  database.pragma("user_version = 21");
+}
+
 export function applyInitialSchema(database: SQLiteDatabase): void {
   database.exec(readFileSync(schemaPath, "utf8"));
   applyAdditiveV2Migration(database);
@@ -920,6 +1121,8 @@ export function applyInitialSchema(database: SQLiteDatabase): void {
   applyAdditiveV17Migration(database);
   applyAdditiveV18Migration(database);
   applyAdditiveV19Migration(database);
+  applyAdditiveV20Migration(database);
+  applyAdditiveV21Migration(database);
   database.pragma("foreign_keys = ON");
 }
 

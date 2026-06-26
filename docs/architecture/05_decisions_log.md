@@ -795,3 +795,10 @@ these primitive palette tokens, for example `text.alert = blue` or
 dark/light modes, components, or usage semantics. Fields that need transparency
 store the palette token separately from a numeric alpha value in the `0–1`
 range.
+
+Theme tokens are the first migrated consumer: direct HEX strings in theme JSON
+are converted to primitive palette tokens when a matching palette color exists.
+If a direct theme HEX has no primitive match during the migration, it is mapped
+to `red` intentionally so unresolved palette coverage is immediately visible.
+The runtime resolver converts palette token strings back to HEX before
+preview/render.

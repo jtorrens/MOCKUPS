@@ -1260,14 +1260,14 @@ function slugifyIdPart(value: string): string {
 function defaultThemeTokens(family: "ios" | "android") {
   const isAndroid = family === "android";
   const fontFamily = isAndroid ? "Roboto" : "SF Pro Text";
-  const lightBackground = isAndroid ? "#FFFFFF" : "#FFFFFF";
-  const darkBackground = isAndroid ? "#101114" : "#000000";
-  const lightText = isAndroid ? "#1D1B20" : "#000000";
-  const darkText = isAndroid ? "#E6E1E5" : "#FFFFFF";
-  const lightSecondary = isAndroid ? "#625B71" : "#6E6E73";
-  const darkSecondary = isAndroid ? "#CAC4D0" : "#98989D";
-  const lightAccent = isAndroid ? "#6750A4" : "#007AFF";
-  const darkAccent = isAndroid ? "#D0BCFF" : "#0A84FF";
+  const lightBackground = "white";
+  const darkBackground = isAndroid ? "red" : "black";
+  const lightText = isAndroid ? "red" : "black";
+  const darkText = isAndroid ? "red" : "white";
+  const lightSecondary = isAndroid ? "red" : "gray_medium";
+  const darkSecondary = isAndroid ? "red" : "gray_medium_bright";
+  const lightAccent = isAndroid ? "red" : "blue";
+  const darkAccent = isAndroid ? "red" : "blue_bright";
 
   return {
     defaultMode: "light",
@@ -1290,17 +1290,17 @@ function defaultThemeTokens(family: "ios" | "android") {
           background: "rgba(255,255,255,0)",
         },
         keyboard: {
-          background: isAndroid ? "#E7E3EC" : "#D1D5DB",
-          keyBackground: "#FFFFFF",
-          specialKeyBackground: isAndroid ? "#D0CBD8" : "#AEB4BE",
-          pressedKeyBackground: isAndroid ? "#C2BBCB" : "#8E8E93",
-          popoverBackground: "#FFFFFF",
+          background: isAndroid ? "red" : "keyboard_light_background",
+          keyBackground: "white",
+          specialKeyBackground: isAndroid ? "red" : "keyboard_light_special",
+          pressedKeyBackground: isAndroid ? "red" : "gray",
+          popoverBackground: "white",
           text: lightText,
         },
         notifications: {
           background: isAndroid ? "rgba(255,255,255,0.94)" : "rgba(245,245,247,0.92)",
           titleColor: lightText,
-          bodyColor: isAndroid ? "#49454F" : "#3A3A3C",
+          bodyColor: isAndroid ? "red" : "gray_deep",
         },
       },
       dark: {
@@ -1321,17 +1321,17 @@ function defaultThemeTokens(family: "ios" | "android") {
           background: "rgba(0,0,0,0)",
         },
         keyboard: {
-          background: isAndroid ? "#211F26" : "#2C2C2E",
-          keyBackground: isAndroid ? "#3B383F" : "#636366",
-          specialKeyBackground: isAndroid ? "#4A4650" : "#3A3A3C",
-          pressedKeyBackground: isAndroid ? "#5F5967" : "#8E8E93",
-          popoverBackground: isAndroid ? "#3B383F" : "#636366",
+          background: isAndroid ? "red" : "keyboard_dark_background",
+          keyBackground: isAndroid ? "red" : "keyboard_dark_key",
+          specialKeyBackground: isAndroid ? "red" : "gray_deep",
+          pressedKeyBackground: isAndroid ? "red" : "gray",
+          popoverBackground: isAndroid ? "red" : "keyboard_dark_key",
           text: darkText,
         },
         notifications: {
-          background: isAndroid ? "rgba(28,27,31,0.94)" : "rgba(44,44,46,0.92)",
+          background: isAndroid ? "rgba(250,0,0,0.94)" : "rgba(44,44,46,0.92)",
           titleColor: darkText,
-          bodyColor: isAndroid ? "#CAC4D0" : "#D1D1D6",
+          bodyColor: isAndroid ? "red" : "gray_soft",
         },
       },
     },
@@ -1362,11 +1362,11 @@ function defaultThemeTokens(family: "ios" | "android") {
       iconScale: 1,
     },
     keyboard: {
-      background: isAndroid ? "#E7E3EC" : "#D1D5DB",
-      keyBackground: "#FFFFFF",
-      specialKeyBackground: isAndroid ? "#D0CBD8" : "#AEB4BE",
-      pressedKeyBackground: isAndroid ? "#C2BBCB" : "#8E8E93",
-      popoverBackground: "#FFFFFF",
+      background: isAndroid ? "red" : "keyboard_light_background",
+      keyBackground: "white",
+      specialKeyBackground: isAndroid ? "red" : "keyboard_light_special",
+      pressedKeyBackground: isAndroid ? "red" : "gray",
+      popoverBackground: "white",
       text: lightText,
     },
     notifications: {

@@ -40,6 +40,7 @@ import type { RepositoryDataset } from "../types.js";
 const IOS_SEED_PALETTE_COLORS = [
   ["white", "#FFFFFF"],
   ["black", "#000000"],
+  ["red", "#FA0000"],
   ["blue", "#007AFF"],
   ["blue_bright", "#0A84FF"],
   ["gray_medium", "#6E6E73"],
@@ -345,11 +346,11 @@ export function createExampleDataset(): RepositoryDataset {
         offsetY: -5,
         tickSingleIconToken: "message_check",
         tickDoubleIconToken: "message_done_all",
-        textColor: "#7A7A7A",
-        sentColor: "#7A7A7A",
-        deliveredColor: "#7A7A7A",
-        readColor: "#34B7F1",
-        failedColor: "#D92D20",
+        textColor: "#FA0000",
+        sentColor: "#FA0000",
+        deliveredColor: "#FA0000",
+        readColor: "#FA0000",
+        failedColor: "#FA0000",
       },
     },
     textInputBar: {
@@ -404,24 +405,24 @@ export function createExampleDataset(): RepositoryDataset {
           avatarBorderColor: "#FFFFFF",
         },
         chatBubbles: {
-          outgoingBackground: "#0B84FF",
+          outgoingBackground: "#FA0000",
           outgoingText: "#FFFFFF",
-          incomingBackground: "#E9E9EB",
+          incomingBackground: "#FA0000",
           incomingText: "#000000",
           status: {
-            textColor: "#7A7A7A",
-            sentColor: "#7A7A7A",
-            deliveredColor: "#7A7A7A",
-            readColor: "#34B7F1",
-            failedColor: "#D92D20",
+            textColor: "#FA0000",
+            sentColor: "#FA0000",
+            deliveredColor: "#FA0000",
+            readColor: "#FA0000",
+            failedColor: "#FA0000",
           },
         },
       },
       dark: {
         header: {
-          background: "#1C1C1E",
-          separatorColor: "#38383A",
-          avatarBorderColor: "#1C1C1E",
+          background: "#FA0000",
+          separatorColor: "#FA0000",
+          avatarBorderColor: "#FA0000",
         },
         chatBubbles: {
           outgoingBackground: "#0A84FF",
@@ -429,11 +430,11 @@ export function createExampleDataset(): RepositoryDataset {
           incomingBackground: "#2C2C2E",
           incomingText: "#FFFFFF",
           status: {
-            textColor: "#A1A1A6",
-            sentColor: "#A1A1A6",
-            deliveredColor: "#A1A1A6",
-            readColor: "#53C7FF",
-            failedColor: "#FF6B5F",
+            textColor: "#FA0000",
+            sentColor: "#FA0000",
+            deliveredColor: "#FA0000",
+            readColor: "#FA0000",
+            failedColor: "#FA0000",
           },
         },
       },
@@ -476,12 +477,12 @@ export function createExampleDataset(): RepositoryDataset {
       metadata_json: {
         modes: {
           light: {
-            color: "#64748b",
-            avatarTextColor: "#ffffff",
+            color: "#FA0000",
+            avatarTextColor: "#FFFFFF",
           },
           dark: {
-            color: "#475569",
-            avatarTextColor: "#ffffff",
+            color: "#FA0000",
+            avatarTextColor: "#FFFFFF",
           },
         },
         avatar: {
@@ -505,12 +506,12 @@ export function createExampleDataset(): RepositoryDataset {
       metadata_json: {
         modes: {
           light: {
-            color: "#3b82f6",
-            avatarTextColor: "#ffffff",
+            color: "#FA0000",
+            avatarTextColor: "#FFFFFF",
           },
           dark: {
-            color: "#60a5fa",
-            avatarTextColor: "#0f172a",
+            color: "#FA0000",
+            avatarTextColor: "#FA0000",
           },
         },
         avatar: {

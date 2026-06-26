@@ -9,64 +9,64 @@
     "modes": {
       "light": {
         "colors": {
-          "background": "#FFFFFF",
-          "textPrimary": "#000000",
-          "textSecondary": "#6E6E73",
-          "accent": "#007AFF"
+          "background": "white",
+          "textPrimary": "black",
+          "textSecondary": "gray_medium",
+          "accent": "blue"
         },
         "statusBar": {
           "type": "ios-default",
-          "foreground": "#000000",
+          "foreground": "black",
           "background": "rgba(255,255,255,0)"
         },
         "navigationBar": {
           "type": "ios-home-indicator",
-          "foreground": "#000000",
+          "foreground": "black",
           "background": "rgba(255,255,255,0)"
         },
         "keyboard": {
-          "background": "#D1D5DB",
-          "keyBackground": "#FFFFFF",
-          "specialKeyBackground": "#AEB4BE",
-          "pressedKeyBackground": "#8E8E93",
-          "popoverBackground": "#FFFFFF",
-          "text": "#000000"
+          "background": "keyboard_light_background",
+          "keyBackground": "white",
+          "specialKeyBackground": "keyboard_light_special",
+          "pressedKeyBackground": "gray",
+          "popoverBackground": "white",
+          "text": "black"
         },
         "notifications": {
           "background": "rgba(245,245,247,0.92)",
-          "titleColor": "#000000",
-          "bodyColor": "#3A3A3C"
+          "titleColor": "black",
+          "bodyColor": "gray_deep"
         }
       },
       "dark": {
         "colors": {
-          "background": "#000000",
-          "textPrimary": "#FFFFFF",
-          "textSecondary": "#98989D",
-          "accent": "#0A84FF"
+          "background": "black",
+          "textPrimary": "white",
+          "textSecondary": "gray_medium_bright",
+          "accent": "blue_bright"
         },
         "statusBar": {
           "type": "ios-default",
-          "foreground": "#FFFFFF",
+          "foreground": "white",
           "background": "rgba(0,0,0,0)"
         },
         "navigationBar": {
           "type": "ios-home-indicator",
-          "foreground": "#FFFFFF",
+          "foreground": "white",
           "background": "rgba(0,0,0,0)"
         },
         "keyboard": {
-          "background": "#2C2C2E",
-          "keyBackground": "#636366",
-          "specialKeyBackground": "#3A3A3C",
-          "pressedKeyBackground": "#8E8E93",
-          "popoverBackground": "#636366",
-          "text": "#FFFFFF"
+          "background": "keyboard_dark_background",
+          "keyBackground": "keyboard_dark_key",
+          "specialKeyBackground": "gray_deep",
+          "pressedKeyBackground": "gray",
+          "popoverBackground": "keyboard_dark_key",
+          "text": "white"
         },
         "notifications": {
           "background": "rgba(44,44,46,0.92)",
-          "titleColor": "#FFFFFF",
-          "bodyColor": "#D1D1D6"
+          "titleColor": "white",
+          "bodyColor": "gray_soft"
         }
       }
     },
@@ -79,30 +79,30 @@
       "source": "installed_system_font"
     },
     "colors": {
-      "background": "#FFFFFF",
-      "textPrimary": "#000000",
-      "textSecondary": "#6E6E73",
-      "accent": "#007AFF"
+      "background": "white",
+      "textPrimary": "black",
+      "textSecondary": "gray_medium",
+      "accent": "blue"
     },
     "statusBar": {
       "type": "ios-default",
-      "foreground": "#000000",
+      "foreground": "black",
       "background": "rgba(255,255,255,0)",
       "iconScale": 1
     },
     "navigationBar": {
       "type": "ios-home-indicator",
-      "foreground": "#000000",
+      "foreground": "black",
       "background": "rgba(255,255,255,0)",
       "iconScale": 1
     },
     "keyboard": {
-      "background": "#D1D5DB",
-      "keyBackground": "#FFFFFF",
-      "specialKeyBackground": "#AEB4BE",
-      "pressedKeyBackground": "#8E8E93",
-      "popoverBackground": "#FFFFFF",
-      "text": "#000000"
+      "background": "keyboard_light_background",
+      "keyBackground": "white",
+      "specialKeyBackground": "keyboard_light_special",
+      "pressedKeyBackground": "gray",
+      "popoverBackground": "white",
+      "text": "black"
     },
     "notifications": {
       "backdropBlur": 24

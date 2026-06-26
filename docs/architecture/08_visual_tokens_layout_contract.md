@@ -58,6 +58,17 @@ should reference palette tokens rather than raw RGB values once the color-picker
 UI is migrated. Alpha is not part of the primitive palette; transparent fields
 store a palette token plus a separate numeric `0–1` alpha.
 
+Theme colors may already store palette tokens directly. The resolver replaces
+matching palette token strings with concrete HEX values after merging
+theme/app/module tokens and before visual scaling/rendering, so preview and
+render modules still receive paintable CSS color values.
+
+Before wider token conversion, persisted JSON colors are normalized so any
+direct physical HEX/RGB/RGBA color either matches a primitive palette value or
+is replaced with the palette debug red (`#FA0000`, preserving alpha for RGBA).
+This makes later color-token migration deterministic and makes missing palette
+coverage visually obvious.
+
 Mode-aware color values may exist in Theme, App, and Module defaults. The editor should keep both light and dark columns available at authoring time; the resolver collapses to one mode only for preview/render. Module-specific values belong in `module_theme_configs.tokens_json`. For Chat, this includes message list gutter, header height/background/separator/icon/avatar defaults, message spacing/grouping distances, message/header typography, bubble colors/padding/radius/tails/shadows, bubble avatar size/gap, cursor behavior, and future chat media defaults.
 
 Before a module receives renderable props, the resolver scales design-unit token values to the selected device render space using `device.metrics_json.scaleToPixels`, or the render/design width ratio when needed. For the seeded iPhone fixture, 430 logical points render at 1290 pixels, so a Chat message `fontSize` of `17` resolves to `51px`. Numeric values that are not design units, such as `maxWidthRatio` and frame counts, are not scaled. Font weight variants are named font-face selections and are not scaled.
