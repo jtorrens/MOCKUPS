@@ -157,6 +157,7 @@ export function ModuleInstanceRecordEditor({
         groupKey={groupKey}
         groupValue={groupValue}
         hints={hints}
+        mediaRoot={mediaRoot}
         normalizeMediaPath={(filePath) => relativePathFromRoot(filePath, mediaRoot)}
         onBrowseMedia={async () => {
           const [filePath] =

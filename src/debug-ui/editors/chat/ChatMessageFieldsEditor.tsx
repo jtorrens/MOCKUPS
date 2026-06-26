@@ -29,6 +29,7 @@ interface ChatMessageFieldsEditorProps {
   textRevealMode: string;
   mediaType: string;
   mediaFilePath: string;
+  mediaRoot: string;
   canBrowseMedia: boolean;
   mediaNumberFields: MediaNumberField[];
   onDirectionChange: (direction: string) => void;
@@ -61,6 +62,7 @@ export function ChatMessageFieldsEditor({
   textRevealMode,
   mediaType,
   mediaFilePath,
+  mediaRoot,
   canBrowseMedia,
   mediaNumberFields,
   onDirectionChange,
@@ -217,6 +219,7 @@ export function ChatMessageFieldsEditor({
       <ChatMessageMediaEditor
         mediaType={mediaType}
         filePath={mediaFilePath}
+        mediaRoot={mediaRoot}
         canBrowse={canBrowseMedia}
         numberFields={mediaNumberFields}
         onMediaTypeChange={onMediaTypeChange}

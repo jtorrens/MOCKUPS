@@ -27,8 +27,44 @@ function mediaPreviewUrl(filePath: string, rootPath: string) {
   return resolvedPath;
 }
 
-function cssUrl(value: string) {
+export function cssUrl(value: string) {
   return `url("${value.replace(/"/g, '\\"')}")`;
+}
+
+export function useMediaPreviewUrl({
+  enabled = true,
+  filePath,
+  mediaRoot,
+}: {
+  enabled?: boolean;
+  filePath: string;
+  mediaRoot: string;
+}) {
+  const [previewUrl, setPreviewUrl] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    setPreviewUrl("");
+    if (!enabled || !filePath.trim()) return () => undefined;
+    const fallbackUrl = mediaPreviewUrl(filePath, mediaRoot);
+    const loader = mockupsNative()?.mediaDataUrl;
+    if (!loader) {
+      setPreviewUrl(fallbackUrl);
+      return () => undefined;
+    }
+    void loader(filePath, mediaRoot)
+      .then((nextUrl) => {
+        if (!cancelled) setPreviewUrl(nextUrl || fallbackUrl);
+      })
+      .catch(() => {
+        if (!cancelled) setPreviewUrl(fallbackUrl);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [enabled, filePath, mediaRoot]);
+
+  return previewUrl;
 }
 
 export function ActorAvatarPreview({
@@ -52,29 +88,11 @@ export function ActorAvatarPreview({
   textColor: string;
   initials: string;
 }) {
-  const [previewUrl, setPreviewUrl] = useState("");
-
-  useEffect(() => {
-    let cancelled = false;
-    setPreviewUrl("");
-    if (useInitials || !filePath.trim()) return () => undefined;
-    const fallbackUrl = mediaPreviewUrl(filePath, mediaRoot);
-    const loader = mockupsNative()?.mediaDataUrl;
-    if (!loader) {
-      setPreviewUrl(fallbackUrl);
-      return () => undefined;
-    }
-    void loader(filePath, mediaRoot)
-      .then((nextUrl) => {
-        if (!cancelled) setPreviewUrl(nextUrl || fallbackUrl);
-      })
-      .catch(() => {
-        if (!cancelled) setPreviewUrl(fallbackUrl);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [filePath, mediaRoot, useInitials]);
+  const previewUrl = useMediaPreviewUrl({
+    enabled: !useInitials,
+    filePath,
+    mediaRoot,
+  });
 
   const shouldShowInitials = useInitials || !previewUrl;
   return (
@@ -107,29 +125,7 @@ export function MediaCoverPreview({
   mediaRoot: string;
   fallbackLabel: string;
 }) {
-  const [previewUrl, setPreviewUrl] = useState("");
-
-  useEffect(() => {
-    let cancelled = false;
-    setPreviewUrl("");
-    if (!filePath.trim()) return () => undefined;
-    const fallbackUrl = mediaPreviewUrl(filePath, mediaRoot);
-    const loader = mockupsNative()?.mediaDataUrl;
-    if (!loader) {
-      setPreviewUrl(fallbackUrl);
-      return () => undefined;
-    }
-    void loader(filePath, mediaRoot)
-      .then((nextUrl) => {
-        if (!cancelled) setPreviewUrl(nextUrl || fallbackUrl);
-      })
-      .catch(() => {
-        if (!cancelled) setPreviewUrl(fallbackUrl);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [filePath, mediaRoot]);
+  const previewUrl = useMediaPreviewUrl({ filePath, mediaRoot });
 
   return (
     <div
