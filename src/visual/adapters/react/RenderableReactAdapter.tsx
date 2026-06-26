@@ -116,11 +116,16 @@ function nodeStyle(
     opacity,
     boxSizing: "border-box",
     boxShadow:
-      node.type === "avatar" || node.type === "message_bubble_shape"
+      node.type === "avatar" ||
+      node.type === "message_bubble_shape" ||
+      node.type === "message_bubble_media" ||
+      node.type === "message_bubble_media_image"
         ? undefined
         : shadow,
     filter:
-      node.type === "message_bubble_shape" && shadow
+      (node.type === "message_bubble_shape" ||
+        node.type === "message_bubble_media_image") &&
+      shadow
         ? `drop-shadow(${shadow})`
         : undefined,
     border:
@@ -452,6 +457,37 @@ function inlineCursorFromChildren(node: RenderableNode) {
 }
 
 function nodeContent(node: RenderableNode): ReactNode {
+  if (node.type === "message_bubble_media_image") {
+    const mediaType = stringValue(node.metadata?.type) ?? "image";
+    const uri = stringValue(node.metadata?.uri);
+    const hasPosterBackground = stringValue(node.style?.backgroundImage) !== undefined;
+    const scale = numberValue(node.metadata?.scale) ?? 1;
+    const translateX = numberValue(node.metadata?.translateX) ?? 0;
+    const translateY = numberValue(node.metadata?.translateY) ?? 0;
+    if (mediaType !== "video" || !uri || hasPosterBackground) return node.text;
+    return (
+      <video
+        aria-hidden="true"
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="metadata"
+        src={uri}
+        style={{
+          position: "absolute",
+          left: "50%",
+          top: "50%",
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          pointerEvents: "none",
+          transform: `translate(calc(-50% + ${translateX}px), calc(-50% + ${translateY}px)) scale(${scale})`,
+          transformOrigin: "center",
+        }}
+      />
+    );
+  }
   if (node.type === "avatar") {
     const label = stringValue(node.metadata?.label) ?? "?";
     const radius = numberValue(node.style?.borderRadius);

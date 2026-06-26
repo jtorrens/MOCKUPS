@@ -45,6 +45,7 @@ interface RecordEditorProps {
   record: AppRecord | undefined;
   records: Record<string, AppRecord[]>;
   inheritedFields?: Record<string, Record<string, unknown>>;
+  productionId: string;
   onRecordsChanged: (records: AppRecord[]) => void;
   onRecordSaved: (record: AppRecord) => void;
 }
@@ -54,6 +55,7 @@ export function RecordEditor({
   record,
   records,
   inheritedFields = {},
+  productionId,
   onRecordsChanged,
   onRecordSaved,
 }: RecordEditorProps) {
@@ -117,6 +119,7 @@ export function RecordEditor({
       inheritedFields={inheritedFields}
       jsonGroupDrafts={jsonGroupDrafts}
       mediaRoot={productionMediaRoot}
+      productionId={productionId}
       nativeBridge={mockupsNative()}
       relativePathFromRoot={relativePathFromRoot}
       renderServices={renderServices}

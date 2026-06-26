@@ -18,6 +18,20 @@ function bubbleStatusColorDescriptor(
   };
 }
 
+function bubbleMediaBorderColorDescriptor(mode: "light" | "dark"): FieldDescriptor {
+  return {
+    canonicalPath: `module.colors.chatBubbles.media.borderColor.${mode}`,
+    storagePath: ["modes", mode, "chatBubbles", "media", "borderColor"],
+    label: "Media border",
+    section: "Colors",
+    area: "colors",
+    group: "Chat Bubbles",
+    role: "Media",
+    property: "borderColor",
+    widget: "color",
+  };
+}
+
 export const coreChatV1ContentDescriptors: FieldDescriptor[] = [
   {
     canonicalPath: "moduleInstance.content.messages[]",
@@ -292,6 +306,43 @@ export const coreChatV1TokenDescriptors: FieldDescriptor[] = [
     widget: "checkbox",
   },
   {
+    canonicalPath: "module.design.chatBubbles.media.borderWidth",
+    storagePath: ["chatBubbles", "media", "borderWidth"],
+    label: "Border width",
+    section: "Design",
+    area: "design",
+    group: "Chat Bubbles",
+    role: "Media",
+    property: "borderWidth",
+    widget: "number",
+    min: 0,
+    step: 1,
+  },
+  {
+    canonicalPath: "module.design.chatBubbles.media.cornerRadius",
+    storagePath: ["chatBubbles", "media", "cornerRadius"],
+    label: "Corner radius",
+    section: "Design",
+    area: "design",
+    group: "Chat Bubbles",
+    role: "Media",
+    property: "cornerRadius",
+    widget: "number",
+    min: 0,
+    step: 1,
+  },
+  {
+    canonicalPath: "module.design.chatBubbles.media.shadow.enabled",
+    storagePath: ["chatBubbles", "media", "shadowEnabled"],
+    label: "Media shadow",
+    section: "Design",
+    area: "design",
+    group: "Chat Bubbles",
+    role: "Media",
+    property: "shadowEnabled",
+    widget: "checkbox",
+  },
+  {
     canonicalPath: "module.design.chatBubbles.tail.position",
     storagePath: ["chatBubbles", "tail", "verticalPosition"],
     label: "Tail position",
@@ -435,6 +486,7 @@ export const coreChatV1TokenDescriptors: FieldDescriptor[] = [
     property: "tickDoubleIconToken",
   },
   ...(["light", "dark"] as const).flatMap((mode) => [
+    bubbleMediaBorderColorDescriptor(mode),
     bubbleStatusColorDescriptor(mode, "textColor", "Status text"),
     bubbleStatusColorDescriptor(mode, "sentColor", "Sent"),
     bubbleStatusColorDescriptor(mode, "deliveredColor", "Delivered"),

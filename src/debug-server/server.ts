@@ -1,5 +1,6 @@
 import { createServer } from "node:http";
 import { execFile } from "node:child_process";
+import { createHash } from "node:crypto";
 import { createReadStream, statSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -30,6 +31,7 @@ const execFileAsync = promisify(execFile);
 const renderOutputDir = path.resolve("out");
 const currentFramePng = path.join(renderOutputDir, "current-frame.png");
 const currentFrameProps = path.join(renderOutputDir, "current-frame-props.json");
+const mediaFrameDir = path.join(renderOutputDir, "media-frames");
 
 function absoluteServerUrl(request: import("node:http").IncomingMessage) {
   return `http://${request.headers.host ?? `127.0.0.1:${PORT}`}`;
@@ -42,7 +44,25 @@ function mediaContentType(filePath: string) {
   if (extension === ".gif") return "image/gif";
   if (extension === ".svg") return "image/svg+xml";
   if (extension === ".avif") return "image/avif";
+  if (extension === ".mp4" || extension === ".m4v") return "video/mp4";
+  if (extension === ".mov") return "video/quicktime";
+  if (extension === ".webm") return "video/webm";
   return "image/png";
+}
+
+function mediaFrameFilePath({
+  fps,
+  frame,
+  sourcePath,
+}: {
+  fps: number;
+  frame: number;
+  sourcePath: string;
+}) {
+  const hash = createHash("sha1")
+    .update(`${path.resolve(sourcePath)}:${frame}:${fps}`)
+    .digest("hex");
+  return path.join(mediaFrameDir, `${hash}.png`);
 }
 
 function productionMediaRoot(productionId: string) {
@@ -181,6 +201,53 @@ function resolveProductionMediaPath(productionId: string, requestedPath: string)
   return resolvedPath;
 }
 
+async function ensureMediaFrame({
+  filePath,
+  fps,
+  frame,
+}: {
+  filePath: string;
+  fps: number;
+  frame: number;
+}) {
+  const safeFrame = Math.max(0, Math.floor(frame));
+  const safeFps = Number.isFinite(fps) && fps > 0 ? fps : 30;
+  const outputPath = mediaFrameFilePath({
+    fps: safeFps,
+    frame: safeFrame,
+    sourcePath: filePath,
+  });
+  try {
+    const sourceStats = statSync(filePath);
+    const outputStats = statSync(outputPath);
+    if (outputStats.mtimeMs >= sourceStats.mtimeMs) {
+      return outputPath;
+    }
+  } catch {
+    // Missing or stale thumbnail; generate below.
+  }
+  await mkdir(mediaFrameDir, { recursive: true });
+  const seconds = (safeFrame / safeFps).toFixed(6);
+  await execFileAsync(
+    "ffmpeg",
+    [
+      "-hide_banner",
+      "-loglevel",
+      "error",
+      "-y",
+      "-ss",
+      seconds,
+      "-i",
+      filePath,
+      "-frames:v",
+      "1",
+      outputPath,
+    ],
+    { maxBuffer: 1024 * 1024 * 8 },
+  );
+  return outputPath;
+}
+
 function sendJson(
   response: import("node:http").ServerResponse,
   status: number,
@@ -229,10 +296,17 @@ function absolutizeRenderableUrls(
     node.asset?.type === "image" && typeof node.asset.uri === "string"
       ? absolutize(node.asset.uri)
       : undefined;
+  const metadataUri =
+    typeof node.metadata?.uri === "string"
+      ? absolutize(node.metadata.uri)
+      : undefined;
   return {
     ...node,
     ...(nextStyle ? { style: nextStyle } : {}),
     ...(assetUri ? { asset: { type: "image", uri: assetUri } } : {}),
+    ...(metadataUri
+      ? { metadata: { ...node.metadata, uri: metadataUri } }
+      : {}),
     ...(node.children
       ? {
           children: node.children.map((child) =>
@@ -431,6 +505,33 @@ const server = createServer(async (request, response) => {
         "Cache-Control": "no-store",
       });
       createReadStream(filePath).pipe(response);
+      return;
+    }
+    if (request.method === "GET" && url.pathname === "/api/media-frame") {
+      const productionId = url.searchParams.get("productionId") ?? "";
+      const requestedPath = url.searchParams.get("path") ?? "";
+      if (!productionId || !requestedPath) {
+        sendJson(response, 400, { error: "Missing productionId or path" });
+        return;
+      }
+      const filePath = resolveProductionMediaPath(productionId, requestedPath);
+      const stats = statSync(filePath);
+      if (!stats.isFile()) {
+        sendJson(response, 404, { error: "Media file not found" });
+        return;
+      }
+      const framePath = await ensureMediaFrame({
+        filePath,
+        fps: Number(url.searchParams.get("fps") ?? 30),
+        frame: Number(url.searchParams.get("frame") ?? 0),
+      });
+      const frameStats = statSync(framePath);
+      response.writeHead(200, {
+        "Content-Type": "image/png",
+        "Content-Length": frameStats.size,
+        "Cache-Control": "no-store",
+      });
+      createReadStream(framePath).pipe(response);
       return;
     }
     if (request.method === "GET" && url.pathname === "/api/debug") {

@@ -32,6 +32,7 @@ interface ChatContentGroupEditorProps {
   recordId?: unknown;
   canBrowseMedia: boolean;
   mediaRoot: string;
+  productionId: string;
   normalizeMediaPath: (filePath: string) => string;
   onBrowseMedia: () => Promise<string | undefined>;
   onGroupValueChange: (value: JsonValue) => void;
@@ -47,6 +48,7 @@ export function ChatContentGroupEditor({
   recordId,
   canBrowseMedia,
   mediaRoot,
+  productionId,
   normalizeMediaPath,
   onBrowseMedia,
   onGroupValueChange,
@@ -174,6 +176,7 @@ export function ChatContentGroupEditor({
         mediaType={mediaType}
         mediaFilePath={String(media.filePath ?? "")}
         mediaRoot={mediaRoot}
+        productionId={productionId}
         canBrowseMedia={canBrowseMedia}
         mediaNumberFields={mediaNumberFieldsForMessage(message)}
         onDirectionChange={setDirection}

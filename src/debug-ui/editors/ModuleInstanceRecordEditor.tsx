@@ -37,6 +37,7 @@ interface ModuleInstanceRecordEditorProps {
   activeTab: ScreenInstanceTab;
   activeContentTab: string;
   mediaRoot: string;
+  productionId: string;
   nativeBridge: ModuleNativeBridge | undefined;
   relativePathFromRoot: (filePath: string, rootPath: string) => string;
   setDrafts: (drafts: Record<string, string>) => void;
@@ -98,6 +99,7 @@ export function ModuleInstanceRecordEditor({
   activeTab,
   activeContentTab,
   mediaRoot,
+  productionId,
   nativeBridge,
   relativePathFromRoot,
   setDrafts,
@@ -158,6 +160,7 @@ export function ModuleInstanceRecordEditor({
         groupValue={groupValue}
         hints={hints}
         mediaRoot={mediaRoot}
+        productionId={productionId}
         normalizeMediaPath={(filePath) => relativePathFromRoot(filePath, mediaRoot)}
         onBrowseMedia={async () => {
           const [filePath] =

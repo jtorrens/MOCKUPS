@@ -42,6 +42,14 @@ const MessageThemeSchema = z.object({
     avatarSize: z.number().min(0).optional(),
     avatarGap: z.number().min(0).optional(),
     shadowEnabled: z.boolean().optional(),
+    media: z
+      .object({
+        borderWidth: z.number().min(0).optional(),
+        cornerRadius: z.number().min(0).optional(),
+        borderColor: z.string().optional(),
+        shadowEnabled: z.boolean().optional(),
+      })
+      .optional(),
     status: z
       .object({
         showText: z.boolean().optional(),
@@ -175,6 +183,7 @@ export function resolveMessageBubble({
   const statusText = typeof rawStatus.text === "string" ? rawStatus.text : "";
   const deliveryStatus = statusDeliveryValue(rawStatus.deliveryStatus);
   const statusTokens = themeTokens.chatBubbles.status ?? {};
+  const mediaTokens = themeTokens.chatBubbles.media ?? {};
   const statusColor =
     deliveryStatus === "read"
       ? statusTokens.readColor
@@ -233,6 +242,12 @@ export function resolveMessageBubble({
       tailScale: themeTokens.chatBubbles.tail.scale ?? 1,
       shadowEnabled:
         themeTokens.chatBubbles.shadowEnabled === true && !systemTextOnly,
+      media: {
+        borderWidth: mediaTokens.borderWidth ?? 0,
+        cornerRadius: mediaTokens.cornerRadius ?? themeTokens.radii.bubble,
+        borderColor: mediaTokens.borderColor ?? "transparent",
+        shadowEnabled: mediaTokens.shadowEnabled === true,
+      },
       status: {
         showText: statusTokens.showText !== false,
         showTicks: statusTokens.showTicks !== false,

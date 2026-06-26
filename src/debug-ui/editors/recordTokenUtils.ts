@@ -108,9 +108,18 @@ export function normalizeCoreChatModuleTokensForEditor(
   const root = isJsonObject(source) ? source : {};
   const header = isJsonObject(root.header) ? root.header : {};
   const chatBubbles = isJsonObject(root.chatBubbles) ? root.chatBubbles : {};
+  const chatBubbleMedia = isJsonObject(chatBubbles.media)
+    ? chatBubbles.media
+    : {};
   const avatars = isJsonObject(root.avatars) ? root.avatars : {};
   const light = modeRoot(root, "light");
   const dark = modeRoot(root, "dark");
+  const lightMedia = isJsonObject(light.chatBubbles.media)
+    ? light.chatBubbles.media
+    : {};
+  const darkMedia = isJsonObject(dark.chatBubbles.media)
+    ? dark.chatBubbles.media
+    : {};
   root.modes = {
     ...light.modes,
     light: {
@@ -132,6 +141,13 @@ export function normalizeCoreChatModuleTokensForEditor(
           typeof light.chatBubbles.systemText === "string"
             ? light.chatBubbles.systemText
             : "#3C3C43",
+        media: {
+          ...lightMedia,
+          borderColor:
+            typeof lightMedia.borderColor === "string"
+              ? lightMedia.borderColor
+              : "#FFFFFF",
+        },
       },
     },
     dark: {
@@ -153,6 +169,13 @@ export function normalizeCoreChatModuleTokensForEditor(
           typeof dark.chatBubbles.systemText === "string"
             ? dark.chatBubbles.systemText
             : "#F2F2F7",
+        media: {
+          ...darkMedia,
+          borderColor:
+            typeof darkMedia.borderColor === "string"
+              ? darkMedia.borderColor
+              : "#1C1C1E",
+        },
       },
     },
   };
@@ -201,6 +224,15 @@ export function normalizeCoreChatModuleTokensForEditor(
       numberValue(avatars.gap, 8),
     ),
     shadowEnabled: chatBubbles.shadowEnabled === true,
+    media: {
+      ...chatBubbleMedia,
+      borderWidth: numberValue(chatBubbleMedia.borderWidth, 0),
+      cornerRadius: numberValue(
+        chatBubbleMedia.cornerRadius,
+        numberValue(chatBubbles.radius, 18),
+      ),
+      shadowEnabled: chatBubbleMedia.shadowEnabled === true,
+    },
     tail: {
       ...(isJsonObject(chatBubbles.tail) ? chatBubbles.tail : {}),
       style:

@@ -33,6 +33,7 @@ interface RecordEditorDispatcherProps {
   inheritedFields: Record<string, Record<string, unknown>>;
   jsonGroupDrafts: ReturnType<typeof createJsonGroupDrafts>;
   mediaRoot: string;
+  productionId: string;
   nativeBridge: NativeBridge | undefined;
   relativePathFromRoot: (filePath: string, rootPath: string) => string;
   renderServices: ReturnType<typeof createRecordEditorRenderServices>;
@@ -49,6 +50,7 @@ export function RecordEditorDispatcher({
   inheritedFields,
   jsonGroupDrafts,
   mediaRoot,
+  productionId,
   nativeBridge,
   relativePathFromRoot,
   renderServices,
@@ -161,6 +163,7 @@ export function RecordEditorDispatcher({
         activeTab={tabs.screenTab}
         activeContentTab={tabs.contentTab}
         mediaRoot={mediaRoot}
+        productionId={productionId}
         nativeBridge={nativeBridge}
         relativePathFromRoot={relativePathFromRoot}
         setDrafts={setDrafts}

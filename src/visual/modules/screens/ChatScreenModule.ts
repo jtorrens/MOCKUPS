@@ -45,6 +45,7 @@ function createMessageBubbleInput(
   const system = message.direction === "system";
   const chatTokens = input.theme.chatBubbles;
   const tailTokens = readObject(chatTokens, "tail");
+  const mediaTokens = readObject(chatTokens, "media");
   const typographyTokens = input.theme.typography;
   const messageTypography = readObject(typographyTokens ?? {}, "message");
   const actorAvatar = outgoing
@@ -64,6 +65,7 @@ function createMessageBubbleInput(
       displayName: message.sender.displayName,
       ...(actorAvatar ? { avatarUri: actorAvatar } : {}),
     },
+    ...(message.media ? { media: message.media } : {}),
     style: message.style ?? {
       backgroundColor: readString(
         chatTokens,
@@ -117,6 +119,16 @@ function createMessageBubbleInput(
       shadowEnabled: chatTokens.shadowEnabled === true,
       shadow: readObject(chatTokens, "shadow"),
       avatarSize: readNumber(chatTokens, "avatarSize", 32),
+      media: {
+        borderWidth: readNumber(mediaTokens, "borderWidth", 0),
+        cornerRadius: readNumber(
+          mediaTokens,
+          "cornerRadius",
+          readNumber(chatTokens, "radius", 18),
+        ),
+        borderColor: readString(mediaTokens, "borderColor", "transparent"),
+        shadowEnabled: mediaTokens.shadowEnabled === true,
+      },
     },
     layout: message.layout ?? {
       maxWidth: Math.round(
@@ -260,6 +272,7 @@ export const ChatScreenModule: VisualModule<ResolvedChatScreenProps> = {
       );
     }
 
+    const messageNodes: RenderableNode[] = [];
     for (const messageInput of messageInputs) {
       const messageLayout = layout.messages.find(
         (candidate) => candidate.messageId === messageInput.id,
@@ -267,10 +280,22 @@ export const ChatScreenModule: VisualModule<ResolvedChatScreenProps> = {
       if (!messageLayout) {
         throw new Error(`Missing layout for message ${messageInput.id}`);
       }
-      children.push(
+      messageNodes.push(
         renderMessageBubbleWithLayout(messageInput, messageLayout.layout),
       );
     }
+    children.push({
+      id: `${input.screenInstanceId}:message_list`,
+      type: "message_list",
+      role: "messages",
+      frame: input.frame,
+      box: layout.messageListBox,
+      style: {
+        backgroundColor: "transparent",
+        overflow: "clip",
+      },
+      children: messageNodes,
+    });
 
     if (layout.textInputBarBox) {
       children.push({
@@ -330,6 +355,7 @@ export const ChatScreenModule: VisualModule<ResolvedChatScreenProps> = {
         ownerActorId: input.ownerActor.id,
         events: input.events,
         layout: {
+          messageAreaBox: layout.messageAreaBox,
           messageListBox: layout.messageListBox,
           textInputBarBox: layout.textInputBarBox,
           keyboardBox: layout.keyboardBox,

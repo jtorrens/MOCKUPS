@@ -1,5 +1,8 @@
+import { useState } from "react";
 import { fontStylesForFamily, useSystemFontCatalog } from "./systemFonts.js";
 import { DeferredNumberInput } from "../../editor-ui/DeferredNumberInput.js";
+import { DeferredTextInput } from "../../editor-ui/DeferredTextInput.js";
+import { EditorSubsectionAccordion } from "../../editor-ui/EditorSubsectionAccordion.js";
 import { ColorValueEditor } from "./ColorValueEditor.js";
 import {
   InspectorFieldRow,
@@ -133,7 +136,42 @@ function widgetForRow(
   return "text";
 }
 
-function groupedRows(rows: TokenRow[]): TokenRowGroup[] {
+function chatBubbleGroupForRow(row: TokenRow): string {
+  const firstKey = String(row.path[0] ?? "");
+  if (firstKey === "tail") return "tail";
+  if (firstKey === "media") return "media";
+  if (firstKey === "status") return "status";
+  if (firstKey === "avatarSize" || firstKey === "avatarGap") return "avatar";
+  if (
+    firstKey === "paddingX" ||
+    firstKey === "paddingY" ||
+    firstKey === "maxWidthRatio" ||
+    firstKey === "radius" ||
+    firstKey === "shadowEnabled"
+  ) {
+    return "bubble";
+  }
+  return "general";
+}
+
+function groupedRows(rows: TokenRow[], groupContext?: string): TokenRowGroup[] {
+  if (groupContext === "chatBubbles") {
+    const groups = new Map<string, TokenRow[]>();
+    for (const row of rows) {
+      const group = chatBubbleGroupForRow(row);
+      groups.set(group, [...(groups.get(group) ?? []), row]);
+    }
+    const order = ["bubble", "avatar", "media", "tail", "status", "general"];
+    return order
+      .filter((key) => groups.has(key))
+      .map((key) => ({
+        key,
+        label: friendlyGroupLabel(key),
+        rows: groups.get(key) ?? [],
+        renderAsGroup: true,
+      }));
+  }
+
   if (!rows.some((row) => row.path.length > 1)) {
     return [{ key: "", label: "", rows, renderAsGroup: false }];
   }
@@ -197,6 +235,7 @@ export function TokenOverrideEditor({
   const displayRoot = mergedTokenShape(inheritedRoot, rootValue);
   const rows = flattenPrimitiveTokens(displayRoot);
   const { families, stylesByFamily } = useSystemFontCatalog();
+  const [activeTokenGroup, setActiveTokenGroup] = useState("");
 
   function restoreValue(path: JsonPath, inheritedValue: JsonValue) {
     onRootChange(
@@ -350,13 +389,11 @@ export function TokenOverrideEditor({
               }
             />
           ) : (
-            <input
-              aria-label={`${label} override`}
-              type="text"
+            <DeferredTextInput
+              ariaLabel={`${label} override`}
               placeholder="Inherit"
               value={stringValue}
-              onChange={(event) => {
-                const raw = event.target.value;
+              onCommit={(raw) => {
                 if (raw === "") {
                   restoreValue(row.path, row.value);
                   return;
@@ -383,8 +420,24 @@ export function TokenOverrideEditor({
 
   return (
     <div className="token-override-editor">
-      {groupedRows(rows).map((group) =>
-        group.renderAsGroup ? (
+      {groupedRows(rows, groupContext).map((group) => {
+        if (!group.renderAsGroup) {
+          return group.rows.map((row) => renderRow(row, group.key || undefined));
+        }
+        if (groupContext === "chatBubbles") {
+          return (
+            <EditorSubsectionAccordion
+              key={group.key}
+              group={group.key}
+              activeGroup={activeTokenGroup}
+              warning={group.rows.some((row) => hasAtPath(rootValue, row.path))}
+              onToggle={setActiveTokenGroup}
+            >
+              {group.rows.map((row) => renderRow(row, group.key))}
+            </EditorSubsectionAccordion>
+          );
+        }
+        return (
           <section key={group.key} className="token-override-group">
             <h4>
               <span className="editor-group-icon ui-glyph" aria-hidden="true">
@@ -394,10 +447,8 @@ export function TokenOverrideEditor({
             </h4>
             {group.rows.map((row) => renderRow(row, group.key))}
           </section>
-        ) : (
-          group.rows.map((row) => renderRow(row, group.key || undefined))
-        ),
-      )}
+        );
+      })}
     </div>
   );
 }

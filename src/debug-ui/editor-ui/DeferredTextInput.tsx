@@ -1,15 +1,19 @@
 import { useEffect, useState } from "react";
 
 interface DeferredTextInputProps {
+  ariaLabel?: string;
   className?: string;
   multiline?: boolean;
+  placeholder?: string;
   value: string;
   onCommit: (nextValue: string) => void;
 }
 
 export function DeferredTextInput({
+  ariaLabel,
   className = "json-value-control",
   multiline = false,
+  placeholder,
   value,
   onCommit,
 }: DeferredTextInputProps) {
@@ -28,7 +32,9 @@ export function DeferredTextInput({
   if (multiline) {
     return (
       <textarea
+        aria-label={ariaLabel}
         className={className}
+        placeholder={placeholder}
         value={draft}
         rows={4}
         onBlur={commit}
@@ -39,7 +45,9 @@ export function DeferredTextInput({
 
   return (
     <input
+      aria-label={ariaLabel}
       className={className}
+      placeholder={placeholder}
       value={draft}
       onBlur={commit}
       onChange={(event) => setDraft(event.target.value)}

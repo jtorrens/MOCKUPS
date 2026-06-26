@@ -27,11 +27,16 @@ function translateMessageLayout(
   return {
     ...layout,
     bubbleBox: translateBox(layout.bubbleBox),
+    ...(layout.mediaBox ? { mediaBox: translateBox(layout.mediaBox) } : {}),
     textBox: translateBox(layout.textBox),
     ...(layout.avatarBox
       ? { avatarBox: translateBox(layout.avatarBox) }
       : {}),
   };
+}
+
+function stringValue(value: unknown) {
+  return typeof value === "string" ? value : "";
 }
 
 export function layoutChatScreen({
@@ -135,43 +140,61 @@ export function layoutChatScreen({
         }
       : undefined;
   const messageListTop = rootBox.y + statusBarHeight + headerHeight;
-  const messageListBottom =
-    rootBox.y +
-    rootBox.height -
-    textInputBarHeight -
-    keyboardHeight -
-    navigationBarHeight -
-    props.viewport.safeArea.bottom;
+  const lowerChromeTop =
+    textInputBarBox?.y ??
+    keyboardBox?.y ??
+    navigationBarBox?.y ??
+    rootBox.y + rootBox.height - props.viewport.safeArea.bottom;
+  const scrollTriggerBottom =
+    textInputBarBox?.y ??
+    keyboardBox?.y ??
+    navigationBarBox?.y ??
+    rootBox.y + rootBox.height - props.viewport.safeArea.bottom;
+  const messageListBottom = lowerChromeTop;
   const messageListLeft = rootBox.x + props.viewport.safeArea.left + screenGutter;
   const messageListRight =
     rootBox.x + rootBox.width - props.viewport.safeArea.right - screenGutter;
-  const messageListBox = {
+  const messageAreaBox = {
     x: messageListLeft,
     y: messageListTop,
     width: Math.max(1, messageListRight - messageListLeft),
     height: Math.max(0, messageListBottom - messageListTop),
   };
+  const messageListBox = {
+    x: rootBox.x,
+    y: messageListTop,
+    width: rootBox.width,
+    height: Math.max(0, messageListBottom - messageListTop),
+  };
 
-  let cursorY = messageListBox.y + groupSpacing;
+  let cursorY = messageAreaBox.y + groupSpacing;
   const messageLayouts: ChatMessageLayout[] = messages.map((message, index) => {
     if (index > 0) {
       cursorY += messageSpacing;
     }
     const layout = layoutMessageBubble({
       props: message,
-      messageArea: messageListBox,
+      messageArea: messageAreaBox,
       y: cursorY,
     });
     cursorY += layout.bubbleBox.height;
     return { messageId: message.id, layout };
   });
 
-  const contentBottom = messageLayouts.at(-1)?.layout.bubbleBox
-    ? messageLayouts.at(-1)!.layout.bubbleBox.y +
-      messageLayouts.at(-1)!.layout.bubbleBox.height
+  const activeComposerMessageId = stringValue(props.props.activeComposerMessageId);
+  const scrollReferenceLayouts = activeComposerMessageId
+    ? messageLayouts.filter((message) => message.messageId !== activeComposerMessageId)
+    : messageLayouts;
+  const contentBottom = scrollReferenceLayouts.at(-1)?.layout.bubbleBox
+    ? scrollReferenceLayouts.at(-1)!.layout.bubbleBox.y +
+      scrollReferenceLayouts.at(-1)!.layout.bubbleBox.height
     : messageListBox.y;
   const visibleBottom = messageListBox.y + messageListBox.height;
-  const scrollOffset = Math.max(0, contentBottom - visibleBottom);
+  const requestedScrollOffset =
+    contentBottom > scrollTriggerBottom
+      ? Math.max(0, contentBottom - visibleBottom)
+      : 0;
+  const scrollOffset = requestedScrollOffset;
   const translatedLayouts =
     scrollOffset > 0
       ? messageLayouts.map((message) => ({
@@ -187,6 +210,7 @@ export function layoutChatScreen({
     ...(keyboardBox ? { keyboardBox } : {}),
     ...(textInputBarBox ? { textInputBarBox } : {}),
     ...(headerBox ? { headerBox } : {}),
+    messageAreaBox,
     messageListBox,
     messages: translatedLayouts,
     overflow: {

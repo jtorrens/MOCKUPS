@@ -9,6 +9,16 @@ export interface LayoutMessageBubbleInput {
   y: number;
 }
 
+function readRecord(value: unknown): Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function readNumber(value: unknown, fallback: number) {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
 export function layoutMessageBubble({
   props,
   messageArea,
@@ -34,14 +44,32 @@ export function layoutMessageBubble({
     lineHeight: props.style.lineHeight,
     maxWidth: maxTextWidth,
   });
+  const mediaWindow = readRecord(props.media?.window);
+  const rawMediaWidth = props.media
+    ? readNumber(mediaWindow.width, 0)
+    : 0;
+  const rawMediaHeight = props.media
+    ? readNumber(mediaWindow.height, 0)
+    : 0;
+  const hasMedia = rawMediaWidth > 0 && rawMediaHeight > 0;
+  const mediaWidth = hasMedia ? Math.min(maxTextWidth, rawMediaWidth) : 0;
+  const mediaHeight =
+    hasMedia && rawMediaWidth > 0
+      ? Math.round((rawMediaHeight * mediaWidth) / rawMediaWidth)
+      : 0;
+  const mediaTextGap = hasMedia && props.visibleText.length > 0
+    ? Math.max(2, Math.round(props.style.paddingY * 0.75))
+    : 0;
+  const contentWidth = Math.max(measurement.width, mediaWidth);
+  const contentHeight = mediaHeight + mediaTextGap + measurement.height;
   const bubbleWidth = Math.min(
     maxBubbleWidth,
     Math.max(
       props.style.paddingX * 2 + props.style.fontSize * 0.52,
-      measurement.width + props.style.paddingX * 2,
+      contentWidth + props.style.paddingX * 2,
     ),
   );
-  const bubbleHeight = measurement.height + props.style.paddingY * 2;
+  const bubbleHeight = contentHeight + props.style.paddingY * 2;
   const alignment = props.layout.alignment;
   const bubbleX =
     alignment === "right"
@@ -71,12 +99,20 @@ export function layoutMessageBubble({
   };
   const textBox = {
     x: Math.round(bubbleBox.x + props.style.paddingX),
-    y: Math.round(bubbleBox.y + props.style.paddingY),
+    y: Math.round(bubbleBox.y + props.style.paddingY + mediaHeight + mediaTextGap),
     width: Math.round(
       Math.max(0, bubbleBox.width - props.style.paddingX * 2),
     ),
     height: measurement.height,
   };
+  const mediaBox = hasMedia
+    ? {
+        x: Math.round(bubbleBox.x + props.style.paddingX),
+        y: Math.round(bubbleBox.y + props.style.paddingY),
+        width: Math.round(mediaWidth),
+        height: Math.round(mediaHeight),
+      }
+    : undefined;
   const avatarBox = hasReceivedAvatar
     ? {
         x: messageArea.x,
@@ -90,6 +126,7 @@ export function layoutMessageBubble({
 
   return {
     bubbleBox,
+    ...(mediaBox ? { mediaBox } : {}),
     textBox,
     ...(avatarBox ? { avatarBox } : {}),
     measurement,

@@ -38,6 +38,11 @@
   background-repeat: no-repeat;
 }
 
+video.chat-media-preview-image {
+  display: block;
+  object-position: center;
+}
+
 .chat-media-preview-wrap small {
   color: var(--field-label-color, #667085);
   font-size: 11px;
@@ -45,8 +50,18 @@
 
 .chat-media-number-grid {
   display: grid;
+  gap: 8px;
+}
+
+.chat-media-number-pair {
+  display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px 12px;
+  gap: 12px;
+}
+
+.chat-media-number-pair-single {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 50%;
 }
 
 .chat-media-number-grid .inspector-field-row.chat-media-number-field {

@@ -148,6 +148,15 @@ export const ResolvedMessageBubblePropsSchema = z.object({
     displayName: z.string().min(1),
     avatarUri: z.string().min(1).optional(),
   }),
+  media: z
+    .object({
+      assetId: IdSchema.optional(),
+      uri: z.string().min(1),
+      type: z.enum(["image", "video"]).optional(),
+      window: JsonObjectSchema.optional(),
+      transform: JsonObjectSchema.optional(),
+    })
+    .optional(),
   style: z.object({
     backgroundColor: z.string().min(1),
     textColor: z.string().min(1),
@@ -166,6 +175,7 @@ export const ResolvedMessageBubblePropsSchema = z.object({
     shadowEnabled: z.boolean(),
     shadow: JsonObjectSchema,
     avatarSize: z.number().min(0),
+    media: JsonObjectSchema.optional(),
     status: JsonObjectSchema.optional(),
   }),
   layout: z.object({

@@ -771,6 +771,9 @@ function normalizeChatVisualTokenGroups(
 ): Record<string, unknown> {
   const header = isObject(tokens.header) ? tokens.header : {};
   const chatBubbles = isObject(tokens.chatBubbles) ? tokens.chatBubbles : {};
+  const chatBubbleMedia = isObject(chatBubbles.media)
+    ? chatBubbles.media
+    : {};
   const { shadow: _chatBubbleShadow, ...visibleChatBubbles } = chatBubbles;
   const avatars = isObject(tokens.avatars) ? tokens.avatars : {};
   const shadows = isObject(tokens.shadows) ? tokens.shadows : {};
@@ -826,6 +829,19 @@ function normalizeChatVisualTokenGroups(
       ...visibleChatBubbles,
       avatarSize: bubbleAvatarSize,
       avatarGap: bubbleAvatarGap,
+      media: {
+        ...chatBubbleMedia,
+        borderWidth: numberValue(chatBubbleMedia.borderWidth, 0),
+        cornerRadius: numberValue(
+          chatBubbleMedia.cornerRadius,
+          numberValue(chatBubbles.radius, 18),
+        ),
+        borderColor:
+          typeof chatBubbleMedia.borderColor === "string"
+            ? chatBubbleMedia.borderColor
+            : "transparent",
+        shadowEnabled: chatBubbleMedia.shadowEnabled === true,
+      },
       systemBackground,
       systemText,
     },
@@ -907,6 +923,8 @@ const DESIGN_UNIT_TOKEN_PATHS = [
   ["chatBubbles", "paddingY"],
   ["chatBubbles", "avatarSize"],
   ["chatBubbles", "avatarGap"],
+  ["chatBubbles", "media", "borderWidth"],
+  ["chatBubbles", "media", "cornerRadius"],
   ["chatBubbles", "tail", "width"],
   ["chatBubbles", "tail", "height"],
   ["chatBubbles", "status", "size"],
@@ -970,6 +988,38 @@ function scaleDesignTokensForRender(
     }
   }
   return scaled;
+}
+
+function scaleChatMediaForRender(
+  media: Record<string, unknown> | undefined,
+  scale: number,
+): Record<string, unknown> | undefined {
+  if (!media) return undefined;
+  const windowValue = isObject(media.window) ? media.window : undefined;
+  const transformValue = isObject(media.transform) ? media.transform : undefined;
+  return {
+    ...media,
+    ...(windowValue
+      ? {
+          window: {
+            ...windowValue,
+            width: numberValue(windowValue.width, 0) * scale,
+            height: numberValue(windowValue.height, 0) * scale,
+            offsetX: numberValue(windowValue.offsetX, 0) * scale,
+            offsetY: numberValue(windowValue.offsetY, 0) * scale,
+          },
+        }
+      : {}),
+    ...(transformValue
+      ? {
+          transform: {
+            ...transformValue,
+            translateX: numberValue(transformValue.translateX, 0) * scale,
+            translateY: numberValue(transformValue.translateY, 0) * scale,
+          },
+        }
+      : {}),
+  };
 }
 
 function renderScaleFromMetrics(
@@ -1291,7 +1341,11 @@ export function resolveChatScreen({
           message.mediaAssetId,
         )
       : undefined;
-    const mediaUri = message.media?.filePath ?? mediaAsset?.uri;
+    const scaledMedia = scaleChatMediaForRender(message.media, renderScale);
+    const mediaFilePath = scaledMedia
+      ? stringValue(scaledMedia.filePath)
+      : "";
+    const mediaUri = mediaFilePath || mediaAsset?.uri;
 
     return {
       id: bubble.id,
@@ -1308,12 +1362,14 @@ export function resolveChatScreen({
             media: {
               ...(mediaAsset ? { assetId: mediaAsset.id } : {}),
               uri: mediaUri,
-              ...(message.media?.type ? { type: message.media.type } : {}),
-              ...(message.media?.window
-                ? { window: message.media.window }
+              ...(scaledMedia && stringValue(scaledMedia.type)
+                ? { type: stringValue(scaledMedia.type) }
                 : {}),
-              ...(message.media?.transform
-                ? { transform: message.media.transform }
+              ...(scaledMedia?.window
+                ? { window: scaledMedia.window }
+                : {}),
+              ...(scaledMedia?.transform
+                ? { transform: scaledMedia.transform }
                 : {}),
             },
           }
@@ -1470,6 +1526,9 @@ export function resolveChatScreen({
       showNavigationBar: moduleConfig.showNavigationBar,
       showKeyboard: runtimeShowKeyboard,
       showTextInputBar: runtimeShowTextInputBar,
+      ...(activeComposerMessage
+        ? { activeComposerMessageId: activeComposerMessage.id }
+        : {}),
       textInputBar: moduleConfig.textInputBar ?? {},
       keyboard: moduleConfig.keyboard ?? {},
       initialScroll: moduleConfig.initialScroll,

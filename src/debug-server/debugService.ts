@@ -64,6 +64,23 @@ function previewMediaUrl(productionId: string, filePath: string) {
   return `/api/media?productionId=${encodeURIComponent(productionId)}&path=${encodeURIComponent(filePath)}`;
 }
 
+function previewMediaFrameUrl({
+  filePath,
+  fps,
+  frame,
+  productionId,
+}: {
+  filePath: string;
+  fps: number;
+  frame: number;
+  productionId: string;
+}) {
+  if (!filePath || /^(data:|blob:|https?:|\/api\/media-frame)/i.test(filePath)) {
+    return filePath;
+  }
+  return `/api/media-frame?productionId=${encodeURIComponent(productionId)}&path=${encodeURIComponent(filePath)}&frame=${encodeURIComponent(String(Math.max(0, Math.floor(frame))))}&fps=${encodeURIComponent(String(fps > 0 ? fps : 30))}`;
+}
+
 function rewriteRenderableMediaUrls(
   node: RenderableNode,
   productionId: string,
@@ -97,10 +114,48 @@ function rewriteRenderableMediaUrls(
     node.asset?.type === "image" && typeof node.asset.uri === "string"
       ? previewMediaUrl(productionId, node.asset.uri)
       : undefined;
+  const metadataUri =
+    typeof node.metadata?.uri === "string"
+      ? previewMediaUrl(productionId, node.metadata.uri)
+      : undefined;
+  const videoPosterUrl =
+    node.type === "message_bubble_media_image" &&
+    node.metadata?.type === "video" &&
+    typeof node.metadata.uri === "string"
+      ? previewMediaFrameUrl({
+          filePath: node.metadata.uri,
+          fps:
+            typeof node.metadata.fps === "number" && node.metadata.fps > 0
+              ? node.metadata.fps
+              : 30,
+          frame:
+            typeof node.metadata.frame === "number" && node.metadata.frame >= 0
+              ? node.metadata.frame
+              : typeof node.frame === "number"
+                ? node.frame
+                : 0,
+          productionId,
+        })
+      : "";
   return {
     ...node,
-    ...(nextStyle ? { style: nextStyle } : {}),
+    ...(nextStyle || videoPosterUrl
+      ? {
+          style: {
+            ...(nextStyle ?? {}),
+            ...(videoPosterUrl
+              ? {
+                  backgroundImage: cssUrl(videoPosterUrl),
+                  backgroundRepeat: "no-repeat",
+                }
+              : {}),
+          },
+        }
+      : {}),
     ...(assetUri ? { asset: { type: "image", uri: assetUri } } : {}),
+    ...(metadataUri
+      ? { metadata: { ...node.metadata, uri: metadataUri } }
+      : {}),
     ...(node.children
       ? {
           children: node.children.map((child) =>

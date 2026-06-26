@@ -11,6 +11,7 @@ export interface TextMeasurement {
 
 export interface MessageBubbleLayout {
   bubbleBox: RenderableBox;
+  mediaBox?: RenderableBox;
   textBox: RenderableBox;
   avatarBox?: RenderableBox;
   measurement: TextMeasurement;
@@ -30,6 +31,7 @@ export interface ChatScreenLayout {
   keyboardBox?: RenderableBox;
   textInputBarBox?: RenderableBox;
   headerBox?: RenderableBox;
+  messageAreaBox: RenderableBox;
   messageListBox: RenderableBox;
   messages: ChatMessageLayout[];
   overflow: {

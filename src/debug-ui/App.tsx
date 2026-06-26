@@ -781,6 +781,7 @@ export function App() {
                 table={activeTable}
                 record={selectedRecord}
                 records={state.records}
+                productionId={selection.productionId}
                 inheritedFields={
                   selectedRecord
                     ? state.inheritedJson[activeTable.id]?.[selectedRecord.id] ?? {}

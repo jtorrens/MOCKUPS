@@ -65,7 +65,11 @@ assert(childTypes.includes("status_bar"), "Tree must contain status_bar");
 assert(childTypes.includes("navigation_bar"), "Tree must contain navigation_bar");
 assert(childTypes.includes("chat_header"), "Tree must contain chat_header");
 assert(
-  childTypes.filter((type) => type === "message_bubble").length ===
+  childTypes.includes("message_list"),
+  "Tree must contain a clipped message_list",
+);
+assert(
+  collectNodes(tree).filter((node) => node.type === "message_bubble").length ===
     chatProps.messages.length,
   "Tree must contain one message bubble per resolved message",
 );
@@ -75,8 +79,9 @@ const navigationNode = tree.children?.find(
   (child) => child.type === "navigation_bar",
 );
 const wallpaperNode = tree.children?.find((child) => child.type === "wallpaper");
-const bubbleNodes =
-  tree.children?.filter((child) => child.type === "message_bubble") ?? [];
+const bubbleNodes = collectNodes(tree).filter(
+  (child) => child.type === "message_bubble",
+);
 const receivedBubble = bubbleNodes.find((child) => child.role === "incoming");
 const sentBubble = bubbleNodes.find((child) => child.role === "outgoing");
 const layoutMetadata = tree.metadata?.layout;
@@ -95,14 +100,21 @@ assert(statusNode?.box, "StatusBar must have a box");
 assert(navigationNode?.box, "NavigationBar must have a box");
 assert(headerNode?.box, "ChatHeader must have a box");
 assert(
-  isRecord(layoutMetadata) && isBox(layoutMetadata.messageListBox),
+  isRecord(layoutMetadata) &&
+    isBox(layoutMetadata.messageListBox) &&
+    isBox(layoutMetadata.messageAreaBox),
   "Chat layout must expose the message-list bounds",
 );
 const messageListBox = layoutMetadata.messageListBox;
+const messageAreaBox = layoutMetadata.messageAreaBox;
 assert(
-  messageListBox.x === 72 &&
-    messageListBox.x + messageListBox.width === 1218,
-  "Message list must use the scaled screen gutter",
+  messageListBox.x === 0 && messageListBox.width === tree.box.width,
+  "Message list clip must span the full screen width",
+);
+assert(
+  messageAreaBox.x === 72 &&
+    messageAreaBox.x + messageAreaBox.width === 1218,
+  "Message area must use the scaled screen gutter",
 );
 assert(
   receivedBubble?.style?.tailStyle === "rounded_wedge",
@@ -126,10 +138,10 @@ assert(
 for (const bubble of bubbleNodes) {
   assert(bubble.box, `Bubble ${bubble.id} must have a box`);
   assert(
-    bubble.box.x >= messageListBox.x &&
+    bubble.box.x >= messageAreaBox.x &&
       bubble.box.x + bubble.box.width <=
-        messageListBox.x + messageListBox.width,
-    `Bubble ${bubble.id} must stay inside message-list horizontal bounds`,
+        messageAreaBox.x + messageAreaBox.width,
+    `Bubble ${bubble.id} must stay inside message-area horizontal bounds`,
   );
 }
 assert(
@@ -138,8 +150,8 @@ assert(
 );
 assert(
   sentBubble.box.x + sentBubble.box.width ===
-    messageListBox.x + messageListBox.width,
-  "Sent bubble must align to the scaled message-list right edge",
+    messageAreaBox.x + messageAreaBox.width,
+  "Sent bubble must align to the scaled message-area right edge",
 );
 assert(
   receivedBubble.box.y + receivedBubble.box.height <= sentBubble.box.y,
@@ -209,8 +221,9 @@ assert(
   "Overflow policy must compute a positive deterministic scroll offset",
 );
 const overflowMessageListBox = overflowLayout.messageListBox;
-const overflowBubbles =
-  overflowTree.children?.filter((child) => child.type === "message_bubble") ?? [];
+const overflowBubbles = collectNodes(overflowTree).filter(
+  (child) => child.type === "message_bubble",
+);
 const lastOverflowBubble = overflowBubbles.at(-1);
 assert(
   isBox(overflowMessageListBox) &&
@@ -236,7 +249,7 @@ const zeroGutterLayout = zeroGutterTree.metadata?.layout;
 const zeroGutterMessageListBox = isRecord(zeroGutterLayout)
   ? zeroGutterLayout.messageListBox
   : undefined;
-const zeroGutterSentBubble = zeroGutterTree.children?.find(
+const zeroGutterSentBubble = collectNodes(zeroGutterTree).find(
   (child) => child.type === "message_bubble" && child.role === "outgoing",
 );
 assert(

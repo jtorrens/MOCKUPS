@@ -51,6 +51,83 @@ function maskUrl(value: string) {
   return value ? `url("${value.replace(/"/g, '\\"')}")` : undefined;
 }
 
+function cssUrl(value: string) {
+  return `url("${value.replace(/"/g, '\\"')}")`;
+}
+
+function messageMediaNode(
+  input: ResolvedMessageBubbleProps,
+  layout: MessageBubbleLayout,
+): RenderableNode | undefined {
+  if (!input.media || !layout.mediaBox) return undefined;
+  const mediaStyle = readRecord(input.style.media);
+  const transform = readRecord(input.media.transform);
+  const scale = Math.max(0.01, readNumber(transform.scale, 1));
+  const translateX = readNumber(transform.translateX, 0);
+  const translateY = readNumber(transform.translateY, 0);
+  const borderWidth = Math.max(0, readNumber(mediaStyle.borderWidth, 0));
+  const borderColor = readString(mediaStyle.borderColor, "transparent");
+  const cornerRadius = Math.max(0, readNumber(mediaStyle.cornerRadius, input.style.borderRadius));
+  const shadowEnabled = mediaStyle.shadowEnabled === true;
+  const mediaImage: RenderableNode = {
+    id: `${input.id}:media:image`,
+    type: "message_bubble_media_image",
+    role: input.media.type ?? "image",
+    frame: input.frame,
+    box: layout.mediaBox,
+    style: {
+      backgroundColor: "#000000",
+      backgroundImage: input.media.type === "video" ? undefined : cssUrl(input.media.uri),
+      backgroundPosition: `calc(50% + ${translateX}px) calc(50% + ${translateY}px)`,
+      backgroundRepeat: "no-repeat",
+      backgroundSize: `${scale * 100}%`,
+      borderRadius: cornerRadius,
+      overflow: "hidden",
+      shadow: shadowEnabled ? input.style.shadow : {},
+    },
+    metadata: {
+      uri: input.media.uri,
+      type: input.media.type ?? "image",
+      frame: input.frame,
+      fps: input.fps,
+      scale,
+      translateX,
+      translateY,
+      transform: input.media.transform,
+      window: input.media.window,
+    },
+  };
+  const mediaBorder: RenderableNode | undefined =
+    borderWidth > 0 && borderColor !== "transparent"
+      ? {
+          id: `${input.id}:media:border`,
+          type: "message_bubble_media_border",
+          role: "border",
+          frame: input.frame,
+          box: layout.mediaBox,
+          style: {
+            borderColor,
+            borderRadius: cornerRadius,
+            borderWidth,
+            pointerEvents: "none",
+          },
+        }
+      : undefined;
+
+  return {
+    id: `${input.id}:media`,
+    type: "message_bubble_media",
+    role: input.media.type ?? "image",
+    frame: input.frame,
+    box: layout.mediaBox,
+    style: {
+      backgroundColor: "transparent",
+      overflow: "visible",
+    },
+    children: mediaBorder ? [mediaImage, mediaBorder] : [mediaImage],
+  };
+}
+
 function messageStatusNode(
   input: ResolvedMessageBubbleProps,
   layout: MessageBubbleLayout,
@@ -284,6 +361,10 @@ export function renderMessageBubbleWithLayout(
           box: layout.avatarBox,
         },
       );
+    }
+    const media = messageMediaNode(input, layout);
+    if (media) {
+      children.push(media);
     }
     const status = messageStatusNode(input, layout);
     if (status) {

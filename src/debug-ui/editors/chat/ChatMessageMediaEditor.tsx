@@ -15,6 +15,7 @@ interface ChatMessageMediaEditorProps {
   mediaType: string;
   filePath: string;
   mediaRoot: string;
+  productionId: string;
   canBrowse: boolean;
   numberFields: MediaNumberField[];
   onMediaTypeChange: (mediaType: string) => void;
@@ -27,6 +28,7 @@ export function ChatMessageMediaEditor({
   mediaType,
   filePath,
   mediaRoot,
+  productionId,
   canBrowse,
   numberFields,
   onMediaTypeChange,
@@ -46,6 +48,7 @@ export function ChatMessageMediaEditor({
   const mediaScale = numberFieldValue(["media", "transform", "scale"], 1);
   const mediaX = numberFieldValue(["media", "transform", "translateX"], 0);
   const mediaY = numberFieldValue(["media", "transform", "translateY"], 0);
+  const numberFieldRows = pairLogicalNumberFields(numberFields);
 
   return (
     <details className="record-editor-content-nested-card" open>
@@ -77,6 +80,7 @@ export function ChatMessageMediaEditor({
               filePath={filePath}
               mediaRoot={mediaRoot}
               mediaType={mediaType}
+              productionId={productionId}
               scale={mediaScale}
               translateX={mediaX}
               translateY={mediaY}
@@ -102,23 +106,34 @@ export function ChatMessageMediaEditor({
               }
             />
             <div className="chat-media-number-grid">
-              {numberFields.map(({ label, path, value, fallback }) => (
-                <InspectorFieldRow
-                  key={String(label)}
-                  className="record-editor-content-field-row chat-media-number-field"
-                  label={<span>{String(label)}</span>}
-                  control={
-                    <DeferredNumberInput
-                      ariaLabel={String(label)}
-                      min={String(label).includes("scale") ? 0.01 : undefined}
-                      step={String(label).includes("scale") ? 0.05 : 1}
-                      value={Number(value ?? fallback)}
-                      onCommit={(nextValue) =>
-                        onNumberFieldChange(path, nextValue)
+              {numberFieldRows.map((row) => (
+                <div
+                  key={row.map((field) => pathKey(field.path)).join("|")}
+                  className={
+                    row.length > 1
+                      ? "chat-media-number-pair"
+                      : "chat-media-number-pair chat-media-number-pair-single"
+                  }
+                >
+                  {row.map(({ label, path, value, fallback }) => (
+                    <InspectorFieldRow
+                      key={String(label)}
+                      className="record-editor-content-field-row chat-media-number-field"
+                      label={<span>{String(label)}</span>}
+                      control={
+                        <DeferredNumberInput
+                          ariaLabel={String(label)}
+                          min={String(label).toLowerCase().includes("scale") ? 0.01 : undefined}
+                          step={String(label).toLowerCase().includes("scale") ? 0.05 : 1}
+                          value={Number(value ?? fallback)}
+                          onCommit={(nextValue) =>
+                            onNumberFieldChange(path, nextValue)
+                          }
+                        />
                       }
                     />
-                  }
-                />
+                  ))}
+                </div>
               ))}
             </div>
           </>
@@ -132,12 +147,51 @@ function pathKey(path: JsonPath) {
   return path.map(String).join(".");
 }
 
+function pairLogicalNumberFields(fields: MediaNumberField[]) {
+  const rows: MediaNumberField[][] = [];
+  const used = new Set<string>();
+  const pairs = [
+    [
+      ["media", "window", "width"],
+      ["media", "window", "height"],
+    ],
+    [
+      ["media", "window", "offsetX"],
+      ["media", "window", "offsetY"],
+    ],
+    [["media", "transform", "scale"]],
+    [
+      ["media", "transform", "translateX"],
+      ["media", "transform", "translateY"],
+    ],
+  ].map((row) => row.map((path) => pathKey(path)));
+
+  for (const pair of pairs) {
+    const row = pair
+      .map((key) => fields.find((field) => pathKey(field.path) === key))
+      .filter((field): field is MediaNumberField => Boolean(field));
+    if (row.length > 0) {
+      rows.push(row);
+      row.forEach((field) => used.add(pathKey(field.path)));
+    }
+  }
+
+  for (const field of fields) {
+    if (!used.has(pathKey(field.path))) {
+      rows.push([field]);
+    }
+  }
+
+  return rows;
+}
+
 function ChatBubbleMediaPreview({
   containerHeight,
   containerWidth,
   filePath,
   mediaRoot,
   mediaType,
+  productionId,
   scale,
   translateX,
   translateY,
@@ -147,6 +201,7 @@ function ChatBubbleMediaPreview({
   filePath: string;
   mediaRoot: string;
   mediaType: string;
+  productionId: string;
   scale: number;
   translateX: number;
   translateY: number;
@@ -156,6 +211,10 @@ function ChatBubbleMediaPreview({
     filePath,
     mediaRoot,
   });
+  const videoPosterUrl =
+    mediaType === "video" && productionId && filePath
+      ? `/api/media-frame?productionId=${encodeURIComponent(productionId)}&path=${encodeURIComponent(filePath)}&frame=0&fps=30`
+      : "";
 
   const safeWidth = Math.max(1, containerWidth);
   const safeHeight = Math.max(1, containerHeight);
@@ -171,7 +230,16 @@ function ChatBubbleMediaPreview({
           height: previewHeight,
         }}
       >
-        {previewUrl ? (
+        {videoPosterUrl ? (
+          <div
+            className="chat-media-preview-image"
+            style={{
+              backgroundImage: cssUrl(videoPosterUrl),
+              backgroundPosition: `calc(50% + ${translateX}px) calc(50% + ${translateY}px)`,
+              backgroundSize: `${Math.max(0.01, scale) * 100}%`,
+            }}
+          />
+        ) : previewUrl ? (
           <div
             className="chat-media-preview-image"
             style={{
