@@ -172,6 +172,10 @@ function createMessageBubbleInput(
   });
 }
 
+function hasStartedAtFrame(message: ReturnType<typeof createMessageBubbleInput>) {
+  return message.timing.startFrame <= message.frame;
+}
+
 export const ChatScreenModule: VisualModule<ResolvedChatScreenProps> = {
   type: "chat_screen",
   version: 1,
@@ -183,6 +187,7 @@ export const ChatScreenModule: VisualModule<ResolvedChatScreenProps> = {
     const wallpaperOpacity = clampOpacity(readNumber(wallpaper, "opacity", 1));
     const messageInputs = input.messages
       .map((message) => createMessageBubbleInput(input, message))
+      .filter(hasStartedAtFrame)
       .filter((message) => {
         return typeof message.animation?.hideUntilWriteComplete === "boolean"
           ? message.animation.hideUntilWriteComplete !== true

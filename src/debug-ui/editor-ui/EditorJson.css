@@ -353,7 +353,7 @@
 
 .token-override-row {
   display: grid;
-  grid-template-columns: minmax(160px, 1fr) minmax(220px, 1.2fr) minmax(210px, 1.1fr);
+  grid-template-columns: minmax(150px, 0.55fr) minmax(220px, 1fr) auto;
   gap: 10px;
   align-items: center;
   border: 1px solid #293041;
@@ -701,6 +701,10 @@
 .editor-workspace .json-add-input::placeholder,
 .editor-workspace .token-override-input input::placeholder {
   color: var(--editor-input-placeholder-color, #8a94a6);
+}
+
+.editor-workspace .token-override-input select.is-inherited-value {
+  color: var(--editor-input-placeholder-color, #8a94a6) !important;
 }
 
 .editor-workspace .json-tree-node input:focus,

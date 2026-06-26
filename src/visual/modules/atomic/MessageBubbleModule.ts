@@ -142,6 +142,7 @@ function messageStatusNode(
     statusStyle.showTicks !== false &&
     deliveryStatus !== "none";
   if (!showText && !showTicks) return undefined;
+  if (!layout.statusBox) return undefined;
 
   const size = readNumber(statusStyle.size, 11);
   const gap = readNumber(statusStyle.gap, 3);
@@ -153,12 +154,7 @@ function messageStatusNode(
   const tickWidth = showTicks ? Math.ceil(size * (isDoubleTick ? 1.45 : 1)) : 0;
   const totalWidth =
     textWidth + tickWidth + (showText && showTicks ? Math.max(0, gap) : 0);
-  const statusBox = {
-    x: Math.round(layout.bubbleBox.x + layout.bubbleBox.width + offsetX - totalWidth),
-    y: Math.round(layout.bubbleBox.y + layout.bubbleBox.height + offsetY - lineHeight),
-    width: Math.max(1, totalWidth),
-    height: lineHeight,
-  };
+  const statusBox = layout.statusBox;
   const children: RenderableNode[] = [];
   let cursorX = statusBox.x;
   if (showText) {

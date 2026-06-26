@@ -29,6 +29,7 @@ function translateMessageLayout(
     bubbleBox: translateBox(layout.bubbleBox),
     ...(layout.mediaBox ? { mediaBox: translateBox(layout.mediaBox) } : {}),
     textBox: translateBox(layout.textBox),
+    ...(layout.statusBox ? { statusBox: translateBox(layout.statusBox) } : {}),
     ...(layout.avatarBox
       ? { avatarBox: translateBox(layout.avatarBox) }
       : {}),

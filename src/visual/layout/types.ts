@@ -13,6 +13,7 @@ export interface MessageBubbleLayout {
   bubbleBox: RenderableBox;
   mediaBox?: RenderableBox;
   textBox: RenderableBox;
+  statusBox?: RenderableBox;
   avatarBox?: RenderableBox;
   measurement: TextMeasurement;
   maxBubbleWidth: number;

@@ -398,7 +398,10 @@
   background: var(--restore-button-hover-background, #f8fafc);
 }
 
-.token-override-row.inspector-field-row,
+.token-override-row.inspector-field-row {
+  grid-template-columns: minmax(150px, 0.55fr) minmax(220px, 1fr) auto;
+}
+
 .mode-color-row.inspector-field-row {
   grid-template-columns: minmax(150px, 1fr) minmax(150px, 0.85fr) minmax(280px, auto) auto;
 }

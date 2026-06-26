@@ -19,6 +19,49 @@ function readNumber(value: unknown, fallback: number) {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
 }
 
+function readString(value: unknown, fallback = "") {
+  return typeof value === "string" ? value : fallback;
+}
+
+function measureStatus(props: ResolvedMessageBubbleProps) {
+  const status = readRecord(props.status);
+  const statusStyle = readRecord(props.style.status);
+  const deliveryStatus = readString(status.deliveryStatus, "none");
+  const text = readString(status.text);
+  const showText = statusStyle.showText !== false && text.trim().length > 0;
+  const showTicks =
+    props.direction === "outgoing" &&
+    statusStyle.showTicks !== false &&
+    deliveryStatus !== "none";
+  if (!showText && !showTicks) {
+    return {
+      visible: false,
+      width: 0,
+      height: 0,
+      offsetX: 0,
+      offsetY: 0,
+    };
+  }
+  const size = readNumber(statusStyle.size, 11);
+  const gap = readNumber(statusStyle.gap, 3);
+  const lineHeight = Math.round(size * 1.15);
+  const textWidth = showText
+    ? Math.ceil(Array.from(text).length * size * 0.54)
+    : 0;
+  const isDoubleTick = deliveryStatus === "delivered" || deliveryStatus === "read";
+  const tickWidth = showTicks ? Math.ceil(size * (isDoubleTick ? 1.45 : 1)) : 0;
+  return {
+    visible: true,
+    width: Math.max(
+      1,
+      textWidth + tickWidth + (showText && showTicks ? Math.max(0, gap) : 0),
+    ),
+    height: lineHeight,
+    offsetX: readNumber(statusStyle.offsetX, -8),
+    offsetY: readNumber(statusStyle.offsetY, -5),
+  };
+}
+
 export function layoutMessageBubble({
   props,
   messageArea,
@@ -60,8 +103,24 @@ export function layoutMessageBubble({
   const mediaTextGap = hasMedia && props.visibleText.length > 0
     ? Math.max(2, Math.round(props.style.paddingY * 0.75))
     : 0;
-  const contentWidth = Math.max(measurement.width, mediaWidth);
-  const contentHeight = mediaHeight + mediaTextGap + measurement.height;
+  const statusMeasurement = measureStatus(props);
+  const hasTextContent = props.visibleText.length > 0;
+  const hasMainContent = hasMedia || hasTextContent;
+  const statusGap =
+    statusMeasurement.visible && hasMainContent
+      ? Math.max(2, Math.round(props.style.paddingY * 0.5))
+      : 0;
+  const contentWidth = Math.max(
+    hasTextContent ? measurement.width : 0,
+    mediaWidth,
+    statusMeasurement.width,
+  );
+  const contentHeight =
+    mediaHeight +
+    mediaTextGap +
+    (hasTextContent ? measurement.height : 0) +
+    statusGap +
+    statusMeasurement.height;
   const bubbleWidth = Math.min(
     maxBubbleWidth,
     Math.max(
@@ -103,8 +162,27 @@ export function layoutMessageBubble({
     width: Math.round(
       Math.max(0, bubbleBox.width - props.style.paddingX * 2),
     ),
-    height: measurement.height,
+    height: hasTextContent ? measurement.height : 0,
   };
+  const statusBox = statusMeasurement.visible
+    ? {
+        x: Math.round(
+          bubbleBox.x +
+            bubbleBox.width -
+            props.style.paddingX -
+            statusMeasurement.width +
+            statusMeasurement.offsetX,
+        ),
+        y: Math.round(
+          textBox.y +
+            textBox.height +
+            statusGap +
+            statusMeasurement.offsetY,
+        ),
+        width: Math.round(statusMeasurement.width),
+        height: Math.round(statusMeasurement.height),
+      }
+    : undefined;
   const mediaBox = hasMedia
     ? {
         x: Math.round(bubbleBox.x + props.style.paddingX),
@@ -128,6 +206,7 @@ export function layoutMessageBubble({
     bubbleBox,
     ...(mediaBox ? { mediaBox } : {}),
     textBox,
+    ...(statusBox ? { statusBox } : {}),
     ...(avatarBox ? { avatarBox } : {}),
     measurement,
     maxBubbleWidth,

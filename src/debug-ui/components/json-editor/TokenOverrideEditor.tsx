@@ -281,17 +281,28 @@ export function TokenOverrideEditor({
 
   function renderRow(row: TokenRow, groupKey?: string) {
     const hasLocalValue = hasAtPath(rootValue, row.path);
-    const overrideValue = hasLocalValue ? getAtPath(rootValue, row.path) : null;
+    const localValue = hasLocalValue ? getAtPath(rootValue, row.path) : null;
+    const hasBaselineValue = hasAtPath(inheritedRoot, row.path);
+    const baselineValue = hasBaselineValue
+      ? getAtPath(inheritedRoot, row.path)
+      : row.value;
+    const effectiveValue = hasLocalValue ? localValue : baselineValue;
     const hasOverride =
-      hasLocalValue && !deepEqualJson(overrideValue, row.value);
-    const hint = hintForPath(hints, row.path, row.value, groupContext);
+      hasLocalValue && !deepEqualJson(localValue, baselineValue);
+    const hint = hintForPath(hints, row.path, baselineValue, groupContext);
     const label = compactLabelForGroup(
       hint.label ?? friendlyPathLeafLabel(row.path),
       groupKey ?? groupContext,
     );
     const key = pathLabel(row.path);
-    const widget = widgetForRow(hint, key, row.value, groupKey ?? groupContext);
-    const stringValue = hasOverride ? tokenDisplayValue(overrideValue) : "";
+    const widget = widgetForRow(
+      hint,
+      key,
+      effectiveValue,
+      groupKey ?? groupContext,
+    );
+    const stringValue = hasOverride ? tokenDisplayValue(localValue) : "";
+    const inheritedDisplayValue = tokenDisplayValue(baselineValue);
     const selectOptions = withCurrentOption(
       widget === "font"
           ? families
@@ -306,44 +317,38 @@ export function TokenOverrideEditor({
         key={key}
         className={`token-override-row ${hasOverride ? "has-override" : ""}`}
         state={hasOverride ? "override" : "default"}
-        label={<strong>{label}</strong>}
-        meta={
-          <code title={key}>
-            {key}
-            {showInheritedValue ? (
-              <small>{tokenDisplayValue(row.value)}</small>
-            ) : null}
-          </code>
-        }
+        label={<strong title={key}>{label}</strong>}
         control={
           <div className="token-override-input">
           {widget === "checkbox" ? (
             <select
               aria-label={`${label} override`}
-              value={hasOverride ? String(Boolean(overrideValue)) : ""}
+              className={!hasOverride ? "is-inherited-value" : undefined}
+              value={hasOverride ? String(Boolean(localValue)) : ""}
               onChange={(event) => {
                 const raw = event.target.value;
                 onRootChange(
                   raw === ""
                     ? restoreMode === "set"
-                      ? setAtPath(rootValue, row.path, row.value)
+                      ? setAtPath(rootValue, row.path, baselineValue)
                       : deleteAtPathAndPrune(rootValue, row.path)
                     : setAtPath(rootValue, row.path, raw === "true"),
                 );
               }}
             >
-              <option value="">Inherit</option>
+              <option value="">{inheritedDisplayValue}</option>
               <option value="true">true</option>
               <option value="false">false</option>
             </select>
           ) : widget === "select" || widget === "font" ? (
             <select
               aria-label={`${label} override`}
+              className={!hasOverride ? "is-inherited-value" : undefined}
               value={stringValue}
               onChange={(event) => {
                 const raw = event.target.value;
                 if (raw === "") {
-                  restoreValue(row.path, row.value);
+                  restoreValue(row.path, baselineValue);
                   return;
                 }
                 if (widget === "font" && isFontFamilyKey(key, groupKey ?? groupContext)) {
@@ -353,19 +358,19 @@ export function TokenOverrideEditor({
                 onRootChange(setAtPath(rootValue, row.path, raw));
               }}
             >
-              <option value="">Inherit</option>
+              <option value="">{inheritedDisplayValue}</option>
               {selectOptions.map((option) => (
                 <option key={option} value={option}>
                   {option}
                 </option>
               ))}
             </select>
-          ) : widget === "color" && typeof row.value === "string" ? (
+          ) : widget === "color" && typeof baselineValue === "string" ? (
             <span className="json-color-pair token-color-pair">
               <ColorValueEditor
                 label={`${label} override`}
-                value={stringValue || row.value}
-                alpha={isRgbaColor(String(stringValue || row.value))}
+                value={stringValue || baselineValue}
+                alpha={isRgbaColor(String(stringValue || baselineValue))}
                 onChange={(nextColor) =>
                   onRootChange(setAtPath(rootValue, row.path, nextColor))
                 }
@@ -376,14 +381,14 @@ export function TokenOverrideEditor({
               ariaLabel={`${label} override`}
               max={hint.max}
               min={hint.min}
-              placeholder="Inherit"
+              placeholder={showInheritedValue ? inheritedDisplayValue : ""}
               step={hint.step ?? "any"}
               value={
-                hasOverride && typeof overrideValue === "number"
-                  ? overrideValue
+                hasOverride && typeof localValue === "number"
+                  ? localValue
                   : ""
               }
-              onEmptyCommit={() => restoreValue(row.path, row.value)}
+              onEmptyCommit={() => restoreValue(row.path, baselineValue)}
               onCommit={(nextValue) =>
                 onRootChange(setAtPath(rootValue, row.path, nextValue))
               }
@@ -391,14 +396,14 @@ export function TokenOverrideEditor({
           ) : (
             <DeferredTextInput
               ariaLabel={`${label} override`}
-              placeholder="Inherit"
+              placeholder={showInheritedValue ? inheritedDisplayValue : ""}
               value={stringValue}
               onCommit={(raw) => {
                 if (raw === "") {
-                  restoreValue(row.path, row.value);
+                  restoreValue(row.path, baselineValue);
                   return;
                 }
-                const nextValue = parseOverride(raw, row.value);
+                const nextValue = parseOverride(raw, baselineValue);
                 if (nextValue === null) return;
                 onRootChange(setAtPath(rootValue, row.path, nextValue));
               }}
@@ -409,8 +414,8 @@ export function TokenOverrideEditor({
         restore={
           hasOverride ? (
             <InspectorRestoreButton
-              label={`Restore ${label}`}
-              onClick={() => restoreValue(row.path, row.value)}
+              label={`Restore ${label} to ${inheritedDisplayValue}`}
+              onClick={() => restoreValue(row.path, baselineValue)}
             />
           ) : undefined
         }
