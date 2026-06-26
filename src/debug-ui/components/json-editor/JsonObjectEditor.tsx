@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AppModalDialog } from "../AppModalDialog.js";
 import type { JsonUiHints } from "./uiHints.js";
 import {
   defaultJsonValue,
@@ -44,6 +45,8 @@ export function JsonObjectEditor({
   const [newKey, setNewKey] = useState("");
   const [newKind, setNewKind] = useState("string");
   const [error, setError] = useState("");
+  const [pendingRenameKey, setPendingRenameKey] = useState("");
+  const [pendingDeleteKey, setPendingDeleteKey] = useState("");
 
   function addKey() {
     const key = newKey.trim();
@@ -61,24 +64,61 @@ export function JsonObjectEditor({
   }
 
   function renameKey(oldKey: string) {
-    const nextKey = window.prompt("Rename JSON key", oldKey);
-    if (nextKey === null || nextKey === oldKey) return;
+    setPendingRenameKey(oldKey);
+  }
+
+  function commitRenameKey(oldKey: string, nextKey: string) {
+    if (nextKey === oldKey) {
+      setPendingRenameKey("");
+      return;
+    }
     const result = renameKeyAtPath(rootValue, path, oldKey, nextKey);
     if (!result.ok) {
       setError(result.error);
       return;
     }
     setError("");
+    setPendingRenameKey("");
     onRootChange(result.value);
   }
 
   function deleteKey(key: string) {
-    if (!window.confirm(`Delete key "${key}"?`)) return;
+    setPendingDeleteKey(key);
+  }
+
+  function commitDeleteKey(key: string) {
+    setPendingDeleteKey("");
     onRootChange(deleteAtPath(rootValue, [...path, key]));
   }
 
   return (
     <div className="json-object-editor">
+      {pendingRenameKey ? (
+        <AppModalDialog
+          eyebrow="JSON key"
+          title="Rename key"
+          confirmLabel="Rename"
+          prompt={{
+            label: "Key",
+            initialValue: pendingRenameKey,
+          }}
+          onCancel={() => setPendingRenameKey("")}
+          onConfirm={(nextKey) =>
+            commitRenameKey(pendingRenameKey, String(nextKey ?? ""))
+          }
+        />
+      ) : null}
+      {pendingDeleteKey ? (
+        <AppModalDialog
+          eyebrow="JSON key"
+          title={`Delete “${pendingDeleteKey}”?`}
+          message="This removes the key and its value."
+          confirmLabel="Delete"
+          destructive
+          onCancel={() => setPendingDeleteKey("")}
+          onConfirm={() => commitDeleteKey(pendingDeleteKey)}
+        />
+      ) : null}
       {Object.entries(value).map(([key, entryValue]) => (
         <div className="json-object-row" key={key}>
           <JsonTreeNode

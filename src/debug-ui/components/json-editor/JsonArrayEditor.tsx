@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AppModalDialog } from "../AppModalDialog.js";
 import type { JsonUiHints } from "./uiHints.js";
 import {
   cloneJson,
@@ -41,6 +42,7 @@ export function JsonArrayEditor({
   onRootChange,
 }: JsonArrayEditorProps) {
   const [newKind, setNewKind] = useState("object");
+  const [pendingDeleteIndex, setPendingDeleteIndex] = useState<number | null>(null);
 
   function replaceArray(nextArray: JsonValue[]) {
     onRootChange(setAtPath(rootValue, path, nextArray));
@@ -59,7 +61,11 @@ export function JsonArrayEditor({
   }
 
   function deleteItem(index: number) {
-    if (!window.confirm(`Delete array item [${index}]?`)) return;
+    setPendingDeleteIndex(index);
+  }
+
+  function commitDeleteItem(index: number) {
+    setPendingDeleteIndex(null);
     replaceArray(value.filter((_, candidateIndex) => candidateIndex !== index));
   }
 
@@ -75,6 +81,17 @@ export function JsonArrayEditor({
 
   return (
     <div className="json-array-editor">
+      {pendingDeleteIndex !== null ? (
+        <AppModalDialog
+          eyebrow="JSON array"
+          title={`Delete item [${pendingDeleteIndex}]?`}
+          message="This removes the array item and its nested values."
+          confirmLabel="Delete"
+          destructive
+          onCancel={() => setPendingDeleteIndex(null)}
+          onConfirm={() => commitDeleteItem(pendingDeleteIndex)}
+        />
+      ) : null}
       {value.map((entryValue, index) => (
         <div className="json-array-row" key={index}>
           <JsonTreeNode

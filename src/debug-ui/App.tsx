@@ -17,6 +17,7 @@ import {
   paletteTokenUsages,
   type PaletteTokenUsage,
 } from "./editors/paletteUsage.js";
+import { AppModalDialog } from "./components/AppModalDialog.js";
 import { RightPreviewShell } from "./preview/index.js";
 import "./AppShell.css";
 import "./panels/LeftPanel.css";
@@ -29,6 +30,12 @@ type UiThemeMode = "light" | "dark";
 interface PaletteDeleteBlocker {
   token: string;
   usages: PaletteTokenUsage[];
+}
+
+interface PendingPaletteDelete {
+  tableId: "palette_colors";
+  recordId: string;
+  token: string;
 }
 
 interface StoredLayout {
@@ -136,6 +143,8 @@ export function App() {
   const [isProductionModalOpen, setProductionModalOpen] = useState(false);
   const [paletteDeleteBlocker, setPaletteDeleteBlocker] =
     useState<PaletteDeleteBlocker | null>(null);
+  const [pendingPaletteDelete, setPendingPaletteDelete] =
+    useState<PendingPaletteDelete | null>(null);
   const [themeCreateParent, setThemeCreateParent] = useState<{
     productionId?: string;
   } | null>(null);
@@ -479,6 +488,37 @@ export function App() {
       .finally(() => setBusyProjectAction(false));
   }
 
+  type DeletableTableId =
+    | "shots"
+    | "icon_themes"
+    | "status_bars"
+    | "navigation_bars"
+    | "themes"
+    | "devices"
+    | "palette_colors"
+    | "production_fonts"
+    | "render_presets";
+
+  function executeDeleteRecord(tableId: DeletableTableId, recordId: string) {
+    setBusyProjectAction(true);
+    setRequestError("");
+    void deleteAppRecord({ tableId, recordId })
+      .then((result) => {
+        setState(result.state);
+        const nextSelected = initialSelectedRecords(result.state);
+        setSelectedRecordIds(nextSelected);
+        setActiveTableId(tableId);
+        try {
+          setSelection(chooseInitialSelection(result.state));
+        } catch {
+          setSelection(null);
+        }
+        setRefreshCounter((value) => value + 1);
+      })
+      .catch((error: Error) => setRequestError(error.message))
+      .finally(() => setBusyProjectAction(false));
+  }
+
   function handleDeleteRecord(
     tableId:
       | "shots"
@@ -507,27 +547,10 @@ export function App() {
         setPaletteDeleteBlocker({ token, usages });
         return;
       }
-      if (!window.confirm(`Delete “${token}”? This cannot be undone.`)) {
-        return;
-      }
+      setPendingPaletteDelete({ tableId, recordId, token });
+      return;
     }
-    setBusyProjectAction(true);
-    setRequestError("");
-    void deleteAppRecord({ tableId, recordId })
-      .then((result) => {
-        setState(result.state);
-        const nextSelected = initialSelectedRecords(result.state);
-        setSelectedRecordIds(nextSelected);
-        setActiveTableId(tableId);
-        try {
-          setSelection(chooseInitialSelection(result.state));
-        } catch {
-          setSelection(null);
-        }
-        setRefreshCounter((value) => value + 1);
-      })
-      .catch((error: Error) => setRequestError(error.message))
-      .finally(() => setBusyProjectAction(false));
+    executeDeleteRecord(tableId, recordId);
   }
 
   function beginHorizontalResize(
@@ -720,13 +743,6 @@ export function App() {
                   <span className="eyebrow">Palette color</span>
                   <h2>Cannot delete “{paletteDeleteBlocker.token}”</h2>
                 </div>
-                <button
-                  type="button"
-                  className="app-modal-close-button"
-                  onClick={() => setPaletteDeleteBlocker(null)}
-                >
-                  Cancel
-                </button>
               </div>
               <p className="modal-help">
                 This token is still used. Rename or replace these references
@@ -750,7 +766,7 @@ export function App() {
               <footer className="palette-modal-actions">
                 <button
                   type="button"
-                  className="secondary-button"
+                  className="app-modal-button"
                   onClick={() => setPaletteDeleteBlocker(null)}
                 >
                   Cancel
@@ -758,6 +774,21 @@ export function App() {
               </footer>
             </section>
           </div>
+        ) : null}
+        {pendingPaletteDelete ? (
+          <AppModalDialog
+            eyebrow="Palette color"
+            title={`Delete “${pendingPaletteDelete.token}”?`}
+            message="This cannot be undone."
+            confirmLabel="Delete"
+            destructive
+            onCancel={() => setPendingPaletteDelete(null)}
+            onConfirm={() => {
+              const pending = pendingPaletteDelete;
+              setPendingPaletteDelete(null);
+              executeDeleteRecord(pending.tableId, pending.recordId);
+            }}
+          />
         ) : null}
         <div className="authoring-workspace">
           <aside

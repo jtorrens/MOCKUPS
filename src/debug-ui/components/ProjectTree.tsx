@@ -9,6 +9,7 @@ import {
   paletteTokenUsageCount,
   paletteTokenUsages,
 } from "../editors/paletteUsage.js";
+import { AppModalDialog } from "./AppModalDialog.js";
 import "./ProjectTree.css";
 
 interface ProjectTreeProps {
@@ -61,6 +62,23 @@ interface ProjectTreeProps {
       | "render_presets",
     recordId: string,
   ) => void;
+}
+
+type DeletableTableId =
+  | "shots"
+  | "icon_themes"
+  | "status_bars"
+  | "navigation_bars"
+  | "themes"
+  | "devices"
+  | "palette_colors"
+  | "production_fonts"
+  | "render_presets";
+
+interface PendingDelete {
+  tableId: DeletableTableId;
+  recordId: string;
+  label: string;
 }
 
 const PRODUCTION_DATA_TABLE_IDS = new Set([
@@ -456,6 +474,7 @@ export function ProjectTree({
   const [openTreeBranches, setOpenTreeBranches] = useState<
     Record<string, boolean>
   >({});
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
   const tablesById = tableById(tables);
   const selectedProductionId = selectedRecordIds.productions;
   const productionEpisodes = [
@@ -519,16 +538,7 @@ export function ProjectTree({
   }
 
   function confirmDelete(
-    tableId:
-      | "shots"
-      | "icon_themes"
-      | "status_bars"
-      | "navigation_bars"
-      | "themes"
-      | "devices"
-      | "palette_colors"
-      | "production_fonts"
-      | "render_presets",
+    tableId: DeletableTableId,
     recordId: string,
     label: string,
   ) {
@@ -536,9 +546,7 @@ export function ProjectTree({
       onDeleteRecord(tableId, recordId);
       return;
     }
-    if (window.confirm(`Delete “${label}”? This cannot be undone.`)) {
-      onDeleteRecord(tableId, recordId);
-    }
+    setPendingDelete({ tableId, recordId, label });
   }
 
   function toggleDataTable(tableId: string, tableRecords: AppRecord[]) {
@@ -1028,6 +1036,21 @@ export function ProjectTree({
 
   return (
     <section className="project-browser-root">
+      {pendingDelete ? (
+        <AppModalDialog
+          eyebrow="Delete record"
+          title={`Delete “${pendingDelete.label}”?`}
+          message="This cannot be undone."
+          confirmLabel="Delete"
+          destructive
+          onCancel={() => setPendingDelete(null)}
+          onConfirm={() => {
+            const pending = pendingDelete;
+            setPendingDelete(null);
+            onDeleteRecord(pending.tableId, pending.recordId);
+          }}
+        />
+      ) : null}
       <div className="project-tree-view">
         <div className="workspace-accordions" aria-label="Workspace">
           {renderWorkspaceAccordion(

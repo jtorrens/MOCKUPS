@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import type { AppFieldDefinition, AppRecord, AppTableDefinition } from "../api/client.js";
+import { AppModalDialog } from "../components/AppModalDialog.js";
 import type { JsonValue } from "../components/json-editor/jsonEditorUtils.js";
 import { DeferredTextInput } from "../editor-ui/DeferredTextInput.js";
 import { EditorHeader } from "../editor-ui/EditorHeader.js";
@@ -270,6 +271,7 @@ export function IconThemeRecordEditor({
   const [newFamily, setNewFamily] = useState("");
   const [newFile, setNewFile] = useState("");
   const [modalError, setModalError] = useState("");
+  const [pendingDeleteToken, setPendingDeleteToken] = useState("");
   const mapping = parsedObject(drafts.mapping_json ?? "{}");
   const rows = tokenRows(mapping);
   const assetRoot = String(record.asset_root ?? drafts.asset_root ?? "");
@@ -316,6 +318,20 @@ export function IconThemeRecordEditor({
 
   return (
     <section className="record-editor">
+      {pendingDeleteToken ? (
+        <AppModalDialog
+          eyebrow="Icon token"
+          title={`Delete “${pendingDeleteToken}”?`}
+          message="This removes the token from this icon theme."
+          confirmLabel="Delete"
+          destructive
+          onCancel={() => setPendingDeleteToken("")}
+          onConfirm={() => {
+            setJsonDraft("mapping_json", deleteToken(mapping, pendingDeleteToken));
+            setPendingDeleteToken("");
+          }}
+        />
+      ) : null}
       <EditorHeader
         eyebrow="Icon Theme Editor"
         title={String(record[table.titleColumn] ?? record.id)}
@@ -386,11 +402,7 @@ export function IconThemeRecordEditor({
                         <button
                           type="button"
                           className="secondary-button icon-theme-delete-button"
-                          onClick={() => {
-                            if (window.confirm(`Delete icon token “${token}”?`)) {
-                              setJsonDraft("mapping_json", deleteToken(mapping, token));
-                            }
-                          }}
+                          onClick={() => setPendingDeleteToken(token)}
                         >
                           Delete
                         </button>

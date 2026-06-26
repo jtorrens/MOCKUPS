@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { AppModalDialog } from "../../components/AppModalDialog.js";
 import { isJsonObject, type JsonValue } from "../../components/json-editor/jsonEditorUtils.js";
 import { friendlyGroupLabel } from "../../components/json-editor/labels.js";
 import { contentSummary } from "./chatContentModel.js";
@@ -32,8 +33,26 @@ export function ChatContentArrayEditor({
   onAddItem,
   renderItemContent,
 }: ChatContentArrayEditorProps) {
+  const [pendingDeleteIndex, setPendingDeleteIndex] = useState<number | null>(null);
+  const singularLabel = friendlyGroupLabel(groupKey).replace(/s$/i, "");
+
   return (
     <div className="record-editor-content-array-editor">
+      {pendingDeleteIndex !== null ? (
+        <AppModalDialog
+          eyebrow={friendlyGroupLabel(groupKey)}
+          title={`Delete ${singularLabel} [${pendingDeleteIndex}]?`}
+          message="This removes the content row and its nested values."
+          confirmLabel="Delete"
+          destructive
+          onCancel={() => setPendingDeleteIndex(null)}
+          onConfirm={() => {
+            const index = pendingDeleteIndex;
+            setPendingDeleteIndex(null);
+            onDeleteItem(index);
+          }}
+        />
+      ) : null}
       {value.map((entryValue, index) => {
         const stableId =
           isJsonObject(entryValue) && typeof entryValue.id === "string"
@@ -84,7 +103,7 @@ export function ChatContentArrayEditor({
                 <button
                   type="button"
                   className="record-editor-content-action ui-icon-button"
-                  onClick={() => onDeleteItem(index)}
+                  onClick={() => setPendingDeleteIndex(index)}
                 >
                   ⌫
                 </button>
@@ -110,12 +129,12 @@ export function ChatContentArrayEditor({
           </section>
         );
       })}
-      <button
+    <button
         type="button"
         className="record-editor-content-add-button"
         onClick={onAddItem}
       >
-        Add {friendlyGroupLabel(groupKey).replace(/s$/i, "")}
+        Add {singularLabel}
       </button>
     </div>
   );
