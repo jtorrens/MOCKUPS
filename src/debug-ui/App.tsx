@@ -12,6 +12,11 @@ import {
 } from "./api/client.js";
 import { ProjectTree } from "./components/ProjectTree.js";
 import { RecordEditor } from "./components/RecordEditor.js";
+import {
+  paletteTokenUsageCount,
+  paletteTokenUsages,
+  type PaletteTokenUsage,
+} from "./editors/paletteUsage.js";
 import { RightPreviewShell } from "./preview/index.js";
 import "./AppShell.css";
 import "./panels/LeftPanel.css";
@@ -20,6 +25,11 @@ const LAYOUT_STORAGE_KEY = "mockups.debugUi.layout.v1";
 const UI_THEME_STORAGE_KEY = "mockups.debugUi.theme.v1";
 
 type UiThemeMode = "light" | "dark";
+
+interface PaletteDeleteBlocker {
+  token: string;
+  usages: PaletteTokenUsage[];
+}
 
 interface StoredLayout {
   navigationWidth?: number;
@@ -124,6 +134,8 @@ export function App() {
   const [requestError, setRequestError] = useState("");
   const [refreshCounter, setRefreshCounter] = useState(0);
   const [isProductionModalOpen, setProductionModalOpen] = useState(false);
+  const [paletteDeleteBlocker, setPaletteDeleteBlocker] =
+    useState<PaletteDeleteBlocker | null>(null);
   const [themeCreateParent, setThemeCreateParent] = useState<{
     productionId?: string;
   } | null>(null);
@@ -480,6 +492,25 @@ export function App() {
       | "render_presets",
     recordId: string,
   ) {
+    if (tableId === "palette_colors" && state) {
+      const record = state.records.palette_colors?.find(
+        (candidate) => candidate.id === recordId,
+      );
+      const token = String(record?.token ?? "");
+      const usages = paletteTokenUsages({
+        tables: state.tables,
+        records: state.records,
+        record,
+        token,
+      });
+      if (paletteTokenUsageCount(usages) > 0) {
+        setPaletteDeleteBlocker({ token, usages });
+        return;
+      }
+      if (!window.confirm(`Delete “${token}”? This cannot be undone.`)) {
+        return;
+      }
+    }
     setBusyProjectAction(true);
     setRequestError("");
     void deleteAppRecord({ tableId, recordId })
@@ -671,6 +702,63 @@ export function App() {
             </section>
           </div>
         ) : null}
+        {paletteDeleteBlocker ? (
+          <div
+            className="modal-backdrop"
+            role="presentation"
+            onMouseDown={() => setPaletteDeleteBlocker(null)}
+          >
+            <section
+              className="app-modal-card palette-token-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Palette color cannot be deleted"
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <div className="app-modal-heading">
+                <div>
+                  <span className="eyebrow">Palette color</span>
+                  <h2>Cannot delete “{paletteDeleteBlocker.token}”</h2>
+                </div>
+                <button
+                  type="button"
+                  className="app-modal-close-button"
+                  onClick={() => setPaletteDeleteBlocker(null)}
+                >
+                  Cancel
+                </button>
+              </div>
+              <p className="modal-help">
+                This token is still used. Rename or replace these references
+                before deleting it.
+              </p>
+              <div className="palette-usage-list">
+                {paletteDeleteBlocker.usages.map((usage) => (
+                  <div
+                    key={`${usage.tableId}:${usage.recordId}:${usage.field}`}
+                    className="palette-usage-row"
+                  >
+                    <strong>{usage.tableLabel}</strong>
+                    <span>{usage.recordLabel}</span>
+                    <small>
+                      {usage.field} · {usage.count} reference
+                      {usage.count === 1 ? "" : "s"}
+                    </small>
+                  </div>
+                ))}
+              </div>
+              <footer className="palette-modal-actions">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => setPaletteDeleteBlocker(null)}
+                >
+                  Cancel
+                </button>
+              </footer>
+            </section>
+          </div>
+        ) : null}
         <div className="authoring-workspace">
           <aside
             className="navigation-rail"
@@ -786,6 +874,7 @@ export function App() {
             </div>
             {activeTable ? (
               <RecordEditor
+                tables={state.tables}
                 table={activeTable}
                 record={selectedRecord}
                 records={state.records}
@@ -801,6 +890,15 @@ export function App() {
                 onRecordSaved={(record) =>
                   refreshAppStateAfterSave(activeTable.id, record)
                 }
+                onAppStateChanged={(nextState, tableId, record) => {
+                  setState(nextState);
+                  setSelectedRecordIds((current) => ({
+                    ...initialSelectedRecords(nextState),
+                    ...current,
+                    [tableId]: record.id,
+                  }));
+                  setRefreshCounter((value) => value + 1);
+                }}
               />
             ) : null}
           </div>

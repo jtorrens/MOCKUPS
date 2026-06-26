@@ -352,6 +352,18 @@ export function renderMessageBubbleWithLayout(
             size: input.style.avatarSize,
             label: input.actor.displayName,
             frame: input.frame,
+            ...(input.actor.avatarScale !== undefined
+              ? { imageScale: input.actor.avatarScale }
+              : {}),
+            ...(input.actor.avatarOffsetX !== undefined
+              ? { imageOffsetX: input.actor.avatarOffsetX }
+              : {}),
+            ...(input.actor.avatarOffsetY !== undefined
+              ? { imageOffsetY: input.actor.avatarOffsetY }
+              : {}),
+            ...(input.actor.avatarBaseSize !== undefined
+              ? { imageBaseSize: input.actor.avatarBaseSize }
+              : {}),
             ...(input.style.shadowEnabled ? { shadow: input.style.shadow } : {}),
           }),
           box: layout.avatarBox,

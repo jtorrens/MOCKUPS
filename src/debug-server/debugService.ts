@@ -1211,6 +1211,11 @@ export interface AppUpdateRequest {
   patch: Record<string, unknown>;
 }
 
+export interface PaletteColorRenameRequest {
+  recordId: string;
+  nextToken: string;
+}
+
 export interface AppCreateRequest {
   tableId:
     | "productions"
@@ -1260,14 +1265,25 @@ function slugifyIdPart(value: string): string {
 function defaultThemeTokens(family: "ios" | "android") {
   const isAndroid = family === "android";
   const fontFamily = isAndroid ? "Roboto" : "SF Pro Text";
-  const lightBackground = "white";
-  const darkBackground = isAndroid ? "red" : "black";
-  const lightText = isAndroid ? "red" : "black";
-  const darkText = isAndroid ? "red" : "white";
-  const lightSecondary = isAndroid ? "red" : "gray_medium";
-  const darkSecondary = isAndroid ? "red" : "gray_medium_bright";
-  const lightAccent = isAndroid ? "red" : "blue";
-  const darkAccent = isAndroid ? "red" : "blue_bright";
+  const lightBackground = "gray_100";
+  const darkBackground = isAndroid ? "gray_010" : "gray_000";
+  const lightText = isAndroid ? "gray_010" : "gray_000";
+  const darkText = isAndroid ? "gray_090" : "gray_100";
+  const lightSecondary = isAndroid ? "gray_030" : "gray_040";
+  const darkSecondary = isAndroid ? "gray_080" : "gray_060";
+  const lightAccent = isAndroid ? "purple" : "blue";
+  const darkAccent = isAndroid ? "purple_tint" : "blue_bright";
+  const lightKeyboardBackground = isAndroid
+    ? "gray_100"
+    : "gray_080";
+  const lightKeyboardKey = "gray_100";
+  const lightKeyboardSpecial = isAndroid ? "gray_090" : "gray_070";
+  const darkKeyboardBackground = isAndroid
+    ? "gray_010"
+    : "gray_020";
+  const darkKeyboardKey = isAndroid ? "gray_020" : "gray_040";
+  const darkKeyboardSpecial = "gray_020";
+  const keyboardPressed = isAndroid ? "gray_050" : "gray_060";
 
   return {
     defaultMode: "light",
@@ -1290,17 +1306,17 @@ function defaultThemeTokens(family: "ios" | "android") {
           background: "rgba(255,255,255,0)",
         },
         keyboard: {
-          background: isAndroid ? "red" : "keyboard_light_background",
-          keyBackground: "white",
-          specialKeyBackground: isAndroid ? "red" : "keyboard_light_special",
-          pressedKeyBackground: isAndroid ? "red" : "gray",
-          popoverBackground: "white",
+          background: lightKeyboardBackground,
+          keyBackground: lightKeyboardKey,
+          specialKeyBackground: lightKeyboardSpecial,
+          pressedKeyBackground: keyboardPressed,
+          popoverBackground: lightKeyboardKey,
           text: lightText,
         },
         notifications: {
           background: isAndroid ? "rgba(255,255,255,0.94)" : "rgba(245,245,247,0.92)",
           titleColor: lightText,
-          bodyColor: isAndroid ? "red" : "gray_deep",
+          bodyColor: isAndroid ? "gray_030" : "gray_020",
         },
       },
       dark: {
@@ -1321,17 +1337,17 @@ function defaultThemeTokens(family: "ios" | "android") {
           background: "rgba(0,0,0,0)",
         },
         keyboard: {
-          background: isAndroid ? "red" : "keyboard_dark_background",
-          keyBackground: isAndroid ? "red" : "keyboard_dark_key",
-          specialKeyBackground: isAndroid ? "red" : "gray_deep",
-          pressedKeyBackground: isAndroid ? "red" : "gray",
-          popoverBackground: isAndroid ? "red" : "keyboard_dark_key",
+          background: darkKeyboardBackground,
+          keyBackground: darkKeyboardKey,
+          specialKeyBackground: darkKeyboardSpecial,
+          pressedKeyBackground: keyboardPressed,
+          popoverBackground: darkKeyboardKey,
           text: darkText,
         },
         notifications: {
-          background: isAndroid ? "rgba(250,0,0,0.94)" : "rgba(44,44,46,0.92)",
+          background: isAndroid ? "rgba(29,27,32,0.94)" : "rgba(44,44,46,0.92)",
           titleColor: darkText,
-          bodyColor: isAndroid ? "red" : "gray_soft",
+          bodyColor: isAndroid ? "gray_080" : "gray_080",
         },
       },
     },
@@ -1362,11 +1378,11 @@ function defaultThemeTokens(family: "ios" | "android") {
       iconScale: 1,
     },
     keyboard: {
-      background: isAndroid ? "red" : "keyboard_light_background",
-      keyBackground: "white",
-      specialKeyBackground: isAndroid ? "red" : "keyboard_light_special",
-      pressedKeyBackground: isAndroid ? "red" : "gray",
-      popoverBackground: "white",
+      background: lightKeyboardBackground,
+      keyBackground: lightKeyboardKey,
+      specialKeyBackground: lightKeyboardSpecial,
+      pressedKeyBackground: keyboardPressed,
+      popoverBackground: lightKeyboardKey,
       text: lightText,
     },
     notifications: {
@@ -2428,5 +2444,208 @@ export function updateAppRecord(
     record: candidate,
     saved,
     records: listAppRecords(database)[definition.id],
+  };
+}
+
+function replaceStringInJsonValue(
+  value: unknown,
+  oldToken: string,
+  nextToken: string,
+): { value: unknown; changed: boolean } {
+  if (Array.isArray(value)) {
+    let changed = false;
+    const nextArray = value.map((entry) => {
+      const result = replaceStringInJsonValue(entry, oldToken, nextToken);
+      changed ||= result.changed;
+      return result.value;
+    });
+    return { value: nextArray, changed };
+  }
+  if (value && typeof value === "object") {
+    let changed = false;
+    const nextObject = Object.fromEntries(
+      Object.entries(value).map(([key, entry]) => {
+        const result = replaceStringInJsonValue(entry, oldToken, nextToken);
+        changed ||= result.changed;
+        return [key, result.value];
+      }),
+    );
+    return { value: nextObject, changed };
+  }
+  if (value === oldToken) {
+    return { value: nextToken, changed: true };
+  }
+  return { value, changed: false };
+}
+
+function replacePaletteTokenInJsonRows({
+  database,
+  table,
+  idColumn = "id",
+  jsonColumn,
+  whereSql,
+  whereValues,
+  oldToken,
+  nextToken,
+}: {
+  database: SQLiteDatabase;
+  table: string;
+  idColumn?: string;
+  jsonColumn: string;
+  whereSql: string;
+  whereValues: unknown[];
+  oldToken: string;
+  nextToken: string;
+}) {
+  const rows = database
+    .prepare(
+      `SELECT ${idColumn} AS id, ${jsonColumn} AS jsonValue FROM ${table} WHERE ${whereSql}`,
+    )
+    .all(...whereValues) as { id: string; jsonValue: string | null }[];
+  const update = database.prepare(
+    `UPDATE ${table} SET ${jsonColumn} = ? WHERE ${idColumn} = ?`,
+  );
+  let replacements = 0;
+  for (const row of rows) {
+    const parsed = row.jsonValue ? JSON.parse(row.jsonValue) : {};
+    const result = replaceStringInJsonValue(parsed, oldToken, nextToken);
+    if (!result.changed) continue;
+    update.run(
+      stringifyJsonObject(
+        result.value as Record<string, unknown>,
+        `${table}.${jsonColumn}`,
+      ),
+      row.id,
+    );
+    replacements += 1;
+  }
+  return replacements;
+}
+
+export function renamePaletteColorToken(
+  database: SQLiteDatabase,
+  request: PaletteColorRenameRequest,
+) {
+  const nextToken = request.nextToken.trim();
+  if (!/^[a-z][a-z0-9_]*(?:\.[a-z0-9_]+)*$/.test(nextToken)) {
+    throw new Error("Palette token must be lower_snake_case or dotted lower_snake_case.");
+  }
+  const existing = database
+    .prepare("SELECT * FROM palette_colors WHERE id = ?")
+    .get(request.recordId) as Row | undefined;
+  if (!existing) {
+    throw new Error(`Palette color ${request.recordId} not found`);
+  }
+  const oldToken = String(existing.token);
+  const productionId = String(existing.production_id);
+  if (oldToken === nextToken) {
+    return {
+      tableId: "palette_colors",
+      record: decodeAppRow(existing, tableDefinition("palette_colors")),
+      state: loadAppState(database),
+      replacements: 0,
+    };
+  }
+  const conflict = database
+    .prepare(
+      "SELECT id FROM palette_colors WHERE production_id = ? AND token = ? AND id <> ?",
+    )
+    .get(productionId, nextToken, request.recordId) as Row | undefined;
+  if (conflict) {
+    throw new Error(`Palette token ${nextToken} already exists in this production.`);
+  }
+
+  const transaction = database.transaction(() => {
+    let replacements = 0;
+    replacements += replacePaletteTokenInJsonRows({
+      database,
+      table: "themes",
+      jsonColumn: "tokens_json",
+      whereSql: "production_id = ?",
+      whereValues: [productionId],
+      oldToken,
+      nextToken,
+    });
+    replacements += replacePaletteTokenInJsonRows({
+      database,
+      table: "apps",
+      jsonColumn: "config_json",
+      whereSql: "production_id = ?",
+      whereValues: [productionId],
+      oldToken,
+      nextToken,
+    });
+    replacements += replacePaletteTokenInJsonRows({
+      database,
+      table: "apps",
+      jsonColumn: "metadata_json",
+      whereSql: "production_id = ?",
+      whereValues: [productionId],
+      oldToken,
+      nextToken,
+    });
+    replacements += replacePaletteTokenInJsonRows({
+      database,
+      table: "actors",
+      jsonColumn: "metadata_json",
+      whereSql: "production_id = ?",
+      whereValues: [productionId],
+      oldToken,
+      nextToken,
+    });
+    replacements += replacePaletteTokenInJsonRows({
+      database,
+      table: "status_bars",
+      jsonColumn: "config_json",
+      whereSql: "production_id = ?",
+      whereValues: [productionId],
+      oldToken,
+      nextToken,
+    });
+    replacements += replacePaletteTokenInJsonRows({
+      database,
+      table: "navigation_bars",
+      jsonColumn: "config_json",
+      whereSql: "production_id = ?",
+      whereValues: [productionId],
+      oldToken,
+      nextToken,
+    });
+    replacements += replacePaletteTokenInJsonRows({
+      database,
+      table: "module_theme_configs",
+      jsonColumn: "tokens_json",
+      whereSql:
+        "theme_id IN (SELECT id FROM themes WHERE production_id = ?)",
+      whereValues: [productionId],
+      oldToken,
+      nextToken,
+    });
+    replacements += replacePaletteTokenInJsonRows({
+      database,
+      table: "module_theme_configs",
+      jsonColumn: "metadata_json",
+      whereSql:
+        "theme_id IN (SELECT id FROM themes WHERE production_id = ?)",
+      whereValues: [productionId],
+      oldToken,
+      nextToken,
+    });
+    database
+      .prepare("UPDATE palette_colors SET token = ? WHERE id = ?")
+      .run(nextToken, request.recordId);
+    return replacements;
+  });
+
+  const replacements = transaction();
+  const savedRow = database
+    .prepare("SELECT * FROM palette_colors WHERE id = ?")
+    .get(request.recordId) as Row;
+  const record = decodeAppRow(savedRow, tableDefinition("palette_colors"));
+  return {
+    tableId: "palette_colors",
+    record,
+    state: loadAppState(database),
+    replacements,
   };
 }

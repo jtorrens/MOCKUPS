@@ -51,6 +51,7 @@ function createMessageBubbleInput(
   const actorAvatar = outgoing
     ? input.ownerActor.avatar?.uri
     : input.header.avatar?.uri;
+  const actorAvatarConfig = outgoing ? input.ownerActor.avatar : input.header.avatar;
 
   return ResolvedMessageBubblePropsSchema.parse({
     frame: input.frame,
@@ -64,6 +65,18 @@ function createMessageBubbleInput(
       id: message.sender.id,
       displayName: message.sender.displayName,
       ...(actorAvatar ? { avatarUri: actorAvatar } : {}),
+      ...(typeof actorAvatarConfig?.scale === "number"
+        ? { avatarScale: actorAvatarConfig.scale }
+        : {}),
+      ...(typeof actorAvatarConfig?.offsetX === "number"
+        ? { avatarOffsetX: actorAvatarConfig.offsetX }
+        : {}),
+      ...(typeof actorAvatarConfig?.offsetY === "number"
+        ? { avatarOffsetY: actorAvatarConfig.offsetY }
+        : {}),
+      ...(typeof actorAvatarConfig?.baseSize === "number"
+        ? { avatarBaseSize: actorAvatarConfig.baseSize }
+        : {}),
     },
     ...(message.media ? { media: message.media } : {}),
     style: message.style ?? {

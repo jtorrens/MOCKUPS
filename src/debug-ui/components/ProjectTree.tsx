@@ -5,6 +5,10 @@ import type {
   AppTableDefinition,
   DebugOptions,
 } from "../api/client.js";
+import {
+  paletteTokenUsageCount,
+  paletteTokenUsages,
+} from "../editors/paletteUsage.js";
 import "./ProjectTree.css";
 
 interface ProjectTreeProps {
@@ -61,11 +65,14 @@ interface ProjectTreeProps {
 
 const PRODUCTION_DATA_TABLE_IDS = new Set([
   "actors",
+  "themes",
+  "devices",
+]);
+
+const SYSTEM_DATA_TABLE_IDS = new Set([
   "icon_themes",
   "status_bars",
   "navigation_bars",
-  "themes",
-  "devices",
   "media_assets",
   "palette_colors",
   "production_fonts",
@@ -347,6 +354,7 @@ function TreeButton({
   icon,
   title,
   meta,
+  usageState,
   swatchColor,
   className,
   asRecord,
@@ -359,6 +367,7 @@ function TreeButton({
   icon?: string;
   title: string;
   meta?: string;
+  usageState?: "used" | "unused";
   swatchColor?: string;
   className?: string;
   asRecord?: boolean;
@@ -393,6 +402,13 @@ function TreeButton({
         <strong>{title}</strong>
         {meta ? <small>{meta}</small> : null}
       </span>
+      {usageState ? (
+        <span
+          className={`tree-record-usage-dot is-${usageState}`}
+          title={usageState === "used" ? "Token is used" : "Token is unused"}
+          aria-label={usageState === "used" ? "Used token" : "Unused token"}
+        />
+      ) : null}
       {swatchColor ? (
         <span
           className="tree-record-color-swatch"
@@ -432,7 +448,7 @@ export function ProjectTree({
   onDeleteRecord,
 }: ProjectTreeProps) {
   const [browserTab, setBrowserTab] = useState<
-    "" | "project" | "apps" | "data"
+    "" | "project" | "apps" | "data" | "system"
   >("");
   const [openDataTables, setOpenDataTables] = useState<Record<string, boolean>>(
     {},
@@ -454,6 +470,9 @@ export function ProjectTree({
   );
   const dataTables = tables.filter((table) =>
     PRODUCTION_DATA_TABLE_IDS.has(table.id),
+  );
+  const systemTables = tables.filter((table) =>
+    SYSTEM_DATA_TABLE_IDS.has(table.id),
   );
   const appRecords = recordsForSelectedProduction("apps");
   const moduleConfigRecords = recordsForSelectedProduction(
@@ -513,6 +532,10 @@ export function ProjectTree({
     recordId: string,
     label: string,
   ) {
+    if (tableId === "palette_colors") {
+      onDeleteRecord(tableId, recordId);
+      return;
+    }
     if (window.confirm(`Delete “${label}”? This cannot be undone.`)) {
       onDeleteRecord(tableId, recordId);
     }
@@ -790,10 +813,10 @@ export function ProjectTree({
     );
   }
 
-  function renderDataTree() {
+  function renderTableTree(tableList: AppTableDefinition[]) {
     return (
       <div className="project-tree-view">
-        {dataTables.map((table) => {
+        {tableList.map((table) => {
           const tableRecords = recordsForSelectedProduction(table.id);
           return (
             <details
@@ -902,30 +925,46 @@ export function ProjectTree({
                 {tableRecords.length === 0 ? (
                   <EmptyPanel>No records yet.</EmptyPanel>
                 ) : (
-                  tableRecords.map((record) => (
-                    <div
-                      key={record.id}
-                      className={`project-tree-card project-tree-leaf project-tree-data-record-card ${cardLevelClass(1)}`}
-                      data-tree-level="1"
-                    >
-                      <TreeButton
-                        tableId={table.id}
-                        recordId={record.id}
-                        activeTableId={activeTableId}
-                        selectedRecordIds={selectedRecordIds}
-                        title={recordTitle(table, record)}
-                        meta={String(record.id)}
-                        swatchColor={
-                          table.id === "palette_colors"
-                            ? String(record.value_hex ?? "")
-                            : undefined
-                        }
-                        onClick={() => select(table.id, record.id)}
-                        className={rowLevelClass(1)}
-                        asRecord
-                      />
-                    </div>
-                  ))
+                  tableRecords.map((record) => {
+                    const paletteUsageState =
+                      table.id === "palette_colors"
+                        ? paletteTokenUsageCount(
+                            paletteTokenUsages({
+                              tables,
+                              records,
+                              record,
+                              token: String(record.token ?? ""),
+                            }),
+                          ) > 0
+                          ? "used"
+                          : "unused"
+                        : undefined;
+                    return (
+                      <div
+                        key={record.id}
+                        className={`project-tree-card project-tree-leaf project-tree-data-record-card ${cardLevelClass(1)}`}
+                        data-tree-level="1"
+                      >
+                        <TreeButton
+                          tableId={table.id}
+                          recordId={record.id}
+                          activeTableId={activeTableId}
+                          selectedRecordIds={selectedRecordIds}
+                          title={recordTitle(table, record)}
+                          meta={String(record.id)}
+                          usageState={paletteUsageState}
+                          swatchColor={
+                            table.id === "palette_colors"
+                              ? String(record.value_hex ?? "")
+                              : undefined
+                          }
+                          onClick={() => select(table.id, record.id)}
+                          className={rowLevelClass(1)}
+                          asRecord
+                        />
+                      </div>
+                    );
+                  })
                 )}
               </div>
             </details>
@@ -936,7 +975,7 @@ export function ProjectTree({
   }
 
   function renderWorkspaceAccordion(
-    id: "project" | "apps" | "data",
+    id: "project" | "apps" | "data" | "system",
     icon: string,
     title: string,
     subtitle: string,
@@ -1018,8 +1057,15 @@ export function ProjectTree({
             "data",
             "data",
             "Production data",
-            "Actors, devices, themes and assets",
-            renderDataTree(),
+            "Actors, devices and production themes",
+            renderTableTree(dataTables),
+          )}
+          {renderWorkspaceAccordion(
+            "system",
+            "data",
+            "System data",
+            "Icon sets, bars, palette, fonts, media and presets",
+            renderTableTree(systemTables),
           )}
         </div>
       </div>

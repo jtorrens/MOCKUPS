@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 interface DeferredTextInputProps {
   ariaLabel?: string;
   className?: string;
+  disabled?: boolean;
   multiline?: boolean;
   placeholder?: string;
   value: string;
@@ -12,6 +13,7 @@ interface DeferredTextInputProps {
 export function DeferredTextInput({
   ariaLabel,
   className = "json-value-control",
+  disabled = false,
   multiline = false,
   placeholder,
   value,
@@ -37,6 +39,7 @@ export function DeferredTextInput({
         placeholder={placeholder}
         value={draft}
         rows={4}
+        disabled={disabled}
         onBlur={commit}
         onChange={(event) => setDraft(event.target.value)}
       />
@@ -49,6 +52,7 @@ export function DeferredTextInput({
       className={className}
       placeholder={placeholder}
       value={draft}
+      disabled={disabled}
       onBlur={commit}
       onChange={(event) => setDraft(event.target.value)}
       onKeyDown={(event) => {

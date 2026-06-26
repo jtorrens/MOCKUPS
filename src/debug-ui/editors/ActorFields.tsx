@@ -1,6 +1,7 @@
 import type { ComponentType } from "react";
 import type { AppRecord } from "../api/client.js";
 import { DeferredTextInput } from "../editor-ui/DeferredTextInput.js";
+import { DeferredNumberInput } from "../editor-ui/DeferredNumberInput.js";
 import { ColorValueEditor } from "../components/json-editor/ColorValueEditor.js";
 import type { PaletteColorCatalog } from "../components/json-editor/paletteColors.js";
 import { InspectorFieldRow } from "../components/inspector/InspectorFieldRow.js";
@@ -61,10 +62,35 @@ function isHexColor(value: unknown): value is string {
   return typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value);
 }
 
+function isPaletteColorToken(
+  value: unknown,
+  paletteCatalog: PaletteColorCatalog | undefined,
+): value is string {
+  return (
+    typeof value === "string" &&
+    Boolean(paletteCatalog?.byToken.has(value))
+  );
+}
+
+function isStoredColor(
+  value: unknown,
+  paletteCatalog: PaletteColorCatalog | undefined,
+): value is string {
+  return isHexColor(value) || isPaletteColorToken(value, paletteCatalog);
+}
+
+function resolvedActorColorValue(
+  value: string,
+  paletteCatalog: PaletteColorCatalog | undefined,
+) {
+  return paletteCatalog?.byToken.get(value)?.valueHex ?? value;
+}
+
 function actorModeColor(
   drafts: Record<string, string>,
   mode: (typeof actorThemeModes)[number] = "light",
   field: "color" | "avatarTextColor" = "color",
+  paletteCatalog?: PaletteColorCatalog,
 ) {
   const root = parsedObject(drafts.metadata_json ?? "{}");
   const modes = root.modes;
@@ -74,11 +100,11 @@ function actorModeColor(
       : undefined;
   if (modeRoot && typeof modeRoot === "object" && !Array.isArray(modeRoot)) {
     const value = (modeRoot as Record<string, unknown>)[field];
-    if (isHexColor(value)) {
+    if (isStoredColor(value, paletteCatalog)) {
       return value;
     }
   }
-  if (field === "color" && isHexColor(root.color)) {
+  if (field === "color" && isStoredColor(root.color, paletteCatalog)) {
     return root.color;
   }
   const avatar = root.avatar;
@@ -87,19 +113,25 @@ function actorModeColor(
     avatar &&
     typeof avatar === "object" &&
     !Array.isArray(avatar) &&
-    isHexColor((avatar as Record<string, unknown>).textColor)
+    isStoredColor((avatar as Record<string, unknown>).textColor, paletteCatalog)
   ) {
     return (avatar as Record<string, string>).textColor;
   }
   return field === "color" ? "#64748b" : "#ffffff";
 }
 
-function actorColor(drafts: Record<string, string>) {
-  return actorModeColor(drafts, "light", "color");
+function actorColor(
+  drafts: Record<string, string>,
+  paletteCatalog?: PaletteColorCatalog,
+) {
+  return actorModeColor(drafts, "light", "color", paletteCatalog);
 }
 
-function actorAvatarTextColor(drafts: Record<string, string>) {
-  return actorModeColor(drafts, "light", "avatarTextColor");
+function actorAvatarTextColor(
+  drafts: Record<string, string>,
+  paletteCatalog?: PaletteColorCatalog,
+) {
+  return actorModeColor(drafts, "light", "avatarTextColor", paletteCatalog);
 }
 
 function actorAvatar(drafts: Record<string, string>) {
@@ -184,23 +216,44 @@ function ActorColorField(context: ActorFieldsContext) {
           control={
             <div className="actor-color-control actor-mode-color-grid">
               {actorThemeModes.map((mode) => {
-                const color = actorModeColor(context.drafts, mode, row.field);
+                const color = actorModeColor(
+                  context.drafts,
+                  mode,
+                  row.field,
+                  context.paletteCatalog,
+                );
                 const previewBackground =
                   row.field === "color"
                     ? color
-                    : actorModeColor(context.drafts, mode, "color");
+                    : actorModeColor(
+                        context.drafts,
+                        mode,
+                        "color",
+                        context.paletteCatalog,
+                      );
                 const previewText =
                   row.field === "avatarTextColor"
                     ? color
-                    : actorModeColor(context.drafts, mode, "avatarTextColor");
+                    : actorModeColor(
+                        context.drafts,
+                        mode,
+                        "avatarTextColor",
+                        context.paletteCatalog,
+                      );
                 return (
                   <label key={mode} className="actor-mode-color-cell">
                     <span className="actor-mode-color-label">{mode}</span>
                     <span
                       className="actor-color-preview"
                       style={{
-                        backgroundColor: previewBackground,
-                        color: previewText,
+                        backgroundColor: resolvedActorColorValue(
+                          previewBackground,
+                          context.paletteCatalog,
+                        ),
+                        color: resolvedActorColorValue(
+                          previewText,
+                          context.paletteCatalog,
+                        ),
                       }}
                       aria-hidden="true"
                     >
@@ -237,8 +290,8 @@ function ActorAvatarFields(context: ActorFieldsContext) {
   const offsetX = typeof avatar.offsetX === "number" ? avatar.offsetX : 0;
   const offsetY = typeof avatar.offsetY === "number" ? avatar.offsetY : 0;
   const useInitials = avatar.useInitials === true;
-  const textColor = actorAvatarTextColor(context.drafts);
-  const backgroundColor = actorColor(context.drafts);
+  const textColor = actorAvatarTextColor(context.drafts, context.paletteCatalog);
+  const backgroundColor = actorColor(context.drafts, context.paletteCatalog);
   const initials = actorInitials(context);
   const AvatarPreview = context.AvatarPreview;
 
@@ -293,17 +346,20 @@ function ActorAvatarFields(context: ActorFieldsContext) {
         }
       />
       <div className="actor-avatar-frame" aria-label="Avatar crop frame">
-        <AvatarPreview
-          filePath={filePath}
-          mediaRoot={context.mediaRoot}
-          scale={scale}
-          offsetX={offsetX}
-          offsetY={offsetY}
-          useInitials={useInitials}
-          backgroundColor={backgroundColor}
-          textColor={textColor}
-          initials={initials}
-        />
+      <AvatarPreview
+        filePath={filePath}
+        mediaRoot={context.mediaRoot}
+        scale={scale}
+        offsetX={offsetX}
+        offsetY={offsetY}
+        useInitials={useInitials}
+        backgroundColor={resolvedActorColorValue(
+          backgroundColor,
+          context.paletteCatalog,
+        )}
+        textColor={resolvedActorColorValue(textColor, context.paletteCatalog)}
+        initials={initials}
+      />
         <small>Base avatar frame: 640×640</small>
       </div>
       <InspectorFieldRow
@@ -311,12 +367,11 @@ function ActorAvatarFields(context: ActorFieldsContext) {
         className="record-editor-field record-editor-field-number"
         label={<span>Avatar scale</span>}
         control={
-          <input
-            type="number"
+          <DeferredNumberInput
             step={0.01}
             min={0.01}
-            value={String(scale)}
-            onChange={(event) => patchAvatar({ scale: Number(event.target.value) })}
+            value={scale}
+            onCommit={(nextValue) => patchAvatar({ scale: nextValue })}
           />
         }
       />
@@ -325,11 +380,10 @@ function ActorAvatarFields(context: ActorFieldsContext) {
         className="record-editor-field record-editor-field-number"
         label={<span>Avatar offset X</span>}
         control={
-          <input
-            type="number"
+          <DeferredNumberInput
             step={1}
-            value={String(offsetX)}
-            onChange={(event) => patchAvatar({ offsetX: Number(event.target.value) })}
+            value={offsetX}
+            onCommit={(nextValue) => patchAvatar({ offsetX: nextValue })}
           />
         }
       />
@@ -338,11 +392,10 @@ function ActorAvatarFields(context: ActorFieldsContext) {
         className="record-editor-field record-editor-field-number"
         label={<span>Avatar offset Y</span>}
         control={
-          <input
-            type="number"
+          <DeferredNumberInput
             step={1}
-            value={String(offsetY)}
-            onChange={(event) => patchAvatar({ offsetY: Number(event.target.value) })}
+            value={offsetY}
+            onCommit={(nextValue) => patchAvatar({ offsetY: nextValue })}
           />
         }
       />

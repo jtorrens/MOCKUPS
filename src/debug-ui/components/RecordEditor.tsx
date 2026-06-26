@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import {
   type AppRecord,
+  type AppState,
   type AppTableDefinition,
 } from "../api/client.js";
 import { EditorHeader } from "../editor-ui/EditorHeader.js";
@@ -43,6 +44,7 @@ function relativePathFromRoot(filePath: string, rootPath: string) {
 }
 
 interface RecordEditorProps {
+  tables: AppTableDefinition[];
   table: AppTableDefinition;
   record: AppRecord | undefined;
   records: Record<string, AppRecord[]>;
@@ -50,9 +52,11 @@ interface RecordEditorProps {
   productionId: string;
   onRecordsChanged: (records: AppRecord[]) => void;
   onRecordSaved: (record: AppRecord) => void;
+  onAppStateChanged?: (state: AppState, tableId: string, record: AppRecord) => void;
 }
 
 export function RecordEditor({
+  tables,
   table,
   record,
   records,
@@ -60,6 +64,7 @@ export function RecordEditor({
   productionId,
   onRecordsChanged,
   onRecordSaved,
+  onAppStateChanged,
 }: RecordEditorProps) {
   const { drafts, errors, setDrafts, states } = useRecordDraftAutosave({
     table,
@@ -99,6 +104,7 @@ export function RecordEditor({
     records,
   });
   const renderServices = createRecordEditorRenderServices({
+    tables,
     table,
     record,
     records,
@@ -113,6 +119,7 @@ export function RecordEditor({
     setDrafts,
     productionFontCatalog,
     paletteCatalog,
+    onAppStateChanged,
   });
 
   const jsonGroupDrafts = createJsonGroupDrafts({

@@ -37,22 +37,29 @@ import {
 } from "../../schemas/index.js";
 import type { RepositoryDataset } from "../types.js";
 
-const IOS_SEED_PALETTE_COLORS = [
-  ["white", "#FFFFFF"],
-  ["black", "#000000"],
+const SEED_PALETTE_COLORS = [
+  ["gray_000", "#000000"],
+  ["gray_010", "#1A1A1A"],
+  ["gray_020", "#333333"],
+  ["gray_030", "#4D4D4D"],
+  ["gray_040", "#666666"],
+  ["gray_050", "#808080"],
+  ["gray_060", "#999999"],
+  ["gray_070", "#B3B3B3"],
+  ["gray_080", "#CCCCCC"],
+  ["gray_090", "#E6E6E6"],
+  ["gray_100", "#FFFFFF"],
   ["red", "#FA0000"],
   ["blue", "#007AFF"],
   ["blue_bright", "#0A84FF"],
-  ["gray_medium", "#6E6E73"],
-  ["gray_medium_bright", "#98989D"],
-  ["gray", "#8E8E93"],
-  ["gray_deep", "#3A3A3C"],
-  ["gray_soft", "#D1D1D6"],
-  ["off_white", "#F5F5F7"],
-  ["keyboard_light_background", "#D1D5DB"],
-  ["keyboard_light_special", "#AEB4BE"],
-  ["keyboard_dark_background", "#2C2C2E"],
-  ["keyboard_dark_key", "#636366"],
+  ["pastel_coral", "#FF8A80"],
+  ["pastel_orange", "#FFB74D"],
+  ["pastel_yellow", "#FFF176"],
+  ["pastel_mint", "#66D9A3"],
+  ["pastel_sky", "#64B5F6"],
+  ["pastel_lavender", "#B39DDB"],
+  ["purple", "#6750A4"],
+  ["purple_tint", "#D0BCFF"],
 ] as const;
 
 export function createExampleDataset(): RepositoryDataset {
@@ -236,14 +243,14 @@ export function createExampleDataset(): RepositoryDataset {
     navigation_bar_id: navigationBar.id,
   });
   const paletteColors = PaletteColorSchema.array().parse(
-    IOS_SEED_PALETTE_COLORS.map(([token, valueHex]) => ({
+    SEED_PALETTE_COLORS.map(([token, valueHex]) => ({
       id: `palette_${production.id}_${token}`,
       production_id: production.id,
       token,
       value_hex: valueHex,
       metadata_json: {
-        source: "ios_seed_theme",
-        note: "Primitive color seeded from the original iOS theme values.",
+        source: "base_seed_palette",
+        note: "Primitive production color seeded from the base design palette.",
       },
     })),
   );
@@ -346,11 +353,11 @@ export function createExampleDataset(): RepositoryDataset {
         offsetY: -5,
         tickSingleIconToken: "message_check",
         tickDoubleIconToken: "message_done_all",
-        textColor: "#FA0000",
-        sentColor: "#FA0000",
-        deliveredColor: "#FA0000",
-        readColor: "#FA0000",
-        failedColor: "#FA0000",
+        textColor: "gray_040",
+        sentColor: "gray_040",
+        deliveredColor: "gray_040",
+        readColor: "blue",
+        failedColor: "red",
       },
     },
     textInputBar: {
@@ -400,41 +407,41 @@ export function createExampleDataset(): RepositoryDataset {
     modes: {
       light: {
         header: {
-          background: "#FFFFFF",
-          separatorColor: "#D1D1D6",
-          avatarBorderColor: "#FFFFFF",
+          background: "gray_100",
+          separatorColor: "gray_080",
+          avatarBorderColor: "gray_100",
         },
         chatBubbles: {
-          outgoingBackground: "#FA0000",
-          outgoingText: "#FFFFFF",
-          incomingBackground: "#FA0000",
-          incomingText: "#000000",
+          outgoingBackground: "blue",
+          outgoingText: "gray_100",
+          incomingBackground: "gray_100",
+          incomingText: "gray_000",
           status: {
-            textColor: "#FA0000",
-            sentColor: "#FA0000",
-            deliveredColor: "#FA0000",
-            readColor: "#FA0000",
-            failedColor: "#FA0000",
+            textColor: "gray_040",
+            sentColor: "gray_040",
+            deliveredColor: "gray_040",
+            readColor: "blue",
+            failedColor: "red",
           },
         },
       },
       dark: {
         header: {
-          background: "#FA0000",
-          separatorColor: "#FA0000",
-          avatarBorderColor: "#FA0000",
+          background: "gray_020",
+          separatorColor: "gray_060",
+          avatarBorderColor: "gray_020",
         },
         chatBubbles: {
-          outgoingBackground: "#0A84FF",
-          outgoingText: "#FFFFFF",
-          incomingBackground: "#2C2C2E",
-          incomingText: "#FFFFFF",
+          outgoingBackground: "blue_bright",
+          outgoingText: "gray_100",
+          incomingBackground: "gray_020",
+          incomingText: "gray_100",
           status: {
-            textColor: "#FA0000",
-            sentColor: "#FA0000",
-            deliveredColor: "#FA0000",
-            readColor: "#FA0000",
-            failedColor: "#FA0000",
+            textColor: "gray_060",
+            sentColor: "gray_060",
+            deliveredColor: "gray_060",
+            readColor: "blue_bright",
+            failedColor: "red",
           },
         },
       },
@@ -477,12 +484,12 @@ export function createExampleDataset(): RepositoryDataset {
       metadata_json: {
         modes: {
           light: {
-            color: "#FA0000",
-            avatarTextColor: "#FFFFFF",
+            color: "blue",
+            avatarTextColor: "gray_100",
           },
           dark: {
-            color: "#FA0000",
-            avatarTextColor: "#FFFFFF",
+            color: "blue_bright",
+            avatarTextColor: "gray_100",
           },
         },
         avatar: {
@@ -506,12 +513,12 @@ export function createExampleDataset(): RepositoryDataset {
       metadata_json: {
         modes: {
           light: {
-            color: "#FA0000",
-            avatarTextColor: "#FFFFFF",
+            color: "gray_040",
+            avatarTextColor: "gray_100",
           },
           dark: {
-            color: "#FA0000",
-            avatarTextColor: "#FA0000",
+            color: "gray_020",
+            avatarTextColor: "gray_100",
           },
         },
         avatar: {

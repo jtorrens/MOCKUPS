@@ -10,6 +10,10 @@ export interface AvatarModuleInput {
   borderWidth?: number;
   borderColor?: string;
   shadow?: Record<string, unknown>;
+  imageScale?: number;
+  imageOffsetX?: number;
+  imageOffsetY?: number;
+  imageBaseSize?: number;
 }
 
 export const AvatarModule: VisualModule<AvatarModuleInput> = {
@@ -35,7 +39,19 @@ export const AvatarModule: VisualModule<AvatarModuleInput> = {
         ...(input.shadow ? { shadow: input.shadow } : {}),
       },
       asset: { type: "image", uri: input.uri },
-      metadata: { label: input.label ?? null },
+      metadata: {
+        label: input.label ?? null,
+        ...(input.imageScale !== undefined ? { imageScale: input.imageScale } : {}),
+        ...(input.imageOffsetX !== undefined
+          ? { imageOffsetX: input.imageOffsetX }
+          : {}),
+        ...(input.imageOffsetY !== undefined
+          ? { imageOffsetY: input.imageOffsetY }
+          : {}),
+        ...(input.imageBaseSize !== undefined
+          ? { imageBaseSize: input.imageBaseSize }
+          : {}),
+      },
     };
   },
 };

@@ -1154,6 +1154,7 @@ function resolveChatActor(
     id: actor.id,
     displayName: actor.display_name,
     ...(directAvatarUri || avatar ? { avatarUri: directAvatarUri ?? avatar?.uri } : {}),
+    ...actorAvatarCrop(actor),
     ...(actorMetadataColor(actor, themeMode, "color", palette) ? {
       color: actorMetadataColor(actor, themeMode, "color", palette),
     } : {}),
@@ -1212,6 +1213,24 @@ function actorAvatarUri(actor: Actor | undefined) {
   }
   const filePath = avatarRecord.filePath;
   return typeof filePath === "string" && filePath.trim() ? filePath : undefined;
+}
+
+function actorAvatarCrop(actor: Actor | undefined) {
+  const metadata = actor?.metadata_json;
+  if (!isObject(metadata) || !isObject(metadata.avatar)) {
+    return {};
+  }
+  const avatar = metadata.avatar;
+  const scale = numberValue(avatar.scale, 1);
+  const offsetX = numberValue(avatar.offsetX, 0);
+  const offsetY = numberValue(avatar.offsetY, 0);
+  const baseSize = numberValue(avatar.baseSize, 640);
+  return {
+    ...(scale > 0 ? { avatarScale: scale } : {}),
+    avatarOffsetX: offsetX,
+    avatarOffsetY: offsetY,
+    ...(baseSize > 0 ? { avatarBaseSize: baseSize } : {}),
+  };
 }
 
 export interface ResolveChatScreenInput {
@@ -1501,11 +1520,35 @@ export function resolveChatScreen({
   const ownerAvatar = ownerChatActor.avatarUri
     ? {
         uri: ownerChatActor.avatarUri,
+        ...(ownerChatActor.avatarScale !== undefined
+          ? { scale: ownerChatActor.avatarScale }
+          : {}),
+        ...(ownerChatActor.avatarOffsetX !== undefined
+          ? { offsetX: ownerChatActor.avatarOffsetX }
+          : {}),
+        ...(ownerChatActor.avatarOffsetY !== undefined
+          ? { offsetY: ownerChatActor.avatarOffsetY }
+          : {}),
+        ...(ownerChatActor.avatarBaseSize !== undefined
+          ? { baseSize: ownerChatActor.avatarBaseSize }
+          : {}),
       }
     : undefined;
   const headerAvatar = headerActor?.avatarUri
     ? {
         uri: headerActor.avatarUri,
+        ...(headerActor.avatarScale !== undefined
+          ? { scale: headerActor.avatarScale }
+          : {}),
+        ...(headerActor.avatarOffsetX !== undefined
+          ? { offsetX: headerActor.avatarOffsetX }
+          : {}),
+        ...(headerActor.avatarOffsetY !== undefined
+          ? { offsetY: headerActor.avatarOffsetY }
+          : {}),
+        ...(headerActor.avatarBaseSize !== undefined
+          ? { baseSize: headerActor.avatarBaseSize }
+          : {}),
       }
     : undefined;
   const systemShadow = isObject(themeTokens.shadows?.elevated)

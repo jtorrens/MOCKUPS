@@ -182,6 +182,18 @@ export const ChatHeaderModule: VisualModule<ChatHeaderModuleInput> = {
           borderWidth: avatarBorderWidth,
           borderColor: avatarBorderColor,
           shadow: avatarShadow,
+          ...(typeof input.header.avatar.scale === "number"
+            ? { imageScale: input.header.avatar.scale }
+            : {}),
+          ...(typeof input.header.avatar.offsetX === "number"
+            ? { imageOffsetX: input.header.avatar.offsetX }
+            : {}),
+          ...(typeof input.header.avatar.offsetY === "number"
+            ? { imageOffsetY: input.header.avatar.offsetY }
+            : {}),
+          ...(typeof input.header.avatar.baseSize === "number"
+            ? { imageBaseSize: input.header.avatar.baseSize }
+            : {}),
         }),
         box: avatarBox,
       });

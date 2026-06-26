@@ -17,12 +17,14 @@ import {
   createAppRecord,
   deleteAppRecord,
   duplicateAppRecord,
+  renamePaletteColorToken,
   updateAppRecord,
   type AppCreateRequest,
   type AppRecordActionRequest,
   type AppUpdateRequest,
   type DebugSaveRequest,
   type DebugSelection,
+  type PaletteColorRenameRequest,
 } from "./debugService.js";
 
 const PORT = 4174;
@@ -581,6 +583,11 @@ const server = createServer(async (request, response) => {
     if (request.method === "POST" && url.pathname === "/api/app/record/duplicate") {
       const body = (await readJson(request)) as AppRecordActionRequest;
       sendJson(response, 200, duplicateAppRecord(database, body));
+      return;
+    }
+    if (request.method === "POST" && url.pathname === "/api/app/palette-color/rename") {
+      const body = (await readJson(request)) as PaletteColorRenameRequest;
+      sendJson(response, 200, renamePaletteColorToken(database, body));
       return;
     }
     if (request.method === "POST" && url.pathname === "/api/app/production-font/import") {

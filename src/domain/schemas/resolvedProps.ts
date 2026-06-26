@@ -27,6 +27,10 @@ const ResolvedActorSchema = z.object({
     .object({
       assetId: IdSchema.optional(),
       uri: z.string().min(1),
+      scale: z.number().positive().optional(),
+      offsetX: z.number().optional(),
+      offsetY: z.number().optional(),
+      baseSize: z.number().positive().optional(),
     })
     .optional(),
 });
@@ -127,6 +131,10 @@ export const ResolvedChatScreenPropsSchema = z.object({
       .object({
         assetId: IdSchema.optional(),
         uri: z.string().min(1),
+        scale: z.number().positive().optional(),
+        offsetX: z.number().optional(),
+        offsetY: z.number().optional(),
+        baseSize: z.number().positive().optional(),
       })
       .optional(),
   }),
@@ -147,6 +155,10 @@ export const ResolvedMessageBubblePropsSchema = z.object({
     id: IdSchema,
     displayName: z.string().min(1),
     avatarUri: z.string().min(1).optional(),
+    avatarScale: z.number().positive().optional(),
+    avatarOffsetX: z.number().optional(),
+    avatarOffsetY: z.number().optional(),
+    avatarBaseSize: z.number().positive().optional(),
   }),
   media: z
     .object({

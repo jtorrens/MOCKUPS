@@ -91,6 +91,10 @@ export interface ResolvedChatActor {
   id: string;
   displayName: string;
   avatarUri?: string;
+  avatarScale?: number;
+  avatarOffsetX?: number;
+  avatarOffsetY?: number;
+  avatarBaseSize?: number;
   color?: string;
   avatarTextColor?: string;
 }
@@ -221,6 +225,10 @@ export function resolveMessageBubble({
       id: sender.id,
       displayName: sender.displayName,
       ...(sender.avatarUri ? { avatarUri: sender.avatarUri } : {}),
+      ...(sender.avatarScale !== undefined ? { avatarScale: sender.avatarScale } : {}),
+      ...(sender.avatarOffsetX !== undefined ? { avatarOffsetX: sender.avatarOffsetX } : {}),
+      ...(sender.avatarOffsetY !== undefined ? { avatarOffsetY: sender.avatarOffsetY } : {}),
+      ...(sender.avatarBaseSize !== undefined ? { avatarBaseSize: sender.avatarBaseSize } : {}),
     },
     style: {
       backgroundColor,

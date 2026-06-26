@@ -496,6 +496,15 @@ function nodeContent(node: RenderableNode): ReactNode {
     const borderWidth = numberValue(node.style?.borderWidth);
     const avatarRadius = radius !== undefined ? `${radius}px` : "50%";
     const avatarShadow = shadowValue(node.style?.shadow);
+    const imageScale = Math.max(0.01, numberValue(node.metadata?.imageScale) ?? 1);
+    const imageBaseSize = Math.max(1, numberValue(node.metadata?.imageBaseSize) ?? 640);
+    const avatarBoxWidth = Math.max(1, numberValue(node.box?.width) ?? 1);
+    const imageOffsetX =
+      ((numberValue(node.metadata?.imageOffsetX) ?? 0) / imageBaseSize) *
+      avatarBoxWidth;
+    const imageOffsetY =
+      ((numberValue(node.metadata?.imageOffsetY) ?? 0) / imageBaseSize) *
+      avatarBoxWidth;
     return (
       <div
         style={{
@@ -531,10 +540,15 @@ function nodeContent(node: RenderableNode): ReactNode {
             src={avatarUri}
             style={{
               display: "block",
-              width: "100%",
-              height: "100%",
+              width: `${imageScale * 100}%`,
+              height: `${imageScale * 100}%`,
+              left: "50%",
+              top: "50%",
+              maxWidth: "none",
+              maxHeight: "none",
               objectFit: "cover",
-              position: "relative",
+              position: "absolute",
+              transform: `translate(calc(-50% + ${imageOffsetX}px), calc(-50% + ${imageOffsetY}px))`,
               zIndex: 0,
             }}
           />

@@ -228,6 +228,24 @@ export async function importProductionFont(request: {
   );
 }
 
+export async function renamePaletteColorToken(request: {
+  recordId: string;
+  nextToken: string;
+}): Promise<{
+  state: AppState;
+  record: AppRecord;
+  tableId: "palette_colors";
+  replacements: number;
+}> {
+  return readResponse(
+    await fetch("/api/app/palette-color/rename", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
+    }),
+  );
+}
+
 export async function getPreviewPayload(
   selection: DebugSelection,
 ): Promise<DebugPayload> {

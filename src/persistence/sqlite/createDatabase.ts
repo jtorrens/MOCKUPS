@@ -8,43 +8,39 @@ const schemaPath = fileURLToPath(new URL("./schema.sql", import.meta.url));
 
 export type SQLiteDatabase = Database.Database;
 
-const IOS_SEED_PALETTE_COLORS = [
-  ["white", "#FFFFFF"],
-  ["black", "#000000"],
+const SEED_PALETTE_COLORS = [
+  ["gray_000", "#000000"],
+  ["gray_010", "#1A1A1A"],
+  ["gray_020", "#333333"],
+  ["gray_030", "#4D4D4D"],
+  ["gray_040", "#666666"],
+  ["gray_050", "#808080"],
+  ["gray_060", "#999999"],
+  ["gray_070", "#B3B3B3"],
+  ["gray_080", "#CCCCCC"],
+  ["gray_090", "#E6E6E6"],
+  ["gray_100", "#FFFFFF"],
   ["red", "#FA0000"],
   ["blue", "#007AFF"],
   ["blue_bright", "#0A84FF"],
-  ["gray_medium", "#6E6E73"],
-  ["gray_medium_bright", "#98989D"],
-  ["gray", "#8E8E93"],
-  ["gray_deep", "#3A3A3C"],
-  ["gray_soft", "#D1D1D6"],
-  ["off_white", "#F5F5F7"],
-  ["keyboard_light_background", "#D1D5DB"],
-  ["keyboard_light_special", "#AEB4BE"],
-  ["keyboard_dark_background", "#2C2C2E"],
-  ["keyboard_dark_key", "#636366"],
+  ["pastel_coral", "#FF8A80"],
+  ["pastel_orange", "#FFB74D"],
+  ["pastel_yellow", "#FFF176"],
+  ["pastel_mint", "#66D9A3"],
+  ["pastel_sky", "#64B5F6"],
+  ["pastel_lavender", "#B39DDB"],
+  ["purple", "#6750A4"],
+  ["purple_tint", "#D0BCFF"],
 ] as const;
 
-const PALETTE_TOKEN_RENAMES = {
-  ios_blue: "blue",
-  ios_blue_bright: "blue_bright",
-  ios_text_secondary: "gray_medium",
-  ios_text_secondary_dark: "gray_medium_bright",
-  ios_gray: "gray",
-  ios_gray_deep: "gray_deep",
-  ios_gray_soft: "gray_soft",
-  ios_surface_light: "off_white",
-} as const;
-
 const THEME_HEX_TO_PALETTE_TOKEN = new Map(
-  IOS_SEED_PALETTE_COLORS.map(([token, valueHex]) => [
+  SEED_PALETTE_COLORS.map(([token, valueHex]) => [
     valueHex.toUpperCase(),
     token,
   ]),
 );
 const PALETTE_HEX_VALUES = new Set(
-  IOS_SEED_PALETTE_COLORS.map(([, valueHex]) => valueHex.toUpperCase()),
+  SEED_PALETTE_COLORS.map(([, valueHex]) => valueHex.toUpperCase()),
 );
 
 function themeColorTokenForValue(value: string) {
@@ -998,9 +994,6 @@ function applyAdditiveV19Migration(database: SQLiteDatabase): void {
   const productions = database
     .prepare("SELECT id FROM productions ORDER BY id")
     .all() as { id: string }[];
-  const count = database.prepare(
-    "SELECT COUNT(*) AS total FROM palette_colors WHERE production_id = ?",
-  );
   const insert = database.prepare(
     `INSERT OR IGNORE INTO palette_colors (
       id,
@@ -1011,28 +1004,18 @@ function applyAdditiveV19Migration(database: SQLiteDatabase): void {
     ) VALUES (?, ?, ?, ?, ?)`,
   );
   for (const production of productions) {
-    const total = Number(
-      (count.get(production.id) as { total: number | bigint }).total,
-    );
-    if (total > 0) continue;
-    for (const [token, valueHex] of IOS_SEED_PALETTE_COLORS) {
+    for (const [token, valueHex] of SEED_PALETTE_COLORS) {
       insert.run(
         `palette_${production.id}_${token}`,
         production.id,
         token,
         valueHex,
         JSON.stringify({
-          source: "ios_seed_theme",
-          note: "Primitive color seeded from the original iOS theme values.",
+          source: "base_seed_palette",
+          note: "Primitive production color seeded from the base design palette.",
         }),
       );
     }
-  }
-  const rename = database.prepare(
-    "UPDATE OR IGNORE palette_colors SET token = ? WHERE token = ?",
-  );
-  for (const [oldToken, nextToken] of Object.entries(PALETTE_TOKEN_RENAMES)) {
-    rename.run(nextToken, oldToken);
   }
   database.pragma("user_version = 19");
 }

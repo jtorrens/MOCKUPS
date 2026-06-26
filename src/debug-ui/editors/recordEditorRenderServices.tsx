@@ -2,6 +2,7 @@ import type { Dispatch, SetStateAction } from "react";
 import type {
   AppFieldDefinition,
   AppRecord,
+  AppState,
   AppTableDefinition,
 } from "../api/client.js";
 import { renderGenericField as renderGenericFieldFromDispatcher } from "./GenericFieldDispatcher.js";
@@ -33,6 +34,7 @@ interface NativeBridge {
 }
 
 interface RecordEditorRenderServicesOptions {
+  tables: AppTableDefinition[];
   table: AppTableDefinition;
   record: AppRecord;
   records: Record<string, AppRecord[]>;
@@ -47,9 +49,11 @@ interface RecordEditorRenderServicesOptions {
   setDrafts: Dispatch<SetStateAction<Record<string, string>>>;
   productionFontCatalog?: ProductionFontCatalog;
   paletteCatalog?: PaletteColorCatalog;
+  onAppStateChanged?: (state: AppState, tableId: string, record: AppRecord) => void;
 }
 
 export function createRecordEditorRenderServices({
+  tables,
   table,
   record,
   records,
@@ -64,6 +68,7 @@ export function createRecordEditorRenderServices({
   setDrafts,
   productionFontCatalog,
   paletteCatalog,
+  onAppStateChanged,
 }: RecordEditorRenderServicesOptions) {
   function setJsonDraft(column: string, value: JsonValue) {
     setDrafts({
@@ -147,6 +152,7 @@ export function createRecordEditorRenderServices({
 
   function renderGenericField(field: AppFieldDefinition) {
     return renderGenericFieldFromDispatcher({
+      tables,
       table,
       field,
       record,
@@ -157,6 +163,7 @@ export function createRecordEditorRenderServices({
       nativeBridge,
       productionMediaRoot,
       paletteCatalog,
+      onAppStateChanged,
       relativePathFromRoot,
       setDrafts,
       setJsonDraft,
