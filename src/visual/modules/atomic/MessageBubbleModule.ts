@@ -36,6 +36,17 @@ function readNumber(value: unknown, fallback: number) {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
 }
 
+function colorAlphaIsZero(value: string) {
+  if (value.trim().toLowerCase() === "transparent") return true;
+  return (
+    value
+      .trim()
+      .match(
+        /^rgba\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*(0|0?\.0+)\s*\)$/i,
+      ) !== null
+  );
+}
+
 function maskUrl(value: string) {
   return value ? `url("${value.replace(/"/g, '\\"')}")` : undefined;
 }
@@ -207,6 +218,8 @@ export function renderMessageBubbleWithLayout(
   input: ResolvedMessageBubbleProps,
   layout: MessageBubbleLayout,
 ): RenderableNode {
+    const hasShapeShadow =
+      input.style.shadowEnabled && !colorAlphaIsZero(input.style.backgroundColor);
     const cursorConfig =
       typeof input.animation.cursor === "object" && input.animation.cursor !== null
         ? (input.animation.cursor as Record<string, unknown>)
@@ -252,7 +265,7 @@ export function renderMessageBubbleWithLayout(
           height: layout.bubbleBox.height,
         },
         style: {
-          shadow: input.style.shadowEnabled ? input.style.shadow : {},
+          shadow: hasShapeShadow ? input.style.shadow : {},
         },
         children: shapeChildren,
       },
@@ -289,6 +302,7 @@ export function renderMessageBubbleWithLayout(
         fontSize: input.style.fontSize,
         lineHeight: input.style.lineHeight,
         fontWeight: input.style.fontWeight,
+        ...(input.direction === "system" ? { textAlign: "center" } : {}),
       },
       children:
         cursorVisible && input.direction === "outgoing"

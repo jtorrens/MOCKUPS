@@ -93,7 +93,10 @@ function modeRoot(root: Record<string, JsonValue>, mode: "light" | "dark") {
   const modes = isJsonObject(root.modes) ? root.modes : {};
   const currentMode = isJsonObject(modes[mode]) ? modes[mode] : {};
   const header = isJsonObject(currentMode.header) ? currentMode.header : {};
-  return { modes, currentMode, header };
+  const chatBubbles = isJsonObject(currentMode.chatBubbles)
+    ? currentMode.chatBubbles
+    : {};
+  return { modes, currentMode, header, chatBubbles };
 }
 
 export function normalizeCoreChatModuleTokensForEditor(
@@ -119,6 +122,17 @@ export function normalizeCoreChatModuleTokensForEditor(
             ? light.header.avatarBorderColor
             : "#ffffff",
       },
+      chatBubbles: {
+        ...light.chatBubbles,
+        systemBackground:
+          typeof light.chatBubbles.systemBackground === "string"
+            ? light.chatBubbles.systemBackground
+            : "rgba(118, 118, 128, 0.16)",
+        systemText:
+          typeof light.chatBubbles.systemText === "string"
+            ? light.chatBubbles.systemText
+            : "#3C3C43",
+      },
     },
     dark: {
       ...dark.currentMode,
@@ -128,6 +142,17 @@ export function normalizeCoreChatModuleTokensForEditor(
           typeof dark.header.avatarBorderColor === "string"
             ? dark.header.avatarBorderColor
             : "#1c1c1e",
+      },
+      chatBubbles: {
+        ...dark.chatBubbles,
+        systemBackground:
+          typeof dark.chatBubbles.systemBackground === "string"
+            ? dark.chatBubbles.systemBackground
+            : "rgba(118, 118, 128, 0.24)",
+        systemText:
+          typeof dark.chatBubbles.systemText === "string"
+            ? dark.chatBubbles.systemText
+            : "#F2F2F7",
       },
     },
   };

@@ -794,6 +794,16 @@ function normalizeChatVisualTokenGroups(
     chatBubbles.avatarGap,
     numberValue(avatars.gap, 8),
   );
+  const systemBackground =
+    typeof chatBubbles.systemBackground === "string"
+      ? chatBubbles.systemBackground
+      : "rgba(118, 118, 128, 0.16)";
+  const systemText =
+    typeof chatBubbles.systemText === "string"
+      ? chatBubbles.systemText
+      : typeof chatBubbles.incomingText === "string"
+        ? chatBubbles.incomingText
+        : "#3C3C43";
   return {
     ...tokens,
     header: {
@@ -816,6 +826,8 @@ function normalizeChatVisualTokenGroups(
       ...visibleChatBubbles,
       avatarSize: bubbleAvatarSize,
       avatarGap: bubbleAvatarGap,
+      systemBackground,
+      systemText,
     },
     avatars: {
       ...avatars,
@@ -1326,10 +1338,11 @@ export function resolveChatScreen({
     .reverse()
     .find((message) => isActiveWriteOnMessage(message, localFrame));
 
-  const runtimeShowTextInputBar =
-    moduleConfig.showTextInputBar === true && activeComposerMessage !== undefined;
+  const runtimeShowTextInputBar = moduleConfig.showTextInputBar === true;
   const runtimeShowKeyboard =
-    moduleConfig.showKeyboard === true && runtimeShowTextInputBar;
+    moduleConfig.showKeyboard === true &&
+    runtimeShowTextInputBar &&
+    activeComposerMessage !== undefined;
   const runtimePressedKey = activeComposerMessage
     ? pressedKeyFromWriteOnState(
         activeComposerMessage.text,

@@ -87,6 +87,7 @@ function nodeStyle(
   const backgroundPosition = stringValue(style.backgroundPosition);
   const backgroundRepeat = stringValue(style.backgroundRepeat);
   const color = stringValue(style.textColor ?? style.color ?? style.foreground);
+  const textAlign = stringValue(style.textAlign);
   const borderRadius = numberValue(style.borderRadius ?? style.cornerRadius);
   const borderColor = node.type === "avatar" ? undefined : stringValue(style.borderColor);
   const borderWidth = node.type === "avatar" ? undefined : numberValue(style.borderWidth);
@@ -100,6 +101,7 @@ function nodeStyle(
     backgroundPosition,
     backgroundRepeat,
     color,
+    textAlign: textAlign as CSSProperties["textAlign"],
     fontFamily: stringValue(style.fontFamily) ?? "Arial, sans-serif",
     fontSize: numberValue(style.fontSize),
     fontWeight: cssFontWeight(style.fontWeight),

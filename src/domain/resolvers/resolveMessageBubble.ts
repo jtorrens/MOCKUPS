@@ -34,6 +34,8 @@ const MessageThemeSchema = z.object({
     outgoingText: z.string().min(1),
     incomingBackground: z.string().min(1),
     incomingText: z.string().min(1),
+    systemBackground: z.string().min(1).optional(),
+    systemText: z.string().min(1).optional(),
     paddingX: z.number().min(0),
     paddingY: z.number().min(0),
     maxWidthRatio: z.number().min(0).max(1),
@@ -125,6 +127,16 @@ function resolveVisibleText(
   return characters.slice(0, Math.floor(characters.length * progress)).join("");
 }
 
+function colorAlphaIsZero(value: string) {
+  if (value.trim().toLowerCase() === "transparent") return true;
+  const match = value
+    .trim()
+    .match(
+      /^rgba\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*(0|0?\.0+)\s*\)$/i,
+    );
+  return match !== null;
+}
+
 export interface ResolveMessageBubbleInput {
   message: ChatModuleMessage;
   sender: ResolvedChatActor;
@@ -147,6 +159,18 @@ export function resolveMessageBubble({
   const themeTokens = MessageThemeSchema.parse(rawThemeTokens);
   const messageTypography = themeTokens.typography?.message;
   const isOutgoing = direction === "outgoing";
+  const isSystem = direction === "system";
+  const backgroundColor = isOutgoing
+    ? themeTokens.chatBubbles.outgoingBackground
+    : isSystem
+      ? themeTokens.chatBubbles.systemBackground ?? "rgba(118, 118, 128, 0.16)"
+      : themeTokens.chatBubbles.incomingBackground;
+  const textColor = isOutgoing
+    ? themeTokens.chatBubbles.outgoingText
+    : isSystem
+      ? themeTokens.chatBubbles.systemText ?? themeTokens.chatBubbles.incomingText
+      : themeTokens.chatBubbles.incomingText;
+  const systemTextOnly = isSystem && colorAlphaIsZero(backgroundColor);
   const rawStatus = messageStatus(message);
   const statusText = typeof rawStatus.text === "string" ? rawStatus.text : "";
   const deliveryStatus = statusDeliveryValue(rawStatus.deliveryStatus);
@@ -190,12 +214,8 @@ export function resolveMessageBubble({
       ...(sender.avatarUri ? { avatarUri: sender.avatarUri } : {}),
     },
     style: {
-      backgroundColor: isOutgoing
-        ? themeTokens.chatBubbles.outgoingBackground
-        : themeTokens.chatBubbles.incomingBackground,
-      textColor: isOutgoing
-        ? themeTokens.chatBubbles.outgoingText
-        : themeTokens.chatBubbles.incomingText,
+      backgroundColor,
+      textColor,
       fontFamily: messageTypography?.fontFamily ?? themeTokens.fonts.family,
       fontSize: messageTypography?.fontSize ?? themeTokens.fonts.bodySize,
       lineHeight:
@@ -211,7 +231,8 @@ export function resolveMessageBubble({
       tailWidth: themeTokens.chatBubbles.tail.width,
       tailHeight: themeTokens.chatBubbles.tail.height,
       tailScale: themeTokens.chatBubbles.tail.scale ?? 1,
-      shadowEnabled: themeTokens.chatBubbles.shadowEnabled === true,
+      shadowEnabled:
+        themeTokens.chatBubbles.shadowEnabled === true && !systemTextOnly,
       status: {
         showText: statusTokens.showText !== false,
         showTicks: statusTokens.showTicks !== false,

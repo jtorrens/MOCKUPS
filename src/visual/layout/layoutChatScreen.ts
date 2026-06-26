@@ -153,11 +153,9 @@ export function layoutChatScreen({
   };
 
   let cursorY = messageListBox.y + groupSpacing;
-  let previousActorId: string | undefined;
-  const messageLayouts: ChatMessageLayout[] = messages.map((message) => {
-    if (previousActorId !== undefined) {
-      cursorY +=
-        previousActorId === message.actor.id ? messageSpacing : groupSpacing;
+  const messageLayouts: ChatMessageLayout[] = messages.map((message, index) => {
+    if (index > 0) {
+      cursorY += messageSpacing;
     }
     const layout = layoutMessageBubble({
       props: message,
@@ -165,7 +163,6 @@ export function layoutChatScreen({
       y: cursorY,
     });
     cursorY += layout.bubbleBox.height;
-    previousActorId = message.actor.id;
     return { messageId: message.id, layout };
   });
 

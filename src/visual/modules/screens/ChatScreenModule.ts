@@ -42,6 +42,7 @@ function createMessageBubbleInput(
   message: ResolvedChatScreenProps["messages"][number],
 ) {
   const outgoing = message.direction === "outgoing";
+  const system = message.direction === "system";
   const chatTokens = input.theme.chatBubbles;
   const tailTokens = readObject(chatTokens, "tail");
   const typographyTokens = input.theme.typography;
@@ -66,12 +67,20 @@ function createMessageBubbleInput(
     style: message.style ?? {
       backgroundColor: readString(
         chatTokens,
-        outgoing ? "outgoingBackground" : "incomingBackground",
-        outgoing ? "#0B84FF" : "#E9E9EB",
+        outgoing
+          ? "outgoingBackground"
+          : system
+            ? "systemBackground"
+            : "incomingBackground",
+        outgoing
+          ? "#0B84FF"
+          : system
+            ? "rgba(118, 118, 128, 0.16)"
+            : "#E9E9EB",
       ),
       textColor: readString(
         chatTokens,
-        outgoing ? "outgoingText" : "incomingText",
+        outgoing ? "outgoingText" : system ? "systemText" : "incomingText",
         outgoing ? "#FFFFFF" : "#000000",
       ),
       fontFamily: readString(

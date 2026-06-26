@@ -74,6 +74,23 @@ export const KeyboardModule: VisualModule<KeyboardModuleInput> = {
     const keyboardRows = rows(input);
     const keyboardBottomItems = bottomItems(input);
     const pressedKey = readString(asRecord(input.keyboard), "pressedKey", "");
+    const pressedKeyTarget = pressedKey
+      ? keyboardRows.reduce<{ rowIndex: number; keyIndex: number } | undefined>(
+          (target, row, rowIndex) =>
+            row.reduce<{ rowIndex: number; keyIndex: number } | undefined>(
+              (rowTarget, rawKey, keyIndex) => {
+                const key = asRecord(rawKey);
+                const id = readString(key, "id", String(keyIndex));
+                const label = readString(key, "label", "");
+                return pressedKey === id || pressedKey === label
+                  ? { rowIndex, keyIndex }
+                  : rowTarget;
+              },
+              target,
+            ),
+          undefined,
+        )
+      : undefined;
     return {
       id: "keyboard",
       type: "keyboard",
@@ -112,7 +129,9 @@ export const KeyboardModule: VisualModule<KeyboardModuleInput> = {
             const id = readString(key, "id", String(keyIndex));
             const kind = readString(key, "kind", "character");
             const label = readString(key, "label", "");
-            const pressed = pressedKey !== "" && (pressedKey === id || pressedKey === label);
+            const pressed =
+              pressedKeyTarget?.rowIndex === rowIndex &&
+              pressedKeyTarget.keyIndex === keyIndex;
             const keyFontSize =
               kind === "emoji" ||
               (kind === "character" && /\p{Extended_Pictographic}/u.test(label))
