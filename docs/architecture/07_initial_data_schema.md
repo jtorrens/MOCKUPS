@@ -190,7 +190,7 @@ Modules use asset IDs with a media window (logical width/height/offsets) and an 
 - Relationships: belongs to a production. Theme/app/module semantic color tokens should eventually reference these primitive palette tokens instead of storing raw RGB/HEX directly.
 - Must not contain: component semantics, dark/light mode roles, alpha values, or per-shot overrides.
 
-`token` names primitive colors such as `blue`, `white`, or `keyboard_dark_key`.
+`token` names primitive colors such as `blue`, `gray_100`, or `pastel_mint`.
 Semantic roles remain in theme/app/module JSON, for example
 `theme.text.alert = blue`. Alpha/transparency is intentionally separate
 from the primitive color; fields that need transparency should store a palette

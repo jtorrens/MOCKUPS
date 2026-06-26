@@ -9,64 +9,82 @@
     "modes": {
       "light": {
         "colors": {
-          "background": "white",
-          "textPrimary": "black",
-          "textSecondary": "gray_medium",
+          "background": "gray_100",
+          "textPrimary": "gray_000",
+          "textSecondary": "gray_040",
           "accent": "blue"
         },
         "statusBar": {
           "type": "ios-default",
-          "foreground": "black",
-          "background": "rgba(255,255,255,0)"
+          "foreground": "gray_000",
+          "background": {
+            "color": "gray_100",
+            "alpha": 0
+          }
         },
         "navigationBar": {
           "type": "ios-home-indicator",
-          "foreground": "black",
-          "background": "rgba(255,255,255,0)"
+          "foreground": "gray_000",
+          "background": {
+            "color": "gray_100",
+            "alpha": 0
+          }
         },
         "keyboard": {
-          "background": "keyboard_light_background",
-          "keyBackground": "white",
-          "specialKeyBackground": "keyboard_light_special",
-          "pressedKeyBackground": "gray",
-          "popoverBackground": "white",
-          "text": "black"
+          "background": "gray_080",
+          "keyBackground": "gray_100",
+          "specialKeyBackground": "gray_070",
+          "pressedKeyBackground": "gray_060",
+          "popoverBackground": "gray_100",
+          "text": "gray_000"
         },
         "notifications": {
-          "background": "rgba(245,245,247,0.92)",
-          "titleColor": "black",
-          "bodyColor": "gray_deep"
+          "background": {
+            "color": "gray_090",
+            "alpha": 0.92
+          },
+          "titleColor": "gray_000",
+          "bodyColor": "gray_020"
         }
       },
       "dark": {
         "colors": {
-          "background": "black",
-          "textPrimary": "white",
-          "textSecondary": "gray_medium_bright",
+          "background": "gray_000",
+          "textPrimary": "gray_100",
+          "textSecondary": "gray_060",
           "accent": "blue_bright"
         },
         "statusBar": {
           "type": "ios-default",
-          "foreground": "white",
-          "background": "rgba(0,0,0,0)"
+          "foreground": "gray_100",
+          "background": {
+            "color": "gray_000",
+            "alpha": 0
+          }
         },
         "navigationBar": {
           "type": "ios-home-indicator",
-          "foreground": "white",
-          "background": "rgba(0,0,0,0)"
+          "foreground": "gray_100",
+          "background": {
+            "color": "gray_000",
+            "alpha": 0
+          }
         },
         "keyboard": {
-          "background": "keyboard_dark_background",
-          "keyBackground": "keyboard_dark_key",
-          "specialKeyBackground": "gray_deep",
-          "pressedKeyBackground": "gray",
-          "popoverBackground": "keyboard_dark_key",
-          "text": "white"
+          "background": "gray_020",
+          "keyBackground": "gray_040",
+          "specialKeyBackground": "gray_020",
+          "pressedKeyBackground": "gray_060",
+          "popoverBackground": "gray_040",
+          "text": "gray_100"
         },
         "notifications": {
-          "background": "rgba(44,44,46,0.92)",
-          "titleColor": "white",
-          "bodyColor": "gray_soft"
+          "background": {
+            "color": "gray_020",
+            "alpha": 0.92
+          },
+          "titleColor": "gray_100",
+          "bodyColor": "gray_080"
         }
       }
     },
@@ -76,33 +94,39 @@
       "bodyLineHeight": 21.25,
       "captionSize": 13,
       "weight": "Regular",
-      "source": "installed_system_font"
+      "source": "production_font"
     },
     "colors": {
-      "background": "white",
-      "textPrimary": "black",
-      "textSecondary": "gray_medium",
+      "background": "gray_100",
+      "textPrimary": "gray_000",
+      "textSecondary": "gray_040",
       "accent": "blue"
     },
     "statusBar": {
       "type": "ios-default",
-      "foreground": "black",
-      "background": "rgba(255,255,255,0)",
+      "foreground": "gray_000",
+      "background": {
+        "color": "gray_100",
+        "alpha": 0
+      },
       "iconScale": 1
     },
     "navigationBar": {
       "type": "ios-home-indicator",
-      "foreground": "black",
-      "background": "rgba(255,255,255,0)",
+      "foreground": "gray_000",
+      "background": {
+        "color": "gray_100",
+        "alpha": 0
+      },
       "iconScale": 1
     },
     "keyboard": {
-      "background": "keyboard_light_background",
-      "keyBackground": "white",
-      "specialKeyBackground": "keyboard_light_special",
-      "pressedKeyBackground": "gray",
-      "popoverBackground": "white",
-      "text": "black"
+      "background": "gray_080",
+      "keyBackground": "gray_100",
+      "specialKeyBackground": "gray_070",
+      "pressedKeyBackground": "gray_060",
+      "popoverBackground": "gray_100",
+      "text": "gray_000"
     },
     "notifications": {
       "backdropBlur": 24
@@ -119,13 +143,19 @@
     },
     "shadows": {
       "avatar": {
-        "color": "rgba(0,0,0,0.18)",
+        "color": {
+          "color": "gray_000",
+          "alpha": 0.18
+        },
         "offsetX": 0,
         "offsetY": 4,
         "blur": 18
       },
       "elevated": {
-        "color": "rgba(0,0,0,0.18)",
+        "color": {
+          "color": "gray_000",
+          "alpha": 0.18
+        },
         "offsetX": 0,
         "offsetY": 4,
         "blur": 18

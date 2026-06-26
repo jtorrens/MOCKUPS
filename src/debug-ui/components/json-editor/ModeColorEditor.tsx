@@ -61,11 +61,59 @@ function isAlphaColorRolePath(path: JsonPath): boolean {
   );
 }
 
+function clampAlpha(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value)
+    ? Math.max(0, Math.min(1, value))
+    : 1;
+}
+
+function hexToRgba(hex: string, alpha: number) {
+  const normalized = hex.replace("#", "");
+  return `rgba(${Number.parseInt(normalized.slice(0, 2), 16)},${Number.parseInt(
+    normalized.slice(2, 4),
+    16,
+  )},${Number.parseInt(normalized.slice(4, 6), 16)},${clampAlpha(alpha)})`;
+}
+
+function isPaletteAlphaColor(value: JsonValue): value is { color: string; alpha: number } {
+  return (
+    isJsonObject(value) &&
+    typeof value.color === "string" &&
+    typeof value.alpha === "number"
+  );
+}
+
+function rgbaToPaletteAlphaValue(
+  value: string,
+  paletteCatalog?: PaletteColorCatalog,
+): JsonValue {
+  const match =
+    /^rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(0|1|0?\.\d+)\s*\)$/i.exec(
+      value.trim(),
+    );
+  if (!match) return value;
+  const [, red, green, blue, alpha] = match;
+  const hex = `#${[red, green, blue]
+    .map((channel) =>
+      Math.max(0, Math.min(255, Number(channel)))
+        .toString(16)
+        .padStart(2, "0"),
+    )
+    .join("")}`.toUpperCase();
+  return {
+    color: paletteCatalog?.byHex.get(hex)?.token ?? value,
+    alpha: clampAlpha(Number(alpha)),
+  };
+}
+
 function flattenColorPaths(value: JsonValue, path: JsonPath = []): JsonPath[] {
   if (Array.isArray(value)) {
     return value.flatMap((entry, index) =>
       flattenColorPaths(entry, [...path, index]),
     );
+  }
+  if (isPaletteAlphaColor(value)) {
+    return [path];
   }
   if (isJsonObject(value)) {
     return Object.entries(value).flatMap(([key, entry]) =>
@@ -110,8 +158,17 @@ function uniqueRolePaths(
   });
 }
 
-function colorAt(root: JsonValue, mode: "light" | "dark", rolePath: JsonPath) {
+function colorAt(
+  root: JsonValue,
+  mode: "light" | "dark",
+  rolePath: JsonPath,
+  paletteCatalog?: PaletteColorCatalog,
+) {
   const value = getAtPath(root, ["modes", mode, ...rolePath]);
+  if (isPaletteAlphaColor(value)) {
+    const paletteHex = paletteCatalog?.byToken.get(value.color)?.valueHex;
+    return paletteHex ? hexToRgba(paletteHex, value.alpha) : value.color;
+  }
   return typeof value === "string" ? value : "";
 }
 
@@ -119,9 +176,10 @@ function inheritedColorAt(
   root: JsonValue | undefined,
   mode: "light" | "dark",
   rolePath: JsonPath,
+  paletteCatalog?: PaletteColorCatalog,
 ) {
   if (!root) return undefined;
-  const value = colorAt(root, mode, rolePath);
+  const value = colorAt(root, mode, rolePath, paletteCatalog);
   return value || undefined;
 }
 
@@ -205,11 +263,18 @@ export function ModeColorEditor({
       onRootChange(deleteAtPathAndPrune(rootValue, ["modes", mode, ...rolePath]));
       return;
     }
+    const isAlphaColor =
+      raw.trim().toLowerCase().startsWith("rgba(") ||
+      isAlphaColorRolePath(rolePath);
     onRootChange(
       setAtPath(
         rootValue,
         ["modes", mode, ...rolePath],
-        isHexColor(raw) ? raw.toLowerCase() : raw,
+        isAlphaColor
+          ? rgbaToPaletteAlphaValue(raw, paletteCatalog)
+          : isHexColor(raw)
+            ? raw.toLowerCase()
+            : raw,
       ),
     );
   }
@@ -225,11 +290,16 @@ export function ModeColorEditor({
 
   function hasModeOverride(mode: "light" | "dark", rolePath: JsonPath) {
     if (!inheritedRoot) return false;
-    const inheritedValue = inheritedColorAt(inheritedRoot, mode, rolePath);
+    const inheritedValue = inheritedColorAt(
+      inheritedRoot,
+      mode,
+      rolePath,
+      paletteCatalog,
+    );
     if (!inheritedValue) return false;
     const localPath: JsonPath = ["modes", mode, ...rolePath];
     if (!hasAtPath(rootValue, localPath)) return false;
-    return colorAt(rootValue, mode, rolePath) !== inheritedValue;
+    return colorAt(rootValue, mode, rolePath, paletteCatalog) !== inheritedValue;
   }
 
   function hasRoleOverride(rolePath: JsonPath) {
@@ -274,17 +344,19 @@ export function ModeColorEditor({
               rolePath,
               lightPath: ["modes", "light", ...rolePath],
               darkPath: ["modes", "dark", ...rolePath],
-              lightValue: colorAt(rootValue, "light", rolePath),
-              darkValue: colorAt(rootValue, "dark", rolePath),
+              lightValue: colorAt(rootValue, "light", rolePath, paletteCatalog),
+              darkValue: colorAt(rootValue, "dark", rolePath, paletteCatalog),
               inheritedLightValue: inheritedColorAt(
                 inheritedRoot,
                 "light",
                 rolePath,
+                paletteCatalog,
               ),
               inheritedDarkValue: inheritedColorAt(
                 inheritedRoot,
                 "dark",
                 rolePath,
+                paletteCatalog,
               ),
             };
             return (

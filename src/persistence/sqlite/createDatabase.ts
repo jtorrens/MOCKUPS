@@ -39,12 +39,38 @@ const THEME_HEX_TO_PALETTE_TOKEN = new Map(
     token,
   ]),
 );
-const PALETTE_HEX_VALUES = new Set(
-  SEED_PALETTE_COLORS.map(([, valueHex]) => valueHex.toUpperCase()),
-);
+function hexChannels(value: string) {
+  const normalized = value.replace("#", "").toUpperCase();
+  return {
+    red: Number.parseInt(normalized.slice(0, 2), 16),
+    green: Number.parseInt(normalized.slice(2, 4), 16),
+    blue: Number.parseInt(normalized.slice(4, 6), 16),
+  };
+}
+
+function closestPaletteTokenForHex(value: string) {
+  const normalized = value.toUpperCase();
+  const exact = THEME_HEX_TO_PALETTE_TOKEN.get(normalized);
+  if (exact) return exact;
+  const target = hexChannels(normalized);
+  let bestToken = "red";
+  let bestDistance = Number.POSITIVE_INFINITY;
+  for (const [token, valueHex] of SEED_PALETTE_COLORS) {
+    const candidate = hexChannels(valueHex);
+    const distance =
+      (target.red - candidate.red) ** 2 +
+      (target.green - candidate.green) ** 2 +
+      (target.blue - candidate.blue) ** 2;
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      bestToken = token;
+    }
+  }
+  return bestToken;
+}
 
 function themeColorTokenForValue(value: string) {
-  return THEME_HEX_TO_PALETTE_TOKEN.get(value.toUpperCase()) ?? "red";
+  return closestPaletteTokenForHex(value);
 }
 
 function convertThemeColorsToPaletteTokens(value: unknown): unknown {
@@ -65,11 +91,6 @@ function convertThemeColorsToPaletteTokens(value: unknown): unknown {
   return value;
 }
 
-function normalizeHexColorToPalette(value: string) {
-  const normalized = value.toUpperCase();
-  return PALETTE_HEX_VALUES.has(normalized) ? normalized : "#FA0000";
-}
-
 function componentToHex(value: number) {
   return Math.max(0, Math.min(255, Math.round(value)))
     .toString(16)
@@ -77,7 +98,7 @@ function componentToHex(value: number) {
     .toUpperCase();
 }
 
-function normalizeRgbLikeColorToPalette(value: string) {
+function normalizeRgbLikeColorToPaletteToken(value: string) {
   const match =
     /^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})(?:\s*,\s*([0-9.]+))?\s*\)$/i.exec(
       value.trim(),
@@ -85,10 +106,9 @@ function normalizeRgbLikeColorToPalette(value: string) {
   if (!match) return value;
   const [, r, g, b, alpha] = match;
   const hex = `#${componentToHex(Number(r))}${componentToHex(Number(g))}${componentToHex(Number(b))}`;
-  if (PALETTE_HEX_VALUES.has(hex)) return value;
-  return alpha === undefined
-    ? "rgb(250,0,0)"
-    : `rgba(250,0,0,${alpha})`;
+  const color = closestPaletteTokenForHex(hex);
+  if (alpha === undefined) return color;
+  return { color, alpha: Math.max(0, Math.min(1, Number(alpha))) };
 }
 
 function normalizePhysicalColorsToPalette(value: unknown): unknown {
@@ -105,11 +125,63 @@ function normalizePhysicalColorsToPalette(value: unknown): unknown {
   }
   if (typeof value !== "string") return value;
   if (/^#[0-9a-fA-F]{6}$/.test(value)) {
-    return normalizeHexColorToPalette(value);
+    return closestPaletteTokenForHex(value);
   }
   if (/^rgba?\(/i.test(value.trim())) {
-    return normalizeRgbLikeColorToPalette(value);
+    return normalizeRgbLikeColorToPaletteToken(value);
   }
+  return value;
+}
+
+function modeForPath(path: string[]) {
+  return path.includes("dark") ? "dark" : "light";
+}
+
+function cleanupDebugRedDefault(path: string[], value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((entry, index) =>
+      cleanupDebugRedDefault([...path, String(index)], entry),
+    );
+  }
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, entry]) => [
+        key,
+        cleanupDebugRedDefault([...path, key], entry),
+      ]),
+    );
+  }
+  if (value !== "red") return value;
+
+  const joined = path.join(".");
+  const mode = modeForPath(path);
+  const dark = mode === "dark";
+
+  if (joined.endsWith("wallpaper.color")) return dark ? "gray_000" : "gray_100";
+  if (joined.endsWith("notifications.background.color")) {
+    return dark ? "gray_020" : "gray_090";
+  }
+  if (joined.endsWith("header.background")) return dark ? "gray_020" : "gray_100";
+  if (joined.endsWith("header.separatorColor")) return dark ? "gray_060" : "gray_080";
+  if (joined.endsWith("chatBubbles.outgoingBackground")) {
+    return dark ? "blue_bright" : "blue";
+  }
+  if (joined.endsWith("chatBubbles.incomingBackground")) {
+    return dark ? "gray_020" : "gray_100";
+  }
+  if (joined.endsWith("chatBubbles.status.textColor")) {
+    return dark ? "gray_060" : "gray_050";
+  }
+  if (joined.endsWith("chatBubbles.status.sentColor")) {
+    return dark ? "gray_060" : "gray_050";
+  }
+  if (joined.endsWith("chatBubbles.status.deliveredColor")) {
+    return dark ? "gray_060" : "gray_050";
+  }
+  if (joined.endsWith("chatBubbles.status.readColor")) {
+    return dark ? "blue_bright" : "blue";
+  }
+
   return value;
 }
 
@@ -521,7 +593,7 @@ function defaultTextInputBarConfig(): Record<string, unknown> {
           { token: "media_camera", order: 10 },
           { token: "media_mic", order: 20 },
         ],
-        typing: [{ token: "chat_send", order: 10, color: "#007AFF" }],
+        typing: [{ token: "chat_send", order: 10, color: "blue" }],
       },
     },
   };
@@ -743,11 +815,11 @@ function defaultChatBubbleStatusConfig(): Record<string, unknown> {
     offsetY: -5,
     tickSingleIconToken: "message_check",
     tickDoubleIconToken: "message_done_all",
-    textColor: "#7A7A7A",
-    sentColor: "#7A7A7A",
-    deliveredColor: "#7A7A7A",
-    readColor: "#34B7F1",
-    failedColor: "#D92D20",
+    textColor: "gray_050",
+    sentColor: "gray_050",
+    deliveredColor: "gray_050",
+    readColor: "blue",
+    failedColor: "red",
   };
 }
 
@@ -813,18 +885,18 @@ function mergeChatBubbleStatusDefaults(tokens: Record<string, unknown>) {
     modes: {
       ...modes,
       light: mergeModeStatus("light", {
-        textColor: "#7A7A7A",
-        sentColor: "#7A7A7A",
-        deliveredColor: "#7A7A7A",
-        readColor: "#34B7F1",
-        failedColor: "#D92D20",
+        textColor: "gray_050",
+        sentColor: "gray_050",
+        deliveredColor: "gray_050",
+        readColor: "blue",
+        failedColor: "red",
       }),
       dark: mergeModeStatus("dark", {
-        textColor: "#A1A1A6",
-        sentColor: "#A1A1A6",
-        deliveredColor: "#A1A1A6",
-        readColor: "#53C7FF",
-        failedColor: "#FF6B5F",
+        textColor: "gray_060",
+        sentColor: "gray_060",
+        deliveredColor: "gray_060",
+        readColor: "blue_bright",
+        failedColor: "red",
       }),
     },
   };
@@ -1084,6 +1156,49 @@ function applyAdditiveV21Migration(database: SQLiteDatabase): void {
   database.pragma("user_version = 21");
 }
 
+function applyAdditiveV22Migration(database: SQLiteDatabase): void {
+  const existingColumns = new Map<string, Set<string>>();
+  function columnsForTable(tableName: string) {
+    const cached = existingColumns.get(tableName);
+    if (cached) return cached;
+    const columns = new Set(
+      (
+        database.pragma(`table_info(${tableName})`) as {
+          name: string;
+        }[]
+      ).map((column) => column.name),
+    );
+    existingColumns.set(tableName, columns);
+    return columns;
+  }
+
+  for (const [tableName, columnName] of COLOR_NORMALIZATION_JSON_COLUMNS) {
+    if (!columnsForTable(tableName).has(columnName)) continue;
+    const rows = database
+      .prepare(
+        `SELECT id, ${columnName} AS json_value FROM ${tableName} WHERE ${columnName} IS NOT NULL`,
+      )
+      .all() as { id: string; json_value: string }[];
+    if (rows.length === 0) continue;
+    const update = database.prepare(
+      `UPDATE ${tableName} SET ${columnName} = ? WHERE id = ?`,
+    );
+    for (const row of rows) {
+      try {
+        const parsed = JSON.parse(row.json_value) as unknown;
+        const cleaned = cleanupDebugRedDefault([columnName], parsed);
+        const nextJson = JSON.stringify(cleaned);
+        if (nextJson !== row.json_value) {
+          update.run(nextJson, row.id);
+        }
+      } catch {
+        // Leave malformed JSON untouched; validation paths should surface it.
+      }
+    }
+  }
+  database.pragma("user_version = 22");
+}
+
 export function applyInitialSchema(database: SQLiteDatabase): void {
   database.exec(readFileSync(schemaPath, "utf8"));
   applyAdditiveV2Migration(database);
@@ -1106,6 +1221,7 @@ export function applyInitialSchema(database: SQLiteDatabase): void {
   applyAdditiveV19Migration(database);
   applyAdditiveV20Migration(database);
   applyAdditiveV21Migration(database);
+  applyAdditiveV22Migration(database);
   database.pragma("foreign_keys = ON");
 }
 

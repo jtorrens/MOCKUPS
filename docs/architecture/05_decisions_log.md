@@ -786,22 +786,21 @@ Status: accepted
 Color governance follows the same approval pattern as production fonts, but the
 palette layer is intentionally lower-level than theme/app/module tokens. A
 production owns a `palette_colors` table of primitive RGB colors such as
-`white`, `black`, `blue`, or `keyboard_dark_key`. Each row stores a token
+`gray_100`, `gray_000`, `blue`, or `pastel_mint`. Each row stores a token
 and a concrete `#RRGGBB` value.
 
 Theme, app, and module JSON will later store semantic roles that reference
 these primitive palette tokens, for example `text.alert = blue` or
-`header.background = white`. The palette itself does not know about
+`header.background = gray_100`. The palette itself does not know about
 dark/light modes, components, or usage semantics. Fields that need transparency
 store the palette token separately from a numeric alpha value in the `0–1`
 range.
 
 Theme tokens are the first migrated consumer: direct HEX strings in theme JSON
-are converted to primitive palette tokens when a matching palette color exists.
-If a direct theme HEX has no primitive match during the migration, it is mapped
-to `red` intentionally so unresolved palette coverage is immediately visible.
-The runtime resolver converts palette token strings back to HEX before
-preview/render.
+are converted to the closest primitive palette token. The `red` token is a real
+palette color and should remain only where a design explicitly needs red, such
+as error/failed states. The runtime resolver converts palette token strings
+back to HEX before preview/render.
 
 The editor color control now follows the same rule: mode-aware RGB color fields
 use a compact production-palette swatch selector and store the selected palette

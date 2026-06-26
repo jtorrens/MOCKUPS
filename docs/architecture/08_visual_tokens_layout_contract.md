@@ -64,10 +64,10 @@ theme/app/module tokens and before visual scaling/rendering, so preview and
 render modules still receive paintable CSS color values.
 
 Before wider token conversion, persisted JSON colors are normalized so any
-direct physical HEX/RGB/RGBA color either matches a primitive palette value or
-is replaced with the palette debug red (`#FA0000`, preserving alpha for RGBA).
-This makes later color-token migration deterministic and makes missing palette
-coverage visually obvious.
+direct physical HEX/RGB/RGBA color is converted to the closest primitive
+palette token. RGBA values are represented as a palette color token plus a
+numeric alpha in the `0–1` range, keeping transparency outside the primitive
+palette.
 
 Mode-aware color values may exist in Theme, App, and Module defaults. The editor should keep both light and dark columns available at authoring time; the resolver collapses to one mode only for preview/render. Module-specific values belong in `module_theme_configs.tokens_json`. For Chat, this includes message list gutter, header height/background/separator/icon/avatar defaults, message spacing/grouping distances, message/header typography, bubble colors/padding/radius/tails/shadows, bubble avatar size/gap, cursor behavior, and future chat media defaults.
 

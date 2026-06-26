@@ -705,6 +705,20 @@ function paletteMapForColors(colors: PaletteColor[]) {
   return new Map(colors.map((color) => [color.token, color.value_hex]));
 }
 
+function clampAlpha(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value)
+    ? Math.max(0, Math.min(1, value))
+    : 1;
+}
+
+function rgbaFromHex(hex: string, alpha: number) {
+  const normalized = hex.replace("#", "");
+  const red = Number.parseInt(normalized.slice(0, 2), 16);
+  const green = Number.parseInt(normalized.slice(2, 4), 16);
+  const blue = Number.parseInt(normalized.slice(4, 6), 16);
+  return `rgba(${red},${green},${blue},${clampAlpha(alpha)})`;
+}
+
 function resolvePaletteTokenReferences(
   value: unknown,
   palette: Map<string, string>,
@@ -713,6 +727,13 @@ function resolvePaletteTokenReferences(
     return value.map((entry) => resolvePaletteTokenReferences(entry, palette));
   }
   if (isObject(value)) {
+    if (typeof value.color === "string" && typeof value.alpha === "number") {
+      const resolvedColor = palette.get(value.color) ?? value.color;
+      if (/^#[0-9a-fA-F]{6}$/.test(resolvedColor)) {
+        return rgbaFromHex(resolvedColor, value.alpha);
+      }
+      return resolvedColor;
+    }
     return Object.fromEntries(
       Object.entries(value).map(([key, entry]) => [
         key,

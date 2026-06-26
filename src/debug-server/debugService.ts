@@ -1351,12 +1351,12 @@ function defaultThemeTokens(family: "ios" | "android") {
         statusBar: {
           type: isAndroid ? "android-default" : "ios-default",
           foreground: lightText,
-          background: "rgba(255,255,255,0)",
+          background: { color: "gray_100", alpha: 0 },
         },
         navigationBar: {
           type: isAndroid ? "android-gesture" : "ios-home-indicator",
           foreground: lightText,
-          background: "rgba(255,255,255,0)",
+          background: { color: "gray_100", alpha: 0 },
         },
         keyboard: {
           background: lightKeyboardBackground,
@@ -1367,7 +1367,10 @@ function defaultThemeTokens(family: "ios" | "android") {
           text: lightText,
         },
         notifications: {
-          background: isAndroid ? "rgba(255,255,255,0.94)" : "rgba(245,245,247,0.92)",
+          background: {
+            color: isAndroid ? "gray_100" : "gray_090",
+            alpha: isAndroid ? 0.94 : 0.92,
+          },
           titleColor: lightText,
           bodyColor: isAndroid ? "gray_030" : "gray_020",
         },
@@ -1382,12 +1385,12 @@ function defaultThemeTokens(family: "ios" | "android") {
         statusBar: {
           type: isAndroid ? "android-default" : "ios-default",
           foreground: darkText,
-          background: "rgba(0,0,0,0)",
+          background: { color: "gray_000", alpha: 0 },
         },
         navigationBar: {
           type: isAndroid ? "android-gesture" : "ios-home-indicator",
           foreground: darkText,
-          background: "rgba(0,0,0,0)",
+          background: { color: "gray_000", alpha: 0 },
         },
         keyboard: {
           background: darkKeyboardBackground,
@@ -1398,7 +1401,10 @@ function defaultThemeTokens(family: "ios" | "android") {
           text: darkText,
         },
         notifications: {
-          background: isAndroid ? "rgba(29,27,32,0.94)" : "rgba(44,44,46,0.92)",
+          background: {
+            color: isAndroid ? "gray_010" : "gray_020",
+            alpha: isAndroid ? 0.94 : 0.92,
+          },
           titleColor: darkText,
           bodyColor: isAndroid ? "gray_080" : "gray_080",
         },
@@ -1410,7 +1416,7 @@ function defaultThemeTokens(family: "ios" | "android") {
       bodyLineHeight: 21.25,
       captionSize: 13,
       weight: "Regular",
-      source: "installed_system_font",
+      source: "production_font",
     },
     colors: {
       background: lightBackground,
@@ -1421,13 +1427,13 @@ function defaultThemeTokens(family: "ios" | "android") {
     statusBar: {
       type: isAndroid ? "android-default" : "ios-default",
       foreground: lightText,
-      background: "rgba(255,255,255,0)",
+      background: { color: "gray_100", alpha: 0 },
       iconScale: 1,
     },
     navigationBar: {
       type: isAndroid ? "android-gesture" : "ios-home-indicator",
       foreground: lightText,
-      background: "rgba(255,255,255,0)",
+      background: { color: "gray_100", alpha: 0 },
       iconScale: 1,
     },
     keyboard: {
@@ -1453,13 +1459,13 @@ function defaultThemeTokens(family: "ios" | "android") {
     },
     shadows: {
       avatar: {
-        color: "rgba(0,0,0,0.18)",
+        color: { color: "gray_000", alpha: 0.18 },
         offsetX: 0,
         offsetY: 4,
         blur: 18,
       },
       elevated: {
-        color: "rgba(0,0,0,0.18)",
+        color: { color: "gray_000", alpha: 0.18 },
         offsetX: 0,
         offsetY: 4,
         blur: 18,

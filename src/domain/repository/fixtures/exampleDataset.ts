@@ -83,7 +83,7 @@ export function createExampleDataset(): RepositoryDataset {
       ...resolvedChatSource.theme,
       navigationBar: resolvedChatSource.theme.navigationBar ?? {
         background: "transparent",
-        foreground: "#000000",
+        foreground: "gray_000",
       },
     },
     navigationBar: resolvedChatSource.navigationBar ?? {
@@ -269,12 +269,12 @@ export function createExampleDataset(): RepositoryDataset {
         modes: {
           light: {
             wallpaper: {
-              color: "#FFFFFF",
+              color: "gray_100",
             },
           },
           dark: {
             wallpaper: {
-              color: "#000000",
+              color: "gray_000",
             },
           },
         },
@@ -376,7 +376,7 @@ export function createExampleDataset(): RepositoryDataset {
             { token: "media_camera", order: 10 },
             { token: "media_mic", order: 20 },
           ],
-          typing: [{ token: "chat_send", order: 10, color: "#007AFF" }],
+          typing: [{ token: "chat_send", order: 10, color: "blue" }],
         },
       },
     },
