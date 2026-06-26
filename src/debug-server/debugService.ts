@@ -15,6 +15,7 @@ import {
   ModuleThemeConfigSchema,
   NavigationBarSchema,
   ProductionSchema,
+  ProductionFontSchema,
   RenderPresetSchema,
   ScreenInstanceSchema,
   ShotSchema,
@@ -615,6 +616,39 @@ export const APP_TABLES = [
     ],
   },
   {
+    id: "production_fonts",
+    label: "Production Fonts",
+    table: "production_fonts",
+    titleColumn: "family",
+    jsonFields: ["metadata_json"],
+    optionalScalars: ["source_path", "postscript_name"],
+    fields: [
+      { column: "id", label: "ID", kind: "string", readonly: true },
+      {
+        column: "production_id",
+        label: "Production ID",
+        kind: "string",
+        readonly: true,
+      },
+      { column: "family", label: "Family", kind: "string" },
+      { column: "style", label: "Style", kind: "string" },
+      { column: "file_path", label: "Font file", kind: "string" },
+      {
+        column: "source_path",
+        label: "Source path",
+        kind: "string",
+        nullable: true,
+      },
+      {
+        column: "postscript_name",
+        label: "PostScript name",
+        kind: "string",
+        nullable: true,
+      },
+      { column: "metadata_json", label: "Font notes", kind: "json" },
+    ],
+  },
+  {
     id: "render_presets",
     label: "Render Presets",
     table: "render_presets",
@@ -688,6 +722,7 @@ const PARSERS = {
   devices: DeviceSchema,
   device_states: DeviceStateSchema,
   media_assets: MediaAssetSchema,
+  production_fonts: ProductionFontSchema,
   render_presets: RenderPresetSchema,
   apps: AppSchema,
   animation_presets: AnimationPresetSchema,
@@ -1172,6 +1207,7 @@ export interface AppCreateRequest {
     | "navigation_bars"
     | "themes"
     | "devices"
+    | "production_fonts"
     | "render_presets";
   parent?: {
     productionId?: string;
@@ -1189,6 +1225,7 @@ export interface AppRecordActionRequest {
     | "navigation_bars"
     | "themes"
     | "devices"
+    | "production_fonts"
     | "render_presets";
   recordId: string;
 }
@@ -1814,6 +1851,41 @@ export function createAppRecord(
     return { tableId: "devices", record, state: loadAppState(database) };
   }
 
+  if (request.tableId === "production_fonts") {
+    const productionId = request.parent?.productionId;
+    if (!productionId) {
+      throw new Error("Creating a production font requires a productionId parent.");
+    }
+    const production = database
+      .prepare("SELECT id FROM productions WHERE id = ?")
+      .get(productionId);
+    if (!production) {
+      throw new Error(`Production ${productionId} not found`);
+    }
+    const family = request.name?.trim() || "New Font";
+    const style = "Regular";
+    const id = uniqueId("font", `${family} ${style}`);
+    database
+      .prepare(
+        `INSERT INTO production_fonts (
+          id,
+          production_id,
+          family,
+          style,
+          file_path,
+          source_path,
+          postscript_name,
+          metadata_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(id, productionId, family, style, `fonts/${family}/${family}-${style}.ttf`, null, null, "{}");
+    const record = decodeAppRow(
+      database.prepare("SELECT * FROM production_fonts WHERE id = ?").get(id) as Row,
+      tableDefinition("production_fonts"),
+    );
+    return { tableId: "production_fonts", record, state: loadAppState(database) };
+  }
+
   if (request.tableId === "render_presets") {
     const productionId = request.parent?.productionId;
     if (!productionId) {
@@ -1951,6 +2023,7 @@ function duplicateSimpleRecord(
     | "navigation_bars"
     | "themes"
     | "devices"
+    | "production_fonts"
     | "render_presets",
   recordId: string,
 ) {
@@ -1961,7 +2034,9 @@ function duplicateSimpleRecord(
   if (!existing) {
     throw new Error(`Record ${recordId} not found in ${tableId}`);
   }
-  const name = copyName(existing.name);
+  const nameSource =
+    tableId === "production_fonts" ? existing.family : existing.name;
+  const name = copyName(nameSource);
   const id = uniqueId(
     tableId === "icon_themes"
       ? "icon_theme"
@@ -1973,6 +2048,8 @@ function duplicateSimpleRecord(
       ? "theme"
       : tableId === "devices"
         ? "device"
+      : tableId === "production_fonts"
+        ? "font"
         : "render_preset",
     name,
   );
@@ -1980,7 +2057,7 @@ function duplicateSimpleRecord(
   const next: Row = {
     ...existing,
     id,
-    name,
+    ...(tableId === "production_fonts" ? { family: name } : { name }),
   };
   database
     .prepare(

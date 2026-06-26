@@ -388,6 +388,7 @@ export function App() {
       | "navigation_bars"
       | "themes"
       | "devices"
+      | "production_fonts"
       | "render_presets",
     parent?: { productionId?: string; episodeId?: string },
     options?: { family?: "ios" | "android" },
@@ -418,6 +419,7 @@ export function App() {
       | "navigation_bars"
       | "themes"
       | "devices"
+      | "production_fonts"
       | "render_presets",
     parent?: { productionId?: string; episodeId?: string },
   ) {
@@ -446,6 +448,7 @@ export function App() {
       | "navigation_bars"
       | "themes"
       | "devices"
+      | "production_fonts"
       | "render_presets",
     recordId: string,
   ) {
@@ -469,6 +472,7 @@ export function App() {
       | "navigation_bars"
       | "themes"
       | "devices"
+      | "production_fonts"
       | "render_presets",
     recordId: string,
   ) {

@@ -12,6 +12,7 @@ import type {
   NavigationBar,
   Notification,
   Production,
+  ProductionFont,
   Shot,
   StatusBar,
   Theme,
@@ -38,6 +39,7 @@ export class InMemoryRepository implements DomainRepository {
   readonly #actors: Map<string, Actor>;
   readonly #apps: Map<string, App>;
   readonly #mediaAssets: Map<string, MediaAsset>;
+  readonly #productionFonts: Map<string, ProductionFont>;
   readonly #conversations: Map<string, Conversation>;
   readonly #notifications: Map<string, Notification>;
 
@@ -57,6 +59,7 @@ export class InMemoryRepository implements DomainRepository {
     this.#actors = indexById(dataset.actors);
     this.#apps = indexById(dataset.apps);
     this.#mediaAssets = indexById(dataset.mediaAssets);
+    this.#productionFonts = indexById(dataset.productionFonts);
     this.#conversations = indexById(dataset.conversations);
     this.#notifications = indexById(dataset.notifications);
   }
@@ -136,6 +139,16 @@ export class InMemoryRepository implements DomainRepository {
 
   getMediaAsset(id: string) {
     return this.#mediaAssets.get(id);
+  }
+
+  getProductionFonts(productionId: string) {
+    return [...this.#productionFonts.values()]
+      .filter((font) => font.production_id === productionId)
+      .sort(
+        (left, right) =>
+          left.family.localeCompare(right.family) ||
+          left.style.localeCompare(right.style),
+      );
   }
 
   getConversation(id: string) {

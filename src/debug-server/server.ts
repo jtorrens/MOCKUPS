@@ -2,7 +2,7 @@ import { createServer } from "node:http";
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import { createReadStream, statSync } from "node:fs";
-import { mkdir, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import { createDatabase } from "../persistence/sqlite/createDatabase.js";
@@ -94,6 +94,34 @@ function safeFilePart(value: unknown, fallback: string) {
     .replace(/[^a-z0-9._-]+/g, "_")
     .replace(/^_+|_+$/g, "")
     .slice(0, 80) || fallback;
+}
+
+function safeRelativePathPart(value: unknown, fallback: string) {
+  return safeFilePart(value, fallback).replace(/^\.+/, "") || fallback;
+}
+
+function titleCaseFilePart(value: string) {
+  return value
+    .replace(/[_-]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/\b\w/g, (match) => match.toUpperCase());
+}
+
+function inferFontNameParts(sourcePath: string) {
+  const parsed = path.parse(sourcePath);
+  const name = parsed.name.trim();
+  const segments = name.split(/[-_]+/).filter(Boolean);
+  if (segments.length <= 1) {
+    return {
+      family: titleCaseFilePart(name) || "New Font",
+      style: "Regular",
+    };
+  }
+  return {
+    family: titleCaseFilePart(segments.slice(0, -1).join(" ")),
+    style: titleCaseFilePart(segments[segments.length - 1] ?? "Regular"),
+  };
 }
 
 function frameFileName(selection: DebugSelection) {
@@ -199,6 +227,95 @@ function resolveProductionMediaPath(productionId: string, requestedPath: string)
     throw new Error("Media path is outside production media root");
   }
   return resolvedPath;
+}
+
+async function importProductionFont({
+  productionId,
+  recordId,
+  sourcePath,
+}: {
+  productionId: string;
+  recordId: string;
+  sourcePath: string;
+}) {
+  if (!productionId || !recordId || !sourcePath) {
+    throw new Error("Missing productionId, recordId or sourcePath");
+  }
+  const mediaRoot = productionMediaRoot(productionId);
+  if (!mediaRoot) {
+    throw new Error("Production media root is not set");
+  }
+  const extension = path.extname(sourcePath).toLowerCase();
+  if (![".ttf", ".otf", ".woff", ".woff2"].includes(extension)) {
+    throw new Error("Choose a .ttf, .otf, .woff or .woff2 font file");
+  }
+  const existing = database
+    .prepare("SELECT id FROM production_fonts WHERE id = ? AND production_id = ?")
+    .get(recordId, productionId);
+  if (!existing) {
+    throw new Error(`Production font ${recordId} not found`);
+  }
+  const inferred = inferFontNameParts(sourcePath);
+  const conflict = database
+    .prepare(
+      `SELECT id FROM production_fonts
+       WHERE production_id = ? AND family = ? AND style = ? AND id <> ?`,
+    )
+    .get(productionId, inferred.family, inferred.style, recordId);
+  if (conflict) {
+    throw new Error(`Font ${inferred.family} ${inferred.style} already exists`);
+  }
+  const rootPath = path.resolve(mediaRoot);
+  const sourceResolved = path.resolve(sourcePath);
+  const fileName = path.basename(sourcePath);
+  const relativeFilePath = path.posix.join(
+    "fonts",
+    safeRelativePathPart(inferred.family, "font"),
+    fileName,
+  );
+  const destination = path.resolve(rootPath, relativeFilePath);
+  const relativeDestination = path.relative(rootPath, destination);
+  if (relativeDestination.startsWith("..") || path.isAbsolute(relativeDestination)) {
+    throw new Error("Font destination is outside production media root");
+  }
+  await mkdir(path.dirname(destination), { recursive: true });
+  if (sourceResolved !== destination) {
+    await copyFile(sourceResolved, destination);
+  }
+  const metadataJson = JSON.stringify({
+    importedAt: new Date().toISOString(),
+    sourceFileName: fileName,
+  });
+  database
+    .prepare(
+      `UPDATE production_fonts
+       SET family = ?,
+           style = ?,
+           file_path = ?,
+           source_path = ?,
+           metadata_json = ?
+       WHERE id = ?`,
+    )
+    .run(
+      inferred.family,
+      inferred.style,
+      relativeFilePath,
+      sourceResolved,
+      metadataJson,
+      recordId,
+    );
+  const state = loadAppState(database);
+  const record = state.records.production_fonts?.find(
+    (candidate) => candidate.id === recordId,
+  );
+  if (!record) {
+    throw new Error(`Imported production font ${recordId} was not found`);
+  }
+  return {
+    tableId: "production_fonts",
+    record,
+    state,
+  };
 }
 
 async function ensureMediaFrame({
@@ -434,6 +551,23 @@ const server = createServer(async (request, response) => {
     if (request.method === "POST" && url.pathname === "/api/app/record/duplicate") {
       const body = (await readJson(request)) as AppRecordActionRequest;
       sendJson(response, 200, duplicateAppRecord(database, body));
+      return;
+    }
+    if (request.method === "POST" && url.pathname === "/api/app/production-font/import") {
+      const body = (await readJson(request)) as {
+        productionId?: string;
+        recordId?: string;
+        sourcePath?: string;
+      };
+      sendJson(
+        response,
+        200,
+        await importProductionFont({
+          productionId: body.productionId ?? "",
+          recordId: body.recordId ?? "",
+          sourcePath: body.sourcePath ?? "",
+        }),
+      );
       return;
     }
     if (request.method === "DELETE" && url.pathname === "/api/app/record") {

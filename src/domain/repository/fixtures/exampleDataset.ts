@@ -25,6 +25,7 @@ import {
   ModuleThemeConfigSchema,
   NavigationBarSchema,
   NotificationSchema,
+  ProductionFontSchema,
   ProductionSchema,
   ResolvedChatScreenPropsSchema,
   ScreenEventSchema,
@@ -524,6 +525,19 @@ export function createExampleDataset(): RepositoryDataset {
     },
   ]);
 
+  const productionFonts = ProductionFontSchema.array().parse([
+    {
+      id: "font_oswald_regular",
+      production_id: production.id,
+      family: "Oswald",
+      style: "Regular",
+      file_path: "fonts/Oswald/Oswald-Regular.ttf",
+      metadata_json: {
+        note: "Demo production font placeholder. Add the font file in a real production root.",
+      },
+    },
+  ]);
+
   const deviceStates = DeviceStateSchema.array().parse([
     {
       id: "device_state_locked_morning",
@@ -593,6 +607,7 @@ export function createExampleDataset(): RepositoryDataset {
     animationPresets,
     apps: [app],
     mediaAssets,
+    productionFonts,
     conversations: [],
     conversationParticipants: [],
     messages: [],

@@ -14,6 +14,7 @@ import {
   NavigationBarSchema,
   NotificationSchema,
   ProductionSchema,
+  ProductionFontSchema,
   ScreenEventSchema,
   ScreenInstanceSchema,
   ShotSchema,
@@ -33,6 +34,7 @@ import {
   type NavigationBar,
   type Notification,
   type Production,
+  type ProductionFont,
   type ScreenEvent,
   type ScreenInstance,
   type Shot,
@@ -276,6 +278,18 @@ export class SQLiteRepository implements DomainRepository {
       id,
       MediaAssetSchema,
       { optional: ["dimensions_json", "metadata_json"] },
+    );
+  }
+
+  getProductionFonts(productionId: string): ProductionFont[] {
+    return this.getMany(
+      "SELECT * FROM production_fonts WHERE production_id = ? ORDER BY family COLLATE NOCASE, style COLLATE NOCASE, id",
+      productionId,
+      ProductionFontSchema,
+      {
+        optional: ["metadata_json"],
+        optionalScalars: ["source_path", "postscript_name"],
+      },
     );
   }
 

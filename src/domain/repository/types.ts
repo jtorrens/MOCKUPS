@@ -15,6 +15,7 @@ import type {
   NavigationBar,
   Notification,
   Production,
+  ProductionFont,
   ScreenEvent,
   ScreenInstance,
   Shot,
@@ -40,6 +41,7 @@ export interface RepositoryDataset {
   animationPresets: AnimationPreset[];
   apps: App[];
   mediaAssets: MediaAsset[];
+  productionFonts: ProductionFont[];
   conversations: Conversation[];
   conversationParticipants: ConversationParticipant[];
   messages: Message[];
@@ -69,6 +71,7 @@ export interface DomainRepository {
   getDeviceState(id: string): DeviceState | undefined;
   getActor(id: string): Actor | undefined;
   getMediaAsset(id: string): MediaAsset | undefined;
+  getProductionFonts(productionId: string): ProductionFont[];
   getConversation(id: string): Conversation | undefined;
   getConversationParticipants(conversationId: string): ConversationParticipant[];
   getMessagesForConversation(conversationId: string): Message[];

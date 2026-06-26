@@ -1,6 +1,6 @@
 # Initial data schema
 
-This is the persistence-oriented schema for MOCKUPS. The initial SQLite implementation now exists. The current design-stage schema is version 10 and intentionally breaks from the earlier Screen Template layer: app identity/defaults and module-specific defaults are now direct runtime layers, and explicit module instances own per-shot content, behavior, and parameter animation.
+This is the persistence-oriented schema for MOCKUPS. The initial SQLite implementation now exists. The current design-stage schema is version 17 and intentionally breaks from the earlier Screen Template layer: app identity/defaults and module-specific defaults are now direct runtime layers, and explicit module instances own per-shot content, behavior, and parameter animation.
 
 ## Storage boundary
 
@@ -19,6 +19,7 @@ Production
  │   ├─ Actors
  │   ├─ Apps
  │   ├─ MediaAssets
+ │   ├─ ProductionFonts
  │   ├─ AnimationPresets
  │   └─ RenderPresets
  │
@@ -72,7 +73,7 @@ Production
 
 `screen_type` is a broad discriminator; `module_id` + `module_schema_version` select the exact module contract. `transform_json` transforms the device-screen render inside the shot's device render space. `core.chat` now reads content/behavior from `module_instances` and has no runtime fallback to `data_ref_json` or `props_json`.
 
-SQLite schema version 10 includes `screen_instances.app_id`, explicit `module_instances`, `module_instances.animation_json`, production default FPS, episode/shot render slugs, inline `screen_instances.device_state_json`, removes the active `screen_templates` table, and scopes `module_theme_configs` by `theme_id + app_id + module_id + module_schema_version`. This is a design-stage breaking schema: local development databases may be reset explicitly with `npm run db:reset`; normal app startup must not reseed or overwrite edited data.
+SQLite schema version 17 includes `screen_instances.app_id`, explicit `module_instances`, `module_instances.animation_json`, production default FPS, episode/shot render slugs, inline `screen_instances.device_state_json`, production-scoped approved fonts, removes the active `screen_templates` table, and scopes `module_theme_configs` by `theme_id + app_id + module_id + module_schema_version`. This is a design-stage breaking schema: local development databases may be reset explicitly with `npm run db:reset`; normal app startup must not reseed or overwrite edited data.
 
 ### `module_instances`
 
@@ -170,6 +171,16 @@ App and module JSON may contain `modes.light` and `modes.dark` color values. The
 - Must not contain: heavy binary data duplicated into SQLite or per-component transforms. Prefer project-relative URIs. Small inline SVG may be considered later.
 
 Modules use asset IDs with a media window (logical width/height/offsets) and an asset transform (ratio scale, translation, rotation). OS/app icon tokens are resolved through a separate theme/OS/mode-aware icon map rather than treated as user media.
+
+### `production_fonts`
+
+- Purpose: approved portable font registry for one production.
+- SQL/stable fields: `id`, `production_id`, `family`, `style`, `file_path`, `source_path`, `postscript_name`.
+- JSON/flexible fields: `metadata_json`.
+- Relationships: belongs to a production. Font pickers and future text measurement should resolve against this approved set rather than arbitrary host-installed fonts.
+- Must not contain: binary font data duplicated into SQLite or shot/module-specific typography choices.
+
+`file_path` is always relative to the production media root and points to the copied font file under the production folder, for example `fonts/Oswald/Oswald-Regular.ttf`. `source_path` is optional provenance/debug information and may be an absolute path from the importing workstation. This keeps a production portable across machines: moving or duplicating the production only requires changing the production root.
 
 ### `animation_presets`
 

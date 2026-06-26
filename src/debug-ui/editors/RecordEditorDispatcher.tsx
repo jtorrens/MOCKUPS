@@ -10,6 +10,7 @@ import { IconThemeRecordEditor } from "./IconThemeRecordEditor.js";
 import { ModuleInstanceRecordEditor } from "./ModuleInstanceRecordEditor.js";
 import { ModuleThemeConfigRecordEditor } from "./ModuleThemeConfigRecordEditor.js";
 import { NavigationBarRecordEditor } from "./NavigationBarRecordEditor.js";
+import { ProductionFontRecordEditor } from "./ProductionFontRecordEditor.js";
 import { ScreenInstanceRecordEditor } from "./ScreenInstanceRecordEditor.js";
 import { StatusBarRecordEditor } from "./StatusBarRecordEditor.js";
 import { ThemeRecordEditor } from "./ThemeRecordEditor.js";
@@ -39,6 +40,8 @@ interface RecordEditorDispatcherProps {
   renderServices: ReturnType<typeof createRecordEditorRenderServices>;
   setDrafts: Dispatch<SetStateAction<Record<string, string>>>;
   tabs: ReturnType<typeof useRecordEditorTabs>;
+  onRecordsChanged: (records: AppRecord[]) => void;
+  onRecordSaved: (record: AppRecord) => void;
 }
 
 export function RecordEditorDispatcher({
@@ -56,6 +59,8 @@ export function RecordEditorDispatcher({
   renderServices,
   setDrafts,
   tabs,
+  onRecordsChanged,
+  onRecordSaved,
 }: RecordEditorDispatcherProps) {
   const {
     renderField,
@@ -148,6 +153,22 @@ export function RecordEditorDispatcher({
         renderField={renderField}
         setActiveTab={tabs.setNavigationBarTab}
         setJsonDraft={setJsonDraft}
+      />
+    );
+  }
+
+  if (table.id === "production_fonts") {
+    return (
+      <ProductionFontRecordEditor
+        table={table}
+        record={record}
+        activeTab={tabs.genericTab}
+        nativeBridge={nativeBridge}
+        productionId={productionId}
+        renderGenericField={renderGenericField}
+        setActiveTab={tabs.setGenericTab}
+        onRecordsChanged={onRecordsChanged}
+        onRecordSaved={onRecordSaved}
       />
     );
   }

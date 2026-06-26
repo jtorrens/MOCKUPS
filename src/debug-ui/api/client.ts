@@ -125,6 +125,7 @@ export interface AppCreateRequest {
     | "navigation_bars"
     | "themes"
     | "devices"
+    | "production_fonts"
     | "render_presets";
   parent?: {
     productionId?: string;
@@ -142,6 +143,7 @@ export interface AppRecordActionRequest {
     | "navigation_bars"
     | "themes"
     | "devices"
+    | "production_fonts"
     | "render_presets";
   recordId: string;
 }
@@ -206,6 +208,20 @@ export async function deleteAppRecord(
   return readResponse(
     await fetch(`/api/app/record?${query}`, {
       method: "DELETE",
+    }),
+  );
+}
+
+export async function importProductionFont(request: {
+  productionId: string;
+  recordId: string;
+  sourcePath: string;
+}): Promise<{ state: AppState; record: AppRecord; tableId: string }> {
+  return readResponse(
+    await fetch("/api/app/production-font/import", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
     }),
   );
 }

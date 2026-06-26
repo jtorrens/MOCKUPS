@@ -692,6 +692,25 @@ function applyAdditiveV16Migration(database: SQLiteDatabase): void {
   database.pragma("user_version = 16");
 }
 
+function applyAdditiveV17Migration(database: SQLiteDatabase): void {
+  database.exec(`
+    CREATE TABLE IF NOT EXISTS production_fonts (
+      id TEXT PRIMARY KEY,
+      production_id TEXT NOT NULL REFERENCES productions(id) ON DELETE CASCADE,
+      family TEXT NOT NULL,
+      style TEXT NOT NULL,
+      file_path TEXT NOT NULL,
+      source_path TEXT,
+      postscript_name TEXT,
+      metadata_json TEXT,
+      UNIQUE (production_id, family, style)
+    );
+    CREATE INDEX IF NOT EXISTS idx_production_fonts_lookup
+      ON production_fonts(production_id, family, style);
+  `);
+  database.pragma("user_version = 17");
+}
+
 export function applyInitialSchema(database: SQLiteDatabase): void {
   database.exec(readFileSync(schemaPath, "utf8"));
   applyAdditiveV2Migration(database);
@@ -709,6 +728,7 @@ export function applyInitialSchema(database: SQLiteDatabase): void {
   applyAdditiveV14Migration(database);
   applyAdditiveV15Migration(database);
   applyAdditiveV16Migration(database);
+  applyAdditiveV17Migration(database);
   database.pragma("foreign_keys = ON");
 }
 

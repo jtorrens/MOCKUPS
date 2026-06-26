@@ -99,6 +99,7 @@ try {
     "actors",
     "apps",
     "media_assets",
+    "production_fonts",
     "animation_presets",
     "render_presets",
     "conversations",
@@ -189,8 +190,8 @@ try {
     "themes must contain the selected navigation_bar_id column",
   );
   assert(
-    Number(database.pragma("user_version", { simple: true })) === 16,
-    "SQLite schema version must be 16",
+    Number(database.pragma("user_version", { simple: true })) === 17,
+    "SQLite schema version must be 17",
   );
 
   database.exec("BEGIN");
@@ -231,7 +232,7 @@ try {
   console.log("✓ schema and seed validated in isolated in-memory SQLite");
   console.log("✓ all required domain tables exist");
   console.log("✓ module_theme_configs exists and seeds core.chat tokens");
-  console.log("✓ screen_instances references and module_instances content/behavior/animation columns exist in schema v16");
+  console.log("✓ screen_instances references, module_instances content/behavior/animation, and production fonts exist in schema v17");
   console.log("✓ SQLiteRepository resolved ChatScreen props with Zod");
   console.log("✓ SQLite and in-memory chat props are equivalent");
   console.log("✓ Chat module instance JSON and actor-based output validated");

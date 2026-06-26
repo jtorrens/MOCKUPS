@@ -125,6 +125,8 @@ export function RecordEditor({
       renderServices={renderServices}
       setDrafts={setDrafts}
       tabs={tabs}
+      onRecordsChanged={onRecordsChanged}
+      onRecordSaved={onRecordSaved}
     />
   );
 }

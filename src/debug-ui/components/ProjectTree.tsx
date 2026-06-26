@@ -26,6 +26,7 @@ interface ProjectTreeProps {
       | "navigation_bars"
       | "themes"
       | "devices"
+      | "production_fonts"
       | "render_presets",
     parent?: { productionId?: string; episodeId?: string },
   ) => void;
@@ -37,6 +38,7 @@ interface ProjectTreeProps {
       | "navigation_bars"
       | "themes"
       | "devices"
+      | "production_fonts"
       | "render_presets",
     recordId: string,
   ) => void;
@@ -48,6 +50,7 @@ interface ProjectTreeProps {
       | "navigation_bars"
       | "themes"
       | "devices"
+      | "production_fonts"
       | "render_presets",
     recordId: string,
   ) => void;
@@ -61,6 +64,7 @@ const PRODUCTION_DATA_TABLE_IDS = new Set([
   "themes",
   "devices",
   "media_assets",
+  "production_fonts",
   "render_presets",
   "animation_presets",
 ]);
@@ -77,6 +81,7 @@ function productionDataIcon(tableId: string) {
   if (tableId === "themes") return "theme";
   if (tableId === "devices") return "device";
   if (tableId === "media_assets") return "media";
+  if (tableId === "production_fonts") return "typography";
   if (tableId === "render_presets") return "render";
   if (tableId === "animation_presets") return "animation";
   return "data";
@@ -298,6 +303,13 @@ function TreeIcon({ name }: { name: string }) {
       </svg>
     );
   }
+  if (name === "typography") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M5 5h14M12 5v14M8 19h8" />
+      </svg>
+    );
+  }
   if (name === "render") {
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -481,6 +493,7 @@ export function ProjectTree({
       | "navigation_bars"
       | "themes"
       | "devices"
+      | "production_fonts"
       | "render_presets",
     recordId: string,
     label: string,
@@ -809,6 +822,7 @@ export function ProjectTree({
                 table.id === "navigation_bars" ||
                 table.id === "themes" ||
                 table.id === "devices" ||
+                table.id === "production_fonts" ||
                 table.id === "render_presets" ? (
                   <TreeActions
                     canAdd={Boolean(selectedProductionId)}
@@ -823,6 +837,7 @@ export function ProjectTree({
                           | "navigation_bars"
                           | "themes"
                           | "devices"
+                          | "production_fonts"
                           | "render_presets",
                         {
                           productionId: selectedProductionId,
@@ -837,6 +852,7 @@ export function ProjectTree({
                           | "navigation_bars"
                           | "themes"
                           | "devices"
+                          | "production_fonts"
                           | "render_presets",
                         selectedRecordIds[table.id],
                       )
@@ -853,6 +869,7 @@ export function ProjectTree({
                             | "navigation_bars"
                             | "themes"
                             | "devices"
+                            | "production_fonts"
                             | "render_presets",
                           selected.id,
                           recordTitle(table, selected),

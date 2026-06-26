@@ -26,6 +26,7 @@ const DELETE_ORDER = [
   "navigation_bars",
   "status_bars",
   "icon_themes",
+  "production_fonts",
   "media_assets",
   "productions",
 ] as const;
@@ -343,6 +344,22 @@ function seedRecords(
     ],
     dataset.mediaAssets,
     new Set(["dimensions_json", "metadata_json"]),
+  );
+  insertRows(
+    database,
+    "production_fonts",
+    [
+      "id",
+      "production_id",
+      "family",
+      "style",
+      "file_path",
+      "source_path",
+      "postscript_name",
+      "metadata_json",
+    ],
+    dataset.productionFonts,
+    new Set(["metadata_json"]),
   );
   insertRows(
     database,

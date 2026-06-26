@@ -23,6 +23,18 @@ CREATE TABLE IF NOT EXISTS media_assets (
   metadata_json TEXT
 );
 
+CREATE TABLE IF NOT EXISTS production_fonts (
+  id TEXT PRIMARY KEY,
+  production_id TEXT NOT NULL REFERENCES productions(id) ON DELETE CASCADE,
+  family TEXT NOT NULL,
+  style TEXT NOT NULL,
+  file_path TEXT NOT NULL,
+  source_path TEXT,
+  postscript_name TEXT,
+  metadata_json TEXT,
+  UNIQUE (production_id, family, style)
+);
+
 CREATE TABLE IF NOT EXISTS episodes (
   id TEXT PRIMARY KEY,
   production_id TEXT NOT NULL REFERENCES productions(id) ON DELETE CASCADE,
@@ -296,6 +308,7 @@ CREATE TABLE IF NOT EXISTS screen_events (
 CREATE INDEX IF NOT EXISTS idx_shots_production ON shots(production_id, sort_order);
 CREATE INDEX IF NOT EXISTS idx_episodes_production ON episodes(production_id, sort_order);
 CREATE INDEX IF NOT EXISTS idx_icon_themes_production ON icon_themes(production_id, name);
+CREATE INDEX IF NOT EXISTS idx_production_fonts_lookup ON production_fonts(production_id, family, style);
 CREATE INDEX IF NOT EXISTS idx_status_bars_production ON status_bars(production_id, name);
 CREATE INDEX IF NOT EXISTS idx_navigation_bars_production ON navigation_bars(production_id, name);
 CREATE INDEX IF NOT EXISTS idx_module_theme_configs_lookup ON module_theme_configs(theme_id, app_id, module_id, module_schema_version);

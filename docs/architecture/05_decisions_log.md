@@ -757,3 +757,21 @@ Implications:
 Reference docs:
 - `docs/architecture/12_editor_encapsulation_contract.md`
 - `docs/architecture/13_keyboard_text_input_audit.md`
+
+## D056 — Production fonts are approved, copied, and referenced relatively
+
+Status: accepted
+
+Fonts used by render/preview should be production-approved assets, not implicit
+dependencies on whichever fonts are installed on the workstation. The app now
+has a production-scoped `production_fonts` table. Importing a font copies the
+font file into the production root and stores a relative `file_path`, while
+`source_path` remains optional provenance/debug information.
+
+This keeps productions portable across Mac/PC and prepares the next pass:
+font pickers should list only approved production fonts, and text measurement
+for bubbles should use the same approved font files that final rendering uses.
+
+The same pattern is expected later for color governance: production-approved
+mode palettes should replace arbitrary one-off color picking where consistency
+matters.
