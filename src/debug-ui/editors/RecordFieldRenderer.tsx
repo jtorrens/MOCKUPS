@@ -5,6 +5,7 @@ import {
 } from "../api/client.js";
 import { JsonTreeEditor } from "../components/json-editor/JsonTreeEditor.js";
 import type { ProductionFontCatalog } from "../components/json-editor/productionFonts.js";
+import type { PaletteColorCatalog } from "../components/json-editor/paletteColors.js";
 import { InspectorFieldRow } from "../components/inspector/InspectorFieldRow.js";
 
 export type FieldSaveState =
@@ -258,6 +259,7 @@ interface RecordFieldRendererProps {
   inheritedValue: unknown;
   rawOverride?: RawJsonFieldOverride;
   productionFontCatalog?: ProductionFontCatalog;
+  paletteCatalog?: PaletteColorCatalog;
   onDraftChange: (column: string, value: string) => void;
 }
 
@@ -272,6 +274,7 @@ export function RecordFieldRenderer({
   inheritedValue,
   rawOverride,
   productionFontCatalog,
+  paletteCatalog,
   onDraftChange,
 }: RecordFieldRendererProps) {
   const relationSelect = relationOptionsForField(
@@ -372,6 +375,7 @@ export function RecordFieldRenderer({
           field,
         )}
         productionFontCatalog={productionFontCatalog}
+        paletteCatalog={paletteCatalog}
         onRawTextChange={
           rawOverride?.onRawTextChange ??
           ((nextRawText) => onDraftChange(field.column, nextRawText))

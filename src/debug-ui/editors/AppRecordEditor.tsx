@@ -179,6 +179,7 @@ export function AppRecordEditor({
                     appTokenRoot={appTokenRoot}
                     mediaRoot={mediaRoot}
                     nativeBridge={nativeBridge}
+                    paletteCatalog={paletteCatalog}
                     relativePathFromRoot={relativePathFromRoot}
                     MediaCoverPreview={MediaCoverPreview}
                     onTokenRootChange={updateAppTokenRoot}

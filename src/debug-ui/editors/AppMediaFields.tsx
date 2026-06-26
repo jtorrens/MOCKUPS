@@ -3,6 +3,7 @@ import type { AppRecord } from "../api/client.js";
 import { DeferredTextInput } from "../editor-ui/DeferredTextInput.js";
 import { InspectorFieldRow } from "../components/inspector/InspectorFieldRow.js";
 import { ColorValueEditor } from "../components/json-editor/ColorValueEditor.js";
+import type { PaletteColorCatalog } from "../components/json-editor/paletteColors.js";
 import {
   setAtPath,
   type JsonPath,
@@ -224,6 +225,7 @@ interface AppWallpaperEditorProps {
   nativeBridge: AppNativeBridge | undefined;
   relativePathFromRoot: (filePath: string, rootPath: string) => string;
   MediaCoverPreview: ComponentType<MediaCoverPreviewProps>;
+  paletteCatalog?: PaletteColorCatalog;
   onTokenRootChange: (nextValue: JsonValue) => void;
 }
 
@@ -233,6 +235,7 @@ export function AppWallpaperEditor({
   nativeBridge,
   relativePathFromRoot,
   MediaCoverPreview,
+  paletteCatalog,
   onTokenRootChange,
 }: AppWallpaperEditorProps) {
   const wallpaper = appWallpaper(appTokenRoot);
@@ -360,6 +363,7 @@ export function AppWallpaperEditor({
               <ColorValueEditor
                 label={`Wallpaper ${mode}`}
                 value={appWallpaperModeColor(appTokenRoot, mode)}
+                paletteCatalog={paletteCatalog}
                 onChange={(nextColor) => updateAppWallpaperModeColor(mode, nextColor)}
               />
             </div>

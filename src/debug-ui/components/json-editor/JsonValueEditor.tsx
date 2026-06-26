@@ -6,6 +6,7 @@ import {
   productionFontIdForFamily,
   type ProductionFontCatalog,
 } from "./productionFonts.js";
+import type { PaletteColorCatalog } from "./paletteColors.js";
 import type { JsonUiHints } from "./uiHints.js";
 import { hintForPath } from "./uiHints.js";
 import {
@@ -24,6 +25,7 @@ interface JsonValueEditorProps {
   hints: JsonUiHints;
   groupContext?: string;
   productionFontCatalog?: ProductionFontCatalog;
+  paletteCatalog?: PaletteColorCatalog;
   onChange: (nextValue: JsonValue) => void;
   onRootChange?: (nextValue: JsonValue) => void;
 }
@@ -157,6 +159,7 @@ export function JsonValueEditor({
   hints,
   groupContext,
   productionFontCatalog,
+  paletteCatalog,
   onChange,
   onRootChange,
 }: JsonValueEditorProps) {
@@ -274,6 +277,7 @@ export function JsonValueEditor({
         value={value}
         alpha={isAlphaColorField(key, parent, groupContext)}
         label={key}
+        paletteCatalog={paletteCatalog}
         onChange={onChange}
       />
     );

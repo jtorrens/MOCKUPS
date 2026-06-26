@@ -2,6 +2,7 @@ import type { ComponentType } from "react";
 import type { AppRecord } from "../api/client.js";
 import { DeferredTextInput } from "../editor-ui/DeferredTextInput.js";
 import { ColorValueEditor } from "../components/json-editor/ColorValueEditor.js";
+import type { PaletteColorCatalog } from "../components/json-editor/paletteColors.js";
 import { InspectorFieldRow } from "../components/inspector/InspectorFieldRow.js";
 import { parsedObject } from "./recordJsonUtils.js";
 
@@ -28,6 +29,7 @@ interface ActorFieldsContext {
   nativeBridge: ActorNativeBridge | undefined;
   relativePathFromRoot: (filePath: string, rootPath: string) => string;
   AvatarPreview: ComponentType<ActorAvatarPreviewProps>;
+  paletteCatalog?: PaletteColorCatalog;
   setMetadataRaw: (nextRaw: string) => void;
 }
 
@@ -207,6 +209,7 @@ function ActorColorField(context: ActorFieldsContext) {
                     <ColorValueEditor
                       label={`${row.label} ${mode}`}
                       value={color}
+                      paletteCatalog={context.paletteCatalog}
                       onChange={(nextColor) =>
                         setActorModeColor({
                           ...context,

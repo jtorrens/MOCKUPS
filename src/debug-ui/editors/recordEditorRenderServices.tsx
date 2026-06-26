@@ -22,6 +22,7 @@ import {
   type JsonValue,
 } from "../components/json-editor/jsonEditorUtils.js";
 import type { ProductionFontCatalog } from "../components/json-editor/productionFonts.js";
+import type { PaletteColorCatalog } from "../components/json-editor/paletteColors.js";
 
 type SaveState = "saved" | "dirty" | "invalid" | "saving" | "failed";
 
@@ -45,6 +46,7 @@ interface RecordEditorRenderServicesOptions {
   relativePathFromRoot: (filePath: string, rootPath: string) => string;
   setDrafts: Dispatch<SetStateAction<Record<string, string>>>;
   productionFontCatalog?: ProductionFontCatalog;
+  paletteCatalog?: PaletteColorCatalog;
 }
 
 export function createRecordEditorRenderServices({
@@ -61,6 +63,7 @@ export function createRecordEditorRenderServices({
   relativePathFromRoot,
   setDrafts,
   productionFontCatalog,
+  paletteCatalog,
 }: RecordEditorRenderServicesOptions) {
   function setJsonDraft(column: string, value: JsonValue) {
     setDrafts({
@@ -86,6 +89,7 @@ export function createRecordEditorRenderServices({
         inheritedValue={inheritedFields[field.column]}
         rawOverride={rawOverride}
         productionFontCatalog={productionFontCatalog}
+        paletteCatalog={paletteCatalog}
         onDraftChange={(column, value) =>
           setDrafts({
             ...drafts,
@@ -120,6 +124,7 @@ export function createRecordEditorRenderServices({
         omitKeys={omitKeys}
         onRootChange={(nextRoot) => setJsonDraft(column, nextRoot)}
         productionFontCatalog={productionFontCatalog}
+        paletteCatalog={paletteCatalog}
       />
     );
   }
@@ -135,6 +140,7 @@ export function createRecordEditorRenderServices({
         root={root}
         onRootChange={(nextRoot) => setJsonDraft(field.column, nextRoot)}
         productionFontCatalog={productionFontCatalog}
+        paletteCatalog={paletteCatalog}
       />
     );
   }
@@ -150,6 +156,7 @@ export function createRecordEditorRenderServices({
       errors,
       nativeBridge,
       productionMediaRoot,
+      paletteCatalog,
       relativePathFromRoot,
       setDrafts,
       setJsonDraft,

@@ -9,6 +9,7 @@ import {
   productionFontIdForFamily,
   type ProductionFontCatalog,
 } from "./productionFonts.js";
+import type { PaletteColorCatalog } from "./paletteColors.js";
 import {
   InspectorFieldRow,
   InspectorRestoreButton,
@@ -41,6 +42,7 @@ interface TokenOverrideEditorProps {
   groupContext?: string;
   restoreMode?: "remove" | "set";
   productionFontCatalog?: ProductionFontCatalog;
+  paletteCatalog?: PaletteColorCatalog;
   onRootChange: (nextValue: JsonValue) => void;
 }
 
@@ -239,6 +241,7 @@ export function TokenOverrideEditor({
   groupContext,
   restoreMode = "remove",
   productionFontCatalog,
+  paletteCatalog,
   onRootChange,
 }: TokenOverrideEditorProps) {
   const displayRoot = mergedTokenShape(inheritedRoot, rootValue);
@@ -401,6 +404,7 @@ export function TokenOverrideEditor({
                 label={`${label} override`}
                 value={stringValue || baselineValue}
                 alpha={isRgbaColor(String(stringValue || baselineValue))}
+                paletteCatalog={paletteCatalog}
                 onChange={(nextColor) =>
                   onRootChange(setAtPath(rootValue, row.path, nextColor))
                 }

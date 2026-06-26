@@ -14,6 +14,7 @@ import { buildJsonUiHints } from "../components/json-editor/uiHints.js";
 import { InspectorFieldRow } from "../components/inspector/InspectorFieldRow.js";
 import { ActorMetadataFields } from "./ActorFields.js";
 import { ActorAvatarPreview } from "./MediaPreviews.js";
+import type { PaletteColorCatalog } from "../components/json-editor/paletteColors.js";
 import { ProductionSettingsField } from "./ProductionFields.js";
 import { renderRenderPresetField } from "./RenderPresetFields.js";
 import { renderShotSpecialField } from "./ShotFields.js";
@@ -33,6 +34,7 @@ interface GenericFieldDispatcherContext {
     pickDirectory?: () => Promise<string[]>;
   } | undefined;
   productionMediaRoot: string;
+  paletteCatalog?: PaletteColorCatalog;
   relativePathFromRoot: (filePath: string, rootPath: string) => string;
   setDrafts: (nextDrafts: Record<string, string>) => void;
   setJsonDraft: (column: string, value: JsonValue) => void;
@@ -57,6 +59,7 @@ export function renderGenericField(
     errors,
     nativeBridge,
     productionMediaRoot,
+    paletteCatalog,
     relativePathFromRoot,
     setDrafts,
     setJsonDraft,
@@ -136,6 +139,7 @@ export function renderGenericField(
         drafts={drafts}
         mediaRoot={productionMediaRoot}
         nativeBridge={nativeBridge}
+        paletteCatalog={paletteCatalog}
         relativePathFromRoot={relativePathFromRoot}
         AvatarPreview={ActorAvatarPreview}
         setMetadataRaw={(nextRaw) =>
@@ -187,6 +191,7 @@ export function renderGenericField(
                   path={["note"]}
                   value=""
                   hints={buildJsonUiHints(table, field, record)}
+                  paletteCatalog={paletteCatalog}
                   onRootChange={(nextRoot) =>
                     setJsonDraft(field.column, nextRoot)
                   }

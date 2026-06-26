@@ -14,6 +14,7 @@ import { buildJsonUiHints } from "../components/json-editor/uiHints.js";
 import { InspectorFieldRow } from "../components/inspector/InspectorFieldRow.js";
 import { normalizeGroupValue } from "./recordJsonUtils.js";
 import type { ProductionFontCatalog } from "../components/json-editor/productionFonts.js";
+import type { PaletteColorCatalog } from "../components/json-editor/paletteColors.js";
 
 interface FlatJsonObjectEditorProps {
   table: AppTableDefinition;
@@ -22,6 +23,7 @@ interface FlatJsonObjectEditorProps {
   root: Record<string, unknown>;
   omitKeys?: string[];
   productionFontCatalog?: ProductionFontCatalog;
+  paletteCatalog?: PaletteColorCatalog;
   onRootChange: (nextRoot: JsonValue) => void;
 }
 
@@ -32,6 +34,7 @@ export function FlatJsonObjectEditor({
   root,
   omitKeys = [],
   productionFontCatalog,
+  paletteCatalog,
   onRootChange,
 }: FlatJsonObjectEditorProps) {
   const visibleEntries = Object.entries(root).filter(
@@ -56,6 +59,7 @@ export function FlatJsonObjectEditor({
                 value={jsonValue}
                 hints={buildJsonUiHints(table, field, record)}
                 productionFontCatalog={productionFontCatalog}
+                paletteCatalog={paletteCatalog}
                 onRootChange={onRootChange}
                 onChange={(nextValue) =>
                   onRootChange(setAtPath(root as JsonValue, [key], nextValue))
@@ -102,6 +106,7 @@ interface DeviceMetricsFieldProps {
   record: AppRecord | undefined;
   root: JsonValue;
   productionFontCatalog?: ProductionFontCatalog;
+  paletteCatalog?: PaletteColorCatalog;
   onRootChange: (nextRoot: JsonValue) => void;
 }
 
@@ -111,6 +116,7 @@ export function DeviceMetricsField({
   record,
   root,
   productionFontCatalog,
+  paletteCatalog,
   onRootChange,
 }: DeviceMetricsFieldProps) {
   const entries = primitiveJsonPaths(root).filter((entry) => entry.path.length > 0);
@@ -130,6 +136,7 @@ export function DeviceMetricsField({
                 value={value}
                 hints={buildJsonUiHints(table, field, record)}
                 productionFontCatalog={productionFontCatalog}
+                paletteCatalog={paletteCatalog}
                 onRootChange={onRootChange}
                 onChange={(nextValue) =>
                   onRootChange(setAtPath(root, path, nextValue))

@@ -1131,6 +1131,7 @@ function resolveChatActor(
   repository: DomainRepository,
   actorId: string,
   themeMode: "light" | "dark",
+  palette: Map<string, string>,
 ): ResolvedChatActor {
   const actor = requireRecord(
     repository.getActor(actorId),
@@ -1153,11 +1154,16 @@ function resolveChatActor(
     id: actor.id,
     displayName: actor.display_name,
     ...(directAvatarUri || avatar ? { avatarUri: directAvatarUri ?? avatar?.uri } : {}),
-    ...(actorMetadataColor(actor, themeMode, "color") ? {
-      color: actorMetadataColor(actor, themeMode, "color"),
+    ...(actorMetadataColor(actor, themeMode, "color", palette) ? {
+      color: actorMetadataColor(actor, themeMode, "color", palette),
     } : {}),
-    ...(actorMetadataColor(actor, themeMode, "avatarTextColor") ? {
-      avatarTextColor: actorMetadataColor(actor, themeMode, "avatarTextColor"),
+    ...(actorMetadataColor(actor, themeMode, "avatarTextColor", palette) ? {
+      avatarTextColor: actorMetadataColor(
+        actor,
+        themeMode,
+        "avatarTextColor",
+        palette,
+      ),
     } : {}),
   };
 }
@@ -1166,6 +1172,7 @@ function actorMetadataColor(
   actor: Actor | undefined,
   themeMode: "light" | "dark",
   field: "color" | "avatarTextColor",
+  palette: Map<string, string>,
 ) {
   const metadata = actor?.metadata_json;
   if (!isObject(metadata)) {
@@ -1175,17 +1182,17 @@ function actorMetadataColor(
   if (isObject(modes) && isObject(modes[themeMode])) {
     const modeValue = modes[themeMode]?.[field];
     if (typeof modeValue === "string" && modeValue.trim()) {
-      return modeValue;
+      return palette.get(modeValue) ?? modeValue;
     }
   }
   if (field === "color") {
     return typeof metadata.color === "string" && metadata.color.trim()
-      ? metadata.color
+      ? palette.get(metadata.color) ?? metadata.color
       : undefined;
   }
   const avatar = metadata.avatar;
   if (isObject(avatar) && typeof avatar.textColor === "string" && avatar.textColor.trim()) {
-    return avatar.textColor;
+    return palette.get(avatar.textColor) ?? avatar.textColor;
   }
   return undefined;
 }
@@ -1255,9 +1262,22 @@ export function resolveChatScreen({
   const themeEnvelope = ThemeEnvelopeSchema.parse(theme.tokens_json);
   const themeMode =
     screenInstance.theme_mode ?? themeEnvelope.defaultMode ?? "light";
-  const ownerChatActor = resolveChatActor(repository, ownerActor.id, themeMode);
+  const palette = paletteMapForColors(
+    repository.getPaletteColors(theme.production_id),
+  );
+  const ownerChatActor = resolveChatActor(
+    repository,
+    ownerActor.id,
+    themeMode,
+    palette,
+  );
   const headerActor = moduleData.header.actorId
-    ? resolveChatActor(repository, moduleData.header.actorId, themeMode)
+    ? resolveChatActor(
+        repository,
+        moduleData.header.actorId,
+        themeMode,
+        palette,
+      )
     : undefined;
 
   const metrics = DeviceMetricsSchema.parse(device.metrics_json);
@@ -1287,9 +1307,6 @@ export function resolveChatScreen({
   const inheritedModuleTokens = mergeTokenObjects(
     mergeTokenObjects(genericTokens, moduleDefaultsFromGenericTokens),
     moduleThemeTokens,
-  );
-  const palette = paletteMapForColors(
-    repository.getPaletteColors(theme.production_id),
   );
   const mergedThemeTokens = resolvePaletteTokenReferences(
     inheritedModuleTokens,
@@ -1356,6 +1373,7 @@ export function resolveChatScreen({
             repository,
             message.actorId ?? ownerActor.id,
             themeMode,
+            palette,
           );
     const bubble = resolveMessageBubble({
       message,
