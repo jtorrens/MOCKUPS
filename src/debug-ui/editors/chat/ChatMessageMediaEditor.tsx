@@ -71,18 +71,6 @@ export function ChatMessageMediaEditor({
                   >
                     Browse…
                   </button>
-                  <input
-                    type="file"
-                    accept={mediaType === "image" ? "image/*" : "video/*"}
-                    onChange={(event) => {
-                      const file = event.currentTarget.files?.[0] as
-                        | (File & { path?: string })
-                        | undefined;
-                      if (file) {
-                        onFilePathChange(file.path ?? file.name);
-                      }
-                    }}
-                  />
                 </div>
               }
             />
