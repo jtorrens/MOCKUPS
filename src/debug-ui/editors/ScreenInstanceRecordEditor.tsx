@@ -62,7 +62,7 @@ export function ScreenInstanceRecordEditor({
       transformFieldExists={Boolean(transformField)}
       deviceStateFieldExists={Boolean(deviceStateField)}
       renderGeneralFields={() =>
-        renderFields(["app_id", "theme_mode", "start_frame", "end_frame"])
+        renderFields(["app_id", "theme_mode", "duration_frames"])
       }
       renderTransformFields={() =>
         transformField

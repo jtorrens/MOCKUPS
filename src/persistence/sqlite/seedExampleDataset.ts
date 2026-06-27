@@ -649,6 +649,7 @@ function seedRecords(
       "device_state_json",
       "theme_id",
       "theme_mode",
+      "duration_frames",
       "start_frame",
       "end_frame",
       "layer_order",

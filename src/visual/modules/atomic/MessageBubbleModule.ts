@@ -69,11 +69,12 @@ function messageMediaNode(
   const borderColor = readString(mediaStyle.borderColor, "transparent");
   const cornerRadius = Math.max(0, readNumber(mediaStyle.cornerRadius, input.style.borderRadius));
   const shadowEnabled = mediaStyle.shadowEnabled === true;
+  const mediaFrame = Math.max(0, readNumber(input.media.frame, input.frame));
   const mediaImage: RenderableNode = {
     id: `${input.id}:media:image`,
     type: "message_bubble_media_image",
     role: input.media.type ?? "image",
-    frame: input.frame,
+    frame: mediaFrame,
     box: layout.mediaBox,
     style: {
       backgroundColor: "#000000",
@@ -88,7 +89,9 @@ function messageMediaNode(
     metadata: {
       uri: input.media.uri,
       type: input.media.type ?? "image",
-      frame: input.frame,
+      playMode: input.media.playMode ?? "once",
+      playStartFrame: input.media.playStartFrame ?? 0,
+      frame: mediaFrame,
       fps: input.fps,
       scale,
       translateX,

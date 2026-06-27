@@ -46,8 +46,19 @@ import {
   readRequiredJson,
   stringifyJsonObject,
 } from "../persistence/sqlite/json.js";
+import {
+  computeScreenTimeline,
+  type TimelineScreenLike,
+} from "../domain/timeline/screenTimeline.js";
 
 type Row = Record<string, unknown>;
+
+type ScreenOptionRow = TimelineScreenLike & {
+  shotId: string;
+  appId?: string;
+  screenType: string;
+  moduleId?: string | null;
+};
 
 function extractCssUrl(value: unknown) {
   if (typeof value !== "string") return "";
@@ -74,17 +85,26 @@ function previewMediaFrameUrl({
   filePath,
   fps,
   frame,
+  playMode,
   productionId,
 }: {
   filePath: string;
   fps: number;
   frame: number;
+  playMode?: string;
   productionId: string;
 }) {
   if (!filePath || /^(data:|blob:|https?:|\/api\/media-frame)/i.test(filePath)) {
     return filePath;
   }
-  return `/api/media-frame?productionId=${encodeURIComponent(productionId)}&path=${encodeURIComponent(filePath)}&frame=${encodeURIComponent(String(Math.max(0, Math.floor(frame))))}&fps=${encodeURIComponent(String(fps > 0 ? fps : 30))}`;
+  const query = new URLSearchParams({
+    productionId,
+    path: filePath,
+    frame: String(Math.max(0, Math.floor(frame))),
+    fps: String(fps > 0 ? fps : 30),
+  });
+  if (playMode) query.set("playMode", playMode);
+  return `/api/media-frame?${query.toString()}`;
 }
 
 function fontWeightForStyle(style: string) {
@@ -172,6 +192,10 @@ function rewriteRenderableMediaUrls(
               : typeof node.frame === "number"
                 ? node.frame
                 : 0,
+          playMode:
+            typeof node.metadata.playMode === "string"
+              ? node.metadata.playMode
+              : undefined,
           productionId,
         })
       : "";
@@ -388,7 +412,6 @@ export const APP_TABLES = [
       "transform_json",
       "props_json",
       "transition_in_json",
-      "transition_out_json",
     ],
     fields: [
       { column: "id", label: "ID", kind: "string", readonly: true },
@@ -414,11 +437,9 @@ export const APP_TABLES = [
         kind: "string",
         nullable: true,
       },
-      { column: "start_frame", label: "Start frame", kind: "number" },
-      { column: "end_frame", label: "End frame", kind: "number" },
-      { column: "layer_order", label: "Layer order", kind: "number" },
+      { column: "duration_frames", label: "Duration frames", kind: "number" },
       { column: "transform_json", label: "Screen transform", kind: "json" },
-      { column: "transition_out_json", label: "Transition", kind: "json" },
+      { column: "transition_in_json", label: "Transition", kind: "json" },
     ],
   },
   {
@@ -861,18 +882,81 @@ export function listDebugOptions(database: SQLiteDatabase) {
       "SELECT id, production_id AS productionId, name, slug, sort_order AS sortOrder FROM episodes ORDER BY production_id, name COLLATE NOCASE, id",
     )
     .all();
-  const shots = database
+  const rawShots = database
     .prepare(
       "SELECT id, production_id AS productionId, episode_id AS episodeId, owner_actor_id AS ownerActorId, name, slug, version, duration_frames AS durationFrames, fps FROM shots ORDER BY production_id, episode_id, name COLLATE NOCASE, id",
     )
     .all();
-  const screenInstances = database
+  const rawScreenInstances = database
     .prepare(
-      "SELECT id, shot_id AS shotId, app_id AS appId, screen_type AS screenType, module_id AS moduleId, start_frame AS startFrame, end_frame AS endFrame, layer_order AS layerOrder FROM screen_instances ORDER BY shot_id, layer_order, id",
+      "SELECT id, shot_id AS shotId, app_id AS appId, screen_type AS screenType, module_id AS moduleId, duration_frames AS duration_frames, start_frame AS start_frame, end_frame AS end_frame, layer_order AS layer_order, transition_in_json AS transitionInJson FROM screen_instances ORDER BY shot_id, layer_order, id",
     )
-    .all();
+    .all() as (ScreenOptionRow & { transitionInJson?: string | null })[];
+  const parsedScreenInstances = rawScreenInstances.map((screen) => ({
+    ...screen,
+    transition_in_json:
+      typeof screen.transitionInJson === "string"
+        ? (JSON.parse(screen.transitionInJson) as JsonObject)
+        : null,
+  }));
+  const timelineByShot = new Map<string, ReturnType<typeof computeScreenTimeline<ScreenOptionRow>>>();
+  for (const screen of parsedScreenInstances) {
+    const list = timelineByShot.get(screen.shotId);
+    if (list) continue;
+    timelineByShot.set(
+      screen.shotId,
+      computeScreenTimeline(
+        parsedScreenInstances.filter((item) => item.shotId === screen.shotId),
+      ),
+    );
+  }
+  const shots = rawShots.map((shot) => {
+    const timeline = timelineByShot.get(String((shot as Row).id)) ?? [];
+    return {
+      ...(shot as Row),
+      durationFrames:
+        timeline.length > 0
+          ? Math.max(...timeline.map((entry) => entry.endFrame))
+          : Number((shot as Row).durationFrames ?? 1),
+    };
+  });
+  const screenInstances = [...timelineByShot.values()]
+    .flat()
+    .sort((left, right) => left.screen.shotId.localeCompare(right.screen.shotId) || left.order - right.order)
+    .map((entry) => ({
+      id: entry.screen.id,
+      shotId: entry.screen.shotId,
+      appId: entry.screen.appId,
+      screenType: entry.screen.screenType,
+      moduleId: entry.screen.moduleId,
+      durationFrames: entry.durationFrames,
+      startFrame: entry.startFrame,
+      endFrame: entry.endFrame,
+      layerOrder: entry.order,
+      transitionFrames: entry.transitionFrames,
+      transitionType: entry.transitionType,
+    }));
 
   return { productions, episodes, shots, screenInstances };
+}
+
+function syncShotScreenTimeline(database: SQLiteDatabase, shotId: string): void {
+  const rows = database
+    .prepare("SELECT * FROM screen_instances WHERE shot_id = ? ORDER BY layer_order, id")
+    .all(shotId) as (Row & TimelineScreenLike)[];
+  const timeline = computeScreenTimeline(rows);
+  const updateScreen = database.prepare(
+    `UPDATE screen_instances
+     SET start_frame = ?, end_frame = ?, layer_order = ?
+     WHERE id = ?`,
+  );
+  for (const entry of timeline) {
+    updateScreen.run(entry.startFrame, entry.endFrame, entry.order, entry.screen.id);
+  }
+  const durationFrames = timeline.length > 0 ? Math.max(...timeline.map((entry) => entry.endFrame)) : 1;
+  database
+    .prepare("UPDATE shots SET duration_frames = ? WHERE id = ?")
+    .run(durationFrames, shotId);
 }
 
 export function loadDebugPayload(
@@ -890,6 +974,20 @@ export function loadDebugPayload(
   if (screenInstance.shot_id !== selection.shotId) {
     throw new Error("Selected screen instance does not belong to selected shot");
   }
+  const screenTimeline = computeScreenTimeline(
+    repository.getScreenInstancesForShot(selection.shotId),
+  );
+  const selectedTimelineEntry = screenTimeline.find(
+    (entry) => entry.screen.id === screenInstance.id,
+  );
+  const computedScreenInstance = selectedTimelineEntry
+    ? {
+        ...screenInstance,
+        start_frame: selectedTimelineEntry.startFrame,
+        end_frame: selectedTimelineEntry.endFrame,
+        layer_order: selectedTimelineEntry.order,
+      }
+    : screenInstance;
   const shot = repository.getShot(selection.shotId);
   const ownerActorId = shot?.owner_actor_id ?? screenInstance.owner_actor_id;
   const ownerActor = ownerActorId ? repository.getActor(ownerActorId) : undefined;
@@ -930,7 +1028,7 @@ export function loadDebugPayload(
     );
     if (!selectedResolved) {
       warnings.push(
-        `Screen instance is inactive at frame ${selection.frame} (${screenInstance.start_frame}–${screenInstance.end_frame - 1}).`,
+        `Screen instance is inactive at frame ${selection.frame} (${computedScreenInstance.start_frame}–${computedScreenInstance.end_frame - 1}).`,
       );
     } else {
       resolvedScreen =
@@ -980,8 +1078,9 @@ export function loadDebugPayload(
       screenType: screenInstance.screen_type,
       moduleId: screenInstance.module_id,
       moduleSchemaVersion: screenInstance.module_schema_version,
-      startFrame: screenInstance.start_frame,
-      endFrame: screenInstance.end_frame,
+      durationFrames: computedScreenInstance.duration_frames,
+      startFrame: computedScreenInstance.start_frame,
+      endFrame: computedScreenInstance.end_frame,
     },
     editable: {
       moduleData: moduleInstance?.content_json ?? {},
@@ -1302,6 +1401,11 @@ export interface AppRecordActionRequest {
     | "production_fonts"
     | "render_presets";
   recordId: string;
+}
+
+export interface ScreenInstanceMoveRequest {
+  recordId: string;
+  direction: -1 | 1;
 }
 
 function slugifyIdPart(value: string): string {
@@ -2285,6 +2389,7 @@ function duplicateShotRecord(database: SQLiteDatabase, recordId: string) {
             device_state_json,
             theme_id,
             theme_mode,
+            duration_frames,
             start_frame,
             end_frame,
             layer_order,
@@ -2296,7 +2401,7 @@ function duplicateShotRecord(database: SQLiteDatabase, recordId: string) {
             props_json,
             transition_in_json,
             transition_out_json
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         )
         .run(
           newScreenId,
@@ -2311,6 +2416,7 @@ function duplicateShotRecord(database: SQLiteDatabase, recordId: string) {
           screen.device_state_json ?? null,
           screen.theme_id ?? null,
           screen.theme_mode ?? null,
+          screen.duration_frames ?? Math.max(1, Number(screen.end_frame) - Number(screen.start_frame)),
           screen.start_frame,
           screen.end_frame,
           screen.layer_order,
@@ -2387,6 +2493,8 @@ function duplicateShotRecord(database: SQLiteDatabase, recordId: string) {
       }
     }
 
+    syncShotScreenTimeline(database, id);
+
     return decodeAppRow(
       database.prepare("SELECT * FROM shots WHERE id = ?").get(id) as Row,
       tableDefinition("shots"),
@@ -2403,6 +2511,54 @@ export function duplicateAppRecord(
       ? duplicateShotRecord(database, request.recordId)
       : duplicateSimpleRecord(database, request.tableId, request.recordId);
   return { tableId: request.tableId, record, state: loadAppState(database) };
+}
+
+export function moveScreenInstance(
+  database: SQLiteDatabase,
+  request: ScreenInstanceMoveRequest,
+) {
+  const direction = request.direction < 0 ? -1 : 1;
+  return database.transaction(() => {
+    const current = database
+      .prepare("SELECT * FROM screen_instances WHERE id = ?")
+      .get(request.recordId) as Row | undefined;
+    if (!current) {
+      throw new Error(`Screen instance ${request.recordId} not found`);
+    }
+    const screens = database
+      .prepare(
+        "SELECT id, layer_order FROM screen_instances WHERE shot_id = ? ORDER BY layer_order, id",
+      )
+      .all(String(current.shot_id)) as { id: string; layer_order: number }[];
+    const currentIndex = screens.findIndex(
+      (screen) => screen.id === request.recordId,
+    );
+    const target = screens[currentIndex + direction];
+    if (!target) {
+      return {
+        state: loadAppState(database),
+        record: decodeAppRow(current, tableDefinition("screen_instances")),
+        tableId: "screen_instances" as const,
+      };
+    }
+    const updateOrder = database.prepare(
+      "UPDATE screen_instances SET layer_order = ? WHERE id = ?",
+    );
+    updateOrder.run(target.layer_order, current.id);
+    updateOrder.run(current.layer_order, target.id);
+    syncShotScreenTimeline(database, String(current.shot_id));
+    const record = decodeAppRow(
+      database
+        .prepare("SELECT * FROM screen_instances WHERE id = ?")
+        .get(request.recordId) as Row,
+      tableDefinition("screen_instances"),
+    );
+    return {
+      state: loadAppState(database),
+      record,
+      tableId: "screen_instances" as const,
+    };
+  })();
 }
 
 export function deleteAppRecord(
@@ -2475,22 +2631,8 @@ export function updateAppRecord(
     .prepare(`UPDATE ${definition.table} SET ${assignments} WHERE id = ?`)
     .run(...Object.values(encoded), request.recordId);
 
-  if (
-    definition.id === "screen_instances" &&
-    (Object.hasOwn(encoded, "start_frame") ||
-      Object.hasOwn(encoded, "end_frame"))
-  ) {
-    const screenRows = database
-      .prepare(
-        `SELECT id FROM screen_instances
-         WHERE shot_id = ?
-         ORDER BY start_frame, end_frame, id`,
-      )
-      .all(String(existing.shot_id)) as { id: string }[];
-    const updateLayer = database.prepare(
-      "UPDATE screen_instances SET layer_order = ? WHERE id = ?",
-    );
-    screenRows.forEach((row, index) => updateLayer.run(index, row.id));
+  if (definition.id === "screen_instances") {
+    syncShotScreenTimeline(database, String(existing.shot_id));
   }
 
   const savedRow = database

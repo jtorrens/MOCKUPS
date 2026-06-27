@@ -13,6 +13,7 @@ import {
   listDebugOptions,
   loadAppState,
   loadDebugPayload,
+  moveScreenInstance,
   saveDebugPayload,
   createAppRecord,
   deleteAppRecord,
@@ -25,6 +26,7 @@ import {
   type DebugSaveRequest,
   type DebugSelection,
   type PaletteColorRenameRequest,
+  type ScreenInstanceMoveRequest,
 } from "./debugService.js";
 
 const PORT = 4174;
@@ -34,6 +36,7 @@ const renderOutputDir = path.resolve("out");
 const currentFramePng = path.join(renderOutputDir, "current-frame.png");
 const currentFrameProps = path.join(renderOutputDir, "current-frame-props.json");
 const mediaFrameDir = path.join(renderOutputDir, "media-frames");
+const videoFrameCountCache = new Map<string, number>();
 
 function absoluteServerUrl(request: import("node:http").IncomingMessage) {
   return `http://${request.headers.host ?? `127.0.0.1:${PORT}`}`;
@@ -358,13 +361,21 @@ async function ensureMediaFrame({
   filePath,
   fps,
   frame,
+  playMode,
 }: {
   filePath: string;
   fps: number;
   frame: number;
+  playMode?: string;
 }) {
-  const safeFrame = Math.max(0, Math.floor(frame));
   const safeFps = Number.isFinite(fps) && fps > 0 ? fps : 30;
+  const requestedFrame = Math.max(0, Math.floor(frame));
+  const safeFrame = await resolveVideoFrame({
+    filePath,
+    fps: safeFps,
+    frame: requestedFrame,
+    playMode,
+  });
   const outputPath = mediaFrameFilePath({
     fps: safeFps,
     frame: safeFrame,
@@ -399,6 +410,55 @@ async function ensureMediaFrame({
     { maxBuffer: 1024 * 1024 * 8 },
   );
   return outputPath;
+}
+
+async function videoFrameCount(filePath: string, fps: number) {
+  const stats = statSync(filePath);
+  const cacheKey = `${path.resolve(filePath)}:${stats.mtimeMs}:${fps}`;
+  const cached = videoFrameCountCache.get(cacheKey);
+  if (cached !== undefined) return cached;
+  try {
+    const { stdout } = await execFileAsync(
+      "ffprobe",
+      [
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "default=noprint_wrappers=1:nokey=1",
+        filePath,
+      ],
+      { maxBuffer: 1024 * 1024 },
+    );
+    const seconds = Number.parseFloat(stdout.trim());
+    const frameCount =
+      Number.isFinite(seconds) && seconds > 0
+        ? Math.max(1, Math.floor(seconds * fps))
+        : 0;
+    videoFrameCountCache.set(cacheKey, frameCount);
+    return frameCount;
+  } catch {
+    videoFrameCountCache.set(cacheKey, 0);
+    return 0;
+  }
+}
+
+async function resolveVideoFrame({
+  filePath,
+  fps,
+  frame,
+  playMode,
+}: {
+  filePath: string;
+  fps: number;
+  frame: number;
+  playMode?: string;
+}) {
+  const frameCount = await videoFrameCount(filePath, fps);
+  if (frameCount <= 0) return frame;
+  if (playMode === "loop") return frame % frameCount;
+  return Math.min(frame, frameCount - 1);
 }
 
 function sendJson(
@@ -608,6 +668,11 @@ const server = createServer(async (request, response) => {
       sendJson(response, 200, duplicateAppRecord(database, body));
       return;
     }
+    if (request.method === "POST" && url.pathname === "/api/app/screen-instance/move") {
+      const body = (await readJson(request)) as ScreenInstanceMoveRequest;
+      sendJson(response, 200, moveScreenInstance(database, body));
+      return;
+    }
     if (request.method === "POST" && url.pathname === "/api/app/palette-color/rename") {
       const body = (await readJson(request)) as PaletteColorRenameRequest;
       sendJson(response, 200, renamePaletteColorToken(database, body));
@@ -718,6 +783,7 @@ const server = createServer(async (request, response) => {
         filePath,
         fps: Number(url.searchParams.get("fps") ?? 30),
         frame: Number(url.searchParams.get("frame") ?? 0),
+        playMode: url.searchParams.get("playMode") ?? undefined,
       });
       const frameStats = statSync(framePath);
       response.writeHead(200, {

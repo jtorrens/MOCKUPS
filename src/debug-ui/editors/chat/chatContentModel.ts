@@ -160,6 +160,12 @@ export function messageWithMediaType(
     media: {
       type: nextType,
       filePath: String(media.filePath ?? ""),
+      ...(nextType === "video"
+        ? {
+            playMode: media.playMode === "loop" ? "loop" : "once",
+            playStartFrame: Number(media.playStartFrame ?? 0),
+          }
+        : {}),
       window: {
         width: Number(mediaWindow.width ?? 360),
         height: Number(mediaWindow.height ?? 240),

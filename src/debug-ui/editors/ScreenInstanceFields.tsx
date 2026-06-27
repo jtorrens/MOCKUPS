@@ -6,46 +6,6 @@ function stringifyJson(value: unknown): string {
   return JSON.stringify(value, null, 2);
 }
 
-function nextScreenInstance({
-  records,
-  record,
-  drafts,
-}: {
-  records: Record<string, AppRecord[]>;
-  record: AppRecord | undefined;
-  drafts: Record<string, string>;
-}) {
-  const startFrame = Number(drafts.start_frame ?? record?.start_frame ?? 0);
-  return records.screen_instances
-    ?.filter(
-      (item) =>
-        item.shot_id === record?.shot_id &&
-        item.id !== record?.id &&
-        Number(item.start_frame) >= startFrame,
-    )
-    .sort((left, right) => {
-      const frameDelta = Number(left.start_frame) - Number(right.start_frame);
-      return frameDelta || String(left.id).localeCompare(String(right.id));
-    })[0];
-}
-
-function transitionOverlapFrames({
-  records,
-  record,
-  drafts,
-}: {
-  records: Record<string, AppRecord[]>;
-  record: AppRecord | undefined;
-  drafts: Record<string, string>;
-}) {
-  const next = nextScreenInstance({ records, record, drafts });
-  if (!next) return 0;
-  const currentEnd = Number(drafts.end_frame ?? record?.end_frame ?? 0);
-  const nextStart = Number(next.start_frame ?? 0);
-  const overlap = currentEnd - nextStart;
-  return Number.isFinite(overlap) && overlap > 0 ? overlap : 0;
-}
-
 interface ScreenTransitionFieldsProps {
   records: Record<string, AppRecord[]>;
   record: AppRecord | undefined;
@@ -54,17 +14,31 @@ interface ScreenTransitionFieldsProps {
 }
 
 export function ScreenTransitionFields({
-  records,
-  record,
   drafts,
   setDraftValue,
 }: ScreenTransitionFieldsProps) {
-  const root = parsedObject(drafts.transition_out_json ?? "{}");
+  const root = parsedObject(drafts.transition_in_json ?? "{}");
   const type =
-    root.type === "dissolve" || root.type === "overlay"
+    root.type === "none" || root.type === "dissolve" || root.type === "overlay"
       ? String(root.type)
-      : "overlay";
-  const overlap = transitionOverlapFrames({ records, record, drafts });
+      : "none";
+  const durationFrames = Math.max(
+    0,
+    Number(root.durationFrames ?? root.duration_frames ?? 0),
+  );
+
+  function updateTransition(patch: Record<string, unknown>) {
+    const next = {
+      ...root,
+      ...patch,
+    };
+    if (next.type === "none" || Number(next.durationFrames ?? 0) <= 0) {
+      setDraftValue("transition_in_json", stringifyJson({ type: "none", durationFrames: 0 }));
+      return;
+    }
+    setDraftValue("transition_in_json", stringifyJson(next));
+  }
+
   return (
     <>
       <InspectorFieldRow
@@ -75,16 +49,13 @@ export function ScreenTransitionFields({
           <select
             value={type}
             onChange={(event) =>
-              setDraftValue(
-                "transition_out_json",
-                stringifyJson({
-                  ...root,
-                  type: event.target.value,
-                  duration_frames: overlap,
-                }),
-              )
+              updateTransition({
+                type: event.target.value,
+                durationFrames,
+              })
             }
           >
+            <option value="none">None</option>
             <option value="overlay">Overlay</option>
             <option value="dissolve">Dissolve</option>
           </select>
@@ -92,10 +63,22 @@ export function ScreenTransitionFields({
       />
       <InspectorFieldRow
         key="transition_duration"
-        className="record-editor-field record-editor-field-number is-readonly"
+        className="record-editor-field record-editor-field-number"
         label={<span>Duration frames</span>}
-        meta={<code>Calculated from screen overlap</code>}
-        control={<input disabled value={String(overlap)} />}
+        meta={<code>Starts before this screen</code>}
+        control={
+          <input
+            type="number"
+            min={0}
+            value={String(durationFrames)}
+            onChange={(event) =>
+              updateTransition({
+                type,
+                durationFrames: Math.max(0, Number(event.target.value)),
+              })
+            }
+          />
+        }
       />
     </>
   );

@@ -51,10 +51,13 @@ function shotCalculatedDurationFrames(
     (item) => item.shot_id === record?.id,
   );
   if (!screens?.length) return undefined;
-  const lastFrame = Math.max(
-    ...screens.map((item) => Number(item.end_frame ?? 0)),
+  const durationFrames = screens.reduce(
+    (sum, item) => sum + Math.max(1, Number(item.duration_frames ?? 0)),
+    0,
   );
-  return Number.isFinite(lastFrame) && lastFrame > 0 ? lastFrame : undefined;
+  return Number.isFinite(durationFrames) && durationFrames > 0
+    ? durationFrames
+    : undefined;
 }
 
 function shotOwnerDeviceName({

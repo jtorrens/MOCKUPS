@@ -5,6 +5,7 @@ import {
   duplicateAppRecord,
   getAppState,
   getPreviewPayload,
+  moveScreenInstance as moveScreenInstanceRecord,
   type AppRecord,
   type AppState,
   type DebugPayload,
@@ -553,6 +554,34 @@ export function App() {
     executeDeleteRecord(tableId, recordId);
   }
 
+  function handleMoveScreenInstance(recordId: string, direction: -1 | 1) {
+    setBusyProjectAction(true);
+    setRequestError("");
+    void moveScreenInstanceRecord({ recordId, direction })
+      .then((result) => {
+        setState(result.state);
+        setSelectedRecordIds({
+          ...selectedRecordIds,
+          screen_instances: recordId,
+        });
+        const moved = result.state.options.screenInstances.find(
+          (instance) => instance.id === recordId,
+        );
+        if (moved && selection?.screenInstanceId === recordId) {
+          setSelection({
+            ...selection,
+            frame: Math.max(
+              moved.startFrame,
+              Math.min(selection.frame, moved.endFrame - 1),
+            ),
+          });
+        }
+        setRefreshCounter((value) => value + 1);
+      })
+      .catch((error: Error) => setRequestError(error.message))
+      .finally(() => setBusyProjectAction(false));
+  }
+
   function beginHorizontalResize(
     startEvent: ReactPointerEvent,
     options: {
@@ -868,6 +897,7 @@ export function App() {
                 onCreateRecord={handleCreateRecord}
                 onDuplicateRecord={handleDuplicateRecord}
                 onDeleteRecord={handleDeleteRecord}
+                onMoveScreenInstance={handleMoveScreenInstance}
               />
             </div>
           </aside>

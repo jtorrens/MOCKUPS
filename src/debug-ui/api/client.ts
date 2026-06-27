@@ -52,9 +52,12 @@ export interface DebugOptions {
     appId?: string;
     screenType: string;
     moduleId?: string;
+    durationFrames: number;
     startFrame: number;
     endFrame: number;
     layerOrder: number;
+    transitionFrames?: number;
+    transitionType?: string;
   }[];
 }
 
@@ -91,6 +94,7 @@ export interface DebugPayload {
     screenType: string;
     moduleId?: string;
     moduleSchemaVersion?: number;
+    durationFrames: number;
     startFrame: number;
     endFrame: number;
   };
@@ -210,6 +214,19 @@ export async function deleteAppRecord(
   return readResponse(
     await fetch(`/api/app/record?${query}`, {
       method: "DELETE",
+    }),
+  );
+}
+
+export async function moveScreenInstance(request: {
+  recordId: string;
+  direction: -1 | 1;
+}): Promise<{ state: AppState; record: AppRecord; tableId: "screen_instances" }> {
+  return readResponse(
+    await fetch("/api/app/screen-instance/move", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
     }),
   );
 }

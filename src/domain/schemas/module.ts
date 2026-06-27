@@ -54,6 +54,8 @@ export const ChatModuleMessageSchema = z
       .object({
         type: z.enum(["none", "image", "video"]).optional(),
         filePath: z.string().optional(),
+        playMode: z.enum(["once", "loop"]).optional(),
+        playStartFrame: NonNegativeIntegerSchema.optional(),
         window: MediaWindowSchema,
         transform: AssetTransformSchema,
       })

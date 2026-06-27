@@ -47,6 +47,7 @@ export const ScreenInstanceSchema = z
     device_state_json: JsonObjectSchema.nullable().optional(),
     theme_id: IdSchema.nullable().optional(),
     theme_mode: ThemeModeSchema.nullable().optional(),
+    duration_frames: PositiveIntegerSchema,
     start_frame: NonNegativeIntegerSchema,
     end_frame: NonNegativeIntegerSchema,
     layer_order: z.number().int(),

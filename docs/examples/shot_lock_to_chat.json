@@ -38,8 +38,9 @@
       },
       "theme_id": null,
       "theme_mode": "light",
+      "duration_frames": 150,
       "start_frame": 0,
-      "end_frame": 165,
+      "end_frame": 150,
       "layer_order": 0,
       "data_ref_json": {
         "type": "notification",
@@ -53,10 +54,7 @@
       },
       "props_json": {},
       "transition_in_json": null,
-      "transition_out_json": {
-        "type": "unlock_to_app",
-        "duration_frames": 15
-      }
+      "transition_out_json": null
     },
     {
       "id": "screen_instance_chat",
@@ -81,6 +79,7 @@
       },
       "theme_id": null,
       "theme_mode": "light",
+      "duration_frames": 150,
       "start_frame": 150,
       "end_frame": 300,
       "layer_order": 1,

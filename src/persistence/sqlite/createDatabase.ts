@@ -1199,6 +1199,29 @@ function applyAdditiveV22Migration(database: SQLiteDatabase): void {
   database.pragma("user_version = 22");
 }
 
+function applyAdditiveV23Migration(database: SQLiteDatabase): void {
+  const screenColumns = new Set(
+    (
+      database.pragma("table_info(screen_instances)") as {
+        name: string;
+      }[]
+    ).map((column) => column.name),
+  );
+  if (!screenColumns.has("duration_frames")) {
+    database.exec(
+      `ALTER TABLE screen_instances
+       ADD COLUMN duration_frames INTEGER NOT NULL DEFAULT 1 CHECK (duration_frames > 0)`,
+    );
+  }
+  database.exec(`
+    UPDATE screen_instances
+    SET duration_frames = MAX(1, end_frame - start_frame)
+    WHERE duration_frames IS NULL
+      OR duration_frames <= 1
+  `);
+  database.pragma("user_version = 23");
+}
+
 export function applyInitialSchema(database: SQLiteDatabase): void {
   database.exec(readFileSync(schemaPath, "utf8"));
   applyAdditiveV2Migration(database);
@@ -1222,6 +1245,7 @@ export function applyInitialSchema(database: SQLiteDatabase): void {
   applyAdditiveV20Migration(database);
   applyAdditiveV21Migration(database);
   applyAdditiveV22Migration(database);
+  applyAdditiveV23Migration(database);
   database.pragma("foreign_keys = ON");
 }
 

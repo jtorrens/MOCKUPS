@@ -16,10 +16,14 @@ interface ChatMessageMediaEditorProps {
   filePath: string;
   mediaRoot: string;
   productionId: string;
+  playMode: string;
+  playStartFrame: number;
   canBrowse: boolean;
   numberFields: MediaNumberField[];
   onMediaTypeChange: (mediaType: string) => void;
   onFilePathChange: (filePath: string) => void;
+  onPlayModeChange: (playMode: string) => void;
+  onPlayStartFrameChange: (playStartFrame: number) => void;
   onBrowseFile: () => void;
   onNumberFieldChange: (path: JsonPath, value: JsonValue) => void;
 }
@@ -29,10 +33,14 @@ export function ChatMessageMediaEditor({
   filePath,
   mediaRoot,
   productionId,
+  playMode,
+  playStartFrame,
   canBrowse,
   numberFields,
   onMediaTypeChange,
   onFilePathChange,
+  onPlayModeChange,
+  onPlayStartFrameChange,
   onBrowseFile,
   onNumberFieldChange,
 }: ChatMessageMediaEditorProps) {
@@ -105,6 +113,37 @@ export function ChatMessageMediaEditor({
                 </div>
               }
             />
+            {mediaType === "video" ? (
+              <>
+                <InspectorFieldRow
+                  className="record-editor-content-field-row"
+                  label={<span>Play</span>}
+                  control={
+                    <select
+                      className="json-value-control"
+                      value={playMode === "loop" ? "loop" : "once"}
+                      onChange={(event) => onPlayModeChange(event.target.value)}
+                    >
+                      <option value="once">Once</option>
+                      <option value="loop">Loop</option>
+                    </select>
+                  }
+                />
+                <InspectorFieldRow
+                  className="record-editor-content-field-row"
+                  label={<span>Play start frame</span>}
+                  control={
+                    <DeferredNumberInput
+                      ariaLabel="Play start frame"
+                      min={0}
+                      step={1}
+                      value={Math.max(0, Number(playStartFrame) || 0)}
+                      onCommit={onPlayStartFrameChange}
+                    />
+                  }
+                />
+              </>
+            ) : null}
             <div className="chat-media-number-grid">
               {numberFieldRows.map((row) => (
                 <div

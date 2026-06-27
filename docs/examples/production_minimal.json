@@ -63,6 +63,7 @@
       },
       "theme_id": null,
       "theme_mode": "light",
+      "duration_frames": 150,
       "start_frame": 0,
       "end_frame": 150,
       "layer_order": 0,

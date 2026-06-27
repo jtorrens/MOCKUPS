@@ -175,6 +175,8 @@ export function ChatContentGroupEditor({
         textRevealMode={String(textReveal.mode ?? "simple_write_on")}
         mediaType={mediaType}
         mediaFilePath={String(media.filePath ?? "")}
+        mediaPlayMode={String(media.playMode ?? "once")}
+        mediaPlayStartFrame={Number(media.playStartFrame ?? 0)}
         mediaRoot={mediaRoot}
         productionId={productionId}
         canBrowseMedia={canBrowseMedia}
@@ -213,6 +215,12 @@ export function ChatContentGroupEditor({
         onMediaTypeChange={setMediaType}
         onMediaFilePathChange={(nextPath) =>
           setConversationMediaPath(normalizeMediaPath(nextPath))
+        }
+        onMediaPlayModeChange={(playMode) =>
+          setMessagePath(["media", "playMode"], playMode)
+        }
+        onMediaPlayStartFrameChange={(playStartFrame) =>
+          setMessagePath(["media", "playStartFrame"], Math.max(0, playStartFrame))
         }
         onBrowseMedia={() => {
           void (async () => {

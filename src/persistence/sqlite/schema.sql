@@ -276,6 +276,7 @@ CREATE TABLE IF NOT EXISTS screen_instances (
   device_state_json TEXT,
   theme_id TEXT REFERENCES themes(id) ON DELETE SET NULL,
   theme_mode TEXT CHECK (theme_mode IS NULL OR theme_mode IN ('light', 'dark')),
+  duration_frames INTEGER NOT NULL DEFAULT 1 CHECK (duration_frames > 0),
   start_frame INTEGER NOT NULL CHECK (start_frame >= 0),
   end_frame INTEGER NOT NULL CHECK (end_frame > start_frame),
   layer_order INTEGER NOT NULL,

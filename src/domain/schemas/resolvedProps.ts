@@ -57,6 +57,9 @@ const ResolvedChatMessageSchema = z.object({
       assetId: IdSchema.optional(),
       uri: z.string().min(1),
       type: z.enum(["image", "video"]).optional(),
+      playMode: z.enum(["once", "loop"]).optional(),
+      playStartFrame: NonNegativeIntegerSchema.optional(),
+      frame: NonNegativeIntegerSchema.optional(),
       window: JsonObjectSchema.optional(),
       transform: JsonObjectSchema.optional(),
     })
@@ -165,6 +168,9 @@ export const ResolvedMessageBubblePropsSchema = z.object({
       assetId: IdSchema.optional(),
       uri: z.string().min(1),
       type: z.enum(["image", "video"]).optional(),
+      playMode: z.enum(["once", "loop"]).optional(),
+      playStartFrame: NonNegativeIntegerSchema.optional(),
+      frame: NonNegativeIntegerSchema.optional(),
       window: JsonObjectSchema.optional(),
       transform: JsonObjectSchema.optional(),
     })

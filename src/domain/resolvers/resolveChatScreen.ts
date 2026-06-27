@@ -1455,6 +1455,12 @@ export function resolveChatScreen({
               ...(scaledMedia && stringValue(scaledMedia.type)
                 ? { type: stringValue(scaledMedia.type) }
                 : {}),
+              ...(scaledMedia && stringValue(scaledMedia.playMode)
+                ? { playMode: stringValue(scaledMedia.playMode) }
+                : {}),
+              ...(typeof scaledMedia?.playStartFrame === "number"
+                ? { playStartFrame: scaledMedia.playStartFrame }
+                : {}),
               ...(scaledMedia?.window
                 ? { window: scaledMedia.window }
                 : {}),

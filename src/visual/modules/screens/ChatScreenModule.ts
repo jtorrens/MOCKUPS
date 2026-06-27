@@ -53,6 +53,19 @@ function createMessageBubbleInput(
     ? input.ownerActor.avatar?.uri
     : input.header.avatar?.uri;
   const actorAvatarConfig = outgoing ? input.ownerActor.avatar : input.header.avatar;
+  const mediaPlayStartFrame =
+    typeof message.media?.playStartFrame === "number"
+      ? message.media.playStartFrame
+      : 0;
+  const mediaStartFrame =
+    typeof message.timing.writeOnStartFrame === "number" &&
+    typeof message.timing.writeOnDurationFrames === "number"
+      ? message.timing.writeOnStartFrame + message.timing.writeOnDurationFrames
+      : message.timing.startFrame;
+  const mediaFrame = Math.max(
+    0,
+    input.frame - mediaStartFrame - mediaPlayStartFrame,
+  );
 
   return ResolvedMessageBubblePropsSchema.parse({
     frame: input.frame,
@@ -79,7 +92,14 @@ function createMessageBubbleInput(
         ? { avatarBaseSize: actorAvatarConfig.baseSize }
         : {}),
     },
-    ...(message.media ? { media: message.media } : {}),
+    ...(message.media
+      ? {
+          media: {
+            ...message.media,
+            frame: mediaFrame,
+          },
+        }
+      : {}),
     style: message.style ?? {
       backgroundColor: readString(
         chatTokens,

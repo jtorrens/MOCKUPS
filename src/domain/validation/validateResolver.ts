@@ -68,15 +68,21 @@ assert(
   "Lock screen data reference must resolve its notification and app",
 );
 
-const overlapFrame = resolveShot({ ...commonInput, shotFrame: 150 });
+const overlapFrame = resolveShot({ ...commonInput, shotFrame: 145 });
 assert(
   overlapFrame.active_screen_instances.map((screen) => screen.screen_type).join(",") ===
     "lock_screen,chat",
-  "Frame 150 must resolve the lock-to-chat overlap in layer order",
+  "Transition frames before chat start must resolve the lock-to-chat overlap in layer order",
 );
 assert(
   overlapFrame.active_screen_instances[1]?.local_frame === 0,
-  "Chat local frame must start at zero",
+  "Incoming chat local frame must stay frozen at zero during transition",
+);
+const chatStartFrame = resolveShot({ ...commonInput, shotFrame: 150 });
+assert(
+  chatStartFrame.active_screen_instances.map((screen) => screen.screen_type).join(",") ===
+    "chat",
+  "Frame 150 must resolve the chat screen after the pre-start transition",
 );
 
 const writeOnFrame = resolveShot({ ...commonInput, shotFrame: 210 });

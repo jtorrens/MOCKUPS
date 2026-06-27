@@ -29,6 +29,8 @@ interface ChatMessageFieldsEditorProps {
   textRevealMode: string;
   mediaType: string;
   mediaFilePath: string;
+  mediaPlayMode: string;
+  mediaPlayStartFrame: number;
   mediaRoot: string;
   productionId: string;
   canBrowseMedia: boolean;
@@ -45,6 +47,8 @@ interface ChatMessageFieldsEditorProps {
   onTextRevealModeChange: (mode: string) => void;
   onMediaTypeChange: (mediaType: string) => void;
   onMediaFilePathChange: (filePath: string) => void;
+  onMediaPlayModeChange: (playMode: string) => void;
+  onMediaPlayStartFrameChange: (playStartFrame: number) => void;
   onBrowseMedia: () => void;
   onMediaNumberFieldChange: (path: JsonPath, value: JsonValue) => void;
 }
@@ -63,6 +67,8 @@ export function ChatMessageFieldsEditor({
   textRevealMode,
   mediaType,
   mediaFilePath,
+  mediaPlayMode,
+  mediaPlayStartFrame,
   mediaRoot,
   productionId,
   canBrowseMedia,
@@ -79,6 +85,8 @@ export function ChatMessageFieldsEditor({
   onTextRevealModeChange,
   onMediaTypeChange,
   onMediaFilePathChange,
+  onMediaPlayModeChange,
+  onMediaPlayStartFrameChange,
   onBrowseMedia,
   onMediaNumberFieldChange,
 }: ChatMessageFieldsEditorProps) {
@@ -223,10 +231,14 @@ export function ChatMessageFieldsEditor({
         filePath={mediaFilePath}
         mediaRoot={mediaRoot}
         productionId={productionId}
+        playMode={mediaPlayMode}
+        playStartFrame={mediaPlayStartFrame}
         canBrowse={canBrowseMedia}
         numberFields={mediaNumberFields}
         onMediaTypeChange={onMediaTypeChange}
         onFilePathChange={onMediaFilePathChange}
+        onPlayModeChange={onMediaPlayModeChange}
+        onPlayStartFrameChange={onMediaPlayStartFrameChange}
         onBrowseFile={onBrowseMedia}
         onNumberFieldChange={onMediaNumberFieldChange}
       />

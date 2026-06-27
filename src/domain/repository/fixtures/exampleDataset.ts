@@ -102,6 +102,9 @@ export function createExampleDataset(): RepositoryDataset {
   const screenInstances = ScreenInstanceSchema.array().parse(
     shotExample.screen_instances.map((instance) => ({
       ...instance,
+      duration_frames:
+        instance.duration_frames ??
+        Math.max(1, Number(instance.end_frame) - Number(instance.start_frame)),
       device_state_json:
         instance.device_state_id === "device_state_locked_morning"
           ? { ...resolvedChat.deviceState, locked: true }

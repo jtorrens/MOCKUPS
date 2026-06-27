@@ -62,6 +62,7 @@ interface ProjectTreeProps {
       | "render_presets",
     recordId: string,
   ) => void;
+  onMoveScreenInstance: (recordId: string, direction: -1 | 1) => void;
 }
 
 type DeletableTableId =
@@ -140,7 +141,10 @@ function shotDurationFromScreens(
   screens: DebugOptions["screenInstances"],
 ) {
   if (screens.length === 0) return shot.durationFrames;
-  const duration = Math.max(...screens.map((screen) => screen.endFrame));
+  const duration = screens.reduce(
+    (sum, screen) => sum + Math.max(1, Number(screen.durationFrames ?? 0)),
+    0,
+  );
   return Number.isFinite(duration) && duration > 0
     ? duration
     : shot.durationFrames;
@@ -464,6 +468,7 @@ export function ProjectTree({
   onCreateRecord,
   onDuplicateRecord,
   onDeleteRecord,
+  onMoveScreenInstance,
 }: ProjectTreeProps) {
   const [browserTab, setBrowserTab] = useState<
     "" | "project" | "apps" | "data" | "system"
@@ -628,9 +633,13 @@ export function ProjectTree({
                     <EmptyPanel>No shots yet.</EmptyPanel>
                   ) : (
                     shots.map((shot) => {
-                      const screens = options.screenInstances.filter(
-                        (instance) => instance.shotId === shot.id,
-                      );
+                      const screens = options.screenInstances
+                        .filter((instance) => instance.shotId === shot.id)
+                        .sort(
+                          (left, right) =>
+                            left.layerOrder - right.layerOrder ||
+                            left.id.localeCompare(right.id),
+                        );
                       const renderName = shotRenderName(
                         production,
                         episode,
@@ -679,7 +688,7 @@ export function ProjectTree({
                             {screens.length === 0 ? (
                               <EmptyPanel>No screens yet.</EmptyPanel>
                             ) : (
-                              screens.map((instance) => (
+                              screens.map((instance, index) => (
                                 <div
                                   key={instance.id}
                                   className={`project-tree-card project-tree-branch project-tree-leaf ${cardLevelClass(2)}`}
@@ -692,13 +701,36 @@ export function ProjectTree({
                                     selectedRecordIds={selectedRecordIds}
                                     icon="screen"
                                     title={screenTitle(instance)}
-                                    meta={`${instance.startFrame}–${instance.endFrame}f`}
+                                    meta={`${instance.startFrame}–${Math.max(instance.startFrame, instance.endFrame - 1)}f`}
                                     onClick={() =>
                                       select("screen_instances", instance.id)
                                     }
                                     asRecord
                                     className={rowLevelClass(3)}
                                   />
+                                  <span className="tree-actions">
+                                    <ActionButton
+                                      disabled={busyAction || index === 0}
+                                      title="Move screen up"
+                                      onClick={() =>
+                                        onMoveScreenInstance(instance.id, -1)
+                                      }
+                                    >
+                                      ↑
+                                    </ActionButton>
+                                    <ActionButton
+                                      disabled={
+                                        busyAction ||
+                                        index >= screens.length - 1
+                                      }
+                                      title="Move screen down"
+                                      onClick={() =>
+                                        onMoveScreenInstance(instance.id, 1)
+                                      }
+                                    >
+                                      ↓
+                                    </ActionButton>
+                                  </span>
                                   {tablesById.get("module_instances") ? (
                                     <div className="project-tree-children compact">
                                       {moduleInstanceRecords
