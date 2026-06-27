@@ -28,8 +28,9 @@ export const coreChatV1EditorHints: ModuleEditorHintContract = {
       "messages.[].media.type": {
         label: "Media type",
         widget: "select",
-        options: ["none", "image", "video"],
+        options: ["none", "image", "video", "audio"],
       },
+      "messages.[].media.durationSeconds": { label: "Audio duration" },
       "messages.[].media.filePath": { label: "Media file path" },
       "messages.[].media.window": { label: "Media crop/window" },
       "messages.[].media.window.width": { label: "Media window width" },
@@ -43,9 +44,10 @@ export const coreChatV1EditorHints: ModuleEditorHintContract = {
       "messages.[].media.transform.rotationDegrees": {
         label: "Media rotation",
       },
-      "messages.[].startFrame": { label: "Start frame" },
+      "messages.[].delayAfterPreviousFrames": {
+        label: "Delay after previous write-on",
+      },
       "messages.[].durationFrames": { label: "Duration frames" },
-      "messages.[].writeOnStartFrame": { label: "Write-on start" },
       "messages.[].writeOnDurationFrames": { label: "Write-on duration" },
       "messages.[].exitFrame": { label: "Exit frame" },
     },

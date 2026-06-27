@@ -48,6 +48,10 @@ function createMessageBubbleInput(
   const tailTokens = readObject(chatTokens, "tail");
   const mediaTokens = readObject(chatTokens, "media");
   const avatarComponent = readObject(input.theme.components ?? {}, "avatar");
+  const audioMessageComponent = readObject(
+    input.theme.components ?? {},
+    "audioMessage",
+  );
   const typographyTokens = input.theme.typography;
   const messageTypography = readObject(typographyTokens ?? {}, "message");
   const actorAvatar = outgoing
@@ -170,6 +174,7 @@ function createMessageBubbleInput(
         shadowEnabled: mediaTokens.shadowEnabled === true,
       },
       }),
+      audioMessage: audioMessageComponent,
       avatar: {
         ...avatarComponent,
         ...(avatarComponent.surfaceReliefEnabled !== false

@@ -127,7 +127,9 @@ export function ChatContentGroupEditor({
             ...messageActorOptions,
           ]
         : messageActorOptions;
-    const startFrame = Number(message.startFrame ?? 0);
+    const delayAfterPreviousFrames = Number(
+      message.delayAfterPreviousFrames ?? message.startFrame ?? 0,
+    );
     const writeOnDurationFrames = Number(textReveal.durationFrames ?? 30);
 
     function updateMessage(nextMessage: JsonValue) {
@@ -165,7 +167,7 @@ export function ChatContentGroupEditor({
         direction={direction}
         actorId={currentActorId}
         actorOptions={actorOptionsWithCurrentActor}
-        startFrame={startFrame}
+        delayAfterPreviousFrames={delayAfterPreviousFrames}
         writeOnDurationFrames={writeOnDurationFrames}
         showBubbleBackground={message.showBubbleBackground !== false}
         textScale={Number(message.textScale ?? 1)}
@@ -175,6 +177,7 @@ export function ChatContentGroupEditor({
         textRevealMode={String(textReveal.mode ?? "simple_write_on")}
         mediaType={mediaType}
         mediaFilePath={String(media.filePath ?? "")}
+        mediaDurationSeconds={Number(media.durationSeconds ?? 8)}
         mediaPlayMode={String(media.playMode ?? "once")}
         mediaPlayStartFrame={Number(media.playStartFrame ?? 0)}
         mediaRoot={mediaRoot}
@@ -185,15 +188,8 @@ export function ChatContentGroupEditor({
         onActorChange={(nextActorId) =>
           setMessagePath(["actorId"], nextActorId)
         }
-        onStartFrameChange={(nextFrame) =>
-          updateMessage({
-            ...message,
-            startFrame: nextFrame,
-            textReveal: {
-              ...textReveal,
-              startFrame: nextFrame,
-            },
-          })
+        onDelayAfterPreviousFramesChange={(nextFrame) =>
+          setMessagePath(["delayAfterPreviousFrames"], Math.max(0, nextFrame))
         }
         onWriteOnDurationFramesChange={(nextFrameCount) =>
           setMessagePath(["textReveal", "durationFrames"], nextFrameCount)
@@ -215,6 +211,9 @@ export function ChatContentGroupEditor({
         onMediaTypeChange={setMediaType}
         onMediaFilePathChange={(nextPath) =>
           setConversationMediaPath(normalizeMediaPath(nextPath))
+        }
+        onMediaDurationSecondsChange={(durationSeconds) =>
+          setMessagePath(["media", "durationSeconds"], Math.max(0.1, durationSeconds))
         }
         onMediaPlayModeChange={(playMode) =>
           setMessagePath(["media", "playMode"], playMode)

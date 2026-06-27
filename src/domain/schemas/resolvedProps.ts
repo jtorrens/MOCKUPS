@@ -55,8 +55,9 @@ const ResolvedChatMessageSchema = z.object({
   media: z
     .object({
       assetId: IdSchema.optional(),
-      uri: z.string().min(1),
-      type: z.enum(["image", "video"]).optional(),
+      uri: z.string().min(1).optional(),
+      type: z.enum(["image", "video", "audio"]).optional(),
+      durationSeconds: z.number().positive().optional(),
       playMode: z.enum(["once", "loop"]).optional(),
       playStartFrame: NonNegativeIntegerSchema.optional(),
       frame: NonNegativeIntegerSchema.optional(),
@@ -168,8 +169,9 @@ export const ResolvedMessageBubblePropsSchema = z.object({
   media: z
     .object({
       assetId: IdSchema.optional(),
-      uri: z.string().min(1),
-      type: z.enum(["image", "video"]).optional(),
+      uri: z.string().min(1).optional(),
+      type: z.enum(["image", "video", "audio"]).optional(),
+      durationSeconds: z.number().positive().optional(),
       playMode: z.enum(["once", "loop"]).optional(),
       playStartFrame: NonNegativeIntegerSchema.optional(),
       frame: NonNegativeIntegerSchema.optional(),
@@ -197,6 +199,7 @@ export const ResolvedMessageBubblePropsSchema = z.object({
     surfaceRelief: JsonObjectSchema.optional(),
     avatarSize: z.number().min(0),
     avatar: JsonObjectSchema.optional(),
+    audioMessage: JsonObjectSchema.optional(),
     media: JsonObjectSchema.optional(),
     status: JsonObjectSchema.optional(),
   }),

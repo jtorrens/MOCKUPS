@@ -191,7 +191,7 @@ try {
     "themes must contain the selected navigation_bar_id column",
   );
   assert(
-    Number(database.pragma("user_version", { simple: true })) === 27,
+    Number(database.pragma("user_version", { simple: true })) === 28,
     "SQLite schema version must be 27",
   );
 
@@ -233,7 +233,7 @@ try {
   console.log("✓ schema and seed validated in isolated in-memory SQLite");
   console.log("✓ all required domain tables exist");
   console.log("✓ module_theme_configs exists and seeds core.chat tokens");
-  console.log("✓ screen_instances references, module_instances content/behavior/animation, component classes, production font families, palette-normalized colors, and screen durations exist in schema v27");
+  console.log("✓ screen_instances references, module_instances content/behavior/animation, component classes, production font families, palette-normalized colors, and screen durations exist in schema v28");
   console.log("✓ SQLiteRepository resolved ChatScreen props with Zod");
   console.log("✓ SQLite and in-memory chat props are equivalent");
   console.log("✓ Chat module instance JSON and actor-based output validated");

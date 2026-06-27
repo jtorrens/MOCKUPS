@@ -39,13 +39,22 @@ export function contentSummary(value: JsonValue, groupKey?: string): string {
     if (groupKey === "messages") {
       const text = typeof value.text === "string" ? value.text : "";
       const direction = value.type === "system" ? "sistema" : "mensaje";
-      const start = typeof value.startFrame === "number" ? value.startFrame : null;
+      const delay =
+        typeof value.delayAfterPreviousFrames === "number"
+          ? value.delayAfterPreviousFrames
+          : typeof value.startFrame === "number"
+            ? value.startFrame
+            : null;
       const duration =
         typeof value.enterDurationFrames === "number"
           ? value.enterDurationFrames
           : null;
       const timing =
-        start !== null && duration !== null ? `${start}–${start + duration}f` : "";
+        delay !== null && duration !== null
+          ? `+${delay}f · ${duration}f enter`
+          : delay !== null
+            ? `+${delay}f`
+            : "";
       const mediaSummary: string = value.media
         ? contentSummary(value.media as JsonValue)
         : "";
@@ -97,11 +106,10 @@ export function defaultMessageItem(
     media: {
       type: "none",
     },
-    startFrame: 0,
+    delayAfterPreviousFrames: 0,
     enterDurationFrames: 10,
     textReveal: {
       mode: "simple_write_on",
-      startFrame: 0,
       durationFrames: 30,
     },
   };
@@ -159,25 +167,37 @@ export function messageWithMediaType(
     type: messageWithoutAsset.type === "system" ? "text" : messageWithoutAsset.type,
     media: {
       type: nextType,
-      filePath: String(media.filePath ?? ""),
+      ...(nextType === "audio"
+        ? {}
+        : { filePath: String(media.filePath ?? "") }),
+      ...(nextType === "audio"
+        ? {
+            durationSeconds: Number(media.durationSeconds ?? 8),
+            playStartFrame: Number(media.playStartFrame ?? 0),
+          }
+        : {}),
       ...(nextType === "video"
         ? {
             playMode: media.playMode === "loop" ? "loop" : "once",
             playStartFrame: Number(media.playStartFrame ?? 0),
           }
         : {}),
-      window: {
-        width: Number(mediaWindow.width ?? 360),
-        height: Number(mediaWindow.height ?? 240),
-        offsetX: Number(mediaWindow.offsetX ?? 0),
-        offsetY: Number(mediaWindow.offsetY ?? 0),
-      },
-      transform: {
-        scale: Number(mediaTransform.scale ?? 1),
-        translateX: Number(mediaTransform.translateX ?? 0),
-        translateY: Number(mediaTransform.translateY ?? 0),
-        rotationDegrees: Number(mediaTransform.rotationDegrees ?? 0),
-      },
+      ...(nextType === "audio"
+        ? {}
+        : {
+            window: {
+              width: Number(mediaWindow.width ?? 360),
+              height: Number(mediaWindow.height ?? 240),
+              offsetX: Number(mediaWindow.offsetX ?? 0),
+              offsetY: Number(mediaWindow.offsetY ?? 0),
+            },
+            transform: {
+              scale: Number(mediaTransform.scale ?? 1),
+              translateX: Number(mediaTransform.translateX ?? 0),
+              translateY: Number(mediaTransform.translateY ?? 0),
+              rotationDegrees: Number(mediaTransform.rotationDegrees ?? 0),
+            },
+          }),
     },
   };
 }
@@ -207,7 +227,6 @@ export function messageWithTextRevealMode(
   return {
     ...message,
     textReveal: {
-      startFrame: Number(textReveal.startFrame ?? message.startFrame ?? 0),
       durationFrames: Number(textReveal.durationFrames ?? 30),
       ...textReveal,
       mode,
@@ -240,6 +259,10 @@ export function chatContentGroupHasWarning({
 export function mediaNumberFieldsForMessage(
   message: Record<string, JsonValue>,
 ): ChatMediaNumberField[] {
+  const media = isJsonObject(message.media) ? message.media : {};
+  if (media.type === "audio") {
+    return [];
+  }
   return (
     [
       ["Container width", ["media", "window", "width"], 360],

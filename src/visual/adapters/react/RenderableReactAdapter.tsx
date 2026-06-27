@@ -253,7 +253,6 @@ function nodeStyle(
     boxShadow:
       node.type === "avatar" ||
       node.type === "message_bubble_shape" ||
-      node.type === "message_bubble_media" ||
       node.type === "message_bubble_media_image"
         ? undefined
         : joinedBoxShadow(shadow, surfaceRelief),
@@ -861,7 +860,10 @@ function nodeContent(node: RenderableNode): ReactNode {
   if (node.type === "message_bubble_tail") {
     return messageBubbleTailNode(node);
   }
-  if (node.type === "message_bubble_status_icon") {
+  if (
+    node.type === "message_bubble_status_icon" ||
+    node.type === "message_bubble_audio_badge_icon"
+  ) {
     const token = stringValue(node.metadata?.token) ?? node.text ?? "";
     if (stringValue(node.style?.maskImage)) {
       return <span title={token} />;
@@ -1249,7 +1251,8 @@ function RenderNode({
               whiteSpace: "nowrap",
               overflow: "visible",
             }
-        : node.type === "message_bubble_status_icon"
+        : node.type === "message_bubble_status_icon" ||
+          node.type === "message_bubble_audio_badge_icon"
           ? {
               display: "inline-flex",
               alignItems: "center",
@@ -1271,6 +1274,19 @@ function RenderNode({
               WebkitMaskSize: stringValue(node.style?.WebkitMaskImage)
                 ? "contain"
                 : undefined,
+            }
+        : node.type === "message_bubble_audio_play"
+          ? {
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              paddingLeft: numberValue(node.style?.paddingLeft),
+              whiteSpace: "nowrap",
+            }
+        : node.type === "message_bubble_audio_duration"
+          ? {
+              display: "block",
+              whiteSpace: "nowrap",
             }
         : node.type === "text"
           ? {

@@ -16,12 +16,14 @@ interface ChatMessageMediaEditorProps {
   filePath: string;
   mediaRoot: string;
   productionId: string;
+  durationSeconds: number;
   playMode: string;
   playStartFrame: number;
   canBrowse: boolean;
   numberFields: MediaNumberField[];
   onMediaTypeChange: (mediaType: string) => void;
   onFilePathChange: (filePath: string) => void;
+  onDurationSecondsChange: (durationSeconds: number) => void;
   onPlayModeChange: (playMode: string) => void;
   onPlayStartFrameChange: (playStartFrame: number) => void;
   onBrowseFile: () => void;
@@ -33,12 +35,14 @@ export function ChatMessageMediaEditor({
   filePath,
   mediaRoot,
   productionId,
+  durationSeconds,
   playMode,
   playStartFrame,
   canBrowse,
   numberFields,
   onMediaTypeChange,
   onFilePathChange,
+  onDurationSecondsChange,
   onPlayModeChange,
   onPlayStartFrameChange,
   onBrowseFile,
@@ -77,9 +81,40 @@ export function ChatMessageMediaEditor({
               <option value="none">None</option>
               <option value="image">Image</option>
               <option value="video">Video</option>
+              <option value="audio">Audio</option>
             </select>
           }
         />
+        {mediaType === "audio" ? (
+          <>
+            <InspectorFieldRow
+              className="record-editor-content-field-row"
+              label={<span>Duration seconds</span>}
+              control={
+                <DeferredNumberInput
+                  ariaLabel="Audio duration seconds"
+                  min={0.1}
+                  step={0.1}
+                  value={Math.max(0.1, Number(durationSeconds) || 8)}
+                  onCommit={onDurationSecondsChange}
+                />
+              }
+            />
+            <InspectorFieldRow
+              className="record-editor-content-field-row"
+              label={<span>Play start frame</span>}
+              control={
+                <DeferredNumberInput
+                  ariaLabel="Audio play start frame"
+                  min={0}
+                  step={1}
+                  value={Math.max(0, Number(playStartFrame) || 0)}
+                  onCommit={onPlayStartFrameChange}
+                />
+              }
+            />
+          </>
+        ) : null}
         {mediaType === "image" || mediaType === "video" ? (
           <>
             <ChatBubbleMediaPreview

@@ -609,6 +609,143 @@ export function ComponentClassRecordEditor({
                   />
                 </>
               ) : null}
+              {componentType === "audio_message" ? (
+                <>
+                  {[
+                    ["Width", "width", 260],
+                    ["Height", "height", 58],
+                    ["Avatar size", "avatarSize", 38],
+                    ["Avatar gap", "avatarGap", 8],
+                    ["Play circle size", "playCircleSize", 32],
+                    ["Microphone badge size", "microphoneBadgeSize", 16],
+                    ["Waveform bars", "waveformBarCount", 28],
+                    ["Waveform gap", "waveformGap", 2],
+                    ["Waveform min height", "waveformMinHeight", 4],
+                    ["Waveform max height", "waveformMaxHeight", 22],
+                    ["Progress knob size", "progressKnobSize", 9],
+                    ["Text size", "textSize", 11],
+                    ["Corner radius", "cornerRadius", 18],
+                    ["Border width", "borderWidth", 0],
+                  ].map(([label, key, fallback]) => (
+                    <InspectorFieldRow
+                      key={String(key)}
+                      label={String(label)}
+                      control={
+                        <DeferredTextInput
+                          ariaLabel={String(label)}
+                          value={String(numberValue(tokens[String(key)], Number(fallback)))}
+                          onCommit={(nextValue) => {
+                            const parsed = Number(nextValue);
+                            if (!Number.isFinite(parsed)) return;
+                            updateTokens(
+                              setTokenValue(tokens, String(key), parsed),
+                            );
+                          }}
+                        />
+                      }
+                    />
+                  ))}
+                  <InspectorFieldRow
+                    label="Avatar position"
+                    control={
+                      <select
+                        className="json-value-control"
+                        value={stringValue(tokens.avatarPosition, "left")}
+                        onChange={(event) =>
+                          updateTokens(
+                            setTokenValue(
+                              tokens,
+                              "avatarPosition",
+                              event.currentTarget.value,
+                            ),
+                          )
+                        }
+                      >
+                        <option value="left">Left</option>
+                        <option value="right">Right</option>
+                      </select>
+                    }
+                  />
+                  {[
+                    ["Play circle color", "playCircleColorToken", "accent"],
+                    ["Play icon color", "playIconColorToken", "background"],
+                    ["Microphone badge icon", "microphoneBadgeIconToken", "media_mic"],
+                    ["Waveform color", "waveformColorToken", "textSecondary"],
+                    ["Waveform played color", "waveformPlayedColorToken", "accent"],
+                    ["Text color", "textColorToken", "textSecondary"],
+                    ["Border color", "borderColorToken", "gray_080"],
+                    ["Shadow token", "shadowToken", "system"],
+                  ].map(([label, key, fallback]) => (
+                    <InspectorFieldRow
+                      key={String(key)}
+                      label={String(label)}
+                      control={
+                        <DeferredTextInput
+                          ariaLabel={String(label)}
+                          value={stringValue(tokens[String(key)], String(fallback))}
+                          onCommit={(nextValue) =>
+                            updateTokens(
+                              setTokenValue(tokens, String(key), nextValue),
+                            )
+                          }
+                        />
+                      }
+                    />
+                  ))}
+                  <InspectorFieldRow
+                    label="Shadow"
+                    control={shadowCheckbox({
+                      checked: booleanValue(tokens.shadowEnabled),
+                      onChange: (nextValue) =>
+                        updateTokens(
+                          setTokenValue(tokens, "shadowEnabled", nextValue),
+                        ),
+                    })}
+                  />
+                  <InspectorFieldRow
+                    label="Surface relief"
+                    control={
+                      <span
+                        style={{
+                          alignItems: "center",
+                          display: "inline-flex",
+                          gap: 10,
+                        }}
+                      >
+                        <label className="json-checkbox">
+                          <input
+                            type="checkbox"
+                            checked={booleanValue(
+                              tokens.surfaceReliefEnabled,
+                            )}
+                            onChange={(event) =>
+                              updateTokens(
+                                setTokenValue(
+                                  tokens,
+                                  "surfaceReliefEnabled",
+                                  event.currentTarget.checked,
+                                ),
+                              )
+                            }
+                          />
+                          {booleanValue(tokens.surfaceReliefEnabled)
+                            ? "true"
+                            : "false"}
+                        </label>
+                        <button
+                          type="button"
+                          className="inspector-restore-button"
+                          title="Surface relief detail editing will be added later"
+                          aria-label="Edit surface relief settings"
+                          disabled
+                        >
+                          ✎
+                        </button>
+                      </span>
+                    }
+                  />
+                </>
+              ) : null}
               {componentType === "text_input_bar" ? (
                 <>
                   <InspectorFieldRow

@@ -1260,6 +1260,38 @@ function defaultButtonIconComponentTokens() {
   });
 }
 
+function defaultAudioMessageComponentTokens() {
+  return JSON.stringify({
+    schemaVersion: 1,
+    componentType: "audio_message",
+    width: 260,
+    height: 58,
+    avatarSize: 38,
+    avatarPosition: "left",
+    avatarGap: 8,
+    playCircleSize: 32,
+    playCircleColorToken: "accent",
+    playIconColorToken: "background",
+    microphoneBadgeSize: 16,
+    microphoneBadgeIconToken: "media_mic",
+    waveformBarCount: 28,
+    waveformGap: 2,
+    waveformMinHeight: 4,
+    waveformMaxHeight: 22,
+    progressKnobSize: 9,
+    waveformColorToken: "textSecondary",
+    waveformPlayedColorToken: "accent",
+    textSize: 11,
+    textColorToken: "textSecondary",
+    cornerRadius: 18,
+    borderWidth: 0,
+    borderColorToken: "gray_080",
+    shadowEnabled: false,
+    shadowToken: "system",
+    surfaceReliefEnabled: false,
+  });
+}
+
 function defaultTextInputBarComponentTokens() {
   return JSON.stringify({
     schemaVersion: 1,
@@ -1352,6 +1384,12 @@ function seedDefaultComponentClasses(database: SQLiteDatabase): void {
         type: "button_icon",
         name: "Default icon button",
         tokens: defaultButtonIconComponentTokens(),
+      },
+      {
+        id: `${production.id}:audio_message_default`,
+        type: "audio_message",
+        name: "Default audio message",
+        tokens: defaultAudioMessageComponentTokens(),
       },
       {
         id: `${production.id}:text_input_bar_default`,
@@ -1450,6 +1488,11 @@ function applyAdditiveV27Migration(database: SQLiteDatabase): void {
   database.pragma("user_version = 27");
 }
 
+function applyAdditiveV28Migration(database: SQLiteDatabase): void {
+  seedDefaultComponentClasses(database);
+  database.pragma("user_version = 28");
+}
+
 export function applyInitialSchema(database: SQLiteDatabase): void {
   database.exec(readFileSync(schemaPath, "utf8"));
   applyAdditiveV2Migration(database);
@@ -1478,6 +1521,7 @@ export function applyInitialSchema(database: SQLiteDatabase): void {
   applyAdditiveV25Migration(database);
   applyAdditiveV26Migration(database);
   applyAdditiveV27Migration(database);
+  applyAdditiveV28Migration(database);
   database.pragma("foreign_keys = ON");
 }
 

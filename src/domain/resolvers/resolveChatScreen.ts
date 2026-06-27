@@ -11,6 +11,7 @@ import {
   ResolvedChatScreenPropsSchema,
   type Actor,
   type App,
+  type ChatModuleMessage,
   type Device,
   type DeviceState,
   type ModuleInstance,
@@ -908,6 +909,104 @@ function resolveDefaultButtonIconComponent(
   };
 }
 
+function themeColor(
+  colors: Record<string, unknown>,
+  palette: Map<string, string>,
+  token: string,
+  fallback: string,
+) {
+  if (typeof colors[token] === "string") return colors[token];
+  return palette.get(token) ?? fallback;
+}
+
+function resolveDefaultAudioMessageComponent(
+  repository: DomainRepository,
+  productionId: string,
+  iconTheme:
+    | {
+        asset_root: string;
+        mapping_json: Record<string, unknown>;
+      }
+    | undefined,
+  renderScale: number,
+  themeTokens: Record<string, unknown>,
+  palette: Map<string, string>,
+) {
+  const component =
+    repository
+      .getComponentClasses(productionId, "audio_message")
+      .find((entry) => entry.name === "Default audio message") ??
+    repository.getComponentClasses(productionId, "audio_message")[0];
+  const tokens = isObject(component?.tokens_json) ? component.tokens_json : {};
+  const colors = isObject(themeTokens.colors) ? themeTokens.colors : {};
+  const shadows = isObject(themeTokens.shadows) ? themeTokens.shadows : {};
+  const surfaceRelief = isObject(themeTokens.surfaceRelief)
+    ? themeTokens.surfaceRelief
+    : {};
+  const playCircleColorToken = stringValue(tokens.playCircleColorToken, "accent");
+  const playIconColorToken = stringValue(tokens.playIconColorToken, "background");
+  const borderColorToken = stringValue(tokens.borderColorToken, "gray_080");
+  const shadowToken = stringValue(tokens.shadowToken, "system");
+  const waveformColorToken = stringValue(tokens.waveformColorToken, "textSecondary");
+  const waveformPlayedColorToken = stringValue(
+    tokens.waveformPlayedColorToken,
+    "accent",
+  );
+  const textColorToken = stringValue(tokens.textColorToken, "textSecondary");
+  const microphoneBadgeIconToken = stringValue(
+    tokens.microphoneBadgeIconToken,
+    "media_mic",
+  );
+
+  return {
+    id: component?.id ?? null,
+    name: component?.name ?? "Default audio message",
+    componentType: "audio_message",
+    width: numberValue(tokens.width, 260) * renderScale,
+    height: numberValue(tokens.height, 58) * renderScale,
+    avatarSize: numberValue(tokens.avatarSize, 38) * renderScale,
+    avatarPosition:
+      stringValue(tokens.avatarPosition, "left") === "right" ? "right" : "left",
+    avatarGap: numberValue(tokens.avatarGap, 8) * renderScale,
+    playCircleSize: numberValue(tokens.playCircleSize, 32) * renderScale,
+    playCircleColor: themeColor(colors, palette, playCircleColorToken, "#007AFF"),
+    playIconColor: themeColor(colors, palette, playIconColorToken, "#FFFFFF"),
+    microphoneBadgeSize: numberValue(tokens.microphoneBadgeSize, 16) * renderScale,
+    microphoneBadgeIconToken,
+    microphoneBadgeIconUri: iconUriForToken(microphoneBadgeIconToken, iconTheme),
+    waveformBarCount: Math.max(
+      4,
+      Math.round(numberValue(tokens.waveformBarCount, 28)),
+    ),
+    waveformGap: numberValue(tokens.waveformGap, 2) * renderScale,
+    waveformMinHeight: numberValue(tokens.waveformMinHeight, 4) * renderScale,
+    waveformMaxHeight: numberValue(tokens.waveformMaxHeight, 22) * renderScale,
+    progressKnobSize: numberValue(tokens.progressKnobSize, 9) * renderScale,
+    waveformColor: themeColor(colors, palette, waveformColorToken, "#8E8E93"),
+    waveformPlayedColor: themeColor(
+      colors,
+      palette,
+      waveformPlayedColorToken,
+      "#007AFF",
+    ),
+    textSize: numberValue(tokens.textSize, 11) * renderScale,
+    textColor: themeColor(colors, palette, textColorToken, "#8E8E93"),
+    cornerRadius: numberValue(tokens.cornerRadius, 18) * renderScale,
+    borderWidth: numberValue(tokens.borderWidth, 0) * renderScale,
+    borderColor: themeColor(colors, palette, borderColorToken, "#D1D1D6"),
+    shadowEnabled: tokens.shadowEnabled === true,
+    shadow: isObject(shadows[shadowToken])
+      ? shadows[shadowToken]
+      : isObject(shadows.system)
+        ? shadows.system
+        : isObject(shadows.elevated)
+          ? shadows.elevated
+          : {},
+    surfaceReliefEnabled: tokens.surfaceReliefEnabled === true,
+    surfaceRelief: isObject(surfaceRelief.default) ? surfaceRelief.default : {},
+  };
+}
+
 export function moduleTypographyDefaultsFromFonts(
   tokens: Record<string, unknown>,
 ): Record<string, unknown> {
@@ -1557,6 +1656,14 @@ export function resolveChatScreen({
     renderScale,
     themeTokens,
   );
+  const audioMessageComponent = resolveDefaultAudioMessageComponent(
+    repository,
+    theme.production_id,
+    iconTheme,
+    renderScale,
+    themeTokens,
+    palette,
+  );
   const textInputBarComponent = resolveDefaultComponentTokens(
     repository,
     theme.production_id,
@@ -1597,12 +1704,35 @@ export function resolveChatScreen({
     navigationBar?.config_json,
     renderScale,
   );
+  let previousMessageWriteOnEndFrame = 0;
   const resolvedMessages = moduleData.messages.map((message) => {
+    const legacyAbsoluteStartFrame =
+      typeof message.startFrame === "number"
+        ? message.startFrame
+        : previousMessageWriteOnEndFrame;
+    const delayAfterPreviousFrames =
+      typeof message.delayAfterPreviousFrames === "number"
+        ? message.delayAfterPreviousFrames
+        : Math.max(0, legacyAbsoluteStartFrame - previousMessageWriteOnEndFrame);
+    const effectiveStartFrame =
+      previousMessageWriteOnEndFrame + delayAfterPreviousFrames;
+    const effectiveMessage: ChatModuleMessage = {
+      ...message,
+      startFrame: effectiveStartFrame,
+      ...(message.textReveal
+        ? {
+            textReveal: {
+              ...message.textReveal,
+              startFrame: effectiveStartFrame,
+            },
+          }
+        : {}),
+    };
     const direction =
-      message.direction ??
-      (message.type === "system"
+      effectiveMessage.direction ??
+      (effectiveMessage.type === "system"
         ? "system"
-        : message.actorId === ownerActor.id
+        : effectiveMessage.actorId === ownerActor.id
           ? "outgoing"
           : "incoming");
     const sender =
@@ -1610,12 +1740,12 @@ export function resolveChatScreen({
         ? ownerChatActor
         : resolveChatActor(
             repository,
-            message.actorId ?? ownerActor.id,
+            effectiveMessage.actorId ?? ownerActor.id,
             themeMode,
             palette,
           );
     const bubble = resolveMessageBubble({
-      message,
+      message: effectiveMessage,
       sender,
       direction,
       themeTokens: normalizedThemeTokens,
@@ -1623,18 +1753,23 @@ export function resolveChatScreen({
       fps,
       viewportWidth: metrics.viewport.width,
     });
-    const mediaAsset = message.mediaAssetId
+    previousMessageWriteOnEndFrame =
+      bubble.timing.startFrame + (bubble.timing.writeOnDurationFrames ?? 0);
+
+    const mediaAsset = effectiveMessage.mediaAssetId
       ? requireRecord(
-          repository.getMediaAsset(message.mediaAssetId),
+          repository.getMediaAsset(effectiveMessage.mediaAssetId),
           "MediaAsset",
-          message.mediaAssetId,
+          effectiveMessage.mediaAssetId,
         )
       : undefined;
-    const scaledMedia = scaleChatMediaForRender(message.media, renderScale);
+    const scaledMedia = scaleChatMediaForRender(effectiveMessage.media, renderScale);
     const mediaFilePath = scaledMedia
       ? stringValue(scaledMedia.filePath)
       : "";
     const mediaUri = mediaFilePath || mediaAsset?.uri;
+    const mediaType = scaledMedia ? stringValue(scaledMedia.type) : "";
+    const isAudioMedia = mediaType === "audio";
 
     return {
       id: bubble.id,
@@ -1646,13 +1781,25 @@ export function resolveChatScreen({
         id: bubble.actor.id,
         displayName: bubble.actor.displayName,
       },
-      ...(mediaUri
+      ...(mediaUri || isAudioMedia
         ? {
             media: {
               ...(mediaAsset ? { assetId: mediaAsset.id } : {}),
-              uri: mediaUri,
-              ...(scaledMedia && stringValue(scaledMedia.type)
-                ? { type: stringValue(scaledMedia.type) }
+              ...(mediaUri ? { uri: mediaUri } : {}),
+              ...(mediaType ? { type: mediaType } : {}),
+              ...(isAudioMedia
+                ? {
+                    durationSeconds: numberValue(
+                      scaledMedia?.durationSeconds,
+                      8,
+                    ),
+                    window: {
+                      width: audioMessageComponent.width,
+                      height: audioMessageComponent.height,
+                      offsetX: 0,
+                      offsetY: 0,
+                    },
+                  }
                 : {}),
               ...(scaledMedia && stringValue(scaledMedia.playMode)
                 ? { playMode: stringValue(scaledMedia.playMode) }
@@ -1839,6 +1986,7 @@ export function resolveChatScreen({
       components: {
         ...(isObject(themeTokens.components) ? themeTokens.components : {}),
         avatar: avatarComponent,
+        audioMessage: audioMessageComponent,
         buttonIcon: buttonIconComponent,
         textInputBar: {
           id: textInputBarComponent.id,

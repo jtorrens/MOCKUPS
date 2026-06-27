@@ -34,7 +34,7 @@ export const TextRevealSchema = z.object({
     "natural_write_on",
     "waiting_dots",
   ]),
-  startFrame: NonNegativeIntegerSchema,
+  startFrame: NonNegativeIntegerSchema.default(0),
   durationFrames: NonNegativeIntegerSchema,
 });
 
@@ -52,8 +52,9 @@ export const ChatModuleMessageSchema = z
     mediaAssetId: IdSchema.optional(),
     media: z
       .object({
-        type: z.enum(["none", "image", "video"]).optional(),
+        type: z.enum(["none", "image", "video", "audio"]).optional(),
         filePath: z.string().optional(),
+        durationSeconds: z.number().positive().optional(),
         playMode: z.enum(["once", "loop"]).optional(),
         playStartFrame: NonNegativeIntegerSchema.optional(),
         window: MediaWindowSchema,
@@ -71,7 +72,17 @@ export const ChatModuleMessageSchema = z
           .default("none"),
       })
       .optional(),
-    startFrame: NonNegativeIntegerSchema,
+    /**
+     * Authoring timing: frames to wait after the previous message write-on has
+     * finished. Message order is the source of truth for sequencing.
+     */
+    delayAfterPreviousFrames: NonNegativeIntegerSchema.optional(),
+    /**
+     * Legacy absolute timing kept as an optional import/migration fallback.
+     * The resolver converts it into delayAfterPreviousFrames when the new field
+     * is absent.
+     */
+    startFrame: NonNegativeIntegerSchema.optional(),
     enterDurationFrames: NonNegativeIntegerSchema.default(0),
     exitFrame: NonNegativeIntegerSchema.optional(),
     textReveal: TextRevealSchema.optional(),
@@ -91,6 +102,7 @@ export const ChatModuleMessageSchema = z
     if (
       value.media &&
       value.media.type !== "none" &&
+      value.media.type !== "audio" &&
       !value.media.filePath &&
       !value.mediaAssetId
     ) {

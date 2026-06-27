@@ -19,7 +19,7 @@ interface ChatMessageFieldsEditorProps {
   direction: string;
   actorId: string;
   actorOptions: ActorOption[];
-  startFrame: number;
+  delayAfterPreviousFrames: number;
   writeOnDurationFrames: number;
   showBubbleBackground: boolean;
   textScale: number;
@@ -29,6 +29,7 @@ interface ChatMessageFieldsEditorProps {
   textRevealMode: string;
   mediaType: string;
   mediaFilePath: string;
+  mediaDurationSeconds: number;
   mediaPlayMode: string;
   mediaPlayStartFrame: number;
   mediaRoot: string;
@@ -37,7 +38,7 @@ interface ChatMessageFieldsEditorProps {
   mediaNumberFields: MediaNumberField[];
   onDirectionChange: (direction: string) => void;
   onActorChange: (actorId: string) => void;
-  onStartFrameChange: (frame: number) => void;
+  onDelayAfterPreviousFramesChange: (frame: number) => void;
   onWriteOnDurationFramesChange: (frameCount: number) => void;
   onShowBubbleBackgroundChange: (show: boolean) => void;
   onTextScaleChange: (scale: number) => void;
@@ -47,6 +48,7 @@ interface ChatMessageFieldsEditorProps {
   onTextRevealModeChange: (mode: string) => void;
   onMediaTypeChange: (mediaType: string) => void;
   onMediaFilePathChange: (filePath: string) => void;
+  onMediaDurationSecondsChange: (durationSeconds: number) => void;
   onMediaPlayModeChange: (playMode: string) => void;
   onMediaPlayStartFrameChange: (playStartFrame: number) => void;
   onBrowseMedia: () => void;
@@ -57,7 +59,7 @@ export function ChatMessageFieldsEditor({
   direction,
   actorId,
   actorOptions,
-  startFrame,
+  delayAfterPreviousFrames,
   writeOnDurationFrames,
   showBubbleBackground,
   textScale,
@@ -67,6 +69,7 @@ export function ChatMessageFieldsEditor({
   textRevealMode,
   mediaType,
   mediaFilePath,
+  mediaDurationSeconds,
   mediaPlayMode,
   mediaPlayStartFrame,
   mediaRoot,
@@ -75,7 +78,7 @@ export function ChatMessageFieldsEditor({
   mediaNumberFields,
   onDirectionChange,
   onActorChange,
-  onStartFrameChange,
+  onDelayAfterPreviousFramesChange,
   onWriteOnDurationFramesChange,
   onShowBubbleBackgroundChange,
   onTextScaleChange,
@@ -85,6 +88,7 @@ export function ChatMessageFieldsEditor({
   onTextRevealModeChange,
   onMediaTypeChange,
   onMediaFilePathChange,
+  onMediaDurationSecondsChange,
   onMediaPlayModeChange,
   onMediaPlayStartFrameChange,
   onBrowseMedia,
@@ -134,15 +138,17 @@ export function ChatMessageFieldsEditor({
       ) : null}
       <InspectorFieldRow
         className="record-editor-content-field-row"
-        label={<span>Start frame</span>}
+        label={<span>Delay after previous write-on</span>}
         control={
           <input
             className="json-value-control"
             type="number"
             min={0}
             step={1}
-            value={startFrame}
-            onChange={(event) => onStartFrameChange(Number(event.target.value))}
+            value={delayAfterPreviousFrames}
+            onChange={(event) =>
+              onDelayAfterPreviousFramesChange(Number(event.target.value))
+            }
           />
         }
       />
@@ -229,6 +235,7 @@ export function ChatMessageFieldsEditor({
       <ChatMessageMediaEditor
         mediaType={mediaType}
         filePath={mediaFilePath}
+        durationSeconds={mediaDurationSeconds}
         mediaRoot={mediaRoot}
         productionId={productionId}
         playMode={mediaPlayMode}
@@ -237,6 +244,7 @@ export function ChatMessageFieldsEditor({
         numberFields={mediaNumberFields}
         onMediaTypeChange={onMediaTypeChange}
         onFilePathChange={onMediaFilePathChange}
+        onDurationSecondsChange={onMediaDurationSecondsChange}
         onPlayModeChange={onMediaPlayModeChange}
         onPlayStartFrameChange={onMediaPlayStartFrameChange}
         onBrowseFile={onBrowseMedia}

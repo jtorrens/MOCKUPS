@@ -55,6 +55,279 @@ function cssUrl(value: string) {
   return `url("${value.replace(/"/g, '\\"')}")`;
 }
 
+function hashString(value: string) {
+  let hash = 2166136261;
+  for (const char of value) {
+    hash ^= char.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function deterministicWaveformValue(seed: number, index: number) {
+  const value = Math.sin((seed + index * 97.13) * 0.017) * 43758.5453;
+  return value - Math.floor(value);
+}
+
+function formatDuration(seconds: number) {
+  const safeSeconds = Math.max(0, Math.round(seconds));
+  const minutes = Math.floor(safeSeconds / 60);
+  const remainder = safeSeconds % 60;
+  return `${minutes}:${String(remainder).padStart(2, "0")}`;
+}
+
+function formatRemainingDuration(seconds: number) {
+  const safeSeconds = Math.max(0, Math.ceil(seconds));
+  const minutes = Math.floor(safeSeconds / 60);
+  const remainder = safeSeconds % 60;
+  return `${minutes}:${String(remainder).padStart(2, "0")}`;
+}
+
+function messageAudioChildren(
+  input: ResolvedMessageBubbleProps,
+  layout: MessageBubbleLayout,
+): RenderableNode[] {
+  if (!input.media || !layout.mediaBox) return [];
+  const audioStyle = readRecord(input.style.audioMessage);
+  const box = layout.mediaBox;
+  const durationSeconds = Math.max(1, readNumber(input.media.durationSeconds, 8));
+  const playFrame = readNumber(input.media.frame, 0);
+  const totalPlayFrames = durationSeconds * input.fps;
+  const progress = Math.max(
+    0,
+    Math.min(1, playFrame / totalPlayFrames),
+  );
+  const isPlaying = playFrame > 0 && playFrame < totalPlayFrames;
+  const displayedDurationText = isPlaying
+    ? formatRemainingDuration(durationSeconds - playFrame / input.fps)
+    : progress >= 1
+      ? "0:00"
+      : formatDuration(durationSeconds);
+  const avatarSize = Math.max(0, readNumber(audioStyle.avatarSize, 0));
+  const avatarGap = Math.max(0, readNumber(audioStyle.avatarGap, 8));
+  const avatarPosition = readString(audioStyle.avatarPosition, "left") === "right"
+    ? "right"
+    : "left";
+  const playCircleSize = Math.min(
+    box.height,
+    Math.max(1, readNumber(audioStyle.playCircleSize, 32)),
+  );
+  const badgeSize = Math.max(1, readNumber(audioStyle.microphoneBadgeSize, 16));
+  const sidePadding = Math.max(6, Math.round(box.height * 0.16));
+  const verticalCenter = box.y + box.height / 2;
+  const avatarX =
+    avatarPosition === "right"
+      ? box.x + box.width - sidePadding - avatarSize
+      : box.x + sidePadding;
+  const contentStart =
+    avatarPosition === "right"
+      ? box.x + sidePadding
+      : avatarX + avatarSize + avatarGap;
+  const contentEnd =
+    avatarPosition === "right"
+      ? avatarX - avatarGap
+      : box.x + box.width - sidePadding;
+  const playX = contentStart;
+  const playY = Math.round(verticalCenter - playCircleSize / 2);
+  const textSize = Math.max(1, readNumber(audioStyle.textSize, 11));
+  const durationText = displayedDurationText;
+  const durationWidth = Math.ceil(durationText.length * textSize * 0.58);
+  const itemGap = avatarGap;
+  const waveformStart = playX + playCircleSize + itemGap;
+  const waveformEnd = Math.max(
+    waveformStart + 1,
+    contentEnd - durationWidth - itemGap,
+  );
+  const progressKnobSize = Math.max(
+    5,
+    readNumber(audioStyle.progressKnobSize, 9),
+  );
+  const barCount = Math.max(4, Math.round(readNumber(audioStyle.waveformBarCount, 28)));
+  const waveformGap = Math.max(0, readNumber(audioStyle.waveformGap, 2));
+  const availableWaveformWidth = Math.max(1, waveformEnd - waveformStart);
+  const barWidth = Math.max(
+    1,
+    Math.floor((availableWaveformWidth - waveformGap * (barCount - 1)) / barCount),
+  );
+  const actualWaveformEnd =
+    waveformStart + (barCount - 1) * (barWidth + waveformGap) + barWidth;
+  const firstBarCenter = waveformStart + barWidth / 2;
+  const lastBarCenter = actualWaveformEnd - barWidth / 2;
+  const minHeight = Math.max(1, readNumber(audioStyle.waveformMinHeight, 4));
+  const maxHeight = Math.max(minHeight, readNumber(audioStyle.waveformMaxHeight, 22));
+  const playedBars = Math.floor(barCount * progress);
+  const seed = hashString(input.id);
+  const children: RenderableNode[] = [];
+
+  if (input.actor.avatarUri && avatarSize > 0) {
+    children.push({
+      ...AvatarModule.render({
+        id: `${input.id}:audio:avatar`,
+        uri: input.actor.avatarUri,
+        size: avatarSize,
+        label: input.actor.displayName,
+        frame: input.frame,
+        cornerRadius: Math.round(avatarSize * 0.5),
+        ...(input.actor.avatarScale !== undefined
+          ? { imageScale: input.actor.avatarScale }
+          : {}),
+        ...(input.actor.avatarOffsetX !== undefined
+          ? { imageOffsetX: input.actor.avatarOffsetX }
+          : {}),
+        ...(input.actor.avatarOffsetY !== undefined
+          ? { imageOffsetY: input.actor.avatarOffsetY }
+          : {}),
+        ...(input.actor.avatarBaseSize !== undefined
+          ? { imageBaseSize: input.actor.avatarBaseSize }
+          : {}),
+      }),
+      box: {
+        x: Math.round(avatarX),
+        y: Math.round(verticalCenter - avatarSize / 2),
+        width: Math.round(avatarSize),
+        height: Math.round(avatarSize),
+      },
+    });
+    children.push({
+      id: `${input.id}:audio:mic-badge`,
+      type: "message_bubble_audio_badge",
+      role: "microphone_badge",
+      frame: input.frame,
+      box: {
+        x: Math.round(avatarX + avatarSize - badgeSize * 0.85),
+        y: Math.round(verticalCenter + avatarSize / 2 - badgeSize * 0.95),
+        width: Math.round(badgeSize),
+        height: Math.round(badgeSize),
+      },
+      style: {
+        backgroundColor: readString(audioStyle.playCircleColor, "#007AFF"),
+        borderRadius: Math.round(badgeSize / 2),
+      },
+      children: [
+        {
+          id: `${input.id}:audio:mic-badge:icon`,
+          type: "message_bubble_audio_badge_icon",
+          role: "microphone",
+          frame: input.frame,
+          box: {
+            x: Math.round(avatarX + avatarSize - badgeSize * 0.69),
+            y: Math.round(verticalCenter + avatarSize / 2 - badgeSize * 0.79),
+            width: Math.round(badgeSize * 0.68),
+            height: Math.round(badgeSize * 0.68),
+          },
+          text: "MIC",
+          style: {
+            color: readString(audioStyle.playIconColor, "#FFFFFF"),
+            ...(readString(audioStyle.microphoneBadgeIconUri)
+              ? {
+                  maskImage: maskUrl(readString(audioStyle.microphoneBadgeIconUri)),
+                  WebkitMaskImage: maskUrl(readString(audioStyle.microphoneBadgeIconUri)),
+                }
+              : {}),
+          },
+          metadata: {
+            token: readString(audioStyle.microphoneBadgeIconToken, "media_mic"),
+          },
+        },
+      ],
+    });
+  }
+
+  children.push({
+    id: `${input.id}:audio:play-circle`,
+    type: "message_bubble_audio_play",
+    role: "play",
+    frame: input.frame,
+    box: {
+      x: Math.round(playX),
+      y: playY,
+      width: Math.round(playCircleSize),
+      height: Math.round(playCircleSize),
+    },
+    text: isPlaying ? "Ⅱ" : "▶",
+    style: {
+      alignItems: "center",
+      backgroundColor: readString(audioStyle.playCircleColor, "#007AFF"),
+      borderRadius: Math.round(playCircleSize / 2),
+      color: readString(audioStyle.playIconColor, "#FFFFFF"),
+      display: "flex",
+      fontSize: Math.round(playCircleSize * 0.44),
+      justifyContent: "center",
+      lineHeight: playCircleSize,
+      paddingLeft: isPlaying ? 0 : Math.round(playCircleSize * 0.07),
+    },
+  });
+
+  for (let index = 0; index < barCount; index += 1) {
+    const normalized = deterministicWaveformValue(seed, index);
+    const height = minHeight + normalized * (maxHeight - minHeight);
+    const x = waveformStart + index * (barWidth + waveformGap);
+    children.push({
+      id: `${input.id}:audio:waveform:${index}`,
+      type: "message_bubble_audio_waveform_bar",
+      role: index < playedBars ? "played" : "unplayed",
+      frame: input.frame,
+      box: {
+        x: Math.round(x),
+        y: Math.round(verticalCenter - height / 2),
+        width: Math.round(barWidth),
+        height: Math.round(height),
+      },
+      style: {
+        backgroundColor:
+          index < playedBars
+            ? readString(audioStyle.waveformPlayedColor, "#007AFF")
+            : readString(audioStyle.waveformColor, "#8E8E93"),
+        borderRadius: Math.max(1, Math.round(barWidth / 2)),
+      },
+    });
+  }
+
+  children.push({
+    id: `${input.id}:audio:progress-knob`,
+    type: "message_bubble_audio_progress_knob",
+    role: "progress_knob",
+    frame: input.frame,
+    box: {
+      x: Math.round(
+        firstBarCenter +
+          (lastBarCenter - firstBarCenter) * progress -
+          progressKnobSize / 2,
+      ),
+      y: Math.round(verticalCenter - progressKnobSize / 2),
+      width: progressKnobSize,
+      height: progressKnobSize,
+    },
+    style: {
+      backgroundColor: readString(audioStyle.playCircleColor, "#007AFF"),
+      borderRadius: Math.round(progressKnobSize / 2),
+    },
+  });
+
+  children.push({
+    id: `${input.id}:audio:duration`,
+    type: "message_bubble_audio_duration",
+    role: "duration",
+    frame: input.frame,
+    box: {
+      x: Math.round(contentEnd - durationWidth),
+      y: Math.round(verticalCenter - textSize * 0.6),
+      width: durationWidth,
+      height: Math.round(textSize * 1.25),
+    },
+    text: durationText,
+    style: {
+      color: readString(audioStyle.textColor, "#8E8E93"),
+      fontFamily: input.style.fontFamily,
+      fontSize: textSize,
+      lineHeight: Math.round(textSize * 1.25),
+      whiteSpace: "nowrap",
+    },
+  });
+
+  return children;
+}
+
 function messageMediaNode(
   input: ResolvedMessageBubbleProps,
   layout: MessageBubbleLayout,
@@ -62,33 +335,60 @@ function messageMediaNode(
   if (!input.media || !layout.mediaBox) return undefined;
   const mediaStyle = readRecord(input.style.media);
   const transform = readRecord(input.media.transform);
+  const mediaType = readString(input.media.type, "image");
+  const effectiveMediaStyle =
+    mediaType === "audio" ? readRecord(input.style.audioMessage) : mediaStyle;
   const scale = Math.max(0.01, readNumber(transform.scale, 1));
   const translateX = readNumber(transform.translateX, 0);
   const translateY = readNumber(transform.translateY, 0);
-  const borderWidth = Math.max(0, readNumber(mediaStyle.borderWidth, 0));
-  const borderColor = readString(mediaStyle.borderColor, "transparent");
-  const cornerRadius = Math.max(0, readNumber(mediaStyle.cornerRadius, input.style.borderRadius));
-  const shadowEnabled = mediaStyle.shadowEnabled === true;
+  const borderWidth = Math.max(0, readNumber(effectiveMediaStyle.borderWidth, 0));
+  const borderColor = readString(effectiveMediaStyle.borderColor, "transparent");
+  const cornerRadius = Math.max(
+    0,
+    readNumber(effectiveMediaStyle.cornerRadius, input.style.borderRadius),
+  );
+  const shadowEnabled = effectiveMediaStyle.shadowEnabled === true;
+  const mediaShadow = readRecord(effectiveMediaStyle.shadow);
+  const surfaceReliefEnabled = effectiveMediaStyle.surfaceReliefEnabled === true;
+  const mediaSurfaceRelief = surfaceReliefEnabled
+    ? readRecord(effectiveMediaStyle.surfaceRelief)
+    : {};
   const mediaFrame = Math.max(0, readNumber(input.media.frame, input.frame));
+  const audioContainerShadow =
+    mediaType === "audio" && shadowEnabled
+      ? Object.keys(mediaShadow).length
+        ? mediaShadow
+        : input.style.shadow
+      : {};
+  const audioContainerRelief =
+    mediaType === "audio" ? mediaSurfaceRelief : {};
   const mediaImage: RenderableNode = {
     id: `${input.id}:media:image`,
     type: "message_bubble_media_image",
-    role: input.media.type ?? "image",
+    role: mediaType,
     frame: mediaFrame,
     box: layout.mediaBox,
     style: {
       backgroundColor: "#000000",
-      backgroundImage: input.media.type === "video" ? undefined : cssUrl(input.media.uri),
+      backgroundImage:
+        mediaType === "video" || mediaType === "audio" || !input.media.uri
+          ? undefined
+          : cssUrl(input.media.uri),
       backgroundPosition: `calc(50% + ${translateX}px) calc(50% + ${translateY}px)`,
       backgroundRepeat: "no-repeat",
       backgroundSize: `${scale * 100}%`,
       borderRadius: cornerRadius,
       overflow: "hidden",
-      shadow: shadowEnabled ? input.style.shadow : {},
+      shadow:
+        mediaType !== "audio" && shadowEnabled
+          ? Object.keys(mediaShadow).length
+            ? mediaShadow
+            : input.style.shadow
+          : {},
     },
     metadata: {
       uri: input.media.uri,
-      type: input.media.type ?? "image",
+      type: mediaType,
       playMode: input.media.playMode ?? "once",
       playStartFrame: input.media.playStartFrame ?? 0,
       frame: mediaFrame,
@@ -120,14 +420,26 @@ function messageMediaNode(
   return {
     id: `${input.id}:media`,
     type: "message_bubble_media",
-    role: input.media.type ?? "image",
+    role: mediaType,
     frame: input.frame,
     box: layout.mediaBox,
     style: {
-      backgroundColor: "transparent",
+      backgroundColor:
+        mediaType === "audio" ? input.style.backgroundColor : "transparent",
+      borderRadius: cornerRadius,
       overflow: "visible",
+      shadow: audioContainerShadow,
+      surfaceRelief: audioContainerRelief,
     },
-    children: mediaBorder ? [mediaImage, mediaBorder] : [mediaImage],
+    children:
+      mediaType === "audio"
+        ? [
+            ...messageAudioChildren(input, layout),
+            ...(mediaBorder ? [mediaBorder] : []),
+          ]
+        : mediaBorder
+          ? [mediaImage, mediaBorder]
+          : [mediaImage],
   };
 }
 

@@ -190,6 +190,7 @@ export function resolveMessageBubble({
   const deliveryStatus = statusDeliveryValue(rawStatus.deliveryStatus);
   const statusTokens = themeTokens.chatBubbles.status ?? {};
   const mediaTokens = themeTokens.chatBubbles.media ?? {};
+  const messageStartFrame = message.startFrame ?? 0;
   const statusColor =
     deliveryStatus === "read"
       ? statusTokens.readColor
@@ -200,9 +201,9 @@ export function resolveMessageBubble({
           : statusTokens.sentColor;
   const enterProgress =
     message.enterDurationFrames === 0
-      ? Number(localFrame >= message.startFrame)
+      ? Number(localFrame >= messageStartFrame)
       : clamp(
-          (localFrame - message.startFrame) / message.enterDurationFrames,
+          (localFrame - messageStartFrame) / message.enterDurationFrames,
         );
   const reveal = message.textReveal;
   const writeOnProgress =
@@ -303,7 +304,7 @@ export function resolveMessageBubble({
       ...message.layoutOverride,
     },
     timing: {
-      startFrame: message.startFrame,
+      startFrame: messageStartFrame,
       enterDurationFrames: message.enterDurationFrames,
       writeOnStartFrame:
         direction !== "system" && reveal?.mode === "simple_write_on"

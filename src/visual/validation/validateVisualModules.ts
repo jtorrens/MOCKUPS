@@ -310,6 +310,56 @@ assert(
     zeroGutterMessageListBox.x + zeroGutterMessageListBox.width,
   "Zero-gutter sent bubble plus tail must align to the message-list right edge",
 );
+const audioMessageComponent = isRecord(chatProps.theme.components)
+  && isRecord(chatProps.theme.components.audioMessage)
+  ? chatProps.theme.components.audioMessage
+  : {};
+const audioMediaProps = ResolvedChatScreenPropsSchema.parse({
+  ...chatProps,
+  messages: [
+    {
+      ...chatProps.messages[0],
+      id: "audio_message_validation",
+      text: "",
+      visibleText: "",
+      media: {
+        type: "audio",
+        durationSeconds: 12,
+        playStartFrame: 0,
+        frame: 90,
+        window: {
+          width:
+            typeof audioMessageComponent.width === "number"
+              ? audioMessageComponent.width
+              : 260,
+          height:
+            typeof audioMessageComponent.height === "number"
+              ? audioMessageComponent.height
+              : 58,
+          offsetX: 0,
+          offsetY: 0,
+        },
+      },
+    },
+  ],
+});
+const audioMediaTree = RenderableNodeSchema.parse(
+  chatModule.render(audioMediaProps),
+);
+const audioNodes = collectNodes(audioMediaTree);
+assert(
+  audioNodes.some((node) => node.type === "message_bubble_audio_play") &&
+    audioNodes.some((node) => node.type === "message_bubble_audio_waveform_bar") &&
+    audioNodes.some((node) => node.type === "message_bubble_audio_progress_knob") &&
+    audioNodes.some((node) => node.type === "message_bubble_audio_badge"),
+  "Audio media messages must render play, deterministic waveform, progress knob, and microphone badge",
+);
+assert(
+  audioNodes.some(
+    (node) => node.type === "message_bubble_audio_play" && node.text === "Ⅱ",
+  ),
+  "Audio media play control must show pause while playback is active",
+);
 const keyboardProps = ResolvedChatScreenPropsSchema.parse({
   ...chatProps,
   props: {
