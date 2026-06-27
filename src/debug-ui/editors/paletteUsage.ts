@@ -106,6 +106,25 @@ export function paletteTokenUsages({
     if (navigationBar.production_id !== productionId) continue;
     pushUsage({ usages, tablesById, tableId: "navigation_bars", record: navigationBar, field: "config_json", token });
   }
+  for (const componentClass of records.component_classes ?? []) {
+    if (componentClass.production_id !== productionId) continue;
+    pushUsage({
+      usages,
+      tablesById,
+      tableId: "component_classes",
+      record: componentClass,
+      field: "tokens_json",
+      token,
+    });
+    pushUsage({
+      usages,
+      tablesById,
+      tableId: "component_classes",
+      record: componentClass,
+      field: "metadata_json",
+      token,
+    });
+  }
   for (const config of records.module_theme_configs ?? []) {
     if (!themeIds.has(String(config.theme_id ?? ""))) continue;
     pushUsage({

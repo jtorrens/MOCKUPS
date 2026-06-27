@@ -139,6 +139,7 @@ export function RecordEditor({
       jsonGroupDrafts={jsonGroupDrafts}
       mediaRoot={productionMediaRoot}
       productionId={productionId}
+      paletteCatalog={paletteCatalog}
       nativeBridge={mockupsNative()}
       relativePathFromRoot={relativePathFromRoot}
       renderServices={renderServices}

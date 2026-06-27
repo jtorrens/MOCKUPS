@@ -9,6 +9,7 @@ import {
   hasModeColorOverrides,
   ModeColorEditor,
 } from "../components/json-editor/ModeColorEditor.js";
+import { InspectorFieldRow } from "../components/inspector/InspectorFieldRow.js";
 import { createPaletteColorCatalog } from "../components/json-editor/paletteColors.js";
 import type { JsonValue } from "../components/json-editor/jsonEditorUtils.js";
 import { ModuleThemeConfigEditor } from "./ModuleThemeConfigEditor.js";
@@ -146,6 +147,11 @@ export function ModuleThemeConfigRecordEditor({
     activeDesignGroup && selectableDesignGroups.includes(activeDesignGroup)
       ? activeDesignGroup
       : "";
+  const avatarComponent = (records.component_classes ?? []).find(
+    (component) =>
+      component.production_id === themeRecord?.production_id &&
+      component.component_type === "avatar",
+  );
 
   return (
     <ModuleThemeConfigEditor
@@ -175,6 +181,30 @@ export function ModuleThemeConfigRecordEditor({
                 onToggle={setActiveDesignGroup}
               >
                 <div className="record-editor-field-stack record-editor-single-column">
+                  {record.module_id === "core.chat" && group === "header" ? (
+                    <InspectorFieldRow
+                      label="Avatar component"
+                      control={
+                        <span style={{ display: "inline-flex", gap: 10, alignItems: "center" }}>
+                          <input
+                            className="json-value-control"
+                            disabled
+                            value={String(avatarComponent?.name ?? "Default avatar")}
+                            readOnly
+                          />
+                          <button
+                            type="button"
+                            className="inspector-restore-button"
+                            title="Component overrides will be edited here"
+                            aria-label="Edit avatar component overrides"
+                            disabled
+                          >
+                            ✎
+                          </button>
+                        </span>
+                      }
+                    />
+                  ) : null}
                   {renderField(tokensField, {
                     rawText: stringifyJson(tokenRoot[group] ?? {}),
                     hideLabel: true,

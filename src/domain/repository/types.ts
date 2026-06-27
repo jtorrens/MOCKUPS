@@ -2,6 +2,7 @@ import type {
   Actor,
   AnimationPreset,
   App,
+  ComponentClass,
   Conversation,
   ConversationParticipant,
   Device,
@@ -31,6 +32,7 @@ export interface RepositoryDataset {
   screenInstances: ScreenInstance[];
   moduleInstances: ModuleInstance[];
   screenEvents: ScreenEvent[];
+  componentClasses: ComponentClass[];
   iconThemes: IconTheme[];
   statusBars: StatusBar[];
   navigationBars: NavigationBar[];
@@ -59,6 +61,11 @@ export interface DomainRepository {
     screenInstanceId: string,
   ): ModuleInstance | undefined;
   getScreenEventsForInstance(screenInstanceId: string): ScreenEvent[];
+  getComponentClass(id: string): ComponentClass | undefined;
+  getComponentClasses(
+    productionId: string,
+    componentType?: string,
+  ): ComponentClass[];
   getIconTheme(id: string): IconTheme | undefined;
   getStatusBar(id: string): StatusBar | undefined;
   getNavigationBar(id: string): NavigationBar | undefined;

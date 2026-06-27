@@ -70,6 +70,12 @@ export function stripModuleSystemOwnedTokens(
     : ({} as JsonValue);
   const root = isJsonObject(source) ? source : {};
   delete root.cursor;
+  if (isJsonObject(root.header)) {
+    delete root.header.avatarCornerRadius;
+    delete root.header.avatarBorderWidth;
+    delete root.header.avatarBorderColor;
+    delete root.header.avatarShadow;
+  }
   if (isJsonObject(root.chatBubbles)) {
     delete root.chatBubbles.shadow;
   }
@@ -78,6 +84,12 @@ export function stripModuleSystemOwnedTokens(
     const modeRoot = isJsonObject(modes[mode]) ? modes[mode] : undefined;
     if (!modeRoot) continue;
     delete modeRoot.cursor;
+    if (isJsonObject(modeRoot.header)) {
+      delete modeRoot.header.avatarCornerRadius;
+      delete modeRoot.header.avatarBorderWidth;
+      delete modeRoot.header.avatarBorderColor;
+      delete modeRoot.header.avatarShadow;
+    }
     if (isJsonObject(modeRoot.chatBubbles)) {
       delete modeRoot.chatBubbles.shadow;
     }
@@ -97,6 +109,17 @@ function modeRoot(root: Record<string, JsonValue>, mode: "light" | "dark") {
     ? currentMode.chatBubbles
     : {};
   return { modes, currentMode, header, chatBubbles };
+}
+
+function stripAvatarComponentKeys(value: Record<string, JsonValue>) {
+  const {
+    avatarCornerRadius: _avatarCornerRadius,
+    avatarBorderWidth: _avatarBorderWidth,
+    avatarBorderColor: _avatarBorderColor,
+    avatarShadow: _avatarShadow,
+    ...visibleValue
+  } = value;
+  return visibleValue;
 }
 
 export function normalizeCoreChatModuleTokensForEditor(
@@ -124,13 +147,7 @@ export function normalizeCoreChatModuleTokensForEditor(
     ...light.modes,
     light: {
       ...light.currentMode,
-      header: {
-        ...light.header,
-        avatarBorderColor:
-          typeof light.header.avatarBorderColor === "string"
-            ? light.header.avatarBorderColor
-            : "#ffffff",
-      },
+      header: stripAvatarComponentKeys(light.header),
       chatBubbles: {
         ...light.chatBubbles,
         systemBackground:
@@ -152,13 +169,7 @@ export function normalizeCoreChatModuleTokensForEditor(
     },
     dark: {
       ...dark.currentMode,
-      header: {
-        ...dark.header,
-        avatarBorderColor:
-          typeof dark.header.avatarBorderColor === "string"
-            ? dark.header.avatarBorderColor
-            : "#1c1c1e",
-      },
+      header: stripAvatarComponentKeys(dark.header),
       chatBubbles: {
         ...dark.chatBubbles,
         systemBackground:
@@ -180,20 +191,11 @@ export function normalizeCoreChatModuleTokensForEditor(
     },
   };
   root.header = {
-    ...header,
+    ...stripAvatarComponentKeys(header),
     avatarSize: numberValue(
       header.avatarSize,
       numberValue(avatars.headerSize, 56),
     ),
-    avatarCornerRadius: numberValue(
-      header.avatarCornerRadius,
-      Math.round(
-        numberValue(header.avatarSize, numberValue(avatars.headerSize, 56)) *
-          0.22,
-      ),
-    ),
-    avatarBorderWidth: numberValue(header.avatarBorderWidth, 0),
-    avatarShadow: header.avatarShadow === true,
     subtitleBottomPadding: numberValue(header.subtitleBottomPadding, 10),
     elementGap: numberValue(
       header.elementGap,

@@ -208,6 +208,8 @@ const COLOR_NORMALIZATION_JSON_COLUMNS = [
   ["status_bars", "metadata_json"],
   ["navigation_bars", "config_json"],
   ["navigation_bars", "metadata_json"],
+  ["component_classes", "tokens_json"],
+  ["component_classes", "metadata_json"],
   ["themes", "tokens_json"],
   ["module_theme_configs", "tokens_json"],
   ["module_theme_configs", "metadata_json"],
@@ -1222,6 +1224,65 @@ function applyAdditiveV23Migration(database: SQLiteDatabase): void {
   database.pragma("user_version = 23");
 }
 
+function defaultAvatarComponentTokens() {
+  return JSON.stringify({
+    schemaVersion: 1,
+    componentType: "avatar",
+    cornerRadius: 12,
+    borderWidth: 0,
+    borderColor: {
+      light: "gray_100",
+      dark: "gray_020",
+    },
+    shadowEnabled: false,
+    shadowToken: "system",
+  });
+}
+
+function seedDefaultAvatarComponentClasses(database: SQLiteDatabase): void {
+  const productions = database
+    .prepare("SELECT id FROM productions ORDER BY id")
+    .all() as { id: string }[];
+  const insert = database.prepare(
+    `INSERT OR IGNORE INTO component_classes (
+      id,
+      production_id,
+      component_type,
+      name,
+      tokens_json,
+      metadata_json
+    ) VALUES (?, ?, ?, ?, ?, ?)`,
+  );
+  for (const production of productions) {
+    insert.run(
+      `${production.id}:avatar_default`,
+      production.id,
+      "avatar",
+      "Default avatar",
+      defaultAvatarComponentTokens(),
+      JSON.stringify({ source: "seed" }),
+    );
+  }
+}
+
+function applyAdditiveV24Migration(database: SQLiteDatabase): void {
+  database.exec(`
+    CREATE TABLE IF NOT EXISTS component_classes (
+      id TEXT PRIMARY KEY,
+      production_id TEXT NOT NULL REFERENCES productions(id) ON DELETE CASCADE,
+      component_type TEXT NOT NULL,
+      name TEXT NOT NULL,
+      tokens_json TEXT NOT NULL,
+      metadata_json TEXT,
+      UNIQUE (production_id, component_type, name)
+    );
+    CREATE INDEX IF NOT EXISTS idx_component_classes_lookup
+      ON component_classes(production_id, component_type, name);
+  `);
+  seedDefaultAvatarComponentClasses(database);
+  database.pragma("user_version = 24");
+}
+
 export function applyInitialSchema(database: SQLiteDatabase): void {
   database.exec(readFileSync(schemaPath, "utf8"));
   applyAdditiveV2Migration(database);
@@ -1246,6 +1307,7 @@ export function applyInitialSchema(database: SQLiteDatabase): void {
   applyAdditiveV21Migration(database);
   applyAdditiveV22Migration(database);
   applyAdditiveV23Migration(database);
+  applyAdditiveV24Migration(database);
   database.pragma("foreign_keys = ON");
 }
 

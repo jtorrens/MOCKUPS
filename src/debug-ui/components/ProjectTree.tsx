@@ -92,6 +92,7 @@ const SYSTEM_DATA_TABLE_IDS = new Set([
   "icon_themes",
   "status_bars",
   "navigation_bars",
+  "component_classes",
   "media_assets",
   "palette_colors",
   "production_fonts",
@@ -108,6 +109,7 @@ function productionDataIcon(tableId: string) {
   if (tableId === "icon_themes") return "icon";
   if (tableId === "status_bars") return "status";
   if (tableId === "navigation_bars") return "navigation";
+  if (tableId === "component_classes") return "component";
   if (tableId === "themes") return "theme";
   if (tableId === "devices") return "device";
   if (tableId === "media_assets") return "media";
@@ -317,6 +319,16 @@ function TreeIcon({ name }: { name: string }) {
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <rect x="4" y="5" width="16" height="14" rx="2.5" />
         <path d="M8 16h8M8 12l2.5-2.5L13 12M16 9.5v5" />
+      </svg>
+    );
+  }
+  if (name === "component") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="4" y="4" width="7" height="7" rx="1.5" />
+        <rect x="13" y="4" width="7" height="7" rx="1.5" />
+        <rect x="4" y="13" width="7" height="7" rx="1.5" />
+        <path d="M13 16.5h7M16.5 13v7" />
       </svg>
     );
   }

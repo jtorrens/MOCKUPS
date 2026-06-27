@@ -17,6 +17,7 @@ export interface ChatHeaderModuleInput {
   colors: ResolvedChatScreenProps["theme"]["colors"];
   fonts: ResolvedChatScreenProps["theme"]["fonts"];
   shadows?: ResolvedChatScreenProps["theme"]["shadows"];
+  avatarComponent?: Record<string, unknown>;
   typography?: ResolvedChatScreenProps["theme"]["typography"];
   headerTokens: ResolvedChatScreenProps["theme"]["header"];
   screenGutter: number;
@@ -111,25 +112,22 @@ export const ChatHeaderModule: VisualModule<ChatHeaderModuleInput> = {
       "avatarSize",
       56,
     );
+    const avatarComponent = input.avatarComponent ?? {};
     const avatarCornerRadius = readNumber(
-      input.headerTokens,
-      "avatarCornerRadius",
+      avatarComponent,
+      "cornerRadius",
       Math.round(avatarSize * 0.22),
     );
-    const avatarBorderWidth = readNumber(
-      input.headerTokens,
-      "avatarBorderWidth",
-      0,
-    );
+    const avatarBorderWidth = readNumber(avatarComponent, "borderWidth", 0);
     const avatarBorderColor = readString(
-      input.headerTokens,
-      "avatarBorderColor",
+      avatarComponent,
+      "borderColor",
       textColor,
     );
-    const avatarShadowEnabled = input.headerTokens.avatarShadow === true;
-    const avatarShadow = avatarShadowEnabled
-      ? readObject(input.shadows ?? {}, "avatar")
-      : {};
+    const avatarShadow =
+      avatarComponent.shadowEnabled === true
+        ? readObject(avatarComponent, "shadow")
+        : {};
     const leftItems = sortedItems(input.headerTokens.leftItems);
     const rightItems = sortedItems(input.headerTokens.rightItems);
     const headerTitleTypography = readObject(

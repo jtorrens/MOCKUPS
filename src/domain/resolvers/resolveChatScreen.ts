@@ -86,6 +86,7 @@ const ChatThemeSchema = z.object({
   typography: z.record(z.string(), z.unknown()).optional(),
   chatBubbles: z.record(z.string(), z.unknown()),
   avatars: z.record(z.string(), z.unknown()),
+  components: z.record(z.string(), z.unknown()).optional(),
   cursor: z.record(z.string(), z.unknown()),
   shadows: z.record(z.string(), z.unknown()).optional(),
   radii: z.object({ bubble: z.number().min(0) }),
@@ -747,6 +748,60 @@ function resolvePaletteTokenReferences(
   return value;
 }
 
+function modeValue(
+  value: unknown,
+  themeMode: "light" | "dark",
+): unknown {
+  if (isObject(value)) {
+    return value[themeMode] ?? value.light ?? value.dark ?? value;
+  }
+  return value;
+}
+
+function resolveDefaultAvatarComponent(
+  repository: DomainRepository,
+  productionId: string,
+  themeMode: "light" | "dark",
+  palette: Map<string, string>,
+  renderScale: number,
+  themeTokens: Record<string, unknown>,
+) {
+  const component =
+    repository
+      .getComponentClasses(productionId, "avatar")
+      .find((entry) => entry.name === "Default avatar") ??
+    repository.getComponentClasses(productionId, "avatar")[0];
+  const rawTokens = isObject(component?.tokens_json)
+    ? component.tokens_json
+    : {};
+  const resolvedTokens = resolvePaletteTokenReferences(
+    rawTokens,
+    palette,
+  ) as Record<string, unknown>;
+  const shadows = isObject(themeTokens.shadows) ? themeTokens.shadows : {};
+  const shadowToken = stringValue(resolvedTokens.shadowToken, "avatar");
+  const shadow =
+    isObject(shadows[shadowToken])
+      ? shadows[shadowToken]
+      : isObject(shadows.avatar)
+        ? shadows.avatar
+        : isObject(shadows.elevated)
+          ? shadows.elevated
+          : {};
+  const borderColor = modeValue(resolvedTokens.borderColor, themeMode);
+
+  return {
+    id: component?.id ?? null,
+    name: component?.name ?? "Default avatar",
+    componentType: "avatar",
+    cornerRadius: numberValue(resolvedTokens.cornerRadius, 12) * renderScale,
+    borderWidth: numberValue(resolvedTokens.borderWidth, 0) * renderScale,
+    borderColor: stringValue(borderColor, "transparent"),
+    shadowEnabled: resolvedTokens.shadowEnabled === true,
+    shadow,
+  };
+}
+
 export function moduleTypographyDefaultsFromFonts(
   tokens: Record<string, unknown>,
 ): Record<string, unknown> {
@@ -859,10 +914,6 @@ function normalizeChatVisualTokenGroups(
     header: {
       ...header,
       avatarSize: headerAvatarSize,
-      avatarCornerRadius: numberValue(
-        header.avatarCornerRadius,
-        Math.round(headerAvatarSize * 0.22),
-      ),
       subtitleBottomPadding: numberValue(header.subtitleBottomPadding, 10),
       elementGap: numberValue(header.elementGap, numberValue(avatars.gap, 8)),
       sidePadding: numberValue(
@@ -955,8 +1006,6 @@ const DESIGN_UNIT_TOKEN_PATHS = [
   ["header", "sidePadding"],
   ["header", "iconSize"],
   ["header", "avatarSize"],
-  ["header", "avatarCornerRadius"],
-  ["header", "avatarBorderWidth"],
   ["header", "subtitleBottomPadding"],
   ["messages", "spacing"],
   ["messages", "groupSpacing"],
@@ -1134,12 +1183,28 @@ function stripModuleThemeSystemOwnedTokens(
 ): Record<string, unknown> {
   const next: Record<string, unknown> = { ...tokens };
   delete next.cursor;
+  if (isObject(next.header)) {
+    const header = { ...(next.header as Record<string, unknown>) };
+    delete header.avatarCornerRadius;
+    delete header.avatarBorderWidth;
+    delete header.avatarBorderColor;
+    delete header.avatarShadow;
+    next.header = header;
+  }
   if (isObject(next.modes)) {
     const modes = { ...(next.modes as Record<string, unknown>) };
     for (const mode of ["light", "dark"] as const) {
       if (isObject(modes[mode])) {
         const modeRoot = { ...(modes[mode] as Record<string, unknown>) };
         delete modeRoot.cursor;
+        if (isObject(modeRoot.header)) {
+          const header = { ...(modeRoot.header as Record<string, unknown>) };
+          delete header.avatarCornerRadius;
+          delete header.avatarBorderWidth;
+          delete header.avatarBorderColor;
+          delete header.avatarShadow;
+          modeRoot.header = header;
+        }
         modes[mode] = modeRoot;
       }
     }
@@ -1370,6 +1435,14 @@ export function resolveChatScreen({
   const themeTokens = ChatThemeSchema.parse(
     withBubbleStatusIconUris(normalizedThemeTokens, iconTheme),
   );
+  const avatarComponent = resolveDefaultAvatarComponent(
+    repository,
+    theme.production_id,
+    themeMode,
+    palette,
+    renderScale,
+    themeTokens,
+  );
   const resolvedHeaderTokens = {
     ...themeTokens.header,
     leftItems: resolveIconItems(
@@ -1596,6 +1669,10 @@ export function resolveChatScreen({
     theme: {
       id: theme.id,
       ...themeTokens,
+      components: {
+        ...(isObject(themeTokens.components) ? themeTokens.components : {}),
+        avatar: avatarComponent,
+      },
       header: resolvedHeaderTokens,
       chatBubbles: {
         ...themeTokens.chatBubbles,

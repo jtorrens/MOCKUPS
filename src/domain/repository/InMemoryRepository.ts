@@ -1,6 +1,7 @@
 import type {
   Actor,
   App,
+  ComponentClass,
   Conversation,
   Device,
   DeviceState,
@@ -29,6 +30,7 @@ export class InMemoryRepository implements DomainRepository {
   readonly #productions: Map<string, Production>;
   readonly #episodes: Map<string, Episode>;
   readonly #shots: Map<string, Shot>;
+  readonly #componentClasses: Map<string, ComponentClass>;
   readonly #iconThemes: Map<string, IconTheme>;
   readonly #statusBars: Map<string, StatusBar>;
   readonly #navigationBars: Map<string, NavigationBar>;
@@ -50,6 +52,7 @@ export class InMemoryRepository implements DomainRepository {
     this.#productions = indexById(dataset.productions);
     this.#episodes = indexById(dataset.episodes);
     this.#shots = indexById(dataset.shots);
+    this.#componentClasses = indexById(dataset.componentClasses);
     this.#iconThemes = indexById(dataset.iconThemes);
     this.#statusBars = indexById(dataset.statusBars);
     this.#navigationBars = indexById(dataset.navigationBars);
@@ -95,6 +98,21 @@ export class InMemoryRepository implements DomainRepository {
     return this.#dataset.screenEvents
       .filter((event) => event.screen_instance_id === screenInstanceId)
       .sort((a, b) => a.start_frame - b.start_frame);
+  }
+
+  getComponentClass(id: string) {
+    return this.#componentClasses.get(id);
+  }
+
+  getComponentClasses(productionId: string, componentType?: string) {
+    return [...this.#componentClasses.values()]
+      .filter(
+        (componentClass) =>
+          componentClass.production_id === productionId &&
+          (componentType === undefined ||
+            componentClass.component_type === componentType),
+      )
+      .sort((left, right) => left.name.localeCompare(right.name));
   }
 
   getIconTheme(id: string) {

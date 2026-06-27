@@ -5,6 +5,7 @@ import type {
   AppTableDefinition,
 } from "../api/client.js";
 import { AppRecordEditor } from "./AppRecordEditor.js";
+import { ComponentClassRecordEditor } from "./ComponentClassRecordEditor.js";
 import { GenericRecordEditor } from "./GenericRecordEditor.js";
 import { IconThemeRecordEditor } from "./IconThemeRecordEditor.js";
 import { ModuleInstanceRecordEditor } from "./ModuleInstanceRecordEditor.js";
@@ -15,6 +16,7 @@ import { ScreenInstanceRecordEditor } from "./ScreenInstanceRecordEditor.js";
 import { StatusBarRecordEditor } from "./StatusBarRecordEditor.js";
 import { ThemeRecordEditor } from "./ThemeRecordEditor.js";
 import { shotHasFpsOverride } from "./ShotFields.js";
+import type { PaletteColorCatalog } from "../components/json-editor/paletteColors.js";
 import type { createJsonGroupDrafts } from "./jsonGroupDrafts.js";
 import type { createRecordEditorRenderServices } from "./recordEditorRenderServices.js";
 import type { useRecordEditorTabs } from "./useRecordEditorTabs.js";
@@ -34,6 +36,7 @@ interface RecordEditorDispatcherProps {
   inheritedFields: Record<string, Record<string, unknown>>;
   jsonGroupDrafts: ReturnType<typeof createJsonGroupDrafts>;
   mediaRoot: string;
+  paletteCatalog?: PaletteColorCatalog;
   productionId: string;
   nativeBridge: NativeBridge | undefined;
   relativePathFromRoot: (filePath: string, rootPath: string) => string;
@@ -53,6 +56,7 @@ export function RecordEditorDispatcher({
   inheritedFields,
   jsonGroupDrafts,
   mediaRoot,
+  paletteCatalog,
   productionId,
   nativeBridge,
   relativePathFromRoot,
@@ -171,6 +175,21 @@ export function RecordEditorDispatcher({
         setActiveTab={tabs.setGenericTab}
         onRecordsChanged={onRecordsChanged}
         onRecordSaved={onRecordSaved}
+      />
+    );
+  }
+
+  if (table.id === "component_classes") {
+    return (
+      <ComponentClassRecordEditor
+        table={table}
+        record={record}
+        activeTab={tabs.genericTab}
+        drafts={drafts}
+        paletteCatalog={paletteCatalog}
+        renderField={renderField}
+        setActiveTab={tabs.setGenericTab}
+        setJsonDraft={setJsonDraft}
       />
     );
   }

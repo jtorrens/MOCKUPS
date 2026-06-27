@@ -164,26 +164,6 @@ export const coreChatV1EditorHints: ModuleEditorHintContract = {
         min: 0,
         step: 1,
       },
-      "header.avatarCornerRadius": {
-        label: "Avatar corner radius",
-        widget: "number",
-        min: 0,
-        step: 1,
-      },
-      "header.avatarBorderWidth": {
-        label: "Avatar border width",
-        widget: "number",
-        min: 0,
-        step: 1,
-      },
-      "header.avatarShadow": {
-        label: "Avatar shadow",
-        widget: "checkbox",
-      },
-      "header.avatarBorderColor": {
-        label: "Avatar border color",
-        widget: "color",
-      },
       "chatBubbles.avatarSize": {
         label: "Message avatar size",
         widget: "number",

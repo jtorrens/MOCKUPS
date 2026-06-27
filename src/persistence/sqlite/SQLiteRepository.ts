@@ -2,6 +2,7 @@ import type { DomainRepository } from "../../domain/repository/types.js";
 import {
   ActorSchema,
   AppSchema,
+  ComponentClassSchema,
   ConversationParticipantSchema,
   ConversationSchema,
   DeviceSchema,
@@ -23,6 +24,7 @@ import {
   ThemeSchema,
   type Actor,
   type App,
+  type ComponentClass,
   type Conversation,
   type ConversationParticipant,
   type Device,
@@ -192,6 +194,39 @@ export class SQLiteRepository implements DomainRepository {
       screenInstanceId,
       ScreenEventSchema,
       { required: ["payload_json"] },
+    );
+  }
+
+  getComponentClass(id: string): ComponentClass | undefined {
+    return this.getOne(
+      "SELECT * FROM component_classes WHERE id = ?",
+      id,
+      ComponentClassSchema,
+      { required: ["tokens_json"], optional: ["metadata_json"] },
+    );
+  }
+
+  getComponentClasses(productionId: string, componentType?: string): ComponentClass[] {
+    if (componentType) {
+      const rows = this.database
+        .prepare(
+          "SELECT * FROM component_classes WHERE production_id = ? AND component_type = ? ORDER BY name COLLATE NOCASE, id",
+        )
+        .all(productionId, componentType) as Row[];
+      return rows.map((row) =>
+        ComponentClassSchema.parse(
+          decodeRow(row, {
+            required: ["tokens_json"],
+            optional: ["metadata_json"],
+          }),
+        ),
+      );
+    }
+    return this.getMany(
+      "SELECT * FROM component_classes WHERE production_id = ? ORDER BY component_type, name COLLATE NOCASE, id",
+      productionId,
+      ComponentClassSchema,
+      { required: ["tokens_json"], optional: ["metadata_json"] },
     );
   }
 

@@ -17,6 +17,7 @@ import {
   ActorSchema,
   AnimationPresetSchema,
   AppSchema,
+  ComponentClassSchema,
   DeviceSchema,
   DeviceStateSchema,
   EpisodeSchema,
@@ -307,9 +308,6 @@ export function createExampleDataset(): RepositoryDataset {
       leftIconTokens: "nav_chevron_left",
       rightIconTokens: "media_camera, phone_call",
       avatarSize: 56,
-      avatarCornerRadius: 12,
-      avatarBorderWidth: 0,
-      avatarShadow: false,
       subtitleBottomPadding: 10,
     },
     messages: {
@@ -412,7 +410,6 @@ export function createExampleDataset(): RepositoryDataset {
         header: {
           background: "gray_100",
           separatorColor: "gray_080",
-          avatarBorderColor: "gray_100",
         },
         chatBubbles: {
           outgoingBackground: "blue",
@@ -432,7 +429,6 @@ export function createExampleDataset(): RepositoryDataset {
         header: {
           background: "gray_020",
           separatorColor: "gray_060",
-          avatarBorderColor: "gray_020",
         },
         chatBubbles: {
           outgoingBackground: "blue_bright",
@@ -635,6 +631,25 @@ export function createExampleDataset(): RepositoryDataset {
     style_override_json: {},
     metadata_json: {},
   });
+  const avatarComponentClass = ComponentClassSchema.parse({
+    id: `${production.id}:avatar_default`,
+    production_id: production.id,
+    component_type: "avatar",
+    name: "Default avatar",
+    tokens_json: {
+      schemaVersion: 1,
+      componentType: "avatar",
+      cornerRadius: 12,
+      borderWidth: 0,
+      borderColor: {
+        light: "gray_100",
+        dark: "gray_020",
+      },
+      shadowEnabled: false,
+      shadowToken: "system",
+    },
+    metadata_json: { source: "seed" },
+  });
 
   return {
     productions: [production],
@@ -643,6 +658,7 @@ export function createExampleDataset(): RepositoryDataset {
     screenInstances,
     moduleInstances,
     screenEvents,
+    componentClasses: [avatarComponentClass],
     iconThemes: [],
     statusBars: [statusBar],
     navigationBars: [navigationBar],

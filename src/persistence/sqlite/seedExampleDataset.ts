@@ -24,6 +24,7 @@ const DELETE_ORDER = [
   "devices",
   "themes",
   "navigation_bars",
+  "component_classes",
   "status_bars",
   "icon_themes",
   "production_fonts",
@@ -409,6 +410,20 @@ function seedRecords(
     ],
     dataset.navigationBars,
     new Set(["config_json", "metadata_json"]),
+  );
+  insertRows(
+    database,
+    "component_classes",
+    [
+      "id",
+      "production_id",
+      "component_type",
+      "name",
+      "tokens_json",
+      "metadata_json",
+    ],
+    dataset.componentClasses,
+    new Set(["tokens_json", "metadata_json"]),
   );
   insertRows(
     database,

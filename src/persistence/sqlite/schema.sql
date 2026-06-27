@@ -79,6 +79,16 @@ CREATE TABLE IF NOT EXISTS navigation_bars (
   metadata_json TEXT
 );
 
+CREATE TABLE IF NOT EXISTS component_classes (
+  id TEXT PRIMARY KEY,
+  production_id TEXT NOT NULL REFERENCES productions(id) ON DELETE CASCADE,
+  component_type TEXT NOT NULL,
+  name TEXT NOT NULL,
+  tokens_json TEXT NOT NULL,
+  metadata_json TEXT,
+  UNIQUE (production_id, component_type, name)
+);
+
 CREATE TABLE IF NOT EXISTS themes (
   id TEXT PRIMARY KEY,
   production_id TEXT NOT NULL REFERENCES productions(id) ON DELETE CASCADE,
@@ -320,6 +330,7 @@ CREATE INDEX IF NOT EXISTS idx_production_fonts_lookup ON production_fonts(produ
 CREATE INDEX IF NOT EXISTS idx_palette_colors_lookup ON palette_colors(production_id, token);
 CREATE INDEX IF NOT EXISTS idx_status_bars_production ON status_bars(production_id, name);
 CREATE INDEX IF NOT EXISTS idx_navigation_bars_production ON navigation_bars(production_id, name);
+CREATE INDEX IF NOT EXISTS idx_component_classes_lookup ON component_classes(production_id, component_type, name);
 CREATE INDEX IF NOT EXISTS idx_module_theme_configs_lookup ON module_theme_configs(theme_id, app_id, module_id, module_schema_version);
 CREATE INDEX IF NOT EXISTS idx_screen_instances_shot ON screen_instances(shot_id, layer_order);
 CREATE INDEX IF NOT EXISTS idx_module_instances_screen ON module_instances(screen_instance_id, sort_order, id);

@@ -4,6 +4,7 @@ export * from "./app.js";
 export * from "./asset.js";
 export * from "./call.js";
 export * from "./common.js";
+export * from "./componentClass.js";
 export * from "./conversation.js";
 export * from "./dataSource.js";
 export * from "./device.js";

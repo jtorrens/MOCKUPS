@@ -347,6 +347,8 @@ export function renderMessageBubbleWithLayout(
       },
     ];
     if (input.actor.avatarUri && layout.avatarBox) {
+      const avatarStyle = readRecord(input.style.avatar);
+      const avatarShadowEnabled = avatarStyle.shadowEnabled === true;
       children.push(
         {
           ...AvatarModule.render({
@@ -355,6 +357,12 @@ export function renderMessageBubbleWithLayout(
             size: input.style.avatarSize,
             label: input.actor.displayName,
             frame: input.frame,
+            cornerRadius: readNumber(
+              avatarStyle.cornerRadius,
+              Math.round(input.style.avatarSize * 0.22),
+            ),
+            borderWidth: readNumber(avatarStyle.borderWidth, 0),
+            borderColor: readString(avatarStyle.borderColor, "transparent"),
             ...(input.actor.avatarScale !== undefined
               ? { imageScale: input.actor.avatarScale }
               : {}),
@@ -367,7 +375,9 @@ export function renderMessageBubbleWithLayout(
             ...(input.actor.avatarBaseSize !== undefined
               ? { imageBaseSize: input.actor.avatarBaseSize }
               : {}),
-            ...(input.style.shadowEnabled ? { shadow: input.style.shadow } : {}),
+            ...(avatarShadowEnabled
+              ? { shadow: readRecord(avatarStyle.shadow) }
+              : {}),
           }),
           box: layout.avatarBox,
         },

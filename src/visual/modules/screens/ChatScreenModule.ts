@@ -47,6 +47,7 @@ function createMessageBubbleInput(
   const chatTokens = input.theme.chatBubbles;
   const tailTokens = readObject(chatTokens, "tail");
   const mediaTokens = readObject(chatTokens, "media");
+  const avatarComponent = readObject(input.theme.components ?? {}, "avatar");
   const typographyTokens = input.theme.typography;
   const messageTypography = readObject(typographyTokens ?? {}, "message");
   const actorAvatar = outgoing
@@ -100,7 +101,8 @@ function createMessageBubbleInput(
           },
         }
       : {}),
-    style: message.style ?? {
+    style: {
+      ...(message.style ?? {
       backgroundColor: readString(
         chatTokens,
         outgoing
@@ -163,6 +165,8 @@ function createMessageBubbleInput(
         borderColor: readString(mediaTokens, "borderColor", "transparent"),
         shadowEnabled: mediaTokens.shadowEnabled === true,
       },
+      }),
+      avatar: avatarComponent,
     },
     layout: message.layout ?? {
       maxWidth: Math.round(
@@ -311,6 +315,7 @@ export const ChatScreenModule: VisualModule<ResolvedChatScreenProps> = {
             colors: input.theme.colors,
             fonts: input.theme.fonts,
             shadows: input.theme.shadows,
+            avatarComponent: readObject(input.theme.components ?? {}, "avatar"),
             typography: input.theme.typography,
             headerTokens: input.theme.header,
             screenGutter,
