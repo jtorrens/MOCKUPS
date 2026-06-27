@@ -1390,7 +1390,18 @@ export function resolveModuleThemeTokens(
   tokens: Record<string, unknown>,
   themeMode: "light" | "dark",
 ): Record<string, unknown> {
-  return mergeTokenObjects(tokens, resolveThemeModeTokens(tokens, themeMode));
+  const merged = mergeTokenObjects(tokens, resolveThemeModeTokens(tokens, themeMode));
+  const rootChatBubbles = isObject(tokens.chatBubbles) ? tokens.chatBubbles : {};
+  if (typeof rootChatBubbles.contentMetaGap === "number") {
+    const mergedChatBubbles = isObject(merged.chatBubbles)
+      ? merged.chatBubbles
+      : {};
+    merged.chatBubbles = {
+      ...mergedChatBubbles,
+      contentMetaGap: rootChatBubbles.contentMetaGap,
+    };
+  }
+  return merged;
 }
 
 function normalizeChatVisualTokenGroups(
@@ -1452,6 +1463,7 @@ function normalizeChatVisualTokenGroups(
       ...visibleChatBubbles,
       avatarSize: bubbleAvatarSize,
       avatarGap: bubbleAvatarGap,
+      contentMetaGap: numberValue(chatBubbles.contentMetaGap, 4),
       messageLabelUseActorColor:
         typeof chatBubbles.messageLabelUseActorColor === "boolean"
           ? chatBubbles.messageLabelUseActorColor
@@ -1548,6 +1560,7 @@ const DESIGN_UNIT_TOKEN_PATHS = [
   ["typography", "headerSubtitle", "lineHeight"],
   ["chatBubbles", "paddingX"],
   ["chatBubbles", "paddingY"],
+  ["chatBubbles", "contentMetaGap"],
   ["chatBubbles", "avatarSize"],
   ["chatBubbles", "avatarGap"],
   ["chatBubbles", "media", "borderWidth"],

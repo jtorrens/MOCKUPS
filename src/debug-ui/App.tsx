@@ -217,7 +217,7 @@ export function App() {
           productionId: recordId,
           shotId: shot.id,
           screenInstanceId: instance.id,
-          frame: previewFrameForScreen(instance),
+          frame: previewFrameForScreen(instance, selection.frame),
         });
       }
     }
@@ -234,7 +234,7 @@ export function App() {
           productionId: episode.productionId,
           shotId: shot.id,
           screenInstanceId: instance.id,
-          frame: previewFrameForScreen(instance),
+          frame: previewFrameForScreen(instance, selection.frame),
         });
       }
     }
@@ -318,7 +318,7 @@ export function App() {
         productionId,
         shotId: shot.id,
         screenInstanceId: instance.id,
-        frame: previewFrameForScreen(instance),
+        frame: previewFrameForScreen(instance, selection.frame),
       });
     } else {
       setSelection({

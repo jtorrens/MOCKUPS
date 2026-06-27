@@ -38,6 +38,7 @@ const MessageThemeSchema = z.object({
     systemText: z.string().min(1).optional(),
     paddingX: z.number().min(0),
     paddingY: z.number().min(0),
+    contentMetaGap: z.number().min(0).optional(),
     maxWidthRatio: z.number().min(0).max(1),
     avatarSize: z.number().min(0).optional(),
     avatarGap: z.number().min(0).optional(),
@@ -246,6 +247,7 @@ export function resolveMessageBubble({
       borderRadius: themeTokens.radii.bubble,
       paddingX: themeTokens.chatBubbles.paddingX,
       paddingY: themeTokens.chatBubbles.paddingY,
+      contentMetaGap: themeTokens.chatBubbles.contentMetaGap ?? 4,
       tailStyle: themeTokens.chatBubbles.tail.style,
       tailVerticalPosition:
         themeTokens.chatBubbles.tail.verticalPosition ?? "bottom",

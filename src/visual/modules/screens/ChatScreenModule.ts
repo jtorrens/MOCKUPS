@@ -168,6 +168,7 @@ function createMessageBubbleInput(
       borderRadius: readNumber(chatTokens, "radius", 18),
       paddingX: readNumber(chatTokens, "paddingX", 14),
       paddingY: readNumber(chatTokens, "paddingY", 9),
+      contentMetaGap: readNumber(chatTokens, "contentMetaGap", 4),
       tailStyle: readString(tailTokens, "style", "none"),
       tailVerticalPosition:
         readString(tailTokens, "verticalPosition", "bottom") === "top"

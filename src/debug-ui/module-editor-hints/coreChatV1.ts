@@ -186,6 +186,12 @@ export const coreChatV1EditorHints: ModuleEditorHintContract = {
         label: "Bubble surface relief",
         widget: "checkbox",
       },
+      "chatBubbles.contentMetaGap": {
+        label: "Content meta gap",
+        widget: "number",
+        min: 0,
+        step: 1,
+      },
       "chatBubbles.messageLabelUseActorColor": {
         label: "Use actor color",
         widget: "checkbox",

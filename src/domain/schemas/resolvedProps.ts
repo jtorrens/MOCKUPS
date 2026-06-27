@@ -200,6 +200,7 @@ export const ResolvedMessageBubblePropsSchema = z.object({
     borderRadius: z.number().min(0),
     paddingX: z.number().min(0),
     paddingY: z.number().min(0),
+    contentMetaGap: z.number().min(0).optional(),
     tailStyle: z.string().min(1),
     tailVerticalPosition: z.enum(["top", "bottom"]),
     tailWidth: z.number().min(0),

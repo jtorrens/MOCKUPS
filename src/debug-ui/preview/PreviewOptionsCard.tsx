@@ -141,7 +141,7 @@ export function PreviewOptionsCard({
                     productionId,
                     shotId: shot.id,
                     screenInstanceId: instance.id,
-                    frame: previewFrameForScreen(instance),
+                    frame: previewFrameForScreen(instance, selection.frame),
                   });
                 }
               }}
@@ -169,7 +169,7 @@ export function PreviewOptionsCard({
                     productionId: shot.productionId,
                     shotId: shot.id,
                     screenInstanceId: instance.id,
-                    frame: previewFrameForScreen(instance),
+                    frame: previewFrameForScreen(instance, selection.frame),
                   });
                 }
               }}
@@ -194,7 +194,7 @@ export function PreviewOptionsCard({
                     ...selection,
                     shotId,
                     screenInstanceId: instance.id,
-                    frame: previewFrameForScreen(instance),
+                    frame: previewFrameForScreen(instance, selection.frame),
                   });
                 }
               }}

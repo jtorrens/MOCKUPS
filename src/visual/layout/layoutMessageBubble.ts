@@ -121,7 +121,12 @@ function measureMessageLabel(
     height,
     offsetX: readNumber(labelStyle.offsetX, 0),
     offsetY,
-    reserveHeight: Math.max(0, height + offsetY + props.style.paddingY),
+    reserveHeight: Math.max(
+      0,
+      height +
+        offsetY +
+        readNumber(props.style.contentMetaGap, Math.max(2, Math.round(props.style.paddingY * 0.5))),
+    ),
   };
 }
 
@@ -168,15 +173,19 @@ export function layoutMessageBubble({
     hasMedia && rawMediaWidth > 0
       ? Math.round((rawMediaHeight * mediaWidth) / rawMediaWidth)
       : 0;
+  const contentMetaGap = readNumber(
+    props.style.contentMetaGap,
+    Math.max(2, Math.round(props.style.paddingY * 0.5)),
+  );
   const mediaTextGap = hasMedia && props.visibleText.length > 0
-    ? Math.max(2, Math.round(props.style.paddingY * 0.75))
+    ? contentMetaGap
     : 0;
   const statusMeasurement = measureStatus(props);
   const hasTextContent = props.visibleText.length > 0;
   const hasMainContent = hasMedia || hasTextContent;
   const statusGap =
     statusMeasurement.visible && hasMainContent
-      ? Math.max(2, Math.round(props.style.paddingY * 0.5))
+      ? contentMetaGap
       : 0;
   const contentWidth = Math.max(
     labelMeasurement.width,

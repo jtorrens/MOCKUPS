@@ -226,6 +226,7 @@ export function normalizeCoreChatModuleTokensForEditor(
       numberValue(avatars.gap, 8),
     ),
     shadowEnabled: chatBubbles.shadowEnabled === true,
+    contentMetaGap: numberValue(chatBubbles.contentMetaGap, 4),
     messageLabelUseActorColor:
       typeof chatBubbles.messageLabelUseActorColor === "boolean"
         ? chatBubbles.messageLabelUseActorColor

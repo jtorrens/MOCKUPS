@@ -1062,6 +1062,7 @@ function mergeChatBubbleStatusDefaults(tokens: Record<string, unknown>) {
     ...tokens,
     chatBubbles: {
       surfaceReliefEnabled: true,
+      contentMetaGap: 4,
       messageLabelUseActorColor: true,
       messageLabelOffsetX: 0,
       messageLabelOffsetY: 0,
