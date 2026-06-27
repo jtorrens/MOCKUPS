@@ -37,11 +37,13 @@ function itemNode({
   frame,
   color,
   iconSize,
+  buttonIcon,
 }: {
   item: Record<string, unknown>;
   frame: number;
   color: string;
   iconSize: number;
+  buttonIcon: Record<string, unknown>;
 }): RenderableNode {
   const token = readString(item, "token", readString(item, "label", ""));
   const iconUri = readString(item, "iconUri", "");
@@ -56,6 +58,7 @@ function itemNode({
       color: itemColor,
       fontSize: iconSize,
       lineHeight: iconSize,
+      buttonIcon,
       ...(iconUri
         ? {
             maskImage: maskUrl(iconUri),
@@ -82,6 +85,19 @@ export const TextInputBarModule: VisualModule<TextInputBarModuleInput> = {
     const layout = asRecord(config.layout);
     const colors = readObject(input.tokens, "colors");
     const fonts = readObject(input.tokens, "fonts");
+    const components = readObject(input.tokens, "components");
+    const buttonIconComponent = readObject(components, "buttonIcon");
+    const buttonIcon = {
+      ...buttonIconComponent,
+      ...(buttonIconComponent.surfaceReliefEnabled === true
+        ? {
+            surfaceRelief: readObject(
+              input.tokens.surfaceRelief ?? {},
+              "default",
+            ),
+          }
+        : {}),
+    };
     const cursorTokens = readObject(input.tokens, "cursor");
     const keyboardTokens = readObject(input.tokens, "keyboard");
     const height = readNumber(layout, "height", 56);
@@ -169,6 +185,7 @@ export const TextInputBarModule: VisualModule<TextInputBarModuleInput> = {
               frame: input.frame,
               color: mutedForeground,
               iconSize,
+              buttonIcon,
             }),
           ),
         },
@@ -245,6 +262,7 @@ export const TextInputBarModule: VisualModule<TextInputBarModuleInput> = {
               frame: input.frame,
               color: mutedForeground,
               iconSize,
+              buttonIcon,
             }),
           ),
         },

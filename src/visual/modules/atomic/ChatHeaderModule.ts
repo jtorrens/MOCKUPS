@@ -19,6 +19,7 @@ export interface ChatHeaderModuleInput {
   shadows?: ResolvedChatScreenProps["theme"]["shadows"];
   surfaceRelief?: ResolvedChatScreenProps["theme"]["surfaceRelief"];
   avatarComponent?: Record<string, unknown>;
+  buttonIconComponent?: Record<string, unknown>;
   typography?: ResolvedChatScreenProps["theme"]["typography"];
   headerTokens: ResolvedChatScreenProps["theme"]["header"];
   screenGutter: number;
@@ -46,6 +47,7 @@ function iconNode({
   y,
   size,
   color,
+  buttonIcon,
 }: {
   item: Record<string, unknown>;
   idPrefix: string;
@@ -54,6 +56,7 @@ function iconNode({
   y: number;
   size: number;
   color: string;
+  buttonIcon: Record<string, unknown>;
 }): RenderableNode {
   const token = readString(item, "token", readString(item, "label", ""));
   const iconUri = readString(item, "iconUri", "");
@@ -68,6 +71,7 @@ function iconNode({
       color: readString(item, "color", color),
       fontSize: size,
       lineHeight: size,
+      buttonIcon,
       ...(iconUri
         ? {
             maskImage: `url("${iconUri.replace(/"/g, '\\"')}")`,
@@ -114,6 +118,12 @@ export const ChatHeaderModule: VisualModule<ChatHeaderModuleInput> = {
       56,
     );
     const avatarComponent = input.avatarComponent ?? {};
+    const buttonIcon = {
+      ...(input.buttonIconComponent ?? {}),
+      ...(input.buttonIconComponent?.surfaceReliefEnabled === true
+        ? { surfaceRelief: readObject(input.surfaceRelief ?? {}, "default") }
+        : {}),
+    };
     const avatarCornerRadius = readNumber(
       avatarComponent,
       "cornerRadius",
@@ -163,6 +173,7 @@ export const ChatHeaderModule: VisualModule<ChatHeaderModuleInput> = {
           y: iconY,
           size: iconSize,
           color: textColor,
+          buttonIcon,
         }),
       );
       cursorX += iconSize + elementGap;
@@ -222,6 +233,7 @@ export const ChatHeaderModule: VisualModule<ChatHeaderModuleInput> = {
           y: iconY,
           size: iconSize,
           color: textColor,
+          buttonIcon,
         }),
       );
       rightX += iconSize + elementGap;

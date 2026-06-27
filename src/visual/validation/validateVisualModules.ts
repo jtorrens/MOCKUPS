@@ -186,6 +186,12 @@ assert(
 );
 assert(
   collectNodes(tree).some(
+    (node) => node.type === "chat_header_icon" && node.style?.buttonIcon,
+  ),
+  "Chat header icons must consume the shared button_icon component",
+);
+assert(
+  collectNodes(tree).some(
     (node) => node.type === "message_bubble_shape" && node.style?.surfaceRelief,
   ),
   "Message bubble shape groups must consume theme surface relief when enabled",
@@ -346,6 +352,12 @@ assert(
   keyboardKeys.some((node) => node.style?.surfaceRelief),
   "Keyboard keys must consume theme surface relief when enabled",
 );
+assert(
+  collectNodes(keyboardTree).some(
+    (node) => node.type === "keyboard_bottom_item" && node.style?.buttonIcon,
+  ),
+  "Keyboard bottom icons must consume the shared button_icon component",
+);
 const textInputProps = ResolvedChatScreenPropsSchema.parse({
   ...chatProps,
   props: {
@@ -408,6 +420,10 @@ assert(
 assert(
   textInputSend?.style?.color === "#007AFF",
   "Text input bar must support state-specific colored icons",
+);
+assert(
+  textInputSend?.style?.buttonIcon,
+  "Text input bar icons must consume the shared button_icon component",
 );
 assert(
   Object.keys(visualModuleRegistry).sort().join(",") ===

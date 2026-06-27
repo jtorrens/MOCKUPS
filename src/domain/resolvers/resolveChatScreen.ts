@@ -832,6 +832,76 @@ function resolveDefaultComponentTokens(
   };
 }
 
+function resolveDefaultButtonIconComponent(
+  repository: DomainRepository,
+  productionId: string,
+  themeMode: "light" | "dark",
+  palette: Map<string, string>,
+  renderScale: number,
+  themeTokens: Record<string, unknown>,
+) {
+  const component =
+    repository
+      .getComponentClasses(productionId, "button_icon")
+      .find((entry) => entry.name === "Default icon button") ??
+    repository.getComponentClasses(productionId, "button_icon")[0];
+  const rawTokens = isObject(component?.tokens_json)
+    ? component.tokens_json
+    : {};
+  const resolvedTokens = resolvePaletteTokenReferences(
+    rawTokens,
+    palette,
+  ) as Record<string, unknown>;
+  const shadows = isObject(themeTokens.shadows) ? themeTokens.shadows : {};
+  const colors = isObject(themeTokens.colors) ? themeTokens.colors : {};
+  const shadowToken = stringValue(resolvedTokens.shadowToken, "system");
+  const shadow =
+    isObject(shadows[shadowToken])
+      ? shadows[shadowToken]
+      : isObject(shadows.elevated)
+        ? shadows.elevated
+        : isObject(shadows.avatar)
+          ? shadows.avatar
+          : {};
+  const borderColorToken = stringValue(
+    rawTokens.borderColorToken,
+    "textSecondary",
+  );
+  const borderColor =
+    typeof colors[borderColorToken] === "string"
+      ? colors[borderColorToken]
+      : borderColorToken;
+  const labelColorToken = stringValue(
+    rawTokens.labelColorToken,
+    "textSecondary",
+  );
+  const labelColor =
+    typeof colors[labelColorToken] === "string"
+      ? colors[labelColorToken]
+      : labelColorToken;
+
+  return {
+    id: component?.id ?? null,
+    name: component?.name ?? "Default icon button",
+    componentType: "button_icon",
+    cornerRadius: numberValue(resolvedTokens.cornerRadius, 0) * renderScale,
+    iconPadding: numberValue(resolvedTokens.iconPadding, 2) * renderScale,
+    borderWidth: numberValue(resolvedTokens.borderWidth, 0) * renderScale,
+    borderColor,
+    shadowEnabled: resolvedTokens.shadowEnabled === true,
+    shadow,
+    surfaceReliefEnabled: resolvedTokens.surfaceReliefEnabled === true,
+    labelEnabled: resolvedTokens.labelEnabled === true,
+    labelPosition:
+      stringValue(resolvedTokens.labelPosition, "bottom") === "top"
+        ? "top"
+        : "bottom",
+    labelPadding: numberValue(resolvedTokens.labelPadding, 2) * renderScale,
+    labelSize: numberValue(resolvedTokens.labelSize, 10) * renderScale,
+    labelColor,
+  };
+}
+
 export function moduleTypographyDefaultsFromFonts(
   tokens: Record<string, unknown>,
 ): Record<string, unknown> {
@@ -1473,6 +1543,14 @@ export function resolveChatScreen({
     renderScale,
     themeTokens,
   );
+  const buttonIconComponent = resolveDefaultButtonIconComponent(
+    repository,
+    theme.production_id,
+    themeMode,
+    palette,
+    renderScale,
+    themeTokens,
+  );
   const textInputBarComponent = resolveDefaultComponentTokens(
     repository,
     theme.production_id,
@@ -1716,6 +1794,7 @@ export function resolveChatScreen({
       components: {
         ...(isObject(themeTokens.components) ? themeTokens.components : {}),
         avatar: avatarComponent,
+        buttonIcon: buttonIconComponent,
         textInputBar: {
           id: textInputBarComponent.id,
           name: textInputBarComponent.name,

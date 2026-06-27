@@ -1241,6 +1241,25 @@ function defaultAvatarComponentTokens() {
   });
 }
 
+function defaultButtonIconComponentTokens() {
+  return JSON.stringify({
+    schemaVersion: 1,
+    componentType: "button_icon",
+    cornerRadius: 0,
+    iconPadding: 2,
+    borderWidth: 0,
+    borderColorToken: "textSecondary",
+    shadowEnabled: false,
+    shadowToken: "system",
+    surfaceReliefEnabled: false,
+    labelEnabled: false,
+    labelPosition: "bottom",
+    labelPadding: 2,
+    labelSize: 10,
+    labelColorToken: "textSecondary",
+  });
+}
+
 function defaultTextInputBarComponentTokens() {
   return JSON.stringify({
     schemaVersion: 1,
@@ -1325,6 +1344,12 @@ function seedDefaultComponentClasses(database: SQLiteDatabase): void {
         type: "avatar",
         name: "Default avatar",
         tokens: defaultAvatarComponentTokens(),
+      },
+      {
+        id: `${production.id}:button_icon_default`,
+        type: "button_icon",
+        name: "Default icon button",
+        tokens: defaultButtonIconComponentTokens(),
       },
       {
         id: `${production.id}:text_input_bar_default`,
@@ -1418,6 +1443,11 @@ function applyAdditiveV26Migration(database: SQLiteDatabase): void {
   database.pragma("user_version = 26");
 }
 
+function applyAdditiveV27Migration(database: SQLiteDatabase): void {
+  seedDefaultComponentClasses(database);
+  database.pragma("user_version = 27");
+}
+
 export function applyInitialSchema(database: SQLiteDatabase): void {
   database.exec(readFileSync(schemaPath, "utf8"));
   applyAdditiveV2Migration(database);
@@ -1445,6 +1475,7 @@ export function applyInitialSchema(database: SQLiteDatabase): void {
   applyAdditiveV24Migration(database);
   applyAdditiveV25Migration(database);
   applyAdditiveV26Migration(database);
+  applyAdditiveV27Migration(database);
   database.pragma("foreign_keys = ON");
 }
 

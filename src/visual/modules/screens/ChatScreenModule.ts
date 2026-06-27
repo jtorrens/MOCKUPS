@@ -331,6 +331,10 @@ export const ChatScreenModule: VisualModule<ResolvedChatScreenProps> = {
             shadows: input.theme.shadows,
             surfaceRelief: input.theme.surfaceRelief,
             avatarComponent: readObject(input.theme.components ?? {}, "avatar"),
+            buttonIconComponent: readObject(
+              input.theme.components ?? {},
+              "buttonIcon",
+            ),
             typography: input.theme.typography,
             headerTokens: input.theme.header,
             screenGutter,

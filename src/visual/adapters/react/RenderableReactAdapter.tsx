@@ -180,6 +180,34 @@ function joinedFilter(...values: Array<string | undefined>) {
   return values.filter(Boolean).join(" ") || undefined;
 }
 
+function buttonIconVisualStyle(value: unknown): CSSProperties {
+  const buttonIcon = asRecord(value);
+  const borderWidth = numberValue(buttonIcon.borderWidth) ?? 0;
+  const borderColor = stringValue(buttonIcon.borderColor) ?? "transparent";
+  const borderRing =
+    borderWidth > 0 ? `0 0 0 ${borderWidth}px ${borderColor}` : undefined;
+  return {
+    borderRadius: numberValue(buttonIcon.cornerRadius),
+    boxShadow: joinedBoxShadow(
+      borderRing,
+      buttonIcon.shadowEnabled === true
+        ? shadowValue(buttonIcon.shadow)
+        : undefined,
+      buttonIcon.surfaceReliefEnabled === true
+        ? surfaceReliefValue(buttonIcon.surfaceRelief)
+        : undefined,
+    ),
+  };
+}
+
+function buttonIconOuterSize(style: Record<string, unknown> | undefined) {
+  const iconSize = numberValue(style?.fontSize);
+  if (iconSize == null) return undefined;
+  const buttonIcon = asRecord(style?.buttonIcon);
+  const iconPadding = numberValue(buttonIcon.iconPadding) ?? 0;
+  return iconSize + iconPadding * 2;
+}
+
 function nodeStyle(
   node: RenderableNode,
   parentOrigin: { x: number; y: number },
@@ -541,6 +569,79 @@ function iconTokenLabel(token: string) {
   return parts.at(-1)?.slice(0, 2).toUpperCase() ?? "IC";
 }
 
+function iconButtonContent(node: RenderableNode): ReactNode {
+  const token = stringValue(node.metadata?.token) ?? node.text ?? "";
+  const buttonIcon = asRecord(node.style?.buttonIcon);
+  const iconSize = numberValue(node.style?.fontSize) ?? 16;
+  const iconPadding = numberValue(buttonIcon.iconPadding) ?? 0;
+  const maskImage = stringValue(node.style?.maskImage);
+  const webkitMaskImage = stringValue(node.style?.WebkitMaskImage);
+  const labelEnabled = buttonIcon.labelEnabled === true;
+  const labelPosition =
+    stringValue(buttonIcon.labelPosition) === "top" ? "top" : "bottom";
+  const label = stringValue(node.metadata?.label) ?? token;
+  const labelPadding = numberValue(buttonIcon.labelPadding) ?? 0;
+  const labelNode = labelEnabled ? (
+    <span
+      style={{
+        color: stringValue(buttonIcon.labelColor) ?? "currentColor",
+        fontSize: numberValue(buttonIcon.labelSize) ?? Math.max(8, iconSize * 0.42),
+        lineHeight: 1,
+        marginBottom: labelPosition === "top" ? labelPadding : undefined,
+        marginTop: labelPosition === "bottom" ? labelPadding : undefined,
+        whiteSpace: "nowrap",
+      }}
+    >
+      {label}
+    </span>
+  ) : null;
+  const glyph = maskImage || webkitMaskImage ? (
+    <span
+      title={token}
+      aria-hidden="true"
+      style={{
+        display: "inline-block",
+        width: iconSize,
+        height: iconSize,
+        backgroundColor: "currentColor",
+        maskImage,
+        maskPosition: "center",
+        maskRepeat: "no-repeat",
+        maskSize: "contain",
+        WebkitMaskImage: webkitMaskImage,
+        WebkitMaskPosition: "center",
+        WebkitMaskRepeat: "no-repeat",
+        WebkitMaskSize: "contain",
+      }}
+    />
+  ) : (
+    <span title={token}>{iconTokenLabel(token)}</span>
+  );
+  const glyphBox = (
+    <span
+      style={{
+        ...buttonIconVisualStyle(buttonIcon),
+        alignItems: "center",
+        boxSizing: "content-box",
+        display: "inline-flex",
+        height: iconSize,
+        justifyContent: "center",
+        padding: iconPadding,
+        width: iconSize,
+      }}
+    >
+      {glyph}
+    </span>
+  );
+  return (
+    <>
+      {labelPosition === "top" ? labelNode : null}
+      {glyphBox}
+      {labelPosition === "bottom" ? labelNode : null}
+    </>
+  );
+}
+
 function inlineCursorFromChildren(node: RenderableNode) {
   const cursorNode = node.children?.find(
     (child) =>
@@ -768,25 +869,13 @@ function nodeContent(node: RenderableNode): ReactNode {
     return <span title={token}>{node.text}</span>;
   }
   if (node.type === "keyboard_bottom_item") {
-    const token = stringValue(node.metadata?.token) ?? node.text ?? "";
-    if (stringValue(node.style?.maskImage)) {
-      return <span title={token} />;
-    }
-    return <span title={token}>{iconTokenLabel(token)}</span>;
+    return iconButtonContent(node);
   }
   if (node.type === "text_input_bar_item") {
-    const token = stringValue(node.metadata?.token) ?? node.text ?? "";
-    if (stringValue(node.style?.maskImage)) {
-      return <span title={token} />;
-    }
-    return <span title={token}>{iconTokenLabel(token)}</span>;
+    return iconButtonContent(node);
   }
   if (node.type === "chat_header_icon") {
-    const token = stringValue(node.metadata?.token) ?? node.text ?? "";
-    if (stringValue(node.style?.maskImage)) {
-      return <span title={token} />;
-    }
-    return <span title={token}>{iconTokenLabel(token)}</span>;
+    return iconButtonContent(node);
   }
   if (node.type === "keyboard_key_popover") {
     return (
@@ -1009,93 +1098,51 @@ function RenderNode({
                       : node.type === "keyboard_bottom_item"
                         ? {
                             display: "inline-flex",
+                            flexDirection:
+                              stringValue(
+                                asRecord(node.style?.buttonIcon).labelPosition,
+                              ) === "top" ||
+                              stringValue(
+                                asRecord(node.style?.buttonIcon).labelPosition,
+                              ) === "bottom"
+                                ? "column"
+                                : "row",
                             alignItems: "center",
                             justifyContent: "center",
                             minWidth: stringValue(node.style?.maskImage)
-                              ? numberValue(node.style?.fontSize)
+                              ? buttonIconOuterSize(node.style)
                               : 0,
                             width: stringValue(node.style?.maskImage)
-                              ? numberValue(node.style?.fontSize)
+                              ? buttonIconOuterSize(node.style)
                               : undefined,
-                            height: numberValue(node.style?.lineHeight),
+                            height: buttonIconOuterSize(node.style),
                             fontSize: numberValue(node.style?.fontSize),
                             lineHeight: numberValue(node.style?.lineHeight)
                               ? `${numberValue(node.style?.lineHeight)}px`
                               : undefined,
-                            backgroundColor: stringValue(node.style?.maskImage)
-                              ? "currentColor"
-                              : undefined,
-                            maskImage: stringValue(node.style?.maskImage),
-                            maskPosition: stringValue(node.style?.maskImage)
-                              ? "center"
-                              : undefined,
-                            maskRepeat: stringValue(node.style?.maskImage)
-                              ? "no-repeat"
-                              : undefined,
-                            maskSize: stringValue(node.style?.maskImage)
-                              ? "contain"
-                              : undefined,
-                            WebkitMaskImage: stringValue(
-                              node.style?.WebkitMaskImage,
-                            ),
-                            WebkitMaskPosition: stringValue(
-                              node.style?.WebkitMaskImage,
-                            )
-                              ? "center"
-                              : undefined,
-                            WebkitMaskRepeat: stringValue(
-                              node.style?.WebkitMaskImage,
-                            )
-                              ? "no-repeat"
-                              : undefined,
-                            WebkitMaskSize: stringValue(
-                              node.style?.WebkitMaskImage,
-                            )
-                              ? "contain"
-                              : undefined,
+                            overflow: "visible",
                           }
                         : node.type === "chat_header_icon"
                           ? {
                               display: "inline-flex",
+                              flexDirection:
+                                stringValue(
+                                  asRecord(node.style?.buttonIcon).labelPosition,
+                                ) === "top" ||
+                                stringValue(
+                                  asRecord(node.style?.buttonIcon).labelPosition,
+                                ) === "bottom"
+                                  ? "column"
+                                  : "row",
                               alignItems: "center",
                               justifyContent: "center",
-                              width: numberValue(node.style?.fontSize),
-                              height: numberValue(node.style?.lineHeight),
+                              width: buttonIconOuterSize(node.style),
+                              height: buttonIconOuterSize(node.style),
                               fontSize: numberValue(node.style?.fontSize),
                               lineHeight: numberValue(node.style?.lineHeight)
                                 ? `${numberValue(node.style?.lineHeight)}px`
                                 : undefined,
-                              backgroundColor: stringValue(node.style?.maskImage)
-                                ? "currentColor"
-                                : undefined,
-                              maskImage: stringValue(node.style?.maskImage),
-                              maskPosition: stringValue(node.style?.maskImage)
-                                ? "center"
-                                : undefined,
-                              maskRepeat: stringValue(node.style?.maskImage)
-                                ? "no-repeat"
-                                : undefined,
-                              maskSize: stringValue(node.style?.maskImage)
-                                ? "contain"
-                                : undefined,
-                              WebkitMaskImage: stringValue(
-                                node.style?.WebkitMaskImage,
-                              ),
-                              WebkitMaskPosition: stringValue(
-                                node.style?.WebkitMaskImage,
-                              )
-                                ? "center"
-                                : undefined,
-                              WebkitMaskRepeat: stringValue(
-                                node.style?.WebkitMaskImage,
-                              )
-                                ? "no-repeat"
-                                : undefined,
-                              WebkitMaskSize: stringValue(
-                                node.style?.WebkitMaskImage,
-                              )
-                                ? "contain"
-                                : undefined,
+                              overflow: "visible",
                             }
                         : node.type === "text_input_bar"
                         ? {
@@ -1125,45 +1172,26 @@ function RenderNode({
                           : node.type === "text_input_bar_item"
                             ? {
                                 display: "inline-flex",
+                                flexDirection:
+                                  stringValue(
+                                    asRecord(node.style?.buttonIcon)
+                                      .labelPosition,
+                                  ) === "top" ||
+                                  stringValue(
+                                    asRecord(node.style?.buttonIcon)
+                                      .labelPosition,
+                                  ) === "bottom"
+                                    ? "column"
+                                    : "row",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                width: numberValue(node.style?.fontSize),
-                                height: numberValue(node.style?.lineHeight),
+                                width: buttonIconOuterSize(node.style),
+                                height: buttonIconOuterSize(node.style),
                                 fontSize: numberValue(node.style?.fontSize),
                                 lineHeight: numberValue(node.style?.lineHeight)
                                   ? `${numberValue(node.style?.lineHeight)}px`
                                   : undefined,
-                                backgroundColor: stringValue(node.style?.maskImage)
-                                  ? "currentColor"
-                                  : undefined,
-                                maskImage: stringValue(node.style?.maskImage),
-                                maskPosition: stringValue(node.style?.maskImage)
-                                  ? "center"
-                                  : undefined,
-                                maskRepeat: stringValue(node.style?.maskImage)
-                                  ? "no-repeat"
-                                  : undefined,
-                                maskSize: stringValue(node.style?.maskImage)
-                                  ? "contain"
-                                  : undefined,
-                                WebkitMaskImage: stringValue(
-                                  node.style?.WebkitMaskImage,
-                                ),
-                                WebkitMaskPosition: stringValue(
-                                  node.style?.WebkitMaskImage,
-                                )
-                                  ? "center"
-                                  : undefined,
-                                WebkitMaskRepeat: stringValue(
-                                  node.style?.WebkitMaskImage,
-                                )
-                                  ? "no-repeat"
-                                  : undefined,
-                                WebkitMaskSize: stringValue(
-                                  node.style?.WebkitMaskImage,
-                                )
-                                  ? "contain"
-                                  : undefined,
+                                overflow: "visible",
                               }
                             : node.type === "text_input_bar_field"
                               ? {

@@ -157,6 +157,11 @@ export function ModuleThemeConfigRecordEditor({
       component.production_id === themeRecord?.production_id &&
       component.component_type === "text_input_bar",
   );
+  const buttonIconComponent = (records.component_classes ?? []).find(
+    (component) =>
+      component.production_id === themeRecord?.production_id &&
+      component.component_type === "button_icon",
+  );
   const keyboardComponent = (records.component_classes ?? []).find(
     (component) =>
       component.production_id === themeRecord?.production_id &&
@@ -259,6 +264,31 @@ export function ModuleThemeConfigRecordEditor({
                               className="inspector-restore-button"
                               title="Component overrides will be edited here"
                               aria-label="Edit text input component overrides"
+                              disabled
+                            >
+                              ✎
+                            </button>
+                          </span>
+                        }
+                      />
+                      <InspectorFieldRow
+                        label="Icon button component"
+                        control={
+                          <span style={{ display: "inline-flex", gap: 10, alignItems: "center" }}>
+                            <input
+                              className="json-value-control"
+                              disabled
+                              value={String(
+                                buttonIconComponent?.name ??
+                                  "Default icon button",
+                              )}
+                              readOnly
+                            />
+                            <button
+                              type="button"
+                              className="inspector-restore-button"
+                              title="Component overrides will be edited here"
+                              aria-label="Edit icon button component overrides"
                               disabled
                             >
                               ✎

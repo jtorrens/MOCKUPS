@@ -652,6 +652,29 @@ export function createExampleDataset(): RepositoryDataset {
     },
     metadata_json: { source: "seed" },
   });
+  const buttonIconComponentClass = ComponentClassSchema.parse({
+    id: `${production.id}:button_icon_default`,
+    production_id: production.id,
+    component_type: "button_icon",
+    name: "Default icon button",
+    tokens_json: {
+      schemaVersion: 1,
+      componentType: "button_icon",
+      cornerRadius: 0,
+      iconPadding: 2,
+      borderWidth: 0,
+      borderColorToken: "textSecondary",
+      shadowEnabled: false,
+      shadowToken: "system",
+      surfaceReliefEnabled: false,
+      labelEnabled: false,
+      labelPosition: "bottom",
+      labelPadding: 2,
+      labelSize: 10,
+      labelColorToken: "textSecondary",
+    },
+    metadata_json: { source: "seed" },
+  });
   const textInputBarComponentClass = ComponentClassSchema.parse({
     id: `${production.id}:text_input_bar_default`,
     production_id: production.id,
@@ -730,6 +753,7 @@ export function createExampleDataset(): RepositoryDataset {
     screenEvents,
     componentClasses: [
       avatarComponentClass,
+      buttonIconComponentClass,
       textInputBarComponentClass,
       keyboardComponentClass,
     ],

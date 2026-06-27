@@ -71,6 +71,19 @@ export const KeyboardModule: VisualModule<KeyboardModuleInput> = {
       "text",
       readString(colors, "textPrimary", "#000000"),
     );
+    const components = readObject(input.tokens, "components");
+    const buttonIconComponent = readObject(components, "buttonIcon");
+    const buttonIcon = {
+      ...buttonIconComponent,
+      ...(buttonIconComponent.surfaceReliefEnabled === true
+        ? {
+            surfaceRelief: readObject(
+              input.tokens.surfaceRelief ?? {},
+              "default",
+            ),
+          }
+        : {}),
+    };
     const keyboardRows = rows(input);
     const keyboardBottomItems = bottomItems(input);
     const keyShadowEnabled = input.keyboard?.keyShadowEnabled !== false;
@@ -243,6 +256,7 @@ export const KeyboardModule: VisualModule<KeyboardModuleInput> = {
                     color: textColor,
                     fontSize: bottomIconSize,
                     lineHeight: bottomIconSize,
+                    buttonIcon,
                     ...(iconUri
                       ? {
                           maskImage: `url("${iconUri.replace(/"/g, '\\"')}")`,

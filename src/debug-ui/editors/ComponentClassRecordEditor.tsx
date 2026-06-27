@@ -86,6 +86,27 @@ function setBorderColorValue(
   };
 }
 
+function shadowCheckbox({
+  checked,
+  label,
+  onChange,
+}: {
+  checked: boolean;
+  label?: string;
+  onChange: (nextValue: boolean) => void;
+}) {
+  return (
+    <label className="json-checkbox">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.currentTarget.checked)}
+      />
+      {label ?? (checked ? "true" : "false")}
+    </label>
+  );
+}
+
 function iconSetValue(
   tokens: Record<string, JsonValue>,
   zone: "left" | "right",
@@ -385,6 +406,205 @@ export function ComponentClassRecordEditor({
                           ✎
                         </button>
                       </span>
+                    }
+                  />
+                </>
+              ) : null}
+              {componentType === "button_icon" ? (
+                <>
+                  <InspectorFieldRow
+                    label="Corner radius"
+                    control={
+                      <DeferredTextInput
+                        ariaLabel="Corner radius"
+                        value={String(numberValue(tokens.cornerRadius, 0))}
+                        onCommit={(nextValue) => {
+                          const parsed = Number(nextValue);
+                          if (!Number.isFinite(parsed)) return;
+                          updateTokens(
+                            setTokenValue(tokens, "cornerRadius", parsed),
+                          );
+                        }}
+                      />
+                    }
+                  />
+                  <InspectorFieldRow
+                    label="Border width"
+                    control={
+                      <DeferredTextInput
+                        ariaLabel="Border width"
+                        value={String(numberValue(tokens.borderWidth, 0))}
+                        onCommit={(nextValue) => {
+                          const parsed = Number(nextValue);
+                          if (!Number.isFinite(parsed)) return;
+                          updateTokens(
+                            setTokenValue(tokens, "borderWidth", parsed),
+                          );
+                        }}
+                      />
+                    }
+                  />
+                  <InspectorFieldRow
+                    label="Icon padding"
+                    control={
+                      <DeferredTextInput
+                        ariaLabel="Icon padding"
+                        value={String(numberValue(tokens.iconPadding, 2))}
+                        onCommit={(nextValue) => {
+                          const parsed = Number(nextValue);
+                          if (!Number.isFinite(parsed)) return;
+                          updateTokens(
+                            setTokenValue(tokens, "iconPadding", parsed),
+                          );
+                        }}
+                      />
+                    }
+                  />
+                  <InspectorFieldRow
+                    label="Border theme color"
+                    control={
+                      <DeferredTextInput
+                        ariaLabel="Border theme color"
+                        value={stringValue(
+                          tokens.borderColorToken,
+                          "textSecondary",
+                        )}
+                        onCommit={(nextValue) =>
+                          updateTokens(
+                            setTokenValue(
+                              tokens,
+                              "borderColorToken",
+                              nextValue,
+                            ),
+                          )
+                        }
+                      />
+                    }
+                  />
+                  <InspectorFieldRow
+                    label="Shadow enabled"
+                    control={shadowCheckbox({
+                      checked: booleanValue(tokens.shadowEnabled),
+                      onChange: (nextValue) =>
+                        updateTokens(
+                          setTokenValue(tokens, "shadowEnabled", nextValue),
+                        ),
+                    })}
+                  />
+                  <InspectorFieldRow
+                    label="Surface relief"
+                    control={
+                      <span
+                        style={{
+                          alignItems: "center",
+                          display: "inline-flex",
+                          gap: 10,
+                        }}
+                      >
+                        {shadowCheckbox({
+                          checked: booleanValue(
+                            tokens.surfaceReliefEnabled,
+                            false,
+                          ),
+                          onChange: (nextValue) =>
+                            updateTokens(
+                              setTokenValue(
+                                tokens,
+                                "surfaceReliefEnabled",
+                                nextValue,
+                              ),
+                            ),
+                        })}
+                        <button
+                          type="button"
+                          className="inspector-restore-button"
+                          title="Surface relief detail editing will be added later"
+                          aria-label="Edit surface relief settings"
+                          disabled
+                        >
+                          ✎
+                        </button>
+                      </span>
+                    }
+                  />
+                  <InspectorFieldRow
+                    label="Show label"
+                    control={shadowCheckbox({
+                      checked: booleanValue(tokens.labelEnabled),
+                      onChange: (nextValue) =>
+                        updateTokens(
+                          setTokenValue(tokens, "labelEnabled", nextValue),
+                        ),
+                    })}
+                  />
+                  <InspectorFieldRow
+                    label="Label position"
+                    control={
+                      <select
+                        className="json-value-control"
+                        value={stringValue(tokens.labelPosition, "bottom")}
+                        onChange={(event) =>
+                          updateTokens(
+                            setTokenValue(
+                              tokens,
+                              "labelPosition",
+                              event.currentTarget.value,
+                            ),
+                          )
+                        }
+                      >
+                        <option value="top">Top</option>
+                        <option value="bottom">Bottom</option>
+                      </select>
+                    }
+                  />
+                  <InspectorFieldRow
+                    label="Label padding"
+                    control={
+                      <DeferredTextInput
+                        ariaLabel="Label padding"
+                        value={String(numberValue(tokens.labelPadding, 2))}
+                        onCommit={(nextValue) => {
+                          const parsed = Number(nextValue);
+                          if (!Number.isFinite(parsed)) return;
+                          updateTokens(
+                            setTokenValue(tokens, "labelPadding", parsed),
+                          );
+                        }}
+                      />
+                    }
+                  />
+                  <InspectorFieldRow
+                    label="Label size"
+                    control={
+                      <DeferredTextInput
+                        ariaLabel="Label size"
+                        value={String(numberValue(tokens.labelSize, 10))}
+                        onCommit={(nextValue) => {
+                          const parsed = Number(nextValue);
+                          if (!Number.isFinite(parsed)) return;
+                          updateTokens(
+                            setTokenValue(tokens, "labelSize", parsed),
+                          );
+                        }}
+                      />
+                    }
+                  />
+                  <InspectorFieldRow
+                    label="Label theme color"
+                    control={
+                      <DeferredTextInput
+                        ariaLabel="Label theme color"
+                        value={stringValue(
+                          tokens.labelColorToken,
+                          "textSecondary",
+                        )}
+                        onCommit={(nextValue) =>
+                          updateTokens(
+                            setTokenValue(tokens, "labelColorToken", nextValue),
+                          )
+                        }
+                      />
                     }
                   />
                 </>
