@@ -475,6 +475,8 @@ function iconItemsForState(
         mapping_json: Record<string, unknown>;
       }
     | undefined,
+  themeTokens: Record<string, unknown> = {},
+  palette: Map<string, string> = new Map(),
 ) {
   const items = Array.isArray(rawItems) ? rawItems : fallbackItems;
   const resolvedItems: Record<string, unknown>[] = [];
@@ -484,12 +486,15 @@ function iconItemsForState(
     const token = stringValue(item.token);
     if (!token) return;
     const iconUri = iconUriForToken(token, iconTheme);
+    const colorToken = stringValue(item.color);
     resolvedItems.push({
       id: stringValue(item.id, token),
       token,
       label: stringValue(item.label, token),
       order: numberValue(item.order, index * 10),
-      color: stringValue(item.color),
+      color: colorToken
+        ? themeColor(themeTokens, palette, colorToken, colorToken)
+        : undefined,
       ...(iconUri ? { iconUri } : {}),
     });
   });
@@ -506,6 +511,8 @@ function resolveIconItems(
         mapping_json: Record<string, unknown>;
       }
     | undefined,
+  themeTokens: Record<string, unknown> = {},
+  palette: Map<string, string> = new Map(),
 ) {
   if (typeof rawItems === "string") {
     return iconItemsForState(
@@ -516,9 +523,11 @@ function resolveIconItems(
         .map((token, index) => ({ token, order: (index + 1) * 10 })),
       [],
       iconTheme,
+      themeTokens,
+      palette,
     );
   }
-  return iconItemsForState(rawItems, [], iconTheme);
+  return iconItemsForState(rawItems, [], iconTheme, themeTokens, palette);
 }
 
 function iconItemsSource(primary: unknown, fallback: unknown): unknown {
@@ -535,6 +544,8 @@ function resolveTextInputBarDefinition(
   },
   scale = 1,
   viewportWidth = 390 * scale,
+  themeTokens: Record<string, unknown> = {},
+  palette: Map<string, string> = new Map(),
 ) {
   const root = isObject(behaviorTextInputBar) ? behaviorTextInputBar : {};
   const text = stringValue(root.text, stringValue(root.draftText));
@@ -556,17 +567,21 @@ function resolveTextInputBarDefinition(
       { token: "media_camera", order: 10 },
       { token: "media_mic", order: 20 },
     ],
-    typing: [{ token: "chat_send", order: 10, color: "#007AFF" }],
+    typing: [{ token: "chat_send", order: 10, color: "icons.accent" }],
   };
   const leftItems = iconItemsForState(
     rawLeftSets[state],
     defaultLeftItems[state],
     iconTheme,
+    themeTokens,
+    palette,
   );
   const rightItems = iconItemsForState(
     rawRightSets[state],
     defaultRightItems[state],
     iconTheme,
+    themeTokens,
+    palette,
   );
   const baseFontSize = 17;
   const cursorWidth = numberValue(root.cursorWidth, 2);
@@ -635,10 +650,20 @@ function resolveTextInputBarDefinition(
     placeholder: stringValue(root.placeholder, "Mensaje"),
     state,
     cursorVisible: root.cursorVisible !== false,
-    idleTextColor: stringValue(root.idleTextColor, ""),
+    idleTextColor: themeColor(
+      themeTokens,
+      palette,
+      stringValue(root.idleTextColor, "icons.secondary"),
+      "",
+    ),
     cursorWidth: cursorWidth * scale,
     cursorBlinkFrames: Math.max(1, numberValue(root.cursorBlinkFrames, 15)),
-    cursorColor: stringValue(root.cursorColor, ""),
+    cursorColor: themeColor(
+      themeTokens,
+      palette,
+      stringValue(root.cursorColor, "icons.accent"),
+      "",
+    ),
     fieldShadowEnabled: root.fieldShadowEnabled !== false,
     layout,
     leftItems,
@@ -763,20 +788,9 @@ function resolvePaletteTokenReferences(
   return value;
 }
 
-function modeValue(
-  value: unknown,
-  themeMode: "light" | "dark",
-): unknown {
-  if (isObject(value)) {
-    return value[themeMode] ?? value.light ?? value.dark ?? value;
-  }
-  return value;
-}
-
 function resolveDefaultAvatarComponent(
   repository: DomainRepository,
   productionId: string,
-  themeMode: "light" | "dark",
   palette: Map<string, string>,
   renderScale: number,
   themeTokens: Record<string, unknown>,
@@ -803,7 +817,16 @@ function resolveDefaultAvatarComponent(
         : isObject(shadows.elevated)
           ? shadows.elevated
           : {};
-  const borderColor = modeValue(resolvedTokens.borderColor, themeMode);
+  const borderColorToken = stringValue(
+    rawTokens.borderColorToken,
+    "borders.primary",
+  );
+  const borderColor = themeColor(
+    themeTokens,
+    palette,
+    borderColorToken,
+    "#D1D1D6",
+  );
 
   return {
     id: component?.id ?? null,
@@ -811,7 +834,7 @@ function resolveDefaultAvatarComponent(
     componentType: "avatar",
     cornerRadius: numberValue(resolvedTokens.cornerRadius, 12) * renderScale,
     borderWidth: numberValue(resolvedTokens.borderWidth, 0) * renderScale,
-    borderColor: stringValue(borderColor, "transparent"),
+    borderColor,
     shadowEnabled: resolvedTokens.shadowEnabled === true,
     surfaceReliefEnabled: resolvedTokens.surfaceReliefEnabled !== false,
     shadow,
@@ -860,7 +883,6 @@ function resolveDefaultButtonIconComponent(
     palette,
   ) as Record<string, unknown>;
   const shadows = isObject(themeTokens.shadows) ? themeTokens.shadows : {};
-  const colors = isObject(themeTokens.colors) ? themeTokens.colors : {};
   const shadowToken = stringValue(resolvedTokens.shadowToken, "system");
   const shadow =
     isObject(shadows[shadowToken])
@@ -872,20 +894,24 @@ function resolveDefaultButtonIconComponent(
           : {};
   const borderColorToken = stringValue(
     rawTokens.borderColorToken,
-    "textSecondary",
+    "borders.primary",
   );
-  const borderColor =
-    typeof colors[borderColorToken] === "string"
-      ? colors[borderColorToken]
-      : borderColorToken;
+  const borderColor = themeColor(
+    themeTokens,
+    palette,
+    borderColorToken,
+    "#D1D1D6",
+  );
   const labelColorToken = stringValue(
     rawTokens.labelColorToken,
-    "textSecondary",
+    "icons.primary",
   );
-  const labelColor =
-    typeof colors[labelColorToken] === "string"
-      ? colors[labelColorToken]
-      : labelColorToken;
+  const labelColor = themeColor(
+    themeTokens,
+    palette,
+    labelColorToken,
+    "#000000",
+  );
 
   return {
     id: component?.id ?? null,
@@ -910,13 +936,32 @@ function resolveDefaultButtonIconComponent(
 }
 
 function themeColor(
-  colors: Record<string, unknown>,
+  themeTokens: Record<string, unknown>,
   palette: Map<string, string>,
   token: string,
   fallback: string,
 ) {
-  if (typeof colors[token] === "string") return colors[token];
+  const colors = isObject(themeTokens.colors) ? themeTokens.colors : {};
+  if (typeof colors[token] === "string") {
+    const colorToken = colors[token];
+    return palette.get(colorToken) ?? colorToken;
+  }
+  const scopedValue = token.includes(".")
+    ? getNestedValue(themeTokens, token.split("."))
+    : undefined;
+  if (typeof scopedValue === "string") return scopedValue;
   return palette.get(token) ?? fallback;
+}
+
+function colorWithAlpha(color: string, alpha: number) {
+  const safeAlpha = Math.max(0, Math.min(1, alpha));
+  if (/^#[0-9a-fA-F]{6}$/.test(color)) {
+    const red = parseInt(color.slice(1, 3), 16);
+    const green = parseInt(color.slice(3, 5), 16);
+    const blue = parseInt(color.slice(5, 7), 16);
+    return `rgba(${red}, ${green}, ${blue}, ${safeAlpha})`;
+  }
+  return color;
 }
 
 function resolveDefaultAudioMessageComponent(
@@ -938,21 +983,20 @@ function resolveDefaultAudioMessageComponent(
       .find((entry) => entry.name === "Default audio message") ??
     repository.getComponentClasses(productionId, "audio_message")[0];
   const tokens = isObject(component?.tokens_json) ? component.tokens_json : {};
-  const colors = isObject(themeTokens.colors) ? themeTokens.colors : {};
   const shadows = isObject(themeTokens.shadows) ? themeTokens.shadows : {};
   const surfaceRelief = isObject(themeTokens.surfaceRelief)
     ? themeTokens.surfaceRelief
     : {};
-  const playCircleColorToken = stringValue(tokens.playCircleColorToken, "accent");
-  const playIconColorToken = stringValue(tokens.playIconColorToken, "background");
-  const borderColorToken = stringValue(tokens.borderColorToken, "gray_080");
+  const playCircleColorToken = stringValue(tokens.playCircleColorToken, "icons.accent");
+  const playIconColorToken = stringValue(tokens.playIconColorToken, "icons.secondary");
+  const borderColorToken = stringValue(tokens.borderColorToken, "borders.primary");
   const shadowToken = stringValue(tokens.shadowToken, "system");
-  const waveformColorToken = stringValue(tokens.waveformColorToken, "textSecondary");
+  const waveformColorToken = stringValue(tokens.waveformColorToken, "icons.primary");
   const waveformPlayedColorToken = stringValue(
     tokens.waveformPlayedColorToken,
-    "accent",
+    "icons.accent",
   );
-  const textColorToken = stringValue(tokens.textColorToken, "textSecondary");
+  const textColorToken = stringValue(tokens.textColorToken, "icons.secondary");
   const microphoneBadgeIconToken = stringValue(
     tokens.microphoneBadgeIconToken,
     "media_mic",
@@ -969,8 +1013,8 @@ function resolveDefaultAudioMessageComponent(
       stringValue(tokens.avatarPosition, "left") === "right" ? "right" : "left",
     avatarGap: numberValue(tokens.avatarGap, 8) * renderScale,
     playCircleSize: numberValue(tokens.playCircleSize, 32) * renderScale,
-    playCircleColor: themeColor(colors, palette, playCircleColorToken, "#007AFF"),
-    playIconColor: themeColor(colors, palette, playIconColorToken, "#FFFFFF"),
+    playCircleColor: themeColor(themeTokens, palette, playCircleColorToken, "#007AFF"),
+    playIconColor: themeColor(themeTokens, palette, playIconColorToken, "#FFFFFF"),
     microphoneBadgeSize: numberValue(tokens.microphoneBadgeSize, 16) * renderScale,
     microphoneBadgeIconToken,
     microphoneBadgeIconUri: iconUriForToken(microphoneBadgeIconToken, iconTheme),
@@ -982,18 +1026,18 @@ function resolveDefaultAudioMessageComponent(
     waveformMinHeight: numberValue(tokens.waveformMinHeight, 4) * renderScale,
     waveformMaxHeight: numberValue(tokens.waveformMaxHeight, 22) * renderScale,
     progressKnobSize: numberValue(tokens.progressKnobSize, 9) * renderScale,
-    waveformColor: themeColor(colors, palette, waveformColorToken, "#8E8E93"),
+    waveformColor: themeColor(themeTokens, palette, waveformColorToken, "#8E8E93"),
     waveformPlayedColor: themeColor(
-      colors,
+      themeTokens,
       palette,
       waveformPlayedColorToken,
       "#007AFF",
     ),
     textSize: numberValue(tokens.textSize, 11) * renderScale,
-    textColor: themeColor(colors, palette, textColorToken, "#8E8E93"),
+    textColor: themeColor(themeTokens, palette, textColorToken, "#8E8E93"),
     cornerRadius: numberValue(tokens.cornerRadius, 18) * renderScale,
     borderWidth: numberValue(tokens.borderWidth, 0) * renderScale,
-    borderColor: themeColor(colors, palette, borderColorToken, "#D1D1D6"),
+    borderColor: themeColor(themeTokens, palette, borderColorToken, "#D1D1D6"),
     shadowEnabled: tokens.shadowEnabled === true,
     shadow: isObject(shadows[shadowToken])
       ? shadows[shadowToken]
@@ -1004,6 +1048,77 @@ function resolveDefaultAudioMessageComponent(
           : {},
     surfaceReliefEnabled: tokens.surfaceReliefEnabled === true,
     surfaceRelief: isObject(surfaceRelief.default) ? surfaceRelief.default : {},
+  };
+}
+
+function resolveDefaultVideoMessageComponent(
+  repository: DomainRepository,
+  productionId: string,
+  iconTheme:
+    | {
+        asset_root: string;
+        mapping_json: Record<string, unknown>;
+      }
+    | undefined,
+  renderScale: number,
+  themeTokens: Record<string, unknown>,
+  palette: Map<string, string>,
+) {
+  const component =
+    repository
+      .getComponentClasses(productionId, "video_message")
+      .find((entry) => entry.name === "Default video message") ??
+    repository.getComponentClasses(productionId, "video_message")[0];
+  const tokens = isObject(component?.tokens_json) ? component.tokens_json : {};
+  const shadows = isObject(themeTokens.shadows) ? themeTokens.shadows : {};
+  const surfaceRelief = isObject(themeTokens.surfaceRelief)
+    ? themeTokens.surfaceRelief
+    : {};
+  const borderColorToken = stringValue(tokens.borderColorToken, "borders.primary");
+  const shadowToken = stringValue(tokens.shadowToken, "system");
+  const playCircleColorToken = stringValue(tokens.playCircleColorToken, "icons.accent");
+  const playIconColorToken = stringValue(tokens.playIconColorToken, "icons.secondary");
+  const statusColorToken = stringValue(tokens.statusColorToken, "icons.secondary");
+  const statusIconToken = stringValue(tokens.statusIconToken, "media_video");
+  const playCircleColor = themeColor(
+    themeTokens,
+    palette,
+    playCircleColorToken,
+    "#000000",
+  );
+
+  return {
+    id: component?.id ?? null,
+    name: component?.name ?? "Default video message",
+    componentType: "video_message",
+    cornerRadius: numberValue(tokens.cornerRadius, 18) * renderScale,
+    borderWidth: numberValue(tokens.borderWidth, 0) * renderScale,
+    borderColor: themeColor(themeTokens, palette, borderColorToken, "#D1D1D6"),
+    shadowEnabled: tokens.shadowEnabled === true,
+    shadow: isObject(shadows[shadowToken])
+      ? shadows[shadowToken]
+      : isObject(shadows.system)
+        ? shadows.system
+        : isObject(shadows.elevated)
+          ? shadows.elevated
+          : {},
+    surfaceReliefEnabled: tokens.surfaceReliefEnabled === true,
+    surfaceRelief: isObject(surfaceRelief.default) ? surfaceRelief.default : {},
+    playOverlayEnabled: tokens.playOverlayEnabled !== false,
+    playCircleSize: numberValue(tokens.playCircleSize, 44) * renderScale,
+    playCircleColor: colorWithAlpha(
+      playCircleColor,
+      numberValue(tokens.playCircleAlpha, 0.55),
+    ),
+    playIconColor: themeColor(themeTokens, palette, playIconColorToken, "#FFFFFF"),
+    statusVisible: tokens.statusVisible !== false,
+    statusIconToken,
+    statusIconUri: iconUriForToken(statusIconToken, iconTheme),
+    statusSize: numberValue(tokens.statusSize, 12) * renderScale,
+    statusPaddingX: numberValue(tokens.statusPaddingX, 8) * renderScale,
+    statusPaddingY: numberValue(tokens.statusPaddingY, 6) * renderScale,
+    statusGap: numberValue(tokens.statusGap, 4) * renderScale,
+    statusColor: themeColor(themeTokens, palette, statusColorToken, "#FFFFFF"),
   };
 }
 
@@ -1054,8 +1169,18 @@ export function resolveGlobalThemeTokens(
     resolveThemeModeTokens(theme.tokens_json, themeMode),
   );
   const cursor = isObject(merged.cursor) ? merged.cursor : {};
+  const colors = isObject(merged.colors) ? merged.colors : {};
   return {
     ...merged,
+    colors: {
+      "icons.primary": "gray_000",
+      "icons.secondary": "gray_040",
+      "icons.accent": "blue",
+      "borders.primary": "gray_080",
+      "borders.secondary": "gray_070",
+      "borders.alternate": "gray_090",
+      ...colors,
+    },
     cursor: {
       style: "bar",
       width: 2,
@@ -1643,7 +1768,6 @@ export function resolveChatScreen({
   const avatarComponent = resolveDefaultAvatarComponent(
     repository,
     theme.production_id,
-    themeMode,
     palette,
     renderScale,
     themeTokens,
@@ -1657,6 +1781,14 @@ export function resolveChatScreen({
     themeTokens,
   );
   const audioMessageComponent = resolveDefaultAudioMessageComponent(
+    repository,
+    theme.production_id,
+    iconTheme,
+    renderScale,
+    themeTokens,
+    palette,
+  );
+  const videoMessageComponent = resolveDefaultVideoMessageComponent(
     repository,
     theme.production_id,
     iconTheme,
@@ -1681,10 +1813,14 @@ export function resolveChatScreen({
     leftItems: resolveIconItems(
       iconItemsSource(themeTokens.header.leftItems, themeTokens.header.leftIconTokens),
       iconTheme,
+      themeTokens,
+      palette,
     ),
     rightItems: resolveIconItems(
       iconItemsSource(themeTokens.header.rightItems, themeTokens.header.rightIconTokens),
       iconTheme,
+      themeTokens,
+      palette,
     ),
   };
   const effectiveStatusBar = resolveStatusBarDefinition(
@@ -1787,12 +1923,16 @@ export function resolveChatScreen({
               ...(mediaAsset ? { assetId: mediaAsset.id } : {}),
               ...(mediaUri ? { uri: mediaUri } : {}),
               ...(mediaType ? { type: mediaType } : {}),
-              ...(isAudioMedia
+              ...(typeof scaledMedia?.durationSeconds === "number"
                 ? {
                     durationSeconds: numberValue(
-                      scaledMedia?.durationSeconds,
+                      scaledMedia.durationSeconds,
                       8,
                     ),
+                  }
+                : {}),
+              ...(isAudioMedia
+                ? {
                     window: {
                       width: audioMessageComponent.width,
                       height: audioMessageComponent.height,
@@ -1843,6 +1983,28 @@ export function resolveChatScreen({
     0,
     Math.round(numberValue(rawKeyboardTokens.pushDurationFrames, 8)),
   );
+  const enteringComposerMessage = activeComposerMessage
+    ? undefined
+    : [...resolvedMessages].reverse().find((message) => {
+        const writeOnStartFrame = message.timing.writeOnStartFrame;
+        const writeOnDurationFrames = message.timing.writeOnDurationFrames;
+        if (
+          message.direction !== "outgoing" ||
+          writeOnStartFrame === undefined ||
+          writeOnDurationFrames === undefined ||
+          writeOnDurationFrames <= 0
+        ) {
+          return false;
+        }
+        const keyboardEnterStartFrame = Math.max(
+          0,
+          writeOnStartFrame - keyboardPushDurationFrames,
+        );
+        return (
+          localFrame >= keyboardEnterStartFrame &&
+          localFrame < writeOnStartFrame
+        );
+      });
   const exitingComposerMessage = activeComposerMessage
     ? undefined
     : [...resolvedMessages].reverse().find((message) => {
@@ -1865,8 +2027,21 @@ export function resolveChatScreen({
   const keyboardTransition = activeComposerMessage
     ? {
         phase: "enter",
-        startFrame: activeComposerMessage.timing.writeOnStartFrame ?? localFrame,
+        startFrame: Math.max(
+          0,
+          (activeComposerMessage.timing.writeOnStartFrame ?? localFrame) -
+            keyboardPushDurationFrames,
+        ),
       }
+    : enteringComposerMessage
+      ? {
+          phase: "enter",
+          startFrame: Math.max(
+            0,
+            (enteringComposerMessage.timing.writeOnStartFrame ?? localFrame) -
+              keyboardPushDurationFrames,
+          ),
+        }
     : exitingComposerMessage
       ? {
           phase: "exit",
@@ -1880,7 +2055,9 @@ export function resolveChatScreen({
   const runtimeShowKeyboard =
     moduleConfig.showKeyboard === true &&
     runtimeShowTextInputBar &&
-    (activeComposerMessage !== undefined || exitingComposerMessage !== undefined);
+    (activeComposerMessage !== undefined ||
+      enteringComposerMessage !== undefined ||
+      exitingComposerMessage !== undefined);
   const runtimePressedKey = activeComposerMessage
     ? pressedKeyFromWriteOnState(
         activeComposerMessage.text,
@@ -1914,6 +2091,8 @@ export function resolveChatScreen({
     iconTheme,
     renderScale,
     metrics.viewport.width,
+    themeTokens,
+    palette,
   );
 
   const messages = resolvedMessages.map((message) =>
@@ -1988,6 +2167,7 @@ export function resolveChatScreen({
         avatar: avatarComponent,
         audioMessage: audioMessageComponent,
         buttonIcon: buttonIconComponent,
+        videoMessage: videoMessageComponent,
         textInputBar: {
           id: textInputBarComponent.id,
           name: textInputBarComponent.name,

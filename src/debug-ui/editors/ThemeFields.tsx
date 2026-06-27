@@ -140,6 +140,14 @@ export function normalizedThemeTokenRoot({
   root: Record<string, unknown>;
   family: string;
 }) {
+  const semanticColorDefaults = {
+    "icons.primary": "gray_000",
+    "icons.secondary": "gray_040",
+    "icons.accent": "blue",
+    "borders.primary": "gray_080",
+    "borders.secondary": "gray_070",
+    "borders.alternate": "gray_090",
+  };
   const modes = isJsonObject(root.modes as JsonValue)
     ? (root.modes as Record<string, JsonValue>)
     : {};
@@ -164,8 +172,21 @@ export function normalizedThemeTokenRoot({
   const darkNotifications = isJsonObject(darkMode.notifications)
     ? (darkMode.notifications as Record<string, JsonValue>)
     : {};
+  const rootColors = isJsonObject(root.colors as JsonValue)
+    ? (root.colors as Record<string, JsonValue>)
+    : {};
+  const lightColors = isJsonObject(lightMode.colors)
+    ? (lightMode.colors as Record<string, JsonValue>)
+    : {};
+  const darkColors = isJsonObject(darkMode.colors)
+    ? (darkMode.colors as Record<string, JsonValue>)
+    : {};
   return {
     ...root,
+    colors: {
+      ...semanticColorDefaults,
+      ...rootColors,
+    },
     notifications: visibleNotifications,
     statusBar: normalizeThemeChromeGroup("statusBar", family, root.statusBar),
     navigationBar: normalizeThemeChromeGroup(
@@ -180,6 +201,11 @@ export function normalizedThemeTokenRoot({
       ...modes,
       light: {
         ...lightMode,
+        colors: {
+          ...semanticColorDefaults,
+          ...rootColors,
+          ...lightColors,
+        },
         statusBar: normalizeThemeChromeGroup(
           "statusBar",
           family,
@@ -215,6 +241,11 @@ export function normalizedThemeTokenRoot({
       },
       dark: {
         ...darkMode,
+        colors: {
+          ...semanticColorDefaults,
+          ...rootColors,
+          ...darkColors,
+        },
         statusBar: normalizeThemeChromeGroup(
           "statusBar",
           family,

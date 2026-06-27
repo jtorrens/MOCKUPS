@@ -360,6 +360,48 @@ assert(
   ),
   "Audio media play control must show pause while playback is active",
 );
+const videoMediaProps = ResolvedChatScreenPropsSchema.parse({
+  ...chatProps,
+  messages: [
+    {
+      ...chatProps.messages[0],
+      id: "video_message_validation",
+      text: "",
+      visibleText: "",
+      timing: {
+        startFrame: chatProps.frame,
+        enterDurationFrames: 0,
+      },
+      media: {
+        type: "video",
+        uri: "file:///tmp/validation-video.mp4",
+        durationSeconds: 12,
+        playStartFrame: 0,
+        frame: 0,
+        window: {
+          width: 260,
+          height: 146,
+          offsetX: 0,
+          offsetY: 0,
+        },
+      },
+    },
+  ],
+});
+const videoMediaTree = RenderableNodeSchema.parse(
+  chatModule.render(videoMediaProps),
+);
+const videoNodes = collectNodes(videoMediaTree);
+assert(
+  videoNodes.some((node) => node.type === "message_bubble_video_status_icon") &&
+    videoNodes.some(
+      (node) =>
+        node.type === "message_bubble_video_status_duration" &&
+        node.text === "0:12",
+    ) &&
+    videoNodes.some((node) => node.type === "message_bubble_video_play_overlay"),
+  "Video media messages must render status icon, duration, and pre-play overlay",
+);
 const keyboardProps = ResolvedChatScreenPropsSchema.parse({
   ...chatProps,
   props: {
@@ -420,11 +462,15 @@ assert(
   "Keyboard push validation requires an active write-on message",
 );
 const pushDurationFrames = 8;
+const keyboardEnterStartFrame = Math.max(
+  0,
+  activeComposer.timing.writeOnStartFrame - pushDurationFrames,
+);
 const keyboardPushStartTree = RenderableNodeSchema.parse(
   chatModule.render(
     ResolvedChatScreenPropsSchema.parse({
       ...chatProps,
-      frame: activeComposer.timing.writeOnStartFrame,
+      frame: keyboardEnterStartFrame,
       props: {
         ...chatProps.props,
         showKeyboard: true,
@@ -441,7 +487,7 @@ const keyboardPushEndTree = RenderableNodeSchema.parse(
   chatModule.render(
     ResolvedChatScreenPropsSchema.parse({
       ...chatProps,
-      frame: activeComposer.timing.writeOnStartFrame + pushDurationFrames,
+      frame: activeComposer.timing.writeOnStartFrame,
       props: {
         ...chatProps.props,
         showKeyboard: true,
@@ -460,11 +506,35 @@ const keyboardPushStartNode = keyboardPushStartTree.children?.find(
 const keyboardPushEndNode = keyboardPushEndTree.children?.find(
   (child) => child.type === "keyboard",
 );
+const textInputIdleTree = RenderableNodeSchema.parse(
+  chatModule.render(
+    ResolvedChatScreenPropsSchema.parse({
+      ...chatProps,
+      props: {
+        ...chatProps.props,
+        showKeyboard: false,
+        showTextInputBar: true,
+      },
+    }),
+  ),
+);
+const textInputIdleNode = textInputIdleTree.children?.find(
+  (child) => child.type === "text_input_bar",
+);
+const textInputPushStartNode = keyboardPushStartTree.children?.find(
+  (child) => child.type === "text_input_bar",
+);
 assert(
   keyboardPushStartNode?.box &&
     keyboardPushEndNode?.box &&
     keyboardPushStartNode.box.y > keyboardPushEndNode.box.y,
   "Keyboard must push in from below during its configured duration",
+);
+assert(
+  textInputIdleNode?.box &&
+    textInputPushStartNode?.box &&
+    textInputPushStartNode.box.y <= textInputIdleNode.box.y,
+  "Text input bar must never animate below its idle position above the navigation bar",
 );
 const keyboardPushExitStartTree = RenderableNodeSchema.parse(
   chatModule.render(

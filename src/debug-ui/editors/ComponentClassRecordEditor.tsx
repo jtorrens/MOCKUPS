@@ -1,10 +1,9 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import type {
   AppFieldDefinition,
   AppRecord,
   AppTableDefinition,
 } from "../api/client.js";
-import { ColorValueEditor } from "../components/json-editor/ColorValueEditor.js";
 import type { PaletteColorCatalog } from "../components/json-editor/paletteColors.js";
 import {
   isJsonObject,
@@ -18,6 +17,7 @@ import { EditorHeader } from "../editor-ui/EditorHeader.js";
 import { EditorSectionButton } from "../editor-ui/EditorSectionButton.js";
 import { EditorSectionCard } from "../editor-ui/EditorSectionCard.js";
 import { EditorSections } from "../editor-ui/EditorSections.js";
+import { EditorSubsectionAccordion } from "../editor-ui/EditorSubsectionAccordion.js";
 import { parsedObject } from "./recordJsonUtils.js";
 
 type ComponentClassTab = "" | "general";
@@ -45,19 +45,6 @@ function stringValue(value: unknown, fallback = "") {
   return typeof value === "string" ? value : fallback;
 }
 
-function borderColorValue(
-  tokens: Record<string, JsonValue>,
-  mode: "light" | "dark",
-) {
-  const borderColor = isJsonObject(tokens.borderColor)
-    ? tokens.borderColor
-    : {};
-  return stringValue(
-    borderColor[mode],
-    mode === "dark" ? "gray_020" : "gray_100",
-  );
-}
-
 function setTokenValue(
   tokens: Record<string, JsonValue>,
   key: string,
@@ -66,23 +53,6 @@ function setTokenValue(
   return {
     ...tokens,
     [key]: value,
-  };
-}
-
-function setBorderColorValue(
-  tokens: Record<string, JsonValue>,
-  mode: "light" | "dark",
-  value: string,
-) {
-  const borderColor = isJsonObject(tokens.borderColor)
-    ? tokens.borderColor
-    : {};
-  return {
-    ...tokens,
-    borderColor: {
-      ...borderColor,
-      [mode]: value,
-    },
   };
 }
 
@@ -146,7 +116,7 @@ function iconSetItems(
       token,
       order: (index + 1) * 10,
       ...(zone === "right" && state === "typing" && token === "chat_send"
-        ? { color: "blue" }
+        ? { color: "icons.accent" }
         : {}),
     })) as JsonValue;
 }
@@ -237,7 +207,6 @@ export function ComponentClassRecordEditor({
   record,
   activeTab,
   drafts,
-  paletteCatalog,
   renderField,
   setActiveTab,
   setJsonDraft,
@@ -251,6 +220,7 @@ export function ComponentClassRecordEditor({
     record.component_type,
     stringValue(tokens.componentType, "avatar"),
   );
+  const [activeComponentGroup, setActiveComponentGroup] = useState("");
 
   function updateTokens(nextTokens: Record<string, JsonValue>) {
     setJsonDraft("tokens_json", {
@@ -259,6 +229,106 @@ export function ComponentClassRecordEditor({
       schemaVersion: numberValue(nextTokens.schemaVersion, 1),
       componentType: stringValue(nextTokens.componentType, componentType),
     });
+  }
+
+  function tokenNumberRow(label: string, key: string, fallback: number) {
+    return (
+      <InspectorFieldRow
+        label={label}
+        control={
+          <DeferredTextInput
+            ariaLabel={label}
+            value={String(numberValue(tokens[key], fallback))}
+            onCommit={(nextValue) => {
+              const parsed = Number(nextValue);
+              if (!Number.isFinite(parsed)) return;
+              updateTokens(setTokenValue(tokens, key, parsed));
+            }}
+          />
+        }
+      />
+    );
+  }
+
+  function tokenTextRow(label: string, key: string, fallback: string) {
+    return (
+      <InspectorFieldRow
+        label={label}
+        control={
+          <DeferredTextInput
+            ariaLabel={label}
+            value={stringValue(tokens[key], fallback)}
+            onCommit={(nextValue) =>
+              updateTokens(setTokenValue(tokens, key, nextValue))
+            }
+          />
+        }
+      />
+    );
+  }
+
+  function tokenCheckboxRow(label: string, key: string, fallback = false) {
+    return (
+      <InspectorFieldRow
+        label={label}
+        control={shadowCheckbox({
+          checked: booleanValue(tokens[key], fallback),
+          onChange: (nextValue) =>
+            updateTokens(setTokenValue(tokens, key, nextValue)),
+        })}
+      />
+    );
+  }
+
+  function surfaceReliefRow(fallback = false) {
+    return (
+      <InspectorFieldRow
+        label="Surface relief"
+        control={
+          <span
+            style={{
+              alignItems: "center",
+              display: "inline-flex",
+              gap: 10,
+            }}
+          >
+            {shadowCheckbox({
+              checked: booleanValue(tokens.surfaceReliefEnabled, fallback),
+              onChange: (nextValue) =>
+                updateTokens(
+                  setTokenValue(tokens, "surfaceReliefEnabled", nextValue),
+                ),
+            })}
+            <button
+              type="button"
+              className="inspector-restore-button"
+              title="Surface relief detail editing will be added later"
+              aria-label="Edit surface relief settings"
+              disabled
+            >
+              ✎
+            </button>
+          </span>
+        }
+      />
+    );
+  }
+
+  function componentAccordion(
+    group: string,
+    children: ReactNode,
+    warning = false,
+  ) {
+    return (
+      <EditorSubsectionAccordion
+        group={group}
+        activeGroup={activeComponentGroup}
+        warning={warning}
+        onToggle={setActiveComponentGroup}
+      >
+        {children}
+      </EditorSubsectionAccordion>
+    );
   }
 
   return (
@@ -282,804 +352,444 @@ export function ComponentClassRecordEditor({
               {nameField ? renderField(nameField) : null}
               {componentType === "avatar" ? (
                 <>
-                  <InspectorFieldRow
-                    label="Corner radius"
-                    control={
-                      <DeferredTextInput
-                        ariaLabel="Corner radius"
-                        value={String(numberValue(tokens.cornerRadius, 12))}
-                        onCommit={(nextValue) => {
-                          const parsed = Number(nextValue);
-                          if (!Number.isFinite(parsed)) return;
-                          updateTokens(
-                            setTokenValue(tokens, "cornerRadius", parsed),
-                          );
-                        }}
-                      />
-                    }
-                  />
-                  <InspectorFieldRow
-                    label="Border width"
-                    control={
-                      <DeferredTextInput
-                        ariaLabel="Border width"
-                        value={String(numberValue(tokens.borderWidth, 0))}
-                        onCommit={(nextValue) => {
-                          const parsed = Number(nextValue);
-                          if (!Number.isFinite(parsed)) return;
-                          updateTokens(
-                            setTokenValue(tokens, "borderWidth", parsed),
-                          );
-                        }}
-                      />
-                    }
-                  />
-                  <InspectorFieldRow
-                    label="Border color light"
-                    control={
-                      <ColorValueEditor
-                        label="Border color light"
-                        value={borderColorValue(tokens, "light")}
-                        paletteCatalog={paletteCatalog}
-                        onChange={(nextValue) =>
-                          updateTokens(
-                            setBorderColorValue(tokens, "light", nextValue),
-                          )
-                        }
-                      />
-                    }
-                  />
-                  <InspectorFieldRow
-                    label="Border color dark"
-                    control={
-                      <ColorValueEditor
-                        label="Border color dark"
-                        value={borderColorValue(tokens, "dark")}
-                        paletteCatalog={paletteCatalog}
-                        onChange={(nextValue) =>
-                          updateTokens(
-                            setBorderColorValue(tokens, "dark", nextValue),
-                          )
-                        }
-                      />
-                    }
-                  />
-                  <InspectorFieldRow
-                    label="Shadow enabled"
-                    control={
-                      <label className="json-checkbox">
-                        <input
-                          type="checkbox"
-                          checked={booleanValue(tokens.shadowEnabled)}
-                          onChange={(event) =>
-                            updateTokens(
-                              setTokenValue(
-                                tokens,
-                                "shadowEnabled",
-                                event.currentTarget.checked,
-                              ),
-                            )
-                          }
-                        />
-                        {booleanValue(tokens.shadowEnabled) ? "true" : "false"}
-                      </label>
-                    }
-                  />
-                  <InspectorFieldRow
-                    label="Surface relief"
-                    control={
-                      <span
-                        style={{
-                          alignItems: "center",
-                          display: "inline-flex",
-                          gap: 10,
-                        }}
-                      >
-                        <label className="json-checkbox">
-                          <input
-                            type="checkbox"
-                            checked={booleanValue(
-                              tokens.surfaceReliefEnabled,
-                              true,
-                            )}
-                            onChange={(event) =>
-                              updateTokens(
-                                setTokenValue(
-                                  tokens,
-                                  "surfaceReliefEnabled",
-                                  event.currentTarget.checked,
-                                ),
-                              )
-                            }
-                          />
-                          {booleanValue(tokens.surfaceReliefEnabled, true)
-                            ? "true"
-                            : "false"}
-                        </label>
-                        <button
-                          type="button"
-                          className="inspector-restore-button"
-                          title="Surface relief detail editing will be added later"
-                          aria-label="Edit surface relief settings"
-                          disabled
-                        >
-                          ✎
-                        </button>
-                      </span>
-                    }
-                  />
+                  {componentAccordion(
+                    "appearance",
+                    <>
+                      {tokenNumberRow("Corner radius", "cornerRadius", 12)}
+                      {tokenNumberRow("Border width", "borderWidth", 0)}
+                      {tokenTextRow(
+                        "Border theme color",
+                        "borderColorToken",
+                        "borders.primary",
+                      )}
+                    </>,
+                  )}
+                  {componentAccordion(
+                    "effects",
+                    <>
+                      {tokenCheckboxRow("Shadow enabled", "shadowEnabled")}
+                      {surfaceReliefRow(true)}
+                    </>,
+                  )}
                 </>
               ) : null}
               {componentType === "button_icon" ? (
                 <>
-                  <InspectorFieldRow
-                    label="Corner radius"
-                    control={
-                      <DeferredTextInput
-                        ariaLabel="Corner radius"
-                        value={String(numberValue(tokens.cornerRadius, 0))}
-                        onCommit={(nextValue) => {
-                          const parsed = Number(nextValue);
-                          if (!Number.isFinite(parsed)) return;
-                          updateTokens(
-                            setTokenValue(tokens, "cornerRadius", parsed),
-                          );
-                        }}
-                      />
-                    }
-                  />
-                  <InspectorFieldRow
-                    label="Border width"
-                    control={
-                      <DeferredTextInput
-                        ariaLabel="Border width"
-                        value={String(numberValue(tokens.borderWidth, 0))}
-                        onCommit={(nextValue) => {
-                          const parsed = Number(nextValue);
-                          if (!Number.isFinite(parsed)) return;
-                          updateTokens(
-                            setTokenValue(tokens, "borderWidth", parsed),
-                          );
-                        }}
-                      />
-                    }
-                  />
-                  <InspectorFieldRow
-                    label="Icon padding"
-                    control={
-                      <DeferredTextInput
-                        ariaLabel="Icon padding"
-                        value={String(numberValue(tokens.iconPadding, 2))}
-                        onCommit={(nextValue) => {
-                          const parsed = Number(nextValue);
-                          if (!Number.isFinite(parsed)) return;
-                          updateTokens(
-                            setTokenValue(tokens, "iconPadding", parsed),
-                          );
-                        }}
-                      />
-                    }
-                  />
-                  <InspectorFieldRow
-                    label="Border theme color"
-                    control={
-                      <DeferredTextInput
-                        ariaLabel="Border theme color"
-                        value={stringValue(
-                          tokens.borderColorToken,
-                          "textSecondary",
-                        )}
-                        onCommit={(nextValue) =>
-                          updateTokens(
-                            setTokenValue(
-                              tokens,
-                              "borderColorToken",
-                              nextValue,
-                            ),
-                          )
-                        }
-                      />
-                    }
-                  />
-                  <InspectorFieldRow
-                    label="Shadow enabled"
-                    control={shadowCheckbox({
-                      checked: booleanValue(tokens.shadowEnabled),
-                      onChange: (nextValue) =>
-                        updateTokens(
-                          setTokenValue(tokens, "shadowEnabled", nextValue),
-                        ),
-                    })}
-                  />
-                  <InspectorFieldRow
-                    label="Surface relief"
-                    control={
-                      <span
-                        style={{
-                          alignItems: "center",
-                          display: "inline-flex",
-                          gap: 10,
-                        }}
-                      >
-                        {shadowCheckbox({
-                          checked: booleanValue(
-                            tokens.surfaceReliefEnabled,
-                            false,
-                          ),
-                          onChange: (nextValue) =>
-                            updateTokens(
-                              setTokenValue(
-                                tokens,
-                                "surfaceReliefEnabled",
-                                nextValue,
-                              ),
-                            ),
-                        })}
-                        <button
-                          type="button"
-                          className="inspector-restore-button"
-                          title="Surface relief detail editing will be added later"
-                          aria-label="Edit surface relief settings"
-                          disabled
-                        >
-                          ✎
-                        </button>
-                      </span>
-                    }
-                  />
-                  <InspectorFieldRow
-                    label="Show label"
-                    control={shadowCheckbox({
-                      checked: booleanValue(tokens.labelEnabled),
-                      onChange: (nextValue) =>
-                        updateTokens(
-                          setTokenValue(tokens, "labelEnabled", nextValue),
-                        ),
-                    })}
-                  />
-                  <InspectorFieldRow
-                    label="Label position"
-                    control={
-                      <select
-                        className="json-value-control"
-                        value={stringValue(tokens.labelPosition, "bottom")}
-                        onChange={(event) =>
-                          updateTokens(
-                            setTokenValue(
-                              tokens,
-                              "labelPosition",
-                              event.currentTarget.value,
-                            ),
-                          )
-                        }
-                      >
-                        <option value="top">Top</option>
-                        <option value="bottom">Bottom</option>
-                      </select>
-                    }
-                  />
-                  <InspectorFieldRow
-                    label="Label padding"
-                    control={
-                      <DeferredTextInput
-                        ariaLabel="Label padding"
-                        value={String(numberValue(tokens.labelPadding, 2))}
-                        onCommit={(nextValue) => {
-                          const parsed = Number(nextValue);
-                          if (!Number.isFinite(parsed)) return;
-                          updateTokens(
-                            setTokenValue(tokens, "labelPadding", parsed),
-                          );
-                        }}
-                      />
-                    }
-                  />
-                  <InspectorFieldRow
-                    label="Label size"
-                    control={
-                      <DeferredTextInput
-                        ariaLabel="Label size"
-                        value={String(numberValue(tokens.labelSize, 10))}
-                        onCommit={(nextValue) => {
-                          const parsed = Number(nextValue);
-                          if (!Number.isFinite(parsed)) return;
-                          updateTokens(
-                            setTokenValue(tokens, "labelSize", parsed),
-                          );
-                        }}
-                      />
-                    }
-                  />
-                  <InspectorFieldRow
-                    label="Label theme color"
-                    control={
-                      <DeferredTextInput
-                        ariaLabel="Label theme color"
-                        value={stringValue(
-                          tokens.labelColorToken,
-                          "textSecondary",
-                        )}
-                        onCommit={(nextValue) =>
-                          updateTokens(
-                            setTokenValue(tokens, "labelColorToken", nextValue),
-                          )
-                        }
-                      />
-                    }
-                  />
-                </>
-              ) : null}
-              {componentType === "audio_message" ? (
-                <>
-                  {[
-                    ["Width", "width", 260],
-                    ["Height", "height", 58],
-                    ["Avatar size", "avatarSize", 38],
-                    ["Avatar gap", "avatarGap", 8],
-                    ["Play circle size", "playCircleSize", 32],
-                    ["Microphone badge size", "microphoneBadgeSize", 16],
-                    ["Waveform bars", "waveformBarCount", 28],
-                    ["Waveform gap", "waveformGap", 2],
-                    ["Waveform min height", "waveformMinHeight", 4],
-                    ["Waveform max height", "waveformMaxHeight", 22],
-                    ["Progress knob size", "progressKnobSize", 9],
-                    ["Text size", "textSize", 11],
-                    ["Corner radius", "cornerRadius", 18],
-                    ["Border width", "borderWidth", 0],
-                  ].map(([label, key, fallback]) => (
-                    <InspectorFieldRow
-                      key={String(key)}
-                      label={String(label)}
-                      control={
-                        <DeferredTextInput
-                          ariaLabel={String(label)}
-                          value={String(numberValue(tokens[String(key)], Number(fallback)))}
-                          onCommit={(nextValue) => {
-                            const parsed = Number(nextValue);
-                            if (!Number.isFinite(parsed)) return;
-                            updateTokens(
-                              setTokenValue(tokens, String(key), parsed),
-                            );
-                          }}
-                        />
-                      }
-                    />
-                  ))}
-                  <InspectorFieldRow
-                    label="Avatar position"
-                    control={
-                      <select
-                        className="json-value-control"
-                        value={stringValue(tokens.avatarPosition, "left")}
-                        onChange={(event) =>
-                          updateTokens(
-                            setTokenValue(
-                              tokens,
-                              "avatarPosition",
-                              event.currentTarget.value,
-                            ),
-                          )
-                        }
-                      >
-                        <option value="left">Left</option>
-                        <option value="right">Right</option>
-                      </select>
-                    }
-                  />
-                  {[
-                    ["Play circle color", "playCircleColorToken", "accent"],
-                    ["Play icon color", "playIconColorToken", "background"],
-                    ["Microphone badge icon", "microphoneBadgeIconToken", "media_mic"],
-                    ["Waveform color", "waveformColorToken", "textSecondary"],
-                    ["Waveform played color", "waveformPlayedColorToken", "accent"],
-                    ["Text color", "textColorToken", "textSecondary"],
-                    ["Border color", "borderColorToken", "gray_080"],
-                    ["Shadow token", "shadowToken", "system"],
-                  ].map(([label, key, fallback]) => (
-                    <InspectorFieldRow
-                      key={String(key)}
-                      label={String(label)}
-                      control={
-                        <DeferredTextInput
-                          ariaLabel={String(label)}
-                          value={stringValue(tokens[String(key)], String(fallback))}
-                          onCommit={(nextValue) =>
-                            updateTokens(
-                              setTokenValue(tokens, String(key), nextValue),
-                            )
-                          }
-                        />
-                      }
-                    />
-                  ))}
-                  <InspectorFieldRow
-                    label="Shadow"
-                    control={shadowCheckbox({
-                      checked: booleanValue(tokens.shadowEnabled),
-                      onChange: (nextValue) =>
-                        updateTokens(
-                          setTokenValue(tokens, "shadowEnabled", nextValue),
-                        ),
-                    })}
-                  />
-                  <InspectorFieldRow
-                    label="Surface relief"
-                    control={
-                      <span
-                        style={{
-                          alignItems: "center",
-                          display: "inline-flex",
-                          gap: 10,
-                        }}
-                      >
-                        <label className="json-checkbox">
-                          <input
-                            type="checkbox"
-                            checked={booleanValue(
-                              tokens.surfaceReliefEnabled,
-                            )}
+                  {componentAccordion(
+                    "container",
+                    <>
+                      {tokenNumberRow("Corner radius", "cornerRadius", 0)}
+                      {tokenNumberRow("Border width", "borderWidth", 0)}
+                      {tokenNumberRow("Icon padding", "iconPadding", 2)}
+                      {tokenTextRow(
+                        "Border theme color",
+                        "borderColorToken",
+                        "borders.primary",
+                      )}
+                    </>,
+                  )}
+                  {componentAccordion(
+                    "effects",
+                    <>
+                      {tokenCheckboxRow("Shadow enabled", "shadowEnabled")}
+                      {surfaceReliefRow(false)}
+                    </>,
+                  )}
+                  {componentAccordion(
+                    "label",
+                    <>
+                      {tokenCheckboxRow("Show label", "labelEnabled")}
+                      <InspectorFieldRow
+                        label="Label position"
+                        control={
+                          <select
+                            className="json-value-control"
+                            value={stringValue(tokens.labelPosition, "bottom")}
                             onChange={(event) =>
                               updateTokens(
                                 setTokenValue(
                                   tokens,
-                                  "surfaceReliefEnabled",
-                                  event.currentTarget.checked,
+                                  "labelPosition",
+                                  event.currentTarget.value,
                                 ),
                               )
                             }
-                          />
-                          {booleanValue(tokens.surfaceReliefEnabled)
-                            ? "true"
-                            : "false"}
-                        </label>
-                        <button
-                          type="button"
-                          className="inspector-restore-button"
-                          title="Surface relief detail editing will be added later"
-                          aria-label="Edit surface relief settings"
-                          disabled
-                        >
-                          ✎
-                        </button>
-                      </span>
-                    }
-                  />
+                          >
+                            <option value="top">Top</option>
+                            <option value="bottom">Bottom</option>
+                          </select>
+                        }
+                      />
+                      {tokenNumberRow("Label padding", "labelPadding", 2)}
+                      {tokenNumberRow("Label size", "labelSize", 10)}
+                      {tokenTextRow(
+                        "Label theme color",
+                        "labelColorToken",
+                        "icons.primary",
+                      )}
+                    </>,
+                  )}
+                </>
+              ) : null}
+              {componentType === "audio_message" ? (
+                <>
+                  {componentAccordion(
+                    "container",
+                    <>
+                      {tokenNumberRow("Width", "width", 260)}
+                      {tokenNumberRow("Height", "height", 58)}
+                      {tokenNumberRow("Corner radius", "cornerRadius", 18)}
+                      {tokenNumberRow("Border width", "borderWidth", 0)}
+                      {tokenTextRow(
+                        "Border color",
+                        "borderColorToken",
+                        "borders.primary",
+                      )}
+                    </>,
+                  )}
+                  {componentAccordion(
+                    "avatar",
+                    <>
+                      {tokenNumberRow("Avatar size", "avatarSize", 38)}
+                      {tokenNumberRow("Avatar gap", "avatarGap", 8)}
+                      <InspectorFieldRow
+                        label="Avatar position"
+                        control={
+                          <select
+                            className="json-value-control"
+                            value={stringValue(tokens.avatarPosition, "left")}
+                            onChange={(event) =>
+                              updateTokens(
+                                setTokenValue(
+                                  tokens,
+                                  "avatarPosition",
+                                  event.currentTarget.value,
+                                ),
+                              )
+                            }
+                          >
+                            <option value="left">Left</option>
+                            <option value="right">Right</option>
+                          </select>
+                        }
+                      />
+                      {tokenNumberRow(
+                        "Microphone badge size",
+                        "microphoneBadgeSize",
+                        16,
+                      )}
+                      {tokenTextRow(
+                        "Microphone badge icon",
+                        "microphoneBadgeIconToken",
+                        "media_mic",
+                      )}
+                    </>,
+                  )}
+                  {componentAccordion(
+                    "playback",
+                    <>
+                      {tokenNumberRow("Play circle size", "playCircleSize", 32)}
+                      {tokenTextRow(
+                        "Play circle color",
+                        "playCircleColorToken",
+                        "icons.accent",
+                      )}
+                      {tokenTextRow(
+                        "Play icon color",
+                        "playIconColorToken",
+                        "icons.secondary",
+                      )}
+                      {tokenNumberRow(
+                        "Progress knob size",
+                        "progressKnobSize",
+                        9,
+                      )}
+                    </>,
+                  )}
+                  {componentAccordion(
+                    "waveform",
+                    <>
+                      {tokenNumberRow("Waveform bars", "waveformBarCount", 28)}
+                      {tokenNumberRow("Waveform gap", "waveformGap", 2)}
+                      {tokenNumberRow(
+                        "Waveform min height",
+                        "waveformMinHeight",
+                        4,
+                      )}
+                      {tokenNumberRow(
+                        "Waveform max height",
+                        "waveformMaxHeight",
+                        22,
+                      )}
+                      {tokenTextRow(
+                        "Waveform color",
+                        "waveformColorToken",
+                        "icons.primary",
+                      )}
+                      {tokenTextRow(
+                        "Waveform played color",
+                        "waveformPlayedColorToken",
+                        "icons.accent",
+                      )}
+                    </>,
+                  )}
+                  {componentAccordion(
+                    "text",
+                    <>
+                      {tokenNumberRow("Text size", "textSize", 11)}
+                      {tokenTextRow(
+                        "Text color",
+                        "textColorToken",
+                        "icons.secondary",
+                      )}
+                    </>,
+                  )}
+                  {componentAccordion(
+                    "effects",
+                    <>
+                      {tokenCheckboxRow("Shadow", "shadowEnabled")}
+                      {tokenTextRow("Shadow token", "shadowToken", "system")}
+                      {surfaceReliefRow()}
+                    </>,
+                  )}
+                </>
+              ) : null}
+              {componentType === "video_message" ? (
+                <>
+                  {componentAccordion(
+                    "container",
+                    <>
+                      {tokenNumberRow("Corner radius", "cornerRadius", 18)}
+                      {tokenNumberRow("Border width", "borderWidth", 0)}
+                      {tokenTextRow(
+                        "Border color",
+                        "borderColorToken",
+                        "borders.primary",
+                      )}
+                    </>,
+                  )}
+                  {componentAccordion(
+                    "playOverlay",
+                    <>
+                      {tokenCheckboxRow(
+                        "Show play overlay",
+                        "playOverlayEnabled",
+                        true,
+                      )}
+                      {tokenNumberRow(
+                        "Play circle size",
+                        "playCircleSize",
+                        44,
+                      )}
+                      {tokenNumberRow(
+                        "Play circle alpha",
+                        "playCircleAlpha",
+                        0.55,
+                      )}
+                      {tokenTextRow(
+                        "Play circle color",
+                        "playCircleColorToken",
+                        "icons.accent",
+                      )}
+                      {tokenTextRow(
+                        "Play icon color",
+                        "playIconColorToken",
+                        "icons.secondary",
+                      )}
+                    </>,
+                  )}
+                  {componentAccordion(
+                    "statusBar",
+                    <>
+                      {tokenCheckboxRow("Show status", "statusVisible", true)}
+                      {tokenTextRow(
+                        "Status icon",
+                        "statusIconToken",
+                        "media_video",
+                      )}
+                      {tokenTextRow(
+                        "Status color",
+                        "statusColorToken",
+                        "icons.secondary",
+                      )}
+                      {tokenNumberRow("Status size", "statusSize", 12)}
+                      {tokenNumberRow(
+                        "Status padding X",
+                        "statusPaddingX",
+                        8,
+                      )}
+                      {tokenNumberRow(
+                        "Status padding Y",
+                        "statusPaddingY",
+                        6,
+                      )}
+                      {tokenNumberRow("Status gap", "statusGap", 4)}
+                    </>,
+                  )}
+                  {componentAccordion(
+                    "effects",
+                    <>
+                      {tokenCheckboxRow("Shadow", "shadowEnabled")}
+                      {tokenTextRow("Shadow token", "shadowToken", "system")}
+                      {surfaceReliefRow()}
+                    </>,
+                  )}
                 </>
               ) : null}
               {componentType === "text_input_bar" ? (
                 <>
-                  <InspectorFieldRow
-                    label="Placeholder"
-                    control={
-                      <DeferredTextInput
-                        ariaLabel="Placeholder"
-                        value={stringValue(tokens.placeholder, "Mensaje")}
-                        onCommit={(nextValue) =>
-                          updateTokens(
-                            setTokenValue(tokens, "placeholder", nextValue),
-                          )
-                        }
-                      />
-                    }
-                  />
-                  <InspectorFieldRow
-                    label="Show cursor"
-                    control={
-                      <label className="json-checkbox">
-                        <input
-                          type="checkbox"
-                          checked={booleanValue(tokens.cursorVisible, true)}
-                          onChange={(event) =>
-                            updateTokens(
-                              setTokenValue(
-                                tokens,
-                                "cursorVisible",
-                                event.currentTarget.checked,
-                              ),
-                            )
-                          }
-                        />
-                        {booleanValue(tokens.cursorVisible, true)
-                          ? "true"
-                          : "false"}
-                      </label>
-                    }
-                  />
-                  <InspectorFieldRow
-                    label="Idle text color"
-                    control={
-                      <ColorValueEditor
-                        label="Idle text color"
-                        value={stringValue(tokens.idleTextColor, "gray_050")}
-                        paletteCatalog={paletteCatalog}
-                        onChange={(nextValue) =>
-                          updateTokens(
-                            setTokenValue(tokens, "idleTextColor", nextValue),
-                          )
-                        }
-                      />
-                    }
-                  />
-                  <InspectorFieldRow
-                    label="Cursor width"
-                    control={
-                      <DeferredTextInput
-                        ariaLabel="Cursor width"
-                        value={String(numberValue(tokens.cursorWidth, 2))}
-                        onCommit={(nextValue) => {
-                          const parsed = Number(nextValue);
-                          if (!Number.isFinite(parsed)) return;
-                          updateTokens(
-                            setTokenValue(tokens, "cursorWidth", parsed),
-                          );
-                        }}
-                      />
-                    }
-                  />
-                  <InspectorFieldRow
-                    label="Cursor blink speed"
-                    control={
-                      <DeferredTextInput
-                        ariaLabel="Cursor blink speed"
-                        value={String(numberValue(tokens.cursorBlinkFrames, 15))}
-                        onCommit={(nextValue) => {
-                          const parsed = Number(nextValue);
-                          if (!Number.isFinite(parsed)) return;
-                          updateTokens(
-                            setTokenValue(tokens, "cursorBlinkFrames", parsed),
-                          );
-                        }}
-                      />
-                    }
-                  />
-                  <InspectorFieldRow
-                    label="Cursor color"
-                    control={
-                      <ColorValueEditor
-                        label="Cursor color"
-                        value={stringValue(tokens.cursorColor, "blue")}
-                        paletteCatalog={paletteCatalog}
-                        onChange={(nextValue) =>
-                          updateTokens(
-                            setTokenValue(tokens, "cursorColor", nextValue),
-                          )
-                        }
-                      />
-                    }
-                  />
-                  <InspectorFieldRow
-                    label="Input corner radius"
-                    control={
-                      <DeferredTextInput
-                        ariaLabel="Input corner radius"
-                        value={String(numberValue(tokens.fieldRadius, 20))}
-                        onCommit={(nextValue) => {
-                          const parsed = Number(nextValue);
-                          if (!Number.isFinite(parsed)) return;
-                          updateTokens(
-                            setTokenValue(tokens, "fieldRadius", parsed),
-                          );
-                        }}
-                      />
-                    }
-                  />
-                  <InspectorFieldRow
-                    label="Input shadow"
-                    control={
-                      <label className="json-checkbox">
-                        <input
-                          type="checkbox"
-                          checked={booleanValue(tokens.fieldShadowEnabled, true)}
-                          onChange={(event) =>
-                            updateTokens(
-                              setTokenValue(
-                                tokens,
-                                "fieldShadowEnabled",
-                                event.currentTarget.checked,
-                              ),
-                            )
-                          }
-                        />
-                        {booleanValue(tokens.fieldShadowEnabled, true)
-                          ? "true"
-                          : "false"}
-                      </label>
-                    }
-                  />
-                  {(["idle", "typing"] as const).flatMap((state) =>
-                    (["left", "right"] as const).map((zone) => (
-                      <InspectorFieldRow
-                        key={`${zone}-${state}`}
-                        label={`${zone === "left" ? "Left" : "Right"} icons ${state}`}
-                        control={
-                          <DeferredTextInput
-                            ariaLabel={`${zone} icons ${state}`}
-                            value={iconSetValue(tokens, zone, state)}
-                            onCommit={(nextValue) =>
-                              updateTokens(
-                                setIconSetValue(tokens, zone, state, nextValue),
-                              )
+                  {componentAccordion(
+                    "field",
+                    <>
+                      {tokenTextRow("Placeholder", "placeholder", "Mensaje")}
+                      {tokenTextRow(
+                        "Idle text color",
+                        "idleTextColor",
+                        "icons.secondary",
+                      )}
+                      {tokenNumberRow(
+                        "Input corner radius",
+                        "fieldRadius",
+                        20,
+                      )}
+                      {tokenCheckboxRow(
+                        "Input shadow",
+                        "fieldShadowEnabled",
+                        true,
+                      )}
+                    </>,
+                  )}
+                  {componentAccordion(
+                    "cursor",
+                    <>
+                      {tokenCheckboxRow("Show cursor", "cursorVisible", true)}
+                      {tokenNumberRow("Cursor width", "cursorWidth", 2)}
+                      {tokenNumberRow(
+                        "Cursor blink speed",
+                        "cursorBlinkFrames",
+                        15,
+                      )}
+                      {tokenTextRow(
+                        "Cursor color",
+                        "cursorColor",
+                        "icons.accent",
+                      )}
+                    </>,
+                  )}
+                  {componentAccordion(
+                    "iconSets",
+                    <>
+                      {(["idle", "typing"] as const).flatMap((state) =>
+                        (["left", "right"] as const).map((zone) => (
+                          <InspectorFieldRow
+                            key={`${zone}-${state}`}
+                            label={`${zone === "left" ? "Left" : "Right"} icons ${state}`}
+                            control={
+                              <DeferredTextInput
+                                ariaLabel={`${zone} icons ${state}`}
+                                value={iconSetValue(tokens, zone, state)}
+                                onCommit={(nextValue) =>
+                                  updateTokens(
+                                    setIconSetValue(
+                                      tokens,
+                                      zone,
+                                      state,
+                                      nextValue,
+                                    ),
+                                  )
+                                }
+                              />
                             }
                           />
-                        }
-                      />
-                    )),
+                        )),
+                      )}
+                    </>,
                   )}
                 </>
               ) : null}
               {componentType === "keyboard" ? (
                 <>
-                  <InspectorFieldRow
-                    label="Keyboard language"
-                    control={
-                      <select
-                        className="json-value-control"
-                        value={stringValue(tokens.language, "es")}
-                        onChange={(event) =>
-                          updateTokens(
-                            setTokenValue(
-                              tokens,
-                              "language",
-                              event.currentTarget.value,
-                            ),
-                          )
-                        }
-                      >
-                        <option value="es">Español</option>
-                        <option value="en">English</option>
-                      </select>
-                    }
-                  />
-                  <InspectorFieldRow
-                    label="Push duration frames"
-                    control={
-                      <DeferredTextInput
-                        ariaLabel="Push duration frames"
-                        value={String(numberValue(tokens.pushDurationFrames, 8))}
-                        onCommit={(nextValue) => {
-                          const parsed = Number(nextValue);
-                          if (!Number.isFinite(parsed)) return;
-                          updateTokens(
-                            setTokenValue(
-                              tokens,
-                              "pushDurationFrames",
-                              parsed,
-                            ),
-                          );
-                        }}
-                      />
-                    }
-                  />
-                  <InspectorFieldRow
-                    label="Message gap to text input"
-                    control={
-                      <DeferredTextInput
-                        ariaLabel="Message gap to text input"
-                        value={String(numberValue(tokens.messageGapToTextInput, 10))}
-                        onCommit={(nextValue) => {
-                          const parsed = Number(nextValue);
-                          if (!Number.isFinite(parsed)) return;
-                          updateTokens(
-                            setTokenValue(
-                              tokens,
-                              "messageGapToTextInput",
-                              parsed,
-                            ),
-                          );
-                        }}
-                      />
-                    }
-                  />
-                  <InspectorFieldRow
-                    label="Key corner radius"
-                    control={
-                      <DeferredTextInput
-                        ariaLabel="Key corner radius"
-                        value={String(numberValue(tokens.keyRadius, 7))}
-                        onCommit={(nextValue) => {
-                          const parsed = Number(nextValue);
-                          if (!Number.isFinite(parsed)) return;
-                          updateTokens(
-                            setTokenValue(tokens, "keyRadius", parsed),
-                          );
-                        }}
-                      />
-                    }
-                  />
-                  <InspectorFieldRow
-                    label="Key shadow"
-                    control={
-                      <label className="json-checkbox">
-                        <input
-                          type="checkbox"
-                          checked={booleanValue(tokens.keyShadowEnabled, true)}
-                          onChange={(event) =>
-                            updateTokens(
-                              setTokenValue(
-                                tokens,
-                                "keyShadowEnabled",
-                                event.currentTarget.checked,
-                              ),
-                            )
-                          }
-                        />
-                        {booleanValue(tokens.keyShadowEnabled, true)
-                          ? "true"
-                          : "false"}
-                      </label>
-                    }
-                  />
-                  <InspectorFieldRow
-                    label="Surface relief"
-                    control={
-                      <span
-                        style={{
-                          alignItems: "center",
-                          display: "inline-flex",
-                          gap: 10,
-                        }}
-                      >
-                        <label className="json-checkbox">
-                          <input
-                            type="checkbox"
-                            checked={booleanValue(
-                              tokens.surfaceReliefEnabled,
-                              true,
-                            )}
+                  {componentAccordion(
+                    "general",
+                    <>
+                      <InspectorFieldRow
+                        label="Keyboard language"
+                        control={
+                          <select
+                            className="json-value-control"
+                            value={stringValue(tokens.language, "es")}
                             onChange={(event) =>
                               updateTokens(
                                 setTokenValue(
                                   tokens,
-                                  "surfaceReliefEnabled",
-                                  event.currentTarget.checked,
+                                  "language",
+                                  event.currentTarget.value,
                                 ),
                               )
                             }
+                          >
+                            <option value="es">Español</option>
+                            <option value="en">English</option>
+                          </select>
+                        }
+                      />
+                      {tokenNumberRow(
+                        "Push duration frames",
+                        "pushDurationFrames",
+                        8,
+                      )}
+                      {tokenNumberRow(
+                        "Message gap to text input",
+                        "messageGapToTextInput",
+                        10,
+                      )}
+                    </>,
+                  )}
+                  {componentAccordion(
+                    "keys",
+                    <>
+                      {tokenNumberRow("Key corner radius", "keyRadius", 7)}
+                      {tokenCheckboxRow(
+                        "Key shadow",
+                        "keyShadowEnabled",
+                        true,
+                      )}
+                      {surfaceReliefRow(true)}
+                    </>,
+                  )}
+                  {componentAccordion(
+                    "bottomIcons",
+                    <>
+                      <InspectorFieldRow
+                        label="Bottom left icons"
+                        control={
+                          <DeferredTextInput
+                            ariaLabel="Bottom left icons"
+                            value={bottomIconValue(tokens, "left")}
+                            onCommit={(nextValue) =>
+                              updateTokens(
+                                setBottomIconValue(tokens, "left", nextValue),
+                              )
+                            }
                           />
-                          {booleanValue(tokens.surfaceReliefEnabled, true)
-                            ? "true"
-                            : "false"}
-                        </label>
-                        <button
-                          type="button"
-                          className="inspector-restore-button"
-                          title="Surface relief detail editing will be added later"
-                          aria-label="Edit surface relief settings"
-                          disabled
-                        >
-                          ✎
-                        </button>
-                      </span>
-                    }
-                  />
-                  <InspectorFieldRow
-                    label="Bottom left icons"
-                    control={
-                      <DeferredTextInput
-                        ariaLabel="Bottom left icons"
-                        value={bottomIconValue(tokens, "left")}
-                        onCommit={(nextValue) =>
-                          updateTokens(
-                            setBottomIconValue(tokens, "left", nextValue),
-                          )
                         }
                       />
-                    }
-                  />
-                  <InspectorFieldRow
-                    label="Bottom right icons"
-                    control={
-                      <DeferredTextInput
-                        ariaLabel="Bottom right icons"
-                        value={bottomIconValue(tokens, "right")}
-                        onCommit={(nextValue) =>
-                          updateTokens(
-                            setBottomIconValue(tokens, "right", nextValue),
-                          )
+                      <InspectorFieldRow
+                        label="Bottom right icons"
+                        control={
+                          <DeferredTextInput
+                            ariaLabel="Bottom right icons"
+                            value={bottomIconValue(tokens, "right")}
+                            onCommit={(nextValue) =>
+                              updateTokens(
+                                setBottomIconValue(tokens, "right", nextValue),
+                              )
+                            }
+                          />
                         }
                       />
-                    }
-                  />
+                    </>,
+                  )}
                 </>
               ) : null}
             </div>

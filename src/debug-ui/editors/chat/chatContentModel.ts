@@ -178,6 +178,7 @@ export function messageWithMediaType(
         : {}),
       ...(nextType === "video"
         ? {
+            durationSeconds: Number(media.durationSeconds ?? 8),
             playMode: media.playMode === "loop" ? "loop" : "once",
             playStartFrame: Number(media.playStartFrame ?? 0),
           }

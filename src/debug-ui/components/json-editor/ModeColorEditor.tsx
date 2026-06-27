@@ -46,6 +46,12 @@ function isHexColor(value: unknown): boolean {
 
 function isColorRolePath(path: JsonPath): boolean {
   const key = String(path[path.length - 1] ?? "");
+  if (
+    path[0] === "colors" &&
+    (key.startsWith("icons.") || key.startsWith("borders."))
+  ) {
+    return true;
+  }
   return /(color|background|text|accent|surface|separator)$/i.test(key);
 }
 
@@ -184,6 +190,13 @@ function inheritedColorAt(
 }
 
 function roleLabel(path: JsonPath) {
+  const leafKey = String(path[path.length - 1] ?? "");
+  if (
+    path[0] === "colors" &&
+    (leafKey.startsWith("icons.") || leafKey.startsWith("borders."))
+  ) {
+    return friendlyPathLeafLabel([leafKey.split(".").slice(1).join(".")]);
+  }
   const leaf = friendlyPathLeafLabel(path);
   const parent =
     path.length > 1
@@ -193,6 +206,9 @@ function roleLabel(path: JsonPath) {
 }
 
 function roleGroup(path: JsonPath): string {
+  const leafKey = String(path[path.length - 1] ?? "");
+  if (path[0] === "colors" && leafKey.startsWith("icons.")) return "icons";
+  if (path[0] === "colors" && leafKey.startsWith("borders.")) return "borders";
   return typeof path[0] === "string" ? path[0] : "colors";
 }
 
@@ -200,19 +216,23 @@ function groupOrder(group: string): number {
   const normalized = group.toLowerCase();
   const order: Record<string, number> = {
     colors: 10,
-    header: 20,
-    chatbubbles: 30,
-    bubbles: 30,
-    messages: 35,
-    statusbar: 40,
-    notifications: 45,
-    cursor: 50,
+    icons: 20,
+    borders: 30,
+    header: 40,
+    chatbubbles: 50,
+    bubbles: 50,
+    messages: 55,
+    statusbar: 60,
+    notifications: 65,
+    cursor: 70,
   };
   return order[normalized] ?? 100;
 }
 
 function colorGroupLabel(group: string): string {
   if (group === "colors") return "App Colors";
+  if (group === "icons") return "Icon Colors";
+  if (group === "borders") return "Border Colors";
   return friendlyGroupLabel(group);
 }
 

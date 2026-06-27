@@ -85,14 +85,14 @@ export function ChatMessageMediaEditor({
             </select>
           }
         />
-        {mediaType === "audio" ? (
+        {mediaType === "audio" || mediaType === "video" ? (
           <>
             <InspectorFieldRow
               className="record-editor-content-field-row"
               label={<span>Duration seconds</span>}
               control={
                 <DeferredNumberInput
-                  ariaLabel="Audio duration seconds"
+                  ariaLabel={`${mediaType} duration seconds`}
                   min={0.1}
                   step={0.1}
                   value={Math.max(0.1, Number(durationSeconds) || 8)}

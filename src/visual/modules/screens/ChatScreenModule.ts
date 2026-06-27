@@ -52,6 +52,10 @@ function createMessageBubbleInput(
     input.theme.components ?? {},
     "audioMessage",
   );
+  const videoMessageComponent = readObject(
+    input.theme.components ?? {},
+    "videoMessage",
+  );
   const typographyTokens = input.theme.typography;
   const messageTypography = readObject(typographyTokens ?? {}, "message");
   const actorAvatar = outgoing
@@ -175,6 +179,7 @@ function createMessageBubbleInput(
       },
       }),
       audioMessage: audioMessageComponent,
+      videoMessage: videoMessageComponent,
       avatar: {
         ...avatarComponent,
         ...(avatarComponent.surfaceReliefEnabled !== false

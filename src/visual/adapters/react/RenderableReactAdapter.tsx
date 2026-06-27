@@ -225,6 +225,7 @@ function nodeStyle(
   const borderRadius = numberValue(style.borderRadius ?? style.cornerRadius);
   const borderColor = node.type === "avatar" ? undefined : stringValue(style.borderColor);
   const borderWidth = node.type === "avatar" ? undefined : numberValue(style.borderWidth);
+  const zIndex = numberValue(style.zIndex);
   const opacity = node.transform?.opacity;
   const separatorWidth = numberValue(style.separatorWidth);
   return {
@@ -249,6 +250,7 @@ function nodeStyle(
         ? "visible"
         : (stringValue(style.overflow) as CSSProperties["overflow"]),
     opacity,
+    zIndex,
     boxSizing: "border-box",
     boxShadow:
       node.type === "avatar" ||
@@ -862,7 +864,8 @@ function nodeContent(node: RenderableNode): ReactNode {
   }
   if (
     node.type === "message_bubble_status_icon" ||
-    node.type === "message_bubble_audio_badge_icon"
+    node.type === "message_bubble_audio_badge_icon" ||
+    node.type === "message_bubble_video_status_icon"
   ) {
     const token = stringValue(node.metadata?.token) ?? node.text ?? "";
     if (stringValue(node.style?.maskImage)) {
@@ -1252,7 +1255,8 @@ function RenderNode({
               overflow: "visible",
             }
         : node.type === "message_bubble_status_icon" ||
-          node.type === "message_bubble_audio_badge_icon"
+          node.type === "message_bubble_audio_badge_icon" ||
+          node.type === "message_bubble_video_status_icon"
           ? {
               display: "inline-flex",
               alignItems: "center",
@@ -1275,7 +1279,8 @@ function RenderNode({
                 ? "contain"
                 : undefined,
             }
-        : node.type === "message_bubble_audio_play"
+        : (node.type === "message_bubble_audio_play" ||
+            node.type === "message_bubble_video_play_overlay")
           ? {
               display: "flex",
               alignItems: "center",
@@ -1284,6 +1289,17 @@ function RenderNode({
               whiteSpace: "nowrap",
             }
         : node.type === "message_bubble_audio_duration"
+          ? {
+              display: "block",
+              whiteSpace: "nowrap",
+            }
+        : node.type === "message_bubble_video_status"
+          ? {
+              display: "block",
+              overflow: "visible",
+              pointerEvents: "none",
+            }
+        : node.type === "message_bubble_video_status_duration"
           ? {
               display: "block",
               whiteSpace: "nowrap",

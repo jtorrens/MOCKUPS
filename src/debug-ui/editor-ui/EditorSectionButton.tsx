@@ -115,6 +115,66 @@ function sectionMeta(label: string) {
       icon: "◌",
       subtitle: "Notification card styling",
     },
+    container: {
+      icon: "▢",
+      subtitle: "Outer box, border and shape",
+    },
+    appearance: {
+      icon: "◐",
+      subtitle: "Visual presentation and component shape",
+    },
+    effects: {
+      icon: "◒",
+      subtitle: "Shadow, elevation and relief",
+    },
+    label: {
+      icon: "T",
+      subtitle: "Optional text label settings",
+    },
+    playoverlay: {
+      icon: "▶",
+      subtitle: "Video play overlay styling",
+    },
+    status: {
+      icon: "▥",
+      subtitle: "Status and metadata display",
+    },
+    "status bar": {
+      icon: "▥",
+      subtitle: "Video metadata overlay",
+    },
+    waveform: {
+      icon: "〰",
+      subtitle: "Audio waveform and progress",
+    },
+    playback: {
+      icon: "▶",
+      subtitle: "Playback controls and timing visuals",
+    },
+    field: {
+      icon: "▭",
+      subtitle: "Input field surface and placeholder",
+    },
+    icons: {
+      icon: "◉",
+      subtitle: "Icon tokens and zones",
+    },
+    iconsets: {
+      icon: "◉",
+      subtitle: "State-specific icon token sets",
+    },
+    keys: {
+      icon: "⌨",
+      subtitle: "Keyboard key style and behavior",
+    },
+    bottomicons: {
+      icon: "⌘",
+      subtitle: "Keyboard bottom row icon tokens",
+    },
+    text: {
+      icon: "T",
+      subtitle: "Text size and color tokens",
+    },
   };
   return meta[normalized] ?? { icon: "•", subtitle: "" };
 }

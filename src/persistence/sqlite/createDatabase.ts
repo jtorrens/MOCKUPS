@@ -595,7 +595,7 @@ function defaultTextInputBarConfig(): Record<string, unknown> {
           { token: "media_camera", order: 10 },
           { token: "media_mic", order: 20 },
         ],
-        typing: [{ token: "chat_send", order: 10, color: "blue" }],
+        typing: [{ token: "chat_send", order: 10, color: "icons.accent" }],
       },
     },
   };
@@ -823,6 +823,183 @@ function defaultChatBubbleStatusConfig(): Record<string, unknown> {
     readColor: "blue",
     failedColor: "red",
   };
+}
+
+function defaultThemeSemanticColorTokens() {
+  return {
+    "icons.primary": "gray_000",
+    "icons.secondary": "gray_040",
+    "icons.accent": "blue",
+    "borders.primary": "gray_080",
+    "borders.secondary": "gray_070",
+    "borders.alternate": "gray_090",
+  };
+}
+
+function ensureThemeSemanticColorGroups(tokens: Record<string, unknown>) {
+  const modes =
+    tokens.modes &&
+    typeof tokens.modes === "object" &&
+    !Array.isArray(tokens.modes)
+      ? { ...(tokens.modes as Record<string, unknown>) }
+      : {};
+
+  function mergeMode(mode: "light" | "dark") {
+    const modeRoot =
+      modes[mode] && typeof modes[mode] === "object" && !Array.isArray(modes[mode])
+        ? { ...(modes[mode] as Record<string, unknown>) }
+        : {};
+    const dark = mode === "dark";
+    const modeColors =
+      modeRoot.colors &&
+      typeof modeRoot.colors === "object" &&
+      !Array.isArray(modeRoot.colors)
+        ? { ...(modeRoot.colors as Record<string, unknown>) }
+        : {};
+    const legacyIcons =
+      modeRoot.icons &&
+      typeof modeRoot.icons === "object" &&
+      !Array.isArray(modeRoot.icons)
+        ? (modeRoot.icons as Record<string, unknown>)
+        : {};
+    const legacyBorders =
+      modeRoot.borders &&
+      typeof modeRoot.borders === "object" &&
+      !Array.isArray(modeRoot.borders)
+        ? (modeRoot.borders as Record<string, unknown>)
+        : {};
+    delete modeRoot.icons;
+    delete modeRoot.borders;
+    return {
+      ...modeRoot,
+      colors: {
+        ...defaultThemeSemanticColorTokens(),
+        ...Object.fromEntries(
+          Object.entries(legacyIcons).map(([key, value]) => [`icons.${key}`, value]),
+        ),
+        ...Object.fromEntries(
+          Object.entries(legacyBorders).map(([key, value]) => [
+            `borders.${key}`,
+            value,
+          ]),
+        ),
+        ...modeColors,
+      },
+    };
+  }
+  const rootColors =
+    tokens.colors &&
+    typeof tokens.colors === "object" &&
+    !Array.isArray(tokens.colors)
+      ? { ...(tokens.colors as Record<string, unknown>) }
+      : {};
+  const legacyRootIcons =
+    tokens.icons &&
+    typeof tokens.icons === "object" &&
+    !Array.isArray(tokens.icons)
+      ? (tokens.icons as Record<string, unknown>)
+      : {};
+  const legacyRootBorders =
+    tokens.borders &&
+    typeof tokens.borders === "object" &&
+    !Array.isArray(tokens.borders)
+      ? (tokens.borders as Record<string, unknown>)
+      : {};
+  const nextTokens = { ...tokens };
+  delete nextTokens.icons;
+  delete nextTokens.borders;
+
+  return {
+    ...nextTokens,
+    colors: {
+      ...defaultThemeSemanticColorTokens(),
+      ...Object.fromEntries(
+        Object.entries(legacyRootIcons).map(([key, value]) => [`icons.${key}`, value]),
+      ),
+      ...Object.fromEntries(
+        Object.entries(legacyRootBorders).map(([key, value]) => [
+          `borders.${key}`,
+          value,
+        ]),
+      ),
+      ...rootColors,
+    },
+    modes: {
+      ...modes,
+      light: mergeMode("light"),
+      dark: mergeMode("dark"),
+    },
+  };
+}
+
+function normalizeComponentSemanticColorTokens(tokens: Record<string, unknown>) {
+  const replacements: Record<string, string> = {
+    accent: "icons.accent",
+    background: "icons.secondary",
+    textSecondary: "icons.primary",
+    blue: "icons.accent",
+    blue_bright: "icons.accent",
+    gray_000: "icons.primary",
+    gray_040: "icons.secondary",
+    gray_050: "icons.secondary",
+    gray_080: "borders.primary",
+    gray_100: "icons.secondary",
+  };
+  function normalizeValue(value: unknown): unknown {
+    if (typeof value === "string") {
+      return replacements[value] ?? value;
+    }
+    if (Array.isArray(value)) {
+      return value.map((entry) => normalizeValue(entry));
+    }
+    if (value && typeof value === "object") {
+      return Object.fromEntries(
+        Object.entries(value as Record<string, unknown>).map(([key, entry]) => [
+          key,
+          normalizeValue(entry),
+        ]),
+      );
+    }
+    return value;
+  }
+  const next = normalizeValue(tokens) as Record<string, unknown>;
+  for (const key of [
+    "borderColorToken",
+    "labelColorToken",
+    "playCircleColorToken",
+    "playIconColorToken",
+    "statusColorToken",
+    "waveformColorToken",
+    "waveformPlayedColorToken",
+    "textColorToken",
+    "idleTextColor",
+    "cursorColor",
+  ]) {
+    const value = next[key];
+    if (typeof value === "string" && replacements[value]) {
+      next[key] = replacements[value];
+    }
+  }
+  if (next.componentType === "video_message") {
+    return {
+      statusVisible: true,
+      statusIconToken: "media_video",
+      statusColorToken: "icons.secondary",
+      statusSize: 12,
+      statusPaddingX: 8,
+      statusPaddingY: 6,
+      statusGap: 4,
+      ...next,
+    };
+  }
+  if (next.componentType === "avatar") {
+    const { borderColor: _legacyBorderColor, ...rest } = next;
+    return {
+      borderColorToken: "borders.primary",
+      ...rest,
+    };
+  }
+  return next;
 }
 
 function mergeChatBubbleStatusDefaults(tokens: Record<string, unknown>) {
@@ -1231,10 +1408,7 @@ function defaultAvatarComponentTokens() {
     componentType: "avatar",
     cornerRadius: 12,
     borderWidth: 0,
-    borderColor: {
-      light: "gray_100",
-      dark: "gray_020",
-    },
+    borderColorToken: "borders.primary",
     shadowEnabled: false,
     shadowToken: "system",
     surfaceReliefEnabled: true,
@@ -1248,7 +1422,7 @@ function defaultButtonIconComponentTokens() {
     cornerRadius: 0,
     iconPadding: 2,
     borderWidth: 0,
-    borderColorToken: "textSecondary",
+    borderColorToken: "borders.primary",
     shadowEnabled: false,
     shadowToken: "system",
     surfaceReliefEnabled: false,
@@ -1256,7 +1430,7 @@ function defaultButtonIconComponentTokens() {
     labelPosition: "bottom",
     labelPadding: 2,
     labelSize: 10,
-    labelColorToken: "textSecondary",
+    labelColorToken: "icons.primary",
   });
 }
 
@@ -1270,8 +1444,8 @@ function defaultAudioMessageComponentTokens() {
     avatarPosition: "left",
     avatarGap: 8,
     playCircleSize: 32,
-    playCircleColorToken: "accent",
-    playIconColorToken: "background",
+    playCircleColorToken: "icons.accent",
+    playIconColorToken: "icons.secondary",
     microphoneBadgeSize: 16,
     microphoneBadgeIconToken: "media_mic",
     waveformBarCount: 28,
@@ -1279,16 +1453,41 @@ function defaultAudioMessageComponentTokens() {
     waveformMinHeight: 4,
     waveformMaxHeight: 22,
     progressKnobSize: 9,
-    waveformColorToken: "textSecondary",
-    waveformPlayedColorToken: "accent",
+    waveformColorToken: "icons.primary",
+    waveformPlayedColorToken: "icons.accent",
     textSize: 11,
-    textColorToken: "textSecondary",
+    textColorToken: "icons.secondary",
     cornerRadius: 18,
     borderWidth: 0,
-    borderColorToken: "gray_080",
+    borderColorToken: "borders.primary",
     shadowEnabled: false,
     shadowToken: "system",
     surfaceReliefEnabled: false,
+  });
+}
+
+function defaultVideoMessageComponentTokens() {
+  return JSON.stringify({
+    schemaVersion: 1,
+    componentType: "video_message",
+    cornerRadius: 18,
+    borderWidth: 0,
+    borderColorToken: "borders.primary",
+    shadowEnabled: false,
+    shadowToken: "system",
+    surfaceReliefEnabled: false,
+    playOverlayEnabled: true,
+    playCircleSize: 44,
+    playCircleColorToken: "icons.accent",
+    playCircleAlpha: 0.55,
+    playIconColorToken: "icons.secondary",
+    statusVisible: true,
+    statusIconToken: "media_video",
+    statusColorToken: "icons.secondary",
+    statusSize: 12,
+    statusPaddingX: 8,
+    statusPaddingY: 6,
+    statusGap: 4,
   });
 }
 
@@ -1298,10 +1497,10 @@ function defaultTextInputBarComponentTokens() {
     componentType: "text_input_bar",
     placeholder: "Mensaje",
     cursorVisible: true,
-    idleTextColor: "gray_050",
+    idleTextColor: "icons.secondary",
     cursorWidth: 2,
     cursorBlinkFrames: 15,
-    cursorColor: "blue",
+    cursorColor: "icons.accent",
     fieldRadius: 20,
     fieldShadowEnabled: true,
     iconSets: {
@@ -1317,7 +1516,7 @@ function defaultTextInputBarComponentTokens() {
           { token: "media_camera", order: 10 },
           { token: "media_mic", order: 20 },
         ],
-        typing: [{ token: "chat_send", order: 10, color: "blue" }],
+        typing: [{ token: "chat_send", order: 10, color: "icons.accent" }],
       },
     },
   });
@@ -1390,6 +1589,12 @@ function seedDefaultComponentClasses(database: SQLiteDatabase): void {
         type: "audio_message",
         name: "Default audio message",
         tokens: defaultAudioMessageComponentTokens(),
+      },
+      {
+        id: `${production.id}:video_message_default`,
+        type: "video_message",
+        name: "Default video message",
+        tokens: defaultVideoMessageComponentTokens(),
       },
       {
         id: `${production.id}:text_input_bar_default`,
@@ -1493,6 +1698,43 @@ function applyAdditiveV28Migration(database: SQLiteDatabase): void {
   database.pragma("user_version = 28");
 }
 
+function applyAdditiveV29Migration(database: SQLiteDatabase): void {
+  const themeRows = database
+    .prepare("SELECT id, tokens_json FROM themes ORDER BY id")
+    .all() as { id: string; tokens_json: string }[];
+  const updateTheme = database.prepare(
+    "UPDATE themes SET tokens_json = ? WHERE id = ?",
+  );
+  for (const row of themeRows) {
+    try {
+      const tokens = JSON.parse(row.tokens_json) as Record<string, unknown>;
+      updateTheme.run(JSON.stringify(ensureThemeSemanticColorGroups(tokens)), row.id);
+    } catch {
+      // Malformed JSON is handled by validation paths; skip migration here.
+    }
+  }
+
+  seedDefaultComponentClasses(database);
+  const componentRows = database
+    .prepare("SELECT id, tokens_json FROM component_classes ORDER BY id")
+    .all() as { id: string; tokens_json: string }[];
+  const updateComponent = database.prepare(
+    "UPDATE component_classes SET tokens_json = ? WHERE id = ?",
+  );
+  for (const row of componentRows) {
+    try {
+      const tokens = JSON.parse(row.tokens_json) as Record<string, unknown>;
+      updateComponent.run(
+        JSON.stringify(normalizeComponentSemanticColorTokens(tokens)),
+        row.id,
+      );
+    } catch {
+      // Malformed JSON is handled by validation paths; skip migration here.
+    }
+  }
+  database.pragma("user_version = 29");
+}
+
 export function applyInitialSchema(database: SQLiteDatabase): void {
   database.exec(readFileSync(schemaPath, "utf8"));
   applyAdditiveV2Migration(database);
@@ -1522,6 +1764,7 @@ export function applyInitialSchema(database: SQLiteDatabase): void {
   applyAdditiveV26Migration(database);
   applyAdditiveV27Migration(database);
   applyAdditiveV28Migration(database);
+  applyAdditiveV29Migration(database);
   database.pragma("foreign_keys = ON");
 }
 

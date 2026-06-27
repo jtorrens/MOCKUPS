@@ -167,6 +167,11 @@ export function ModuleThemeConfigRecordEditor({
       component.production_id === themeRecord?.production_id &&
       component.component_type === "audio_message",
   );
+  const videoMessageComponent = (records.component_classes ?? []).find(
+    (component) =>
+      component.production_id === themeRecord?.production_id &&
+      component.component_type === "video_message",
+  );
   const keyboardComponent = (records.component_classes ?? []).find(
     (component) =>
       component.production_id === themeRecord?.production_id &&
@@ -319,6 +324,31 @@ export function ModuleThemeConfigRecordEditor({
                               className="inspector-restore-button"
                               title="Component overrides will be edited here"
                               aria-label="Edit audio message component overrides"
+                              disabled
+                            >
+                              ✎
+                            </button>
+                          </span>
+                        }
+                      />
+                      <InspectorFieldRow
+                        label="Video message component"
+                        control={
+                          <span style={{ display: "inline-flex", gap: 10, alignItems: "center" }}>
+                            <input
+                              className="json-value-control"
+                              disabled
+                              value={String(
+                                videoMessageComponent?.name ??
+                                  "Default video message",
+                              )}
+                              readOnly
+                            />
+                            <button
+                              type="button"
+                              className="inspector-restore-button"
+                              title="Component overrides will be edited here"
+                              aria-label="Edit video message component overrides"
                               disabled
                             >
                               ✎

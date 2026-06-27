@@ -337,7 +337,11 @@ function messageMediaNode(
   const transform = readRecord(input.media.transform);
   const mediaType = readString(input.media.type, "image");
   const effectiveMediaStyle =
-    mediaType === "audio" ? readRecord(input.style.audioMessage) : mediaStyle;
+    mediaType === "audio"
+      ? readRecord(input.style.audioMessage)
+      : mediaType === "video"
+        ? readRecord(input.style.videoMessage)
+        : mediaStyle;
   const scale = Math.max(0.01, readNumber(transform.scale, 1));
   const translateX = readNumber(transform.translateX, 0);
   const translateY = readNumber(transform.translateY, 0);
@@ -354,14 +358,67 @@ function messageMediaNode(
     ? readRecord(effectiveMediaStyle.surfaceRelief)
     : {};
   const mediaFrame = Math.max(0, readNumber(input.media.frame, input.frame));
-  const audioContainerShadow =
-    mediaType === "audio" && shadowEnabled
+  const componentContainerShadow =
+    (mediaType === "audio" || mediaType === "video") && shadowEnabled
       ? Object.keys(mediaShadow).length
         ? mediaShadow
         : input.style.shadow
       : {};
-  const audioContainerRelief =
-    mediaType === "audio" ? mediaSurfaceRelief : {};
+  const componentContainerRelief =
+    mediaType === "audio" || mediaType === "video" ? mediaSurfaceRelief : {};
+  const showVideoPlayOverlay =
+    mediaType === "video" &&
+    effectiveMediaStyle.playOverlayEnabled !== false &&
+    mediaFrame <= 0;
+  const videoPlayCircleSize = Math.max(
+    1,
+    readNumber(effectiveMediaStyle.playCircleSize, 44),
+  );
+  const videoDurationSeconds = Math.max(
+    1,
+    readNumber(input.media.durationSeconds, 8),
+  );
+  const videoTotalPlayFrames = Math.max(1, videoDurationSeconds * input.fps);
+  const videoProgress = Math.max(
+    0,
+    Math.min(1, mediaFrame / videoTotalPlayFrames),
+  );
+  const isVideoPlaying =
+    mediaType === "video" &&
+    mediaFrame > 0 &&
+    mediaFrame < videoTotalPlayFrames;
+  const videoStatusSize = Math.max(
+    1,
+    readNumber(effectiveMediaStyle.statusSize, 12),
+  );
+  const videoStatusLineHeight = Math.round(videoStatusSize * 1.22);
+  const videoStatusPaddingX = Math.max(
+    0,
+    readNumber(effectiveMediaStyle.statusPaddingX, 8),
+  );
+  const videoStatusPaddingY = Math.max(
+    0,
+    readNumber(effectiveMediaStyle.statusPaddingY, 7),
+  );
+  const videoStatusGap = Math.max(
+    0,
+    readNumber(effectiveMediaStyle.statusGap, 4),
+  );
+  const videoStatusColor = readString(
+    effectiveMediaStyle.statusColor,
+    readString(effectiveMediaStyle.playCircleColor, "#007AFF"),
+  );
+  const videoDurationText =
+    mediaType === "video"
+      ? isVideoPlaying
+        ? formatRemainingDuration(videoDurationSeconds - mediaFrame / input.fps)
+        : videoProgress >= 1
+          ? "0:00"
+          : formatDuration(videoDurationSeconds)
+      : "";
+  const videoDurationWidth = Math.ceil(
+    videoDurationText.length * videoStatusSize * 0.58,
+  );
   const mediaImage: RenderableNode = {
     id: `${input.id}:media:image`,
     type: "message_bubble_media_image",
@@ -379,8 +436,9 @@ function messageMediaNode(
       backgroundSize: `${scale * 100}%`,
       borderRadius: cornerRadius,
       overflow: "hidden",
+      zIndex: 1,
       shadow:
-        mediaType !== "audio" && shadowEnabled
+        mediaType !== "audio" && mediaType !== "video" && shadowEnabled
           ? Object.keys(mediaShadow).length
             ? mediaShadow
             : input.style.shadow
@@ -413,7 +471,95 @@ function messageMediaNode(
             borderRadius: cornerRadius,
             borderWidth,
             pointerEvents: "none",
+            zIndex: 4,
           },
+        }
+      : undefined;
+  const videoStatusNode: RenderableNode | undefined =
+    mediaType === "video" && effectiveMediaStyle.statusVisible !== false
+      ? {
+          id: `${input.id}:media:video-status`,
+          type: "message_bubble_video_status",
+          role: "video_status",
+          frame: input.frame,
+          box: {
+            x: layout.mediaBox.x + videoStatusPaddingX,
+            y: layout.mediaBox.y + videoStatusPaddingY,
+            width: Math.max(1, layout.mediaBox.width - videoStatusPaddingX * 2),
+            height: videoStatusLineHeight,
+          },
+          style: {
+            color: videoStatusColor,
+            fontFamily: input.style.fontFamily,
+            fontSize: videoStatusSize,
+            lineHeight: videoStatusLineHeight,
+            gap: videoStatusGap,
+            zIndex: 2,
+          },
+          children: [
+            {
+              id: `${input.id}:media:video-status:icon`,
+              type: "message_bubble_video_status_icon",
+              role: "video_icon",
+              frame: input.frame,
+              box: {
+                x: layout.mediaBox.x + videoStatusPaddingX,
+                y: Math.round(
+                  layout.mediaBox.y +
+                    videoStatusPaddingY +
+                    (videoStatusLineHeight - videoStatusSize) / 2,
+                ),
+                width: videoStatusSize,
+                height: videoStatusSize,
+              },
+              text: "VIDEO",
+              style: {
+                color: videoStatusColor,
+                ...(readString(effectiveMediaStyle.statusIconUri)
+                  ? {
+                      maskImage: maskUrl(
+                        readString(effectiveMediaStyle.statusIconUri),
+                      ),
+                      WebkitMaskImage: maskUrl(
+                        readString(effectiveMediaStyle.statusIconUri),
+                      ),
+                    }
+                  : {}),
+              },
+              metadata: {
+                token: readString(
+                  effectiveMediaStyle.statusIconToken,
+                  "media_video",
+                ),
+              },
+            },
+            {
+              id: `${input.id}:media:video-status:duration`,
+              type: "message_bubble_video_status_duration",
+              role: "duration",
+              frame: input.frame,
+              box: {
+                x: Math.round(
+                  layout.mediaBox.x +
+                    layout.mediaBox.width -
+                    videoStatusPaddingX -
+                    videoDurationWidth,
+                ),
+                y: layout.mediaBox.y + videoStatusPaddingY,
+                width: videoDurationWidth,
+                height: videoStatusLineHeight,
+              },
+              text: videoDurationText,
+              style: {
+                color: videoStatusColor,
+                fontFamily: input.style.fontFamily,
+                fontSize: videoStatusSize,
+                lineHeight: videoStatusLineHeight,
+                textAlign: "right",
+                whiteSpace: "nowrap",
+              },
+            },
+          ],
         }
       : undefined;
 
@@ -425,11 +571,15 @@ function messageMediaNode(
     box: layout.mediaBox,
     style: {
       backgroundColor:
-        mediaType === "audio" ? input.style.backgroundColor : "transparent",
+        mediaType === "audio"
+          ? input.style.backgroundColor
+          : mediaType === "video"
+            ? "#000000"
+            : "transparent",
       borderRadius: cornerRadius,
-      overflow: "visible",
-      shadow: audioContainerShadow,
-      surfaceRelief: audioContainerRelief,
+      overflow: mediaType === "video" ? "hidden" : "visible",
+      shadow: componentContainerShadow,
+      surfaceRelief: componentContainerRelief,
     },
     children:
       mediaType === "audio"
@@ -437,9 +587,51 @@ function messageMediaNode(
             ...messageAudioChildren(input, layout),
             ...(mediaBorder ? [mediaBorder] : []),
           ]
-        : mediaBorder
-          ? [mediaImage, mediaBorder]
-          : [mediaImage],
+        : [
+            mediaImage,
+            ...(videoStatusNode ? [videoStatusNode] : []),
+            ...(showVideoPlayOverlay
+              ? [
+                  {
+                    id: `${input.id}:media:video-play-overlay`,
+                    type: "message_bubble_video_play_overlay",
+                    role: "play_overlay",
+                    frame: input.frame,
+                    box: {
+                      x: Math.round(
+                        layout.mediaBox.x +
+                          layout.mediaBox.width / 2 -
+                          videoPlayCircleSize / 2,
+                      ),
+                      y: Math.round(
+                        layout.mediaBox.y +
+                          layout.mediaBox.height / 2 -
+                          videoPlayCircleSize / 2,
+                      ),
+                      width: Math.round(videoPlayCircleSize),
+                      height: Math.round(videoPlayCircleSize),
+                    },
+                    text: "▶",
+                    style: {
+                      backgroundColor: readString(
+                        effectiveMediaStyle.playCircleColor,
+                        "rgba(0, 0, 0, 0.55)",
+                      ),
+                      borderRadius: Math.round(videoPlayCircleSize / 2),
+                      color: readString(
+                        effectiveMediaStyle.playIconColor,
+                        "#FFFFFF",
+                      ),
+                      fontSize: Math.round(videoPlayCircleSize * 0.44),
+                      lineHeight: Math.round(videoPlayCircleSize),
+                      paddingLeft: Math.round(videoPlayCircleSize * 0.07),
+                      zIndex: 3,
+                    },
+                  },
+                ]
+              : []),
+            ...(mediaBorder ? [mediaBorder] : []),
+          ],
   };
 }
 

@@ -144,7 +144,7 @@ export function layoutChatScreen({
       : 1;
   const keyboardPushOffset =
     (showKeyboard && showTextInputBar ? 1 - keyboardPushProgress : 0) *
-    (keyboardHeight + textInputBarHeight);
+    keyboardHeight;
   const messageGapToTextInput =
     textInputBarHeight > 0
       ? Math.max(0, readNumber(keyboardRoot, "messageGapToTextInput", 10))

@@ -200,6 +200,7 @@ export const ResolvedMessageBubblePropsSchema = z.object({
     avatarSize: z.number().min(0),
     avatar: JsonObjectSchema.optional(),
     audioMessage: JsonObjectSchema.optional(),
+    videoMessage: JsonObjectSchema.optional(),
     media: JsonObjectSchema.optional(),
     status: JsonObjectSchema.optional(),
   }),

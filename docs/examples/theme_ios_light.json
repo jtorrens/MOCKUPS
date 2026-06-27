@@ -12,7 +12,13 @@
           "background": "gray_100",
           "textPrimary": "gray_000",
           "textSecondary": "gray_040",
-          "accent": "blue"
+          "accent": "blue",
+          "icons.primary": "gray_000",
+          "icons.secondary": "gray_040",
+          "icons.accent": "blue",
+          "borders.primary": "gray_080",
+          "borders.secondary": "gray_070",
+          "borders.alternate": "gray_090"
         },
         "statusBar": {
           "type": "ios-default",
@@ -52,7 +58,13 @@
           "background": "gray_000",
           "textPrimary": "gray_100",
           "textSecondary": "gray_060",
-          "accent": "blue_bright"
+          "accent": "blue_bright",
+          "icons.primary": "gray_000",
+          "icons.secondary": "gray_040",
+          "icons.accent": "blue",
+          "borders.primary": "gray_080",
+          "borders.secondary": "gray_070",
+          "borders.alternate": "gray_090"
         },
         "statusBar": {
           "type": "ios-default",
@@ -100,7 +112,13 @@
       "background": "gray_100",
       "textPrimary": "gray_000",
       "textSecondary": "gray_040",
-      "accent": "blue"
+      "accent": "blue",
+      "icons.primary": "gray_000",
+      "icons.secondary": "gray_040",
+      "icons.accent": "blue",
+      "borders.primary": "gray_080",
+      "borders.secondary": "gray_070",
+      "borders.alternate": "gray_090"
     },
     "statusBar": {
       "type": "ios-default",
