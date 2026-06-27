@@ -288,7 +288,22 @@ export function RecordFieldRenderer({
     const selectedRelationLabel = relationSelect?.options.find(
       (option) => option.value === (drafts[field.column] ?? ""),
     )?.label;
-    const control = field.readonly ? (
+    const control = field.kind === "boolean" ? (
+      <label className="json-checkbox">
+        <input
+          data-testid={`field-${field.column}`}
+          disabled={field.readonly}
+          type="checkbox"
+          checked={drafts[field.column] === "true" || drafts[field.column] === "1"}
+          onChange={(event) =>
+            onDraftChange(field.column, event.currentTarget.checked ? "1" : "0")
+          }
+        />
+        {drafts[field.column] === "true" || drafts[field.column] === "1"
+          ? "true"
+          : "false"}
+      </label>
+    ) : field.readonly ? (
       <input
         data-testid={`field-${field.column}`}
         disabled

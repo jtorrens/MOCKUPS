@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS palette_colors (
   production_id TEXT NOT NULL REFERENCES productions(id) ON DELETE CASCADE,
   token TEXT NOT NULL,
   value_hex TEXT NOT NULL CHECK (value_hex GLOB '#[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]'),
+  is_neutral INTEGER NOT NULL DEFAULT 0 CHECK (is_neutral IN (0, 1)),
   metadata_json TEXT,
   UNIQUE (production_id, token)
 );

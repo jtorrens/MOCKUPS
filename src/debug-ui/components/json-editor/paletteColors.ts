@@ -4,6 +4,7 @@ export interface PaletteColorOption {
   id: string;
   token: string;
   valueHex: string;
+  isNeutral: boolean;
 }
 
 export interface PaletteColorCatalog {
@@ -91,6 +92,10 @@ export function createPaletteColorCatalog(
       id: record.id,
       token: String(record.token),
       valueHex: normalizeHex(String(record.value_hex)),
+      isNeutral:
+        record.is_neutral === true ||
+        record.is_neutral === 1 ||
+        record.is_neutral === "1",
     }))
     .sort((left, right) => {
       const leftKey = paletteSortKey(left);

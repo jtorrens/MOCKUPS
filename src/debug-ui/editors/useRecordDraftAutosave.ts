@@ -47,6 +47,12 @@ function parseValue(
     }
     return { ok: true, value: numberValue };
   }
+  if (field.kind === "boolean") {
+    return {
+      ok: true,
+      value: raw === "true" || raw === "1",
+    };
+  }
   return {
     ok: true,
     value: raw === "" && field.nullable ? null : raw,

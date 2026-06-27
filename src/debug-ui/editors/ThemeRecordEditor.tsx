@@ -12,6 +12,7 @@ import {
   type JsonValue,
 } from "../components/json-editor/jsonEditorUtils.js";
 import {
+  NeutralTintGroupEditor,
   normalizedThemeTokenRoot,
   ThemeChromeGroupEditor,
   ThemeCursorGroupEditor,
@@ -115,6 +116,7 @@ export function ThemeRecordEditor({
                   group !== "navigationBar" &&
                   group !== "keyboard" &&
                   group !== "cursor" &&
+                  group !== "neutralTint" &&
                   group !== "surfaceRelief",
               )
               .map((group) => (
@@ -157,6 +159,19 @@ export function ThemeRecordEditor({
                 />
               </EditorSubsectionAccordion>
             ))}
+            <EditorSubsectionAccordion
+              key="neutralTint"
+              group="neutralTint"
+              activeGroup={resolvedActiveTokenGroup}
+              onToggle={setActiveTokenGroup}
+            >
+              <NeutralTintGroupEditor
+                tokenRoot={themeTokenRoot}
+                onTokenRootChange={(nextRoot) =>
+                  setJsonDraft("tokens_json", nextRoot)
+                }
+              />
+            </EditorSubsectionAccordion>
             <EditorSubsectionAccordion
               key="cursor"
               group="cursor"

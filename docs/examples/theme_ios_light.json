@@ -6,6 +6,10 @@
   "version": "1.0.0",
   "tokens_json": {
     "defaultMode": "light",
+    "neutralTint": {
+      "hueDeg": 0,
+      "saturation": 0
+    },
     "modes": {
       "light": {
         "colors": {

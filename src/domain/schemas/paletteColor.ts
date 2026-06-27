@@ -12,6 +12,7 @@ export const PaletteColorSchema = z.object({
     .string()
     .regex(/^#[0-9a-fA-F]{6}$/)
     .transform((value) => value.toUpperCase()),
+  is_neutral: z.coerce.boolean().default(false),
   metadata_json: JsonObjectSchema.optional(),
 });
 

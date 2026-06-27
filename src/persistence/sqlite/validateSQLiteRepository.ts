@@ -164,6 +164,13 @@ try {
       }[]
     ).map((column) => column.name),
   );
+  const paletteColumns = new Set(
+    (
+      database.pragma("table_info(palette_colors)") as {
+        name: string;
+      }[]
+    ).map((column) => column.name),
+  );
   const requiredModuleColumns = [
     "screen_instance_id",
     "module_id",
@@ -191,8 +198,12 @@ try {
     "themes must contain the selected navigation_bar_id column",
   );
   assert(
-    Number(database.pragma("user_version", { simple: true })) === 29,
-    "SQLite schema version must be 29",
+    paletteColumns.has("is_neutral"),
+    "palette_colors must contain the neutral-color marker column",
+  );
+  assert(
+    Number(database.pragma("user_version", { simple: true })) === 30,
+    "SQLite schema version must be 30",
   );
 
   database.exec("BEGIN");
@@ -233,7 +244,7 @@ try {
   console.log("✓ schema and seed validated in isolated in-memory SQLite");
   console.log("✓ all required domain tables exist");
   console.log("✓ module_theme_configs exists and seeds core.chat tokens");
-  console.log("✓ screen_instances references, module_instances content/behavior/animation, component classes, production font families, palette-normalized colors, screen durations, and semantic icon/border colors exist in schema v29");
+  console.log("✓ screen_instances references, module_instances content/behavior/animation, component classes, production font families, palette-neutral colors, screen durations, and semantic icon/border colors exist in schema v30");
   console.log("✓ SQLiteRepository resolved ChatScreen props with Zod");
   console.log("✓ SQLite and in-memory chat props are equivalent");
   console.log("✓ Chat module instance JSON and actor-based output validated");

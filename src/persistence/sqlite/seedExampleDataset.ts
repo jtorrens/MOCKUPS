@@ -364,9 +364,17 @@ function seedRecords(
   insertRows(
     database,
     "palette_colors",
-    ["id", "production_id", "token", "value_hex", "metadata_json"],
+    [
+      "id",
+      "production_id",
+      "token",
+      "value_hex",
+      "is_neutral",
+      "metadata_json",
+    ],
     dataset.paletteColors,
     new Set(["metadata_json"]),
+    new Set(["is_neutral"]),
   );
   insertRows(
     database,

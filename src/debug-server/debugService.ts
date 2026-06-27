@@ -236,7 +236,7 @@ function rewriteRenderableMediaUrls(
       : {}),
   };
 }
-type FieldKind = "string" | "number" | "json";
+type FieldKind = "string" | "number" | "boolean" | "json";
 
 export interface AppFieldDefinition {
   column: string;
@@ -718,6 +718,7 @@ export const APP_TABLES = [
       },
       { column: "token", label: "Token", kind: "string" },
       { column: "value_hex", label: "RGB / HEX", kind: "string" },
+      { column: "is_neutral", label: "Neutral", kind: "boolean" },
       { column: "metadata_json", label: "Palette notes", kind: "json" },
     ],
   },
@@ -874,6 +875,11 @@ function encodeValue(
       throw new Error(`${field.label} must be a number`);
     }
     return numberValue;
+  }
+  if (field.kind === "boolean") {
+    return value === true || value === "true" || value === 1 || value === "1"
+      ? 1
+      : 0;
   }
   if (value === "" || value === null || value === undefined) {
     return field.nullable ? null : "";

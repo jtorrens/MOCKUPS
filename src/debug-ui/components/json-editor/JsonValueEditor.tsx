@@ -57,6 +57,17 @@ function withCurrentOption(options: string[], value: JsonValue) {
   return [current, ...options];
 }
 
+function isNeutralHueField(path: JsonPath) {
+  return (
+    String(path[path.length - 2] ?? "") === "neutralTint" &&
+    String(path[path.length - 1] ?? "") === "hueDeg"
+  );
+}
+
+function normalizeHueDeg(value: number) {
+  return ((value % 360) + 360) % 360;
+}
+
 function fontFamilyForPath(rootValue: JsonValue, path: JsonPath): string | undefined {
   for (let length = path.length - 1; length >= 0; length -= 1) {
     const parentPath = path.slice(0, length);
@@ -293,6 +304,35 @@ export function JsonValueEditor({
         />
         {value ? "true" : "false"}
       </label>
+    );
+  }
+
+  if (typeof value === "number" && isNeutralHueField(path)) {
+    const hue = normalizeHueDeg(value);
+    return (
+      <div className="json-hue-slider-control">
+        <input
+          aria-label="Neutral tint hue"
+          className="json-hue-slider"
+          max={360}
+          min={0}
+          step={1}
+          type="range"
+          value={hue}
+          style={{ accentColor: `hsl(${hue} 80% 52%)` }}
+          onChange={(event) => onChange(Number(event.currentTarget.value))}
+        />
+        <DeferredNumberInput
+          ariaLabel="Neutral tint hue degrees"
+          className="json-value-control json-hue-slider-value"
+          max={360}
+          min={0}
+          step={1}
+          value={hue}
+          onCommit={(nextValue) => onChange(normalizeHueDeg(nextValue))}
+        />
+        <span className="json-hue-slider-unit">°</span>
+      </div>
     );
   }
 

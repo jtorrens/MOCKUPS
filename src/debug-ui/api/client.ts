@@ -1,6 +1,6 @@
 import type { RenderableNode } from "../../visual/renderable/types.js";
 
-export type FieldKind = "string" | "number" | "json";
+export type FieldKind = "string" | "number" | "boolean" | "json";
 
 export interface AppFieldDefinition {
   column: string;

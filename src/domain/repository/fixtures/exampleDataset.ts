@@ -252,6 +252,15 @@ export function createExampleDataset(): RepositoryDataset {
       production_id: production.id,
       token,
       value_hex: valueHex,
+      is_neutral: (() => {
+        const normalized = valueHex.replace("#", "");
+        return (
+          normalized.slice(0, 2) === normalized.slice(2, 4) &&
+          normalized.slice(2, 4) === normalized.slice(4, 6)
+        );
+      })()
+        ? 1
+        : 0,
       metadata_json: {
         source: "base_seed_palette",
         note: "Primitive production color seeded from the base design palette.",
@@ -266,6 +275,10 @@ export function createExampleDataset(): RepositoryDataset {
     app_type: "chat",
     config_json: {
       tokens_json: {
+        neutralTint: {
+          hueDeg: 0,
+          saturation: 0,
+        },
         wallpaper: {
           kind: "solid",
           opacity: 1,

@@ -8,6 +8,24 @@ import {
 
 export type ThemeChromeGroupKey = "statusBar" | "navigationBar";
 
+function numberValue(value: unknown, fallback: number): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function normalizeHueDeg(value: number) {
+  return ((value % 360) + 360) % 360;
+}
+
+function normalizeNeutralTint(value: unknown): Record<string, JsonValue> {
+  const root = isJsonObject(value as JsonValue)
+    ? (value as Record<string, JsonValue>)
+    : {};
+  return {
+    hueDeg: numberValue(root.hueDeg, 0),
+    saturation: numberValue(root.saturation, 0),
+  };
+}
+
 function themeCursorDefaults(): Record<string, JsonValue> {
   return {
     style: "bar",
@@ -183,6 +201,12 @@ export function normalizedThemeTokenRoot({
     : {};
   return {
     ...root,
+    neutralTint: isJsonObject(root.neutralTint as JsonValue)
+      ? root.neutralTint
+      : {
+          hueDeg: 0,
+          saturation: 0,
+        },
     colors: {
       ...semanticColorDefaults,
       ...rootColors,
@@ -288,6 +312,91 @@ export function normalizedThemeTokenRoot({
 interface ThemeSurfaceReliefGroupEditorProps {
   tokenRoot: Record<string, JsonValue>;
   onTokenRootChange: (nextRoot: JsonValue) => void;
+}
+
+interface NeutralTintGroupEditorProps {
+  tokenRoot: Record<string, JsonValue>;
+  onTokenRootChange: (nextRoot: JsonValue) => void;
+}
+
+export function NeutralTintGroupEditor({
+  tokenRoot,
+  onTokenRootChange,
+}: NeutralTintGroupEditorProps) {
+  const group = normalizeNeutralTint(tokenRoot.neutralTint);
+  const hue = normalizeHueDeg(numberValue(group.hueDeg, 0));
+  const saturation = Math.max(0, Math.min(1, numberValue(group.saturation, 0)));
+
+  function updateNeutralTint(path: JsonPath, nextValue: JsonValue) {
+    onTokenRootChange(
+      setAtPath(tokenRoot as JsonValue, ["neutralTint", ...path], nextValue),
+    );
+  }
+
+  return (
+    <div className="theme-chrome-editor">
+      <InspectorFieldRow
+        className="record-editor-field"
+        label={<span>Hue</span>}
+        control={
+          <div className="json-hue-slider-control">
+            <input
+              aria-label="Neutral tint hue"
+              className="json-hue-slider"
+              max={360}
+              min={0}
+              step={1}
+              type="range"
+              value={hue}
+              style={{ accentColor: `hsl(${hue} 80% 52%)` }}
+              onChange={(event) =>
+                updateNeutralTint(
+                  ["hueDeg"],
+                  Number(event.currentTarget.value),
+                )
+              }
+            />
+            <input
+              aria-label="Neutral tint hue degrees"
+              className="json-value-control json-hue-slider-value"
+              max={360}
+              min={0}
+              step={1}
+              type="number"
+              value={hue}
+              onChange={(event) =>
+                updateNeutralTint(
+                  ["hueDeg"],
+                  normalizeHueDeg(Number(event.currentTarget.value)),
+                )
+              }
+            />
+            <span className="json-hue-slider-unit">°</span>
+          </div>
+        }
+      />
+      <InspectorFieldRow
+        className="record-editor-field"
+        label={<span>Saturation</span>}
+        control={
+          <input
+            className="json-value-control"
+            max={1}
+            min={0}
+            step={0.01}
+            type="number"
+            value={saturation}
+            onChange={(event) =>
+              updateNeutralTint(
+                ["saturation"],
+                Math.max(0, Math.min(1, Number(event.currentTarget.value))),
+              )
+            }
+          />
+        }
+      />
+    </div>
+  );
 }
 
 export function ThemeSurfaceReliefGroupEditor({

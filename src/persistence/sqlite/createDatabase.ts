@@ -33,6 +33,11 @@ const SEED_PALETTE_COLORS = [
   ["purple_tint", "#D0BCFF"],
 ] as const;
 
+function isNeutralHex(valueHex: string) {
+  const { red, green, blue } = hexChannels(valueHex);
+  return red === green && green === blue;
+}
+
 const THEME_HEX_TO_PALETTE_TOKEN = new Map(
   SEED_PALETTE_COLORS.map(([token, valueHex]) => [
     valueHex.toUpperCase(),
@@ -1237,12 +1242,26 @@ function applyAdditiveV19Migration(database: SQLiteDatabase): void {
       production_id TEXT NOT NULL REFERENCES productions(id) ON DELETE CASCADE,
       token TEXT NOT NULL,
       value_hex TEXT NOT NULL CHECK (value_hex GLOB '#[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]'),
+      is_neutral INTEGER NOT NULL DEFAULT 0 CHECK (is_neutral IN (0, 1)),
       metadata_json TEXT,
       UNIQUE (production_id, token)
     );
     CREATE INDEX IF NOT EXISTS idx_palette_colors_lookup
       ON palette_colors(production_id, token);
   `);
+  const paletteColumns = new Set(
+    (
+      database.pragma("table_info(palette_colors)") as {
+        name: string;
+      }[]
+    ).map((column) => column.name),
+  );
+  if (!paletteColumns.has("is_neutral")) {
+    database.exec(`
+      ALTER TABLE palette_colors
+        ADD COLUMN is_neutral INTEGER NOT NULL DEFAULT 0 CHECK (is_neutral IN (0, 1))
+    `);
+  }
   const productions = database
     .prepare("SELECT id FROM productions ORDER BY id")
     .all() as { id: string }[];
@@ -1252,8 +1271,9 @@ function applyAdditiveV19Migration(database: SQLiteDatabase): void {
       production_id,
       token,
       value_hex,
+      is_neutral,
       metadata_json
-    ) VALUES (?, ?, ?, ?, ?)`,
+    ) VALUES (?, ?, ?, ?, ?, ?)`,
   );
   for (const production of productions) {
     for (const [token, valueHex] of SEED_PALETTE_COLORS) {
@@ -1262,6 +1282,7 @@ function applyAdditiveV19Migration(database: SQLiteDatabase): void {
         production.id,
         token,
         valueHex,
+        isNeutralHex(valueHex) ? 1 : 0,
         JSON.stringify({
           source: "base_seed_palette",
           note: "Primitive production color seeded from the base design palette.",
@@ -1735,6 +1756,91 @@ function applyAdditiveV29Migration(database: SQLiteDatabase): void {
   database.pragma("user_version = 29");
 }
 
+function applyAdditiveV30Migration(database: SQLiteDatabase): void {
+  const columns = new Set(
+    (
+      database.pragma("table_info(palette_colors)") as {
+        name: string;
+      }[]
+    ).map((column) => column.name),
+  );
+  if (!columns.has("is_neutral")) {
+    database.exec(`
+      ALTER TABLE palette_colors
+        ADD COLUMN is_neutral INTEGER NOT NULL DEFAULT 0 CHECK (is_neutral IN (0, 1))
+    `);
+  }
+  database.exec(`
+    UPDATE palette_colors
+      SET is_neutral = CASE
+        WHEN UPPER(SUBSTR(value_hex, 2, 2)) = UPPER(SUBSTR(value_hex, 4, 2))
+         AND UPPER(SUBSTR(value_hex, 4, 2)) = UPPER(SUBSTR(value_hex, 6, 2))
+        THEN 1
+        ELSE is_neutral
+      END
+  `);
+  const themeRows = database
+    .prepare("SELECT id, tokens_json FROM themes ORDER BY id")
+    .all() as { id: string; tokens_json: string }[];
+  const updateTheme = database.prepare(
+    "UPDATE themes SET tokens_json = ? WHERE id = ?",
+  );
+  for (const row of themeRows) {
+    try {
+      const tokens = JSON.parse(row.tokens_json) as Record<string, unknown>;
+      if (!tokens.neutralTint) {
+        updateTheme.run(
+          JSON.stringify({
+            neutralTint: { hueDeg: 0, saturation: 0 },
+            ...tokens,
+          }),
+          row.id,
+        );
+      }
+    } catch {
+      // Malformed JSON is handled by validation paths; skip migration here.
+    }
+  }
+  const appRows = database
+    .prepare("SELECT id, config_json FROM apps ORDER BY id")
+    .all() as { id: string; config_json: string }[];
+  const updateApp = database.prepare(
+    "UPDATE apps SET config_json = ? WHERE id = ?",
+  );
+  for (const row of appRows) {
+    try {
+      const config = JSON.parse(row.config_json) as Record<string, unknown>;
+      const tokens = config.tokens_json;
+      if (tokens && typeof tokens === "object" && !Array.isArray(tokens)) {
+        const tokenRoot = tokens as Record<string, unknown>;
+        if (!tokenRoot.neutralTint) {
+          updateApp.run(
+            JSON.stringify({
+              ...config,
+              tokens_json: {
+                neutralTint: { hueDeg: 0, saturation: 0 },
+                ...tokenRoot,
+              },
+            }),
+            row.id,
+          );
+        }
+      } else if (!config.neutralTint) {
+        updateApp.run(
+          JSON.stringify({
+            neutralTint: { hueDeg: 0, saturation: 0 },
+            ...config,
+          }),
+          row.id,
+        );
+      }
+    } catch {
+      // Malformed JSON is handled by validation paths; skip migration here.
+    }
+  }
+  database.pragma("user_version = 30");
+}
+
 export function applyInitialSchema(database: SQLiteDatabase): void {
   database.exec(readFileSync(schemaPath, "utf8"));
   applyAdditiveV2Migration(database);
@@ -1765,6 +1871,7 @@ export function applyInitialSchema(database: SQLiteDatabase): void {
   applyAdditiveV27Migration(database);
   applyAdditiveV28Migration(database);
   applyAdditiveV29Migration(database);
+  applyAdditiveV30Migration(database);
   database.pragma("foreign_keys = ON");
 }
 

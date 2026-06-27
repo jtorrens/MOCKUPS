@@ -19,6 +19,10 @@ function sectionMeta(label: string) {
       icon: "◐",
       subtitle: "Mode-aware colors, surfaces and semantic roles",
     },
+    "neutral tint": {
+      icon: "◍",
+      subtitle: "Hue and saturation bias for neutral palette tokens",
+    },
     notes: {
       icon: "✎",
       subtitle: "Documentation and internal annotations",

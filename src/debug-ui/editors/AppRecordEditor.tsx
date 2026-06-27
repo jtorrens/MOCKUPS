@@ -16,6 +16,7 @@ import {
   type JsonValue,
 } from "../components/json-editor/jsonEditorUtils.js";
 import { AppEditor } from "./AppEditor.js";
+import { NeutralTintGroupEditor } from "./ThemeFields.js";
 import {
   AppIconFields,
   AppWallpaperEditor,
@@ -182,6 +183,11 @@ export function AppRecordEditor({
                     paletteCatalog={paletteCatalog}
                     relativePathFromRoot={relativePathFromRoot}
                     MediaCoverPreview={MediaCoverPreview}
+                    onTokenRootChange={updateAppTokenRoot}
+                  />
+                ) : group === "neutralTint" ? (
+                  <NeutralTintGroupEditor
+                    tokenRoot={appEditorTokenRoot as Record<string, JsonValue>}
                     onTokenRootChange={updateAppTokenRoot}
                   />
                 ) : (

@@ -742,8 +742,126 @@ function fontWeightToken(value: unknown): string | number | undefined {
   return undefined;
 }
 
-function paletteMapForColors(colors: PaletteColor[]) {
-  return new Map(colors.map((color) => [color.token, color.value_hex]));
+function clampUnit(value: number) {
+  return Math.max(0, Math.min(1, value));
+}
+
+function normalizeHue(value: number) {
+  return ((value % 360) + 360) % 360;
+}
+
+function hexToRgb(value: string) {
+  const normalized = value.replace("#", "");
+  return {
+    red: Number.parseInt(normalized.slice(0, 2), 16) / 255,
+    green: Number.parseInt(normalized.slice(2, 4), 16) / 255,
+    blue: Number.parseInt(normalized.slice(4, 6), 16) / 255,
+  };
+}
+
+function rgbToHex(red: number, green: number, blue: number) {
+  const toHex = (value: number) =>
+    Math.round(clampUnit(value) * 255)
+      .toString(16)
+      .padStart(2, "0")
+      .toUpperCase();
+  return `#${toHex(red)}${toHex(green)}${toHex(blue)}`;
+}
+
+function rgbToHsl({
+  red,
+  green,
+  blue,
+}: {
+  red: number;
+  green: number;
+  blue: number;
+}) {
+  const max = Math.max(red, green, blue);
+  const min = Math.min(red, green, blue);
+  const lightness = (max + min) / 2;
+  if (max === min) return { hue: 0, saturation: 0, lightness };
+  const delta = max - min;
+  const saturation =
+    lightness > 0.5 ? delta / (2 - max - min) : delta / (max + min);
+  let hue =
+    max === red
+      ? (green - blue) / delta + (green < blue ? 6 : 0)
+      : max === green
+        ? (blue - red) / delta + 2
+        : (red - green) / delta + 4;
+  hue *= 60;
+  return { hue, saturation, lightness };
+}
+
+function hslToRgb({
+  hue,
+  saturation,
+  lightness,
+}: {
+  hue: number;
+  saturation: number;
+  lightness: number;
+}) {
+  const normalizedHue = normalizeHue(hue) / 360;
+  if (saturation <= 0) {
+    return { red: lightness, green: lightness, blue: lightness };
+  }
+  const hueToRgb = (p: number, q: number, t: number) => {
+    let next = t;
+    if (next < 0) next += 1;
+    if (next > 1) next -= 1;
+    if (next < 1 / 6) return p + (q - p) * 6 * next;
+    if (next < 1 / 2) return q;
+    if (next < 2 / 3) return p + (q - p) * (2 / 3 - next) * 6;
+    return p;
+  };
+  const q =
+    lightness < 0.5
+      ? lightness * (1 + saturation)
+      : lightness + saturation - lightness * saturation;
+  const p = 2 * lightness - q;
+  return {
+    red: hueToRgb(p, q, normalizedHue + 1 / 3),
+    green: hueToRgb(p, q, normalizedHue),
+    blue: hueToRgb(p, q, normalizedHue - 1 / 3),
+  };
+}
+
+function neutralTintFromTokens(tokens: Record<string, unknown>) {
+  const tint = isObject(tokens.neutralTint) ? tokens.neutralTint : {};
+  return {
+    hueDeg: normalizeHue(numberValue(tint.hueDeg, 0)),
+    saturation: clampUnit(numberValue(tint.saturation, 0)),
+  };
+}
+
+function tintedNeutralHex(valueHex: string, tint: { hueDeg: number; saturation: number }) {
+  if (tint.saturation <= 0) return valueHex.toUpperCase();
+  const hsl = rgbToHsl(hexToRgb(valueHex));
+  const rgb = hslToRgb({
+    hue: tint.hueDeg,
+    saturation: tint.saturation,
+    lightness: hsl.lightness,
+  });
+  return rgbToHex(rgb.red, rgb.green, rgb.blue);
+}
+
+function paletteMapForColors(
+  colors: PaletteColor[],
+  neutralTint: { hueDeg: number; saturation: number } = {
+    hueDeg: 0,
+    saturation: 0,
+  },
+) {
+  return new Map(
+    colors.map((color) => [
+      color.token,
+      color.is_neutral
+        ? tintedNeutralHex(color.value_hex, neutralTint)
+        : color.value_hex,
+    ]),
+  );
 }
 
 function clampAlpha(value: unknown) {
@@ -1170,8 +1288,14 @@ export function resolveGlobalThemeTokens(
   );
   const cursor = isObject(merged.cursor) ? merged.cursor : {};
   const colors = isObject(merged.colors) ? merged.colors : {};
+  const neutralTint = isObject(merged.neutralTint) ? merged.neutralTint : {};
   return {
     ...merged,
+    neutralTint: {
+      hueDeg: 0,
+      saturation: 0,
+      ...neutralTint,
+    },
     colors: {
       "icons.primary": "gray_000",
       "icons.secondary": "gray_040",
@@ -1697,8 +1821,14 @@ export function resolveChatScreen({
   const themeEnvelope = ThemeEnvelopeSchema.parse(theme.tokens_json);
   const themeMode =
     screenInstance.theme_mode ?? themeEnvelope.defaultMode ?? "light";
+  const globalThemeTokens = resolveGlobalThemeTokens(theme, themeMode);
+  const appTokens = resolveAppTokens(app, themeMode);
+  const neutralTint = neutralTintFromTokens(
+    mergeTokenObjects(globalThemeTokens, appTokens),
+  );
   const palette = paletteMapForColors(
     repository.getPaletteColors(theme.production_id),
+    neutralTint,
   );
   const ownerChatActor = resolveChatActor(
     repository,
@@ -1728,8 +1858,6 @@ export function resolveChatScreen({
       `No module theme config for theme ${theme.id}, app ${app.id}, module ${moduleInstance.module_id}, schema ${moduleInstance.module_schema_version}`,
     );
   }
-  const globalThemeTokens = resolveGlobalThemeTokens(theme, themeMode);
-  const appTokens = resolveAppTokens(app, themeMode);
   const moduleThemeTokens = stripModuleThemeSystemOwnedTokens(
     resolveModuleThemeTokens(moduleThemeConfig.tokens_json, themeMode),
   );
