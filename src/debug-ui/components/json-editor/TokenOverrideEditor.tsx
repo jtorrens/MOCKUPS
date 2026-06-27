@@ -151,6 +151,7 @@ function chatBubbleGroupForRow(row: TokenRow): string {
   if (firstKey === "tail") return "tail";
   if (firstKey === "media") return "media";
   if (firstKey === "status") return "status";
+  if (firstKey.startsWith("messageLabel")) return "label";
   if (firstKey === "avatarSize" || firstKey === "avatarGap") return "avatar";
   if (
     firstKey === "paddingX" ||
@@ -172,7 +173,7 @@ function groupedRows(rows: TokenRow[], groupContext?: string): TokenRowGroup[] {
       const group = chatBubbleGroupForRow(row);
       groups.set(group, [...(groups.get(group) ?? []), row]);
     }
-    const order = ["bubble", "avatar", "media", "tail", "status", "general"];
+    const order = ["bubble", "avatar", "label", "media", "tail", "status", "general"];
     return order
       .filter((key) => groups.has(key))
       .map((key) => ({

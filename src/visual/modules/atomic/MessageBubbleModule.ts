@@ -794,6 +794,50 @@ function tailNode(
   };
 }
 
+function messageLabelNode(
+  input: ResolvedMessageBubbleProps,
+  layout: MessageBubbleLayout,
+): RenderableNode | undefined {
+  const labelStyle = readRecord(input.style.label);
+  if (labelStyle.visible !== true || !layout.labelBox) return undefined;
+  const borderWidth = readNumber(labelStyle.borderWidth, 0);
+  const paddingX = readNumber(labelStyle.paddingX, 8);
+  const paddingY = readNumber(labelStyle.paddingY, 4);
+  const text = input.actor.displayName;
+  const fontSize = readNumber(labelStyle.fontSize, input.style.fontSize * 0.78);
+  return {
+    id: `${input.id}:label`,
+    type: "message_bubble_label",
+    role: "actor_label",
+    frame: input.frame,
+    box: layout.labelBox,
+    text,
+    style: {
+      backgroundColor:
+        labelStyle.backgroundVisible === false
+          ? "transparent"
+          : readString(labelStyle.backgroundColor, input.style.backgroundColor),
+      borderRadius: readNumber(labelStyle.cornerRadius, 0),
+      borderColor: readString(labelStyle.borderColor, "transparent"),
+      borderWidth,
+      shadow: labelStyle.shadowEnabled === true ? readRecord(labelStyle.shadow) : {},
+      surfaceRelief:
+        labelStyle.surfaceReliefEnabled === true
+          ? readRecord(labelStyle.surfaceRelief)
+          : {},
+      overflow: "visible",
+      textColor: readString(labelStyle.textColor, input.style.textColor),
+      fontFamily: readString(labelStyle.fontFamily, input.style.fontFamily),
+      fontSize,
+      lineHeight: readNumber(labelStyle.lineHeight, Math.round(fontSize * 1.2)),
+      fontWeight: readString(labelStyle.fontWeight, "Regular"),
+      textAlign: "center",
+      paddingX,
+      paddingY,
+    },
+  };
+}
+
 export function renderMessageBubbleWithLayout(
   input: ResolvedMessageBubbleProps,
   layout: MessageBubbleLayout,
@@ -937,6 +981,10 @@ export function renderMessageBubbleWithLayout(
             ]
           : undefined,
     });
+    const label = messageLabelNode(input, layout);
+    if (label) {
+      children.push(label);
+    }
 
     return {
       id: input.id,

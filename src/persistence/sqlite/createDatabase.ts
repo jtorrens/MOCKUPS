@@ -974,6 +974,7 @@ function normalizeComponentSemanticColorTokens(tokens: Record<string, unknown>) 
     "playCircleColorToken",
     "playIconColorToken",
     "statusColorToken",
+    "backgroundColorToken",
     "waveformColorToken",
     "waveformPlayedColorToken",
     "textColorToken",
@@ -1061,6 +1062,9 @@ function mergeChatBubbleStatusDefaults(tokens: Record<string, unknown>) {
     ...tokens,
     chatBubbles: {
       surfaceReliefEnabled: true,
+      messageLabelUseActorColor: true,
+      messageLabelOffsetX: 0,
+      messageLabelOffsetY: 0,
       ...chatBubbles,
       status: {
         ...defaultChatBubbleStatusConfig(),
@@ -1455,6 +1459,29 @@ function defaultButtonIconComponentTokens() {
   });
 }
 
+function defaultLabelComponentTokens() {
+  return JSON.stringify({
+    schemaVersion: 1,
+    componentType: "label",
+    sizingMode: "content",
+    width: 120,
+    height: 28,
+    paddingX: 8,
+    paddingY: 4,
+    cornerRadius: 10,
+    borderWidth: 0,
+    borderColorToken: "borders.primary",
+    backgroundVisible: true,
+    backgroundColorToken: "background",
+    textColorToken: "textPrimary",
+    fontSize: 12,
+    fontWeight: "Regular",
+    shadowEnabled: false,
+    shadowToken: "system",
+    surfaceReliefEnabled: false,
+  });
+}
+
 function defaultAudioMessageComponentTokens() {
   return JSON.stringify({
     schemaVersion: 1,
@@ -1604,6 +1631,12 @@ function seedDefaultComponentClasses(database: SQLiteDatabase): void {
         type: "button_icon",
         name: "Default icon button",
         tokens: defaultButtonIconComponentTokens(),
+      },
+      {
+        id: `${production.id}:label_default`,
+        type: "label",
+        name: "Default label",
+        tokens: defaultLabelComponentTokens(),
       },
       {
         id: `${production.id}:audio_message_default`,

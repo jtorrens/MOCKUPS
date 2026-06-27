@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { InspectorFieldRow } from "../components/inspector/InspectorFieldRow.js";
 import {
   isJsonObject,
@@ -62,6 +63,7 @@ export function ModuleBehaviorFields({
         ["Show navigation bar", "showNavigationBar", true],
         ["Show text input bar", "showTextInputBar", false],
         ["Show keyboard", "showKeyboard", false],
+        ["Show incoming actor labels", "showIncomingActorLabels", false],
       ].map(([label, key, fallback]) => (
         <InspectorFieldRow
           key={String(key)}
@@ -189,4 +191,3 @@ export function ModuleBehaviorFields({
     </>
   );
 }
-import { useState } from "react";

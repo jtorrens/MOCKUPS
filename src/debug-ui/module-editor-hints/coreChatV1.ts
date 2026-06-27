@@ -186,6 +186,20 @@ export const coreChatV1EditorHints: ModuleEditorHintContract = {
         label: "Bubble surface relief",
         widget: "checkbox",
       },
+      "chatBubbles.messageLabelUseActorColor": {
+        label: "Use actor color",
+        widget: "checkbox",
+      },
+      "chatBubbles.messageLabelOffsetX": {
+        label: "Offset X",
+        widget: "number",
+        step: 1,
+      },
+      "chatBubbles.messageLabelOffsetY": {
+        label: "Offset Y",
+        widget: "number",
+        step: 1,
+      },
       "chatBubbles.tail.style": {
         label: "Tail style",
         widget: "select",

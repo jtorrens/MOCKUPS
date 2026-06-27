@@ -7,6 +7,7 @@ export const ComponentClassTypeSchema = z.enum([
   "button_icon",
   "text_input_bar",
   "keyboard",
+  "label",
   "video_message",
 ]);
 

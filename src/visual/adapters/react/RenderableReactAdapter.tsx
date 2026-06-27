@@ -1304,6 +1304,26 @@ function RenderNode({
               display: "block",
               whiteSpace: "nowrap",
             }
+        : node.type === "message_bubble_label"
+          ? {
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              paddingLeft: numberValue(node.style?.paddingX),
+              paddingRight: numberValue(node.style?.paddingX),
+              paddingTop: numberValue(node.style?.paddingY),
+              paddingBottom: numberValue(node.style?.paddingY),
+              whiteSpace: "nowrap",
+              overflow: "visible",
+            }
+        : node.type === "text" && node.role === "actor_label_text"
+          ? {
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+            }
         : node.type === "text"
           ? {
               whiteSpace: "pre-wrap",

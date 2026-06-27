@@ -79,6 +79,52 @@ function measureStatus(props: ResolvedMessageBubbleProps) {
   };
 }
 
+function measureMessageLabel(
+  props: ResolvedMessageBubbleProps,
+  measurer: TextMeasurer | undefined,
+) {
+  const labelStyle = readRecord(props.style.label);
+  if (labelStyle.visible !== true || props.direction !== "incoming") {
+    return {
+      visible: false,
+      width: 0,
+      height: 0,
+      offsetX: 0,
+      offsetY: 0,
+      reserveHeight: 0,
+    };
+  }
+  const text = props.actor.displayName;
+  const fontSize = readNumber(labelStyle.fontSize, Math.max(1, props.style.fontSize * 0.78));
+  const lineHeight = readNumber(labelStyle.lineHeight, Math.round(fontSize * 1.2));
+  const paddingX = readNumber(labelStyle.paddingX, 8);
+  const paddingY = readNumber(labelStyle.paddingY, 4);
+  const textWidth =
+    measurer?.measureLineWidth(text, {
+      fontFamily: props.style.fontFamily,
+      fontSize,
+      fontWeight: readString(labelStyle.fontWeight, "Regular"),
+    }) ?? Math.ceil(Array.from(text).length * fontSize * 0.56);
+  const sizingMode = readString(labelStyle.sizingMode, "content");
+  const width =
+    sizingMode === "fixed"
+      ? Math.max(1, readNumber(labelStyle.width, textWidth + paddingX * 2))
+      : Math.max(1, textWidth + paddingX * 2);
+  const height =
+    sizingMode === "fixed"
+      ? Math.max(1, readNumber(labelStyle.height, lineHeight + paddingY * 2))
+      : Math.max(1, lineHeight + paddingY * 2);
+  const offsetY = readNumber(labelStyle.offsetY, 0);
+  return {
+    visible: true,
+    width,
+    height,
+    offsetX: readNumber(labelStyle.offsetX, 0),
+    offsetY,
+    reserveHeight: Math.max(0, height + offsetY + props.style.paddingY),
+  };
+}
+
 export function layoutMessageBubble({
   props,
   messageArea,
@@ -108,6 +154,7 @@ export function layoutMessageBubble({
     maxWidth: maxTextWidth,
     measurer,
   });
+  const labelMeasurement = measureMessageLabel(props, measurer);
   const mediaWindow = readRecord(props.media?.window);
   const rawMediaWidth = props.media
     ? readNumber(mediaWindow.width, 0)
@@ -132,11 +179,13 @@ export function layoutMessageBubble({
       ? Math.max(2, Math.round(props.style.paddingY * 0.5))
       : 0;
   const contentWidth = Math.max(
+    labelMeasurement.width,
     hasTextContent ? measurement.width : 0,
     mediaWidth,
     statusMeasurement.width,
   );
   const contentHeight =
+    labelMeasurement.reserveHeight +
     mediaHeight +
     mediaTextGap +
     (hasTextContent ? measurement.height : 0) +
@@ -184,7 +233,13 @@ export function layoutMessageBubble({
   };
   const textBox = {
     x: Math.round(bubbleBox.x + props.style.paddingX),
-    y: Math.round(bubbleBox.y + props.style.paddingY + mediaHeight + mediaTextGap),
+    y: Math.round(
+      bubbleBox.y +
+        props.style.paddingY +
+        labelMeasurement.reserveHeight +
+        mediaHeight +
+        mediaTextGap,
+    ),
     width: Math.round(
       Math.max(0, bubbleBox.width - props.style.paddingX * 2),
     ),
@@ -212,9 +267,19 @@ export function layoutMessageBubble({
   const mediaBox = hasMedia
     ? {
         x: Math.round(bubbleBox.x + props.style.paddingX),
-        y: Math.round(bubbleBox.y + props.style.paddingY),
+        y: Math.round(
+          bubbleBox.y + props.style.paddingY + labelMeasurement.reserveHeight,
+        ),
         width: Math.round(mediaWidth),
         height: Math.round(mediaHeight),
+      }
+    : undefined;
+  const labelBox = labelMeasurement.visible
+    ? {
+        x: Math.round(bubbleBox.x + props.style.paddingX + labelMeasurement.offsetX),
+        y: Math.round(bubbleBox.y + props.style.paddingY + labelMeasurement.offsetY),
+        width: Math.round(labelMeasurement.width),
+        height: Math.round(labelMeasurement.height),
       }
     : undefined;
   const avatarBox = hasReceivedAvatar
@@ -230,6 +295,7 @@ export function layoutMessageBubble({
 
   return {
     bubbleBox,
+    ...(labelBox ? { labelBox } : {}),
     ...(mediaBox ? { mediaBox } : {}),
     textBox,
     ...(statusBox ? { statusBox } : {}),

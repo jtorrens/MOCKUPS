@@ -431,6 +431,82 @@ export function ComponentClassRecordEditor({
                   )}
                 </>
               ) : null}
+              {componentType === "label" ? (
+                <>
+                  {componentAccordion(
+                    "layout",
+                    <>
+                      <InspectorFieldRow
+                        label="Sizing mode"
+                        control={
+                          <select
+                            className="json-value-control"
+                            value={stringValue(tokens.sizingMode, "content")}
+                            onChange={(event) =>
+                              updateTokens(
+                                setTokenValue(
+                                  tokens,
+                                  "sizingMode",
+                                  event.currentTarget.value,
+                                ),
+                              )
+                            }
+                          >
+                            <option value="content">Text + padding</option>
+                            <option value="fixed">Fixed box</option>
+                          </select>
+                        }
+                      />
+                      {tokenNumberRow("Width", "width", 120)}
+                      {tokenNumberRow("Height", "height", 28)}
+                      {tokenNumberRow("Padding X", "paddingX", 8)}
+                      {tokenNumberRow("Padding Y", "paddingY", 4)}
+                    </>,
+                  )}
+                  {componentAccordion(
+                    "appearance",
+                    <>
+                      {tokenCheckboxRow(
+                        "Background visible",
+                        "backgroundVisible",
+                        true,
+                      )}
+                      {tokenTextRow(
+                        "Background theme color",
+                        "backgroundColorToken",
+                        "background",
+                      )}
+                      {tokenNumberRow("Corner radius", "cornerRadius", 10)}
+                      {tokenNumberRow("Border width", "borderWidth", 0)}
+                      {tokenTextRow(
+                        "Border theme color",
+                        "borderColorToken",
+                        "borders.primary",
+                      )}
+                    </>,
+                  )}
+                  {componentAccordion(
+                    "text",
+                    <>
+                      {tokenNumberRow("Text size", "fontSize", 12)}
+                      {tokenTextRow("Text weight", "fontWeight", "Regular")}
+                      {tokenTextRow(
+                        "Text theme color",
+                        "textColorToken",
+                        "textPrimary",
+                      )}
+                    </>,
+                  )}
+                  {componentAccordion(
+                    "effects",
+                    <>
+                      {tokenCheckboxRow("Shadow", "shadowEnabled")}
+                      {tokenTextRow("Shadow token", "shadowToken", "system")}
+                      {surfaceReliefRow()}
+                    </>,
+                  )}
+                </>
+              ) : null}
               {componentType === "audio_message" ? (
                 <>
                   {componentAccordion(

@@ -226,6 +226,12 @@ export function normalizeCoreChatModuleTokensForEditor(
       numberValue(avatars.gap, 8),
     ),
     shadowEnabled: chatBubbles.shadowEnabled === true,
+    messageLabelUseActorColor:
+      typeof chatBubbles.messageLabelUseActorColor === "boolean"
+        ? chatBubbles.messageLabelUseActorColor
+        : true,
+    messageLabelOffsetX: numberValue(chatBubbles.messageLabelOffsetX, 0),
+    messageLabelOffsetY: numberValue(chatBubbles.messageLabelOffsetY, 0),
     media: {
       ...chatBubbleMedia,
       borderWidth: numberValue(chatBubbleMedia.borderWidth, 0),

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import type {
   AppFieldDefinition,
   AppRecord,
@@ -10,6 +10,7 @@ import {
   ModeColorEditor,
 } from "../components/json-editor/ModeColorEditor.js";
 import { InspectorFieldRow } from "../components/inspector/InspectorFieldRow.js";
+import { AppModalDialog } from "../components/AppModalDialog.js";
 import { createPaletteColorCatalog } from "../components/json-editor/paletteColors.js";
 import type { JsonValue } from "../components/json-editor/jsonEditorUtils.js";
 import { ModuleThemeConfigEditor } from "./ModuleThemeConfigEditor.js";
@@ -112,6 +113,9 @@ export function ModuleThemeConfigRecordEditor({
   setActiveDesignGroup,
   setJsonDraft,
 }: ModuleThemeConfigRecordEditorProps) {
+  const [componentOverrideModal, setComponentOverrideModal] = useState<
+    string | null
+  >(null);
   const tokensField = fieldsByColumn.get("tokens_json");
   const themeRecord = (records.themes ?? []).find(
     (theme) => theme.id === record.theme_id,
@@ -177,8 +181,14 @@ export function ModuleThemeConfigRecordEditor({
       component.production_id === themeRecord?.production_id &&
       component.component_type === "keyboard",
   );
+  const labelComponent = (records.component_classes ?? []).find(
+    (component) =>
+      component.production_id === themeRecord?.production_id &&
+      component.component_type === "label",
+  );
 
   return (
+    <>
     <ModuleThemeConfigEditor
       table={table}
       record={record}
@@ -229,6 +239,32 @@ export function ModuleThemeConfigRecordEditor({
                         </span>
                       }
                     />
+                  ) : null}
+                  {record.module_id === "core.chat" && group === "chatBubbles" ? (
+                    <>
+                      <InspectorFieldRow
+                        label="Message label component"
+                        control={
+                          <span style={{ display: "inline-flex", gap: 10, alignItems: "center" }}>
+                            <input
+                              className="json-value-control"
+                              disabled
+                              value={String(labelComponent?.name ?? "Default label")}
+                              readOnly
+                            />
+                            <button
+                              type="button"
+                              className="inspector-restore-button"
+                              title="Edit message label component overrides"
+                              aria-label="Edit message label component overrides"
+                              onClick={() => setComponentOverrideModal("Message label")}
+                            >
+                              ✎
+                            </button>
+                          </span>
+                        }
+                      />
+                    </>
                   ) : null}
                   {renderField(tokensField, {
                     rawText: stringifyJson(tokenRoot[group] ?? {}),
@@ -431,5 +467,15 @@ export function ModuleThemeConfigRecordEditor({
       )}
       setActiveTab={setActiveTab}
     />
+    {componentOverrideModal ? (
+      <AppModalDialog
+        title={`${componentOverrideModal} overrides`}
+        message="El punto de entrada ya queda preparado. En la siguiente fase conectaremos aquí la lista de parámetros con override y restore por campo."
+        confirmLabel="OK"
+        onCancel={() => setComponentOverrideModal(null)}
+        onConfirm={() => setComponentOverrideModal(null)}
+      />
+    ) : null}
+    </>
   );
 }

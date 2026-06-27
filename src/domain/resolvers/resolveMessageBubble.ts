@@ -232,6 +232,7 @@ export function resolveMessageBubble({
       ...(sender.avatarOffsetX !== undefined ? { avatarOffsetX: sender.avatarOffsetX } : {}),
       ...(sender.avatarOffsetY !== undefined ? { avatarOffsetY: sender.avatarOffsetY } : {}),
       ...(sender.avatarBaseSize !== undefined ? { avatarBaseSize: sender.avatarBaseSize } : {}),
+      ...(sender.color ? { color: sender.color } : {}),
     },
     style: {
       backgroundColor,

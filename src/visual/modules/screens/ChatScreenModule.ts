@@ -56,12 +56,15 @@ function createMessageBubbleInput(
     input.theme.components ?? {},
     "videoMessage",
   );
+  const labelComponent = readObject(input.theme.components ?? {}, "label");
   const typographyTokens = input.theme.typography;
   const messageTypography = readObject(typographyTokens ?? {}, "message");
   const actorAvatar = outgoing
     ? input.ownerActor.avatar?.uri
-    : input.header.avatar?.uri;
-  const actorAvatarConfig = outgoing ? input.ownerActor.avatar : input.header.avatar;
+    : message.sender.avatar?.uri;
+  const actorAvatarConfig = outgoing
+    ? input.ownerActor.avatar
+    : message.sender.avatar;
   const mediaPlayStartFrame =
     typeof message.media?.playStartFrame === "number"
       ? message.media.playStartFrame
@@ -75,6 +78,16 @@ function createMessageBubbleInput(
     0,
     input.frame - mediaStartFrame - mediaPlayStartFrame,
   );
+  const incomingBackground = readString(
+    chatTokens,
+    "incomingBackground",
+    "#E9E9EB",
+  );
+  const showIncomingActorLabel =
+    input.props.showIncomingActorLabels === true && message.direction === "incoming";
+  const labelUseActorColor =
+    chatTokens.messageLabelUseActorColor !== false &&
+    typeof message.sender.color === "string";
 
   return ResolvedMessageBubblePropsSchema.parse({
     frame: input.frame,
@@ -100,6 +113,9 @@ function createMessageBubbleInput(
       ...(typeof actorAvatarConfig?.baseSize === "number"
         ? { avatarBaseSize: actorAvatarConfig.baseSize }
         : {}),
+      ...(typeof message.sender.color === "string"
+        ? { color: message.sender.color }
+        : {}),
     },
     ...(message.media
       ? {
@@ -122,7 +138,7 @@ function createMessageBubbleInput(
           ? "#0B84FF"
           : system
             ? "rgba(118, 118, 128, 0.16)"
-            : "#E9E9EB",
+            : incomingBackground,
       ),
       textColor: readString(
         chatTokens,
@@ -180,6 +196,16 @@ function createMessageBubbleInput(
       }),
       audioMessage: audioMessageComponent,
       videoMessage: videoMessageComponent,
+      label: {
+        ...labelComponent,
+        visible: showIncomingActorLabel,
+        backgroundColor: incomingBackground,
+        textColor: labelUseActorColor
+          ? message.sender.color
+          : readString(labelComponent, "textColor", readString(chatTokens, "incomingText", "#000000")),
+        offsetX: readNumber(chatTokens, "messageLabelOffsetX", 0),
+        offsetY: readNumber(chatTokens, "messageLabelOffsetY", 0),
+      },
       avatar: {
         ...avatarComponent,
         ...(avatarComponent.surfaceReliefEnabled !== false

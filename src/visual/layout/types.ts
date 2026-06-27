@@ -21,6 +21,7 @@ export interface TextMeasurer {
 
 export interface MessageBubbleLayout {
   bubbleBox: RenderableBox;
+  labelBox?: RenderableBox;
   mediaBox?: RenderableBox;
   textBox: RenderableBox;
   statusBox?: RenderableBox;

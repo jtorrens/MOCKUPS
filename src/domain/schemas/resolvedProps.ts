@@ -51,6 +51,16 @@ const ResolvedChatMessageSchema = z.object({
   sender: z.object({
     id: IdSchema,
     displayName: z.string().min(1),
+    color: z.string().min(1).optional(),
+    avatar: z
+      .object({
+        uri: z.string().min(1),
+        scale: z.number().positive().optional(),
+        offsetX: z.number().optional(),
+        offsetY: z.number().optional(),
+        baseSize: z.number().positive().optional(),
+      })
+      .optional(),
   }),
   media: z
     .object({
@@ -165,6 +175,7 @@ export const ResolvedMessageBubblePropsSchema = z.object({
     avatarOffsetX: z.number().optional(),
     avatarOffsetY: z.number().optional(),
     avatarBaseSize: z.number().positive().optional(),
+    color: z.string().min(1).optional(),
   }),
   media: z
     .object({
@@ -201,6 +212,7 @@ export const ResolvedMessageBubblePropsSchema = z.object({
     avatar: JsonObjectSchema.optional(),
     audioMessage: JsonObjectSchema.optional(),
     videoMessage: JsonObjectSchema.optional(),
+    label: JsonObjectSchema.optional(),
     media: JsonObjectSchema.optional(),
     status: JsonObjectSchema.optional(),
   }),

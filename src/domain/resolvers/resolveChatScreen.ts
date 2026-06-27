@@ -1053,6 +1053,66 @@ function resolveDefaultButtonIconComponent(
   };
 }
 
+function resolveDefaultLabelComponent(
+  repository: DomainRepository,
+  productionId: string,
+  palette: Map<string, string>,
+  renderScale: number,
+  themeTokens: Record<string, unknown>,
+) {
+  const component =
+    repository
+      .getComponentClasses(productionId, "label")
+      .find((entry) => entry.name === "Default label") ??
+    repository.getComponentClasses(productionId, "label")[0];
+  const tokens = isObject(component?.tokens_json) ? component.tokens_json : {};
+  const shadows = isObject(themeTokens.shadows) ? themeTokens.shadows : {};
+  const surfaceRelief = isObject(themeTokens.surfaceRelief)
+    ? themeTokens.surfaceRelief
+    : {};
+  const borderColorToken = stringValue(tokens.borderColorToken, "borders.primary");
+  const backgroundColorToken = stringValue(tokens.backgroundColorToken, "background");
+  const textColorToken = stringValue(tokens.textColorToken, "textPrimary");
+  const shadowToken = stringValue(tokens.shadowToken, "system");
+
+  return {
+    id: component?.id ?? null,
+    name: component?.name ?? "Default label",
+    componentType: "label",
+    sizingMode:
+      stringValue(tokens.sizingMode, "content") === "fixed"
+        ? "fixed"
+        : "content",
+    width: numberValue(tokens.width, 120) * renderScale,
+    height: numberValue(tokens.height, 28) * renderScale,
+    paddingX: numberValue(tokens.paddingX, 8) * renderScale,
+    paddingY: numberValue(tokens.paddingY, 4) * renderScale,
+    cornerRadius: numberValue(tokens.cornerRadius, 10) * renderScale,
+    borderWidth: numberValue(tokens.borderWidth, 0) * renderScale,
+    borderColor: themeColor(themeTokens, palette, borderColorToken, "#D1D1D6"),
+    backgroundVisible: tokens.backgroundVisible !== false,
+    backgroundColor: themeColor(
+      themeTokens,
+      palette,
+      backgroundColorToken,
+      "#F2F2F7",
+    ),
+    textColor: themeColor(themeTokens, palette, textColorToken, "#1D1D1F"),
+    fontSize: numberValue(tokens.fontSize, 12) * renderScale,
+    fontWeight: stringValue(tokens.fontWeight, "Regular"),
+    shadowEnabled: tokens.shadowEnabled === true,
+    shadow: isObject(shadows[shadowToken])
+      ? shadows[shadowToken]
+      : isObject(shadows.system)
+        ? shadows.system
+        : isObject(shadows.elevated)
+          ? shadows.elevated
+          : {},
+    surfaceReliefEnabled: tokens.surfaceReliefEnabled === true,
+    surfaceRelief: isObject(surfaceRelief.default) ? surfaceRelief.default : {},
+  };
+}
+
 function themeColor(
   themeTokens: Record<string, unknown>,
   palette: Map<string, string>,
@@ -1381,6 +1441,12 @@ function normalizeChatVisualTokenGroups(
       ...visibleChatBubbles,
       avatarSize: bubbleAvatarSize,
       avatarGap: bubbleAvatarGap,
+      messageLabelUseActorColor:
+        typeof chatBubbles.messageLabelUseActorColor === "boolean"
+          ? chatBubbles.messageLabelUseActorColor
+          : true,
+      messageLabelOffsetX: numberValue(chatBubbles.messageLabelOffsetX, 0),
+      messageLabelOffsetY: numberValue(chatBubbles.messageLabelOffsetY, 0),
       media: {
         ...chatBubbleMedia,
         borderWidth: numberValue(chatBubbleMedia.borderWidth, 0),
@@ -1908,6 +1974,13 @@ export function resolveChatScreen({
     renderScale,
     themeTokens,
   );
+  const labelComponent = resolveDefaultLabelComponent(
+    repository,
+    theme.production_id,
+    palette,
+    renderScale,
+    themeTokens,
+  );
   const audioMessageComponent = resolveDefaultAudioMessageComponent(
     repository,
     theme.production_id,
@@ -2044,6 +2117,26 @@ export function resolveChatScreen({
       sender: {
         id: bubble.actor.id,
         displayName: bubble.actor.displayName,
+        ...(bubble.actor.color ? { color: bubble.actor.color } : {}),
+        ...(bubble.actor.avatarUri
+          ? {
+              avatar: {
+                uri: bubble.actor.avatarUri,
+                ...(bubble.actor.avatarScale !== undefined
+                  ? { scale: bubble.actor.avatarScale }
+                  : {}),
+                ...(bubble.actor.avatarOffsetX !== undefined
+                  ? { offsetX: bubble.actor.avatarOffsetX }
+                  : {}),
+                ...(bubble.actor.avatarOffsetY !== undefined
+                  ? { offsetY: bubble.actor.avatarOffsetY }
+                  : {}),
+                ...(bubble.actor.avatarBaseSize !== undefined
+                  ? { baseSize: bubble.actor.avatarBaseSize }
+                  : {}),
+              },
+            }
+          : {}),
       },
       ...(mediaUri || isAudioMedia
         ? {
@@ -2295,6 +2388,7 @@ export function resolveChatScreen({
         avatar: avatarComponent,
         audioMessage: audioMessageComponent,
         buttonIcon: buttonIconComponent,
+        label: labelComponent,
         videoMessage: videoMessageComponent,
         textInputBar: {
           id: textInputBarComponent.id,
@@ -2357,6 +2451,7 @@ export function resolveChatScreen({
       showNavigationBar: moduleConfig.showNavigationBar,
       showKeyboard: runtimeShowKeyboard,
       showTextInputBar: runtimeShowTextInputBar,
+      showIncomingActorLabels: moduleConfig.showIncomingActorLabels,
       ...(activeComposerMessage
         ? { activeComposerMessageId: activeComposerMessage.id }
         : {}),
