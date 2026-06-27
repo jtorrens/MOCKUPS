@@ -146,8 +146,38 @@ function surfaceReliefValue(value: unknown): string | undefined {
     .join(", ") || undefined;
 }
 
+function surfaceReliefParts(value: unknown) {
+  const relief = asRecord(value);
+  if (!Object.keys(relief).length) {
+    return [];
+  }
+  const angleDeg = numberValue(relief.angleDeg) ?? -45;
+  const extension = numberValue(relief.extension) ?? 1;
+  const angleRad = (angleDeg * Math.PI) / 180;
+  const x = Math.cos(angleRad) * extension;
+  const y = Math.sin(angleRad) * extension;
+  const upperColor = intensityColor(relief.upperIntensity);
+  const lowerColor = intensityColor(relief.lowerIntensity);
+  return [
+    upperColor ? { color: upperColor, x, y } : undefined,
+    lowerColor ? { color: lowerColor, x: -x, y: -y } : undefined,
+  ].filter(Boolean) as Array<{ color: string; x: number; y: number }>;
+}
+
+function surfaceReliefDropShadowValue(value: unknown): string | undefined {
+  const relief = asRecord(value);
+  const spread = numberValue(relief.spread) ?? 0;
+  return surfaceReliefParts(value)
+    .map((part) => `drop-shadow(${part.x}px ${part.y}px ${spread}px ${part.color})`)
+    .join(" ") || undefined;
+}
+
 function joinedBoxShadow(...values: Array<string | undefined>) {
   return values.filter(Boolean).join(", ") || undefined;
+}
+
+function joinedFilter(...values: Array<string | undefined>) {
+  return values.filter(Boolean).join(" ") || undefined;
 }
 
 function nodeStyle(
@@ -156,6 +186,7 @@ function nodeStyle(
 ): CSSProperties {
   const style = node.style ?? {};
   const shadow = shadowValue(style.shadow);
+  const surfaceRelief = surfaceReliefValue(style.surfaceRelief);
   const backgroundColor = stringValue(style.backgroundColor ?? style.background);
   const backgroundImage = stringValue(style.backgroundImage);
   const backgroundSize = stringValue(style.backgroundSize);
@@ -197,12 +228,19 @@ function nodeStyle(
       node.type === "message_bubble_media" ||
       node.type === "message_bubble_media_image"
         ? undefined
-        : shadow,
+        : joinedBoxShadow(shadow, surfaceRelief),
     filter:
       (node.type === "message_bubble_shape" ||
         node.type === "message_bubble_media_image") &&
       shadow
-        ? `drop-shadow(${shadow})`
+        ? joinedFilter(
+            `drop-shadow(${shadow})`,
+            node.type === "message_bubble_shape"
+              ? surfaceReliefDropShadowValue(style.surfaceRelief)
+              : undefined,
+          )
+        : node.type === "message_bubble_shape"
+          ? surfaceReliefDropShadowValue(style.surfaceRelief)
         : undefined,
     border:
       borderColor && borderWidth

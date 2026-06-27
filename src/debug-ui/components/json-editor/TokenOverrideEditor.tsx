@@ -157,7 +157,8 @@ function chatBubbleGroupForRow(row: TokenRow): string {
     firstKey === "paddingY" ||
     firstKey === "maxWidthRatio" ||
     firstKey === "radius" ||
-    firstKey === "shadowEnabled"
+    firstKey === "shadowEnabled" ||
+    firstKey === "surfaceReliefEnabled"
   ) {
     return "bubble";
   }

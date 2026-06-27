@@ -154,6 +154,10 @@ function createMessageBubbleInput(
       tailScale: readNumber(tailTokens, "scale", 1),
       shadowEnabled: chatTokens.shadowEnabled === true,
       shadow: readObject(chatTokens, "shadow"),
+      surfaceRelief:
+        chatTokens.surfaceReliefEnabled !== false
+          ? readObject(input.theme.surfaceRelief ?? {}, "default")
+          : {},
       avatarSize: readNumber(chatTokens, "avatarSize", 32),
       media: {
         borderWidth: readNumber(mediaTokens, "borderWidth", 0),

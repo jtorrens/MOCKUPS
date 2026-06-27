@@ -274,13 +274,13 @@ function tailNode(
     role: `${side}_${vertical}`,
     frame: input.frame,
     box: { x, y, width, height },
-    style: {
-      backgroundColor: input.style.backgroundColor,
-      tailStyle: input.style.tailStyle,
-      side,
-      vertical,
-      borderRadius: Math.max(1, Math.round(input.style.borderRadius * 0.35)),
-    },
+        style: {
+          backgroundColor: input.style.backgroundColor,
+          tailStyle: input.style.tailStyle,
+          side,
+          vertical,
+          borderRadius: Math.max(1, Math.round(input.style.borderRadius * 0.35)),
+        },
     metadata: {
       side,
       vertical,
@@ -342,6 +342,7 @@ export function renderMessageBubbleWithLayout(
         },
         style: {
           shadow: hasShapeShadow ? input.style.shadow : {},
+          surfaceRelief: input.style.surfaceRelief,
         },
         children: shapeChildren,
       },

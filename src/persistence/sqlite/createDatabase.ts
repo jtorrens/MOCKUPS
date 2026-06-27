@@ -878,6 +878,7 @@ function mergeChatBubbleStatusDefaults(tokens: Record<string, unknown>) {
   return {
     ...tokens,
     chatBubbles: {
+      surfaceReliefEnabled: true,
       ...chatBubbles,
       status: {
         ...defaultChatBubbleStatusConfig(),
@@ -1394,6 +1395,29 @@ function applyAdditiveV25Migration(database: SQLiteDatabase): void {
   database.pragma("user_version = 25");
 }
 
+function applyAdditiveV26Migration(database: SQLiteDatabase): void {
+  const rows = database
+    .prepare(
+      `SELECT id, tokens_json
+       FROM module_theme_configs
+       WHERE module_id = 'core.chat'`,
+    )
+    .all() as { id: string; tokens_json: string }[];
+  const update = database.prepare(
+    "UPDATE module_theme_configs SET tokens_json = ? WHERE id = ?",
+  );
+  for (const row of rows) {
+    let tokens: Record<string, unknown>;
+    try {
+      tokens = JSON.parse(row.tokens_json) as Record<string, unknown>;
+    } catch {
+      continue;
+    }
+    update.run(JSON.stringify(mergeChatBubbleStatusDefaults(tokens)), row.id);
+  }
+  database.pragma("user_version = 26");
+}
+
 export function applyInitialSchema(database: SQLiteDatabase): void {
   database.exec(readFileSync(schemaPath, "utf8"));
   applyAdditiveV2Migration(database);
@@ -1420,6 +1444,7 @@ export function applyInitialSchema(database: SQLiteDatabase): void {
   applyAdditiveV23Migration(database);
   applyAdditiveV24Migration(database);
   applyAdditiveV25Migration(database);
+  applyAdditiveV26Migration(database);
   database.pragma("foreign_keys = ON");
 }
 

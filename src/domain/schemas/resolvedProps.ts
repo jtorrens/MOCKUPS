@@ -194,6 +194,7 @@ export const ResolvedMessageBubblePropsSchema = z.object({
     tailScale: z.number().positive(),
     shadowEnabled: z.boolean(),
     shadow: JsonObjectSchema,
+    surfaceRelief: JsonObjectSchema.optional(),
     avatarSize: z.number().min(0),
     avatar: JsonObjectSchema.optional(),
     media: JsonObjectSchema.optional(),

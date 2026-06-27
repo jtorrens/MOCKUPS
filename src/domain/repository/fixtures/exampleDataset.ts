@@ -338,6 +338,7 @@ export function createExampleDataset(): RepositoryDataset {
       avatarSize: 32,
       avatarGap: 8,
       shadowEnabled: false,
+      surfaceReliefEnabled: true,
       tail: {
         style: "rounded_wedge",
         verticalPosition: "bottom",

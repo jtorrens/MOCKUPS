@@ -42,6 +42,7 @@ const MessageThemeSchema = z.object({
     avatarSize: z.number().min(0).optional(),
     avatarGap: z.number().min(0).optional(),
     shadowEnabled: z.boolean().optional(),
+    surfaceReliefEnabled: z.boolean().optional(),
     media: z
       .object({
         borderWidth: z.number().min(0).optional(),
@@ -78,6 +79,7 @@ const MessageThemeSchema = z.object({
     }),
   }),
   shadows: z.record(z.string(), z.unknown()).optional(),
+  surfaceRelief: z.record(z.string(), z.unknown()).optional(),
   radii: z.object({
     bubble: z.number().min(0),
   }),
@@ -277,6 +279,11 @@ export function resolveMessageBubble({
           : isRecord(themeTokens.shadows?.notification)
             ? themeTokens.shadows.notification
             : {},
+      surfaceRelief:
+        themeTokens.chatBubbles.surfaceReliefEnabled !== false &&
+        isRecord(themeTokens.surfaceRelief?.default)
+          ? themeTokens.surfaceRelief.default
+          : {},
       avatarSize:
         themeTokens.chatBubbles.avatarSize ?? themeTokens.avatars.defaultSize,
       ...message.styleOverride,

@@ -177,7 +177,11 @@ export const coreChatV1EditorHints: ModuleEditorHintContract = {
         step: 1,
       },
       "chatBubbles.shadowEnabled": {
-        label: "Bubble / avatar shadow",
+        label: "Bubble shadow",
+        widget: "checkbox",
+      },
+      "chatBubbles.surfaceReliefEnabled": {
+        label: "Bubble surface relief",
         widget: "checkbox",
       },
       "chatBubbles.tail.style": {

@@ -185,6 +185,12 @@ assert(
   "Avatar component must consume theme surface relief when enabled",
 );
 assert(
+  collectNodes(tree).some(
+    (node) => node.type === "message_bubble_shape" && node.style?.surfaceRelief,
+  ),
+  "Message bubble shape groups must consume theme surface relief when enabled",
+);
+assert(
   bubbleNodes.every((bubble) =>
     bubble.children?.some(
       (child) => child.type === "text" && child.box !== undefined,
