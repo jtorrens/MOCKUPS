@@ -88,6 +88,7 @@ const ChatThemeSchema = z.object({
   chatBubbles: z.record(z.string(), z.unknown()),
   avatars: z.record(z.string(), z.unknown()),
   components: z.record(z.string(), z.unknown()).optional(),
+  componentOverrides: z.record(z.string(), z.unknown()).optional(),
   cursor: z.record(z.string(), z.unknown()),
   shadows: z.record(z.string(), z.unknown()).optional(),
   surfaceRelief: z.record(z.string(), z.unknown()).optional(),
@@ -1065,7 +1066,17 @@ function resolveDefaultLabelComponent(
       .getComponentClasses(productionId, "label")
       .find((entry) => entry.name === "Default label") ??
     repository.getComponentClasses(productionId, "label")[0];
-  const tokens = isObject(component?.tokens_json) ? component.tokens_json : {};
+  const rawTokens = isObject(component?.tokens_json) ? component.tokens_json : {};
+  const componentOverrides = isObject(themeTokens.componentOverrides)
+    ? themeTokens.componentOverrides
+    : {};
+  const labelOverrides = isObject(componentOverrides.label)
+    ? componentOverrides.label
+    : {};
+  const tokens = {
+    ...rawTokens,
+    ...labelOverrides,
+  };
   const shadows = isObject(themeTokens.shadows) ? themeTokens.shadows : {};
   const surfaceRelief = isObject(themeTokens.surfaceRelief)
     ? themeTokens.surfaceRelief

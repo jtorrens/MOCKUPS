@@ -9,10 +9,13 @@ import {
   hasModeColorOverrides,
   ModeColorEditor,
 } from "../components/json-editor/ModeColorEditor.js";
-import { InspectorFieldRow } from "../components/inspector/InspectorFieldRow.js";
-import { AppModalDialog } from "../components/AppModalDialog.js";
+import {
+  InspectorFieldRow,
+  InspectorRestoreButton,
+} from "../components/inspector/InspectorFieldRow.js";
 import { createPaletteColorCatalog } from "../components/json-editor/paletteColors.js";
 import type { JsonValue } from "../components/json-editor/jsonEditorUtils.js";
+import { DeferredTextInput } from "../editor-ui/DeferredTextInput.js";
 import { ModuleThemeConfigEditor } from "./ModuleThemeConfigEditor.js";
 import { ModuleFunctionalConfigFields } from "./ModuleFunctionalConfigFields.js";
 import { parsedObject } from "./recordJsonUtils.js";
@@ -70,6 +73,56 @@ function explicitLocalDiffers(local: unknown, inherited: unknown): boolean {
   }
   return JSON.stringify(local) !== JSON.stringify(inherited);
 }
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function componentTokens(record: AppRecord | undefined) {
+  return isPlainObject(record?.tokens_json)
+    ? (record.tokens_json as Record<string, unknown>)
+    : {};
+}
+
+function displayTokenValue(value: unknown) {
+  if (typeof value === "boolean") return value ? "true" : "false";
+  if (typeof value === "number" || typeof value === "string") return String(value);
+  return "";
+}
+
+interface LabelOverrideField {
+  key: string;
+  label: string;
+  kind: "number" | "text" | "boolean" | "select";
+  options?: Array<{ value: string; label: string }>;
+}
+
+const labelOverrideFields: LabelOverrideField[] = [
+  {
+    key: "sizingMode",
+    label: "Sizing mode",
+    kind: "select",
+    options: [
+      { value: "content", label: "Text + padding" },
+      { value: "fixed", label: "Fixed box" },
+    ],
+  },
+  { key: "width", label: "Width", kind: "number" },
+  { key: "height", label: "Height", kind: "number" },
+  { key: "paddingX", label: "Padding X", kind: "number" },
+  { key: "paddingY", label: "Padding Y", kind: "number" },
+  { key: "cornerRadius", label: "Corner radius", kind: "number" },
+  { key: "borderWidth", label: "Border width", kind: "number" },
+  { key: "borderColorToken", label: "Border theme color", kind: "text" },
+  { key: "backgroundVisible", label: "Background visible", kind: "boolean" },
+  { key: "backgroundColorToken", label: "Background theme color", kind: "text" },
+  { key: "textColorToken", label: "Text theme color", kind: "text" },
+  { key: "fontSize", label: "Text size", kind: "number" },
+  { key: "fontWeight", label: "Text weight", kind: "text" },
+  { key: "shadowEnabled", label: "Shadow", kind: "boolean" },
+  { key: "shadowToken", label: "Shadow token", kind: "text" },
+  { key: "surfaceReliefEnabled", label: "Surface relief", kind: "boolean" },
+];
 
 function differsFromInherited(
   drafts: Record<string, string>,
@@ -141,7 +194,8 @@ export function ModuleThemeConfigRecordEditor({
       group !== "modes" &&
       group !== "textInputBar" &&
       group !== "keyboard" &&
-      group !== "avatars",
+      group !== "avatars" &&
+      group !== "componentOverrides",
   );
   const selectableDesignGroups = [...designGroups, "controls"];
   const controlsWarning =
@@ -186,6 +240,97 @@ export function ModuleThemeConfigRecordEditor({
       component.production_id === themeRecord?.production_id &&
       component.component_type === "label",
   );
+  const labelBaseTokens = componentTokens(labelComponent);
+  const componentOverrides = isPlainObject(tokenRoot.componentOverrides)
+    ? (tokenRoot.componentOverrides as Record<string, unknown>)
+    : {};
+  const labelOverrides = isPlainObject(componentOverrides.label)
+    ? (componentOverrides.label as Record<string, unknown>)
+    : {};
+  const hasLabelOverrides = Object.keys(labelOverrides).length > 0;
+
+  function setLabelOverrides(nextOverrides: Record<string, unknown>) {
+    const nextComponentOverrides = {
+      ...componentOverrides,
+      ...(Object.keys(nextOverrides).length ? { label: nextOverrides } : {}),
+    };
+    if (!Object.keys(nextOverrides).length) {
+      delete nextComponentOverrides.label;
+    }
+    const nextRoot: Record<string, unknown> = {
+      ...tokenRoot,
+      componentOverrides: nextComponentOverrides,
+    };
+    if (!Object.keys(nextComponentOverrides).length) {
+      delete nextRoot.componentOverrides;
+    }
+    setJsonDraft("tokens_json", nextRoot as JsonValue);
+  }
+
+  function setLabelOverrideValue(key: string, value: unknown) {
+    setLabelOverrides({
+      ...labelOverrides,
+      [key]: value,
+    });
+  }
+
+  function restoreLabelOverride(key: string) {
+    const nextOverrides = { ...labelOverrides };
+    delete nextOverrides[key];
+    setLabelOverrides(nextOverrides);
+  }
+
+  function renderLabelOverrideControl(field: LabelOverrideField) {
+    const baseValue = labelBaseTokens[field.key];
+    const hasOverride = Object.prototype.hasOwnProperty.call(
+      labelOverrides,
+      field.key,
+    );
+    const value = hasOverride ? labelOverrides[field.key] : baseValue;
+    if (field.kind === "boolean") {
+      return (
+        <input
+          type="checkbox"
+          checked={value === true}
+          onChange={(event) =>
+            setLabelOverrideValue(field.key, event.currentTarget.checked)
+          }
+        />
+      );
+    }
+    if (field.kind === "select") {
+      return (
+        <select
+          className="json-value-control"
+          value={typeof value === "string" ? value : String(baseValue ?? "")}
+          onChange={(event) =>
+            setLabelOverrideValue(field.key, event.currentTarget.value)
+          }
+        >
+          {(field.options ?? []).map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      );
+    }
+    return (
+      <DeferredTextInput
+        ariaLabel={`${field.label} override`}
+        value={displayTokenValue(value)}
+        onCommit={(nextValue) => {
+          if (field.kind === "number") {
+            const parsed = Number(nextValue);
+            if (!Number.isFinite(parsed)) return;
+            setLabelOverrideValue(field.key, parsed);
+            return;
+          }
+          setLabelOverrideValue(field.key, nextValue);
+        }}
+      />
+    );
+  }
 
   return (
     <>
@@ -255,9 +400,24 @@ export function ModuleThemeConfigRecordEditor({
                             <button
                               type="button"
                               className="inspector-restore-button"
-                              title="Edit message label component overrides"
+                              title={
+                                hasLabelOverrides
+                                  ? "Edit message label component overrides"
+                                  : "Add message label component overrides"
+                              }
                               aria-label="Edit message label component overrides"
-                              onClick={() => setComponentOverrideModal("Message label")}
+                              onClick={() => setComponentOverrideModal("label")}
+                              style={{
+                                color: hasLabelOverrides
+                                  ? "var(--editor-warning-color, #b45309)"
+                                  : undefined,
+                                borderColor: hasLabelOverrides
+                                  ? "var(--editor-warning-border-color, #e4ad68)"
+                                  : undefined,
+                                background: hasLabelOverrides
+                                  ? "var(--editor-warning-background, #fff7ed)"
+                                  : undefined,
+                              }}
                             >
                               ✎
                             </button>
@@ -467,14 +627,95 @@ export function ModuleThemeConfigRecordEditor({
       )}
       setActiveTab={setActiveTab}
     />
-    {componentOverrideModal ? (
-      <AppModalDialog
-        title={`${componentOverrideModal} overrides`}
-        message="El punto de entrada ya queda preparado. En la siguiente fase conectaremos aquí la lista de parámetros con override y restore por campo."
-        confirmLabel="OK"
-        onCancel={() => setComponentOverrideModal(null)}
-        onConfirm={() => setComponentOverrideModal(null)}
-      />
+    {componentOverrideModal === "label" ? (
+      <div
+        className="modal-backdrop"
+        role="presentation"
+        onMouseDown={() => setComponentOverrideModal(null)}
+      >
+        <section
+          className="app-modal-card app-confirm-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Message label overrides"
+          style={{ maxWidth: 760, width: "min(760px, calc(100vw - 48px))" }}
+          onMouseDown={(event) => event.stopPropagation()}
+        >
+          <div className="app-modal-heading">
+            <div>
+              <span className="eyebrow">Component override</span>
+              <h2>Message label</h2>
+            </div>
+          </div>
+          <p className="modal-help">
+            Overrides stored in this module. Restore removes the local value and
+            returns to the component default.
+          </p>
+          <div className="record-editor-field-stack record-editor-single-column">
+            {labelOverrideFields.map((field) => {
+              const hasOverride = Object.prototype.hasOwnProperty.call(
+                labelOverrides,
+                field.key,
+              );
+              const baseValue = labelBaseTokens[field.key];
+              return (
+                <InspectorFieldRow
+                  key={field.key}
+                  label={
+                    <span
+                      style={{
+                        color: hasOverride
+                          ? "var(--editor-warning-color, #b45309)"
+                          : undefined,
+                      }}
+                    >
+                      {field.label}
+                    </span>
+                  }
+                  control={
+                    <div
+                      style={{
+                        alignItems: "center",
+                        display: "grid",
+                        gap: 8,
+                        gridTemplateColumns: "minmax(0, 1fr) auto",
+                      }}
+                    >
+                      <div>
+                        {renderLabelOverrideControl(field)}
+                        <small
+                          style={{
+                            display: "block",
+                            marginTop: 4,
+                            opacity: 0.7,
+                          }}
+                        >
+                          Default: {displayTokenValue(baseValue)}
+                        </small>
+                      </div>
+                      {hasOverride ? (
+                        <InspectorRestoreButton
+                          label={`Restore ${field.label}`}
+                          onClick={() => restoreLabelOverride(field.key)}
+                        />
+                      ) : null}
+                    </div>
+                  }
+                />
+              );
+            })}
+          </div>
+          <footer className="app-modal-actions">
+            <button
+              type="button"
+              className="app-modal-button"
+              onClick={() => setComponentOverrideModal(null)}
+            >
+              Close
+            </button>
+          </footer>
+        </section>
+      </div>
     ) : null}
     </>
   );
