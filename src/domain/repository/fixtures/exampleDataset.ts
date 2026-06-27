@@ -719,6 +719,8 @@ export function createExampleDataset(): RepositoryDataset {
       schemaVersion: 1,
       componentType: "keyboard",
       language: "es",
+      pushDurationFrames: 8,
+      messageGapToTextInput: 10,
       keyRadius: 7,
       keyShadowEnabled: true,
       surfaceReliefEnabled: true,

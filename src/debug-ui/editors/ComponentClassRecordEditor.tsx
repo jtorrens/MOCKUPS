@@ -794,6 +794,46 @@ export function ComponentClassRecordEditor({
                     }
                   />
                   <InspectorFieldRow
+                    label="Push duration frames"
+                    control={
+                      <DeferredTextInput
+                        ariaLabel="Push duration frames"
+                        value={String(numberValue(tokens.pushDurationFrames, 8))}
+                        onCommit={(nextValue) => {
+                          const parsed = Number(nextValue);
+                          if (!Number.isFinite(parsed)) return;
+                          updateTokens(
+                            setTokenValue(
+                              tokens,
+                              "pushDurationFrames",
+                              parsed,
+                            ),
+                          );
+                        }}
+                      />
+                    }
+                  />
+                  <InspectorFieldRow
+                    label="Message gap to text input"
+                    control={
+                      <DeferredTextInput
+                        ariaLabel="Message gap to text input"
+                        value={String(numberValue(tokens.messageGapToTextInput, 10))}
+                        onCommit={(nextValue) => {
+                          const parsed = Number(nextValue);
+                          if (!Number.isFinite(parsed)) return;
+                          updateTokens(
+                            setTokenValue(
+                              tokens,
+                              "messageGapToTextInput",
+                              parsed,
+                            ),
+                          );
+                        }}
+                      />
+                    }
+                  />
+                  <InspectorFieldRow
                     label="Key corner radius"
                     control={
                       <DeferredTextInput

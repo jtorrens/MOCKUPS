@@ -1,5 +1,6 @@
 .left-panel-shell {
   align-self: flex-start;
+  flex: 0 0 auto;
   min-width: 720px;
   max-width: calc(100vw - 420px);
   min-height: 0;

@@ -358,6 +358,127 @@ assert(
   ),
   "Keyboard bottom icons must consume the shared button_icon component",
 );
+const activeComposerId =
+  typeof chatProps.props.activeComposerMessageId === "string"
+    ? chatProps.props.activeComposerMessageId
+    : "";
+const activeComposer = chatProps.messages.find(
+  (message) => message.id === activeComposerId,
+);
+assert(
+  activeComposer?.timing.writeOnStartFrame !== undefined,
+  "Keyboard push validation requires an active write-on message",
+);
+const pushDurationFrames = 8;
+const keyboardPushStartTree = RenderableNodeSchema.parse(
+  chatModule.render(
+    ResolvedChatScreenPropsSchema.parse({
+      ...chatProps,
+      frame: activeComposer.timing.writeOnStartFrame,
+      props: {
+        ...chatProps.props,
+        showKeyboard: true,
+        showTextInputBar: true,
+      },
+      keyboard: {
+        ...chatProps.keyboard,
+        pushDurationFrames,
+      },
+    }),
+  ),
+);
+const keyboardPushEndTree = RenderableNodeSchema.parse(
+  chatModule.render(
+    ResolvedChatScreenPropsSchema.parse({
+      ...chatProps,
+      frame: activeComposer.timing.writeOnStartFrame + pushDurationFrames,
+      props: {
+        ...chatProps.props,
+        showKeyboard: true,
+        showTextInputBar: true,
+      },
+      keyboard: {
+        ...chatProps.keyboard,
+        pushDurationFrames,
+      },
+    }),
+  ),
+);
+const keyboardPushStartNode = keyboardPushStartTree.children?.find(
+  (child) => child.type === "keyboard",
+);
+const keyboardPushEndNode = keyboardPushEndTree.children?.find(
+  (child) => child.type === "keyboard",
+);
+assert(
+  keyboardPushStartNode?.box &&
+    keyboardPushEndNode?.box &&
+    keyboardPushStartNode.box.y > keyboardPushEndNode.box.y,
+  "Keyboard must push in from below during its configured duration",
+);
+const keyboardPushExitStartTree = RenderableNodeSchema.parse(
+  chatModule.render(
+    ResolvedChatScreenPropsSchema.parse({
+      ...chatProps,
+      frame:
+        activeComposer.timing.writeOnStartFrame +
+        (activeComposer.timing.writeOnDurationFrames ?? 0),
+      props: {
+        ...chatProps.props,
+        showKeyboard: true,
+        showTextInputBar: true,
+        keyboardTransition: {
+          phase: "exit",
+          startFrame:
+            activeComposer.timing.writeOnStartFrame +
+            (activeComposer.timing.writeOnDurationFrames ?? 0),
+        },
+      },
+      keyboard: {
+        ...chatProps.keyboard,
+        pushDurationFrames,
+      },
+    }),
+  ),
+);
+const keyboardPushExitMidTree = RenderableNodeSchema.parse(
+  chatModule.render(
+    ResolvedChatScreenPropsSchema.parse({
+      ...chatProps,
+      frame:
+        activeComposer.timing.writeOnStartFrame +
+        (activeComposer.timing.writeOnDurationFrames ?? 0) +
+        Math.ceil(pushDurationFrames / 2),
+      props: {
+        ...chatProps.props,
+        showKeyboard: true,
+        showTextInputBar: true,
+        keyboardTransition: {
+          phase: "exit",
+          startFrame:
+            activeComposer.timing.writeOnStartFrame +
+            (activeComposer.timing.writeOnDurationFrames ?? 0),
+        },
+      },
+      keyboard: {
+        ...chatProps.keyboard,
+        pushDurationFrames,
+      },
+    }),
+  ),
+);
+const keyboardPushExitStartNode = keyboardPushExitStartTree.children?.find(
+  (child) => child.type === "keyboard",
+);
+const keyboardPushExitMidNode = keyboardPushExitMidTree.children?.find(
+  (child) => child.type === "keyboard",
+);
+assert(
+  keyboardPushExitStartNode?.box &&
+    keyboardPushExitMidNode?.box &&
+    keyboardPushExitMidNode.box.y > keyboardPushExitStartNode.box.y,
+  "Keyboard must push out below with the same configured duration",
+);
 const textInputProps = ResolvedChatScreenPropsSchema.parse({
   ...chatProps,
   props: {

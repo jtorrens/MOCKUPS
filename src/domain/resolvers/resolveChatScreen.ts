@@ -426,6 +426,12 @@ function resolveKeyboardDefinition(
     language,
     mode,
     pressedKey,
+    pushDurationFrames: Math.max(
+      0,
+      Math.round(numberValue(behaviorRoot.pushDurationFrames, 8)),
+    ),
+    messageGapToTextInput:
+      numberValue(behaviorRoot.messageGapToTextInput, 10) * scale,
     keyShadowEnabled: behaviorRoot.keyShadowEnabled !== false,
     surfaceReliefEnabled: behaviorRoot.surfaceReliefEnabled !== false,
     modes: Object.fromEntries(
@@ -1682,12 +1688,52 @@ export function resolveChatScreen({
   const activeComposerMessage = [...resolvedMessages]
     .reverse()
     .find((message) => isActiveWriteOnMessage(message, localFrame));
+  const rawKeyboardTokens = {
+    ...keyboardComponent.tokens,
+    ...(isObject(moduleConfig.keyboard) ? moduleConfig.keyboard : {}),
+  };
+  const keyboardPushDurationFrames = Math.max(
+    0,
+    Math.round(numberValue(rawKeyboardTokens.pushDurationFrames, 8)),
+  );
+  const exitingComposerMessage = activeComposerMessage
+    ? undefined
+    : [...resolvedMessages].reverse().find((message) => {
+        const writeOnStartFrame = message.timing.writeOnStartFrame;
+        const writeOnDurationFrames = message.timing.writeOnDurationFrames;
+        if (
+          message.direction !== "outgoing" ||
+          writeOnStartFrame === undefined ||
+          writeOnDurationFrames === undefined ||
+          writeOnDurationFrames <= 0
+        ) {
+          return false;
+        }
+        const writeOnEndFrame = writeOnStartFrame + writeOnDurationFrames;
+        return (
+          localFrame >= writeOnEndFrame &&
+          localFrame < writeOnEndFrame + keyboardPushDurationFrames
+        );
+      });
+  const keyboardTransition = activeComposerMessage
+    ? {
+        phase: "enter",
+        startFrame: activeComposerMessage.timing.writeOnStartFrame ?? localFrame,
+      }
+    : exitingComposerMessage
+      ? {
+          phase: "exit",
+          startFrame:
+            (exitingComposerMessage.timing.writeOnStartFrame ?? localFrame) +
+            (exitingComposerMessage.timing.writeOnDurationFrames ?? 0),
+        }
+      : undefined;
 
   const runtimeShowTextInputBar = moduleConfig.showTextInputBar === true;
   const runtimeShowKeyboard =
     moduleConfig.showKeyboard === true &&
     runtimeShowTextInputBar &&
-    activeComposerMessage !== undefined;
+    (activeComposerMessage !== undefined || exitingComposerMessage !== undefined);
   const runtimePressedKey = activeComposerMessage
     ? pressedKeyFromWriteOnState(
         activeComposerMessage.text,
@@ -1697,8 +1743,7 @@ export function resolveChatScreen({
 
   const effectiveKeyboard = resolveKeyboardDefinition(
     {
-      ...keyboardComponent.tokens,
-      ...(isObject(moduleConfig.keyboard) ? moduleConfig.keyboard : {}),
+      ...rawKeyboardTokens,
       ...(runtimePressedKey ? { pressedKey: runtimePressedKey } : {}),
     },
     iconTheme,
@@ -1859,6 +1904,7 @@ export function resolveChatScreen({
       ...(activeComposerMessage
         ? { activeComposerMessageId: activeComposerMessage.id }
         : {}),
+      ...(keyboardTransition ? { keyboardTransition } : {}),
       textInputBar: moduleConfig.textInputBar ?? {},
       keyboard: moduleConfig.keyboard ?? {},
       initialScroll: moduleConfig.initialScroll,

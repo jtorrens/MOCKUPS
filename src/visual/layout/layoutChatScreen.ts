@@ -42,6 +42,23 @@ function stringValue(value: unknown) {
   return typeof value === "string" ? value : "";
 }
 
+function clamp01(value: number) {
+  return Math.max(0, Math.min(1, value));
+}
+
+function easeInOutCubic(value: number) {
+  const clamped = clamp01(value);
+  return clamped < 0.5
+    ? 4 * clamped * clamped * clamped
+    : 1 - Math.pow(-2 * clamped + 2, 3) / 2;
+}
+
+function recordValue(value: unknown) {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
 export function layoutChatScreen({
   props,
   messages,
@@ -95,6 +112,43 @@ export function layoutChatScreen({
     showTextInputBar && typeof textInputBarLayout.height === "number"
       ? textInputBarLayout.height
       : 0;
+  const activeComposerMessageId = stringValue(props.props.activeComposerMessageId);
+  const activeComposerMessage = activeComposerMessageId
+    ? props.messages.find((message) => message.id === activeComposerMessageId)
+    : undefined;
+  const keyboardTransition = recordValue(props.props.keyboardTransition);
+  const keyboardTransitionPhase = stringValue(keyboardTransition.phase);
+  const keyboardTransitionStartFrame =
+    typeof keyboardTransition.startFrame === "number"
+      ? keyboardTransition.startFrame
+      : activeComposerMessage?.timing.writeOnStartFrame;
+  const keyboardRoot = recordValue(props.keyboard);
+  const keyboardPushDurationFrames = Math.max(
+    0,
+    readNumber(keyboardRoot, "pushDurationFrames", 8),
+  );
+  const keyboardPushProgress =
+    showKeyboard &&
+    showTextInputBar &&
+    keyboardTransitionStartFrame !== undefined
+      ? keyboardPushDurationFrames <= 0
+        ? 1
+        : easeInOutCubic(
+            keyboardTransitionPhase === "exit"
+              ? 1 -
+                  (props.frame - keyboardTransitionStartFrame) /
+                    keyboardPushDurationFrames
+              : (props.frame - keyboardTransitionStartFrame) /
+                  keyboardPushDurationFrames,
+          )
+      : 1;
+  const keyboardPushOffset =
+    (showKeyboard && showTextInputBar ? 1 - keyboardPushProgress : 0) *
+    (keyboardHeight + textInputBarHeight);
+  const messageGapToTextInput =
+    textInputBarHeight > 0
+      ? Math.max(0, readNumber(keyboardRoot, "messageGapToTextInput", 10))
+      : 0;
   const statusBarBox = showStatusBar
     ? {
         x: rootBox.x,
@@ -124,7 +178,12 @@ export function layoutChatScreen({
     showKeyboard && keyboardHeight > 0
       ? {
           x: rootBox.x,
-          y: rootBox.y + rootBox.height - navigationBarHeight - keyboardHeight,
+          y:
+            rootBox.y +
+            rootBox.height -
+            navigationBarHeight -
+            keyboardHeight +
+            keyboardPushOffset,
           width: rootBox.width,
           height: keyboardHeight,
         }
@@ -138,7 +197,8 @@ export function layoutChatScreen({
             rootBox.height -
             navigationBarHeight -
             keyboardHeight -
-            textInputBarHeight,
+            textInputBarHeight +
+            keyboardPushOffset,
           width: rootBox.width,
           height: textInputBarHeight,
         }
@@ -150,10 +210,11 @@ export function layoutChatScreen({
     navigationBarBox?.y ??
     rootBox.y + rootBox.height - props.viewport.safeArea.bottom;
   const scrollTriggerBottom =
-    textInputBarBox?.y ??
-    keyboardBox?.y ??
-    navigationBarBox?.y ??
-    rootBox.y + rootBox.height - props.viewport.safeArea.bottom;
+    textInputBarBox
+      ? textInputBarBox.y - messageGapToTextInput
+      : keyboardBox?.y ??
+        navigationBarBox?.y ??
+        rootBox.y + rootBox.height - props.viewport.safeArea.bottom;
   const messageListBottom = lowerChromeTop;
   const messageListLeft = rootBox.x + props.viewport.safeArea.left + screenGutter;
   const messageListRight =
@@ -186,7 +247,6 @@ export function layoutChatScreen({
     return { messageId: message.id, layout };
   });
 
-  const activeComposerMessageId = stringValue(props.props.activeComposerMessageId);
   const scrollReferenceLayouts = activeComposerMessageId
     ? messageLayouts.filter((message) => message.messageId !== activeComposerMessageId)
     : messageLayouts;
@@ -197,7 +257,7 @@ export function layoutChatScreen({
   const visibleBottom = messageListBox.y + messageListBox.height;
   const requestedScrollOffset =
     contentBottom > scrollTriggerBottom
-      ? Math.max(0, contentBottom - visibleBottom)
+      ? Math.max(0, contentBottom + messageGapToTextInput - visibleBottom)
       : 0;
   const scrollOffset = requestedScrollOffset;
   const translatedLayouts =
