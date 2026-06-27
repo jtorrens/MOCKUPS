@@ -10,6 +10,7 @@ export interface AvatarModuleInput {
   borderWidth?: number;
   borderColor?: string;
   shadow?: Record<string, unknown>;
+  surfaceRelief?: Record<string, unknown>;
   imageScale?: number;
   imageOffsetX?: number;
   imageOffsetY?: number;
@@ -37,6 +38,7 @@ export const AvatarModule: VisualModule<AvatarModuleInput> = {
           : {}),
         ...(input.borderColor ? { borderColor: input.borderColor } : {}),
         ...(input.shadow ? { shadow: input.shadow } : {}),
+        ...(input.surfaceRelief ? { surfaceRelief: input.surfaceRelief } : {}),
       },
       asset: { type: "image", uri: input.uri },
       metadata: {

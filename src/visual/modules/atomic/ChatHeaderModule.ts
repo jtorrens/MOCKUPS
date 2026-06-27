@@ -17,6 +17,7 @@ export interface ChatHeaderModuleInput {
   colors: ResolvedChatScreenProps["theme"]["colors"];
   fonts: ResolvedChatScreenProps["theme"]["fonts"];
   shadows?: ResolvedChatScreenProps["theme"]["shadows"];
+  surfaceRelief?: ResolvedChatScreenProps["theme"]["surfaceRelief"];
   avatarComponent?: Record<string, unknown>;
   typography?: ResolvedChatScreenProps["theme"]["typography"];
   headerTokens: ResolvedChatScreenProps["theme"]["header"];
@@ -128,6 +129,10 @@ export const ChatHeaderModule: VisualModule<ChatHeaderModuleInput> = {
       avatarComponent.shadowEnabled === true
         ? readObject(avatarComponent, "shadow")
         : {};
+    const avatarSurfaceRelief =
+      avatarComponent.surfaceReliefEnabled !== false
+        ? readObject(input.surfaceRelief ?? {}, "default")
+        : {};
     const leftItems = sortedItems(input.headerTokens.leftItems);
     const rightItems = sortedItems(input.headerTokens.rightItems);
     const headerTitleTypography = readObject(
@@ -180,6 +185,7 @@ export const ChatHeaderModule: VisualModule<ChatHeaderModuleInput> = {
           borderWidth: avatarBorderWidth,
           borderColor: avatarBorderColor,
           shadow: avatarShadow,
+          surfaceRelief: avatarSurfaceRelief,
           ...(typeof input.header.avatar.scale === "number"
             ? { imageScale: input.header.avatar.scale }
             : {}),

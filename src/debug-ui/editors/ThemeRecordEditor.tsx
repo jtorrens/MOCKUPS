@@ -15,6 +15,7 @@ import {
   normalizedThemeTokenRoot,
   ThemeChromeGroupEditor,
   ThemeCursorGroupEditor,
+  ThemeSurfaceReliefGroupEditor,
 } from "./ThemeFields.js";
 import { ThemeEditor } from "./ThemeEditor.js";
 import {
@@ -113,7 +114,8 @@ export function ThemeRecordEditor({
                   group !== "statusBar" &&
                   group !== "navigationBar" &&
                   group !== "keyboard" &&
-                  group !== "cursor",
+                  group !== "cursor" &&
+                  group !== "surfaceRelief",
               )
               .map((group) => (
                 <EditorSubsectionAccordion
@@ -162,6 +164,19 @@ export function ThemeRecordEditor({
               onToggle={setActiveTokenGroup}
             >
               <ThemeCursorGroupEditor
+                tokenRoot={themeTokenRoot}
+                onTokenRootChange={(nextRoot) =>
+                  setJsonDraft("tokens_json", nextRoot)
+                }
+              />
+            </EditorSubsectionAccordion>
+            <EditorSubsectionAccordion
+              key="surfaceRelief"
+              group="surfaceRelief"
+              activeGroup={resolvedActiveTokenGroup}
+              onToggle={setActiveTokenGroup}
+            >
+              <ThemeSurfaceReliefGroupEditor
                 tokenRoot={themeTokenRoot}
                 onTokenRootChange={(nextRoot) =>
                   setJsonDraft("tokens_json", nextRoot)

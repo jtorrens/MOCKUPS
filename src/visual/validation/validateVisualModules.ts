@@ -181,6 +181,10 @@ assert(
   "Every rendered avatar must have a box",
 );
 assert(
+  avatarNodes.some((node) => node.style?.surfaceRelief),
+  "Avatar component must consume theme surface relief when enabled",
+);
+assert(
   bubbleNodes.every((bubble) =>
     bubble.children?.some(
       (child) => child.type === "text" && child.box !== undefined,
@@ -331,6 +335,10 @@ assert(
 assert(
   keyboardNode.metadata?.mode === "shift" && keyboardPopover?.text === "A",
   "Keyboard must infer shift mode and render the Apple-style key popover",
+);
+assert(
+  keyboardKeys.some((node) => node.style?.surfaceRelief),
+  "Keyboard keys must consume theme surface relief when enabled",
 );
 const textInputProps = ResolvedChatScreenPropsSchema.parse({
   ...chatProps,

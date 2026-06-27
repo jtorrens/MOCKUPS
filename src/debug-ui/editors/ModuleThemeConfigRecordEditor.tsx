@@ -152,6 +152,16 @@ export function ModuleThemeConfigRecordEditor({
       component.production_id === themeRecord?.production_id &&
       component.component_type === "avatar",
   );
+  const textInputBarComponent = (records.component_classes ?? []).find(
+    (component) =>
+      component.production_id === themeRecord?.production_id &&
+      component.component_type === "text_input_bar",
+  );
+  const keyboardComponent = (records.component_classes ?? []).find(
+    (component) =>
+      component.production_id === themeRecord?.production_id &&
+      component.component_type === "keyboard",
+  );
 
   return (
     <ModuleThemeConfigEditor
@@ -229,6 +239,59 @@ export function ModuleThemeConfigRecordEditor({
                 onToggle={setActiveDesignGroup}
               >
                 <div className="record-editor-field-stack record-editor-single-column">
+                  {record.module_id === "core.chat" ? (
+                    <>
+                      <InspectorFieldRow
+                        label="Text input component"
+                        control={
+                          <span style={{ display: "inline-flex", gap: 10, alignItems: "center" }}>
+                            <input
+                              className="json-value-control"
+                              disabled
+                              value={String(
+                                textInputBarComponent?.name ??
+                                  "Default text input bar",
+                              )}
+                              readOnly
+                            />
+                            <button
+                              type="button"
+                              className="inspector-restore-button"
+                              title="Component overrides will be edited here"
+                              aria-label="Edit text input component overrides"
+                              disabled
+                            >
+                              ✎
+                            </button>
+                          </span>
+                        }
+                      />
+                      <InspectorFieldRow
+                        label="Keyboard component"
+                        control={
+                          <span style={{ display: "inline-flex", gap: 10, alignItems: "center" }}>
+                            <input
+                              className="json-value-control"
+                              disabled
+                              value={String(
+                                keyboardComponent?.name ?? "Default keyboard",
+                              )}
+                              readOnly
+                            />
+                            <button
+                              type="button"
+                              className="inspector-restore-button"
+                              title="Component overrides will be edited here"
+                              aria-label="Edit keyboard component overrides"
+                              disabled
+                            >
+                              ✎
+                            </button>
+                          </span>
+                        }
+                      />
+                    </>
+                  ) : null}
                   <ModuleFunctionalConfigFields
                     rawValue={JSON.stringify(tokenRoot, null, 2)}
                     onRawChange={(nextRaw) =>

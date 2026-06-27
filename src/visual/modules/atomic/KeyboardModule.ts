@@ -73,6 +73,12 @@ export const KeyboardModule: VisualModule<KeyboardModuleInput> = {
     );
     const keyboardRows = rows(input);
     const keyboardBottomItems = bottomItems(input);
+    const keyShadowEnabled = input.keyboard?.keyShadowEnabled !== false;
+    const keySurfaceReliefEnabled =
+      input.keyboard?.surfaceReliefEnabled !== false;
+    const surfaceRelief = asRecord(
+      asRecord(input.tokens.surfaceRelief).default,
+    );
     const pressedKey = readString(asRecord(input.keyboard), "pressedKey", "");
     const pressedKeyTarget = pressedKey
       ? keyboardRows.reduce<{ rowIndex: number; keyIndex: number } | undefined>(
@@ -153,6 +159,17 @@ export const KeyboardModule: VisualModule<KeyboardModuleInput> = {
                 fontSize: keyFontSize,
                 lineHeight: keyFontSize,
                 weight: readNumber(key, "weight", 1),
+                shadow: keyShadowEnabled
+                  ? {
+                      color: "rgba(0,0,0,0.18)",
+                      offsetX: 0,
+                      offsetY: 1,
+                      blur: 2,
+                    }
+                  : {},
+                surfaceRelief: keySurfaceReliefEnabled
+                  ? surfaceRelief
+                  : undefined,
               },
               metadata: {
                 id,

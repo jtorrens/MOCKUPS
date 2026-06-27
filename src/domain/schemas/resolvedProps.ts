@@ -102,6 +102,7 @@ export const ResolvedChatScreenPropsSchema = z.object({
     components: JsonObjectSchema.optional(),
     cursor: JsonObjectSchema,
     shadows: JsonObjectSchema.optional(),
+    surfaceRelief: JsonObjectSchema.optional(),
   }),
   device: z.object({
     id: IdSchema,

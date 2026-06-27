@@ -96,14 +96,22 @@ export const TextInputBarModule: VisualModule<TextInputBarModuleInput> = {
     const fontSize = readNumber(layout, "fontSize", 17);
     const lineHeight = readNumber(layout, "lineHeight", fontSize * 1.25);
     const cursorWidth = readNumber(
-      cursorTokens,
-      "width",
-      readNumber(layout, "cursorWidth", 2),
+      config,
+      "cursorWidth",
+      readNumber(cursorTokens, "width", readNumber(layout, "cursorWidth", 2)),
     );
-    const blinkFrames = Math.max(1, readNumber(cursorTokens, "blinkFrames", 15));
+    const blinkFrames = Math.max(
+      1,
+      readNumber(
+        config,
+        "cursorBlinkFrames",
+        readNumber(cursorTokens, "blinkFrames", 15),
+      ),
+    );
     const cursorOpacity = cursorBlinkOpacity(input.frame, blinkFrames);
     const foreground = readString(colors, "textPrimary", "#000000");
     const mutedForeground = readString(colors, "textSecondary", "#6B7280");
+    const idleTextColor = readString(config, "idleTextColor", mutedForeground);
     const fieldBackground = readString(
       keyboardTokens,
       "keyBackground",
@@ -172,7 +180,7 @@ export const TextInputBarModule: VisualModule<TextInputBarModuleInput> = {
           text: text || placeholder,
           style: {
             background: fieldBackground,
-            color: text ? foreground : mutedForeground,
+            color: text ? foreground : idleTextColor,
             borderRadius: fieldRadius,
             borderColor: fieldBorderColor,
             borderWidth: Math.max(1, cursorWidth * 0.5),
@@ -182,14 +190,21 @@ export const TextInputBarModule: VisualModule<TextInputBarModuleInput> = {
             fontSize,
             lineHeight,
             whiteSpace: "pre-wrap",
-            cursorColor: readString(cursorTokens, "color", foreground),
+            cursorColor: readString(
+              config,
+              "cursorColor",
+              readString(cursorTokens, "color", foreground),
+            ),
             cursorWidth,
-            shadow: {
-              color: "rgba(0,0,0,0.16)",
-              offsetX: 0,
-              offsetY: Math.max(1, cursorWidth * 0.5),
-              blur: Math.max(2, cursorWidth * 2),
-            },
+            shadow:
+              config.fieldShadowEnabled === false
+                ? {}
+                : {
+                    color: "rgba(0,0,0,0.16)",
+                    offsetX: 0,
+                    offsetY: Math.max(1, cursorWidth * 0.5),
+                    blur: Math.max(2, cursorWidth * 2),
+                  },
           },
           metadata: {
             isPlaceholder: !text,
@@ -204,7 +219,11 @@ export const TextInputBarModule: VisualModule<TextInputBarModuleInput> = {
                     role: "cursor",
                     frame: input.frame,
                     style: {
-                      background: readString(cursorTokens, "color", foreground),
+                      background: readString(
+                        config,
+                        "cursorColor",
+                        readString(cursorTokens, "color", foreground),
+                      ),
                       width: cursorWidth,
                       opacity: cursorOpacity,
                     },

@@ -89,6 +89,7 @@ const ChatThemeSchema = z.object({
   components: z.record(z.string(), z.unknown()).optional(),
   cursor: z.record(z.string(), z.unknown()),
   shadows: z.record(z.string(), z.unknown()).optional(),
+  surfaceRelief: z.record(z.string(), z.unknown()).optional(),
   radii: z.object({ bubble: z.number().min(0) }),
 });
 
@@ -336,7 +337,7 @@ function resolveKeyboardDefinition(
     rowGap: 8,
     keyGap: 6,
     keyHeight: 42,
-    keyRadius: 7,
+    keyRadius: numberValue(behaviorRoot.keyRadius, 7),
     fontSize: 18,
     emojiFontScale: 0.6,
   };
@@ -425,6 +426,8 @@ function resolveKeyboardDefinition(
     language,
     mode,
     pressedKey,
+    keyShadowEnabled: behaviorRoot.keyShadowEnabled !== false,
+    surfaceReliefEnabled: behaviorRoot.surfaceReliefEnabled !== false,
     modes: Object.fromEntries(
       Object.entries(STANDARD_IOS_KEYBOARD_LAYOUT.modes).map(([key, value]) => [
         key,
@@ -559,7 +562,7 @@ function resolveTextInputBarDefinition(
     iconTheme,
   );
   const baseFontSize = 17;
-  const cursorWidth = 2;
+  const cursorWidth = numberValue(root.cursorWidth, 2);
   const designViewportWidth = viewportWidth / Math.max(scale, 0.0001);
   const designPaddingX = 8;
   const designGap = 8;
@@ -608,7 +611,7 @@ function resolveTextInputBarDefinition(
     lineHeight,
     fieldPaddingX: 14,
     fieldPaddingY: designFieldPaddingY,
-    fieldRadius: 20,
+    fieldRadius: numberValue(root.fieldRadius, 20),
     iconSize: 20,
     fontSize: baseFontSize,
     cursorWidth,
@@ -625,6 +628,11 @@ function resolveTextInputBarDefinition(
     placeholder: stringValue(root.placeholder, "Mensaje"),
     state,
     cursorVisible: root.cursorVisible !== false,
+    idleTextColor: stringValue(root.idleTextColor, ""),
+    cursorWidth: cursorWidth * scale,
+    cursorBlinkFrames: Math.max(1, numberValue(root.cursorBlinkFrames, 15)),
+    cursorColor: stringValue(root.cursorColor, ""),
+    fieldShadowEnabled: root.fieldShadowEnabled !== false,
     layout,
     leftItems,
     rightItems,
@@ -798,7 +806,29 @@ function resolveDefaultAvatarComponent(
     borderWidth: numberValue(resolvedTokens.borderWidth, 0) * renderScale,
     borderColor: stringValue(borderColor, "transparent"),
     shadowEnabled: resolvedTokens.shadowEnabled === true,
+    surfaceReliefEnabled: resolvedTokens.surfaceReliefEnabled !== false,
     shadow,
+  };
+}
+
+function resolveDefaultComponentTokens(
+  repository: DomainRepository,
+  productionId: string,
+  componentType: "text_input_bar" | "keyboard",
+  palette: Map<string, string>,
+) {
+  const component =
+    repository.getComponentClasses(productionId, componentType)[0];
+  const rawTokens = isObject(component?.tokens_json) ? component.tokens_json : {};
+  const tokens = resolvePaletteTokenReferences(rawTokens, palette) as Record<
+    string,
+    unknown
+  >;
+  return {
+    id: component?.id ?? null,
+    name: component?.name ?? "",
+    componentType,
+    tokens,
   };
 }
 
@@ -1443,6 +1473,18 @@ export function resolveChatScreen({
     renderScale,
     themeTokens,
   );
+  const textInputBarComponent = resolveDefaultComponentTokens(
+    repository,
+    theme.production_id,
+    "text_input_bar",
+    palette,
+  );
+  const keyboardComponent = resolveDefaultComponentTokens(
+    repository,
+    theme.production_id,
+    "keyboard",
+    palette,
+  );
   const resolvedHeaderTokens = {
     ...themeTokens.header,
     leftItems: resolveIconItems(
@@ -1577,6 +1619,7 @@ export function resolveChatScreen({
 
   const effectiveKeyboard = resolveKeyboardDefinition(
     {
+      ...keyboardComponent.tokens,
       ...(isObject(moduleConfig.keyboard) ? moduleConfig.keyboard : {}),
       ...(runtimePressedKey ? { pressedKey: runtimePressedKey } : {}),
     },
@@ -1586,6 +1629,7 @@ export function resolveChatScreen({
   );
   const effectiveTextInputBar = resolveTextInputBarDefinition(
     {
+      ...textInputBarComponent.tokens,
       ...(isObject(moduleConfig.textInputBar) ? moduleConfig.textInputBar : {}),
       ...(activeComposerMessage
         ? {
@@ -1672,6 +1716,16 @@ export function resolveChatScreen({
       components: {
         ...(isObject(themeTokens.components) ? themeTokens.components : {}),
         avatar: avatarComponent,
+        textInputBar: {
+          id: textInputBarComponent.id,
+          name: textInputBarComponent.name,
+          componentType: textInputBarComponent.componentType,
+        },
+        keyboard: {
+          id: keyboardComponent.id,
+          name: keyboardComponent.name,
+          componentType: keyboardComponent.componentType,
+        },
       },
       header: resolvedHeaderTokens,
       chatBubbles: {

@@ -647,6 +647,75 @@ export function createExampleDataset(): RepositoryDataset {
       },
       shadowEnabled: false,
       shadowToken: "system",
+      surfaceReliefEnabled: true,
+    },
+    metadata_json: { source: "seed" },
+  });
+  const textInputBarComponentClass = ComponentClassSchema.parse({
+    id: `${production.id}:text_input_bar_default`,
+    production_id: production.id,
+    component_type: "text_input_bar",
+    name: "Default text input bar",
+    tokens_json: {
+      schemaVersion: 1,
+      componentType: "text_input_bar",
+      placeholder: "Mensaje",
+      cursorVisible: true,
+      idleTextColor: "gray_050",
+      cursorWidth: 2,
+      cursorBlinkFrames: 15,
+      cursorColor: "blue",
+      fieldRadius: 20,
+      fieldShadowEnabled: true,
+      iconSets: {
+        left: {
+          idle: [
+            { token: "chat_emoji", order: 10 },
+            { token: "chat_attach", order: 20 },
+          ],
+          typing: [{ token: "chat_emoji", order: 10 }],
+        },
+        right: {
+          idle: [
+            { token: "media_camera", order: 10 },
+            { token: "media_mic", order: 20 },
+          ],
+          typing: [{ token: "chat_send", order: 10, color: "blue" }],
+        },
+      },
+    },
+    metadata_json: { source: "seed" },
+  });
+  const keyboardComponentClass = ComponentClassSchema.parse({
+    id: `${production.id}:keyboard_default`,
+    production_id: production.id,
+    component_type: "keyboard",
+    name: "Default keyboard",
+    tokens_json: {
+      schemaVersion: 1,
+      componentType: "keyboard",
+      language: "es",
+      keyRadius: 7,
+      keyShadowEnabled: true,
+      surfaceReliefEnabled: true,
+      bottomItems: [
+        {
+          id: "app_language",
+          label: "app_language",
+          kind: "iconToken",
+          token: "app_language",
+          zone: "left",
+          order: 10,
+        },
+        {
+          id: "media_mic",
+          label: "media_mic",
+          kind: "iconToken",
+          token: "media_mic",
+          zone: "right",
+          order: 10,
+        },
+      ],
     },
     metadata_json: { source: "seed" },
   });
@@ -658,7 +727,11 @@ export function createExampleDataset(): RepositoryDataset {
     screenInstances,
     moduleInstances,
     screenEvents,
-    componentClasses: [avatarComponentClass],
+    componentClasses: [
+      avatarComponentClass,
+      textInputBarComponentClass,
+      keyboardComponentClass,
+    ],
     iconThemes: [],
     statusBars: [statusBar],
     navigationBars: [navigationBar],

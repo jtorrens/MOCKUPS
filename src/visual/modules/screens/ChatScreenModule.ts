@@ -166,7 +166,17 @@ function createMessageBubbleInput(
         shadowEnabled: mediaTokens.shadowEnabled === true,
       },
       }),
-      avatar: avatarComponent,
+      avatar: {
+        ...avatarComponent,
+        ...(avatarComponent.surfaceReliefEnabled !== false
+          ? {
+              surfaceRelief: readObject(
+                input.theme.surfaceRelief ?? {},
+                "default",
+              ),
+            }
+          : {}),
+      },
     },
     layout: message.layout ?? {
       maxWidth: Math.round(
@@ -315,6 +325,7 @@ export const ChatScreenModule: VisualModule<ResolvedChatScreenProps> = {
             colors: input.theme.colors,
             fonts: input.theme.fonts,
             shadows: input.theme.shadows,
+            surfaceRelief: input.theme.surfaceRelief,
             avatarComponent: readObject(input.theme.components ?? {}, "avatar"),
             typography: input.theme.typography,
             headerTokens: input.theme.header,

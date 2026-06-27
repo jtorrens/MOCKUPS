@@ -102,6 +102,37 @@ function normalizeThemeKeyboardGroup(value: unknown, dark = false) {
   };
 }
 
+function themeSurfaceReliefDefaults(): Record<string, JsonValue> {
+  return {
+    default: {
+      angleDeg: -45,
+      extension: 1,
+      spread: 0,
+      upperIntensity: 0.1,
+      lowerIntensity: -0.08,
+    },
+  };
+}
+
+function normalizeThemeSurfaceReliefGroup(value: unknown) {
+  const root = isJsonObject(value as JsonValue)
+    ? (value as Record<string, JsonValue>)
+    : {};
+  const defaultRoot = isJsonObject(root.default)
+    ? (root.default as Record<string, JsonValue>)
+    : {};
+  const defaults = themeSurfaceReliefDefaults();
+  const defaultDefaults = defaults.default as Record<string, JsonValue>;
+  return {
+    ...defaults,
+    ...root,
+    default: {
+      ...defaultDefaults,
+      ...defaultRoot,
+    },
+  };
+}
+
 export function normalizedThemeTokenRoot({
   root,
   family,
@@ -144,6 +175,7 @@ export function normalizedThemeTokenRoot({
     ),
     keyboard: normalizeThemeKeyboardGroup(root.keyboard),
     cursor: normalizeThemeCursorGroup(root.cursor),
+    surfaceRelief: normalizeThemeSurfaceReliefGroup(root.surfaceRelief),
     modes: {
       ...modes,
       light: {
@@ -220,6 +252,106 @@ export function normalizedThemeTokenRoot({
       },
     },
   } as Record<string, JsonValue>;
+}
+
+interface ThemeSurfaceReliefGroupEditorProps {
+  tokenRoot: Record<string, JsonValue>;
+  onTokenRootChange: (nextRoot: JsonValue) => void;
+}
+
+export function ThemeSurfaceReliefGroupEditor({
+  tokenRoot,
+  onTokenRootChange,
+}: ThemeSurfaceReliefGroupEditorProps) {
+  const surfaceRelief = normalizeThemeSurfaceReliefGroup(tokenRoot.surfaceRelief);
+  const group = isJsonObject(surfaceRelief.default)
+    ? (surfaceRelief.default as Record<string, JsonValue>)
+    : {};
+
+  function updateSurfaceRelief(path: JsonPath, nextValue: JsonValue) {
+    onTokenRootChange(
+      setAtPath(
+        tokenRoot as JsonValue,
+        ["surfaceRelief", "default", ...path],
+        nextValue,
+      ),
+    );
+  }
+
+  return (
+    <div className="theme-chrome-editor">
+      <InspectorFieldRow
+        className="record-editor-field"
+        label={<span>Angle</span>}
+        control={
+          <input
+            type="number"
+            step={1}
+            value={Number(group.angleDeg ?? -45)}
+            onChange={(event) =>
+              updateSurfaceRelief(["angleDeg"], Number(event.target.value))
+            }
+          />
+        }
+      />
+      <InspectorFieldRow
+        className="record-editor-field"
+        label={<span>Extension</span>}
+        control={
+          <input
+            type="number"
+            step="0.1"
+            value={Number(group.extension ?? 1)}
+            onChange={(event) =>
+              updateSurfaceRelief(["extension"], Number(event.target.value))
+            }
+          />
+        }
+      />
+      <InspectorFieldRow
+        className="record-editor-field"
+        label={<span>Spread</span>}
+        control={
+          <input
+            type="number"
+            step="0.1"
+            value={Number(group.spread ?? 0)}
+            onChange={(event) =>
+              updateSurfaceRelief(["spread"], Number(event.target.value))
+            }
+          />
+        }
+      />
+      <InspectorFieldRow
+        className="record-editor-field"
+        label={<span>Upper intensity</span>}
+        control={
+          <input
+            type="number"
+            step="0.01"
+            value={Number(group.upperIntensity ?? 0.1)}
+            onChange={(event) =>
+              updateSurfaceRelief(["upperIntensity"], Number(event.target.value))
+            }
+          />
+        }
+      />
+      <InspectorFieldRow
+        className="record-editor-field"
+        label={<span>Lower intensity</span>}
+        control={
+          <input
+            type="number"
+            step="0.01"
+            value={Number(group.lowerIntensity ?? -0.08)}
+            onChange={(event) =>
+              updateSurfaceRelief(["lowerIntensity"], Number(event.target.value))
+            }
+          />
+        }
+      />
+    </div>
+  );
 }
 
 interface ThemeCursorGroupEditorProps {

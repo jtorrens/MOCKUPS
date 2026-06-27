@@ -1597,6 +1597,15 @@ function defaultThemeTokens(family: "ios" | "android") {
         blur: 18,
       },
     },
+    surfaceRelief: {
+      default: {
+        angleDeg: -45,
+        extension: 1,
+        spread: 0,
+        upperIntensity: 0.1,
+        lowerIntensity: -0.08,
+      },
+    },
   };
 }
 

@@ -1,7 +1,11 @@
 import { z } from "zod";
 import { IdSchema, JsonObjectSchema } from "./common.js";
 
-export const ComponentClassTypeSchema = z.enum(["avatar"]);
+export const ComponentClassTypeSchema = z.enum([
+  "avatar",
+  "text_input_bar",
+  "keyboard",
+]);
 
 export const ComponentClassSchema = z.object({
   id: IdSchema,

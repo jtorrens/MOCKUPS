@@ -1236,10 +1236,71 @@ function defaultAvatarComponentTokens() {
     },
     shadowEnabled: false,
     shadowToken: "system",
+    surfaceReliefEnabled: true,
   });
 }
 
-function seedDefaultAvatarComponentClasses(database: SQLiteDatabase): void {
+function defaultTextInputBarComponentTokens() {
+  return JSON.stringify({
+    schemaVersion: 1,
+    componentType: "text_input_bar",
+    placeholder: "Mensaje",
+    cursorVisible: true,
+    idleTextColor: "gray_050",
+    cursorWidth: 2,
+    cursorBlinkFrames: 15,
+    cursorColor: "blue",
+    fieldRadius: 20,
+    fieldShadowEnabled: true,
+    iconSets: {
+      left: {
+        idle: [
+          { token: "chat_emoji", order: 10 },
+          { token: "chat_attach", order: 20 },
+        ],
+        typing: [{ token: "chat_emoji", order: 10 }],
+      },
+      right: {
+        idle: [
+          { token: "media_camera", order: 10 },
+          { token: "media_mic", order: 20 },
+        ],
+        typing: [{ token: "chat_send", order: 10, color: "blue" }],
+      },
+    },
+  });
+}
+
+function defaultKeyboardComponentTokens() {
+  return JSON.stringify({
+    schemaVersion: 1,
+    componentType: "keyboard",
+    language: "es",
+    keyRadius: 7,
+    keyShadowEnabled: true,
+    surfaceReliefEnabled: true,
+    bottomItems: [
+      {
+        id: "app_language",
+        label: "app_language",
+        kind: "iconToken",
+        token: "app_language",
+        zone: "left",
+        order: 10,
+      },
+      {
+        id: "media_mic",
+        label: "media_mic",
+        kind: "iconToken",
+        token: "media_mic",
+        zone: "right",
+        order: 10,
+      },
+    ],
+  });
+}
+
+function seedDefaultComponentClasses(database: SQLiteDatabase): void {
   const productions = database
     .prepare("SELECT id FROM productions ORDER BY id")
     .all() as { id: string }[];
@@ -1253,15 +1314,60 @@ function seedDefaultAvatarComponentClasses(database: SQLiteDatabase): void {
       metadata_json
     ) VALUES (?, ?, ?, ?, ?, ?)`,
   );
+  const updateTokens = database.prepare(
+    "UPDATE component_classes SET tokens_json = ? WHERE id = ?",
+  );
   for (const production of productions) {
-    insert.run(
-      `${production.id}:avatar_default`,
-      production.id,
-      "avatar",
-      "Default avatar",
-      defaultAvatarComponentTokens(),
-      JSON.stringify({ source: "seed" }),
-    );
+    const defaults = [
+      {
+        id: `${production.id}:avatar_default`,
+        type: "avatar",
+        name: "Default avatar",
+        tokens: defaultAvatarComponentTokens(),
+      },
+      {
+        id: `${production.id}:text_input_bar_default`,
+        type: "text_input_bar",
+        name: "Default text input bar",
+        tokens: defaultTextInputBarComponentTokens(),
+      },
+      {
+        id: `${production.id}:keyboard_default`,
+        type: "keyboard",
+        name: "Default keyboard",
+        tokens: defaultKeyboardComponentTokens(),
+      },
+    ];
+    for (const component of defaults) {
+      insert.run(
+        component.id,
+        production.id,
+        component.type,
+        component.name,
+        component.tokens,
+        JSON.stringify({ source: "seed" }),
+      );
+      const current = database
+        .prepare("SELECT tokens_json FROM component_classes WHERE id = ?")
+        .get(component.id) as { tokens_json?: string } | undefined;
+      if (!current?.tokens_json) continue;
+      try {
+        const currentTokens = JSON.parse(current.tokens_json) as Record<
+          string,
+          unknown
+        >;
+        const defaultTokens = JSON.parse(component.tokens) as Record<
+          string,
+          unknown
+        >;
+        const nextTokens = { ...defaultTokens, ...currentTokens };
+        if (JSON.stringify(nextTokens) !== JSON.stringify(currentTokens)) {
+          updateTokens.run(JSON.stringify(nextTokens), component.id);
+        }
+      } catch {
+        updateTokens.run(component.tokens, component.id);
+      }
+    }
   }
 }
 
@@ -1279,8 +1385,13 @@ function applyAdditiveV24Migration(database: SQLiteDatabase): void {
     CREATE INDEX IF NOT EXISTS idx_component_classes_lookup
       ON component_classes(production_id, component_type, name);
   `);
-  seedDefaultAvatarComponentClasses(database);
+  seedDefaultComponentClasses(database);
   database.pragma("user_version = 24");
+}
+
+function applyAdditiveV25Migration(database: SQLiteDatabase): void {
+  seedDefaultComponentClasses(database);
+  database.pragma("user_version = 25");
 }
 
 export function applyInitialSchema(database: SQLiteDatabase): void {
@@ -1308,6 +1419,7 @@ export function applyInitialSchema(database: SQLiteDatabase): void {
   applyAdditiveV22Migration(database);
   applyAdditiveV23Migration(database);
   applyAdditiveV24Migration(database);
+  applyAdditiveV25Migration(database);
   database.pragma("foreign_keys = ON");
 }
 

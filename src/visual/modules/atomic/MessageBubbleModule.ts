@@ -378,6 +378,9 @@ export function renderMessageBubbleWithLayout(
             ...(avatarShadowEnabled
               ? { shadow: readRecord(avatarStyle.shadow) }
               : {}),
+            ...(avatarStyle.surfaceRelief
+              ? { surfaceRelief: readRecord(avatarStyle.surfaceRelief) }
+              : {}),
           }),
           box: layout.avatarBox,
         },

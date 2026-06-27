@@ -110,6 +110,46 @@ function shadowValue(value: unknown): string | undefined {
   return `${numberValue(shadow.offsetX) ?? 0}px ${numberValue(shadow.offsetY) ?? 0}px ${numberValue(shadow.blur) ?? 0}px ${color}`;
 }
 
+function intensityColor(value: unknown): string | undefined {
+  const intensity = numberValue(value);
+  if (intensity === undefined || intensity === 0) {
+    return undefined;
+  }
+  const alpha = Math.min(1, Math.abs(intensity));
+  return intensity > 0
+    ? `rgba(255, 255, 255, ${alpha})`
+    : `rgba(0, 0, 0, ${alpha})`;
+}
+
+function surfaceReliefValue(value: unknown): string | undefined {
+  const relief = asRecord(value);
+  if (!Object.keys(relief).length) {
+    return undefined;
+  }
+  const angleDeg = numberValue(relief.angleDeg) ?? -45;
+  const extension = numberValue(relief.extension) ?? 1;
+  const spread = numberValue(relief.spread) ?? 0;
+  const angleRad = (angleDeg * Math.PI) / 180;
+  const x = Math.cos(angleRad) * extension;
+  const y = Math.sin(angleRad) * extension;
+  const upperColor = intensityColor(relief.upperIntensity);
+  const lowerColor = intensityColor(relief.lowerIntensity);
+  return [
+    upperColor
+      ? `inset ${x}px ${y}px ${spread}px ${upperColor}`
+      : undefined,
+    lowerColor
+      ? `inset ${-x}px ${-y}px ${spread}px ${lowerColor}`
+      : undefined,
+  ]
+    .filter(Boolean)
+    .join(", ") || undefined;
+}
+
+function joinedBoxShadow(...values: Array<string | undefined>) {
+  return values.filter(Boolean).join(", ") || undefined;
+}
+
 function nodeStyle(
   node: RenderableNode,
   parentOrigin: { x: number; y: number },
@@ -571,6 +611,7 @@ function nodeContent(node: RenderableNode): ReactNode {
     const borderWidth = numberValue(node.style?.borderWidth);
     const avatarRadius = radius !== undefined ? `${radius}px` : "50%";
     const avatarShadow = shadowValue(node.style?.shadow);
+    const avatarSurfaceRelief = surfaceReliefValue(node.style?.surfaceRelief);
     const imageScale = Math.max(0.01, numberValue(node.metadata?.imageScale) ?? 1);
     const imageBaseSize = Math.max(1, numberValue(node.metadata?.imageBaseSize) ?? 640);
     const avatarBoxWidth = Math.max(1, numberValue(node.box?.width) ?? 1);
@@ -641,6 +682,19 @@ function nodeContent(node: RenderableNode): ReactNode {
               boxSizing: "border-box",
               pointerEvents: "none",
               zIndex: 1,
+            }}
+          />
+        ) : null}
+        {avatarSurfaceRelief ? (
+          <span
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              inset: 0,
+              borderRadius: "inherit",
+              boxShadow: avatarSurfaceRelief,
+              pointerEvents: "none",
+              zIndex: 2,
             }}
           />
         ) : null}
@@ -866,8 +920,12 @@ function RenderNode({
                       flex: `${numberValue(node.style?.weight) ?? 1} 1 0`,
                       height: "100%",
                       minWidth: 0,
-                      boxShadow:
-                        "0 0.06em 0.08em rgba(0, 0, 0, 0.18), 0 0.01em 0 rgba(255, 255, 255, 0.32) inset",
+                      boxShadow: joinedBoxShadow(
+                        node.style?.shadow === undefined
+                          ? "0 0.01em 0 rgba(255, 255, 255, 0.32) inset"
+                          : shadowValue(node.style.shadow),
+                        surfaceReliefValue(node.style?.surfaceRelief),
+                      ),
                       whiteSpace: "nowrap",
                       overflow: "visible",
                     }
