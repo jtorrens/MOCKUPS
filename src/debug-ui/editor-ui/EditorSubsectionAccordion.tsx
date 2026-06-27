@@ -7,6 +7,7 @@ interface EditorSubsectionAccordionProps {
   group: string;
   activeGroup: string;
   warning?: boolean;
+  animationState?: "unsupported" | "inactive" | "active";
   onToggle: (group: string) => void;
   children: ReactNode;
 }
@@ -15,6 +16,7 @@ export function EditorSubsectionAccordion({
   group,
   activeGroup,
   warning,
+  animationState = "unsupported",
   onToggle,
   children,
 }: EditorSubsectionAccordionProps) {
@@ -24,6 +26,7 @@ export function EditorSubsectionAccordion({
       <EditorSectionButton
         active={active}
         warning={warning}
+        animationState={animationState}
         onClick={() => onToggle(active ? "" : group)}
       >
         {friendlyGroupLabel(group)}

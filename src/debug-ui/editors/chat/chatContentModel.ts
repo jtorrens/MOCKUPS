@@ -16,6 +16,22 @@ export interface ChatActorOption {
   label: string;
 }
 
+export function createMessageId(existingIds: Iterable<unknown> = []) {
+  const usedIds = new Set(
+    Array.from(existingIds)
+      .filter((value): value is string => typeof value === "string")
+      .map((value) => value.trim())
+      .filter(Boolean),
+  );
+  let index = usedIds.size + 1;
+  let id = `message_${String(index).padStart(3, "0")}`;
+  while (usedIds.has(id)) {
+    index += 1;
+    id = `message_${String(index).padStart(3, "0")}`;
+  }
+  return id;
+}
+
 export function defaultGroupValue(groupKey: string): JsonValue {
   return groupKey === "messages" ? [] : {};
 }
@@ -75,6 +91,36 @@ export function contentSummary(value: JsonValue, groupKey?: string): string {
   return String(value);
 }
 
+export function contentItemHasAnimation(value: JsonValue) {
+  if (!isJsonObject(value)) return false;
+  const animation = isJsonObject(value.animation) ? value.animation : {};
+  const tracks = isJsonObject(animation.tracks) ? animation.tracks : {};
+  return Object.keys(tracks).length > 0;
+}
+
+export function chatContentGroupSupportsAnimation(group: string) {
+  return group === "header" || group === "messages";
+}
+
+export function chatContentGroupHasAnimation({
+  group,
+  contentRoot,
+}: {
+  group: string;
+  contentRoot: Record<string, unknown>;
+}) {
+  if (group === "header") {
+    return contentItemHasAnimation(contentRoot.header as JsonValue);
+  }
+  if (group === "messages") {
+    const messages = contentRoot.messages;
+    return Array.isArray(messages)
+      ? messages.some((message) => contentItemHasAnimation(message as JsonValue))
+      : false;
+  }
+  return false;
+}
+
 export function messageDirectionFromSenderRole(
   message: Record<string, JsonValue>,
   senderRole?: unknown,
@@ -90,9 +136,10 @@ export function messageDirectionFromSenderRole(
 export function defaultMessageItem(
   index: number,
   actorId = "",
+  existingIds: Iterable<unknown> = [],
 ): Record<string, JsonValue> {
   return {
-    id: `message_${String(index + 1).padStart(3, "0")}`,
+    id: createMessageId(existingIds),
     actorId,
     direction: "incoming",
     type: "text",

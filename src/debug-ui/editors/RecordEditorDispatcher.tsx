@@ -45,6 +45,7 @@ interface RecordEditorDispatcherProps {
   tabs: ReturnType<typeof useRecordEditorTabs>;
   onRecordsChanged: (records: AppRecord[]) => void;
   onRecordSaved: (record: AppRecord) => void;
+  onPreviewRelativeFrameChange?: (frame: number) => void;
 }
 
 export function RecordEditorDispatcher({
@@ -65,6 +66,7 @@ export function RecordEditorDispatcher({
   tabs,
   onRecordsChanged,
   onRecordSaved,
+  onPreviewRelativeFrameChange,
 }: RecordEditorDispatcherProps) {
   const {
     renderField,
@@ -211,6 +213,7 @@ export function RecordEditorDispatcher({
         setDrafts={setDrafts}
         setActiveTab={tabs.setScreenTab}
         setActiveContentTab={tabs.setContentTab}
+        onPreviewRelativeFrameChange={onPreviewRelativeFrameChange}
       />
     );
   }

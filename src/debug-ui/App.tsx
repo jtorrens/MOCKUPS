@@ -960,6 +960,26 @@ export function App() {
                   }));
                   setRefreshCounter((value) => value + 1);
                 }}
+                onPreviewRelativeFrameChange={(relativeFrame) => {
+                  if (!state) return;
+                  setSelection((current) => {
+                    if (!current) return current;
+                    const instance = state.options.screenInstances.find(
+                      (candidate) => candidate.id === current.screenInstanceId,
+                    );
+                    if (!instance) return current;
+                    return {
+                      ...current,
+                      frame: Math.max(
+                        instance.startFrame,
+                        Math.min(
+                          instance.startFrame + Math.max(0, Math.round(relativeFrame)),
+                          instance.endFrame - 1,
+                        ),
+                      ),
+                    };
+                  });
+                }}
               />
             ) : null}
           </div>

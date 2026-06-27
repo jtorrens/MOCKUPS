@@ -14,6 +14,7 @@ interface ChatContentArrayEditorProps {
   onDuplicateItem: (index: number) => void;
   onDeleteItem: (index: number) => void;
   onAddItem: () => void;
+  itemHasAnimation?: (entryValue: JsonValue) => boolean;
   renderItemContent: (
     entryValue: JsonValue,
     index: number,
@@ -31,6 +32,7 @@ export function ChatContentArrayEditor({
   onDuplicateItem,
   onDeleteItem,
   onAddItem,
+  itemHasAnimation,
   renderItemContent,
 }: ChatContentArrayEditorProps) {
   const [pendingDeleteIndex, setPendingDeleteIndex] = useState<number | null>(null);
@@ -60,6 +62,7 @@ export function ChatContentArrayEditor({
             : String(index);
         const openKey = `${recordId ?? "record"}:${groupKey}:${stableId}`;
         const isOpen = Boolean(openItems[openKey]);
+        const hasAnimation = itemHasAnimation?.(entryValue) === true;
         return (
           <section
             className={`record-editor-content-item-card ${isOpen ? "open" : ""}`}
@@ -72,7 +75,22 @@ export function ChatContentArrayEditor({
                 aria-expanded={isOpen}
                 onClick={() => onToggleItem(groupKey, openKey, isOpen)}
               >
-                <span>
+                <span className="record-editor-content-item-summary">
+                  {itemHasAnimation ? (
+                    <span
+                      className={`record-editor-animation-indicator is-inline ${
+                        hasAnimation ? "is-active" : ""
+                      }`}
+                      title={
+                        hasAnimation
+                          ? "This item has active animation"
+                          : "This item supports animation"
+                      }
+                      aria-hidden="true"
+                    >
+                      {hasAnimation ? "◆" : "◇"}
+                    </span>
+                  ) : null}
                   [{index}] {contentSummary(entryValue, groupKey)}
                 </span>
               </button>

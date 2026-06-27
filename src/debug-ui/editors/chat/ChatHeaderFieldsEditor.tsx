@@ -4,28 +4,58 @@ import {
   InspectorRestoreButton,
 } from "../../components/inspector/InspectorFieldRow.js";
 import type { JsonValue } from "../../components/json-editor/jsonEditorUtils.js";
+import {
+  ChatAnimationEditor,
+  type ChatAnimatableField,
+} from "./ChatAnimationEditor.js";
 
 interface ChatHeaderFieldsEditorProps {
   header: Record<string, JsonValue>;
   inheritedTitle: string;
   actorOptions: Array<{ value: string; label: string }>;
+  animation: Record<string, JsonValue>;
+  timelineDurationFrames: number;
   onChange: (
     key: "title" | "subtitle" | "actorId" | "useContactColor",
     value: string | boolean,
   ) => void;
+  onAnimationChange: (animation: Record<string, JsonValue>) => void;
+  onAnimationFrameChange?: (frame: number) => void;
 }
 
 export function ChatHeaderFieldsEditor({
   header,
   inheritedTitle,
   actorOptions,
+  animation,
+  timelineDurationFrames,
   onChange,
+  onAnimationChange,
+  onAnimationFrameChange,
 }: ChatHeaderFieldsEditorProps) {
   const title = String(header.title ?? inheritedTitle ?? "");
+  const subtitle = String(header.subtitle ?? "");
   const hasTitleOverride = Boolean(inheritedTitle) && title !== inheritedTitle;
+  const animatableFields: ChatAnimatableField[] = [
+    {
+      key: "subtitle",
+      label: "Subtitle",
+      valueType: "text",
+      value: subtitle,
+      interpolationOptions: ["hold", "linear", "ease"],
+    },
+  ];
 
   return (
-    <div className="record-editor-field-stack record-editor-direct-fields">
+    <ChatAnimationEditor
+      animation={animation}
+      fields={animatableFields}
+      timelineDurationFrames={timelineDurationFrames}
+      onAnimationChange={onAnimationChange}
+      onAnimationFrameChange={onAnimationFrameChange}
+    >
+      {({ animationCard, fieldLabel }) => (
+        <div className="record-editor-field-stack record-editor-direct-fields">
       <InspectorFieldRow
         className="record-editor-field record-editor-field-string"
         label={<span>Actor</span>}
@@ -72,10 +102,10 @@ export function ChatHeaderFieldsEditor({
       />
       <InspectorFieldRow
         className="record-editor-field record-editor-field-string"
-        label={<span>Subtitle</span>}
+        label={fieldLabel("subtitle")}
         control={
           <DeferredTextInput
-            value={String(header.subtitle ?? "")}
+            value={subtitle}
             onCommit={(nextValue) => onChange("subtitle", nextValue)}
           />
         }
@@ -93,6 +123,9 @@ export function ChatHeaderFieldsEditor({
           />
         }
       />
-    </div>
+      {animationCard}
+        </div>
+      )}
+    </ChatAnimationEditor>
   );
 }

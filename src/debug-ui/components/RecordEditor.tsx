@@ -53,6 +53,7 @@ interface RecordEditorProps {
   onRecordsChanged: (records: AppRecord[]) => void;
   onRecordSaved: (record: AppRecord) => void;
   onAppStateChanged?: (state: AppState, tableId: string, record: AppRecord) => void;
+  onPreviewRelativeFrameChange?: (frame: number) => void;
 }
 
 export function RecordEditor({
@@ -65,6 +66,7 @@ export function RecordEditor({
   onRecordsChanged,
   onRecordSaved,
   onAppStateChanged,
+  onPreviewRelativeFrameChange,
 }: RecordEditorProps) {
   const { drafts, errors, setDrafts, states } = useRecordDraftAutosave({
     table,
@@ -147,6 +149,7 @@ export function RecordEditor({
       tabs={tabs}
       onRecordsChanged={onRecordsChanged}
       onRecordSaved={onRecordSaved}
+      onPreviewRelativeFrameChange={onPreviewRelativeFrameChange}
     />
   );
 }

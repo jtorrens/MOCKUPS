@@ -123,6 +123,7 @@ export const ChatModuleDataSchema = z
       actorId: IdSchema.optional(),
       iconToken: z.string().min(1).optional(),
       useContactColor: z.boolean().optional(),
+      animation: JsonObjectSchema.optional(),
     }),
     messages: z.array(ChatModuleMessageSchema),
   })

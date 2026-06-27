@@ -15,6 +15,8 @@ import { ChatMessageFieldsEditor } from "./ChatMessageFieldsEditor.js";
 import { ChatNestedValueEditor } from "./ChatNestedValueEditor.js";
 import {
   actorOptions,
+  createMessageId,
+  contentItemHasAnimation,
   defaultMessageItem,
   mediaNumberFieldsForMessage,
   messageWithDirection,
@@ -33,10 +35,12 @@ interface ChatContentGroupEditorProps {
   canBrowseMedia: boolean;
   mediaRoot: string;
   productionId: string;
+  screenDurationFrames: number;
   normalizeMediaPath: (filePath: string) => string;
   onBrowseMedia: () => Promise<string | undefined>;
   onGroupValueChange: (value: JsonValue) => void;
   onToggleItem: (groupKey: string, openKey: string, isOpen: boolean) => void;
+  onPreviewRelativeFrameChange?: (frame: number) => void;
 }
 
 export function ChatContentGroupEditor({
@@ -49,10 +53,12 @@ export function ChatContentGroupEditor({
   canBrowseMedia,
   mediaRoot,
   productionId,
+  screenDurationFrames,
   normalizeMediaPath,
   onBrowseMedia,
   onGroupValueChange,
   onToggleItem,
+  onPreviewRelativeFrameChange,
 }: ChatContentGroupEditorProps) {
   function updateAtPath(path: JsonPath, nextValue: JsonValue) {
     onGroupValueChange(setAtPath(groupValue, path, nextValue));
@@ -82,11 +88,14 @@ export function ChatContentGroupEditor({
   function renderHeaderFields(header: Record<string, JsonValue>) {
     const inheritedTitle = actorDisplayName(header.actorId);
     const headerActorOptions = actorOptions(actors);
+    const animation = isJsonObject(header.animation) ? header.animation : {};
     return (
       <ChatHeaderFieldsEditor
         header={header}
         inheritedTitle={inheritedTitle}
         actorOptions={headerActorOptions}
+        animation={animation}
+        timelineDurationFrames={Math.max(1, screenDurationFrames)}
         onChange={(key, value) => {
           if (key !== "actorId") {
             updateAtPath([key], value);
@@ -101,6 +110,10 @@ export function ChatContentGroupEditor({
             ),
           );
         }}
+        onAnimationChange={(nextAnimation) =>
+          updateAtPath(["animation"], nextAnimation)
+        }
+        onAnimationFrameChange={onPreviewRelativeFrameChange}
       />
     );
   }
@@ -113,6 +126,7 @@ export function ChatContentGroupEditor({
     const media = isJsonObject(message.media) ? message.media : {};
     const status = isJsonObject(message.status) ? message.status : {};
     const textReveal = isJsonObject(message.textReveal) ? message.textReveal : {};
+    const animation = isJsonObject(message.animation) ? message.animation : {};
     const mediaType = String(media.type ?? (message.mediaAssetId ? "image" : "none"));
     const messageActorOptions = actorOptions(actors);
     const currentActorId = String(message.actorId ?? "");
@@ -131,6 +145,11 @@ export function ChatContentGroupEditor({
       message.delayAfterPreviousFrames ?? message.startFrame ?? 0,
     );
     const writeOnDurationFrames = Number(textReveal.durationFrames ?? 30);
+    const messageStartFrame = messageStartFrameAt(index);
+    const messageTimelineDurationFrames = Math.max(
+      1,
+      screenDurationFrames - messageStartFrame,
+    );
 
     function updateMessage(nextMessage: JsonValue) {
       updateAtPath([index], nextMessage);
@@ -175,6 +194,8 @@ export function ChatContentGroupEditor({
         statusText={String(status.text ?? "")}
         deliveryStatus={String(status.deliveryStatus ?? "none")}
         textRevealMode={String(textReveal.mode ?? "simple_write_on")}
+        animation={animation}
+        timelineDurationFrames={messageTimelineDurationFrames}
         mediaType={mediaType}
         mediaFilePath={String(media.filePath ?? "")}
         mediaDurationSeconds={Number(media.durationSeconds ?? 8)}
@@ -208,6 +229,9 @@ export function ChatContentGroupEditor({
         onTextRevealModeChange={(mode) =>
           updateMessage(messageWithTextRevealMode(message, mode))
         }
+        onAnimationChange={(nextAnimation) =>
+          setMessagePath(["animation"], nextAnimation)
+        }
         onMediaTypeChange={setMediaType}
         onMediaFilePathChange={(nextPath) =>
           setConversationMediaPath(normalizeMediaPath(nextPath))
@@ -232,8 +256,31 @@ export function ChatContentGroupEditor({
         onMediaNumberFieldChange={(path, nextValue) =>
           setMessagePath(path, nextValue)
         }
+        onAnimationFrameChange={(frame) =>
+          onPreviewRelativeFrameChange?.(messageStartFrame + frame)
+        }
       />
     );
+  }
+
+  function messageStartFrameAt(targetIndex: number) {
+    if (!Array.isArray(groupValue)) return 0;
+    let previousWriteOnEndFrame = 0;
+    for (let index = 0; index <= targetIndex; index += 1) {
+      const item = groupValue[index];
+      const message = isJsonObject(item) ? item : {};
+      const textReveal = isJsonObject(message.textReveal)
+        ? message.textReveal
+        : {};
+      const delayAfterPreviousFrames = Number(
+        message.delayAfterPreviousFrames ?? message.startFrame ?? 0,
+      );
+      const startFrame = previousWriteOnEndFrame + Math.max(0, delayAfterPreviousFrames);
+      if (index === targetIndex) return startFrame;
+      previousWriteOnEndFrame =
+        startFrame + Math.max(0, Number(textReveal.durationFrames ?? 30));
+    }
+    return previousWriteOnEndFrame;
   }
 
   function renderNestedValue(path: JsonPath, label: string, value: JsonValue) {
@@ -261,9 +308,12 @@ export function ChatContentGroupEditor({
   function addArrayItem() {
     const nextIndex = Array.isArray(groupValue) ? groupValue.length : 0;
     const firstActorId = String(actors[0]?.id ?? "");
+    const existingIds = Array.isArray(groupValue)
+      ? groupValue.map((item) => (isJsonObject(item) ? item.id : undefined))
+      : [];
     const nextItem =
       groupKey === "messages"
-        ? defaultMessageItem(nextIndex, firstActorId)
+        ? defaultMessageItem(nextIndex, firstActorId, existingIds)
         : defaultJsonValue("object");
     onGroupValueChange(
       Array.isArray(groupValue) ? [...groupValue, nextItem] : [nextItem],
@@ -272,9 +322,19 @@ export function ChatContentGroupEditor({
 
   function duplicateArrayItem(index: number) {
     if (!Array.isArray(groupValue)) return;
+    const clonedItem = cloneJson(groupValue[index]);
+    const nextItem =
+      groupKey === "messages" && isJsonObject(clonedItem)
+        ? {
+            ...clonedItem,
+            id: createMessageId(
+              groupValue.map((item) => (isJsonObject(item) ? item.id : undefined)),
+            ),
+          }
+        : clonedItem;
     onGroupValueChange([
       ...groupValue.slice(0, index + 1),
-      cloneJson(groupValue[index]),
+      nextItem,
       ...groupValue.slice(index + 1),
     ]);
   }
@@ -309,6 +369,9 @@ export function ChatContentGroupEditor({
         onDuplicateItem={duplicateArrayItem}
         onDeleteItem={deleteArrayItem}
         onAddItem={addArrayItem}
+        itemHasAnimation={
+          groupKey === "messages" ? contentItemHasAnimation : undefined
+        }
         renderItemContent={(entryValue, index, isOpen) =>
           isOpen ? (
             <>

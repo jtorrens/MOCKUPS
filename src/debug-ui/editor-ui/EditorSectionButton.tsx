@@ -186,6 +186,7 @@ function sectionMeta(label: string) {
 interface EditorSectionButtonProps {
   active: boolean;
   warning?: boolean;
+  animationState?: "unsupported" | "inactive" | "active";
   children: ReactNode;
   onClick: () => void;
 }
@@ -193,6 +194,7 @@ interface EditorSectionButtonProps {
 export function EditorSectionButton({
   active,
   warning,
+  animationState = "unsupported",
   children,
   onClick,
 }: EditorSectionButtonProps) {
@@ -211,6 +213,21 @@ export function EditorSectionButton({
         <span>{children}</span>
         {meta.subtitle ? <small>{meta.subtitle}</small> : null}
       </span>
+      {animationState !== "unsupported" ? (
+        <span
+          className={`record-editor-animation-indicator ${
+            animationState === "active" ? "is-active" : ""
+          }`}
+          title={
+            animationState === "active"
+              ? "This group has active animation"
+              : "This group supports animation"
+          }
+          aria-hidden="true"
+        >
+          {animationState === "active" ? "◆" : "◇"}
+        </span>
+      ) : null}
     </button>
   );
 }

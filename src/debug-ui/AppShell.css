@@ -72,8 +72,8 @@ input[type="number"]::-webkit-outer-spin-button {
   display: grid;
   place-items: center;
   padding: 24px;
-  background: rgba(3, 5, 9, 0.62);
-  backdrop-filter: blur(8px);
+  background: transparent;
+  backdrop-filter: none;
 }
 
 .production-modal {

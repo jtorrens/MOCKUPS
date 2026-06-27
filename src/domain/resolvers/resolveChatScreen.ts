@@ -1661,6 +1661,225 @@ function renderScaleFromMetrics(
   return metrics.pixelRatio;
 }
 
+type ChatAnimationInterpolation = "hold" | "linear" | "ease";
+type ChatDeliveryStatus = "none" | "sent" | "delivered" | "read" | "failed";
+
+interface ChatAnimationKeyframe {
+  frame: number;
+  value: unknown;
+  interpolation: ChatAnimationInterpolation;
+}
+
+function animationInterpolationValue(value: unknown): ChatAnimationInterpolation {
+  const interpolation = stringValue(value, "hold");
+  return interpolation === "linear" || interpolation === "ease"
+    ? interpolation
+    : "hold";
+}
+
+function deliveryStatusValue(value: unknown): ChatDeliveryStatus {
+  return value === "sent" ||
+    value === "delivered" ||
+    value === "read" ||
+    value === "failed"
+    ? value
+    : "none";
+}
+
+function animationTrackKeyframesFromAnimation(
+  animationValue: unknown,
+  trackKey: string,
+): ChatAnimationKeyframe[] {
+  const animation = isObject(animationValue) ? animationValue : {};
+  const tracks = isObject(animation.tracks) ? animation.tracks : {};
+  const track = isObject(tracks[trackKey]) ? tracks[trackKey] : {};
+  const keyframes = Array.isArray(track.keyframes) ? track.keyframes : [];
+  return keyframes
+    .filter(isObject)
+    .map((keyframe) => {
+      return {
+        frame: Math.max(0, Math.round(numberValue(keyframe.frame, 0))),
+        value: keyframe.value,
+        interpolation: animationInterpolationValue(keyframe.interpolation),
+      };
+    })
+    .filter((keyframe) => Number.isFinite(keyframe.frame))
+    .sort((a, b) => a.frame - b.frame);
+}
+
+function animationTrackKeyframes(
+  message: ChatModuleMessage,
+  trackKey: string,
+): ChatAnimationKeyframe[] {
+  return animationTrackKeyframesFromAnimation(message.animation, trackKey);
+}
+
+function easedProgress(progress: number) {
+  const safeProgress = Math.max(0, Math.min(1, progress));
+  return safeProgress * safeProgress * (3 - 2 * safeProgress);
+}
+
+function interpolateTextByTail(
+  fromValue: string,
+  toValue: string,
+  progress: number,
+) {
+  const fromChars = Array.from(fromValue);
+  const toChars = Array.from(toValue);
+  let commonPrefixLength = 0;
+  while (
+    commonPrefixLength < fromChars.length &&
+    commonPrefixLength < toChars.length &&
+    fromChars[commonPrefixLength] === toChars[commonPrefixLength]
+  ) {
+    commonPrefixLength += 1;
+  }
+  const eraseCount = fromChars.length - commonPrefixLength;
+  const writeCount = toChars.length - commonPrefixLength;
+  const totalEdits = eraseCount + writeCount;
+  if (totalEdits <= 0) return toValue;
+  const currentEdit = Math.round(totalEdits * Math.max(0, Math.min(1, progress)));
+  if (currentEdit <= eraseCount) {
+    return fromChars.slice(0, fromChars.length - currentEdit).join("");
+  }
+  return toChars
+    .slice(0, commonPrefixLength + (currentEdit - eraseCount))
+    .join("");
+}
+
+function animatedValueForMessageTrack(
+  message: ChatModuleMessage,
+  trackKey: string,
+  baseValue: unknown,
+  messageLocalFrame: number,
+  valueType: "text" | "hold" = "text",
+) {
+  return animatedValueForAnimationTrack(
+    message.animation,
+    trackKey,
+    baseValue,
+    messageLocalFrame,
+    valueType,
+  );
+}
+
+function animatedValueForAnimationTrack(
+  animationValue: unknown,
+  trackKey: string,
+  baseValue: unknown,
+  localFrame: number,
+  valueType: "text" | "hold" = "text",
+) {
+  const keyframes = animationTrackKeyframesFromAnimation(animationValue, trackKey);
+  if (!keyframes.length) return baseValue;
+  const exact = keyframes.find((keyframe) => keyframe.frame === localFrame);
+  if (exact) return exact.value;
+  const previous = keyframes
+    .filter((keyframe) => keyframe.frame < localFrame)
+    .at(-1);
+  const next = keyframes.find((keyframe) => keyframe.frame > localFrame);
+  if (!previous) return baseValue;
+  if (valueType === "hold") return previous.value;
+  if (!next || next.interpolation === "hold") return previous.value;
+  if (typeof previous.value !== "string" || typeof next.value !== "string") {
+    return previous.value;
+  }
+  const span = Math.max(1, next.frame - previous.frame);
+  const rawProgress = (localFrame - previous.frame) / span;
+  const progress =
+    next.interpolation === "ease" ? easedProgress(rawProgress) : rawProgress;
+  return interpolateTextByTail(previous.value, next.value, progress);
+}
+
+function activeTextAnimationWriteOnWindow(
+  message: ChatModuleMessage,
+  messageLocalFrame: number,
+) {
+  const keyframes = animationTrackKeyframes(message, "text");
+  const previous = keyframes
+    .filter((keyframe) => keyframe.frame <= messageLocalFrame)
+    .at(-1);
+  const next = keyframes.find((keyframe) => keyframe.frame > messageLocalFrame);
+  if (!previous || !next || next.interpolation === "hold") return undefined;
+  if (typeof previous.value !== "string" || typeof next.value !== "string") {
+    return undefined;
+  }
+  const durationFrames = next.frame - previous.frame;
+  if (durationFrames <= 0) return undefined;
+  return {
+    startFrame: previous.frame,
+    durationFrames,
+  };
+}
+
+function animatedTextComposerPressedKey(
+  message: ChatModuleMessage,
+  messageLocalFrame: number,
+) {
+  const currentValue = animatedValueForMessageTrack(
+    message,
+    "text",
+    message.text,
+    messageLocalFrame,
+  );
+  const previousValue = animatedValueForMessageTrack(
+    message,
+    "text",
+    message.text,
+    Math.max(0, messageLocalFrame - 1),
+  );
+  if (typeof currentValue !== "string" || typeof previousValue !== "string") {
+    return "";
+  }
+  if (currentValue === previousValue) return "";
+
+  const currentCharacters = Array.from(currentValue);
+  const previousCharacters = Array.from(previousValue);
+  if (currentCharacters.length < previousCharacters.length) {
+    return "backspace";
+  }
+  return normalizeKeyboardDisplayKey(currentCharacters.at(-1) ?? "");
+}
+
+function animatedChatMessage(
+  message: ChatModuleMessage,
+  messageLocalFrame: number,
+): ChatModuleMessage {
+  const status = isObject(message.status) ? message.status : undefined;
+  const animatedText = animatedValueForMessageTrack(
+    message,
+    "text",
+    message.text,
+    messageLocalFrame,
+  );
+  const animatedStatusText = animatedValueForMessageTrack(
+    message,
+    "status.text",
+    status?.text,
+    messageLocalFrame,
+  );
+  const animatedDeliveryStatus = animatedValueForMessageTrack(
+    message,
+    "status.deliveryStatus",
+    status?.deliveryStatus,
+    messageLocalFrame,
+    "hold",
+  );
+  const nextStatus = {
+    ...(status ?? {}),
+    deliveryStatus: deliveryStatusValue(status?.deliveryStatus),
+    ...(typeof animatedStatusText === "string" ? { text: animatedStatusText } : {}),
+    ...(typeof animatedDeliveryStatus === "string"
+      ? { deliveryStatus: deliveryStatusValue(animatedDeliveryStatus) }
+      : {}),
+  };
+  return {
+    ...message,
+    ...(typeof animatedText === "string" ? { text: animatedText } : {}),
+    status: nextStatus,
+  };
+}
+
 function resolveAppTokens(
   app: App,
   themeMode: "light" | "dark",
@@ -2076,11 +2295,23 @@ export function resolveChatScreen({
           }
         : {}),
     };
+    const messageLocalFrame = Math.max(0, localFrame - effectiveStartFrame);
+    const animatedMessage = animatedChatMessage(
+      effectiveMessage,
+      messageLocalFrame,
+    );
+    const animatedWriteOnWindow = activeTextAnimationWriteOnWindow(
+      effectiveMessage,
+      messageLocalFrame,
+    );
+    const animatedComposerPressedKey = animatedWriteOnWindow
+      ? animatedTextComposerPressedKey(effectiveMessage, messageLocalFrame)
+      : undefined;
     const direction =
-      effectiveMessage.direction ??
-      (effectiveMessage.type === "system"
+      animatedMessage.direction ??
+      (animatedMessage.type === "system"
         ? "system"
-        : effectiveMessage.actorId === ownerActor.id
+        : animatedMessage.actorId === ownerActor.id
           ? "outgoing"
           : "incoming");
     const sender =
@@ -2088,12 +2319,12 @@ export function resolveChatScreen({
         ? ownerChatActor
         : resolveChatActor(
             repository,
-            effectiveMessage.actorId ?? ownerActor.id,
+            animatedMessage.actorId ?? ownerActor.id,
             themeMode,
             palette,
           );
     const bubble = resolveMessageBubble({
-      message: effectiveMessage,
+      message: animatedMessage,
       sender,
       direction,
       themeTokens: normalizedThemeTokens,
@@ -2104,14 +2335,14 @@ export function resolveChatScreen({
     previousMessageWriteOnEndFrame =
       bubble.timing.startFrame + (bubble.timing.writeOnDurationFrames ?? 0);
 
-    const mediaAsset = effectiveMessage.mediaAssetId
+    const mediaAsset = animatedMessage.mediaAssetId
       ? requireRecord(
-          repository.getMediaAsset(effectiveMessage.mediaAssetId),
+          repository.getMediaAsset(animatedMessage.mediaAssetId),
           "MediaAsset",
-          effectiveMessage.mediaAssetId,
+          animatedMessage.mediaAssetId,
         )
       : undefined;
-    const scaledMedia = scaleChatMediaForRender(effectiveMessage.media, renderScale);
+    const scaledMedia = scaleChatMediaForRender(animatedMessage.media, renderScale);
     const mediaFilePath = scaledMedia
       ? stringValue(scaledMedia.filePath)
       : "";
@@ -2191,16 +2422,25 @@ export function resolveChatScreen({
       timing: {
         startFrame: bubble.timing.startFrame,
         enterDurationFrames: bubble.timing.enterDurationFrames,
-        ...(bubble.timing.writeOnStartFrame !== null
+        ...(animatedWriteOnWindow
+          ? { writeOnStartFrame: effectiveStartFrame + animatedWriteOnWindow.startFrame }
+          : bubble.timing.writeOnStartFrame !== null
           ? { writeOnStartFrame: bubble.timing.writeOnStartFrame }
           : {}),
-        ...(bubble.timing.writeOnDurationFrames !== null
+        ...(animatedWriteOnWindow
+          ? { writeOnDurationFrames: animatedWriteOnWindow.durationFrames }
+          : bubble.timing.writeOnDurationFrames !== null
           ? { writeOnDurationFrames: bubble.timing.writeOnDurationFrames }
           : {}),
       },
       style: bubble.style,
       layout: bubble.layout,
-      animation: bubble.animation,
+      animation: {
+        ...(isObject(bubble.animation) ? bubble.animation : {}),
+        ...(animatedWriteOnWindow
+          ? { composerPressedKey: animatedComposerPressedKey ?? "" }
+          : {}),
+      },
     };
   });
 
@@ -2290,11 +2530,21 @@ export function resolveChatScreen({
     (activeComposerMessage !== undefined ||
       enteringComposerMessage !== undefined ||
       exitingComposerMessage !== undefined);
+  const activeComposerAnimation = isObject(activeComposerMessage?.animation)
+    ? activeComposerMessage.animation
+    : {};
+  const hasAnimatedComposerPressedKey =
+    Object.prototype.hasOwnProperty.call(
+      activeComposerAnimation,
+      "composerPressedKey",
+    );
   const runtimePressedKey = activeComposerMessage
-    ? pressedKeyFromWriteOnState(
-        activeComposerMessage.text,
-        activeComposerMessage.visibleText,
-      )
+    ? hasAnimatedComposerPressedKey
+      ? stringValue(activeComposerAnimation.composerPressedKey) || undefined
+      : pressedKeyFromWriteOnState(
+          activeComposerMessage.text,
+          activeComposerMessage.visibleText,
+        )
     : undefined;
 
   const effectiveKeyboard = resolveKeyboardDefinition(
@@ -2376,6 +2626,12 @@ export function resolveChatScreen({
           : {}),
       }
     : undefined;
+  const animatedHeaderSubtitle = animatedValueForAnimationTrack(
+    moduleData.header.animation,
+    "subtitle",
+    moduleData.header.subtitle,
+    localFrame,
+  );
   const systemShadow = isObject(themeTokens.shadows?.elevated)
     ? themeTokens.shadows.elevated
     : isObject(themeTokens.shadows?.avatar)
@@ -2439,7 +2695,11 @@ export function resolveChatScreen({
     },
     header: {
       title: moduleData.header.title,
-      subtitle: moduleData.header.subtitle,
+      ...(typeof animatedHeaderSubtitle === "string"
+        ? { subtitle: animatedHeaderSubtitle }
+        : moduleData.header.subtitle
+          ? { subtitle: moduleData.header.subtitle }
+          : {}),
       ...(moduleData.header.useContactColor && headerActor?.color
         ? { backgroundColor: headerActor.color }
         : {}),

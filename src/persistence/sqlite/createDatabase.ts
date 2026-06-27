@@ -1874,6 +1874,64 @@ function applyAdditiveV30Migration(database: SQLiteDatabase): void {
   database.pragma("user_version = 30");
 }
 
+function nextStableMessageId(usedIds: Set<string>): string {
+  let index = usedIds.size + 1;
+  let id = `message_${String(index).padStart(3, "0")}`;
+  while (usedIds.has(id)) {
+    index += 1;
+    id = `message_${String(index).padStart(3, "0")}`;
+  }
+  usedIds.add(id);
+  return id;
+}
+
+function ensureMessageIdsInModuleData(value: unknown): unknown {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  const root = value as Record<string, unknown>;
+  if (!Array.isArray(root.messages)) return value;
+
+  const usedIds = new Set<string>();
+  const messages = root.messages.map((message) => {
+    if (!message || typeof message !== "object" || Array.isArray(message)) {
+      return message;
+    }
+    const nextMessage = { ...(message as Record<string, unknown>) };
+    const currentId =
+      typeof nextMessage.id === "string" ? nextMessage.id.trim() : "";
+    if (currentId && !usedIds.has(currentId)) {
+      usedIds.add(currentId);
+      nextMessage.id = currentId;
+      return nextMessage;
+    }
+    nextMessage.id = nextStableMessageId(usedIds);
+    return nextMessage;
+  });
+
+  return { ...root, messages };
+}
+
+function applyAdditiveV31Migration(database: SQLiteDatabase): void {
+  const rows = database
+    .prepare("SELECT id, module_data_json FROM screen_instances ORDER BY id")
+    .all() as { id: string; module_data_json: string | null }[];
+  const update = database.prepare(
+    "UPDATE screen_instances SET module_data_json = ? WHERE id = ?",
+  );
+  for (const row of rows) {
+    if (!row.module_data_json) continue;
+    try {
+      const data = JSON.parse(row.module_data_json) as unknown;
+      const nextData = ensureMessageIdsInModuleData(data);
+      if (JSON.stringify(data) !== JSON.stringify(nextData)) {
+        update.run(JSON.stringify(nextData), row.id);
+      }
+    } catch {
+      // Malformed JSON is handled by validation paths; skip migration here.
+    }
+  }
+  database.pragma("user_version = 31");
+}
+
 export function applyInitialSchema(database: SQLiteDatabase): void {
   database.exec(readFileSync(schemaPath, "utf8"));
   applyAdditiveV2Migration(database);
@@ -1905,6 +1963,7 @@ export function applyInitialSchema(database: SQLiteDatabase): void {
   applyAdditiveV28Migration(database);
   applyAdditiveV29Migration(database);
   applyAdditiveV30Migration(database);
+  applyAdditiveV31Migration(database);
   database.pragma("foreign_keys = ON");
 }
 

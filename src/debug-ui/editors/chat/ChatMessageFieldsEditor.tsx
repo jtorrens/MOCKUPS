@@ -1,6 +1,10 @@
-import { DeferredTextInput } from "../../editor-ui/DeferredTextInput.js";
-import { InspectorFieldRow } from "../../components/inspector/InspectorFieldRow.js";
 import type { JsonPath, JsonValue } from "../../components/json-editor/jsonEditorUtils.js";
+import { InspectorFieldRow } from "../../components/inspector/InspectorFieldRow.js";
+import { DeferredTextInput } from "../../editor-ui/DeferredTextInput.js";
+import {
+  ChatAnimationEditor,
+  type ChatAnimatableField,
+} from "./ChatAnimationEditor.js";
 import { ChatMessageMediaEditor } from "./ChatMessageMediaEditor.js";
 
 interface ActorOption {
@@ -27,6 +31,8 @@ interface ChatMessageFieldsEditorProps {
   statusText: string;
   deliveryStatus: string;
   textRevealMode: string;
+  animation: Record<string, JsonValue>;
+  timelineDurationFrames: number;
   mediaType: string;
   mediaFilePath: string;
   mediaDurationSeconds: number;
@@ -46,6 +52,7 @@ interface ChatMessageFieldsEditorProps {
   onStatusTextChange: (text: string) => void;
   onDeliveryStatusChange: (status: string) => void;
   onTextRevealModeChange: (mode: string) => void;
+  onAnimationChange: (animation: Record<string, JsonValue>) => void;
   onMediaTypeChange: (mediaType: string) => void;
   onMediaFilePathChange: (filePath: string) => void;
   onMediaDurationSecondsChange: (durationSeconds: number) => void;
@@ -53,6 +60,7 @@ interface ChatMessageFieldsEditorProps {
   onMediaPlayStartFrameChange: (playStartFrame: number) => void;
   onBrowseMedia: () => void;
   onMediaNumberFieldChange: (path: JsonPath, value: JsonValue) => void;
+  onAnimationFrameChange?: (frame: number) => void;
 }
 
 export function ChatMessageFieldsEditor({
@@ -67,6 +75,8 @@ export function ChatMessageFieldsEditor({
   statusText,
   deliveryStatus,
   textRevealMode,
+  animation,
+  timelineDurationFrames,
   mediaType,
   mediaFilePath,
   mediaDurationSeconds,
@@ -86,6 +96,7 @@ export function ChatMessageFieldsEditor({
   onStatusTextChange,
   onDeliveryStatusChange,
   onTextRevealModeChange,
+  onAnimationChange,
   onMediaTypeChange,
   onMediaFilePathChange,
   onMediaDurationSecondsChange,
@@ -93,9 +104,49 @@ export function ChatMessageFieldsEditor({
   onMediaPlayStartFrameChange,
   onBrowseMedia,
   onMediaNumberFieldChange,
+  onAnimationFrameChange,
 }: ChatMessageFieldsEditorProps) {
+  const animatableFields: ChatAnimatableField[] = [
+    {
+      key: "text",
+      label: "Message text",
+      valueType: "text",
+      value: text,
+      interpolationOptions: ["hold", "linear", "ease"],
+    },
+    {
+      key: "status.text",
+      label: "Status text",
+      valueType: "text",
+      value: statusText,
+      interpolationOptions: ["hold", "linear", "ease"],
+    },
+    {
+      key: "status.deliveryStatus",
+      label: "Delivery status",
+      valueType: "select",
+      value: deliveryStatus,
+      interpolationOptions: ["hold"],
+      selectOptions: [
+        { value: "none", label: "None" },
+        { value: "sent", label: "Sent" },
+        { value: "delivered", label: "Delivered" },
+        { value: "read", label: "Read" },
+        { value: "failed", label: "Failed" },
+      ],
+    },
+  ];
+
   return (
-    <div className="record-editor-content-fields">
+    <ChatAnimationEditor
+      animation={animation}
+      fields={animatableFields}
+      timelineDurationFrames={timelineDurationFrames}
+      onAnimationChange={onAnimationChange}
+      onAnimationFrameChange={onAnimationFrameChange}
+    >
+      {({ animationCard, fieldLabel }) => (
+        <div className="record-editor-content-fields">
       <InspectorFieldRow
         className="record-editor-content-field-row"
         label={<span>Type</span>}
@@ -196,28 +247,21 @@ export function ChatMessageFieldsEditor({
       />
       <InspectorFieldRow
         className="record-editor-content-field-row"
-        label={<span>Message text</span>}
+        label={fieldLabel("text")}
         control={
-          <DeferredTextInput
-            multiline
-            value={text}
-            onCommit={onTextChange}
-          />
+          <DeferredTextInput multiline value={text} onCommit={onTextChange} />
         }
       />
       <InspectorFieldRow
         className="record-editor-content-field-row"
-        label={<span>Status text</span>}
+        label={fieldLabel("status.text")}
         control={
-          <DeferredTextInput
-            value={statusText}
-            onCommit={onStatusTextChange}
-          />
+          <DeferredTextInput value={statusText} onCommit={onStatusTextChange} />
         }
       />
       <InspectorFieldRow
         className="record-editor-content-field-row"
-        label={<span>Delivery status</span>}
+        label={fieldLabel("status.deliveryStatus")}
         control={
           <select
             className="json-value-control"
@@ -265,6 +309,9 @@ export function ChatMessageFieldsEditor({
           </select>
         }
       />
-    </div>
+      {animationCard}
+        </div>
+      )}
+    </ChatAnimationEditor>
   );
 }

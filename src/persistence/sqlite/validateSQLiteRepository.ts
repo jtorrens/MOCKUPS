@@ -202,8 +202,8 @@ try {
     "palette_colors must contain the neutral-color marker column",
   );
   assert(
-    Number(database.pragma("user_version", { simple: true })) === 30,
-    "SQLite schema version must be 30",
+    Number(database.pragma("user_version", { simple: true })) === 31,
+    "SQLite schema version must be 31",
   );
 
   database.exec("BEGIN");
@@ -244,7 +244,7 @@ try {
   console.log("✓ schema and seed validated in isolated in-memory SQLite");
   console.log("✓ all required domain tables exist");
   console.log("✓ module_theme_configs exists and seeds core.chat tokens");
-  console.log("✓ screen_instances references, module_instances content/behavior/animation, component classes, production font families, palette-neutral colors, screen durations, and semantic icon/border colors exist in schema v30");
+  console.log("✓ screen_instances references, module_instances content/behavior/animation, component classes, production font families, palette-neutral colors, screen durations, semantic icon/border colors, and stable message ids exist in schema v31");
   console.log("✓ SQLiteRepository resolved ChatScreen props with Zod");
   console.log("✓ SQLite and in-memory chat props are equivalent");
   console.log("✓ Chat module instance JSON and actor-based output validated");

@@ -15,7 +15,9 @@ import {
 import { titleForRecord } from "./RecordFieldRenderer.js";
 import type { ScreenInstanceTab } from "./editorTabs.js";
 import {
+  chatContentGroupHasAnimation,
   chatContentGroupHasWarning,
+  chatContentGroupSupportsAnimation,
   defaultGroupValue,
 } from "./chat/chatContentModel.js";
 import { ChatContentGroupEditor } from "./chat/ChatContentGroupEditor.js";
@@ -43,6 +45,7 @@ interface ModuleInstanceRecordEditorProps {
   setDrafts: (drafts: Record<string, string>) => void;
   setActiveTab: (tab: ScreenInstanceTab) => void;
   setActiveContentTab: (tab: string) => void;
+  onPreviewRelativeFrameChange?: (frame: number) => void;
 }
 
 function stringifyJson(value: unknown): string {
@@ -105,9 +108,17 @@ export function ModuleInstanceRecordEditor({
   setDrafts,
   setActiveTab,
   setActiveContentTab,
+  onPreviewRelativeFrameChange,
 }: ModuleInstanceRecordEditorProps) {
   const [openContentItems, setOpenContentItems] = useState<Record<string, boolean>>(
     {},
+  );
+  const screenInstance = records.screen_instances?.find(
+    (item) => item.id === record.screen_instance_id,
+  );
+  const screenDurationFrames = Math.max(
+    1,
+    Number(screenInstance?.duration_frames ?? screenInstance?.durationFrames ?? 1),
   );
 
   useEffect(() => {
@@ -161,6 +172,7 @@ export function ModuleInstanceRecordEditor({
         hints={hints}
         mediaRoot={mediaRoot}
         productionId={productionId}
+        screenDurationFrames={screenDurationFrames}
         normalizeMediaPath={(filePath) => relativePathFromRoot(filePath, mediaRoot)}
         onBrowseMedia={async () => {
           const [filePath] =
@@ -169,6 +181,7 @@ export function ModuleInstanceRecordEditor({
         }}
         onGroupValueChange={updateGroupValue}
         onToggleItem={toggleExclusiveContentItem}
+        onPreviewRelativeFrameChange={onPreviewRelativeFrameChange}
         openItems={openContentItems}
         recordId={record.id}
       />
@@ -224,6 +237,16 @@ export function ModuleInstanceRecordEditor({
           group={group}
           activeGroup={activeGroup}
           warning={warning}
+          animationState={
+            chatContentGroupSupportsAnimation(group)
+              ? chatContentGroupHasAnimation({
+                  group,
+                  contentRoot: parsedObject(drafts.content_json ?? "{}"),
+                })
+                ? "active"
+                : "inactive"
+              : "unsupported"
+          }
           onToggle={onToggle}
         >
           {children}
