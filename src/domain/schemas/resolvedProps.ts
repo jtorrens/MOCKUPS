@@ -109,7 +109,6 @@ export const ResolvedChatScreenPropsSchema = z.object({
     messages: JsonObjectSchema,
     typography: JsonObjectSchema.optional(),
     chatBubbles: JsonObjectSchema,
-    avatars: JsonObjectSchema,
     components: JsonObjectSchema.optional(),
     cursor: JsonObjectSchema,
     shadows: JsonObjectSchema.optional(),

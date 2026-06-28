@@ -134,7 +134,6 @@ export function normalizeCoreChatModuleTokensForEditor(
   const chatBubbleMedia = isJsonObject(chatBubbles.media)
     ? chatBubbles.media
     : {};
-  const avatars = isJsonObject(root.avatars) ? root.avatars : {};
   const light = modeRoot(root, "light");
   const dark = modeRoot(root, "dark");
   const lightMedia = isJsonObject(light.chatBubbles.media)
@@ -192,18 +191,12 @@ export function normalizeCoreChatModuleTokensForEditor(
   };
   root.header = {
     ...stripAvatarComponentKeys(header),
-    avatarSize: numberValue(
-      header.avatarSize,
-      numberValue(avatars.headerSize, 56),
-    ),
+    avatarSize: numberValue(header.avatarSize, 56),
     subtitleBottomPadding: numberValue(header.subtitleBottomPadding, 10),
-    elementGap: numberValue(
-      header.elementGap,
-      numberValue(avatars.gap, 8),
-    ),
+    elementGap: numberValue(header.elementGap, 8),
     sidePadding: numberValue(
       header.sidePadding,
-      numberValue(header.elementGap, numberValue(avatars.gap, 8)),
+      numberValue(header.elementGap, 8),
     ),
     iconSize: numberValue(header.iconSize, 24),
     leftIconTokens:
@@ -217,14 +210,8 @@ export function normalizeCoreChatModuleTokensForEditor(
   };
   root.chatBubbles = {
     ...chatBubbles,
-    avatarSize: numberValue(
-      chatBubbles.avatarSize,
-      numberValue(avatars.defaultSize, 32),
-    ),
-    avatarGap: numberValue(
-      chatBubbles.avatarGap,
-      numberValue(avatars.gap, 8),
-    ),
+    avatarSize: numberValue(chatBubbles.avatarSize, 32),
+    avatarGap: numberValue(chatBubbles.avatarGap, 8),
     shadowEnabled: chatBubbles.shadowEnabled === true,
     contentMetaGap: numberValue(chatBubbles.contentMetaGap, 4),
     messageLabelUseActorColor:

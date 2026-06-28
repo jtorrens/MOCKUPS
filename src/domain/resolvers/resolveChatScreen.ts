@@ -87,7 +87,6 @@ const ChatThemeSchema = z.object({
   messages: z.record(z.string(), z.unknown()),
   typography: z.record(z.string(), z.unknown()).optional(),
   chatBubbles: z.record(z.string(), z.unknown()),
-  avatars: z.record(z.string(), z.unknown()),
   components: z.record(z.string(), z.unknown()).optional(),
   componentOverrides: z.record(z.string(), z.unknown()).optional(),
   cursor: z.record(z.string(), z.unknown()),
@@ -1403,11 +1402,10 @@ function normalizeChatVisualTokenGroups(
     ? chatBubbles.media
     : {};
   const { shadow: _chatBubbleShadow, ...visibleChatBubbles } = chatBubbles;
-  const avatars = isObject(tokens.avatars) ? tokens.avatars : {};
   const shadows = isObject(tokens.shadows) ? tokens.shadows : {};
   const headerAvatarSize = numberValue(
     header.avatarSize,
-    numberValue(avatars.headerSize, 56),
+    56,
   );
   const headerLeftIconTokens =
     typeof header.leftIconTokens === "string" && header.leftIconTokens.trim()
@@ -1419,11 +1417,11 @@ function normalizeChatVisualTokenGroups(
       : "media_camera, phone_call";
   const bubbleAvatarSize = numberValue(
     chatBubbles.avatarSize,
-    numberValue(avatars.defaultSize, 32),
+    32,
   );
   const bubbleAvatarGap = numberValue(
     chatBubbles.avatarGap,
-    numberValue(avatars.gap, 8),
+    8,
   );
   const systemBackground =
     typeof chatBubbles.systemBackground === "string"
@@ -1441,10 +1439,10 @@ function normalizeChatVisualTokenGroups(
       ...header,
       avatarSize: headerAvatarSize,
       subtitleBottomPadding: numberValue(header.subtitleBottomPadding, 10),
-      elementGap: numberValue(header.elementGap, numberValue(avatars.gap, 8)),
+      elementGap: numberValue(header.elementGap, 8),
       sidePadding: numberValue(
         header.sidePadding,
-        numberValue(header.elementGap, numberValue(avatars.gap, 8)),
+        numberValue(header.elementGap, 8),
       ),
       leftIconTokens: headerLeftIconTokens,
       rightIconTokens: headerRightIconTokens,
@@ -1475,12 +1473,6 @@ function normalizeChatVisualTokenGroups(
       },
       systemBackground,
       systemText,
-    },
-    avatars: {
-      ...avatars,
-      defaultSize: bubbleAvatarSize,
-      gap: bubbleAvatarGap,
-      headerSize: headerAvatarSize,
     },
     shadows: {
       ...shadows,
@@ -1570,9 +1562,6 @@ const DESIGN_UNIT_TOKEN_PATHS = [
   ["shadows", "notification", "offsetX"],
   ["shadows", "notification", "offsetY"],
   ["shadows", "notification", "blur"],
-  ["avatars", "defaultSize"],
-  ["avatars", "headerSize"],
-  ["avatars", "gap"],
   ["radii", "bubble"],
   ["cursor", "width"],
 ] as const;

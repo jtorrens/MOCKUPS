@@ -84,10 +84,6 @@ const MessageThemeSchema = z.object({
   radii: z.object({
     bubble: z.number().min(0),
   }),
-  avatars: z.object({
-    defaultSize: z.number().min(0),
-    gap: z.number().min(0),
-  }),
 });
 
 export interface ResolvedChatActor {
@@ -293,7 +289,7 @@ export function resolveMessageBubble({
           ? themeTokens.surfaceRelief.default
           : {},
       avatarSize:
-        themeTokens.chatBubbles.avatarSize ?? themeTokens.avatars.defaultSize,
+        themeTokens.chatBubbles.avatarSize ?? 32,
       ...message.styleOverride,
     },
     layout: {
@@ -307,7 +303,7 @@ export function resolveMessageBubble({
           : "left",
       showTail: direction !== "system",
       groupPosition: "single",
-      avatarGap: themeTokens.chatBubbles.avatarGap ?? themeTokens.avatars.gap,
+      avatarGap: themeTokens.chatBubbles.avatarGap ?? 8,
       ...message.layoutOverride,
     },
     timing: {
