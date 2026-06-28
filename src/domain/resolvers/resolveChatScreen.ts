@@ -1925,28 +1925,12 @@ function stripModuleThemeSystemOwnedTokens(
 ): Record<string, unknown> {
   const next: Record<string, unknown> = { ...tokens };
   delete next.cursor;
-  if (isObject(next.header)) {
-    const header = { ...(next.header as Record<string, unknown>) };
-    delete header.avatarCornerRadius;
-    delete header.avatarBorderWidth;
-    delete header.avatarBorderColor;
-    delete header.avatarShadow;
-    next.header = header;
-  }
   if (isObject(next.modes)) {
     const modes = { ...(next.modes as Record<string, unknown>) };
     for (const mode of ["light", "dark"] as const) {
       if (isObject(modes[mode])) {
         const modeRoot = { ...(modes[mode] as Record<string, unknown>) };
         delete modeRoot.cursor;
-        if (isObject(modeRoot.header)) {
-          const header = { ...(modeRoot.header as Record<string, unknown>) };
-          delete header.avatarCornerRadius;
-          delete header.avatarBorderWidth;
-          delete header.avatarBorderColor;
-          delete header.avatarShadow;
-          modeRoot.header = header;
-        }
         modes[mode] = modeRoot;
       }
     }
