@@ -1,6 +1,8 @@
 import { STANDARD_IOS_KEYBOARD_LAYOUT } from "../../keyboards/standardKeyboardLayout.js";
-import type { JsonFieldBinding } from "../../value-system/JsonFieldBinding.js";
-import { defineFields } from "../../value-system/FieldDefinition.js";
+import {
+  defineFields,
+  type JsonFieldBinding,
+} from "../../value-system/index.js";
 
 export const CHAT_KEYBOARD_FIELDS = defineFields({
   language: {

@@ -1,5 +1,7 @@
-import type { JsonFieldBinding } from "../../value-system/JsonFieldBinding.js";
-import { defineFields } from "../../value-system/FieldDefinition.js";
+import {
+  defineFields,
+  type JsonFieldBinding,
+} from "../../value-system/index.js";
 
 export const CHAT_TEXT_INPUT_BAR_FIELDS = defineFields({
   cursorWidth: {

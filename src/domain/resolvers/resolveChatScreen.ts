@@ -2,8 +2,8 @@ import { z } from "zod";
 import {
   CHAT_KEYBOARD_TOKEN_BINDINGS,
   CHAT_TEXT_INPUT_BAR_TOKEN_BINDINGS,
-  CHAT_TYPOGRAPHY_GROUPS,
   CHAT_TYPOGRAPHY_TOKEN_BINDINGS,
+  stripChatModuleTypographyFontIdentity,
 } from "../fields/chatFields.js";
 import {
   parseKeyboardRows,
@@ -17,7 +17,7 @@ import {
 import {
   getJsonValueAtPath,
   resolveJsonFieldBindingGroup,
-} from "../value-system/JsonFieldBinding.js";
+} from "../value-system/index.js";
 import type { DomainRepository } from "../repository/types.js";
 import {
   ChatModuleConfigSchema,
@@ -1481,37 +1481,13 @@ export function moduleTypographyDefaultsFromFonts(
   };
 }
 
-function stripModuleTypographyFontIdentity(
-  tokens: Record<string, unknown>,
-): Record<string, unknown> {
-  const typography = isObject(tokens.typography) ? tokens.typography : undefined;
-  if (!typography) return tokens;
-
-  const nextTypography: Record<string, unknown> = { ...typography };
-  for (const group of CHAT_TYPOGRAPHY_GROUPS) {
-    const entry = nextTypography[group];
-    if (!isObject(entry)) continue;
-    const nextEntry = { ...entry };
-    delete nextEntry.fontFamily;
-    delete nextEntry.family;
-    delete nextEntry.productionFontId;
-    delete nextEntry.source;
-    nextTypography[group] = nextEntry;
-  }
-
-  return {
-    ...tokens,
-    typography: nextTypography,
-  };
-}
-
 function resolveChatTypographyTokens(
   genericTokens: Record<string, unknown>,
   moduleDefaultsFromGenericTokens: Record<string, unknown>,
   moduleThemeTokens: Record<string, unknown>,
 ): Record<string, unknown> {
   return resolveJsonFieldBindingGroup(CHAT_TYPOGRAPHY_TOKEN_BINDINGS, [
-    stripModuleTypographyFontIdentity(moduleThemeTokens),
+    stripChatModuleTypographyFontIdentity(moduleThemeTokens),
     moduleDefaultsFromGenericTokens,
     genericTokens,
   ]);
@@ -2447,7 +2423,7 @@ export function resolveChatScreen({
   const moduleDefaultsFromGenericTokens =
     moduleTypographyDefaultsFromFonts(genericTokens);
   const typographySafeModuleThemeTokens =
-    stripModuleTypographyFontIdentity(moduleThemeTokens);
+    stripChatModuleTypographyFontIdentity(moduleThemeTokens);
   const baseInheritedModuleTokens = mergeTokenObjects(
     mergeTokenObjects(genericTokens, moduleDefaultsFromGenericTokens),
     typographySafeModuleThemeTokens,
