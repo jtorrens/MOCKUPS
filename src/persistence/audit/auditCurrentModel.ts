@@ -464,6 +464,32 @@ function auditDebugColorSentinel(database: SQLiteDatabase, issues: AuditIssue[])
   }
 }
 
+function auditThemeNotificationColors(database: SQLiteDatabase, issues: AuditIssue[]) {
+  const themeRows = database
+    .prepare("SELECT id, tokens_json FROM themes ORDER BY id")
+    .all() as { id: string; tokens_json: string }[];
+  for (const row of themeRows) {
+    try {
+      const tokens = JSON.parse(row.tokens_json) as Record<string, unknown>;
+      const rootNotifications = isObject(tokens.notifications)
+        ? tokens.notifications
+        : {};
+      for (const legacyField of ["background", "titleColor", "bodyColor"]) {
+        if (legacyField in rootNotifications) {
+          add(
+            issues,
+            "fail",
+            `themes.${row.id}.notifications.${legacyField}`,
+            "Notification colors are mode-specific and must live under modes.light/dark.notifications.",
+          );
+        }
+      }
+    } catch {
+      add(issues, "fail", `themes.${row.id}.notifications`, "Theme tokens JSON is invalid.");
+    }
+  }
+}
+
 function auditForeignKeys(database: SQLiteDatabase, issues: AuditIssue[]) {
   const failures = database.pragma("foreign_key_check") as unknown[];
   if (failures.length === 0) {
@@ -503,6 +529,9 @@ function auditDatabase(database: SQLiteDatabase, label: string): AuditIssue[] {
   auditForeignKeys(database, issues);
   if (tables.has("palette_colors") && tables.has("themes")) {
     auditDebugColorSentinel(database, issues);
+  }
+  if (tables.has("themes")) {
+    auditThemeNotificationColors(database, issues);
   }
   auditLegacyTables(database, tables, issues);
   if (tables.has("module_theme_configs")) {

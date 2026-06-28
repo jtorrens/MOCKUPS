@@ -159,6 +159,7 @@ export function normalizedThemeTokenRoot({
   family: string;
 }) {
   const semanticColorDefaults = {
+    "debug.red": "debug_red",
     "icons.primary": "gray_000",
     "icons.secondary": "gray_040",
     "icons.accent": "blue",
@@ -175,15 +176,9 @@ export function normalizedThemeTokenRoot({
   const darkMode = isJsonObject(modes.dark)
     ? (modes.dark as Record<string, JsonValue>)
     : {};
-  const legacyNotifications = isJsonObject(root.notifications as JsonValue)
+  const rootNotifications = isJsonObject(root.notifications as JsonValue)
     ? (root.notifications as Record<string, JsonValue>)
     : {};
-  const visibleNotifications = {
-    ...legacyNotifications,
-  };
-  delete visibleNotifications.background;
-  delete visibleNotifications.titleColor;
-  delete visibleNotifications.bodyColor;
   const lightNotifications = isJsonObject(lightMode.notifications)
     ? (lightMode.notifications as Record<string, JsonValue>)
     : {};
@@ -211,7 +206,7 @@ export function normalizedThemeTokenRoot({
       ...semanticColorDefaults,
       ...rootColors,
     },
-    notifications: visibleNotifications,
+    notifications: rootNotifications,
     statusBar: normalizeThemeChromeGroup("statusBar", family, root.statusBar),
     navigationBar: normalizeThemeChromeGroup(
       "navigationBar",
@@ -251,15 +246,12 @@ export function normalizedThemeTokenRoot({
         notifications: {
           background:
             lightNotifications.background ??
-            legacyNotifications.background ??
             "rgba(245,245,247,0.92)",
           titleColor:
             lightNotifications.titleColor ??
-            legacyNotifications.titleColor ??
             "#000000",
           bodyColor:
             lightNotifications.bodyColor ??
-            legacyNotifications.bodyColor ??
             "#3A3A3C",
         },
       },
@@ -293,15 +285,12 @@ export function normalizedThemeTokenRoot({
         notifications: {
           background:
             darkNotifications.background ??
-            legacyNotifications.background ??
             "rgba(44,44,46,0.92)",
           titleColor:
             darkNotifications.titleColor ??
-            legacyNotifications.titleColor ??
             "#FFFFFF",
           bodyColor:
             darkNotifications.bodyColor ??
-            legacyNotifications.bodyColor ??
             "#D1D1D6",
         },
       },
