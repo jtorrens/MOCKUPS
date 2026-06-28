@@ -1391,18 +1391,7 @@ export function resolveModuleThemeTokens(
   tokens: Record<string, unknown>,
   themeMode: "light" | "dark",
 ): Record<string, unknown> {
-  const merged = mergeTokenObjects(tokens, resolveThemeModeTokens(tokens, themeMode));
-  const rootChatBubbles = isObject(tokens.chatBubbles) ? tokens.chatBubbles : {};
-  if (typeof rootChatBubbles.contentMetaGap === "number") {
-    const mergedChatBubbles = isObject(merged.chatBubbles)
-      ? merged.chatBubbles
-      : {};
-    merged.chatBubbles = {
-      ...mergedChatBubbles,
-      contentMetaGap: rootChatBubbles.contentMetaGap,
-    };
-  }
-  return merged;
+  return mergeTokenObjects(tokens, resolveThemeModeTokens(tokens, themeMode));
 }
 
 function normalizeChatVisualTokenGroups(
