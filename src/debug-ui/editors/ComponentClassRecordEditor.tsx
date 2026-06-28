@@ -12,6 +12,7 @@ import {
 import {
   InspectorFieldRow,
 } from "../components/inspector/InspectorFieldRow.js";
+import type { ProductionFontCatalog } from "../components/json-editor/productionFonts.js";
 import { DeferredTextInput } from "../editor-ui/DeferredTextInput.js";
 import { EditorHeader } from "../editor-ui/EditorHeader.js";
 import { EditorSectionButton } from "../editor-ui/EditorSectionButton.js";
@@ -28,6 +29,7 @@ interface ComponentClassRecordEditorProps {
   activeTab: ComponentClassTab;
   drafts: Record<string, string>;
   paletteCatalog?: PaletteColorCatalog;
+  productionFontCatalog?: ProductionFontCatalog;
   renderField: (field: AppFieldDefinition) => ReactNode;
   setActiveTab: (tab: ComponentClassTab) => void;
   setJsonDraft: (column: string, value: JsonValue) => void;
@@ -43,6 +45,19 @@ function booleanValue(value: unknown, fallback = false) {
 
 function stringValue(value: unknown, fallback = "") {
   return typeof value === "string" ? value : fallback;
+}
+
+function fontWeightValue(value: unknown, fallback = "Regular") {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+  if (typeof value === "string" && value) return value;
+  return fallback;
+}
+
+function jsonFontWeightValue(value: string): JsonValue {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && value.trim() !== "" ? parsed : value;
 }
 
 function setTokenValue(
@@ -208,6 +223,7 @@ export function ComponentClassRecordEditor({
   activeTab,
   drafts,
   renderField,
+  productionFontCatalog,
   setActiveTab,
   setJsonDraft,
 }: ComponentClassRecordEditorProps) {
@@ -277,6 +293,100 @@ export function ComponentClassRecordEditor({
             updateTokens(setTokenValue(tokens, key, nextValue)),
         })}
       />
+    );
+  }
+
+  function officialFontFamilyValue(fallback = "Oswald") {
+    const selected = stringValue(tokens.fontFamily, "");
+    if (selected) return selected;
+    return productionFontCatalog?.families[0] ?? fallback;
+  }
+
+  function officialFontWeightValue(family: string, fallback = "Regular") {
+    const selected = fontWeightValue(tokens.fontWeight, "");
+    if (selected) return selected;
+    return productionFontCatalog?.stylesByFamily.get(family)?.[0] ?? fallback;
+  }
+
+  function tokenOfficialFontRows() {
+    const approvedFamilies = productionFontCatalog?.families ?? [];
+    const family = officialFontFamilyValue();
+    const familyOptions = approvedFamilies.includes(family)
+      ? approvedFamilies
+      : family
+        ? [family, ...approvedFamilies]
+        : approvedFamilies;
+    const approvedWeights =
+      productionFontCatalog?.stylesByFamily.get(family) ?? [];
+    const weight = officialFontWeightValue(family);
+    const weightOptions = approvedWeights.includes(weight)
+      ? approvedWeights
+      : weight
+        ? [weight, ...approvedWeights]
+        : approvedWeights;
+
+    return (
+      <>
+        <InspectorFieldRow
+          label="Font family"
+          control={
+            <select
+              className="json-value-control"
+              value={family}
+              disabled={!familyOptions.length}
+              onChange={(event) => {
+                const nextFamily = event.currentTarget.value;
+                const nextWeight =
+                  productionFontCatalog?.stylesByFamily.get(nextFamily)?.[0] ??
+                  "Regular";
+                updateTokens({
+                  ...setTokenValue(tokens, "fontFamily", nextFamily),
+                  fontWeight: nextWeight,
+                });
+              }}
+            >
+              {familyOptions.length ? (
+                familyOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))
+              ) : (
+                <option value="">No production fonts</option>
+              )}
+            </select>
+          }
+        />
+        <InspectorFieldRow
+          label="Font weight"
+          control={
+            <select
+              className="json-value-control"
+              value={weight}
+              disabled={!weightOptions.length}
+              onChange={(event) =>
+                updateTokens(
+                  setTokenValue(
+                    tokens,
+                    "fontWeight",
+                    jsonFontWeightValue(event.currentTarget.value),
+                  ),
+                )
+              }
+            >
+              {weightOptions.length ? (
+                weightOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))
+              ) : (
+                <option value="">No styles</option>
+              )}
+            </select>
+          }
+        />
+      </>
     );
   }
 
@@ -819,11 +929,34 @@ export function ComponentClassRecordEditor({
                         "messageGapToTextInput",
                         10,
                       )}
+                      {tokenOfficialFontRows()}
                     </>,
                   )}
                   {componentAccordion(
                     "keys",
                     <>
+                      <InspectorFieldRow
+                        label="Pressed effect"
+                        control={
+                          <select
+                            className="json-value-control"
+                            value={stringValue(tokens.pressedEffect, "popover")}
+                            onChange={(event) =>
+                              updateTokens(
+                                setTokenValue(
+                                  tokens,
+                                  "pressedEffect",
+                                  event.currentTarget.value,
+                                ),
+                              )
+                            }
+                          >
+                            <option value="popover">Popover</option>
+                            <option value="inPlace">In place</option>
+                            <option value="none">None</option>
+                          </select>
+                        }
+                      />
                       {tokenNumberRow("Key corner radius", "keyRadius", 7)}
                       {tokenCheckboxRow(
                         "Key shadow",

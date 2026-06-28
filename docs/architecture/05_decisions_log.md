@@ -807,3 +807,35 @@ use a compact production-palette swatch selector and store the selected palette
 token. Swatches are visually contiguous to make small color differences easier
 to compare. Fields that still require transparency keep the same palette
 selection UI with an enabled `0–1` alpha slider.
+
+## D058 — Existing UI concepts are mandatory reuse points
+
+Status: accepted
+
+The debug editor must not introduce one-off visual formats for concepts that
+already exist. A concept such as inherited/override fields, restore actions,
+accordion cards, icon buttons, modal actions, selectors, color pickers, file
+pickers, table rows, or preview navigation has exactly one approved visual
+language unless we explicitly decide to replace it everywhere.
+
+Strict implementation rule:
+- Reuse the existing component, class, and token pattern for the concept.
+- Do not create a new CSS class, markup structure, or local format when an
+  equivalent concept already exists.
+- If the existing component does not fit, stop and ask for confirmation before
+  creating a new primitive or format.
+- If a new primitive is approved, document the concept it owns, the shared
+  tokens it consumes, and where it is allowed to be used.
+
+For inherited/override values, the required format is the established override
+editor: inherited value inside the field using inherited/placeholder styling,
+normal editable value when changed, amber override state, and the standard
+restore button.
+
+For bugs described as “does not update”, the required debug procedure is to
+trace the full chain before declaring a fix complete:
+
+`editor draft → autosave/API → SQLite row → resolver → resolved props/renderable
+payload → preview/renderer output`
+
+Verifying only one layer, such as the DB or editable payload, is not sufficient.

@@ -17,6 +17,7 @@ import { StatusBarRecordEditor } from "./StatusBarRecordEditor.js";
 import { ThemeRecordEditor } from "./ThemeRecordEditor.js";
 import { shotHasFpsOverride } from "./ShotFields.js";
 import type { PaletteColorCatalog } from "../components/json-editor/paletteColors.js";
+import type { ProductionFontCatalog } from "../components/json-editor/productionFonts.js";
 import type { createJsonGroupDrafts } from "./jsonGroupDrafts.js";
 import type { createRecordEditorRenderServices } from "./recordEditorRenderServices.js";
 import type { useRecordEditorTabs } from "./useRecordEditorTabs.js";
@@ -37,6 +38,7 @@ interface RecordEditorDispatcherProps {
   jsonGroupDrafts: ReturnType<typeof createJsonGroupDrafts>;
   mediaRoot: string;
   paletteCatalog?: PaletteColorCatalog;
+  productionFontCatalog?: ProductionFontCatalog;
   productionId: string;
   nativeBridge: NativeBridge | undefined;
   relativePathFromRoot: (filePath: string, rootPath: string) => string;
@@ -58,6 +60,7 @@ export function RecordEditorDispatcher({
   jsonGroupDrafts,
   mediaRoot,
   paletteCatalog,
+  productionFontCatalog,
   productionId,
   nativeBridge,
   relativePathFromRoot,
@@ -189,6 +192,7 @@ export function RecordEditorDispatcher({
         activeTab={tabs.genericTab}
         drafts={drafts}
         paletteCatalog={paletteCatalog}
+        productionFontCatalog={productionFontCatalog}
         renderField={renderField}
         setActiveTab={tabs.setGenericTab}
         setJsonDraft={setJsonDraft}

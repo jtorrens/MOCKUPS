@@ -1,5 +1,6 @@
 import type { ResolvedChatScreenProps } from "../../../domain/schemas/index.js";
 import {
+  readFontWeight,
   readNumber,
   readObject,
   readString,
@@ -55,6 +56,7 @@ export const KeyboardModule: VisualModule<KeyboardModuleInput> = {
     const rowGap = readNumber(layout, "rowGap", 8);
     const keyGap = readNumber(layout, "keyGap", 6);
     const keyHeight = readNumber(layout, "keyHeight", 42);
+    const keyPadding = readNumber(layout, "keyPadding", 6);
     const keyRadius = readNumber(layout, "keyRadius", 7);
     const fontSize = readNumber(layout, "fontSize", 18);
     const emojiFontScale = readNumber(layout, "emojiFontScale", 0.75);
@@ -66,11 +68,32 @@ export const KeyboardModule: VisualModule<KeyboardModuleInput> = {
       "specialKeyBackground",
       "#AEB4BE",
     );
+    const pressedKeyBackground = readString(
+      keyboardTokens,
+      "pressedKeyBackground",
+      specialKeyBackground,
+    );
     const textColor = readString(
       keyboardTokens,
       "text",
       readString(colors, "textPrimary", "#000000"),
     );
+    const fontFamily = readString(
+      asRecord(input.keyboard),
+      "fontFamily",
+      readString(fonts, "family", "system-ui"),
+    );
+    const fontWeight = readFontWeight(
+      asRecord(input.keyboard),
+      "fontWeight",
+      "Regular",
+    );
+    const fontStyle =
+      typeof fontWeight === "string" && /italic/i.test(fontWeight)
+        ? "italic"
+        : "normal";
+    const specialKeyFontSize = fontSize * 0.65;
+    const specialKeyFontWeight = 200;
     const components = readObject(input.tokens, "components");
     const buttonIconComponent = readObject(components, "buttonIcon");
     const buttonIcon = {
@@ -93,6 +116,11 @@ export const KeyboardModule: VisualModule<KeyboardModuleInput> = {
       asRecord(input.tokens.surfaceRelief).default,
     );
     const pressedKey = readString(asRecord(input.keyboard), "pressedKey", "");
+    const pressedEffect = readString(
+      asRecord(input.keyboard),
+      "pressedEffect",
+      "popover",
+    );
     const pressedKeyTarget = pressedKey
       ? keyboardRows.reduce<{ rowIndex: number; keyIndex: number } | undefined>(
           (target, row, rowIndex) =>
@@ -124,7 +152,9 @@ export const KeyboardModule: VisualModule<KeyboardModuleInput> = {
       style: {
         background,
         color: textColor,
-        fontFamily: readString(fonts, "family", "system-ui"),
+        fontFamily,
+        fontStyle,
+        fontWeight,
         fontSize,
         lineHeight: fontSize,
         paddingTop: topPadding,
@@ -142,6 +172,7 @@ export const KeyboardModule: VisualModule<KeyboardModuleInput> = {
           style: {
             gap: keyGap,
             keyHeight,
+            keyPadding,
           },
           children: row.map((rawKey, keyIndex) => {
             const key = asRecord(rawKey);
@@ -151,11 +182,19 @@ export const KeyboardModule: VisualModule<KeyboardModuleInput> = {
             const pressed =
               pressedKeyTarget?.rowIndex === rowIndex &&
               pressedKeyTarget.keyIndex === keyIndex;
-            const keyFontSize =
+            const isEmojiKey =
               kind === "emoji" ||
-              (kind === "character" && /\p{Extended_Pictographic}/u.test(label))
+              (kind === "character" && /\p{Extended_Pictographic}/u.test(label));
+            const keyFontSize =
+              isEmojiKey
                 ? fontSize * emojiFontScale
-                : fontSize;
+                : kind === "character" || kind === "space"
+                  ? fontSize
+                  : specialKeyFontSize;
+            const keyFontWeight =
+              kind === "character" || kind === "space" || isEmojiKey
+                ? fontWeight
+                : specialKeyFontWeight;
             return {
               id: `keyboard:row:${rowIndex}:key:${id}`,
               type: "keyboard_key",
@@ -164,14 +203,21 @@ export const KeyboardModule: VisualModule<KeyboardModuleInput> = {
               text: label,
               style: {
                 background:
-                  kind === "character" || kind === "space"
+                  pressed && pressedEffect === "inPlace"
+                    ? pressedKeyBackground
+                    : kind === "character" || kind === "space"
                     ? keyBackground
                     : specialKeyBackground,
                 color: textColor,
                 borderRadius: keyRadius,
                 fontSize: keyFontSize,
+                fontWeight: keyFontWeight,
+                keyPadding,
+                isEmojiKey,
                 lineHeight: keyFontSize,
                 weight: readNumber(key, "weight", 1),
+                pressedTransformScale:
+                  pressed && pressedEffect === "inPlace" ? 0.9 : undefined,
                 shadow: keyShadowEnabled
                   ? {
                       color: "rgba(0,0,0,0.18)",
@@ -188,9 +234,10 @@ export const KeyboardModule: VisualModule<KeyboardModuleInput> = {
                 id,
                 kind,
                 pressed,
+                pressedEffect,
               },
               children:
-                pressed && label
+                pressed && label && pressedEffect === "popover"
                   ? [
                       {
                         id: `keyboard:row:${rowIndex}:key:${id}:popover`,
@@ -210,9 +257,10 @@ export const KeyboardModule: VisualModule<KeyboardModuleInput> = {
                           ),
                           color: textColor,
                           borderRadius: keyRadius * 1.15,
-                          fontSize: fontSize * 1.28,
-                          lineHeight: fontSize * 1.28,
-                          widthRatio: 0.86,
+                          fontSize: keyFontSize,
+                          fontWeight: keyFontWeight,
+                          lineHeight: keyFontSize,
+                          widthRatio: 1,
                         },
                       },
                     ]

@@ -830,9 +830,13 @@ export function createExampleDataset(): RepositoryDataset {
       schemaVersion: 1,
       componentType: "keyboard",
       language: "es",
+      fontFamily: "Oswald",
+      fontWeight: "Regular",
       pushDurationFrames: 8,
       messageGapToTextInput: 10,
+      pressedEffect: "popover",
       keyRadius: 7,
+      keyPadding: 6,
       keyShadowEnabled: true,
       surfaceReliefEnabled: true,
       bottomItems: [

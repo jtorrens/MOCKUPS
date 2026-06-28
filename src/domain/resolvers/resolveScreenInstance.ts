@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { DomainRepository } from "../repository/types.js";
 import type {
+  DeviceState,
   JsonObject,
   ResolvedChatScreenProps,
   ScreenInstance,
@@ -57,6 +58,34 @@ function resolveLightweightDataReference(
     type: reference.type,
     notification,
     app,
+  };
+}
+
+function resolveDeviceStateForScreenInstance(
+  repository: DomainRepository,
+  screenInstance: ScreenInstance,
+  productionId: string,
+  deviceId: string,
+): DeviceState | undefined {
+  const inherited = screenInstance.device_state_id
+    ? requireRecord(
+        repository.getDeviceState(screenInstance.device_state_id),
+        "DeviceState",
+        screenInstance.device_state_id,
+      )
+    : undefined;
+  if (!screenInstance.device_state_json) {
+    return inherited;
+  }
+  return {
+    id: inherited?.id ?? `${screenInstance.id}:device_state`,
+    production_id: inherited?.production_id ?? productionId,
+    device_id: inherited?.device_id ?? deviceId,
+    name: inherited?.name ?? "Screen instance device state",
+    state_json: {
+      ...(inherited?.state_json ?? {}),
+      ...screenInstance.device_state_json,
+    },
   };
 }
 
@@ -117,21 +146,12 @@ export function resolveScreenInstance({
     deviceId,
   );
   const theme = requireRecord(repository.getTheme(themeId), "Theme", themeId);
-  const deviceState = screenInstance.device_state_json
-    ? {
-        id: `${screenInstance.id}:device_state`,
-        production_id: ownerActor.production_id,
-        device_id: device.id,
-        name: "Screen instance device state",
-        state_json: screenInstance.device_state_json,
-      }
-    : screenInstance.device_state_id
-      ? requireRecord(
-          repository.getDeviceState(screenInstance.device_state_id),
-          "DeviceState",
-          screenInstance.device_state_id,
-        )
-      : undefined;
+  const deviceState = resolveDeviceStateForScreenInstance(
+    repository,
+    screenInstance,
+    ownerActor.production_id,
+    device.id,
+  );
   const events = repository.getScreenEventsForInstance(screenInstance.id);
 
   const base: ResolvedScreenInstance = {

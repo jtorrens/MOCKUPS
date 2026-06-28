@@ -240,6 +240,7 @@ function nodeStyle(
     textAlign: textAlign as CSSProperties["textAlign"],
     fontFamily: stringValue(style.fontFamily) ?? "Arial, sans-serif",
     fontSize: numberValue(style.fontSize),
+    fontStyle: stringValue(style.fontStyle) as CSSProperties["fontStyle"],
     fontWeight: cssFontWeight(style.fontWeight),
     lineHeight: numberValue(style.lineHeight)
       ? `${numberValue(style.lineHeight)}px`
@@ -902,6 +903,24 @@ function nodeContent(node: RenderableNode): ReactNode {
       </>
     );
   }
+  if (node.type === "keyboard_key") {
+    const isEmojiKey = node.style?.isEmojiKey === true;
+    return (
+      <span
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: "100%",
+          height: "100%",
+          lineHeight: isEmojiKey ? 1 : undefined,
+          textAlign: "center",
+        }}
+      >
+        {node.text}
+      </span>
+    );
+  }
   if (node.type === "text_input_bar_field") {
     return (
       <>
@@ -1052,6 +1071,8 @@ function RenderNode({
                       flex: `${numberValue(node.style?.weight) ?? 1} 1 0`,
                       height: "100%",
                       minWidth: 0,
+                      padding: numberValue(node.style?.keyPadding),
+                      boxSizing: "border-box",
                       boxShadow: joinedBoxShadow(
                         node.style?.shadow === undefined
                           ? "0 0.01em 0 rgba(255, 255, 255, 0.32) inset"
@@ -1060,6 +1081,10 @@ function RenderNode({
                       ),
                       whiteSpace: "nowrap",
                       overflow: "visible",
+                      transform: numberValue(node.style?.pressedTransformScale)
+                        ? `scale(${numberValue(node.style?.pressedTransformScale)})`
+                        : undefined,
+                      transformOrigin: "center center",
                     }
                   : node.type === "keyboard_key_popover"
                     ? {

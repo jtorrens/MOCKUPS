@@ -53,6 +53,7 @@ import {
 } from "../domain/timeline/screenTimeline.js";
 
 type Row = Record<string, unknown>;
+type DeviceState = z.infer<typeof DeviceStateSchema>;
 
 type ScreenOptionRow = TimelineScreenLike & {
   shotId: string;
@@ -110,6 +111,9 @@ function previewMediaFrameUrl({
 
 function fontWeightForStyle(style: string) {
   const normalized = style.toLowerCase().replace(/[\s_-]+/g, "");
+  if (normalized.includes("variable") || normalized.includes("wght")) {
+    return "200 800";
+  }
   if (normalized.includes("thin")) return 100;
   if (normalized.includes("extralight") || normalized.includes("ultralight")) {
     return 200;
@@ -285,6 +289,30 @@ export function asObject(value: unknown, label: string): JsonObject {
     throw new Error(`${label}\n${zodMessage(result.error)}`);
   }
   return result.data;
+}
+
+function resolveScreenDeviceState(
+  repository: SQLiteRepository,
+  screenInstance: z.infer<typeof ScreenInstanceSchema>,
+  productionId: string,
+  deviceId: string,
+): DeviceState | undefined {
+  const inherited = screenInstance.device_state_id
+    ? repository.getDeviceState(screenInstance.device_state_id)
+    : undefined;
+  if (!screenInstance.device_state_json) {
+    return inherited;
+  }
+  return {
+    id: inherited?.id ?? `${screenInstance.id}:device_state`,
+    production_id: inherited?.production_id ?? productionId,
+    device_id: inherited?.device_id ?? deviceId,
+    name: inherited?.name ?? "Screen instance device state",
+    state_json: {
+      ...(inherited?.state_json ?? {}),
+      ...screenInstance.device_state_json,
+    },
+  };
 }
 
 function nullsToUndefined(row: Row, fields: string[] = []): Row {
@@ -1023,17 +1051,14 @@ export function loadDebugPayload(
   const deviceId = screenInstance.device_id ?? ownerActor?.default_device_id;
   const theme = themeId ? repository.getTheme(themeId) : undefined;
   const device = deviceId ? repository.getDevice(deviceId) : undefined;
-  const deviceState = screenInstance.device_state_json
-    ? {
-        id: `${screenInstance.id}:device_state`,
-        production_id: shot?.production_id ?? selection.productionId,
-        device_id: deviceId ?? "",
-        name: "Screen instance device state",
-        state_json: screenInstance.device_state_json,
-      }
-    : screenInstance.device_state_id
-      ? repository.getDeviceState(screenInstance.device_state_id)
-      : undefined;
+  const deviceState = deviceId
+    ? resolveScreenDeviceState(
+        repository,
+        screenInstance,
+        shot?.production_id ?? selection.productionId,
+        deviceId,
+      )
+    : undefined;
   const moduleInstance =
     repository.getPrimaryModuleInstanceForScreenInstance(screenInstance.id);
   if (!theme || !device || !deviceState) {

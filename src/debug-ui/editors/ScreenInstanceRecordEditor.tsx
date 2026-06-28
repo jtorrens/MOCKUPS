@@ -5,7 +5,11 @@ import type {
   AppTableDefinition,
 } from "../api/client.js";
 import { ScreenInstanceEditor } from "./ScreenInstanceEditor.js";
-import { ScreenTransitionFields } from "./ScreenInstanceFields.js";
+import {
+  ScreenOrientationField,
+  ScreenDeviceStateFields,
+  ScreenTransitionFields,
+} from "./ScreenInstanceFields.js";
 import type { RawJsonFieldOverride } from "./RecordFieldRenderer.js";
 import type { ScreenInstanceTab } from "./editorTabs.js";
 
@@ -62,7 +66,19 @@ export function ScreenInstanceRecordEditor({
       transformFieldExists={Boolean(transformField)}
       deviceStateFieldExists={Boolean(deviceStateField)}
       renderGeneralFields={() =>
-        renderFields(["app_id", "theme_mode", "duration_frames"])
+        <>
+          {renderFields(["app_id", "theme_mode", "duration_frames"])}
+          {deviceStateField ? (
+            <ScreenOrientationField
+              records={records}
+              record={record}
+              rawValue={drafts.device_state_json ?? "{}"}
+              onRawChange={(nextRawText) =>
+                setJsonText("device_state_json", nextRawText)
+              }
+            />
+          ) : null}
+        </>
       }
       renderTransformFields={() =>
         transformField
@@ -85,13 +101,16 @@ export function ScreenInstanceRecordEditor({
       )}
       renderDeviceStateFields={() =>
         deviceStateField
-          ? renderField(deviceStateField, {
-              hideLabel: true,
-              rawText: drafts.device_state_json ?? "{}",
-              groupContext: "deviceState",
-              onRawTextChange: (nextRawText) =>
-                setJsonText("device_state_json", nextRawText),
-            })
+          ? (
+              <ScreenDeviceStateFields
+                records={records}
+                record={record}
+                rawValue={drafts.device_state_json ?? "{}"}
+                onRawChange={(nextRawText) =>
+                  setJsonText("device_state_json", nextRawText)
+                }
+              />
+            )
           : null
       }
       setActiveTab={setActiveTab}

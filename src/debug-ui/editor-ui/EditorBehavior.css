@@ -253,6 +253,7 @@
 .module-behavior-override-control > input:not([type]),
 .module-behavior-override-control > input[type="text"],
 .module-behavior-override-control > input[type="number"],
+.module-behavior-override-control > select,
 .module-behavior-generated-value input[type="number"] {
   box-sizing: border-box;
   width: 100%;

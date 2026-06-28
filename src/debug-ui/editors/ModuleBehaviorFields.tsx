@@ -29,14 +29,6 @@ export interface StatusBarBehaviorItem {
   zone?: string;
 }
 
-function runtimeValueForItem(
-  item: StatusBarBehaviorItem,
-  override: Record<string, JsonValue>,
-) {
-  if ("value" in override) return override.value;
-  return item.value ?? "";
-}
-
 function hasOwnValue(object: Record<string, unknown>, key: string) {
   return Object.prototype.hasOwnProperty.call(object, key);
 }
@@ -64,7 +56,12 @@ export function ModuleBehaviorFields({
   onRawChange,
 }: ModuleBehaviorFieldsProps) {
   const [statusBarOpen, setStatusBarOpen] = useState(false);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
   const root = parsedObject(rawValue);
+  const rawKeyboard = root.keyboard as JsonValue;
+  const keyboardRoot = isJsonObject(rawKeyboard)
+    ? (rawKeyboard as Record<string, JsonValue>)
+    : {};
   const rawStatusBar = root.statusBar as JsonValue;
   const statusBarRoot = isJsonObject(rawStatusBar)
     ? (rawStatusBar as Record<string, JsonValue>)
@@ -87,8 +84,6 @@ export function ModuleBehaviorFields({
         ["Show header", "showHeader", true],
         ["Show status bar", "showStatusBar", true],
         ["Show navigation bar", "showNavigationBar", true],
-        ["Show text input bar", "showTextInputBar", false],
-        ["Show keyboard", "showKeyboard", false],
         ["Show incoming actor labels", "showIncomingActorLabels", false],
       ].map(([label, key, fallback]) => (
         <InspectorFieldRow
@@ -138,6 +133,91 @@ export function ModuleBehaviorFields({
           </select>
         }
       />
+      <ModuleBehaviorCard
+        title="Keyboard"
+        summary="Text input visibility, keyboard visibility and pressed effect"
+        icon="⌨"
+        open={keyboardOpen}
+        onToggle={() => setKeyboardOpen((current) => !current)}
+      >
+        {[
+          ["Show text input bar", "showTextInputBar", false],
+          ["Show keyboard", "showKeyboard", false],
+        ].map(([label, key, fallback]) => (
+          <InspectorFieldRow
+            key={String(key)}
+            className={`record-editor-field record-editor-field-boolean ${
+              hasOwnValue(root, String(key)) ? "is-override" : "is-inherited"
+            }`}
+            label={<span>{String(label)}</span>}
+            control={
+              <div className="module-behavior-override-control">
+                <input
+                  type="checkbox"
+                  className={hasOwnValue(root, String(key)) ? "is-override" : "is-inherited"}
+                  checked={Boolean(root[String(key)] ?? fallback)}
+                  onChange={(event) =>
+                    updateBehaviorValue([String(key)], event.target.checked)
+                  }
+                />
+                {hasOwnValue(root, String(key)) ? (
+                  <button
+                    type="button"
+                    className="field-restore-button"
+                    aria-label={`Restore ${String(label)}`}
+                    onClick={() => restoreBehaviorValue([String(key)])}
+                  >
+                    ↻
+                  </button>
+                ) : null}
+              </div>
+            }
+          />
+        ))}
+        <InspectorFieldRow
+          key="keyboardPressedEffect"
+          className={`record-editor-field record-editor-field-string ${
+            hasOwnValue(keyboardRoot, "pressedEffect")
+              ? "is-override"
+              : "is-inherited"
+          }`}
+          label={<span>Pressed effect</span>}
+          control={
+            <div className="module-behavior-override-control">
+              <select
+                className={
+                  hasOwnValue(keyboardRoot, "pressedEffect")
+                    ? "is-override"
+                    : "is-inherited"
+                }
+                value={String(keyboardRoot.pressedEffect ?? "popover")}
+                onChange={(event) =>
+                  updateBehaviorValue(
+                    ["keyboard", "pressedEffect"],
+                    event.target.value,
+                  )
+                }
+              >
+                <option value="popover">Popover</option>
+                <option value="inPlace">In place</option>
+                <option value="none">None</option>
+              </select>
+              {hasOwnValue(keyboardRoot, "pressedEffect") ? (
+                <button
+                  type="button"
+                  className="field-restore-button"
+                  aria-label="Restore pressed effect"
+                  onClick={() =>
+                    restoreBehaviorValue(["keyboard", "pressedEffect"])
+                  }
+                >
+                  ↻
+                </button>
+              ) : null}
+            </div>
+          }
+        />
+      </ModuleBehaviorCard>
       {statusBarItems.length ? (
         <ModuleBehaviorCard
           title="Status bar items"

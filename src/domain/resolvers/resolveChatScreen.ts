@@ -134,6 +134,7 @@ export function mergeTokenObjects(
 function resolveStatusBarDefinition(
   statusBarConfig: Record<string, unknown> | undefined,
   behaviorStatusBar: unknown,
+  deviceState: Record<string, unknown>,
   iconTheme?: {
     asset_root: string;
     mapping_json: Record<string, unknown>;
@@ -165,8 +166,28 @@ function resolveStatusBarDefinition(
     const order = numberValue(rawItem.order, 0);
     if (!id || zone === "off") continue;
     const override = isObject(behaviorItems[id]) ? behaviorItems[id] : {};
+    const runtimeValue =
+      id === "time"
+        ? stringValue(deviceState.time, stringValue(rawItem.value))
+        : id === "carrier"
+          ? stringValue(deviceState.networkLabel, stringValue(rawItem.value))
+          : id === "signal" || kind === "generatedSignal"
+            ? numberValue(deviceState.signalBars, numberValue(rawItem.value, 0))
+            : id === "battery" || kind === "generatedBattery"
+              ? Math.round(numberValue(deviceState.batteryLevel, 0) * 100)
+              : "value" in rawItem
+                ? rawItem.value
+                : undefined;
+    const runtimeCharging =
+      id === "battery" || kind === "generatedBattery"
+        ? deviceState.batteryCharging === true
+        : rawItem.charging === true;
+    const runtimeEnabled =
+      id === "wifi" && "wifiEnabled" in deviceState
+        ? deviceState.wifiEnabled === true
+        : true;
     const enabled =
-      typeof override.enabled === "boolean" ? override.enabled : true;
+      typeof override.enabled === "boolean" ? override.enabled : runtimeEnabled;
     if (!enabled) continue;
     const iconToken =
       token && isObject(iconTheme?.mapping_json.tokens)
@@ -183,13 +204,14 @@ function resolveStatusBarDefinition(
       value:
         "value" in override
           ? override.value
-          : "value" in rawItem
-            ? rawItem.value
-            : undefined,
+          : runtimeValue,
       charging:
         typeof override.charging === "boolean"
           ? override.charging
-          : rawItem.charging === true,
+          : runtimeCharging,
+      ...(id === "wifi" && typeof deviceState.wifiIconState === "string"
+        ? { wifiIconState: deviceState.wifiIconState }
+        : {}),
       ...(kind === "iconToken" && iconFile
         ? {
             iconUri: `${iconTheme?.asset_root.replace(/\/+$/g, "")}/${iconFile}`,
@@ -329,6 +351,8 @@ function resolveKeyboardDefinition(
       : STANDARD_IOS_KEYBOARD_LAYOUT.defaultMode
   ) as KeyboardMode;
   const bottomUtilityHeight = 34;
+  const keyPadding = numberValue(behaviorRoot.keyPadding, 6);
+  const keyHeight = 42;
   const designLayout = {
     topPadding: 8,
     sidePadding: 6,
@@ -338,10 +362,11 @@ function resolveKeyboardDefinition(
     bottomIconSize: 22,
     rowGap: 8,
     keyGap: 6,
-    keyHeight: 42,
+    keyHeight,
+    keyPadding,
     keyRadius: numberValue(behaviorRoot.keyRadius, 7),
-    fontSize: 18,
-    emojiFontScale: 0.6,
+    fontSize: Math.max(1, keyHeight - keyPadding * 2),
+    emojiFontScale: 0.85,
   };
   const rowCount = STANDARD_IOS_KEYBOARD_LAYOUT.modes[mode]?.rowsText
     .trim()
@@ -355,7 +380,7 @@ function resolveKeyboardDefinition(
   const layout = Object.fromEntries(
     Object.entries({ height, ...designLayout }).map(([key, value]) => [
       key,
-      value * scale,
+      key === "emojiFontScale" ? value : value * scale,
     ]),
   );
   const rawBottomItems = Array.isArray(behaviorRoot.bottomItems)
@@ -434,6 +459,9 @@ function resolveKeyboardDefinition(
     ),
     messageGapToTextInput:
       numberValue(behaviorRoot.messageGapToTextInput, 10) * scale,
+    fontFamily: stringValue(behaviorRoot.fontFamily, "Oswald"),
+    fontWeight: fontWeightToken(behaviorRoot.fontWeight) ?? "Regular",
+    pressedEffect: stringValue(behaviorRoot.pressedEffect, "popover"),
     keyShadowEnabled: behaviorRoot.keyShadowEnabled !== false,
     surfaceReliefEnabled: behaviorRoot.surfaceReliefEnabled !== false,
     modes: Object.fromEntries(
@@ -1653,6 +1681,138 @@ function renderScaleFromMetrics(
   return metrics.pixelRatio;
 }
 
+function keyboardInstanceOverrides(value: unknown) {
+  if (!isObject(value)) return {};
+  const next = { ...value };
+  delete next.fontFamily;
+  delete next.fontWeight;
+  return next;
+}
+
+function swapBoxSize<T extends { width: number; height: number }>(box: T): T {
+  return {
+    ...box,
+    width: box.height,
+    height: box.width,
+  };
+}
+
+function landscapeMetrics(
+  metrics: z.infer<typeof DeviceMetricsSchema>,
+): z.infer<typeof DeviceMetricsSchema> {
+  return {
+    ...metrics,
+    ...(metrics.designSpace
+      ? { designSpace: swapBoxSize(metrics.designSpace) }
+      : {}),
+    ...(metrics.renderSize ? { renderSize: swapBoxSize(metrics.renderSize) } : {}),
+    viewport: swapBoxSize(metrics.viewport),
+    safeArea: {
+      top: metrics.safeArea.left,
+      right: metrics.safeArea.top,
+      bottom: metrics.safeArea.right,
+      left: metrics.safeArea.bottom,
+    },
+  };
+}
+
+function orientedMetrics(
+  metrics: z.infer<typeof DeviceMetricsSchema>,
+  orientation: "portrait" | "landscape",
+): z.infer<typeof DeviceMetricsSchema> {
+  if (orientation !== "landscape") return metrics;
+  return landscapeMetrics(metrics);
+}
+
+function scaleNumericRecord(
+  value: Record<string, unknown>,
+  factor: number,
+  keys: string[],
+) {
+  const next = { ...value };
+  for (const key of keys) {
+    if (typeof next[key] === "number") {
+      next[key] = next[key] * factor;
+    }
+  }
+  return next;
+}
+
+function scaledLowerChrome({
+  keyboard,
+  textInputBar,
+  viewportHeight,
+  showKeyboard,
+  showTextInputBar,
+}: {
+  keyboard: Record<string, unknown>;
+  textInputBar: Record<string, unknown>;
+  viewportHeight: number;
+  showKeyboard: boolean;
+  showTextInputBar: boolean;
+}) {
+  if (!showKeyboard || !showTextInputBar) {
+    return { keyboard, textInputBar };
+  }
+  const keyboardLayout = isObject(keyboard.layout) ? keyboard.layout : {};
+  const textInputLayout = isObject(textInputBar.layout) ? textInputBar.layout : {};
+  const keyboardHeight = numberValue(keyboardLayout.height, 0);
+  const textInputHeight = numberValue(textInputLayout.height, 0);
+  const maxCombinedHeight = viewportHeight * 0.5;
+  const combinedHeight = keyboardHeight + textInputHeight;
+  if (combinedHeight <= maxCombinedHeight || combinedHeight <= 0) {
+    return { keyboard, textInputBar };
+  }
+  const factor = maxCombinedHeight / combinedHeight;
+  const scaledKeyboardLayout = scaleNumericRecord(keyboardLayout, factor, [
+    "height",
+    "topPadding",
+    "sidePadding",
+    "bottomPadding",
+    "bottomUtilityHeight",
+    "bottomUtilitySidePadding",
+    "bottomIconSize",
+    "rowGap",
+    "keyGap",
+    "keyHeight",
+    "keyPadding",
+    "keyRadius",
+    "fontSize",
+  ]);
+  const scaledTextInputLayout = scaleNumericRecord(textInputLayout, factor, [
+    "height",
+    "paddingX",
+    "paddingY",
+    "gap",
+    "fieldHeight",
+    "lineHeight",
+    "fieldPaddingX",
+    "fieldPaddingY",
+    "fieldRadius",
+    "iconSize",
+    "fontSize",
+    "cursorWidth",
+  ]);
+  return {
+    keyboard: {
+      ...keyboard,
+      messageGapToTextInput:
+        typeof keyboard.messageGapToTextInput === "number"
+          ? keyboard.messageGapToTextInput * factor
+          : keyboard.messageGapToTextInput,
+      layout: scaledKeyboardLayout,
+    },
+    textInputBar: {
+      ...textInputBar,
+      cursorWidth:
+        typeof textInputBar.cursorWidth === "number"
+          ? textInputBar.cursorWidth * factor
+          : textInputBar.cursorWidth,
+      layout: scaledTextInputLayout,
+    },
+  };
+}
+
 type ChatAnimationInterpolation = "hold" | "linear" | "ease";
 type ChatDeliveryStatus = "none" | "sent" | "delivered" | "read" | "failed";
 
@@ -1904,19 +2064,16 @@ function chatModuleConfig(
         : isObject(behavior.textInputBar)
           ? behavior.textInputBar
           : undefined;
-  const keyboard =
-    isObject(moduleTokens.keyboard)
-      ? moduleTokens.keyboard
-      : isObject(screenBase.keyboard)
-        ? screenBase.keyboard
-        : isObject(behavior.keyboard)
-          ? behavior.keyboard
-          : undefined;
+  const keyboard = {
+    ...(isObject(moduleTokens.keyboard) ? moduleTokens.keyboard : {}),
+    ...(isObject(screenBase.keyboard) ? screenBase.keyboard : {}),
+    ...(isObject(behavior.keyboard) ? behavior.keyboard : {}),
+  };
 
   return {
     ...behavior,
     ...(textInputBar ? { textInputBar } : {}),
-    ...(keyboard ? { keyboard } : {}),
+    ...(Object.keys(keyboard).length ? { keyboard } : {}),
   };
 }
 
@@ -2117,8 +2274,11 @@ export function resolveChatScreen({
       )
     : undefined;
 
-  const metrics = DeviceMetricsSchema.parse(device.metrics_json);
   const state = DeviceStateValuesSchema.parse(deviceState.state_json);
+  const metrics = orientedMetrics(
+    DeviceMetricsSchema.parse(device.metrics_json),
+    state.orientation,
+  );
   const moduleThemeConfig = repository.getModuleThemeConfig(
     theme.id,
     app.id,
@@ -2233,6 +2393,7 @@ export function resolveChatScreen({
   const effectiveStatusBar = resolveStatusBarDefinition(
     statusBar?.config_json,
     moduleConfig.statusBar,
+    state,
     iconTheme,
     renderScale,
   );
@@ -2421,7 +2582,7 @@ export function resolveChatScreen({
     .find((message) => isActiveWriteOnMessage(message, localFrame));
   const rawKeyboardTokens = {
     ...keyboardComponent.tokens,
-    ...(isObject(moduleConfig.keyboard) ? moduleConfig.keyboard : {}),
+    ...keyboardInstanceOverrides(moduleConfig.keyboard),
   };
   const keyboardPushDurationFrames = Math.max(
     0,
@@ -2519,7 +2680,7 @@ export function resolveChatScreen({
         )
     : undefined;
 
-  const effectiveKeyboard = resolveKeyboardDefinition(
+  const rawEffectiveKeyboard = resolveKeyboardDefinition(
     {
       ...rawKeyboardTokens,
       ...(runtimePressedKey ? { pressedKey: runtimePressedKey } : {}),
@@ -2528,7 +2689,7 @@ export function resolveChatScreen({
     renderScale,
     { hasTextInputBar: runtimeShowTextInputBar },
   );
-  const effectiveTextInputBar = resolveTextInputBarDefinition(
+  const rawEffectiveTextInputBar = resolveTextInputBarDefinition(
     {
       ...textInputBarComponent.tokens,
       ...(isObject(moduleConfig.textInputBar) ? moduleConfig.textInputBar : {}),
@@ -2548,6 +2709,16 @@ export function resolveChatScreen({
     themeTokens,
     palette,
   );
+  const {
+    keyboard: effectiveKeyboard,
+    textInputBar: effectiveTextInputBar,
+  } = scaledLowerChrome({
+    keyboard: rawEffectiveKeyboard,
+    textInputBar: rawEffectiveTextInputBar,
+    viewportHeight: metrics.viewport.height,
+    showKeyboard: runtimeShowKeyboard,
+    showTextInputBar: runtimeShowTextInputBar,
+  });
 
   const messages = resolvedMessages.map((message) =>
     activeComposerMessage &&

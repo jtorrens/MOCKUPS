@@ -142,6 +142,7 @@ export function RecordEditor({
       mediaRoot={productionMediaRoot}
       productionId={productionId}
       paletteCatalog={paletteCatalog}
+      productionFontCatalog={productionFontCatalog}
       nativeBridge={mockupsNative()}
       relativePathFromRoot={relativePathFromRoot}
       renderServices={renderServices}
