@@ -263,6 +263,14 @@ function auditCoreChatModuleTheme(database: SQLiteDatabase, issues: AuditIssue[]
           );
         }
       }
+      if ("shadow" in chatBubbles) {
+        add(
+          issues,
+          "fail",
+          `module_theme_configs.${row.id}.modes.${mode}.chatBubbles.shadow`,
+          "Bubble shadow config must use shadowEnabled plus theme shadows, not embedded shadow tokens.",
+        );
+      }
     }
     if ("avatars" in tokens) {
       add(
@@ -278,6 +286,15 @@ function auditCoreChatModuleTheme(database: SQLiteDatabase, issues: AuditIssue[]
         "fail",
         `module_theme_configs.${row.id}.cursor`,
         "Cursor config is theme/component-owned and must not live in module theme root.",
+      );
+    }
+    const rootChatBubbles = asObject(tokens.chatBubbles);
+    if ("shadow" in rootChatBubbles) {
+      add(
+        issues,
+        "fail",
+        `module_theme_configs.${row.id}.chatBubbles.shadow`,
+        "Bubble shadow config must use shadowEnabled plus theme shadows, not embedded shadow tokens.",
       );
     }
   }
