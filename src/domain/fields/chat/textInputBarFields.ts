@@ -1,5 +1,6 @@
 import {
   defineFields,
+  getJsonValueAtPath,
   type JsonFieldBinding,
 } from "../../value-system/index.js";
 
@@ -48,3 +49,25 @@ export const CHAT_TEXT_INPUT_BAR_TOKEN_BINDINGS = [
     field: CHAT_TEXT_INPUT_BAR_FIELDS.idleTextColor,
   },
 ] satisfies readonly JsonFieldBinding[];
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+export function unscaleTextInputBarThemeScope(
+  themeTokens: Record<string, unknown>,
+  scale: number,
+): Record<string, unknown> {
+  const cursor = isObject(themeTokens.cursor) ? themeTokens.cursor : {};
+  const cursorWidth = getJsonValueAtPath(cursor, ["width"]);
+  if (typeof cursorWidth !== "number" || !Number.isFinite(cursorWidth)) {
+    return themeTokens;
+  }
+  return {
+    ...themeTokens,
+    cursor: {
+      ...cursor,
+      width: cursorWidth / Math.max(scale, 0.0001),
+    },
+  };
+}

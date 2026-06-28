@@ -4,6 +4,7 @@ import {
   CHAT_TEXT_INPUT_BAR_TOKEN_BINDINGS,
   CHAT_TYPOGRAPHY_TOKEN_BINDINGS,
   stripChatModuleTypographyFontIdentity,
+  unscaleTextInputBarThemeScope,
 } from "../fields/chatFields.js";
 import {
   parseKeyboardRows,
@@ -15,7 +16,6 @@ import {
   fontWeightForProductionStyle,
 } from "../fonts/productionFontNormalization.js";
 import {
-  getJsonValueAtPath,
   resolveJsonFieldBindingGroup,
 } from "../value-system/index.js";
 import type { DomainRepository } from "../repository/types.js";
@@ -594,24 +594,6 @@ function iconItemsSource(primary: unknown, fallback: unknown): unknown {
     : primary ?? fallback;
 }
 
-function unscaledTextInputInheritanceThemeTokens(
-  themeTokens: Record<string, unknown>,
-  scale: number,
-): Record<string, unknown> {
-  const cursor = isObject(themeTokens.cursor) ? themeTokens.cursor : {};
-  const cursorWidth = getJsonValueAtPath(cursor, ["width"]);
-  if (typeof cursorWidth !== "number" || !Number.isFinite(cursorWidth)) {
-    return themeTokens;
-  }
-  return {
-    ...themeTokens,
-    cursor: {
-      ...cursor,
-      width: cursorWidth / Math.max(scale, 0.0001),
-    },
-  };
-}
-
 function resolveTextInputBarInheritance(
   value: Record<string, unknown>,
   themeTokens: Record<string, unknown>,
@@ -621,7 +603,7 @@ function resolveTextInputBarInheritance(
     ...value,
     ...resolveJsonFieldBindingGroup(CHAT_TEXT_INPUT_BAR_TOKEN_BINDINGS, [
       value,
-      unscaledTextInputInheritanceThemeTokens(themeTokens, scale),
+      unscaleTextInputBarThemeScope(themeTokens, scale),
     ]),
   };
 }
