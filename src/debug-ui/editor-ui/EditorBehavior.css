@@ -231,6 +231,10 @@
   border-top: var(--editor-row-separator, 1px solid rgba(148, 163, 184, 0.18));
 }
 
+.module-behavior-status-row.is-override {
+  background: var(--editor-override-row-background, rgba(245, 158, 11, 0.08));
+}
+
 .module-behavior-status-label {
   display: grid;
   gap: 3px;
@@ -246,6 +250,9 @@
 .module-behavior-status-row input[type="text"],
 .module-behavior-status-row input[type="number"],
 .module-behavior-status-row > input:not([type]),
+.module-behavior-override-control > input:not([type]),
+.module-behavior-override-control > input[type="text"],
+.module-behavior-override-control > input[type="number"],
 .module-behavior-generated-value input[type="number"] {
   box-sizing: border-box;
   width: 100%;
@@ -259,9 +266,47 @@
   font-size: var(--field-control-font-size, 13px);
 }
 
+.module-behavior-status-row input.is-override {
+  border-color: var(--editor-override-border-color, #d97706);
+}
+
+.module-behavior-status-row input.is-inherited:not([type="checkbox"]) {
+  color: var(--editor-readonly-text-color, var(--field-label-color, #536070));
+}
+
+.module-behavior-override-control {
+  display: inline-grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.module-behavior-override-control > input[type="checkbox"] {
+  justify-self: start;
+}
+
+.field-restore-button {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: var(--field-control-radius, 8px);
+  color: var(--editor-action-color, var(--field-label-color, #536070));
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.field-restore-button:hover {
+  background: var(--editor-button-hover-background, rgba(148, 163, 184, 0.16));
+}
+
 .module-behavior-generated-value {
   display: grid;
-  grid-template-columns: minmax(62px, 84px) auto;
+  grid-template-columns: minmax(80px, 118px) auto;
   align-items: center;
   gap: 8px;
 }

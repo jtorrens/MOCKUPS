@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { InspectorFieldRow } from "../components/inspector/InspectorFieldRow.js";
 import {
+  deleteAtPathAndPrune,
   isJsonObject,
   setAtPath,
   type JsonPath,
@@ -36,6 +37,27 @@ function runtimeValueForItem(
   return item.value ?? "";
 }
 
+function hasOwnValue(object: Record<string, unknown>, key: string) {
+  return Object.prototype.hasOwnProperty.call(object, key);
+}
+
+function statusFieldState(
+  override: Record<string, JsonValue>,
+  key: string,
+  inheritedValue: JsonValue,
+) {
+  if (!hasOwnValue(override, key)) {
+    return {
+      overridden: false,
+      value: inheritedValue,
+    };
+  }
+  return {
+    overridden: true,
+    value: override[key],
+  };
+}
+
 export function ModuleBehaviorFields({
   rawValue,
   statusBarItems = [],
@@ -55,6 +77,10 @@ export function ModuleBehaviorFields({
     onRawChange(stringifyJson(setAtPath(root as JsonValue, path, nextValue)));
   }
 
+  function restoreBehaviorValue(path: JsonPath) {
+    onRawChange(stringifyJson(deleteAtPathAndPrune(root as JsonValue, path)));
+  }
+
   return (
     <>
       {[
@@ -67,16 +93,31 @@ export function ModuleBehaviorFields({
       ].map(([label, key, fallback]) => (
         <InspectorFieldRow
           key={String(key)}
-          className="record-editor-field record-editor-field-boolean"
+          className={`record-editor-field record-editor-field-boolean ${
+            hasOwnValue(root, String(key)) ? "is-override" : "is-inherited"
+          }`}
           label={<span>{String(label)}</span>}
           control={
-            <input
-              type="checkbox"
-              checked={Boolean(root[String(key)] ?? fallback)}
-              onChange={(event) =>
-                updateBehaviorValue([String(key)], event.target.checked)
-              }
-            />
+            <div className="module-behavior-override-control">
+              <input
+                type="checkbox"
+                className={hasOwnValue(root, String(key)) ? "is-override" : "is-inherited"}
+                checked={Boolean(root[String(key)] ?? fallback)}
+                onChange={(event) =>
+                  updateBehaviorValue([String(key)], event.target.checked)
+                }
+              />
+              {hasOwnValue(root, String(key)) ? (
+                <button
+                  type="button"
+                  className="field-restore-button"
+                  aria-label={`Restore ${String(label)}`}
+                  onClick={() => restoreBehaviorValue([String(key)])}
+                >
+                  ↻
+                </button>
+              ) : null}
+            </div>
           }
         />
       ))}
@@ -116,58 +157,114 @@ export function ModuleBehaviorFields({
             const override = isJsonObject(rawOverride)
               ? (rawOverride as Record<string, JsonValue>)
               : {};
-            const enabled =
-              typeof override.enabled === "boolean"
-                ? override.enabled
-                : item.zone !== "off";
+            const enabledState = statusFieldState(
+              override,
+              "enabled",
+              item.zone !== "off",
+            );
+            const valueState = statusFieldState(
+              override,
+              "value",
+              (item.value ?? "") as JsonValue,
+            );
+            const chargingState = statusFieldState(
+              override,
+              "charging",
+              item.charging === true,
+            );
             const itemPath: JsonPath = ["statusBar", "items", item.id];
             return (
-              <div className="module-behavior-status-row" key={item.id}>
+              <div
+                className={`module-behavior-status-row ${
+                  enabledState.overridden ||
+                  valueState.overridden ||
+                  chargingState.overridden
+                    ? "is-override"
+                    : "is-inherited"
+                }`}
+                key={item.id}
+              >
                 <div className="module-behavior-status-label">
                   <strong>{item.label}</strong>
                   <small>{item.kind}</small>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={enabled}
-                  onChange={(event) =>
-                    updateBehaviorValue(
-                      [...itemPath, "enabled"],
-                      event.target.checked,
-                    )
-                  }
-                />
-                {item.kind === "text" ? (
+                <div className="module-behavior-override-control">
                   <input
-                    value={String(runtimeValueForItem(item, override))}
+                    type="checkbox"
+                    className={enabledState.overridden ? "is-override" : "is-inherited"}
+                    checked={Boolean(enabledState.value)}
                     onChange={(event) =>
-                      updateBehaviorValue([...itemPath, "value"], event.target.value)
+                      updateBehaviorValue(
+                        [...itemPath, "enabled"],
+                        event.target.checked,
+                      )
                     }
                   />
+                  {enabledState.overridden ? (
+                    <button
+                      type="button"
+                      className="field-restore-button"
+                      aria-label={`Restore ${item.label} visibility`}
+                      onClick={() => restoreBehaviorValue([...itemPath, "enabled"])}
+                    >
+                      ↻
+                    </button>
+                  ) : null}
+                </div>
+                {item.kind === "text" ? (
+                  <div className="module-behavior-override-control">
+                    <input
+                      className={valueState.overridden ? "is-override" : "is-inherited"}
+                      value={String(valueState.value ?? "")}
+                      onChange={(event) =>
+                        updateBehaviorValue([...itemPath, "value"], event.target.value)
+                      }
+                    />
+                    {valueState.overridden ? (
+                      <button
+                        type="button"
+                        className="field-restore-button"
+                        aria-label={`Restore ${item.label} value`}
+                        onClick={() => restoreBehaviorValue([...itemPath, "value"])}
+                      >
+                        ↻
+                      </button>
+                    ) : null}
+                  </div>
                 ) : item.kind === "generatedBattery" ||
                   item.kind === "generatedSignal" ? (
                   <div className="module-behavior-generated-value">
-                    <input
-                      type="number"
-                      min={0}
-                      max={item.kind === "generatedBattery" ? 100 : 4}
-                      value={Number(runtimeValueForItem(item, override) || 0)}
-                      onChange={(event) =>
-                        updateBehaviorValue(
-                          [...itemPath, "value"],
-                          Number(event.target.value),
-                        )
-                      }
-                    />
+                    <div className="module-behavior-override-control">
+                      <input
+                        type="number"
+                        min={0}
+                        max={item.kind === "generatedBattery" ? 100 : 4}
+                        className={valueState.overridden ? "is-override" : "is-inherited"}
+                        value={Number(valueState.value || 0)}
+                        onChange={(event) =>
+                          updateBehaviorValue(
+                            [...itemPath, "value"],
+                            Number(event.target.value),
+                          )
+                        }
+                      />
+                      {valueState.overridden ? (
+                        <button
+                          type="button"
+                          className="field-restore-button"
+                          aria-label={`Restore ${item.label} value`}
+                          onClick={() => restoreBehaviorValue([...itemPath, "value"])}
+                        >
+                          ↻
+                        </button>
+                      ) : null}
+                    </div>
                     {item.kind === "generatedBattery" ? (
                       <label>
                         <input
                           type="checkbox"
-                          checked={
-                            typeof override.charging === "boolean"
-                              ? override.charging
-                              : item.charging === true
-                          }
+                          className={chargingState.overridden ? "is-override" : "is-inherited"}
+                          checked={Boolean(chargingState.value)}
                           onChange={(event) =>
                             updateBehaviorValue(
                               [...itemPath, "charging"],
@@ -176,6 +273,16 @@ export function ModuleBehaviorFields({
                           }
                         />
                         <span>Charging</span>
+                        {chargingState.overridden ? (
+                          <button
+                            type="button"
+                            className="field-restore-button"
+                            aria-label={`Restore ${item.label} charging`}
+                            onClick={() => restoreBehaviorValue([...itemPath, "charging"])}
+                          >
+                            ↻
+                          </button>
+                        ) : null}
                       </label>
                     ) : null}
                   </div>

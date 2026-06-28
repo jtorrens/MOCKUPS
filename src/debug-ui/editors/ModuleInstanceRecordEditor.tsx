@@ -54,8 +54,20 @@ function stringifyJson(value: unknown): string {
 
 function statusBarItemsForBehavior(
   records: Record<string, AppRecord[]>,
+  moduleInstance: AppRecord,
 ): StatusBarBehaviorItem[] {
-  const statusBar = records.status_bars?.[0];
+  const screenInstance = records.screen_instances?.find(
+    (item) => item.id === moduleInstance.screen_instance_id,
+  );
+  const ownerActor = records.actors?.find(
+    (actor) => actor.id === screenInstance?.owner_actor_id,
+  );
+  const themeId =
+    screenInstance?.theme_id ?? ownerActor?.default_theme_id ?? records.themes?.[0]?.id;
+  const theme = records.themes?.find((item) => item.id === themeId);
+  const statusBar = records.status_bars?.find(
+    (item) => item.id === theme?.status_bar_id,
+  );
   const rawConfig = statusBar?.config_json;
   const config =
     typeof rawConfig === "string"
@@ -222,7 +234,7 @@ export function ModuleInstanceRecordEditor({
       renderBehaviorFields={() => (
         <ModuleBehaviorFields
           rawValue={drafts.behavior_json ?? "{}"}
-          statusBarItems={statusBarItemsForBehavior(records)}
+          statusBarItems={statusBarItemsForBehavior(records, record)}
           onRawChange={(nextRaw) =>
             setDrafts({
               ...drafts,
