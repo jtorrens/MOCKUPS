@@ -1,5 +1,11 @@
 import { z } from "zod";
 import {
+  CHAT_KEYBOARD_TOKEN_BINDINGS,
+  CHAT_TEXT_INPUT_BAR_TOKEN_BINDINGS,
+  CHAT_TYPOGRAPHY_GROUPS,
+  CHAT_TYPOGRAPHY_TOKEN_BINDINGS,
+} from "../fields/chatFields.js";
+import {
   parseKeyboardRows,
   STANDARD_IOS_KEYBOARD_LAYOUT,
   type KeyboardMode,
@@ -11,7 +17,6 @@ import {
 import {
   getTokenAtPath,
   resolveInheritedTokenGroup,
-  type InheritableTokenDescriptor,
 } from "../tokens/tokenInheritance.js";
 import type { DomainRepository } from "../repository/types.js";
 import {
@@ -331,36 +336,11 @@ function keyboardModeForPressedKey(value: string): KeyboardMode {
   return "lowercase";
 }
 
-const KEYBOARD_INHERITABLE_TOKENS = [
-  {
-    outputPath: ["language"],
-    kind: "enum",
-    fallback: STANDARD_IOS_KEYBOARD_LAYOUT.defaultLanguage,
-  },
-  {
-    outputPath: ["mode"],
-    kind: "enum",
-    fallback: STANDARD_IOS_KEYBOARD_LAYOUT.defaultMode,
-  },
-  { outputPath: ["pushDurationFrames"], kind: "integer", fallback: 8 },
-  { outputPath: ["messageGapToTextInput"], kind: "decimal", fallback: 10 },
-  { outputPath: ["fontFamily"], kind: "fontFamily", fallback: "Oswald" },
-  { outputPath: ["fontWeight"], kind: "fontWeight", fallback: 400 },
-  { outputPath: ["fontStyle"], kind: "fontStyle", fallback: "normal" },
-  { outputPath: ["pressedEffect"], kind: "enum", fallback: "popover" },
-  { outputPath: ["keyRadius"], kind: "decimal", fallback: 7 },
-  { outputPath: ["keyPadding"], kind: "decimal", fallback: 6 },
-  { outputPath: ["keyShadowEnabled"], kind: "boolean", fallback: true },
-  { outputPath: ["surfaceReliefEnabled"], kind: "boolean", fallback: true },
-  { outputPath: ["bottomItems"], kind: "jsonArray" },
-  { outputPath: ["extraEmojis"], kind: "jsonArray" },
-] satisfies readonly InheritableTokenDescriptor[];
-
 function resolveKeyboardInheritance(
   componentTokens: unknown,
   instanceTokens: unknown,
 ): Record<string, unknown> {
-  return resolveInheritedTokenGroup(KEYBOARD_INHERITABLE_TOKENS, [
+  return resolveInheritedTokenGroup(CHAT_KEYBOARD_TOKEN_BINDINGS, [
     isObject(instanceTokens) ? instanceTokens : {},
     isObject(componentTokens) ? componentTokens : {},
   ]);
@@ -614,33 +594,6 @@ function iconItemsSource(primary: unknown, fallback: unknown): unknown {
     : primary ?? fallback;
 }
 
-const TEXT_INPUT_BAR_INHERITABLE_TOKENS = [
-  {
-    outputPath: ["cursorWidth"],
-    inputPaths: [["cursorWidth"], ["cursor", "width"]],
-    kind: "decimal",
-    fallback: 2,
-  },
-  {
-    outputPath: ["cursorBlinkFrames"],
-    inputPaths: [["cursorBlinkFrames"], ["cursor", "blinkFrames"]],
-    kind: "integer",
-    fallback: 15,
-  },
-  {
-    outputPath: ["cursorColor"],
-    inputPaths: [["cursorColor"], ["cursor", "color"]],
-    kind: "themeColorToken",
-    fallback: "icons.accent",
-  },
-  {
-    outputPath: ["idleTextColor"],
-    inputPaths: [["idleTextColor"]],
-    kind: "themeColorToken",
-    fallback: "icons.secondary",
-  },
-] satisfies readonly InheritableTokenDescriptor[];
-
 function unscaledTextInputInheritanceThemeTokens(
   themeTokens: Record<string, unknown>,
   scale: number,
@@ -666,7 +619,7 @@ function resolveTextInputBarInheritance(
 ): Record<string, unknown> {
   return {
     ...value,
-    ...resolveInheritedTokenGroup(TEXT_INPUT_BAR_INHERITABLE_TOKENS, [
+    ...resolveInheritedTokenGroup(CHAT_TEXT_INPUT_BAR_TOKEN_BINDINGS, [
       value,
       unscaledTextInputInheritanceThemeTokens(themeTokens, scale),
     ]),
@@ -1528,28 +1481,6 @@ export function moduleTypographyDefaultsFromFonts(
   };
 }
 
-const CHAT_TYPOGRAPHY_GROUPS = [
-  "message",
-  "headerTitle",
-  "headerSubtitle",
-] as const;
-
-const CHAT_TYPOGRAPHY_PROPERTY_KINDS = {
-  fontFamily: "fontFamily",
-  fontSize: "decimal",
-  lineHeight: "decimal",
-  fontWeight: "fontWeight",
-  fontStyle: "fontStyle",
-} as const;
-
-const CHAT_TYPOGRAPHY_INHERITABLE_TOKENS =
-  CHAT_TYPOGRAPHY_GROUPS.flatMap((group) =>
-    Object.entries(CHAT_TYPOGRAPHY_PROPERTY_KINDS).map(([property, kind]) => ({
-      outputPath: ["typography", group, property],
-      kind,
-    })),
-  ) satisfies readonly InheritableTokenDescriptor[];
-
 function stripModuleTypographyFontIdentity(
   tokens: Record<string, unknown>,
 ): Record<string, unknown> {
@@ -1579,7 +1510,7 @@ function resolveChatTypographyTokens(
   moduleDefaultsFromGenericTokens: Record<string, unknown>,
   moduleThemeTokens: Record<string, unknown>,
 ): Record<string, unknown> {
-  return resolveInheritedTokenGroup(CHAT_TYPOGRAPHY_INHERITABLE_TOKENS, [
+  return resolveInheritedTokenGroup(CHAT_TYPOGRAPHY_TOKEN_BINDINGS, [
     stripModuleTypographyFontIdentity(moduleThemeTokens),
     moduleDefaultsFromGenericTokens,
     genericTokens,

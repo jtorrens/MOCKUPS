@@ -1,4 +1,8 @@
 import {
+  resolveFieldValue,
+  type FieldDefinition,
+} from "../value-system/FieldDefinition.js";
+import {
   ValueRegistry,
   type ValueKind,
 } from "../value-system/ValueRegistry.js";
@@ -7,6 +11,8 @@ export type TokenPath = readonly string[];
 export type TokenScope = Record<string, unknown>;
 
 export interface InheritableTokenDescriptor {
+  readonly field?: FieldDefinition;
+  readonly fieldId?: string;
   readonly outputPath: TokenPath;
   readonly inputPaths?: readonly TokenPath[];
   readonly kind?: ValueKind;
@@ -60,19 +66,38 @@ export function resolveInheritedToken(
   const inputPaths = descriptor.inputPaths?.length
     ? descriptor.inputPaths
     : [descriptor.outputPath];
-  for (const scope of scopes) {
-    for (const path of inputPaths) {
-      const value = getTokenAtPath(scope, path);
-      if (value !== undefined && !ValueRegistry.isInherited(value)) {
-        return descriptor.kind
-          ? ValueRegistry.assert(descriptor.kind, value)
-          : value;
-      }
+  const candidates = scopes.flatMap((scope, scopeIndex) =>
+    inputPaths.map((path) => ({
+      source: `${scopeIndex}:${path.join(".")}`,
+      value: getTokenAtPath(scope, path),
+    })),
+  );
+
+  const field =
+    descriptor.field ??
+    (descriptor.kind
+      ? {
+          id: descriptor.fieldId ?? descriptor.outputPath.join("."),
+          kind: descriptor.kind,
+          defaultValue: descriptor.fallback,
+        }
+      : undefined);
+
+  if (field) {
+    return resolveFieldValue(
+      field,
+      candidates,
+    )?.value;
+  }
+
+  for (const candidate of candidates) {
+    const value = candidate.value;
+    if (value !== undefined && !ValueRegistry.isInherited(value)) {
+      return value;
     }
   }
-  return descriptor.kind && descriptor.fallback !== undefined
-    ? ValueRegistry.assert(descriptor.kind, descriptor.fallback)
-    : descriptor.fallback;
+
+  return descriptor.fallback;
 }
 
 export function resolveInheritedTokenGroup(
