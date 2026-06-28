@@ -1,20 +1,20 @@
 import {
   resolveFieldValue,
   type FieldDefinition,
-} from "../value-system/FieldDefinition.js";
+} from "./FieldDefinition.js";
 import {
   ValueRegistry,
   type ValueKind,
-} from "../value-system/ValueRegistry.js";
+} from "./ValueRegistry.js";
 
-export type TokenPath = readonly string[];
-export type TokenScope = Record<string, unknown>;
+export type JsonPath = readonly string[];
+export type JsonObject = Record<string, unknown>;
 
-export interface InheritableTokenDescriptor {
+export interface JsonFieldBinding {
   readonly field?: FieldDefinition;
   readonly fieldId?: string;
-  readonly outputPath: TokenPath;
-  readonly inputPaths?: readonly TokenPath[];
+  readonly outputPath: JsonPath;
+  readonly inputPaths?: readonly JsonPath[];
   readonly kind?: ValueKind;
   readonly fallback?: unknown;
 }
@@ -23,9 +23,9 @@ function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-export function getTokenAtPath(
+export function getJsonValueAtPath(
   source: unknown,
-  path: TokenPath,
+  path: JsonPath,
 ): unknown {
   let current = source;
   for (const segment of path) {
@@ -35,9 +35,9 @@ export function getTokenAtPath(
   return current;
 }
 
-function setTokenAtPath(
-  target: TokenScope,
-  path: TokenPath,
+function setJsonValueAtPath(
+  target: JsonObject,
+  path: JsonPath,
   value: unknown,
 ) {
   let current = target;
@@ -46,7 +46,7 @@ function setTokenAtPath(
     if (isObject(existing)) {
       current = existing;
     } else {
-      const next: TokenScope = {};
+      const next: JsonObject = {};
       current[segment] = next;
       current = next;
     }
@@ -55,8 +55,8 @@ function setTokenAtPath(
   if (last) current[last] = value;
 }
 
-export function resolveInheritedToken(
-  descriptor: InheritableTokenDescriptor,
+export function resolveJsonFieldBinding(
+  descriptor: JsonFieldBinding,
   scopes: readonly unknown[],
 ): unknown {
   // Scopes are ordered from the most local value to the oldest parent.
@@ -69,7 +69,7 @@ export function resolveInheritedToken(
   const candidates = scopes.flatMap((scope, scopeIndex) =>
     inputPaths.map((path) => ({
       source: `${scopeIndex}:${path.join(".")}`,
-      value: getTokenAtPath(scope, path),
+      value: getJsonValueAtPath(scope, path),
     })),
   );
 
@@ -100,15 +100,15 @@ export function resolveInheritedToken(
   return descriptor.fallback;
 }
 
-export function resolveInheritedTokenGroup(
-  descriptors: readonly InheritableTokenDescriptor[],
+export function resolveJsonFieldBindingGroup(
+  descriptors: readonly JsonFieldBinding[],
   scopes: readonly unknown[],
-): TokenScope {
-  const resolved: TokenScope = {};
+): JsonObject {
+  const resolved: JsonObject = {};
   for (const descriptor of descriptors) {
-    const value = resolveInheritedToken(descriptor, scopes);
+    const value = resolveJsonFieldBinding(descriptor, scopes);
     if (value !== undefined) {
-      setTokenAtPath(resolved, descriptor.outputPath, value);
+      setJsonValueAtPath(resolved, descriptor.outputPath, value);
     }
   }
   return resolved;

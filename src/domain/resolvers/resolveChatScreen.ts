@@ -15,9 +15,9 @@ import {
   fontWeightForProductionStyle,
 } from "../fonts/productionFontNormalization.js";
 import {
-  getTokenAtPath,
-  resolveInheritedTokenGroup,
-} from "../tokens/tokenInheritance.js";
+  getJsonValueAtPath,
+  resolveJsonFieldBindingGroup,
+} from "../value-system/JsonFieldBinding.js";
 import type { DomainRepository } from "../repository/types.js";
 import {
   ChatModuleConfigSchema,
@@ -340,7 +340,7 @@ function resolveKeyboardInheritance(
   componentTokens: unknown,
   instanceTokens: unknown,
 ): Record<string, unknown> {
-  return resolveInheritedTokenGroup(CHAT_KEYBOARD_TOKEN_BINDINGS, [
+  return resolveJsonFieldBindingGroup(CHAT_KEYBOARD_TOKEN_BINDINGS, [
     isObject(instanceTokens) ? instanceTokens : {},
     isObject(componentTokens) ? componentTokens : {},
   ]);
@@ -599,7 +599,7 @@ function unscaledTextInputInheritanceThemeTokens(
   scale: number,
 ): Record<string, unknown> {
   const cursor = isObject(themeTokens.cursor) ? themeTokens.cursor : {};
-  const cursorWidth = getTokenAtPath(cursor, ["width"]);
+  const cursorWidth = getJsonValueAtPath(cursor, ["width"]);
   if (typeof cursorWidth !== "number" || !Number.isFinite(cursorWidth)) {
     return themeTokens;
   }
@@ -619,7 +619,7 @@ function resolveTextInputBarInheritance(
 ): Record<string, unknown> {
   return {
     ...value,
-    ...resolveInheritedTokenGroup(CHAT_TEXT_INPUT_BAR_TOKEN_BINDINGS, [
+    ...resolveJsonFieldBindingGroup(CHAT_TEXT_INPUT_BAR_TOKEN_BINDINGS, [
       value,
       unscaledTextInputInheritanceThemeTokens(themeTokens, scale),
     ]),
@@ -1510,7 +1510,7 @@ function resolveChatTypographyTokens(
   moduleDefaultsFromGenericTokens: Record<string, unknown>,
   moduleThemeTokens: Record<string, unknown>,
 ): Record<string, unknown> {
-  return resolveInheritedTokenGroup(CHAT_TYPOGRAPHY_TOKEN_BINDINGS, [
+  return resolveJsonFieldBindingGroup(CHAT_TYPOGRAPHY_TOKEN_BINDINGS, [
     stripModuleTypographyFontIdentity(moduleThemeTokens),
     moduleDefaultsFromGenericTokens,
     genericTokens,
