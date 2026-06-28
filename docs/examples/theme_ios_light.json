@@ -13,6 +13,7 @@
     "modes": {
       "light": {
         "colors": {
+          "debug.red": "debug_red",
           "background": "gray_100",
           "textPrimary": "gray_000",
           "textSecondary": "gray_040",
@@ -59,6 +60,7 @@
       },
       "dark": {
         "colors": {
+          "debug.red": "debug_red",
           "background": "gray_000",
           "textPrimary": "gray_100",
           "textSecondary": "gray_060",
@@ -113,6 +115,7 @@
       "source": "production_font"
     },
     "colors": {
+      "debug.red": "debug_red",
       "background": "gray_100",
       "textPrimary": "gray_000",
       "textSecondary": "gray_040",

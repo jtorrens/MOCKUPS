@@ -18,6 +18,8 @@
     "db:reset": "tsx src/persistence/sqlite/resetDevelopmentDatabase.ts",
     "icon-theme:import": "tsx src/icon-themes/importDevelopmentIconTheme.ts",
     "validate:sqlite": "tsx src/persistence/sqlite/validateSQLiteRepository.ts",
+    "audit:current-model": "tsx src/persistence/audit/auditCurrentModel.ts",
+    "db:normalize-current-model": "tsx src/persistence/audit/normalizeCurrentModel.ts",
     "debug:server": "tsx src/debug-server/server.ts",
     "debug:ui": "vite",
     "debug": "concurrently -k -n api,ui -c blue,magenta \"npm run debug:server\" \"npm run debug:ui\"",

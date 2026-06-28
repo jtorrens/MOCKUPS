@@ -39,6 +39,7 @@ import {
 import type { RepositoryDataset } from "../types.js";
 
 const SEED_PALETTE_COLORS = [
+  ["debug_red", "#FF00FF"],
   ["gray_000", "#000000"],
   ["gray_010", "#1A1A1A"],
   ["gray_020", "#333333"],
@@ -262,8 +263,13 @@ export function createExampleDataset(): RepositoryDataset {
         ? 1
         : 0,
       metadata_json: {
-        source: "base_seed_palette",
-        note: "Primitive production color seeded from the base design palette.",
+        source: token === "debug_red" ? "debug_sentinel" : "base_seed_palette",
+        protected: token === "debug_red",
+        hiddenFromPickers: token === "debug_red",
+        note:
+          token === "debug_red"
+            ? "Protected sentinel color for unresolved theme/component color decisions."
+            : "Primitive production color seeded from the base design palette.",
       },
     })),
   );

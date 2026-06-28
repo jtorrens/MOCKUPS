@@ -5,6 +5,8 @@ export interface PaletteColorOption {
   token: string;
   valueHex: string;
   isNeutral: boolean;
+  protected: boolean;
+  hiddenFromPickers: boolean;
 }
 
 export interface PaletteColorCatalog {
@@ -18,6 +20,16 @@ function isPaletteRecord(record: AppRecord): boolean {
     typeof record.id === "string" &&
     typeof record.token === "string" &&
     typeof record.value_hex === "string"
+  );
+}
+
+function metadataFlag(record: AppRecord, key: string) {
+  const metadata = record.metadata_json;
+  return (
+    metadata !== null &&
+    typeof metadata === "object" &&
+    !Array.isArray(metadata) &&
+    (metadata as Record<string, unknown>)[key] === true
   );
 }
 
@@ -80,7 +92,7 @@ export function createPaletteColorCatalog(
   records: Record<string, AppRecord[]> = {},
   productionId?: string,
 ): PaletteColorCatalog {
-  const colors = (records.palette_colors ?? [])
+  const allColors = (records.palette_colors ?? [])
     .filter(isPaletteRecord)
     .filter(
       (record) =>
@@ -96,6 +108,8 @@ export function createPaletteColorCatalog(
         record.is_neutral === true ||
         record.is_neutral === 1 ||
         record.is_neutral === "1",
+      protected: metadataFlag(record, "protected"),
+      hiddenFromPickers: metadataFlag(record, "hiddenFromPickers"),
     }))
     .sort((left, right) => {
       const leftKey = paletteSortKey(left);
@@ -116,10 +130,11 @@ export function createPaletteColorCatalog(
         leftKey.token.localeCompare(rightKey.token)
       );
     });
+  const pickerColors = allColors.filter((color) => !color.hiddenFromPickers);
 
   return {
-    colors,
-    byToken: new Map(colors.map((color) => [color.token, color])),
-    byHex: new Map(colors.map((color) => [color.valueHex, color])),
+    colors: pickerColors,
+    byToken: new Map(allColors.map((color) => [color.token, color])),
+    byHex: new Map(allColors.map((color) => [color.valueHex, color])),
   };
 }

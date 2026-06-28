@@ -538,6 +538,16 @@ export function App() {
         (candidate) => candidate.id === recordId,
       );
       const token = String(record?.token ?? "");
+      const metadata = record?.metadata_json;
+      if (
+        metadata &&
+        typeof metadata === "object" &&
+        !Array.isArray(metadata) &&
+        (metadata as Record<string, unknown>).protected === true
+      ) {
+        setRequestError(`Palette color ${token} is protected and cannot be deleted`);
+        return;
+      }
       const usages = paletteTokenUsages({
         tables: state.tables,
         records: state.records,

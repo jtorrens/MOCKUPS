@@ -153,7 +153,7 @@
                 "rotationDegrees": 0
               }
             },
-            "startFrame": 15,
+            "delayAfterPreviousFrames": 15,
             "enterDurationFrames": 10
           },
           {
@@ -162,7 +162,7 @@
             "direction": "outgoing",
             "type": "text",
             "text": "Two minutes away.",
-            "startFrame": 45,
+            "delayAfterPreviousFrames": 30,
             "enterDurationFrames": 10,
             "textReveal": {
               "mode": "simple_write_on",

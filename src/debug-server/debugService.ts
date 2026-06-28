@@ -2604,10 +2604,18 @@ export function deleteAppRecord(
 ) {
   const definition = tableDefinition(request.tableId);
   const existing = database
-    .prepare(`SELECT id FROM ${definition.table} WHERE id = ?`)
-    .get(request.recordId);
+    .prepare(`SELECT * FROM ${definition.table} WHERE id = ?`)
+    .get(request.recordId) as Row | undefined;
   if (!existing) {
     throw new Error(`Record ${request.recordId} not found in ${request.tableId}`);
+  }
+  if (request.tableId === "palette_colors") {
+    const metadata = readOptionalJson(existing, "metadata_json");
+    if (metadata?.protected === true) {
+      throw new Error(
+        `Palette color ${String(existing.token ?? request.recordId)} is protected and cannot be deleted`,
+      );
+    }
   }
   database
     .prepare(`DELETE FROM ${definition.table} WHERE id = ?`)

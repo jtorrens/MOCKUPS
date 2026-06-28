@@ -9,6 +9,7 @@ const schemaPath = fileURLToPath(new URL("./schema.sql", import.meta.url));
 export type SQLiteDatabase = Database.Database;
 
 const SEED_PALETTE_COLORS = [
+  ["debug_red", "#FF00FF"],
   ["gray_000", "#000000"],
   ["gray_010", "#1A1A1A"],
   ["gray_020", "#333333"],
@@ -832,6 +833,7 @@ function defaultChatBubbleStatusConfig(): Record<string, unknown> {
 
 function defaultThemeSemanticColorTokens() {
   return {
+    "debug.red": "debug_red",
     "icons.primary": "gray_000",
     "icons.secondary": "gray_040",
     "icons.accent": "blue",
@@ -1289,8 +1291,13 @@ function applyAdditiveV19Migration(database: SQLiteDatabase): void {
         valueHex,
         isNeutralHex(valueHex) ? 1 : 0,
         JSON.stringify({
-          source: "base_seed_palette",
-          note: "Primitive production color seeded from the base design palette.",
+          source: token === "debug_red" ? "debug_sentinel" : "base_seed_palette",
+          protected: token === "debug_red",
+          hiddenFromPickers: token === "debug_red",
+          note:
+            token === "debug_red"
+              ? "Protected sentinel color for unresolved theme/component color decisions."
+              : "Primitive production color seeded from the base design palette.",
         }),
       );
     }
@@ -1933,6 +1940,66 @@ function applyAdditiveV31Migration(database: SQLiteDatabase): void {
   database.pragma("user_version = 31");
 }
 
+function applyAdditiveV32Migration(database: SQLiteDatabase): void {
+  const productions = database
+    .prepare("SELECT id FROM productions ORDER BY id")
+    .all() as { id: string }[];
+  const insertPalette = database.prepare(
+    `INSERT OR IGNORE INTO palette_colors (
+      id,
+      production_id,
+      token,
+      value_hex,
+      is_neutral,
+      metadata_json
+    ) VALUES (?, ?, ?, ?, ?, ?)`,
+  );
+  const updatePalette = database.prepare(
+    `UPDATE palette_colors
+       SET value_hex = ?,
+           is_neutral = ?,
+           metadata_json = ?
+     WHERE production_id = ? AND token = ?`,
+  );
+  const debugMetadata = JSON.stringify({
+    source: "debug_sentinel",
+    protected: true,
+    hiddenFromPickers: true,
+    note: "Protected sentinel color for unresolved theme/component color decisions.",
+  });
+  for (const production of productions) {
+    insertPalette.run(
+      `palette_${production.id}_debug_red`,
+      production.id,
+      "debug_red",
+      "#FF00FF",
+      0,
+      debugMetadata,
+    );
+    updatePalette.run("#FF00FF", 0, debugMetadata, production.id, "debug_red");
+  }
+
+  const themes = database
+    .prepare("SELECT id, tokens_json FROM themes ORDER BY id")
+    .all() as { id: string; tokens_json: string }[];
+  const updateTheme = database.prepare(
+    "UPDATE themes SET tokens_json = ? WHERE id = ?",
+  );
+  for (const row of themes) {
+    try {
+      const tokens = JSON.parse(row.tokens_json) as Record<string, unknown>;
+      const nextTokens = ensureThemeSemanticColorGroups(tokens);
+      const nextJson = JSON.stringify(nextTokens);
+      if (nextJson !== row.tokens_json) {
+        updateTheme.run(nextJson, row.id);
+      }
+    } catch {
+      // Malformed JSON is handled by validation paths; skip migration here.
+    }
+  }
+  database.pragma("user_version = 32");
+}
+
 export function applyInitialSchema(database: SQLiteDatabase): void {
   database.exec(readFileSync(schemaPath, "utf8"));
   applyAdditiveV2Migration(database);
@@ -1965,6 +2032,7 @@ export function applyInitialSchema(database: SQLiteDatabase): void {
   applyAdditiveV29Migration(database);
   applyAdditiveV30Migration(database);
   applyAdditiveV31Migration(database);
+  applyAdditiveV32Migration(database);
   database.pragma("foreign_keys = ON");
 }
 
