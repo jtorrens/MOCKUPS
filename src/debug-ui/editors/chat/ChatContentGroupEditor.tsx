@@ -141,9 +141,7 @@ export function ChatContentGroupEditor({
             ...messageActorOptions,
           ]
         : messageActorOptions;
-    const delayAfterPreviousFrames = Number(
-      message.delayAfterPreviousFrames ?? message.startFrame ?? 0,
-    );
+    const delayAfterPreviousFrames = Number(message.delayAfterPreviousFrames ?? 0);
     const writeOnDurationFrames = Number(textReveal.durationFrames ?? 30);
     const messageStartFrame = messageStartFrameAt(index);
     const messageTimelineDurationFrames = Math.max(
@@ -272,9 +270,7 @@ export function ChatContentGroupEditor({
       const textReveal = isJsonObject(message.textReveal)
         ? message.textReveal
         : {};
-      const delayAfterPreviousFrames = Number(
-        message.delayAfterPreviousFrames ?? message.startFrame ?? 0,
-      );
+      const delayAfterPreviousFrames = Number(message.delayAfterPreviousFrames ?? 0);
       const startFrame = previousWriteOnEndFrame + Math.max(0, delayAfterPreviousFrames);
       if (index === targetIndex) return startFrame;
       previousWriteOnEndFrame =

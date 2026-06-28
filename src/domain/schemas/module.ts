@@ -77,12 +77,6 @@ export const ChatModuleMessageSchema = z
      * finished. Message order is the source of truth for sequencing.
      */
     delayAfterPreviousFrames: NonNegativeIntegerSchema.optional(),
-    /**
-     * Legacy absolute timing kept as an optional import/migration fallback.
-     * The resolver converts it into delayAfterPreviousFrames when the new field
-     * is absent.
-     */
-    startFrame: NonNegativeIntegerSchema.optional(),
     enterDurationFrames: NonNegativeIntegerSchema.default(0),
     exitFrame: NonNegativeIntegerSchema.optional(),
     textReveal: TextRevealSchema.optional(),

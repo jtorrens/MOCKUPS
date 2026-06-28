@@ -324,8 +324,10 @@ function auditModuleInstances(database: SQLiteDatabase, issues: AuditIssue[]) {
         "Participants are legacy for core.chat content; messages should reference actors directly.",
       );
     }
+    const rawMessages = Array.isArray(content.messages) ? content.messages : [];
     parsed.data.messages.forEach((message, index) => {
-      if (message.startFrame !== undefined) {
+      const rawMessage = rawMessages[index];
+      if (isObject(rawMessage) && rawMessage.startFrame !== undefined) {
         add(
           issues,
           "fail",

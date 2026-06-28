@@ -58,9 +58,7 @@ export function contentSummary(value: JsonValue, groupKey?: string): string {
       const delay =
         typeof value.delayAfterPreviousFrames === "number"
           ? value.delayAfterPreviousFrames
-          : typeof value.startFrame === "number"
-            ? value.startFrame
-            : null;
+          : null;
       const duration =
         typeof value.enterDurationFrames === "number"
           ? value.enterDurationFrames

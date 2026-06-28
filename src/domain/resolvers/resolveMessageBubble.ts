@@ -102,6 +102,10 @@ export interface ResolvedChatActor {
   avatarTextColor?: string;
 }
 
+export type TimedChatModuleMessage = ChatModuleMessage & {
+  startFrame: number;
+};
+
 function messageStatus(message: ChatModuleMessage) {
   return isRecord(message.status)
     ? (message.status as Record<string, unknown>)
@@ -153,7 +157,7 @@ function colorAlphaIsZero(value: string) {
 }
 
 export interface ResolveMessageBubbleInput {
-  message: ChatModuleMessage;
+  message: TimedChatModuleMessage;
   sender: ResolvedChatActor;
   direction: "incoming" | "outgoing" | "system";
   themeTokens: Record<string, unknown>;
@@ -191,7 +195,7 @@ export function resolveMessageBubble({
   const deliveryStatus = statusDeliveryValue(rawStatus.deliveryStatus);
   const statusTokens = themeTokens.chatBubbles.status ?? {};
   const mediaTokens = themeTokens.chatBubbles.media ?? {};
-  const messageStartFrame = message.startFrame ?? 0;
+  const messageStartFrame = message.startFrame;
   const statusColor =
     deliveryStatus === "read"
       ? statusTokens.readColor

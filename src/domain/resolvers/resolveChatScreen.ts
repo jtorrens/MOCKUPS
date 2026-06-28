@@ -24,6 +24,7 @@ import { requireRecord } from "./helpers.js";
 import {
   resolveMessageBubble,
   type ResolvedChatActor,
+  type TimedChatModuleMessage,
 } from "./resolveMessageBubble.js";
 
 const CHAT_MODULE_ID = "core.chat";
@@ -2286,17 +2287,13 @@ export function resolveChatScreen({
   );
   let previousMessageWriteOnEndFrame = 0;
   const resolvedMessages = moduleData.messages.map((message) => {
-    const legacyAbsoluteStartFrame =
-      typeof message.startFrame === "number"
-        ? message.startFrame
-        : previousMessageWriteOnEndFrame;
     const delayAfterPreviousFrames =
       typeof message.delayAfterPreviousFrames === "number"
         ? message.delayAfterPreviousFrames
-        : Math.max(0, legacyAbsoluteStartFrame - previousMessageWriteOnEndFrame);
+        : 0;
     const effectiveStartFrame =
       previousMessageWriteOnEndFrame + delayAfterPreviousFrames;
-    const effectiveMessage: ChatModuleMessage = {
+    const effectiveMessage: TimedChatModuleMessage = {
       ...message,
       startFrame: effectiveStartFrame,
       ...(message.textReveal
@@ -2309,10 +2306,10 @@ export function resolveChatScreen({
         : {}),
     };
     const messageLocalFrame = Math.max(0, localFrame - effectiveStartFrame);
-    const animatedMessage = animatedChatMessage(
-      effectiveMessage,
-      messageLocalFrame,
-    );
+    const animatedMessage: TimedChatModuleMessage = {
+      ...animatedChatMessage(effectiveMessage, messageLocalFrame),
+      startFrame: effectiveStartFrame,
+    };
     const animatedWriteOnWindow = activeTextAnimationWriteOnWindow(
       effectiveMessage,
       messageLocalFrame,
