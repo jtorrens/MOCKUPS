@@ -490,6 +490,61 @@ function auditThemeNotificationColors(database: SQLiteDatabase, issues: AuditIss
   }
 }
 
+function auditChromeBarConfigs(database: SQLiteDatabase, issues: AuditIssue[]) {
+  const statusRows = database
+    .prepare("SELECT id, config_json FROM status_bars ORDER BY id")
+    .all() as { id: string; config_json: string }[];
+  for (const row of statusRows) {
+    try {
+      const config = JSON.parse(row.config_json) as Record<string, unknown>;
+      if (!Array.isArray(config.items)) {
+        add(
+          issues,
+          "fail",
+          `status_bars.${row.id}.config_json.items`,
+          "Status bars must use canonical items[] configuration.",
+        );
+      }
+      for (const legacyKey of ["time", "carrier", "signal", "wifi", "battery", "focus"]) {
+        if (legacyKey in config) {
+          add(
+            issues,
+            "fail",
+            `status_bars.${row.id}.config_json.${legacyKey}`,
+            "Legacy status bar item groups must be migrated into items[].",
+          );
+        }
+      }
+    } catch {
+      add(issues, "fail", `status_bars.${row.id}.config_json`, "Status bar config JSON is invalid.");
+    }
+  }
+
+  const navigationRows = database
+    .prepare("SELECT id, config_json FROM navigation_bars ORDER BY id")
+    .all() as { id: string; config_json: string }[];
+  for (const row of navigationRows) {
+    try {
+      const config = JSON.parse(row.config_json) as Record<string, unknown>;
+      add(
+        issues,
+        Array.isArray(config.items) ? "pass" : "fail",
+        `navigation_bars.${row.id}.config_json.items`,
+        Array.isArray(config.items)
+          ? "Navigation bar uses canonical items[] configuration."
+          : "Navigation bars must use canonical items[] configuration.",
+      );
+    } catch {
+      add(
+        issues,
+        "fail",
+        `navigation_bars.${row.id}.config_json`,
+        "Navigation bar config JSON is invalid.",
+      );
+    }
+  }
+}
+
 function auditForeignKeys(database: SQLiteDatabase, issues: AuditIssue[]) {
   const failures = database.pragma("foreign_key_check") as unknown[];
   if (failures.length === 0) {
@@ -532,6 +587,9 @@ function auditDatabase(database: SQLiteDatabase, label: string): AuditIssue[] {
   }
   if (tables.has("themes")) {
     auditThemeNotificationColors(database, issues);
+  }
+  if (tables.has("status_bars") && tables.has("navigation_bars")) {
+    auditChromeBarConfigs(database, issues);
   }
   auditLegacyTables(database, tables, issues);
   if (tables.has("module_theme_configs")) {

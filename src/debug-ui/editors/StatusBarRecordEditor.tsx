@@ -116,59 +116,6 @@ function defaultStatusBarConfig(): Record<string, JsonValue> {
   };
 }
 
-function legacyItems(root: Record<string, JsonValue>): StatusBarItem[] | null {
-  if (Array.isArray(root.items)) return null;
-  const defaults = defaultStatusBarItems();
-  const time = isJsonObject(root.time) ? root.time : {};
-  const carrier = isJsonObject(root.carrier) ? root.carrier : {};
-  const signal = isJsonObject(root.signal) ? root.signal : {};
-  const wifi = isJsonObject(root.wifi) ? root.wifi : {};
-  const battery = isJsonObject(root.battery) ? root.battery : {};
-  const focus = isJsonObject(root.focus) ? root.focus : {};
-  return defaults.map((item) => {
-    if (item.id === "time") {
-      return {
-        ...item,
-        value: typeof time.text === "string" ? time.text : item.value,
-        zone: time.enabled === false ? "off" : "left",
-      };
-    }
-    if (item.id === "carrier") {
-      return {
-        ...item,
-        value: typeof carrier.text === "string" ? carrier.text : item.value,
-        zone: carrier.enabled === true ? "left" : "off",
-      };
-    }
-    if (item.id === "signal") {
-      return {
-        ...item,
-        value: typeof signal.strength === "number" ? signal.strength : item.value,
-        zone: signal.enabled === false ? "off" : "right",
-      };
-    }
-    if (item.id === "wifi") {
-      return {
-        ...item,
-        token: typeof wifi.iconToken === "string" ? wifi.iconToken : item.token,
-        zone: wifi.enabled === false ? "off" : "right",
-      };
-    }
-    if (item.id === "battery") {
-      return {
-        ...item,
-        value: typeof battery.level === "number" ? battery.level : item.value,
-        charging: battery.charging === true,
-        zone: battery.enabled === false ? "off" : "right",
-      };
-    }
-    if (item.id === "soundOff" && focus.enabled === true) {
-      return { ...item, zone: "right" };
-    }
-    return item;
-  });
-}
-
 function configRoot(raw: string) {
   const parsed = parsedObject(raw) as Record<string, JsonValue>;
   const parsedLayout = isJsonObject(parsed.layout)
@@ -182,10 +129,6 @@ function configRoot(raw: string) {
       ...parsedLayout,
     },
   } as Record<string, JsonValue>;
-  const migratedItems = legacyItems(merged);
-  if (migratedItems) {
-    merged.items = migratedItems as unknown as JsonValue;
-  }
   if (!Array.isArray(merged.items)) {
     merged.items = defaultStatusBarItems() as unknown as JsonValue;
   }
