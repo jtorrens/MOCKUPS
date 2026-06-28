@@ -207,17 +207,30 @@ assert(
 const messageTextNodes = collectNodes(tree).filter(
   (node) => node.role === "message_text",
 );
+const expectedMessageTypography = isRecord(chatProps.theme.typography?.message)
+  ? chatProps.theme.typography.message
+  : {};
 assert(
-  messageTextNodes.every((node) => node.style?.fontWeight === "Regular"),
-  "Message text nodes must receive Chat typography font weight",
+  messageTextNodes.every(
+    (node) =>
+      node.style?.fontWeight === expectedMessageTypography?.fontWeight &&
+      node.style?.fontStyle === expectedMessageTypography?.fontStyle,
+  ),
+  "Message text nodes must inherit app/theme typography font weight and style",
 );
 const headerTitleNode = collectNodes(tree).find(
   (node) => node.id === "chat_header:title",
 );
+const expectedHeaderTitleTypography = isRecord(
+  chatProps.theme.typography?.headerTitle,
+)
+  ? chatProps.theme.typography.headerTitle
+  : {};
 assert(
-  headerTitleNode?.style?.fontSize === 51 &&
-    headerTitleNode.style.fontWeight === "Semibold",
-  "Chat header title must receive scaled Chat typography tokens",
+  headerTitleNode?.style?.fontSize === expectedHeaderTitleTypography.fontSize &&
+    headerTitleNode?.style?.fontWeight === expectedHeaderTitleTypography.fontWeight &&
+    headerTitleNode?.style?.fontStyle === expectedHeaderTitleTypography.fontStyle,
+  "Chat header title must inherit scaled app/theme typography tokens",
 );
 const statusItems =
   statusNode?.children?.flatMap((child) => child.children ?? []) ?? [];

@@ -99,6 +99,7 @@ export const ResolvedChatScreenPropsSchema = z.object({
   theme: z.object({
     id: IdSchema,
     fonts: JsonObjectSchema,
+    systemFonts: JsonObjectSchema.optional(),
     colors: JsonObjectSchema,
     wallpaper: JsonObjectSchema.optional(),
     statusBar: JsonObjectSchema,
@@ -193,6 +194,7 @@ export const ResolvedMessageBubblePropsSchema = z.object({
     backgroundColor: z.string().min(1),
     textColor: z.string().min(1),
     fontFamily: z.string().min(1),
+    fontStyle: z.string().min(1).optional(),
     fontSize: z.number().positive(),
     lineHeight: z.number().positive(),
     fontWeight: z.union([z.string().min(1), z.number().positive()]).optional(),

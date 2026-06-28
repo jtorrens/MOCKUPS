@@ -1,5 +1,6 @@
 import type { ResolvedChatScreenProps } from "../../../domain/schemas/index.js";
 import {
+  readFontWeight,
   readNumber,
   readObject,
   readString,
@@ -84,7 +85,10 @@ export const TextInputBarModule: VisualModule<TextInputBarModuleInput> = {
     const config = asRecord(input.textInputBar);
     const layout = asRecord(config.layout);
     const colors = readObject(input.tokens, "colors");
-    const fonts = readObject(input.tokens, "fonts");
+    const systemFonts = readObject(input.tokens, "systemFonts");
+    const fonts = Object.keys(systemFonts).length
+      ? systemFonts
+      : readObject(input.tokens, "fonts");
     const components = readObject(input.tokens, "components");
     const buttonIconComponent = readObject(components, "buttonIcon");
     const buttonIcon = {
@@ -163,6 +167,8 @@ export const TextInputBarModule: VisualModule<TextInputBarModuleInput> = {
         background: barBackground,
         color: foreground,
         fontFamily: readString(fonts, "family", "system-ui"),
+        fontStyle: readString(fonts, "fontStyle", "normal"),
+        fontWeight: readFontWeight(fonts, "fontWeight", readFontWeight(fonts, "weight", 400)),
         fontSize,
         lineHeight: fontSize * 1.25,
         paddingX,

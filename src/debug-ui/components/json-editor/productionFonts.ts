@@ -4,11 +4,9 @@ import {
   fontWeightForProductionStyle,
   isVariableFontStyle,
 } from "../../../domain/fonts/productionFontNormalization.js";
-import { fontStylesForFamily as fallbackFontStylesForFamily } from "./systemFonts.js";
 
 export interface ProductionFontCatalog {
   families: string[];
-  stylesByFamily: Map<string, string[]>;
   idsByFamily: Map<string, string>;
   facesByFamily: Map<string, ProductionFontFaceOption[]>;
 }
@@ -35,7 +33,6 @@ function faceLabel(face: Pick<ProductionFontFaceOption, "fontWeight" | "fontStyl
 export function createProductionFontCatalog(
   records: Record<string, AppRecord[]> = {},
 ): ProductionFontCatalog {
-  const stylesByFamily = new Map<string, string[]>();
   const facesByFamily = new Map<string, ProductionFontFaceOption[]>();
   const idsByFamily = new Map<string, string>();
 
@@ -45,11 +42,6 @@ export function createProductionFontCatalog(
     idsByFamily.set(family, record.id);
     const filesJson = isRecord(record.files_json) ? record.files_json : {};
     const files = Array.isArray(filesJson.files) ? filesJson.files : [];
-    const styles = files
-      .map((file) =>
-        isRecord(file) && typeof file.style === "string" ? file.style : "",
-      )
-      .filter(Boolean);
     const faces = files.flatMap((file) => {
       if (!isRecord(file)) return [];
       const sourceStyle =
@@ -89,15 +81,6 @@ export function createProductionFontCatalog(
         left.fontWeight - right.fontWeight ||
         left.fontStyle.localeCompare(right.fontStyle),
     );
-    const expandedStyles = styles.some(isVariableFontStyle)
-      ? VARIABLE_FONT_WEIGHT_OPTIONS.map(String)
-      : styles;
-    stylesByFamily.set(
-      family,
-      Array.from(new Set(expandedStyles.length ? expandedStyles : ["Regular"])).sort((left, right) =>
-        left.localeCompare(right),
-      ),
-    );
     facesByFamily.set(
       family,
       uniqueFaces.length
@@ -119,21 +102,9 @@ export function createProductionFontCatalog(
     families: Array.from(idsByFamily.keys()).sort((left, right) =>
       left.localeCompare(right),
     ),
-    stylesByFamily,
     facesByFamily,
     idsByFamily,
   };
-}
-
-export function fontStylesForFamily(
-  productionFontCatalog: ProductionFontCatalog | undefined,
-  fallbackStylesByFamily: Map<string, string[]>,
-  family: string | undefined,
-) {
-  if (family && productionFontCatalog?.stylesByFamily.has(family)) {
-    return productionFontCatalog.stylesByFamily.get(family) ?? ["Regular"];
-  }
-  return fallbackFontStylesForFamily(fallbackStylesByFamily, family);
 }
 
 export function productionFontIdForFamily(

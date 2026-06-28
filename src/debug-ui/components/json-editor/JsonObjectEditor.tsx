@@ -28,6 +28,13 @@ interface JsonObjectEditorProps {
   onRootChange: (nextValue: JsonValue) => void;
 }
 
+function isFontCompanionKey(key: string, value: Record<string, JsonValue>) {
+  return (
+    (key === "fontWeight" || key === "fontStyle") &&
+    (typeof value.fontFamily === "string" || typeof value.family === "string")
+  );
+}
+
 export function JsonObjectEditor({
   rootValue,
   inheritedRoot,
@@ -119,7 +126,7 @@ export function JsonObjectEditor({
           onConfirm={() => commitDeleteKey(pendingDeleteKey)}
         />
       ) : null}
-      {Object.entries(value).map(([key, entryValue]) => (
+      {Object.entries(value).filter(([key]) => !isFontCompanionKey(key, value)).map(([key, entryValue]) => (
         <div className="json-object-row" key={key}>
           <JsonTreeNode
             rootValue={rootValue}

@@ -4,10 +4,21 @@ import {
   type ChatModuleMessage,
   type ResolvedMessageBubbleProps,
 } from "../schemas/index.js";
+import { fontWeightForProductionStyle } from "../fonts/productionFontNormalization.js";
 import { clamp } from "./helpers.js";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function resolvedFontWeight(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim()) {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+    return fontWeightForProductionStyle(value);
+  }
+  return undefined;
 }
 
 const MessageThemeSchema = z.object({
@@ -16,12 +27,15 @@ const MessageThemeSchema = z.object({
     bodySize: z.number().positive(),
     bodyLineHeight: z.number().positive(),
     weight: z.union([z.string().min(1), z.number().positive()]).optional(),
+    fontWeight: z.union([z.string().min(1), z.number().positive()]).optional(),
+    fontStyle: z.enum(["normal", "italic"]).optional(),
   }),
   typography: z
     .object({
       message: z
         .object({
           fontFamily: z.string().min(1).optional(),
+          fontStyle: z.enum(["normal", "italic"]).optional(),
           fontSize: z.number().positive().optional(),
           lineHeight: z.number().positive().optional(),
           fontWeight: z.union([z.string().min(1), z.number().positive()]).optional(),
@@ -239,11 +253,15 @@ export function resolveMessageBubble({
       backgroundColor,
       textColor,
       fontFamily: messageTypography?.fontFamily ?? themeTokens.fonts.family,
+      fontStyle: messageTypography?.fontStyle ?? themeTokens.fonts.fontStyle,
       fontSize: messageTypography?.fontSize ?? themeTokens.fonts.bodySize,
       lineHeight:
         messageTypography?.lineHeight ?? themeTokens.fonts.bodyLineHeight,
       fontWeight:
-        messageTypography?.fontWeight ?? themeTokens.fonts.weight ?? "Regular",
+        resolvedFontWeight(messageTypography?.fontWeight) ??
+        resolvedFontWeight(themeTokens.fonts.fontWeight) ??
+        resolvedFontWeight(themeTokens.fonts.weight) ??
+        400,
       borderRadius: themeTokens.radii.bubble,
       paddingX: themeTokens.chatBubbles.paddingX,
       paddingY: themeTokens.chatBubbles.paddingY,

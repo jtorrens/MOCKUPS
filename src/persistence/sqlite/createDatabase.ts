@@ -2,6 +2,10 @@ import { mkdirSync, readFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import Database from "better-sqlite3";
+import {
+  fontStyleForProductionStyle,
+  fontWeightForProductionStyle,
+} from "../../domain/fonts/productionFontNormalization.js";
 import { developmentDatabasePath } from "./paths.js";
 
 const schemaPath = fileURLToPath(new URL("./schema.sql", import.meta.url));
@@ -1483,7 +1487,6 @@ function defaultLabelComponentTokens() {
     backgroundColorToken: "background",
     textColorToken: "textPrimary",
     fontSize: 12,
-    fontWeight: "Regular",
     shadowEnabled: false,
     shadowToken: "system",
     surfaceReliefEnabled: false,
@@ -2005,6 +2008,303 @@ function applyAdditiveV32Migration(database: SQLiteDatabase): void {
   database.pragma("user_version = 32");
 }
 
+function normalizeProductionFontTokens(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(normalizeProductionFontTokens);
+  if (!value || typeof value !== "object") return value;
+  const source = value as Record<string, unknown>;
+  const next: Record<string, unknown> = {};
+  for (const [key, entry] of Object.entries(source)) {
+    if (key === "fontWeight" && typeof entry === "string" && entry.trim()) {
+      const parsed = Number(entry);
+      next[key] = Number.isFinite(parsed)
+        ? parsed
+        : fontWeightForProductionStyle(entry);
+      if (!Object.hasOwn(source, "fontStyle")) {
+        next.fontStyle = fontStyleForProductionStyle(entry);
+      }
+      continue;
+    }
+    next[key] = normalizeProductionFontTokens(entry);
+  }
+  return next;
+}
+
+function normalizeJsonColumnFontTokens(
+  database: SQLiteDatabase,
+  table: string,
+  idColumn: string,
+  jsonColumn: string,
+) {
+  const rows = database
+    .prepare(`SELECT ${idColumn} AS id, ${jsonColumn} AS value FROM ${table}`)
+    .all() as { id: string; value: string | null }[];
+  const update = database.prepare(
+    `UPDATE ${table} SET ${jsonColumn} = ? WHERE ${idColumn} = ?`,
+  );
+  for (const row of rows) {
+    if (!row.value) continue;
+    try {
+      const parsed = JSON.parse(row.value) as unknown;
+      const normalized = normalizeProductionFontTokens(parsed);
+      const nextJson = JSON.stringify(normalized);
+      if (nextJson !== row.value) update.run(nextJson, row.id);
+    } catch {
+      // Malformed JSON is handled by validation paths; skip migration here.
+    }
+  }
+}
+
+function applyAdditiveV33Migration(database: SQLiteDatabase): void {
+  normalizeJsonColumnFontTokens(database, "themes", "id", "tokens_json");
+  normalizeJsonColumnFontTokens(
+    database,
+    "module_theme_configs",
+    "id",
+    "tokens_json",
+  );
+  normalizeJsonColumnFontTokens(
+    database,
+    "component_classes",
+    "id",
+    "tokens_json",
+  );
+  normalizeJsonColumnFontTokens(
+    database,
+    "module_instances",
+    "id",
+    "behavior_json",
+  );
+  database.pragma("user_version = 33");
+}
+
+function removeCoreChatModuleFontIdentityFields(value: unknown): unknown {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  const root = { ...(value as Record<string, unknown>) };
+  const typography = root.typography;
+  if (typography && typeof typography === "object" && !Array.isArray(typography)) {
+    const nextTypography = { ...(typography as Record<string, unknown>) };
+    for (const key of ["message", "headerTitle", "headerSubtitle"]) {
+      const entry = nextTypography[key];
+      if (!entry || typeof entry !== "object" || Array.isArray(entry)) continue;
+      const nextEntry = { ...(entry as Record<string, unknown>) };
+      delete nextEntry.fontFamily;
+      delete nextEntry.family;
+      delete nextEntry.fontStyle;
+      delete nextEntry.productionFontId;
+      delete nextEntry.source;
+      nextTypography[key] = nextEntry;
+    }
+    root.typography = nextTypography;
+  }
+  return root;
+}
+
+function applyAdditiveV34Migration(database: SQLiteDatabase): void {
+  const rows = database
+    .prepare(
+      `SELECT id, tokens_json, metadata_json
+       FROM module_theme_configs
+       WHERE module_id = 'core.chat'`,
+    )
+    .all() as { id: string; tokens_json: string; metadata_json: string | null }[];
+  const update = database.prepare(
+    `UPDATE module_theme_configs
+     SET tokens_json = ?, metadata_json = ?
+     WHERE id = ?`,
+  );
+  for (const row of rows) {
+    try {
+      const tokens = removeCoreChatModuleFontIdentityFields(
+        JSON.parse(row.tokens_json),
+      );
+      let metadata = row.metadata_json
+        ? (JSON.parse(row.metadata_json) as Record<string, unknown>)
+        : {};
+      if (
+        metadata.default_tokens_json &&
+        typeof metadata.default_tokens_json === "object" &&
+        !Array.isArray(metadata.default_tokens_json)
+      ) {
+        metadata = {
+          ...metadata,
+          default_tokens_json: removeCoreChatModuleFontIdentityFields(
+            metadata.default_tokens_json,
+          ),
+        };
+      }
+      update.run(JSON.stringify(tokens), JSON.stringify(metadata), row.id);
+    } catch {
+      // Malformed JSON is handled by validation paths; skip migration here.
+    }
+  }
+  database.pragma("user_version = 34");
+}
+
+function removeCoreChatModuleTypography(value: unknown): unknown {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  const root = { ...(value as Record<string, unknown>) };
+  delete root.typography;
+  return root;
+}
+
+function removeCoreChatModuleFontGroup(value: unknown): unknown {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  const root = { ...(value as Record<string, unknown>) };
+  delete root.fonts;
+  return root;
+}
+
+function removeLabelComponentFontIdentity(value: unknown): unknown {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  const root = { ...(value as Record<string, unknown>) };
+  delete root.fontFamily;
+  delete root.fontWeight;
+  delete root.fontStyle;
+  delete root.productionFontId;
+  delete root.source;
+  return root;
+}
+
+function removeOrphanAppFontMetadata(value: unknown): unknown {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  const root = { ...(value as Record<string, unknown>) };
+  const tokenRoot =
+    root.tokens_json && typeof root.tokens_json === "object" && !Array.isArray(root.tokens_json)
+      ? { ...(root.tokens_json as Record<string, unknown>) }
+      : root;
+  if (tokenRoot.fonts && typeof tokenRoot.fonts === "object" && !Array.isArray(tokenRoot.fonts)) {
+    const fonts = { ...(tokenRoot.fonts as Record<string, unknown>) };
+    if (typeof fonts.family !== "string" || !fonts.family.trim()) {
+      delete fonts.source;
+      delete fonts.productionFontId;
+      delete fonts.fontWeight;
+      delete fonts.fontStyle;
+    }
+    tokenRoot.fonts = fonts;
+  }
+  return root.tokens_json && typeof root.tokens_json === "object" && !Array.isArray(root.tokens_json)
+    ? { ...root, tokens_json: tokenRoot }
+    : tokenRoot;
+}
+
+function applyAdditiveV35Migration(database: SQLiteDatabase): void {
+  const moduleRows = database
+    .prepare(
+      `SELECT id, tokens_json, metadata_json
+       FROM module_theme_configs
+       WHERE module_id = 'core.chat'`,
+    )
+    .all() as { id: string; tokens_json: string; metadata_json: string | null }[];
+  const updateModule = database.prepare(
+    `UPDATE module_theme_configs
+     SET tokens_json = ?, metadata_json = ?
+     WHERE id = ?`,
+  );
+  for (const row of moduleRows) {
+    try {
+      const tokens = removeCoreChatModuleTypography(JSON.parse(row.tokens_json));
+      let metadata = row.metadata_json
+        ? (JSON.parse(row.metadata_json) as Record<string, unknown>)
+        : {};
+      if (
+        metadata.default_tokens_json &&
+        typeof metadata.default_tokens_json === "object" &&
+        !Array.isArray(metadata.default_tokens_json)
+      ) {
+        metadata = {
+          ...metadata,
+          default_tokens_json: removeCoreChatModuleTypography(
+            metadata.default_tokens_json,
+          ),
+        };
+      }
+      updateModule.run(JSON.stringify(tokens), JSON.stringify(metadata), row.id);
+    } catch {
+      // Malformed JSON is handled by validation paths; skip migration here.
+    }
+  }
+
+  const componentRows = database
+    .prepare(
+      `SELECT id, tokens_json
+       FROM component_classes
+       WHERE component_type = 'label'`,
+    )
+    .all() as { id: string; tokens_json: string }[];
+  const updateComponent = database.prepare(
+    "UPDATE component_classes SET tokens_json = ? WHERE id = ?",
+  );
+  for (const row of componentRows) {
+    try {
+      updateComponent.run(
+        JSON.stringify(removeLabelComponentFontIdentity(JSON.parse(row.tokens_json))),
+        row.id,
+      );
+    } catch {
+      // Malformed JSON is handled by validation paths; skip migration here.
+    }
+  }
+
+  const appRows = database
+    .prepare("SELECT id, config_json FROM apps")
+    .all() as { id: string; config_json: string | null }[];
+  const updateApp = database.prepare(
+    "UPDATE apps SET config_json = ? WHERE id = ?",
+  );
+  for (const row of appRows) {
+    if (!row.config_json) continue;
+    try {
+      updateApp.run(
+        JSON.stringify(removeOrphanAppFontMetadata(JSON.parse(row.config_json))),
+        row.id,
+      );
+    } catch {
+      // Malformed JSON is handled by validation paths; skip migration here.
+    }
+  }
+
+  database.pragma("user_version = 35");
+}
+
+function applyAdditiveV36Migration(database: SQLiteDatabase): void {
+  const rows = database
+    .prepare(
+      `SELECT id, tokens_json, metadata_json
+       FROM module_theme_configs
+       WHERE module_id = 'core.chat'`,
+    )
+    .all() as { id: string; tokens_json: string; metadata_json: string | null }[];
+  const update = database.prepare(
+    `UPDATE module_theme_configs
+     SET tokens_json = ?, metadata_json = ?
+     WHERE id = ?`,
+  );
+  for (const row of rows) {
+    try {
+      const tokens = removeCoreChatModuleFontGroup(JSON.parse(row.tokens_json));
+      let metadata = row.metadata_json
+        ? (JSON.parse(row.metadata_json) as Record<string, unknown>)
+        : {};
+      if (
+        metadata.default_tokens_json &&
+        typeof metadata.default_tokens_json === "object" &&
+        !Array.isArray(metadata.default_tokens_json)
+      ) {
+        metadata = {
+          ...metadata,
+          default_tokens_json: removeCoreChatModuleFontGroup(
+            metadata.default_tokens_json,
+          ),
+        };
+      }
+      update.run(JSON.stringify(tokens), JSON.stringify(metadata), row.id);
+    } catch {
+      // Malformed JSON is handled by validation paths; skip migration here.
+    }
+  }
+  database.pragma("user_version = 36");
+}
+
 export function applyInitialSchema(database: SQLiteDatabase): void {
   database.exec(readFileSync(schemaPath, "utf8"));
   applyAdditiveV2Migration(database);
@@ -2038,6 +2338,10 @@ export function applyInitialSchema(database: SQLiteDatabase): void {
   applyAdditiveV30Migration(database);
   applyAdditiveV31Migration(database);
   applyAdditiveV32Migration(database);
+  applyAdditiveV33Migration(database);
+  applyAdditiveV34Migration(database);
+  applyAdditiveV35Migration(database);
+  applyAdditiveV36Migration(database);
   database.pragma("foreign_keys = ON");
 }
 

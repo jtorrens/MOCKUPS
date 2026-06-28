@@ -106,8 +106,18 @@ const labelOverrideFields: ComponentOverrideField[] = [
   { key: "backgroundVisible", label: "Background visible", kind: "boolean" },
   { key: "backgroundColorToken", label: "Background theme color", kind: "text" },
   { key: "textColorToken", label: "Text theme color", kind: "text" },
+  { key: "fontFamily", label: "Font family", kind: "text" },
   { key: "fontSize", label: "Text size", kind: "number" },
-  { key: "fontWeight", label: "Text weight", kind: "text" },
+  { key: "fontWeight", label: "Text weight", kind: "number" },
+  {
+    key: "fontStyle",
+    label: "Font style",
+    kind: "select",
+    options: [
+      { value: "normal", label: "Normal" },
+      { value: "italic", label: "Italic" },
+    ],
+  },
   { key: "shadowEnabled", label: "Shadow", kind: "boolean" },
   { key: "shadowToken", label: "Shadow token", kind: "text" },
   { key: "surfaceReliefEnabled", label: "Surface relief", kind: "boolean" },
@@ -132,6 +142,15 @@ function moduleEditorTokenRoot(
     ? normalizeCoreChatModuleTokensForEditor(stripped)
     : stripped;
 }
+
+const MODULE_DESIGN_GROUPS = new Set([
+  "layout",
+  "header",
+  "messages",
+  "typography",
+  "chatBubbles",
+  "radii",
+]);
 
 function stringifyJson(value: unknown): string {
   return JSON.stringify(value, null, 2);
@@ -178,9 +197,16 @@ export function ModuleThemeConfigRecordEditor({
     !Array.isArray(inheritedFields.tokens_json)
       ? moduleEditorTokenRoot(record, inheritedFields.tokens_json)
       : undefined;
-  const designGroups = Object.keys(tokenRoot).filter(
+  const designGroups = Array.from(
+    new Set([
+      ...Object.keys(inheritedTokenRoot ?? {}),
+      ...Object.keys(tokenRoot),
+    ]),
+  ).filter(
     (group) =>
+      MODULE_DESIGN_GROUPS.has(group) &&
       group !== "modes" &&
+      group !== "fonts" &&
       group !== "textInputBar" &&
       group !== "keyboard" &&
       group !== "avatars" &&

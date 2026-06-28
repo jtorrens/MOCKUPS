@@ -271,6 +271,7 @@ export async function getPreviewPayload(
     shotId: selection.shotId,
     screenInstanceId: selection.screenInstanceId,
     frame: String(selection.frame),
+    _: String(Date.now()),
   });
   return readResponse(await fetch(`/api/app/preview?${query}`));
 }

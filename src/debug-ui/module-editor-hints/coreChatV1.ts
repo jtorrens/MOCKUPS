@@ -71,6 +71,7 @@ export const coreChatV1EditorHints: ModuleEditorHintContract = {
       "typography.message.fontFamily": {
         label: "Message font family",
         widget: "font",
+        lockFontFamily: true,
       },
       "typography.message.fontSize": {
         label: "Message font size",
@@ -91,6 +92,7 @@ export const coreChatV1EditorHints: ModuleEditorHintContract = {
       "typography.headerTitle.fontFamily": {
         label: "Header title font family",
         widget: "font",
+        lockFontFamily: true,
       },
       "typography.headerTitle.fontSize": {
         label: "Header title font size",
@@ -111,6 +113,7 @@ export const coreChatV1EditorHints: ModuleEditorHintContract = {
       "typography.headerSubtitle.fontFamily": {
         label: "Header subtitle font family",
         widget: "font",
+        lockFontFamily: true,
       },
       "typography.headerSubtitle.fontSize": {
         label: "Header subtitle font size",
@@ -275,6 +278,7 @@ export const coreChatV1EditorHints: ModuleEditorHintContract = {
       "typography.message.fontFamily": {
         label: "Message font family",
         widget: "font",
+        lockFontFamily: true,
       },
       "typography.message.fontSize": {
         label: "Message font size",

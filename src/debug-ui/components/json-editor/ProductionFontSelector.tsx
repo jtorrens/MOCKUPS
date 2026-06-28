@@ -14,6 +14,9 @@ export interface ProductionFontSelection {
 
 interface ProductionFontSelectorProps {
   catalog?: ProductionFontCatalog;
+  compact?: boolean;
+  inherited?: boolean;
+  lockFamily?: boolean;
   value: {
     fontFamily?: unknown;
     fontWeight?: unknown;
@@ -75,8 +78,19 @@ function closestFace(
   );
 }
 
+function defaultFace(faces: ProductionFontFaceOption[]) {
+  return (
+    faces.find((face) => face.fontWeight === 400 && face.fontStyle === "normal") ??
+    faces.find((face) => face.fontStyle === "normal") ??
+    faces[0]
+  );
+}
+
 export function ProductionFontSelector({
   catalog,
+  compact = false,
+  inherited = false,
+  lockFamily = false,
   value,
   onChange,
 }: ProductionFontSelectorProps) {
@@ -118,81 +132,106 @@ export function ProductionFontSelector({
     });
   }
 
+  const familySelect = (
+    <select
+      className={`json-value-control ${inherited ? "is-inherited-value" : ""}`.trim()}
+      style={{ minWidth: 0 }}
+      value={currentFamily}
+      disabled={lockFamily || !familyOptions.length}
+      onChange={(event) => {
+        const nextFamily = event.currentTarget.value;
+        commitFace(defaultFace(catalog?.facesByFamily.get(nextFamily) ?? []));
+      }}
+    >
+      {familyOptions.length ? (
+        familyOptions.map((family) => (
+          <option key={family} value={family}>
+            {family}
+          </option>
+        ))
+      ) : (
+        <option value="">No production fonts</option>
+      )}
+    </select>
+  );
+  const weightSelect = (
+    <select
+      className={`json-value-control ${inherited ? "is-inherited-value" : ""}`.trim()}
+      style={{ minWidth: 0 }}
+      value={String(currentFace.fontWeight)}
+      disabled={!weightOptions.length}
+      onChange={(event) => {
+        const nextWeight = Number(event.currentTarget.value);
+        commitFace(
+          closestFace(faces, nextWeight, currentFace.fontStyle) ?? {
+            ...currentFace,
+            fontWeight: nextWeight,
+          },
+        );
+      }}
+    >
+      {weightOptions.map((weight) => (
+        <option key={weight} value={weight}>
+          {weight}
+        </option>
+      ))}
+    </select>
+  );
+  const styleSelect = (
+    <select
+      className={`json-value-control ${inherited ? "is-inherited-value" : ""}`.trim()}
+      style={{ minWidth: 0 }}
+      value={currentFace.fontStyle}
+      disabled={!styleOptions.length}
+      onChange={(event) => {
+        const nextStyle = event.currentTarget.value as "normal" | "italic";
+        commitFace(
+          closestFace(faces, currentFace.fontWeight, nextStyle) ?? {
+            ...currentFace,
+            fontStyle: nextStyle,
+          },
+        );
+      }}
+    >
+      {styleOptions.map((style) => (
+        <option key={style} value={style}>
+          {style === "italic" ? "Italic" : "Normal"}
+        </option>
+      ))}
+    </select>
+  );
+
+  if (compact) {
+    return (
+      <span
+        style={{
+          display: "grid",
+          gap: 7,
+          gridTemplateColumns: "minmax(0, 1fr) 58px 72px",
+          minWidth: 0,
+          width: "100%",
+        }}
+      >
+        {familySelect}
+        {weightSelect}
+        {styleSelect}
+      </span>
+    );
+  }
+
   return (
     <>
       <InspectorFieldRow
         label="Font family"
-        control={
-          <select
-            className="json-value-control"
-            value={currentFamily}
-            disabled={!familyOptions.length}
-            onChange={(event) => {
-              const nextFamily = event.currentTarget.value;
-              commitFace(catalog?.facesByFamily.get(nextFamily)?.[0]);
-            }}
-          >
-            {familyOptions.length ? (
-              familyOptions.map((family) => (
-                <option key={family} value={family}>
-                  {family}
-                </option>
-              ))
-            ) : (
-              <option value="">No production fonts</option>
-            )}
-          </select>
-        }
+        control={familySelect}
       />
       <InspectorFieldRow
         label="Font weight"
-        control={
-          <select
-            className="json-value-control"
-            value={String(currentFace.fontWeight)}
-            disabled={!weightOptions.length}
-            onChange={(event) => {
-              const nextWeight = Number(event.currentTarget.value);
-              commitFace(
-                closestFace(faces, nextWeight, currentFace.fontStyle) ?? {
-                  ...currentFace,
-                  fontWeight: nextWeight,
-                },
-              );
-            }}
-          >
-            {weightOptions.map((weight) => (
-              <option key={weight} value={weight}>
-                {weight}
-              </option>
-            ))}
-          </select>
-        }
+        control={weightSelect}
       />
       <InspectorFieldRow
         label="Font style"
-        control={
-          <select
-            className="json-value-control"
-            value={currentFace.fontStyle}
-            disabled={!styleOptions.length}
-            onChange={(event) => {
-              const nextStyle = event.currentTarget.value as "normal" | "italic";
-              commitFace(
-                closestFace(faces, currentFace.fontWeight, nextStyle) ?? {
-                  ...currentFace,
-                  fontStyle: nextStyle,
-                },
-              );
-            }}
-          >
-            {styleOptions.map((style) => (
-              <option key={style} value={style}>
-                {style === "italic" ? "Italic" : "Normal"}
-              </option>
-            ))}
-          </select>
-        }
+        control={styleSelect}
       />
     </>
   );

@@ -1,11 +1,13 @@
-import { useSystemFontCatalog } from "./systemFonts.js";
 import { DeferredNumberInput } from "../../editor-ui/DeferredNumberInput.js";
 import { ColorValueEditor } from "./ColorValueEditor.js";
 import {
-  fontStylesForFamily,
   productionFontIdForFamily,
   type ProductionFontCatalog,
 } from "./productionFonts.js";
+import {
+  ProductionFontSelector,
+  type ProductionFontSelection,
+} from "./ProductionFontSelector.js";
 import type { PaletteColorCatalog } from "./paletteColors.js";
 import type { JsonUiHints } from "./uiHints.js";
 import { hintForPath } from "./uiHints.js";
@@ -82,7 +84,7 @@ function fontFamilyForPath(rootValue: JsonValue, path: JsonPath): string | undef
 }
 
 function isFontStyleKey(key: string, parent: string) {
-  return key === "style" && /font|type/i.test(parent);
+  return key === "fontStyle" || (key === "style" && /font|type/i.test(parent));
 }
 
 function isFontWeightKey(key: string, parent: string, groupContext?: string) {
@@ -98,50 +100,6 @@ function isFontFamilyKey(key: string, parent: string, groupContext?: string) {
     /fontFamily$/i.test(key) ||
     (key === "family" && /font|fonts/i.test(parent || groupContext || ""))
   );
-}
-
-function firstAvailableFontStyle(
-  productionFontCatalog: ProductionFontCatalog | undefined,
-  stylesByFamily: Map<string, string[]>,
-  family: string,
-) {
-  return (
-    fontStylesForFamily(productionFontCatalog, stylesByFamily, family)[0] ??
-    "Regular"
-  );
-}
-
-function withCompatibleSiblingWeights(
-  rootValue: JsonValue,
-  path: JsonPath,
-  family: string,
-  productionFontCatalog: ProductionFontCatalog | undefined,
-  stylesByFamily: Map<string, string[]>,
-) {
-  const parentPath = path.slice(0, -1);
-  const parent = getAtPath(rootValue, parentPath);
-  if (!isJsonObject(parent)) return rootValue;
-  const options = fontStylesForFamily(
-    productionFontCatalog,
-    stylesByFamily,
-    family,
-  );
-  const fallback = firstAvailableFontStyle(
-    productionFontCatalog,
-    stylesByFamily,
-    family,
-  );
-  let nextRoot = rootValue;
-  for (const [key, value] of Object.entries(parent)) {
-    if (!isFontWeightKey(key, String(parentPath[parentPath.length - 1] ?? ""))) {
-      continue;
-    }
-    if (typeof value === "string" && options.includes(value)) {
-      continue;
-    }
-    nextRoot = setAtPath(nextRoot, [...parentPath, key], fallback);
-  }
-  return nextRoot;
 }
 
 function withProductionFontMetadata(
@@ -163,6 +121,28 @@ function withProductionFontMetadata(
   );
 }
 
+function withProductionFontSelection(
+  rootValue: JsonValue,
+  path: JsonPath,
+  selection: ProductionFontSelection,
+  productionFontCatalog: ProductionFontCatalog | undefined,
+  options: { lockFamily?: boolean } = {},
+) {
+  const parentPath = path.slice(0, -1);
+  let nextRoot = options.lockFamily
+    ? rootValue
+    : setAtPath(rootValue, path, selection.fontFamily);
+  nextRoot = setAtPath(nextRoot, [...parentPath, "fontWeight"], selection.fontWeight);
+  nextRoot = setAtPath(nextRoot, [...parentPath, "fontStyle"], selection.fontStyle);
+  if (options.lockFamily) return nextRoot;
+  return withProductionFontMetadata(
+    nextRoot,
+    path,
+    selection.fontFamily,
+    productionFontCatalog,
+  );
+}
+
 export function JsonValueEditor({
   rootValue,
   path,
@@ -176,9 +156,6 @@ export function JsonValueEditor({
 }: JsonValueEditorProps) {
   const hint = hintForPath(hints, path, value, groupContext);
   const widget = hint.widget;
-  const { families, stylesByFamily } = useSystemFontCatalog();
-  const approvedFamilies = productionFontCatalog?.families ?? [];
-  const fontFamilies = productionFontCatalog ? approvedFamilies : families;
   const key = String(path[path.length - 1] ?? "");
   const parent = String(path[path.length - 2] ?? "");
 
@@ -188,16 +165,8 @@ export function JsonValueEditor({
   const chromeOptions = parentChromeOptions.length
     ? parentChromeOptions
     : contextChromeOptions;
-  const fontOptions =
-    isFontStyleKey(key, parent) || isFontWeightKey(key, parent, groupContext)
-      ? fontStylesForFamily(
-          productionFontCatalog,
-          stylesByFamily,
-          fontFamilyForPath(rootValue, path),
-        )
-      : [];
   const dynamicSelectOptions =
-    hint.options ?? (chromeOptions.length ? chromeOptions : fontOptions);
+    hint.options ?? (chromeOptions.length ? chromeOptions : []);
 
   const resolvedWidget =
     widget ||
@@ -221,61 +190,64 @@ export function JsonValueEditor({
   }
 
   if (resolvedWidget === "font") {
+    const parentPath = path.slice(0, -1);
+    const parentValue = getAtPath(rootValue, parentPath);
+    const parentObject = isJsonObject(parentValue) ? parentValue : {};
     return (
-      <select
-        className="json-value-control"
-        value={String(value ?? "")}
-        onChange={(event) => {
-          const nextFamily = event.target.value;
-          if (onRootChange && isFontFamilyKey(key, parent, groupContext)) {
-            const nextRoot = withCompatibleSiblingWeights(
-              withProductionFontMetadata(
-                setAtPath(rootValue, path, nextFamily),
-                path,
-                nextFamily,
-                productionFontCatalog,
-              ),
-              path,
-              nextFamily,
-              productionFontCatalog,
-              stylesByFamily,
-            );
-            onRootChange(nextRoot);
+      <ProductionFontSelector
+        compact
+        catalog={productionFontCatalog}
+        lockFamily={hint.lockFontFamily}
+        value={{
+          fontFamily: value,
+          fontWeight: parentObject.fontWeight,
+          fontStyle: parentObject.fontStyle,
+        }}
+        onChange={(nextFont) => {
+          if (!onRootChange) {
+            onChange(nextFont.fontFamily);
             return;
           }
-          onChange(nextFamily);
+          onRootChange(
+            withProductionFontSelection(
+              rootValue,
+              path,
+              nextFont,
+              productionFontCatalog,
+              { lockFamily: hint.lockFontFamily },
+            ),
+          );
         }}
-      >
-        {fontFamilies.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </select>
+      />
     );
   }
 
   if (isFontWeightKey(key, parent, groupContext) || isFontStyleKey(key, parent)) {
-    const options = withCurrentOption(
-      fontStylesForFamily(
-        productionFontCatalog,
-        stylesByFamily,
-        fontFamilyForPath(rootValue, path),
-      ),
-      value,
-    );
+    const parentPath = path.slice(0, -1);
+    const parentValue = getAtPath(rootValue, parentPath);
+    const parentObject = isJsonObject(parentValue) ? parentValue : {};
     return (
-      <select
-        className="json-value-control"
-        value={String(value ?? "")}
-        onChange={(event) => onChange(event.target.value)}
-      >
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </select>
+      <ProductionFontSelector
+        compact
+        catalog={productionFontCatalog}
+        lockFamily={hint.lockFontFamily}
+        value={{
+          fontFamily: fontFamilyForPath(rootValue, path),
+          fontWeight: parentObject.fontWeight,
+          fontStyle: parentObject.fontStyle,
+        }}
+        onChange={(nextFont) =>
+          onRootChange?.(
+            withProductionFontSelection(
+              rootValue,
+              [...parentPath, "fontFamily"],
+              nextFont,
+              productionFontCatalog,
+              { lockFamily: hint.lockFontFamily },
+            ),
+          )
+        }
+      />
     );
   }
 

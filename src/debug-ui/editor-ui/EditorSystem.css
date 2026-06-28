@@ -434,7 +434,7 @@
 }
 
 .token-override-row.inspector-field-row {
-  grid-template-columns: minmax(150px, 0.55fr) minmax(220px, 1fr) auto;
+  grid-template-columns: minmax(120px, 0.42fr) minmax(260px, 1fr) auto;
 }
 
 .mode-color-row.inspector-field-row {

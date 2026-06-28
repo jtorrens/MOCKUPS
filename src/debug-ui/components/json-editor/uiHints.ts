@@ -28,6 +28,7 @@ export type JsonUiHint = {
   property?: string;
   summaryKeys?: string[];
   options?: string[];
+  lockFontFamily?: boolean;
   min?: number;
   max?: number;
   step?: number;

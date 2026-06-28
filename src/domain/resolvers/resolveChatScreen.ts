@@ -81,6 +81,7 @@ const DeviceStateValuesSchema = z.object({
 
 const ChatThemeSchema = z.object({
   fonts: z.record(z.string(), z.unknown()),
+  systemFonts: z.record(z.string(), z.unknown()).optional(),
   colors: z.record(z.string(), z.unknown()),
   wallpaper: z.record(z.string(), z.unknown()).optional(),
   statusBar: z.record(z.string(), z.unknown()),
@@ -1140,6 +1141,9 @@ function resolveDefaultLabelComponent(
   const backgroundColorToken = stringValue(tokens.backgroundColorToken, "background");
   const textColorToken = stringValue(tokens.textColorToken, "textPrimary");
   const shadowToken = stringValue(tokens.shadowToken, "system");
+  const themeFonts = isObject(themeTokens.fonts) ? themeTokens.fonts : {};
+  const hasLocalFontStyle =
+    Object.hasOwn(tokens, "fontStyle") || Object.hasOwn(tokens, "fontWeight");
 
   return {
     id: component?.id ?? null,
@@ -1164,8 +1168,15 @@ function resolveDefaultLabelComponent(
       "#F2F2F7",
     ),
     textColor: themeColor(themeTokens, palette, textColorToken, "#1D1D1F"),
+    fontFamily: stringValue(tokens.fontFamily, stringValue(themeFonts.family, "system-ui")),
+    fontStyle: hasLocalFontStyle
+      ? resolvedFontStyleToken(tokens.fontStyle, tokens.fontWeight)
+      : resolvedFontStyleToken(themeFonts.fontStyle, themeFonts.fontWeight ?? themeFonts.weight),
     fontSize: numberValue(tokens.fontSize, 12) * renderScale,
-    fontWeight: stringValue(tokens.fontWeight, "Regular"),
+    fontWeight:
+      resolvedFontWeightToken(tokens.fontWeight) ??
+      resolvedFontWeightToken(themeFonts.fontWeight ?? themeFonts.weight) ??
+      400,
     shadowEnabled: tokens.shadowEnabled === true,
     shadow: isObject(shadows[shadowToken])
       ? shadows[shadowToken]
@@ -1374,9 +1385,16 @@ export function moduleTypographyDefaultsFromFonts(
   const bodySize = numericToken(fonts.bodySize);
   const bodyLineHeight = numericToken(fonts.bodyLineHeight);
   const captionSize = numericToken(fonts.captionSize);
-  const weight = fontWeightToken(fonts.weight);
+  const weight = resolvedFontWeightToken(fonts.fontWeight ?? fonts.weight);
+  const style = resolvedFontStyleToken(fonts.fontStyle, fonts.fontWeight ?? fonts.weight);
 
-  if (!fontFamily && bodySize === undefined && captionSize === undefined) {
+  if (
+    !fontFamily &&
+    bodySize === undefined &&
+    captionSize === undefined &&
+    weight === undefined &&
+    style === undefined
+  ) {
     return {};
   }
 
@@ -1387,18 +1405,21 @@ export function moduleTypographyDefaultsFromFonts(
         ...(bodySize !== undefined ? { fontSize: bodySize } : {}),
         ...(bodyLineHeight !== undefined ? { lineHeight: bodyLineHeight } : {}),
         ...(weight !== undefined ? { fontWeight: weight } : {}),
+        ...(style !== undefined ? { fontStyle: style } : {}),
       },
       headerTitle: {
         ...(fontFamily ? { fontFamily } : {}),
         ...(bodySize !== undefined ? { fontSize: bodySize } : {}),
         ...(bodyLineHeight !== undefined ? { lineHeight: bodyLineHeight } : {}),
         ...(weight !== undefined ? { fontWeight: weight } : {}),
+        ...(style !== undefined ? { fontStyle: style } : {}),
       },
       headerSubtitle: {
         ...(fontFamily ? { fontFamily } : {}),
         ...(captionSize !== undefined ? { fontSize: captionSize } : {}),
         ...(captionSize !== undefined ? { lineHeight: captionSize * 1.2308 } : {}),
         ...(weight !== undefined ? { fontWeight: weight } : {}),
+        ...(style !== undefined ? { fontStyle: style } : {}),
       },
     },
   };
@@ -1709,6 +1730,15 @@ function renderScaleFromMetrics(
 }
 
 function keyboardInstanceOverrides(value: unknown) {
+  if (!isObject(value)) return {};
+  const next = { ...value };
+  delete next.fontFamily;
+  delete next.fontWeight;
+  delete next.fontStyle;
+  return next;
+}
+
+function textInputBarInstanceOverrides(value: unknown) {
   if (!isObject(value)) return {};
   const next = { ...value };
   delete next.fontFamily;
@@ -2335,12 +2365,25 @@ export function resolveChatScreen({
     inheritedModuleTokens,
     palette,
   ) as Record<string, unknown>;
+  const systemThemeTokens = resolvePaletteTokenReferences(
+    globalThemeTokens,
+    palette,
+  ) as Record<string, unknown>;
   const renderScale = renderScaleFromMetrics(metrics);
   const scaledThemeTokens = scaleDesignTokensForRender(
     mergedThemeTokens,
     renderScale,
   );
-  const normalizedThemeTokens = normalizeChatVisualTokenGroups(scaledThemeTokens);
+  const scaledSystemThemeTokens = scaleDesignTokensForRender(
+    systemThemeTokens,
+    renderScale,
+  );
+  const normalizedThemeTokens = {
+    ...normalizeChatVisualTokenGroups(scaledThemeTokens),
+    ...(isObject(scaledSystemThemeTokens.fonts)
+      ? { systemFonts: scaledSystemThemeTokens.fonts }
+      : {}),
+  };
   const statusBar = theme.status_bar_id
     ? repository.getStatusBar(theme.status_bar_id)
     : undefined;
@@ -2720,7 +2763,7 @@ export function resolveChatScreen({
   const rawEffectiveTextInputBar = resolveTextInputBarDefinition(
     {
       ...textInputBarComponent.tokens,
-      ...(isObject(moduleConfig.textInputBar) ? moduleConfig.textInputBar : {}),
+      ...textInputBarInstanceOverrides(moduleConfig.textInputBar),
       ...(activeComposerMessage
         ? {
             text: activeComposerMessage.visibleText,

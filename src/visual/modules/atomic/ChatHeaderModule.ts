@@ -275,10 +275,15 @@ export const ChatHeaderModule: VisualModule<ChatHeaderModuleInput> = {
         ),
         fontSize: readNumber(headerTitleTypography, "fontSize", 17),
         lineHeight: titleLineHeight,
+        fontStyle: readString(
+          headerTitleTypography,
+          "fontStyle",
+          readString(input.fonts, "fontStyle", "normal"),
+        ),
         fontWeight: readFontWeight(
           headerTitleTypography,
           "fontWeight",
-          readFontWeight(input.fonts, "weight", "Regular"),
+          readFontWeight(input.fonts, "fontWeight", readFontWeight(input.fonts, "weight", "Regular")),
         ),
       },
       metadata: {
@@ -307,10 +312,15 @@ export const ChatHeaderModule: VisualModule<ChatHeaderModuleInput> = {
           ),
           fontSize: readNumber(headerSubtitleTypography, "fontSize", 13),
           lineHeight: subtitleLineHeight,
+          fontStyle: readString(
+            headerSubtitleTypography,
+            "fontStyle",
+            readString(input.fonts, "fontStyle", "normal"),
+          ),
           fontWeight: readFontWeight(
             headerSubtitleTypography,
             "fontWeight",
-            readFontWeight(input.fonts, "weight", "Regular"),
+            readFontWeight(input.fonts, "fontWeight", readFontWeight(input.fonts, "weight", "Regular")),
           ),
         },
       });

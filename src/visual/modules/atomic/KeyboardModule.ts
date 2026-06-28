@@ -42,7 +42,10 @@ export const KeyboardModule: VisualModule<KeyboardModuleInput> = {
     const layout = asRecord(input.keyboard?.layout);
     const keyboardTokens = readObject(input.tokens, "keyboard");
     const colors = readObject(input.tokens, "colors");
-    const fonts = readObject(input.tokens, "fonts");
+    const systemFonts = readObject(input.tokens, "systemFonts");
+    const fonts = Object.keys(systemFonts).length
+      ? systemFonts
+      : readObject(input.tokens, "fonts");
     const height = readNumber(layout, "height", 0);
     const topPadding = readNumber(layout, "topPadding", 8);
     const sidePadding = readNumber(layout, "sidePadding", 6);

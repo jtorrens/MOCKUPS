@@ -107,6 +107,16 @@ function displayLabel(
   );
 }
 
+function isFontCompanionField(path: JsonPath, rootValue: JsonValue) {
+  const key = String(path[path.length - 1] ?? "");
+  if (key !== "fontWeight" && key !== "fontStyle") return false;
+  const parent = getAtPath(rootValue, path.slice(0, -1));
+  return (
+    isJsonObject(parent) &&
+    (typeof parent.fontFamily === "string" || typeof parent.family === "string")
+  );
+}
+
 export function JsonTreeNode({
   rootValue,
   inheritedRoot,
@@ -130,6 +140,10 @@ export function JsonTreeNode({
   const hint = hintForPath(hints, path, value, groupContext);
   const visibleLabel = displayLabel(hints, path, label, value, groupContext);
   const visibleSummary = collapsedSummary(value, hint);
+
+  if (isFontCompanionField(path, rootValue)) {
+    return null;
+  }
 
   function restoreInherited() {
     onRootChange(

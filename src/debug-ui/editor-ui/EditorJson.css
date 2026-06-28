@@ -923,6 +923,10 @@
   color: var(--editor-input-placeholder-color, #8a94a6) !important;
 }
 
+.editor-workspace .json-value-control.is-inherited-value {
+  color: var(--editor-input-placeholder-color, #8a94a6) !important;
+}
+
 .editor-workspace .json-tree-node input:focus,
 .editor-workspace .json-tree-node select:focus,
 .editor-workspace .json-tree-node textarea:focus,

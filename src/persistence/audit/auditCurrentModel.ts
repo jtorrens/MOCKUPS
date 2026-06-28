@@ -1,5 +1,4 @@
 import { existsSync } from "node:fs";
-import Database from "better-sqlite3";
 import { ChatModuleDataSchema, ComponentClassSchema } from "../../domain/schemas/index.js";
 import { createDatabase, type SQLiteDatabase } from "../sqlite/createDatabase.js";
 import { developmentDatabasePath } from "../sqlite/paths.js";
@@ -587,14 +586,14 @@ function auditDatabase(database: SQLiteDatabase, label: string): AuditIssue[] {
     }
   }
   const version = Number(database.pragma("user_version", { simple: true }));
-  if (version === 32) {
-    add(issues, "pass", "schema.user_version", "SQLite user_version is 32.");
+  if (version === 36) {
+    add(issues, "pass", "schema.user_version", "SQLite user_version is 36.");
   } else {
     add(
       issues,
       "fail",
       "schema.user_version",
-      `Expected SQLite user_version 32, got ${version}.`,
+      `Expected SQLite user_version 36, got ${version}.`,
     );
   }
   auditJsonColumns(database, tables, issues);
@@ -656,10 +655,7 @@ try {
 }
 
 if (existsSync(developmentDatabasePath)) {
-  const developmentDatabase = new Database(developmentDatabasePath, {
-    readonly: true,
-    fileMustExist: true,
-  });
+  const developmentDatabase = createDatabase(developmentDatabasePath);
   try {
     allIssues.push(...auditDatabase(developmentDatabase, "dev"));
   } finally {

@@ -333,23 +333,6 @@ export function createExampleDataset(): RepositoryDataset {
       spacing: 6,
       groupSpacing: 12,
     },
-    typography: {
-      message: {
-        fontSize: 17,
-        lineHeight: 21.25,
-        fontWeight: "Regular",
-      },
-      headerTitle: {
-        fontSize: 17,
-        lineHeight: 22,
-        fontWeight: "Semibold",
-      },
-      headerSubtitle: {
-        fontSize: 13,
-        lineHeight: 16,
-        fontWeight: "Regular",
-      },
-    },
     chatBubbles: {
       paddingX: 14,
       paddingY: 9,
@@ -714,7 +697,6 @@ export function createExampleDataset(): RepositoryDataset {
       backgroundColorToken: "background",
       textColorToken: "textPrimary",
       fontSize: 12,
-      fontWeight: "Regular",
       shadowEnabled: false,
       shadowToken: "system",
       surfaceReliefEnabled: false,

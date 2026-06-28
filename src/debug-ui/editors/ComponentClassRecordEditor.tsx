@@ -514,7 +514,22 @@ export function ComponentClassRecordEditor({
                     "text",
                     <>
                       {tokenNumberRow("Text size", "fontSize", 12)}
-                      {tokenTextRow("Text weight", "fontWeight", "Regular")}
+                      <ProductionFontSelector
+                        catalog={productionFontCatalog}
+                        value={{
+                          fontFamily: tokens.fontFamily,
+                          fontWeight: tokens.fontWeight,
+                          fontStyle: tokens.fontStyle,
+                        }}
+                        onChange={(nextFont) =>
+                          updateTokens({
+                            ...tokens,
+                            fontFamily: nextFont.fontFamily,
+                            fontWeight: nextFont.fontWeight,
+                            fontStyle: nextFont.fontStyle,
+                          })
+                        }
+                      />
                       {tokenTextRow(
                         "Text theme color",
                         "textColorToken",

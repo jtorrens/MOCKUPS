@@ -1,14 +1,16 @@
 import { useState } from "react";
-import { useSystemFontCatalog } from "./systemFonts.js";
 import { DeferredNumberInput } from "../../editor-ui/DeferredNumberInput.js";
 import { DeferredTextInput } from "../../editor-ui/DeferredTextInput.js";
 import { EditorSubsectionAccordion } from "../../editor-ui/EditorSubsectionAccordion.js";
 import { ColorValueEditor } from "./ColorValueEditor.js";
 import {
-  fontStylesForFamily,
   productionFontIdForFamily,
   type ProductionFontCatalog,
 } from "./productionFonts.js";
+import {
+  ProductionFontSelector,
+  type ProductionFontSelection,
+} from "./ProductionFontSelector.js";
 import type { PaletteColorCatalog } from "./paletteColors.js";
 import {
   InspectorFieldRow,
@@ -234,6 +236,20 @@ function isFontFamilyKey(key: string, groupContext?: string) {
   );
 }
 
+function isFontCompanionRow(row: TokenRow, root: JsonValue) {
+  const key = String(row.path[row.path.length - 1] ?? "");
+  if (key !== "fontWeight" && key !== "fontStyle") return false;
+  const parent = getAtPath(root, row.path.slice(0, -1));
+  return (
+    isJsonObject(parent) &&
+    (typeof parent.fontFamily === "string" || typeof parent.family === "string")
+  );
+}
+
+function fontSiblingPath(path: JsonPath, key: string) {
+  return [...path.slice(0, -1), key];
+}
+
 export function TokenOverrideEditor({
   rootValue,
   inheritedRoot,
@@ -247,10 +263,9 @@ export function TokenOverrideEditor({
   onRootChange,
 }: TokenOverrideEditorProps) {
   const displayRoot = mergedTokenShape(inheritedRoot, rootValue);
-  const rows = flattenPrimitiveTokens(displayRoot);
-  const { families, stylesByFamily } = useSystemFontCatalog();
-  const approvedFamilies = productionFontCatalog?.families ?? [];
-  const fontFamilies = productionFontCatalog ? approvedFamilies : families;
+  const rows = flattenPrimitiveTokens(displayRoot).filter(
+    (row) => !isFontCompanionRow(row, displayRoot),
+  );
   const [activeTokenGroup, setActiveTokenGroup] = useState("");
 
   function restoreValue(path: JsonPath, inheritedValue: JsonValue) {
@@ -261,39 +276,24 @@ export function TokenOverrideEditor({
     );
   }
 
-  function fontFamilyForWeight(path: JsonPath): string | undefined {
+  function setFontSelectionOverride(
+    path: JsonPath,
+    selection: ProductionFontSelection,
+    options: { lockFamily?: boolean } = {},
+  ) {
     const parentPath = path.slice(0, -1);
-    for (const familyKey of ["fontFamily", "family"]) {
-      const fontFamilyPath = [...parentPath, familyKey];
-      const localFamily = getAtPath(rootValue, fontFamilyPath);
-      if (typeof localFamily === "string" && localFamily) return localFamily;
-      const inheritedFamily = getAtPath(inheritedRoot, fontFamilyPath);
-      if (typeof inheritedFamily === "string" && inheritedFamily) {
-        return inheritedFamily;
-      }
+    let nextRoot = options.lockFamily
+      ? rootValue
+      : setAtPath(rootValue, path, selection.fontFamily);
+    nextRoot = setAtPath(nextRoot, [...parentPath, "fontWeight"], selection.fontWeight);
+    nextRoot = setAtPath(nextRoot, [...parentPath, "fontStyle"], selection.fontStyle);
+    if (options.lockFamily) {
+      onRootChange(nextRoot);
+      return;
     }
-    return undefined;
-  }
-
-  function setFontFamilyOverride(path: JsonPath, family: string) {
-    const parentPath = path.slice(0, -1);
-    const inheritedParent = getAtPath(inheritedRoot, parentPath);
-    const localParent = getAtPath(rootValue, parentPath);
-    const sourceParent = isJsonObject(localParent)
-      ? localParent
-      : isJsonObject(inheritedParent)
-        ? inheritedParent
-        : {};
-    const options = fontStylesForFamily(
-      productionFontCatalog,
-      stylesByFamily,
-      family,
-    );
-    const fallback = options[0] ?? "Regular";
-    let nextRoot = setAtPath(rootValue, path, family);
     const productionFontId = productionFontIdForFamily(
       productionFontCatalog,
-      family,
+      selection.fontFamily,
     );
     if (productionFontId) {
       nextRoot = setAtPath(
@@ -302,10 +302,20 @@ export function TokenOverrideEditor({
         "production_font_family",
       );
     }
-    for (const [key, value] of Object.entries(sourceParent)) {
-      if (!isFontWeightKey(key)) continue;
-      if (typeof value === "string" && options.includes(value)) continue;
-      nextRoot = setAtPath(nextRoot, [...parentPath, key], fallback);
+    onRootChange(nextRoot);
+  }
+
+  function restoreFontSelection(path: JsonPath) {
+    let nextRoot =
+      restoreMode === "set"
+        ? setAtPath(rootValue, path, getAtPath(inheritedRoot, path))
+        : deleteAtPathAndPrune(rootValue, path);
+    for (const key of ["fontWeight", "fontStyle", "productionFontId", "source"]) {
+      const siblingPath = fontSiblingPath(path, key);
+      nextRoot =
+        restoreMode === "set" && hasAtPath(inheritedRoot, siblingPath)
+          ? setAtPath(nextRoot, siblingPath, getAtPath(inheritedRoot, siblingPath))
+          : deleteAtPathAndPrune(nextRoot, siblingPath);
     }
     onRootChange(nextRoot);
   }
@@ -332,34 +342,44 @@ export function TokenOverrideEditor({
       effectiveValue,
       groupKey ?? groupContext,
     );
+    const hasFontOverride =
+      widget === "font" &&
+      ["fontFamily", "family", "fontWeight", "fontStyle"].some((fontKey) => {
+        const candidatePath =
+          fontKey === "fontFamily" || fontKey === "family"
+            ? row.path
+            : fontSiblingPath(row.path, fontKey);
+        return (
+          hasAtPath(rootValue, candidatePath) &&
+          !deepEqualJson(
+            getAtPath(rootValue, candidatePath),
+            getAtPath(inheritedRoot, candidatePath),
+          )
+        );
+      });
+    const rowHasOverride = widget === "font" ? hasFontOverride : hasOverride;
     const stringValue = hasOverride ? tokenDisplayValue(localValue) : "";
     const inheritedDisplayValue = tokenDisplayValue(baselineValue);
     const selectOptions = withCurrentOption(
-      widget === "font"
-          ? fontFamilies
-        : isFontWeightKey(key)
-          ? fontStylesForFamily(
-              productionFontCatalog,
-              stylesByFamily,
-              fontFamilyForWeight(row.path),
-            )
-          : hint.options ?? [],
+      widget === "font" || isFontWeightKey(key)
+        ? []
+        : hint.options ?? [],
       stringValue,
     );
 
     return (
       <InspectorFieldRow
         key={key}
-        className={`token-override-row ${hasOverride ? "has-override" : ""}`}
-        state={hasOverride ? "override" : "default"}
+        className={`token-override-row ${rowHasOverride ? "has-override" : ""}`}
+        state={rowHasOverride ? "override" : "default"}
         label={<strong title={key}>{label}</strong>}
         control={
           <div className="token-override-input">
           {widget === "checkbox" ? (
             <select
               aria-label={`${label} override`}
-              className={!hasOverride ? "is-inherited-value" : undefined}
-              value={hasOverride ? String(Boolean(localValue)) : ""}
+              className={!rowHasOverride ? "is-inherited-value" : undefined}
+              value={rowHasOverride ? String(Boolean(localValue)) : ""}
               onChange={(event) => {
                 const raw = event.target.value;
                 onRootChange(
@@ -375,19 +395,32 @@ export function TokenOverrideEditor({
               <option value="true">true</option>
               <option value="false">false</option>
             </select>
-          ) : widget === "select" || widget === "font" ? (
+          ) : widget === "font" ? (
+            <ProductionFontSelector
+              compact
+              catalog={productionFontCatalog}
+              inherited={!rowHasOverride}
+              lockFamily={hint.lockFontFamily}
+              value={{
+                fontFamily: effectiveValue,
+                fontWeight: getAtPath(displayRoot, [...row.path.slice(0, -1), "fontWeight"]),
+                fontStyle: getAtPath(displayRoot, [...row.path.slice(0, -1), "fontStyle"]),
+              }}
+              onChange={(nextFont) =>
+                setFontSelectionOverride(row.path, nextFont, {
+                  lockFamily: hint.lockFontFamily,
+                })
+              }
+            />
+          ) : widget === "select" ? (
             <select
               aria-label={`${label} override`}
-              className={!hasOverride ? "is-inherited-value" : undefined}
+              className={!rowHasOverride ? "is-inherited-value" : undefined}
               value={stringValue}
               onChange={(event) => {
                 const raw = event.target.value;
                 if (raw === "") {
                   restoreValue(row.path, baselineValue);
-                  return;
-                }
-                if (widget === "font" && isFontFamilyKey(key, groupKey ?? groupContext)) {
-                  setFontFamilyOverride(row.path, raw);
                   return;
                 }
                 onRootChange(setAtPath(rootValue, row.path, raw));
@@ -448,10 +481,14 @@ export function TokenOverrideEditor({
           </div>
         }
         restore={
-          hasOverride ? (
+          rowHasOverride ? (
             <InspectorRestoreButton
               label={`Restore ${label} to ${inheritedDisplayValue}`}
-              onClick={() => restoreValue(row.path, baselineValue)}
+              onClick={() =>
+                widget === "font"
+                  ? restoreFontSelection(row.path)
+                  : restoreValue(row.path, baselineValue)
+              }
             />
           ) : undefined
         }
