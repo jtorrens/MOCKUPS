@@ -4,6 +4,10 @@ import {
   STANDARD_IOS_KEYBOARD_LAYOUT,
   type KeyboardMode,
 } from "../keyboards/standardKeyboardLayout.js";
+import {
+  fontStyleForProductionStyle,
+  fontWeightForProductionStyle,
+} from "../fonts/productionFontNormalization.js";
 import type { DomainRepository } from "../repository/types.js";
 import {
   ChatModuleConfigSchema,
@@ -366,7 +370,7 @@ function resolveKeyboardDefinition(
     keyPadding,
     keyRadius: numberValue(behaviorRoot.keyRadius, 7),
     fontSize: Math.max(1, keyHeight - keyPadding * 2),
-    emojiFontScale: 0.85,
+    emojiFontScale: 1.2,
   };
   const rowCount = STANDARD_IOS_KEYBOARD_LAYOUT.modes[mode]?.rowsText
     .trim()
@@ -460,7 +464,11 @@ function resolveKeyboardDefinition(
     messageGapToTextInput:
       numberValue(behaviorRoot.messageGapToTextInput, 10) * scale,
     fontFamily: stringValue(behaviorRoot.fontFamily, "Oswald"),
-    fontWeight: fontWeightToken(behaviorRoot.fontWeight) ?? "Regular",
+    fontWeight: resolvedFontWeightToken(behaviorRoot.fontWeight) ?? 400,
+    fontStyle: resolvedFontStyleToken(
+      behaviorRoot.fontStyle,
+      behaviorRoot.fontWeight,
+    ),
     pressedEffect: stringValue(behaviorRoot.pressedEffect, "popover"),
     keyShadowEnabled: behaviorRoot.keyShadowEnabled !== false,
     surfaceReliefEnabled: behaviorRoot.surfaceReliefEnabled !== false,
@@ -769,6 +777,25 @@ function fontWeightToken(value: unknown): string | number | undefined {
   if (typeof value === "string" && value.trim()) return value;
   if (typeof value === "number" && Number.isFinite(value)) return value;
   return undefined;
+}
+
+function resolvedFontWeightToken(value: unknown): string | number | undefined {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim()) {
+    return fontWeightForProductionStyle(value);
+  }
+  return undefined;
+}
+
+function resolvedFontStyleToken(
+  fontStyle: unknown,
+  fontWeight: unknown,
+): "normal" | "italic" {
+  if (fontStyle === "italic" || fontStyle === "normal") return fontStyle;
+  if (typeof fontWeight === "string") {
+    return fontStyleForProductionStyle(fontWeight);
+  }
+  return "normal";
 }
 
 function clampUnit(value: number) {
@@ -1686,6 +1713,7 @@ function keyboardInstanceOverrides(value: unknown) {
   const next = { ...value };
   delete next.fontFamily;
   delete next.fontWeight;
+  delete next.fontStyle;
   return next;
 }
 

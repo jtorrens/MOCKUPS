@@ -238,7 +238,7 @@ function nodeStyle(
     backgroundRepeat,
     color,
     textAlign: textAlign as CSSProperties["textAlign"],
-    fontFamily: stringValue(style.fontFamily) ?? "Arial, sans-serif",
+    fontFamily: stringValue(style.fontFamily),
     fontSize: numberValue(style.fontSize),
     fontStyle: stringValue(style.fontStyle) as CSSProperties["fontStyle"],
     fontWeight: cssFontWeight(style.fontWeight),
@@ -673,6 +673,43 @@ function inlineCursorFromChildren(node: RenderableNode) {
   );
 }
 
+function keyboardEmojiModeGlyph(node: RenderableNode): ReactNode {
+  const size = (numberValue(node.style?.fontSize) ?? 18) * 0.9;
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      style={{
+        display: "block",
+        width: size,
+        height: size,
+        overflow: "visible",
+      }}
+    >
+      <circle
+        cx="12"
+        cy="12"
+        r="9"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.1"
+      />
+      <circle cx="8.7" cy="9.4" r="0.75" fill="currentColor" />
+      <circle cx="15.3" cy="9.4" r="0.75" fill="currentColor" />
+      <path
+        d="M8.4 14.1c1.05 1.45 2.25 2.15 3.6 2.15s2.55-.7 3.6-2.15"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.1"
+      />
+    </svg>
+  );
+}
+
 function StableBackgroundImage({ node }: { node: RenderableNode }) {
   const requestedBackground = stringValue(node.style?.backgroundImage);
   const requestedUrl = extractCssUrl(requestedBackground);
@@ -905,6 +942,10 @@ function nodeContent(node: RenderableNode): ReactNode {
   }
   if (node.type === "keyboard_key") {
     const isEmojiKey = node.style?.isEmojiKey === true;
+    const content =
+      node.style?.isEmojiModeSwitchKey === true
+        ? keyboardEmojiModeGlyph(node)
+        : node.text;
     return (
       <span
         style={{
@@ -913,11 +954,12 @@ function nodeContent(node: RenderableNode): ReactNode {
           justifyContent: "center",
           width: "100%",
           height: "100%",
+          fontSize: numberValue(node.style?.fontSize),
           lineHeight: isEmojiKey ? 1 : undefined,
           textAlign: "center",
         }}
       >
-        {node.text}
+        {content}
       </span>
     );
   }

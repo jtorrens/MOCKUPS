@@ -18,6 +18,11 @@ import {
   paletteTokenUsages,
   type PaletteTokenUsage,
 } from "./editors/paletteUsage.js";
+import {
+  productionFontUsageCount,
+  productionFontUsages,
+  type ProductionFontUsage,
+} from "./editors/productionFontUsage.js";
 import { AppModalDialog } from "./components/AppModalDialog.js";
 import { RightPreviewShell } from "./preview/index.js";
 import "./AppShell.css";
@@ -37,6 +42,11 @@ interface PendingPaletteDelete {
   tableId: "palette_colors";
   recordId: string;
   token: string;
+}
+
+interface ProductionFontDeleteBlocker {
+  family: string;
+  usages: ProductionFontUsage[];
 }
 
 interface StoredLayout {
@@ -144,6 +154,8 @@ export function App() {
   const [isProductionModalOpen, setProductionModalOpen] = useState(false);
   const [paletteDeleteBlocker, setPaletteDeleteBlocker] =
     useState<PaletteDeleteBlocker | null>(null);
+  const [productionFontDeleteBlocker, setProductionFontDeleteBlocker] =
+    useState<ProductionFontDeleteBlocker | null>(null);
   const [pendingPaletteDelete, setPendingPaletteDelete] =
     useState<PendingPaletteDelete | null>(null);
   const [themeCreateParent, setThemeCreateParent] = useState<{
@@ -561,6 +573,21 @@ export function App() {
       setPendingPaletteDelete({ tableId, recordId, token });
       return;
     }
+    if (tableId === "production_fonts" && state) {
+      const record = state.records.production_fonts?.find(
+        (candidate) => candidate.id === recordId,
+      );
+      const family = String(record?.family ?? "");
+      const usages = productionFontUsages({
+        tables: state.tables,
+        records: state.records,
+        record,
+      });
+      if (productionFontUsageCount(usages) > 0) {
+        setProductionFontDeleteBlocker({ family, usages });
+        return;
+      }
+    }
     executeDeleteRecord(tableId, recordId);
   }
 
@@ -765,54 +792,70 @@ export function App() {
           </div>
         ) : null}
         {paletteDeleteBlocker ? (
-          <div
-            className="modal-backdrop"
-            role="presentation"
-            onMouseDown={() => setPaletteDeleteBlocker(null)}
-          >
-            <section
-              className="app-modal-card palette-token-modal"
-              role="dialog"
-              aria-modal="true"
-              aria-label="Palette color cannot be deleted"
-              onMouseDown={(event) => event.stopPropagation()}
-            >
-              <div className="app-modal-heading">
-                <div>
-                  <span className="eyebrow">Palette color</span>
-                  <h2>Cannot delete “{paletteDeleteBlocker.token}”</h2>
+          <AppModalDialog
+            eyebrow="Palette color"
+            title={`Cannot delete “${paletteDeleteBlocker.token}”`}
+            message={
+              <>
+                <span>
+                  This token is still used. Rename or replace these references
+                  before deleting it.
+                </span>
+                <div className="palette-usage-list">
+                  {paletteDeleteBlocker.usages.map((usage) => (
+                    <div
+                      key={`${usage.tableId}:${usage.recordId}:${usage.field}`}
+                      className="palette-usage-row"
+                    >
+                      <strong>{usage.tableLabel}</strong>
+                      <span>{usage.recordLabel}</span>
+                      <small>
+                        {usage.field} · {usage.count} reference
+                        {usage.count === 1 ? "" : "s"}
+                      </small>
+                    </div>
+                  ))}
                 </div>
-              </div>
-              <p className="modal-help">
-                This token is still used. Rename or replace these references
-                before deleting it.
-              </p>
-              <div className="palette-usage-list">
-                {paletteDeleteBlocker.usages.map((usage) => (
-                  <div
-                    key={`${usage.tableId}:${usage.recordId}:${usage.field}`}
-                    className="palette-usage-row"
-                  >
-                    <strong>{usage.tableLabel}</strong>
-                    <span>{usage.recordLabel}</span>
-                    <small>
-                      {usage.field} · {usage.count} reference
-                      {usage.count === 1 ? "" : "s"}
-                    </small>
-                  </div>
-                ))}
-              </div>
-              <footer className="palette-modal-actions">
-                <button
-                  type="button"
-                  className="app-modal-button"
-                  onClick={() => setPaletteDeleteBlocker(null)}
-                >
-                  Cancel
-                </button>
-              </footer>
-            </section>
-          </div>
+              </>
+            }
+            cancelLabel="Cancel"
+            hideConfirm
+            onCancel={() => setPaletteDeleteBlocker(null)}
+            onConfirm={() => setPaletteDeleteBlocker(null)}
+          />
+        ) : null}
+        {productionFontDeleteBlocker ? (
+          <AppModalDialog
+            eyebrow="Production font"
+            title={`Cannot delete “${productionFontDeleteBlocker.family}”`}
+            message={
+              <>
+                <span>
+                  This font family is still used. Replace these references before
+                  deleting it.
+                </span>
+                <div className="palette-usage-list">
+                  {productionFontDeleteBlocker.usages.map((usage) => (
+                    <div
+                      key={`${usage.tableId}:${usage.recordId}:${usage.field}`}
+                      className="palette-usage-row"
+                    >
+                      <strong>{usage.tableLabel}</strong>
+                      <span>{usage.recordLabel}</span>
+                      <small>
+                        {usage.field} · {usage.count} reference
+                        {usage.count === 1 ? "" : "s"}
+                      </small>
+                    </div>
+                  ))}
+                </div>
+              </>
+            }
+            cancelLabel="Cancel"
+            hideConfirm
+            onCancel={() => setProductionFontDeleteBlocker(null)}
+            onConfirm={() => setProductionFontDeleteBlocker(null)}
+          />
         ) : null}
         {pendingPaletteDelete ? (
           <AppModalDialog

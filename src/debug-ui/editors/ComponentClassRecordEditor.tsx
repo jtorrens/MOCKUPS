@@ -5,6 +5,7 @@ import type {
   AppTableDefinition,
 } from "../api/client.js";
 import type { PaletteColorCatalog } from "../components/json-editor/paletteColors.js";
+import { ProductionFontSelector } from "../components/json-editor/ProductionFontSelector.js";
 import {
   isJsonObject,
   type JsonValue,
@@ -45,19 +46,6 @@ function booleanValue(value: unknown, fallback = false) {
 
 function stringValue(value: unknown, fallback = "") {
   return typeof value === "string" ? value : fallback;
-}
-
-function fontWeightValue(value: unknown, fallback = "Regular") {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return String(value);
-  }
-  if (typeof value === "string" && value) return value;
-  return fallback;
-}
-
-function jsonFontWeightValue(value: string): JsonValue {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) && value.trim() !== "" ? parsed : value;
 }
 
 function setTokenValue(
@@ -296,97 +284,24 @@ export function ComponentClassRecordEditor({
     );
   }
 
-  function officialFontFamilyValue(fallback = "Oswald") {
-    const selected = stringValue(tokens.fontFamily, "");
-    if (selected) return selected;
-    return productionFontCatalog?.families[0] ?? fallback;
-  }
-
-  function officialFontWeightValue(family: string, fallback = "Regular") {
-    const selected = fontWeightValue(tokens.fontWeight, "");
-    if (selected) return selected;
-    return productionFontCatalog?.stylesByFamily.get(family)?.[0] ?? fallback;
-  }
-
   function tokenOfficialFontRows() {
-    const approvedFamilies = productionFontCatalog?.families ?? [];
-    const family = officialFontFamilyValue();
-    const familyOptions = approvedFamilies.includes(family)
-      ? approvedFamilies
-      : family
-        ? [family, ...approvedFamilies]
-        : approvedFamilies;
-    const approvedWeights =
-      productionFontCatalog?.stylesByFamily.get(family) ?? [];
-    const weight = officialFontWeightValue(family);
-    const weightOptions = approvedWeights.includes(weight)
-      ? approvedWeights
-      : weight
-        ? [weight, ...approvedWeights]
-        : approvedWeights;
-
     return (
-      <>
-        <InspectorFieldRow
-          label="Font family"
-          control={
-            <select
-              className="json-value-control"
-              value={family}
-              disabled={!familyOptions.length}
-              onChange={(event) => {
-                const nextFamily = event.currentTarget.value;
-                const nextWeight =
-                  productionFontCatalog?.stylesByFamily.get(nextFamily)?.[0] ??
-                  "Regular";
-                updateTokens({
-                  ...setTokenValue(tokens, "fontFamily", nextFamily),
-                  fontWeight: nextWeight,
-                });
-              }}
-            >
-              {familyOptions.length ? (
-                familyOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))
-              ) : (
-                <option value="">No production fonts</option>
-              )}
-            </select>
-          }
-        />
-        <InspectorFieldRow
-          label="Font weight"
-          control={
-            <select
-              className="json-value-control"
-              value={weight}
-              disabled={!weightOptions.length}
-              onChange={(event) =>
-                updateTokens(
-                  setTokenValue(
-                    tokens,
-                    "fontWeight",
-                    jsonFontWeightValue(event.currentTarget.value),
-                  ),
-                )
-              }
-            >
-              {weightOptions.length ? (
-                weightOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))
-              ) : (
-                <option value="">No styles</option>
-              )}
-            </select>
-          }
-        />
-      </>
+      <ProductionFontSelector
+        catalog={productionFontCatalog}
+        value={{
+          fontFamily: tokens.fontFamily,
+          fontWeight: tokens.fontWeight,
+          fontStyle: tokens.fontStyle,
+        }}
+        onChange={(nextFont) =>
+          updateTokens({
+            ...tokens,
+            fontFamily: nextFont.fontFamily,
+            fontWeight: nextFont.fontWeight,
+            fontStyle: nextFont.fontStyle,
+          })
+        }
+      />
     );
   }
 
@@ -958,6 +873,7 @@ export function ComponentClassRecordEditor({
                         }
                       />
                       {tokenNumberRow("Key corner radius", "keyRadius", 7)}
+                      {tokenNumberRow("Key padding", "keyPadding", 6)}
                       {tokenCheckboxRow(
                         "Key shadow",
                         "keyShadowEnabled",

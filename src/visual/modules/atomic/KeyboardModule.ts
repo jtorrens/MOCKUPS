@@ -88,12 +88,9 @@ export const KeyboardModule: VisualModule<KeyboardModuleInput> = {
       "fontWeight",
       "Regular",
     );
-    const fontStyle =
-      typeof fontWeight === "string" && /italic/i.test(fontWeight)
-        ? "italic"
-        : "normal";
-    const specialKeyFontSize = fontSize * 0.65;
-    const specialKeyFontWeight = 200;
+    const fontStyle = readString(asRecord(input.keyboard), "fontStyle", "normal");
+    const specialKeyFontSize = fontSize * 0.75;
+    const specialKeyFontWeight = 350;
     const components = readObject(input.tokens, "components");
     const buttonIconComponent = readObject(components, "buttonIcon");
     const buttonIcon = {
@@ -185,6 +182,7 @@ export const KeyboardModule: VisualModule<KeyboardModuleInput> = {
             const isEmojiKey =
               kind === "emoji" ||
               (kind === "character" && /\p{Extended_Pictographic}/u.test(label));
+            const isEmojiModeSwitchKey = kind === "emoji" && id === "emoji";
             const keyFontSize =
               isEmojiKey
                 ? fontSize * emojiFontScale
@@ -192,9 +190,13 @@ export const KeyboardModule: VisualModule<KeyboardModuleInput> = {
                   ? fontSize
                   : specialKeyFontSize;
             const keyFontWeight =
-              kind === "character" || kind === "space" || isEmojiKey
+              isEmojiKey
+                ? 100
+                : kind === "character" || kind === "space"
                 ? fontWeight
                 : specialKeyFontWeight;
+            const visualKeyPadding =
+              kind === "character" && !isEmojiKey ? keyPadding : 0;
             return {
               id: `keyboard:row:${rowIndex}:key:${id}`,
               type: "keyboard_key",
@@ -212,8 +214,9 @@ export const KeyboardModule: VisualModule<KeyboardModuleInput> = {
                 borderRadius: keyRadius,
                 fontSize: keyFontSize,
                 fontWeight: keyFontWeight,
-                keyPadding,
+                keyPadding: visualKeyPadding,
                 isEmojiKey,
+                isEmojiModeSwitchKey,
                 lineHeight: keyFontSize,
                 weight: readNumber(key, "weight", 1),
                 pressedTransformScale:

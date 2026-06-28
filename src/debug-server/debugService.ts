@@ -32,6 +32,10 @@ import {
   resolveModuleThemeTokens,
   resolveShot,
 } from "../domain/resolvers/index.js";
+import {
+  fontStyleForProductionStyle,
+  fontWeightRangeForProductionStyle,
+} from "../domain/fonts/productionFontNormalization.js";
 import { ChatScreenModule } from "../visual/modules/screens/ChatScreenModule.js";
 import { RenderableNodeSchema } from "../visual/renderable/schema.js";
 import type { RenderableNode } from "../visual/renderable/types.js";
@@ -109,37 +113,15 @@ function previewMediaFrameUrl({
   return `/api/media-frame?${query.toString()}`;
 }
 
-function fontWeightForStyle(style: string) {
-  const normalized = style.toLowerCase().replace(/[\s_-]+/g, "");
-  if (normalized.includes("variable") || normalized.includes("wght")) {
-    return "200 800";
-  }
-  if (normalized.includes("thin")) return 100;
-  if (normalized.includes("extralight") || normalized.includes("ultralight")) {
-    return 200;
-  }
-  if (normalized.includes("light")) return 300;
-  if (normalized.includes("medium")) return 500;
-  if (normalized.includes("semibold") || normalized.includes("demibold")) {
-    return 600;
-  }
-  if (normalized.includes("extrabold") || normalized.includes("ultrabold")) {
-    return 800;
-  }
-  if (normalized.includes("black") || normalized.includes("heavy")) return 900;
-  if (normalized.includes("bold")) return 700;
-  return 400;
-}
-
 function productionFontFaceMetadata(
   database: SQLiteDatabase,
   productionId: string,
 ) {
   return productionFontFaceSources(database, productionId).map((face) => ({
     family: face.family,
-    style: /italic/i.test(face.style) ? "italic" : "normal",
+    style: fontStyleForProductionStyle(face.style),
     uri: previewMediaUrl(productionId, face.relativeFilePath),
-    weight: fontWeightForStyle(face.style),
+    weight: fontWeightRangeForProductionStyle(face.style),
   }));
 }
 
@@ -864,6 +846,77 @@ function tableDefinition(tableId: string): AppTableDefinition {
     throw new Error(`Unknown table ${tableId}`);
   }
   return definition;
+}
+
+function countProductionFontReferencesInValue({
+  family,
+  key,
+  productionFontId,
+  value,
+}: {
+  family: string;
+  key?: string;
+  productionFontId: string;
+  value: unknown;
+}): number {
+  if (Array.isArray(value)) {
+    return value.reduce(
+      (total, entry) =>
+        total +
+        countProductionFontReferencesInValue({
+          family,
+          productionFontId,
+          value: entry,
+        }),
+      0,
+    );
+  }
+  if (isObject(value)) {
+    return Object.entries(value).reduce(
+      (total, [entryKey, entryValue]) =>
+        total +
+        countProductionFontReferencesInValue({
+          family,
+          key: entryKey,
+          productionFontId,
+          value: entryValue,
+        }),
+      0,
+    );
+  }
+  if (key === "productionFontId" && value === productionFontId) return 1;
+  if ((key === "fontFamily" || key === "family") && value === family) return 1;
+  return 0;
+}
+
+function productionFontReferenceCount(
+  database: SQLiteDatabase,
+  fontRow: Row,
+): number {
+  const productionId = String(fontRow.production_id ?? "");
+  const family = String(fontRow.family ?? "");
+  const productionFontId = String(fontRow.id ?? "");
+  if (!productionId || !family || !productionFontId) return 0;
+  let total = 0;
+  for (const definition of APP_TABLES) {
+    if (definition.id === "production_fonts") continue;
+    if (!definition.fields.some((field) => field.column === "production_id")) {
+      continue;
+    }
+    const rows = database
+      .prepare(`SELECT * FROM ${definition.table} WHERE production_id = ?`)
+      .all(productionId) as Row[];
+    for (const row of rows) {
+      for (const field of definition.jsonFields) {
+        total += countProductionFontReferencesInValue({
+          family,
+          productionFontId,
+          value: readOptionalJson(row, field),
+        });
+      }
+    }
+  }
+  return total;
 }
 
 function decodeAppRow(row: Row, definition: AppTableDefinition): Row {
@@ -2641,6 +2694,14 @@ export function deleteAppRecord(
         `Palette color ${String(existing.token ?? request.recordId)} is protected and cannot be deleted`,
       );
     }
+  }
+  if (
+    request.tableId === "production_fonts" &&
+    productionFontReferenceCount(database, existing) > 0
+  ) {
+    throw new Error(
+      `Production font ${String(existing.family ?? request.recordId)} is still used and cannot be deleted`,
+    );
   }
   database
     .prepare(`DELETE FROM ${definition.table} WHERE id = ?`)

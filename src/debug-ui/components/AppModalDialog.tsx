@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 interface AppModalDialogProps {
   title: string;
@@ -7,6 +8,7 @@ interface AppModalDialogProps {
   confirmLabel?: string;
   cancelLabel?: string;
   destructive?: boolean;
+  hideConfirm?: boolean;
   prompt?: {
     label: string;
     initialValue: string;
@@ -23,6 +25,7 @@ export function AppModalDialog({
   confirmLabel = "Confirm",
   cancelLabel = "Cancel",
   destructive = false,
+  hideConfirm = false,
   prompt,
   onCancel,
   onConfirm,
@@ -51,7 +54,7 @@ export function AppModalDialog({
     onConfirm(prompt ? value : undefined);
   }
 
-  return (
+  return createPortal(
     <div
       className="modal-backdrop"
       role="presentation"
@@ -70,7 +73,7 @@ export function AppModalDialog({
             <h2>{title}</h2>
           </div>
         </div>
-        {message ? <p className="modal-help">{message}</p> : null}
+        {message ? <div className="modal-help">{message}</div> : null}
         {prompt ? (
           <label className="app-modal-form-field">
             <span>{prompt.label}</span>
@@ -96,15 +99,18 @@ export function AppModalDialog({
           >
             {cancelLabel}
           </button>
-          <button
-            type="button"
-            className={`app-modal-button ${destructive ? "danger" : "primary"}`}
-            onClick={submit}
-          >
-            {confirmLabel}
-          </button>
+          {hideConfirm ? null : (
+            <button
+              type="button"
+              className={`app-modal-button ${destructive ? "danger" : "primary"}`}
+              onClick={submit}
+            >
+              {confirmLabel}
+            </button>
+          )}
         </footer>
       </section>
-    </div>
+    </div>,
+    document.body,
   );
 }
