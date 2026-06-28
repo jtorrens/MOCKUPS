@@ -239,6 +239,9 @@ export function editorValueForThemeTokenGroup(
     const {
       source: _source,
       productionFontId: _productionFontId,
+      weight: _weight,
+      fontWeight: _fontWeight,
+      fontStyle: _fontStyle,
       ...visibleValue
     } = value;
     return visibleValue;
@@ -349,5 +352,8 @@ export function nextThemeTokenGroupValue({
   ) {
     nextValue.productionFontId = originalValue.productionFontId;
   }
+  delete nextValue.weight;
+  delete nextValue.fontWeight;
+  delete nextValue.fontStyle;
   return nextValue;
 }

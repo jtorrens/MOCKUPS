@@ -8,6 +8,11 @@ import {
   fontStyleForProductionStyle,
   fontWeightForProductionStyle,
 } from "../fonts/productionFontNormalization.js";
+import {
+  getTokenAtPath,
+  resolveInheritedTokenGroup,
+  type InheritableTokenDescriptor,
+} from "../tokens/tokenInheritance.js";
 import type { DomainRepository } from "../repository/types.js";
 import {
   ChatModuleConfigSchema,
@@ -326,6 +331,41 @@ function keyboardModeForPressedKey(value: string): KeyboardMode {
   return "lowercase";
 }
 
+const KEYBOARD_INHERITABLE_TOKENS = [
+  {
+    outputPath: ["language"],
+    kind: "enum",
+    fallback: STANDARD_IOS_KEYBOARD_LAYOUT.defaultLanguage,
+  },
+  {
+    outputPath: ["mode"],
+    kind: "enum",
+    fallback: STANDARD_IOS_KEYBOARD_LAYOUT.defaultMode,
+  },
+  { outputPath: ["pushDurationFrames"], kind: "integer", fallback: 8 },
+  { outputPath: ["messageGapToTextInput"], kind: "decimal", fallback: 10 },
+  { outputPath: ["fontFamily"], kind: "fontFamily", fallback: "Oswald" },
+  { outputPath: ["fontWeight"], kind: "fontWeight", fallback: 400 },
+  { outputPath: ["fontStyle"], kind: "fontStyle", fallback: "normal" },
+  { outputPath: ["pressedEffect"], kind: "enum", fallback: "popover" },
+  { outputPath: ["keyRadius"], kind: "decimal", fallback: 7 },
+  { outputPath: ["keyPadding"], kind: "decimal", fallback: 6 },
+  { outputPath: ["keyShadowEnabled"], kind: "boolean", fallback: true },
+  { outputPath: ["surfaceReliefEnabled"], kind: "boolean", fallback: true },
+  { outputPath: ["bottomItems"], kind: "jsonArray" },
+  { outputPath: ["extraEmojis"], kind: "jsonArray" },
+] satisfies readonly InheritableTokenDescriptor[];
+
+function resolveKeyboardInheritance(
+  componentTokens: unknown,
+  instanceTokens: unknown,
+): Record<string, unknown> {
+  return resolveInheritedTokenGroup(KEYBOARD_INHERITABLE_TOKENS, [
+    isObject(instanceTokens) ? instanceTokens : {},
+    isObject(componentTokens) ? componentTokens : {},
+  ]);
+}
+
 function resolveKeyboardDefinition(
   behaviorKeyboard: unknown,
   iconTheme?: {
@@ -574,6 +614,65 @@ function iconItemsSource(primary: unknown, fallback: unknown): unknown {
     : primary ?? fallback;
 }
 
+const TEXT_INPUT_BAR_INHERITABLE_TOKENS = [
+  {
+    outputPath: ["cursorWidth"],
+    inputPaths: [["cursorWidth"], ["cursor", "width"]],
+    kind: "decimal",
+    fallback: 2,
+  },
+  {
+    outputPath: ["cursorBlinkFrames"],
+    inputPaths: [["cursorBlinkFrames"], ["cursor", "blinkFrames"]],
+    kind: "integer",
+    fallback: 15,
+  },
+  {
+    outputPath: ["cursorColor"],
+    inputPaths: [["cursorColor"], ["cursor", "color"]],
+    kind: "themeColorToken",
+    fallback: "icons.accent",
+  },
+  {
+    outputPath: ["idleTextColor"],
+    inputPaths: [["idleTextColor"]],
+    kind: "themeColorToken",
+    fallback: "icons.secondary",
+  },
+] satisfies readonly InheritableTokenDescriptor[];
+
+function unscaledTextInputInheritanceThemeTokens(
+  themeTokens: Record<string, unknown>,
+  scale: number,
+): Record<string, unknown> {
+  const cursor = isObject(themeTokens.cursor) ? themeTokens.cursor : {};
+  const cursorWidth = getTokenAtPath(cursor, ["width"]);
+  if (typeof cursorWidth !== "number" || !Number.isFinite(cursorWidth)) {
+    return themeTokens;
+  }
+  return {
+    ...themeTokens,
+    cursor: {
+      ...cursor,
+      width: cursorWidth / Math.max(scale, 0.0001),
+    },
+  };
+}
+
+function resolveTextInputBarInheritance(
+  value: Record<string, unknown>,
+  themeTokens: Record<string, unknown>,
+  scale: number,
+): Record<string, unknown> {
+  return {
+    ...value,
+    ...resolveInheritedTokenGroup(TEXT_INPUT_BAR_INHERITABLE_TOKENS, [
+      value,
+      unscaledTextInputInheritanceThemeTokens(themeTokens, scale),
+    ]),
+  };
+}
+
 function resolveTextInputBarDefinition(
   behaviorTextInputBar: unknown,
   iconTheme?: {
@@ -585,7 +684,11 @@ function resolveTextInputBarDefinition(
   themeTokens: Record<string, unknown> = {},
   palette: Map<string, string> = new Map(),
 ) {
-  const root = isObject(behaviorTextInputBar) ? behaviorTextInputBar : {};
+  const root = resolveTextInputBarInheritance(
+    isObject(behaviorTextInputBar) ? behaviorTextInputBar : {},
+    themeTokens,
+    scale,
+  );
   const text = stringValue(root.text, stringValue(root.draftText));
   const measureText = text;
   const rawState = stringValue(root.state, text ? "typing" : "idle");
@@ -1425,6 +1528,64 @@ export function moduleTypographyDefaultsFromFonts(
   };
 }
 
+const CHAT_TYPOGRAPHY_GROUPS = [
+  "message",
+  "headerTitle",
+  "headerSubtitle",
+] as const;
+
+const CHAT_TYPOGRAPHY_PROPERTY_KINDS = {
+  fontFamily: "fontFamily",
+  fontSize: "decimal",
+  lineHeight: "decimal",
+  fontWeight: "fontWeight",
+  fontStyle: "fontStyle",
+} as const;
+
+const CHAT_TYPOGRAPHY_INHERITABLE_TOKENS =
+  CHAT_TYPOGRAPHY_GROUPS.flatMap((group) =>
+    Object.entries(CHAT_TYPOGRAPHY_PROPERTY_KINDS).map(([property, kind]) => ({
+      outputPath: ["typography", group, property],
+      kind,
+    })),
+  ) satisfies readonly InheritableTokenDescriptor[];
+
+function stripModuleTypographyFontIdentity(
+  tokens: Record<string, unknown>,
+): Record<string, unknown> {
+  const typography = isObject(tokens.typography) ? tokens.typography : undefined;
+  if (!typography) return tokens;
+
+  const nextTypography: Record<string, unknown> = { ...typography };
+  for (const group of CHAT_TYPOGRAPHY_GROUPS) {
+    const entry = nextTypography[group];
+    if (!isObject(entry)) continue;
+    const nextEntry = { ...entry };
+    delete nextEntry.fontFamily;
+    delete nextEntry.family;
+    delete nextEntry.productionFontId;
+    delete nextEntry.source;
+    nextTypography[group] = nextEntry;
+  }
+
+  return {
+    ...tokens,
+    typography: nextTypography,
+  };
+}
+
+function resolveChatTypographyTokens(
+  genericTokens: Record<string, unknown>,
+  moduleDefaultsFromGenericTokens: Record<string, unknown>,
+  moduleThemeTokens: Record<string, unknown>,
+): Record<string, unknown> {
+  return resolveInheritedTokenGroup(CHAT_TYPOGRAPHY_INHERITABLE_TOKENS, [
+    stripModuleTypographyFontIdentity(moduleThemeTokens),
+    moduleDefaultsFromGenericTokens,
+    genericTokens,
+  ]);
+}
+
 export function resolveGlobalThemeTokens(
   theme: Theme,
   themeMode: "light" | "dark",
@@ -2114,14 +2275,11 @@ function chatModuleConfig(
     moduleInstance.behavior_json && isObject(moduleInstance.behavior_json)
       ? moduleInstance.behavior_json
       : {};
-  const textInputBar =
-    isObject(moduleTokens.textInputBar)
-      ? moduleTokens.textInputBar
-      : isObject(screenBase.textInputBar)
-        ? screenBase.textInputBar
-        : isObject(behavior.textInputBar)
-          ? behavior.textInputBar
-          : undefined;
+  const textInputBar = {
+    ...(isObject(moduleTokens.textInputBar) ? moduleTokens.textInputBar : {}),
+    ...(isObject(screenBase.textInputBar) ? screenBase.textInputBar : {}),
+    ...(isObject(behavior.textInputBar) ? behavior.textInputBar : {}),
+  };
   const keyboard = {
     ...(isObject(moduleTokens.keyboard) ? moduleTokens.keyboard : {}),
     ...(isObject(screenBase.keyboard) ? screenBase.keyboard : {}),
@@ -2130,7 +2288,7 @@ function chatModuleConfig(
 
   return {
     ...behavior,
-    ...(textInputBar ? { textInputBar } : {}),
+    ...(Object.keys(textInputBar).length ? { textInputBar } : {}),
     ...(Object.keys(keyboard).length ? { keyboard } : {}),
   };
 }
@@ -2357,9 +2515,19 @@ export function resolveChatScreen({
   const genericTokens = mergeTokenObjects(globalThemeTokens, appTokens);
   const moduleDefaultsFromGenericTokens =
     moduleTypographyDefaultsFromFonts(genericTokens);
-  const inheritedModuleTokens = mergeTokenObjects(
+  const typographySafeModuleThemeTokens =
+    stripModuleTypographyFontIdentity(moduleThemeTokens);
+  const baseInheritedModuleTokens = mergeTokenObjects(
     mergeTokenObjects(genericTokens, moduleDefaultsFromGenericTokens),
-    moduleThemeTokens,
+    typographySafeModuleThemeTokens,
+  );
+  const inheritedModuleTokens = mergeTokenObjects(
+    baseInheritedModuleTokens,
+    resolveChatTypographyTokens(
+      genericTokens,
+      moduleDefaultsFromGenericTokens,
+      typographySafeModuleThemeTokens,
+    ),
   );
   const mergedThemeTokens = resolvePaletteTokenReferences(
     inheritedModuleTokens,
@@ -2651,10 +2819,10 @@ export function resolveChatScreen({
   const activeComposerMessage = [...resolvedMessages]
     .reverse()
     .find((message) => isActiveWriteOnMessage(message, localFrame));
-  const rawKeyboardTokens = {
-    ...keyboardComponent.tokens,
-    ...keyboardInstanceOverrides(moduleConfig.keyboard),
-  };
+  const rawKeyboardTokens = resolveKeyboardInheritance(
+    keyboardComponent.tokens,
+    keyboardInstanceOverrides(moduleConfig.keyboard),
+  );
   const keyboardPushDurationFrames = Math.max(
     0,
     Math.round(numberValue(rawKeyboardTokens.pushDurationFrames, 8)),
