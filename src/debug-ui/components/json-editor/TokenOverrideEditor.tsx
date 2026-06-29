@@ -29,6 +29,7 @@ import type { PaletteColorCatalog } from "./paletteColors.js";
 import {
   InspectorFieldRow,
   InspectorRestoreButton,
+  ToggleInspectorLabel,
 } from "../inspector/InspectorFieldRow.js";
 import {
   compactLabelForGroup,
@@ -82,6 +83,8 @@ interface TokenRowGroup {
   renderAsGroup: boolean;
 }
 
+const FIELD_KIND_HIGH_ROW = new Set(["filePath", "relativeFilePath"]);
+
 function flattenPrimitiveTokens(value: JsonValue, path: JsonPath = []): TokenRow[] {
   if (Array.isArray(value)) {
     return value.flatMap((entry, index) =>
@@ -133,7 +136,17 @@ function rowsWithDictionaryDefaults(
       value: (hint.field.defaultValue ?? "") as JsonValue,
     });
   }
-  return Array.from(byPath.values());
+  const rowsWithDefaults = Array.from(byPath.values());
+  const order = new Map<string, number>();
+  Object.values(hints).forEach((hint, index) => {
+    const path = hint.storagePath ?? (hint.canonicalPath ? pathFromHintKey(hint.canonicalPath) : []);
+    if (path.length) order.set(pathLabel(path), index);
+  });
+  return rowsWithDefaults.sort(
+    (left, right) =>
+      (order.get(pathLabel(left.path)) ?? Number.MAX_SAFE_INTEGER) -
+      (order.get(pathLabel(right.path)) ?? Number.MAX_SAFE_INTEGER),
+  );
 }
 
 function tokenDisplayValue(value: JsonValue): string {
@@ -252,7 +265,7 @@ function groupedRows(
       key,
       label,
       rows: groupRows,
-      renderAsGroup: Boolean(key) && groupRows.length > 1,
+      renderAsGroup: Boolean(key),
     };
   }).sort((left, right) => {
     if (!left.renderAsGroup && right.renderAsGroup) return -1;
@@ -484,10 +497,19 @@ export function TokenOverrideEditor({
       <InspectorFieldRow
         key={`${groupKey ?? ""}:${pair.id}`}
         className={`token-override-row ${DICTIONARY_FIELD_CLASS} ${
+          descriptors.some((entry) => FIELD_KIND_HIGH_ROW.has(entry.descriptor.field.kind))
+            ? "is-multiline"
+            : ""
+        } ${
           rowState === "override" ? "has-override" : ""
         }`}
         state={rowState}
-        label={<strong title={pair.id}>{pair.label}</strong>}
+        label={
+          <ToggleInspectorLabel
+            label={<strong>{pair.label}</strong>}
+            technicalLabel={pair.id}
+          />
+        }
         data-field-id={pair.id}
         data-control-kind="pair"
         control={
@@ -630,11 +652,21 @@ export function TokenOverrideEditor({
         key={key}
         className={`token-override-row ${
           descriptor ? DICTIONARY_FIELD_CLASS : ""
-        } ${descriptor?.field.ui?.multiline === true ? "is-multiline" : ""} ${
+        } ${
+          descriptor?.field.ui?.multiline === true ||
+          (descriptor ? FIELD_KIND_HIGH_ROW.has(descriptor.field.kind) : false)
+            ? "is-multiline"
+            : ""
+        } ${
           rowState === "override" ? "has-override" : ""
         }`}
         state={rowState}
-        label={<strong title={key}>{label}</strong>}
+        label={
+          <ToggleInspectorLabel
+            label={<strong>{label}</strong>}
+            technicalLabel={descriptor?.field.id ?? key}
+          />
+        }
         data-field-id={descriptor?.field.id}
         data-value-kind={descriptor?.field.kind}
         data-control-kind={descriptorControlKind}

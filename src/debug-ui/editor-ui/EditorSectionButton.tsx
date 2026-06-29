@@ -20,7 +20,7 @@ function sectionMeta(label: string) {
       subtitle: "Mode-aware colors, surfaces and semantic roles",
     },
     "app colors": {
-      icon: "◐",
+      icon: "▣",
       subtitle: "Application color roles",
     },
     "border colors": {
@@ -28,8 +28,40 @@ function sectionMeta(label: string) {
       subtitle: "Border color roles",
     },
     "icon colors": {
-      icon: "◉",
+      icon: "✦",
       subtitle: "Icon color roles",
+    },
+    canvas: {
+      icon: "▣",
+      subtitle: "Output canvas size and bounds",
+    },
+    "design space": {
+      icon: "□",
+      subtitle: "Logical device dimensions",
+    },
+    designspace: {
+      icon: "□",
+      subtitle: "Logical device dimensions",
+    },
+    rendering: {
+      icon: "◈",
+      subtitle: "Pixel scale and render metrics",
+    },
+    "safe area": {
+      icon: "◰",
+      subtitle: "Insets reserved by the device",
+    },
+    safearea: {
+      icon: "◰",
+      subtitle: "Insets reserved by the device",
+    },
+    screen: {
+      icon: "▯",
+      subtitle: "Physical screen rectangle",
+    },
+    viewport: {
+      icon: "▱",
+      subtitle: "Visible render viewport",
     },
     "neutral tint": {
       icon: "◍",
@@ -128,7 +160,7 @@ function sectionMeta(label: string) {
       subtitle: "Device status bar appearance",
     },
     notifications: {
-      icon: "◌",
+      icon: "◔",
       subtitle: "Notification card styling",
     },
     container: {
@@ -160,7 +192,7 @@ function sectionMeta(label: string) {
       subtitle: "Video metadata overlay",
     },
     "surface relief": {
-      icon: "◒",
+      icon: "◓",
       subtitle: "Highlight and shadow relief settings",
     },
     waveform: {

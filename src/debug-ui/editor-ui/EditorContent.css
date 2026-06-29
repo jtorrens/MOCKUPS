@@ -122,7 +122,9 @@
   --ui-glyph-size: var(--subcard-header-icon-size, 24px);
   --ui-glyph-radius: var(--subcard-header-icon-radius, 8px);
   --ui-glyph-font-size: var(--subcard-header-icon-font-size, 16px);
-  justify-self: start;
+  align-self: start;
+  justify-self: center;
+  place-self: start center;
 }
 
 .editor-subsection-card .tab-copy > span {

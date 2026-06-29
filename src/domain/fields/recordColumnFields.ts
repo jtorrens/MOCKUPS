@@ -3,11 +3,13 @@ import type {
   JsonFieldBinding,
 } from "../value-system/index.js";
 import { ACTOR_COLUMN_BINDINGS } from "./actorFields.js";
+import { DEVICE_COLUMN_BINDINGS } from "./deviceFields.js";
 import { PRODUCTION_COLUMN_BINDINGS } from "./productionFields.js";
 import { THEME_COLUMN_BINDINGS } from "./themeFields.js";
 
 const RECORD_COLUMN_BINDINGS: Record<string, readonly JsonFieldBinding[]> = {
   actors: ACTOR_COLUMN_BINDINGS,
+  devices: DEVICE_COLUMN_BINDINGS,
   productions: PRODUCTION_COLUMN_BINDINGS,
   themes: THEME_COLUMN_BINDINGS,
 };

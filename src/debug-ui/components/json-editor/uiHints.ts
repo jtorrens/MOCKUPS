@@ -1,5 +1,6 @@
 import type { AppFieldDefinition, AppTableDefinition } from "../../api/client.js";
 import { ACTOR_METADATA_BINDINGS } from "../../../domain/fields/actorFields.js";
+import { DEVICE_METRICS_BINDINGS } from "../../../domain/fields/deviceFields.js";
 import {
   PRODUCTION_METADATA_BINDINGS,
   PRODUCTION_SETTINGS_BINDINGS,
@@ -147,6 +148,9 @@ export function buildJsonUiHints(
     ...(table.id === "actors" && field.column === "metadata_json"
       ? jsonUiHintsFromFieldBindings(ACTOR_METADATA_BINDINGS)
       : {}),
+    ...(table.id === "devices" && field.column === "metrics_json"
+      ? jsonUiHintsFromFieldBindings(DEVICE_METRICS_BINDINGS)
+      : {}),
     ...moduleJsonUiHintsForRecord(table.id, field.column, record),
   };
   if (table.id === "screen_instances" && field.column === "transform_json") {
@@ -158,14 +162,6 @@ export function buildJsonUiHints(
       widget: "number",
       step: 1,
     };
-  }
-  if (table.id === "devices" && field.column === "metrics_json") {
-    hints.scaleToPixels = {
-      label: "Scale to pixels",
-      widget: "number",
-      step: 0.1,
-    };
-    hints.pixelRatio = { label: "Pixel ratio", widget: "number", step: 0.1 };
   }
   if (table.id === "device_states" && field.column === "state_json") {
     hints.orientation = {

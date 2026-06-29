@@ -1,4 +1,31 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+
+interface ToggleInspectorLabelProps {
+  label: ReactNode;
+  technicalLabel?: string;
+  title?: string;
+}
+
+export function ToggleInspectorLabel({
+  label,
+  technicalLabel,
+  title,
+}: ToggleInspectorLabelProps) {
+  const [showTechnical, setShowTechnical] = useState(false);
+  if (!technicalLabel) return <>{label}</>;
+  return (
+    <button
+      type="button"
+      className={`inspector-field-label-toggle ${
+        showTechnical ? "is-technical" : ""
+      }`}
+      title={title ?? technicalLabel}
+      onClick={() => setShowTechnical((current) => !current)}
+    >
+      {showTechnical ? technicalLabel : label}
+    </button>
+  );
+}
 
 interface InspectorFieldRowProps {
   label: ReactNode;

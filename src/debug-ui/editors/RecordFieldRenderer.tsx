@@ -398,6 +398,7 @@ export function RecordFieldRenderer({
                 "avatar_asset_id",
                 "default_device_id",
                 "default_theme_id",
+                "frame_asset_id",
               ].includes(field.column)
                 ? "None"
                 : "Inherited/default",

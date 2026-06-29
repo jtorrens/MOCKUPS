@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import {
   InspectorRestoreButton,
+  ToggleInspectorLabel,
 } from "../../components/inspector/InspectorFieldRow.js";
 import { controlDefinitionForField } from "../ValueKindControlRegistry.js";
 import type { EditorFieldDescriptor } from "./EditorFieldDescriptor.js";
@@ -37,7 +38,7 @@ export function EditorFieldRow({
       description={descriptor.field.ui?.description}
       error={descriptor.validation?.message}
       fieldId={descriptor.field.id}
-      label={<span>{label}</span>}
+      label={<ToggleInspectorLabel label={label} technicalLabel={descriptor.field.id} />}
       readonly={descriptor.readonly}
       restore={restore}
       sourceKind={descriptor.source.kind}
