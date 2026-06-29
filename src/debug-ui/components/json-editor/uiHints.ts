@@ -1,10 +1,17 @@
 import type { AppFieldDefinition, AppTableDefinition } from "../../api/client.js";
 import { ACTOR_METADATA_BINDINGS } from "../../../domain/fields/actorFields.js";
 import { DEVICE_METRICS_BINDINGS } from "../../../domain/fields/deviceFields.js";
+import { EPISODE_METADATA_BINDINGS } from "../../../domain/fields/episodeFields.js";
 import {
   PRODUCTION_METADATA_BINDINGS,
   PRODUCTION_SETTINGS_BINDINGS,
 } from "../../../domain/fields/productionFields.js";
+import {
+  SCREEN_INSTANCE_DEVICE_STATE_BINDINGS,
+  SCREEN_INSTANCE_TRANSFORM_BINDINGS,
+  SCREEN_INSTANCE_TRANSITION_BINDINGS,
+} from "../../../domain/fields/screenInstanceFields.js";
+import { SHOT_METADATA_BINDINGS } from "../../../domain/fields/shotFields.js";
 import { THEME_TOKEN_BINDINGS } from "../../../domain/fields/themeFields.js";
 import type { FieldDefinition } from "../../../domain/value-system/index.js";
 import { fieldDescriptorHintsForContext } from "../../field-descriptors/registry.js";
@@ -148,21 +155,26 @@ export function buildJsonUiHints(
     ...(table.id === "actors" && field.column === "metadata_json"
       ? jsonUiHintsFromFieldBindings(ACTOR_METADATA_BINDINGS)
       : {}),
+    ...(table.id === "episodes" && field.column === "metadata_json"
+      ? jsonUiHintsFromFieldBindings(EPISODE_METADATA_BINDINGS)
+      : {}),
+    ...(table.id === "shots" && field.column === "metadata_json"
+      ? jsonUiHintsFromFieldBindings(SHOT_METADATA_BINDINGS)
+      : {}),
     ...(table.id === "devices" && field.column === "metrics_json"
       ? jsonUiHintsFromFieldBindings(DEVICE_METRICS_BINDINGS)
       : {}),
+    ...(table.id === "screen_instances" && field.column === "transform_json"
+      ? jsonUiHintsFromFieldBindings(SCREEN_INSTANCE_TRANSFORM_BINDINGS)
+      : {}),
+    ...(table.id === "screen_instances" && field.column === "device_state_json"
+      ? jsonUiHintsFromFieldBindings(SCREEN_INSTANCE_DEVICE_STATE_BINDINGS)
+      : {}),
+    ...(table.id === "screen_instances" && field.column === "transition_in_json"
+      ? jsonUiHintsFromFieldBindings(SCREEN_INSTANCE_TRANSITION_BINDINGS)
+      : {}),
     ...moduleJsonUiHintsForRecord(table.id, field.column, record),
   };
-  if (table.id === "screen_instances" && field.column === "transform_json") {
-    hints.x = { label: "X position", widget: "number", step: 1 };
-    hints.y = { label: "Y position", widget: "number", step: 1 };
-    hints.scale = { label: "Scale", widget: "number", step: 0.01 };
-    hints.rotation_degrees = {
-      label: "Rotation",
-      widget: "number",
-      step: 1,
-    };
-  }
   if (table.id === "device_states" && field.column === "state_json") {
     hints.orientation = {
       label: "Orientation",

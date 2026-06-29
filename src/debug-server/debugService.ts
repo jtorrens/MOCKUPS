@@ -958,7 +958,7 @@ export function listDebugOptions(database: SQLiteDatabase) {
     .all();
   const rawShots = database
     .prepare(
-      "SELECT id, production_id AS productionId, episode_id AS episodeId, owner_actor_id AS ownerActorId, name, slug, version, duration_frames AS durationFrames, fps FROM shots ORDER BY production_id, episode_id, name COLLATE NOCASE, id",
+      "SELECT id, production_id AS productionId, episode_id AS episodeId, owner_actor_id AS ownerActorId, name, slug, version, sort_order AS sortOrder, duration_frames AS durationFrames, fps FROM shots ORDER BY production_id, episode_id, COALESCE(sort_order, 0), name COLLATE NOCASE, id",
     )
     .all();
   const rawScreenInstances = database

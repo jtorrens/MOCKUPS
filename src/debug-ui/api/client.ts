@@ -43,6 +43,7 @@ export interface DebugOptions {
     name: string;
     slug?: string | null;
     version?: number | null;
+    sortOrder?: number | null;
     durationFrames: number;
     fps: number;
   }[];

@@ -9,6 +9,7 @@ import type { JsonValue } from "../components/json-editor/jsonEditorUtils.js";
 import type { PaletteColorCatalog } from "../components/json-editor/paletteColors.js";
 import { renderAnimationPresetField } from "./AnimationPresetFields.js";
 import { renderRenderPresetField } from "./RenderPresetFields.js";
+import { renderShotSpecialField } from "./ShotFields.js";
 import type { FieldSaveState } from "./RecordFieldRenderer.js";
 
 interface GenericFieldDispatcherContext {
@@ -38,11 +39,32 @@ interface GenericFieldDispatcherContext {
 export function renderGenericField({
   table,
   field,
+  records,
+  record,
   drafts,
+  states,
+  errors,
   setDrafts,
   setJsonDraft,
   renderField,
 }: GenericFieldDispatcherContext): ReactNode {
+  if (table.id === "shots") {
+    const special = renderShotSpecialField({
+      field,
+      records,
+      record,
+      drafts,
+      states,
+      errors,
+      setDraftValue: (column, value) =>
+        setDrafts({
+          ...drafts,
+          [column]: value,
+        }),
+      renderField,
+    });
+    if (special !== undefined) return special;
+  }
   if (table.id === "animation_presets") {
     return renderAnimationPresetField({
       field,

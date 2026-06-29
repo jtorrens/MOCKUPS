@@ -608,11 +608,13 @@ export function ProjectTree({
             const shots = [
               ...options.shots.filter((shot) => shot.episodeId === episode.id),
             ].sort((left, right) =>
+              Number(left.sortOrder ?? Number.MAX_SAFE_INTEGER) -
+                Number(right.sortOrder ?? Number.MAX_SAFE_INTEGER) ||
               shotRenderName(production, episode, left).localeCompare(
-                shotRenderName(production, episode, right),
-                undefined,
-                { numeric: true, sensitivity: "base" },
-              ),
+                  shotRenderName(production, episode, right),
+                  undefined,
+                  { numeric: true, sensitivity: "base" },
+                ),
             );
             return (
               <details

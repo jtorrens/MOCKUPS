@@ -4,9 +4,14 @@ import {
   type AppRecord,
 } from "../api/client.js";
 import {
-  InspectorFieldRow,
-  InspectorRestoreButton,
-} from "../components/inspector/InspectorFieldRow.js";
+  DictionaryFieldControl,
+  DICTIONARY_FIELD_CLASS,
+} from "../editor-ui/DictionaryFieldControl.js";
+import { EditorFieldRow } from "../editor-ui/fields/EditorFieldRow.js";
+import { createRecordFieldDescriptor } from "../editor-ui/fields/createRecordFieldDescriptor.js";
+import { toDictionaryFieldControlProps } from "../editor-ui/fields/EditorFieldDescriptor.js";
+import { SHOT_FIELDS } from "../../domain/fields/shotFields.js";
+import type { FieldDefinition } from "../../domain/value-system/index.js";
 import { titleForRecord } from "./RecordFieldRenderer.js";
 import type { FieldSaveState } from "./RecordFieldRenderer.js";
 
@@ -129,70 +134,93 @@ function ShotFpsField({
     currentFps !== inheritedFps;
   const state = states[field.column] ?? "saved";
   const error = errors[field.column];
+  const descriptor = createRecordFieldDescriptor({
+    field: SHOT_FIELDS.fps,
+    column: field.column,
+    value: drafts[field.column] ?? "",
+    recordId: typeof record?.id === "string" ? record.id : undefined,
+    recordType: "shots",
+    error,
+    state: error || state === "invalid" || state === "failed"
+      ? "invalid"
+      : hasOverride
+        ? "local"
+        : "default",
+    placeholder:
+      inheritedFps !== undefined ? String(inheritedFps) : undefined,
+    onWrite: (nextValue) => setDraftValue(field.column, String(nextValue ?? "")),
+  });
+  const fpsDescriptor = {
+    ...descriptor,
+    parentValue: inheritedFps,
+    defaultValue: inheritedFps ?? descriptor.defaultValue,
+    resolvedValue: Number.isFinite(currentFps)
+      ? currentFps
+      : inheritedFps ?? descriptor.resolvedValue,
+    canRestore: hasOverride && inheritedFps !== undefined,
+    actions: {
+      ...descriptor.actions,
+      restore:
+        hasOverride && inheritedFps !== undefined
+          ? () => setDraftValue(field.column, String(inheritedFps))
+          : undefined,
+    },
+  };
   return (
-    <InspectorFieldRow
+    <EditorFieldRow
       key={field.column}
-      className={`record-editor-field record-editor-field-${field.kind} state-${state} ${
-        hasOverride ? "json-override" : ""
-      }`}
-      state={
-        state === "invalid" || state === "failed"
-          ? "invalid"
-          : hasOverride
-            ? "override"
-            : "default"
-      }
-      label={<span>{field.label}</span>}
-      meta={
-        inheritedFps !== undefined ? (
-          <code>{`Project default: ${inheritedFps}`}</code>
-        ) : null
-      }
-      control={
-        <>
-          <input
-            data-testid={`field-${field.column}`}
-            type="number"
-            value={drafts[field.column] ?? ""}
-            onChange={(event) => setDraftValue(field.column, event.target.value)}
-          />
-          {error ? <strong>{error}</strong> : null}
-        </>
-      }
-      restore={
-        hasOverride && inheritedFps !== undefined ? (
-          <InspectorRestoreButton
-            label="Restore project FPS"
-            onClick={() => setDraftValue(field.column, String(inheritedFps))}
-          />
-        ) : null
-      }
-    />
+      className={`record-editor-field record-editor-field-${field.kind} ${DICTIONARY_FIELD_CLASS}`}
+      descriptor={fpsDescriptor}
+    >
+      <DictionaryFieldControl
+        {...toDictionaryFieldControlProps(fpsDescriptor)}
+      />
+    </EditorFieldRow>
+  );
+}
+
+function ReadonlyShotField({
+  field,
+  value,
+  column,
+  record,
+}: {
+  field: FieldDefinition;
+  value: unknown;
+  column: string;
+  record: AppRecord | undefined;
+}) {
+  const descriptor = createRecordFieldDescriptor({
+    field,
+    column,
+    value,
+    recordId: typeof record?.id === "string" ? record.id : undefined,
+    recordType: "shots",
+    readonly: true,
+    onWrite: () => undefined,
+  });
+  return (
+    <EditorFieldRow
+      key={column}
+      className={`record-editor-field record-editor-field-string is-readonly ${DICTIONARY_FIELD_CLASS}`}
+      descriptor={descriptor}
+    >
+      <DictionaryFieldControl {...toDictionaryFieldControlProps(descriptor)} />
+    </EditorFieldRow>
   );
 }
 
 function ShotDurationField({
-  field,
   records,
   record,
 }: ShotSpecialFieldContext) {
   const calculatedDuration = shotCalculatedDurationFrames(records, record);
   return (
-    <InspectorFieldRow
-      key={field.column}
-      className="record-editor-field record-editor-field-number is-readonly"
-      label={<span>{field.label}</span>}
-      meta={
-        calculatedDuration !== undefined ? (
-          <code>Calculated from screens</code>
-        ) : null
-      }
-      control={
-        <input
-          disabled
-          value={String(calculatedDuration ?? record?.duration_frames ?? "")}
-        />
-      }
+    <ReadonlyShotField
+      field={SHOT_FIELDS.durationFrames}
+      column="duration_frames"
+      value={calculatedDuration ?? record?.duration_frames ?? ""}
+      record={record}
     />
   );
 }
@@ -203,11 +231,11 @@ function ShotOwnerDeviceField({
   drafts,
 }: Pick<ShotSpecialFieldContext, "records" | "record" | "drafts">) {
   return (
-    <InspectorFieldRow
-      key="owner_device"
-      className="record-editor-field record-editor-field-string is-readonly"
-      label={<span>Device</span>}
-      control={<input disabled value={shotOwnerDeviceName({ records, record, drafts }) ?? ""} />}
+    <ReadonlyShotField
+      field={SHOT_FIELDS.ownerDevice}
+      column="owner_device"
+      value={shotOwnerDeviceName({ records, record, drafts }) ?? ""}
+      record={record}
     />
   );
 }
@@ -235,16 +263,11 @@ export function renderShotSpecialField(
     return (
       <>
         {renderField(field)}
-        <InspectorFieldRow
-          key="render_name"
-          className="record-editor-field record-editor-field-string is-readonly"
-          label={<span>Render name</span>}
-          control={
-            <input
-              disabled
-              value={renderShotName({ records, record, drafts })}
-            />
-          }
+        <ReadonlyShotField
+          field={SHOT_FIELDS.renderName}
+          column="render_name"
+          value={renderShotName({ records, record, drafts })}
+          record={record}
         />
       </>
     );

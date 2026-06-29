@@ -1,5 +1,4 @@
 import type { AppRecord } from "../api/client.js";
-import { InspectorFieldRow } from "../components/inspector/InspectorFieldRow.js";
 import {
   deepEqualJson,
   isJsonObject,
@@ -7,6 +6,11 @@ import {
 } from "../components/json-editor/jsonEditorUtils.js";
 import { TokenOverrideEditor } from "../components/json-editor/TokenOverrideEditor.js";
 import type { JsonUiHints } from "../components/json-editor/uiHints.js";
+import { jsonUiHintsFromFieldBindings } from "../components/json-editor/fieldDefinitionHints.js";
+import {
+  SCREEN_INSTANCE_DEVICE_STATE_BINDINGS,
+  SCREEN_INSTANCE_TRANSITION_BINDINGS,
+} from "../../domain/fields/screenInstanceFields.js";
 import { parsedObject } from "./recordJsonUtils.js";
 
 function stringifyJson(value: unknown): string {
@@ -80,69 +84,28 @@ export function ScreenTransitionFields({
   setDraftValue,
 }: ScreenTransitionFieldsProps) {
   const root = parsedObject(drafts.transition_in_json ?? "{}");
-  const type =
-    root.type === "none" || root.type === "dissolve" || root.type === "overlay"
-      ? String(root.type)
-      : "none";
-  const durationFrames = Math.max(
-    0,
-    Number(root.durationFrames ?? root.duration_frames ?? 0),
-  );
-
-  function updateTransition(patch: Record<string, unknown>) {
-    const next = {
-      ...root,
-      ...patch,
-    };
-    if (next.type === "none" || Number(next.durationFrames ?? 0) <= 0) {
-      setDraftValue("transition_in_json", stringifyJson({ type: "none", durationFrames: 0 }));
-      return;
-    }
-    setDraftValue("transition_in_json", stringifyJson(next));
-  }
-
   return (
-    <>
-      <InspectorFieldRow
-        key="transition_type"
-        className="record-editor-field record-editor-field-string"
-        label={<span>Transition</span>}
-        control={
-          <select
-            value={type}
-            onChange={(event) =>
-              updateTransition({
-                type: event.target.value,
-                durationFrames,
-              })
-            }
-          >
-            <option value="none">None</option>
-            <option value="overlay">Overlay</option>
-            <option value="dissolve">Dissolve</option>
-          </select>
-        }
-      />
-      <InspectorFieldRow
-        key="transition_duration"
-        className="record-editor-field record-editor-field-number"
-        label={<span>Duration frames</span>}
-        meta={<code>Starts before this screen</code>}
-        control={
-          <input
-            type="number"
-            min={0}
-            value={String(durationFrames)}
-            onChange={(event) =>
-              updateTransition({
-                type,
-                durationFrames: Math.max(0, Number(event.target.value)),
-              })
-            }
-          />
-        }
-      />
-    </>
+    <TokenOverrideEditor
+      rootValue={root as JsonValue}
+      inheritedRoot={{ type: "none", durationFrames: 0 }}
+      hints={jsonUiHintsFromFieldBindings(SCREEN_INSTANCE_TRANSITION_BINDINGS)}
+      groupContext="transition"
+      restoreMode="set"
+      showInheritedValue
+      onRootChange={(nextRoot) => {
+        const next = isJsonObject(nextRoot) ? nextRoot : {};
+        const type = String(next.type ?? "none");
+        const durationFrames = Math.max(0, Number(next.durationFrames ?? 0));
+        setDraftValue(
+          "transition_in_json",
+          stringifyJson(
+            type === "none" || durationFrames <= 0
+              ? { type: "none", durationFrames: 0 }
+              : { ...next, type, durationFrames },
+          ),
+        );
+      }}
+    />
   );
 }
 
@@ -153,38 +116,12 @@ interface ScreenDeviceStateFieldsProps {
   onRawChange: (nextRaw: string) => void;
 }
 
-const DEVICE_STATE_HINTS: JsonUiHints = {
-  time: { label: "Time", widget: "text" },
-  batteryLevel: {
-    label: "Battery level",
-    widget: "number",
-    min: 0,
-    max: 1,
-    step: 0.01,
-  },
-  batteryCharging: {
-    label: "Battery charging",
-    widget: "checkbox",
-  },
-  signalBars: {
-    label: "Signal bars",
-    widget: "number",
-    min: 0,
-    max: 4,
-    step: 1,
-  },
-  networkLabel: { label: "Network label", widget: "text" },
-  wifiEnabled: { label: "Wi-Fi enabled", widget: "checkbox" },
-  wifiIconState: { label: "Wi-Fi icon state", widget: "text" },
-  locked: { label: "Locked", widget: "checkbox" },
-};
+const DEVICE_STATE_HINTS: JsonUiHints = jsonUiHintsFromFieldBindings(
+  SCREEN_INSTANCE_DEVICE_STATE_BINDINGS,
+);
 
 const SCREEN_ORIENTATION_HINTS: JsonUiHints = {
-  orientation: {
-    label: "Orientation",
-    widget: "select",
-    options: ["portrait", "landscape"],
-  },
+  orientation: DEVICE_STATE_HINTS.orientation,
 };
 
 function DeviceStateOverrideEditor({
