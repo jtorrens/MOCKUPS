@@ -9,10 +9,22 @@ import {
   setAtPath,
   type JsonValue,
 } from "../components/json-editor/jsonEditorUtils.js";
+import {
+  DictionaryFieldControl,
+  DICTIONARY_FIELD_CLASS,
+  type DictionarySelectOptions,
+} from "../editor-ui/DictionaryFieldControl.js";
 import { EditorHeader } from "../editor-ui/EditorHeader.js";
 import { EditorSectionButton } from "../editor-ui/EditorSectionButton.js";
 import { EditorSectionCard } from "../editor-ui/EditorSectionCard.js";
 import { EditorSections } from "../editor-ui/EditorSections.js";
+import { EditorFieldRow } from "../editor-ui/fields/EditorFieldRow.js";
+import { createJsonFieldDescriptor } from "../editor-ui/fields/createJsonFieldDescriptor.js";
+import { toDictionaryFieldControlProps } from "../editor-ui/fields/EditorFieldDescriptor.js";
+import {
+  STATUS_BAR_CONFIG_BINDINGS,
+  STATUS_BAR_FIELDS,
+} from "../../domain/fields/statusBarFields.js";
 import { parsedObject } from "./recordJsonUtils.js";
 
 type StatusBarTab = "" | "general" | "config";
@@ -201,6 +213,21 @@ function iconThemeTokenOptions(records: Record<string, AppRecord[]>) {
   return Object.keys(tokens).sort((left, right) => left.localeCompare(right));
 }
 
+function tokenSelectOptions(
+  tokens: readonly string[],
+  currentToken?: string,
+): DictionarySelectOptions {
+  const uniqueTokens = new Set(tokens);
+  if (currentToken) uniqueTokens.add(currentToken);
+  return {
+    allowEmpty: true,
+    emptyLabel: "Select token…",
+    options: [...uniqueTokens]
+      .sort((left, right) => left.localeCompare(right))
+      .map((token) => ({ value: token, label: token })),
+  };
+}
+
 export function StatusBarRecordEditor({
   table,
   record,
@@ -211,10 +238,17 @@ export function StatusBarRecordEditor({
   setActiveTab,
   setJsonDraft,
 }: StatusBarRecordEditorProps) {
+  const rawRoot = parsedObject(drafts.config_json ?? "{}") as Record<string, JsonValue>;
   const root = configRoot(drafts.config_json ?? "{}");
-  const layout = isJsonObject(root.layout) ? root.layout : {};
   const items = statusBarItems(root);
   const tokenOptions = iconThemeTokenOptions(records);
+  const zoneSelectOptions: DictionarySelectOptions = {
+    options: [
+      { value: "off", label: "Off" },
+      { value: "left", label: "Left" },
+      { value: "right", label: "Right" },
+    ],
+  };
   const generalFields = table.fields.filter(
     (field) =>
       !["id", "production_id", "config_json", "metadata_json"].includes(
@@ -222,8 +256,32 @@ export function StatusBarRecordEditor({
       ),
   );
   const update = (path: Array<string | number>, nextValue: JsonValue) =>
-    setJsonDraft("config_json", setAtPath(root, path, nextValue));
+    setJsonDraft("config_json", setAtPath(rawRoot, path, nextValue));
   const updateItems = (nextItems: JsonValue) => update(["items"], nextItems);
+  const fallbackConfig = defaultStatusBarConfig() as JsonValue;
+
+  function renderLayoutField(binding: (typeof STATUS_BAR_CONFIG_BINDINGS)[number]) {
+    const descriptor = createJsonFieldDescriptor({
+      binding,
+      localRoot: rawRoot,
+      parentRoot: {},
+      fallbackRoot: fallbackConfig,
+      sourceKind: "json-binding",
+      recordId: typeof record.id === "string" ? record.id : undefined,
+      recordType: "status_bars",
+      onRootChange: (nextRoot) => setJsonDraft("config_json", nextRoot),
+    });
+    if (!descriptor) return null;
+    return (
+      <EditorFieldRow
+        key={binding.outputPath.join(".")}
+        className={`record-editor-field ${DICTIONARY_FIELD_CLASS}`}
+        descriptor={descriptor}
+      >
+        <DictionaryFieldControl {...toDictionaryFieldControlProps(descriptor)} />
+      </EditorFieldRow>
+    );
+  }
 
   return (
     <section className="record-editor">
@@ -256,51 +314,8 @@ export function StatusBarRecordEditor({
           </EditorSectionButton>
           {activeTab === "config" ? (
             <div className="editor-section-body status-bar-config-editor">
-              <div className="status-bar-layout-grid">
-                <label>
-                  <span>Height</span>
-                  <input
-                    type="number"
-                    min={0}
-                    value={numberValue(layout.height, 54)}
-                    onChange={(event) =>
-                      update(["layout", "height"], Number(event.target.value))
-                    }
-                  />
-                </label>
-                <label>
-                  <span>Item size</span>
-                  <input
-                    type="number"
-                    min={0}
-                    value={numberValue(layout.itemSize, 18)}
-                    onChange={(event) =>
-                      update(["layout", "itemSize"], Number(event.target.value))
-                    }
-                  />
-                </label>
-                <label>
-                  <span>Gap</span>
-                  <input
-                    type="number"
-                    min={0}
-                    value={numberValue(layout.gap, 6)}
-                    onChange={(event) =>
-                      update(["layout", "gap"], Number(event.target.value))
-                    }
-                  />
-                </label>
-                <label>
-                  <span>Side padding</span>
-                  <input
-                    type="number"
-                    min={0}
-                    value={numberValue(layout.sidePadding, 24)}
-                    onChange={(event) =>
-                      update(["layout", "sidePadding"], Number(event.target.value))
-                    }
-                  />
-                </label>
+              <div className="record-editor-field-stack record-editor-direct-fields">
+                {STATUS_BAR_CONFIG_BINDINGS.map(renderLayoutField)}
               </div>
 
               <div className="status-bar-items-table">
@@ -318,88 +333,84 @@ export function StatusBarRecordEditor({
                     </div>
                     <div className="status-bar-item-value">
                       {item.kind === "iconToken" ? (
-                        <select
+                        <DictionaryFieldControl
+                          field={STATUS_BAR_FIELDS.itemIconToken}
+                          selectOptions={tokenSelectOptions(
+                            tokenOptions,
+                            item.token,
+                          )}
                           value={item.token ?? ""}
-                          onChange={(event) =>
+                          onChange={(nextValue) =>
                             updateItems(
-                              updateItem(items, index, { token: event.target.value }),
+                              updateItem(items, index, { token: String(nextValue) }),
                             )
                           }
-                        >
-                          {item.token && !tokenOptions.includes(item.token) ? (
-                            <option value={item.token}>{item.token}</option>
-                          ) : null}
-                          <option value="">Select token…</option>
-                          {tokenOptions.map((token) => (
-                            <option key={token} value={token}>
-                              {token}
-                            </option>
-                          ))}
-                        </select>
+                        />
                       ) : item.kind === "text" ? (
-                        <input
+                        <DictionaryFieldControl
+                          field={STATUS_BAR_FIELDS.itemTextValue}
                           value={String(item.value ?? "")}
-                          onChange={(event) =>
+                          onChange={(nextValue) =>
                             updateItems(
-                              updateItem(items, index, { value: event.target.value }),
+                              updateItem(items, index, { value: String(nextValue) }),
                             )
                           }
                         />
                       ) : (
                         <div className="status-bar-generated-controls">
-                          <input
-                            type="number"
-                            min={0}
-                            max={item.kind === "generatedBattery" ? 100 : 4}
+                          <DictionaryFieldControl
+                            field={
+                              item.kind === "generatedBattery"
+                                ? STATUS_BAR_FIELDS.itemBatteryValue
+                                : STATUS_BAR_FIELDS.itemSignalValue
+                            }
                             value={Number(item.value ?? 0)}
-                            onChange={(event) =>
+                            onChange={(nextValue) =>
                               updateItems(
                                 updateItem(items, index, {
-                                  value: Number(event.target.value),
+                                  value: Number(nextValue),
                                 }),
                               )
                             }
                           />
                           {item.kind === "generatedBattery" ? (
-                            <label>
-                              <input
-                                type="checkbox"
-                                checked={item.charging === true}
-                                onChange={(event) =>
+                            <div className="status-bar-generated-flag">
+                              <span>Charging</span>
+                              <DictionaryFieldControl
+                                field={STATUS_BAR_FIELDS.itemCharging}
+                                value={item.charging === true}
+                                onChange={(nextValue) =>
                                   updateItems(
                                     updateItem(items, index, {
-                                      charging: event.target.checked,
+                                      charging: nextValue === true,
                                     }),
                                   )
                                 }
                               />
-                              <span>Charging</span>
-                            </label>
+                            </div>
                           ) : null}
                         </div>
                       )}
                     </div>
-                    <select
+                    <DictionaryFieldControl
+                      field={STATUS_BAR_FIELDS.itemZone}
+                      selectOptions={zoneSelectOptions}
                       value={item.zone}
-                      onChange={(event) =>
+                      onChange={(nextValue) =>
                         updateItems(
                           updateItem(items, index, {
-                            zone: event.target.value as StatusBarZone,
+                            zone: nextValue as StatusBarZone,
                           }),
                         )
                       }
-                    >
-                      <option value="off">Off</option>
-                      <option value="left">Left</option>
-                      <option value="right">Right</option>
-                    </select>
-                    <input
-                      type="number"
+                    />
+                    <DictionaryFieldControl
+                      field={STATUS_BAR_FIELDS.itemOrder}
                       value={item.order}
-                      onChange={(event) =>
+                      onChange={(nextValue) =>
                         updateItems(
                           updateItem(items, index, {
-                            order: Number(event.target.value),
+                            order: Number(nextValue),
                           }),
                         )
                       }

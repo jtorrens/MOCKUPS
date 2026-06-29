@@ -28,12 +28,12 @@ export const CHAT_TEXT_INPUT_BAR_FIELDS = defineFields({
   cursorColor: {
     id: "chat.textInputBar.cursorColor",
     kind: "themeColorToken",
-    defaultValue: "cursor.color",
+    defaultValue: "theme.cursor.color",
     ui: {
       label: "Cursor color",
       semanticTokenGroup: "cursor",
       options: [
-        "cursor.color",
+        "theme.cursor.color",
         "icons.accent",
         "icons.primary",
         "icons.secondary",

@@ -121,7 +121,7 @@ const COMMON_HINTS: JsonUiHints = {
     widget: "color",
   },
   "chatBubbles.incomingText": { label: "Incoming text", widget: "color" },
-  "cursor.color": { label: "Cursor color", widget: "color" },
+  "theme.cursor.color": { label: "Cursor color", widget: "color" },
 };
 
 export function buildJsonUiHints(

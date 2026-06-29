@@ -2,11 +2,14 @@ import type { Dispatch, SetStateAction } from "react";
 import type {
   AppFieldDefinition,
   AppRecord,
+  AppState,
   AppTableDefinition,
 } from "../api/client.js";
 import { GenericRecordEditor } from "./GenericRecordEditor.js";
+import { IconThemeRecordEditor } from "./IconThemeRecordEditor.js";
 import { ModuleInstanceRecordEditor } from "./ModuleInstanceRecordEditor.js";
 import { ScreenInstanceRecordEditor } from "./ScreenInstanceRecordEditor.js";
+import { StatusBarRecordEditor } from "./StatusBarRecordEditor.js";
 import type { PaletteColorCatalog } from "../components/json-editor/paletteColors.js";
 import type { ProductionFontCatalog } from "../components/json-editor/productionFonts.js";
 import type { createJsonGroupDrafts } from "./jsonGroupDrafts.js";
@@ -38,6 +41,7 @@ interface RecordEditorDispatcherProps {
   tabs: ReturnType<typeof useRecordEditorTabs>;
   onRecordsChanged: (records: AppRecord[]) => void;
   onRecordSaved: (record: AppRecord) => void;
+  onAppStateChanged?: (state: AppState, tableId: string, record: AppRecord) => void;
   onPreviewRelativeFrameChange?: (frame: number) => void;
 }
 
@@ -60,15 +64,46 @@ export function RecordEditorDispatcher({
   tabs,
   onRecordsChanged,
   onRecordSaved,
+  onAppStateChanged,
   onPreviewRelativeFrameChange,
 }: RecordEditorDispatcherProps) {
   const {
     renderField,
     renderFields,
     renderGenericField,
+    setJsonDraft,
   } = renderServices;
 
   if (table.id !== "module_instances" && table.id !== "screen_instances") {
+    if (table.id === "icon_themes") {
+      return (
+        <IconThemeRecordEditor
+          table={table}
+          record={record}
+          activeTab={tabs.iconThemeTab}
+          drafts={drafts}
+          mediaRoot={mediaRoot}
+          nativeBridge={nativeBridge}
+          renderField={renderField}
+          setActiveTab={tabs.setIconThemeTab}
+          onAppStateChanged={onAppStateChanged}
+        />
+      );
+    }
+    if (table.id === "status_bars") {
+      return (
+        <StatusBarRecordEditor
+          table={table}
+          record={record}
+          records={records}
+          activeTab={tabs.statusBarTab}
+          drafts={drafts}
+          renderField={renderField}
+          setActiveTab={tabs.setStatusBarTab}
+          setJsonDraft={setJsonDraft}
+        />
+      );
+    }
     return (
       <GenericRecordEditor
         table={table}

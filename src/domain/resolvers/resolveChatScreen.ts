@@ -741,7 +741,7 @@ function resolveTextInputBarDefinition(
     cursorColor: themeColor(
       themeTokens,
       palette,
-      stringValue(root.cursorColor, "cursor.color"),
+      stringValue(root.cursorColor, "theme.cursor.color"),
       "",
     ),
     fieldShadowEnabled: root.fieldShadowEnabled !== false,
@@ -1535,6 +1535,7 @@ export function resolveGlobalThemeTokens(
       "borders.primary": "gray_080",
       "borders.secondary": "gray_070",
       "borders.alternate": "gray_090",
+      "theme.cursor.color": "gray_000",
       ...colors,
     },
     cursor: {

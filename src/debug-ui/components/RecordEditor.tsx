@@ -150,6 +150,7 @@ export function RecordEditor({
       tabs={tabs}
       onRecordsChanged={onRecordsChanged}
       onRecordSaved={onRecordSaved}
+      onAppStateChanged={onAppStateChanged}
       onPreviewRelativeFrameChange={onPreviewRelativeFrameChange}
     />
   );

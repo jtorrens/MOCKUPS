@@ -17,7 +17,9 @@ import {
   saveDebugPayload,
   createAppRecord,
   deleteAppRecord,
+  deleteIconThemeToken,
   duplicateAppRecord,
+  refreshIconThemeSet,
   renamePaletteColorToken,
   updateAppRecord,
   type AppCreateRequest,
@@ -25,6 +27,8 @@ import {
   type AppUpdateRequest,
   type DebugSaveRequest,
   type DebugSelection,
+  type IconThemeRefreshRequest,
+  type IconThemeDeleteTokenRequest,
   type PaletteColorRenameRequest,
   type ScreenInstanceMoveRequest,
 } from "./debugService.js";
@@ -676,6 +680,16 @@ const server = createServer(async (request, response) => {
     if (request.method === "POST" && url.pathname === "/api/app/palette-color/rename") {
       const body = (await readJson(request)) as PaletteColorRenameRequest;
       sendJson(response, 200, renamePaletteColorToken(database, body));
+      return;
+    }
+    if (request.method === "POST" && url.pathname === "/api/app/icon-theme/refresh") {
+      const body = (await readJson(request)) as IconThemeRefreshRequest;
+      sendJson(response, 200, await refreshIconThemeSet(database, body));
+      return;
+    }
+    if (request.method === "POST" && url.pathname === "/api/app/icon-theme/delete-token") {
+      const body = (await readJson(request)) as IconThemeDeleteTokenRequest;
+      sendJson(response, 200, await deleteIconThemeToken(database, body));
       return;
     }
     if (request.method === "POST" && url.pathname === "/api/app/production-font/import") {

@@ -74,7 +74,6 @@ function stateForValues({
   localValue,
   parentHasValue,
   defaultHasValue,
-  localMatchesBaseline,
   validation,
 }: {
   readonly field: FieldDefinition;
@@ -82,17 +81,10 @@ function stateForValues({
   readonly localValue: unknown;
   readonly parentHasValue: boolean;
   readonly defaultHasValue: boolean;
-  readonly localMatchesBaseline: boolean;
   readonly validation?: EditorValidation;
 }): EditorFieldState {
   if (validation && !validation.valid) return "invalid";
-  if (
-    localHasValue &&
-    !ValueRegistry.isInherited(localValue) &&
-    !localMatchesBaseline
-  ) {
-    return "local";
-  }
+  if (localHasValue && !ValueRegistry.isInherited(localValue)) return "local";
   if (parentHasValue) return "inherited";
   if (defaultHasValue || field.defaultValue !== undefined) return "default";
   return "default";
@@ -136,19 +128,12 @@ export function createJsonFieldDescriptor({
   const displayValue = normalizeForDisplay(field, displaySource);
   const validation = validationForField(field, displayValue);
   const baselineValue = parentHasValue ? parentValue : defaultValue;
-  const localMatchesBaseline =
-    localHasValue &&
-    deepEqualJson(
-      (localValue ?? null) as JsonValue,
-      (baselineValue ?? null) as JsonValue,
-    );
   const state = stateForValues({
     field,
     localHasValue,
     localValue,
     parentHasValue,
     defaultHasValue: defaultValue !== undefined,
-    localMatchesBaseline,
     validation,
   });
   const canRestore =

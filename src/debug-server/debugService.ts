@@ -1,3 +1,5 @@
+import { readdir, unlink } from "node:fs/promises";
+import path from "node:path";
 import type { z } from "zod";
 import {
   ActorSchema,
@@ -1473,6 +1475,31 @@ export interface AppUpdateRequest {
 export interface PaletteColorRenameRequest {
   recordId: string;
   nextToken: string;
+}
+
+export interface IconThemeRefreshRequest {
+  recordId: string;
+}
+
+export interface IconThemeDeleteTokenRequest {
+  recordId: string;
+  token: string;
+}
+
+export interface IconThemeRefreshResult {
+  state: ReturnType<typeof loadAppState>;
+  record: Row;
+  tableId: "icon_themes";
+  commonTokenCount: number;
+  setCount: number;
+  omittedTokenCount: number;
+}
+
+export interface IconThemeDeleteTokenResult {
+  state: ReturnType<typeof loadAppState>;
+  record: Row;
+  tableId: "icon_themes";
+  deletedFileCount: number;
 }
 
 export interface AppCreateRequest {
@@ -2955,6 +2982,254 @@ function replacePaletteTokenInJsonRows({
     replacements += 1;
   }
   return replacements;
+}
+
+function productionMediaRootForIconTheme(database: SQLiteDatabase, productionId: string) {
+  const row = database
+    .prepare("SELECT settings_json FROM productions WHERE id = ?")
+    .get(productionId) as { settings_json: string } | undefined;
+  if (!row) return "";
+  try {
+    const settings = JSON.parse(row.settings_json) as unknown;
+    if (
+      settings &&
+      typeof settings === "object" &&
+      !Array.isArray(settings) &&
+      typeof (settings as Record<string, unknown>).mediaRoot === "string"
+    ) {
+      return (settings as Record<string, string>).mediaRoot;
+    }
+  } catch {
+    return "";
+  }
+  return "";
+}
+
+function iconTokenCategory(token: string) {
+  return token.split("_")[0] || "misc";
+}
+
+async function svgTokenSet(directory: string) {
+  const entries = await readdir(directory, { withFileTypes: true });
+  return new Set(
+    entries
+      .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith(".svg"))
+      .map((entry) => entry.name.replace(/\.svg$/i, ""))
+      .filter(Boolean),
+  );
+}
+
+async function iconThemeSetDirectories({
+  assetRoot,
+  mediaRoot,
+}: {
+  assetRoot: string;
+  mediaRoot: string;
+}) {
+  const currentSetPath = path.isAbsolute(assetRoot)
+    ? path.resolve(assetRoot)
+    : path.resolve(mediaRoot, assetRoot);
+  const setsRoot = path.dirname(currentSetPath);
+  const setEntries = await readdir(setsRoot, { withFileTypes: true });
+  return {
+    setsRoot,
+    setDirectories: setEntries
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => ({
+        name: entry.name,
+        path: path.join(setsRoot, entry.name),
+      }))
+      .sort((left, right) => left.name.localeCompare(right.name)),
+  };
+}
+
+function sortedTokens(tokens: Iterable<string>) {
+  return Array.from(tokens).sort((left, right) =>
+    left.localeCompare(right, undefined, {
+      numeric: true,
+      sensitivity: "base",
+    }),
+  );
+}
+
+function iconThemeContext(database: SQLiteDatabase, recordId: string) {
+  const row = database
+    .prepare("SELECT * FROM icon_themes WHERE id = ?")
+    .get(recordId) as Row | undefined;
+  if (!row) {
+    throw new Error(`Icon theme ${recordId} not found`);
+  }
+  const productionId = String(row.production_id);
+  const mediaRoot = productionMediaRootForIconTheme(database, productionId);
+  if (!mediaRoot) {
+    throw new Error("Production media root is not set.");
+  }
+  const assetRoot = String(row.asset_root ?? "").trim();
+  if (!assetRoot) {
+    throw new Error("Icon theme asset root is not set.");
+  }
+  return { assetRoot, mediaRoot, row };
+}
+
+export async function refreshIconThemeSet(
+  database: SQLiteDatabase,
+  request: IconThemeRefreshRequest,
+): Promise<IconThemeRefreshResult> {
+  const { assetRoot, mediaRoot, row } = iconThemeContext(database, request.recordId);
+  const { setsRoot, setDirectories } = await iconThemeSetDirectories({
+    assetRoot,
+    mediaRoot,
+  });
+
+  if (setDirectories.length === 0) {
+    throw new Error(`No icon sets found in ${setsRoot}`);
+  }
+
+  const sets = await Promise.all(
+    setDirectories.map(async (entry) => ({
+      ...entry,
+      tokens: await svgTokenSet(entry.path),
+    })),
+  );
+  const [firstSet] = sets;
+  const commonTokens = new Set(firstSet?.tokens ?? []);
+  for (const set of sets.slice(1)) {
+    for (const token of Array.from(commonTokens)) {
+      if (!set.tokens.has(token)) commonTokens.delete(token);
+    }
+  }
+  const allTokens = new Set(sets.flatMap((set) => Array.from(set.tokens)));
+  const currentMapping = readRequiredJson(row, "mapping_json");
+  const currentTokens =
+    currentMapping.tokens &&
+    typeof currentMapping.tokens === "object" &&
+    !Array.isArray(currentMapping.tokens)
+      ? (currentMapping.tokens as Record<string, Record<string, unknown>>)
+      : {};
+  const nextTokens: Record<string, Record<string, unknown>> = {};
+  const nextCategories: Record<string, string[]> = {};
+  for (const token of sortedTokens(commonTokens)) {
+    const existing = currentTokens[token] ?? {};
+    const category =
+      typeof existing.category === "string" && existing.category.trim()
+        ? existing.category
+        : iconTokenCategory(token);
+    nextTokens[token] = {
+      ...existing,
+      category,
+      file: `${token}.svg`,
+    };
+    nextCategories[category] = [...(nextCategories[category] ?? []), token];
+  }
+  const nextMapping = {
+    ...currentMapping,
+    schemaVersion: 1,
+    source: {
+      ...(typeof currentMapping.source === "object" &&
+      currentMapping.source !== null &&
+      !Array.isArray(currentMapping.source)
+        ? (currentMapping.source as Record<string, unknown>)
+        : {}),
+      setsRoot: path.relative(path.resolve(mediaRoot), setsRoot).replace(/\\/g, "/"),
+      setCount: sets.length,
+      refreshedAt: new Date().toISOString(),
+    },
+    tokens: nextTokens,
+    categories: nextCategories,
+  };
+  database
+    .prepare("UPDATE icon_themes SET mapping_json = ? WHERE id = ?")
+    .run(
+      stringifyJsonObject(nextMapping, "icon_themes.mapping_json"),
+      request.recordId,
+    );
+  const updated = database
+    .prepare("SELECT * FROM icon_themes WHERE id = ?")
+    .get(request.recordId) as Row;
+  return {
+    tableId: "icon_themes",
+    record: decodeAppRow(updated, tableDefinition("icon_themes")),
+    state: loadAppState(database),
+    commonTokenCount: commonTokens.size,
+    setCount: sets.length,
+    omittedTokenCount: Math.max(0, allTokens.size - commonTokens.size),
+  };
+}
+
+export async function deleteIconThemeToken(
+  database: SQLiteDatabase,
+  request: IconThemeDeleteTokenRequest,
+): Promise<IconThemeDeleteTokenResult> {
+  const token = request.token.trim();
+  if (!/^[a-z][a-z0-9_]*(?:\.[a-z0-9_]+)*$/.test(token)) {
+    throw new Error("Icon token must be lower_snake_case or dotted lower_snake_case.");
+  }
+  const { assetRoot, mediaRoot, row } = iconThemeContext(database, request.recordId);
+  const { setDirectories } = await iconThemeSetDirectories({
+    assetRoot,
+    mediaRoot,
+  });
+  let deletedFileCount = 0;
+  await Promise.all(
+    setDirectories.map(async (entry) => {
+      try {
+        await unlink(path.join(entry.path, `${token}.svg`));
+        deletedFileCount += 1;
+      } catch (error) {
+        if (
+          typeof error === "object" &&
+          error !== null &&
+          "code" in error &&
+          (error as { code?: string }).code === "ENOENT"
+        ) {
+          return;
+        }
+        throw error;
+      }
+    }),
+  );
+  const currentMapping = readRequiredJson(row, "mapping_json");
+  const currentTokens =
+    currentMapping.tokens &&
+    typeof currentMapping.tokens === "object" &&
+    !Array.isArray(currentMapping.tokens)
+      ? { ...(currentMapping.tokens as Record<string, unknown>) }
+      : {};
+  delete currentTokens[token];
+  const currentCategories =
+    currentMapping.categories &&
+    typeof currentMapping.categories === "object" &&
+    !Array.isArray(currentMapping.categories)
+      ? (currentMapping.categories as Record<string, unknown>)
+      : {};
+  const nextCategories = Object.fromEntries(
+    Object.entries(currentCategories).map(([category, values]) => [
+      category,
+      Array.isArray(values)
+        ? values.filter((value) => value !== token)
+        : values,
+    ]),
+  );
+  const nextMapping = {
+    ...currentMapping,
+    tokens: currentTokens,
+    categories: nextCategories,
+  };
+  database
+    .prepare("UPDATE icon_themes SET mapping_json = ? WHERE id = ?")
+    .run(
+      stringifyJsonObject(nextMapping, "icon_themes.mapping_json"),
+      request.recordId,
+    );
+  const updated = database
+    .prepare("SELECT * FROM icon_themes WHERE id = ?")
+    .get(request.recordId) as Row;
+  return {
+    tableId: "icon_themes",
+    record: decodeAppRow(updated, tableDefinition("icon_themes")),
+    state: loadAppState(database),
+    deletedFileCount,
+  };
 }
 
 export function renamePaletteColorToken(

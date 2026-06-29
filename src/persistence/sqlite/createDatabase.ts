@@ -1605,7 +1605,7 @@ function defaultTextInputBarComponentTokens() {
     idleTextColor: "icons.secondary",
     cursorWidth: 2,
     cursorBlinkFrames: 15,
-    cursorColor: "cursor.color",
+    cursorColor: "theme.cursor.color",
     fieldRadius: 20,
     fieldShadowEnabled: true,
     iconSets: {

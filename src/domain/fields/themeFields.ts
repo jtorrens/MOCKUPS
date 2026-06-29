@@ -958,11 +958,11 @@ export const THEME_TOKEN_BINDINGS = [
     field: THEME_FIELDS.borderAlternateDark,
   },
   {
-    outputPath: ["modes", "light", "colors", "cursor.color"],
+    outputPath: ["modes", "light", "colors", "theme.cursor.color"],
     field: THEME_FIELDS.cursorColorLight,
   },
   {
-    outputPath: ["modes", "dark", "colors", "cursor.color"],
+    outputPath: ["modes", "dark", "colors", "theme.cursor.color"],
     field: THEME_FIELDS.cursorColorDark,
   },
   {

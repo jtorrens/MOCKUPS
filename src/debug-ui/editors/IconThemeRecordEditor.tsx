@@ -1,9 +1,14 @@
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import type { AppFieldDefinition, AppRecord, AppTableDefinition } from "../api/client.js";
+import {
+  deleteIconThemeToken,
+  refreshIconThemeSet,
+  type AppFieldDefinition,
+  type AppRecord,
+  type AppState,
+  type AppTableDefinition,
+} from "../api/client.js";
 import { AppModalDialog } from "../components/AppModalDialog.js";
-import type { JsonValue } from "../components/json-editor/jsonEditorUtils.js";
-import { DeferredTextInput } from "../editor-ui/DeferredTextInput.js";
 import { EditorHeader } from "../editor-ui/EditorHeader.js";
 import { EditorSectionButton } from "../editor-ui/EditorSectionButton.js";
 import { EditorSectionCard } from "../editor-ui/EditorSectionCard.js";
@@ -26,7 +31,7 @@ interface IconThemeRecordEditorProps {
   nativeBridge: IconThemeNativeBridge | undefined;
   renderField: (field: AppFieldDefinition) => ReactNode;
   setActiveTab: (tab: IconThemeTab) => void;
-  setJsonDraft: (column: string, value: JsonValue) => void;
+  onAppStateChanged?: (state: AppState, tableId: string, record: AppRecord) => void;
 }
 
 interface IconThemeTokenRow {
@@ -53,18 +58,6 @@ function tokenRows(mapping: Record<string, unknown>) {
   );
 }
 
-function normalizeCategory(value: string) {
-  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_");
-}
-
-function basename(value: string) {
-  return value.replace(/\\/g, "/").split("/").at(-1) ?? value;
-}
-
-function withoutSvgExtension(value: string) {
-  return value.replace(/\.svg$/i, "");
-}
-
 function toText(value: unknown) {
   return typeof value === "string" ? value : "";
 }
@@ -74,67 +67,6 @@ function tokenPath(assetRoot: string, file: string) {
   if (!trimmedFile) return "";
   if (/^(data:|file:|https?:|\/)/i.test(trimmedFile)) return trimmedFile;
   return `${assetRoot.replace(/\/+$/g, "")}/${trimmedFile.replace(/^\/+/g, "")}`;
-}
-
-function addToken(
-  mapping: Record<string, unknown>,
-  token: string,
-  category: string,
-  file: string,
-) {
-  const tokens = mappingTokens(mapping);
-  const nextCategory = normalizeCategory(category) || "misc";
-  const nextToken = token.trim();
-  const nextCategories =
-    mapping.categories &&
-    typeof mapping.categories === "object" &&
-    !Array.isArray(mapping.categories)
-      ? (mapping.categories as Record<string, JsonValue>)
-      : {};
-  const currentCategoryTokens = Array.isArray(nextCategories[nextCategory])
-    ? (nextCategories[nextCategory] as JsonValue[]).filter(
-        (value): value is string => typeof value === "string",
-      )
-    : [];
-
-  return {
-    ...mapping,
-    tokens: {
-      ...tokens,
-      [nextToken]: {
-        category: nextCategory,
-        file,
-      },
-    },
-    categories: {
-      ...nextCategories,
-      [nextCategory]: Array.from(new Set([...currentCategoryTokens, nextToken])),
-    },
-  } as JsonValue;
-}
-
-function deleteToken(mapping: Record<string, unknown>, token: string) {
-  const tokens = { ...mappingTokens(mapping) };
-  delete tokens[token];
-  const categories =
-    mapping.categories &&
-    typeof mapping.categories === "object" &&
-    !Array.isArray(mapping.categories)
-      ? (mapping.categories as Record<string, JsonValue>)
-      : {};
-  const nextCategories = Object.fromEntries(
-    Object.entries(categories).map(([category, values]) => [
-      category,
-      Array.isArray(values)
-        ? values.filter((value) => value !== token)
-        : values,
-    ]),
-  );
-  return {
-    ...mapping,
-    tokens,
-    categories: nextCategories,
-  } as unknown as JsonValue;
 }
 
 function IconPreview({
@@ -189,72 +121,6 @@ function IconPreview({
   );
 }
 
-function AddIconTokenModal({
-  canBrowse,
-  error,
-  file,
-  family,
-  token,
-  onBrowse,
-  onCancel,
-  onSave,
-  setFamily,
-  setToken,
-}: {
-  canBrowse: boolean;
-  error: string;
-  file: string;
-  family: string;
-  token: string;
-  onBrowse: () => void;
-  onCancel: () => void;
-  onSave: () => void;
-  setFamily: (value: string) => void;
-  setToken: (value: string) => void;
-}) {
-  return (
-    <div className="modal-backdrop" role="presentation">
-      <div className="modal-card icon-theme-modal" role="dialog" aria-modal="true">
-        <header>
-          <h2>Add icon token</h2>
-          <p>Choose an SVG and assign the logical token used by apps/modules.</p>
-        </header>
-        <div className="record-editor-field-stack record-editor-direct-fields">
-          <label className="icon-theme-modal-field">
-            <span>Token name</span>
-            <DeferredTextInput value={token} onCommit={setToken} />
-          </label>
-          <label className="icon-theme-modal-field">
-            <span>Family / group</span>
-            <DeferredTextInput value={family} onCommit={setFamily} />
-          </label>
-          <div className="icon-theme-modal-file">
-            <span>SVG</span>
-            <strong>{file ? basename(file) : "No SVG selected"}</strong>
-            <button
-              type="button"
-              className="secondary-button"
-              disabled={!canBrowse}
-              onClick={onBrowse}
-            >
-              Browse SVG
-            </button>
-          </div>
-          {error ? <p className="form-error">{error}</p> : null}
-        </div>
-        <footer>
-          <button type="button" className="secondary-button" onClick={onCancel}>
-            Cancel
-          </button>
-          <button type="button" className="primary-button" onClick={onSave}>
-            Add token
-          </button>
-        </footer>
-      </div>
-    </div>
-  );
-}
-
 export function IconThemeRecordEditor({
   table,
   record,
@@ -264,72 +130,111 @@ export function IconThemeRecordEditor({
   nativeBridge,
   renderField,
   setActiveTab,
-  setJsonDraft,
+  onAppStateChanged,
 }: IconThemeRecordEditorProps) {
-  const [adding, setAdding] = useState(false);
-  const [newToken, setNewToken] = useState("");
-  const [newFamily, setNewFamily] = useState("");
-  const [newFile, setNewFile] = useState("");
-  const [modalError, setModalError] = useState("");
   const [pendingDeleteToken, setPendingDeleteToken] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [pendingRefresh, setPendingRefresh] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshMessage, setRefreshMessage] = useState("");
   const mapping = parsedObject(drafts.mapping_json ?? "{}");
   const rows = tokenRows(mapping);
   const assetRoot = String(record.asset_root ?? drafts.asset_root ?? "");
   const generalFields = table.fields.filter(
     (field) =>
-      !["id", "production_id", "mapping_json", "metadata_json"].includes(field.column),
+      ![
+        "id",
+        "production_id",
+        "asset_root",
+        "mapping_json",
+        "metadata_json",
+      ].includes(field.column),
   );
 
-  async function browseNewSvg() {
-    const [selectedPath] = await (nativeBridge?.pickFile?.() ?? Promise.resolve([]));
-    if (!selectedPath) return;
-    setNewFile(selectedPath);
-    if (!newToken.trim()) {
-      setNewToken(withoutSvgExtension(basename(selectedPath)));
+  async function confirmRefreshSets() {
+    setRefreshing(true);
+    try {
+      const result = await refreshIconThemeSet({ recordId: record.id });
+      onAppStateChanged?.(result.state, result.tableId, result.record);
+      setRefreshMessage(
+        `Refreshed ${result.commonTokenCount} common token${
+          result.commonTokenCount === 1 ? "" : "s"
+        } across ${result.setCount} set${result.setCount === 1 ? "" : "s"}.${
+          result.omittedTokenCount
+            ? ` ${result.omittedTokenCount} token${
+                result.omittedTokenCount === 1 ? "" : "s"
+              } omitted because they are not present in every set.`
+            : ""
+        }`,
+      );
+    } catch (error) {
+      setRefreshMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setRefreshing(false);
+      setPendingRefresh(false);
     }
   }
 
-  function resetModal() {
-    setNewToken("");
-    setNewFamily("");
-    setNewFile("");
-    setModalError("");
-  }
-
-  function saveNewToken() {
-    const token = newToken.trim();
-    const file = basename(newFile.trim());
-    if (!token) {
-      setModalError("Token name is required.");
-      return;
+  async function confirmDeleteToken() {
+    const token = pendingDeleteToken;
+    if (!token) return;
+    setDeleting(true);
+    try {
+      const result = await deleteIconThemeToken({ recordId: record.id, token });
+      onAppStateChanged?.(result.state, result.tableId, result.record);
+      setRefreshMessage(
+        `Deleted “${token}” from ${result.deletedFileCount} icon set${
+          result.deletedFileCount === 1 ? "" : "s"
+        } and removed it from the mapping.`,
+      );
+    } catch (error) {
+      setRefreshMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setDeleting(false);
+      setPendingDeleteToken("");
     }
-    if (!file || !file.toLowerCase().endsWith(".svg")) {
-      setModalError("Choose an SVG file.");
-      return;
-    }
-    if (Object.hasOwn(mappingTokens(mapping), token)) {
-      setModalError(`Token “${token}” already exists.`);
-      return;
-    }
-    setJsonDraft("mapping_json", addToken(mapping, token, newFamily, file));
-    resetModal();
-    setAdding(false);
   }
 
   return (
     <section className="record-editor">
+      {pendingRefresh ? (
+        <AppModalDialog
+          eyebrow="Icon theme"
+          title="Refresh icon sets?"
+          message={
+            <>
+              This scans every set in the icon-themes directory and rebuilds this
+              mapping using only SVG tokens present in all sets.
+            </>
+          }
+          confirmLabel={refreshing ? "Refreshing…" : "Refresh"}
+          onCancel={() => {
+            if (!refreshing) setPendingRefresh(false);
+          }}
+          onConfirm={() => void confirmRefreshSets()}
+        />
+      ) : null}
+      {refreshMessage ? (
+        <AppModalDialog
+          eyebrow="Icon theme"
+          title="Refresh complete"
+          message={refreshMessage}
+          hideConfirm
+          onCancel={() => setRefreshMessage("")}
+          onConfirm={() => setRefreshMessage("")}
+        />
+      ) : null}
       {pendingDeleteToken ? (
         <AppModalDialog
           eyebrow="Icon token"
           title={`Delete “${pendingDeleteToken}”?`}
-          message="This removes the token from this icon theme."
-          confirmLabel="Delete"
+          message="This deletes the SVG from every sibling icon set and removes the token from this mapping."
+          confirmLabel={deleting ? "Deleting…" : "Delete"}
           destructive
-          onCancel={() => setPendingDeleteToken("")}
-          onConfirm={() => {
-            setJsonDraft("mapping_json", deleteToken(mapping, pendingDeleteToken));
-            setPendingDeleteToken("");
+          onCancel={() => {
+            if (!deleting) setPendingDeleteToken("");
           }}
+          onConfirm={() => void confirmDeleteToken()}
         />
       ) : null}
       <EditorHeader
@@ -366,12 +271,9 @@ export function IconThemeRecordEditor({
                 <button
                   type="button"
                   className="primary-button"
-                  onClick={() => {
-                    resetModal();
-                    setAdding(true);
-                  }}
+                  onClick={() => setPendingRefresh(true)}
                 >
-                  Add icon
+                  Refresh sets
                 </button>
               </div>
               {rows.length === 0 ? (
@@ -415,24 +317,6 @@ export function IconThemeRecordEditor({
           ) : null}
         </EditorSectionCard>
       </EditorSections>
-
-      {adding ? (
-        <AddIconTokenModal
-          canBrowse={Boolean(nativeBridge?.pickFile)}
-          error={modalError}
-          file={newFile}
-          family={newFamily}
-          token={newToken}
-          onBrowse={() => void browseNewSvg()}
-          onCancel={() => {
-            resetModal();
-            setAdding(false);
-          }}
-          onSave={saveNewToken}
-          setFamily={setNewFamily}
-          setToken={setNewToken}
-        />
-      ) : null}
     </section>
   );
 }

@@ -265,6 +265,43 @@ export async function renamePaletteColorToken(request: {
   );
 }
 
+export async function refreshIconThemeSet(request: {
+  recordId: string;
+}): Promise<{
+  state: AppState;
+  record: AppRecord;
+  tableId: "icon_themes";
+  commonTokenCount: number;
+  setCount: number;
+  omittedTokenCount: number;
+}> {
+  return readResponse(
+    await fetch("/api/app/icon-theme/refresh", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
+    }),
+  );
+}
+
+export async function deleteIconThemeToken(request: {
+  recordId: string;
+  token: string;
+}): Promise<{
+  state: AppState;
+  record: AppRecord;
+  tableId: "icon_themes";
+  deletedFileCount: number;
+}> {
+  return readResponse(
+    await fetch("/api/app/icon-theme/delete-token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
+    }),
+  );
+}
+
 export async function getPreviewPayload(
   selection: DebugSelection,
 ): Promise<DebugPayload> {
