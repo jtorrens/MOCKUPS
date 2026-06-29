@@ -14,8 +14,10 @@ export interface TypographySelection {
 
 export interface TypographySelectorProps {
   catalog?: ProductionFontCatalog;
+  category?: "normal" | "emoji" | "all";
   compact?: boolean;
   controlClassName?: string;
+  familyOnly?: boolean;
   inherited?: boolean;
   lockFamily?: boolean;
   value: {
@@ -89,14 +91,24 @@ function defaultFace(faces: ProductionFontFaceOption[]) {
 
 export function TypographySelector({
   catalog,
+  category = "normal",
   compact = false,
   controlClassName = "",
+  familyOnly = false,
   inherited = false,
   lockFamily = false,
   value,
   onChange,
 }: TypographySelectorProps) {
-  const families = catalog?.families ?? [];
+  const families =
+    category === "emoji"
+      ? catalog?.emojiFamilies ?? []
+      : category === "all"
+        ? [
+            ...(catalog?.families ?? []),
+            ...(catalog?.emojiFamilies ?? []),
+          ].sort((left, right) => left.localeCompare(right))
+        : catalog?.families ?? [];
   const currentFamily = stringValue(value.fontFamily, families[0] ?? "");
   const familyOptions = families.includes(currentFamily)
     ? families
@@ -160,7 +172,9 @@ export function TypographySelector({
           </option>
         ))
       ) : (
-        <option value="">No production fonts</option>
+        <option value="">
+          {category === "emoji" ? "No emoji fonts" : "No production fonts"}
+        </option>
       )}
     </select>
   );
@@ -218,14 +232,16 @@ export function TypographySelector({
         style={{
           display: "grid",
           gap: 7,
-          gridTemplateColumns: "minmax(0, 1fr) 74px 94px",
+          gridTemplateColumns: familyOnly
+            ? "minmax(0, 1fr)"
+            : "minmax(0, 1fr) 74px 94px",
           minWidth: 0,
           width: "100%",
         }}
       >
         {familySelect}
-        {weightSelect}
-        {styleSelect}
+        {familyOnly ? null : weightSelect}
+        {familyOnly ? null : styleSelect}
       </span>
     );
   }

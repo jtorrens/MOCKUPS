@@ -209,6 +209,15 @@ export const THEME_FIELDS = defineFields({
       group: GROUPS.typography,
     },
   },
+  typographyEmojiFamily: {
+    id: "theme.typography.emojiFamily",
+    kind: "fontFamily",
+    ui: {
+      label: "Emoji font",
+      group: GROUPS.typography,
+      allowEmpty: true,
+    },
+  },
   typographyBodySize: {
     id: "theme.typography.bodySize",
     kind: "decimal",
@@ -1129,6 +1138,10 @@ export const THEME_TOKEN_BINDINGS = [
   {
     outputPath: ["fonts", "family"],
     field: THEME_FIELDS.typographyFamily,
+  },
+  {
+    outputPath: ["fonts", "emojiFamily"],
+    field: THEME_FIELDS.typographyEmojiFamily,
   },
   {
     outputPath: ["fonts", "bodySize"],

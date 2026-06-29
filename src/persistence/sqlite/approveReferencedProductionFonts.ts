@@ -271,10 +271,11 @@ async function main() {
       id,
       production_id,
       family,
+      category,
       files_json,
       source_path,
       metadata_json
-    ) VALUES (?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(production_id, family) DO UPDATE SET
       files_json = excluded.files_json,
       source_path = excluded.source_path,
@@ -341,6 +342,7 @@ async function main() {
         approvedFamilyId,
         productionId,
         family,
+        "normal",
         JSON.stringify({ files: copiedFiles }),
         path.dirname(matches[0]?.sourcePath ?? ""),
         JSON.stringify({

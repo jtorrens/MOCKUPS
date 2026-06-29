@@ -1,6 +1,7 @@
 import type { FieldDefinition } from "../../domain/value-system/index.js";
 import { ColorValueEditor } from "../components/json-editor/ColorValueEditor.js";
 import type { PaletteColorCatalog } from "../components/json-editor/paletteColors.js";
+import type { ProductionFontCatalog } from "../components/json-editor/productionFonts.js";
 import {
   cssUrl,
   MediaCoverPreview,
@@ -43,6 +44,7 @@ export interface DictionaryFieldControlProps {
   fileBrowser?: DictionaryFileBrowser;
   mediaRoot?: string;
   paletteCatalog?: PaletteColorCatalog;
+  productionFontCatalog?: ProductionFontCatalog;
   imagePreview?: {
     readonly baseSize?: number;
     readonly scale?: number;
@@ -64,6 +66,27 @@ function stringValue(value: unknown) {
   return value === undefined || value === null ? "" : String(value);
 }
 
+function fontFamilyCategoryForField(field: FieldDefinition): "normal" | "emoji" {
+  const text = `${field.id} ${field.ui?.label ?? ""}`.toLowerCase();
+  return text.includes("emoji") ? "emoji" : "normal";
+}
+
+function fontWeightValue(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  if (typeof value === "string" && value.trim()) return value.trim();
+  return "400";
+}
+
+function fontWeightOptions(value: unknown) {
+  const weights = ["100", "200", "300", "400", "500", "600", "700", "800", "900"];
+  const current = fontWeightValue(value);
+  return weights.includes(current) ? weights : [current, ...weights];
+}
+
+function fontStyleValue(value: unknown) {
+  return value === "italic" ? "italic" : "normal";
+}
+
 function booleanValue(value: unknown) {
   return value === true || value === "true" || value === "1";
 }
@@ -79,6 +102,24 @@ function numberOrDefault(value: unknown, fallback: number) {
 
 function normalizeHueDeg(value: number) {
   return ((value % 360) + 360) % 360;
+}
+
+function jsonTextValue(value: unknown) {
+  if (typeof value === "string") return value;
+  if (value === undefined || value === null) return "";
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return "";
+  }
+}
+
+function parseJsonTextValue(value: string) {
+  try {
+    return JSON.parse(value) as unknown;
+  } catch {
+    return undefined;
+  }
 }
 
 function DictionaryImagePreview({
@@ -125,6 +166,7 @@ export function DictionaryFieldControl({
   fileBrowser,
   mediaRoot,
   paletteCatalog,
+  productionFontCatalog,
   imagePreview,
   onChange,
 }: DictionaryFieldControlProps) {
@@ -158,6 +200,86 @@ export function DictionaryFieldControl({
         />
       </div>
     );
+  }
+
+  if (control === "hexColor") {
+    return (
+      <div className={`${controlClassName} palette-color-value-control palette-color-free-control`}>
+        <ColorValueEditor
+          value={stringValue(value)}
+          label={field.ui?.label ?? field.id}
+          onChange={onChange}
+        />
+      </div>
+    );
+  }
+
+  if (control === "typography") {
+    if (field.kind === "fontFamily") {
+      const category = fontFamilyCategoryForField(field);
+      const families =
+        category === "emoji"
+          ? productionFontCatalog?.emojiFamilies ?? []
+          : productionFontCatalog?.families ?? [];
+      const currentValue = stringValue(value);
+      const options = families.includes(currentValue)
+        ? families
+        : currentValue
+          ? [currentValue, ...families]
+          : families;
+      return (
+        <select
+          className={controlClassName}
+          disabled={disabled || readOnly || !options.length}
+          value={currentValue || options[0] || ""}
+          onChange={(event) => onChange(event.currentTarget.value)}
+        >
+          {options.length ? (
+            options.map((family) => (
+              <option key={family} value={family}>
+                {family}
+              </option>
+            ))
+          ) : (
+            <option value="">
+              {category === "emoji" ? "No emoji fonts" : "No production fonts"}
+            </option>
+          )}
+        </select>
+      );
+    }
+
+    if (field.kind === "fontWeight") {
+      const options = fontWeightOptions(value);
+      return (
+        <select
+          className={controlClassName}
+          disabled={disabled || readOnly}
+          value={fontWeightValue(value)}
+          onChange={(event) => onChange(Number(event.currentTarget.value))}
+        >
+          {options.map((weight) => (
+            <option key={weight} value={weight}>
+              {weight}
+            </option>
+          ))}
+        </select>
+      );
+    }
+
+    if (field.kind === "fontStyle") {
+      return (
+        <select
+          className={controlClassName}
+          disabled={disabled || readOnly}
+          value={fontStyleValue(value)}
+          onChange={(event) => onChange(event.currentTarget.value)}
+        >
+          <option value="normal">Normal</option>
+          <option value="italic">Italic</option>
+        </select>
+      );
+    }
   }
 
   if (
@@ -282,6 +404,31 @@ export function DictionaryFieldControl({
           )
         ) : null}
       </div>
+    );
+  }
+
+  if (control === "jsonObject" || control === "jsonArray") {
+    return (
+      <DeferredTextInput
+        className={controlClassName}
+        disabled={disabled || readOnly}
+        multiline
+        placeholder={placeholder}
+        rows={field.ui?.rows ?? 4}
+        value={jsonTextValue(value)}
+        onCommit={(nextValue) => {
+          const parsed = parseJsonTextValue(String(nextValue));
+          if (
+            (control === "jsonObject" &&
+              parsed !== null &&
+              typeof parsed === "object" &&
+              !Array.isArray(parsed)) ||
+            (control === "jsonArray" && Array.isArray(parsed))
+          ) {
+            onChange(parsed);
+          }
+        }}
+      />
     );
   }
 

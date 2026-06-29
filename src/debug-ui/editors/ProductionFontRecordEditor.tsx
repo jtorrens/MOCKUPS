@@ -1,7 +1,5 @@
-import { useState } from "react";
 import type { ReactNode } from "react";
 import {
-  importProductionFont,
   type AppFieldDefinition,
   type AppRecord,
   type AppTableDefinition,
@@ -10,59 +8,48 @@ import { EditorHeader } from "../editor-ui/EditorHeader.js";
 import { EditorSectionButton } from "../editor-ui/EditorSectionButton.js";
 import { EditorSectionCard } from "../editor-ui/EditorSectionCard.js";
 import { EditorSections } from "../editor-ui/EditorSections.js";
-
-interface NativeBridge {
-  pickFile?: () => Promise<string[]>;
-}
+import { parsedObject } from "./recordJsonUtils.js";
 
 interface ProductionFontRecordEditorProps {
   table: AppTableDefinition;
   record: AppRecord;
   activeTab: "" | "general";
-  nativeBridge: NativeBridge | undefined;
-  productionId: string;
   renderGenericField: (field: AppFieldDefinition) => ReactNode;
   setActiveTab: (tab: "" | "general") => void;
-  onRecordsChanged: (records: AppRecord[]) => void;
-  onRecordSaved: (record: AppRecord) => void;
 }
 
 export function ProductionFontRecordEditor({
   table,
   record,
   activeTab,
-  nativeBridge,
-  productionId,
   renderGenericField,
   setActiveTab,
-  onRecordsChanged,
-  onRecordSaved,
 }: ProductionFontRecordEditorProps) {
-  const [importing, setImporting] = useState(false);
-  const [error, setError] = useState("");
   const fields = table.fields.filter(
-    (field) => !["id", "production_id", "metadata_json"].includes(field.column),
+    (field) =>
+      ![
+        "id",
+        "production_id",
+        "files_json",
+        "source_path",
+        "metadata_json",
+      ].includes(field.column),
   );
-
-  async function chooseFontFile() {
-    setError("");
-    const [sourcePath] = await (nativeBridge?.pickFile?.() ?? Promise.resolve([]));
-    if (!sourcePath) return;
-    setImporting(true);
-    try {
-      const result = await importProductionFont({
-        productionId,
-        recordId: record.id,
-        sourcePath,
-      });
-      onRecordsChanged(result.state.records.production_fonts ?? []);
-      onRecordSaved(result.record);
-    } catch (importError) {
-      setError(importError instanceof Error ? importError.message : String(importError));
-    } finally {
-      setImporting(false);
-    }
-  }
+  const filesRoot = parsedObject(
+    typeof record.files_json === "string"
+      ? record.files_json
+      : JSON.stringify(record.files_json ?? {}),
+  );
+  const fontFiles = Array.isArray(filesRoot.files)
+    ? filesRoot.files
+        .filter((file): file is Record<string, unknown> =>
+          typeof file === "object" && file !== null && !Array.isArray(file),
+        )
+        .map((file) => ({
+          style: String(file.style ?? "Regular"),
+          filePath: String(file.filePath ?? ""),
+        }))
+    : [];
 
   return (
     <section className="record-editor">
@@ -81,16 +68,23 @@ export function ProductionFontRecordEditor({
           </EditorSectionButton>
           {activeTab === "general" ? (
             <div className="editor-section-body record-editor-field-stack record-editor-direct-fields">
-              <button
-                type="button"
-                className="secondary-button"
-                disabled={!nativeBridge?.pickFile || importing}
-                onClick={chooseFontFile}
-              >
-                {importing ? "Importing…" : "Import font family…"}
-              </button>
-              {error ? <p className="record-editor-field-error">{error}</p> : null}
               {fields.map((field) => renderGenericField(field))}
+              <div className="production-font-file-list" aria-label="Font files">
+                <span className="production-font-file-list-title">Font files</span>
+                {fontFiles.length ? (
+                  fontFiles.map((file) => (
+                    <div className="production-font-file-row" key={`${file.style}:${file.filePath}`}>
+                      <strong>{file.style}</strong>
+                      <span>{file.filePath}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="production-font-file-row">
+                    <strong>No files</strong>
+                    <span>Import a font family to populate this list.</span>
+                  </div>
+                )}
+              </div>
             </div>
           ) : null}
         </EditorSectionCard>

@@ -104,9 +104,14 @@ function isFontWeightKey(key: string, parent: string, groupContext?: string) {
 
 function isFontFamilyKey(key: string, parent: string, groupContext?: string) {
   return (
+    key === "emojiFamily" ||
     /fontFamily$/i.test(key) ||
     (key === "family" && /font|fonts/i.test(parent || groupContext || ""))
   );
+}
+
+function fontCategoryForKey(key: string): "normal" | "emoji" {
+  return key === "emojiFamily" ? "emoji" : "normal";
 }
 
 function withProductionFontMetadata(
@@ -232,7 +237,9 @@ export function JsonValueEditor({
       <ProductionFontSelector
         compact
         catalog={productionFontCatalog}
+        category={fontCategoryForKey(key)}
         controlClassName={dictionaryControlClassName}
+        familyOnly={key === "emojiFamily"}
         lockFamily={hint.lockFontFamily}
         value={{
           fontFamily: value,
@@ -245,13 +252,15 @@ export function JsonValueEditor({
             return;
           }
           onRootChange(
-            withProductionFontSelection(
-              rootValue,
-              path,
-              nextFont,
-              productionFontCatalog,
-              { lockFamily: hint.lockFontFamily },
-            ),
+            key === "emojiFamily"
+              ? setAtPath(rootValue, path, nextFont.fontFamily)
+              : withProductionFontSelection(
+                  rootValue,
+                  path,
+                  nextFont,
+                  productionFontCatalog,
+                  { lockFamily: hint.lockFontFamily },
+                ),
           );
         }}
       />
@@ -266,6 +275,7 @@ export function JsonValueEditor({
       <ProductionFontSelector
         compact
         catalog={productionFontCatalog}
+        category="normal"
         controlClassName={dictionaryControlClassName}
         lockFamily={hint.lockFontFamily}
         value={{

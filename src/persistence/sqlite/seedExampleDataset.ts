@@ -334,6 +334,7 @@ function seedRecords(
       "id",
       "production_id",
       "family",
+      "category",
       "files_json",
       "source_path",
       "metadata_json",

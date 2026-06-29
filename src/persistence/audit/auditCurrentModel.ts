@@ -583,14 +583,14 @@ function auditDatabase(database: SQLiteDatabase, label: string): AuditIssue[] {
     }
   }
   const version = Number(database.pragma("user_version", { simple: true }));
-  if (version === 37) {
-    add(issues, "pass", "schema.user_version", "SQLite user_version is 37.");
+  if (version === 39) {
+    add(issues, "pass", "schema.user_version", "SQLite user_version is 39.");
   } else {
     add(
       issues,
       "fail",
       "schema.user_version",
-      `Expected SQLite user_version 37, got ${version}.`,
+      `Expected SQLite user_version 39, got ${version}.`,
     );
   }
   auditJsonColumns(database, tables, issues);

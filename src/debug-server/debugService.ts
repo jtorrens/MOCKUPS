@@ -719,6 +719,7 @@ export const APP_TABLES = [
         readonly: true,
       },
       { column: "family", label: "Family", kind: "string" },
+      { column: "category", label: "Category", kind: "string" },
       { column: "files_json", label: "Font files", kind: "json" },
       {
         column: "source_path",
@@ -2298,12 +2299,13 @@ export function createAppRecord(
           id,
           production_id,
           family,
+          category,
           files_json,
           source_path,
           metadata_json
-        ) VALUES (?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
       )
-      .run(id, productionId, family, '{"files":[]}', null, "{}");
+      .run(id, productionId, family, "normal", '{"files":[]}', null, "{}");
     const record = decodeAppRow(
       database.prepare("SELECT * FROM production_fonts WHERE id = ?").get(id) as Row,
       tableDefinition("production_fonts"),

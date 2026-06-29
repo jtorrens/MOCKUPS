@@ -16,8 +16,10 @@ import {
   normalizedThemeTokenRoot,
   ThemeChromeGroupEditor,
   ThemeCursorGroupEditor,
+  ThemeFontsGroupEditor,
   ThemeSurfaceReliefGroupEditor,
 } from "./ThemeFields.js";
+import { createProductionFontCatalog } from "../components/json-editor/productionFonts.js";
 import { ThemeEditor } from "./ThemeEditor.js";
 import {
   editorValueForThemeTokenGroup,
@@ -66,6 +68,7 @@ export function ThemeRecordEditor({
     records,
     typeof record.production_id === "string" ? record.production_id : undefined,
   );
+  const productionFontCatalog = createProductionFontCatalog(records);
   const themeTokenRoot = normalizedThemeTokenRoot({
     root: parsedObject(drafts.tokens_json ?? "{}"),
     family,
@@ -116,6 +119,7 @@ export function ThemeRecordEditor({
                   group !== "navigationBar" &&
                   group !== "keyboard" &&
                   group !== "cursor" &&
+                  group !== "fonts" &&
                   group !== "neutralTint" &&
                   group !== "surfaceRelief",
               )
@@ -159,6 +163,20 @@ export function ThemeRecordEditor({
                 />
               </EditorSubsectionAccordion>
             ))}
+            <EditorSubsectionAccordion
+              key="fonts"
+              group="fonts"
+              activeGroup={resolvedActiveTokenGroup}
+              onToggle={setActiveTokenGroup}
+            >
+              <ThemeFontsGroupEditor
+                tokenRoot={themeTokenRoot}
+                productionFontCatalog={productionFontCatalog}
+                onTokenRootChange={(nextRoot) =>
+                  setJsonDraft("tokens_json", nextRoot)
+                }
+              />
+            </EditorSubsectionAccordion>
             <EditorSubsectionAccordion
               key="neutralTint"
               group="neutralTint"

@@ -1,4 +1,6 @@
 import { InspectorFieldRow } from "../components/inspector/InspectorFieldRow.js";
+import { TypographySelector } from "../editor-ui/TypographySelector.js";
+import type { ProductionFontCatalog } from "../components/json-editor/productionFonts.js";
 import { THEME_FIELDS } from "../../domain/fields/themeFields.js";
 import type { FieldDefinition } from "../../domain/value-system/index.js";
 import {
@@ -7,6 +9,7 @@ import {
   type EditorControlKind,
 } from "../editor-ui/ValueKindControlRegistry.js";
 import {
+  DICTIONARY_CONTROL_CLASS,
   DICTIONARY_FIELD_CLASS,
 } from "../editor-ui/DictionaryFieldControl.js";
 import {
@@ -17,6 +20,12 @@ import {
 } from "../components/json-editor/jsonEditorUtils.js";
 
 export type ThemeChromeGroupKey = "statusBar" | "navigationBar";
+
+function fontObject(root: Record<string, JsonValue>) {
+  return isJsonObject(root.fonts as JsonValue)
+    ? (root.fonts as Record<string, JsonValue>)
+    : {};
+}
 
 function themeFieldMetadata(
   field: FieldDefinition,
@@ -32,7 +41,7 @@ function themeFieldMetadata(
 }
 
 const dictionaryThemeRowClassName = `record-editor-field ${DICTIONARY_FIELD_CLASS}`;
-const dictionaryThemeControlClassName = "json-value-control";
+const dictionaryThemeControlClassName = `json-value-control ${DICTIONARY_CONTROL_CLASS}`;
 
 function numberValue(value: unknown, fallback: number): number {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
@@ -235,6 +244,16 @@ export function normalizedThemeTokenRoot({
     colors: {
       ...semanticColorDefaults,
       ...rootColors,
+    },
+    fonts: {
+      ...(isJsonObject(root.fonts as JsonValue)
+        ? (root.fonts as Record<string, JsonValue>)
+        : {}),
+      emojiFamily:
+        isJsonObject(root.fonts as JsonValue) &&
+        typeof (root.fonts as Record<string, JsonValue>).emojiFamily === "string"
+          ? (root.fonts as Record<string, JsonValue>).emojiFamily
+          : "",
     },
     notifications: rootNotifications,
     statusBar: normalizeThemeChromeGroup("statusBar", family, root.statusBar),
@@ -629,6 +648,142 @@ interface ThemeChromeGroupEditorProps {
   groupKey: ThemeChromeGroupKey;
   family: string;
   onTokenRootChange: (nextRoot: JsonValue) => void;
+}
+
+interface ThemeFontsGroupEditorProps {
+  tokenRoot: Record<string, JsonValue>;
+  productionFontCatalog?: ProductionFontCatalog;
+  onTokenRootChange: (nextRoot: JsonValue) => void;
+}
+
+export function ThemeFontsGroupEditor({
+  tokenRoot,
+  productionFontCatalog,
+  onTokenRootChange,
+}: ThemeFontsGroupEditorProps) {
+  const fonts = fontObject(tokenRoot);
+
+  function updateFonts(path: JsonPath, nextValue: JsonValue) {
+    onTokenRootChange(
+      setAtPath(tokenRoot as JsonValue, ["fonts", ...path], nextValue),
+    );
+  }
+
+  function updateFontSelection(nextFont: {
+    fontFamily: string;
+    fontWeight: number;
+    fontStyle: "normal" | "italic";
+  }) {
+    onTokenRootChange(
+      setAtPath(
+        setAtPath(
+          setAtPath(tokenRoot as JsonValue, ["fonts", "family"], nextFont.fontFamily),
+          ["fonts", "fontWeight"],
+          nextFont.fontWeight,
+        ),
+        ["fonts", "fontStyle"],
+        nextFont.fontStyle,
+      ),
+    );
+  }
+
+  return (
+    <div className="theme-chrome-editor">
+      <InspectorFieldRow
+        className={dictionaryThemeRowClassName}
+        label={<span>{THEME_FIELDS.typographyFamily.ui?.label ?? "Font family"}</span>}
+        control={
+          <TypographySelector
+            compact
+            catalog={productionFontCatalog}
+            category="normal"
+            controlClassName={dictionaryThemeControlClassName}
+            value={{
+              fontFamily: fonts.family,
+              fontWeight: fonts.fontWeight ?? fonts.weight,
+              fontStyle: fonts.fontStyle,
+            }}
+            onChange={updateFontSelection}
+          />
+        }
+      />
+      <InspectorFieldRow
+        className={dictionaryThemeRowClassName}
+        label={
+          <span>{THEME_FIELDS.typographyEmojiFamily.ui?.label ?? "Emoji font"}</span>
+        }
+        control={
+          <TypographySelector
+            compact
+            familyOnly
+            catalog={productionFontCatalog}
+            category="emoji"
+            controlClassName={dictionaryThemeControlClassName}
+            value={{
+              fontFamily: fonts.emojiFamily,
+              fontWeight: 400,
+              fontStyle: "normal",
+            }}
+            onChange={(nextFont) =>
+              updateFonts(["emojiFamily"], nextFont.fontFamily)
+            }
+          />
+        }
+      />
+      <InspectorFieldRow
+        className={dictionaryThemeRowClassName}
+        label={<span>{THEME_FIELDS.typographyBodySize.ui?.label ?? "Body size"}</span>}
+        control={
+          <input
+            className={dictionaryThemeControlClassName}
+            type="number"
+            min={1}
+            step={1}
+            value={Number(fonts.bodySize ?? 17)}
+            onChange={(event) => updateFonts(["bodySize"], Number(event.target.value))}
+          />
+        }
+      />
+      <InspectorFieldRow
+        className={dictionaryThemeRowClassName}
+        label={
+          <span>
+            {THEME_FIELDS.typographyBodyLineHeight.ui?.label ?? "Body line height"}
+          </span>
+        }
+        control={
+          <input
+            className={dictionaryThemeControlClassName}
+            type="number"
+            min={1}
+            step={1}
+            value={Number(fonts.bodyLineHeight ?? 21.25)}
+            onChange={(event) =>
+              updateFonts(["bodyLineHeight"], Number(event.target.value))
+            }
+          />
+        }
+      />
+      <InspectorFieldRow
+        className={dictionaryThemeRowClassName}
+        label={
+          <span>{THEME_FIELDS.typographyCaptionSize.ui?.label ?? "Caption size"}</span>
+        }
+        control={
+          <input
+            className={dictionaryThemeControlClassName}
+            type="number"
+            min={1}
+            step={1}
+            value={Number(fonts.captionSize ?? 13)}
+            onChange={(event) =>
+              updateFonts(["captionSize"], Number(event.target.value))
+            }
+          />
+        }
+      />
+    </div>
+  );
 }
 
 export function ThemeChromeGroupEditor({

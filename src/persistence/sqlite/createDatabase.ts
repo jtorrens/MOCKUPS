@@ -1171,6 +1171,7 @@ function applyAdditiveV17Migration(database: SQLiteDatabase): void {
       id TEXT PRIMARY KEY,
       production_id TEXT NOT NULL REFERENCES productions(id) ON DELETE CASCADE,
       family TEXT NOT NULL,
+      category TEXT NOT NULL DEFAULT 'normal' CHECK (category IN ('normal', 'emoji')),
       files_json TEXT NOT NULL,
       source_path TEXT,
       metadata_json TEXT,
@@ -2600,6 +2601,19 @@ function applyAdditiveV38Migration(database: SQLiteDatabase): void {
   database.pragma("user_version = 38");
 }
 
+function applyAdditiveV39Migration(database: SQLiteDatabase): void {
+  if (
+    tableExists(database, "production_fonts") &&
+    !tableColumns(database, "production_fonts").has("category")
+  ) {
+    database.exec(`
+      ALTER TABLE production_fonts
+        ADD COLUMN category TEXT NOT NULL DEFAULT 'normal' CHECK (category IN ('normal', 'emoji'));
+    `);
+  }
+  database.pragma("user_version = 39");
+}
+
 export function applyInitialSchema(database: SQLiteDatabase): void {
   database.exec(readFileSync(schemaPath, "utf8"));
   applyAdditiveV2Migration(database);
@@ -2639,6 +2653,7 @@ export function applyInitialSchema(database: SQLiteDatabase): void {
   applyAdditiveV36Migration(database);
   applyAdditiveV37Migration(database);
   applyAdditiveV38Migration(database);
+  applyAdditiveV39Migration(database);
   database.pragma("foreign_keys = ON");
 }
 

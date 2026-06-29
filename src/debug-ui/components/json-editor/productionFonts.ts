@@ -7,9 +7,13 @@ import {
 
 export interface ProductionFontCatalog {
   families: string[];
+  emojiFamilies: string[];
   idsByFamily: Map<string, string>;
+  categoriesByFamily: Map<string, ProductionFontCategory>;
   facesByFamily: Map<string, ProductionFontFaceOption[]>;
 }
+
+export type ProductionFontCategory = "normal" | "emoji";
 
 export interface ProductionFontFaceOption {
   family: string;
@@ -35,11 +39,14 @@ export function createProductionFontCatalog(
 ): ProductionFontCatalog {
   const facesByFamily = new Map<string, ProductionFontFaceOption[]>();
   const idsByFamily = new Map<string, string>();
+  const categoriesByFamily = new Map<string, ProductionFontCategory>();
 
   for (const record of records.production_fonts ?? []) {
     const family = typeof record.family === "string" ? record.family : "";
     if (!family) continue;
+    const category = record.category === "emoji" ? "emoji" : "normal";
     idsByFamily.set(family, record.id);
+    categoriesByFamily.set(family, category);
     const filesJson = isRecord(record.files_json) ? record.files_json : {};
     const files = Array.isArray(filesJson.files) ? filesJson.files : [];
     const faces = files.flatMap((file) => {
@@ -99,9 +106,13 @@ export function createProductionFontCatalog(
   }
 
   return {
-    families: Array.from(idsByFamily.keys()).sort((left, right) =>
-      left.localeCompare(right),
-    ),
+    families: Array.from(idsByFamily.keys())
+      .filter((family) => categoriesByFamily.get(family) !== "emoji")
+      .sort((left, right) => left.localeCompare(right)),
+    emojiFamilies: Array.from(idsByFamily.keys())
+      .filter((family) => categoriesByFamily.get(family) === "emoji")
+      .sort((left, right) => left.localeCompare(right)),
+    categoriesByFamily,
     facesByFamily,
     idsByFamily,
   };

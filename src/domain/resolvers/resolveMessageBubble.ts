@@ -21,9 +21,17 @@ function resolvedFontWeight(value: unknown) {
   return undefined;
 }
 
+function cssFontFamilyStack(primary: string, emojiFamily?: string) {
+  const trimmedPrimary = primary.trim();
+  const trimmedEmoji = emojiFamily?.trim();
+  if (!trimmedEmoji || trimmedEmoji === trimmedPrimary) return trimmedPrimary;
+  return `"${trimmedPrimary.replace(/"/g, '\\"')}", "${trimmedEmoji.replace(/"/g, '\\"')}"`;
+}
+
 const MessageThemeSchema = z.object({
   fonts: z.object({
     family: z.string().min(1),
+    emojiFamily: z.string().min(1).optional(),
     bodySize: z.number().positive(),
     bodyLineHeight: z.number().positive(),
     weight: z.union([z.string().min(1), z.number().positive()]).optional(),
@@ -227,6 +235,7 @@ export function resolveMessageBubble({
         ? Number(localFrame >= reveal.startFrame)
         : clamp((localFrame - reveal.startFrame) / reveal.durationFrames)
       : 1;
+  const messageFontFamily = messageTypography?.fontFamily ?? themeTokens.fonts.family;
 
   return ResolvedMessageBubblePropsSchema.parse({
     frame: localFrame,
@@ -252,7 +261,7 @@ export function resolveMessageBubble({
     style: {
       backgroundColor,
       textColor,
-      fontFamily: messageTypography?.fontFamily ?? themeTokens.fonts.family,
+      fontFamily: cssFontFamilyStack(messageFontFamily, themeTokens.fonts.emojiFamily),
       fontStyle: messageTypography?.fontStyle ?? themeTokens.fonts.fontStyle,
       fontSize: messageTypography?.fontSize ?? themeTokens.fonts.bodySize,
       lineHeight:

@@ -534,6 +534,7 @@ export function createExampleDataset(): RepositoryDataset {
       id: "font_oswald_regular",
       production_id: production.id,
       family: "Oswald",
+      category: "normal",
       files_json: {
         files: [
           {

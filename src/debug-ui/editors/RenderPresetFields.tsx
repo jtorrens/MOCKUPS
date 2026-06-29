@@ -3,8 +3,15 @@ import {
   type AppFieldDefinition,
   type AppRecord,
 } from "../api/client.js";
-import { InspectorFieldRow } from "../components/inspector/InspectorFieldRow.js";
 import type { JsonValue } from "../components/json-editor/jsonEditorUtils.js";
+import {
+  DictionaryFieldControl,
+  DICTIONARY_FIELD_CLASS,
+} from "../editor-ui/DictionaryFieldControl.js";
+import { EditorFieldRow } from "../editor-ui/fields/EditorFieldRow.js";
+import type { EditorFieldDescriptor } from "../editor-ui/fields/EditorFieldDescriptor.js";
+import { toDictionaryFieldControlProps } from "../editor-ui/fields/EditorFieldDescriptor.js";
+import { RENDER_PRESET_FIELDS } from "../../domain/fields/renderPresetFields.js";
 import { parsedObject } from "./recordJsonUtils.js";
 
 const movCodecOptions = [
@@ -72,6 +79,7 @@ function renderPresetPayload(format: string, codec: string) {
 
 function hiddenRenderPresetField(column: string) {
   return [
+    "id",
     "production_id",
     "width",
     "height",
@@ -114,24 +122,63 @@ function RenderPresetCodecField({
     });
   }
 
+  const descriptor = createCustomDescriptor({
+    field: {
+      ...RENDER_PRESET_FIELDS.codecValue,
+      ui: {
+        ...RENDER_PRESET_FIELDS.codecValue.ui,
+        label: format === "image" ? "Image type" : "Codec",
+      },
+    },
+    value: current,
+    selectOptions: {
+      options,
+    },
+    onWrite: (nextValue) => updateCodec(String(nextValue)),
+  });
+  return renderCustomDictionaryField("render_preset_codec", descriptor);
+}
+
+function createCustomDescriptor({
+  field,
+  value,
+  selectOptions,
+  onWrite,
+}: Pick<EditorFieldDescriptor, "field" | "selectOptions"> & {
+  readonly value: unknown;
+  readonly onWrite: (nextValue: unknown) => void;
+}): EditorFieldDescriptor {
+  return {
+    kind: "field",
+    field,
+    displayValue: value,
+    resolvedValue: value,
+    localValue: value,
+    state: "local",
+    readonly: false,
+    canInherit: false,
+    canRestore: false,
+    source: {
+      kind: "custom",
+      path: [field.id],
+      recordType: "render_presets",
+    },
+    actions: {
+      write: onWrite,
+    },
+    selectOptions,
+  };
+}
+
+function renderCustomDictionaryField(key: string, descriptor: EditorFieldDescriptor) {
   return (
-    <InspectorFieldRow
-      key="render_preset_codec"
-      className="record-editor-field record-editor-field-string"
-      label={<span>{format === "image" ? "Image type" : "Codec"}</span>}
-      control={
-        <select
-          value={current}
-          onChange={(event) => updateCodec(event.target.value)}
-        >
-          {options.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      }
-    />
+    <EditorFieldRow
+      key={key}
+      className={`record-editor-field ${DICTIONARY_FIELD_CLASS}`}
+      descriptor={descriptor}
+    >
+      <DictionaryFieldControl {...toDictionaryFieldControlProps(descriptor)} />
+    </EditorFieldRow>
   );
 }
 
@@ -150,34 +197,30 @@ export function renderRenderPresetField({
   }
   if (field.column === "format") {
     const format = drafts.format === "image" ? "image" : "mov";
-    return (
-      <InspectorFieldRow
-        key={field.column}
-        className="record-editor-field record-editor-field-string"
-        label={<span>Format</span>}
-        control={
-          <select
-            value={format}
-            onChange={(event) => {
-              const nextFormat = event.target.value;
-              const nextCodec = nextFormat === "image" ? "png" : "prores_422_hq";
-              const payload = renderPresetPayload(nextFormat, nextCodec);
-              setDrafts({
-                ...drafts,
-                format: nextFormat,
-                codec_json: stringifyJson(payload.codec_json),
-                color_json: stringifyJson(payload.color_json),
-                quality_json: stringifyJson(payload.quality_json),
-                export_json: stringifyJson(payload.export_json),
-              });
-            }}
-          >
-            <option value="mov">MOV</option>
-            <option value="image">Image</option>
-          </select>
-        }
-      />
-    );
+    const descriptor = createCustomDescriptor({
+      field: RENDER_PRESET_FIELDS.format,
+      value: format,
+      selectOptions: {
+        options: [
+          { value: "mov", label: "MOV" },
+          { value: "image", label: "Image" },
+        ],
+      },
+      onWrite: (nextValue) => {
+        const nextFormat = String(nextValue);
+        const nextCodec = nextFormat === "image" ? "png" : "prores_422_hq";
+        const payload = renderPresetPayload(nextFormat, nextCodec);
+        setDrafts({
+          ...drafts,
+          format: nextFormat,
+          codec_json: stringifyJson(payload.codec_json),
+          color_json: stringifyJson(payload.color_json),
+          quality_json: stringifyJson(payload.quality_json),
+          export_json: stringifyJson(payload.export_json),
+        });
+      },
+    });
+    return renderCustomDictionaryField(field.column, descriptor);
   }
   if (field.column === "export_json") {
     const exportRoot = parsedObject(drafts.export_json ?? "{}");
@@ -185,26 +228,16 @@ export function renderRenderPresetField({
       typeof exportRoot.ffmpegArgs === "string"
         ? exportRoot.ffmpegArgs
         : "";
-    return (
-      <InspectorFieldRow
-        key={field.column}
-        className="record-editor-field record-editor-field-string"
-        label={<span>FFmpeg args</span>}
-        control={
-          <textarea
-            data-testid="field-ffmpeg_args"
-            value={ffmpegArgs}
-            onChange={(event) =>
-              setJsonDraft("export_json", {
-                ...exportRoot,
-                ffmpegArgs: event.target.value,
-              })
-            }
-            rows={2}
-          />
-        }
-      />
-    );
+    const descriptor = createCustomDescriptor({
+      field: RENDER_PRESET_FIELDS.ffmpegArgs,
+      value: ffmpegArgs,
+      onWrite: (nextValue) =>
+        setJsonDraft("export_json", {
+          ...exportRoot,
+          ffmpegArgs: String(nextValue),
+        }),
+    });
+    return renderCustomDictionaryField(field.column, descriptor);
   }
   return renderField(field);
 }

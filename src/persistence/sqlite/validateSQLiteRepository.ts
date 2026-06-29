@@ -170,6 +170,13 @@ try {
       }[]
     ).map((column) => column.name),
   );
+  const productionFontColumns = new Set(
+    (
+      database.pragma("table_info(production_fonts)") as {
+        name: string;
+      }[]
+    ).map((column) => column.name),
+  );
   const requiredModuleColumns = [
     "screen_instance_id",
     "module_id",
@@ -201,8 +208,12 @@ try {
     "palette_colors must contain the neutral-color marker column",
   );
   assert(
-    Number(database.pragma("user_version", { simple: true })) === 38,
-    "SQLite schema version must be 38",
+    productionFontColumns.has("category"),
+    "production_fonts must contain the normal/emoji category column",
+  );
+  assert(
+    Number(database.pragma("user_version", { simple: true })) === 39,
+    "SQLite schema version must be 39",
   );
 
   database.exec("BEGIN");
@@ -243,7 +254,7 @@ try {
   console.log("✓ schema and seed validated in isolated in-memory SQLite");
   console.log("✓ all required domain tables exist");
   console.log("✓ module_theme_configs exists and seeds core.chat tokens");
-  console.log("✓ screen_instances references, module_instances content/behavior/animation, component classes, production font families, palette-neutral colors, screen durations, semantic icon/border/debug colors, stable message ids, normalized production font tokens, and semantic chat header tokens exist in schema v38");
+  console.log("✓ screen_instances references, module_instances content/behavior/animation, component classes, production font families/categories, palette-neutral colors, screen durations, semantic icon/border/debug colors, stable message ids, normalized production font tokens, and semantic chat header tokens exist in schema v39");
   console.log("✓ SQLiteRepository resolved ChatScreen props with Zod");
   console.log("✓ SQLite and in-memory chat props are equivalent");
   console.log("✓ Chat module instance JSON and actor-based output validated");

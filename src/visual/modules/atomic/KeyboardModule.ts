@@ -86,6 +86,7 @@ export const KeyboardModule: VisualModule<KeyboardModuleInput> = {
       "fontFamily",
       readString(fonts, "family", "system-ui"),
     );
+    const emojiFontFamily = readString(fonts, "emojiFamily", "");
     const fontWeight = readFontWeight(
       asRecord(input.keyboard),
       "fontWeight",
@@ -216,6 +217,7 @@ export const KeyboardModule: VisualModule<KeyboardModuleInput> = {
                 color: textColor,
                 borderRadius: keyRadius,
                 fontSize: keyFontSize,
+                fontFamily: isEmojiKey && emojiFontFamily ? emojiFontFamily : fontFamily,
                 fontWeight: keyFontWeight,
                 keyPadding: visualKeyPadding,
                 isEmojiKey,
@@ -264,6 +266,10 @@ export const KeyboardModule: VisualModule<KeyboardModuleInput> = {
                           color: textColor,
                           borderRadius: keyRadius * 1.15,
                           fontSize: keyFontSize,
+                          fontFamily:
+                            isEmojiKey && emojiFontFamily
+                              ? emojiFontFamily
+                              : fontFamily,
                           fontWeight: keyFontWeight,
                           lineHeight: keyFontSize,
                           widthRatio: 1,

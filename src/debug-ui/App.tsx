@@ -5,6 +5,7 @@ import {
   duplicateAppRecord,
   getAppState,
   getPreviewPayload,
+  importProductionFont,
   moveScreenInstance as moveScreenInstanceRecord,
   type AppRecord,
   type AppState,
@@ -42,6 +43,14 @@ interface PendingPaletteDelete {
   tableId: "palette_colors";
   recordId: string;
   token: string;
+}
+
+interface MockupsNativeBridge {
+  pickFile?: () => Promise<string[]>;
+}
+
+function mockupsNative() {
+  return (window as Window & { mockupsNative?: MockupsNativeBridge }).mockupsNative;
 }
 
 interface ProductionFontDeleteBlocker {
@@ -463,6 +472,40 @@ export function App() {
   ) {
     if (tableId === "themes") {
       setThemeCreateParent({ productionId: parent?.productionId });
+      return;
+    }
+    if (tableId === "production_fonts") {
+      const productionId = parent?.productionId;
+      if (!productionId) {
+        setRequestError("Creating a production font requires a selected production.");
+        return;
+      }
+      const pickFile = mockupsNative()?.pickFile;
+      if (!pickFile) {
+        setRequestError("Font import requires the desktop file picker.");
+        return;
+      }
+      setBusyProjectAction(true);
+      setRequestError("");
+      void pickFile()
+        .then(([sourcePath]) => {
+          if (!sourcePath) return undefined;
+          return createAppRecord({ tableId, parent }).then((created) =>
+            importProductionFont({
+              productionId,
+              recordId: created.record.id,
+              sourcePath,
+            }),
+          );
+        })
+        .then((result) => {
+          if (!result) return;
+          setState(result.state);
+          syncSelectionForCreatedRecord(result.state, result.tableId, result.record);
+          setRefreshCounter((value) => value + 1);
+        })
+        .catch((error: Error) => setRequestError(error.message))
+        .finally(() => setBusyProjectAction(false));
       return;
     }
     performCreateRecord(tableId, parent);

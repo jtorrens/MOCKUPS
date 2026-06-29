@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS production_fonts (
   id TEXT PRIMARY KEY,
   production_id TEXT NOT NULL REFERENCES productions(id) ON DELETE CASCADE,
   family TEXT NOT NULL,
+  category TEXT NOT NULL DEFAULT 'normal' CHECK (category IN ('normal', 'emoji')),
   files_json TEXT NOT NULL,
   source_path TEXT,
   metadata_json TEXT,

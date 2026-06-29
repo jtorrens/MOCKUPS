@@ -8,6 +8,8 @@ import type {
 import { GenericRecordEditor } from "./GenericRecordEditor.js";
 import { IconThemeRecordEditor } from "./IconThemeRecordEditor.js";
 import { ModuleInstanceRecordEditor } from "./ModuleInstanceRecordEditor.js";
+import { NavigationBarRecordEditor } from "./NavigationBarRecordEditor.js";
+import { ProductionFontRecordEditor } from "./ProductionFontRecordEditor.js";
 import { ScreenInstanceRecordEditor } from "./ScreenInstanceRecordEditor.js";
 import { StatusBarRecordEditor } from "./StatusBarRecordEditor.js";
 import type { PaletteColorCatalog } from "../components/json-editor/paletteColors.js";
@@ -101,6 +103,30 @@ export function RecordEditorDispatcher({
           renderField={renderField}
           setActiveTab={tabs.setStatusBarTab}
           setJsonDraft={setJsonDraft}
+        />
+      );
+    }
+    if (table.id === "navigation_bars") {
+      return (
+        <NavigationBarRecordEditor
+          table={table}
+          record={record}
+          activeTab={tabs.navigationBarTab}
+          drafts={drafts}
+          renderField={renderField}
+          setActiveTab={tabs.setNavigationBarTab}
+          setJsonDraft={setJsonDraft}
+        />
+      );
+    }
+    if (table.id === "production_fonts") {
+      return (
+        <ProductionFontRecordEditor
+          table={table}
+          record={record}
+          activeTab={tabs.genericTab}
+          renderGenericField={renderGenericField}
+          setActiveTab={tabs.setGenericTab}
         />
       );
     }

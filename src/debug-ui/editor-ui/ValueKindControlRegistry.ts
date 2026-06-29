@@ -10,6 +10,7 @@ export type EditorControlKind =
   | "text"
   | "checkbox"
   | "select"
+  | "hexColor"
   | "typography"
   | "paletteColorToken"
   | "themeColorToken"
@@ -57,6 +58,11 @@ const VALUE_KIND_CONTROL_DEFINITIONS = [
     control: "select",
     label: "Enum",
     requiresOptions: true,
+  },
+  {
+    kind: "hexColor",
+    control: "hexColor",
+    label: "HEX color",
   },
   {
     kind: "fontFamily",

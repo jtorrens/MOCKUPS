@@ -396,6 +396,7 @@ export function RecordFieldRenderer({
               fileBrowser: nativeBridge,
               mediaRoot,
               paletteCatalog,
+              productionFontCatalog,
             })}
           />
         </EditorFieldRow>

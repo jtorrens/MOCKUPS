@@ -624,3 +624,42 @@
   grid-template-columns: 136px 136px;
   gap: 8px;
 }
+
+.production-font-file-list {
+  display: grid;
+  gap: 6px;
+  border: 1px solid var(--card-border-color, rgba(148, 163, 184, 0.28));
+  border-radius: var(--card-radius, 10px);
+  padding: 10px;
+  background: var(--editor-subcard-background, rgba(148, 163, 184, 0.08));
+}
+
+.production-font-file-list-title {
+  color: var(--field-label-color, #475467);
+  font-size: var(--field-label-font-size, 12px);
+  font-weight: var(--field-label-font-weight, 650);
+}
+
+.production-font-file-row {
+  display: grid;
+  grid-template-columns: minmax(92px, 0.35fr) minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  border-top: 1px solid var(--card-border-color, rgba(148, 163, 184, 0.24));
+  padding-top: 6px;
+  color: var(--editor-readonly-text-color, var(--editor-text-color, #172033));
+  font-size: var(--field-control-font-size, 13px);
+}
+
+.production-font-file-row strong {
+  min-width: 0;
+  color: var(--editor-text-color, #172033);
+  font-weight: 650;
+}
+
+.production-font-file-row span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

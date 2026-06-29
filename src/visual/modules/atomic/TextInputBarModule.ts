@@ -33,6 +33,13 @@ function maskUrl(value: string) {
   return `url("${value.replace(/"/g, '\\"')}")`;
 }
 
+function cssFontFamilyStack(primary: string, emojiFamily?: string) {
+  const trimmedPrimary = primary.trim();
+  const trimmedEmoji = emojiFamily?.trim();
+  if (!trimmedEmoji || trimmedEmoji === trimmedPrimary) return trimmedPrimary;
+  return `"${trimmedPrimary.replace(/"/g, '\\"')}", "${trimmedEmoji.replace(/"/g, '\\"')}"`;
+}
+
 function itemNode({
   item,
   frame,
@@ -171,7 +178,10 @@ export const TextInputBarModule: VisualModule<TextInputBarModuleInput> = {
       style: {
         background: barBackground,
         color: foreground,
-        fontFamily: readString(fonts, "family", "system-ui"),
+        fontFamily: cssFontFamilyStack(
+          readString(fonts, "family", "system-ui"),
+          readString(fonts, "emojiFamily", ""),
+        ),
         fontStyle: readString(fonts, "fontStyle", "normal"),
         fontWeight: readFontWeight(fonts, "fontWeight", readFontWeight(fonts, "weight", 400)),
         fontSize,

@@ -6,6 +6,7 @@ export type ValueKind =
   | "text"
   | "boolean"
   | "enum"
+  | "hexColor"
   | "fontFamily"
   | "fontWeight"
   | "fontStyle"
@@ -56,6 +57,16 @@ function normalizeFontWeight(value: unknown) {
   return Number.isFinite(parsed) ? parsed : value;
 }
 
+function normalizeHexColor(value: unknown) {
+  if (!isNonEmptyString(value)) return value;
+  const trimmed = value.trim();
+  return /^#[0-9A-Fa-f]{6}$/.test(trimmed) ? trimmed.toUpperCase() : value;
+}
+
+function isHexColor(value: unknown) {
+  return isNonEmptyString(value) && /^#[0-9A-Fa-f]{6}$/.test(value.trim());
+}
+
 function isFontWeight(value: unknown) {
   const normalized = normalizeFontWeight(value);
   return (
@@ -92,6 +103,12 @@ const SYSTEM_VALUE_KIND_DEFINITIONS = [
     kind: "enum",
     label: "Enum",
     validate: isNonEmptyString,
+  },
+  {
+    kind: "hexColor",
+    label: "HEX color",
+    normalize: normalizeHexColor,
+    validate: isHexColor,
   },
   {
     kind: "fontFamily",

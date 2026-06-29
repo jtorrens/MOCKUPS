@@ -325,9 +325,9 @@
    During editor consolidation, only controls emitted by DictionaryFieldControl
    are visible. Labels keep their normal editor styling so a field can exist as
    a placeholder until its control is migrated. */
-.dictionary-field .inspector-field-label,
-.dictionary-field .inspector-field-label span,
-.dictionary-field .inspector-field-label strong,
+.inspector-field-row.dictionary-field > .inspector-field-label,
+.inspector-field-row.dictionary-field > .inspector-field-label span,
+.inspector-field-row.dictionary-field > .inspector-field-label strong,
 .dictionary-field > span {
   color: #16a34a !important;
 }

@@ -5,6 +5,7 @@ import type {
   DictionarySelectOptions,
 } from "../DictionaryFieldControl.js";
 import type { PaletteColorCatalog } from "../../components/json-editor/paletteColors.js";
+import type { ProductionFontCatalog } from "../../components/json-editor/productionFonts.js";
 
 export type EditorFieldState =
   | "local"
@@ -89,6 +90,7 @@ export function toDictionaryFieldControlProps(
     readonly fileBrowser?: DictionaryFileBrowser;
     readonly mediaRoot?: string;
     readonly paletteCatalog?: PaletteColorCatalog;
+    readonly productionFontCatalog?: ProductionFontCatalog;
     readonly imagePreview?: DictionaryFieldControlProps["imagePreview"];
   } = {},
 ): DictionaryFieldControlProps {
@@ -101,6 +103,7 @@ export function toDictionaryFieldControlProps(
     fileBrowser: options.fileBrowser,
     mediaRoot: options.mediaRoot,
     paletteCatalog: options.paletteCatalog,
+    productionFontCatalog: options.productionFontCatalog,
     imagePreview: options.imagePreview,
     validation: descriptor.validation
       ? {

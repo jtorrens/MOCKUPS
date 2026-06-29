@@ -9,10 +9,22 @@ import {
   setAtPath,
   type JsonValue,
 } from "../components/json-editor/jsonEditorUtils.js";
+import {
+  DictionaryFieldControl,
+  DICTIONARY_FIELD_CLASS,
+  type DictionarySelectOptions,
+} from "../editor-ui/DictionaryFieldControl.js";
 import { EditorHeader } from "../editor-ui/EditorHeader.js";
 import { EditorSectionButton } from "../editor-ui/EditorSectionButton.js";
 import { EditorSectionCard } from "../editor-ui/EditorSectionCard.js";
 import { EditorSections } from "../editor-ui/EditorSections.js";
+import { EditorFieldRow } from "../editor-ui/fields/EditorFieldRow.js";
+import { createJsonFieldDescriptor } from "../editor-ui/fields/createJsonFieldDescriptor.js";
+import { toDictionaryFieldControlProps } from "../editor-ui/fields/EditorFieldDescriptor.js";
+import {
+  NAVIGATION_BAR_CONFIG_BINDINGS,
+  NAVIGATION_BAR_FIELDS,
+} from "../../domain/fields/navigationBarFields.js";
 import { parsedObject } from "./recordJsonUtils.js";
 
 type NavigationBarTab = "" | "general" | "config";
@@ -157,8 +169,17 @@ export function NavigationBarRecordEditor({
   setJsonDraft,
 }: NavigationBarRecordEditorProps) {
   const root = configRoot(drafts.config_json ?? "{}");
+  const rawRoot = parsedObject(drafts.config_json ?? "{}") as Record<string, JsonValue>;
   const layout = isJsonObject(root.layout) ? root.layout : {};
   const items = navigationBarItems(root);
+  const zoneSelectOptions: DictionarySelectOptions = {
+    options: [
+      { value: "off", label: "Off" },
+      { value: "left", label: "Left" },
+      { value: "center", label: "Center" },
+      { value: "right", label: "Right" },
+    ],
+  };
   const generalFields = table.fields.filter(
     (field) =>
       !["id", "production_id", "config_json", "metadata_json"].includes(
@@ -166,8 +187,32 @@ export function NavigationBarRecordEditor({
       ),
   );
   const update = (path: Array<string | number>, nextValue: JsonValue) =>
-    setJsonDraft("config_json", setAtPath(root, path, nextValue));
+    setJsonDraft("config_json", setAtPath(rawRoot, path, nextValue));
   const updateItems = (nextItems: JsonValue) => update(["items"], nextItems);
+  const fallbackConfig = defaultNavigationBarConfig() as JsonValue;
+
+  function renderLayoutField(binding: (typeof NAVIGATION_BAR_CONFIG_BINDINGS)[number]) {
+    const descriptor = createJsonFieldDescriptor({
+      binding,
+      localRoot: rawRoot,
+      parentRoot: {},
+      fallbackRoot: fallbackConfig,
+      sourceKind: "json-binding",
+      recordId: typeof record.id === "string" ? record.id : undefined,
+      recordType: "navigation_bars",
+      onRootChange: (nextRoot) => setJsonDraft("config_json", nextRoot),
+    });
+    if (!descriptor) return null;
+    return (
+      <EditorFieldRow
+        key={binding.outputPath.join(".")}
+        className={`record-editor-field ${DICTIONARY_FIELD_CLASS}`}
+        descriptor={descriptor}
+      >
+        <DictionaryFieldControl {...toDictionaryFieldControlProps(descriptor)} />
+      </EditorFieldRow>
+    );
+  }
 
   return (
     <section className="record-editor">
@@ -200,72 +245,8 @@ export function NavigationBarRecordEditor({
           </EditorSectionButton>
           {activeTab === "config" ? (
             <div className="editor-section-body status-bar-config-editor">
-              <div className="status-bar-layout-grid">
-                <label>
-                  <span>Height</span>
-                  <input
-                    type="number"
-                    min={0}
-                    value={numberValue(layout.height, 34)}
-                    onChange={(event) =>
-                      update(["layout", "height"], Number(event.target.value))
-                    }
-                  />
-                </label>
-                <label>
-                  <span>Item size</span>
-                  <input
-                    type="number"
-                    min={0}
-                    value={numberValue(layout.itemSize, 18)}
-                    onChange={(event) =>
-                      update(["layout", "itemSize"], Number(event.target.value))
-                    }
-                  />
-                </label>
-                <label>
-                  <span>Side padding</span>
-                  <input
-                    type="number"
-                    min={0}
-                    value={numberValue(layout.sidePadding, 40)}
-                    onChange={(event) =>
-                      update(["layout", "sidePadding"], Number(event.target.value))
-                    }
-                  />
-                </label>
-                <label>
-                  <span>Stroke width</span>
-                  <input
-                    type="number"
-                    min={0}
-                    value={numberValue(layout.strokeWidth, 2)}
-                    onChange={(event) =>
-                      update(["layout", "strokeWidth"], Number(event.target.value))
-                    }
-                  />
-                </label>
-                <label>
-                  <span>Corner radius</span>
-                  <input
-                    type="number"
-                    min={0}
-                    value={numberValue(layout.cornerRadius, 3)}
-                    onChange={(event) =>
-                      update(["layout", "cornerRadius"], Number(event.target.value))
-                    }
-                  />
-                </label>
-                <label>
-                  <span>Filled</span>
-                  <input
-                    type="checkbox"
-                    checked={layout.filled === true}
-                    onChange={(event) =>
-                      update(["layout", "filled"], event.target.checked)
-                    }
-                  />
-                </label>
+              <div className="record-editor-field-stack record-editor-direct-fields">
+                {NAVIGATION_BAR_CONFIG_BINDINGS.map(renderLayoutField)}
               </div>
 
               <div className="status-bar-items-table">
@@ -284,28 +265,25 @@ export function NavigationBarRecordEditor({
                     <div className="status-bar-item-value">
                       <span>{item.kind}</span>
                     </div>
-                    <select
+                    <DictionaryFieldControl
+                      field={NAVIGATION_BAR_FIELDS.itemZone}
+                      selectOptions={zoneSelectOptions}
                       value={item.zone}
-                      onChange={(event) =>
+                      onChange={(nextValue) =>
                         updateItems(
                           updateItem(items, index, {
-                            zone: event.target.value as NavigationBarZone,
+                            zone: nextValue as NavigationBarZone,
                           }),
                         )
                       }
-                    >
-                      <option value="off">Off</option>
-                      <option value="left">Left</option>
-                      <option value="center">Center</option>
-                      <option value="right">Right</option>
-                    </select>
-                    <input
-                      type="number"
+                    />
+                    <DictionaryFieldControl
+                      field={NAVIGATION_BAR_FIELDS.itemOrder}
                       value={item.order}
-                      onChange={(event) =>
+                      onChange={(nextValue) =>
                         updateItems(
                           updateItem(items, index, {
-                            order: Number(event.target.value),
+                            order: Number(nextValue),
                           }),
                         )
                       }

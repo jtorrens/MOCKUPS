@@ -7,6 +7,8 @@ import type {
 } from "../api/client.js";
 import type { JsonValue } from "../components/json-editor/jsonEditorUtils.js";
 import type { PaletteColorCatalog } from "../components/json-editor/paletteColors.js";
+import { renderAnimationPresetField } from "./AnimationPresetFields.js";
+import { renderRenderPresetField } from "./RenderPresetFields.js";
 import type { FieldSaveState } from "./RecordFieldRenderer.js";
 
 interface GenericFieldDispatcherContext {
@@ -36,12 +38,41 @@ interface GenericFieldDispatcherContext {
 export function renderGenericField({
   table,
   field,
+  drafts,
+  setDrafts,
+  setJsonDraft,
   renderField,
 }: GenericFieldDispatcherContext): ReactNode {
+  if (table.id === "animation_presets") {
+    return renderAnimationPresetField({
+      field,
+      drafts,
+      setJsonDraft,
+      renderField,
+    });
+  }
+  if (table.id === "render_presets") {
+    return renderRenderPresetField({
+      field,
+      drafts,
+      setDrafts,
+      setJsonDraft,
+      renderField,
+    });
+  }
   if (
     table.id === "devices" &&
     ["production_id", "manufacturer", "model", "os_family"].includes(field.column)
   ) {
+    return null;
+  }
+  if (
+    field.column === "production_id" &&
+    ["animation_presets", "palette_colors", "render_presets"].includes(table.id)
+  ) {
+    return null;
+  }
+  if (table.id === "palette_colors" && field.column === "metadata_json") {
     return null;
   }
   if (table.id === "actors" && field.column === "production_id") return null;

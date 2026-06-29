@@ -465,6 +465,7 @@ export function TokenOverrideEditor({
           fileBrowser: nativeBridge,
           mediaRoot,
           paletteCatalog,
+          productionFontCatalog,
           imagePreview,
         })}
       />

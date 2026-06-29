@@ -100,7 +100,6 @@ const SYSTEM_DATA_TABLE_IDS = new Set([
   "palette_colors",
   "production_fonts",
   "render_presets",
-  "animation_presets",
 ]);
 
 function tableById(tables: AppTableDefinition[]) {
@@ -189,6 +188,7 @@ function TreeActions({
   canAdd,
   canDuplicate,
   canDelete,
+  showDuplicate = true,
   busy,
   onAdd,
   onDuplicate,
@@ -197,6 +197,7 @@ function TreeActions({
   canAdd?: boolean;
   canDuplicate?: boolean;
   canDelete?: boolean;
+  showDuplicate?: boolean;
   busy?: boolean;
   onAdd?: () => void;
   onDuplicate?: () => void;
@@ -207,13 +208,15 @@ function TreeActions({
       <ActionButton disabled={!canAdd || busy} title="Add" onClick={onAdd}>
         +
       </ActionButton>
-      <ActionButton
-        disabled={!canDuplicate || busy}
-        title="Duplicate"
-        onClick={onDuplicate}
-      >
-        ⧉
-      </ActionButton>
+      {showDuplicate ? (
+        <ActionButton
+          disabled={!canDuplicate || busy}
+          title="Duplicate"
+          onClick={onDuplicate}
+        >
+          ⧉
+        </ActionButton>
+      ) : null}
       <ActionButton
         disabled={!canDelete || busy}
         title="Delete"
@@ -922,6 +925,7 @@ export function ProjectTree({
                     canAdd={Boolean(selectedProductionId)}
                     canDuplicate={Boolean(selectedRecordIds[table.id])}
                     canDelete={Boolean(selectedRecordIds[table.id])}
+                    showDuplicate={table.id !== "production_fonts"}
                     busy={busyAction}
                     onAdd={() =>
                       onCreateRecord(
