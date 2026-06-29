@@ -97,6 +97,7 @@
 .editor-subsection-card > button {
   grid-template-columns:
     var(--subcard-header-icon-column, 30px) minmax(0, 1fr) auto auto;
+  align-items: start;
   gap: var(--subcard-header-gap, 10px);
   min-height: var(--subcard-header-min-height, 54px);
   padding: var(--subcard-header-padding-block, 10px)
@@ -121,6 +122,7 @@
   --ui-glyph-size: var(--subcard-header-icon-size, 24px);
   --ui-glyph-radius: var(--subcard-header-icon-radius, 8px);
   --ui-glyph-font-size: var(--subcard-header-icon-font-size, 16px);
+  justify-self: start;
 }
 
 .editor-subsection-card .tab-copy > span {

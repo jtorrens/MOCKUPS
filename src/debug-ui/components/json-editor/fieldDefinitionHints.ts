@@ -33,12 +33,21 @@ function widgetForField(field: FieldDefinition): JsonWidget | undefined {
   }
 }
 
-function hintForField(field: FieldDefinition): JsonUiHint {
+function encodedHintPath(path: readonly (string | number)[]) {
+  return JSON.stringify(path);
+}
+
+function hintForField(
+  field: FieldDefinition,
+  storagePath: readonly (string | number)[],
+): JsonUiHint {
   const metadata = editorMetadataForField(field);
   return {
     field,
     dictionaryDerived: true,
     label: metadata.label,
+    storagePath: [...storagePath],
+    group: metadata.group?.id,
     widget: widgetForField(field),
     options: metadata.options ? [...metadata.options] : undefined,
     min: metadata.min,
@@ -54,6 +63,7 @@ function hintForField(field: FieldDefinition): JsonUiHint {
     accept: metadata.accept ? [...metadata.accept] : undefined,
     multiline: metadata.multiline,
     rows: metadata.rows,
+    numericControl: metadata.numericControl,
   };
 }
 
@@ -63,9 +73,15 @@ export function jsonUiHintsFromFieldBindings(
   return Object.fromEntries(
     bindings
       .filter((binding) => binding.field && binding.outputPath.length > 0)
-      .map((binding) => [
-        binding.outputPath.join("."),
-        hintForField(binding.field as FieldDefinition),
-      ]),
+      .flatMap((binding) => {
+        const hint = hintForField(
+          binding.field as FieldDefinition,
+          binding.outputPath,
+        );
+        return [
+          [binding.outputPath.join("."), hint],
+          [encodedHintPath(binding.outputPath), hint],
+        ];
+      }),
   );
 }

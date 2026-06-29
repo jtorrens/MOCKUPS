@@ -77,6 +77,10 @@ function numberOrDefault(value: unknown, fallback: number) {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
 }
 
+function normalizeHueDeg(value: number) {
+  return ((value % 360) + 360) % 360;
+}
+
 function DictionaryImagePreview({
   filePath,
   mediaRoot,
@@ -183,6 +187,39 @@ export function DictionaryFieldControl({
   }
 
   if (control === "number" || control === "alpha") {
+    if (metadata.numericControl === "hueDegrees") {
+      const hue = normalizeHueDeg(numberOrDefault(value, 0));
+      const isDisabled = disabled || readOnly;
+      return (
+        <div className={`json-hue-slider-control ${controlClassName}`}>
+          <input
+            aria-label={`${field.ui?.label ?? field.id} hue`}
+            className="json-hue-slider"
+            disabled={isDisabled}
+            max={metadata.max ?? 360}
+            min={metadata.min ?? 0}
+            step={metadata.step ?? 1}
+            type="range"
+            value={hue}
+            style={{ accentColor: `hsl(${hue} 80% 52%)` }}
+            onChange={(event) =>
+              onChange(normalizeHueDeg(Number(event.currentTarget.value)))
+            }
+          />
+          <DeferredNumberInput
+            ariaLabel={`${field.ui?.label ?? field.id} degrees`}
+            className={`${controlClassName} json-hue-slider-value`}
+            disabled={isDisabled}
+            max={metadata.max ?? 360}
+            min={metadata.min ?? 0}
+            step={metadata.step ?? 1}
+            value={hue}
+            onCommit={(nextValue) => onChange(normalizeHueDeg(nextValue))}
+          />
+          <span className="json-hue-slider-unit">°</span>
+        </div>
+      );
+    }
     return (
       <DeferredNumberInput
         className={controlClassName}

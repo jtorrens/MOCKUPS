@@ -48,12 +48,17 @@ export type JsonUiHint = {
   accept?: string[];
   multiline?: boolean;
   rows?: number;
+  numericControl?: "default" | "hueDegrees";
   min?: number;
   max?: number;
   step?: number | "any";
 };
 
 export type JsonUiHints = Record<string, JsonUiHint>;
+
+function encodedHintPath(path: JsonPath): string {
+  return JSON.stringify(path);
+}
 
 const COMMON_HINTS: JsonUiHints = {
   id: { label: "ID" },
@@ -185,10 +190,12 @@ export function hintForPath(
   groupContext?: string,
 ): JsonUiHint {
   const normalized = normalizedHintPath(path);
+  const encoded = encodedHintPath(path);
   const contextNormalized = groupContext
     ? `${groupContext}.${normalized}`
     : normalized;
   const exact =
+    hints[encoded] ??
     hints[contextNormalized] ??
     hints[normalized] ??
     hints[String(path[path.length - 1] ?? "")];

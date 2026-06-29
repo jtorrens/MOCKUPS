@@ -5,6 +5,7 @@ import { EditorSubsectionCard } from "./EditorSectionCard.js";
 
 interface EditorSubsectionAccordionProps {
   group: string;
+  label?: string;
   activeGroup: string;
   warning?: boolean;
   animationState?: "unsupported" | "inactive" | "active";
@@ -14,6 +15,7 @@ interface EditorSubsectionAccordionProps {
 
 export function EditorSubsectionAccordion({
   group,
+  label,
   activeGroup,
   warning,
   animationState = "unsupported",
@@ -29,7 +31,7 @@ export function EditorSubsectionAccordion({
         animationState={animationState}
         onClick={() => onToggle(active ? "" : group)}
       >
-        {friendlyGroupLabel(group)}
+        {label ?? friendlyGroupLabel(group)}
       </EditorSectionButton>
       {active ? <div className="editor-subsection-body">{children}</div> : null}
     </EditorSubsectionCard>

@@ -99,6 +99,21 @@ function flattenPrimitiveTokens(value: JsonValue, path: JsonPath = []): TokenRow
 }
 
 function pathFromHintKey(key: string): JsonPath {
+  if (key.startsWith("[")) {
+    try {
+      const parsed = JSON.parse(key) as unknown;
+      if (
+        Array.isArray(parsed) &&
+        parsed.every(
+          (part) => typeof part === "string" || typeof part === "number",
+        )
+      ) {
+        return parsed;
+      }
+    } catch {
+      // Fall through to legacy dot path.
+    }
+  }
   return key.split(".").filter(Boolean);
 }
 
@@ -109,7 +124,7 @@ function rowsWithDictionaryDefaults(
   const byPath = new Map(rows.map((row) => [pathLabel(row.path), row]));
   for (const [key, hint] of Object.entries(hints)) {
     if (!hint.field) continue;
-    const path = pathFromHintKey(hint.canonicalPath ?? key);
+    const path = hint.storagePath ?? pathFromHintKey(hint.canonicalPath ?? key);
     if (path.length === 0) continue;
     const pathKey = pathLabel(path);
     if (byPath.has(pathKey)) continue;
@@ -198,7 +213,11 @@ function chatBubbleGroupForRow(row: TokenRow): string {
   return "general";
 }
 
-function groupedRows(rows: TokenRow[], groupContext?: string): TokenRowGroup[] {
+function groupedRows(
+  rows: TokenRow[],
+  hints: JsonUiHints,
+  groupContext?: string,
+): TokenRowGroup[] {
   if (groupContext === "chatBubbles") {
     const groups = new Map<string, TokenRow[]>();
     for (const row of rows) {
@@ -221,15 +240,25 @@ function groupedRows(rows: TokenRow[], groupContext?: string): TokenRowGroup[] {
   }
   const groups = new Map<string, TokenRow[]>();
   for (const row of rows) {
-    const group = String(row.path[0] ?? "");
+    const hint = hintForPath(hints, row.path, row.value, groupContext);
+    const group = hint.field?.ui?.group?.id ?? "";
     groups.set(group, [...(groups.get(group) ?? []), row]);
   }
-  return Array.from(groups, ([key, groupRows]) => ({
-    key,
-    label: friendlyGroupLabel(key),
-    rows: groupRows,
-    renderAsGroup: groupRows.length > 1,
-  }));
+  return Array.from(groups, ([key, groupRows]) => {
+    const label =
+      hintForPath(hints, groupRows[0]?.path ?? [], groupRows[0]?.value ?? null, groupContext)
+        .field?.ui?.group?.label ?? friendlyGroupLabel(key);
+    return {
+      key,
+      label,
+      rows: groupRows,
+      renderAsGroup: Boolean(key) && groupRows.length > 1,
+    };
+  }).sort((left, right) => {
+    if (!left.renderAsGroup && right.renderAsGroup) return -1;
+    if (left.renderAsGroup && !right.renderAsGroup) return 1;
+    return left.label.localeCompare(right.label);
+  });
 }
 
 function mergedTokenShape(inherited: JsonValue, local: JsonValue): JsonValue {
@@ -306,6 +335,7 @@ export function TokenOverrideEditor({
   ).filter((row) => {
     if (isFontCompanionRow(row, displayRoot)) return false;
     const hint = hintForPath(hints, row.path, row.value, groupContext);
+    if (!hint.field) return false;
     return hint.field?.ui?.hidden !== true;
   });
   const [activeTokenGroup, setActiveTokenGroup] = useState("");
@@ -639,7 +669,7 @@ export function TokenOverrideEditor({
 
   return (
     <div className="token-override-editor">
-      {groupedRows(rows, groupContext).map((group) => {
+      {groupedRows(rows, hints, groupContext).map((group) => {
         if (!group.renderAsGroup) {
           return renderRows(group.rows, group.key || undefined);
         }
@@ -647,6 +677,7 @@ export function TokenOverrideEditor({
           <EditorSubsectionAccordion
             key={group.key}
             group={group.key}
+            label={group.label}
             activeGroup={activeTokenGroup}
             warning={group.rows.some((row) => hasAtPath(rootValue, row.path))}
             onToggle={setActiveTokenGroup}

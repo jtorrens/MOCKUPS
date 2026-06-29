@@ -19,6 +19,18 @@ function sectionMeta(label: string) {
       icon: "◐",
       subtitle: "Mode-aware colors, surfaces and semantic roles",
     },
+    "app colors": {
+      icon: "◐",
+      subtitle: "Application color roles",
+    },
+    "border colors": {
+      icon: "▢",
+      subtitle: "Border color roles",
+    },
+    "icon colors": {
+      icon: "◉",
+      subtitle: "Icon color roles",
+    },
     "neutral tint": {
       icon: "◍",
       subtitle: "Hue and saturation bias for neutral palette tokens",
@@ -146,6 +158,10 @@ function sectionMeta(label: string) {
     "status bar": {
       icon: "▥",
       subtitle: "Video metadata overlay",
+    },
+    "surface relief": {
+      icon: "◒",
+      subtitle: "Highlight and shadow relief settings",
     },
     waveform: {
       icon: "〰",

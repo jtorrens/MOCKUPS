@@ -21,6 +21,11 @@ export interface FieldEditorMetadata {
   readonly hidden?: boolean;
   readonly multiline?: boolean;
   readonly rows?: number;
+  readonly numericControl?: "default" | "hueDegrees";
+  readonly group?: {
+    readonly id: string;
+    readonly label?: string;
+  };
   readonly pair?: {
     readonly id: string;
     readonly label: string;
