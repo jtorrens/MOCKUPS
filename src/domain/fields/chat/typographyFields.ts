@@ -11,12 +11,51 @@ export const CHAT_TYPOGRAPHY_GROUPS = [
 ] as const;
 
 const CHAT_TYPOGRAPHY_PROPERTY_FIELDS = {
-  fontFamily: { kind: "fontFamily" },
-  fontSize: { kind: "decimal" },
-  lineHeight: { kind: "decimal" },
-  fontWeight: { kind: "fontWeight" },
-  fontStyle: { kind: "fontStyle" },
+  fontFamily: {
+    kind: "fontFamily",
+    ui: {
+      label: "Font family",
+      lockFontFamily: true,
+    },
+  },
+  fontSize: {
+    kind: "decimal",
+    ui: {
+      label: "Font size",
+      min: 1,
+      step: 1,
+    },
+  },
+  lineHeight: {
+    kind: "decimal",
+    ui: {
+      label: "Line height",
+      min: 1,
+      step: 1,
+    },
+  },
+  fontWeight: {
+    kind: "fontWeight",
+    ui: {
+      label: "Font weight",
+    },
+  },
+  fontStyle: {
+    kind: "fontStyle",
+    ui: {
+      label: "Font style",
+    },
+  },
 } as const;
+
+const CHAT_TYPOGRAPHY_GROUP_LABELS: Record<
+  (typeof CHAT_TYPOGRAPHY_GROUPS)[number],
+  string
+> = {
+  message: "Message",
+  headerTitle: "Header title",
+  headerSubtitle: "Header subtitle",
+};
 
 export const CHAT_TYPOGRAPHY_TOKEN_BINDINGS =
   CHAT_TYPOGRAPHY_GROUPS.flatMap((group) =>
@@ -26,6 +65,12 @@ export const CHAT_TYPOGRAPHY_TOKEN_BINDINGS =
         field: {
           id: `chat.typography.${group}.${property}`,
           ...definition,
+          ui: {
+            ...definition.ui,
+            label: `${CHAT_TYPOGRAPHY_GROUP_LABELS[group]} ${
+              definition.ui.label
+            }`,
+          },
         },
       }),
     ),

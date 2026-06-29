@@ -3,10 +3,27 @@ import {
   type ValueKind,
 } from "./ValueRegistry.js";
 
+export interface FieldEditorMetadata {
+  readonly label?: string;
+  readonly options?: readonly string[];
+  readonly min?: number;
+  readonly max?: number;
+  readonly step?: number | "any";
+  readonly allowMultiple?: boolean;
+  readonly allowEmpty?: boolean;
+  readonly semanticTokenGroup?: string;
+  readonly tableId?: string;
+  readonly labelColumn?: string;
+  readonly fileKind?: "file" | "directory";
+  readonly accept?: readonly string[];
+  readonly lockFontFamily?: boolean;
+}
+
 export interface FieldDefinition {
   readonly id: string;
   readonly kind: ValueKind;
   readonly defaultValue?: unknown;
+  readonly ui?: FieldEditorMetadata;
 }
 
 export function defineField(definition: FieldDefinition): FieldDefinition {

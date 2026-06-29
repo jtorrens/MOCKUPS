@@ -5,6 +5,13 @@ import { DeferredNumberInput } from "../editor-ui/DeferredNumberInput.js";
 import { ColorValueEditor } from "../components/json-editor/ColorValueEditor.js";
 import type { PaletteColorCatalog } from "../components/json-editor/paletteColors.js";
 import { InspectorFieldRow } from "../components/inspector/InspectorFieldRow.js";
+import { ACTOR_FIELDS } from "../../domain/fields/actorFields.js";
+import {
+  controlDefinitionForField,
+  editorMetadataForField,
+  type EditorControlKind,
+} from "../editor-ui/ValueKindControlRegistry.js";
+import type { FieldDefinition } from "../../domain/value-system/index.js";
 import { parsedObject } from "./recordJsonUtils.js";
 
 interface ActorNativeBridge {
@@ -21,6 +28,7 @@ interface ActorAvatarPreviewProps {
   backgroundColor: string;
   textColor: string;
   initials: string;
+  initialsPadding?: number;
 }
 
 interface ActorFieldsContext {
@@ -57,6 +65,19 @@ function actorInitials({
 }
 
 const actorThemeModes = ["light", "dark"] as const;
+
+function actorFieldMetadata(
+  field: FieldDefinition,
+  expectedControl: EditorControlKind,
+) {
+  const control = controlDefinitionForField(field).control;
+  if (control !== expectedControl) {
+    throw new Error(
+      `Actor field "${field.id}" expected ${expectedControl} control, got ${control}`,
+    );
+  }
+  return editorMetadataForField(field);
+}
 
 function isHexColor(value: unknown): value is string {
   return typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value);
@@ -203,8 +224,22 @@ function setActorAvatarPatch({
 function ActorColorField(context: ActorFieldsContext) {
   const initials = actorInitials(context);
   const rows = [
-    { field: "color" as const, label: "Actor color" },
-    { field: "avatarTextColor" as const, label: "Avatar text color" },
+    {
+      field: "color" as const,
+      label: "Actor color",
+      fields: {
+        light: ACTOR_FIELDS.colorLight,
+        dark: ACTOR_FIELDS.colorDark,
+      },
+    },
+    {
+      field: "avatarTextColor" as const,
+      label: "Avatar text color",
+      fields: {
+        light: ACTOR_FIELDS.avatarTextColorLight,
+        dark: ACTOR_FIELDS.avatarTextColorDark,
+      },
+    },
   ];
   return (
     <>
@@ -216,6 +251,7 @@ function ActorColorField(context: ActorFieldsContext) {
           control={
             <div className="actor-color-control actor-mode-color-grid">
               {actorThemeModes.map((mode) => {
+                actorFieldMetadata(row.fields[mode], "paletteColorToken");
                 const color = actorModeColor(
                   context.drafts,
                   mode,
@@ -284,11 +320,30 @@ function ActorColorField(context: ActorFieldsContext) {
 }
 
 function ActorAvatarFields(context: ActorFieldsContext) {
+  const useInitialsField = actorFieldMetadata(
+    ACTOR_FIELDS.avatarUseInitials,
+    "checkbox",
+  );
+  const filePathField = actorFieldMetadata(
+    ACTOR_FIELDS.avatarFilePath,
+    "relativeFilePath",
+  );
+  const scaleField = actorFieldMetadata(ACTOR_FIELDS.avatarScale, "number");
+  const offsetXField = actorFieldMetadata(ACTOR_FIELDS.avatarOffsetX, "number");
+  const offsetYField = actorFieldMetadata(ACTOR_FIELDS.avatarOffsetY, "number");
+  const initialsPaddingField = actorFieldMetadata(
+    ACTOR_FIELDS.avatarInitialsPadding,
+    "number",
+  );
   const avatar = actorAvatar(context.drafts);
   const filePath = typeof avatar.filePath === "string" ? avatar.filePath : "";
   const scale = typeof avatar.scale === "number" ? avatar.scale : 1;
   const offsetX = typeof avatar.offsetX === "number" ? avatar.offsetX : 0;
   const offsetY = typeof avatar.offsetY === "number" ? avatar.offsetY : 0;
+  const initialsPadding =
+    typeof avatar.initialsPadding === "number"
+      ? avatar.initialsPadding
+      : Number(ACTOR_FIELDS.avatarInitialsPadding.defaultValue ?? 96);
   const useInitials = avatar.useInitials === true;
   const textColor = actorAvatarTextColor(context.drafts, context.paletteCatalog);
   const backgroundColor = actorColor(context.drafts, context.paletteCatalog);
@@ -313,7 +368,7 @@ function ActorAvatarFields(context: ActorFieldsContext) {
       <InspectorFieldRow
         key="actor_avatar_use_initials"
         className="record-editor-field record-editor-field-boolean"
-        label={<span>Use initials</span>}
+        label={<span>{useInitialsField.label}</span>}
         control={
           <input
             type="checkbox"
@@ -325,7 +380,7 @@ function ActorAvatarFields(context: ActorFieldsContext) {
       <InspectorFieldRow
         key="actor_avatar_file"
         className="record-editor-field record-editor-field-string"
-        label={<span>Avatar image</span>}
+        label={<span>{filePathField.label}</span>}
         control={
           <div className="media-file-control actor-avatar-file-control">
             <DeferredTextInput
@@ -359,43 +414,73 @@ function ActorAvatarFields(context: ActorFieldsContext) {
         )}
         textColor={resolvedActorColorValue(textColor, context.paletteCatalog)}
         initials={initials}
+        initialsPadding={initialsPadding}
       />
         <small>Base avatar frame: 640×640</small>
       </div>
       <InspectorFieldRow
         key="actor_avatar_scale"
         className="record-editor-field record-editor-field-number"
-        label={<span>Avatar scale</span>}
+        label={<span>{scaleField.label}</span>}
         control={
           <DeferredNumberInput
-            step={0.01}
-            min={0.01}
+            step={scaleField.step ?? "any"}
+            min={scaleField.min}
             value={scale}
             onCommit={(nextValue) => patchAvatar({ scale: nextValue })}
           />
         }
       />
       <InspectorFieldRow
-        key="actor_avatar_offset_x"
+        key="actor_avatar_offset"
         className="record-editor-field record-editor-field-number"
-        label={<span>Avatar offset X</span>}
+        label={<span>Avatar offset</span>}
         control={
-          <DeferredNumberInput
-            step={1}
-            value={offsetX}
-            onCommit={(nextValue) => patchAvatar({ offsetX: nextValue })}
-          />
+          <div className="record-editor-field-pair">
+            <label className="record-editor-field-pair-item">
+              <span>X</span>
+              <DeferredNumberInput
+                className="json-value-control record-editor-compact-number"
+                step={offsetXField.step ?? "any"}
+                min={offsetXField.min}
+                max={offsetXField.max}
+                value={offsetX}
+                onCommit={(nextValue) =>
+                  patchAvatar({ offsetX: Math.round(nextValue) })
+                }
+              />
+            </label>
+            <label className="record-editor-field-pair-item">
+              <span>Y</span>
+              <DeferredNumberInput
+                className="json-value-control record-editor-compact-number"
+                step={offsetYField.step ?? "any"}
+                min={offsetYField.min}
+                max={offsetYField.max}
+                value={offsetY}
+                onCommit={(nextValue) =>
+                  patchAvatar({ offsetY: Math.round(nextValue) })
+                }
+              />
+            </label>
+          </div>
         }
       />
       <InspectorFieldRow
-        key="actor_avatar_offset_y"
+        key="actor_avatar_initials_padding"
         className="record-editor-field record-editor-field-number"
-        label={<span>Avatar offset Y</span>}
+        label={<span>{initialsPaddingField.label}</span>}
         control={
           <DeferredNumberInput
-            step={1}
-            value={offsetY}
-            onCommit={(nextValue) => patchAvatar({ offsetY: nextValue })}
+            step={initialsPaddingField.step ?? "any"}
+            min={initialsPaddingField.min}
+            max={initialsPaddingField.max}
+            value={initialsPadding}
+            onCommit={(nextValue) =>
+              patchAvatar({
+                initialsPadding: Math.max(0, Math.round(nextValue)),
+              })
+            }
           />
         }
       />

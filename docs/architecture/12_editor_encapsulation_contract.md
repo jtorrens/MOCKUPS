@@ -122,6 +122,32 @@ Before implementing a new editor feature:
 6. Avoid moving values between instance and module levels unless the data rule
    above explicitly calls for it.
 
+## Field dictionary audit rule
+
+After finishing the cleanup of any editor card, run a field dictionary audit for
+that card before moving on.
+
+The audit must verify:
+
+1. Every visible editable field in the card has a `FieldDefinition` in the
+   appropriate domain field catalog.
+2. Every hidden/internal field is intentionally omitted from the card and has a
+   clear reason.
+3. The field's `kind` exists in `ValueRegistry`.
+4. The editor control is selected from `ValueKindControlRegistry` /
+   `FieldDefinition.ui`, not hardcoded locally in the editor.
+5. Field-specific metadata such as `label`, `min`, `max`, `step`, `options`,
+   `tableId`, `labelColumn`, `semanticTokenGroup`, `fileKind`, `accept`,
+   `allowEmpty`, `allowMultiple`, or `lockFontFamily` lives in the field
+   definition when it is reusable field meaning.
+6. Local editor code may still provide domain layout or preview-only helpers,
+   but it must not silently choose a different control for an existing value
+   kind.
+
+This check is also part of the broader encapsulation audit. A card is not
+considered cleaned if its fields are visually consistent but still choose their
+controls through ad-hoc editor code.
+
 ## Current accepted direction
 
 The left panel, central editor, and right preview may remain separate

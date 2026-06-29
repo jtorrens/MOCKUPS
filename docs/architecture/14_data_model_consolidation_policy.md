@@ -132,6 +132,7 @@ used by the canonical chat flow.
 [ ] SQL/Zod/type contract updated
 [ ] seed/default updated
 [ ] editor descriptor/UI updated
+[ ] editor card fields audited against FieldDefinition → ValueRegistry → control registry
 [ ] resolver updated
 [ ] design-unit scaling updated if needed
 [ ] migration/normalization added if existing data needs conversion
@@ -210,7 +211,18 @@ For each field, document:
 - design-space or render-space unit;
 - allowed token/reference type;
 - UI editor;
+- field definition / value kind / editor control;
 - resolver that consumes it.
+
+For each editor card touched during consolidation, include the field dictionary
+audit:
+
+```text
+field path → FieldDefinition id → ValueRegistry kind → control registry control
+```
+
+Hidden/internal fields must be listed as intentionally hidden instead of simply
+missing from the audit.
 
 ### Phase 3 — normalize/migrate useful data
 

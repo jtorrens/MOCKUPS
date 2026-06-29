@@ -29,6 +29,7 @@ interface ProjectTreeProps {
       | "icon_themes"
       | "status_bars"
       | "navigation_bars"
+      | "actors"
       | "themes"
       | "devices"
       | "palette_colors"
@@ -42,6 +43,7 @@ interface ProjectTreeProps {
       | "icon_themes"
       | "status_bars"
       | "navigation_bars"
+      | "actors"
       | "themes"
       | "devices"
       | "palette_colors"
@@ -55,6 +57,7 @@ interface ProjectTreeProps {
       | "icon_themes"
       | "status_bars"
       | "navigation_bars"
+      | "actors"
       | "themes"
       | "devices"
       | "palette_colors"
@@ -70,6 +73,7 @@ type DeletableTableId =
   | "icon_themes"
   | "status_bars"
   | "navigation_bars"
+  | "actors"
   | "themes"
   | "devices"
   | "palette_colors"
@@ -910,6 +914,7 @@ export function ProjectTree({
                 {table.id === "icon_themes" ||
                 table.id === "status_bars" ||
                 table.id === "navigation_bars" ||
+                table.id === "actors" ||
                 table.id === "themes" ||
                 table.id === "devices" ||
                 table.id === "palette_colors" ||
@@ -926,6 +931,7 @@ export function ProjectTree({
                           | "icon_themes"
                           | "status_bars"
                           | "navigation_bars"
+                          | "actors"
                           | "themes"
                           | "devices"
                           | "palette_colors"
@@ -942,6 +948,7 @@ export function ProjectTree({
                           | "icon_themes"
                           | "status_bars"
                           | "navigation_bars"
+                          | "actors"
                           | "themes"
                           | "devices"
                           | "palette_colors"
@@ -960,6 +967,7 @@ export function ProjectTree({
                             | "icon_themes"
                             | "status_bars"
                             | "navigation_bars"
+                            | "actors"
                             | "themes"
                             | "devices"
                             | "palette_colors"

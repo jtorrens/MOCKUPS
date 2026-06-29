@@ -55,6 +55,7 @@ import {
   computeScreenTimeline,
   type TimelineScreenLike,
 } from "../domain/timeline/screenTimeline.js";
+import { ACTOR_FIELDS } from "../domain/fields/actorFields.js";
 
 type Row = Record<string, unknown>;
 type DeviceState = z.infer<typeof DeviceStateSchema>;
@@ -1482,6 +1483,7 @@ export interface AppCreateRequest {
     | "icon_themes"
     | "status_bars"
     | "navigation_bars"
+    | "actors"
     | "themes"
     | "devices"
     | "palette_colors"
@@ -1501,6 +1503,7 @@ export interface AppRecordActionRequest {
     | "icon_themes"
     | "status_bars"
     | "navigation_bars"
+    | "actors"
     | "themes"
     | "devices"
     | "palette_colors"
@@ -2161,6 +2164,99 @@ export function createAppRecord(
     return { tableId: "devices", record, state: loadAppState(database) };
   }
 
+  if (request.tableId === "actors") {
+    const productionId = request.parent?.productionId;
+    if (!productionId) {
+      throw new Error("Creating an actor requires a productionId parent.");
+    }
+    const production = database
+      .prepare("SELECT id FROM productions WHERE id = ?")
+      .get(productionId);
+    if (!production) {
+      throw new Error(`Production ${productionId} not found`);
+    }
+    const existingCount = Number(
+      (
+        database
+          .prepare("SELECT COUNT(*) AS total FROM actors WHERE production_id = ?")
+          .get(productionId) as { total?: number } | undefined
+      )?.total ?? 0,
+    );
+    const displayName = request.name?.trim() || `Actor ${existingCount + 1}`;
+    const id = uniqueId("actor", displayName);
+    const actorColorToken =
+      firstScalar(
+        database,
+        "SELECT token FROM palette_colors WHERE production_id = ? AND token LIKE 'pastel_%' ORDER BY token LIMIT 1",
+        productionId,
+      ) ??
+      firstScalar(
+        database,
+        "SELECT token FROM palette_colors WHERE production_id = ? ORDER BY token LIMIT 1",
+        productionId,
+      ) ??
+      "debug_red";
+    const avatarTextColorToken =
+      firstScalar(
+        database,
+        "SELECT token FROM palette_colors WHERE production_id = ? AND token IN ('white', 'gray_100') ORDER BY CASE token WHEN 'white' THEN 0 ELSE 1 END LIMIT 1",
+        productionId,
+      ) ?? actorColorToken;
+    const defaultDeviceId = firstScalar(
+      database,
+      "SELECT id FROM devices WHERE production_id = ? ORDER BY name, id LIMIT 1",
+      productionId,
+    );
+    const defaultThemeId = firstScalar(
+      database,
+      "SELECT id FROM themes WHERE production_id = ? ORDER BY name, id LIMIT 1",
+      productionId,
+    );
+    const metadata = {
+      modes: {
+        light: { color: actorColorToken, avatarTextColor: avatarTextColorToken },
+        dark: { color: actorColorToken, avatarTextColor: avatarTextColorToken },
+      },
+      avatar: {
+        useInitials: true,
+        filePath: "",
+        scale: ACTOR_FIELDS.avatarScale.defaultValue ?? 1,
+        offsetX: ACTOR_FIELDS.avatarOffsetX.defaultValue ?? 0,
+        offsetY: ACTOR_FIELDS.avatarOffsetY.defaultValue ?? 0,
+        baseSize: ACTOR_FIELDS.avatarBaseSize.defaultValue ?? 640,
+        initialsPadding: ACTOR_FIELDS.avatarInitialsPadding.defaultValue ?? 96,
+      },
+    };
+    database
+      .prepare(
+        `INSERT INTO actors (
+          id,
+          production_id,
+          display_name,
+          short_name,
+          avatar_asset_id,
+          default_device_id,
+          default_theme_id,
+          metadata_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        id,
+        productionId,
+        displayName,
+        null,
+        null,
+        defaultDeviceId,
+        defaultThemeId,
+        stringifyJsonObject(metadata, "actors.metadata_json"),
+      );
+    const record = decodeAppRow(
+      database.prepare("SELECT * FROM actors WHERE id = ?").get(id) as Row,
+      tableDefinition("actors"),
+    );
+    return { tableId: "actors", record, state: loadAppState(database) };
+  }
+
   if (request.tableId === "production_fonts") {
     const productionId = request.parent?.productionId;
     if (!productionId) {
@@ -2371,6 +2467,7 @@ function duplicateSimpleRecord(
     | "icon_themes"
     | "status_bars"
     | "navigation_bars"
+    | "actors"
     | "themes"
     | "devices"
     | "palette_colors"
@@ -2390,6 +2487,8 @@ function duplicateSimpleRecord(
       ? existing.family
       : tableId === "palette_colors"
         ? existing.token
+      : tableId === "actors"
+        ? existing.display_name
         : existing.name;
   const name = copyName(nameSource);
   const id = uniqueId(
@@ -2399,6 +2498,8 @@ function duplicateSimpleRecord(
         ? "status_bar"
       : tableId === "navigation_bars"
         ? "navigation_bar"
+      : tableId === "actors"
+        ? "actor"
       : tableId === "themes"
       ? "theme"
       : tableId === "devices"
@@ -2418,6 +2519,8 @@ function duplicateSimpleRecord(
       ? { family: name }
       : tableId === "palette_colors"
         ? { token: slugifyIdPart(name).replace(/-/g, "_") }
+      : tableId === "actors"
+        ? { display_name: name }
         : { name }),
   };
   database

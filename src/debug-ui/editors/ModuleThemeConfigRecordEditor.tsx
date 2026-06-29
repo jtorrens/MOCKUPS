@@ -220,6 +220,8 @@ export function ModuleThemeConfigRecordEditor({
     activeDesignGroup && selectableDesignGroups.includes(activeDesignGroup)
       ? activeDesignGroup
       : "";
+  const hiddenModeColorGroups: string[] = [];
+  const hiddenModeColorRolePaths: string[] = [];
   const avatarComponent = (records.component_classes ?? []).find(
     (component) =>
       component.production_id === themeRecord?.production_id &&
@@ -307,6 +309,8 @@ export function ModuleThemeConfigRecordEditor({
       colorsWarning={hasModeColorOverrides(
         tokenRoot as JsonValue,
         inheritedTokenRoot as JsonValue | undefined,
+        hiddenModeColorGroups,
+        hiddenModeColorRolePaths,
       )}
       renderDesign={() =>
         tokensField
@@ -543,6 +547,7 @@ export function ModuleThemeConfigRecordEditor({
                   ) : null}
                   <ModuleFunctionalConfigFields
                     rawValue={JSON.stringify(tokenRoot, null, 2)}
+                    sessionKey={`module_theme_configs:${record.id}:functional`}
                     onRawChange={(nextRaw) =>
                       setJsonDraft(
                         "tokens_json",
@@ -561,6 +566,8 @@ export function ModuleThemeConfigRecordEditor({
           <ModeColorEditor
             rootValue={tokenRoot as JsonValue}
             inheritedRoot={inheritedFields.tokens_json as JsonValue | undefined}
+            hiddenGroups={hiddenModeColorGroups}
+            hiddenRolePaths={hiddenModeColorRolePaths}
             paletteCatalog={paletteCatalog}
             onRootChange={(nextValue) => setJsonDraft("tokens_json", nextValue)}
           />

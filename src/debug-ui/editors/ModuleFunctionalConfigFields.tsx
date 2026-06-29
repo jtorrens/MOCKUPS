@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   isJsonObject,
   setAtPath,
@@ -8,6 +7,7 @@ import {
 import { KeyboardBehaviorFields } from "./module-behavior/KeyboardBehaviorFields.js";
 import { ModuleBehaviorCard } from "./module-behavior/ModuleBehaviorCard.js";
 import { TextInputBarBehaviorFields } from "./module-behavior/TextInputBarBehaviorFields.js";
+import { useSessionStoredState } from "../editor-ui/useSessionStoredState.js";
 import { parsedObject } from "./recordJsonUtils.js";
 
 function stringifyJson(value: unknown): string {
@@ -16,14 +16,18 @@ function stringifyJson(value: unknown): string {
 
 interface ModuleFunctionalConfigFieldsProps {
   rawValue: string;
+  sessionKey: string;
   onRawChange: (nextRaw: string) => void;
 }
 
 export function ModuleFunctionalConfigFields({
   rawValue,
+  sessionKey,
   onRawChange,
 }: ModuleFunctionalConfigFieldsProps) {
-  const [openCards, setOpenCards] = useState<Record<string, boolean>>({
+  const [openCards, setOpenCards] = useSessionStoredState<
+    Record<string, boolean>
+  >(`${sessionKey}:openCards`, {
     textInputBar: true,
     keyboard: false,
   });

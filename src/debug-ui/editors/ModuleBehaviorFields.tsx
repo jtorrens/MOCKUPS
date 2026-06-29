@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { InspectorFieldRow } from "../components/inspector/InspectorFieldRow.js";
 import {
   deleteAtPathAndPrune,
@@ -8,6 +7,7 @@ import {
   type JsonValue,
 } from "../components/json-editor/jsonEditorUtils.js";
 import { ModuleBehaviorCard } from "./module-behavior/ModuleBehaviorCard.js";
+import { useSessionStoredState } from "../editor-ui/useSessionStoredState.js";
 import { parsedObject } from "./recordJsonUtils.js";
 
 function stringifyJson(value: unknown): string {
@@ -16,6 +16,7 @@ function stringifyJson(value: unknown): string {
 
 interface ModuleBehaviorFieldsProps {
   rawValue: string;
+  sessionKey: string;
   statusBarItems?: StatusBarBehaviorItem[];
   onRawChange: (nextRaw: string) => void;
 }
@@ -52,11 +53,18 @@ function statusFieldState(
 
 export function ModuleBehaviorFields({
   rawValue,
+  sessionKey,
   statusBarItems = [],
   onRawChange,
 }: ModuleBehaviorFieldsProps) {
-  const [statusBarOpen, setStatusBarOpen] = useState(false);
-  const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const [statusBarOpen, setStatusBarOpen] = useSessionStoredState(
+    `${sessionKey}:statusBarOpen`,
+    false,
+  );
+  const [keyboardOpen, setKeyboardOpen] = useSessionStoredState(
+    `${sessionKey}:keyboardOpen`,
+    false,
+  );
   const root = parsedObject(rawValue);
   const rawKeyboard = root.keyboard as JsonValue;
   const keyboardRoot = isJsonObject(rawKeyboard)

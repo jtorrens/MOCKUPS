@@ -29,9 +29,16 @@ export type JsonUiHint = {
   summaryKeys?: string[];
   options?: string[];
   lockFontFamily?: boolean;
+  allowMultiple?: boolean;
+  allowEmpty?: boolean;
+  semanticTokenGroup?: string;
+  tableId?: string;
+  labelColumn?: string;
+  fileKind?: "file" | "directory";
+  accept?: string[];
   min?: number;
   max?: number;
-  step?: number;
+  step?: number | "any";
 };
 
 export type JsonUiHints = Record<string, JsonUiHint>;
@@ -96,8 +103,6 @@ const COMMON_HINTS: JsonUiHints = {
     widget: "color",
   },
   "chatBubbles.incomingText": { label: "Incoming text", widget: "color" },
-  "header.background": { label: "Header background", widget: "color" },
-  "header.separatorColor": { label: "Header separator", widget: "color" },
   "cursor.color": { label: "Cursor color", widget: "color" },
 };
 

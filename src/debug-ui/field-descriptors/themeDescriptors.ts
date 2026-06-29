@@ -40,7 +40,7 @@ export const themeTokenDescriptors: FieldDescriptor[] = [
   },
   {
     canonicalPath: "theme.tokens.typography.body.weight",
-    storagePath: ["fonts", "weight"],
+    storagePath: ["fonts", "fontWeight"],
     label: "Weight",
     section: "Tokens",
     area: "tokens",

@@ -1,11 +1,15 @@
 import { z } from "zod";
 import {
+  CHAT_HEADER_DEFAULTS,
+  CHAT_HEADER_DESIGN_UNIT_PATHS,
+  CHAT_HEADER_TOKEN_BINDINGS,
   CHAT_KEYBOARD_TOKEN_BINDINGS,
   CHAT_TEXT_INPUT_BAR_TOKEN_BINDINGS,
   CHAT_TYPOGRAPHY_TOKEN_BINDINGS,
   stripChatModuleTypographyFontIdentity,
   unscaleTextInputBarThemeScope,
 } from "../fields/chatFields.js";
+import { ACTOR_FIELDS } from "../fields/actorFields.js";
 import {
   parseKeyboardRows,
   STANDARD_IOS_KEYBOARD_LAYOUT,
@@ -1475,6 +1479,19 @@ function resolveChatTypographyTokens(
   ]);
 }
 
+function resolveChatHeaderTokens(
+  genericTokens: Record<string, unknown>,
+  moduleThemeTokens: Record<string, unknown>,
+): Record<string, unknown> {
+  const header = resolveJsonFieldBindingGroup(CHAT_HEADER_TOKEN_BINDINGS, [
+    isObject(moduleThemeTokens.header) ? moduleThemeTokens.header : {},
+    isObject(genericTokens.header) ? genericTokens.header : {},
+  ]);
+  return {
+    header,
+  };
+}
+
 export function resolveGlobalThemeTokens(
   theme: Theme,
   themeMode: "light" | "dark",
@@ -1531,16 +1548,16 @@ function normalizeChatVisualTokenGroups(
   const shadows = isObject(tokens.shadows) ? tokens.shadows : {};
   const headerAvatarSize = numberValue(
     header.avatarSize,
-    56,
+    CHAT_HEADER_DEFAULTS.avatarSize,
   );
   const headerLeftIconTokens =
     typeof header.leftIconTokens === "string" && header.leftIconTokens.trim()
       ? header.leftIconTokens
-      : "nav_chevron_left";
+      : CHAT_HEADER_DEFAULTS.leftIconTokens;
   const headerRightIconTokens =
     typeof header.rightIconTokens === "string" && header.rightIconTokens.trim()
       ? header.rightIconTokens
-      : "media_camera, phone_call";
+      : CHAT_HEADER_DEFAULTS.rightIconTokens;
   const bubbleAvatarSize = numberValue(
     chatBubbles.avatarSize,
     32,
@@ -1563,13 +1580,25 @@ function normalizeChatVisualTokenGroups(
     ...tokens,
     header: {
       ...header,
+      height: numberValue(header.height, CHAT_HEADER_DEFAULTS.height),
+      separatorWidth: numberValue(
+        header.separatorWidth,
+        CHAT_HEADER_DEFAULTS.separatorWidth,
+      ),
       avatarSize: headerAvatarSize,
-      subtitleBottomPadding: numberValue(header.subtitleBottomPadding, 10),
-      elementGap: numberValue(header.elementGap, 8),
+      subtitleBottomPadding: numberValue(
+        header.subtitleBottomPadding,
+        CHAT_HEADER_DEFAULTS.subtitleBottomPadding,
+      ),
+      elementGap: numberValue(
+        header.elementGap,
+        CHAT_HEADER_DEFAULTS.elementGap,
+      ),
       sidePadding: numberValue(
         header.sidePadding,
-        numberValue(header.elementGap, 8),
+        numberValue(header.elementGap, CHAT_HEADER_DEFAULTS.sidePadding),
       ),
+      iconSize: numberValue(header.iconSize, CHAT_HEADER_DEFAULTS.iconSize),
       leftIconTokens: headerLeftIconTokens,
       rightIconTokens: headerRightIconTokens,
     },
@@ -1651,13 +1680,7 @@ const DESIGN_UNIT_TOKEN_PATHS = [
   ["fonts", "bodyLineHeight"],
   ["fonts", "captionSize"],
   ["layout", "screenGutter"],
-  ["header", "height"],
-  ["header", "separatorWidth"],
-  ["header", "elementGap"],
-  ["header", "sidePadding"],
-  ["header", "iconSize"],
-  ["header", "avatarSize"],
-  ["header", "subtitleBottomPadding"],
+  ...CHAT_HEADER_DESIGN_UNIT_PATHS,
   ["messages", "spacing"],
   ["messages", "groupSpacing"],
   ["typography", "message", "fontSize"],
@@ -2212,7 +2235,7 @@ function resolveChatActor(
     "Actor",
     actorId,
   );
-  const directAvatarUri = actorAvatarUri(actor);
+  const directAvatarUri = actorAvatarUri(actor, themeMode, palette);
   const avatarAssetId = directAvatarUri
     ? undefined
     : actor.avatar_asset_id;
@@ -2272,7 +2295,73 @@ function actorMetadataColor(
   return undefined;
 }
 
-function actorAvatarUri(actor: Actor | undefined) {
+function escapeSvgText(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function actorInitials(actor: Actor | undefined) {
+  const shortName = actor?.short_name?.trim() ?? "";
+  const source = shortName || (actor?.display_name ?? "");
+  const words = source
+    .split(/\s+/)
+    .map((word) => word.trim())
+    .filter(Boolean);
+  if (!words.length) return "?";
+  return words
+    .slice(0, 2)
+    .map((word) => word[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
+function svgDataUri(svg: string) {
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
+function actorInitialsAvatarUri(
+  actor: Actor | undefined,
+  themeMode: "light" | "dark",
+  palette: Map<string, string>,
+) {
+  const metadata = actor?.metadata_json;
+  const avatar = isObject(metadata?.avatar) ? metadata.avatar : {};
+  const baseSize = Math.max(1, Math.round(numberValue(avatar.baseSize, 640)));
+  const padding = Math.max(
+    0,
+    Math.min(
+      baseSize / 2 - 1,
+      numberValue(
+        avatar.initialsPadding,
+        Number(ACTOR_FIELDS.avatarInitialsPadding.defaultValue ?? 8),
+      ),
+    ),
+  );
+  const initials = actorInitials(actor);
+  const backgroundColor =
+    actorMetadataColor(actor, themeMode, "color", palette) ?? "#64748b";
+  const textColor =
+    actorMetadataColor(actor, themeMode, "avatarTextColor", palette) ??
+    "#ffffff";
+  const available = Math.max(1, baseSize - padding * 2);
+  const fontSize = Math.max(
+    1,
+    Math.min(
+      available,
+      initials.length <= 1 ? available : available / (initials.length * 0.62),
+    ),
+  );
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${baseSize}" height="${baseSize}" viewBox="0 0 ${baseSize} ${baseSize}"><rect width="${baseSize}" height="${baseSize}" fill="${escapeSvgText(backgroundColor)}"/><text x="50%" y="50%" fill="${escapeSvgText(textColor)}" font-family="Arial, Helvetica, sans-serif" font-size="${fontSize}" font-weight="700" text-anchor="middle" dominant-baseline="central">${escapeSvgText(initials)}</text></svg>`;
+  return svgDataUri(svg);
+}
+
+function actorAvatarUri(
+  actor: Actor | undefined,
+  themeMode: "light" | "dark",
+  palette: Map<string, string>,
+) {
   const metadata = actor?.metadata_json;
   if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
     return undefined;
@@ -2283,7 +2372,7 @@ function actorAvatarUri(actor: Actor | undefined) {
   }
   const avatarRecord = avatar as Record<string, unknown>;
   if (avatarRecord.useInitials === true) {
-    return undefined;
+    return actorInitialsAvatarUri(actor, themeMode, palette);
   }
   const filePath = avatarRecord.filePath;
   return typeof filePath === "string" && filePath.trim() ? filePath : undefined;
@@ -2295,6 +2384,9 @@ function actorAvatarCrop(actor: Actor | undefined) {
     return {};
   }
   const avatar = metadata.avatar;
+  if (avatar.useInitials === true) {
+    return {};
+  }
   const scale = numberValue(avatar.scale, 1);
   const offsetX = numberValue(avatar.offsetX, 0);
   const offsetY = numberValue(avatar.offsetY, 0);
@@ -2411,7 +2503,10 @@ export function resolveChatScreen({
     typographySafeModuleThemeTokens,
   );
   const inheritedModuleTokens = mergeTokenObjects(
-    baseInheritedModuleTokens,
+    mergeTokenObjects(
+      baseInheritedModuleTokens,
+      resolveChatHeaderTokens(genericTokens, moduleThemeTokens),
+    ),
     resolveChatTypographyTokens(
       genericTokens,
       moduleDefaultsFromGenericTokens,
@@ -2505,6 +2600,34 @@ export function resolveChatScreen({
   );
   const resolvedHeaderTokens = {
     ...themeTokens.header,
+    background:
+      typeof themeTokens.header.background === "string"
+        ? themeColor(
+            themeTokens,
+            palette,
+            themeTokens.header.background,
+            stringValue(
+              isObject(themeTokens.colors)
+                ? themeTokens.colors.background
+                : undefined,
+              "#FFFFFF",
+            ),
+          )
+        : stringValue(
+            isObject(themeTokens.colors)
+              ? themeTokens.colors.background
+              : undefined,
+            "#FFFFFF",
+          ),
+    separatorColor:
+      typeof themeTokens.header.separatorColor === "string"
+        ? themeColor(
+            themeTokens,
+            palette,
+            themeTokens.header.separatorColor,
+            "transparent",
+          )
+        : "transparent",
     leftItems: resolveIconItems(
       iconItemsSource(themeTokens.header.leftItems, themeTokens.header.leftIconTokens),
       iconTheme,

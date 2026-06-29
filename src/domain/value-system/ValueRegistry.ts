@@ -13,6 +13,7 @@ export type ValueKind =
   | "themeColorToken"
   | "alpha"
   | "iconToken"
+  | "recordReference"
   | "filePath"
   | "relativeFilePath"
   | "jsonObject"
@@ -131,6 +132,11 @@ const SYSTEM_VALUE_KIND_DEFINITIONS = [
     validate: isNonEmptyString,
   },
   {
+    kind: "recordReference",
+    label: "Record reference",
+    validate: isNonEmptyString,
+  },
+  {
     kind: "filePath",
     label: "File path",
     validate: isNonEmptyString,
@@ -165,6 +171,10 @@ export class ValueRegistry {
 
   static hasKind(kind: ValueKind): boolean {
     return this.definitions.has(kind);
+  }
+
+  static allKinds(): readonly ValueKind[] {
+    return [...this.definitions.keys()];
   }
 
   static definition(kind: ValueKind): ValueKindDefinition {

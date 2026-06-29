@@ -77,6 +77,7 @@ export function ActorAvatarPreview({
   backgroundColor,
   textColor,
   initials,
+  initialsPadding,
 }: {
   filePath: string;
   mediaRoot: string;
@@ -87,6 +88,7 @@ export function ActorAvatarPreview({
   backgroundColor: string;
   textColor: string;
   initials: string;
+  initialsPadding?: number;
 }) {
   const previewUrl = useMediaPreviewUrl({
     enabled: !useInitials,
@@ -95,6 +97,20 @@ export function ActorAvatarPreview({
   });
 
   const shouldShowInitials = useInitials || !previewUrl;
+  const baseSize = 640;
+  const previewSize = 160;
+  const safePadding = Math.max(
+    0,
+    Math.min(baseSize / 2 - 1, initialsPadding ?? 96),
+  );
+  const available = Math.max(1, baseSize - safePadding * 2);
+  const fontSize =
+    (Math.min(
+      available,
+      initials.length <= 1 ? available : available / (initials.length * 0.62),
+    ) /
+      baseSize) *
+    previewSize;
   return (
     <div
       className="actor-avatar-preview"
@@ -103,6 +119,7 @@ export function ActorAvatarPreview({
           ? {
               backgroundColor,
               color: textColor,
+              fontSize,
             }
           : {
               backgroundImage: cssUrl(previewUrl),

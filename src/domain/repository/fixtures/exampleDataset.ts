@@ -320,7 +320,9 @@ export function createExampleDataset(): RepositoryDataset {
     },
     header: {
       height: 96,
+      background: "colors.background",
       separatorWidth: 1,
+      separatorColor: "borders.primary",
       elementGap: 8,
       sidePadding: 8,
       iconSize: 24,
@@ -413,10 +415,6 @@ export function createExampleDataset(): RepositoryDataset {
     },
     modes: {
       light: {
-        header: {
-          background: "gray_100",
-          separatorColor: "gray_080",
-        },
         chatBubbles: {
           outgoingBackground: "blue",
           outgoingText: "gray_100",
@@ -432,10 +430,6 @@ export function createExampleDataset(): RepositoryDataset {
         },
       },
       dark: {
-        header: {
-          background: "gray_020",
-          separatorColor: "gray_060",
-        },
         chatBubbles: {
           outgoingBackground: "blue_bright",
           outgoingText: "gray_100",

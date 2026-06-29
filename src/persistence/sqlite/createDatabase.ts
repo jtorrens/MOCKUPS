@@ -171,8 +171,8 @@ function cleanupDebugRedDefault(path: string[], value: unknown): unknown {
   if (joined.endsWith("notifications.background.color")) {
     return dark ? "gray_020" : "gray_090";
   }
-  if (joined.endsWith("header.background")) return dark ? "gray_020" : "gray_100";
-  if (joined.endsWith("header.separatorColor")) return dark ? "gray_060" : "gray_080";
+  if (joined.endsWith("header.background")) return "colors.background";
+  if (joined.endsWith("header.separatorColor")) return "borders.primary";
   if (joined.endsWith("chatBubbles.outgoingBackground")) {
     return dark ? "blue_bright" : "blue";
   }
@@ -1012,6 +1012,52 @@ function normalizeComponentSemanticColorTokens(tokens: Record<string, unknown>) 
     };
   }
   return next;
+}
+
+function normalizeCoreChatHeaderSemanticTokens(value: unknown): unknown {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return value;
+  }
+  const root = { ...(value as Record<string, unknown>) };
+  const header =
+    root.header && typeof root.header === "object" && !Array.isArray(root.header)
+      ? { ...(root.header as Record<string, unknown>) }
+      : {};
+  const modes =
+    root.modes && typeof root.modes === "object" && !Array.isArray(root.modes)
+      ? { ...(root.modes as Record<string, unknown>) }
+      : {};
+
+  root.header = {
+    ...header,
+    background:
+      typeof header.background === "string" && header.background.includes(".")
+        ? header.background
+        : "colors.background",
+    separatorColor:
+      typeof header.separatorColor === "string" &&
+      header.separatorColor.includes(".")
+        ? header.separatorColor
+        : "borders.primary",
+  };
+
+  for (const mode of ["light", "dark"] as const) {
+    const modeRoot =
+      modes[mode] && typeof modes[mode] === "object" && !Array.isArray(modes[mode])
+        ? { ...(modes[mode] as Record<string, unknown>) }
+        : undefined;
+    if (!modeRoot) continue;
+    if (
+      modeRoot.header &&
+      typeof modeRoot.header === "object" &&
+      !Array.isArray(modeRoot.header)
+    ) {
+      delete modeRoot.header;
+    }
+    modes[mode] = modeRoot;
+  }
+  root.modes = modes;
+  return root;
 }
 
 function mergeChatBubbleStatusDefaults(tokens: Record<string, unknown>) {
@@ -2305,6 +2351,47 @@ function applyAdditiveV36Migration(database: SQLiteDatabase): void {
   database.pragma("user_version = 36");
 }
 
+function applyAdditiveV37Migration(database: SQLiteDatabase): void {
+  const rows = database
+    .prepare(
+      `SELECT id, tokens_json, metadata_json
+       FROM module_theme_configs
+       WHERE module_id = 'core.chat'`,
+    )
+    .all() as { id: string; tokens_json: string; metadata_json: string | null }[];
+  const update = database.prepare(
+    `UPDATE module_theme_configs
+     SET tokens_json = ?, metadata_json = ?
+     WHERE id = ?`,
+  );
+  for (const row of rows) {
+    try {
+      const tokens = normalizeCoreChatHeaderSemanticTokens(
+        JSON.parse(row.tokens_json),
+      );
+      let metadata = row.metadata_json
+        ? (JSON.parse(row.metadata_json) as Record<string, unknown>)
+        : {};
+      if (
+        metadata.default_tokens_json &&
+        typeof metadata.default_tokens_json === "object" &&
+        !Array.isArray(metadata.default_tokens_json)
+      ) {
+        metadata = {
+          ...metadata,
+          default_tokens_json: normalizeCoreChatHeaderSemanticTokens(
+            metadata.default_tokens_json,
+          ),
+        };
+      }
+      update.run(JSON.stringify(tokens), JSON.stringify(metadata), row.id);
+    } catch {
+      // Malformed JSON is handled by validation paths; skip migration here.
+    }
+  }
+  database.pragma("user_version = 37");
+}
+
 export function applyInitialSchema(database: SQLiteDatabase): void {
   database.exec(readFileSync(schemaPath, "utf8"));
   applyAdditiveV2Migration(database);
@@ -2342,6 +2429,7 @@ export function applyInitialSchema(database: SQLiteDatabase): void {
   applyAdditiveV34Migration(database);
   applyAdditiveV35Migration(database);
   applyAdditiveV36Migration(database);
+  applyAdditiveV37Migration(database);
   database.pragma("foreign_keys = ON");
 }
 

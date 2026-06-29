@@ -234,6 +234,7 @@ export function ModuleInstanceRecordEditor({
       renderBehaviorFields={() => (
         <ModuleBehaviorFields
           rawValue={drafts.behavior_json ?? "{}"}
+          sessionKey={`module_instances:${record.id}:behavior`}
           statusBarItems={statusBarItemsForBehavior(records, record)}
           onRawChange={(nextRaw) =>
             setDrafts({

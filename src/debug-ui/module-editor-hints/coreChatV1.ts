@@ -1,4 +1,16 @@
+import {
+  CHAT_HEADER_TOKEN_BINDINGS,
+  CHAT_TYPOGRAPHY_TOKEN_BINDINGS,
+} from "../../domain/fields/chatFields.js";
+import { jsonUiHintsFromFieldBindings } from "../components/json-editor/fieldDefinitionHints.js";
 import type { ModuleEditorHintContract } from "./types.js";
+
+const coreChatHeaderHints = jsonUiHintsFromFieldBindings(
+  CHAT_HEADER_TOKEN_BINDINGS,
+);
+const coreChatTypographyHints = jsonUiHintsFromFieldBindings(
+  CHAT_TYPOGRAPHY_TOKEN_BINDINGS,
+);
 
 export const coreChatV1EditorHints: ModuleEditorHintContract = {
   moduleId: "core.chat",
@@ -68,107 +80,8 @@ export const coreChatV1EditorHints: ModuleEditorHintContract = {
       },
     },
     tokens_json: {
-      "typography.message.fontFamily": {
-        label: "Message font family",
-        widget: "font",
-        lockFontFamily: true,
-      },
-      "typography.message.fontSize": {
-        label: "Message font size",
-        widget: "number",
-        min: 1,
-        step: 1,
-      },
-      "typography.message.lineHeight": {
-        label: "Message line height",
-        widget: "number",
-        min: 1,
-        step: 1,
-      },
-      "typography.message.fontWeight": {
-        label: "Message font weight",
-        widget: "select",
-      },
-      "typography.headerTitle.fontFamily": {
-        label: "Header title font family",
-        widget: "font",
-        lockFontFamily: true,
-      },
-      "typography.headerTitle.fontSize": {
-        label: "Header title font size",
-        widget: "number",
-        min: 1,
-        step: 1,
-      },
-      "typography.headerTitle.lineHeight": {
-        label: "Header title line height",
-        widget: "number",
-        min: 1,
-        step: 1,
-      },
-      "typography.headerTitle.fontWeight": {
-        label: "Header title font weight",
-        widget: "select",
-      },
-      "typography.headerSubtitle.fontFamily": {
-        label: "Header subtitle font family",
-        widget: "font",
-        lockFontFamily: true,
-      },
-      "typography.headerSubtitle.fontSize": {
-        label: "Header subtitle font size",
-        widget: "number",
-        min: 1,
-        step: 1,
-      },
-      "typography.headerSubtitle.lineHeight": {
-        label: "Header subtitle line height",
-        widget: "number",
-        min: 1,
-        step: 1,
-      },
-      "typography.headerSubtitle.fontWeight": {
-        label: "Header subtitle font weight",
-        widget: "select",
-      },
-      "header.elementGap": {
-        label: "Element gap",
-        widget: "number",
-        min: 0,
-        step: 1,
-      },
-      "header.sidePadding": {
-        label: "Side padding",
-        widget: "number",
-        min: 0,
-        step: 1,
-      },
-      "header.iconSize": {
-        label: "Icon size",
-        widget: "number",
-        min: 0,
-        step: 1,
-      },
-      "header.leftIconTokens": {
-        label: "Left icon tokens",
-        widget: "text",
-      },
-      "header.rightIconTokens": {
-        label: "Right icon tokens",
-        widget: "text",
-      },
-      "header.subtitleBottomPadding": {
-        label: "Subtitle bottom padding",
-        widget: "number",
-        min: 0,
-        step: 1,
-      },
-      "header.avatarSize": {
-        label: "Avatar size",
-        widget: "number",
-        min: 0,
-        step: 1,
-      },
+      ...coreChatTypographyHints,
+      ...coreChatHeaderHints,
       "chatBubbles.avatarSize": {
         label: "Message avatar size",
         widget: "number",
@@ -275,27 +188,7 @@ export const coreChatV1EditorHints: ModuleEditorHintContract = {
       },
     },
     module_tokens_override_json: {
-      "typography.message.fontFamily": {
-        label: "Message font family",
-        widget: "font",
-        lockFontFamily: true,
-      },
-      "typography.message.fontSize": {
-        label: "Message font size",
-        widget: "number",
-        min: 1,
-        step: 1,
-      },
-      "typography.message.lineHeight": {
-        label: "Message line height",
-        widget: "number",
-        min: 1,
-        step: 1,
-      },
-      "typography.message.fontWeight": {
-        label: "Message font weight",
-        widget: "select",
-      },
+      ...coreChatTypographyHints,
     },
   },
 };

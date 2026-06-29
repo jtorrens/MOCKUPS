@@ -7,6 +7,12 @@ import { JsonTreeEditor } from "../components/json-editor/JsonTreeEditor.js";
 import type { ProductionFontCatalog } from "../components/json-editor/productionFonts.js";
 import type { PaletteColorCatalog } from "../components/json-editor/paletteColors.js";
 import { InspectorFieldRow } from "../components/inspector/InspectorFieldRow.js";
+import { ACTOR_COLUMN_BINDINGS } from "../../domain/fields/actorFields.js";
+import {
+  controlDefinitionForField,
+  editorMetadataForField,
+} from "../editor-ui/ValueKindControlRegistry.js";
+import type { FieldDefinition } from "../../domain/value-system/index.js";
 
 export type FieldSaveState =
   | "saved"
@@ -248,6 +254,33 @@ function relationOptionsForField(
   return undefined;
 }
 
+function dictionaryFieldForColumn(
+  table: AppTableDefinition,
+  field: AppFieldDefinition,
+): FieldDefinition | undefined {
+  if (table.id !== "actors") return undefined;
+  return ACTOR_COLUMN_BINDINGS.find(
+    (binding) => binding.outputPath.length === 1 && binding.outputPath[0] === field.column,
+  )?.field;
+}
+
+function relationOptionsForDictionaryField(
+  field: FieldDefinition,
+  records: Record<string, AppRecord[]>,
+): { options: { value: string; label: string }[]; allowEmpty: boolean } | undefined {
+  const metadata = editorMetadataForField(field);
+  if (!metadata.tableId) return undefined;
+  const tableRecords = records[metadata.tableId] ?? [];
+  const labelColumn = metadata.labelColumn ?? "name";
+  return {
+    allowEmpty: metadata.allowEmpty === true,
+    options: tableRecords.map((item) => ({
+      value: item.id,
+      label: titleForRecord(item, labelColumn),
+    })),
+  };
+}
+
 interface RecordFieldRendererProps {
   table: AppTableDefinition;
   field: AppFieldDefinition;
@@ -277,18 +310,26 @@ export function RecordFieldRenderer({
   paletteCatalog,
   onDraftChange,
 }: RecordFieldRendererProps) {
-  const relationSelect = relationOptionsForField(
-    table,
-    field,
-    record,
-    records,
-  );
+  const dictionaryField = dictionaryFieldForColumn(table, field);
+  const dictionaryControl = dictionaryField
+    ? controlDefinitionForField(dictionaryField).control
+    : undefined;
+  const relationSelect =
+    dictionaryField && dictionaryControl === "recordSelect"
+      ? relationOptionsForDictionaryField(dictionaryField, records)
+      : relationOptionsForField(
+          table,
+          field,
+          record,
+          records,
+        );
 
   if (field.kind !== "json") {
     const selectedRelationLabel = relationSelect?.options.find(
       (option) => option.value === (drafts[field.column] ?? ""),
     )?.label;
-    const control = field.kind === "boolean" ? (
+    const control = (dictionaryControl ?? field.kind) === "checkbox" ||
+      field.kind === "boolean" ? (
       <label className="json-checkbox">
         <input
           data-testid={`field-${field.column}`}
@@ -334,7 +375,7 @@ export function RecordFieldRenderer({
     ) : (
       <input
         data-testid={`field-${field.column}`}
-        type={field.kind === "number" ? "number" : "text"}
+        type={(dictionaryControl ?? field.kind) === "number" || field.kind === "number" ? "number" : "text"}
         value={drafts[field.column] ?? ""}
         onChange={(event) => onDraftChange(field.column, event.target.value)}
       />

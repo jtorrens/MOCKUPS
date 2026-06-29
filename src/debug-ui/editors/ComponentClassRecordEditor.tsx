@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import type {
   AppFieldDefinition,
   AppRecord,
@@ -20,6 +20,7 @@ import { EditorSectionButton } from "../editor-ui/EditorSectionButton.js";
 import { EditorSectionCard } from "../editor-ui/EditorSectionCard.js";
 import { EditorSections } from "../editor-ui/EditorSections.js";
 import { EditorSubsectionAccordion } from "../editor-ui/EditorSubsectionAccordion.js";
+import { useSessionStoredState } from "../editor-ui/useSessionStoredState.js";
 import { parsedObject } from "./recordJsonUtils.js";
 
 type ComponentClassTab = "" | "general";
@@ -224,7 +225,8 @@ export function ComponentClassRecordEditor({
     record.component_type,
     stringValue(tokens.componentType, "avatar"),
   );
-  const [activeComponentGroup, setActiveComponentGroup] = useState("");
+  const [activeComponentGroup, setActiveComponentGroup] =
+    useSessionStoredState(`component_classes:${record.id}:activeGroup`, "");
 
   function updateTokens(nextTokens: Record<string, JsonValue>) {
     setJsonDraft("tokens_json", {

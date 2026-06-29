@@ -26,6 +26,7 @@ interface ModeColorEditorProps {
   rootValue: JsonValue;
   inheritedRoot?: JsonValue;
   hiddenGroups?: string[];
+  hiddenRolePaths?: string[];
   paletteCatalog?: PaletteColorCatalog;
   onRootChange: (nextValue: JsonValue) => void;
 }
@@ -140,8 +141,12 @@ function uniqueRolePaths(
   rootValue: JsonValue,
   inheritedRoot?: JsonValue,
   hiddenGroups: string[] = [],
+  hiddenRolePaths: string[] = [],
 ) {
   const hidden = new Set(hiddenGroups.map((group) => group.toLowerCase()));
+  const hiddenPaths = new Set(
+    hiddenRolePaths.map((path) => path.toLowerCase()),
+  );
   const keys = new Set<string>();
   const paths: JsonPath[] = [];
   for (const root of [rootValue, inheritedRoot]) {
@@ -151,6 +156,7 @@ function uniqueRolePaths(
         const group = roleGroup(rolePath).toLowerCase();
         if (hidden.has(group)) continue;
         const key = pathLabel(rolePath);
+        if (hiddenPaths.has(key.toLowerCase())) continue;
         if (!keys.has(key)) {
           keys.add(key);
           paths.push(rolePath);
@@ -253,16 +259,22 @@ export function hasModeColorOverrides(
   rootValue: JsonValue,
   inheritedRoot?: JsonValue,
   hiddenGroups: string[] = [],
+  hiddenRolePaths: string[] = [],
 ) {
   if (!inheritedRoot) return false;
-  return uniqueRolePaths(rootValue, inheritedRoot, hiddenGroups).some((rolePath) =>
-    (["light", "dark"] as const).some((mode) => {
-      const inheritedValue = inheritedColorAt(inheritedRoot, mode, rolePath);
-      if (!inheritedValue) return false;
-      const localPath: JsonPath = ["modes", mode, ...rolePath];
-      if (!hasAtPath(rootValue, localPath)) return false;
-      return colorAt(rootValue, mode, rolePath) !== inheritedValue;
-    }),
+  return uniqueRolePaths(
+    rootValue,
+    inheritedRoot,
+    hiddenGroups,
+    hiddenRolePaths,
+  ).some((rolePath) =>
+      (["light", "dark"] as const).some((mode) => {
+        const inheritedValue = inheritedColorAt(inheritedRoot, mode, rolePath);
+        if (!inheritedValue) return false;
+        const localPath: JsonPath = ["modes", mode, ...rolePath];
+        if (!hasAtPath(rootValue, localPath)) return false;
+        return colorAt(rootValue, mode, rolePath) !== inheritedValue;
+      }),
   );
 }
 
@@ -270,12 +282,13 @@ export function ModeColorEditor({
   rootValue,
   inheritedRoot,
   hiddenGroups = [],
+  hiddenRolePaths = [],
   paletteCatalog,
   onRootChange,
 }: ModeColorEditorProps) {
   const [activeGroup, setActiveGroup] = useState("");
   const colorGroups = groupedRolePaths(
-    uniqueRolePaths(rootValue, inheritedRoot, hiddenGroups),
+    uniqueRolePaths(rootValue, inheritedRoot, hiddenGroups, hiddenRolePaths),
   );
 
   function updateColor(mode: "light" | "dark", rolePath: JsonPath, raw: string) {

@@ -1,3 +1,4 @@
+import { CHAT_HEADER_DEFAULTS } from "../../domain/fields/chatFields.js";
 import {
   cloneJson,
   isJsonObject,
@@ -117,7 +118,6 @@ export function normalizeCoreChatModuleTokensForEditor(
       ...light.modes,
       light: {
         ...light.currentMode,
-      header: light.header,
       chatBubbles: {
         ...light.chatBubbles,
         systemBackground:
@@ -139,7 +139,6 @@ export function normalizeCoreChatModuleTokensForEditor(
     },
     dark: {
       ...dark.currentMode,
-      header: dark.header,
       chatBubbles: {
         ...dark.chatBubbles,
         systemBackground:
@@ -162,22 +161,36 @@ export function normalizeCoreChatModuleTokensForEditor(
   };
   root.header = {
     ...header,
-    avatarSize: numberValue(header.avatarSize, 56),
-    subtitleBottomPadding: numberValue(header.subtitleBottomPadding, 10),
-    elementGap: numberValue(header.elementGap, 8),
+    background:
+      typeof header.background === "string"
+        ? header.background
+        : CHAT_HEADER_DEFAULTS.background,
+    separatorColor:
+      typeof header.separatorColor === "string"
+        ? header.separatorColor
+        : CHAT_HEADER_DEFAULTS.separatorColor,
+    avatarSize: numberValue(header.avatarSize, CHAT_HEADER_DEFAULTS.avatarSize),
+    subtitleBottomPadding: numberValue(
+      header.subtitleBottomPadding,
+      CHAT_HEADER_DEFAULTS.subtitleBottomPadding,
+    ),
+    elementGap: numberValue(
+      header.elementGap,
+      CHAT_HEADER_DEFAULTS.elementGap,
+    ),
     sidePadding: numberValue(
       header.sidePadding,
-      numberValue(header.elementGap, 8),
+      numberValue(header.elementGap, CHAT_HEADER_DEFAULTS.sidePadding),
     ),
-    iconSize: numberValue(header.iconSize, 24),
+    iconSize: numberValue(header.iconSize, CHAT_HEADER_DEFAULTS.iconSize),
     leftIconTokens:
       typeof header.leftIconTokens === "string"
         ? header.leftIconTokens
-        : "nav_chevron_left",
+        : CHAT_HEADER_DEFAULTS.leftIconTokens,
     rightIconTokens:
       typeof header.rightIconTokens === "string"
         ? header.rightIconTokens
-        : "media_camera, phone_call",
+        : CHAT_HEADER_DEFAULTS.rightIconTokens,
   };
   root.chatBubbles = {
     ...chatBubbles,
@@ -240,8 +253,6 @@ export function editorValueForThemeTokenGroup(
       source: _source,
       productionFontId: _productionFontId,
       weight: _weight,
-      fontWeight: _fontWeight,
-      fontStyle: _fontStyle,
       ...visibleValue
     } = value;
     return visibleValue;
@@ -353,7 +364,5 @@ export function nextThemeTokenGroupValue({
     nextValue.productionFontId = originalValue.productionFontId;
   }
   delete nextValue.weight;
-  delete nextValue.fontWeight;
-  delete nextValue.fontStyle;
   return nextValue;
 }

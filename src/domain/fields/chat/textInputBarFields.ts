@@ -9,21 +9,41 @@ export const CHAT_TEXT_INPUT_BAR_FIELDS = defineFields({
     id: "chat.textInputBar.cursorWidth",
     kind: "decimal",
     defaultValue: 2,
+    ui: {
+      label: "Cursor width",
+      min: 0,
+      step: 1,
+    },
   },
   cursorBlinkFrames: {
     id: "chat.textInputBar.cursorBlinkFrames",
     kind: "integer",
     defaultValue: 15,
+    ui: {
+      label: "Cursor blink",
+      min: 0,
+      step: 1,
+    },
   },
   cursorColor: {
     id: "chat.textInputBar.cursorColor",
     kind: "themeColorToken",
     defaultValue: "icons.accent",
+    ui: {
+      label: "Cursor color",
+      semanticTokenGroup: "icons",
+      options: ["icons.accent", "icons.primary", "icons.secondary"],
+    },
   },
   idleTextColor: {
     id: "chat.textInputBar.idleTextColor",
     kind: "themeColorToken",
     defaultValue: "icons.secondary",
+    ui: {
+      label: "Idle text color",
+      semanticTokenGroup: "icons",
+      options: ["icons.secondary", "icons.primary", "colors.text"],
+    },
   },
 });
 
