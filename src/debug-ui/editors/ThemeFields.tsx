@@ -1,4 +1,11 @@
 import { InspectorFieldRow } from "../components/inspector/InspectorFieldRow.js";
+import { THEME_FIELDS } from "../../domain/fields/themeFields.js";
+import type { FieldDefinition } from "../../domain/value-system/index.js";
+import {
+  controlDefinitionForField,
+  editorMetadataForField,
+  type EditorControlKind,
+} from "../editor-ui/ValueKindControlRegistry.js";
 import {
   isJsonObject,
   setAtPath,
@@ -7,6 +14,19 @@ import {
 } from "../components/json-editor/jsonEditorUtils.js";
 
 export type ThemeChromeGroupKey = "statusBar" | "navigationBar";
+
+function themeFieldMetadata(
+  field: FieldDefinition,
+  expectedControl: EditorControlKind,
+) {
+  const control = controlDefinitionForField(field).control;
+  if (control !== expectedControl) {
+    throw new Error(
+      `Theme field "${field.id}" expected ${expectedControl} control, got ${control}`,
+    );
+  }
+  return editorMetadataForField(field);
+}
 
 function numberValue(value: unknown, fallback: number): number {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
@@ -22,15 +42,18 @@ function normalizeNeutralTint(value: unknown): Record<string, JsonValue> {
     : {};
   return {
     hueDeg: numberValue(root.hueDeg, 0),
-    saturation: numberValue(root.saturation, 0),
+    saturation: numberValue(
+      root.saturation,
+      THEME_FIELDS.neutralTintSaturation.defaultValue as number,
+    ),
   };
 }
 
 function themeCursorDefaults(): Record<string, JsonValue> {
   return {
     style: "bar",
-    width: 2,
-    blinkFrames: 15,
+    width: THEME_FIELDS.cursorWidth.defaultValue as number,
+    blinkFrames: THEME_FIELDS.cursorBlinkFrames.defaultValue as number,
   };
 }
 
@@ -123,11 +146,11 @@ function normalizeThemeKeyboardGroup(value: unknown, dark = false) {
 function themeSurfaceReliefDefaults(): Record<string, JsonValue> {
   return {
     default: {
-      angleDeg: -45,
-      extension: 1,
-      spread: 0,
-      upperIntensity: 0.1,
-      lowerIntensity: -0.08,
+      angleDeg: THEME_FIELDS.surfaceReliefAngleDeg.defaultValue as number,
+      extension: THEME_FIELDS.surfaceReliefExtension.defaultValue as number,
+      spread: THEME_FIELDS.surfaceReliefSpread.defaultValue as number,
+      upperIntensity: THEME_FIELDS.surfaceReliefUpperIntensity.defaultValue as number,
+      lowerIntensity: THEME_FIELDS.surfaceReliefLowerIntensity.defaultValue as number,
     },
   };
 }
@@ -313,8 +336,30 @@ export function NeutralTintGroupEditor({
   onTokenRootChange,
 }: NeutralTintGroupEditorProps) {
   const group = normalizeNeutralTint(tokenRoot.neutralTint);
-  const hue = normalizeHueDeg(numberValue(group.hueDeg, 0));
-  const saturation = Math.max(0, Math.min(1, numberValue(group.saturation, 0)));
+  const hueField = themeFieldMetadata(
+    THEME_FIELDS.neutralTintHueDeg,
+    "number",
+  );
+  const saturationField = themeFieldMetadata(
+    THEME_FIELDS.neutralTintSaturation,
+    "alpha",
+  );
+  const hue = normalizeHueDeg(
+    numberValue(
+      group.hueDeg,
+      THEME_FIELDS.neutralTintHueDeg.defaultValue as number,
+    ),
+  );
+  const saturation = Math.max(
+    0,
+    Math.min(
+      1,
+      numberValue(
+        group.saturation,
+        THEME_FIELDS.neutralTintSaturation.defaultValue as number,
+      ),
+    ),
+  );
 
   function updateNeutralTint(path: JsonPath, nextValue: JsonValue) {
     onTokenRootChange(
@@ -326,15 +371,15 @@ export function NeutralTintGroupEditor({
     <div className="theme-chrome-editor">
       <InspectorFieldRow
         className="record-editor-field"
-        label={<span>Hue</span>}
+        label={<span>{hueField.label}</span>}
         control={
           <div className="json-hue-slider-control">
             <input
               aria-label="Neutral tint hue"
               className="json-hue-slider"
-              max={360}
-              min={0}
-              step={1}
+              max={hueField.max}
+              min={hueField.min}
+              step={hueField.step ?? 1}
               type="range"
               value={hue}
               style={{ accentColor: `hsl(${hue} 80% 52%)` }}
@@ -348,9 +393,9 @@ export function NeutralTintGroupEditor({
             <input
               aria-label="Neutral tint hue degrees"
               className="json-value-control json-hue-slider-value"
-              max={360}
-              min={0}
-              step={1}
+              max={hueField.max}
+              min={hueField.min}
+              step={hueField.step ?? 1}
               type="number"
               value={hue}
               onChange={(event) =>
@@ -366,13 +411,13 @@ export function NeutralTintGroupEditor({
       />
       <InspectorFieldRow
         className="record-editor-field"
-        label={<span>Saturation</span>}
+        label={<span>{saturationField.label}</span>}
         control={
           <input
             className="json-value-control"
-            max={1}
-            min={0}
-            step={0.01}
+            max={saturationField.max}
+            min={saturationField.min}
+            step={saturationField.step ?? 0.01}
             type="number"
             value={saturation}
             onChange={(event) =>
@@ -396,6 +441,26 @@ export function ThemeSurfaceReliefGroupEditor({
   const group = isJsonObject(surfaceRelief.default)
     ? (surfaceRelief.default as Record<string, JsonValue>)
     : {};
+  const angleField = themeFieldMetadata(
+    THEME_FIELDS.surfaceReliefAngleDeg,
+    "number",
+  );
+  const extensionField = themeFieldMetadata(
+    THEME_FIELDS.surfaceReliefExtension,
+    "number",
+  );
+  const spreadField = themeFieldMetadata(
+    THEME_FIELDS.surfaceReliefSpread,
+    "number",
+  );
+  const upperIntensityField = themeFieldMetadata(
+    THEME_FIELDS.surfaceReliefUpperIntensity,
+    "number",
+  );
+  const lowerIntensityField = themeFieldMetadata(
+    THEME_FIELDS.surfaceReliefLowerIntensity,
+    "number",
+  );
 
   function updateSurfaceRelief(path: JsonPath, nextValue: JsonValue) {
     onTokenRootChange(
@@ -411,12 +476,15 @@ export function ThemeSurfaceReliefGroupEditor({
     <div className="theme-chrome-editor">
       <InspectorFieldRow
         className="record-editor-field"
-        label={<span>Angle</span>}
+        label={<span>{angleField.label}</span>}
         control={
           <input
+            className="json-value-control"
+            min={angleField.min}
+            max={angleField.max}
             type="number"
-            step={1}
-            value={Number(group.angleDeg ?? -45)}
+            step={angleField.step ?? 1}
+            value={Number(group.angleDeg ?? THEME_FIELDS.surfaceReliefAngleDeg.defaultValue)}
             onChange={(event) =>
               updateSurfaceRelief(["angleDeg"], Number(event.target.value))
             }
@@ -425,12 +493,15 @@ export function ThemeSurfaceReliefGroupEditor({
       />
       <InspectorFieldRow
         className="record-editor-field"
-        label={<span>Extension</span>}
+        label={<span>{extensionField.label}</span>}
         control={
           <input
+            className="json-value-control"
+            min={extensionField.min}
+            max={extensionField.max}
             type="number"
-            step="0.1"
-            value={Number(group.extension ?? 1)}
+            step={extensionField.step ?? "any"}
+            value={Number(group.extension ?? THEME_FIELDS.surfaceReliefExtension.defaultValue)}
             onChange={(event) =>
               updateSurfaceRelief(["extension"], Number(event.target.value))
             }
@@ -439,12 +510,15 @@ export function ThemeSurfaceReliefGroupEditor({
       />
       <InspectorFieldRow
         className="record-editor-field"
-        label={<span>Spread</span>}
+        label={<span>{spreadField.label}</span>}
         control={
           <input
+            className="json-value-control"
+            min={spreadField.min}
+            max={spreadField.max}
             type="number"
-            step="0.1"
-            value={Number(group.spread ?? 0)}
+            step={spreadField.step ?? "any"}
+            value={Number(group.spread ?? THEME_FIELDS.surfaceReliefSpread.defaultValue)}
             onChange={(event) =>
               updateSurfaceRelief(["spread"], Number(event.target.value))
             }
@@ -453,12 +527,15 @@ export function ThemeSurfaceReliefGroupEditor({
       />
       <InspectorFieldRow
         className="record-editor-field"
-        label={<span>Upper intensity</span>}
+        label={<span>{upperIntensityField.label}</span>}
         control={
           <input
+            className="json-value-control"
+            min={upperIntensityField.min}
+            max={upperIntensityField.max}
             type="number"
-            step="0.01"
-            value={Number(group.upperIntensity ?? 0.1)}
+            step={upperIntensityField.step ?? "any"}
+            value={Number(group.upperIntensity ?? THEME_FIELDS.surfaceReliefUpperIntensity.defaultValue)}
             onChange={(event) =>
               updateSurfaceRelief(["upperIntensity"], Number(event.target.value))
             }
@@ -467,12 +544,15 @@ export function ThemeSurfaceReliefGroupEditor({
       />
       <InspectorFieldRow
         className="record-editor-field"
-        label={<span>Lower intensity</span>}
+        label={<span>{lowerIntensityField.label}</span>}
         control={
           <input
+            className="json-value-control"
+            min={lowerIntensityField.min}
+            max={lowerIntensityField.max}
             type="number"
-            step="0.01"
-            value={Number(group.lowerIntensity ?? -0.08)}
+            step={lowerIntensityField.step ?? "any"}
+            value={Number(group.lowerIntensity ?? THEME_FIELDS.surfaceReliefLowerIntensity.defaultValue)}
             onChange={(event) =>
               updateSurfaceRelief(["lowerIntensity"], Number(event.target.value))
             }
@@ -495,6 +575,11 @@ export function ThemeCursorGroupEditor({
   const group = isJsonObject(tokenRoot.cursor)
     ? (tokenRoot.cursor as Record<string, JsonValue>)
     : themeCursorDefaults();
+  const widthField = themeFieldMetadata(THEME_FIELDS.cursorWidth, "number");
+  const blinkFramesField = themeFieldMetadata(
+    THEME_FIELDS.cursorBlinkFrames,
+    "number",
+  );
 
   function updateCursor(path: JsonPath, nextValue: JsonValue) {
     onTokenRootChange(
@@ -506,13 +591,15 @@ export function ThemeCursorGroupEditor({
     <div className="theme-chrome-editor">
       <InspectorFieldRow
         className="record-editor-field"
-        label={<span>Width</span>}
+        label={<span>{widthField.label}</span>}
         control={
           <input
+            className="json-value-control"
             type="number"
-            min={1}
-            step={1}
-            value={Number(group.width ?? 2)}
+            min={widthField.min}
+            max={widthField.max}
+            step={widthField.step ?? 1}
+            value={Number(group.width ?? THEME_FIELDS.cursorWidth.defaultValue)}
             onChange={(event) =>
               updateCursor(["width"], Number(event.target.value))
             }
@@ -521,13 +608,17 @@ export function ThemeCursorGroupEditor({
       />
       <InspectorFieldRow
         className="record-editor-field"
-        label={<span>Blink frames</span>}
+        label={<span>{blinkFramesField.label}</span>}
         control={
           <input
+            className="json-value-control"
             type="number"
-            min={1}
-            step={1}
-            value={Number(group.blinkFrames ?? 15)}
+            min={blinkFramesField.min}
+            max={blinkFramesField.max}
+            step={blinkFramesField.step ?? 1}
+            value={Number(
+              group.blinkFrames ?? THEME_FIELDS.cursorBlinkFrames.defaultValue,
+            )}
             onChange={(event) =>
               updateCursor(["blinkFrames"], Number(event.target.value))
             }

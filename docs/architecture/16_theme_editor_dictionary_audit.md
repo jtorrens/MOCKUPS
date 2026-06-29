@@ -1,6 +1,7 @@
 # Theme editor dictionary audit
 
-Status: Phase 1 started — General fields catalogued
+Status: Phase 2 started — General, neutral tint, cursor and surface relief
+fields catalogued
 
 This document records the first field-by-field audit for the `themes` editor.
 It follows the mandatory cleanup rule: inventory fields first, then map them to
@@ -187,12 +188,19 @@ Current controls:
 
 Dictionary status:
 
-- missing field definitions.
+- catalogued in `THEME_FIELDS`:
+  - `theme.neutralTint.hueDeg`, kind `integer`;
+  - `theme.neutralTint.saturation`, kind `alpha`.
+
+Current cleanup state:
+
+- labels/min/max/step come from `THEME_FIELDS`;
+- controls are guarded through `ValueKindControlRegistry`;
+- the existing hue slider remains as Theme-specific layout around a numeric
+  field.
 
 Target:
 
-- add `theme.neutralTint.hueDeg`, kind `integer` or future `hueDegrees`;
-- add `theme.neutralTint.saturation`, kind `alpha` or future `unitInterval`;
 - register hue slider as the canonical control for hue-like fields.
 
 ### `ThemeCursorGroupEditor`
@@ -210,12 +218,18 @@ Current controls:
 
 Dictionary status:
 
-- missing field definitions.
+- catalogued in `THEME_FIELDS`:
+  - `theme.cursor.width`, kind `integer`;
+  - `theme.cursor.blinkFrames`, kind `integer`.
+
+Current cleanup state:
+
+- labels/min/max/step/defaults come from `THEME_FIELDS`;
+- controls are guarded through `ValueKindControlRegistry`;
+- cursor mode colors remain handled by the Colors card.
 
 Target:
 
-- `theme.cursor.width`, kind `integer`;
-- `theme.cursor.blinkFrames`, kind `integer`;
 - cursor colors handled by Colors card through explicit field definitions.
 
 ### `ThemeSurfaceReliefGroupEditor`
@@ -234,11 +248,20 @@ Current controls:
 
 Dictionary status:
 
-- missing field definitions.
+- catalogued in `THEME_FIELDS`:
+  - `theme.surfaceRelief.default.angleDeg`, kind `integer`;
+  - `theme.surfaceRelief.default.extension`, kind `decimal`;
+  - `theme.surfaceRelief.default.spread`, kind `decimal`;
+  - `theme.surfaceRelief.default.upperIntensity`, kind `decimal`;
+  - `theme.surfaceRelief.default.lowerIntensity`, kind `decimal`.
+
+Current cleanup state:
+
+- labels/step/defaults come from `THEME_FIELDS`;
+- controls are guarded through `ValueKindControlRegistry`.
 
 Target:
 
-- add field definitions for all surface relief values;
 - consider future value kinds:
   - `angleDegrees`;
   - `signedIntensity`;
@@ -277,6 +300,7 @@ Created `src/domain/fields/themeFields.ts` with:
 - SQL column definitions;
 - parent `tokens_json` definition;
 - column bindings for Theme general fields.
+- token bindings for neutral tint, cursor and surface relief numeric fields.
 
 This should mirror the actor cleanup pattern.
 
@@ -299,7 +323,7 @@ field definitions.
 
 Do not keep two independent lists long-term.
 
-### Phase 4 — Convert manual ThemeFields controls
+### Phase 4 — Convert remaining manual ThemeFields controls
 
 For each Theme subsection:
 
@@ -307,6 +331,18 @@ For each Theme subsection:
 2. map to `THEME_FIELDS`;
 3. assert expected controls like Actor does;
 4. keep only layout/update logic locally.
+
+Started for:
+
+- `NeutralTintGroupEditor`;
+- `ThemeCursorGroupEditor`;
+- `ThemeSurfaceReliefGroupEditor`.
+
+Pending:
+
+- `ThemeChromeGroupEditor`;
+- keyboard token fields;
+- mode color fields.
 
 ### Phase 5 — Make `ModeColorEditor` dictionary-fed
 

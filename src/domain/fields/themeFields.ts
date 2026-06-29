@@ -81,6 +81,93 @@ export const THEME_FIELDS = defineFields({
       label: "Theme tokens",
     },
   },
+  neutralTintHueDeg: {
+    id: "theme.neutralTint.hueDeg",
+    kind: "integer",
+    defaultValue: 0,
+    ui: {
+      label: "Hue",
+      min: 0,
+      max: 360,
+      step: 1,
+    },
+  },
+  neutralTintSaturation: {
+    id: "theme.neutralTint.saturation",
+    kind: "alpha",
+    defaultValue: 0,
+    ui: {
+      label: "Saturation",
+      min: 0,
+      max: 1,
+      step: 0.01,
+    },
+  },
+  cursorWidth: {
+    id: "theme.cursor.width",
+    kind: "integer",
+    defaultValue: 2,
+    ui: {
+      label: "Width",
+      min: 1,
+      step: 1,
+    },
+  },
+  cursorBlinkFrames: {
+    id: "theme.cursor.blinkFrames",
+    kind: "integer",
+    defaultValue: 15,
+    ui: {
+      label: "Blink frames",
+      min: 1,
+      step: 1,
+    },
+  },
+  surfaceReliefAngleDeg: {
+    id: "theme.surfaceRelief.default.angleDeg",
+    kind: "integer",
+    defaultValue: -45,
+    ui: {
+      label: "Angle",
+      step: 1,
+    },
+  },
+  surfaceReliefExtension: {
+    id: "theme.surfaceRelief.default.extension",
+    kind: "decimal",
+    defaultValue: 1,
+    ui: {
+      label: "Extension",
+      step: 0.1,
+    },
+  },
+  surfaceReliefSpread: {
+    id: "theme.surfaceRelief.default.spread",
+    kind: "decimal",
+    defaultValue: 0,
+    ui: {
+      label: "Spread",
+      step: 0.1,
+    },
+  },
+  surfaceReliefUpperIntensity: {
+    id: "theme.surfaceRelief.default.upperIntensity",
+    kind: "decimal",
+    defaultValue: 0.1,
+    ui: {
+      label: "Upper intensity",
+      step: 0.01,
+    },
+  },
+  surfaceReliefLowerIntensity: {
+    id: "theme.surfaceRelief.default.lowerIntensity",
+    kind: "decimal",
+    defaultValue: -0.08,
+    ui: {
+      label: "Lower intensity",
+      step: 0.01,
+    },
+  },
 });
 
 export const THEME_COLUMN_BINDINGS = [
@@ -93,4 +180,40 @@ export const THEME_COLUMN_BINDINGS = [
   { outputPath: ["navigation_bar_id"], field: THEME_FIELDS.navigationBarId },
   { outputPath: ["version"], field: THEME_FIELDS.version },
   { outputPath: ["tokens_json"], field: THEME_FIELDS.tokens },
+] satisfies readonly JsonFieldBinding[];
+
+export const THEME_TOKEN_BINDINGS = [
+  {
+    outputPath: ["neutralTint", "hueDeg"],
+    field: THEME_FIELDS.neutralTintHueDeg,
+  },
+  {
+    outputPath: ["neutralTint", "saturation"],
+    field: THEME_FIELDS.neutralTintSaturation,
+  },
+  { outputPath: ["cursor", "width"], field: THEME_FIELDS.cursorWidth },
+  {
+    outputPath: ["cursor", "blinkFrames"],
+    field: THEME_FIELDS.cursorBlinkFrames,
+  },
+  {
+    outputPath: ["surfaceRelief", "default", "angleDeg"],
+    field: THEME_FIELDS.surfaceReliefAngleDeg,
+  },
+  {
+    outputPath: ["surfaceRelief", "default", "extension"],
+    field: THEME_FIELDS.surfaceReliefExtension,
+  },
+  {
+    outputPath: ["surfaceRelief", "default", "spread"],
+    field: THEME_FIELDS.surfaceReliefSpread,
+  },
+  {
+    outputPath: ["surfaceRelief", "default", "upperIntensity"],
+    field: THEME_FIELDS.surfaceReliefUpperIntensity,
+  },
+  {
+    outputPath: ["surfaceRelief", "default", "lowerIntensity"],
+    field: THEME_FIELDS.surfaceReliefLowerIntensity,
+  },
 ] satisfies readonly JsonFieldBinding[];
