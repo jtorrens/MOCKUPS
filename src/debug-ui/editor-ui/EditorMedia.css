@@ -262,13 +262,25 @@ video.chat-media-preview-image {
 
 .icon-theme-preview {
   display: grid;
+  flex: 0 0 auto;
   place-items: center;
   width: 30px;
   height: 30px;
+  margin-bottom: 0;
   border: var(--editor-subsection-border, 1px solid rgba(148, 163, 184, 0.35));
   border-radius: var(--subcard-header-icon-radius, 8px);
   color: var(--editor-input-color, var(--editor-text-color, #172033));
   background: var(--editor-input-background, rgba(255, 255, 255, 0.5));
+}
+
+.record-editor .icon-theme-preview,
+.record-editor-field .icon-theme-preview,
+.inspector-field-row .icon-theme-preview {
+  display: grid;
+  align-items: center;
+  justify-items: center;
+  place-items: center;
+  margin-bottom: 0;
 }
 
 .icon-theme-preview-mask {
@@ -282,6 +294,15 @@ video.chat-media-preview-image {
   -webkit-mask-position: center;
   -webkit-mask-repeat: no-repeat;
   -webkit-mask-size: contain;
+}
+
+.icon-theme-preview .icon-theme-preview-mask,
+.record-editor .icon-theme-preview .icon-theme-preview-mask,
+.record-editor-field .icon-theme-preview .icon-theme-preview-mask,
+.inspector-field-row .icon-theme-preview .icon-theme-preview-mask {
+  display: block;
+  flex: 0 0 auto;
+  margin: 0;
 }
 
 .icon-theme-modal {
@@ -480,6 +501,35 @@ video.chat-media-preview-image {
 .icon-token-picker-button:disabled {
   cursor: default;
   opacity: var(--editor-button-disabled-opacity, 0.45);
+}
+
+.icon-token-picker-button-icons {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 0;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.record-editor .icon-token-picker-button .icon-token-picker-button-icons,
+.record-editor-field .icon-token-picker-button .icon-token-picker-button-icons,
+.inspector-field-row .icon-token-picker-button .icon-token-picker-button-icons {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin: 0;
+}
+
+.icon-token-picker-button-icons .icon-theme-preview {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+}
+
+.icon-token-picker-button-icons .icon-theme-preview-mask {
+  width: 17px;
+  height: 17px;
 }
 
 .icon-token-picker-button > span:last-child {

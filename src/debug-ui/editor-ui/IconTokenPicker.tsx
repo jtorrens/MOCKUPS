@@ -63,9 +63,10 @@ export function IconTokenPicker({
     });
   }, [query, selectedTheme]);
   const assetRoot = iconThemeAssetRoot(selectedTheme);
-  const previewEntry = iconThemeTokenEntries(selectedTheme).find(
-    (entry) => entry.token === currentTokens[0],
-  );
+  const selectedEntries = currentTokens.map((token) => ({
+    token,
+    entry: iconThemeTokenEntries(selectedTheme).find((entry) => entry.token === token),
+  }));
   const summary = currentTokens.length
     ? currentTokens.join(", ")
     : allowMultiple
@@ -97,12 +98,27 @@ export function IconTokenPicker({
         title={summary}
         onClick={openModal}
       >
-        <IconGlyphPreview
-          assetRoot={assetRoot}
-          file={previewEntry?.file ?? ""}
-          mediaRoot={mediaRoot}
-          nativeBridge={nativeBridge}
-        />
+        <span className="icon-token-picker-button-icons">
+          {selectedEntries.length ? (
+            selectedEntries.map(({ token, entry }) => (
+              <IconGlyphPreview
+                key={token}
+                assetRoot={assetRoot}
+                file={entry?.file ?? ""}
+                mediaRoot={mediaRoot}
+                nativeBridge={nativeBridge}
+                label="?"
+              />
+            ))
+          ) : (
+            <IconGlyphPreview
+              assetRoot={assetRoot}
+              file=""
+              mediaRoot={mediaRoot}
+              nativeBridge={nativeBridge}
+            />
+          )}
+        </span>
         <span>{summary}</span>
       </button>
       {open ? (

@@ -744,7 +744,21 @@
   --ui-glyph-color: var(--editor-group-icon-color, #343946);
   --ui-glyph-background: var(--editor-group-icon-background, transparent);
   --ui-glyph-font-size: 12px;
+  display: grid;
+  place-items: center;
   flex: 0 0 auto;
+  margin: 0;
+  line-height: 1;
+  text-align: center;
+}
+
+.token-override-group h4 .editor-group-icon,
+.mode-color-group h4 .editor-group-icon {
+  display: grid;
+  align-items: center;
+  justify-items: center;
+  place-items: center;
+  margin: 0;
 }
 
 .token-override-row,

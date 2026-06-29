@@ -15,9 +15,21 @@ function sectionMeta(label: string) {
       icon: "◫",
       subtitle: "Semantic tokens inherited by lower levels",
     },
+    "icon tokens": {
+      icon: "✦",
+      subtitle: "Reusable icon token names and mapped SVGs",
+    },
     colors: {
       icon: "◐",
       subtitle: "Mode-aware colors, surfaces and semantic roles",
+    },
+    configuration: {
+      icon: "⚙",
+      subtitle: "Composition, rows and runtime configuration",
+    },
+    config: {
+      icon: "⚙",
+      subtitle: "Composition, rows and runtime configuration",
     },
     "app colors": {
       icon: "▣",
@@ -70,6 +82,14 @@ function sectionMeta(label: string) {
     notes: {
       icon: "✎",
       subtitle: "Documentation and internal annotations",
+    },
+    files: {
+      icon: "☷",
+      subtitle: "Imported files associated with this record",
+    },
+    "font files": {
+      icon: "T",
+      subtitle: "Approved styles copied with this family",
     },
     content: {
       icon: "☰",
@@ -215,6 +235,10 @@ function sectionMeta(label: string) {
       icon: "◉",
       subtitle: "State-specific icon token sets",
     },
+    "icon sets": {
+      icon: "◉",
+      subtitle: "State-specific icon token sets",
+    },
     keys: {
       icon: "⌨",
       subtitle: "Keyboard key style and behavior",
@@ -223,12 +247,44 @@ function sectionMeta(label: string) {
       icon: "⌘",
       subtitle: "Keyboard bottom row icon tokens",
     },
+    "bottom icons": {
+      icon: "⌘",
+      subtitle: "Keyboard bottom row icon tokens",
+    },
+    controls: {
+      icon: "◫",
+      subtitle: "Interactive controls and picker surfaces",
+    },
+    rows: {
+      icon: "☷",
+      subtitle: "Ordered row items",
+    },
+    items: {
+      icon: "☷",
+      subtitle: "Ordered item list",
+    },
+    "animation parameters": {
+      icon: "◇",
+      subtitle: "Reusable animation parameter defaults",
+    },
+    parameters: {
+      icon: "◇",
+      subtitle: "Reusable parameter defaults",
+    },
+    import: {
+      icon: "⇩",
+      subtitle: "Import source and ingestion settings",
+    },
+    source: {
+      icon: "⇢",
+      subtitle: "Source metadata",
+    },
     text: {
       icon: "T",
       subtitle: "Text size and color tokens",
     },
   };
-  return meta[normalized] ?? { icon: "•", subtitle: "" };
+  return meta[normalized] ?? { icon: "▧", subtitle: "Editor group" };
 }
 
 interface EditorSectionButtonProps {

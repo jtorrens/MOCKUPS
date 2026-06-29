@@ -169,6 +169,7 @@
 
 .module-behavior-card-icon {
   display: inline-grid;
+  flex: 0 0 auto;
   width: var(--subcard-header-icon-size, 24px);
   height: var(--subcard-header-icon-size, 24px);
   place-items: center;
@@ -177,6 +178,8 @@
   color: var(--card-header-icon-color, #1d2129);
   background: var(--card-header-icon-background, transparent);
   font-size: var(--subcard-header-icon-font-size, 16px);
+  line-height: 1;
+  text-align: center;
 }
 
 .module-behavior-card-copy {
@@ -352,4 +355,36 @@ textarea.dictionary-control,
   outline-offset: -2px;
   background: color-mix(in srgb, var(--editor-input-background, #f7f8fb) 86%, #16a34a) !important;
   box-shadow: inset 0 0 0 1px #16a34a !important;
+}
+
+/* Glyphs are atomic visual controls. Keep this after the temporary dictionary
+   debug layer so old field/span rules cannot pull icons to a corner. */
+.record-editor .ui-glyph,
+.record-editor .tab-icon.ui-glyph,
+.record-editor .editor-group-icon.ui-glyph,
+.record-editor .module-behavior-card-icon.ui-glyph,
+.record-editor .icon-theme-preview,
+.record-editor .icon-token-picker-button .icon-token-picker-button-icons,
+.record-editor .icon-token-picker-button .icon-theme-preview {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  place-items: center !important;
+  margin: 0 !important;
+  padding: 0;
+  line-height: 1 !important;
+  text-align: center !important;
+}
+
+.record-editor .icon-token-picker-button .icon-token-picker-button-icons {
+  justify-content: flex-start !important;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.record-editor .icon-theme-preview .icon-theme-preview-mask,
+.record-editor .icon-token-picker-button .icon-theme-preview-mask {
+  display: block !important;
+  flex: 0 0 auto !important;
+  margin: 0 !important;
 }

@@ -67,6 +67,13 @@
   --ui-glyph-background: var(--card-header-icon-background, transparent);
   --ui-glyph-font-size: var(--card-header-icon-font-size, 20px);
   --ui-glyph-font-weight: var(--card-header-icon-font-weight, 700);
+  display: grid;
+  align-items: center;
+  justify-items: center;
+  place-items: center;
+  margin: 0;
+  line-height: 1;
+  text-align: center;
 }
 
 .editor-section-card > button .tab-copy > span {
@@ -97,7 +104,7 @@
 .editor-subsection-card > button {
   grid-template-columns:
     var(--subcard-header-icon-column, 30px) minmax(0, 1fr) auto auto;
-  align-items: start;
+  align-items: center;
   gap: var(--subcard-header-gap, 10px);
   min-height: var(--subcard-header-min-height, 54px);
   padding: var(--subcard-header-padding-block, 10px)
@@ -122,9 +129,15 @@
   --ui-glyph-size: var(--subcard-header-icon-size, 24px);
   --ui-glyph-radius: var(--subcard-header-icon-radius, 8px);
   --ui-glyph-font-size: var(--subcard-header-icon-font-size, 16px);
-  align-self: start;
+  display: grid;
+  align-items: center;
+  justify-items: center;
+  place-items: center;
   justify-self: center;
-  place-self: start center;
+  place-self: center;
+  margin: 0;
+  line-height: 1;
+  text-align: center;
 }
 
 .editor-subsection-card .tab-copy > span {
