@@ -21,7 +21,6 @@ import {
   DeviceSchema,
   DeviceStateSchema,
   EpisodeSchema,
-  MediaAssetSchema,
   ModuleInstanceSchema,
   ModuleThemeConfigSchema,
   NavigationBarSchema,
@@ -479,7 +478,6 @@ export function createExampleDataset(): RepositoryDataset {
   const actors = ActorSchema.array().parse([
     {
       ...productionExample.actors[0],
-      avatar_asset_id: ownerAvatar.assetId,
       metadata_json: {
         modes: {
           light: {
@@ -506,7 +504,6 @@ export function createExampleDataset(): RepositoryDataset {
       production_id: production.id,
       display_name: otherMessage.sender.displayName,
       short_name: otherMessage.sender.displayName,
-      avatar_asset_id: otherAvatar.assetId,
       default_device_id: device.id,
       default_theme_id: theme.id,
       metadata_json: {
@@ -529,36 +526,6 @@ export function createExampleDataset(): RepositoryDataset {
           offsetY: 0,
         },
       },
-    },
-  ]);
-
-  const mediaAssets = MediaAssetSchema.array().parse([
-    {
-      id: ownerAvatar.assetId,
-      production_id: production.id,
-      name: `${resolvedChat.ownerActor.displayName} avatar`,
-      asset_type: "image",
-      uri: ownerAvatar.uri,
-      mime_type: "image/png",
-      metadata_json: { scope: "production_reusable", usage: "actor_avatar" },
-    },
-    {
-      id: otherAvatar.assetId,
-      production_id: production.id,
-      name: `${otherMessage.sender.displayName} avatar`,
-      asset_type: "image",
-      uri: otherAvatar.uri,
-      mime_type: "image/png",
-      metadata_json: { scope: "production_reusable", usage: "actor_avatar" },
-    },
-    {
-      id: device.frame_asset_id,
-      production_id: production.id,
-      name: "Generic iPhone frame",
-      asset_type: "image",
-      uri: "assets/iphone-generic-frame.png",
-      mime_type: "image/png",
-      metadata_json: { scope: "production_reusable", usage: "device_frame" },
     },
   ]);
 
@@ -864,7 +831,6 @@ export function createExampleDataset(): RepositoryDataset {
     actors,
     animationPresets,
     apps: [app],
-    mediaAssets,
     paletteColors,
     productionFonts,
     conversations: [],

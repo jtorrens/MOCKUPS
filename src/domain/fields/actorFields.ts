@@ -34,16 +34,6 @@ export const ACTOR_FIELDS = defineFields({
       label: "Short name",
     },
   },
-  avatarAssetId: {
-    id: "actor.avatarAssetId",
-    kind: "recordReference",
-    ui: {
-      label: "Avatar asset",
-      tableId: "media_assets",
-      labelColumn: "name",
-      allowEmpty: true,
-    },
-  },
   defaultDeviceId: {
     id: "actor.defaultDeviceId",
     kind: "recordReference",
@@ -186,7 +176,6 @@ export const ACTOR_COLUMN_BINDINGS = [
   { outputPath: ["production_id"], field: ACTOR_FIELDS.productionId },
   { outputPath: ["display_name"], field: ACTOR_FIELDS.displayName },
   { outputPath: ["short_name"], field: ACTOR_FIELDS.shortName },
-  { outputPath: ["avatar_asset_id"], field: ACTOR_FIELDS.avatarAssetId },
   { outputPath: ["default_device_id"], field: ACTOR_FIELDS.defaultDeviceId },
   { outputPath: ["default_theme_id"], field: ACTOR_FIELDS.defaultThemeId },
   { outputPath: ["metadata_json"], field: ACTOR_FIELDS.metadata },

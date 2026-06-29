@@ -127,7 +127,7 @@ export function ChatContentGroupEditor({
     const status = isJsonObject(message.status) ? message.status : {};
     const textReveal = isJsonObject(message.textReveal) ? message.textReveal : {};
     const animation = isJsonObject(message.animation) ? message.animation : {};
-    const mediaType = String(media.type ?? (message.mediaAssetId ? "image" : "none"));
+    const mediaType = String(media.type ?? "none");
     const messageActorOptions = actorOptions(actors);
     const currentActorId = String(message.actorId ?? "");
     const actorOptionsWithCurrentActor =

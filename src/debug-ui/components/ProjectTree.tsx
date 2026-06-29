@@ -97,7 +97,6 @@ const SYSTEM_DATA_TABLE_IDS = new Set([
   "status_bars",
   "navigation_bars",
   "component_classes",
-  "media_assets",
   "palette_colors",
   "production_fonts",
   "render_presets",
@@ -116,7 +115,6 @@ function productionDataIcon(tableId: string) {
   if (tableId === "component_classes") return "component";
   if (tableId === "themes") return "theme";
   if (tableId === "devices") return "device";
-  if (tableId === "media_assets") return "media";
   if (tableId === "palette_colors") return "color";
   if (tableId === "production_fonts") return "typography";
   if (tableId === "render_presets") return "render";

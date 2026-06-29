@@ -11,18 +11,6 @@ CREATE TABLE IF NOT EXISTS productions (
   metadata_json TEXT
 );
 
-CREATE TABLE IF NOT EXISTS media_assets (
-  id TEXT PRIMARY KEY,
-  production_id TEXT NOT NULL REFERENCES productions(id) ON DELETE CASCADE,
-  name TEXT NOT NULL,
-  asset_type TEXT NOT NULL,
-  uri TEXT NOT NULL,
-  mime_type TEXT NOT NULL,
-  checksum TEXT,
-  dimensions_json TEXT,
-  metadata_json TEXT
-);
-
 CREATE TABLE IF NOT EXISTS production_fonts (
   id TEXT PRIMARY KEY,
   production_id TEXT NOT NULL REFERENCES productions(id) ON DELETE CASCADE,
@@ -122,8 +110,7 @@ CREATE TABLE IF NOT EXISTS devices (
   manufacturer TEXT NOT NULL,
   model TEXT NOT NULL,
   os_family TEXT NOT NULL,
-  metrics_json TEXT NOT NULL,
-  frame_asset_id TEXT REFERENCES media_assets(id) ON DELETE SET NULL
+  metrics_json TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS device_states (
@@ -139,7 +126,6 @@ CREATE TABLE IF NOT EXISTS actors (
   production_id TEXT NOT NULL REFERENCES productions(id) ON DELETE CASCADE,
   display_name TEXT NOT NULL,
   short_name TEXT,
-  avatar_asset_id TEXT REFERENCES media_assets(id) ON DELETE SET NULL,
   default_device_id TEXT REFERENCES devices(id) ON DELETE SET NULL,
   default_theme_id TEXT REFERENCES themes(id) ON DELETE SET NULL,
   metadata_json TEXT
@@ -151,7 +137,6 @@ CREATE TABLE IF NOT EXISTS apps (
   name TEXT NOT NULL,
   bundle_key TEXT NOT NULL,
   app_type TEXT NOT NULL,
-  icon_asset_id TEXT REFERENCES media_assets(id) ON DELETE SET NULL,
   config_json TEXT,
   metadata_json TEXT
 );
@@ -228,7 +213,6 @@ CREATE TABLE IF NOT EXISTS messages (
   write_on_start_frame INTEGER CHECK (write_on_start_frame >= 0),
   write_on_duration_frames INTEGER CHECK (write_on_duration_frames >= 0),
   exit_frame INTEGER CHECK (exit_frame >= 0),
-  media_asset_id TEXT REFERENCES media_assets(id) ON DELETE SET NULL,
   style_override_json TEXT NOT NULL,
   animation_override_json TEXT NOT NULL,
   layout_override_json TEXT NOT NULL,

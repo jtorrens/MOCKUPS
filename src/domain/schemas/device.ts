@@ -9,7 +9,6 @@ export const DeviceSchema = z.object({
   model: z.string().min(1),
   os_family: z.string().min(1),
   metrics_json: JsonObjectSchema,
-  frame_asset_id: IdSchema.nullable().optional(),
 });
 
 export const DeviceStateSchema = z.object({

@@ -111,7 +111,7 @@ module_instances.behavior_json
   messageGrouping, debug, behavior defaults
 ```
 
-`core.chat` schema version 1 now resolves directly from this module JSON. Direction is explicit per message. Non-system messages reference production actors through `actorId`; system messages may omit actor identity. Optional media uses `mediaAssetId` or a direct file path plus a logical media window/transform and may coexist with message text, for example an image/video with a caption or accompanying text.
+`core.chat` schema version 1 now resolves directly from this module JSON. Direction is explicit per message. Non-system messages reference production actors through `actorId`; system messages may omit actor identity. Optional media uses a direct production-relative file path plus a logical media window/transform and may coexist with message text, for example an image/video with a caption or accompanying text.
 
 There is no runtime fallback to `data_ref_json`, `conversations`, `conversation_participants`, `messages`, or generic `props_json`. Those SQLite structures may remain until a later cleanup/migration task, but debug/editor tooling must not write them.
 

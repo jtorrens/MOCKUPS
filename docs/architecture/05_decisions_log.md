@@ -353,7 +353,7 @@ Status: accepted
 Chat message `type` describes the message family, not an exclusive payload switch. A message may contain text and attached media together, such as an image/video with a caption or accompanying text.
 
 Implications:
-- `module_instances.content_json.messages[]` may include both `text` and `mediaAssetId`/`media`.
+- `module_instances.content_json.messages[]` may include both `text` and direct production-relative `media`.
 - The Chat editor must expose media fields as optional attachments, not as mutually exclusive alternatives to text.
 - Resolved Chat props preserve both `text`/`visibleText` and `media` when both are present.
 
@@ -361,7 +361,7 @@ Implications:
 
 Status: accepted
 
-The app shell should not present productions, episodes, shots, screen instances, and reusable resources as one flat row of tabs. The primary Project workspace presents the editorial hierarchy as `Production → Episode → Shot → Screen instance`; reusable entities such as actors, themes, devices, media assets, presets, apps, and module theme configs live in a separate Library workspace.
+The app shell should not present productions, episodes, shots, screen instances, and reusable resources as one flat row of tabs. The primary Project workspace presents the editorial hierarchy as `Production → Episode → Shot → Screen instance`; reusable entities such as actors, themes, devices, presets, apps, and module theme configs live in a separate Library workspace.
 
 Implications:
 - Creating/editing hierarchy records happens in context: episode under selected production, shot under selected episode.
@@ -415,7 +415,7 @@ Implications:
 - Production actions are grouped separately from the episode/shot tree.
 - Project navigation is organized as `Episodes -> Shots -> Screens -> per-screen module theme/data`.
 - Apps and module theme configs are production-owned library records, not global assets.
-- Other tables such as actors, themes, devices, device states, media assets, render presets, and animation presets are production-owned setup data.
+- Other tables such as actors, themes, devices, device states, render presets, and animation presets are production-owned setup data.
 - Future production duplication can copy the full production tree and its library/setup records.
 
 Superseded note: the earlier Screen Template layer has been removed from the active architecture. See D042.
@@ -616,7 +616,7 @@ The generic authoring UI now covers the reusable production-level tables enough 
 
 This phase establishes:
 
-- Devices are production data records with user-facing `name`, `frame_asset_id`, and editable metrics. Manufacturer/model/OS family remain internal implementation fields for now.
+- Devices are production data records with user-facing `name` and editable metrics. Manufacturer/model/OS family remain internal implementation fields for now.
 - Development seed creates a small baseline device catalog: three iPhone models and three common Android models.
 - Shots expose an editable `Episode` dropdown so a duplicated shot can be moved between episodes.
 - Render Presets describe output/export behavior, not shot timing or dimensions. Width, height, and fps remain internal SQL placeholders until the schema is simplified; final values come from the Shot/render context.

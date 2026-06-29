@@ -20,7 +20,6 @@ interface JsonColumn {
 
 const EXPECTED_TABLES = [
   "productions",
-  "media_assets",
   "production_fonts",
   "palette_colors",
   "episodes",
@@ -57,8 +56,6 @@ const LEGACY_EMPTY_TABLES = [
 const JSON_COLUMNS: JsonColumn[] = [
   { table: "productions", column: "settings_json", nullable: true },
   { table: "productions", column: "metadata_json", nullable: true },
-  { table: "media_assets", column: "dimensions_json", nullable: true },
-  { table: "media_assets", column: "metadata_json", nullable: true },
   { table: "production_fonts", column: "files_json" },
   { table: "production_fonts", column: "metadata_json", nullable: true },
   { table: "palette_colors", column: "metadata_json", nullable: true },

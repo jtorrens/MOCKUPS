@@ -18,7 +18,6 @@ Production
  │   ├─ Devices
  │   ├─ Actors
  │   ├─ Apps
- │   ├─ MediaAssets
  │   ├─ ProductionFonts
  │   ├─ AnimationPresets
  │   └─ RenderPresets
@@ -129,9 +128,9 @@ App and module JSON may contain `modes.light` and `modes.dark` color values. The
 ### `devices`
 
 - Purpose: reusable device identity, screen geometry, and device-pack entry.
-- SQL/stable fields: `id`, `production_id`, `name`, `manufacturer`, `model`, `os_family`, `frame_asset_id`.
+- SQL/stable fields: `id`, `production_id`, `name`, `manufacturer`, `model`, `os_family`.
 - JSON/flexible fields: `metrics_json`.
-- Relationships: belongs to a production; may reference a media asset for its frame; referenced by actors and screen instances.
+- Relationships: belongs to a production; referenced by actors and screen instances.
 - Must not contain: actor-specific content or shot-specific transforms.
 
 `metrics_json` may contain logical `designSpace`, internal pixel `renderSize`, `scaleToPixels`, canvas/screen/viewport bounds, safe areas, status-bar area, notch/dynamic-island geometry, corner radius, pixel ratio, and default screen scale.
@@ -147,28 +146,20 @@ App and module JSON may contain `modes.light` and `modes.dark` color values. The
 ### `actors`
 
 - Purpose: fictional or narrative people/accounts participating in screen content; they are not necessarily real application users.
-- SQL/stable fields: `id`, `production_id`, `display_name`, `short_name`, `avatar_asset_id`, `default_device_id`, `default_theme_id`.
+- SQL/stable fields: `id`, `production_id`, `display_name`, `short_name`, `default_device_id`, `default_theme_id`.
 - JSON/flexible fields: `metadata_json`.
-- Relationships: belongs to a production; may reference avatar, device, and theme defaults; referenced as owner, sender, or target.
+- Relationships: belongs to a production; may reference device and theme defaults; avatar media is stored as production-relative paths in metadata; referenced as owner, sender, or target.
 - Must not contain: credentials, visual-module logic, or copies of conversations/messages.
 
 ### `apps`
 
 - Purpose: reusable identity and defaults for an app represented on a device.
-- SQL/stable fields: `id`, `production_id`, `name`, `bundle_key`, `app_type`, `icon_asset_id`.
+- SQL/stable fields: `id`, `production_id`, `name`, `bundle_key`, `app_type`.
 - JSON/flexible fields: `config_json`, `metadata_json`.
-- Relationships: belongs to a production; may reference an icon media asset; referenced by screen instances, module theme configs, notifications, calls, and data sources.
+- Relationships: belongs to a production; icon/media references are production-relative paths or icon tokens; referenced by screen instances, module theme configs, notifications, calls, and data sources.
 - Must not contain: shot placement, actor credentials, or renderer-specific code.
 
 `config_json.tokens_json` stores app-level reusable defaults inherited by screens, such as generic app typography, wallpaper roles, icon references, shared surfaces, and mode-aware app colors. App wallpaper supports `kind: "solid" | "image"` and a shared decimal `opacity` in the `0–1` range. Solid wallpapers store mode colors under `modes.light.wallpaper.color` and `modes.dark.wallpaper.color`; image wallpapers store direct production-relative media at `wallpaper.image.filePath` and render as centered cover/crop. If an app wants to change a generic inherited role such as `colors.background` or `colors.accent`, it should override that same token path. Apps must not own visual status bar or navigation bar tokens; those resolve from Theme plus the final device/mode context, while per-page visibility remains module-instance behavior.
-
-### `media_assets`
-
-- Purpose: registry of production-owned images, video, audio, fonts, and other files.
-- SQL/stable fields: `id`, `production_id`, `name`, `asset_type`, `uri`, `mime_type`, `checksum`.
-- JSON/flexible fields: `dimensions_json`, `metadata_json` including reusable/one-off usage scope where needed.
-- Relationships: belongs to a production; referenced through `media_asset_id` or role-specific asset IDs.
-- Must not contain: heavy binary data duplicated into SQLite or per-component transforms. Prefer project-relative URIs. Small inline SVG may be considered later.
 
 Modules use asset IDs with a media window (logical width/height/offsets) and an asset transform (ratio scale, translation, rotation). OS/app icon tokens are resolved through a separate theme/OS/mode-aware icon map rather than treated as user media.
 
@@ -227,9 +218,9 @@ Deprecation note: these normalized relationships remain physically available for
 ### `messages`
 
 - Purpose: ordered narrative items within a conversation, including frame-addressable entrance and write-on behavior.
-- SQL/stable fields: `id`, `conversation_id`, `sort_order`, `sender_actor_id`, `message_type`, `text`, `start_frame`, `enter_duration_frames`, `write_on_enabled`, `write_on_start_frame`, `write_on_duration_frames`, `exit_frame`, `media_asset_id`.
+- SQL/stable fields: `id`, `conversation_id`, `sort_order`, `sender_actor_id`, `message_type`, `text`, `start_frame`, `enter_duration_frames`, `write_on_enabled`, `write_on_start_frame`, `write_on_duration_frames`, `exit_frame`.
 - JSON/flexible fields: `style_override_json`, `animation_override_json`, `layout_override_json`, `metadata_json`.
-- Relationships: belongs to a conversation; references a sender actor and optional media asset.
+- Relationships: belongs to a conversation and references a sender actor.
 - Must not contain: normal theme font, color, padding, or radius values unless they are intentional one-off overrides.
 
 Message timing fields are relative to the screen-instance/conversation timeline supplied by the resolver, not absolute shot frames. This keeps conversation data reusable when a screen instance starts at a different shot frame.

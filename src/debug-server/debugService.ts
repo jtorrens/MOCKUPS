@@ -16,7 +16,6 @@ import {
   EpisodeSchema,
   IconThemeSchema,
   JsonObjectSchema,
-  MediaAssetSchema,
   ModuleInstanceSchema,
   ModuleThemeConfigSchema,
   NavigationBarSchema,
@@ -503,12 +502,6 @@ export const APP_TABLES = [
         nullable: true,
       },
       {
-        column: "avatar_asset_id",
-        label: "Avatar asset ID",
-        kind: "string",
-        nullable: true,
-      },
-      {
         column: "default_device_id",
         label: "Default device ID",
         kind: "string",
@@ -673,12 +666,6 @@ export const APP_TABLES = [
       { column: "manufacturer", label: "Manufacturer", kind: "string" },
       { column: "model", label: "Model", kind: "string" },
       { column: "os_family", label: "OS family", kind: "string" },
-      {
-        column: "frame_asset_id",
-        label: "Frame asset ID",
-        kind: "string",
-        nullable: true,
-      },
       { column: "metrics_json", label: "Device metrics", kind: "json" },
     ],
   },
@@ -694,29 +681,6 @@ export const APP_TABLES = [
       { column: "device_id", label: "Device ID", kind: "string" },
       { column: "name", label: "Name", kind: "string" },
       { column: "state_json", label: "Device state", kind: "json" },
-    ],
-  },
-  {
-    id: "media_assets",
-    label: "Media Assets",
-    table: "media_assets",
-    titleColumn: "name",
-    jsonFields: ["dimensions_json", "metadata_json"],
-    fields: [
-      { column: "id", label: "ID", kind: "string", readonly: true },
-      { column: "production_id", label: "Production ID", kind: "string" },
-      { column: "name", label: "Name", kind: "string" },
-      { column: "asset_type", label: "Type", kind: "string" },
-      { column: "uri", label: "URI", kind: "string" },
-      { column: "mime_type", label: "MIME type", kind: "string" },
-      {
-        column: "checksum",
-        label: "Checksum",
-        kind: "string",
-        nullable: true,
-      },
-      { column: "dimensions_json", label: "Asset dimensions", kind: "json" },
-      { column: "metadata_json", label: "Asset notes", kind: "json" },
     ],
   },
   {
@@ -797,12 +761,6 @@ export const APP_TABLES = [
       { column: "name", label: "Name", kind: "string" },
       { column: "bundle_key", label: "Bundle key", kind: "string" },
       { column: "app_type", label: "App type", kind: "string" },
-      {
-        column: "icon_asset_id",
-        label: "Icon asset ID",
-        kind: "string",
-        nullable: true,
-      },
       { column: "config_json", label: "App settings", kind: "json" },
       { column: "metadata_json", label: "App notes", kind: "json" },
     ],
@@ -839,7 +797,6 @@ const PARSERS = {
   module_theme_configs: ModuleThemeConfigSchema,
   devices: DeviceSchema,
   device_states: DeviceStateSchema,
-  media_assets: MediaAssetSchema,
   palette_colors: PaletteColorSchema,
   production_fonts: ProductionFontSchema,
   render_presets: RenderPresetSchema,
@@ -1364,7 +1321,6 @@ function loadInheritedJson(database: SQLiteDatabase) {
       ActorSchema.parse({
         ...nullsToUndefined(row, [
           "short_name",
-          "avatar_asset_id",
           "default_device_id",
           "default_theme_id",
         ]),
@@ -1393,7 +1349,7 @@ function loadInheritedJson(database: SQLiteDatabase) {
     appRows.map((row) => [
       String(row.id),
       AppSchema.parse({
-        ...nullsToUndefined(row, ["icon_asset_id"]),
+        ...row,
         config_json: readOptionalJson(row, "config_json"),
         metadata_json: readOptionalJson(row, "metadata_json"),
       }),
@@ -2213,8 +2169,8 @@ export function createAppRecord(
     const id = uniqueId("device", name);
     database
       .prepare(
-        `INSERT INTO devices (id, production_id, name, manufacturer, model, os_family, metrics_json, frame_asset_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO devices (id, production_id, name, manufacturer, model, os_family, metrics_json)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         id,
@@ -2224,7 +2180,6 @@ export function createAppRecord(
         name,
         "custom",
         stringifyJsonObject(defaultDeviceMetrics(1080, 2340), "devices.metrics_json"),
-        null,
       );
     const record = decodeAppRow(
       database.prepare("SELECT * FROM devices WHERE id = ?").get(id) as Row,
@@ -2303,17 +2258,15 @@ export function createAppRecord(
           production_id,
           display_name,
           short_name,
-          avatar_asset_id,
           default_device_id,
           default_theme_id,
           metadata_json
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         id,
         productionId,
         displayName,
-        null,
         null,
         defaultDeviceId,
         defaultThemeId,

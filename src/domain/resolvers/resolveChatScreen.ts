@@ -2268,21 +2268,11 @@ function resolveChatActor(
     actorId,
   );
   const directAvatarUri = actorAvatarUri(actor, themeMode, palette);
-  const avatarAssetId = directAvatarUri
-    ? undefined
-    : actor.avatar_asset_id;
-  const avatar = avatarAssetId
-    ? requireRecord(
-        repository.getMediaAsset(avatarAssetId),
-        "MediaAsset",
-        avatarAssetId,
-      )
-    : undefined;
 
   return {
     id: actor.id,
     displayName: actor.display_name,
-    ...(directAvatarUri || avatar ? { avatarUri: directAvatarUri ?? avatar?.uri } : {}),
+    ...(directAvatarUri ? { avatarUri: directAvatarUri } : {}),
     ...actorAvatarCrop(actor),
     ...(actorMetadataColor(actor, themeMode, "color", palette) ? {
       color: actorMetadataColor(actor, themeMode, "color", palette),
@@ -2756,18 +2746,11 @@ export function resolveChatScreen({
     previousMessageWriteOnEndFrame =
       bubble.timing.startFrame + (bubble.timing.writeOnDurationFrames ?? 0);
 
-    const mediaAsset = animatedMessage.mediaAssetId
-      ? requireRecord(
-          repository.getMediaAsset(animatedMessage.mediaAssetId),
-          "MediaAsset",
-          animatedMessage.mediaAssetId,
-        )
-      : undefined;
     const scaledMedia = scaleChatMediaForRender(animatedMessage.media, renderScale);
     const mediaFilePath = scaledMedia
       ? stringValue(scaledMedia.filePath)
       : "";
-    const mediaUri = mediaFilePath || mediaAsset?.uri;
+    const mediaUri = mediaFilePath;
     const mediaType = scaledMedia ? stringValue(scaledMedia.type) : "";
     const isAudioMedia = mediaType === "audio";
 
@@ -2804,7 +2787,6 @@ export function resolveChatScreen({
       ...(mediaUri || isAudioMedia
         ? {
             media: {
-              ...(mediaAsset ? { assetId: mediaAsset.id } : {}),
               ...(mediaUri ? { uri: mediaUri } : {}),
               ...(mediaType ? { type: mediaType } : {}),
               ...(typeof scaledMedia?.durationSeconds === "number"

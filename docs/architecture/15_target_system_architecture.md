@@ -697,7 +697,7 @@ all component fields into every module editor.
 
 Some references are not normal inheritance parents.
 
-Palette, production fonts, icon themes, media assets and production root paths
+Palette, production fonts, icon themes and production root paths
 are resource registries. They resolve references into concrete runtime values,
 but they do not behave like `theme → app → module → instance` parent chains.
 

@@ -45,11 +45,10 @@ export const ChatModuleMessageSchema = z
     direction: z.enum(["incoming", "outgoing", "system"]).optional(),
     /**
      * Message family. Media is not exclusive with text: a text message may also
-     * include mediaAssetId/media to represent an attachment with a caption.
+     * include media to represent an attachment with a caption.
      */
     type: z.enum(["text", "media", "system"]),
     text: z.string().optional(),
-    mediaAssetId: IdSchema.optional(),
     media: z
       .object({
         type: z.enum(["none", "image", "video", "audio"]).optional(),
@@ -97,13 +96,12 @@ export const ChatModuleMessageSchema = z
       value.media &&
       value.media.type !== "none" &&
       value.media.type !== "audio" &&
-      !value.media.filePath &&
-      !value.mediaAssetId
+      !value.media.filePath
     ) {
       context.addIssue({
         code: "custom",
-        message: "media requires mediaAssetId or media.filePath",
-        path: ["mediaAssetId"],
+        message: "media requires media.filePath",
+        path: ["media", "filePath"],
       });
     }
   });

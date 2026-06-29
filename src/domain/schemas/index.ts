@@ -1,7 +1,6 @@
 export * from "./actor.js";
 export * from "./animation.js";
 export * from "./app.js";
-export * from "./asset.js";
 export * from "./call.js";
 export * from "./common.js";
 export * from "./componentClass.js";

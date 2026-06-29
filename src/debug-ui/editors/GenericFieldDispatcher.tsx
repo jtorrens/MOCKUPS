@@ -45,7 +45,6 @@ export function renderGenericField({
     return null;
   }
   if (table.id === "actors" && field.column === "production_id") return null;
-  if (table.id === "actors" && field.column === "avatar_asset_id") return null;
   if (
     table.id === "episodes" &&
     (field.column === "production_id" || field.column === "sort_order")

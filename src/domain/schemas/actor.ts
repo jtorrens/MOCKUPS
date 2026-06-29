@@ -6,7 +6,6 @@ export const ActorSchema = z.object({
   production_id: IdSchema,
   display_name: z.string().min(1),
   short_name: z.string().min(1).nullable().optional(),
-  avatar_asset_id: IdSchema.nullable().optional(),
   default_device_id: IdSchema.nullable().optional(),
   default_theme_id: IdSchema.nullable().optional(),
   metadata_json: JsonObjectSchema.optional(),

@@ -51,7 +51,7 @@ The accepted foundation is production-scoped and shot-centered, where production
 - Added `debug`, `debug:server`, `debug:ui`, `debug:check`, and `debug:build` scripts; visual browser smoke checks cover loading, invalid JSON blocking, save/re-resolve, and state restoration.
 - Evolved the debug UI into the first practical app shell with a left editable workspace and a persistent right preview/output panel.
 - Added the project hierarchy `Productions → Episodes → Shots → Screen Instances`, with reusable resources separated into a Library area.
-- Added a Project/Library browser: Project exposes compact collapsible hierarchy panels; Library exposes reusable resource tables such as actors, themes, module theme configs, devices, device states, media assets, render presets, apps, animation presets, and screen templates.
+- Added a Project/Library browser: Project exposes compact collapsible hierarchy panels; Library exposes reusable resource tables such as actors, themes, module theme configs, devices, device states, render presets, apps, animation presets, and screen templates.
 - Added a safe first create flow for productions, episodes, and shots. Newly created episodes attach to the selected production; newly created shots attach to the selected episode and receive conservative defaults.
 - Added debounced autosave for editable scalar fields and JSON object fields, with per-field save state and invalid JSON blocking before persistence.
 - Added app-core HTTP endpoints for loading table definitions/records/options, creating supported hierarchy records, patching validated records, and resolving the current preview context.

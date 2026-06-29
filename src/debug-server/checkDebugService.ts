@@ -58,7 +58,6 @@ try {
     "module_theme_configs",
     "devices",
     "device_states",
-    "media_assets",
     "palette_colors",
     "production_fonts",
     "render_presets",

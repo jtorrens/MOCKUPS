@@ -201,30 +201,6 @@ function relationOptionsForField(
       })) ?? [],
     };
   }
-  if (field.column === "avatar_asset_id") {
-    return {
-      allowEmpty: true,
-      options: records.media_assets?.map((item) => ({
-        value: item.id,
-        label: titleForRecord(item, "name"),
-      })) ?? [],
-    };
-  }
-  if (field.column === "frame_asset_id") {
-    return {
-      allowEmpty: true,
-      options: records.media_assets
-        ?.filter(
-          (item) =>
-            !item.asset_type ||
-            item.asset_type === "image",
-        )
-        .map((item) => ({
-          value: item.id,
-          label: titleForRecord(item, "name"),
-        })) ?? [],
-    };
-  }
   if (field.column === "default_device_id") {
     return {
       allowEmpty: true,
@@ -395,10 +371,8 @@ export function RecordFieldRenderer({
           ? {
               ...selectOptions,
               emptyLabel: [
-                "avatar_asset_id",
                 "default_device_id",
                 "default_theme_id",
-                "frame_asset_id",
               ].includes(field.column)
                 ? "None"
                 : "Inherited/default",

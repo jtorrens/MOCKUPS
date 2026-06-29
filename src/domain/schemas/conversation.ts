@@ -33,7 +33,6 @@ export const MessageSchema = z.object({
   write_on_start_frame: NonNegativeIntegerSchema.nullable(),
   write_on_duration_frames: NonNegativeIntegerSchema.nullable(),
   exit_frame: NonNegativeIntegerSchema.nullable(),
-  media_asset_id: IdSchema.nullable(),
   style_override_json: JsonObjectSchema,
   animation_override_json: JsonObjectSchema,
   layout_override_json: JsonObjectSchema,

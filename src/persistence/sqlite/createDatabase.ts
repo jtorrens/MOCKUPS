@@ -207,8 +207,6 @@ const SCREEN_INSTANCE_V2_COLUMNS = {
 const COLOR_NORMALIZATION_JSON_COLUMNS = [
   ["productions", "settings_json"],
   ["productions", "metadata_json"],
-  ["media_assets", "dimensions_json"],
-  ["media_assets", "metadata_json"],
   ["palette_colors", "metadata_json"],
   ["production_fonts", "files_json"],
   ["production_fonts", "metadata_json"],
@@ -2392,6 +2390,216 @@ function applyAdditiveV37Migration(database: SQLiteDatabase): void {
   database.pragma("user_version = 37");
 }
 
+function tableColumns(database: SQLiteDatabase, tableName: string): Set<string> {
+  return new Set(
+    (
+      database.pragma(`table_info(${tableName})`) as {
+        name: string;
+      }[]
+    ).map((column) => column.name),
+  );
+}
+
+function tableExists(database: SQLiteDatabase, tableName: string): boolean {
+  const row = database
+    .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?")
+    .get(tableName) as { name: string } | undefined;
+  return Boolean(row);
+}
+
+function applyAdditiveV38Migration(database: SQLiteDatabase): void {
+  const needsDeviceRebuild =
+    tableExists(database, "devices") &&
+    tableColumns(database, "devices").has("frame_asset_id");
+  const needsActorRebuild =
+    tableExists(database, "actors") &&
+    tableColumns(database, "actors").has("avatar_asset_id");
+  const needsAppRebuild =
+    tableExists(database, "apps") &&
+    tableColumns(database, "apps").has("icon_asset_id");
+  const needsMessageRebuild =
+    tableExists(database, "messages") &&
+    tableColumns(database, "messages").has("media_asset_id");
+
+  if (
+    needsDeviceRebuild ||
+    needsActorRebuild ||
+    needsAppRebuild ||
+    needsMessageRebuild ||
+    tableExists(database, "media_assets")
+  ) {
+    database.pragma("foreign_keys = OFF");
+
+    if (needsDeviceRebuild) {
+      database.exec(`
+        CREATE TABLE devices_v38 (
+          id TEXT PRIMARY KEY,
+          production_id TEXT NOT NULL REFERENCES productions(id) ON DELETE CASCADE,
+          name TEXT NOT NULL,
+          manufacturer TEXT NOT NULL,
+          model TEXT NOT NULL,
+          os_family TEXT NOT NULL,
+          metrics_json TEXT NOT NULL
+        );
+        INSERT INTO devices_v38 (
+          id,
+          production_id,
+          name,
+          manufacturer,
+          model,
+          os_family,
+          metrics_json
+        )
+        SELECT
+          id,
+          production_id,
+          name,
+          manufacturer,
+          model,
+          os_family,
+          metrics_json
+        FROM devices;
+        DROP TABLE devices;
+        ALTER TABLE devices_v38 RENAME TO devices;
+      `);
+    }
+
+    if (needsActorRebuild) {
+      database.exec(`
+        CREATE TABLE actors_v38 (
+          id TEXT PRIMARY KEY,
+          production_id TEXT NOT NULL REFERENCES productions(id) ON DELETE CASCADE,
+          display_name TEXT NOT NULL,
+          short_name TEXT,
+          default_device_id TEXT REFERENCES devices(id) ON DELETE SET NULL,
+          default_theme_id TEXT REFERENCES themes(id) ON DELETE SET NULL,
+          metadata_json TEXT
+        );
+        INSERT INTO actors_v38 (
+          id,
+          production_id,
+          display_name,
+          short_name,
+          default_device_id,
+          default_theme_id,
+          metadata_json
+        )
+        SELECT
+          id,
+          production_id,
+          display_name,
+          short_name,
+          default_device_id,
+          default_theme_id,
+          metadata_json
+        FROM actors;
+        DROP TABLE actors;
+        ALTER TABLE actors_v38 RENAME TO actors;
+      `);
+    }
+
+    if (needsAppRebuild) {
+      database.exec(`
+        CREATE TABLE apps_v38 (
+          id TEXT PRIMARY KEY,
+          production_id TEXT NOT NULL REFERENCES productions(id) ON DELETE CASCADE,
+          name TEXT NOT NULL,
+          bundle_key TEXT NOT NULL,
+          app_type TEXT NOT NULL,
+          config_json TEXT,
+          metadata_json TEXT
+        );
+        INSERT INTO apps_v38 (
+          id,
+          production_id,
+          name,
+          bundle_key,
+          app_type,
+          config_json,
+          metadata_json
+        )
+        SELECT
+          id,
+          production_id,
+          name,
+          bundle_key,
+          app_type,
+          config_json,
+          metadata_json
+        FROM apps;
+        DROP TABLE apps;
+        ALTER TABLE apps_v38 RENAME TO apps;
+      `);
+    }
+
+    if (needsMessageRebuild) {
+      database.exec(`
+        CREATE TABLE messages_v38 (
+          id TEXT PRIMARY KEY,
+          conversation_id TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+          sort_order INTEGER NOT NULL CHECK (sort_order >= 0),
+          sender_actor_id TEXT NOT NULL REFERENCES actors(id) ON DELETE RESTRICT,
+          message_type TEXT NOT NULL,
+          text TEXT,
+          start_frame INTEGER NOT NULL CHECK (start_frame >= 0),
+          enter_duration_frames INTEGER NOT NULL CHECK (enter_duration_frames >= 0),
+          write_on_enabled INTEGER NOT NULL CHECK (write_on_enabled IN (0, 1)),
+          write_on_start_frame INTEGER CHECK (write_on_start_frame >= 0),
+          write_on_duration_frames INTEGER CHECK (write_on_duration_frames >= 0),
+          exit_frame INTEGER CHECK (exit_frame >= 0),
+          style_override_json TEXT NOT NULL,
+          animation_override_json TEXT NOT NULL,
+          layout_override_json TEXT NOT NULL,
+          metadata_json TEXT NOT NULL
+        );
+        INSERT INTO messages_v38 (
+          id,
+          conversation_id,
+          sort_order,
+          sender_actor_id,
+          message_type,
+          text,
+          start_frame,
+          enter_duration_frames,
+          write_on_enabled,
+          write_on_start_frame,
+          write_on_duration_frames,
+          exit_frame,
+          style_override_json,
+          animation_override_json,
+          layout_override_json,
+          metadata_json
+        )
+        SELECT
+          id,
+          conversation_id,
+          sort_order,
+          sender_actor_id,
+          message_type,
+          text,
+          start_frame,
+          enter_duration_frames,
+          write_on_enabled,
+          write_on_start_frame,
+          write_on_duration_frames,
+          exit_frame,
+          style_override_json,
+          animation_override_json,
+          layout_override_json,
+          metadata_json
+        FROM messages;
+        DROP TABLE messages;
+        ALTER TABLE messages_v38 RENAME TO messages;
+      `);
+    }
+
+    database.exec("DROP TABLE IF EXISTS media_assets;");
+    database.pragma("foreign_key_check");
+    database.pragma("foreign_keys = ON");
+  }
+  database.pragma("user_version = 38");
+}
+
 export function applyInitialSchema(database: SQLiteDatabase): void {
   database.exec(readFileSync(schemaPath, "utf8"));
   applyAdditiveV2Migration(database);
@@ -2430,6 +2638,7 @@ export function applyInitialSchema(database: SQLiteDatabase): void {
   applyAdditiveV35Migration(database);
   applyAdditiveV36Migration(database);
   applyAdditiveV37Migration(database);
+  applyAdditiveV38Migration(database);
   database.pragma("foreign_keys = ON");
 }
 

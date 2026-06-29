@@ -42,7 +42,6 @@ Production
 - `devices`: device identity and physical/display metrics; suitable for device packs.
 - `device_states`: reusable runtime states such as battery, signal, time, lock state, and orientation.
 - `actors`: reusable character/profile identity, contact data, avatars, and app-specific handles.
-- `media_assets`: production-owned images, video, audio, fonts, and other referenced files.
 - `animation_presets`: reusable timing, easing, and transition configuration.
 - `render_presets`: output dimensions, frame rate, codec/export, color, and quality settings.
 - `conversations` / `messages`: deprecated compatibility structures still present in the initial SQLite schema; canonical Chat runtime content now lives in `module_instances.content_json`.

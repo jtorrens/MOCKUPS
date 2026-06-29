@@ -5,7 +5,6 @@
   "manufacturer": "Apple",
   "model": "iPhone 15 Pro Max",
   "os_family": "ios",
-  "frame_asset_id": "media_asset_iphone_frame",
   "metrics_json": {
     "designSpace": {
       "width": 430,

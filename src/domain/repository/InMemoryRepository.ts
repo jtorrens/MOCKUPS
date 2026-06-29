@@ -7,7 +7,6 @@ import type {
   DeviceState,
   Episode,
   IconTheme,
-  MediaAsset,
   ModuleInstance,
   ModuleThemeConfig,
   NavigationBar,
@@ -41,7 +40,6 @@ export class InMemoryRepository implements DomainRepository {
   readonly #deviceStates: Map<string, DeviceState>;
   readonly #actors: Map<string, Actor>;
   readonly #apps: Map<string, App>;
-  readonly #mediaAssets: Map<string, MediaAsset>;
   readonly #paletteColors: Map<string, PaletteColor>;
   readonly #productionFonts: Map<string, ProductionFont>;
   readonly #conversations: Map<string, Conversation>;
@@ -63,7 +61,6 @@ export class InMemoryRepository implements DomainRepository {
     this.#deviceStates = indexById(dataset.deviceStates);
     this.#actors = indexById(dataset.actors);
     this.#apps = indexById(dataset.apps);
-    this.#mediaAssets = indexById(dataset.mediaAssets);
     this.#paletteColors = indexById(dataset.paletteColors);
     this.#productionFonts = indexById(dataset.productionFonts);
     this.#conversations = indexById(dataset.conversations);
@@ -156,10 +153,6 @@ export class InMemoryRepository implements DomainRepository {
 
   getActor(id: string) {
     return this.#actors.get(id);
-  }
-
-  getMediaAsset(id: string) {
-    return this.#mediaAssets.get(id);
   }
 
   getPaletteColors(productionId: string) {

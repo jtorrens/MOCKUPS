@@ -37,16 +37,6 @@ export const DEVICE_FIELDS = defineFields({
       label: "Name",
     },
   },
-  frameAssetId: {
-    id: "device.frameAssetId",
-    kind: "recordReference",
-    ui: {
-      label: "Frame asset",
-      tableId: "media_assets",
-      labelColumn: "name",
-      allowEmpty: true,
-    },
-  },
   designWidth: {
     id: "device.metrics.designSpace.width",
     kind: "integer",
@@ -320,7 +310,6 @@ export const DEVICE_COLUMN_BINDINGS = [
   { outputPath: ["id"], field: DEVICE_FIELDS.id },
   { outputPath: ["production_id"], field: DEVICE_FIELDS.productionId },
   { outputPath: ["name"], field: DEVICE_FIELDS.name },
-  { outputPath: ["frame_asset_id"], field: DEVICE_FIELDS.frameAssetId },
 ] satisfies readonly JsonFieldBinding[];
 
 export const DEVICE_METRICS_BINDINGS = [

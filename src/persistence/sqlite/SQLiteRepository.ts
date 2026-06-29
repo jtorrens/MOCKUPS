@@ -8,7 +8,6 @@ import {
   DeviceSchema,
   DeviceStateSchema,
   IconThemeSchema,
-  MediaAssetSchema,
   MessageSchema,
   ModuleInstanceSchema,
   ModuleThemeConfigSchema,
@@ -30,7 +29,6 @@ import {
   type Device,
   type DeviceState,
   type IconTheme,
-  type MediaAsset,
   type Message,
   type ModuleInstance,
   type ModuleThemeConfig,
@@ -307,15 +305,6 @@ export class SQLiteRepository implements DomainRepository {
     return this.getOne("SELECT * FROM actors WHERE id = ?", id, ActorSchema, {
       optional: ["metadata_json"],
     });
-  }
-
-  getMediaAsset(id: string): MediaAsset | undefined {
-    return this.getOne(
-      "SELECT * FROM media_assets WHERE id = ?",
-      id,
-      MediaAssetSchema,
-      { optional: ["dimensions_json", "metadata_json"] },
-    );
   }
 
   getPaletteColors(productionId: string): PaletteColor[] {

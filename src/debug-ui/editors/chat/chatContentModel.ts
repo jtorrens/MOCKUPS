@@ -195,10 +195,9 @@ export function messageWithMediaType(
   message: Record<string, JsonValue>,
   nextType: string,
 ): Record<string, JsonValue> {
-  const { mediaAssetId: _mediaAssetId, ...messageWithoutAsset } = message;
   if (nextType === "none") {
     return {
-      ...messageWithoutAsset,
+      ...message,
       media: { type: "none" },
     };
   }
@@ -208,8 +207,8 @@ export function messageWithMediaType(
   const mediaTransform = isJsonObject(media.transform) ? media.transform : {};
 
   return {
-    ...messageWithoutAsset,
-    type: messageWithoutAsset.type === "system" ? "text" : messageWithoutAsset.type,
+    ...message,
+    type: message.type === "system" ? "text" : message.type,
     media: {
       type: nextType,
       ...(nextType === "audio"
@@ -253,10 +252,9 @@ export function messageWithMediaPath(
   mediaType: string,
   filePath: string,
 ): Record<string, JsonValue> {
-  const { mediaAssetId: _mediaAssetId, ...messageWithoutAsset } = message;
   const media = isJsonObject(message.media) ? message.media : {};
   return {
-    ...messageWithoutAsset,
+    ...message,
     media: {
       ...media,
       type: mediaType === "none" ? "image" : mediaType,

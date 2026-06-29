@@ -29,7 +29,6 @@ const DELETE_ORDER = [
   "icon_themes",
   "production_fonts",
   "palette_colors",
-  "media_assets",
   "productions",
 ] as const;
 
@@ -176,7 +175,6 @@ function deviceMetrics(width: number, height: number, scale: number) {
 
 function productionDevices(dataset: RepositoryDataset) {
   const baseDevice = dataset.devices[0];
-  const frameAssetId = baseDevice?.frame_asset_id ?? null;
   const productionId = dataset.productions[0]?.id ?? baseDevice?.production_id;
   return BASE_DEVICE_SPECS.map((spec) => ({
     id: spec.id,
@@ -189,7 +187,6 @@ function productionDevices(dataset: RepositoryDataset) {
       spec.id === baseDevice?.id
         ? baseDevice.metrics_json
         : deviceMetrics(spec.width, spec.height, spec.scale),
-    frame_asset_id: frameAssetId,
   }));
 }
 
@@ -332,23 +329,6 @@ function seedRecords(
   );
   insertRows(
     database,
-    "media_assets",
-    [
-      "id",
-      "production_id",
-      "name",
-      "asset_type",
-      "uri",
-      "mime_type",
-      "checksum",
-      "dimensions_json",
-      "metadata_json",
-    ],
-    dataset.mediaAssets,
-    new Set(["dimensions_json", "metadata_json"]),
-  );
-  insertRows(
-    database,
     "production_fonts",
     [
       "id",
@@ -461,7 +441,6 @@ function seedRecords(
       "model",
       "os_family",
       "metrics_json",
-      "frame_asset_id",
     ],
     productionDevices(dataset),
     new Set(["metrics_json"]),
@@ -481,7 +460,6 @@ function seedRecords(
       "production_id",
       "display_name",
       "short_name",
-      "avatar_asset_id",
       "default_device_id",
       "default_theme_id",
       "metadata_json",
@@ -498,7 +476,6 @@ function seedRecords(
       "name",
       "bundle_key",
       "app_type",
-      "icon_asset_id",
       "config_json",
       "metadata_json",
     ],
@@ -621,7 +598,6 @@ function seedRecords(
       "write_on_start_frame",
       "write_on_duration_frames",
       "exit_frame",
-      "media_asset_id",
       "style_override_json",
       "animation_override_json",
       "layout_override_json",

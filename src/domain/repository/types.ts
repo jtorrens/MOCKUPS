@@ -9,7 +9,6 @@ import type {
   DeviceState,
   Episode,
   IconTheme,
-  MediaAsset,
   Message,
   ModuleInstance,
   ModuleThemeConfig,
@@ -43,7 +42,6 @@ export interface RepositoryDataset {
   actors: Actor[];
   animationPresets: AnimationPreset[];
   apps: App[];
-  mediaAssets: MediaAsset[];
   paletteColors: PaletteColor[];
   productionFonts: ProductionFont[];
   conversations: Conversation[];
@@ -79,7 +77,6 @@ export interface DomainRepository {
   getDevice(id: string): Device | undefined;
   getDeviceState(id: string): DeviceState | undefined;
   getActor(id: string): Actor | undefined;
-  getMediaAsset(id: string): MediaAsset | undefined;
   getPaletteColors(productionId: string): PaletteColor[];
   getProductionFonts(productionId: string): ProductionFont[];
   getConversation(id: string): Conversation | undefined;
