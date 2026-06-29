@@ -18,6 +18,16 @@ import {
   DictionaryFieldControl,
   DICTIONARY_FIELD_CLASS,
 } from "../editor-ui/DictionaryFieldControl.js";
+import {
+  EditorFieldRow,
+} from "../editor-ui/fields/EditorFieldRow.js";
+import {
+  toDictionaryFieldControlProps,
+  type EditorFieldState,
+} from "../editor-ui/fields/EditorFieldDescriptor.js";
+import {
+  createRecordFieldDescriptor,
+} from "../editor-ui/fields/createRecordFieldDescriptor.js";
 
 export type FieldSaveState =
   | "saved"
@@ -299,6 +309,19 @@ function relationOptionsForDictionaryField(
   };
 }
 
+function draftValueForDictionaryWrite(value: unknown): string {
+  if (typeof value === "boolean") return value ? "1" : "0";
+  return value === undefined || value === null ? "" : String(value);
+}
+
+function descriptorStateForSaveState(
+  state: FieldSaveState,
+  error: string | undefined,
+): EditorFieldState {
+  if (error || state === "invalid" || state === "failed") return "invalid";
+  return "default";
+}
+
 interface RecordFieldRendererProps {
   table: AppTableDefinition;
   field: AppFieldDefinition;
@@ -363,37 +386,47 @@ export function RecordFieldRenderer({
     const selectedRelationLabel = selectOptions?.options.find(
       (option) => option.value === (drafts[field.column] ?? ""),
     )?.label;
-    const control = dictionaryField ? (
-      <DictionaryFieldControl
-        field={dictionaryField}
-        disabled={field.readonly}
-        selectOptions={
-          selectOptions
-            ? {
-                ...selectOptions,
-                emptyLabel: [
-                  "avatar_asset_id",
-                  "default_device_id",
-                  "default_theme_id",
-                ].includes(field.column)
-                  ? "None"
-                  : "Inherited/default",
-              }
-            : undefined
-        }
-        value={drafts[field.column] ?? ""}
-        onChange={(nextValue) =>
-          onDraftChange(
-            field.column,
-            typeof nextValue === "boolean"
-              ? nextValue
-                ? "1"
-                : "0"
-              : String(nextValue ?? ""),
-          )
-        }
-      />
-    ) : field.kind === "boolean" ? (
+    if (dictionaryField) {
+      const descriptor = createRecordFieldDescriptor({
+        field: dictionaryField,
+        column: field.column,
+        value: drafts[field.column] ?? "",
+        recordId: typeof record?.id === "string" ? record.id : undefined,
+        recordType: table.id,
+        readonly: field.readonly,
+        error,
+        selectOptions: selectOptions
+          ? {
+              ...selectOptions,
+              emptyLabel: [
+                "avatar_asset_id",
+                "default_device_id",
+                "default_theme_id",
+              ].includes(field.column)
+                ? "None"
+                : "Inherited/default",
+            }
+          : undefined,
+        state: descriptorStateForSaveState(state, error),
+        onWrite: (nextValue) =>
+          onDraftChange(field.column, draftValueForDictionaryWrite(nextValue)),
+      });
+
+      return (
+        <EditorFieldRow
+          key={field.column}
+          className={`record-editor-field record-editor-field-${field.kind} state-${state} ${DICTIONARY_FIELD_CLASS} ${
+            field.readonly ? "is-readonly" : ""
+          }`}
+          descriptor={descriptor}
+        >
+          <DictionaryFieldControl
+            {...toDictionaryFieldControlProps(descriptor)}
+          />
+        </EditorFieldRow>
+      );
+    }
+    const control = field.kind === "boolean" ? (
       <label className="json-checkbox">
         <input
           data-testid={`field-${field.column}`}
