@@ -2,11 +2,14 @@ import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import {
   deleteIconThemeToken,
+  generateIconThemeToken,
   refreshIconThemeSet,
+  searchIconThemeSources,
   type AppFieldDefinition,
   type AppRecord,
   type AppState,
   type AppTableDefinition,
+  type IconThemeSourceCandidate,
 } from "../api/client.js";
 import { AppModalDialog } from "../components/AppModalDialog.js";
 import { EditorHeader } from "../editor-ui/EditorHeader.js";
@@ -60,6 +63,19 @@ function tokenRows(mapping: Record<string, unknown>) {
 
 function toText(value: unknown) {
   return typeof value === "string" ? value : "";
+}
+
+function tokenFromText(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .replace(/_+/g, "_");
+}
+
+function categoryFromToken(token: string) {
+  return token.split("_")[0] || "misc";
 }
 
 function tokenPath(assetRoot: string, file: string) {
@@ -121,6 +137,41 @@ function IconPreview({
   );
 }
 
+function SourceCandidateButton({
+  candidate,
+  selected,
+  onClick,
+}: {
+  candidate: IconThemeSourceCandidate;
+  selected: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={`secondary-button icon-theme-source-candidate ${
+        selected ? "is-selected" : ""
+      }`}
+      onClick={onClick}
+    >
+      <span className="icon-theme-preview" aria-hidden="true">
+        {candidate.previewUrl ? (
+          <span
+            className="icon-theme-preview-mask"
+            style={{
+              WebkitMaskImage: `url("${candidate.previewUrl}")`,
+              maskImage: `url("${candidate.previewUrl}")`,
+            }}
+          />
+        ) : (
+          "—"
+        )}
+      </span>
+      <span>{candidate.sourceName}</span>
+    </button>
+  );
+}
+
 export function IconThemeRecordEditor({
   table,
   record,
@@ -134,9 +185,24 @@ export function IconThemeRecordEditor({
 }: IconThemeRecordEditorProps) {
   const [pendingDeleteToken, setPendingDeleteToken] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [generatorOpen, setGeneratorOpen] = useState(false);
+  const [generatorQuery, setGeneratorQuery] = useState("");
+  const [generatorToken, setGeneratorToken] = useState("");
+  const [generatorCategory, setGeneratorCategory] = useState("");
+  const [generatorDescription, setGeneratorDescription] = useState("");
+  const [generatorSearching, setGeneratorSearching] = useState(false);
+  const [generatorGenerating, setGeneratorGenerating] = useState(false);
+  const [generatorError, setGeneratorError] = useState("");
+  const [sourceResults, setSourceResults] = useState<{
+    lucide: IconThemeSourceCandidate[];
+    material: IconThemeSourceCandidate[];
+  }>({ lucide: [], material: [] });
+  const [selectedLucide, setSelectedLucide] = useState("");
+  const [selectedMaterial, setSelectedMaterial] = useState("");
   const [pendingRefresh, setPendingRefresh] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshMessage, setRefreshMessage] = useState("");
+  const [refreshMessageTitle, setRefreshMessageTitle] = useState("Icon theme update complete");
   const mapping = parsedObject(drafts.mapping_json ?? "{}");
   const rows = tokenRows(mapping);
   const assetRoot = String(record.asset_root ?? drafts.asset_root ?? "");
@@ -156,6 +222,7 @@ export function IconThemeRecordEditor({
     try {
       const result = await refreshIconThemeSet({ recordId: record.id });
       onAppStateChanged?.(result.state, result.tableId, result.record);
+      setRefreshMessageTitle("Refresh complete");
       setRefreshMessage(
         `Refreshed ${result.commonTokenCount} common token${
           result.commonTokenCount === 1 ? "" : "s"
@@ -168,6 +235,7 @@ export function IconThemeRecordEditor({
         }`,
       );
     } catch (error) {
+      setRefreshMessageTitle("Refresh failed");
       setRefreshMessage(error instanceof Error ? error.message : String(error));
     } finally {
       setRefreshing(false);
@@ -182,17 +250,86 @@ export function IconThemeRecordEditor({
     try {
       const result = await deleteIconThemeToken({ recordId: record.id, token });
       onAppStateChanged?.(result.state, result.tableId, result.record);
+      setRefreshMessageTitle("Delete complete");
       setRefreshMessage(
         `Deleted “${token}” from ${result.deletedFileCount} icon set${
           result.deletedFileCount === 1 ? "" : "s"
         } and removed it from the mapping.`,
       );
     } catch (error) {
+      setRefreshMessageTitle("Delete failed");
       setRefreshMessage(error instanceof Error ? error.message : String(error));
     } finally {
       setDeleting(false);
       setPendingDeleteToken("");
     }
+  }
+
+  async function searchSources() {
+    const query = generatorQuery.trim();
+    if (!query) return;
+    setGeneratorSearching(true);
+    setGeneratorError("");
+    try {
+      const result = await searchIconThemeSources({
+        recordId: record.id,
+        query,
+      });
+      setSourceResults(result);
+      setSelectedLucide(result.lucide[0]?.sourceName ?? "");
+      setSelectedMaterial(result.material[0]?.sourceName ?? "");
+      const nextToken = generatorToken.trim() || tokenFromText(query);
+      setGeneratorToken(nextToken);
+      setGeneratorCategory(generatorCategory.trim() || categoryFromToken(nextToken));
+    } catch (error) {
+      setGeneratorError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setGeneratorSearching(false);
+    }
+  }
+
+  async function generateSelectedToken() {
+    const token = tokenFromText(generatorToken);
+    if (!token) {
+      setGeneratorError("Token is required.");
+      return;
+    }
+    setGeneratorGenerating(true);
+    setGeneratorError("");
+    try {
+      const result = await generateIconThemeToken({
+        recordId: record.id,
+        token,
+        category: tokenFromText(generatorCategory) || categoryFromToken(token),
+        description: generatorDescription,
+        selectedSources: {
+          lucide: selectedLucide,
+          material: selectedMaterial,
+        },
+      });
+      onAppStateChanged?.(result.state, result.tableId, result.record);
+      setRefreshMessageTitle("Generate complete");
+      setRefreshMessage(
+        `Generated “${result.token}” in ${result.writtenFileCount} set${
+          result.writtenFileCount === 1 ? "" : "s"
+        }. Refreshed ${result.refreshedThemeCount} icon theme${
+          result.refreshedThemeCount === 1 ? "" : "s"
+        }; ${result.commonTokenCount} common token${
+          result.commonTokenCount === 1 ? "" : "s"
+        }.`,
+      );
+      setGeneratorOpen(false);
+    } catch (error) {
+      setGeneratorError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setGeneratorGenerating(false);
+    }
+  }
+
+  function closeGenerator() {
+    if (generatorSearching || generatorGenerating) return;
+    setGeneratorOpen(false);
+    setGeneratorError("");
   }
 
   return (
@@ -217,9 +354,10 @@ export function IconThemeRecordEditor({
       {refreshMessage ? (
         <AppModalDialog
           eyebrow="Icon theme"
-          title="Refresh complete"
+          title={refreshMessageTitle}
           message={refreshMessage}
           hideConfirm
+          cancelLabel="OK"
           onCancel={() => setRefreshMessage("")}
           onConfirm={() => setRefreshMessage("")}
         />
@@ -235,6 +373,114 @@ export function IconThemeRecordEditor({
             if (!deleting) setPendingDeleteToken("");
           }}
           onConfirm={() => void confirmDeleteToken()}
+        />
+      ) : null}
+      {generatorOpen ? (
+        <AppModalDialog
+          className="icon-theme-generator-modal"
+          eyebrow="Icon themes"
+          title="Search / add icon token"
+          message={
+            <div className="icon-theme-generator">
+              <label className="app-modal-form-field">
+                <span>Search</span>
+                <div className="icon-theme-generator-search-row">
+                  <input
+                    className="app-modal-input"
+                    value={generatorQuery}
+                    placeholder="telephone"
+                    onChange={(event) => setGeneratorQuery(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") void searchSources();
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => void searchSources()}
+                  >
+                    {generatorSearching ? "Searching…" : "Search"}
+                  </button>
+                </div>
+              </label>
+              <div className="icon-theme-generator-results">
+                <div>
+                  <strong>Lucide</strong>
+                  <div className="icon-theme-generator-candidates">
+                    {sourceResults.lucide.length ? (
+                      sourceResults.lucide.map((candidate) => (
+                        <SourceCandidateButton
+                          key={candidate.sourceName}
+                          candidate={candidate}
+                          selected={selectedLucide === candidate.sourceName}
+                          onClick={() => setSelectedLucide(candidate.sourceName)}
+                        />
+                      ))
+                    ) : (
+                      <span className="empty-panel">No results yet.</span>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <strong>Material</strong>
+                  <div className="icon-theme-generator-candidates">
+                    {sourceResults.material.length ? (
+                      sourceResults.material.map((candidate) => (
+                        <SourceCandidateButton
+                          key={candidate.sourceName}
+                          candidate={candidate}
+                          selected={selectedMaterial === candidate.sourceName}
+                          onClick={() => setSelectedMaterial(candidate.sourceName)}
+                        />
+                      ))
+                    ) : (
+                      <span className="empty-panel">No results yet.</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <label className="app-modal-form-field">
+                <span>MOCKUPS token</span>
+                <input
+                  className="app-modal-input"
+                  value={generatorToken}
+                  placeholder="phone_call"
+                  onChange={(event) => {
+                    const nextToken = event.target.value;
+                    setGeneratorToken(nextToken);
+                    if (!generatorCategory.trim()) {
+                      setGeneratorCategory(categoryFromToken(tokenFromText(nextToken)));
+                    }
+                  }}
+                />
+              </label>
+              <label className="app-modal-form-field">
+                <span>Category</span>
+                <input
+                  className="app-modal-input"
+                  value={generatorCategory}
+                  placeholder="phone"
+                  onChange={(event) => setGeneratorCategory(event.target.value)}
+                />
+              </label>
+              <label className="app-modal-form-field">
+                <span>Description</span>
+                <textarea
+                  className="app-modal-input"
+                  rows={3}
+                  value={generatorDescription}
+                  placeholder="Phone call icon"
+                  onChange={(event) => setGeneratorDescription(event.target.value)}
+                />
+              </label>
+              {generatorError ? (
+                <strong className="editor-field-row-error">{generatorError}</strong>
+              ) : null}
+            </div>
+          }
+          confirmLabel={generatorGenerating ? "Generating…" : "Generate"}
+          onCancel={closeGenerator}
+          onConfirm={() => void generateSelectedToken()}
         />
       ) : null}
       <EditorHeader
@@ -274,6 +520,13 @@ export function IconThemeRecordEditor({
                   onClick={() => setPendingRefresh(true)}
                 >
                   Refresh sets
+                </button>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => setGeneratorOpen(true)}
+                >
+                  Search / add token
                 </button>
               </div>
               {rows.length === 0 ? (

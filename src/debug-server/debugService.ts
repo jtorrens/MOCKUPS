@@ -1,5 +1,8 @@
-import { readdir, unlink } from "node:fs/promises";
+import { execFile } from "node:child_process";
+import { mkdtemp, readFile, readdir, unlink, writeFile } from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
+import { promisify } from "node:util";
 import type { z } from "zod";
 import {
   ActorSchema,
@@ -61,6 +64,7 @@ import { ACTOR_FIELDS } from "../domain/fields/actorFields.js";
 
 type Row = Record<string, unknown>;
 type DeviceState = z.infer<typeof DeviceStateSchema>;
+const execFileAsync = promisify(execFile);
 
 type ScreenOptionRow = TimelineScreenLike & {
   shotId: string;
@@ -1486,6 +1490,22 @@ export interface IconThemeDeleteTokenRequest {
   token: string;
 }
 
+export interface IconThemeSearchSourcesRequest {
+  recordId: string;
+  query: string;
+}
+
+export interface IconThemeGenerateTokenRequest {
+  recordId: string;
+  token: string;
+  category?: string;
+  description?: string;
+  selectedSources: {
+    lucide?: string;
+    material?: string;
+  };
+}
+
 export interface IconThemeRefreshResult {
   state: ReturnType<typeof loadAppState>;
   record: Row;
@@ -1500,6 +1520,28 @@ export interface IconThemeDeleteTokenResult {
   record: Row;
   tableId: "icon_themes";
   deletedFileCount: number;
+}
+
+export interface IconThemeSourceCandidate {
+  provider: "lucide" | "material";
+  sourceName: string;
+  previewUrl?: string;
+}
+
+export interface IconThemeSearchSourcesResult {
+  lucide: IconThemeSourceCandidate[];
+  material: IconThemeSourceCandidate[];
+}
+
+export interface IconThemeGenerateTokenResult {
+  state: ReturnType<typeof loadAppState>;
+  record: Row;
+  tableId: "icon_themes";
+  token: string;
+  writtenFileCount: number;
+  refreshedThemeCount: number;
+  commonTokenCount: number;
+  omittedTokenCount: number;
 }
 
 export interface AppCreateRequest {
@@ -3071,15 +3113,179 @@ function iconThemeContext(database: SQLiteDatabase, recordId: string) {
   return { assetRoot, mediaRoot, row };
 }
 
+function plainObject(value: unknown): Record<string, unknown> | undefined {
+  return value &&
+    typeof value === "object" &&
+    !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : undefined;
+}
+
+async function readJsonFileIfExists(filePath: string) {
+  try {
+    return JSON.parse(await readFile(filePath, "utf8")) as unknown;
+  } catch {
+    return undefined;
+  }
+}
+
+function inferIconSetFromName(name: string) {
+  const lower = name.toLowerCase();
+  if (lower.includes("lucide") || lower.includes("lucida")) {
+    const stroke = lower.includes("semi") ? 2.5 : lower.includes("bold") ? 2.75 : 2;
+    return {
+      provider: "lucide",
+      setName: name,
+      package: "lucide-static",
+      stroke,
+      fillMode: "stroke",
+    };
+  }
+  if (lower.includes("material")) {
+    const style = lower.includes("outlined")
+      ? "outlined"
+      : lower.includes("sharp")
+        ? "sharp"
+        : "rounded";
+    const weightMatch = /(?:^|-|_)(100|200|300|400|500|600|700)(?:$|-|_)/.exec(lower);
+    const weight = weightMatch ? Number(weightMatch[1]) : 400;
+    return {
+      provider: "material",
+      setName: name,
+      package: `@material-symbols/svg-${weight}`,
+      style,
+      weight,
+      fillMode: "filled",
+    };
+  }
+  return undefined;
+}
+
+function iconSetFromManifest(
+  manifest: Record<string, unknown> | undefined,
+  fallbackName: string,
+) {
+  if (!manifest) return undefined;
+  const source = String(manifest.source ?? "");
+  const style = String(manifest.style ?? "").toLowerCase();
+  if (source.includes("lucide") || style === "lucide") {
+    return {
+      provider: "lucide",
+      setName: String(manifest.name ?? fallbackName),
+      package: source || "lucide-static",
+      stroke:
+        typeof manifest.stroke === "number" && Number.isFinite(manifest.stroke)
+          ? manifest.stroke
+          : 2,
+      fillMode: "stroke",
+    };
+  }
+  if (source.includes("material") || ["rounded", "outlined", "sharp"].includes(style)) {
+    const weight =
+      typeof manifest.weight === "number" && Number.isFinite(manifest.weight)
+        ? manifest.weight
+        : 400;
+    return {
+      provider: "material",
+      setName: String(manifest.name ?? fallbackName),
+      package: source || `@material-symbols/svg-${weight}`,
+      style: ["rounded", "outlined", "sharp"].includes(style) ? style : "rounded",
+      weight,
+      fillMode: "filled",
+    };
+  }
+  return undefined;
+}
+
+async function inferIconSetDefinition({
+  row,
+  setPath,
+}: {
+  row: Row;
+  setPath: string;
+}) {
+  const metadata = readOptionalJson(row, "metadata_json") ?? {};
+  const existing = plainObject(metadata.iconSet);
+  if (existing?.provider) return { metadata, iconSet: existing };
+  const manifest = plainObject(await readJsonFileIfExists(path.join(setPath, "manifest.json")));
+  const name = path.basename(setPath);
+  const iconSet = iconSetFromManifest(manifest, name) ?? inferIconSetFromName(name);
+  if (!iconSet) {
+    throw new Error(`Could not infer icon set definition for ${name}`);
+  }
+  return { metadata, iconSet };
+}
+
+async function iconThemeProductionContext(
+  database: SQLiteDatabase,
+  recordId: string,
+) {
+  const { mediaRoot, row } = iconThemeContext(database, recordId);
+  const productionId = String(row.production_id);
+  const rows = database
+    .prepare("SELECT * FROM icon_themes WHERE production_id = ? ORDER BY name")
+    .all(productionId) as Row[];
+  if (!rows.length) {
+    throw new Error(`Production ${productionId} has no icon themes.`);
+  }
+
+  let rootPath = "";
+  const sets = [];
+  for (const iconTheme of rows) {
+    const assetRoot = String(iconTheme.asset_root ?? "").trim();
+    if (!assetRoot) {
+      throw new Error(`Icon theme ${iconTheme.id} has no asset root.`);
+    }
+    const setPath = path.isAbsolute(assetRoot)
+      ? path.resolve(assetRoot)
+      : path.resolve(mediaRoot, assetRoot);
+    const candidateRoot = path.dirname(setPath);
+    if (!rootPath) rootPath = candidateRoot;
+    if (path.resolve(rootPath) !== path.resolve(candidateRoot)) {
+      throw new Error("All icon themes in the production must share one icon-themes root.");
+    }
+    const { metadata, iconSet } = await inferIconSetDefinition({
+      row: iconTheme,
+      setPath,
+    });
+    const nextMetadata = {
+      ...metadata,
+      iconSet,
+    };
+    database
+      .prepare("UPDATE icon_themes SET metadata_json = ? WHERE id = ?")
+      .run(
+        stringifyJsonObject(nextMetadata, "icon_themes.metadata_json"),
+        iconTheme.id,
+      );
+    sets.push({
+      id: String(iconTheme.id),
+      name: path.basename(setPath),
+      path: setPath,
+      iconSet,
+    });
+  }
+
+  return {
+    mediaRoot,
+    productionId,
+    rootPath,
+    row,
+    sets,
+    rows,
+  };
+}
+
 export async function refreshIconThemeSet(
   database: SQLiteDatabase,
   request: IconThemeRefreshRequest,
 ): Promise<IconThemeRefreshResult> {
-  const { assetRoot, mediaRoot, row } = iconThemeContext(database, request.recordId);
-  const { setsRoot, setDirectories } = await iconThemeSetDirectories({
-    assetRoot,
-    mediaRoot,
-  });
+  const context = await iconThemeProductionContext(database, request.recordId);
+  const { mediaRoot, rootPath: setsRoot, row } = context;
+  const setDirectories = context.sets.map((set) => ({
+    name: set.name,
+    path: set.path,
+  }));
 
   if (setDirectories.length === 0) {
     throw new Error(`No icon sets found in ${setsRoot}`);
@@ -3156,6 +3362,187 @@ export async function refreshIconThemeSet(
   };
 }
 
+function iconThemeScriptPath() {
+  return path.resolve("scripts/icon-themes/sync-icon-theme-token.cjs");
+}
+
+function parseScriptJson(stdout: string) {
+  try {
+    return JSON.parse(stdout) as unknown;
+  } catch (error) {
+    throw new Error("Icon theme script did not return valid JSON.", { cause: error });
+  }
+}
+
+export async function searchIconThemeSources(
+  database: SQLiteDatabase,
+  request: IconThemeSearchSourcesRequest,
+): Promise<IconThemeSearchSourcesResult> {
+  const query = request.query.trim();
+  if (!query) return { lucide: [], material: [] };
+  await iconThemeProductionContext(database, request.recordId);
+  const { stdout } = await execFileAsync(
+    process.execPath,
+    [
+      iconThemeScriptPath(),
+      "--mode",
+      "search",
+      "--query",
+      query,
+    ],
+    {
+      cwd: process.cwd(),
+      maxBuffer: 1024 * 1024 * 4,
+    },
+  );
+  const parsed = plainObject(parseScriptJson(stdout)) ?? {};
+  const normalizeCandidates = (provider: "lucide" | "material") =>
+    (Array.isArray(parsed[provider]) ? parsed[provider] : [])
+      .map((entry) => plainObject(entry))
+      .filter((entry): entry is Record<string, unknown> => Boolean(entry))
+      .map((entry) => ({
+        provider,
+        sourceName: String(entry.sourceName ?? ""),
+        previewUrl:
+          typeof entry.previewUrl === "string"
+            ? entry.previewUrl
+            : undefined,
+      }))
+      .filter((entry) => entry.sourceName);
+  return {
+    lucide: normalizeCandidates("lucide"),
+    material: normalizeCandidates("material"),
+  };
+}
+
+export async function generateIconThemeToken(
+  database: SQLiteDatabase,
+  request: IconThemeGenerateTokenRequest,
+): Promise<IconThemeGenerateTokenResult> {
+  const token = request.token.trim();
+  if (!/^[a-z][a-z0-9_]*(?:\.[a-z0-9_]+)*$/.test(token)) {
+    throw new Error("Icon token must be lower_snake_case or dotted lower_snake_case.");
+  }
+  const context = await iconThemeProductionContext(database, request.recordId);
+  const providers = new Set(
+    context.sets.map((set) => String(set.iconSet.provider)),
+  );
+  for (const provider of providers) {
+    if (provider !== "lucide" && provider !== "material") {
+      throw new Error(`Unsupported icon provider: ${provider}`);
+    }
+    if (!request.selectedSources[provider as "lucide" | "material"]) {
+      throw new Error(`Missing selected source for ${provider}.`);
+    }
+  }
+
+  const requestPath = path.join(
+    await mkdtemp(path.join(os.tmpdir(), "mockups-icon-generate-")),
+    "request.json",
+  );
+  await writeFile(
+    requestPath,
+    JSON.stringify(
+      {
+        token,
+        category: request.category?.trim() || iconTokenCategory(token),
+        description: request.description?.trim() || "",
+        iconThemesRoot: context.rootPath,
+        mediaRoot: context.mediaRoot,
+        selectedSources: request.selectedSources,
+        sets: context.sets,
+      },
+      null,
+      2,
+    ),
+    "utf8",
+  );
+  const { stdout } = await execFileAsync(
+    process.execPath,
+    [
+      iconThemeScriptPath(),
+      "--mode",
+      "generate",
+      "--request",
+      requestPath,
+    ],
+    {
+      cwd: process.cwd(),
+      maxBuffer: 1024 * 1024 * 4,
+    },
+  );
+  const scriptResult = plainObject(parseScriptJson(stdout)) ?? {};
+
+  let commonTokenCount = 0;
+  let omittedTokenCount = 0;
+  let refreshedThemeCount = 0;
+  for (const row of context.rows) {
+    const refreshResult = await refreshIconThemeSet(database, {
+      recordId: String(row.id),
+    });
+    commonTokenCount = refreshResult.commonTokenCount;
+    omittedTokenCount = refreshResult.omittedTokenCount;
+    refreshedThemeCount += 1;
+  }
+  const category = request.category?.trim() || iconTokenCategory(token);
+  const description = request.description?.trim() || "";
+  for (const row of context.rows) {
+    const refreshed = database
+      .prepare("SELECT * FROM icon_themes WHERE id = ?")
+      .get(row.id) as Row;
+    const mapping = readRequiredJson(refreshed, "mapping_json");
+    const tokensRoot = plainObject(mapping.tokens) ?? {};
+    const existingToken = plainObject(tokensRoot[token]) ?? {};
+    const nextTokens = {
+      ...tokensRoot,
+      [token]: {
+        ...existingToken,
+        category,
+        description,
+        file: `${token}.svg`,
+        sources: request.selectedSources,
+      },
+    };
+    const nextCategories = plainObject(mapping.categories) ?? {};
+    const categoryTokens = Array.isArray(nextCategories[category])
+      ? [...(nextCategories[category] as unknown[]).map(String)]
+      : [];
+    if (!categoryTokens.includes(token)) categoryTokens.push(token);
+    database
+      .prepare("UPDATE icon_themes SET mapping_json = ? WHERE id = ?")
+      .run(
+        stringifyJsonObject(
+          {
+            ...mapping,
+            tokens: nextTokens,
+            categories: {
+              ...nextCategories,
+              [category]: categoryTokens,
+            },
+          },
+          "icon_themes.mapping_json",
+        ),
+        row.id,
+      );
+  }
+  const updated = database
+    .prepare("SELECT * FROM icon_themes WHERE id = ?")
+    .get(request.recordId) as Row;
+  return {
+    tableId: "icon_themes",
+    record: decodeAppRow(updated, tableDefinition("icon_themes")),
+    state: loadAppState(database),
+    token,
+    writtenFileCount:
+      typeof scriptResult.writtenFileCount === "number"
+        ? scriptResult.writtenFileCount
+        : context.sets.length,
+    refreshedThemeCount,
+    commonTokenCount,
+    omittedTokenCount,
+  };
+}
+
 export async function deleteIconThemeToken(
   database: SQLiteDatabase,
   request: IconThemeDeleteTokenRequest,
@@ -3164,11 +3551,12 @@ export async function deleteIconThemeToken(
   if (!/^[a-z][a-z0-9_]*(?:\.[a-z0-9_]+)*$/.test(token)) {
     throw new Error("Icon token must be lower_snake_case or dotted lower_snake_case.");
   }
-  const { assetRoot, mediaRoot, row } = iconThemeContext(database, request.recordId);
-  const { setDirectories } = await iconThemeSetDirectories({
-    assetRoot,
-    mediaRoot,
-  });
+  const context = await iconThemeProductionContext(database, request.recordId);
+  const { row } = context;
+  const setDirectories = context.sets.map((set) => ({
+    name: set.name,
+    path: set.path,
+  }));
   let deletedFileCount = 0;
   await Promise.all(
     setDirectories.map(async (entry) => {

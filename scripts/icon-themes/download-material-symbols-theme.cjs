@@ -13,6 +13,7 @@
  *   node scripts/icon-themes/download-material-symbols-theme.cjs --style rounded --weight 600
  *
  * Opciones:
+ *   --icon-themes-root <absoluteOrRelativePath>
  *   --style rounded|outlined|sharp
  *   --weight 100|200|300|400|500|600|700
  *   --out <folderName>
@@ -139,6 +140,7 @@ const ICONS = [
 
 function parseArgs(argv) {
   const args = {
+    iconThemesRoot: null,
     style: "rounded",
     weight: "600",
     out: null,
@@ -148,7 +150,11 @@ function parseArgs(argv) {
   for (let i = 0; i < argv.length; i++) {
     const token = argv[i];
 
-    if (token === "--style") {
+    if (token === "--icon-themes-root") {
+      args.iconThemesRoot = argv[++i];
+    } else if (token.startsWith("--icon-themes-root=")) {
+      args.iconThemesRoot = token.slice("--icon-themes-root=".length);
+    } else if (token === "--style") {
       args.style = argv[++i];
     } else if (token.startsWith("--style=")) {
       args.style = token.slice("--style=".length);
@@ -193,6 +199,7 @@ Uso:
   node scripts/icon-themes/download-material-symbols-theme.cjs --style rounded --weight 600
 
 Opciones:
+  --icon-themes-root <absoluteOrRelativePath>
   --style rounded|outlined|sharp
   --weight 100|200|300|400|500|600|700
   --out <folderName>
@@ -200,6 +207,7 @@ Opciones:
 
 Ejemplos:
   node scripts/icon-themes/download-material-symbols-theme.cjs --style rounded --weight 600
+  node scripts/icon-themes/download-material-symbols-theme.cjs --icon-themes-root /path/to/icon-themes --style rounded --weight 600
   node scripts/icon-themes/download-material-symbols-theme.cjs --style outlined --weight 400
   node scripts/icon-themes/download-material-symbols-theme.cjs --style rounded --weight 700 --out material-rounded-bold
 `);
@@ -386,8 +394,11 @@ function main() {
 
   const packageName = `@material-symbols/svg-${args.weight}`;
   const projectRoot = process.cwd();
-  const outputDir = path.join(projectRoot, "assets", "icon-themes", args.out);
-  const licenseDir = path.join(projectRoot, "assets", "icon-themes", "_licenses");
+  const iconThemesRoot = args.iconThemesRoot
+    ? path.resolve(projectRoot, args.iconThemesRoot)
+    : path.join(projectRoot, "assets", "icon-themes");
+  const outputDir = path.join(iconThemesRoot, args.out);
+  const licenseDir = path.join(iconThemesRoot, "_licenses");
 
   if (!args.keepExisting) {
     removeDirIfExists(outputDir);
@@ -401,6 +412,7 @@ function main() {
     console.log(`Style: ${args.style}`);
     console.log(`Weight: ${args.weight}`);
     console.log(`Package: ${packageName}`);
+    console.log(`Icon themes root: ${iconThemesRoot}`);
     console.log(`Output folder: ${outputDir}`);
     console.log("");
     console.log(`Downloading ${packageName}@latest...`);

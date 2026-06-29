@@ -19,8 +19,10 @@ import {
   deleteAppRecord,
   deleteIconThemeToken,
   duplicateAppRecord,
+  generateIconThemeToken,
   refreshIconThemeSet,
   renamePaletteColorToken,
+  searchIconThemeSources,
   updateAppRecord,
   type AppCreateRequest,
   type AppRecordActionRequest,
@@ -29,6 +31,8 @@ import {
   type DebugSelection,
   type IconThemeRefreshRequest,
   type IconThemeDeleteTokenRequest,
+  type IconThemeGenerateTokenRequest,
+  type IconThemeSearchSourcesRequest,
   type PaletteColorRenameRequest,
   type ScreenInstanceMoveRequest,
 } from "./debugService.js";
@@ -690,6 +694,16 @@ const server = createServer(async (request, response) => {
     if (request.method === "POST" && url.pathname === "/api/app/icon-theme/delete-token") {
       const body = (await readJson(request)) as IconThemeDeleteTokenRequest;
       sendJson(response, 200, await deleteIconThemeToken(database, body));
+      return;
+    }
+    if (request.method === "POST" && url.pathname === "/api/app/icon-theme/search-sources") {
+      const body = (await readJson(request)) as IconThemeSearchSourcesRequest;
+      sendJson(response, 200, await searchIconThemeSources(database, body));
+      return;
+    }
+    if (request.method === "POST" && url.pathname === "/api/app/icon-theme/generate-token") {
+      const body = (await readJson(request)) as IconThemeGenerateTokenRequest;
+      sendJson(response, 200, await generateIconThemeToken(database, body));
       return;
     }
     if (request.method === "POST" && url.pathname === "/api/app/production-font/import") {

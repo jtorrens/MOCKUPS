@@ -14,6 +14,7 @@
  *   node scripts/icon-themes/download-lucide-theme.cjs
  *
  * Opciones:
+ *   --icon-themes-root <absoluteOrRelativePath>
  *   --out <folderName>
  *   --stroke <number>
  *   --keep-existing
@@ -144,6 +145,7 @@ const ICONS = [
 
 function parseArgs(argv) {
   const args = {
+    iconThemesRoot: null,
     out: DEFAULT_OUT,
     stroke: DEFAULT_STROKE,
     keepExisting: false
@@ -152,7 +154,11 @@ function parseArgs(argv) {
   for (let i = 0; i < argv.length; i++) {
     const token = argv[i];
 
-    if (token === "--out") {
+    if (token === "--icon-themes-root") {
+      args.iconThemesRoot = argv[++i];
+    } else if (token.startsWith("--icon-themes-root=")) {
+      args.iconThemesRoot = token.slice("--icon-themes-root=".length);
+    } else if (token === "--out") {
       args.out = argv[++i];
     } else if (token.startsWith("--out=")) {
       args.out = token.slice("--out=".length);
@@ -183,6 +189,7 @@ Uso:
   node scripts/icon-themes/download-lucide-theme.cjs
 
 Opciones:
+  --icon-themes-root <absoluteOrRelativePath>
   --out <folderName>
   --stroke <number>
   --keep-existing
@@ -190,6 +197,7 @@ Opciones:
 Ejemplos:
   node scripts/icon-themes/download-lucide-theme.cjs
   node scripts/icon-themes/download-lucide-theme.cjs --out lucide-basic
+  node scripts/icon-themes/download-lucide-theme.cjs --icon-themes-root /path/to/icon-themes --out lucide-basic
   node scripts/icon-themes/download-lucide-theme.cjs --out lucide-semibold --stroke 2.25
   node scripts/icon-themes/download-lucide-theme.cjs --out lucide-bold-ish --stroke 2.75
 `);
@@ -364,8 +372,11 @@ function main() {
   const args = parseArgs(process.argv.slice(2));
 
   const projectRoot = process.cwd();
-  const outputDir = path.join(projectRoot, "assets", "icon-themes", args.out);
-  const licenseDir = path.join(projectRoot, "assets", "icon-themes", "_licenses");
+  const iconThemesRoot = args.iconThemesRoot
+    ? path.resolve(projectRoot, args.iconThemesRoot)
+    : path.join(projectRoot, "assets", "icon-themes");
+  const outputDir = path.join(iconThemesRoot, args.out);
+  const licenseDir = path.join(iconThemesRoot, "_licenses");
 
   if (!args.keepExisting) {
     removeDirIfExists(outputDir);
@@ -377,6 +388,7 @@ function main() {
 
   try {
     console.log(`Package: ${PACKAGE_NAME}`);
+    console.log(`Icon themes root: ${iconThemesRoot}`);
     console.log(`Output folder: ${outputDir}`);
     console.log(`Stroke: ${args.stroke}`);
     console.log("");

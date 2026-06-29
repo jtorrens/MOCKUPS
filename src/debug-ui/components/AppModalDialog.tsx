@@ -9,6 +9,7 @@ interface AppModalDialogProps {
   cancelLabel?: string;
   destructive?: boolean;
   hideConfirm?: boolean;
+  className?: string;
   prompt?: {
     label: string;
     initialValue: string;
@@ -26,6 +27,7 @@ export function AppModalDialog({
   cancelLabel = "Cancel",
   destructive = false,
   hideConfirm = false,
+  className = "",
   prompt,
   onCancel,
   onConfirm,
@@ -61,7 +63,7 @@ export function AppModalDialog({
       onMouseDown={onCancel}
     >
       <section
-        className="app-modal-card app-confirm-modal"
+        className={`app-modal-card app-confirm-modal ${className}`.trim()}
         role="dialog"
         aria-modal="true"
         aria-label={title}

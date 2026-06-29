@@ -370,3 +370,92 @@ video.chat-media-preview-image {
 .icon-theme-delete-button {
   justify-self: end;
 }
+
+.icon-theme-generator {
+  display: grid;
+  width: min(920px, calc(100vw - 96px));
+  max-height: min(74vh, 760px);
+  gap: 12px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.app-confirm-modal.icon-theme-generator-modal {
+  width: min(980px, calc(100vw - 48px));
+}
+
+.icon-theme-generator-modal .secondary-button {
+  border: 0;
+  border-radius: var(--field-control-radius, 8px);
+  padding: 7px 10px;
+  color: var(--button-secondary-color, var(--editor-input-color, var(--editor-text-color, #172033)));
+  background: var(--button-secondary-background, var(--editor-button-background, rgba(148, 163, 184, 0.18)));
+  font: inherit;
+  font-size: var(--field-control-font-size, 13px);
+  cursor: pointer;
+}
+
+.icon-theme-generator-modal .secondary-button:disabled {
+  cursor: default;
+  opacity: var(--editor-button-disabled-opacity, 0.45);
+}
+
+.icon-theme-generator-search-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.icon-theme-generator-results {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.icon-theme-generator-results > div {
+  display: grid;
+  min-width: 0;
+  gap: 8px;
+  border: var(--editor-subsection-border, var(--card-border, 1px solid #dfe3eb));
+  border-radius: var(--editor-subsection-radius, var(--card-radius, 12px));
+  padding: 10px;
+  background: var(--editor-subsection-background, var(--editor-surface-background, var(--card-background, #ffffff)));
+}
+
+.icon-theme-generator-results strong {
+  color: var(--card-header-title-color, var(--editor-text-color, #172033));
+  font-size: var(--card-header-title-font-size, 13px);
+}
+
+.icon-theme-generator-candidates {
+  display: grid;
+  max-height: 260px;
+  gap: 6px;
+  overflow: auto;
+}
+
+.icon-theme-source-candidate.secondary-button {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  min-width: 0;
+  gap: 9px;
+  text-align: left;
+}
+
+.icon-theme-source-candidate > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.icon-theme-source-candidate.is-selected {
+  color: var(--button-primary-color, #ffffff);
+  background: var(--selection-color, #2f6bff);
+}
+
+.icon-theme-source-candidate.is-selected .icon-theme-preview {
+  color: var(--button-primary-color, #ffffff);
+  border-color: color-mix(in srgb, var(--button-primary-color, #ffffff) 55%, transparent);
+  background: color-mix(in srgb, var(--button-primary-color, #ffffff) 14%, transparent);
+}

@@ -302,6 +302,56 @@ export async function deleteIconThemeToken(request: {
   );
 }
 
+export interface IconThemeSourceCandidate {
+  provider: "lucide" | "material";
+  sourceName: string;
+  previewUrl?: string;
+}
+
+export async function searchIconThemeSources(request: {
+  recordId: string;
+  query: string;
+}): Promise<{
+  lucide: IconThemeSourceCandidate[];
+  material: IconThemeSourceCandidate[];
+}> {
+  return readResponse(
+    await fetch("/api/app/icon-theme/search-sources", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
+    }),
+  );
+}
+
+export async function generateIconThemeToken(request: {
+  recordId: string;
+  token: string;
+  category?: string;
+  description?: string;
+  selectedSources: {
+    lucide?: string;
+    material?: string;
+  };
+}): Promise<{
+  state: AppState;
+  record: AppRecord;
+  tableId: "icon_themes";
+  token: string;
+  writtenFileCount: number;
+  refreshedThemeCount: number;
+  commonTokenCount: number;
+  omittedTokenCount: number;
+}> {
+  return readResponse(
+    await fetch("/api/app/icon-theme/generate-token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
+    }),
+  );
+}
+
 export async function getPreviewPayload(
   selection: DebugSelection,
 ): Promise<DebugPayload> {
