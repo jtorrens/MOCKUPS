@@ -24,6 +24,12 @@ interface JsonArrayEditorProps {
   groupContext?: string;
   productionFontCatalog?: ProductionFontCatalog;
   paletteCatalog?: PaletteColorCatalog;
+  mediaRoot?: string;
+  nativeBridge?: {
+    pickFile?: () => Promise<string[]>;
+    pickDirectory?: () => Promise<string[]>;
+    mediaDataUrl?: (filePath: string, rootPath: string) => Promise<string>;
+  };
   onRootChange: (nextValue: JsonValue) => void;
 }
 
@@ -39,6 +45,8 @@ export function JsonArrayEditor({
   groupContext,
   productionFontCatalog,
   paletteCatalog,
+  mediaRoot,
+  nativeBridge,
   onRootChange,
 }: JsonArrayEditorProps) {
   const [newKind, setNewKind] = useState("object");
@@ -107,6 +115,8 @@ export function JsonArrayEditor({
             groupContext={groupContext}
             productionFontCatalog={productionFontCatalog}
             paletteCatalog={paletteCatalog}
+            mediaRoot={mediaRoot}
+            nativeBridge={nativeBridge}
             onRootChange={onRootChange}
           />
           {allowArrayStructuralEdits ? (

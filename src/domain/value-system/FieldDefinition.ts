@@ -18,6 +18,14 @@ export interface FieldEditorMetadata {
   readonly fileKind?: "file" | "directory";
   readonly accept?: readonly string[];
   readonly lockFontFamily?: boolean;
+  readonly hidden?: boolean;
+  readonly multiline?: boolean;
+  readonly rows?: number;
+  readonly pair?: {
+    readonly id: string;
+    readonly label: string;
+    readonly role: string;
+  };
 }
 
 export interface FieldDefinition {

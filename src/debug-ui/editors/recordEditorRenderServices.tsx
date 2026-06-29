@@ -7,17 +7,9 @@ import type {
 } from "../api/client.js";
 import { renderGenericField as renderGenericFieldFromDispatcher } from "./GenericFieldDispatcher.js";
 import {
-  DeviceMetricsField,
-  FlatJsonObjectEditor,
-} from "./FlatJsonFieldEditors.js";
-import {
   RecordFieldRenderer,
   type RawJsonFieldOverride,
 } from "./RecordFieldRenderer.js";
-import {
-  parsedJsonValue,
-  parsedObject,
-} from "./recordJsonUtils.js";
 import {
   stringifyJson,
   type JsonValue,
@@ -95,6 +87,8 @@ export function createRecordEditorRenderServices({
         rawOverride={rawOverride}
         productionFontCatalog={productionFontCatalog}
         paletteCatalog={paletteCatalog}
+        mediaRoot={productionMediaRoot}
+        nativeBridge={nativeBridge}
         onDraftChange={(column, value) =>
           setDrafts({
             ...drafts,
@@ -111,43 +105,6 @@ export function createRecordEditorRenderServices({
       .filter((field): field is AppFieldDefinition => Boolean(field))
       .filter((field) => field.column !== "id")
       .map((field) => renderField(field));
-  }
-
-  function renderFlatJsonObjectEditor(
-    column: string,
-    omitKeys: string[] = [],
-  ) {
-    const field = fieldsByColumn.get(column);
-    if (!field) return null;
-    const root = parsedObject(drafts[column] ?? "{}");
-    return (
-      <FlatJsonObjectEditor
-        table={table}
-        field={field}
-        record={record}
-        root={root}
-        omitKeys={omitKeys}
-        onRootChange={(nextRoot) => setJsonDraft(column, nextRoot)}
-        productionFontCatalog={productionFontCatalog}
-        paletteCatalog={paletteCatalog}
-      />
-    );
-  }
-
-  function renderDeviceMetricsField(field: AppFieldDefinition) {
-    const root = parsedJsonValue(drafts[field.column] ?? "{}", {}) as JsonValue;
-    return (
-      <DeviceMetricsField
-        key={field.column}
-        table={table}
-        field={field}
-        record={record}
-        root={root}
-        onRootChange={(nextRoot) => setJsonDraft(field.column, nextRoot)}
-        productionFontCatalog={productionFontCatalog}
-        paletteCatalog={paletteCatalog}
-      />
-    );
   }
 
   function renderGenericField(field: AppFieldDefinition) {
@@ -168,16 +125,12 @@ export function createRecordEditorRenderServices({
       setDrafts,
       setJsonDraft,
       renderField,
-      renderFlatJsonObjectEditor,
-      renderDeviceMetricsField,
     });
   }
 
   return {
-    renderDeviceMetricsField,
     renderField,
     renderFields,
-    renderFlatJsonObjectEditor,
     renderGenericField,
     setJsonDraft,
   };

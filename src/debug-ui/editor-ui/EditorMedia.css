@@ -5,6 +5,11 @@
   align-items: center;
 }
 
+.media-file-control .media-cover-preview,
+.media-file-control .actor-avatar-preview {
+  grid-column: 1 / -1;
+}
+
 .chat-media-preview-wrap {
   display: grid;
   gap: 6px;

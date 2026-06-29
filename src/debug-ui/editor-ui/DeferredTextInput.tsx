@@ -6,6 +6,7 @@ interface DeferredTextInputProps {
   disabled?: boolean;
   multiline?: boolean;
   placeholder?: string;
+  rows?: number;
   value: string;
   onCommit: (nextValue: string) => void;
 }
@@ -16,6 +17,7 @@ export function DeferredTextInput({
   disabled = false,
   multiline = false,
   placeholder,
+  rows = 4,
   value,
   onCommit,
 }: DeferredTextInputProps) {
@@ -38,7 +40,7 @@ export function DeferredTextInput({
         className={className}
         placeholder={placeholder}
         value={draft}
-        rows={4}
+        rows={rows}
         disabled={disabled}
         onBlur={commit}
         onChange={(event) => setDraft(event.target.value)}

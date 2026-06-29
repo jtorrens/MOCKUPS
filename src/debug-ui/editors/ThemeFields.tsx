@@ -7,7 +7,6 @@ import {
   type EditorControlKind,
 } from "../editor-ui/ValueKindControlRegistry.js";
 import {
-  DICTIONARY_CONTROL_CLASS,
   DICTIONARY_FIELD_CLASS,
 } from "../editor-ui/DictionaryFieldControl.js";
 import {
@@ -33,7 +32,7 @@ function themeFieldMetadata(
 }
 
 const dictionaryThemeRowClassName = `record-editor-field ${DICTIONARY_FIELD_CLASS}`;
-const dictionaryThemeControlClassName = `json-value-control ${DICTIONARY_CONTROL_CLASS}`;
+const dictionaryThemeControlClassName = "json-value-control";
 
 function numberValue(value: unknown, fallback: number): number {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;

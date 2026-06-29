@@ -20,6 +20,12 @@ import {
 import type { ProductionFontCatalog } from "./productionFonts.js";
 import type { PaletteColorCatalog } from "./paletteColors.js";
 
+interface JsonTreeNativeBridge {
+  pickFile?: () => Promise<string[]>;
+  pickDirectory?: () => Promise<string[]>;
+  mediaDataUrl?: (filePath: string, rootPath: string) => Promise<string>;
+}
+
 interface JsonTreeEditorProps {
   table: AppTableDefinition;
   field: AppFieldDefinition;
@@ -35,6 +41,8 @@ interface JsonTreeEditorProps {
   allowArrayStructuralEdits?: boolean;
   productionFontCatalog?: ProductionFontCatalog;
   paletteCatalog?: PaletteColorCatalog;
+  mediaRoot?: string;
+  nativeBridge?: JsonTreeNativeBridge;
   onRawTextChange: (nextRawText: string) => void;
 }
 
@@ -53,6 +61,8 @@ export function JsonTreeEditor({
   allowArrayStructuralEdits = false,
   productionFontCatalog,
   paletteCatalog,
+  mediaRoot,
+  nativeBridge,
   onRawTextChange,
 }: JsonTreeEditorProps) {
   const parsed = useMemo(
@@ -89,6 +99,10 @@ export function JsonTreeEditor({
     field.column === "config_json" &&
     parsed.ok &&
     isJsonObject(inheritedValue as JsonValue);
+  const canUseDictionaryJsonEditor =
+    parsed.ok &&
+    isJsonObject(parsed.value) &&
+    Object.values(hints).some((hint) => hint.field);
   return (
     <div
       className={`json-tree-editor ${parsed.ok ? "mode-tree" : "mode-raw"} ${
@@ -112,6 +126,8 @@ export function JsonTreeEditor({
           groupContext={groupContext}
           productionFontCatalog={productionFontCatalog}
           paletteCatalog={paletteCatalog}
+          mediaRoot={mediaRoot}
+          nativeBridge={nativeBridge}
           onRootChange={setTreeValue}
         />
       ) : canUseInheritedOverrideEditor ? (
@@ -124,6 +140,8 @@ export function JsonTreeEditor({
           restoreMode={restoreStrategy}
           productionFontCatalog={productionFontCatalog}
           paletteCatalog={paletteCatalog}
+          mediaRoot={mediaRoot}
+          nativeBridge={nativeBridge}
           onRootChange={setTreeValue}
         />
       ) : canUseModuleThemeTokenEditor ? (
@@ -136,6 +154,8 @@ export function JsonTreeEditor({
           restoreMode={restoreStrategy}
           productionFontCatalog={productionFontCatalog}
           paletteCatalog={paletteCatalog}
+          mediaRoot={mediaRoot}
+          nativeBridge={nativeBridge}
           onRootChange={setTreeValue}
         />
       ) : canUseAppInheritedTokenEditor ? (
@@ -148,6 +168,25 @@ export function JsonTreeEditor({
           restoreMode={restoreStrategy}
           productionFontCatalog={productionFontCatalog}
           paletteCatalog={paletteCatalog}
+          mediaRoot={mediaRoot}
+          nativeBridge={nativeBridge}
+          onRootChange={setTreeValue}
+        />
+      ) : canUseDictionaryJsonEditor ? (
+        <TokenOverrideEditor
+          rootValue={parsed.value}
+          inheritedRoot={
+            isJsonObject(inheritedValue as JsonValue)
+              ? (inheritedValue as JsonValue)
+              : {}
+          }
+          hints={hints}
+          inheritedColumnLabel="Default"
+          restoreMode={restoreStrategy}
+          productionFontCatalog={productionFontCatalog}
+          paletteCatalog={paletteCatalog}
+          mediaRoot={mediaRoot}
+          nativeBridge={nativeBridge}
           onRootChange={setTreeValue}
         />
       ) : groupContext && Array.isArray(parsed.value) ? (
@@ -167,6 +206,8 @@ export function JsonTreeEditor({
             groupContext={groupContext}
             productionFontCatalog={productionFontCatalog}
             paletteCatalog={paletteCatalog}
+            mediaRoot={mediaRoot}
+            nativeBridge={nativeBridge}
             onRootChange={setTreeValue}
           />
         </div>
@@ -184,6 +225,8 @@ export function JsonTreeEditor({
             groupContext={groupContext}
             productionFontCatalog={productionFontCatalog}
             paletteCatalog={paletteCatalog}
+            mediaRoot={mediaRoot}
+            nativeBridge={nativeBridge}
             onRootChange={setTreeValue}
           />
         </div>
@@ -202,6 +245,8 @@ export function JsonTreeEditor({
             groupContext={groupContext}
             productionFontCatalog={productionFontCatalog}
             paletteCatalog={paletteCatalog}
+            mediaRoot={mediaRoot}
+            nativeBridge={nativeBridge}
             onRootChange={setTreeValue}
           />
         </div>

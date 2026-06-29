@@ -1,4 +1,9 @@
 import type { AppFieldDefinition, AppTableDefinition } from "../../api/client.js";
+import { ACTOR_METADATA_BINDINGS } from "../../../domain/fields/actorFields.js";
+import {
+  PRODUCTION_METADATA_BINDINGS,
+  PRODUCTION_SETTINGS_BINDINGS,
+} from "../../../domain/fields/productionFields.js";
 import { THEME_TOKEN_BINDINGS } from "../../../domain/fields/themeFields.js";
 import type { FieldDefinition } from "../../../domain/value-system/index.js";
 import { fieldDescriptorHintsForContext } from "../../field-descriptors/registry.js";
@@ -41,6 +46,8 @@ export type JsonUiHint = {
   labelColumn?: string;
   fileKind?: "file" | "directory";
   accept?: string[];
+  multiline?: boolean;
+  rows?: number;
   min?: number;
   max?: number;
   step?: number | "any";
@@ -125,6 +132,15 @@ export function buildJsonUiHints(
     }),
     ...(table.id === "themes" && field.column === "tokens_json"
       ? jsonUiHintsFromFieldBindings(THEME_TOKEN_BINDINGS)
+      : {}),
+    ...(table.id === "productions" && field.column === "settings_json"
+      ? jsonUiHintsFromFieldBindings(PRODUCTION_SETTINGS_BINDINGS)
+      : {}),
+    ...(table.id === "productions" && field.column === "metadata_json"
+      ? jsonUiHintsFromFieldBindings(PRODUCTION_METADATA_BINDINGS)
+      : {}),
+    ...(table.id === "actors" && field.column === "metadata_json"
+      ? jsonUiHintsFromFieldBindings(ACTOR_METADATA_BINDINGS)
       : {}),
     ...moduleJsonUiHintsForRecord(table.id, field.column, record),
   };

@@ -7,8 +7,7 @@ import { JsonTreeEditor } from "../components/json-editor/JsonTreeEditor.js";
 import type { ProductionFontCatalog } from "../components/json-editor/productionFonts.js";
 import type { PaletteColorCatalog } from "../components/json-editor/paletteColors.js";
 import { InspectorFieldRow } from "../components/inspector/InspectorFieldRow.js";
-import { ACTOR_COLUMN_BINDINGS } from "../../domain/fields/actorFields.js";
-import { THEME_COLUMN_BINDINGS } from "../../domain/fields/themeFields.js";
+import { fieldDefinitionForRecordColumn } from "../../domain/fields/recordColumnFields.js";
 import {
   controlDefinitionForField,
   editorMetadataForField,
@@ -273,15 +272,7 @@ function dictionaryFieldForColumn(
   table: AppTableDefinition,
   field: AppFieldDefinition,
 ): FieldDefinition | undefined {
-  const bindings =
-    table.id === "actors"
-      ? ACTOR_COLUMN_BINDINGS
-      : table.id === "themes"
-        ? THEME_COLUMN_BINDINGS
-        : undefined;
-  return bindings?.find(
-    (binding) => binding.outputPath.length === 1 && binding.outputPath[0] === field.column,
-  )?.field;
+  return fieldDefinitionForRecordColumn(table.id, field.column);
 }
 
 function relationOptionsForDictionaryField(
@@ -334,6 +325,12 @@ interface RecordFieldRendererProps {
   rawOverride?: RawJsonFieldOverride;
   productionFontCatalog?: ProductionFontCatalog;
   paletteCatalog?: PaletteColorCatalog;
+  mediaRoot?: string;
+  nativeBridge?: {
+    pickFile?: () => Promise<string[]>;
+    pickDirectory?: () => Promise<string[]>;
+    mediaDataUrl?: (filePath: string, rootPath: string) => Promise<string>;
+  };
   onDraftChange: (column: string, value: string) => void;
 }
 
@@ -349,6 +346,8 @@ export function RecordFieldRenderer({
   rawOverride,
   productionFontCatalog,
   paletteCatalog,
+  mediaRoot,
+  nativeBridge,
   onDraftChange,
 }: RecordFieldRendererProps) {
   const dictionaryField = dictionaryFieldForColumn(table, field);
@@ -383,9 +382,6 @@ export function RecordFieldRenderer({
   const selectOptions = relationSelect ?? dictionarySelect;
 
   if (field.kind !== "json") {
-    const selectedRelationLabel = selectOptions?.options.find(
-      (option) => option.value === (drafts[field.column] ?? ""),
-    )?.label;
     if (dictionaryField) {
       const descriptor = createRecordFieldDescriptor({
         field: dictionaryField,
@@ -421,75 +417,26 @@ export function RecordFieldRenderer({
           descriptor={descriptor}
         >
           <DictionaryFieldControl
-            {...toDictionaryFieldControlProps(descriptor)}
+            {...toDictionaryFieldControlProps(descriptor, {
+              fileBrowser: nativeBridge,
+              mediaRoot,
+              paletteCatalog,
+            })}
           />
         </EditorFieldRow>
       );
     }
-    const control = field.kind === "boolean" ? (
-      <label className="json-checkbox">
-        <input
-          data-testid={`field-${field.column}`}
-          disabled={field.readonly}
-          type="checkbox"
-          checked={drafts[field.column] === "true" || drafts[field.column] === "1"}
-          onChange={(event) =>
-            onDraftChange(field.column, event.currentTarget.checked ? "1" : "0")
-          }
-        />
-        {drafts[field.column] === "true" || drafts[field.column] === "1"
-          ? "true"
-          : "false"}
-      </label>
-    ) : selectOptions && selectOptions.options.length > 0 ? (
-      <select
-        data-testid={`field-${field.column}`}
-        disabled={field.readonly}
-        value={drafts[field.column] ?? ""}
-        onChange={(event) => onDraftChange(field.column, event.target.value)}
-      >
-        {selectOptions.allowEmpty ? (
-          <option value="">
-            {["avatar_asset_id", "default_device_id", "default_theme_id"].includes(
-              field.column,
-            )
-              ? "None"
-              : "Inherited/default"}
-          </option>
-        ) : null}
-        {selectOptions.options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    ) : field.readonly ? (
-      <input
-        data-testid={`field-${field.column}`}
-        disabled
-        type="text"
-        value={selectedRelationLabel ?? drafts[field.column] ?? ""}
-      />
-    ) : (
-      <input
-        data-testid={`field-${field.column}`}
-        type={field.kind === "number" ? "number" : "text"}
-        value={drafts[field.column] ?? ""}
-        onChange={(event) => onDraftChange(field.column, event.target.value)}
-      />
-    );
 
     return (
       <InspectorFieldRow
         key={field.column}
-        className={`record-editor-field record-editor-field-${field.kind} state-${state}${dictionaryClassName} ${
+        className={`record-editor-field record-editor-field-${field.kind} state-${state} ${
           field.readonly ? "is-readonly" : ""
         }`}
         state={state === "invalid" || state === "failed" ? "invalid" : "default"}
-        label={<span>{dictionaryMetadata?.label ?? field.label}</span>}
+        label={<span>{field.label}</span>}
         control={
           <>
-            {control}
             {error ? <strong>{error}</strong> : null}
           </>
         }
@@ -530,6 +477,8 @@ export function RecordFieldRenderer({
         )}
         productionFontCatalog={productionFontCatalog}
         paletteCatalog={paletteCatalog}
+        mediaRoot={mediaRoot}
+        nativeBridge={nativeBridge}
         onRawTextChange={
           rawOverride?.onRawTextChange ??
           ((nextRawText) => onDraftChange(field.column, nextRawText))

@@ -14,7 +14,6 @@ import type { FieldDefinition } from "../../domain/value-system/index.js";
 import { parsedObject } from "./recordJsonUtils.js";
 import {
   DictionaryFieldControl,
-  DICTIONARY_CONTROL_CLASS,
   DICTIONARY_FIELD_CLASS,
 } from "../editor-ui/DictionaryFieldControl.js";
 
@@ -280,7 +279,7 @@ function ActorColorField(context: ActorFieldsContext) {
           className={`record-editor-field record-editor-field-string ${DICTIONARY_FIELD_CLASS} actor-color-field`}
           label={<span>{row.label}</span>}
           control={
-            <div className={`actor-color-control actor-mode-color-grid ${DICTIONARY_CONTROL_CLASS}`}>
+            <div className="actor-color-control actor-mode-color-grid">
               {actorThemeModes.map((mode) => {
                 actorFieldMetadata(row.fields[mode], "paletteColorToken");
                 const color = actorModeColor(
@@ -402,7 +401,7 @@ function ActorAvatarFields(context: ActorFieldsContext) {
         className={`record-editor-field record-editor-field-string ${DICTIONARY_FIELD_CLASS}`}
         label={<span>{filePathField.label}</span>}
         control={
-          <div className={`media-file-control actor-avatar-file-control ${DICTIONARY_CONTROL_CLASS}`}>
+          <div className="media-file-control actor-avatar-file-control">
             <DeferredTextInput
               value={filePath}
               onCommit={(nextValue) => patchAvatar({ filePath: nextValue })}
@@ -455,7 +454,7 @@ function ActorAvatarFields(context: ActorFieldsContext) {
         className={`record-editor-field record-editor-field-number ${DICTIONARY_FIELD_CLASS}`}
         label={<span>Avatar offset</span>}
         control={
-          <div className={`record-editor-field-pair ${DICTIONARY_CONTROL_CLASS}`}>
+          <div className="record-editor-field-pair">
             <label className="record-editor-field-pair-item">
               <span>X</span>
               <DictionaryFieldControl

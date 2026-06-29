@@ -6,6 +6,7 @@ import {
   InspectorFieldRow,
   InspectorRestoreButton,
 } from "../inspector/InspectorFieldRow.js";
+import { DICTIONARY_FIELD_CLASS } from "../../editor-ui/DictionaryFieldControl.js";
 import { compactLabelForGroup, groupFromPathSegment } from "./labels.js";
 import { hintForPath, type JsonUiHint, type JsonUiHints } from "./uiHints.js";
 import {
@@ -34,6 +35,12 @@ interface JsonTreeNodeProps {
   groupContext?: string;
   productionFontCatalog?: ProductionFontCatalog;
   paletteCatalog?: PaletteColorCatalog;
+  mediaRoot?: string;
+  nativeBridge?: {
+    pickFile?: () => Promise<string[]>;
+    pickDirectory?: () => Promise<string[]>;
+    mediaDataUrl?: (filePath: string, rootPath: string) => Promise<string>;
+  };
   onRootChange: (nextValue: JsonValue) => void;
 }
 
@@ -130,6 +137,8 @@ export function JsonTreeNode({
   groupContext,
   productionFontCatalog,
   paletteCatalog,
+  mediaRoot,
+  nativeBridge,
   onRootChange,
 }: JsonTreeNodeProps) {
   const [isOpen, setIsOpen] = useState(path.length < 2);
@@ -185,6 +194,8 @@ export function JsonTreeNode({
           groupContext={groupContext}
           productionFontCatalog={productionFontCatalog}
           paletteCatalog={paletteCatalog}
+          mediaRoot={mediaRoot}
+          nativeBridge={nativeBridge}
           onRootChange={onRootChange}
         />
       </details>
@@ -223,6 +234,8 @@ export function JsonTreeNode({
           groupContext={groupContext}
           productionFontCatalog={productionFontCatalog}
           paletteCatalog={paletteCatalog}
+          mediaRoot={mediaRoot}
+          nativeBridge={nativeBridge}
           onRootChange={onRootChange}
         />
       </details>
@@ -232,6 +245,8 @@ export function JsonTreeNode({
   return (
     <InspectorFieldRow
       className={`json-editor-field json-primitive-row ${
+        hint.field ? DICTIONARY_FIELD_CLASS : ""
+      } ${
         isOverride ? "json-override" : ""
       }`}
       state={isOverride ? "override" : "default"}
@@ -245,6 +260,8 @@ export function JsonTreeNode({
           groupContext={groupContext}
           productionFontCatalog={productionFontCatalog}
           paletteCatalog={paletteCatalog}
+          mediaRoot={mediaRoot}
+          nativeBridge={nativeBridge}
           onRootChange={onRootChange}
           onChange={(nextValue) =>
             onRootChange(setAtPath(rootValue, path, nextValue))

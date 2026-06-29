@@ -52,6 +52,8 @@ function hintForField(field: FieldDefinition): JsonUiHint {
     labelColumn: metadata.labelColumn,
     fileKind: metadata.fileKind,
     accept: metadata.accept ? [...metadata.accept] : undefined,
+    multiline: metadata.multiline,
+    rows: metadata.rows,
   };
 }
 

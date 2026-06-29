@@ -30,7 +30,9 @@ export function EditorFieldRow({
 
   return (
     <FieldRowBase
-      className={className}
+      className={`${className} ${
+        descriptor.field.ui?.multiline === true ? "is-multiline" : ""
+      }`.trim()}
       controlKind={controlDefinition.control}
       description={descriptor.field.ui?.description}
       error={descriptor.validation?.message}

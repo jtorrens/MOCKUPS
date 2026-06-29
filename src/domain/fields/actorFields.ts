@@ -76,6 +76,7 @@ export const ACTOR_FIELDS = defineFields({
     kind: "paletteColorToken",
     ui: {
       label: "Actor color light",
+      pair: { id: "actor.color", label: "Actor color", role: "light" },
     },
   },
   colorDark: {
@@ -83,6 +84,7 @@ export const ACTOR_FIELDS = defineFields({
     kind: "paletteColorToken",
     ui: {
       label: "Actor color dark",
+      pair: { id: "actor.color", label: "Actor color", role: "dark" },
     },
   },
   avatarTextColorLight: {
@@ -90,6 +92,11 @@ export const ACTOR_FIELDS = defineFields({
     kind: "paletteColorToken",
     ui: {
       label: "Avatar text color light",
+      pair: {
+        id: "actor.avatarTextColor",
+        label: "Avatar text color",
+        role: "light",
+      },
     },
   },
   avatarTextColorDark: {
@@ -97,6 +104,11 @@ export const ACTOR_FIELDS = defineFields({
     kind: "paletteColorToken",
     ui: {
       label: "Avatar text color dark",
+      pair: {
+        id: "actor.avatarTextColor",
+        label: "Avatar text color",
+        role: "dark",
+      },
     },
   },
   avatarUseInitials: {
@@ -133,6 +145,7 @@ export const ACTOR_FIELDS = defineFields({
     ui: {
       label: "Avatar offset X",
       step: 1,
+      pair: { id: "actor.avatar.offset", label: "Avatar offset", role: "X" },
     },
   },
   avatarOffsetY: {
@@ -142,6 +155,7 @@ export const ACTOR_FIELDS = defineFields({
     ui: {
       label: "Avatar offset Y",
       step: 1,
+      pair: { id: "actor.avatar.offset", label: "Avatar offset", role: "Y" },
     },
   },
   avatarBaseSize: {
@@ -152,6 +166,7 @@ export const ACTOR_FIELDS = defineFields({
       label: "Avatar base size",
       min: 1,
       step: 1,
+      hidden: true,
     },
   },
   avatarInitialsPadding: {

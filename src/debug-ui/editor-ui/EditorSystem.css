@@ -214,25 +214,61 @@
 
 .record-editor-field-pair {
   display: grid;
-  gap: 10px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 8px;
+  row-gap: 0;
+  grid-auto-flow: column;
+  grid-template-columns:
+    var(--field-pair-label-width, 42px)
+    var(--field-pair-control-width, 96px)
+    var(--field-pair-label-width, 42px)
+    var(--field-pair-control-width, 96px);
+  grid-template-rows: minmax(var(--field-control-height, 42px), auto);
   align-items: center;
-  width: 100%;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.record-editor-field-pair-color {
+  --field-pair-control-width: 230px;
 }
 
 .record-editor-field-pair-item {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: 8px;
+  display: contents;
   min-width: 0;
 }
 
-.record-editor-field-pair-item > span {
+.record-editor-field-pair-item > :not(span) {
+  width: 100%;
+  min-width: 0;
+}
+
+.record-editor-field-pair-item > span,
+.record-editor-field-pair-label {
   color: var(--editor-muted-color, #667085);
   font-size: 11px;
   font-weight: 650;
   line-height: 1;
+  width: var(--field-pair-label-width, 42px);
+  white-space: nowrap;
+}
+
+.record-editor-field-pair-control,
+.record-editor-field-pair-control > * {
+  width: var(--field-pair-control-width, 96px);
+  max-width: var(--field-pair-control-width, 96px);
+  min-width: 0;
+}
+
+.record-editor-field-pair-control .color-value-editor {
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.record-editor-field-pair-control .color-token-readout {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .record-editor-compact-number {
@@ -410,38 +446,26 @@
   accent-color: var(--editor-accent-color, #6372f0);
 }
 
+.inspector-field-row.is-multiline {
+  align-items: start;
+}
+
+.inspector-field-row.is-multiline .inspector-field-label,
+.inspector-field-row.is-multiline .inspector-field-control,
+.inspector-field-row.is-multiline .inspector-field-restore {
+  align-self: start;
+}
+
+.inspector-field-row.is-multiline .inspector-field-label {
+  padding-top: 10px;
+}
+
 .record-editor .inspector-field-row.record-editor-field {
   display: grid !important;
   grid-template-columns: 150px minmax(0, 1fr) !important;
   width: 100% !important;
   padding: 0 10px !important;
   box-sizing: border-box !important;
-}
-
-.record-editor .dictionary-field .inspector-field-label span,
-.record-editor .dictionary-field > span {
-  color: #16a34a;
-}
-
-.record-editor .dictionary-control,
-.record-editor input.dictionary-control,
-.record-editor select.dictionary-control,
-.record-editor textarea.dictionary-control,
-.record-editor .json-value-control.dictionary-control,
-.record-editor .json-value-textarea.dictionary-control,
-.record-editor .dictionary-control input,
-.record-editor .dictionary-control select,
-.record-editor .dictionary-control textarea {
-  border: 2px solid #16a34a !important;
-  outline: 1px solid #16a34a !important;
-  outline-offset: -2px;
-  background: color-mix(in srgb, var(--editor-input-background, #f7f8fb) 86%, #16a34a) !important;
-  box-shadow: inset 0 0 0 1px #16a34a !important;
-}
-
-.record-editor .record-editor-field.record-editor-field-dictionary .inspector-field-label span,
-.record-editor .record-editor-field.record-editor-field-dictionary > span {
-  color: #2f6bff;
 }
 
 .record-editor .record-editor-field.record-editor-control-dictionary input,

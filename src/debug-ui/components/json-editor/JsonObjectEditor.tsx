@@ -25,6 +25,12 @@ interface JsonObjectEditorProps {
   groupContext?: string;
   productionFontCatalog?: ProductionFontCatalog;
   paletteCatalog?: PaletteColorCatalog;
+  mediaRoot?: string;
+  nativeBridge?: {
+    pickFile?: () => Promise<string[]>;
+    pickDirectory?: () => Promise<string[]>;
+    mediaDataUrl?: (filePath: string, rootPath: string) => Promise<string>;
+  };
   onRootChange: (nextValue: JsonValue) => void;
 }
 
@@ -47,6 +53,8 @@ export function JsonObjectEditor({
   groupContext,
   productionFontCatalog,
   paletteCatalog,
+  mediaRoot,
+  nativeBridge,
   onRootChange,
 }: JsonObjectEditorProps) {
   const [newKey, setNewKey] = useState("");
@@ -141,6 +149,8 @@ export function JsonObjectEditor({
             groupContext={groupContext}
             productionFontCatalog={productionFontCatalog}
             paletteCatalog={paletteCatalog}
+            mediaRoot={mediaRoot}
+            nativeBridge={nativeBridge}
             onRootChange={onRootChange}
           />
           {allowObjectStructuralEdits ? (

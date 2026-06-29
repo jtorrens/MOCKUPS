@@ -4,18 +4,9 @@ import type {
   AppRecord,
   AppTableDefinition,
 } from "../api/client.js";
-import { AppRecordEditor } from "./AppRecordEditor.js";
-import { ComponentClassRecordEditor } from "./ComponentClassRecordEditor.js";
 import { GenericRecordEditor } from "./GenericRecordEditor.js";
-import { IconThemeRecordEditor } from "./IconThemeRecordEditor.js";
 import { ModuleInstanceRecordEditor } from "./ModuleInstanceRecordEditor.js";
-import { ModuleThemeConfigRecordEditor } from "./ModuleThemeConfigRecordEditor.js";
-import { NavigationBarRecordEditor } from "./NavigationBarRecordEditor.js";
-import { ProductionFontRecordEditor } from "./ProductionFontRecordEditor.js";
 import { ScreenInstanceRecordEditor } from "./ScreenInstanceRecordEditor.js";
-import { StatusBarRecordEditor } from "./StatusBarRecordEditor.js";
-import { ThemeRecordEditor } from "./ThemeRecordEditor.js";
-import { shotHasFpsOverride } from "./ShotFields.js";
 import type { PaletteColorCatalog } from "../components/json-editor/paletteColors.js";
 import type { ProductionFontCatalog } from "../components/json-editor/productionFonts.js";
 import type { createJsonGroupDrafts } from "./jsonGroupDrafts.js";
@@ -74,128 +65,17 @@ export function RecordEditorDispatcher({
   const {
     renderField,
     renderFields,
-    renderFlatJsonObjectEditor,
     renderGenericField,
-    setJsonDraft,
   } = renderServices;
-  const { rawForJsonGroupValue, updateJsonGroupValue } = jsonGroupDrafts;
 
-  if (table.id === "apps") {
+  if (table.id !== "module_instances" && table.id !== "screen_instances") {
     return (
-      <AppRecordEditor
-        table={table}
-        record={record}
-        records={records}
-        fieldsByColumn={fieldsByColumn}
-        drafts={drafts}
-        inheritedFields={inheritedFields}
-        activeTab={tabs.appTab}
-        activeTokenGroup={tabs.appTokenGroup}
-        mediaRoot={mediaRoot}
-        nativeBridge={nativeBridge}
-        relativePathFromRoot={relativePathFromRoot}
-        renderFields={renderFields}
-        renderField={renderField}
-        renderFlatJsonObjectEditor={renderFlatJsonObjectEditor}
-        setActiveTab={tabs.setAppTab}
-        setActiveTokenGroup={tabs.setAppTokenGroup}
-        setJsonDraft={setJsonDraft}
-      />
-    );
-  }
-
-  if (table.id === "themes") {
-    return (
-      <ThemeRecordEditor
-        table={table}
-        record={record}
-        records={records}
-        fieldsByColumn={fieldsByColumn}
-        drafts={drafts}
-        activeTab={tabs.themeTab}
-        activeTokenGroup={tabs.themeTokenGroup}
-        renderFields={renderFields}
-        renderField={renderField}
-        setActiveTab={tabs.setThemeTab}
-        setActiveTokenGroup={tabs.setThemeTokenGroup}
-        setJsonDraft={setJsonDraft}
-      />
-    );
-  }
-
-  if (table.id === "icon_themes") {
-    return (
-      <IconThemeRecordEditor
-        table={table}
-        record={record}
-        drafts={drafts}
-        activeTab={tabs.iconThemeTab}
-        mediaRoot={mediaRoot}
-        nativeBridge={nativeBridge}
-        renderField={renderField}
-        setActiveTab={tabs.setIconThemeTab}
-        setJsonDraft={setJsonDraft}
-      />
-    );
-  }
-
-  if (table.id === "status_bars") {
-    return (
-      <StatusBarRecordEditor
-        table={table}
-        record={record}
-        records={records}
-        drafts={drafts}
-        activeTab={tabs.statusBarTab}
-        renderField={renderField}
-        setActiveTab={tabs.setStatusBarTab}
-        setJsonDraft={setJsonDraft}
-      />
-    );
-  }
-
-  if (table.id === "navigation_bars") {
-    return (
-      <NavigationBarRecordEditor
-        table={table}
-        record={record}
-        drafts={drafts}
-        activeTab={tabs.navigationBarTab}
-        renderField={renderField}
-        setActiveTab={tabs.setNavigationBarTab}
-        setJsonDraft={setJsonDraft}
-      />
-    );
-  }
-
-  if (table.id === "production_fonts") {
-    return (
-      <ProductionFontRecordEditor
+      <GenericRecordEditor
         table={table}
         record={record}
         activeTab={tabs.genericTab}
-        nativeBridge={nativeBridge}
-        productionId={productionId}
         renderGenericField={renderGenericField}
         setActiveTab={tabs.setGenericTab}
-        onRecordsChanged={onRecordsChanged}
-        onRecordSaved={onRecordSaved}
-      />
-    );
-  }
-
-  if (table.id === "component_classes") {
-    return (
-      <ComponentClassRecordEditor
-        table={table}
-        record={record}
-        activeTab={tabs.genericTab}
-        drafts={drafts}
-        paletteCatalog={paletteCatalog}
-        productionFontCatalog={productionFontCatalog}
-        renderField={renderField}
-        setActiveTab={tabs.setGenericTab}
-        setJsonDraft={setJsonDraft}
       />
     );
   }
@@ -239,29 +119,6 @@ export function RecordEditorDispatcher({
     );
   }
 
-  if (table.id === "module_theme_configs") {
-    return (
-      <ModuleThemeConfigRecordEditor
-        table={table}
-        record={record}
-        records={records}
-        fieldsByColumn={fieldsByColumn}
-        drafts={drafts}
-        inheritedFields={inheritedFields}
-        activeTab={tabs.moduleThemeTab}
-        activeDesignGroup={tabs.moduleDesignGroup}
-        renderFields={renderFields}
-        renderField={renderField}
-        renderFlatJsonObjectEditor={renderFlatJsonObjectEditor}
-        rawForJsonGroupValue={rawForJsonGroupValue}
-        updateJsonGroupValue={updateJsonGroupValue}
-        setActiveTab={tabs.setModuleThemeTab}
-        setActiveDesignGroup={tabs.setModuleDesignGroup}
-        setJsonDraft={setJsonDraft}
-      />
-    );
-  }
-
   return (
     <GenericRecordEditor
       table={table}
@@ -269,14 +126,6 @@ export function RecordEditorDispatcher({
       activeTab={tabs.genericTab}
       renderGenericField={renderGenericField}
       setActiveTab={tabs.setGenericTab}
-      showGeneralWarning={
-        table.id === "shots" &&
-        shotHasFpsOverride({
-          records,
-          record,
-          drafts,
-        })
-      }
     />
   );
 }

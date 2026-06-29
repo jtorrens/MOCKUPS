@@ -1,8 +1,10 @@
 import type { FieldDefinition } from "../../../domain/value-system/index.js";
 import type {
+  DictionaryFileBrowser,
   DictionaryFieldControlProps,
   DictionarySelectOptions,
 } from "../DictionaryFieldControl.js";
+import type { PaletteColorCatalog } from "../../components/json-editor/paletteColors.js";
 
 export type EditorFieldState =
   | "local"
@@ -83,6 +85,12 @@ export function editorFieldLabel(descriptor: EditorFieldDescriptor): string {
 
 export function toDictionaryFieldControlProps(
   descriptor: EditorFieldDescriptor,
+  options: {
+    readonly fileBrowser?: DictionaryFileBrowser;
+    readonly mediaRoot?: string;
+    readonly paletteCatalog?: PaletteColorCatalog;
+    readonly imagePreview?: DictionaryFieldControlProps["imagePreview"];
+  } = {},
 ): DictionaryFieldControlProps {
   return {
     field: descriptor.field,
@@ -90,6 +98,10 @@ export function toDictionaryFieldControlProps(
     readOnly: descriptor.readonly,
     placeholder: descriptor.placeholder,
     selectOptions: descriptor.selectOptions,
+    fileBrowser: options.fileBrowser,
+    mediaRoot: options.mediaRoot,
+    paletteCatalog: options.paletteCatalog,
+    imagePreview: options.imagePreview,
     validation: descriptor.validation
       ? {
           valid: descriptor.validation.valid,

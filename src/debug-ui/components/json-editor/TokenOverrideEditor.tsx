@@ -2,7 +2,7 @@ import { useState } from "react";
 import { DeferredNumberInput } from "../../editor-ui/DeferredNumberInput.js";
 import { DeferredTextInput } from "../../editor-ui/DeferredTextInput.js";
 import {
-  DICTIONARY_CONTROL_CLASS,
+  DictionaryFieldControl,
   DICTIONARY_FIELD_CLASS,
 } from "../../editor-ui/DictionaryFieldControl.js";
 import { EditorSubsectionAccordion } from "../../editor-ui/EditorSubsectionAccordion.js";
@@ -12,6 +12,10 @@ import {
 import {
   createJsonFieldDescriptor,
 } from "../../editor-ui/fields/createJsonFieldDescriptor.js";
+import {
+  toDictionaryFieldControlProps,
+  type EditorFieldDescriptor,
+} from "../../editor-ui/fields/EditorFieldDescriptor.js";
 import { ColorValueEditor } from "./ColorValueEditor.js";
 import {
   productionFontIdForFamily,
@@ -45,6 +49,12 @@ import {
 } from "./jsonEditorUtils.js";
 import type { JsonUiHints } from "./uiHints.js";
 
+interface TokenOverrideNativeBridge {
+  pickFile?: () => Promise<string[]>;
+  pickDirectory?: () => Promise<string[]>;
+  mediaDataUrl?: (filePath: string, rootPath: string) => Promise<string>;
+}
+
 interface TokenOverrideEditorProps {
   rootValue: JsonValue;
   inheritedRoot: JsonValue;
@@ -55,6 +65,8 @@ interface TokenOverrideEditorProps {
   restoreMode?: "remove" | "set";
   productionFontCatalog?: ProductionFontCatalog;
   paletteCatalog?: PaletteColorCatalog;
+  mediaRoot?: string;
+  nativeBridge?: TokenOverrideNativeBridge;
   onRootChange: (nextValue: JsonValue) => void;
 }
 
@@ -68,21 +80,6 @@ interface TokenRowGroup {
   label: string;
   rows: TokenRow[];
   renderAsGroup: boolean;
-}
-
-function groupIcon(label: string): string {
-  const normalized = label.toLowerCase();
-  if (normalized.includes("typography") || normalized.includes("font")) return "T";
-  if (normalized.includes("color")) return "◐";
-  if (normalized.includes("header")) return "▤";
-  if (normalized.includes("message") || normalized.includes("bubble")) return "☰";
-  if (normalized.includes("spacing") || normalized.includes("padding")) return "↔";
-  if (normalized.includes("radius") || normalized.includes("radii")) return "◜";
-  if (normalized.includes("shadow") || normalized.includes("elevation")) return "◒";
-  if (normalized.includes("status")) return "▥";
-  if (normalized.includes("cursor")) return "⌁";
-  if (normalized.includes("wallpaper") || normalized.includes("background")) return "▧";
-  return "◇";
 }
 
 function flattenPrimitiveTokens(value: JsonValue, path: JsonPath = []): TokenRow[] {
@@ -99,6 +96,29 @@ function flattenPrimitiveTokens(value: JsonValue, path: JsonPath = []): TokenRow
     );
   }
   return [{ path, value }];
+}
+
+function pathFromHintKey(key: string): JsonPath {
+  return key.split(".").filter(Boolean);
+}
+
+function rowsWithDictionaryDefaults(
+  rows: TokenRow[],
+  hints: JsonUiHints,
+): TokenRow[] {
+  const byPath = new Map(rows.map((row) => [pathLabel(row.path), row]));
+  for (const [key, hint] of Object.entries(hints)) {
+    if (!hint.field) continue;
+    const path = pathFromHintKey(hint.canonicalPath ?? key);
+    if (path.length === 0) continue;
+    const pathKey = pathLabel(path);
+    if (byPath.has(pathKey)) continue;
+    byPath.set(pathKey, {
+      path,
+      value: (hint.field.defaultValue ?? "") as JsonValue,
+    });
+  }
+  return Array.from(byPath.values());
 }
 
 function tokenDisplayValue(value: JsonValue): string {
@@ -260,6 +280,11 @@ function fontSiblingPath(path: JsonPath, key: string) {
   return [...path.slice(0, -1), key];
 }
 
+function numericSibling(root: JsonValue, path: JsonPath, key: string): number | undefined {
+  const value = getAtPath(root, [...path.slice(0, -1), key]);
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
 export function TokenOverrideEditor({
   rootValue,
   inheritedRoot,
@@ -270,12 +295,19 @@ export function TokenOverrideEditor({
   restoreMode = "remove",
   productionFontCatalog,
   paletteCatalog,
+  mediaRoot,
+  nativeBridge,
   onRootChange,
 }: TokenOverrideEditorProps) {
   const displayRoot = mergedTokenShape(inheritedRoot, rootValue);
-  const rows = flattenPrimitiveTokens(displayRoot).filter(
-    (row) => !isFontCompanionRow(row, displayRoot),
-  );
+  const rows = rowsWithDictionaryDefaults(
+    flattenPrimitiveTokens(displayRoot),
+    hints,
+  ).filter((row) => {
+    if (isFontCompanionRow(row, displayRoot)) return false;
+    const hint = hintForPath(hints, row.path, row.value, groupContext);
+    return hint.field?.ui?.hidden !== true;
+  });
   const [activeTokenGroup, setActiveTokenGroup] = useState("");
 
   function restoreValue(path: JsonPath, inheritedValue: JsonValue) {
@@ -330,18 +362,13 @@ export function TokenOverrideEditor({
     onRootChange(nextRoot);
   }
 
-  function renderRow(row: TokenRow, groupKey?: string) {
-    const hasLocalValue = hasAtPath(rootValue, row.path);
-    const localValue = hasLocalValue ? getAtPath(rootValue, row.path) : null;
+  function descriptorForRow(row: TokenRow) {
     const hasBaselineValue = hasAtPath(inheritedRoot, row.path);
     const baselineValue = hasBaselineValue
       ? getAtPath(inheritedRoot, row.path)
       : row.value;
-    const effectiveValue = hasLocalValue ? localValue : baselineValue;
-    const hasOverride =
-      hasLocalValue && !deepEqualJson(localValue, baselineValue);
     const hint = hintForPath(hints, row.path, baselineValue, groupContext);
-    const descriptor = hint.field
+    return hint.field
       ? createJsonFieldDescriptor({
           binding: {
             field: hint.field,
@@ -353,6 +380,160 @@ export function TokenOverrideEditor({
           onRootChange,
         })
       : undefined;
+  }
+
+  function restorePaths(paths: readonly JsonPath[]) {
+    let nextRoot = rootValue;
+    for (const path of paths) {
+      const baseline = hasAtPath(inheritedRoot, path)
+        ? getAtPath(inheritedRoot, path)
+        : undefined;
+      nextRoot =
+        restoreMode === "set" && baseline !== undefined
+          ? setAtPath(nextRoot, path, baseline)
+          : deleteAtPathAndPrune(nextRoot, path);
+    }
+    onRootChange(nextRoot);
+  }
+
+  function renderDictionaryControl(
+    descriptor: EditorFieldDescriptor,
+    inheritedDisplayValue: string,
+    descriptorSelectOptions: EditorFieldDescriptor["selectOptions"],
+  ) {
+    const path = descriptor.source.path ?? [];
+    const imagePreview =
+      descriptor.field.kind === "relativeFilePath" ||
+      descriptor.field.kind === "filePath"
+        ? {
+            scale: numericSibling(displayRoot, [...path], "scale"),
+            offsetX: numericSibling(displayRoot, [...path], "offsetX"),
+            offsetY: numericSibling(displayRoot, [...path], "offsetY"),
+            baseSize: numericSibling(displayRoot, [...path], "baseSize"),
+          }
+        : undefined;
+    return (
+      <DictionaryFieldControl
+        {...toDictionaryFieldControlProps({
+          ...descriptor,
+          selectOptions: descriptorSelectOptions,
+          placeholder: showInheritedValue ? inheritedDisplayValue : "",
+        }, {
+          fileBrowser: nativeBridge,
+          mediaRoot,
+          paletteCatalog,
+          imagePreview,
+        })}
+      />
+    );
+  }
+
+  function renderPairRows(pairRows: TokenRow[], groupKey?: string) {
+    const descriptors = pairRows
+      .map((row) => ({ row, descriptor: descriptorForRow(row) }))
+      .filter(
+        (entry): entry is { row: TokenRow; descriptor: EditorFieldDescriptor } =>
+          Boolean(entry.descriptor),
+      );
+    const firstDescriptor = descriptors[0]?.descriptor;
+    const pair = firstDescriptor?.field.ui?.pair;
+    if (!pair || descriptors.length < 2) return null;
+    const rowState = descriptors.some((entry) => entry.descriptor.state === "local")
+      ? "override"
+      : descriptors.some((entry) => entry.descriptor.state === "invalid")
+        ? "invalid"
+        : "default";
+    const canRestore = descriptors.some((entry) => entry.descriptor.canRestore);
+    const pairKind = descriptors.some(
+      (entry) => entry.descriptor.field.kind === "paletteColorToken",
+    )
+      ? " record-editor-field-pair-color"
+      : "";
+
+    return (
+      <InspectorFieldRow
+        key={`${groupKey ?? ""}:${pair.id}`}
+        className={`token-override-row ${DICTIONARY_FIELD_CLASS} ${
+          rowState === "override" ? "has-override" : ""
+        }`}
+        state={rowState}
+        label={<strong title={pair.id}>{pair.label}</strong>}
+        data-field-id={pair.id}
+        data-control-kind="pair"
+        control={
+          <div className={`record-editor-field-pair${pairKind} token-override-input dictionary-control`}>
+            {descriptors.map(({ row, descriptor }) => {
+              const role = descriptor.field.ui?.pair?.role ?? "";
+              const inheritedValue = hasAtPath(inheritedRoot, row.path)
+                ? getAtPath(inheritedRoot, row.path)
+                : (descriptor.defaultValue as JsonValue | undefined) ?? row.value ?? null;
+              const inheritedDisplayValue = tokenDisplayValue(
+                inheritedValue,
+              );
+              const descriptorSelectOptions =
+                descriptor.selectOptions;
+              return (
+                <>
+                  <span
+                    className="record-editor-field-pair-label"
+                    key={`${pathLabel(row.path)}:label`}
+                  >
+                    {role}
+                  </span>
+                  <div
+                    className="record-editor-field-pair-control"
+                    key={`${pathLabel(row.path)}:control`}
+                  >
+                    {renderDictionaryControl(
+                      descriptor,
+                      inheritedDisplayValue,
+                      descriptorSelectOptions,
+                    )}
+                  </div>
+                </>
+              );
+            })}
+          </div>
+        }
+        restore={
+          canRestore ? (
+            <InspectorRestoreButton
+              label={`Restore ${pair.label}`}
+              onClick={() => restorePaths(descriptors.map((entry) => entry.row.path))}
+            />
+          ) : undefined
+        }
+      />
+    );
+  }
+
+  function renderRows(rowList: TokenRow[], groupKey?: string) {
+    const consumedPairs = new Set<string>();
+    return rowList.flatMap((row) => {
+      const descriptor = descriptorForRow(row);
+      const pair = descriptor?.field.ui?.pair;
+      if (!pair) return [renderRow(row, groupKey)];
+      if (consumedPairs.has(pair.id)) return [];
+      consumedPairs.add(pair.id);
+      const pairRows = rowList.filter(
+        (candidate) => descriptorForRow(candidate)?.field.ui?.pair?.id === pair.id,
+      );
+      return [renderPairRows(pairRows, groupKey) ?? renderRow(row, groupKey)];
+    });
+  }
+
+  function renderRow(row: TokenRow, groupKey?: string) {
+    const hasLocalValue = hasAtPath(rootValue, row.path);
+    const localValue = hasLocalValue ? getAtPath(rootValue, row.path) : null;
+    const hasBaselineValue = hasAtPath(inheritedRoot, row.path);
+    const baselineValue = hasBaselineValue
+      ? getAtPath(inheritedRoot, row.path)
+      : row.value;
+    const effectiveValue = hasLocalValue ? localValue : baselineValue;
+    const hasOverride =
+      hasLocalValue && !deepEqualJson(localValue, baselineValue);
+    const hint = hintForPath(hints, row.path, baselineValue, groupContext);
+    const descriptor = descriptorForRow(row);
     const label = compactLabelForGroup(
       hint.label ?? friendlyPathLeafLabel(row.path),
       groupKey ?? groupContext,
@@ -388,162 +569,67 @@ export function TokenOverrideEditor({
         : hint.options ?? [],
       stringValue,
     );
-    const dictionaryControlClassName = hint.dictionaryDerived
-      ? DICTIONARY_CONTROL_CLASS
-      : "";
-    const inheritedClassName = !rowHasOverride ? "is-inherited-value" : "";
-    const controlClassName = [inheritedClassName, dictionaryControlClassName]
-      .filter(Boolean)
-      .join(" ");
     const descriptorControlKind = descriptor
       ? controlDefinitionForField(descriptor.field).control
       : undefined;
+    const descriptorSelectOptions =
+      descriptor && hint.options?.length
+        ? {
+            allowEmpty: false,
+            options: withCurrentOption(
+              hint.options,
+              String(descriptor.displayValue ?? ""),
+            ).map((option) => ({
+              value: String(option),
+              label: String(option),
+            })),
+          }
+        : descriptor?.selectOptions;
+    const rowState = descriptor
+      ? descriptor.state === "invalid"
+        ? "invalid"
+        : descriptor.state === "local"
+          ? "override"
+          : "default"
+      : rowHasOverride
+        ? "override"
+        : "default";
 
     return (
       <InspectorFieldRow
         key={key}
         className={`token-override-row ${
-          hint.dictionaryDerived ? DICTIONARY_FIELD_CLASS : ""
-        } ${rowHasOverride ? "has-override" : ""}`}
-        state={rowHasOverride ? "override" : "default"}
+          descriptor ? DICTIONARY_FIELD_CLASS : ""
+        } ${descriptor?.field.ui?.multiline === true ? "is-multiline" : ""} ${
+          rowState === "override" ? "has-override" : ""
+        }`}
+        state={rowState}
         label={<strong title={key}>{label}</strong>}
         data-field-id={descriptor?.field.id}
         data-value-kind={descriptor?.field.kind}
         data-control-kind={descriptorControlKind}
         data-source-kind={descriptor?.source.kind}
         control={
-          <div
-            className={`token-override-input ${dictionaryControlClassName}`.trim()}
-          >
-          {widget === "checkbox" ? (
-            <select
-              aria-label={`${label} override`}
-              className={controlClassName || undefined}
-              value={rowHasOverride ? String(Boolean(localValue)) : ""}
-              onChange={(event) => {
-                const raw = event.target.value;
-                onRootChange(
-                  raw === ""
-                    ? restoreMode === "set"
-                      ? setAtPath(rootValue, row.path, baselineValue)
-                      : deleteAtPathAndPrune(rootValue, row.path)
-                    : setAtPath(rootValue, row.path, raw === "true"),
-                );
-              }}
-            >
-              <option value="">{inheritedDisplayValue}</option>
-              <option value="true">true</option>
-              <option value="false">false</option>
-            </select>
-          ) : widget === "font" ? (
-            <ProductionFontSelector
-              compact
-              catalog={productionFontCatalog}
-              controlClassName={dictionaryControlClassName}
-              inherited={!rowHasOverride}
-              lockFamily={hint.lockFontFamily}
-              value={{
-                fontFamily: effectiveValue,
-                fontWeight: getAtPath(displayRoot, [...row.path.slice(0, -1), "fontWeight"]),
-                fontStyle: getAtPath(displayRoot, [...row.path.slice(0, -1), "fontStyle"]),
-              }}
-              onChange={(nextFont) =>
-                setFontSelectionOverride(row.path, nextFont, {
-                  lockFamily: hint.lockFontFamily,
-                })
-              }
-            />
-          ) : widget === "select" ? (
-            <select
-              aria-label={`${label} override`}
-              className={controlClassName || undefined}
-              value={stringValue}
-              onChange={(event) => {
-                const raw = event.target.value;
-                if (raw === "") {
-                  restoreValue(row.path, baselineValue);
-                  return;
-                }
-                onRootChange(setAtPath(rootValue, row.path, raw));
-              }}
-            >
-              <option value="">{inheritedDisplayValue}</option>
-              {selectOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          ) : widget === "color" && typeof baselineValue === "string" ? (
-            <span
-              className={[
-                "json-color-pair",
-                "token-color-pair",
-                dictionaryControlClassName,
-              ]
-                .filter(Boolean)
-                .join(" ")}
-            >
-              <ColorValueEditor
-                label={`${label} override`}
-                value={stringValue || baselineValue}
-                alpha={isRgbaColor(String(stringValue || baselineValue))}
-                paletteCatalog={paletteCatalog}
-                onChange={(nextColor) =>
-                  onRootChange(setAtPath(rootValue, row.path, nextColor))
-                }
-              />
-            </span>
-          ) : widget === "number" ? (
-            <DeferredNumberInput
-              ariaLabel={`${label} override`}
-              className={["json-value-control", controlClassName]
-                .filter(Boolean)
-                .join(" ")}
-              max={hint.max}
-              min={hint.min}
-              placeholder={showInheritedValue ? inheritedDisplayValue : ""}
-              step={hint.step ?? "any"}
-              value={
-                hasOverride && typeof localValue === "number"
-                  ? localValue
-                  : ""
-              }
-              onEmptyCommit={() => restoreValue(row.path, baselineValue)}
-              onCommit={(nextValue) =>
-                onRootChange(setAtPath(rootValue, row.path, nextValue))
-              }
-            />
+          descriptor ? (
+            <div className="token-override-input">
+              {renderDictionaryControl(
+                {
+                  ...descriptor,
+                  selectOptions: descriptorSelectOptions,
+                },
+                inheritedDisplayValue,
+                descriptorSelectOptions,
+              )}
+            </div>
           ) : (
-            <DeferredTextInput
-              ariaLabel={`${label} override`}
-              className={["json-value-control", controlClassName]
-                .filter(Boolean)
-                .join(" ")}
-              placeholder={showInheritedValue ? inheritedDisplayValue : ""}
-              value={stringValue}
-              onCommit={(raw) => {
-                if (raw === "") {
-                  restoreValue(row.path, baselineValue);
-                  return;
-                }
-                const nextValue = parseOverride(raw, baselineValue);
-                if (nextValue === null) return;
-                onRootChange(setAtPath(rootValue, row.path, nextValue));
-              }}
-            />
-          )}
-          </div>
+            <span>{inheritedColumnLabel}</span>
+          )
         }
         restore={
-          rowHasOverride ? (
+          descriptor?.canRestore && descriptor.actions.restore ? (
             <InspectorRestoreButton
               label={`Restore ${label} to ${inheritedDisplayValue}`}
-              onClick={() =>
-                widget === "font"
-                  ? restoreFontSelection(row.path)
-                  : restoreValue(row.path, baselineValue)
-              }
+              onClick={descriptor.actions.restore}
             />
           ) : undefined
         }
@@ -555,31 +641,18 @@ export function TokenOverrideEditor({
     <div className="token-override-editor">
       {groupedRows(rows, groupContext).map((group) => {
         if (!group.renderAsGroup) {
-          return group.rows.map((row) => renderRow(row, group.key || undefined));
-        }
-        if (groupContext === "chatBubbles") {
-          return (
-            <EditorSubsectionAccordion
-              key={group.key}
-              group={group.key}
-              activeGroup={activeTokenGroup}
-              warning={group.rows.some((row) => hasAtPath(rootValue, row.path))}
-              onToggle={setActiveTokenGroup}
-            >
-              {group.rows.map((row) => renderRow(row, group.key))}
-            </EditorSubsectionAccordion>
-          );
+          return renderRows(group.rows, group.key || undefined);
         }
         return (
-          <section key={group.key} className="token-override-group">
-            <h4>
-              <span className="editor-group-icon ui-glyph" aria-hidden="true">
-                {groupIcon(group.label)}
-              </span>
-              {group.label}
-            </h4>
-            {group.rows.map((row) => renderRow(row, group.key))}
-          </section>
+          <EditorSubsectionAccordion
+            key={group.key}
+            group={group.key}
+            activeGroup={activeTokenGroup}
+            warning={group.rows.some((row) => hasAtPath(rootValue, row.path))}
+            onToggle={setActiveTokenGroup}
+          >
+            {renderRows(group.rows, group.key)}
+          </EditorSubsectionAccordion>
         );
       })}
     </div>

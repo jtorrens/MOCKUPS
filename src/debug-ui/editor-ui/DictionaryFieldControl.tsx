@@ -1,4 +1,11 @@
 import type { FieldDefinition } from "../../domain/value-system/index.js";
+import { ColorValueEditor } from "../components/json-editor/ColorValueEditor.js";
+import type { PaletteColorCatalog } from "../components/json-editor/paletteColors.js";
+import {
+  cssUrl,
+  MediaCoverPreview,
+  useMediaPreviewUrl,
+} from "../editors/MediaPreviews.js";
 import { DeferredNumberInput } from "./DeferredNumberInput.js";
 import { DeferredTextInput } from "./DeferredTextInput.js";
 import {
@@ -20,6 +27,12 @@ export interface DictionarySelectOptions {
   readonly options: readonly DictionarySelectOption[];
 }
 
+export interface DictionaryFileBrowser {
+  readonly pickFile?: () => Promise<string[]>;
+  readonly pickDirectory?: () => Promise<string[]>;
+  readonly mediaDataUrl?: (filePath: string, rootPath: string) => Promise<string>;
+}
+
 export interface DictionaryFieldControlProps {
   field: FieldDefinition;
   value: unknown;
@@ -27,6 +40,15 @@ export interface DictionaryFieldControlProps {
   readOnly?: boolean;
   placeholder?: string;
   selectOptions?: DictionarySelectOptions;
+  fileBrowser?: DictionaryFileBrowser;
+  mediaRoot?: string;
+  paletteCatalog?: PaletteColorCatalog;
+  imagePreview?: {
+    readonly baseSize?: number;
+    readonly scale?: number;
+    readonly offsetX?: number;
+    readonly offsetY?: number;
+  };
   validation?: {
     readonly valid: boolean;
     readonly message?: string;
@@ -46,6 +68,49 @@ function booleanValue(value: unknown) {
   return value === true || value === "true" || value === "1";
 }
 
+function acceptsImagePreview(field: FieldDefinition) {
+  const accept = field.ui?.accept ?? [];
+  return accept.some((entry) => entry === "image/*" || entry.startsWith("image/"));
+}
+
+function numberOrDefault(value: unknown, fallback: number) {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function DictionaryImagePreview({
+  filePath,
+  mediaRoot,
+  preview,
+}: {
+  filePath: string;
+  mediaRoot: string;
+  preview?: DictionaryFieldControlProps["imagePreview"];
+}) {
+  const previewUrl = useMediaPreviewUrl({ filePath, mediaRoot });
+  const baseSize = Math.max(1, numberOrDefault(preview?.baseSize, 640));
+  const previewSize = 160;
+  const scale = Math.max(0.01, numberOrDefault(preview?.scale, 1));
+  const offsetX = (numberOrDefault(preview?.offsetX, 0) / baseSize) * previewSize;
+  const offsetY = (numberOrDefault(preview?.offsetY, 0) / baseSize) * previewSize;
+
+  return (
+    <div
+      className="actor-avatar-preview"
+      style={
+        previewUrl
+          ? {
+              backgroundImage: cssUrl(previewUrl),
+              backgroundSize: `${scale * 100}%`,
+              backgroundPosition: `calc(50% + ${offsetX}px) calc(50% + ${offsetY}px)`,
+            }
+          : undefined
+      }
+    >
+      {!previewUrl ? "Image preview" : null}
+    </div>
+  );
+}
+
 export function DictionaryFieldControl({
   field,
   value,
@@ -53,6 +118,10 @@ export function DictionaryFieldControl({
   readOnly = false,
   placeholder,
   selectOptions,
+  fileBrowser,
+  mediaRoot,
+  paletteCatalog,
+  imagePreview,
   onChange,
 }: DictionaryFieldControlProps) {
   const spec = fieldControlSpecForField(field);
@@ -74,11 +143,23 @@ export function DictionaryFieldControl({
     );
   }
 
+  if (control === "paletteColorToken") {
+    return (
+      <div className={controlClassName}>
+        <ColorValueEditor
+          value={stringValue(value)}
+          label={field.ui?.label ?? field.id}
+          paletteCatalog={paletteCatalog}
+          onChange={onChange}
+        />
+      </div>
+    );
+  }
+
   if (
     control === "select" ||
     control === "recordSelect" ||
     control === "themeColorToken" ||
-    control === "paletteColorToken" ||
     control === "iconToken"
   ) {
     const options = selectOptions?.options ?? [];
@@ -117,11 +198,63 @@ export function DictionaryFieldControl({
     );
   }
 
+  if (control === "filePath" || control === "relativeFilePath") {
+    const pick =
+      metadata.fileKind === "directory"
+        ? fileBrowser?.pickDirectory
+        : fileBrowser?.pickFile;
+    const isDisabled = disabled || readOnly;
+
+    async function choosePath() {
+      const [selectedPath] = await (pick?.() ?? Promise.resolve([]));
+      if (selectedPath) onChange(selectedPath);
+    }
+
+    return (
+      <div className={`media-file-control ${controlClassName}`}>
+        <DeferredTextInput
+          className={controlClassName}
+          disabled={isDisabled}
+          placeholder={placeholder}
+          value={stringValue(value)}
+          onCommit={onChange}
+        />
+        <button
+          type="button"
+          className="record-editor-compact-button"
+          disabled={isDisabled || !pick}
+          onClick={() => {
+            void choosePath();
+          }}
+        >
+          Browse…
+        </button>
+        {mediaRoot && acceptsImagePreview(field) && stringValue(value).trim() ? (
+          imagePreview ? (
+            <DictionaryImagePreview
+              filePath={stringValue(value)}
+              mediaRoot={mediaRoot}
+              preview={imagePreview}
+            />
+          ) : (
+            <MediaCoverPreview
+              filePath={stringValue(value)}
+              mediaRoot={mediaRoot}
+              fallbackLabel="Image preview"
+            />
+          )
+        ) : null}
+      </div>
+    );
+  }
+
   return (
     <DeferredTextInput
       className={controlClassName}
       disabled={disabled || readOnly}
+      multiline={field.ui?.multiline === true}
       placeholder={placeholder}
+      rows={field.ui?.rows}
       value={stringValue(value)}
       onCommit={onChange}
     />

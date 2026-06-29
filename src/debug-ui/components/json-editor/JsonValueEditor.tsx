@@ -1,5 +1,5 @@
 import { DeferredNumberInput } from "../../editor-ui/DeferredNumberInput.js";
-import { DICTIONARY_CONTROL_CLASS } from "../../editor-ui/DictionaryFieldControl.js";
+import { DictionaryFieldControl } from "../../editor-ui/DictionaryFieldControl.js";
 import { ColorValueEditor } from "./ColorValueEditor.js";
 import {
   productionFontIdForFamily,
@@ -29,6 +29,12 @@ interface JsonValueEditorProps {
   groupContext?: string;
   productionFontCatalog?: ProductionFontCatalog;
   paletteCatalog?: PaletteColorCatalog;
+  mediaRoot?: string;
+  nativeBridge?: {
+    pickFile?: () => Promise<string[]>;
+    pickDirectory?: () => Promise<string[]>;
+    mediaDataUrl?: (filePath: string, rootPath: string) => Promise<string>;
+  };
   onChange: (nextValue: JsonValue) => void;
   onRootChange?: (nextValue: JsonValue) => void;
 }
@@ -152,19 +158,41 @@ export function JsonValueEditor({
   groupContext,
   productionFontCatalog,
   paletteCatalog,
+  mediaRoot,
+  nativeBridge,
   onChange,
   onRootChange,
 }: JsonValueEditorProps) {
   const hint = hintForPath(hints, path, value, groupContext);
+  if (hint.field) {
+    return (
+      <DictionaryFieldControl
+        field={hint.field}
+        value={value}
+        fileBrowser={nativeBridge}
+        mediaRoot={mediaRoot}
+        paletteCatalog={paletteCatalog}
+        selectOptions={
+          hint.options?.length
+            ? {
+                allowEmpty: false,
+                options: withCurrentOption(hint.options, value).map((option) => ({
+                  value: String(option),
+                  label: String(option),
+                })),
+              }
+            : undefined
+        }
+        onChange={(nextValue) => onChange(nextValue as JsonValue)}
+      />
+    );
+  }
+
   const widget = hint.widget;
   const key = String(path[path.length - 1] ?? "");
   const parent = String(path[path.length - 2] ?? "");
-  const dictionaryControlClassName = hint.dictionaryDerived
-    ? DICTIONARY_CONTROL_CLASS
-    : "";
-  const jsonValueControlClassName = ["json-value-control", dictionaryControlClassName]
-    .filter(Boolean)
-    .join(" ");
+  const dictionaryControlClassName = "";
+  const jsonValueControlClassName = "json-value-control";
 
   const parentChromeOptions = key === "type" ? chromeTypeOptions(parent) : [];
   const contextChromeOptions =
@@ -356,12 +384,13 @@ export function JsonValueEditor({
     );
   }
 
-  if (widget === "textarea") {
+  if (widget === "textarea" || hint.multiline === true) {
     return (
       <textarea
         className={["json-value-textarea", dictionaryControlClassName]
           .filter(Boolean)
           .join(" ")}
+        rows={hint.rows ?? 4}
         value={typeof value === "string" ? value : String(value ?? "")}
         onChange={(event) => onChange(event.target.value)}
       />

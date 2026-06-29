@@ -321,9 +321,21 @@
   white-space: nowrap;
 }
 
-/* Temporary dictionary migration marker.
-   This file is imported last by the editor shell, so the marker wins over
-   inherited/override styling while we audit dictionary-backed controls. */
+/* Temporary dictionary migration gate.
+   During editor consolidation, only controls emitted by DictionaryFieldControl
+   are visible. Labels keep their normal editor styling so a field can exist as
+   a placeholder until its control is migrated. */
+.dictionary-field .inspector-field-label,
+.dictionary-field .inspector-field-label span,
+.dictionary-field .inspector-field-label strong,
+.dictionary-field > span {
+  color: #16a34a !important;
+}
+
+.editor-workspace .inspector-field-control:not(:has(.dictionary-control)) > * {
+  display: none !important;
+}
+
 .dictionary-control,
 input.dictionary-control,
 select.dictionary-control,
@@ -334,12 +346,7 @@ textarea.dictionary-control,
 .dictionary-control > select,
 .dictionary-control > textarea,
 .dictionary-control .json-value-control,
-.dictionary-control .json-value-textarea,
-.dictionary-field .token-override-input input,
-.dictionary-field .token-override-input select,
-.dictionary-field .token-override-input textarea,
-.dictionary-field .token-override-input .json-value-control,
-.dictionary-field .token-override-input .json-value-textarea {
+.dictionary-control .json-value-textarea {
   border: 2px solid #16a34a !important;
   outline: 1px solid #16a34a !important;
   outline-offset: -2px;
