@@ -10,6 +10,12 @@ import {
 import { DeferredNumberInput } from "./DeferredNumberInput.js";
 import { DeferredTextInput } from "./DeferredTextInput.js";
 import {
+  IconTokenPicker,
+} from "./IconTokenPicker.js";
+import type {
+  IconThemeLikeRecord,
+} from "./IconGlyphPreview.js";
+import {
   controlDefinitionForField,
   fieldControlSpecForField,
 } from "./ValueKindControlRegistry.js";
@@ -45,6 +51,7 @@ export interface DictionaryFieldControlProps {
   mediaRoot?: string;
   paletteCatalog?: PaletteColorCatalog;
   productionFontCatalog?: ProductionFontCatalog;
+  iconThemeRecords?: readonly IconThemeLikeRecord[];
   imagePreview?: {
     readonly baseSize?: number;
     readonly scale?: number;
@@ -167,6 +174,7 @@ export function DictionaryFieldControl({
   mediaRoot,
   paletteCatalog,
   productionFontCatalog,
+  iconThemeRecords,
   imagePreview,
   onChange,
 }: DictionaryFieldControlProps) {
@@ -282,11 +290,24 @@ export function DictionaryFieldControl({
     }
   }
 
+  if (control === "iconToken") {
+    return (
+      <IconTokenPicker
+        allowMultiple={field.ui?.allowMultiple === true}
+        disabled={disabled || readOnly}
+        iconThemeRecords={iconThemeRecords}
+        mediaRoot={mediaRoot}
+        nativeBridge={fileBrowser}
+        value={value}
+        onChange={onChange}
+      />
+    );
+  }
+
   if (
     control === "select" ||
     control === "recordSelect" ||
-    control === "themeColorToken" ||
-    control === "iconToken"
+    control === "themeColorToken"
   ) {
     const options = selectOptions?.options ?? [];
     return (

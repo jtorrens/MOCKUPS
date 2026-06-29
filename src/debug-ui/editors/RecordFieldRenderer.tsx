@@ -6,6 +6,7 @@ import {
 import { JsonTreeEditor } from "../components/json-editor/JsonTreeEditor.js";
 import type { ProductionFontCatalog } from "../components/json-editor/productionFonts.js";
 import type { PaletteColorCatalog } from "../components/json-editor/paletteColors.js";
+import type { IconThemeLikeRecord } from "../editor-ui/IconGlyphPreview.js";
 import { InspectorFieldRow } from "../components/inspector/InspectorFieldRow.js";
 import { fieldDefinitionForRecordColumn } from "../../domain/fields/recordColumnFields.js";
 import {
@@ -301,6 +302,7 @@ interface RecordFieldRendererProps {
   rawOverride?: RawJsonFieldOverride;
   productionFontCatalog?: ProductionFontCatalog;
   paletteCatalog?: PaletteColorCatalog;
+  iconThemeRecords?: readonly IconThemeLikeRecord[];
   mediaRoot?: string;
   nativeBridge?: {
     pickFile?: () => Promise<string[]>;
@@ -322,6 +324,7 @@ export function RecordFieldRenderer({
   rawOverride,
   productionFontCatalog,
   paletteCatalog,
+  iconThemeRecords,
   mediaRoot,
   nativeBridge,
   onDraftChange,
@@ -397,6 +400,7 @@ export function RecordFieldRenderer({
               mediaRoot,
               paletteCatalog,
               productionFontCatalog,
+              iconThemeRecords,
             })}
           />
         </EditorFieldRow>

@@ -6,6 +6,7 @@ import type {
 } from "../DictionaryFieldControl.js";
 import type { PaletteColorCatalog } from "../../components/json-editor/paletteColors.js";
 import type { ProductionFontCatalog } from "../../components/json-editor/productionFonts.js";
+import type { IconThemeLikeRecord } from "../IconGlyphPreview.js";
 
 export type EditorFieldState =
   | "local"
@@ -91,6 +92,7 @@ export function toDictionaryFieldControlProps(
     readonly mediaRoot?: string;
     readonly paletteCatalog?: PaletteColorCatalog;
     readonly productionFontCatalog?: ProductionFontCatalog;
+    readonly iconThemeRecords?: readonly IconThemeLikeRecord[];
     readonly imagePreview?: DictionaryFieldControlProps["imagePreview"];
   } = {},
 ): DictionaryFieldControlProps {
@@ -104,6 +106,7 @@ export function toDictionaryFieldControlProps(
     mediaRoot: options.mediaRoot,
     paletteCatalog: options.paletteCatalog,
     productionFontCatalog: options.productionFontCatalog,
+    iconThemeRecords: options.iconThemeRecords,
     imagePreview: options.imagePreview,
     validation: descriptor.validation
       ? {

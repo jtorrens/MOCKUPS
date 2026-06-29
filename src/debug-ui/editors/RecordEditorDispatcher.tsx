@@ -101,6 +101,8 @@ export function RecordEditorDispatcher({
           records={records}
           activeTab={tabs.statusBarTab}
           drafts={drafts}
+          mediaRoot={mediaRoot}
+          nativeBridge={nativeBridge}
           renderField={renderField}
           setActiveTab={tabs.setStatusBarTab}
           setJsonDraft={setJsonDraft}
@@ -138,7 +140,10 @@ export function RecordEditorDispatcher({
           record={record}
           activeTab={tabs.genericTab}
           drafts={drafts}
+          mediaRoot={mediaRoot}
+          nativeBridge={nativeBridge}
           productionFontCatalog={productionFontCatalog}
+          iconThemeRecords={records.icon_themes}
           renderField={renderField}
           setActiveTab={tabs.setGenericTab}
           setJsonDraft={setJsonDraft}

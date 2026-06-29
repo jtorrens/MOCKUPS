@@ -37,6 +37,10 @@ interface StatusBarRecordEditorProps {
   records: Record<string, AppRecord[]>;
   activeTab: StatusBarTab;
   drafts: Record<string, string>;
+  mediaRoot?: string;
+  nativeBridge?: {
+    mediaDataUrl?: (filePath: string, rootPath: string) => Promise<string>;
+  };
   renderField: (field: AppFieldDefinition) => ReactNode;
   setActiveTab: (tab: StatusBarTab) => void;
   setJsonDraft: (column: string, value: JsonValue) => void;
@@ -234,6 +238,8 @@ export function StatusBarRecordEditor({
   records,
   activeTab,
   drafts,
+  mediaRoot,
+  nativeBridge,
   renderField,
   setActiveTab,
   setJsonDraft,
@@ -335,6 +341,9 @@ export function StatusBarRecordEditor({
                       {item.kind === "iconToken" ? (
                         <DictionaryFieldControl
                           field={STATUS_BAR_FIELDS.itemIconToken}
+                          iconThemeRecords={records.icon_themes}
+                          mediaRoot={mediaRoot}
+                          fileBrowser={nativeBridge}
                           selectOptions={tokenSelectOptions(
                             tokenOptions,
                             item.token,

@@ -19,6 +19,7 @@ import {
   DICTIONARY_FIELD_CLASS,
   type DictionarySelectOptions,
 } from "../editor-ui/DictionaryFieldControl.js";
+import type { IconThemeLikeRecord } from "../editor-ui/IconGlyphPreview.js";
 import { EditorHeader } from "../editor-ui/EditorHeader.js";
 import { EditorSectionButton } from "../editor-ui/EditorSectionButton.js";
 import { EditorSectionCard } from "../editor-ui/EditorSectionCard.js";
@@ -34,8 +35,13 @@ interface ComponentClassRecordEditorProps {
   record: AppRecord;
   activeTab: ComponentClassTab;
   drafts: Record<string, string>;
+  mediaRoot?: string;
+  nativeBridge?: {
+    mediaDataUrl?: (filePath: string, rootPath: string) => Promise<string>;
+  };
   paletteCatalog?: PaletteColorCatalog;
   productionFontCatalog?: ProductionFontCatalog;
+  iconThemeRecords?: readonly IconThemeLikeRecord[];
   renderField: (field: AppFieldDefinition) => ReactNode;
   setActiveTab: (tab: ComponentClassTab) => void;
   setJsonDraft: (column: string, value: JsonValue) => void;
@@ -226,8 +232,11 @@ export function ComponentClassRecordEditor({
   record,
   activeTab,
   drafts,
+  mediaRoot,
+  nativeBridge,
   renderField,
   productionFontCatalog,
+  iconThemeRecords,
   setActiveTab,
   setJsonDraft,
 }: ComponentClassRecordEditorProps) {
@@ -290,6 +299,9 @@ export function ComponentClassRecordEditor({
             value={value}
             selectOptions={selectOptions}
             productionFontCatalog={productionFontCatalog}
+            iconThemeRecords={iconThemeRecords}
+            mediaRoot={mediaRoot}
+            fileBrowser={nativeBridge}
             onChange={(nextValue) =>
               updateTokens(setTokenValue(tokens, key, nextValue as JsonValue))
             }
@@ -396,6 +408,9 @@ export function ComponentClassRecordEditor({
             <DictionaryFieldControl
               field={field}
               value={tokens.surfaceReliefEnabled ?? fallback}
+              iconThemeRecords={iconThemeRecords}
+              mediaRoot={mediaRoot}
+              fileBrowser={nativeBridge}
               onChange={(nextValue) =>
                 updateTokens(
                   setTokenValue(tokens, "surfaceReliefEnabled", nextValue as JsonValue),
@@ -819,12 +834,16 @@ export function ComponentClassRecordEditor({
                               <DictionaryFieldControl
                                 field={{
                                   id: `component.${componentType}.iconSets.${zone}.${state}`,
-                                  kind: "text",
+                                  kind: "iconToken",
                                   defaultValue: iconSetValue(tokens, zone, state),
                                   ui: {
                                     label: `${zone} icons ${state}`,
+                                    allowMultiple: true,
                                   },
                                 }}
+                                iconThemeRecords={iconThemeRecords}
+                                mediaRoot={mediaRoot}
+                                fileBrowser={nativeBridge}
                                 value={iconSetValue(tokens, zone, state)}
                                 onChange={(nextValue) =>
                                   updateTokens(
@@ -896,10 +915,13 @@ export function ComponentClassRecordEditor({
                           <DictionaryFieldControl
                             field={{
                               id: `component.${componentType}.bottomItems.left`,
-                              kind: "text",
+                              kind: "iconToken",
                               defaultValue: "app_language",
-                              ui: { label: "Bottom left icons" },
+                              ui: { label: "Bottom left icons", allowMultiple: true },
                             }}
+                            iconThemeRecords={iconThemeRecords}
+                            mediaRoot={mediaRoot}
+                            fileBrowser={nativeBridge}
                             value={bottomIconValue(tokens, "left")}
                             onChange={(nextValue) =>
                               updateTokens(
@@ -920,10 +942,13 @@ export function ComponentClassRecordEditor({
                           <DictionaryFieldControl
                             field={{
                               id: `component.${componentType}.bottomItems.right`,
-                              kind: "text",
+                              kind: "iconToken",
                               defaultValue: "media_mic",
-                              ui: { label: "Bottom right icons" },
+                              ui: { label: "Bottom right icons", allowMultiple: true },
                             }}
+                            iconThemeRecords={iconThemeRecords}
+                            mediaRoot={mediaRoot}
+                            fileBrowser={nativeBridge}
                             value={bottomIconValue(tokens, "right")}
                             onChange={(nextValue) =>
                               updateTokens(

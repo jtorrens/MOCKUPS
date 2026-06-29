@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { ReactNode } from "react";
 import {
   deleteIconThemeToken,
@@ -16,6 +16,7 @@ import { EditorHeader } from "../editor-ui/EditorHeader.js";
 import { EditorSectionButton } from "../editor-ui/EditorSectionButton.js";
 import { EditorSectionCard } from "../editor-ui/EditorSectionCard.js";
 import { EditorSections } from "../editor-ui/EditorSections.js";
+import { IconGlyphPreview } from "../editor-ui/IconGlyphPreview.js";
 import { parsedObject } from "./recordJsonUtils.js";
 
 type IconThemeTab = "" | "general" | "tokens";
@@ -78,13 +79,6 @@ function categoryFromToken(token: string) {
   return token.split("_")[0] || "misc";
 }
 
-function tokenPath(assetRoot: string, file: string) {
-  const trimmedFile = file.trim();
-  if (!trimmedFile) return "";
-  if (/^(data:|file:|https?:|\/)/i.test(trimmedFile)) return trimmedFile;
-  return `${assetRoot.replace(/\/+$/g, "")}/${trimmedFile.replace(/^\/+/g, "")}`;
-}
-
 function IconPreview({
   assetRoot,
   file,
@@ -96,44 +90,13 @@ function IconPreview({
   mediaRoot: string;
   nativeBridge: IconThemeNativeBridge | undefined;
 }) {
-  const [url, setUrl] = useState("");
-  const iconPath = tokenPath(assetRoot, file);
-
-  useEffect(() => {
-    let cancelled = false;
-    setUrl("");
-    if (!iconPath) return () => undefined;
-    const loader = nativeBridge?.mediaDataUrl;
-    if (!loader) {
-      setUrl(iconPath.startsWith("/") ? `file://${encodeURI(iconPath)}` : iconPath);
-      return () => undefined;
-    }
-    void loader(iconPath, mediaRoot)
-      .then((nextUrl) => {
-        if (!cancelled) setUrl(nextUrl || "");
-      })
-      .catch(() => {
-        if (!cancelled) setUrl("");
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [iconPath, mediaRoot, nativeBridge]);
-
   return (
-    <span className="icon-theme-preview" aria-hidden="true">
-      {url ? (
-        <span
-          className="icon-theme-preview-mask"
-          style={{
-            WebkitMaskImage: `url("${url}")`,
-            maskImage: `url("${url}")`,
-          }}
-        />
-      ) : (
-        "—"
-      )}
-    </span>
+    <IconGlyphPreview
+      assetRoot={assetRoot}
+      file={file}
+      mediaRoot={mediaRoot}
+      nativeBridge={nativeBridge}
+    />
   );
 }
 

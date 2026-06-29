@@ -87,6 +87,7 @@ export function createRecordEditorRenderServices({
         rawOverride={rawOverride}
         productionFontCatalog={productionFontCatalog}
         paletteCatalog={paletteCatalog}
+        iconThemeRecords={records.icon_themes}
         mediaRoot={productionMediaRoot}
         nativeBridge={nativeBridge}
         onDraftChange={(column, value) =>
