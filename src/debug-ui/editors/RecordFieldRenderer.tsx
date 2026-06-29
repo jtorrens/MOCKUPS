@@ -8,6 +8,7 @@ import type { ProductionFontCatalog } from "../components/json-editor/production
 import type { PaletteColorCatalog } from "../components/json-editor/paletteColors.js";
 import { InspectorFieldRow } from "../components/inspector/InspectorFieldRow.js";
 import { ACTOR_COLUMN_BINDINGS } from "../../domain/fields/actorFields.js";
+import { THEME_COLUMN_BINDINGS } from "../../domain/fields/themeFields.js";
 import {
   controlDefinitionForField,
   editorMetadataForField,
@@ -258,19 +259,32 @@ function dictionaryFieldForColumn(
   table: AppTableDefinition,
   field: AppFieldDefinition,
 ): FieldDefinition | undefined {
-  if (table.id !== "actors") return undefined;
-  return ACTOR_COLUMN_BINDINGS.find(
+  const bindings =
+    table.id === "actors"
+      ? ACTOR_COLUMN_BINDINGS
+      : table.id === "themes"
+        ? THEME_COLUMN_BINDINGS
+        : undefined;
+  return bindings?.find(
     (binding) => binding.outputPath.length === 1 && binding.outputPath[0] === field.column,
   )?.field;
 }
 
 function relationOptionsForDictionaryField(
   field: FieldDefinition,
+  record: AppRecord | undefined,
   records: Record<string, AppRecord[]>,
 ): { options: { value: string; label: string }[]; allowEmpty: boolean } | undefined {
   const metadata = editorMetadataForField(field);
   if (!metadata.tableId) return undefined;
-  const tableRecords = records[metadata.tableId] ?? [];
+  const productionId =
+    typeof record?.production_id === "string" ? record.production_id : undefined;
+  const tableRecords = (records[metadata.tableId] ?? []).filter(
+    (item) =>
+      !productionId ||
+      !Object.hasOwn(item, "production_id") ||
+      item.production_id === productionId,
+  );
   const labelColumn = metadata.labelColumn ?? "name";
   return {
     allowEmpty: metadata.allowEmpty === true,
@@ -311,12 +325,15 @@ export function RecordFieldRenderer({
   onDraftChange,
 }: RecordFieldRendererProps) {
   const dictionaryField = dictionaryFieldForColumn(table, field);
+  const dictionaryMetadata = dictionaryField
+    ? editorMetadataForField(dictionaryField)
+    : undefined;
   const dictionaryControl = dictionaryField
     ? controlDefinitionForField(dictionaryField).control
     : undefined;
   const relationSelect =
     dictionaryField && dictionaryControl === "recordSelect"
-      ? relationOptionsForDictionaryField(dictionaryField, records)
+      ? relationOptionsForDictionaryField(dictionaryField, record, records)
       : relationOptionsForField(
           table,
           field,
@@ -388,7 +405,7 @@ export function RecordFieldRenderer({
           field.readonly ? "is-readonly" : ""
         }`}
         state={state === "invalid" || state === "failed" ? "invalid" : "default"}
-        label={<span>{field.label}</span>}
+        label={<span>{dictionaryMetadata?.label ?? field.label}</span>}
         control={
           <>
             {control}

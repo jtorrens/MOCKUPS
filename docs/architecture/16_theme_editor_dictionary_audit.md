@@ -1,6 +1,6 @@
 # Theme editor dictionary audit
 
-Status: initial audit
+Status: Phase 1 started — General fields catalogued
 
 This document records the first field-by-field audit for the `themes` editor.
 It follows the mandatory cleanup rule: inventory fields first, then map them to
@@ -33,8 +33,8 @@ ownership and control selection.
 
 The Theme editor is functional but not yet fully dictionary-driven.
 
-There is no dedicated `THEME_FIELDS` catalog yet. Theme fields currently come
-from a mix of:
+There is now a dedicated `THEME_FIELDS` catalog for Theme SQL/general fields.
+Theme token JSON fields still come from a mix of:
 
 - generic SQL table metadata from `debugService.ts`;
 - a small legacy descriptor list in `themeDescriptors.ts`;
@@ -48,25 +48,28 @@ fields to explicit field definitions before changing their UI further.
 
 | Field | Storage | Current control | Dictionary status | Target |
 | --- | --- | --- | --- | --- |
-| `id` | SQL column | generic readonly field | missing theme field definition | `theme.id`, kind `text`, readonly/internal |
-| `production_id` | SQL column | generic relation-ish field | missing theme field definition | `theme.productionId`, kind `recordReference`, hidden/internal |
-| `name` | SQL column | generic text field | missing theme field definition | `theme.name`, kind `text` |
-| `family` | SQL column | generic readonly text field | missing theme field definition | `theme.family`, kind `enum`, readonly |
-| `icon_theme_id` | SQL column | hardcoded relation rule in `RecordFieldRenderer` | missing theme field definition | `theme.iconThemeId`, kind `recordReference` |
-| `status_bar_id` | SQL column | hardcoded relation rule in `RecordFieldRenderer` | missing theme field definition | `theme.statusBarId`, kind `recordReference` |
-| `navigation_bar_id` | SQL column | hardcoded relation rule in `RecordFieldRenderer` | missing theme field definition | `theme.navigationBarId`, kind `recordReference` |
-| `version` | SQL column | generic text field | missing theme field definition | `theme.version`, kind `text` |
-| `tokens_json` | SQL JSON column | theme-specific editors | partially described by legacy descriptors | `theme.tokens`, kind `jsonObject`, with child field definitions |
+| `id` | SQL column | generic readonly field | `theme.id`, kind `text` | complete for General |
+| `production_id` | SQL column | dictionary relation/readonly field | `theme.productionId`, kind `recordReference` | complete for General, hidden/internal policy still editor-owned |
+| `name` | SQL column | dictionary text field | `theme.name`, kind `text` | complete for General |
+| `family` | SQL column | dictionary enum/readonly field | `theme.family`, kind `enum` | complete for General |
+| `icon_theme_id` | SQL column | dictionary record select | `theme.iconThemeId`, kind `recordReference` | complete for General |
+| `status_bar_id` | SQL column | dictionary record select | `theme.statusBarId`, kind `recordReference` | complete for General |
+| `navigation_bar_id` | SQL column | dictionary record select | `theme.navigationBarId`, kind `recordReference` | complete for General |
+| `version` | SQL column | dictionary text field | `theme.version`, kind `text` | complete for General |
+| `tokens_json` | SQL JSON column | theme-specific editors | `theme.tokens`, kind `jsonObject` | parent field catalogued; child token fields still pending |
 
 ### Notes
 
-The relation controls for icon theme, status bar and navigation bar currently
-work, but the relation metadata lives in `RecordFieldRenderer` instead of field
-definitions. This should become dictionary metadata:
+The relation controls for icon theme, status bar and navigation bar now get
+their relation metadata from field definitions:
 
 - `tableId`
 - `labelColumn`
 - `allowEmpty`
+
+`RecordFieldRenderer` still owns generic relation option lookup and production
+filtering. That is acceptable because it is reusable editor infrastructure, not
+Theme-specific UI.
 
 ## Tokens card
 
@@ -269,11 +272,11 @@ Target:
 
 ### Phase 1 — Theme field catalog
 
-Create `src/domain/fields/themeFields.ts` with:
+Created `src/domain/fields/themeFields.ts` with:
 
 - SQL column definitions;
-- token JSON definitions;
-- JSON bindings for token paths.
+- parent `tokens_json` definition;
+- column bindings for Theme general fields.
 
 This should mirror the actor cleanup pattern.
 
