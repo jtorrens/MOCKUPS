@@ -127,6 +127,7 @@ used by the canonical chat flow.
 ## Required checklist for future model changes
 
 ```text
+[ ] editor/card field inventory completed before implementation
 [ ] before/after documented
 [ ] data ownership level decided
 [ ] SQL/Zod/type contract updated

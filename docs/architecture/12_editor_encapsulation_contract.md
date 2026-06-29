@@ -111,6 +111,14 @@ UI.
 
 Before implementing a new editor feature:
 
+0. Run the editor/card field inventory first:
+   - list every visible editable field in the card;
+   - list hidden/internal fields and why they are hidden;
+   - map each field to its `FieldDefinition`;
+   - verify the field `kind` exists in `ValueRegistry`;
+   - verify the UI control comes from `ValueKindControlRegistry` or
+     `FieldDefinition.ui`;
+   - verify the value has a resolver/render path if it affects output.
 1. Reuse `editor-ui` primitives if an existing card/field/row pattern fits.
 2. If a new visual pattern is needed, add it as a reusable primitive first.
 3. Keep editor-specific code focused on structure, labels, options, and domain
