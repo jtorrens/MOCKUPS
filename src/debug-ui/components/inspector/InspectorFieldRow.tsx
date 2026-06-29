@@ -7,6 +7,10 @@ interface InspectorFieldRowProps {
   restore?: ReactNode;
   className?: string;
   state?: "default" | "override" | "invalid";
+  "data-field-id"?: string;
+  "data-value-kind"?: string;
+  "data-control-kind"?: string;
+  "data-source-kind"?: string;
 }
 
 export function InspectorFieldRow({
@@ -16,9 +20,19 @@ export function InspectorFieldRow({
   restore,
   className = "",
   state = "default",
+  "data-field-id": dataFieldId,
+  "data-value-kind": dataValueKind,
+  "data-control-kind": dataControlKind,
+  "data-source-kind": dataSourceKind,
 }: InspectorFieldRowProps) {
   return (
-    <div className={`inspector-field-row state-${state} ${className}`.trim()}>
+    <div
+      className={`inspector-field-row state-${state} ${className}`.trim()}
+      data-control-kind={dataControlKind}
+      data-field-id={dataFieldId}
+      data-source-kind={dataSourceKind}
+      data-value-kind={dataValueKind}
+    >
       <div className="inspector-field-label">{label}</div>
       {meta ? <div className="inspector-field-meta">{meta}</div> : null}
       <div className="inspector-field-control">{control}</div>

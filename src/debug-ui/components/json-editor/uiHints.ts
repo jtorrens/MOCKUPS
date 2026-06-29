@@ -1,5 +1,6 @@
 import type { AppFieldDefinition, AppTableDefinition } from "../../api/client.js";
 import { THEME_TOKEN_BINDINGS } from "../../../domain/fields/themeFields.js";
+import type { FieldDefinition } from "../../../domain/value-system/index.js";
 import { fieldDescriptorHintsForContext } from "../../field-descriptors/registry.js";
 import { moduleJsonUiHintsForRecord } from "../../module-editor-hints/registry.js";
 import { jsonUiHintsFromFieldBindings } from "./fieldDefinitionHints.js";
@@ -19,6 +20,7 @@ export type JsonWidget =
   | "textarea";
 
 export type JsonUiHint = {
+  field?: FieldDefinition;
   dictionaryDerived?: boolean;
   widget?: JsonWidget;
   label?: string;

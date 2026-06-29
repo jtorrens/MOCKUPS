@@ -6,6 +6,12 @@ import {
   DICTIONARY_FIELD_CLASS,
 } from "../../editor-ui/DictionaryFieldControl.js";
 import { EditorSubsectionAccordion } from "../../editor-ui/EditorSubsectionAccordion.js";
+import {
+  controlDefinitionForField,
+} from "../../editor-ui/ValueKindControlRegistry.js";
+import {
+  createJsonFieldDescriptor,
+} from "../../editor-ui/fields/createJsonFieldDescriptor.js";
 import { ColorValueEditor } from "./ColorValueEditor.js";
 import {
   productionFontIdForFamily,
@@ -335,6 +341,18 @@ export function TokenOverrideEditor({
     const hasOverride =
       hasLocalValue && !deepEqualJson(localValue, baselineValue);
     const hint = hintForPath(hints, row.path, baselineValue, groupContext);
+    const descriptor = hint.field
+      ? createJsonFieldDescriptor({
+          binding: {
+            field: hint.field,
+            outputPath: row.path.map(String),
+          },
+          localRoot: rootValue,
+          parentRoot: inheritedRoot,
+          restoreMode,
+          onRootChange,
+        })
+      : undefined;
     const label = compactLabelForGroup(
       hint.label ?? friendlyPathLeafLabel(row.path),
       groupKey ?? groupContext,
@@ -377,6 +395,9 @@ export function TokenOverrideEditor({
     const controlClassName = [inheritedClassName, dictionaryControlClassName]
       .filter(Boolean)
       .join(" ");
+    const descriptorControlKind = descriptor
+      ? controlDefinitionForField(descriptor.field).control
+      : undefined;
 
     return (
       <InspectorFieldRow
@@ -386,6 +407,10 @@ export function TokenOverrideEditor({
         } ${rowHasOverride ? "has-override" : ""}`}
         state={rowHasOverride ? "override" : "default"}
         label={<strong title={key}>{label}</strong>}
+        data-field-id={descriptor?.field.id}
+        data-value-kind={descriptor?.field.kind}
+        data-control-kind={descriptorControlKind}
+        data-source-kind={descriptor?.source.kind}
         control={
           <div
             className={`token-override-input ${dictionaryControlClassName}`.trim()}
