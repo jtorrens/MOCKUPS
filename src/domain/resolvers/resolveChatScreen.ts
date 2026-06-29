@@ -1840,16 +1840,8 @@ function textInputBarInstanceOverrides(value: unknown) {
 
 function textInputBarComponentBase(
   componentTokens: unknown,
-  instanceTokens: unknown,
 ) {
-  const base = isObject(componentTokens) ? { ...componentTokens } : {};
-  const instance = isObject(instanceTokens) ? instanceTokens : {};
-  for (const key of ["cursorWidth", "cursorBlinkFrames", "cursorColor"] as const) {
-    if (!Object.hasOwn(instance, key)) {
-      delete base[key];
-    }
-  }
-  return base;
+  return isObject(componentTokens) ? { ...componentTokens } : {};
 }
 
 function swapBoxSize<T extends { width: number; height: number }>(box: T): T {
@@ -2625,6 +2617,28 @@ export function resolveChatScreen({
     "keyboard",
     palette,
   );
+  const resolvedComponents = {
+    ...(isObject(themeTokens.components) ? themeTokens.components : {}),
+    avatar: avatarComponent,
+    audioMessage: audioMessageComponent,
+    buttonIcon: buttonIconComponent,
+    label: labelComponent,
+    videoMessage: videoMessageComponent,
+    textInputBar: {
+      id: textInputBarComponent.id,
+      name: textInputBarComponent.name,
+      componentType: textInputBarComponent.componentType,
+    },
+    keyboard: {
+      id: keyboardComponent.id,
+      name: keyboardComponent.name,
+      componentType: keyboardComponent.componentType,
+    },
+  };
+  const themeTokensWithComponents = {
+    ...themeTokens,
+    components: resolvedComponents,
+  };
   const resolvedHeaderTokens = {
     ...themeTokens.header,
     background:
@@ -2738,7 +2752,7 @@ export function resolveChatScreen({
       message: animatedMessage,
       sender,
       direction,
-      themeTokens: normalizedThemeTokens,
+      themeTokens: themeTokensWithComponents,
       localFrame,
       fps,
       viewportWidth: metrics.viewport.width,
@@ -2963,7 +2977,6 @@ export function resolveChatScreen({
     {
       ...textInputBarComponentBase(
         textInputBarComponent.tokens,
-        moduleConfig.textInputBar,
       ),
       ...textInputBarInstanceOverrides(moduleConfig.textInputBar),
       ...(activeComposerMessage
@@ -3066,24 +3079,7 @@ export function resolveChatScreen({
     theme: {
       id: theme.id,
       ...themeTokens,
-      components: {
-        ...(isObject(themeTokens.components) ? themeTokens.components : {}),
-        avatar: avatarComponent,
-        audioMessage: audioMessageComponent,
-        buttonIcon: buttonIconComponent,
-        label: labelComponent,
-        videoMessage: videoMessageComponent,
-        textInputBar: {
-          id: textInputBarComponent.id,
-          name: textInputBarComponent.name,
-          componentType: textInputBarComponent.componentType,
-        },
-        keyboard: {
-          id: keyboardComponent.id,
-          name: keyboardComponent.name,
-          componentType: keyboardComponent.componentType,
-        },
-      },
+      components: resolvedComponents,
       header: resolvedHeaderTokens,
       chatBubbles: {
         ...themeTokens.chatBubbles,

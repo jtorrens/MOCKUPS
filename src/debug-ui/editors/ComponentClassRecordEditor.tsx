@@ -5,7 +5,6 @@ import type {
   AppTableDefinition,
 } from "../api/client.js";
 import type { PaletteColorCatalog } from "../components/json-editor/paletteColors.js";
-import { ProductionFontSelector } from "../components/json-editor/ProductionFontSelector.js";
 import {
   isJsonObject,
   type JsonValue,
@@ -14,7 +13,12 @@ import {
   InspectorFieldRow,
 } from "../components/inspector/InspectorFieldRow.js";
 import type { ProductionFontCatalog } from "../components/json-editor/productionFonts.js";
-import { DeferredTextInput } from "../editor-ui/DeferredTextInput.js";
+import type { FieldDefinition, ValueKind } from "../../domain/value-system/index.js";
+import {
+  DictionaryFieldControl,
+  DICTIONARY_FIELD_CLASS,
+  type DictionarySelectOptions,
+} from "../editor-ui/DictionaryFieldControl.js";
 import { EditorHeader } from "../editor-ui/EditorHeader.js";
 import { EditorSectionButton } from "../editor-ui/EditorSectionButton.js";
 import { EditorSectionCard } from "../editor-ui/EditorSectionCard.js";
@@ -60,27 +64,6 @@ function setTokenValue(
   };
 }
 
-function shadowCheckbox({
-  checked,
-  label,
-  onChange,
-}: {
-  checked: boolean;
-  label?: string;
-  onChange: (nextValue: boolean) => void;
-}) {
-  return (
-    <label className="json-checkbox">
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(event) => onChange(event.currentTarget.checked)}
-      />
-      {label ?? (checked ? "true" : "false")}
-    </label>
-  );
-}
-
 function iconSetValue(
   tokens: Record<string, JsonValue>,
   zone: "left" | "right",
@@ -105,6 +88,38 @@ function iconSetValue(
     })
     .filter(Boolean)
     .join(", ");
+}
+
+const THEME_COLOR_TOKEN_OPTIONS = [
+  "background",
+  "textPrimary",
+  "textSecondary",
+  "icons.primary",
+  "icons.secondary",
+  "icons.accent",
+  "borders.primary",
+  "borders.secondary",
+  "borders.alternate",
+  "theme.cursor.color",
+].map((token) => ({ value: token, label: token }));
+
+const FONT_WEIGHT_OPTIONS = ["100", "200", "300", "400", "500", "600", "700", "800", "900"].map(
+  (weight) => ({ value: weight, label: weight }),
+);
+
+const FONT_STYLE_OPTIONS = [
+  { value: "normal", label: "Normal" },
+  { value: "italic", label: "Italic" },
+];
+
+function enumSelectOptions(options: readonly string[]): DictionarySelectOptions {
+  return {
+    options: options.map((option) => ({ value: option, label: option })),
+  };
+}
+
+function themeColorSelectOptions(): DictionarySelectOptions {
+  return { options: THEME_COLOR_TOKEN_OPTIONS };
 }
 
 function iconSetItems(
@@ -237,35 +252,46 @@ export function ComponentClassRecordEditor({
     });
   }
 
-  function tokenNumberRow(label: string, key: string, fallback: number) {
+  function tokenFieldRow({
+    label,
+    key,
+    kind,
+    fallback,
+    selectOptions,
+    min,
+    step,
+  }: {
+    label: string;
+    key: string;
+    kind: ValueKind;
+    fallback: JsonValue;
+    selectOptions?: DictionarySelectOptions;
+    min?: number;
+    step?: number | "any";
+  }) {
+    const field: FieldDefinition = {
+      id: `component.${componentType}.${key}`,
+      kind,
+      defaultValue: fallback,
+      ui: {
+        label,
+        ...(min !== undefined ? { min } : {}),
+        ...(step !== undefined ? { step } : {}),
+      },
+    };
+    const value = tokens[key] ?? fallback;
     return (
       <InspectorFieldRow
-        label={label}
+        className={`record-editor-field ${DICTIONARY_FIELD_CLASS}`}
+        label={<span>{label}</span>}
         control={
-          <DeferredTextInput
-            ariaLabel={label}
-            value={String(numberValue(tokens[key], fallback))}
-            onCommit={(nextValue) => {
-              const parsed = Number(nextValue);
-              if (!Number.isFinite(parsed)) return;
-              updateTokens(setTokenValue(tokens, key, parsed));
-            }}
-          />
-        }
-      />
-    );
-  }
-
-  function tokenTextRow(label: string, key: string, fallback: string) {
-    return (
-      <InspectorFieldRow
-        label={label}
-        control={
-          <DeferredTextInput
-            ariaLabel={label}
-            value={stringValue(tokens[key], fallback)}
-            onCommit={(nextValue) =>
-              updateTokens(setTokenValue(tokens, key, nextValue))
+          <DictionaryFieldControl
+            field={field}
+            value={value}
+            selectOptions={selectOptions}
+            productionFontCatalog={productionFontCatalog}
+            onChange={(nextValue) =>
+              updateTokens(setTokenValue(tokens, key, nextValue as JsonValue))
             }
           />
         }
@@ -273,44 +299,92 @@ export function ComponentClassRecordEditor({
     );
   }
 
+  function tokenNumberRow(label: string, key: string, fallback: number) {
+    return tokenFieldRow({
+      label,
+      key,
+      kind: Number.isInteger(fallback) ? "integer" : "decimal",
+      fallback,
+      min: 0,
+      step: Number.isInteger(fallback) ? 1 : "any",
+    });
+  }
+
+  function tokenTextRow(label: string, key: string, fallback: string) {
+    return tokenFieldRow({ label, key, kind: "text", fallback });
+  }
+
   function tokenCheckboxRow(label: string, key: string, fallback = false) {
-    return (
-      <InspectorFieldRow
-        label={label}
-        control={shadowCheckbox({
-          checked: booleanValue(tokens[key], fallback),
-          onChange: (nextValue) =>
-            updateTokens(setTokenValue(tokens, key, nextValue)),
-        })}
-      />
-    );
+    return tokenFieldRow({ label, key, kind: "boolean", fallback });
+  }
+
+  function tokenThemeColorRow(label: string, key: string, fallback: string) {
+    return tokenFieldRow({
+      label,
+      key,
+      kind: "themeColorToken",
+      fallback,
+      selectOptions: themeColorSelectOptions(),
+    });
+  }
+
+  function tokenIconRow(label: string, key: string, fallback: string) {
+    return tokenFieldRow({ label, key, kind: "iconToken", fallback });
+  }
+
+  function tokenEnumRow(
+    label: string,
+    key: string,
+    fallback: string,
+    options: readonly string[],
+  ) {
+    return tokenFieldRow({
+      label,
+      key,
+      kind: "enum",
+      fallback,
+      selectOptions: enumSelectOptions(options),
+    });
   }
 
   function tokenOfficialFontRows() {
     return (
-      <ProductionFontSelector
-        catalog={productionFontCatalog}
-        value={{
-          fontFamily: tokens.fontFamily,
-          fontWeight: tokens.fontWeight,
-          fontStyle: tokens.fontStyle,
-        }}
-        onChange={(nextFont) =>
-          updateTokens({
-            ...tokens,
-            fontFamily: nextFont.fontFamily,
-            fontWeight: nextFont.fontWeight,
-            fontStyle: nextFont.fontStyle,
-          })
-        }
-      />
+      <>
+        {tokenFieldRow({
+          label: "Font family",
+          key: "fontFamily",
+          kind: "fontFamily",
+          fallback: "SF Pro Text",
+        })}
+        {tokenFieldRow({
+          label: "Font weight",
+          key: "fontWeight",
+          kind: "fontWeight",
+          fallback: 400,
+          selectOptions: { options: FONT_WEIGHT_OPTIONS },
+        })}
+        {tokenFieldRow({
+          label: "Font style",
+          key: "fontStyle",
+          kind: "fontStyle",
+          fallback: "normal",
+          selectOptions: { options: FONT_STYLE_OPTIONS },
+        })}
+      </>
     );
   }
 
   function surfaceReliefRow(fallback = false) {
+    const field: FieldDefinition = {
+      id: `component.${componentType}.surfaceReliefEnabled`,
+      kind: "boolean",
+      defaultValue: fallback,
+      ui: { label: "Surface relief" },
+    };
     return (
       <InspectorFieldRow
-        label="Surface relief"
+        className={`record-editor-field ${DICTIONARY_FIELD_CLASS}`}
+        label={<span>Surface relief</span>}
         control={
           <span
             style={{
@@ -319,13 +393,15 @@ export function ComponentClassRecordEditor({
               gap: 10,
             }}
           >
-            {shadowCheckbox({
-              checked: booleanValue(tokens.surfaceReliefEnabled, fallback),
-              onChange: (nextValue) =>
+            <DictionaryFieldControl
+              field={field}
+              value={tokens.surfaceReliefEnabled ?? fallback}
+              onChange={(nextValue) =>
                 updateTokens(
-                  setTokenValue(tokens, "surfaceReliefEnabled", nextValue),
-                ),
-            })}
+                  setTokenValue(tokens, "surfaceReliefEnabled", nextValue as JsonValue),
+                )
+              }
+            />
             <button
               type="button"
               className="inspector-restore-button"
@@ -384,7 +460,7 @@ export function ComponentClassRecordEditor({
                     <>
                       {tokenNumberRow("Corner radius", "cornerRadius", 12)}
                       {tokenNumberRow("Border width", "borderWidth", 0)}
-                      {tokenTextRow(
+                      {tokenThemeColorRow(
                         "Border theme color",
                         "borderColorToken",
                         "borders.primary",
@@ -408,7 +484,7 @@ export function ComponentClassRecordEditor({
                       {tokenNumberRow("Corner radius", "cornerRadius", 0)}
                       {tokenNumberRow("Border width", "borderWidth", 0)}
                       {tokenNumberRow("Icon padding", "iconPadding", 2)}
-                      {tokenTextRow(
+                      {tokenThemeColorRow(
                         "Border theme color",
                         "borderColorToken",
                         "borders.primary",
@@ -426,30 +502,13 @@ export function ComponentClassRecordEditor({
                     "label",
                     <>
                       {tokenCheckboxRow("Show label", "labelEnabled")}
-                      <InspectorFieldRow
-                        label="Label position"
-                        control={
-                          <select
-                            className="json-value-control"
-                            value={stringValue(tokens.labelPosition, "bottom")}
-                            onChange={(event) =>
-                              updateTokens(
-                                setTokenValue(
-                                  tokens,
-                                  "labelPosition",
-                                  event.currentTarget.value,
-                                ),
-                              )
-                            }
-                          >
-                            <option value="top">Top</option>
-                            <option value="bottom">Bottom</option>
-                          </select>
-                        }
-                      />
+                      {tokenEnumRow("Label position", "labelPosition", "bottom", [
+                        "top",
+                        "bottom",
+                      ])}
                       {tokenNumberRow("Label padding", "labelPadding", 2)}
                       {tokenNumberRow("Label size", "labelSize", 10)}
-                      {tokenTextRow(
+                      {tokenThemeColorRow(
                         "Label theme color",
                         "labelColorToken",
                         "icons.primary",
@@ -463,27 +522,10 @@ export function ComponentClassRecordEditor({
                   {componentAccordion(
                     "layout",
                     <>
-                      <InspectorFieldRow
-                        label="Sizing mode"
-                        control={
-                          <select
-                            className="json-value-control"
-                            value={stringValue(tokens.sizingMode, "content")}
-                            onChange={(event) =>
-                              updateTokens(
-                                setTokenValue(
-                                  tokens,
-                                  "sizingMode",
-                                  event.currentTarget.value,
-                                ),
-                              )
-                            }
-                          >
-                            <option value="content">Text + padding</option>
-                            <option value="fixed">Fixed box</option>
-                          </select>
-                        }
-                      />
+                      {tokenEnumRow("Sizing mode", "sizingMode", "content", [
+                        "content",
+                        "fixed",
+                      ])}
                       {tokenNumberRow("Width", "width", 120)}
                       {tokenNumberRow("Height", "height", 28)}
                       {tokenNumberRow("Padding X", "paddingX", 8)}
@@ -498,14 +540,14 @@ export function ComponentClassRecordEditor({
                         "backgroundVisible",
                         true,
                       )}
-                      {tokenTextRow(
+                      {tokenThemeColorRow(
                         "Background theme color",
                         "backgroundColorToken",
                         "background",
                       )}
                       {tokenNumberRow("Corner radius", "cornerRadius", 10)}
                       {tokenNumberRow("Border width", "borderWidth", 0)}
-                      {tokenTextRow(
+                      {tokenThemeColorRow(
                         "Border theme color",
                         "borderColorToken",
                         "borders.primary",
@@ -516,23 +558,8 @@ export function ComponentClassRecordEditor({
                     "text",
                     <>
                       {tokenNumberRow("Text size", "fontSize", 12)}
-                      <ProductionFontSelector
-                        catalog={productionFontCatalog}
-                        value={{
-                          fontFamily: tokens.fontFamily,
-                          fontWeight: tokens.fontWeight,
-                          fontStyle: tokens.fontStyle,
-                        }}
-                        onChange={(nextFont) =>
-                          updateTokens({
-                            ...tokens,
-                            fontFamily: nextFont.fontFamily,
-                            fontWeight: nextFont.fontWeight,
-                            fontStyle: nextFont.fontStyle,
-                          })
-                        }
-                      />
-                      {tokenTextRow(
+                      {tokenOfficialFontRows()}
+                      {tokenThemeColorRow(
                         "Text theme color",
                         "textColorToken",
                         "textPrimary",
@@ -558,7 +585,7 @@ export function ComponentClassRecordEditor({
                       {tokenNumberRow("Height", "height", 58)}
                       {tokenNumberRow("Corner radius", "cornerRadius", 18)}
                       {tokenNumberRow("Border width", "borderWidth", 0)}
-                      {tokenTextRow(
+                      {tokenThemeColorRow(
                         "Border color",
                         "borderColorToken",
                         "borders.primary",
@@ -570,33 +597,16 @@ export function ComponentClassRecordEditor({
                     <>
                       {tokenNumberRow("Avatar size", "avatarSize", 38)}
                       {tokenNumberRow("Avatar gap", "avatarGap", 8)}
-                      <InspectorFieldRow
-                        label="Avatar position"
-                        control={
-                          <select
-                            className="json-value-control"
-                            value={stringValue(tokens.avatarPosition, "left")}
-                            onChange={(event) =>
-                              updateTokens(
-                                setTokenValue(
-                                  tokens,
-                                  "avatarPosition",
-                                  event.currentTarget.value,
-                                ),
-                              )
-                            }
-                          >
-                            <option value="left">Left</option>
-                            <option value="right">Right</option>
-                          </select>
-                        }
-                      />
+                      {tokenEnumRow("Avatar position", "avatarPosition", "left", [
+                        "left",
+                        "right",
+                      ])}
                       {tokenNumberRow(
                         "Microphone badge size",
                         "microphoneBadgeSize",
                         16,
                       )}
-                      {tokenTextRow(
+                      {tokenIconRow(
                         "Microphone badge icon",
                         "microphoneBadgeIconToken",
                         "media_mic",
@@ -607,12 +617,12 @@ export function ComponentClassRecordEditor({
                     "playback",
                     <>
                       {tokenNumberRow("Play circle size", "playCircleSize", 32)}
-                      {tokenTextRow(
+                      {tokenThemeColorRow(
                         "Play circle color",
                         "playCircleColorToken",
                         "icons.accent",
                       )}
-                      {tokenTextRow(
+                      {tokenThemeColorRow(
                         "Play icon color",
                         "playIconColorToken",
                         "icons.secondary",
@@ -639,12 +649,12 @@ export function ComponentClassRecordEditor({
                         "waveformMaxHeight",
                         22,
                       )}
-                      {tokenTextRow(
+                      {tokenThemeColorRow(
                         "Waveform color",
                         "waveformColorToken",
                         "icons.primary",
                       )}
-                      {tokenTextRow(
+                      {tokenThemeColorRow(
                         "Waveform played color",
                         "waveformPlayedColorToken",
                         "icons.accent",
@@ -655,7 +665,7 @@ export function ComponentClassRecordEditor({
                     "text",
                     <>
                       {tokenNumberRow("Text size", "textSize", 11)}
-                      {tokenTextRow(
+                      {tokenThemeColorRow(
                         "Text color",
                         "textColorToken",
                         "icons.secondary",
@@ -679,7 +689,7 @@ export function ComponentClassRecordEditor({
                     <>
                       {tokenNumberRow("Corner radius", "cornerRadius", 18)}
                       {tokenNumberRow("Border width", "borderWidth", 0)}
-                      {tokenTextRow(
+                      {tokenThemeColorRow(
                         "Border color",
                         "borderColorToken",
                         "borders.primary",
@@ -704,12 +714,12 @@ export function ComponentClassRecordEditor({
                         "playCircleAlpha",
                         0.55,
                       )}
-                      {tokenTextRow(
+                      {tokenThemeColorRow(
                         "Play circle color",
                         "playCircleColorToken",
                         "icons.accent",
                       )}
-                      {tokenTextRow(
+                      {tokenThemeColorRow(
                         "Play icon color",
                         "playIconColorToken",
                         "icons.secondary",
@@ -720,12 +730,12 @@ export function ComponentClassRecordEditor({
                     "statusBar",
                     <>
                       {tokenCheckboxRow("Show status", "statusVisible", true)}
-                      {tokenTextRow(
+                      {tokenIconRow(
                         "Status icon",
                         "statusIconToken",
                         "media_video",
                       )}
-                      {tokenTextRow(
+                      {tokenThemeColorRow(
                         "Status color",
                         "statusColorToken",
                         "icons.secondary",
@@ -760,7 +770,7 @@ export function ComponentClassRecordEditor({
                     "field",
                     <>
                       {tokenTextRow("Placeholder", "placeholder", "Mensaje")}
-                      {tokenTextRow(
+                      {tokenThemeColorRow(
                         "Idle text color",
                         "idleTextColor",
                         "icons.secondary",
@@ -787,7 +797,7 @@ export function ComponentClassRecordEditor({
                         "cursorBlinkFrames",
                         15,
                       )}
-                      {tokenTextRow(
+                      {tokenThemeColorRow(
                         "Cursor color",
                         "cursorColor",
                         "icons.accent",
@@ -801,18 +811,28 @@ export function ComponentClassRecordEditor({
                         (["left", "right"] as const).map((zone) => (
                           <InspectorFieldRow
                             key={`${zone}-${state}`}
-                            label={`${zone === "left" ? "Left" : "Right"} icons ${state}`}
+                            className={`record-editor-field ${DICTIONARY_FIELD_CLASS}`}
+                            label={
+                              <span>{`${zone === "left" ? "Left" : "Right"} icons ${state}`}</span>
+                            }
                             control={
-                              <DeferredTextInput
-                                ariaLabel={`${zone} icons ${state}`}
+                              <DictionaryFieldControl
+                                field={{
+                                  id: `component.${componentType}.iconSets.${zone}.${state}`,
+                                  kind: "text",
+                                  defaultValue: iconSetValue(tokens, zone, state),
+                                  ui: {
+                                    label: `${zone} icons ${state}`,
+                                  },
+                                }}
                                 value={iconSetValue(tokens, zone, state)}
-                                onCommit={(nextValue) =>
+                                onChange={(nextValue) =>
                                   updateTokens(
                                     setIconSetValue(
                                       tokens,
                                       zone,
                                       state,
-                                      nextValue,
+                                      stringValue(nextValue),
                                     ),
                                   )
                                 }
@@ -830,27 +850,10 @@ export function ComponentClassRecordEditor({
                   {componentAccordion(
                     "general",
                     <>
-                      <InspectorFieldRow
-                        label="Keyboard language"
-                        control={
-                          <select
-                            className="json-value-control"
-                            value={stringValue(tokens.language, "es")}
-                            onChange={(event) =>
-                              updateTokens(
-                                setTokenValue(
-                                  tokens,
-                                  "language",
-                                  event.currentTarget.value,
-                                ),
-                              )
-                            }
-                          >
-                            <option value="es">Español</option>
-                            <option value="en">English</option>
-                          </select>
-                        }
-                      />
+                      {tokenEnumRow("Keyboard language", "language", "es", [
+                        "es",
+                        "en",
+                      ])}
                       {tokenNumberRow(
                         "Push duration frames",
                         "pushDurationFrames",
@@ -867,28 +870,12 @@ export function ComponentClassRecordEditor({
                   {componentAccordion(
                     "keys",
                     <>
-                      <InspectorFieldRow
-                        label="Pressed effect"
-                        control={
-                          <select
-                            className="json-value-control"
-                            value={stringValue(tokens.pressedEffect, "popover")}
-                            onChange={(event) =>
-                              updateTokens(
-                                setTokenValue(
-                                  tokens,
-                                  "pressedEffect",
-                                  event.currentTarget.value,
-                                ),
-                              )
-                            }
-                          >
-                            <option value="popover">Popover</option>
-                            <option value="inPlace">In place</option>
-                            <option value="none">None</option>
-                          </select>
-                        }
-                      />
+                      {tokenEnumRow(
+                        "Pressed effect",
+                        "pressedEffect",
+                        "popover",
+                        ["popover", "inPlace", "none"],
+                      )}
                       {tokenNumberRow("Key corner radius", "keyRadius", 7)}
                       {tokenNumberRow("Key padding", "keyPadding", 6)}
                       {tokenCheckboxRow(
@@ -903,28 +890,48 @@ export function ComponentClassRecordEditor({
                     "bottomIcons",
                     <>
                       <InspectorFieldRow
-                        label="Bottom left icons"
+                        className={`record-editor-field ${DICTIONARY_FIELD_CLASS}`}
+                        label={<span>Bottom left icons</span>}
                         control={
-                          <DeferredTextInput
-                            ariaLabel="Bottom left icons"
+                          <DictionaryFieldControl
+                            field={{
+                              id: `component.${componentType}.bottomItems.left`,
+                              kind: "text",
+                              defaultValue: "app_language",
+                              ui: { label: "Bottom left icons" },
+                            }}
                             value={bottomIconValue(tokens, "left")}
-                            onCommit={(nextValue) =>
+                            onChange={(nextValue) =>
                               updateTokens(
-                                setBottomIconValue(tokens, "left", nextValue),
+                                setBottomIconValue(
+                                  tokens,
+                                  "left",
+                                  stringValue(nextValue),
+                                ),
                               )
                             }
                           />
                         }
                       />
                       <InspectorFieldRow
-                        label="Bottom right icons"
+                        className={`record-editor-field ${DICTIONARY_FIELD_CLASS}`}
+                        label={<span>Bottom right icons</span>}
                         control={
-                          <DeferredTextInput
-                            ariaLabel="Bottom right icons"
+                          <DictionaryFieldControl
+                            field={{
+                              id: `component.${componentType}.bottomItems.right`,
+                              kind: "text",
+                              defaultValue: "media_mic",
+                              ui: { label: "Bottom right icons" },
+                            }}
                             value={bottomIconValue(tokens, "right")}
-                            onCommit={(nextValue) =>
+                            onChange={(nextValue) =>
                               updateTokens(
-                                setBottomIconValue(tokens, "right", nextValue),
+                                setBottomIconValue(
+                                  tokens,
+                                  "right",
+                                  stringValue(nextValue),
+                                ),
                               )
                             }
                           />

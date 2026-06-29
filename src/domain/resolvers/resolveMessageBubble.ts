@@ -51,6 +51,7 @@ const MessageThemeSchema = z.object({
         .optional(),
     })
     .optional(),
+  components: z.record(z.string(), z.unknown()).optional(),
   chatBubbles: z.object({
     outgoingBackground: z.string().min(1),
     outgoingText: z.string().min(1),
@@ -213,6 +214,10 @@ export function resolveMessageBubble({
   const deliveryStatus = statusDeliveryValue(rawStatus.deliveryStatus);
   const statusTokens = themeTokens.chatBubbles.status ?? {};
   const mediaTokens = themeTokens.chatBubbles.media ?? {};
+  const componentTokens = themeTokens.components ?? {};
+  const avatarComponent = isRecord(componentTokens.avatar)
+    ? componentTokens.avatar
+    : {};
   const messageStartFrame = message.startFrame;
   const statusColor =
     deliveryStatus === "read"
@@ -289,6 +294,7 @@ export function resolveMessageBubble({
         borderColor: mediaTokens.borderColor ?? "transparent",
         shadowEnabled: mediaTokens.shadowEnabled === true,
       },
+      avatar: avatarComponent,
       status: {
         showText: statusTokens.showText !== false,
         showTicks: statusTokens.showTicks !== false,

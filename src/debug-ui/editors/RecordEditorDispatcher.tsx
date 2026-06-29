@@ -5,6 +5,7 @@ import type {
   AppState,
   AppTableDefinition,
 } from "../api/client.js";
+import { ComponentClassRecordEditor } from "./ComponentClassRecordEditor.js";
 import { GenericRecordEditor } from "./GenericRecordEditor.js";
 import { IconThemeRecordEditor } from "./IconThemeRecordEditor.js";
 import { ModuleInstanceRecordEditor } from "./ModuleInstanceRecordEditor.js";
@@ -127,6 +128,20 @@ export function RecordEditorDispatcher({
           activeTab={tabs.genericTab}
           renderGenericField={renderGenericField}
           setActiveTab={tabs.setGenericTab}
+        />
+      );
+    }
+    if (table.id === "component_classes") {
+      return (
+        <ComponentClassRecordEditor
+          table={table}
+          record={record}
+          activeTab={tabs.genericTab}
+          drafts={drafts}
+          productionFontCatalog={productionFontCatalog}
+          renderField={renderField}
+          setActiveTab={tabs.setGenericTab}
+          setJsonDraft={setJsonDraft}
         />
       );
     }

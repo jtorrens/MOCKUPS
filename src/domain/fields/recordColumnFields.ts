@@ -4,6 +4,7 @@ import type {
 } from "../value-system/index.js";
 import { ANIMATION_PRESET_COLUMN_BINDINGS } from "./animationPresetFields.js";
 import { ACTOR_COLUMN_BINDINGS } from "./actorFields.js";
+import { COMPONENT_CLASS_COLUMN_BINDINGS } from "./componentClassFields.js";
 import { DEVICE_COLUMN_BINDINGS } from "./deviceFields.js";
 import { NAVIGATION_BAR_COLUMN_BINDINGS } from "./navigationBarFields.js";
 import { PALETTE_COLOR_COLUMN_BINDINGS } from "./paletteColorFields.js";
@@ -16,6 +17,7 @@ import { THEME_COLUMN_BINDINGS } from "./themeFields.js";
 const RECORD_COLUMN_BINDINGS: Record<string, readonly JsonFieldBinding[]> = {
   animation_presets: ANIMATION_PRESET_COLUMN_BINDINGS,
   actors: ACTOR_COLUMN_BINDINGS,
+  component_classes: COMPONENT_CLASS_COLUMN_BINDINGS,
   devices: DEVICE_COLUMN_BINDINGS,
   navigation_bars: NAVIGATION_BAR_COLUMN_BINDINGS,
   palette_colors: PALETTE_COLOR_COLUMN_BINDINGS,
