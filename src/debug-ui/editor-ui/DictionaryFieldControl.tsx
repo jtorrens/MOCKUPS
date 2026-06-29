@@ -20,12 +20,17 @@ export interface DictionarySelectOptions {
   readonly options: readonly DictionarySelectOption[];
 }
 
-interface DictionaryFieldControlProps {
+export interface DictionaryFieldControlProps {
   field: FieldDefinition;
   value: unknown;
   disabled?: boolean;
+  readOnly?: boolean;
   placeholder?: string;
   selectOptions?: DictionarySelectOptions;
+  validation?: {
+    readonly valid: boolean;
+    readonly message?: string;
+  };
   onChange: (nextValue: unknown) => void;
 }
 
@@ -45,6 +50,7 @@ export function DictionaryFieldControl({
   field,
   value,
   disabled = false,
+  readOnly = false,
   placeholder,
   selectOptions,
   onChange,
@@ -58,7 +64,7 @@ export function DictionaryFieldControl({
     return (
       <label className={`json-checkbox ${controlClassName}`}>
         <input
-          disabled={disabled}
+          disabled={disabled || readOnly}
           type="checkbox"
           checked={booleanValue(value)}
           onChange={(event) => onChange(event.currentTarget.checked)}
@@ -79,7 +85,7 @@ export function DictionaryFieldControl({
     return (
       <select
         className={controlClassName}
-        disabled={disabled}
+        disabled={disabled || readOnly}
         value={stringValue(value)}
         onChange={(event) => onChange(event.currentTarget.value)}
       >
@@ -99,7 +105,7 @@ export function DictionaryFieldControl({
     return (
       <DeferredNumberInput
         className={controlClassName}
-        disabled={disabled}
+        disabled={disabled || readOnly}
         max={metadata.max}
         min={metadata.min}
         placeholder={placeholder}
@@ -114,7 +120,7 @@ export function DictionaryFieldControl({
   return (
     <DeferredTextInput
       className={controlClassName}
-      disabled={disabled}
+      disabled={disabled || readOnly}
       placeholder={placeholder}
       value={stringValue(value)}
       onCommit={onChange}

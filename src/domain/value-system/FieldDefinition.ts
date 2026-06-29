@@ -5,6 +5,7 @@ import {
 
 export interface FieldEditorMetadata {
   readonly label?: string;
+  readonly description?: string;
   readonly options?: readonly string[];
   readonly min?: number;
   readonly max?: number;

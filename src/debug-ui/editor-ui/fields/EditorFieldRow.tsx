@@ -1,0 +1,48 @@
+import type { ReactNode } from "react";
+import {
+  InspectorRestoreButton,
+} from "../../components/inspector/InspectorFieldRow.js";
+import { controlDefinitionForField } from "../ValueKindControlRegistry.js";
+import type { EditorFieldDescriptor } from "./EditorFieldDescriptor.js";
+import { editorFieldLabel } from "./EditorFieldDescriptor.js";
+import { FieldRowBase } from "./FieldRowBase.js";
+
+export interface EditorFieldRowProps {
+  readonly descriptor: EditorFieldDescriptor;
+  readonly children: ReactNode;
+  readonly className?: string;
+}
+
+export function EditorFieldRow({
+  descriptor,
+  children,
+  className = "",
+}: EditorFieldRowProps) {
+  const label = editorFieldLabel(descriptor);
+  const controlDefinition = controlDefinitionForField(descriptor.field);
+  const restore =
+    descriptor.canRestore && descriptor.actions.restore ? (
+      <InspectorRestoreButton
+        label={`Restore ${label}`}
+        onClick={descriptor.actions.restore}
+      />
+    ) : undefined;
+
+  return (
+    <FieldRowBase
+      className={className}
+      controlKind={controlDefinition.control}
+      description={descriptor.field.ui?.description}
+      error={descriptor.validation?.message}
+      fieldId={descriptor.field.id}
+      label={<span>{label}</span>}
+      readonly={descriptor.readonly}
+      restore={restore}
+      sourceKind={descriptor.source.kind}
+      state={descriptor.state}
+      valueKind={descriptor.field.kind}
+    >
+      {children}
+    </FieldRowBase>
+  );
+}

@@ -147,3 +147,48 @@ export function fieldControlSpecForField(field: FieldDefinition): FieldControlSp
 export function allValueKindControlDefinitions() {
   return [...VALUE_KIND_CONTROL_DEFINITIONS];
 }
+
+export interface ValueKindControlRegistryIssue {
+  readonly message: string;
+  readonly kind?: ValueKind;
+}
+
+export function validateValueKindControlRegistry(): readonly ValueKindControlRegistryIssue[] {
+  const issues: ValueKindControlRegistryIssue[] = [];
+  const domainKinds = new Set(DomainValueRegistry.allKinds());
+  const controlKinds = new Set<ValueKind>();
+
+  for (const definition of VALUE_KIND_CONTROL_DEFINITIONS) {
+    if (controlKinds.has(definition.kind)) {
+      issues.push({
+        kind: definition.kind,
+        message: `Duplicate editor control registration for value kind "${definition.kind}"`,
+      });
+    }
+    controlKinds.add(definition.kind);
+    if (!domainKinds.has(definition.kind)) {
+      issues.push({
+        kind: definition.kind,
+        message: `Editor control registered for unknown value kind "${definition.kind}"`,
+      });
+    }
+  }
+
+  for (const kind of domainKinds) {
+    if (!controlKinds.has(kind)) {
+      issues.push({
+        kind,
+        message: `Missing editor control registration for value kind "${kind}"`,
+      });
+    }
+  }
+
+  return issues;
+}
+
+export function assertValueKindControlRegistryIsComplete() {
+  const issues = validateValueKindControlRegistry();
+  if (issues.length) {
+    throw new Error(issues.map((issue) => issue.message).join("\n"));
+  }
+}

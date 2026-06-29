@@ -8,6 +8,7 @@
     "validate:examples": "tsx src/domain/validation/validateExamples.ts",
     "validate:resolver": "tsx src/domain/validation/validateResolver.ts",
     "validate:visual": "tsx src/visual/validation/validateVisualModules.ts",
+    "validate:editor-dictionary": "tsx src/debug-ui/validation/validateEditorDictionary.ts",
     "validate:preview": "tsx src/debug-ui/preview/validatePreviewSizing.ts",
     "remotion:studio": "remotion studio src/remotion/index.ts",
     "remotion:preview": "remotion studio src/remotion/index.ts",
