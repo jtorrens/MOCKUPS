@@ -1,7 +1,6 @@
 import type { ComponentType } from "react";
 import type { AppRecord } from "../api/client.js";
 import { DeferredTextInput } from "../editor-ui/DeferredTextInput.js";
-import { DeferredNumberInput } from "../editor-ui/DeferredNumberInput.js";
 import { ColorValueEditor } from "../components/json-editor/ColorValueEditor.js";
 import type { PaletteColorCatalog } from "../components/json-editor/paletteColors.js";
 import { InspectorFieldRow } from "../components/inspector/InspectorFieldRow.js";
@@ -13,6 +12,11 @@ import {
 } from "../editor-ui/ValueKindControlRegistry.js";
 import type { FieldDefinition } from "../../domain/value-system/index.js";
 import { parsedObject } from "./recordJsonUtils.js";
+import {
+  DictionaryFieldControl,
+  DICTIONARY_CONTROL_CLASS,
+  DICTIONARY_FIELD_CLASS,
+} from "../editor-ui/DictionaryFieldControl.js";
 
 interface ActorNativeBridge {
   pickFile?: () => Promise<string[]>;
@@ -77,6 +81,33 @@ function actorFieldMetadata(
     );
   }
   return editorMetadataForField(field);
+}
+
+function ActorDictionaryFieldRow({
+  field,
+  expectedControl,
+  value,
+  onChange,
+}: {
+  field: FieldDefinition;
+  expectedControl: EditorControlKind;
+  value: boolean | number | string;
+  onChange: (nextValue: unknown) => void;
+}) {
+  const metadata = actorFieldMetadata(field, expectedControl);
+  return (
+    <InspectorFieldRow
+      className={`record-editor-field ${DICTIONARY_FIELD_CLASS}`}
+      label={<span>{metadata.label}</span>}
+      control={
+        <DictionaryFieldControl
+          field={field}
+          value={value}
+          onChange={onChange}
+        />
+      }
+    />
+  );
 }
 
 function isHexColor(value: unknown): value is string {
@@ -246,10 +277,10 @@ function ActorColorField(context: ActorFieldsContext) {
       {rows.map((row) => (
         <InspectorFieldRow
           key={`actor_${row.field}`}
-          className="record-editor-field record-editor-field-string actor-color-field"
+          className={`record-editor-field record-editor-field-string ${DICTIONARY_FIELD_CLASS} actor-color-field`}
           label={<span>{row.label}</span>}
           control={
-            <div className="actor-color-control actor-mode-color-grid">
+            <div className={`actor-color-control actor-mode-color-grid ${DICTIONARY_CONTROL_CLASS}`}>
               {actorThemeModes.map((mode) => {
                 actorFieldMetadata(row.fields[mode], "paletteColorToken");
                 const color = actorModeColor(
@@ -320,17 +351,11 @@ function ActorColorField(context: ActorFieldsContext) {
 }
 
 function ActorAvatarFields(context: ActorFieldsContext) {
-  const useInitialsField = actorFieldMetadata(
-    ACTOR_FIELDS.avatarUseInitials,
-    "checkbox",
-  );
   const filePathField = actorFieldMetadata(
     ACTOR_FIELDS.avatarFilePath,
     "relativeFilePath",
   );
   const scaleField = actorFieldMetadata(ACTOR_FIELDS.avatarScale, "number");
-  const offsetXField = actorFieldMetadata(ACTOR_FIELDS.avatarOffsetX, "number");
-  const offsetYField = actorFieldMetadata(ACTOR_FIELDS.avatarOffsetY, "number");
   const initialsPaddingField = actorFieldMetadata(
     ACTOR_FIELDS.avatarInitialsPadding,
     "number",
@@ -365,24 +390,19 @@ function ActorAvatarFields(context: ActorFieldsContext) {
 
   return (
     <>
-      <InspectorFieldRow
+      <ActorDictionaryFieldRow
         key="actor_avatar_use_initials"
-        className="record-editor-field record-editor-field-boolean"
-        label={<span>{useInitialsField.label}</span>}
-        control={
-          <input
-            type="checkbox"
-            checked={useInitials}
-            onChange={(event) => patchAvatar({ useInitials: event.target.checked })}
-          />
-        }
+        field={ACTOR_FIELDS.avatarUseInitials}
+        expectedControl="checkbox"
+        value={useInitials}
+        onChange={(nextValue) => patchAvatar({ useInitials: nextValue === true })}
       />
       <InspectorFieldRow
         key="actor_avatar_file"
-        className="record-editor-field record-editor-field-string"
+        className={`record-editor-field record-editor-field-string ${DICTIONARY_FIELD_CLASS}`}
         label={<span>{filePathField.label}</span>}
         control={
-          <div className="media-file-control actor-avatar-file-control">
+          <div className={`media-file-control actor-avatar-file-control ${DICTIONARY_CONTROL_CLASS}`}>
             <DeferredTextInput
               value={filePath}
               onCommit={(nextValue) => patchAvatar({ filePath: nextValue })}
@@ -420,46 +440,39 @@ function ActorAvatarFields(context: ActorFieldsContext) {
       </div>
       <InspectorFieldRow
         key="actor_avatar_scale"
-        className="record-editor-field record-editor-field-number"
+        className={`record-editor-field record-editor-field-number ${DICTIONARY_FIELD_CLASS}`}
         label={<span>{scaleField.label}</span>}
         control={
-          <DeferredNumberInput
-            step={scaleField.step ?? "any"}
-            min={scaleField.min}
+          <DictionaryFieldControl
+            field={ACTOR_FIELDS.avatarScale}
             value={scale}
-            onCommit={(nextValue) => patchAvatar({ scale: nextValue })}
+            onChange={(nextValue) => patchAvatar({ scale: Number(nextValue) })}
           />
         }
       />
       <InspectorFieldRow
         key="actor_avatar_offset"
-        className="record-editor-field record-editor-field-number"
+        className={`record-editor-field record-editor-field-number ${DICTIONARY_FIELD_CLASS}`}
         label={<span>Avatar offset</span>}
         control={
-          <div className="record-editor-field-pair">
+          <div className={`record-editor-field-pair ${DICTIONARY_CONTROL_CLASS}`}>
             <label className="record-editor-field-pair-item">
               <span>X</span>
-              <DeferredNumberInput
-                className="json-value-control record-editor-compact-number"
-                step={offsetXField.step ?? "any"}
-                min={offsetXField.min}
-                max={offsetXField.max}
+              <DictionaryFieldControl
+                field={ACTOR_FIELDS.avatarOffsetX}
                 value={offsetX}
-                onCommit={(nextValue) =>
-                  patchAvatar({ offsetX: Math.round(nextValue) })
+                onChange={(nextValue) =>
+                  patchAvatar({ offsetX: Math.round(Number(nextValue)) })
                 }
               />
             </label>
             <label className="record-editor-field-pair-item">
               <span>Y</span>
-              <DeferredNumberInput
-                className="json-value-control record-editor-compact-number"
-                step={offsetYField.step ?? "any"}
-                min={offsetYField.min}
-                max={offsetYField.max}
+              <DictionaryFieldControl
+                field={ACTOR_FIELDS.avatarOffsetY}
                 value={offsetY}
-                onCommit={(nextValue) =>
-                  patchAvatar({ offsetY: Math.round(nextValue) })
+                onChange={(nextValue) =>
+                  patchAvatar({ offsetY: Math.round(Number(nextValue)) })
                 }
               />
             </label>
@@ -468,17 +481,15 @@ function ActorAvatarFields(context: ActorFieldsContext) {
       />
       <InspectorFieldRow
         key="actor_avatar_initials_padding"
-        className="record-editor-field record-editor-field-number"
+        className={`record-editor-field record-editor-field-number ${DICTIONARY_FIELD_CLASS}`}
         label={<span>{initialsPaddingField.label}</span>}
         control={
-          <DeferredNumberInput
-            step={initialsPaddingField.step ?? "any"}
-            min={initialsPaddingField.min}
-            max={initialsPaddingField.max}
+          <DictionaryFieldControl
+            field={ACTOR_FIELDS.avatarInitialsPadding}
             value={initialsPadding}
-            onCommit={(nextValue) =>
+            onChange={(nextValue) =>
               patchAvatar({
-                initialsPadding: Math.max(0, Math.round(nextValue)),
+                initialsPadding: Math.max(0, Math.round(Number(nextValue))),
               })
             }
           />

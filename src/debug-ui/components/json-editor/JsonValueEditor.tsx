@@ -1,4 +1,5 @@
 import { DeferredNumberInput } from "../../editor-ui/DeferredNumberInput.js";
+import { DICTIONARY_CONTROL_CLASS } from "../../editor-ui/DictionaryFieldControl.js";
 import { ColorValueEditor } from "./ColorValueEditor.js";
 import {
   productionFontIdForFamily,
@@ -158,6 +159,12 @@ export function JsonValueEditor({
   const widget = hint.widget;
   const key = String(path[path.length - 1] ?? "");
   const parent = String(path[path.length - 2] ?? "");
+  const dictionaryControlClassName = hint.dictionaryDerived
+    ? DICTIONARY_CONTROL_CLASS
+    : "";
+  const jsonValueControlClassName = ["json-value-control", dictionaryControlClassName]
+    .filter(Boolean)
+    .join(" ");
 
   const parentChromeOptions = key === "type" ? chromeTypeOptions(parent) : [];
   const contextChromeOptions =
@@ -176,7 +183,7 @@ export function JsonValueEditor({
   if (resolvedWidget === "select" && dynamicSelectOptions.length) {
     return (
       <select
-        className="json-value-control"
+        className={jsonValueControlClassName}
         value={String(value ?? "")}
         onChange={(event) => onChange(event.target.value)}
       >
@@ -197,6 +204,7 @@ export function JsonValueEditor({
       <ProductionFontSelector
         compact
         catalog={productionFontCatalog}
+        controlClassName={dictionaryControlClassName}
         lockFamily={hint.lockFontFamily}
         value={{
           fontFamily: value,
@@ -230,6 +238,7 @@ export function JsonValueEditor({
       <ProductionFontSelector
         compact
         catalog={productionFontCatalog}
+        controlClassName={dictionaryControlClassName}
         lockFamily={hint.lockFontFamily}
         value={{
           fontFamily: fontFamilyForPath(rootValue, path),
@@ -296,7 +305,13 @@ export function JsonValueEditor({
         />
         <DeferredNumberInput
           ariaLabel="Neutral tint hue degrees"
-          className="json-value-control json-hue-slider-value"
+          className={[
+            "json-value-control",
+            "json-hue-slider-value",
+            dictionaryControlClassName,
+          ]
+            .filter(Boolean)
+            .join(" ")}
           max={360}
           min={0}
           step={1}
@@ -311,7 +326,7 @@ export function JsonValueEditor({
   if (typeof value === "number") {
     return (
       <DeferredNumberInput
-        className="json-value-control"
+        className={jsonValueControlClassName}
         min={hint.min}
         max={hint.max}
         step={hint.step ?? "any"}
@@ -344,7 +359,9 @@ export function JsonValueEditor({
   if (widget === "textarea") {
     return (
       <textarea
-        className="json-value-textarea"
+        className={["json-value-textarea", dictionaryControlClassName]
+          .filter(Boolean)
+          .join(" ")}
         value={typeof value === "string" ? value : String(value ?? "")}
         onChange={(event) => onChange(event.target.value)}
       />
@@ -353,7 +370,7 @@ export function JsonValueEditor({
 
   return (
     <input
-      className="json-value-control"
+      className={jsonValueControlClassName}
       type="text"
       value={typeof value === "string" ? value : String(value ?? "")}
       onChange={(event) => onChange(event.target.value)}

@@ -2,6 +2,7 @@ import type {
   FieldDefinition,
   FieldEditorMetadata,
 } from "../../domain/value-system/index.js";
+import { ValueRegistry as DomainValueRegistry } from "../../domain/value-system/index.js";
 import type { ValueKind } from "../../domain/value-system/index.js";
 
 export type EditorControlKind =
@@ -26,6 +27,14 @@ export interface ValueKindControlDefinition {
   readonly label: string;
   readonly defaultStep?: number | "any";
   readonly requiresOptions?: boolean;
+}
+
+export interface FieldControlSpec {
+  readonly field: FieldDefinition;
+  readonly valueKind: ReturnType<typeof DomainValueRegistry.definition>;
+  readonly controlDefinition: ValueKindControlDefinition;
+  readonly metadata: FieldEditorMetadata;
+  readonly acceptsInherited: boolean;
 }
 
 const VALUE_KIND_CONTROL_DEFINITIONS = [
@@ -121,6 +130,17 @@ export function editorMetadataForField(
   return {
     step: definition.defaultStep,
     ...field.ui,
+  };
+}
+
+export function fieldControlSpecForField(field: FieldDefinition): FieldControlSpec {
+  const valueKind = DomainValueRegistry.definition(field.kind);
+  return {
+    field,
+    valueKind,
+    controlDefinition: controlDefinitionForField(field),
+    metadata: editorMetadataForField(field),
+    acceptsInherited: valueKind.acceptsInherited !== false,
   };
 }
 

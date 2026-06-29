@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { DeferredNumberInput } from "../../editor-ui/DeferredNumberInput.js";
 import { DeferredTextInput } from "../../editor-ui/DeferredTextInput.js";
+import {
+  DICTIONARY_CONTROL_CLASS,
+  DICTIONARY_FIELD_CLASS,
+} from "../../editor-ui/DictionaryFieldControl.js";
 import { EditorSubsectionAccordion } from "../../editor-ui/EditorSubsectionAccordion.js";
 import { ColorValueEditor } from "./ColorValueEditor.js";
 import {
@@ -366,19 +370,30 @@ export function TokenOverrideEditor({
         : hint.options ?? [],
       stringValue,
     );
+    const dictionaryControlClassName = hint.dictionaryDerived
+      ? DICTIONARY_CONTROL_CLASS
+      : "";
+    const inheritedClassName = !rowHasOverride ? "is-inherited-value" : "";
+    const controlClassName = [inheritedClassName, dictionaryControlClassName]
+      .filter(Boolean)
+      .join(" ");
 
     return (
       <InspectorFieldRow
         key={key}
-        className={`token-override-row ${rowHasOverride ? "has-override" : ""}`}
+        className={`token-override-row ${
+          hint.dictionaryDerived ? DICTIONARY_FIELD_CLASS : ""
+        } ${rowHasOverride ? "has-override" : ""}`}
         state={rowHasOverride ? "override" : "default"}
         label={<strong title={key}>{label}</strong>}
         control={
-          <div className="token-override-input">
+          <div
+            className={`token-override-input ${dictionaryControlClassName}`.trim()}
+          >
           {widget === "checkbox" ? (
             <select
               aria-label={`${label} override`}
-              className={!rowHasOverride ? "is-inherited-value" : undefined}
+              className={controlClassName || undefined}
               value={rowHasOverride ? String(Boolean(localValue)) : ""}
               onChange={(event) => {
                 const raw = event.target.value;
@@ -399,6 +414,7 @@ export function TokenOverrideEditor({
             <ProductionFontSelector
               compact
               catalog={productionFontCatalog}
+              controlClassName={dictionaryControlClassName}
               inherited={!rowHasOverride}
               lockFamily={hint.lockFontFamily}
               value={{
@@ -415,7 +431,7 @@ export function TokenOverrideEditor({
           ) : widget === "select" ? (
             <select
               aria-label={`${label} override`}
-              className={!rowHasOverride ? "is-inherited-value" : undefined}
+              className={controlClassName || undefined}
               value={stringValue}
               onChange={(event) => {
                 const raw = event.target.value;
@@ -434,7 +450,15 @@ export function TokenOverrideEditor({
               ))}
             </select>
           ) : widget === "color" && typeof baselineValue === "string" ? (
-            <span className="json-color-pair token-color-pair">
+            <span
+              className={[
+                "json-color-pair",
+                "token-color-pair",
+                dictionaryControlClassName,
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            >
               <ColorValueEditor
                 label={`${label} override`}
                 value={stringValue || baselineValue}
@@ -448,6 +472,9 @@ export function TokenOverrideEditor({
           ) : widget === "number" ? (
             <DeferredNumberInput
               ariaLabel={`${label} override`}
+              className={["json-value-control", controlClassName]
+                .filter(Boolean)
+                .join(" ")}
               max={hint.max}
               min={hint.min}
               placeholder={showInheritedValue ? inheritedDisplayValue : ""}
@@ -465,6 +492,9 @@ export function TokenOverrideEditor({
           ) : (
             <DeferredTextInput
               ariaLabel={`${label} override`}
+              className={["json-value-control", controlClassName]
+                .filter(Boolean)
+                .join(" ")}
               placeholder={showInheritedValue ? inheritedDisplayValue : ""}
               value={stringValue}
               onCommit={(raw) => {

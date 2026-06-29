@@ -59,6 +59,22 @@ function createMessageBubbleInput(
   const labelComponent = readObject(input.theme.components ?? {}, "label");
   const typographyTokens = input.theme.typography;
   const messageTypography = readObject(typographyTokens ?? {}, "message");
+  const showBubbleWriteOnCursor =
+    input.props.showTextInputBar !== true && input.props.showKeyboard !== true;
+  const writeOnStartFrame =
+    typeof message.timing.writeOnStartFrame === "number"
+      ? message.timing.writeOnStartFrame
+      : undefined;
+  const writeOnDurationFrames =
+    typeof message.timing.writeOnDurationFrames === "number"
+      ? message.timing.writeOnDurationFrames
+      : undefined;
+  const isWritingOn =
+    writeOnStartFrame !== undefined &&
+    writeOnDurationFrames !== undefined &&
+    writeOnDurationFrames > 0 &&
+    input.frame >= writeOnStartFrame &&
+    input.frame < writeOnStartFrame + writeOnDurationFrames;
   const actorAvatar = outgoing
     ? input.ownerActor.avatar?.uri
     : message.sender.avatar?.uri;
@@ -246,14 +262,17 @@ function createMessageBubbleInput(
           animation: {
             ...(message.animation ?? {}),
             cursor: {
-              color: readString(input.theme.cursor, "color", "#007AFF"),
+              color: readString(
+                input.theme.colors,
+                "cursor.color",
+                "currentColor",
+              ),
               width: readNumber(input.theme.cursor, "width", 2),
               blinkFrames: readNumber(input.theme.cursor, "blinkFrames", 15),
               visible:
-                typeof message.timing.writeOnStartFrame === "number" &&
-                typeof message.timing.writeOnDurationFrames === "number" &&
-                message.visibleText.length > 0 &&
-                message.visibleText.length < message.text.length,
+                showBubbleWriteOnCursor &&
+                isWritingOn &&
+                message.visibleText.length > 0,
             },
           },
         }

@@ -1,6 +1,8 @@
 import type { AppFieldDefinition, AppTableDefinition } from "../../api/client.js";
+import { THEME_TOKEN_BINDINGS } from "../../../domain/fields/themeFields.js";
 import { fieldDescriptorHintsForContext } from "../../field-descriptors/registry.js";
 import { moduleJsonUiHintsForRecord } from "../../module-editor-hints/registry.js";
+import { jsonUiHintsFromFieldBindings } from "./fieldDefinitionHints.js";
 import {
   normalizedHintPath,
   type JsonPath,
@@ -17,6 +19,7 @@ export type JsonWidget =
   | "textarea";
 
 export type JsonUiHint = {
+  dictionaryDerived?: boolean;
   widget?: JsonWidget;
   label?: string;
   canonicalPath?: string;
@@ -118,6 +121,9 @@ export function buildJsonUiHints(
       fieldColumn: field.column,
       record,
     }),
+    ...(table.id === "themes" && field.column === "tokens_json"
+      ? jsonUiHintsFromFieldBindings(THEME_TOKEN_BINDINGS)
+      : {}),
     ...moduleJsonUiHintsForRecord(table.id, field.column, record),
   };
   if (table.id === "screen_instances" && field.column === "transform_json") {

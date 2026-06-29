@@ -168,6 +168,54 @@ export const THEME_FIELDS = defineFields({
       step: 0.01,
     },
   },
+  typographyFamily: {
+    id: "theme.typography.family",
+    kind: "fontFamily",
+    ui: {
+      label: "Font family",
+    },
+  },
+  typographyBodySize: {
+    id: "theme.typography.bodySize",
+    kind: "decimal",
+    ui: {
+      label: "Body size",
+      min: 1,
+      step: 1,
+    },
+  },
+  typographyBodyLineHeight: {
+    id: "theme.typography.bodyLineHeight",
+    kind: "decimal",
+    ui: {
+      label: "Body line height",
+      min: 1,
+      step: 1,
+    },
+  },
+  typographyCaptionSize: {
+    id: "theme.typography.captionSize",
+    kind: "decimal",
+    ui: {
+      label: "Caption size",
+      min: 1,
+      step: 1,
+    },
+  },
+  typographyFontWeight: {
+    id: "theme.typography.fontWeight",
+    kind: "fontWeight",
+    ui: {
+      label: "Font weight",
+    },
+  },
+  typographyFontStyle: {
+    id: "theme.typography.fontStyle",
+    kind: "fontStyle",
+    ui: {
+      label: "Font style",
+    },
+  },
 });
 
 export const THEME_COLUMN_BINDINGS = [
@@ -215,5 +263,29 @@ export const THEME_TOKEN_BINDINGS = [
   {
     outputPath: ["surfaceRelief", "default", "lowerIntensity"],
     field: THEME_FIELDS.surfaceReliefLowerIntensity,
+  },
+  {
+    outputPath: ["typography", "family"],
+    field: THEME_FIELDS.typographyFamily,
+  },
+  {
+    outputPath: ["typography", "bodySize"],
+    field: THEME_FIELDS.typographyBodySize,
+  },
+  {
+    outputPath: ["typography", "bodyLineHeight"],
+    field: THEME_FIELDS.typographyBodyLineHeight,
+  },
+  {
+    outputPath: ["typography", "captionSize"],
+    field: THEME_FIELDS.typographyCaptionSize,
+  },
+  {
+    outputPath: ["typography", "fontWeight"],
+    field: THEME_FIELDS.typographyFontWeight,
+  },
+  {
+    outputPath: ["typography", "fontStyle"],
+    field: THEME_FIELDS.typographyFontStyle,
   },
 ] satisfies readonly JsonFieldBinding[];

@@ -7,6 +7,10 @@ import {
   type EditorControlKind,
 } from "../editor-ui/ValueKindControlRegistry.js";
 import {
+  DICTIONARY_CONTROL_CLASS,
+  DICTIONARY_FIELD_CLASS,
+} from "../editor-ui/DictionaryFieldControl.js";
+import {
   isJsonObject,
   setAtPath,
   type JsonPath,
@@ -27,6 +31,9 @@ function themeFieldMetadata(
   }
   return editorMetadataForField(field);
 }
+
+const dictionaryThemeRowClassName = `record-editor-field ${DICTIONARY_FIELD_CLASS}`;
+const dictionaryThemeControlClassName = `json-value-control ${DICTIONARY_CONTROL_CLASS}`;
 
 function numberValue(value: unknown, fallback: number): number {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
@@ -61,9 +68,10 @@ function normalizeThemeCursorGroup(value: unknown) {
   const root = isJsonObject(value as JsonValue)
     ? (value as Record<string, JsonValue>)
     : {};
+  const { color: _legacyColor, ...cursorRoot } = root;
   return {
     ...themeCursorDefaults(),
-    ...root,
+    ...cursorRoot,
   };
 }
 
@@ -259,13 +267,7 @@ export function normalizedThemeTokenRoot({
           lightMode.navigationBar,
         ),
         keyboard: normalizeThemeKeyboardGroup(lightMode.keyboard),
-        cursor: {
-          color:
-            isJsonObject(lightMode.cursor) &&
-            typeof lightMode.cursor.color === "string"
-              ? lightMode.cursor.color
-              : "#007AFF",
-        },
+        cursor: normalizeThemeCursorGroup(lightMode.cursor),
         notifications: {
           background:
             lightNotifications.background ??
@@ -298,13 +300,7 @@ export function normalizedThemeTokenRoot({
           true,
         ),
         keyboard: normalizeThemeKeyboardGroup(darkMode.keyboard, true),
-        cursor: {
-          color:
-            isJsonObject(darkMode.cursor) &&
-            typeof darkMode.cursor.color === "string"
-              ? darkMode.cursor.color
-              : "#0A84FF",
-        },
+        cursor: normalizeThemeCursorGroup(darkMode.cursor),
         notifications: {
           background:
             darkNotifications.background ??
@@ -370,7 +366,7 @@ export function NeutralTintGroupEditor({
   return (
     <div className="theme-chrome-editor">
       <InspectorFieldRow
-        className="record-editor-field"
+        className={dictionaryThemeRowClassName}
         label={<span>{hueField.label}</span>}
         control={
           <div className="json-hue-slider-control">
@@ -392,7 +388,7 @@ export function NeutralTintGroupEditor({
             />
             <input
               aria-label="Neutral tint hue degrees"
-              className="json-value-control json-hue-slider-value"
+              className={`${dictionaryThemeControlClassName} json-hue-slider-value`}
               max={hueField.max}
               min={hueField.min}
               step={hueField.step ?? 1}
@@ -410,11 +406,11 @@ export function NeutralTintGroupEditor({
         }
       />
       <InspectorFieldRow
-        className="record-editor-field"
+        className={dictionaryThemeRowClassName}
         label={<span>{saturationField.label}</span>}
         control={
           <input
-            className="json-value-control"
+            className={dictionaryThemeControlClassName}
             max={saturationField.max}
             min={saturationField.min}
             step={saturationField.step ?? 0.01}
@@ -475,11 +471,11 @@ export function ThemeSurfaceReliefGroupEditor({
   return (
     <div className="theme-chrome-editor">
       <InspectorFieldRow
-        className="record-editor-field"
+        className={dictionaryThemeRowClassName}
         label={<span>{angleField.label}</span>}
         control={
           <input
-            className="json-value-control"
+            className={dictionaryThemeControlClassName}
             min={angleField.min}
             max={angleField.max}
             type="number"
@@ -492,11 +488,11 @@ export function ThemeSurfaceReliefGroupEditor({
         }
       />
       <InspectorFieldRow
-        className="record-editor-field"
+        className={dictionaryThemeRowClassName}
         label={<span>{extensionField.label}</span>}
         control={
           <input
-            className="json-value-control"
+            className={dictionaryThemeControlClassName}
             min={extensionField.min}
             max={extensionField.max}
             type="number"
@@ -509,11 +505,11 @@ export function ThemeSurfaceReliefGroupEditor({
         }
       />
       <InspectorFieldRow
-        className="record-editor-field"
+        className={dictionaryThemeRowClassName}
         label={<span>{spreadField.label}</span>}
         control={
           <input
-            className="json-value-control"
+            className={dictionaryThemeControlClassName}
             min={spreadField.min}
             max={spreadField.max}
             type="number"
@@ -526,11 +522,11 @@ export function ThemeSurfaceReliefGroupEditor({
         }
       />
       <InspectorFieldRow
-        className="record-editor-field"
+        className={dictionaryThemeRowClassName}
         label={<span>{upperIntensityField.label}</span>}
         control={
           <input
-            className="json-value-control"
+            className={dictionaryThemeControlClassName}
             min={upperIntensityField.min}
             max={upperIntensityField.max}
             type="number"
@@ -543,11 +539,11 @@ export function ThemeSurfaceReliefGroupEditor({
         }
       />
       <InspectorFieldRow
-        className="record-editor-field"
+        className={dictionaryThemeRowClassName}
         label={<span>{lowerIntensityField.label}</span>}
         control={
           <input
-            className="json-value-control"
+            className={dictionaryThemeControlClassName}
             min={lowerIntensityField.min}
             max={lowerIntensityField.max}
             type="number"
@@ -590,11 +586,11 @@ export function ThemeCursorGroupEditor({
   return (
     <div className="theme-chrome-editor">
       <InspectorFieldRow
-        className="record-editor-field"
+        className={dictionaryThemeRowClassName}
         label={<span>{widthField.label}</span>}
         control={
           <input
-            className="json-value-control"
+            className={dictionaryThemeControlClassName}
             type="number"
             min={widthField.min}
             max={widthField.max}
@@ -607,11 +603,11 @@ export function ThemeCursorGroupEditor({
         }
       />
       <InspectorFieldRow
-        className="record-editor-field"
+        className={dictionaryThemeRowClassName}
         label={<span>{blinkFramesField.label}</span>}
         control={
           <input
-            className="json-value-control"
+            className={dictionaryThemeControlClassName}
             type="number"
             min={blinkFramesField.min}
             max={blinkFramesField.max}

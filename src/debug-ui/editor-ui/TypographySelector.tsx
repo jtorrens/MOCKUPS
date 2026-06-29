@@ -15,6 +15,7 @@ export interface TypographySelection {
 export interface TypographySelectorProps {
   catalog?: ProductionFontCatalog;
   compact?: boolean;
+  controlClassName?: string;
   inherited?: boolean;
   lockFamily?: boolean;
   value: {
@@ -89,6 +90,7 @@ function defaultFace(faces: ProductionFontFaceOption[]) {
 export function TypographySelector({
   catalog,
   compact = false,
+  controlClassName = "",
   inherited = false,
   lockFamily = false,
   value,
@@ -132,9 +134,17 @@ export function TypographySelector({
     });
   }
 
+  const selectClassName = [
+    "json-value-control",
+    inherited ? "is-inherited-value" : "",
+    controlClassName,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   const familySelect = (
     <select
-      className={`json-value-control ${inherited ? "is-inherited-value" : ""}`.trim()}
+      className={selectClassName}
       style={{ minWidth: 0 }}
       value={currentFamily}
       disabled={lockFamily || !familyOptions.length}
@@ -156,7 +166,7 @@ export function TypographySelector({
   );
   const weightSelect = (
     <select
-      className={`json-value-control ${inherited ? "is-inherited-value" : ""}`.trim()}
+      className={selectClassName}
       style={{ minWidth: 0 }}
       value={String(currentFace.fontWeight)}
       disabled={!weightOptions.length}
@@ -179,7 +189,7 @@ export function TypographySelector({
   );
   const styleSelect = (
     <select
-      className={`json-value-control ${inherited ? "is-inherited-value" : ""}`.trim()}
+      className={selectClassName}
       style={{ minWidth: 0 }}
       value={currentFace.fontStyle}
       disabled={!styleOptions.length}
@@ -204,6 +214,7 @@ export function TypographySelector({
   if (compact) {
     return (
       <span
+        className={controlClassName}
         style={{
           display: "grid",
           gap: 7,

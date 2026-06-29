@@ -28,11 +28,16 @@ export const CHAT_TEXT_INPUT_BAR_FIELDS = defineFields({
   cursorColor: {
     id: "chat.textInputBar.cursorColor",
     kind: "themeColorToken",
-    defaultValue: "icons.accent",
+    defaultValue: "cursor.color",
     ui: {
       label: "Cursor color",
-      semanticTokenGroup: "icons",
-      options: ["icons.accent", "icons.primary", "icons.secondary"],
+      semanticTokenGroup: "cursor",
+      options: [
+        "cursor.color",
+        "icons.accent",
+        "icons.primary",
+        "icons.secondary",
+      ],
     },
   },
   idleTextColor: {

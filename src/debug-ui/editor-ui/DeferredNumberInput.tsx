@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 interface DeferredNumberInputProps {
   ariaLabel?: string;
   className?: string;
+  disabled?: boolean;
   max?: number;
   min?: number;
   placeholder?: string;
@@ -15,6 +16,7 @@ interface DeferredNumberInputProps {
 export function DeferredNumberInput({
   ariaLabel,
   className = "json-value-control",
+  disabled = false,
   max,
   min,
   placeholder,
@@ -48,6 +50,7 @@ export function DeferredNumberInput({
     <input
       aria-label={ariaLabel}
       className={className}
+      disabled={disabled}
       max={max}
       min={min}
       placeholder={placeholder}

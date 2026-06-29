@@ -14,6 +14,10 @@ import {
   editorMetadataForField,
 } from "../editor-ui/ValueKindControlRegistry.js";
 import type { FieldDefinition } from "../../domain/value-system/index.js";
+import {
+  DictionaryFieldControl,
+  DICTIONARY_FIELD_CLASS,
+} from "../editor-ui/DictionaryFieldControl.js";
 
 export type FieldSaveState =
   | "saved"
@@ -325,6 +329,7 @@ export function RecordFieldRenderer({
   onDraftChange,
 }: RecordFieldRendererProps) {
   const dictionaryField = dictionaryFieldForColumn(table, field);
+  const dictionaryClassName = dictionaryField ? ` ${DICTIONARY_FIELD_CLASS}` : "";
   const dictionaryMetadata = dictionaryField
     ? editorMetadataForField(dictionaryField)
     : undefined;
@@ -340,13 +345,55 @@ export function RecordFieldRenderer({
           record,
           records,
         );
+  const dictionarySelect =
+    dictionaryField &&
+    dictionaryControl === "select" &&
+    dictionaryMetadata?.options?.length
+      ? {
+          allowEmpty: dictionaryMetadata.allowEmpty === true,
+          options: dictionaryMetadata.options.map((option) => ({
+            value: option,
+            label: option,
+          })),
+        }
+      : undefined;
+  const selectOptions = relationSelect ?? dictionarySelect;
 
   if (field.kind !== "json") {
-    const selectedRelationLabel = relationSelect?.options.find(
+    const selectedRelationLabel = selectOptions?.options.find(
       (option) => option.value === (drafts[field.column] ?? ""),
     )?.label;
-    const control = (dictionaryControl ?? field.kind) === "checkbox" ||
-      field.kind === "boolean" ? (
+    const control = dictionaryField ? (
+      <DictionaryFieldControl
+        field={dictionaryField}
+        disabled={field.readonly}
+        selectOptions={
+          selectOptions
+            ? {
+                ...selectOptions,
+                emptyLabel: [
+                  "avatar_asset_id",
+                  "default_device_id",
+                  "default_theme_id",
+                ].includes(field.column)
+                  ? "None"
+                  : "Inherited/default",
+              }
+            : undefined
+        }
+        value={drafts[field.column] ?? ""}
+        onChange={(nextValue) =>
+          onDraftChange(
+            field.column,
+            typeof nextValue === "boolean"
+              ? nextValue
+                ? "1"
+                : "0"
+              : String(nextValue ?? ""),
+          )
+        }
+      />
+    ) : field.kind === "boolean" ? (
       <label className="json-checkbox">
         <input
           data-testid={`field-${field.column}`}
@@ -361,20 +408,14 @@ export function RecordFieldRenderer({
           ? "true"
           : "false"}
       </label>
-    ) : field.readonly ? (
-      <input
-        data-testid={`field-${field.column}`}
-        disabled
-        type="text"
-        value={selectedRelationLabel ?? drafts[field.column] ?? ""}
-      />
-    ) : relationSelect && relationSelect.options.length > 0 ? (
+    ) : selectOptions && selectOptions.options.length > 0 ? (
       <select
         data-testid={`field-${field.column}`}
+        disabled={field.readonly}
         value={drafts[field.column] ?? ""}
         onChange={(event) => onDraftChange(field.column, event.target.value)}
       >
-        {relationSelect.allowEmpty ? (
+        {selectOptions.allowEmpty ? (
           <option value="">
             {["avatar_asset_id", "default_device_id", "default_theme_id"].includes(
               field.column,
@@ -383,16 +424,23 @@ export function RecordFieldRenderer({
               : "Inherited/default"}
           </option>
         ) : null}
-        {relationSelect.options.map((option) => (
+        {selectOptions.options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
           </option>
         ))}
       </select>
+    ) : field.readonly ? (
+      <input
+        data-testid={`field-${field.column}`}
+        disabled
+        type="text"
+        value={selectedRelationLabel ?? drafts[field.column] ?? ""}
+      />
     ) : (
       <input
         data-testid={`field-${field.column}`}
-        type={(dictionaryControl ?? field.kind) === "number" || field.kind === "number" ? "number" : "text"}
+        type={field.kind === "number" ? "number" : "text"}
         value={drafts[field.column] ?? ""}
         onChange={(event) => onDraftChange(field.column, event.target.value)}
       />
@@ -401,7 +449,7 @@ export function RecordFieldRenderer({
     return (
       <InspectorFieldRow
         key={field.column}
-        className={`record-editor-field record-editor-field-${field.kind} state-${state} ${
+        className={`record-editor-field record-editor-field-${field.kind} state-${state}${dictionaryClassName} ${
           field.readonly ? "is-readonly" : ""
         }`}
         state={state === "invalid" || state === "failed" ? "invalid" : "default"}
@@ -419,7 +467,7 @@ export function RecordFieldRenderer({
   return (
     <div
       key={field.column}
-      className={`record-editor-field record-editor-field-${field.kind} state-${state} ${
+      className={`record-editor-field record-editor-field-${field.kind} state-${state}${dictionaryClassName} ${
         rawOverride?.hideLabel && field.kind === "json"
           ? "record-editor-field-frameless"
           : ""

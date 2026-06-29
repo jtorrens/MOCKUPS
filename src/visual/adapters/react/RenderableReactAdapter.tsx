@@ -1391,6 +1391,12 @@ function RenderNode({
               whiteSpace: "nowrap",
               overflow: "hidden",
             }
+        : node.type === "text" && node.role === "message_text"
+          ? {
+              whiteSpace: "pre-wrap",
+              overflow: "visible",
+              display: "inline",
+            }
         : node.type === "text"
           ? {
               whiteSpace: "pre-wrap",

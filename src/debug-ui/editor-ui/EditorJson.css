@@ -927,6 +927,37 @@
   color: var(--editor-input-placeholder-color, #8a94a6) !important;
 }
 
+.editor-workspace .dictionary-field strong,
+.editor-workspace .dictionary-field .inspector-field-label span {
+  color: #16a34a !important;
+}
+
+.editor-workspace .dictionary-control,
+.editor-workspace input.dictionary-control,
+.editor-workspace select.dictionary-control,
+.editor-workspace textarea.dictionary-control,
+.editor-workspace .json-value-control.dictionary-control,
+.editor-workspace .json-value-textarea.dictionary-control,
+.editor-workspace .dictionary-control input,
+.editor-workspace .dictionary-control select,
+.editor-workspace .dictionary-control textarea {
+  border: 2px solid #16a34a !important;
+  outline: 1px solid #16a34a !important;
+  outline-offset: -2px;
+  background: color-mix(in srgb, var(--editor-input-background, #f7f8fb) 86%, #16a34a) !important;
+  box-shadow: inset 0 0 0 1px #16a34a !important;
+}
+
+.editor-workspace .json-value-control.record-editor-control-dictionary,
+.editor-workspace .json-value-textarea.record-editor-control-dictionary,
+.editor-workspace .token-override-input.record-editor-control-dictionary input,
+.editor-workspace .token-override-input.record-editor-control-dictionary select,
+.editor-workspace .token-override-input.record-editor-control-dictionary textarea {
+  border-color: #2f6bff !important;
+  outline: 1px solid #2f6bff;
+  outline-offset: -2px;
+}
+
 .editor-workspace .json-tree-node input:focus,
 .editor-workspace .json-tree-node select:focus,
 .editor-workspace .json-tree-node textarea:focus,
@@ -1091,4 +1122,30 @@
 .record-editor .theme-token-group-editor .json-primitive-row {
   border: 0 !important;
   padding-inline: 10px !important;
+}
+
+/* Temporary dictionary migration marker.
+   Keep this at the end of the file so dictionary controls win over editor
+   inherited/override styling while we audit each editor card. */
+.editor-workspace .dictionary-control,
+.editor-workspace input.dictionary-control,
+.editor-workspace select.dictionary-control,
+.editor-workspace textarea.dictionary-control,
+.editor-workspace .json-value-control.dictionary-control,
+.editor-workspace .json-value-textarea.dictionary-control,
+.editor-workspace .dictionary-control > input,
+.editor-workspace .dictionary-control > select,
+.editor-workspace .dictionary-control > textarea,
+.editor-workspace .dictionary-control .json-value-control,
+.editor-workspace .dictionary-control .json-value-textarea,
+.editor-workspace .dictionary-field .token-override-input input,
+.editor-workspace .dictionary-field .token-override-input select,
+.editor-workspace .dictionary-field .token-override-input textarea,
+.editor-workspace .dictionary-field .token-override-input .json-value-control,
+.editor-workspace .dictionary-field .token-override-input .json-value-textarea {
+  border: 2px solid #16a34a !important;
+  outline: 1px solid #16a34a !important;
+  outline-offset: -2px;
+  background: color-mix(in srgb, var(--editor-input-background, #f7f8fb) 86%, #16a34a) !important;
+  box-shadow: inset 0 0 0 1px #16a34a !important;
 }

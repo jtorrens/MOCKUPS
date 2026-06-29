@@ -775,7 +775,7 @@ export function createExampleDataset(): RepositoryDataset {
       idleTextColor: "icons.secondary",
       cursorWidth: 2,
       cursorBlinkFrames: 15,
-      cursorColor: "icons.accent",
+      cursorColor: "cursor.color",
       fieldRadius: 20,
       fieldShadowEnabled: true,
       iconSets: {

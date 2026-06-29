@@ -392,6 +392,14 @@
   cursor: default;
 }
 
+.record-editor .inspector-field-row.record-editor-field.record-editor-control-dictionary.is-readonly input:disabled,
+.record-editor .inspector-field-row.record-editor-field.record-editor-control-dictionary.is-readonly select:disabled,
+.record-editor .inspector-field-row.record-editor-field.record-editor-control-dictionary.is-readonly textarea:disabled {
+  border-color: #2f6bff !important;
+  outline: 1px solid #2f6bff;
+  outline-offset: -2px;
+}
+
 .record-editor input[type="checkbox"],
 .record-editor-field input[type="checkbox"] {
   width: 16px !important;
@@ -408,6 +416,53 @@
   width: 100% !important;
   padding: 0 10px !important;
   box-sizing: border-box !important;
+}
+
+.record-editor .dictionary-field .inspector-field-label span,
+.record-editor .dictionary-field > span {
+  color: #16a34a;
+}
+
+.record-editor .dictionary-control,
+.record-editor input.dictionary-control,
+.record-editor select.dictionary-control,
+.record-editor textarea.dictionary-control,
+.record-editor .json-value-control.dictionary-control,
+.record-editor .json-value-textarea.dictionary-control,
+.record-editor .dictionary-control input,
+.record-editor .dictionary-control select,
+.record-editor .dictionary-control textarea {
+  border: 2px solid #16a34a !important;
+  outline: 1px solid #16a34a !important;
+  outline-offset: -2px;
+  background: color-mix(in srgb, var(--editor-input-background, #f7f8fb) 86%, #16a34a) !important;
+  box-shadow: inset 0 0 0 1px #16a34a !important;
+}
+
+.record-editor .record-editor-field.record-editor-field-dictionary .inspector-field-label span,
+.record-editor .record-editor-field.record-editor-field-dictionary > span {
+  color: #2f6bff;
+}
+
+.record-editor .record-editor-field.record-editor-control-dictionary input,
+.record-editor .record-editor-field.record-editor-control-dictionary select,
+.record-editor .record-editor-field.record-editor-control-dictionary textarea,
+.record-editor .record-editor-control-dictionary input,
+.record-editor .record-editor-control-dictionary select,
+.record-editor .record-editor-control-dictionary textarea,
+.record-editor .json-value-control.record-editor-control-dictionary,
+.record-editor .json-value-textarea.record-editor-control-dictionary {
+  border-color: #2f6bff !important;
+  outline: 1px solid #2f6bff;
+  outline-offset: -2px;
+}
+
+.record-editor .record-editor-field.record-editor-control-dictionary .color-swatch-button,
+.record-editor .record-editor-field.record-editor-control-dictionary .media-file-control,
+.record-editor .record-editor-field.record-editor-control-dictionary .record-editor-field-pair {
+  border-color: #2f6bff !important;
+  outline: 1px solid #2f6bff;
+  outline-offset: -1px;
 }
 
 .record-editor .inspector-field-row.record-editor-field .inspector-field-control {

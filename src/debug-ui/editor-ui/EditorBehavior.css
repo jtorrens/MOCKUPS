@@ -320,3 +320,29 @@
   font-size: var(--field-label-font-size, 12px);
   white-space: nowrap;
 }
+
+/* Temporary dictionary migration marker.
+   This file is imported last by the editor shell, so the marker wins over
+   inherited/override styling while we audit dictionary-backed controls. */
+.dictionary-control,
+input.dictionary-control,
+select.dictionary-control,
+textarea.dictionary-control,
+.json-value-control.dictionary-control,
+.json-value-textarea.dictionary-control,
+.dictionary-control > input,
+.dictionary-control > select,
+.dictionary-control > textarea,
+.dictionary-control .json-value-control,
+.dictionary-control .json-value-textarea,
+.dictionary-field .token-override-input input,
+.dictionary-field .token-override-input select,
+.dictionary-field .token-override-input textarea,
+.dictionary-field .token-override-input .json-value-control,
+.dictionary-field .token-override-input .json-value-textarea {
+  border: 2px solid #16a34a !important;
+  outline: 1px solid #16a34a !important;
+  outline-offset: -2px;
+  background: color-mix(in srgb, var(--editor-input-background, #f7f8fb) 86%, #16a34a) !important;
+  box-shadow: inset 0 0 0 1px #16a34a !important;
+}

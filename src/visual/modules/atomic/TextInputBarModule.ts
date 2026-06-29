@@ -112,6 +112,11 @@ export const TextInputBarModule: VisualModule<TextInputBarModuleInput> = {
     const fieldPaddingX = readNumber(layout, "fieldPaddingX", 14);
     const fieldPaddingY = readNumber(layout, "fieldPaddingY", 6);
     const fieldRadius = readNumber(layout, "fieldRadius", 20);
+    const fieldBorderWidth = readNumber(
+      config,
+      "fieldBorderWidth",
+      readNumber(layout, "fieldBorderWidth", 1),
+    );
     const iconSize = readNumber(layout, "iconSize", 24);
     const fontSize = readNumber(layout, "fontSize", 17);
     const lineHeight = readNumber(layout, "lineHeight", fontSize * 1.25);
@@ -206,7 +211,7 @@ export const TextInputBarModule: VisualModule<TextInputBarModuleInput> = {
             color: text ? foreground : idleTextColor,
             borderRadius: fieldRadius,
             borderColor: fieldBorderColor,
-            borderWidth: Math.max(1, cursorWidth * 0.5),
+            borderWidth: fieldBorderWidth,
             paddingX: fieldPaddingX,
             paddingY: fieldPaddingY,
             height: fieldHeight,
@@ -225,8 +230,8 @@ export const TextInputBarModule: VisualModule<TextInputBarModuleInput> = {
                 : {
                     color: "rgba(0,0,0,0.16)",
                     offsetX: 0,
-                    offsetY: Math.max(1, cursorWidth * 0.5),
-                    blur: Math.max(2, cursorWidth * 2),
+                    offsetY: 3,
+                    blur: 12,
                   },
           },
           metadata: {

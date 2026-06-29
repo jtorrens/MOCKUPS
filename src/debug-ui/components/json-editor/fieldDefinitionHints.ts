@@ -36,6 +36,7 @@ function widgetForField(field: FieldDefinition): JsonWidget | undefined {
 function hintForField(field: FieldDefinition): JsonUiHint {
   const metadata = editorMetadataForField(field);
   return {
+    dictionaryDerived: true,
     label: metadata.label,
     widget: widgetForField(field),
     options: metadata.options ? [...metadata.options] : undefined,

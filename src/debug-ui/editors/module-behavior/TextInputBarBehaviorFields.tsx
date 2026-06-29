@@ -57,7 +57,7 @@ function iconSetItems(
       token,
       order: (index + 1) * 10,
       ...(zone === "right" && state === "typing" && token === "chat_send"
-        ? { color: "#007AFF" }
+        ? { color: "icons.accent" }
         : {}),
     })) as JsonValue;
 }

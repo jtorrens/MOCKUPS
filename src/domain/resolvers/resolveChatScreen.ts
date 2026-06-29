@@ -741,7 +741,7 @@ function resolveTextInputBarDefinition(
     cursorColor: themeColor(
       themeTokens,
       palette,
-      stringValue(root.cursorColor, "icons.accent"),
+      stringValue(root.cursorColor, "cursor.color"),
       "",
     ),
     fieldShadowEnabled: root.fieldShadowEnabled !== false,
@@ -933,6 +933,23 @@ function neutralTintFromTokens(tokens: Record<string, unknown>) {
     hueDeg: normalizeHue(numberValue(tint.hueDeg, 0)),
     saturation: clampUnit(numberValue(tint.saturation, 0)),
   };
+}
+
+function hasActiveNeutralTint(tokens: Record<string, unknown>) {
+  const tint = isObject(tokens.neutralTint) ? tokens.neutralTint : undefined;
+  if (!tint) return false;
+  return clampUnit(numberValue(tint.saturation, 0)) > 0;
+}
+
+function neutralTintFromThemeAndAppTokens(
+  themeTokens: Record<string, unknown>,
+  appTokens: Record<string, unknown>,
+) {
+  return neutralTintFromTokens(
+    hasActiveNeutralTint(appTokens)
+      ? mergeTokenObjects(themeTokens, appTokens)
+      : themeTokens,
+  );
 }
 
 function tintedNeutralHex(valueHex: string, tint: { hueDeg: number; saturation: number }) {
@@ -1246,7 +1263,7 @@ function themeColor(
   const scopedValue = token.includes(".")
     ? getNestedValue(themeTokens, token.split("."))
     : undefined;
-  if (typeof scopedValue === "string") return scopedValue;
+  if (typeof scopedValue === "string") return palette.get(scopedValue) ?? scopedValue;
   return palette.get(token) ?? fallback;
 }
 
@@ -1501,6 +1518,7 @@ export function resolveGlobalThemeTokens(
     resolveThemeModeTokens(theme.tokens_json, themeMode),
   );
   const cursor = isObject(merged.cursor) ? merged.cursor : {};
+  const { color: _legacyCursorColor, ...cursorTokens } = cursor;
   const colors = isObject(merged.colors) ? merged.colors : {};
   const neutralTint = isObject(merged.neutralTint) ? merged.neutralTint : {};
   return {
@@ -1523,8 +1541,7 @@ export function resolveGlobalThemeTokens(
       style: "bar",
       width: 2,
       blinkFrames: 15,
-      color: themeMode === "dark" ? "#0A84FF" : "#007AFF",
-      ...cursor,
+      ...cursorTokens,
     },
   };
 }
@@ -1818,6 +1835,20 @@ function textInputBarInstanceOverrides(value: unknown) {
   delete next.fontWeight;
   delete next.fontStyle;
   return next;
+}
+
+function textInputBarComponentBase(
+  componentTokens: unknown,
+  instanceTokens: unknown,
+) {
+  const base = isObject(componentTokens) ? { ...componentTokens } : {};
+  const instance = isObject(instanceTokens) ? instanceTokens : {};
+  for (const key of ["cursorWidth", "cursorBlinkFrames", "cursorColor"] as const) {
+    if (!Object.hasOwn(instance, key)) {
+      delete base[key];
+    }
+  }
+  return base;
 }
 
 function swapBoxSize<T extends { width: number; height: number }>(box: T): T {
@@ -2449,8 +2480,9 @@ export function resolveChatScreen({
     screenInstance.theme_mode ?? themeEnvelope.defaultMode ?? "light";
   const globalThemeTokens = resolveGlobalThemeTokens(theme, themeMode);
   const appTokens = resolveAppTokens(app, themeMode);
-  const neutralTint = neutralTintFromTokens(
-    mergeTokenObjects(globalThemeTokens, appTokens),
+  const neutralTint = neutralTintFromThemeAndAppTokens(
+    globalThemeTokens,
+    appTokens,
   );
   const palette = paletteMapForColors(
     repository.getPaletteColors(theme.production_id),
@@ -2522,6 +2554,10 @@ export function resolveChatScreen({
     palette,
   ) as Record<string, unknown>;
   const renderScale = renderScaleFromMetrics(metrics);
+  const scaledResolvableThemeTokens = scaleDesignTokensForRender(
+    inheritedModuleTokens,
+    renderScale,
+  );
   const scaledThemeTokens = scaleDesignTokensForRender(
     mergedThemeTokens,
     renderScale,
@@ -2942,7 +2978,10 @@ export function resolveChatScreen({
   );
   const rawEffectiveTextInputBar = resolveTextInputBarDefinition(
     {
-      ...textInputBarComponent.tokens,
+      ...textInputBarComponentBase(
+        textInputBarComponent.tokens,
+        moduleConfig.textInputBar,
+      ),
       ...textInputBarInstanceOverrides(moduleConfig.textInputBar),
       ...(activeComposerMessage
         ? {
@@ -2957,7 +2996,7 @@ export function resolveChatScreen({
     iconTheme,
     renderScale,
     metrics.viewport.width,
-    themeTokens,
+    scaledResolvableThemeTokens,
     palette,
   );
   const {
