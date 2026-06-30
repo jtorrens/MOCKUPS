@@ -5,10 +5,64 @@ import {
   type ResolvedMessageBubbleProps,
 } from "../schemas/index.js";
 import { fontWeightForProductionStyle } from "../fonts/productionFontNormalization.js";
+import { surfaceStyleNormalize } from "../value-system/index.js";
 import { clamp } from "./helpers.js";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function numberValue(value: unknown, fallback: number) {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function stringValue(value: unknown, fallback: string) {
+  return typeof value === "string" && value.trim() ? value : fallback;
+}
+
+function nestedValue(root: Record<string, unknown>, path: readonly string[]) {
+  let current: unknown = root;
+  for (const part of path) {
+    if (!isRecord(current)) return undefined;
+    current = current[part];
+  }
+  return current;
+}
+
+function themeColor(
+  themeTokens: Record<string, unknown>,
+  palette: Map<string, string>,
+  token: string,
+  fallback: string,
+) {
+  const colors = isRecord(themeTokens.colors) ? themeTokens.colors : {};
+  const colorReference =
+    typeof colors[token] === "string"
+      ? colors[token]
+      : token.includes(".")
+        ? nestedValue(themeTokens, token.split("."))
+        : undefined;
+  if (typeof colorReference === "string") {
+    return palette.get(colorReference) ?? colorReference;
+  }
+  return palette.get(token) ?? fallback;
+}
+
+function themeRadius(
+  themeTokens: Record<string, unknown>,
+  token: unknown,
+  fallback: number,
+) {
+  const radii = isRecord(themeTokens.radii) ? themeTokens.radii : {};
+  const key = stringValue(token, "");
+  const scopedKey = key.startsWith("radii.") ? key.slice("radii.".length) : key;
+  const value =
+    typeof radii[scopedKey] === "number"
+      ? radii[scopedKey]
+      : key.includes(".")
+        ? nestedValue(themeTokens, key.split("."))
+        : undefined;
+  return numberValue(value, fallback);
 }
 
 function resolvedFontWeight(value: unknown) {
@@ -29,6 +83,7 @@ function cssFontFamilyStack(primary: string, emojiFamily?: string) {
 }
 
 const MessageThemeSchema = z.object({
+  colors: z.record(z.string(), z.unknown()).optional(),
   fonts: z.object({
     family: z.string().min(1),
     emojiFamily: z.string().min(1).optional(),
@@ -65,14 +120,19 @@ const MessageThemeSchema = z.object({
     maxWidthRatio: z.number().min(0).max(1),
     avatarSize: z.number().min(0).optional(),
     avatarGap: z.number().min(0).optional(),
+    style: z.record(z.string(), z.unknown()).optional(),
     shadowEnabled: z.boolean().optional(),
     surfaceReliefEnabled: z.boolean().optional(),
+    avatar: z.record(z.string(), z.unknown()).optional(),
+    messageLabelStyle: z.record(z.string(), z.unknown()).optional(),
     media: z
       .object({
         borderWidth: z.number().min(0).optional(),
         cornerRadius: z.number().min(0).optional(),
         borderColor: z.string().optional(),
         shadowEnabled: z.boolean().optional(),
+        surfaceReliefEnabled: z.boolean().optional(),
+        style: z.record(z.string(), z.unknown()).optional(),
       })
       .optional(),
     status: z
@@ -105,7 +165,13 @@ const MessageThemeSchema = z.object({
   shadows: z.record(z.string(), z.unknown()).optional(),
   surfaceRelief: z.record(z.string(), z.unknown()).optional(),
   radii: z.object({
-    bubble: z.number().min(0),
+    control: z.number().min(0),
+    card: z.number().min(0),
+    panel: z.number().min(0),
+    surface: z.number().min(0),
+    pill: z.number().min(0),
+    avatar: z.number().min(0),
+    full: z.number().min(0),
   }),
 });
 
@@ -180,6 +246,7 @@ export interface ResolveMessageBubbleInput {
   sender: ResolvedChatActor;
   direction: "incoming" | "outgoing" | "system";
   themeTokens: Record<string, unknown>;
+  palette: Map<string, string>;
   localFrame: number;
   fps: number;
   viewportWidth: number;
@@ -190,6 +257,7 @@ export function resolveMessageBubble({
   sender,
   direction,
   themeTokens: rawThemeTokens,
+  palette,
   localFrame,
   fps,
   viewportWidth,
@@ -214,6 +282,41 @@ export function resolveMessageBubble({
   const deliveryStatus = statusDeliveryValue(rawStatus.deliveryStatus);
   const statusTokens = themeTokens.chatBubbles.status ?? {};
   const mediaTokens = themeTokens.chatBubbles.media ?? {};
+  const bubbleStyleTokens = surfaceStyleNormalize(themeTokens.chatBubbles.style);
+  const mediaStyleTokens = surfaceStyleNormalize(mediaTokens.style);
+  const avatarStyleTokens = surfaceStyleNormalize({
+    cornerRadiusToken: "radii.avatar",
+    ...(isRecord(themeTokens.chatBubbles.avatar?.style)
+      ? themeTokens.chatBubbles.avatar.style
+      : {}),
+  });
+  const avatarTokens = isRecord(themeTokens.chatBubbles.avatar)
+    ? themeTokens.chatBubbles.avatar
+    : {};
+  const labelStyleTokens = surfaceStyleNormalize(
+    themeTokens.chatBubbles.messageLabelStyle,
+  );
+  const themeSurfaceRelief = isRecord(themeTokens.surfaceRelief?.default)
+    ? themeTokens.surfaceRelief.default
+    : {};
+  const avatarBorderColor = themeColor(
+    themeTokens,
+    palette,
+    stringValue(avatarStyleTokens.borderColorToken, "borders.primary"),
+    "transparent",
+  );
+  const labelBorderColor = themeColor(
+    themeTokens,
+    palette,
+    stringValue(labelStyleTokens.borderColorToken, "borders.primary"),
+    "transparent",
+  );
+  const mediaBorderColor = themeColor(
+    themeTokens,
+    palette,
+    stringValue(mediaStyleTokens.borderColorToken, "borders.primary"),
+    mediaTokens.borderColor ?? "transparent",
+  );
   const componentTokens = themeTokens.components ?? {};
   const avatarComponent = isRecord(componentTokens.avatar)
     ? componentTokens.avatar
@@ -276,7 +379,18 @@ export function resolveMessageBubble({
         resolvedFontWeight(themeTokens.fonts.fontWeight) ??
         resolvedFontWeight(themeTokens.fonts.weight) ??
         400,
-      borderRadius: themeTokens.radii.bubble,
+      borderRadius: themeRadius(
+        themeTokens,
+        bubbleStyleTokens.cornerRadiusToken,
+        18,
+      ),
+      borderColor: themeColor(
+        themeTokens,
+        palette,
+        stringValue(bubbleStyleTokens.borderColorToken, "borders.primary"),
+        "transparent",
+      ),
+      borderWidth: numberValue(bubbleStyleTokens.borderWidth, 0),
       paddingX: themeTokens.chatBubbles.paddingX,
       paddingY: themeTokens.chatBubbles.paddingY,
       contentMetaGap: themeTokens.chatBubbles.contentMetaGap ?? 4,
@@ -287,14 +401,56 @@ export function resolveMessageBubble({
       tailHeight: themeTokens.chatBubbles.tail.height,
       tailScale: themeTokens.chatBubbles.tail.scale ?? 1,
       shadowEnabled:
-        themeTokens.chatBubbles.shadowEnabled === true && !systemTextOnly,
+        bubbleStyleTokens.shadowEnabled === true && !systemTextOnly,
       media: {
-        borderWidth: mediaTokens.borderWidth ?? 0,
-        cornerRadius: mediaTokens.cornerRadius ?? themeTokens.radii.bubble,
-        borderColor: mediaTokens.borderColor ?? "transparent",
-        shadowEnabled: mediaTokens.shadowEnabled === true,
+        borderWidth: numberValue(mediaStyleTokens.borderWidth, 0),
+        cornerRadius: themeRadius(
+          themeTokens,
+          mediaStyleTokens.cornerRadiusToken,
+          18,
+        ),
+        borderColor: mediaBorderColor,
+        shadowEnabled: mediaStyleTokens.shadowEnabled === true,
+        surfaceReliefEnabled: mediaStyleTokens.surfaceReliefEnabled === true,
+        surfaceRelief: isRecord(mediaStyleTokens.surfaceRelief)
+          ? mediaStyleTokens.surfaceRelief
+          : {},
       },
-      avatar: avatarComponent,
+      avatar: {
+        ...avatarComponent,
+        ...avatarStyleTokens,
+        cornerRadius: themeRadius(
+          themeTokens,
+          avatarStyleTokens.cornerRadiusToken,
+          numberValue(avatarComponent.cornerRadius, 0),
+        ),
+        alignment:
+          avatarTokens.alignment === "top" || avatarTokens.alignment === "center"
+            ? avatarTokens.alignment
+            : "bottom",
+        offsetX: numberValue(avatarTokens.offsetX, 0),
+        offsetY: numberValue(avatarTokens.offsetY, 0),
+        borderColor: avatarBorderColor,
+        surfaceRelief:
+          avatarStyleTokens.surfaceReliefEnabled === true &&
+          isRecord(avatarStyleTokens.surfaceRelief)
+            ? avatarStyleTokens.surfaceRelief
+            : avatarComponent.surfaceRelief,
+      },
+      label: {
+        ...labelStyleTokens,
+        cornerRadius: themeRadius(
+          themeTokens,
+          labelStyleTokens.cornerRadiusToken,
+          0,
+        ),
+        borderColor: labelBorderColor,
+        surfaceRelief:
+          labelStyleTokens.surfaceReliefEnabled === true &&
+          isRecord(labelStyleTokens.surfaceRelief)
+            ? labelStyleTokens.surfaceRelief
+            : undefined,
+      },
       status: {
         showText: statusTokens.showText !== false,
         showTicks: statusTokens.showTicks !== false,
@@ -317,9 +473,10 @@ export function resolveMessageBubble({
             ? themeTokens.shadows.notification
             : {},
       surfaceRelief:
-        themeTokens.chatBubbles.surfaceReliefEnabled !== false &&
-        isRecord(themeTokens.surfaceRelief?.default)
-          ? themeTokens.surfaceRelief.default
+        bubbleStyleTokens.surfaceReliefEnabled === true
+          ? isRecord(bubbleStyleTokens.surfaceRelief)
+            ? bubbleStyleTokens.surfaceRelief
+            : themeSurfaceRelief
           : {},
       avatarSize:
         themeTokens.chatBubbles.avatarSize ?? 32,

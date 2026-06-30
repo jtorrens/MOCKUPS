@@ -83,6 +83,23 @@ function formatRemainingDuration(seconds: number) {
   return `${minutes}:${String(remainder).padStart(2, "0")}`;
 }
 
+function unionBoxForNodes(nodes: RenderableNode[]) {
+  const boxes = nodes
+    .map((node) => node.box)
+    .filter((box): box is NonNullable<RenderableNode["box"]> => Boolean(box));
+  if (!boxes.length) return undefined;
+  const left = Math.min(...boxes.map((box) => box.x));
+  const top = Math.min(...boxes.map((box) => box.y));
+  const right = Math.max(...boxes.map((box) => box.x + box.width));
+  const bottom = Math.max(...boxes.map((box) => box.y + box.height));
+  return {
+    x: left,
+    y: top,
+    width: right - left,
+    height: bottom - top,
+  };
+}
+
 function messageAudioChildren(
   input: ResolvedMessageBubbleProps,
   layout: MessageBubbleLayout,
@@ -795,6 +812,52 @@ function tailNode(
   };
 }
 
+function tailCornerExtensionNode(
+  input: ResolvedMessageBubbleProps,
+  tail: RenderableNode | undefined,
+  layout: MessageBubbleLayout,
+): RenderableNode | undefined {
+  if (!tail) return undefined;
+  const tailBox = tail.box;
+  if (!tailBox) return undefined;
+  const side = input.direction === "outgoing" ? "right" : "left";
+  const radius = Math.max(0, Math.round(input.style.borderRadius));
+  if (radius <= 0) return undefined;
+  const targetLeft = layout.bubbleBox.x + layout.bubbleBox.width - radius;
+  const targetRight = layout.bubbleBox.x + radius;
+  const tailLeft = tailBox.x;
+  const tailRight = tailBox.x + tailBox.width;
+  const box =
+    side === "right"
+      ? tailLeft > targetLeft
+        ? {
+            x: targetLeft,
+            y: tailBox.y,
+            width: tailLeft - targetLeft,
+            height: tailBox.height,
+          }
+        : undefined
+      : tailRight < targetRight
+        ? {
+            x: tailRight,
+            y: tailBox.y,
+            width: targetRight - tailRight,
+            height: tailBox.height,
+          }
+        : undefined;
+  if (!box || box.width <= 0 || box.height <= 0) return undefined;
+  return {
+    id: `${input.id}:tail:corner-extension`,
+    type: "message_bubble_tail_extension",
+    role: tail.role,
+    frame: input.frame,
+    box,
+    style: {
+      backgroundColor: input.style.backgroundColor,
+    },
+  };
+}
+
 function messageLabelNode(
   input: ResolvedMessageBubbleProps,
   layout: MessageBubbleLayout,
@@ -875,24 +938,26 @@ export function renderMessageBubbleWithLayout(
         },
       },
     ];
+    const tailExtension = tailCornerExtensionNode(input, tail, layout);
+    if (tailExtension) {
+      shapeChildren.push(tailExtension);
+    }
     if (tail) {
       shapeChildren.push(tail);
     }
+    const shapeBox = unionBoxForNodes(shapeChildren) ?? layout.bubbleBox;
     const children: RenderableNode[] = [
       {
         id: `${input.id}:shape`,
         type: "message_bubble_shape",
         role: input.direction,
         frame: input.frame,
-        box: {
-          x: layout.bubbleBox.x,
-          y: layout.bubbleBox.y,
-          width: layout.bubbleBox.width,
-          height: layout.bubbleBox.height,
-        },
+        box: shapeBox,
         style: {
           shadow: hasShapeShadow ? input.style.shadow : {},
           surfaceRelief: input.style.surfaceRelief,
+          borderColor: readString(input.style.borderColor, "transparent"),
+          borderWidth: readNumber(input.style.borderWidth, 0),
         },
         children: shapeChildren,
       },

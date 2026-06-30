@@ -4,6 +4,13 @@ import type {
   AppRecord,
   AppTableDefinition,
 } from "../api/client.js";
+import {
+  CHAT_BUBBLE_TOKEN_BINDINGS,
+  CHAT_HEADER_TOKEN_BINDINGS,
+  CHAT_LAYOUT_MESSAGE_TOKEN_BINDINGS,
+  CHAT_TYPOGRAPHY_TOKEN_BINDINGS,
+} from "../../domain/fields/chatFields.js";
+import type { JsonFieldBinding } from "../../domain/value-system/index.js";
 import { EditorSubsectionAccordion } from "../editor-ui/EditorSubsectionAccordion.js";
 import {
   hasModeColorOverrides,
@@ -16,12 +23,17 @@ import {
   ComponentOverrideModal,
   type ComponentOverrideField,
 } from "../components/ComponentOverrideModal.js";
+import {
+  TokenOverrideEditor,
+  tokenOverrideHasNonDefaultFields,
+} from "../components/json-editor/TokenOverrideEditor.js";
+import { jsonUiHintsFromFieldBindings } from "../components/json-editor/fieldDefinitionHints.js";
 import { createPaletteColorCatalog } from "../components/json-editor/paletteColors.js";
+import type { ProductionFontCatalog } from "../components/json-editor/productionFonts.js";
 import type { JsonValue } from "../components/json-editor/jsonEditorUtils.js";
 import { ModuleThemeConfigEditor } from "./ModuleThemeConfigEditor.js";
 import { ModuleFunctionalConfigFields } from "./ModuleFunctionalConfigFields.js";
 import { parsedObject } from "./recordJsonUtils.js";
-import type { RawJsonFieldOverride } from "./RecordFieldRenderer.js";
 import type { ModuleThemeTab } from "./editorTabs.js";
 import {
   normalizeCoreChatModuleTokensForEditor,
@@ -37,21 +49,22 @@ interface ModuleThemeConfigRecordEditorProps {
   inheritedFields: Record<string, unknown>;
   activeTab: ModuleThemeTab;
   activeDesignGroup: string;
+  productionFontCatalog?: ProductionFontCatalog;
   renderFields: (columns: string[]) => ReactNode;
-  renderField: (
-    field: AppFieldDefinition,
-    rawOverride?: RawJsonFieldOverride,
-  ) => ReactNode;
   renderFlatJsonObjectEditor: (column: string, omitKeys?: string[]) => ReactNode;
-  rawForJsonGroupValue: (column: string, groupKey: string) => string;
-  updateJsonGroupValue: (
-    column: string,
-    groupKey: string,
-    nextRawText: string,
-  ) => void;
   setActiveTab: (tab: ModuleThemeTab) => void;
   setActiveDesignGroup: (group: string) => void;
   setJsonDraft: (column: string, value: JsonValue) => void;
+}
+
+function withGroupPrefix(
+  group: string,
+  bindings: readonly JsonFieldBinding[],
+): JsonFieldBinding[] {
+  return bindings.map((binding) => ({
+    ...binding,
+    outputPath: [group, ...binding.outputPath],
+  }));
 }
 
 function hasObjectContent(value: string | undefined) {
@@ -151,9 +164,12 @@ const MODULE_DESIGN_GROUPS = new Set([
   "chatBubbles",
 ]);
 
-function stringifyJson(value: unknown): string {
-  return JSON.stringify(value, null, 2);
-}
+const moduleDesignHints = jsonUiHintsFromFieldBindings([
+  ...withGroupPrefix("header", CHAT_HEADER_TOKEN_BINDINGS),
+  ...CHAT_LAYOUT_MESSAGE_TOKEN_BINDINGS,
+  ...CHAT_TYPOGRAPHY_TOKEN_BINDINGS,
+  ...CHAT_BUBBLE_TOKEN_BINDINGS,
+]);
 
 export function ModuleThemeConfigRecordEditor({
   table,
@@ -164,11 +180,9 @@ export function ModuleThemeConfigRecordEditor({
   inheritedFields,
   activeTab,
   activeDesignGroup,
+  productionFontCatalog,
   renderFields,
-  renderField,
   renderFlatJsonObjectEditor,
-  rawForJsonGroupValue,
-  updateJsonGroupValue,
   setActiveTab,
   setActiveDesignGroup,
   setJsonDraft,
@@ -265,6 +279,30 @@ export function ModuleThemeConfigRecordEditor({
     : {};
   const hasLabelOverrides = Object.keys(labelOverrides).length > 0;
 
+  function tokenGroupValue(group: string, root?: Record<string, JsonValue>) {
+    const value = root?.[group];
+    return isPlainObject(value) ? (value as JsonValue) : ({} as JsonValue);
+  }
+
+  function setTokenGroupValue(group: string, nextValue: JsonValue) {
+    setJsonDraft("tokens_json", {
+      ...tokenRoot,
+      [group]: nextValue,
+    } as JsonValue);
+  }
+
+  function designGroupWarning(group: string) {
+    return tokenOverrideHasNonDefaultFields({
+      rootValue: tokenGroupValue(group, tokenRoot as Record<string, JsonValue>),
+      inheritedRoot: tokenGroupValue(
+        group,
+        inheritedTokenRoot as Record<string, JsonValue> | undefined,
+      ),
+      hints: moduleDesignHints,
+      groupContext: group,
+    });
+  }
+
   function setLabelOverrides(nextOverrides: Record<string, unknown>) {
     const nextComponentOverrides = {
       ...componentOverrides,
@@ -320,10 +358,7 @@ export function ModuleThemeConfigRecordEditor({
                 key={group}
                 group={group}
                 activeGroup={resolvedActiveDesignGroup}
-                warning={explicitLocalDiffers(
-                  tokenRoot[group],
-                  inheritedTokenRoot?.[group],
-                )}
+                warning={designGroupWarning(group)}
                 onToggle={setActiveDesignGroup}
               >
                 <div className="record-editor-field-stack record-editor-single-column">
@@ -392,19 +427,22 @@ export function ModuleThemeConfigRecordEditor({
                       />
                     </>
                   ) : null}
-                  {renderField(tokensField, {
-                    rawText: stringifyJson(tokenRoot[group] ?? {}),
-                    hideLabel: true,
-                    groupContext: group,
-                    inheritedValue: inheritedTokenRoot?.[group] as
-                      | Record<string, unknown>
-                      | undefined,
-                    onRawTextChange: (nextRawText) =>
-                      setJsonDraft("tokens_json", {
-                        ...tokenRoot,
-                        [group]: parsedObject(nextRawText),
-                      } as JsonValue),
-                  })}
+                  <TokenOverrideEditor
+                    rootValue={tokenGroupValue(
+                      group,
+                      tokenRoot as Record<string, JsonValue>,
+                    )}
+                    inheritedRoot={tokenGroupValue(
+                      group,
+                      inheritedTokenRoot as Record<string, JsonValue> | undefined,
+                    )}
+                    hints={moduleDesignHints}
+                    groupContext={group}
+                    inlineSingleGroup={group !== "chatBubbles" && group !== "typography"}
+                    productionFontCatalog={productionFontCatalog}
+                    paletteCatalog={paletteCatalog}
+                    onRootChange={(nextValue) => setTokenGroupValue(group, nextValue)}
+                  />
                 </div>
               </EditorSubsectionAccordion>
               ))}

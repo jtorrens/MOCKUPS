@@ -254,6 +254,33 @@ export function normalizedThemeTokenRoot({
     ),
     keyboard: normalizeThemeKeyboardGroup(root.keyboard),
     cursor: normalizeThemeCursorGroup(root.cursor),
+    radii: isJsonObject(root.radii as JsonValue)
+      ? root.radii
+      : {
+          control: 8,
+          card: family === "android" ? 16 : 12,
+          panel: family === "android" ? 20 : 16,
+          surface: 18,
+          pill: 999,
+          avatar: 12,
+          full: 9999,
+        },
+    shadows: isJsonObject(root.shadows as JsonValue)
+      ? root.shadows
+      : {
+          avatar: {
+            color: { color: "gray_000", alpha: 0.18 },
+            offsetX: 0,
+            offsetY: 4,
+            blur: 18,
+          },
+          elevated: {
+            color: { color: "gray_000", alpha: 0.18 },
+            offsetX: 0,
+            offsetY: 4,
+            blur: 18,
+          },
+        },
     surfaceRelief: normalizeThemeSurfaceReliefGroup(root.surfaceRelief),
     modes: {
       ...modes,

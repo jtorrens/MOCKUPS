@@ -291,12 +291,23 @@ export function layoutMessageBubble({
         height: Math.round(labelMeasurement.height),
       }
     : undefined;
+  const avatarStyle = readRecord(props.style.avatar);
+  const avatarAlignment = readString(avatarStyle.alignment, "bottom");
+  const avatarBaseY =
+    avatarAlignment === "top"
+      ? bubbleBox.y
+      : avatarAlignment === "center"
+        ? bubbleBox.y + (bubbleBox.height - props.style.avatarSize) / 2
+        : bubbleBox.y + bubbleBox.height - props.style.avatarSize;
   const avatarBox = hasReceivedAvatar
     ? {
-        x: messageArea.x,
-        y: Math.round(
-          bubbleBox.y + bubbleBox.height - props.style.avatarSize,
+        x: Math.round(
+          bubbleBox.x -
+            props.layout.avatarGap -
+            props.style.avatarSize +
+            readNumber(avatarStyle.offsetX, 0),
         ),
+        y: Math.round(avatarBaseY + readNumber(avatarStyle.offsetY, 0)),
         width: props.style.avatarSize,
         height: props.style.avatarSize,
       }

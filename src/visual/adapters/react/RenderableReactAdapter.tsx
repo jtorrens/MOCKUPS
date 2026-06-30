@@ -180,6 +180,34 @@ function joinedFilter(...values: Array<string | undefined>) {
   return values.filter(Boolean).join(" ") || undefined;
 }
 
+function shapeBorderFilterValue(style: Record<string, unknown>) {
+  const color = stringValue(style.borderColor);
+  const width = numberValue(style.borderWidth);
+  if (!color || color === "transparent" || !width || width <= 0) {
+    return undefined;
+  }
+  return [
+    `drop-shadow(${width}px 0 0 ${color})`,
+    `drop-shadow(${-width}px 0 0 ${color})`,
+    `drop-shadow(0 ${width}px 0 ${color})`,
+    `drop-shadow(0 ${-width}px 0 ${color})`,
+  ].join(" ");
+}
+
+function visualSurfaceFilterValue(
+  style: Record<string, unknown>,
+  options: { includeBorder?: boolean; includeShadow?: boolean; includeRelief?: boolean } = {},
+) {
+  const shadow = options.includeShadow === false ? undefined : shadowValue(style.shadow);
+  return joinedFilter(
+    options.includeBorder === false ? undefined : shapeBorderFilterValue(style),
+    shadow ? `drop-shadow(${shadow})` : undefined,
+    options.includeRelief === false
+      ? undefined
+      : surfaceReliefDropShadowValue(style.surfaceRelief),
+  );
+}
+
 function buttonIconVisualStyle(value: unknown): CSSProperties {
   const buttonIcon = asRecord(value);
   const borderWidth = numberValue(buttonIcon.borderWidth) ?? 0;
@@ -260,20 +288,16 @@ function nodeStyle(
         ? undefined
         : joinedBoxShadow(shadow, surfaceRelief),
     filter:
-      (node.type === "message_bubble_shape" ||
-        node.type === "message_bubble_media_image") &&
-      shadow
-        ? joinedFilter(
-            `drop-shadow(${shadow})`,
-            node.type === "message_bubble_shape"
-              ? surfaceReliefDropShadowValue(style.surfaceRelief)
-              : undefined,
-          )
-        : node.type === "message_bubble_shape"
-          ? surfaceReliefDropShadowValue(style.surfaceRelief)
-        : undefined,
+      node.type === "message_bubble_shape"
+        ? visualSurfaceFilterValue(style)
+        : node.type === "message_bubble_media_image" && shadow
+          ? visualSurfaceFilterValue(style, {
+              includeBorder: false,
+              includeRelief: false,
+            })
+          : undefined,
     border:
-      borderColor && borderWidth
+      node.type !== "message_bubble_shape" && borderColor && borderWidth
         ? `${borderWidth}px solid ${borderColor}`
         : undefined,
     borderBottom:
@@ -542,6 +566,12 @@ function tailSvgPath(style: unknown, side: unknown, vertical: unknown) {
 }
 
 function messageBubbleTailNode(node: RenderableNode): ReactNode {
+  const borderColor = stringValue(node.style?.borderColor);
+  const borderWidth = numberValue(node.style?.borderWidth);
+  const strokeWidth =
+    borderColor && borderWidth
+      ? Math.max(0.1, borderWidth)
+      : undefined;
   return (
     <svg
       viewBox="0 0 100 100"
@@ -561,6 +591,9 @@ function messageBubbleTailNode(node: RenderableNode): ReactNode {
           node.style?.vertical,
         )}
         fill="currentColor"
+        stroke={borderColor}
+        strokeWidth={strokeWidth}
+        vectorEffect="non-scaling-stroke"
       />
     </svg>
   );

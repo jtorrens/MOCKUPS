@@ -255,10 +255,8 @@
   row-gap: 0;
   grid-auto-flow: column;
   grid-template-columns:
-    var(--field-pair-label-width, 42px)
-    var(--field-pair-control-width, 96px)
-    var(--field-pair-label-width, 42px)
-    var(--field-pair-control-width, 96px);
+    minmax(0, max-content)
+    minmax(0, max-content);
   grid-template-rows: minmax(var(--field-control-height, 42px), auto);
   align-items: center;
   width: fit-content;
@@ -270,7 +268,12 @@
 }
 
 .record-editor-field-pair-item {
-  display: contents;
+  display: grid;
+  grid-template-columns:
+    var(--field-pair-label-width, 42px)
+    var(--field-pair-control-width, 96px);
+  column-gap: 8px;
+  align-items: center;
   min-width: 0;
 }
 

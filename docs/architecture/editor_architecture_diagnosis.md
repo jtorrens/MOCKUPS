@@ -522,6 +522,34 @@ Conviene crear scripts que detecten:
 - fallbacks legacy no usados;
 - campos internos visibles por accidente.
 
+## Mejoras futuras del renderer visual
+
+### Bubble shape como SVG único
+
+Cuando el sistema esté más estable, conviene sustituir la construcción actual del bubble con varias piezas (`body`, `tail`, extensión de unión) por una silueta vectorial única.
+
+Modelo deseado:
+
+```txt
+BubbleShapeRenderer
+  → buildBubblePath({ width, height, radius, tailStyle, tailSide, tailPosition, tailSize })
+  → <svg><path /></svg>
+```
+
+Motivo:
+
+- el borde sería un `stroke` real sobre la silueta compuesta;
+- la sombra se aplicaría al path completo;
+- el relief/contorno no dependería de aproximaciones con `drop-shadow`;
+- tail y bubble serían geométricamente una sola pieza;
+- preview y render compartirían una forma más robusta.
+
+Regla para retomarlo:
+
+- mantener el layout actual;
+- cambiar sólo la representación visual del shape;
+- no mover texto, media, avatar, status ni label en esa fase.
+
 ## Diagnóstico final
 
 La arquitectura va en buena dirección.
@@ -547,4 +575,3 @@ FieldDefinition → ValueKindControlRegistry → DictionaryFieldControl
 ```
 
 Cuando esa cadena sea obligatoria, los editores deberían volverse mucho más predecibles.
-

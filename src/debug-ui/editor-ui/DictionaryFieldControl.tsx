@@ -1,4 +1,14 @@
+import { useState } from "react";
+import {
+  SURFACE_STYLE_FIELDS,
+  surfaceStyleDefaultValue,
+  surfaceStyleGet,
+  surfaceStyleNormalize,
+  surfaceStyleSet,
+  type SurfaceStyleFieldDefinition,
+} from "../../domain/value-system/index.js";
 import type { FieldDefinition } from "../../domain/value-system/index.js";
+import { ToggleInspectorLabel } from "../components/inspector/InspectorFieldRow.js";
 import { ColorValueEditor } from "../components/json-editor/ColorValueEditor.js";
 import type { PaletteColorCatalog } from "../components/json-editor/paletteColors.js";
 import type { ProductionFontCatalog } from "../components/json-editor/productionFonts.js";
@@ -43,6 +53,9 @@ export interface DictionaryFileBrowser {
 export interface DictionaryFieldControlProps {
   field: FieldDefinition;
   value: unknown;
+  localValue?: unknown;
+  parentValue?: unknown;
+  defaultValue?: unknown;
   disabled?: boolean;
   readOnly?: boolean;
   placeholder?: string;
@@ -129,6 +142,36 @@ function parseJsonTextValue(value: string) {
   }
 }
 
+function objectValue(value: unknown): Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function hasNestedValue(value: unknown, path: readonly string[]): boolean {
+  let current: unknown = value;
+  for (const part of path) {
+    if (!objectValue(current) || !(part in objectValue(current))) return false;
+    current = objectValue(current)[part];
+  }
+  return true;
+}
+
+function mergeSurfaceStyleLayer(
+  base: Record<string, unknown>,
+  layer: unknown,
+): Record<string, unknown> {
+  return SURFACE_STYLE_FIELDS.reduce<Record<string, unknown>>((nextRoot, styleField) => {
+    if (!hasNestedValue(layer, styleField.path)) return nextRoot;
+    return surfaceStyleSet(
+      nextRoot,
+      styleField.path,
+      surfaceStyleGet(objectValue(layer), styleField.path),
+    );
+  }, base);
+}
+
+
 function relativePathFromRoot(filePath: string, rootPath: string) {
   if (!rootPath || !filePath.startsWith(rootPath)) return filePath;
   return filePath.slice(rootPath.length).replace(/^[/\\]+/, "");
@@ -168,9 +211,209 @@ function DictionaryImagePreview({
   );
 }
 
+function SurfaceStyleControl({
+  field,
+  value,
+  localValue,
+  parentValue,
+  defaultValue,
+  disabled,
+  readOnly,
+  onChange,
+}: {
+  field: FieldDefinition;
+  value: unknown;
+  localValue?: unknown;
+  parentValue?: unknown;
+  defaultValue?: unknown;
+  disabled: boolean;
+  readOnly: boolean;
+  onChange: (nextValue: unknown) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const localRoot = objectValue(localValue);
+  const parentRoot = objectValue(parentValue);
+  const defaultRoot = surfaceStyleNormalize(
+    defaultValue === undefined ? surfaceStyleDefaultValue() : defaultValue,
+  );
+  const fallbackDisplayRoot = surfaceStyleNormalize(value);
+  const root = surfaceStyleNormalize(
+    mergeSurfaceStyleLayer(
+      mergeSurfaceStyleLayer(defaultRoot, parentRoot),
+      localRoot,
+    ),
+  );
+  const isDisabled = disabled || readOnly;
+
+  function valueForField(styleField: SurfaceStyleFieldDefinition) {
+    const current = surfaceStyleGet(root, styleField.path);
+    const fallback = surfaceStyleGet(fallbackDisplayRoot, styleField.path);
+    return current ?? fallback ?? styleField.defaultValue;
+  }
+
+  function setStyleField(
+    styleField: SurfaceStyleFieldDefinition,
+    nextValue: unknown,
+  ) {
+    onChange(surfaceStyleSet(localRoot, styleField.path, nextValue));
+  }
+
+  function fieldTechnicalLabel(styleField: SurfaceStyleFieldDefinition) {
+    return `${field.id}.${styleField.path.join(".")}`;
+  }
+
+  function renderSubLabel(styleField: SurfaceStyleFieldDefinition) {
+    return (
+      <ToggleInspectorLabel
+        label={<span>{styleField.label}</span>}
+        technicalLabel={fieldTechnicalLabel(styleField)}
+      />
+    );
+  }
+
+  function renderStyleField(styleField: SurfaceStyleFieldDefinition) {
+    const currentValue = valueForField(styleField);
+    if (styleField.kind === "boolean") {
+      return (
+        <label
+          key={styleField.path.join(".")}
+          className="surface-style-control__row surface-style-control__row--checkbox"
+        >
+          {renderSubLabel(styleField)}
+          <input
+            disabled={isDisabled}
+            type="checkbox"
+            checked={currentValue === true}
+            onChange={(event) =>
+              setStyleField(styleField, event.currentTarget.checked)
+            }
+          />
+        </label>
+      );
+    }
+    if (
+      styleField.kind === "themeColorToken" ||
+      styleField.kind === "themeRadiusToken"
+    ) {
+      const options = styleField.options ?? [];
+      return (
+        <label key={styleField.path.join(".")} className="surface-style-control__row">
+          {renderSubLabel(styleField)}
+          <select
+            className="json-value-control dictionary-control"
+            disabled={isDisabled}
+            value={String(currentValue)}
+            onChange={(event) => setStyleField(styleField, event.currentTarget.value)}
+          >
+            {options.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </label>
+      );
+    }
+    return (
+      <label key={styleField.path.join(".")} className="surface-style-control__row">
+        {renderSubLabel(styleField)}
+        <DeferredNumberInput
+          className="json-value-control dictionary-control"
+          disabled={isDisabled}
+          min={styleField.min}
+          step={styleField.step ?? "any"}
+          value={
+            typeof currentValue === "number" && Number.isFinite(currentValue)
+              ? currentValue
+              : ""
+          }
+          onCommit={(nextValue) => setStyleField(styleField, nextValue)}
+        />
+      </label>
+    );
+  }
+
+  function renderReliefInput(styleField: SurfaceStyleFieldDefinition) {
+    const currentValue = valueForField(styleField);
+    return (
+      <DeferredNumberInput
+        key={`${styleField.path.join(".")}:input`}
+        className="json-value-control dictionary-control surface-style-control__relief-input"
+        disabled={isDisabled}
+        min={styleField.min}
+        step={styleField.step ?? "any"}
+        value={
+          typeof currentValue === "number" && Number.isFinite(currentValue)
+            ? currentValue
+            : ""
+        }
+        onCommit={(nextValue) => setStyleField(styleField, nextValue)}
+      />
+    );
+  }
+
+  const baseFields = SURFACE_STYLE_FIELDS.filter((entry) => entry.group !== "relief");
+  const reliefFields = SURFACE_STYLE_FIELDS.filter((entry) => entry.group === "relief");
+  const shadowEnabled = surfaceStyleGet(root, ["shadowEnabled"]) === true;
+  const reliefEnabled = surfaceStyleGet(root, ["surfaceReliefEnabled"]) === true;
+  const borderWidth = surfaceStyleGet(root, ["borderWidth"]);
+  const hasCustomValue = SURFACE_STYLE_FIELDS.some((entry) =>
+    hasNestedValue(localRoot, entry.path),
+  );
+
+  return (
+    <div
+      className={`surface-style-control dictionary-control ${
+        hasCustomValue ? "has-override" : ""
+      }`}
+    >
+      <button
+        type="button"
+        className="surface-style-control__summary"
+        disabled={isDisabled}
+        onClick={() => setOpen((current) => !current)}
+      >
+        <span>{field.ui?.label ?? "Style"}</span>
+        <span className="surface-style-control__summary-detail">
+          {shadowEnabled ? "shadow" : "no shadow"}
+          {" · "}
+          {reliefEnabled ? "relief" : "no relief"}
+          {" · "}
+          {typeof borderWidth === "number" ? borderWidth : 0}px border
+        </span>
+        <span aria-hidden="true" className="surface-style-control__chevron">
+          {open ? "⌃" : "⌄"}
+        </span>
+      </button>
+      {open ? (
+        <div className="surface-style-control__body">
+          {baseFields.map(renderStyleField)}
+          <div className="surface-style-control__relief-viewport">
+            <div className="surface-style-control__subgrid">
+              <span className="surface-style-control__subgrid-heading">Relief</span>
+              {reliefFields.map((styleField) => (
+                <span
+                  key={`${styleField.path.join(".")}:label`}
+                  className="surface-style-control__relief-label"
+                >
+                  {renderSubLabel(styleField)}
+                </span>
+              ))}
+              {reliefFields.map(renderReliefInput)}
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function DictionaryFieldControl({
   field,
   value,
+  localValue,
+  parentValue,
+  defaultValue,
   disabled = false,
   readOnly = false,
   placeholder,
@@ -306,6 +549,21 @@ export function DictionaryFieldControl({
         mediaRoot={mediaRoot}
         nativeBridge={fileBrowser}
         value={value}
+        onChange={onChange}
+      />
+    );
+  }
+
+  if (control === "surfaceStyle") {
+    return (
+      <SurfaceStyleControl
+        field={field}
+        value={value}
+        localValue={localValue}
+        parentValue={parentValue}
+        defaultValue={defaultValue}
+        disabled={disabled}
+        readOnly={readOnly}
         onChange={onChange}
       />
     );

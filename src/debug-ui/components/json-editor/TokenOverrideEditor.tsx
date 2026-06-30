@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { DeferredNumberInput } from "../../editor-ui/DeferredNumberInput.js";
 import { DeferredTextInput } from "../../editor-ui/DeferredTextInput.js";
 import {
@@ -9,6 +9,9 @@ import { EditorSubsectionAccordion } from "../../editor-ui/EditorSubsectionAccor
 import {
   controlDefinitionForField,
 } from "../../editor-ui/ValueKindControlRegistry.js";
+import {
+  surfaceStyleNormalize,
+} from "../../../domain/value-system/index.js";
 import {
   createJsonFieldDescriptor,
 } from "../../editor-ui/fields/createJsonFieldDescriptor.js";
@@ -84,7 +87,11 @@ interface TokenRowGroup {
   renderAsGroup: boolean;
 }
 
-const FIELD_KIND_HIGH_ROW = new Set(["filePath", "relativeFilePath"]);
+const FIELD_KIND_HIGH_ROW = new Set([
+  "filePath",
+  "relativeFilePath",
+  "surfaceStyle",
+]);
 
 function flattenPrimitiveTokens(value: JsonValue, path: JsonPath = []): TokenRow[] {
   if (Array.isArray(value)) {
@@ -157,6 +164,23 @@ function rowsWithDictionaryDefaults(
     if (!hint.field) continue;
     const path = contextualHintPath(hint, key, groupContext);
     if (!path?.length) continue;
+    if (hint.field.kind === "surfaceStyle") {
+      for (const currentPathKey of Array.from(byPath.keys())) {
+        const currentPath = currentPathKey.split(".");
+        const isDescendant =
+          currentPath.length > path.length &&
+          path.every((part, index) => String(part) === currentPath[index]);
+        if (isDescendant) byPath.delete(currentPathKey);
+      }
+      const pathKey = pathLabel(path);
+      if (!byPath.has(pathKey)) {
+        byPath.set(pathKey, {
+          path,
+          value: surfaceStyleNormalize(hint.field.defaultValue ?? {}) as JsonValue,
+        });
+      }
+      continue;
+    }
     const pathKey = pathLabel(path);
     if (byPath.has(pathKey)) continue;
     byPath.set(pathKey, {
@@ -239,6 +263,9 @@ function chatBubbleGroupForRow(row: TokenRow): string {
   if (firstKey === "tail") return "tail";
   if (firstKey === "media") return "media";
   if (firstKey === "status") return "status";
+  if (firstKey === "avatar") return "avatar";
+  if (firstKey === "style") return "bubble";
+  if (firstKey === "surfaceRelief") return "bubble";
   if (firstKey.startsWith("messageLabel")) return "label";
   if (firstKey === "avatarSize" || firstKey === "avatarGap") return "avatar";
   if (
@@ -246,6 +273,8 @@ function chatBubbleGroupForRow(row: TokenRow): string {
     firstKey === "paddingY" ||
     firstKey === "maxWidthRatio" ||
     firstKey === "radius" ||
+    firstKey === "borderWidth" ||
+    firstKey === "borderColorToken" ||
     firstKey === "shadowEnabled" ||
     firstKey === "surfaceReliefEnabled"
   ) {
@@ -265,9 +294,10 @@ function groupedRows(
       const group = chatBubbleGroupForRow(row);
       groups.set(group, [...(groups.get(group) ?? []), row]);
     }
-    const order = ["bubble", "avatar", "label", "media", "tail", "status", "general"];
-    return order
-      .filter((key) => groups.has(key))
+    return Array.from(groups.keys())
+      .sort((left, right) =>
+        friendlyGroupLabel(left).localeCompare(friendlyGroupLabel(right)),
+      )
       .map((key) => ({
         key,
         label: friendlyGroupLabel(key),
@@ -651,7 +681,7 @@ export function TokenOverrideEditor({
         data-field-id={pair.id}
         data-control-kind="pair"
         control={
-          <div className={`record-editor-field-pair${pairKind} token-override-input dictionary-control`}>
+          <div className={`record-editor-field-pair${pairKind} dictionary-control`}>
             {descriptors.map(({ row, descriptor }) => {
               const role = descriptor.field.ui?.pair?.role ?? "";
               const inheritedValue = hasAtPath(inheritedRoot, row.path)
@@ -663,24 +693,16 @@ export function TokenOverrideEditor({
               const descriptorSelectOptions =
                 descriptor.selectOptions;
               return (
-                <>
-                  <span
-                    className="record-editor-field-pair-label"
-                    key={`${pathLabel(row.path)}:label`}
-                  >
-                    {role}
-                  </span>
-                  <div
-                    className="record-editor-field-pair-control"
-                    key={`${pathLabel(row.path)}:control`}
-                  >
+                <Fragment key={pathLabel(row.path)}>
+                  <span className="record-editor-field-pair-label">{role}</span>
+                  <div className="record-editor-field-pair-control">
                     {renderDictionaryControl(
                       descriptor,
                       inheritedDisplayValue,
                       descriptorSelectOptions,
                     )}
                   </div>
-                </>
+                </Fragment>
               );
             })}
           </div>

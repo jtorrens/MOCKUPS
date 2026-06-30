@@ -85,6 +85,15 @@ export function createExampleDataset(): RepositoryDataset {
         background: "transparent",
         foreground: "gray_000",
       },
+      radii: resolvedChatSource.theme.radii ?? {
+        control: 8,
+        card: 12,
+        panel: 16,
+        surface: 18,
+        pill: 999,
+        avatar: 12,
+        full: 9999,
+      },
     },
     navigationBar: resolvedChatSource.navigationBar ?? {
       layout: {
@@ -406,7 +415,13 @@ export function createExampleDataset(): RepositoryDataset {
       ],
     },
     radii: {
-      bubble: 18,
+      control: 8,
+      card: 12,
+      panel: 16,
+      surface: 18,
+      pill: 999,
+      avatar: 12,
+      full: 9999,
     },
     modes: {
       light: {

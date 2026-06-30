@@ -21,6 +21,7 @@ import {
 } from "../fonts/productionFontNormalization.js";
 import {
   resolveJsonFieldBindingGroup,
+  surfaceStyleNormalize,
 } from "../value-system/index.js";
 import type { DomainRepository } from "../repository/types.js";
 import {
@@ -111,7 +112,15 @@ const ChatThemeSchema = z.object({
   cursor: z.record(z.string(), z.unknown()),
   shadows: z.record(z.string(), z.unknown()).optional(),
   surfaceRelief: z.record(z.string(), z.unknown()).optional(),
-  radii: z.object({ bubble: z.number().min(0) }),
+  radii: z.object({
+    control: z.number().min(0),
+    card: z.number().min(0),
+    panel: z.number().min(0),
+    surface: z.number().min(0),
+    pill: z.number().min(0),
+    avatar: z.number().min(0),
+    full: z.number().min(0),
+  }),
 });
 
 const ThemeEnvelopeSchema = z.object({
@@ -1267,6 +1276,58 @@ function themeColor(
   return palette.get(token) ?? fallback;
 }
 
+function themeRadius(
+  themeTokens: Record<string, unknown>,
+  token: unknown,
+  fallback: number,
+) {
+  const radii = isObject(themeTokens.radii) ? themeTokens.radii : {};
+  const key = stringValue(token, "");
+  const scopedKey = key.startsWith("radii.") ? key.slice("radii.".length) : key;
+  const value =
+    typeof radii[scopedKey] === "number"
+      ? radii[scopedKey]
+      : key.includes(".")
+        ? getNestedValue(themeTokens, key.split("."))
+        : undefined;
+  return numberValue(value, fallback);
+}
+
+function resolveSurfaceStyleToken(
+  value: unknown,
+  {
+    themeTokens,
+    palette,
+    renderScale,
+    fallbackCornerRadius = 0,
+    fallbackBorderColor = "#D1D1D6",
+  }: {
+    themeTokens: Record<string, unknown>;
+    palette: Map<string, string>;
+    renderScale: number;
+    fallbackCornerRadius?: number;
+    fallbackBorderColor?: string;
+  },
+) {
+  const style = surfaceStyleNormalize(value);
+  const borderColorToken = stringValue(
+    style.borderColorToken,
+    "borders.primary",
+  );
+  return {
+    shadowEnabled: style.shadowEnabled === true,
+    surfaceReliefEnabled: style.surfaceReliefEnabled === true,
+    borderWidth: numberValue(style.borderWidth, 0) * renderScale,
+    borderColor: themeColor(themeTokens, palette, borderColorToken, fallbackBorderColor),
+    cornerRadius:
+      themeRadius(themeTokens, style.cornerRadiusToken, fallbackCornerRadius) *
+      renderScale,
+    surfaceRelief: isObject(style.surfaceRelief)
+      ? style.surfaceRelief
+      : {},
+  };
+}
+
 function colorWithAlpha(color: string, alpha: number) {
   const safeAlpha = Math.max(0, Math.min(1, alpha));
   if (/^#[0-9a-fA-F]{6}$/.test(color)) {
@@ -1562,6 +1623,48 @@ function normalizeChatVisualTokenGroups(
   const chatBubbleMedia = isObject(chatBubbles.media)
     ? chatBubbles.media
     : {};
+  const chatBubbleStyle = surfaceStyleNormalize({
+    ...(isObject(chatBubbles.style) ? chatBubbles.style : {}),
+    ...(typeof chatBubbles.shadowEnabled === "boolean"
+      ? { shadowEnabled: chatBubbles.shadowEnabled }
+      : {}),
+    ...(typeof chatBubbles.surfaceReliefEnabled === "boolean"
+      ? { surfaceReliefEnabled: chatBubbles.surfaceReliefEnabled }
+      : {}),
+    ...(typeof chatBubbles.cornerRadiusToken === "string"
+      ? { cornerRadiusToken: chatBubbles.cornerRadiusToken }
+      : {}),
+    ...(isObject(chatBubbles.surfaceRelief)
+      ? { surfaceRelief: chatBubbles.surfaceRelief }
+      : {}),
+  });
+  const chatBubbleMediaStyle = surfaceStyleNormalize({
+    ...(isObject(chatBubbleMedia.style) ? chatBubbleMedia.style : {}),
+    ...(typeof chatBubbleMedia.borderWidth === "number"
+      ? { borderWidth: chatBubbleMedia.borderWidth }
+      : {}),
+    ...(typeof chatBubbleMedia.cornerRadiusToken === "string"
+      ? { cornerRadiusToken: chatBubbleMedia.cornerRadiusToken }
+      : typeof chatBubbles.cornerRadiusToken === "string"
+        ? { cornerRadiusToken: chatBubbles.cornerRadiusToken }
+        : {}),
+    ...(typeof chatBubbleMedia.shadowEnabled === "boolean"
+      ? { shadowEnabled: chatBubbleMedia.shadowEnabled }
+      : {}),
+    ...(typeof chatBubbleMedia.surfaceReliefEnabled === "boolean"
+      ? { surfaceReliefEnabled: chatBubbleMedia.surfaceReliefEnabled }
+      : {}),
+  });
+  const chatBubbleAvatar = isObject(chatBubbles.avatar) ? chatBubbles.avatar : {};
+  const chatBubbleAvatarStyle = surfaceStyleNormalize({
+    cornerRadiusToken: "radii.avatar",
+    ...(isObject(chatBubbleAvatar.style) ? chatBubbleAvatar.style : {}),
+  });
+  const messageLabelStyle = surfaceStyleNormalize(
+    isObject(chatBubbles.messageLabelStyle)
+      ? chatBubbles.messageLabelStyle
+      : {},
+  );
   const { shadow: _chatBubbleShadow, ...visibleChatBubbles } = chatBubbles;
   const shadows = isObject(tokens.shadows) ? tokens.shadows : {};
   const headerAvatarSize = numberValue(
@@ -1624,25 +1727,40 @@ function normalizeChatVisualTokenGroups(
       ...visibleChatBubbles,
       avatarSize: bubbleAvatarSize,
       avatarGap: bubbleAvatarGap,
+      style: chatBubbleStyle,
+      radius: themeRadius(tokens, chatBubbleStyle.cornerRadiusToken, 18),
+      shadowEnabled: chatBubbleStyle.shadowEnabled === true,
+      surfaceReliefEnabled: chatBubbleStyle.surfaceReliefEnabled === true,
       contentMetaGap: numberValue(chatBubbles.contentMetaGap, 4),
+      avatar: {
+        ...chatBubbleAvatar,
+        alignment:
+          chatBubbleAvatar.alignment === "top" ||
+          chatBubbleAvatar.alignment === "center"
+            ? chatBubbleAvatar.alignment
+            : "bottom",
+        offsetX: numberValue(chatBubbleAvatar.offsetX, 0),
+        offsetY: numberValue(chatBubbleAvatar.offsetY, 0),
+        style: chatBubbleAvatarStyle,
+      },
       messageLabelUseActorColor:
         typeof chatBubbles.messageLabelUseActorColor === "boolean"
           ? chatBubbles.messageLabelUseActorColor
           : true,
       messageLabelOffsetX: numberValue(chatBubbles.messageLabelOffsetX, 0),
       messageLabelOffsetY: numberValue(chatBubbles.messageLabelOffsetY, 0),
+      messageLabelStyle,
       media: {
         ...chatBubbleMedia,
-        borderWidth: numberValue(chatBubbleMedia.borderWidth, 0),
-        cornerRadius: numberValue(
-          chatBubbleMedia.cornerRadius,
-          numberValue(chatBubbles.radius, 18),
-        ),
+        style: chatBubbleMediaStyle,
+        borderWidth: numberValue(chatBubbleMediaStyle.borderWidth, 0),
+        cornerRadius: themeRadius(tokens, chatBubbleMediaStyle.cornerRadiusToken, 18),
         borderColor:
           typeof chatBubbleMedia.borderColor === "string"
             ? chatBubbleMedia.borderColor
             : "transparent",
-        shadowEnabled: chatBubbleMedia.shadowEnabled === true,
+        shadowEnabled: chatBubbleMediaStyle.shadowEnabled === true,
+        surfaceReliefEnabled: chatBubbleMediaStyle.surfaceReliefEnabled === true,
       },
       systemBackground,
       systemText,
@@ -1712,8 +1830,12 @@ const DESIGN_UNIT_TOKEN_PATHS = [
   ["chatBubbles", "contentMetaGap"],
   ["chatBubbles", "avatarSize"],
   ["chatBubbles", "avatarGap"],
-  ["chatBubbles", "media", "borderWidth"],
-  ["chatBubbles", "media", "cornerRadius"],
+  ["chatBubbles", "style", "borderWidth"],
+  ["chatBubbles", "avatar", "offsetX"],
+  ["chatBubbles", "avatar", "offsetY"],
+  ["chatBubbles", "avatar", "style", "borderWidth"],
+  ["chatBubbles", "messageLabelStyle", "borderWidth"],
+  ["chatBubbles", "media", "style", "borderWidth"],
   ["chatBubbles", "tail", "width"],
   ["chatBubbles", "tail", "height"],
   ["chatBubbles", "status", "size"],
@@ -1729,7 +1851,13 @@ const DESIGN_UNIT_TOKEN_PATHS = [
   ["shadows", "notification", "offsetX"],
   ["shadows", "notification", "offsetY"],
   ["shadows", "notification", "blur"],
-  ["radii", "bubble"],
+  ["radii", "control"],
+  ["radii", "card"],
+  ["radii", "panel"],
+  ["radii", "surface"],
+  ["radii", "pill"],
+  ["radii", "avatar"],
+  ["radii", "full"],
   ["cursor", "width"],
 ] as const;
 
@@ -2753,6 +2881,7 @@ export function resolveChatScreen({
       sender,
       direction,
       themeTokens: themeTokensWithComponents,
+      palette,
       localFrame,
       fps,
       viewportWidth: metrics.viewport.width,
@@ -3083,7 +3212,13 @@ export function resolveChatScreen({
       header: resolvedHeaderTokens,
       chatBubbles: {
         ...themeTokens.chatBubbles,
-        radius: themeTokens.radii.bubble,
+        radius: themeRadius(
+          themeTokens,
+          isObject(themeTokens.chatBubbles?.style)
+            ? themeTokens.chatBubbles.style.cornerRadiusToken
+            : undefined,
+          18,
+        ),
         shadow: systemShadow,
       },
     },

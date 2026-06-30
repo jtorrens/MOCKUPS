@@ -2,6 +2,7 @@ import {
   ResolvedMessageBubblePropsSchema,
   type ResolvedChatScreenProps,
 } from "../../../domain/schemas/index.js";
+import { surfaceStyleNormalize } from "../../../domain/value-system/index.js";
 import {
   readFontWeight,
   readNumber,
@@ -38,15 +39,65 @@ function headerBackgroundColor(input: ResolvedChatScreenProps) {
   );
 }
 
+function nestedValue(root: Record<string, unknown>, path: readonly string[]) {
+  let current: unknown = root;
+  for (const part of path) {
+    if (!current || typeof current !== "object" || Array.isArray(current)) {
+      return undefined;
+    }
+    current = (current as Record<string, unknown>)[part];
+  }
+  return current;
+}
+
+function themeRadius(
+  theme: ResolvedChatScreenProps["theme"],
+  token: unknown,
+  fallback: number,
+) {
+  const key = typeof token === "string" && token.trim() ? token.trim() : "";
+  const scopedKey = key.startsWith("radii.") ? key.slice("radii.".length) : key;
+  const value =
+    typeof theme.radii?.[scopedKey] === "number"
+      ? theme.radii[scopedKey]
+      : key.includes(".")
+        ? nestedValue(theme as Record<string, unknown>, key.split("."))
+        : undefined;
+  return readNumber({ value }, "value", fallback);
+}
+
+function themeColor(
+  theme: ResolvedChatScreenProps["theme"],
+  token: unknown,
+  fallback: string,
+) {
+  const key = typeof token === "string" && token.trim() ? token.trim() : "";
+  const value =
+    typeof theme.colors?.[key] === "string"
+      ? theme.colors[key]
+      : key.includes(".")
+        ? nestedValue(theme as Record<string, unknown>, key.split("."))
+        : undefined;
+  return typeof value === "string" ? value : fallback;
+}
+
 function createMessageBubbleInput(
   input: ResolvedChatScreenProps,
   message: ResolvedChatScreenProps["messages"][number],
 ) {
   const outgoing = message.direction === "outgoing";
   const system = message.direction === "system";
-  const chatTokens = input.theme.chatBubbles;
-  const tailTokens = readObject(chatTokens, "tail");
-  const mediaTokens = readObject(chatTokens, "media");
+    const chatTokens = input.theme.chatBubbles;
+    const tailTokens = readObject(chatTokens, "tail");
+    const mediaTokens = readObject(chatTokens, "media");
+    const bubbleStyleTokens = surfaceStyleNormalize(readObject(chatTokens, "style"));
+    const mediaStyleTokens = surfaceStyleNormalize(readObject(mediaTokens, "style"));
+    const avatarTokens = readObject(chatTokens, "avatar");
+    const avatarStyleTokens = surfaceStyleNormalize({
+      cornerRadiusToken: "radii.avatar",
+      ...readObject(avatarTokens, "style"),
+    });
+    const labelStyleTokens = surfaceStyleNormalize(readObject(chatTokens, "messageLabelStyle"));
   const avatarComponent = readObject(input.theme.components ?? {}, "avatar");
   const audioMessageComponent = readObject(
     input.theme.components ?? {},
@@ -181,7 +232,17 @@ function createMessageBubbleInput(
         "fontWeight",
         readFontWeight(input.theme.fonts, "weight", "Regular"),
       ),
-      borderRadius: readNumber(chatTokens, "radius", 18),
+      borderRadius: themeRadius(
+        input.theme,
+        bubbleStyleTokens.cornerRadiusToken,
+        readNumber(chatTokens, "radius", 18),
+      ),
+      borderColor: themeColor(
+        input.theme,
+        bubbleStyleTokens.borderColorToken,
+        "transparent",
+      ),
+      borderWidth: readNumber(bubbleStyleTokens, "borderWidth", 0),
       paddingX: readNumber(chatTokens, "paddingX", 14),
       paddingY: readNumber(chatTokens, "paddingY", 9),
       contentMetaGap: readNumber(chatTokens, "contentMetaGap", 4),
@@ -193,22 +254,28 @@ function createMessageBubbleInput(
       tailWidth: readNumber(tailTokens, "width", 0),
       tailHeight: readNumber(tailTokens, "height", 0),
       tailScale: readNumber(tailTokens, "scale", 1),
-      shadowEnabled: chatTokens.shadowEnabled === true,
+      shadowEnabled: bubbleStyleTokens.shadowEnabled === true,
       shadow: readObject(chatTokens, "shadow"),
       surfaceRelief:
-        chatTokens.surfaceReliefEnabled !== false
-          ? readObject(input.theme.surfaceRelief ?? {}, "default")
+        bubbleStyleTokens.surfaceReliefEnabled === true
+          ? readObject(bubbleStyleTokens, "surfaceRelief")
           : {},
       avatarSize: readNumber(chatTokens, "avatarSize", 32),
       media: {
-        borderWidth: readNumber(mediaTokens, "borderWidth", 0),
-        cornerRadius: readNumber(
-          mediaTokens,
-          "cornerRadius",
+        borderWidth: readNumber(mediaStyleTokens, "borderWidth", readNumber(mediaTokens, "borderWidth", 0)),
+        cornerRadius: themeRadius(
+          input.theme,
+          mediaStyleTokens.cornerRadiusToken,
           readNumber(chatTokens, "radius", 18),
         ),
-        borderColor: readString(mediaTokens, "borderColor", "transparent"),
-        shadowEnabled: mediaTokens.shadowEnabled === true,
+        borderColor: themeColor(
+          input.theme,
+          mediaStyleTokens.borderColorToken,
+          readString(mediaTokens, "borderColor", "transparent"),
+        ),
+        shadowEnabled: mediaStyleTokens.shadowEnabled === true,
+        surfaceReliefEnabled: mediaStyleTokens.surfaceReliefEnabled === true,
+        surfaceRelief: readObject(mediaStyleTokens, "surfaceRelief"),
       },
       }),
       audioMessage: audioMessageComponent,
@@ -222,15 +289,41 @@ function createMessageBubbleInput(
           : readString(labelComponent, "textColor", readString(chatTokens, "incomingText", "#000000")),
         offsetX: readNumber(chatTokens, "messageLabelOffsetX", 0),
         offsetY: readNumber(chatTokens, "messageLabelOffsetY", 0),
+        ...labelStyleTokens,
+        cornerRadius: themeRadius(
+          input.theme,
+          labelStyleTokens.cornerRadiusToken,
+          readNumber(labelComponent, "cornerRadius", 0),
+        ),
+        borderColor: themeColor(
+          input.theme,
+          labelStyleTokens.borderColorToken,
+          readString(labelComponent, "borderColor", "transparent"),
+        ),
       },
       avatar: {
         ...avatarComponent,
-        ...(avatarComponent.surfaceReliefEnabled !== false
+        ...avatarStyleTokens,
+        alignment:
+          readString(avatarTokens, "alignment", "bottom") === "top" ||
+          readString(avatarTokens, "alignment", "bottom") === "center"
+            ? readString(avatarTokens, "alignment", "bottom")
+            : "bottom",
+        offsetX: readNumber(avatarTokens, "offsetX", 0),
+        offsetY: readNumber(avatarTokens, "offsetY", 0),
+        cornerRadius: themeRadius(
+          input.theme,
+          avatarStyleTokens.cornerRadiusToken,
+          readNumber(avatarComponent, "cornerRadius", 0),
+        ),
+        borderColor: themeColor(
+          input.theme,
+          avatarStyleTokens.borderColorToken,
+          readString(avatarComponent, "borderColor", "transparent"),
+        ),
+        ...(avatarStyleTokens.surfaceReliefEnabled === true
           ? {
-              surfaceRelief: readObject(
-                input.theme.surfaceRelief ?? {},
-                "default",
-              ),
+              surfaceRelief: readObject(avatarStyleTokens, "surfaceRelief"),
             }
           : {}),
       },

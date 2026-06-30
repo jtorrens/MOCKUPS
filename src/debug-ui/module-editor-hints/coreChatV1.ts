@@ -4,6 +4,7 @@ import {
   CHAT_CONTENT_MEDIA_BINDINGS,
   CHAT_CONTENT_MESSAGE_BINDINGS,
   CHAT_HEADER_TOKEN_BINDINGS,
+  CHAT_LAYOUT_MESSAGE_TOKEN_BINDINGS,
   CHAT_TYPOGRAPHY_TOKEN_BINDINGS,
 } from "../../domain/fields/chatFields.js";
 import { jsonUiHintsFromFieldBindings } from "../components/json-editor/fieldDefinitionHints.js";
@@ -18,6 +19,9 @@ const coreChatBubbleHints = jsonUiHintsFromFieldBindings(
 );
 const coreChatTypographyHints = jsonUiHintsFromFieldBindings(
   CHAT_TYPOGRAPHY_TOKEN_BINDINGS,
+);
+const coreChatLayoutMessageHints = jsonUiHintsFromFieldBindings(
+  CHAT_LAYOUT_MESSAGE_TOKEN_BINDINGS,
 );
 const coreChatContentHints = jsonUiHintsFromFieldBindings([
   ...CHAT_CONTENT_HEADER_BINDINGS,
@@ -100,6 +104,7 @@ export const coreChatV1EditorHints: ModuleEditorHintContract = {
     module_data_json: coreChatContentJsonHints,
     module_config_json: coreChatBehaviorJsonHints,
     tokens_json: {
+      ...coreChatLayoutMessageHints,
       ...coreChatTypographyHints,
       ...coreChatHeaderHints,
       ...coreChatBubbleHints,

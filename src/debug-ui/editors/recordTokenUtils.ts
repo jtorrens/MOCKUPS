@@ -1,4 +1,5 @@
 import { CHAT_HEADER_DEFAULTS } from "../../domain/fields/chatFields.js";
+import { surfaceStyleNormalize } from "../../domain/value-system/index.js";
 import {
   cloneJson,
   isJsonObject,
@@ -7,6 +8,16 @@ import {
 
 function defaultTokenGroupValue(groupKey: string): JsonValue {
   return groupKey === "messages" ? [] : {};
+}
+
+function normalizeSurfaceStyleForContext(
+  value: Record<string, unknown>,
+  defaults: Record<string, unknown>,
+) {
+  return surfaceStyleNormalize({
+    ...defaults,
+    ...value,
+  });
 }
 
 export function tokenEditorGroups(
@@ -106,6 +117,132 @@ export function normalizeCoreChatModuleTokensForEditor(
   const chatBubbleMedia = isJsonObject(chatBubbles.media)
     ? chatBubbles.media
     : {};
+  const chatBubbleAvatar = isJsonObject(chatBubbles.avatar)
+    ? chatBubbles.avatar
+    : {};
+  const hasBubbleStyle =
+    isJsonObject(chatBubbles.style) ||
+    typeof chatBubbles.shadowEnabled === "boolean" ||
+    typeof chatBubbles.surfaceReliefEnabled === "boolean" ||
+    typeof chatBubbles.borderWidth === "number" ||
+    typeof chatBubbles.borderColorToken === "string" ||
+    typeof chatBubbles.cornerRadiusToken === "string" ||
+    isJsonObject(chatBubbles.surfaceRelief);
+  const bubbleStyle = hasBubbleStyle
+    ? surfaceStyleNormalize({
+    ...(isJsonObject(chatBubbles.style) ? chatBubbles.style : {}),
+    ...(typeof chatBubbles.shadowEnabled === "boolean"
+      ? { shadowEnabled: chatBubbles.shadowEnabled }
+      : {}),
+    ...(typeof chatBubbles.surfaceReliefEnabled === "boolean"
+      ? { surfaceReliefEnabled: chatBubbles.surfaceReliefEnabled }
+      : {}),
+    ...(typeof chatBubbles.borderWidth === "number"
+      ? { borderWidth: chatBubbles.borderWidth }
+      : {}),
+    ...(typeof chatBubbles.borderColorToken === "string"
+      ? { borderColorToken: chatBubbles.borderColorToken }
+      : {}),
+    ...(typeof chatBubbles.cornerRadiusToken === "string"
+      ? { cornerRadiusToken: chatBubbles.cornerRadiusToken }
+      : {}),
+    ...(isJsonObject(chatBubbles.surfaceRelief)
+      ? { surfaceRelief: chatBubbles.surfaceRelief }
+      : {}),
+      })
+    : undefined;
+  const avatarStyle = normalizeSurfaceStyleForContext({
+    ...(isJsonObject(chatBubbleAvatar.style) ? chatBubbleAvatar.style : {}),
+    ...(typeof chatBubbleAvatar.shadowEnabled === "boolean"
+      ? { shadowEnabled: chatBubbleAvatar.shadowEnabled }
+      : {}),
+    ...(typeof chatBubbleAvatar.surfaceReliefEnabled === "boolean"
+      ? { surfaceReliefEnabled: chatBubbleAvatar.surfaceReliefEnabled }
+      : {}),
+    ...(typeof chatBubbleAvatar.borderWidth === "number"
+      ? { borderWidth: chatBubbleAvatar.borderWidth }
+      : {}),
+    ...(typeof chatBubbleAvatar.borderColorToken === "string"
+      ? { borderColorToken: chatBubbleAvatar.borderColorToken }
+      : {}),
+    ...(typeof chatBubbleAvatar.cornerRadiusToken === "string"
+      ? { cornerRadiusToken: chatBubbleAvatar.cornerRadiusToken }
+      : {}),
+  }, { cornerRadiusToken: "radii.avatar" });
+  const messageLabelStyle = surfaceStyleNormalize({
+    ...(isJsonObject(chatBubbles.messageLabelStyle)
+      ? chatBubbles.messageLabelStyle
+      : {}),
+    ...(typeof chatBubbles.messageLabelShadowEnabled === "boolean"
+      ? { shadowEnabled: chatBubbles.messageLabelShadowEnabled }
+      : {}),
+    ...(typeof chatBubbles.messageLabelSurfaceReliefEnabled === "boolean"
+      ? { surfaceReliefEnabled: chatBubbles.messageLabelSurfaceReliefEnabled }
+      : {}),
+    ...(typeof chatBubbles.messageLabelBorderWidth === "number"
+      ? { borderWidth: chatBubbles.messageLabelBorderWidth }
+      : {}),
+    ...(typeof chatBubbles.messageLabelBorderColorToken === "string"
+      ? { borderColorToken: chatBubbles.messageLabelBorderColorToken }
+      : {}),
+    ...(typeof chatBubbles.messageLabelCornerRadiusToken === "string"
+      ? { cornerRadiusToken: chatBubbles.messageLabelCornerRadiusToken }
+      : {}),
+  });
+  const mediaStyle = surfaceStyleNormalize({
+    ...(isJsonObject(chatBubbleMedia.style) ? chatBubbleMedia.style : {}),
+    ...(typeof chatBubbleMedia.shadowEnabled === "boolean"
+      ? { shadowEnabled: chatBubbleMedia.shadowEnabled }
+      : {}),
+    ...(typeof chatBubbleMedia.surfaceReliefEnabled === "boolean"
+      ? { surfaceReliefEnabled: chatBubbleMedia.surfaceReliefEnabled }
+      : {}),
+    ...(typeof chatBubbleMedia.borderWidth === "number"
+      ? { borderWidth: chatBubbleMedia.borderWidth }
+      : {}),
+    ...(typeof chatBubbleMedia.borderColorToken === "string"
+      ? { borderColorToken: chatBubbleMedia.borderColorToken }
+      : {}),
+    ...(typeof chatBubbleMedia.cornerRadiusToken === "string"
+      ? { cornerRadiusToken: chatBubbleMedia.cornerRadiusToken }
+      : typeof chatBubbles.cornerRadiusToken === "string"
+        ? { cornerRadiusToken: chatBubbles.cornerRadiusToken }
+        : {}),
+  });
+  const {
+    shadowEnabled: _legacyBubbleShadowEnabled,
+    surfaceReliefEnabled: _legacyBubbleSurfaceReliefEnabled,
+    borderWidth: _legacyBubbleBorderWidth,
+    borderColorToken: _legacyBubbleBorderColorToken,
+    radius: _legacyBubbleRadius,
+    cornerRadiusToken: _legacyBubbleCornerRadiusToken,
+    surfaceRelief: _legacyBubbleSurfaceRelief,
+    messageLabelShadowEnabled: _legacyLabelShadowEnabled,
+    messageLabelSurfaceReliefEnabled: _legacyLabelSurfaceReliefEnabled,
+    messageLabelBorderWidth: _legacyLabelBorderWidth,
+    messageLabelBorderColorToken: _legacyLabelBorderColorToken,
+    messageLabelCornerRadius: _legacyLabelCornerRadius,
+    messageLabelCornerRadiusToken: _legacyLabelCornerRadiusToken,
+    ...visibleChatBubbles
+  } = chatBubbles;
+  const {
+    shadowEnabled: _legacyAvatarShadowEnabled,
+    surfaceReliefEnabled: _legacyAvatarSurfaceReliefEnabled,
+    borderWidth: _legacyAvatarBorderWidth,
+    borderColorToken: _legacyAvatarBorderColorToken,
+    cornerRadius: _legacyAvatarCornerRadius,
+    cornerRadiusToken: _legacyAvatarCornerRadiusToken,
+    ...visibleChatBubbleAvatar
+  } = chatBubbleAvatar;
+  const {
+    shadowEnabled: _legacyMediaShadowEnabled,
+    surfaceReliefEnabled: _legacyMediaSurfaceReliefEnabled,
+    borderWidth: _legacyMediaBorderWidth,
+    borderColorToken: _legacyMediaBorderColorToken,
+    cornerRadius: _legacyMediaCornerRadius,
+    cornerRadiusToken: _legacyMediaCornerRadiusToken,
+    ...visibleChatBubbleMedia
+  } = chatBubbleMedia;
   const light = modeRoot(root, "light");
   const dark = modeRoot(root, "dark");
   const lightMedia = isJsonObject(light.chatBubbles.media)
@@ -193,25 +330,31 @@ export function normalizeCoreChatModuleTokensForEditor(
         : CHAT_HEADER_DEFAULTS.rightIconTokens,
   };
   root.chatBubbles = {
-    ...chatBubbles,
+    ...visibleChatBubbles,
     avatarSize: numberValue(chatBubbles.avatarSize, 32),
     avatarGap: numberValue(chatBubbles.avatarGap, 8),
-    shadowEnabled: chatBubbles.shadowEnabled === true,
+    ...(bubbleStyle ? { style: bubbleStyle as JsonValue } : {}),
     contentMetaGap: numberValue(chatBubbles.contentMetaGap, 4),
+    avatar: {
+      ...visibleChatBubbleAvatar,
+      alignment:
+        chatBubbleAvatar.alignment === "top" || chatBubbleAvatar.alignment === "bottom"
+          ? chatBubbleAvatar.alignment
+          : "bottom",
+      offsetX: numberValue(chatBubbleAvatar.offsetX, 0),
+      offsetY: numberValue(chatBubbleAvatar.offsetY, 0),
+      style: avatarStyle as JsonValue,
+    },
     messageLabelUseActorColor:
       typeof chatBubbles.messageLabelUseActorColor === "boolean"
         ? chatBubbles.messageLabelUseActorColor
         : true,
     messageLabelOffsetX: numberValue(chatBubbles.messageLabelOffsetX, 0),
     messageLabelOffsetY: numberValue(chatBubbles.messageLabelOffsetY, 0),
+    messageLabelStyle: messageLabelStyle as JsonValue,
     media: {
-      ...chatBubbleMedia,
-      borderWidth: numberValue(chatBubbleMedia.borderWidth, 0),
-      cornerRadius: numberValue(
-        chatBubbleMedia.cornerRadius,
-        numberValue(chatBubbles.radius, 18),
-      ),
-      shadowEnabled: chatBubbleMedia.shadowEnabled === true,
+      ...visibleChatBubbleMedia,
+      style: mediaStyle as JsonValue,
     },
     tail: {
       ...(isJsonObject(chatBubbles.tail) ? chatBubbles.tail : {}),

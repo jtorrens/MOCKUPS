@@ -12,6 +12,8 @@ const GROUPS = {
   statusBar: { id: "statusBar", label: "Status bar" },
   navigationBar: { id: "navigationBar", label: "Navigation bar" },
   keyboard: { id: "keyboard", label: "Keyboard" },
+  radii: { id: "radii", label: "Radii" },
+  shadows: { id: "shadows", label: "Shadows" },
   surfaceRelief: { id: "surfaceRelief", label: "Surface relief" },
   typography: { id: "typography", label: "Typography" },
 } as const;
@@ -147,6 +149,187 @@ export const THEME_FIELDS = defineFields({
       label: "Blink frames",
       group: GROUPS.cursor,
       min: 1,
+      step: 1,
+    },
+  },
+  radiusControl: {
+    id: "theme.radii.control",
+    kind: "decimal",
+    defaultValue: 8,
+    ui: {
+      label: "Control",
+      group: GROUPS.radii,
+      min: 0,
+      step: 1,
+    },
+  },
+  radiusCard: {
+    id: "theme.radii.card",
+    kind: "decimal",
+    defaultValue: 12,
+    ui: {
+      label: "Card",
+      group: GROUPS.radii,
+      min: 0,
+      step: 1,
+    },
+  },
+  radiusPanel: {
+    id: "theme.radii.panel",
+    kind: "decimal",
+    defaultValue: 16,
+    ui: {
+      label: "Panel",
+      group: GROUPS.radii,
+      min: 0,
+      step: 1,
+    },
+  },
+  radiusSurface: {
+    id: "theme.radii.surface",
+    kind: "decimal",
+    defaultValue: 18,
+    ui: {
+      label: "Surface",
+      group: GROUPS.radii,
+      min: 0,
+      step: 1,
+    },
+  },
+  radiusPill: {
+    id: "theme.radii.pill",
+    kind: "decimal",
+    defaultValue: 999,
+    ui: {
+      label: "Pill",
+      group: GROUPS.radii,
+      min: 0,
+      step: 1,
+    },
+  },
+  radiusAvatar: {
+    id: "theme.radii.avatar",
+    kind: "decimal",
+    defaultValue: 12,
+    ui: {
+      label: "Avatar",
+      group: GROUPS.radii,
+      min: 0,
+      step: 1,
+    },
+  },
+  radiusFull: {
+    id: "theme.radii.full",
+    kind: "decimal",
+    defaultValue: 9999,
+    ui: {
+      label: "Full",
+      group: GROUPS.radii,
+      min: 0,
+      step: 1,
+    },
+  },
+  shadowAvatarColor: {
+    id: "theme.shadows.avatar.color",
+    kind: "paletteColorToken",
+    defaultValue: "gray_000",
+    ui: {
+      label: "Avatar color",
+      group: GROUPS.shadows,
+    },
+  },
+  shadowAvatarAlpha: {
+    id: "theme.shadows.avatar.alpha",
+    kind: "alpha",
+    defaultValue: 0.18,
+    ui: {
+      label: "Avatar alpha",
+      group: GROUPS.shadows,
+      min: 0,
+      max: 1,
+      step: 0.01,
+    },
+  },
+  shadowAvatarOffsetX: {
+    id: "theme.shadows.avatar.offsetX",
+    kind: "decimal",
+    defaultValue: 0,
+    ui: {
+      label: "Avatar offset X",
+      group: GROUPS.shadows,
+      step: 1,
+    },
+  },
+  shadowAvatarOffsetY: {
+    id: "theme.shadows.avatar.offsetY",
+    kind: "decimal",
+    defaultValue: 4,
+    ui: {
+      label: "Avatar offset Y",
+      group: GROUPS.shadows,
+      step: 1,
+    },
+  },
+  shadowAvatarBlur: {
+    id: "theme.shadows.avatar.blur",
+    kind: "decimal",
+    defaultValue: 18,
+    ui: {
+      label: "Avatar blur",
+      group: GROUPS.shadows,
+      min: 0,
+      step: 1,
+    },
+  },
+  shadowElevatedColor: {
+    id: "theme.shadows.elevated.color",
+    kind: "paletteColorToken",
+    defaultValue: "gray_000",
+    ui: {
+      label: "Elevated color",
+      group: GROUPS.shadows,
+    },
+  },
+  shadowElevatedAlpha: {
+    id: "theme.shadows.elevated.alpha",
+    kind: "alpha",
+    defaultValue: 0.18,
+    ui: {
+      label: "Elevated alpha",
+      group: GROUPS.shadows,
+      min: 0,
+      max: 1,
+      step: 0.01,
+    },
+  },
+  shadowElevatedOffsetX: {
+    id: "theme.shadows.elevated.offsetX",
+    kind: "decimal",
+    defaultValue: 0,
+    ui: {
+      label: "Elevated offset X",
+      group: GROUPS.shadows,
+      step: 1,
+    },
+  },
+  shadowElevatedOffsetY: {
+    id: "theme.shadows.elevated.offsetY",
+    kind: "decimal",
+    defaultValue: 4,
+    ui: {
+      label: "Elevated offset Y",
+      group: GROUPS.shadows,
+      step: 1,
+    },
+  },
+  shadowElevatedBlur: {
+    id: "theme.shadows.elevated.blur",
+    kind: "decimal",
+    defaultValue: 18,
+    ui: {
+      label: "Elevated blur",
+      group: GROUPS.shadows,
+      min: 0,
       step: 1,
     },
   },
@@ -999,6 +1182,56 @@ export const THEME_TOKEN_BINDINGS = [
   {
     outputPath: ["cursor", "blinkFrames"],
     field: THEME_FIELDS.cursorBlinkFrames,
+  },
+  { outputPath: ["radii", "control"], field: THEME_FIELDS.radiusControl },
+  { outputPath: ["radii", "card"], field: THEME_FIELDS.radiusCard },
+  { outputPath: ["radii", "panel"], field: THEME_FIELDS.radiusPanel },
+  { outputPath: ["radii", "surface"], field: THEME_FIELDS.radiusSurface },
+  { outputPath: ["radii", "pill"], field: THEME_FIELDS.radiusPill },
+  { outputPath: ["radii", "avatar"], field: THEME_FIELDS.radiusAvatar },
+  {
+    outputPath: ["radii", "full"],
+    field: THEME_FIELDS.radiusFull,
+  },
+  {
+    outputPath: ["shadows", "avatar", "color", "color"],
+    field: THEME_FIELDS.shadowAvatarColor,
+  },
+  {
+    outputPath: ["shadows", "avatar", "color", "alpha"],
+    field: THEME_FIELDS.shadowAvatarAlpha,
+  },
+  {
+    outputPath: ["shadows", "avatar", "offsetX"],
+    field: THEME_FIELDS.shadowAvatarOffsetX,
+  },
+  {
+    outputPath: ["shadows", "avatar", "offsetY"],
+    field: THEME_FIELDS.shadowAvatarOffsetY,
+  },
+  {
+    outputPath: ["shadows", "avatar", "blur"],
+    field: THEME_FIELDS.shadowAvatarBlur,
+  },
+  {
+    outputPath: ["shadows", "elevated", "color", "color"],
+    field: THEME_FIELDS.shadowElevatedColor,
+  },
+  {
+    outputPath: ["shadows", "elevated", "color", "alpha"],
+    field: THEME_FIELDS.shadowElevatedAlpha,
+  },
+  {
+    outputPath: ["shadows", "elevated", "offsetX"],
+    field: THEME_FIELDS.shadowElevatedOffsetX,
+  },
+  {
+    outputPath: ["shadows", "elevated", "offsetY"],
+    field: THEME_FIELDS.shadowElevatedOffsetY,
+  },
+  {
+    outputPath: ["shadows", "elevated", "blur"],
+    field: THEME_FIELDS.shadowElevatedBlur,
   },
   {
     outputPath: ["surfaceRelief", "default", "angleDeg"],

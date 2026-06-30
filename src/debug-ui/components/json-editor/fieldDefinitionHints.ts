@@ -29,6 +29,7 @@ function widgetForField(field: FieldDefinition): JsonWidget | undefined {
     case "text":
     case "filePath":
     case "relativeFilePath":
+    case "surfaceStyle":
       return "text";
   }
 }

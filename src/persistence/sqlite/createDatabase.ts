@@ -2611,6 +2611,48 @@ function applyAdditiveV39Migration(database: SQLiteDatabase): void {
         ADD COLUMN category TEXT NOT NULL DEFAULT 'normal' CHECK (category IN ('normal', 'emoji'));
     `);
   }
+  const themeRows = database
+    .prepare("SELECT id, tokens_json FROM themes ORDER BY id")
+    .all() as { id: string; tokens_json: string }[];
+  const updateTheme = database.prepare(
+    "UPDATE themes SET tokens_json = ? WHERE id = ?",
+  );
+  for (const row of themeRows) {
+    try {
+      const tokens = JSON.parse(row.tokens_json) as Record<string, unknown>;
+      const radii =
+        tokens.radii && typeof tokens.radii === "object" && !Array.isArray(tokens.radii)
+          ? (tokens.radii as Record<string, unknown>)
+          : {};
+      const surface =
+        typeof radii.surface === "number"
+          ? radii.surface
+          : typeof radii.bubble === "number"
+            ? radii.bubble
+            : 18;
+      const nextTokens = {
+        ...tokens,
+        radii: {
+          control: typeof radii.control === "number" ? radii.control : 8,
+          card: typeof radii.card === "number" ? radii.card : 12,
+          panel:
+            typeof radii.panel === "number"
+              ? radii.panel
+              : typeof radii.notification === "number"
+                ? radii.notification
+                : 16,
+          surface,
+          pill: typeof radii.pill === "number" ? radii.pill : 999,
+          avatar: typeof radii.avatar === "number" ? radii.avatar : 12,
+          full: typeof radii.full === "number" ? radii.full : 9999,
+        },
+      };
+      const nextJson = JSON.stringify(nextTokens);
+      if (nextJson !== row.tokens_json) updateTheme.run(nextJson, row.id);
+    } catch {
+      // Malformed JSON is handled by validation paths; skip migration here.
+    }
+  }
   database.pragma("user_version = 39");
 }
 

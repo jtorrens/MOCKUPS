@@ -114,6 +114,7 @@ export const ResolvedChatScreenPropsSchema = z.object({
     cursor: JsonObjectSchema,
     shadows: JsonObjectSchema.optional(),
     surfaceRelief: JsonObjectSchema.optional(),
+    radii: JsonObjectSchema,
   }),
   device: z.object({
     id: IdSchema,
@@ -199,6 +200,8 @@ export const ResolvedMessageBubblePropsSchema = z.object({
     lineHeight: z.number().positive(),
     fontWeight: z.union([z.string().min(1), z.number().positive()]).optional(),
     borderRadius: z.number().min(0),
+    borderColor: z.string().min(1).optional(),
+    borderWidth: z.number().min(0).optional(),
     paddingX: z.number().min(0),
     paddingY: z.number().min(0),
     contentMetaGap: z.number().min(0).optional(),

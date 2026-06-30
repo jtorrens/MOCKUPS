@@ -1706,8 +1706,13 @@ function defaultThemeTokens(family: "ios" | "android") {
       lg: 24,
     },
     radii: {
-      notification: isAndroid ? 20 : 16,
+      control: 8,
       card: isAndroid ? 16 : 12,
+      panel: isAndroid ? 20 : 16,
+      surface: 18,
+      pill: 999,
+      avatar: 12,
+      full: 9999,
     },
     shadows: {
       avatar: {

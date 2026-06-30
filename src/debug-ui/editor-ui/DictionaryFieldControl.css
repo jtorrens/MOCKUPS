@@ -179,11 +179,186 @@
   box-shadow: var(--dictionary-control-focus-shadow) !important;
 }
 
-.editor-workspace .record-editor-field-pair.dictionary-control,
-.editor-workspace .record-editor-field-pair:has(.dictionary-control) {
+.editor-workspace .record-editor-field-pair.dictionary-control {
+  align-items: center !important;
   border: var(--dictionary-control-border) !important;
   border-radius: var(--dictionary-control-radius) !important;
-  padding: 4px !important;
+  display: grid !important;
+  gap: 6px !important;
+  grid-auto-flow: row !important;
+  --field-pair-label-width: 32px;
+  --field-pair-control-width: 204px;
+  grid-template-columns:
+    var(--field-pair-label-width)
+    var(--field-pair-control-width)
+    var(--field-pair-label-width)
+    var(--field-pair-control-width) !important;
+  grid-template-rows: minmax(var(--field-control-height, 42px), auto) !important;
+  min-width: calc(
+    (var(--field-pair-label-width, 28px) * 2) +
+    (var(--field-pair-control-width, 128px) * 2) +
+    30px
+  ) !important;
+  width: 520px !important;
+  max-width: min(100%, 520px) !important;
+  padding: 6px 8px !important;
   outline: var(--dictionary-control-outline) !important;
   outline-offset: var(--dictionary-control-outline-offset) !important;
+}
+
+.editor-workspace .record-editor-field-pair.dictionary-control .record-editor-field-pair-label {
+  align-items: center !important;
+  display: inline-flex !important;
+  justify-content: center !important;
+  min-width: var(--field-pair-label-width, 32px) !important;
+  padding: 0 2px !important;
+  width: var(--field-pair-label-width, 32px) !important;
+  white-space: nowrap !important;
+}
+
+.editor-workspace .record-editor-field-pair.dictionary-control .record-editor-field-pair-control {
+  max-width: var(--field-pair-control-width, 204px) !important;
+  min-width: 0 !important;
+  width: var(--field-pair-control-width, 204px) !important;
+}
+
+.editor-workspace .surface-style-control.dictionary-control {
+  box-sizing: border-box !important;
+  border: var(--dictionary-control-border) !important;
+  border-radius: var(--dictionary-control-radius) !important;
+  background: var(--dictionary-control-background) !important;
+  color: var(--dictionary-control-color) !important;
+  outline: var(--dictionary-control-outline) !important;
+  outline-offset: var(--dictionary-control-outline-offset) !important;
+  overflow: hidden;
+}
+
+.editor-workspace .surface-style-control.has-override {
+  border-color: var(--editor-warning-border-color, #e4ad68) !important;
+  outline-color: var(--editor-warning-border-color, #e4ad68) !important;
+}
+
+.editor-workspace .surface-style-control__summary {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: var(--field-control-height, 42px);
+  padding: 0 11px;
+  text-align: left;
+  width: 100%;
+}
+
+.editor-workspace .surface-style-control__summary:disabled {
+  cursor: default;
+  opacity: 0.75;
+}
+
+.editor-workspace .surface-style-control__summary-detail {
+  color: var(--field-readonly-color, #667085);
+  font-size: 0.86em;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editor-workspace .surface-style-control__chevron {
+  font-size: var(--card-chevron-size, 16px);
+  line-height: 1;
+}
+
+.editor-workspace .surface-style-control__body {
+  border-top: var(--dictionary-control-border);
+  display: grid;
+  gap: 10px;
+  padding: 8px;
+}
+
+.editor-workspace .surface-style-control__row {
+  align-items: start;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(92px, 0.8fr) minmax(0, 1fr);
+}
+
+.editor-workspace .surface-style-control__row > span,
+.editor-workspace .surface-style-control__subgrid span {
+  color: var(--field-label-color, var(--dictionary-control-color));
+  font-size: var(--field-label-font-size, 12px);
+}
+
+.editor-workspace .surface-style-control__row--checkbox {
+  grid-template-columns: max-content auto;
+  justify-content: start;
+}
+
+.editor-workspace .surface-style-control__row--checkbox input {
+  accent-color: var(--selection-color, #2f6bff);
+  justify-self: start;
+}
+
+.editor-workspace .surface-style-control__relief-viewport {
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+
+.editor-workspace .surface-style-control__subgrid {
+  align-items: center;
+  display: grid;
+  column-gap: 5px;
+  grid-template-columns: max-content repeat(5, 75px);
+  grid-template-rows: auto 32px;
+  justify-content: start;
+  min-width: max-content;
+  row-gap: 3px;
+}
+
+.editor-workspace .surface-style-control__subgrid-heading {
+  align-self: center;
+  color: var(--field-label-color, var(--dictionary-control-color));
+  font-size: var(--field-label-font-size, 12px);
+  grid-row: 1 / span 2;
+  padding-right: 4px;
+  white-space: nowrap;
+}
+
+.editor-workspace .surface-style-control__subgrid .surface-style-control__relief-input {
+  box-sizing: border-box !important;
+  max-width: 75px !important;
+  min-height: 32px !important;
+  min-width: 75px !important;
+  padding: 0 4px !important;
+  text-align: center !important;
+  width: 75px !important;
+}
+
+.editor-workspace .surface-style-control.dictionary-control
+  .surface-style-control__subgrid
+  input.surface-style-control__relief-input.json-value-control.dictionary-control {
+  flex: 0 0 75px !important;
+  height: 32px !important;
+  max-width: 75px !important;
+  min-width: 75px !important;
+  padding-left: 3px !important;
+  padding-right: 3px !important;
+  width: 75px !important;
+}
+
+.editor-workspace .surface-style-control__relief-label {
+  align-self: end;
+  color: var(--field-label-color, var(--dictionary-control-color));
+  font-size: 9px !important;
+  line-height: 1.1;
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

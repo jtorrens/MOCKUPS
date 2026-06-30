@@ -1,3 +1,8 @@
+import {
+  surfaceStyleIsValid,
+  surfaceStyleNormalize,
+} from "./SurfaceStyleDefinition.js";
+
 export const INHERITED_FIELD_VALUE = "inherited";
 
 export type ValueKind =
@@ -17,6 +22,7 @@ export type ValueKind =
   | "recordReference"
   | "filePath"
   | "relativeFilePath"
+  | "surfaceStyle"
   | "jsonObject"
   | "jsonArray";
 
@@ -165,6 +171,12 @@ const SYSTEM_VALUE_KIND_DEFINITIONS = [
       isNonEmptyString(value) &&
       !value.startsWith("/") &&
       !/^[a-zA-Z]:[\\/]/.test(value),
+  },
+  {
+    kind: "surfaceStyle",
+    label: "Surface style",
+    normalize: surfaceStyleNormalize,
+    validate: surfaceStyleIsValid,
   },
   {
     kind: "jsonObject",

@@ -130,11 +130,9 @@ export function RecordEditorDispatcher({
           inheritedFields={inheritedFields}
           activeTab={tabs.moduleThemeTab}
           activeDesignGroup={tabs.moduleDesignGroup}
+          productionFontCatalog={productionFontCatalog}
           renderFields={renderFields}
-          renderField={renderField}
           renderFlatJsonObjectEditor={renderFlatJsonObjectEditor}
-          rawForJsonGroupValue={jsonGroupDrafts.rawForJsonGroupValue}
-          updateJsonGroupValue={jsonGroupDrafts.updateJsonGroupValue}
           setActiveTab={tabs.setModuleThemeTab}
           setActiveDesignGroup={tabs.setModuleDesignGroup}
           setJsonDraft={setJsonDraft}

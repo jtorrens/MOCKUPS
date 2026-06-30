@@ -19,6 +19,7 @@ export type EditorControlKind =
   | "recordSelect"
   | "filePath"
   | "relativeFilePath"
+  | "surfaceStyle"
   | "jsonObject"
   | "jsonArray";
 
@@ -101,6 +102,11 @@ const VALUE_KIND_CONTROL_DEFINITIONS = [
     kind: "relativeFilePath",
     control: "relativeFilePath",
     label: "Relative file path",
+  },
+  {
+    kind: "surfaceStyle",
+    control: "surfaceStyle",
+    label: "Surface style",
   },
   { kind: "jsonObject", control: "jsonObject", label: "JSON object" },
   { kind: "jsonArray", control: "jsonArray", label: "JSON array" },

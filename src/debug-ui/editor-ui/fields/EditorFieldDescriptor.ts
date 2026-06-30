@@ -99,6 +99,9 @@ export function toDictionaryFieldControlProps(
   return {
     field: descriptor.field,
     value: descriptor.displayValue,
+    localValue: descriptor.localValue,
+    parentValue: descriptor.parentValue,
+    defaultValue: descriptor.defaultValue,
     readOnly: descriptor.readonly,
     placeholder: descriptor.placeholder,
     selectOptions: descriptor.selectOptions,

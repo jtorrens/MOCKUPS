@@ -25,23 +25,55 @@ export const CHAT_BUBBLE_FIELDS = defineFields({
     defaultValue: 8,
     ui: { label: "Message avatar gap", group: GROUPS.avatar, min: 0, step: 1 },
   },
-  shadowEnabled: {
-    id: "chat.bubbles.shadowEnabled",
-    kind: "boolean",
-    defaultValue: false,
-    ui: { label: "Bubble shadow", group: GROUPS.bubble },
-  },
-  surfaceReliefEnabled: {
-    id: "chat.bubbles.surfaceReliefEnabled",
-    kind: "boolean",
-    defaultValue: false,
-    ui: { label: "Bubble surface relief", group: GROUPS.bubble },
+  bubbleStyle: {
+    id: "chat.bubbles.style",
+    kind: "surfaceStyle",
+    defaultValue: { cornerRadiusToken: "radii.surface" },
+    ui: { label: "Style", group: GROUPS.bubble },
   },
   contentMetaGap: {
     id: "chat.bubbles.contentMetaGap",
     kind: "decimal",
     defaultValue: 4,
     ui: { label: "Content meta gap", group: GROUPS.bubble, min: 0, step: 1 },
+  },
+  avatarAlignment: {
+    id: "chat.bubbles.avatar.alignment",
+    kind: "enum",
+    defaultValue: "bottom",
+    ui: {
+      label: "Avatar alignment",
+      group: GROUPS.avatar,
+      options: ["top", "center", "bottom"],
+    },
+  },
+  avatarOffsetX: {
+    id: "chat.bubbles.avatar.offsetX",
+    kind: "decimal",
+    defaultValue: 0,
+    ui: {
+      label: "Avatar offset X",
+      group: GROUPS.avatar,
+      step: 1,
+      pair: { id: "chat.bubbles.avatar.offset", label: "Avatar offset", role: "X" },
+    },
+  },
+  avatarOffsetY: {
+    id: "chat.bubbles.avatar.offsetY",
+    kind: "decimal",
+    defaultValue: 0,
+    ui: {
+      label: "Avatar offset Y",
+      group: GROUPS.avatar,
+      step: 1,
+      pair: { id: "chat.bubbles.avatar.offset", label: "Avatar offset", role: "Y" },
+    },
+  },
+  avatarStyle: {
+    id: "chat.bubbles.avatar.style",
+    kind: "surfaceStyle",
+    defaultValue: { cornerRadiusToken: "radii.avatar" },
+    ui: { label: "Style", group: GROUPS.avatar },
   },
   messageLabelUseActorColor: {
     id: "chat.bubbles.messageLabel.useActorColor",
@@ -79,23 +111,17 @@ export const CHAT_BUBBLE_FIELDS = defineFields({
       },
     },
   },
-  mediaBorderWidth: {
-    id: "chat.bubbles.media.borderWidth",
-    kind: "decimal",
-    defaultValue: 0,
-    ui: { label: "Border width", group: GROUPS.media, min: 0, step: 1 },
+  messageLabelStyle: {
+    id: "chat.bubbles.messageLabel.style",
+    kind: "surfaceStyle",
+    defaultValue: { cornerRadiusToken: "radii.surface" },
+    ui: { label: "Style", group: GROUPS.label },
   },
-  mediaCornerRadius: {
-    id: "chat.bubbles.media.cornerRadius",
-    kind: "decimal",
-    defaultValue: 0,
-    ui: { label: "Corner radius", group: GROUPS.media, min: 0, step: 1 },
-  },
-  mediaShadowEnabled: {
-    id: "chat.bubbles.media.shadowEnabled",
-    kind: "boolean",
-    defaultValue: false,
-    ui: { label: "Media shadow", group: GROUPS.media },
+  mediaStyle: {
+    id: "chat.bubbles.media.style",
+    kind: "surfaceStyle",
+    defaultValue: { cornerRadiusToken: "radii.surface" },
+    ui: { label: "Style", group: GROUPS.media },
   },
   tailStyle: {
     id: "chat.bubbles.tail.style",
@@ -311,16 +337,28 @@ export const CHAT_BUBBLE_TOKEN_BINDINGS = [
   { outputPath: ["chatBubbles", "avatarSize"], field: CHAT_BUBBLE_FIELDS.avatarSize },
   { outputPath: ["chatBubbles", "avatarGap"], field: CHAT_BUBBLE_FIELDS.avatarGap },
   {
-    outputPath: ["chatBubbles", "shadowEnabled"],
-    field: CHAT_BUBBLE_FIELDS.shadowEnabled,
-  },
-  {
-    outputPath: ["chatBubbles", "surfaceReliefEnabled"],
-    field: CHAT_BUBBLE_FIELDS.surfaceReliefEnabled,
+    outputPath: ["chatBubbles", "style"],
+    field: CHAT_BUBBLE_FIELDS.bubbleStyle,
   },
   {
     outputPath: ["chatBubbles", "contentMetaGap"],
     field: CHAT_BUBBLE_FIELDS.contentMetaGap,
+  },
+  {
+    outputPath: ["chatBubbles", "avatar", "alignment"],
+    field: CHAT_BUBBLE_FIELDS.avatarAlignment,
+  },
+  {
+    outputPath: ["chatBubbles", "avatar", "offsetX"],
+    field: CHAT_BUBBLE_FIELDS.avatarOffsetX,
+  },
+  {
+    outputPath: ["chatBubbles", "avatar", "offsetY"],
+    field: CHAT_BUBBLE_FIELDS.avatarOffsetY,
+  },
+  {
+    outputPath: ["chatBubbles", "avatar", "style"],
+    field: CHAT_BUBBLE_FIELDS.avatarStyle,
   },
   {
     outputPath: ["chatBubbles", "messageLabelUseActorColor"],
@@ -335,16 +373,12 @@ export const CHAT_BUBBLE_TOKEN_BINDINGS = [
     field: CHAT_BUBBLE_FIELDS.messageLabelOffsetY,
   },
   {
-    outputPath: ["chatBubbles", "media", "borderWidth"],
-    field: CHAT_BUBBLE_FIELDS.mediaBorderWidth,
+    outputPath: ["chatBubbles", "messageLabelStyle"],
+    field: CHAT_BUBBLE_FIELDS.messageLabelStyle,
   },
   {
-    outputPath: ["chatBubbles", "media", "cornerRadius"],
-    field: CHAT_BUBBLE_FIELDS.mediaCornerRadius,
-  },
-  {
-    outputPath: ["chatBubbles", "media", "shadowEnabled"],
-    field: CHAT_BUBBLE_FIELDS.mediaShadowEnabled,
+    outputPath: ["chatBubbles", "media", "style"],
+    field: CHAT_BUBBLE_FIELDS.mediaStyle,
   },
   {
     outputPath: ["chatBubbles", "tail", "style"],

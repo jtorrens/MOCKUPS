@@ -219,6 +219,20 @@ export function hintForPath(
     hints[String(path[path.length - 1] ?? "")];
   if (exact) return exact;
 
+  for (let index = path.length - 1; index > 0; index -= 1) {
+    const parentPath = path.slice(0, index);
+    const parentNormalized = normalizedHintPath(parentPath);
+    const parentEncoded = encodedHintPath(parentPath);
+    const parentContextNormalized = groupContext
+      ? `${groupContext}.${parentNormalized}`
+      : parentNormalized;
+    const parentHint =
+      hints[parentEncoded] ??
+      hints[parentContextNormalized] ??
+      hints[parentNormalized];
+    if (parentHint?.field?.kind === "surfaceStyle") return parentHint;
+  }
+
   const key = String(path[path.length - 1] ?? "");
   const parent = String(path[path.length - 2] ?? "");
   if (/fontFamily$/i.test(key) || (key === "family" && /font|fonts/i.test(parent))) {
