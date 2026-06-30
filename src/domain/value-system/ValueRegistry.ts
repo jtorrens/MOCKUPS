@@ -23,6 +23,7 @@ export type ValueKind =
   | "filePath"
   | "relativeFilePath"
   | "surfaceStyle"
+  | "componentOverride"
   | "jsonObject"
   | "jsonArray";
 
@@ -177,6 +178,11 @@ const SYSTEM_VALUE_KIND_DEFINITIONS = [
     label: "Surface style",
     normalize: surfaceStyleNormalize,
     validate: surfaceStyleIsValid,
+  },
+  {
+    kind: "componentOverride",
+    label: "Component override",
+    validate: isObject,
   },
   {
     kind: "jsonObject",

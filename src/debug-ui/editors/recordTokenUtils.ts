@@ -329,6 +329,8 @@ export function normalizeCoreChatModuleTokensForEditor(
         ? header.rightIconTokens
         : CHAT_HEADER_DEFAULTS.rightIconTokens,
   };
+  const chatBubbleTail = isJsonObject(chatBubbles.tail) ? chatBubbles.tail : {};
+  const { scale: _legacyTailScale, ...visibleChatBubbleTail } = chatBubbleTail;
   root.chatBubbles = {
     ...visibleChatBubbles,
     avatarSize: numberValue(chatBubbles.avatarSize, 32),
@@ -357,7 +359,7 @@ export function normalizeCoreChatModuleTokensForEditor(
       style: mediaStyle as JsonValue,
     },
     tail: {
-      ...(isJsonObject(chatBubbles.tail) ? chatBubbles.tail : {}),
+      ...visibleChatBubbleTail,
       style:
         isJsonObject(chatBubbles.tail) && typeof chatBubbles.tail.style === "string"
           ? chatBubbles.tail.style
@@ -374,10 +376,6 @@ export function normalizeCoreChatModuleTokensForEditor(
       height: numberValue(
         isJsonObject(chatBubbles.tail) ? chatBubbles.tail.height : undefined,
         12,
-      ),
-      scale: numberValue(
-        isJsonObject(chatBubbles.tail) ? chatBubbles.tail.scale : undefined,
-        1,
       ),
     },
   };

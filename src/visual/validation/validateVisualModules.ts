@@ -122,8 +122,9 @@ assert(
 );
 assert(
   receivedBubble?.style?.tailVerticalPosition === "bottom" &&
-    receivedBubble.style.tailScale === 1,
-  "Message bubble must expose resolved tail position and scale tokens",
+    typeof receivedBubble.style.tailWidth === "number" &&
+    typeof receivedBubble.style.tailHeight === "number",
+  "Message bubble must expose resolved tail position and size tokens",
 );
 assert(
   receivedBubble &&

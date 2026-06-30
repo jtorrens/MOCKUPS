@@ -598,13 +598,6 @@ export function ComponentClassRecordEditor({
                     <>
                       {tokenNumberRow("Width", "width", 260)}
                       {tokenNumberRow("Height", "height", 58)}
-                      {tokenNumberRow("Corner radius", "cornerRadius", 18)}
-                      {tokenNumberRow("Border width", "borderWidth", 0)}
-                      {tokenThemeColorRow(
-                        "Border color",
-                        "borderColorToken",
-                        "borders.primary",
-                      )}
                     </>,
                   )}
                   {componentAccordion(
@@ -687,30 +680,10 @@ export function ComponentClassRecordEditor({
                       )}
                     </>,
                   )}
-                  {componentAccordion(
-                    "effects",
-                    <>
-                      {tokenCheckboxRow("Shadow", "shadowEnabled")}
-                      {tokenTextRow("Shadow token", "shadowToken", "system")}
-                      {surfaceReliefRow()}
-                    </>,
-                  )}
                 </>
               ) : null}
               {componentType === "video_message" ? (
                 <>
-                  {componentAccordion(
-                    "container",
-                    <>
-                      {tokenNumberRow("Corner radius", "cornerRadius", 18)}
-                      {tokenNumberRow("Border width", "borderWidth", 0)}
-                      {tokenThemeColorRow(
-                        "Border color",
-                        "borderColorToken",
-                        "borders.primary",
-                      )}
-                    </>,
-                  )}
                   {componentAccordion(
                     "playOverlay",
                     <>
@@ -767,14 +740,6 @@ export function ComponentClassRecordEditor({
                         6,
                       )}
                       {tokenNumberRow("Status gap", "statusGap", 4)}
-                    </>,
-                  )}
-                  {componentAccordion(
-                    "effects",
-                    <>
-                      {tokenCheckboxRow("Shadow", "shadowEnabled")}
-                      {tokenTextRow("Shadow token", "shadowToken", "system")}
-                      {surfaceReliefRow()}
                     </>,
                   )}
                 </>

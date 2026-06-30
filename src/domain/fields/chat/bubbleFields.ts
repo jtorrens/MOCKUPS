@@ -147,19 +147,25 @@ export const CHAT_BUBBLE_FIELDS = defineFields({
     id: "chat.bubbles.tail.width",
     kind: "decimal",
     defaultValue: 16,
-    ui: { label: "Tail width", group: GROUPS.tail, min: 0, step: 1 },
+    ui: {
+      label: "Tail width",
+      group: GROUPS.tail,
+      min: 0,
+      step: 1,
+      pair: { id: "chat.bubbles.tail.size", label: "Tail size", role: "W" },
+    },
   },
   tailHeight: {
     id: "chat.bubbles.tail.height",
     kind: "decimal",
     defaultValue: 12,
-    ui: { label: "Tail height", group: GROUPS.tail, min: 0, step: 1 },
-  },
-  tailScale: {
-    id: "chat.bubbles.tail.scale",
-    kind: "decimal",
-    defaultValue: 1,
-    ui: { label: "Tail scale", group: GROUPS.tail, min: 0.01, step: 0.05 },
+    ui: {
+      label: "Tail height",
+      group: GROUPS.tail,
+      min: 0,
+      step: 1,
+      pair: { id: "chat.bubbles.tail.size", label: "Tail size", role: "H" },
+    },
   },
   statusShowText: {
     id: "chat.bubbles.status.showText",
@@ -395,10 +401,6 @@ export const CHAT_BUBBLE_TOKEN_BINDINGS = [
   {
     outputPath: ["chatBubbles", "tail", "height"],
     field: CHAT_BUBBLE_FIELDS.tailHeight,
-  },
-  {
-    outputPath: ["chatBubbles", "tail", "scale"],
-    field: CHAT_BUBBLE_FIELDS.tailScale,
   },
   {
     outputPath: ["chatBubbles", "status", "showText"],

@@ -31,9 +31,7 @@ function tailProtrusion(props: ResolvedMessageBubbleProps) {
   if (props.style.tailStyle === "none") {
     return { left: 0, right: 0 };
   }
-  const width = Math.round(
-    props.style.tailWidth * Math.max(0.01, props.style.tailScale),
-  );
+  const width = Math.round(props.style.tailWidth);
   if (width <= 0) return { left: 0, right: 0 };
   return props.direction === "outgoing"
     ? { left: 0, right: width - Math.ceil(width * 0.34) }

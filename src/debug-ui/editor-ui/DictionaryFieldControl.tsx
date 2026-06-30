@@ -65,6 +65,11 @@ export interface DictionaryFieldControlProps {
   paletteCatalog?: PaletteColorCatalog;
   productionFontCatalog?: ProductionFontCatalog;
   iconThemeRecords?: readonly IconThemeLikeRecord[];
+  componentOverride?: {
+    readonly componentName: string;
+    readonly hasOverrides: boolean;
+    readonly onEdit: () => void;
+  };
   imagePreview?: {
     readonly baseSize?: number;
     readonly scale?: number;
@@ -423,6 +428,7 @@ export function DictionaryFieldControl({
   paletteCatalog,
   productionFontCatalog,
   iconThemeRecords,
+  componentOverride,
   imagePreview,
   onChange,
 }: DictionaryFieldControlProps) {
@@ -566,6 +572,34 @@ export function DictionaryFieldControl({
         readOnly={readOnly}
         onChange={onChange}
       />
+    );
+  }
+
+  if (control === "componentOverride") {
+    const hasOverrides = componentOverride?.hasOverrides === true;
+    return (
+      <button
+        type="button"
+        className={`component-override-control ${controlClassName} ${
+          hasOverrides ? "has-override" : ""
+        }`}
+        disabled={disabled || readOnly || !componentOverride}
+        title={
+          hasOverrides
+            ? `Edit ${componentOverride?.componentName ?? "component"} overrides`
+            : `Add ${componentOverride?.componentName ?? "component"} overrides`
+        }
+        aria-label={
+          hasOverrides
+            ? `Edit ${componentOverride?.componentName ?? "component"} overrides`
+            : `Add ${componentOverride?.componentName ?? "component"} overrides`
+        }
+        onClick={componentOverride?.onEdit}
+      >
+        <span aria-hidden="true" className="component-override-control__icon">
+          &#9998;
+        </span>
+      </button>
     );
   }
 

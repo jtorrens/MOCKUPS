@@ -30,6 +30,7 @@ function widgetForField(field: FieldDefinition): JsonWidget | undefined {
     case "filePath":
     case "relativeFilePath":
     case "surfaceStyle":
+    case "componentOverride":
       return "text";
   }
 }

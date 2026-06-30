@@ -1,103 +1,120 @@
-import { DeferredTextInput } from "../editor-ui/DeferredTextInput.js";
+import { useMemo, useState } from "react";
+import type { FieldDefinition } from "../../domain/value-system/index.js";
+import {
+  DictionaryFieldControl,
+  DICTIONARY_FIELD_CLASS,
+  type DictionaryFileBrowser,
+  type DictionarySelectOptions,
+} from "../editor-ui/DictionaryFieldControl.js";
+import type { IconThemeLikeRecord } from "../editor-ui/IconGlyphPreview.js";
+import type { PaletteColorCatalog } from "./json-editor/paletteColors.js";
+import type { ProductionFontCatalog } from "./json-editor/productionFonts.js";
 import {
   InspectorFieldRow,
   InspectorRestoreButton,
 } from "./inspector/InspectorFieldRow.js";
 
 export interface ComponentOverrideField {
-  key: string;
-  label: string;
-  kind: "number" | "text" | "boolean" | "select";
-  options?: Array<{ value: string; label: string }>;
+  readonly key: string;
+  readonly field: FieldDefinition;
+  readonly selectOptions?: DictionarySelectOptions;
 }
 
 interface ComponentOverrideModalProps {
   title: string;
+  componentName: string;
   fields: ComponentOverrideField[];
   baseTokens: Record<string, unknown>;
   overrides: Record<string, unknown>;
-  onClose: () => void;
-  onSetOverride: (key: string, value: unknown) => void;
-  onRestoreOverride: (key: string) => void;
-}
-
-function displayTokenValue(value: unknown) {
-  if (typeof value === "boolean") return value ? "true" : "false";
-  if (typeof value === "number" || typeof value === "string") return String(value);
-  return "";
+  paletteCatalog?: PaletteColorCatalog;
+  productionFontCatalog?: ProductionFontCatalog;
+  iconThemeRecords?: readonly IconThemeLikeRecord[];
+  mediaRoot?: string;
+  fileBrowser?: DictionaryFileBrowser;
+  onCancel: () => void;
+  onApply: (nextOverrides: Record<string, unknown>) => void;
 }
 
 function hasOwnKey(value: Record<string, unknown>, key: string) {
   return Object.prototype.hasOwnProperty.call(value, key);
 }
 
+function jsonStable(value: unknown) {
+  return JSON.stringify(value ?? null);
+}
+
+function changedFromBase(
+  key: string,
+  baseTokens: Record<string, unknown>,
+  overrides: Record<string, unknown>,
+) {
+  if (!hasOwnKey(overrides, key)) return false;
+  return jsonStable(overrides[key]) !== jsonStable(baseTokens[key]);
+}
+
+function cleanOverrides(
+  fields: ComponentOverrideField[],
+  baseTokens: Record<string, unknown>,
+  overrides: Record<string, unknown>,
+) {
+  const allowed = new Set(fields.map((field) => field.key));
+  return Object.fromEntries(
+    Object.entries(overrides).filter(
+      ([key, value]) =>
+        allowed.has(key) &&
+        jsonStable(value) !== jsonStable(baseTokens[key]),
+    ),
+  );
+}
+
 export function ComponentOverrideModal({
   title,
+  componentName,
   fields,
   baseTokens,
   overrides,
-  onClose,
-  onSetOverride,
-  onRestoreOverride,
+  paletteCatalog,
+  productionFontCatalog,
+  iconThemeRecords,
+  mediaRoot,
+  fileBrowser,
+  onCancel,
+  onApply,
 }: ComponentOverrideModalProps) {
-  function renderControl(field: ComponentOverrideField) {
-    const baseValue = baseTokens[field.key];
-    const hasOverride = hasOwnKey(overrides, field.key);
-    const value = hasOverride ? overrides[field.key] : baseValue;
+  const [draftOverrides, setDraftOverrides] = useState<Record<string, unknown>>(
+    () => cleanOverrides(fields, baseTokens, overrides),
+  );
+  const cleanedDraft = useMemo(
+    () => cleanOverrides(fields, baseTokens, draftOverrides),
+    [baseTokens, draftOverrides, fields],
+  );
+  const hasChanges = jsonStable(cleanedDraft) !== jsonStable(cleanOverrides(fields, baseTokens, overrides));
 
-    if (field.kind === "boolean") {
-      return (
-        <input
-          type="checkbox"
-          checked={value === true}
-          onChange={(event) =>
-            onSetOverride(field.key, event.currentTarget.checked)
-          }
-        />
-      );
-    }
+  function setOverride(key: string, value: unknown) {
+    setDraftOverrides((current) => {
+      const next = { ...current, [key]: value };
+      if (jsonStable(value) === jsonStable(baseTokens[key])) {
+        delete next[key];
+      }
+      return next;
+    });
+  }
 
-    if (field.kind === "select") {
-      return (
-        <select
-          className="json-value-control"
-          value={typeof value === "string" ? value : String(baseValue ?? "")}
-          onChange={(event) => onSetOverride(field.key, event.currentTarget.value)}
-        >
-          {(field.options ?? []).map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      );
-    }
-
-    return (
-      <DeferredTextInput
-        ariaLabel={`${field.label} override`}
-        value={displayTokenValue(value)}
-        onCommit={(nextValue) => {
-          if (field.kind === "number") {
-            const parsed = Number(nextValue);
-            if (!Number.isFinite(parsed)) return;
-            onSetOverride(field.key, parsed);
-            return;
-          }
-          onSetOverride(field.key, nextValue);
-        }}
-      />
-    );
+  function restoreOverride(key: string) {
+    setDraftOverrides((current) => {
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
   }
 
   return (
-    <div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
+    <div className="modal-backdrop" role="presentation" onMouseDown={onCancel}>
       <section
-        className="app-modal-card app-confirm-modal"
+        className="app-modal-card app-confirm-modal component-override-modal"
         role="dialog"
         aria-modal="true"
         aria-label={`${title} overrides`}
-        style={{ maxWidth: 760, width: "min(760px, calc(100vw - 48px))" }}
         onMouseDown={(event) => event.stopPropagation()}
       >
         <div className="app-modal-heading">
@@ -107,63 +124,63 @@ export function ComponentOverrideModal({
           </div>
         </div>
         <p className="modal-help">
-          Overrides stored in this module. Restore removes the local value and
-          returns to the component default.
+          Base component: <strong>{componentName}</strong>. Only changed fields
+          are stored in this module.
         </p>
-        <div className="record-editor-field-stack record-editor-single-column">
-          {fields.map((field) => {
-            const hasOverride = hasOwnKey(overrides, field.key);
-            const baseValue = baseTokens[field.key];
+        <div className="record-editor-field-stack record-editor-single-column component-override-modal__body">
+          {fields.map(({ key, field, selectOptions }) => {
+            const hasOverride = changedFromBase(key, baseTokens, draftOverrides);
+            const baseValue = baseTokens[key] ?? field.defaultValue;
+            const value = hasOwnKey(draftOverrides, key)
+              ? draftOverrides[key]
+              : baseValue;
             return (
               <InspectorFieldRow
-                key={field.key}
-                label={
-                  <span
-                    style={{
-                      color: hasOverride
-                        ? "var(--editor-warning-color, #b45309)"
-                        : undefined,
-                    }}
-                  >
-                    {field.label}
-                  </span>
-                }
+                key={key}
+                className={`record-editor-field ${DICTIONARY_FIELD_CLASS} ${
+                  hasOverride ? "has-override" : ""
+                }`}
+                state={hasOverride ? "override" : "default"}
+                label={<span>{field.ui?.label ?? key}</span>}
                 control={
-                  <div
-                    style={{
-                      alignItems: "center",
-                      display: "grid",
-                      gap: 8,
-                      gridTemplateColumns: "minmax(0, 1fr) auto",
-                    }}
-                  >
-                    <div>
-                      {renderControl(field)}
-                      <small
-                        style={{
-                          display: "block",
-                          marginTop: 4,
-                          opacity: 0.7,
-                        }}
-                      >
-                        Default: {displayTokenValue(baseValue)}
-                      </small>
-                    </div>
-                    {hasOverride ? (
-                      <InspectorRestoreButton
-                        label={`Restore ${field.label}`}
-                        onClick={() => onRestoreOverride(field.key)}
-                      />
-                    ) : null}
-                  </div>
+                  <DictionaryFieldControl
+                    field={field}
+                    value={value}
+                    localValue={hasOverride ? draftOverrides[key] : undefined}
+                    parentValue={baseValue}
+                    defaultValue={baseValue}
+                    selectOptions={selectOptions}
+                    paletteCatalog={paletteCatalog}
+                    productionFontCatalog={productionFontCatalog}
+                    iconThemeRecords={iconThemeRecords}
+                    mediaRoot={mediaRoot}
+                    fileBrowser={fileBrowser}
+                    onChange={(nextValue) => setOverride(key, nextValue)}
+                  />
+                }
+                restore={
+                  hasOverride ? (
+                    <InspectorRestoreButton
+                      label={`Restore ${field.ui?.label ?? key}`}
+                      onClick={() => restoreOverride(key)}
+                    />
+                  ) : undefined
                 }
               />
             );
           })}
         </div>
         <footer className="app-modal-actions">
-          <button type="button" className="app-modal-button" onClick={onClose}>
-            Close
+          <button type="button" className="app-modal-button" onClick={onCancel}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="app-modal-button primary"
+            disabled={!hasChanges}
+            onClick={() => onApply(cleanedDraft)}
+          >
+            Apply
           </button>
         </footer>
       </section>

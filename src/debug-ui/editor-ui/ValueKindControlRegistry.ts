@@ -20,6 +20,7 @@ export type EditorControlKind =
   | "filePath"
   | "relativeFilePath"
   | "surfaceStyle"
+  | "componentOverride"
   | "jsonObject"
   | "jsonArray";
 
@@ -107,6 +108,11 @@ const VALUE_KIND_CONTROL_DEFINITIONS = [
     kind: "surfaceStyle",
     control: "surfaceStyle",
     label: "Surface style",
+  },
+  {
+    kind: "componentOverride",
+    control: "componentOverride",
+    label: "Component override",
   },
   { kind: "jsonObject", control: "jsonObject", label: "JSON object" },
   { kind: "jsonArray", control: "jsonArray", label: "JSON array" },

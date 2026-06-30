@@ -179,6 +179,39 @@
   box-shadow: var(--dictionary-control-focus-shadow) !important;
 }
 
+.editor-workspace .component-override-control.dictionary-control {
+  align-items: center !important;
+  background: var(--dictionary-control-background) !important;
+  border: var(--dictionary-control-border) !important;
+  border-radius: var(--dictionary-control-radius) !important;
+  box-sizing: border-box !important;
+  color: var(--dictionary-control-color) !important;
+  display: inline-grid !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  height: var(--field-control-height, 42px) !important;
+  justify-items: center !important;
+  line-height: 1 !important;
+  outline: var(--dictionary-control-outline) !important;
+  outline-offset: var(--dictionary-control-outline-offset) !important;
+  padding: 0 !important;
+  place-items: center !important;
+  width: var(--field-control-height, 42px) !important;
+}
+
+.editor-workspace .component-override-control.dictionary-control.has-override {
+  background: var(--editor-warning-background, #fff7ed) !important;
+  border-color: var(--editor-warning-border-color, #e4ad68) !important;
+  color: var(--editor-warning-color, #b45309) !important;
+  outline-color: var(--editor-warning-border-color, #e4ad68) !important;
+}
+
+.editor-workspace .component-override-control.dictionary-control:hover:not(:disabled),
+.editor-workspace .component-override-control.dictionary-control:focus-visible {
+  border-color: var(--dictionary-control-focus-border-color) !important;
+  box-shadow: var(--dictionary-control-focus-shadow) !important;
+}
+
 .editor-workspace .record-editor-field-pair.dictionary-control {
   align-items: center !important;
   border: var(--dictionary-control-border) !important;
@@ -230,7 +263,7 @@
   color: var(--dictionary-control-color) !important;
   outline: var(--dictionary-control-outline) !important;
   outline-offset: var(--dictionary-control-outline-offset) !important;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .editor-workspace .surface-style-control.has-override {

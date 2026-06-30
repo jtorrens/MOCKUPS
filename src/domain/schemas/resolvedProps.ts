@@ -209,7 +209,6 @@ export const ResolvedMessageBubblePropsSchema = z.object({
     tailVerticalPosition: z.enum(["top", "bottom"]),
     tailWidth: z.number().min(0),
     tailHeight: z.number().min(0),
-    tailScale: z.number().positive(),
     shadowEnabled: z.boolean(),
     shadow: JsonObjectSchema,
     surfaceRelief: JsonObjectSchema.optional(),

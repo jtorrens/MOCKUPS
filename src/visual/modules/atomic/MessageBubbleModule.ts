@@ -353,26 +353,21 @@ function messageMediaNode(
   const mediaStyle = readRecord(input.style.media);
   const transform = readRecord(input.media.transform);
   const mediaType = readString(input.media.type, "image");
-  const effectiveMediaStyle =
-    mediaType === "audio"
-      ? readRecord(input.style.audioMessage)
-      : mediaType === "video"
-        ? readRecord(input.style.videoMessage)
-        : mediaStyle;
+  const videoMessageStyle = readRecord(input.style.videoMessage);
   const scale = Math.max(0.01, readNumber(transform.scale, 1));
   const translateX = readNumber(transform.translateX, 0);
   const translateY = readNumber(transform.translateY, 0);
-  const borderWidth = Math.max(0, readNumber(effectiveMediaStyle.borderWidth, 0));
-  const borderColor = readString(effectiveMediaStyle.borderColor, "transparent");
+  const borderWidth = Math.max(0, readNumber(mediaStyle.borderWidth, 0));
+  const borderColor = readString(mediaStyle.borderColor, "transparent");
   const cornerRadius = Math.max(
     0,
-    readNumber(effectiveMediaStyle.cornerRadius, input.style.borderRadius),
+    readNumber(mediaStyle.cornerRadius, input.style.borderRadius),
   );
-  const shadowEnabled = effectiveMediaStyle.shadowEnabled === true;
-  const mediaShadow = readRecord(effectiveMediaStyle.shadow);
-  const surfaceReliefEnabled = effectiveMediaStyle.surfaceReliefEnabled === true;
+  const shadowEnabled = mediaStyle.shadowEnabled === true;
+  const mediaShadow = readRecord(mediaStyle.shadow);
+  const surfaceReliefEnabled = mediaStyle.surfaceReliefEnabled === true;
   const mediaSurfaceRelief = surfaceReliefEnabled
-    ? readRecord(effectiveMediaStyle.surfaceRelief)
+    ? readRecord(mediaStyle.surfaceRelief)
     : {};
   const mediaFrame = Math.max(0, readNumber(input.media.frame, input.frame));
   const componentContainerShadow =
@@ -385,11 +380,11 @@ function messageMediaNode(
     mediaType === "audio" || mediaType === "video" ? mediaSurfaceRelief : {};
   const showVideoPlayOverlay =
     mediaType === "video" &&
-    effectiveMediaStyle.playOverlayEnabled !== false &&
+    videoMessageStyle.playOverlayEnabled !== false &&
     mediaFrame <= 0;
   const videoPlayCircleSize = Math.max(
     1,
-    readNumber(effectiveMediaStyle.playCircleSize, 44),
+    readNumber(videoMessageStyle.playCircleSize, 44),
   );
   const videoDurationSeconds = Math.max(
     1,
@@ -406,24 +401,24 @@ function messageMediaNode(
     mediaFrame < videoTotalPlayFrames;
   const videoStatusSize = Math.max(
     1,
-    readNumber(effectiveMediaStyle.statusSize, 12),
+    readNumber(videoMessageStyle.statusSize, 12),
   );
   const videoStatusLineHeight = Math.round(videoStatusSize * 1.22);
   const videoStatusPaddingX = Math.max(
     0,
-    readNumber(effectiveMediaStyle.statusPaddingX, 8),
+    readNumber(videoMessageStyle.statusPaddingX, 8),
   );
   const videoStatusPaddingY = Math.max(
     0,
-    readNumber(effectiveMediaStyle.statusPaddingY, 7),
+    readNumber(videoMessageStyle.statusPaddingY, 7),
   );
   const videoStatusGap = Math.max(
     0,
-    readNumber(effectiveMediaStyle.statusGap, 4),
+    readNumber(videoMessageStyle.statusGap, 4),
   );
   const videoStatusColor = readString(
-    effectiveMediaStyle.statusColor,
-    readString(effectiveMediaStyle.playCircleColor, "#007AFF"),
+    videoMessageStyle.statusColor,
+    readString(videoMessageStyle.playCircleColor, "#007AFF"),
   );
   const videoDurationText =
     mediaType === "video"
@@ -493,7 +488,7 @@ function messageMediaNode(
         }
       : undefined;
   const videoStatusNode: RenderableNode | undefined =
-    mediaType === "video" && effectiveMediaStyle.statusVisible !== false
+    mediaType === "video" && videoMessageStyle.statusVisible !== false
       ? {
           id: `${input.id}:media:video-status`,
           type: "message_bubble_video_status",
@@ -532,20 +527,20 @@ function messageMediaNode(
               text: "VIDEO",
               style: {
                 color: videoStatusColor,
-                ...(readString(effectiveMediaStyle.statusIconUri)
+                ...(readString(videoMessageStyle.statusIconUri)
                   ? {
                       maskImage: maskUrl(
-                        readString(effectiveMediaStyle.statusIconUri),
+                        readString(videoMessageStyle.statusIconUri),
                       ),
                       WebkitMaskImage: maskUrl(
-                        readString(effectiveMediaStyle.statusIconUri),
+                        readString(videoMessageStyle.statusIconUri),
                       ),
                     }
                   : {}),
               },
               metadata: {
                 token: readString(
-                  effectiveMediaStyle.statusIconToken,
+                  videoMessageStyle.statusIconToken,
                   "media_video",
                 ),
               },
@@ -631,12 +626,12 @@ function messageMediaNode(
                     text: "▶",
                     style: {
                       backgroundColor: readString(
-                        effectiveMediaStyle.playCircleColor,
+                        videoMessageStyle.playCircleColor,
                         "rgba(0, 0, 0, 0.55)",
                       ),
                       borderRadius: Math.round(videoPlayCircleSize / 2),
                       color: readString(
-                        effectiveMediaStyle.playIconColor,
+                        videoMessageStyle.playIconColor,
                         "#FFFFFF",
                       ),
                       fontSize: Math.round(videoPlayCircleSize * 0.44),
@@ -768,9 +763,8 @@ function tailNode(
 ): RenderableNode | undefined {
   if (!input.layout.showTail || input.direction === "system") return undefined;
   if (input.style.tailStyle === "none") return undefined;
-  const scale = Math.max(0.01, input.style.tailScale);
-  const width = Math.round(input.style.tailWidth * scale);
-  const height = Math.round(input.style.tailHeight * scale);
+  const width = Math.round(input.style.tailWidth);
+  const height = Math.round(input.style.tailHeight);
   if (width <= 0 || height <= 0) return undefined;
   const side = input.direction === "outgoing" ? "right" : "left";
   const vertical = input.style.tailVerticalPosition;
@@ -806,7 +800,6 @@ function tailNode(
     metadata: {
       side,
       vertical,
-      scale,
       style: input.style.tailStyle,
     },
   };
@@ -1079,7 +1072,6 @@ export function renderMessageBubbleWithLayout(
         tailVerticalPosition: input.style.tailVerticalPosition,
         tailWidth: input.style.tailWidth,
         tailHeight: input.style.tailHeight,
-        tailScale: input.style.tailScale,
         shadow: {},
       },
       text: input.visibleText,
@@ -1096,7 +1088,6 @@ export function renderMessageBubbleWithLayout(
           width: input.style.tailWidth,
           height: input.style.tailHeight,
           verticalPosition: input.style.tailVerticalPosition,
-          scale: input.style.tailScale,
           path: "not_computed_renderer_agnostic_stub",
         },
         measurement: layout.measurement,

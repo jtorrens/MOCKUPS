@@ -1,4 +1,4 @@
-import { Fragment, useState } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 import { DeferredNumberInput } from "../../editor-ui/DeferredNumberInput.js";
 import { DeferredTextInput } from "../../editor-ui/DeferredTextInput.js";
 import {
@@ -66,6 +66,7 @@ interface TokenOverrideEditorProps {
   showInheritedValue?: boolean;
   inheritedColumnLabel?: string;
   groupContext?: string;
+  groupHeaderExtras?: Record<string, ReactNode>;
   inlineSingleGroup?: boolean;
   restoreMode?: "remove" | "set";
   productionFontCatalog?: ProductionFontCatalog;
@@ -271,6 +272,7 @@ function chatBubbleGroupForRow(row: TokenRow): string {
   if (
     firstKey === "paddingX" ||
     firstKey === "paddingY" ||
+    firstKey === "contentMetaGap" ||
     firstKey === "maxWidthRatio" ||
     firstKey === "radius" ||
     firstKey === "borderWidth" ||
@@ -456,6 +458,7 @@ export function TokenOverrideEditor({
   showInheritedValue = true,
   inheritedColumnLabel = "Token / inherited",
   groupContext,
+  groupHeaderExtras,
   inlineSingleGroup = false,
   restoreMode = "remove",
   productionFontCatalog,
@@ -877,6 +880,7 @@ export function TokenOverrideEditor({
             warning={group.rows.some(rowHasNonDefaultValue)}
             onToggle={setActiveTokenGroup}
           >
+            {groupHeaderExtras?.[group.key] ?? null}
             {renderRows(group.rows, group.key)}
           </EditorSubsectionAccordion>
         );

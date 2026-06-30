@@ -13,6 +13,10 @@ import {
 import type { JsonFieldBinding } from "../../domain/value-system/index.js";
 import { EditorSubsectionAccordion } from "../editor-ui/EditorSubsectionAccordion.js";
 import {
+  DICTIONARY_FIELD_CLASS,
+  DictionaryFieldControl,
+} from "../editor-ui/DictionaryFieldControl.js";
+import {
   hasModeColorOverrides,
   ModeColorEditor,
 } from "../components/json-editor/ModeColorEditor.js";
@@ -31,6 +35,7 @@ import { jsonUiHintsFromFieldBindings } from "../components/json-editor/fieldDef
 import { createPaletteColorCatalog } from "../components/json-editor/paletteColors.js";
 import type { ProductionFontCatalog } from "../components/json-editor/productionFonts.js";
 import type { JsonValue } from "../components/json-editor/jsonEditorUtils.js";
+import type { FieldDefinition } from "../../domain/value-system/index.js";
 import { ModuleThemeConfigEditor } from "./ModuleThemeConfigEditor.js";
 import { ModuleFunctionalConfigFields } from "./ModuleFunctionalConfigFields.js";
 import { parsedObject } from "./recordJsonUtils.js";
@@ -99,41 +104,73 @@ function componentTokens(record: AppRecord | undefined) {
     : {};
 }
 
+const THEME_COLOR_TOKEN_OPTIONS = [
+  "background",
+  "textPrimary",
+  "textSecondary",
+  "icons.primary",
+  "icons.secondary",
+  "icons.accent",
+  "borders.primary",
+  "borders.secondary",
+  "borders.alternate",
+  "theme.cursor.color",
+].map((token) => ({ value: token, label: token }));
+
+function overrideField(
+  key: string,
+  kind: FieldDefinition["kind"],
+  label: string,
+  defaultValue: unknown,
+  ui: FieldDefinition["ui"] = {},
+): ComponentOverrideField {
+  const field: FieldDefinition = {
+    id: `componentOverride.label.${key}`,
+    kind,
+    defaultValue,
+    ui: {
+      label,
+      ...ui,
+    },
+  };
+  return {
+    key,
+    field,
+    selectOptions:
+      kind === "enum"
+        ? {
+            options: (ui.options ?? []).map((option) => ({
+              value: option,
+              label: option,
+            })),
+          }
+        : kind === "themeColorToken"
+          ? { options: THEME_COLOR_TOKEN_OPTIONS }
+          : undefined,
+  };
+}
+
 const labelOverrideFields: ComponentOverrideField[] = [
-  {
-    key: "sizingMode",
-    label: "Sizing mode",
-    kind: "select",
-    options: [
-      { value: "content", label: "Text + padding" },
-      { value: "fixed", label: "Fixed box" },
-    ],
-  },
-  { key: "width", label: "Width", kind: "number" },
-  { key: "height", label: "Height", kind: "number" },
-  { key: "paddingX", label: "Padding X", kind: "number" },
-  { key: "paddingY", label: "Padding Y", kind: "number" },
-  { key: "cornerRadius", label: "Corner radius", kind: "number" },
-  { key: "borderWidth", label: "Border width", kind: "number" },
-  { key: "borderColorToken", label: "Border theme color", kind: "text" },
-  { key: "backgroundVisible", label: "Background visible", kind: "boolean" },
-  { key: "backgroundColorToken", label: "Background theme color", kind: "text" },
-  { key: "textColorToken", label: "Text theme color", kind: "text" },
-  { key: "fontFamily", label: "Font family", kind: "text" },
-  { key: "fontSize", label: "Text size", kind: "number" },
-  { key: "fontWeight", label: "Text weight", kind: "number" },
-  {
-    key: "fontStyle",
-    label: "Font style",
-    kind: "select",
-    options: [
-      { value: "normal", label: "Normal" },
-      { value: "italic", label: "Italic" },
-    ],
-  },
-  { key: "shadowEnabled", label: "Shadow", kind: "boolean" },
-  { key: "shadowToken", label: "Shadow token", kind: "text" },
-  { key: "surfaceReliefEnabled", label: "Surface relief", kind: "boolean" },
+  overrideField("sizingMode", "enum", "Sizing mode", "content", {
+    options: ["content", "fixed"],
+  }),
+  overrideField("width", "decimal", "Width", 120, { min: 0, step: 1 }),
+  overrideField("height", "decimal", "Height", 28, { min: 0, step: 1 }),
+  overrideField("paddingX", "decimal", "Padding X", 8, { min: 0, step: 1 }),
+  overrideField("paddingY", "decimal", "Padding Y", 4, { min: 0, step: 1 }),
+  overrideField("cornerRadius", "decimal", "Corner radius", 10, { min: 0, step: 1 }),
+  overrideField("borderWidth", "decimal", "Border width", 0, { min: 0, step: 1 }),
+  overrideField("borderColorToken", "themeColorToken", "Border theme color", "borders.primary"),
+  overrideField("backgroundVisible", "boolean", "Background visible", true),
+  overrideField("backgroundColorToken", "themeColorToken", "Background theme color", "background"),
+  overrideField("textColorToken", "themeColorToken", "Text theme color", "textPrimary"),
+  overrideField("fontFamily", "fontFamily", "Font family", ""),
+  overrideField("fontSize", "decimal", "Text size", 12, { min: 0, step: 1 }),
+  overrideField("fontWeight", "fontWeight", "Text weight", 400),
+  overrideField("fontStyle", "fontStyle", "Font style", "normal"),
+  overrideField("shadowEnabled", "boolean", "Shadow", false),
+  overrideField("shadowToken", "text", "Shadow token", "system"),
+  overrideField("surfaceReliefEnabled", "boolean", "Surface relief", false),
 ];
 
 function differsFromInherited(
@@ -278,6 +315,35 @@ export function ModuleThemeConfigRecordEditor({
     ? (componentOverrides.label as Record<string, unknown>)
     : {};
   const hasLabelOverrides = Object.keys(labelOverrides).length > 0;
+  const labelComponentName = String(labelComponent?.name ?? "Default label");
+  const labelComponentOverrideField: FieldDefinition = {
+    id: "componentOverride.label",
+    kind: "componentOverride",
+    defaultValue: {},
+    ui: { label: `. ${labelComponentName}` },
+  };
+  const messageLabelComponentRow =
+    record.module_id === "core.chat" ? (
+      <InspectorFieldRow
+        className={`record-editor-field ${DICTIONARY_FIELD_CLASS}`}
+        state={hasLabelOverrides ? "override" : "default"}
+        label={<span>{labelComponentOverrideField.ui?.label}</span>}
+        control={
+          <DictionaryFieldControl
+            field={labelComponentOverrideField}
+            value={labelOverrides}
+            componentOverride={{
+              componentName: labelComponentName,
+              hasOverrides: hasLabelOverrides,
+              onEdit: () => setComponentOverrideModal("label"),
+            }}
+            onChange={() => {
+              // componentOverride edits are opened through its dictionary control.
+            }}
+          />
+        }
+      />
+    ) : null;
 
   function tokenGroupValue(group: string, root?: Record<string, JsonValue>) {
     const value = root?.[group];
@@ -319,19 +385,6 @@ export function ModuleThemeConfigRecordEditor({
       delete nextRoot.componentOverrides;
     }
     setJsonDraft("tokens_json", nextRoot as JsonValue);
-  }
-
-  function setLabelOverrideValue(key: string, value: unknown) {
-    setLabelOverrides({
-      ...labelOverrides,
-      [key]: value,
-    });
-  }
-
-  function restoreLabelOverride(key: string) {
-    const nextOverrides = { ...labelOverrides };
-    delete nextOverrides[key];
-    setLabelOverrides(nextOverrides);
   }
 
   return (
@@ -386,47 +439,6 @@ export function ModuleThemeConfigRecordEditor({
                       }
                     />
                   ) : null}
-                  {record.module_id === "core.chat" && group === "chatBubbles" ? (
-                    <>
-                      <InspectorFieldRow
-                        label="Message label component"
-                        control={
-                          <span style={{ display: "inline-flex", gap: 10, alignItems: "center" }}>
-                            <input
-                              className="json-value-control"
-                              disabled
-                              value={String(labelComponent?.name ?? "Default label")}
-                              readOnly
-                            />
-                            <button
-                              type="button"
-                              className="inspector-restore-button"
-                              title={
-                                hasLabelOverrides
-                                  ? "Edit message label component overrides"
-                                  : "Add message label component overrides"
-                              }
-                              aria-label="Edit message label component overrides"
-                              onClick={() => setComponentOverrideModal("label")}
-                              style={{
-                                color: hasLabelOverrides
-                                  ? "var(--editor-warning-color, #b45309)"
-                                  : undefined,
-                                borderColor: hasLabelOverrides
-                                  ? "var(--editor-warning-border-color, #e4ad68)"
-                                  : undefined,
-                                background: hasLabelOverrides
-                                  ? "var(--editor-warning-background, #fff7ed)"
-                                  : undefined,
-                              }}
-                            >
-                              ✎
-                            </button>
-                          </span>
-                        }
-                      />
-                    </>
-                  ) : null}
                   <TokenOverrideEditor
                     rootValue={tokenGroupValue(
                       group,
@@ -438,6 +450,11 @@ export function ModuleThemeConfigRecordEditor({
                     )}
                     hints={moduleDesignHints}
                     groupContext={group}
+                    groupHeaderExtras={
+                      group === "chatBubbles" && messageLabelComponentRow
+                        ? { label: messageLabelComponentRow }
+                        : undefined
+                    }
                     inlineSingleGroup={group !== "chatBubbles" && group !== "typography"}
                     productionFontCatalog={productionFontCatalog}
                     paletteCatalog={paletteCatalog}
@@ -637,12 +654,17 @@ export function ModuleThemeConfigRecordEditor({
     {componentOverrideModal === "label" ? (
       <ComponentOverrideModal
         title="Message label"
+        componentName={String(labelComponent?.name ?? "Default label")}
         fields={labelOverrideFields}
         baseTokens={labelBaseTokens}
         overrides={labelOverrides}
-        onClose={() => setComponentOverrideModal(null)}
-        onSetOverride={setLabelOverrideValue}
-        onRestoreOverride={restoreLabelOverride}
+        paletteCatalog={paletteCatalog}
+        productionFontCatalog={productionFontCatalog}
+        onCancel={() => setComponentOverrideModal(null)}
+        onApply={(nextOverrides) => {
+          setLabelOverrides(nextOverrides);
+          setComponentOverrideModal(null);
+        }}
       />
     ) : null}
     </>

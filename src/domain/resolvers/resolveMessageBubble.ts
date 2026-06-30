@@ -159,7 +159,6 @@ const MessageThemeSchema = z.object({
       verticalPosition: z.enum(["top", "bottom"]).optional(),
       width: z.number().min(0),
       height: z.number().min(0),
-      scale: z.number().positive().optional(),
     }),
   }),
   shadows: z.record(z.string(), z.unknown()).optional(),
@@ -399,7 +398,6 @@ export function resolveMessageBubble({
         themeTokens.chatBubbles.tail.verticalPosition ?? "bottom",
       tailWidth: themeTokens.chatBubbles.tail.width,
       tailHeight: themeTokens.chatBubbles.tail.height,
-      tailScale: themeTokens.chatBubbles.tail.scale ?? 1,
       shadowEnabled:
         bubbleStyleTokens.shadowEnabled === true && !systemTextOnly,
       media: {

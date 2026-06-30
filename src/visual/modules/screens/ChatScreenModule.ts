@@ -253,7 +253,6 @@ function createMessageBubbleInput(
           : "bottom",
       tailWidth: readNumber(tailTokens, "width", 0),
       tailHeight: readNumber(tailTokens, "height", 0),
-      tailScale: readNumber(tailTokens, "scale", 1),
       shadowEnabled: bubbleStyleTokens.shadowEnabled === true,
       shadow: readObject(chatTokens, "shadow"),
       surfaceRelief:
