@@ -360,14 +360,29 @@
   font-weight: 700;
 }
 
-.record-editor-content-field-row .json-value-control,
-.record-editor-content-field-row .json-value-textarea,
-.record-editor-content-field-row select,
-.record-editor-content-field-row input,
-.record-editor-content-field-row textarea {
+.record-editor-content-field-row .json-value-control:not(.dictionary-control),
+.record-editor-content-field-row .json-value-textarea:not(.dictionary-control),
+.record-editor-content-field-row select:not(.dictionary-control),
+.record-editor-content-field-row input:not(.dictionary-control),
+.record-editor-content-field-row textarea:not(.dictionary-control) {
   color: var(--content-field-control-color, #15171c) !important;
   background: var(--content-field-control-background, #ffffff) !important;
   border-color: var(--content-field-control-border-color, #bfc7d4) !important;
+  opacity: 1 !important;
+}
+
+.record-editor-content-field-row .json-value-control.dictionary-control,
+.record-editor-content-field-row .json-value-textarea.dictionary-control,
+.record-editor-content-field-row select.dictionary-control,
+.record-editor-content-field-row input.dictionary-control,
+.record-editor-content-field-row textarea.dictionary-control,
+.record-editor-content-field-row .dictionary-control .json-value-control,
+.record-editor-content-field-row .dictionary-control .json-value-textarea {
+  color: var(--content-field-control-color, #15171c) !important;
+  background: var(--content-field-control-background, #ffffff) !important;
+  border-color: #16a34a !important;
+  border-radius: var(--editor-input-radius, 8px) !important;
+  box-shadow: none !important;
   opacity: 1 !important;
 }
 
@@ -435,20 +450,20 @@
   opacity: var(--editor-button-disabled-opacity, 0.55);
 }
 
-.message-animation-field-label,
-.message-animation-row-label {
+.animation-field-label,
+.animation-field-row-label {
   display: inline-flex;
   align-items: center;
   min-width: 0;
   gap: 8px;
 }
 
-.message-animation-toggle.is-active,
-.message-animation-row-key.is-active {
+.animation-field-toggle.is-active,
+.animation-field-row-key.is-active {
   color: var(--selection-color, #2f6bff) !important;
 }
 
-.message-animation-row-key {
+.animation-field-row-key {
   display: inline-grid;
   width: 24px;
   height: 24px;
@@ -461,7 +476,7 @@
   font-weight: 800;
 }
 
-.message-animation-row-step {
+.animation-field-row-step {
   display: inline-grid;
   width: 18px;
   height: 24px;
@@ -474,34 +489,34 @@
   font-weight: 650;
 }
 
-.message-animation-row-step:disabled {
+.animation-field-row-step:disabled {
   opacity: var(--editor-button-disabled-opacity, 0.35);
 }
 
-.message-animation-timeline {
+.animation-field-timeline {
   display: grid;
   gap: 8px;
   padding: 2px 0 6px;
 }
 
-.message-animation-controls {
+.animation-field-controls {
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-.message-animation-current-frame {
+.animation-field-current-frame {
   width: 72px !important;
   min-width: 72px !important;
   text-align: center;
 }
 
-.message-animation-slider {
+.animation-field-slider {
   width: 100% !important;
   min-width: 0 !important;
 }
 
-.message-animation-keyframe-strip {
+.animation-field-keyframe-strip {
   position: relative;
   height: 12px;
   border-radius: 999px;
@@ -513,7 +528,7 @@
     );
 }
 
-.message-animation-keyframe-mark {
+.animation-field-keyframe-mark {
   position: absolute;
   top: 50%;
   width: 7px;
@@ -523,13 +538,13 @@
   transform: translate(-50%, -50%) rotate(45deg);
 }
 
-.message-animation-keyframe-mark.is-current {
+.animation-field-keyframe-mark.is-current {
   width: 9px;
   height: 9px;
   background: var(--selection-color, #2f6bff);
 }
 
-.message-animation-row-controls {
+.animation-field-row-controls {
   display: grid;
   align-items: center;
   gap: 14px;

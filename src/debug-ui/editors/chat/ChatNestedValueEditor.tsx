@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
 import { InspectorFieldRow } from "../../components/inspector/InspectorFieldRow.js";
-import { JsonValueEditor } from "../../components/json-editor/JsonValueEditor.js";
 import type { JsonPath, JsonValue } from "../../components/json-editor/jsonEditorUtils.js";
 import { isJsonObject } from "../../components/json-editor/jsonEditorUtils.js";
 import type { JsonUiHints } from "../../components/json-editor/uiHints.js";
 import { hintForPath } from "../../components/json-editor/uiHints.js";
 import { friendlyGroupLabel } from "../../components/json-editor/labels.js";
+import { ChatDictionaryFieldRow } from "./ChatDictionaryFieldRow.js";
 import {
   contentSummary,
   isPrimitiveContentValue,
@@ -43,6 +43,17 @@ export function ChatNestedValueEditor({
   onRootChange,
 }: ChatNestedValueEditorProps): ReactNode {
   if (isPrimitiveContentValue(value)) {
+    const hint = hintForPath(hints, path, value, groupKey);
+    if (hint.field) {
+      return (
+        <ChatDictionaryFieldRow
+          key={path.join(".") || label}
+          field={hint.field}
+          value={value ?? ""}
+          onChange={(nextValue) => onPathChange(path, nextValue as JsonValue)}
+        />
+      );
+    }
     return (
       <InspectorFieldRow
         key={path.join(".") || label}
@@ -50,17 +61,7 @@ export function ChatNestedValueEditor({
         label={
           <span>{contentFieldLabel(hints, groupKey, path, label, value)}</span>
         }
-        control={
-          <JsonValueEditor
-            rootValue={rootValue}
-            path={path}
-            value={value}
-            hints={hints}
-            groupContext={groupKey}
-            onChange={(nextValue) => onPathChange(path, nextValue)}
-            onRootChange={onRootChange}
-          />
-        }
+        control={<span />}
       />
     );
   }

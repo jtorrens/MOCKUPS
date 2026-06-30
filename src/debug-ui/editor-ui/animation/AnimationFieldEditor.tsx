@@ -5,43 +5,47 @@ import {
   type JsonValue,
 } from "../../components/json-editor/jsonEditorUtils.js";
 import { InspectorFieldRow } from "../../components/inspector/InspectorFieldRow.js";
-import { DeferredTextInput } from "../../editor-ui/DeferredTextInput.js";
-import { EditorSubsectionAccordion } from "../../editor-ui/EditorSubsectionAccordion.js";
+import type { FieldDefinition } from "../../../domain/value-system/index.js";
+import { DictionaryFieldControl } from "../DictionaryFieldControl.js";
+import { EditorSubsectionAccordion } from "../EditorSubsectionAccordion.js";
+import type { EditorFieldDescriptor } from "../fields/EditorFieldDescriptor.js";
+import { toDictionaryFieldControlProps } from "../fields/EditorFieldDescriptor.js";
 
-export type ChatAnimationInterpolation = "hold" | "linear" | "ease";
-export type ChatAnimationValueType = "text" | "select";
+export type AnimationInterpolation = "hold" | "linear" | "ease";
+export type AnimationValueType = "text" | "select";
 
-export interface ChatAnimatableField {
+export interface AnimatableField {
   key: string;
   label: string;
-  valueType: ChatAnimationValueType;
+  valueType: AnimationValueType;
   value: JsonValue;
-  interpolationOptions: ChatAnimationInterpolation[];
+  interpolationOptions: AnimationInterpolation[];
+  field?: FieldDefinition;
   selectOptions?: Array<{ value: string; label: string }>;
 }
 
 interface AnimationKeyframe {
   frame: number;
-  interpolation: ChatAnimationInterpolation;
+  interpolation: AnimationInterpolation;
   value: JsonValue;
 }
 
-interface ChatAnimationEditorRenderApi {
+interface AnimationFieldEditorRenderApi {
   animationCard: ReactNode;
   fieldLabel: (trackKey: string) => ReactNode;
   hasAnimationTracks: boolean;
 }
 
-interface ChatAnimationEditorProps {
+interface AnimationFieldEditorProps {
   animation: Record<string, JsonValue>;
-  fields: ChatAnimatableField[];
+  fields: AnimatableField[];
   timelineDurationFrames: number;
-  children: (api: ChatAnimationEditorRenderApi) => ReactNode;
+  children: (api: AnimationFieldEditorRenderApi) => ReactNode;
   onAnimationChange: (animation: Record<string, JsonValue>) => void;
   onAnimationFrameChange?: (frame: number) => void;
 }
 
-export function chatAnimationHasTracks(animation: unknown) {
+export function animationHasTracks(animation: unknown) {
   if (typeof animation !== "object" || animation === null || Array.isArray(animation)) {
     return false;
   }
@@ -60,14 +64,76 @@ function normalizedKeyframe(value: Record<string, JsonValue>): AnimationKeyframe
   };
 }
 
-export function ChatAnimationEditor({
+function animationValueField(field: AnimatableField): FieldDefinition {
+  return (
+    field.field ?? {
+      id: `chat.animation.${field.key}`,
+      kind: field.valueType === "select" ? "enum" : "text",
+      defaultValue: field.valueType === "select" ? String(field.value) : "",
+      ui: {
+        label: field.label,
+        options:
+          field.valueType === "select"
+            ? field.selectOptions?.map((option) => option.value)
+            : undefined,
+      },
+    }
+  );
+}
+
+const ANIMATION_INTERPOLATION_FIELD: FieldDefinition = {
+  id: "chat.animation.keyframe.interpolation",
+  kind: "enum",
+  defaultValue: "hold",
+  ui: {
+    label: "Interpolation",
+    options: ["hold", "linear", "ease"],
+  },
+};
+
+function animationDescriptor({
+  field,
+  value,
+  onChange,
+  options,
+}: {
+  field: FieldDefinition;
+  value: unknown;
+  onChange: (nextValue: unknown) => void;
+  options?: Array<{ value: string; label: string }>;
+}): EditorFieldDescriptor {
+  return {
+    kind: "field",
+    field,
+    localValue: value,
+    displayValue: value,
+    resolvedValue: value,
+    state: "default",
+    readonly: false,
+    canInherit: false,
+    canRestore: false,
+    source: { kind: "module-instance-content", path: field.id.split(".") },
+    actions: { write: onChange },
+    selectOptions:
+      options || field.ui?.options
+        ? {
+            options: (options ?? field.ui?.options?.map((option) => ({
+              value: option,
+              label: option,
+            })) ?? []),
+          }
+        : undefined,
+  };
+}
+
+export function AnimationFieldEditor({
   animation,
   fields,
   timelineDurationFrames,
   children,
   onAnimationChange,
   onAnimationFrameChange,
-}: ChatAnimationEditorProps) {
+}: AnimationFieldEditorProps) {
   const [activeAnimationGroup, setActiveAnimationGroup] = useState("");
   const [animationFrame, setAnimationFrame] = useState(0);
   const [pendingDeleteTrack, setPendingDeleteTrack] = useState<string | null>(null);
@@ -160,7 +226,7 @@ export function ChatAnimationEditor({
     );
   }
 
-  function valueAtFrame(field: ChatAnimatableField) {
+  function valueAtFrame(field: AnimatableField) {
     const keyframes = keyframesFor(field.key);
     const exact = keyframes.find((keyframe) => keyframe.frame === animationFrame);
     if (exact) return exact.value;
@@ -171,7 +237,7 @@ export function ChatAnimationEditor({
   }
 
   function setTrackKeyframes(
-    field: ChatAnimatableField,
+    field: AnimatableField,
     keyframes: AnimationKeyframe[],
   ) {
     const nextTracks = { ...animationTracks };
@@ -196,7 +262,7 @@ export function ChatAnimationEditor({
     onAnimationChange({ tracks: nextTracks });
   }
 
-  function enableAnimationTrack(field: ChatAnimatableField) {
+  function enableAnimationTrack(field: AnimatableField) {
     setTrackKeyframes(field, [
       {
         frame: 0,
@@ -214,9 +280,9 @@ export function ChatAnimationEditor({
   }
 
   function upsertKeyframeValue(
-    field: ChatAnimatableField,
+    field: AnimatableField,
     value: JsonValue,
-    interpolation?: ChatAnimationInterpolation,
+    interpolation?: AnimationInterpolation,
   ) {
     const keyframes = keyframesFor(field.key);
     const existing = keyframes.find(
@@ -250,7 +316,7 @@ export function ChatAnimationEditor({
     );
   }
 
-  function toggleKeyframeAtCurrentFrame(field: ChatAnimatableField) {
+  function toggleKeyframeAtCurrentFrame(field: AnimatableField) {
     const currentKeyframe = keyframeAtCurrentFrame(field.key);
     if (currentKeyframe) {
       setPendingDeleteKeyframe({
@@ -267,10 +333,10 @@ export function ChatAnimationEditor({
     if (!field) return <span>{trackKey}</span>;
     const active = isTrackEnabled(field.key);
     return (
-      <span className="message-animation-field-label">
+      <span className="animation-field-label">
         <button
           type="button"
-          className={`message-animation-toggle record-editor-content-action ui-icon-button ${
+          className={`animation-field-toggle record-editor-content-action ui-icon-button ${
             active ? "is-active" : ""
           }`}
           title={active ? "Remove animation" : "Animate field"}
@@ -292,29 +358,45 @@ export function ChatAnimationEditor({
     );
   }
 
-  function renderAnimationValueControl(field: ChatAnimatableField) {
+  function renderAnimationValueControl(field: AnimatableField) {
     const currentValue = valueAtFrame(field);
-    if (field.valueType === "select") {
-      return (
-        <select
-          className="json-value-control"
-          value={typeof currentValue === "string" ? currentValue : String(field.value)}
-          onChange={(event) => upsertKeyframeValue(field, event.currentTarget.value)}
-        >
-          {(field.selectOptions ?? []).map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      );
-    }
+    const descriptor = animationDescriptor({
+      field: animationValueField(field),
+      value:
+        field.valueType === "select"
+          ? typeof currentValue === "string"
+            ? currentValue
+            : String(field.value)
+          : typeof currentValue === "string"
+            ? currentValue
+            : String(currentValue),
+      options: field.selectOptions,
+      onChange: (nextValue) => upsertKeyframeValue(field, nextValue as JsonValue),
+    });
     return (
-      <DeferredTextInput
-        value={typeof currentValue === "string" ? currentValue : String(currentValue)}
-        onCommit={(nextValue) => upsertKeyframeValue(field, nextValue)}
-      />
+      <DictionaryFieldControl {...toDictionaryFieldControlProps(descriptor)} />
     );
+  }
+
+  function renderInterpolationControl(
+    field: AnimatableField,
+    currentKeyframe: AnimationKeyframe | undefined,
+  ) {
+    const descriptor = animationDescriptor({
+      field: ANIMATION_INTERPOLATION_FIELD,
+      value: currentKeyframe?.interpolation ?? field.interpolationOptions[0],
+      options: field.interpolationOptions.map((option) => ({
+        value: option,
+        label: option,
+      })),
+      onChange: (nextValue) =>
+        upsertKeyframeValue(
+          field,
+          valueAtFrame(field),
+          String(nextValue) as AnimationInterpolation,
+        ),
+    });
+    return <DictionaryFieldControl {...toDictionaryFieldControlProps(descriptor)} />;
   }
 
   function renderAnimationRows() {
@@ -331,8 +413,8 @@ export function ChatAnimationEditor({
 
     return (
       <div className="record-editor-content-fields">
-        <div className="message-animation-timeline">
-          <div className="message-animation-controls">
+        <div className="animation-field-timeline">
+          <div className="animation-field-controls">
             <button
               type="button"
               className="record-editor-content-action ui-icon-button"
@@ -363,7 +445,7 @@ export function ChatAnimationEditor({
               ◆‹
             </button>
             <input
-              className="json-value-control message-animation-current-frame"
+              className="json-value-control animation-field-current-frame"
               type="number"
               min={0}
               max={timelineEndFrame}
@@ -404,7 +486,7 @@ export function ChatAnimationEditor({
             </button>
           </div>
           <input
-            className="json-value-control message-animation-slider"
+            className="json-value-control animation-field-slider"
             type="range"
             min={0}
             max={timelineEndFrame}
@@ -414,11 +496,11 @@ export function ChatAnimationEditor({
               setClampedAnimationFrame(Number(event.currentTarget.value))
             }
           />
-          <div className="message-animation-keyframe-strip" aria-hidden="true">
+          <div className="animation-field-keyframe-strip" aria-hidden="true">
             {visibleKeyframeFrames.map((frame) => (
               <span
                 key={frame}
-                className={`message-animation-keyframe-mark ${
+                className={`animation-field-keyframe-mark ${
                   frame === animationFrame ? "is-current" : ""
                 }`}
                 style={{
@@ -435,13 +517,13 @@ export function ChatAnimationEditor({
           return (
             <InspectorFieldRow
               key={field.key}
-              className="record-editor-content-field-row message-animation-row"
+              className="record-editor-content-field-row dictionary-field animation-field-row"
               state={currentKeyframe ? "override" : "default"}
               label={
-                <span className="message-animation-row-label">
+                <span className="animation-field-row-label">
                   <button
                     type="button"
-                    className="message-animation-row-step"
+                    className="animation-field-row-step"
                     title="Previous property keyframe"
                     aria-label={`Previous ${field.label} keyframe`}
                     disabled={previousFieldKeyframeFrame(field.key) === undefined}
@@ -454,7 +536,7 @@ export function ChatAnimationEditor({
                   </button>
                   <button
                     type="button"
-                    className={`message-animation-row-key ${
+                    className={`animation-field-row-key ${
                       currentKeyframe ? "is-active" : ""
                     }`}
                     title={currentKeyframe ? "Delete keyframe" : "Add keyframe"}
@@ -469,7 +551,7 @@ export function ChatAnimationEditor({
                   </button>
                   <button
                     type="button"
-                    className="message-animation-row-step"
+                    className="animation-field-row-step"
                     title="Next property keyframe"
                     aria-label={`Next ${field.label} keyframe`}
                     disabled={nextFieldKeyframeFrame(field.key) === undefined}
@@ -490,28 +572,9 @@ export function ChatAnimationEditor({
                 </span>
               }
               control={
-                <div className="message-animation-row-controls">
+                <div className="animation-field-row-controls">
                   {renderAnimationValueControl(field)}
-                  <select
-                    className="json-value-control"
-                    value={
-                      currentKeyframe?.interpolation ??
-                      field.interpolationOptions[0]
-                    }
-                    onChange={(event) =>
-                      upsertKeyframeValue(
-                        field,
-                        valueAtFrame(field),
-                        event.currentTarget.value as ChatAnimationInterpolation,
-                      )
-                    }
-                  >
-                    {field.interpolationOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
+                  {renderInterpolationControl(field, currentKeyframe)}
                 </div>
               }
             />

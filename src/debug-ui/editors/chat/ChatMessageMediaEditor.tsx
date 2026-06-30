@@ -1,8 +1,8 @@
-import { DeferredTextInput } from "../../editor-ui/DeferredTextInput.js";
-import { DeferredNumberInput } from "../../editor-ui/DeferredNumberInput.js";
-import { InspectorFieldRow } from "../../components/inspector/InspectorFieldRow.js";
+import { CHAT_CONTENT_MEDIA_FIELDS } from "../../../domain/fields/chatFields.js";
+import type { FieldDefinition } from "../../../domain/value-system/index.js";
 import type { JsonPath, JsonValue } from "../../components/json-editor/jsonEditorUtils.js";
 import { cssUrl, useMediaPreviewUrl } from "../MediaPreviews.js";
+import { ChatDictionaryFieldRow } from "./ChatDictionaryFieldRow.js";
 
 interface MediaNumberField {
   label: string;
@@ -26,7 +26,7 @@ interface ChatMessageMediaEditorProps {
   onDurationSecondsChange: (durationSeconds: number) => void;
   onPlayModeChange: (playMode: string) => void;
   onPlayStartFrameChange: (playStartFrame: number) => void;
-  onBrowseFile: () => void;
+  onBrowseFile: () => Promise<string | undefined>;
   onNumberFieldChange: (path: JsonPath, value: JsonValue) => void;
 }
 
@@ -69,49 +69,22 @@ export function ChatMessageMediaEditor({
         <small>{mediaType}</small>
       </summary>
       <div className="record-editor-content-fields">
-        <InspectorFieldRow
-          className="record-editor-content-field-row"
-          label={<span>Type</span>}
-          control={
-            <select
-              className="json-value-control"
-              value={mediaType}
-              onChange={(event) => onMediaTypeChange(event.target.value)}
-            >
-              <option value="none">None</option>
-              <option value="image">Image</option>
-              <option value="video">Video</option>
-              <option value="audio">Audio</option>
-            </select>
-          }
+        <ChatDictionaryFieldRow
+          field={CHAT_CONTENT_MEDIA_FIELDS.type}
+          value={mediaType}
+          onChange={(nextValue) => onMediaTypeChange(String(nextValue))}
         />
         {mediaType === "audio" || mediaType === "video" ? (
           <>
-            <InspectorFieldRow
-              className="record-editor-content-field-row"
-              label={<span>Duration seconds</span>}
-              control={
-                <DeferredNumberInput
-                  ariaLabel={`${mediaType} duration seconds`}
-                  min={0.1}
-                  step={0.1}
-                  value={Math.max(0.1, Number(durationSeconds) || 8)}
-                  onCommit={onDurationSecondsChange}
-                />
-              }
+            <ChatDictionaryFieldRow
+              field={CHAT_CONTENT_MEDIA_FIELDS.durationSeconds}
+              value={Math.max(0.1, Number(durationSeconds) || 8)}
+              onChange={(nextValue) => onDurationSecondsChange(Number(nextValue))}
             />
-            <InspectorFieldRow
-              className="record-editor-content-field-row"
-              label={<span>Play start frame</span>}
-              control={
-                <DeferredNumberInput
-                  ariaLabel="Audio play start frame"
-                  min={0}
-                  step={1}
-                  value={Math.max(0, Number(playStartFrame) || 0)}
-                  onCommit={onPlayStartFrameChange}
-                />
-              }
+            <ChatDictionaryFieldRow
+              field={CHAT_CONTENT_MEDIA_FIELDS.playStartFrame}
+              value={Math.max(0, Number(playStartFrame) || 0)}
+              onChange={(nextValue) => onPlayStartFrameChange(Number(nextValue))}
             />
           </>
         ) : null}
@@ -128,54 +101,33 @@ export function ChatMessageMediaEditor({
               translateX={mediaX}
               translateY={mediaY}
             />
-            <InspectorFieldRow
-              className="record-editor-content-field-row"
-              label={<span>File path</span>}
-              control={
-                <div className="media-file-control">
-                  <DeferredTextInput
-                    value={filePath}
-                    onCommit={onFilePathChange}
-                  />
-                  <button
-                    type="button"
-                    className="record-editor-compact-button"
-                    disabled={!canBrowse}
-                    onClick={onBrowseFile}
-                  >
-                    Browse…
-                  </button>
-                </div>
+            <ChatDictionaryFieldRow
+              field={CHAT_CONTENT_MEDIA_FIELDS.filePath}
+              fileBrowser={
+                canBrowse
+                  ? {
+                      pickFile: async () => {
+                        const nextPath = await onBrowseFile();
+                        return nextPath ? [nextPath] : [];
+                      },
+                    }
+                  : undefined
               }
+              mediaRoot={mediaRoot}
+              value={filePath}
+              onChange={(nextValue) => onFilePathChange(String(nextValue))}
             />
             {mediaType === "video" ? (
               <>
-                <InspectorFieldRow
-                  className="record-editor-content-field-row"
-                  label={<span>Play</span>}
-                  control={
-                    <select
-                      className="json-value-control"
-                      value={playMode === "loop" ? "loop" : "once"}
-                      onChange={(event) => onPlayModeChange(event.target.value)}
-                    >
-                      <option value="once">Once</option>
-                      <option value="loop">Loop</option>
-                    </select>
-                  }
+                <ChatDictionaryFieldRow
+                  field={CHAT_CONTENT_MEDIA_FIELDS.playMode}
+                  value={playMode === "loop" ? "loop" : "once"}
+                  onChange={(nextValue) => onPlayModeChange(String(nextValue))}
                 />
-                <InspectorFieldRow
-                  className="record-editor-content-field-row"
-                  label={<span>Play start frame</span>}
-                  control={
-                    <DeferredNumberInput
-                      ariaLabel="Play start frame"
-                      min={0}
-                      step={1}
-                      value={Math.max(0, Number(playStartFrame) || 0)}
-                      onCommit={onPlayStartFrameChange}
-                    />
-                  }
+                <ChatDictionaryFieldRow
+                  field={CHAT_CONTENT_MEDIA_FIELDS.playStartFrame}
+                  value={Math.max(0, Number(playStartFrame) || 0)}
+                  onChange={(nextValue) => onPlayStartFrameChange(Number(nextValue))}
                 />
               </>
             ) : null}
@@ -190,20 +142,13 @@ export function ChatMessageMediaEditor({
                   }
                 >
                   {row.map(({ label, path, value, fallback }) => (
-                    <InspectorFieldRow
+                    <ChatDictionaryFieldRow
                       key={String(label)}
-                      className="record-editor-content-field-row chat-media-number-field"
-                      label={<span>{String(label)}</span>}
-                      control={
-                        <DeferredNumberInput
-                          ariaLabel={String(label)}
-                          min={String(label).toLowerCase().includes("scale") ? 0.01 : undefined}
-                          step={String(label).toLowerCase().includes("scale") ? 0.05 : 1}
-                          value={Number(value ?? fallback)}
-                          onCommit={(nextValue) =>
-                            onNumberFieldChange(path, nextValue)
-                          }
-                        />
+                      className="chat-media-number-field"
+                      field={mediaFieldForPath(path, String(label))}
+                      value={Number(value ?? fallback)}
+                      onChange={(nextValue) =>
+                        onNumberFieldChange(path, Number(nextValue))
                       }
                     />
                   ))}
@@ -219,6 +164,30 @@ export function ChatMessageMediaEditor({
 
 function pathKey(path: JsonPath) {
   return path.map(String).join(".");
+}
+
+function mediaFieldForPath(path: JsonPath, label: string): FieldDefinition {
+  const key = pathKey(path);
+  if (key === "media.window.width") return CHAT_CONTENT_MEDIA_FIELDS.windowWidth;
+  if (key === "media.window.height") return CHAT_CONTENT_MEDIA_FIELDS.windowHeight;
+  if (key === "media.window.offsetX") return CHAT_CONTENT_MEDIA_FIELDS.windowOffsetX;
+  if (key === "media.window.offsetY") return CHAT_CONTENT_MEDIA_FIELDS.windowOffsetY;
+  if (key === "media.transform.scale") return CHAT_CONTENT_MEDIA_FIELDS.transformScale;
+  if (key === "media.transform.translateX") {
+    return CHAT_CONTENT_MEDIA_FIELDS.transformTranslateX;
+  }
+  if (key === "media.transform.translateY") {
+    return CHAT_CONTENT_MEDIA_FIELDS.transformTranslateY;
+  }
+  if (key === "media.transform.rotationDegrees") {
+    return CHAT_CONTENT_MEDIA_FIELDS.transformRotationDegrees;
+  }
+  return {
+    id: `chat.content.message.${key}`,
+    kind: "decimal",
+    defaultValue: 0,
+    ui: { label, step: 1 },
+  };
 }
 
 function pairLogicalNumberFields(fields: MediaNumberField[]) {

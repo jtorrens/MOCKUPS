@@ -42,7 +42,7 @@ function moduleFieldForJsonField(
     tableId === "module_instances" &&
     (fieldColumn === "content_json" || fieldColumn === "behavior_json")
   ) {
-    return fieldColumn === "content_json" ? "module_data_json" : "module_config_json";
+    return fieldColumn;
   }
   if (
     tableId === "module_theme_configs" &&

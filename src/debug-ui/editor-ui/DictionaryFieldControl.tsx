@@ -182,6 +182,8 @@ export function DictionaryFieldControl({
   const control = spec.controlDefinition.control;
   const metadata = spec.metadata;
   const controlClassName = classNameForField(field);
+  const nativeControlClassName = `json-value-control ${controlClassName}`;
+  const nativeTextareaClassName = `json-value-textarea ${controlClassName}`;
 
   if (control === "checkbox") {
     return (
@@ -237,7 +239,7 @@ export function DictionaryFieldControl({
           : families;
       return (
         <select
-          className={controlClassName}
+          className={nativeControlClassName}
           disabled={disabled || readOnly || !options.length}
           value={currentValue || options[0] || ""}
           onChange={(event) => onChange(event.currentTarget.value)}
@@ -261,7 +263,7 @@ export function DictionaryFieldControl({
       const options = fontWeightOptions(value);
       return (
         <select
-          className={controlClassName}
+          className={nativeControlClassName}
           disabled={disabled || readOnly}
           value={fontWeightValue(value)}
           onChange={(event) => onChange(Number(event.currentTarget.value))}
@@ -278,7 +280,7 @@ export function DictionaryFieldControl({
     if (field.kind === "fontStyle") {
       return (
         <select
-          className={controlClassName}
+          className={nativeControlClassName}
           disabled={disabled || readOnly}
           value={fontStyleValue(value)}
           onChange={(event) => onChange(event.currentTarget.value)}
@@ -312,7 +314,7 @@ export function DictionaryFieldControl({
     const options = selectOptions?.options ?? [];
     return (
       <select
-        className={controlClassName}
+        className={nativeControlClassName}
         disabled={disabled || readOnly}
         value={stringValue(value)}
         onChange={(event) => onChange(event.currentTarget.value)}
@@ -351,7 +353,7 @@ export function DictionaryFieldControl({
           />
           <DeferredNumberInput
             ariaLabel={`${field.ui?.label ?? field.id} degrees`}
-            className={`${controlClassName} json-hue-slider-value`}
+            className={`${nativeControlClassName} json-hue-slider-value`}
             disabled={isDisabled}
             max={metadata.max ?? 360}
             min={metadata.min ?? 0}
@@ -365,7 +367,7 @@ export function DictionaryFieldControl({
     }
     return (
       <DeferredNumberInput
-        className={controlClassName}
+        className={nativeControlClassName}
         disabled={disabled || readOnly}
         max={metadata.max}
         min={metadata.min}
@@ -393,7 +395,7 @@ export function DictionaryFieldControl({
     return (
       <div className={`media-file-control ${controlClassName}`}>
         <DeferredTextInput
-          className={controlClassName}
+          className={nativeControlClassName}
           disabled={isDisabled}
           placeholder={placeholder}
           value={stringValue(value)}
@@ -431,7 +433,7 @@ export function DictionaryFieldControl({
   if (control === "jsonObject" || control === "jsonArray") {
     return (
       <DeferredTextInput
-        className={controlClassName}
+        className={nativeTextareaClassName}
         disabled={disabled || readOnly}
         multiline
         placeholder={placeholder}
@@ -455,7 +457,11 @@ export function DictionaryFieldControl({
 
   return (
     <DeferredTextInput
-      className={controlClassName}
+      className={
+        field.ui?.multiline === true
+          ? nativeTextareaClassName
+          : nativeControlClassName
+      }
       disabled={disabled || readOnly}
       multiline={field.ui?.multiline === true}
       placeholder={placeholder}

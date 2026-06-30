@@ -243,14 +243,7 @@ export function ChatContentGroupEditor({
         onMediaPlayStartFrameChange={(playStartFrame) =>
           setMessagePath(["media", "playStartFrame"], Math.max(0, playStartFrame))
         }
-        onBrowseMedia={() => {
-          void (async () => {
-            const filePath = await onBrowseMedia();
-            if (filePath) {
-              setConversationMediaPath(filePath);
-            }
-          })();
-        }}
+        onBrowseMedia={onBrowseMedia}
         onMediaNumberFieldChange={(path, nextValue) =>
           setMessagePath(path, nextValue)
         }

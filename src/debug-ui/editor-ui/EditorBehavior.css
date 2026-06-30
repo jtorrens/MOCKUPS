@@ -215,19 +215,10 @@
   font-size: var(--field-label-font-size, 12px);
 }
 
-.module-behavior-status-header,
 .module-behavior-status-row {
   display: grid;
-  grid-template-columns: minmax(140px, 1.2fr) 52px minmax(160px, 1.4fr);
-  align-items: center;
-  gap: 10px;
-  padding: 9px 12px;
-}
-
-.module-behavior-status-header {
-  color: var(--field-label-color, #536070);
-  font-size: var(--field-label-font-size, 12px);
-  font-weight: 650;
+  gap: 8px;
+  padding: 10px 12px;
 }
 
 .module-behavior-status-row {
@@ -250,44 +241,20 @@
   font-weight: 650;
 }
 
-.module-behavior-status-row input[type="text"],
-.module-behavior-status-row input[type="number"],
-.module-behavior-status-row > input:not([type]),
-.module-behavior-override-control > input:not([type]),
-.module-behavior-override-control > input[type="text"],
-.module-behavior-override-control > input[type="number"],
-.module-behavior-override-control > select,
-.module-behavior-generated-value input[type="number"] {
-  box-sizing: border-box;
-  width: 100%;
+.module-behavior-status-row .json-checkbox.dictionary-control {
+  justify-self: start;
+  width: max-content;
   min-height: var(--field-control-height, 32px);
-  border: 1px solid var(--editor-input-border-color, #d9dee7);
-  border-radius: var(--field-control-radius, 8px);
-  padding: 0 9px;
-  color: var(--editor-input-color, var(--editor-text-color, #172033));
-  background: var(--editor-input-background, #ffffff);
-  font: inherit;
+  border: 1px solid #16a34a !important;
+  border-radius: var(--editor-input-radius, 8px) !important;
+  padding: 0 10px;
+  color: var(--editor-input-color, var(--editor-text-color, #172033)) !important;
+  background: var(--editor-input-background, #ffffff) !important;
   font-size: var(--field-control-font-size, 13px);
 }
 
-.module-behavior-status-row input.is-override {
-  border-color: var(--editor-override-border-color, #d97706);
-}
-
-.module-behavior-status-row input.is-inherited:not([type="checkbox"]) {
-  color: var(--editor-readonly-text-color, var(--field-label-color, #536070));
-}
-
-.module-behavior-override-control {
-  display: inline-grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-}
-
-.module-behavior-override-control > input[type="checkbox"] {
-  justify-self: start;
+.module-behavior-status-row .json-checkbox.dictionary-control > input {
+  font-size: var(--field-control-font-size, 13px);
 }
 
 .field-restore-button {
@@ -310,8 +277,33 @@
 
 .module-behavior-generated-value {
   display: grid;
-  grid-template-columns: minmax(80px, 118px) auto;
-  align-items: center;
+  gap: 8px;
+}
+
+.module-behavior-status-field {
+  margin: 0;
+}
+
+.module-behavior-status-field .inspector-field-label,
+.module-behavior-status-field .inspector-field-control {
+  min-width: 0;
+}
+
+.module-behavior-status-field .inspector-field-restore {
+  align-self: center;
+}
+
+.module-behavior-status-field.editor-field-row {
+  padding-block: 0;
+}
+
+.module-behavior-status-field.editor-field-row + .module-behavior-status-field.editor-field-row {
+  margin-top: 2px;
+}
+
+.module-behavior-generated-value .module-behavior-status-field {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.8fr) minmax(0, 1.4fr) auto;
   gap: 8px;
 }
 
@@ -350,11 +342,7 @@ textarea.dictionary-control,
 .dictionary-control > textarea,
 .dictionary-control .json-value-control,
 .dictionary-control .json-value-textarea {
-  border: 2px solid #16a34a !important;
-  outline: 1px solid #16a34a !important;
-  outline-offset: -2px;
-  background: color-mix(in srgb, var(--editor-input-background, #f7f8fb) 86%, #16a34a) !important;
-  box-shadow: inset 0 0 0 1px #16a34a !important;
+  border-color: #16a34a !important;
 }
 
 /* Glyphs are atomic visual controls. Keep this after the temporary dictionary

@@ -12,12 +12,14 @@ export interface EditorFieldRowProps {
   readonly descriptor: EditorFieldDescriptor;
   readonly children: ReactNode;
   readonly className?: string;
+  readonly labelOverride?: ReactNode;
 }
 
 export function EditorFieldRow({
   descriptor,
   children,
   className = "",
+  labelOverride,
 }: EditorFieldRowProps) {
   const label = editorFieldLabel(descriptor);
   const controlDefinition = controlDefinitionForField(descriptor.field);
@@ -38,7 +40,11 @@ export function EditorFieldRow({
       description={descriptor.field.ui?.description}
       error={descriptor.validation?.message}
       fieldId={descriptor.field.id}
-      label={<ToggleInspectorLabel label={label} technicalLabel={descriptor.field.id} />}
+      label={
+        labelOverride ?? (
+          <ToggleInspectorLabel label={label} technicalLabel={descriptor.field.id} />
+        )
+      }
       readonly={descriptor.readonly}
       restore={restore}
       sourceKind={descriptor.source.kind}

@@ -1,10 +1,10 @@
+import { CHAT_CONTENT_MESSAGE_FIELDS } from "../../../domain/fields/chatFields.js";
 import type { JsonPath, JsonValue } from "../../components/json-editor/jsonEditorUtils.js";
-import { InspectorFieldRow } from "../../components/inspector/InspectorFieldRow.js";
-import { DeferredTextInput } from "../../editor-ui/DeferredTextInput.js";
 import {
-  ChatAnimationEditor,
-  type ChatAnimatableField,
-} from "./ChatAnimationEditor.js";
+  AnimationFieldEditor,
+  type AnimatableField,
+} from "../../editor-ui/animation/AnimationFieldEditor.js";
+import { ChatDictionaryFieldRow } from "./ChatDictionaryFieldRow.js";
 import { ChatMessageMediaEditor } from "./ChatMessageMediaEditor.js";
 
 interface ActorOption {
@@ -58,7 +58,7 @@ interface ChatMessageFieldsEditorProps {
   onMediaDurationSecondsChange: (durationSeconds: number) => void;
   onMediaPlayModeChange: (playMode: string) => void;
   onMediaPlayStartFrameChange: (playStartFrame: number) => void;
-  onBrowseMedia: () => void;
+  onBrowseMedia: () => Promise<string | undefined>;
   onMediaNumberFieldChange: (path: JsonPath, value: JsonValue) => void;
   onAnimationFrameChange?: (frame: number) => void;
 }
@@ -106,12 +106,13 @@ export function ChatMessageFieldsEditor({
   onMediaNumberFieldChange,
   onAnimationFrameChange,
 }: ChatMessageFieldsEditorProps) {
-  const animatableFields: ChatAnimatableField[] = [
+  const animatableFields: AnimatableField[] = [
     {
       key: "text",
       label: "Message text",
       valueType: "text",
       value: text,
+      field: CHAT_CONTENT_MESSAGE_FIELDS.text,
       interpolationOptions: ["hold", "linear", "ease"],
     },
     {
@@ -119,6 +120,7 @@ export function ChatMessageFieldsEditor({
       label: "Status text",
       valueType: "text",
       value: statusText,
+      field: CHAT_CONTENT_MESSAGE_FIELDS.statusText,
       interpolationOptions: ["hold", "linear", "ease"],
     },
     {
@@ -126,6 +128,7 @@ export function ChatMessageFieldsEditor({
       label: "Delivery status",
       valueType: "select",
       value: deliveryStatus,
+      field: CHAT_CONTENT_MESSAGE_FIELDS.deliveryStatus,
       interpolationOptions: ["hold"],
       selectOptions: [
         { value: "none", label: "None" },
@@ -136,9 +139,19 @@ export function ChatMessageFieldsEditor({
       ],
     },
   ];
+  const actorSelectOptions = {
+    allowEmpty: true,
+    emptyLabel: "None",
+    options: [
+      ...(!actorOptions.some((option) => option.value === actorId) && actorId
+        ? [{ value: actorId, label: "Current actor" }]
+        : []),
+      ...actorOptions,
+    ],
+  };
 
   return (
-    <ChatAnimationEditor
+    <AnimationFieldEditor
       animation={animation}
       fields={animatableFields}
       timelineDurationFrames={timelineDurationFrames}
@@ -147,134 +160,64 @@ export function ChatMessageFieldsEditor({
     >
       {({ animationCard, fieldLabel }) => (
         <div className="record-editor-content-fields">
-      <InspectorFieldRow
-        className="record-editor-content-field-row"
-        label={<span>Type</span>}
-        control={
-          <select
-            className="json-value-control"
-            value={direction}
-            onChange={(event) => onDirectionChange(event.target.value)}
-          >
-            <option value="received">Recibido</option>
-            <option value="sent">Enviado</option>
-            <option value="system">Sistema</option>
-          </select>
-        }
+      <ChatDictionaryFieldRow
+        field={CHAT_CONTENT_MESSAGE_FIELDS.direction}
+        value={direction}
+        onChange={(nextValue) => onDirectionChange(String(nextValue))}
       />
       {direction !== "system" ? (
         <div className="record-editor-content-nested-panel">
-          <InspectorFieldRow
-            className="record-editor-content-field-row"
-            label={<span>Actor</span>}
-            control={
-              <select
-                className="json-value-control"
-                value={actorId}
-                onChange={(event) => onActorChange(event.target.value)}
-              >
-                {!actorOptions.some((option) => option.value === actorId) &&
-                actorId ? (
-                  <option value={actorId}>Current actor</option>
-                ) : null}
-                {actorOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            }
+          <ChatDictionaryFieldRow
+            field={CHAT_CONTENT_MESSAGE_FIELDS.actorId}
+            value={actorId}
+            selectOptions={actorSelectOptions}
+            onChange={(nextValue) => onActorChange(String(nextValue))}
           />
         </div>
       ) : null}
-      <InspectorFieldRow
-        className="record-editor-content-field-row"
-        label={<span>Delay after previous write-on</span>}
-        control={
-          <input
-            className="json-value-control"
-            type="number"
-            min={0}
-            step={1}
-            value={delayAfterPreviousFrames}
-            onChange={(event) =>
-              onDelayAfterPreviousFramesChange(Number(event.target.value))
-            }
-          />
+      <ChatDictionaryFieldRow
+        field={CHAT_CONTENT_MESSAGE_FIELDS.delayAfterPreviousFrames}
+        value={delayAfterPreviousFrames}
+        onChange={(nextValue) =>
+          onDelayAfterPreviousFramesChange(Number(nextValue))
         }
       />
-      <InspectorFieldRow
-        className="record-editor-content-field-row"
-        label={<span>Write-on duration</span>}
-        control={
-          <input
-            className="json-value-control"
-            type="number"
-            min={0}
-            step={1}
-            value={writeOnDurationFrames}
-            onChange={(event) =>
-              onWriteOnDurationFramesChange(Number(event.target.value))
-            }
-          />
+      <ChatDictionaryFieldRow
+        field={CHAT_CONTENT_MESSAGE_FIELDS.writeOnDurationFrames}
+        value={writeOnDurationFrames}
+        onChange={(nextValue) =>
+          onWriteOnDurationFramesChange(Number(nextValue))
         }
       />
-      <InspectorFieldRow
-        className="record-editor-content-field-row"
-        label={<span>Show bubble background</span>}
-        control={
-          <input
-            type="checkbox"
-            checked={showBubbleBackground}
-            onChange={(event) =>
-              onShowBubbleBackgroundChange(event.target.checked)
-            }
-          />
+      <ChatDictionaryFieldRow
+        field={CHAT_CONTENT_MESSAGE_FIELDS.showBubbleBackground}
+        value={showBubbleBackground}
+        onChange={(nextValue) =>
+          onShowBubbleBackgroundChange(nextValue === true)
         }
       />
-      <InspectorFieldRow
-        className="record-editor-content-field-row"
-        label={<span>Text scale</span>}
-        control={
-          <input
-            className="json-value-control"
-            type="number"
-            step="0.05"
-            value={textScale}
-            onChange={(event) => onTextScaleChange(Number(event.target.value))}
-          />
-        }
+      <ChatDictionaryFieldRow
+        field={CHAT_CONTENT_MESSAGE_FIELDS.textScale}
+        value={textScale}
+        onChange={(nextValue) => onTextScaleChange(Number(nextValue))}
       />
-      <InspectorFieldRow
-        className="record-editor-content-field-row"
-        label={fieldLabel("text")}
-        control={
-          <DeferredTextInput multiline value={text} onCommit={onTextChange} />
-        }
+      <ChatDictionaryFieldRow
+        field={CHAT_CONTENT_MESSAGE_FIELDS.text}
+        labelOverride={fieldLabel("text")}
+        value={text}
+        onChange={(nextValue) => onTextChange(String(nextValue))}
       />
-      <InspectorFieldRow
-        className="record-editor-content-field-row"
-        label={fieldLabel("status.text")}
-        control={
-          <DeferredTextInput value={statusText} onCommit={onStatusTextChange} />
-        }
+      <ChatDictionaryFieldRow
+        field={CHAT_CONTENT_MESSAGE_FIELDS.statusText}
+        labelOverride={fieldLabel("status.text")}
+        value={statusText}
+        onChange={(nextValue) => onStatusTextChange(String(nextValue))}
       />
-      <InspectorFieldRow
-        className="record-editor-content-field-row"
-        label={fieldLabel("status.deliveryStatus")}
-        control={
-          <select
-            className="json-value-control"
-            value={deliveryStatus}
-            onChange={(event) => onDeliveryStatusChange(event.target.value)}
-          >
-            <option value="none">None</option>
-            <option value="sent">Sent</option>
-            <option value="delivered">Delivered</option>
-            <option value="read">Read</option>
-            <option value="failed">Failed</option>
-          </select>
-        }
+      <ChatDictionaryFieldRow
+        field={CHAT_CONTENT_MESSAGE_FIELDS.deliveryStatus}
+        labelOverride={fieldLabel("status.deliveryStatus")}
+        value={deliveryStatus}
+        onChange={(nextValue) => onDeliveryStatusChange(String(nextValue))}
       />
       <ChatMessageMediaEditor
         mediaType={mediaType}
@@ -294,24 +237,14 @@ export function ChatMessageFieldsEditor({
         onBrowseFile={onBrowseMedia}
         onNumberFieldChange={onMediaNumberFieldChange}
       />
-      <InspectorFieldRow
-        className="record-editor-content-field-row"
-        label={<span>Text reveal mode</span>}
-        control={
-          <select
-            className="json-value-control"
-            value={textRevealMode}
-            onChange={(event) => onTextRevealModeChange(event.target.value)}
-          >
-            <option value="simple_write_on">Simple write down</option>
-            <option value="natural_write_on">Write down natural</option>
-            <option value="waiting_dots">Waiting dots animation</option>
-          </select>
-        }
+      <ChatDictionaryFieldRow
+        field={CHAT_CONTENT_MESSAGE_FIELDS.textRevealMode}
+        value={textRevealMode}
+        onChange={(nextValue) => onTextRevealModeChange(String(nextValue))}
       />
       {animationCard}
         </div>
       )}
-    </ChatAnimationEditor>
+    </AnimationFieldEditor>
   );
 }
