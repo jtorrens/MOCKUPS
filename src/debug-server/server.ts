@@ -13,6 +13,7 @@ import {
   listDebugOptions,
   loadAppState,
   loadDebugPayload,
+  moveModuleInstance,
   moveScreenInstance,
   saveDebugPayload,
   createAppRecord,
@@ -33,6 +34,7 @@ import {
   type IconThemeDeleteTokenRequest,
   type IconThemeGenerateTokenRequest,
   type IconThemeSearchSourcesRequest,
+  type ModuleInstanceMoveRequest,
   type PaletteColorRenameRequest,
   type ScreenInstanceMoveRequest,
 } from "./debugService.js";
@@ -679,6 +681,11 @@ const server = createServer(async (request, response) => {
     if (request.method === "POST" && url.pathname === "/api/app/screen-instance/move") {
       const body = (await readJson(request)) as ScreenInstanceMoveRequest;
       sendJson(response, 200, moveScreenInstance(database, body));
+      return;
+    }
+    if (request.method === "POST" && url.pathname === "/api/app/module-instance/move") {
+      const body = (await readJson(request)) as ModuleInstanceMoveRequest;
+      sendJson(response, 200, moveModuleInstance(database, body));
       return;
     }
     if (request.method === "POST" && url.pathname === "/api/app/palette-color/rename") {

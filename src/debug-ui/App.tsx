@@ -6,6 +6,7 @@ import {
   getAppState,
   getPreviewPayload,
   importProductionFont,
+  moveModuleInstance as moveModuleInstanceRecord,
   moveScreenInstance as moveScreenInstanceRecord,
   type AppRecord,
   type AppState,
@@ -434,8 +435,17 @@ export function App() {
       | "devices"
       | "palette_colors"
       | "production_fonts"
-      | "render_presets",
-    parent?: { productionId?: string; episodeId?: string },
+      | "render_presets"
+      | "screen_instances"
+      | "module_instances",
+    parent?: {
+      productionId?: string;
+      episodeId?: string;
+      shotId?: string;
+      screenInstanceId?: string;
+      appId?: string;
+      moduleConfigId?: string;
+    },
     options?: { family?: "ios" | "android" },
   ) {
     setBusyProjectAction(true);
@@ -467,7 +477,9 @@ export function App() {
       | "devices"
       | "palette_colors"
       | "production_fonts"
-      | "render_presets",
+      | "render_presets"
+      | "screen_instances"
+      | "module_instances",
     parent?: { productionId?: string; episodeId?: string },
   ) {
     if (tableId === "themes") {
@@ -532,7 +544,9 @@ export function App() {
       | "devices"
       | "palette_colors"
       | "production_fonts"
-      | "render_presets",
+      | "render_presets"
+      | "screen_instances"
+      | "module_instances",
     recordId: string,
   ) {
     setBusyProjectAction(true);
@@ -557,7 +571,9 @@ export function App() {
     | "devices"
     | "palette_colors"
     | "production_fonts"
-    | "render_presets";
+    | "render_presets"
+    | "screen_instances"
+    | "module_instances";
 
   function executeDeleteRecord(tableId: DeletableTableId, recordId: string) {
     setBusyProjectAction(true);
@@ -590,7 +606,9 @@ export function App() {
       | "devices"
       | "palette_colors"
       | "production_fonts"
-      | "render_presets",
+      | "render_presets"
+      | "screen_instances"
+      | "module_instances",
     recordId: string,
   ) {
     if (tableId === "palette_colors" && state) {
@@ -661,6 +679,22 @@ export function App() {
             ),
           });
         }
+        setRefreshCounter((value) => value + 1);
+      })
+      .catch((error: Error) => setRequestError(error.message))
+      .finally(() => setBusyProjectAction(false));
+  }
+
+  function handleMoveModuleInstance(recordId: string, direction: -1 | 1) {
+    setBusyProjectAction(true);
+    setRequestError("");
+    void moveModuleInstanceRecord({ recordId, direction })
+      .then((result) => {
+        setState(result.state);
+        setSelectedRecordIds({
+          ...selectedRecordIds,
+          module_instances: recordId,
+        });
         setRefreshCounter((value) => value + 1);
       })
       .catch((error: Error) => setRequestError(error.message))
@@ -999,6 +1033,7 @@ export function App() {
                 onDuplicateRecord={handleDuplicateRecord}
                 onDeleteRecord={handleDeleteRecord}
                 onMoveScreenInstance={handleMoveScreenInstance}
+                onMoveModuleInstance={handleMoveModuleInstance}
               />
             </div>
           </aside>

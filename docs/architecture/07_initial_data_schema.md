@@ -92,7 +92,7 @@ For `core.chat@1`, `content_json` owns header, messages, timings, media referenc
 - Relationships: belongs to one screen instance and may reference an animation preset; `target_id` identifies the affected narrative or visual item within resolved data.
 - Must not contain: complete screen state, theme defaults, or module drawing code.
 
-Canonical initial event types include `notification_appears`, `unlock_gesture`, `incoming_call_accepted`, `message_write_on_starts`, `scroll_moves`, `keyboard_appears`, and `app_transition`. Event `start_frame` is relative to the parent screen instance. ShotBuilder derives the local frame from the requested shot frame before module rendering.
+Canonical initial event types include `notification_appears`, `incoming_call_accepted`, `message_write_on_starts`, `scroll_moves`, `keyboard_appears`, and `app_transition`. Event `start_frame` is relative to the parent screen instance. ShotBuilder derives the local frame from the requested shot frame before module rendering.
 
 ### `themes`
 

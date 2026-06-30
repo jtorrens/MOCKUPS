@@ -19,6 +19,13 @@
   gap: 4px;
 }
 
+.project-tree-module-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: center;
+}
+
 .project-browser-root .project-tree-view .project-tree-action-button {
   width: 26px;
   height: 26px;

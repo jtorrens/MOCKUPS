@@ -21,7 +21,7 @@ No debug UI, editor UI, Electron shell, or export pipeline was implemented.
 - `docs/examples/device_iphone_generic.json`
 - `docs/examples/production_minimal.json`
 - `docs/examples/resolved_props_chat_screen.json`
-- `docs/examples/shot_lock_to_chat.json`
+- `docs/examples/shot_chat.json`
 - `src/domain/schemas/index.ts`
 - `src/domain/schemas/module.ts`
 - `src/domain/schemas/resolvedProps.ts`

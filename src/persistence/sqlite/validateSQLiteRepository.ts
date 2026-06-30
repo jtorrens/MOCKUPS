@@ -20,13 +20,13 @@ function resolveChatAtFrame(repository: SQLiteRepository | ReturnType<typeof loa
   const shot = resolveShot({
     repository,
     productionId: "production_demo",
-    shotId: "shot_lock_to_chat",
-    shotFrame: 210,
+    shotId: "shot_chat",
+    shotFrame: 60,
   });
   const chatInstance = shot.active_screen_instances.find(
     (screen) => screen.screen_type === "chat",
   );
-  assert(chatInstance?.resolved_props, "Chat props must resolve at shot frame 210");
+  assert(chatInstance?.resolved_props, "Chat props must resolve at shot frame 60");
   return ResolvedChatScreenPropsSchema.parse(chatInstance.resolved_props);
 }
 
@@ -45,7 +45,7 @@ try {
   );
 
   const sqliteChatInstance = sqliteRepository
-    .getScreenInstancesForShot("shot_lock_to_chat")
+    .getScreenInstancesForShot("shot_chat")
     .find((instance) => instance.screen_type === "chat");
   assert(sqliteChatInstance, "SQLite Chat screen instance must exist");
   const sqliteModuleInstance =

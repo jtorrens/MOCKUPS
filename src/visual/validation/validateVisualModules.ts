@@ -1,4 +1,4 @@
-import shotExample from "../../../docs/examples/shot_lock_to_chat.json" with {
+import shotExample from "../../../docs/examples/shot_chat.json" with {
   type: "json",
 };
 import {
@@ -44,12 +44,12 @@ const resolvedShot = resolveShot({
   repository,
   productionId: shotExample.production_id,
   shotId: shotExample.shot.id,
-  shotFrame: 210,
+  shotFrame: 60,
 });
 const chatInstance = resolvedShot.active_screen_instances.find(
   (screen) => screen.screen_type === "chat",
 );
-assert(chatInstance?.resolved_props, "Chat props must resolve at shot frame 210");
+assert(chatInstance?.resolved_props, "Chat props must resolve at shot frame 60");
 
 const chatProps = ResolvedChatScreenPropsSchema.parse(
   chatInstance.resolved_props,
@@ -685,7 +685,7 @@ assert(
   "Registry must contain all required visual modules",
 );
 
-console.log("✓ resolved chat props rendered at shot frame 210 / local frame 60");
+console.log("✓ resolved chat props rendered at shot frame 60 / local frame 60");
 console.log("✓ renderable tree validated recursively with Zod");
 console.log("✓ ChatScreen composed status bar, navigation bar, header, and message bubbles");
 console.log("✓ app wallpaper rendered as the back layer");

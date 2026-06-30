@@ -1,6 +1,6 @@
 # Project vision
 
-MOCKUPS generates final-render animated, diegetic phone and app screens for audiovisual shots. It is not a chat-only generator: supported screen types include chat, lock screens, notifications, incoming and active calls, home screens, custom apps, and future modules.
+MOCKUPS generates final-render animated, diegetic phone and app screens for audiovisual shots. It is not a chat-only generator: supported screen types include chat, phone screens, notifications, incoming and active calls, home screens, custom apps, and future modules.
 
 A production is the working scope and contains reusable resources such as actor profiles, style/theme packs, device packs, apps, app/screen tokens, animation presets, and render presets. Productions also contain editorial episodes, and episodes contain shots. A shot is the central render unit: the timeline of actions shown by a device screen. Each shot instantiates one or more screens, which may run sequentially or overlap.
 

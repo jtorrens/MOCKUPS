@@ -44,8 +44,8 @@
       "id": "screen_instance_001",
       "shot_id": "shot_001",
       "app_id": "app_messages",
-      "screen_type": "lock_screen",
-      "module_id": "lock_screen",
+      "screen_type": "chat",
+      "module_id": "core.chat",
       "module_schema_version": 1,
       "owner_actor_id": "actor_alex",
       "device_id": null,
@@ -83,11 +83,24 @@
     {
       "id": "screen_instance_001:module",
       "screen_instance_id": "screen_instance_001",
-      "module_id": "lock_screen",
+      "module_id": "core.chat",
       "module_schema_version": 1,
       "sort_order": 0,
-      "content_json": {},
-      "behavior_json": {},
+      "content_json": {
+        "schemaVersion": 1,
+        "header": {
+          "title": "Chat"
+        },
+        "messages": []
+      },
+      "behavior_json": {
+        "showHeader": true,
+        "showStatusBar": true,
+        "showKeyboard": false,
+        "initialScroll": "bottom",
+        "messageGrouping": "bySender",
+        "debugShowBounds": false
+      },
       "animation_json": {
         "schemaVersion": 1,
         "tracks": []

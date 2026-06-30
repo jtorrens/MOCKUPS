@@ -78,7 +78,6 @@ For now, use the existing `apps` entity. Do not create `app_theme_configs`.
 Represents a concrete functional screen/module inside an App:
 
 - `core.chat`;
-- `core.lock_screen`;
 - `phone.incoming_call`;
 - `phone.in_call`;
 - `instagram.feed`;

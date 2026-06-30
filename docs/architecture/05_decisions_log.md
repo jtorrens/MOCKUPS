@@ -24,7 +24,7 @@ Implications:
 
 Status: accepted
 
-Chat uses the same screen-instance and module model as lock screens, notifications, calls, home screens, custom apps, and future types.
+Chat uses the same screen-instance and module model as phone screens, notifications, calls, home screens, custom apps, and future types.
 
 Implications:
 - Chat-specific entities must not define the root architecture.
@@ -279,7 +279,7 @@ Status: accepted
 A module theme config is selected by `theme_id`, `module_id`, and `module_schema_version`.
 
 Implications:
-- One theme can carry different module-specific defaults for Chat, lock screen, calls, home screen, and future modules.
+- One theme can carry different module-specific defaults for Chat, phone screen, calls, home screen, and future modules.
 - A theme/module pair may later have multiple named configs; the current resolver selects the seeded/default config deterministically.
 
 ## D028 — Module theme configs may inherit global theme tokens

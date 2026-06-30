@@ -7,7 +7,7 @@ import productionExample from "../../../../docs/examples/production_minimal.json
 import resolvedChatExample from "../../../../docs/examples/resolved_props_chat_screen.json" with {
   type: "json",
 };
-import shotExample from "../../../../docs/examples/shot_lock_to_chat.json" with {
+import shotExample from "../../../../docs/examples/shot_chat.json" with {
   type: "json",
 };
 import themeExample from "../../../../docs/examples/theme_ios_light.json" with {
@@ -24,7 +24,6 @@ import {
   ModuleInstanceSchema,
   ModuleThemeConfigSchema,
   NavigationBarSchema,
-  NotificationSchema,
   PaletteColorSchema,
   ProductionFontSchema,
   ProductionSchema,
@@ -106,10 +105,7 @@ export function createExampleDataset(): RepositoryDataset {
       duration_frames:
         instance.duration_frames ??
         Math.max(1, Number(instance.end_frame) - Number(instance.start_frame)),
-      device_state_json:
-        instance.device_state_id === "device_state_locked_morning"
-          ? { ...resolvedChat.deviceState, locked: true }
-          : resolvedChat.deviceState,
+      device_state_json: resolvedChat.deviceState,
       module_data_json: null,
       module_config_json: null,
       module_tokens_override_json: null,
@@ -551,54 +547,16 @@ export function createExampleDataset(): RepositoryDataset {
 
   const deviceStates = DeviceStateSchema.array().parse([
     {
-      id: "device_state_locked_morning",
+      id: "device_state_chat_morning",
       production_id: production.id,
       device_id: device.id,
-      name: "Locked morning",
-      state_json: { ...resolvedChat.deviceState, locked: true },
-    },
-    {
-      id: "device_state_unlocked_morning",
-      production_id: production.id,
-      device_id: device.id,
-      name: "Unlocked morning",
+      name: "Chat morning",
       state_json: resolvedChat.deviceState,
     },
   ]);
 
   const animationPresets = AnimationPresetSchema.array().parse([
-    {
-      id: "animation_notification_slide",
-      production_id: production.id,
-      name: "Notification slide",
-      animation_type: "slide",
-      version: "1.0.0",
-      parameters_json: { direction: "down", easing: "ease_out" },
-    },
-    {
-      id: "animation_unlock_default",
-      production_id: production.id,
-      name: "Default unlock",
-      animation_type: "unlock",
-      version: "1.0.0",
-      parameters_json: { easing: "ease_in_out" },
-    },
   ]);
-
-  const notification = NotificationSchema.parse({
-    id: shotExample.references.notification_id,
-    production_id: production.id,
-    app_id: app.id,
-    owner_actor_id: resolvedChat.ownerActor.id,
-    sender_actor_id: otherMessage.sender.id,
-    notification_type: "message",
-    title: otherMessage.sender.displayName,
-    body: otherMessage.text,
-    sort_order: 0,
-    payload_json: { destination_screen_instance_id: "screen_instance_chat" },
-    style_override_json: {},
-    metadata_json: {},
-  });
   const avatarComponentClass = ComponentClassSchema.parse({
     id: `${production.id}:avatar_default`,
     production_id: production.id,
@@ -837,6 +795,6 @@ export function createExampleDataset(): RepositoryDataset {
     conversations: [],
     conversationParticipants: [],
     messages: [],
-    notifications: [notification],
+    notifications: [],
   };
 }

@@ -1,4 +1,4 @@
-import shotExample from "../../../docs/examples/shot_lock_to_chat.json" with {
+import shotExample from "../../../docs/examples/shot_chat.json" with {
   type: "json",
 };
 import { loadExampleRepository } from "../repository/fixtureLoader.js";
@@ -49,51 +49,15 @@ const commonInput = {
   shotId: shotExample.shot.id,
 };
 
-const lockFrame = resolveShot({ ...commonInput, shotFrame: 75 });
-assert(
-  lockFrame.active_screen_instances.length === 1 &&
-    lockFrame.active_screen_instances[0]?.screen_type === "lock_screen",
-  "Frame 75 must resolve the lock screen",
-);
-assert(
-  lockFrame.active_screen_instances[0]?.local_frame === 75,
-  "Lock screen local frame must be 75",
-);
-const lockData = lockFrame.active_screen_instances[0]?.resolved_context?.data;
-assert(
-  typeof lockData === "object" &&
-    lockData !== null &&
-    "notification" in lockData &&
-    "app" in lockData,
-  "Lock screen data reference must resolve its notification and app",
-);
-
-const overlapFrame = resolveShot({ ...commonInput, shotFrame: 145 });
-assert(
-  overlapFrame.active_screen_instances.map((screen) => screen.screen_type).join(",") ===
-    "lock_screen,chat",
-  "Transition frames before chat start must resolve the lock-to-chat overlap in layer order",
-);
-assert(
-  overlapFrame.active_screen_instances[1]?.local_frame === 0,
-  "Incoming chat local frame must stay frozen at zero during transition",
-);
-const chatStartFrame = resolveShot({ ...commonInput, shotFrame: 150 });
-assert(
-  chatStartFrame.active_screen_instances.map((screen) => screen.screen_type).join(",") ===
-    "chat",
-  "Frame 150 must resolve the chat screen after the pre-start transition",
-);
-
-const writeOnFrame = resolveShot({ ...commonInput, shotFrame: 210 });
+const writeOnFrame = resolveShot({ ...commonInput, shotFrame: 60 });
 const chatInstance = writeOnFrame.active_screen_instances.find(
   (screen) => screen.screen_type === "chat",
 );
-assert(chatInstance?.resolved_props, "Frame 210 must resolve chat props");
+assert(chatInstance?.resolved_props, "Frame 60 must resolve chat props");
 const chatProps = ResolvedChatScreenPropsSchema.parse(
   chatInstance.resolved_props,
 );
-assert(chatProps.frame === 60, "Shot frame 210 must become chat local frame 60");
+assert(chatProps.frame === 60, "Shot frame 60 must become chat local frame 60");
 assert(
   chatProps.messages[1]?.visibleText === "Two minu",
   "Frame 60 must resolve deterministic partial write-on text",
@@ -114,11 +78,11 @@ assert(
   "Resolved message must retain its actorId",
 );
 
-const completedFrame = resolveShot({ ...commonInput, shotFrame: 240 });
+const completedFrame = resolveShot({ ...commonInput, shotFrame: 90 });
 const completedChat = completedFrame.active_screen_instances.find(
   (screen) => screen.screen_type === "chat",
 );
-assert(completedChat?.resolved_props, "Frame 240 must resolve chat props");
+assert(completedChat?.resolved_props, "Frame 90 must resolve chat props");
 const completedProps = ResolvedChatScreenPropsSchema.parse(
   completedChat.resolved_props,
 );
@@ -127,11 +91,9 @@ assert(
   "Completed write-on must expose the full message",
 );
 
-console.log("✓ lock frame resolved at shot frame 75");
-console.log("✓ lock/chat overlap resolved at shot frame 150");
-console.log("✓ chat props validated during write-on at shot frame 210");
+console.log("✓ chat props validated during write-on at shot frame 60");
 console.log("✓ Chat resolved without legacy conversation/message records");
 console.log("✓ message.direction determined incoming/outgoing/system alignment");
 console.log("✓ text and media can coexist on one Chat message");
-console.log("✓ completed write-on validated at shot frame 240");
+console.log("✓ completed write-on validated at shot frame 90");
 console.log("In-memory repository and resolver validation succeeded.");

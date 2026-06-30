@@ -12,6 +12,38 @@ import {
 import { AppModalDialog } from "./AppModalDialog.js";
 import "./ProjectTree.css";
 
+type CreatableTableId =
+  | "productions"
+  | "episodes"
+  | "shots"
+  | "icon_themes"
+  | "status_bars"
+  | "navigation_bars"
+  | "actors"
+  | "themes"
+  | "devices"
+  | "palette_colors"
+  | "production_fonts"
+  | "render_presets"
+  | "screen_instances"
+  | "module_instances";
+
+type DuplicableTableId =
+  | "shots"
+  | "icon_themes"
+  | "status_bars"
+  | "navigation_bars"
+  | "actors"
+  | "themes"
+  | "devices"
+  | "palette_colors"
+  | "production_fonts"
+  | "render_presets"
+  | "screen_instances"
+  | "module_instances";
+
+type DeletableTableId = DuplicableTableId;
+
 interface ProjectTreeProps {
   tables: AppTableDefinition[];
   activeTableId: string;
@@ -22,63 +54,21 @@ interface ProjectTreeProps {
   onTableChange: (tableId: string) => void;
   onRecordSelect: (tableId: string, recordId: string) => void;
   onCreateRecord: (
-    tableId:
-      | "productions"
-      | "episodes"
-      | "shots"
-      | "icon_themes"
-      | "status_bars"
-      | "navigation_bars"
-      | "actors"
-      | "themes"
-      | "devices"
-      | "palette_colors"
-      | "production_fonts"
-      | "render_presets",
-    parent?: { productionId?: string; episodeId?: string },
+    tableId: CreatableTableId,
+    parent?: {
+      productionId?: string;
+      episodeId?: string;
+      shotId?: string;
+      screenInstanceId?: string;
+      appId?: string;
+      moduleConfigId?: string;
+    },
   ) => void;
-  onDuplicateRecord: (
-    tableId:
-      | "shots"
-      | "icon_themes"
-      | "status_bars"
-      | "navigation_bars"
-      | "actors"
-      | "themes"
-      | "devices"
-      | "palette_colors"
-      | "production_fonts"
-      | "render_presets",
-    recordId: string,
-  ) => void;
-  onDeleteRecord: (
-    tableId:
-      | "shots"
-      | "icon_themes"
-      | "status_bars"
-      | "navigation_bars"
-      | "actors"
-      | "themes"
-      | "devices"
-      | "palette_colors"
-      | "production_fonts"
-      | "render_presets",
-    recordId: string,
-  ) => void;
+  onDuplicateRecord: (tableId: DuplicableTableId, recordId: string) => void;
+  onDeleteRecord: (tableId: DeletableTableId, recordId: string) => void;
   onMoveScreenInstance: (recordId: string, direction: -1 | 1) => void;
+  onMoveModuleInstance: (recordId: string, direction: -1 | 1) => void;
 }
-
-type DeletableTableId =
-  | "shots"
-  | "icon_themes"
-  | "status_bars"
-  | "navigation_bars"
-  | "actors"
-  | "themes"
-  | "devices"
-  | "palette_colors"
-  | "production_fonts"
-  | "render_presets";
 
 interface PendingDelete {
   tableId: DeletableTableId;
@@ -486,6 +476,7 @@ export function ProjectTree({
   onDuplicateRecord,
   onDeleteRecord,
   onMoveScreenInstance,
+  onMoveModuleInstance,
 }: ProjectTreeProps) {
   const [browserTab, setBrowserTab] = useState<
     "" | "project" | "apps" | "data" | "system"
@@ -497,6 +488,15 @@ export function ProjectTree({
     Record<string, boolean>
   >({});
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
+  const [pendingCreateScreenShotId, setPendingCreateScreenShotId] = useState<
+    string | null
+  >(null);
+  const [pendingCreateModuleScreenId, setPendingCreateModuleScreenId] = useState<
+    string | null
+  >(null);
+  const [selectedCreateAppId, setSelectedCreateAppId] = useState("");
+  const [selectedCreateModuleConfigId, setSelectedCreateModuleConfigId] =
+    useState("");
   const tablesById = tableById(tables);
   const selectedProductionId = selectedRecordIds.productions;
   const productionEpisodes = [
@@ -557,6 +557,42 @@ export function ProjectTree({
   function selectAndOpen(tableId: string, recordId: string) {
     select(tableId, recordId);
     setBranchOpen(tableId, recordId, true);
+  }
+
+  function moduleConfigsForApp(appId: string) {
+    return moduleConfigRecords.filter((config) => config.app_id === appId);
+  }
+
+  function openCreateScreenModal(shotId: string) {
+    const firstAppId = appRecords[0]?.id ?? "";
+    setSelectedCreateAppId(firstAppId);
+    setPendingCreateScreenShotId(shotId);
+  }
+
+  function openCreateModuleModal(screenId: string, appId: string | undefined) {
+    const firstConfigId = appId ? moduleConfigsForApp(appId)[0]?.id ?? "" : "";
+    setSelectedCreateModuleConfigId(firstConfigId);
+    setPendingCreateModuleScreenId(screenId);
+  }
+
+  function confirmCreateScreen() {
+    if (!pendingCreateScreenShotId || !selectedCreateAppId) return;
+    onCreateRecord("screen_instances", {
+      shotId: pendingCreateScreenShotId,
+      appId: selectedCreateAppId,
+    });
+    setPendingCreateScreenShotId(null);
+    setSelectedCreateAppId("");
+  }
+
+  function confirmCreateModule() {
+    if (!pendingCreateModuleScreenId || !selectedCreateModuleConfigId) return;
+    onCreateRecord("module_instances", {
+      screenInstanceId: pendingCreateModuleScreenId,
+      moduleConfigId: selectedCreateModuleConfigId,
+    });
+    setPendingCreateModuleScreenId(null);
+    setSelectedCreateModuleConfigId("");
   }
 
   function confirmDelete(
@@ -692,9 +728,11 @@ export function ProjectTree({
                               className={rowLevelClass(2)}
                             />
                             <TreeActions
+                              canAdd={appRecords.length > 0}
                               canDuplicate
                               canDelete
                               busy={busyAction}
+                              onAdd={() => openCreateScreenModal(shot.id)}
                               onDuplicate={() =>
                                 onDuplicateRecord("shots", shot.id)
                               }
@@ -729,6 +767,47 @@ export function ProjectTree({
                                   />
                                   <span className="tree-actions">
                                     <ActionButton
+                                      disabled={
+                                        busyAction ||
+                                        moduleConfigsForApp(instance.appId ?? "")
+                                          .length === 0
+                                      }
+                                      title="Add module"
+                                      onClick={() =>
+                                        openCreateModuleModal(
+                                          instance.id,
+                                          instance.appId,
+                                        )
+                                      }
+                                    >
+                                      +
+                                    </ActionButton>
+                                    <ActionButton
+                                      disabled={busyAction}
+                                      title="Duplicate screen"
+                                      onClick={() =>
+                                        onDuplicateRecord(
+                                          "screen_instances",
+                                          instance.id,
+                                        )
+                                      }
+                                    >
+                                      ⧉
+                                    </ActionButton>
+                                    <ActionButton
+                                      disabled={busyAction}
+                                      title="Delete screen"
+                                      onClick={() =>
+                                        confirmDelete(
+                                          "screen_instances",
+                                          instance.id,
+                                          screenTitle(instance),
+                                        )
+                                      }
+                                    >
+                                      ⌫
+                                    </ActionButton>
+                                    <ActionButton
                                       disabled={busyAction || index === 0}
                                       title="Move screen up"
                                       onClick={() =>
@@ -758,30 +837,94 @@ export function ProjectTree({
                                             moduleInstance.screen_instance_id ===
                                             instance.id,
                                         )
-                                        .map((moduleInstance) => (
-                                          <TreeButton
+                                        .map((moduleInstance, moduleIndex, moduleList) => (
+                                          <div
                                             key={moduleInstance.id}
-                                            tableId="module_instances"
-                                            recordId={moduleInstance.id}
-                                            activeTableId={activeTableId}
-                                            selectedRecordIds={
-                                              selectedRecordIds
-                                            }
-                                            icon="module"
-                                            title={String(
-                                              moduleInstance.module_id ??
-                                                "Module instance",
-                                            )}
-                                            meta="Module content"
-                                            onClick={() =>
-                                              select(
-                                                "module_instances",
-                                                moduleInstance.id,
-                                              )
-                                            }
-                                            className={rowLevelClass(4)}
-                                            asRecord
-                                          />
+                                            className="project-tree-module-row"
+                                          >
+                                            <TreeButton
+                                              tableId="module_instances"
+                                              recordId={moduleInstance.id}
+                                              activeTableId={activeTableId}
+                                              selectedRecordIds={
+                                                selectedRecordIds
+                                              }
+                                              icon="module"
+                                              title={String(
+                                                moduleInstance.module_id ??
+                                                  "Module instance",
+                                              )}
+                                              meta="Module content"
+                                              onClick={() =>
+                                                select(
+                                                  "module_instances",
+                                                  moduleInstance.id,
+                                                )
+                                              }
+                                              className={rowLevelClass(4)}
+                                              asRecord
+                                            />
+                                            <span className="tree-actions">
+                                              <ActionButton
+                                                disabled={
+                                                  busyAction || moduleIndex === 0
+                                                }
+                                                title="Move module up"
+                                                onClick={() =>
+                                                  onMoveModuleInstance(
+                                                    moduleInstance.id,
+                                                    -1,
+                                                  )
+                                                }
+                                              >
+                                                ↑
+                                              </ActionButton>
+                                              <ActionButton
+                                                disabled={
+                                                  busyAction ||
+                                                  moduleIndex >=
+                                                    moduleList.length - 1
+                                                }
+                                                title="Move module down"
+                                                onClick={() =>
+                                                  onMoveModuleInstance(
+                                                    moduleInstance.id,
+                                                    1,
+                                                  )
+                                                }
+                                              >
+                                                ↓
+                                              </ActionButton>
+                                              <ActionButton
+                                                disabled={busyAction}
+                                                title="Duplicate module"
+                                                onClick={() =>
+                                                  onDuplicateRecord(
+                                                    "module_instances",
+                                                    moduleInstance.id,
+                                                  )
+                                                }
+                                              >
+                                                ⧉
+                                              </ActionButton>
+                                              <ActionButton
+                                                disabled={busyAction}
+                                                title="Delete module"
+                                                onClick={() =>
+                                                  confirmDelete(
+                                                    "module_instances",
+                                                    moduleInstance.id,
+                                                    String(
+                                                      moduleInstance.module_id ??
+                                                        "Module instance",
+                                                    ),
+                                                  )
+                                                }
+                                              >
+                                                ⌫
+                                              </ActionButton>
+                                            </span>
+                                          </div>
                                         ))}
                                     </div>
                                   ) : null}
@@ -1105,6 +1248,76 @@ export function ProjectTree({
             setPendingDelete(null);
             onDeleteRecord(pending.tableId, pending.recordId);
           }}
+        />
+      ) : null}
+      {pendingCreateScreenShotId ? (
+        <AppModalDialog
+          eyebrow="Add screen"
+          title="Add app screen"
+          message={
+            <label className="app-modal-form-field">
+              <span>App</span>
+              <select
+                className="app-modal-input"
+                value={selectedCreateAppId}
+                onChange={(event) => setSelectedCreateAppId(event.target.value)}
+              >
+                {appRecords.map((app) => (
+                  <option key={app.id} value={app.id}>
+                    {String(app.name ?? app.id)}
+                  </option>
+                ))}
+              </select>
+              {appRecords.length === 0 ? (
+                <small>No apps exist in this production.</small>
+              ) : null}
+            </label>
+          }
+          confirmLabel="Add screen"
+          onCancel={() => {
+            setPendingCreateScreenShotId(null);
+            setSelectedCreateAppId("");
+          }}
+          onConfirm={confirmCreateScreen}
+        />
+      ) : null}
+      {pendingCreateModuleScreenId ? (
+        <AppModalDialog
+          eyebrow="Add module"
+          title="Add module to screen"
+          message={(() => {
+            const screen = options.screenInstances.find(
+              (instance) => instance.id === pendingCreateModuleScreenId,
+            );
+            const configs = screen?.appId ? moduleConfigsForApp(screen.appId) : [];
+            return (
+              <label className="app-modal-form-field">
+                <span>Module</span>
+                <select
+                  className="app-modal-input"
+                  value={selectedCreateModuleConfigId}
+                  onChange={(event) =>
+                    setSelectedCreateModuleConfigId(event.target.value)
+                  }
+                >
+                  {configs.map((config) => (
+                    <option key={config.id} value={config.id}>
+                      {String(config.name ?? config.module_id ?? config.id)}
+                    </option>
+                  ))}
+                </select>
+                {configs.length === 0 ? (
+                  <small>This app has no module configs.</small>
+                ) : null}
+              </label>
+            );
+          })()}
+          confirmLabel="Add module"
+          onCancel={() => {
+            setPendingCreateModuleScreenId(null);
+            setSelectedCreateModuleConfigId("");
+          }}
+          onConfirm={confirmCreateModule}
         />
       ) : null}
       <div className="project-tree-view">

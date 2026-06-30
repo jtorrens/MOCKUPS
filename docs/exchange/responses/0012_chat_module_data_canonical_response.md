@@ -16,7 +16,7 @@ The canonical in-memory and SQLite fixtures contain no normalized Chat records. 
 - `docs/architecture/07_initial_data_schema.md`
 - `docs/architecture/08_visual_tokens_layout_contract.md`
 - `docs/architecture/09_foundational_module_contracts.md`
-- `docs/examples/shot_lock_to_chat.json`
+- `docs/examples/shot_chat.json`
 - `docs/examples/resolved_props_chat_screen.json`
 - `src/domain/schemas/module.ts`
 - `src/domain/schemas/resolvedProps.ts`

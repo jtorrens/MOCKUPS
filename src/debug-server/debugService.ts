@@ -1514,10 +1514,16 @@ export interface AppCreateRequest {
     | "devices"
     | "palette_colors"
     | "production_fonts"
-    | "render_presets";
+    | "render_presets"
+    | "screen_instances"
+    | "module_instances";
   parent?: {
     productionId?: string;
     episodeId?: string;
+    shotId?: string;
+    screenInstanceId?: string;
+    appId?: string;
+    moduleConfigId?: string;
   };
   name?: string;
   family?: "ios" | "android";
@@ -1534,11 +1540,18 @@ export interface AppRecordActionRequest {
     | "devices"
     | "palette_colors"
     | "production_fonts"
-    | "render_presets";
+    | "render_presets"
+    | "screen_instances"
+    | "module_instances";
   recordId: string;
 }
 
 export interface ScreenInstanceMoveRequest {
+  recordId: string;
+  direction: -1 | 1;
+}
+
+export interface ModuleInstanceMoveRequest {
   recordId: string;
   direction: -1 | 1;
 }
@@ -1845,6 +1858,26 @@ function uniqueId(prefix: string, name: string): string {
   return `${prefix}_${slugifyIdPart(name)}_${Date.now().toString(36)}`;
 }
 
+function uniqueDatabaseId(
+  database: SQLiteDatabase,
+  table: string,
+  prefix: string,
+  name: string,
+): string {
+  const base = uniqueId(prefix, name);
+  let candidate = base;
+  let suffix = 1;
+  while (
+    database
+      .prepare(`SELECT id FROM ${table} WHERE id = ?`)
+      .get(candidate)
+  ) {
+    candidate = `${base}_${suffix}`;
+    suffix += 1;
+  }
+  return candidate;
+}
+
 function nextSortOrder(
   database: SQLiteDatabase,
   table: string,
@@ -1944,6 +1977,251 @@ function ffmpegArgsForRenderPreset(format: string, codec: string) {
   if (codec === "h264_medium") return "-c:v libx264 -preset medium -crf 23 -pix_fmt yuv420p";
   if (codec === "h264_high") return "-c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p";
   return "";
+}
+
+function moduleConfigRow(
+  database: SQLiteDatabase,
+  moduleConfigId: string,
+): Row {
+  const config = database
+    .prepare("SELECT * FROM module_theme_configs WHERE id = ?")
+    .get(moduleConfigId) as Row | undefined;
+  if (!config) {
+    throw new Error(`Module config ${moduleConfigId} not found`);
+  }
+  return config;
+}
+
+function defaultModuleInstanceContent(moduleId: string): JsonObject {
+  if (moduleId === "core.chat") {
+    return ChatModuleDataSchema.parse({
+      schemaVersion: 1,
+      header: { title: "Chat" },
+      messages: [],
+    });
+  }
+  return { schemaVersion: 1 };
+}
+
+function defaultModuleInstanceBehavior(moduleId: string): JsonObject {
+  if (moduleId === "core.chat") {
+    return ChatModuleConfigSchema.parse({});
+  }
+  return { schemaVersion: 1 };
+}
+
+function defaultModuleInstanceAnimation(): JsonObject {
+  return { schemaVersion: 1, tracks: [] };
+}
+
+function createModuleInstanceForConfig({
+  database,
+  screenInstanceId,
+  moduleConfigId,
+}: {
+  database: SQLiteDatabase;
+  screenInstanceId: string;
+  moduleConfigId: string;
+}): Row {
+  const screen = database
+    .prepare("SELECT id, app_id FROM screen_instances WHERE id = ?")
+    .get(screenInstanceId) as Row | undefined;
+  if (!screen) {
+    throw new Error(`Screen instance ${screenInstanceId} not found`);
+  }
+  const config = moduleConfigRow(database, moduleConfigId);
+  if (String(config.app_id) !== String(screen.app_id)) {
+    throw new Error("Module config does not belong to the selected screen app.");
+  }
+  const moduleId = String(config.module_id);
+  const moduleSchemaVersion = Number(config.module_schema_version ?? 1);
+  const sortOrder = nextSortOrder(
+    database,
+    "module_instances",
+    "screen_instance_id",
+    screenInstanceId,
+  );
+  const id = uniqueDatabaseId(
+    database,
+    "module_instances",
+    "module_instance",
+    `${screenInstanceId}_${moduleId}_${sortOrder}`,
+  );
+  database
+    .prepare(
+      `INSERT INTO module_instances (
+        id,
+        screen_instance_id,
+        module_id,
+        module_schema_version,
+        sort_order,
+        content_json,
+        behavior_json,
+        animation_json,
+        metadata_json
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    .run(
+      id,
+      screenInstanceId,
+      moduleId,
+      moduleSchemaVersion,
+      sortOrder,
+      stringifyJsonObject(
+        defaultModuleInstanceContent(moduleId),
+        "module_instances.content_json",
+      ),
+      stringifyJsonObject(
+        defaultModuleInstanceBehavior(moduleId),
+        "module_instances.behavior_json",
+      ),
+      stringifyJsonObject(
+        defaultModuleInstanceAnimation(),
+        "module_instances.animation_json",
+      ),
+      stringifyJsonObject(
+        { moduleConfigId },
+        "module_instances.metadata_json",
+      ),
+    );
+  return database
+    .prepare("SELECT * FROM module_instances WHERE id = ?")
+    .get(id) as Row;
+}
+
+function createScreenInstanceForApp({
+  database,
+  shotId,
+  appId,
+}: {
+  database: SQLiteDatabase;
+  shotId: string;
+  appId: string;
+}): Row {
+  const shot = database
+    .prepare("SELECT * FROM shots WHERE id = ?")
+    .get(shotId) as Row | undefined;
+  if (!shot) {
+    throw new Error(`Shot ${shotId} not found`);
+  }
+  const app = database
+    .prepare("SELECT * FROM apps WHERE id = ?")
+    .get(appId) as Row | undefined;
+  if (!app) {
+    throw new Error(`App ${appId} not found`);
+  }
+  if (String(app.production_id) !== String(shot.production_id)) {
+    throw new Error("App does not belong to the selected shot production.");
+  }
+  const firstModuleConfig = database
+    .prepare(
+      `SELECT * FROM module_theme_configs
+       WHERE app_id = ?
+       ORDER BY name COLLATE NOCASE, id
+       LIMIT 1`,
+    )
+    .get(appId) as Row | undefined;
+  const moduleId = firstModuleConfig ? String(firstModuleConfig.module_id) : null;
+  const moduleSchemaVersion = firstModuleConfig
+    ? Number(firstModuleConfig.module_schema_version ?? 1)
+    : null;
+  const screenType = moduleId === "core.chat" ? "chat" : "custom_app";
+  const durationFrames = Math.max(1, Number(shot.fps ?? 30) * 4);
+  const layerOrder = Number(
+    (
+      database
+        .prepare(
+          "SELECT COALESCE(MAX(layer_order), -1) + 1 AS next_layer_order FROM screen_instances WHERE shot_id = ?",
+        )
+        .get(shotId) as { next_layer_order?: number } | undefined
+    )?.next_layer_order ?? 0,
+  );
+  const ownerActorId =
+    typeof shot.owner_actor_id === "string" && shot.owner_actor_id
+      ? shot.owner_actor_id
+      : firstScalar(
+          database,
+          "SELECT id FROM actors WHERE production_id = ? ORDER BY display_name, id LIMIT 1",
+          String(shot.production_id),
+        );
+  if (!ownerActorId) {
+    throw new Error("Creating a screen requires a shot owner actor or a production actor.");
+  }
+  const actor = database
+    .prepare("SELECT default_device_id, default_theme_id FROM actors WHERE id = ?")
+    .get(ownerActorId) as Row | undefined;
+  const id = uniqueDatabaseId(
+    database,
+    "screen_instances",
+    "screen",
+    `${shotId}_${appId}_${layerOrder}`,
+  );
+  database
+    .prepare(
+      `INSERT INTO screen_instances (
+        id,
+        shot_id,
+        app_id,
+        screen_type,
+        module_id,
+        module_schema_version,
+        owner_actor_id,
+        device_id,
+        device_state_id,
+        device_state_json,
+        theme_id,
+        theme_mode,
+        duration_frames,
+        start_frame,
+        end_frame,
+        layer_order,
+        data_ref_json,
+        module_data_json,
+        module_config_json,
+        module_tokens_override_json,
+        transform_json,
+        props_json,
+        transition_in_json,
+        transition_out_json
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    .run(
+      id,
+      shotId,
+      appId,
+      screenType,
+      moduleId,
+      moduleSchemaVersion,
+      ownerActorId,
+      actor?.default_device_id ?? null,
+      null,
+      null,
+      actor?.default_theme_id ?? null,
+      null,
+      durationFrames,
+      0,
+      durationFrames,
+      layerOrder,
+      null,
+      null,
+      null,
+      null,
+      "{}",
+      "{}",
+      null,
+      null,
+    );
+  if (firstModuleConfig) {
+    createModuleInstanceForConfig({
+      database,
+      screenInstanceId: id,
+      moduleConfigId: String(firstModuleConfig.id),
+    });
+  }
+  syncShotScreenTimeline(database, shotId);
+  return database
+    .prepare("SELECT * FROM screen_instances WHERE id = ?")
+    .get(id) as Row;
 }
 
 export function createAppRecord(
@@ -2406,6 +2684,36 @@ export function createAppRecord(
     return { tableId: "render_presets", record, state: loadAppState(database) };
   }
 
+  if (request.tableId === "screen_instances") {
+    const shotId = request.parent?.shotId;
+    const appId = request.parent?.appId;
+    if (!shotId || !appId) {
+      throw new Error("Creating a screen requires shotId and appId.");
+    }
+    const row = database.transaction(() =>
+      createScreenInstanceForApp({ database, shotId, appId }),
+    )();
+    const record = decodeAppRow(row, tableDefinition("screen_instances"));
+    return { tableId: "screen_instances", record, state: loadAppState(database) };
+  }
+
+  if (request.tableId === "module_instances") {
+    const screenInstanceId = request.parent?.screenInstanceId;
+    const moduleConfigId = request.parent?.moduleConfigId;
+    if (!screenInstanceId || !moduleConfigId) {
+      throw new Error("Creating a module instance requires screenInstanceId and moduleConfigId.");
+    }
+    const row = database.transaction(() =>
+      createModuleInstanceForConfig({
+        database,
+        screenInstanceId,
+        moduleConfigId,
+      }),
+    )();
+    const record = decodeAppRow(row, tableDefinition("module_instances"));
+    return { tableId: "module_instances", record, state: loadAppState(database) };
+  }
+
   const episodeId = request.parent?.episodeId;
   if (!episodeId) {
     throw new Error("Creating a shot requires an episodeId parent.");
@@ -2744,6 +3052,183 @@ function duplicateShotRecord(database: SQLiteDatabase, recordId: string) {
   })();
 }
 
+function duplicateScreenInstanceRecord(database: SQLiteDatabase, recordId: string) {
+  return database.transaction(() => {
+    const existing = database
+      .prepare("SELECT * FROM screen_instances WHERE id = ?")
+      .get(recordId) as Row | undefined;
+    if (!existing) {
+      throw new Error(`Record ${recordId} not found in screen_instances`);
+    }
+    const shotId = String(existing.shot_id);
+    const layerOrder = Number(
+      (
+        database
+          .prepare(
+            "SELECT COALESCE(MAX(layer_order), -1) + 1 AS next_layer_order FROM screen_instances WHERE shot_id = ?",
+          )
+          .get(shotId) as { next_layer_order?: number } | undefined
+      )?.next_layer_order ?? 0,
+    );
+    const id = uniqueDatabaseId(
+      database,
+      "screen_instances",
+      "screen",
+      `${shotId}_${existing.app_id}_copy`,
+    );
+    database
+      .prepare(
+        `INSERT INTO screen_instances (
+          id,
+          shot_id,
+          app_id,
+          screen_type,
+          module_id,
+          module_schema_version,
+          owner_actor_id,
+          device_id,
+          device_state_id,
+          device_state_json,
+          theme_id,
+          theme_mode,
+          duration_frames,
+          start_frame,
+          end_frame,
+          layer_order,
+          data_ref_json,
+          module_data_json,
+          module_config_json,
+          module_tokens_override_json,
+          transform_json,
+          props_json,
+          transition_in_json,
+          transition_out_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        id,
+        shotId,
+        existing.app_id,
+        existing.screen_type,
+        existing.module_id ?? null,
+        existing.module_schema_version ?? null,
+        existing.owner_actor_id,
+        existing.device_id ?? null,
+        existing.device_state_id ?? null,
+        existing.device_state_json ?? null,
+        existing.theme_id ?? null,
+        existing.theme_mode ?? null,
+        existing.duration_frames,
+        0,
+        Number(existing.duration_frames ?? 1),
+        layerOrder,
+        existing.data_ref_json ?? null,
+        existing.module_data_json ?? null,
+        existing.module_config_json ?? null,
+        existing.module_tokens_override_json ?? null,
+        existing.transform_json ?? "{}",
+        existing.props_json ?? "{}",
+        existing.transition_in_json ?? null,
+        existing.transition_out_json ?? null,
+      );
+
+    const modules = database
+      .prepare("SELECT * FROM module_instances WHERE screen_instance_id = ? ORDER BY sort_order, id")
+      .all(recordId) as Row[];
+    for (const moduleInstance of modules) {
+      database
+        .prepare(
+          `INSERT INTO module_instances (
+            id,
+            screen_instance_id,
+            module_id,
+            module_schema_version,
+            sort_order,
+            content_json,
+            behavior_json,
+            animation_json,
+            metadata_json
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .run(
+          uniqueDatabaseId(
+            database,
+            "module_instances",
+            "module_instance",
+            `${id}_${moduleInstance.id}`,
+          ),
+          id,
+          moduleInstance.module_id,
+          moduleInstance.module_schema_version,
+          moduleInstance.sort_order ?? null,
+          moduleInstance.content_json,
+          moduleInstance.behavior_json,
+          moduleInstance.animation_json ?? '{"schemaVersion":1,"tracks":[]}',
+          moduleInstance.metadata_json ?? null,
+        );
+    }
+
+    syncShotScreenTimeline(database, shotId);
+    return decodeAppRow(
+      database.prepare("SELECT * FROM screen_instances WHERE id = ?").get(id) as Row,
+      tableDefinition("screen_instances"),
+    );
+  })();
+}
+
+function duplicateModuleInstanceRecord(database: SQLiteDatabase, recordId: string) {
+  return database.transaction(() => {
+    const existing = database
+      .prepare("SELECT * FROM module_instances WHERE id = ?")
+      .get(recordId) as Row | undefined;
+    if (!existing) {
+      throw new Error(`Record ${recordId} not found in module_instances`);
+    }
+    const screenInstanceId = String(existing.screen_instance_id);
+    const sortOrder = nextSortOrder(
+      database,
+      "module_instances",
+      "screen_instance_id",
+      screenInstanceId,
+    );
+    const id = uniqueDatabaseId(
+      database,
+      "module_instances",
+      "module_instance",
+      `${screenInstanceId}_${existing.module_id}_copy`,
+    );
+    database
+      .prepare(
+        `INSERT INTO module_instances (
+          id,
+          screen_instance_id,
+          module_id,
+          module_schema_version,
+          sort_order,
+          content_json,
+          behavior_json,
+          animation_json,
+          metadata_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        id,
+        screenInstanceId,
+        existing.module_id,
+        existing.module_schema_version,
+        sortOrder,
+        existing.content_json,
+        existing.behavior_json,
+        existing.animation_json ?? '{"schemaVersion":1,"tracks":[]}',
+        existing.metadata_json ?? null,
+      );
+    return decodeAppRow(
+      database.prepare("SELECT * FROM module_instances WHERE id = ?").get(id) as Row,
+      tableDefinition("module_instances"),
+    );
+  })();
+}
+
 export function duplicateAppRecord(
   database: SQLiteDatabase,
   request: AppRecordActionRequest,
@@ -2751,6 +3236,10 @@ export function duplicateAppRecord(
   const record =
     request.tableId === "shots"
       ? duplicateShotRecord(database, request.recordId)
+      : request.tableId === "screen_instances"
+        ? duplicateScreenInstanceRecord(database, request.recordId)
+      : request.tableId === "module_instances"
+        ? duplicateModuleInstanceRecord(database, request.recordId)
       : duplicateSimpleRecord(database, request.tableId, request.recordId);
   return { tableId: request.tableId, record, state: loadAppState(database) };
 }
@@ -2803,6 +3292,63 @@ export function moveScreenInstance(
   })();
 }
 
+export function moveModuleInstance(
+  database: SQLiteDatabase,
+  request: ModuleInstanceMoveRequest,
+) {
+  const direction = request.direction < 0 ? -1 : 1;
+  return database.transaction(() => {
+    const current = database
+      .prepare("SELECT * FROM module_instances WHERE id = ?")
+      .get(request.recordId) as Row | undefined;
+    if (!current) {
+      throw new Error(`Module instance ${request.recordId} not found`);
+    }
+    const modules = database
+      .prepare(
+        "SELECT id, sort_order FROM module_instances WHERE screen_instance_id = ? ORDER BY sort_order, id",
+      )
+      .all(String(current.screen_instance_id)) as {
+        id: string;
+        sort_order: number | null;
+      }[];
+    const normalized = modules.map((moduleInstance, index) => ({
+      ...moduleInstance,
+      sort_order:
+        typeof moduleInstance.sort_order === "number"
+          ? moduleInstance.sort_order
+          : index,
+    }));
+    const currentIndex = normalized.findIndex(
+      (moduleInstance) => moduleInstance.id === request.recordId,
+    );
+    const target = normalized[currentIndex + direction];
+    if (!target) {
+      return {
+        state: loadAppState(database),
+        record: decodeAppRow(current, tableDefinition("module_instances")),
+        tableId: "module_instances" as const,
+      };
+    }
+    const updateOrder = database.prepare(
+      "UPDATE module_instances SET sort_order = ? WHERE id = ?",
+    );
+    updateOrder.run(target.sort_order, current.id);
+    updateOrder.run(normalized[currentIndex]?.sort_order ?? 0, target.id);
+    const record = decodeAppRow(
+      database
+        .prepare("SELECT * FROM module_instances WHERE id = ?")
+        .get(request.recordId) as Row,
+      tableDefinition("module_instances"),
+    );
+    return {
+      state: loadAppState(database),
+      record,
+      tableId: "module_instances" as const,
+    };
+  })();
+}
+
 export function deleteAppRecord(
   database: SQLiteDatabase,
   request: AppRecordActionRequest,
@@ -2830,9 +3376,14 @@ export function deleteAppRecord(
       `Production font ${String(existing.family ?? request.recordId)} is still used and cannot be deleted`,
     );
   }
+  const shotIdToSync =
+    request.tableId === "screen_instances" ? String(existing.shot_id) : "";
   database
     .prepare(`DELETE FROM ${definition.table} WHERE id = ?`)
     .run(request.recordId);
+  if (shotIdToSync) {
+    syncShotScreenTimeline(database, shotIdToSync);
+  }
   return {
     tableId: request.tableId,
     deletedRecordId: request.recordId,

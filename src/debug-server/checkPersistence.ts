@@ -22,12 +22,12 @@ seedExampleDataset(database);
 
 const originalShot = database
   .prepare("SELECT name FROM shots WHERE id = ?")
-  .get("shot_lock_to_chat") as { name: string };
+  .get("shot_chat") as { name: string };
 const scalarName = `${originalShot.name} persisted`;
 
 updateAppRecord(database, {
   tableId: "shots",
-  recordId: "shot_lock_to_chat",
+  recordId: "shot_chat",
   patch: { name: scalarName },
 });
 
@@ -56,7 +56,7 @@ database = createDatabase(databasePath);
 try {
   const persistedShot = database
     .prepare("SELECT name FROM shots WHERE id = ?")
-    .get("shot_lock_to_chat") as { name: string };
+    .get("shot_chat") as { name: string };
   assert(
     persistedShot.name === scalarName,
     "Scalar edit did not persist after SQLite reopen",
@@ -76,9 +76,9 @@ try {
 
   const payload = loadDebugPayload(database, {
     productionId: "production_demo",
-    shotId: "shot_lock_to_chat",
+    shotId: "shot_chat",
     screenInstanceId: "screen_instance_chat",
-    frame: 210,
+    frame: 60,
   });
   const props = payload.resolvedScreen as {
     props?: { showKeyboard?: boolean; debugShowBounds?: boolean };

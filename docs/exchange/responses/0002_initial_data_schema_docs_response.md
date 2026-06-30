@@ -8,7 +8,7 @@ Defined the practical first data schema for all required entities and added six 
 
 - `docs/architecture/07_initial_data_schema.md`
 - `docs/examples/production_minimal.json`
-- `docs/examples/shot_lock_to_chat.json`
+- `docs/examples/shot_chat.json`
 - `docs/examples/theme_ios_light.json`
 - `docs/examples/device_iphone_generic.json`
 - `docs/examples/resolved_props_chat_screen.json`

@@ -159,4 +159,4 @@ Restore behavior depends on whether the edited JSON is a sparse override documen
 
 ## Why module configs are separate
 
-Module-specific design values should be edited in a module context because they are not globally meaningful. A Chat bubble tail is part of Chat; a lock-screen notification card, call button grid, or home-screen app icon grid will each have their own module-specific design model. Keeping those tokens in module theme configs avoids polluting the global theme and makes future specialized module editors cleaner.
+Module-specific design values should be edited in a module context because they are not globally meaningful. A Chat bubble tail is part of Chat; a notification card, call button grid, or home-screen app icon grid will each have their own module-specific design model. Keeping those tokens in module theme configs avoids polluting the global theme and makes future specialized module editors cleaner.

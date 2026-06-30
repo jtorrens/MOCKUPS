@@ -15,7 +15,6 @@ import { ModuleParameterAnimationSchema } from "./animation.js";
 
 export const ScreenTypeSchema = z.enum([
   "chat",
-  "lock_screen",
   "notification_stack",
   "incoming_call",
   "in_call",
@@ -25,7 +24,6 @@ export const ScreenTypeSchema = z.enum([
 
 export const ScreenEventTypeSchema = z.enum([
   "notification_appears",
-  "unlock_gesture",
   "incoming_call_accepted",
   "message_write_on_starts",
   "scroll_moves",

@@ -42,7 +42,7 @@ Core architecture decisions already accepted:
 ```text
 docs/architecture/07_initial_data_schema.md
 docs/examples/production_minimal.json
-docs/examples/shot_lock_to_chat.json
+docs/examples/shot_chat.json
 docs/examples/theme_ios_light.json
 docs/examples/device_iphone_generic.json
 docs/examples/resolved_props_chat_screen.json
@@ -209,7 +209,7 @@ transition_out_json
 
 Explain:
 
-* `screen_type` is a stable discriminator, such as `chat`, `lock_screen`, `notification_stack`, `incoming_call`, `home_screen`, or `custom_app`.
+* `screen_type` is a stable discriminator, such as `chat`, `notification_stack`, `incoming_call`, `home_screen`, or `custom_app`.
 * `data_ref_json` points to the narrative/data source used by the screen.
 * `props_json` contains template-specific configuration.
 * `transform_json` describes how the screen is positioned or transformed inside the shot.
@@ -363,12 +363,12 @@ Create a minimal example containing:
 
 This example may be compact.
 
-### `docs/examples/shot_lock_to_chat.json`
+### `docs/examples/shot_chat.json`
 
 Create a richer example showing:
 
 ```text
-lock screen → notification appears → unlock → chat screen
+chat screen
 ```
 
 It should include:
@@ -377,7 +377,7 @@ It should include:
 * one shot
 * at least two screen instances:
 
-  * lock screen
+  * phone screen
   * chat screen
 * at least one screen event for a notification appearing
 * one unlock event

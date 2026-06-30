@@ -11,9 +11,9 @@ export const CHAT_PREVIEW_FPS = 25;
 export const CHAT_PREVIEW_DURATION_FRAMES = 100;
 
 const SOURCE_SHOT_FPS = 30;
-const SOURCE_SHOT_START_FRAME = 150;
+const SOURCE_SHOT_START_FRAME = 0;
 const PRODUCTION_ID = "production_demo";
-const SHOT_ID = "shot_lock_to_chat";
+const SHOT_ID = "shot_chat";
 const repository = loadExampleRepository();
 
 export function remotionFrameToShotFrame(remotionFrame: number): number {

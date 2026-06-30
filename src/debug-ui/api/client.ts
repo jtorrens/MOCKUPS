@@ -133,10 +133,16 @@ export interface AppCreateRequest {
     | "devices"
     | "palette_colors"
     | "production_fonts"
-    | "render_presets";
+    | "render_presets"
+    | "screen_instances"
+    | "module_instances";
   parent?: {
     productionId?: string;
     episodeId?: string;
+    shotId?: string;
+    screenInstanceId?: string;
+    appId?: string;
+    moduleConfigId?: string;
   };
   name?: string;
   family?: "ios" | "android";
@@ -153,7 +159,9 @@ export interface AppRecordActionRequest {
     | "devices"
     | "palette_colors"
     | "production_fonts"
-    | "render_presets";
+    | "render_presets"
+    | "screen_instances"
+    | "module_instances";
   recordId: string;
 }
 
@@ -227,6 +235,19 @@ export async function moveScreenInstance(request: {
 }): Promise<{ state: AppState; record: AppRecord; tableId: "screen_instances" }> {
   return readResponse(
     await fetch("/api/app/screen-instance/move", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
+    }),
+  );
+}
+
+export async function moveModuleInstance(request: {
+  recordId: string;
+  direction: -1 | 1;
+}): Promise<{ state: AppState; record: AppRecord; tableId: "module_instances" }> {
+  return readResponse(
+    await fetch("/api/app/module-instance/move", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(request),

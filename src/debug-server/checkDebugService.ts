@@ -117,7 +117,7 @@ try {
     productionId: production.id,
     shotId: shot.id,
     screenInstanceId: screen.id,
-    frame: Math.max(screen.startFrame, 210),
+    frame: Math.max(screen.startFrame, 60),
   });
   assert(payload.editable.moduleData, "Preview payload must include module data");
   assert(payload.resolvedScreen, "Preview payload must include resolved props");
@@ -152,7 +152,7 @@ try {
     productionId: production.id,
     shotId: shot.id,
     screenInstanceId: screen.id,
-    frame: Math.max(screen.startFrame, 210),
+    frame: Math.max(screen.startFrame, 60),
   });
   assert(
     (savedPayload.resolvedScreen as { props?: { debugShowBounds?: boolean } })

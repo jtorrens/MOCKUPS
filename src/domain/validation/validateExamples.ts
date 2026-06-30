@@ -11,7 +11,7 @@ import resolvedChatExample from "../../../docs/examples/resolved_props_chat_scre
 import resolvedBubbleExample from "../../../docs/examples/resolved_props_message_bubble.json" with {
   type: "json",
 };
-import shotExample from "../../../docs/examples/shot_lock_to_chat.json" with {
+import shotExample from "../../../docs/examples/shot_chat.json" with {
   type: "json",
 };
 import themeExample from "../../../docs/examples/theme_ios_light.json" with {
@@ -28,7 +28,6 @@ import {
   ProductionSchema,
   ResolvedChatScreenPropsSchema,
   ResolvedMessageBubblePropsSchema,
-  ScreenEventSchema,
   ScreenInstanceSchema,
   ShotSchema,
   ThemeSchema,
@@ -46,16 +45,12 @@ const ProductionMinimalExampleSchema = z.object({
   module_instances: z.array(ModuleInstanceSchema).min(1),
 });
 
-const ShotLockToChatExampleSchema = z
+const ShotChatExampleSchema = z
   .object({
     production_id: IdSchema,
     shot: ShotSchema,
-    references: z.object({
-      notification_id: IdSchema,
-    }),
-    screen_instances: z.array(ScreenInstanceSchema).min(2),
-    module_instances: z.array(ModuleInstanceSchema).min(2),
-    screen_events: z.array(ScreenEventSchema).min(2),
+    screen_instances: z.array(ScreenInstanceSchema).min(1),
+    module_instances: z.array(ModuleInstanceSchema).min(1),
   })
   .superRefine((value, context) => {
     const screenInstanceIds = new Set(
@@ -76,16 +71,6 @@ const ShotLockToChatExampleSchema = z
           code: "custom",
           message: "screen instance must reference shot.id",
           path: ["screen_instances", index, "shot_id"],
-        });
-      }
-    });
-
-    value.screen_events.forEach((event, index) => {
-      if (!screenInstanceIds.has(event.screen_instance_id)) {
-        context.addIssue({
-          code: "custom",
-          message: "screen event must reference a listed screen instance",
-          path: ["screen_events", index, "screen_instance_id"],
         });
       }
     });
@@ -140,21 +125,6 @@ const ShotLockToChatExampleSchema = z
         path: ["screen_instances", "data_ref_json"],
       });
     }
-
-    const notificationEvent = value.screen_events.find(
-      (event) => event.event_type === "notification_appears",
-    );
-    if (
-      notificationEvent?.payload_json.notification_id !==
-      value.references.notification_id
-    ) {
-      context.addIssue({
-        code: "custom",
-        message:
-          "notification event payload must match references.notification_id",
-        path: ["references", "notification_id"],
-      });
-    }
   });
 
 const validations = [
@@ -164,8 +134,8 @@ const validations = [
     value: productionExample,
   },
   {
-    file: "shot_lock_to_chat.json",
-    schema: ShotLockToChatExampleSchema,
+    file: "shot_chat.json",
+    schema: ShotChatExampleSchema,
     value: shotExample,
   },
   {

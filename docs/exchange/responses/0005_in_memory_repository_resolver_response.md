@@ -30,8 +30,8 @@ None. Missing full records in the documentation fixtures were filled in a dedica
 - `npm test` — passed.
 - `npm run typecheck` — passed through `npm test`.
 - `npm run validate:examples` — all six JSON examples passed through `npm test`.
-- `npm run validate:resolver` — passed for lock frame 75, lock/chat overlap frame 150, chat write-on frame 210, message-bubble local frame 60, and completed write-on frame 240.
+- `npm run validate:resolver` — passed for chat write-on frame 60, message-bubble local frame 60, and completed write-on frame 90.
 
 ## Notes
 
-The implementation follows the suggested structure. The fixture loader derives minimal templates, actors, device states, media assets, app, conversation participants, messages, and notification from existing example IDs/content. These records are development fixtures, not file-based persistence. Lock-screen support is intentionally lightweight but resolves its notification and app; chat output is fully validated. No visual module, renderer/compositor, UI, Electron, Remotion, SQLite, migration, persistence, asset pipeline, or export code was added.
+The implementation follows the suggested structure. The fixture loader derives minimal templates, actors, device states, app, conversation participants, and messages from existing example IDs/content. These records are development fixtures, not file-based persistence. Chat output is fully validated. No visual module, renderer/compositor, UI, Electron, Remotion, SQLite, migration, persistence, asset pipeline, or export code was added.
