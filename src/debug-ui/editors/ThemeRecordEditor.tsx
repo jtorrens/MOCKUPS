@@ -4,8 +4,12 @@ import type {
   AppRecord,
   AppTableDefinition,
 } from "../api/client.js";
+import { THEME_TOKEN_BINDINGS } from "../../domain/fields/themeFields.js";
 import { EditorSubsectionAccordion } from "../editor-ui/EditorSubsectionAccordion.js";
+import { friendlyGroupLabel } from "../components/json-editor/labels.js";
 import { ModeColorEditor } from "../components/json-editor/ModeColorEditor.js";
+import { jsonUiHintsFromFieldBindings } from "../components/json-editor/fieldDefinitionHints.js";
+import { tokenOverrideHasNonDefaultFields } from "../components/json-editor/TokenOverrideEditor.js";
 import { createPaletteColorCatalog } from "../components/json-editor/paletteColors.js";
 import {
   stringifyJson,
@@ -69,6 +73,7 @@ export function ThemeRecordEditor({
     typeof record.production_id === "string" ? record.production_id : undefined,
   );
   const productionFontCatalog = createProductionFontCatalog(records);
+  const themeTokenHints = jsonUiHintsFromFieldBindings(THEME_TOKEN_BINDINGS);
   const themeTokenRoot = normalizedThemeTokenRoot({
     root: parsedObject(drafts.tokens_json ?? "{}"),
     family,
@@ -90,6 +95,18 @@ export function ThemeRecordEditor({
       }),
     };
     setJsonDraft("tokens_json", nextRoot);
+  }
+
+  function themeTokenGroupWarning(group: string) {
+    return tokenOverrideHasNonDefaultFields({
+      rootValue:
+        group === "neutralTint"
+          ? (themeTokenRoot as JsonValue)
+          : (editorValueForThemeTokenGroup(themeTokenRoot, group) as JsonValue),
+      inheritedRoot: {},
+      hints: themeTokenHints,
+      groupContext: group,
+    });
   }
 
   return (
@@ -123,11 +140,15 @@ export function ThemeRecordEditor({
                   group !== "neutralTint" &&
                   group !== "surfaceRelief",
               )
+              .sort((left, right) =>
+                friendlyGroupLabel(left).localeCompare(friendlyGroupLabel(right)),
+              )
               .map((group) => (
                 <EditorSubsectionAccordion
                   key={group}
                   group={group}
                   activeGroup={resolvedActiveTokenGroup}
+                  warning={themeTokenGroupWarning(group)}
                   onToggle={setActiveTokenGroup}
                 >
                   <div className="record-editor-field-stack record-editor-single-column theme-token-group-editor">
@@ -151,6 +172,7 @@ export function ThemeRecordEditor({
                 key={group}
                 group={group}
                 activeGroup={resolvedActiveTokenGroup}
+                warning={themeTokenGroupWarning(group)}
                 onToggle={setActiveTokenGroup}
               >
                 <ThemeChromeGroupEditor
@@ -167,6 +189,7 @@ export function ThemeRecordEditor({
               key="fonts"
               group="fonts"
               activeGroup={resolvedActiveTokenGroup}
+              warning={themeTokenGroupWarning("fonts")}
               onToggle={setActiveTokenGroup}
             >
               <ThemeFontsGroupEditor
@@ -181,6 +204,7 @@ export function ThemeRecordEditor({
               key="neutralTint"
               group="neutralTint"
               activeGroup={resolvedActiveTokenGroup}
+              warning={themeTokenGroupWarning("neutralTint")}
               onToggle={setActiveTokenGroup}
             >
               <NeutralTintGroupEditor
@@ -194,6 +218,7 @@ export function ThemeRecordEditor({
               key="cursor"
               group="cursor"
               activeGroup={resolvedActiveTokenGroup}
+              warning={themeTokenGroupWarning("cursor")}
               onToggle={setActiveTokenGroup}
             >
               <ThemeCursorGroupEditor
@@ -207,6 +232,7 @@ export function ThemeRecordEditor({
               key="surfaceRelief"
               group="surfaceRelief"
               activeGroup={resolvedActiveTokenGroup}
+              warning={themeTokenGroupWarning("surfaceRelief")}
               onToggle={setActiveTokenGroup}
             >
               <ThemeSurfaceReliefGroupEditor

@@ -4,24 +4,34 @@ import type {
   AppRecord,
   AppTableDefinition,
 } from "../api/client.js";
+import {
+  APP_CONFIG_BINDINGS,
+  APP_METADATA_BINDINGS,
+} from "../../domain/fields/appFields.js";
+import { THEME_TOKEN_BINDINGS } from "../../domain/fields/themeFields.js";
 import { EditorSubsectionAccordion } from "../editor-ui/EditorSubsectionAccordion.js";
 import {
   hasModeColorOverrides,
   ModeColorEditor,
 } from "../components/json-editor/ModeColorEditor.js";
+import {
+  TokenOverrideEditor,
+  tokenOverrideHasNonDefaultFields,
+} from "../components/json-editor/TokenOverrideEditor.js";
+import { jsonUiHintsFromFieldBindings } from "../components/json-editor/fieldDefinitionHints.js";
 import { createPaletteColorCatalog } from "../components/json-editor/paletteColors.js";
+import type { ProductionFontCatalog } from "../components/json-editor/productionFonts.js";
 import {
   isJsonObject,
-  stringifyJson,
   type JsonValue,
 } from "../components/json-editor/jsonEditorUtils.js";
+import { friendlyGroupLabel } from "../components/json-editor/labels.js";
 import { AppEditor } from "./AppEditor.js";
 import { NeutralTintGroupEditor } from "./ThemeFields.js";
 import {
   AppIconFields,
   AppWallpaperEditor,
 } from "./AppMediaFields.js";
-import { ActorAvatarPreview, MediaCoverPreview } from "./MediaPreviews.js";
 import {
   editorValueForTokenGroup,
   inheritedValueForTokenGroup,
@@ -30,12 +40,22 @@ import {
   tokenEditorGroups,
 } from "./recordTokenUtils.js";
 import { parsedObject } from "./recordJsonUtils.js";
-import type { RawJsonFieldOverride } from "./RecordFieldRenderer.js";
 import type { AppEditorTab } from "./editorTabs.js";
 
 interface AppNativeBridge {
   pickFile?: () => Promise<string[]>;
 }
+
+const APP_EDITABLE_TOKEN_GROUPS = [
+  "fonts",
+  "surfaceRelief",
+] as const;
+
+const APP_SPECIAL_TOKEN_GROUPS = new Set<string>([
+  "icon",
+  "neutralTint",
+  "wallpaper",
+]);
 
 interface AppRecordEditorProps {
   table: AppTableDefinition;
@@ -47,13 +67,9 @@ interface AppRecordEditorProps {
   activeTab: AppEditorTab;
   activeTokenGroup: string;
   mediaRoot: string;
+  productionFontCatalog?: ProductionFontCatalog;
   nativeBridge: AppNativeBridge | undefined;
   renderFields: (columns: string[]) => ReactNode;
-  renderField: (
-    field: AppFieldDefinition,
-    rawOverride?: RawJsonFieldOverride,
-  ) => ReactNode;
-  renderFlatJsonObjectEditor: (column: string, omitKeys?: string[]) => ReactNode;
   setActiveTab: (tab: AppEditorTab) => void;
   setActiveTokenGroup: (group: string) => void;
   setJsonDraft: (column: string, value: JsonValue) => void;
@@ -94,13 +110,12 @@ export function AppRecordEditor({
   activeTab,
   activeTokenGroup,
   mediaRoot,
+  productionFontCatalog,
   nativeBridge,
   renderFields,
-  renderField,
-  renderFlatJsonObjectEditor,
   setActiveTab,
-      setActiveTokenGroup,
-      setJsonDraft,
+  setActiveTokenGroup,
+  setJsonDraft,
 }: AppRecordEditorProps) {
   const configField = fieldsByColumn.get("config_json");
   const metadataField = fieldsByColumn.get("metadata_json");
@@ -117,9 +132,35 @@ export function AppRecordEditor({
   const inheritedAppRoot = stripAppStatusAndNavigationTokens(
     inheritedFields.config_json,
   );
+  const appNoteHints = jsonUiHintsFromFieldBindings(
+    APP_METADATA_BINDINGS.filter((binding) => binding.outputPath[0] === "note"),
+  );
+  const appIconHints = jsonUiHintsFromFieldBindings(
+    APP_METADATA_BINDINGS.filter((binding) => binding.outputPath[0] === "icon"),
+  );
+  const appWallpaperHints = jsonUiHintsFromFieldBindings(APP_CONFIG_BINDINGS);
+  const appTokenHints = jsonUiHintsFromFieldBindings(THEME_TOKEN_BINDINGS);
   const appTokenGroups = tokenEditorGroups(appEditorTokenRoot, inheritedAppRoot);
+  const hintedAppTokenGroups = new Set(
+    Object.values(appTokenHints)
+      .map((hint) => {
+        const path = hint.storagePath ?? [];
+        return typeof path[0] === "string" ? path[0] : undefined;
+      })
+      .filter((group): group is string => Boolean(group)),
+  );
+  const appTokenSections = Array.from(
+    new Set([...appTokenGroups, ...APP_EDITABLE_TOKEN_GROUPS, "icon"]),
+  )
+    .filter(
+      (group) =>
+        APP_SPECIAL_TOKEN_GROUPS.has(group) || hintedAppTokenGroups.has(group),
+    )
+    .sort((left, right) =>
+      friendlyGroupLabel(left).localeCompare(friendlyGroupLabel(right)),
+    );
   const resolvedActiveTokenGroup =
-    activeTokenGroup && appTokenGroups.includes(activeTokenGroup)
+    activeTokenGroup && appTokenSections.includes(activeTokenGroup)
       ? activeTokenGroup
       : "";
 
@@ -131,6 +172,38 @@ export function AppRecordEditor({
     setJsonDraft("config_json", nextConfig);
   }
 
+  function appTokenSectionWarning(group: string) {
+    if (group === "icon") {
+      return tokenOverrideHasNonDefaultFields({
+        rootValue: appMetadataRoot as JsonValue,
+        inheritedRoot: {},
+        hints: appIconHints,
+        groupContext: "icon",
+      });
+    }
+    if (group === "wallpaper") {
+      return tokenOverrideHasNonDefaultFields({
+        rootValue: appTokenRoot as JsonValue,
+        inheritedRoot: {},
+        hints: appWallpaperHints,
+        groupContext: "wallpaper",
+      });
+    }
+    return tokenOverrideHasNonDefaultFields({
+      rootValue:
+        group === "neutralTint"
+          ? (appEditorTokenRoot as JsonValue)
+          : (editorValueForTokenGroup(appEditorTokenRoot, group) as JsonValue),
+      inheritedRoot:
+        group === "neutralTint"
+          ? (inheritedAppRoot as JsonValue)
+          : ((inheritedValueForTokenGroup(inheritedAppRoot, group) ??
+              {}) as JsonValue),
+      hints: appTokenHints,
+      groupContext: group,
+    });
+  }
+
   return (
     <AppEditor
       table={table}
@@ -138,6 +211,7 @@ export function AppRecordEditor({
       activeTab={activeTab}
       tokensFieldExists={Boolean(configField)}
       notesFieldExists={Boolean(metadataField)}
+      colorsFieldExists={false}
       tokensWarning={explicitLocalOverridesInherited(
         appEditorTokenRoot,
         inheritedAppRoot,
@@ -149,36 +223,34 @@ export function AppRecordEditor({
       )}
       renderGeneral={() => (
         <>
-          {renderFields(["id", "production_id", "name", "bundle_key", "app_type"])}
-          <AppIconFields
-            record={record}
-            drafts={drafts}
-            metadataRoot={appMetadataRoot}
-            mediaRoot={mediaRoot}
-            nativeBridge={nativeBridge}
-            AvatarPreview={ActorAvatarPreview}
-            onMetadataRootChange={(nextRoot) =>
-              setJsonDraft("metadata_json", nextRoot)
-            }
-          />
+          {renderFields(["name"])}
         </>
       )}
       renderTokens={() =>
         configField
-          ? appTokenGroups.map((group) => (
+          ? appTokenSections.map((group) => (
               <EditorSubsectionAccordion
                 key={group}
                 group={group}
                 activeGroup={resolvedActiveTokenGroup}
+                warning={appTokenSectionWarning(group)}
                 onToggle={setActiveTokenGroup}
               >
-                {group === "wallpaper" ? (
+                {group === "icon" ? (
+                  <AppIconFields
+                    metadataRoot={appMetadataRoot}
+                    mediaRoot={mediaRoot}
+                    nativeBridge={nativeBridge}
+                    onMetadataRootChange={(nextRoot) =>
+                      setJsonDraft("metadata_json", nextRoot)
+                    }
+                  />
+                ) : group === "wallpaper" ? (
                   <AppWallpaperEditor
                     appTokenRoot={appTokenRoot}
                     mediaRoot={mediaRoot}
                     nativeBridge={nativeBridge}
                     paletteCatalog={paletteCatalog}
-                    MediaCoverPreview={MediaCoverPreview}
                     onTokenRootChange={updateAppTokenRoot}
                   />
                 ) : group === "neutralTint" ? (
@@ -188,30 +260,34 @@ export function AppRecordEditor({
                   />
                 ) : (
                   <div className="record-editor-field-stack record-editor-single-column theme-token-group-editor">
-                    {renderField(configField, {
-                      hideLabel: true,
-                      rawText: stringifyJson(
+                    <TokenOverrideEditor
+                      rootValue={
                         editorValueForTokenGroup(
                           appEditorTokenRoot,
                           group,
-                        ) as JsonValue,
-                      ),
-                      groupContext: group,
-                      inheritedValue: inheritedValueForTokenGroup(
-                        inheritedAppRoot,
-                        group,
-                      ),
-                      onRawTextChange: (nextRawText) => {
-                        const nextVisibleValue = parsedObject(nextRawText);
+                        ) as JsonValue
+                      }
+                      inheritedRoot={
+                        (inheritedValueForTokenGroup(inheritedAppRoot, group) ??
+                          {}) as JsonValue
+                      }
+                      hints={appTokenHints}
+                      groupContext={group}
+                      inlineSingleGroup
+                      productionFontCatalog={productionFontCatalog}
+                      paletteCatalog={paletteCatalog}
+                      mediaRoot={mediaRoot}
+                      nativeBridge={nativeBridge}
+                      onRootChange={(nextVisibleValue) => {
                         updateAppTokenRoot({
                           ...appEditorTokenRoot,
                           [group]: mergeTokenGroupWithInternalFields(
                             appEditorTokenRoot[group],
-                            nextVisibleValue as JsonValue,
+                            nextVisibleValue,
                           ),
                         } as JsonValue);
-                      },
-                    })}
+                      }}
+                    />
                   </div>
                 )}
               </EditorSubsectionAccordion>
@@ -228,7 +304,15 @@ export function AppRecordEditor({
         />
       )}
       renderNotes={() =>
-        metadataField ? renderFlatJsonObjectEditor("metadata_json") : null
+        metadataField ? (
+          <TokenOverrideEditor
+            rootValue={appMetadataRoot as JsonValue}
+            inheritedRoot={{}}
+            hints={appNoteHints}
+            inlineSingleGroup
+            onRootChange={(nextRoot) => setJsonDraft("metadata_json", nextRoot)}
+          />
+        ) : null
       }
       setActiveTab={setActiveTab}
     />

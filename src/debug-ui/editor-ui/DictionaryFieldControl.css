@@ -1,0 +1,189 @@
+/*
+  Dictionary controls are atomic editor controls.
+
+  Editors may decide layout: cards, rows, grouping, labels and restore slots.
+  They must not redefine the visual contract of a control emitted by
+  DictionaryFieldControl. This file is intentionally imported after the editor
+  CSS layers so each dictionary subtype can protect its own border/background/
+  text/focus styles from later editor-specific selectors.
+
+  The green border is temporary migration/debug feedback: label green means the
+  field is described by the dictionary; control green means the concrete control
+  is emitted by DictionaryFieldControl.
+*/
+
+.editor-workspace {
+  --dictionary-control-debug-border-color: #16a34a;
+  --dictionary-control-border: 1px solid var(--dictionary-control-debug-border-color);
+  --dictionary-control-outline: 1px solid var(--dictionary-control-debug-border-color);
+  --dictionary-control-outline-offset: -2px;
+  --dictionary-control-radius: var(--field-control-radius, 9px);
+  --dictionary-control-background: var(--editor-input-background, #ffffff);
+  --dictionary-control-color: var(--editor-input-color, #15171c);
+  --dictionary-control-placeholder-color: var(--editor-input-placeholder-color, #8a94a6);
+  --dictionary-control-focus-border-color: var(--editor-input-focus-border-color, #8fa2ff);
+  --dictionary-control-focus-shadow: var(--editor-input-focus-shadow, 0 0 0 3px rgba(59, 102, 255, 0.1));
+  --dictionary-control-disabled-background: var(--field-readonly-background, #fbfcfd);
+  --dictionary-control-disabled-color: var(--field-readonly-color, #667085);
+}
+
+.editor-workspace :is(
+  input.dictionary-control,
+  select.dictionary-control,
+  textarea.dictionary-control,
+  .json-value-control.dictionary-control,
+  .json-value-textarea.dictionary-control
+) {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  border: var(--dictionary-control-border) !important;
+  border-radius: var(--dictionary-control-radius) !important;
+  color: var(--dictionary-control-color) !important;
+  background: var(--dictionary-control-background) !important;
+  box-shadow: none !important;
+  outline: var(--dictionary-control-outline) !important;
+  outline-offset: var(--dictionary-control-outline-offset) !important;
+}
+
+.editor-workspace :is(
+  input.dictionary-control,
+  select.dictionary-control,
+  .json-value-control.dictionary-control
+) {
+  min-height: var(--field-control-height, 42px) !important;
+  padding: 0 11px !important;
+}
+
+.editor-workspace :is(
+  textarea.dictionary-control,
+  .json-value-textarea.dictionary-control
+) {
+  min-height: calc(var(--field-control-height, 42px) * 2) !important;
+  padding: 10px 11px !important;
+  resize: vertical;
+}
+
+.editor-workspace :is(
+  input.dictionary-control,
+  textarea.dictionary-control,
+  .json-value-control.dictionary-control,
+  .json-value-textarea.dictionary-control
+)::placeholder {
+  color: var(--dictionary-control-placeholder-color) !important;
+}
+
+.editor-workspace :is(
+  input.dictionary-control,
+  select.dictionary-control,
+  textarea.dictionary-control,
+  .json-value-control.dictionary-control,
+  .json-value-textarea.dictionary-control
+):focus {
+  border-color: var(--dictionary-control-focus-border-color) !important;
+  box-shadow: var(--dictionary-control-focus-shadow) !important;
+  outline: var(--dictionary-control-outline) !important;
+  outline-offset: var(--dictionary-control-outline-offset) !important;
+}
+
+.editor-workspace :is(
+  input.dictionary-control,
+  select.dictionary-control,
+  textarea.dictionary-control,
+  .json-value-control.dictionary-control,
+  .json-value-textarea.dictionary-control
+):disabled {
+  color: var(--dictionary-control-disabled-color) !important;
+  background: var(--dictionary-control-disabled-background) !important;
+}
+
+.editor-workspace .json-checkbox.dictionary-control {
+  box-sizing: border-box !important;
+  min-height: var(--field-control-height, 42px) !important;
+  border: var(--dictionary-control-border) !important;
+  border-radius: var(--dictionary-control-radius) !important;
+  padding: 0 11px !important;
+  color: var(--dictionary-control-color) !important;
+  background: var(--dictionary-control-background) !important;
+  outline: var(--dictionary-control-outline) !important;
+  outline-offset: var(--dictionary-control-outline-offset) !important;
+}
+
+.editor-workspace .json-checkbox.dictionary-control > input {
+  width: auto !important;
+  min-height: 0 !important;
+  border: 0 !important;
+  outline: 0 !important;
+  padding: 0 !important;
+  accent-color: var(--selection-color, #2f6bff);
+}
+
+.editor-workspace .media-file-control.dictionary-control {
+  box-sizing: border-box !important;
+  border: var(--dictionary-control-border) !important;
+  border-radius: var(--dictionary-control-radius) !important;
+  padding: 8px !important;
+  background: color-mix(in srgb, var(--dictionary-control-background) 76%, transparent) !important;
+  outline: var(--dictionary-control-outline) !important;
+  outline-offset: var(--dictionary-control-outline-offset) !important;
+}
+
+.editor-workspace .media-file-control.dictionary-control .record-editor-compact-button {
+  border: var(--dictionary-control-border) !important;
+  border-radius: var(--dictionary-control-radius) !important;
+  color: var(--editor-button-color, var(--dictionary-control-color)) !important;
+  background: var(--editor-button-background, var(--dictionary-control-background)) !important;
+}
+
+.editor-workspace .dictionary-control .color-value-editor,
+.editor-workspace .palette-color-value-control.dictionary-control,
+.editor-workspace .dictionary-control.palette-color-value-control,
+.editor-workspace .dictionary-control.palette-color-free-control {
+  box-sizing: border-box !important;
+  min-height: var(--field-control-height, 42px) !important;
+  border: var(--dictionary-control-border) !important;
+  border-radius: var(--dictionary-control-radius) !important;
+  padding: 4px 7px !important;
+  color: var(--dictionary-control-color) !important;
+  background: var(--dictionary-control-background) !important;
+  outline: var(--dictionary-control-outline) !important;
+  outline-offset: var(--dictionary-control-outline-offset) !important;
+}
+
+.editor-workspace .dictionary-control .color-swatch-button,
+.editor-workspace .dictionary-control .color-alpha-input,
+.editor-workspace .dictionary-control .color-native-input,
+.editor-workspace .dictionary-control .color-text-input {
+  border: var(--dictionary-control-border) !important;
+  border-radius: calc(var(--dictionary-control-radius) - 2px) !important;
+  color: var(--dictionary-control-color) !important;
+  background: var(--dictionary-control-background) !important;
+}
+
+.editor-workspace .dictionary-control .color-token-readout {
+  color: var(--dictionary-control-color) !important;
+}
+
+.editor-workspace .icon-token-picker-button.dictionary-control {
+  box-sizing: border-box !important;
+  min-height: var(--field-control-height, 42px) !important;
+  border: var(--dictionary-control-border) !important;
+  border-radius: var(--dictionary-control-radius) !important;
+  color: var(--dictionary-control-color) !important;
+  background: var(--dictionary-control-background) !important;
+  outline: var(--dictionary-control-outline) !important;
+  outline-offset: var(--dictionary-control-outline-offset) !important;
+}
+
+.editor-workspace .icon-token-picker-button.dictionary-control:focus-visible {
+  border-color: var(--dictionary-control-focus-border-color) !important;
+  box-shadow: var(--dictionary-control-focus-shadow) !important;
+}
+
+.editor-workspace .record-editor-field-pair.dictionary-control,
+.editor-workspace .record-editor-field-pair:has(.dictionary-control) {
+  border: var(--dictionary-control-border) !important;
+  border-radius: var(--dictionary-control-radius) !important;
+  padding: 4px !important;
+  outline: var(--dictionary-control-outline) !important;
+  outline-offset: var(--dictionary-control-outline-offset) !important;
+}

@@ -149,7 +149,6 @@ const MODULE_DESIGN_GROUPS = new Set([
   "messages",
   "typography",
   "chatBubbles",
-  "radii",
 ]);
 
 function stringifyJson(value: unknown): string {
@@ -211,7 +210,7 @@ export function ModuleThemeConfigRecordEditor({
       group !== "keyboard" &&
       group !== "avatars" &&
       group !== "componentOverrides",
-  );
+  ).sort((left, right) => left.localeCompare(right));
   const selectableDesignGroups = [...designGroups, "controls"];
   const controlsWarning =
     explicitLocalDiffers(tokenRoot.textInputBar, inheritedTokenRoot?.textInputBar) ||

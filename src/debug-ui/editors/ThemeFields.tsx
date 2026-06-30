@@ -215,15 +215,6 @@ export function normalizedThemeTokenRoot({
   const darkMode = isJsonObject(modes.dark)
     ? (modes.dark as Record<string, JsonValue>)
     : {};
-  const rootNotifications = isJsonObject(root.notifications as JsonValue)
-    ? (root.notifications as Record<string, JsonValue>)
-    : {};
-  const lightNotifications = isJsonObject(lightMode.notifications)
-    ? (lightMode.notifications as Record<string, JsonValue>)
-    : {};
-  const darkNotifications = isJsonObject(darkMode.notifications)
-    ? (darkMode.notifications as Record<string, JsonValue>)
-    : {};
   const rootColors = isJsonObject(root.colors as JsonValue)
     ? (root.colors as Record<string, JsonValue>)
     : {};
@@ -255,7 +246,6 @@ export function normalizedThemeTokenRoot({
           ? (root.fonts as Record<string, JsonValue>).emojiFamily
           : "",
     },
-    notifications: rootNotifications,
     statusBar: normalizeThemeChromeGroup("statusBar", family, root.statusBar),
     navigationBar: normalizeThemeChromeGroup(
       "navigationBar",
@@ -286,17 +276,6 @@ export function normalizedThemeTokenRoot({
         ),
         keyboard: normalizeThemeKeyboardGroup(lightMode.keyboard),
         cursor: normalizeThemeCursorGroup(lightMode.cursor),
-        notifications: {
-          background:
-            lightNotifications.background ??
-            "rgba(245,245,247,0.92)",
-          titleColor:
-            lightNotifications.titleColor ??
-            "#000000",
-          bodyColor:
-            lightNotifications.bodyColor ??
-            "#3A3A3C",
-        },
       },
       dark: {
         ...darkMode,
@@ -319,17 +298,6 @@ export function normalizedThemeTokenRoot({
         ),
         keyboard: normalizeThemeKeyboardGroup(darkMode.keyboard, true),
         cursor: normalizeThemeCursorGroup(darkMode.cursor),
-        notifications: {
-          background:
-            darkNotifications.background ??
-            "rgba(44,44,46,0.92)",
-          titleColor:
-            darkNotifications.titleColor ??
-            "#FFFFFF",
-          bodyColor:
-            darkNotifications.bodyColor ??
-            "#D1D1D6",
-        },
       },
     },
   } as Record<string, JsonValue>;

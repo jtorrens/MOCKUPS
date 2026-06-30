@@ -12,6 +12,7 @@ interface AppEditorProps {
   activeTab: AppEditorTab;
   tokensFieldExists: boolean;
   notesFieldExists: boolean;
+  colorsFieldExists: boolean;
   tokensWarning: boolean;
   colorsWarning: boolean;
   renderGeneral: () => ReactNode;
@@ -27,6 +28,7 @@ export function AppEditor({
   activeTab,
   tokensFieldExists,
   notesFieldExists,
+  colorsFieldExists,
   tokensWarning,
   colorsWarning,
   renderGeneral,
@@ -69,18 +71,20 @@ export function AppEditor({
             </div>
           ) : null}
         </EditorSectionCard>
-        <EditorSectionCard>
-          <EditorSectionButton
-            active={activeTab === "colors"}
-            warning={colorsWarning}
-            onClick={() => setActiveTab(activeTab === "colors" ? "" : "colors")}
-          >
-            Colors
-          </EditorSectionButton>
-          {activeTab === "colors" ? (
-            <div className="editor-section-body">{renderColors()}</div>
-          ) : null}
-        </EditorSectionCard>
+        {colorsFieldExists ? (
+          <EditorSectionCard>
+            <EditorSectionButton
+              active={activeTab === "colors"}
+              warning={colorsWarning}
+              onClick={() => setActiveTab(activeTab === "colors" ? "" : "colors")}
+            >
+              Colors
+            </EditorSectionButton>
+            {activeTab === "colors" ? (
+              <div className="editor-section-body">{renderColors()}</div>
+            ) : null}
+          </EditorSectionCard>
+        ) : null}
         <EditorSectionCard>
           <EditorSectionButton
             active={activeTab === "notes"}

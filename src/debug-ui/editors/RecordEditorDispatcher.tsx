@@ -110,10 +110,9 @@ export function RecordEditorDispatcher({
           activeTab={tabs.appTab}
           activeTokenGroup={tabs.appTokenGroup}
           mediaRoot={mediaRoot}
+          productionFontCatalog={productionFontCatalog}
           nativeBridge={nativeBridge}
           renderFields={renderFields}
-          renderField={renderField}
-          renderFlatJsonObjectEditor={renderFlatJsonObjectEditor}
           setActiveTab={tabs.setAppTab}
           setActiveTokenGroup={tabs.setAppTokenGroup}
           setJsonDraft={setJsonDraft}

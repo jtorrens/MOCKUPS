@@ -63,6 +63,7 @@ interface TokenOverrideEditorProps {
   showInheritedValue?: boolean;
   inheritedColumnLabel?: string;
   groupContext?: string;
+  inlineSingleGroup?: boolean;
   restoreMode?: "remove" | "set";
   productionFontCatalog?: ProductionFontCatalog;
   paletteCatalog?: PaletteColorCatalog;
@@ -120,15 +121,42 @@ function pathFromHintKey(key: string): JsonPath {
   return key.split(".").filter(Boolean);
 }
 
+function contextualHintPath(
+  hint: JsonUiHint,
+  key: string,
+  groupContext?: string,
+): JsonPath | undefined {
+  const path = hint.storagePath ?? pathFromHintKey(hint.canonicalPath ?? key);
+  if (!path.length) return undefined;
+  if (!groupContext) return path;
+  if (path[0] === groupContext) return path.slice(1);
+  if (hint.group === groupContext || hint.field?.ui?.group?.id === groupContext) {
+    return path;
+  }
+  return undefined;
+}
+
+function rowBelongsToContext(
+  hint: JsonUiHint,
+  path: JsonPath,
+  groupContext?: string,
+) {
+  if (!groupContext) return true;
+  if (path[0] === groupContext) return true;
+  if (hint.storagePath?.[0] === groupContext) return true;
+  return hint.group === groupContext || hint.field?.ui?.group?.id === groupContext;
+}
+
 function rowsWithDictionaryDefaults(
   rows: TokenRow[],
   hints: JsonUiHints,
+  groupContext?: string,
 ): TokenRow[] {
   const byPath = new Map(rows.map((row) => [pathLabel(row.path), row]));
   for (const [key, hint] of Object.entries(hints)) {
     if (!hint.field) continue;
-    const path = hint.storagePath ?? pathFromHintKey(hint.canonicalPath ?? key);
-    if (path.length === 0) continue;
+    const path = contextualHintPath(hint, key, groupContext);
+    if (!path?.length) continue;
     const pathKey = pathLabel(path);
     if (byPath.has(pathKey)) continue;
     byPath.set(pathKey, {
@@ -138,9 +166,9 @@ function rowsWithDictionaryDefaults(
   }
   const rowsWithDefaults = Array.from(byPath.values());
   const order = new Map<string, number>();
-  Object.values(hints).forEach((hint, index) => {
-    const path = hint.storagePath ?? (hint.canonicalPath ? pathFromHintKey(hint.canonicalPath) : []);
-    if (path.length) order.set(pathLabel(path), index);
+  Object.entries(hints).forEach(([key, hint], index) => {
+    const path = contextualHintPath(hint, key, groupContext);
+    if (path?.length) order.set(pathLabel(path), index);
   });
   return rowsWithDefaults.sort(
     (left, right) =>
@@ -327,6 +355,70 @@ function numericSibling(root: JsonValue, path: JsonPath, key: string): number | 
   return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
 
+export function tokenOverrideHasNonDefaultFields({
+  rootValue,
+  inheritedRoot,
+  hints,
+  groupContext,
+}: {
+  rootValue: JsonValue;
+  inheritedRoot: JsonValue;
+  hints: JsonUiHints;
+  groupContext?: string;
+}) {
+  const displayRoot = mergedTokenShape(inheritedRoot, rootValue);
+  const rows = rowsWithDictionaryDefaults(
+    flattenPrimitiveTokens(displayRoot),
+    hints,
+    groupContext,
+  ).filter((row) => {
+    if (isFontCompanionRow(row, displayRoot)) return false;
+    const hint = hintForPath(hints, row.path, row.value, groupContext);
+    if (!hint.field) return false;
+    if (!rowBelongsToContext(hint, row.path, groupContext)) return false;
+    return hint.field?.ui?.hidden !== true;
+  });
+  const defaultsByPath = new Map(
+    rows.map((row) => [pathLabel(row.path), row.value]),
+  );
+
+  return rows.some((row) => {
+    const hint = hintForPath(hints, row.path, row.value, groupContext);
+    const key = pathLabel(row.path);
+    const effectiveValue = hasAtPath(rootValue, row.path)
+      ? getAtPath(rootValue, row.path)
+      : hasAtPath(inheritedRoot, row.path)
+        ? getAtPath(inheritedRoot, row.path)
+        : row.value;
+    const widget = widgetForRow(hint, key, effectiveValue, groupContext);
+    if (widget === "font") {
+      return ["fontFamily", "family", "fontWeight", "fontStyle"].some(
+        (fontKey) => {
+          const candidatePath =
+            fontKey === "fontFamily" || fontKey === "family"
+              ? row.path
+              : fontSiblingPath(row.path, fontKey);
+          return (
+            hasAtPath(rootValue, candidatePath) &&
+            !deepEqualJson(
+              getAtPath(rootValue, candidatePath),
+              hasAtPath(inheritedRoot, candidatePath)
+                ? getAtPath(inheritedRoot, candidatePath)
+                : defaultsByPath.get(pathLabel(candidatePath)) ?? null,
+            )
+          );
+        },
+      );
+    }
+    if (!hasAtPath(rootValue, row.path)) return false;
+    const localValue = getAtPath(rootValue, row.path);
+    const baselineValue = hasAtPath(inheritedRoot, row.path)
+      ? getAtPath(inheritedRoot, row.path)
+      : row.value;
+    return !deepEqualJson(localValue, baselineValue);
+  });
+}
+
 export function TokenOverrideEditor({
   rootValue,
   inheritedRoot,
@@ -334,6 +426,7 @@ export function TokenOverrideEditor({
   showInheritedValue = true,
   inheritedColumnLabel = "Token / inherited",
   groupContext,
+  inlineSingleGroup = false,
   restoreMode = "remove",
   productionFontCatalog,
   paletteCatalog,
@@ -345,12 +438,18 @@ export function TokenOverrideEditor({
   const rows = rowsWithDictionaryDefaults(
     flattenPrimitiveTokens(displayRoot),
     hints,
+    groupContext,
   ).filter((row) => {
     if (isFontCompanionRow(row, displayRoot)) return false;
     const hint = hintForPath(hints, row.path, row.value, groupContext);
     if (!hint.field) return false;
+    if (!rowBelongsToContext(hint, row.path, groupContext)) return false;
     return hint.field?.ui?.hidden !== true;
   });
+  const defaultsByPath = new Map(
+    rows.map((row) => [pathLabel(row.path), row.value]),
+  );
+  const rowGroups = groupedRows(rows, hints, groupContext);
   const [activeTokenGroup, setActiveTokenGroup] = useState("");
 
   function restoreValue(path: JsonPath, inheritedValue: JsonValue) {
@@ -470,6 +569,44 @@ export function TokenOverrideEditor({
         })}
       />
     );
+  }
+
+  function rowHasNonDefaultValue(row: TokenRow) {
+    const descriptor = descriptorForRow(row);
+    const key = pathLabel(row.path);
+    const hint = hintForPath(hints, row.path, row.value, groupContext);
+    const effectiveValue = hasAtPath(rootValue, row.path)
+      ? getAtPath(rootValue, row.path)
+      : hasAtPath(inheritedRoot, row.path)
+        ? getAtPath(inheritedRoot, row.path)
+        : row.value;
+    const widget = widgetForRow(hint, key, effectiveValue, groupContext);
+    if (widget === "font") {
+      return ["fontFamily", "family", "fontWeight", "fontStyle"].some(
+        (fontKey) => {
+          const candidatePath =
+            fontKey === "fontFamily" || fontKey === "family"
+              ? row.path
+              : fontSiblingPath(row.path, fontKey);
+          return (
+            hasAtPath(rootValue, candidatePath) &&
+            !deepEqualJson(
+              getAtPath(rootValue, candidatePath),
+              hasAtPath(inheritedRoot, candidatePath)
+                ? getAtPath(inheritedRoot, candidatePath)
+                : defaultsByPath.get(pathLabel(candidatePath)) ?? null,
+            )
+          );
+        },
+      );
+    }
+    if (descriptor) return descriptor.state === "local";
+    if (!hasAtPath(rootValue, row.path)) return false;
+    const localValue = getAtPath(rootValue, row.path);
+    const baselineValue = hasAtPath(inheritedRoot, row.path)
+      ? getAtPath(inheritedRoot, row.path)
+      : row.value;
+    return !deepEqualJson(localValue, baselineValue);
   }
 
   function renderPairRows(pairRows: TokenRow[], groupKey?: string) {
@@ -702,8 +839,11 @@ export function TokenOverrideEditor({
 
   return (
     <div className="token-override-editor">
-      {groupedRows(rows, hints, groupContext).map((group) => {
-        if (!group.renderAsGroup) {
+      {rowGroups.map((group) => {
+        if (
+          !group.renderAsGroup ||
+          (inlineSingleGroup && rowGroups.length === 1)
+        ) {
           return renderRows(group.rows, group.key || undefined);
         }
         return (
@@ -712,7 +852,7 @@ export function TokenOverrideEditor({
             group={group.key}
             label={group.label}
             activeGroup={activeTokenGroup}
-            warning={group.rows.some((row) => hasAtPath(rootValue, row.path))}
+            warning={group.rows.some(rowHasNonDefaultValue)}
             onToggle={setActiveTokenGroup}
           >
             {renderRows(group.rows, group.key)}

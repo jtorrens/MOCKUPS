@@ -165,8 +165,10 @@ function uniqueRolePaths(
     }
   }
   return paths.sort((a, b) => {
-    const orderDelta = groupOrder(roleGroup(a)) - groupOrder(roleGroup(b));
-    return orderDelta || pathLabel(a).localeCompare(pathLabel(b));
+    const groupDelta = colorGroupLabel(roleGroup(a)).localeCompare(
+      colorGroupLabel(roleGroup(b)),
+    );
+    return groupDelta || pathLabel(a).localeCompare(pathLabel(b));
   });
 }
 
@@ -218,23 +220,6 @@ function roleGroup(path: JsonPath): string {
   return typeof path[0] === "string" ? path[0] : "colors";
 }
 
-function groupOrder(group: string): number {
-  const normalized = group.toLowerCase();
-  const order: Record<string, number> = {
-    colors: 10,
-    icons: 20,
-    borders: 30,
-    header: 40,
-    chatbubbles: 50,
-    bubbles: 50,
-    messages: 55,
-    statusbar: 60,
-    notifications: 65,
-    cursor: 70,
-  };
-  return order[normalized] ?? 100;
-}
-
 function colorGroupLabel(group: string): string {
   if (group === "colors") return "App Colors";
   if (group === "icons") return "Icon Colors";
@@ -252,7 +237,7 @@ function groupedRolePaths(paths: JsonPath[]) {
     group,
     label: colorGroupLabel(group),
     paths: groupPaths,
-  })).sort((a, b) => groupOrder(a.group) - groupOrder(b.group));
+  })).sort((a, b) => a.label.localeCompare(b.label));
 }
 
 export function hasModeColorOverrides(

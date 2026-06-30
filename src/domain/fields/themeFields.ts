@@ -12,7 +12,6 @@ const GROUPS = {
   statusBar: { id: "statusBar", label: "Status bar" },
   navigationBar: { id: "navigationBar", label: "Navigation bar" },
   keyboard: { id: "keyboard", label: "Keyboard" },
-  notifications: { id: "notifications", label: "Notifications" },
   surfaceRelief: { id: "surfaceRelief", label: "Surface relief" },
   typography: { id: "typography", label: "Typography" },
 } as const;
@@ -775,88 +774,6 @@ export const THEME_FIELDS = defineFields({
       pair: { id: "theme.keyboard.text", label: "Text", role: "dark" },
     },
   },
-  notificationBackgroundLight: {
-    id: "theme.notifications.background.light",
-    kind: "paletteColorToken",
-    defaultValue: "gray_090",
-    ui: {
-      label: "Background light",
-      group: GROUPS.notifications,
-      pair: { id: "theme.notifications.background", label: "Background", role: "light" },
-    },
-  },
-  notificationBackgroundDark: {
-    id: "theme.notifications.background.dark",
-    kind: "paletteColorToken",
-    defaultValue: "gray_020",
-    ui: {
-      label: "Background dark",
-      group: GROUPS.notifications,
-      pair: { id: "theme.notifications.background", label: "Background", role: "dark" },
-    },
-  },
-  notificationBackgroundAlphaLight: {
-    id: "theme.notifications.backgroundAlpha.light",
-    kind: "alpha",
-    defaultValue: 0.92,
-    ui: {
-      label: "Background alpha light",
-      group: GROUPS.notifications,
-      step: 0.01,
-      pair: { id: "theme.notifications.backgroundAlpha", label: "Background alpha", role: "light" },
-    },
-  },
-  notificationBackgroundAlphaDark: {
-    id: "theme.notifications.backgroundAlpha.dark",
-    kind: "alpha",
-    defaultValue: 0.92,
-    ui: {
-      label: "Background alpha dark",
-      group: GROUPS.notifications,
-      step: 0.01,
-      pair: { id: "theme.notifications.backgroundAlpha", label: "Background alpha", role: "dark" },
-    },
-  },
-  notificationTitleColorLight: {
-    id: "theme.notifications.titleColor.light",
-    kind: "paletteColorToken",
-    defaultValue: "gray_000",
-    ui: {
-      label: "Title light",
-      group: GROUPS.notifications,
-      pair: { id: "theme.notifications.titleColor", label: "Title", role: "light" },
-    },
-  },
-  notificationTitleColorDark: {
-    id: "theme.notifications.titleColor.dark",
-    kind: "paletteColorToken",
-    defaultValue: "gray_100",
-    ui: {
-      label: "Title dark",
-      group: GROUPS.notifications,
-      pair: { id: "theme.notifications.titleColor", label: "Title", role: "dark" },
-    },
-  },
-  notificationBodyColorLight: {
-    id: "theme.notifications.bodyColor.light",
-    kind: "paletteColorToken",
-    defaultValue: "gray_020",
-    ui: {
-      label: "Body light",
-      group: GROUPS.notifications,
-      pair: { id: "theme.notifications.bodyColor", label: "Body", role: "light" },
-    },
-  },
-  notificationBodyColorDark: {
-    id: "theme.notifications.bodyColor.dark",
-    kind: "paletteColorToken",
-    defaultValue: "gray_080",
-    ui: {
-      label: "Body dark",
-      group: GROUPS.notifications,
-      pair: { id: "theme.notifications.bodyColor", label: "Body", role: "dark" },
-    },
-  },
 });
 
 export const THEME_COLUMN_BINDINGS = [
@@ -1069,38 +986,6 @@ export const THEME_TOKEN_BINDINGS = [
   {
     outputPath: ["modes", "dark", "keyboard", "text"],
     field: THEME_FIELDS.keyboardTextDark,
-  },
-  {
-    outputPath: ["modes", "light", "notifications", "background", "color"],
-    field: THEME_FIELDS.notificationBackgroundLight,
-  },
-  {
-    outputPath: ["modes", "dark", "notifications", "background", "color"],
-    field: THEME_FIELDS.notificationBackgroundDark,
-  },
-  {
-    outputPath: ["modes", "light", "notifications", "background", "alpha"],
-    field: THEME_FIELDS.notificationBackgroundAlphaLight,
-  },
-  {
-    outputPath: ["modes", "dark", "notifications", "background", "alpha"],
-    field: THEME_FIELDS.notificationBackgroundAlphaDark,
-  },
-  {
-    outputPath: ["modes", "light", "notifications", "titleColor"],
-    field: THEME_FIELDS.notificationTitleColorLight,
-  },
-  {
-    outputPath: ["modes", "dark", "notifications", "titleColor"],
-    field: THEME_FIELDS.notificationTitleColorDark,
-  },
-  {
-    outputPath: ["modes", "light", "notifications", "bodyColor"],
-    field: THEME_FIELDS.notificationBodyColorLight,
-  },
-  {
-    outputPath: ["modes", "dark", "notifications", "bodyColor"],
-    field: THEME_FIELDS.notificationBodyColorDark,
   },
   {
     outputPath: ["neutralTint", "hueDeg"],

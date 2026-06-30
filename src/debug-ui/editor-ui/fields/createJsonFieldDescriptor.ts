@@ -72,6 +72,7 @@ function stateForValues({
   field,
   localHasValue,
   localValue,
+  localDiffersFromBaseline,
   parentHasValue,
   defaultHasValue,
   validation,
@@ -79,12 +80,19 @@ function stateForValues({
   readonly field: FieldDefinition;
   readonly localHasValue: boolean;
   readonly localValue: unknown;
+  readonly localDiffersFromBaseline: boolean;
   readonly parentHasValue: boolean;
   readonly defaultHasValue: boolean;
   readonly validation?: EditorValidation;
 }): EditorFieldState {
   if (validation && !validation.valid) return "invalid";
-  if (localHasValue && !ValueRegistry.isInherited(localValue)) return "local";
+  if (
+    localHasValue &&
+    !ValueRegistry.isInherited(localValue) &&
+    localDiffersFromBaseline
+  ) {
+    return "local";
+  }
   if (parentHasValue) return "inherited";
   if (defaultHasValue || field.defaultValue !== undefined) return "default";
   return "default";
@@ -128,20 +136,22 @@ export function createJsonFieldDescriptor({
   const displayValue = normalizeForDisplay(field, displaySource);
   const validation = validationForField(field, displayValue);
   const baselineValue = parentHasValue ? parentValue : defaultValue;
-  const state = stateForValues({
-    field,
-    localHasValue,
-    localValue,
-    parentHasValue,
-    defaultHasValue: defaultValue !== undefined,
-    validation,
-  });
-  const canRestore =
+  const localDiffersFromBaseline =
     localHasValue &&
     !deepEqualJson(
       (localValue ?? null) as JsonValue,
       (baselineValue ?? null) as JsonValue,
     );
+  const state = stateForValues({
+    field,
+    localHasValue,
+    localValue,
+    localDiffersFromBaseline,
+    parentHasValue,
+    defaultHasValue: defaultValue !== undefined,
+    validation,
+  });
+  const canRestore = localDiffersFromBaseline;
 
   return {
     kind: "field",

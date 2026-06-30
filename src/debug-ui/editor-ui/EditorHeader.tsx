@@ -3,6 +3,7 @@ import "./EditorContent.css";
 import "./EditorJson.css";
 import "./EditorMedia.css";
 import "./EditorBehavior.css";
+import "./DictionaryFieldControl.css";
 
 interface EditorHeaderProps {
   title: string;
