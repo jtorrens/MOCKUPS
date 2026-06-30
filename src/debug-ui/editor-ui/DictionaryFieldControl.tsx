@@ -129,6 +129,11 @@ function parseJsonTextValue(value: string) {
   }
 }
 
+function relativePathFromRoot(filePath: string, rootPath: string) {
+  if (!rootPath || !filePath.startsWith(rootPath)) return filePath;
+  return filePath.slice(rootPath.length).replace(/^[/\\]+/, "");
+}
+
 function DictionaryImagePreview({
   filePath,
   mediaRoot,
@@ -389,7 +394,13 @@ export function DictionaryFieldControl({
 
     async function choosePath() {
       const [selectedPath] = await (pick?.() ?? Promise.resolve([]));
-      if (selectedPath) onChange(selectedPath);
+      if (selectedPath) {
+        onChange(
+          field.kind === "relativeFilePath" && mediaRoot
+            ? relativePathFromRoot(selectedPath, mediaRoot)
+            : selectedPath,
+        );
+      }
     }
 
     return (

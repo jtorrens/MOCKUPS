@@ -1,4 +1,5 @@
 import {
+  CHAT_BUBBLE_TOKEN_BINDINGS,
   CHAT_CONTENT_HEADER_BINDINGS,
   CHAT_CONTENT_MEDIA_BINDINGS,
   CHAT_CONTENT_MESSAGE_BINDINGS,
@@ -11,6 +12,9 @@ import type { ModuleEditorHintContract } from "./types.js";
 
 const coreChatHeaderHints = jsonUiHintsFromFieldBindings(
   CHAT_HEADER_TOKEN_BINDINGS,
+);
+const coreChatBubbleHints = jsonUiHintsFromFieldBindings(
+  CHAT_BUBBLE_TOKEN_BINDINGS,
 );
 const coreChatTypographyHints = jsonUiHintsFromFieldBindings(
   CHAT_TYPOGRAPHY_TOKEN_BINDINGS,
@@ -98,110 +102,7 @@ export const coreChatV1EditorHints: ModuleEditorHintContract = {
     tokens_json: {
       ...coreChatTypographyHints,
       ...coreChatHeaderHints,
-      "chatBubbles.avatarSize": {
-        label: "Message avatar size",
-        widget: "number",
-        min: 0,
-        step: 1,
-      },
-      "chatBubbles.avatarGap": {
-        label: "Message avatar gap",
-        widget: "number",
-        min: 0,
-        step: 1,
-      },
-      "chatBubbles.shadowEnabled": {
-        label: "Bubble shadow",
-        widget: "checkbox",
-      },
-      "chatBubbles.surfaceReliefEnabled": {
-        label: "Bubble surface relief",
-        widget: "checkbox",
-      },
-      "chatBubbles.contentMetaGap": {
-        label: "Content meta gap",
-        widget: "number",
-        min: 0,
-        step: 1,
-      },
-      "chatBubbles.messageLabelUseActorColor": {
-        label: "Use actor color",
-        widget: "checkbox",
-      },
-      "chatBubbles.messageLabelOffsetX": {
-        label: "Offset X",
-        widget: "number",
-        step: 1,
-      },
-      "chatBubbles.messageLabelOffsetY": {
-        label: "Offset Y",
-        widget: "number",
-        step: 1,
-      },
-      "chatBubbles.tail.style": {
-        label: "Tail style",
-        widget: "select",
-        options: ["rounded_wedge", "simple_triangle", "curved_hook", "cut_corner"],
-      },
-      "chatBubbles.tail.verticalPosition": {
-        label: "Tail position",
-        widget: "select",
-        options: ["bottom", "top"],
-      },
-      "chatBubbles.tail.width": {
-        label: "Tail width",
-        widget: "number",
-        min: 0,
-        step: 1,
-      },
-      "chatBubbles.tail.height": {
-        label: "Tail height",
-        widget: "number",
-        min: 0,
-        step: 1,
-      },
-      "chatBubbles.tail.scale": {
-        label: "Tail scale",
-        widget: "number",
-        min: 0.01,
-        step: 0.05,
-      },
-      "chatBubbles.status.showText": {
-        label: "Show status text",
-        widget: "checkbox",
-      },
-      "chatBubbles.status.showTicks": {
-        label: "Show ticks",
-        widget: "checkbox",
-      },
-      "chatBubbles.status.size": {
-        label: "Status size",
-        widget: "number",
-        min: 0,
-        step: 1,
-      },
-      "chatBubbles.status.gap": {
-        label: "Status gap",
-        widget: "number",
-        min: 0,
-        step: 1,
-      },
-      "chatBubbles.status.offsetX": {
-        label: "Status X offset",
-        widget: "number",
-        step: 1,
-      },
-      "chatBubbles.status.offsetY": {
-        label: "Status Y offset",
-        widget: "number",
-        step: 1,
-      },
-      "chatBubbles.status.tickSingleIconToken": {
-        label: "Single tick token",
-      },
-      "chatBubbles.status.tickDoubleIconToken": {
-        label: "Double tick token",
-      },
+      ...coreChatBubbleHints,
     },
     module_tokens_override_json: {
       ...coreChatTypographyHints,

@@ -5,10 +5,13 @@ import type {
   AppState,
   AppTableDefinition,
 } from "../api/client.js";
+import { AppRecordEditor } from "./AppRecordEditor.js";
 import { ComponentClassRecordEditor } from "./ComponentClassRecordEditor.js";
+import { FlatJsonObjectEditor } from "./FlatJsonFieldEditors.js";
 import { GenericRecordEditor } from "./GenericRecordEditor.js";
 import { IconThemeRecordEditor } from "./IconThemeRecordEditor.js";
 import { ModuleInstanceRecordEditor } from "./ModuleInstanceRecordEditor.js";
+import { ModuleThemeConfigRecordEditor } from "./ModuleThemeConfigRecordEditor.js";
 import { NavigationBarRecordEditor } from "./NavigationBarRecordEditor.js";
 import { ProductionFontRecordEditor } from "./ProductionFontRecordEditor.js";
 import { ScreenInstanceRecordEditor } from "./ScreenInstanceRecordEditor.js";
@@ -17,6 +20,7 @@ import type { PaletteColorCatalog } from "../components/json-editor/paletteColor
 import type { ProductionFontCatalog } from "../components/json-editor/productionFonts.js";
 import type { createJsonGroupDrafts } from "./jsonGroupDrafts.js";
 import type { createRecordEditorRenderServices } from "./recordEditorRenderServices.js";
+import { parsedObject } from "./recordJsonUtils.js";
 import type { useRecordEditorTabs } from "./useRecordEditorTabs.js";
 
 interface NativeBridge {
@@ -76,8 +80,68 @@ export function RecordEditorDispatcher({
     renderGenericField,
     setJsonDraft,
   } = renderServices;
+  const renderFlatJsonObjectEditor = (column: string, omitKeys?: string[]) => {
+    const field = fieldsByColumn.get(column);
+    if (!field) return null;
+    return (
+      <FlatJsonObjectEditor
+        table={table}
+        field={field}
+        record={record}
+        root={parsedObject(drafts[column] ?? "{}")}
+        omitKeys={omitKeys}
+        productionFontCatalog={productionFontCatalog}
+        paletteCatalog={paletteCatalog}
+        onRootChange={(nextRoot) => setJsonDraft(column, nextRoot)}
+      />
+    );
+  };
 
   if (table.id !== "module_instances" && table.id !== "screen_instances") {
+    if (table.id === "apps") {
+      return (
+        <AppRecordEditor
+          table={table}
+          record={record}
+          records={records}
+          fieldsByColumn={fieldsByColumn}
+          drafts={drafts}
+          inheritedFields={inheritedFields}
+          activeTab={tabs.appTab}
+          activeTokenGroup={tabs.appTokenGroup}
+          mediaRoot={mediaRoot}
+          nativeBridge={nativeBridge}
+          renderFields={renderFields}
+          renderField={renderField}
+          renderFlatJsonObjectEditor={renderFlatJsonObjectEditor}
+          setActiveTab={tabs.setAppTab}
+          setActiveTokenGroup={tabs.setAppTokenGroup}
+          setJsonDraft={setJsonDraft}
+        />
+      );
+    }
+    if (table.id === "module_theme_configs") {
+      return (
+        <ModuleThemeConfigRecordEditor
+          table={table}
+          record={record}
+          records={records}
+          fieldsByColumn={fieldsByColumn}
+          drafts={drafts}
+          inheritedFields={inheritedFields}
+          activeTab={tabs.moduleThemeTab}
+          activeDesignGroup={tabs.moduleDesignGroup}
+          renderFields={renderFields}
+          renderField={renderField}
+          renderFlatJsonObjectEditor={renderFlatJsonObjectEditor}
+          rawForJsonGroupValue={jsonGroupDrafts.rawForJsonGroupValue}
+          updateJsonGroupValue={jsonGroupDrafts.updateJsonGroupValue}
+          setActiveTab={tabs.setModuleThemeTab}
+          setActiveDesignGroup={tabs.setModuleDesignGroup}
+          setJsonDraft={setJsonDraft}
+        />
+      );
+    }
     if (table.id === "icon_themes") {
       return (
         <IconThemeRecordEditor

@@ -1,5 +1,9 @@
 import type { AppFieldDefinition, AppTableDefinition } from "../../api/client.js";
 import { ACTOR_METADATA_BINDINGS } from "../../../domain/fields/actorFields.js";
+import {
+  APP_CONFIG_BINDINGS,
+  APP_METADATA_BINDINGS,
+} from "../../../domain/fields/appFields.js";
 import { DEVICE_METRICS_BINDINGS } from "../../../domain/fields/deviceFields.js";
 import { EPISODE_METADATA_BINDINGS } from "../../../domain/fields/episodeFields.js";
 import {
@@ -145,6 +149,12 @@ export function buildJsonUiHints(
     }),
     ...(table.id === "themes" && field.column === "tokens_json"
       ? jsonUiHintsFromFieldBindings(THEME_TOKEN_BINDINGS)
+      : {}),
+    ...(table.id === "apps" && field.column === "config_json"
+      ? jsonUiHintsFromFieldBindings(APP_CONFIG_BINDINGS)
+      : {}),
+    ...(table.id === "apps" && field.column === "metadata_json"
+      ? jsonUiHintsFromFieldBindings(APP_METADATA_BINDINGS)
       : {}),
     ...(table.id === "productions" && field.column === "settings_json"
       ? jsonUiHintsFromFieldBindings(PRODUCTION_SETTINGS_BINDINGS)

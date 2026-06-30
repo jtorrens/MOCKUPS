@@ -48,7 +48,6 @@ interface AppRecordEditorProps {
   activeTokenGroup: string;
   mediaRoot: string;
   nativeBridge: AppNativeBridge | undefined;
-  relativePathFromRoot: (filePath: string, rootPath: string) => string;
   renderFields: (columns: string[]) => ReactNode;
   renderField: (
     field: AppFieldDefinition,
@@ -96,13 +95,12 @@ export function AppRecordEditor({
   activeTokenGroup,
   mediaRoot,
   nativeBridge,
-  relativePathFromRoot,
   renderFields,
   renderField,
   renderFlatJsonObjectEditor,
   setActiveTab,
-  setActiveTokenGroup,
-  setJsonDraft,
+      setActiveTokenGroup,
+      setJsonDraft,
 }: AppRecordEditorProps) {
   const configField = fieldsByColumn.get("config_json");
   const metadataField = fieldsByColumn.get("metadata_json");
@@ -151,14 +149,13 @@ export function AppRecordEditor({
       )}
       renderGeneral={() => (
         <>
-          {renderFields(["id", "name"])}
+          {renderFields(["id", "production_id", "name", "bundle_key", "app_type"])}
           <AppIconFields
             record={record}
             drafts={drafts}
             metadataRoot={appMetadataRoot}
             mediaRoot={mediaRoot}
             nativeBridge={nativeBridge}
-            relativePathFromRoot={relativePathFromRoot}
             AvatarPreview={ActorAvatarPreview}
             onMetadataRootChange={(nextRoot) =>
               setJsonDraft("metadata_json", nextRoot)
@@ -181,7 +178,6 @@ export function AppRecordEditor({
                     mediaRoot={mediaRoot}
                     nativeBridge={nativeBridge}
                     paletteCatalog={paletteCatalog}
-                    relativePathFromRoot={relativePathFromRoot}
                     MediaCoverPreview={MediaCoverPreview}
                     onTokenRootChange={updateAppTokenRoot}
                   />

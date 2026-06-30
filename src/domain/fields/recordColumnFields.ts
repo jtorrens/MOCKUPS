@@ -4,6 +4,7 @@ import type {
 } from "../value-system/index.js";
 import { ANIMATION_PRESET_COLUMN_BINDINGS } from "./animationPresetFields.js";
 import { ACTOR_COLUMN_BINDINGS } from "./actorFields.js";
+import { APP_COLUMN_BINDINGS } from "./appFields.js";
 import { COMPONENT_CLASS_COLUMN_BINDINGS } from "./componentClassFields.js";
 import { DEVICE_COLUMN_BINDINGS } from "./deviceFields.js";
 import { EPISODE_COLUMN_BINDINGS } from "./episodeFields.js";
@@ -16,10 +17,12 @@ import { SCREEN_INSTANCE_COLUMN_BINDINGS } from "./screenInstanceFields.js";
 import { SHOT_COLUMN_BINDINGS } from "./shotFields.js";
 import { STATUS_BAR_COLUMN_BINDINGS } from "./statusBarFields.js";
 import { THEME_COLUMN_BINDINGS } from "./themeFields.js";
+import { MODULE_THEME_CONFIG_COLUMN_BINDINGS } from "./moduleThemeConfigFields.js";
 
 const RECORD_COLUMN_BINDINGS: Record<string, readonly JsonFieldBinding[]> = {
   animation_presets: ANIMATION_PRESET_COLUMN_BINDINGS,
   actors: ACTOR_COLUMN_BINDINGS,
+  apps: APP_COLUMN_BINDINGS,
   component_classes: COMPONENT_CLASS_COLUMN_BINDINGS,
   devices: DEVICE_COLUMN_BINDINGS,
   episodes: EPISODE_COLUMN_BINDINGS,
@@ -32,6 +35,7 @@ const RECORD_COLUMN_BINDINGS: Record<string, readonly JsonFieldBinding[]> = {
   shots: SHOT_COLUMN_BINDINGS,
   status_bars: STATUS_BAR_COLUMN_BINDINGS,
   themes: THEME_COLUMN_BINDINGS,
+  module_theme_configs: MODULE_THEME_CONFIG_COLUMN_BINDINGS,
 };
 
 export function fieldDefinitionForRecordColumn(
