@@ -30,17 +30,12 @@ internal sealed class SpikeDatabase
 
     public List<ProjectTreeNode> LoadProjectTree()
     {
-        var rootNodes = LoadProjectHierarchy();
-        rootNodes.AddRange(LoadDataNavigationGroups());
-        return rootNodes;
-    }
-
-    private List<ProjectTreeNode> LoadProjectHierarchy()
-    {
         using var connection = OpenConnection();
         var projects = QueryProjectRows(connection);
         var episodes = QueryEpisodeRows(connection);
         var shots = QueryShotRows(connection);
+        var apps = QueryAppRows(connection);
+        var modules = QueryModuleRows(connection);
 
         var projectNodes = projects
             .Select((project) => new ProjectTreeNode(
@@ -50,18 +45,69 @@ internal sealed class SpikeDatabase
                 project.Notes))
             .ToDictionary((node) => node.Id);
 
+        var appRootNodes = new Dictionary<string, ProjectTreeNode>();
         var episodeNodes = new Dictionary<string, ProjectTreeNode>();
+        foreach (var project in projectNodes.Values)
+        {
+            var appsRoot = new ProjectTreeNode(
+                ProjectTreeNodeKind.AppsRoot,
+                $"apps_root_{project.Id}",
+                "Apps",
+                "Apps available in this project.",
+                project);
+            var episodesRoot = new ProjectTreeNode(
+                ProjectTreeNodeKind.EpisodesRoot,
+                $"episodes_root_{project.Id}",
+                "Episodes",
+                "Episodes and shots for this project.",
+                project);
+
+            project.AddChild(appsRoot);
+            project.AddChild(episodesRoot);
+            appRootNodes[project.Id] = appsRoot;
+            episodeNodes[episodesRoot.Id] = episodesRoot;
+        }
+
+        var appNodes = new Dictionary<string, ProjectTreeNode>();
+        foreach (var app in apps.OrderBy((app) => app.SortOrder).ThenBy((app) => app.Name))
+        {
+            if (!appRootNodes.TryGetValue(app.ProjectId, out var appsRoot)) continue;
+
+            var node = new ProjectTreeNode(
+                ProjectTreeNodeKind.App,
+                app.Id,
+                app.Name,
+                app.Notes,
+                appsRoot);
+            appsRoot.AddChild(node);
+            appNodes[node.Id] = node;
+        }
+
+        foreach (var module in modules.OrderBy((module) => module.SortOrder).ThenBy((module) => module.Name))
+        {
+            if (!appNodes.TryGetValue(module.AppId, out var app)) continue;
+
+            app.AddChild(new ProjectTreeNode(
+                ProjectTreeNodeKind.Module,
+                module.Id,
+                module.Name,
+                module.Notes,
+                app));
+        }
+
         foreach (var episode in episodes.OrderBy((episode) => episode.SortOrder).ThenBy((episode) => episode.Name))
         {
             if (!projectNodes.TryGetValue(episode.ProjectId, out var project)) continue;
+            var episodesRoot = project.Children.FirstOrDefault((child) => child.Kind == ProjectTreeNodeKind.EpisodesRoot);
+            if (episodesRoot is null) continue;
 
             var node = new ProjectTreeNode(
                 ProjectTreeNodeKind.Episode,
                 episode.Id,
                 episode.Name,
                 episode.Notes,
-                project);
-            project.AddChild(node);
+                episodesRoot);
+            episodesRoot.AddChild(node);
             episodeNodes[node.Id] = node;
         }
 
@@ -82,91 +128,68 @@ internal sealed class SpikeDatabase
             .ToList();
     }
 
-    private List<ProjectTreeNode> LoadDataNavigationGroups()
-    {
-        using var connection = OpenConnection();
-
-        var productionData = new ProjectTreeNode(
-            ProjectTreeNodeKind.NavigationGroup,
-            "nav_production_data",
-            "Production Data",
-            "Editor navigation group. Not a persisted table.");
-        foreach (var item in LoadNamedTableNodes(
-            connection,
-            productionData,
-            [
-                ("actors", "Actors", ProjectTreeNodeKind.Actor),
-                ("devices", "Devices", ProjectTreeNodeKind.Device),
-                ("apps", "Apps", ProjectTreeNodeKind.App),
-                ("modules", "Modules", ProjectTreeNodeKind.Module),
-                ("themes", "Themes", ProjectTreeNodeKind.Theme),
-                ("palette_colors", "Palette", ProjectTreeNodeKind.PaletteColor),
-                ("production_fonts", "Production Fonts", ProjectTreeNodeKind.ProductionFont),
-                ("component_classes", "Component Classes", ProjectTreeNodeKind.ComponentClass),
-            ]))
-        {
-            productionData.AddChild(item);
-        }
-
-        var systemData = new ProjectTreeNode(
-            ProjectTreeNodeKind.NavigationGroup,
-            "nav_system_data",
-            "System Data",
-            "Editor navigation group. Not a persisted table.");
-        foreach (var item in LoadNamedTableNodes(
-            connection,
-            systemData,
-            [
-                ("icon_themes", "Icon Themes", ProjectTreeNodeKind.IconTheme),
-                ("status_bars", "Status Bars", ProjectTreeNodeKind.StatusBar),
-                ("navigation_bars", "Navigation Bars", ProjectTreeNodeKind.NavigationBar),
-                ("render_presets", "Render Presets", ProjectTreeNodeKind.RenderPreset),
-            ]))
-        {
-            systemData.AddChild(item);
-        }
-
-        return [productionData, systemData];
-    }
-
-    private static List<ProjectTreeNode> LoadNamedTableNodes(
-        SqliteConnection connection,
-        ProjectTreeNode group,
-        IReadOnlyList<(string Table, string Label, ProjectTreeNodeKind Kind)> tables)
-    {
-        var nodes = new List<ProjectTreeNode>();
-        foreach (var (table, label, kind) in tables)
-        {
-            var tableNode = new ProjectTreeNode(
-                ProjectTreeNodeKind.TableGroup,
-                $"table_{table}",
-                label,
-                $"{label} table.",
-                group);
-
-            foreach (var row in QueryNamedRows(connection, table))
-            {
-                tableNode.AddChild(new ProjectTreeNode(
-                    kind,
-                    row.Id,
-                    row.Name,
-                    row.Notes,
-                    tableNode));
-            }
-
-            nodes.Add(tableNode);
-        }
-
-        return nodes;
-    }
-
     public ProjectTreeNode AddChild(ProjectTreeNode parent)
     {
         using var connection = OpenConnection();
 
         if (parent.Kind == ProjectTreeNodeKind.Project)
         {
-            var index = NextSortOrder(connection, "episodes", "project_id", parent.Id);
+            throw new InvalidOperationException("Project children are created through explicit Apps/Episodes roots.");
+        }
+
+        if (parent.Kind == ProjectTreeNodeKind.AppsRoot)
+        {
+            var project = parent.Parent ?? throw new InvalidOperationException("Apps root has no project parent.");
+            var index = NextSortOrder(connection, "apps", "project_id", project.Id);
+            var id = $"app_{Guid.NewGuid():N}";
+            Execute(
+                connection,
+                """
+                INSERT INTO apps (id, project_id, name, notes, sort_order)
+                VALUES ($id, $projectId, $name, $notes, $sortOrder)
+                """,
+                ("$id", id),
+                ("$projectId", project.Id),
+                ("$name", $"App {index + 1}"),
+                ("$notes", "New app created in the desktop shell spike."),
+                ("$sortOrder", index));
+
+            return new ProjectTreeNode(
+                ProjectTreeNodeKind.App,
+                id,
+                $"App {index + 1}",
+                "New app created in the desktop shell spike.",
+                parent);
+        }
+
+        if (parent.Kind == ProjectTreeNodeKind.App)
+        {
+            var index = NextSortOrder(connection, "modules", "app_id", parent.Id);
+            var id = $"module_{Guid.NewGuid():N}";
+            Execute(
+                connection,
+                """
+                INSERT INTO modules (id, app_id, name, notes, sort_order)
+                VALUES ($id, $appId, $name, $notes, $sortOrder)
+                """,
+                ("$id", id),
+                ("$appId", parent.Id),
+                ("$name", $"Module {index + 1}"),
+                ("$notes", "New module created in the desktop shell spike."),
+                ("$sortOrder", index));
+
+            return new ProjectTreeNode(
+                ProjectTreeNodeKind.Module,
+                id,
+                $"Module {index + 1}",
+                "New module created in the desktop shell spike.",
+                parent);
+        }
+
+        if (parent.Kind == ProjectTreeNodeKind.EpisodesRoot)
+        {
+            var project = parent.Parent ?? throw new InvalidOperationException("Episodes root has no project parent.");
+            var index = NextSortOrder(connection, "episodes", "project_id", project.Id);
             var id = $"episode_{Guid.NewGuid():N}";
             Execute(
                 connection,
@@ -175,7 +198,7 @@ internal sealed class SpikeDatabase
                 VALUES ($id, $projectId, $name, $notes, $sortOrder)
                 """,
                 ("$id", id),
-                ("$projectId", parent.Id),
+                ("$projectId", project.Id),
                 ("$name", $"Episode {index + 1}"),
                 ("$notes", "New episode created in the desktop shell spike."),
                 ("$sortOrder", index));
@@ -222,7 +245,8 @@ internal sealed class SpikeDatabase
         if (node.Kind == ProjectTreeNodeKind.Episode)
         {
             var id = $"episode_{Guid.NewGuid():N}";
-            var sortOrder = NextSortOrder(connection, "episodes", "project_id", node.Parent!.Id);
+            var project = node.Parent?.Parent ?? throw new InvalidOperationException("Episode has no project parent.");
+            var sortOrder = NextSortOrder(connection, "episodes", "project_id", project.Id);
             Execute(
                 connection,
                 """
@@ -261,6 +285,49 @@ internal sealed class SpikeDatabase
             return new ProjectTreeNode(ProjectTreeNodeKind.Shot, id, $"{node.Name} copy", node.Notes, node.Parent);
         }
 
+        if (node.Kind == ProjectTreeNodeKind.App)
+        {
+            var id = $"app_{Guid.NewGuid():N}";
+            var project = node.Parent?.Parent ?? throw new InvalidOperationException("App has no project parent.");
+            var sortOrder = NextSortOrder(connection, "apps", "project_id", project.Id);
+            Execute(
+                connection,
+                """
+                INSERT INTO apps (id, project_id, name, notes, sort_order)
+                SELECT $id, project_id, $name, notes, $sortOrder
+                FROM apps
+                WHERE id = $sourceId
+                """,
+                ("$id", id),
+                ("$name", $"{node.Name} copy"),
+                ("$sortOrder", sortOrder),
+                ("$sourceId", node.Id));
+
+            DuplicateModules(connection, node.Id, id);
+
+            return new ProjectTreeNode(ProjectTreeNodeKind.App, id, $"{node.Name} copy", node.Notes, node.Parent);
+        }
+
+        if (node.Kind == ProjectTreeNodeKind.Module)
+        {
+            var id = $"module_{Guid.NewGuid():N}";
+            var sortOrder = NextSortOrder(connection, "modules", "app_id", node.Parent!.Id);
+            Execute(
+                connection,
+                """
+                INSERT INTO modules (id, app_id, name, notes, sort_order)
+                SELECT $id, app_id, $name, notes, $sortOrder
+                FROM modules
+                WHERE id = $sourceId
+                """,
+                ("$id", id),
+                ("$name", $"{node.Name} copy"),
+                ("$sortOrder", sortOrder),
+                ("$sourceId", node.Id));
+
+            return new ProjectTreeNode(ProjectTreeNodeKind.Module, id, $"{node.Name} copy", node.Notes, node.Parent);
+        }
+
         throw new InvalidOperationException($"Cannot duplicate {node.Kind}.");
     }
 
@@ -271,6 +338,8 @@ internal sealed class SpikeDatabase
         {
             ProjectTreeNodeKind.Episode => "episodes",
             ProjectTreeNodeKind.Shot => "shots",
+            ProjectTreeNodeKind.App => "apps",
+            ProjectTreeNodeKind.Module => "modules",
             _ => throw new InvalidOperationException($"Cannot delete {node.Kind}."),
         };
 
@@ -327,7 +396,27 @@ internal sealed class SpikeDatabase
         SeedShot(connection, "shot_004", "episode_002", "Shot 01 · Lock to chat", 0);
         SeedShot(connection, "shot_005", "episode_002", "Shot 02 · Message escalation", 1);
 
-        SeedTopLevelRows(connection);
+        Execute(
+            connection,
+            """
+            INSERT INTO apps (id, project_id, name, notes, sort_order)
+            VALUES ($id, $projectId, $name, $notes, 0)
+            """,
+            ("$id", "app_core_chat"),
+            ("$projectId", "project_foqn_s2"),
+            ("$name", "Chat"),
+            ("$notes", "Seed app. Modules hang below their app."));
+
+        Execute(
+            connection,
+            """
+            INSERT INTO modules (id, app_id, name, notes, sort_order)
+            VALUES ($id, $appId, $name, $notes, 0)
+            """,
+            ("$id", "module_core_chat"),
+            ("$appId", "app_core_chat"),
+            ("$name", "Chat Module"),
+            ("$notes", "Seed module linked to Chat app."));
     }
 
     private static void SeedShot(SqliteConnection connection, string id, string episodeId, string name, int sortOrder)
@@ -341,51 +430,8 @@ internal sealed class SpikeDatabase
             ("$id", id),
             ("$episodeId", episodeId),
             ("$name", name),
-            ("$notes", "Seed shot. Screen/app/module levels are intentionally added later."),
+            ("$notes", "Seed shot. Screen level is intentionally added later."),
             ("$sortOrder", sortOrder));
-    }
-
-    private static void SeedTopLevelRows(SqliteConnection connection)
-    {
-        InsertNamedRow(connection, "actors", "actor_alex", "Alex");
-        InsertNamedRow(connection, "actors", "actor_sam", "Sam");
-        InsertNamedRow(connection, "devices", "device_iphone_mock", "iPhone Mock");
-        InsertNamedRow(connection, "apps", "app_core_chat", "Chat");
-        InsertNamedRow(connection, "modules", "module_core_chat", "Chat Module", ("app_id", "app_core_chat"));
-        InsertNamedRow(connection, "themes", "theme_ios_warm", "iOS Warm");
-        InsertNamedRow(connection, "palette_colors", "palette_gray_000", "gray_000");
-        InsertNamedRow(connection, "palette_colors", "palette_blue", "blue");
-        InsertNamedRow(connection, "production_fonts", "font_sf_pro", "SF Pro");
-        InsertNamedRow(connection, "component_classes", "component_avatar_default", "Default Avatar", ("component_type", "avatar"));
-        InsertNamedRow(connection, "component_classes", "component_keyboard_default", "Default Keyboard", ("component_type", "keyboard"));
-        InsertNamedRow(connection, "icon_themes", "icon_theme_lucide_basic", "Lucide Basic");
-        InsertNamedRow(connection, "status_bars", "status_bar_ios_default", "iOS Default");
-        InsertNamedRow(connection, "navigation_bars", "navigation_bar_android_default", "Android Default");
-        InsertNamedRow(connection, "render_presets", "render_preset_preview", "Preview");
-    }
-
-    private static void InsertNamedRow(
-        SqliteConnection connection,
-        string table,
-        string id,
-        string name,
-        params (string Column, object Value)[] extraColumns)
-    {
-        var columns = new List<string> { "id", "name" };
-        var parameters = new List<string> { "$id", "$name" };
-        var values = new List<(string Key, object? Value)> { ("$id", id), ("$name", name) };
-
-        foreach (var (column, value) in extraColumns)
-        {
-            columns.Add(column);
-            parameters.Add($"${column}");
-            values.Add(($"${column}", value));
-        }
-
-        Execute(
-            connection,
-            $"INSERT INTO {table} ({string.Join(", ", columns)}) VALUES ({string.Join(", ", parameters)})",
-            values.ToArray());
     }
 
     private static void DuplicateShots(SqliteConnection connection, string sourceEpisodeId, string targetEpisodeId)
@@ -411,6 +457,30 @@ internal sealed class SpikeDatabase
                 ("$sortOrder", index),
                 ("$fps", shot.Fps),
                 ("$durationFrames", shot.DurationFrames));
+        }
+    }
+
+    private static void DuplicateModules(SqliteConnection connection, string sourceAppId, string targetAppId)
+    {
+        var sourceModules = QueryModuleRows(connection)
+            .Where((module) => module.AppId == sourceAppId)
+            .OrderBy((module) => module.SortOrder)
+            .ToList();
+
+        for (var index = 0; index < sourceModules.Count; index++)
+        {
+            var module = sourceModules[index];
+            Execute(
+                connection,
+                """
+                INSERT INTO modules (id, app_id, name, notes, sort_order)
+                VALUES ($id, $appId, $name, $notes, $sortOrder)
+                """,
+                ("$id", $"module_{Guid.NewGuid():N}"),
+                ("$appId", targetAppId),
+                ("$name", module.Name),
+                ("$notes", module.Notes),
+                ("$sortOrder", index));
         }
     }
 
@@ -476,18 +546,39 @@ internal sealed class SpikeDatabase
         return rows;
     }
 
-    private static List<NamedRow> QueryNamedRows(SqliteConnection connection, string table)
+    private static List<AppRow> QueryAppRows(SqliteConnection connection)
     {
-        var rows = new List<NamedRow>();
+        var rows = new List<AppRow>();
         using var command = connection.CreateCommand();
-        command.CommandText = $"SELECT id, name, metadata_json FROM {table} ORDER BY name";
+        command.CommandText = "SELECT id, project_id, name, notes, sort_order FROM apps ORDER BY sort_order, name";
         using var reader = command.ExecuteReader();
         while (reader.Read())
         {
-            rows.Add(new NamedRow(
+            rows.Add(new AppRow(
                 reader.GetString(0),
                 reader.GetString(1),
-                ReadString(reader, 2)));
+                reader.GetString(2),
+                ReadString(reader, 3),
+                reader.GetInt32(4)));
+        }
+
+        return rows;
+    }
+
+    private static List<ModuleRow> QueryModuleRows(SqliteConnection connection)
+    {
+        var rows = new List<ModuleRow>();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT id, app_id, name, notes, sort_order FROM modules ORDER BY sort_order, name";
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            rows.Add(new ModuleRow(
+                reader.GetString(0),
+                reader.GetString(1),
+                reader.GetString(2),
+                ReadString(reader, 3),
+                reader.GetInt32(4)));
         }
 
         return rows;
@@ -561,21 +652,12 @@ internal sealed class SpikeDatabase
           metadata_json TEXT NOT NULL DEFAULT '{}'
         );
 
-        CREATE TABLE IF NOT EXISTS actors (
-          id TEXT PRIMARY KEY,
-          name TEXT NOT NULL,
-          metadata_json TEXT NOT NULL DEFAULT '{}'
-        );
-
-        CREATE TABLE IF NOT EXISTS devices (
-          id TEXT PRIMARY KEY,
-          name TEXT NOT NULL,
-          metadata_json TEXT NOT NULL DEFAULT '{}'
-        );
-
         CREATE TABLE IF NOT EXISTS apps (
           id TEXT PRIMARY KEY,
+          project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
           name TEXT NOT NULL,
+          notes TEXT NOT NULL DEFAULT '',
+          sort_order INTEGER NOT NULL DEFAULT 0,
           metadata_json TEXT NOT NULL DEFAULT '{}'
         );
 
@@ -583,86 +665,16 @@ internal sealed class SpikeDatabase
           id TEXT PRIMARY KEY,
           app_id TEXT NOT NULL REFERENCES apps(id) ON DELETE CASCADE,
           name TEXT NOT NULL,
-          metadata_json TEXT NOT NULL DEFAULT '{}'
-        );
-
-        CREATE TABLE IF NOT EXISTS screen_instances (
-          id TEXT PRIMARY KEY,
-          shot_id TEXT NOT NULL REFERENCES shots(id) ON DELETE CASCADE,
-          app_id TEXT NOT NULL REFERENCES apps(id),
-          name TEXT NOT NULL,
+          notes TEXT NOT NULL DEFAULT '',
           sort_order INTEGER NOT NULL DEFAULT 0,
-          duration_frames INTEGER NOT NULL DEFAULT 240,
-          metadata_json TEXT NOT NULL DEFAULT '{}'
-        );
-
-        CREATE TABLE IF NOT EXISTS module_instances (
-          id TEXT PRIMARY KEY,
-          screen_instance_id TEXT NOT NULL REFERENCES screen_instances(id) ON DELETE CASCADE,
-          module_id TEXT NOT NULL REFERENCES modules(id),
-          name TEXT NOT NULL,
-          sort_order INTEGER NOT NULL DEFAULT 0,
-          metadata_json TEXT NOT NULL DEFAULT '{}'
-        );
-
-        CREATE TABLE IF NOT EXISTS themes (
-          id TEXT PRIMARY KEY,
-          name TEXT NOT NULL,
-          metadata_json TEXT NOT NULL DEFAULT '{}'
-        );
-
-        CREATE TABLE IF NOT EXISTS palette_colors (
-          id TEXT PRIMARY KEY,
-          name TEXT NOT NULL,
-          value_hex TEXT NOT NULL DEFAULT '#000000',
-          is_neutral INTEGER NOT NULL DEFAULT 0,
-          metadata_json TEXT NOT NULL DEFAULT '{}'
-        );
-
-        CREATE TABLE IF NOT EXISTS production_fonts (
-          id TEXT PRIMARY KEY,
-          name TEXT NOT NULL,
-          family_name TEXT NOT NULL DEFAULT '',
-          category TEXT NOT NULL DEFAULT 'text',
-          metadata_json TEXT NOT NULL DEFAULT '{}'
-        );
-
-        CREATE TABLE IF NOT EXISTS component_classes (
-          id TEXT PRIMARY KEY,
-          name TEXT NOT NULL,
-          component_type TEXT NOT NULL,
-          metadata_json TEXT NOT NULL DEFAULT '{}'
-        );
-
-        CREATE TABLE IF NOT EXISTS icon_themes (
-          id TEXT PRIMARY KEY,
-          name TEXT NOT NULL,
-          asset_root TEXT NOT NULL DEFAULT '',
-          metadata_json TEXT NOT NULL DEFAULT '{}'
-        );
-
-        CREATE TABLE IF NOT EXISTS status_bars (
-          id TEXT PRIMARY KEY,
-          name TEXT NOT NULL,
-          metadata_json TEXT NOT NULL DEFAULT '{}'
-        );
-
-        CREATE TABLE IF NOT EXISTS navigation_bars (
-          id TEXT PRIMARY KEY,
-          name TEXT NOT NULL,
-          metadata_json TEXT NOT NULL DEFAULT '{}'
-        );
-
-        CREATE TABLE IF NOT EXISTS render_presets (
-          id TEXT PRIMARY KEY,
-          name TEXT NOT NULL,
           metadata_json TEXT NOT NULL DEFAULT '{}'
         );
         """;
 
     private sealed record ProjectRow(string Id, string Name, string Notes);
     private sealed record EpisodeRow(string Id, string ProjectId, string Name, string Notes, int SortOrder);
-    private sealed record NamedRow(string Id, string Name, string Notes);
+    private sealed record AppRow(string Id, string ProjectId, string Name, string Notes, int SortOrder);
+    private sealed record ModuleRow(string Id, string AppId, string Name, string Notes, int SortOrder);
     private sealed record ShotRow(
         string Id,
         string EpisodeId,

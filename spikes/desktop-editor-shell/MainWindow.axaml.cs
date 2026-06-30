@@ -132,8 +132,9 @@ public partial class MainWindow : Window
             Tag = node,
             IsExpanded = node.Kind is ProjectTreeNodeKind.Project
                 or ProjectTreeNodeKind.Episode
-                or ProjectTreeNodeKind.NavigationGroup
-                or ProjectTreeNodeKind.TableGroup,
+                or ProjectTreeNodeKind.App
+                or ProjectTreeNodeKind.AppsRoot
+                or ProjectTreeNodeKind.EpisodesRoot,
         };
 
         foreach (var child in node.Children)
@@ -253,22 +254,12 @@ public partial class MainWindow : Window
         return kind switch
         {
             ProjectTreeNodeKind.Project => "▣",
+            ProjectTreeNodeKind.AppsRoot => "▣",
+            ProjectTreeNodeKind.EpisodesRoot => "▤",
             ProjectTreeNodeKind.Episode => "▤",
             ProjectTreeNodeKind.Shot => "◈",
-            ProjectTreeNodeKind.NavigationGroup => "▦",
-            ProjectTreeNodeKind.TableGroup => "☷",
-            ProjectTreeNodeKind.Actor => "◉",
-            ProjectTreeNodeKind.Device => "▯",
             ProjectTreeNodeKind.App => "▣",
             ProjectTreeNodeKind.Module => "▧",
-            ProjectTreeNodeKind.Theme => "◐",
-            ProjectTreeNodeKind.PaletteColor => "◍",
-            ProjectTreeNodeKind.ProductionFont => "T",
-            ProjectTreeNodeKind.ComponentClass => "◇",
-            ProjectTreeNodeKind.IconTheme => "✦",
-            ProjectTreeNodeKind.StatusBar => "▥",
-            ProjectTreeNodeKind.NavigationBar => "☰",
-            ProjectTreeNodeKind.RenderPreset => "▶",
             _ => "•",
         };
     }
@@ -357,7 +348,9 @@ public partial class MainWindow : Window
         {
             Text = node.Kind == ProjectTreeNodeKind.Episode
                 ? "This will also remove the shots inside this episode in the current in-memory spike."
-                : "This removes this shot from the current in-memory spike.",
+                : node.Kind == ProjectTreeNodeKind.App
+                    ? "This will also remove the modules inside this app in the current spike database."
+                    : "This removes this item from the current spike database.",
             Classes = { "muted" },
             TextWrapping = TextWrapping.Wrap,
         });
@@ -444,22 +437,12 @@ public partial class MainWindow : Window
 internal enum ProjectTreeNodeKind
 {
     Project,
-    Episode,
-    Shot,
-    NavigationGroup,
-    TableGroup,
-    Actor,
-    Device,
+    AppsRoot,
+    EpisodesRoot,
     App,
     Module,
-    Theme,
-    PaletteColor,
-    ProductionFont,
-    ComponentClass,
-    IconTheme,
-    StatusBar,
-    NavigationBar,
-    RenderPreset,
+    Episode,
+    Shot,
 }
 
 internal sealed class ProjectTreeNode
@@ -486,17 +469,28 @@ internal sealed class ProjectTreeNode
     public List<ProjectTreeNode> Children { get; } = [];
 
     public int Level => Parent is null ? 0 : Parent.Level + 1;
-    public bool CanAddChild => Kind is ProjectTreeNodeKind.Project or ProjectTreeNodeKind.Episode;
-    public bool CanDuplicate => Kind is ProjectTreeNodeKind.Episode or ProjectTreeNodeKind.Shot;
-    public bool CanDelete => Kind is ProjectTreeNodeKind.Episode or ProjectTreeNodeKind.Shot;
+    public bool CanAddChild => Kind is ProjectTreeNodeKind.AppsRoot
+        or ProjectTreeNodeKind.App
+        or ProjectTreeNodeKind.EpisodesRoot
+        or ProjectTreeNodeKind.Episode;
+    public bool CanDuplicate => Kind is ProjectTreeNodeKind.App
+        or ProjectTreeNodeKind.Module
+        or ProjectTreeNodeKind.Episode
+        or ProjectTreeNodeKind.Shot;
+    public bool CanDelete => Kind is ProjectTreeNodeKind.App
+        or ProjectTreeNodeKind.Module
+        or ProjectTreeNodeKind.Episode
+        or ProjectTreeNodeKind.Shot;
 
     public string Display => Kind switch
     {
         ProjectTreeNodeKind.Project => $"▣ {Name}",
+        ProjectTreeNodeKind.AppsRoot => $"▣ {Name}",
+        ProjectTreeNodeKind.EpisodesRoot => $"▤ {Name}",
+        ProjectTreeNodeKind.App => $"▣ {Name}",
+        ProjectTreeNodeKind.Module => $"▧ {Name}",
         ProjectTreeNodeKind.Episode => $"▤ {Name}",
         ProjectTreeNodeKind.Shot => $"◈ {Name}",
-        ProjectTreeNodeKind.NavigationGroup => $"▦ {Name}",
-        ProjectTreeNodeKind.TableGroup => $"☷ {Name}",
         _ => Name,
     };
 
