@@ -346,6 +346,29 @@ internal sealed class SpikeDatabase
         Execute(connection, $"DELETE FROM {table} WHERE id = $id", ("$id", node.Id));
     }
 
+    public void UpdateNode(ProjectTreeNode node)
+    {
+        using var connection = OpenConnection();
+        var table = node.Kind switch
+        {
+            ProjectTreeNodeKind.Project => "projects",
+            ProjectTreeNodeKind.App => "apps",
+            ProjectTreeNodeKind.Module => "modules",
+            ProjectTreeNodeKind.Episode => "episodes",
+            ProjectTreeNodeKind.Shot => "shots",
+            _ => "",
+        };
+
+        if (string.IsNullOrWhiteSpace(table)) return;
+
+        Execute(
+            connection,
+            $"UPDATE {table} SET name = $name, notes = $notes WHERE id = $id",
+            ("$id", node.Id),
+            ("$name", node.Name),
+            ("$notes", node.Notes));
+    }
+
     private void Initialize()
     {
         using var connection = OpenConnection();

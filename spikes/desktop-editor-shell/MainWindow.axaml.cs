@@ -3,6 +3,7 @@ using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Mockups.DesktopEditorShell.Data;
+using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,6 +15,7 @@ public partial class MainWindow : Window
 {
     private bool _isDark = true;
     private readonly SpikeDatabase _database = new(SpikeDatabase.DefaultDatabasePath());
+    private readonly List<EditorAccordionCard> _editorCards = [];
     private ProjectTreeNode? _selectedNode;
 
     public MainWindow()
@@ -62,6 +64,12 @@ public partial class MainWindow : Window
             SetBrush("TreeRowLevel1Background", "#383a3f");
             SetBrush("TreeRowLevel2Background", "#3b3d42");
             SetBrush("TreeRowBorderBrush", "#50535b");
+            SetBrush("DictionaryLabelBrush", "#aaa69d");
+            SetBrush("DictionaryControlBorderBrush", "#565a62");
+            SetBrush("ReadonlyInputBackground", "#323439");
+            SetBrush("OverrideBorderBrush", "#d4b45f");
+            SetBrush("OverrideBackground", "#40392b");
+            SetBrush("OverrideCardBackground", "#373428");
 
             ThemeLabel.Text = "Dark mode";
             ThemeToggleButton.Content = "Switch to light";
@@ -97,6 +105,12 @@ public partial class MainWindow : Window
         SetBrush("TreeRowLevel1Background", "#f8fafc");
         SetBrush("TreeRowLevel2Background", "#f5f7fb");
         SetBrush("TreeRowBorderBrush", "#e1e5ec");
+        SetBrush("DictionaryLabelBrush", "#475467");
+        SetBrush("DictionaryControlBorderBrush", "#cfd6e2");
+        SetBrush("ReadonlyInputBackground", "#fbfcfd");
+        SetBrush("OverrideBorderBrush", "#e4ad68");
+        SetBrush("OverrideBackground", "#fff7ed");
+        SetBrush("OverrideCardBackground", "#fffbf4");
 
         ThemeLabel.Text = "Light mode";
         ThemeToggleButton.Content = "Switch to dark";
@@ -276,9 +290,130 @@ public partial class MainWindow : Window
     {
         _selectedNode = node;
         EditorTitle.Text = node.Name;
-        SelectedNameField.Text = node.Name;
-        SelectedKindField.Text = node.Kind.ToString();
-        SelectedNotesField.Text = node.Notes;
+        BuildEditorCards(node);
+    }
+
+    private void BuildEditorCards(ProjectTreeNode node)
+    {
+        _editorCards.Clear();
+        EditorCardsPanel.Children.Clear();
+
+        var generalCard = CreateGeneralCard(node);
+        AddEditorCard(generalCard);
+
+        var styleCard = new EditorAccordionCard(
+            "Style",
+            "◒",
+            new TextBlock
+            {
+                Text = "Style fields will be added only when their FieldDefinitions exist.",
+                Classes = { "muted" },
+                TextWrapping = TextWrapping.Wrap,
+            });
+        AddEditorCard(styleCard);
+
+        var behaviorCard = new EditorAccordionCard(
+            "Behavior",
+            "⚙",
+            new TextBlock
+            {
+                Text = "Behavior fields will follow the same dictionary route.",
+                Classes = { "muted" },
+                TextWrapping = TextWrapping.Wrap,
+            });
+        AddEditorCard(behaviorCard);
+    }
+
+    private EditorAccordionCard CreateGeneralCard(ProjectTreeNode node)
+    {
+        var persisted = node.Kind is ProjectTreeNodeKind.Project
+            or ProjectTreeNodeKind.App
+            or ProjectTreeNodeKind.Module
+            or ProjectTreeNodeKind.Episode
+            or ProjectTreeNodeKind.Shot;
+
+        var fields = new[]
+        {
+            new FieldValue(
+                new FieldDefinition(
+                    "core.name",
+                    "Name",
+                    ValueKind.StringSingleLine,
+                    IsEditable: persisted,
+                    DefaultValue: node.Name),
+                node.Name),
+            new FieldValue(
+                new FieldDefinition(
+                    "core.kind",
+                    "Kind",
+                    ValueKind.StringReadOnly,
+                    IsEditable: false,
+                    DefaultValue: node.Kind.ToString()),
+                node.Kind.ToString()),
+            new FieldValue(
+                new FieldDefinition(
+                    "core.notes",
+                    "Notes",
+                    ValueKind.StringMultiline,
+                    IsEditable: persisted,
+                    DefaultValue: node.Notes),
+                node.Notes),
+        };
+
+        var body = new StackPanel
+        {
+            Spacing = 12,
+        };
+        var controls = new List<DictionaryFieldControl>();
+
+        foreach (var field in fields)
+        {
+            var control = new DictionaryFieldControl(field);
+            controls.Add(control);
+            control.ValueChanged += (_, value) =>
+            {
+                if (field.Definition.Id == "core.name")
+                {
+                    node.Name = value;
+                    EditorTitle.Text = value;
+                }
+                else if (field.Definition.Id == "core.notes")
+                {
+                    node.Notes = value;
+                }
+
+                if (persisted && field.Definition.Id != "core.kind")
+                {
+                    _database.UpdateNode(node);
+                }
+            };
+            body.Children.Add(control);
+        }
+
+        var card = new EditorAccordionCard("General", "⌘", body, isOpen: true);
+        foreach (var control in controls)
+        {
+            control.ValueChanged += (_, _) =>
+            {
+                card.IsChanged = controls.Any((item) => !item.IsDefault);
+            };
+        }
+
+        card.IsChanged = controls.Any((item) => !item.IsDefault);
+        return card;
+    }
+
+    private void AddEditorCard(EditorAccordionCard card)
+    {
+        card.Opened += (_, _) =>
+        {
+            foreach (var other in _editorCards.Where((item) => item != card))
+            {
+                other.SetOpen(false, notify: false);
+            }
+        };
+        _editorCards.Add(card);
+        EditorCardsPanel.Children.Add(card);
     }
 
     private void AddChild(ProjectTreeNode parent)
