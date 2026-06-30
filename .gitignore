@@ -3,6 +3,8 @@
 node_modules/
 dist/
 out/
+bin/
+obj/
 assets/*/media/
 *.sqlite
 *.sqlite3
