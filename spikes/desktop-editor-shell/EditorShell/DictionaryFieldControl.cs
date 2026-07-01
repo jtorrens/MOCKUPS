@@ -1,6 +1,5 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Templates;
 using Avalonia.Layout;
 using Avalonia.Media;
 using System;
@@ -338,12 +337,6 @@ internal sealed class DictionaryFieldControl : Grid
             MinWidth = 220,
             IsEnabled = _definition.IsEditable,
             ItemsSource = _definition.Options ?? [],
-            ItemTemplate = new FuncDataTemplate<FieldOption>((option, _) => option is null
-                ? new TextBlock()
-                : CreateOptionView(option)),
-            SelectionBoxItemTemplate = new FuncDataTemplate<FieldOption>((option, _) => option is null
-                ? new TextBlock()
-                : CreateOptionView(option)),
         };
 
         comboBox.SelectedItem = SelectedOption(value);
@@ -393,42 +386,6 @@ internal sealed class DictionaryFieldControl : Grid
         grid.Children.Add(secondLabel);
         grid.Children.Add(secondCombo);
         return (grid, firstCombo, secondCombo);
-    }
-
-    private static Control CreateOptionView(FieldOption option)
-    {
-        var grid = new Grid
-        {
-            ColumnDefinitions = new ColumnDefinitions("18,*"),
-            ColumnSpacing = 8,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        if (!string.IsNullOrWhiteSpace(option.ColorHex))
-        {
-            var swatch = new Border
-            {
-                Width = 14,
-                Height = 14,
-                CornerRadius = new CornerRadius(4),
-                Background = new SolidColorBrush(ParseColor(option.ColorHex)),
-                BorderBrush = new SolidColorBrush(Color.Parse("#667085")),
-                BorderThickness = new Avalonia.Thickness(1),
-                VerticalAlignment = VerticalAlignment.Center,
-            };
-            Grid.SetColumn(swatch, 0);
-            grid.Children.Add(swatch);
-        }
-
-        var label = new TextBlock
-        {
-            Text = option.Label,
-            TextTrimming = TextTrimming.CharacterEllipsis,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        Grid.SetColumn(label, 1);
-
-        grid.Children.Add(label);
-        return grid;
     }
 
     private FieldOption? SelectedOption(string value)

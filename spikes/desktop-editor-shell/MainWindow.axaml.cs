@@ -1239,6 +1239,11 @@ public partial class MainWindow : SukiWindow
                 ? RelativeActorMediaPath(node.Id, value)
                 : value;
             storedValue ??= value;
+            if (_database.GetActorFieldValue(node.Id, fieldId) == storedValue)
+            {
+                return;
+            }
+
             _database.UpdateActorField(node.Id, fieldId, storedValue);
             if (fieldId == "actor.shortName")
             {

@@ -153,6 +153,20 @@ Examples of disallowed manual value controls:
 - ad hoc color picker outside the color control;
 - ad hoc X/Y layout outside the pair control.
 
+## 5A. Field commits are a shared editor-shell behavior
+
+Dictionary controls may emit local editing events while the user types, selects, or while Avalonia initializes a control. Those local events must not be treated as final record commits by each editor independently.
+
+The desired general behavior is:
+
+- the control owns temporary edit state;
+- the record is updated when the field edit is committed, normally on field exit, picker accept, checkbox toggle, or an explicit commit gesture;
+- editors do not implement their own per-character persistence rules;
+- rebuilding an editor in response to a field commit must never create a feedback loop where control initialization commits the same value again;
+- if an emitted value is equal to the stored value, the shell must ignore it before updating the record or rebuilding the editor.
+
+Current spike note: the Actor editor freeze exposed this problem. Avatar controls emitted `ValueChanged` during initialization, and the Actor editor rebuilt itself on every avatar change. A same-value guard stops the immediate loop, but the real fix is to generalize commit-on-field-exit / commit-on-accepted-change for all dictionary controls and all editors.
+
 ## 6. Visual style is token-based
 
 The editor shell may have its own UI tokens, but they must be centralized.
