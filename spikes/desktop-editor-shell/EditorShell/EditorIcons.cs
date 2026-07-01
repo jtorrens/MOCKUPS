@@ -79,6 +79,7 @@ internal static class EditorIcons
             ProjectTreeNodeKind.AppsRoot => Apps,
             ProjectTreeNodeKind.PaletteRoot => Color,
             ProjectTreeNodeKind.DevicesRoot => Device,
+            ProjectTreeNodeKind.ActorsRoot => Actor,
             ProjectTreeNodeKind.App => App,
             ProjectTreeNodeKind.Module => Module,
             ProjectTreeNodeKind.EpisodesRoot => Episodes,
@@ -86,6 +87,7 @@ internal static class EditorIcons
             ProjectTreeNodeKind.Shot => Shot,
             ProjectTreeNodeKind.PaletteColor => Color,
             ProjectTreeNodeKind.Device => Device,
+            ProjectTreeNodeKind.Actor => Actor,
             _ => Component,
         };
     }

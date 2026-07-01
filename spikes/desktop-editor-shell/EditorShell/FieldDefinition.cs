@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal enum ValueKind
@@ -8,9 +10,17 @@ internal enum ValueKind
     Integer,
     IntegerPair,
     DirectoryPath,
+    ImageFilePath,
     HexColor,
+    PaletteColorToken,
+    PaletteColorPair,
     Boolean,
 }
+
+internal sealed record FieldOption(
+    string Value,
+    string Label,
+    string? ColorHex = null);
 
 internal sealed record FieldDefinition(
     string Id,
@@ -18,7 +28,8 @@ internal sealed record FieldDefinition(
     ValueKind ValueKind,
     bool IsEditable = true,
     string DefaultValue = "",
-    bool CommitAsDefault = true);
+    bool CommitAsDefault = true,
+    IReadOnlyList<FieldOption>? Options = null);
 
 internal sealed record FieldValue(
     FieldDefinition Definition,

@@ -41,6 +41,7 @@ internal sealed class SpikeDatabase
         var modules = QueryModuleRows(connection);
         var paletteColors = QueryPaletteColorRows(connection);
         var devices = QueryDeviceRows(connection);
+        var actors = QueryActorRows(connection);
 
         var projectNodes = projects
             .Select((project) => new ProjectTreeNode(
@@ -54,6 +55,7 @@ internal sealed class SpikeDatabase
         var appRootNodes = new Dictionary<string, ProjectTreeNode>();
         var paletteRootNodes = new Dictionary<string, ProjectTreeNode>();
         var deviceRootNodes = new Dictionary<string, ProjectTreeNode>();
+        var actorRootNodes = new Dictionary<string, ProjectTreeNode>();
         var episodeRootNodes = new Dictionary<string, ProjectTreeNode>();
         var episodeNodes = new Dictionary<string, ProjectTreeNode>();
         foreach (var project in projectNodes.Values)
@@ -93,6 +95,13 @@ internal sealed class SpikeDatabase
                 "Device metrics available in this project.",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.DevicesRoot),
                 productionDataRoot);
+            var actorsRoot = new ProjectTreeNode(
+                ProjectTreeNodeKind.ActorsRoot,
+                $"actors_root_{project.Id}",
+                "Actors",
+                "People and identities used by the production.",
+                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ActorsRoot),
+                productionDataRoot);
             var episodesRoot = new ProjectTreeNode(
                 ProjectTreeNodeKind.EpisodesRoot,
                 $"episodes_root_{project.Id}",
@@ -101,6 +110,7 @@ internal sealed class SpikeDatabase
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.EpisodesRoot),
                 project);
 
+            productionDataRoot.AddChild(actorsRoot);
             productionDataRoot.AddChild(devicesRoot);
             systemDataRoot.AddChild(paletteRoot);
             project.AddChild(appsRoot);
@@ -110,6 +120,7 @@ internal sealed class SpikeDatabase
             appRootNodes[project.Id] = appsRoot;
             paletteRootNodes[project.Id] = paletteRoot;
             deviceRootNodes[project.Id] = devicesRoot;
+            actorRootNodes[project.Id] = actorsRoot;
             episodeRootNodes[project.Id] = episodesRoot;
         }
 
@@ -183,6 +194,19 @@ internal sealed class SpikeDatabase
                 $"{device.Manufacturer} {device.Model}".Trim(),
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Device),
                 devicesRoot));
+        }
+
+        foreach (var actor in actors.OrderBy((actor) => actor.DisplayName))
+        {
+            if (!actorRootNodes.TryGetValue(actor.ProjectId, out var actorsRoot)) continue;
+
+            actorsRoot.AddChild(new ProjectTreeNode(
+                ProjectTreeNodeKind.Actor,
+                actor.Id,
+                actor.DisplayName,
+                actor.ShortName,
+                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Actor),
+                actorsRoot));
         }
 
         foreach (var shot in shots.OrderBy((shot) => shot.SortOrder).ThenBy((shot) => shot.Name))
@@ -292,6 +316,33 @@ internal sealed class SpikeDatabase
                 $"Device {index}",
                 "",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Device),
+                parent);
+        }
+
+        if (parent.Kind == ProjectTreeNodeKind.ActorsRoot)
+        {
+            var project = ProjectAncestor(parent);
+            var index = ScalarLong(connection, "SELECT COUNT(*) FROM actors WHERE project_id = $projectId", ("$projectId", project.Id)) + 1;
+            var id = $"actor_{Guid.NewGuid():N}";
+            var displayName = $"Actor {index}";
+            Execute(
+                connection,
+                """
+                INSERT INTO actors (id, project_id, display_name, short_name, default_device_id, default_theme_id, metadata_json)
+                VALUES ($id, $projectId, $displayName, $shortName, '', '', $metadataJson)
+                """,
+                ("$id", id),
+                ("$projectId", project.Id),
+                ("$displayName", displayName),
+                ("$shortName", $"A{index}"),
+                ("$metadataJson", DefaultActorMetadataJson("blue", "gray_010")));
+
+            return new ProjectTreeNode(
+                ProjectTreeNodeKind.Actor,
+                id,
+                displayName,
+                $"A{index}",
+                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Actor),
                 parent);
         }
 
@@ -513,6 +564,24 @@ internal sealed class SpikeDatabase
             return new ProjectTreeNode(ProjectTreeNodeKind.Device, id, $"{node.Name} copy", node.Notes, node.RecordClassId, node.Parent);
         }
 
+        if (node.Kind == ProjectTreeNodeKind.Actor)
+        {
+            var id = $"actor_{Guid.NewGuid():N}";
+            Execute(
+                connection,
+                """
+                INSERT INTO actors (id, project_id, display_name, short_name, default_device_id, default_theme_id, metadata_json)
+                SELECT $id, project_id, $name, short_name, default_device_id, default_theme_id, metadata_json
+                FROM actors
+                WHERE id = $sourceId
+                """,
+                ("$id", id),
+                ("$name", $"{node.Name} copy"),
+                ("$sourceId", node.Id));
+
+            return new ProjectTreeNode(ProjectTreeNodeKind.Actor, id, $"{node.Name} copy", node.Notes, node.RecordClassId, node.Parent);
+        }
+
         throw new InvalidOperationException($"Cannot duplicate {node.Kind}.");
     }
 
@@ -527,6 +596,7 @@ internal sealed class SpikeDatabase
             ProjectTreeNodeKind.Module => "modules",
             ProjectTreeNodeKind.PaletteColor => "palette_colors",
             ProjectTreeNodeKind.Device => "devices",
+            ProjectTreeNodeKind.Actor => "actors",
             _ => throw new InvalidOperationException($"Cannot delete {node.Kind}."),
         };
 
@@ -545,6 +615,7 @@ internal sealed class SpikeDatabase
             ProjectTreeNodeKind.Shot => "shots",
             ProjectTreeNodeKind.PaletteColor => "palette_colors",
             ProjectTreeNodeKind.Device => "devices",
+            ProjectTreeNodeKind.Actor => "actors",
             _ => "",
         };
 
@@ -562,6 +633,16 @@ internal sealed class SpikeDatabase
             Execute(
                 connection,
                 "UPDATE devices SET name = $name WHERE id = $id",
+                ("$id", node.Id),
+                ("$name", node.Name));
+            return;
+        }
+
+        if (node.Kind == ProjectTreeNodeKind.Actor)
+        {
+            Execute(
+                connection,
+                "UPDATE actors SET display_name = $name WHERE id = $id",
                 ("$id", node.Id),
                 ("$name", node.Name));
             return;
@@ -598,6 +679,7 @@ internal sealed class SpikeDatabase
         SeedIfEmpty(connection);
         SeedPaletteColorsIfEmpty(connection);
         SeedDevicesIfEmpty(connection);
+        SeedActorsIfEmpty(connection);
     }
 
     private SqliteConnection OpenConnection()
@@ -733,6 +815,33 @@ internal sealed class SpikeDatabase
         }
     }
 
+    private static void SeedActorsIfEmpty(SqliteConnection connection)
+    {
+        var projectIds = QueryProjectRows(connection).Select((project) => project.Id).ToList();
+        foreach (var projectId in projectIds)
+        {
+            if (ScalarLong(connection, "SELECT COUNT(*) FROM actors WHERE project_id = $projectId", ("$projectId", projectId)) > 0)
+            {
+                continue;
+            }
+
+            foreach (var seed in ActorSeedRows)
+            {
+                Execute(
+                    connection,
+                    """
+                    INSERT INTO actors (id, project_id, display_name, short_name, default_device_id, default_theme_id, metadata_json)
+                    VALUES ($id, $projectId, $displayName, $shortName, '', '', $metadataJson)
+                    """,
+                    ("$id", seed.Id),
+                    ("$projectId", projectId),
+                    ("$displayName", seed.DisplayName),
+                    ("$shortName", seed.ShortName),
+                    ("$metadataJson", seed.MetadataJson));
+            }
+        }
+    }
+
     private static void SeedEditorLayouts(SqliteConnection connection)
     {
         foreach (var recordClassId in new[]
@@ -743,6 +852,7 @@ internal sealed class SpikeDatabase
             "navigation.apps",
             "navigation.palette",
             "navigation.devices",
+            "navigation.actors",
             "navigation.episodes",
             "app.generic",
             "app.core.chat",
@@ -752,6 +862,7 @@ internal sealed class SpikeDatabase
             "shot",
             "palette_color",
             "device",
+            "actor",
         })
         {
             Execute(
@@ -829,11 +940,69 @@ internal sealed class SpikeDatabase
                     { "id": "device.metrics.dynamicIsland.position", "order": 610, "visible": true },
                     { "id": "device.metrics.dynamicIsland.size", "order": 620, "visible": true }
                   """
+            : recordClassId == "actor"
+                ? """
+                    { "id": "core.name", "order": 10, "visible": true },
+                    { "id": "actor.shortName", "order": 20, "visible": true },
+                    { "id": "actor.defaultDeviceId", "order": 30, "visible": true },
+                    { "id": "actor.defaultThemeId", "order": 40, "visible": true }
+                  """
             : """
                     { "id": "core.name", "order": 10, "visible": true },
                     { "id": "core.kind", "order": 20, "visible": false },
                     { "id": "core.notes", "order": 30, "visible": true }
               """;
+
+        var actorCards = recordClassId == "actor"
+            ? $$"""
+            ,
+            {
+              "id": "colors",
+              "label": "Colors",
+              "subtitle": "Light and dark actor palette tokens",
+              "icon": "{{EditorIcons.Color}}",
+              "order": 20,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                {
+                  "id": "modes",
+                  "label": "Modes",
+                  "order": 10,
+                  "visible": true,
+                  "fields": [
+                    { "id": "actor.color.modes", "order": 10, "visible": true },
+                    { "id": "actor.avatarTextColor.modes", "order": 20, "visible": true }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "avatar",
+              "label": "Avatar",
+              "subtitle": "Image crop and initials fallback",
+              "icon": "{{EditorIcons.Avatar}}",
+              "order": 30,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                {
+                  "id": "avatar",
+                  "label": "Avatar image",
+                  "order": 10,
+                  "visible": true,
+                  "fields": [
+                    { "id": "actor.avatar.filePath", "order": 10, "visible": true },
+                    { "id": "actor.avatar.scale", "order": 20, "visible": true },
+                    { "id": "actor.avatar.offset", "order": 30, "visible": true },
+                    { "id": "actor.avatar.useInitials", "order": 40, "visible": true },
+                    { "id": "actor.avatar.initialsPadding", "order": 50, "visible": true }
+                  ]
+                }
+              ]
+            }
+            """
+            : "";
 
         return $$"""
         {
@@ -841,6 +1010,7 @@ internal sealed class SpikeDatabase
             {
               "id": "general",
               "label": "General",
+              "subtitle": "Identity",
               "icon": "{{EditorIcons.General}}",
               "order": 10,
               "visible": true,
@@ -848,7 +1018,7 @@ internal sealed class SpikeDatabase
               "groups": [
                 {
                   "id": "identity",
-                  "label": "",
+                  "label": "Identity",
                   "order": 10,
                   "visible": true,
                   "fields": [
@@ -856,7 +1026,7 @@ internal sealed class SpikeDatabase
                   ]
                 }
               ]
-            }
+            }{{actorCards}}
           ]
         }
         """;
@@ -1024,6 +1194,16 @@ internal sealed class SpikeDatabase
             default:
                 throw new InvalidOperationException($"Unknown palette field '{fieldId}'.");
         }
+    }
+
+    public IReadOnlyList<FieldOption> GetPaletteColorOptions(string projectId)
+    {
+        using var connection = OpenConnection();
+        return QueryPaletteColorRows(connection)
+            .Where((color) => color.ProjectId == projectId)
+            .OrderBy((color) => color.Token)
+            .Select((color) => new FieldOption(color.Token, color.Token, color.ValueHex))
+            .ToList();
     }
 
     public ProjectSettings GetProjectSettings(string projectId)
@@ -1196,6 +1376,120 @@ internal sealed class SpikeDatabase
         }
 
         return rows;
+    }
+
+    private static List<ActorRow> QueryActorRows(SqliteConnection connection)
+    {
+        var rows = new List<ActorRow>();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT id, project_id, display_name, short_name, default_device_id, default_theme_id, metadata_json FROM actors ORDER BY display_name";
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            rows.Add(new ActorRow(
+                reader.GetString(0),
+                reader.GetString(1),
+                reader.GetString(2),
+                ReadString(reader, 3),
+                ReadString(reader, 4),
+                ReadString(reader, 5),
+                ReadString(reader, 6)));
+        }
+
+        return rows;
+    }
+
+    public ActorSettings GetActorSettings(string actorId)
+    {
+        using var connection = OpenConnection();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT project_id, display_name, short_name, default_device_id, default_theme_id, metadata_json FROM actors WHERE id = $id";
+        command.Parameters.AddWithValue("$id", actorId);
+        using var reader = command.ExecuteReader();
+        if (!reader.Read())
+        {
+            throw new InvalidOperationException($"Missing actor '{actorId}'.");
+        }
+
+        return new ActorSettings(
+            reader.GetString(0),
+            reader.GetString(1),
+            ReadString(reader, 2),
+            ReadString(reader, 3),
+            ReadString(reader, 4),
+            ReadString(reader, 5));
+    }
+
+    public void UpdateActorField(string actorId, string fieldId, string value)
+    {
+        using var connection = OpenConnection();
+        switch (fieldId)
+        {
+            case "actor.shortName":
+                Execute(connection, "UPDATE actors SET short_name = $value WHERE id = $id", ("$id", actorId), ("$value", value));
+                return;
+            case "actor.defaultDeviceId":
+                Execute(connection, "UPDATE actors SET default_device_id = $value WHERE id = $id", ("$id", actorId), ("$value", value));
+                return;
+            case "actor.defaultThemeId":
+                Execute(connection, "UPDATE actors SET default_theme_id = $value WHERE id = $id", ("$id", actorId), ("$value", value));
+                return;
+        }
+
+        var settings = GetActorSettings(actorId);
+        var metadata = ParseJsonObject(settings.MetadataJson);
+        switch (fieldId)
+        {
+            case "actor.color.modes":
+                SetPair(metadata, value, ["modes", "light", "color"], ["modes", "dark", "color"], asNumber: false);
+                break;
+            case "actor.avatarTextColor.modes":
+                SetPair(metadata, value, ["modes", "light", "avatarTextColor"], ["modes", "dark", "avatarTextColor"], asNumber: false);
+                break;
+            case "actor.avatar.filePath":
+                SetJsonValue(metadata, ["avatar", "filePath"], JsonValue.Create(value)!);
+                break;
+            case "actor.avatar.scale":
+                SetJsonValue(metadata, ["avatar", "scale"], NumberNode(value));
+                break;
+            case "actor.avatar.offset":
+                SetPair(metadata, value, ["avatar", "offsetX"], ["avatar", "offsetY"]);
+                break;
+            case "actor.avatar.useInitials":
+                SetJsonValue(metadata, ["avatar", "useInitials"], JsonValue.Create(StringToBool(value))!);
+                break;
+            case "actor.avatar.initialsPadding":
+                SetJsonValue(metadata, ["avatar", "initialsPadding"], NumberNode(value));
+                break;
+            default:
+                throw new InvalidOperationException($"Unknown actor field '{fieldId}'.");
+        }
+
+        Execute(
+            connection,
+            "UPDATE actors SET metadata_json = $metadataJson WHERE id = $id",
+            ("$id", actorId),
+            ("$metadataJson", metadata.ToJsonString()));
+    }
+
+    public string GetActorFieldValue(string actorId, string fieldId)
+    {
+        var settings = GetActorSettings(actorId);
+        var metadata = ParseJsonObject(settings.MetadataJson);
+        return fieldId switch
+        {
+            "actor.shortName" => settings.ShortName,
+            "actor.defaultDeviceId" => settings.DefaultDeviceId,
+            "actor.defaultThemeId" => settings.DefaultThemeId,
+            "actor.color.modes" => MetricPair(settings.MetadataJson, ["modes", "light", "color"], ["modes", "dark", "color"]),
+            "actor.avatarTextColor.modes" => MetricPair(settings.MetadataJson, ["modes", "light", "avatarTextColor"], ["modes", "dark", "avatarTextColor"]),
+            "actor.avatar.filePath" => JsonString(metadata, ["avatar", "filePath"]),
+            "actor.avatar.scale" => JsonNumberString(metadata, ["avatar", "scale"]),
+            "actor.avatar.offset" => MetricPair(settings.MetadataJson, ["avatar", "offsetX"], ["avatar", "offsetY"]),
+            "actor.avatar.useInitials" => BoolToString(JsonBool(metadata, ["avatar", "useInitials"])),
+            "actor.avatar.initialsPadding" => JsonNumberString(metadata, ["avatar", "initialsPadding"]),
+            _ => throw new InvalidOperationException($"Unknown actor field '{fieldId}'."),
+        };
     }
 
     public DeviceSettings GetDeviceSettings(string deviceId)
@@ -1445,6 +1739,11 @@ internal sealed class SpikeDatabase
         return value.Equals("true", StringComparison.OrdinalIgnoreCase) || value == "1";
     }
 
+    private static string BoolToString(bool value)
+    {
+        return value ? "true" : "false";
+    }
+
     private static JsonObject ParseJsonObject(string json)
     {
         return JsonNode.Parse(json)?.AsObject() ?? [];
@@ -1468,6 +1767,24 @@ internal sealed class SpikeDatabase
         return node.GetValue<string?>() ?? "0";
     }
 
+    private static string JsonString(JsonObject root, IReadOnlyList<string> path)
+    {
+        var node = GetJsonValue(root, path);
+        if (node is null) return "";
+        if (node is JsonValue value && value.TryGetValue<string>(out var text))
+        {
+            return text;
+        }
+
+        return node.ToJsonString().Trim('"');
+    }
+
+    private static bool JsonBool(JsonObject root, IReadOnlyList<string> path)
+    {
+        var node = GetJsonValue(root, path);
+        return node is JsonValue value && value.TryGetValue<bool>(out var boolean) && boolean;
+    }
+
     private static JsonNode? GetJsonValue(JsonObject root, IReadOnlyList<string> path)
     {
         JsonNode? current = root;
@@ -1482,11 +1799,18 @@ internal sealed class SpikeDatabase
         return current;
     }
 
-    private static void SetPair(JsonObject root, string pairValue, IReadOnlyList<string> firstPath, IReadOnlyList<string> secondPath)
+    private static void SetPair(
+        JsonObject root,
+        string pairValue,
+        IReadOnlyList<string> firstPath,
+        IReadOnlyList<string> secondPath,
+        bool asNumber = true)
     {
         var parts = pairValue.Split('|', 2);
-        SetJsonValue(root, firstPath, NumberNode(parts.ElementAtOrDefault(0) ?? "0"));
-        SetJsonValue(root, secondPath, NumberNode(parts.ElementAtOrDefault(1) ?? "0"));
+        var first = parts.ElementAtOrDefault(0) ?? "";
+        var second = parts.ElementAtOrDefault(1) ?? "";
+        SetJsonValue(root, firstPath, asNumber ? NumberNode(first) : JsonValue.Create(first)!);
+        SetJsonValue(root, secondPath, asNumber ? NumberNode(second) : JsonValue.Create(second)!);
     }
 
     private static void SetJsonValue(JsonObject root, IReadOnlyList<string> path, JsonNode value)
@@ -1517,6 +1841,38 @@ internal sealed class SpikeDatabase
     private static string DefaultDeviceMetricsJson(int width, int height, double scale)
     {
         return DeviceMetricsJson(width, height, scale, includeDynamicIsland: false);
+    }
+
+    private static string DefaultActorMetadataJson(string colorToken, string avatarTextColorToken)
+    {
+        var root = new JsonObject
+        {
+            ["modes"] = new JsonObject
+            {
+                ["light"] = new JsonObject
+                {
+                    ["color"] = colorToken,
+                    ["avatarTextColor"] = avatarTextColorToken,
+                },
+                ["dark"] = new JsonObject
+                {
+                    ["color"] = colorToken,
+                    ["avatarTextColor"] = avatarTextColorToken,
+                },
+            },
+            ["avatar"] = new JsonObject
+            {
+                ["useInitials"] = true,
+                ["filePath"] = "",
+                ["scale"] = 1,
+                ["offsetX"] = 0,
+                ["offsetY"] = 0,
+                ["baseSize"] = 640,
+                ["initialsPadding"] = 96,
+            },
+        };
+
+        return root.ToJsonString();
     }
 
     private static string DeviceMetricsJson(int width, int height, double scale, bool includeDynamicIsland)
@@ -1702,6 +2058,16 @@ internal sealed class SpikeDatabase
           metrics_json TEXT NOT NULL
         );
 
+        CREATE TABLE IF NOT EXISTS actors (
+          id TEXT PRIMARY KEY,
+          project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+          display_name TEXT NOT NULL,
+          short_name TEXT NOT NULL DEFAULT '',
+          default_device_id TEXT NOT NULL DEFAULT '',
+          default_theme_id TEXT NOT NULL DEFAULT '',
+          metadata_json TEXT NOT NULL DEFAULT '{}'
+        );
+
         CREATE TABLE IF NOT EXISTS editor_layouts (
           record_class_id TEXT PRIMARY KEY,
           layout_json TEXT NOT NULL
@@ -1711,6 +2077,13 @@ internal sealed class SpikeDatabase
     public sealed record ProjectSettings(string Slug, int DefaultFps, string MediaRoot);
     public sealed record EpisodeSettings(string Slug, int SortOrder);
     public sealed record DeviceSettings(string Name, string Manufacturer, string Model, string OsFamily, string MetricsJson);
+    public sealed record ActorSettings(
+        string ProjectId,
+        string DisplayName,
+        string ShortName,
+        string DefaultDeviceId,
+        string DefaultThemeId,
+        string MetadataJson);
     public sealed record PaletteColorSettings(
         string Token,
         string ValueHex,
@@ -1725,6 +2098,7 @@ internal sealed class SpikeDatabase
     private sealed record ModuleRow(string Id, string AppId, string RecordClassId, string Name, string Notes, int SortOrder);
     private sealed record PaletteColorRow(string Id, string ProjectId, string Token, string ValueHex, string Note, bool IsNeutral, string MetadataJson);
     private sealed record DeviceRow(string Id, string ProjectId, string Name, string Manufacturer, string Model, string OsFamily, string MetricsJson);
+    private sealed record ActorRow(string Id, string ProjectId, string DisplayName, string ShortName, string DefaultDeviceId, string DefaultThemeId, string MetadataJson);
     private sealed record ShotRow(
         string Id,
         string EpisodeId,
@@ -1736,6 +2110,7 @@ internal sealed class SpikeDatabase
 
     private sealed record PaletteSeedRow(string Token, string ValueHex, bool IsNeutral, string MetadataJson);
     private sealed record DeviceSeedRow(string Id, string Name, string Manufacturer, string Model, string OsFamily, string MetricsJson);
+    private sealed record ActorSeedRow(string Id, string DisplayName, string ShortName, string MetadataJson);
 
     private static readonly PaletteSeedRow[] PaletteSeedRows =
     [
@@ -1773,5 +2148,12 @@ internal sealed class SpikeDatabase
         new("device_samsung_galaxy_s24", "Samsung Galaxy S24", "Samsung", "Galaxy S24", "android", DeviceMetricsJson(1080, 2340, 3, includeDynamicIsland: false)),
         new("device_samsung_galaxy_s24_ultra", "Samsung Galaxy S24 Ultra", "Samsung", "Galaxy S24 Ultra", "android", DeviceMetricsJson(1440, 3120, 3, includeDynamicIsland: false)),
         new("device_google_pixel_8_pro", "Google Pixel 8 Pro", "Google", "Pixel 8 Pro", "android", DeviceMetricsJson(1344, 2992, 3, includeDynamicIsland: false)),
+    ];
+
+    private static readonly ActorSeedRow[] ActorSeedRows =
+    [
+        new("actor_alex", "Alex", "Alex", DefaultActorMetadataJson("pastel_sky", "gray_010")),
+        new("actor_sam", "Sam", "Sam", DefaultActorMetadataJson("pastel_mint", "gray_010")),
+        new("actor_alex_b", "Alex B", "Alex B", DefaultActorMetadataJson("pastel_yellow", "gray_010")),
     ];
 }

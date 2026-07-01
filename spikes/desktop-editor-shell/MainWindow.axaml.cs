@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
@@ -300,6 +301,7 @@ public partial class MainWindow : SukiWindow
             ProjectTreeNodeKind.EpisodesRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.Episode),
             ProjectTreeNodeKind.PaletteRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.PaletteColor),
             ProjectTreeNodeKind.DevicesRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.Device),
+            ProjectTreeNodeKind.ActorsRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.Actor),
             _ => EditorIcons.ForTreeNode(ProjectTreeNodeKind.App),
         };
         AddNavigationCard(parent, sectionRoot, content, iconName);
@@ -595,6 +597,7 @@ public partial class MainWindow : SukiWindow
             SelectTreeNode(node);
             if (node.Children.Count > 0)
             {
+                CollapseSiblingNodes(node);
                 _expandedNodeIds.Add(node.Id);
                 RebuildNavigationCards();
             }
@@ -739,10 +742,15 @@ public partial class MainWindow : SukiWindow
                 });
             }
 
+            if (node.Kind == ProjectTreeNodeKind.Actor && layoutCard.Id == "avatar")
+            {
+                groupPanel.Children.Add(CreateActorAvatarPreview(node.Id));
+            }
+
             foreach (var layoutField in group.VisibleFields)
             {
                 var field = CreateFieldValue(node, layoutField.Id);
-                var control = new DictionaryFieldControl(field, BrowseDirectory);
+                var control = new DictionaryFieldControl(field, BrowsePath);
                 controls.Add(control);
                 control.ValueChanged += (_, value) =>
                 {
@@ -889,7 +897,8 @@ public partial class MainWindow : SukiWindow
             or ProjectTreeNodeKind.Episode
             or ProjectTreeNodeKind.Shot
             or ProjectTreeNodeKind.PaletteColor
-            or ProjectTreeNodeKind.Device;
+            or ProjectTreeNodeKind.Device
+            or ProjectTreeNodeKind.Actor;
 
         return fieldId switch
         {
@@ -1002,6 +1011,16 @@ public partial class MainWindow : SukiWindow
             "device.metrics.statusBar.size" when node.Kind == ProjectTreeNodeKind.Device => CreateDeviceFieldValue(node.Id, "device.metrics.statusBar.size", "Status bar size", ValueKind.IntegerPair),
             "device.metrics.dynamicIsland.position" when node.Kind == ProjectTreeNodeKind.Device => CreateDeviceFieldValue(node.Id, "device.metrics.dynamicIsland.position", "Dynamic island position", ValueKind.IntegerPair),
             "device.metrics.dynamicIsland.size" when node.Kind == ProjectTreeNodeKind.Device => CreateDeviceFieldValue(node.Id, "device.metrics.dynamicIsland.size", "Dynamic island size", ValueKind.IntegerPair),
+            "actor.shortName" when node.Kind == ProjectTreeNodeKind.Actor => CreateActorFieldValue(node.Id, "actor.shortName", "Short name", ValueKind.StringSingleLine),
+            "actor.defaultDeviceId" when node.Kind == ProjectTreeNodeKind.Actor => CreateActorFieldValue(node.Id, "actor.defaultDeviceId", "Default device", ValueKind.StringSingleLine),
+            "actor.defaultThemeId" when node.Kind == ProjectTreeNodeKind.Actor => CreateActorFieldValue(node.Id, "actor.defaultThemeId", "Default theme", ValueKind.StringSingleLine),
+            "actor.color.modes" when node.Kind == ProjectTreeNodeKind.Actor => CreateActorFieldValue(node.Id, "actor.color.modes", "Actor Color", ValueKind.PaletteColorPair),
+            "actor.avatarTextColor.modes" when node.Kind == ProjectTreeNodeKind.Actor => CreateActorFieldValue(node.Id, "actor.avatarTextColor.modes", "Actor Text Color", ValueKind.PaletteColorPair),
+            "actor.avatar.filePath" when node.Kind == ProjectTreeNodeKind.Actor => CreateActorFieldValue(node.Id, "actor.avatar.filePath", "Avatar image", ValueKind.ImageFilePath),
+            "actor.avatar.scale" when node.Kind == ProjectTreeNodeKind.Actor => CreateActorFieldValue(node.Id, "actor.avatar.scale", "Avatar scale", ValueKind.StringSingleLine),
+            "actor.avatar.offset" when node.Kind == ProjectTreeNodeKind.Actor => CreateActorFieldValue(node.Id, "actor.avatar.offset", "Avatar offset", ValueKind.IntegerPair),
+            "actor.avatar.useInitials" when node.Kind == ProjectTreeNodeKind.Actor => CreateActorFieldValue(node.Id, "actor.avatar.useInitials", "Use initials", ValueKind.Boolean),
+            "actor.avatar.initialsPadding" when node.Kind == ProjectTreeNodeKind.Actor => CreateActorFieldValue(node.Id, "actor.avatar.initialsPadding", "Initials padding", ValueKind.Integer),
             _ => throw new InvalidOperationException($"Unknown field '{fieldId}' for record class '{node.RecordClassId}'."),
         };
     }
@@ -1109,6 +1128,29 @@ public partial class MainWindow : SukiWindow
             value);
     }
 
+    private FieldValue CreateActorFieldValue(
+        string actorId,
+        string fieldId,
+        string label,
+        ValueKind valueKind)
+    {
+        var settings = _database.GetActorSettings(actorId);
+        var value = _database.GetActorFieldValue(actorId, fieldId);
+        var paletteOptions = valueKind is ValueKind.PaletteColorToken or ValueKind.PaletteColorPair
+            ? _database.GetPaletteColorOptions(settings.ProjectId)
+            : null;
+
+        return new FieldValue(
+            new FieldDefinition(
+                fieldId,
+                label,
+                valueKind,
+                IsEditable: true,
+                DefaultValue: value,
+                Options: paletteOptions),
+            value);
+    }
+
     private void ApplyFieldValue(ProjectTreeNode node, string fieldId, string value)
     {
         var persisted = node.Kind is ProjectTreeNodeKind.Project
@@ -1117,7 +1159,8 @@ public partial class MainWindow : SukiWindow
             or ProjectTreeNodeKind.Episode
             or ProjectTreeNodeKind.Shot
             or ProjectTreeNodeKind.PaletteColor
-            or ProjectTreeNodeKind.Device;
+            or ProjectTreeNodeKind.Device
+            or ProjectTreeNodeKind.Actor;
 
         if (fieldId == "core.name")
         {
@@ -1164,6 +1207,17 @@ public partial class MainWindow : SukiWindow
             return;
         }
 
+        if (node.Kind == ProjectTreeNodeKind.Actor && fieldId.StartsWith("actor.", StringComparison.Ordinal))
+        {
+            _database.UpdateActorField(node.Id, fieldId, value);
+            if (fieldId == "actor.shortName")
+            {
+                node.Notes = value;
+                RebuildNavigationCards();
+            }
+            return;
+        }
+
         if (persisted && fieldId is "core.name" or "core.notes")
         {
             _database.UpdateNode(node);
@@ -1191,6 +1245,164 @@ public partial class MainWindow : SukiWindow
 
         var folders = await StorageProvider.OpenFolderPickerAsync(options);
         return folders.Count > 0 ? folders[0].Path.LocalPath : null;
+    }
+
+    private Task<string?> BrowsePath(string currentPath, ValueKind valueKind)
+    {
+        return valueKind == ValueKind.ImageFilePath
+            ? BrowseImageFile(currentPath)
+            : BrowseDirectory(currentPath);
+    }
+
+    private async Task<string?> BrowseImageFile(string currentPath)
+    {
+        var options = new FilePickerOpenOptions
+        {
+            Title = "Select avatar image",
+            AllowMultiple = false,
+            FileTypeFilter =
+            [
+                new FilePickerFileType("Images")
+                {
+                    Patterns = ["*.png", "*.jpg", "*.jpeg", "*.webp", "*.heic"],
+                    AppleUniformTypeIdentifiers = ["public.image"],
+                    MimeTypes = ["image/png", "image/jpeg", "image/webp"],
+                },
+            ],
+        };
+
+        if (!string.IsNullOrWhiteSpace(currentPath))
+        {
+            var fullPath = Path.IsPathFullyQualified(currentPath)
+                ? currentPath
+                : Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", currentPath));
+            var parent = Path.GetDirectoryName(fullPath);
+            if (!string.IsNullOrWhiteSpace(parent) && Directory.Exists(parent))
+            {
+                options.SuggestedStartLocation = await StorageProvider.TryGetFolderFromPathAsync(parent);
+            }
+        }
+
+        var files = await StorageProvider.OpenFilePickerAsync(options);
+        return files.Count > 0 ? files[0].Path.LocalPath : null;
+    }
+
+    private Control CreateActorAvatarPreview(string actorId)
+    {
+        var settings = _database.GetActorSettings(actorId);
+        var imagePath = _database.GetActorFieldValue(actorId, "actor.avatar.filePath");
+        var useInitials = StringToBool(_database.GetActorFieldValue(actorId, "actor.avatar.useInitials"));
+        var scale = ParseDouble(_database.GetActorFieldValue(actorId, "actor.avatar.scale"), 1);
+        var offset = SplitPair(_database.GetActorFieldValue(actorId, "actor.avatar.offset"));
+        var offsetX = ParseDouble(offset.First, 0) / 4;
+        var offsetY = ParseDouble(offset.Second, 0) / 4;
+        var colorPair = SplitPair(_database.GetActorFieldValue(actorId, "actor.color.modes"));
+        var textColorPair = SplitPair(_database.GetActorFieldValue(actorId, "actor.avatarTextColor.modes"));
+        var paletteOptions = _database.GetPaletteColorOptions(settings.ProjectId);
+        var background = PaletteBrush(paletteOptions, colorPair.First, "#808080");
+        var foreground = PaletteBrush(paletteOptions, textColorPair.First, "#1A1A1A");
+
+        var viewport = new Border
+        {
+            Width = 160,
+            Height = 160,
+            CornerRadius = new CornerRadius(18),
+            ClipToBounds = true,
+            BorderThickness = new Avalonia.Thickness(1),
+            BorderBrush = new SolidColorBrush(Color.Parse(_isDark ? "#8FA0B8" : "#667085")),
+            Background = background,
+            HorizontalAlignment = HorizontalAlignment.Left,
+        };
+
+        var fullPath = ResolveLocalPath(imagePath);
+        if (!useInitials && !string.IsNullOrWhiteSpace(fullPath) && File.Exists(fullPath))
+        {
+            try
+            {
+                viewport.Child = new Image
+                {
+                    Source = new Bitmap(fullPath),
+                    Width = 160,
+                    Height = 160,
+                    Stretch = Stretch.UniformToFill,
+                    RenderTransformOrigin = new RelativePoint(0.5, 0.5, RelativeUnit.Relative),
+                    RenderTransform = new TransformGroup
+                    {
+                        Children =
+                        {
+                            new ScaleTransform(scale, scale),
+                            new TranslateTransform(offsetX, offsetY),
+                        },
+                    },
+                };
+                return WrapAvatarPreview(viewport);
+            }
+            catch (Exception)
+            {
+                // If an image format is unsupported in this spike shell, fall back to initials.
+            }
+        }
+
+        viewport.Child = new TextBlock
+        {
+            Text = ActorInitials(settings.ShortName, settings.DisplayName),
+            Foreground = foreground,
+            FontSize = 52,
+            FontWeight = FontWeight.Bold,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        return WrapAvatarPreview(viewport);
+    }
+
+    private static Control WrapAvatarPreview(Control viewport)
+    {
+        return new StackPanel
+        {
+            Spacing = 8,
+            Children =
+            {
+                new TextBlock
+                {
+                    Text = "Avatar preview · 640×640 crop",
+                    FontSize = 12,
+                    Opacity = 0.72,
+                },
+                viewport,
+            },
+        };
+    }
+
+    private static string? ResolveLocalPath(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return null;
+        return Path.IsPathFullyQualified(path)
+            ? path
+            : Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", path));
+    }
+
+    private static IBrush PaletteBrush(IReadOnlyList<FieldOption> paletteOptions, string token, string fallback)
+    {
+        var hex = paletteOptions.FirstOrDefault((option) => option.Value == token)?.ColorHex;
+        return SafeColorBrush(hex, fallback);
+    }
+
+    private static string ActorInitials(string shortName, string displayName)
+    {
+        var source = string.IsNullOrWhiteSpace(shortName) ? displayName : shortName;
+        var parts = source.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return string.Concat(parts.Take(2).Select((part) => part[0])).ToUpperInvariant();
+    }
+
+    private static double ParseDouble(string value, double fallback)
+    {
+        return double.TryParse(value, out var parsed) ? parsed : fallback;
+    }
+
+    private static (string First, string Second) SplitPair(string value)
+    {
+        var parts = value.Split('|', 2);
+        return (parts.ElementAtOrDefault(0) ?? "", parts.ElementAtOrDefault(1) ?? "");
     }
 
     private void AddEditorCard(Expander card)
@@ -1232,6 +1444,11 @@ public partial class MainWindow : SukiWindow
     private static string BoolToString(bool value)
     {
         return value ? "true" : "false";
+    }
+
+    private static bool StringToBool(string value)
+    {
+        return value.Equals("true", StringComparison.OrdinalIgnoreCase) || value == "1";
     }
 
     private void AddChild(ProjectTreeNode parent)
@@ -1411,6 +1628,7 @@ internal enum ProjectTreeNodeKind
     AppsRoot,
     PaletteRoot,
     DevicesRoot,
+    ActorsRoot,
     EpisodesRoot,
     App,
     Module,
@@ -1418,6 +1636,7 @@ internal enum ProjectTreeNodeKind
     Shot,
     PaletteColor,
     Device,
+    Actor,
 }
 
 internal sealed class ProjectTreeNode
@@ -1457,6 +1676,7 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.App
         or ProjectTreeNodeKind.PaletteRoot
         or ProjectTreeNodeKind.DevicesRoot
+        or ProjectTreeNodeKind.ActorsRoot
         or ProjectTreeNodeKind.EpisodesRoot
         or ProjectTreeNodeKind.Episode;
     public bool CanDuplicate => Kind is ProjectTreeNodeKind.App
@@ -1464,18 +1684,21 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.Episode
         or ProjectTreeNodeKind.Shot
         or ProjectTreeNodeKind.PaletteColor
-        or ProjectTreeNodeKind.Device;
+        or ProjectTreeNodeKind.Device
+        or ProjectTreeNodeKind.Actor;
     public bool CanDelete => Kind is ProjectTreeNodeKind.App
         or ProjectTreeNodeKind.Module
         or ProjectTreeNodeKind.Episode
         or ProjectTreeNodeKind.Shot
         or ProjectTreeNodeKind.PaletteColor
-        or ProjectTreeNodeKind.Device;
+        or ProjectTreeNodeKind.Device
+        or ProjectTreeNodeKind.Actor;
     public bool CanOpenEditor => Kind is not ProjectTreeNodeKind.ProductionDataRoot
         and not ProjectTreeNodeKind.SystemDataRoot
         and not ProjectTreeNodeKind.AppsRoot
         and not ProjectTreeNodeKind.PaletteRoot
         and not ProjectTreeNodeKind.DevicesRoot
+        and not ProjectTreeNodeKind.ActorsRoot
         and not ProjectTreeNodeKind.EpisodesRoot;
 
     public string Display => Name;
@@ -1496,6 +1719,7 @@ internal sealed class ProjectTreeNode
             ProjectTreeNodeKind.AppsRoot => "navigation.apps",
             ProjectTreeNodeKind.PaletteRoot => "navigation.palette",
             ProjectTreeNodeKind.DevicesRoot => "navigation.devices",
+            ProjectTreeNodeKind.ActorsRoot => "navigation.actors",
             ProjectTreeNodeKind.EpisodesRoot => "navigation.episodes",
             ProjectTreeNodeKind.App => "app.generic",
             ProjectTreeNodeKind.Module => "module.generic",
@@ -1503,6 +1727,7 @@ internal sealed class ProjectTreeNode
             ProjectTreeNodeKind.Shot => "shot",
             ProjectTreeNodeKind.PaletteColor => "palette_color",
             ProjectTreeNodeKind.Device => "device",
+            ProjectTreeNodeKind.Actor => "actor",
             _ => throw new InvalidOperationException($"No record class for {kind}."),
         };
     }

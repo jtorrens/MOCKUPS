@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Templates;
 using Avalonia.Layout;
 using Avalonia.Media;
 using System;
@@ -15,29 +16,35 @@ internal sealed class DictionaryFieldControl : Grid
     private readonly TextBox? _textBox;
     private readonly TextBox? _pairFirstTextBox;
     private readonly TextBox? _pairSecondTextBox;
+    private readonly ComboBox? _comboBox;
+    private readonly ComboBox? _pairFirstComboBox;
+    private readonly ComboBox? _pairSecondComboBox;
     private readonly CheckBox? _checkBox;
     private readonly Border? _colorSwatch;
     private readonly ColorPicker? _colorPicker;
     private readonly Button _restoreButton;
-    private readonly Func<string, Task<string?>>? _browseDirectory;
+    private readonly Func<string, ValueKind, Task<string?>>? _browsePath;
     private bool _isUpdatingColorControl;
     private string _defaultValue;
     private string _value;
 
     public DictionaryFieldControl(
         FieldValue fieldValue,
-        Func<string, Task<string?>>? browseDirectory = null)
+        Func<string, ValueKind, Task<string?>>? browsePath = null)
     {
         _definition = fieldValue.Definition;
         _defaultValue = fieldValue.Definition.DefaultValue;
         _value = fieldValue.Value;
-        _browseDirectory = browseDirectory;
+        _browsePath = browsePath;
 
         ColumnDefinitions = _definition.ValueKind switch
         {
             ValueKind.DirectoryPath => new ColumnDefinitions("180,*,Auto,Auto"),
+            ValueKind.ImageFilePath => new ColumnDefinitions("180,*,Auto,Auto"),
             ValueKind.HexColor => new ColumnDefinitions("180,28,*,Auto,Auto"),
             ValueKind.IntegerPair => new ColumnDefinitions("180,*,Auto"),
+            ValueKind.PaletteColorToken => new ColumnDefinitions("180,*,Auto"),
+            ValueKind.PaletteColorPair => new ColumnDefinitions("180,*,Auto"),
             _ => new ColumnDefinitions("180,*,Auto"),
         };
         ColumnSpacing = 12;
@@ -74,6 +81,29 @@ internal sealed class DictionaryFieldControl : Grid
             };
             SetColumn(_checkBox, 1);
             Children.Add(_checkBox);
+        }
+        else if (_definition.ValueKind == ValueKind.PaletteColorToken)
+        {
+            _comboBox = CreatePaletteComboBox(_value);
+            _comboBox.SelectionChanged += (_, _) =>
+            {
+                if (_isUpdatingColorControl) return;
+
+                _value = ComboValue(_comboBox);
+                UpdateState();
+                ValueChanged?.Invoke(this, _value);
+            };
+            SetColumn(_comboBox, 1);
+            Children.Add(_comboBox);
+        }
+        else if (_definition.ValueKind == ValueKind.PaletteColorPair)
+        {
+            var pair = SplitPair(_value);
+            var pairControl = CreatePalettePairControl(pair.First, pair.Second);
+            _pairFirstComboBox = pairControl.FirstComboBox;
+            _pairSecondComboBox = pairControl.SecondComboBox;
+            SetColumn(pairControl.Control, 1);
+            Children.Add(pairControl.Control);
         }
         else if (_definition.ValueKind == ValueKind.HexColor)
         {
@@ -136,7 +166,7 @@ internal sealed class DictionaryFieldControl : Grid
             Children.Add(_textBox);
         }
 
-        if (_definition.ValueKind == ValueKind.DirectoryPath)
+        if (_definition.ValueKind is ValueKind.DirectoryPath or ValueKind.ImageFilePath)
         {
             var browseButton = new Button
             {
@@ -144,13 +174,13 @@ internal sealed class DictionaryFieldControl : Grid
                 MinWidth = 86,
                 MinHeight = 36,
                 VerticalAlignment = VerticalAlignment.Center,
-                IsEnabled = _definition.IsEditable && _browseDirectory is not null,
+                IsEnabled = _definition.IsEditable && _browsePath is not null,
             };
             browseButton.Click += async (_, _) =>
             {
-                if (_browseDirectory is null) return;
+                if (_browsePath is null) return;
 
-                var selectedPath = await _browseDirectory(_value);
+                var selectedPath = await _browsePath(_value, _definition.ValueKind);
                 if (!string.IsNullOrWhiteSpace(selectedPath))
                 {
                     SetValue(selectedPath);
@@ -178,6 +208,7 @@ internal sealed class DictionaryFieldControl : Grid
         SetColumn(_restoreButton, _definition.ValueKind switch
         {
             ValueKind.DirectoryPath => 3,
+            ValueKind.ImageFilePath => 3,
             ValueKind.HexColor => 4,
             _ => 2,
         });
@@ -212,6 +243,14 @@ internal sealed class DictionaryFieldControl : Grid
         else if (_definition.ValueKind == ValueKind.IntegerPair)
         {
             UpdatePairControlsFromValue();
+        }
+        else if (_definition.ValueKind == ValueKind.PaletteColorToken)
+        {
+            UpdatePaletteComboFromValue();
+        }
+        else if (_definition.ValueKind == ValueKind.PaletteColorPair)
+        {
+            UpdatePalettePairControlsFromValue();
         }
         else if (_textBox is not null)
         {
@@ -284,6 +323,148 @@ internal sealed class DictionaryFieldControl : Grid
         return (grid, firstTextBox, secondTextBox);
     }
 
+    private ComboBox CreatePaletteComboBox(string value)
+    {
+        var comboBox = new ComboBox
+        {
+            MinHeight = 36,
+            MinWidth = 220,
+            IsEnabled = _definition.IsEditable,
+            ItemsSource = _definition.Options ?? [],
+            ItemTemplate = new FuncDataTemplate<FieldOption>((option, _) => option is null
+                ? new TextBlock()
+                : CreatePaletteOptionView(option)),
+        };
+
+        comboBox.SelectedItem = SelectedOption(value);
+        return comboBox;
+    }
+
+    private (Control Control, ComboBox FirstComboBox, ComboBox SecondComboBox) CreatePalettePairControl(string first, string second)
+    {
+        var grid = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("Auto,160,Auto,160"),
+            ColumnSpacing = 10,
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Left,
+        };
+
+        var labels = PairLabels(_definition.Id);
+        var firstLabel = new TextBlock
+        {
+            Text = labels.First,
+            MinWidth = 57,
+            VerticalAlignment = VerticalAlignment.Center,
+            Opacity = 0.78,
+        };
+        Grid.SetColumn(firstLabel, 0);
+
+        var firstCombo = CreatePaletteComboBox(first);
+        firstCombo.SelectionChanged += (_, _) => SetPalettePairValueFromComboBoxes(firstCombo, null);
+        Grid.SetColumn(firstCombo, 1);
+
+        var secondLabel = new TextBlock
+        {
+            Text = labels.Second,
+            MinWidth = 57,
+            VerticalAlignment = VerticalAlignment.Center,
+            Opacity = 0.78,
+        };
+        Grid.SetColumn(secondLabel, 2);
+
+        var secondCombo = CreatePaletteComboBox(second);
+        secondCombo.SelectionChanged += (_, _) => SetPalettePairValueFromComboBoxes(null, secondCombo);
+        Grid.SetColumn(secondCombo, 3);
+
+        grid.Children.Add(firstLabel);
+        grid.Children.Add(firstCombo);
+        grid.Children.Add(secondLabel);
+        grid.Children.Add(secondCombo);
+        return (grid, firstCombo, secondCombo);
+    }
+
+    private static Control CreatePaletteOptionView(FieldOption option)
+    {
+        var grid = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("18,*"),
+            ColumnSpacing = 8,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        var swatch = new Border
+        {
+            Width = 14,
+            Height = 14,
+            CornerRadius = new CornerRadius(4),
+            Background = new SolidColorBrush(ParseColor(option.ColorHex ?? "#808080")),
+            BorderBrush = new SolidColorBrush(Color.Parse("#667085")),
+            BorderThickness = new Avalonia.Thickness(1),
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        Grid.SetColumn(swatch, 0);
+
+        var label = new TextBlock
+        {
+            Text = option.Label,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        Grid.SetColumn(label, 1);
+
+        grid.Children.Add(swatch);
+        grid.Children.Add(label);
+        return grid;
+    }
+
+    private FieldOption? SelectedOption(string value)
+    {
+        return (_definition.Options ?? []).FirstOrDefault((option) => option.Value == value)
+            ?? (_definition.Options ?? []).FirstOrDefault();
+    }
+
+    private static string ComboValue(ComboBox comboBox)
+    {
+        return comboBox.SelectedItem is FieldOption option ? option.Value : "";
+    }
+
+    private void SetPalettePairValueFromComboBoxes(ComboBox? firstComboBox, ComboBox? secondComboBox)
+    {
+        if (_isUpdatingColorControl) return;
+
+        _value = JoinPair(
+            firstComboBox is not null ? ComboValue(firstComboBox) : (_pairFirstComboBox is not null ? ComboValue(_pairFirstComboBox) : ""),
+            secondComboBox is not null ? ComboValue(secondComboBox) : (_pairSecondComboBox is not null ? ComboValue(_pairSecondComboBox) : ""));
+        UpdateState();
+        ValueChanged?.Invoke(this, _value);
+    }
+
+    private void UpdatePaletteComboFromValue()
+    {
+        if (_comboBox is null) return;
+
+        _isUpdatingColorControl = true;
+        _comboBox.SelectedItem = SelectedOption(_value);
+        _isUpdatingColorControl = false;
+    }
+
+    private void UpdatePalettePairControlsFromValue()
+    {
+        var pair = SplitPair(_value);
+        _isUpdatingColorControl = true;
+        if (_pairFirstComboBox is not null)
+        {
+            _pairFirstComboBox.SelectedItem = SelectedOption(pair.First);
+        }
+
+        if (_pairSecondComboBox is not null)
+        {
+            _pairSecondComboBox.SelectedItem = SelectedOption(pair.Second);
+        }
+
+        _isUpdatingColorControl = false;
+    }
+
     private static TextBox CreateCompactPairTextBox(string value)
     {
         return new TextBox
@@ -331,6 +512,7 @@ internal sealed class DictionaryFieldControl : Grid
             var id when id.EndsWith(".position", StringComparison.Ordinal) => ("X", "Y"),
             var id when id.EndsWith(".vertical", StringComparison.Ordinal) => ("Top", "Bottom"),
             var id when id.EndsWith(".horizontal", StringComparison.Ordinal) => ("Left", "Right"),
+            var id when id.EndsWith(".modes", StringComparison.Ordinal) => ("Light", "Dark"),
             _ => ("A", "B"),
         };
     }
