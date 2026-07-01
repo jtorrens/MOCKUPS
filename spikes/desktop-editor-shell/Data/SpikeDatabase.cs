@@ -78,7 +78,7 @@ internal sealed class SpikeDatabase
                 "Apps",
                 "Apps available in this project.",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.AppsRoot),
-                productionDataRoot);
+                project);
             var paletteRoot = new ProjectTreeNode(
                 ProjectTreeNodeKind.PaletteRoot,
                 $"palette_root_{project.Id}",
@@ -99,12 +99,12 @@ internal sealed class SpikeDatabase
                 "Episodes",
                 "Episodes and shots for this project.",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.EpisodesRoot),
-                productionDataRoot);
+                project);
 
-            productionDataRoot.AddChild(appsRoot);
             productionDataRoot.AddChild(devicesRoot);
-            productionDataRoot.AddChild(episodesRoot);
             systemDataRoot.AddChild(paletteRoot);
+            project.AddChild(appsRoot);
+            project.AddChild(episodesRoot);
             project.AddChild(productionDataRoot);
             project.AddChild(systemDataRoot);
             appRootNodes[project.Id] = appsRoot;

@@ -156,7 +156,7 @@ internal static class EditorIcons
             Module => "editor_content.svg",
             Episodes => "editor_messages.svg",
             Episode => "editor_content.svg",
-            Shot => "editor_video.svg",
+            Shot => "editor_shot.svg",
             General => "editor_general.svg",
             Style => "editor_style.svg",
             Behavior => "editor_behavior.svg",

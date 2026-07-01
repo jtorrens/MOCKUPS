@@ -262,7 +262,12 @@ public partial class MainWindow : SukiWindow
             Margin = new Avalonia.Thickness(0, 6, 0, 0),
         };
 
-        foreach (var root in project.Children.Where((child) => child.Kind is ProjectTreeNodeKind.ProductionDataRoot or ProjectTreeNodeKind.SystemDataRoot))
+        foreach (var root in project.Children
+            .Where((child) => child.Kind is ProjectTreeNodeKind.AppsRoot
+                or ProjectTreeNodeKind.EpisodesRoot
+                or ProjectTreeNodeKind.ProductionDataRoot
+                or ProjectTreeNodeKind.SystemDataRoot)
+            .OrderBy(NavigationRootOrder))
         {
             AddNavigationSection(panel, root);
         }
@@ -295,6 +300,18 @@ public partial class MainWindow : SukiWindow
         AddNavigationCard(parent, sectionRoot, content, iconName);
     }
 
+    private static int NavigationRootOrder(ProjectTreeNode node)
+    {
+        return node.Kind switch
+        {
+            ProjectTreeNodeKind.AppsRoot => 10,
+            ProjectTreeNodeKind.EpisodesRoot => 20,
+            ProjectTreeNodeKind.ProductionDataRoot => 30,
+            ProjectTreeNodeKind.SystemDataRoot => 40,
+            _ => 100,
+        };
+    }
+
     private void AddNavigationNode(StackPanel parent, ProjectTreeNode node, int level)
     {
         if (node.Children.Count > 0)
@@ -315,7 +332,7 @@ public partial class MainWindow : SukiWindow
 
         parent.Children.Add(node.Kind == ProjectTreeNodeKind.PaletteColor
             ? CreatePaletteNavigationRow(node)
-            : CreateNavigationRow(node, iconName: null));
+            : CreateNavigationRow(node, EditorIcons.ForTreeNode(node.Kind)));
     }
 
     private void AddNavigationCard(
@@ -370,6 +387,7 @@ public partial class MainWindow : SukiWindow
         if (iconName is not null)
         {
             var icon = EditorIcons.Create(iconName, 16);
+            ApplyNavigationSelectionBrush(icon, node);
             Grid.SetColumn(icon, 0);
             grid.Children.Add(icon);
             contentColumn = 1;
@@ -423,6 +441,7 @@ public partial class MainWindow : SukiWindow
         if (iconName is not null)
         {
             var icon = EditorIcons.Create(iconName, 16);
+            ApplyNavigationSelectionBrush(icon, node);
             Grid.SetColumn(icon, 0);
             grid.Children.Add(icon);
             contentColumn = 1;
@@ -534,6 +553,7 @@ public partial class MainWindow : SukiWindow
             {
                 Text = node.Name,
                 FontWeight = FontWeight.SemiBold,
+                Foreground = NavigationTextBrush(node),
                 TextTrimming = TextTrimming.CharacterEllipsis,
                 VerticalAlignment = VerticalAlignment.Center,
             },
@@ -555,6 +575,22 @@ public partial class MainWindow : SukiWindow
             }
         };
         return button;
+    }
+
+    private IBrush? NavigationTextBrush(ProjectTreeNode node)
+    {
+        return _selectedNode?.Id == node.Id
+            ? new SolidColorBrush(Color.Parse(_isDark ? "#7DB7FF" : "#1368CE"))
+            : null;
+    }
+
+    private void ApplyNavigationSelectionBrush(Control control, ProjectTreeNode node)
+    {
+        var brush = NavigationTextBrush(node);
+        if (brush is not null)
+        {
+            ApplyIconBrush(control, brush);
+        }
     }
 
     private StackPanel CreateNavigationActions(ProjectTreeNode node)
