@@ -6,6 +6,7 @@ internal enum ValueKind
     StringReadOnly,
     StringMultiline,
     Integer,
+    IntegerPair,
     DirectoryPath,
     HexColor,
     Boolean,

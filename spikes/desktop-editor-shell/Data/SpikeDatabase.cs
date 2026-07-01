@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.Data;
 
@@ -39,6 +40,7 @@ internal sealed class SpikeDatabase
         var apps = QueryAppRows(connection);
         var modules = QueryModuleRows(connection);
         var paletteColors = QueryPaletteColorRows(connection);
+        var devices = QueryDeviceRows(connection);
 
         var projectNodes = projects
             .Select((project) => new ProjectTreeNode(
@@ -51,6 +53,7 @@ internal sealed class SpikeDatabase
 
         var appRootNodes = new Dictionary<string, ProjectTreeNode>();
         var paletteRootNodes = new Dictionary<string, ProjectTreeNode>();
+        var deviceRootNodes = new Dictionary<string, ProjectTreeNode>();
         var episodeNodes = new Dictionary<string, ProjectTreeNode>();
         foreach (var project in projectNodes.Values)
         {
@@ -68,6 +71,13 @@ internal sealed class SpikeDatabase
                 "Project primitive color tokens.",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.PaletteRoot),
                 project);
+            var devicesRoot = new ProjectTreeNode(
+                ProjectTreeNodeKind.DevicesRoot,
+                $"devices_root_{project.Id}",
+                "Devices",
+                "Device metrics available in this project.",
+                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.DevicesRoot),
+                project);
             var episodesRoot = new ProjectTreeNode(
                 ProjectTreeNodeKind.EpisodesRoot,
                 $"episodes_root_{project.Id}",
@@ -78,9 +88,11 @@ internal sealed class SpikeDatabase
 
             project.AddChild(appsRoot);
             project.AddChild(paletteRoot);
+            project.AddChild(devicesRoot);
             project.AddChild(episodesRoot);
             appRootNodes[project.Id] = appsRoot;
             paletteRootNodes[project.Id] = paletteRoot;
+            deviceRootNodes[project.Id] = devicesRoot;
             episodeNodes[episodesRoot.Id] = episodesRoot;
         }
 
@@ -143,6 +155,19 @@ internal sealed class SpikeDatabase
                 paletteRoot,
                 color.ValueHex,
                 IsPaletteColorUsed(connection, color.ProjectId, color.Token, color.Id)));
+        }
+
+        foreach (var device in devices.OrderBy((device) => device.Name))
+        {
+            if (!deviceRootNodes.TryGetValue(device.ProjectId, out var devicesRoot)) continue;
+
+            devicesRoot.AddChild(new ProjectTreeNode(
+                ProjectTreeNodeKind.Device,
+                device.Id,
+                device.Name,
+                $"{device.Manufacturer} {device.Model}".Trim(),
+                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Device),
+                devicesRoot));
         }
 
         foreach (var shot in shots.OrderBy((shot) => shot.SortOrder).ThenBy((shot) => shot.Name))
@@ -224,6 +249,35 @@ internal sealed class SpikeDatabase
                 parent,
                 "#808080",
                 false);
+        }
+
+        if (parent.Kind == ProjectTreeNodeKind.DevicesRoot)
+        {
+            var project = parent.Parent ?? throw new InvalidOperationException("Devices root has no project parent.");
+            var index = ScalarLong(connection, "SELECT COUNT(*) FROM devices WHERE project_id = $projectId", ("$projectId", project.Id)) + 1;
+            var id = $"device_{Guid.NewGuid():N}";
+            var metricsJson = DefaultDeviceMetricsJson(1170, 2532, 3);
+            Execute(
+                connection,
+                """
+                INSERT INTO devices (id, project_id, name, manufacturer, model, os_family, metrics_json)
+                VALUES ($id, $projectId, $name, $manufacturer, $model, $osFamily, $metricsJson)
+                """,
+                ("$id", id),
+                ("$projectId", project.Id),
+                ("$name", $"Device {index}"),
+                ("$manufacturer", ""),
+                ("$model", ""),
+                ("$osFamily", "ios"),
+                ("$metricsJson", metricsJson));
+
+            return new ProjectTreeNode(
+                ProjectTreeNodeKind.Device,
+                id,
+                $"Device {index}",
+                "",
+                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Device),
+                parent);
         }
 
         if (parent.Kind == ProjectTreeNodeKind.App)
@@ -426,6 +480,24 @@ internal sealed class SpikeDatabase
             return new ProjectTreeNode(ProjectTreeNodeKind.Module, id, $"{node.Name} copy", node.Notes, node.RecordClassId, node.Parent);
         }
 
+        if (node.Kind == ProjectTreeNodeKind.Device)
+        {
+            var id = $"device_{Guid.NewGuid():N}";
+            Execute(
+                connection,
+                """
+                INSERT INTO devices (id, project_id, name, manufacturer, model, os_family, metrics_json)
+                SELECT $id, project_id, $name, manufacturer, model, os_family, metrics_json
+                FROM devices
+                WHERE id = $sourceId
+                """,
+                ("$id", id),
+                ("$name", $"{node.Name} copy"),
+                ("$sourceId", node.Id));
+
+            return new ProjectTreeNode(ProjectTreeNodeKind.Device, id, $"{node.Name} copy", node.Notes, node.RecordClassId, node.Parent);
+        }
+
         throw new InvalidOperationException($"Cannot duplicate {node.Kind}.");
     }
 
@@ -439,6 +511,7 @@ internal sealed class SpikeDatabase
             ProjectTreeNodeKind.App => "apps",
             ProjectTreeNodeKind.Module => "modules",
             ProjectTreeNodeKind.PaletteColor => "palette_colors",
+            ProjectTreeNodeKind.Device => "devices",
             _ => throw new InvalidOperationException($"Cannot delete {node.Kind}."),
         };
 
@@ -456,6 +529,7 @@ internal sealed class SpikeDatabase
             ProjectTreeNodeKind.Episode => "episodes",
             ProjectTreeNodeKind.Shot => "shots",
             ProjectTreeNodeKind.PaletteColor => "palette_colors",
+            ProjectTreeNodeKind.Device => "devices",
             _ => "",
         };
 
@@ -465,6 +539,16 @@ internal sealed class SpikeDatabase
         {
             Execute(connection, "UPDATE palette_colors SET token = $token WHERE id = $id", ("$id", node.Id), ("$token", node.Name));
             UpdatePaletteMetadata(connection, node.Id, "note", node.Notes);
+            return;
+        }
+
+        if (node.Kind == ProjectTreeNodeKind.Device)
+        {
+            Execute(
+                connection,
+                "UPDATE devices SET name = $name WHERE id = $id",
+                ("$id", node.Id),
+                ("$name", node.Name));
             return;
         }
 
@@ -498,6 +582,7 @@ internal sealed class SpikeDatabase
         SeedEditorLayouts(connection);
         SeedIfEmpty(connection);
         SeedPaletteColorsIfEmpty(connection);
+        SeedDevicesIfEmpty(connection);
     }
 
     private SqliteConnection OpenConnection()
@@ -604,6 +689,35 @@ internal sealed class SpikeDatabase
         }
     }
 
+    private static void SeedDevicesIfEmpty(SqliteConnection connection)
+    {
+        var projectIds = QueryProjectRows(connection).Select((project) => project.Id).ToList();
+        foreach (var projectId in projectIds)
+        {
+            if (ScalarLong(connection, "SELECT COUNT(*) FROM devices WHERE project_id = $projectId", ("$projectId", projectId)) > 0)
+            {
+                continue;
+            }
+
+            foreach (var seed in DeviceSeedRows)
+            {
+                Execute(
+                    connection,
+                    """
+                    INSERT INTO devices (id, project_id, name, manufacturer, model, os_family, metrics_json)
+                    VALUES ($id, $projectId, $name, $manufacturer, $model, $osFamily, $metricsJson)
+                    """,
+                    ("$id", seed.Id),
+                    ("$projectId", projectId),
+                    ("$name", seed.Name),
+                    ("$manufacturer", seed.Manufacturer),
+                    ("$model", seed.Model),
+                    ("$osFamily", seed.OsFamily),
+                    ("$metricsJson", seed.MetricsJson));
+            }
+        }
+    }
+
     private static void SeedEditorLayouts(SqliteConnection connection)
     {
         foreach (var recordClassId in new[]
@@ -611,6 +725,7 @@ internal sealed class SpikeDatabase
             "project",
             "navigation.apps",
             "navigation.palette",
+            "navigation.devices",
             "navigation.episodes",
             "app.generic",
             "app.core.chat",
@@ -619,6 +734,7 @@ internal sealed class SpikeDatabase
             "episode",
             "shot",
             "palette_color",
+            "device",
         })
         {
             Execute(
@@ -660,6 +776,30 @@ internal sealed class SpikeDatabase
                     { "id": "palette.protected", "order": 50, "visible": true },
                     { "id": "palette.hiddenFromPickers", "order": 60, "visible": true },
                     { "id": "palette.note", "order": 70, "visible": true }
+                  """
+            : recordClassId == "device"
+                ? """
+                    { "id": "core.name", "order": 10, "visible": true },
+                    { "id": "device.manufacturer", "order": 20, "visible": true },
+                    { "id": "device.model", "order": 30, "visible": true },
+                    { "id": "device.osFamily", "order": 40, "visible": true },
+                    { "id": "device.metrics.designSpace.size", "order": 110, "visible": true },
+                    { "id": "device.metrics.renderSize", "order": 120, "visible": true },
+                    { "id": "device.metrics.scaleToPixels", "order": 130, "visible": true },
+                    { "id": "device.metrics.pixelRatio", "order": 140, "visible": true },
+                    { "id": "device.metrics.defaultScreenScale", "order": 150, "visible": true },
+                    { "id": "device.metrics.canvas.size", "order": 160, "visible": true },
+                    { "id": "device.metrics.screen.position", "order": 210, "visible": true },
+                    { "id": "device.metrics.screen.size", "order": 220, "visible": true },
+                    { "id": "device.metrics.cornerRadius", "order": 230, "visible": true },
+                    { "id": "device.metrics.viewport.position", "order": 310, "visible": true },
+                    { "id": "device.metrics.viewport.size", "order": 320, "visible": true },
+                    { "id": "device.metrics.safeArea.vertical", "order": 410, "visible": true },
+                    { "id": "device.metrics.safeArea.horizontal", "order": 420, "visible": true },
+                    { "id": "device.metrics.statusBar.position", "order": 510, "visible": true },
+                    { "id": "device.metrics.statusBar.size", "order": 520, "visible": true },
+                    { "id": "device.metrics.dynamicIsland.position", "order": 610, "visible": true },
+                    { "id": "device.metrics.dynamicIsland.size", "order": 620, "visible": true }
                   """
             : """
                     { "id": "core.name", "order": 10, "visible": true },
@@ -1009,6 +1149,160 @@ internal sealed class SpikeDatabase
         return rows;
     }
 
+    private static List<DeviceRow> QueryDeviceRows(SqliteConnection connection)
+    {
+        var rows = new List<DeviceRow>();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT id, project_id, name, manufacturer, model, os_family, metrics_json FROM devices ORDER BY name";
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            rows.Add(new DeviceRow(
+                reader.GetString(0),
+                reader.GetString(1),
+                reader.GetString(2),
+                ReadString(reader, 3),
+                ReadString(reader, 4),
+                ReadString(reader, 5),
+                reader.GetString(6)));
+        }
+
+        return rows;
+    }
+
+    public DeviceSettings GetDeviceSettings(string deviceId)
+    {
+        using var connection = OpenConnection();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT name, manufacturer, model, os_family, metrics_json FROM devices WHERE id = $id";
+        command.Parameters.AddWithValue("$id", deviceId);
+        using var reader = command.ExecuteReader();
+        if (!reader.Read())
+        {
+            throw new InvalidOperationException($"Missing device '{deviceId}'.");
+        }
+
+        return new DeviceSettings(
+            reader.GetString(0),
+            ReadString(reader, 1),
+            ReadString(reader, 2),
+            ReadString(reader, 3),
+            reader.GetString(4));
+    }
+
+    public void UpdateDeviceField(string deviceId, string fieldId, string value)
+    {
+        using var connection = OpenConnection();
+        switch (fieldId)
+        {
+            case "device.manufacturer":
+                Execute(connection, "UPDATE devices SET manufacturer = $value WHERE id = $id", ("$id", deviceId), ("$value", value));
+                return;
+            case "device.model":
+                Execute(connection, "UPDATE devices SET model = $value WHERE id = $id", ("$id", deviceId), ("$value", value));
+                return;
+            case "device.osFamily":
+                Execute(connection, "UPDATE devices SET os_family = $value WHERE id = $id", ("$id", deviceId), ("$value", value));
+                return;
+        }
+
+        if (!fieldId.StartsWith("device.metrics.", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException($"Unknown device field '{fieldId}'.");
+        }
+
+        var settings = GetDeviceSettings(deviceId);
+        var metrics = ParseJsonObject(settings.MetricsJson);
+        switch (fieldId)
+        {
+            case "device.metrics.designSpace.size":
+                SetPair(metrics, value, ["designSpace", "width"], ["designSpace", "height"]);
+                break;
+            case "device.metrics.renderSize":
+                SetPair(metrics, value, ["renderSize", "width"], ["renderSize", "height"]);
+                break;
+            case "device.metrics.canvas.size":
+                SetPair(metrics, value, ["canvas", "width"], ["canvas", "height"]);
+                break;
+            case "device.metrics.screen.position":
+                SetPair(metrics, value, ["screen", "x"], ["screen", "y"]);
+                break;
+            case "device.metrics.screen.size":
+                SetPair(metrics, value, ["screen", "width"], ["screen", "height"]);
+                break;
+            case "device.metrics.viewport.position":
+                SetPair(metrics, value, ["viewport", "x"], ["viewport", "y"]);
+                break;
+            case "device.metrics.viewport.size":
+                SetPair(metrics, value, ["viewport", "width"], ["viewport", "height"]);
+                break;
+            case "device.metrics.safeArea.vertical":
+                SetPair(metrics, value, ["safeArea", "top"], ["safeArea", "bottom"]);
+                break;
+            case "device.metrics.safeArea.horizontal":
+                SetPair(metrics, value, ["safeArea", "left"], ["safeArea", "right"]);
+                break;
+            case "device.metrics.statusBar.position":
+                SetPair(metrics, value, ["statusBar", "x"], ["statusBar", "y"]);
+                break;
+            case "device.metrics.statusBar.size":
+                SetPair(metrics, value, ["statusBar", "width"], ["statusBar", "height"]);
+                break;
+            case "device.metrics.dynamicIsland.position":
+                SetPair(metrics, value, ["dynamicIsland", "x"], ["dynamicIsland", "y"]);
+                break;
+            case "device.metrics.dynamicIsland.size":
+                SetPair(metrics, value, ["dynamicIsland", "width"], ["dynamicIsland", "height"]);
+                break;
+            case "device.metrics.scaleToPixels":
+                SetJsonValue(metrics, ["scaleToPixels"], NumberNode(value));
+                break;
+            case "device.metrics.pixelRatio":
+                SetJsonValue(metrics, ["pixelRatio"], NumberNode(value));
+                break;
+            case "device.metrics.defaultScreenScale":
+                SetJsonValue(metrics, ["defaultScreenScale"], NumberNode(value));
+                break;
+            case "device.metrics.cornerRadius":
+                SetJsonValue(metrics, ["cornerRadius"], NumberNode(value));
+                break;
+            default:
+                throw new InvalidOperationException($"Unknown device metrics field '{fieldId}'.");
+        }
+
+        Execute(
+            connection,
+            "UPDATE devices SET metrics_json = $metricsJson WHERE id = $id",
+            ("$id", deviceId),
+            ("$metricsJson", metrics.ToJsonString()));
+    }
+
+    public string GetDeviceMetricFieldValue(string deviceId, string fieldId)
+    {
+        var settings = GetDeviceSettings(deviceId);
+        return fieldId switch
+        {
+            "device.metrics.designSpace.size" => MetricPair(settings.MetricsJson, ["designSpace", "width"], ["designSpace", "height"]),
+            "device.metrics.renderSize" => MetricPair(settings.MetricsJson, ["renderSize", "width"], ["renderSize", "height"]),
+            "device.metrics.canvas.size" => MetricPair(settings.MetricsJson, ["canvas", "width"], ["canvas", "height"]),
+            "device.metrics.screen.position" => MetricPair(settings.MetricsJson, ["screen", "x"], ["screen", "y"]),
+            "device.metrics.screen.size" => MetricPair(settings.MetricsJson, ["screen", "width"], ["screen", "height"]),
+            "device.metrics.viewport.position" => MetricPair(settings.MetricsJson, ["viewport", "x"], ["viewport", "y"]),
+            "device.metrics.viewport.size" => MetricPair(settings.MetricsJson, ["viewport", "width"], ["viewport", "height"]),
+            "device.metrics.safeArea.vertical" => MetricPair(settings.MetricsJson, ["safeArea", "top"], ["safeArea", "bottom"]),
+            "device.metrics.safeArea.horizontal" => MetricPair(settings.MetricsJson, ["safeArea", "left"], ["safeArea", "right"]),
+            "device.metrics.statusBar.position" => MetricPair(settings.MetricsJson, ["statusBar", "x"], ["statusBar", "y"]),
+            "device.metrics.statusBar.size" => MetricPair(settings.MetricsJson, ["statusBar", "width"], ["statusBar", "height"]),
+            "device.metrics.dynamicIsland.position" => MetricPair(settings.MetricsJson, ["dynamicIsland", "x"], ["dynamicIsland", "y"]),
+            "device.metrics.dynamicIsland.size" => MetricPair(settings.MetricsJson, ["dynamicIsland", "width"], ["dynamicIsland", "height"]),
+            "device.metrics.scaleToPixels" => JsonNumberString(ParseJsonObject(settings.MetricsJson), ["scaleToPixels"]),
+            "device.metrics.pixelRatio" => JsonNumberString(ParseJsonObject(settings.MetricsJson), ["pixelRatio"]),
+            "device.metrics.defaultScreenScale" => JsonNumberString(ParseJsonObject(settings.MetricsJson), ["defaultScreenScale"]),
+            "device.metrics.cornerRadius" => JsonNumberString(ParseJsonObject(settings.MetricsJson), ["cornerRadius"]),
+            _ => throw new InvalidOperationException($"Unknown device metrics field '{fieldId}'."),
+        };
+    }
+
     private static string ReadString(SqliteDataReader reader, int index)
     {
         return reader.IsDBNull(index) ? "" : reader.GetString(index);
@@ -1121,6 +1415,119 @@ internal sealed class SpikeDatabase
     private static bool StringToBool(string value)
     {
         return value.Equals("true", StringComparison.OrdinalIgnoreCase) || value == "1";
+    }
+
+    private static JsonObject ParseJsonObject(string json)
+    {
+        return JsonNode.Parse(json)?.AsObject() ?? [];
+    }
+
+    private static string MetricPair(string metricsJson, IReadOnlyList<string> firstPath, IReadOnlyList<string> secondPath)
+    {
+        var metrics = ParseJsonObject(metricsJson);
+        return $"{JsonNumberString(metrics, firstPath)}|{JsonNumberString(metrics, secondPath)}";
+    }
+
+    private static string JsonNumberString(JsonObject root, IReadOnlyList<string> path)
+    {
+        var node = GetJsonValue(root, path);
+        if (node is null) return "0";
+        if (node.GetValueKind() == JsonValueKind.Number)
+        {
+            return node.ToJsonString();
+        }
+
+        return node.GetValue<string?>() ?? "0";
+    }
+
+    private static JsonNode? GetJsonValue(JsonObject root, IReadOnlyList<string> path)
+    {
+        JsonNode? current = root;
+        foreach (var part in path)
+        {
+            if (current is not JsonObject currentObject || !currentObject.TryGetPropertyValue(part, out current))
+            {
+                return null;
+            }
+        }
+
+        return current;
+    }
+
+    private static void SetPair(JsonObject root, string pairValue, IReadOnlyList<string> firstPath, IReadOnlyList<string> secondPath)
+    {
+        var parts = pairValue.Split('|', 2);
+        SetJsonValue(root, firstPath, NumberNode(parts.ElementAtOrDefault(0) ?? "0"));
+        SetJsonValue(root, secondPath, NumberNode(parts.ElementAtOrDefault(1) ?? "0"));
+    }
+
+    private static void SetJsonValue(JsonObject root, IReadOnlyList<string> path, JsonNode value)
+    {
+        var current = root;
+        for (var index = 0; index < path.Count - 1; index++)
+        {
+            var part = path[index];
+            if (current[part] is not JsonObject child)
+            {
+                child = [];
+                current[part] = child;
+            }
+
+            current = child;
+        }
+
+        current[path[^1]] = value;
+    }
+
+    private static JsonNode NumberNode(string value)
+    {
+        return value.Contains('.', StringComparison.Ordinal)
+            ? JsonValue.Create(double.TryParse(value, out var decimalValue) ? decimalValue : 0)!
+            : JsonValue.Create(int.TryParse(value, out var integerValue) ? integerValue : 0)!;
+    }
+
+    private static string DefaultDeviceMetricsJson(int width, int height, double scale)
+    {
+        return DeviceMetricsJson(width, height, scale, includeDynamicIsland: false);
+    }
+
+    private static string DeviceMetricsJson(int width, int height, double scale, bool includeDynamicIsland)
+    {
+        var statusBarHeight = (int)Math.Round(height * 0.063);
+        var bottomInset = (int)Math.Round(height * 0.0365);
+        var cornerRadius = (int)Math.Round(width * 0.128);
+        var root = new JsonObject
+        {
+            ["designSpace"] = new JsonObject
+            {
+                ["width"] = (int)Math.Round(width / scale),
+                ["height"] = (int)Math.Round(height / scale),
+                ["unit"] = "logical",
+            },
+            ["renderSize"] = new JsonObject { ["width"] = width, ["height"] = height },
+            ["scaleToPixels"] = scale,
+            ["canvas"] = new JsonObject { ["width"] = width, ["height"] = height },
+            ["screen"] = new JsonObject { ["x"] = 0, ["y"] = 0, ["width"] = width, ["height"] = height },
+            ["viewport"] = new JsonObject { ["x"] = 0, ["y"] = 0, ["width"] = width, ["height"] = height },
+            ["safeArea"] = new JsonObject { ["top"] = statusBarHeight, ["right"] = 0, ["bottom"] = bottomInset, ["left"] = 0 },
+            ["statusBar"] = new JsonObject { ["x"] = 0, ["y"] = 0, ["width"] = width, ["height"] = statusBarHeight },
+            ["cornerRadius"] = cornerRadius,
+            ["pixelRatio"] = scale,
+            ["defaultScreenScale"] = 1,
+        };
+
+        if (includeDynamicIsland)
+        {
+            root["dynamicIsland"] = new JsonObject
+            {
+                ["x"] = 462,
+                ["y"] = 33,
+                ["width"] = 366,
+                ["height"] = 111,
+            };
+        }
+
+        return root.ToJsonString();
     }
 
     private static void EnsureProjectColumns(SqliteConnection connection)
@@ -1257,6 +1664,16 @@ internal sealed class SpikeDatabase
           UNIQUE(project_id, token)
         );
 
+        CREATE TABLE IF NOT EXISTS devices (
+          id TEXT PRIMARY KEY,
+          project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+          name TEXT NOT NULL,
+          manufacturer TEXT NOT NULL DEFAULT '',
+          model TEXT NOT NULL DEFAULT '',
+          os_family TEXT NOT NULL DEFAULT '',
+          metrics_json TEXT NOT NULL
+        );
+
         CREATE TABLE IF NOT EXISTS editor_layouts (
           record_class_id TEXT PRIMARY KEY,
           layout_json TEXT NOT NULL
@@ -1265,6 +1682,7 @@ internal sealed class SpikeDatabase
 
     public sealed record ProjectSettings(string Slug, int DefaultFps, string MediaRoot);
     public sealed record EpisodeSettings(string Slug, int SortOrder);
+    public sealed record DeviceSettings(string Name, string Manufacturer, string Model, string OsFamily, string MetricsJson);
     public sealed record PaletteColorSettings(
         string Token,
         string ValueHex,
@@ -1278,6 +1696,7 @@ internal sealed class SpikeDatabase
     private sealed record AppRow(string Id, string ProjectId, string RecordClassId, string Name, string Notes, int SortOrder);
     private sealed record ModuleRow(string Id, string AppId, string RecordClassId, string Name, string Notes, int SortOrder);
     private sealed record PaletteColorRow(string Id, string ProjectId, string Token, string ValueHex, string Note, bool IsNeutral, string MetadataJson);
+    private sealed record DeviceRow(string Id, string ProjectId, string Name, string Manufacturer, string Model, string OsFamily, string MetricsJson);
     private sealed record ShotRow(
         string Id,
         string EpisodeId,
@@ -1288,6 +1707,7 @@ internal sealed class SpikeDatabase
         int DurationFrames);
 
     private sealed record PaletteSeedRow(string Token, string ValueHex, bool IsNeutral, string MetadataJson);
+    private sealed record DeviceSeedRow(string Id, string Name, string Manufacturer, string Model, string OsFamily, string MetricsJson);
 
     private static readonly PaletteSeedRow[] PaletteSeedRows =
     [
@@ -1315,5 +1735,15 @@ internal sealed class SpikeDatabase
         new("purple", "#6750A4", false, """{"source":"android_seed_theme","note":"Primitive color seeded from the Android theme values."}"""),
         new("purple_tint", "#D0BCFF", false, """{"source":"android_seed_theme","note":"Primitive color seeded from the Android theme values."}"""),
         new("red", "#DF2020", false, """{"note":"Production palette primitive color."}"""),
+    ];
+
+    private static readonly DeviceSeedRow[] DeviceSeedRows =
+    [
+        new("device_iphone_15_pro", "iPhone 15 Pro", "Apple", "iPhone 15 Pro", "ios", DeviceMetricsJson(1179, 2556, 3, includeDynamicIsland: false)),
+        new("device_iphone_generic", "iPhone 15 Pro Max", "Apple", "iPhone 15 Pro Max", "ios", DeviceMetricsJson(1290, 2796, 3, includeDynamicIsland: true)),
+        new("device_iphone_14_pro", "iPhone 14 Pro", "Apple", "iPhone 14 Pro", "ios", DeviceMetricsJson(1179, 2556, 3, includeDynamicIsland: false)),
+        new("device_samsung_galaxy_s24", "Samsung Galaxy S24", "Samsung", "Galaxy S24", "android", DeviceMetricsJson(1080, 2340, 3, includeDynamicIsland: false)),
+        new("device_samsung_galaxy_s24_ultra", "Samsung Galaxy S24 Ultra", "Samsung", "Galaxy S24 Ultra", "android", DeviceMetricsJson(1440, 3120, 3, includeDynamicIsland: false)),
+        new("device_google_pixel_8_pro", "Google Pixel 8 Pro", "Google", "Pixel 8 Pro", "android", DeviceMetricsJson(1344, 2992, 3, includeDynamicIsland: false)),
     ];
 }

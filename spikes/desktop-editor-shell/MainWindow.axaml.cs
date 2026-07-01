@@ -262,7 +262,7 @@ public partial class MainWindow : SukiWindow
             Margin = new Avalonia.Thickness(0, 6, 0, 0),
         };
 
-        foreach (var root in project.Children.Where((child) => child.Kind is ProjectTreeNodeKind.AppsRoot or ProjectTreeNodeKind.PaletteRoot or ProjectTreeNodeKind.EpisodesRoot))
+        foreach (var root in project.Children.Where((child) => child.Kind is ProjectTreeNodeKind.AppsRoot or ProjectTreeNodeKind.PaletteRoot or ProjectTreeNodeKind.DevicesRoot or ProjectTreeNodeKind.EpisodesRoot))
         {
             AddNavigationSection(panel, root);
         }
@@ -287,6 +287,7 @@ public partial class MainWindow : SukiWindow
         {
             ProjectTreeNodeKind.EpisodesRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.Episode),
             ProjectTreeNodeKind.PaletteRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.PaletteColor),
+            ProjectTreeNodeKind.DevicesRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.Device),
             _ => EditorIcons.ForTreeNode(ProjectTreeNodeKind.App),
         };
         AddNavigationCard(parent, sectionRoot, content, iconName);
@@ -766,7 +767,8 @@ public partial class MainWindow : SukiWindow
             or ProjectTreeNodeKind.Module
             or ProjectTreeNodeKind.Episode
             or ProjectTreeNodeKind.Shot
-            or ProjectTreeNodeKind.PaletteColor;
+            or ProjectTreeNodeKind.PaletteColor
+            or ProjectTreeNodeKind.Device;
 
         return fieldId switch
         {
@@ -859,6 +861,26 @@ public partial class MainWindow : SukiWindow
                 "palette.note",
                 "Note",
                 ValueKind.StringMultiline),
+            "device.manufacturer" when node.Kind == ProjectTreeNodeKind.Device => CreateDeviceFieldValue(node.Id, "device.manufacturer", "Manufacturer", ValueKind.StringSingleLine),
+            "device.model" when node.Kind == ProjectTreeNodeKind.Device => CreateDeviceFieldValue(node.Id, "device.model", "Model", ValueKind.StringSingleLine),
+            "device.osFamily" when node.Kind == ProjectTreeNodeKind.Device => CreateDeviceFieldValue(node.Id, "device.osFamily", "OS Family", ValueKind.StringSingleLine),
+            "device.metrics.designSpace.size" when node.Kind == ProjectTreeNodeKind.Device => CreateDeviceFieldValue(node.Id, "device.metrics.designSpace.size", "Design space", ValueKind.IntegerPair),
+            "device.metrics.renderSize" when node.Kind == ProjectTreeNodeKind.Device => CreateDeviceFieldValue(node.Id, "device.metrics.renderSize", "Render size", ValueKind.IntegerPair),
+            "device.metrics.scaleToPixels" when node.Kind == ProjectTreeNodeKind.Device => CreateDeviceFieldValue(node.Id, "device.metrics.scaleToPixels", "Scale to pixels", ValueKind.Integer),
+            "device.metrics.pixelRatio" when node.Kind == ProjectTreeNodeKind.Device => CreateDeviceFieldValue(node.Id, "device.metrics.pixelRatio", "Pixel ratio", ValueKind.Integer),
+            "device.metrics.defaultScreenScale" when node.Kind == ProjectTreeNodeKind.Device => CreateDeviceFieldValue(node.Id, "device.metrics.defaultScreenScale", "Default screen scale", ValueKind.Integer),
+            "device.metrics.canvas.size" when node.Kind == ProjectTreeNodeKind.Device => CreateDeviceFieldValue(node.Id, "device.metrics.canvas.size", "Canvas size", ValueKind.IntegerPair),
+            "device.metrics.screen.position" when node.Kind == ProjectTreeNodeKind.Device => CreateDeviceFieldValue(node.Id, "device.metrics.screen.position", "Screen position", ValueKind.IntegerPair),
+            "device.metrics.screen.size" when node.Kind == ProjectTreeNodeKind.Device => CreateDeviceFieldValue(node.Id, "device.metrics.screen.size", "Screen size", ValueKind.IntegerPair),
+            "device.metrics.cornerRadius" when node.Kind == ProjectTreeNodeKind.Device => CreateDeviceFieldValue(node.Id, "device.metrics.cornerRadius", "Corner radius", ValueKind.Integer),
+            "device.metrics.viewport.position" when node.Kind == ProjectTreeNodeKind.Device => CreateDeviceFieldValue(node.Id, "device.metrics.viewport.position", "Viewport position", ValueKind.IntegerPair),
+            "device.metrics.viewport.size" when node.Kind == ProjectTreeNodeKind.Device => CreateDeviceFieldValue(node.Id, "device.metrics.viewport.size", "Viewport size", ValueKind.IntegerPair),
+            "device.metrics.safeArea.vertical" when node.Kind == ProjectTreeNodeKind.Device => CreateDeviceFieldValue(node.Id, "device.metrics.safeArea.vertical", "Safe vertical", ValueKind.IntegerPair),
+            "device.metrics.safeArea.horizontal" when node.Kind == ProjectTreeNodeKind.Device => CreateDeviceFieldValue(node.Id, "device.metrics.safeArea.horizontal", "Safe horizontal", ValueKind.IntegerPair),
+            "device.metrics.statusBar.position" when node.Kind == ProjectTreeNodeKind.Device => CreateDeviceFieldValue(node.Id, "device.metrics.statusBar.position", "Status bar position", ValueKind.IntegerPair),
+            "device.metrics.statusBar.size" when node.Kind == ProjectTreeNodeKind.Device => CreateDeviceFieldValue(node.Id, "device.metrics.statusBar.size", "Status bar size", ValueKind.IntegerPair),
+            "device.metrics.dynamicIsland.position" when node.Kind == ProjectTreeNodeKind.Device => CreateDeviceFieldValue(node.Id, "device.metrics.dynamicIsland.position", "Dynamic island position", ValueKind.IntegerPair),
+            "device.metrics.dynamicIsland.size" when node.Kind == ProjectTreeNodeKind.Device => CreateDeviceFieldValue(node.Id, "device.metrics.dynamicIsland.size", "Dynamic island size", ValueKind.IntegerPair),
             _ => throw new InvalidOperationException($"Unknown field '{fieldId}' for record class '{node.RecordClassId}'."),
         };
     }
@@ -941,6 +963,31 @@ public partial class MainWindow : SukiWindow
             value);
     }
 
+    private FieldValue CreateDeviceFieldValue(
+        string deviceId,
+        string fieldId,
+        string label,
+        ValueKind valueKind)
+    {
+        var settings = _database.GetDeviceSettings(deviceId);
+        var value = fieldId switch
+        {
+            "device.manufacturer" => settings.Manufacturer,
+            "device.model" => settings.Model,
+            "device.osFamily" => settings.OsFamily,
+            _ => _database.GetDeviceMetricFieldValue(deviceId, fieldId),
+        };
+
+        return new FieldValue(
+            new FieldDefinition(
+                fieldId,
+                label,
+                valueKind,
+                IsEditable: true,
+                DefaultValue: value),
+            value);
+    }
+
     private void ApplyFieldValue(ProjectTreeNode node, string fieldId, string value)
     {
         var persisted = node.Kind is ProjectTreeNodeKind.Project
@@ -948,7 +995,8 @@ public partial class MainWindow : SukiWindow
             or ProjectTreeNodeKind.Module
             or ProjectTreeNodeKind.Episode
             or ProjectTreeNodeKind.Shot
-            or ProjectTreeNodeKind.PaletteColor;
+            or ProjectTreeNodeKind.PaletteColor
+            or ProjectTreeNodeKind.Device;
 
         if (fieldId == "core.name")
         {
@@ -986,6 +1034,12 @@ public partial class MainWindow : SukiWindow
                 node.ColorHex = value;
                 RebuildNavigationCards();
             }
+            return;
+        }
+
+        if (node.Kind == ProjectTreeNodeKind.Device && fieldId.StartsWith("device.", StringComparison.Ordinal))
+        {
+            _database.UpdateDeviceField(node.Id, fieldId, value);
             return;
         }
 
@@ -1233,12 +1287,14 @@ internal enum ProjectTreeNodeKind
     Project,
     AppsRoot,
     PaletteRoot,
+    DevicesRoot,
     EpisodesRoot,
     App,
     Module,
     Episode,
     Shot,
     PaletteColor,
+    Device,
 }
 
 internal sealed class ProjectTreeNode
@@ -1277,20 +1333,24 @@ internal sealed class ProjectTreeNode
     public bool CanAddChild => Kind is ProjectTreeNodeKind.AppsRoot
         or ProjectTreeNodeKind.App
         or ProjectTreeNodeKind.PaletteRoot
+        or ProjectTreeNodeKind.DevicesRoot
         or ProjectTreeNodeKind.EpisodesRoot
         or ProjectTreeNodeKind.Episode;
     public bool CanDuplicate => Kind is ProjectTreeNodeKind.App
         or ProjectTreeNodeKind.Module
         or ProjectTreeNodeKind.Episode
         or ProjectTreeNodeKind.Shot
-        or ProjectTreeNodeKind.PaletteColor;
+        or ProjectTreeNodeKind.PaletteColor
+        or ProjectTreeNodeKind.Device;
     public bool CanDelete => Kind is ProjectTreeNodeKind.App
         or ProjectTreeNodeKind.Module
         or ProjectTreeNodeKind.Episode
         or ProjectTreeNodeKind.Shot
-        or ProjectTreeNodeKind.PaletteColor;
+        or ProjectTreeNodeKind.PaletteColor
+        or ProjectTreeNodeKind.Device;
     public bool CanOpenEditor => Kind is not ProjectTreeNodeKind.AppsRoot
         and not ProjectTreeNodeKind.PaletteRoot
+        and not ProjectTreeNodeKind.DevicesRoot
         and not ProjectTreeNodeKind.EpisodesRoot;
 
     public string Display => Name;
@@ -1308,12 +1368,14 @@ internal sealed class ProjectTreeNode
             ProjectTreeNodeKind.Project => "project",
             ProjectTreeNodeKind.AppsRoot => "navigation.apps",
             ProjectTreeNodeKind.PaletteRoot => "navigation.palette",
+            ProjectTreeNodeKind.DevicesRoot => "navigation.devices",
             ProjectTreeNodeKind.EpisodesRoot => "navigation.episodes",
             ProjectTreeNodeKind.App => "app.generic",
             ProjectTreeNodeKind.Module => "module.generic",
             ProjectTreeNodeKind.Episode => "episode",
             ProjectTreeNodeKind.Shot => "shot",
             ProjectTreeNodeKind.PaletteColor => "palette_color",
+            ProjectTreeNodeKind.Device => "device",
             _ => throw new InvalidOperationException($"No record class for {kind}."),
         };
     }

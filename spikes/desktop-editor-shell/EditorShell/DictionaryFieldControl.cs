@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -12,6 +13,8 @@ internal sealed class DictionaryFieldControl : Grid
     private readonly FieldDefinition _definition;
     private readonly TextBlock _label;
     private readonly TextBox? _textBox;
+    private readonly TextBox? _pairFirstTextBox;
+    private readonly TextBox? _pairSecondTextBox;
     private readonly CheckBox? _checkBox;
     private readonly Border? _colorSwatch;
     private readonly ColorPicker? _colorPicker;
@@ -34,6 +37,7 @@ internal sealed class DictionaryFieldControl : Grid
         {
             ValueKind.DirectoryPath => new ColumnDefinitions("180,*,Auto,Auto"),
             ValueKind.HexColor => new ColumnDefinitions("180,28,*,Auto,Auto"),
+            ValueKind.IntegerPair => new ColumnDefinitions("180,*,Auto"),
             _ => new ColumnDefinitions("180,*,Auto"),
         };
         ColumnSpacing = 12;
@@ -108,6 +112,15 @@ internal sealed class DictionaryFieldControl : Grid
             };
             SetColumn(_colorPicker, 3);
             Children.Add(_colorPicker);
+        }
+        else if (_definition.ValueKind == ValueKind.IntegerPair)
+        {
+            var pair = SplitPair(_value);
+            var pairControl = CreatePairControl(pair.First, pair.Second);
+            _pairFirstTextBox = pairControl.FirstTextBox;
+            _pairSecondTextBox = pairControl.SecondTextBox;
+            SetColumn(pairControl.Control, 1);
+            Children.Add(pairControl.Control);
         }
         else
         {
@@ -196,6 +209,10 @@ internal sealed class DictionaryFieldControl : Grid
         {
             UpdateColorControlsFromValue();
         }
+        else if (_definition.ValueKind == ValueKind.IntegerPair)
+        {
+            UpdatePairControlsFromValue();
+        }
         else if (_textBox is not null)
         {
             _textBox.Text = value;
@@ -221,6 +238,112 @@ internal sealed class DictionaryFieldControl : Grid
                 : VerticalAlignment.Center,
         };
         return textBox;
+    }
+
+    private (Control Control, TextBox FirstTextBox, TextBox SecondTextBox) CreatePairControl(string first, string second)
+    {
+        var grid = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("Auto,90,Auto,90"),
+            ColumnSpacing = 8,
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Left,
+        };
+
+        var labels = PairLabels(_definition.Id);
+        var firstLabel = new TextBlock
+        {
+            Text = labels.First,
+            MinWidth = 38,
+            VerticalAlignment = VerticalAlignment.Center,
+            Opacity = 0.78,
+        };
+        Grid.SetColumn(firstLabel, 0);
+
+        var firstTextBox = CreateCompactPairTextBox(first);
+        firstTextBox.TextChanged += (_, _) => SetPairValueFromTextBoxes(firstTextBox, null);
+        Grid.SetColumn(firstTextBox, 1);
+
+        var secondLabel = new TextBlock
+        {
+            Text = labels.Second,
+            MinWidth = 38,
+            VerticalAlignment = VerticalAlignment.Center,
+            Opacity = 0.78,
+        };
+        Grid.SetColumn(secondLabel, 2);
+
+        var secondTextBox = CreateCompactPairTextBox(second);
+        secondTextBox.TextChanged += (_, _) => SetPairValueFromTextBoxes(null, secondTextBox);
+        Grid.SetColumn(secondTextBox, 3);
+
+        grid.Children.Add(firstLabel);
+        grid.Children.Add(firstTextBox);
+        grid.Children.Add(secondLabel);
+        grid.Children.Add(secondTextBox);
+        return (grid, firstTextBox, secondTextBox);
+    }
+
+    private static TextBox CreateCompactPairTextBox(string value)
+    {
+        return new TextBox
+        {
+            Text = value,
+            Width = 90,
+            MinHeight = 36,
+            VerticalContentAlignment = VerticalAlignment.Center,
+        };
+    }
+
+    private void SetPairValueFromTextBoxes(TextBox? firstTextBox, TextBox? secondTextBox)
+    {
+        if (_isUpdatingColorControl) return;
+
+        _value = JoinPair(
+            firstTextBox?.Text ?? _pairFirstTextBox?.Text ?? "",
+            secondTextBox?.Text ?? _pairSecondTextBox?.Text ?? "");
+        UpdateState();
+        ValueChanged?.Invoke(this, _value);
+    }
+
+    private void UpdatePairControlsFromValue()
+    {
+        var pair = SplitPair(_value);
+        _isUpdatingColorControl = true;
+        if (_pairFirstTextBox is not null && _pairFirstTextBox.Text != pair.First)
+        {
+            _pairFirstTextBox.Text = pair.First;
+        }
+
+        if (_pairSecondTextBox is not null && _pairSecondTextBox.Text != pair.Second)
+        {
+            _pairSecondTextBox.Text = pair.Second;
+        }
+
+        _isUpdatingColorControl = false;
+    }
+
+    private static (string First, string Second) PairLabels(string fieldId)
+    {
+        return fieldId switch
+        {
+            var id when id.EndsWith(".size", StringComparison.Ordinal) || id.EndsWith(".renderSize", StringComparison.Ordinal) => ("W", "H"),
+            var id when id.EndsWith(".position", StringComparison.Ordinal) => ("X", "Y"),
+            var id when id.EndsWith(".vertical", StringComparison.Ordinal) => ("Top", "Bottom"),
+            var id when id.EndsWith(".horizontal", StringComparison.Ordinal) => ("Left", "Right"),
+            _ => ("A", "B"),
+        };
+    }
+
+    private static (string First, string Second) SplitPair(string value)
+    {
+        var parts = value.Split('|', 2);
+        return (parts.ElementAtOrDefault(0) ?? "", parts.ElementAtOrDefault(1) ?? "");
+    }
+
+    private static string JoinPair(string first, string second)
+    {
+        return $"{first}|{second}";
     }
 
     private static Border CreateColorSwatch(string value)

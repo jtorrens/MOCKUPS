@@ -76,12 +76,14 @@ internal static class EditorIcons
             ProjectTreeNodeKind.Project => Project,
             ProjectTreeNodeKind.AppsRoot => Apps,
             ProjectTreeNodeKind.PaletteRoot => Color,
+            ProjectTreeNodeKind.DevicesRoot => Device,
             ProjectTreeNodeKind.App => App,
             ProjectTreeNodeKind.Module => Module,
             ProjectTreeNodeKind.EpisodesRoot => Episodes,
             ProjectTreeNodeKind.Episode => Episode,
             ProjectTreeNodeKind.Shot => Shot,
             ProjectTreeNodeKind.PaletteColor => Color,
+            ProjectTreeNodeKind.Device => Device,
             _ => Component,
         };
     }
