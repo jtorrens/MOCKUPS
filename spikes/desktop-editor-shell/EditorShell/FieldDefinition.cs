@@ -7,6 +7,8 @@ internal enum ValueKind
     StringMultiline,
     Integer,
     DirectoryPath,
+    HexColor,
+    Boolean,
 }
 
 internal sealed record FieldDefinition(

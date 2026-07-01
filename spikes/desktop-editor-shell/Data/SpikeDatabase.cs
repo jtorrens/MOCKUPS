@@ -38,6 +38,7 @@ internal sealed class SpikeDatabase
         var shots = QueryShotRows(connection);
         var apps = QueryAppRows(connection);
         var modules = QueryModuleRows(connection);
+        var paletteColors = QueryPaletteColorRows(connection);
 
         var projectNodes = projects
             .Select((project) => new ProjectTreeNode(
@@ -49,6 +50,7 @@ internal sealed class SpikeDatabase
             .ToDictionary((node) => node.Id);
 
         var appRootNodes = new Dictionary<string, ProjectTreeNode>();
+        var paletteRootNodes = new Dictionary<string, ProjectTreeNode>();
         var episodeNodes = new Dictionary<string, ProjectTreeNode>();
         foreach (var project in projectNodes.Values)
         {
@@ -59,6 +61,13 @@ internal sealed class SpikeDatabase
                 "Apps available in this project.",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.AppsRoot),
                 project);
+            var paletteRoot = new ProjectTreeNode(
+                ProjectTreeNodeKind.PaletteRoot,
+                $"palette_root_{project.Id}",
+                "Palette Colors",
+                "Project primitive color tokens.",
+                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.PaletteRoot),
+                project);
             var episodesRoot = new ProjectTreeNode(
                 ProjectTreeNodeKind.EpisodesRoot,
                 $"episodes_root_{project.Id}",
@@ -68,8 +77,10 @@ internal sealed class SpikeDatabase
                 project);
 
             project.AddChild(appsRoot);
+            project.AddChild(paletteRoot);
             project.AddChild(episodesRoot);
             appRootNodes[project.Id] = appsRoot;
+            paletteRootNodes[project.Id] = paletteRoot;
             episodeNodes[episodesRoot.Id] = episodesRoot;
         }
 
@@ -117,6 +128,21 @@ internal sealed class SpikeDatabase
                 episodesRoot);
             episodesRoot.AddChild(node);
             episodeNodes[node.Id] = node;
+        }
+
+        foreach (var color in paletteColors.OrderBy((color) => color.Token))
+        {
+            if (!paletteRootNodes.TryGetValue(color.ProjectId, out var paletteRoot)) continue;
+
+            paletteRoot.AddChild(new ProjectTreeNode(
+                ProjectTreeNodeKind.PaletteColor,
+                color.Id,
+                color.Token,
+                color.Note,
+                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.PaletteColor),
+                paletteRoot,
+                color.ValueHex,
+                IsPaletteColorUsed(connection, color.ProjectId, color.Token, color.Id)));
         }
 
         foreach (var shot in shots.OrderBy((shot) => shot.SortOrder).ThenBy((shot) => shot.Name))
@@ -171,6 +197,33 @@ internal sealed class SpikeDatabase
                 "New app created in the desktop shell spike.",
                 "app.generic",
                 parent);
+        }
+
+        if (parent.Kind == ProjectTreeNodeKind.PaletteRoot)
+        {
+            var project = parent.Parent ?? throw new InvalidOperationException("Palette root has no project parent.");
+            var id = $"palette_{Guid.NewGuid():N}";
+            var token = $"color_{ScalarLong(connection, "SELECT COUNT(*) FROM palette_colors WHERE project_id = $projectId", ("$projectId", project.Id)) + 1}";
+            Execute(
+                connection,
+                """
+                INSERT INTO palette_colors (id, project_id, token, value_hex, metadata_json, is_neutral)
+                VALUES ($id, $projectId, $token, '#808080', $metadataJson, 1)
+                """,
+                ("$id", id),
+                ("$projectId", project.Id),
+                ("$token", token),
+                ("$metadataJson", JsonSerializer.Serialize(new { note = "Project palette primitive color." })));
+
+            return new ProjectTreeNode(
+                ProjectTreeNodeKind.PaletteColor,
+                id,
+                token,
+                "Project palette primitive color.",
+                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.PaletteColor),
+                parent,
+                "#808080",
+                false);
         }
 
         if (parent.Kind == ProjectTreeNodeKind.App)
@@ -328,6 +381,31 @@ internal sealed class SpikeDatabase
             return new ProjectTreeNode(ProjectTreeNodeKind.App, id, $"{node.Name} copy", node.Notes, node.RecordClassId, node.Parent);
         }
 
+        if (node.Kind == ProjectTreeNodeKind.PaletteColor)
+        {
+            var id = $"palette_{Guid.NewGuid():N}";
+            Execute(
+                connection,
+                """
+                INSERT INTO palette_colors (id, project_id, token, value_hex, metadata_json, is_neutral)
+                SELECT $id, project_id, token || '_copy', value_hex, metadata_json, is_neutral
+                FROM palette_colors
+                WHERE id = $sourceId
+                """,
+                ("$id", id),
+                ("$sourceId", node.Id));
+
+            return new ProjectTreeNode(
+                ProjectTreeNodeKind.PaletteColor,
+                id,
+                $"{node.Name}_copy",
+                node.Notes,
+                node.RecordClassId,
+                node.Parent,
+                node.ColorHex,
+                false);
+        }
+
         if (node.Kind == ProjectTreeNodeKind.Module)
         {
             var id = $"module_{Guid.NewGuid():N}";
@@ -360,6 +438,7 @@ internal sealed class SpikeDatabase
             ProjectTreeNodeKind.Shot => "shots",
             ProjectTreeNodeKind.App => "apps",
             ProjectTreeNodeKind.Module => "modules",
+            ProjectTreeNodeKind.PaletteColor => "palette_colors",
             _ => throw new InvalidOperationException($"Cannot delete {node.Kind}."),
         };
 
@@ -376,10 +455,18 @@ internal sealed class SpikeDatabase
             ProjectTreeNodeKind.Module => "modules",
             ProjectTreeNodeKind.Episode => "episodes",
             ProjectTreeNodeKind.Shot => "shots",
+            ProjectTreeNodeKind.PaletteColor => "palette_colors",
             _ => "",
         };
 
         if (string.IsNullOrWhiteSpace(table)) return;
+
+        if (node.Kind == ProjectTreeNodeKind.PaletteColor)
+        {
+            Execute(connection, "UPDATE palette_colors SET token = $token WHERE id = $id", ("$id", node.Id), ("$token", node.Name));
+            UpdatePaletteMetadata(connection, node.Id, "note", node.Notes);
+            return;
+        }
 
         Execute(
             connection,
@@ -410,6 +497,7 @@ internal sealed class SpikeDatabase
         EnsureEpisodeColumns(connection);
         SeedEditorLayouts(connection);
         SeedIfEmpty(connection);
+        SeedPaletteColorsIfEmpty(connection);
     }
 
     private SqliteConnection OpenConnection()
@@ -488,12 +576,41 @@ internal sealed class SpikeDatabase
             ("$notes", "Seed module linked to Chat app."));
     }
 
+    private static void SeedPaletteColorsIfEmpty(SqliteConnection connection)
+    {
+        var projectIds = QueryProjectRows(connection).Select((project) => project.Id).ToList();
+        foreach (var projectId in projectIds)
+        {
+            if (ScalarLong(connection, "SELECT COUNT(*) FROM palette_colors WHERE project_id = $projectId", ("$projectId", projectId)) > 0)
+            {
+                continue;
+            }
+
+            foreach (var seed in PaletteSeedRows)
+            {
+                Execute(
+                    connection,
+                    """
+                    INSERT INTO palette_colors (id, project_id, token, value_hex, metadata_json, is_neutral)
+                    VALUES ($id, $projectId, $token, $valueHex, $metadataJson, $isNeutral)
+                    """,
+                    ("$id", $"palette_{projectId}_{seed.Token}"),
+                    ("$projectId", projectId),
+                    ("$token", seed.Token),
+                    ("$valueHex", seed.ValueHex),
+                    ("$metadataJson", seed.MetadataJson),
+                    ("$isNeutral", seed.IsNeutral ? 1 : 0));
+            }
+        }
+    }
+
     private static void SeedEditorLayouts(SqliteConnection connection)
     {
         foreach (var recordClassId in new[]
         {
             "project",
             "navigation.apps",
+            "navigation.palette",
             "navigation.episodes",
             "app.generic",
             "app.core.chat",
@@ -501,6 +618,7 @@ internal sealed class SpikeDatabase
             "module.core.chat",
             "episode",
             "shot",
+            "palette_color",
         })
         {
             Execute(
@@ -532,6 +650,16 @@ internal sealed class SpikeDatabase
                     { "id": "episode.sortOrder", "order": 30, "visible": true },
                     { "id": "core.kind", "order": 40, "visible": false },
                     { "id": "core.notes", "order": 50, "visible": true }
+                  """
+            : recordClassId == "palette_color"
+                ? """
+                    { "id": "palette.token", "order": 10, "visible": true },
+                    { "id": "palette.valueHex", "order": 20, "visible": true },
+                    { "id": "palette.isNeutral", "order": 30, "visible": true },
+                    { "id": "palette.source", "order": 40, "visible": true },
+                    { "id": "palette.protected", "order": 50, "visible": true },
+                    { "id": "palette.hiddenFromPickers", "order": 60, "visible": true },
+                    { "id": "palette.note", "order": 70, "visible": true }
                   """
             : """
                     { "id": "core.name", "order": 10, "visible": true },
@@ -652,6 +780,82 @@ internal sealed class SpikeDatabase
         }
 
         return rows;
+    }
+
+    private static List<PaletteColorRow> QueryPaletteColorRows(SqliteConnection connection)
+    {
+        var rows = new List<PaletteColorRow>();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT id, project_id, token, value_hex, metadata_json, is_neutral FROM palette_colors ORDER BY token";
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            var metadataJson = ReadString(reader, 4);
+            rows.Add(new PaletteColorRow(
+                reader.GetString(0),
+                reader.GetString(1),
+                reader.GetString(2),
+                reader.GetString(3),
+                MetadataString(metadataJson, "note"),
+                reader.GetInt32(5) != 0,
+                metadataJson));
+        }
+
+        return rows;
+    }
+
+    public PaletteColorSettings GetPaletteColorSettings(string colorId)
+    {
+        using var connection = OpenConnection();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT token, value_hex, metadata_json, is_neutral FROM palette_colors WHERE id = $id";
+        command.Parameters.AddWithValue("$id", colorId);
+        using var reader = command.ExecuteReader();
+        if (!reader.Read())
+        {
+            throw new InvalidOperationException($"Missing palette color '{colorId}'.");
+        }
+
+        var metadataJson = ReadString(reader, 2);
+        return new PaletteColorSettings(
+            reader.GetString(0),
+            reader.GetString(1),
+            reader.GetInt32(3) != 0,
+            MetadataString(metadataJson, "source"),
+            MetadataBool(metadataJson, "protected"),
+            MetadataBool(metadataJson, "hiddenFromPickers"),
+            MetadataString(metadataJson, "note"));
+    }
+
+    public void UpdatePaletteColorField(string colorId, string fieldId, string value)
+    {
+        using var connection = OpenConnection();
+        switch (fieldId)
+        {
+            case "palette.token":
+                Execute(connection, "UPDATE palette_colors SET token = $value WHERE id = $id", ("$id", colorId), ("$value", value));
+                return;
+            case "palette.valueHex":
+                Execute(connection, "UPDATE palette_colors SET value_hex = $value WHERE id = $id", ("$id", colorId), ("$value", NormalizeHex(value)));
+                return;
+            case "palette.isNeutral":
+                Execute(connection, "UPDATE palette_colors SET is_neutral = $value WHERE id = $id", ("$id", colorId), ("$value", StringToBool(value) ? 1 : 0));
+                return;
+            case "palette.source":
+                UpdatePaletteMetadata(connection, colorId, "source", value);
+                return;
+            case "palette.protected":
+                UpdatePaletteMetadata(connection, colorId, "protected", StringToBool(value));
+                return;
+            case "palette.hiddenFromPickers":
+                UpdatePaletteMetadata(connection, colorId, "hiddenFromPickers", StringToBool(value));
+                return;
+            case "palette.note":
+                UpdatePaletteMetadata(connection, colorId, "note", value);
+                return;
+            default:
+                throw new InvalidOperationException($"Unknown palette field '{fieldId}'.");
+        }
     }
 
     public ProjectSettings GetProjectSettings(string projectId)
@@ -810,6 +1014,115 @@ internal sealed class SpikeDatabase
         return reader.IsDBNull(index) ? "" : reader.GetString(index);
     }
 
+    private static bool IsPaletteColorUsed(SqliteConnection connection, string projectId, string token, string colorId)
+    {
+        // The new shell does not yet reference palette tokens from theme/component tables.
+        // The flag is still part of the model now, so the navigation can show the correct
+        // used/unused marker as soon as those references land.
+        _ = connection;
+        _ = projectId;
+        _ = token;
+        _ = colorId;
+        return false;
+    }
+
+    private static string MetadataString(string metadataJson, string key)
+    {
+        if (string.IsNullOrWhiteSpace(metadataJson)) return "";
+
+        try
+        {
+            using var document = JsonDocument.Parse(metadataJson);
+            return document.RootElement.TryGetProperty(key, out var value) && value.ValueKind == JsonValueKind.String
+                ? value.GetString() ?? ""
+                : "";
+        }
+        catch (JsonException)
+        {
+            return "";
+        }
+    }
+
+    private static bool MetadataBool(string metadataJson, string key)
+    {
+        if (string.IsNullOrWhiteSpace(metadataJson)) return false;
+
+        try
+        {
+            using var document = JsonDocument.Parse(metadataJson);
+            if (!document.RootElement.TryGetProperty(key, out var value))
+            {
+                return false;
+            }
+
+            return value.ValueKind switch
+            {
+                JsonValueKind.True => true,
+                JsonValueKind.False => false,
+                JsonValueKind.String => StringToBool(value.GetString() ?? ""),
+                JsonValueKind.Number => value.TryGetInt32(out var number) && number != 0,
+                _ => false,
+            };
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
+    private static void UpdatePaletteMetadata(SqliteConnection connection, string colorId, string key, object value)
+    {
+        using var select = connection.CreateCommand();
+        select.CommandText = "SELECT metadata_json FROM palette_colors WHERE id = $id";
+        select.Parameters.AddWithValue("$id", colorId);
+        var metadataJson = select.ExecuteScalar() as string ?? "{}";
+
+        var metadata = new Dictionary<string, object?>();
+        try
+        {
+            using var document = JsonDocument.Parse(metadataJson);
+            foreach (var property in document.RootElement.EnumerateObject())
+            {
+                metadata[property.Name] = property.Value.ValueKind switch
+                {
+                    JsonValueKind.True => true,
+                    JsonValueKind.False => false,
+                    JsonValueKind.Number when property.Value.TryGetInt64(out var number) => number,
+                    JsonValueKind.String => property.Value.GetString(),
+                    _ => property.Value.GetRawText(),
+                };
+            }
+        }
+        catch (JsonException)
+        {
+            // Invalid metadata is replaced by the field being edited. This is project data,
+            // but the table is internal to the spike and metadata must remain valid JSON.
+        }
+
+        metadata[key] = value;
+        Execute(
+            connection,
+            "UPDATE palette_colors SET metadata_json = $metadataJson WHERE id = $id",
+            ("$id", colorId),
+            ("$metadataJson", JsonSerializer.Serialize(metadata)));
+    }
+
+    private static string NormalizeHex(string value)
+    {
+        var trimmed = value.Trim();
+        if (trimmed.Length == 6 && !trimmed.StartsWith("#", StringComparison.Ordinal))
+        {
+            trimmed = $"#{trimmed}";
+        }
+
+        return trimmed;
+    }
+
+    private static bool StringToBool(string value)
+    {
+        return value.Equals("true", StringComparison.OrdinalIgnoreCase) || value == "1";
+    }
+
     private static void EnsureProjectColumns(SqliteConnection connection)
     {
         AddColumnIfMissing(connection, "projects", "slug", "TEXT NOT NULL DEFAULT ''");
@@ -934,6 +1247,16 @@ internal sealed class SpikeDatabase
           metadata_json TEXT NOT NULL DEFAULT '{}'
         );
 
+        CREATE TABLE IF NOT EXISTS palette_colors (
+          id TEXT PRIMARY KEY,
+          project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+          token TEXT NOT NULL,
+          value_hex TEXT NOT NULL,
+          metadata_json TEXT NOT NULL DEFAULT '{}',
+          is_neutral INTEGER NOT NULL DEFAULT 0,
+          UNIQUE(project_id, token)
+        );
+
         CREATE TABLE IF NOT EXISTS editor_layouts (
           record_class_id TEXT PRIMARY KEY,
           layout_json TEXT NOT NULL
@@ -942,10 +1265,19 @@ internal sealed class SpikeDatabase
 
     public sealed record ProjectSettings(string Slug, int DefaultFps, string MediaRoot);
     public sealed record EpisodeSettings(string Slug, int SortOrder);
+    public sealed record PaletteColorSettings(
+        string Token,
+        string ValueHex,
+        bool IsNeutral,
+        string Source,
+        bool IsProtected,
+        bool HiddenFromPickers,
+        string Note);
     private sealed record ProjectRow(string Id, string Name, string Notes);
     private sealed record EpisodeRow(string Id, string ProjectId, string Name, string Slug, string Notes, int SortOrder);
     private sealed record AppRow(string Id, string ProjectId, string RecordClassId, string Name, string Notes, int SortOrder);
     private sealed record ModuleRow(string Id, string AppId, string RecordClassId, string Name, string Notes, int SortOrder);
+    private sealed record PaletteColorRow(string Id, string ProjectId, string Token, string ValueHex, string Note, bool IsNeutral, string MetadataJson);
     private sealed record ShotRow(
         string Id,
         string EpisodeId,
@@ -954,4 +1286,34 @@ internal sealed class SpikeDatabase
         int SortOrder,
         int Fps,
         int DurationFrames);
+
+    private sealed record PaletteSeedRow(string Token, string ValueHex, bool IsNeutral, string MetadataJson);
+
+    private static readonly PaletteSeedRow[] PaletteSeedRows =
+    [
+        new("aqua_green", "#79D2B0", false, """{"note":"Production palette primitive color."}"""),
+        new("blue", "#007AFF", false, """{"source":"ios_seed_theme","note":"Primitive color seeded from the original iOS theme values."}"""),
+        new("blue_bright", "#0A84FF", false, """{"source":"ios_seed_theme","note":"Primitive color seeded from the original iOS theme values."}"""),
+        new("debug_red", "#FF00FF", false, """{"source":"debug_sentinel","protected":true,"hiddenFromPickers":true,"note":"Protected sentinel color for unresolved theme/component color decisions."}"""),
+        new("gray_000", "#000000", true, """{"note":"Neutral palette color."}"""),
+        new("gray_010", "#1A1A1A", true, """{"note":"Neutral palette color."}"""),
+        new("gray_020", "#333333", true, """{"note":"Neutral palette color."}"""),
+        new("gray_030", "#4D4D4D", true, """{"note":"Neutral palette color."}"""),
+        new("gray_040", "#666666", true, """{"note":"Neutral palette color."}"""),
+        new("gray_050", "#808080", true, """{"note":"Neutral palette color."}"""),
+        new("gray_060", "#999999", true, """{"note":"Neutral palette color."}"""),
+        new("gray_070", "#B3B3B3", true, """{"note":"Neutral palette color."}"""),
+        new("gray_080", "#CCCCCC", true, """{"note":"Neutral palette color."}"""),
+        new("gray_090", "#E6E6E6", true, """{"note":"Neutral palette color."}"""),
+        new("gray_100", "#FFFFFF", true, """{"note":"Neutral palette color."}"""),
+        new("pastel_coral", "#FF8A80", false, """{"note":"Actor differentiator palette color."}"""),
+        new("pastel_lavender", "#B39DDB", false, """{"note":"Actor differentiator palette color."}"""),
+        new("pastel_mint", "#66D9A3", false, """{"note":"Actor differentiator palette color."}"""),
+        new("pastel_orange", "#FFB74D", false, """{"note":"Actor differentiator palette color."}"""),
+        new("pastel_sky", "#64B5F6", false, """{"note":"Actor differentiator palette color."}"""),
+        new("pastel_yellow", "#FFF176", false, """{"note":"Actor differentiator palette color."}"""),
+        new("purple", "#6750A4", false, """{"source":"android_seed_theme","note":"Primitive color seeded from the Android theme values."}"""),
+        new("purple_tint", "#D0BCFF", false, """{"source":"android_seed_theme","note":"Primitive color seeded from the Android theme values."}"""),
+        new("red", "#DF2020", false, """{"note":"Production palette primitive color."}"""),
+    ];
 }

@@ -262,7 +262,7 @@ public partial class MainWindow : SukiWindow
             Margin = new Avalonia.Thickness(0, 6, 0, 0),
         };
 
-        foreach (var root in project.Children.Where((child) => child.Kind is ProjectTreeNodeKind.AppsRoot or ProjectTreeNodeKind.EpisodesRoot))
+        foreach (var root in project.Children.Where((child) => child.Kind is ProjectTreeNodeKind.AppsRoot or ProjectTreeNodeKind.PaletteRoot or ProjectTreeNodeKind.EpisodesRoot))
         {
             AddNavigationSection(panel, root);
         }
@@ -283,9 +283,12 @@ public partial class MainWindow : SukiWindow
             AddNavigationNode(content, child, level: 1);
         }
 
-        var iconName = sectionRoot.Kind == ProjectTreeNodeKind.EpisodesRoot
-            ? EditorIcons.ForTreeNode(ProjectTreeNodeKind.Episode)
-            : EditorIcons.ForTreeNode(ProjectTreeNodeKind.App);
+        var iconName = sectionRoot.Kind switch
+        {
+            ProjectTreeNodeKind.EpisodesRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.Episode),
+            ProjectTreeNodeKind.PaletteRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.PaletteColor),
+            _ => EditorIcons.ForTreeNode(ProjectTreeNodeKind.App),
+        };
         AddNavigationCard(parent, sectionRoot, content, iconName);
     }
 
@@ -307,7 +310,9 @@ public partial class MainWindow : SukiWindow
             return;
         }
 
-        parent.Children.Add(CreateNavigationRow(node, iconName: null));
+        parent.Children.Add(node.Kind == ProjectTreeNodeKind.PaletteColor
+            ? CreatePaletteNavigationRow(node)
+            : CreateNavigationRow(node, iconName: null));
     }
 
     private void AddNavigationCard(
@@ -426,6 +431,64 @@ public partial class MainWindow : SukiWindow
         var actions = CreateNavigationActions(node);
         Grid.SetColumn(actions, contentColumn + 1);
 
+        grid.Children.Add(titleButton);
+        grid.Children.Add(actions);
+        row.Child = grid;
+        return row;
+    }
+
+    private Control CreatePaletteNavigationRow(ProjectTreeNode node)
+    {
+        var row = new Border
+        {
+            Padding = new Avalonia.Thickness(6, 4),
+            CornerRadius = new CornerRadius(8),
+            Background = _selectedNode?.Id == node.Id
+                ? new SolidColorBrush(Color.Parse(_isDark ? "#253f5f" : "#dfefff"))
+                : Brushes.Transparent,
+        };
+
+        var grid = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("10,18,*,Auto"),
+            ColumnSpacing = 7,
+            Background = Brushes.Transparent,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+
+        var usedDot = new Avalonia.Controls.Shapes.Ellipse
+        {
+            Width = 7,
+            Height = 7,
+            Fill = node.IsUsed ? new SolidColorBrush(Color.Parse("#D6A638")) : Brushes.Transparent,
+            Stroke = new SolidColorBrush(Color.Parse(_isDark ? "#8d96a6" : "#667085")),
+            StrokeThickness = 1,
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center,
+        };
+        Grid.SetColumn(usedDot, 0);
+
+        var swatch = new Border
+        {
+            Width = 16,
+            Height = 16,
+            CornerRadius = new CornerRadius(4),
+            Background = SafeColorBrush(node.ColorHex, "#808080"),
+            BorderBrush = new SolidColorBrush(Color.Parse(_isDark ? "#B7C0D2" : "#667085")),
+            BorderThickness = new Avalonia.Thickness(1),
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center,
+        };
+        Grid.SetColumn(swatch, 1);
+
+        var titleButton = CreateNavigationSelectButton(node);
+        Grid.SetColumn(titleButton, 2);
+
+        var actions = CreateNavigationActions(node);
+        Grid.SetColumn(actions, 3);
+
+        grid.Children.Add(usedDot);
+        grid.Children.Add(swatch);
         grid.Children.Add(titleButton);
         grid.Children.Add(actions);
         row.Child = grid;
@@ -702,7 +765,8 @@ public partial class MainWindow : SukiWindow
             or ProjectTreeNodeKind.App
             or ProjectTreeNodeKind.Module
             or ProjectTreeNodeKind.Episode
-            or ProjectTreeNodeKind.Shot;
+            or ProjectTreeNodeKind.Shot
+            or ProjectTreeNodeKind.PaletteColor;
 
         return fieldId switch
         {
@@ -760,6 +824,41 @@ public partial class MainWindow : SukiWindow
                 "episode.sortOrder",
                 "Sort Order",
                 ValueKind.Integer),
+            "palette.token" when node.Kind == ProjectTreeNodeKind.PaletteColor => CreatePaletteColorFieldValue(
+                node.Id,
+                "palette.token",
+                "Token",
+                ValueKind.StringSingleLine),
+            "palette.valueHex" when node.Kind == ProjectTreeNodeKind.PaletteColor => CreatePaletteColorFieldValue(
+                node.Id,
+                "palette.valueHex",
+                "Hex",
+                ValueKind.HexColor),
+            "palette.isNeutral" when node.Kind == ProjectTreeNodeKind.PaletteColor => CreatePaletteColorFieldValue(
+                node.Id,
+                "palette.isNeutral",
+                "Neutral",
+                ValueKind.Boolean),
+            "palette.source" when node.Kind == ProjectTreeNodeKind.PaletteColor => CreatePaletteColorFieldValue(
+                node.Id,
+                "palette.source",
+                "Source",
+                ValueKind.StringSingleLine),
+            "palette.protected" when node.Kind == ProjectTreeNodeKind.PaletteColor => CreatePaletteColorFieldValue(
+                node.Id,
+                "palette.protected",
+                "Protected",
+                ValueKind.Boolean),
+            "palette.hiddenFromPickers" when node.Kind == ProjectTreeNodeKind.PaletteColor => CreatePaletteColorFieldValue(
+                node.Id,
+                "palette.hiddenFromPickers",
+                "Hidden From Pickers",
+                ValueKind.Boolean),
+            "palette.note" when node.Kind == ProjectTreeNodeKind.PaletteColor => CreatePaletteColorFieldValue(
+                node.Id,
+                "palette.note",
+                "Note",
+                ValueKind.StringMultiline),
             _ => throw new InvalidOperationException($"Unknown field '{fieldId}' for record class '{node.RecordClassId}'."),
         };
     }
@@ -813,13 +912,43 @@ public partial class MainWindow : SukiWindow
             value);
     }
 
+    private FieldValue CreatePaletteColorFieldValue(
+        string colorId,
+        string fieldId,
+        string label,
+        ValueKind valueKind)
+    {
+        var settings = _database.GetPaletteColorSettings(colorId);
+        var value = fieldId switch
+        {
+            "palette.token" => settings.Token,
+            "palette.valueHex" => settings.ValueHex,
+            "palette.isNeutral" => BoolToString(settings.IsNeutral),
+            "palette.source" => settings.Source,
+            "palette.protected" => BoolToString(settings.IsProtected),
+            "palette.hiddenFromPickers" => BoolToString(settings.HiddenFromPickers),
+            "palette.note" => settings.Note,
+            _ => "",
+        };
+
+        return new FieldValue(
+            new FieldDefinition(
+                fieldId,
+                label,
+                valueKind,
+                IsEditable: true,
+                DefaultValue: value),
+            value);
+    }
+
     private void ApplyFieldValue(ProjectTreeNode node, string fieldId, string value)
     {
         var persisted = node.Kind is ProjectTreeNodeKind.Project
             or ProjectTreeNodeKind.App
             or ProjectTreeNodeKind.Module
             or ProjectTreeNodeKind.Episode
-            or ProjectTreeNodeKind.Shot;
+            or ProjectTreeNodeKind.Shot
+            or ProjectTreeNodeKind.PaletteColor;
 
         if (fieldId == "core.name")
         {
@@ -840,6 +969,23 @@ public partial class MainWindow : SukiWindow
         if (node.Kind == ProjectTreeNodeKind.Episode && fieldId.StartsWith("episode.", StringComparison.Ordinal))
         {
             _database.UpdateEpisodeField(node.Id, fieldId, value);
+            return;
+        }
+
+        if (node.Kind == ProjectTreeNodeKind.PaletteColor && fieldId.StartsWith("palette.", StringComparison.Ordinal))
+        {
+            _database.UpdatePaletteColorField(node.Id, fieldId, value);
+            if (fieldId == "palette.token")
+            {
+                node.Name = value;
+                EditorTitle.Text = value;
+                RebuildNavigationCards();
+            }
+            else if (fieldId == "palette.valueHex")
+            {
+                node.ColorHex = value;
+                RebuildNavigationCards();
+            }
             return;
         }
 
@@ -894,6 +1040,23 @@ public partial class MainWindow : SukiWindow
                 Content = card,
             },
         });
+    }
+
+    private static IBrush SafeColorBrush(string? hex, string fallback)
+    {
+        try
+        {
+            return new SolidColorBrush(Color.Parse(string.IsNullOrWhiteSpace(hex) ? fallback : hex));
+        }
+        catch (FormatException)
+        {
+            return new SolidColorBrush(Color.Parse(fallback));
+        }
+    }
+
+    private static string BoolToString(bool value)
+    {
+        return value ? "true" : "false";
     }
 
     private void AddChild(ProjectTreeNode parent)
@@ -1069,11 +1232,13 @@ internal enum ProjectTreeNodeKind
 {
     Project,
     AppsRoot,
+    PaletteRoot,
     EpisodesRoot,
     App,
     Module,
     Episode,
     Shot,
+    PaletteColor,
 }
 
 internal sealed class ProjectTreeNode
@@ -1084,7 +1249,9 @@ internal sealed class ProjectTreeNode
         string name,
         string notes,
         string recordClassId,
-        ProjectTreeNode? parent = null)
+        ProjectTreeNode? parent = null,
+        string? colorHex = null,
+        bool isUsed = false)
     {
         Kind = kind;
         Id = id;
@@ -1092,6 +1259,8 @@ internal sealed class ProjectTreeNode
         Notes = notes;
         RecordClassId = recordClassId;
         Parent = parent;
+        ColorHex = colorHex;
+        IsUsed = isUsed;
     }
 
     public ProjectTreeNodeKind Kind { get; }
@@ -1100,22 +1269,28 @@ internal sealed class ProjectTreeNode
     public string Notes { get; set; }
     public string RecordClassId { get; }
     public ProjectTreeNode? Parent { get; private set; }
+    public string? ColorHex { get; set; }
+    public bool IsUsed { get; }
     public List<ProjectTreeNode> Children { get; } = [];
 
     public int Level => Parent is null ? 0 : Parent.Level + 1;
     public bool CanAddChild => Kind is ProjectTreeNodeKind.AppsRoot
         or ProjectTreeNodeKind.App
+        or ProjectTreeNodeKind.PaletteRoot
         or ProjectTreeNodeKind.EpisodesRoot
         or ProjectTreeNodeKind.Episode;
     public bool CanDuplicate => Kind is ProjectTreeNodeKind.App
         or ProjectTreeNodeKind.Module
         or ProjectTreeNodeKind.Episode
-        or ProjectTreeNodeKind.Shot;
+        or ProjectTreeNodeKind.Shot
+        or ProjectTreeNodeKind.PaletteColor;
     public bool CanDelete => Kind is ProjectTreeNodeKind.App
         or ProjectTreeNodeKind.Module
         or ProjectTreeNodeKind.Episode
-        or ProjectTreeNodeKind.Shot;
+        or ProjectTreeNodeKind.Shot
+        or ProjectTreeNodeKind.PaletteColor;
     public bool CanOpenEditor => Kind is not ProjectTreeNodeKind.AppsRoot
+        and not ProjectTreeNodeKind.PaletteRoot
         and not ProjectTreeNodeKind.EpisodesRoot;
 
     public string Display => Name;
@@ -1132,11 +1307,13 @@ internal sealed class ProjectTreeNode
         {
             ProjectTreeNodeKind.Project => "project",
             ProjectTreeNodeKind.AppsRoot => "navigation.apps",
+            ProjectTreeNodeKind.PaletteRoot => "navigation.palette",
             ProjectTreeNodeKind.EpisodesRoot => "navigation.episodes",
             ProjectTreeNodeKind.App => "app.generic",
             ProjectTreeNodeKind.Module => "module.generic",
             ProjectTreeNodeKind.Episode => "episode",
             ProjectTreeNodeKind.Shot => "shot",
+            ProjectTreeNodeKind.PaletteColor => "palette_color",
             _ => throw new InvalidOperationException($"No record class for {kind}."),
         };
     }

@@ -239,6 +239,26 @@ The UI must show clearly whether a field is default/inherited or overridden.
 
 An editor is responsible for:
 
+## 18. Deferred implementation notes
+
+These are agreed improvements to revisit after the current migration pass. They should not be solved with editor-specific shortcuts.
+
+- Extract the current `DictionaryFieldControl` switch into a dedicated dictionary control registry/factory. `DictionaryFieldControl` should become mostly a shell/row host; each `ValueKind` should resolve to a reusable control class.
+- Promote numeric controls beyond plain text boxes. `number.integer` and `number.decimal` should have numeric validation, formatting, and step behavior owned by the dictionary layer.
+- Add compound value kinds for paired values instead of solving pairs visually per editor:
+  - `pair.xy`;
+  - `pair.widthHeight`;
+  - `pair.lightDarkColor`;
+  - future logical pairs/triples where the value is conceptually edited as a unit.
+- Layout JSON should be able to reference either individual fields or compound field groups. If a pair is conceptually one value, the JSON should declare it as one dictionary field/control, not as two unrelated controls forced onto one row by an editor.
+- Centralize editor-shell UI tokens for common chrome still hardcoded in the spike:
+  - selected row background;
+  - amber/changed marker;
+  - swatch border;
+  - preview demo colors.
+- Keep navigation rows, dialogs, and preview shell as common editor chrome. They may be custom, but must remain shared infrastructure, not per-editor styling.
+- The palette “used” marker is already modeled in navigation. When theme/component tables land, implement reference scanning there instead of inventing table-specific markers.
+
 - choosing the record/entity;
 - grouping fields into cards/subcards;
 - ordering groups;

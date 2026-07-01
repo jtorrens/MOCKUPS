@@ -1,10 +1,28 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="using:Avalonia.Controls.Converters"
+             xmlns:pc="using:Avalonia.Controls.Primitives.Converters"
              xmlns:suki="clr-namespace:SukiUI;assembly=SukiUI"
              x:Class="Mockups.DesktopEditorShell.App"
              RequestedThemeVariant="Dark">
 
+    <Application.Resources>
+        <converters:EnumToBoolConverter x:Key="EnumToBoolConverter" />
+        <converters:ToBrushConverter x:Key="ToBrushConverter" />
+        <converters:CornerRadiusFilterConverter x:Key="LeftCornerRadiusFilterConverter" Filter="TopLeft, BottomLeft" />
+        <converters:CornerRadiusFilterConverter x:Key="RightCornerRadiusFilterConverter" Filter="TopRight, BottomRight" />
+        <converters:CornerRadiusFilterConverter x:Key="TopCornerRadiusFilterConverter" Filter="TopLeft, TopRight" />
+        <converters:CornerRadiusFilterConverter x:Key="BottomCornerRadiusFilterConverter" Filter="BottomLeft, BottomRight" />
+        <converters:CornerRadiusToDoubleConverter x:Key="TopLeftCornerRadiusConverter" Corner="TopLeft" />
+        <converters:CornerRadiusToDoubleConverter x:Key="BottomRightCornerRadiusConverter" Corner="BottomRight" />
+        <converters:ColorToDisplayNameConverter x:Key="ColorToDisplayNameConverter" />
+        <converters:DoNothingForNullConverter x:Key="DoNothingForNullConverter" />
+        <pc:AccentColorConverter x:Key="AccentColorConverter" />
+        <pc:ContrastBrushConverter x:Key="ContrastBrushConverter" />
+    </Application.Resources>
+
     <Application.Styles>
         <suki:SukiTheme ThemeColor="Blue" />
+        <StyleInclude Source="avares://Avalonia.Controls.ColorPicker/Themes/Fluent/Fluent.xaml" />
     </Application.Styles>
 </Application>
