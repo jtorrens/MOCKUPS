@@ -1206,6 +1206,23 @@ internal sealed class SpikeDatabase
             .ToList();
     }
 
+    public IReadOnlyList<FieldOption> GetDeviceOptions(string projectId)
+    {
+        using var connection = OpenConnection();
+        return QueryDeviceRows(connection)
+            .Where((device) => device.ProjectId == projectId)
+            .OrderBy((device) => device.Name)
+            .Select((device) => new FieldOption(device.Id, device.Name))
+            .ToList();
+    }
+
+    public IReadOnlyList<FieldOption> GetThemeOptions(string projectId)
+    {
+        // Theme rows are not part of this new shell yet, but this keeps the field
+        // on the dictionary option-control path instead of falling back to text.
+        return [new FieldOption("", "No theme table yet")];
+    }
+
     public ProjectSettings GetProjectSettings(string projectId)
     {
         using var connection = OpenConnection();

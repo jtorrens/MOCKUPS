@@ -43,6 +43,7 @@ internal sealed class DictionaryFieldControl : Grid
             ValueKind.ImageFilePath => new ColumnDefinitions("180,*,Auto,Auto"),
             ValueKind.HexColor => new ColumnDefinitions("180,28,*,Auto,Auto"),
             ValueKind.IntegerPair => new ColumnDefinitions("180,*,Auto"),
+            ValueKind.OptionToken => new ColumnDefinitions("180,*,Auto"),
             ValueKind.PaletteColorToken => new ColumnDefinitions("180,*,Auto"),
             ValueKind.PaletteColorPair => new ColumnDefinitions("180,*,Auto"),
             _ => new ColumnDefinitions("180,*,Auto"),
@@ -82,9 +83,9 @@ internal sealed class DictionaryFieldControl : Grid
             SetColumn(_checkBox, 1);
             Children.Add(_checkBox);
         }
-        else if (_definition.ValueKind == ValueKind.PaletteColorToken)
+        else if (_definition.ValueKind is ValueKind.OptionToken or ValueKind.PaletteColorToken)
         {
-            _comboBox = CreatePaletteComboBox(_value);
+            _comboBox = CreateOptionComboBox(_value);
             _comboBox.SelectionChanged += (_, _) =>
             {
                 if (_isUpdatingColorControl) return;
@@ -244,9 +245,9 @@ internal sealed class DictionaryFieldControl : Grid
         {
             UpdatePairControlsFromValue();
         }
-        else if (_definition.ValueKind == ValueKind.PaletteColorToken)
+        else if (_definition.ValueKind is ValueKind.OptionToken or ValueKind.PaletteColorToken)
         {
-            UpdatePaletteComboFromValue();
+            UpdateOptionComboFromValue();
         }
         else if (_definition.ValueKind == ValueKind.PaletteColorPair)
         {
@@ -276,6 +277,12 @@ internal sealed class DictionaryFieldControl : Grid
                 ? VerticalAlignment.Top
                 : VerticalAlignment.Center,
         };
+        if (_definition.ValueKind == ValueKind.ImageFilePath)
+        {
+            textBox.MaxWidth = 420;
+            textBox.HorizontalAlignment = HorizontalAlignment.Stretch;
+        }
+
         return textBox;
     }
 
@@ -323,7 +330,7 @@ internal sealed class DictionaryFieldControl : Grid
         return (grid, firstTextBox, secondTextBox);
     }
 
-    private ComboBox CreatePaletteComboBox(string value)
+    private ComboBox CreateOptionComboBox(string value)
     {
         var comboBox = new ComboBox
         {
@@ -333,7 +340,10 @@ internal sealed class DictionaryFieldControl : Grid
             ItemsSource = _definition.Options ?? [],
             ItemTemplate = new FuncDataTemplate<FieldOption>((option, _) => option is null
                 ? new TextBlock()
-                : CreatePaletteOptionView(option)),
+                : CreateOptionView(option)),
+            SelectionBoxItemTemplate = new FuncDataTemplate<FieldOption>((option, _) => option is null
+                ? new TextBlock()
+                : CreateOptionView(option)),
         };
 
         comboBox.SelectedItem = SelectedOption(value);
@@ -344,8 +354,8 @@ internal sealed class DictionaryFieldControl : Grid
     {
         var grid = new Grid
         {
-            ColumnDefinitions = new ColumnDefinitions("Auto,160,Auto,160"),
-            ColumnSpacing = 10,
+            ColumnDefinitions = new ColumnDefinitions("Auto,180,Auto,180"),
+            ColumnSpacing = 14,
             VerticalAlignment = VerticalAlignment.Center,
             HorizontalAlignment = HorizontalAlignment.Left,
         };
@@ -360,7 +370,7 @@ internal sealed class DictionaryFieldControl : Grid
         };
         Grid.SetColumn(firstLabel, 0);
 
-        var firstCombo = CreatePaletteComboBox(first);
+        var firstCombo = CreateOptionComboBox(first);
         firstCombo.SelectionChanged += (_, _) => SetPalettePairValueFromComboBoxes(firstCombo, null);
         Grid.SetColumn(firstCombo, 1);
 
@@ -368,12 +378,13 @@ internal sealed class DictionaryFieldControl : Grid
         {
             Text = labels.Second,
             MinWidth = 57,
+            Margin = new Avalonia.Thickness(10, 0, 0, 0),
             VerticalAlignment = VerticalAlignment.Center,
             Opacity = 0.78,
         };
         Grid.SetColumn(secondLabel, 2);
 
-        var secondCombo = CreatePaletteComboBox(second);
+        var secondCombo = CreateOptionComboBox(second);
         secondCombo.SelectionChanged += (_, _) => SetPalettePairValueFromComboBoxes(null, secondCombo);
         Grid.SetColumn(secondCombo, 3);
 
@@ -384,7 +395,7 @@ internal sealed class DictionaryFieldControl : Grid
         return (grid, firstCombo, secondCombo);
     }
 
-    private static Control CreatePaletteOptionView(FieldOption option)
+    private static Control CreateOptionView(FieldOption option)
     {
         var grid = new Grid
         {
@@ -392,17 +403,21 @@ internal sealed class DictionaryFieldControl : Grid
             ColumnSpacing = 8,
             VerticalAlignment = VerticalAlignment.Center,
         };
-        var swatch = new Border
+        if (!string.IsNullOrWhiteSpace(option.ColorHex))
         {
-            Width = 14,
-            Height = 14,
-            CornerRadius = new CornerRadius(4),
-            Background = new SolidColorBrush(ParseColor(option.ColorHex ?? "#808080")),
-            BorderBrush = new SolidColorBrush(Color.Parse("#667085")),
-            BorderThickness = new Avalonia.Thickness(1),
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        Grid.SetColumn(swatch, 0);
+            var swatch = new Border
+            {
+                Width = 14,
+                Height = 14,
+                CornerRadius = new CornerRadius(4),
+                Background = new SolidColorBrush(ParseColor(option.ColorHex)),
+                BorderBrush = new SolidColorBrush(Color.Parse("#667085")),
+                BorderThickness = new Avalonia.Thickness(1),
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            Grid.SetColumn(swatch, 0);
+            grid.Children.Add(swatch);
+        }
 
         var label = new TextBlock
         {
@@ -412,7 +427,6 @@ internal sealed class DictionaryFieldControl : Grid
         };
         Grid.SetColumn(label, 1);
 
-        grid.Children.Add(swatch);
         grid.Children.Add(label);
         return grid;
     }
@@ -439,7 +453,7 @@ internal sealed class DictionaryFieldControl : Grid
         ValueChanged?.Invoke(this, _value);
     }
 
-    private void UpdatePaletteComboFromValue()
+    private void UpdateOptionComboFromValue()
     {
         if (_comboBox is null) return;
 

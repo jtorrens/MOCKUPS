@@ -219,7 +219,7 @@ public partial class MainWindow : SukiWindow
         }
         else
         {
-            CollapseSiblingNodes(node);
+            CollapseVisibleNavigationPeers(node);
             _expandedNodeIds.Add(node.Id);
         }
 
@@ -234,6 +234,27 @@ public partial class MainWindow : SukiWindow
         {
             CollapseNodeAndDescendants(sibling);
         }
+    }
+
+    private void CollapseVisibleNavigationPeers(ProjectTreeNode node)
+    {
+        if (node.Kind == ProjectTreeNodeKind.Project)
+        {
+            foreach (var child in node.Children)
+            {
+                CollapseNodeAndDescendants(child);
+            }
+            return;
+        }
+
+        if (node.Parent?.Kind == ProjectTreeNodeKind.Project)
+        {
+            CollapseNodeAndDescendants(node.Parent);
+            CollapseSiblingNodes(node);
+            return;
+        }
+
+        CollapseSiblingNodes(node);
     }
 
     private void CollapseNodeAndDescendants(ProjectTreeNode node)
@@ -597,7 +618,7 @@ public partial class MainWindow : SukiWindow
             SelectTreeNode(node);
             if (node.Children.Count > 0)
             {
-                CollapseSiblingNodes(node);
+                CollapseVisibleNavigationPeers(node);
                 _expandedNodeIds.Add(node.Id);
                 RebuildNavigationCards();
             }
@@ -1012,8 +1033,8 @@ public partial class MainWindow : SukiWindow
             "device.metrics.dynamicIsland.position" when node.Kind == ProjectTreeNodeKind.Device => CreateDeviceFieldValue(node.Id, "device.metrics.dynamicIsland.position", "Dynamic island position", ValueKind.IntegerPair),
             "device.metrics.dynamicIsland.size" when node.Kind == ProjectTreeNodeKind.Device => CreateDeviceFieldValue(node.Id, "device.metrics.dynamicIsland.size", "Dynamic island size", ValueKind.IntegerPair),
             "actor.shortName" when node.Kind == ProjectTreeNodeKind.Actor => CreateActorFieldValue(node.Id, "actor.shortName", "Short name", ValueKind.StringSingleLine),
-            "actor.defaultDeviceId" when node.Kind == ProjectTreeNodeKind.Actor => CreateActorFieldValue(node.Id, "actor.defaultDeviceId", "Default device", ValueKind.StringSingleLine),
-            "actor.defaultThemeId" when node.Kind == ProjectTreeNodeKind.Actor => CreateActorFieldValue(node.Id, "actor.defaultThemeId", "Default theme", ValueKind.StringSingleLine),
+            "actor.defaultDeviceId" when node.Kind == ProjectTreeNodeKind.Actor => CreateActorFieldValue(node.Id, "actor.defaultDeviceId", "Default device", ValueKind.OptionToken),
+            "actor.defaultThemeId" when node.Kind == ProjectTreeNodeKind.Actor => CreateActorFieldValue(node.Id, "actor.defaultThemeId", "Default theme", ValueKind.OptionToken),
             "actor.color.modes" when node.Kind == ProjectTreeNodeKind.Actor => CreateActorFieldValue(node.Id, "actor.color.modes", "Actor Color", ValueKind.PaletteColorPair),
             "actor.avatarTextColor.modes" when node.Kind == ProjectTreeNodeKind.Actor => CreateActorFieldValue(node.Id, "actor.avatarTextColor.modes", "Actor Text Color", ValueKind.PaletteColorPair),
             "actor.avatar.filePath" when node.Kind == ProjectTreeNodeKind.Actor => CreateActorFieldValue(node.Id, "actor.avatar.filePath", "Avatar image", ValueKind.ImageFilePath),
@@ -1136,9 +1157,14 @@ public partial class MainWindow : SukiWindow
     {
         var settings = _database.GetActorSettings(actorId);
         var value = _database.GetActorFieldValue(actorId, fieldId);
-        var paletteOptions = valueKind is ValueKind.PaletteColorToken or ValueKind.PaletteColorPair
-            ? _database.GetPaletteColorOptions(settings.ProjectId)
-            : null;
+        var options = fieldId switch
+        {
+            "actor.defaultDeviceId" => _database.GetDeviceOptions(settings.ProjectId),
+            "actor.defaultThemeId" => _database.GetThemeOptions(settings.ProjectId),
+            _ => valueKind is ValueKind.PaletteColorToken or ValueKind.PaletteColorPair
+                ? _database.GetPaletteColorOptions(settings.ProjectId)
+                : null,
+        };
 
         return new FieldValue(
             new FieldDefinition(
@@ -1147,7 +1173,7 @@ public partial class MainWindow : SukiWindow
                 valueKind,
                 IsEditable: true,
                 DefaultValue: value,
-                Options: paletteOptions),
+                Options: options),
             value);
     }
 
@@ -1209,11 +1235,19 @@ public partial class MainWindow : SukiWindow
 
         if (node.Kind == ProjectTreeNodeKind.Actor && fieldId.StartsWith("actor.", StringComparison.Ordinal))
         {
-            _database.UpdateActorField(node.Id, fieldId, value);
+            var storedValue = fieldId == "actor.avatar.filePath"
+                ? RelativeActorMediaPath(node.Id, value)
+                : value;
+            storedValue ??= value;
+            _database.UpdateActorField(node.Id, fieldId, storedValue);
             if (fieldId == "actor.shortName")
             {
-                node.Notes = value;
+                node.Notes = storedValue;
                 RebuildNavigationCards();
+            }
+            else if (fieldId.StartsWith("actor.avatar.", StringComparison.Ordinal))
+            {
+                BuildEditorCards(node);
             }
             return;
         }
@@ -1250,11 +1284,11 @@ public partial class MainWindow : SukiWindow
     private Task<string?> BrowsePath(string currentPath, ValueKind valueKind)
     {
         return valueKind == ValueKind.ImageFilePath
-            ? BrowseImageFile(currentPath)
+            ? BrowseImageFile(currentPath, CurrentMediaRoot())
             : BrowseDirectory(currentPath);
     }
 
-    private async Task<string?> BrowseImageFile(string currentPath)
+    private async Task<string?> BrowseImageFile(string currentPath, string? mediaRoot)
     {
         var options = new FilePickerOpenOptions
         {
@@ -1275,7 +1309,9 @@ public partial class MainWindow : SukiWindow
         {
             var fullPath = Path.IsPathFullyQualified(currentPath)
                 ? currentPath
-                : Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", currentPath));
+                : !string.IsNullOrWhiteSpace(mediaRoot)
+                    ? Path.GetFullPath(Path.Combine(mediaRoot, currentPath))
+                    : Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", currentPath));
             var parent = Path.GetDirectoryName(fullPath);
             if (!string.IsNullOrWhiteSpace(parent) && Directory.Exists(parent))
             {
@@ -1284,7 +1320,10 @@ public partial class MainWindow : SukiWindow
         }
 
         var files = await StorageProvider.OpenFilePickerAsync(options);
-        return files.Count > 0 ? files[0].Path.LocalPath : null;
+        if (files.Count == 0) return null;
+
+        var selectedPath = files[0].Path.LocalPath;
+        return RelativePathIfInsideMediaRoot(selectedPath, mediaRoot);
     }
 
     private Control CreateActorAvatarPreview(string actorId)
@@ -1314,7 +1353,7 @@ public partial class MainWindow : SukiWindow
             HorizontalAlignment = HorizontalAlignment.Left,
         };
 
-        var fullPath = ResolveLocalPath(imagePath);
+        var fullPath = ResolveLocalPath(imagePath, CurrentMediaRoot());
         if (!useInitials && !string.IsNullOrWhiteSpace(fullPath) && File.Exists(fullPath))
         {
             try
@@ -1373,12 +1412,47 @@ public partial class MainWindow : SukiWindow
         };
     }
 
-    private static string? ResolveLocalPath(string path)
+    private string? RelativeActorMediaPath(string actorId, string path)
+    {
+        var settings = _database.GetActorSettings(actorId);
+        var mediaRoot = _database.GetProjectSettings(settings.ProjectId).MediaRoot;
+        return RelativePathIfInsideMediaRoot(path, mediaRoot);
+    }
+
+    private string? CurrentMediaRoot()
+    {
+        var node = _selectedNode;
+        if (node is null) return null;
+
+        var current = node;
+        while (current.Kind != ProjectTreeNodeKind.Project)
+        {
+            current = current.Parent;
+            if (current is null) return null;
+        }
+
+        return _database.GetProjectSettings(current.Id).MediaRoot;
+    }
+
+    private static string RelativePathIfInsideMediaRoot(string path, string? mediaRoot)
+    {
+        if (string.IsNullOrWhiteSpace(path) || string.IsNullOrWhiteSpace(mediaRoot)) return path;
+        var fullPath = Path.GetFullPath(path);
+        var fullRoot = Path.GetFullPath(mediaRoot);
+        var relative = Path.GetRelativePath(fullRoot, fullPath);
+        return relative.StartsWith("..", StringComparison.Ordinal) || Path.IsPathFullyQualified(relative)
+            ? path
+            : relative;
+    }
+
+    private static string? ResolveLocalPath(string path, string? mediaRoot)
     {
         if (string.IsNullOrWhiteSpace(path)) return null;
         return Path.IsPathFullyQualified(path)
             ? path
-            : Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", path));
+            : !string.IsNullOrWhiteSpace(mediaRoot)
+                ? Path.GetFullPath(Path.Combine(mediaRoot, path))
+                : Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", path));
     }
 
     private static IBrush PaletteBrush(IReadOnlyList<FieldOption> paletteOptions, string token, string fallback)

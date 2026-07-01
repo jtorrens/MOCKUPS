@@ -11,6 +11,7 @@ internal enum ValueKind
     IntegerPair,
     DirectoryPath,
     ImageFilePath,
+    OptionToken,
     HexColor,
     PaletteColorToken,
     PaletteColorPair,
