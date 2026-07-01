@@ -24,6 +24,7 @@ internal sealed class DictionaryFieldControl : Grid
         var label = new TextBlock
         {
             Text = _definition.Label,
+            FontWeight = FontWeight.SemiBold,
             VerticalAlignment = _definition.ValueKind == ValueKind.StringMultiline
                 ? VerticalAlignment.Top
                 : VerticalAlignment.Center,
@@ -31,7 +32,6 @@ internal sealed class DictionaryFieldControl : Grid
                 ? new Avalonia.Thickness(0, 7, 0, 0)
                 : new Avalonia.Thickness(0),
         };
-        label.Classes.Add("dictionary-label");
         SetColumn(label, 0);
 
         _textBox = CreateTextBox();
@@ -55,7 +55,6 @@ internal sealed class DictionaryFieldControl : Grid
                 : VerticalAlignment.Center,
             IsVisible = !fieldValue.IsDefault && _definition.IsEditable,
         };
-        _restoreButton.Classes.Add("dictionary-restore");
         _restoreButton.Click += (_, _) =>
         {
             SetValue(_definition.DefaultValue);
@@ -95,12 +94,6 @@ internal sealed class DictionaryFieldControl : Grid
                 ? VerticalAlignment.Top
                 : VerticalAlignment.Center,
         };
-        textBox.Classes.Add("dictionary-control");
-        if (textBox.IsReadOnly)
-        {
-            textBox.Classes.Add("dictionary-control-readonly");
-        }
-
         return textBox;
     }
 
@@ -110,6 +103,5 @@ internal sealed class DictionaryFieldControl : Grid
         _restoreButton.IsVisible = !isDefault && _definition.IsEditable;
 
         PseudoClasses.Set(":changed", !isDefault);
-        _textBox.Classes.Set("dictionary-control-changed", !isDefault);
     }
 }

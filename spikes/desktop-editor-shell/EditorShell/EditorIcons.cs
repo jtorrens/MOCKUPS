@@ -96,7 +96,6 @@ internal static class EditorIcons
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
         };
-        icon.Classes.Add("editor-icon");
         return icon;
     }
 

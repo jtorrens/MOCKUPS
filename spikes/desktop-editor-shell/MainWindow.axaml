@@ -1,244 +1,30 @@
-<Window xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="1440" d:DesignHeight="900"
-        x:Class="Mockups.DesktopEditorShell.MainWindow"
-        Title="Mockups Desktop Editor Shell"
-        Width="1440"
-        Height="900"
-        MinWidth="1040"
-        MinHeight="680"
-        Background="{DynamicResource AppShellBackground}">
-    <Window.Styles>
-        <Style Selector="Border.panel">
-            <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Background" Value="{DynamicResource PanelBackground}" />
-        </Style>
-        <Style Selector="Border.card">
-            <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="14" />
-            <Setter Property="Background" Value="{DynamicResource CardBackground}" />
-            <Setter Property="BoxShadow" Value="{DynamicResource CardShadow}" />
-            <Setter Property="Padding" Value="14" />
-            <Setter Property="Margin" Value="0,0,0,10" />
-        </Style>
-        <Style Selector="TextBlock.eyebrow">
-            <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
-            <Setter Property="FontSize" Value="11" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-        </Style>
-        <Style Selector="TextBlock.title">
-            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
-            <Setter Property="FontSize" Value="17" />
-            <Setter Property="FontWeight" Value="Bold" />
-        </Style>
-        <Style Selector="TextBlock.body">
-            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
-            <Setter Property="FontSize" Value="13" />
-        </Style>
-        <Style Selector="TextBlock.muted">
-            <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
-            <Setter Property="FontSize" Value="12" />
-        </Style>
-        <Style Selector="Button.toolbar">
-            <Setter Property="Background" Value="{DynamicResource ButtonBackground}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource ButtonBorderBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="10" />
-            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
-            <Setter Property="Padding" Value="12,7" />
-        </Style>
-        <Style Selector="Button.tree-action">
-            <Setter Property="Width" Value="24" />
-            <Setter Property="Height" Value="24" />
-            <Setter Property="Padding" Value="0" />
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderBrush" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="CornerRadius" Value="8" />
-            <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
-            <Setter Property="FontSize" Value="13" />
-            <Setter Property="FontWeight" Value="Bold" />
-        </Style>
-        <Style Selector="Button.tree-action:pointerover">
-            <Setter Property="Background" Value="{DynamicResource TreeActionHoverBackground}" />
-            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
-        </Style>
-        <Style Selector="TextBox.field">
-            <Setter Property="Background" Value="{DynamicResource InputBackground}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="10" />
-            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
-            <Setter Property="MinHeight" Value="36" />
-            <Setter Property="Padding" Value="10,6" />
-        </Style>
-        <Style Selector="TextBlock.dictionary-label">
-            <Setter Property="Foreground" Value="{DynamicResource DictionaryLabelBrush}" />
-            <Setter Property="FontSize" Value="13" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-        </Style>
-        <Style Selector="TextBlock.editor-group-label">
-            <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
-            <Setter Property="FontSize" Value="11" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-        </Style>
-        <Style Selector="TextBox.dictionary-control">
-            <Setter Property="Background" Value="{DynamicResource InputBackground}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource DictionaryControlBorderBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="10" />
-            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
-            <Setter Property="CaretBrush" Value="{DynamicResource TextBrush}" />
-            <Setter Property="SelectionBrush" Value="{DynamicResource DictionaryControlSelectionBrush}" />
-            <Setter Property="SelectionForegroundBrush" Value="{DynamicResource DictionaryControlSelectionTextBrush}" />
-            <Setter Property="Padding" Value="10,6" />
-        </Style>
-        <Style Selector="TextBox.dictionary-control:focus">
-            <Setter Property="Background" Value="{DynamicResource InputBackground}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource DictionaryControlFocusBorderBrush}" />
-            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
-        </Style>
-        <Style Selector="TextBox.dictionary-control /template/ Border">
-            <Setter Property="Background" Value="{DynamicResource InputBackground}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource DictionaryControlBorderBrush}" />
-        </Style>
-        <Style Selector="TextBox.dictionary-control:focus /template/ Border">
-            <Setter Property="Background" Value="{DynamicResource InputBackground}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource DictionaryControlFocusBorderBrush}" />
-        </Style>
-        <Style Selector="TextBox.dictionary-control:pointerover /template/ Border">
-            <Setter Property="Background" Value="{DynamicResource InputBackground}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource DictionaryControlBorderBrush}" />
-        </Style>
-        <Style Selector="TextBox.dictionary-control:pointerover">
-            <Setter Property="Background" Value="{DynamicResource InputBackground}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource DictionaryControlBorderBrush}" />
-            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
-        </Style>
-        <Style Selector="TextBox.dictionary-control-changed">
-            <Setter Property="BorderBrush" Value="{DynamicResource OverrideBorderBrush}" />
-            <Setter Property="Background" Value="{DynamicResource OverrideBackground}" />
-        </Style>
-        <Style Selector="TextBox.dictionary-control-changed:focus">
-            <Setter Property="BorderBrush" Value="{DynamicResource OverrideBorderBrush}" />
-            <Setter Property="Background" Value="{DynamicResource OverrideBackground}" />
-        </Style>
-        <Style Selector="TextSelectionHandle">
-            <Setter Property="IsVisible" Value="False" />
-            <Setter Property="Opacity" Value="0" />
-        </Style>
-        <Style Selector="TextBox.dictionary-control-readonly">
-            <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
-            <Setter Property="Background" Value="{DynamicResource ReadonlyInputBackground}" />
-        </Style>
-        <Style Selector="Button.dictionary-restore">
-            <Setter Property="Background" Value="{DynamicResource ButtonBackground}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource ButtonBorderBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="16" />
-            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
-        </Style>
-        <Style Selector="Border.editor-accordion-card">
-            <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
-            <Setter Property="BorderThickness" Value="2" />
-            <Setter Property="CornerRadius" Value="14" />
-            <Setter Property="Background" Value="{DynamicResource CardBackground}" />
-            <Setter Property="BoxShadow" Value="{DynamicResource CardShadow}" />
-            <Setter Property="Margin" Value="0,0,0,10" />
-        </Style>
-        <Style Selector="Border.editor-accordion-card:changed">
-            <Setter Property="BorderBrush" Value="{DynamicResource OverrideBorderBrush}" />
-            <Setter Property="Background" Value="{DynamicResource OverrideCardBackground}" />
-        </Style>
-        <Style Selector="ContentControl.accordion-body">
-            <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
-            <Setter Property="BorderThickness" Value="0,1,0,0" />
-        </Style>
-        <Style Selector="TextBlock.accordion-icon">
-            <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
-        </Style>
-        <Style Selector="PathIcon.accordion-icon">
-            <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
-        </Style>
-        <Style Selector="TextBlock.accordion-title">
-            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
-        </Style>
-        <Style Selector="TextBlock.accordion-chevron">
-            <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
-        </Style>
-        <Style Selector="TreeView">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
-        </Style>
-        <Style Selector="TreeViewItem">
-            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
-            <Setter Property="Margin" Value="0,3" />
-        </Style>
-        <Style Selector="TreeViewItem:selected /template/ ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource TreeSelectionBackground}" />
-        </Style>
-        <Style Selector="Border.tree-row">
-            <Setter Property="Background" Value="{DynamicResource TreeRowBackground}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource TreeRowBorderBrush}" />
-            <Setter Property="BorderThickness" Value="2" />
-            <Setter Property="CornerRadius" Value="13" />
-            <Setter Property="BoxShadow" Value="{DynamicResource TreeRowShadow}" />
-            <Setter Property="Padding" Value="10,8" />
-            <Setter Property="MinHeight" Value="44" />
-            <Setter Property="Margin" Value="0,0,0,8" />
-        </Style>
-        <Style Selector="Border.tree-row.selected">
-            <Setter Property="BorderBrush" Value="{DynamicResource TreeSelectedBorderBrush}" />
-        </Style>
-        <Style Selector="Border.tree-row-level-1">
-            <Setter Property="Background" Value="{DynamicResource TreeRowLevel1Background}" />
-        </Style>
-        <Style Selector="Border.tree-row-level-2">
-            <Setter Property="Background" Value="{DynamicResource TreeRowLevel2Background}" />
-        </Style>
-        <Style Selector="TextBlock.tree-glyph">
-            <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
-            <Setter Property="FontSize" Value="14" />
-            <Setter Property="FontWeight" Value="Bold" />
-        </Style>
-        <Style Selector="PathIcon.tree-glyph">
-            <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
-        </Style>
-        <Style Selector="TextBlock.tree-chevron">
-            <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
-            <Setter Property="FontSize" Value="18" />
-            <Setter Property="FontWeight" Value="Bold" />
-        </Style>
-        <Style Selector="PathIcon.tree-chevron">
-            <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
-        </Style>
-        <Style Selector="PathIcon.editor-icon">
-            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
-        </Style>
-    </Window.Styles>
-
-    <Grid RowDefinitions="Auto,*">
+<suki:SukiWindow xmlns="https://github.com/avaloniaui"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                 xmlns:suki="clr-namespace:SukiUI.Controls;assembly=SukiUI"
+                 mc:Ignorable="d" d:DesignWidth="1440" d:DesignHeight="900"
+                 x:Class="Mockups.DesktopEditorShell.MainWindow"
+                 Title="Mockups Desktop Editor Shell"
+                 Width="1440"
+                 Height="900"
+                 MinWidth="1040"
+                 MinHeight="680"
+                 IsMenuVisible="False"
+                 BackgroundAnimationEnabled="False">
+    <Grid Margin="10" RowDefinitions="Auto,*">
         <Border Grid.Row="0"
-                BorderBrush="{DynamicResource PanelBorderBrush}"
-                BorderThickness="0,0,0,1"
-                Background="{DynamicResource ToolbarBackground}"
                 Padding="18,12">
             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
                 <StackPanel>
-                    <TextBlock Classes="eyebrow" Text="SPIKE / DESKTOP EDITOR SHELL" />
-                    <TextBlock Classes="title" Text="Three resizable panels · shared light/dark palette" />
+                    <TextBlock FontSize="11" FontWeight="SemiBold" Text="SPIKE / DESKTOP EDITOR SHELL" />
+                    <TextBlock FontSize="17" FontWeight="Bold" Text="Three resizable panels · shared light/dark palette" />
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                     <TextBlock x:Name="ThemeLabel"
-                               Classes="muted"
                                VerticalAlignment="Center"
                                Text="Dark mode" />
                     <Button x:Name="ThemeToggleButton"
-                            Classes="toolbar"
                             Click="OnToggleThemeClick"
                             Content="Switch to light" />
                 </StackPanel>
@@ -247,65 +33,61 @@
 
         <Grid x:Name="ShellColumns"
               Grid.Row="1"
-              ColumnDefinitions="320,6,*,6,420"
-              Background="{DynamicResource AppShellBackground}">
-            <Border Grid.Column="0" Classes="panel" BorderThickness="0,0,1,0">
-                <DockPanel>
+              ColumnDefinitions="320,6,2*,6,*">
+            <Border Grid.Column="0" Margin="10">
+                <suki:GlassCard>
+                    <DockPanel>
                     <Border DockPanel.Dock="Top"
-                            BorderBrush="{DynamicResource PanelBorderBrush}"
-                            BorderThickness="0,0,0,1"
                             Padding="18,16">
                         <StackPanel Spacing="4">
-                            <TextBlock Classes="eyebrow" Text="NAVIGATION" />
-                            <TextBlock Classes="title" Text="Production tree" />
+                            <TextBlock FontSize="11" FontWeight="SemiBold" Text="NAVIGATION" />
+                            <TextBlock FontSize="17" FontWeight="Bold" Text="Production tree" />
                         </StackPanel>
                     </Border>
-                    <ScrollViewer Padding="18">
-                        <StackPanel x:Name="ProjectTreeHost" Spacing="0" />
-                    </ScrollViewer>
-                </DockPanel>
+                    <TreeView x:Name="ProjectTreeView"
+                              Padding="18" />
+                    </DockPanel>
+                </suki:GlassCard>
             </Border>
 
             <GridSplitter Grid.Column="1"
                           Width="6"
-                          Background="{DynamicResource SplitterBackground}"
                           ResizeDirection="Columns"
                           ResizeBehavior="PreviousAndNext" />
 
-            <Border Grid.Column="2" Classes="panel" BorderThickness="0">
-                <DockPanel>
+            <Border Grid.Column="2" Margin="10">
+                <suki:GlassCard>
+                    <DockPanel>
                     <Border DockPanel.Dock="Top"
-                            BorderBrush="{DynamicResource PanelBorderBrush}"
-                            BorderThickness="0,0,0,1"
-                            Padding="22,16">
+                            Padding="18,16">
                         <StackPanel Spacing="4">
-                            <TextBlock Classes="eyebrow" Text="EDITOR" />
+                            <TextBlock FontSize="11" FontWeight="SemiBold" Text="EDITOR" />
                             <TextBlock x:Name="EditorTitle"
-                                       Classes="title"
+                                       FontSize="17"
+                                       FontWeight="Bold"
                                        Text="Dictionary-driven property editor" />
                         </StackPanel>
                     </Border>
                     <ScrollViewer Padding="22">
-                        <StackPanel x:Name="EditorCardsPanel" />
+                        <StackPanel x:Name="EditorCardsPanel" Spacing="10" />
                     </ScrollViewer>
-                </DockPanel>
+                    </DockPanel>
+                </suki:GlassCard>
             </Border>
 
             <GridSplitter Grid.Column="3"
                           Width="6"
-                          Background="{DynamicResource SplitterBackground}"
                           ResizeDirection="Columns"
                           ResizeBehavior="PreviousAndNext" />
 
-            <Border Grid.Column="4" Classes="panel" BorderThickness="1,0,0,0">
-                <DockPanel>
+            <Border Grid.Column="4" Margin="10">
+                <suki:GlassCard>
+                    <DockPanel>
                     <Border DockPanel.Dock="Top"
-                            BorderBrush="{DynamicResource PanelBorderBrush}"
-                            BorderThickness="0,0,0,1"
                             Padding="18,16">
                         <StackPanel Spacing="4">
-                            <TextBlock Classes="eyebrow" Text="WEB PREVIEW" />
-                            <TextBlock Classes="title" Text="Runtime stays web" />
+                            <TextBlock FontSize="11" FontWeight="SemiBold" Text="WEB PREVIEW" />
+                            <TextBlock FontSize="17" FontWeight="Bold" Text="Runtime stays web" />
                         </StackPanel>
                     </Border>
                     <Grid Margin="22">
@@ -358,8 +140,9 @@
                             </Grid>
                         </Border>
                     </Grid>
-                </DockPanel>
+                    </DockPanel>
+                </suki:GlassCard>
             </Border>
         </Grid>
     </Grid>
-</Window>
+</suki:SukiWindow>

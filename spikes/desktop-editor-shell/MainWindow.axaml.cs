@@ -3,10 +3,13 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
-using Avalonia.Media.Immutable;
+using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Mockups.DesktopEditorShell.Data;
 using Mockups.DesktopEditorShell.EditorShell;
+using SukiUI;
+using SukiUI.Controls;
+using SukiUI.Enums;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -16,14 +19,15 @@ using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell;
 
-public partial class MainWindow : Window
+public partial class MainWindow : SukiWindow
 {
     private bool _isDark = true;
     private readonly SpikeDatabase _database = new(SpikeDatabase.DefaultDatabasePath());
-    private readonly List<EditorAccordionCard> _editorCards = [];
+    private readonly List<Expander> _editorCards = [];
     private readonly HashSet<string> _expandedNodeIds = [];
     private List<ProjectTreeNode> _treeRoots = [];
     private ProjectTreeNode? _selectedNode;
+    private bool _isRebuildingProjectTree;
 
     public MainWindow()
     {
@@ -42,22 +46,14 @@ public partial class MainWindow : Window
 
     private void ApplyTheme()
     {
+        var themeVariant = _isDark ? ThemeVariant.Dark : ThemeVariant.Light;
+        RequestedThemeVariant = themeVariant;
+        Application.Current!.RequestedThemeVariant = themeVariant;
+        SukiTheme.GetInstance().ChangeBaseTheme(themeVariant);
+        SukiTheme.GetInstance().ChangeColorTheme(SukiColor.Blue);
+
         if (_isDark)
         {
-            SetBrush("AppShellBackground", "#25272b");
-            SetBrush("ToolbarBackground", "#2b2d30");
-            SetBrush("PanelBackground", "#2f3136");
-            SetBrush("PanelBorderBrush", "#555861");
-            SetBrush("SplitterBackground", "#383a3f");
-            SetBrush("CardBackground", "#373a40");
-            SetBrush("CardBorderBrush", "#646a76");
-            SetShadow("CardShadow", "0 5 18 0 #66000000");
-            SetBrush("InputBackground", "#383a3f");
-            SetBrush("InputBorderBrush", "#77b86a");
-            SetBrush("ButtonBackground", "#383a3f");
-            SetBrush("ButtonBorderBrush", "#565a62");
-            SetBrush("TextBrush", "#e0ded8");
-            SetBrush("MutedTextBrush", "#aaa69d");
             SetBrush("PreviewDeviceBorderBrush", "#111318");
             SetBrush("PreviewDeviceBackground", "#ece9e2");
             SetBrush("PreviewHeaderBackground", "#d7b25c");
@@ -68,45 +64,11 @@ public partial class MainWindow : Window
             SetBrush("PreviewIncomingBubble", "#f6f4ef");
             SetBrush("PreviewBubbleTextBrush", "#fff8ee");
             SetBrush("PreviewIncomingTextBrush", "#302f2d");
-            SetBrush("TreeSelectionBackground", "#3d4548");
-            SetBrush("TreeSelectedBorderBrush", "#5aa7ff");
-            SetBrush("TreeActionHoverBackground", "#404248");
-            SetBrush("TreeRowBackground", "#373a40");
-            SetBrush("TreeRowLevel1Background", "#34373d");
-            SetBrush("TreeRowLevel2Background", "#30343a");
-            SetBrush("TreeRowBorderBrush", "#646a76");
-            SetShadow("TreeRowShadow", "0 5 18 0 #66000000");
-            SetBrush("DictionaryLabelBrush", "#aaa69d");
-            SetBrush("DictionaryControlBorderBrush", "#565a62");
-            SetBrush("DictionaryControlFocusBorderBrush", "#8b8f99");
-            SetBrush("DictionaryControlSelectionBrush", "#5f6c72");
-            SetBrush("DictionaryControlSelectionTextBrush", "#f4f1eb");
-            SetBrush("ReadonlyInputBackground", "#323439");
-            SetBrush("OverrideBorderBrush", "#d4b45f");
-            SetBrush("OverrideBackground", "#40392b");
-            SetBrush("OverrideCardBackground", "#373428");
-            SetTextControlBrushes();
-            ApplyShellSurfaceStyles();
-
             ThemeLabel.Text = "Dark mode";
             ThemeToggleButton.Content = "Switch to light";
             return;
         }
 
-        SetBrush("AppShellBackground", "#ffffff");
-        SetBrush("ToolbarBackground", "#ffffff");
-        SetBrush("PanelBackground", "#fbfcfd");
-        SetBrush("PanelBorderBrush", "#dde1e8");
-        SetBrush("SplitterBackground", "#f0f2f5");
-        SetBrush("CardBackground", "#f3f5f8");
-        SetBrush("CardBorderBrush", "#c3ccd9");
-        SetShadow("CardShadow", "0 3 12 0 #22000000");
-        SetBrush("InputBackground", "#f7f8fb");
-        SetBrush("InputBorderBrush", "#77b86a");
-        SetBrush("ButtonBackground", "#ffffff");
-        SetBrush("ButtonBorderBrush", "#d9dee7");
-        SetBrush("TextBrush", "#15171c");
-        SetBrush("MutedTextBrush", "#667085");
         SetBrush("PreviewDeviceBorderBrush", "#111318");
         SetBrush("PreviewDeviceBackground", "#ffffff");
         SetBrush("PreviewHeaderBackground", "#d7b25c");
@@ -117,26 +79,6 @@ public partial class MainWindow : Window
         SetBrush("PreviewIncomingBubble", "#ffffff");
         SetBrush("PreviewBubbleTextBrush", "#fff8ee");
         SetBrush("PreviewIncomingTextBrush", "#302f2d");
-        SetBrush("TreeSelectionBackground", "#eef2ff");
-        SetBrush("TreeSelectedBorderBrush", "#2f6bff");
-        SetBrush("TreeActionHoverBackground", "#f2f4f7");
-        SetBrush("TreeRowBackground", "#f3f5f8");
-        SetBrush("TreeRowLevel1Background", "#eef2f6");
-        SetBrush("TreeRowLevel2Background", "#e9eef4");
-        SetBrush("TreeRowBorderBrush", "#c3ccd9");
-        SetShadow("TreeRowShadow", "0 4 14 0 #1f000000");
-        SetBrush("DictionaryLabelBrush", "#475467");
-        SetBrush("DictionaryControlBorderBrush", "#cfd6e2");
-        SetBrush("DictionaryControlFocusBorderBrush", "#aab4c3");
-        SetBrush("DictionaryControlSelectionBrush", "#dce7f2");
-        SetBrush("DictionaryControlSelectionTextBrush", "#15171c");
-        SetBrush("ReadonlyInputBackground", "#fbfcfd");
-        SetBrush("OverrideBorderBrush", "#e4ad68");
-        SetBrush("OverrideBackground", "#fff7ed");
-        SetBrush("OverrideCardBackground", "#fffbf4");
-        SetTextControlBrushes();
-        ApplyShellSurfaceStyles();
-
         ThemeLabel.Text = "Light mode";
         ThemeToggleButton.Content = "Switch to dark";
     }
@@ -144,85 +86,6 @@ public partial class MainWindow : Window
     private void SetBrush(string key, string hex)
     {
         Resources[key] = new SolidColorBrush(Color.Parse(hex));
-    }
-
-    private void SetShadow(string key, string value)
-    {
-        Resources[key] = BoxShadows.Parse(value);
-    }
-
-    private void ApplyShellSurfaceStyles()
-    {
-        foreach (var card in EditorCardsPanel.Children.OfType<EditorAccordionCard>())
-        {
-            ApplyCardSurface(card);
-        }
-
-        ApplyTreeSurfaceStyles(ProjectTreeHost);
-    }
-
-    private void ApplyCardSurface(EditorAccordionCard card)
-    {
-        card.Background = (IBrush)Resources[card.IsChanged ? "OverrideCardBackground" : "CardBackground"]!;
-        card.BorderBrush = (IBrush)Resources[card.IsChanged ? "OverrideBorderBrush" : "CardBorderBrush"]!;
-        card.BorderThickness = new Avalonia.Thickness(2);
-        card.CornerRadius = new CornerRadius(14);
-        card.BoxShadow = (BoxShadows)Resources["CardShadow"]!;
-    }
-
-    private void ApplyTreeSurfaceStyles(Panel panel)
-    {
-        foreach (var child in panel.Children)
-        {
-            if (child is Border border && border.Classes.Contains("tree-row"))
-            {
-                ApplyTreeRowSurface(border);
-            }
-
-            if (child is Panel childPanel)
-            {
-                ApplyTreeSurfaceStyles(childPanel);
-            }
-        }
-    }
-
-    private void ApplyTreeRowSurface(Border row)
-    {
-        row.Background = (IBrush)Resources[
-            row.Classes.Contains("tree-row-level-2")
-                ? "TreeRowLevel2Background"
-                : row.Classes.Contains("tree-row-level-1")
-                    ? "TreeRowLevel1Background"
-                    : "TreeRowBackground"]!;
-        row.BorderBrush = row.Classes.Contains("selected")
-            ? (IBrush)Resources["TreeSelectedBorderBrush"]!
-            : (IBrush)Resources["TreeRowBorderBrush"]!;
-        row.BorderThickness = new Avalonia.Thickness(2);
-        row.CornerRadius = new CornerRadius(13);
-        row.BoxShadow = (BoxShadows)Resources["TreeRowShadow"]!;
-    }
-
-    private void SetTextControlBrushes()
-    {
-        Resources["TextControlBackground"] = Resources["InputBackground"]!;
-        Resources["TextControlBackgroundPointerOver"] = Resources["InputBackground"]!;
-        Resources["TextControlBackgroundFocused"] = Resources["InputBackground"]!;
-        Resources["TextControlBackgroundDisabled"] = Resources["ReadonlyInputBackground"]!;
-
-        Resources["TextControlBorderBrush"] = Resources["DictionaryControlBorderBrush"]!;
-        Resources["TextControlBorderBrushPointerOver"] = Resources["DictionaryControlBorderBrush"]!;
-        Resources["TextControlBorderBrushFocused"] = Resources["DictionaryControlFocusBorderBrush"]!;
-        Resources["TextControlBorderBrushDisabled"] = Resources["DictionaryControlBorderBrush"]!;
-
-        Resources["TextControlForeground"] = Resources["TextBrush"]!;
-        Resources["TextControlForegroundPointerOver"] = Resources["TextBrush"]!;
-        Resources["TextControlForegroundFocused"] = Resources["TextBrush"]!;
-        Resources["TextControlForegroundDisabled"] = Resources["MutedTextBrush"]!;
-
-        Resources["TextControlSelectionHighlightColor"] = Resources["DictionaryControlSelectionBrush"]!;
-        Resources["TextControlSelectionHighlightColorFocused"] = Resources["DictionaryControlSelectionBrush"]!;
-        Resources["TextControlSelectionForeground"] = Resources["DictionaryControlSelectionTextBrush"]!;
-        Resources["TextControlSelectionForegroundFocused"] = Resources["DictionaryControlSelectionTextBrush"]!;
     }
 
     private static string ShellStatePath()
@@ -251,11 +114,11 @@ public partial class MainWindow : Window
                 Height = state.Height;
             }
 
-            if (state.LeftPanelWidth > 0 && state.EditorPanelWidth > 0 && state.RightPanelWidth > 0)
+            if (state.LeftPanelWidth > 0 && state.EditorPanelWidth > 0)
             {
                 ShellColumns.ColumnDefinitions[0].Width = new GridLength(state.LeftPanelWidth);
                 ShellColumns.ColumnDefinitions[2].Width = new GridLength(state.EditorPanelWidth);
-                ShellColumns.ColumnDefinitions[4].Width = new GridLength(state.RightPanelWidth);
+                ShellColumns.ColumnDefinitions[4].Width = new GridLength(1, GridUnitType.Star);
             }
         }
         catch
@@ -293,17 +156,13 @@ public partial class MainWindow : Window
 
     private void LoadProjectTree()
     {
-        ProjectTreeHost.Children.Clear();
         _treeRoots = _database.LoadProjectTree();
         if (_expandedNodeIds.Count == 0 && _treeRoots.Count > 0)
         {
             _expandedNodeIds.Add(_treeRoots[0].Id);
         }
 
-        foreach (var project in _treeRoots)
-        {
-            ProjectTreeHost.Children.Add(CreateTreeNodeView(project));
-        }
+        RebuildProjectTreeView();
 
         if (_treeRoots.Count > 0)
         {
@@ -314,59 +173,52 @@ public partial class MainWindow : Window
 
             ExpandAncestors(selected);
             ShowNode(selected, rebuildTree: false);
-            RefreshTreeSelection(ProjectTreeHost);
         }
     }
 
-    private Control CreateTreeNodeView(ProjectTreeNode node)
+    private TreeViewItem CreateTreeNodeItem(ProjectTreeNode node)
     {
-        var stack = new StackPanel
+        var item = new TreeViewItem
         {
-            Spacing = 0,
+            Header = CreateTreeHeader(node),
+            Tag = node.Id,
+            IsExpanded = _expandedNodeIds.Contains(node.Id),
+            IsSelected = _selectedNode?.Id == node.Id,
         };
 
-        stack.Children.Add(CreateTreeHeader(node));
-
-        if (node.Children.Count > 0 && _expandedNodeIds.Contains(node.Id))
+        if (node.Children.Count > 0)
         {
-            var children = new StackPanel
-            {
-                Spacing = 0,
-                Margin = new Avalonia.Thickness(18, 0, 0, 0),
-            };
-
-            foreach (var child in node.Children)
-            {
-                children.Children.Add(CreateTreeNodeView(child));
-            }
-
-            stack.Children.Add(children);
+            item.ItemsSource = node.Children.Select(CreateTreeNodeItem).ToList();
         }
 
-        return stack;
+        item.PropertyChanged += (_, change) =>
+        {
+            if (_isRebuildingProjectTree || change.Property != TreeViewItem.IsExpandedProperty) return;
+
+            if (item.IsExpanded)
+            {
+                CollapseSiblingNodes(node);
+                _expandedNodeIds.Add(node.Id);
+                RebuildProjectTreeView();
+                return;
+            }
+
+            CollapseNodeAndDescendants(node);
+        };
+
+        return item;
     }
 
     private Control CreateTreeHeader(ProjectTreeNode node)
     {
-        var row = new Border
-        {
-            MinWidth = 240,
-            Tag = node.Id,
-        };
-        row.Classes.Add("tree-row");
-        row.Classes.Add($"tree-row-level-{node.Level}");
-        row.Classes.Set("selected", _selectedNode?.Id == node.Id);
-        ApplyTreeRowSurface(row);
-
         var grid = new Grid
         {
-            ColumnDefinitions = new ColumnDefinitions("24,*,Auto,Auto"),
+            ColumnDefinitions = new ColumnDefinitions("24,*,Auto"),
             ColumnSpacing = 10,
             VerticalAlignment = VerticalAlignment.Center,
         };
 
         var glyph = EditorIcons.Create(NodeIcon(node.Kind), 19);
-        glyph.Classes.Add("tree-glyph");
         Grid.SetColumn(glyph, 0);
 
         var labelStack = new StackPanel
@@ -377,13 +229,13 @@ public partial class MainWindow : Window
         labelStack.Children.Add(new TextBlock
         {
             Text = node.Name,
-            Classes = { "body" },
+            FontWeight = Avalonia.Media.FontWeight.SemiBold,
             TextTrimming = TextTrimming.CharacterEllipsis,
         });
         labelStack.Children.Add(new TextBlock
         {
             Text = node.Kind.ToString(),
-            Classes = { "muted" },
+            FontSize = 11,
             TextTrimming = TextTrimming.CharacterEllipsis,
         });
         Grid.SetColumn(labelStack, 1);
@@ -424,20 +276,10 @@ public partial class MainWindow : Window
 
         Grid.SetColumn(actions, 2);
 
-        var chevron = node.Children.Count == 0
-            ? new TextBlock { Width = 20, Height = 20 }
-            : EditorIcons.Create(
-                _expandedNodeIds.Contains(node.Id) ? EditorIcons.Collapse : EditorIcons.Expand,
-                18);
-        chevron.Classes.Add("tree-chevron");
-        Grid.SetColumn(chevron, 3);
-
         grid.Children.Add(glyph);
         grid.Children.Add(labelStack);
         grid.Children.Add(actions);
-        grid.Children.Add(chevron);
-        row.Child = grid;
-        row.PointerPressed += (_, e) =>
+        grid.PointerPressed += (_, e) =>
         {
             if (e.Source is Control source
                 && (source is Button || source.FindAncestorOfType<Button>() is not null))
@@ -447,13 +289,9 @@ public partial class MainWindow : Window
 
             e.Handled = true;
             SelectTreeNode(node);
-            if (node.Children.Count > 0)
-            {
-                ToggleTreeNode(node);
-            }
         };
 
-        return row;
+        return grid;
     }
 
     private Button CreateTreeActionButton(
@@ -464,9 +302,11 @@ public partial class MainWindow : Window
         var button = new Button
         {
             Content = content,
+            Width = 28,
+            Height = 28,
+            Padding = new Avalonia.Thickness(0),
         };
         ToolTip.SetTip(button, tooltip);
-        button.Classes.Add("tree-action");
         button.Click += onClick;
         return button;
     }
@@ -479,22 +319,6 @@ public partial class MainWindow : Window
     private void SelectTreeNode(ProjectTreeNode node)
     {
         ShowNode(node);
-        RefreshTreeSelection(ProjectTreeHost);
-    }
-
-    private void ToggleTreeNode(ProjectTreeNode node)
-    {
-        if (_expandedNodeIds.Contains(node.Id))
-        {
-            _expandedNodeIds.Remove(node.Id);
-        }
-        else
-        {
-            CollapseSiblingNodes(node);
-            _expandedNodeIds.Add(node.Id);
-        }
-
-        RebuildProjectTreeView();
     }
 
     private void CollapseSiblingNodes(ProjectTreeNode node)
@@ -518,10 +342,14 @@ public partial class MainWindow : Window
 
     private void RebuildProjectTreeView()
     {
-        ProjectTreeHost.Children.Clear();
-        foreach (var project in _treeRoots)
+        _isRebuildingProjectTree = true;
+        try
         {
-            ProjectTreeHost.Children.Add(CreateTreeNodeView(project));
+            ProjectTreeView.ItemsSource = _treeRoots.Select(CreateTreeNodeItem).ToList();
+        }
+        finally
+        {
+            _isRebuildingProjectTree = false;
         }
     }
 
@@ -551,7 +379,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private EditorAccordionCard CreateLayoutCard(ProjectTreeNode node, EditorLayoutCard layoutCard)
+    private Expander CreateLayoutCard(ProjectTreeNode node, EditorLayoutCard layoutCard)
     {
         var body = new StackPanel
         {
@@ -571,7 +399,8 @@ public partial class MainWindow : Window
                 groupPanel.Children.Add(new TextBlock
                 {
                     Text = group.Label,
-                    Classes = { "editor-group-label" },
+                    FontSize = 12,
+                    Opacity = 0.72,
                 });
             }
 
@@ -598,23 +427,30 @@ public partial class MainWindow : Window
             body.Children.Add(new TextBlock
             {
                 Text = "No fields in this card yet.",
-                Classes = { "muted" },
                 TextWrapping = TextWrapping.Wrap,
             });
         }
 
-        var card = new EditorAccordionCard(layoutCard.Label, layoutCard.Icon, body, isOpen: layoutCard.DefaultOpen);
+        var card = new Expander
+        {
+            Header = layoutCard.Label,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            ExpandDirection = ExpandDirection.Down,
+            IsExpanded = layoutCard.DefaultOpen,
+            Content = new Border
+            {
+                Padding = new Avalonia.Thickness(10),
+                Child = body,
+            },
+        };
         foreach (var control in controls)
         {
             control.ValueChanged += (_, _) =>
             {
-                card.IsChanged = controls.Any((item) => !item.IsDefault);
-                ApplyCardSurface(card);
+                // Visual override badges will be handled by semantic controls later.
             };
         }
 
-        card.IsChanged = controls.Any((item) => !item.IsDefault);
-        ApplyCardSurface(card);
         return card;
     }
 
@@ -680,18 +516,26 @@ public partial class MainWindow : Window
         }
     }
 
-    private void AddEditorCard(EditorAccordionCard card)
+    private void AddEditorCard(Expander card)
     {
-        card.Opened += (_, _) =>
+        card.PropertyChanged += (_, change) =>
         {
+            if (change.Property != Expander.IsExpandedProperty || !card.IsExpanded) return;
+
             foreach (var other in _editorCards.Where((item) => item != card))
             {
-                other.SetOpen(false, notify: false);
+                other.IsExpanded = false;
             }
         };
         _editorCards.Add(card);
-        EditorCardsPanel.Children.Add(card);
-        ApplyCardSurface(card);
+        EditorCardsPanel.Children.Add(new Border
+        {
+            Margin = new Avalonia.Thickness(0, 0, 0, 12),
+            Child = new GlassCard
+            {
+                Content = card,
+            },
+        });
     }
 
     private void AddChild(ProjectTreeNode parent)
@@ -728,7 +572,7 @@ public partial class MainWindow : Window
 
     private async Task<bool> ConfirmDelete(ProjectTreeNode node)
     {
-        var dialog = new Window
+        var dialog = new SukiWindow
         {
             Title = $"Delete {node.Kind}",
             Width = 420,
@@ -737,15 +581,13 @@ public partial class MainWindow : Window
             MinHeight = 220,
             CanResize = false,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            Background = (IBrush)Resources["PanelBackground"]!,
+            IsMenuVisible = false,
+            BackgroundAnimationEnabled = false,
         };
 
         var root = new Border
         {
             Padding = new Avalonia.Thickness(22),
-            BorderBrush = (IBrush)Resources["PanelBorderBrush"]!,
-            BorderThickness = new Avalonia.Thickness(1),
-            Background = (IBrush)Resources["PanelBackground"]!,
             Child = new Grid
             {
                 RowDefinitions = new RowDefinitions("*,Auto"),
@@ -760,7 +602,8 @@ public partial class MainWindow : Window
         content.Children.Add(new TextBlock
         {
             Text = $"Delete {node.Name}?",
-            Classes = { "title" },
+            FontSize = 17,
+            FontWeight = Avalonia.Media.FontWeight.Bold,
         });
         content.Children.Add(new TextBlock
         {
@@ -769,7 +612,6 @@ public partial class MainWindow : Window
                 : node.Kind == ProjectTreeNodeKind.App
                     ? "This will also remove the modules inside this app in the current spike database."
                     : "This removes this item from the current spike database.",
-            Classes = { "muted" },
             TextWrapping = TextWrapping.Wrap,
         });
 
@@ -785,7 +627,6 @@ public partial class MainWindow : Window
             Content = "Cancel",
             MinWidth = 92,
         };
-        cancelButton.Classes.Add("toolbar");
         cancelButton.Click += (_, _) => dialog.Close(false);
 
         var deleteButton = new Button
@@ -796,7 +637,6 @@ public partial class MainWindow : Window
             BorderBrush = new SolidColorBrush(Color.Parse(_isDark ? "#78565a" : "#ffd0d5")),
             Foreground = new SolidColorBrush(Color.Parse(_isDark ? "#e8a1a8" : "#b4232e")),
         };
-        deleteButton.Classes.Add("toolbar");
         deleteButton.Click += (_, _) => dialog.Close(true);
 
         actions.Children.Add(cancelButton);
@@ -854,22 +694,6 @@ public partial class MainWindow : Window
         {
             _expandedNodeIds.Add(parent.Id);
             parent = parent.Parent;
-        }
-    }
-
-    private void RefreshTreeSelection(Panel panel)
-    {
-        foreach (var child in panel.Children)
-        {
-            if (child is Border border && border.Tag is string nodeId)
-            {
-                border.Classes.Set("selected", _selectedNode?.Id == nodeId);
-                ApplyTreeRowSurface(border);
-            }
-            else if (child is Panel childPanel)
-            {
-                RefreshTreeSelection(childPanel);
-            }
         }
     }
 }
