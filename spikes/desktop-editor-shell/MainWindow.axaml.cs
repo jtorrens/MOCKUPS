@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Mockups.DesktopEditorShell.Data;
@@ -27,7 +28,6 @@ public partial class MainWindow : SukiWindow
     private readonly HashSet<string> _expandedNodeIds = [];
     private List<ProjectTreeNode> _treeRoots = [];
     private ProjectTreeNode? _selectedNode;
-    private bool _isRebuildingProjectTree;
 
     public MainWindow()
     {
@@ -162,136 +162,19 @@ public partial class MainWindow : SukiWindow
             _expandedNodeIds.Add(_treeRoots[0].Id);
         }
 
-        RebuildProjectTreeView();
+        RebuildNavigationCards();
 
         if (_treeRoots.Count > 0)
         {
             var selected = _selectedNode is not null
                 ? FindNodeById(_treeRoots, _selectedNode.Id)
                 : null;
-            selected ??= _treeRoots[0];
+            selected = selected?.CanOpenEditor == true ? selected : null;
+            selected ??= _treeRoots.FirstOrDefault((node) => node.CanOpenEditor) ?? _treeRoots[0];
 
             ExpandAncestors(selected);
             ShowNode(selected, rebuildTree: false);
         }
-    }
-
-    private TreeViewItem CreateTreeNodeItem(ProjectTreeNode node)
-    {
-        var item = new TreeViewItem
-        {
-            Header = CreateTreeHeader(node),
-            Tag = node.Id,
-            IsExpanded = _expandedNodeIds.Contains(node.Id),
-            IsSelected = _selectedNode?.Id == node.Id,
-        };
-
-        if (node.Children.Count > 0)
-        {
-            item.ItemsSource = node.Children.Select(CreateTreeNodeItem).ToList();
-        }
-
-        item.PropertyChanged += (_, change) =>
-        {
-            if (_isRebuildingProjectTree || change.Property != TreeViewItem.IsExpandedProperty) return;
-
-            if (item.IsExpanded)
-            {
-                CollapseSiblingNodes(node);
-                _expandedNodeIds.Add(node.Id);
-                RebuildProjectTreeView();
-                return;
-            }
-
-            CollapseNodeAndDescendants(node);
-        };
-
-        return item;
-    }
-
-    private Control CreateTreeHeader(ProjectTreeNode node)
-    {
-        var grid = new Grid
-        {
-            ColumnDefinitions = new ColumnDefinitions("24,*,Auto"),
-            ColumnSpacing = 10,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-
-        var glyph = EditorIcons.Create(NodeIcon(node.Kind), 19);
-        Grid.SetColumn(glyph, 0);
-
-        var labelStack = new StackPanel
-        {
-            Spacing = 1,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        labelStack.Children.Add(new TextBlock
-        {
-            Text = node.Name,
-            FontWeight = Avalonia.Media.FontWeight.SemiBold,
-            TextTrimming = TextTrimming.CharacterEllipsis,
-        });
-        labelStack.Children.Add(new TextBlock
-        {
-            Text = node.Kind.ToString(),
-            FontSize = 11,
-            TextTrimming = TextTrimming.CharacterEllipsis,
-        });
-        Grid.SetColumn(labelStack, 1);
-
-        var actions = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            Spacing = 2,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-
-        if (node.CanAddChild)
-        {
-            actions.Children.Add(CreateTreeActionButton(EditorIcons.Create(EditorIcons.Add, 15), "Add child", (_, e) =>
-            {
-                e.Handled = true;
-                AddChild(node);
-            }));
-        }
-
-        if (node.CanDuplicate)
-        {
-            actions.Children.Add(CreateTreeActionButton(EditorIcons.Create(EditorIcons.Duplicate, 15), "Duplicate", (_, e) =>
-            {
-                e.Handled = true;
-                DuplicateNode(node);
-            }));
-        }
-
-        if (node.CanDelete)
-        {
-            actions.Children.Add(CreateTreeActionButton(EditorIcons.Create(EditorIcons.Delete, 15), "Delete", async (_, e) =>
-            {
-                e.Handled = true;
-                await DeleteNode(node);
-            }));
-        }
-
-        Grid.SetColumn(actions, 2);
-
-        grid.Children.Add(glyph);
-        grid.Children.Add(labelStack);
-        grid.Children.Add(actions);
-        grid.PointerPressed += (_, e) =>
-        {
-            if (e.Source is Control source
-                && (source is Button || source.FindAncestorOfType<Button>() is not null))
-            {
-                return;
-            }
-
-            e.Handled = true;
-            SelectTreeNode(node);
-        };
-
-        return grid;
     }
 
     private Button CreateTreeActionButton(
@@ -302,23 +185,44 @@ public partial class MainWindow : SukiWindow
         var button = new Button
         {
             Content = content,
-            Width = 28,
-            Height = 28,
+            Width = 25,
+            Height = 25,
             Padding = new Avalonia.Thickness(0),
+            Background = Brushes.Transparent,
+            BorderBrush = Brushes.Transparent,
+            BorderThickness = new Avalonia.Thickness(0),
         };
         ToolTip.SetTip(button, tooltip);
         button.Click += onClick;
         return button;
     }
 
-    private static string NodeIcon(ProjectTreeNodeKind kind)
-    {
-        return EditorIcons.ForTreeNode(kind);
-    }
-
     private void SelectTreeNode(ProjectTreeNode node)
     {
+        if (!node.CanOpenEditor)
+        {
+            ToggleTreeGroup(node);
+            return;
+        }
+
         ShowNode(node);
+    }
+
+    private void ToggleTreeGroup(ProjectTreeNode node)
+    {
+        if (node.Children.Count == 0) return;
+
+        if (_expandedNodeIds.Contains(node.Id))
+        {
+            CollapseNodeAndDescendants(node);
+        }
+        else
+        {
+            CollapseSiblingNodes(node);
+            _expandedNodeIds.Add(node.Id);
+        }
+
+        RebuildNavigationCards();
     }
 
     private void CollapseSiblingNodes(ProjectTreeNode node)
@@ -340,17 +244,291 @@ public partial class MainWindow : SukiWindow
         }
     }
 
-    private void RebuildProjectTreeView()
+    private void RebuildNavigationCards()
     {
-        _isRebuildingProjectTree = true;
-        try
+        NavigationCardsPanel.Children.Clear();
+
+        foreach (var project in _treeRoots)
         {
-            ProjectTreeView.ItemsSource = _treeRoots.Select(CreateTreeNodeItem).ToList();
+            AddNavigationCard(NavigationCardsPanel, project, CreateProjectNavigationContent(project), EditorIcons.ForTreeNode(project.Kind));
         }
-        finally
+    }
+
+    private Control CreateProjectNavigationContent(ProjectTreeNode project)
+    {
+        var panel = new StackPanel
         {
-            _isRebuildingProjectTree = false;
+            Spacing = 7,
+            Margin = new Avalonia.Thickness(0, 6, 0, 0),
+        };
+
+        foreach (var root in project.Children.Where((child) => child.Kind is ProjectTreeNodeKind.AppsRoot or ProjectTreeNodeKind.EpisodesRoot))
+        {
+            AddNavigationSection(panel, root);
         }
+
+        return panel;
+    }
+
+    private void AddNavigationSection(StackPanel parent, ProjectTreeNode sectionRoot)
+    {
+        var content = new StackPanel
+        {
+            Spacing = 5,
+            Margin = new Avalonia.Thickness(6, 5, 0, 0),
+        };
+
+        foreach (var child in sectionRoot.Children)
+        {
+            AddNavigationNode(content, child, level: 1);
+        }
+
+        var iconName = sectionRoot.Kind == ProjectTreeNodeKind.EpisodesRoot
+            ? EditorIcons.ForTreeNode(ProjectTreeNodeKind.Episode)
+            : EditorIcons.ForTreeNode(ProjectTreeNodeKind.App);
+        AddNavigationCard(parent, sectionRoot, content, iconName);
+    }
+
+    private void AddNavigationNode(StackPanel parent, ProjectTreeNode node, int level)
+    {
+        if (node.Children.Count > 0)
+        {
+            var content = new StackPanel
+            {
+                Spacing = 5,
+                Margin = new Avalonia.Thickness(6, 5, 0, 0),
+            };
+            foreach (var child in node.Children)
+            {
+                AddNavigationNode(content, child, level + 1);
+            }
+
+            AddNavigationCard(parent, node, content, iconName: null);
+            return;
+        }
+
+        parent.Children.Add(CreateNavigationRow(node, iconName: null));
+    }
+
+    private void AddNavigationCard(
+        StackPanel parent,
+        ProjectTreeNode node,
+        Control content,
+        string? iconName)
+    {
+        var isExpanded = _expandedNodeIds.Contains(node.Id);
+        var body = new Border
+        {
+            Padding = new Avalonia.Thickness(7, 0, 7, 7),
+            IsVisible = isExpanded,
+            Child = content,
+        };
+
+        var card = new Border
+        {
+            Margin = new Avalonia.Thickness(0, 0, 0, 4),
+            CornerRadius = new CornerRadius(10),
+            BoxShadow = BoxShadows.Parse("0 4 10 0 #18000000"),
+            Child = new GlassCard
+            {
+                Content = new StackPanel
+                {
+                    Spacing = 2,
+                    Children =
+                    {
+                        CreateNavigationHeader(node, iconName, isExpanded),
+                        body,
+                    },
+                },
+            },
+        };
+
+        parent.Children.Add(card);
+    }
+
+    private Control CreateNavigationHeader(ProjectTreeNode node, string? iconName, bool isExpanded)
+    {
+        var grid = new Grid
+        {
+            ColumnDefinitions = iconName is null
+                ? new ColumnDefinitions("*,Auto,24")
+                : new ColumnDefinitions("20,*,Auto,24"),
+            ColumnSpacing = 6,
+            Background = Brushes.Transparent,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+
+        var contentColumn = 0;
+        if (iconName is not null)
+        {
+            var icon = EditorIcons.Create(iconName, 16);
+            Grid.SetColumn(icon, 0);
+            grid.Children.Add(icon);
+            contentColumn = 1;
+        }
+
+        var titleButton = CreateNavigationSelectButton(node);
+        Grid.SetColumn(titleButton, contentColumn);
+
+        var actions = CreateNavigationActions(node);
+        Grid.SetColumn(actions, contentColumn + 1);
+
+        var toggle = CreateNavigationToggleButton(
+            isExpanded,
+            isExpanded ? "Collapse" : "Expand",
+            (_, e) =>
+            {
+                e.Handled = true;
+                ToggleTreeGroup(node);
+            });
+        Grid.SetColumn(toggle, contentColumn + 2);
+
+        grid.Children.Add(titleButton);
+        grid.Children.Add(actions);
+        grid.Children.Add(toggle);
+
+        return grid;
+    }
+
+    private Control CreateNavigationRow(ProjectTreeNode node, string? iconName)
+    {
+        var row = new Border
+        {
+            Padding = new Avalonia.Thickness(6, 4),
+            CornerRadius = new CornerRadius(8),
+            Background = _selectedNode?.Id == node.Id
+                ? new SolidColorBrush(Color.Parse(_isDark ? "#253f5f" : "#dfefff"))
+                : Brushes.Transparent,
+        };
+
+        var grid = new Grid
+        {
+            ColumnDefinitions = iconName is null
+                ? new ColumnDefinitions("*,Auto")
+                : new ColumnDefinitions("20,*,Auto"),
+            ColumnSpacing = 6,
+            Background = Brushes.Transparent,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+
+        var contentColumn = 0;
+        if (iconName is not null)
+        {
+            var icon = EditorIcons.Create(iconName, 16);
+            Grid.SetColumn(icon, 0);
+            grid.Children.Add(icon);
+            contentColumn = 1;
+        }
+
+        var titleButton = CreateNavigationSelectButton(node);
+        Grid.SetColumn(titleButton, contentColumn);
+
+        var actions = CreateNavigationActions(node);
+        Grid.SetColumn(actions, contentColumn + 1);
+
+        grid.Children.Add(titleButton);
+        grid.Children.Add(actions);
+        row.Child = grid;
+        return row;
+    }
+
+    private Button CreateNavigationToggleButton(
+        bool isExpanded,
+        string tooltip,
+        EventHandler<RoutedEventArgs> onClick)
+    {
+        var button = new Button
+        {
+            Content = new TextBlock
+            {
+                Text = isExpanded ? "−" : "+",
+                FontSize = 17,
+                FontWeight = FontWeight.SemiBold,
+                TextAlignment = TextAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+            },
+            Width = 25,
+            Height = 25,
+            Padding = new Avalonia.Thickness(0),
+            Background = Brushes.Transparent,
+            BorderBrush = Brushes.Transparent,
+            BorderThickness = new Avalonia.Thickness(0),
+        };
+        ToolTip.SetTip(button, tooltip);
+        button.Click += onClick;
+        return button;
+    }
+
+    private Button CreateNavigationSelectButton(ProjectTreeNode node)
+    {
+        var button = new Button
+        {
+            Content = new TextBlock
+            {
+                Text = node.Name,
+                FontWeight = FontWeight.SemiBold,
+                TextTrimming = TextTrimming.CharacterEllipsis,
+                VerticalAlignment = VerticalAlignment.Center,
+            },
+            Padding = new Avalonia.Thickness(0),
+            HorizontalContentAlignment = HorizontalAlignment.Stretch,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Background = Brushes.Transparent,
+            BorderBrush = Brushes.Transparent,
+            BorderThickness = new Avalonia.Thickness(0),
+        };
+        button.Click += (_, e) =>
+        {
+            e.Handled = true;
+            SelectTreeNode(node);
+            if (node.Children.Count > 0)
+            {
+                _expandedNodeIds.Add(node.Id);
+                RebuildNavigationCards();
+            }
+        };
+        return button;
+    }
+
+    private StackPanel CreateNavigationActions(ProjectTreeNode node)
+    {
+        var actions = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 1,
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Right,
+        };
+
+        if (node.CanAddChild)
+        {
+            actions.Children.Add(CreateTreeActionButton(EditorIcons.Create(EditorIcons.Add, 14), "Add child", (_, e) =>
+            {
+                e.Handled = true;
+                AddChild(node);
+            }));
+        }
+
+        if (node.CanDuplicate)
+        {
+            actions.Children.Add(CreateTreeActionButton(EditorIcons.Create(EditorIcons.Duplicate, 14), "Duplicate", (_, e) =>
+            {
+                e.Handled = true;
+                DuplicateNode(node);
+            }));
+        }
+
+        if (node.CanDelete)
+        {
+            actions.Children.Add(CreateTreeActionButton(EditorIcons.Create(EditorIcons.Delete, 14), "Delete", async (_, e) =>
+            {
+                e.Handled = true;
+                await DeleteNode(node);
+            }));
+        }
+
+        return actions;
     }
 
     private void ShowNode(ProjectTreeNode node, bool rebuildTree = false)
@@ -360,7 +538,7 @@ public partial class MainWindow : SukiWindow
         BuildEditorCards(node);
         if (rebuildTree)
         {
-            RebuildProjectTreeView();
+            RebuildNavigationCards();
         }
     }
 
@@ -386,6 +564,7 @@ public partial class MainWindow : SukiWindow
             Spacing = 12,
         };
         var controls = new List<DictionaryFieldControl>();
+        var headerIcon = EditorIcons.Create(layoutCard.Icon, 18);
 
         foreach (var group in layoutCard.VisibleGroups)
         {
@@ -407,11 +586,15 @@ public partial class MainWindow : SukiWindow
             foreach (var layoutField in group.VisibleFields)
             {
                 var field = CreateFieldValue(node, layoutField.Id);
-                var control = new DictionaryFieldControl(field);
+                var control = new DictionaryFieldControl(field, BrowseDirectory);
                 controls.Add(control);
                 control.ValueChanged += (_, value) =>
                 {
                     ApplyFieldValue(node, field.Definition.Id, value);
+                    if (field.Definition.CommitAsDefault)
+                    {
+                        control.AcceptCurrentValueAsDefault();
+                    }
                 };
                 groupPanel.Children.Add(control);
             }
@@ -433,7 +616,7 @@ public partial class MainWindow : SukiWindow
 
         var card = new Expander
         {
-            Header = layoutCard.Label,
+            Header = CreateEditorCardHeader(layoutCard.Label, headerIcon),
             HorizontalAlignment = HorizontalAlignment.Stretch,
             ExpandDirection = ExpandDirection.Down,
             IsExpanded = layoutCard.DefaultOpen,
@@ -443,15 +626,74 @@ public partial class MainWindow : SukiWindow
                 Child = body,
             },
         };
+        UpdateEditorCardHeaderState(headerIcon, controls);
         foreach (var control in controls)
         {
             control.ValueChanged += (_, _) =>
             {
-                // Visual override badges will be handled by semantic controls later.
+                UpdateEditorCardHeaderState(headerIcon, controls);
             };
         }
 
         return card;
+    }
+
+    private static Control CreateEditorCardHeader(string label, Control icon)
+    {
+        var header = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 10,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        header.Children.Add(icon);
+        header.Children.Add(new TextBlock
+        {
+            Text = label,
+            FontWeight = FontWeight.SemiBold,
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        return header;
+    }
+
+    private static void UpdateEditorCardHeaderState(Control headerIcon, IEnumerable<DictionaryFieldControl> controls)
+    {
+        var hasOverrides = controls.Any((control) => !control.IsDefault);
+        var brush = hasOverrides ? new SolidColorBrush(Color.Parse("#D6A638")) : null;
+        ApplyIconBrush(headerIcon, brush);
+    }
+
+    private static void ApplyIconBrush(Control control, IBrush? brush)
+    {
+        switch (control)
+        {
+            case PathIcon pathIcon:
+                if (brush is null)
+                {
+                    pathIcon.ClearValue(PathIcon.ForegroundProperty);
+                }
+                else
+                {
+                    pathIcon.Foreground = brush;
+                }
+                break;
+            case TextBlock textBlock:
+                if (brush is null)
+                {
+                    textBlock.ClearValue(TextBlock.ForegroundProperty);
+                }
+                else
+                {
+                    textBlock.Foreground = brush;
+                }
+                break;
+            case Panel panel:
+                foreach (var child in panel.Children.OfType<Control>())
+                {
+                    ApplyIconBrush(child, brush);
+                }
+                break;
+        }
     }
 
     private FieldValue CreateFieldValue(ProjectTreeNode node, string fieldId)
@@ -483,13 +725,92 @@ public partial class MainWindow : SukiWindow
             "core.notes" => new FieldValue(
                 new FieldDefinition(
                     "core.notes",
-                    "Notes",
+                    node.Kind switch
+                    {
+                        ProjectTreeNodeKind.Project => "Production Notes",
+                        ProjectTreeNodeKind.Episode => "Episode Notes",
+                        _ => "Notes",
+                    },
                     ValueKind.StringMultiline,
                     IsEditable: persisted,
                     DefaultValue: node.Notes),
                 node.Notes),
+            "project.slug" when node.Kind == ProjectTreeNodeKind.Project => CreateProjectFieldValue(
+                node.Id,
+                "project.slug",
+                "Slug",
+                ValueKind.StringSingleLine),
+            "project.defaultFps" when node.Kind == ProjectTreeNodeKind.Project => CreateProjectFieldValue(
+                node.Id,
+                "project.defaultFps",
+                "Default FPS",
+                ValueKind.Integer),
+            "project.mediaRoot" when node.Kind == ProjectTreeNodeKind.Project => CreateProjectFieldValue(
+                node.Id,
+                "project.mediaRoot",
+                "Media Root",
+                ValueKind.DirectoryPath),
+            "episode.slug" when node.Kind == ProjectTreeNodeKind.Episode => CreateEpisodeFieldValue(
+                node.Id,
+                "episode.slug",
+                "Slug",
+                ValueKind.StringSingleLine),
+            "episode.sortOrder" when node.Kind == ProjectTreeNodeKind.Episode => CreateEpisodeFieldValue(
+                node.Id,
+                "episode.sortOrder",
+                "Sort Order",
+                ValueKind.Integer),
             _ => throw new InvalidOperationException($"Unknown field '{fieldId}' for record class '{node.RecordClassId}'."),
         };
+    }
+
+    private FieldValue CreateProjectFieldValue(
+        string projectId,
+        string fieldId,
+        string label,
+        ValueKind valueKind)
+    {
+        var settings = _database.GetProjectSettings(projectId);
+        var value = fieldId switch
+        {
+            "project.slug" => settings.Slug,
+            "project.defaultFps" => settings.DefaultFps.ToString(),
+            "project.mediaRoot" => settings.MediaRoot,
+            _ => "",
+        };
+
+        return new FieldValue(
+            new FieldDefinition(
+                fieldId,
+                label,
+                valueKind,
+                IsEditable: true,
+                DefaultValue: value),
+            value);
+    }
+
+    private FieldValue CreateEpisodeFieldValue(
+        string episodeId,
+        string fieldId,
+        string label,
+        ValueKind valueKind)
+    {
+        var settings = _database.GetEpisodeSettings(episodeId);
+        var value = fieldId switch
+        {
+            "episode.slug" => settings.Slug,
+            "episode.sortOrder" => settings.SortOrder.ToString(),
+            _ => "",
+        };
+
+        return new FieldValue(
+            new FieldDefinition(
+                fieldId,
+                label,
+                valueKind,
+                IsEditable: true,
+                DefaultValue: value),
+            value);
     }
 
     private void ApplyFieldValue(ProjectTreeNode node, string fieldId, string value)
@@ -510,10 +831,45 @@ public partial class MainWindow : SukiWindow
             node.Notes = value;
         }
 
+        if (node.Kind == ProjectTreeNodeKind.Project && fieldId.StartsWith("project.", StringComparison.Ordinal))
+        {
+            _database.UpdateProjectField(node.Id, fieldId, value);
+            return;
+        }
+
+        if (node.Kind == ProjectTreeNodeKind.Episode && fieldId.StartsWith("episode.", StringComparison.Ordinal))
+        {
+            _database.UpdateEpisodeField(node.Id, fieldId, value);
+            return;
+        }
+
         if (persisted && fieldId is "core.name" or "core.notes")
         {
             _database.UpdateNode(node);
         }
+    }
+
+    private async Task<string?> BrowseDirectory(string currentPath)
+    {
+        var options = new FolderPickerOpenOptions
+        {
+            Title = "Select media root",
+            AllowMultiple = false,
+        };
+
+        if (!string.IsNullOrWhiteSpace(currentPath))
+        {
+            var fullPath = Path.IsPathFullyQualified(currentPath)
+                ? currentPath
+                : Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", currentPath));
+            if (Directory.Exists(fullPath))
+            {
+                options.SuggestedStartLocation = await StorageProvider.TryGetFolderFromPathAsync(fullPath);
+            }
+        }
+
+        var folders = await StorageProvider.OpenFolderPickerAsync(options);
+        return folders.Count > 0 ? folders[0].Path.LocalPath : null;
     }
 
     private void AddEditorCard(Expander card)
@@ -531,6 +887,8 @@ public partial class MainWindow : SukiWindow
         EditorCardsPanel.Children.Add(new Border
         {
             Margin = new Avalonia.Thickness(0, 0, 0, 12),
+            CornerRadius = new CornerRadius(14),
+            BoxShadow = BoxShadows.Parse("0 6 14 0 #22000000"),
             Child = new GlassCard
             {
                 Content = card,
@@ -757,6 +1115,8 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.Module
         or ProjectTreeNodeKind.Episode
         or ProjectTreeNodeKind.Shot;
+    public bool CanOpenEditor => Kind is not ProjectTreeNodeKind.AppsRoot
+        and not ProjectTreeNodeKind.EpisodesRoot;
 
     public string Display => Name;
 

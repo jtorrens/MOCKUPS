@@ -1,6 +1,11 @@
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -57,6 +62,13 @@ internal static class EditorIcons
     public const string Shadow = "shadow";
     public const string Border = "border";
 
+    private static readonly Regex SvgPathRegex = new(
+        "<path\\b[^>]*\\bd=\"([^\"]+)\"",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+    private static readonly Dictionary<string, string?> SvgPathCache = [];
+    private static string? SystemIconsDirectoryCache;
+
     public static string ForTreeNode(ProjectTreeNodeKind kind)
     {
         return kind switch
@@ -74,7 +86,8 @@ internal static class EditorIcons
 
     public static Control Create(string name, double size = 20)
     {
-        var path = PathData(name);
+        var svgPath = SvgPathData(name);
+        var path = svgPath ?? PathData(name);
         if (path is null)
         {
             return new TextBlock
@@ -99,15 +112,111 @@ internal static class EditorIcons
         return icon;
     }
 
+    private static string? SvgPathData(string name)
+    {
+        if (SvgPathCache.TryGetValue(name, out var cachedPath))
+        {
+            return cachedPath;
+        }
+
+        var iconPath = SystemIconPath(name);
+        if (iconPath is null || !File.Exists(iconPath))
+        {
+            SvgPathCache[name] = null;
+            return null;
+        }
+
+        var svg = File.ReadAllText(iconPath);
+        var paths = SvgPathRegex
+            .Matches(svg)
+            .Select((match) => match.Groups[1].Value.Trim())
+            .Where((path) => !string.IsNullOrWhiteSpace(path))
+            .ToArray();
+        var pathData = paths.Length == 0 ? null : string.Join(" ", paths);
+        SvgPathCache[name] = pathData;
+        return pathData;
+    }
+
+    private static string? SystemIconPath(string name)
+    {
+        var fileName = name switch
+        {
+            Add => "system_add.svg",
+            Delete => "system_delete.svg",
+            Duplicate => "system_duplicate.svg",
+            Project => "editor_general.svg",
+            Apps => "editor_design.svg",
+            App => "editor_layout.svg",
+            Module => "editor_content.svg",
+            Episodes => "editor_messages.svg",
+            Episode => "editor_content.svg",
+            Shot => "editor_video.svg",
+            General => "editor_general.svg",
+            Style => "editor_style.svg",
+            Behavior => "editor_behavior.svg",
+            Content => "editor_content.svg",
+            Design => "editor_design.svg",
+            Layout => "editor_layout.svg",
+            Header => "editor_header.svg",
+            Messages => "editor_messages.svg",
+            Bubble => "editor_bubble.svg",
+            Avatar => "editor_avatar.svg",
+            Label => "editor_label.svg",
+            Image => "editor_image.svg",
+            Video => "editor_video.svg",
+            Audio => "editor_audio.svg",
+            Tail => "editor_tail.svg",
+            Keyboard => "editor_keyboard.svg",
+            TextInput => "editor_text_input.svg",
+            ButtonIcon => "editor_button_icon.svg",
+            Relief => "editor_relief.svg",
+            Shadow => "editor_shadow.svg",
+            Border => "editor_border.svg",
+            Media => "editor_media.svg",
+            _ => null,
+        };
+
+        if (fileName is null)
+        {
+            return null;
+        }
+
+        var directory = SystemIconsDirectory();
+        return directory is null ? null : Path.Combine(directory, fileName);
+    }
+
+    private static string? SystemIconsDirectory()
+    {
+        if (SystemIconsDirectoryCache is not null)
+        {
+            return SystemIconsDirectoryCache;
+        }
+
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            var candidate = Path.Combine(directory.FullName, "assets", "system", "system_icons");
+            if (Directory.Exists(candidate))
+            {
+                SystemIconsDirectoryCache = candidate;
+                return candidate;
+            }
+
+            directory = directory.Parent;
+        }
+
+        return null;
+    }
+
     private static string? PathData(string name)
     {
         return name switch
         {
-            Add => "M12 5V19 M5 12H19",
-            Delete => "M6 7H18 M9 7V5H15V7 M8 10V18 M12 10V18 M16 10V18 M7 7L8 21H16L17 7",
+            Add => "M6 3H14L19 8V21H6Z M14 3V8H19 M10 14H15 M12.5 11.5V16.5",
+            Delete => "M7 7H17V20H7Z M9 4H15V6H20V8H4V6H9Z M9 10H11V18H9Z M13 10H15V18H13Z",
             Duplicate => "M8 8H18V18H8Z M5 5H15V8 M5 5V15H8",
-            Expand => "M9 6L15 12L9 18",
-            Collapse => "M6 15L12 9L18 15",
+            Expand => "M9 5L16 12L9 19Z",
+            Collapse => "M5 15L12 8L19 15Z",
 
             Project => "M4 9.5L12 4L20 9.5V20C20 20.55 19.55 21 19 21H14V15H10V21H5C4.45 21 4 20.55 4 20V9.5Z",
             Apps => "M5 5H11V11H5Z M13 5H19V11H13Z M5 13H11V19H5Z M13 13H19V19H13Z",

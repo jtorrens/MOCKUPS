@@ -5,6 +5,8 @@ internal enum ValueKind
     StringSingleLine,
     StringReadOnly,
     StringMultiline,
+    Integer,
+    DirectoryPath,
 }
 
 internal sealed record FieldDefinition(
@@ -12,7 +14,8 @@ internal sealed record FieldDefinition(
     string Label,
     ValueKind ValueKind,
     bool IsEditable = true,
-    string DefaultValue = "");
+    string DefaultValue = "",
+    bool CommitAsDefault = true);
 
 internal sealed record FieldValue(
     FieldDefinition Definition,

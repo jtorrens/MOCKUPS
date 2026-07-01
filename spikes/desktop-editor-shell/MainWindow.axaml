@@ -44,8 +44,9 @@
                             <TextBlock FontSize="17" FontWeight="Bold" Text="Production tree" />
                         </StackPanel>
                     </Border>
-                    <TreeView x:Name="ProjectTreeView"
-                              Padding="18" />
+                    <ScrollViewer Padding="10">
+                        <StackPanel x:Name="NavigationCardsPanel" Spacing="10" />
+                    </ScrollViewer>
                     </DockPanel>
                 </suki:GlassCard>
             </Border>

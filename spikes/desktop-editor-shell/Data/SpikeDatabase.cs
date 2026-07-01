@@ -215,6 +215,11 @@ internal sealed class SpikeDatabase
                 ("$name", $"Episode {index + 1}"),
                 ("$notes", "New episode created in the desktop shell spike."),
                 ("$sortOrder", index));
+            Execute(
+                connection,
+                "UPDATE episodes SET slug = $slug WHERE id = $id",
+                ("$id", id),
+                ("$slug", $"episode-{index + 1}"));
 
             return new ProjectTreeNode(
                 ProjectTreeNodeKind.Episode,
@@ -265,8 +270,8 @@ internal sealed class SpikeDatabase
             Execute(
                 connection,
                 """
-                INSERT INTO episodes (id, project_id, name, notes, sort_order)
-                SELECT $id, project_id, $name, notes, $sortOrder
+                INSERT INTO episodes (id, project_id, name, slug, notes, sort_order)
+                SELECT $id, project_id, $name, slug || '-copy', notes, $sortOrder
                 FROM episodes
                 WHERE id = $sourceId
                 """,
@@ -401,6 +406,8 @@ internal sealed class SpikeDatabase
     {
         using var connection = OpenConnection();
         ExecuteScript(connection, SchemaSql);
+        EnsureProjectColumns(connection);
+        EnsureEpisodeColumns(connection);
         SeedEditorLayouts(connection);
         SeedIfEmpty(connection);
     }
@@ -423,22 +430,30 @@ internal sealed class SpikeDatabase
             ("$name", "FOQN S2"),
             ("$notes", "Spike project seeded from the current production structure."),
             ("$mediaRoot", "assets/FOQN_S2"));
+        Execute(
+            connection,
+            "UPDATE projects SET slug = $slug, default_fps = $defaultFps WHERE id = $id",
+            ("$id", "project_foqn_s2"),
+            ("$slug", "foqn_s2"),
+            ("$defaultFps", 25));
 
         Execute(
             connection,
-            "INSERT INTO episodes (id, project_id, name, notes, sort_order) VALUES ($id, $projectId, $name, $notes, $sortOrder)",
+            "INSERT INTO episodes (id, project_id, name, slug, notes, sort_order) VALUES ($id, $projectId, $name, $slug, $notes, $sortOrder)",
             ("$id", "episode_001"),
             ("$projectId", "project_foqn_s2"),
             ("$name", "Episode 1"),
+            ("$slug", "episode-1"),
             ("$notes", "First seeded episode."),
             ("$sortOrder", 0));
 
         Execute(
             connection,
-            "INSERT INTO episodes (id, project_id, name, notes, sort_order) VALUES ($id, $projectId, $name, $notes, $sortOrder)",
+            "INSERT INTO episodes (id, project_id, name, slug, notes, sort_order) VALUES ($id, $projectId, $name, $slug, $notes, $sortOrder)",
             ("$id", "episode_002"),
             ("$projectId", "project_foqn_s2"),
             ("$name", "Episode 2"),
+            ("$slug", "episode-2"),
             ("$notes", "Second seeded episode."),
             ("$sortOrder", 1));
 
@@ -501,9 +516,28 @@ internal sealed class SpikeDatabase
 
     private static string MinimalEditorLayoutJson(string recordClassId)
     {
-        var styleLabel = recordClassId.StartsWith("navigation.", StringComparison.Ordinal)
-            ? "Navigation"
-            : "Style";
+        var generalFields = recordClassId == "project"
+            ? """
+                    { "id": "core.name", "order": 10, "visible": true },
+                    { "id": "project.slug", "order": 20, "visible": true },
+                    { "id": "project.defaultFps", "order": 30, "visible": true },
+                    { "id": "project.mediaRoot", "order": 40, "visible": true },
+                    { "id": "core.kind", "order": 50, "visible": false },
+                    { "id": "core.notes", "order": 60, "visible": true }
+              """
+            : recordClassId == "episode"
+                ? """
+                    { "id": "core.name", "order": 10, "visible": true },
+                    { "id": "episode.slug", "order": 20, "visible": true },
+                    { "id": "episode.sortOrder", "order": 30, "visible": true },
+                    { "id": "core.kind", "order": 40, "visible": false },
+                    { "id": "core.notes", "order": 50, "visible": true }
+                  """
+            : """
+                    { "id": "core.name", "order": 10, "visible": true },
+                    { "id": "core.kind", "order": 20, "visible": false },
+                    { "id": "core.notes", "order": 30, "visible": true }
+              """;
 
         return $$"""
         {
@@ -522,28 +556,10 @@ internal sealed class SpikeDatabase
                   "order": 10,
                   "visible": true,
                   "fields": [
-                    { "id": "core.name", "order": 10, "visible": true },
-                    { "id": "core.kind", "order": 20, "visible": false },
-                    { "id": "core.notes", "order": 30, "visible": true }
+                    {{generalFields}}
                   ]
                 }
               ]
-            },
-            {
-              "id": "style",
-              "label": "{{styleLabel}}",
-              "icon": "{{EditorIcons.Style}}",
-              "order": 20,
-              "visible": true,
-              "groups": []
-            },
-            {
-              "id": "behavior",
-              "label": "Behavior",
-              "icon": "{{EditorIcons.Behavior}}",
-              "order": 30,
-              "visible": true,
-              "groups": []
             }
           ]
         }
@@ -638,11 +654,81 @@ internal sealed class SpikeDatabase
         return rows;
     }
 
+    public ProjectSettings GetProjectSettings(string projectId)
+    {
+        using var connection = OpenConnection();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT slug, default_fps, media_root FROM projects WHERE id = $id";
+        command.Parameters.AddWithValue("$id", projectId);
+        using var reader = command.ExecuteReader();
+        if (!reader.Read())
+        {
+            throw new InvalidOperationException($"Missing project '{projectId}'.");
+        }
+
+        return new ProjectSettings(
+            ReadString(reader, 0),
+            reader.IsDBNull(1) ? 25 : reader.GetInt32(1),
+            ReadString(reader, 2));
+    }
+
+    public void UpdateProjectField(string projectId, string fieldId, string value)
+    {
+        using var connection = OpenConnection();
+        var column = fieldId switch
+        {
+            "project.slug" => "slug",
+            "project.defaultFps" => "default_fps",
+            "project.mediaRoot" => "media_root",
+            _ => throw new InvalidOperationException($"Unknown project field '{fieldId}'."),
+        };
+
+        Execute(
+            connection,
+            $"UPDATE projects SET {column} = $value WHERE id = $id",
+            ("$id", projectId),
+            ("$value", fieldId == "project.defaultFps" && int.TryParse(value, out var fps) ? fps : value));
+    }
+
+    public EpisodeSettings GetEpisodeSettings(string episodeId)
+    {
+        using var connection = OpenConnection();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT slug, sort_order FROM episodes WHERE id = $id";
+        command.Parameters.AddWithValue("$id", episodeId);
+        using var reader = command.ExecuteReader();
+        if (!reader.Read())
+        {
+            throw new InvalidOperationException($"Missing episode '{episodeId}'.");
+        }
+
+        return new EpisodeSettings(
+            ReadString(reader, 0),
+            reader.IsDBNull(1) ? 0 : reader.GetInt32(1));
+    }
+
+    public void UpdateEpisodeField(string episodeId, string fieldId, string value)
+    {
+        using var connection = OpenConnection();
+        var column = fieldId switch
+        {
+            "episode.slug" => "slug",
+            "episode.sortOrder" => "sort_order",
+            _ => throw new InvalidOperationException($"Unknown episode field '{fieldId}'."),
+        };
+
+        Execute(
+            connection,
+            $"UPDATE episodes SET {column} = $value WHERE id = $id",
+            ("$id", episodeId),
+            ("$value", fieldId == "episode.sortOrder" && int.TryParse(value, out var sortOrder) ? sortOrder : value));
+    }
+
     private static List<EpisodeRow> QueryEpisodeRows(SqliteConnection connection)
     {
         var rows = new List<EpisodeRow>();
         using var command = connection.CreateCommand();
-        command.CommandText = "SELECT id, project_id, name, notes, sort_order FROM episodes ORDER BY sort_order, name";
+        command.CommandText = "SELECT id, project_id, name, slug, notes, sort_order FROM episodes ORDER BY sort_order, name";
         using var reader = command.ExecuteReader();
         while (reader.Read())
         {
@@ -651,7 +737,8 @@ internal sealed class SpikeDatabase
                 reader.GetString(1),
                 reader.GetString(2),
                 ReadString(reader, 3),
-                reader.GetInt32(4)));
+                ReadString(reader, 4),
+                reader.GetInt32(5)));
         }
 
         return rows;
@@ -723,6 +810,44 @@ internal sealed class SpikeDatabase
         return reader.IsDBNull(index) ? "" : reader.GetString(index);
     }
 
+    private static void EnsureProjectColumns(SqliteConnection connection)
+    {
+        AddColumnIfMissing(connection, "projects", "slug", "TEXT NOT NULL DEFAULT ''");
+        AddColumnIfMissing(connection, "projects", "default_fps", "INTEGER NOT NULL DEFAULT 25");
+    }
+
+    private static void EnsureEpisodeColumns(SqliteConnection connection)
+    {
+        AddColumnIfMissing(connection, "episodes", "slug", "TEXT NOT NULL DEFAULT ''");
+        Execute(
+            connection,
+            """
+            UPDATE episodes
+            SET slug = lower(replace(trim(name), ' ', '-'))
+            WHERE trim(slug) = ''
+            """);
+    }
+
+    private static void AddColumnIfMissing(
+        SqliteConnection connection,
+        string table,
+        string column,
+        string definition)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = $"PRAGMA table_info({table})";
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            if (string.Equals(reader.GetString(1), column, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+        }
+
+        Execute(connection, $"ALTER TABLE {table} ADD COLUMN {column} {definition}");
+    }
+
     private static void ExecuteScript(SqliteConnection connection, string script)
     {
         using var command = connection.CreateCommand();
@@ -761,6 +886,8 @@ internal sealed class SpikeDatabase
         CREATE TABLE IF NOT EXISTS projects (
           id TEXT PRIMARY KEY,
           name TEXT NOT NULL,
+          slug TEXT NOT NULL DEFAULT '',
+          default_fps INTEGER NOT NULL DEFAULT 25,
           notes TEXT NOT NULL DEFAULT '',
           media_root TEXT NOT NULL DEFAULT '',
           metadata_json TEXT NOT NULL DEFAULT '{}'
@@ -770,6 +897,7 @@ internal sealed class SpikeDatabase
           id TEXT PRIMARY KEY,
           project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
           name TEXT NOT NULL,
+          slug TEXT NOT NULL DEFAULT '',
           notes TEXT NOT NULL DEFAULT '',
           sort_order INTEGER NOT NULL DEFAULT 0,
           metadata_json TEXT NOT NULL DEFAULT '{}'
@@ -812,8 +940,10 @@ internal sealed class SpikeDatabase
         );
         """;
 
+    public sealed record ProjectSettings(string Slug, int DefaultFps, string MediaRoot);
+    public sealed record EpisodeSettings(string Slug, int SortOrder);
     private sealed record ProjectRow(string Id, string Name, string Notes);
-    private sealed record EpisodeRow(string Id, string ProjectId, string Name, string Notes, int SortOrder);
+    private sealed record EpisodeRow(string Id, string ProjectId, string Name, string Slug, string Notes, int SortOrder);
     private sealed record AppRow(string Id, string ProjectId, string RecordClassId, string Name, string Notes, int SortOrder);
     private sealed record ModuleRow(string Id, string AppId, string RecordClassId, string Name, string Notes, int SortOrder);
     private sealed record ShotRow(

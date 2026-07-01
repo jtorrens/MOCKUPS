@@ -2,26 +2,36 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using System;
+using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class DictionaryFieldControl : Grid
 {
     private readonly FieldDefinition _definition;
+    private readonly TextBlock _label;
     private readonly TextBox _textBox;
     private readonly Button _restoreButton;
+    private readonly Func<string, Task<string?>>? _browseDirectory;
+    private string _defaultValue;
     private string _value;
 
-    public DictionaryFieldControl(FieldValue fieldValue)
+    public DictionaryFieldControl(
+        FieldValue fieldValue,
+        Func<string, Task<string?>>? browseDirectory = null)
     {
         _definition = fieldValue.Definition;
+        _defaultValue = fieldValue.Definition.DefaultValue;
         _value = fieldValue.Value;
+        _browseDirectory = browseDirectory;
 
-        ColumnDefinitions = new ColumnDefinitions("180,*,Auto");
+        ColumnDefinitions = _definition.ValueKind == ValueKind.DirectoryPath
+            ? new ColumnDefinitions("180,*,Auto,Auto")
+            : new ColumnDefinitions("180,*,Auto");
         ColumnSpacing = 12;
         MinHeight = _definition.ValueKind == ValueKind.StringMultiline ? 96 : 40;
 
-        var label = new TextBlock
+        _label = new TextBlock
         {
             Text = _definition.Label,
             FontWeight = FontWeight.SemiBold,
@@ -32,7 +42,7 @@ internal sealed class DictionaryFieldControl : Grid
                 ? new Avalonia.Thickness(0, 7, 0, 0)
                 : new Avalonia.Thickness(0),
         };
-        SetColumn(label, 0);
+        SetColumn(_label, 0);
 
         _textBox = CreateTextBox();
         _textBox.Text = _value;
@@ -44,6 +54,30 @@ internal sealed class DictionaryFieldControl : Grid
         };
         SetColumn(_textBox, 1);
 
+        if (_definition.ValueKind == ValueKind.DirectoryPath)
+        {
+            var browseButton = new Button
+            {
+                Content = "Browse",
+                MinWidth = 86,
+                MinHeight = 36,
+                VerticalAlignment = VerticalAlignment.Center,
+                IsEnabled = _definition.IsEditable && _browseDirectory is not null,
+            };
+            browseButton.Click += async (_, _) =>
+            {
+                if (_browseDirectory is null) return;
+
+                var selectedPath = await _browseDirectory(_value);
+                if (!string.IsNullOrWhiteSpace(selectedPath))
+                {
+                    SetValue(selectedPath);
+                }
+            };
+            SetColumn(browseButton, 2);
+            Children.Add(browseButton);
+        }
+
         _restoreButton = new Button
         {
             Content = "↺",
@@ -53,15 +87,15 @@ internal sealed class DictionaryFieldControl : Grid
             VerticalAlignment = _definition.ValueKind == ValueKind.StringMultiline
                 ? VerticalAlignment.Top
                 : VerticalAlignment.Center,
-            IsVisible = !fieldValue.IsDefault && _definition.IsEditable,
+            IsVisible = !IsDefault && _definition.IsEditable,
         };
         _restoreButton.Click += (_, _) =>
         {
-            SetValue(_definition.DefaultValue);
+            SetValue(_defaultValue);
         };
-        SetColumn(_restoreButton, 2);
+        SetColumn(_restoreButton, _definition.ValueKind == ValueKind.DirectoryPath ? 3 : 2);
 
-        Children.Add(label);
+        Children.Add(_label);
         Children.Add(_textBox);
         Children.Add(_restoreButton);
         UpdateState();
@@ -69,7 +103,13 @@ internal sealed class DictionaryFieldControl : Grid
 
     public event EventHandler<string>? ValueChanged;
 
-    public bool IsDefault => _value == _definition.DefaultValue;
+    public bool IsDefault => _value == _defaultValue;
+
+    public void AcceptCurrentValueAsDefault()
+    {
+        _defaultValue = _value;
+        UpdateState();
+    }
 
     public void SetValue(string value)
     {
@@ -90,6 +130,7 @@ internal sealed class DictionaryFieldControl : Grid
                 ? TextWrapping.Wrap
                 : TextWrapping.NoWrap,
             MinHeight = _definition.ValueKind == ValueKind.StringMultiline ? 88 : 36,
+            PlaceholderText = _definition.ValueKind == ValueKind.DirectoryPath ? "Select folder…" : null,
             VerticalContentAlignment = _definition.ValueKind == ValueKind.StringMultiline
                 ? VerticalAlignment.Top
                 : VerticalAlignment.Center,
@@ -101,6 +142,14 @@ internal sealed class DictionaryFieldControl : Grid
     {
         var isDefault = IsDefault;
         _restoreButton.IsVisible = !isDefault && _definition.IsEditable;
+        if (isDefault)
+        {
+            _label.ClearValue(TextBlock.ForegroundProperty);
+        }
+        else
+        {
+            _label.Foreground = new SolidColorBrush(Color.Parse("#D6A638"));
+        }
 
         PseudoClasses.Set(":changed", !isDefault);
     }
