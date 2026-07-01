@@ -1,7 +1,10 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Templates;
+using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Styling;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -26,6 +29,7 @@ internal sealed class DictionaryFieldControl : Grid
     private bool _isUpdatingColorControl;
     private string _defaultValue;
     private string _value;
+    private string _lastCommittedValue;
 
     public DictionaryFieldControl(
         FieldValue fieldValue,
@@ -34,6 +38,7 @@ internal sealed class DictionaryFieldControl : Grid
         _definition = fieldValue.Definition;
         _defaultValue = fieldValue.Definition.DefaultValue;
         _value = fieldValue.Value;
+        _lastCommittedValue = fieldValue.Value;
         _browsePath = browsePath;
 
         ColumnDefinitions = _definition.ValueKind switch
@@ -74,10 +79,10 @@ internal sealed class DictionaryFieldControl : Grid
             _checkBox.PropertyChanged += (_, change) =>
             {
                 if (change.Property != CheckBox.IsCheckedProperty) return;
+                if (_isUpdatingColorControl) return;
 
-                _value = BoolToString(_checkBox.IsChecked == true);
-                UpdateState();
-                ValueChanged?.Invoke(this, _value);
+                SetLocalValue(BoolToString(_checkBox.IsChecked == true));
+                CommitValue();
             };
             SetColumn(_checkBox, 1);
             Children.Add(_checkBox);
@@ -89,9 +94,8 @@ internal sealed class DictionaryFieldControl : Grid
             {
                 if (_isUpdatingColorControl) return;
 
-                _value = ComboValue(_comboBox);
-                UpdateState();
-                ValueChanged?.Invoke(this, _value);
+                SetLocalValue(ComboValue(_comboBox));
+                CommitValue();
             };
             SetColumn(_comboBox, 1);
             Children.Add(_comboBox);
@@ -117,11 +121,10 @@ internal sealed class DictionaryFieldControl : Grid
             {
                 if (_isUpdatingColorControl) return;
 
-                _value = NormalizeHex(_textBox.Text ?? "");
+                SetLocalValue(NormalizeHex(_textBox.Text ?? ""));
                 UpdateColorControlsFromValue();
-                UpdateState();
-                ValueChanged?.Invoke(this, _value);
             };
+            AttachDeferredCommit(_textBox);
             SetColumn(_textBox, 2);
             Children.Add(_textBox);
 
@@ -140,6 +143,7 @@ internal sealed class DictionaryFieldControl : Grid
 
                 SetValue(ColorToHex(args.NewColor));
             };
+            _colorPicker.LostFocus += (_, _) => CommitValue();
             SetColumn(_colorPicker, 3);
             Children.Add(_colorPicker);
         }
@@ -158,10 +162,11 @@ internal sealed class DictionaryFieldControl : Grid
             _textBox.Text = _value;
             _textBox.TextChanged += (_, _) =>
             {
-                _value = _textBox.Text ?? "";
-                UpdateState();
-                ValueChanged?.Invoke(this, _value);
+                if (_isUpdatingColorControl) return;
+
+                SetLocalValue(_textBox.Text ?? "");
             };
+            AttachDeferredCommit(_textBox);
             SetColumn(_textBox, 1);
             Children.Add(_textBox);
         }
@@ -183,7 +188,7 @@ internal sealed class DictionaryFieldControl : Grid
                 var selectedPath = await _browsePath(_value, _definition.ValueKind);
                 if (!string.IsNullOrWhiteSpace(selectedPath))
                 {
-                    SetValue(selectedPath);
+                    SetValue(selectedPath, commit: true);
                 }
             };
             SetColumn(browseButton, 2);
@@ -203,7 +208,7 @@ internal sealed class DictionaryFieldControl : Grid
         };
         _restoreButton.Click += (_, _) =>
         {
-            SetValue(_defaultValue);
+            SetValue(_defaultValue, commit: true);
         };
         SetColumn(_restoreButton, _definition.ValueKind switch
         {
@@ -220,18 +225,41 @@ internal sealed class DictionaryFieldControl : Grid
 
     public event EventHandler<string>? ValueChanged;
 
+    public event EventHandler<string>? ValueCommitted;
+
     public bool IsDefault => _value == _defaultValue;
+
+    public bool CommitAsDefault => _definition.CommitAsDefault;
+
+    public string Value => _value;
 
     public void AcceptCurrentValueAsDefault()
     {
         _defaultValue = _value;
+        _lastCommittedValue = _value;
         UpdateState();
     }
 
-    public void SetValue(string value)
+    public void MarkCurrentValueCommitted()
     {
-        if (_value == value) return;
+        _lastCommittedValue = _value;
+        UpdateState();
+    }
+
+    public void SetValue(string value, bool commit = false)
+    {
+        if (_value == value)
+        {
+            if (commit)
+            {
+                CommitValue();
+            }
+
+            return;
+        }
+
         _value = value;
+        _isUpdatingColorControl = true;
         if (_checkBox is not null)
         {
             _checkBox.IsChecked = StringToBool(value);
@@ -256,9 +284,43 @@ internal sealed class DictionaryFieldControl : Grid
         {
             _textBox.Text = value;
         }
+        _isUpdatingColorControl = false;
 
         UpdateState();
         ValueChanged?.Invoke(this, _value);
+        if (commit)
+        {
+            CommitValue();
+        }
+    }
+
+    private void SetLocalValue(string value)
+    {
+        if (_value == value) return;
+
+        _value = value;
+        UpdateState();
+        ValueChanged?.Invoke(this, _value);
+    }
+
+    private void CommitValue()
+    {
+        if (_lastCommittedValue == _value) return;
+
+        _lastCommittedValue = _value;
+        ValueCommitted?.Invoke(this, _value);
+    }
+
+    private void AttachDeferredCommit(TextBox textBox)
+    {
+        textBox.LostFocus += (_, _) => CommitValue();
+        textBox.KeyDown += (_, args) =>
+        {
+            if (args.Key != Key.Enter || _definition.ValueKind == ValueKind.StringMultiline) return;
+
+            CommitValue();
+            args.Handled = true;
+        };
     }
 
     private TextBox CreateTextBox()
@@ -307,6 +369,7 @@ internal sealed class DictionaryFieldControl : Grid
 
         var firstTextBox = CreateCompactPairTextBox(first);
         firstTextBox.TextChanged += (_, _) => SetPairValueFromTextBoxes(firstTextBox, null);
+        AttachDeferredCommit(firstTextBox);
         Grid.SetColumn(firstTextBox, 1);
 
         var secondLabel = new TextBlock
@@ -320,6 +383,7 @@ internal sealed class DictionaryFieldControl : Grid
 
         var secondTextBox = CreateCompactPairTextBox(second);
         secondTextBox.TextChanged += (_, _) => SetPairValueFromTextBoxes(null, secondTextBox);
+        AttachDeferredCommit(secondTextBox);
         Grid.SetColumn(secondTextBox, 3);
 
         grid.Children.Add(firstLabel);
@@ -337,10 +401,50 @@ internal sealed class DictionaryFieldControl : Grid
             MinWidth = 220,
             IsEnabled = _definition.IsEditable,
             ItemsSource = _definition.Options ?? [],
+            ItemTemplate = _definition.ValueKind is ValueKind.PaletteColorToken or ValueKind.PaletteColorPair
+                ? PaletteOptionTemplate()
+                : null,
         };
 
         comboBox.SelectedItem = SelectedOption(value);
         return comboBox;
+    }
+
+    private static IDataTemplate PaletteOptionTemplate()
+    {
+        return new FuncDataTemplate<FieldOption>((option, _) =>
+        {
+            var panel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = 8,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            panel.Children.Add(new Border
+            {
+                Width = 16,
+                Height = 16,
+                CornerRadius = new CornerRadius(4),
+                Background = SafeColorBrush(option?.ColorHex, "#808080"),
+                BorderBrush = new SolidColorBrush(Color.Parse("#667085")),
+                BorderThickness = new Avalonia.Thickness(1),
+                VerticalAlignment = VerticalAlignment.Center,
+            });
+            panel.Children.Add(new TextBlock
+            {
+                Text = option?.Label ?? "",
+                Foreground = PaletteOptionTextBrush(),
+                VerticalAlignment = VerticalAlignment.Center,
+                TextTrimming = TextTrimming.CharacterEllipsis,
+            });
+            return panel;
+        });
+    }
+
+    private static IBrush PaletteOptionTextBrush()
+    {
+        var isLight = Application.Current?.ActualThemeVariant == ThemeVariant.Light;
+        return new SolidColorBrush(Color.Parse(isLight ? "#1F2937" : "#F1F5F9"));
     }
 
     private (Control Control, ComboBox FirstComboBox, ComboBox SecondComboBox) CreatePalettePairControl(string first, string second)
@@ -403,11 +507,10 @@ internal sealed class DictionaryFieldControl : Grid
     {
         if (_isUpdatingColorControl) return;
 
-        _value = JoinPair(
+        SetLocalValue(JoinPair(
             firstComboBox is not null ? ComboValue(firstComboBox) : (_pairFirstComboBox is not null ? ComboValue(_pairFirstComboBox) : ""),
-            secondComboBox is not null ? ComboValue(secondComboBox) : (_pairSecondComboBox is not null ? ComboValue(_pairSecondComboBox) : ""));
-        UpdateState();
-        ValueChanged?.Invoke(this, _value);
+            secondComboBox is not null ? ComboValue(secondComboBox) : (_pairSecondComboBox is not null ? ComboValue(_pairSecondComboBox) : "")));
+        CommitValue();
     }
 
     private void UpdateOptionComboFromValue()
@@ -451,11 +554,9 @@ internal sealed class DictionaryFieldControl : Grid
     {
         if (_isUpdatingColorControl) return;
 
-        _value = JoinPair(
+        SetLocalValue(JoinPair(
             firstTextBox?.Text ?? _pairFirstTextBox?.Text ?? "",
-            secondTextBox?.Text ?? _pairSecondTextBox?.Text ?? "");
-        UpdateState();
-        ValueChanged?.Invoke(this, _value);
+            secondTextBox?.Text ?? _pairSecondTextBox?.Text ?? ""));
     }
 
     private void UpdatePairControlsFromValue()
@@ -556,6 +657,18 @@ internal sealed class DictionaryFieldControl : Grid
         catch (FormatException)
         {
             return Color.Parse("#808080");
+        }
+    }
+
+    private static IBrush SafeColorBrush(string? value, string fallback)
+    {
+        try
+        {
+            return new SolidColorBrush(Color.Parse(string.IsNullOrWhiteSpace(value) ? fallback : NormalizeHex(value)));
+        }
+        catch (FormatException)
+        {
+            return new SolidColorBrush(Color.Parse(fallback));
         }
     }
 

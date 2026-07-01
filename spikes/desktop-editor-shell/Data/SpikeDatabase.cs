@@ -11,6 +11,7 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed class SpikeDatabase
 {
+    private static readonly object WriteGate = new();
     private readonly string _connectionString;
 
     public SpikeDatabase(string databasePath)
@@ -1419,6 +1420,11 @@ internal sealed class SpikeDatabase
     public ActorSettings GetActorSettings(string actorId)
     {
         using var connection = OpenConnection();
+        return GetActorSettings(connection, actorId);
+    }
+
+    private static ActorSettings GetActorSettings(SqliteConnection connection, string actorId)
+    {
         using var command = connection.CreateCommand();
         command.CommandText = "SELECT project_id, display_name, short_name, default_device_id, default_theme_id, metadata_json FROM actors WHERE id = $id";
         command.Parameters.AddWithValue("$id", actorId);
@@ -1453,7 +1459,7 @@ internal sealed class SpikeDatabase
                 return;
         }
 
-        var settings = GetActorSettings(actorId);
+        var settings = GetActorSettings(connection, actorId);
         var metadata = ParseJsonObject(settings.MetadataJson);
         switch (fieldId)
         {
@@ -1512,6 +1518,11 @@ internal sealed class SpikeDatabase
     public DeviceSettings GetDeviceSettings(string deviceId)
     {
         using var connection = OpenConnection();
+        return GetDeviceSettings(connection, deviceId);
+    }
+
+    private static DeviceSettings GetDeviceSettings(SqliteConnection connection, string deviceId)
+    {
         using var command = connection.CreateCommand();
         command.CommandText = "SELECT name, manufacturer, model, os_family, metrics_json FROM devices WHERE id = $id";
         command.Parameters.AddWithValue("$id", deviceId);
@@ -1550,7 +1561,7 @@ internal sealed class SpikeDatabase
             throw new InvalidOperationException($"Unknown device field '{fieldId}'.");
         }
 
-        var settings = GetDeviceSettings(deviceId);
+        var settings = GetDeviceSettings(connection, deviceId);
         var metrics = ParseJsonObject(settings.MetricsJson);
         switch (fieldId)
         {
@@ -1973,7 +1984,10 @@ internal sealed class SpikeDatabase
     {
         using var command = connection.CreateCommand();
         command.CommandText = script;
-        command.ExecuteNonQuery();
+        lock (WriteGate)
+        {
+            command.ExecuteNonQuery();
+        }
     }
 
     private static void Execute(SqliteConnection connection, string sql, params (string Key, object? Value)[] parameters)
@@ -1985,7 +1999,10 @@ internal sealed class SpikeDatabase
             command.Parameters.AddWithValue(key, value ?? DBNull.Value);
         }
 
-        command.ExecuteNonQuery();
+        lock (WriteGate)
+        {
+            command.ExecuteNonQuery();
+        }
     }
 
     private static long ScalarLong(SqliteConnection connection, string sql, params (string Key, object? Value)[] parameters)

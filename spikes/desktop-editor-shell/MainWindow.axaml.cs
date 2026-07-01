@@ -25,6 +25,7 @@ public partial class MainWindow : SukiWindow
 {
     private bool _isDark = true;
     private readonly SpikeDatabase _database = new(SpikeDatabase.DefaultDatabasePath());
+    private readonly EditorFieldCommitCoordinator _fieldCommitCoordinator = new();
     private readonly List<Expander> _editorCards = [];
     private readonly HashSet<string> _expandedNodeIds = [];
     private List<ProjectTreeNode> _treeRoots = [];
@@ -711,7 +712,7 @@ public partial class MainWindow : SukiWindow
         return actions;
     }
 
-    private void ShowNode(ProjectTreeNode node, bool rebuildTree = false)
+    private void ShowNode(ProjectTreeNode node, bool rebuildTree = true)
     {
         _selectedNode = node;
         EditorTitle.Text = node.Name;
@@ -744,7 +745,9 @@ public partial class MainWindow : SukiWindow
             Spacing = 12,
         };
         var controls = new List<DictionaryFieldControl>();
+        var controlsByFieldId = new Dictionary<string, DictionaryFieldControl>();
         var headerIcon = EditorIcons.Create(layoutCard.Icon, 18);
+        ContentControl? actorAvatarPreviewHost = null;
 
         foreach (var group in layoutCard.VisibleGroups)
         {
@@ -765,7 +768,11 @@ public partial class MainWindow : SukiWindow
 
             if (node.Kind == ProjectTreeNodeKind.Actor && layoutCard.Id == "avatar")
             {
-                groupPanel.Children.Add(CreateActorAvatarPreview(node.Id));
+                actorAvatarPreviewHost = new ContentControl
+                {
+                    Content = CreateActorAvatarPreview(node.Id),
+                };
+                groupPanel.Children.Add(actorAvatarPreviewHost);
             }
 
             foreach (var layoutField in group.VisibleFields)
@@ -773,13 +780,15 @@ public partial class MainWindow : SukiWindow
                 var field = CreateFieldValue(node, layoutField.Id);
                 var control = new DictionaryFieldControl(field, BrowsePath);
                 controls.Add(control);
-                control.ValueChanged += (_, value) =>
+                controlsByFieldId[field.Definition.Id] = control;
+                control.ValueCommitted += (_, value) =>
                 {
-                    ApplyFieldValue(node, field.Definition.Id, value);
-                    if (field.Definition.CommitAsDefault)
-                    {
-                        control.AcceptCurrentValueAsDefault();
-                    }
+                    _fieldCommitCoordinator.Commit(
+                        control,
+                        value,
+                        (draftValue) => StoredFieldValue(node, field.Definition.Id, draftValue),
+                        () => CurrentStoredFieldValue(node, field.Definition.Id),
+                        (storedValue) => PersistFieldValue(node, field.Definition.Id, storedValue));
                 };
                 groupPanel.Children.Add(control);
             }
@@ -817,10 +826,22 @@ public partial class MainWindow : SukiWindow
             control.ValueChanged += (_, _) =>
             {
                 UpdateEditorCardHeaderState(headerIcon, controls);
+                if (actorAvatarPreviewHost is not null)
+                {
+                    actorAvatarPreviewHost.Content = CreateActorAvatarPreview(node.Id, CurrentDraftFieldValues(controlsByFieldId));
+                }
             };
         }
 
         return card;
+    }
+
+    private static IReadOnlyDictionary<string, string> CurrentDraftFieldValues(
+        IReadOnlyDictionary<string, DictionaryFieldControl> controlsByFieldId)
+    {
+        return controlsByFieldId.ToDictionary(
+            (pair) => pair.Key,
+            (pair) => pair.Value.Value);
     }
 
     private static string EditorCardSubtitle(EditorLayoutCard layoutCard)
@@ -1172,12 +1193,32 @@ public partial class MainWindow : SukiWindow
                 label,
                 valueKind,
                 IsEditable: true,
-                DefaultValue: value,
+                DefaultValue: ActorFieldDefaultValue(fieldId, value),
+                CommitAsDefault: !ActorFieldKeepsDefault(fieldId, valueKind),
                 Options: options),
             value);
     }
 
-    private void ApplyFieldValue(ProjectTreeNode node, string fieldId, string value)
+    private static bool ActorFieldKeepsDefault(string fieldId, ValueKind valueKind)
+    {
+        return fieldId.StartsWith("actor.avatar.", StringComparison.Ordinal)
+            || valueKind == ValueKind.PaletteColorPair;
+    }
+
+    private static string ActorFieldDefaultValue(string fieldId, string currentValue)
+    {
+        return fieldId switch
+        {
+            "actor.avatar.filePath" => "",
+            "actor.avatar.scale" => "1",
+            "actor.avatar.offset" => "0|0",
+            "actor.avatar.useInitials" => "false",
+            "actor.avatar.initialsPadding" => "96",
+            _ => currentValue,
+        };
+    }
+
+    private void PersistFieldValue(ProjectTreeNode node, string fieldId, string value)
     {
         var persisted = node.Kind is ProjectTreeNodeKind.Project
             or ProjectTreeNodeKind.App
@@ -1235,24 +1276,11 @@ public partial class MainWindow : SukiWindow
 
         if (node.Kind == ProjectTreeNodeKind.Actor && fieldId.StartsWith("actor.", StringComparison.Ordinal))
         {
-            var storedValue = fieldId == "actor.avatar.filePath"
-                ? RelativeActorMediaPath(node.Id, value)
-                : value;
-            storedValue ??= value;
-            if (_database.GetActorFieldValue(node.Id, fieldId) == storedValue)
-            {
-                return;
-            }
-
-            _database.UpdateActorField(node.Id, fieldId, storedValue);
+            _database.UpdateActorField(node.Id, fieldId, value);
             if (fieldId == "actor.shortName")
             {
-                node.Notes = storedValue;
+                node.Notes = value;
                 RebuildNavigationCards();
-            }
-            else if (fieldId.StartsWith("actor.avatar.", StringComparison.Ordinal))
-            {
-                BuildEditorCards(node);
             }
             return;
         }
@@ -1261,6 +1289,26 @@ public partial class MainWindow : SukiWindow
         {
             _database.UpdateNode(node);
         }
+    }
+
+    private string StoredFieldValue(ProjectTreeNode node, string fieldId, string value)
+    {
+        if (node.Kind == ProjectTreeNodeKind.Actor && fieldId == "actor.avatar.filePath")
+        {
+            return RelativeActorMediaPath(node.Id, value) ?? value;
+        }
+
+        return value;
+    }
+
+    private string CurrentStoredFieldValue(ProjectTreeNode node, string fieldId)
+    {
+        return fieldId switch
+        {
+            "core.name" => node.Name,
+            "core.notes" => node.Notes,
+            _ => CreateFieldValue(node, fieldId).Value,
+        };
     }
 
     private async Task<string?> BrowseDirectory(string currentPath)
@@ -1331,17 +1379,19 @@ public partial class MainWindow : SukiWindow
         return RelativePathIfInsideMediaRoot(selectedPath, mediaRoot);
     }
 
-    private Control CreateActorAvatarPreview(string actorId)
+    private Control CreateActorAvatarPreview(
+        string actorId,
+        IReadOnlyDictionary<string, string>? draftValues = null)
     {
         var settings = _database.GetActorSettings(actorId);
-        var imagePath = _database.GetActorFieldValue(actorId, "actor.avatar.filePath");
-        var useInitials = StringToBool(_database.GetActorFieldValue(actorId, "actor.avatar.useInitials"));
-        var scale = ParseDouble(_database.GetActorFieldValue(actorId, "actor.avatar.scale"), 1);
-        var offset = SplitPair(_database.GetActorFieldValue(actorId, "actor.avatar.offset"));
+        var imagePath = ActorPreviewField(actorId, "actor.avatar.filePath", draftValues);
+        var useInitials = StringToBool(ActorPreviewField(actorId, "actor.avatar.useInitials", draftValues));
+        var scale = ParseDouble(ActorPreviewField(actorId, "actor.avatar.scale", draftValues), 1);
+        var offset = SplitPair(ActorPreviewField(actorId, "actor.avatar.offset", draftValues));
         var offsetX = ParseDouble(offset.First, 0) / 4;
         var offsetY = ParseDouble(offset.Second, 0) / 4;
-        var colorPair = SplitPair(_database.GetActorFieldValue(actorId, "actor.color.modes"));
-        var textColorPair = SplitPair(_database.GetActorFieldValue(actorId, "actor.avatarTextColor.modes"));
+        var colorPair = SplitPair(ActorPreviewField(actorId, "actor.color.modes", draftValues));
+        var textColorPair = SplitPair(ActorPreviewField(actorId, "actor.avatarTextColor.modes", draftValues));
         var paletteOptions = _database.GetPaletteColorOptions(settings.ProjectId);
         var background = PaletteBrush(paletteOptions, colorPair.First, "#808080");
         var foreground = PaletteBrush(paletteOptions, textColorPair.First, "#1A1A1A");
@@ -1397,6 +1447,16 @@ public partial class MainWindow : SukiWindow
             VerticalAlignment = VerticalAlignment.Center,
         };
         return WrapAvatarPreview(viewport);
+    }
+
+    private string ActorPreviewField(
+        string actorId,
+        string fieldId,
+        IReadOnlyDictionary<string, string>? draftValues)
+    {
+        return draftValues is not null && draftValues.TryGetValue(fieldId, out var value)
+            ? value
+            : _database.GetActorFieldValue(actorId, fieldId);
     }
 
     private static Control WrapAvatarPreview(Control viewport)

@@ -23,6 +23,5 @@
 
     <Application.Styles>
         <suki:SukiTheme ThemeColor="Blue" />
-        <StyleInclude Source="avares://Avalonia.Controls.ColorPicker/Themes/Fluent/Fluent.xaml" />
     </Application.Styles>
 </Application>
