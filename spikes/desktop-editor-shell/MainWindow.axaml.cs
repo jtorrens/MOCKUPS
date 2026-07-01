@@ -262,7 +262,7 @@ public partial class MainWindow : SukiWindow
             Margin = new Avalonia.Thickness(0, 6, 0, 0),
         };
 
-        foreach (var root in project.Children.Where((child) => child.Kind is ProjectTreeNodeKind.AppsRoot or ProjectTreeNodeKind.PaletteRoot or ProjectTreeNodeKind.DevicesRoot or ProjectTreeNodeKind.EpisodesRoot))
+        foreach (var root in project.Children.Where((child) => child.Kind is ProjectTreeNodeKind.ProductionDataRoot or ProjectTreeNodeKind.SystemDataRoot))
         {
             AddNavigationSection(panel, root);
         }
@@ -285,6 +285,8 @@ public partial class MainWindow : SukiWindow
 
         var iconName = sectionRoot.Kind switch
         {
+            ProjectTreeNodeKind.ProductionDataRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.ProductionDataRoot),
+            ProjectTreeNodeKind.SystemDataRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.SystemDataRoot),
             ProjectTreeNodeKind.EpisodesRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.Episode),
             ProjectTreeNodeKind.PaletteRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.PaletteColor),
             ProjectTreeNodeKind.DevicesRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.Device),
@@ -307,7 +309,7 @@ public partial class MainWindow : SukiWindow
                 AddNavigationNode(content, child, level + 1);
             }
 
-            AddNavigationCard(parent, node, content, iconName: null);
+            AddNavigationCard(parent, node, content, EditorIcons.ForTreeNode(node.Kind));
             return;
         }
 
@@ -1285,6 +1287,8 @@ internal sealed class ShellWindowState
 internal enum ProjectTreeNodeKind
 {
     Project,
+    ProductionDataRoot,
+    SystemDataRoot,
     AppsRoot,
     PaletteRoot,
     DevicesRoot,
@@ -1348,7 +1352,9 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.Shot
         or ProjectTreeNodeKind.PaletteColor
         or ProjectTreeNodeKind.Device;
-    public bool CanOpenEditor => Kind is not ProjectTreeNodeKind.AppsRoot
+    public bool CanOpenEditor => Kind is not ProjectTreeNodeKind.ProductionDataRoot
+        and not ProjectTreeNodeKind.SystemDataRoot
+        and not ProjectTreeNodeKind.AppsRoot
         and not ProjectTreeNodeKind.PaletteRoot
         and not ProjectTreeNodeKind.DevicesRoot
         and not ProjectTreeNodeKind.EpisodesRoot;
@@ -1366,6 +1372,8 @@ internal sealed class ProjectTreeNode
         return kind switch
         {
             ProjectTreeNodeKind.Project => "project",
+            ProjectTreeNodeKind.ProductionDataRoot => "navigation.production_data",
+            ProjectTreeNodeKind.SystemDataRoot => "navigation.system_data",
             ProjectTreeNodeKind.AppsRoot => "navigation.apps",
             ProjectTreeNodeKind.PaletteRoot => "navigation.palette",
             ProjectTreeNodeKind.DevicesRoot => "navigation.devices",

@@ -74,6 +74,8 @@ internal static class EditorIcons
         return kind switch
         {
             ProjectTreeNodeKind.Project => Project,
+            ProjectTreeNodeKind.ProductionDataRoot => Content,
+            ProjectTreeNodeKind.SystemDataRoot => Design,
             ProjectTreeNodeKind.AppsRoot => Apps,
             ProjectTreeNodeKind.PaletteRoot => Color,
             ProjectTreeNodeKind.DevicesRoot => Device,
@@ -177,6 +179,7 @@ internal static class EditorIcons
             Shadow => "editor_shadow.svg",
             Border => "editor_border.svg",
             Media => "editor_media.svg",
+            Device => "editor_device.svg",
             _ => null,
         };
 

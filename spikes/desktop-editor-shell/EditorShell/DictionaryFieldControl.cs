@@ -254,7 +254,7 @@ internal sealed class DictionaryFieldControl : Grid
         var firstLabel = new TextBlock
         {
             Text = labels.First,
-            MinWidth = 38,
+            MinWidth = 57,
             VerticalAlignment = VerticalAlignment.Center,
             Opacity = 0.78,
         };
@@ -267,7 +267,7 @@ internal sealed class DictionaryFieldControl : Grid
         var secondLabel = new TextBlock
         {
             Text = labels.Second,
-            MinWidth = 38,
+            MinWidth = 57,
             VerticalAlignment = VerticalAlignment.Center,
             Opacity = 0.78,
         };

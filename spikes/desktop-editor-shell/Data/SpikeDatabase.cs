@@ -54,46 +54,63 @@ internal sealed class SpikeDatabase
         var appRootNodes = new Dictionary<string, ProjectTreeNode>();
         var paletteRootNodes = new Dictionary<string, ProjectTreeNode>();
         var deviceRootNodes = new Dictionary<string, ProjectTreeNode>();
+        var episodeRootNodes = new Dictionary<string, ProjectTreeNode>();
         var episodeNodes = new Dictionary<string, ProjectTreeNode>();
         foreach (var project in projectNodes.Values)
         {
+            var productionDataRoot = new ProjectTreeNode(
+                ProjectTreeNodeKind.ProductionDataRoot,
+                $"production_data_root_{project.Id}",
+                "Production Data",
+                "Project-specific production records.",
+                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ProductionDataRoot),
+                project);
+            var systemDataRoot = new ProjectTreeNode(
+                ProjectTreeNodeKind.SystemDataRoot,
+                $"system_data_root_{project.Id}",
+                "System Data",
+                "Shared system resources for this project.",
+                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.SystemDataRoot),
+                project);
             var appsRoot = new ProjectTreeNode(
                 ProjectTreeNodeKind.AppsRoot,
                 $"apps_root_{project.Id}",
                 "Apps",
                 "Apps available in this project.",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.AppsRoot),
-                project);
+                productionDataRoot);
             var paletteRoot = new ProjectTreeNode(
                 ProjectTreeNodeKind.PaletteRoot,
                 $"palette_root_{project.Id}",
                 "Palette Colors",
                 "Project primitive color tokens.",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.PaletteRoot),
-                project);
+                systemDataRoot);
             var devicesRoot = new ProjectTreeNode(
                 ProjectTreeNodeKind.DevicesRoot,
                 $"devices_root_{project.Id}",
                 "Devices",
                 "Device metrics available in this project.",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.DevicesRoot),
-                project);
+                productionDataRoot);
             var episodesRoot = new ProjectTreeNode(
                 ProjectTreeNodeKind.EpisodesRoot,
                 $"episodes_root_{project.Id}",
                 "Episodes",
                 "Episodes and shots for this project.",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.EpisodesRoot),
-                project);
+                productionDataRoot);
 
-            project.AddChild(appsRoot);
-            project.AddChild(paletteRoot);
-            project.AddChild(devicesRoot);
-            project.AddChild(episodesRoot);
+            productionDataRoot.AddChild(appsRoot);
+            productionDataRoot.AddChild(devicesRoot);
+            productionDataRoot.AddChild(episodesRoot);
+            systemDataRoot.AddChild(paletteRoot);
+            project.AddChild(productionDataRoot);
+            project.AddChild(systemDataRoot);
             appRootNodes[project.Id] = appsRoot;
             paletteRootNodes[project.Id] = paletteRoot;
             deviceRootNodes[project.Id] = devicesRoot;
-            episodeNodes[episodesRoot.Id] = episodesRoot;
+            episodeRootNodes[project.Id] = episodesRoot;
         }
 
         var appNodes = new Dictionary<string, ProjectTreeNode>();
@@ -127,9 +144,7 @@ internal sealed class SpikeDatabase
 
         foreach (var episode in episodes.OrderBy((episode) => episode.SortOrder).ThenBy((episode) => episode.Name))
         {
-            if (!projectNodes.TryGetValue(episode.ProjectId, out var project)) continue;
-            var episodesRoot = project.Children.FirstOrDefault((child) => child.Kind == ProjectTreeNodeKind.EpisodesRoot);
-            if (episodesRoot is null) continue;
+            if (!episodeRootNodes.TryGetValue(episode.ProjectId, out var episodesRoot)) continue;
 
             var node = new ProjectTreeNode(
                 ProjectTreeNodeKind.Episode,
@@ -199,7 +214,7 @@ internal sealed class SpikeDatabase
 
         if (parent.Kind == ProjectTreeNodeKind.AppsRoot)
         {
-            var project = parent.Parent ?? throw new InvalidOperationException("Apps root has no project parent.");
+            var project = ProjectAncestor(parent);
             var index = NextSortOrder(connection, "apps", "project_id", project.Id);
             var id = $"app_{Guid.NewGuid():N}";
             Execute(
@@ -226,7 +241,7 @@ internal sealed class SpikeDatabase
 
         if (parent.Kind == ProjectTreeNodeKind.PaletteRoot)
         {
-            var project = parent.Parent ?? throw new InvalidOperationException("Palette root has no project parent.");
+            var project = ProjectAncestor(parent);
             var id = $"palette_{Guid.NewGuid():N}";
             var token = $"color_{ScalarLong(connection, "SELECT COUNT(*) FROM palette_colors WHERE project_id = $projectId", ("$projectId", project.Id)) + 1}";
             Execute(
@@ -253,7 +268,7 @@ internal sealed class SpikeDatabase
 
         if (parent.Kind == ProjectTreeNodeKind.DevicesRoot)
         {
-            var project = parent.Parent ?? throw new InvalidOperationException("Devices root has no project parent.");
+            var project = ProjectAncestor(parent);
             var index = ScalarLong(connection, "SELECT COUNT(*) FROM devices WHERE project_id = $projectId", ("$projectId", project.Id)) + 1;
             var id = $"device_{Guid.NewGuid():N}";
             var metricsJson = DefaultDeviceMetricsJson(1170, 2532, 3);
@@ -308,7 +323,7 @@ internal sealed class SpikeDatabase
 
         if (parent.Kind == ProjectTreeNodeKind.EpisodesRoot)
         {
-            var project = parent.Parent ?? throw new InvalidOperationException("Episodes root has no project parent.");
+            var project = ProjectAncestor(parent);
             var index = NextSortOrder(connection, "episodes", "project_id", project.Id);
             var id = $"episode_{Guid.NewGuid():N}";
             Execute(
@@ -723,6 +738,8 @@ internal sealed class SpikeDatabase
         foreach (var recordClassId in new[]
         {
             "project",
+            "navigation.production_data",
+            "navigation.system_data",
             "navigation.apps",
             "navigation.palette",
             "navigation.devices",
@@ -746,6 +763,17 @@ internal sealed class SpikeDatabase
                 ("$recordClassId", recordClassId),
                 ("$layoutJson", MinimalEditorLayoutJson(recordClassId)));
         }
+    }
+
+    private static ProjectTreeNode ProjectAncestor(ProjectTreeNode node)
+    {
+        var current = node;
+        while (current.Kind != ProjectTreeNodeKind.Project)
+        {
+            current = current.Parent ?? throw new InvalidOperationException($"{node.Kind} has no project ancestor.");
+        }
+
+        return current;
     }
 
     private static string MinimalEditorLayoutJson(string recordClassId)
