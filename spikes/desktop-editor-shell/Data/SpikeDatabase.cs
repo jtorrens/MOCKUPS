@@ -1,8 +1,10 @@
 using Microsoft.Data.Sqlite;
+using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 
 namespace Mockups.DesktopEditorShell.Data;
 
@@ -42,7 +44,8 @@ internal sealed class SpikeDatabase
                 ProjectTreeNodeKind.Project,
                 project.Id,
                 project.Name,
-                project.Notes))
+                project.Notes,
+                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Project)))
             .ToDictionary((node) => node.Id);
 
         var appRootNodes = new Dictionary<string, ProjectTreeNode>();
@@ -54,12 +57,14 @@ internal sealed class SpikeDatabase
                 $"apps_root_{project.Id}",
                 "Apps",
                 "Apps available in this project.",
+                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.AppsRoot),
                 project);
             var episodesRoot = new ProjectTreeNode(
                 ProjectTreeNodeKind.EpisodesRoot,
                 $"episodes_root_{project.Id}",
                 "Episodes",
                 "Episodes and shots for this project.",
+                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.EpisodesRoot),
                 project);
 
             project.AddChild(appsRoot);
@@ -78,6 +83,7 @@ internal sealed class SpikeDatabase
                 app.Id,
                 app.Name,
                 app.Notes,
+                app.RecordClassId,
                 appsRoot);
             appsRoot.AddChild(node);
             appNodes[node.Id] = node;
@@ -92,6 +98,7 @@ internal sealed class SpikeDatabase
                 module.Id,
                 module.Name,
                 module.Notes,
+                module.RecordClassId,
                 app));
         }
 
@@ -106,6 +113,7 @@ internal sealed class SpikeDatabase
                 episode.Id,
                 episode.Name,
                 episode.Notes,
+                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Episode),
                 episodesRoot);
             episodesRoot.AddChild(node);
             episodeNodes[node.Id] = node;
@@ -120,6 +128,7 @@ internal sealed class SpikeDatabase
                 shot.Id,
                 shot.Name,
                 shot.Notes,
+                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Shot),
                 episode));
         }
 
@@ -145,11 +154,12 @@ internal sealed class SpikeDatabase
             Execute(
                 connection,
                 """
-                INSERT INTO apps (id, project_id, name, notes, sort_order)
-                VALUES ($id, $projectId, $name, $notes, $sortOrder)
+                INSERT INTO apps (id, project_id, record_class_id, name, notes, sort_order)
+                VALUES ($id, $projectId, $recordClassId, $name, $notes, $sortOrder)
                 """,
                 ("$id", id),
                 ("$projectId", project.Id),
+                ("$recordClassId", "app.generic"),
                 ("$name", $"App {index + 1}"),
                 ("$notes", "New app created in the desktop shell spike."),
                 ("$sortOrder", index));
@@ -159,6 +169,7 @@ internal sealed class SpikeDatabase
                 id,
                 $"App {index + 1}",
                 "New app created in the desktop shell spike.",
+                "app.generic",
                 parent);
         }
 
@@ -169,11 +180,12 @@ internal sealed class SpikeDatabase
             Execute(
                 connection,
                 """
-                INSERT INTO modules (id, app_id, name, notes, sort_order)
-                VALUES ($id, $appId, $name, $notes, $sortOrder)
+                INSERT INTO modules (id, app_id, record_class_id, name, notes, sort_order)
+                VALUES ($id, $appId, $recordClassId, $name, $notes, $sortOrder)
                 """,
                 ("$id", id),
                 ("$appId", parent.Id),
+                ("$recordClassId", "module.generic"),
                 ("$name", $"Module {index + 1}"),
                 ("$notes", "New module created in the desktop shell spike."),
                 ("$sortOrder", index));
@@ -183,6 +195,7 @@ internal sealed class SpikeDatabase
                 id,
                 $"Module {index + 1}",
                 "New module created in the desktop shell spike.",
+                "module.generic",
                 parent);
         }
 
@@ -208,6 +221,7 @@ internal sealed class SpikeDatabase
                 id,
                 $"Episode {index + 1}",
                 "New episode created in the desktop shell spike.",
+                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Episode),
                 parent);
         }
 
@@ -232,6 +246,7 @@ internal sealed class SpikeDatabase
                 id,
                 $"Shot {index + 1:00}",
                 "New shot created in the desktop shell spike.",
+                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Shot),
                 parent);
         }
 
@@ -262,7 +277,7 @@ internal sealed class SpikeDatabase
 
             DuplicateShots(connection, node.Id, id);
 
-            return new ProjectTreeNode(ProjectTreeNodeKind.Episode, id, $"{node.Name} copy", node.Notes, node.Parent);
+            return new ProjectTreeNode(ProjectTreeNodeKind.Episode, id, $"{node.Name} copy", node.Notes, node.RecordClassId, node.Parent);
         }
 
         if (node.Kind == ProjectTreeNodeKind.Shot)
@@ -282,7 +297,7 @@ internal sealed class SpikeDatabase
                 ("$sortOrder", sortOrder),
                 ("$sourceId", node.Id));
 
-            return new ProjectTreeNode(ProjectTreeNodeKind.Shot, id, $"{node.Name} copy", node.Notes, node.Parent);
+            return new ProjectTreeNode(ProjectTreeNodeKind.Shot, id, $"{node.Name} copy", node.Notes, node.RecordClassId, node.Parent);
         }
 
         if (node.Kind == ProjectTreeNodeKind.App)
@@ -293,8 +308,8 @@ internal sealed class SpikeDatabase
             Execute(
                 connection,
                 """
-                INSERT INTO apps (id, project_id, name, notes, sort_order)
-                SELECT $id, project_id, $name, notes, $sortOrder
+                INSERT INTO apps (id, project_id, record_class_id, name, notes, sort_order)
+                SELECT $id, project_id, record_class_id, $name, notes, $sortOrder
                 FROM apps
                 WHERE id = $sourceId
                 """,
@@ -305,7 +320,7 @@ internal sealed class SpikeDatabase
 
             DuplicateModules(connection, node.Id, id);
 
-            return new ProjectTreeNode(ProjectTreeNodeKind.App, id, $"{node.Name} copy", node.Notes, node.Parent);
+            return new ProjectTreeNode(ProjectTreeNodeKind.App, id, $"{node.Name} copy", node.Notes, node.RecordClassId, node.Parent);
         }
 
         if (node.Kind == ProjectTreeNodeKind.Module)
@@ -315,8 +330,8 @@ internal sealed class SpikeDatabase
             Execute(
                 connection,
                 """
-                INSERT INTO modules (id, app_id, name, notes, sort_order)
-                SELECT $id, app_id, $name, notes, $sortOrder
+                INSERT INTO modules (id, app_id, record_class_id, name, notes, sort_order)
+                SELECT $id, app_id, record_class_id, $name, notes, $sortOrder
                 FROM modules
                 WHERE id = $sourceId
                 """,
@@ -325,7 +340,7 @@ internal sealed class SpikeDatabase
                 ("$sortOrder", sortOrder),
                 ("$sourceId", node.Id));
 
-            return new ProjectTreeNode(ProjectTreeNodeKind.Module, id, $"{node.Name} copy", node.Notes, node.Parent);
+            return new ProjectTreeNode(ProjectTreeNodeKind.Module, id, $"{node.Name} copy", node.Notes, node.RecordClassId, node.Parent);
         }
 
         throw new InvalidOperationException($"Cannot duplicate {node.Kind}.");
@@ -369,10 +384,24 @@ internal sealed class SpikeDatabase
             ("$notes", node.Notes));
     }
 
+    public EditorLayout LoadEditorLayout(string recordClassId)
+    {
+        using var connection = OpenConnection();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT layout_json FROM editor_layouts WHERE record_class_id = $recordClassId";
+        command.Parameters.AddWithValue("$recordClassId", recordClassId);
+        var json = command.ExecuteScalar() as string
+            ?? throw new InvalidOperationException($"Missing editor layout for record class '{recordClassId}'.");
+
+        return JsonSerializer.Deserialize<EditorLayout>(json)
+            ?? throw new InvalidOperationException($"Invalid editor layout JSON for record class '{recordClassId}'.");
+    }
+
     private void Initialize()
     {
         using var connection = OpenConnection();
         ExecuteScript(connection, SchemaSql);
+        SeedEditorLayouts(connection);
         SeedIfEmpty(connection);
     }
 
@@ -422,24 +451,103 @@ internal sealed class SpikeDatabase
         Execute(
             connection,
             """
-            INSERT INTO apps (id, project_id, name, notes, sort_order)
-            VALUES ($id, $projectId, $name, $notes, 0)
+            INSERT INTO apps (id, project_id, record_class_id, name, notes, sort_order)
+            VALUES ($id, $projectId, $recordClassId, $name, $notes, 0)
             """,
             ("$id", "app_core_chat"),
             ("$projectId", "project_foqn_s2"),
+            ("$recordClassId", "app.core.chat"),
             ("$name", "Chat"),
             ("$notes", "Seed app. Modules hang below their app."));
 
         Execute(
             connection,
             """
-            INSERT INTO modules (id, app_id, name, notes, sort_order)
-            VALUES ($id, $appId, $name, $notes, 0)
+            INSERT INTO modules (id, app_id, record_class_id, name, notes, sort_order)
+            VALUES ($id, $appId, $recordClassId, $name, $notes, 0)
             """,
             ("$id", "module_core_chat"),
             ("$appId", "app_core_chat"),
+            ("$recordClassId", "module.core.chat"),
             ("$name", "Chat Module"),
             ("$notes", "Seed module linked to Chat app."));
+    }
+
+    private static void SeedEditorLayouts(SqliteConnection connection)
+    {
+        foreach (var recordClassId in new[]
+        {
+            "project",
+            "navigation.apps",
+            "navigation.episodes",
+            "app.generic",
+            "app.core.chat",
+            "module.generic",
+            "module.core.chat",
+            "episode",
+            "shot",
+        })
+        {
+            Execute(
+                connection,
+                """
+                INSERT OR REPLACE INTO editor_layouts (record_class_id, layout_json)
+                VALUES ($recordClassId, $layoutJson)
+                """,
+                ("$recordClassId", recordClassId),
+                ("$layoutJson", MinimalEditorLayoutJson(recordClassId)));
+        }
+    }
+
+    private static string MinimalEditorLayoutJson(string recordClassId)
+    {
+        var styleLabel = recordClassId.StartsWith("navigation.", StringComparison.Ordinal)
+            ? "Navigation"
+            : "Style";
+
+        return $$"""
+        {
+          "cards": [
+            {
+              "id": "general",
+              "label": "General",
+              "icon": "{{EditorIcons.General}}",
+              "order": 10,
+              "visible": true,
+              "defaultOpen": true,
+              "groups": [
+                {
+                  "id": "identity",
+                  "label": "",
+                  "order": 10,
+                  "visible": true,
+                  "fields": [
+                    { "id": "core.name", "order": 10, "visible": true },
+                    { "id": "core.kind", "order": 20, "visible": false },
+                    { "id": "core.notes", "order": 30, "visible": true }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "style",
+              "label": "{{styleLabel}}",
+              "icon": "{{EditorIcons.Style}}",
+              "order": 20,
+              "visible": true,
+              "groups": []
+            },
+            {
+              "id": "behavior",
+              "label": "Behavior",
+              "icon": "{{EditorIcons.Behavior}}",
+              "order": 30,
+              "visible": true,
+              "groups": []
+            }
+          ]
+        }
+        """;
     }
 
     private static void SeedShot(SqliteConnection connection, string id, string episodeId, string name, int sortOrder)
@@ -496,11 +604,12 @@ internal sealed class SpikeDatabase
             Execute(
                 connection,
                 """
-                INSERT INTO modules (id, app_id, name, notes, sort_order)
-                VALUES ($id, $appId, $name, $notes, $sortOrder)
+                INSERT INTO modules (id, app_id, record_class_id, name, notes, sort_order)
+                VALUES ($id, $appId, $recordClassId, $name, $notes, $sortOrder)
                 """,
                 ("$id", $"module_{Guid.NewGuid():N}"),
                 ("$appId", targetAppId),
+                ("$recordClassId", module.RecordClassId),
                 ("$name", module.Name),
                 ("$notes", module.Notes),
                 ("$sortOrder", index));
@@ -573,7 +682,7 @@ internal sealed class SpikeDatabase
     {
         var rows = new List<AppRow>();
         using var command = connection.CreateCommand();
-        command.CommandText = "SELECT id, project_id, name, notes, sort_order FROM apps ORDER BY sort_order, name";
+        command.CommandText = "SELECT id, project_id, record_class_id, name, notes, sort_order FROM apps ORDER BY sort_order, name";
         using var reader = command.ExecuteReader();
         while (reader.Read())
         {
@@ -581,8 +690,9 @@ internal sealed class SpikeDatabase
                 reader.GetString(0),
                 reader.GetString(1),
                 reader.GetString(2),
-                ReadString(reader, 3),
-                reader.GetInt32(4)));
+                reader.GetString(3),
+                ReadString(reader, 4),
+                reader.GetInt32(5)));
         }
 
         return rows;
@@ -592,7 +702,7 @@ internal sealed class SpikeDatabase
     {
         var rows = new List<ModuleRow>();
         using var command = connection.CreateCommand();
-        command.CommandText = "SELECT id, app_id, name, notes, sort_order FROM modules ORDER BY sort_order, name";
+        command.CommandText = "SELECT id, app_id, record_class_id, name, notes, sort_order FROM modules ORDER BY sort_order, name";
         using var reader = command.ExecuteReader();
         while (reader.Read())
         {
@@ -600,8 +710,9 @@ internal sealed class SpikeDatabase
                 reader.GetString(0),
                 reader.GetString(1),
                 reader.GetString(2),
-                ReadString(reader, 3),
-                reader.GetInt32(4)));
+                reader.GetString(3),
+                ReadString(reader, 4),
+                reader.GetInt32(5)));
         }
 
         return rows;
@@ -678,6 +789,7 @@ internal sealed class SpikeDatabase
         CREATE TABLE IF NOT EXISTS apps (
           id TEXT PRIMARY KEY,
           project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+          record_class_id TEXT NOT NULL,
           name TEXT NOT NULL,
           notes TEXT NOT NULL DEFAULT '',
           sort_order INTEGER NOT NULL DEFAULT 0,
@@ -687,17 +799,23 @@ internal sealed class SpikeDatabase
         CREATE TABLE IF NOT EXISTS modules (
           id TEXT PRIMARY KEY,
           app_id TEXT NOT NULL REFERENCES apps(id) ON DELETE CASCADE,
+          record_class_id TEXT NOT NULL,
           name TEXT NOT NULL,
           notes TEXT NOT NULL DEFAULT '',
           sort_order INTEGER NOT NULL DEFAULT 0,
           metadata_json TEXT NOT NULL DEFAULT '{}'
         );
+
+        CREATE TABLE IF NOT EXISTS editor_layouts (
+          record_class_id TEXT PRIMARY KEY,
+          layout_json TEXT NOT NULL
+        );
         """;
 
     private sealed record ProjectRow(string Id, string Name, string Notes);
     private sealed record EpisodeRow(string Id, string ProjectId, string Name, string Notes, int SortOrder);
-    private sealed record AppRow(string Id, string ProjectId, string Name, string Notes, int SortOrder);
-    private sealed record ModuleRow(string Id, string AppId, string Name, string Notes, int SortOrder);
+    private sealed record AppRow(string Id, string ProjectId, string RecordClassId, string Name, string Notes, int SortOrder);
+    private sealed record ModuleRow(string Id, string AppId, string RecordClassId, string Name, string Notes, int SortOrder);
     private sealed record ShotRow(
         string Id,
         string EpisodeId,

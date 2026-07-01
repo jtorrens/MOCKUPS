@@ -11,3 +11,4 @@ assets/*/media/
 *.db
 *.db-wal
 *.db-shm
+spikes/desktop-editor-shell/data/window-state.json

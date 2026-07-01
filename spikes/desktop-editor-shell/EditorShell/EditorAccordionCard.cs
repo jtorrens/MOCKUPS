@@ -40,16 +40,7 @@ internal sealed class EditorAccordionCard : Border
             Margin = new Avalonia.Thickness(14, 10),
         };
 
-        var iconBlock = new TextBlock
-        {
-            Text = icon,
-            Width = 24,
-            Height = 24,
-            VerticalAlignment = VerticalAlignment.Center,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            TextAlignment = TextAlignment.Center,
-            FontWeight = FontWeight.Bold,
-        };
+        var iconBlock = EditorIcons.Create(icon, 20);
         iconBlock.Classes.Add("accordion-icon");
         Grid.SetColumn(iconBlock, 0);
 
