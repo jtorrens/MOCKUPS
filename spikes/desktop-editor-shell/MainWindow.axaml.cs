@@ -504,7 +504,7 @@ public partial class MainWindow : SukiWindow
 
     private void AddNavigationNode(StackPanel parent, ProjectTreeNode node, int level)
     {
-        if (node.Children.Count > 0)
+        if (node.Children.Count > 0 || node.CanAddChild)
         {
             var content = new StackPanel
             {
@@ -807,6 +807,7 @@ public partial class MainWindow : SukiWindow
             ProjectTreeNodeKind.AppsRoot => "Apps and module defaults",
             ProjectTreeNodeKind.ProductionDataRoot => "Actors, devices and production themes",
             ProjectTreeNodeKind.SystemDataRoot => "Icon sets, bars, palette, fonts, media and presets",
+            ProjectTreeNodeKind.ProductionFontsRoot => "Approved production font families",
             _ => node.Notes,
         };
     }
@@ -845,10 +846,10 @@ public partial class MainWindow : SukiWindow
 
         if (node.CanAddChild)
         {
-            actions.Children.Add(CreateTreeActionButton(EditorIcons.Create(EditorIcons.Add, 14), "Add child", (_, e) =>
+            actions.Children.Add(CreateTreeActionButton(EditorIcons.Create(EditorIcons.Add, 14), "Add child", async (_, e) =>
             {
                 e.Handled = true;
-                AddChild(node);
+                await AddChild(node);
             }));
         }
 
@@ -1101,7 +1102,8 @@ public partial class MainWindow : SukiWindow
             or ProjectTreeNodeKind.Shot
             or ProjectTreeNodeKind.PaletteColor
             or ProjectTreeNodeKind.Device
-            or ProjectTreeNodeKind.Actor;
+            or ProjectTreeNodeKind.Actor
+            or ProjectTreeNodeKind.ProductionFont;
 
         return fieldId switch
         {
@@ -1224,6 +1226,10 @@ public partial class MainWindow : SukiWindow
             "actor.avatar.offset" when node.Kind == ProjectTreeNodeKind.Actor => CreateActorFieldValue(node.Id, "actor.avatar.offset", "Avatar offset", ValueKind.IntegerPair),
             "actor.avatar.useInitials" when node.Kind == ProjectTreeNodeKind.Actor => CreateActorFieldValue(node.Id, "actor.avatar.useInitials", "Use initials", ValueKind.Boolean),
             "actor.avatar.initialsPadding" when node.Kind == ProjectTreeNodeKind.Actor => CreateActorFieldValue(node.Id, "actor.avatar.initialsPadding", "Initials padding", ValueKind.Integer),
+            "font.family" when node.Kind == ProjectTreeNodeKind.ProductionFont => CreateProductionFontFieldValue(node.Id, "font.family", "Family", ValueKind.StringReadOnly),
+            "font.category" when node.Kind == ProjectTreeNodeKind.ProductionFont => CreateProductionFontFieldValue(node.Id, "font.category", "Category", ValueKind.OptionToken),
+            "font.sourceDirectory" when node.Kind == ProjectTreeNodeKind.ProductionFont => CreateProductionFontFieldValue(node.Id, "font.sourceDirectory", "Source Directory", ValueKind.StringReadOnly),
+            "font.files" when node.Kind == ProjectTreeNodeKind.ProductionFont => CreateProductionFontFieldValue(node.Id, "font.files", "Font Files", ValueKind.StringMultiline),
             _ => throw new InvalidOperationException($"Unknown field '{fieldId}' for record class '{node.RecordClassId}'."),
         };
     }
@@ -1360,6 +1366,33 @@ public partial class MainWindow : SukiWindow
             value);
     }
 
+    private FieldValue CreateProductionFontFieldValue(
+        string fontId,
+        string fieldId,
+        string label,
+        ValueKind valueKind)
+    {
+        var value = _database.GetProductionFontFieldValue(fontId, fieldId);
+        var isEditable = fieldId == "font.category";
+        var options = fieldId == "font.category"
+            ? new[]
+            {
+                new FieldOption("text", "Text"),
+                new FieldOption("emoji", "Emoji"),
+            }
+            : null;
+
+        return new FieldValue(
+            new FieldDefinition(
+                fieldId,
+                label,
+                valueKind,
+                IsEditable: isEditable,
+                DefaultValue: value,
+                Options: options),
+            value);
+    }
+
     private static bool ActorFieldKeepsDefault(string fieldId, ValueKind valueKind)
     {
         return fieldId.StartsWith("actor.avatar.", StringComparison.Ordinal)
@@ -1388,7 +1421,8 @@ public partial class MainWindow : SukiWindow
             or ProjectTreeNodeKind.Shot
             or ProjectTreeNodeKind.PaletteColor
             or ProjectTreeNodeKind.Device
-            or ProjectTreeNodeKind.Actor;
+            or ProjectTreeNodeKind.Actor
+            or ProjectTreeNodeKind.ProductionFont;
 
         if (fieldId == "core.name")
         {
@@ -1447,6 +1481,18 @@ public partial class MainWindow : SukiWindow
                 node.Notes = value;
                 RebuildNavigationCards();
             }
+            return;
+        }
+
+        if (node.Kind == ProjectTreeNodeKind.ProductionFont && fieldId.StartsWith("font.", StringComparison.Ordinal))
+        {
+            _database.UpdateProductionFontField(node.Id, fieldId, value);
+            if (fieldId == "font.category")
+            {
+                node.Notes = $"{value} · {_database.GetProductionFontFieldValue(node.Id, "font.files").Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Length} files";
+                RebuildNavigationCards();
+            }
+
             return;
         }
 
@@ -1755,10 +1801,122 @@ public partial class MainWindow : SukiWindow
         return value.Equals("true", StringComparison.OrdinalIgnoreCase) || value == "1";
     }
 
-    private void AddChild(ProjectTreeNode parent)
+    private async Task AddChild(ProjectTreeNode parent)
     {
+        if (parent.Kind == ProjectTreeNodeKind.ProductionFontsRoot)
+        {
+            var importedFont = await ImportProductionFont(parent);
+            if (importedFont is not null)
+            {
+                ReloadAndSelect(importedFont);
+            }
+
+            return;
+        }
+
         var child = _database.AddChild(parent);
         ReloadAndSelect(child);
+    }
+
+    private async Task<ProjectTreeNode?> ImportProductionFont(ProjectTreeNode fontsRoot)
+    {
+        var options = new FilePickerOpenOptions
+        {
+            Title = "Import production font family",
+            AllowMultiple = true,
+            FileTypeFilter =
+            [
+                new FilePickerFileType("Font files")
+                {
+                    Patterns = ["*.ttf", "*.otf", "*.ttc", "*.woff", "*.woff2"],
+                    AppleUniformTypeIdentifiers = ["public.font"],
+                },
+            ],
+        };
+
+        var project = ProjectAncestor(fontsRoot);
+        var mediaRoot = _database.GetProjectSettings(project.Id).MediaRoot;
+        var fullMediaRoot = ResolveProjectMediaRoot(mediaRoot);
+        if (!string.IsNullOrWhiteSpace(fullMediaRoot) && Directory.Exists(fullMediaRoot))
+        {
+            options.SuggestedStartLocation = await StorageProvider.TryGetFolderFromPathAsync(fullMediaRoot);
+        }
+
+        var files = await StorageProvider.OpenFilePickerAsync(options);
+        if (files.Count == 0) return null;
+
+        try
+        {
+            return _database.ImportProductionFont(fontsRoot, files.Select((file) => file.Path.LocalPath).ToList());
+        }
+        catch (Exception exception)
+        {
+            await ShowInfoDialog("Import font failed", exception.Message);
+            return null;
+        }
+    }
+
+    private static ProjectTreeNode ProjectAncestor(ProjectTreeNode node)
+    {
+        var current = node;
+        while (current.Kind != ProjectTreeNodeKind.Project)
+        {
+            current = current.Parent ?? throw new InvalidOperationException($"{node.Kind} has no project ancestor.");
+        }
+
+        return current;
+    }
+
+    private static string ResolveProjectMediaRoot(string mediaRoot)
+    {
+        if (Path.IsPathFullyQualified(mediaRoot)) return mediaRoot;
+        return Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", mediaRoot));
+    }
+
+    private async Task ShowInfoDialog(string title, string message)
+    {
+        var dialog = new SukiWindow
+        {
+            Title = title,
+            Width = 440,
+            Height = 220,
+            MinWidth = 440,
+            MinHeight = 220,
+            CanResize = false,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            IsMenuVisible = false,
+            BackgroundAnimationEnabled = false,
+        };
+
+        var okButton = new Button
+        {
+            Content = "OK",
+            MinWidth = 92,
+            HorizontalAlignment = HorizontalAlignment.Right,
+        };
+        okButton.Click += (_, _) => dialog.Close();
+
+        dialog.Content = new Border
+        {
+            Padding = new Avalonia.Thickness(22),
+            Child = new Grid
+            {
+                RowDefinitions = new RowDefinitions("*,Auto"),
+                RowSpacing = 18,
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = message,
+                        TextWrapping = TextWrapping.Wrap,
+                    },
+                    okButton,
+                },
+            },
+        };
+        Grid.SetRow(okButton, 1);
+
+        await dialog.ShowDialog(this);
     }
 
     private void DuplicateNode(ProjectTreeNode node)
@@ -1933,6 +2091,7 @@ internal enum ProjectTreeNodeKind
     PaletteRoot,
     DevicesRoot,
     ActorsRoot,
+    ProductionFontsRoot,
     EpisodesRoot,
     App,
     Module,
@@ -1941,6 +2100,7 @@ internal enum ProjectTreeNodeKind
     PaletteColor,
     Device,
     Actor,
+    ProductionFont,
 }
 
 internal sealed class ProjectTreeNode
@@ -1981,6 +2141,7 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.PaletteRoot
         or ProjectTreeNodeKind.DevicesRoot
         or ProjectTreeNodeKind.ActorsRoot
+        or ProjectTreeNodeKind.ProductionFontsRoot
         or ProjectTreeNodeKind.EpisodesRoot
         or ProjectTreeNodeKind.Episode;
     public bool CanDuplicate => Kind is ProjectTreeNodeKind.App
@@ -1996,13 +2157,15 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.Shot
         or ProjectTreeNodeKind.PaletteColor
         or ProjectTreeNodeKind.Device
-        or ProjectTreeNodeKind.Actor;
+        or ProjectTreeNodeKind.Actor
+        or ProjectTreeNodeKind.ProductionFont;
     public bool CanOpenEditor => Kind is not ProjectTreeNodeKind.ProductionDataRoot
         and not ProjectTreeNodeKind.SystemDataRoot
         and not ProjectTreeNodeKind.AppsRoot
         and not ProjectTreeNodeKind.PaletteRoot
         and not ProjectTreeNodeKind.DevicesRoot
         and not ProjectTreeNodeKind.ActorsRoot
+        and not ProjectTreeNodeKind.ProductionFontsRoot
         and not ProjectTreeNodeKind.EpisodesRoot;
 
     public string Display => Name;
@@ -2024,6 +2187,7 @@ internal sealed class ProjectTreeNode
             ProjectTreeNodeKind.PaletteRoot => "navigation.palette",
             ProjectTreeNodeKind.DevicesRoot => "navigation.devices",
             ProjectTreeNodeKind.ActorsRoot => "navigation.actors",
+            ProjectTreeNodeKind.ProductionFontsRoot => "navigation.production_fonts",
             ProjectTreeNodeKind.EpisodesRoot => "navigation.episodes",
             ProjectTreeNodeKind.App => "app.generic",
             ProjectTreeNodeKind.Module => "module.generic",
@@ -2032,6 +2196,7 @@ internal sealed class ProjectTreeNode
             ProjectTreeNodeKind.PaletteColor => "palette_color",
             ProjectTreeNodeKind.Device => "device",
             ProjectTreeNodeKind.Actor => "actor",
+            ProjectTreeNodeKind.ProductionFont => "production_font",
             _ => throw new InvalidOperationException($"No record class for {kind}."),
         };
     }

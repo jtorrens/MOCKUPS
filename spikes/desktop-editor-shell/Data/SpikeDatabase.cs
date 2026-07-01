@@ -6,10 +6,11 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 
 namespace Mockups.DesktopEditorShell.Data;
 
-internal sealed class SpikeDatabase
+internal sealed partial class SpikeDatabase
 {
     private static readonly object WriteGate = new();
     private readonly string _connectionString;
@@ -43,6 +44,7 @@ internal sealed class SpikeDatabase
         var paletteColors = QueryPaletteColorRows(connection);
         var devices = QueryDeviceRows(connection);
         var actors = QueryActorRows(connection);
+        var productionFonts = QueryProductionFontRows(connection);
 
         var projectNodes = projects
             .Select((project) => new ProjectTreeNode(
@@ -57,6 +59,7 @@ internal sealed class SpikeDatabase
         var paletteRootNodes = new Dictionary<string, ProjectTreeNode>();
         var deviceRootNodes = new Dictionary<string, ProjectTreeNode>();
         var actorRootNodes = new Dictionary<string, ProjectTreeNode>();
+        var productionFontRootNodes = new Dictionary<string, ProjectTreeNode>();
         var episodeRootNodes = new Dictionary<string, ProjectTreeNode>();
         var episodeNodes = new Dictionary<string, ProjectTreeNode>();
         foreach (var project in projectNodes.Values)
@@ -103,6 +106,13 @@ internal sealed class SpikeDatabase
                 "People and identities used by the production.",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ActorsRoot),
                 productionDataRoot);
+            var productionFontsRoot = new ProjectTreeNode(
+                ProjectTreeNodeKind.ProductionFontsRoot,
+                $"production_fonts_root_{project.Id}",
+                "Production Fonts",
+                "Approved font families copied into this production.",
+                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ProductionFontsRoot),
+                systemDataRoot);
             var episodesRoot = new ProjectTreeNode(
                 ProjectTreeNodeKind.EpisodesRoot,
                 $"episodes_root_{project.Id}",
@@ -114,6 +124,7 @@ internal sealed class SpikeDatabase
             productionDataRoot.AddChild(actorsRoot);
             productionDataRoot.AddChild(devicesRoot);
             systemDataRoot.AddChild(paletteRoot);
+            systemDataRoot.AddChild(productionFontsRoot);
             project.AddChild(appsRoot);
             project.AddChild(episodesRoot);
             project.AddChild(productionDataRoot);
@@ -122,6 +133,7 @@ internal sealed class SpikeDatabase
             paletteRootNodes[project.Id] = paletteRoot;
             deviceRootNodes[project.Id] = devicesRoot;
             actorRootNodes[project.Id] = actorsRoot;
+            productionFontRootNodes[project.Id] = productionFontsRoot;
             episodeRootNodes[project.Id] = episodesRoot;
         }
 
@@ -208,6 +220,20 @@ internal sealed class SpikeDatabase
                 actor.ShortName,
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Actor),
                 actorsRoot));
+        }
+
+        foreach (var font in productionFonts.OrderBy((font) => font.FamilyName))
+        {
+            if (!productionFontRootNodes.TryGetValue(font.ProjectId, out var fontsRoot)) continue;
+
+            fontsRoot.AddChild(new ProjectTreeNode(
+                ProjectTreeNodeKind.ProductionFont,
+                font.Id,
+                font.FamilyName,
+                $"{font.Category} · {ProductionFontFileCount(font.FilesJson)} files",
+                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ProductionFont),
+                fontsRoot,
+                isUsed: IsProductionFontUsed(connection, font.ProjectId, font.Id)));
         }
 
         foreach (var shot in shots.OrderBy((shot) => shot.SortOrder).ThenBy((shot) => shot.Name))
@@ -345,6 +371,11 @@ internal sealed class SpikeDatabase
                 $"A{index}",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Actor),
                 parent);
+        }
+
+        if (parent.Kind == ProjectTreeNodeKind.ProductionFontsRoot)
+        {
+            throw new InvalidOperationException("Production fonts are added through the font importer.");
         }
 
         if (parent.Kind == ProjectTreeNodeKind.App)
@@ -598,8 +629,19 @@ internal sealed class SpikeDatabase
             ProjectTreeNodeKind.PaletteColor => "palette_colors",
             ProjectTreeNodeKind.Device => "devices",
             ProjectTreeNodeKind.Actor => "actors",
+            ProjectTreeNodeKind.ProductionFont => "production_fonts",
             _ => throw new InvalidOperationException($"Cannot delete {node.Kind}."),
         };
+
+        if (node.Kind == ProjectTreeNodeKind.ProductionFont)
+        {
+            if (IsProductionFontUsed(connection, ProjectAncestor(node).Id, node.Id))
+            {
+                throw new InvalidOperationException("This production font is still used and cannot be deleted.");
+            }
+
+            DeleteProductionFontFiles(connection, node.Id);
+        }
 
         Execute(connection, $"DELETE FROM {table} WHERE id = $id", ("$id", node.Id));
     }
@@ -617,6 +659,7 @@ internal sealed class SpikeDatabase
             ProjectTreeNodeKind.PaletteColor => "palette_colors",
             ProjectTreeNodeKind.Device => "devices",
             ProjectTreeNodeKind.Actor => "actors",
+            ProjectTreeNodeKind.ProductionFont => "production_fonts",
             _ => "",
         };
 
@@ -644,6 +687,16 @@ internal sealed class SpikeDatabase
             Execute(
                 connection,
                 "UPDATE actors SET display_name = $name WHERE id = $id",
+                ("$id", node.Id),
+                ("$name", node.Name));
+            return;
+        }
+
+        if (node.Kind == ProjectTreeNodeKind.ProductionFont)
+        {
+            Execute(
+                connection,
+                "UPDATE production_fonts SET family_name = $name WHERE id = $id",
                 ("$id", node.Id),
                 ("$name", node.Name));
             return;
@@ -681,6 +734,7 @@ internal sealed class SpikeDatabase
         SeedPaletteColorsIfEmpty(connection);
         SeedDevicesIfEmpty(connection);
         SeedActorsIfEmpty(connection);
+        SeedProductionFontsIfEmpty(connection);
     }
 
     private SqliteConnection OpenConnection()
@@ -843,6 +897,11 @@ internal sealed class SpikeDatabase
         }
     }
 
+    private static void SeedProductionFontsIfEmpty(SqliteConnection connection)
+    {
+        _ = connection;
+    }
+
     private static void SeedEditorLayouts(SqliteConnection connection)
     {
         foreach (var recordClassId in new[]
@@ -854,6 +913,7 @@ internal sealed class SpikeDatabase
             "navigation.palette",
             "navigation.devices",
             "navigation.actors",
+            "navigation.production_fonts",
             "navigation.episodes",
             "app.generic",
             "app.core.chat",
@@ -864,6 +924,7 @@ internal sealed class SpikeDatabase
             "palette_color",
             "device",
             "actor",
+            "production_font",
         })
         {
             Execute(
@@ -947,6 +1008,14 @@ internal sealed class SpikeDatabase
                     { "id": "actor.shortName", "order": 20, "visible": true },
                     { "id": "actor.defaultDeviceId", "order": 30, "visible": true },
                     { "id": "actor.defaultThemeId", "order": 40, "visible": true }
+                  """
+            : recordClassId == "production_font"
+                ? """
+                    { "id": "core.name", "order": 10, "visible": true },
+                    { "id": "font.family", "order": 20, "visible": true },
+                    { "id": "font.category", "order": 30, "visible": true },
+                    { "id": "font.sourceDirectory", "order": 40, "visible": false },
+                    { "id": "font.files", "order": 50, "visible": true }
                   """
             : """
                     { "id": "core.name", "order": 10, "visible": true },
@@ -1217,6 +1286,140 @@ internal sealed class SpikeDatabase
             .ToList();
     }
 
+    public ProjectTreeNode ImportProductionFont(ProjectTreeNode fontsRoot, IReadOnlyList<string> selectedFilePaths)
+    {
+        if (fontsRoot.Kind != ProjectTreeNodeKind.ProductionFontsRoot)
+        {
+            throw new InvalidOperationException("Production fonts can only be imported from the Production Fonts root.");
+        }
+
+        var sourceFiles = ExpandFontFamilyFiles(selectedFilePaths);
+        if (sourceFiles.Count == 0)
+        {
+            throw new InvalidOperationException("No supported font files were selected.");
+        }
+
+        var project = ProjectAncestor(fontsRoot);
+        var projectSettings = GetProjectSettings(project.Id);
+        var familyName = InferFontFamilyName(sourceFiles[0]);
+        var category = IsEmojiFontFamily(familyName) ? "emoji" : "text";
+        var familySlug = Slug(familyName);
+        var relativeDirectory = Path.Combine("fonts", familySlug);
+        var mediaRoot = ResolveProjectPath(projectSettings.MediaRoot);
+        var targetDirectory = Path.Combine(mediaRoot, relativeDirectory);
+        Directory.CreateDirectory(targetDirectory);
+
+        var copiedFiles = new JsonArray();
+        foreach (var sourceFile in sourceFiles.OrderBy(Path.GetFileName))
+        {
+            var targetPath = Path.Combine(targetDirectory, Path.GetFileName(sourceFile));
+            if (!Path.GetFullPath(sourceFile).Equals(Path.GetFullPath(targetPath), StringComparison.OrdinalIgnoreCase))
+            {
+                File.Copy(sourceFile, targetPath, overwrite: true);
+            }
+
+            copiedFiles.Add(new JsonObject
+            {
+                ["fileName"] = Path.GetFileName(sourceFile),
+                ["relativePath"] = NormalizeRelativePath(Path.Combine(relativeDirectory, Path.GetFileName(sourceFile))),
+                ["style"] = InferFontStyle(sourceFile),
+                ["weight"] = InferFontWeight(sourceFile),
+            });
+        }
+
+        using var connection = OpenConnection();
+        var existingId = ExistingProductionFontId(connection, project.Id, familyName);
+        var id = string.IsNullOrWhiteSpace(existingId) ? $"font_{Guid.NewGuid():N}" : existingId;
+        if (string.IsNullOrWhiteSpace(existingId))
+        {
+            Execute(
+                connection,
+                """
+                INSERT INTO production_fonts (id, project_id, family_name, category, source_directory, files_json)
+                VALUES ($id, $projectId, $familyName, $category, $sourceDirectory, $filesJson)
+                """,
+                ("$id", id),
+                ("$projectId", project.Id),
+                ("$familyName", familyName),
+                ("$category", category),
+                ("$sourceDirectory", NormalizeRelativePath(relativeDirectory)),
+                ("$filesJson", copiedFiles.ToJsonString()));
+        }
+        else
+        {
+            Execute(
+                connection,
+                """
+                UPDATE production_fonts
+                SET category = $category,
+                    source_directory = $sourceDirectory,
+                    files_json = $filesJson
+                WHERE id = $id
+                """,
+                ("$id", id),
+                ("$category", category),
+                ("$sourceDirectory", NormalizeRelativePath(relativeDirectory)),
+                ("$filesJson", copiedFiles.ToJsonString()));
+        }
+
+        return new ProjectTreeNode(
+            ProjectTreeNodeKind.ProductionFont,
+            id,
+            familyName,
+            $"{category} · {copiedFiles.Count} files",
+            ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ProductionFont),
+            fontsRoot);
+    }
+
+    public ProductionFontSettings GetProductionFontSettings(string fontId)
+    {
+        using var connection = OpenConnection();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT family_name, category, source_directory, files_json FROM production_fonts WHERE id = $id";
+        command.Parameters.AddWithValue("$id", fontId);
+        using var reader = command.ExecuteReader();
+        if (!reader.Read())
+        {
+            throw new InvalidOperationException($"Missing production font '{fontId}'.");
+        }
+
+        return new ProductionFontSettings(
+            reader.GetString(0),
+            ReadString(reader, 1),
+            ReadString(reader, 2),
+            ReadString(reader, 3));
+    }
+
+    public string GetProductionFontFieldValue(string fontId, string fieldId)
+    {
+        var settings = GetProductionFontSettings(fontId);
+        return fieldId switch
+        {
+            "font.family" => settings.FamilyName,
+            "font.category" => settings.Category,
+            "font.sourceDirectory" => settings.SourceDirectory,
+            "font.files" => ProductionFontFilesSummary(settings.FilesJson),
+            _ => throw new InvalidOperationException($"Unknown production font field '{fieldId}'."),
+        };
+    }
+
+    public void UpdateProductionFontField(string fontId, string fieldId, string value)
+    {
+        using var connection = OpenConnection();
+        var column = fieldId switch
+        {
+            "font.family" => "family_name",
+            "font.category" => "category",
+            _ => throw new InvalidOperationException($"Unknown editable production font field '{fieldId}'."),
+        };
+
+        Execute(
+            connection,
+            $"UPDATE production_fonts SET {column} = $value WHERE id = $id",
+            ("$id", fontId),
+            ("$value", value));
+    }
+
     public DevicePreviewMetrics GetDevicePreviewMetrics(string deviceId)
     {
         var settings = GetDeviceSettings(deviceId);
@@ -1434,6 +1637,26 @@ internal sealed class SpikeDatabase
                 ReadString(reader, 4),
                 ReadString(reader, 5),
                 ReadString(reader, 6)));
+        }
+
+        return rows;
+    }
+
+    private static List<ProductionFontRow> QueryProductionFontRows(SqliteConnection connection)
+    {
+        var rows = new List<ProductionFontRow>();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT id, project_id, family_name, category, source_directory, files_json FROM production_fonts ORDER BY family_name";
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            rows.Add(new ProductionFontRow(
+                reader.GetString(0),
+                reader.GetString(1),
+                reader.GetString(2),
+                ReadString(reader, 3),
+                ReadString(reader, 4),
+                ReadString(reader, 5)));
         }
 
         return rows;
@@ -1691,6 +1914,205 @@ internal sealed class SpikeDatabase
         _ = colorId;
         return false;
     }
+
+    private static bool IsProductionFontUsed(SqliteConnection connection, string projectId, string fontId)
+    {
+        _ = connection;
+        _ = projectId;
+        _ = fontId;
+        return false;
+    }
+
+    private static string ExistingProductionFontId(SqliteConnection connection, string projectId, string familyName)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT id FROM production_fonts WHERE project_id = $projectId AND family_name = $familyName";
+        command.Parameters.AddWithValue("$projectId", projectId);
+        command.Parameters.AddWithValue("$familyName", familyName);
+        return command.ExecuteScalar() as string ?? "";
+    }
+
+    private static int ProductionFontFileCount(string filesJson)
+    {
+        try
+        {
+            return JsonNode.Parse(filesJson)?.AsArray().Count ?? 0;
+        }
+        catch (JsonException)
+        {
+            return 0;
+        }
+    }
+
+    private static string ProductionFontFilesSummary(string filesJson)
+    {
+        try
+        {
+            var files = JsonNode.Parse(filesJson)?.AsArray();
+            if (files is null || files.Count == 0) return "No copied font files.";
+
+            return string.Join(
+                Environment.NewLine,
+                files
+                    .OfType<JsonObject>()
+                    .Select((file) =>
+                    {
+                        var name = JsonNodeString(file, "fileName");
+                        var style = JsonNodeString(file, "style");
+                        var weight = JsonNodeString(file, "weight");
+                        var relativePath = JsonNodeString(file, "relativePath");
+                        return $"{name} · {style} · {weight} · {relativePath}";
+                    }));
+        }
+        catch (JsonException)
+        {
+            return filesJson;
+        }
+    }
+
+    private static string JsonNodeString(JsonObject node, string key)
+    {
+        if (!node.TryGetPropertyValue(key, out var value) || value is null) return "";
+        return value.GetValueKind() == JsonValueKind.String
+            ? value.GetValue<string>()
+            : value.ToJsonString();
+    }
+
+    private static IReadOnlyList<string> ExpandFontFamilyFiles(IReadOnlyList<string> selectedFilePaths)
+    {
+        var selected = selectedFilePaths
+            .Where(IsSupportedFontFile)
+            .Select(Path.GetFullPath)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        if (selected.Count == 0) return selected;
+
+        var first = selected[0];
+        var directory = Path.GetDirectoryName(first);
+        if (string.IsNullOrWhiteSpace(directory) || !Directory.Exists(directory))
+        {
+            return selected;
+        }
+
+        var family = InferFontFamilyName(first);
+        var familySlug = Slug(family);
+        var matchingFamilyFiles = Directory
+            .EnumerateFiles(directory)
+            .Where(IsSupportedFontFile)
+            .Where((file) => Slug(InferFontFamilyName(file)) == familySlug)
+            .Select(Path.GetFullPath);
+
+        return selected
+            .Concat(matchingFamilyFiles)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(Path.GetFileName)
+            .ToList();
+    }
+
+    private static bool IsSupportedFontFile(string path)
+    {
+        var extension = Path.GetExtension(path).ToLowerInvariant();
+        return extension is ".ttf" or ".otf" or ".ttc" or ".woff" or ".woff2";
+    }
+
+    private static string InferFontFamilyName(string filePath)
+    {
+        var name = Path.GetFileNameWithoutExtension(filePath);
+        var dashIndex = name.IndexOf('-', StringComparison.Ordinal);
+        if (dashIndex > 0)
+        {
+            return CleanFontFamilyName(name[..dashIndex]);
+        }
+
+        return CleanFontFamilyName(FontStyleSuffixRegex().Replace(name, ""));
+    }
+
+    private static string CleanFontFamilyName(string value)
+    {
+        var clean = value.Replace('_', ' ').Trim();
+        clean = Regex.Replace(clean, "\\s+", " ");
+        return string.IsNullOrWhiteSpace(clean) ? "Imported Font" : clean;
+    }
+
+    private static string InferFontStyle(string filePath)
+    {
+        var name = Path.GetFileNameWithoutExtension(filePath);
+        return name.Contains("italic", StringComparison.OrdinalIgnoreCase)
+            || name.Contains("oblique", StringComparison.OrdinalIgnoreCase)
+                ? "italic"
+                : "normal";
+    }
+
+    private static int InferFontWeight(string filePath)
+    {
+        var name = Path.GetFileNameWithoutExtension(filePath);
+        if (ContainsWeight(name, "Thin")) return 100;
+        if (ContainsWeight(name, "ExtraLight") || ContainsWeight(name, "UltraLight")) return 200;
+        if (ContainsWeight(name, "Light")) return 300;
+        if (ContainsWeight(name, "Medium")) return 500;
+        if (ContainsWeight(name, "SemiBold") || ContainsWeight(name, "Semibold") || ContainsWeight(name, "DemiBold")) return 600;
+        if (ContainsWeight(name, "ExtraBold") || ContainsWeight(name, "UltraBold")) return 800;
+        if (ContainsWeight(name, "Black") || ContainsWeight(name, "Heavy")) return 900;
+        if (ContainsWeight(name, "Bold")) return 700;
+        return 400;
+    }
+
+    private static bool ContainsWeight(string name, string token)
+    {
+        return name.Contains(token, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsEmojiFontFamily(string familyName)
+    {
+        return familyName.Contains("emoji", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string Slug(string value)
+    {
+        var slug = Regex.Replace(value.Trim().ToLowerInvariant(), "[^a-z0-9]+", "_").Trim('_');
+        return string.IsNullOrWhiteSpace(slug) ? "font" : slug;
+    }
+
+    private static string ResolveProjectPath(string path)
+    {
+        if (Path.IsPathFullyQualified(path)) return path;
+        return Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", path));
+    }
+
+    private static string NormalizeRelativePath(string path)
+    {
+        return path.Replace(Path.DirectorySeparatorChar, '/').Replace(Path.AltDirectorySeparatorChar, '/');
+    }
+
+    private static void DeleteProductionFontFiles(SqliteConnection connection, string fontId)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT projects.media_root, production_fonts.source_directory
+            FROM production_fonts
+            INNER JOIN projects ON projects.id = production_fonts.project_id
+            WHERE production_fonts.id = $id
+            """;
+        command.Parameters.AddWithValue("$id", fontId);
+        using var reader = command.ExecuteReader();
+        if (!reader.Read()) return;
+
+        var mediaRoot = ResolveProjectPath(ReadString(reader, 0));
+        var sourceDirectory = ReadString(reader, 1);
+        if (string.IsNullOrWhiteSpace(mediaRoot) || string.IsNullOrWhiteSpace(sourceDirectory)) return;
+
+        var targetDirectory = Path.GetFullPath(Path.Combine(mediaRoot, sourceDirectory));
+        var fullMediaRoot = Path.GetFullPath(mediaRoot);
+        var relative = Path.GetRelativePath(fullMediaRoot, targetDirectory);
+        if (relative.StartsWith("..", StringComparison.Ordinal) || Path.IsPathFullyQualified(relative)) return;
+        if (Directory.Exists(targetDirectory))
+        {
+            Directory.Delete(targetDirectory, recursive: true);
+        }
+    }
+
+    [GeneratedRegex("(Regular|Bold|Italic|Light|Medium|SemiBold|Semibold|Black|Thin|ExtraLight|UltraLight|ExtraBold|UltraBold|Condensed|Oblique|Variable|VF|Roman)$", RegexOptions.IgnoreCase)]
+    private static partial Regex FontStyleSuffixRegex();
 
     private static string MetadataString(string metadataJson, string key)
     {
@@ -2137,6 +2559,17 @@ internal sealed class SpikeDatabase
           metadata_json TEXT NOT NULL DEFAULT '{}'
         );
 
+        CREATE TABLE IF NOT EXISTS production_fonts (
+          id TEXT PRIMARY KEY,
+          project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+          family_name TEXT NOT NULL,
+          category TEXT NOT NULL DEFAULT 'text',
+          source_directory TEXT NOT NULL DEFAULT '',
+          files_json TEXT NOT NULL DEFAULT '[]',
+          metadata_json TEXT NOT NULL DEFAULT '{}',
+          UNIQUE(project_id, family_name)
+        );
+
         CREATE TABLE IF NOT EXISTS editor_layouts (
           record_class_id TEXT PRIMARY KEY,
           layout_json TEXT NOT NULL
@@ -2170,6 +2603,11 @@ internal sealed class SpikeDatabase
         bool IsProtected,
         bool HiddenFromPickers,
         string Note);
+    public sealed record ProductionFontSettings(
+        string FamilyName,
+        string Category,
+        string SourceDirectory,
+        string FilesJson);
     private sealed record ProjectRow(string Id, string Name, string Notes);
     private sealed record EpisodeRow(string Id, string ProjectId, string Name, string Slug, string Notes, int SortOrder);
     private sealed record AppRow(string Id, string ProjectId, string RecordClassId, string Name, string Notes, int SortOrder);
@@ -2177,6 +2615,7 @@ internal sealed class SpikeDatabase
     private sealed record PaletteColorRow(string Id, string ProjectId, string Token, string ValueHex, string Note, bool IsNeutral, string MetadataJson);
     private sealed record DeviceRow(string Id, string ProjectId, string Name, string Manufacturer, string Model, string OsFamily, string MetricsJson);
     private sealed record ActorRow(string Id, string ProjectId, string DisplayName, string ShortName, string DefaultDeviceId, string DefaultThemeId, string MetadataJson);
+    private sealed record ProductionFontRow(string Id, string ProjectId, string FamilyName, string Category, string SourceDirectory, string FilesJson);
     private sealed record ShotRow(
         string Id,
         string EpisodeId,
