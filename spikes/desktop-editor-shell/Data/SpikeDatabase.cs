@@ -1217,6 +1217,28 @@ internal sealed class SpikeDatabase
             .ToList();
     }
 
+    public DevicePreviewMetrics GetDevicePreviewMetrics(string deviceId)
+    {
+        var settings = GetDeviceSettings(deviceId);
+        var metrics = ParseJsonObject(settings.MetricsJson);
+        var canvasWidth = JsonNumberDouble(metrics, ["canvas", "width"], JsonNumberDouble(metrics, ["renderSize", "width"], 1080));
+        var canvasHeight = JsonNumberDouble(metrics, ["canvas", "height"], JsonNumberDouble(metrics, ["renderSize", "height"], 1920));
+        var screenX = JsonNumberDouble(metrics, ["screen", "x"], 0);
+        var screenY = JsonNumberDouble(metrics, ["screen", "y"], 0);
+        var screenWidth = JsonNumberDouble(metrics, ["screen", "width"], canvasWidth);
+        var screenHeight = JsonNumberDouble(metrics, ["screen", "height"], canvasHeight);
+        var cornerRadius = JsonNumberDouble(metrics, ["cornerRadius"], 0);
+        return new DevicePreviewMetrics(
+            settings.Name,
+            canvasWidth,
+            canvasHeight,
+            screenX,
+            screenY,
+            screenWidth,
+            screenHeight,
+            cornerRadius);
+    }
+
     public IReadOnlyList<FieldOption> GetThemeOptions(string projectId)
     {
         // Theme rows are not part of this new shell yet, but this keeps the field
@@ -1795,6 +1817,19 @@ internal sealed class SpikeDatabase
         return node.GetValue<string?>() ?? "0";
     }
 
+    private static double JsonNumberDouble(JsonObject root, IReadOnlyList<string> path, double fallback)
+    {
+        var node = GetJsonValue(root, path);
+        if (node is null) return fallback;
+        if (node is JsonValue value)
+        {
+            if (value.TryGetValue<double>(out var number)) return number;
+            if (value.TryGetValue<string>(out var text) && double.TryParse(text, out var parsed)) return parsed;
+        }
+
+        return fallback;
+    }
+
     private static string JsonString(JsonObject root, IReadOnlyList<string> path)
     {
         var node = GetJsonValue(root, path);
@@ -2111,6 +2146,15 @@ internal sealed class SpikeDatabase
     public sealed record ProjectSettings(string Slug, int DefaultFps, string MediaRoot);
     public sealed record EpisodeSettings(string Slug, int SortOrder);
     public sealed record DeviceSettings(string Name, string Manufacturer, string Model, string OsFamily, string MetricsJson);
+    public sealed record DevicePreviewMetrics(
+        string Name,
+        double CanvasWidth,
+        double CanvasHeight,
+        double ScreenX,
+        double ScreenY,
+        double ScreenWidth,
+        double ScreenHeight,
+        double CornerRadius);
     public sealed record ActorSettings(
         string ProjectId,
         string DisplayName,

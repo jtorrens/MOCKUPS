@@ -30,6 +30,7 @@ public partial class MainWindow : SukiWindow
     private readonly HashSet<string> _expandedNodeIds = [];
     private List<ProjectTreeNode> _treeRoots = [];
     private ProjectTreeNode? _selectedNode;
+    private string? _selectedPreviewDeviceId;
 
     public MainWindow()
     {
@@ -38,6 +39,7 @@ public partial class MainWindow : SukiWindow
         Closing += (_, _) => SaveShellState();
         ApplyTheme();
         LoadProjectTree();
+        InitializePreviewDevices();
     }
 
     private void OnToggleThemeClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -68,6 +70,7 @@ public partial class MainWindow : SukiWindow
             SetBrush("PreviewIncomingTextBrush", "#302f2d");
             ThemeLabel.Text = "Dark mode";
             ThemeToggleButton.Content = "Switch to light";
+            RefreshPreviewDevice();
             return;
         }
 
@@ -83,11 +86,169 @@ public partial class MainWindow : SukiWindow
         SetBrush("PreviewIncomingTextBrush", "#302f2d");
         ThemeLabel.Text = "Light mode";
         ThemeToggleButton.Content = "Switch to dark";
+        RefreshPreviewDevice();
     }
 
     private void SetBrush(string key, string hex)
     {
         Resources[key] = new SolidColorBrush(Color.Parse(hex));
+    }
+
+    private void InitializePreviewDevices()
+    {
+        var project = _treeRoots.FirstOrDefault((node) => node.Kind == ProjectTreeNodeKind.Project);
+        if (project is null) return;
+
+        var options = _database.GetDeviceOptions(project.Id);
+        PreviewDeviceComboBox.ItemsSource = options;
+        var selected = !string.IsNullOrWhiteSpace(_selectedPreviewDeviceId)
+            ? options.FirstOrDefault((option) => option.Value == _selectedPreviewDeviceId)
+            : null;
+        selected ??= options.FirstOrDefault();
+        PreviewDeviceComboBox.SelectedItem = selected;
+        _selectedPreviewDeviceId = selected?.Value;
+        RefreshPreviewDevice();
+    }
+
+    private void OnPreviewDeviceChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (PreviewDeviceComboBox.SelectedItem is not FieldOption option) return;
+
+        _selectedPreviewDeviceId = option.Value;
+        RefreshPreviewDevice();
+    }
+
+    private void RefreshPreviewDevice()
+    {
+        if (PreviewDeviceHost is null || string.IsNullOrWhiteSpace(_selectedPreviewDeviceId)) return;
+
+        var metrics = _database.GetDevicePreviewMetrics(_selectedPreviewDeviceId);
+        PreviewDeviceHost.Content = CreateDevicePreview(metrics);
+    }
+
+    private Control CreateDevicePreview(SpikeDatabase.DevicePreviewMetrics metrics)
+    {
+        var canvas = new Canvas
+        {
+            Width = metrics.CanvasWidth,
+            Height = metrics.CanvasHeight,
+        };
+
+        var device = new Border
+        {
+            Width = metrics.CanvasWidth,
+            Height = metrics.CanvasHeight,
+            CornerRadius = new CornerRadius(Math.Max(0, metrics.CornerRadius)),
+            Background = new SolidColorBrush(Color.Parse(_isDark ? "#20242D" : "#F2F4F7")),
+            BorderBrush = (IBrush)Resources["PreviewDeviceBorderBrush"]!,
+            BorderThickness = new Avalonia.Thickness(Math.Max(6, Math.Min(metrics.CanvasWidth, metrics.CanvasHeight) * 0.012)),
+            ClipToBounds = true,
+            BoxShadow = BoxShadows.Parse("0 10 28 0 #33000000"),
+        };
+        Canvas.SetLeft(device, 0);
+        Canvas.SetTop(device, 0);
+
+        var screen = new Border
+        {
+            Width = metrics.ScreenWidth,
+            Height = metrics.ScreenHeight,
+            CornerRadius = new CornerRadius(Math.Max(0, metrics.CornerRadius * 0.72)),
+            Background = (IBrush)Resources["PreviewScreenBackground"]!,
+            ClipToBounds = true,
+            Child = CreatePreviewScreenContent(metrics),
+        };
+        Canvas.SetLeft(screen, metrics.ScreenX);
+        Canvas.SetTop(screen, metrics.ScreenY);
+
+        canvas.Children.Add(device);
+        canvas.Children.Add(screen);
+        return canvas;
+    }
+
+    private Control CreatePreviewScreenContent(SpikeDatabase.DevicePreviewMetrics metrics)
+    {
+        var headerHeight = Math.Max(56, metrics.ScreenHeight * 0.11);
+        return new Grid
+        {
+            RowDefinitions = new RowDefinitions($"{headerHeight},*"),
+            Children =
+            {
+                new Border
+                {
+                    Background = (IBrush)Resources["PreviewHeaderBackground"]!,
+                    Padding = new Avalonia.Thickness(18, 14),
+                    Child = new StackPanel
+                    {
+                        Children =
+                        {
+                            new TextBlock
+                            {
+                                Foreground = (IBrush)Resources["PreviewHeaderTextBrush"]!,
+                                FontSize = 18,
+                                FontWeight = FontWeight.Bold,
+                                Text = "Alex",
+                            },
+                            new TextBlock
+                            {
+                                Foreground = (IBrush)Resources["PreviewHeaderMutedBrush"]!,
+                                FontSize = 12,
+                                Text = "offline",
+                            },
+                        },
+                    },
+                },
+                PreviewMessagesLayer(),
+            },
+        };
+    }
+
+    private Control PreviewMessagesLayer()
+    {
+        var layer = new Grid
+        {
+            Background = Brushes.Transparent,
+            Children =
+            {
+                new StackPanel
+                {
+                    Margin = new Avalonia.Thickness(18, 34, 18, 0),
+                    Spacing = 12,
+                    Children =
+                    {
+                        new Border
+                        {
+                            HorizontalAlignment = HorizontalAlignment.Right,
+                            MaxWidth = 210,
+                            CornerRadius = new CornerRadius(18),
+                            Background = (IBrush)Resources["PreviewOutgoingBubble"]!,
+                            Padding = new Avalonia.Thickness(14, 10),
+                            Child = new TextBlock
+                            {
+                                Foreground = (IBrush)Resources["PreviewBubbleTextBrush"]!,
+                                TextWrapping = TextWrapping.Wrap,
+                                Text = "Are you close?",
+                            },
+                        },
+                        new Border
+                        {
+                            HorizontalAlignment = HorizontalAlignment.Left,
+                            MaxWidth = 220,
+                            CornerRadius = new CornerRadius(18),
+                            Background = (IBrush)Resources["PreviewIncomingBubble"]!,
+                            Padding = new Avalonia.Thickness(14, 10),
+                            Child = new TextBlock
+                            {
+                                Foreground = (IBrush)Resources["PreviewIncomingTextBrush"]!,
+                                TextWrapping = TextWrapping.Wrap,
+                                Text = "Two minutes away.",
+                            },
+                        },
+                    },
+                },
+            },
+        };
+        Grid.SetRow(layer, 1);
+        return layer;
     }
 
     private static string ShellStatePath()
@@ -1271,6 +1432,10 @@ public partial class MainWindow : SukiWindow
         if (node.Kind == ProjectTreeNodeKind.Device && fieldId.StartsWith("device.", StringComparison.Ordinal))
         {
             _database.UpdateDeviceField(node.Id, fieldId, value);
+            if (_selectedPreviewDeviceId == node.Id)
+            {
+                RefreshPreviewDevice();
+            }
             return;
         }
 

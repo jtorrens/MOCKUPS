@@ -91,54 +91,32 @@
                             <TextBlock FontSize="17" FontWeight="Bold" Text="Runtime stays web" />
                         </StackPanel>
                     </Border>
-                    <Grid Margin="22">
-                        <Border Width="270"
-                                Height="560"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                BorderBrush="{DynamicResource PreviewDeviceBorderBrush}"
-                                BorderThickness="8"
-                                CornerRadius="34"
-                                Background="{DynamicResource PreviewDeviceBackground}">
-                            <Grid RowDefinitions="70,*">
-                                <Border Grid.Row="0"
-                                        Background="{DynamicResource PreviewHeaderBackground}"
-                                        CornerRadius="26,26,0,0"
-                                        Padding="18,14">
-                                    <StackPanel>
-                                        <TextBlock Foreground="{DynamicResource PreviewHeaderTextBrush}"
-                                                   FontSize="18"
-                                                   FontWeight="Bold"
-                                                   Text="Alex" />
-                                        <TextBlock Foreground="{DynamicResource PreviewHeaderMutedBrush}"
-                                                   FontSize="12"
-                                                   Text="offline" />
-                                    </StackPanel>
-                                </Border>
-                                <Grid Grid.Row="1"
-                                      Background="{DynamicResource PreviewScreenBackground}">
-                                    <StackPanel Margin="18,34,18,0" Spacing="12">
-                                        <Border HorizontalAlignment="Right"
-                                                MaxWidth="210"
-                                                CornerRadius="18"
-                                                Background="{DynamicResource PreviewOutgoingBubble}"
-                                                Padding="14,10">
-                                            <TextBlock Foreground="{DynamicResource PreviewBubbleTextBrush}"
-                                                       TextWrapping="Wrap"
-                                                       Text="Are you close?" />
-                                        </Border>
-                                        <Border HorizontalAlignment="Left"
-                                                MaxWidth="220"
-                                                CornerRadius="18"
-                                                Background="{DynamicResource PreviewIncomingBubble}"
-                                                Padding="14,10">
-                                            <TextBlock Foreground="{DynamicResource PreviewIncomingTextBrush}"
-                                                       TextWrapping="Wrap"
-                                                       Text="Two minutes away." />
-                                        </Border>
-                                    </StackPanel>
-                                </Grid>
-                            </Grid>
+                    <Grid Margin="22"
+                          RowDefinitions="Auto,*"
+                          RowSpacing="14">
+                        <Border Grid.Row="0"
+                                Padding="12"
+                                CornerRadius="12"
+                                Background="#22000000">
+                            <StackPanel Spacing="8">
+                                <TextBlock FontSize="11"
+                                           FontWeight="SemiBold"
+                                           Text="DEVICE" />
+                                <ComboBox x:Name="PreviewDeviceComboBox"
+                                          MinHeight="36"
+                                          HorizontalAlignment="Stretch"
+                                          SelectionChanged="OnPreviewDeviceChanged" />
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Row="1"
+                                Padding="12"
+                                CornerRadius="12"
+                                Background="#18000000">
+                            <Viewbox Stretch="Uniform"
+                                     HorizontalAlignment="Center"
+                                     VerticalAlignment="Center">
+                                <ContentControl x:Name="PreviewDeviceHost" />
+                            </Viewbox>
                         </Border>
                     </Grid>
                     </DockPanel>
