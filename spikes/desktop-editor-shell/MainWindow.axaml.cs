@@ -251,6 +251,15 @@ public partial class MainWindow : SukiWindow
         foreach (var project in _treeRoots)
         {
             AddNavigationCard(NavigationCardsPanel, project, CreateProjectNavigationContent(project), EditorIcons.ForTreeNode(project.Kind));
+
+            foreach (var root in project.Children
+                .Where((child) => child.Kind is ProjectTreeNodeKind.AppsRoot
+                    or ProjectTreeNodeKind.ProductionDataRoot
+                    or ProjectTreeNodeKind.SystemDataRoot)
+                .OrderBy(NavigationRootOrder))
+            {
+                AddNavigationSection(NavigationCardsPanel, root);
+            }
         }
     }
 
@@ -262,14 +271,10 @@ public partial class MainWindow : SukiWindow
             Margin = new Avalonia.Thickness(0, 6, 0, 0),
         };
 
-        foreach (var root in project.Children
-            .Where((child) => child.Kind is ProjectTreeNodeKind.AppsRoot
-                or ProjectTreeNodeKind.EpisodesRoot
-                or ProjectTreeNodeKind.ProductionDataRoot
-                or ProjectTreeNodeKind.SystemDataRoot)
-            .OrderBy(NavigationRootOrder))
+        var episodesRoot = project.Children.FirstOrDefault((child) => child.Kind == ProjectTreeNodeKind.EpisodesRoot);
+        foreach (var episode in episodesRoot?.Children ?? [])
         {
-            AddNavigationSection(panel, root);
+            AddNavigationNode(panel, episode, level: 1);
         }
 
         return panel;
@@ -393,7 +398,7 @@ public partial class MainWindow : SukiWindow
             contentColumn = 1;
         }
 
-        var titleButton = CreateNavigationSelectButton(node);
+        var titleButton = CreateNavigationSelectButton(node, includeSubtitle: true);
         Grid.SetColumn(titleButton, contentColumn);
 
         var actions = CreateNavigationActions(node);
@@ -447,7 +452,7 @@ public partial class MainWindow : SukiWindow
             contentColumn = 1;
         }
 
-        var titleButton = CreateNavigationSelectButton(node);
+        var titleButton = CreateNavigationSelectButton(node, includeSubtitle: true);
         Grid.SetColumn(titleButton, contentColumn);
 
         var actions = CreateNavigationActions(node);
@@ -503,7 +508,7 @@ public partial class MainWindow : SukiWindow
         };
         Grid.SetColumn(swatch, 1);
 
-        var titleButton = CreateNavigationSelectButton(node);
+        var titleButton = CreateNavigationSelectButton(node, includeSubtitle: true);
         Grid.SetColumn(titleButton, 2);
 
         var actions = CreateNavigationActions(node);
@@ -545,18 +550,38 @@ public partial class MainWindow : SukiWindow
         return button;
     }
 
-    private Button CreateNavigationSelectButton(ProjectTreeNode node)
+    private Button CreateNavigationSelectButton(ProjectTreeNode node, bool includeSubtitle)
     {
-        var button = new Button
+        var textPanel = new StackPanel
         {
-            Content = new TextBlock
+            Spacing = 1,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        textPanel.Children.Add(new TextBlock
+        {
+            Text = NavigationTitle(node),
+            FontWeight = FontWeight.SemiBold,
+            Foreground = NavigationTextBrush(node),
+            TextTrimming = TextTrimming.CharacterEllipsis,
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        var subtitle = NavigationSubtitle(node);
+        if (includeSubtitle && !string.IsNullOrWhiteSpace(subtitle))
+        {
+            textPanel.Children.Add(new TextBlock
             {
-                Text = node.Name,
-                FontWeight = FontWeight.SemiBold,
-                Foreground = NavigationTextBrush(node),
+                Text = subtitle,
+                FontSize = 12,
+                Opacity = 0.72,
+                Foreground = NavigationMutedTextBrush(node),
                 TextTrimming = TextTrimming.CharacterEllipsis,
                 VerticalAlignment = VerticalAlignment.Center,
-            },
+            });
+        }
+
+        var button = new Button
+        {
+            Content = textPanel,
             Padding = new Avalonia.Thickness(0),
             HorizontalContentAlignment = HorizontalAlignment.Stretch,
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -577,19 +602,48 @@ public partial class MainWindow : SukiWindow
         return button;
     }
 
-    private IBrush? NavigationTextBrush(ProjectTreeNode node)
+    private static string NavigationTitle(ProjectTreeNode node)
+    {
+        return node.Kind switch
+        {
+            ProjectTreeNodeKind.Project => "Project",
+            ProjectTreeNodeKind.ProductionDataRoot => "Production data",
+            ProjectTreeNodeKind.SystemDataRoot => "System data",
+            _ => node.Name,
+        };
+    }
+
+    private static string NavigationSubtitle(ProjectTreeNode node)
+    {
+        return node.Kind switch
+        {
+            ProjectTreeNodeKind.Project => "Episodes, shots, screens and modules",
+            ProjectTreeNodeKind.AppsRoot => "Apps and module defaults",
+            ProjectTreeNodeKind.ProductionDataRoot => "Actors, devices and production themes",
+            ProjectTreeNodeKind.SystemDataRoot => "Icon sets, bars, palette, fonts, media and presets",
+            _ => node.Notes,
+        };
+    }
+
+    private IBrush NavigationTextBrush(ProjectTreeNode node)
     {
         return _selectedNode?.Id == node.Id
             ? new SolidColorBrush(Color.Parse(_isDark ? "#7DB7FF" : "#1368CE"))
-            : null;
+            : new SolidColorBrush(Color.Parse(_isDark ? "#F1F5F9" : "#1F2937"));
+    }
+
+    private IBrush NavigationMutedTextBrush(ProjectTreeNode node)
+    {
+        return _selectedNode?.Id == node.Id
+            ? new SolidColorBrush(Color.Parse(_isDark ? "#A8CEFF" : "#2F7EDB"))
+            : new SolidColorBrush(Color.Parse(_isDark ? "#B8C0CE" : "#667085"));
     }
 
     private void ApplyNavigationSelectionBrush(Control control, ProjectTreeNode node)
     {
-        var brush = NavigationTextBrush(node);
-        if (brush is not null)
+        if (_selectedNode?.Id == node.Id)
         {
-            ApplyIconBrush(control, brush);
+            ApplyIconBrush(control, NavigationTextBrush(node));
         }
     }
 
@@ -718,7 +772,7 @@ public partial class MainWindow : SukiWindow
 
         var card = new Expander
         {
-            Header = CreateEditorCardHeader(layoutCard.Label, headerIcon),
+            Header = CreateEditorCardHeader(layoutCard.Label, EditorCardSubtitle(layoutCard), headerIcon),
             HorizontalAlignment = HorizontalAlignment.Stretch,
             ExpandDirection = ExpandDirection.Down,
             IsExpanded = layoutCard.DefaultOpen,
@@ -740,7 +794,19 @@ public partial class MainWindow : SukiWindow
         return card;
     }
 
-    private static Control CreateEditorCardHeader(string label, Control icon)
+    private static string EditorCardSubtitle(EditorLayoutCard layoutCard)
+    {
+        if (!string.IsNullOrWhiteSpace(layoutCard.Subtitle))
+        {
+            return layoutCard.Subtitle;
+        }
+
+        return layoutCard.VisibleGroups
+            .Select((group) => group.Label)
+            .FirstOrDefault((label) => !string.IsNullOrWhiteSpace(label)) ?? "";
+    }
+
+    private static Control CreateEditorCardHeader(string label, string subtitle, Control icon)
     {
         var header = new StackPanel
         {
@@ -749,12 +815,29 @@ public partial class MainWindow : SukiWindow
             VerticalAlignment = VerticalAlignment.Center,
         };
         header.Children.Add(icon);
-        header.Children.Add(new TextBlock
+        var textPanel = new StackPanel
+        {
+            Spacing = 1,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        textPanel.Children.Add(new TextBlock
         {
             Text = label,
             FontWeight = FontWeight.SemiBold,
             VerticalAlignment = VerticalAlignment.Center,
         });
+        if (!string.IsNullOrWhiteSpace(subtitle))
+        {
+            textPanel.Children.Add(new TextBlock
+            {
+                Text = subtitle,
+                FontSize = 12,
+                Opacity = 0.72,
+                VerticalAlignment = VerticalAlignment.Center,
+            });
+        }
+
+        header.Children.Add(textPanel);
         return header;
     }
 

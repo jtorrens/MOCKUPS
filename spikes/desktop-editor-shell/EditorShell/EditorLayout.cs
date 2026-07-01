@@ -18,6 +18,9 @@ internal sealed class EditorLayoutCard
     [JsonPropertyName("label")]
     public string Label { get; init; } = "";
 
+    [JsonPropertyName("subtitle")]
+    public string Subtitle { get; init; } = "";
+
     [JsonPropertyName("icon")]
     public string Icon { get; init; } = "•";
 
