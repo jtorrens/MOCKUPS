@@ -83,6 +83,7 @@ internal static class EditorIcons
             ProjectTreeNodeKind.NavigationBarsRoot => Navigation,
             ProjectTreeNodeKind.DevicesRoot => Device,
             ProjectTreeNodeKind.ActorsRoot => Actor,
+            ProjectTreeNodeKind.ThemesRoot => Theme,
             ProjectTreeNodeKind.ProductionFontsRoot => Typography,
             ProjectTreeNodeKind.App => App,
             ProjectTreeNodeKind.Module => Module,
@@ -95,6 +96,7 @@ internal static class EditorIcons
             ProjectTreeNodeKind.NavigationBar => Navigation,
             ProjectTreeNodeKind.Device => Device,
             ProjectTreeNodeKind.Actor => Actor,
+            ProjectTreeNodeKind.Theme => Theme,
             ProjectTreeNodeKind.ProductionFont => Typography,
             _ => Component,
         };
@@ -193,6 +195,7 @@ internal static class EditorIcons
             Color => "editor_palette.svg",
             Status => "editor_statusbar.svg",
             Navigation => "editor_navbar.svg",
+            Theme => "editor_design.svg",
             Icon => "editor_button_icon.svg",
             Typography => "editor_fonts.svg",
             _ => null,

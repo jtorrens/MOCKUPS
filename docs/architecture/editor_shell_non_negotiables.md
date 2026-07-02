@@ -4,6 +4,19 @@ This document defines the architectural rules for the next editor shell. It is m
 
 The goal is not to describe the current code perfectly. The goal is to protect the model we want.
 
+## 0. Read-before-change rule
+
+Before modifying the Avalonia/Suki desktop editor spike, read this document and apply it as a checklist.
+
+The short operational version also lives in the repository root as `AGENTS.md` so future Codex sessions see the same constraints.
+
+Two rules override local convenience:
+
+1. `MainWindow` is shell-only. It must not accumulate editor-specific logic.
+2. Editable fields go through `FieldDefinition` and dictionary controls. If the dictionary cannot express the field yet, extend the dictionary first.
+
+If a requested change appears to require breaking either rule, stop and clarify the architecture before implementing.
+
 ## 1. Editor and runtime are separate systems
 
 The editor edits structured data. It does not own the final visual rendering.
@@ -152,6 +165,54 @@ Examples of disallowed manual value controls:
 - ad hoc dropdown for an enum;
 - ad hoc color picker outside the color control;
 - ad hoc X/Y layout outside the pair control.
+
+## 5B. `MainWindow` is shell-only
+
+`MainWindow` may orchestrate the desktop shell, but it must not implement individual editors.
+
+Allowed responsibilities:
+
+- window initialization;
+- high-level three-panel composition;
+- selected tree node state;
+- navigation tree refresh and selection wiring;
+- editor card composition from generic layout metadata;
+- preview panel wiring;
+- generic modal hosting/delegation;
+- persisted window/panel visual state.
+
+Disallowed responsibilities:
+
+- editor-specific field construction;
+- editor-specific collection rows;
+- table-specific business rules;
+- domain-specific pickers or dialogs;
+- SVG/icon/media/font/palette logic specific to one editor;
+- one-off layout fixes for a specific editor.
+
+If a behavior is needed by one editor only, it belongs in that editor's class. If it can be reused, it belongs in a shared editor-shell class. `MainWindow` should instantiate/delegate, not implement.
+
+This applies especially to the Avalonia/Suki spike at:
+
+- `spikes/desktop-editor-shell/MainWindow.axaml.cs`
+- `spikes/desktop-editor-shell/EditorShell/`
+
+The target shape is:
+
+```text
+MainWindow
+  shell state
+  tree/editor/preview wiring
+  generic card rendering
+  generic dialog host
+
+EditorShell/*
+  editor-specific classes
+  reusable collection editors
+  dictionary controls
+  picker/dialog classes
+  preview helper controls
+```
 
 ## 5A. Field commits are a shared editor-shell behavior
 

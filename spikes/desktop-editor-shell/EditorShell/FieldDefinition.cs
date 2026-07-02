@@ -8,6 +8,7 @@ internal enum ValueKind
     StringReadOnly,
     StringMultiline,
     Integer,
+    HueDegrees,
     IntegerPair,
     DirectoryPath,
     ImageFilePath,

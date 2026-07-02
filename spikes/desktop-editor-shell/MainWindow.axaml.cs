@@ -27,6 +27,31 @@ namespace Mockups.DesktopEditorShell;
 
 public partial class MainWindow : SukiWindow
 {
+    private static readonly Dictionary<string, string> ThemeColorPairLabels = new()
+    {
+        ["theme.colors.background"] = "Background",
+        ["theme.colors.textPrimary"] = "Text primary",
+        ["theme.colors.textSecondary"] = "Text secondary",
+        ["theme.colors.accent"] = "Accent",
+        ["theme.icons.primary"] = "Icon primary",
+        ["theme.icons.secondary"] = "Icon secondary",
+        ["theme.icons.accent"] = "Icon accent",
+        ["theme.borders.primary"] = "Border primary",
+        ["theme.borders.secondary"] = "Border secondary",
+        ["theme.borders.alternate"] = "Border alternate",
+        ["theme.cursor.color"] = "Cursor color",
+        ["theme.statusBar.foreground"] = "Foreground",
+        ["theme.statusBar.background"] = "Background",
+        ["theme.navigationBar.foreground"] = "Foreground",
+        ["theme.navigationBar.background"] = "Background",
+        ["theme.keyboard.background"] = "Background",
+        ["theme.keyboard.keyBackground"] = "Key background",
+        ["theme.keyboard.specialKeyBackground"] = "Special key background",
+        ["theme.keyboard.pressedKeyBackground"] = "Pressed key background",
+        ["theme.keyboard.popoverBackground"] = "Popover background",
+        ["theme.keyboard.text"] = "Text",
+    };
+
     private bool _isDark = true;
     private readonly SpikeDatabase _database = new(SpikeDatabase.DefaultDatabasePath());
     private readonly EditorFieldCommitCoordinator _fieldCommitCoordinator = new();
@@ -492,6 +517,7 @@ public partial class MainWindow : SukiWindow
             ProjectTreeNodeKind.NavigationBarsRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.NavigationBar),
             ProjectTreeNodeKind.DevicesRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.Device),
             ProjectTreeNodeKind.ActorsRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.Actor),
+            ProjectTreeNodeKind.ThemesRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.Theme),
             _ => EditorIcons.ForTreeNode(ProjectTreeNodeKind.App),
         };
         AddNavigationCard(parent, sectionRoot, content, iconName);
@@ -818,6 +844,7 @@ public partial class MainWindow : SukiWindow
             ProjectTreeNodeKind.IconThemesRoot => "Semantic icon tokens shared by every set",
             ProjectTreeNodeKind.StatusBarsRoot => "Reusable status bar definitions",
             ProjectTreeNodeKind.NavigationBarsRoot => "Reusable navigation bar definitions",
+            ProjectTreeNodeKind.ThemesRoot => "Visual theme definitions",
             _ => node.Notes,
         };
     }
@@ -911,15 +938,28 @@ public partial class MainWindow : SukiWindow
 
         if (node.Kind == ProjectTreeNodeKind.IconTheme)
         {
-            AddEditorCard(CreateIconThemeTokensCard(node));
+            AddEditorCard(new IconThemeTokensCollectionEditor(
+                _database,
+                _isDark,
+                ShowInfoDialog,
+                ConfirmIconTokenDelete,
+                ShowIconThemeSearchDialog,
+                ReloadAndSelect).Create(node));
         }
         else if (node.Kind == ProjectTreeNodeKind.StatusBar)
         {
-            AddEditorCard(CreateStatusBarItemsCard(node));
+            AddEditorCard(new StatusBarItemsCollectionEditor(
+                _database,
+                _isDark,
+                BrowsePath,
+                ShowIconTokenPicker).Create(node));
         }
         else if (node.Kind == ProjectTreeNodeKind.NavigationBar)
         {
-            AddEditorCard(CreateNavigationBarItemsCard(node));
+            AddEditorCard(new NavigationBarItemsCollectionEditor(
+                _database,
+                _isDark,
+                BrowsePath).Create(node));
         }
     }
 
@@ -940,16 +980,6 @@ public partial class MainWindow : SukiWindow
             {
                 Spacing = 12,
             };
-
-            if (!string.IsNullOrWhiteSpace(group.Label))
-            {
-                groupPanel.Children.Add(new TextBlock
-                {
-                    Text = group.Label,
-                    FontSize = 12,
-                    Opacity = 0.72,
-                });
-            }
 
             if (node.Kind == ProjectTreeNodeKind.Actor && layoutCard.Id == "avatar")
             {
@@ -980,7 +1010,7 @@ public partial class MainWindow : SukiWindow
 
             if (groupPanel.Children.Count > 0)
             {
-                body.Children.Add(groupPanel);
+                body.Children.Add(EditorGroupBlock.Create(group, groupPanel));
             }
         }
 
@@ -995,7 +1025,7 @@ public partial class MainWindow : SukiWindow
 
         var card = new Expander
         {
-            Header = CreateEditorCardHeader(layoutCard.Label, EditorCardSubtitle(layoutCard), headerIcon),
+            Header = EditorCardHeader.Create(layoutCard.Label, EditorCardSubtitle(layoutCard), headerIcon),
             HorizontalAlignment = HorizontalAlignment.Stretch,
             ExpandDirection = ExpandDirection.Down,
             IsExpanded = layoutCard.DefaultOpen,
@@ -1041,744 +1071,11 @@ public partial class MainWindow : SukiWindow
             .FirstOrDefault((label) => !string.IsNullOrWhiteSpace(label)) ?? "";
     }
 
-    private static Control CreateEditorCardHeader(string label, string subtitle, Control icon)
-    {
-        var header = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            Spacing = 10,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        header.Children.Add(icon);
-        var textPanel = new StackPanel
-        {
-            Spacing = 1,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        textPanel.Children.Add(new TextBlock
-        {
-            Text = label,
-            FontWeight = FontWeight.SemiBold,
-            VerticalAlignment = VerticalAlignment.Center,
-        });
-        if (!string.IsNullOrWhiteSpace(subtitle))
-        {
-            textPanel.Children.Add(new TextBlock
-            {
-                Text = subtitle,
-                FontSize = 12,
-                Opacity = 0.72,
-                VerticalAlignment = VerticalAlignment.Center,
-            });
-        }
-
-        header.Children.Add(textPanel);
-        return header;
-    }
-
     private static void UpdateEditorCardHeaderState(Control headerIcon, IEnumerable<DictionaryFieldControl> controls)
     {
         var hasOverrides = controls.Any((control) => !control.IsDefault);
         var brush = hasOverrides ? new SolidColorBrush(Color.Parse("#D6A638")) : null;
         ApplyIconBrush(headerIcon, brush);
-    }
-
-    private Expander CreateIconThemeTokensCard(ProjectTreeNode node)
-    {
-        var icon = EditorIcons.Create(EditorIcons.Icon, 18);
-        var tokensPanel = new StackPanel
-        {
-            Spacing = 10,
-        };
-        tokensPanel.Children.Add(CreateIconThemeTokenToolbar(node));
-
-        var tokens = _database.GetIconThemeTokens(node.Id);
-        if (tokens.Count == 0)
-        {
-            tokensPanel.Children.Add(new TextBlock
-            {
-                Text = "No icon tokens yet. Use Refresh Sets first.",
-                Opacity = 0.72,
-            });
-        }
-        else
-        {
-            foreach (var token in tokens)
-            {
-                tokensPanel.Children.Add(CreateIconThemeTokenRow(node, token));
-            }
-        }
-
-        return new Expander
-        {
-            Header = CreateEditorCardHeader("Icon Tokens", $"{tokens.Count} semantic tokens", icon),
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            ExpandDirection = ExpandDirection.Down,
-            IsExpanded = false,
-            Content = new Border
-            {
-                Padding = new Avalonia.Thickness(10),
-                Child = tokensPanel,
-            },
-        };
-    }
-
-    private Control CreateIconThemeTokenToolbar(ProjectTreeNode node)
-    {
-        var toolbar = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            Spacing = 8,
-            HorizontalAlignment = HorizontalAlignment.Right,
-        };
-
-        var refreshButton = new Button
-        {
-            Content = "Refresh sets",
-        };
-        refreshButton.Click += async (_, _) =>
-        {
-            try
-            {
-                var result = _database.RefreshIconThemeSetsForTheme(node.Id);
-                await ShowInfoDialog("Refresh complete", $"Refreshed {result.CommonTokenCount} common token(s) across {result.ThemeCount} icon set(s). Omitted {result.OmittedTokenCount} token(s).");
-                ReloadAndSelect(node);
-            }
-            catch (Exception exception)
-            {
-                await ShowInfoDialog("Refresh failed", exception.Message);
-            }
-        };
-
-        var searchButton = new Button
-        {
-            Content = "Search / add token",
-        };
-        searchButton.Click += async (_, _) => await ShowIconThemeSearchDialog(node);
-
-        toolbar.Children.Add(refreshButton);
-        toolbar.Children.Add(searchButton);
-        return toolbar;
-    }
-
-    private Expander CreateStatusBarItemsCard(ProjectTreeNode node)
-    {
-        var icon = EditorIcons.Create(EditorIcons.Status, 18);
-        var settings = _database.GetStatusBarSettings(node.Id);
-        var items = _database.GetStatusBarItems(node.Id).ToList();
-        var body = new StackPanel
-        {
-            Spacing = 10,
-        };
-
-        body.Children.Add(new TextBlock
-        {
-            Text = "Status items resolve left/right zones by order. Icon rows use semantic icon tokens from System Data → Icon Themes.",
-            TextWrapping = TextWrapping.Wrap,
-            Opacity = 0.72,
-        });
-
-        for (var index = 0; index < items.Count; index++)
-        {
-            body.Children.Add(CreateStatusBarItemRow(node, settings.ProjectId, index, items[index]));
-        }
-
-        return new Expander
-        {
-            Header = CreateEditorCardHeader("Items", $"{items.Count} status items", icon),
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            ExpandDirection = ExpandDirection.Down,
-            IsExpanded = false,
-            Content = new Border
-            {
-                Padding = new Avalonia.Thickness(10),
-                Child = body,
-            },
-        };
-    }
-
-    private Control CreateStatusBarItemRow(ProjectTreeNode node, string projectId, int index, SpikeDatabase.StatusBarItem item)
-    {
-        var row = new Border
-        {
-            Padding = new Avalonia.Thickness(10),
-            CornerRadius = new CornerRadius(10),
-            BorderBrush = new SolidColorBrush(Color.Parse(_isDark ? "#34445A" : "#D0D7E2")),
-            BorderThickness = new Avalonia.Thickness(1),
-        };
-        var panel = new StackPanel
-        {
-            Spacing = 8,
-        };
-        row.Child = panel;
-
-        panel.Children.Add(new TextBlock
-        {
-            Text = $"{item.Label} · {item.Kind}",
-            FontWeight = FontWeight.SemiBold,
-        });
-
-        var controlsPanel = new StackPanel
-        {
-            Spacing = 8,
-        };
-
-        var valueControl = item.Kind switch
-        {
-            "iconToken" => CreateStatusBarIconTokenControl(node, projectId, index, item),
-            "generatedBattery" => CreateStatusBarGeneratedControl(node, index, item, includeCharging: true),
-            "generatedSignal" => CreateStatusBarGeneratedControl(node, index, item, includeCharging: false),
-            _ => CreateStatusBarTextControl(node, index, item),
-        };
-        controlsPanel.Children.Add(valueControl);
-
-        var zoneControl = CreateInlineStatusField(
-            new FieldValue(
-                new FieldDefinition(
-                    $"statusBar.items.{index}.zone",
-                    "Zone",
-                    ValueKind.OptionToken,
-                    DefaultValue: item.Zone,
-                    Options:
-                    [
-                        new FieldOption("off", "Off"),
-                        new FieldOption("left", "Left"),
-                        new FieldOption("right", "Right"),
-                    ]),
-                item.Zone),
-            (value) => UpdateStatusBarItem(node, index, item with { Zone = value }));
-        controlsPanel.Children.Add(zoneControl);
-
-        var orderControl = CreateInlineStatusField(
-            new FieldValue(
-                new FieldDefinition(
-                    $"statusBar.items.{index}.order",
-                    "Order",
-                    ValueKind.Integer,
-                    DefaultValue: item.Order.ToString()),
-                item.Order.ToString()),
-            (value) => UpdateStatusBarItem(node, index, item with { Order = int.TryParse(value, out var parsed) ? parsed : item.Order }));
-        controlsPanel.Children.Add(orderControl);
-
-        panel.Children.Add(controlsPanel);
-        return row;
-    }
-
-    private Control CreateStatusBarTextControl(ProjectTreeNode node, int index, SpikeDatabase.StatusBarItem item)
-    {
-        return CreateInlineStatusField(
-            new FieldValue(
-                new FieldDefinition(
-                    $"statusBar.items.{index}.value",
-                    "Value",
-                    ValueKind.StringSingleLine,
-                    DefaultValue: item.Value),
-                item.Value),
-            (value) => UpdateStatusBarItem(node, index, item with { Value = value }));
-    }
-
-    private Control CreateStatusBarIconTokenControl(ProjectTreeNode node, string projectId, int index, SpikeDatabase.StatusBarItem item)
-    {
-        var currentItem = item;
-        var grid = new Grid
-        {
-            ColumnDefinitions = new ColumnDefinitions("38,*,Auto"),
-            ColumnSpacing = 8,
-        };
-        var previewBox = new Border
-        {
-            Width = 34,
-            Height = 34,
-            CornerRadius = new CornerRadius(8),
-            BorderBrush = new SolidColorBrush(Color.Parse("#4B5B75")),
-            BorderThickness = new Avalonia.Thickness(1),
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-            Child = CreateProjectIconTokenPreview(projectId, item.Token, 21),
-        };
-        grid.Children.Add(previewBox);
-
-        var tokenBox = new TextBox
-        {
-            Text = item.Token,
-            IsReadOnly = true,
-            MinHeight = 36,
-            PlaceholderText = "Select icon token…",
-            VerticalContentAlignment = VerticalAlignment.Center,
-        };
-        Grid.SetColumn(tokenBox, 1);
-        grid.Children.Add(tokenBox);
-
-        var pickButton = new Button
-        {
-            Content = "Pick…",
-            MinWidth = 72,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        pickButton.Click += async (_, _) =>
-        {
-            var selected = await ShowIconTokenPicker(projectId, currentItem.Token, allowMultiple: false);
-            if (!string.IsNullOrWhiteSpace(selected))
-            {
-                currentItem = currentItem with { Token = selected };
-                UpdateStatusBarItem(node, index, currentItem);
-                tokenBox.Text = selected;
-                previewBox.Child = CreateProjectIconTokenPreview(projectId, selected, 21);
-            }
-        };
-        Grid.SetColumn(pickButton, 2);
-        grid.Children.Add(pickButton);
-        return grid;
-    }
-
-    private Control CreateStatusBarGeneratedControl(ProjectTreeNode node, int index, SpikeDatabase.StatusBarItem item, bool includeCharging)
-    {
-        var grid = new Grid
-        {
-            ColumnDefinitions = includeCharging ? new ColumnDefinitions("*,120") : new ColumnDefinitions("*"),
-            ColumnSpacing = 10,
-        };
-        grid.Children.Add(CreateInlineStatusField(
-            new FieldValue(
-                new FieldDefinition(
-                    $"statusBar.items.{index}.value",
-                    item.Kind == "generatedBattery" ? "Battery %" : "Signal",
-                    ValueKind.Integer,
-                    DefaultValue: item.Value),
-                item.Value),
-            (value) => UpdateStatusBarItem(node, index, item with { Value = value })));
-
-        if (includeCharging)
-        {
-            var charging = CreateInlineStatusField(
-                new FieldValue(
-                    new FieldDefinition(
-                        $"statusBar.items.{index}.charging",
-                        "Charging",
-                        ValueKind.Boolean,
-                        DefaultValue: BoolToString(item.Charging)),
-                    BoolToString(item.Charging)),
-                (value) => UpdateStatusBarItem(node, index, item with { Charging = StringToBool(value) }));
-            Grid.SetColumn(charging, 1);
-            grid.Children.Add(charging);
-        }
-
-        return grid;
-    }
-
-    private DictionaryFieldControl CreateInlineStatusField(FieldValue fieldValue, Action<string> persist)
-    {
-        var control = new DictionaryFieldControl(fieldValue, BrowsePath);
-        control.ValueCommitted += (_, value) => persist(value);
-        return control;
-    }
-
-    private void UpdateStatusBarItem(ProjectTreeNode node, int index, SpikeDatabase.StatusBarItem nextItem)
-    {
-        _database.UpdateStatusBarItem(node.Id, index, nextItem);
-    }
-
-    private Expander CreateNavigationBarItemsCard(ProjectTreeNode node)
-    {
-        var icon = EditorIcons.Create(EditorIcons.Navigation, 18);
-        var items = _database.GetNavigationBarItems(node.Id).ToList();
-        var body = new StackPanel
-        {
-            Spacing = 10,
-        };
-
-        body.Children.Add(new TextBlock
-        {
-            Text = "Navigation buttons are generated by kind. Zone and order control placement inside the bar.",
-            TextWrapping = TextWrapping.Wrap,
-            Opacity = 0.72,
-        });
-
-        for (var index = 0; index < items.Count; index++)
-        {
-            body.Children.Add(CreateNavigationBarItemRow(node, index, items[index]));
-        }
-
-        return new Expander
-        {
-            Header = CreateEditorCardHeader("Button Items", $"{items.Count} generated buttons", icon),
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            ExpandDirection = ExpandDirection.Down,
-            IsExpanded = false,
-            Content = new Border
-            {
-                Padding = new Avalonia.Thickness(10),
-                Child = body,
-            },
-        };
-    }
-
-    private Control CreateNavigationBarItemRow(ProjectTreeNode node, int index, SpikeDatabase.NavigationBarItem item)
-    {
-        var row = new Border
-        {
-            Padding = new Avalonia.Thickness(10),
-            CornerRadius = new CornerRadius(10),
-            BorderBrush = new SolidColorBrush(Color.Parse(_isDark ? "#34445A" : "#D0D7E2")),
-            BorderThickness = new Avalonia.Thickness(1),
-        };
-        var panel = new StackPanel
-        {
-            Spacing = 8,
-        };
-        row.Child = panel;
-
-        panel.Children.Add(new TextBlock
-        {
-            Text = $"{item.Label} · {item.Kind}",
-            FontWeight = FontWeight.SemiBold,
-        });
-
-        panel.Children.Add(CreateInlineStatusField(
-            new FieldValue(
-                new FieldDefinition(
-                    $"navigationBar.items.{index}.zone",
-                    "Zone",
-                    ValueKind.OptionToken,
-                    DefaultValue: item.Zone,
-                    Options:
-                    [
-                        new FieldOption("off", "Off"),
-                        new FieldOption("left", "Left"),
-                        new FieldOption("center", "Center"),
-                        new FieldOption("right", "Right"),
-                    ]),
-                item.Zone),
-            (value) => UpdateNavigationBarItem(node, index, item with { Zone = value })));
-
-        panel.Children.Add(CreateInlineStatusField(
-            new FieldValue(
-                new FieldDefinition(
-                    $"navigationBar.items.{index}.order",
-                    "Order",
-                    ValueKind.Integer,
-                    DefaultValue: item.Order.ToString()),
-                item.Order.ToString()),
-            (value) => UpdateNavigationBarItem(node, index, item with { Order = int.TryParse(value, out var parsed) ? parsed : item.Order })));
-
-        return row;
-    }
-
-    private void UpdateNavigationBarItem(ProjectTreeNode node, int index, SpikeDatabase.NavigationBarItem nextItem)
-    {
-        _database.UpdateNavigationBarItem(node.Id, index, nextItem);
-    }
-
-    private Control CreateIconThemeTokenRow(ProjectTreeNode node, SpikeDatabase.IconThemeToken token)
-    {
-        var grid = new Grid
-        {
-            ColumnDefinitions = new ColumnDefinitions("34,*,90,Auto"),
-            ColumnSpacing = 10,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-
-        var preview = CreateIconThemePreview(node.Id, token.File, 24);
-        Grid.SetColumn(preview, 0);
-
-        var text = new StackPanel
-        {
-            Spacing = 1,
-            Children =
-            {
-                new TextBlock
-                {
-                    Text = token.Token,
-                    FontWeight = FontWeight.SemiBold,
-                    TextTrimming = TextTrimming.CharacterEllipsis,
-                },
-                new TextBlock
-                {
-                    Text = string.IsNullOrWhiteSpace(token.Description) ? token.File : token.Description,
-                    FontSize = 12,
-                    Opacity = 0.72,
-                    TextTrimming = TextTrimming.CharacterEllipsis,
-                },
-            },
-        };
-        Grid.SetColumn(text, 1);
-
-        var category = new TextBlock
-        {
-            Text = string.IsNullOrWhiteSpace(token.Category) ? "misc" : token.Category,
-            Opacity = 0.82,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        Grid.SetColumn(category, 2);
-
-        var deleteButton = new Button
-        {
-            Content = EditorIcons.Create(EditorIcons.Delete, 14),
-            Width = 30,
-            Height = 30,
-            Padding = new Avalonia.Thickness(0),
-        };
-        deleteButton.Click += async (_, _) =>
-        {
-            var confirmed = await ConfirmIconTokenDelete(token.Token);
-            if (!confirmed) return;
-
-            try
-            {
-                _database.DeleteIconThemeToken(node.Id, token.Token);
-                ReloadAndSelect(node);
-            }
-            catch (Exception exception)
-            {
-                await ShowInfoDialog("Delete failed", exception.Message);
-            }
-        };
-        Grid.SetColumn(deleteButton, 3);
-
-        grid.Children.Add(preview);
-        grid.Children.Add(text);
-        grid.Children.Add(category);
-        grid.Children.Add(deleteButton);
-        return new Border
-        {
-            Padding = new Avalonia.Thickness(8),
-            CornerRadius = new CornerRadius(10),
-            BorderBrush = new SolidColorBrush(Color.Parse(_isDark ? "#44546A" : "#D0D7E2")),
-            BorderThickness = new Avalonia.Thickness(1),
-            Child = grid,
-        };
-    }
-
-    private Control CreateIconThemePreview(string iconThemeId, string file, double size)
-    {
-        try
-        {
-            var path = _database.ResolveIconThemeAssetPath(iconThemeId, file);
-            if (!File.Exists(path)) return EditorIcons.Create(EditorIcons.Icon, size);
-
-            return CreateSvgPathPreview(File.ReadAllText(path), size);
-        }
-        catch
-        {
-            return EditorIcons.Create(EditorIcons.Icon, size);
-        }
-    }
-
-    private Control CreateProjectIconTokenPreview(string projectId, string token, double size)
-    {
-        try
-        {
-            var firstToken = token
-                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .FirstOrDefault();
-            if (string.IsNullOrWhiteSpace(firstToken)) return EditorIcons.Create(EditorIcons.Icon, size);
-
-            var path = _database.ResolveIconTokenAssetPath(projectId, firstToken);
-            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path)) return EditorIcons.Create(EditorIcons.Icon, size);
-
-            return CreateSvgPathPreview(File.ReadAllText(path), size);
-        }
-        catch
-        {
-            return EditorIcons.Create(EditorIcons.Icon, size);
-        }
-    }
-
-    private static Control CreateSvgPathPreview(string svg, double size)
-    {
-        try
-        {
-            var viewBox = SvgViewBox(svg);
-            var strokeMode = SvgUsesStroke(svg);
-            var brush = new SolidColorBrush(Color.Parse("#F2F6FF"));
-            var strokeThickness = SvgDouble(SvgAttribute(svg, "stroke-width"), 2);
-            var viewportCanvas = new Canvas
-            {
-                Width = viewBox.Width,
-                Height = viewBox.Height,
-            };
-            var drawingCanvas = new Canvas
-            {
-                Width = viewBox.Width,
-                Height = viewBox.Height,
-                RenderTransform = viewBox.X != 0 || viewBox.Y != 0
-                    ? new TranslateTransform(-viewBox.X, -viewBox.Y)
-                    : null,
-            };
-            viewportCanvas.Children.Add(drawingCanvas);
-            var canvas = drawingCanvas;
-
-            foreach (Match match in Regex.Matches(svg, "<path\\b[^>]*\\bd=\"([^\"]+)\"[^>]*/?>", RegexOptions.IgnoreCase))
-            {
-                AddSvgPath(canvas, match.Groups[1].Value, strokeMode, brush, strokeThickness);
-            }
-
-            foreach (Match match in Regex.Matches(svg, "<line\\b([^>]*)/?>", RegexOptions.IgnoreCase))
-            {
-                var attrs = match.Groups[1].Value;
-                canvas.Children.Add(new Avalonia.Controls.Shapes.Line
-                {
-                    StartPoint = new Point(SvgDouble(SvgAttribute(attrs, "x1"), 0), SvgDouble(SvgAttribute(attrs, "y1"), 0)),
-                    EndPoint = new Point(SvgDouble(SvgAttribute(attrs, "x2"), 0), SvgDouble(SvgAttribute(attrs, "y2"), 0)),
-                    Stroke = brush,
-                    StrokeThickness = strokeThickness,
-                    StrokeLineCap = PenLineCap.Round,
-                });
-            }
-
-            foreach (Match match in Regex.Matches(svg, "<rect\\b([^>]*)/?>", RegexOptions.IgnoreCase))
-            {
-                var attrs = match.Groups[1].Value;
-                var rect = new Avalonia.Controls.Shapes.Rectangle
-                {
-                    Width = SvgDouble(SvgAttribute(attrs, "width"), 0),
-                    Height = SvgDouble(SvgAttribute(attrs, "height"), 0),
-                    RadiusX = SvgDouble(SvgAttribute(attrs, "rx"), 0),
-                    RadiusY = SvgDouble(SvgAttribute(attrs, "ry"), SvgDouble(SvgAttribute(attrs, "rx"), 0)),
-                    Stroke = strokeMode ? brush : null,
-                    Fill = strokeMode ? null : brush,
-                    StrokeThickness = strokeThickness,
-                };
-                Canvas.SetLeft(rect, SvgDouble(SvgAttribute(attrs, "x"), 0));
-                Canvas.SetTop(rect, SvgDouble(SvgAttribute(attrs, "y"), 0));
-                canvas.Children.Add(rect);
-            }
-
-            foreach (Match match in Regex.Matches(svg, "<circle\\b([^>]*)/?>", RegexOptions.IgnoreCase))
-            {
-                var attrs = match.Groups[1].Value;
-                var radius = SvgDouble(SvgAttribute(attrs, "r"), 0);
-                var circle = new Avalonia.Controls.Shapes.Ellipse
-                {
-                    Width = radius * 2,
-                    Height = radius * 2,
-                    Stroke = strokeMode ? brush : null,
-                    Fill = strokeMode && radius <= strokeThickness ? brush : strokeMode ? null : brush,
-                    StrokeThickness = strokeThickness,
-                };
-                Canvas.SetLeft(circle, SvgDouble(SvgAttribute(attrs, "cx"), 0) - radius);
-                Canvas.SetTop(circle, SvgDouble(SvgAttribute(attrs, "cy"), 0) - radius);
-                canvas.Children.Add(circle);
-            }
-
-            foreach (Match match in Regex.Matches(svg, "<(?:polyline|polygon)\\b([^>]*)/?>", RegexOptions.IgnoreCase))
-            {
-                var points = SvgAttribute(match.Groups[1].Value, "points");
-                var pathData = SvgPointsToPath(points, match.Value.StartsWith("<polygon", StringComparison.OrdinalIgnoreCase));
-                if (!string.IsNullOrWhiteSpace(pathData))
-                {
-                    AddSvgPath(canvas, pathData, strokeMode, brush, strokeThickness);
-                }
-            }
-
-            if (canvas.Children.Count == 0) return EditorIcons.Create(EditorIcons.Icon, size);
-
-            return new Viewbox
-            {
-                Width = size,
-                Height = size,
-                Stretch = Stretch.Uniform,
-                Child = viewportCanvas,
-            };
-        }
-        catch
-        {
-            return EditorIcons.Create(EditorIcons.Icon, size);
-        }
-    }
-
-    private static void AddSvgPath(Canvas canvas, string data, bool strokeMode, IBrush brush, double strokeThickness)
-    {
-        if (string.IsNullOrWhiteSpace(data)) return;
-
-        canvas.Children.Add(new Avalonia.Controls.Shapes.Path
-        {
-            Data = Geometry.Parse(data),
-            Stroke = strokeMode ? brush : null,
-            Fill = strokeMode ? null : brush,
-            StrokeThickness = strokeThickness,
-            StrokeLineCap = PenLineCap.Round,
-            StrokeJoin = PenLineJoin.Round,
-        });
-    }
-
-    private static Rect SvgViewBox(string svg)
-    {
-        var raw = SvgAttribute(svg, "viewBox");
-        if (!string.IsNullOrWhiteSpace(raw))
-        {
-            var values = Regex.Split(raw.Trim(), "[,\\s]+")
-                .Where((value) => !string.IsNullOrWhiteSpace(value))
-                .Select((value) => SvgDouble(value, 0))
-                .ToArray();
-            if (values.Length == 4 && values[2] > 0 && values[3] > 0)
-            {
-                return new Rect(values[0], values[1], values[2], values[3]);
-            }
-        }
-
-        return new Rect(0, 0, SvgDouble(SvgAttribute(svg, "width"), 24), SvgDouble(SvgAttribute(svg, "height"), 24));
-    }
-
-    private static bool SvgUsesStroke(string svg)
-    {
-        var stroke = SvgAttribute(svg, "stroke");
-        var fill = SvgAttribute(svg, "fill");
-        return !string.IsNullOrWhiteSpace(stroke)
-            && !stroke.Equals("none", StringComparison.OrdinalIgnoreCase)
-            && (string.IsNullOrWhiteSpace(fill) || fill.Equals("none", StringComparison.OrdinalIgnoreCase));
-    }
-
-    private static string SvgAttribute(string text, string name)
-    {
-        var match = Regex.Match(text, $"\\b{Regex.Escape(name)}\\s*=\\s*\"([^\"]*)\"", RegexOptions.IgnoreCase);
-        return match.Success ? match.Groups[1].Value : "";
-    }
-
-    private static double SvgDouble(string value, double fallback)
-    {
-        if (string.IsNullOrWhiteSpace(value)) return fallback;
-        value = Regex.Replace(value.Trim(), "[a-z%]+$", "", RegexOptions.IgnoreCase);
-        return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed) ? parsed : fallback;
-    }
-
-    private static string SvgPointsToPath(string points, bool close)
-    {
-        var values = Regex.Split(points.Trim(), "[,\\s]+")
-            .Where((value) => !string.IsNullOrWhiteSpace(value))
-            .Select((value) => SvgDouble(value, 0))
-            .ToArray();
-        if (values.Length < 4) return "";
-
-        var builder = new StringBuilder($"M {values[0].ToString(CultureInfo.InvariantCulture)} {values[1].ToString(CultureInfo.InvariantCulture)}");
-        for (var i = 2; i + 1 < values.Length; i += 2)
-        {
-            builder.Append(" L ");
-            builder.Append(values[i].ToString(CultureInfo.InvariantCulture));
-            builder.Append(' ');
-            builder.Append(values[i + 1].ToString(CultureInfo.InvariantCulture));
-        }
-        if (close) builder.Append(" Z");
-        return builder.ToString();
-    }
-
-    private static Control CreateIconThemeSearchPreview(string previewUrl, double size)
-    {
-        const string prefix = "data:image/svg+xml;base64,";
-        if (string.IsNullOrWhiteSpace(previewUrl) || !previewUrl.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-        {
-            return EditorIcons.Create(EditorIcons.Icon, size);
-        }
-
-        try
-        {
-            var svg = Encoding.UTF8.GetString(Convert.FromBase64String(previewUrl[prefix.Length..]));
-            return CreateSvgPathPreview(svg, size);
-        }
-        catch
-        {
-            return EditorIcons.Create(EditorIcons.Icon, size);
-        }
     }
 
     private static void ApplyIconBrush(Control control, IBrush? brush)
@@ -1816,6 +1113,11 @@ public partial class MainWindow : SukiWindow
 
     private FieldValue CreateFieldValue(ProjectTreeNode node, string fieldId)
     {
+        if (node.Kind == ProjectTreeNodeKind.Theme && ThemeColorPairLabels.TryGetValue(fieldId, out var themeColorPairLabel))
+        {
+            return CreateThemeFieldValue(node.Id, fieldId, themeColorPairLabel, ValueKind.PaletteColorPair);
+        }
+
         var persisted = node.Kind is ProjectTreeNodeKind.Project
             or ProjectTreeNodeKind.App
             or ProjectTreeNodeKind.Module
@@ -1824,6 +1126,7 @@ public partial class MainWindow : SukiWindow
             or ProjectTreeNodeKind.PaletteColor
             or ProjectTreeNodeKind.Device
             or ProjectTreeNodeKind.Actor
+            or ProjectTreeNodeKind.Theme
             or ProjectTreeNodeKind.ProductionFont
             or ProjectTreeNodeKind.IconTheme
             or ProjectTreeNodeKind.StatusBar
@@ -1950,6 +1253,20 @@ public partial class MainWindow : SukiWindow
             "actor.avatar.offset" when node.Kind == ProjectTreeNodeKind.Actor => CreateActorFieldValue(node.Id, "actor.avatar.offset", "Avatar offset", ValueKind.IntegerPair),
             "actor.avatar.useInitials" when node.Kind == ProjectTreeNodeKind.Actor => CreateActorFieldValue(node.Id, "actor.avatar.useInitials", "Use initials", ValueKind.Boolean),
             "actor.avatar.initialsPadding" when node.Kind == ProjectTreeNodeKind.Actor => CreateActorFieldValue(node.Id, "actor.avatar.initialsPadding", "Initials padding", ValueKind.Integer),
+            "theme.family" when node.Kind == ProjectTreeNodeKind.Theme => CreateThemeFieldValue(node.Id, "theme.family", "Family", ValueKind.OptionToken),
+            "theme.iconThemeId" when node.Kind == ProjectTreeNodeKind.Theme => CreateThemeFieldValue(node.Id, "theme.iconThemeId", "Icon theme", ValueKind.OptionToken),
+            "theme.statusBarId" when node.Kind == ProjectTreeNodeKind.Theme => CreateThemeFieldValue(node.Id, "theme.statusBarId", "Status bar", ValueKind.OptionToken),
+            "theme.navigationBarId" when node.Kind == ProjectTreeNodeKind.Theme => CreateThemeFieldValue(node.Id, "theme.navigationBarId", "Navigation bar", ValueKind.OptionToken),
+            "theme.defaultMode" when node.Kind == ProjectTreeNodeKind.Theme => CreateThemeFieldValue(node.Id, "theme.defaultMode", "Default mode", ValueKind.OptionToken),
+            "theme.neutralTint.hueDeg" when node.Kind == ProjectTreeNodeKind.Theme => CreateThemeFieldValue(node.Id, "theme.neutralTint.hueDeg", "Hue", ValueKind.HueDegrees),
+            "theme.neutralTint.saturation" when node.Kind == ProjectTreeNodeKind.Theme => CreateThemeFieldValue(node.Id, "theme.neutralTint.saturation", "Saturation", ValueKind.StringSingleLine),
+            "theme.cursor.width" when node.Kind == ProjectTreeNodeKind.Theme => CreateThemeFieldValue(node.Id, "theme.cursor.width", "Cursor width", ValueKind.Integer),
+            "theme.cursor.blinkFrames" when node.Kind == ProjectTreeNodeKind.Theme => CreateThemeFieldValue(node.Id, "theme.cursor.blinkFrames", "Blink frames", ValueKind.Integer),
+            "theme.typography.fontFamilyId" when node.Kind == ProjectTreeNodeKind.Theme => CreateThemeFieldValue(node.Id, "theme.typography.fontFamilyId", "Text font", ValueKind.OptionToken),
+            "theme.typography.emojiFontFamilyId" when node.Kind == ProjectTreeNodeKind.Theme => CreateThemeFieldValue(node.Id, "theme.typography.emojiFontFamilyId", "Emoji font", ValueKind.OptionToken),
+            "theme.typography.size" when node.Kind == ProjectTreeNodeKind.Theme => CreateThemeFieldValue(node.Id, "theme.typography.size", "Size", ValueKind.Integer),
+            "theme.typography.weight" when node.Kind == ProjectTreeNodeKind.Theme => CreateThemeFieldValue(node.Id, "theme.typography.weight", "Weight", ValueKind.OptionToken),
+            "theme.typography.style" when node.Kind == ProjectTreeNodeKind.Theme => CreateThemeFieldValue(node.Id, "theme.typography.style", "Style", ValueKind.OptionToken),
             "font.family" when node.Kind == ProjectTreeNodeKind.ProductionFont => CreateProductionFontFieldValue(node.Id, "font.family", "Family", ValueKind.StringReadOnly),
             "font.category" when node.Kind == ProjectTreeNodeKind.ProductionFont => CreateProductionFontFieldValue(node.Id, "font.category", "Category", ValueKind.OptionToken),
             "font.sourceDirectory" when node.Kind == ProjectTreeNodeKind.ProductionFont => CreateProductionFontFieldValue(node.Id, "font.sourceDirectory", "Source Directory", ValueKind.StringReadOnly),
@@ -2109,6 +1426,65 @@ public partial class MainWindow : SukiWindow
             value);
     }
 
+    private FieldValue CreateThemeFieldValue(
+        string themeId,
+        string fieldId,
+        string label,
+        ValueKind valueKind)
+    {
+        var settings = _database.GetThemeSettings(themeId);
+        var value = _database.GetThemeFieldValue(themeId, fieldId);
+        IReadOnlyList<FieldOption>? options = fieldId switch
+        {
+            "theme.family" =>
+            [
+                new FieldOption("ios", "iOS"),
+                new FieldOption("android", "Android"),
+                new FieldOption("custom", "Custom"),
+            ],
+            "theme.iconThemeId" => _database.GetIconThemeOptions(settings.ProjectId),
+            "theme.statusBarId" => _database.GetStatusBarOptions(settings.ProjectId),
+            "theme.navigationBarId" => _database.GetNavigationBarOptions(settings.ProjectId),
+            "theme.defaultMode" =>
+            [
+                new FieldOption("light", "Light"),
+                new FieldOption("dark", "Dark"),
+            ],
+            "theme.typography.fontFamilyId" => _database.GetProductionFontOptions(settings.ProjectId, "text"),
+            "theme.typography.emojiFontFamilyId" => _database.GetProductionFontOptions(settings.ProjectId, "emoji"),
+            "theme.typography.weight" =>
+            [
+                new FieldOption("100", "100"),
+                new FieldOption("200", "200"),
+                new FieldOption("300", "300"),
+                new FieldOption("400", "400"),
+                new FieldOption("500", "500"),
+                new FieldOption("600", "600"),
+                new FieldOption("700", "700"),
+                new FieldOption("800", "800"),
+                new FieldOption("900", "900"),
+            ],
+            "theme.typography.style" =>
+            [
+                new FieldOption("normal", "Normal"),
+                new FieldOption("italic", "Italic"),
+            ],
+            _ => valueKind is ValueKind.PaletteColorToken or ValueKind.PaletteColorPair
+                ? _database.GetPaletteColorOptions(settings.ProjectId)
+                : null,
+        };
+
+        return new FieldValue(
+            new FieldDefinition(
+                fieldId,
+                label,
+                valueKind,
+                IsEditable: true,
+                DefaultValue: value,
+                Options: options),
+            value);
+    }
+
     private FieldValue CreateProductionFontFieldValue(
         string fontId,
         string fieldId,
@@ -2224,6 +1600,7 @@ public partial class MainWindow : SukiWindow
             or ProjectTreeNodeKind.PaletteColor
             or ProjectTreeNodeKind.Device
             or ProjectTreeNodeKind.Actor
+            or ProjectTreeNodeKind.Theme
             or ProjectTreeNodeKind.ProductionFont
             or ProjectTreeNodeKind.IconTheme
             or ProjectTreeNodeKind.StatusBar;
@@ -2285,6 +1662,20 @@ public partial class MainWindow : SukiWindow
                 node.Notes = value;
                 RebuildNavigationCards();
             }
+            return;
+        }
+
+        if (node.Kind == ProjectTreeNodeKind.Theme && fieldId.StartsWith("theme.", StringComparison.Ordinal))
+        {
+            _database.UpdateThemeField(node.Id, fieldId, value);
+            if (fieldId is "theme.family" or "theme.iconThemeId" or "theme.statusBarId" or "theme.navigationBarId")
+            {
+                var settings = _database.GetThemeSettings(node.Id);
+                var linkedCount = new[] { settings.IconThemeId, settings.StatusBarId, settings.NavigationBarId }.Count((id) => !string.IsNullOrWhiteSpace(id));
+                node.Notes = $"{settings.Family} · {linkedCount}/3 refs";
+                RebuildNavigationCards();
+            }
+
             return;
         }
 
@@ -2663,8 +2054,89 @@ public partial class MainWindow : SukiWindow
             return;
         }
 
+        if (parent.Kind == ProjectTreeNodeKind.ThemesRoot)
+        {
+            var preset = await ChooseThemePreset();
+            if (preset is null) return;
+
+            var theme = _database.AddTheme(parent, preset);
+            ReloadAndSelect(theme);
+            return;
+        }
+
         var child = _database.AddChild(parent);
         ReloadAndSelect(child);
+    }
+
+    private async Task<string?> ChooseThemePreset()
+    {
+        var dialog = new SukiWindow
+        {
+            Title = "Create theme",
+            Width = 420,
+            Height = 230,
+            MinWidth = 420,
+            MinHeight = 230,
+            CanResize = false,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            IsMenuVisible = false,
+            BackgroundAnimationEnabled = false,
+        };
+
+        var cancelButton = new Button { Content = "Cancel", MinWidth = 92 };
+        cancelButton.Click += (_, _) => dialog.Close(null);
+        var iosButton = new Button { Content = "iOS preset", MinWidth = 110 };
+        iosButton.Click += (_, _) => dialog.Close("ios");
+        var androidButton = new Button { Content = "Android preset", MinWidth = 130 };
+        androidButton.Click += (_, _) => dialog.Close("android");
+
+        var actions = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Spacing = 10,
+            Children =
+            {
+                cancelButton,
+                iosButton,
+                androidButton,
+            },
+        };
+
+        dialog.Content = new Border
+        {
+            Padding = new Avalonia.Thickness(22),
+            Child = new Grid
+            {
+                RowDefinitions = new RowDefinitions("*,Auto"),
+                RowSpacing = 18,
+                Children =
+                {
+                    new StackPanel
+                    {
+                        Spacing = 8,
+                        Children =
+                        {
+                            new TextBlock
+                            {
+                                Text = "Choose a starting preset for the new theme.",
+                                TextWrapping = TextWrapping.Wrap,
+                            },
+                            new TextBlock
+                            {
+                                Text = "You can edit the linked icon, status bar, navigation bar and tokens afterwards.",
+                                Opacity = 0.72,
+                                TextWrapping = TextWrapping.Wrap,
+                            },
+                        },
+                    },
+                    actions,
+                },
+            },
+        };
+        Grid.SetRow(actions, 1);
+
+        return await dialog.ShowDialog<string?>(this);
     }
 
     private async Task<ProjectTreeNode?> ImportProductionFont(ProjectTreeNode fontsRoot)
@@ -2818,358 +2290,14 @@ public partial class MainWindow : SukiWindow
         return await dialog.ShowDialog<bool>(this);
     }
 
-    private async Task ShowIconThemeSearchDialog(ProjectTreeNode node)
+    private Task ShowIconThemeSearchDialog(ProjectTreeNode node)
     {
-        var dialog = new SukiWindow
-        {
-            Title = "Search / add icon token",
-            Width = 760,
-            Height = 660,
-            MinWidth = 720,
-            MinHeight = 600,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            IsMenuVisible = false,
-            BackgroundAnimationEnabled = false,
-        };
-
-        var queryBox = new TextBox { PlaceholderText = "telephone" };
-        var tokenBox = new TextBox { PlaceholderText = "phone_call" };
-        var categoryBox = new TextBox { PlaceholderText = "phone" };
-        var descriptionBox = new TextBox
-        {
-            PlaceholderText = "Phone call icon",
-            AcceptsReturn = true,
-            MinHeight = 70,
-        };
-        var lucideList = new ListBox { MinHeight = 190, MaxHeight = 230 };
-        var materialList = new ListBox { MinHeight = 190, MaxHeight = 230 };
-        var errorText = new TextBlock
-        {
-            Foreground = new SolidColorBrush(Color.Parse("#E8A1A8")),
-            TextWrapping = TextWrapping.Wrap,
-            IsVisible = false,
-        };
-
-        void SetError(string message)
-        {
-            errorText.Text = message;
-            errorText.IsVisible = !string.IsNullOrWhiteSpace(message);
-        }
-
-        var searchButton = new Button { Content = "Search", MinWidth = 90 };
-        searchButton.Click += async (_, _) =>
-        {
-            SetError("");
-            try
-            {
-                var result = _database.SearchIconThemeSources(queryBox.Text ?? "");
-                lucideList.ItemsSource = result.Lucide;
-                materialList.ItemsSource = result.Material;
-                lucideList.SelectedIndex = result.Lucide.Count > 0 ? 0 : -1;
-                materialList.SelectedIndex = result.Material.Count > 0 ? 0 : -1;
-                if (string.IsNullOrWhiteSpace(tokenBox.Text))
-                {
-                    tokenBox.Text = TokenFromText(queryBox.Text ?? "");
-                }
-                if (string.IsNullOrWhiteSpace(categoryBox.Text))
-                {
-                    categoryBox.Text = CategoryFromToken(tokenBox.Text ?? "");
-                }
-            }
-            catch (Exception exception)
-            {
-                SetError(exception.Message);
-            }
-        };
-
-        var generateButton = new Button { Content = "Generate", MinWidth = 100 };
-        generateButton.Click += async (_, _) =>
-        {
-            SetError("");
-            try
-            {
-                var lucide = lucideList.SelectedItem as SpikeDatabase.IconThemeSearchCandidate;
-                var material = materialList.SelectedItem as SpikeDatabase.IconThemeSearchCandidate;
-                if (lucide is null || material is null)
-                {
-                    SetError("Select one Lucide source and one Material source.");
-                    return;
-                }
-
-                var result = _database.GenerateIconThemeToken(
-                    node.Id,
-                    TokenFromText(tokenBox.Text ?? ""),
-                    TokenFromText(categoryBox.Text ?? ""),
-                    descriptionBox.Text ?? "",
-                    lucide.SourceName,
-                    material.SourceName);
-                dialog.Close();
-                await ShowInfoDialog("Generate complete", $"Generated “{result.Token}” in {result.WrittenFileCount} set(s). Refreshed {result.RefreshResult.CommonTokenCount} common token(s).");
-                ReloadAndSelect(node);
-            }
-            catch (Exception exception)
-            {
-                SetError(exception.Message);
-            }
-        };
-
-        var cancelButton = new Button { Content = "Cancel", MinWidth = 92 };
-        cancelButton.Click += (_, _) => dialog.Close();
-
-        var actionRow = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            HorizontalAlignment = HorizontalAlignment.Right,
-            Spacing = 10,
-            Children = { cancelButton, generateButton },
-        };
-        var contentStack = new StackPanel
-        {
-            Spacing = 12,
-            Children =
-            {
-                new TextBlock
-                {
-                    Text = "Search provider icons, select one Lucide and one Material source, then generate a shared MOCKUPS token.",
-                    TextWrapping = TextWrapping.Wrap,
-                    Opacity = 0.8,
-                },
-                new Grid
-                {
-                    ColumnDefinitions = new ColumnDefinitions("*,Auto"),
-                    ColumnSpacing = 8,
-                    Children =
-                    {
-                        queryBox,
-                        searchButton,
-                    },
-                },
-                new Grid
-                {
-                    ColumnDefinitions = new ColumnDefinitions("*,*"),
-                    ColumnSpacing = 12,
-                    Children =
-                    {
-                        CandidateColumn("Lucide", lucideList),
-                        CandidateColumn("Material", materialList, column: 1),
-                    },
-                },
-                LabeledControl("MOCKUPS token", tokenBox),
-                LabeledControl("Category", categoryBox),
-                LabeledControl("Description", descriptionBox),
-                errorText,
-            },
-        };
-        var dialogGrid = new Grid
-        {
-            RowDefinitions = new RowDefinitions("*,Auto"),
-            RowSpacing = 14,
-            Children =
-            {
-                new ScrollViewer
-                {
-                    Content = contentStack,
-                },
-                actionRow,
-            },
-        };
-        Grid.SetRow(actionRow, 1);
-
-        dialog.Content = new Border
-        {
-            Padding = new Avalonia.Thickness(18),
-            Child = dialogGrid,
-        };
-
-        Grid.SetColumn(searchButton, 1);
-        await dialog.ShowDialog(this);
+        return new IconThemeSearchDialog(this, _database, ShowInfoDialog, ReloadAndSelect).Show(node);
     }
 
-    private async Task<string?> ShowIconTokenPicker(string projectId, string currentValue, bool allowMultiple)
+    private Task<string?> ShowIconTokenPicker(string projectId, string currentValue, bool allowMultiple)
     {
-        var tokens = _database.GetIconTokenOptions(projectId, currentValue);
-        var selected = currentValue.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet(StringComparer.Ordinal);
-        var dialog = new SukiWindow
-        {
-            Title = allowMultiple ? "Select icon tokens" : "Select icon token",
-            Width = 520,
-            Height = 640,
-            MinWidth = 460,
-            MinHeight = 520,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            IsMenuVisible = false,
-            BackgroundAnimationEnabled = false,
-        };
-
-        var list = new StackPanel { Spacing = 5 };
-        foreach (var option in tokens)
-        {
-            var optionContent = new Grid
-            {
-                ColumnDefinitions = new ColumnDefinitions("30,*"),
-                ColumnSpacing = 10,
-                MinHeight = 34,
-            };
-            optionContent.Children.Add(CreateProjectIconTokenPreview(projectId, option.Value, 20));
-            var optionLabel = new TextBlock
-            {
-                Text = option.Label,
-                VerticalAlignment = VerticalAlignment.Center,
-            };
-            Grid.SetColumn(optionLabel, 1);
-            optionContent.Children.Add(optionLabel);
-
-            var checkBox = new CheckBox
-            {
-                Content = optionContent,
-                IsChecked = selected.Contains(option.Value),
-            };
-            checkBox.PropertyChanged += (_, change) =>
-            {
-                if (change.Property != CheckBox.IsCheckedProperty) return;
-                if (checkBox.IsChecked == true)
-                {
-                    if (!allowMultiple)
-                    {
-                        selected.Clear();
-                        foreach (var sibling in list.Children.OfType<CheckBox>().Where((item) => item != checkBox))
-                        {
-                            sibling.IsChecked = false;
-                        }
-                    }
-
-                    selected.Add(option.Value);
-                }
-                else
-                {
-                    selected.Remove(option.Value);
-                }
-            };
-            list.Children.Add(checkBox);
-        }
-
-        string? result = null;
-        var cancelButton = new Button { Content = "Cancel", MinWidth = 90 };
-        cancelButton.Click += (_, _) => dialog.Close();
-        var okButton = new Button { Content = "OK", MinWidth = 90 };
-        okButton.Click += (_, _) =>
-        {
-            result = string.Join(",", selected.OrderBy((token) => token, StringComparer.Ordinal));
-            dialog.Close();
-        };
-
-        var actions = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            HorizontalAlignment = HorizontalAlignment.Right,
-            Spacing = 10,
-            Children = { cancelButton, okButton },
-        };
-        var root = new Grid
-        {
-            RowDefinitions = new RowDefinitions("*,Auto"),
-            RowSpacing = 14,
-            Children =
-            {
-                new ScrollViewer
-                {
-                    Content = list.Children.Count == 0
-                        ? new TextBlock
-                        {
-                            Text = "No icon tokens available. Refresh icon themes first.",
-                            Opacity = 0.72,
-                        }
-                        : list,
-                },
-                actions,
-            },
-        };
-        Grid.SetRow(actions, 1);
-        dialog.Content = new Border
-        {
-            Padding = new Avalonia.Thickness(18),
-            Child = root,
-        };
-
-        await dialog.ShowDialog(this);
-        return result;
-    }
-
-    private static Control CandidateColumn(string title, ListBox listBox, int column = 0)
-    {
-        listBox.ItemTemplate = new FuncDataTemplate<SpikeDatabase.IconThemeSearchCandidate>((candidate, _) =>
-        {
-            var row = new Grid
-            {
-                ColumnDefinitions = new ColumnDefinitions("34,*"),
-                ColumnSpacing = 10,
-            };
-            row.Children.Add(CreateIconThemeSearchPreview(candidate?.PreviewUrl ?? "", 22));
-            var text = new StackPanel
-            {
-                Spacing = 2,
-                Children =
-                {
-                    new TextBlock
-                    {
-                        Text = candidate?.SourceName ?? "",
-                        FontWeight = FontWeight.SemiBold,
-                    },
-                    new TextBlock
-                    {
-                        Text = candidate?.Provider ?? "",
-                        FontSize = 11,
-                        Opacity = 0.65,
-                    },
-                },
-            };
-            Grid.SetColumn(text, 1);
-            row.Children.Add(text);
-            return row;
-        });
-        var panel = new StackPanel
-        {
-            Spacing = 6,
-            Children =
-            {
-                new TextBlock { Text = title, FontWeight = FontWeight.SemiBold },
-                listBox,
-            },
-        };
-        Grid.SetColumn(panel, column);
-        return panel;
-    }
-
-    private static Control LabeledControl(string label, Control control)
-    {
-        return new StackPanel
-        {
-            Spacing = 5,
-            Children =
-            {
-                new TextBlock
-                {
-                    Text = label,
-                    FontWeight = FontWeight.SemiBold,
-                    FontSize = 12,
-                    Opacity = 0.78,
-                },
-                control,
-            },
-        };
-    }
-
-    private static string TokenFromText(string value)
-    {
-        var token = Regex.Replace(value.Trim().ToLowerInvariant(), "[^a-z0-9_]+", "_");
-        token = Regex.Replace(token, "_+", "_").Trim('_');
-        return token;
-    }
-
-    private static string CategoryFromToken(string token)
-    {
-        var index = token.IndexOf('_', StringComparison.Ordinal);
-        return index <= 0 ? "misc" : token[..index];
+        return new IconTokenPickerDialog(this, _database).Show(projectId, currentValue, allowMultiple);
     }
 
     private void DuplicateNode(ProjectTreeNode node)
@@ -3347,6 +2475,7 @@ internal enum ProjectTreeNodeKind
     NavigationBarsRoot,
     DevicesRoot,
     ActorsRoot,
+    ThemesRoot,
     ProductionFontsRoot,
     EpisodesRoot,
     App,
@@ -3359,6 +2488,7 @@ internal enum ProjectTreeNodeKind
     NavigationBar,
     Device,
     Actor,
+    Theme,
     ProductionFont,
 }
 
@@ -3403,6 +2533,7 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.NavigationBarsRoot
         or ProjectTreeNodeKind.DevicesRoot
         or ProjectTreeNodeKind.ActorsRoot
+        or ProjectTreeNodeKind.ThemesRoot
         or ProjectTreeNodeKind.ProductionFontsRoot
         or ProjectTreeNodeKind.EpisodesRoot
         or ProjectTreeNodeKind.Episode;
@@ -3415,7 +2546,8 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.StatusBar
         or ProjectTreeNodeKind.NavigationBar
         or ProjectTreeNodeKind.Device
-        or ProjectTreeNodeKind.Actor;
+        or ProjectTreeNodeKind.Actor
+        or ProjectTreeNodeKind.Theme;
     public bool CanDelete => Kind is ProjectTreeNodeKind.App
         or ProjectTreeNodeKind.Module
         or ProjectTreeNodeKind.Episode
@@ -3426,6 +2558,7 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.NavigationBar
         or ProjectTreeNodeKind.Device
         or ProjectTreeNodeKind.Actor
+        or ProjectTreeNodeKind.Theme
         or ProjectTreeNodeKind.ProductionFont;
     public bool CanOpenEditor => Kind is not ProjectTreeNodeKind.ProductionDataRoot
         and not ProjectTreeNodeKind.SystemDataRoot
@@ -3436,6 +2569,7 @@ internal sealed class ProjectTreeNode
         and not ProjectTreeNodeKind.NavigationBarsRoot
         and not ProjectTreeNodeKind.DevicesRoot
         and not ProjectTreeNodeKind.ActorsRoot
+        and not ProjectTreeNodeKind.ThemesRoot
         and not ProjectTreeNodeKind.ProductionFontsRoot
         and not ProjectTreeNodeKind.EpisodesRoot;
 
@@ -3461,6 +2595,7 @@ internal sealed class ProjectTreeNode
             ProjectTreeNodeKind.NavigationBarsRoot => "navigation.navigation_bars",
             ProjectTreeNodeKind.DevicesRoot => "navigation.devices",
             ProjectTreeNodeKind.ActorsRoot => "navigation.actors",
+            ProjectTreeNodeKind.ThemesRoot => "navigation.themes",
             ProjectTreeNodeKind.ProductionFontsRoot => "navigation.production_fonts",
             ProjectTreeNodeKind.EpisodesRoot => "navigation.episodes",
             ProjectTreeNodeKind.App => "app.generic",
@@ -3473,6 +2608,7 @@ internal sealed class ProjectTreeNode
             ProjectTreeNodeKind.NavigationBar => "navigation_bar",
             ProjectTreeNodeKind.Device => "device",
             ProjectTreeNodeKind.Actor => "actor",
+            ProjectTreeNodeKind.Theme => "theme",
             ProjectTreeNodeKind.ProductionFont => "production_font",
             _ => throw new InvalidOperationException($"No record class for {kind}."),
         };

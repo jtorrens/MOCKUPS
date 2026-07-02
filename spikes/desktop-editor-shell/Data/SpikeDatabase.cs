@@ -13,6 +13,30 @@ namespace Mockups.DesktopEditorShell.Data;
 internal sealed partial class SpikeDatabase
 {
     private static readonly object WriteGate = new();
+    private static readonly Dictionary<string, (string[] Light, string[] Dark)> ThemeColorPairPaths = new()
+    {
+        ["theme.colors.background"] = (["modes", "light", "colors", "background"], ["modes", "dark", "colors", "background"]),
+        ["theme.colors.textPrimary"] = (["modes", "light", "colors", "textPrimary"], ["modes", "dark", "colors", "textPrimary"]),
+        ["theme.colors.textSecondary"] = (["modes", "light", "colors", "textSecondary"], ["modes", "dark", "colors", "textSecondary"]),
+        ["theme.colors.accent"] = (["modes", "light", "colors", "accent"], ["modes", "dark", "colors", "accent"]),
+        ["theme.icons.primary"] = (["modes", "light", "colors", "icons.primary"], ["modes", "dark", "colors", "icons.primary"]),
+        ["theme.icons.secondary"] = (["modes", "light", "colors", "icons.secondary"], ["modes", "dark", "colors", "icons.secondary"]),
+        ["theme.icons.accent"] = (["modes", "light", "colors", "icons.accent"], ["modes", "dark", "colors", "icons.accent"]),
+        ["theme.borders.primary"] = (["modes", "light", "colors", "borders.primary"], ["modes", "dark", "colors", "borders.primary"]),
+        ["theme.borders.secondary"] = (["modes", "light", "colors", "borders.secondary"], ["modes", "dark", "colors", "borders.secondary"]),
+        ["theme.borders.alternate"] = (["modes", "light", "colors", "borders.alternate"], ["modes", "dark", "colors", "borders.alternate"]),
+        ["theme.cursor.color"] = (["modes", "light", "colors", "theme.cursor.color"], ["modes", "dark", "colors", "theme.cursor.color"]),
+        ["theme.statusBar.foreground"] = (["modes", "light", "statusBar", "foreground"], ["modes", "dark", "statusBar", "foreground"]),
+        ["theme.statusBar.background"] = (["modes", "light", "statusBar", "background", "color"], ["modes", "dark", "statusBar", "background", "color"]),
+        ["theme.navigationBar.foreground"] = (["modes", "light", "navigationBar", "foreground"], ["modes", "dark", "navigationBar", "foreground"]),
+        ["theme.navigationBar.background"] = (["modes", "light", "navigationBar", "background", "color"], ["modes", "dark", "navigationBar", "background", "color"]),
+        ["theme.keyboard.background"] = (["modes", "light", "keyboard", "background"], ["modes", "dark", "keyboard", "background"]),
+        ["theme.keyboard.keyBackground"] = (["modes", "light", "keyboard", "keyBackground"], ["modes", "dark", "keyboard", "keyBackground"]),
+        ["theme.keyboard.specialKeyBackground"] = (["modes", "light", "keyboard", "specialKeyBackground"], ["modes", "dark", "keyboard", "specialKeyBackground"]),
+        ["theme.keyboard.pressedKeyBackground"] = (["modes", "light", "keyboard", "pressedKeyBackground"], ["modes", "dark", "keyboard", "pressedKeyBackground"]),
+        ["theme.keyboard.popoverBackground"] = (["modes", "light", "keyboard", "popoverBackground"], ["modes", "dark", "keyboard", "popoverBackground"]),
+        ["theme.keyboard.text"] = (["modes", "light", "keyboard", "text"], ["modes", "dark", "keyboard", "text"]),
+    };
     private readonly string _connectionString;
 
     public SpikeDatabase(string databasePath)
@@ -44,6 +68,7 @@ internal sealed partial class SpikeDatabase
         var paletteColors = QueryPaletteColorRows(connection);
         var devices = QueryDeviceRows(connection);
         var actors = QueryActorRows(connection);
+        var themes = QueryThemeRows(connection);
         var productionFonts = QueryProductionFontRows(connection);
         var iconThemes = QueryIconThemeRows(connection);
         var statusBars = QueryStatusBarRows(connection);
@@ -62,6 +87,7 @@ internal sealed partial class SpikeDatabase
         var paletteRootNodes = new Dictionary<string, ProjectTreeNode>();
         var deviceRootNodes = new Dictionary<string, ProjectTreeNode>();
         var actorRootNodes = new Dictionary<string, ProjectTreeNode>();
+        var themeRootNodes = new Dictionary<string, ProjectTreeNode>();
         var productionFontRootNodes = new Dictionary<string, ProjectTreeNode>();
         var iconThemeRootNodes = new Dictionary<string, ProjectTreeNode>();
         var statusBarRootNodes = new Dictionary<string, ProjectTreeNode>();
@@ -112,6 +138,13 @@ internal sealed partial class SpikeDatabase
                 "People and identities used by the production.",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ActorsRoot),
                 productionDataRoot);
+            var themesRoot = new ProjectTreeNode(
+                ProjectTreeNodeKind.ThemesRoot,
+                $"themes_root_{project.Id}",
+                "Themes",
+                "Production visual themes.",
+                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ThemesRoot),
+                productionDataRoot);
             var productionFontsRoot = new ProjectTreeNode(
                 ProjectTreeNodeKind.ProductionFontsRoot,
                 $"production_fonts_root_{project.Id}",
@@ -150,6 +183,7 @@ internal sealed partial class SpikeDatabase
 
             productionDataRoot.AddChild(actorsRoot);
             productionDataRoot.AddChild(devicesRoot);
+            productionDataRoot.AddChild(themesRoot);
             systemDataRoot.AddChild(paletteRoot);
             systemDataRoot.AddChild(iconThemesRoot);
             systemDataRoot.AddChild(statusBarsRoot);
@@ -163,6 +197,7 @@ internal sealed partial class SpikeDatabase
             paletteRootNodes[project.Id] = paletteRoot;
             deviceRootNodes[project.Id] = devicesRoot;
             actorRootNodes[project.Id] = actorsRoot;
+            themeRootNodes[project.Id] = themesRoot;
             productionFontRootNodes[project.Id] = productionFontsRoot;
             iconThemeRootNodes[project.Id] = iconThemesRoot;
             statusBarRootNodes[project.Id] = statusBarsRoot;
@@ -253,6 +288,20 @@ internal sealed partial class SpikeDatabase
                 actor.ShortName,
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Actor),
                 actorsRoot));
+        }
+
+        foreach (var theme in themes.OrderBy((theme) => theme.Name))
+        {
+            if (!themeRootNodes.TryGetValue(theme.ProjectId, out var themesRoot)) continue;
+
+            themesRoot.AddChild(new ProjectTreeNode(
+                ProjectTreeNodeKind.Theme,
+                theme.Id,
+                theme.Name,
+                $"{theme.Family} · {ThemeReferenceSummary(theme)}",
+                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Theme),
+                themesRoot,
+                isUsed: IsThemeUsed(connection, theme.ProjectId, theme.Id)));
         }
 
         foreach (var font in productionFonts.OrderBy((font) => font.FamilyName))
@@ -445,6 +494,11 @@ internal sealed partial class SpikeDatabase
                 parent);
         }
 
+        if (parent.Kind == ProjectTreeNodeKind.ThemesRoot)
+        {
+            return AddTheme(parent, "custom");
+        }
+
         if (parent.Kind == ProjectTreeNodeKind.ProductionFontsRoot)
         {
             throw new InvalidOperationException("Production fonts are added through the font importer.");
@@ -592,6 +646,52 @@ internal sealed partial class SpikeDatabase
         }
 
         throw new InvalidOperationException($"Cannot add a child to {parent.Kind}.");
+    }
+
+    public ProjectTreeNode AddTheme(ProjectTreeNode themesRoot, string family)
+    {
+        if (themesRoot.Kind != ProjectTreeNodeKind.ThemesRoot)
+        {
+            throw new InvalidOperationException("Themes can only be added from the Themes root.");
+        }
+
+        family = family is "ios" or "android" ? family : "custom";
+        using var connection = OpenConnection();
+        var project = ProjectAncestor(themesRoot);
+        var index = ScalarLong(connection, "SELECT COUNT(*) FROM themes WHERE project_id = $projectId", ("$projectId", project.Id)) + 1;
+        var id = $"theme_{Guid.NewGuid():N}";
+        var name = family switch
+        {
+            "ios" => $"iOS Theme {index}",
+            "android" => $"Android Theme {index}",
+            _ => $"Theme {index}",
+        };
+        var iconThemeId = FirstId(connection, "icon_themes", project.Id);
+        var statusBarId = FirstId(connection, "status_bars", project.Id);
+        var navigationBarId = FirstId(connection, "navigation_bars", project.Id);
+        Execute(
+            connection,
+            """
+            INSERT INTO themes (id, project_id, name, family, icon_theme_id, status_bar_id, navigation_bar_id, tokens_json, metadata_json)
+            VALUES ($id, $projectId, $name, $family, $iconThemeId, $statusBarId, $navigationBarId, $tokensJson, $metadataJson)
+            """,
+            ("$id", id),
+            ("$projectId", project.Id),
+            ("$name", name),
+            ("$family", family),
+            ("$iconThemeId", iconThemeId),
+            ("$statusBarId", statusBarId),
+            ("$navigationBarId", navigationBarId),
+            ("$tokensJson", DefaultThemeTokensJson(family)),
+            ("$metadataJson", JsonSerializer.Serialize(new { note = $"{family} preset production theme." })));
+
+        return new ProjectTreeNode(
+            ProjectTreeNodeKind.Theme,
+            id,
+            name,
+            $"{family} · {ThemeReferenceSummary(iconThemeId, statusBarId, navigationBarId)}",
+            ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Theme),
+            themesRoot);
     }
 
     public ProjectTreeNode Duplicate(ProjectTreeNode node)
@@ -745,6 +845,24 @@ internal sealed partial class SpikeDatabase
             return new ProjectTreeNode(ProjectTreeNodeKind.Actor, id, $"{node.Name} copy", node.Notes, node.RecordClassId, node.Parent);
         }
 
+        if (node.Kind == ProjectTreeNodeKind.Theme)
+        {
+            var id = $"theme_{Guid.NewGuid():N}";
+            Execute(
+                connection,
+                """
+                INSERT INTO themes (id, project_id, name, family, icon_theme_id, status_bar_id, navigation_bar_id, tokens_json, metadata_json)
+                SELECT $id, project_id, $name, family, icon_theme_id, status_bar_id, navigation_bar_id, tokens_json, metadata_json
+                FROM themes
+                WHERE id = $sourceId
+                """,
+                ("$id", id),
+                ("$name", $"{node.Name} copy"),
+                ("$sourceId", node.Id));
+
+            return new ProjectTreeNode(ProjectTreeNodeKind.Theme, id, $"{node.Name} copy", node.Notes, node.RecordClassId, node.Parent);
+        }
+
         if (node.Kind == ProjectTreeNodeKind.StatusBar)
         {
             var id = $"status_bar_{Guid.NewGuid():N}";
@@ -796,6 +914,7 @@ internal sealed partial class SpikeDatabase
             ProjectTreeNodeKind.PaletteColor => "palette_colors",
             ProjectTreeNodeKind.Device => "devices",
             ProjectTreeNodeKind.Actor => "actors",
+            ProjectTreeNodeKind.Theme => "themes",
             ProjectTreeNodeKind.ProductionFont => "production_fonts",
             ProjectTreeNodeKind.IconTheme => "icon_themes",
             ProjectTreeNodeKind.StatusBar => "status_bars",
@@ -811,6 +930,11 @@ internal sealed partial class SpikeDatabase
             }
 
             DeleteProductionFontFiles(connection, node.Id);
+        }
+
+        if (node.Kind == ProjectTreeNodeKind.Theme && IsThemeUsed(connection, ProjectAncestor(node).Id, node.Id))
+        {
+            throw new InvalidOperationException("This theme is still used and cannot be deleted.");
         }
 
         Execute(connection, $"DELETE FROM {table} WHERE id = $id", ("$id", node.Id));
@@ -829,6 +953,7 @@ internal sealed partial class SpikeDatabase
             ProjectTreeNodeKind.PaletteColor => "palette_colors",
             ProjectTreeNodeKind.Device => "devices",
             ProjectTreeNodeKind.Actor => "actors",
+            ProjectTreeNodeKind.Theme => "themes",
             ProjectTreeNodeKind.ProductionFont => "production_fonts",
             ProjectTreeNodeKind.IconTheme => "icon_themes",
             ProjectTreeNodeKind.StatusBar => "status_bars",
@@ -869,6 +994,16 @@ internal sealed partial class SpikeDatabase
             Execute(
                 connection,
                 "UPDATE production_fonts SET family_name = $name WHERE id = $id",
+                ("$id", node.Id),
+                ("$name", node.Name));
+            return;
+        }
+
+        if (node.Kind == ProjectTreeNodeKind.Theme)
+        {
+            Execute(
+                connection,
+                "UPDATE themes SET name = $name WHERE id = $id",
                 ("$id", node.Id),
                 ("$name", node.Name));
             return;
@@ -939,6 +1074,8 @@ internal sealed partial class SpikeDatabase
         SeedProductionFontsIfEmpty(connection);
         SeedStatusBarsIfEmpty(connection);
         SeedNavigationBarsIfEmpty(connection);
+        SeedThemesIfEmpty(connection);
+        EnsureThemeTokens(connection);
     }
 
     private SqliteConnection OpenConnection()
@@ -1156,6 +1293,56 @@ internal sealed partial class SpikeDatabase
         }
     }
 
+    private static void SeedThemesIfEmpty(SqliteConnection connection)
+    {
+        var projectIds = QueryProjectRows(connection).Select((project) => project.Id).ToList();
+        foreach (var projectId in projectIds)
+        {
+            if (ScalarLong(connection, "SELECT COUNT(*) FROM themes WHERE project_id = $projectId", ("$projectId", projectId)) > 0)
+            {
+                continue;
+            }
+
+            var iconThemeId = FirstId(connection, "icon_themes", projectId);
+            var statusBarId = FirstId(connection, "status_bars", projectId);
+            var navigationBarId = FirstId(connection, "navigation_bars", projectId);
+            Execute(
+                connection,
+                """
+                INSERT INTO themes (id, project_id, name, family, icon_theme_id, status_bar_id, navigation_bar_id, tokens_json, metadata_json)
+                VALUES ($id, $projectId, $name, $family, $iconThemeId, $statusBarId, $navigationBarId, $tokensJson, $metadataJson)
+                """,
+                ("$id", $"theme_{projectId}_ios_default"),
+                ("$projectId", projectId),
+                ("$name", "iOS Default Theme"),
+                ("$family", "ios"),
+                ("$iconThemeId", iconThemeId),
+                ("$statusBarId", statusBarId),
+                ("$navigationBarId", navigationBarId),
+                ("$tokensJson", DefaultThemeTokensJson("ios")),
+                ("$metadataJson", JsonSerializer.Serialize(new { note = "Default iOS-style production theme." })));
+        }
+    }
+
+    private static void EnsureThemeTokens(SqliteConnection connection)
+    {
+        foreach (var theme in QueryThemeRows(connection))
+        {
+            var tokens = ParseJsonObject(string.IsNullOrWhiteSpace(theme.TokensJson) ? "{}" : theme.TokensJson);
+            var defaults = ParseJsonObject(DefaultThemeTokensJson(theme.Family));
+            if (!MergeMissing(tokens, defaults))
+            {
+                continue;
+            }
+
+            Execute(
+                connection,
+                "UPDATE themes SET tokens_json = $tokensJson WHERE id = $id",
+                ("$id", theme.Id),
+                ("$tokensJson", tokens.ToJsonString()));
+        }
+    }
+
     private static void SeedEditorLayouts(SqliteConnection connection)
     {
         foreach (var recordClassId in new[]
@@ -1167,6 +1354,7 @@ internal sealed partial class SpikeDatabase
             "navigation.palette",
             "navigation.devices",
             "navigation.actors",
+            "navigation.themes",
             "navigation.production_fonts",
             "navigation.icon_themes",
             "navigation.status_bars",
@@ -1181,6 +1369,7 @@ internal sealed partial class SpikeDatabase
             "palette_color",
             "device",
             "actor",
+            "theme",
             "production_font",
             "icon_theme",
             "status_bar",
@@ -1269,6 +1458,12 @@ internal sealed partial class SpikeDatabase
                     { "id": "actor.defaultDeviceId", "order": 30, "visible": true },
                     { "id": "actor.defaultThemeId", "order": 40, "visible": true }
                   """
+            : recordClassId == "theme"
+                ? """
+                    { "id": "core.name", "order": 10, "visible": true },
+                    { "id": "theme.family", "order": 20, "visible": true },
+                    { "id": "theme.defaultMode", "order": 30, "visible": true }
+                  """
             : recordClassId == "production_font"
                 ? """
                     { "id": "core.name", "order": 10, "visible": true },
@@ -1351,6 +1546,157 @@ internal sealed partial class SpikeDatabase
             }
             """
             : "";
+        var themeCards = recordClassId == "theme"
+            ? $$"""
+            ,
+            {
+              "id": "references",
+              "label": "References",
+              "subtitle": "Linked icon, status and navigation resources",
+              "icon": "{{EditorIcons.Design}}",
+              "order": 20,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                {
+                  "id": "references",
+                  "label": "References",
+                  "order": 10,
+                  "visible": true,
+                  "fields": [
+                    { "id": "theme.iconThemeId", "order": 10, "visible": true },
+                    { "id": "theme.statusBarId", "order": 20, "visible": true },
+                    { "id": "theme.navigationBarId", "order": 30, "visible": true }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "colors",
+              "label": "Colors",
+              "subtitle": "Theme color behavior",
+              "icon": "{{EditorIcons.Color}}",
+              "order": 30,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                {
+                  "id": "neutralTint",
+                  "label": "Neutral tint",
+                  "order": 10,
+                  "visible": true,
+                  "fields": [
+                    { "id": "theme.neutralTint.hueDeg", "order": 10, "visible": true },
+                    { "id": "theme.neutralTint.saturation", "order": 20, "visible": true }
+                  ]
+                },
+                {
+                  "id": "appColors",
+                  "label": "App colors",
+                  "order": 20,
+                  "visible": true,
+                  "fields": [
+                    { "id": "theme.colors.background", "order": 10, "visible": true },
+                    { "id": "theme.colors.textPrimary", "order": 20, "visible": true },
+                    { "id": "theme.colors.textSecondary", "order": 30, "visible": true },
+                    { "id": "theme.colors.accent", "order": 40, "visible": true }
+                  ]
+                },
+                {
+                  "id": "borderColors",
+                  "label": "Border colors",
+                  "order": 30,
+                  "visible": true,
+                  "fields": [
+                    { "id": "theme.borders.primary", "order": 10, "visible": true },
+                    { "id": "theme.borders.secondary", "order": 20, "visible": true },
+                    { "id": "theme.borders.alternate", "order": 30, "visible": true }
+                  ]
+                },
+                {
+                  "id": "cursor",
+                  "label": "Cursor",
+                  "order": 40,
+                  "visible": true,
+                  "fields": [
+                    { "id": "theme.cursor.color", "order": 10, "visible": true },
+                    { "id": "theme.cursor.width", "order": 20, "visible": true },
+                    { "id": "theme.cursor.blinkFrames", "order": 30, "visible": true }
+                  ]
+                },
+                {
+                  "id": "iconColors",
+                  "label": "Icon colors",
+                  "order": 50,
+                  "visible": true,
+                  "fields": [
+                    { "id": "theme.icons.primary", "order": 10, "visible": true },
+                    { "id": "theme.icons.secondary", "order": 20, "visible": true },
+                    { "id": "theme.icons.accent", "order": 30, "visible": true }
+                  ]
+                },
+                {
+                  "id": "keyboard",
+                  "label": "Keyboard",
+                  "order": 60,
+                  "visible": true,
+                  "fields": [
+                    { "id": "theme.keyboard.background", "order": 10, "visible": true },
+                    { "id": "theme.keyboard.keyBackground", "order": 20, "visible": true },
+                    { "id": "theme.keyboard.specialKeyBackground", "order": 30, "visible": true },
+                    { "id": "theme.keyboard.pressedKeyBackground", "order": 40, "visible": true },
+                    { "id": "theme.keyboard.popoverBackground", "order": 50, "visible": true },
+                    { "id": "theme.keyboard.text", "order": 60, "visible": true }
+                  ]
+                },
+                {
+                  "id": "navigationBar",
+                  "label": "Navigation bar",
+                  "order": 70,
+                  "visible": true,
+                  "fields": [
+                    { "id": "theme.navigationBar.foreground", "order": 10, "visible": true },
+                    { "id": "theme.navigationBar.background", "order": 20, "visible": true }
+                  ]
+                },
+                {
+                  "id": "statusBar",
+                  "label": "Status bar",
+                  "order": 80,
+                  "visible": true,
+                  "fields": [
+                    { "id": "theme.statusBar.foreground", "order": 10, "visible": true },
+                    { "id": "theme.statusBar.background", "order": 20, "visible": true }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "typography",
+              "label": "Typography",
+              "subtitle": "Default text and emoji font tokens",
+              "icon": "{{EditorIcons.Typography}}",
+              "order": 40,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                {
+                  "id": "typography",
+                  "label": "Typography",
+                  "order": 10,
+                  "visible": true,
+                  "fields": [
+                    { "id": "theme.typography.fontFamilyId", "order": 10, "visible": true },
+                    { "id": "theme.typography.emojiFontFamilyId", "order": 20, "visible": true },
+                    { "id": "theme.typography.size", "order": 30, "visible": true },
+                    { "id": "theme.typography.weight", "order": 40, "visible": true },
+                    { "id": "theme.typography.style", "order": 50, "visible": true }
+                  ]
+                }
+              ]
+            }
+            """
+            : "";
         var navigationBarCards = recordClassId == "navigation_bar"
             ? $$"""
             ,
@@ -1426,7 +1772,7 @@ internal sealed partial class SpikeDatabase
                   ]
                 }
               ]
-            }{{actorCards}}{{navigationBarCards}}
+            }{{actorCards}}{{themeCards}}{{navigationBarCards}}
           ]
         }
         """;
@@ -1504,6 +1850,14 @@ internal sealed partial class SpikeDatabase
             connection,
             $"SELECT COALESCE(MAX(sort_order), -1) + 1 FROM {table} WHERE {parentColumn} = $parentId",
             ("$parentId", parentId));
+    }
+
+    private static string FirstId(SqliteConnection connection, string table, string projectId)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = $"SELECT id FROM {table} WHERE project_id = $projectId ORDER BY name, id LIMIT 1";
+        command.Parameters.AddWithValue("$projectId", projectId);
+        return command.ExecuteScalar() as string ?? "";
     }
 
     private static List<ProjectRow> QueryProjectRows(SqliteConnection connection)
@@ -1614,6 +1968,56 @@ internal sealed partial class SpikeDatabase
             .OrderBy((device) => device.Name)
             .Select((device) => new FieldOption(device.Id, device.Name))
             .ToList();
+    }
+
+    public IReadOnlyList<FieldOption> GetProductionFontOptions(string projectId, string? category = null)
+    {
+        using var connection = OpenConnection();
+        var fonts = QueryProductionFontRows(connection)
+            .Where((font) => font.ProjectId == projectId)
+            .Where((font) => string.IsNullOrWhiteSpace(category) || font.Category.Equals(category, StringComparison.OrdinalIgnoreCase))
+            .OrderBy((font) => font.FamilyName)
+            .Select((font) => new FieldOption(font.Id, font.FamilyName))
+            .ToList();
+
+        fonts.Insert(0, new FieldOption("", "System default"));
+        return fonts;
+    }
+
+    public IReadOnlyList<FieldOption> GetIconThemeOptions(string projectId)
+    {
+        using var connection = OpenConnection();
+        var options = QueryIconThemeRows(connection)
+            .Where((theme) => theme.ProjectId == projectId)
+            .OrderBy((theme) => theme.Name)
+            .Select((theme) => new FieldOption(theme.Id, theme.Name))
+            .ToList();
+        options.Insert(0, new FieldOption("", "None"));
+        return options;
+    }
+
+    public IReadOnlyList<FieldOption> GetStatusBarOptions(string projectId)
+    {
+        using var connection = OpenConnection();
+        var options = QueryStatusBarRows(connection)
+            .Where((statusBar) => statusBar.ProjectId == projectId)
+            .OrderBy((statusBar) => statusBar.Name)
+            .Select((statusBar) => new FieldOption(statusBar.Id, statusBar.Name))
+            .ToList();
+        options.Insert(0, new FieldOption("", "None"));
+        return options;
+    }
+
+    public IReadOnlyList<FieldOption> GetNavigationBarOptions(string projectId)
+    {
+        using var connection = OpenConnection();
+        var options = QueryNavigationBarRows(connection)
+            .Where((navigationBar) => navigationBar.ProjectId == projectId)
+            .OrderBy((navigationBar) => navigationBar.Name)
+            .Select((navigationBar) => new FieldOption(navigationBar.Id, navigationBar.Name))
+            .ToList();
+        options.Insert(0, new FieldOption("", "None"));
+        return options;
     }
 
     public ProjectTreeNode ImportProductionFont(ProjectTreeNode fontsRoot, IReadOnlyList<string> selectedFilePaths)
@@ -2214,9 +2618,140 @@ internal sealed partial class SpikeDatabase
 
     public IReadOnlyList<FieldOption> GetThemeOptions(string projectId)
     {
-        // Theme rows are not part of this new shell yet, but this keeps the field
-        // on the dictionary option-control path instead of falling back to text.
-        return [new FieldOption("", "No theme table yet")];
+        using var connection = OpenConnection();
+        return QueryThemeRows(connection)
+            .Where((theme) => theme.ProjectId == projectId)
+            .OrderBy((theme) => theme.Name)
+            .Select((theme) => new FieldOption(theme.Id, theme.Name))
+            .ToList();
+    }
+
+    public ThemeSettings GetThemeSettings(string themeId)
+    {
+        using var connection = OpenConnection();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT project_id, name, family, icon_theme_id, status_bar_id, navigation_bar_id, tokens_json, metadata_json FROM themes WHERE id = $id";
+        command.Parameters.AddWithValue("$id", themeId);
+        using var reader = command.ExecuteReader();
+        if (!reader.Read())
+        {
+            throw new InvalidOperationException($"Missing theme '{themeId}'.");
+        }
+
+        return new ThemeSettings(
+            reader.GetString(0),
+            reader.GetString(1),
+            ReadString(reader, 2),
+            ReadString(reader, 3),
+            ReadString(reader, 4),
+            ReadString(reader, 5),
+            ReadString(reader, 6),
+            ReadString(reader, 7));
+    }
+
+    public string GetThemeFieldValue(string themeId, string fieldId)
+    {
+        var settings = GetThemeSettings(themeId);
+        var tokens = ParseJsonObject(string.IsNullOrWhiteSpace(settings.TokensJson) ? "{}" : settings.TokensJson);
+        if (ThemeColorPairPaths.TryGetValue(fieldId, out var colorPairPaths))
+        {
+            return $"{JsonString(tokens, colorPairPaths.Light)}|{JsonString(tokens, colorPairPaths.Dark)}";
+        }
+
+        return fieldId switch
+        {
+            "theme.family" => settings.Family,
+            "theme.iconThemeId" => settings.IconThemeId,
+            "theme.statusBarId" => settings.StatusBarId,
+            "theme.navigationBarId" => settings.NavigationBarId,
+            "theme.defaultMode" => JsonString(tokens, ["defaultMode"]) is { Length: > 0 } mode ? mode : "light",
+            "theme.neutralTint.hueDeg" => JsonNumberString(tokens, ["neutralTint", "hueDeg"]),
+            "theme.neutralTint.saturation" => JsonNumberString(tokens, ["neutralTint", "saturation"]),
+            "theme.cursor.width" => JsonNumberString(tokens, ["cursor", "width"]),
+            "theme.cursor.blinkFrames" => JsonNumberString(tokens, ["cursor", "blinkFrames"]),
+            "theme.typography.fontFamilyId" => JsonString(tokens, ["typography", "fontFamilyId"]),
+            "theme.typography.emojiFontFamilyId" => JsonString(tokens, ["typography", "emojiFontFamilyId"]),
+            "theme.typography.size" => JsonNumberString(tokens, ["typography", "size"]),
+            "theme.typography.weight" => JsonNumberString(tokens, ["typography", "weight"]),
+            "theme.typography.style" => JsonString(tokens, ["typography", "style"]) is { Length: > 0 } style ? style : "normal",
+            _ => throw new InvalidOperationException($"Unknown theme field '{fieldId}'."),
+        };
+    }
+
+    public void UpdateThemeField(string themeId, string fieldId, string value)
+    {
+        using var connection = OpenConnection();
+        switch (fieldId)
+        {
+            case "theme.family":
+                Execute(connection, "UPDATE themes SET family = $value WHERE id = $id", ("$id", themeId), ("$value", value));
+                return;
+            case "theme.iconThemeId":
+                Execute(connection, "UPDATE themes SET icon_theme_id = $value WHERE id = $id", ("$id", themeId), ("$value", value));
+                return;
+            case "theme.statusBarId":
+                Execute(connection, "UPDATE themes SET status_bar_id = $value WHERE id = $id", ("$id", themeId), ("$value", value));
+                return;
+            case "theme.navigationBarId":
+                Execute(connection, "UPDATE themes SET navigation_bar_id = $value WHERE id = $id", ("$id", themeId), ("$value", value));
+                return;
+            default:
+                UpdateThemeToken(connection, themeId, fieldId, value);
+                return;
+        }
+    }
+
+    private static void UpdateThemeToken(SqliteConnection connection, string themeId, string fieldId, string value)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT tokens_json FROM themes WHERE id = $id";
+        command.Parameters.AddWithValue("$id", themeId);
+        var tokens = ParseJsonObject(command.ExecuteScalar() as string ?? "{}");
+
+        if (ThemeColorPairPaths.TryGetValue(fieldId, out var colorPairPaths))
+        {
+            SetPair(tokens, value, colorPairPaths.Light, colorPairPaths.Dark, asNumber: false);
+            Execute(connection, "UPDATE themes SET tokens_json = $tokensJson WHERE id = $id", ("$id", themeId), ("$tokensJson", tokens.ToJsonString()));
+            return;
+        }
+
+        switch (fieldId)
+        {
+            case "theme.defaultMode":
+                SetJsonValue(tokens, ["defaultMode"], JsonValue.Create(value)!);
+                break;
+            case "theme.neutralTint.hueDeg":
+                SetJsonValue(tokens, ["neutralTint", "hueDeg"], NumberNode(value));
+                break;
+            case "theme.neutralTint.saturation":
+                SetJsonValue(tokens, ["neutralTint", "saturation"], NumberNode(value));
+                break;
+            case "theme.cursor.width":
+                SetJsonValue(tokens, ["cursor", "width"], NumberNode(value));
+                break;
+            case "theme.cursor.blinkFrames":
+                SetJsonValue(tokens, ["cursor", "blinkFrames"], NumberNode(value));
+                break;
+            case "theme.typography.fontFamilyId":
+                SetJsonValue(tokens, ["typography", "fontFamilyId"], JsonValue.Create(value)!);
+                break;
+            case "theme.typography.emojiFontFamilyId":
+                SetJsonValue(tokens, ["typography", "emojiFontFamilyId"], JsonValue.Create(value)!);
+                break;
+            case "theme.typography.size":
+                SetJsonValue(tokens, ["typography", "size"], NumberNode(value));
+                break;
+            case "theme.typography.weight":
+                SetJsonValue(tokens, ["typography", "weight"], NumberNode(value));
+                break;
+            case "theme.typography.style":
+                SetJsonValue(tokens, ["typography", "style"], JsonValue.Create(value)!);
+                break;
+            default:
+                throw new InvalidOperationException($"Unknown theme field '{fieldId}'.");
+        }
+
+        Execute(connection, "UPDATE themes SET tokens_json = $tokensJson WHERE id = $id", ("$id", themeId), ("$tokensJson", tokens.ToJsonString()));
     }
 
     public ProjectSettings GetProjectSettings(string projectId)
@@ -2407,6 +2942,29 @@ internal sealed partial class SpikeDatabase
                 ReadString(reader, 4),
                 ReadString(reader, 5),
                 ReadString(reader, 6)));
+        }
+
+        return rows;
+    }
+
+    private static List<ThemeRow> QueryThemeRows(SqliteConnection connection)
+    {
+        var rows = new List<ThemeRow>();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT id, project_id, name, family, icon_theme_id, status_bar_id, navigation_bar_id, tokens_json, metadata_json FROM themes ORDER BY name";
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            rows.Add(new ThemeRow(
+                reader.GetString(0),
+                reader.GetString(1),
+                reader.GetString(2),
+                ReadString(reader, 3),
+                ReadString(reader, 4),
+                ReadString(reader, 5),
+                ReadString(reader, 6),
+                ReadString(reader, 7),
+                ReadString(reader, 8)));
         }
 
         return rows;
@@ -2753,6 +3311,20 @@ internal sealed partial class SpikeDatabase
         return false;
     }
 
+    private static bool IsThemeUsed(SqliteConnection connection, string projectId, string themeId)
+    {
+        return ScalarLong(
+            connection,
+            """
+            SELECT COUNT(*)
+            FROM actors
+            WHERE project_id = $projectId
+              AND default_theme_id = $themeId
+            """,
+            ("$projectId", projectId),
+            ("$themeId", themeId)) > 0;
+    }
+
     private static string ExistingProductionFontId(SqliteConnection connection, string projectId, string familyName)
     {
         using var command = connection.CreateCommand();
@@ -2772,6 +3344,17 @@ internal sealed partial class SpikeDatabase
         {
             return 0;
         }
+    }
+
+    private static string ThemeReferenceSummary(ThemeRow theme)
+    {
+        return ThemeReferenceSummary(theme.IconThemeId, theme.StatusBarId, theme.NavigationBarId);
+    }
+
+    private static string ThemeReferenceSummary(string iconThemeId, string statusBarId, string navigationBarId)
+    {
+        var linkedCount = new[] { iconThemeId, statusBarId, navigationBarId }.Count((value) => !string.IsNullOrWhiteSpace(value));
+        return $"{linkedCount}/3 refs";
     }
 
     private static string ProductionFontFilesSummary(string filesJson)
@@ -3405,6 +3988,27 @@ internal sealed partial class SpikeDatabase
         return JsonNode.Parse(json)?.AsObject() ?? [];
     }
 
+    private static bool MergeMissing(JsonObject target, JsonObject defaults)
+    {
+        var changed = false;
+        foreach (var pair in defaults)
+        {
+            if (!target.TryGetPropertyValue(pair.Key, out var existing) || existing is null)
+            {
+                target[pair.Key] = pair.Value?.DeepClone();
+                changed = true;
+                continue;
+            }
+
+            if (existing is JsonObject existingObject && pair.Value is JsonObject defaultObject)
+            {
+                changed |= MergeMissing(existingObject, defaultObject);
+            }
+        }
+
+        return changed;
+    }
+
     private static string MetricPair(string metricsJson, IReadOnlyList<string> firstPath, IReadOnlyList<string> secondPath)
     {
         var metrics = ParseJsonObject(metricsJson);
@@ -3516,6 +4120,126 @@ internal sealed partial class SpikeDatabase
         return value.Contains('.', StringComparison.Ordinal)
             ? JsonValue.Create(double.TryParse(value, out var decimalValue) ? decimalValue : 0)!
             : JsonValue.Create(int.TryParse(value, out var integerValue) ? integerValue : 0)!;
+    }
+
+    private static string DefaultThemeTokensJson(string family)
+    {
+        var isAndroid = family.Equals("android", StringComparison.OrdinalIgnoreCase);
+        var tokens = new JsonObject
+        {
+            ["schemaVersion"] = 1,
+            ["defaultMode"] = "light",
+            ["neutralTint"] = new JsonObject
+            {
+                ["hueDeg"] = 0,
+                ["saturation"] = 0,
+            },
+            ["cursor"] = new JsonObject
+            {
+                ["width"] = 2,
+                ["blinkFrames"] = 20,
+            },
+            ["typography"] = new JsonObject
+            {
+                ["fontFamilyId"] = "",
+                ["emojiFontFamilyId"] = "",
+                ["size"] = isAndroid ? 15 : 16,
+                ["weight"] = 400,
+                ["style"] = "normal",
+            },
+            ["modes"] = new JsonObject
+            {
+                ["light"] = new JsonObject
+                {
+                    ["colors"] = new JsonObject
+                    {
+                        ["background"] = "gray_100",
+                        ["textPrimary"] = "gray_010",
+                        ["textSecondary"] = "gray_040",
+                        ["accent"] = isAndroid ? "purple" : "blue",
+                        ["icons.primary"] = "gray_010",
+                        ["icons.secondary"] = "gray_040",
+                        ["icons.accent"] = isAndroid ? "purple" : "blue",
+                        ["borders.primary"] = "gray_070",
+                        ["borders.secondary"] = "gray_080",
+                        ["borders.alternate"] = "gray_060",
+                        ["theme.cursor.color"] = isAndroid ? "purple" : "blue",
+                    },
+                    ["statusBar"] = new JsonObject
+                    {
+                        ["foreground"] = "gray_010",
+                        ["background"] = new JsonObject
+                        {
+                            ["color"] = "gray_100",
+                            ["alpha"] = 1,
+                        },
+                    },
+                    ["navigationBar"] = new JsonObject
+                    {
+                        ["foreground"] = "gray_010",
+                        ["background"] = new JsonObject
+                        {
+                            ["color"] = "gray_100",
+                            ["alpha"] = 1,
+                        },
+                    },
+                    ["keyboard"] = new JsonObject
+                    {
+                        ["background"] = "gray_090",
+                        ["keyBackground"] = "gray_100",
+                        ["specialKeyBackground"] = "gray_080",
+                        ["pressedKeyBackground"] = "gray_070",
+                        ["popoverBackground"] = "gray_100",
+                        ["text"] = "gray_010",
+                    },
+                },
+                ["dark"] = new JsonObject
+                {
+                    ["colors"] = new JsonObject
+                    {
+                        ["background"] = "gray_010",
+                        ["textPrimary"] = "gray_100",
+                        ["textSecondary"] = "gray_070",
+                        ["accent"] = isAndroid ? "purple_tint" : "blue_bright",
+                        ["icons.primary"] = "gray_100",
+                        ["icons.secondary"] = "gray_070",
+                        ["icons.accent"] = isAndroid ? "purple_tint" : "blue_bright",
+                        ["borders.primary"] = "gray_040",
+                        ["borders.secondary"] = "gray_030",
+                        ["borders.alternate"] = "gray_050",
+                        ["theme.cursor.color"] = isAndroid ? "purple_tint" : "blue_bright",
+                    },
+                    ["statusBar"] = new JsonObject
+                    {
+                        ["foreground"] = "gray_100",
+                        ["background"] = new JsonObject
+                        {
+                            ["color"] = "gray_010",
+                            ["alpha"] = 1,
+                        },
+                    },
+                    ["navigationBar"] = new JsonObject
+                    {
+                        ["foreground"] = "gray_100",
+                        ["background"] = new JsonObject
+                        {
+                            ["color"] = "gray_010",
+                            ["alpha"] = 1,
+                        },
+                    },
+                    ["keyboard"] = new JsonObject
+                    {
+                        ["background"] = "gray_020",
+                        ["keyBackground"] = "gray_030",
+                        ["specialKeyBackground"] = "gray_040",
+                        ["pressedKeyBackground"] = "gray_050",
+                        ["popoverBackground"] = "gray_030",
+                        ["text"] = "gray_100",
+                    },
+                },
+            },
+        };
+        return tokens.ToJsonString();
     }
 
     private static string DefaultStatusBarConfigJson()
@@ -4032,6 +4756,19 @@ internal sealed partial class SpikeDatabase
           UNIQUE(project_id, name)
         );
 
+        CREATE TABLE IF NOT EXISTS themes (
+          id TEXT PRIMARY KEY,
+          project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+          name TEXT NOT NULL,
+          family TEXT NOT NULL DEFAULT 'ios',
+          icon_theme_id TEXT NOT NULL DEFAULT '',
+          status_bar_id TEXT NOT NULL DEFAULT '',
+          navigation_bar_id TEXT NOT NULL DEFAULT '',
+          tokens_json TEXT NOT NULL DEFAULT '{}',
+          metadata_json TEXT NOT NULL DEFAULT '{}',
+          UNIQUE(project_id, name)
+        );
+
         CREATE TABLE IF NOT EXISTS editor_layouts (
           record_class_id TEXT PRIMARY KEY,
           layout_json TEXT NOT NULL
@@ -4056,6 +4793,15 @@ internal sealed partial class SpikeDatabase
         string ShortName,
         string DefaultDeviceId,
         string DefaultThemeId,
+        string MetadataJson);
+    public sealed record ThemeSettings(
+        string ProjectId,
+        string Name,
+        string Family,
+        string IconThemeId,
+        string StatusBarId,
+        string NavigationBarId,
+        string TokensJson,
         string MetadataJson);
     public sealed record PaletteColorSettings(
         string Token,
@@ -4120,6 +4866,7 @@ internal sealed partial class SpikeDatabase
     private sealed record PaletteColorRow(string Id, string ProjectId, string Token, string ValueHex, string Note, bool IsNeutral, string MetadataJson);
     private sealed record DeviceRow(string Id, string ProjectId, string Name, string Manufacturer, string Model, string OsFamily, string MetricsJson);
     private sealed record ActorRow(string Id, string ProjectId, string DisplayName, string ShortName, string DefaultDeviceId, string DefaultThemeId, string MetadataJson);
+    private sealed record ThemeRow(string Id, string ProjectId, string Name, string Family, string IconThemeId, string StatusBarId, string NavigationBarId, string TokensJson, string MetadataJson);
     private sealed record ProductionFontRow(string Id, string ProjectId, string FamilyName, string Category, string SourceDirectory, string FilesJson);
     private sealed record IconThemeRow(string Id, string ProjectId, string Name, string AssetRoot, string MappingJson, string MetadataJson);
     private sealed record StatusBarRow(string Id, string ProjectId, string Name, string Family, string ConfigJson, string MetadataJson);

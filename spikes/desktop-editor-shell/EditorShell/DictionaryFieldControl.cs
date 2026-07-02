@@ -18,6 +18,7 @@ internal sealed class DictionaryFieldControl : Grid
     private readonly TextBox? _textBox;
     private readonly TextBox? _pairFirstTextBox;
     private readonly TextBox? _pairSecondTextBox;
+    private readonly HueDegreesControl? _hueControl;
     private readonly ComboBox? _comboBox;
     private readonly ComboBox? _pairFirstComboBox;
     private readonly ComboBox? _pairSecondComboBox;
@@ -46,6 +47,7 @@ internal sealed class DictionaryFieldControl : Grid
             ValueKind.DirectoryPath => new ColumnDefinitions("180,*,Auto,Auto"),
             ValueKind.ImageFilePath => new ColumnDefinitions("180,*,Auto,Auto"),
             ValueKind.HexColor => new ColumnDefinitions("180,28,*,Auto,Auto"),
+            ValueKind.HueDegrees => new ColumnDefinitions("180,*,Auto"),
             ValueKind.IntegerPair => new ColumnDefinitions("180,*,Auto"),
             ValueKind.OptionToken => new ColumnDefinitions("180,*,Auto"),
             ValueKind.PaletteColorToken => new ColumnDefinitions("180,*,Auto"),
@@ -146,6 +148,18 @@ internal sealed class DictionaryFieldControl : Grid
             _colorPicker.LostFocus += (_, _) => CommitValue();
             SetColumn(_colorPicker, 3);
             Children.Add(_colorPicker);
+        }
+        else if (_definition.ValueKind == ValueKind.HueDegrees)
+        {
+            _hueControl = new HueDegreesControl(_value, _definition.IsEditable);
+            _hueControl.ValueChanged += (_, value) => SetLocalValue(value);
+            _hueControl.ValueCommitted += (_, value) =>
+            {
+                SetLocalValue(value);
+                CommitValue();
+            };
+            SetColumn(_hueControl, 1);
+            Children.Add(_hueControl);
         }
         else if (_definition.ValueKind == ValueKind.IntegerPair)
         {
@@ -267,6 +281,10 @@ internal sealed class DictionaryFieldControl : Grid
         else if (_definition.ValueKind == ValueKind.HexColor)
         {
             UpdateColorControlsFromValue();
+        }
+        else if (_definition.ValueKind == ValueKind.HueDegrees && _hueControl is not null)
+        {
+            _hueControl.SetValue(value);
         }
         else if (_definition.ValueKind == ValueKind.IntegerPair)
         {
@@ -584,7 +602,7 @@ internal sealed class DictionaryFieldControl : Grid
             var id when id.EndsWith(".position", StringComparison.Ordinal) => ("X", "Y"),
             var id when id.EndsWith(".vertical", StringComparison.Ordinal) => ("Top", "Bottom"),
             var id when id.EndsWith(".horizontal", StringComparison.Ordinal) => ("Left", "Right"),
-            var id when id.EndsWith(".modes", StringComparison.Ordinal) => ("Light", "Dark"),
+            var id when id.EndsWith(".modes", StringComparison.Ordinal) || id.StartsWith("theme.", StringComparison.Ordinal) => ("Light", "Dark"),
             _ => ("A", "B"),
         };
     }
