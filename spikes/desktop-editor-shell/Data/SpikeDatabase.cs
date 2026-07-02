@@ -47,6 +47,7 @@ internal sealed partial class SpikeDatabase
         var productionFonts = QueryProductionFontRows(connection);
         var iconThemes = QueryIconThemeRows(connection);
         var statusBars = QueryStatusBarRows(connection);
+        var navigationBars = QueryNavigationBarRows(connection);
 
         var projectNodes = projects
             .Select((project) => new ProjectTreeNode(
@@ -64,6 +65,7 @@ internal sealed partial class SpikeDatabase
         var productionFontRootNodes = new Dictionary<string, ProjectTreeNode>();
         var iconThemeRootNodes = new Dictionary<string, ProjectTreeNode>();
         var statusBarRootNodes = new Dictionary<string, ProjectTreeNode>();
+        var navigationBarRootNodes = new Dictionary<string, ProjectTreeNode>();
         var episodeRootNodes = new Dictionary<string, ProjectTreeNode>();
         var episodeNodes = new Dictionary<string, ProjectTreeNode>();
         foreach (var project in projectNodes.Values)
@@ -131,6 +133,13 @@ internal sealed partial class SpikeDatabase
                 "Reusable device status bar compositions.",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.StatusBarsRoot),
                 systemDataRoot);
+            var navigationBarsRoot = new ProjectTreeNode(
+                ProjectTreeNodeKind.NavigationBarsRoot,
+                $"navigation_bars_root_{project.Id}",
+                "Navigation Bars",
+                "Reusable device navigation bar compositions.",
+                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.NavigationBarsRoot),
+                systemDataRoot);
             var episodesRoot = new ProjectTreeNode(
                 ProjectTreeNodeKind.EpisodesRoot,
                 $"episodes_root_{project.Id}",
@@ -144,6 +153,7 @@ internal sealed partial class SpikeDatabase
             systemDataRoot.AddChild(paletteRoot);
             systemDataRoot.AddChild(iconThemesRoot);
             systemDataRoot.AddChild(statusBarsRoot);
+            systemDataRoot.AddChild(navigationBarsRoot);
             systemDataRoot.AddChild(productionFontsRoot);
             project.AddChild(appsRoot);
             project.AddChild(episodesRoot);
@@ -156,6 +166,7 @@ internal sealed partial class SpikeDatabase
             productionFontRootNodes[project.Id] = productionFontsRoot;
             iconThemeRootNodes[project.Id] = iconThemesRoot;
             statusBarRootNodes[project.Id] = statusBarsRoot;
+            navigationBarRootNodes[project.Id] = navigationBarsRoot;
             episodeRootNodes[project.Id] = episodesRoot;
         }
 
@@ -282,6 +293,19 @@ internal sealed partial class SpikeDatabase
                 $"{statusBar.Family} · {StatusBarItemCount(statusBar.ConfigJson)} items",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.StatusBar),
                 statusBarsRoot));
+        }
+
+        foreach (var navigationBar in navigationBars.OrderBy((navigationBar) => navigationBar.Name))
+        {
+            if (!navigationBarRootNodes.TryGetValue(navigationBar.ProjectId, out var navigationBarsRoot)) continue;
+
+            navigationBarsRoot.AddChild(new ProjectTreeNode(
+                ProjectTreeNodeKind.NavigationBar,
+                navigationBar.Id,
+                navigationBar.Name,
+                $"{navigationBar.Family} · {NavigationBarItemCount(navigationBar.ConfigJson)} buttons",
+                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.NavigationBar),
+                navigationBarsRoot));
         }
 
         foreach (var shot in shots.OrderBy((shot) => shot.SortOrder).ThenBy((shot) => shot.Name))
@@ -455,6 +479,33 @@ internal sealed partial class SpikeDatabase
                 name,
                 $"custom · {DefaultStatusBarItems().Count} items",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.StatusBar),
+                parent);
+        }
+
+        if (parent.Kind == ProjectTreeNodeKind.NavigationBarsRoot)
+        {
+            var project = ProjectAncestor(parent);
+            var index = ScalarLong(connection, "SELECT COUNT(*) FROM navigation_bars WHERE project_id = $projectId", ("$projectId", project.Id)) + 1;
+            var id = $"navigation_bar_{Guid.NewGuid():N}";
+            var name = $"Navigation Bar {index}";
+            Execute(
+                connection,
+                """
+                INSERT INTO navigation_bars (id, project_id, name, family, config_json, metadata_json)
+                VALUES ($id, $projectId, $name, 'custom', $configJson, $metadataJson)
+                """,
+                ("$id", id),
+                ("$projectId", project.Id),
+                ("$name", name),
+                ("$configJson", DefaultNavigationBarConfigJson()),
+                ("$metadataJson", JsonSerializer.Serialize(new { note = "Custom reusable navigation bar composition." })));
+
+            return new ProjectTreeNode(
+                ProjectTreeNodeKind.NavigationBar,
+                id,
+                name,
+                $"custom · {DefaultNavigationBarItems().Count} buttons",
+                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.NavigationBar),
                 parent);
         }
 
@@ -712,6 +763,24 @@ internal sealed partial class SpikeDatabase
             return new ProjectTreeNode(ProjectTreeNodeKind.StatusBar, id, $"{node.Name} copy", node.Notes, node.RecordClassId, node.Parent);
         }
 
+        if (node.Kind == ProjectTreeNodeKind.NavigationBar)
+        {
+            var id = $"navigation_bar_{Guid.NewGuid():N}";
+            Execute(
+                connection,
+                """
+                INSERT INTO navigation_bars (id, project_id, name, family, config_json, metadata_json)
+                SELECT $id, project_id, $name, family, config_json, metadata_json
+                FROM navigation_bars
+                WHERE id = $sourceId
+                """,
+                ("$id", id),
+                ("$name", $"{node.Name} copy"),
+                ("$sourceId", node.Id));
+
+            return new ProjectTreeNode(ProjectTreeNodeKind.NavigationBar, id, $"{node.Name} copy", node.Notes, node.RecordClassId, node.Parent);
+        }
+
         throw new InvalidOperationException($"Cannot duplicate {node.Kind}.");
     }
 
@@ -730,6 +799,7 @@ internal sealed partial class SpikeDatabase
             ProjectTreeNodeKind.ProductionFont => "production_fonts",
             ProjectTreeNodeKind.IconTheme => "icon_themes",
             ProjectTreeNodeKind.StatusBar => "status_bars",
+            ProjectTreeNodeKind.NavigationBar => "navigation_bars",
             _ => throw new InvalidOperationException($"Cannot delete {node.Kind}."),
         };
 
@@ -824,6 +894,16 @@ internal sealed partial class SpikeDatabase
             return;
         }
 
+        if (node.Kind == ProjectTreeNodeKind.NavigationBar)
+        {
+            Execute(
+                connection,
+                "UPDATE navigation_bars SET name = $name WHERE id = $id",
+                ("$id", node.Id),
+                ("$name", node.Name));
+            return;
+        }
+
         Execute(
             connection,
             $"UPDATE {table} SET name = $name, notes = $notes WHERE id = $id",
@@ -858,6 +938,7 @@ internal sealed partial class SpikeDatabase
         SeedActorsIfEmpty(connection);
         SeedProductionFontsIfEmpty(connection);
         SeedStatusBarsIfEmpty(connection);
+        SeedNavigationBarsIfEmpty(connection);
     }
 
     private SqliteConnection OpenConnection()
@@ -1050,6 +1131,31 @@ internal sealed partial class SpikeDatabase
         }
     }
 
+    private static void SeedNavigationBarsIfEmpty(SqliteConnection connection)
+    {
+        var projectIds = QueryProjectRows(connection).Select((project) => project.Id).ToList();
+        foreach (var projectId in projectIds)
+        {
+            if (ScalarLong(connection, "SELECT COUNT(*) FROM navigation_bars WHERE project_id = $projectId", ("$projectId", projectId)) > 0)
+            {
+                continue;
+            }
+
+            Execute(
+                connection,
+                """
+                INSERT INTO navigation_bars (id, project_id, name, family, config_json, metadata_json)
+                VALUES ($id, $projectId, $name, $family, $configJson, $metadataJson)
+                """,
+                ("$id", $"navigation_bar_{projectId}_ios_default"),
+                ("$projectId", projectId),
+                ("$name", "iOS Default Navigation Bar"),
+                ("$family", "ios"),
+                ("$configJson", DefaultNavigationBarConfigJson()),
+                ("$metadataJson", JsonSerializer.Serialize(new { note = "Reusable iOS-style navigation bar composition." })));
+        }
+    }
+
     private static void SeedEditorLayouts(SqliteConnection connection)
     {
         foreach (var recordClassId in new[]
@@ -1064,6 +1170,7 @@ internal sealed partial class SpikeDatabase
             "navigation.production_fonts",
             "navigation.icon_themes",
             "navigation.status_bars",
+            "navigation.navigation_bars",
             "navigation.episodes",
             "app.generic",
             "app.core.chat",
@@ -1077,6 +1184,7 @@ internal sealed partial class SpikeDatabase
             "production_font",
             "icon_theme",
             "status_bar",
+            "navigation_bar",
         })
         {
             Execute(
@@ -1181,6 +1289,12 @@ internal sealed partial class SpikeDatabase
                     { "id": "core.name", "order": 10, "visible": true },
                     { "id": "statusBar.family", "order": 20, "visible": true }
                   """
+            : recordClassId == "navigation_bar"
+                ? """
+                    { "id": "core.name", "order": 10, "visible": true },
+                    { "id": "navigationBar.family", "order": 20, "visible": true },
+                    { "id": "navigationBar.type", "order": 30, "visible": true }
+                  """
             : """
                     { "id": "core.name", "order": 10, "visible": true },
                     { "id": "core.kind", "order": 20, "visible": false },
@@ -1237,6 +1351,58 @@ internal sealed partial class SpikeDatabase
             }
             """
             : "";
+        var navigationBarCards = recordClassId == "navigation_bar"
+            ? $$"""
+            ,
+            {
+              "id": "buttons",
+              "label": "Buttons",
+              "subtitle": "Size and generated button shape",
+              "icon": "{{EditorIcons.Navigation}}",
+              "order": 20,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                {
+                  "id": "layout",
+                  "label": "Layout values",
+                  "order": 10,
+                  "visible": true,
+                  "fields": [
+                    { "id": "navigationBar.layout.height", "order": 10, "visible": true },
+                    { "id": "navigationBar.layout.itemSize", "order": 20, "visible": true },
+                    { "id": "navigationBar.layout.sidePadding", "order": 30, "visible": true },
+                    { "id": "navigationBar.layout.strokeWidth", "order": 40, "visible": true },
+                    { "id": "navigationBar.layout.cornerRadius", "order": 50, "visible": true },
+                    { "id": "navigationBar.layout.filled", "order": 60, "visible": true }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "gestureBar",
+              "label": "Gesture Bar",
+              "subtitle": "Home indicator dimensions",
+              "icon": "{{EditorIcons.Navigation}}",
+              "order": 30,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                {
+                  "id": "gesture",
+                  "label": "Gesture bar values",
+                  "order": 10,
+                  "visible": true,
+                  "fields": [
+                    { "id": "navigationBar.gesture.width", "order": 10, "visible": true },
+                    { "id": "navigationBar.gesture.height", "order": 20, "visible": true },
+                    { "id": "navigationBar.gesture.cornerRadius", "order": 30, "visible": true }
+                  ]
+                }
+              ]
+            }
+            """
+            : "";
 
         return $$"""
         {
@@ -1260,7 +1426,7 @@ internal sealed partial class SpikeDatabase
                   ]
                 }
               ]
-            }{{actorCards}}
+            }{{actorCards}}{{navigationBarCards}}
           ]
         }
         """;
@@ -1893,6 +2059,137 @@ internal sealed partial class SpikeDatabase
         }
     }
 
+    public NavigationBarSettings GetNavigationBarSettings(string navigationBarId)
+    {
+        using var connection = OpenConnection();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT project_id, name, family, config_json, metadata_json FROM navigation_bars WHERE id = $id";
+        command.Parameters.AddWithValue("$id", navigationBarId);
+        using var reader = command.ExecuteReader();
+        if (!reader.Read())
+        {
+            throw new InvalidOperationException($"Missing navigation bar '{navigationBarId}'.");
+        }
+
+        return new NavigationBarSettings(
+            reader.GetString(0),
+            reader.GetString(1),
+            ReadString(reader, 2),
+            ReadString(reader, 3),
+            ReadString(reader, 4));
+    }
+
+    public string GetNavigationBarFieldValue(string navigationBarId, string fieldId)
+    {
+        var settings = GetNavigationBarSettings(navigationBarId);
+        var config = NavigationBarConfig(settings.ConfigJson);
+        return fieldId switch
+        {
+            "navigationBar.family" => settings.Family,
+            "navigationBar.type" => JsonString(config, ["type"]) is { Length: > 0 } type ? type : "buttons",
+            "navigationBar.layout.height" => JsonNumberString(config, ["layout", "height"], "34"),
+            "navigationBar.layout.itemSize" => JsonNumberString(config, ["layout", "itemSize"], "18"),
+            "navigationBar.layout.sidePadding" => JsonNumberString(config, ["layout", "sidePadding"], "40"),
+            "navigationBar.layout.strokeWidth" => JsonNumberString(config, ["layout", "strokeWidth"], "2"),
+            "navigationBar.layout.cornerRadius" => JsonNumberString(config, ["layout", "cornerRadius"], "3"),
+            "navigationBar.layout.filled" => BoolToString(JsonBool(config, ["layout", "filled"])),
+            "navigationBar.gesture.width" => JsonNumberString(config, ["gesture", "width"], "134"),
+            "navigationBar.gesture.height" => JsonNumberString(config, ["gesture", "height"], "5"),
+            "navigationBar.gesture.cornerRadius" => JsonNumberString(config, ["gesture", "cornerRadius"], "3"),
+            _ => "",
+        };
+    }
+
+    public IReadOnlyList<NavigationBarItem> GetNavigationBarItems(string navigationBarId)
+    {
+        return NavigationBarItems(NavigationBarConfig(GetNavigationBarSettings(navigationBarId).ConfigJson));
+    }
+
+    public void UpdateNavigationBarField(string navigationBarId, string fieldId, string value)
+    {
+        lock (WriteGate)
+        {
+            using var connection = OpenConnection();
+            if (fieldId == "navigationBar.family")
+            {
+                Execute(connection, "UPDATE navigation_bars SET family = $family WHERE id = $id", ("$id", navigationBarId), ("$family", value));
+                return;
+            }
+
+            using var command = connection.CreateCommand();
+            command.CommandText = "SELECT config_json FROM navigation_bars WHERE id = $id";
+            command.Parameters.AddWithValue("$id", navigationBarId);
+            var config = NavigationBarConfig(command.ExecuteScalar() as string ?? "{}");
+            switch (fieldId)
+            {
+                case "navigationBar.type":
+                    var type = value is "gestureBar" ? "gestureBar" : "buttons";
+                    SetJsonValue(config, ["type"], JsonValue.Create(type)!);
+                    break;
+                case "navigationBar.layout.height":
+                    SetJsonNumber(config, ["layout", "height"], int.TryParse(value, out var height) ? height : 0);
+                    break;
+                case "navigationBar.layout.itemSize":
+                    SetJsonNumber(config, ["layout", "itemSize"], int.TryParse(value, out var itemSize) ? itemSize : 0);
+                    break;
+                case "navigationBar.layout.sidePadding":
+                    SetJsonNumber(config, ["layout", "sidePadding"], int.TryParse(value, out var sidePadding) ? sidePadding : 0);
+                    break;
+                case "navigationBar.layout.strokeWidth":
+                    SetJsonValue(config, ["layout", "strokeWidth"], NumberNode(value));
+                    break;
+                case "navigationBar.layout.cornerRadius":
+                    SetJsonNumber(config, ["layout", "cornerRadius"], int.TryParse(value, out var cornerRadius) ? cornerRadius : 0);
+                    break;
+                case "navigationBar.layout.filled":
+                    SetJsonValue(config, ["layout", "filled"], JsonValue.Create(value.Equals("true", StringComparison.OrdinalIgnoreCase))!);
+                    break;
+                case "navigationBar.gesture.width":
+                    SetJsonNumber(config, ["gesture", "width"], int.TryParse(value, out var gestureWidth) ? gestureWidth : 0);
+                    break;
+                case "navigationBar.gesture.height":
+                    SetJsonNumber(config, ["gesture", "height"], int.TryParse(value, out var gestureHeight) ? gestureHeight : 0);
+                    break;
+                case "navigationBar.gesture.cornerRadius":
+                    SetJsonNumber(config, ["gesture", "cornerRadius"], int.TryParse(value, out var gestureCornerRadius) ? gestureCornerRadius : 0);
+                    break;
+                default:
+                    throw new InvalidOperationException($"Unknown navigation bar field '{fieldId}'.");
+            }
+
+            Execute(
+                connection,
+                "UPDATE navigation_bars SET config_json = $configJson WHERE id = $id",
+                ("$id", navigationBarId),
+                ("$configJson", config.ToJsonString()));
+        }
+    }
+
+    public void UpdateNavigationBarItem(string navigationBarId, int index, NavigationBarItem patch)
+    {
+        lock (WriteGate)
+        {
+            using var connection = OpenConnection();
+            using var command = connection.CreateCommand();
+            command.CommandText = "SELECT config_json FROM navigation_bars WHERE id = $id";
+            command.Parameters.AddWithValue("$id", navigationBarId);
+            var config = NavigationBarConfig(command.ExecuteScalar() as string ?? "{}");
+            var items = config["items"] as JsonArray ?? new JsonArray();
+            while (items.Count <= index)
+            {
+                items.Add(NavigationBarItemToJson(DefaultNavigationBarItems().ElementAtOrDefault(items.Count) ?? DefaultNavigationBarItems()[0]));
+            }
+
+            items[index] = NavigationBarItemToJson(patch);
+            config["items"] = items;
+            Execute(
+                connection,
+                "UPDATE navigation_bars SET config_json = $configJson WHERE id = $id",
+                ("$id", navigationBarId),
+                ("$configJson", config.ToJsonString()));
+        }
+    }
+
     public DevicePreviewMetrics GetDevicePreviewMetrics(string deviceId)
     {
         var settings = GetDeviceSettings(deviceId);
@@ -2164,6 +2461,26 @@ internal sealed partial class SpikeDatabase
         while (reader.Read())
         {
             rows.Add(new StatusBarRow(
+                reader.GetString(0),
+                reader.GetString(1),
+                reader.GetString(2),
+                ReadString(reader, 3),
+                ReadString(reader, 4),
+                ReadString(reader, 5)));
+        }
+
+        return rows;
+    }
+
+    private static List<NavigationBarRow> QueryNavigationBarRows(SqliteConnection connection)
+    {
+        var rows = new List<NavigationBarRow>();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT id, project_id, name, family, config_json, metadata_json FROM navigation_bars ORDER BY name";
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            rows.Add(new NavigationBarRow(
                 reader.GetString(0),
                 reader.GetString(1),
                 reader.GetString(2),
@@ -3323,6 +3640,121 @@ internal sealed partial class SpikeDatabase
         return StatusBarItems(StatusBarConfig(configJson)).Count;
     }
 
+    private static string DefaultNavigationBarConfigJson()
+    {
+        var config = new JsonObject
+        {
+            ["schemaVersion"] = 1,
+            ["type"] = "buttons",
+            ["layout"] = new JsonObject
+            {
+                ["height"] = 34,
+                ["itemSize"] = 18,
+                ["sidePadding"] = 40,
+                ["strokeWidth"] = 2,
+                ["cornerRadius"] = 3,
+                ["filled"] = false,
+            },
+            ["gesture"] = new JsonObject
+            {
+                ["width"] = 134,
+                ["height"] = 5,
+                ["cornerRadius"] = 3,
+            },
+            ["items"] = new JsonArray(DefaultNavigationBarItems().Select(NavigationBarItemToJson).ToArray<JsonNode?>()),
+        };
+        return config.ToJsonString();
+    }
+
+    private static List<NavigationBarItem> DefaultNavigationBarItems()
+    {
+        return
+        [
+            new("back", "Back", "generatedBack", "left", 10),
+            new("home", "Home", "generatedHome", "center", 10),
+            new("recents", "Recents", "generatedRecents", "right", 10),
+        ];
+    }
+
+    private static JsonObject NavigationBarConfig(string json)
+    {
+        var fallback = ParseJsonObject(DefaultNavigationBarConfigJson());
+        var parsed = ParseJsonObject(string.IsNullOrWhiteSpace(json) ? "{}" : json);
+        var layout = parsed["layout"] as JsonObject ?? [];
+        var gesture = parsed["gesture"] as JsonObject ?? [];
+        var fallbackLayout = fallback["layout"]!.AsObject();
+        var fallbackGesture = fallback["gesture"]!.AsObject();
+        parsed["schemaVersion"] ??= 1;
+        parsed["type"] = JsonString(parsed, ["type"]) is "gestureBar" ? "gestureBar" : "buttons";
+        parsed["layout"] = new JsonObject
+        {
+            ["height"] = GetJsonValue(layout, ["height"])?.DeepClone() ?? fallbackLayout["height"]!.DeepClone(),
+            ["itemSize"] = GetJsonValue(layout, ["itemSize"])?.DeepClone() ?? fallbackLayout["itemSize"]!.DeepClone(),
+            ["sidePadding"] = GetJsonValue(layout, ["sidePadding"])?.DeepClone() ?? fallbackLayout["sidePadding"]!.DeepClone(),
+            ["strokeWidth"] = GetJsonValue(layout, ["strokeWidth"])?.DeepClone() ?? fallbackLayout["strokeWidth"]!.DeepClone(),
+            ["cornerRadius"] = GetJsonValue(layout, ["cornerRadius"])?.DeepClone() ?? fallbackLayout["cornerRadius"]!.DeepClone(),
+            ["filled"] = GetJsonValue(layout, ["filled"])?.DeepClone() ?? fallbackLayout["filled"]!.DeepClone(),
+        };
+        parsed["gesture"] = new JsonObject
+        {
+            ["width"] = GetJsonValue(gesture, ["width"])?.DeepClone() ?? fallbackGesture["width"]!.DeepClone(),
+            ["height"] = GetJsonValue(gesture, ["height"])?.DeepClone() ?? fallbackGesture["height"]!.DeepClone(),
+            ["cornerRadius"] = GetJsonValue(gesture, ["cornerRadius"])?.DeepClone() ?? fallbackGesture["cornerRadius"]!.DeepClone(),
+        };
+        if (parsed["items"] is not JsonArray)
+        {
+            parsed["items"] = new JsonArray(DefaultNavigationBarItems().Select(NavigationBarItemToJson).ToArray<JsonNode?>());
+        }
+
+        return parsed;
+    }
+
+    private static IReadOnlyList<NavigationBarItem> NavigationBarItems(JsonObject config)
+    {
+        var defaults = DefaultNavigationBarItems();
+        var rawItems = config["items"] as JsonArray ?? [];
+        return rawItems.Select((raw, index) =>
+        {
+            var item = raw as JsonObject ?? [];
+            var fallback = defaults.ElementAtOrDefault(index) ?? defaults[0];
+            var kind = JsonString(item, ["kind"]);
+            if (kind is not ("generatedBack" or "generatedHome" or "generatedRecents"))
+            {
+                kind = fallback.Kind;
+            }
+
+            var zone = JsonString(item, ["zone"]);
+            if (zone is not ("off" or "left" or "center" or "right"))
+            {
+                zone = fallback.Zone;
+            }
+
+            return new NavigationBarItem(
+                JsonString(item, ["id"]) is { Length: > 0 } id ? id : fallback.Id,
+                JsonString(item, ["label"]) is { Length: > 0 } label ? label : fallback.Label,
+                kind,
+                zone,
+                int.TryParse(JsonNumberString(item, ["order"]), out var order) ? order : fallback.Order);
+        }).ToList();
+    }
+
+    private static JsonObject NavigationBarItemToJson(NavigationBarItem item)
+    {
+        return new JsonObject
+        {
+            ["id"] = item.Id,
+            ["label"] = item.Label,
+            ["kind"] = item.Kind,
+            ["zone"] = item.Zone,
+            ["order"] = item.Order,
+        };
+    }
+
+    private static int NavigationBarItemCount(string configJson)
+    {
+        return NavigationBarItems(NavigationBarConfig(configJson)).Count;
+    }
+
     private static string DefaultDeviceMetricsJson(int width, int height, double scale)
     {
         return DeviceMetricsJson(width, height, scale, includeDynamicIsland: false);
@@ -3590,6 +4022,16 @@ internal sealed partial class SpikeDatabase
           UNIQUE(project_id, name)
         );
 
+        CREATE TABLE IF NOT EXISTS navigation_bars (
+          id TEXT PRIMARY KEY,
+          project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+          name TEXT NOT NULL,
+          family TEXT NOT NULL DEFAULT '',
+          config_json TEXT NOT NULL DEFAULT '{}',
+          metadata_json TEXT NOT NULL DEFAULT '{}',
+          UNIQUE(project_id, name)
+        );
+
         CREATE TABLE IF NOT EXISTS editor_layouts (
           record_class_id TEXT PRIMARY KEY,
           layout_json TEXT NOT NULL
@@ -3659,6 +4101,18 @@ internal sealed partial class SpikeDatabase
         bool Charging,
         string Zone,
         int Order);
+    public sealed record NavigationBarSettings(
+        string ProjectId,
+        string Name,
+        string Family,
+        string ConfigJson,
+        string MetadataJson);
+    public sealed record NavigationBarItem(
+        string Id,
+        string Label,
+        string Kind,
+        string Zone,
+        int Order);
     private sealed record ProjectRow(string Id, string Name, string Notes);
     private sealed record EpisodeRow(string Id, string ProjectId, string Name, string Slug, string Notes, int SortOrder);
     private sealed record AppRow(string Id, string ProjectId, string RecordClassId, string Name, string Notes, int SortOrder);
@@ -3669,6 +4123,7 @@ internal sealed partial class SpikeDatabase
     private sealed record ProductionFontRow(string Id, string ProjectId, string FamilyName, string Category, string SourceDirectory, string FilesJson);
     private sealed record IconThemeRow(string Id, string ProjectId, string Name, string AssetRoot, string MappingJson, string MetadataJson);
     private sealed record StatusBarRow(string Id, string ProjectId, string Name, string Family, string ConfigJson, string MetadataJson);
+    private sealed record NavigationBarRow(string Id, string ProjectId, string Name, string Family, string ConfigJson, string MetadataJson);
     private sealed record ShotRow(
         string Id,
         string EpisodeId,

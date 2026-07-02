@@ -80,6 +80,7 @@ internal static class EditorIcons
             ProjectTreeNodeKind.PaletteRoot => Color,
             ProjectTreeNodeKind.IconThemesRoot => Icon,
             ProjectTreeNodeKind.StatusBarsRoot => Status,
+            ProjectTreeNodeKind.NavigationBarsRoot => Navigation,
             ProjectTreeNodeKind.DevicesRoot => Device,
             ProjectTreeNodeKind.ActorsRoot => Actor,
             ProjectTreeNodeKind.ProductionFontsRoot => Typography,
@@ -91,6 +92,7 @@ internal static class EditorIcons
             ProjectTreeNodeKind.PaletteColor => Color,
             ProjectTreeNodeKind.IconTheme => Icon,
             ProjectTreeNodeKind.StatusBar => Status,
+            ProjectTreeNodeKind.NavigationBar => Navigation,
             ProjectTreeNodeKind.Device => Device,
             ProjectTreeNodeKind.Actor => Actor,
             ProjectTreeNodeKind.ProductionFont => Typography,
@@ -188,8 +190,11 @@ internal static class EditorIcons
             Border => "editor_border.svg",
             Media => "editor_media.svg",
             Device => "editor_device.svg",
+            Color => "editor_palette.svg",
+            Status => "editor_statusbar.svg",
+            Navigation => "editor_navbar.svg",
             Icon => "editor_button_icon.svg",
-            Typography => "editor_text_input.svg",
+            Typography => "editor_fonts.svg",
             _ => null,
         };
 
