@@ -1,5 +1,6 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:animation="using:Avalonia.Animation"
              xmlns:converters="using:Avalonia.Controls.Converters"
              xmlns:pc="using:Avalonia.Controls.Primitives.Converters"
              xmlns:suki="clr-namespace:SukiUI;assembly=SukiUI"
@@ -23,5 +24,13 @@
 
     <Application.Styles>
         <suki:SukiTheme ThemeColor="Blue" />
+        <Style Selector="Expander">
+            <Setter Property="ContentTransition">
+                <animation:CompositePageTransition>
+                    <animation:PageSlide Duration="0:0:0.04" Orientation="Vertical" />
+                    <animation:CrossFade Duration="0:0:0.04" />
+                </animation:CompositePageTransition>
+            </Setter>
+        </Style>
     </Application.Styles>
 </Application>
