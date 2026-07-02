@@ -10,6 +10,7 @@
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="12.0.5" />
     <PackageReference Include="Avalonia.Controls.ColorPicker" Version="12.0.3" />
+    <PackageReference Include="Avalonia.Controls.WebView" Version="12.0.1" />
     <PackageReference Include="Avalonia.Desktop" Version="12.0.5" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="12.0.5" />
     <PackageReference Include="Avalonia.Fonts.Inter" Version="12.0.5" />
@@ -22,8 +23,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="../../scripts/icon-themes/sync-icon-theme-token.cjs"
-             Link="scripts/icon-themes/sync-icon-theme-token.cjs"
-             CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../../scripts/icon-themes/sync-icon-theme-token.cjs" Link="scripts/icon-themes/sync-icon-theme-token.cjs" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

@@ -15,17 +15,20 @@ internal sealed class StatusBarItemsCollectionEditor
     private readonly bool _isDark;
     private readonly Func<string, ValueKind, Task<string?>> _browsePath;
     private readonly Func<string, string, bool, Task<string?>> _showIconTokenPicker;
+    private readonly Action _onChanged;
 
     public StatusBarItemsCollectionEditor(
         SpikeDatabase database,
         bool isDark,
         Func<string, ValueKind, Task<string?>> browsePath,
-        Func<string, string, bool, Task<string?>> showIconTokenPicker)
+        Func<string, string, bool, Task<string?>> showIconTokenPicker,
+        Action onChanged)
     {
         _database = database;
         _isDark = isDark;
         _browsePath = browsePath;
         _showIconTokenPicker = showIconTokenPicker;
+        _onChanged = onChanged;
     }
 
     public Expander Create(ProjectTreeNode node)
@@ -241,6 +244,7 @@ internal sealed class StatusBarItemsCollectionEditor
     private void UpdateItem(ProjectTreeNode node, int index, SpikeDatabase.StatusBarItem nextItem)
     {
         _database.UpdateStatusBarItem(node.Id, index, nextItem);
+        _onChanged();
     }
 
     private static string BoolToString(bool value) => value ? "true" : "false";

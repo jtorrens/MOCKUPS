@@ -14,15 +14,18 @@ internal sealed class NavigationBarItemsCollectionEditor
     private readonly SpikeDatabase _database;
     private readonly bool _isDark;
     private readonly Func<string, ValueKind, Task<string?>> _browsePath;
+    private readonly Action _onChanged;
 
     public NavigationBarItemsCollectionEditor(
         SpikeDatabase database,
         bool isDark,
-        Func<string, ValueKind, Task<string?>> browsePath)
+        Func<string, ValueKind, Task<string?>> browsePath,
+        Action onChanged)
     {
         _database = database;
         _isDark = isDark;
         _browsePath = browsePath;
+        _onChanged = onChanged;
     }
 
     public Expander Create(ProjectTreeNode node)
@@ -121,5 +124,6 @@ internal sealed class NavigationBarItemsCollectionEditor
     private void UpdateItem(ProjectTreeNode node, int index, SpikeDatabase.NavigationBarItem nextItem)
     {
         _database.UpdateNavigationBarItem(node.Id, index, nextItem);
+        _onChanged();
     }
 }

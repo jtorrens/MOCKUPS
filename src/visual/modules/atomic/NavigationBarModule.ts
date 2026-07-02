@@ -90,11 +90,56 @@ export const NavigationBarModule: VisualModule<NavigationBarModuleInput> = {
   render(input) {
     const foreground = readString(input.tokens, "foreground", "#000000");
     const background = readString(input.tokens, "background", "transparent");
+    const type = readString(input.navigationBar, "type", "buttons");
     const layout = asRecord(input.navigationBar?.layout);
+    const gesture = asRecord(input.navigationBar?.gesture);
     const height = readNumber(layout, "height", 0);
     const itemSize = readNumber(layout, "itemSize", Math.max(10, height * 0.5));
     const sidePadding = readNumber(layout, "sidePadding", 40);
     const items = navigationBarItems(input);
+    if (type === "gestureBar") {
+      const gestureWidth = readNumber(gesture, "width", 134);
+      const gestureHeight = readNumber(gesture, "height", 5);
+      const gestureCornerRadius = readNumber(gesture, "cornerRadius", gestureHeight / 2);
+      return {
+        id: "navigation_bar",
+        type: "navigation_bar",
+        role: "device_navigation",
+        frame: input.frame,
+        box: {
+          x: input.viewport.x,
+          y: input.viewport.y + input.viewport.height - height,
+          width: input.viewport.width,
+          height,
+        },
+        style: {
+          background,
+        },
+        children: [
+          {
+            id: "navigation_bar:gesture",
+            type: "navigation_bar_gesture",
+            role: "gesture_bar",
+            frame: input.frame,
+            box: {
+              x: input.viewport.x + (input.viewport.width - gestureWidth) / 2,
+              y: input.viewport.y + input.viewport.height - height + (height - gestureHeight) / 2,
+              width: gestureWidth,
+              height: gestureHeight,
+            },
+            style: {
+              background: foreground,
+              cornerRadius: gestureCornerRadius,
+            },
+          },
+        ],
+        metadata: {
+          layout: "navigation_bar_gesture_v1",
+          tokenSource: "themes.navigation_bar_id -> navigation_bars.config_json",
+        },
+      };
+    }
+
     return {
       id: "navigation_bar",
       type: "navigation_bar",

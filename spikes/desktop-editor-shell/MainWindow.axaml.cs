@@ -57,18 +57,24 @@ public partial class MainWindow : SukiWindow
     private readonly EditorFieldCommitCoordinator _fieldCommitCoordinator = new();
     private readonly List<Expander> _editorCards = [];
     private readonly HashSet<string> _expandedNodeIds = [];
+    private readonly RuntimeWebPreviewPane _runtimePreviewPane = new();
+    private readonly DesignWebPreviewPane _designPreviewPane = new();
     private List<ProjectTreeNode> _treeRoots = [];
     private ProjectTreeNode? _selectedNode;
     private string? _selectedPreviewDeviceId;
+    private string? _selectedPreviewThemeId;
+    private string _selectedPreviewMode = "light";
 
     public MainWindow()
     {
         InitializeComponent();
+        RuntimePreviewHost.Content = _runtimePreviewPane;
+        DesignPreviewHost.Content = _designPreviewPane;
         RestoreShellState();
         Closing += (_, _) => SaveShellState();
         ApplyTheme();
         LoadProjectTree();
-        InitializePreviewDevices();
+        InitializePreviewOptions();
     }
 
     private void OnToggleThemeClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -87,55 +93,49 @@ public partial class MainWindow : SukiWindow
 
         if (_isDark)
         {
-            SetBrush("PreviewDeviceBorderBrush", "#111318");
-            SetBrush("PreviewDeviceBackground", "#ece9e2");
-            SetBrush("PreviewHeaderBackground", "#d7b25c");
-            SetBrush("PreviewHeaderTextBrush", "#302a20");
-            SetBrush("PreviewHeaderMutedBrush", "#5e523d");
-            SetBrush("PreviewScreenBackground", "#f1f3ef");
-            SetBrush("PreviewOutgoingBubble", "#9fcfb3");
-            SetBrush("PreviewIncomingBubble", "#f6f4ef");
-            SetBrush("PreviewBubbleTextBrush", "#fff8ee");
-            SetBrush("PreviewIncomingTextBrush", "#302f2d");
             ThemeLabel.Text = "Dark mode";
             ThemeToggleButton.Content = "Switch to light";
             RefreshPreviewDevice();
             return;
         }
 
-        SetBrush("PreviewDeviceBorderBrush", "#111318");
-        SetBrush("PreviewDeviceBackground", "#ffffff");
-        SetBrush("PreviewHeaderBackground", "#d7b25c");
-        SetBrush("PreviewHeaderTextBrush", "#302a20");
-        SetBrush("PreviewHeaderMutedBrush", "#5e523d");
-        SetBrush("PreviewScreenBackground", "#f7f9fc");
-        SetBrush("PreviewOutgoingBubble", "#9fcfb3");
-        SetBrush("PreviewIncomingBubble", "#ffffff");
-        SetBrush("PreviewBubbleTextBrush", "#fff8ee");
-        SetBrush("PreviewIncomingTextBrush", "#302f2d");
         ThemeLabel.Text = "Light mode";
         ThemeToggleButton.Content = "Switch to dark";
         RefreshPreviewDevice();
     }
 
-    private void SetBrush(string key, string hex)
-    {
-        Resources[key] = new SolidColorBrush(Color.Parse(hex));
-    }
-
-    private void InitializePreviewDevices()
+    private void InitializePreviewOptions()
     {
         var project = _treeRoots.FirstOrDefault((node) => node.Kind == ProjectTreeNodeKind.Project);
         if (project is null) return;
 
-        var options = _database.GetDeviceOptions(project.Id);
-        PreviewDeviceComboBox.ItemsSource = options;
+        var deviceOptions = _database.GetDeviceOptions(project.Id);
+        PreviewDeviceComboBox.ItemsSource = deviceOptions;
         var selected = !string.IsNullOrWhiteSpace(_selectedPreviewDeviceId)
-            ? options.FirstOrDefault((option) => option.Value == _selectedPreviewDeviceId)
+            ? deviceOptions.FirstOrDefault((option) => option.Value == _selectedPreviewDeviceId)
             : null;
-        selected ??= options.FirstOrDefault();
+        selected ??= deviceOptions.FirstOrDefault();
         PreviewDeviceComboBox.SelectedItem = selected;
         _selectedPreviewDeviceId = selected?.Value;
+
+        var themeOptions = _database.GetThemeOptions(project.Id);
+        PreviewThemeComboBox.ItemsSource = themeOptions;
+        var selectedTheme = !string.IsNullOrWhiteSpace(_selectedPreviewThemeId)
+            ? themeOptions.FirstOrDefault((option) => option.Value == _selectedPreviewThemeId)
+            : null;
+        selectedTheme ??= themeOptions.FirstOrDefault();
+        PreviewThemeComboBox.SelectedItem = selectedTheme;
+        _selectedPreviewThemeId = selectedTheme?.Value;
+
+        var modeOptions = new[]
+        {
+            new FieldOption("light", "Light"),
+            new FieldOption("dark", "Dark"),
+        };
+        PreviewModeComboBox.ItemsSource = modeOptions;
+        PreviewModeComboBox.SelectedItem = modeOptions.FirstOrDefault((option) => option.Value == _selectedPreviewMode) ?? modeOptions[0];
+        _selectedPreviewMode = ((FieldOption)PreviewModeComboBox.SelectedItem).Value;
+
         RefreshPreviewDevice();
     }
 
@@ -147,137 +147,40 @@ public partial class MainWindow : SukiWindow
         RefreshPreviewDevice();
     }
 
+    private void OnPreviewThemeChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (PreviewThemeComboBox.SelectedItem is not FieldOption option) return;
+
+        _selectedPreviewThemeId = option.Value;
+        RefreshPreviewDevice();
+    }
+
+    private void OnPreviewModeChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (PreviewModeComboBox.SelectedItem is not FieldOption option) return;
+
+        _selectedPreviewMode = option.Value;
+        RefreshPreviewDevice();
+    }
+
     private void RefreshPreviewDevice()
     {
-        if (PreviewDeviceHost is null || string.IsNullOrWhiteSpace(_selectedPreviewDeviceId)) return;
+        if (string.IsNullOrWhiteSpace(_selectedPreviewDeviceId)) return;
 
         var metrics = _database.GetDevicePreviewMetrics(_selectedPreviewDeviceId);
-        PreviewDeviceHost.Content = CreateDevicePreview(metrics);
+        var themeName = SelectedPreviewThemeName();
+        _runtimePreviewPane.Update(metrics, _isDark, themeName, _selectedPreviewMode);
+        _designPreviewPane.Update(
+            metrics,
+            _isDark,
+            themeName,
+            _selectedPreviewMode,
+            DesignPreviewPayloadFactory.Create(_database, _selectedNode, _selectedPreviewThemeId));
     }
 
-    private Control CreateDevicePreview(SpikeDatabase.DevicePreviewMetrics metrics)
+    private string SelectedPreviewThemeName()
     {
-        var canvas = new Canvas
-        {
-            Width = metrics.CanvasWidth,
-            Height = metrics.CanvasHeight,
-        };
-
-        var device = new Border
-        {
-            Width = metrics.CanvasWidth,
-            Height = metrics.CanvasHeight,
-            CornerRadius = new CornerRadius(Math.Max(0, metrics.CornerRadius)),
-            Background = new SolidColorBrush(Color.Parse(_isDark ? "#20242D" : "#F2F4F7")),
-            BorderBrush = (IBrush)Resources["PreviewDeviceBorderBrush"]!,
-            BorderThickness = new Avalonia.Thickness(Math.Max(6, Math.Min(metrics.CanvasWidth, metrics.CanvasHeight) * 0.012)),
-            ClipToBounds = true,
-            BoxShadow = BoxShadows.Parse("0 10 28 0 #33000000"),
-        };
-        Canvas.SetLeft(device, 0);
-        Canvas.SetTop(device, 0);
-
-        var screen = new Border
-        {
-            Width = metrics.ScreenWidth,
-            Height = metrics.ScreenHeight,
-            CornerRadius = new CornerRadius(Math.Max(0, metrics.CornerRadius * 0.72)),
-            Background = (IBrush)Resources["PreviewScreenBackground"]!,
-            ClipToBounds = true,
-            Child = CreatePreviewScreenContent(metrics),
-        };
-        Canvas.SetLeft(screen, metrics.ScreenX);
-        Canvas.SetTop(screen, metrics.ScreenY);
-
-        canvas.Children.Add(device);
-        canvas.Children.Add(screen);
-        return canvas;
-    }
-
-    private Control CreatePreviewScreenContent(SpikeDatabase.DevicePreviewMetrics metrics)
-    {
-        var headerHeight = Math.Max(56, metrics.ScreenHeight * 0.11);
-        return new Grid
-        {
-            RowDefinitions = new RowDefinitions($"{headerHeight},*"),
-            Children =
-            {
-                new Border
-                {
-                    Background = (IBrush)Resources["PreviewHeaderBackground"]!,
-                    Padding = new Avalonia.Thickness(18, 14),
-                    Child = new StackPanel
-                    {
-                        Children =
-                        {
-                            new TextBlock
-                            {
-                                Foreground = (IBrush)Resources["PreviewHeaderTextBrush"]!,
-                                FontSize = 18,
-                                FontWeight = FontWeight.Bold,
-                                Text = "Alex",
-                            },
-                            new TextBlock
-                            {
-                                Foreground = (IBrush)Resources["PreviewHeaderMutedBrush"]!,
-                                FontSize = 12,
-                                Text = "offline",
-                            },
-                        },
-                    },
-                },
-                PreviewMessagesLayer(),
-            },
-        };
-    }
-
-    private Control PreviewMessagesLayer()
-    {
-        var layer = new Grid
-        {
-            Background = Brushes.Transparent,
-            Children =
-            {
-                new StackPanel
-                {
-                    Margin = new Avalonia.Thickness(18, 34, 18, 0),
-                    Spacing = 12,
-                    Children =
-                    {
-                        new Border
-                        {
-                            HorizontalAlignment = HorizontalAlignment.Right,
-                            MaxWidth = 210,
-                            CornerRadius = new CornerRadius(18),
-                            Background = (IBrush)Resources["PreviewOutgoingBubble"]!,
-                            Padding = new Avalonia.Thickness(14, 10),
-                            Child = new TextBlock
-                            {
-                                Foreground = (IBrush)Resources["PreviewBubbleTextBrush"]!,
-                                TextWrapping = TextWrapping.Wrap,
-                                Text = "Are you close?",
-                            },
-                        },
-                        new Border
-                        {
-                            HorizontalAlignment = HorizontalAlignment.Left,
-                            MaxWidth = 220,
-                            CornerRadius = new CornerRadius(18),
-                            Background = (IBrush)Resources["PreviewIncomingBubble"]!,
-                            Padding = new Avalonia.Thickness(14, 10),
-                            Child = new TextBlock
-                            {
-                                Foreground = (IBrush)Resources["PreviewIncomingTextBrush"]!,
-                                TextWrapping = TextWrapping.Wrap,
-                                Text = "Two minutes away.",
-                            },
-                        },
-                    },
-                },
-            },
-        };
-        Grid.SetRow(layer, 1);
-        return layer;
+        return PreviewThemeComboBox.SelectedItem is FieldOption option ? option.Label : "No theme";
     }
 
     private static string ShellStatePath()
@@ -918,6 +821,7 @@ public partial class MainWindow : SukiWindow
         _selectedNode = node;
         EditorTitle.Text = node.Name;
         BuildEditorCards(node);
+        RefreshPreviewDevice();
         if (rebuildTree)
         {
             RebuildNavigationCards();
@@ -954,14 +858,16 @@ public partial class MainWindow : SukiWindow
                 _database,
                 _isDark,
                 BrowsePath,
-                ShowIconTokenPicker).Create(node));
+                ShowIconTokenPicker,
+                RefreshPreviewDevice).Create(node));
         }
         else if (node.Kind == ProjectTreeNodeKind.NavigationBar)
         {
             AddEditorCard(new NavigationBarItemsCollectionEditor(
                 _database,
                 _isDark,
-                BrowsePath).Create(node));
+                BrowsePath,
+                RefreshPreviewDevice).Create(node));
         }
     }
 
@@ -1011,6 +917,7 @@ public partial class MainWindow : SukiWindow
                         (draftValue) => StoredFieldValue(node, field.Definition.Id, draftValue),
                         () => CurrentStoredFieldValue(node, field.Definition.Id),
                         (storedValue) => PersistFieldValue(node, field.Definition.Id, storedValue));
+                    RefreshPreviewDevice();
                 };
                 groupPanel.Children.Add(control);
             }

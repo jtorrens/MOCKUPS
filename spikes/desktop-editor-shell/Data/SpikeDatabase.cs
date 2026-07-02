@@ -1820,6 +1820,34 @@ internal sealed partial class SpikeDatabase
             }
             """
             : "";
+        var statusBarCards = recordClassId == "status_bar"
+            ? $$"""
+            ,
+            {
+              "id": "layout",
+              "label": "Layout",
+              "subtitle": "Height, item size, gap and padding",
+              "icon": "{{EditorIcons.Layout}}",
+              "order": 20,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                {
+                  "id": "layout",
+                  "label": "Layout values",
+                  "order": 10,
+                  "visible": true,
+                  "fields": [
+                    { "id": "statusBar.layout.height", "order": 10, "visible": true },
+                    { "id": "statusBar.layout.itemSize", "order": 20, "visible": true },
+                    { "id": "statusBar.layout.gap", "order": 30, "visible": true },
+                    { "id": "statusBar.layout.sidePadding", "order": 40, "visible": true }
+                  ]
+                }
+              ]
+            }
+            """
+            : "";
         var navigationBarCards = recordClassId == "navigation_bar"
             ? $$"""
             ,
@@ -1898,7 +1926,7 @@ internal sealed partial class SpikeDatabase
                   ]
                 }
               ]
-            }{{actorCards}}{{themeCards}}{{navigationBarCards}}{{componentCards}}
+            }{{actorCards}}{{themeCards}}{{statusBarCards}}{{navigationBarCards}}{{componentCards}}
           ]
         }
         """;
@@ -2273,6 +2301,18 @@ internal sealed partial class SpikeDatabase
             .OrderBy((color) => color.Token)
             .Select((color) => new FieldOption(color.Token, color.Token, color.ValueHex))
             .ToList();
+    }
+
+    public IReadOnlyDictionary<string, string> GetPaletteColorMap(string projectId)
+    {
+        using var connection = OpenConnection();
+        return QueryPaletteColorRows(connection)
+            .Where((color) => color.ProjectId == projectId)
+            .GroupBy((color) => color.Token, StringComparer.Ordinal)
+            .ToDictionary(
+                (group) => group.Key,
+                (group) => group.First().ValueHex,
+                StringComparer.Ordinal);
     }
 
     public IReadOnlyList<FieldOption> GetDeviceOptions(string projectId)
@@ -3028,6 +3068,16 @@ internal sealed partial class SpikeDatabase
         var screenWidth = JsonNumberDouble(metrics, ["screen", "width"], canvasWidth);
         var screenHeight = JsonNumberDouble(metrics, ["screen", "height"], canvasHeight);
         var cornerRadius = JsonNumberDouble(metrics, ["cornerRadius"], 0);
+        var statusBarHeight = JsonNumberDouble(metrics, ["statusBar", "height"], JsonNumberDouble(metrics, ["safeArea", "top"], 0));
+        var safeAreaBottom = JsonNumberDouble(metrics, ["safeArea", "bottom"], 0);
+        var scaleToPixels = JsonNumberDouble(metrics, ["scaleToPixels"], 0);
+        if (scaleToPixels <= 0)
+        {
+            var renderWidth = JsonNumberDouble(metrics, ["renderSize", "width"], canvasWidth);
+            var designWidth = JsonNumberDouble(metrics, ["designSpace", "width"], 0);
+            scaleToPixels = designWidth > 0 ? renderWidth / designWidth : JsonNumberDouble(metrics, ["pixelRatio"], 1);
+        }
+
         return new DevicePreviewMetrics(
             settings.Name,
             canvasWidth,
@@ -3036,7 +3086,10 @@ internal sealed partial class SpikeDatabase
             screenY,
             screenWidth,
             screenHeight,
-            cornerRadius);
+            cornerRadius,
+            statusBarHeight,
+            safeAreaBottom,
+            scaleToPixels);
     }
 
     public IReadOnlyList<FieldOption> GetThemeOptions(string projectId)
@@ -5333,7 +5386,10 @@ internal sealed partial class SpikeDatabase
         double ScreenY,
         double ScreenWidth,
         double ScreenHeight,
-        double CornerRadius);
+        double CornerRadius,
+        double StatusBarHeight,
+        double SafeAreaBottom,
+        double ScaleToPixels);
     public sealed record ActorSettings(
         string ProjectId,
         string DisplayName,

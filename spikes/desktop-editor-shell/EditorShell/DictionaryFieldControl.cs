@@ -23,7 +23,7 @@ internal sealed class DictionaryFieldControl : Grid
     private readonly ComboBox? _comboBox;
     private readonly ComboBox? _pairFirstComboBox;
     private readonly ComboBox? _pairSecondComboBox;
-    private readonly CheckBox? _checkBox;
+    private readonly ToggleSwitch? _toggleSwitch;
     private readonly IconSlotsControl? _iconSlotsControl;
     private readonly Button? _themeTokenButton;
     private readonly Border? _colorSwatch;
@@ -34,6 +34,7 @@ internal sealed class DictionaryFieldControl : Grid
     private readonly Func<string, IReadOnlyList<FieldOption>?, Task<string?>>? _showThemeTokenPicker;
     private readonly Func<string, Control>? _createIconPreview;
     private bool _isUpdatingColorControl;
+    private bool _isInherited;
     private string _defaultValue;
     private string _value;
     private string _lastCommittedValue;
@@ -46,9 +47,10 @@ internal sealed class DictionaryFieldControl : Grid
         Func<string, Control>? createIconPreview = null)
     {
         _definition = fieldValue.Definition;
+        _isInherited = fieldValue.IsInherited;
         _defaultValue = fieldValue.Definition.DefaultValue;
-        _value = fieldValue.Value;
-        _lastCommittedValue = fieldValue.Value;
+        _value = fieldValue.IsInherited ? fieldValue.Definition.InheritedValue : fieldValue.Value;
+        _lastCommittedValue = fieldValue.IsInherited ? fieldValue.Definition.InheritedStorageValue : fieldValue.Value;
         _browsePath = browsePath;
         _showIconTokenPicker = showIconTokenPicker;
         _showThemeTokenPicker = showThemeTokenPicker;
@@ -91,22 +93,22 @@ internal sealed class DictionaryFieldControl : Grid
 
         if (_definition.ValueKind == ValueKind.Boolean)
         {
-            _checkBox = new CheckBox
+            _toggleSwitch = new ToggleSwitch
             {
                 IsChecked = StringToBool(_value),
                 IsEnabled = _definition.IsEditable,
                 VerticalAlignment = VerticalAlignment.Center,
             };
-            _checkBox.PropertyChanged += (_, change) =>
+            _toggleSwitch.PropertyChanged += (_, change) =>
             {
-                if (change.Property != CheckBox.IsCheckedProperty) return;
+                if (change.Property != ToggleSwitch.IsCheckedProperty) return;
                 if (_isUpdatingColorControl) return;
 
-                SetLocalValue(BoolToString(_checkBox.IsChecked == true));
+                SetLocalValue(BoolToString(_toggleSwitch.IsChecked == true));
                 CommitValue();
             };
-            SetColumn(_checkBox, 1);
-            Children.Add(_checkBox);
+            SetColumn(_toggleSwitch, 1);
+            Children.Add(_toggleSwitch);
         }
         else if (_definition.ValueKind is ValueKind.OptionToken or ValueKind.PaletteColorToken)
         {
@@ -276,7 +278,10 @@ internal sealed class DictionaryFieldControl : Grid
         };
         _restoreButton.Click += (_, _) =>
         {
-            SetValue(_defaultValue, commit: true);
+            if (_definition.CanInherit)
+            {
+                SetInheritedValue(commit: true);
+            }
         };
         SetColumn(_restoreButton, _definition.ValueKind switch
         {
@@ -295,7 +300,11 @@ internal sealed class DictionaryFieldControl : Grid
 
     public event EventHandler<string>? ValueCommitted;
 
-    public bool IsDefault => _value == _defaultValue;
+    public bool IsDefault => _definition.CanInherit
+        ? _isInherited
+        : _value == _lastCommittedValue;
+
+    public bool HasLocalOverride => _definition.CanInherit && !_isInherited;
 
     public bool CommitAsDefault => _definition.CommitAsDefault;
 
@@ -305,12 +314,13 @@ internal sealed class DictionaryFieldControl : Grid
     {
         _defaultValue = _value;
         _lastCommittedValue = _value;
+        _isInherited = false;
         UpdateState();
     }
 
     public void MarkCurrentValueCommitted()
     {
-        _lastCommittedValue = _value;
+        _lastCommittedValue = _isInherited ? _definition.InheritedStorageValue : _value;
         UpdateState();
     }
 
@@ -327,10 +337,11 @@ internal sealed class DictionaryFieldControl : Grid
         }
 
         _value = value;
+        _isInherited = false;
         _isUpdatingColorControl = true;
-        if (_checkBox is not null)
+        if (_toggleSwitch is not null)
         {
-            _checkBox.IsChecked = StringToBool(value);
+            _toggleSwitch.IsChecked = StringToBool(value);
         }
         else if (_definition.ValueKind == ValueKind.HexColor)
         {
@@ -376,19 +387,78 @@ internal sealed class DictionaryFieldControl : Grid
 
     private void SetLocalValue(string value)
     {
-        if (_value == value) return;
+        if (!_isInherited && _value == value) return;
 
         _value = value;
+        _isInherited = false;
         UpdateState();
         ValueChanged?.Invoke(this, _value);
     }
 
     private void CommitValue()
     {
-        if (_lastCommittedValue == _value) return;
+        var storageValue = _isInherited ? _definition.InheritedStorageValue : _value;
+        if (_lastCommittedValue == storageValue) return;
 
-        _lastCommittedValue = _value;
-        ValueCommitted?.Invoke(this, _value);
+        _lastCommittedValue = storageValue;
+        ValueCommitted?.Invoke(this, storageValue);
+    }
+
+    private void SetInheritedValue(bool commit)
+    {
+        if (!_definition.CanInherit) return;
+
+        _isInherited = true;
+        SetDisplayedValue(_definition.InheritedValue);
+        UpdateState();
+        ValueChanged?.Invoke(this, _definition.InheritedStorageValue);
+        if (commit)
+        {
+            CommitValue();
+        }
+    }
+
+    private void SetDisplayedValue(string value)
+    {
+        _value = value;
+        _isUpdatingColorControl = true;
+        if (_toggleSwitch is not null)
+        {
+            _toggleSwitch.IsChecked = StringToBool(value);
+        }
+        else if (_definition.ValueKind == ValueKind.HexColor)
+        {
+            UpdateColorControlsFromValue();
+        }
+        else if (_definition.ValueKind == ValueKind.HueDegrees && _hueControl is not null)
+        {
+            _hueControl.SetValue(value);
+        }
+        else if (_definition.ValueKind == ValueKind.IntegerPair)
+        {
+            UpdatePairControlsFromValue();
+        }
+        else if (_definition.ValueKind == ValueKind.IconSlots && _iconSlotsControl is not null)
+        {
+            _iconSlotsControl.SetValue(value);
+        }
+        else if (_definition.ValueKind == ValueKind.ThemeToken && _themeTokenButton is not null)
+        {
+            _themeTokenButton.Content = ThemeTokenButtonContent(value);
+        }
+        else if (_definition.ValueKind is ValueKind.OptionToken or ValueKind.PaletteColorToken)
+        {
+            UpdateOptionComboFromValue();
+        }
+        else if (_definition.ValueKind == ValueKind.PaletteColorPair)
+        {
+            UpdatePalettePairControlsFromValue();
+        }
+        else if (_textBox is not null)
+        {
+            _textBox.Text = value;
+        }
+        _isUpdatingColorControl = false;
     }
 
     private void AttachDeferredCommit(TextBox textBox)
@@ -781,7 +851,7 @@ internal sealed class DictionaryFieldControl : Grid
     private void UpdateState()
     {
         var isDefault = IsDefault;
-        _restoreButton.IsVisible = !isDefault && _definition.IsEditable;
+        _restoreButton.IsVisible = _definition.CanInherit && !isDefault && _definition.IsEditable;
         if (isDefault)
         {
             _label.ClearValue(TextBlock.ForegroundProperty);

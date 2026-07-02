@@ -39,11 +39,16 @@ internal sealed record FieldDefinition(
     bool IsEditable = true,
     string DefaultValue = "",
     bool CommitAsDefault = true,
+    bool CanInherit = false,
+    string InheritedValue = "",
+    string InheritedStorageValue = "inherited",
     IReadOnlyList<FieldOption>? Options = null);
 
 internal sealed record FieldValue(
     FieldDefinition Definition,
-    string Value)
+    string Value,
+    bool IsInherited = false)
 {
-    public bool IsDefault => Value == Definition.DefaultValue;
+    public bool HasLocalOverride => Definition.CanInherit && !IsInherited;
+    public bool IsDefault => Definition.CanInherit ? IsInherited : Value == Definition.DefaultValue;
 }
