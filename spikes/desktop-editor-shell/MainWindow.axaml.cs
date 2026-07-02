@@ -488,6 +488,7 @@ public partial class MainWindow : SukiWindow
             ProjectTreeNodeKind.EpisodesRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.Episode),
             ProjectTreeNodeKind.PaletteRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.PaletteColor),
             ProjectTreeNodeKind.IconThemesRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.IconTheme),
+            ProjectTreeNodeKind.StatusBarsRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.StatusBar),
             ProjectTreeNodeKind.DevicesRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.Device),
             ProjectTreeNodeKind.ActorsRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.Actor),
             _ => EditorIcons.ForTreeNode(ProjectTreeNodeKind.App),
@@ -814,6 +815,7 @@ public partial class MainWindow : SukiWindow
             ProjectTreeNodeKind.SystemDataRoot => "Icon sets, bars, palette, fonts, media and presets",
             ProjectTreeNodeKind.ProductionFontsRoot => "Approved production font families",
             ProjectTreeNodeKind.IconThemesRoot => "Semantic icon tokens shared by every set",
+            ProjectTreeNodeKind.StatusBarsRoot => "Reusable status bar definitions",
             _ => node.Notes,
         };
     }
@@ -908,6 +910,10 @@ public partial class MainWindow : SukiWindow
         if (node.Kind == ProjectTreeNodeKind.IconTheme)
         {
             AddEditorCard(CreateIconThemeTokensCard(node));
+        }
+        else if (node.Kind == ProjectTreeNodeKind.StatusBar)
+        {
+            AddEditorCard(CreateStatusBarItemsCard(node));
         }
     }
 
@@ -1149,6 +1155,223 @@ public partial class MainWindow : SukiWindow
         return toolbar;
     }
 
+    private Expander CreateStatusBarItemsCard(ProjectTreeNode node)
+    {
+        var icon = EditorIcons.Create(EditorIcons.Status, 18);
+        var settings = _database.GetStatusBarSettings(node.Id);
+        var items = _database.GetStatusBarItems(node.Id).ToList();
+        var body = new StackPanel
+        {
+            Spacing = 10,
+        };
+
+        body.Children.Add(new TextBlock
+        {
+            Text = "Status items resolve left/right zones by order. Icon rows use semantic icon tokens from System Data → Icon Themes.",
+            TextWrapping = TextWrapping.Wrap,
+            Opacity = 0.72,
+        });
+
+        for (var index = 0; index < items.Count; index++)
+        {
+            body.Children.Add(CreateStatusBarItemRow(node, settings.ProjectId, index, items[index]));
+        }
+
+        return new Expander
+        {
+            Header = CreateEditorCardHeader("Items", $"{items.Count} status items", icon),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            ExpandDirection = ExpandDirection.Down,
+            IsExpanded = false,
+            Content = new Border
+            {
+                Padding = new Avalonia.Thickness(10),
+                Child = body,
+            },
+        };
+    }
+
+    private Control CreateStatusBarItemRow(ProjectTreeNode node, string projectId, int index, SpikeDatabase.StatusBarItem item)
+    {
+        var row = new Border
+        {
+            Padding = new Avalonia.Thickness(10),
+            CornerRadius = new CornerRadius(10),
+            BorderBrush = new SolidColorBrush(Color.Parse(_isDark ? "#34445A" : "#D0D7E2")),
+            BorderThickness = new Avalonia.Thickness(1),
+        };
+        var panel = new StackPanel
+        {
+            Spacing = 8,
+        };
+        row.Child = panel;
+
+        panel.Children.Add(new TextBlock
+        {
+            Text = $"{item.Label} · {item.Kind}",
+            FontWeight = FontWeight.SemiBold,
+        });
+
+        var controlsPanel = new StackPanel
+        {
+            Spacing = 8,
+        };
+
+        var valueControl = item.Kind switch
+        {
+            "iconToken" => CreateStatusBarIconTokenControl(node, projectId, index, item),
+            "generatedBattery" => CreateStatusBarGeneratedControl(node, index, item, includeCharging: true),
+            "generatedSignal" => CreateStatusBarGeneratedControl(node, index, item, includeCharging: false),
+            _ => CreateStatusBarTextControl(node, index, item),
+        };
+        controlsPanel.Children.Add(valueControl);
+
+        var zoneControl = CreateInlineStatusField(
+            new FieldValue(
+                new FieldDefinition(
+                    $"statusBar.items.{index}.zone",
+                    "Zone",
+                    ValueKind.OptionToken,
+                    DefaultValue: item.Zone,
+                    Options:
+                    [
+                        new FieldOption("off", "Off"),
+                        new FieldOption("left", "Left"),
+                        new FieldOption("right", "Right"),
+                    ]),
+                item.Zone),
+            (value) => UpdateStatusBarItem(node, index, item with { Zone = value }));
+        controlsPanel.Children.Add(zoneControl);
+
+        var orderControl = CreateInlineStatusField(
+            new FieldValue(
+                new FieldDefinition(
+                    $"statusBar.items.{index}.order",
+                    "Order",
+                    ValueKind.Integer,
+                    DefaultValue: item.Order.ToString()),
+                item.Order.ToString()),
+            (value) => UpdateStatusBarItem(node, index, item with { Order = int.TryParse(value, out var parsed) ? parsed : item.Order }));
+        controlsPanel.Children.Add(orderControl);
+
+        panel.Children.Add(controlsPanel);
+        return row;
+    }
+
+    private Control CreateStatusBarTextControl(ProjectTreeNode node, int index, SpikeDatabase.StatusBarItem item)
+    {
+        return CreateInlineStatusField(
+            new FieldValue(
+                new FieldDefinition(
+                    $"statusBar.items.{index}.value",
+                    "Value",
+                    ValueKind.StringSingleLine,
+                    DefaultValue: item.Value),
+                item.Value),
+            (value) => UpdateStatusBarItem(node, index, item with { Value = value }));
+    }
+
+    private Control CreateStatusBarIconTokenControl(ProjectTreeNode node, string projectId, int index, SpikeDatabase.StatusBarItem item)
+    {
+        var currentItem = item;
+        var grid = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("38,*,Auto"),
+            ColumnSpacing = 8,
+        };
+        var previewBox = new Border
+        {
+            Width = 34,
+            Height = 34,
+            CornerRadius = new CornerRadius(8),
+            BorderBrush = new SolidColorBrush(Color.Parse("#4B5B75")),
+            BorderThickness = new Avalonia.Thickness(1),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Child = CreateProjectIconTokenPreview(projectId, item.Token, 21),
+        };
+        grid.Children.Add(previewBox);
+
+        var tokenBox = new TextBox
+        {
+            Text = item.Token,
+            IsReadOnly = true,
+            MinHeight = 36,
+            PlaceholderText = "Select icon token…",
+            VerticalContentAlignment = VerticalAlignment.Center,
+        };
+        Grid.SetColumn(tokenBox, 1);
+        grid.Children.Add(tokenBox);
+
+        var pickButton = new Button
+        {
+            Content = "Pick…",
+            MinWidth = 72,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        pickButton.Click += async (_, _) =>
+        {
+            var selected = await ShowIconTokenPicker(projectId, currentItem.Token, allowMultiple: false);
+            if (!string.IsNullOrWhiteSpace(selected))
+            {
+                currentItem = currentItem with { Token = selected };
+                UpdateStatusBarItem(node, index, currentItem);
+                tokenBox.Text = selected;
+                previewBox.Child = CreateProjectIconTokenPreview(projectId, selected, 21);
+            }
+        };
+        Grid.SetColumn(pickButton, 2);
+        grid.Children.Add(pickButton);
+        return grid;
+    }
+
+    private Control CreateStatusBarGeneratedControl(ProjectTreeNode node, int index, SpikeDatabase.StatusBarItem item, bool includeCharging)
+    {
+        var grid = new Grid
+        {
+            ColumnDefinitions = includeCharging ? new ColumnDefinitions("*,120") : new ColumnDefinitions("*"),
+            ColumnSpacing = 10,
+        };
+        grid.Children.Add(CreateInlineStatusField(
+            new FieldValue(
+                new FieldDefinition(
+                    $"statusBar.items.{index}.value",
+                    item.Kind == "generatedBattery" ? "Battery %" : "Signal",
+                    ValueKind.Integer,
+                    DefaultValue: item.Value),
+                item.Value),
+            (value) => UpdateStatusBarItem(node, index, item with { Value = value })));
+
+        if (includeCharging)
+        {
+            var charging = CreateInlineStatusField(
+                new FieldValue(
+                    new FieldDefinition(
+                        $"statusBar.items.{index}.charging",
+                        "Charging",
+                        ValueKind.Boolean,
+                        DefaultValue: BoolToString(item.Charging)),
+                    BoolToString(item.Charging)),
+                (value) => UpdateStatusBarItem(node, index, item with { Charging = StringToBool(value) }));
+            Grid.SetColumn(charging, 1);
+            grid.Children.Add(charging);
+        }
+
+        return grid;
+    }
+
+    private DictionaryFieldControl CreateInlineStatusField(FieldValue fieldValue, Action<string> persist)
+    {
+        var control = new DictionaryFieldControl(fieldValue, BrowsePath);
+        control.ValueCommitted += (_, value) => persist(value);
+        return control;
+    }
+
+    private void UpdateStatusBarItem(ProjectTreeNode node, int index, SpikeDatabase.StatusBarItem nextItem)
+    {
+        _database.UpdateStatusBarItem(node.Id, index, nextItem);
+    }
+
     private Control CreateIconThemeTokenRow(ProjectTreeNode node, SpikeDatabase.IconThemeToken token)
     {
         var grid = new Grid
@@ -1235,6 +1458,26 @@ public partial class MainWindow : SukiWindow
         {
             var path = _database.ResolveIconThemeAssetPath(iconThemeId, file);
             if (!File.Exists(path)) return EditorIcons.Create(EditorIcons.Icon, size);
+
+            return CreateSvgPathPreview(File.ReadAllText(path), size);
+        }
+        catch
+        {
+            return EditorIcons.Create(EditorIcons.Icon, size);
+        }
+    }
+
+    private Control CreateProjectIconTokenPreview(string projectId, string token, double size)
+    {
+        try
+        {
+            var firstToken = token
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .FirstOrDefault();
+            if (string.IsNullOrWhiteSpace(firstToken)) return EditorIcons.Create(EditorIcons.Icon, size);
+
+            var path = _database.ResolveIconTokenAssetPath(projectId, firstToken);
+            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path)) return EditorIcons.Create(EditorIcons.Icon, size);
 
             return CreateSvgPathPreview(File.ReadAllText(path), size);
         }
@@ -1485,7 +1728,8 @@ public partial class MainWindow : SukiWindow
             or ProjectTreeNodeKind.Device
             or ProjectTreeNodeKind.Actor
             or ProjectTreeNodeKind.ProductionFont
-            or ProjectTreeNodeKind.IconTheme;
+            or ProjectTreeNodeKind.IconTheme
+            or ProjectTreeNodeKind.StatusBar;
 
         return fieldId switch
         {
@@ -1615,6 +1859,11 @@ public partial class MainWindow : SukiWindow
             "iconTheme.assetRoot" when node.Kind == ProjectTreeNodeKind.IconTheme => CreateIconThemeFieldValue(node.Id, "iconTheme.assetRoot", "Asset Root", ValueKind.StringReadOnly),
             "iconTheme.tokenCount" when node.Kind == ProjectTreeNodeKind.IconTheme => CreateIconThemeFieldValue(node.Id, "iconTheme.tokenCount", "Token Count", ValueKind.StringReadOnly),
             "iconTheme.metadata" when node.Kind == ProjectTreeNodeKind.IconTheme => CreateIconThemeFieldValue(node.Id, "iconTheme.metadata", "Metadata", ValueKind.StringMultiline),
+            "statusBar.family" when node.Kind == ProjectTreeNodeKind.StatusBar => CreateStatusBarFieldValue(node.Id, "statusBar.family", "Family", ValueKind.StringSingleLine),
+            "statusBar.layout.height" when node.Kind == ProjectTreeNodeKind.StatusBar => CreateStatusBarFieldValue(node.Id, "statusBar.layout.height", "Height", ValueKind.Integer),
+            "statusBar.layout.itemSize" when node.Kind == ProjectTreeNodeKind.StatusBar => CreateStatusBarFieldValue(node.Id, "statusBar.layout.itemSize", "Item size", ValueKind.Integer),
+            "statusBar.layout.gap" when node.Kind == ProjectTreeNodeKind.StatusBar => CreateStatusBarFieldValue(node.Id, "statusBar.layout.gap", "Gap", ValueKind.Integer),
+            "statusBar.layout.sidePadding" when node.Kind == ProjectTreeNodeKind.StatusBar => CreateStatusBarFieldValue(node.Id, "statusBar.layout.sidePadding", "Side padding", ValueKind.Integer),
             _ => throw new InvalidOperationException($"Unknown field '{fieldId}' for record class '{node.RecordClassId}'."),
         };
     }
@@ -1795,6 +2044,23 @@ public partial class MainWindow : SukiWindow
             value);
     }
 
+    private FieldValue CreateStatusBarFieldValue(
+        string statusBarId,
+        string fieldId,
+        string label,
+        ValueKind valueKind)
+    {
+        var value = _database.GetStatusBarFieldValue(statusBarId, fieldId);
+        return new FieldValue(
+            new FieldDefinition(
+                fieldId,
+                label,
+                valueKind,
+                IsEditable: true,
+                DefaultValue: value),
+            value);
+    }
+
     private static bool ActorFieldKeepsDefault(string fieldId, ValueKind valueKind)
     {
         return fieldId.StartsWith("actor.avatar.", StringComparison.Ordinal)
@@ -1825,7 +2091,8 @@ public partial class MainWindow : SukiWindow
             or ProjectTreeNodeKind.Device
             or ProjectTreeNodeKind.Actor
             or ProjectTreeNodeKind.ProductionFont
-            or ProjectTreeNodeKind.IconTheme;
+            or ProjectTreeNodeKind.IconTheme
+            or ProjectTreeNodeKind.StatusBar;
 
         if (fieldId == "core.name")
         {
@@ -1901,6 +2168,18 @@ public partial class MainWindow : SukiWindow
 
         if (node.Kind == ProjectTreeNodeKind.IconTheme && fieldId.StartsWith("iconTheme.", StringComparison.Ordinal))
         {
+            return;
+        }
+
+        if (node.Kind == ProjectTreeNodeKind.StatusBar && fieldId.StartsWith("statusBar.", StringComparison.Ordinal))
+        {
+            _database.UpdateStatusBarField(node.Id, fieldId, value);
+            if (fieldId == "statusBar.family")
+            {
+                var itemCount = _database.GetStatusBarItems(node.Id).Count;
+                node.Notes = $"{value} · {itemCount} items";
+                RebuildNavigationCards();
+            }
             return;
         }
 
@@ -2560,6 +2839,116 @@ public partial class MainWindow : SukiWindow
         await dialog.ShowDialog(this);
     }
 
+    private async Task<string?> ShowIconTokenPicker(string projectId, string currentValue, bool allowMultiple)
+    {
+        var tokens = _database.GetIconTokenOptions(projectId, currentValue);
+        var selected = currentValue.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet(StringComparer.Ordinal);
+        var dialog = new SukiWindow
+        {
+            Title = allowMultiple ? "Select icon tokens" : "Select icon token",
+            Width = 520,
+            Height = 640,
+            MinWidth = 460,
+            MinHeight = 520,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            IsMenuVisible = false,
+            BackgroundAnimationEnabled = false,
+        };
+
+        var list = new StackPanel { Spacing = 5 };
+        foreach (var option in tokens)
+        {
+            var optionContent = new Grid
+            {
+                ColumnDefinitions = new ColumnDefinitions("30,*"),
+                ColumnSpacing = 10,
+                MinHeight = 34,
+            };
+            optionContent.Children.Add(CreateProjectIconTokenPreview(projectId, option.Value, 20));
+            var optionLabel = new TextBlock
+            {
+                Text = option.Label,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            Grid.SetColumn(optionLabel, 1);
+            optionContent.Children.Add(optionLabel);
+
+            var checkBox = new CheckBox
+            {
+                Content = optionContent,
+                IsChecked = selected.Contains(option.Value),
+            };
+            checkBox.PropertyChanged += (_, change) =>
+            {
+                if (change.Property != CheckBox.IsCheckedProperty) return;
+                if (checkBox.IsChecked == true)
+                {
+                    if (!allowMultiple)
+                    {
+                        selected.Clear();
+                        foreach (var sibling in list.Children.OfType<CheckBox>().Where((item) => item != checkBox))
+                        {
+                            sibling.IsChecked = false;
+                        }
+                    }
+
+                    selected.Add(option.Value);
+                }
+                else
+                {
+                    selected.Remove(option.Value);
+                }
+            };
+            list.Children.Add(checkBox);
+        }
+
+        string? result = null;
+        var cancelButton = new Button { Content = "Cancel", MinWidth = 90 };
+        cancelButton.Click += (_, _) => dialog.Close();
+        var okButton = new Button { Content = "OK", MinWidth = 90 };
+        okButton.Click += (_, _) =>
+        {
+            result = string.Join(",", selected.OrderBy((token) => token, StringComparer.Ordinal));
+            dialog.Close();
+        };
+
+        var actions = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Spacing = 10,
+            Children = { cancelButton, okButton },
+        };
+        var root = new Grid
+        {
+            RowDefinitions = new RowDefinitions("*,Auto"),
+            RowSpacing = 14,
+            Children =
+            {
+                new ScrollViewer
+                {
+                    Content = list.Children.Count == 0
+                        ? new TextBlock
+                        {
+                            Text = "No icon tokens available. Refresh icon themes first.",
+                            Opacity = 0.72,
+                        }
+                        : list,
+                },
+                actions,
+            },
+        };
+        Grid.SetRow(actions, 1);
+        dialog.Content = new Border
+        {
+            Padding = new Avalonia.Thickness(18),
+            Child = root,
+        };
+
+        await dialog.ShowDialog(this);
+        return result;
+    }
+
     private static Control CandidateColumn(string title, ListBox listBox, int column = 0)
     {
         listBox.ItemTemplate = new FuncDataTemplate<SpikeDatabase.IconThemeSearchCandidate>((candidate, _) =>
@@ -2808,6 +3197,7 @@ internal enum ProjectTreeNodeKind
     AppsRoot,
     PaletteRoot,
     IconThemesRoot,
+    StatusBarsRoot,
     DevicesRoot,
     ActorsRoot,
     ProductionFontsRoot,
@@ -2818,6 +3208,7 @@ internal enum ProjectTreeNodeKind
     Shot,
     PaletteColor,
     IconTheme,
+    StatusBar,
     Device,
     Actor,
     ProductionFont,
@@ -2860,6 +3251,7 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.App
         or ProjectTreeNodeKind.PaletteRoot
         or ProjectTreeNodeKind.IconThemesRoot
+        or ProjectTreeNodeKind.StatusBarsRoot
         or ProjectTreeNodeKind.DevicesRoot
         or ProjectTreeNodeKind.ActorsRoot
         or ProjectTreeNodeKind.ProductionFontsRoot
@@ -2871,6 +3263,7 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.Shot
         or ProjectTreeNodeKind.PaletteColor
         or ProjectTreeNodeKind.IconTheme
+        or ProjectTreeNodeKind.StatusBar
         or ProjectTreeNodeKind.Device
         or ProjectTreeNodeKind.Actor;
     public bool CanDelete => Kind is ProjectTreeNodeKind.App
@@ -2879,6 +3272,7 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.Shot
         or ProjectTreeNodeKind.PaletteColor
         or ProjectTreeNodeKind.IconTheme
+        or ProjectTreeNodeKind.StatusBar
         or ProjectTreeNodeKind.Device
         or ProjectTreeNodeKind.Actor
         or ProjectTreeNodeKind.ProductionFont;
@@ -2887,6 +3281,7 @@ internal sealed class ProjectTreeNode
         and not ProjectTreeNodeKind.AppsRoot
         and not ProjectTreeNodeKind.PaletteRoot
         and not ProjectTreeNodeKind.IconThemesRoot
+        and not ProjectTreeNodeKind.StatusBarsRoot
         and not ProjectTreeNodeKind.DevicesRoot
         and not ProjectTreeNodeKind.ActorsRoot
         and not ProjectTreeNodeKind.ProductionFontsRoot
@@ -2910,6 +3305,7 @@ internal sealed class ProjectTreeNode
             ProjectTreeNodeKind.AppsRoot => "navigation.apps",
             ProjectTreeNodeKind.PaletteRoot => "navigation.palette",
             ProjectTreeNodeKind.IconThemesRoot => "navigation.icon_themes",
+            ProjectTreeNodeKind.StatusBarsRoot => "navigation.status_bars",
             ProjectTreeNodeKind.DevicesRoot => "navigation.devices",
             ProjectTreeNodeKind.ActorsRoot => "navigation.actors",
             ProjectTreeNodeKind.ProductionFontsRoot => "navigation.production_fonts",
@@ -2920,6 +3316,7 @@ internal sealed class ProjectTreeNode
             ProjectTreeNodeKind.Shot => "shot",
             ProjectTreeNodeKind.PaletteColor => "palette_color",
             ProjectTreeNodeKind.IconTheme => "icon_theme",
+            ProjectTreeNodeKind.StatusBar => "status_bar",
             ProjectTreeNodeKind.Device => "device",
             ProjectTreeNodeKind.Actor => "actor",
             ProjectTreeNodeKind.ProductionFont => "production_font",

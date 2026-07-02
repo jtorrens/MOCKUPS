@@ -46,6 +46,7 @@ internal sealed partial class SpikeDatabase
         var actors = QueryActorRows(connection);
         var productionFonts = QueryProductionFontRows(connection);
         var iconThemes = QueryIconThemeRows(connection);
+        var statusBars = QueryStatusBarRows(connection);
 
         var projectNodes = projects
             .Select((project) => new ProjectTreeNode(
@@ -62,6 +63,7 @@ internal sealed partial class SpikeDatabase
         var actorRootNodes = new Dictionary<string, ProjectTreeNode>();
         var productionFontRootNodes = new Dictionary<string, ProjectTreeNode>();
         var iconThemeRootNodes = new Dictionary<string, ProjectTreeNode>();
+        var statusBarRootNodes = new Dictionary<string, ProjectTreeNode>();
         var episodeRootNodes = new Dictionary<string, ProjectTreeNode>();
         var episodeNodes = new Dictionary<string, ProjectTreeNode>();
         foreach (var project in projectNodes.Values)
@@ -122,6 +124,13 @@ internal sealed partial class SpikeDatabase
                 "Icon sets and shared semantic icon tokens.",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.IconThemesRoot),
                 systemDataRoot);
+            var statusBarsRoot = new ProjectTreeNode(
+                ProjectTreeNodeKind.StatusBarsRoot,
+                $"status_bars_root_{project.Id}",
+                "Status Bars",
+                "Reusable device status bar compositions.",
+                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.StatusBarsRoot),
+                systemDataRoot);
             var episodesRoot = new ProjectTreeNode(
                 ProjectTreeNodeKind.EpisodesRoot,
                 $"episodes_root_{project.Id}",
@@ -134,6 +143,7 @@ internal sealed partial class SpikeDatabase
             productionDataRoot.AddChild(devicesRoot);
             systemDataRoot.AddChild(paletteRoot);
             systemDataRoot.AddChild(iconThemesRoot);
+            systemDataRoot.AddChild(statusBarsRoot);
             systemDataRoot.AddChild(productionFontsRoot);
             project.AddChild(appsRoot);
             project.AddChild(episodesRoot);
@@ -145,6 +155,7 @@ internal sealed partial class SpikeDatabase
             actorRootNodes[project.Id] = actorsRoot;
             productionFontRootNodes[project.Id] = productionFontsRoot;
             iconThemeRootNodes[project.Id] = iconThemesRoot;
+            statusBarRootNodes[project.Id] = statusBarsRoot;
             episodeRootNodes[project.Id] = episodesRoot;
         }
 
@@ -258,6 +269,19 @@ internal sealed partial class SpikeDatabase
                 $"{IconThemeTokenCount(iconTheme.MappingJson)} tokens · {iconTheme.AssetRoot}",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.IconTheme),
                 iconThemesRoot));
+        }
+
+        foreach (var statusBar in statusBars.OrderBy((statusBar) => statusBar.Name))
+        {
+            if (!statusBarRootNodes.TryGetValue(statusBar.ProjectId, out var statusBarsRoot)) continue;
+
+            statusBarsRoot.AddChild(new ProjectTreeNode(
+                ProjectTreeNodeKind.StatusBar,
+                statusBar.Id,
+                statusBar.Name,
+                $"{statusBar.Family} · {StatusBarItemCount(statusBar.ConfigJson)} items",
+                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.StatusBar),
+                statusBarsRoot));
         }
 
         foreach (var shot in shots.OrderBy((shot) => shot.SortOrder).ThenBy((shot) => shot.Name))
@@ -405,6 +429,33 @@ internal sealed partial class SpikeDatabase
         if (parent.Kind == ProjectTreeNodeKind.IconThemesRoot)
         {
             throw new InvalidOperationException("Icon themes are rebuilt through Refresh Sets.");
+        }
+
+        if (parent.Kind == ProjectTreeNodeKind.StatusBarsRoot)
+        {
+            var project = ProjectAncestor(parent);
+            var index = ScalarLong(connection, "SELECT COUNT(*) FROM status_bars WHERE project_id = $projectId", ("$projectId", project.Id)) + 1;
+            var id = $"status_bar_{Guid.NewGuid():N}";
+            var name = $"Status Bar {index}";
+            Execute(
+                connection,
+                """
+                INSERT INTO status_bars (id, project_id, name, family, config_json, metadata_json)
+                VALUES ($id, $projectId, $name, 'custom', $configJson, $metadataJson)
+                """,
+                ("$id", id),
+                ("$projectId", project.Id),
+                ("$name", name),
+                ("$configJson", DefaultStatusBarConfigJson()),
+                ("$metadataJson", JsonSerializer.Serialize(new { note = "Custom reusable status bar composition." })));
+
+            return new ProjectTreeNode(
+                ProjectTreeNodeKind.StatusBar,
+                id,
+                name,
+                $"custom · {DefaultStatusBarItems().Count} items",
+                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.StatusBar),
+                parent);
         }
 
         if (parent.Kind == ProjectTreeNodeKind.App)
@@ -643,6 +694,24 @@ internal sealed partial class SpikeDatabase
             return new ProjectTreeNode(ProjectTreeNodeKind.Actor, id, $"{node.Name} copy", node.Notes, node.RecordClassId, node.Parent);
         }
 
+        if (node.Kind == ProjectTreeNodeKind.StatusBar)
+        {
+            var id = $"status_bar_{Guid.NewGuid():N}";
+            Execute(
+                connection,
+                """
+                INSERT INTO status_bars (id, project_id, name, family, config_json, metadata_json)
+                SELECT $id, project_id, $name, family, config_json, metadata_json
+                FROM status_bars
+                WHERE id = $sourceId
+                """,
+                ("$id", id),
+                ("$name", $"{node.Name} copy"),
+                ("$sourceId", node.Id));
+
+            return new ProjectTreeNode(ProjectTreeNodeKind.StatusBar, id, $"{node.Name} copy", node.Notes, node.RecordClassId, node.Parent);
+        }
+
         throw new InvalidOperationException($"Cannot duplicate {node.Kind}.");
     }
 
@@ -660,6 +729,7 @@ internal sealed partial class SpikeDatabase
             ProjectTreeNodeKind.Actor => "actors",
             ProjectTreeNodeKind.ProductionFont => "production_fonts",
             ProjectTreeNodeKind.IconTheme => "icon_themes",
+            ProjectTreeNodeKind.StatusBar => "status_bars",
             _ => throw new InvalidOperationException($"Cannot delete {node.Kind}."),
         };
 
@@ -691,6 +761,7 @@ internal sealed partial class SpikeDatabase
             ProjectTreeNodeKind.Actor => "actors",
             ProjectTreeNodeKind.ProductionFont => "production_fonts",
             ProjectTreeNodeKind.IconTheme => "icon_themes",
+            ProjectTreeNodeKind.StatusBar => "status_bars",
             _ => "",
         };
 
@@ -743,6 +814,16 @@ internal sealed partial class SpikeDatabase
             return;
         }
 
+        if (node.Kind == ProjectTreeNodeKind.StatusBar)
+        {
+            Execute(
+                connection,
+                "UPDATE status_bars SET name = $name WHERE id = $id",
+                ("$id", node.Id),
+                ("$name", node.Name));
+            return;
+        }
+
         Execute(
             connection,
             $"UPDATE {table} SET name = $name, notes = $notes WHERE id = $id",
@@ -776,6 +857,7 @@ internal sealed partial class SpikeDatabase
         SeedDevicesIfEmpty(connection);
         SeedActorsIfEmpty(connection);
         SeedProductionFontsIfEmpty(connection);
+        SeedStatusBarsIfEmpty(connection);
     }
 
     private SqliteConnection OpenConnection()
@@ -943,6 +1025,31 @@ internal sealed partial class SpikeDatabase
         _ = connection;
     }
 
+    private static void SeedStatusBarsIfEmpty(SqliteConnection connection)
+    {
+        var projectIds = QueryProjectRows(connection).Select((project) => project.Id).ToList();
+        foreach (var projectId in projectIds)
+        {
+            if (ScalarLong(connection, "SELECT COUNT(*) FROM status_bars WHERE project_id = $projectId", ("$projectId", projectId)) > 0)
+            {
+                continue;
+            }
+
+            Execute(
+                connection,
+                """
+                INSERT INTO status_bars (id, project_id, name, family, config_json, metadata_json)
+                VALUES ($id, $projectId, $name, $family, $configJson, $metadataJson)
+                """,
+                ("$id", $"status_bar_{projectId}_ios_default"),
+                ("$projectId", projectId),
+                ("$name", "iOS Default Status Bar"),
+                ("$family", "ios"),
+                ("$configJson", DefaultStatusBarConfigJson()),
+                ("$metadataJson", JsonSerializer.Serialize(new { note = "Reusable iOS-style status bar composition." })));
+        }
+    }
+
     private static void SeedEditorLayouts(SqliteConnection connection)
     {
         foreach (var recordClassId in new[]
@@ -956,6 +1063,7 @@ internal sealed partial class SpikeDatabase
             "navigation.actors",
             "navigation.production_fonts",
             "navigation.icon_themes",
+            "navigation.status_bars",
             "navigation.episodes",
             "app.generic",
             "app.core.chat",
@@ -968,6 +1076,7 @@ internal sealed partial class SpikeDatabase
             "actor",
             "production_font",
             "icon_theme",
+            "status_bar",
         })
         {
             Execute(
@@ -1066,6 +1175,11 @@ internal sealed partial class SpikeDatabase
                     { "id": "iconTheme.assetRoot", "order": 20, "visible": true },
                     { "id": "iconTheme.tokenCount", "order": 30, "visible": true },
                     { "id": "iconTheme.metadata", "order": 40, "visible": false }
+                  """
+            : recordClassId == "status_bar"
+                ? """
+                    { "id": "core.name", "order": 10, "visible": true },
+                    { "id": "statusBar.family", "order": 20, "visible": true }
                   """
             : """
                     { "id": "core.name", "order": 10, "visible": true },
@@ -1507,12 +1621,51 @@ internal sealed partial class SpikeDatabase
         return IconThemeTokens(settings.MappingJson);
     }
 
+    public IReadOnlyList<FieldOption> GetIconTokenOptions(string projectId, string? currentToken = null)
+    {
+        using var connection = OpenConnection();
+        var tokens = QueryIconThemeRows(connection)
+            .Where((row) => row.ProjectId == projectId)
+            .SelectMany((row) => IconThemeTokens(row.MappingJson).Select((token) => token.Token))
+            .ToHashSet(StringComparer.Ordinal);
+        if (!string.IsNullOrWhiteSpace(currentToken))
+        {
+            foreach (var token in currentToken.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                tokens.Add(token);
+            }
+        }
+
+        return tokens
+            .OrderBy((token) => token, StringComparer.Ordinal)
+            .Select((token) => new FieldOption(token, token))
+            .ToList();
+    }
+
     public string ResolveIconThemeAssetPath(string iconThemeId, string file)
     {
         var settings = GetIconThemeSettings(iconThemeId);
         var projectId = ProjectIdForIconTheme(iconThemeId);
         var mediaRoot = ResolveProjectPath(GetProjectSettings(projectId).MediaRoot);
         return Path.Combine(mediaRoot, settings.AssetRoot, file);
+    }
+
+    public string? ResolveIconTokenAssetPath(string projectId, string token)
+    {
+        if (string.IsNullOrWhiteSpace(token)) return null;
+
+        using var connection = OpenConnection();
+        var mediaRoot = ResolveProjectPath(GetProjectSettings(projectId).MediaRoot);
+        foreach (var row in QueryIconThemeRows(connection).Where((row) => row.ProjectId == projectId))
+        {
+            var icon = IconThemeTokens(row.MappingJson).FirstOrDefault((candidate) => candidate.Token == token);
+            if (icon is null || string.IsNullOrWhiteSpace(icon.File)) continue;
+
+            var path = Path.Combine(mediaRoot, row.AssetRoot, icon.File);
+            if (File.Exists(path)) return path;
+        }
+
+        return null;
     }
 
     public IconThemeRefreshResult RefreshIconThemeSets(ProjectTreeNode iconThemesRoot)
@@ -1631,6 +1784,113 @@ internal sealed partial class SpikeDatabase
         var refresh = RefreshIconThemeSets(connection, projectId);
         UpdateIconThemeTokenMetadata(connection, projectId, token, category, description, lucideSource, materialSource);
         return new IconThemeGenerateResult(token, JsonInt(parsed, ["writtenFileCount"], rows.Count), refresh);
+    }
+
+    public StatusBarSettings GetStatusBarSettings(string statusBarId)
+    {
+        using var connection = OpenConnection();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT project_id, name, family, config_json, metadata_json FROM status_bars WHERE id = $id";
+        command.Parameters.AddWithValue("$id", statusBarId);
+        using var reader = command.ExecuteReader();
+        if (!reader.Read())
+        {
+            throw new InvalidOperationException($"Missing status bar '{statusBarId}'.");
+        }
+
+        return new StatusBarSettings(
+            reader.GetString(0),
+            reader.GetString(1),
+            ReadString(reader, 2),
+            ReadString(reader, 3),
+            ReadString(reader, 4));
+    }
+
+    public string GetStatusBarFieldValue(string statusBarId, string fieldId)
+    {
+        var settings = GetStatusBarSettings(statusBarId);
+        var config = StatusBarConfig(settings.ConfigJson);
+        return fieldId switch
+        {
+            "statusBar.family" => settings.Family,
+            "statusBar.layout.height" => JsonNumberString(config, ["layout", "height"], "54"),
+            "statusBar.layout.itemSize" => JsonNumberString(config, ["layout", "itemSize"], "18"),
+            "statusBar.layout.gap" => JsonNumberString(config, ["layout", "gap"], "6"),
+            "statusBar.layout.sidePadding" => JsonNumberString(config, ["layout", "sidePadding"], "24"),
+            _ => "",
+        };
+    }
+
+    public IReadOnlyList<StatusBarItem> GetStatusBarItems(string statusBarId)
+    {
+        return StatusBarItems(StatusBarConfig(GetStatusBarSettings(statusBarId).ConfigJson));
+    }
+
+    public void UpdateStatusBarField(string statusBarId, string fieldId, string value)
+    {
+        lock (WriteGate)
+        {
+            using var connection = OpenConnection();
+            if (fieldId == "statusBar.family")
+            {
+                Execute(connection, "UPDATE status_bars SET family = $family WHERE id = $id", ("$id", statusBarId), ("$family", value));
+                return;
+            }
+
+            using var command = connection.CreateCommand();
+            command.CommandText = "SELECT config_json FROM status_bars WHERE id = $id";
+            command.Parameters.AddWithValue("$id", statusBarId);
+            var config = StatusBarConfig(command.ExecuteScalar() as string ?? "{}");
+            var nextValue = int.TryParse(value, out var parsed) ? parsed : 0;
+            switch (fieldId)
+            {
+                case "statusBar.layout.height":
+                    SetJsonNumber(config, ["layout", "height"], nextValue);
+                    break;
+                case "statusBar.layout.itemSize":
+                    SetJsonNumber(config, ["layout", "itemSize"], nextValue);
+                    break;
+                case "statusBar.layout.gap":
+                    SetJsonNumber(config, ["layout", "gap"], nextValue);
+                    break;
+                case "statusBar.layout.sidePadding":
+                    SetJsonNumber(config, ["layout", "sidePadding"], nextValue);
+                    break;
+                default:
+                    throw new InvalidOperationException($"Unknown status bar field '{fieldId}'.");
+            }
+
+            Execute(
+                connection,
+                "UPDATE status_bars SET config_json = $configJson WHERE id = $id",
+                ("$id", statusBarId),
+                ("$configJson", config.ToJsonString()));
+        }
+    }
+
+    public void UpdateStatusBarItem(string statusBarId, int index, StatusBarItem patch)
+    {
+        lock (WriteGate)
+        {
+            using var connection = OpenConnection();
+            using var command = connection.CreateCommand();
+            command.CommandText = "SELECT config_json FROM status_bars WHERE id = $id";
+            command.Parameters.AddWithValue("$id", statusBarId);
+            var config = StatusBarConfig(command.ExecuteScalar() as string ?? "{}");
+            var items = config["items"] as JsonArray ?? new JsonArray();
+            while (items.Count <= index)
+            {
+                items.Add(JsonSerializer.SerializeToNode(DefaultStatusBarItems().ElementAtOrDefault(items.Count) ?? DefaultStatusBarItems()[0])!);
+            }
+
+            items[index] = StatusBarItemToJson(patch);
+            config["items"] = items;
+            Execute(
+                connection,
+                "UPDATE status_bars SET config_json = $configJson WHERE id = $id",
+                ("$id", statusBarId),
+                ("$configJson", config.ToJsonString()));
+        }
     }
 
     public DevicePreviewMetrics GetDevicePreviewMetrics(string deviceId)
@@ -1884,6 +2144,26 @@ internal sealed partial class SpikeDatabase
         while (reader.Read())
         {
             rows.Add(new IconThemeRow(
+                reader.GetString(0),
+                reader.GetString(1),
+                reader.GetString(2),
+                ReadString(reader, 3),
+                ReadString(reader, 4),
+                ReadString(reader, 5)));
+        }
+
+        return rows;
+    }
+
+    private static List<StatusBarRow> QueryStatusBarRows(SqliteConnection connection)
+    {
+        var rows = new List<StatusBarRow>();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT id, project_id, name, family, config_json, metadata_json FROM status_bars ORDER BY name";
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            rows.Add(new StatusBarRow(
                 reader.GetString(0),
                 reader.GetString(1),
                 reader.GetString(2),
@@ -2826,6 +3106,12 @@ internal sealed partial class SpikeDatabase
         return node.GetValue<string?>() ?? "0";
     }
 
+    private static string JsonNumberString(JsonObject root, IReadOnlyList<string> path, string fallback)
+    {
+        var value = JsonNumberString(root, path);
+        return value == "0" && GetJsonValue(root, path) is null ? fallback : value;
+    }
+
     private static double JsonNumberDouble(JsonObject root, IReadOnlyList<string> path, double fallback)
     {
         var node = GetJsonValue(root, path);
@@ -2903,11 +3189,138 @@ internal sealed partial class SpikeDatabase
         current[path[^1]] = value;
     }
 
+    private static void SetJsonNumber(JsonObject root, IReadOnlyList<string> path, int value)
+    {
+        SetJsonValue(root, path, JsonValue.Create(value)!);
+    }
+
     private static JsonNode NumberNode(string value)
     {
         return value.Contains('.', StringComparison.Ordinal)
             ? JsonValue.Create(double.TryParse(value, out var decimalValue) ? decimalValue : 0)!
             : JsonValue.Create(int.TryParse(value, out var integerValue) ? integerValue : 0)!;
+    }
+
+    private static string DefaultStatusBarConfigJson()
+    {
+        var config = new JsonObject
+        {
+            ["schemaVersion"] = 2,
+            ["layout"] = new JsonObject
+            {
+                ["height"] = 54,
+                ["itemSize"] = 18,
+                ["gap"] = 6,
+                ["sidePadding"] = 24,
+            },
+            ["items"] = new JsonArray(DefaultStatusBarItems().Select(StatusBarItemToJson).ToArray<JsonNode?>()),
+        };
+        return config.ToJsonString();
+    }
+
+    private static List<StatusBarItem> DefaultStatusBarItems()
+    {
+        return
+        [
+            new("time", "Time", "text", "9:41", "", false, "left", 10),
+            new("carrier", "Carrier", "text", "", "", false, "off", 20),
+            new("signal", "Signal", "generatedSignal", "4", "", false, "right", 10),
+            new("wifi", "Wi‑Fi", "iconToken", "", "status_wifi", false, "right", 20),
+            new("soundOff", "Sound Off", "iconToken", "", "media_volume_off", false, "off", 30),
+            new("bluetooth", "Bluetooth", "iconToken", "", "status_bluetooth", false, "off", 40),
+            new("battery", "Battery", "generatedBattery", "85", "", false, "right", 50),
+        ];
+    }
+
+    private static JsonObject StatusBarConfig(string json)
+    {
+        var fallback = ParseJsonObject(DefaultStatusBarConfigJson());
+        var parsed = ParseJsonObject(string.IsNullOrWhiteSpace(json) ? "{}" : json);
+        var layout = parsed["layout"] as JsonObject ?? [];
+        var fallbackLayout = fallback["layout"]!.AsObject();
+        parsed["schemaVersion"] ??= 2;
+        parsed["layout"] = new JsonObject
+        {
+            ["height"] = GetJsonValue(layout, ["height"])?.DeepClone() ?? fallbackLayout["height"]!.DeepClone(),
+            ["itemSize"] = GetJsonValue(layout, ["itemSize"])?.DeepClone() ?? fallbackLayout["itemSize"]!.DeepClone(),
+            ["gap"] = GetJsonValue(layout, ["gap"])?.DeepClone() ?? fallbackLayout["gap"]!.DeepClone(),
+            ["sidePadding"] = GetJsonValue(layout, ["sidePadding"])?.DeepClone() ?? fallbackLayout["sidePadding"]!.DeepClone(),
+        };
+        if (parsed["items"] is not JsonArray)
+        {
+            parsed["items"] = new JsonArray(DefaultStatusBarItems().Select(StatusBarItemToJson).ToArray<JsonNode?>());
+        }
+
+        return parsed;
+    }
+
+    private static IReadOnlyList<StatusBarItem> StatusBarItems(JsonObject config)
+    {
+        var defaults = DefaultStatusBarItems();
+        var rawItems = config["items"] as JsonArray ?? [];
+        return rawItems.Select((raw, index) =>
+        {
+            var item = raw as JsonObject ?? [];
+            var fallback = defaults.ElementAtOrDefault(index) ?? defaults[0];
+            var kind = JsonString(item, ["kind"]);
+            if (kind is not ("text" or "iconToken" or "generatedBattery" or "generatedSignal"))
+            {
+                kind = fallback.Kind;
+            }
+
+            var zone = JsonString(item, ["zone"]);
+            if (zone is not ("off" or "left" or "right"))
+            {
+                zone = fallback.Zone;
+            }
+
+            return new StatusBarItem(
+                JsonString(item, ["id"]) is { Length: > 0 } id ? id : fallback.Id,
+                JsonString(item, ["label"]) is { Length: > 0 } label ? label : fallback.Label,
+                kind,
+                JsonString(item, ["value"]) is { Length: > 0 } stringValue
+                    ? stringValue
+                    : JsonNumberString(item, ["value"]),
+                JsonString(item, ["token"]) is { Length: > 0 } token ? token : fallback.Token,
+                JsonBool(item, ["charging"]),
+                zone,
+                int.TryParse(JsonNumberString(item, ["order"]), out var order) ? order : fallback.Order);
+        }).ToList();
+    }
+
+    private static JsonObject StatusBarItemToJson(StatusBarItem item)
+    {
+        var json = new JsonObject
+        {
+            ["id"] = item.Id,
+            ["label"] = item.Label,
+            ["kind"] = item.Kind,
+            ["zone"] = item.Zone,
+            ["order"] = item.Order,
+        };
+        if (item.Kind == "iconToken")
+        {
+            json["token"] = item.Token;
+        }
+        else if (item.Kind == "generatedBattery" || item.Kind == "generatedSignal")
+        {
+            json["value"] = int.TryParse(item.Value, out var number) ? number : 0;
+            if (item.Kind == "generatedBattery")
+            {
+                json["charging"] = item.Charging;
+            }
+        }
+        else
+        {
+            json["value"] = item.Value;
+        }
+
+        return json;
+    }
+
+    private static int StatusBarItemCount(string configJson)
+    {
+        return StatusBarItems(StatusBarConfig(configJson)).Count;
     }
 
     private static string DefaultDeviceMetricsJson(int width, int height, double scale)
@@ -3167,6 +3580,16 @@ internal sealed partial class SpikeDatabase
           UNIQUE(project_id, name)
         );
 
+        CREATE TABLE IF NOT EXISTS status_bars (
+          id TEXT PRIMARY KEY,
+          project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+          name TEXT NOT NULL,
+          family TEXT NOT NULL DEFAULT '',
+          config_json TEXT NOT NULL DEFAULT '{}',
+          metadata_json TEXT NOT NULL DEFAULT '{}',
+          UNIQUE(project_id, name)
+        );
+
         CREATE TABLE IF NOT EXISTS editor_layouts (
           record_class_id TEXT PRIMARY KEY,
           layout_json TEXT NOT NULL
@@ -3221,6 +3644,21 @@ internal sealed partial class SpikeDatabase
         IReadOnlyList<IconThemeSearchCandidate> Lucide,
         IReadOnlyList<IconThemeSearchCandidate> Material);
     public sealed record IconThemeGenerateResult(string Token, int WrittenFileCount, IconThemeRefreshResult RefreshResult);
+    public sealed record StatusBarSettings(
+        string ProjectId,
+        string Name,
+        string Family,
+        string ConfigJson,
+        string MetadataJson);
+    public sealed record StatusBarItem(
+        string Id,
+        string Label,
+        string Kind,
+        string Value,
+        string Token,
+        bool Charging,
+        string Zone,
+        int Order);
     private sealed record ProjectRow(string Id, string Name, string Notes);
     private sealed record EpisodeRow(string Id, string ProjectId, string Name, string Slug, string Notes, int SortOrder);
     private sealed record AppRow(string Id, string ProjectId, string RecordClassId, string Name, string Notes, int SortOrder);
@@ -3230,6 +3668,7 @@ internal sealed partial class SpikeDatabase
     private sealed record ActorRow(string Id, string ProjectId, string DisplayName, string ShortName, string DefaultDeviceId, string DefaultThemeId, string MetadataJson);
     private sealed record ProductionFontRow(string Id, string ProjectId, string FamilyName, string Category, string SourceDirectory, string FilesJson);
     private sealed record IconThemeRow(string Id, string ProjectId, string Name, string AssetRoot, string MappingJson, string MetadataJson);
+    private sealed record StatusBarRow(string Id, string ProjectId, string Name, string Family, string ConfigJson, string MetadataJson);
     private sealed record ShotRow(
         string Id,
         string EpisodeId,
