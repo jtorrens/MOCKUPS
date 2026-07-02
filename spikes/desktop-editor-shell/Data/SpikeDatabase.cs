@@ -73,6 +73,7 @@ internal sealed partial class SpikeDatabase
         var iconThemes = QueryIconThemeRows(connection);
         var statusBars = QueryStatusBarRows(connection);
         var navigationBars = QueryNavigationBarRows(connection);
+        var componentClasses = QueryComponentClassRows(connection);
 
         var projectNodes = projects
             .Select((project) => new ProjectTreeNode(
@@ -92,6 +93,7 @@ internal sealed partial class SpikeDatabase
         var iconThemeRootNodes = new Dictionary<string, ProjectTreeNode>();
         var statusBarRootNodes = new Dictionary<string, ProjectTreeNode>();
         var navigationBarRootNodes = new Dictionary<string, ProjectTreeNode>();
+        var componentClassRootNodes = new Dictionary<string, ProjectTreeNode>();
         var episodeRootNodes = new Dictionary<string, ProjectTreeNode>();
         var episodeNodes = new Dictionary<string, ProjectTreeNode>();
         foreach (var project in projectNodes.Values)
@@ -173,6 +175,13 @@ internal sealed partial class SpikeDatabase
                 "Reusable device navigation bar compositions.",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.NavigationBarsRoot),
                 systemDataRoot);
+            var componentClassesRoot = new ProjectTreeNode(
+                ProjectTreeNodeKind.ComponentClassesRoot,
+                $"component_classes_root_{project.Id}",
+                "Component Classes",
+                "Reusable visual component defaults.",
+                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ComponentClassesRoot),
+                systemDataRoot);
             var episodesRoot = new ProjectTreeNode(
                 ProjectTreeNodeKind.EpisodesRoot,
                 $"episodes_root_{project.Id}",
@@ -189,6 +198,7 @@ internal sealed partial class SpikeDatabase
             systemDataRoot.AddChild(statusBarsRoot);
             systemDataRoot.AddChild(navigationBarsRoot);
             systemDataRoot.AddChild(productionFontsRoot);
+            systemDataRoot.AddChild(componentClassesRoot);
             project.AddChild(appsRoot);
             project.AddChild(episodesRoot);
             project.AddChild(productionDataRoot);
@@ -202,6 +212,7 @@ internal sealed partial class SpikeDatabase
             iconThemeRootNodes[project.Id] = iconThemesRoot;
             statusBarRootNodes[project.Id] = statusBarsRoot;
             navigationBarRootNodes[project.Id] = navigationBarsRoot;
+            componentClassRootNodes[project.Id] = componentClassesRoot;
             episodeRootNodes[project.Id] = episodesRoot;
         }
 
@@ -355,6 +366,19 @@ internal sealed partial class SpikeDatabase
                 $"{navigationBar.Family} · {NavigationBarItemCount(navigationBar.ConfigJson)} buttons",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.NavigationBar),
                 navigationBarsRoot));
+        }
+
+        foreach (var componentClass in componentClasses.OrderBy((componentClass) => componentClass.ComponentType).ThenBy((componentClass) => componentClass.Name))
+        {
+            if (!componentClassRootNodes.TryGetValue(componentClass.ProjectId, out var componentClassesRoot)) continue;
+
+            componentClassesRoot.AddChild(new ProjectTreeNode(
+                ProjectTreeNodeKind.ComponentClass,
+                componentClass.Id,
+                componentClass.Name,
+                string.IsNullOrWhiteSpace(componentClass.Notes) ? ComponentTypeLabel(componentClass.ComponentType) : componentClass.Notes,
+                componentClass.RecordClassId,
+                componentClassesRoot));
         }
 
         foreach (var shot in shots.OrderBy((shot) => shot.SortOrder).ThenBy((shot) => shot.Name))
@@ -560,6 +584,37 @@ internal sealed partial class SpikeDatabase
                 name,
                 $"custom · {DefaultNavigationBarItems().Count} buttons",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.NavigationBar),
+                parent);
+        }
+
+        if (parent.Kind == ProjectTreeNodeKind.ComponentClassesRoot)
+        {
+            var project = ProjectAncestor(parent);
+            var index = ScalarLong(connection, "SELECT COUNT(*) FROM component_classes WHERE project_id = $projectId", ("$projectId", project.Id)) + 1;
+            var id = $"component_{Guid.NewGuid():N}";
+            var name = $"Avatar Component {index}";
+            var recordClassId = "component.avatar";
+            Execute(
+                connection,
+                """
+                INSERT INTO component_classes (id, project_id, component_type, record_class_id, name, notes, config_json, design_preview_json, metadata_json)
+                VALUES ($id, $projectId, 'avatar', $recordClassId, $name, $notes, $configJson, $designPreviewJson, $metadataJson)
+                """,
+                ("$id", id),
+                ("$projectId", project.Id),
+                ("$recordClassId", recordClassId),
+                ("$name", name),
+                ("$notes", "Custom reusable avatar component class."),
+                ("$configJson", DefaultComponentClassConfigJson("avatar")),
+                ("$designPreviewJson", DefaultComponentDesignPreviewJson("avatar")),
+                ("$metadataJson", JsonSerializer.Serialize(new { note = "Custom reusable component class." })));
+
+            return new ProjectTreeNode(
+                ProjectTreeNodeKind.ComponentClass,
+                id,
+                name,
+                "Custom reusable avatar component class.",
+                recordClassId,
                 parent);
         }
 
@@ -899,6 +954,24 @@ internal sealed partial class SpikeDatabase
             return new ProjectTreeNode(ProjectTreeNodeKind.NavigationBar, id, $"{node.Name} copy", node.Notes, node.RecordClassId, node.Parent);
         }
 
+        if (node.Kind == ProjectTreeNodeKind.ComponentClass)
+        {
+            var id = $"component_{Guid.NewGuid():N}";
+            Execute(
+                connection,
+                """
+                INSERT INTO component_classes (id, project_id, component_type, record_class_id, name, notes, config_json, design_preview_json, metadata_json)
+                SELECT $id, project_id, component_type, record_class_id, $name, notes, config_json, design_preview_json, metadata_json
+                FROM component_classes
+                WHERE id = $sourceId
+                """,
+                ("$id", id),
+                ("$name", $"{node.Name} copy"),
+                ("$sourceId", node.Id));
+
+            return new ProjectTreeNode(ProjectTreeNodeKind.ComponentClass, id, $"{node.Name} copy", node.Notes, node.RecordClassId, node.Parent);
+        }
+
         throw new InvalidOperationException($"Cannot duplicate {node.Kind}.");
     }
 
@@ -919,6 +992,7 @@ internal sealed partial class SpikeDatabase
             ProjectTreeNodeKind.IconTheme => "icon_themes",
             ProjectTreeNodeKind.StatusBar => "status_bars",
             ProjectTreeNodeKind.NavigationBar => "navigation_bars",
+            ProjectTreeNodeKind.ComponentClass => "component_classes",
             _ => throw new InvalidOperationException($"Cannot delete {node.Kind}."),
         };
 
@@ -957,6 +1031,8 @@ internal sealed partial class SpikeDatabase
             ProjectTreeNodeKind.ProductionFont => "production_fonts",
             ProjectTreeNodeKind.IconTheme => "icon_themes",
             ProjectTreeNodeKind.StatusBar => "status_bars",
+            ProjectTreeNodeKind.NavigationBar => "navigation_bars",
+            ProjectTreeNodeKind.ComponentClass => "component_classes",
             _ => "",
         };
 
@@ -1066,6 +1142,7 @@ internal sealed partial class SpikeDatabase
         ExecuteScript(connection, SchemaSql);
         EnsureProjectColumns(connection);
         EnsureEpisodeColumns(connection);
+        EnsureComponentClassColumns(connection);
         SeedEditorLayouts(connection);
         SeedIfEmpty(connection);
         SeedPaletteColorsIfEmpty(connection);
@@ -1074,6 +1151,7 @@ internal sealed partial class SpikeDatabase
         SeedProductionFontsIfEmpty(connection);
         SeedStatusBarsIfEmpty(connection);
         SeedNavigationBarsIfEmpty(connection);
+        SeedComponentClassesIfEmpty(connection);
         SeedThemesIfEmpty(connection);
         EnsureThemeTokens(connection);
     }
@@ -1293,6 +1371,37 @@ internal sealed partial class SpikeDatabase
         }
     }
 
+    private static void SeedComponentClassesIfEmpty(SqliteConnection connection)
+    {
+        var projectIds = QueryProjectRows(connection).Select((project) => project.Id).ToList();
+        foreach (var projectId in projectIds)
+        {
+            if (ScalarLong(connection, "SELECT COUNT(*) FROM component_classes WHERE project_id = $projectId", ("$projectId", projectId)) > 0)
+            {
+                continue;
+            }
+
+            foreach (var seed in ComponentSeedRows)
+            {
+                Execute(
+                    connection,
+                    """
+                    INSERT INTO component_classes (id, project_id, component_type, record_class_id, name, notes, config_json, design_preview_json, metadata_json)
+                    VALUES ($id, $projectId, $componentType, $recordClassId, $name, $notes, $configJson, $designPreviewJson, $metadataJson)
+                    """,
+                    ("$id", $"component_{projectId}_{seed.ComponentType}"),
+                    ("$projectId", projectId),
+                    ("$componentType", seed.ComponentType),
+                    ("$recordClassId", seed.RecordClassId),
+                    ("$name", seed.Name),
+                    ("$notes", ComponentTypeLabel(seed.ComponentType)),
+                    ("$configJson", seed.ConfigJson),
+                    ("$designPreviewJson", seed.DesignPreviewJson),
+                    ("$metadataJson", seed.MetadataJson));
+            }
+        }
+    }
+
     private static void SeedThemesIfEmpty(SqliteConnection connection)
     {
         var projectIds = QueryProjectRows(connection).Select((project) => project.Id).ToList();
@@ -1359,6 +1468,7 @@ internal sealed partial class SpikeDatabase
             "navigation.icon_themes",
             "navigation.status_bars",
             "navigation.navigation_bars",
+            "navigation.component_classes",
             "navigation.episodes",
             "app.generic",
             "app.core.chat",
@@ -1374,6 +1484,13 @@ internal sealed partial class SpikeDatabase
             "icon_theme",
             "status_bar",
             "navigation_bar",
+            "component.avatar",
+            "component.text_input_bar",
+            "component.keyboard",
+            "component.button_icon",
+            "component.label",
+            "component.audio",
+            "component.video",
         })
         {
             Execute(
@@ -1400,7 +1517,13 @@ internal sealed partial class SpikeDatabase
 
     private static string MinimalEditorLayoutJson(string recordClassId)
     {
-        var generalFields = recordClassId == "project"
+        var generalFields = recordClassId.StartsWith("component.", StringComparison.Ordinal)
+            ? """
+                    { "id": "core.name", "order": 10, "visible": true },
+                    { "id": "component.type", "order": 20, "visible": true },
+                    { "id": "core.notes", "order": 30, "visible": true }
+              """
+            : recordClassId == "project"
             ? """
                     { "id": "core.name", "order": 10, "visible": true },
                     { "id": "project.slug", "order": 20, "visible": true },
@@ -1749,6 +1872,9 @@ internal sealed partial class SpikeDatabase
             }
             """
             : "";
+        var componentCards = recordClassId.StartsWith("component.", StringComparison.Ordinal)
+            ? ComponentClassLayoutCardsJson(recordClassId)
+            : "";
 
         return $$"""
         {
@@ -1772,10 +1898,199 @@ internal sealed partial class SpikeDatabase
                   ]
                 }
               ]
-            }{{actorCards}}{{themeCards}}{{navigationBarCards}}
+            }{{actorCards}}{{themeCards}}{{navigationBarCards}}{{componentCards}}
           ]
         }
         """;
+    }
+
+    private static string ComponentClassLayoutCardsJson(string recordClassId)
+    {
+        var typeSpecific = recordClassId switch
+        {
+            "component.avatar" => $$"""
+            ,
+            {
+              "id": "avatar",
+              "label": "Avatar",
+              "subtitle": "Reusable avatar presentation defaults",
+              "icon": "{{EditorIcons.Avatar}}",
+              "order": 20,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "avatar", "label": "Avatar", "order": 10, "visible": true, "fields": [
+                  { "id": "component.avatar.defaultSize", "order": 10, "visible": true },
+                  { "id": "component.avatar.cornerRadiusToken", "order": 20, "visible": true }
+                ] }
+              ]
+            }
+            """,
+            "component.text_input_bar" => $$"""
+            ,
+            {
+              "id": "textInput",
+              "label": "Text Input",
+              "subtitle": "Input bar, idle text and cursor behavior",
+              "icon": "{{EditorIcons.TextInput}}",
+              "order": 20,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "textInput", "label": "Text input", "order": 10, "visible": true, "fields": [
+                  { "id": "component.textInput.height", "order": 10, "visible": true },
+                  { "id": "component.textInput.placeholder", "order": 20, "visible": true },
+                  { "id": "component.textInput.idleTextColorToken", "order": 30, "visible": true },
+                  { "id": "component.textInput.cursorColorToken", "order": 40, "visible": true },
+                  { "id": "component.textInput.cursorWidth", "order": 50, "visible": true },
+                  { "id": "component.textInput.cursorBlinkFrames", "order": 60, "visible": true }
+                ] }
+              ]
+            }
+            """,
+            "component.keyboard" => $$"""
+            ,
+            {
+              "id": "keyboard",
+              "label": "Keyboard",
+              "subtitle": "Key shape, pressed behavior and icon slots",
+              "icon": "{{EditorIcons.Keyboard}}",
+              "order": 20,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "keys", "label": "Keys", "order": 10, "visible": true, "fields": [
+                  { "id": "component.keyboard.keyPadding", "order": 10, "visible": true },
+                  { "id": "component.keyboard.keyCornerRadius", "order": 20, "visible": true },
+                  { "id": "component.keyboard.keyShadowEnabled", "order": 30, "visible": true },
+                  { "id": "component.keyboard.pressedEffect", "order": 40, "visible": true },
+                  { "id": "component.keyboard.specialKeyTextScale", "order": 50, "visible": true },
+                  { "id": "component.keyboard.emojiScale", "order": 60, "visible": true },
+                  { "id": "component.keyboard.bottomIconSlots", "order": 70, "visible": true }
+                ] }
+              ]
+            }
+            """,
+            "component.button_icon" => $$"""
+            ,
+            {
+              "id": "buttonIcon",
+              "label": "Button Icon",
+              "subtitle": "Icon padding and optional label",
+              "icon": "{{EditorIcons.ButtonIcon}}",
+              "order": 20,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "buttonIcon", "label": "Button icon", "order": 10, "visible": true, "fields": [
+                  { "id": "component.buttonIcon.iconPadding", "order": 10, "visible": true },
+                  { "id": "component.buttonIcon.labelEnabled", "order": 20, "visible": true },
+                  { "id": "component.buttonIcon.labelPosition", "order": 30, "visible": true },
+                  { "id": "component.buttonIcon.labelSize", "order": 40, "visible": true },
+                  { "id": "component.buttonIcon.labelPadding", "order": 50, "visible": true }
+                ] }
+              ]
+            }
+            """,
+            "component.label" => $$"""
+            ,
+            {
+              "id": "label",
+              "label": "Label",
+              "subtitle": "Centered text label dimensions and colors",
+              "icon": "{{EditorIcons.Label}}",
+              "order": 20,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "label", "label": "Label", "order": 10, "visible": true, "fields": [
+                  { "id": "component.label.dimensionMode", "order": 10, "visible": true },
+                  { "id": "component.label.size", "order": 20, "visible": true },
+                  { "id": "component.label.padding", "order": 30, "visible": true },
+                  { "id": "component.label.backgroundVisible", "order": 40, "visible": true },
+                  { "id": "component.label.backgroundColorToken", "order": 50, "visible": true },
+                  { "id": "component.label.textColorToken", "order": 60, "visible": true },
+                  { "id": "component.label.textSize", "order": 70, "visible": true },
+                  { "id": "component.label.textStyle", "order": 80, "visible": true }
+                ] }
+              ]
+            }
+            """,
+            "component.audio" => $$"""
+            ,
+            {
+              "id": "audio",
+              "label": "Audio",
+              "subtitle": "Audio bubble layout and waveform defaults",
+              "icon": "{{EditorIcons.Audio}}",
+              "order": 20,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "audio", "label": "Audio", "order": 10, "visible": true, "fields": [
+                  { "id": "component.audio.size", "order": 10, "visible": true },
+                  { "id": "component.audio.avatarPosition", "order": 20, "visible": true },
+                  { "id": "component.audio.avatarSize", "order": 30, "visible": true },
+                  { "id": "component.audio.textSize", "order": 40, "visible": true },
+                  { "id": "component.audio.playColorToken", "order": 50, "visible": true },
+                  { "id": "component.audio.waveformColorToken", "order": 60, "visible": true },
+                  { "id": "component.audio.knobSize", "order": 70, "visible": true }
+                ] }
+              ]
+            }
+            """,
+            "component.video" => $$"""
+            ,
+            {
+              "id": "video",
+              "label": "Video",
+              "subtitle": "Video status bar and play overlay defaults",
+              "icon": "{{EditorIcons.Video}}",
+              "order": 20,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "video", "label": "Video", "order": 10, "visible": true, "fields": [
+                  { "id": "component.video.statusVisible", "order": 10, "visible": true },
+                  { "id": "component.video.statusHeight", "order": 20, "visible": true },
+                  { "id": "component.video.statusIconSlots", "order": 30, "visible": true },
+                  { "id": "component.video.playOverlayVisible", "order": 40, "visible": true },
+                  { "id": "component.video.playColorToken", "order": 50, "visible": true }
+                ] }
+              ]
+            }
+            """,
+            _ => "",
+        };
+
+        var style = $$"""
+        ,
+        {
+          "id": "style",
+          "label": "Style",
+          "subtitle": "Shared surface style defaults",
+          "icon": "{{EditorIcons.Style}}",
+          "order": 90,
+          "visible": true,
+          "defaultOpen": false,
+          "groups": [
+            { "id": "style", "label": "Surface style", "order": 10, "visible": true, "fields": [
+              { "id": "component.style.shadowEnabled", "order": 10, "visible": true },
+              { "id": "component.style.reliefEnabled", "order": 20, "visible": true },
+              { "id": "component.style.borderWidth", "order": 30, "visible": true },
+              { "id": "component.style.borderColorToken", "order": 40, "visible": true },
+              { "id": "component.style.cornerRadiusToken", "order": 50, "visible": true },
+              { "id": "component.style.reliefAngle", "order": 60, "visible": true },
+              { "id": "component.style.reliefExtent", "order": 70, "visible": true },
+              { "id": "component.style.reliefSpread", "order": 80, "visible": true },
+              { "id": "component.style.reliefTopIntensity", "order": 90, "visible": true },
+              { "id": "component.style.reliefBottomIntensity", "order": 100, "visible": true }
+            ] }
+          ]
+        }
+        """;
+
+        return typeSpecific + style;
     }
 
     private static void SeedShot(SqliteConnection connection, string id, string episodeId, string name, int sortOrder)
@@ -2594,6 +2909,114 @@ internal sealed partial class SpikeDatabase
         }
     }
 
+    public ComponentClassSettings GetComponentClassSettings(string componentClassId)
+    {
+        using var connection = OpenConnection();
+        return GetComponentClassSettings(connection, componentClassId);
+    }
+
+    private static ComponentClassSettings GetComponentClassSettings(SqliteConnection connection, string componentClassId)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT project_id, component_type, record_class_id, name, notes, config_json, design_preview_json, metadata_json
+            FROM component_classes
+            WHERE id = $id
+            """;
+        command.Parameters.AddWithValue("$id", componentClassId);
+        using var reader = command.ExecuteReader();
+        if (!reader.Read())
+        {
+            throw new InvalidOperationException($"Missing component class '{componentClassId}'.");
+        }
+
+        return new ComponentClassSettings(
+            reader.GetString(0),
+            reader.GetString(1),
+            reader.GetString(2),
+            reader.GetString(3),
+            ReadString(reader, 4),
+            ReadString(reader, 5),
+            ReadString(reader, 6),
+            ReadString(reader, 7));
+    }
+
+    public FieldValue CreateComponentClassFieldValue(string componentClassId, string fieldId)
+    {
+        var settings = GetComponentClassSettings(componentClassId);
+        var descriptor = ComponentClassFieldCatalog.Get(fieldId);
+        var value = fieldId == "component.type"
+            ? ComponentTypeLabel(settings.ComponentType)
+            : ComponentConfigFieldValue(settings.ConfigJson, descriptor);
+
+        return new FieldValue(
+            new FieldDefinition(
+                descriptor.Id,
+                descriptor.Label,
+                descriptor.ValueKind,
+                descriptor.IsEditable,
+                descriptor.DefaultValue,
+                Options: descriptor.Options),
+            value);
+    }
+
+    public void UpdateComponentClassField(string componentClassId, string fieldId, string value)
+    {
+        var descriptor = ComponentClassFieldCatalog.Get(fieldId);
+        if (!descriptor.IsEditable || descriptor.JsonPath.Length == 0)
+        {
+            return;
+        }
+
+        lock (WriteGate)
+        {
+            using var connection = OpenConnection();
+            var settings = GetComponentClassSettings(connection, componentClassId);
+            var config = ParseJsonObject(string.IsNullOrWhiteSpace(settings.ConfigJson) ? "{}" : settings.ConfigJson);
+            SetJsonValue(config, descriptor.JsonPath, ComponentConfigJsonValue(descriptor.ValueKind, value));
+            Execute(
+                connection,
+                "UPDATE component_classes SET config_json = $configJson WHERE id = $id",
+                ("$id", componentClassId),
+                ("$configJson", config.ToJsonString()));
+        }
+    }
+
+    private static string ComponentConfigFieldValue(string configJson, ComponentClassFieldDescriptor descriptor)
+    {
+        var config = ParseJsonObject(string.IsNullOrWhiteSpace(configJson) ? "{}" : configJson);
+        var node = GetJsonValue(config, descriptor.JsonPath);
+        if (node is null)
+        {
+            return descriptor.DefaultValue;
+        }
+
+        return descriptor.ValueKind switch
+        {
+            ValueKind.Boolean => BoolToString(node is JsonValue value && value.TryGetValue<bool>(out var boolean) && boolean),
+            ValueKind.Integer => JsonNumberString(config, descriptor.JsonPath, descriptor.DefaultValue),
+            ValueKind.IntegerPair => node is JsonValue pairValue && pairValue.TryGetValue<string>(out var pairText)
+                ? pairText
+                : descriptor.DefaultValue,
+            ValueKind.IconSlots => node.ToJsonString(),
+            _ => node is JsonValue stringValue && stringValue.TryGetValue<string>(out var text)
+                ? text
+                : node.ToJsonString().Trim('"'),
+        };
+    }
+
+    private static JsonNode ComponentConfigJsonValue(ValueKind valueKind, string value)
+    {
+        return valueKind switch
+        {
+            ValueKind.Boolean => JsonValue.Create(StringToBool(value))!,
+            ValueKind.Integer => NumberNode(value),
+            ValueKind.IconSlots => JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? ComponentClassFieldCatalog.EmptyIconSlots : value)
+                ?? JsonNode.Parse(ComponentClassFieldCatalog.EmptyIconSlots)!,
+            _ => JsonValue.Create(value)!,
+        };
+    }
+
     public DevicePreviewMetrics GetDevicePreviewMetrics(string deviceId)
     {
         var settings = GetDeviceSettings(deviceId);
@@ -2624,6 +3047,75 @@ internal sealed partial class SpikeDatabase
             .OrderBy((theme) => theme.Name)
             .Select((theme) => new FieldOption(theme.Id, theme.Name))
             .ToList();
+    }
+
+    public IReadOnlyList<ThemeTokenOption> GetThemeTokenOptions(string projectId, string themeId)
+    {
+        using var connection = OpenConnection();
+        var theme = QueryThemeRows(connection)
+            .Where((row) => row.ProjectId == projectId)
+            .FirstOrDefault((row) => row.Id == themeId)
+            ?? QueryThemeRows(connection).FirstOrDefault((row) => row.ProjectId == projectId)
+            ?? throw new InvalidOperationException($"No themes available for project '{projectId}'.");
+        var tokens = ParseJsonObject(string.IsNullOrWhiteSpace(theme.TokensJson) ? "{}" : theme.TokensJson);
+        var palette = QueryPaletteColorRows(connection)
+            .Where((color) => color.ProjectId == projectId)
+            .ToDictionary((color) => color.Token, (color) => color.ValueHex, StringComparer.Ordinal);
+
+        var options = new List<ThemeTokenOption>();
+        foreach (var pair in ThemeColorPairPaths.OrderBy((pair) => pair.Key, StringComparer.Ordinal))
+        {
+            var lightToken = JsonString(tokens, pair.Value.Light);
+            var darkToken = JsonString(tokens, pair.Value.Dark);
+            options.Add(new ThemeTokenOption(
+                pair.Key,
+                pair.Key.Replace("theme.", "", StringComparison.Ordinal),
+                "color",
+                $"{lightToken} / {darkToken}",
+                PaletteHex(palette, lightToken),
+                PaletteHex(palette, darkToken)));
+        }
+
+        foreach (var option in NumericThemeTokenOptions(tokens))
+        {
+            options.Add(option);
+        }
+
+        return options
+            .OrderBy((option) => option.Token, StringComparer.Ordinal)
+            .ToList();
+    }
+
+    private static IEnumerable<ThemeTokenOption> NumericThemeTokenOptions(JsonObject tokens)
+    {
+        foreach (var (token, path) in new (string Token, string[] Path)[]
+        {
+            ("theme.cursor.width", ["cursor", "width"]),
+            ("theme.cursor.blinkFrames", ["cursor", "blinkFrames"]),
+            ("theme.typography.size", ["typography", "size"]),
+            ("theme.typography.weight", ["typography", "weight"]),
+            ("theme.radii.control", ["radii", "control"]),
+            ("theme.radii.card", ["radii", "card"]),
+            ("theme.radii.panel", ["radii", "panel"]),
+            ("theme.radii.surface", ["radii", "surface"]),
+            ("theme.radii.pill", ["radii", "pill"]),
+            ("theme.radii.avatar", ["radii", "avatar"]),
+            ("theme.radii.full", ["radii", "full"]),
+        })
+        {
+            yield return new ThemeTokenOption(
+                token,
+                token.Replace("theme.", "", StringComparison.Ordinal),
+                "number",
+                JsonNumberString(tokens, path, "—"),
+                null,
+                null);
+        }
+    }
+
+    private static string? PaletteHex(IReadOnlyDictionary<string, string> palette, string token)
+    {
+        return palette.TryGetValue(token, out var hex) ? hex : null;
     }
 
     public ThemeSettings GetThemeSettings(string themeId)
@@ -3045,6 +3537,33 @@ internal sealed partial class SpikeDatabase
                 ReadString(reader, 3),
                 ReadString(reader, 4),
                 ReadString(reader, 5)));
+        }
+
+        return rows;
+    }
+
+    private static List<ComponentClassRow> QueryComponentClassRows(SqliteConnection connection)
+    {
+        var rows = new List<ComponentClassRow>();
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT id, project_id, component_type, record_class_id, name, notes, config_json, design_preview_json, metadata_json
+            FROM component_classes
+            ORDER BY component_type, name
+            """;
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            rows.Add(new ComponentClassRow(
+                reader.GetString(0),
+                reader.GetString(1),
+                reader.GetString(2),
+                reader.GetString(3),
+                reader.GetString(4),
+                ReadString(reader, 5),
+                ReadString(reader, 6),
+                ReadString(reader, 7),
+                ReadString(reader, 8)));
         }
 
         return rows;
@@ -4147,6 +4666,16 @@ internal sealed partial class SpikeDatabase
                 ["weight"] = 400,
                 ["style"] = "normal",
             },
+            ["radii"] = new JsonObject
+            {
+                ["control"] = 8,
+                ["card"] = 14,
+                ["panel"] = 20,
+                ["surface"] = 14,
+                ["pill"] = 999,
+                ["avatar"] = 999,
+                ["full"] = 999,
+            },
             ["modes"] = new JsonObject
             {
                 ["light"] = new JsonObject
@@ -4573,6 +5102,11 @@ internal sealed partial class SpikeDatabase
             """);
     }
 
+    private static void EnsureComponentClassColumns(SqliteConnection connection)
+    {
+        AddColumnIfMissing(connection, "component_classes", "notes", "TEXT NOT NULL DEFAULT ''");
+    }
+
     private static void AddColumnIfMissing(
         SqliteConnection connection,
         string table,
@@ -4756,6 +5290,19 @@ internal sealed partial class SpikeDatabase
           UNIQUE(project_id, name)
         );
 
+        CREATE TABLE IF NOT EXISTS component_classes (
+          id TEXT PRIMARY KEY,
+          project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+          component_type TEXT NOT NULL,
+          record_class_id TEXT NOT NULL,
+          name TEXT NOT NULL,
+          notes TEXT NOT NULL DEFAULT '',
+          config_json TEXT NOT NULL DEFAULT '{}',
+          design_preview_json TEXT NOT NULL DEFAULT '{}',
+          metadata_json TEXT NOT NULL DEFAULT '{}',
+          UNIQUE(project_id, component_type, name)
+        );
+
         CREATE TABLE IF NOT EXISTS themes (
           id TEXT PRIMARY KEY,
           project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
@@ -4859,6 +5406,22 @@ internal sealed partial class SpikeDatabase
         string Kind,
         string Zone,
         int Order);
+    public sealed record ComponentClassSettings(
+        string ProjectId,
+        string ComponentType,
+        string RecordClassId,
+        string Name,
+        string Notes,
+        string ConfigJson,
+        string DesignPreviewJson,
+        string MetadataJson);
+    public sealed record ThemeTokenOption(
+        string Token,
+        string Label,
+        string Kind,
+        string Value,
+        string? LightColorHex,
+        string? DarkColorHex);
     private sealed record ProjectRow(string Id, string Name, string Notes);
     private sealed record EpisodeRow(string Id, string ProjectId, string Name, string Slug, string Notes, int SortOrder);
     private sealed record AppRow(string Id, string ProjectId, string RecordClassId, string Name, string Notes, int SortOrder);
@@ -4871,6 +5434,7 @@ internal sealed partial class SpikeDatabase
     private sealed record IconThemeRow(string Id, string ProjectId, string Name, string AssetRoot, string MappingJson, string MetadataJson);
     private sealed record StatusBarRow(string Id, string ProjectId, string Name, string Family, string ConfigJson, string MetadataJson);
     private sealed record NavigationBarRow(string Id, string ProjectId, string Name, string Family, string ConfigJson, string MetadataJson);
+    private sealed record ComponentClassRow(string Id, string ProjectId, string ComponentType, string RecordClassId, string Name, string Notes, string ConfigJson, string DesignPreviewJson, string MetadataJson);
     private sealed record ShotRow(
         string Id,
         string EpisodeId,
@@ -4883,6 +5447,162 @@ internal sealed partial class SpikeDatabase
     private sealed record PaletteSeedRow(string Token, string ValueHex, bool IsNeutral, string MetadataJson);
     private sealed record DeviceSeedRow(string Id, string Name, string Manufacturer, string Model, string OsFamily, string MetricsJson);
     private sealed record ActorSeedRow(string Id, string DisplayName, string ShortName, string MetadataJson);
+    private sealed record ComponentSeedRow(string ComponentType, string RecordClassId, string Name, string ConfigJson, string DesignPreviewJson, string MetadataJson);
+
+    private static readonly ComponentSeedRow[] ComponentSeedRows =
+    [
+        NewComponentSeed("avatar", "component.avatar", "Default Avatar"),
+        NewComponentSeed("textInputBar", "component.text_input_bar", "Default Text Input Bar"),
+        NewComponentSeed("keyboard", "component.keyboard", "Default Keyboard"),
+        NewComponentSeed("buttonIcon", "component.button_icon", "Default Button Icon"),
+        NewComponentSeed("label", "component.label", "Default Label"),
+        NewComponentSeed("audio", "component.audio", "Default Audio"),
+        NewComponentSeed("video", "component.video", "Default Video"),
+    ];
+
+    private static ComponentSeedRow NewComponentSeed(string componentType, string recordClassId, string name)
+    {
+        return new ComponentSeedRow(
+            componentType,
+            recordClassId,
+            name,
+            DefaultComponentClassConfigJson(componentType),
+            DefaultComponentDesignPreviewJson(componentType),
+            JsonSerializer.Serialize(new { note = "Seeded reusable component class." }));
+    }
+
+    private static string ComponentTypeLabel(string componentType)
+    {
+        return componentType switch
+        {
+            "avatar" => "Avatar component",
+            "textInputBar" => "Text input bar component",
+            "keyboard" => "Keyboard component",
+            "buttonIcon" => "Button icon component",
+            "label" => "Label component",
+            "audio" => "Audio component",
+            "video" => "Video component",
+            _ => componentType,
+        };
+    }
+
+    private static string DefaultComponentClassConfigJson(string componentType)
+    {
+        var config = new JsonObject
+        {
+            ["style"] = new JsonObject
+            {
+                ["shadowEnabled"] = false,
+                ["reliefEnabled"] = false,
+                ["borderWidth"] = 0,
+                ["borderColorToken"] = "theme.borders.primary",
+                ["cornerRadiusToken"] = componentType == "avatar" ? "theme.radii.avatar" : "theme.radii.surface",
+                ["reliefAngle"] = -45,
+                ["reliefExtent"] = 1,
+                ["reliefSpread"] = 0,
+                ["reliefTopIntensity"] = 12,
+                ["reliefBottomIntensity"] = -10,
+            },
+        };
+
+        switch (componentType)
+        {
+            case "avatar":
+                config["avatar"] = new JsonObject
+                {
+                    ["defaultSize"] = 48,
+                    ["cornerRadiusToken"] = "theme.radii.avatar",
+                };
+                break;
+            case "textInputBar":
+                config["textInput"] = new JsonObject
+                {
+                    ["height"] = 44,
+                    ["placeholder"] = "Message",
+                    ["idleTextColorToken"] = "theme.colors.textSecondary",
+                    ["cursorColorToken"] = "theme.cursor.color",
+                    ["cursorWidth"] = 2,
+                    ["cursorBlinkFrames"] = 18,
+                };
+                break;
+            case "keyboard":
+                config["keyboard"] = new JsonObject
+                {
+                    ["keyPadding"] = 4,
+                    ["keyCornerRadius"] = 6,
+                    ["keyShadowEnabled"] = false,
+                    ["pressedEffect"] = "popup",
+                    ["specialKeyTextScale"] = "0.65",
+                    ["emojiScale"] = "1.2",
+                    ["bottomIconSlots"] = JsonNode.Parse(ComponentClassFieldCatalog.EmptyIconSlots),
+                };
+                break;
+            case "buttonIcon":
+                config["buttonIcon"] = new JsonObject
+                {
+                    ["iconPadding"] = 6,
+                    ["labelEnabled"] = false,
+                    ["labelPosition"] = "bottom",
+                    ["labelSize"] = 10,
+                    ["labelPadding"] = 3,
+                };
+                break;
+            case "label":
+                config["label"] = new JsonObject
+                {
+                    ["dimensionMode"] = "content",
+                    ["size"] = "120|32",
+                    ["padding"] = "8|4",
+                    ["backgroundVisible"] = true,
+                    ["backgroundColorToken"] = "theme.colors.background",
+                    ["textColorToken"] = "theme.colors.textPrimary",
+                    ["textSize"] = 12,
+                    ["textStyle"] = "normal",
+                };
+                break;
+            case "audio":
+                config["audio"] = new JsonObject
+                {
+                    ["size"] = "230|54",
+                    ["avatarPosition"] = "right",
+                    ["avatarSize"] = 32,
+                    ["textSize"] = 13,
+                    ["playColorToken"] = "theme.icons.accent",
+                    ["waveformColorToken"] = "theme.icons.primary",
+                    ["knobSize"] = 10,
+                };
+                break;
+            case "video":
+                config["video"] = new JsonObject
+                {
+                    ["statusVisible"] = true,
+                    ["statusHeight"] = 24,
+                    ["statusIconSlots"] = JsonNode.Parse("""{"left":["app_camera"],"center":[],"right":[]}"""),
+                    ["playOverlayVisible"] = true,
+                    ["playColorToken"] = "theme.icons.accent",
+                };
+                break;
+        }
+
+        return config.ToJsonString();
+    }
+
+    private static string DefaultComponentDesignPreviewJson(string componentType)
+    {
+        return JsonSerializer.Serialize(new
+        {
+            componentType,
+            sampleText = componentType switch
+            {
+                "label" => "Alex",
+                "textInputBar" => "Message",
+                "audio" => "0:05",
+                "video" => "0:12",
+                _ => "Sample",
+            },
+            sampleSize = 256,
+        });
+    }
 
     private static readonly PaletteSeedRow[] PaletteSeedRows =
     [

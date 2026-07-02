@@ -515,6 +515,7 @@ public partial class MainWindow : SukiWindow
             ProjectTreeNodeKind.IconThemesRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.IconTheme),
             ProjectTreeNodeKind.StatusBarsRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.StatusBar),
             ProjectTreeNodeKind.NavigationBarsRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.NavigationBar),
+            ProjectTreeNodeKind.ComponentClassesRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.ComponentClass),
             ProjectTreeNodeKind.DevicesRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.Device),
             ProjectTreeNodeKind.ActorsRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.Actor),
             ProjectTreeNodeKind.ThemesRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.Theme),
@@ -844,6 +845,7 @@ public partial class MainWindow : SukiWindow
             ProjectTreeNodeKind.IconThemesRoot => "Semantic icon tokens shared by every set",
             ProjectTreeNodeKind.StatusBarsRoot => "Reusable status bar definitions",
             ProjectTreeNodeKind.NavigationBarsRoot => "Reusable navigation bar definitions",
+            ProjectTreeNodeKind.ComponentClassesRoot => "Reusable component defaults",
             ProjectTreeNodeKind.ThemesRoot => "Visual theme definitions",
             _ => node.Notes,
         };
@@ -993,7 +995,12 @@ public partial class MainWindow : SukiWindow
             foreach (var layoutField in group.VisibleFields)
             {
                 var field = CreateFieldValue(node, layoutField.Id);
-                var control = new DictionaryFieldControl(field, BrowsePath);
+                var control = new DictionaryFieldControl(
+                    field,
+                    BrowsePath,
+                    (currentValue, allowMultiple) => ShowIconTokenPicker(ProjectAncestor(node).Id, currentValue, allowMultiple),
+                    (currentValue, allowedOptions) => ShowThemeTokenPicker(ProjectAncestor(node).Id, currentValue, allowedOptions),
+                    (token) => SvgIconPreview.CreateProjectIconTokenPreview(_database, ProjectAncestor(node).Id, token, 18));
                 controls.Add(control);
                 controlsByFieldId[field.Definition.Id] = control;
                 control.ValueCommitted += (_, value) =>
@@ -1130,7 +1137,13 @@ public partial class MainWindow : SukiWindow
             or ProjectTreeNodeKind.ProductionFont
             or ProjectTreeNodeKind.IconTheme
             or ProjectTreeNodeKind.StatusBar
-            or ProjectTreeNodeKind.NavigationBar;
+            or ProjectTreeNodeKind.NavigationBar
+            or ProjectTreeNodeKind.ComponentClass;
+
+        if (node.Kind == ProjectTreeNodeKind.ComponentClass && fieldId.StartsWith("component.", StringComparison.Ordinal))
+        {
+            return _database.CreateComponentClassFieldValue(node.Id, fieldId);
+        }
 
         return fieldId switch
         {
@@ -1603,7 +1616,9 @@ public partial class MainWindow : SukiWindow
             or ProjectTreeNodeKind.Theme
             or ProjectTreeNodeKind.ProductionFont
             or ProjectTreeNodeKind.IconTheme
-            or ProjectTreeNodeKind.StatusBar;
+            or ProjectTreeNodeKind.StatusBar
+            or ProjectTreeNodeKind.NavigationBar
+            or ProjectTreeNodeKind.ComponentClass;
 
         if (fieldId == "core.name")
         {
@@ -1717,6 +1732,12 @@ public partial class MainWindow : SukiWindow
                 node.Notes = $"{value} · {itemCount} buttons";
                 RebuildNavigationCards();
             }
+            return;
+        }
+
+        if (node.Kind == ProjectTreeNodeKind.ComponentClass && fieldId.StartsWith("component.", StringComparison.Ordinal))
+        {
+            _database.UpdateComponentClassField(node.Id, fieldId, value);
             return;
         }
 
@@ -2300,6 +2321,11 @@ public partial class MainWindow : SukiWindow
         return new IconTokenPickerDialog(this, _database).Show(projectId, currentValue, allowMultiple);
     }
 
+    private Task<string?> ShowThemeTokenPicker(string projectId, string currentValue, IReadOnlyList<FieldOption>? allowedOptions)
+    {
+        return new ThemeTokenPickerDialog(this, _database).Show(projectId, currentValue, allowedOptions);
+    }
+
     private void DuplicateNode(ProjectTreeNode node)
     {
         if (node.Parent is null) return;
@@ -2473,6 +2499,7 @@ internal enum ProjectTreeNodeKind
     IconThemesRoot,
     StatusBarsRoot,
     NavigationBarsRoot,
+    ComponentClassesRoot,
     DevicesRoot,
     ActorsRoot,
     ThemesRoot,
@@ -2486,6 +2513,7 @@ internal enum ProjectTreeNodeKind
     IconTheme,
     StatusBar,
     NavigationBar,
+    ComponentClass,
     Device,
     Actor,
     Theme,
@@ -2531,6 +2559,7 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.IconThemesRoot
         or ProjectTreeNodeKind.StatusBarsRoot
         or ProjectTreeNodeKind.NavigationBarsRoot
+        or ProjectTreeNodeKind.ComponentClassesRoot
         or ProjectTreeNodeKind.DevicesRoot
         or ProjectTreeNodeKind.ActorsRoot
         or ProjectTreeNodeKind.ThemesRoot
@@ -2545,6 +2574,7 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.IconTheme
         or ProjectTreeNodeKind.StatusBar
         or ProjectTreeNodeKind.NavigationBar
+        or ProjectTreeNodeKind.ComponentClass
         or ProjectTreeNodeKind.Device
         or ProjectTreeNodeKind.Actor
         or ProjectTreeNodeKind.Theme;
@@ -2556,6 +2586,7 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.IconTheme
         or ProjectTreeNodeKind.StatusBar
         or ProjectTreeNodeKind.NavigationBar
+        or ProjectTreeNodeKind.ComponentClass
         or ProjectTreeNodeKind.Device
         or ProjectTreeNodeKind.Actor
         or ProjectTreeNodeKind.Theme
@@ -2567,6 +2598,7 @@ internal sealed class ProjectTreeNode
         and not ProjectTreeNodeKind.IconThemesRoot
         and not ProjectTreeNodeKind.StatusBarsRoot
         and not ProjectTreeNodeKind.NavigationBarsRoot
+        and not ProjectTreeNodeKind.ComponentClassesRoot
         and not ProjectTreeNodeKind.DevicesRoot
         and not ProjectTreeNodeKind.ActorsRoot
         and not ProjectTreeNodeKind.ThemesRoot
@@ -2593,6 +2625,7 @@ internal sealed class ProjectTreeNode
             ProjectTreeNodeKind.IconThemesRoot => "navigation.icon_themes",
             ProjectTreeNodeKind.StatusBarsRoot => "navigation.status_bars",
             ProjectTreeNodeKind.NavigationBarsRoot => "navigation.navigation_bars",
+            ProjectTreeNodeKind.ComponentClassesRoot => "navigation.component_classes",
             ProjectTreeNodeKind.DevicesRoot => "navigation.devices",
             ProjectTreeNodeKind.ActorsRoot => "navigation.actors",
             ProjectTreeNodeKind.ThemesRoot => "navigation.themes",
@@ -2606,6 +2639,7 @@ internal sealed class ProjectTreeNode
             ProjectTreeNodeKind.IconTheme => "icon_theme",
             ProjectTreeNodeKind.StatusBar => "status_bar",
             ProjectTreeNodeKind.NavigationBar => "navigation_bar",
+            ProjectTreeNodeKind.ComponentClass => "component.avatar",
             ProjectTreeNodeKind.Device => "device",
             ProjectTreeNodeKind.Actor => "actor",
             ProjectTreeNodeKind.Theme => "theme",

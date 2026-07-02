@@ -1,0 +1,147 @@
+using System;
+using System.Collections.Generic;
+
+namespace Mockups.DesktopEditorShell.EditorShell;
+
+internal sealed record ComponentClassFieldDescriptor(
+    string Id,
+    string Label,
+    ValueKind ValueKind,
+    string[] JsonPath,
+    string DefaultValue,
+    bool IsEditable = true,
+    IReadOnlyList<FieldOption>? Options = null);
+
+internal static class ComponentClassFieldCatalog
+{
+    public const string EmptyIconSlots = """{"left":[],"center":[],"right":[]}""";
+
+    private static readonly FieldOption[] ThemeColorOptions =
+    [
+        new("theme.colors.background", "colors.background"),
+        new("theme.colors.textPrimary", "colors.textPrimary"),
+        new("theme.colors.textSecondary", "colors.textSecondary"),
+        new("theme.colors.accent", "colors.accent"),
+        new("theme.icons.primary", "icons.primary"),
+        new("theme.icons.secondary", "icons.secondary"),
+        new("theme.icons.accent", "icons.accent"),
+        new("theme.borders.primary", "borders.primary"),
+        new("theme.borders.secondary", "borders.secondary"),
+        new("theme.borders.alternate", "borders.alternate"),
+        new("theme.cursor.color", "cursor.color"),
+    ];
+
+    private static readonly FieldOption[] RadiusTokenOptions =
+    [
+        new("theme.radii.control", "radii.control"),
+        new("theme.radii.card", "radii.card"),
+        new("theme.radii.panel", "radii.panel"),
+        new("theme.radii.surface", "radii.surface"),
+        new("theme.radii.pill", "radii.pill"),
+        new("theme.radii.avatar", "radii.avatar"),
+        new("theme.radii.full", "radii.full"),
+    ];
+
+    private static readonly FieldOption[] TextStyleOptions =
+    [
+        new("normal", "Normal"),
+        new("italic", "Italic"),
+    ];
+
+    private static readonly FieldOption[] DimensionModeOptions =
+    [
+        new("fixed", "Fixed size"),
+        new("content", "Content + padding"),
+    ];
+
+    private static readonly FieldOption[] LabelPositionOptions =
+    [
+        new("top", "Top"),
+        new("bottom", "Bottom"),
+    ];
+
+    private static readonly FieldOption[] PressedEffectOptions =
+    [
+        new("popup", "Popup"),
+        new("scale", "Scale in place"),
+        new("none", "None"),
+    ];
+
+    private static readonly FieldOption[] AvatarPositionOptions =
+    [
+        new("left", "Left"),
+        new("right", "Right"),
+    ];
+
+    private static readonly Dictionary<string, ComponentClassFieldDescriptor> Fields = new(StringComparer.Ordinal)
+    {
+        ["component.type"] = new("component.type", "Component Type", ValueKind.StringReadOnly, [], "", false),
+        ["component.style.shadowEnabled"] = new("component.style.shadowEnabled", "Shadow", ValueKind.Boolean, ["style", "shadowEnabled"], "false"),
+        ["component.style.reliefEnabled"] = new("component.style.reliefEnabled", "Relief", ValueKind.Boolean, ["style", "reliefEnabled"], "false"),
+        ["component.style.borderWidth"] = new("component.style.borderWidth", "Border width", ValueKind.Integer, ["style", "borderWidth"], "0"),
+        ["component.style.borderColorToken"] = new("component.style.borderColorToken", "Border color", ValueKind.ThemeToken, ["style", "borderColorToken"], "theme.borders.primary", Options: ThemeColorOptions),
+        ["component.style.cornerRadiusToken"] = new("component.style.cornerRadiusToken", "Corner radius", ValueKind.ThemeToken, ["style", "cornerRadiusToken"], "theme.radii.surface", Options: RadiusTokenOptions),
+        ["component.style.reliefAngle"] = new("component.style.reliefAngle", "Relief angle", ValueKind.Integer, ["style", "reliefAngle"], "-45"),
+        ["component.style.reliefExtent"] = new("component.style.reliefExtent", "Relief extent", ValueKind.Integer, ["style", "reliefExtent"], "1"),
+        ["component.style.reliefSpread"] = new("component.style.reliefSpread", "Relief spread", ValueKind.Integer, ["style", "reliefSpread"], "0"),
+        ["component.style.reliefTopIntensity"] = new("component.style.reliefTopIntensity", "Relief top", ValueKind.Integer, ["style", "reliefTopIntensity"], "12"),
+        ["component.style.reliefBottomIntensity"] = new("component.style.reliefBottomIntensity", "Relief bottom", ValueKind.Integer, ["style", "reliefBottomIntensity"], "-10"),
+
+        ["component.avatar.defaultSize"] = new("component.avatar.defaultSize", "Default size", ValueKind.Integer, ["avatar", "defaultSize"], "48"),
+        ["component.avatar.cornerRadiusToken"] = new("component.avatar.cornerRadiusToken", "Avatar radius", ValueKind.ThemeToken, ["avatar", "cornerRadiusToken"], "theme.radii.avatar", Options: RadiusTokenOptions),
+
+        ["component.textInput.height"] = new("component.textInput.height", "Height", ValueKind.Integer, ["textInput", "height"], "44"),
+        ["component.textInput.placeholder"] = new("component.textInput.placeholder", "Placeholder", ValueKind.StringSingleLine, ["textInput", "placeholder"], "Message"),
+        ["component.textInput.idleTextColorToken"] = new("component.textInput.idleTextColorToken", "Idle text color", ValueKind.ThemeToken, ["textInput", "idleTextColorToken"], "theme.colors.textSecondary", Options: ThemeColorOptions),
+        ["component.textInput.cursorColorToken"] = new("component.textInput.cursorColorToken", "Cursor color", ValueKind.ThemeToken, ["textInput", "cursorColorToken"], "theme.cursor.color", Options: ThemeColorOptions),
+        ["component.textInput.cursorWidth"] = new("component.textInput.cursorWidth", "Cursor width", ValueKind.Integer, ["textInput", "cursorWidth"], "2"),
+        ["component.textInput.cursorBlinkFrames"] = new("component.textInput.cursorBlinkFrames", "Blink frames", ValueKind.Integer, ["textInput", "cursorBlinkFrames"], "18"),
+
+        ["component.keyboard.keyPadding"] = new("component.keyboard.keyPadding", "Key padding", ValueKind.Integer, ["keyboard", "keyPadding"], "4"),
+        ["component.keyboard.keyCornerRadius"] = new("component.keyboard.keyCornerRadius", "Key radius", ValueKind.Integer, ["keyboard", "keyCornerRadius"], "6"),
+        ["component.keyboard.keyShadowEnabled"] = new("component.keyboard.keyShadowEnabled", "Key shadow", ValueKind.Boolean, ["keyboard", "keyShadowEnabled"], "false"),
+        ["component.keyboard.pressedEffect"] = new("component.keyboard.pressedEffect", "Pressed effect", ValueKind.OptionToken, ["keyboard", "pressedEffect"], "popup", Options: PressedEffectOptions),
+        ["component.keyboard.specialKeyTextScale"] = new("component.keyboard.specialKeyTextScale", "Special key scale", ValueKind.StringSingleLine, ["keyboard", "specialKeyTextScale"], "0.65"),
+        ["component.keyboard.emojiScale"] = new("component.keyboard.emojiScale", "Emoji scale", ValueKind.StringSingleLine, ["keyboard", "emojiScale"], "1.2"),
+        ["component.keyboard.bottomIconSlots"] = new("component.keyboard.bottomIconSlots", "Bottom icons", ValueKind.IconSlots, ["keyboard", "bottomIconSlots"], EmptyIconSlots),
+
+        ["component.buttonIcon.iconPadding"] = new("component.buttonIcon.iconPadding", "Icon padding", ValueKind.Integer, ["buttonIcon", "iconPadding"], "6"),
+        ["component.buttonIcon.labelEnabled"] = new("component.buttonIcon.labelEnabled", "Show label", ValueKind.Boolean, ["buttonIcon", "labelEnabled"], "false"),
+        ["component.buttonIcon.labelPosition"] = new("component.buttonIcon.labelPosition", "Label position", ValueKind.OptionToken, ["buttonIcon", "labelPosition"], "bottom", Options: LabelPositionOptions),
+        ["component.buttonIcon.labelSize"] = new("component.buttonIcon.labelSize", "Label size", ValueKind.Integer, ["buttonIcon", "labelSize"], "10"),
+        ["component.buttonIcon.labelPadding"] = new("component.buttonIcon.labelPadding", "Label padding", ValueKind.Integer, ["buttonIcon", "labelPadding"], "3"),
+
+        ["component.label.dimensionMode"] = new("component.label.dimensionMode", "Dimension mode", ValueKind.OptionToken, ["label", "dimensionMode"], "content", Options: DimensionModeOptions),
+        ["component.label.size"] = new("component.label.size", "Size", ValueKind.IntegerPair, ["label", "size"], "120|32"),
+        ["component.label.padding"] = new("component.label.padding", "Padding", ValueKind.IntegerPair, ["label", "padding"], "8|4"),
+        ["component.label.backgroundVisible"] = new("component.label.backgroundVisible", "Show background", ValueKind.Boolean, ["label", "backgroundVisible"], "true"),
+        ["component.label.backgroundColorToken"] = new("component.label.backgroundColorToken", "Background", ValueKind.ThemeToken, ["label", "backgroundColorToken"], "theme.colors.background", Options: ThemeColorOptions),
+        ["component.label.textColorToken"] = new("component.label.textColorToken", "Text color", ValueKind.ThemeToken, ["label", "textColorToken"], "theme.colors.textPrimary", Options: ThemeColorOptions),
+        ["component.label.textSize"] = new("component.label.textSize", "Text size", ValueKind.Integer, ["label", "textSize"], "12"),
+        ["component.label.textStyle"] = new("component.label.textStyle", "Text style", ValueKind.OptionToken, ["label", "textStyle"], "normal", Options: TextStyleOptions),
+
+        ["component.audio.size"] = new("component.audio.size", "Size", ValueKind.IntegerPair, ["audio", "size"], "230|54"),
+        ["component.audio.avatarPosition"] = new("component.audio.avatarPosition", "Avatar position", ValueKind.OptionToken, ["audio", "avatarPosition"], "right", Options: AvatarPositionOptions),
+        ["component.audio.avatarSize"] = new("component.audio.avatarSize", "Avatar size", ValueKind.Integer, ["audio", "avatarSize"], "32"),
+        ["component.audio.textSize"] = new("component.audio.textSize", "Text size", ValueKind.Integer, ["audio", "textSize"], "13"),
+        ["component.audio.playColorToken"] = new("component.audio.playColorToken", "Play color", ValueKind.ThemeToken, ["audio", "playColorToken"], "theme.icons.accent", Options: ThemeColorOptions),
+        ["component.audio.waveformColorToken"] = new("component.audio.waveformColorToken", "Waveform color", ValueKind.ThemeToken, ["audio", "waveformColorToken"], "theme.icons.primary", Options: ThemeColorOptions),
+        ["component.audio.knobSize"] = new("component.audio.knobSize", "Knob size", ValueKind.Integer, ["audio", "knobSize"], "10"),
+
+        ["component.video.statusVisible"] = new("component.video.statusVisible", "Show status", ValueKind.Boolean, ["video", "statusVisible"], "true"),
+        ["component.video.statusHeight"] = new("component.video.statusHeight", "Status height", ValueKind.Integer, ["video", "statusHeight"], "24"),
+        ["component.video.statusIconSlots"] = new("component.video.statusIconSlots", "Status icons", ValueKind.IconSlots, ["video", "statusIconSlots"], """{"left":["app_camera"],"center":[],"right":[]}"""),
+        ["component.video.playOverlayVisible"] = new("component.video.playOverlayVisible", "Play overlay", ValueKind.Boolean, ["video", "playOverlayVisible"], "true"),
+        ["component.video.playColorToken"] = new("component.video.playColorToken", "Play color", ValueKind.ThemeToken, ["video", "playColorToken"], "theme.icons.accent", Options: ThemeColorOptions),
+    };
+
+    public static ComponentClassFieldDescriptor Get(string fieldId)
+    {
+        if (Fields.TryGetValue(fieldId, out var field))
+        {
+            return field;
+        }
+
+        throw new InvalidOperationException($"Unknown component class field '{fieldId}'.");
+    }
+}

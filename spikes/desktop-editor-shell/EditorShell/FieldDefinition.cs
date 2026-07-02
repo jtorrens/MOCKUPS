@@ -13,9 +13,11 @@ internal enum ValueKind
     DirectoryPath,
     ImageFilePath,
     OptionToken,
+    ThemeToken,
     HexColor,
     PaletteColorToken,
     PaletteColorPair,
+    IconSlots,
     Boolean,
 }
 

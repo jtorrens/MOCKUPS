@@ -6,6 +6,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Styling;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -23,10 +24,15 @@ internal sealed class DictionaryFieldControl : Grid
     private readonly ComboBox? _pairFirstComboBox;
     private readonly ComboBox? _pairSecondComboBox;
     private readonly CheckBox? _checkBox;
+    private readonly IconSlotsControl? _iconSlotsControl;
+    private readonly Button? _themeTokenButton;
     private readonly Border? _colorSwatch;
     private readonly ColorPicker? _colorPicker;
     private readonly Button _restoreButton;
     private readonly Func<string, ValueKind, Task<string?>>? _browsePath;
+    private readonly Func<string, bool, Task<string?>>? _showIconTokenPicker;
+    private readonly Func<string, IReadOnlyList<FieldOption>?, Task<string?>>? _showThemeTokenPicker;
+    private readonly Func<string, Control>? _createIconPreview;
     private bool _isUpdatingColorControl;
     private string _defaultValue;
     private string _value;
@@ -34,13 +40,19 @@ internal sealed class DictionaryFieldControl : Grid
 
     public DictionaryFieldControl(
         FieldValue fieldValue,
-        Func<string, ValueKind, Task<string?>>? browsePath = null)
+        Func<string, ValueKind, Task<string?>>? browsePath = null,
+        Func<string, bool, Task<string?>>? showIconTokenPicker = null,
+        Func<string, IReadOnlyList<FieldOption>?, Task<string?>>? showThemeTokenPicker = null,
+        Func<string, Control>? createIconPreview = null)
     {
         _definition = fieldValue.Definition;
         _defaultValue = fieldValue.Definition.DefaultValue;
         _value = fieldValue.Value;
         _lastCommittedValue = fieldValue.Value;
         _browsePath = browsePath;
+        _showIconTokenPicker = showIconTokenPicker;
+        _showThemeTokenPicker = showThemeTokenPicker;
+        _createIconPreview = createIconPreview;
 
         ColumnDefinitions = _definition.ValueKind switch
         {
@@ -49,22 +61,29 @@ internal sealed class DictionaryFieldControl : Grid
             ValueKind.HexColor => new ColumnDefinitions("180,28,*,Auto,Auto"),
             ValueKind.HueDegrees => new ColumnDefinitions("180,*,Auto"),
             ValueKind.IntegerPair => new ColumnDefinitions("180,*,Auto"),
+            ValueKind.IconSlots => new ColumnDefinitions("180,*,Auto"),
+            ValueKind.ThemeToken => new ColumnDefinitions("180,*,Auto"),
             ValueKind.OptionToken => new ColumnDefinitions("180,*,Auto"),
             ValueKind.PaletteColorToken => new ColumnDefinitions("180,*,Auto"),
             ValueKind.PaletteColorPair => new ColumnDefinitions("180,*,Auto"),
             _ => new ColumnDefinitions("180,*,Auto"),
         };
         ColumnSpacing = 12;
-        MinHeight = _definition.ValueKind == ValueKind.StringMultiline ? 96 : 40;
+        MinHeight = _definition.ValueKind switch
+        {
+            ValueKind.StringMultiline => 96,
+            ValueKind.IconSlots => 150,
+            _ => 40,
+        };
 
         _label = new TextBlock
         {
             Text = _definition.Label,
             FontWeight = FontWeight.SemiBold,
-            VerticalAlignment = _definition.ValueKind == ValueKind.StringMultiline
+            VerticalAlignment = _definition.ValueKind is ValueKind.StringMultiline or ValueKind.IconSlots
                 ? VerticalAlignment.Top
                 : VerticalAlignment.Center,
-            Margin = _definition.ValueKind == ValueKind.StringMultiline
+            Margin = _definition.ValueKind is ValueKind.StringMultiline or ValueKind.IconSlots
                 ? new Avalonia.Thickness(0, 7, 0, 0)
                 : new Avalonia.Thickness(0),
         };
@@ -101,6 +120,29 @@ internal sealed class DictionaryFieldControl : Grid
             };
             SetColumn(_comboBox, 1);
             Children.Add(_comboBox);
+        }
+        else if (_definition.ValueKind == ValueKind.ThemeToken)
+        {
+            _themeTokenButton = new Button
+            {
+                Content = ThemeTokenButtonContent(_value),
+                MinHeight = 36,
+                MinWidth = 260,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                IsEnabled = _definition.IsEditable && _showThemeTokenPicker is not null,
+            };
+            _themeTokenButton.Click += async (_, _) =>
+            {
+                if (_showThemeTokenPicker is null) return;
+
+                var selected = await _showThemeTokenPicker(_value, _definition.Options);
+                if (!string.IsNullOrWhiteSpace(selected))
+                {
+                    SetValue(selected, commit: true);
+                }
+            };
+            SetColumn(_themeTokenButton, 1);
+            Children.Add(_themeTokenButton);
         }
         else if (_definition.ValueKind == ValueKind.PaletteColorPair)
         {
@@ -169,6 +211,18 @@ internal sealed class DictionaryFieldControl : Grid
             _pairSecondTextBox = pairControl.SecondTextBox;
             SetColumn(pairControl.Control, 1);
             Children.Add(pairControl.Control);
+        }
+        else if (_definition.ValueKind == ValueKind.IconSlots)
+        {
+            _iconSlotsControl = new IconSlotsControl(_value, _definition.IsEditable, _showIconTokenPicker, _createIconPreview);
+            _iconSlotsControl.ValueChanged += (_, value) => SetLocalValue(value);
+            _iconSlotsControl.ValueCommitted += (_, value) =>
+            {
+                SetLocalValue(value);
+                CommitValue();
+            };
+            SetColumn(_iconSlotsControl, 1);
+            Children.Add(_iconSlotsControl);
         }
         else
         {
@@ -290,6 +344,14 @@ internal sealed class DictionaryFieldControl : Grid
         {
             UpdatePairControlsFromValue();
         }
+        else if (_definition.ValueKind == ValueKind.IconSlots && _iconSlotsControl is not null)
+        {
+            _iconSlotsControl.SetValue(value);
+        }
+        else if (_definition.ValueKind == ValueKind.ThemeToken && _themeTokenButton is not null)
+        {
+            _themeTokenButton.Content = ThemeTokenButtonContent(value);
+        }
         else if (_definition.ValueKind is ValueKind.OptionToken or ValueKind.PaletteColorToken)
         {
             UpdateOptionComboFromValue();
@@ -363,6 +425,16 @@ internal sealed class DictionaryFieldControl : Grid
         }
 
         return textBox;
+    }
+
+    private static Control ThemeTokenButtonContent(string value)
+    {
+        return new TextBlock
+        {
+            Text = string.IsNullOrWhiteSpace(value) ? "Select theme token…" : value,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
     }
 
     private (Control Control, TextBox FirstTextBox, TextBox SecondTextBox) CreatePairControl(string first, string second)
