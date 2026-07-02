@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Templates;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -14,9 +15,12 @@ using SukiUI.Controls;
 using SukiUI.Enums;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell;
@@ -483,6 +487,7 @@ public partial class MainWindow : SukiWindow
             ProjectTreeNodeKind.SystemDataRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.SystemDataRoot),
             ProjectTreeNodeKind.EpisodesRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.Episode),
             ProjectTreeNodeKind.PaletteRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.PaletteColor),
+            ProjectTreeNodeKind.IconThemesRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.IconTheme),
             ProjectTreeNodeKind.DevicesRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.Device),
             ProjectTreeNodeKind.ActorsRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.Actor),
             _ => EditorIcons.ForTreeNode(ProjectTreeNodeKind.App),
@@ -808,6 +813,7 @@ public partial class MainWindow : SukiWindow
             ProjectTreeNodeKind.ProductionDataRoot => "Actors, devices and production themes",
             ProjectTreeNodeKind.SystemDataRoot => "Icon sets, bars, palette, fonts, media and presets",
             ProjectTreeNodeKind.ProductionFontsRoot => "Approved production font families",
+            ProjectTreeNodeKind.IconThemesRoot => "Semantic icon tokens shared by every set",
             _ => node.Notes,
         };
     }
@@ -897,6 +903,11 @@ public partial class MainWindow : SukiWindow
                      .ThenBy((card) => card.Label))
         {
             AddEditorCard(CreateLayoutCard(node, layoutCard));
+        }
+
+        if (node.Kind == ProjectTreeNodeKind.IconTheme)
+        {
+            AddEditorCard(CreateIconThemeTokensCard(node));
         }
     }
 
@@ -1060,6 +1071,376 @@ public partial class MainWindow : SukiWindow
         ApplyIconBrush(headerIcon, brush);
     }
 
+    private Expander CreateIconThemeTokensCard(ProjectTreeNode node)
+    {
+        var icon = EditorIcons.Create(EditorIcons.Icon, 18);
+        var tokensPanel = new StackPanel
+        {
+            Spacing = 10,
+        };
+        tokensPanel.Children.Add(CreateIconThemeTokenToolbar(node));
+
+        var tokens = _database.GetIconThemeTokens(node.Id);
+        if (tokens.Count == 0)
+        {
+            tokensPanel.Children.Add(new TextBlock
+            {
+                Text = "No icon tokens yet. Use Refresh Sets first.",
+                Opacity = 0.72,
+            });
+        }
+        else
+        {
+            foreach (var token in tokens)
+            {
+                tokensPanel.Children.Add(CreateIconThemeTokenRow(node, token));
+            }
+        }
+
+        return new Expander
+        {
+            Header = CreateEditorCardHeader("Icon Tokens", $"{tokens.Count} semantic tokens", icon),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            ExpandDirection = ExpandDirection.Down,
+            IsExpanded = false,
+            Content = new Border
+            {
+                Padding = new Avalonia.Thickness(10),
+                Child = tokensPanel,
+            },
+        };
+    }
+
+    private Control CreateIconThemeTokenToolbar(ProjectTreeNode node)
+    {
+        var toolbar = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 8,
+            HorizontalAlignment = HorizontalAlignment.Right,
+        };
+
+        var refreshButton = new Button
+        {
+            Content = "Refresh sets",
+        };
+        refreshButton.Click += async (_, _) =>
+        {
+            try
+            {
+                var result = _database.RefreshIconThemeSetsForTheme(node.Id);
+                await ShowInfoDialog("Refresh complete", $"Refreshed {result.CommonTokenCount} common token(s) across {result.ThemeCount} icon set(s). Omitted {result.OmittedTokenCount} token(s).");
+                ReloadAndSelect(node);
+            }
+            catch (Exception exception)
+            {
+                await ShowInfoDialog("Refresh failed", exception.Message);
+            }
+        };
+
+        var searchButton = new Button
+        {
+            Content = "Search / add token",
+        };
+        searchButton.Click += async (_, _) => await ShowIconThemeSearchDialog(node);
+
+        toolbar.Children.Add(refreshButton);
+        toolbar.Children.Add(searchButton);
+        return toolbar;
+    }
+
+    private Control CreateIconThemeTokenRow(ProjectTreeNode node, SpikeDatabase.IconThemeToken token)
+    {
+        var grid = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("34,*,90,Auto"),
+            ColumnSpacing = 10,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+
+        var preview = CreateIconThemePreview(node.Id, token.File, 24);
+        Grid.SetColumn(preview, 0);
+
+        var text = new StackPanel
+        {
+            Spacing = 1,
+            Children =
+            {
+                new TextBlock
+                {
+                    Text = token.Token,
+                    FontWeight = FontWeight.SemiBold,
+                    TextTrimming = TextTrimming.CharacterEllipsis,
+                },
+                new TextBlock
+                {
+                    Text = string.IsNullOrWhiteSpace(token.Description) ? token.File : token.Description,
+                    FontSize = 12,
+                    Opacity = 0.72,
+                    TextTrimming = TextTrimming.CharacterEllipsis,
+                },
+            },
+        };
+        Grid.SetColumn(text, 1);
+
+        var category = new TextBlock
+        {
+            Text = string.IsNullOrWhiteSpace(token.Category) ? "misc" : token.Category,
+            Opacity = 0.82,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        Grid.SetColumn(category, 2);
+
+        var deleteButton = new Button
+        {
+            Content = EditorIcons.Create(EditorIcons.Delete, 14),
+            Width = 30,
+            Height = 30,
+            Padding = new Avalonia.Thickness(0),
+        };
+        deleteButton.Click += async (_, _) =>
+        {
+            var confirmed = await ConfirmIconTokenDelete(token.Token);
+            if (!confirmed) return;
+
+            try
+            {
+                _database.DeleteIconThemeToken(node.Id, token.Token);
+                ReloadAndSelect(node);
+            }
+            catch (Exception exception)
+            {
+                await ShowInfoDialog("Delete failed", exception.Message);
+            }
+        };
+        Grid.SetColumn(deleteButton, 3);
+
+        grid.Children.Add(preview);
+        grid.Children.Add(text);
+        grid.Children.Add(category);
+        grid.Children.Add(deleteButton);
+        return new Border
+        {
+            Padding = new Avalonia.Thickness(8),
+            CornerRadius = new CornerRadius(10),
+            BorderBrush = new SolidColorBrush(Color.Parse(_isDark ? "#44546A" : "#D0D7E2")),
+            BorderThickness = new Avalonia.Thickness(1),
+            Child = grid,
+        };
+    }
+
+    private Control CreateIconThemePreview(string iconThemeId, string file, double size)
+    {
+        try
+        {
+            var path = _database.ResolveIconThemeAssetPath(iconThemeId, file);
+            if (!File.Exists(path)) return EditorIcons.Create(EditorIcons.Icon, size);
+
+            return CreateSvgPathPreview(File.ReadAllText(path), size);
+        }
+        catch
+        {
+            return EditorIcons.Create(EditorIcons.Icon, size);
+        }
+    }
+
+    private static Control CreateSvgPathPreview(string svg, double size)
+    {
+        try
+        {
+            var viewBox = SvgViewBox(svg);
+            var strokeMode = SvgUsesStroke(svg);
+            var brush = new SolidColorBrush(Color.Parse("#F2F6FF"));
+            var strokeThickness = SvgDouble(SvgAttribute(svg, "stroke-width"), 2);
+            var viewportCanvas = new Canvas
+            {
+                Width = viewBox.Width,
+                Height = viewBox.Height,
+            };
+            var drawingCanvas = new Canvas
+            {
+                Width = viewBox.Width,
+                Height = viewBox.Height,
+                RenderTransform = viewBox.X != 0 || viewBox.Y != 0
+                    ? new TranslateTransform(-viewBox.X, -viewBox.Y)
+                    : null,
+            };
+            viewportCanvas.Children.Add(drawingCanvas);
+            var canvas = drawingCanvas;
+
+            foreach (Match match in Regex.Matches(svg, "<path\\b[^>]*\\bd=\"([^\"]+)\"[^>]*/?>", RegexOptions.IgnoreCase))
+            {
+                AddSvgPath(canvas, match.Groups[1].Value, strokeMode, brush, strokeThickness);
+            }
+
+            foreach (Match match in Regex.Matches(svg, "<line\\b([^>]*)/?>", RegexOptions.IgnoreCase))
+            {
+                var attrs = match.Groups[1].Value;
+                canvas.Children.Add(new Avalonia.Controls.Shapes.Line
+                {
+                    StartPoint = new Point(SvgDouble(SvgAttribute(attrs, "x1"), 0), SvgDouble(SvgAttribute(attrs, "y1"), 0)),
+                    EndPoint = new Point(SvgDouble(SvgAttribute(attrs, "x2"), 0), SvgDouble(SvgAttribute(attrs, "y2"), 0)),
+                    Stroke = brush,
+                    StrokeThickness = strokeThickness,
+                    StrokeLineCap = PenLineCap.Round,
+                });
+            }
+
+            foreach (Match match in Regex.Matches(svg, "<rect\\b([^>]*)/?>", RegexOptions.IgnoreCase))
+            {
+                var attrs = match.Groups[1].Value;
+                var rect = new Avalonia.Controls.Shapes.Rectangle
+                {
+                    Width = SvgDouble(SvgAttribute(attrs, "width"), 0),
+                    Height = SvgDouble(SvgAttribute(attrs, "height"), 0),
+                    RadiusX = SvgDouble(SvgAttribute(attrs, "rx"), 0),
+                    RadiusY = SvgDouble(SvgAttribute(attrs, "ry"), SvgDouble(SvgAttribute(attrs, "rx"), 0)),
+                    Stroke = strokeMode ? brush : null,
+                    Fill = strokeMode ? null : brush,
+                    StrokeThickness = strokeThickness,
+                };
+                Canvas.SetLeft(rect, SvgDouble(SvgAttribute(attrs, "x"), 0));
+                Canvas.SetTop(rect, SvgDouble(SvgAttribute(attrs, "y"), 0));
+                canvas.Children.Add(rect);
+            }
+
+            foreach (Match match in Regex.Matches(svg, "<circle\\b([^>]*)/?>", RegexOptions.IgnoreCase))
+            {
+                var attrs = match.Groups[1].Value;
+                var radius = SvgDouble(SvgAttribute(attrs, "r"), 0);
+                var circle = new Avalonia.Controls.Shapes.Ellipse
+                {
+                    Width = radius * 2,
+                    Height = radius * 2,
+                    Stroke = strokeMode ? brush : null,
+                    Fill = strokeMode && radius <= strokeThickness ? brush : strokeMode ? null : brush,
+                    StrokeThickness = strokeThickness,
+                };
+                Canvas.SetLeft(circle, SvgDouble(SvgAttribute(attrs, "cx"), 0) - radius);
+                Canvas.SetTop(circle, SvgDouble(SvgAttribute(attrs, "cy"), 0) - radius);
+                canvas.Children.Add(circle);
+            }
+
+            foreach (Match match in Regex.Matches(svg, "<(?:polyline|polygon)\\b([^>]*)/?>", RegexOptions.IgnoreCase))
+            {
+                var points = SvgAttribute(match.Groups[1].Value, "points");
+                var pathData = SvgPointsToPath(points, match.Value.StartsWith("<polygon", StringComparison.OrdinalIgnoreCase));
+                if (!string.IsNullOrWhiteSpace(pathData))
+                {
+                    AddSvgPath(canvas, pathData, strokeMode, brush, strokeThickness);
+                }
+            }
+
+            if (canvas.Children.Count == 0) return EditorIcons.Create(EditorIcons.Icon, size);
+
+            return new Viewbox
+            {
+                Width = size,
+                Height = size,
+                Stretch = Stretch.Uniform,
+                Child = viewportCanvas,
+            };
+        }
+        catch
+        {
+            return EditorIcons.Create(EditorIcons.Icon, size);
+        }
+    }
+
+    private static void AddSvgPath(Canvas canvas, string data, bool strokeMode, IBrush brush, double strokeThickness)
+    {
+        if (string.IsNullOrWhiteSpace(data)) return;
+
+        canvas.Children.Add(new Avalonia.Controls.Shapes.Path
+        {
+            Data = Geometry.Parse(data),
+            Stroke = strokeMode ? brush : null,
+            Fill = strokeMode ? null : brush,
+            StrokeThickness = strokeThickness,
+            StrokeLineCap = PenLineCap.Round,
+            StrokeJoin = PenLineJoin.Round,
+        });
+    }
+
+    private static Rect SvgViewBox(string svg)
+    {
+        var raw = SvgAttribute(svg, "viewBox");
+        if (!string.IsNullOrWhiteSpace(raw))
+        {
+            var values = Regex.Split(raw.Trim(), "[,\\s]+")
+                .Where((value) => !string.IsNullOrWhiteSpace(value))
+                .Select((value) => SvgDouble(value, 0))
+                .ToArray();
+            if (values.Length == 4 && values[2] > 0 && values[3] > 0)
+            {
+                return new Rect(values[0], values[1], values[2], values[3]);
+            }
+        }
+
+        return new Rect(0, 0, SvgDouble(SvgAttribute(svg, "width"), 24), SvgDouble(SvgAttribute(svg, "height"), 24));
+    }
+
+    private static bool SvgUsesStroke(string svg)
+    {
+        var stroke = SvgAttribute(svg, "stroke");
+        var fill = SvgAttribute(svg, "fill");
+        return !string.IsNullOrWhiteSpace(stroke)
+            && !stroke.Equals("none", StringComparison.OrdinalIgnoreCase)
+            && (string.IsNullOrWhiteSpace(fill) || fill.Equals("none", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string SvgAttribute(string text, string name)
+    {
+        var match = Regex.Match(text, $"\\b{Regex.Escape(name)}\\s*=\\s*\"([^\"]*)\"", RegexOptions.IgnoreCase);
+        return match.Success ? match.Groups[1].Value : "";
+    }
+
+    private static double SvgDouble(string value, double fallback)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return fallback;
+        value = Regex.Replace(value.Trim(), "[a-z%]+$", "", RegexOptions.IgnoreCase);
+        return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed) ? parsed : fallback;
+    }
+
+    private static string SvgPointsToPath(string points, bool close)
+    {
+        var values = Regex.Split(points.Trim(), "[,\\s]+")
+            .Where((value) => !string.IsNullOrWhiteSpace(value))
+            .Select((value) => SvgDouble(value, 0))
+            .ToArray();
+        if (values.Length < 4) return "";
+
+        var builder = new StringBuilder($"M {values[0].ToString(CultureInfo.InvariantCulture)} {values[1].ToString(CultureInfo.InvariantCulture)}");
+        for (var i = 2; i + 1 < values.Length; i += 2)
+        {
+            builder.Append(" L ");
+            builder.Append(values[i].ToString(CultureInfo.InvariantCulture));
+            builder.Append(' ');
+            builder.Append(values[i + 1].ToString(CultureInfo.InvariantCulture));
+        }
+        if (close) builder.Append(" Z");
+        return builder.ToString();
+    }
+
+    private static Control CreateIconThemeSearchPreview(string previewUrl, double size)
+    {
+        const string prefix = "data:image/svg+xml;base64,";
+        if (string.IsNullOrWhiteSpace(previewUrl) || !previewUrl.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return EditorIcons.Create(EditorIcons.Icon, size);
+        }
+
+        try
+        {
+            var svg = Encoding.UTF8.GetString(Convert.FromBase64String(previewUrl[prefix.Length..]));
+            return CreateSvgPathPreview(svg, size);
+        }
+        catch
+        {
+            return EditorIcons.Create(EditorIcons.Icon, size);
+        }
+    }
+
     private static void ApplyIconBrush(Control control, IBrush? brush)
     {
         switch (control)
@@ -1103,7 +1484,8 @@ public partial class MainWindow : SukiWindow
             or ProjectTreeNodeKind.PaletteColor
             or ProjectTreeNodeKind.Device
             or ProjectTreeNodeKind.Actor
-            or ProjectTreeNodeKind.ProductionFont;
+            or ProjectTreeNodeKind.ProductionFont
+            or ProjectTreeNodeKind.IconTheme;
 
         return fieldId switch
         {
@@ -1230,6 +1612,9 @@ public partial class MainWindow : SukiWindow
             "font.category" when node.Kind == ProjectTreeNodeKind.ProductionFont => CreateProductionFontFieldValue(node.Id, "font.category", "Category", ValueKind.OptionToken),
             "font.sourceDirectory" when node.Kind == ProjectTreeNodeKind.ProductionFont => CreateProductionFontFieldValue(node.Id, "font.sourceDirectory", "Source Directory", ValueKind.StringReadOnly),
             "font.files" when node.Kind == ProjectTreeNodeKind.ProductionFont => CreateProductionFontFieldValue(node.Id, "font.files", "Font Files", ValueKind.StringMultiline),
+            "iconTheme.assetRoot" when node.Kind == ProjectTreeNodeKind.IconTheme => CreateIconThemeFieldValue(node.Id, "iconTheme.assetRoot", "Asset Root", ValueKind.StringReadOnly),
+            "iconTheme.tokenCount" when node.Kind == ProjectTreeNodeKind.IconTheme => CreateIconThemeFieldValue(node.Id, "iconTheme.tokenCount", "Token Count", ValueKind.StringReadOnly),
+            "iconTheme.metadata" when node.Kind == ProjectTreeNodeKind.IconTheme => CreateIconThemeFieldValue(node.Id, "iconTheme.metadata", "Metadata", ValueKind.StringMultiline),
             _ => throw new InvalidOperationException($"Unknown field '{fieldId}' for record class '{node.RecordClassId}'."),
         };
     }
@@ -1393,6 +1778,23 @@ public partial class MainWindow : SukiWindow
             value);
     }
 
+    private FieldValue CreateIconThemeFieldValue(
+        string iconThemeId,
+        string fieldId,
+        string label,
+        ValueKind valueKind)
+    {
+        var value = _database.GetIconThemeFieldValue(iconThemeId, fieldId);
+        return new FieldValue(
+            new FieldDefinition(
+                fieldId,
+                label,
+                valueKind,
+                IsEditable: false,
+                DefaultValue: value),
+            value);
+    }
+
     private static bool ActorFieldKeepsDefault(string fieldId, ValueKind valueKind)
     {
         return fieldId.StartsWith("actor.avatar.", StringComparison.Ordinal)
@@ -1422,7 +1824,8 @@ public partial class MainWindow : SukiWindow
             or ProjectTreeNodeKind.PaletteColor
             or ProjectTreeNodeKind.Device
             or ProjectTreeNodeKind.Actor
-            or ProjectTreeNodeKind.ProductionFont;
+            or ProjectTreeNodeKind.ProductionFont
+            or ProjectTreeNodeKind.IconTheme;
 
         if (fieldId == "core.name")
         {
@@ -1493,6 +1896,11 @@ public partial class MainWindow : SukiWindow
                 RebuildNavigationCards();
             }
 
+            return;
+        }
+
+        if (node.Kind == ProjectTreeNodeKind.IconTheme && fieldId.StartsWith("iconTheme.", StringComparison.Ordinal))
+        {
             return;
         }
 
@@ -1814,6 +2222,22 @@ public partial class MainWindow : SukiWindow
             return;
         }
 
+        if (parent.Kind == ProjectTreeNodeKind.IconThemesRoot)
+        {
+            try
+            {
+                var result = _database.RefreshIconThemeSets(parent);
+                await ShowInfoDialog("Refresh complete", $"Refreshed {result.CommonTokenCount} common token(s) across {result.ThemeCount} icon set(s). Omitted {result.OmittedTokenCount} token(s) not present in every set.");
+                LoadProjectTree();
+            }
+            catch (Exception exception)
+            {
+                await ShowInfoDialog("Refresh failed", exception.Message);
+            }
+
+            return;
+        }
+
         var child = _database.AddChild(parent);
         ReloadAndSelect(child);
     }
@@ -1917,6 +2341,300 @@ public partial class MainWindow : SukiWindow
         Grid.SetRow(okButton, 1);
 
         await dialog.ShowDialog(this);
+    }
+
+    private async Task<bool> ConfirmIconTokenDelete(string token)
+    {
+        var dialog = new SukiWindow
+        {
+            Title = "Delete icon token",
+            Width = 430,
+            Height = 220,
+            MinWidth = 430,
+            MinHeight = 220,
+            CanResize = false,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            IsMenuVisible = false,
+            BackgroundAnimationEnabled = false,
+        };
+
+        var cancelButton = new Button { Content = "Cancel", MinWidth = 92 };
+        cancelButton.Click += (_, _) => dialog.Close(false);
+        var deleteButton = new Button { Content = "Delete", MinWidth = 92 };
+        deleteButton.Click += (_, _) => dialog.Close(true);
+
+        var actions = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Spacing = 10,
+            Children = { cancelButton, deleteButton },
+        };
+        var root = new Grid
+        {
+            RowDefinitions = new RowDefinitions("*,Auto"),
+            RowSpacing = 16,
+            Children =
+            {
+                new TextBlock
+                {
+                    Text = $"Delete “{token}” from every icon set?",
+                    TextWrapping = TextWrapping.Wrap,
+                },
+                actions,
+            },
+        };
+        Grid.SetRow(actions, 1);
+        dialog.Content = new Border
+        {
+            Padding = new Avalonia.Thickness(22),
+            Child = root,
+        };
+        return await dialog.ShowDialog<bool>(this);
+    }
+
+    private async Task ShowIconThemeSearchDialog(ProjectTreeNode node)
+    {
+        var dialog = new SukiWindow
+        {
+            Title = "Search / add icon token",
+            Width = 760,
+            Height = 660,
+            MinWidth = 720,
+            MinHeight = 600,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            IsMenuVisible = false,
+            BackgroundAnimationEnabled = false,
+        };
+
+        var queryBox = new TextBox { PlaceholderText = "telephone" };
+        var tokenBox = new TextBox { PlaceholderText = "phone_call" };
+        var categoryBox = new TextBox { PlaceholderText = "phone" };
+        var descriptionBox = new TextBox
+        {
+            PlaceholderText = "Phone call icon",
+            AcceptsReturn = true,
+            MinHeight = 70,
+        };
+        var lucideList = new ListBox { MinHeight = 190, MaxHeight = 230 };
+        var materialList = new ListBox { MinHeight = 190, MaxHeight = 230 };
+        var errorText = new TextBlock
+        {
+            Foreground = new SolidColorBrush(Color.Parse("#E8A1A8")),
+            TextWrapping = TextWrapping.Wrap,
+            IsVisible = false,
+        };
+
+        void SetError(string message)
+        {
+            errorText.Text = message;
+            errorText.IsVisible = !string.IsNullOrWhiteSpace(message);
+        }
+
+        var searchButton = new Button { Content = "Search", MinWidth = 90 };
+        searchButton.Click += async (_, _) =>
+        {
+            SetError("");
+            try
+            {
+                var result = _database.SearchIconThemeSources(queryBox.Text ?? "");
+                lucideList.ItemsSource = result.Lucide;
+                materialList.ItemsSource = result.Material;
+                lucideList.SelectedIndex = result.Lucide.Count > 0 ? 0 : -1;
+                materialList.SelectedIndex = result.Material.Count > 0 ? 0 : -1;
+                if (string.IsNullOrWhiteSpace(tokenBox.Text))
+                {
+                    tokenBox.Text = TokenFromText(queryBox.Text ?? "");
+                }
+                if (string.IsNullOrWhiteSpace(categoryBox.Text))
+                {
+                    categoryBox.Text = CategoryFromToken(tokenBox.Text ?? "");
+                }
+            }
+            catch (Exception exception)
+            {
+                SetError(exception.Message);
+            }
+        };
+
+        var generateButton = new Button { Content = "Generate", MinWidth = 100 };
+        generateButton.Click += async (_, _) =>
+        {
+            SetError("");
+            try
+            {
+                var lucide = lucideList.SelectedItem as SpikeDatabase.IconThemeSearchCandidate;
+                var material = materialList.SelectedItem as SpikeDatabase.IconThemeSearchCandidate;
+                if (lucide is null || material is null)
+                {
+                    SetError("Select one Lucide source and one Material source.");
+                    return;
+                }
+
+                var result = _database.GenerateIconThemeToken(
+                    node.Id,
+                    TokenFromText(tokenBox.Text ?? ""),
+                    TokenFromText(categoryBox.Text ?? ""),
+                    descriptionBox.Text ?? "",
+                    lucide.SourceName,
+                    material.SourceName);
+                dialog.Close();
+                await ShowInfoDialog("Generate complete", $"Generated “{result.Token}” in {result.WrittenFileCount} set(s). Refreshed {result.RefreshResult.CommonTokenCount} common token(s).");
+                ReloadAndSelect(node);
+            }
+            catch (Exception exception)
+            {
+                SetError(exception.Message);
+            }
+        };
+
+        var cancelButton = new Button { Content = "Cancel", MinWidth = 92 };
+        cancelButton.Click += (_, _) => dialog.Close();
+
+        var actionRow = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Spacing = 10,
+            Children = { cancelButton, generateButton },
+        };
+        var contentStack = new StackPanel
+        {
+            Spacing = 12,
+            Children =
+            {
+                new TextBlock
+                {
+                    Text = "Search provider icons, select one Lucide and one Material source, then generate a shared MOCKUPS token.",
+                    TextWrapping = TextWrapping.Wrap,
+                    Opacity = 0.8,
+                },
+                new Grid
+                {
+                    ColumnDefinitions = new ColumnDefinitions("*,Auto"),
+                    ColumnSpacing = 8,
+                    Children =
+                    {
+                        queryBox,
+                        searchButton,
+                    },
+                },
+                new Grid
+                {
+                    ColumnDefinitions = new ColumnDefinitions("*,*"),
+                    ColumnSpacing = 12,
+                    Children =
+                    {
+                        CandidateColumn("Lucide", lucideList),
+                        CandidateColumn("Material", materialList, column: 1),
+                    },
+                },
+                LabeledControl("MOCKUPS token", tokenBox),
+                LabeledControl("Category", categoryBox),
+                LabeledControl("Description", descriptionBox),
+                errorText,
+            },
+        };
+        var dialogGrid = new Grid
+        {
+            RowDefinitions = new RowDefinitions("*,Auto"),
+            RowSpacing = 14,
+            Children =
+            {
+                new ScrollViewer
+                {
+                    Content = contentStack,
+                },
+                actionRow,
+            },
+        };
+        Grid.SetRow(actionRow, 1);
+
+        dialog.Content = new Border
+        {
+            Padding = new Avalonia.Thickness(18),
+            Child = dialogGrid,
+        };
+
+        Grid.SetColumn(searchButton, 1);
+        await dialog.ShowDialog(this);
+    }
+
+    private static Control CandidateColumn(string title, ListBox listBox, int column = 0)
+    {
+        listBox.ItemTemplate = new FuncDataTemplate<SpikeDatabase.IconThemeSearchCandidate>((candidate, _) =>
+        {
+            var row = new Grid
+            {
+                ColumnDefinitions = new ColumnDefinitions("34,*"),
+                ColumnSpacing = 10,
+            };
+            row.Children.Add(CreateIconThemeSearchPreview(candidate?.PreviewUrl ?? "", 22));
+            var text = new StackPanel
+            {
+                Spacing = 2,
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = candidate?.SourceName ?? "",
+                        FontWeight = FontWeight.SemiBold,
+                    },
+                    new TextBlock
+                    {
+                        Text = candidate?.Provider ?? "",
+                        FontSize = 11,
+                        Opacity = 0.65,
+                    },
+                },
+            };
+            Grid.SetColumn(text, 1);
+            row.Children.Add(text);
+            return row;
+        });
+        var panel = new StackPanel
+        {
+            Spacing = 6,
+            Children =
+            {
+                new TextBlock { Text = title, FontWeight = FontWeight.SemiBold },
+                listBox,
+            },
+        };
+        Grid.SetColumn(panel, column);
+        return panel;
+    }
+
+    private static Control LabeledControl(string label, Control control)
+    {
+        return new StackPanel
+        {
+            Spacing = 5,
+            Children =
+            {
+                new TextBlock
+                {
+                    Text = label,
+                    FontWeight = FontWeight.SemiBold,
+                    FontSize = 12,
+                    Opacity = 0.78,
+                },
+                control,
+            },
+        };
+    }
+
+    private static string TokenFromText(string value)
+    {
+        var token = Regex.Replace(value.Trim().ToLowerInvariant(), "[^a-z0-9_]+", "_");
+        token = Regex.Replace(token, "_+", "_").Trim('_');
+        return token;
+    }
+
+    private static string CategoryFromToken(string token)
+    {
+        var index = token.IndexOf('_', StringComparison.Ordinal);
+        return index <= 0 ? "misc" : token[..index];
     }
 
     private void DuplicateNode(ProjectTreeNode node)
@@ -2089,6 +2807,7 @@ internal enum ProjectTreeNodeKind
     SystemDataRoot,
     AppsRoot,
     PaletteRoot,
+    IconThemesRoot,
     DevicesRoot,
     ActorsRoot,
     ProductionFontsRoot,
@@ -2098,6 +2817,7 @@ internal enum ProjectTreeNodeKind
     Episode,
     Shot,
     PaletteColor,
+    IconTheme,
     Device,
     Actor,
     ProductionFont,
@@ -2139,6 +2859,7 @@ internal sealed class ProjectTreeNode
     public bool CanAddChild => Kind is ProjectTreeNodeKind.AppsRoot
         or ProjectTreeNodeKind.App
         or ProjectTreeNodeKind.PaletteRoot
+        or ProjectTreeNodeKind.IconThemesRoot
         or ProjectTreeNodeKind.DevicesRoot
         or ProjectTreeNodeKind.ActorsRoot
         or ProjectTreeNodeKind.ProductionFontsRoot
@@ -2149,6 +2870,7 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.Episode
         or ProjectTreeNodeKind.Shot
         or ProjectTreeNodeKind.PaletteColor
+        or ProjectTreeNodeKind.IconTheme
         or ProjectTreeNodeKind.Device
         or ProjectTreeNodeKind.Actor;
     public bool CanDelete => Kind is ProjectTreeNodeKind.App
@@ -2156,6 +2878,7 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.Episode
         or ProjectTreeNodeKind.Shot
         or ProjectTreeNodeKind.PaletteColor
+        or ProjectTreeNodeKind.IconTheme
         or ProjectTreeNodeKind.Device
         or ProjectTreeNodeKind.Actor
         or ProjectTreeNodeKind.ProductionFont;
@@ -2163,6 +2886,7 @@ internal sealed class ProjectTreeNode
         and not ProjectTreeNodeKind.SystemDataRoot
         and not ProjectTreeNodeKind.AppsRoot
         and not ProjectTreeNodeKind.PaletteRoot
+        and not ProjectTreeNodeKind.IconThemesRoot
         and not ProjectTreeNodeKind.DevicesRoot
         and not ProjectTreeNodeKind.ActorsRoot
         and not ProjectTreeNodeKind.ProductionFontsRoot
@@ -2185,6 +2909,7 @@ internal sealed class ProjectTreeNode
             ProjectTreeNodeKind.SystemDataRoot => "navigation.system_data",
             ProjectTreeNodeKind.AppsRoot => "navigation.apps",
             ProjectTreeNodeKind.PaletteRoot => "navigation.palette",
+            ProjectTreeNodeKind.IconThemesRoot => "navigation.icon_themes",
             ProjectTreeNodeKind.DevicesRoot => "navigation.devices",
             ProjectTreeNodeKind.ActorsRoot => "navigation.actors",
             ProjectTreeNodeKind.ProductionFontsRoot => "navigation.production_fonts",
@@ -2194,6 +2919,7 @@ internal sealed class ProjectTreeNode
             ProjectTreeNodeKind.Episode => "episode",
             ProjectTreeNodeKind.Shot => "shot",
             ProjectTreeNodeKind.PaletteColor => "palette_color",
+            ProjectTreeNodeKind.IconTheme => "icon_theme",
             ProjectTreeNodeKind.Device => "device",
             ProjectTreeNodeKind.Actor => "actor",
             ProjectTreeNodeKind.ProductionFont => "production_font",

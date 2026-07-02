@@ -45,6 +45,7 @@ internal sealed partial class SpikeDatabase
         var devices = QueryDeviceRows(connection);
         var actors = QueryActorRows(connection);
         var productionFonts = QueryProductionFontRows(connection);
+        var iconThemes = QueryIconThemeRows(connection);
 
         var projectNodes = projects
             .Select((project) => new ProjectTreeNode(
@@ -60,6 +61,7 @@ internal sealed partial class SpikeDatabase
         var deviceRootNodes = new Dictionary<string, ProjectTreeNode>();
         var actorRootNodes = new Dictionary<string, ProjectTreeNode>();
         var productionFontRootNodes = new Dictionary<string, ProjectTreeNode>();
+        var iconThemeRootNodes = new Dictionary<string, ProjectTreeNode>();
         var episodeRootNodes = new Dictionary<string, ProjectTreeNode>();
         var episodeNodes = new Dictionary<string, ProjectTreeNode>();
         foreach (var project in projectNodes.Values)
@@ -113,6 +115,13 @@ internal sealed partial class SpikeDatabase
                 "Approved font families copied into this production.",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ProductionFontsRoot),
                 systemDataRoot);
+            var iconThemesRoot = new ProjectTreeNode(
+                ProjectTreeNodeKind.IconThemesRoot,
+                $"icon_themes_root_{project.Id}",
+                "Icon Themes",
+                "Icon sets and shared semantic icon tokens.",
+                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.IconThemesRoot),
+                systemDataRoot);
             var episodesRoot = new ProjectTreeNode(
                 ProjectTreeNodeKind.EpisodesRoot,
                 $"episodes_root_{project.Id}",
@@ -124,6 +133,7 @@ internal sealed partial class SpikeDatabase
             productionDataRoot.AddChild(actorsRoot);
             productionDataRoot.AddChild(devicesRoot);
             systemDataRoot.AddChild(paletteRoot);
+            systemDataRoot.AddChild(iconThemesRoot);
             systemDataRoot.AddChild(productionFontsRoot);
             project.AddChild(appsRoot);
             project.AddChild(episodesRoot);
@@ -134,6 +144,7 @@ internal sealed partial class SpikeDatabase
             deviceRootNodes[project.Id] = devicesRoot;
             actorRootNodes[project.Id] = actorsRoot;
             productionFontRootNodes[project.Id] = productionFontsRoot;
+            iconThemeRootNodes[project.Id] = iconThemesRoot;
             episodeRootNodes[project.Id] = episodesRoot;
         }
 
@@ -234,6 +245,19 @@ internal sealed partial class SpikeDatabase
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ProductionFont),
                 fontsRoot,
                 isUsed: IsProductionFontUsed(connection, font.ProjectId, font.Id)));
+        }
+
+        foreach (var iconTheme in iconThemes.OrderBy((iconTheme) => iconTheme.Name))
+        {
+            if (!iconThemeRootNodes.TryGetValue(iconTheme.ProjectId, out var iconThemesRoot)) continue;
+
+            iconThemesRoot.AddChild(new ProjectTreeNode(
+                ProjectTreeNodeKind.IconTheme,
+                iconTheme.Id,
+                iconTheme.Name,
+                $"{IconThemeTokenCount(iconTheme.MappingJson)} tokens · {iconTheme.AssetRoot}",
+                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.IconTheme),
+                iconThemesRoot));
         }
 
         foreach (var shot in shots.OrderBy((shot) => shot.SortOrder).ThenBy((shot) => shot.Name))
@@ -376,6 +400,11 @@ internal sealed partial class SpikeDatabase
         if (parent.Kind == ProjectTreeNodeKind.ProductionFontsRoot)
         {
             throw new InvalidOperationException("Production fonts are added through the font importer.");
+        }
+
+        if (parent.Kind == ProjectTreeNodeKind.IconThemesRoot)
+        {
+            throw new InvalidOperationException("Icon themes are rebuilt through Refresh Sets.");
         }
 
         if (parent.Kind == ProjectTreeNodeKind.App)
@@ -630,6 +659,7 @@ internal sealed partial class SpikeDatabase
             ProjectTreeNodeKind.Device => "devices",
             ProjectTreeNodeKind.Actor => "actors",
             ProjectTreeNodeKind.ProductionFont => "production_fonts",
+            ProjectTreeNodeKind.IconTheme => "icon_themes",
             _ => throw new InvalidOperationException($"Cannot delete {node.Kind}."),
         };
 
@@ -660,6 +690,7 @@ internal sealed partial class SpikeDatabase
             ProjectTreeNodeKind.Device => "devices",
             ProjectTreeNodeKind.Actor => "actors",
             ProjectTreeNodeKind.ProductionFont => "production_fonts",
+            ProjectTreeNodeKind.IconTheme => "icon_themes",
             _ => "",
         };
 
@@ -697,6 +728,16 @@ internal sealed partial class SpikeDatabase
             Execute(
                 connection,
                 "UPDATE production_fonts SET family_name = $name WHERE id = $id",
+                ("$id", node.Id),
+                ("$name", node.Name));
+            return;
+        }
+
+        if (node.Kind == ProjectTreeNodeKind.IconTheme)
+        {
+            Execute(
+                connection,
+                "UPDATE icon_themes SET name = $name WHERE id = $id",
                 ("$id", node.Id),
                 ("$name", node.Name));
             return;
@@ -914,6 +955,7 @@ internal sealed partial class SpikeDatabase
             "navigation.devices",
             "navigation.actors",
             "navigation.production_fonts",
+            "navigation.icon_themes",
             "navigation.episodes",
             "app.generic",
             "app.core.chat",
@@ -925,6 +967,7 @@ internal sealed partial class SpikeDatabase
             "device",
             "actor",
             "production_font",
+            "icon_theme",
         })
         {
             Execute(
@@ -1016,6 +1059,13 @@ internal sealed partial class SpikeDatabase
                     { "id": "font.category", "order": 30, "visible": true },
                     { "id": "font.sourceDirectory", "order": 40, "visible": false },
                     { "id": "font.files", "order": 50, "visible": true }
+                  """
+            : recordClassId == "icon_theme"
+                ? """
+                    { "id": "core.name", "order": 10, "visible": true },
+                    { "id": "iconTheme.assetRoot", "order": 20, "visible": true },
+                    { "id": "iconTheme.tokenCount", "order": 30, "visible": true },
+                    { "id": "iconTheme.metadata", "order": 40, "visible": false }
                   """
             : """
                     { "id": "core.name", "order": 10, "visible": true },
@@ -1420,6 +1470,169 @@ internal sealed partial class SpikeDatabase
             ("$value", value));
     }
 
+    public IconThemeSettings GetIconThemeSettings(string iconThemeId)
+    {
+        using var connection = OpenConnection();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT name, asset_root, mapping_json, metadata_json FROM icon_themes WHERE id = $id";
+        command.Parameters.AddWithValue("$id", iconThemeId);
+        using var reader = command.ExecuteReader();
+        if (!reader.Read())
+        {
+            throw new InvalidOperationException($"Missing icon theme '{iconThemeId}'.");
+        }
+
+        return new IconThemeSettings(
+            reader.GetString(0),
+            ReadString(reader, 1),
+            ReadString(reader, 2),
+            ReadString(reader, 3));
+    }
+
+    public string GetIconThemeFieldValue(string iconThemeId, string fieldId)
+    {
+        var settings = GetIconThemeSettings(iconThemeId);
+        return fieldId switch
+        {
+            "iconTheme.assetRoot" => settings.AssetRoot,
+            "iconTheme.tokenCount" => IconThemeTokenCount(settings.MappingJson).ToString(),
+            "iconTheme.metadata" => settings.MetadataJson,
+            _ => throw new InvalidOperationException($"Unknown icon theme field '{fieldId}'."),
+        };
+    }
+
+    public IReadOnlyList<IconThemeToken> GetIconThemeTokens(string iconThemeId)
+    {
+        var settings = GetIconThemeSettings(iconThemeId);
+        return IconThemeTokens(settings.MappingJson);
+    }
+
+    public string ResolveIconThemeAssetPath(string iconThemeId, string file)
+    {
+        var settings = GetIconThemeSettings(iconThemeId);
+        var projectId = ProjectIdForIconTheme(iconThemeId);
+        var mediaRoot = ResolveProjectPath(GetProjectSettings(projectId).MediaRoot);
+        return Path.Combine(mediaRoot, settings.AssetRoot, file);
+    }
+
+    public IconThemeRefreshResult RefreshIconThemeSets(ProjectTreeNode iconThemesRoot)
+    {
+        if (iconThemesRoot.Kind != ProjectTreeNodeKind.IconThemesRoot)
+        {
+            throw new InvalidOperationException("Icon themes can only be refreshed from the Icon Themes root.");
+        }
+
+        var project = ProjectAncestor(iconThemesRoot);
+        using var connection = OpenConnection();
+        return RefreshIconThemeSets(connection, project.Id);
+    }
+
+    public IconThemeRefreshResult RefreshIconThemeSetsForTheme(string iconThemeId)
+    {
+        using var connection = OpenConnection();
+        return RefreshIconThemeSets(connection, ProjectIdForIconTheme(connection, iconThemeId));
+    }
+
+    public void DeleteIconThemeToken(string iconThemeId, string token)
+    {
+        if (!ValidIconTokenRegex().IsMatch(token))
+        {
+            throw new InvalidOperationException("Icon token must be lower_snake_case.");
+        }
+
+        using var connection = OpenConnection();
+        var projectId = ProjectIdForIconTheme(connection, iconThemeId);
+        var rows = QueryIconThemeRows(connection).Where((row) => row.ProjectId == projectId).ToList();
+        var mediaRoot = ResolveProjectPath(GetProjectSettings(projectId).MediaRoot);
+        foreach (var row in rows)
+        {
+            var fullPath = Path.Combine(mediaRoot, row.AssetRoot, $"{token}.svg");
+            if (File.Exists(fullPath))
+            {
+                File.Delete(fullPath);
+            }
+        }
+
+        RefreshIconThemeSets(connection, projectId);
+    }
+
+    public IconThemeSearchResult SearchIconThemeSources(string query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return new IconThemeSearchResult([], []);
+        }
+
+        var parsed = RunIconThemeScript([
+            "--mode",
+            "search",
+            "--query",
+            query.Trim(),
+        ]);
+        var root = parsed.AsObject();
+        return new IconThemeSearchResult(
+            IconThemeCandidates(root, "lucide"),
+            IconThemeCandidates(root, "material"));
+    }
+
+    public IconThemeGenerateResult GenerateIconThemeToken(
+        string iconThemeId,
+        string token,
+        string category,
+        string description,
+        string lucideSource,
+        string materialSource)
+    {
+        token = token.Trim();
+        if (!ValidIconTokenRegex().IsMatch(token))
+        {
+            throw new InvalidOperationException("Icon token must be lower_snake_case.");
+        }
+
+        using var connection = OpenConnection();
+        var projectId = ProjectIdForIconTheme(connection, iconThemeId);
+        var mediaRoot = ResolveProjectPath(GetProjectSettings(projectId).MediaRoot);
+        var rows = QueryIconThemeRows(connection).Where((row) => row.ProjectId == projectId).ToList();
+        if (rows.Count == 0)
+        {
+            throw new InvalidOperationException("Refresh icon sets before generating tokens.");
+        }
+
+        var requestPath = Path.Combine(Path.GetTempPath(), $"mockups-icon-generate-{Guid.NewGuid():N}.json");
+        var setsRoot = Path.GetDirectoryName(Path.Combine(mediaRoot, rows[0].AssetRoot)) ?? mediaRoot;
+        var request = new JsonObject
+        {
+            ["token"] = token,
+            ["category"] = string.IsNullOrWhiteSpace(category) ? IconTokenCategory(token) : category.Trim(),
+            ["description"] = description.Trim(),
+            ["iconThemesRoot"] = setsRoot,
+            ["mediaRoot"] = mediaRoot,
+            ["selectedSources"] = new JsonObject
+            {
+                ["lucide"] = lucideSource,
+                ["material"] = materialSource,
+            },
+            ["sets"] = new JsonArray(rows.Select((row) => new JsonObject
+            {
+                ["id"] = row.Id,
+                ["name"] = Path.GetFileName(row.AssetRoot),
+                ["path"] = Path.Combine(mediaRoot, row.AssetRoot),
+                ["iconSet"] = IconSetDefinition(row),
+            }).ToArray<JsonNode?>()),
+        };
+        File.WriteAllText(requestPath, request.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+
+        var parsed = RunIconThemeScript([
+            "--mode",
+            "generate",
+            "--request",
+            requestPath,
+        ]);
+        var refresh = RefreshIconThemeSets(connection, projectId);
+        UpdateIconThemeTokenMetadata(connection, projectId, token, category, description, lucideSource, materialSource);
+        return new IconThemeGenerateResult(token, JsonInt(parsed, ["writtenFileCount"], rows.Count), refresh);
+    }
+
     public DevicePreviewMetrics GetDevicePreviewMetrics(string deviceId)
     {
         var settings = GetDeviceSettings(deviceId);
@@ -1651,6 +1864,26 @@ internal sealed partial class SpikeDatabase
         while (reader.Read())
         {
             rows.Add(new ProductionFontRow(
+                reader.GetString(0),
+                reader.GetString(1),
+                reader.GetString(2),
+                ReadString(reader, 3),
+                ReadString(reader, 4),
+                ReadString(reader, 5)));
+        }
+
+        return rows;
+    }
+
+    private static List<IconThemeRow> QueryIconThemeRows(SqliteConnection connection)
+    {
+        var rows = new List<IconThemeRow>();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT id, project_id, name, asset_root, mapping_json, metadata_json FROM icon_themes ORDER BY name";
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            rows.Add(new IconThemeRow(
                 reader.GetString(0),
                 reader.GetString(1),
                 reader.GetString(2),
@@ -2114,6 +2347,360 @@ internal sealed partial class SpikeDatabase
     [GeneratedRegex("(Regular|Bold|Italic|Light|Medium|SemiBold|Semibold|Black|Thin|ExtraLight|UltraLight|ExtraBold|UltraBold|Condensed|Oblique|Variable|VF|Roman)$", RegexOptions.IgnoreCase)]
     private static partial Regex FontStyleSuffixRegex();
 
+    private static IconThemeRefreshResult RefreshIconThemeSets(SqliteConnection connection, string projectId)
+    {
+        var mediaRoot = ResolveProjectPath(GetProjectSettings(connection, projectId).MediaRoot);
+        var iconThemesRoot = Path.Combine(mediaRoot, "icon-themes");
+        Directory.CreateDirectory(iconThemesRoot);
+
+        var setDirectories = Directory
+            .EnumerateDirectories(iconThemesRoot)
+            .Where((directory) => !Path.GetFileName(directory).StartsWith(".", StringComparison.Ordinal))
+            .Where((directory) => !Path.GetFileName(directory).StartsWith("_", StringComparison.Ordinal))
+            .OrderBy(Path.GetFileName)
+            .ToList();
+
+        foreach (var directory in setDirectories)
+        {
+            var setName = Path.GetFileName(directory);
+            var id = $"icon_theme_{projectId}_{Slug(setName)}";
+            var assetRoot = NormalizeRelativePath(Path.GetRelativePath(mediaRoot, directory));
+            var metadata = IconThemeMetadata(directory, setName);
+            Execute(
+                connection,
+                """
+                INSERT INTO icon_themes (id, project_id, name, asset_root, mapping_json, metadata_json)
+                VALUES ($id, $projectId, $name, $assetRoot, '{}', $metadataJson)
+                ON CONFLICT(project_id, name) DO UPDATE SET
+                  asset_root = excluded.asset_root,
+                  metadata_json = excluded.metadata_json
+                """,
+                ("$id", id),
+                ("$projectId", projectId),
+                ("$name", setName),
+                ("$assetRoot", assetRoot),
+                ("$metadataJson", metadata.ToJsonString()));
+        }
+
+        var rows = QueryIconThemeRows(connection).Where((row) => row.ProjectId == projectId).ToList();
+        var tokensBySet = rows.ToDictionary(
+            (row) => row.Id,
+            (row) => SvgTokenSet(Path.Combine(mediaRoot, row.AssetRoot)));
+        var commonTokens = tokensBySet.Values.FirstOrDefault()?.ToHashSet(StringComparer.OrdinalIgnoreCase) ?? [];
+        foreach (var setTokens in tokensBySet.Values.Skip(1))
+        {
+            commonTokens.IntersectWith(setTokens);
+        }
+
+        var allTokens = tokensBySet.Values.SelectMany((set) => set).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var row in rows)
+        {
+            var nextMapping = BuildIconThemeMapping(row.MappingJson, commonTokens);
+            Execute(
+                connection,
+                "UPDATE icon_themes SET mapping_json = $mappingJson WHERE id = $id",
+                ("$id", row.Id),
+                ("$mappingJson", nextMapping.ToJsonString()));
+        }
+
+        return new IconThemeRefreshResult(rows.Count, commonTokens.Count, Math.Max(0, allTokens.Count - commonTokens.Count));
+    }
+
+    private static ProjectSettings GetProjectSettings(SqliteConnection connection, string projectId)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT slug, default_fps, media_root FROM projects WHERE id = $id";
+        command.Parameters.AddWithValue("$id", projectId);
+        using var reader = command.ExecuteReader();
+        if (!reader.Read())
+        {
+            throw new InvalidOperationException($"Missing project '{projectId}'.");
+        }
+
+        return new ProjectSettings(
+            ReadString(reader, 0),
+            reader.IsDBNull(1) ? 25 : reader.GetInt32(1),
+            ReadString(reader, 2));
+    }
+
+    private static HashSet<string> SvgTokenSet(string directory)
+    {
+        if (!Directory.Exists(directory)) return [];
+        return Directory
+            .EnumerateFiles(directory, "*.svg", SearchOption.TopDirectoryOnly)
+            .Select((file) => Path.GetFileNameWithoutExtension(file))
+            .Where((token) => !string.IsNullOrWhiteSpace(token))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static JsonObject BuildIconThemeMapping(string currentMappingJson, HashSet<string> commonTokens)
+    {
+        var current = ParseJsonObject(string.IsNullOrWhiteSpace(currentMappingJson) ? "{}" : currentMappingJson);
+        var currentTokens = current["tokens"] as JsonObject ?? [];
+        var nextTokens = new JsonObject();
+        var categories = new SortedDictionary<string, JsonArray>(StringComparer.OrdinalIgnoreCase);
+        foreach (var token in commonTokens.OrderBy((token) => token, StringComparer.OrdinalIgnoreCase))
+        {
+            var existing = currentTokens[token] as JsonObject ?? [];
+            var category = JsonString(existing, ["category"]);
+            if (string.IsNullOrWhiteSpace(category)) category = IconTokenCategory(token);
+            nextTokens[token] = new JsonObject
+            {
+                ["category"] = category,
+                ["file"] = $"{token}.svg",
+                ["description"] = JsonString(existing, ["description"]),
+            };
+            if (!categories.TryGetValue(category, out var categoryTokens))
+            {
+                categoryTokens = [];
+                categories[category] = categoryTokens;
+            }
+
+            categoryTokens.Add(token);
+        }
+
+        return new JsonObject
+        {
+            ["schemaVersion"] = 1,
+            ["tokens"] = nextTokens,
+            ["categories"] = new JsonObject(categories.Select((pair) => KeyValuePair.Create<string, JsonNode?>(pair.Key, pair.Value))),
+        };
+    }
+
+    private static IReadOnlyList<IconThemeToken> IconThemeTokens(string mappingJson)
+    {
+        var mapping = ParseJsonObject(string.IsNullOrWhiteSpace(mappingJson) ? "{}" : mappingJson);
+        var tokens = mapping["tokens"] as JsonObject;
+        if (tokens is null) return [];
+
+        return tokens
+            .OrderBy((pair) => pair.Key, StringComparer.OrdinalIgnoreCase)
+            .Select((pair) =>
+            {
+                var tokenObject = pair.Value as JsonObject ?? [];
+                return new IconThemeToken(
+                    pair.Key,
+                    JsonString(tokenObject, ["category"]),
+                    JsonString(tokenObject, ["file"]),
+                    JsonString(tokenObject, ["description"]));
+            })
+            .ToList();
+    }
+
+    private static int IconThemeTokenCount(string mappingJson)
+    {
+        return IconThemeTokens(mappingJson).Count;
+    }
+
+    private static string IconTokenCategory(string token)
+    {
+        var index = token.IndexOf('_', StringComparison.Ordinal);
+        return index <= 0 ? "misc" : token[..index];
+    }
+
+    private static string ProjectIdForIconTheme(SqliteConnection connection, string iconThemeId)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT project_id FROM icon_themes WHERE id = $id";
+        command.Parameters.AddWithValue("$id", iconThemeId);
+        return command.ExecuteScalar() as string
+            ?? throw new InvalidOperationException($"Missing icon theme '{iconThemeId}'.");
+    }
+
+    private string ProjectIdForIconTheme(string iconThemeId)
+    {
+        using var connection = OpenConnection();
+        return ProjectIdForIconTheme(connection, iconThemeId);
+    }
+
+    private static JsonObject IconThemeMetadata(string directory, string setName)
+    {
+        var manifestPath = Path.Combine(directory, "manifest.json");
+        var metadata = new JsonObject
+        {
+            ["iconSet"] = IconSetDefinitionFromName(setName),
+        };
+        if (!File.Exists(manifestPath)) return metadata;
+
+        try
+        {
+            var manifest = ParseJsonObject(File.ReadAllText(manifestPath));
+            metadata["manifest"] = manifest.DeepClone();
+            metadata["iconSet"] = IconSetDefinition(manifest, setName);
+        }
+        catch (JsonException)
+        {
+            // A malformed manifest should not block refreshing SVG tokens.
+        }
+
+        return metadata;
+    }
+
+    private static JsonObject IconSetDefinition(IconThemeRow row)
+    {
+        var metadata = ParseJsonObject(string.IsNullOrWhiteSpace(row.MetadataJson) ? "{}" : row.MetadataJson);
+        return metadata["iconSet"] is JsonObject iconSet
+            ? (JsonObject)iconSet.DeepClone()
+            : IconSetDefinitionFromName(row.Name);
+    }
+
+    private static JsonObject IconSetDefinition(JsonObject manifest, string fallbackName)
+    {
+        var source = JsonString(manifest, ["source"]);
+        var style = JsonString(manifest, ["style"]);
+        var weight = JsonNumberString(manifest, ["weight"]);
+        var manifestSetName = JsonString(manifest, ["name"]);
+        if (string.IsNullOrWhiteSpace(manifestSetName))
+        {
+            manifestSetName = fallbackName;
+        }
+
+        if (source.Contains("lucide", StringComparison.OrdinalIgnoreCase) || style.Equals("lucide", StringComparison.OrdinalIgnoreCase))
+        {
+            return new JsonObject
+            {
+                ["provider"] = "lucide",
+                ["setName"] = manifestSetName,
+                ["package"] = string.IsNullOrWhiteSpace(source) ? "lucide-static" : source,
+                ["stroke"] = JsonNumberDouble(manifest, ["stroke"], 2),
+                ["fillMode"] = "stroke",
+            };
+        }
+
+        return new JsonObject
+        {
+            ["provider"] = "material",
+            ["setName"] = manifestSetName,
+            ["package"] = string.IsNullOrWhiteSpace(source) ? "material-symbols" : source,
+            ["style"] = string.IsNullOrWhiteSpace(style) ? "rounded" : style,
+            ["weight"] = int.TryParse(weight, out var parsedWeight) && parsedWeight > 0 ? parsedWeight : 400,
+            ["fillMode"] = "filled",
+        };
+    }
+
+    private static JsonObject IconSetDefinitionFromName(string name)
+    {
+        var lower = name.ToLowerInvariant();
+        if (lower.Contains("lucide") || lower.Contains("lucida"))
+        {
+            return new JsonObject
+            {
+                ["provider"] = "lucide",
+                ["setName"] = name,
+                ["package"] = "lucide-static",
+                ["stroke"] = 2,
+                ["fillMode"] = "stroke",
+            };
+        }
+
+        var style = lower.Contains("outlined") ? "outlined" : lower.Contains("sharp") ? "sharp" : "rounded";
+        var weightMatch = Regex.Match(lower, "(100|200|300|400|500|600|700)");
+        return new JsonObject
+        {
+            ["provider"] = "material",
+            ["setName"] = name,
+            ["package"] = "@material-symbols/svg-400",
+            ["style"] = style,
+            ["weight"] = weightMatch.Success ? int.Parse(weightMatch.Value) : 400,
+            ["fillMode"] = "filled",
+        };
+    }
+
+    private static IReadOnlyList<IconThemeSearchCandidate> IconThemeCandidates(JsonObject root, string provider)
+    {
+        if (root[provider] is not JsonArray array) return [];
+        return array
+            .OfType<JsonObject>()
+            .Select((entry) => new IconThemeSearchCandidate(
+                provider,
+                JsonString(entry, ["sourceName"]),
+                JsonString(entry, ["previewUrl"])))
+            .Where((entry) => !string.IsNullOrWhiteSpace(entry.SourceName))
+            .ToList();
+    }
+
+    private static JsonNode RunIconThemeScript(string[] arguments)
+    {
+        var scriptCandidates = new[]
+        {
+            Path.Combine(AppContext.BaseDirectory, "scripts", "icon-themes", "sync-icon-theme-token.cjs"),
+            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "scripts", "icon-themes", "sync-icon-theme-token.cjs"),
+            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "scripts", "icon-themes", "sync-icon-theme-token.cjs"),
+        }
+            .Select(Path.GetFullPath)
+            .ToList();
+        var scriptPath = scriptCandidates.FirstOrDefault(File.Exists)
+            ?? throw new InvalidOperationException($"Icon theme script not found. Checked: {string.Join(", ", scriptCandidates)}");
+        var workingDirectory = Directory.GetParent(scriptPath)?.Parent?.Parent?.FullName ?? AppContext.BaseDirectory;
+        var startInfo = new System.Diagnostics.ProcessStartInfo
+        {
+            FileName = "node",
+            WorkingDirectory = workingDirectory,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+        };
+        startInfo.ArgumentList.Add(scriptPath);
+        foreach (var argument in arguments)
+        {
+            startInfo.ArgumentList.Add(argument);
+        }
+
+        using var process = System.Diagnostics.Process.Start(startInfo)
+            ?? throw new InvalidOperationException("Could not start icon theme script.");
+        var stdout = process.StandardOutput.ReadToEnd();
+        var stderr = process.StandardError.ReadToEnd();
+        process.WaitForExit();
+        if (process.ExitCode != 0)
+        {
+            throw new InvalidOperationException(string.IsNullOrWhiteSpace(stderr) ? "Icon theme script failed." : stderr.Trim());
+        }
+
+        return JsonNode.Parse(stdout) ?? new JsonObject();
+    }
+
+    private static int JsonInt(JsonNode node, IReadOnlyList<string> path, int fallback)
+    {
+        if (node is not JsonObject root) return fallback;
+        var value = GetJsonValue(root, path);
+        return value is JsonValue jsonValue && jsonValue.TryGetValue<int>(out var parsed) ? parsed : fallback;
+    }
+
+    private static void UpdateIconThemeTokenMetadata(
+        SqliteConnection connection,
+        string projectId,
+        string token,
+        string category,
+        string description,
+        string lucideSource,
+        string materialSource)
+    {
+        var rows = QueryIconThemeRows(connection).Where((row) => row.ProjectId == projectId).ToList();
+        foreach (var row in rows)
+        {
+            var mapping = ParseJsonObject(row.MappingJson);
+            var tokens = mapping["tokens"] as JsonObject ?? [];
+            var tokenObject = tokens[token] as JsonObject ?? [];
+            tokenObject["category"] = string.IsNullOrWhiteSpace(category) ? IconTokenCategory(token) : category.Trim();
+            tokenObject["description"] = description.Trim();
+            tokenObject["file"] = $"{token}.svg";
+            tokenObject["sources"] = new JsonObject
+            {
+                ["lucide"] = lucideSource,
+                ["material"] = materialSource,
+            };
+            tokens[token] = tokenObject;
+            mapping["tokens"] = tokens;
+            Execute(
+                connection,
+                "UPDATE icon_themes SET mapping_json = $mappingJson WHERE id = $id",
+                ("$id", row.Id),
+                ("$mappingJson", mapping.ToJsonString()));
+        }
+    }
+
+    [GeneratedRegex("^[a-z][a-z0-9_]*(?:\\.[a-z0-9_]+)*$")]
+    private static partial Regex ValidIconTokenRegex();
+
     private static string MetadataString(string metadataJson, string key)
     {
         if (string.IsNullOrWhiteSpace(metadataJson)) return "";
@@ -2570,6 +3157,16 @@ internal sealed partial class SpikeDatabase
           UNIQUE(project_id, family_name)
         );
 
+        CREATE TABLE IF NOT EXISTS icon_themes (
+          id TEXT PRIMARY KEY,
+          project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+          name TEXT NOT NULL,
+          asset_root TEXT NOT NULL DEFAULT '',
+          mapping_json TEXT NOT NULL DEFAULT '{}',
+          metadata_json TEXT NOT NULL DEFAULT '{}',
+          UNIQUE(project_id, name)
+        );
+
         CREATE TABLE IF NOT EXISTS editor_layouts (
           record_class_id TEXT PRIMARY KEY,
           layout_json TEXT NOT NULL
@@ -2608,6 +3205,22 @@ internal sealed partial class SpikeDatabase
         string Category,
         string SourceDirectory,
         string FilesJson);
+    public sealed record IconThemeSettings(
+        string Name,
+        string AssetRoot,
+        string MappingJson,
+        string MetadataJson);
+    public sealed record IconThemeToken(
+        string Token,
+        string Category,
+        string File,
+        string Description);
+    public sealed record IconThemeRefreshResult(int ThemeCount, int CommonTokenCount, int OmittedTokenCount);
+    public sealed record IconThemeSearchCandidate(string Provider, string SourceName, string PreviewUrl);
+    public sealed record IconThemeSearchResult(
+        IReadOnlyList<IconThemeSearchCandidate> Lucide,
+        IReadOnlyList<IconThemeSearchCandidate> Material);
+    public sealed record IconThemeGenerateResult(string Token, int WrittenFileCount, IconThemeRefreshResult RefreshResult);
     private sealed record ProjectRow(string Id, string Name, string Notes);
     private sealed record EpisodeRow(string Id, string ProjectId, string Name, string Slug, string Notes, int SortOrder);
     private sealed record AppRow(string Id, string ProjectId, string RecordClassId, string Name, string Notes, int SortOrder);
@@ -2616,6 +3229,7 @@ internal sealed partial class SpikeDatabase
     private sealed record DeviceRow(string Id, string ProjectId, string Name, string Manufacturer, string Model, string OsFamily, string MetricsJson);
     private sealed record ActorRow(string Id, string ProjectId, string DisplayName, string ShortName, string DefaultDeviceId, string DefaultThemeId, string MetadataJson);
     private sealed record ProductionFontRow(string Id, string ProjectId, string FamilyName, string Category, string SourceDirectory, string FilesJson);
+    private sealed record IconThemeRow(string Id, string ProjectId, string Name, string AssetRoot, string MappingJson, string MetadataJson);
     private sealed record ShotRow(
         string Id,
         string EpisodeId,

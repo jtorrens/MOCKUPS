@@ -20,4 +20,10 @@
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.9" />
     <PackageReference Include="SukiUI" Version="7.0.1" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="../../scripts/icon-themes/sync-icon-theme-token.cjs"
+             Link="scripts/icon-themes/sync-icon-theme-token.cjs"
+             CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

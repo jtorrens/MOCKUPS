@@ -78,6 +78,7 @@ internal static class EditorIcons
             ProjectTreeNodeKind.SystemDataRoot => Design,
             ProjectTreeNodeKind.AppsRoot => Apps,
             ProjectTreeNodeKind.PaletteRoot => Color,
+            ProjectTreeNodeKind.IconThemesRoot => Icon,
             ProjectTreeNodeKind.DevicesRoot => Device,
             ProjectTreeNodeKind.ActorsRoot => Actor,
             ProjectTreeNodeKind.ProductionFontsRoot => Typography,
@@ -87,6 +88,7 @@ internal static class EditorIcons
             ProjectTreeNodeKind.Episode => Episode,
             ProjectTreeNodeKind.Shot => Shot,
             ProjectTreeNodeKind.PaletteColor => Color,
+            ProjectTreeNodeKind.IconTheme => Icon,
             ProjectTreeNodeKind.Device => Device,
             ProjectTreeNodeKind.Actor => Actor,
             ProjectTreeNodeKind.ProductionFont => Typography,
@@ -184,6 +186,7 @@ internal static class EditorIcons
             Border => "editor_border.svg",
             Media => "editor_media.svg",
             Device => "editor_device.svg",
+            Icon => "editor_button_icon.svg",
             Typography => "editor_text_input.svg",
             _ => null,
         };
