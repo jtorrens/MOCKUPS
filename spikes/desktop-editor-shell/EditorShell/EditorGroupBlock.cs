@@ -6,6 +6,29 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal static class EditorGroupBlock
 {
+    public static Control CreatePlain(EditorLayoutGroup group, Control content)
+    {
+        if (string.IsNullOrWhiteSpace(group.Label) ||
+            string.Equals(group.Label, "General", System.StringComparison.OrdinalIgnoreCase))
+        {
+            return content;
+        }
+
+        var panel = new StackPanel
+        {
+            Spacing = 10,
+        };
+        panel.Children.Add(new TextBlock
+        {
+            Text = group.Label,
+            FontSize = 13,
+            FontWeight = FontWeight.SemiBold,
+            Opacity = 0.82,
+        });
+        panel.Children.Add(content);
+        return panel;
+    }
+
     public static Control Create(EditorLayoutGroup group, Control content)
     {
         var panel = new StackPanel

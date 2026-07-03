@@ -28,7 +28,7 @@ internal sealed class NavigationBarItemsCollectionEditor
         _onChanged = onChanged;
     }
 
-    public Expander Create(ProjectTreeNode node)
+    public InstantEditorCard Create(ProjectTreeNode node)
     {
         var icon = EditorIcons.Create(EditorIcons.Navigation, 18);
         var items = _database.GetNavigationBarItems(node.Id).ToList();
@@ -49,17 +49,16 @@ internal sealed class NavigationBarItemsCollectionEditor
             body.Children.Add(CreateItemRow(node, index, items[index]));
         }
 
-        return new Expander
-        {
-            Header = EditorCardHeader.Create("Button Items", $"{items.Count} generated buttons", icon),
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            ExpandDirection = ExpandDirection.Down,
-            IsExpanded = false,
-            Content = new Border
+        return new InstantEditorCard(
+            EditorCardHeader.Create("Button Items", $"{items.Count} generated buttons", icon),
+            new Border
             {
                 Padding = new Thickness(10),
                 Child = body,
             },
+            isExpanded: false)
+        {
+            HorizontalAlignment = HorizontalAlignment.Stretch,
         };
     }
 

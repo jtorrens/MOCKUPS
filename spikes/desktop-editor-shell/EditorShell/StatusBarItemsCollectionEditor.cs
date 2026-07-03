@@ -31,7 +31,7 @@ internal sealed class StatusBarItemsCollectionEditor
         _onChanged = onChanged;
     }
 
-    public Expander Create(ProjectTreeNode node)
+    public InstantEditorCard Create(ProjectTreeNode node)
     {
         var icon = EditorIcons.Create(EditorIcons.Status, 18);
         var settings = _database.GetStatusBarSettings(node.Id);
@@ -53,17 +53,16 @@ internal sealed class StatusBarItemsCollectionEditor
             body.Children.Add(CreateItemRow(node, settings.ProjectId, index, items[index]));
         }
 
-        return new Expander
-        {
-            Header = EditorCardHeader.Create("Items", $"{items.Count} status items", icon),
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            ExpandDirection = ExpandDirection.Down,
-            IsExpanded = false,
-            Content = new Border
+        return new InstantEditorCard(
+            EditorCardHeader.Create("Items", $"{items.Count} status items", icon),
+            new Border
             {
                 Padding = new Thickness(10),
                 Child = body,
             },
+            isExpanded: false)
+        {
+            HorizontalAlignment = HorizontalAlignment.Stretch,
         };
     }
 
@@ -174,6 +173,7 @@ internal sealed class StatusBarItemsCollectionEditor
             PlaceholderText = "Select icon token…",
             VerticalContentAlignment = VerticalAlignment.Center,
         };
+        EditorTextBoxBehavior.Configure(tokenBox);
         Grid.SetColumn(tokenBox, 1);
         grid.Children.Add(tokenBox);
 

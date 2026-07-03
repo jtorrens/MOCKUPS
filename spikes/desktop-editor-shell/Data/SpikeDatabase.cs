@@ -74,6 +74,15 @@ internal sealed partial class SpikeDatabase
         var statusBars = QueryStatusBarRows(connection);
         var navigationBars = QueryNavigationBarRows(connection);
         var componentClasses = QueryComponentClassRows(connection);
+        var referenceUsageIndex = BuildReferenceUsageIndex(
+            actors,
+            themes,
+            paletteColors,
+            productionFonts,
+            iconThemes,
+            statusBars,
+            navigationBars,
+            componentClasses);
 
         var projectNodes = projects
             .Select((project) => new ProjectTreeNode(
@@ -272,7 +281,7 @@ internal sealed partial class SpikeDatabase
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.PaletteColor),
                 paletteRoot,
                 color.ValueHex,
-                IsPaletteColorUsed(connection, color.ProjectId, color.Token, color.Id)));
+                IsUsed(referenceUsageIndex, ProjectTreeNodeKind.PaletteColor, color.Id)));
         }
 
         foreach (var device in devices.OrderBy((device) => device.Name))
@@ -285,7 +294,8 @@ internal sealed partial class SpikeDatabase
                 device.Name,
                 $"{device.Manufacturer} {device.Model}".Trim(),
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Device),
-                devicesRoot));
+                devicesRoot,
+                isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.Device, device.Id)));
         }
 
         foreach (var actor in actors.OrderBy((actor) => actor.DisplayName))
@@ -298,7 +308,8 @@ internal sealed partial class SpikeDatabase
                 actor.DisplayName,
                 actor.ShortName,
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Actor),
-                actorsRoot));
+                actorsRoot,
+                isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.Actor, actor.Id)));
         }
 
         foreach (var theme in themes.OrderBy((theme) => theme.Name))
@@ -312,7 +323,7 @@ internal sealed partial class SpikeDatabase
                 $"{theme.Family} · {ThemeReferenceSummary(theme)}",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Theme),
                 themesRoot,
-                isUsed: IsThemeUsed(connection, theme.ProjectId, theme.Id)));
+                isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.Theme, theme.Id)));
         }
 
         foreach (var font in productionFonts.OrderBy((font) => font.FamilyName))
@@ -326,7 +337,7 @@ internal sealed partial class SpikeDatabase
                 $"{font.Category} · {ProductionFontFileCount(font.FilesJson)} files",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ProductionFont),
                 fontsRoot,
-                isUsed: IsProductionFontUsed(connection, font.ProjectId, font.Id)));
+                isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.ProductionFont, font.Id)));
         }
 
         foreach (var iconTheme in iconThemes.OrderBy((iconTheme) => iconTheme.Name))
@@ -339,7 +350,8 @@ internal sealed partial class SpikeDatabase
                 iconTheme.Name,
                 $"{IconThemeTokenCount(iconTheme.MappingJson)} tokens · {iconTheme.AssetRoot}",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.IconTheme),
-                iconThemesRoot));
+                iconThemesRoot,
+                isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.IconTheme, iconTheme.Id)));
         }
 
         foreach (var statusBar in statusBars.OrderBy((statusBar) => statusBar.Name))
@@ -352,7 +364,8 @@ internal sealed partial class SpikeDatabase
                 statusBar.Name,
                 $"{statusBar.Family} · {StatusBarItemCount(statusBar.ConfigJson)} items",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.StatusBar),
-                statusBarsRoot));
+                statusBarsRoot,
+                isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.StatusBar, statusBar.Id)));
         }
 
         foreach (var navigationBar in navigationBars.OrderBy((navigationBar) => navigationBar.Name))
@@ -365,7 +378,8 @@ internal sealed partial class SpikeDatabase
                 navigationBar.Name,
                 $"{navigationBar.Family} · {NavigationBarItemCount(navigationBar.ConfigJson)} buttons",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.NavigationBar),
-                navigationBarsRoot));
+                navigationBarsRoot,
+                isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.NavigationBar, navigationBar.Id)));
         }
 
         foreach (var componentClass in componentClasses.OrderBy((componentClass) => componentClass.ComponentType).ThenBy((componentClass) => componentClass.Name))
@@ -378,7 +392,8 @@ internal sealed partial class SpikeDatabase
                 componentClass.Name,
                 string.IsNullOrWhiteSpace(componentClass.Notes) ? ComponentTypeLabel(componentClass.ComponentType) : componentClass.Notes,
                 componentClass.RecordClassId,
-                componentClassesRoot));
+                componentClassesRoot,
+                isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.ComponentClass, componentClass.Id)));
         }
 
         foreach (var shot in shots.OrderBy((shot) => shot.SortOrder).ThenBy((shot) => shot.Name))
@@ -996,22 +1011,24 @@ internal sealed partial class SpikeDatabase
             _ => throw new InvalidOperationException($"Cannot delete {node.Kind}."),
         };
 
+        var usages = GetReferenceUsages(connection, node.Kind, node.Id, ReferenceSearchValue(connection, node));
+        if (usages.Count > 0)
+        {
+            throw new InvalidOperationException($"This {node.Kind} is still used and cannot be deleted.\n\n{string.Join(Environment.NewLine, usages.Take(12))}");
+        }
+
         if (node.Kind == ProjectTreeNodeKind.ProductionFont)
         {
-            if (IsProductionFontUsed(connection, ProjectAncestor(node).Id, node.Id))
-            {
-                throw new InvalidOperationException("This production font is still used and cannot be deleted.");
-            }
-
             DeleteProductionFontFiles(connection, node.Id);
         }
 
-        if (node.Kind == ProjectTreeNodeKind.Theme && IsThemeUsed(connection, ProjectAncestor(node).Id, node.Id))
-        {
-            throw new InvalidOperationException("This theme is still used and cannot be deleted.");
-        }
-
         Execute(connection, $"DELETE FROM {table} WHERE id = $id", ("$id", node.Id));
+    }
+
+    public IReadOnlyList<string> GetReferenceUsages(ProjectTreeNode node)
+    {
+        using var connection = OpenConnection();
+        return GetReferenceUsages(connection, node.Kind, node.Id, ReferenceSearchValue(connection, node));
     }
 
     public void UpdateNode(ProjectTreeNode node)
@@ -3863,38 +3880,314 @@ internal sealed partial class SpikeDatabase
         return reader.IsDBNull(index) ? "" : reader.GetString(index);
     }
 
-    private static bool IsPaletteColorUsed(SqliteConnection connection, string projectId, string token, string colorId)
+    private static IReadOnlyList<string> GetReferenceUsages(
+        SqliteConnection connection,
+        ProjectTreeNodeKind kind,
+        string nodeId,
+        string searchValue)
     {
-        // The new shell does not yet reference palette tokens from theme/component tables.
-        // The flag is still part of the model now, so the navigation can show the correct
-        // used/unused marker as soon as those references land.
-        _ = connection;
-        _ = projectId;
-        _ = token;
-        _ = colorId;
+        if (string.IsNullOrWhiteSpace(searchValue)) return [];
+
+        var ownTable = TableNameForKind(kind);
+        var usages = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var table in ReferenceSearchTables(connection))
+        {
+            if (!HasColumn(connection, table, "id")) continue;
+
+            var textColumns = TextColumns(connection, table);
+            foreach (var column in textColumns)
+            {
+                using var command = connection.CreateCommand();
+                command.CommandText = $"""
+                    SELECT "id"
+                    FROM {QuoteIdentifier(table)}
+                    WHERE {QuoteIdentifier(column)} LIKE $needle
+                      AND ($ownTable <> $table OR "id" <> $nodeId)
+                    LIMIT 25
+                    """;
+                command.Parameters.AddWithValue("$needle", $"%{searchValue}%");
+                command.Parameters.AddWithValue("$ownTable", ownTable);
+                command.Parameters.AddWithValue("$table", table);
+                command.Parameters.AddWithValue("$nodeId", nodeId);
+                using var reader = command.ExecuteReader();
+                while (reader.Read())
+                {
+                    var rowId = reader.GetString(0);
+                    usages.Add($"{TableDisplayName(table)}: {RowDisplayName(connection, table, rowId)} ({column})");
+                }
+            }
+        }
+
+        return usages.ToList();
+    }
+
+    private static Dictionary<string, List<string>> BuildReferenceUsageIndex(
+        IReadOnlyList<ActorRow> actors,
+        IReadOnlyList<ThemeRow> themes,
+        IReadOnlyList<PaletteColorRow> paletteColors,
+        IReadOnlyList<ProductionFontRow> productionFonts,
+        IReadOnlyList<IconThemeRow> iconThemes,
+        IReadOnlyList<StatusBarRow> statusBars,
+        IReadOnlyList<NavigationBarRow> navigationBars,
+        IReadOnlyList<ComponentClassRow> componentClasses)
+    {
+        var index = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+
+        foreach (var actor in actors)
+        {
+            AddUsage(index, ProjectTreeNodeKind.Device, actor.DefaultDeviceId, $"Actor: {actor.DisplayName}");
+            AddUsage(index, ProjectTreeNodeKind.Theme, actor.DefaultThemeId, $"Actor: {actor.DisplayName}");
+        }
+
+        foreach (var theme in themes)
+        {
+            AddUsage(index, ProjectTreeNodeKind.IconTheme, theme.IconThemeId, $"Theme: {theme.Name}");
+            AddUsage(index, ProjectTreeNodeKind.StatusBar, theme.StatusBarId, $"Theme: {theme.Name}");
+            AddUsage(index, ProjectTreeNodeKind.NavigationBar, theme.NavigationBarId, $"Theme: {theme.Name}");
+
+            foreach (var font in productionFonts)
+            {
+                AddUsageIfContains(index, ProjectTreeNodeKind.ProductionFont, font.Id, theme.TokensJson, $"Theme: {theme.Name}");
+            }
+
+            foreach (var color in paletteColors)
+            {
+                AddUsageIfContains(index, ProjectTreeNodeKind.PaletteColor, color.Id, theme.TokensJson, $"Theme: {theme.Name}", color.Token);
+            }
+        }
+
+        foreach (var componentClass in componentClasses)
+        {
+            var componentText = string.Join(
+                "\n",
+                componentClass.ConfigJson,
+                componentClass.DesignPreviewJson,
+                componentClass.MetadataJson);
+
+            foreach (var color in paletteColors)
+            {
+                AddUsageIfContains(index, ProjectTreeNodeKind.PaletteColor, color.Id, componentText, $"Component Class: {componentClass.Name}", color.Token);
+            }
+
+            foreach (var iconTheme in iconThemes)
+            {
+                AddUsageIfContains(index, ProjectTreeNodeKind.IconTheme, iconTheme.Id, componentText, $"Component Class: {componentClass.Name}");
+            }
+
+            foreach (var statusBar in statusBars)
+            {
+                AddUsageIfContains(index, ProjectTreeNodeKind.StatusBar, statusBar.Id, componentText, $"Component Class: {componentClass.Name}");
+            }
+
+            foreach (var navigationBar in navigationBars)
+            {
+                AddUsageIfContains(index, ProjectTreeNodeKind.NavigationBar, navigationBar.Id, componentText, $"Component Class: {componentClass.Name}");
+            }
+
+            foreach (var font in productionFonts)
+            {
+                AddUsageIfContains(index, ProjectTreeNodeKind.ProductionFont, font.Id, componentText, $"Component Class: {componentClass.Name}");
+            }
+        }
+
+        foreach (var actor in actors)
+        {
+            foreach (var color in paletteColors)
+            {
+                AddUsageIfContains(index, ProjectTreeNodeKind.PaletteColor, color.Id, actor.MetadataJson, $"Actor: {actor.DisplayName}", color.Token);
+            }
+        }
+
+        return index;
+    }
+
+    private static bool IsUsed(IReadOnlyDictionary<string, List<string>> index, ProjectTreeNodeKind kind, string id)
+    {
+        return index.ContainsKey(ReferenceKey(kind, id));
+    }
+
+    private static void AddUsage(
+        IDictionary<string, List<string>> index,
+        ProjectTreeNodeKind kind,
+        string id,
+        string usage)
+    {
+        if (string.IsNullOrWhiteSpace(id)) return;
+
+        var key = ReferenceKey(kind, id);
+        if (!index.TryGetValue(key, out var usages))
+        {
+            usages = [];
+            index[key] = usages;
+        }
+
+        if (!usages.Contains(usage, StringComparer.OrdinalIgnoreCase))
+        {
+            usages.Add(usage);
+        }
+    }
+
+    private static void AddUsageIfContains(
+        IDictionary<string, List<string>> index,
+        ProjectTreeNodeKind kind,
+        string id,
+        string haystack,
+        string usage,
+        string? searchValue = null)
+    {
+        var needle = string.IsNullOrWhiteSpace(searchValue) ? id : searchValue;
+        if (string.IsNullOrWhiteSpace(needle)) return;
+        if (string.IsNullOrWhiteSpace(haystack)) return;
+        if (!haystack.Contains(needle, StringComparison.Ordinal)) return;
+
+        AddUsage(index, kind, id, usage);
+    }
+
+    private static string ReferenceKey(ProjectTreeNodeKind kind, string id)
+    {
+        return $"{kind}:{id}";
+    }
+
+    private static bool HasColumn(SqliteConnection connection, string table, string columnName)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = $"PRAGMA table_info({QuoteIdentifier(table)})";
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            if (string.Equals(reader.GetString(1), columnName, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
         return false;
     }
 
-    private static bool IsProductionFontUsed(SqliteConnection connection, string projectId, string fontId)
+    private static string ReferenceSearchValue(SqliteConnection connection, ProjectTreeNode node)
     {
-        _ = connection;
-        _ = projectId;
-        _ = fontId;
-        return false;
+        if (node.Kind != ProjectTreeNodeKind.PaletteColor)
+        {
+            return node.Id;
+        }
+
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT token FROM palette_colors WHERE id = $id";
+        command.Parameters.AddWithValue("$id", node.Id);
+        return command.ExecuteScalar() as string ?? node.Name;
     }
 
-    private static bool IsThemeUsed(SqliteConnection connection, string projectId, string themeId)
+    private static string TableNameForKind(ProjectTreeNodeKind kind)
     {
-        return ScalarLong(
-            connection,
-            """
-            SELECT COUNT(*)
-            FROM actors
-            WHERE project_id = $projectId
-              AND default_theme_id = $themeId
-            """,
-            ("$projectId", projectId),
-            ("$themeId", themeId)) > 0;
+        return kind switch
+        {
+            ProjectTreeNodeKind.Episode => "episodes",
+            ProjectTreeNodeKind.Shot => "shots",
+            ProjectTreeNodeKind.App => "apps",
+            ProjectTreeNodeKind.Module => "modules",
+            ProjectTreeNodeKind.PaletteColor => "palette_colors",
+            ProjectTreeNodeKind.Device => "devices",
+            ProjectTreeNodeKind.Actor => "actors",
+            ProjectTreeNodeKind.Theme => "themes",
+            ProjectTreeNodeKind.ProductionFont => "production_fonts",
+            ProjectTreeNodeKind.IconTheme => "icon_themes",
+            ProjectTreeNodeKind.StatusBar => "status_bars",
+            ProjectTreeNodeKind.NavigationBar => "navigation_bars",
+            ProjectTreeNodeKind.ComponentClass => "component_classes",
+            _ => "",
+        };
+    }
+
+    private static IReadOnlyList<string> ReferenceSearchTables(SqliteConnection connection)
+    {
+        var tables = new List<string>();
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT name
+            FROM sqlite_master
+            WHERE type = 'table'
+              AND name NOT LIKE 'sqlite_%'
+            ORDER BY name
+            """;
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            tables.Add(reader.GetString(0));
+        }
+
+        return tables;
+    }
+
+    private static IReadOnlyList<string> TextColumns(SqliteConnection connection, string table)
+    {
+        var columns = new List<string>();
+        using var command = connection.CreateCommand();
+        command.CommandText = $"PRAGMA table_info({QuoteIdentifier(table)})";
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            var name = reader.GetString(1);
+            var type = ReadString(reader, 2);
+            if (name == "id") continue;
+            if (type.Contains("TEXT", StringComparison.OrdinalIgnoreCase))
+            {
+                columns.Add(name);
+            }
+        }
+
+        return columns;
+    }
+
+    private static string RowDisplayName(SqliteConnection connection, string table, string rowId)
+    {
+        var labelColumn = LabelColumn(connection, table);
+        if (labelColumn is null) return rowId;
+
+        using var command = connection.CreateCommand();
+        command.CommandText = $"SELECT {QuoteIdentifier(labelColumn)} FROM {QuoteIdentifier(table)} WHERE id = $id";
+        command.Parameters.AddWithValue("$id", rowId);
+        return command.ExecuteScalar() as string ?? rowId;
+    }
+
+    private static string? LabelColumn(SqliteConnection connection, string table)
+    {
+        var columns = TextColumns(connection, table);
+        foreach (var preferred in new[] { "name", "display_name", "family_name", "slug", "component_type", "token" })
+        {
+            if (columns.Contains(preferred, StringComparer.OrdinalIgnoreCase))
+            {
+                return preferred;
+            }
+        }
+
+        return columns.FirstOrDefault();
+    }
+
+    private static string TableDisplayName(string table)
+    {
+        return table switch
+        {
+            "actors" => "Actor",
+            "apps" => "App",
+            "component_classes" => "Component Class",
+            "devices" => "Device",
+            "episodes" => "Episode",
+            "icon_themes" => "Icon Theme",
+            "modules" => "Module",
+            "navigation_bars" => "Navigation Bar",
+            "palette_colors" => "Palette Color",
+            "production_fonts" => "Production Font",
+            "projects" => "Project",
+            "shots" => "Shot",
+            "status_bars" => "Status Bar",
+            "themes" => "Theme",
+            _ => table,
+        };
+    }
+
+    private static string QuoteIdentifier(string identifier)
+    {
+        return "\"" + identifier.Replace("\"", "\"\"", StringComparison.Ordinal) + "\"";
     }
 
     private static string ExistingProductionFontId(SqliteConnection connection, string projectId, string familyName)

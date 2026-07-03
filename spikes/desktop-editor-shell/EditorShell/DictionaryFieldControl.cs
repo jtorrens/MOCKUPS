@@ -27,7 +27,7 @@ internal sealed class DictionaryFieldControl : Grid
     private readonly IconSlotsControl? _iconSlotsControl;
     private readonly Button? _themeTokenButton;
     private readonly Border? _colorSwatch;
-    private readonly ColorPicker? _colorPicker;
+    private readonly Button? _colorPickerButton;
     private readonly Button _restoreButton;
     private readonly Func<string, ValueKind, Task<string?>>? _browsePath;
     private readonly Func<string, bool, Task<string?>>? _showIconTokenPicker;
@@ -174,24 +174,22 @@ internal sealed class DictionaryFieldControl : Grid
             SetColumn(_textBox, 2);
             Children.Add(_textBox);
 
-            _colorPicker = new ColorPicker
+            _colorPickerButton = new Button
             {
-                Color = ParseColor(_value),
-                Width = 38,
+                Content = "Pick",
+                MinWidth = 58,
                 Height = 34,
-                Padding = new Avalonia.Thickness(0),
                 IsEnabled = _definition.IsEditable,
                 VerticalAlignment = VerticalAlignment.Center,
             };
-            _colorPicker.ColorChanged += (_, args) =>
+            _colorPickerButton.Click += async (_, _) =>
             {
-                if (_isUpdatingColorControl) return;
-
-                SetValue(ColorToHex(args.NewColor));
+                var color = await ShowHexColorDialogAsync();
+                if (color is null) return;
+                SetValue(color, commit: true);
             };
-            _colorPicker.LostFocus += (_, _) => CommitValue();
-            SetColumn(_colorPicker, 3);
-            Children.Add(_colorPicker);
+            SetColumn(_colorPickerButton, 3);
+            Children.Add(_colorPickerButton);
         }
         else if (_definition.ValueKind == ValueKind.HueDegrees)
         {
@@ -488,6 +486,7 @@ internal sealed class DictionaryFieldControl : Grid
                 ? VerticalAlignment.Top
                 : VerticalAlignment.Center,
         };
+        EditorTextBoxBehavior.Configure(textBox);
         if (_definition.ValueKind == ValueKind.ImageFilePath)
         {
             textBox.MaxWidth = 420;
@@ -565,6 +564,7 @@ internal sealed class DictionaryFieldControl : Grid
                 ? PaletteOptionTemplate()
                 : null,
         };
+        EditorComboBoxBehavior.Configure(comboBox);
 
         comboBox.SelectedItem = SelectedOption(value);
         return comboBox;
@@ -701,13 +701,13 @@ internal sealed class DictionaryFieldControl : Grid
 
     private static TextBox CreateCompactPairTextBox(string value)
     {
-        return new TextBox
+        return EditorTextBoxBehavior.Configure(new TextBox
         {
             Text = value,
             Width = 90,
             MinHeight = 36,
             VerticalContentAlignment = VerticalAlignment.Center,
-        };
+        });
     }
 
     private void SetPairValueFromTextBoxes(TextBox? firstTextBox, TextBox? secondTextBox)
@@ -784,11 +784,6 @@ internal sealed class DictionaryFieldControl : Grid
             _colorSwatch.Background = new SolidColorBrush(color);
         }
 
-        if (_colorPicker is not null)
-        {
-            _colorPicker.Color = color;
-        }
-
         if (_textBox is not null && _textBox.Text != _value)
         {
             _textBox.Text = _value;
@@ -832,9 +827,15 @@ internal sealed class DictionaryFieldControl : Grid
         }
     }
 
-    private static string ColorToHex(Color color)
+    private async Task<string?> ShowHexColorDialogAsync()
     {
-        return $"#{color.R:X2}{color.G:X2}{color.B:X2}";
+        var owner = TopLevel.GetTopLevel(this) as Window;
+        if (owner is null)
+        {
+            return null;
+        }
+
+        return await HexColorPickerDialog.Show(owner, _definition.Label, _value);
     }
 
     private static bool StringToBool(string value)

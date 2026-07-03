@@ -33,7 +33,7 @@ internal sealed class IconThemeTokensCollectionEditor
         _reloadAndSelect = reloadAndSelect;
     }
 
-    public Expander Create(ProjectTreeNode node)
+    public InstantEditorCard Create(ProjectTreeNode node)
     {
         var icon = EditorIcons.Create(EditorIcons.Icon, 18);
         var tokensPanel = new StackPanel
@@ -59,17 +59,16 @@ internal sealed class IconThemeTokensCollectionEditor
             }
         }
 
-        return new Expander
-        {
-            Header = EditorCardHeader.Create("Icon Tokens", $"{tokens.Count} semantic tokens", icon),
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            ExpandDirection = ExpandDirection.Down,
-            IsExpanded = false,
-            Content = new Border
+        return new InstantEditorCard(
+            EditorCardHeader.Create("Icon Tokens", $"{tokens.Count} semantic tokens", icon),
+            new Border
             {
                 Padding = new Thickness(10),
                 Child = tokensPanel,
             },
+            isExpanded: false)
+        {
+            HorizontalAlignment = HorizontalAlignment.Stretch,
         };
     }
 

@@ -24,13 +24,36 @@
 
     <Application.Styles>
         <suki:SukiTheme ThemeColor="Blue" />
+        <StyleInclude Source="avares://Avalonia.Controls.ColorPicker/Themes/Fluent/Fluent.xaml" />
+        <Style Selector="Control">
+            <Setter Property="Transitions" Value="{x:Null}" />
+        </Style>
+        <Style Selector="Popup">
+            <Setter Property="Transitions" Value="{x:Null}" />
+        </Style>
         <Style Selector="Expander">
             <Setter Property="ContentTransition">
-                <animation:CompositePageTransition>
-                    <animation:PageSlide Duration="0:0:0.04" Orientation="Vertical" />
-                    <animation:CrossFade Duration="0:0:0.04" />
-                </animation:CompositePageTransition>
+                <animation:CrossFade Duration="0:0:0.05" />
             </Setter>
+            <Setter Property="Transitions" Value="{x:Null}" />
+        </Style>
+        <Style Selector="Button">
+            <Setter Property="Transitions" Value="{x:Null}" />
+        </Style>
+        <Style Selector="ComboBox">
+            <Setter Property="Transitions" Value="{x:Null}" />
+        </Style>
+        <Style Selector="ComboBoxItem">
+            <Setter Property="Transitions" Value="{x:Null}" />
+        </Style>
+        <Style Selector="ListBoxItem">
+            <Setter Property="Transitions" Value="{x:Null}" />
+        </Style>
+        <Style Selector="TabItem">
+            <Setter Property="Transitions" Value="{x:Null}" />
+        </Style>
+        <Style Selector="ToggleSwitch">
+            <Setter Property="Transitions" Value="{x:Null}" />
         </Style>
     </Application.Styles>
 </Application>

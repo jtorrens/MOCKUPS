@@ -132,6 +132,39 @@ internal static class EditorIcons
         return icon;
     }
 
+    public static void ApplyBrush(Control control, IBrush? brush)
+    {
+        switch (control)
+        {
+            case PathIcon pathIcon:
+                if (brush is null)
+                {
+                    pathIcon.ClearValue(PathIcon.ForegroundProperty);
+                }
+                else
+                {
+                    pathIcon.Foreground = brush;
+                }
+                break;
+            case TextBlock textBlock:
+                if (brush is null)
+                {
+                    textBlock.ClearValue(TextBlock.ForegroundProperty);
+                }
+                else
+                {
+                    textBlock.Foreground = brush;
+                }
+                break;
+            case Panel panel:
+                foreach (var child in panel.Children.OfType<Control>())
+                {
+                    ApplyBrush(child, brush);
+                }
+                break;
+        }
+    }
+
     private static string? SvgPathData(string name)
     {
         if (SvgPathCache.TryGetValue(name, out var cachedPath))

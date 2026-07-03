@@ -81,6 +81,7 @@ internal sealed class HueDegreesControl : Grid
             Width = 78,
             VerticalContentAlignment = VerticalAlignment.Center,
         };
+        EditorTextBoxBehavior.Configure(_textBox);
         _textBox.TextChanged += (_, _) =>
         {
             if (_isUpdating) return;

@@ -53,6 +53,7 @@ internal sealed class IconTokenPickerDialog
             ItemsSource = iconThemes,
             SelectedItem = iconThemes.FirstOrDefault((option) => option.Value == selectedThemeId),
         };
+        EditorComboBoxBehavior.Configure(themeCombo);
         var searchBox = new TextBox
         {
             PlaceholderText = "Search icons…",
