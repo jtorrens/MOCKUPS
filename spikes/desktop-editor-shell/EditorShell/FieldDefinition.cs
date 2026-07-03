@@ -32,6 +32,8 @@ internal sealed record FieldOption(
     }
 }
 
+internal sealed record PairFieldLabels(string First, string Second);
+
 internal sealed record FieldDefinition(
     string Id,
     string Label,
@@ -42,7 +44,8 @@ internal sealed record FieldDefinition(
     bool CanInherit = false,
     string InheritedValue = "",
     string InheritedStorageValue = "inherited",
-    IReadOnlyList<FieldOption>? Options = null);
+    IReadOnlyList<FieldOption>? Options = null,
+    PairFieldLabels? PairLabels = null);
 
 internal sealed record FieldValue(
     FieldDefinition Definition,

@@ -8,7 +8,8 @@ internal sealed record RecordClassFieldDescriptor(
     string Label,
     ValueKind ValueKind,
     bool IsEditable = true,
-    IReadOnlyList<FieldOption>? Options = null);
+    IReadOnlyList<FieldOption>? Options = null,
+    PairFieldLabels? PairLabels = null);
 
 internal static class RecordClassFieldCatalog
 {
@@ -93,7 +94,7 @@ internal static class RecordClassFieldCatalog
         ["actor.avatarTextColor.modes"] = new("actor.avatarTextColor.modes", "Actor Text Color", ValueKind.PaletteColorPair),
         ["actor.avatar.filePath"] = new("actor.avatar.filePath", "Avatar image", ValueKind.ImageFilePath),
         ["actor.avatar.scale"] = new("actor.avatar.scale", "Avatar scale", ValueKind.StringSingleLine),
-        ["actor.avatar.offset"] = new("actor.avatar.offset", "Avatar offset", ValueKind.IntegerPair),
+        ["actor.avatar.offset"] = new("actor.avatar.offset", "Avatar offset", ValueKind.IntegerPair, PairLabels: new("X", "Y")),
         ["actor.avatar.useInitials"] = new("actor.avatar.useInitials", "Use initials", ValueKind.Boolean),
         ["actor.avatar.initialsPadding"] = new("actor.avatar.initialsPadding", "Initials padding", ValueKind.Integer),
 

@@ -65,7 +65,8 @@ internal sealed class RecordClassFieldValueService
                 IsEditable: field.IsEditable,
                 DefaultValue: DefaultValue(node.Kind, field, value),
                 CommitAsDefault: CommitAsDefault(node.Kind, field),
-                Options: options),
+                Options: options,
+                PairLabels: field.PairLabels),
             value);
     }
 

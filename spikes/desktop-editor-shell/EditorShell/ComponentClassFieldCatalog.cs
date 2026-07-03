@@ -10,7 +10,8 @@ internal sealed record ComponentClassFieldDescriptor(
     string[] JsonPath,
     string DefaultValue,
     bool IsEditable = true,
-    IReadOnlyList<FieldOption>? Options = null);
+    IReadOnlyList<FieldOption>? Options = null,
+    PairFieldLabels? PairLabels = null);
 
 internal static class ComponentClassFieldCatalog
 {
@@ -112,15 +113,15 @@ internal static class ComponentClassFieldCatalog
         ["component.buttonIcon.labelPadding"] = new("component.buttonIcon.labelPadding", "Label padding", ValueKind.Integer, ["buttonIcon", "labelPadding"], "3"),
 
         ["component.label.dimensionMode"] = new("component.label.dimensionMode", "Dimension mode", ValueKind.OptionToken, ["label", "dimensionMode"], "content", Options: DimensionModeOptions),
-        ["component.label.size"] = new("component.label.size", "Size", ValueKind.IntegerPair, ["label", "size"], "120|32"),
-        ["component.label.padding"] = new("component.label.padding", "Padding", ValueKind.IntegerPair, ["label", "padding"], "8|4"),
+        ["component.label.size"] = new("component.label.size", "Size", ValueKind.IntegerPair, ["label", "size"], "120|32", PairLabels: new("W", "H")),
+        ["component.label.padding"] = new("component.label.padding", "Padding", ValueKind.IntegerPair, ["label", "padding"], "8|4", PairLabels: new("X", "Y")),
         ["component.label.backgroundVisible"] = new("component.label.backgroundVisible", "Show background", ValueKind.Boolean, ["label", "backgroundVisible"], "true"),
         ["component.label.backgroundColorToken"] = new("component.label.backgroundColorToken", "Background", ValueKind.ThemeToken, ["label", "backgroundColorToken"], "theme.colors.background", Options: ThemeColorOptions),
         ["component.label.textColorToken"] = new("component.label.textColorToken", "Text color", ValueKind.ThemeToken, ["label", "textColorToken"], "theme.colors.textPrimary", Options: ThemeColorOptions),
         ["component.label.textSize"] = new("component.label.textSize", "Text size", ValueKind.Integer, ["label", "textSize"], "12"),
         ["component.label.textStyle"] = new("component.label.textStyle", "Text style", ValueKind.OptionToken, ["label", "textStyle"], "normal", Options: TextStyleOptions),
 
-        ["component.audio.size"] = new("component.audio.size", "Size", ValueKind.IntegerPair, ["audio", "size"], "230|54"),
+        ["component.audio.size"] = new("component.audio.size", "Size", ValueKind.IntegerPair, ["audio", "size"], "230|54", PairLabels: new("W", "H")),
         ["component.audio.avatarPosition"] = new("component.audio.avatarPosition", "Avatar position", ValueKind.OptionToken, ["audio", "avatarPosition"], "right", Options: AvatarPositionOptions),
         ["component.audio.avatarSize"] = new("component.audio.avatarSize", "Avatar size", ValueKind.Integer, ["audio", "avatarSize"], "32"),
         ["component.audio.textSize"] = new("component.audio.textSize", "Text size", ValueKind.Integer, ["audio", "textSize"], "13"),

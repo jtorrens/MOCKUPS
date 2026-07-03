@@ -516,7 +516,7 @@ internal sealed class DictionaryFieldControl : Grid
             HorizontalAlignment = HorizontalAlignment.Left,
         };
 
-        var labels = PairLabels(_definition.Id);
+        var labels = PairLabels(_definition);
         var firstLabel = new TextBlock
         {
             Text = labels.First,
@@ -617,7 +617,7 @@ internal sealed class DictionaryFieldControl : Grid
             HorizontalAlignment = HorizontalAlignment.Left,
         };
 
-        var labels = PairLabels(_definition.Id);
+        var labels = PairLabels(_definition);
         var firstLabel = new TextBlock
         {
             Text = labels.First,
@@ -736,9 +736,14 @@ internal sealed class DictionaryFieldControl : Grid
         _isUpdatingColorControl = false;
     }
 
-    private static (string First, string Second) PairLabels(string fieldId)
+    private static (string First, string Second) PairLabels(FieldDefinition definition)
     {
-        return fieldId switch
+        if (definition.PairLabels is not null)
+        {
+            return (definition.PairLabels.First, definition.PairLabels.Second);
+        }
+
+        return definition.Id switch
         {
             var id when id.EndsWith(".size", StringComparison.Ordinal) || id.EndsWith(".renderSize", StringComparison.Ordinal) => ("W", "H"),
             var id when id.EndsWith(".position", StringComparison.Ordinal) => ("X", "Y"),

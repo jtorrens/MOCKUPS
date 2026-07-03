@@ -28,7 +28,15 @@ internal static class DesignPreviewPayloadFactory
             return null;
         }
 
-        var theme = database.GetThemeSettings(themeId);
+        SpikeDatabase.ThemeSettings theme;
+        try
+        {
+            theme = database.GetThemeSettings(themeId);
+        }
+        catch (InvalidOperationException)
+        {
+            return null;
+        }
         var paletteColors = database.GetPaletteColorMap(theme.ProjectId);
         var projectMediaRoot = database.GetProjectSettings(theme.ProjectId).MediaRoot;
         var iconTheme = !string.IsNullOrWhiteSpace(theme.IconThemeId)
