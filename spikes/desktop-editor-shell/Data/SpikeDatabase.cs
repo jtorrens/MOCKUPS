@@ -2349,7 +2349,7 @@ internal sealed partial class SpikeDatabase
         return QueryPaletteColorRows(connection)
             .Where((color) => color.ProjectId == projectId)
             .OrderBy((color) => color.Token)
-            .Select((color) => new FieldOption(color.Token, color.Token, color.ValueHex))
+            .Select((color) => new FieldOption(color.Token, color.Token, color.ValueHex, color.IsNeutral))
             .ToList();
     }
 

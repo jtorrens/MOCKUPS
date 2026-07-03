@@ -24,7 +24,8 @@ internal enum ValueKind
 internal sealed record FieldOption(
     string Value,
     string Label,
-    string? ColorHex = null)
+    string? ColorHex = null,
+    bool IsNeutral = false)
 {
     public override string ToString()
     {

@@ -15,12 +15,11 @@ internal sealed class DictionaryFieldControl : Grid
     private readonly FieldDefinition _definition;
     private readonly TextBlock _label;
     private readonly TextBox? _textBox;
-    private readonly TextBox? _pairFirstTextBox;
-    private readonly TextBox? _pairSecondTextBox;
+    private readonly DictionaryIntegerPairControl? _integerPairControl;
     private readonly HueDegreesControl? _hueControl;
     private readonly ComboBox? _comboBox;
-    private readonly ComboBox? _pairFirstComboBox;
-    private readonly ComboBox? _pairSecondComboBox;
+    private readonly DictionaryPaletteTokenControl? _paletteTokenControl;
+    private readonly DictionaryPalettePairControl? _palettePairControl;
     private readonly ToggleSwitch? _toggleSwitch;
     private readonly IconSlotsControl? _iconSlotsControl;
     private readonly Button? _themeTokenButton;
@@ -86,7 +85,7 @@ internal sealed class DictionaryFieldControl : Grid
             SetColumn(_toggleSwitch, 1);
             Children.Add(_toggleSwitch);
         }
-        else if (_definition.ValueKind is ValueKind.OptionToken or ValueKind.PaletteColorToken)
+        else if (_definition.ValueKind == ValueKind.OptionToken)
         {
             _comboBox = DictionaryOptionSelector.CreateComboBox(_definition, _value);
             _comboBox.SelectionChanged += (_, _) =>
@@ -98,6 +97,17 @@ internal sealed class DictionaryFieldControl : Grid
             };
             SetColumn(_comboBox, 1);
             Children.Add(_comboBox);
+        }
+        else if (_definition.ValueKind == ValueKind.PaletteColorToken)
+        {
+            _paletteTokenControl = new DictionaryPaletteTokenControl(_definition.Label, _definition.Options, _value, _definition.IsEditable);
+            _paletteTokenControl.ValueCommitted += (_, value) =>
+            {
+                SetLocalValue(value);
+                CommitValue();
+            };
+            SetColumn(_paletteTokenControl, 1);
+            Children.Add(_paletteTokenControl);
         }
         else if (_definition.ValueKind == ValueKind.ThemeToken)
         {
@@ -124,12 +134,15 @@ internal sealed class DictionaryFieldControl : Grid
         }
         else if (_definition.ValueKind == ValueKind.PaletteColorPair)
         {
-            var pair = DictionaryFieldPairText.Split(_value);
-            var pairControl = CreatePalettePairControl(pair.First, pair.Second);
-            _pairFirstComboBox = pairControl.FirstComboBox;
-            _pairSecondComboBox = pairControl.SecondComboBox;
-            SetColumn(pairControl.Control, 1);
-            Children.Add(pairControl.Control);
+            _palettePairControl = new DictionaryPalettePairControl(_definition, _value);
+            _palettePairControl.ValueChanged += (_, value) => SetLocalValue(value);
+            _palettePairControl.ValueCommitted += (_, value) =>
+            {
+                SetLocalValue(value);
+                CommitValue();
+            };
+            SetColumn(_palettePairControl, 1);
+            Children.Add(_palettePairControl);
         }
         else if (_definition.ValueKind == ValueKind.HexColor)
         {
@@ -181,12 +194,15 @@ internal sealed class DictionaryFieldControl : Grid
         }
         else if (_definition.ValueKind == ValueKind.IntegerPair)
         {
-            var pair = DictionaryFieldPairText.Split(_value);
-            var pairControl = CreatePairControl(pair.First, pair.Second);
-            _pairFirstTextBox = pairControl.FirstTextBox;
-            _pairSecondTextBox = pairControl.SecondTextBox;
-            SetColumn(pairControl.Control, 1);
-            Children.Add(pairControl.Control);
+            _integerPairControl = new DictionaryIntegerPairControl(_definition, _value);
+            _integerPairControl.ValueChanged += (_, value) => SetLocalValue(value);
+            _integerPairControl.ValueCommitted += (_, value) =>
+            {
+                SetLocalValue(value);
+                CommitValue();
+            };
+            SetColumn(_integerPairControl, 1);
+            Children.Add(_integerPairControl);
         }
         else if (_definition.ValueKind == ValueKind.IconSlots)
         {
@@ -317,9 +333,9 @@ internal sealed class DictionaryFieldControl : Grid
         {
             _hueControl.SetValue(value);
         }
-        else if (_definition.ValueKind == ValueKind.IntegerPair)
+        else if (_definition.ValueKind == ValueKind.IntegerPair && _integerPairControl is not null)
         {
-            UpdatePairControlsFromValue();
+            _integerPairControl.SetValue(value);
         }
         else if (_definition.ValueKind == ValueKind.IconSlots && _iconSlotsControl is not null)
         {
@@ -329,13 +345,17 @@ internal sealed class DictionaryFieldControl : Grid
         {
             _themeTokenButton.Content = ThemeTokenButtonContent(value);
         }
-        else if (_definition.ValueKind is ValueKind.OptionToken or ValueKind.PaletteColorToken)
+        else if (_definition.ValueKind == ValueKind.OptionToken)
         {
             UpdateOptionComboFromValue();
         }
-        else if (_definition.ValueKind == ValueKind.PaletteColorPair)
+        else if (_definition.ValueKind == ValueKind.PaletteColorToken && _paletteTokenControl is not null)
         {
-            UpdatePalettePairControlsFromValue();
+            _paletteTokenControl.SetValue(value);
+        }
+        else if (_definition.ValueKind == ValueKind.PaletteColorPair && _palettePairControl is not null)
+        {
+            _palettePairControl.SetValue(value);
         }
         else if (_textBox is not null)
         {
@@ -400,9 +420,9 @@ internal sealed class DictionaryFieldControl : Grid
         {
             _hueControl.SetValue(value);
         }
-        else if (_definition.ValueKind == ValueKind.IntegerPair)
+        else if (_definition.ValueKind == ValueKind.IntegerPair && _integerPairControl is not null)
         {
-            UpdatePairControlsFromValue();
+            _integerPairControl.SetValue(value);
         }
         else if (_definition.ValueKind == ValueKind.IconSlots && _iconSlotsControl is not null)
         {
@@ -412,13 +432,17 @@ internal sealed class DictionaryFieldControl : Grid
         {
             _themeTokenButton.Content = ThemeTokenButtonContent(value);
         }
-        else if (_definition.ValueKind is ValueKind.OptionToken or ValueKind.PaletteColorToken)
+        else if (_definition.ValueKind == ValueKind.OptionToken)
         {
             UpdateOptionComboFromValue();
         }
-        else if (_definition.ValueKind == ValueKind.PaletteColorPair)
+        else if (_definition.ValueKind == ValueKind.PaletteColorToken && _paletteTokenControl is not null)
         {
-            UpdatePalettePairControlsFromValue();
+            _paletteTokenControl.SetValue(value);
+        }
+        else if (_definition.ValueKind == ValueKind.PaletteColorPair && _palettePairControl is not null)
+        {
+            _palettePairControl.SetValue(value);
         }
         else if (_textBox is not null)
         {
@@ -449,156 +473,12 @@ internal sealed class DictionaryFieldControl : Grid
         };
     }
 
-    private (Control Control, TextBox FirstTextBox, TextBox SecondTextBox) CreatePairControl(string first, string second)
-    {
-        var grid = new Grid
-        {
-            ColumnDefinitions = new ColumnDefinitions("Auto,90,Auto,90"),
-            ColumnSpacing = 8,
-            VerticalAlignment = VerticalAlignment.Center,
-            HorizontalAlignment = HorizontalAlignment.Left,
-        };
-
-        var labels = DictionaryFieldPairText.Labels(_definition);
-        var firstLabel = new TextBlock
-        {
-            Text = labels.First,
-            MinWidth = 57,
-            VerticalAlignment = VerticalAlignment.Center,
-            Opacity = 0.78,
-        };
-        Grid.SetColumn(firstLabel, 0);
-
-        var firstTextBox = DictionaryTextBoxFactory.CreateCompactPair(first);
-        firstTextBox.TextChanged += (_, _) => SetPairValueFromTextBoxes(firstTextBox, null);
-        AttachDeferredCommit(firstTextBox);
-        Grid.SetColumn(firstTextBox, 1);
-
-        var secondLabel = new TextBlock
-        {
-            Text = labels.Second,
-            MinWidth = 57,
-            VerticalAlignment = VerticalAlignment.Center,
-            Opacity = 0.78,
-        };
-        Grid.SetColumn(secondLabel, 2);
-
-        var secondTextBox = DictionaryTextBoxFactory.CreateCompactPair(second);
-        secondTextBox.TextChanged += (_, _) => SetPairValueFromTextBoxes(null, secondTextBox);
-        AttachDeferredCommit(secondTextBox);
-        Grid.SetColumn(secondTextBox, 3);
-
-        grid.Children.Add(firstLabel);
-        grid.Children.Add(firstTextBox);
-        grid.Children.Add(secondLabel);
-        grid.Children.Add(secondTextBox);
-        return (grid, firstTextBox, secondTextBox);
-    }
-
-    private (Control Control, ComboBox FirstComboBox, ComboBox SecondComboBox) CreatePalettePairControl(string first, string second)
-    {
-        var grid = new Grid
-        {
-            ColumnDefinitions = new ColumnDefinitions("Auto,180,Auto,180"),
-            ColumnSpacing = 14,
-            VerticalAlignment = VerticalAlignment.Center,
-            HorizontalAlignment = HorizontalAlignment.Left,
-        };
-
-        var labels = DictionaryFieldPairText.Labels(_definition);
-        var firstLabel = new TextBlock
-        {
-            Text = labels.First,
-            MinWidth = 57,
-            VerticalAlignment = VerticalAlignment.Center,
-            Opacity = 0.78,
-        };
-        Grid.SetColumn(firstLabel, 0);
-
-        var firstCombo = DictionaryOptionSelector.CreateComboBox(_definition, first);
-        firstCombo.SelectionChanged += (_, _) => SetPalettePairValueFromComboBoxes(firstCombo, null);
-        Grid.SetColumn(firstCombo, 1);
-
-        var secondLabel = new TextBlock
-        {
-            Text = labels.Second,
-            MinWidth = 57,
-            Margin = new Avalonia.Thickness(10, 0, 0, 0),
-            VerticalAlignment = VerticalAlignment.Center,
-            Opacity = 0.78,
-        };
-        Grid.SetColumn(secondLabel, 2);
-
-        var secondCombo = DictionaryOptionSelector.CreateComboBox(_definition, second);
-        secondCombo.SelectionChanged += (_, _) => SetPalettePairValueFromComboBoxes(null, secondCombo);
-        Grid.SetColumn(secondCombo, 3);
-
-        grid.Children.Add(firstLabel);
-        grid.Children.Add(firstCombo);
-        grid.Children.Add(secondLabel);
-        grid.Children.Add(secondCombo);
-        return (grid, firstCombo, secondCombo);
-    }
-
-    private void SetPalettePairValueFromComboBoxes(ComboBox? firstComboBox, ComboBox? secondComboBox)
-    {
-        if (_isUpdatingColorControl) return;
-
-        SetLocalValue(DictionaryFieldPairText.Join(
-            firstComboBox is not null ? DictionaryOptionSelector.Value(firstComboBox) : (_pairFirstComboBox is not null ? DictionaryOptionSelector.Value(_pairFirstComboBox) : ""),
-            secondComboBox is not null ? DictionaryOptionSelector.Value(secondComboBox) : (_pairSecondComboBox is not null ? DictionaryOptionSelector.Value(_pairSecondComboBox) : "")));
-        CommitValue();
-    }
-
     private void UpdateOptionComboFromValue()
     {
         if (_comboBox is null) return;
 
         _isUpdatingColorControl = true;
         _comboBox.SelectedItem = DictionaryOptionSelector.SelectedOption(_definition, _value);
-        _isUpdatingColorControl = false;
-    }
-
-    private void UpdatePalettePairControlsFromValue()
-    {
-        var pair = DictionaryFieldPairText.Split(_value);
-        _isUpdatingColorControl = true;
-        if (_pairFirstComboBox is not null)
-        {
-            _pairFirstComboBox.SelectedItem = DictionaryOptionSelector.SelectedOption(_definition, pair.First);
-        }
-
-        if (_pairSecondComboBox is not null)
-        {
-            _pairSecondComboBox.SelectedItem = DictionaryOptionSelector.SelectedOption(_definition, pair.Second);
-        }
-
-        _isUpdatingColorControl = false;
-    }
-
-    private void SetPairValueFromTextBoxes(TextBox? firstTextBox, TextBox? secondTextBox)
-    {
-        if (_isUpdatingColorControl) return;
-
-        SetLocalValue(DictionaryFieldPairText.Join(
-            firstTextBox?.Text ?? _pairFirstTextBox?.Text ?? "",
-            secondTextBox?.Text ?? _pairSecondTextBox?.Text ?? ""));
-    }
-
-    private void UpdatePairControlsFromValue()
-    {
-        var pair = DictionaryFieldPairText.Split(_value);
-        _isUpdatingColorControl = true;
-        if (_pairFirstTextBox is not null && _pairFirstTextBox.Text != pair.First)
-        {
-            _pairFirstTextBox.Text = pair.First;
-        }
-
-        if (_pairSecondTextBox is not null && _pairSecondTextBox.Text != pair.Second)
-        {
-            _pairSecondTextBox.Text = pair.Second;
-        }
-
         _isUpdatingColorControl = false;
     }
 
