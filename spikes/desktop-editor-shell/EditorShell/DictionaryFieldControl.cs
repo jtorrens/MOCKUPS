@@ -1,6 +1,5 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Templates;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -56,38 +55,16 @@ internal sealed class DictionaryFieldControl : Grid
         _showThemeTokenPicker = showThemeTokenPicker;
         _createIconPreview = createIconPreview;
 
-        ColumnDefinitions = _definition.ValueKind switch
-        {
-            ValueKind.DirectoryPath => new ColumnDefinitions("180,*,Auto,Auto"),
-            ValueKind.ImageFilePath => new ColumnDefinitions("180,*,Auto,Auto"),
-            ValueKind.HexColor => new ColumnDefinitions("180,28,*,Auto,Auto"),
-            ValueKind.HueDegrees => new ColumnDefinitions("180,*,Auto"),
-            ValueKind.IntegerPair => new ColumnDefinitions("180,*,Auto"),
-            ValueKind.IconSlots => new ColumnDefinitions("180,*,Auto"),
-            ValueKind.ThemeToken => new ColumnDefinitions("180,*,Auto"),
-            ValueKind.OptionToken => new ColumnDefinitions("180,*,Auto"),
-            ValueKind.PaletteColorToken => new ColumnDefinitions("180,*,Auto"),
-            ValueKind.PaletteColorPair => new ColumnDefinitions("180,*,Auto"),
-            _ => new ColumnDefinitions("180,*,Auto"),
-        };
+        ColumnDefinitions = DictionaryFieldLayoutRules.Columns(_definition.ValueKind);
         ColumnSpacing = 12;
-        MinHeight = _definition.ValueKind switch
-        {
-            ValueKind.StringMultiline => 96,
-            ValueKind.IconSlots => 150,
-            _ => 40,
-        };
+        MinHeight = DictionaryFieldLayoutRules.MinHeight(_definition.ValueKind);
 
         _label = new TextBlock
         {
             Text = _definition.Label,
             FontWeight = FontWeight.SemiBold,
-            VerticalAlignment = _definition.ValueKind is ValueKind.StringMultiline or ValueKind.IconSlots
-                ? VerticalAlignment.Top
-                : VerticalAlignment.Center,
-            Margin = _definition.ValueKind is ValueKind.StringMultiline or ValueKind.IconSlots
-                ? new Avalonia.Thickness(0, 7, 0, 0)
-                : new Avalonia.Thickness(0),
+            VerticalAlignment = DictionaryFieldLayoutRules.LabelVerticalAlignment(_definition.ValueKind),
+            Margin = DictionaryFieldLayoutRules.LabelMargin(_definition.ValueKind),
         };
         SetColumn(_label, 0);
 
@@ -148,7 +125,7 @@ internal sealed class DictionaryFieldControl : Grid
         }
         else if (_definition.ValueKind == ValueKind.PaletteColorPair)
         {
-            var pair = SplitPair(_value);
+            var pair = DictionaryFieldPairText.Split(_value);
             var pairControl = CreatePalettePairControl(pair.First, pair.Second);
             _pairFirstComboBox = pairControl.FirstComboBox;
             _pairSecondComboBox = pairControl.SecondComboBox;
@@ -167,7 +144,7 @@ internal sealed class DictionaryFieldControl : Grid
             {
                 if (_isUpdatingColorControl) return;
 
-                SetLocalValue(NormalizeHex(_textBox.Text ?? ""));
+                SetLocalValue(DictionaryFieldColorValue.NormalizeHex(_textBox.Text ?? ""));
                 UpdateColorControlsFromValue();
             };
             AttachDeferredCommit(_textBox);
@@ -205,7 +182,7 @@ internal sealed class DictionaryFieldControl : Grid
         }
         else if (_definition.ValueKind == ValueKind.IntegerPair)
         {
-            var pair = SplitPair(_value);
+            var pair = DictionaryFieldPairText.Split(_value);
             var pairControl = CreatePairControl(pair.First, pair.Second);
             _pairFirstTextBox = pairControl.FirstTextBox;
             _pairSecondTextBox = pairControl.SecondTextBox;
@@ -269,9 +246,7 @@ internal sealed class DictionaryFieldControl : Grid
             Width = 32,
             Height = 32,
             Padding = new Avalonia.Thickness(0),
-            VerticalAlignment = _definition.ValueKind == ValueKind.StringMultiline
-                ? VerticalAlignment.Top
-                : VerticalAlignment.Center,
+            VerticalAlignment = DictionaryFieldLayoutRules.RestoreButtonVerticalAlignment(_definition.ValueKind),
             IsVisible = !IsDefault && _definition.IsEditable,
         };
         _restoreButton.Click += (_, _) =>
@@ -281,13 +256,7 @@ internal sealed class DictionaryFieldControl : Grid
                 SetInheritedValue(commit: true);
             }
         };
-        SetColumn(_restoreButton, _definition.ValueKind switch
-        {
-            ValueKind.DirectoryPath => 3,
-            ValueKind.ImageFilePath => 3,
-            ValueKind.HexColor => 4,
-            _ => 2,
-        });
+        SetColumn(_restoreButton, DictionaryFieldLayoutRules.RestoreButtonColumn(_definition.ValueKind));
 
         Children.Add(_label);
         Children.Add(_restoreButton);
@@ -516,7 +485,7 @@ internal sealed class DictionaryFieldControl : Grid
             HorizontalAlignment = HorizontalAlignment.Left,
         };
 
-        var labels = PairLabels(_definition);
+        var labels = DictionaryFieldPairText.Labels(_definition);
         var firstLabel = new TextBlock
         {
             Text = labels.First,
@@ -561,50 +530,13 @@ internal sealed class DictionaryFieldControl : Grid
             IsEnabled = _definition.IsEditable,
             ItemsSource = _definition.Options ?? [],
             ItemTemplate = _definition.ValueKind is ValueKind.PaletteColorToken or ValueKind.PaletteColorPair
-                ? PaletteOptionTemplate()
+                ? DictionaryPaletteOptionTemplate.Create()
                 : null,
         };
         EditorComboBoxBehavior.Configure(comboBox);
 
         comboBox.SelectedItem = SelectedOption(value);
         return comboBox;
-    }
-
-    private static IDataTemplate PaletteOptionTemplate()
-    {
-        return new FuncDataTemplate<FieldOption>((option, _) =>
-        {
-            var panel = new StackPanel
-            {
-                Orientation = Orientation.Horizontal,
-                Spacing = 8,
-                VerticalAlignment = VerticalAlignment.Center,
-            };
-            panel.Children.Add(new Border
-            {
-                Width = 16,
-                Height = 16,
-                CornerRadius = new CornerRadius(4),
-                Background = SafeColorBrush(option?.ColorHex, "#808080"),
-                BorderBrush = new SolidColorBrush(Color.Parse("#667085")),
-                BorderThickness = new Avalonia.Thickness(1),
-                VerticalAlignment = VerticalAlignment.Center,
-            });
-            panel.Children.Add(new TextBlock
-            {
-                Text = option?.Label ?? "",
-                Foreground = PaletteOptionTextBrush(),
-                VerticalAlignment = VerticalAlignment.Center,
-                TextTrimming = TextTrimming.CharacterEllipsis,
-            });
-            return panel;
-        });
-    }
-
-    private static IBrush PaletteOptionTextBrush()
-    {
-        var isLight = Application.Current?.ActualThemeVariant == ThemeVariant.Light;
-        return new SolidColorBrush(Color.Parse(isLight ? "#1F2937" : "#F1F5F9"));
     }
 
     private (Control Control, ComboBox FirstComboBox, ComboBox SecondComboBox) CreatePalettePairControl(string first, string second)
@@ -617,7 +549,7 @@ internal sealed class DictionaryFieldControl : Grid
             HorizontalAlignment = HorizontalAlignment.Left,
         };
 
-        var labels = PairLabels(_definition);
+        var labels = DictionaryFieldPairText.Labels(_definition);
         var firstLabel = new TextBlock
         {
             Text = labels.First,
@@ -667,7 +599,7 @@ internal sealed class DictionaryFieldControl : Grid
     {
         if (_isUpdatingColorControl) return;
 
-        SetLocalValue(JoinPair(
+        SetLocalValue(DictionaryFieldPairText.Join(
             firstComboBox is not null ? ComboValue(firstComboBox) : (_pairFirstComboBox is not null ? ComboValue(_pairFirstComboBox) : ""),
             secondComboBox is not null ? ComboValue(secondComboBox) : (_pairSecondComboBox is not null ? ComboValue(_pairSecondComboBox) : "")));
         CommitValue();
@@ -684,7 +616,7 @@ internal sealed class DictionaryFieldControl : Grid
 
     private void UpdatePalettePairControlsFromValue()
     {
-        var pair = SplitPair(_value);
+        var pair = DictionaryFieldPairText.Split(_value);
         _isUpdatingColorControl = true;
         if (_pairFirstComboBox is not null)
         {
@@ -714,14 +646,14 @@ internal sealed class DictionaryFieldControl : Grid
     {
         if (_isUpdatingColorControl) return;
 
-        SetLocalValue(JoinPair(
+        SetLocalValue(DictionaryFieldPairText.Join(
             firstTextBox?.Text ?? _pairFirstTextBox?.Text ?? "",
             secondTextBox?.Text ?? _pairSecondTextBox?.Text ?? ""));
     }
 
     private void UpdatePairControlsFromValue()
     {
-        var pair = SplitPair(_value);
+        var pair = DictionaryFieldPairText.Split(_value);
         _isUpdatingColorControl = true;
         if (_pairFirstTextBox is not null && _pairFirstTextBox.Text != pair.First)
         {
@@ -736,35 +668,6 @@ internal sealed class DictionaryFieldControl : Grid
         _isUpdatingColorControl = false;
     }
 
-    private static (string First, string Second) PairLabels(FieldDefinition definition)
-    {
-        if (definition.PairLabels is not null)
-        {
-            return (definition.PairLabels.First, definition.PairLabels.Second);
-        }
-
-        return definition.Id switch
-        {
-            var id when id.EndsWith(".size", StringComparison.Ordinal) || id.EndsWith(".renderSize", StringComparison.Ordinal) => ("W", "H"),
-            var id when id.EndsWith(".position", StringComparison.Ordinal) => ("X", "Y"),
-            var id when id.EndsWith(".vertical", StringComparison.Ordinal) => ("Top", "Bottom"),
-            var id when id.EndsWith(".horizontal", StringComparison.Ordinal) => ("Left", "Right"),
-            var id when id.EndsWith(".modes", StringComparison.Ordinal) || id.StartsWith("theme.", StringComparison.Ordinal) => ("Light", "Dark"),
-            _ => ("A", "B"),
-        };
-    }
-
-    private static (string First, string Second) SplitPair(string value)
-    {
-        var parts = value.Split('|', 2);
-        return (parts.ElementAtOrDefault(0) ?? "", parts.ElementAtOrDefault(1) ?? "");
-    }
-
-    private static string JoinPair(string first, string second)
-    {
-        return $"{first}|{second}";
-    }
-
     private static Border CreateColorSwatch(string value)
     {
         return new Border
@@ -772,7 +675,7 @@ internal sealed class DictionaryFieldControl : Grid
             Width = 24,
             Height = 24,
             CornerRadius = new CornerRadius(5),
-            Background = new SolidColorBrush(ParseColor(value)),
+            Background = new SolidColorBrush(DictionaryFieldColorValue.Parse(value)),
             BorderBrush = new SolidColorBrush(Color.Parse("#667085")),
             BorderThickness = new Avalonia.Thickness(1),
             VerticalAlignment = VerticalAlignment.Center,
@@ -783,7 +686,7 @@ internal sealed class DictionaryFieldControl : Grid
     private void UpdateColorControlsFromValue()
     {
         _isUpdatingColorControl = true;
-        var color = ParseColor(_value);
+        var color = DictionaryFieldColorValue.Parse(_value);
         if (_colorSwatch is not null)
         {
             _colorSwatch.Background = new SolidColorBrush(color);
@@ -795,41 +698,6 @@ internal sealed class DictionaryFieldControl : Grid
         }
 
         _isUpdatingColorControl = false;
-    }
-
-    private static string NormalizeHex(string value)
-    {
-        var trimmed = value.Trim();
-        if (trimmed.Length == 6 && !trimmed.StartsWith("#", StringComparison.Ordinal))
-        {
-            trimmed = $"#{trimmed}";
-        }
-
-        return trimmed;
-    }
-
-    private static Color ParseColor(string value)
-    {
-        try
-        {
-            return Color.Parse(string.IsNullOrWhiteSpace(value) ? "#808080" : NormalizeHex(value));
-        }
-        catch (FormatException)
-        {
-            return Color.Parse("#808080");
-        }
-    }
-
-    private static IBrush SafeColorBrush(string? value, string fallback)
-    {
-        try
-        {
-            return new SolidColorBrush(Color.Parse(string.IsNullOrWhiteSpace(value) ? fallback : NormalizeHex(value)));
-        }
-        catch (FormatException)
-        {
-            return new SolidColorBrush(Color.Parse(fallback));
-        }
     }
 
     private async Task<string?> ShowHexColorDialogAsync()
