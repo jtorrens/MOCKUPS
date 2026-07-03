@@ -12,7 +12,9 @@ internal sealed record DesignPreviewPayload(
     IReadOnlyDictionary<string, string> PaletteColors,
     string ProjectMediaRoot,
     string IconAssetRoot,
-    string IconMappingJson);
+    string IconMappingJson,
+    string ComponentType = "",
+    string DesignPreviewJson = "");
 
 internal static class DesignPreviewPayloadFactory
 {
@@ -36,6 +38,7 @@ internal static class DesignPreviewPayloadFactory
         {
             ProjectTreeNodeKind.StatusBar => FromStatusBar(database, node, theme.TokensJson, paletteColors, projectMediaRoot, iconTheme),
             ProjectTreeNodeKind.NavigationBar => FromNavigationBar(database, node, theme.TokensJson, paletteColors, projectMediaRoot, iconTheme),
+            ProjectTreeNodeKind.ComponentClass => FromComponentClass(database, node, theme.TokensJson, paletteColors, projectMediaRoot, iconTheme),
             _ => null,
         };
     }
@@ -78,5 +81,27 @@ internal static class DesignPreviewPayloadFactory
             projectMediaRoot,
             iconTheme?.AssetRoot ?? "",
             iconTheme?.MappingJson ?? "{}");
+    }
+
+    private static DesignPreviewPayload FromComponentClass(
+        SpikeDatabase database,
+        ProjectTreeNode node,
+        string themeTokensJson,
+        IReadOnlyDictionary<string, string> paletteColors,
+        string projectMediaRoot,
+        SpikeDatabase.IconThemeSettings? iconTheme)
+    {
+        var settings = database.GetComponentClassSettings(node.Id);
+        return new DesignPreviewPayload(
+            "componentClass",
+            settings.Name,
+            settings.ConfigJson,
+            themeTokensJson,
+            paletteColors,
+            projectMediaRoot,
+            iconTheme?.AssetRoot ?? "",
+            iconTheme?.MappingJson ?? "{}",
+            settings.ComponentType,
+            settings.DesignPreviewJson);
     }
 }

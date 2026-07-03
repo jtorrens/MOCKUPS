@@ -22,7 +22,9 @@ internal static class WebDesignPreviewRenderer
             var request = new
             {
                 kind = payload.Kind,
+                componentType = payload.ComponentType,
                 configJson = payload.ConfigJson,
+                designPreviewJson = payload.DesignPreviewJson,
                 themeMode = themeMode is "dark" ? "dark" : "light",
                 themeTokensJson = payload.ThemeTokensJson,
                 paletteColors = payload.PaletteColors,

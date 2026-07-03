@@ -90,9 +90,10 @@ export const NavigationBarModule: VisualModule<NavigationBarModuleInput> = {
   render(input) {
     const foreground = readString(input.tokens, "foreground", "#000000");
     const background = readString(input.tokens, "background", "transparent");
-    const type = readString(input.navigationBar, "type", "buttons");
-    const layout = asRecord(input.navigationBar?.layout);
-    const gesture = asRecord(input.navigationBar?.gesture);
+    const navigationBar = asRecord(input.navigationBar);
+    const type = readString(navigationBar, "type", "buttons");
+    const layout = asRecord(navigationBar.layout);
+    const gesture = asRecord(navigationBar.gesture);
     const height = readNumber(layout, "height", 0);
     const itemSize = readNumber(layout, "itemSize", Math.max(10, height * 0.5));
     const sidePadding = readNumber(layout, "sidePadding", 40);
