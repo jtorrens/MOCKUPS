@@ -10,6 +10,10 @@ Before modifying the Avalonia/Suki desktop editor spike, read this document and 
 
 The short operational version also lives in the repository root as `AGENTS.md` so future Codex sessions see the same constraints.
 
+For the cleanup order and migration guardrails, also read:
+
+- `docs/architecture/editor_modernization_roadmap.md`
+
 Two rules override local convenience:
 
 1. `MainWindow` is shell-only. It must not accumulate editor-specific logic.

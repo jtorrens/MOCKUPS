@@ -3,6 +3,7 @@
 Before changing the Avalonia/Suki desktop editor spike, read and follow:
 
 - `docs/architecture/editor_shell_non_negotiables.md`
+- `docs/architecture/editor_modernization_roadmap.md`
 
 ## Hard rule: `MainWindow` is shell-only
 
