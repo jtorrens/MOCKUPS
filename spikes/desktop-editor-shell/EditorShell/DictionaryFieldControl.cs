@@ -20,11 +20,10 @@ internal sealed class DictionaryFieldControl : Grid
     private readonly ComboBox? _comboBox;
     private readonly DictionaryPaletteTokenControl? _paletteTokenControl;
     private readonly DictionaryPalettePairControl? _palettePairControl;
+    private readonly DictionaryHexColorControl? _hexColorControl;
     private readonly ToggleSwitch? _toggleSwitch;
     private readonly IconSlotsControl? _iconSlotsControl;
     private readonly Button? _themeTokenButton;
-    private readonly Border? _colorSwatch;
-    private readonly Button? _colorPickerButton;
     private readonly Button _restoreButton;
     private readonly Func<string, ValueKind, Task<string?>>? _browsePath;
     private readonly Func<string, bool, Task<string?>>? _showIconTokenPicker;
@@ -146,39 +145,15 @@ internal sealed class DictionaryFieldControl : Grid
         }
         else if (_definition.ValueKind == ValueKind.HexColor)
         {
-            _colorSwatch = CreateColorSwatch(_value);
-            SetColumn(_colorSwatch, 1);
-            Children.Add(_colorSwatch);
-
-            _textBox = DictionaryTextBoxFactory.Create(_definition);
-            _textBox.Text = _value;
-            _textBox.TextChanged += (_, _) =>
+            _hexColorControl = new DictionaryHexColorControl(_definition, _value);
+            _hexColorControl.ValueChanged += (_, value) => SetLocalValue(value);
+            _hexColorControl.ValueCommitted += (_, value) =>
             {
-                if (_isUpdatingColorControl) return;
-
-                SetLocalValue(DictionaryFieldColorValue.NormalizeHex(_textBox.Text ?? ""));
-                UpdateColorControlsFromValue();
+                SetLocalValue(value);
+                CommitValue();
             };
-            AttachDeferredCommit(_textBox);
-            SetColumn(_textBox, 2);
-            Children.Add(_textBox);
-
-            _colorPickerButton = new Button
-            {
-                Content = "Pick",
-                MinWidth = 58,
-                Height = 34,
-                IsEnabled = _definition.IsEditable,
-                VerticalAlignment = VerticalAlignment.Center,
-            };
-            _colorPickerButton.Click += async (_, _) =>
-            {
-                var color = await ShowHexColorDialogAsync();
-                if (color is null) return;
-                SetValue(color, commit: true);
-            };
-            SetColumn(_colorPickerButton, 3);
-            Children.Add(_colorPickerButton);
+            SetColumn(_hexColorControl, 1);
+            Children.Add(_hexColorControl);
         }
         else if (_definition.ValueKind == ValueKind.HueDegrees)
         {
@@ -325,9 +300,9 @@ internal sealed class DictionaryFieldControl : Grid
         {
             _toggleSwitch.IsChecked = StringToBool(value);
         }
-        else if (_definition.ValueKind == ValueKind.HexColor)
+        else if (_definition.ValueKind == ValueKind.HexColor && _hexColorControl is not null)
         {
-            UpdateColorControlsFromValue();
+            _hexColorControl.SetValue(value);
         }
         else if (_definition.ValueKind == ValueKind.HueDegrees && _hueControl is not null)
         {
@@ -412,9 +387,9 @@ internal sealed class DictionaryFieldControl : Grid
         {
             _toggleSwitch.IsChecked = StringToBool(value);
         }
-        else if (_definition.ValueKind == ValueKind.HexColor)
+        else if (_definition.ValueKind == ValueKind.HexColor && _hexColorControl is not null)
         {
-            UpdateColorControlsFromValue();
+            _hexColorControl.SetValue(value);
         }
         else if (_definition.ValueKind == ValueKind.HueDegrees && _hueControl is not null)
         {
@@ -480,49 +455,6 @@ internal sealed class DictionaryFieldControl : Grid
         _isUpdatingColorControl = true;
         _comboBox.SelectedItem = DictionaryOptionSelector.SelectedOption(_definition, _value);
         _isUpdatingColorControl = false;
-    }
-
-    private static Border CreateColorSwatch(string value)
-    {
-        return new Border
-        {
-            Width = 24,
-            Height = 24,
-            CornerRadius = new CornerRadius(5),
-            Background = new SolidColorBrush(DictionaryFieldColorValue.Parse(value)),
-            BorderBrush = new SolidColorBrush(Color.Parse("#667085")),
-            BorderThickness = new Avalonia.Thickness(1),
-            VerticalAlignment = VerticalAlignment.Center,
-            HorizontalAlignment = HorizontalAlignment.Center,
-        };
-    }
-
-    private void UpdateColorControlsFromValue()
-    {
-        _isUpdatingColorControl = true;
-        var color = DictionaryFieldColorValue.Parse(_value);
-        if (_colorSwatch is not null)
-        {
-            _colorSwatch.Background = new SolidColorBrush(color);
-        }
-
-        if (_textBox is not null && _textBox.Text != _value)
-        {
-            _textBox.Text = _value;
-        }
-
-        _isUpdatingColorControl = false;
-    }
-
-    private async Task<string?> ShowHexColorDialogAsync()
-    {
-        var owner = TopLevel.GetTopLevel(this) as Window;
-        if (owner is null)
-        {
-            return null;
-        }
-
-        return await HexColorPickerDialog.Show(owner, _definition.Label, _value);
     }
 
     private static bool StringToBool(string value)
