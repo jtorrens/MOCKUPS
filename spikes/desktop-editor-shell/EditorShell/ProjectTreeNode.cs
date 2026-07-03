@@ -13,6 +13,7 @@ internal enum ProjectTreeNodeKind
     IconThemesRoot,
     StatusBarsRoot,
     NavigationBarsRoot,
+    RenderPresetsRoot,
     ComponentClassesRoot,
     DevicesRoot,
     ActorsRoot,
@@ -27,6 +28,7 @@ internal enum ProjectTreeNodeKind
     IconTheme,
     StatusBar,
     NavigationBar,
+    RenderPreset,
     ComponentClass,
     Device,
     Actor,
@@ -73,6 +75,7 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.IconThemesRoot
         or ProjectTreeNodeKind.StatusBarsRoot
         or ProjectTreeNodeKind.NavigationBarsRoot
+        or ProjectTreeNodeKind.RenderPresetsRoot
         or ProjectTreeNodeKind.ComponentClassesRoot
         or ProjectTreeNodeKind.DevicesRoot
         or ProjectTreeNodeKind.ActorsRoot
@@ -88,6 +91,7 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.IconTheme
         or ProjectTreeNodeKind.StatusBar
         or ProjectTreeNodeKind.NavigationBar
+        or ProjectTreeNodeKind.RenderPreset
         or ProjectTreeNodeKind.ComponentClass
         or ProjectTreeNodeKind.Device
         or ProjectTreeNodeKind.Actor
@@ -100,6 +104,7 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.IconTheme
         or ProjectTreeNodeKind.StatusBar
         or ProjectTreeNodeKind.NavigationBar
+        or ProjectTreeNodeKind.RenderPreset
         or ProjectTreeNodeKind.ComponentClass
         or ProjectTreeNodeKind.Device
         or ProjectTreeNodeKind.Actor
@@ -112,6 +117,7 @@ internal sealed class ProjectTreeNode
         and not ProjectTreeNodeKind.IconThemesRoot
         and not ProjectTreeNodeKind.StatusBarsRoot
         and not ProjectTreeNodeKind.NavigationBarsRoot
+        and not ProjectTreeNodeKind.RenderPresetsRoot
         and not ProjectTreeNodeKind.ComponentClassesRoot
         and not ProjectTreeNodeKind.DevicesRoot
         and not ProjectTreeNodeKind.ActorsRoot
@@ -139,6 +145,7 @@ internal sealed class ProjectTreeNode
             ProjectTreeNodeKind.IconThemesRoot => "navigation.icon_themes",
             ProjectTreeNodeKind.StatusBarsRoot => "navigation.status_bars",
             ProjectTreeNodeKind.NavigationBarsRoot => "navigation.navigation_bars",
+            ProjectTreeNodeKind.RenderPresetsRoot => "navigation.render_presets",
             ProjectTreeNodeKind.ComponentClassesRoot => "navigation.component_classes",
             ProjectTreeNodeKind.DevicesRoot => "navigation.devices",
             ProjectTreeNodeKind.ActorsRoot => "navigation.actors",
@@ -153,6 +160,7 @@ internal sealed class ProjectTreeNode
             ProjectTreeNodeKind.IconTheme => "icon_theme",
             ProjectTreeNodeKind.StatusBar => "status_bar",
             ProjectTreeNodeKind.NavigationBar => "navigation_bar",
+            ProjectTreeNodeKind.RenderPreset => "render_preset",
             ProjectTreeNodeKind.ComponentClass => "component.avatar",
             ProjectTreeNodeKind.Device => "device",
             ProjectTreeNodeKind.Actor => "actor",

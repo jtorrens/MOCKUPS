@@ -18,7 +18,10 @@ internal sealed class RecordClassFieldValueService
         return nodeKind switch
         {
             ProjectTreeNodeKind.Project => fieldId.StartsWith("project.", StringComparison.Ordinal),
+            ProjectTreeNodeKind.App => fieldId.StartsWith("app.", StringComparison.Ordinal),
             ProjectTreeNodeKind.Episode => fieldId.StartsWith("episode.", StringComparison.Ordinal),
+            ProjectTreeNodeKind.Shot => fieldId.StartsWith("shot.", StringComparison.Ordinal),
+            ProjectTreeNodeKind.RenderPreset => fieldId.StartsWith("renderPreset.", StringComparison.Ordinal),
             ProjectTreeNodeKind.PaletteColor => fieldId.StartsWith("palette.", StringComparison.Ordinal),
             ProjectTreeNodeKind.Device => fieldId.StartsWith("device.", StringComparison.Ordinal),
             ProjectTreeNodeKind.Theme => fieldId.StartsWith("theme.", StringComparison.Ordinal),
@@ -37,7 +40,10 @@ internal sealed class RecordClassFieldValueService
         var value = node.Kind switch
         {
             ProjectTreeNodeKind.Project => ProjectFieldValue(node.Id, field.Id),
+            ProjectTreeNodeKind.App => AppFieldValue(node.Id, field.Id),
             ProjectTreeNodeKind.Episode => EpisodeFieldValue(node.Id, field.Id),
+            ProjectTreeNodeKind.Shot => ShotFieldValue(node.Id, field.Id),
+            ProjectTreeNodeKind.RenderPreset => RenderPresetFieldValue(node.Id, field.Id),
             ProjectTreeNodeKind.PaletteColor => PaletteColorFieldValue(node.Id, field.Id),
             ProjectTreeNodeKind.Device => DeviceFieldValue(node.Id, field.Id),
             ProjectTreeNodeKind.Theme => ThemeFieldValue(node.Id, field.Id),
@@ -52,6 +58,9 @@ internal sealed class RecordClassFieldValueService
         {
             ProjectTreeNodeKind.Theme => ThemeFieldOptions(node.Id, field),
             ProjectTreeNodeKind.Actor => ActorFieldOptions(node.Id, field),
+            ProjectTreeNodeKind.App => AppFieldOptions(field),
+            ProjectTreeNodeKind.Shot => ShotFieldOptions(node.Id, field),
+            ProjectTreeNodeKind.RenderPreset => RenderPresetFieldOptions(field),
             ProjectTreeNodeKind.ProductionFont => ProductionFontFieldOptions(field),
             ProjectTreeNodeKind.NavigationBar => NavigationBarFieldOptions(field),
             _ => field.Options,
@@ -77,8 +86,17 @@ internal sealed class RecordClassFieldValueService
             case ProjectTreeNodeKind.Project when fieldId.StartsWith("project.", StringComparison.Ordinal):
                 _database.UpdateProjectField(node.Id, fieldId, value);
                 return;
+            case ProjectTreeNodeKind.App when fieldId.StartsWith("app.", StringComparison.Ordinal):
+                _database.UpdateAppField(node.Id, fieldId, value);
+                return;
             case ProjectTreeNodeKind.Episode when fieldId.StartsWith("episode.", StringComparison.Ordinal):
                 _database.UpdateEpisodeField(node.Id, fieldId, value);
+                return;
+            case ProjectTreeNodeKind.Shot when fieldId.StartsWith("shot.", StringComparison.Ordinal):
+                _database.UpdateShotField(node.Id, fieldId, value);
+                return;
+            case ProjectTreeNodeKind.RenderPreset when fieldId.StartsWith("renderPreset.", StringComparison.Ordinal):
+                _database.UpdateRenderPresetField(node.Id, fieldId, value);
                 return;
             case ProjectTreeNodeKind.PaletteColor when fieldId.StartsWith("palette.", StringComparison.Ordinal):
                 _database.UpdatePaletteColorField(node.Id, fieldId, value);
@@ -128,6 +146,55 @@ internal sealed class RecordClassFieldValueService
             "episode.slug" => settings.Slug,
             "episode.sortOrder" => settings.SortOrder.ToString(),
             _ => throw new InvalidOperationException($"Unknown episode field '{fieldId}'."),
+        };
+    }
+
+    private string ShotFieldValue(string shotId, string fieldId)
+    {
+        var settings = _database.GetShotSettings(shotId);
+        return fieldId switch
+        {
+            "shot.slug" => settings.Slug,
+            "shot.version" => settings.Version.ToString(),
+            "shot.sortOrder" => settings.SortOrder.ToString(),
+            "shot.durationFrames" => settings.DurationFrames.ToString(),
+            "shot.fps" => settings.Fps.ToString(),
+            "shot.ownerActorId" => settings.OwnerActorId,
+            "shot.renderPresetId" => settings.RenderPresetId,
+            "shot.canvas" => settings.CanvasJson,
+            "shot.metadata" => settings.MetadataJson,
+            _ => throw new InvalidOperationException($"Unknown shot field '{fieldId}'."),
+        };
+    }
+
+    private string AppFieldValue(string appId, string fieldId)
+    {
+        var settings = _database.GetAppSettings(appId);
+        return fieldId switch
+        {
+            "app.bundleKey" => settings.BundleKey,
+            "app.appType" => settings.AppType,
+            "app.config" => settings.ConfigJson,
+            "app.metadata" => settings.MetadataJson,
+            _ => throw new InvalidOperationException($"Unknown app field '{fieldId}'."),
+        };
+    }
+
+    private string RenderPresetFieldValue(string renderPresetId, string fieldId)
+    {
+        var settings = _database.GetRenderPresetSettings(renderPresetId);
+        return fieldId switch
+        {
+            "renderPreset.width" => settings.Width.ToString(),
+            "renderPreset.height" => settings.Height.ToString(),
+            "renderPreset.fps" => settings.Fps.ToString(),
+            "renderPreset.format" => settings.Format,
+            "renderPreset.codec" => settings.CodecJson,
+            "renderPreset.color" => settings.ColorJson,
+            "renderPreset.quality" => settings.QualityJson,
+            "renderPreset.export" => settings.ExportJson,
+            "renderPreset.export.ffmpegArgs" => ExportFfmpegArgs(settings.ExportJson),
+            _ => throw new InvalidOperationException($"Unknown render preset field '{fieldId}'."),
         };
     }
 
@@ -198,6 +265,43 @@ internal sealed class RecordClassFieldValueService
                 new FieldOption("emoji", "Emoji"),
             ]
             : field.Options;
+    }
+
+    private static IReadOnlyList<FieldOption>? AppFieldOptions(RecordClassFieldDescriptor field)
+    {
+        return field.Id == "app.appType"
+            ?
+            [
+                new FieldOption("chat", "Chat"),
+                new FieldOption("media", "Media"),
+                new FieldOption("system", "System"),
+                new FieldOption("custom", "Custom"),
+            ]
+            : field.Options;
+    }
+
+    private IReadOnlyList<FieldOption>? ShotFieldOptions(string shotId, RecordClassFieldDescriptor field)
+    {
+        var settings = _database.GetShotSettings(shotId);
+        return field.Id switch
+        {
+            "shot.ownerActorId" => _database.GetActorOptions(settings.ProjectId),
+            "shot.renderPresetId" => _database.GetRenderPresetOptions(settings.ProjectId),
+            _ => field.Options,
+        };
+    }
+
+    private static IReadOnlyList<FieldOption>? RenderPresetFieldOptions(RecordClassFieldDescriptor field)
+    {
+        return field.Id switch
+        {
+            "renderPreset.format" =>
+            [
+                new FieldOption("mov", "MOV"),
+                new FieldOption("image", "Image"),
+            ],
+            _ => field.Options,
+        };
     }
 
     private static IReadOnlyList<FieldOption>? NavigationBarFieldOptions(RecordClassFieldDescriptor field)
@@ -298,4 +402,19 @@ internal sealed class RecordClassFieldValueService
     }
 
     private static string BoolToString(bool value) => value ? "true" : "false";
+
+    private static string ExportFfmpegArgs(string exportJson)
+    {
+        try
+        {
+            using var document = System.Text.Json.JsonDocument.Parse(string.IsNullOrWhiteSpace(exportJson) ? "{}" : exportJson);
+            return document.RootElement.TryGetProperty("ffmpegArgs", out var value) && value.ValueKind == System.Text.Json.JsonValueKind.String
+                ? value.GetString() ?? ""
+                : "";
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return "";
+        }
+    }
 }

@@ -50,6 +50,7 @@ internal sealed partial class SpikeDatabase
     }
 
     private static Dictionary<string, List<string>> BuildReferenceUsageIndex(
+        IReadOnlyList<ShotRow> shots,
         IReadOnlyList<ActorRow> actors,
         IReadOnlyList<ThemeRow> themes,
         IReadOnlyList<PaletteColorRow> paletteColors,
@@ -57,6 +58,7 @@ internal sealed partial class SpikeDatabase
         IReadOnlyList<IconThemeRow> iconThemes,
         IReadOnlyList<StatusBarRow> statusBars,
         IReadOnlyList<NavigationBarRow> navigationBars,
+        IReadOnlyList<RenderPresetRow> renderPresets,
         IReadOnlyList<ComponentClassRow> componentClasses)
     {
         var index = new Dictionary<string, List<string>>(StringComparer.Ordinal);
@@ -65,6 +67,12 @@ internal sealed partial class SpikeDatabase
         {
             AddUsage(index, ProjectTreeNodeKind.Device, actor.DefaultDeviceId, $"Actor: {actor.DisplayName}");
             AddUsage(index, ProjectTreeNodeKind.Theme, actor.DefaultThemeId, $"Actor: {actor.DisplayName}");
+        }
+
+        foreach (var shot in shots)
+        {
+            AddUsage(index, ProjectTreeNodeKind.Actor, shot.OwnerActorId, $"Shot: {shot.Name}");
+            AddUsage(index, ProjectTreeNodeKind.RenderPreset, shot.RenderPresetId, $"Shot: {shot.Name}");
         }
 
         foreach (var theme in themes)
@@ -110,6 +118,11 @@ internal sealed partial class SpikeDatabase
             foreach (var navigationBar in navigationBars)
             {
                 AddUsageIfContains(index, ProjectTreeNodeKind.NavigationBar, navigationBar.Id, componentText, $"Component Class: {componentClass.Name}");
+            }
+
+            foreach (var renderPreset in renderPresets)
+            {
+                AddUsageIfContains(index, ProjectTreeNodeKind.RenderPreset, renderPreset.Id, componentText, $"Component Class: {componentClass.Name}");
             }
 
             foreach (var font in productionFonts)
@@ -221,6 +234,7 @@ internal sealed partial class SpikeDatabase
             ProjectTreeNodeKind.IconTheme => "icon_themes",
             ProjectTreeNodeKind.StatusBar => "status_bars",
             ProjectTreeNodeKind.NavigationBar => "navigation_bars",
+            ProjectTreeNodeKind.RenderPreset => "render_presets",
             ProjectTreeNodeKind.ComponentClass => "component_classes",
             _ => "",
         };
@@ -305,6 +319,7 @@ internal sealed partial class SpikeDatabase
             "navigation_bars" => "Navigation Bar",
             "palette_colors" => "Palette Color",
             "production_fonts" => "Production Font",
+            "render_presets" => "Render Preset",
             "projects" => "Project",
             "shots" => "Shot",
             "status_bars" => "Status Bar",
