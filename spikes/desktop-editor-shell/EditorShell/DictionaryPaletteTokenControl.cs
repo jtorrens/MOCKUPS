@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed class DictionaryPaletteTokenControl : Button
+internal sealed class DictionaryPaletteTokenControl : Button, IDictionaryValueControl
 {
     private readonly IReadOnlyList<FieldOption> _options;
     private readonly string _title;

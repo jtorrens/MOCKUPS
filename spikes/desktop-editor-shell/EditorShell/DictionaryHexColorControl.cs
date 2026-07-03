@@ -7,7 +7,7 @@ using System;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed class DictionaryHexColorControl : Grid
+internal sealed class DictionaryHexColorControl : Grid, IDictionaryValueControl
 {
     private readonly FieldDefinition _definition;
     private readonly Border _swatch;
@@ -71,7 +71,6 @@ internal sealed class DictionaryHexColorControl : Grid
 
         _value = value;
         UpdateColorControlsFromValue();
-        ValueChanged?.Invoke(this, _value);
     }
 
     private void SetLocalValue(string value)

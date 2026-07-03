@@ -38,8 +38,10 @@ public partial class MainWindow : SukiWindow
     private readonly EditorNavigationRenderer _navigationRenderer;
     private readonly EditorFieldPostCommitEffects _fieldPostCommitEffects;
     private readonly EditorPathBrowser _pathBrowser;
+    private readonly EditorViewStateController _editorViewState;
+    private readonly EditorCardHostController _editorCardHost;
+    private readonly EditorFieldValueRouter _fieldValues;
     private readonly EditorFieldCommitCoordinator _fieldCommitCoordinator = new();
-    private readonly List<InstantEditorCard> _editorCards = [];
     private readonly Dictionary<string, DictionaryFieldControl> _activeEditorControlsByFieldId = [];
     private readonly HashSet<string> _expandedNodeIds = [];
     private List<ProjectTreeNode> _treeRoots = [];
@@ -80,6 +82,14 @@ public partial class MainWindow : SukiWindow
             RefreshPreviewDevice,
             RefreshPreviewOptions);
         _pathBrowser = new EditorPathBrowser(StorageProvider, _database, () => _selectedNode);
+        _editorViewState = new EditorViewStateController(EditorScrollViewer);
+        _editorCardHost = new EditorCardHostController(EditorCardsPanel);
+        _fieldValues = new EditorFieldValueRouter(
+            _coreFieldValues,
+            _recordClassFieldValues,
+            _componentClassFieldValues,
+            _actorAvatarPreviews,
+            _fieldPostCommitEffects);
         _collectionCards = new EditorCollectionCardFactory(
             _database,
             () => _isDark,
@@ -262,9 +272,21 @@ public partial class MainWindow : SukiWindow
 
     private void ShowNode(ProjectTreeNode node, bool rebuildTree = true)
     {
+        var previousNode = _selectedNode;
+        var keepEditorViewState = _editorViewState.ShouldPreserve(previousNode, node);
+        if (keepEditorViewState)
+        {
+            _editorViewState.Capture(previousNode, _editorCardHost.Cards);
+        }
+
         _selectedNode = node;
         EditorTitle.Text = node.Name;
         BuildEditorCards(node);
+        if (keepEditorViewState)
+        {
+            _editorViewState.Restore(node, _editorCardHost.Cards);
+        }
+
         RefreshPreviewDevice();
         if (rebuildTree)
         {
@@ -274,10 +296,9 @@ public partial class MainWindow : SukiWindow
 
     private void BuildEditorCards(ProjectTreeNode node)
     {
-        _editorCards.Clear();
+        _editorCardHost.Clear();
         _activeEditorControlsByFieldId.Clear();
         _actorAvatarPreviews.Reset();
-        EditorCardsPanel.Children.Clear();
 
         var layout = _database.LoadEditorLayout(node.RecordClassId);
         foreach (var layoutCard in layout.Cards
@@ -285,12 +306,12 @@ public partial class MainWindow : SukiWindow
                      .OrderBy((card) => card.Order)
                      .ThenBy((card) => card.Label))
         {
-            AddEditorCard(CreateLayoutCard(node, layoutCard));
+            _editorCardHost.Add(CreateLayoutCard(node, layoutCard));
         }
 
         foreach (var collectionCard in _collectionCards.Create(node))
         {
-            AddEditorCard(collectionCard);
+            _editorCardHost.Add(collectionCard);
         }
     }
 
@@ -316,7 +337,7 @@ public partial class MainWindow : SukiWindow
 
             foreach (var layoutField in group.VisibleFields)
             {
-                var field = CreateFieldValue(node, layoutField.Id);
+                var field = _fieldValues.Create(node, layoutField.Id);
                 var control = new DictionaryFieldControl(
                     field,
                     _pathBrowser.BrowsePath,
@@ -330,9 +351,9 @@ public partial class MainWindow : SukiWindow
                     _fieldCommitCoordinator.Commit(
                         control,
                         value,
-                        (draftValue) => StoredFieldValue(node, field.Definition.Id, draftValue),
-                        () => CurrentStoredFieldValue(node, field.Definition.Id),
-                        (storedValue) => PersistFieldValue(node, field.Definition.Id, storedValue));
+                        (draftValue) => _fieldValues.ToStorageValue(node, field.Definition.Id, draftValue),
+                        () => _fieldValues.CurrentStoredValue(node, field.Definition.Id),
+                        (storedValue) => _fieldValues.Commit(node, field.Definition.Id, storedValue));
                     if (node.Kind == ProjectTreeNodeKind.Actor)
                     {
                         _actorAvatarPreviews.Refresh(node, _activeEditorControlsByFieldId);
@@ -384,90 +405,6 @@ public partial class MainWindow : SukiWindow
         }
 
         return card;
-    }
-
-    private FieldValue CreateFieldValue(ProjectTreeNode node, string fieldId)
-    {
-        if (_recordClassFieldValues.CanHandle(node.Kind, fieldId))
-        {
-            return _recordClassFieldValues.CreateFieldValue(node, fieldId);
-        }
-
-        if (_componentClassFieldValues.CanHandle(node.Kind, fieldId))
-        {
-            return _componentClassFieldValues.CreateFieldValue(node, fieldId);
-        }
-
-        if (_coreFieldValues.CanHandle(fieldId))
-        {
-            return _coreFieldValues.CreateFieldValue(node, fieldId);
-        }
-
-        throw new InvalidOperationException($"Unknown field '{fieldId}' for record class '{node.RecordClassId}'.");
-    }
-
-    private void PersistFieldValue(ProjectTreeNode node, string fieldId, string value)
-    {
-        if (_recordClassFieldValues.CanHandle(node.Kind, fieldId))
-        {
-            _recordClassFieldValues.CommitFieldValue(node, fieldId, value);
-            _fieldPostCommitEffects.Apply(node, fieldId, value);
-            return;
-        }
-
-        if (_componentClassFieldValues.CanHandle(node.Kind, fieldId))
-        {
-            _componentClassFieldValues.CommitFieldValue(node, fieldId, value);
-            return;
-        }
-
-        if (_coreFieldValues.CanHandle(fieldId))
-        {
-            _coreFieldValues.CommitFieldValue(node, fieldId, value);
-            _fieldPostCommitEffects.Apply(node, fieldId, value);
-        }
-    }
-
-    private string StoredFieldValue(ProjectTreeNode node, string fieldId, string value)
-    {
-        if (node.Kind == ProjectTreeNodeKind.Actor && fieldId == "actor.avatar.filePath")
-        {
-            return _actorAvatarPreviews.RelativeActorMediaPath(node.Id, value) ?? value;
-        }
-
-        return value;
-    }
-
-    private string CurrentStoredFieldValue(ProjectTreeNode node, string fieldId)
-    {
-        return fieldId switch
-        {
-            "core.name" => node.Name,
-            "core.notes" => node.Notes,
-            _ => CreateFieldValue(node, fieldId).Value,
-        };
-    }
-
-    private void AddEditorCard(InstantEditorCard card)
-    {
-        card.Expanded += (_, _) =>
-        {
-            foreach (var other in _editorCards.Where((item) => item != card))
-            {
-                other.IsExpanded = false;
-            }
-        };
-        _editorCards.Add(card);
-        EditorCardsPanel.Children.Add(new Border
-        {
-            Margin = new Avalonia.Thickness(0, 0, 0, 12),
-            CornerRadius = new CornerRadius(14),
-            BoxShadow = BoxShadows.Parse("0 6 14 0 #22000000"),
-            Child = new GlassCard
-            {
-                Content = card,
-            },
-        });
     }
 
     private async Task AddChild(ProjectTreeNode parent)

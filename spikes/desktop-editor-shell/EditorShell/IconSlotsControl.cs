@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed class IconSlotsControl : StackPanel
+internal sealed class IconSlotsControl : StackPanel, IDictionaryValueControl
 {
     private static readonly string[] ZoneKeys = ["left", "center", "right"];
     private readonly Func<string, bool, Task<string?>>? _showIconTokenPicker;

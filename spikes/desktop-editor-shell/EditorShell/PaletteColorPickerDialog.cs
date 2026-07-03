@@ -12,6 +12,12 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal static class PaletteColorPickerDialog
 {
+    private const int DefaultColumnCount = 3;
+    private const double ItemWidth = 210;
+    private const double ItemGap = 8;
+    private const double DialogPadding = 18;
+    private const double ScrollBarAllowance = 18;
+
     public static async Task<string?> Show(
         Window owner,
         string title,
@@ -21,13 +27,16 @@ internal static class PaletteColorPickerDialog
         var selected = currentValue;
         var query = "";
         string? result = null;
+        var listWidth = (DefaultColumnCount * ItemWidth) + ((DefaultColumnCount - 1) * ItemGap);
+        var dialogWidth = listWidth + (DialogPadding * 2) + ScrollBarAllowance;
 
         var dialog = new SukiWindow
         {
             Title = title,
-            Width = 700,
+            Width = dialogWidth,
             Height = 620,
-            MinWidth = 560,
+            MinWidth = dialogWidth,
+            MaxWidth = dialogWidth,
             MinHeight = 500,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             IsMenuVisible = false,
@@ -46,9 +55,11 @@ internal static class PaletteColorPickerDialog
             TextWrapping = TextWrapping.Wrap,
             Opacity = 0.78,
         };
-        var listPanel = new WrapPanel
+        var listPanel = new Grid
         {
-            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Width = listWidth,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            ColumnDefinitions = PaletteColumns(),
         };
 
         void RefreshSelectedText()
@@ -61,6 +72,7 @@ internal static class PaletteColorPickerDialog
         void RefreshList()
         {
             listPanel.Children.Clear();
+            listPanel.RowDefinitions.Clear();
             RefreshSelectedText();
 
             var normalizedQuery = query.Trim();
@@ -74,6 +86,11 @@ internal static class PaletteColorPickerDialog
 
             foreach (var option in visibleOptions)
             {
+                var optionIndex = listPanel.Children.Count;
+                var row = optionIndex / DefaultColumnCount;
+                var column = optionIndex % DefaultColumnCount;
+                EnsureRow(listPanel, row);
+
                 var isSelected = string.Equals(option.Value, selected, StringComparison.Ordinal);
                 var content = new Grid
                 {
@@ -114,7 +131,11 @@ internal static class PaletteColorPickerDialog
                     Content = content,
                     Width = 210,
                     MinHeight = 52,
-                    Margin = new Thickness(0, 0, 8, 8),
+                    Margin = new Thickness(
+                        0,
+                        0,
+                        column == DefaultColumnCount - 1 ? 0 : ItemGap,
+                        ItemGap),
                     BorderThickness = isSelected ? new Thickness(2) : new Thickness(1),
                     BorderBrush = isSelected
                         ? new SolidColorBrush(Color.Parse("#3388FF"))
@@ -125,6 +146,8 @@ internal static class PaletteColorPickerDialog
                     selected = option.Value;
                     RefreshList();
                 };
+                Grid.SetRow(button, row);
+                Grid.SetColumn(button, column);
                 listPanel.Children.Add(button);
             }
 
@@ -183,7 +206,7 @@ internal static class PaletteColorPickerDialog
 
         dialog.Content = new Border
         {
-            Padding = new Thickness(18),
+            Padding = new Thickness(DialogPadding),
             Child = root,
         };
 
@@ -223,5 +246,24 @@ internal static class PaletteColorPickerDialog
         var color = DictionaryFieldColorValue.Parse(hex ?? "#808080");
         var luminance = (0.299 * color.R + 0.587 * color.G + 0.114 * color.B) / 255;
         return new SolidColorBrush(luminance > 0.58 ? Color.Parse("#111827") : Color.Parse("#FFFFFF"));
+    }
+
+    private static ColumnDefinitions PaletteColumns()
+    {
+        var columns = new ColumnDefinitions();
+        for (var i = 0; i < DefaultColumnCount; i++)
+        {
+            columns.Add(new ColumnDefinition(new GridLength(ItemWidth + (i == DefaultColumnCount - 1 ? 0 : ItemGap))));
+        }
+
+        return columns;
+    }
+
+    private static void EnsureRow(Grid grid, int row)
+    {
+        while (grid.RowDefinitions.Count <= row)
+        {
+            grid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        }
     }
 }

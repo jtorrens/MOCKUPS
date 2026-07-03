@@ -8,7 +8,7 @@ using System.Globalization;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed class HueDegreesControl : Grid
+internal sealed class HueDegreesControl : Grid, IDictionaryValueControl
 {
     private readonly Slider _slider;
     private readonly TextBox _textBox;
@@ -108,19 +108,13 @@ internal sealed class HueDegreesControl : Grid
 
     public string Value => _value;
 
-    public void SetValue(string value, bool commit = false)
+    public void SetValue(string value)
     {
         var normalized = NormalizeHue(value);
-        if (_value == normalized)
-        {
-            if (commit) CommitValue();
-            return;
-        }
+        if (_value == normalized) return;
 
         _value = normalized;
         UpdateControls();
-        ValueChanged?.Invoke(this, _value);
-        if (commit) CommitValue();
     }
 
     private void SetLocalValue(string value)

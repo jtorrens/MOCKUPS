@@ -5,7 +5,7 @@ using System;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed class DictionaryIntegerPairControl : Grid
+internal sealed class DictionaryIntegerPairControl : Grid, IDictionaryValueControl
 {
     private readonly TextBox _firstTextBox;
     private readonly TextBox _secondTextBox;
