@@ -6,7 +6,6 @@ using Avalonia.Media;
 using Avalonia.Styling;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -89,12 +88,12 @@ internal sealed class DictionaryFieldControl : Grid
         }
         else if (_definition.ValueKind is ValueKind.OptionToken or ValueKind.PaletteColorToken)
         {
-            _comboBox = CreateOptionComboBox(_value);
+            _comboBox = DictionaryOptionSelector.CreateComboBox(_definition, _value);
             _comboBox.SelectionChanged += (_, _) =>
             {
                 if (_isUpdatingColorControl) return;
 
-                SetLocalValue(ComboValue(_comboBox));
+                SetLocalValue(DictionaryOptionSelector.Value(_comboBox));
                 CommitValue();
             };
             SetColumn(_comboBox, 1);
@@ -138,7 +137,7 @@ internal sealed class DictionaryFieldControl : Grid
             SetColumn(_colorSwatch, 1);
             Children.Add(_colorSwatch);
 
-            _textBox = CreateTextBox();
+            _textBox = DictionaryTextBoxFactory.Create(_definition);
             _textBox.Text = _value;
             _textBox.TextChanged += (_, _) =>
             {
@@ -203,7 +202,7 @@ internal sealed class DictionaryFieldControl : Grid
         }
         else
         {
-            _textBox = CreateTextBox();
+            _textBox = DictionaryTextBoxFactory.Create(_definition);
             _textBox.Text = _value;
             _textBox.TextChanged += (_, _) =>
             {
@@ -440,31 +439,6 @@ internal sealed class DictionaryFieldControl : Grid
         };
     }
 
-    private TextBox CreateTextBox()
-    {
-        var textBox = new TextBox
-        {
-            IsReadOnly = !_definition.IsEditable || _definition.ValueKind == ValueKind.StringReadOnly,
-            AcceptsReturn = _definition.ValueKind == ValueKind.StringMultiline,
-            TextWrapping = _definition.ValueKind == ValueKind.StringMultiline
-                ? TextWrapping.Wrap
-                : TextWrapping.NoWrap,
-            MinHeight = _definition.ValueKind == ValueKind.StringMultiline ? 88 : 36,
-            PlaceholderText = _definition.ValueKind == ValueKind.DirectoryPath ? "Select folder…" : null,
-            VerticalContentAlignment = _definition.ValueKind == ValueKind.StringMultiline
-                ? VerticalAlignment.Top
-                : VerticalAlignment.Center,
-        };
-        EditorTextBoxBehavior.Configure(textBox);
-        if (_definition.ValueKind == ValueKind.ImageFilePath)
-        {
-            textBox.MaxWidth = 420;
-            textBox.HorizontalAlignment = HorizontalAlignment.Stretch;
-        }
-
-        return textBox;
-    }
-
     private static Control ThemeTokenButtonContent(string value)
     {
         return new TextBlock
@@ -495,7 +469,7 @@ internal sealed class DictionaryFieldControl : Grid
         };
         Grid.SetColumn(firstLabel, 0);
 
-        var firstTextBox = CreateCompactPairTextBox(first);
+        var firstTextBox = DictionaryTextBoxFactory.CreateCompactPair(first);
         firstTextBox.TextChanged += (_, _) => SetPairValueFromTextBoxes(firstTextBox, null);
         AttachDeferredCommit(firstTextBox);
         Grid.SetColumn(firstTextBox, 1);
@@ -509,7 +483,7 @@ internal sealed class DictionaryFieldControl : Grid
         };
         Grid.SetColumn(secondLabel, 2);
 
-        var secondTextBox = CreateCompactPairTextBox(second);
+        var secondTextBox = DictionaryTextBoxFactory.CreateCompactPair(second);
         secondTextBox.TextChanged += (_, _) => SetPairValueFromTextBoxes(null, secondTextBox);
         AttachDeferredCommit(secondTextBox);
         Grid.SetColumn(secondTextBox, 3);
@@ -519,24 +493,6 @@ internal sealed class DictionaryFieldControl : Grid
         grid.Children.Add(secondLabel);
         grid.Children.Add(secondTextBox);
         return (grid, firstTextBox, secondTextBox);
-    }
-
-    private ComboBox CreateOptionComboBox(string value)
-    {
-        var comboBox = new ComboBox
-        {
-            MinHeight = 36,
-            MinWidth = 220,
-            IsEnabled = _definition.IsEditable,
-            ItemsSource = _definition.Options ?? [],
-            ItemTemplate = _definition.ValueKind is ValueKind.PaletteColorToken or ValueKind.PaletteColorPair
-                ? DictionaryPaletteOptionTemplate.Create()
-                : null,
-        };
-        EditorComboBoxBehavior.Configure(comboBox);
-
-        comboBox.SelectedItem = SelectedOption(value);
-        return comboBox;
     }
 
     private (Control Control, ComboBox FirstComboBox, ComboBox SecondComboBox) CreatePalettePairControl(string first, string second)
@@ -559,7 +515,7 @@ internal sealed class DictionaryFieldControl : Grid
         };
         Grid.SetColumn(firstLabel, 0);
 
-        var firstCombo = CreateOptionComboBox(first);
+        var firstCombo = DictionaryOptionSelector.CreateComboBox(_definition, first);
         firstCombo.SelectionChanged += (_, _) => SetPalettePairValueFromComboBoxes(firstCombo, null);
         Grid.SetColumn(firstCombo, 1);
 
@@ -573,7 +529,7 @@ internal sealed class DictionaryFieldControl : Grid
         };
         Grid.SetColumn(secondLabel, 2);
 
-        var secondCombo = CreateOptionComboBox(second);
+        var secondCombo = DictionaryOptionSelector.CreateComboBox(_definition, second);
         secondCombo.SelectionChanged += (_, _) => SetPalettePairValueFromComboBoxes(null, secondCombo);
         Grid.SetColumn(secondCombo, 3);
 
@@ -584,24 +540,13 @@ internal sealed class DictionaryFieldControl : Grid
         return (grid, firstCombo, secondCombo);
     }
 
-    private FieldOption? SelectedOption(string value)
-    {
-        return (_definition.Options ?? []).FirstOrDefault((option) => option.Value == value)
-            ?? (_definition.Options ?? []).FirstOrDefault();
-    }
-
-    private static string ComboValue(ComboBox comboBox)
-    {
-        return comboBox.SelectedItem is FieldOption option ? option.Value : "";
-    }
-
     private void SetPalettePairValueFromComboBoxes(ComboBox? firstComboBox, ComboBox? secondComboBox)
     {
         if (_isUpdatingColorControl) return;
 
         SetLocalValue(DictionaryFieldPairText.Join(
-            firstComboBox is not null ? ComboValue(firstComboBox) : (_pairFirstComboBox is not null ? ComboValue(_pairFirstComboBox) : ""),
-            secondComboBox is not null ? ComboValue(secondComboBox) : (_pairSecondComboBox is not null ? ComboValue(_pairSecondComboBox) : "")));
+            firstComboBox is not null ? DictionaryOptionSelector.Value(firstComboBox) : (_pairFirstComboBox is not null ? DictionaryOptionSelector.Value(_pairFirstComboBox) : ""),
+            secondComboBox is not null ? DictionaryOptionSelector.Value(secondComboBox) : (_pairSecondComboBox is not null ? DictionaryOptionSelector.Value(_pairSecondComboBox) : "")));
         CommitValue();
     }
 
@@ -610,7 +555,7 @@ internal sealed class DictionaryFieldControl : Grid
         if (_comboBox is null) return;
 
         _isUpdatingColorControl = true;
-        _comboBox.SelectedItem = SelectedOption(_value);
+        _comboBox.SelectedItem = DictionaryOptionSelector.SelectedOption(_definition, _value);
         _isUpdatingColorControl = false;
     }
 
@@ -620,26 +565,15 @@ internal sealed class DictionaryFieldControl : Grid
         _isUpdatingColorControl = true;
         if (_pairFirstComboBox is not null)
         {
-            _pairFirstComboBox.SelectedItem = SelectedOption(pair.First);
+            _pairFirstComboBox.SelectedItem = DictionaryOptionSelector.SelectedOption(_definition, pair.First);
         }
 
         if (_pairSecondComboBox is not null)
         {
-            _pairSecondComboBox.SelectedItem = SelectedOption(pair.Second);
+            _pairSecondComboBox.SelectedItem = DictionaryOptionSelector.SelectedOption(_definition, pair.Second);
         }
 
         _isUpdatingColorControl = false;
-    }
-
-    private static TextBox CreateCompactPairTextBox(string value)
-    {
-        return EditorTextBoxBehavior.Configure(new TextBox
-        {
-            Text = value,
-            Width = 90,
-            MinHeight = 36,
-            VerticalContentAlignment = VerticalAlignment.Center,
-        });
     }
 
     private void SetPairValueFromTextBoxes(TextBox? firstTextBox, TextBox? secondTextBox)

@@ -47,7 +47,29 @@ internal sealed class EditorAddChildWorkflow
             return preset is null ? null : _database.AddTheme(parent, preset);
         }
 
+        if (parent.Kind == ProjectTreeNodeKind.DevicesRoot)
+        {
+            return await ImportDevice(parent);
+        }
+
         return _database.AddChild(parent);
+    }
+
+    private async Task<ProjectTreeNode?> ImportDevice(ProjectTreeNode devicesRoot)
+    {
+        try
+        {
+            var dialog = new DeviceImportDialog(_owner, new PhoneSpecsDeviceCatalogProvider());
+            var result = await dialog.ShowAsync();
+            if (result is null) return null;
+            if (result.CreateBlank) return _database.AddChild(devicesRoot);
+            return result.Draft is null ? null : _database.AddImportedDevice(devicesRoot, result.Draft);
+        }
+        catch (Exception exception)
+        {
+            await _showInfo("Device import failed", exception.Message);
+            return null;
+        }
     }
 
     private async Task RefreshIconThemes(ProjectTreeNode parent)

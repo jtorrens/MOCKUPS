@@ -718,6 +718,39 @@ internal sealed partial class SpikeDatabase
         throw new InvalidOperationException($"Cannot add a child to {parent.Kind}.");
     }
 
+    public ProjectTreeNode AddImportedDevice(ProjectTreeNode devicesRoot, DeviceImportDraft device)
+    {
+        if (devicesRoot.Kind != ProjectTreeNodeKind.DevicesRoot)
+        {
+            throw new InvalidOperationException("Imported devices can only be added from the Devices root.");
+        }
+
+        using var connection = OpenConnection();
+        var project = ProjectAncestor(devicesRoot);
+        var id = $"device_{Guid.NewGuid():N}";
+        Execute(
+            connection,
+            """
+            INSERT INTO devices (id, project_id, name, manufacturer, model, os_family, metrics_json)
+            VALUES ($id, $projectId, $name, $manufacturer, $model, $osFamily, $metricsJson)
+            """,
+            ("$id", id),
+            ("$projectId", project.Id),
+            ("$name", device.Name),
+            ("$manufacturer", device.Manufacturer),
+            ("$model", device.Model),
+            ("$osFamily", device.OsFamily),
+            ("$metricsJson", device.MetricsJson));
+
+        return new ProjectTreeNode(
+            ProjectTreeNodeKind.Device,
+            id,
+            device.Name,
+            $"{device.Manufacturer} {device.Model}".Trim(),
+            ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Device),
+            devicesRoot);
+    }
+
     public ProjectTreeNode AddTheme(ProjectTreeNode themesRoot, string family)
     {
         if (themesRoot.Kind != ProjectTreeNodeKind.ThemesRoot)
