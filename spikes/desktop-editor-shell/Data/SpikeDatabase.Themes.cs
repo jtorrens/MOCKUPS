@@ -1,0 +1,458 @@
+using Microsoft.Data.Sqlite;
+using Mockups.DesktopEditorShell.EditorShell;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+
+namespace Mockups.DesktopEditorShell.Data;
+
+internal sealed partial class SpikeDatabase
+{
+    private static readonly Dictionary<string, (string[] Light, string[] Dark)> ThemeColorPairPaths = new()
+    {
+        ["theme.colors.background"] = (["modes", "light", "colors", "background"], ["modes", "dark", "colors", "background"]),
+        ["theme.colors.textPrimary"] = (["modes", "light", "colors", "textPrimary"], ["modes", "dark", "colors", "textPrimary"]),
+        ["theme.colors.textSecondary"] = (["modes", "light", "colors", "textSecondary"], ["modes", "dark", "colors", "textSecondary"]),
+        ["theme.colors.accent"] = (["modes", "light", "colors", "accent"], ["modes", "dark", "colors", "accent"]),
+        ["theme.icons.primary"] = (["modes", "light", "colors", "icons.primary"], ["modes", "dark", "colors", "icons.primary"]),
+        ["theme.icons.secondary"] = (["modes", "light", "colors", "icons.secondary"], ["modes", "dark", "colors", "icons.secondary"]),
+        ["theme.icons.accent"] = (["modes", "light", "colors", "icons.accent"], ["modes", "dark", "colors", "icons.accent"]),
+        ["theme.borders.primary"] = (["modes", "light", "colors", "borders.primary"], ["modes", "dark", "colors", "borders.primary"]),
+        ["theme.borders.secondary"] = (["modes", "light", "colors", "borders.secondary"], ["modes", "dark", "colors", "borders.secondary"]),
+        ["theme.borders.alternate"] = (["modes", "light", "colors", "borders.alternate"], ["modes", "dark", "colors", "borders.alternate"]),
+        ["theme.cursor.color"] = (["modes", "light", "colors", "theme.cursor.color"], ["modes", "dark", "colors", "theme.cursor.color"]),
+        ["theme.statusBar.foreground"] = (["modes", "light", "statusBar", "foreground"], ["modes", "dark", "statusBar", "foreground"]),
+        ["theme.statusBar.background"] = (["modes", "light", "statusBar", "background", "color"], ["modes", "dark", "statusBar", "background", "color"]),
+        ["theme.navigationBar.foreground"] = (["modes", "light", "navigationBar", "foreground"], ["modes", "dark", "navigationBar", "foreground"]),
+        ["theme.navigationBar.background"] = (["modes", "light", "navigationBar", "background", "color"], ["modes", "dark", "navigationBar", "background", "color"]),
+        ["theme.keyboard.background"] = (["modes", "light", "keyboard", "background"], ["modes", "dark", "keyboard", "background"]),
+        ["theme.keyboard.keyBackground"] = (["modes", "light", "keyboard", "keyBackground"], ["modes", "dark", "keyboard", "keyBackground"]),
+        ["theme.keyboard.specialKeyBackground"] = (["modes", "light", "keyboard", "specialKeyBackground"], ["modes", "dark", "keyboard", "specialKeyBackground"]),
+        ["theme.keyboard.pressedKeyBackground"] = (["modes", "light", "keyboard", "pressedKeyBackground"], ["modes", "dark", "keyboard", "pressedKeyBackground"]),
+        ["theme.keyboard.popoverBackground"] = (["modes", "light", "keyboard", "popoverBackground"], ["modes", "dark", "keyboard", "popoverBackground"]),
+        ["theme.keyboard.text"] = (["modes", "light", "keyboard", "text"], ["modes", "dark", "keyboard", "text"]),
+    };
+
+    public IReadOnlyList<FieldOption> GetThemeOptions(string projectId)
+    {
+        using var connection = OpenConnection();
+        return QueryThemeRows(connection)
+            .Where((theme) => theme.ProjectId == projectId)
+            .OrderBy((theme) => theme.Name)
+            .Select((theme) => new FieldOption(theme.Id, theme.Name))
+            .ToList();
+    }
+
+    public IReadOnlyList<ThemeTokenOption> GetThemeTokenOptions(string projectId, string themeId)
+    {
+        using var connection = OpenConnection();
+        var theme = QueryThemeRows(connection)
+            .Where((row) => row.ProjectId == projectId)
+            .FirstOrDefault((row) => row.Id == themeId)
+            ?? QueryThemeRows(connection).FirstOrDefault((row) => row.ProjectId == projectId)
+            ?? throw new InvalidOperationException($"No themes available for project '{projectId}'.");
+        var tokens = ParseJsonObject(string.IsNullOrWhiteSpace(theme.TokensJson) ? "{}" : theme.TokensJson);
+        var palette = QueryPaletteColorRows(connection)
+            .Where((color) => color.ProjectId == projectId)
+            .ToDictionary((color) => color.Token, (color) => color.ValueHex, StringComparer.Ordinal);
+
+        var options = new List<ThemeTokenOption>();
+        foreach (var pair in ThemeColorPairPaths.OrderBy((pair) => pair.Key, StringComparer.Ordinal))
+        {
+            var lightToken = JsonString(tokens, pair.Value.Light);
+            var darkToken = JsonString(tokens, pair.Value.Dark);
+            options.Add(new ThemeTokenOption(
+                pair.Key,
+                pair.Key.Replace("theme.", "", StringComparison.Ordinal),
+                "color",
+                $"{lightToken} / {darkToken}",
+                PaletteHex(palette, lightToken),
+                PaletteHex(palette, darkToken)));
+        }
+
+        foreach (var option in NumericThemeTokenOptions(tokens))
+        {
+            options.Add(option);
+        }
+
+        return options
+            .OrderBy((option) => option.Token, StringComparer.Ordinal)
+            .ToList();
+    }
+
+    public ThemeSettings GetThemeSettings(string themeId)
+    {
+        using var connection = OpenConnection();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT project_id, name, family, icon_theme_id, status_bar_id, navigation_bar_id, tokens_json, metadata_json FROM themes WHERE id = $id";
+        command.Parameters.AddWithValue("$id", themeId);
+        using var reader = command.ExecuteReader();
+        if (!reader.Read())
+        {
+            throw new InvalidOperationException($"Missing theme '{themeId}'.");
+        }
+
+        return new ThemeSettings(
+            reader.GetString(0),
+            reader.GetString(1),
+            ReadString(reader, 2),
+            ReadString(reader, 3),
+            ReadString(reader, 4),
+            ReadString(reader, 5),
+            ReadString(reader, 6),
+            ReadString(reader, 7));
+    }
+
+    public string GetThemeFieldValue(string themeId, string fieldId)
+    {
+        var settings = GetThemeSettings(themeId);
+        var tokens = ParseJsonObject(string.IsNullOrWhiteSpace(settings.TokensJson) ? "{}" : settings.TokensJson);
+        if (ThemeColorPairPaths.TryGetValue(fieldId, out var colorPairPaths))
+        {
+            return $"{JsonString(tokens, colorPairPaths.Light)}|{JsonString(tokens, colorPairPaths.Dark)}";
+        }
+
+        return fieldId switch
+        {
+            "theme.family" => settings.Family,
+            "theme.iconThemeId" => settings.IconThemeId,
+            "theme.statusBarId" => settings.StatusBarId,
+            "theme.navigationBarId" => settings.NavigationBarId,
+            "theme.defaultMode" => JsonString(tokens, ["defaultMode"]) is { Length: > 0 } mode ? mode : "light",
+            "theme.neutralTint.hueDeg" => JsonNumberString(tokens, ["neutralTint", "hueDeg"]),
+            "theme.neutralTint.saturation" => JsonNumberString(tokens, ["neutralTint", "saturation"]),
+            "theme.cursor.width" => JsonNumberString(tokens, ["cursor", "width"]),
+            "theme.cursor.blinkFrames" => JsonNumberString(tokens, ["cursor", "blinkFrames"]),
+            "theme.typography.fontFamilyId" => JsonString(tokens, ["typography", "fontFamilyId"]),
+            "theme.typography.emojiFontFamilyId" => JsonString(tokens, ["typography", "emojiFontFamilyId"]),
+            "theme.typography.size" => JsonNumberString(tokens, ["typography", "size"]),
+            "theme.typography.weight" => JsonNumberString(tokens, ["typography", "weight"]),
+            "theme.typography.style" => JsonString(tokens, ["typography", "style"]) is { Length: > 0 } style ? style : "normal",
+            _ => throw new InvalidOperationException($"Unknown theme field '{fieldId}'."),
+        };
+    }
+
+    public void UpdateThemeField(string themeId, string fieldId, string value)
+    {
+        using var connection = OpenConnection();
+        switch (fieldId)
+        {
+            case "theme.family":
+                Execute(connection, "UPDATE themes SET family = $value WHERE id = $id", ("$id", themeId), ("$value", value));
+                return;
+            case "theme.iconThemeId":
+                Execute(connection, "UPDATE themes SET icon_theme_id = $value WHERE id = $id", ("$id", themeId), ("$value", value));
+                return;
+            case "theme.statusBarId":
+                Execute(connection, "UPDATE themes SET status_bar_id = $value WHERE id = $id", ("$id", themeId), ("$value", value));
+                return;
+            case "theme.navigationBarId":
+                Execute(connection, "UPDATE themes SET navigation_bar_id = $value WHERE id = $id", ("$id", themeId), ("$value", value));
+                return;
+            default:
+                UpdateThemeToken(connection, themeId, fieldId, value);
+                return;
+        }
+    }
+
+    private static void SeedThemesIfEmpty(SqliteConnection connection)
+    {
+        var projectIds = QueryProjectRows(connection).Select((project) => project.Id).ToList();
+        foreach (var projectId in projectIds)
+        {
+            if (ScalarLong(connection, "SELECT COUNT(*) FROM themes WHERE project_id = $projectId", ("$projectId", projectId)) > 0)
+            {
+                continue;
+            }
+
+            var iconThemeId = FirstId(connection, "icon_themes", projectId);
+            var statusBarId = FirstId(connection, "status_bars", projectId);
+            var navigationBarId = FirstId(connection, "navigation_bars", projectId);
+            Execute(
+                connection,
+                """
+                INSERT INTO themes (id, project_id, name, family, icon_theme_id, status_bar_id, navigation_bar_id, tokens_json, metadata_json)
+                VALUES ($id, $projectId, $name, $family, $iconThemeId, $statusBarId, $navigationBarId, $tokensJson, $metadataJson)
+                """,
+                ("$id", $"theme_{projectId}_ios_default"),
+                ("$projectId", projectId),
+                ("$name", "iOS Default Theme"),
+                ("$family", "ios"),
+                ("$iconThemeId", iconThemeId),
+                ("$statusBarId", statusBarId),
+                ("$navigationBarId", navigationBarId),
+                ("$tokensJson", DefaultThemeTokensJson("ios")),
+                ("$metadataJson", JsonSerializer.Serialize(new { note = "Default iOS-style production theme." })));
+        }
+    }
+
+    private static void EnsureThemeTokens(SqliteConnection connection)
+    {
+        foreach (var theme in QueryThemeRows(connection))
+        {
+            var tokens = ParseJsonObject(string.IsNullOrWhiteSpace(theme.TokensJson) ? "{}" : theme.TokensJson);
+            var defaults = ParseJsonObject(DefaultThemeTokensJson(theme.Family));
+            if (!MergeMissing(tokens, defaults))
+            {
+                continue;
+            }
+
+            Execute(
+                connection,
+                "UPDATE themes SET tokens_json = $tokensJson WHERE id = $id",
+                ("$id", theme.Id),
+                ("$tokensJson", tokens.ToJsonString()));
+        }
+    }
+
+    private static List<ThemeRow> QueryThemeRows(SqliteConnection connection)
+    {
+        var rows = new List<ThemeRow>();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT id, project_id, name, family, icon_theme_id, status_bar_id, navigation_bar_id, tokens_json, metadata_json FROM themes ORDER BY name";
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            rows.Add(new ThemeRow(
+                reader.GetString(0),
+                reader.GetString(1),
+                reader.GetString(2),
+                ReadString(reader, 3),
+                ReadString(reader, 4),
+                ReadString(reader, 5),
+                ReadString(reader, 6),
+                ReadString(reader, 7),
+                ReadString(reader, 8)));
+        }
+
+        return rows;
+    }
+
+    private static string ThemeReferenceSummary(ThemeRow theme)
+    {
+        return ThemeReferenceSummary(theme.IconThemeId, theme.StatusBarId, theme.NavigationBarId);
+    }
+
+    private static string ThemeReferenceSummary(string iconThemeId, string statusBarId, string navigationBarId)
+    {
+        var linkedCount = new[] { iconThemeId, statusBarId, navigationBarId }.Count((value) => !string.IsNullOrWhiteSpace(value));
+        return $"{linkedCount}/3 refs";
+    }
+
+    private static IEnumerable<ThemeTokenOption> NumericThemeTokenOptions(JsonObject tokens)
+    {
+        foreach (var (token, path) in new (string Token, string[] Path)[]
+        {
+            ("theme.cursor.width", ["cursor", "width"]),
+            ("theme.cursor.blinkFrames", ["cursor", "blinkFrames"]),
+            ("theme.typography.size", ["typography", "size"]),
+            ("theme.typography.weight", ["typography", "weight"]),
+            ("theme.radii.control", ["radii", "control"]),
+            ("theme.radii.card", ["radii", "card"]),
+            ("theme.radii.panel", ["radii", "panel"]),
+            ("theme.radii.surface", ["radii", "surface"]),
+            ("theme.radii.pill", ["radii", "pill"]),
+            ("theme.radii.avatar", ["radii", "avatar"]),
+            ("theme.radii.full", ["radii", "full"]),
+        })
+        {
+            yield return new ThemeTokenOption(
+                token,
+                token.Replace("theme.", "", StringComparison.Ordinal),
+                "number",
+                JsonNumberString(tokens, path, "—"),
+                null,
+                null);
+        }
+    }
+
+    private static string? PaletteHex(IReadOnlyDictionary<string, string> palette, string token)
+    {
+        return palette.TryGetValue(token, out var hex) ? hex : null;
+    }
+
+    private static void UpdateThemeToken(SqliteConnection connection, string themeId, string fieldId, string value)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT tokens_json FROM themes WHERE id = $id";
+        command.Parameters.AddWithValue("$id", themeId);
+        var tokens = ParseJsonObject(command.ExecuteScalar() as string ?? "{}");
+
+        if (ThemeColorPairPaths.TryGetValue(fieldId, out var colorPairPaths))
+        {
+            SetPair(tokens, value, colorPairPaths.Light, colorPairPaths.Dark, asNumber: false);
+            Execute(connection, "UPDATE themes SET tokens_json = $tokensJson WHERE id = $id", ("$id", themeId), ("$tokensJson", tokens.ToJsonString()));
+            return;
+        }
+
+        switch (fieldId)
+        {
+            case "theme.defaultMode":
+                SetJsonValue(tokens, ["defaultMode"], JsonValue.Create(value)!);
+                break;
+            case "theme.neutralTint.hueDeg":
+                SetJsonValue(tokens, ["neutralTint", "hueDeg"], NumberNode(value));
+                break;
+            case "theme.neutralTint.saturation":
+                SetJsonValue(tokens, ["neutralTint", "saturation"], NumberNode(value));
+                break;
+            case "theme.cursor.width":
+                SetJsonValue(tokens, ["cursor", "width"], NumberNode(value));
+                break;
+            case "theme.cursor.blinkFrames":
+                SetJsonValue(tokens, ["cursor", "blinkFrames"], NumberNode(value));
+                break;
+            case "theme.typography.fontFamilyId":
+                SetJsonValue(tokens, ["typography", "fontFamilyId"], JsonValue.Create(value)!);
+                break;
+            case "theme.typography.emojiFontFamilyId":
+                SetJsonValue(tokens, ["typography", "emojiFontFamilyId"], JsonValue.Create(value)!);
+                break;
+            case "theme.typography.size":
+                SetJsonValue(tokens, ["typography", "size"], NumberNode(value));
+                break;
+            case "theme.typography.weight":
+                SetJsonValue(tokens, ["typography", "weight"], NumberNode(value));
+                break;
+            case "theme.typography.style":
+                SetJsonValue(tokens, ["typography", "style"], JsonValue.Create(value)!);
+                break;
+            default:
+                throw new InvalidOperationException($"Unknown theme field '{fieldId}'.");
+        }
+
+        Execute(connection, "UPDATE themes SET tokens_json = $tokensJson WHERE id = $id", ("$id", themeId), ("$tokensJson", tokens.ToJsonString()));
+    }
+
+    private static string DefaultThemeTokensJson(string family)
+    {
+        var isAndroid = family.Equals("android", StringComparison.OrdinalIgnoreCase);
+        var tokens = new JsonObject
+        {
+            ["schemaVersion"] = 1,
+            ["defaultMode"] = "light",
+            ["neutralTint"] = new JsonObject
+            {
+                ["hueDeg"] = 0,
+                ["saturation"] = 0,
+            },
+            ["cursor"] = new JsonObject
+            {
+                ["width"] = 2,
+                ["blinkFrames"] = 20,
+            },
+            ["typography"] = new JsonObject
+            {
+                ["fontFamilyId"] = "",
+                ["emojiFontFamilyId"] = "",
+                ["size"] = isAndroid ? 15 : 16,
+                ["weight"] = 400,
+                ["style"] = "normal",
+            },
+            ["radii"] = new JsonObject
+            {
+                ["control"] = 8,
+                ["card"] = 14,
+                ["panel"] = 20,
+                ["surface"] = 14,
+                ["pill"] = 999,
+                ["avatar"] = 999,
+                ["full"] = 999,
+            },
+            ["modes"] = new JsonObject
+            {
+                ["light"] = new JsonObject
+                {
+                    ["colors"] = new JsonObject
+                    {
+                        ["background"] = "gray_100",
+                        ["textPrimary"] = "gray_010",
+                        ["textSecondary"] = "gray_040",
+                        ["accent"] = isAndroid ? "purple" : "blue",
+                        ["icons.primary"] = "gray_010",
+                        ["icons.secondary"] = "gray_040",
+                        ["icons.accent"] = isAndroid ? "purple" : "blue",
+                        ["borders.primary"] = "gray_070",
+                        ["borders.secondary"] = "gray_080",
+                        ["borders.alternate"] = "gray_060",
+                        ["theme.cursor.color"] = isAndroid ? "purple" : "blue",
+                    },
+                    ["statusBar"] = new JsonObject
+                    {
+                        ["foreground"] = "gray_010",
+                        ["background"] = new JsonObject
+                        {
+                            ["color"] = "gray_100",
+                            ["alpha"] = 1,
+                        },
+                    },
+                    ["navigationBar"] = new JsonObject
+                    {
+                        ["foreground"] = "gray_010",
+                        ["background"] = new JsonObject
+                        {
+                            ["color"] = "gray_100",
+                            ["alpha"] = 1,
+                        },
+                    },
+                    ["keyboard"] = new JsonObject
+                    {
+                        ["background"] = "gray_090",
+                        ["keyBackground"] = "gray_100",
+                        ["specialKeyBackground"] = "gray_080",
+                        ["pressedKeyBackground"] = "gray_070",
+                        ["popoverBackground"] = "gray_100",
+                        ["text"] = "gray_010",
+                    },
+                },
+                ["dark"] = new JsonObject
+                {
+                    ["colors"] = new JsonObject
+                    {
+                        ["background"] = "gray_010",
+                        ["textPrimary"] = "gray_100",
+                        ["textSecondary"] = "gray_070",
+                        ["accent"] = isAndroid ? "purple_tint" : "blue_bright",
+                        ["icons.primary"] = "gray_100",
+                        ["icons.secondary"] = "gray_070",
+                        ["icons.accent"] = isAndroid ? "purple_tint" : "blue_bright",
+                        ["borders.primary"] = "gray_040",
+                        ["borders.secondary"] = "gray_030",
+                        ["borders.alternate"] = "gray_050",
+                        ["theme.cursor.color"] = isAndroid ? "purple_tint" : "blue_bright",
+                    },
+                    ["statusBar"] = new JsonObject
+                    {
+                        ["foreground"] = "gray_100",
+                        ["background"] = new JsonObject
+                        {
+                            ["color"] = "gray_010",
+                            ["alpha"] = 1,
+                        },
+                    },
+                    ["navigationBar"] = new JsonObject
+                    {
+                        ["foreground"] = "gray_100",
+                        ["background"] = new JsonObject
+                        {
+                            ["color"] = "gray_010",
+                            ["alpha"] = 1,
+                        },
+                    },
+                    ["keyboard"] = new JsonObject
+                    {
+                        ["background"] = "gray_020",
+                        ["keyBackground"] = "gray_030",
+                        ["specialKeyBackground"] = "gray_040",
+                        ["pressedKeyBackground"] = "gray_050",
+                        ["popoverBackground"] = "gray_030",
+                        ["text"] = "gray_100",
+                    },
+                },
+            },
+        };
+        return tokens.ToJsonString();
+    }
+}
