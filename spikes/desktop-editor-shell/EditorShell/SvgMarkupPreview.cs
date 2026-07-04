@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using System;
+using System.Globalization;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -53,6 +54,11 @@ internal sealed class SvgMarkupPreview : Grid
         var insetY = geometry is null || geometry.Height <= 0
             ? 0
             : Math.Clamp(padding / geometry.Height * 100, 0, 49);
+        var aspectWidth = geometry is null || geometry.Width <= 0 ? 1 : geometry.Width;
+        var aspectHeight = geometry is null || geometry.Height <= 0 ? 1 : geometry.Height;
+        var maxFrameSide = Math.Max(aspectWidth, aspectHeight);
+        var frameWidth = Math.Clamp(aspectWidth / maxFrameSide * 94, 1, 94);
+        var frameHeight = Math.Clamp(aspectHeight / maxFrameSide * 94, 1, 94);
         return $$"""
             <!doctype html>
             <html>
@@ -78,8 +84,8 @@ internal sealed class SvgMarkupPreview : Grid
 
                 .icon-frame {
                   position: relative;
-                  width: 100%;
-                  height: 100%;
+                  width: {{Percent(frameWidth)}};
+                  height: {{Percent(frameHeight)}};
                   display: grid;
                   place-items: center;
                   border: 1px solid rgba(226, 232, 240, .9);
@@ -100,9 +106,13 @@ internal sealed class SvgMarkupPreview : Grid
 
                 svg {
                   display: block;
-                  width: 92%;
-                  height: 92%;
+                  width: 100%;
+                  height: 100%;
+                  max-width: 100%;
+                  max-height: 100%;
                   overflow: visible;
+                  color: #f8fafc;
+                  filter: brightness(0) invert(1);
                 }
               </style>
             </head>
@@ -114,5 +124,10 @@ internal sealed class SvgMarkupPreview : Grid
             </body>
             </html>
             """;
+    }
+
+    private static string Percent(double value)
+    {
+        return value.ToString("0.####", CultureInfo.InvariantCulture) + "%";
     }
 }

@@ -98,8 +98,8 @@ internal sealed class IconThemeSvgReplaceDialog
                 {
                     new Border
                     {
-                        Width = 430,
-                        Height = 320,
+                        Width = 400,
+                        Height = 400,
                         Padding = new Thickness(6),
                         BorderThickness = new Thickness(1),
                         BorderBrush = new SolidColorBrush(Color.Parse("#44546A")),
@@ -124,7 +124,7 @@ internal sealed class IconThemeSvgReplaceDialog
                 var originalSvg = SvgReplacementService.Validate(original.SvgText);
                 var currentPadding = Number(padding);
                 var originalPreviewGeometry = SvgReplacementService.TryGeometry(originalSvg);
-                originalPreview.SetSvg(originalSvg, originalPreviewGeometry, currentPadding);
+                originalPreview.SetSvg(SvgReplacementService.NormalizePaintToBlack(originalSvg), originalPreviewGeometry, currentPadding);
                 originalGeometry.Text = originalPreviewGeometry?.Label ?? "Unknown size";
                 transformedSvg = SvgReplacementService.Transform(
                     svgBox.Text ?? "",
@@ -137,7 +137,7 @@ internal sealed class IconThemeSvgReplaceDialog
                         Number(rotation),
                         original.SvgText));
                 var newPreviewGeometry = SvgReplacementService.TryGeometry(svgBox.Text ?? "");
-                newPreview.SetSvg(transformedSvg, SvgReplacementService.TryGeometry(transformedSvg) ?? newPreviewGeometry, currentPadding);
+                newPreview.SetSvg(transformedSvg, originalPreviewGeometry, currentPadding);
                 newGeometry.Text = newPreviewGeometry?.Label ?? "Unknown size";
                 acceptButton.IsEnabled = true;
                 SetError("");
