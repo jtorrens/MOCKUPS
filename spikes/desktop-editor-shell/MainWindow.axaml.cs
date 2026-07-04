@@ -134,6 +134,15 @@ public partial class MainWindow : SukiWindow
         }
     }
 
+    private void OnRunIrDiagnosticsClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        var result = EditorIrDiagnosticsService.Run();
+        IrDiagnosticsLabel.Text = result.Message;
+        IrDiagnosticsLabel.Foreground = result.Success
+            ? new SolidColorBrush(Color.Parse("#4ADE80"))
+            : new SolidColorBrush(Color.Parse("#F87171"));
+    }
+
     private void ApplyTheme()
     {
         var themeVariant = _isDark ? ThemeVariant.Dark : ThemeVariant.Light;
