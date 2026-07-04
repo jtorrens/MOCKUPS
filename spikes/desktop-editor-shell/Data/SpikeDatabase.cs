@@ -1024,6 +1024,40 @@ internal sealed partial class SpikeDatabase
             return new ProjectTreeNode(ProjectTreeNodeKind.Theme, id, $"{node.Name} copy", node.Notes, node.RecordClassId, node.Parent);
         }
 
+        if (node.Kind == ProjectTreeNodeKind.IconTheme)
+        {
+            var source = QueryIconThemeRows(connection).FirstOrDefault((row) => row.Id == node.Id)
+                ?? throw new InvalidOperationException($"Missing icon theme '{node.Id}'.");
+            var id = $"icon_theme_{Guid.NewGuid():N}";
+            var duplicatedAssets = DuplicateIconThemeAssets(connection, source, $"{node.Name} copy");
+            var name = duplicatedAssets.Name;
+            var assetRoot = duplicatedAssets.AssetRoot;
+            var metadata = IconThemeMetadata(IconThemeAssetDirectory(connection, source.ProjectId, assetRoot), name);
+            try
+            {
+                Execute(
+                    connection,
+                    """
+                    INSERT INTO icon_themes (id, project_id, name, asset_root, mapping_json, metadata_json)
+                    SELECT $id, project_id, $name, $assetRoot, mapping_json, $metadataJson
+                    FROM icon_themes
+                    WHERE id = $sourceId
+                    """,
+                    ("$id", id),
+                    ("$name", name),
+                    ("$assetRoot", assetRoot),
+                    ("$metadataJson", metadata.ToJsonString()),
+                    ("$sourceId", node.Id));
+            }
+            catch
+            {
+                DeleteIconThemeAssetDirectory(connection, source.ProjectId, assetRoot);
+                throw;
+            }
+
+            return new ProjectTreeNode(ProjectTreeNodeKind.IconTheme, id, name, node.Notes, node.RecordClassId, node.Parent);
+        }
+
         if (node.Kind == ProjectTreeNodeKind.StatusBar)
         {
             var id = $"status_bar_{Guid.NewGuid():N}";
@@ -1215,11 +1249,17 @@ internal sealed partial class SpikeDatabase
 
         if (node.Kind == ProjectTreeNodeKind.IconTheme)
         {
+            var row = QueryIconThemeRows(connection).FirstOrDefault((candidate) => candidate.Id == node.Id)
+                ?? throw new InvalidOperationException($"Missing icon theme '{node.Id}'.");
+            var renamedAssets = RenameIconThemeAssets(connection, row, node.Name);
+            var metadata = IconThemeMetadata(IconThemeAssetDirectory(connection, row.ProjectId, renamedAssets.AssetRoot), renamedAssets.Name);
             Execute(
                 connection,
-                "UPDATE icon_themes SET name = $name WHERE id = $id",
+                "UPDATE icon_themes SET name = $name, asset_root = $assetRoot, metadata_json = $metadataJson WHERE id = $id",
                 ("$id", node.Id),
-                ("$name", node.Name));
+                ("$name", renamedAssets.Name),
+                ("$assetRoot", renamedAssets.AssetRoot),
+                ("$metadataJson", metadata.ToJsonString()));
             return;
         }
 
@@ -2908,6 +2948,109 @@ internal sealed partial class SpikeDatabase
         }
 
         return null;
+    }
+
+    private IconThemeAssetMoveResult DuplicateIconThemeAssets(SqliteConnection connection, IconThemeRow source, string targetName)
+    {
+        var sourceDirectory = IconThemeAssetDirectory(connection, source.ProjectId, source.AssetRoot);
+        if (!Directory.Exists(sourceDirectory))
+        {
+            throw new InvalidOperationException($"Missing icon theme asset directory '{source.AssetRoot}'.");
+        }
+
+        var mediaRoot = ResolveProjectPath(GetProjectSettings(connection, source.ProjectId).MediaRoot);
+        var iconThemesRoot = Path.Combine(mediaRoot, "icon-themes");
+        Directory.CreateDirectory(iconThemesRoot);
+        var targetDirectory = UniqueIconThemeDirectory(iconThemesRoot, IconThemeDirectoryName(targetName));
+        CopyDirectory(sourceDirectory, targetDirectory);
+        return new IconThemeAssetMoveResult(
+            NormalizeRelativePath(Path.GetRelativePath(mediaRoot, targetDirectory)),
+            Path.GetFileName(targetDirectory));
+    }
+
+    private IconThemeAssetMoveResult RenameIconThemeAssets(SqliteConnection connection, IconThemeRow source, string targetName)
+    {
+        var sourceDirectory = IconThemeAssetDirectory(connection, source.ProjectId, source.AssetRoot);
+        if (!Directory.Exists(sourceDirectory))
+        {
+            throw new InvalidOperationException($"Missing icon theme asset directory '{source.AssetRoot}'.");
+        }
+
+        var mediaRoot = ResolveProjectPath(GetProjectSettings(connection, source.ProjectId).MediaRoot);
+        var iconThemesRoot = Path.Combine(mediaRoot, "icon-themes");
+        Directory.CreateDirectory(iconThemesRoot);
+        var targetDirectory = Path.Combine(iconThemesRoot, IconThemeDirectoryName(targetName));
+        if (Path.GetFullPath(sourceDirectory).Equals(Path.GetFullPath(targetDirectory), StringComparison.Ordinal))
+        {
+            return new IconThemeAssetMoveResult(
+                NormalizeRelativePath(Path.GetRelativePath(mediaRoot, sourceDirectory)),
+                Path.GetFileName(sourceDirectory));
+        }
+
+        if (Directory.Exists(targetDirectory))
+        {
+            throw new InvalidOperationException($"Icon theme folder '{Path.GetFileName(targetDirectory)}' already exists.");
+        }
+
+        Directory.Move(sourceDirectory, targetDirectory);
+        return new IconThemeAssetMoveResult(
+            NormalizeRelativePath(Path.GetRelativePath(mediaRoot, targetDirectory)),
+            Path.GetFileName(targetDirectory));
+    }
+
+    private static string IconThemeAssetDirectory(SqliteConnection connection, string projectId, string assetRoot)
+    {
+        var mediaRoot = ResolveProjectPath(GetProjectSettings(connection, projectId).MediaRoot);
+        return Path.GetFullPath(Path.Combine(mediaRoot, assetRoot));
+    }
+
+    private static string UniqueIconThemeDirectory(string iconThemesRoot, string directoryName)
+    {
+        var safeName = string.IsNullOrWhiteSpace(directoryName) ? "Icon Theme" : directoryName;
+        var candidate = Path.Combine(iconThemesRoot, safeName);
+        var index = 2;
+        while (Directory.Exists(candidate))
+        {
+            candidate = Path.Combine(iconThemesRoot, $"{safeName} {index}");
+            index++;
+        }
+
+        return candidate;
+    }
+
+    private static string IconThemeDirectoryName(string name)
+    {
+        var invalidCharacters = Path.GetInvalidFileNameChars();
+        var directoryName = new string(name.Trim().Select((character) =>
+            invalidCharacters.Contains(character) ? '_' : character).ToArray()).Trim();
+        return string.IsNullOrWhiteSpace(directoryName) ? "Icon Theme" : directoryName;
+    }
+
+    private static void CopyDirectory(string sourceDirectory, string targetDirectory)
+    {
+        Directory.CreateDirectory(targetDirectory);
+        foreach (var directory in Directory.EnumerateDirectories(sourceDirectory, "*", SearchOption.AllDirectories))
+        {
+            Directory.CreateDirectory(Path.Combine(targetDirectory, Path.GetRelativePath(sourceDirectory, directory)));
+        }
+
+        foreach (var file in Directory.EnumerateFiles(sourceDirectory, "*", SearchOption.AllDirectories))
+        {
+            File.Copy(file, Path.Combine(targetDirectory, Path.GetRelativePath(sourceDirectory, file)), overwrite: false);
+        }
+    }
+
+    private static void DeleteIconThemeAssetDirectory(SqliteConnection connection, string projectId, string assetRoot)
+    {
+        var mediaRoot = ResolveProjectPath(GetProjectSettings(connection, projectId).MediaRoot);
+        var targetDirectory = Path.GetFullPath(Path.Combine(mediaRoot, assetRoot));
+        var fullMediaRoot = Path.GetFullPath(mediaRoot);
+        var relative = Path.GetRelativePath(fullMediaRoot, targetDirectory);
+        if (relative.StartsWith("..", StringComparison.Ordinal) || Path.IsPathFullyQualified(relative)) return;
+        if (Directory.Exists(targetDirectory))
+        {
+            Directory.Delete(targetDirectory, recursive: true);
+        }
     }
 
     public IconThemeRefreshResult RefreshIconThemeSets(ProjectTreeNode iconThemesRoot)
@@ -6333,6 +6476,7 @@ internal sealed partial class SpikeDatabase
     private sealed record ThemeRow(string Id, string ProjectId, string Name, string Family, string IconThemeId, string StatusBarId, string NavigationBarId, string TokensJson, string MetadataJson);
     private sealed record ProductionFontRow(string Id, string ProjectId, string FamilyName, string Category, string SourceDirectory, string FilesJson);
     private sealed record IconThemeRow(string Id, string ProjectId, string Name, string AssetRoot, string MappingJson, string MetadataJson);
+    private sealed record IconThemeAssetMoveResult(string AssetRoot, string Name);
     private sealed record StatusBarRow(string Id, string ProjectId, string Name, string Family, string ConfigJson, string MetadataJson);
     private sealed record NavigationBarRow(string Id, string ProjectId, string Name, string Family, string ConfigJson, string MetadataJson);
     private sealed record RenderPresetRow(
