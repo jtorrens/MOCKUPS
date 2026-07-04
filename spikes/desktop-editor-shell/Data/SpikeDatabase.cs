@@ -2963,6 +2963,7 @@ internal sealed partial class SpikeDatabase
         Directory.CreateDirectory(iconThemesRoot);
         var targetDirectory = UniqueIconThemeDirectory(iconThemesRoot, IconThemeDirectoryName(targetName));
         CopyDirectory(sourceDirectory, targetDirectory);
+        RewriteIconThemeManifestName(targetDirectory, Path.GetFileName(targetDirectory));
         return new IconThemeAssetMoveResult(
             NormalizeRelativePath(Path.GetRelativePath(mediaRoot, targetDirectory)),
             Path.GetFileName(targetDirectory));
@@ -2982,6 +2983,7 @@ internal sealed partial class SpikeDatabase
         var targetDirectory = Path.Combine(iconThemesRoot, IconThemeDirectoryName(targetName));
         if (Path.GetFullPath(sourceDirectory).Equals(Path.GetFullPath(targetDirectory), StringComparison.Ordinal))
         {
+            RewriteIconThemeManifestName(sourceDirectory, Path.GetFileName(sourceDirectory));
             return new IconThemeAssetMoveResult(
                 NormalizeRelativePath(Path.GetRelativePath(mediaRoot, sourceDirectory)),
                 Path.GetFileName(sourceDirectory));
@@ -2993,6 +2995,7 @@ internal sealed partial class SpikeDatabase
         }
 
         Directory.Move(sourceDirectory, targetDirectory);
+        RewriteIconThemeManifestName(targetDirectory, Path.GetFileName(targetDirectory));
         return new IconThemeAssetMoveResult(
             NormalizeRelativePath(Path.GetRelativePath(mediaRoot, targetDirectory)),
             Path.GetFileName(targetDirectory));
@@ -3037,6 +3040,23 @@ internal sealed partial class SpikeDatabase
         foreach (var file in Directory.EnumerateFiles(sourceDirectory, "*", SearchOption.AllDirectories))
         {
             File.Copy(file, Path.Combine(targetDirectory, Path.GetRelativePath(sourceDirectory, file)), overwrite: false);
+        }
+    }
+
+    private static void RewriteIconThemeManifestName(string directory, string setName)
+    {
+        var manifestPath = Path.Combine(directory, "manifest.json");
+        if (!File.Exists(manifestPath)) return;
+
+        try
+        {
+            var manifest = ParseJsonObject(File.ReadAllText(manifestPath));
+            manifest["name"] = setName;
+            File.WriteAllText(manifestPath, manifest.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+        }
+        catch (JsonException)
+        {
+            // A malformed manifest should not block duplicating or renaming the icon theme.
         }
     }
 
