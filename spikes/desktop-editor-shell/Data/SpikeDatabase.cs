@@ -1760,7 +1760,7 @@ internal sealed partial class SpikeDatabase
                     { "id": "module.recordClassId", "order": 20, "visible": false },
                     { "id": "module.sortOrder", "order": 30, "visible": true },
                     { "id": "core.notes", "order": 40, "visible": true },
-                    { "id": "module.metadata", "order": 50, "visible": true }
+                    { "id": "module.metadata", "order": 50, "visible": false }
                   """
             : recordClassId == "render_preset"
                 ? """
