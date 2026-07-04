@@ -146,57 +146,19 @@ internal sealed class StatusBarItemsCollectionEditor
 
     private Control CreateIconTokenControl(ProjectTreeNode node, string projectId, int index, SpikeDatabase.StatusBarItem item)
     {
-        var currentItem = item;
-        var grid = new Grid
-        {
-            ColumnDefinitions = new ColumnDefinitions("38,*,Auto"),
-            ColumnSpacing = 8,
-        };
-        var previewBox = new Border
-        {
-            Width = 34,
-            Height = 34,
-            CornerRadius = new CornerRadius(8),
-            BorderBrush = new SolidColorBrush(Color.Parse("#4B5B75")),
-            BorderThickness = new Thickness(1),
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-            Child = SvgIconPreview.CreateProjectIconTokenPreview(_database, projectId, item.Token, 21),
-        };
-        grid.Children.Add(previewBox);
-
-        var tokenBox = new TextBox
-        {
-            Text = item.Token,
-            IsReadOnly = true,
-            MinHeight = 36,
-            PlaceholderText = "Select icon token…",
-            VerticalContentAlignment = VerticalAlignment.Center,
-        };
-        EditorTextBoxBehavior.Configure(tokenBox);
-        Grid.SetColumn(tokenBox, 1);
-        grid.Children.Add(tokenBox);
-
-        var pickButton = new Button
-        {
-            Content = "Pick…",
-            MinWidth = 72,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        pickButton.Click += async (_, _) =>
-        {
-            var selected = await _showIconTokenPicker(projectId, currentItem.Token, false);
-            if (!string.IsNullOrWhiteSpace(selected))
-            {
-                currentItem = currentItem with { Token = selected };
-                UpdateItem(node, index, currentItem);
-                tokenBox.Text = selected;
-                previewBox.Child = SvgIconPreview.CreateProjectIconTokenPreview(_database, projectId, selected, 21);
-            }
-        };
-        Grid.SetColumn(pickButton, 2);
-        grid.Children.Add(pickButton);
-        return grid;
+        return CreateInlineField(
+            new FieldValue(
+                new FieldDefinition(
+                    $"statusBar.items.{index}.token",
+                    "Icon token",
+                    ValueKind.IconToken,
+                    DefaultValue: item.Token),
+                item.Token),
+            (value) => UpdateItem(node, index, item with { Token = value }),
+            new DictionaryFieldServices(
+                BrowsePath: _browsePath,
+                ShowIconTokenPicker: (currentValue, allowMultiple) => _showIconTokenPicker(projectId, currentValue, allowMultiple),
+                CreateIconPreview: (token) => SvgIconPreview.CreateProjectIconTokenPreview(_database, projectId, token, 21)));
     }
 
     private Control CreateGeneratedControl(ProjectTreeNode node, int index, SpikeDatabase.StatusBarItem item, bool includeCharging)
@@ -234,9 +196,13 @@ internal sealed class StatusBarItemsCollectionEditor
         return grid;
     }
 
-    private DictionaryFieldControl CreateInlineField(FieldValue fieldValue, Action<string> persist)
+    private DictionaryFieldControl CreateInlineField(
+        FieldValue fieldValue,
+        Action<string> persist,
+        DictionaryFieldServices? services = null)
     {
-        var control = new DictionaryFieldControl(fieldValue, _browsePath);
+        services ??= new DictionaryFieldServices(BrowsePath: _browsePath);
+        var control = new DictionaryFieldControl(fieldValue, services);
         control.ValueCommitted += (_, value) => persist(value);
         return control;
     }

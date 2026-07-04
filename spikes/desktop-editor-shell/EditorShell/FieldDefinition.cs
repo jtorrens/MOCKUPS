@@ -18,6 +18,7 @@ internal enum ValueKind
     HexColor,
     PaletteColorToken,
     PaletteColorPair,
+    IconToken,
     IconSlots,
     Boolean,
 }
