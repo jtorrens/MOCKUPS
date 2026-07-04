@@ -3314,7 +3314,8 @@ internal sealed partial class SpikeDatabase
                 descriptor.IsEditable,
                 descriptor.DefaultValue,
                 Options: descriptor.Options,
-                PairLabels: descriptor.PairLabels),
+                PairLabels: descriptor.PairLabels,
+                Number: descriptor.Number),
             value);
     }
 
@@ -3353,6 +3354,7 @@ internal sealed partial class SpikeDatabase
         {
             ValueKind.Boolean => BoolToString(node is JsonValue value && value.TryGetValue<bool>(out var boolean) && boolean),
             ValueKind.Integer => JsonNumberString(config, descriptor.JsonPath, descriptor.DefaultValue),
+            ValueKind.Decimal => JsonNumberString(config, descriptor.JsonPath, descriptor.DefaultValue),
             ValueKind.IntegerPair => node is JsonValue pairValue && pairValue.TryGetValue<string>(out var pairText)
                 ? pairText
                 : descriptor.DefaultValue,
@@ -3369,6 +3371,7 @@ internal sealed partial class SpikeDatabase
         {
             ValueKind.Boolean => JsonValue.Create(StringToBool(value))!,
             ValueKind.Integer => NumberNode(value),
+            ValueKind.Decimal => NumberNode(value),
             ValueKind.IconSlots => JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? ComponentClassFieldCatalog.EmptyIconSlots : value)
                 ?? JsonNode.Parse(ComponentClassFieldCatalog.EmptyIconSlots)!,
             _ => JsonValue.Create(value)!,

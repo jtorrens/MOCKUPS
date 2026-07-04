@@ -11,7 +11,8 @@ internal sealed record ComponentClassFieldDescriptor(
     string DefaultValue,
     bool IsEditable = true,
     IReadOnlyList<FieldOption>? Options = null,
-    PairFieldLabels? PairLabels = null);
+    PairFieldLabels? PairLabels = null,
+    NumberDefinition? Number = null);
 
 internal static class ComponentClassFieldCatalog
 {
@@ -102,8 +103,20 @@ internal static class ComponentClassFieldCatalog
         ["component.keyboard.keyCornerRadius"] = new("component.keyboard.keyCornerRadius", "Key radius", ValueKind.Integer, ["keyboard", "keyCornerRadius"], "6"),
         ["component.keyboard.keyShadowEnabled"] = new("component.keyboard.keyShadowEnabled", "Key shadow", ValueKind.Boolean, ["keyboard", "keyShadowEnabled"], "false"),
         ["component.keyboard.pressedEffect"] = new("component.keyboard.pressedEffect", "Pressed effect", ValueKind.OptionToken, ["keyboard", "pressedEffect"], "popup", Options: PressedEffectOptions),
-        ["component.keyboard.specialKeyTextScale"] = new("component.keyboard.specialKeyTextScale", "Special key scale", ValueKind.StringSingleLine, ["keyboard", "specialKeyTextScale"], "0.65"),
-        ["component.keyboard.emojiScale"] = new("component.keyboard.emojiScale", "Emoji scale", ValueKind.StringSingleLine, ["keyboard", "emojiScale"], "1.2"),
+        ["component.keyboard.specialKeyTextScale"] = new(
+            "component.keyboard.specialKeyTextScale",
+            "Special key scale",
+            ValueKind.Decimal,
+            ["keyboard", "specialKeyTextScale"],
+            "0.65",
+            Number: new NumberDefinition(0.1m, 4, 0.05m, 2)),
+        ["component.keyboard.emojiScale"] = new(
+            "component.keyboard.emojiScale",
+            "Emoji scale",
+            ValueKind.Decimal,
+            ["keyboard", "emojiScale"],
+            "1.2",
+            Number: new NumberDefinition(0.1m, 4, 0.05m, 2)),
         ["component.keyboard.bottomIconSlots"] = new("component.keyboard.bottomIconSlots", "Bottom icons", ValueKind.IconSlots, ["keyboard", "bottomIconSlots"], EmptyIconSlots),
 
         ["component.buttonIcon.iconPadding"] = new("component.buttonIcon.iconPadding", "Icon padding", ValueKind.Integer, ["buttonIcon", "iconPadding"], "6"),
