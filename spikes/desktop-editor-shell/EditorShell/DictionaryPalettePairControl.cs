@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
+using Avalonia.Media;
 using System;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -13,33 +14,26 @@ internal sealed class DictionaryPalettePairControl : Grid, IDictionaryValueContr
 
     public DictionaryPalettePairControl(FieldDefinition definition, string value)
     {
-        ColumnDefinitions = new ColumnDefinitions("Auto,180,Auto,180");
-        ColumnSpacing = 14;
+        ColumnDefinitions = new ColumnDefinitions("Auto,Auto");
+        ColumnSpacing = 10;
         VerticalAlignment = VerticalAlignment.Center;
         HorizontalAlignment = HorizontalAlignment.Left;
 
         var pair = DictionaryFieldPairText.Split(value);
         var labels = DictionaryFieldPairText.Labels(definition);
 
-        var firstLabel = CreateLabel(labels.First);
-        SetColumn(firstLabel, 0);
-
         _firstControl = new DictionaryPaletteTokenControl($"{definition.Label} · {labels.First}", definition.Options, pair.First, definition.IsEditable);
         _firstControl.ValueCommitted += (_, _) => SetValueFromControls();
-        SetColumn(_firstControl, 1);
-
-        var secondLabel = CreateLabel(labels.Second);
-        secondLabel.Margin = new Thickness(10, 0, 0, 0);
-        SetColumn(secondLabel, 2);
 
         _secondControl = new DictionaryPaletteTokenControl($"{definition.Label} · {labels.Second}", definition.Options, pair.Second, definition.IsEditable);
         _secondControl.ValueCommitted += (_, _) => SetValueFromControls();
-        SetColumn(_secondControl, 3);
 
-        Children.Add(firstLabel);
-        Children.Add(_firstControl);
-        Children.Add(secondLabel);
-        Children.Add(_secondControl);
+        var firstGroup = CreateGroup(labels.First, _firstControl);
+        var secondGroup = CreateGroup(labels.Second, _secondControl);
+        SetColumn(firstGroup, 0);
+        SetColumn(secondGroup, 1);
+        Children.Add(firstGroup);
+        Children.Add(secondGroup);
     }
 
     public event EventHandler<string>? ValueChanged;
@@ -66,14 +60,34 @@ internal sealed class DictionaryPalettePairControl : Grid, IDictionaryValueContr
         ValueCommitted?.Invoke(this, value);
     }
 
-    private static TextBlock CreateLabel(string text)
+    private static Border CreateGroup(string label, Control control)
     {
-        return new TextBlock
+        var labelBlock = new TextBlock
         {
-            Text = text,
-            MinWidth = 57,
+            Text = label,
+            FontWeight = FontWeight.SemiBold,
             VerticalAlignment = VerticalAlignment.Center,
             Opacity = 0.78,
+        };
+
+        Grid.SetColumn(control, 1);
+
+        return new Border
+        {
+            Padding = new Thickness(10, 8),
+            CornerRadius = new CornerRadius(8),
+            BorderThickness = new Thickness(1),
+            BorderBrush = new SolidColorBrush(Color.Parse("#4C5664")),
+            Child = new Grid
+            {
+                ColumnDefinitions = new ColumnDefinitions("62,Auto"),
+                ColumnSpacing = 10,
+                Children =
+                {
+                    labelBlock,
+                    control,
+                },
+            },
         };
     }
 }

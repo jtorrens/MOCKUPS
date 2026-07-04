@@ -40,7 +40,7 @@ internal static class RecordClassFieldCatalog
         ["app.metadata"] = new("app.metadata", "Metadata", ValueKind.StringMultiline),
         ["app.wallpaper.kind"] = new("app.wallpaper.kind", "Kind", ValueKind.OptionToken),
         ["app.wallpaper.opacity"] = new("app.wallpaper.opacity", "Opacity", ValueKind.StringSingleLine),
-        ["app.wallpaper.color"] = new("app.wallpaper.color", "Wallpaper Color", ValueKind.PaletteColorPair),
+        ["app.wallpaper.color"] = new("app.wallpaper.color", "Wallpaper Color", ValueKind.PaletteColorPair, PairLabels: new("Light", "Dark")),
         ["app.wallpaper.image.filePath"] = new("app.wallpaper.image.filePath", "Image", ValueKind.ImageFilePath),
         ["app.note"] = new("app.note", "Note", ValueKind.StringMultiline),
         ["app.icon.filePath"] = new("app.icon.filePath", "App icon image", ValueKind.ImageFilePath),

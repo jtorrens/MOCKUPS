@@ -25,7 +25,8 @@ internal sealed class DictionaryFieldControl : Grid
         Func<string, ValueKind, Task<string?>>? browsePath = null,
         Func<string, bool, Task<string?>>? showIconTokenPicker = null,
         Func<string, IReadOnlyList<FieldOption>?, Task<string?>>? showThemeTokenPicker = null,
-        Func<string, Control>? createIconPreview = null)
+        Func<string, Control>? createIconPreview = null,
+        Func<string, string?>? resolveImagePath = null)
     {
         _definition = fieldValue.Definition;
         _isInherited = fieldValue.IsInherited;
@@ -50,15 +51,15 @@ internal sealed class DictionaryFieldControl : Grid
             _value,
             showIconTokenPicker,
             showThemeTokenPicker,
-            createIconPreview));
+            createIconPreview,
+            resolveImagePath));
 
         if (_definition.ValueKind is ValueKind.DirectoryPath or ValueKind.ImageFilePath)
         {
             _pathBrowseButton = new DictionaryPathBrowseButton(_definition.ValueKind, _value, _definition.IsEditable, browsePath);
             _pathBrowseButton.ValueCommitted += (_, value) =>
             {
-                SetLocalValue(value);
-                CommitValue();
+                SetValue(value, commit: true);
             };
             SetColumn(_pathBrowseButton, 2);
             Children.Add(_pathBrowseButton);

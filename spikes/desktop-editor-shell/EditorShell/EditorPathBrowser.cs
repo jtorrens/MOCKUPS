@@ -29,6 +29,11 @@ internal sealed class EditorPathBrowser
             : BrowseDirectory(currentPath);
     }
 
+    public string? ResolveImagePath(string path)
+    {
+        return MediaPathService.ResolveLocalPath(path, SelectedProjectMediaRoot());
+    }
+
     private async Task<string?> BrowseDirectory(string currentPath)
     {
         var options = new FolderPickerOpenOptions

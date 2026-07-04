@@ -343,7 +343,8 @@ public partial class MainWindow : SukiWindow
                     _pathBrowser.BrowsePath,
                     (currentValue, allowMultiple) => ShowIconTokenPicker(ProjectAncestor(node).Id, currentValue, allowMultiple),
                     (currentValue, allowedOptions) => ShowThemeTokenPicker(ProjectAncestor(node).Id, currentValue, allowedOptions),
-                    (token) => SvgIconPreview.CreateProjectIconTokenPreview(_database, ProjectAncestor(node).Id, token, 18));
+                    (token) => SvgIconPreview.CreateProjectIconTokenPreview(_database, ProjectAncestor(node).Id, token, 18),
+                    _pathBrowser.ResolveImagePath);
                 controls.Add(control);
                 _activeEditorControlsByFieldId[field.Definition.Id] = control;
                 control.ValueCommitted += (_, value) =>

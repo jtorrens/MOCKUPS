@@ -1,5 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Layout;
+using Avalonia;
+using Avalonia.Media;
 using System;
 using System.Threading.Tasks;
 
@@ -21,10 +23,13 @@ internal sealed class DictionaryPathBrowseButton : Button
         _value = value;
         _browsePath = browsePath;
 
-        Content = "Browse";
-        MinWidth = 86;
+        Content = "Browse...";
+        MinWidth = 96;
         MinHeight = 36;
+        Padding = new Thickness(14, 0);
         VerticalAlignment = VerticalAlignment.Center;
+        BorderThickness = new Thickness(1);
+        BorderBrush = new SolidColorBrush(Color.Parse("#6B7583"));
         IsEnabled = isEditable && browsePath is not null;
         Click += async (_, _) => await Browse();
     }
