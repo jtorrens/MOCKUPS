@@ -60,6 +60,10 @@ internal static class RecordClassFieldCatalog
         ["app.icon.scale"] = new("app.icon.scale", "Icon scale", ValueKind.StringSingleLine),
         ["app.icon.offset"] = new("app.icon.offset", "Icon offset", ValueKind.IntegerPair, PairLabels: new("X", "Y")),
 
+        ["module.recordClassId"] = new("module.recordClassId", "Module class", ValueKind.StringReadOnly, IsEditable: false),
+        ["module.sortOrder"] = new("module.sortOrder", "Sort Order", ValueKind.Integer),
+        ["module.metadata"] = new("module.metadata", "Metadata", ValueKind.StringMultiline),
+
         ["renderPreset.width"] = new("renderPreset.width", "Width", ValueKind.Integer, IsEditable: false),
         ["renderPreset.height"] = new("renderPreset.height", "Height", ValueKind.Integer, IsEditable: false),
         ["renderPreset.fps"] = new("renderPreset.fps", "FPS", ValueKind.Integer, IsEditable: false),

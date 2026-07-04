@@ -19,6 +19,7 @@ internal sealed class RecordClassFieldValueService
         {
             ProjectTreeNodeKind.Project => fieldId.StartsWith("project.", StringComparison.Ordinal),
             ProjectTreeNodeKind.App => fieldId.StartsWith("app.", StringComparison.Ordinal),
+            ProjectTreeNodeKind.Module => fieldId.StartsWith("module.", StringComparison.Ordinal),
             ProjectTreeNodeKind.Episode => fieldId.StartsWith("episode.", StringComparison.Ordinal),
             ProjectTreeNodeKind.Shot => fieldId.StartsWith("shot.", StringComparison.Ordinal),
             ProjectTreeNodeKind.RenderPreset => fieldId.StartsWith("renderPreset.", StringComparison.Ordinal),
@@ -41,6 +42,7 @@ internal sealed class RecordClassFieldValueService
         {
             ProjectTreeNodeKind.Project => ProjectFieldValue(node.Id, field.Id),
             ProjectTreeNodeKind.App => AppFieldValue(node.Id, field.Id),
+            ProjectTreeNodeKind.Module => ModuleFieldValue(node.Id, field.Id),
             ProjectTreeNodeKind.Episode => EpisodeFieldValue(node.Id, field.Id),
             ProjectTreeNodeKind.Shot => ShotFieldValue(node.Id, field.Id),
             ProjectTreeNodeKind.RenderPreset => RenderPresetFieldValue(node.Id, field.Id),
@@ -89,6 +91,9 @@ internal sealed class RecordClassFieldValueService
                 return;
             case ProjectTreeNodeKind.App when fieldId.StartsWith("app.", StringComparison.Ordinal):
                 _database.UpdateAppField(node.Id, fieldId, value);
+                return;
+            case ProjectTreeNodeKind.Module when fieldId.StartsWith("module.", StringComparison.Ordinal):
+                _database.UpdateModuleField(node.Id, fieldId, value);
                 return;
             case ProjectTreeNodeKind.Episode when fieldId.StartsWith("episode.", StringComparison.Ordinal):
                 _database.UpdateEpisodeField(node.Id, fieldId, value);
@@ -147,6 +152,18 @@ internal sealed class RecordClassFieldValueService
             "episode.slug" => settings.Slug,
             "episode.sortOrder" => settings.SortOrder.ToString(),
             _ => throw new InvalidOperationException($"Unknown episode field '{fieldId}'."),
+        };
+    }
+
+    private string ModuleFieldValue(string moduleId, string fieldId)
+    {
+        var settings = _database.GetModuleSettings(moduleId);
+        return fieldId switch
+        {
+            "module.recordClassId" => settings.RecordClassId,
+            "module.sortOrder" => settings.SortOrder.ToString(),
+            "module.metadata" => settings.MetadataJson,
+            _ => throw new InvalidOperationException($"Unknown module field '{fieldId}'."),
         };
     }
 

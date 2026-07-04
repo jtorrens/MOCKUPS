@@ -696,15 +696,16 @@ internal sealed partial class SpikeDatabase
             Execute(
                 connection,
                 """
-                INSERT INTO modules (id, app_id, record_class_id, name, notes, sort_order)
-                VALUES ($id, $appId, $recordClassId, $name, $notes, $sortOrder)
+                INSERT INTO modules (id, app_id, record_class_id, name, notes, sort_order, metadata_json)
+                VALUES ($id, $appId, $recordClassId, $name, $notes, $sortOrder, $metadataJson)
                 """,
                 ("$id", id),
                 ("$appId", parent.Id),
                 ("$recordClassId", "module.generic"),
                 ("$name", $"Module {index + 1}"),
                 ("$notes", "New module created in the desktop shell spike."),
-                ("$sortOrder", index));
+                ("$sortOrder", index),
+                ("$metadataJson", JsonSerializer.Serialize(new { note = "New module created in the desktop shell spike." })));
 
             return new ProjectTreeNode(
                 ProjectTreeNodeKind.Module,
@@ -956,8 +957,8 @@ internal sealed partial class SpikeDatabase
             Execute(
                 connection,
                 """
-                INSERT INTO modules (id, app_id, record_class_id, name, notes, sort_order)
-                SELECT $id, app_id, record_class_id, $name, notes, $sortOrder
+                INSERT INTO modules (id, app_id, record_class_id, name, notes, sort_order, metadata_json)
+                SELECT $id, app_id, record_class_id, $name, notes, $sortOrder, metadata_json
                 FROM modules
                 WHERE id = $sourceId
                 """,
@@ -1363,14 +1364,15 @@ internal sealed partial class SpikeDatabase
         Execute(
             connection,
             """
-            INSERT INTO modules (id, app_id, record_class_id, name, notes, sort_order)
-            VALUES ($id, $appId, $recordClassId, $name, $notes, 0)
+            INSERT INTO modules (id, app_id, record_class_id, name, notes, sort_order, metadata_json)
+            VALUES ($id, $appId, $recordClassId, $name, $notes, 0, $metadataJson)
             """,
             ("$id", "module_core_chat"),
             ("$appId", "app_core_chat"),
             ("$recordClassId", "module.core.chat"),
             ("$name", "Chat Module"),
-            ("$notes", "Seed module linked to Chat app."));
+            ("$notes", "Seed module linked to Chat app."),
+            ("$metadataJson", JsonSerializer.Serialize(new { note = "Seed module linked to Chat app." })));
     }
 
     private static void SeedPaletteColorsIfEmpty(SqliteConnection connection)
@@ -1751,6 +1753,14 @@ internal sealed partial class SpikeDatabase
                     { "id": "app.bundleKey", "order": 20, "visible": true },
                     { "id": "app.appType", "order": 30, "visible": true },
                     { "id": "core.kind", "order": 40, "visible": false }
+                  """
+            : recordClassId is "module.generic" or "module.core.chat"
+                ? """
+                    { "id": "core.name", "order": 10, "visible": true },
+                    { "id": "module.recordClassId", "order": 20, "visible": true },
+                    { "id": "module.sortOrder", "order": 30, "visible": true },
+                    { "id": "core.notes", "order": 40, "visible": true },
+                    { "id": "module.metadata", "order": 50, "visible": true }
                   """
             : recordClassId == "render_preset"
                 ? """
@@ -2469,15 +2479,16 @@ internal sealed partial class SpikeDatabase
             Execute(
                 connection,
                 """
-                INSERT INTO modules (id, app_id, record_class_id, name, notes, sort_order)
-                VALUES ($id, $appId, $recordClassId, $name, $notes, $sortOrder)
+                INSERT INTO modules (id, app_id, record_class_id, name, notes, sort_order, metadata_json)
+                VALUES ($id, $appId, $recordClassId, $name, $notes, $sortOrder, $metadataJson)
                 """,
                 ("$id", $"module_{Guid.NewGuid():N}"),
                 ("$appId", targetAppId),
                 ("$recordClassId", module.RecordClassId),
                 ("$name", module.Name),
                 ("$notes", module.Notes),
-                ("$sortOrder", index));
+                ("$sortOrder", index),
+                ("$metadataJson", module.MetadataJson));
         }
     }
 
@@ -3866,6 +3877,50 @@ internal sealed partial class SpikeDatabase
             ReadString(reader, 4));
     }
 
+    public ModuleSettings GetModuleSettings(string moduleId)
+    {
+        using var connection = OpenConnection();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT record_class_id, sort_order, metadata_json FROM modules WHERE id = $id";
+        command.Parameters.AddWithValue("$id", moduleId);
+        using var reader = command.ExecuteReader();
+        if (!reader.Read())
+        {
+            throw new InvalidOperationException($"Missing module '{moduleId}'.");
+        }
+
+        return new ModuleSettings(
+            reader.GetString(0),
+            reader.GetInt32(1),
+            ReadString(reader, 2));
+    }
+
+    public void UpdateModuleField(string moduleId, string fieldId, string value)
+    {
+        using var connection = OpenConnection();
+        switch (fieldId)
+        {
+            case "module.sortOrder":
+                Execute(
+                    connection,
+                    "UPDATE modules SET sort_order = $value WHERE id = $id",
+                    ("$id", moduleId),
+                    ("$value", int.TryParse(value, out var parsed) ? parsed : 0));
+                return;
+            case "module.metadata":
+                Execute(
+                    connection,
+                    "UPDATE modules SET metadata_json = $value WHERE id = $id",
+                    ("$id", moduleId),
+                    ("$value", value));
+                return;
+            case "module.recordClassId":
+                return;
+            default:
+                throw new InvalidOperationException($"Unknown module field '{fieldId}'.");
+        }
+    }
+
     public void UpdateAppField(string appId, string fieldId, string value)
     {
         using var connection = OpenConnection();
@@ -4053,7 +4108,7 @@ internal sealed partial class SpikeDatabase
     {
         var rows = new List<ModuleRow>();
         using var command = connection.CreateCommand();
-        command.CommandText = "SELECT id, app_id, record_class_id, name, notes, sort_order FROM modules ORDER BY sort_order, name";
+        command.CommandText = "SELECT id, app_id, record_class_id, name, notes, sort_order, metadata_json FROM modules ORDER BY sort_order, name";
         using var reader = command.ExecuteReader();
         while (reader.Read())
         {
@@ -4063,7 +4118,8 @@ internal sealed partial class SpikeDatabase
                 reader.GetString(2),
                 reader.GetString(3),
                 ReadString(reader, 4),
-                reader.GetInt32(5)));
+                reader.GetInt32(5),
+                ReadString(reader, 6)));
         }
 
         return rows;
@@ -6150,6 +6206,7 @@ internal sealed partial class SpikeDatabase
         string AppType,
         string ConfigJson,
         string MetadataJson);
+    public sealed record ModuleSettings(string RecordClassId, int SortOrder, string MetadataJson);
     public sealed record DeviceSettings(string Name, string Manufacturer, string Model, string OsFamily, string MetricsJson);
     public sealed record DevicePreviewMetrics(
         string Name,
@@ -6266,7 +6323,7 @@ internal sealed partial class SpikeDatabase
     private sealed record ProjectRow(string Id, string Name, string Notes);
     private sealed record EpisodeRow(string Id, string ProjectId, string Name, string Slug, string Notes, int SortOrder);
     private sealed record AppRow(string Id, string ProjectId, string RecordClassId, string Name, string Notes, int SortOrder);
-    private sealed record ModuleRow(string Id, string AppId, string RecordClassId, string Name, string Notes, int SortOrder);
+    private sealed record ModuleRow(string Id, string AppId, string RecordClassId, string Name, string Notes, int SortOrder, string MetadataJson);
     private sealed record PaletteColorRow(string Id, string ProjectId, string Token, string ValueHex, string Note, bool IsNeutral, string MetadataJson);
     private sealed record DeviceRow(string Id, string ProjectId, string Name, string Manufacturer, string Model, string OsFamily, string MetricsJson);
     private sealed record ActorRow(string Id, string ProjectId, string DisplayName, string ShortName, string DefaultDeviceId, string DefaultThemeId, string MetadataJson);
