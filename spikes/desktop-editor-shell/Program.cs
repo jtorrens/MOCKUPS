@@ -1,4 +1,5 @@
 ﻿using Avalonia;
+using Mockups.DesktopEditorShell.Preview.Avalonia;
 using Mockups.DesktopEditorShell.VisualIr;
 using System;
 using System.Linq;
@@ -17,6 +18,13 @@ class Program
         {
             VisualIrSmokeFixture.ValidateRoundTrip();
             Console.WriteLine("Visual IR smoke fixture validated.");
+            return;
+        }
+
+        if (args.Contains("--visual-ir-debug-renderer-smoke", StringComparer.Ordinal))
+        {
+            VisualIrDebugRendererSmoke.Validate();
+            Console.WriteLine("Visual IR debug renderer smoke validated.");
             return;
         }
 
