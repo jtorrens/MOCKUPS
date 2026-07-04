@@ -3094,7 +3094,31 @@ internal sealed partial class SpikeDatabase
         RefreshIconThemeSets(connection, projectId);
     }
 
-    public IconThemeReplaceSvgResult ReplaceIconThemeTokenSvg(string iconThemeId, string token, string sourcePath)
+    public IconThemeTokenSvg ReadIconThemeTokenSvg(string iconThemeId, string token)
+    {
+        using var connection = OpenConnection();
+        var (row, file) = IconThemeTokenFile(connection, iconThemeId, token);
+        var path = Path.Combine(IconThemeAssetDirectory(connection, row.ProjectId, row.AssetRoot), file);
+        if (!File.Exists(path))
+        {
+            throw new InvalidOperationException($"Missing SVG file '{file}'.");
+        }
+
+        return new IconThemeTokenSvg(token, file, File.ReadAllText(path));
+    }
+
+    public IconThemeReplaceSvgResult ReplaceIconThemeTokenSvg(string iconThemeId, string token, string svgText)
+    {
+        svgText = SvgReplacementService.Validate(svgText);
+        using var connection = OpenConnection();
+        var (row, file) = IconThemeTokenFile(connection, iconThemeId, token);
+        var targetDirectory = IconThemeAssetDirectory(connection, row.ProjectId, row.AssetRoot);
+        Directory.CreateDirectory(targetDirectory);
+        File.WriteAllText(Path.Combine(targetDirectory, file), svgText);
+        return new IconThemeReplaceSvgResult(token, file);
+    }
+
+    public IconThemeReplaceSvgResult ReplaceIconThemeTokenSvgFromFile(string iconThemeId, string token, string sourcePath)
     {
         if (string.IsNullOrWhiteSpace(sourcePath) || !File.Exists(sourcePath))
         {
@@ -3106,7 +3130,11 @@ internal sealed partial class SpikeDatabase
             throw new InvalidOperationException("Only SVG files can be imported into an icon set.");
         }
 
-        using var connection = OpenConnection();
+        return ReplaceIconThemeTokenSvg(iconThemeId, token, File.ReadAllText(sourcePath));
+    }
+
+    private static (IconThemeRow Row, string File) IconThemeTokenFile(SqliteConnection connection, string iconThemeId, string token)
+    {
         var row = QueryIconThemeRows(connection).FirstOrDefault((candidate) => candidate.Id == iconThemeId)
             ?? throw new InvalidOperationException($"Missing icon theme '{iconThemeId}'.");
         if (!ValidIconTokenRegex().IsMatch(token))
@@ -3130,12 +3158,6 @@ internal sealed partial class SpikeDatabase
             throw new InvalidOperationException($"Icon token '{token}' has an invalid SVG file reference.");
         }
 
-        var svgText = NormalizeSvgReplacementText(File.ReadAllText(sourcePath));
-        ValidateSvgReplacementText(svgText);
-        var targetDirectory = IconThemeAssetDirectory(connection, row.ProjectId, row.AssetRoot);
-        Directory.CreateDirectory(targetDirectory);
-        var targetPath = Path.Combine(targetDirectory, file);
-        File.WriteAllText(targetPath, svgText);
         if (tokens is not null)
         {
             Execute(
@@ -3145,7 +3167,7 @@ internal sealed partial class SpikeDatabase
                 ("$mappingJson", mapping.ToJsonString()));
         }
 
-        return new IconThemeReplaceSvgResult(token, file);
+        return (row, file);
     }
 
     public IconThemeSearchResult SearchIconThemeSources(string query)
@@ -5098,45 +5120,6 @@ internal sealed partial class SpikeDatabase
         };
     }
 
-    private static string NormalizeSvgReplacementText(string value)
-    {
-        var trimmed = value.Trim('\uFEFF').Trim();
-        var svgStart = trimmed.IndexOf("<svg", StringComparison.OrdinalIgnoreCase);
-        if (svgStart < 0) return trimmed;
-
-        var svgText = trimmed[svgStart..].Trim();
-        var lastClosingSvg = svgText.LastIndexOf("</svg>", StringComparison.OrdinalIgnoreCase);
-        return lastClosingSvg < 0
-            ? svgText
-            : svgText[..(lastClosingSvg + "</svg>".Length)].Trim();
-    }
-
-    private static void ValidateSvgReplacementText(string svgText)
-    {
-        if (string.IsNullOrWhiteSpace(svgText))
-        {
-            throw new InvalidOperationException("SVG content is required.");
-        }
-
-        if (!Regex.IsMatch(svgText, "^<svg[\\s>]", RegexOptions.IgnoreCase))
-        {
-            throw new InvalidOperationException("SVG content must start with an <svg> element.");
-        }
-
-        if (!Regex.IsMatch(svgText, "(</svg>\\s*$)|(/>\\s*$)", RegexOptions.IgnoreCase))
-        {
-            throw new InvalidOperationException("SVG content must close the <svg> element.");
-        }
-
-        if (Regex.IsMatch(svgText, "<\\s*script\\b", RegexOptions.IgnoreCase) ||
-            Regex.IsMatch(svgText, "<\\s*foreignObject\\b", RegexOptions.IgnoreCase) ||
-            Regex.IsMatch(svgText, "\\bon[a-z]+\\s*=", RegexOptions.IgnoreCase) ||
-            Regex.IsMatch(svgText, "\\b(?:href|xlink:href)\\s*=\\s*[\"']\\s*javascript:", RegexOptions.IgnoreCase))
-        {
-            throw new InvalidOperationException("SVG content contains unsupported executable markup.");
-        }
-    }
-
     private static JsonObject IconThemeCategories(JsonObject tokens)
     {
         var categories = new SortedDictionary<string, JsonArray>(StringComparer.OrdinalIgnoreCase);
@@ -6518,6 +6501,7 @@ internal sealed partial class SpikeDatabase
         string Category,
         string File,
         string Description);
+    public sealed record IconThemeTokenSvg(string Token, string File, string SvgText);
     public sealed record IconThemeRefreshResult(int ThemeCount, int CommonTokenCount, int OmittedTokenCount);
     public sealed record IconThemeReplaceSvgResult(string Token, string File);
     public sealed record IconThemeSearchCandidate(string Provider, string SourceName, string PreviewUrl);

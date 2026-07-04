@@ -96,9 +96,9 @@ public partial class MainWindow : SukiWindow
             ShowInfoDialog,
             ConfirmIconTokenDelete,
             ShowIconThemeSearchDialog,
+            ShowIconThemeSvgReplaceDialog,
             ReloadAndSelect,
             _pathBrowser.BrowsePath,
-            _pathBrowser.BrowseSvgFile,
             ShowIconTokenPicker,
             RefreshPreviewDevice);
         _shellState.Restore();
@@ -450,6 +450,11 @@ public partial class MainWindow : SukiWindow
     private Task ShowIconThemeSearchDialog(ProjectTreeNode node)
     {
         return new IconThemeSearchDialog(this, _database, ShowInfoDialog, ReloadAndSelect).Show(node);
+    }
+
+    private Task ShowIconThemeSvgReplaceDialog(ProjectTreeNode node, string token)
+    {
+        return new IconThemeSvgReplaceDialog(this, _database, _pathBrowser.BrowseSvgFile, ReloadAndSelect).Show(node, token);
     }
 
     private Task<string?> ShowIconTokenPicker(string projectId, string currentValue, bool allowMultiple)

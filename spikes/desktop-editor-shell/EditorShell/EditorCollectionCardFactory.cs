@@ -12,9 +12,9 @@ internal sealed class EditorCollectionCardFactory
     private readonly Func<string, string, Task> _showInfo;
     private readonly Func<string, Task<bool>> _confirmIconTokenDelete;
     private readonly Func<ProjectTreeNode, Task> _showIconThemeSearch;
+    private readonly Func<ProjectTreeNode, string, Task> _showIconThemeSvgReplace;
     private readonly Action<ProjectTreeNode> _reloadAndSelect;
     private readonly Func<string, ValueKind, Task<string?>> _browsePath;
-    private readonly Func<Task<string?>> _browseSvgFile;
     private readonly Func<string, string, bool, Task<string?>> _showIconTokenPicker;
     private readonly Action _onChanged;
 
@@ -24,9 +24,9 @@ internal sealed class EditorCollectionCardFactory
         Func<string, string, Task> showInfo,
         Func<string, Task<bool>> confirmIconTokenDelete,
         Func<ProjectTreeNode, Task> showIconThemeSearch,
+        Func<ProjectTreeNode, string, Task> showIconThemeSvgReplace,
         Action<ProjectTreeNode> reloadAndSelect,
         Func<string, ValueKind, Task<string?>> browsePath,
-        Func<Task<string?>> browseSvgFile,
         Func<string, string, bool, Task<string?>> showIconTokenPicker,
         Action onChanged)
     {
@@ -35,9 +35,9 @@ internal sealed class EditorCollectionCardFactory
         _showInfo = showInfo;
         _confirmIconTokenDelete = confirmIconTokenDelete;
         _showIconThemeSearch = showIconThemeSearch;
+        _showIconThemeSvgReplace = showIconThemeSvgReplace;
         _reloadAndSelect = reloadAndSelect;
         _browsePath = browsePath;
-        _browseSvgFile = browseSvgFile;
         _showIconTokenPicker = showIconTokenPicker;
         _onChanged = onChanged;
     }
@@ -54,7 +54,7 @@ internal sealed class EditorCollectionCardFactory
                     _showInfo,
                     _confirmIconTokenDelete,
                     _showIconThemeSearch,
-                    _browseSvgFile,
+                    _showIconThemeSvgReplace,
                     _reloadAndSelect).Create(node),
             ],
             ProjectTreeNodeKind.StatusBar =>

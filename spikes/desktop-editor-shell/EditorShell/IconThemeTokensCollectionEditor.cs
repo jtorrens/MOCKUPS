@@ -17,7 +17,7 @@ internal sealed class IconThemeTokensCollectionEditor
     private readonly Func<string, string, Task> _showInfo;
     private readonly Func<string, Task<bool>> _confirmDelete;
     private readonly Func<ProjectTreeNode, Task> _showSearch;
-    private readonly Func<Task<string?>> _browseSvgFile;
+    private readonly Func<ProjectTreeNode, string, Task> _showSvgReplace;
     private readonly Action<ProjectTreeNode> _reloadAndSelect;
 
     public IconThemeTokensCollectionEditor(
@@ -26,7 +26,7 @@ internal sealed class IconThemeTokensCollectionEditor
         Func<string, string, Task> showInfo,
         Func<string, Task<bool>> confirmDelete,
         Func<ProjectTreeNode, Task> showSearch,
-        Func<Task<string?>> browseSvgFile,
+        Func<ProjectTreeNode, string, Task> showSvgReplace,
         Action<ProjectTreeNode> reloadAndSelect)
     {
         _database = database;
@@ -34,7 +34,7 @@ internal sealed class IconThemeTokensCollectionEditor
         _showInfo = showInfo;
         _confirmDelete = confirmDelete;
         _showSearch = showSearch;
-        _browseSvgFile = browseSvgFile;
+        _showSvgReplace = showSvgReplace;
         _reloadAndSelect = reloadAndSelect;
     }
 
@@ -233,19 +233,7 @@ internal sealed class IconThemeTokensCollectionEditor
         };
         replaceButton.Click += async (_, _) =>
         {
-            try
-            {
-                var path = await _browseSvgFile();
-                if (string.IsNullOrWhiteSpace(path)) return;
-
-                var result = _database.ReplaceIconThemeTokenSvg(node.Id, token.Token, path);
-                await _showInfo("SVG replaced", $"{result.Token} -> {result.File}");
-                _reloadAndSelect(node);
-            }
-            catch (Exception exception)
-            {
-                await _showInfo("Replace failed", exception.Message);
-            }
+            await _showSvgReplace(node, token.Token);
         };
 
         var deleteButton = new Button
