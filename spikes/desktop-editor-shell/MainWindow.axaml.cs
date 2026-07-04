@@ -38,6 +38,7 @@ public partial class MainWindow : SukiWindow
     private readonly EditorNavigationRenderer _navigationRenderer;
     private readonly EditorFieldPostCommitEffects _fieldPostCommitEffects;
     private readonly EditorPathBrowser _pathBrowser;
+    private readonly EditorDomainDialogService _domainDialogs;
     private readonly EditorViewStateController _editorViewState;
     private readonly EditorCardHostController _editorCardHost;
     private readonly EditorFieldValueRouter _fieldValues;
@@ -82,6 +83,13 @@ public partial class MainWindow : SukiWindow
             RefreshPreviewDevice,
             RefreshPreviewOptions);
         _pathBrowser = new EditorPathBrowser(StorageProvider, _database, () => _selectedNode);
+        _domainDialogs = new EditorDomainDialogService(
+            this,
+            _database,
+            () => _isDark,
+            ShowInfoDialog,
+            _pathBrowser.BrowseSvgFile,
+            ReloadAndSelect);
         _editorViewState = new EditorViewStateController(EditorScrollViewer);
         _editorCardHost = new EditorCardHostController(EditorCardsPanel);
         _fieldValues = new EditorFieldValueRouter(
@@ -94,12 +102,12 @@ public partial class MainWindow : SukiWindow
             _database,
             () => _isDark,
             ShowInfoDialog,
-            ConfirmIconTokenDelete,
-            ShowIconThemeSearchDialog,
-            ShowIconThemeSvgReplaceDialog,
+            _domainDialogs.ConfirmIconTokenDelete,
+            _domainDialogs.ShowIconThemeSearch,
+            _domainDialogs.ShowIconThemeSvgReplace,
             ReloadAndSelect,
             _pathBrowser.BrowsePath,
-            ShowIconTokenPicker,
+            _domainDialogs.ShowIconTokenPicker,
             RefreshPreviewDevice);
         _shellState.Restore();
         Closing += (_, _) => _shellState.Save();
@@ -342,8 +350,8 @@ public partial class MainWindow : SukiWindow
                 var control = new DictionaryFieldControl(
                     field,
                     _pathBrowser.BrowsePath,
-                    (currentValue, allowMultiple) => ShowIconTokenPicker(ProjectAncestor(node).Id, currentValue, allowMultiple),
-                    (currentValue, allowedOptions) => ShowThemeTokenPicker(ProjectAncestor(node).Id, currentValue, allowedOptions),
+                    (currentValue, allowMultiple) => _domainDialogs.ShowIconTokenPicker(ProjectAncestor(node).Id, currentValue, allowMultiple),
+                    (currentValue, allowedOptions) => _domainDialogs.ShowThemeTokenPicker(ProjectAncestor(node).Id, currentValue, allowedOptions),
                     (token) => SvgIconPreview.CreateProjectIconTokenPreview(_database, ProjectAncestor(node).Id, token, 18),
                     _pathBrowser.ResolveImagePath,
                     (fieldId) => _activeFieldControls.ValueOrStored(fieldId, (id) => _fieldValues.CurrentStoredValue(node, id)));
@@ -440,31 +448,6 @@ public partial class MainWindow : SukiWindow
     private async Task ShowInfoDialog(string title, string message)
     {
         await new EditorDialogService(this, _isDark).ShowInfo(title, message);
-    }
-
-    private async Task<bool> ConfirmIconTokenDelete(string token)
-    {
-        return await new EditorDialogService(this, _isDark).ConfirmIconTokenDelete(token);
-    }
-
-    private Task ShowIconThemeSearchDialog(ProjectTreeNode node)
-    {
-        return new IconThemeSearchDialog(this, _database, ShowInfoDialog, ReloadAndSelect).Show(node);
-    }
-
-    private Task ShowIconThemeSvgReplaceDialog(ProjectTreeNode node, string token)
-    {
-        return new IconThemeSvgReplaceDialog(this, _database, _pathBrowser.BrowseSvgFile, ReloadAndSelect).Show(node, token);
-    }
-
-    private Task<string?> ShowIconTokenPicker(string projectId, string currentValue, bool allowMultiple)
-    {
-        return new IconTokenPickerDialog(this, _database).Show(projectId, currentValue, allowMultiple);
-    }
-
-    private Task<string?> ShowThemeTokenPicker(string projectId, string currentValue, IReadOnlyList<FieldOption>? allowedOptions)
-    {
-        return new ThemeTokenPickerDialog(this, _database).Show(projectId, currentValue, allowedOptions);
     }
 
     private void DuplicateNode(ProjectTreeNode node)
