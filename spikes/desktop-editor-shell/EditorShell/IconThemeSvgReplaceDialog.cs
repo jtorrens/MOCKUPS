@@ -65,7 +65,7 @@ internal sealed class IconThemeSvgReplaceDialog
             AcceptsReturn = true,
             TextWrapping = TextWrapping.NoWrap,
             MinHeight = 190,
-            Text = "",
+            Text = original.SvgText,
             PlaceholderText = "<svg viewBox=\"0 0 24 24\">...</svg>",
         });
         var modeBox = new ComboBox
@@ -133,7 +133,7 @@ internal sealed class IconThemeSvgReplaceDialog
                         Number(scale),
                         Number(rotation),
                         original.SvgText));
-                newPreview.Content = SvgIconPreview.CreateFromSvg(transformedSvg, 112);
+                newPreview.Content = SvgIconPreview.CreateFromSvg(transformedSvg, 112, svgBox.Text ?? original.SvgText);
                 newGeometry.Text = SvgReplacementService.TryGeometry(svgBox.Text ?? "")?.Label ?? "Unknown size";
                 acceptButton.IsEnabled = true;
                 SetError("");

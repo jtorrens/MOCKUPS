@@ -72,6 +72,51 @@ internal static class SvgIconPreview
     {
         try
         {
+            return CreateFromSvg(svg, size, fallback: null);
+        }
+        catch
+        {
+            return EditorIcons.Create(EditorIcons.Icon, size);
+        }
+    }
+
+    public static Control CreateFromSvg(string svg, double size, string? fallback)
+    {
+        try
+        {
+            var rendered = CreateSvgPreview(svg, size);
+            if (rendered is not null) return rendered;
+
+            if (!string.IsNullOrWhiteSpace(fallback))
+            {
+                rendered = CreateSvgPreview(fallback, size);
+                if (rendered is not null) return rendered;
+            }
+
+            return EditorIcons.Create(EditorIcons.Icon, size);
+        }
+        catch
+        {
+            if (!string.IsNullOrWhiteSpace(fallback))
+            {
+                try
+                {
+                    return CreateSvgPreview(fallback, size) ?? EditorIcons.Create(EditorIcons.Icon, size);
+                }
+                catch
+                {
+                    return EditorIcons.Create(EditorIcons.Icon, size);
+                }
+            }
+
+            return EditorIcons.Create(EditorIcons.Icon, size);
+        }
+    }
+
+    private static Control? CreateSvgPreview(string svg, double size)
+    {
+        try
+        {
             var viewBox = SvgViewBox(svg);
             var strokeMode = SvgUsesStroke(svg);
             var brush = new SolidColorBrush(Color.Parse("#F2F6FF"));
@@ -155,7 +200,7 @@ internal static class SvgIconPreview
                 }
             }
 
-            if (canvas.Children.Count == 0) return EditorIcons.Create(EditorIcons.Icon, size);
+            if (canvas.Children.Count == 0) return null;
 
             return new Viewbox
             {
@@ -167,7 +212,7 @@ internal static class SvgIconPreview
         }
         catch
         {
-            return EditorIcons.Create(EditorIcons.Icon, size);
+            return null;
         }
     }
 
