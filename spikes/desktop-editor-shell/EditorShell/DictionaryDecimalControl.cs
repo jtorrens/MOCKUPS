@@ -11,11 +11,13 @@ internal sealed class DictionaryDecimalControl : Grid, IDictionaryValueControl
     private readonly NumericUpDown _numeric;
     private bool _isUpdating;
     private string _value;
+    private string _lastCommittedValue;
 
     public DictionaryDecimalControl(FieldDefinition definition, string value)
     {
         _definition = definition;
         _value = Normalize(value);
+        _lastCommittedValue = _value;
         _numeric = new NumericUpDown
         {
             MinHeight = 36,
@@ -41,7 +43,7 @@ internal sealed class DictionaryDecimalControl : Grid, IDictionaryValueControl
             if (change.Property != NumericUpDown.ValueProperty || _isUpdating) return;
 
             SetLocalValue(Format(_numeric.Value ?? 0));
-            ValueCommitted?.Invoke(this, _value);
+            CommitValue();
         };
         Children.Add(_numeric);
     }
@@ -56,6 +58,7 @@ internal sealed class DictionaryDecimalControl : Grid, IDictionaryValueControl
         if (_value == normalized) return;
 
         _value = normalized;
+        _lastCommittedValue = normalized;
         _isUpdating = true;
         _numeric.Value = ParseDecimal(_value, 0);
         _isUpdating = false;
@@ -68,6 +71,14 @@ internal sealed class DictionaryDecimalControl : Grid, IDictionaryValueControl
 
         _value = normalized;
         ValueChanged?.Invoke(this, _value);
+    }
+
+    private void CommitValue()
+    {
+        if (_lastCommittedValue == _value) return;
+
+        _lastCommittedValue = _value;
+        ValueCommitted?.Invoke(this, _value);
     }
 
     private string Normalize(string value)
