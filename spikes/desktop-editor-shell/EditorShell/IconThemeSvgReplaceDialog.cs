@@ -14,8 +14,8 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class IconThemeSvgReplaceDialog
 {
     private const double DefaultPadding = 1;
-    private const double DefaultCornerRadius = 3;
-    private const double DefaultStrokeWidth = 1.5;
+    private const double DefaultCornerRadius = 0;
+    private const double DefaultStrokeWidth = 0;
     private readonly Window _owner;
     private readonly SpikeDatabase _database;
     private readonly Func<Task<string?>> _browseSvgFile;
@@ -39,10 +39,10 @@ internal sealed class IconThemeSvgReplaceDialog
         var dialog = new SukiWindow
         {
             Title = $"Replace SVG for \"{token}\"",
-            Width = 920,
-            Height = 760,
-            MinWidth = 840,
-            MinHeight = 660,
+            Width = 1120,
+            Height = 860,
+            MinWidth = 980,
+            MinHeight = 760,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             IsMenuVisible = false,
             BackgroundAnimationEnabled = false,
@@ -80,11 +80,11 @@ internal sealed class IconThemeSvgReplaceDialog
             MinWidth = 120,
             HorizontalAlignment = HorizontalAlignment.Right,
         };
-        var padding = CreateNumber(DefaultPadding, 0, 12, 0.25m);
-        var radius = CreateNumber(DefaultCornerRadius, 0, 12, 0.25m);
-        var stroke = CreateNumber(DefaultStrokeWidth, 0, 8, 0.05m);
+        var padding = CreateNumber(DefaultPadding, 0, 999, 0.25m);
+        var radius = CreateNumber(DefaultCornerRadius, 0, 999, 0.25m);
+        var stroke = CreateNumber(DefaultStrokeWidth, 0, 32, 0.05m);
         var scale = CreateNumber(1, 0.05, 8, 0.01m);
-        var rotation = CreateNumber(0, -180, 180, 1m);
+        var rotation = CreateNumber(0, -360, 360, 1m);
         var acceptButton = new Button { Content = "Accept", MinWidth = 96, IsEnabled = false };
         var cancelButton = new Button { Content = "Cancel", MinWidth = 92 };
         string transformedSvg = "";
@@ -98,9 +98,9 @@ internal sealed class IconThemeSvgReplaceDialog
                 {
                     new Border
                     {
-                        Width = 220,
-                        Height = 180,
-                        Padding = new Thickness(18),
+                        Width = 430,
+                        Height = 320,
+                        Padding = new Thickness(6),
                         BorderThickness = new Thickness(1),
                         BorderBrush = new SolidColorBrush(Color.Parse("#44546A")),
                         CornerRadius = new CornerRadius(8),
@@ -122,20 +122,23 @@ internal sealed class IconThemeSvgReplaceDialog
             try
             {
                 var originalSvg = SvgReplacementService.Validate(original.SvgText);
-                originalPreview.SetSvg(originalSvg);
-                originalGeometry.Text = SvgReplacementService.TryGeometry(originalSvg)?.Label ?? "Unknown size";
+                var currentPadding = Number(padding);
+                var originalPreviewGeometry = SvgReplacementService.TryGeometry(originalSvg);
+                originalPreview.SetSvg(originalSvg, originalPreviewGeometry, currentPadding);
+                originalGeometry.Text = originalPreviewGeometry?.Label ?? "Unknown size";
                 transformedSvg = SvgReplacementService.Transform(
                     svgBox.Text ?? "",
                     new SvgReplacementService.TransformOptions(
                         modeBox.SelectedIndex == 1 ? "negative" : "positive",
-                        Number(padding),
+                        currentPadding,
                         Number(radius),
                         Number(stroke),
                         Number(scale),
                         Number(rotation),
                         original.SvgText));
-                newPreview.SetSvg(transformedSvg);
-                newGeometry.Text = SvgReplacementService.TryGeometry(svgBox.Text ?? "")?.Label ?? "Unknown size";
+                var newPreviewGeometry = SvgReplacementService.TryGeometry(svgBox.Text ?? "");
+                newPreview.SetSvg(transformedSvg, SvgReplacementService.TryGeometry(transformedSvg) ?? newPreviewGeometry, currentPadding);
+                newGeometry.Text = newPreviewGeometry?.Label ?? "Unknown size";
                 acceptButton.IsEnabled = true;
                 SetError("");
             }
@@ -157,8 +160,60 @@ internal sealed class IconThemeSvgReplaceDialog
             };
         }
 
+        Control NumberEditor(string label, NumericUpDown numeric, double sliderMinimum, double sliderMaximum, double sliderStep, int column)
+        {
+            var slider = new Slider
+            {
+                Minimum = sliderMinimum,
+                Maximum = sliderMaximum,
+                TickFrequency = sliderStep,
+                IsSnapToTickEnabled = false,
+                Value = Math.Clamp(Number(numeric), sliderMinimum, sliderMaximum),
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            var syncing = false;
+            slider.PropertyChanged += (_, change) =>
+            {
+                if (change.Property != Slider.ValueProperty || syncing) return;
+
+                syncing = true;
+                numeric.Value = (decimal)slider.Value;
+                syncing = false;
+                UpdatePreview();
+            };
+            numeric.PropertyChanged += (_, change) =>
+            {
+                if (change.Property != NumericUpDown.ValueProperty || syncing) return;
+
+                syncing = true;
+                slider.Value = Math.Clamp(Number(numeric), sliderMinimum, sliderMaximum);
+                syncing = false;
+            };
+
+            var stack = new StackPanel
+            {
+                Spacing = 4,
+                Children =
+                {
+                    new TextBlock { Text = label, FontSize = 12, Opacity = 0.78 },
+                    new Grid
+                    {
+                        ColumnDefinitions = new ColumnDefinitions("*,78"),
+                        ColumnSpacing = 8,
+                        Children =
+                        {
+                            slider,
+                            numeric,
+                        },
+                    },
+                },
+            };
+            Grid.SetColumn(numeric, 1);
+            Grid.SetColumn(stack, column);
+            return stack;
+        }
+
         svgBox.TextChanged += (_, _) => UpdatePreview();
-        modeBox.SelectionChanged += (_, _) => UpdatePreview();
         Hook(padding);
         Hook(radius);
         Hook(stroke);
@@ -217,6 +272,7 @@ internal sealed class IconThemeSvgReplaceDialog
         };
         Grid.SetColumn(previews.Children[1], 1);
 
+        var radiusEditor = NumberEditor("Radius", radius, 0, 12, 0.25, 2);
         var controls = new Grid
         {
             ColumnDefinitions = new ColumnDefinitions("*,*,*,*,*,*"),
@@ -224,13 +280,20 @@ internal sealed class IconThemeSvgReplaceDialog
             Children =
             {
                 LabeledControl("Mode", modeBox),
-                LabeledControl("Padding", padding, 1),
-                LabeledControl("Radius", radius, 2),
-                LabeledControl("Stroke", stroke, 3),
-                LabeledControl("Scale", scale, 4),
-                LabeledControl("Rotation", rotation, 5),
+                NumberEditor("Padding", padding, 0, 12, 0.25, 1),
+                radiusEditor,
+                NumberEditor("Stroke", stroke, 0, 8, 0.05, 3),
+                NumberEditor("Scale", scale, 0.05, 8, 0.01, 4),
+                NumberEditor("Rotation", rotation, -180, 180, 1, 5),
             },
         };
+        void UpdateMode()
+        {
+            radiusEditor.IsVisible = modeBox.SelectedIndex == 1;
+            UpdatePreview();
+        }
+        modeBox.SelectionChanged += (_, _) => UpdateMode();
+        UpdateMode();
 
         var svgHeader = new Grid
         {

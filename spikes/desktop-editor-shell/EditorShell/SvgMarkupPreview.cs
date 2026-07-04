@@ -31,11 +31,11 @@ internal sealed class SvgMarkupPreview : Grid
         Children.Add(_message);
     }
 
-    public void SetSvg(string svg)
+    public void SetSvg(string svg, SvgReplacementService.Geometry? geometry, double padding)
     {
         _message.IsVisible = false;
         _webView.IsVisible = true;
-        _webView.NavigateToString(Html(svg), new Uri("https://mockups.local/svg-preview/"));
+        _webView.NavigateToString(Html(svg, geometry, padding), new Uri("https://mockups.local/svg-preview/"));
     }
 
     public void SetMessage(string message)
@@ -45,8 +45,14 @@ internal sealed class SvgMarkupPreview : Grid
         _message.IsVisible = true;
     }
 
-    private static string Html(string svg)
+    private static string Html(string svg, SvgReplacementService.Geometry? geometry, double padding)
     {
+        var insetX = geometry is null || geometry.Width <= 0
+            ? 0
+            : Math.Clamp(padding / geometry.Width * 100, 0, 49);
+        var insetY = geometry is null || geometry.Height <= 0
+            ? 0
+            : Math.Clamp(padding / geometry.Height * 100, 0, 49);
         return $$"""
             <!doctype html>
             <html>
@@ -65,21 +71,46 @@ internal sealed class SvgMarkupPreview : Grid
                 body {
                   display: grid;
                   place-items: center;
-                  padding: 14px;
+                  padding: 8px;
                   box-sizing: border-box;
                   color: #f2f6ff;
                 }
 
+                .icon-frame {
+                  position: relative;
+                  width: 100%;
+                  height: 100%;
+                  display: grid;
+                  place-items: center;
+                  border: 1px solid rgba(226, 232, 240, .9);
+                  box-sizing: border-box;
+                }
+
+                .padding-frame {
+                  position: absolute;
+                  left: {{insetX.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture)}}%;
+                  right: {{insetX.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture)}}%;
+                  top: {{insetY.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture)}}%;
+                  bottom: {{insetY.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture)}}%;
+                  border: 1px solid #ff2d55;
+                  box-sizing: border-box;
+                  pointer-events: none;
+                  z-index: 2;
+                }
+
                 svg {
                   display: block;
-                  max-width: 100%;
-                  max-height: 100%;
+                  width: 92%;
+                  height: 92%;
                   overflow: visible;
                 }
               </style>
             </head>
             <body>
-              {{svg}}
+              <div class="icon-frame">
+                {{svg}}
+                <div class="padding-frame"></div>
+              </div>
             </body>
             </html>
             """;
