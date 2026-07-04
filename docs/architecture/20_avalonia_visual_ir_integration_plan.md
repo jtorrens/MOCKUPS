@@ -223,6 +223,63 @@ Avalonia must follow the same geometry rules as the React handoff:
 Avalonia should place these objects. It should not recreate their internal
 geometry.
 
+## Status, navigation and icon SVG parity
+
+The React implementation reached parity between the legacy renderer and the IR
+path by sharing the same SVG preparation before the renderer boundary.
+Avalonia must preserve that split.
+
+Generated status and navigation items are not icon-set glyphs:
+
+- status battery, status signal and generated navigation buttons are semantic
+  resolved items;
+- their runtime values are resolved before Visual IR is created;
+- they are expanded through the generated SVG primitive contract;
+- Visual IR receives final `svg.markup`, final bounds and `fit`;
+- the renderer places the SVG and applies object-level effects only.
+
+The renderer must not infer whether these SVGs are fill-based, stroke-based,
+multi-part, padded, overflowing or semantically a battery/signal/button. Those
+decisions belong to the generated primitive or bridge.
+
+The exact React anchors are:
+
+- `/Volumes/SD_02/PROYECTOS/MOCKUPS_REACT/src/base-routines/generatedSvgPrimitives.ts`
+  - `generatedStatusSignalSvg`
+  - `generatedStatusBatterySvg`
+  - `generatedNavigationButtonSvg`
+- `/Volumes/SD_02/PROYECTOS/MOCKUPS_REACT/src/visual/ir/bridge/renderableToVisualIr.ts`
+  - `statusSignalNode`
+  - `statusBatteryNode`
+  - `navigationItemNode`
+  - `statusItemWidth`
+  - `inlineSvgMarkup`
+  - `iconGlyphNode`
+
+Status battery has an important occupied-size rule. The battery terminal is
+part of the SVG geometry and may visually overflow the logical item width. Do
+not turn that protrusion into layout gap or renderer padding.
+
+Status icon-token items follow the icon glyph path instead:
+
+```text
+status item container -> square icon box -> normalized inline SVG glyph
+```
+
+The glyph path normalizes user/icon-set SVG before IR:
+
+- remove XML and doctype declarations;
+- preserve real `fill="none"` and `stroke="none"`;
+- replace concrete fill/stroke colors with `currentColor`;
+- remove root width/height/style/preserveAspectRatio;
+- set root SVG to `width="100%"`, `height="100%"`,
+  `preserveAspectRatio="xMidYMid meet"` and visible overflow;
+- pass tint as an IR paint, not as renderer-specific icon logic.
+
+Avalonia should port or faithfully reimplement these preparation routines in a
+bridge/base-routine layer. It should not duplicate this logic inside
+`AvaloniaVisualIrRenderer`.
+
 ## Base routines to preserve
 
 Port or reimplement these contracts before depending on them in renderer code:
