@@ -1750,9 +1750,7 @@ internal sealed partial class SpikeDatabase
                     { "id": "core.name", "order": 10, "visible": true },
                     { "id": "app.bundleKey", "order": 20, "visible": true },
                     { "id": "app.appType", "order": 30, "visible": true },
-                    { "id": "app.config", "order": 40, "visible": true },
-                    { "id": "core.kind", "order": 50, "visible": false },
-                    { "id": "core.notes", "order": 60, "visible": true }
+                    { "id": "core.kind", "order": 40, "visible": false }
                   """
             : recordClassId == "render_preset"
                 ? """
@@ -1884,6 +1882,76 @@ internal sealed partial class SpikeDatabase
                     { "id": "actor.avatar.offset", "order": 30, "visible": true },
                     { "id": "actor.avatar.useInitials", "order": 40, "visible": true },
                     { "id": "actor.avatar.initialsPadding", "order": 50, "visible": true }
+                  ]
+                }
+              ]
+            }
+            """
+            : "";
+        var appCards = recordClassId is "app.generic" or "app.core.chat"
+            ? $$"""
+            ,
+            {
+              "id": "wallpaper",
+              "label": "Wallpaper",
+              "subtitle": "Wallpaper color, image and opacity",
+              "icon": "{{EditorIcons.Image}}",
+              "order": 20,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                {
+                  "id": "wallpaper",
+                  "label": "Wallpaper",
+                  "order": 10,
+                  "visible": true,
+                  "fields": [
+                    { "id": "app.wallpaper.kind", "order": 10, "visible": true },
+                    { "id": "app.wallpaper.opacity", "order": 20, "visible": true },
+                    { "id": "app.wallpaper.color", "order": 30, "visible": true },
+                    { "id": "app.wallpaper.image.filePath", "order": 40, "visible": true }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "icon",
+              "label": "Icon",
+              "subtitle": "App icon image crop",
+              "icon": "{{EditorIcons.Icon}}",
+              "order": 30,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                {
+                  "id": "icon",
+                  "label": "Icon",
+                  "order": 10,
+                  "visible": true,
+                  "fields": [
+                    { "id": "app.icon.filePath", "order": 10, "visible": true },
+                    { "id": "app.icon.scale", "order": 20, "visible": true },
+                    { "id": "app.icon.offset", "order": 30, "visible": true }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "notes",
+              "label": "Notes",
+              "subtitle": "App notes",
+              "icon": "{{EditorIcons.Content}}",
+              "order": 40,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                {
+                  "id": "notes",
+                  "label": "Notes",
+                  "order": 10,
+                  "visible": true,
+                  "fields": [
+                    { "id": "app.note", "order": 10, "visible": true }
                   ]
                 }
               ]
@@ -2147,7 +2215,7 @@ internal sealed partial class SpikeDatabase
                   ]
                 }
               ]
-            }{{actorCards}}{{themeCards}}{{statusBarCards}}{{navigationBarCards}}{{componentCards}}
+            }{{appCards}}{{actorCards}}{{themeCards}}{{statusBarCards}}{{navigationBarCards}}{{componentCards}}
           ]
         }
         """;
@@ -3801,6 +3869,18 @@ internal sealed partial class SpikeDatabase
     public void UpdateAppField(string appId, string fieldId, string value)
     {
         using var connection = OpenConnection();
+        if (fieldId.StartsWith("app.wallpaper.", StringComparison.Ordinal))
+        {
+            UpdateAppConfigField(connection, appId, fieldId, value);
+            return;
+        }
+
+        if (fieldId.StartsWith("app.icon.", StringComparison.Ordinal) || fieldId == "app.note")
+        {
+            UpdateAppMetadataField(connection, appId, fieldId, value);
+            return;
+        }
+
         var column = fieldId switch
         {
             "app.bundleKey" => "bundle_key",
@@ -3815,6 +3895,91 @@ internal sealed partial class SpikeDatabase
             $"UPDATE apps SET {column} = $value WHERE id = $id",
             ("$id", appId),
             ("$value", value));
+    }
+
+    public string GetAppConfigFieldValue(string appId, string fieldId)
+    {
+        var settings = GetAppSettings(appId);
+        var config = ParseJsonObject(string.IsNullOrWhiteSpace(settings.ConfigJson) ? "{}" : settings.ConfigJson);
+        var lightWallpaperColor = JsonString(config, ["modes", "light", "wallpaper", "color"]);
+        if (string.IsNullOrWhiteSpace(lightWallpaperColor)) lightWallpaperColor = "gray_100";
+        var darkWallpaperColor = JsonString(config, ["modes", "dark", "wallpaper", "color"]);
+        if (string.IsNullOrWhiteSpace(darkWallpaperColor)) darkWallpaperColor = "gray_000";
+        return fieldId switch
+        {
+            "app.wallpaper.kind" => JsonString(config, ["wallpaper", "kind"]) is { Length: > 0 } kind ? kind : "solid",
+            "app.wallpaper.opacity" => JsonNumberString(config, ["wallpaper", "opacity"], "1"),
+            "app.wallpaper.color" => $"{lightWallpaperColor}|{darkWallpaperColor}",
+            "app.wallpaper.image.filePath" => JsonString(config, ["wallpaper", "image", "filePath"]),
+            _ => throw new InvalidOperationException($"Unknown app config field '{fieldId}'."),
+        };
+    }
+
+    public string GetAppMetadataFieldValue(string appId, string fieldId)
+    {
+        var settings = GetAppSettings(appId);
+        var metadata = ParseJsonObject(string.IsNullOrWhiteSpace(settings.MetadataJson) ? "{}" : settings.MetadataJson);
+        return fieldId switch
+        {
+            "app.note" => JsonString(metadata, ["note"]),
+            "app.icon.filePath" => JsonString(metadata, ["icon", "filePath"]),
+            "app.icon.scale" => JsonNumberString(metadata, ["icon", "scale"], "1"),
+            "app.icon.offset" => $"{JsonNumberString(metadata, ["icon", "offsetX"], "0")}|{JsonNumberString(metadata, ["icon", "offsetY"], "0")}",
+            _ => throw new InvalidOperationException($"Unknown app metadata field '{fieldId}'."),
+        };
+    }
+
+    private static void UpdateAppConfigField(SqliteConnection connection, string appId, string fieldId, string value)
+    {
+        var config = ParseJsonObject(ScalarString(connection, "SELECT config_json FROM apps WHERE id = $id", ("$id", appId)) ?? "{}");
+        switch (fieldId)
+        {
+            case "app.wallpaper.kind":
+                SetJsonValue(config, ["wallpaper", "kind"], JsonValue.Create(value)!);
+                break;
+            case "app.wallpaper.opacity":
+                SetJsonValue(config, ["wallpaper", "opacity"], NumberNode(value));
+                break;
+            case "app.wallpaper.color":
+                SetPair(
+                    config,
+                    value,
+                    ["modes", "light", "wallpaper", "color"],
+                    ["modes", "dark", "wallpaper", "color"],
+                    asNumber: false);
+                break;
+            case "app.wallpaper.image.filePath":
+                SetJsonValue(config, ["wallpaper", "image", "filePath"], JsonValue.Create(value)!);
+                break;
+            default:
+                throw new InvalidOperationException($"Unknown app config field '{fieldId}'.");
+        }
+
+        Execute(connection, "UPDATE apps SET config_json = $configJson WHERE id = $id", ("$id", appId), ("$configJson", config.ToJsonString()));
+    }
+
+    private static void UpdateAppMetadataField(SqliteConnection connection, string appId, string fieldId, string value)
+    {
+        var metadata = ParseJsonObject(ScalarString(connection, "SELECT metadata_json FROM apps WHERE id = $id", ("$id", appId)) ?? "{}");
+        switch (fieldId)
+        {
+            case "app.note":
+                SetJsonValue(metadata, ["note"], JsonValue.Create(value)!);
+                break;
+            case "app.icon.filePath":
+                SetJsonValue(metadata, ["icon", "filePath"], JsonValue.Create(value)!);
+                break;
+            case "app.icon.scale":
+                SetJsonValue(metadata, ["icon", "scale"], NumberNode(value));
+                break;
+            case "app.icon.offset":
+                SetPair(metadata, value, ["icon", "offsetX"], ["icon", "offsetY"]);
+                break;
+            default:
+                throw new InvalidOperationException($"Unknown app metadata field '{fieldId}'.");
+        }
+
+        Execute(connection, "UPDATE apps SET metadata_json = $metadataJson WHERE id = $id", ("$id", appId), ("$metadataJson", metadata.ToJsonString()));
     }
 
     private static List<EpisodeRow> QueryEpisodeRows(SqliteConnection connection)
@@ -5770,6 +5935,18 @@ internal sealed partial class SpikeDatabase
         }
 
         return Convert.ToInt64(command.ExecuteScalar());
+    }
+
+    private static string? ScalarString(SqliteConnection connection, string sql, params (string Key, object? Value)[] parameters)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = sql;
+        foreach (var (key, value) in parameters)
+        {
+            command.Parameters.AddWithValue(key, value ?? DBNull.Value);
+        }
+
+        return command.ExecuteScalar() as string;
     }
 
     private const string SchemaSql =

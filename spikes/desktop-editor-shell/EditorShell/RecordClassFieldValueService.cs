@@ -58,7 +58,7 @@ internal sealed class RecordClassFieldValueService
         {
             ProjectTreeNodeKind.Theme => ThemeFieldOptions(node.Id, field),
             ProjectTreeNodeKind.Actor => ActorFieldOptions(node.Id, field),
-            ProjectTreeNodeKind.App => AppFieldOptions(field),
+            ProjectTreeNodeKind.App => AppFieldOptions(node.Id, field),
             ProjectTreeNodeKind.Shot => ShotFieldOptions(node.Id, field),
             ProjectTreeNodeKind.RenderPreset => RenderPresetFieldOptions(field),
             ProjectTreeNodeKind.ProductionFont => ProductionFontFieldOptions(field),
@@ -178,6 +178,14 @@ internal sealed class RecordClassFieldValueService
             "app.appType" => settings.AppType,
             "app.config" => settings.ConfigJson,
             "app.metadata" => settings.MetadataJson,
+            "app.wallpaper.kind" => _database.GetAppConfigFieldValue(appId, fieldId),
+            "app.wallpaper.opacity" => _database.GetAppConfigFieldValue(appId, fieldId),
+            "app.wallpaper.color" => _database.GetAppConfigFieldValue(appId, fieldId),
+            "app.wallpaper.image.filePath" => _database.GetAppConfigFieldValue(appId, fieldId),
+            "app.note" => _database.GetAppMetadataFieldValue(appId, fieldId),
+            "app.icon.filePath" => _database.GetAppMetadataFieldValue(appId, fieldId),
+            "app.icon.scale" => _database.GetAppMetadataFieldValue(appId, fieldId),
+            "app.icon.offset" => _database.GetAppMetadataFieldValue(appId, fieldId),
             _ => throw new InvalidOperationException($"Unknown app field '{fieldId}'."),
         };
     }
@@ -269,17 +277,25 @@ internal sealed class RecordClassFieldValueService
             : field.Options;
     }
 
-    private static IReadOnlyList<FieldOption>? AppFieldOptions(RecordClassFieldDescriptor field)
+    private IReadOnlyList<FieldOption>? AppFieldOptions(string appId, RecordClassFieldDescriptor field)
     {
-        return field.Id == "app.appType"
-            ?
+        return field.Id switch
+        {
+            "app.appType" =>
             [
                 new FieldOption("chat", "Chat"),
                 new FieldOption("media", "Media"),
                 new FieldOption("system", "System"),
                 new FieldOption("custom", "Custom"),
-            ]
-            : field.Options;
+            ],
+            "app.wallpaper.kind" =>
+            [
+                new FieldOption("solid", "Solid"),
+                new FieldOption("image", "Image"),
+            ],
+            "app.wallpaper.color" => _database.GetPaletteColorOptions(_database.GetAppSettings(appId).ProjectId),
+            _ => field.Options,
+        };
     }
 
     private IReadOnlyList<FieldOption>? ShotFieldOptions(string shotId, RecordClassFieldDescriptor field)
