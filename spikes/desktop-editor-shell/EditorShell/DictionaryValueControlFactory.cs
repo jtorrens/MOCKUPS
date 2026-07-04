@@ -29,6 +29,7 @@ internal static class DictionaryValueControlFactory
             ValueKind.PaletteColorPair => new DictionaryPalettePairControl(definition, value),
             ValueKind.HexColor => new DictionaryHexColorControl(definition, value),
             ValueKind.HueDegrees => new HueDegreesControl(value, definition.IsEditable),
+            ValueKind.Integer => new DictionaryIntegerControl(definition, value),
             ValueKind.Decimal => new DictionaryDecimalControl(definition, value),
             ValueKind.IntegerPair => new DictionaryIntegerPairControl(definition, value),
             ValueKind.ImageFilePath => new DictionaryImageFileControl(definition, value, resolveImagePath, getFieldValue),
