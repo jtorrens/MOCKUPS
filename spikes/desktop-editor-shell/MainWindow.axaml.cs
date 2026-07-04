@@ -42,7 +42,7 @@ public partial class MainWindow : SukiWindow
     private readonly EditorCardHostController _editorCardHost;
     private readonly EditorFieldValueRouter _fieldValues;
     private readonly EditorFieldCommitCoordinator _fieldCommitCoordinator = new();
-    private readonly Dictionary<string, DictionaryFieldControl> _activeEditorControlsByFieldId = [];
+    private readonly EditorActiveFieldControls _activeFieldControls = new();
     private readonly HashSet<string> _expandedNodeIds = [];
     private List<ProjectTreeNode> _treeRoots = [];
     private ProjectTreeNode? _selectedNode;
@@ -297,7 +297,7 @@ public partial class MainWindow : SukiWindow
     private void BuildEditorCards(ProjectTreeNode node)
     {
         _editorCardHost.Clear();
-        _activeEditorControlsByFieldId.Clear();
+        _activeFieldControls.Clear();
         _actorAvatarPreviews.Reset();
 
         var layout = _database.LoadEditorLayout(node.RecordClassId);
@@ -345,9 +345,9 @@ public partial class MainWindow : SukiWindow
                     (currentValue, allowedOptions) => ShowThemeTokenPicker(ProjectAncestor(node).Id, currentValue, allowedOptions),
                     (token) => SvgIconPreview.CreateProjectIconTokenPreview(_database, ProjectAncestor(node).Id, token, 18),
                     _pathBrowser.ResolveImagePath,
-                    (fieldId) => ActiveOrStoredFieldValue(node, fieldId));
+                    (fieldId) => _activeFieldControls.ValueOrStored(fieldId, (id) => _fieldValues.CurrentStoredValue(node, id)));
                 controls.Add(control);
-                _activeEditorControlsByFieldId[field.Definition.Id] = control;
+                _activeFieldControls.Register(control);
                 control.ValueCommitted += (_, value) =>
                 {
                     _fieldCommitCoordinator.Commit(
@@ -358,9 +358,9 @@ public partial class MainWindow : SukiWindow
                         (storedValue) => _fieldValues.Commit(node, field.Definition.Id, storedValue));
                     if (node.Kind == ProjectTreeNodeKind.Actor)
                     {
-                        _actorAvatarPreviews.Refresh(node, _activeEditorControlsByFieldId);
+                        _actorAvatarPreviews.Refresh(node, _activeFieldControls.ControlsByFieldId);
                     }
-                    RefreshDictionaryPreviews();
+                    _activeFieldControls.RefreshPreviews();
                     RefreshPreviewDevice();
                 };
                 groupPanel.Children.Add(control);
@@ -402,27 +402,12 @@ public partial class MainWindow : SukiWindow
                 EditorCardHeader.SetOverrideState(headerIcon, controls);
                 if (node.Kind == ProjectTreeNodeKind.Actor)
                 {
-                    _actorAvatarPreviews.Refresh(node, _activeEditorControlsByFieldId);
+                    _actorAvatarPreviews.Refresh(node, _activeFieldControls.ControlsByFieldId);
                 }
             };
         }
 
         return card;
-    }
-
-    private string ActiveOrStoredFieldValue(ProjectTreeNode node, string fieldId)
-    {
-        return _activeEditorControlsByFieldId.TryGetValue(fieldId, out var control)
-            ? control.Value
-            : _fieldValues.CurrentStoredValue(node, fieldId);
-    }
-
-    private void RefreshDictionaryPreviews()
-    {
-        foreach (var control in _activeEditorControlsByFieldId.Values)
-        {
-            control.RefreshPreview();
-        }
     }
 
     private async Task AddChild(ProjectTreeNode parent)

@@ -102,6 +102,8 @@ internal sealed class DictionaryFieldControl : Grid
 
     public bool CommitAsDefault => _definition.CommitAsDefault;
 
+    public string FieldId => _definition.Id;
+
     public string Value => _value;
 
     public void RefreshPreview()
