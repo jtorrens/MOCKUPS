@@ -133,7 +133,7 @@ internal sealed class IconThemeSvgReplaceDialog
                         Number(scale),
                         Number(rotation),
                         original.SvgText));
-                newPreview.Content = SvgIconPreview.CreateFromSvg(transformedSvg, 112, svgBox.Text ?? original.SvgText);
+                newPreview.Content = SvgIconPreview.CreateFromSvg(transformedSvg, 112);
                 newGeometry.Text = SvgReplacementService.TryGeometry(svgBox.Text ?? "")?.Label ?? "Unknown size";
                 acceptButton.IsEnabled = true;
                 SetError("");

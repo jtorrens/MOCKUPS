@@ -72,43 +72,10 @@ internal static class SvgIconPreview
     {
         try
         {
-            return CreateFromSvg(svg, size, fallback: null);
+            return CreateSvgPreview(svg, size) ?? EditorIcons.Create(EditorIcons.Icon, size);
         }
         catch
         {
-            return EditorIcons.Create(EditorIcons.Icon, size);
-        }
-    }
-
-    public static Control CreateFromSvg(string svg, double size, string? fallback)
-    {
-        try
-        {
-            var rendered = CreateSvgPreview(svg, size);
-            if (rendered is not null) return rendered;
-
-            if (!string.IsNullOrWhiteSpace(fallback))
-            {
-                rendered = CreateSvgPreview(fallback, size);
-                if (rendered is not null) return rendered;
-            }
-
-            return EditorIcons.Create(EditorIcons.Icon, size);
-        }
-        catch
-        {
-            if (!string.IsNullOrWhiteSpace(fallback))
-            {
-                try
-                {
-                    return CreateSvgPreview(fallback, size) ?? EditorIcons.Create(EditorIcons.Icon, size);
-                }
-                catch
-                {
-                    return EditorIcons.Create(EditorIcons.Icon, size);
-                }
-            }
-
             return EditorIcons.Create(EditorIcons.Icon, size);
         }
     }
