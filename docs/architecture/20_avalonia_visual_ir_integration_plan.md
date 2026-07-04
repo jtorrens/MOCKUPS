@@ -284,6 +284,86 @@ production, shot, screen order/durations, theme, icon theme, device, render
 preset, output scale, source media and frame range. The immediate rule is
 simpler: preview and render must use the same resolved/frame model.
 
+## Variant color contract
+
+Visual IR may carry color variants so a playback client can switch display mode
+without receiving duplicate frame payloads.
+
+The motivating case is on-set playback: the same shot can be displayed in a
+variant suitable for the current lighting conditions without asking the editor
+or resolver to resend every plane.
+
+This is a color-only feature. A variant switch may affect:
+
+- solid fill colors;
+- gradient stop colors;
+- stroke paint colors;
+- text fill colors;
+- SVG tint colors;
+- shadow or glow colors.
+
+A variant switch must not affect:
+
+- geometry;
+- bounds;
+- transforms;
+- font selection or metrics;
+- icon token selection;
+- media asset selection;
+- visibility;
+- text/content;
+- layout, padding or spacing.
+
+If one of those non-color values changes between modes, the resolver must emit a
+new Visual IR document or frame sequence.
+
+The contract should not hardcode `light` and `dark`. The document declares the
+available variant names:
+
+```json
+{
+  "resources": {
+    "colorVariants": ["set_day", "set_night", "high_contrast"],
+    "defaultColorVariant": "set_night"
+  }
+}
+```
+
+Any color slot may then be either a concrete color string or a variant color:
+
+```json
+{
+  "kind": "solid",
+  "color": {
+    "kind": "variant",
+    "values": {
+      "set_day": "#111111",
+      "set_night": "#f7f7f7",
+      "high_contrast": "#ffffff"
+    },
+    "fallback": "#f7f7f7"
+  }
+}
+```
+
+This applies everywhere a color appears in `VisualIrPaint`, including gradient
+stops and SVG tint.
+
+Theme and palette tokens do not cross this boundary. The resolver/interpreter
+may start from theme tokens, palette colors and mode-specific app rules, but it
+must resolve them to concrete hex values for every advertised variant before
+creating the IR document.
+
+Renderer behavior is deliberately small:
+
+1. Receive the selected color variant as render option.
+2. If a variant color has that key, use that hex value.
+3. Otherwise use `fallback`.
+4. If no fallback exists, emit a diagnostic and use a safe visible color.
+
+Debug metadata may optionally keep the original token name for inspection, but
+rendering must not depend on it.
+
 ## Resolver boundaries
 
 Resolvers should be small and composable:
