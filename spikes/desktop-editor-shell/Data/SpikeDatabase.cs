@@ -3094,7 +3094,7 @@ internal sealed partial class SpikeDatabase
         RefreshIconThemeSets(connection, projectId);
     }
 
-    public IconThemeImportResult ImportIconThemeSvg(string iconThemeId, string sourcePath)
+    public IconThemeReplaceSvgResult ReplaceIconThemeTokenSvg(string iconThemeId, string token, string sourcePath)
     {
         if (string.IsNullOrWhiteSpace(sourcePath) || !File.Exists(sourcePath))
         {
@@ -3109,30 +3109,43 @@ internal sealed partial class SpikeDatabase
         using var connection = OpenConnection();
         var row = QueryIconThemeRows(connection).FirstOrDefault((candidate) => candidate.Id == iconThemeId)
             ?? throw new InvalidOperationException($"Missing icon theme '{iconThemeId}'.");
-        var token = IconTokenFromFileName(Path.GetFileNameWithoutExtension(sourcePath));
         if (!ValidIconTokenRegex().IsMatch(token))
         {
-            throw new InvalidOperationException("Imported SVG file name cannot be converted into a valid icon token.");
+            throw new InvalidOperationException("Icon token must be lower_snake_case.");
         }
 
+        var mapping = ParseJsonObject(string.IsNullOrWhiteSpace(row.MappingJson) ? "{}" : row.MappingJson);
+        var tokens = mapping["tokens"] as JsonObject;
+        var tokenObject = tokens?[token] as JsonObject
+            ?? throw new InvalidOperationException($"Icon token '{token}' is not present in this icon set.");
+        var file = JsonString(tokenObject, ["file"]);
+        if (string.IsNullOrWhiteSpace(file))
+        {
+            file = $"{token}.svg";
+            tokenObject["file"] = file;
+            mapping["categories"] = tokens is null ? [] : IconThemeCategories(tokens);
+        }
+        if (!Path.GetExtension(file).Equals(".svg", StringComparison.OrdinalIgnoreCase) || Path.GetFileName(file) != file)
+        {
+            throw new InvalidOperationException($"Icon token '{token}' has an invalid SVG file reference.");
+        }
+
+        var svgText = NormalizeSvgReplacementText(File.ReadAllText(sourcePath));
+        ValidateSvgReplacementText(svgText);
         var targetDirectory = IconThemeAssetDirectory(connection, row.ProjectId, row.AssetRoot);
         Directory.CreateDirectory(targetDirectory);
-        var file = $"{token}.svg";
         var targetPath = Path.Combine(targetDirectory, file);
-        var replaced = File.Exists(targetPath);
-        if (!Path.GetFullPath(sourcePath).Equals(Path.GetFullPath(targetPath), StringComparison.Ordinal))
+        File.WriteAllText(targetPath, svgText);
+        if (tokens is not null)
         {
-            File.Copy(sourcePath, targetPath, overwrite: true);
+            Execute(
+                connection,
+                "UPDATE icon_themes SET mapping_json = $mappingJson WHERE id = $id",
+                ("$id", iconThemeId),
+                ("$mappingJson", mapping.ToJsonString()));
         }
 
-        var mapping = UpsertIconThemeToken(row.MappingJson, token, file);
-        Execute(
-            connection,
-            "UPDATE icon_themes SET mapping_json = $mappingJson WHERE id = $id",
-            ("$id", iconThemeId),
-            ("$mappingJson", mapping.ToJsonString()));
-
-        return new IconThemeImportResult(token, file, replaced);
+        return new IconThemeReplaceSvgResult(token, file);
     }
 
     public IconThemeSearchResult SearchIconThemeSources(string query)
@@ -5085,32 +5098,43 @@ internal sealed partial class SpikeDatabase
         };
     }
 
-    private static JsonObject UpsertIconThemeToken(string currentMappingJson, string token, string file)
+    private static string NormalizeSvgReplacementText(string value)
     {
-        var mapping = ParseJsonObject(string.IsNullOrWhiteSpace(currentMappingJson) ? "{}" : currentMappingJson);
-        var tokens = mapping["tokens"] as JsonObject;
-        if (tokens is null)
+        var trimmed = value.Trim('\uFEFF').Trim();
+        var svgStart = trimmed.IndexOf("<svg", StringComparison.OrdinalIgnoreCase);
+        if (svgStart < 0) return trimmed;
+
+        var svgText = trimmed[svgStart..].Trim();
+        var lastClosingSvg = svgText.LastIndexOf("</svg>", StringComparison.OrdinalIgnoreCase);
+        return lastClosingSvg < 0
+            ? svgText
+            : svgText[..(lastClosingSvg + "</svg>".Length)].Trim();
+    }
+
+    private static void ValidateSvgReplacementText(string svgText)
+    {
+        if (string.IsNullOrWhiteSpace(svgText))
         {
-            tokens = [];
-            mapping["tokens"] = tokens;
+            throw new InvalidOperationException("SVG content is required.");
         }
 
-        var existing = tokens[token] as JsonObject;
-        if (existing is null)
+        if (!Regex.IsMatch(svgText, "^<svg[\\s>]", RegexOptions.IgnoreCase))
         {
-            existing = [];
-            tokens[token] = existing;
+            throw new InvalidOperationException("SVG content must start with an <svg> element.");
         }
 
-        var category = JsonString(existing, ["category"]);
-        if (string.IsNullOrWhiteSpace(category)) category = IconTokenCategory(token);
+        if (!Regex.IsMatch(svgText, "(</svg>\\s*$)|(/>\\s*$)", RegexOptions.IgnoreCase))
+        {
+            throw new InvalidOperationException("SVG content must close the <svg> element.");
+        }
 
-        existing["category"] = category;
-        existing["file"] = file;
-        existing["description"] = JsonString(existing, ["description"]);
-        mapping["schemaVersion"] = 1;
-        mapping["categories"] = IconThemeCategories(tokens);
-        return mapping;
+        if (Regex.IsMatch(svgText, "<\\s*script\\b", RegexOptions.IgnoreCase) ||
+            Regex.IsMatch(svgText, "<\\s*foreignObject\\b", RegexOptions.IgnoreCase) ||
+            Regex.IsMatch(svgText, "\\bon[a-z]+\\s*=", RegexOptions.IgnoreCase) ||
+            Regex.IsMatch(svgText, "\\b(?:href|xlink:href)\\s*=\\s*[\"']\\s*javascript:", RegexOptions.IgnoreCase))
+        {
+            throw new InvalidOperationException("SVG content contains unsupported executable markup.");
+        }
     }
 
     private static JsonObject IconThemeCategories(JsonObject tokens)
@@ -5131,14 +5155,6 @@ internal sealed partial class SpikeDatabase
         }
 
         return new JsonObject(categories.Select((pair) => KeyValuePair.Create<string, JsonNode?>(pair.Key, pair.Value)));
-    }
-
-    private static string IconTokenFromFileName(string fileName)
-    {
-        var token = Regex.Replace(fileName.Trim().ToLowerInvariant(), "[^a-z0-9]+", "_").Trim('_');
-        if (string.IsNullOrWhiteSpace(token)) token = "icon";
-        if (!char.IsLetter(token[0])) token = $"icon_{token}";
-        return token;
     }
 
     private static IReadOnlyList<IconThemeToken> IconThemeTokens(string mappingJson)
@@ -6503,7 +6519,7 @@ internal sealed partial class SpikeDatabase
         string File,
         string Description);
     public sealed record IconThemeRefreshResult(int ThemeCount, int CommonTokenCount, int OmittedTokenCount);
-    public sealed record IconThemeImportResult(string Token, string File, bool Replaced);
+    public sealed record IconThemeReplaceSvgResult(string Token, string File);
     public sealed record IconThemeSearchCandidate(string Provider, string SourceName, string PreviewUrl);
     public sealed record IconThemeSearchResult(
         IReadOnlyList<IconThemeSearchCandidate> Lucide,

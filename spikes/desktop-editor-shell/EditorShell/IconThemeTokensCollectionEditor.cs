@@ -90,7 +90,7 @@ internal sealed class IconThemeTokensCollectionEditor
     {
         var toolbar = new Grid
         {
-            ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto,Auto"),
+            ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto"),
             ColumnSpacing = 8,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
@@ -121,29 +121,6 @@ internal sealed class IconThemeTokensCollectionEditor
             }
         };
 
-        var importButton = new Button
-        {
-            Content = "Import SVG",
-        };
-        importButton.Click += async (_, _) =>
-        {
-            try
-            {
-                var path = await _browseSvgFile();
-                if (string.IsNullOrWhiteSpace(path)) return;
-
-                var result = _database.ImportIconThemeSvg(node.Id, path);
-                await _showInfo(
-                    result.Replaced ? "SVG updated" : "SVG imported",
-                    $"{result.Token} -> {result.File}");
-                _reloadAndSelect(node);
-            }
-            catch (Exception exception)
-            {
-                await _showInfo("Import failed", exception.Message);
-            }
-        };
-
         var searchButton = new Button
         {
             Content = "Search / add token",
@@ -152,12 +129,10 @@ internal sealed class IconThemeTokensCollectionEditor
 
         Grid.SetColumn(countText, 0);
         Grid.SetColumn(refreshButton, 1);
-        Grid.SetColumn(importButton, 2);
-        Grid.SetColumn(searchButton, 3);
+        Grid.SetColumn(searchButton, 2);
 
         toolbar.Children.Add(countText);
         toolbar.Children.Add(refreshButton);
-        toolbar.Children.Add(importButton);
         toolbar.Children.Add(searchButton);
         return toolbar;
     }
@@ -249,6 +224,30 @@ internal sealed class IconThemeTokensCollectionEditor
         };
         Grid.SetColumn(category, 2);
 
+        var replaceButton = new Button
+        {
+            Content = "Sustituir SVG",
+            MinWidth = 104,
+            Height = 30,
+            Padding = new Thickness(10, 0),
+        };
+        replaceButton.Click += async (_, _) =>
+        {
+            try
+            {
+                var path = await _browseSvgFile();
+                if (string.IsNullOrWhiteSpace(path)) return;
+
+                var result = _database.ReplaceIconThemeTokenSvg(node.Id, token.Token, path);
+                await _showInfo("SVG replaced", $"{result.Token} -> {result.File}");
+                _reloadAndSelect(node);
+            }
+            catch (Exception exception)
+            {
+                await _showInfo("Replace failed", exception.Message);
+            }
+        };
+
         var deleteButton = new Button
         {
             Content = EditorIcons.Create(EditorIcons.Delete, 14),
@@ -271,12 +270,18 @@ internal sealed class IconThemeTokensCollectionEditor
                 await _showInfo("Delete failed", exception.Message);
             }
         };
-        Grid.SetColumn(deleteButton, 3);
+        var actions = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 8,
+            Children = { replaceButton, deleteButton },
+        };
+        Grid.SetColumn(actions, 3);
 
         grid.Children.Add(preview);
         grid.Children.Add(text);
         grid.Children.Add(category);
-        grid.Children.Add(deleteButton);
+        grid.Children.Add(actions);
         return new Border
         {
             Padding = new Thickness(8),
