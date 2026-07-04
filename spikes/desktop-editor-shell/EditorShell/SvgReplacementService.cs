@@ -88,8 +88,8 @@ internal static class SvgReplacementService
         });
         var namespaces = string.IsNullOrWhiteSpace(source.NamespaceAttributes) ? "" : $" {source.NamespaceAttributes}";
         var presentationAttributes = strokeWidth == 0
-            ? source.PresentationAttributes
-            : OverrideStrokeWidth(source.PresentationAttributes, strokeWidth);
+            ? EffectivePresentationAttributes(source.Attributes)
+            : OverrideStrokeWidth(EffectivePresentationAttributes(source.Attributes), strokeWidth);
         var sourceSvg = $"<svg{namespaces} x=\"{Trim(source.Geometry.MinX)}\" y=\"{Trim(source.Geometry.MinY)}\" width=\"{Trim(source.Geometry.Width)}\" height=\"{Trim(source.Geometry.Height)}\" viewBox=\"{source.ViewBox}\" overflow=\"visible\" color=\"#000\"{presentationAttributes}>\n{source.Body.Trim()}\n    </svg>";
 
         if (mode == "negative")
@@ -146,7 +146,7 @@ internal static class SvgReplacementService
         return NormalizeCompoundPathFillRules(normalized);
     }
 
-    private sealed record SvgParts(string Attributes, string Body, Geometry Geometry, string NamespaceAttributes, string ViewBox, string PresentationAttributes);
+    private sealed record SvgParts(string Attributes, string Body, Geometry Geometry, string NamespaceAttributes, string ViewBox);
 
     private static SvgParts Parts(string value)
     {
@@ -168,7 +168,7 @@ internal static class SvgReplacementService
             viewBox = $"{Trim(geometry.MinX)} {Trim(geometry.MinY)} {Trim(geometry.Width)} {Trim(geometry.Height)}";
         }
 
-        return new SvgParts(attributes, body, geometry, NamespaceAttributes(attributes), viewBox, PresentationAttributes(attributes));
+        return new SvgParts(attributes, body, geometry, NamespaceAttributes(attributes), viewBox);
     }
 
     private static Geometry? ViewBoxGeometry(string attributes)
@@ -219,6 +219,28 @@ internal static class SvgReplacementService
             "style",
         };
         return string.Concat(names.Select((name) => AttributeMatch(attributes, name)));
+    }
+
+    private static string EffectivePresentationAttributes(string attributes)
+    {
+        var presentation = PresentationAttributes(attributes);
+        if (!HasPaintValue(attributes, "fill"))
+        {
+            presentation += " fill=\"#000\"";
+        }
+
+        if (!HasPaintValue(attributes, "stroke"))
+        {
+            presentation += " stroke=\"none\"";
+        }
+
+        return presentation;
+    }
+
+    private static bool HasPaintValue(string attributes, string name)
+    {
+        return Regex.IsMatch(attributes, $"\\s{Regex.Escape(name)}\\s*=", RegexOptions.IgnoreCase) ||
+            Regex.IsMatch(attributes, $"style\\s*=\\s*(['\"])(?:(?!\\1)[\\s\\S])*\\b{Regex.Escape(name)}\\s*:", RegexOptions.IgnoreCase);
     }
 
     private static string AttributeMatch(string text, string name)
