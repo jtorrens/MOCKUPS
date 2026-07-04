@@ -639,7 +639,7 @@ internal sealed partial class SpikeDatabase
                 connection,
                 """
                 INSERT INTO render_presets (id, project_id, name, width, height, fps, format, codec_json, color_json, quality_json, export_json)
-                VALUES ($id, $projectId, $name, 1080, 1920, 25, 'mov', $codecJson, $colorJson, $qualityJson, $exportJson)
+                VALUES ($id, $projectId, $name, 1, 1, 1, 'mov', $codecJson, $colorJson, $qualityJson, $exportJson)
                 """,
                 ("$id", id),
                 ("$projectId", project.Id),
@@ -653,7 +653,7 @@ internal sealed partial class SpikeDatabase
                 ProjectTreeNodeKind.RenderPreset,
                 id,
                 name,
-                "1080x1920 · 25 fps · mov",
+                "1x1 · 1 fps · mov",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.RenderPreset),
                 parent);
         }
@@ -1519,28 +1519,52 @@ internal sealed partial class SpikeDatabase
         var projectIds = QueryProjectRows(connection).Select((project) => project.Id).ToList();
         foreach (var projectId in projectIds)
         {
-            if (ScalarLong(connection, "SELECT COUNT(*) FROM render_presets WHERE project_id = $projectId", ("$projectId", projectId)) > 0)
+            foreach (var seed in RenderPresetSeedRows)
             {
-                continue;
+                Execute(
+                    connection,
+                    """
+                    INSERT OR IGNORE INTO render_presets (id, project_id, name, width, height, fps, format, codec_json, color_json, quality_json, export_json, metadata_json)
+                    VALUES ($id, $projectId, $name, 1, 1, 1, $format, $codecJson, $colorJson, $qualityJson, $exportJson, $metadataJson)
+                    """,
+                    ("$id", $"render_preset_{projectId}_{seed.IdSuffix}"),
+                    ("$projectId", projectId),
+                    ("$name", seed.Name),
+                    ("$format", seed.Format),
+                    ("$codecJson", DefaultRenderPresetCodecJson(seed.Codec)),
+                    ("$colorJson", DefaultRenderPresetColorJson(seed.Format, seed.Codec)),
+                    ("$qualityJson", DefaultRenderPresetQualityJson(seed.Codec)),
+                    ("$exportJson", DefaultRenderPresetExportJson(seed.Format, seed.Codec)),
+                    ("$metadataJson", JsonSerializer.Serialize(new { note = "Seed render preset from React desktop editor." })));
             }
 
-            var fps = GetProjectSettings(connection, projectId).DefaultFps;
-            Execute(
-                connection,
-                """
-                INSERT INTO render_presets (id, project_id, name, width, height, fps, format, codec_json, color_json, quality_json, export_json, metadata_json)
-                VALUES ($id, $projectId, $name, 1080, 1920, $fps, 'mov', $codecJson, $colorJson, $qualityJson, $exportJson, $metadataJson)
-                """,
-                ("$id", $"render_preset_{projectId}_vertical_1080x1920"),
-                ("$projectId", projectId),
-                ("$name", "Vertical 1080x1920"),
-                ("$fps", fps),
-                ("$codecJson", DefaultRenderPresetCodecJson()),
-                ("$colorJson", DefaultRenderPresetColorJson()),
-                ("$qualityJson", DefaultRenderPresetQualityJson()),
-                ("$exportJson", DefaultRenderPresetExportJson()),
-                ("$metadataJson", JsonSerializer.Serialize(new { note = "Default vertical render preset." })));
+            MigrateLegacyVerticalRenderPreset(connection, projectId);
         }
+    }
+
+    private static void MigrateLegacyVerticalRenderPreset(SqliteConnection connection, string projectId)
+    {
+        var legacyId = $"render_preset_{projectId}_vertical_1080x1920";
+        var replacementId = $"render_preset_{projectId}_mov_prores_422_hq";
+        Execute(
+            connection,
+            """
+            UPDATE shots
+            SET render_preset_id = $replacementId
+            WHERE render_preset_id = $legacyId
+              AND EXISTS (SELECT 1 FROM render_presets WHERE id = $replacementId)
+            """,
+            ("$legacyId", legacyId),
+            ("$replacementId", replacementId));
+        Execute(
+            connection,
+            """
+            DELETE FROM render_presets
+            WHERE id = $legacyId
+              AND name = 'Vertical 1080x1920'
+              AND NOT EXISTS (SELECT 1 FROM shots WHERE render_preset_id = $legacyId)
+            """,
+            ("$legacyId", legacyId));
     }
 
     private static void SeedComponentClassesIfEmpty(SqliteConnection connection)
@@ -1719,11 +1743,11 @@ internal sealed partial class SpikeDatabase
                     { "id": "core.name", "order": 10, "visible": true },
                     { "id": "shot.slug", "order": 20, "visible": true },
                     { "id": "shot.version", "order": 30, "visible": true },
-                    { "id": "shot.sortOrder", "order": 40, "visible": true },
+                    { "id": "shot.renderName", "order": 40, "visible": true },
                     { "id": "shot.durationFrames", "order": 50, "visible": true },
                     { "id": "shot.fps", "order": 60, "visible": true },
                     { "id": "shot.ownerActorId", "order": 70, "visible": true },
-                    { "id": "shot.renderPresetId", "order": 80, "visible": true },
+                    { "id": "shot.ownerDevice", "order": 80, "visible": true },
                     { "id": "core.notes", "order": 90, "visible": true }
                   """
             : recordClassId is "app.generic" or "app.core.chat"
@@ -1738,15 +1762,9 @@ internal sealed partial class SpikeDatabase
             : recordClassId == "render_preset"
                 ? """
                     { "id": "core.name", "order": 10, "visible": true },
-                    { "id": "renderPreset.width", "order": 20, "visible": true },
-                    { "id": "renderPreset.height", "order": 30, "visible": true },
-                    { "id": "renderPreset.fps", "order": 40, "visible": true },
-                    { "id": "renderPreset.format", "order": 50, "visible": true },
-                    { "id": "renderPreset.codec", "order": 60, "visible": true },
-                    { "id": "renderPreset.color", "order": 70, "visible": true },
-                    { "id": "renderPreset.quality", "order": 80, "visible": true },
-                    { "id": "renderPreset.export.ffmpegArgs", "order": 90, "visible": true },
-                    { "id": "renderPreset.export", "order": 100, "visible": false }
+                    { "id": "renderPreset.format", "order": 20, "visible": true },
+                    { "id": "renderPreset.codec", "order": 30, "visible": true },
+                    { "id": "renderPreset.export.ffmpegArgs", "order": 40, "visible": true }
                   """
             : recordClassId == "palette_color"
                 ? """
@@ -3668,6 +3686,46 @@ internal sealed partial class SpikeDatabase
             ("$value", nextValue));
     }
 
+    public string GetShotRenderName(string shotId)
+    {
+        using var connection = OpenConnection();
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT p.slug, p.name, e.slug, e.name, s.slug, s.name, s.version
+            FROM shots s
+            JOIN episodes e ON e.id = s.episode_id
+            JOIN projects p ON p.id = e.project_id
+            WHERE s.id = $id
+            """;
+        command.Parameters.AddWithValue("$id", shotId);
+        using var reader = command.ExecuteReader();
+        if (!reader.Read())
+        {
+            throw new InvalidOperationException($"Missing shot '{shotId}'.");
+        }
+
+        var projectSlug = SlugOrName(ReadString(reader, 0), reader.GetString(1), "project");
+        var episodeSlug = SlugOrName(ReadString(reader, 2), reader.GetString(3), "episode");
+        var shotSlug = SlugOrName(ReadString(reader, 4), reader.GetString(5), "shot");
+        var version = reader.IsDBNull(6) ? 1 : reader.GetInt32(6);
+        return $"{projectSlug}_{episodeSlug}_{shotSlug}_v{Math.Max(0, version):00}";
+    }
+
+    public string GetShotOwnerDeviceName(string shotId)
+    {
+        using var connection = OpenConnection();
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT d.name
+            FROM shots s
+            JOIN actors a ON a.id = s.owner_actor_id
+            JOIN devices d ON d.id = a.default_device_id
+            WHERE s.id = $id
+            """;
+        command.Parameters.AddWithValue("$id", shotId);
+        return command.ExecuteScalar() as string ?? "No default device";
+    }
+
     public RenderPresetSettings GetRenderPresetSettings(string renderPresetId)
     {
         using var connection = OpenConnection();
@@ -4465,6 +4523,18 @@ internal sealed partial class SpikeDatabase
     {
         var slug = Regex.Replace(value.Trim().ToLowerInvariant(), "[^a-z0-9]+", "_").Trim('_');
         return string.IsNullOrWhiteSpace(slug) ? "font" : slug;
+    }
+
+    private static string SlugOrName(string slug, string name, string fallback)
+    {
+        if (!string.IsNullOrWhiteSpace(slug)) return SlugValue(slug, fallback);
+        return SlugValue(name, fallback);
+    }
+
+    private static string SlugValue(string value, string fallback)
+    {
+        var slug = Regex.Replace(value.Trim().ToLowerInvariant(), "[^a-z0-9]+", "_").Trim('_');
+        return string.IsNullOrWhiteSpace(slug) ? fallback : slug;
     }
 
     private static string ResolveProjectPath(string path)
@@ -5507,33 +5577,60 @@ internal sealed partial class SpikeDatabase
         return root.ToJsonString();
     }
 
-    private static string DefaultRenderPresetCodecJson()
+    private static string DefaultRenderPresetCodecJson(string codec = "prores_422_hq")
     {
-        return new JsonObject { ["value"] = "prores_422_hq" }.ToJsonString();
+        return new JsonObject { ["codec"] = codec }.ToJsonString();
     }
 
-    private static string DefaultRenderPresetColorJson()
+    private static string DefaultRenderPresetColorJson(string format = "mov", string codec = "prores_422_hq")
     {
+        var isImage = format == "image";
+        var hasAlpha = codec is "prores_4444" or "prores_4444_alpha" or "prores_4444_xq" or "png" or "exr";
         return new JsonObject
         {
-            ["colorSpace"] = "rec709",
-            ["alpha"] = false,
+            ["colorSpace"] = codec == "exr" ? "linear" : isImage ? "srgb" : "rec709",
+            ["alpha"] = hasAlpha,
         }.ToJsonString();
     }
 
-    private static string DefaultRenderPresetQualityJson()
+    private static string DefaultRenderPresetQualityJson(string codec = "prores_422_hq")
     {
-        return new JsonObject { ["profile"] = "prores_422_hq" }.ToJsonString();
+        return new JsonObject { ["profile"] = codec }.ToJsonString();
     }
 
-    private static string DefaultRenderPresetExportJson()
+    private static string DefaultRenderPresetExportJson(string format = "mov", string codec = "prores_422_hq")
     {
+        var isImage = format == "image";
         return new JsonObject
         {
-            ["extension"] = "mov",
-            ["sequence"] = false,
-            ["ffmpegArgs"] = "-c:v prores_ks -profile:v 3 -pix_fmt yuv422p10le",
+            ["extension"] = isImage ? codec : "mov",
+            ["sequence"] = isImage,
+            ["ffmpegArgs"] = FfmpegArgsForRenderPreset(format, codec),
         }.ToJsonString();
+    }
+
+    private static string FfmpegArgsForRenderPreset(string format, string codec)
+    {
+        if (format == "image")
+        {
+            return codec == "exr"
+                ? "-compression zip -pix_fmt rgba64le"
+                : "-compression_level 6 -pix_fmt rgba";
+        }
+
+        return codec switch
+        {
+            "prores_422_proxy" => "-c:v prores_ks -profile:v 0 -pix_fmt yuv422p10le",
+            "prores_422_lt" => "-c:v prores_ks -profile:v 1 -pix_fmt yuv422p10le",
+            "prores_422" => "-c:v prores_ks -profile:v 2 -pix_fmt yuv422p10le",
+            "prores_422_hq" => "-c:v prores_ks -profile:v 3 -pix_fmt yuv422p10le",
+            "prores_4444" or "prores_4444_alpha" => "-c:v prores_ks -profile:v 4 -pix_fmt yuva444p10le",
+            "prores_4444_xq" => "-c:v prores_ks -profile:v 5 -pix_fmt yuva444p10le",
+            "h264_low" => "-c:v libx264 -preset medium -crf 28 -pix_fmt yuv420p",
+            "h264_medium" => "-c:v libx264 -preset medium -crf 23 -pix_fmt yuv420p",
+            "h264_high" => "-c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p",
+            _ => "",
+        };
     }
 
     private static string DeviceMetricsJson(int width, int height, double scale, bool includeDynamicIsland)
@@ -6067,7 +6164,19 @@ internal sealed partial class SpikeDatabase
     private sealed record PaletteSeedRow(string Token, string ValueHex, bool IsNeutral, string MetadataJson);
     private sealed record DeviceSeedRow(string Id, string Name, string Manufacturer, string Model, string OsFamily, string MetricsJson);
     private sealed record ActorSeedRow(string Id, string DisplayName, string ShortName, string MetadataJson);
+    private sealed record RenderPresetSeedRow(string IdSuffix, string Name, string Format, string Codec);
     private sealed record ComponentSeedRow(string ComponentType, string RecordClassId, string Name, string ConfigJson, string DesignPreviewJson, string MetadataJson);
+
+    private static readonly RenderPresetSeedRow[] RenderPresetSeedRows =
+    [
+        new("mov_prores_422_hq", "MOV ProRes 422 HQ", "mov", "prores_422_hq"),
+        new("mov_prores_4444_alpha", "MOV ProRes 4444 Alpha", "mov", "prores_4444"),
+        new("mov_h264_low", "MOV H.264 Low", "mov", "h264_low"),
+        new("mov_h264_medium", "MOV H.264 Medium", "mov", "h264_medium"),
+        new("mov_h264_high", "MOV H.264 High", "mov", "h264_high"),
+        new("image_png", "PNG Image Sequence", "image", "png"),
+        new("image_exr", "EXR Image Sequence", "image", "exr"),
+    ];
 
     private static readonly ComponentSeedRow[] ComponentSeedRows =
     [
