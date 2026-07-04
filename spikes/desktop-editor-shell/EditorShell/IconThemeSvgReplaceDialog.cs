@@ -50,8 +50,8 @@ internal sealed class IconThemeSvgReplaceDialog
             BackgroundTransitionTime = 0.05,
         };
 
-        var originalPreview = new ContentControl();
-        var newPreview = new ContentControl();
+        var originalPreview = new SvgMarkupPreview();
+        var newPreview = new SvgMarkupPreview();
         var originalGeometry = new TextBlock { Opacity = 0.72, HorizontalAlignment = HorizontalAlignment.Center };
         var newGeometry = new TextBlock { Opacity = 0.72, HorizontalAlignment = HorizontalAlignment.Center };
         var errorText = new TextBlock
@@ -89,7 +89,7 @@ internal sealed class IconThemeSvgReplaceDialog
         var cancelButton = new Button { Content = "Cancel", MinWidth = 92 };
         string transformedSvg = "";
 
-        Control PreviewBox(ContentControl preview, TextBlock geometry)
+        Control PreviewBox(Control preview, TextBlock geometry)
         {
             return new StackPanel
             {
@@ -119,10 +119,11 @@ internal sealed class IconThemeSvgReplaceDialog
 
         void UpdatePreview()
         {
-            originalPreview.Content = SvgIconPreview.CreateFromSvg(original.SvgText, 112);
-            originalGeometry.Text = SvgReplacementService.TryGeometry(original.SvgText)?.Label ?? "Unknown size";
             try
             {
+                var originalSvg = SvgReplacementService.Validate(original.SvgText);
+                originalPreview.SetSvg(originalSvg);
+                originalGeometry.Text = SvgReplacementService.TryGeometry(originalSvg)?.Label ?? "Unknown size";
                 transformedSvg = SvgReplacementService.Transform(
                     svgBox.Text ?? "",
                     new SvgReplacementService.TransformOptions(
@@ -133,7 +134,7 @@ internal sealed class IconThemeSvgReplaceDialog
                         Number(scale),
                         Number(rotation),
                         original.SvgText));
-                newPreview.Content = SvgIconPreview.CreateFromSvg(transformedSvg, 112);
+                newPreview.SetSvg(transformedSvg);
                 newGeometry.Text = SvgReplacementService.TryGeometry(svgBox.Text ?? "")?.Label ?? "Unknown size";
                 acceptButton.IsEnabled = true;
                 SetError("");
@@ -141,14 +142,7 @@ internal sealed class IconThemeSvgReplaceDialog
             catch (Exception exception)
             {
                 transformedSvg = "";
-                newPreview.Content = new TextBlock
-                {
-                    Text = "Paste a valid SVG.",
-                    Opacity = 0.72,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    TextWrapping = TextWrapping.Wrap,
-                };
+                newPreview.SetMessage(exception.Message);
                 newGeometry.Text = "";
                 acceptButton.IsEnabled = false;
                 SetError(exception.Message);

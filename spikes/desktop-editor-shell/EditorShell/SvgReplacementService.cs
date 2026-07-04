@@ -229,7 +229,12 @@ internal static class SvgReplacementService
 
     private static double ParseDouble(string value)
     {
-        return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed) ? parsed : double.NaN;
+        if (string.IsNullOrWhiteSpace(value)) return double.NaN;
+
+        var match = Regex.Match(value.Trim(), "^[+-]?(?:\\d+\\.?\\d*|\\.\\d+)(?:[eE][+-]?\\d+)?");
+        return match.Success && double.TryParse(match.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
+            ? parsed
+            : double.NaN;
     }
 
     private static double Clamp(double value, double min, double max)
