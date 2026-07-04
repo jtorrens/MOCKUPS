@@ -100,8 +100,8 @@ internal sealed class IconThemeSvgReplaceDialog
                 {
                     new Border
                     {
-                        Width = 400,
-                        Height = 400,
+                        Width = 240,
+                        Height = 240,
                         Padding = new Thickness(6),
                         BorderThickness = new Thickness(1),
                         BorderBrush = new SolidColorBrush(Color.Parse("#44546A")),

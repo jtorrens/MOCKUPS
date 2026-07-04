@@ -36,7 +36,7 @@ internal sealed class SvgMarkupPreview : Grid
     {
         _message.IsVisible = false;
         _webView.IsVisible = true;
-        _webView.NavigateToString(Html(svg, geometry, padding), new Uri("https://mockups.local/svg-preview/"));
+        _webView.NavigateToString(CreateHtml(svg, geometry, padding, true), new Uri("https://mockups.local/svg-preview/"));
     }
 
     public void SetMessage(string message)
@@ -46,7 +46,7 @@ internal sealed class SvgMarkupPreview : Grid
         _message.IsVisible = true;
     }
 
-    private static string Html(string svg, SvgReplacementService.Geometry? geometry, double padding)
+    public static string CreateHtml(string svg, SvgReplacementService.Geometry? geometry, double padding, bool showGuides)
     {
         var insetX = geometry is null || geometry.Width <= 0
             ? 0
@@ -59,6 +59,9 @@ internal sealed class SvgMarkupPreview : Grid
         var maxFrameSide = Math.Max(aspectWidth, aspectHeight);
         var frameWidth = Math.Clamp(aspectWidth / maxFrameSide * 94, 1, 94);
         var frameHeight = Math.Clamp(aspectHeight / maxFrameSide * 94, 1, 94);
+        var bodyPadding = showGuides ? "8px" : "0";
+        var frameBorder = showGuides ? "1px solid rgba(226, 232, 240, .9)" : "0";
+        var paddingDisplay = showGuides ? "block" : "none";
         return $$"""
             <!doctype html>
             <html>
@@ -77,7 +80,7 @@ internal sealed class SvgMarkupPreview : Grid
                 body {
                   display: grid;
                   place-items: center;
-                  padding: 8px;
+                  padding: {{bodyPadding}};
                   box-sizing: border-box;
                   color: #f2f6ff;
                 }
@@ -88,7 +91,7 @@ internal sealed class SvgMarkupPreview : Grid
                   height: {{Percent(frameHeight)}};
                   display: grid;
                   place-items: center;
-                  border: 1px solid rgba(226, 232, 240, .9);
+                  border: {{frameBorder}};
                   box-sizing: border-box;
                 }
 
@@ -102,6 +105,7 @@ internal sealed class SvgMarkupPreview : Grid
                   box-sizing: border-box;
                   pointer-events: none;
                   z-index: 2;
+                  display: {{paddingDisplay}};
                 }
 
                 .icon-frame > svg {
