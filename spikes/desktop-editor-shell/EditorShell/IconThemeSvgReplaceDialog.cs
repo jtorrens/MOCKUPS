@@ -279,23 +279,23 @@ internal sealed class IconThemeSvgReplaceDialog
         };
         Grid.SetColumn(previews.Children[1], 1);
 
-        var radiusEditor = NumberEditor("Radius", radius, 0, 12, 0.25, 2, 0);
+        var radiusEditor = NumberEditor("Radius", radius, 0, 12, 0.25, 1, 0);
         var controls = new Grid
         {
-            ColumnDefinitions = new ColumnDefinitions("*,*,*,*"),
-            RowDefinitions = new RowDefinitions("Auto,Auto"),
+            ColumnDefinitions = new ColumnDefinitions("*,*,*"),
+            RowDefinitions = new RowDefinitions("Auto,Auto,Auto"),
             ColumnSpacing = 14,
             RowSpacing = 10,
             Children =
             {
                 LabeledControl("Mode", modeBox),
-                NumberEditor("Padding", padding, 0, 12, 0.25, 1, 0),
                 radiusEditor,
-                NumberEditor("Stroke", stroke, 0, 8, 0.05, 3, 0),
-                NumberEditor("Scale", scale, 0.05, 8, 0.01, 0, 1),
-                NumberEditor("Rotation", rotation, -180, 180, 1, 1, 1),
-                NumberEditor("Offset X", offsetX, -12, 12, 0.25, 2, 1),
-                NumberEditor("Offset Y", offsetY, -12, 12, 0.25, 3, 1),
+                NumberEditor("Padding", padding, 0, 12, 0.25, 0, 1),
+                NumberEditor("Stroke", stroke, 0, 8, 0.05, 1, 1),
+                NumberEditor("Scale", scale, 0.05, 8, 0.01, 2, 1),
+                NumberEditor("Rotation", rotation, -180, 180, 1, 0, 2),
+                NumberEditor("Offset X", offsetX, -12, 12, 0.25, 1, 2),
+                NumberEditor("Offset Y", offsetY, -12, 12, 0.25, 2, 2),
             },
         };
         void UpdateMode()
@@ -362,19 +362,22 @@ internal sealed class IconThemeSvgReplaceDialog
         await dialog.ShowDialog(_owner);
     }
 
-    private static Control LabeledControl(string label, Control control, int column = 0)
+    private static Control LabeledControl(string label, Control control, int column = 0, int row = 0)
     {
-        var stack = new StackPanel
+        var grid = new Grid
         {
-            Spacing = 4,
+            ColumnDefinitions = new ColumnDefinitions("Auto,*"),
+            ColumnSpacing = 8,
             Children =
             {
-                new TextBlock { Text = label, FontSize = 12, Opacity = 0.78 },
+                new TextBlock { Text = label, FontSize = 12, Opacity = 0.78, VerticalAlignment = VerticalAlignment.Center },
                 control,
             },
         };
-        Grid.SetColumn(stack, column);
-        return stack;
+        Grid.SetColumn(control, 1);
+        Grid.SetColumn(grid, column);
+        Grid.SetRow(grid, row);
+        return grid;
     }
 
     private static NumericUpDown CreateNumber(double value, double minimum, double maximum, decimal increment)
