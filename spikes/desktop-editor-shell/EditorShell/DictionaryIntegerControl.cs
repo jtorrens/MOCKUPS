@@ -16,7 +16,7 @@ internal sealed class DictionaryIntegerControl : Grid, IDictionaryValueControl
     {
         _value = Normalize(value);
         _lastCommittedValue = _value;
-        _numeric = new NumericUpDown
+        _numeric = EditorNumericUpDownBehavior.Configure(new NumericUpDown
         {
             MinHeight = 36,
             Width = 120,
@@ -25,7 +25,7 @@ internal sealed class DictionaryIntegerControl : Grid, IDictionaryValueControl
             Increment = definition.Number?.Increment ?? 1,
             FormatString = "0",
             Value = ParseInteger(_value, 0),
-        };
+        });
 
         if (definition.Number?.Minimum is { } minimum)
         {

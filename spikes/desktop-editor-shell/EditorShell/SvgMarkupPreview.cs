@@ -111,7 +111,7 @@ internal sealed class SvgMarkupPreview : Grid
                   max-width: 100%;
                   max-height: 100%;
                   overflow: visible;
-                  color: #f8fafc;
+                  color: #000;
                   filter: brightness(0) invert(1);
                 }
               </style>

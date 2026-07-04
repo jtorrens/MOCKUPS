@@ -8,7 +8,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal static class SvgReplacementService
 {
     public sealed record Geometry(double MinX, double MinY, double Width, double Height, double CenterX, double CenterY, string Label);
-    public sealed record TransformOptions(string Mode, double Padding, double CornerRadius, double StrokeWidth, double Scale, double RotationDegrees, string? TargetSvgText = null);
+    public sealed record TransformOptions(string Mode, double Padding, double CornerRadius, double StrokeWidth, double Scale, double RotationDegrees, double OffsetX, double OffsetY, string? TargetSvgText = null);
 
     public static string Normalize(string value)
     {
@@ -80,17 +80,17 @@ internal static class SvgReplacementService
         var fitScale = Math.Min(fitWidth / source.Geometry.Width, fitHeight / source.Geometry.Height);
         var transform = string.Join(" ", new[]
         {
-            $"translate({Trim(target.Geometry.CenterX)} {Trim(target.Geometry.CenterY)})",
+            $"translate({Trim(target.Geometry.CenterX + options.OffsetX)} {Trim(target.Geometry.CenterY + options.OffsetY)})",
             $"rotate({rotation})",
             $"scale({Trim(scale)})",
             $"scale({Trim(fitScale)})",
             $"translate({Trim(-source.Geometry.CenterX)} {Trim(-source.Geometry.CenterY)})",
         });
         var namespaces = string.IsNullOrWhiteSpace(source.NamespaceAttributes) ? "" : $" {source.NamespaceAttributes}";
-        var strokeAttributes = strokeWidth == 0
-            ? "stroke=\"none\""
-            : $"stroke=\"#000\" stroke-width=\"{Trim(strokeWidth)}\" stroke-linecap=\"round\" stroke-linejoin=\"round\"";
-        var sourceSvg = $"<svg{namespaces} x=\"{Trim(source.Geometry.MinX)}\" y=\"{Trim(source.Geometry.MinY)}\" width=\"{Trim(source.Geometry.Width)}\" height=\"{Trim(source.Geometry.Height)}\" viewBox=\"{source.ViewBox}\" overflow=\"visible\" fill=\"#000\" {strokeAttributes}>\n{source.Body.Trim()}\n    </svg>";
+        var presentationAttributes = strokeWidth == 0
+            ? source.PresentationAttributes
+            : OverrideStrokeWidth(source.PresentationAttributes, strokeWidth);
+        var sourceSvg = $"<svg{namespaces} x=\"{Trim(source.Geometry.MinX)}\" y=\"{Trim(source.Geometry.MinY)}\" width=\"{Trim(source.Geometry.Width)}\" height=\"{Trim(source.Geometry.Height)}\" viewBox=\"{source.ViewBox}\" overflow=\"visible\" color=\"#000\"{presentationAttributes}>\n{source.Body.Trim()}\n    </svg>";
 
         if (mode == "negative")
         {
@@ -146,7 +146,7 @@ internal static class SvgReplacementService
         return NormalizeCompoundPathFillRules(normalized);
     }
 
-    private sealed record SvgParts(string Attributes, string Body, Geometry Geometry, string NamespaceAttributes, string ViewBox);
+    private sealed record SvgParts(string Attributes, string Body, Geometry Geometry, string NamespaceAttributes, string ViewBox, string PresentationAttributes);
 
     private static SvgParts Parts(string value)
     {
@@ -168,7 +168,7 @@ internal static class SvgReplacementService
             viewBox = $"{Trim(geometry.MinX)} {Trim(geometry.MinY)} {Trim(geometry.Width)} {Trim(geometry.Height)}";
         }
 
-        return new SvgParts(attributes, body, geometry, NamespaceAttributes(attributes), viewBox);
+        return new SvgParts(attributes, body, geometry, NamespaceAttributes(attributes), viewBox, PresentationAttributes(attributes));
     }
 
     private static Geometry? ViewBoxGeometry(string attributes)
@@ -201,6 +201,46 @@ internal static class SvgReplacementService
     private static string NamespaceAttributes(string attributes)
     {
         return string.Join(" ", Regex.Matches(attributes, "\\s+xmlns(?::[\\w.-]+)?\\s*=\\s*(['\"]).*?\\1", RegexOptions.IgnoreCase).Select((match) => match.Value.Trim()));
+    }
+
+    private static string PresentationAttributes(string attributes)
+    {
+        var names = new[]
+        {
+            "fill",
+            "stroke",
+            "stroke-width",
+            "stroke-linecap",
+            "stroke-linejoin",
+            "stroke-miterlimit",
+            "fill-rule",
+            "clip-rule",
+            "opacity",
+            "style",
+        };
+        return string.Concat(names.Select((name) => AttributeMatch(attributes, name)));
+    }
+
+    private static string AttributeMatch(string text, string name)
+    {
+        var match = Regex.Match(text, $"\\s{Regex.Escape(name)}\\s*=\\s*(['\"])(.*?)\\1", RegexOptions.IgnoreCase);
+        return match.Success ? match.Value : "";
+    }
+
+    private static string OverrideStrokeWidth(string attributes, double strokeWidth)
+    {
+        var next = Regex.Replace(attributes, "\\sstroke-width\\s*=\\s*(['\"]).*?\\1", "", RegexOptions.IgnoreCase);
+        if (!Regex.IsMatch(next, "\\sstroke\\s*=", RegexOptions.IgnoreCase))
+        {
+            next += " stroke=\"currentColor\"";
+        }
+
+        if (!Regex.IsMatch(next, "\\sfill\\s*=", RegexOptions.IgnoreCase))
+        {
+            next += " fill=\"none\"";
+        }
+
+        return $"{next} stroke-width=\"{Trim(strokeWidth)}\"";
     }
 
     private static string RemoveNonSvgNamespacedAttributes(string svgText)

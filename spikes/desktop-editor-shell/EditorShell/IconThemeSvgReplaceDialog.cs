@@ -85,6 +85,8 @@ internal sealed class IconThemeSvgReplaceDialog
         var stroke = CreateNumber(DefaultStrokeWidth, 0, 32, 0.05m);
         var scale = CreateNumber(1, 0.05, 8, 0.01m);
         var rotation = CreateNumber(0, -360, 360, 1m);
+        var offsetX = CreateNumber(0, -999, 999, 0.25m);
+        var offsetY = CreateNumber(0, -999, 999, 0.25m);
         var acceptButton = new Button { Content = "Accept", MinWidth = 96, IsEnabled = false };
         var cancelButton = new Button { Content = "Cancel", MinWidth = 92 };
         string transformedSvg = "";
@@ -124,7 +126,7 @@ internal sealed class IconThemeSvgReplaceDialog
                 var originalSvg = SvgReplacementService.Validate(original.SvgText);
                 var currentPadding = Number(padding);
                 var originalPreviewGeometry = SvgReplacementService.TryGeometry(originalSvg);
-                originalPreview.SetSvg(SvgReplacementService.NormalizePaintToBlack(originalSvg), originalPreviewGeometry, currentPadding);
+                originalPreview.SetSvg(originalSvg, originalPreviewGeometry, currentPadding);
                 originalGeometry.Text = originalPreviewGeometry?.Label ?? "Unknown size";
                 transformedSvg = SvgReplacementService.Transform(
                     svgBox.Text ?? "",
@@ -135,6 +137,8 @@ internal sealed class IconThemeSvgReplaceDialog
                         Number(stroke),
                         Number(scale),
                         Number(rotation),
+                        Number(offsetX),
+                        Number(offsetY),
                         original.SvgText));
                 var newPreviewGeometry = SvgReplacementService.TryGeometry(svgBox.Text ?? "");
                 newPreview.SetSvg(transformedSvg, originalPreviewGeometry, currentPadding);
@@ -219,6 +223,8 @@ internal sealed class IconThemeSvgReplaceDialog
         Hook(stroke);
         Hook(scale);
         Hook(rotation);
+        Hook(offsetX);
+        Hook(offsetY);
 
         cancelButton.Click += (_, _) => dialog.Close();
         loadFileButton.Click += async (_, _) =>
@@ -275,7 +281,7 @@ internal sealed class IconThemeSvgReplaceDialog
         var radiusEditor = NumberEditor("Radius", radius, 0, 12, 0.25, 2);
         var controls = new Grid
         {
-            ColumnDefinitions = new ColumnDefinitions("*,*,*,*,*,*"),
+            ColumnDefinitions = new ColumnDefinitions("*,*,*,*,*,*,*,*"),
             ColumnSpacing = 8,
             Children =
             {
@@ -285,6 +291,8 @@ internal sealed class IconThemeSvgReplaceDialog
                 NumberEditor("Stroke", stroke, 0, 8, 0.05, 3),
                 NumberEditor("Scale", scale, 0.05, 8, 0.01, 4),
                 NumberEditor("Rotation", rotation, -180, 180, 1, 5),
+                NumberEditor("Offset X", offsetX, -12, 12, 0.25, 6),
+                NumberEditor("Offset Y", offsetY, -12, 12, 0.25, 7),
             },
         };
         void UpdateMode()
@@ -368,14 +376,14 @@ internal sealed class IconThemeSvgReplaceDialog
 
     private static NumericUpDown CreateNumber(double value, double minimum, double maximum, decimal increment)
     {
-        return new NumericUpDown
+        return EditorNumericUpDownBehavior.Configure(new NumericUpDown
         {
             Minimum = (decimal)minimum,
             Maximum = (decimal)maximum,
             Increment = increment,
             Value = (decimal)value,
             MinHeight = 34,
-        };
+        });
     }
 
     private static double Number(NumericUpDown numeric)
