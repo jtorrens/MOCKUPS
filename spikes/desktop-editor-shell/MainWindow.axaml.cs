@@ -98,6 +98,7 @@ public partial class MainWindow : SukiWindow
             ShowIconThemeSearchDialog,
             ReloadAndSelect,
             _pathBrowser.BrowsePath,
+            _pathBrowser.BrowseSvgFile,
             ShowIconTokenPicker,
             RefreshPreviewDevice);
         _shellState.Restore();

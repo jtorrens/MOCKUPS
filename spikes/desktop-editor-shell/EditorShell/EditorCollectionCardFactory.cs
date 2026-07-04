@@ -14,6 +14,7 @@ internal sealed class EditorCollectionCardFactory
     private readonly Func<ProjectTreeNode, Task> _showIconThemeSearch;
     private readonly Action<ProjectTreeNode> _reloadAndSelect;
     private readonly Func<string, ValueKind, Task<string?>> _browsePath;
+    private readonly Func<Task<string?>> _browseSvgFile;
     private readonly Func<string, string, bool, Task<string?>> _showIconTokenPicker;
     private readonly Action _onChanged;
 
@@ -25,6 +26,7 @@ internal sealed class EditorCollectionCardFactory
         Func<ProjectTreeNode, Task> showIconThemeSearch,
         Action<ProjectTreeNode> reloadAndSelect,
         Func<string, ValueKind, Task<string?>> browsePath,
+        Func<Task<string?>> browseSvgFile,
         Func<string, string, bool, Task<string?>> showIconTokenPicker,
         Action onChanged)
     {
@@ -35,6 +37,7 @@ internal sealed class EditorCollectionCardFactory
         _showIconThemeSearch = showIconThemeSearch;
         _reloadAndSelect = reloadAndSelect;
         _browsePath = browsePath;
+        _browseSvgFile = browseSvgFile;
         _showIconTokenPicker = showIconTokenPicker;
         _onChanged = onChanged;
     }
@@ -51,6 +54,7 @@ internal sealed class EditorCollectionCardFactory
                     _showInfo,
                     _confirmIconTokenDelete,
                     _showIconThemeSearch,
+                    _browseSvgFile,
                     _reloadAndSelect).Create(node),
             ],
             ProjectTreeNodeKind.StatusBar =>

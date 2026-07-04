@@ -17,6 +17,7 @@ internal sealed class IconThemeTokensCollectionEditor
     private readonly Func<string, string, Task> _showInfo;
     private readonly Func<string, Task<bool>> _confirmDelete;
     private readonly Func<ProjectTreeNode, Task> _showSearch;
+    private readonly Func<Task<string?>> _browseSvgFile;
     private readonly Action<ProjectTreeNode> _reloadAndSelect;
 
     public IconThemeTokensCollectionEditor(
@@ -25,6 +26,7 @@ internal sealed class IconThemeTokensCollectionEditor
         Func<string, string, Task> showInfo,
         Func<string, Task<bool>> confirmDelete,
         Func<ProjectTreeNode, Task> showSearch,
+        Func<Task<string?>> browseSvgFile,
         Action<ProjectTreeNode> reloadAndSelect)
     {
         _database = database;
@@ -32,6 +34,7 @@ internal sealed class IconThemeTokensCollectionEditor
         _showInfo = showInfo;
         _confirmDelete = confirmDelete;
         _showSearch = showSearch;
+        _browseSvgFile = browseSvgFile;
         _reloadAndSelect = reloadAndSelect;
     }
 
@@ -87,7 +90,7 @@ internal sealed class IconThemeTokensCollectionEditor
     {
         var toolbar = new Grid
         {
-            ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto"),
+            ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto,Auto"),
             ColumnSpacing = 8,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
@@ -118,6 +121,29 @@ internal sealed class IconThemeTokensCollectionEditor
             }
         };
 
+        var importButton = new Button
+        {
+            Content = "Import SVG",
+        };
+        importButton.Click += async (_, _) =>
+        {
+            try
+            {
+                var path = await _browseSvgFile();
+                if (string.IsNullOrWhiteSpace(path)) return;
+
+                var result = _database.ImportIconThemeSvg(node.Id, path);
+                await _showInfo(
+                    result.Replaced ? "SVG updated" : "SVG imported",
+                    $"{result.Token} -> {result.File}");
+                _reloadAndSelect(node);
+            }
+            catch (Exception exception)
+            {
+                await _showInfo("Import failed", exception.Message);
+            }
+        };
+
         var searchButton = new Button
         {
             Content = "Search / add token",
@@ -126,10 +152,12 @@ internal sealed class IconThemeTokensCollectionEditor
 
         Grid.SetColumn(countText, 0);
         Grid.SetColumn(refreshButton, 1);
-        Grid.SetColumn(searchButton, 2);
+        Grid.SetColumn(importButton, 2);
+        Grid.SetColumn(searchButton, 3);
 
         toolbar.Children.Add(countText);
         toolbar.Children.Add(refreshButton);
+        toolbar.Children.Add(importButton);
         toolbar.Children.Add(searchButton);
         return toolbar;
     }

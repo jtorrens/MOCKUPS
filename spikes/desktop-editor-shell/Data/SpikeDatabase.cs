@@ -3094,6 +3094,47 @@ internal sealed partial class SpikeDatabase
         RefreshIconThemeSets(connection, projectId);
     }
 
+    public IconThemeImportResult ImportIconThemeSvg(string iconThemeId, string sourcePath)
+    {
+        if (string.IsNullOrWhiteSpace(sourcePath) || !File.Exists(sourcePath))
+        {
+            throw new InvalidOperationException("Select an existing SVG file.");
+        }
+
+        if (!Path.GetExtension(sourcePath).Equals(".svg", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Only SVG files can be imported into an icon set.");
+        }
+
+        using var connection = OpenConnection();
+        var row = QueryIconThemeRows(connection).FirstOrDefault((candidate) => candidate.Id == iconThemeId)
+            ?? throw new InvalidOperationException($"Missing icon theme '{iconThemeId}'.");
+        var token = IconTokenFromFileName(Path.GetFileNameWithoutExtension(sourcePath));
+        if (!ValidIconTokenRegex().IsMatch(token))
+        {
+            throw new InvalidOperationException("Imported SVG file name cannot be converted into a valid icon token.");
+        }
+
+        var targetDirectory = IconThemeAssetDirectory(connection, row.ProjectId, row.AssetRoot);
+        Directory.CreateDirectory(targetDirectory);
+        var file = $"{token}.svg";
+        var targetPath = Path.Combine(targetDirectory, file);
+        var replaced = File.Exists(targetPath);
+        if (!Path.GetFullPath(sourcePath).Equals(Path.GetFullPath(targetPath), StringComparison.Ordinal))
+        {
+            File.Copy(sourcePath, targetPath, overwrite: true);
+        }
+
+        var mapping = UpsertIconThemeToken(row.MappingJson, token, file);
+        Execute(
+            connection,
+            "UPDATE icon_themes SET mapping_json = $mappingJson WHERE id = $id",
+            ("$id", iconThemeId),
+            ("$mappingJson", mapping.ToJsonString()));
+
+        return new IconThemeImportResult(token, file, replaced);
+    }
+
     public IconThemeSearchResult SearchIconThemeSources(string query)
     {
         if (string.IsNullOrWhiteSpace(query))
@@ -5044,6 +5085,62 @@ internal sealed partial class SpikeDatabase
         };
     }
 
+    private static JsonObject UpsertIconThemeToken(string currentMappingJson, string token, string file)
+    {
+        var mapping = ParseJsonObject(string.IsNullOrWhiteSpace(currentMappingJson) ? "{}" : currentMappingJson);
+        var tokens = mapping["tokens"] as JsonObject;
+        if (tokens is null)
+        {
+            tokens = [];
+            mapping["tokens"] = tokens;
+        }
+
+        var existing = tokens[token] as JsonObject;
+        if (existing is null)
+        {
+            existing = [];
+            tokens[token] = existing;
+        }
+
+        var category = JsonString(existing, ["category"]);
+        if (string.IsNullOrWhiteSpace(category)) category = IconTokenCategory(token);
+
+        existing["category"] = category;
+        existing["file"] = file;
+        existing["description"] = JsonString(existing, ["description"]);
+        mapping["schemaVersion"] = 1;
+        mapping["categories"] = IconThemeCategories(tokens);
+        return mapping;
+    }
+
+    private static JsonObject IconThemeCategories(JsonObject tokens)
+    {
+        var categories = new SortedDictionary<string, JsonArray>(StringComparer.OrdinalIgnoreCase);
+        foreach (var pair in tokens.OrderBy((pair) => pair.Key, StringComparer.OrdinalIgnoreCase))
+        {
+            var tokenObject = pair.Value as JsonObject ?? [];
+            var category = JsonString(tokenObject, ["category"]);
+            if (string.IsNullOrWhiteSpace(category)) category = IconTokenCategory(pair.Key);
+            if (!categories.TryGetValue(category, out var categoryTokens))
+            {
+                categoryTokens = [];
+                categories[category] = categoryTokens;
+            }
+
+            categoryTokens.Add(pair.Key);
+        }
+
+        return new JsonObject(categories.Select((pair) => KeyValuePair.Create<string, JsonNode?>(pair.Key, pair.Value)));
+    }
+
+    private static string IconTokenFromFileName(string fileName)
+    {
+        var token = Regex.Replace(fileName.Trim().ToLowerInvariant(), "[^a-z0-9]+", "_").Trim('_');
+        if (string.IsNullOrWhiteSpace(token)) token = "icon";
+        if (!char.IsLetter(token[0])) token = $"icon_{token}";
+        return token;
+    }
+
     private static IReadOnlyList<IconThemeToken> IconThemeTokens(string mappingJson)
     {
         var mapping = ParseJsonObject(string.IsNullOrWhiteSpace(mappingJson) ? "{}" : mappingJson);
@@ -6406,6 +6503,7 @@ internal sealed partial class SpikeDatabase
         string File,
         string Description);
     public sealed record IconThemeRefreshResult(int ThemeCount, int CommonTokenCount, int OmittedTokenCount);
+    public sealed record IconThemeImportResult(string Token, string File, bool Replaced);
     public sealed record IconThemeSearchCandidate(string Provider, string SourceName, string PreviewUrl);
     public sealed record IconThemeSearchResult(
         IReadOnlyList<IconThemeSearchCandidate> Lucide,

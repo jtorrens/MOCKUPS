@@ -29,6 +29,39 @@ internal sealed class EditorPathBrowser
             : BrowseDirectory(currentPath);
     }
 
+    public async Task<string?> BrowseSvgFile()
+    {
+        var options = new FilePickerOpenOptions
+        {
+            Title = "Select SVG icon",
+            AllowMultiple = false,
+            FileTypeFilter =
+            [
+                new FilePickerFileType("SVG")
+                {
+                    Patterns = ["*.svg"],
+                    AppleUniformTypeIdentifiers = ["public.svg-image"],
+                    MimeTypes = ["image/svg+xml"],
+                },
+            ],
+        };
+
+        var mediaRoot = SelectedProjectMediaRoot();
+        if (!string.IsNullOrWhiteSpace(mediaRoot))
+        {
+            var fullMediaRoot = Path.IsPathFullyQualified(mediaRoot)
+                ? mediaRoot
+                : Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", mediaRoot));
+            if (Directory.Exists(fullMediaRoot))
+            {
+                options.SuggestedStartLocation = await _storageProvider.TryGetFolderFromPathAsync(fullMediaRoot);
+            }
+        }
+
+        var files = await _storageProvider.OpenFilePickerAsync(options);
+        return files.Count > 0 ? files[0].Path.LocalPath : null;
+    }
+
     public string? ResolveImagePath(string path)
     {
         return MediaPathService.ResolveLocalPath(path, SelectedProjectMediaRoot());
