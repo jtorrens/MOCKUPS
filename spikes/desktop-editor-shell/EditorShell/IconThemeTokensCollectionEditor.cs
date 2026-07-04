@@ -4,6 +4,8 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Mockups.DesktopEditorShell.Data;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -40,9 +42,9 @@ internal sealed class IconThemeTokensCollectionEditor
         {
             Spacing = 10,
         };
-        tokensPanel.Children.Add(CreateToolbar(node));
 
         var tokens = _database.GetIconThemeTokens(node.Id);
+        tokensPanel.Children.Add(CreateToolbar(node, tokens));
         if (tokens.Count == 0)
         {
             tokensPanel.Children.Add(new TextBlock
@@ -53,10 +55,19 @@ internal sealed class IconThemeTokensCollectionEditor
         }
         else
         {
-            foreach (var token in tokens)
+            var rowsPanel = new StackPanel { Spacing = 10 };
+            var emptyFilterText = new TextBlock
             {
-                tokensPanel.Children.Add(CreateTokenRow(node, token));
-            }
+                Text = "No visible tokens match this filter.",
+                Opacity = 0.72,
+                IsVisible = false,
+            };
+            var filterBox = CreateFilterBox(tokens, rowsPanel, emptyFilterText, node);
+
+            tokensPanel.Children.Add(filterBox);
+            tokensPanel.Children.Add(emptyFilterText);
+            tokensPanel.Children.Add(rowsPanel);
+            RefreshTokenRows(node, tokens, rowsPanel, emptyFilterText, "");
         }
 
         return new InstantEditorCard(
@@ -72,18 +83,26 @@ internal sealed class IconThemeTokensCollectionEditor
         };
     }
 
-    private Control CreateToolbar(ProjectTreeNode node)
+    private Control CreateToolbar(ProjectTreeNode node, IReadOnlyCollection<SpikeDatabase.IconThemeToken> tokens)
     {
-        var toolbar = new StackPanel
+        var toolbar = new Grid
         {
-            Orientation = Orientation.Horizontal,
-            Spacing = 8,
-            HorizontalAlignment = HorizontalAlignment.Right,
+            ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto"),
+            ColumnSpacing = 8,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+
+        var countText = new TextBlock
+        {
+            Text = $"{tokens.Count} token(s)",
+            Opacity = 0.72,
+            VerticalAlignment = VerticalAlignment.Center,
         };
 
         var refreshButton = new Button
         {
             Content = "Refresh sets",
+            HorizontalAlignment = HorizontalAlignment.Right,
         };
         refreshButton.Click += async (_, _) =>
         {
@@ -105,9 +124,59 @@ internal sealed class IconThemeTokensCollectionEditor
         };
         searchButton.Click += async (_, _) => await _showSearch(node);
 
+        Grid.SetColumn(countText, 0);
+        Grid.SetColumn(refreshButton, 1);
+        Grid.SetColumn(searchButton, 2);
+
+        toolbar.Children.Add(countText);
         toolbar.Children.Add(refreshButton);
         toolbar.Children.Add(searchButton);
         return toolbar;
+    }
+
+    private Control CreateFilterBox(
+        IReadOnlyList<SpikeDatabase.IconThemeToken> tokens,
+        StackPanel rowsPanel,
+        TextBlock emptyFilterText,
+        ProjectTreeNode node)
+    {
+        var filterBox = EditorTextBoxBehavior.Configure(new TextBox
+        {
+            PlaceholderText = "Filter visible tokens...",
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        });
+
+        filterBox.TextChanged += (_, _) =>
+        {
+            RefreshTokenRows(node, tokens, rowsPanel, emptyFilterText, filterBox.Text ?? "");
+        };
+
+        return filterBox;
+    }
+
+    private void RefreshTokenRows(
+        ProjectTreeNode node,
+        IReadOnlyList<SpikeDatabase.IconThemeToken> tokens,
+        StackPanel rowsPanel,
+        TextBlock emptyFilterText,
+        string query)
+    {
+        rowsPanel.Children.Clear();
+        var visibleTokens = tokens
+            .Where((token) => EditorSearchMatcher.Matches(
+                query,
+                token.Token,
+                token.Category,
+                token.File,
+                token.Description))
+            .ToList();
+
+        foreach (var token in visibleTokens)
+        {
+            rowsPanel.Children.Add(CreateTokenRow(node, token));
+        }
+
+        emptyFilterText.IsVisible = visibleTokens.Count == 0;
     }
 
     private Control CreateTokenRow(ProjectTreeNode node, SpikeDatabase.IconThemeToken token)
