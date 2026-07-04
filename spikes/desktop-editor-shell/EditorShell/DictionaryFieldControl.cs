@@ -22,13 +22,16 @@ internal sealed class DictionaryFieldControl : Grid
 
     public DictionaryFieldControl(
         FieldValue fieldValue,
-        Func<string, ValueKind, Task<string?>>? browsePath = null,
-        Func<string, bool, Task<string?>>? showIconTokenPicker = null,
-        Func<string, IReadOnlyList<FieldOption>?, Task<string?>>? showThemeTokenPicker = null,
-        Func<string, Control>? createIconPreview = null,
-        Func<string, string?>? resolveImagePath = null,
-        Func<string, string>? getFieldValue = null)
+        Func<string, ValueKind, Task<string?>>? browsePath = null)
+        : this(fieldValue, new DictionaryFieldServices(BrowsePath: browsePath))
     {
+    }
+
+    public DictionaryFieldControl(
+        FieldValue fieldValue,
+        DictionaryFieldServices? services)
+    {
+        services ??= new DictionaryFieldServices();
         _definition = fieldValue.Definition;
         _isInherited = fieldValue.IsInherited;
         _value = fieldValue.IsInherited ? fieldValue.Definition.InheritedValue : fieldValue.Value;
@@ -50,15 +53,11 @@ internal sealed class DictionaryFieldControl : Grid
         _valueControl = AddValueControl(DictionaryValueControlFactory.Create(
             _definition,
             _value,
-            showIconTokenPicker,
-            showThemeTokenPicker,
-            createIconPreview,
-            resolveImagePath,
-            getFieldValue));
+            services));
 
         if (_definition.ValueKind is ValueKind.DirectoryPath or ValueKind.ImageFilePath)
         {
-            _pathBrowseButton = new DictionaryPathBrowseButton(_definition.ValueKind, _value, _definition.IsEditable, browsePath);
+            _pathBrowseButton = new DictionaryPathBrowseButton(_definition.ValueKind, _value, _definition.IsEditable, services.BrowsePath);
             _pathBrowseButton.ValueCommitted += (_, value) =>
             {
                 SetValue(value, commit: true);

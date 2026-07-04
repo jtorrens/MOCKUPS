@@ -39,6 +39,7 @@ public partial class MainWindow : SukiWindow
     private readonly EditorFieldPostCommitEffects _fieldPostCommitEffects;
     private readonly EditorPathBrowser _pathBrowser;
     private readonly EditorDomainDialogService _domainDialogs;
+    private readonly EditorDictionaryFieldServices _dictionaryFieldServices;
     private readonly EditorViewStateController _editorViewState;
     private readonly EditorCardHostController _editorCardHost;
     private readonly EditorFieldValueRouter _fieldValues;
@@ -90,6 +91,7 @@ public partial class MainWindow : SukiWindow
             ShowInfoDialog,
             _pathBrowser.BrowseSvgFile,
             ReloadAndSelect);
+        _dictionaryFieldServices = new EditorDictionaryFieldServices(_database, _pathBrowser, _domainDialogs);
         _editorViewState = new EditorViewStateController(EditorScrollViewer);
         _editorCardHost = new EditorCardHostController(EditorCardsPanel);
         _fieldValues = new EditorFieldValueRouter(
@@ -347,14 +349,12 @@ public partial class MainWindow : SukiWindow
             foreach (var layoutField in group.VisibleFields)
             {
                 var field = _fieldValues.Create(node, layoutField.Id);
+                var services = _dictionaryFieldServices.ForNode(
+                    node,
+                    (fieldId) => _activeFieldControls.ValueOrStored(fieldId, (id) => _fieldValues.CurrentStoredValue(node, id)));
                 var control = new DictionaryFieldControl(
                     field,
-                    _pathBrowser.BrowsePath,
-                    (currentValue, allowMultiple) => _domainDialogs.ShowIconTokenPicker(ProjectAncestor(node).Id, currentValue, allowMultiple),
-                    (currentValue, allowedOptions) => _domainDialogs.ShowThemeTokenPicker(ProjectAncestor(node).Id, currentValue, allowedOptions),
-                    (token) => SvgIconPreview.CreateProjectIconTokenPreview(_database, ProjectAncestor(node).Id, token, 18),
-                    _pathBrowser.ResolveImagePath,
-                    (fieldId) => _activeFieldControls.ValueOrStored(fieldId, (id) => _fieldValues.CurrentStoredValue(node, id)));
+                    services);
                 controls.Add(control);
                 _activeFieldControls.Register(control);
                 control.ValueCommitted += (_, value) =>
@@ -432,17 +432,6 @@ public partial class MainWindow : SukiWindow
         }
 
         ReloadAndSelect(child);
-    }
-
-    private static ProjectTreeNode ProjectAncestor(ProjectTreeNode node)
-    {
-        var current = node;
-        while (current.Kind != ProjectTreeNodeKind.Project)
-        {
-            current = current.Parent ?? throw new InvalidOperationException($"{node.Kind} has no project ancestor.");
-        }
-
-        return current;
     }
 
     private async Task ShowInfoDialog(string title, string message)
