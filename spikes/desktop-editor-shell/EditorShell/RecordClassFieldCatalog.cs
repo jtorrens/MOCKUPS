@@ -69,7 +69,16 @@ internal static class RecordClassFieldCatalog
             Number: new NumberDefinition(0.01m, 8, 0.05m, 2)),
         ["app.icon.offset"] = new("app.icon.offset", "Icon offset", ValueKind.IntegerPair, PairLabels: new("X", "Y")),
 
-        ["module.recordClassId"] = new("module.recordClassId", "Module class", ValueKind.StringReadOnly, IsEditable: false),
+        ["module.recordClassId"] = new(
+            "module.recordClassId",
+            "Module class",
+            ValueKind.OptionToken,
+            IsEditable: false,
+            Options:
+            [
+                new FieldOption("module.generic", "Generic"),
+                new FieldOption("module.core.chat", "Core Chat"),
+            ]),
         ["module.sortOrder"] = new("module.sortOrder", "Sort Order", ValueKind.Integer),
         ["module.metadata"] = new("module.metadata", "Metadata", ValueKind.StringMultiline),
 
