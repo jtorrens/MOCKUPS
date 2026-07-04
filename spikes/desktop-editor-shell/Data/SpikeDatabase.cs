@@ -1757,7 +1757,7 @@ internal sealed partial class SpikeDatabase
             : recordClassId is "module.generic" or "module.core.chat"
                 ? """
                     { "id": "core.name", "order": 10, "visible": true },
-                    { "id": "module.recordClassId", "order": 20, "visible": true },
+                    { "id": "module.recordClassId", "order": 20, "visible": false },
                     { "id": "module.sortOrder", "order": 30, "visible": true },
                     { "id": "core.notes", "order": 40, "visible": true },
                     { "id": "module.metadata", "order": 50, "visible": true }
