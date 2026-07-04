@@ -8,6 +8,7 @@ internal enum ValueKind
     StringReadOnly,
     StringMultiline,
     Integer,
+    Decimal,
     HueDegrees,
     IntegerPair,
     DirectoryPath,
@@ -35,6 +36,12 @@ internal sealed record FieldOption(
 
 internal sealed record PairFieldLabels(string First, string Second);
 
+internal sealed record NumberDefinition(
+    decimal? Minimum = null,
+    decimal? Maximum = null,
+    decimal Increment = 1,
+    int DecimalPlaces = 0);
+
 internal enum ImagePreviewMode
 {
     Aspect,
@@ -59,7 +66,8 @@ internal sealed record FieldDefinition(
     string InheritedStorageValue = "inherited",
     IReadOnlyList<FieldOption>? Options = null,
     PairFieldLabels? PairLabels = null,
-    ImagePreviewDefinition? ImagePreview = null);
+    ImagePreviewDefinition? ImagePreview = null,
+    NumberDefinition? Number = null);
 
 internal sealed record FieldValue(
     FieldDefinition Definition,

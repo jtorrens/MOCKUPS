@@ -10,7 +10,8 @@ internal sealed record RecordClassFieldDescriptor(
     bool IsEditable = true,
     IReadOnlyList<FieldOption>? Options = null,
     PairFieldLabels? PairLabels = null,
-    ImagePreviewDefinition? ImagePreview = null);
+    ImagePreviewDefinition? ImagePreview = null,
+    NumberDefinition? Number = null);
 
 internal static class RecordClassFieldCatalog
 {
@@ -40,7 +41,11 @@ internal static class RecordClassFieldCatalog
         ["app.config"] = new("app.config", "Config", ValueKind.StringMultiline),
         ["app.metadata"] = new("app.metadata", "Metadata", ValueKind.StringMultiline),
         ["app.wallpaper.kind"] = new("app.wallpaper.kind", "Kind", ValueKind.OptionToken),
-        ["app.wallpaper.opacity"] = new("app.wallpaper.opacity", "Opacity", ValueKind.StringSingleLine),
+        ["app.wallpaper.opacity"] = new(
+            "app.wallpaper.opacity",
+            "Opacity",
+            ValueKind.Decimal,
+            Number: new NumberDefinition(0, 1, 0.01m, 2)),
         ["app.wallpaper.color"] = new("app.wallpaper.color", "Wallpaper Color", ValueKind.PaletteColorPair, PairLabels: new("Light", "Dark")),
         ["app.wallpaper.image.filePath"] = new(
             "app.wallpaper.image.filePath",
@@ -57,7 +62,11 @@ internal static class RecordClassFieldCatalog
                 BaseSize: 256,
                 ScaleFieldId: "app.icon.scale",
                 OffsetFieldId: "app.icon.offset")),
-        ["app.icon.scale"] = new("app.icon.scale", "Icon scale", ValueKind.StringSingleLine),
+        ["app.icon.scale"] = new(
+            "app.icon.scale",
+            "Icon scale",
+            ValueKind.Decimal,
+            Number: new NumberDefinition(0.01m, 8, 0.01m, 2)),
         ["app.icon.offset"] = new("app.icon.offset", "Icon offset", ValueKind.IntegerPair, PairLabels: new("X", "Y")),
 
         ["module.recordClassId"] = new("module.recordClassId", "Module class", ValueKind.StringReadOnly, IsEditable: false),
@@ -153,7 +162,11 @@ internal static class RecordClassFieldCatalog
                 BaseSize: 640,
                 ScaleFieldId: "actor.avatar.scale",
                 OffsetFieldId: "actor.avatar.offset")),
-        ["actor.avatar.scale"] = new("actor.avatar.scale", "Avatar scale", ValueKind.StringSingleLine),
+        ["actor.avatar.scale"] = new(
+            "actor.avatar.scale",
+            "Avatar scale",
+            ValueKind.Decimal,
+            Number: new NumberDefinition(0.01m, 8, 0.01m, 2)),
         ["actor.avatar.offset"] = new("actor.avatar.offset", "Avatar offset", ValueKind.IntegerPair, PairLabels: new("X", "Y")),
         ["actor.avatar.useInitials"] = new("actor.avatar.useInitials", "Use initials", ValueKind.Boolean),
         ["actor.avatar.initialsPadding"] = new("actor.avatar.initialsPadding", "Initials padding", ValueKind.Integer),
