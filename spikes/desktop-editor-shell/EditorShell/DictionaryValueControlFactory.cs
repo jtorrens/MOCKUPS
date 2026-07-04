@@ -13,7 +13,8 @@ internal static class DictionaryValueControlFactory
         Func<string, bool, Task<string?>>? showIconTokenPicker,
         Func<string, IReadOnlyList<FieldOption>?, Task<string?>>? showThemeTokenPicker,
         Func<string, Control>? createIconPreview,
-        Func<string, string?>? resolveImagePath)
+        Func<string, string?>? resolveImagePath,
+        Func<string, string>? getFieldValue)
     {
         return definition.ValueKind switch
         {
@@ -29,7 +30,7 @@ internal static class DictionaryValueControlFactory
             ValueKind.HexColor => new DictionaryHexColorControl(definition, value),
             ValueKind.HueDegrees => new HueDegreesControl(value, definition.IsEditable),
             ValueKind.IntegerPair => new DictionaryIntegerPairControl(definition, value),
-            ValueKind.ImageFilePath => new DictionaryImageFileControl(definition, value, resolveImagePath),
+            ValueKind.ImageFilePath => new DictionaryImageFileControl(definition, value, resolveImagePath, getFieldValue),
             ValueKind.IconSlots => new IconSlotsControl(
                 value,
                 definition.IsEditable,

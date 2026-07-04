@@ -5,14 +5,16 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using System;
+using System.Globalization;
 using System.IO;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed class DictionaryImageFileControl : Grid, IDictionaryValueControl
+internal sealed class DictionaryImageFileControl : Grid, IDictionaryValueControl, IDictionaryPreviewValueControl
 {
     private readonly FieldDefinition _definition;
     private readonly Func<string, string?>? _resolveImagePath;
+    private readonly Func<string, string>? _getFieldValue;
     private readonly TextBox _textBox;
     private readonly Border _previewFrame;
     private readonly Image _previewImage;
@@ -24,11 +26,13 @@ internal sealed class DictionaryImageFileControl : Grid, IDictionaryValueControl
     public DictionaryImageFileControl(
         FieldDefinition definition,
         string value,
-        Func<string, string?>? resolveImagePath)
+        Func<string, string?>? resolveImagePath,
+        Func<string, string>? getFieldValue)
     {
         _definition = definition;
         _value = value;
         _resolveImagePath = resolveImagePath;
+        _getFieldValue = getFieldValue;
 
         RowDefinitions = new RowDefinitions("Auto,Auto");
         RowSpacing = 8;
@@ -44,10 +48,7 @@ internal sealed class DictionaryImageFileControl : Grid, IDictionaryValueControl
         AttachDeferredCommit(_textBox);
         Children.Add(_textBox);
 
-        _previewImage = new Image
-        {
-            Stretch = Stretch.UniformToFill,
-        };
+        _previewImage = new Image();
 
         _emptyPreviewText = new TextBlock
         {
@@ -61,8 +62,6 @@ internal sealed class DictionaryImageFileControl : Grid, IDictionaryValueControl
 
         _previewFrame = new Border
         {
-            Width = 240,
-            Height = 136,
             CornerRadius = new CornerRadius(8),
             BorderThickness = new Thickness(1),
             BorderBrush = new SolidColorBrush(Color.Parse("#5A6472")),
@@ -131,11 +130,12 @@ internal sealed class DictionaryImageFileControl : Grid, IDictionaryValueControl
         };
     }
 
-    private void RefreshPreview()
+    public void RefreshPreview()
     {
         _bitmap?.Dispose();
         _bitmap = null;
         _previewImage.Source = null;
+        _previewImage.RenderTransform = null;
 
         var resolvedPath = _resolveImagePath?.Invoke(_value) ?? MediaPathService.ResolveLocalPath(_value, null);
         if (!string.IsNullOrWhiteSpace(resolvedPath) && File.Exists(resolvedPath))
@@ -144,6 +144,7 @@ internal sealed class DictionaryImageFileControl : Grid, IDictionaryValueControl
             {
                 _bitmap = new Bitmap(resolvedPath);
                 _previewImage.Source = _bitmap;
+                ApplyPreviewMetrics(_bitmap);
                 _emptyPreviewText.IsVisible = false;
                 return;
             }
@@ -154,5 +155,94 @@ internal sealed class DictionaryImageFileControl : Grid, IDictionaryValueControl
         }
 
         _emptyPreviewText.IsVisible = true;
+        ApplyEmptyPreviewMetrics();
+    }
+
+    private void ApplyPreviewMetrics(Bitmap bitmap)
+    {
+        var preview = _definition.ImagePreview;
+        if (preview?.Mode == ImagePreviewMode.SquareCrop)
+        {
+            ApplySquareCropPreview(preview);
+            return;
+        }
+
+        ApplyAspectPreview(bitmap);
+    }
+
+    private void ApplyAspectPreview(Bitmap bitmap)
+    {
+        var pixelSize = bitmap.PixelSize;
+        var sourceWidth = Math.Max(1d, pixelSize.Width);
+        var sourceHeight = Math.Max(1d, pixelSize.Height);
+        var width = Math.Min(360d, Math.Max(120d, sourceWidth));
+        var height = Math.Round(width * sourceHeight / sourceWidth);
+        if (height > 220)
+        {
+            height = 220;
+            width = Math.Round(height * sourceWidth / sourceHeight);
+        }
+
+        _previewFrame.Width = width;
+        _previewFrame.Height = height;
+        _previewImage.Width = width;
+        _previewImage.Height = height;
+        _previewImage.Stretch = Stretch.Uniform;
+    }
+
+    private void ApplySquareCropPreview(ImagePreviewDefinition preview)
+    {
+        const double previewSize = 160;
+        var baseSize = Math.Max(1, preview.BaseSize);
+        var scale = Math.Max(0.01, ParseDouble(FieldValue(preview.ScaleFieldId), 1));
+        var offset = SplitPair(FieldValue(preview.OffsetFieldId));
+        var offsetX = ParseDouble(offset.First, 0) / baseSize * previewSize;
+        var offsetY = ParseDouble(offset.Second, 0) / baseSize * previewSize;
+
+        _previewFrame.Width = previewSize;
+        _previewFrame.Height = previewSize;
+        _previewImage.Width = previewSize;
+        _previewImage.Height = previewSize;
+        _previewImage.Stretch = Stretch.UniformToFill;
+        _previewImage.RenderTransformOrigin = new RelativePoint(0.5, 0.5, RelativeUnit.Relative);
+        _previewImage.RenderTransform = new TransformGroup
+        {
+            Children =
+            {
+                new ScaleTransform(scale, scale),
+                new TranslateTransform(offsetX, offsetY),
+            },
+        };
+    }
+
+    private void ApplyEmptyPreviewMetrics()
+    {
+        if (_definition.ImagePreview?.Mode == ImagePreviewMode.SquareCrop)
+        {
+            _previewFrame.Width = 160;
+            _previewFrame.Height = 160;
+            return;
+        }
+
+        _previewFrame.Width = 240;
+        _previewFrame.Height = 136;
+    }
+
+    private string FieldValue(string? fieldId)
+    {
+        return string.IsNullOrWhiteSpace(fieldId) ? "" : _getFieldValue?.Invoke(fieldId) ?? "";
+    }
+
+    private static double ParseDouble(string value, double fallback)
+    {
+        return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var invariant)
+            ? invariant
+            : double.TryParse(value, out var local) ? local : fallback;
+    }
+
+    private static (string First, string Second) SplitPair(string value)
+    {
+        var parts = value.Split('|', 2);
+        return (parts.Length > 0 ? parts[0] : "", parts.Length > 1 ? parts[1] : "");
     }
 }

@@ -1,13 +1,11 @@
 using Avalonia.Controls;
 using Avalonia.Layout;
-using Avalonia;
-using Avalonia.Media;
 using System;
 using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed class DictionaryPathBrowseButton : Button
+internal sealed class DictionaryPathBrowseButton : Grid
 {
     private readonly ValueKind _valueKind;
     private readonly Func<string, ValueKind, Task<string?>>? _browsePath;
@@ -23,15 +21,16 @@ internal sealed class DictionaryPathBrowseButton : Button
         _value = value;
         _browsePath = browsePath;
 
-        Content = "Browse...";
-        MinWidth = 96;
-        MinHeight = 36;
-        Padding = new Thickness(14, 0);
-        VerticalAlignment = VerticalAlignment.Center;
-        BorderThickness = new Thickness(1);
-        BorderBrush = new SolidColorBrush(Color.Parse("#6B7583"));
-        IsEnabled = isEditable && browsePath is not null;
-        Click += async (_, _) => await Browse();
+        var button = new Button
+        {
+            Content = "Browse...",
+            MinWidth = 96,
+            MinHeight = 36,
+            VerticalAlignment = VerticalAlignment.Center,
+            IsEnabled = isEditable && browsePath is not null,
+        };
+        button.Click += async (_, _) => await Browse();
+        Children.Add(button);
     }
 
     public event EventHandler<string>? ValueCommitted;

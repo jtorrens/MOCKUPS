@@ -9,7 +9,8 @@ internal sealed record RecordClassFieldDescriptor(
     ValueKind ValueKind,
     bool IsEditable = true,
     IReadOnlyList<FieldOption>? Options = null,
-    PairFieldLabels? PairLabels = null);
+    PairFieldLabels? PairLabels = null,
+    ImagePreviewDefinition? ImagePreview = null);
 
 internal static class RecordClassFieldCatalog
 {
@@ -41,9 +42,21 @@ internal static class RecordClassFieldCatalog
         ["app.wallpaper.kind"] = new("app.wallpaper.kind", "Kind", ValueKind.OptionToken),
         ["app.wallpaper.opacity"] = new("app.wallpaper.opacity", "Opacity", ValueKind.StringSingleLine),
         ["app.wallpaper.color"] = new("app.wallpaper.color", "Wallpaper Color", ValueKind.PaletteColorPair, PairLabels: new("Light", "Dark")),
-        ["app.wallpaper.image.filePath"] = new("app.wallpaper.image.filePath", "Image", ValueKind.ImageFilePath),
+        ["app.wallpaper.image.filePath"] = new(
+            "app.wallpaper.image.filePath",
+            "Image",
+            ValueKind.ImageFilePath,
+            ImagePreview: new ImagePreviewDefinition(ImagePreviewMode.Aspect)),
         ["app.note"] = new("app.note", "Note", ValueKind.StringMultiline),
-        ["app.icon.filePath"] = new("app.icon.filePath", "App icon image", ValueKind.ImageFilePath),
+        ["app.icon.filePath"] = new(
+            "app.icon.filePath",
+            "App icon image",
+            ValueKind.ImageFilePath,
+            ImagePreview: new ImagePreviewDefinition(
+                ImagePreviewMode.SquareCrop,
+                BaseSize: 256,
+                ScaleFieldId: "app.icon.scale",
+                OffsetFieldId: "app.icon.offset")),
         ["app.icon.scale"] = new("app.icon.scale", "Icon scale", ValueKind.StringSingleLine),
         ["app.icon.offset"] = new("app.icon.offset", "Icon offset", ValueKind.IntegerPair, PairLabels: new("X", "Y")),
 
@@ -127,7 +140,15 @@ internal static class RecordClassFieldCatalog
         ["actor.defaultThemeId"] = new("actor.defaultThemeId", "Default theme", ValueKind.OptionToken),
         ["actor.color.modes"] = new("actor.color.modes", "Actor Color", ValueKind.PaletteColorPair),
         ["actor.avatarTextColor.modes"] = new("actor.avatarTextColor.modes", "Actor Text Color", ValueKind.PaletteColorPair),
-        ["actor.avatar.filePath"] = new("actor.avatar.filePath", "Avatar image", ValueKind.ImageFilePath),
+        ["actor.avatar.filePath"] = new(
+            "actor.avatar.filePath",
+            "Avatar image",
+            ValueKind.ImageFilePath,
+            ImagePreview: new ImagePreviewDefinition(
+                ImagePreviewMode.SquareCrop,
+                BaseSize: 640,
+                ScaleFieldId: "actor.avatar.scale",
+                OffsetFieldId: "actor.avatar.offset")),
         ["actor.avatar.scale"] = new("actor.avatar.scale", "Avatar scale", ValueKind.StringSingleLine),
         ["actor.avatar.offset"] = new("actor.avatar.offset", "Avatar offset", ValueKind.IntegerPair, PairLabels: new("X", "Y")),
         ["actor.avatar.useInitials"] = new("actor.avatar.useInitials", "Use initials", ValueKind.Boolean),

@@ -75,7 +75,8 @@ internal sealed class RecordClassFieldValueService
                 DefaultValue: DefaultValue(node.Kind, field, value),
                 CommitAsDefault: CommitAsDefault(node.Kind, field),
                 Options: options,
-                PairLabels: field.PairLabels),
+                PairLabels: field.PairLabels,
+                ImagePreview: field.ImagePreview),
             value);
     }
 

@@ -11,3 +11,8 @@ internal interface IDictionaryValueControl
     // Programmatic display updates must not emit change or commit events.
     void SetValue(string value);
 }
+
+internal interface IDictionaryPreviewValueControl
+{
+    void RefreshPreview();
+}

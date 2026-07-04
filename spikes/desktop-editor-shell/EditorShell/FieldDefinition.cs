@@ -35,6 +35,18 @@ internal sealed record FieldOption(
 
 internal sealed record PairFieldLabels(string First, string Second);
 
+internal enum ImagePreviewMode
+{
+    Aspect,
+    SquareCrop,
+}
+
+internal sealed record ImagePreviewDefinition(
+    ImagePreviewMode Mode,
+    int BaseSize = 0,
+    string? ScaleFieldId = null,
+    string? OffsetFieldId = null);
+
 internal sealed record FieldDefinition(
     string Id,
     string Label,
@@ -46,7 +58,8 @@ internal sealed record FieldDefinition(
     string InheritedValue = "",
     string InheritedStorageValue = "inherited",
     IReadOnlyList<FieldOption>? Options = null,
-    PairFieldLabels? PairLabels = null);
+    PairFieldLabels? PairLabels = null,
+    ImagePreviewDefinition? ImagePreview = null);
 
 internal sealed record FieldValue(
     FieldDefinition Definition,

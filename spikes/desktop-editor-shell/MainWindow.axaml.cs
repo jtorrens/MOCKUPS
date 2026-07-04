@@ -344,7 +344,8 @@ public partial class MainWindow : SukiWindow
                     (currentValue, allowMultiple) => ShowIconTokenPicker(ProjectAncestor(node).Id, currentValue, allowMultiple),
                     (currentValue, allowedOptions) => ShowThemeTokenPicker(ProjectAncestor(node).Id, currentValue, allowedOptions),
                     (token) => SvgIconPreview.CreateProjectIconTokenPreview(_database, ProjectAncestor(node).Id, token, 18),
-                    _pathBrowser.ResolveImagePath);
+                    _pathBrowser.ResolveImagePath,
+                    (fieldId) => ActiveOrStoredFieldValue(node, fieldId));
                 controls.Add(control);
                 _activeEditorControlsByFieldId[field.Definition.Id] = control;
                 control.ValueCommitted += (_, value) =>
@@ -359,6 +360,7 @@ public partial class MainWindow : SukiWindow
                     {
                         _actorAvatarPreviews.Refresh(node, _activeEditorControlsByFieldId);
                     }
+                    RefreshDictionaryPreviews();
                     RefreshPreviewDevice();
                 };
                 groupPanel.Children.Add(control);
@@ -406,6 +408,21 @@ public partial class MainWindow : SukiWindow
         }
 
         return card;
+    }
+
+    private string ActiveOrStoredFieldValue(ProjectTreeNode node, string fieldId)
+    {
+        return _activeEditorControlsByFieldId.TryGetValue(fieldId, out var control)
+            ? control.Value
+            : _fieldValues.CurrentStoredValue(node, fieldId);
+    }
+
+    private void RefreshDictionaryPreviews()
+    {
+        foreach (var control in _activeEditorControlsByFieldId.Values)
+        {
+            control.RefreshPreview();
+        }
     }
 
     private async Task AddChild(ProjectTreeNode parent)

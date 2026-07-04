@@ -26,7 +26,8 @@ internal sealed class DictionaryFieldControl : Grid
         Func<string, bool, Task<string?>>? showIconTokenPicker = null,
         Func<string, IReadOnlyList<FieldOption>?, Task<string?>>? showThemeTokenPicker = null,
         Func<string, Control>? createIconPreview = null,
-        Func<string, string?>? resolveImagePath = null)
+        Func<string, string?>? resolveImagePath = null,
+        Func<string, string>? getFieldValue = null)
     {
         _definition = fieldValue.Definition;
         _isInherited = fieldValue.IsInherited;
@@ -52,7 +53,8 @@ internal sealed class DictionaryFieldControl : Grid
             showIconTokenPicker,
             showThemeTokenPicker,
             createIconPreview,
-            resolveImagePath));
+            resolveImagePath,
+            getFieldValue));
 
         if (_definition.ValueKind is ValueKind.DirectoryPath or ValueKind.ImageFilePath)
         {
@@ -101,6 +103,14 @@ internal sealed class DictionaryFieldControl : Grid
     public bool CommitAsDefault => _definition.CommitAsDefault;
 
     public string Value => _value;
+
+    public void RefreshPreview()
+    {
+        if (_valueControl is IDictionaryPreviewValueControl previewControl)
+        {
+            previewControl.RefreshPreview();
+        }
+    }
 
     public void AcceptCurrentValueAsDefault()
     {
