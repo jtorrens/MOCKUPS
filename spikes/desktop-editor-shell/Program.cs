@@ -1,5 +1,6 @@
 ﻿using Avalonia;
 using Mockups.DesktopEditorShell.Preview.Avalonia;
+using Mockups.DesktopEditorShell.Preview.Bridges;
 using Mockups.DesktopEditorShell.VisualIr;
 using System;
 using System.Linq;
@@ -25,6 +26,13 @@ class Program
         {
             VisualIrDebugRendererSmoke.Validate();
             Console.WriteLine("Visual IR debug renderer smoke validated.");
+            return;
+        }
+
+        if (args.Contains("--design-preview-ir-bridge-smoke", StringComparer.Ordinal))
+        {
+            DesignPreviewToVisualIrBridgeSmoke.Validate();
+            Console.WriteLine("Design preview to Visual IR bridge smoke validated.");
             return;
         }
 
