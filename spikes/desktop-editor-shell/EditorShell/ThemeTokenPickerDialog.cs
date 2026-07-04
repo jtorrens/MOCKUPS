@@ -86,13 +86,16 @@ internal sealed class ThemeTokenPickerDialog
                 return;
             }
 
-            var normalizedQuery = query.Trim();
             var options = _database.GetThemeTokenOptions(projectId, selectedThemeId)
                 .Where((option) => allowedTokens is null || allowedTokens.Contains(option.Token))
-                .Where((option) => string.IsNullOrWhiteSpace(normalizedQuery)
-                    || option.Token.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase)
-                    || option.Label.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase)
-                    || option.Value.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase))
+                .Where((option) => EditorSearchMatcher.Matches(
+                    query,
+                    option.Token,
+                    option.Label,
+                    option.Kind,
+                    option.Value,
+                    option.LightColorHex,
+                    option.DarkColorHex))
                 .ToList();
 
             foreach (var option in options)

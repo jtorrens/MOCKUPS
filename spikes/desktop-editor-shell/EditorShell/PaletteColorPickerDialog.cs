@@ -75,12 +75,13 @@ internal static class PaletteColorPickerDialog
             listPanel.RowDefinitions.Clear();
             RefreshSelectedText();
 
-            var normalizedQuery = query.Trim();
             var visibleOptions = options
-                .Where((option) => string.IsNullOrWhiteSpace(normalizedQuery)
-                    || option.Value.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase)
-                    || option.Label.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase)
-                    || (option.ColorHex?.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) ?? false))
+                .Where((option) => EditorSearchMatcher.Matches(
+                    query,
+                    option.Value,
+                    option.Label,
+                    option.ColorHex,
+                    option.IsNeutral ? "neutral" : ""))
                 .OrderBy((option) => option.Label, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 

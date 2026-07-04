@@ -112,11 +112,8 @@ internal sealed class IconTokenPickerDialog
                 return;
             }
 
-            var normalizedQuery = query.Trim();
             var tokens = _database.GetIconThemeTokens(selectedThemeId)
-                .Where((token) => string.IsNullOrWhiteSpace(normalizedQuery)
-                    || token.Token.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase)
-                    || token.Category.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase))
+                .Where((token) => EditorSearchMatcher.Matches(query, token.Token, token.Category, token.File))
                 .OrderBy((token) => token.Token, StringComparer.Ordinal)
                 .ToList();
 
