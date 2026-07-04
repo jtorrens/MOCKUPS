@@ -115,6 +115,7 @@ Avalonia rule for this phase:
 
 - expose `slug`, `version`, `durationFrames` read-only, `fps`, `ownerActorId`, `ownerDevice` read-only, `renderName` read-only, and notes;
 - keep `sortOrder`, `renderPresetId`, raw `canvas`, and raw `metadata` out of the default editor until a dedicated shot/screen phase.
+- do not assign render presets to shots in the desktop spike; render settings belong to a later render/batch render workflow, not to the shot editor.
 
 ## Apps
 

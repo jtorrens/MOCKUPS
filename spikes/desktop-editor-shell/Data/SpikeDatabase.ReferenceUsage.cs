@@ -72,7 +72,6 @@ internal sealed partial class SpikeDatabase
         foreach (var shot in shots)
         {
             AddUsage(index, ProjectTreeNodeKind.Actor, shot.OwnerActorId, $"Shot: {shot.Name}");
-            AddUsage(index, ProjectTreeNodeKind.RenderPreset, shot.RenderPresetId, $"Shot: {shot.Name}");
         }
 
         foreach (var theme in themes)

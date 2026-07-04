@@ -750,20 +750,18 @@ internal sealed partial class SpikeDatabase
         {
             var index = NextSortOrder(connection, "shots", "episode_id", parent.Id);
             var id = $"shot_{Guid.NewGuid():N}";
-            var renderPresetId = FirstRenderPresetForEpisode(connection, parent.Id);
             Execute(
                 connection,
                 """
-                INSERT INTO shots (id, episode_id, name, slug, notes, sort_order, fps, duration_frames, render_preset_id)
-                VALUES ($id, $episodeId, $name, $slug, $notes, $sortOrder, 25, 240, $renderPresetId)
+                INSERT INTO shots (id, episode_id, name, slug, notes, sort_order, fps, duration_frames)
+                VALUES ($id, $episodeId, $name, $slug, $notes, $sortOrder, 25, 240)
                 """,
                 ("$id", id),
                 ("$episodeId", parent.Id),
                 ("$name", $"Shot {index + 1:00}"),
                 ("$slug", $"shot-{index + 1:00}"),
                 ("$notes", "New shot created in the desktop shell spike."),
-                ("$sortOrder", index),
-                ("$renderPresetId", renderPresetId));
+                ("$sortOrder", index));
 
             return new ProjectTreeNode(
                 ProjectTreeNodeKind.Shot,
@@ -890,8 +888,8 @@ internal sealed partial class SpikeDatabase
             Execute(
                 connection,
                 """
-                INSERT INTO shots (id, episode_id, name, slug, version, notes, sort_order, fps, duration_frames, owner_actor_id, render_preset_id, canvas_json, metadata_json)
-                SELECT $id, episode_id, $name, slug || '-copy', version, notes, $sortOrder, fps, duration_frames, owner_actor_id, render_preset_id, canvas_json, metadata_json
+                INSERT INTO shots (id, episode_id, name, slug, version, notes, sort_order, fps, duration_frames, owner_actor_id, canvas_json, metadata_json)
+                SELECT $id, episode_id, $name, slug || '-copy', version, notes, $sortOrder, fps, duration_frames, owner_actor_id, canvas_json, metadata_json
                 FROM shots
                 WHERE id = $sourceId
                 """,
@@ -1295,7 +1293,7 @@ internal sealed partial class SpikeDatabase
         SeedRenderPresetsIfEmpty(connection);
         SeedComponentClassesIfEmpty(connection);
         SeedThemesIfEmpty(connection);
-        EnsureShotRenderPresets(connection);
+        ClearShotRenderPresetReferences(connection);
         EnsureThemeTokens(connection);
     }
 
@@ -1545,17 +1543,14 @@ internal sealed partial class SpikeDatabase
     private static void MigrateLegacyVerticalRenderPreset(SqliteConnection connection, string projectId)
     {
         var legacyId = $"render_preset_{projectId}_vertical_1080x1920";
-        var replacementId = $"render_preset_{projectId}_mov_prores_422_hq";
         Execute(
             connection,
             """
             UPDATE shots
-            SET render_preset_id = $replacementId
+            SET render_preset_id = ''
             WHERE render_preset_id = $legacyId
-              AND EXISTS (SELECT 1 FROM render_presets WHERE id = $replacementId)
             """,
-            ("$legacyId", legacyId),
-            ("$replacementId", replacementId));
+            ("$legacyId", legacyId));
         Execute(
             connection,
             """
@@ -2375,8 +2370,8 @@ internal sealed partial class SpikeDatabase
             Execute(
                 connection,
                 """
-                INSERT INTO shots (id, episode_id, name, slug, version, notes, sort_order, fps, duration_frames, owner_actor_id, render_preset_id, canvas_json, metadata_json)
-                VALUES ($id, $episodeId, $name, $slug, $version, $notes, $sortOrder, $fps, $durationFrames, $ownerActorId, $renderPresetId, $canvasJson, $metadataJson)
+                INSERT INTO shots (id, episode_id, name, slug, version, notes, sort_order, fps, duration_frames, owner_actor_id, canvas_json, metadata_json)
+                VALUES ($id, $episodeId, $name, $slug, $version, $notes, $sortOrder, $fps, $durationFrames, $ownerActorId, $canvasJson, $metadataJson)
                 """,
                 ("$id", $"shot_{Guid.NewGuid():N}"),
                 ("$episodeId", targetEpisodeId),
@@ -2388,7 +2383,6 @@ internal sealed partial class SpikeDatabase
                 ("$fps", shot.Fps),
                 ("$durationFrames", shot.DurationFrames),
                 ("$ownerActorId", shot.OwnerActorId),
-                ("$renderPresetId", shot.RenderPresetId),
                 ("$canvasJson", shot.CanvasJson),
                 ("$metadataJson", shot.MetadataJson));
         }
@@ -2432,21 +2426,6 @@ internal sealed partial class SpikeDatabase
         using var command = connection.CreateCommand();
         command.CommandText = $"SELECT id FROM {table} WHERE project_id = $projectId ORDER BY name, id LIMIT 1";
         command.Parameters.AddWithValue("$projectId", projectId);
-        return command.ExecuteScalar() as string ?? "";
-    }
-
-    private static string FirstRenderPresetForEpisode(SqliteConnection connection, string episodeId)
-    {
-        using var command = connection.CreateCommand();
-        command.CommandText = """
-            SELECT rp.id
-            FROM render_presets rp
-            JOIN episodes e ON e.project_id = rp.project_id
-            WHERE e.id = $episodeId
-            ORDER BY rp.name, rp.id
-            LIMIT 1
-            """;
-        command.Parameters.AddWithValue("$episodeId", episodeId);
         return command.ExecuteScalar() as string ?? "";
     }
 
@@ -5720,27 +5699,14 @@ internal sealed partial class SpikeDatabase
             """);
     }
 
-    private static void EnsureShotRenderPresets(SqliteConnection connection)
+    private static void ClearShotRenderPresetReferences(SqliteConnection connection)
     {
         Execute(
             connection,
             """
             UPDATE shots
-            SET render_preset_id = (
-                SELECT rp.id
-                FROM render_presets rp
-                JOIN episodes e ON e.project_id = rp.project_id
-                WHERE e.id = shots.episode_id
-                ORDER BY rp.name, rp.id
-                LIMIT 1
-            )
-            WHERE trim(render_preset_id) = ''
-              AND EXISTS (
-                SELECT 1
-                FROM render_presets rp
-                JOIN episodes e ON e.project_id = rp.project_id
-                WHERE e.id = shots.episode_id
-              )
+            SET render_preset_id = ''
+            WHERE trim(render_preset_id) <> ''
             """);
     }
 
