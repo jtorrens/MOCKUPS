@@ -8,6 +8,9 @@ logic leak back into editors or `MainWindow`.
 
 Source references:
 
+- `/Volumes/SD_02/PROYECTOS/MOCKUPS_REACT/docs/architecture/02_render_architecture.md`
+- `/Volumes/SD_02/PROYECTOS/MOCKUPS_REACT/docs/architecture/15_target_system_architecture.md`
+- `/Volumes/SD_02/PROYECTOS/MOCKUPS_REACT/docs/architecture/17_base_routines.md`
 - `/Volumes/SD_02/PROYECTOS/MOCKUPS_REACT/docs/architecture/18_visual_ir_preview_contract.md`
 - `/Volumes/SD_02/PROYECTOS/MOCKUPS_REACT/docs/architecture/19_avalonia_visual_ir_handoff.md`
 - `/Volumes/SD_02/PROYECTOS/MOCKUPS_REACT/src/visual/ir/types.ts`
@@ -181,6 +184,120 @@ internal interface IVisualIrFrameProvider
 flags, but the returned document must already contain concrete visual values.
 
 The renderer should not call database services from inside `Render`.
+
+## Resolved model and frame model
+
+Avalonia should preserve the React architecture split between resolved model
+and frame model.
+
+The resolved model answers:
+
+```text
+What are the final values after ownership, inheritance and resource resolution?
+```
+
+Examples:
+
+- concrete theme colors for the active mode;
+- resolved font family, weight, style, size and line height;
+- component class properties plus local overrides;
+- resolved media/icon/font references;
+- device metrics and orientation;
+- design-space values converted to render-space values.
+
+The frame model answers:
+
+```text
+At frame N, what exactly should be visible?
+```
+
+Examples:
+
+- write-on text at the current frame;
+- current subtitle/message animation state;
+- current video frame or audio progress;
+- current status text, ticks, battery and signal values.
+
+Preview may change frame selection frequently. It should not re-resolve the
+entire database for values that only require frame evaluation.
+
+## Preview shell boundaries
+
+Preview chrome is outside the render document.
+
+The preview shell may own:
+
+- selected frame;
+- screen navigation;
+- zoom;
+- device-frame overlay;
+- reference overlay controls;
+- debug comparison mode;
+- render-current-frame command.
+
+The preview shell must not own:
+
+- layout;
+- theme token resolution;
+- component inheritance;
+- media scaling;
+- keyboard/status behavior;
+- Visual IR coordinate-space changes.
+
+Device frames, borders, shadows, debug overlays and preview controls must never
+affect module layout or Visual IR bounds. They are display overlays around the
+document, not part of the document.
+
+## Units and output scale
+
+Stored visual values are design-space values until the resolver says otherwise.
+
+Target flow:
+
+```text
+stored design value
+  -> device scale / render-space conversion in resolver
+  -> Visual IR bounds/style values
+  -> output scale in renderer/export
+```
+
+Visual modules and renderers should not guess whether a value has already been
+scaled. If a legacy binding mixes scaled and unscaled values, the adapter must
+make that conversion explicitly before Visual IR.
+
+## Resource and packaging rules
+
+Visual IR resources should be concrete and portable:
+
+- production media paths should be stored relative to the production media
+  root;
+- file dialogs may use absolute paths temporarily, but stored production data
+  should not;
+- icon tokens resolve through the active icon theme before render;
+- portable payloads should inline icon SVG markup where possible, rather than
+  requiring the renderer to read the icon theme directory;
+- fonts should be resolved to approved production font families and resource
+  face sources before render.
+
+Render reproducibility should eventually be captured in a render manifest with
+production, shot, screen order/durations, theme, icon theme, device, render
+preset, output scale, source media and frame range. The immediate rule is
+simpler: preview and render must use the same resolved/frame model.
+
+## Resolver boundaries
+
+Resolvers should be small and composable:
+
+- resource resolvers: palette, theme colors, fonts, icon themes, media paths;
+- field resolvers: inherited/concrete/default values;
+- component resolvers: component classes plus overrides;
+- module resolvers: module-specific runtime props;
+- frame evaluators: animation, write-on, video/audio progress;
+- screen resolvers: device metrics, orientation, ordering and transitions.
+
+Resolvers may validate stored JSON, resolve references, compute timing and scale
+design-space values. They should not draw, call preview APIs, contain editor UI
+layout, or carry long-term legacy fallbacks.
 
 ## Transitional bridge
 

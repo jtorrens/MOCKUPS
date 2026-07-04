@@ -5,7 +5,7 @@
                  xmlns:suki="clr-namespace:SukiUI.Controls;assembly=SukiUI"
                  mc:Ignorable="d" d:DesignWidth="1440" d:DesignHeight="900"
                  x:Class="Mockups.DesktopEditorShell.MainWindow"
-                 Title="Mockups Desktop Editor Shell · codex/editor-modernization-rules · v0.104.0"
+                 Title="Mockups Desktop Editor Shell · codex/editor-modernization-rules · v0.105.0"
                  Width="1440"
                  Height="900"
                  MinWidth="1040"
@@ -19,7 +19,7 @@
                 Padding="18,12">
             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
                 <StackPanel>
-                    <TextBlock FontSize="11" FontWeight="SemiBold" Text="SPIKE / DESKTOP EDITOR SHELL · codex/editor-modernization-rules · v0.104.0" />
+                    <TextBlock FontSize="11" FontWeight="SemiBold" Text="SPIKE / DESKTOP EDITOR SHELL · codex/editor-modernization-rules · v0.105.0" />
                     <TextBlock FontSize="17" FontWeight="Bold" Text="Three resizable panels · shared light/dark palette" />
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
