@@ -164,7 +164,7 @@ internal sealed class IconThemeSvgReplaceDialog
             };
         }
 
-        Control NumberEditor(string label, NumericUpDown numeric, double sliderMinimum, double sliderMaximum, double sliderStep, int column)
+        Control NumberEditor(string label, NumericUpDown numeric, double sliderMinimum, double sliderMaximum, double sliderStep, int column, int row)
         {
             var slider = new Slider
             {
@@ -196,24 +196,25 @@ internal sealed class IconThemeSvgReplaceDialog
 
             var stack = new StackPanel
             {
-                Spacing = 4,
+                Spacing = 6,
                 Children =
                 {
-                    new TextBlock { Text = label, FontSize = 12, Opacity = 0.78 },
                     new Grid
                     {
-                        ColumnDefinitions = new ColumnDefinitions("*,78"),
+                        ColumnDefinitions = new ColumnDefinitions("*,82"),
                         ColumnSpacing = 8,
                         Children =
                         {
-                            slider,
+                            new TextBlock { Text = label, FontSize = 12, Opacity = 0.78, VerticalAlignment = VerticalAlignment.Center },
                             numeric,
                         },
                     },
+                    slider,
                 },
             };
             Grid.SetColumn(numeric, 1);
             Grid.SetColumn(stack, column);
+            Grid.SetRow(stack, row);
             return stack;
         }
 
@@ -278,21 +279,23 @@ internal sealed class IconThemeSvgReplaceDialog
         };
         Grid.SetColumn(previews.Children[1], 1);
 
-        var radiusEditor = NumberEditor("Radius", radius, 0, 12, 0.25, 2);
+        var radiusEditor = NumberEditor("Radius", radius, 0, 12, 0.25, 2, 0);
         var controls = new Grid
         {
-            ColumnDefinitions = new ColumnDefinitions("*,*,*,*,*,*,*,*"),
-            ColumnSpacing = 8,
+            ColumnDefinitions = new ColumnDefinitions("*,*,*,*"),
+            RowDefinitions = new RowDefinitions("Auto,Auto"),
+            ColumnSpacing = 14,
+            RowSpacing = 10,
             Children =
             {
                 LabeledControl("Mode", modeBox),
-                NumberEditor("Padding", padding, 0, 12, 0.25, 1),
+                NumberEditor("Padding", padding, 0, 12, 0.25, 1, 0),
                 radiusEditor,
-                NumberEditor("Stroke", stroke, 0, 8, 0.05, 3),
-                NumberEditor("Scale", scale, 0.05, 8, 0.01, 4),
-                NumberEditor("Rotation", rotation, -180, 180, 1, 5),
-                NumberEditor("Offset X", offsetX, -12, 12, 0.25, 6),
-                NumberEditor("Offset Y", offsetY, -12, 12, 0.25, 7),
+                NumberEditor("Stroke", stroke, 0, 8, 0.05, 3, 0),
+                NumberEditor("Scale", scale, 0.05, 8, 0.01, 0, 1),
+                NumberEditor("Rotation", rotation, -180, 180, 1, 1, 1),
+                NumberEditor("Offset X", offsetX, -12, 12, 0.25, 2, 1),
+                NumberEditor("Offset Y", offsetY, -12, 12, 0.25, 3, 1),
             },
         };
         void UpdateMode()
