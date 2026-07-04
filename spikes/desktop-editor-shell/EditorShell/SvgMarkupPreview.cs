@@ -104,7 +104,7 @@ internal sealed class SvgMarkupPreview : Grid
                   z-index: 2;
                 }
 
-                svg {
+                .icon-frame > svg {
                   display: block;
                   width: 100%;
                   height: 100%;
