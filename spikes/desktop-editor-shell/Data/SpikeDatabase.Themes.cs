@@ -376,6 +376,7 @@ internal sealed partial class SpikeDatabase
             },
             ["radii"] = new JsonObject
             {
+                ["none"] = 0,
                 ["control"] = 8,
                 ["card"] = 14,
                 ["panel"] = 20,

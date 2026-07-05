@@ -2015,11 +2015,31 @@ internal sealed partial class SpikeDatabase
               ]
             },
             {
+              "id": "radii",
+              "label": "Radii",
+              "subtitle": "Shared corner radius tokens",
+              "icon": "{{EditorIcons.Layout}}",
+              "order": 50,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                {
+                  "id": "radii",
+                  "label": "Radii",
+                  "order": 10,
+                  "visible": true,
+                  "fields": [
+                    { "id": "theme.radii.none", "order": 10, "visible": true }
+                  ]
+                }
+              ]
+            },
+            {
               "id": "shadow",
               "label": "Shadow",
               "subtitle": "Single reusable shadow token",
               "icon": "{{EditorIcons.Shadow}}",
-              "order": 50,
+              "order": 60,
               "visible": true,
               "defaultOpen": false,
               "groups": [
@@ -2258,7 +2278,8 @@ internal sealed partial class SpikeDatabase
                   { "id": "component.label.backgroundColorToken", "order": 40, "visible": true },
                   { "id": "component.label.textColorToken", "order": 90, "visible": true },
                   { "id": "component.label.textSizeToken", "order": 100, "visible": true },
-                  { "id": "component.label.textStyle", "order": 110, "visible": true }
+                  { "id": "component.label.textStyle", "order": 110, "visible": true },
+                  { "id": "component.label.textAlign", "order": 120, "visible": true }
                 ] },
                 { "id": "labelSubtext", "label": "Subtext", "order": 20, "visible": true, "fields": [
                   { "id": "component.label.textGap", "order": 10, "visible": true },

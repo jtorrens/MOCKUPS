@@ -12,6 +12,7 @@ export interface LabelDesignContract {
   textColorToken: string;
   textSizeToken: string;
   textStyle: "normal" | "italic";
+  textAlign: "left" | "center" | "right";
   textGap: number;
   subtextColorToken: string;
   subtextSizeToken: string;
@@ -130,6 +131,11 @@ export function resolveLabelComponent(
     throw new Error(`Unsupported label text style ${textStyle}`);
   }
 
+  const textAlign = requiredString(label, "textAlign", "component.label.textAlign");
+  if (textAlign !== "left" && textAlign !== "center" && textAlign !== "right") {
+    throw new Error(`Unsupported label text align ${textAlign}`);
+  }
+
   const subtextStyle = requiredString(
     label,
     "subtextStyle",
@@ -167,6 +173,7 @@ export function resolveLabelComponent(
       "component.label.textSizeToken",
     ),
     textStyle,
+    textAlign,
     textGap: requiredNumber(label, "textGap", "component.label.textGap"),
     subtextColorToken: requiredString(
       label,

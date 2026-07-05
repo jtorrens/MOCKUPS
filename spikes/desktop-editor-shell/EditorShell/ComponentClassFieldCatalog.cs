@@ -50,6 +50,7 @@ internal static class ComponentClassFieldCatalog
 
     private static readonly FieldOption[] RadiusTokenOptions =
     [
+        new("theme.radii.none", "radii.none"),
         new("theme.radii.control", "radii.control"),
         new("theme.radii.card", "radii.card"),
         new("theme.radii.panel", "radii.panel"),
@@ -72,6 +73,13 @@ internal static class ComponentClassFieldCatalog
     [
         new("normal", "Normal"),
         new("italic", "Italic"),
+    ];
+
+    private static readonly FieldOption[] TextAlignOptions =
+    [
+        new("left", "Left"),
+        new("center", "Center"),
+        new("right", "Right"),
     ];
 
     private static readonly FieldOption[] DimensionModeOptions =
@@ -181,6 +189,7 @@ internal static class ComponentClassFieldCatalog
         ["component.label.textColorToken"] = new("component.label.textColorToken", "Text color", ValueKind.ThemeToken, ["label", "textColorToken"], "theme.colors.textPrimary", Options: ThemeColorOptions),
         ["component.label.textSizeToken"] = new("component.label.textSizeToken", "Text size", ValueKind.ThemeToken, ["label", "textSizeToken"], "theme.typography.sizes.s", Options: TypographySizeOptions),
         ["component.label.textStyle"] = new("component.label.textStyle", "Text style", ValueKind.OptionToken, ["label", "textStyle"], "normal", Options: TextStyleOptions),
+        ["component.label.textAlign"] = new("component.label.textAlign", "Text align", ValueKind.OptionToken, ["label", "textAlign"], "center", Options: TextAlignOptions),
         ["component.label.textGap"] = new("component.label.textGap", "Text gap", ValueKind.Decimal, ["label", "textGap"], "2", Number: new NumberDefinition(-64, 64, 0.5m, 2)),
         ["component.label.subtextColorToken"] = new("component.label.subtextColorToken", "Subtext color", ValueKind.ThemeToken, ["label", "subtextColorToken"], "theme.colors.textSecondary", Options: ThemeColorOptions),
         ["component.label.subtextSizeToken"] = new("component.label.subtextSizeToken", "Subtext size", ValueKind.ThemeToken, ["label", "subtextSizeToken"], "theme.typography.sizes.xs", Options: TypographySizeOptions),

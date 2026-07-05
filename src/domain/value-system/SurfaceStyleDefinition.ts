@@ -55,6 +55,7 @@ export const SURFACE_STYLE_FIELDS = [
     kind: "themeRadiusToken",
     defaultValue: "radii.surface",
     options: [
+      "radii.none",
       "radii.control",
       "radii.card",
       "radii.panel",

@@ -1706,6 +1706,7 @@ function defaultThemeTokens(family: "ios" | "android") {
       lg: 24,
     },
     radii: {
+      none: 0,
       control: 8,
       card: isAndroid ? 16 : 12,
       panel: isAndroid ? 20 : 16,

@@ -21,6 +21,7 @@ internal static class ThemeNumericTokenCatalog
         Token("theme.typography.sizes.l", ["typography", "sizes", "l"]),
         Token("theme.typography.sizes.xl", ["typography", "sizes", "xl"]),
         Token("theme.typography.weight", ["typography", "weight"]),
+        Token("theme.radii.none", ["radii", "none"]),
         Token("theme.radii.control", ["radii", "control"]),
         Token("theme.radii.card", ["radii", "card"]),
         Token("theme.radii.panel", ["radii", "panel"]),

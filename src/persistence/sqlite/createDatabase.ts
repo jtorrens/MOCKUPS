@@ -2644,6 +2644,7 @@ function applyAdditiveV39Migration(database: SQLiteDatabase): void {
       const nextTokens = {
         ...tokens,
         radii: {
+          none: typeof radii.none === "number" ? radii.none : 0,
           control: typeof radii.control === "number" ? radii.control : 8,
           card: typeof radii.card === "number" ? radii.card : 12,
           panel:
@@ -2689,6 +2690,41 @@ function applyAdditiveV40Migration(database: SQLiteDatabase): void {
   database.pragma("user_version = 40");
 }
 
+function applyAdditiveV41Migration(database: SQLiteDatabase): void {
+  const themeRows = database
+    .prepare("SELECT id, tokens_json FROM themes ORDER BY id")
+    .all() as { id: string; tokens_json: string }[];
+  const updateTheme = database.prepare(
+    "UPDATE themes SET tokens_json = ? WHERE id = ?",
+  );
+  for (const row of themeRows) {
+    try {
+      const tokens = JSON.parse(row.tokens_json) as Record<string, unknown>;
+      const radii =
+        tokens.radii && typeof tokens.radii === "object" && !Array.isArray(tokens.radii)
+          ? (tokens.radii as Record<string, unknown>)
+          : {};
+      if (typeof radii.none === "number") {
+        continue;
+      }
+
+      updateTheme.run(
+        JSON.stringify({
+          ...tokens,
+          radii: {
+            none: 0,
+            ...radii,
+          },
+        }),
+        row.id,
+      );
+    } catch {
+      // Malformed JSON is handled by validation paths; skip migration here.
+    }
+  }
+  database.pragma("user_version = 41");
+}
+
 export function applyInitialSchema(database: SQLiteDatabase): void {
   database.exec(readFileSync(schemaPath, "utf8"));
   applyAdditiveV2Migration(database);
@@ -2730,6 +2766,7 @@ export function applyInitialSchema(database: SQLiteDatabase): void {
   applyAdditiveV38Migration(database);
   applyAdditiveV39Migration(database);
   applyAdditiveV40Migration(database);
+  applyAdditiveV41Migration(database);
   database.pragma("foreign_keys = ON");
 }
 

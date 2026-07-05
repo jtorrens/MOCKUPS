@@ -275,7 +275,7 @@ export function labelComponentToRenderable(
           textColor: selectedColor(payload, label.textColorToken),
           fontSize,
           lineHeight: size.lineHeight,
-          textAlign: "center",
+          textAlign: label.textAlign,
           fontStyle: label.textStyle === "italic" ? "italic" : undefined,
           whiteSpace: "nowrap",
         },
@@ -292,7 +292,7 @@ export function labelComponentToRenderable(
                 fontSize: subtextFontSize,
                 lineHeight: size.subtextLineHeight,
                 marginTop: label.textGap * scale,
-                textAlign: "center",
+                textAlign: label.textAlign,
                 fontStyle:
                   label.subtextStyle === "italic" ? "italic" : undefined,
                 whiteSpace: "nowrap",

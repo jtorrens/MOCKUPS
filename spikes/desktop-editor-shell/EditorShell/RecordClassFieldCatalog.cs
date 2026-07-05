@@ -197,6 +197,7 @@ internal static class RecordClassFieldCatalog
         ["theme.typography.sizes.xl"] = new("theme.typography.sizes.xl", "Text XL", ValueKind.Integer),
         ["theme.typography.weight"] = new("theme.typography.weight", "Weight", ValueKind.OptionToken),
         ["theme.typography.style"] = new("theme.typography.style", "Style", ValueKind.OptionToken),
+        ["theme.radii.none"] = new("theme.radii.none", "None", ValueKind.Integer),
 
         ["actor.shortName"] = new("actor.shortName", "Short name", ValueKind.StringSingleLine),
         ["actor.defaultDeviceId"] = new("actor.defaultDeviceId", "Default device", ValueKind.OptionToken),

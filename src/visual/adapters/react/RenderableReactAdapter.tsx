@@ -1430,7 +1430,9 @@ function RenderNode({
                   : undefined,
               whiteSpace: "nowrap",
               overflow: "hidden",
-              textAlign: "center",
+              textAlign:
+                (stringValue(node.style?.textAlign) as CSSProperties["textAlign"]) ??
+                "center",
             }
         : node.type === "component_preview_unsupported"
           ? {

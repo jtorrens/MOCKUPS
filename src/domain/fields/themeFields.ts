@@ -152,6 +152,17 @@ export const THEME_FIELDS = defineFields({
       step: 1,
     },
   },
+  radiusNone: {
+    id: "theme.radii.none",
+    kind: "decimal",
+    defaultValue: 0,
+    ui: {
+      label: "None",
+      group: GROUPS.radii,
+      min: 0,
+      step: 1,
+    },
+  },
   radiusControl: {
     id: "theme.radii.control",
     kind: "decimal",

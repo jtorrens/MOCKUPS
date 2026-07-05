@@ -86,6 +86,7 @@ export function createExampleDataset(): RepositoryDataset {
         foreground: "gray_000",
       },
       radii: resolvedChatSource.theme.radii ?? {
+        none: 0,
         control: 8,
         card: 12,
         panel: 16,
@@ -415,6 +416,7 @@ export function createExampleDataset(): RepositoryDataset {
       ],
     },
     radii: {
+      none: 0,
       control: 8,
       card: 12,
       panel: 16,

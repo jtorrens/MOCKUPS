@@ -257,6 +257,7 @@ export function normalizedThemeTokenRoot({
     radii: isJsonObject(root.radii as JsonValue)
       ? root.radii
       : {
+          none: 0,
           control: 8,
           card: family === "android" ? 16 : 12,
           panel: family === "android" ? 20 : 16,

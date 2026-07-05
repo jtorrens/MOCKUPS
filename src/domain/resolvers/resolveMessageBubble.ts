@@ -164,6 +164,7 @@ const MessageThemeSchema = z.object({
   shadows: z.record(z.string(), z.unknown()).optional(),
   surfaceRelief: z.record(z.string(), z.unknown()).optional(),
   radii: z.object({
+    none: z.number().min(0),
     control: z.number().min(0),
     card: z.number().min(0),
     panel: z.number().min(0),

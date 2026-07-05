@@ -332,6 +332,7 @@ internal sealed partial class SpikeDatabase
                     ["textColorToken"] = "theme.colors.textPrimary",
                     ["textSizeToken"] = "theme.typography.sizes.s",
                     ["textStyle"] = "normal",
+                    ["textAlign"] = "center",
                     ["textGap"] = 2,
                     ["subtextColorToken"] = "theme.colors.textSecondary",
                     ["subtextSizeToken"] = "theme.typography.sizes.xs",
