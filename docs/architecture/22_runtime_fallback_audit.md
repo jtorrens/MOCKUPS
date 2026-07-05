@@ -36,12 +36,75 @@ values. The rule is:
   no longer keep a parallel Visual IR resolver.
 - The desktop Visual IR spike has been removed. The web preview is the source of
   truth for design preview rendering.
+- `component.avatar` now renders through the component resolver/web bridge path.
+  Its embedded `component.label` is resolved from the label base class plus
+  slot-local overrides; it is not duplicated into the avatar class.
+- Embedded component override highlighting now tracks stored override presence,
+  not effective-value differences against the base class.
+- The design preview surface no longer invents a plausible light/dark
+  background color when the theme background token is missing. Missing
+  background now fails visibly.
+
+## Component Preview Boundary Audit
+
+Active component class preview routes:
+
+| Component | Status | Route |
+| --- | --- | --- |
+| `component.label` | migrated | `resolveLabelComponent` -> `labelComponentToRenderable` -> web renderer |
+| `component.avatar` | migrated | `resolveAvatarComponent` -> `avatarComponentToRenderable` -> embedded label bridge |
+| other component classes | blocked intentionally | `component_preview_unsupported` with `debug_red` |
+
+System bar preview routes:
+
+| Preview | Status | Route |
+| --- | --- | --- |
+| status bar | migrated for desktop preview | `resolveStatusBar` -> `statusBarToRenderable` -> web renderer |
+| navigation bar | migrated for desktop preview | `resolveNavigationBar` -> `navigationBarToRenderable` -> web renderer |
+
+Status/navigation currently reuse the existing web atomic modules as renderer
+helpers. This is allowed because it stays inside the web rendering layer. It
+must not become a shortcut for component-class preview or embedded-component
+composition. If status/navigation become component classes later, they must get
+component resolvers and bridge functions like label/avatar.
+
+No active desktop preview path may use:
+
+- Visual IR;
+- Avalonia duplicate rendering;
+- `message_bubble_*` render nodes for migrated component classes;
+- raw component config reads inside the web renderer;
+- editor inheritance or override logic inside the web renderer.
+
+## Boundary Watch List
+
+- `renderDesignPreviewHtml.tsx` should remain a dispatcher. It may select the
+  component resolver by type and wrap the result in the preview surface, but it
+  must not grow component-specific field logic.
+- `webPreviewBridge.ts` is now the largest active preview file. Its current role
+  is acceptable, but future generic color/token/icon/pixel routines should move
+  to shared desktop-preview helpers before they spread.
+- `MainWindow.axaml.cs` still hosts the generic embedded-editor navigation and
+  card rebuilding. This is acceptable only while it remains generic shell
+  orchestration. Component-specific embedded behavior belongs in
+  `EmbeddedComponentSlotCatalog`, field catalogs, field value services and
+  resolvers.
+- `systemBarPreviewResolver.ts` uses optional item fields for label/token/value
+  because those collection rows allow item-type-dependent payloads. Keep that
+  limited to collection normalization; required layout/style data should stay
+  strict.
 
 ## Needs Follow-Up
 
 - Device metric parsing still has defensive defaults in `DeviceMetricRules`.
   These should be audited separately when imported devices become part of the
   trusted data contract.
+- The old runtime visual modules under `src/visual/modules/**` are still present
+  for existing web runtime paths. They are not component-class preview
+  compatibility. When a component is migrated to the new component resolver path,
+  do not reuse old module-specific branches to make it look correct.
+- Message bubble migration must be all-owned-subcomponents-at-once, following
+  `docs/architecture/23_embedded_component_composition_contract.md`.
 
 ## Rule For New Work
 

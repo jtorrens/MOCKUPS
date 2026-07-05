@@ -164,6 +164,31 @@ unsupported placeholder. Do not reuse runtime `message_bubble_*` nodes,
 component-specific module shortcuts, or plausible layout defaults to make an
 unmigrated component look partially correct.
 
+### Embedded component composition guardrail
+
+Embedded components are recursive component slots, not copied field groups. The
+authoritative contract is:
+
+- `docs/architecture/23_embedded_component_composition_contract.md`
+
+The reference implementation is `component.avatar` embedding `component.label`.
+
+Future embedded components must preserve this route:
+
+```text
+parent component slot
+  -> child base component config
+  -> slot-local overrides
+  -> child resolver contract
+  -> bridge token/pixel resolution
+  -> web renderable
+```
+
+Do not add child scalar fields directly to the parent field catalog. Do not
+decide override state by comparing effective values with the base component.
+Override state is stored state and only disappears when the override entry is
+removed.
+
 ### Bubble component migration guardrail
 
 When message bubble rendering is migrated to the new preview path, migrate the

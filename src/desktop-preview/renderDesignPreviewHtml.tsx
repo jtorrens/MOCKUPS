@@ -70,11 +70,9 @@ function modeTokens(payload: DesignPreviewPayload) {
 function themeBackground(payload: DesignPreviewPayload) {
   const colors = asRecord(modeTokens(payload).colors);
   const value = resolvePaletteValue(payload, colors.background);
-  return typeof value === "string" && value.trim()
-    ? value
-    : payload.themeMode === "dark"
-      ? "#101827"
-      : "#F7F9FC";
+  if (typeof value === "string" && value.trim()) return value;
+
+  throw new Error(`Missing theme background color for mode ${payload.themeMode}`);
 }
 
 function componentRenderableForPayload(

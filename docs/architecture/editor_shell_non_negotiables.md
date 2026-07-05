@@ -13,6 +13,7 @@ The short operational version also lives in the repository root as `AGENTS.md` s
 For the cleanup order and migration guardrails, also read:
 
 - `docs/architecture/editor_modernization_roadmap.md`
+- `docs/architecture/23_embedded_component_composition_contract.md`
 
 Two rules override local convenience:
 
@@ -171,6 +172,26 @@ Examples of disallowed manual value controls:
 - ad hoc dropdown for an enum;
 - ad hoc color picker outside the color control;
 - ad hoc X/Y layout outside the pair control.
+
+## 5A. Embedded components are recursive component slots
+
+Embedded components must follow the component composition contract in
+`docs/architecture/23_embedded_component_composition_contract.md`.
+
+The short version:
+
+- a parent component owns a slot and slot-local overrides;
+- the child component keeps its own field catalog, controls, resolver and bridge;
+- the parent must not copy the child's scalar fields into its own field catalog;
+- amber override state means "an override entry exists", not "effective value
+  differs from the base";
+- inherited/restored fields remove the override entry;
+- resolvers merge child base config plus slot overrides before the bridge;
+- the bridge resolves tokens, palette colors and device pixels;
+- the web renderer paints final visuals and must not understand inheritance.
+
+This is intentionally recursive. A child component can later embed another
+component through the same slot/override mechanism.
 
 ## 5B. `MainWindow` is shell-only
 
