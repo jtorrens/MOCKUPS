@@ -647,7 +647,7 @@ internal static class DesignPreviewFrameResolver
             var blurRadius = hardCoverage > 0 || spread <= 0
                 ? 0
                 : Math.Max(0.1, spread) * fadeDistance / spread;
-            layers.Add(ReliefHalfLayer(
+            layers.Add(ReliefStroke(
                 $"component.label.relief.top.{index + 1}",
                 bounds,
                 cornerRadius,
@@ -655,9 +655,8 @@ internal static class DesignPreviewFrameResolver
                 lightX * distance,
                 lightY * distance,
                 topIntensity * fade,
-                blurRadius,
-                HalfClip(bounds, lightX, lightY)));
-            layers.Add(ReliefHalfLayer(
+                blurRadius));
+            layers.Add(ReliefStroke(
                 $"component.label.relief.bottom.{index + 1}",
                 bounds,
                 cornerRadius,
@@ -665,56 +664,10 @@ internal static class DesignPreviewFrameResolver
                 -lightX * distance,
                 -lightY * distance,
                 bottomIntensity * fade,
-                blurRadius,
-                HalfClip(bounds, -lightX, -lightY)));
+                blurRadius));
         }
 
         return layers;
-    }
-
-    private static ResolvedDesignGroupNode ReliefHalfLayer(
-        string id,
-        DesignRect bounds,
-        double cornerRadius,
-        string baseColorToken,
-        double offsetX,
-        double offsetY,
-        double brightnessMultiplier,
-        double blurRadius,
-        DesignRect clipRect)
-    {
-        return new ResolvedDesignGroupNode
-        {
-            Id = id,
-            Bounds = new DesignRect(0, 0, bounds.Width, bounds.Height),
-            ClipRect = clipRect,
-            Children =
-            [
-                ReliefStroke(
-                    $"{id}.stroke",
-                    bounds,
-                    cornerRadius,
-                    baseColorToken,
-                    offsetX,
-                    offsetY,
-                    brightnessMultiplier,
-                    blurRadius),
-            ],
-        };
-    }
-
-    private static DesignRect HalfClip(DesignRect bounds, double directionX, double directionY)
-    {
-        if (Math.Abs(directionY) >= Math.Abs(directionX))
-        {
-            return directionY < 0
-                ? new DesignRect(0, 0, bounds.Width, bounds.Height / 2)
-                : new DesignRect(0, bounds.Height / 2, bounds.Width, bounds.Height / 2);
-        }
-
-        return directionX < 0
-            ? new DesignRect(0, 0, bounds.Width / 2, bounds.Height)
-            : new DesignRect(bounds.Width / 2, 0, bounds.Width / 2, bounds.Height);
     }
 
     private static ResolvedDesignRectNode ReliefStroke(
