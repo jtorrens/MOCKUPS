@@ -181,6 +181,10 @@ internal static class ComponentClassFieldCatalog
         ["component.label.textColorToken"] = new("component.label.textColorToken", "Text color", ValueKind.ThemeToken, ["label", "textColorToken"], "theme.colors.textPrimary", Options: ThemeColorOptions),
         ["component.label.textSizeToken"] = new("component.label.textSizeToken", "Text size", ValueKind.ThemeToken, ["label", "textSizeToken"], "theme.typography.sizes.s", Options: TypographySizeOptions),
         ["component.label.textStyle"] = new("component.label.textStyle", "Text style", ValueKind.OptionToken, ["label", "textStyle"], "normal", Options: TextStyleOptions),
+        ["component.label.textGap"] = new("component.label.textGap", "Text gap", ValueKind.Decimal, ["label", "textGap"], "2", Number: new NumberDefinition(0, 64, 0.5m, 2)),
+        ["component.label.subtextColorToken"] = new("component.label.subtextColorToken", "Subtext color", ValueKind.ThemeToken, ["label", "subtextColorToken"], "theme.colors.textSecondary", Options: ThemeColorOptions),
+        ["component.label.subtextSizeToken"] = new("component.label.subtextSizeToken", "Subtext size", ValueKind.ThemeToken, ["label", "subtextSizeToken"], "theme.typography.sizes.xs", Options: TypographySizeOptions),
+        ["component.label.subtextStyle"] = new("component.label.subtextStyle", "Subtext style", ValueKind.OptionToken, ["label", "subtextStyle"], "normal", Options: TextStyleOptions),
 
         ["component.audio.size"] = new("component.audio.size", "Size", ValueKind.IntegerPair, ["audio", "size"], "230|54", PairLabels: new("W", "H")),
         ["component.audio.avatarPosition"] = new("component.audio.avatarPosition", "Avatar position", ValueKind.OptionToken, ["audio", "avatarPosition"], "right", Options: AvatarPositionOptions),

@@ -123,19 +123,25 @@ internal sealed partial class SpikeDatabase
         {
             var config = ParseJsonObject(string.IsNullOrWhiteSpace(row.ConfigJson) ? "{}" : row.ConfigJson);
             var defaults = ParseJsonObject(DefaultComponentClassConfigJson(row.ComponentType));
-            var changed = JsonPath.MergeMissing(config, defaults);
-            changed |= NormalizeReliefIntensity(config, "reliefTopIntensity");
-            changed |= NormalizeReliefIntensity(config, "reliefBottomIntensity");
-            if (!changed)
+            var configChanged = JsonPath.MergeMissing(config, defaults);
+            configChanged |= NormalizeReliefIntensity(config, "reliefTopIntensity");
+            configChanged |= NormalizeReliefIntensity(config, "reliefBottomIntensity");
+
+            var designPreview = ParseJsonObject(string.IsNullOrWhiteSpace(row.DesignPreviewJson) ? "{}" : row.DesignPreviewJson);
+            var designPreviewDefaults = ParseJsonObject(DefaultComponentDesignPreviewJson(row.ComponentType));
+            var designPreviewChanged = JsonPath.MergeMissing(designPreview, designPreviewDefaults);
+
+            if (!configChanged && !designPreviewChanged)
             {
                 continue;
             }
 
             Execute(
                 connection,
-                "UPDATE component_classes SET config_json = $configJson WHERE id = $id",
+                "UPDATE component_classes SET config_json = $configJson, design_preview_json = $designPreviewJson WHERE id = $id",
                 ("$id", row.Id),
-                ("$configJson", config.ToJsonString()));
+                ("$configJson", config.ToJsonString()),
+                ("$designPreviewJson", designPreview.ToJsonString()));
         }
     }
 
@@ -326,6 +332,10 @@ internal sealed partial class SpikeDatabase
                     ["textColorToken"] = "theme.colors.textPrimary",
                     ["textSizeToken"] = "theme.typography.sizes.s",
                     ["textStyle"] = "normal",
+                    ["textGap"] = 2,
+                    ["subtextColorToken"] = "theme.colors.textSecondary",
+                    ["subtextSizeToken"] = "theme.typography.sizes.xs",
+                    ["subtextStyle"] = "normal",
                 };
                 break;
             case "audio":
@@ -368,6 +378,7 @@ internal sealed partial class SpikeDatabase
                 "video" => "0:12",
                 _ => "Sample",
             },
+            sampleSubtext = componentType == "label" ? "Subtitle" : "",
             sampleSize = 256,
         });
     }

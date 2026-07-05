@@ -156,22 +156,44 @@ function centerBox(payload: DesignPreviewPayload, width: number, height: number)
   };
 }
 
-function labelSize(label: LabelDesignContract, fontSize: number, scale: number) {
+function labelTextWidth(text: string, fontSize: number) {
+  return text.length * fontSize * 0.58;
+}
+
+function labelSize(
+  label: LabelDesignContract,
+  fontSize: number,
+  subtextFontSize: number,
+  scale: number,
+) {
   const paddingX = label.padding.x * scale;
   const paddingY = label.padding.y * scale;
-  const lineHeight = Math.max(fontSize * 1.2, fontSize + paddingY * 0.5);
+  const hasSubtext = label.subtext.trim().length > 0;
+  const lineHeight = Math.max(fontSize * 1.2, fontSize);
+  const subtextLineHeight = Math.max(subtextFontSize * 1.2, subtextFontSize);
+  const textGap = hasSubtext ? label.textGap * scale : 0;
+  const contentWidth = Math.max(
+    labelTextWidth(label.text, fontSize),
+    hasSubtext ? labelTextWidth(label.subtext, subtextFontSize) : 0,
+  );
+  const contentHeight =
+    lineHeight + (hasSubtext ? textGap + subtextLineHeight : 0);
   if (label.dimensionMode === "fixed") {
     return {
       width: label.size.width * scale,
       height: label.size.height * scale,
       lineHeight,
+      subtextLineHeight,
+      hasSubtext,
     };
   }
 
   return {
-    width: Math.max(1, label.text.length * fontSize * 0.58 + paddingX * 2),
-    height: Math.max(1, lineHeight + paddingY * 2),
+    width: Math.max(1, contentWidth + paddingX * 2),
+    height: Math.max(1, contentHeight + paddingY * 2),
     lineHeight,
+    subtextLineHeight,
+    hasSubtext,
   };
 }
 
@@ -181,7 +203,8 @@ export function labelComponentToRenderable(
 ): RenderableNode {
   const scale = renderScale(payload);
   const fontSize = numberToken(payload, label.textSizeToken) * scale;
-  const size = labelSize(label, fontSize, scale);
+  const subtextFontSize = numberToken(payload, label.subtextSizeToken) * scale;
+  const size = labelSize(label, fontSize, subtextFontSize, scale);
   const box = centerBox(payload, size.width, size.height);
   const borderWidth = label.surface.borderWidth * scale;
   const background = selectedColor(
@@ -210,21 +233,16 @@ export function labelComponentToRenderable(
     type: "component_label",
     frame: 0,
     box,
-    text: label.text,
     style: {
       background,
-      textColor: selectedColor(payload, label.textColorToken),
       borderWidth,
       borderColor,
       borderRadius: cornerRadius,
       shadow: label.surface.shadowEnabled ? shadow(payload) : undefined,
       surfaceRelief,
-      fontSize,
-      lineHeight: size.lineHeight,
       paddingX: label.padding.x * scale,
       paddingY: label.padding.y * scale,
-      textAlign: "center",
-      fontStyle: label.textStyle === "italic" ? "italic" : undefined,
+      textGap: size.hasSubtext ? label.textGap * scale : 0,
       whiteSpace: "nowrap",
       colorModes: Object.fromEntries(
         variants(payload).map((mode) => [
@@ -237,6 +255,7 @@ export function labelComponentToRenderable(
               label.surfaceAlpha,
             ),
             textColor: colorForMode(payload, label.textColorToken, mode),
+            subtextColor: colorForMode(payload, label.subtextColorToken, mode),
             borderColor: colorForMode(
               payload,
               label.surface.borderColorToken,
@@ -247,6 +266,41 @@ export function labelComponentToRenderable(
         ]),
       ),
     },
+    children: [
+      {
+        id: `${label.id}.text`,
+        type: "component_label_text",
+        frame: 0,
+        text: label.text,
+        style: {
+          textColor: selectedColor(payload, label.textColorToken),
+          fontSize,
+          lineHeight: size.lineHeight,
+          textAlign: "center",
+          fontStyle: label.textStyle === "italic" ? "italic" : undefined,
+          whiteSpace: "nowrap",
+        },
+      },
+      ...(size.hasSubtext
+        ? [
+            {
+              id: `${label.id}.subtext`,
+              type: "component_label_subtext",
+              frame: 0,
+              text: label.subtext,
+              style: {
+                textColor: selectedColor(payload, label.subtextColorToken),
+                fontSize: subtextFontSize,
+                lineHeight: size.subtextLineHeight,
+                textAlign: "center",
+                fontStyle:
+                  label.subtextStyle === "italic" ? "italic" : undefined,
+                whiteSpace: "nowrap",
+              },
+            },
+          ]
+        : []),
+    ],
     metadata: {
       route: "component-resolver.web-bridge",
       componentType: "label",

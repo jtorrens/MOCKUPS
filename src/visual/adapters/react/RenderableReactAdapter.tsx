@@ -1414,12 +1414,23 @@ function RenderNode({
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              flexDirection: node.type === "component_label" ? "column" : undefined,
+              gap: numberValue(node.style?.textGap),
               paddingLeft: numberValue(node.style?.paddingX),
               paddingRight: numberValue(node.style?.paddingX),
               paddingTop: numberValue(node.style?.paddingY),
               paddingBottom: numberValue(node.style?.paddingY),
               whiteSpace: "nowrap",
               overflow: "visible",
+            }
+        : node.type === "component_label_text" ||
+            node.type === "component_label_subtext"
+          ? {
+              display: "block",
+              width: "100%",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textAlign: "center",
             }
         : node.type === "component_preview_unsupported"
           ? {

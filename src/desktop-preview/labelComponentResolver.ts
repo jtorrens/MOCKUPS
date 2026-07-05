@@ -3,6 +3,7 @@ import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 export interface LabelDesignContract {
   id: "component.label";
   text: string;
+  subtext: string;
   dimensionMode: "content" | "fixed";
   size: { width: number; height: number };
   padding: { x: number; y: number };
@@ -11,6 +12,10 @@ export interface LabelDesignContract {
   textColorToken: string;
   textSizeToken: string;
   textStyle: "normal" | "italic";
+  textGap: number;
+  subtextColorToken: string;
+  subtextSizeToken: string;
+  subtextStyle: "normal" | "italic";
   surface: {
     shadowEnabled: boolean;
     reliefEnabled: boolean;
@@ -43,6 +48,16 @@ function requiredString(
   const raw = value[key];
   if (typeof raw === "string" && raw.trim()) return raw;
   throw new Error(`Missing string component value ${path}`);
+}
+
+function requiredText(
+  value: Record<string, unknown>,
+  key: string,
+  path: string,
+) {
+  const raw = value[key];
+  if (typeof raw === "string") return raw;
+  throw new Error(`Missing text component value ${path}`);
 }
 
 function requiredBoolean(
@@ -115,9 +130,23 @@ export function resolveLabelComponent(
     throw new Error(`Unsupported label text style ${textStyle}`);
   }
 
+  const subtextStyle = requiredString(
+    label,
+    "subtextStyle",
+    "component.label.subtextStyle",
+  );
+  if (subtextStyle !== "normal" && subtextStyle !== "italic") {
+    throw new Error(`Unsupported label subtext style ${subtextStyle}`);
+  }
+
   return {
     id: "component.label",
     text: requiredString(preview, "sampleText", "component.label.preview.sampleText"),
+    subtext: requiredText(
+      preview,
+      "sampleSubtext",
+      "component.label.preview.sampleSubtext",
+    ),
     dimensionMode,
     size: { width: size.first, height: size.second },
     padding: { x: padding.first, y: padding.second },
@@ -138,6 +167,18 @@ export function resolveLabelComponent(
       "component.label.textSizeToken",
     ),
     textStyle,
+    textGap: requiredNumber(label, "textGap", "component.label.textGap"),
+    subtextColorToken: requiredString(
+      label,
+      "subtextColorToken",
+      "component.label.subtextColorToken",
+    ),
+    subtextSizeToken: requiredString(
+      label,
+      "subtextSizeToken",
+      "component.label.subtextSizeToken",
+    ),
+    subtextStyle,
     surface: {
       shadowEnabled: requiredBoolean(
         style,
