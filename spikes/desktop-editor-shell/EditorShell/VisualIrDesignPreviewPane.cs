@@ -89,6 +89,13 @@ internal sealed class VisualIrDesignPreviewPane : Grid
             Width = frameWidth + frameBorderThickness,
             Height = frameHeight + frameBorderThickness,
             ClipToBounds = false,
+            Effect = new DropShadowEffect
+            {
+                Color = Color.Parse("#66000000"),
+                BlurRadius = 28,
+                OffsetX = 0,
+                OffsetY = 12,
+            },
         };
         var clippedDesign = new Border
         {
