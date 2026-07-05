@@ -83,20 +83,24 @@ internal sealed class VisualIrDesignPreviewPane : Grid
         const double frameBorderThickness = 10;
         var scale = metrics.ScaleToPixels > 0 ? metrics.ScaleToPixels : 1;
         var cornerRadius = metrics.CornerRadius / scale;
+        var candyOffset = frameBorderThickness / 2;
         var canvas = new Canvas
         {
-            Width = frameWidth,
-            Height = frameHeight,
-            ClipToBounds = true,
+            Width = frameWidth + frameBorderThickness,
+            Height = frameHeight + frameBorderThickness,
+            ClipToBounds = false,
         };
-        canvas.Children.Add(new Border
+        var clippedDesign = new Border
         {
             Width = frameWidth,
             Height = frameHeight,
             CornerRadius = new CornerRadius(cornerRadius),
             ClipToBounds = true,
             Child = rendered,
-        });
+        };
+        Canvas.SetLeft(clippedDesign, candyOffset);
+        Canvas.SetTop(clippedDesign, candyOffset);
+        canvas.Children.Add(clippedDesign);
         var frameBorder = new Border
         {
             Width = frameWidth + frameBorderThickness,
@@ -106,8 +110,6 @@ internal sealed class VisualIrDesignPreviewPane : Grid
             CornerRadius = new CornerRadius(cornerRadius + frameBorderThickness / 2),
             IsHitTestVisible = false,
         };
-        Canvas.SetLeft(frameBorder, -frameBorderThickness / 2);
-        Canvas.SetTop(frameBorder, -frameBorderThickness / 2);
         canvas.Children.Add(frameBorder);
 
         var meta = new TextBlock
@@ -118,8 +120,8 @@ internal sealed class VisualIrDesignPreviewPane : Grid
             FontSize = 10,
             Padding = new Thickness(8, 4),
         };
-        Canvas.SetLeft(meta, 12);
-        Canvas.SetTop(meta, frameHeight - 30);
+        Canvas.SetLeft(meta, candyOffset + 12);
+        Canvas.SetTop(meta, candyOffset + frameHeight - 30);
         canvas.Children.Add(meta);
 
         canvas.HorizontalAlignment = HorizontalAlignment.Center;
