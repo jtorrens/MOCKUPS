@@ -284,7 +284,7 @@ public sealed class EditorInstantComboBox : Grid
     private void ApplyThemeBrushes()
     {
         var isLight = ActualThemeVariant == ThemeVariant.Light;
-        var background = isLight ? "#14000000" : "#18FFFFFF";
+        var background = isLight ? "#14000000" : "#10FFFFFF";
         var popupBackground = isLight ? "#F4F6FA" : "#F01A2433";
         _button.Background = new SolidColorBrush(Color.Parse(background));
         _popupBorder.Background = new SolidColorBrush(Color.Parse(popupBackground));

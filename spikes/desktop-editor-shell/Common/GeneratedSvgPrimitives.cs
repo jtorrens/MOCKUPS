@@ -98,7 +98,7 @@ internal static class GeneratedSvgPrimitives
         {
             "generatedBack" => $"""<path d="{RoundedBackPath(radius)}" fill="{fill}" {common}/>""",
             "generatedRecents" => $"""<rect x="28" y="28" width="44" height="44" rx="{N(radius)}" ry="{N(radius)}" fill="{fill}" {common}/>""",
-            _ => $"""<rect x="27" y="27" width="46" height="46" rx="{N(radius)}" ry="{N(radius)}" fill="{fill}" {common}/>""",
+            _ => $"""<circle cx="50" cy="50" r="23" fill="{fill}" {common}/>""",
         };
         return new GeneratedSvgPrimitive(
             $"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%" style="display:block;overflow:visible">{child}</svg>""",
