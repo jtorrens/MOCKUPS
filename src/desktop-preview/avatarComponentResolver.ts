@@ -1,8 +1,5 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import {
-  defaultLabelComponentConfig,
-  mergeComponentDefaults,
-} from "./componentPreviewDefaults.js";
+import { mergeComponentDefaults } from "./componentPreviewDefaults.js";
 import type { LabelDesignContract } from "./labelComponentResolver.js";
 import { resolveLabelComponentFromRecords } from "./labelComponentResolver.js";
 
@@ -38,6 +35,19 @@ function asRecord(value: unknown): Record<string, unknown> {
 
 function parseObject(json: string | undefined) {
   return asRecord(JSON.parse(json || "{}"));
+}
+
+function requiredRecord(
+  value: Record<string, unknown>,
+  key: string,
+  path: string,
+) {
+  const raw = value[key];
+  if (typeof raw === "object" && raw !== null && !Array.isArray(raw)) {
+    return raw as Record<string, unknown>;
+  }
+
+  throw new Error(`Missing object component value ${path}`);
 }
 
 function requiredString(
@@ -89,6 +99,7 @@ export function resolveAvatarComponent(
 ): AvatarDesignContract {
   const config = parseObject(payload.configJson);
   const preview = parseObject(payload.designPreviewJson);
+  const componentBaseConfigs = parseObject(payload.componentBaseConfigsJson);
   const avatar = asRecord(config.avatar);
   const labelSlot = asRecord(avatar.labelSlot);
   const style = asRecord(config.style);
@@ -113,7 +124,7 @@ export function resolveAvatarComponent(
   );
   const overrides = asRecord(labelSlot.overrides);
   const embeddedLabelConfig = mergeComponentDefaults(
-    defaultLabelComponentConfig(),
+    requiredRecord(componentBaseConfigs, "label", "componentBaseConfigs.label"),
     overrides,
   );
 

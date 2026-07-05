@@ -13,6 +13,7 @@ export interface DevicePayload {
 export interface DesignPreviewPayload {
   kind: "statusBar" | "navigationBar" | "componentClass";
   componentType?: string;
+  componentBaseConfigsJson?: string;
   configJson: string;
   designPreviewJson?: string;
   device: DevicePayload;

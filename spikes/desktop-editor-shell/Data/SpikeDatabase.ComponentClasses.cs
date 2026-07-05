@@ -17,6 +17,58 @@ internal sealed partial class SpikeDatabase
         return GetComponentClassSettings(connection, componentClassId);
     }
 
+    public string GetComponentClassBaseConfigsJson(string projectId)
+    {
+        using var connection = OpenConnection();
+        var configs = new JsonObject();
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT component_type, config_json
+            FROM component_classes
+            WHERE project_id = $projectId
+            ORDER BY CASE WHEN id = 'component_' || $projectId || '_' || component_type THEN 0 ELSE 1 END, name
+            """;
+        command.Parameters.AddWithValue("$projectId", projectId);
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            var componentType = reader.GetString(0);
+            if (configs.ContainsKey(componentType))
+            {
+                continue;
+            }
+
+            configs[componentType] = ParseJsonObject(ReadString(reader, 1));
+        }
+
+        return configs.ToJsonString();
+    }
+
+    private static string GetComponentClassBaseConfigJson(
+        SqliteConnection connection,
+        string projectId,
+        string componentType)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT config_json
+            FROM component_classes
+            WHERE project_id = $projectId
+              AND component_type = $componentType
+            ORDER BY CASE WHEN id = 'component_' || $projectId || '_' || component_type THEN 0 ELSE 1 END, name
+            LIMIT 1
+            """;
+        command.Parameters.AddWithValue("$projectId", projectId);
+        command.Parameters.AddWithValue("$componentType", componentType);
+        var configJson = command.ExecuteScalar() as string;
+        if (string.IsNullOrWhiteSpace(configJson))
+        {
+            throw new InvalidOperationException($"Missing base component class '{componentType}' for project '{projectId}'.");
+        }
+
+        return configJson;
+    }
+
     private static ComponentClassSettings GetComponentClassSettings(SqliteConnection connection, string componentClassId)
     {
         using var command = connection.CreateCommand();
@@ -100,7 +152,8 @@ internal sealed partial class SpikeDatabase
 
         var settings = GetComponentClassSettings(componentClassId);
         var descriptor = ComponentClassFieldCatalog.Get(embeddedFieldId);
-        var inheritedConfigJson = DefaultComponentClassConfigJson(embeddedComponentType);
+        using var connection = OpenConnection();
+        var inheritedConfigJson = GetComponentClassBaseConfigJson(connection, settings.ProjectId, embeddedComponentType);
         var inheritedValue = ComponentConfigFieldValue(inheritedConfigJson, descriptor);
         var config = ParseJsonObject(string.IsNullOrWhiteSpace(settings.ConfigJson) ? "{}" : settings.ConfigJson);
         var overrides = EmbeddedOverrides(config, slot, createIfMissing: false);

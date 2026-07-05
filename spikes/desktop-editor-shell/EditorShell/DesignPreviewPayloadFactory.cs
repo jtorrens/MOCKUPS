@@ -15,7 +15,8 @@ internal sealed record DesignPreviewPayload(
     string IconAssetRoot,
     string IconMappingJson,
     string ComponentType = "",
-    string DesignPreviewJson = "");
+    string DesignPreviewJson = "",
+    string ComponentBaseConfigsJson = "{}");
 
 internal static class DesignPreviewPayloadFactory
 {
@@ -107,6 +108,7 @@ internal static class DesignPreviewPayloadFactory
         SpikeDatabase.IconThemeSettings? iconTheme)
     {
         var settings = database.GetComponentClassSettings(node.Id);
+        var componentBaseConfigsJson = database.GetComponentClassBaseConfigsJson(settings.ProjectId);
         return new DesignPreviewPayload(
             "componentClass",
             settings.Name,
@@ -118,6 +120,7 @@ internal static class DesignPreviewPayloadFactory
             iconTheme?.AssetRoot ?? "",
             iconTheme?.MappingJson ?? "{}",
             settings.ComponentType,
-            settings.DesignPreviewJson);
+            settings.DesignPreviewJson,
+            componentBaseConfigsJson);
     }
 }

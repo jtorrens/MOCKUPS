@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Layout;
+using Avalonia.Media;
 using System;
 using System.Threading.Tasks;
 
@@ -24,6 +25,7 @@ internal sealed class DictionaryEmbeddedComponentControl : Grid, IDictionaryValu
         _label = new TextBlock
         {
             Text = DisplayText(value),
+            Foreground = LabelBrush(definition, value),
             VerticalAlignment = VerticalAlignment.Center,
             Opacity = 0.82,
         };
@@ -32,10 +34,13 @@ internal sealed class DictionaryEmbeddedComponentControl : Grid, IDictionaryValu
 
         var button = new Button
         {
-            Content = "...",
+            Content = "···",
             Width = 40,
             Height = 32,
             Padding = new Avalonia.Thickness(0),
+            Background = new SolidColorBrush(Color.Parse("#24D6A638")),
+            BorderBrush = new SolidColorBrush(Color.Parse("#D6A638")),
+            Foreground = new SolidColorBrush(Color.Parse("#D6A638")),
             HorizontalContentAlignment = HorizontalAlignment.Center,
             VerticalContentAlignment = VerticalAlignment.Center,
             IsEnabled = definition.IsEditable && openEmbeddedComponent is not null,
@@ -68,10 +73,18 @@ internal sealed class DictionaryEmbeddedComponentControl : Grid, IDictionaryValu
 
         _value = value;
         _label.Text = DisplayText(value);
+        _label.Foreground = LabelBrush(_definition, value);
     }
 
     private static string DisplayText(string value)
     {
         return string.IsNullOrWhiteSpace(value) ? "Embedded component" : value;
+    }
+
+    private static IBrush? LabelBrush(FieldDefinition definition, string value)
+    {
+        return !string.Equals(value, definition.DefaultValue, StringComparison.Ordinal)
+            ? new SolidColorBrush(Color.Parse("#D6A638"))
+            : null;
     }
 }
