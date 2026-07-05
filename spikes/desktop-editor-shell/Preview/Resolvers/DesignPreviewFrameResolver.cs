@@ -650,7 +650,7 @@ internal static class DesignPreviewFrameResolver
                 ? 1
                 : Math.Max(0, 1 - fadeDistance / (spread + 1));
             var blurRadius = hardCoverage > 0 || spread <= 0
-                ? 0.45
+                ? 0
                 : Math.Max(0.1, spread) * fadeDistance / spread;
             AddReliefEdge(
                 layers,
@@ -756,8 +756,9 @@ internal static class DesignPreviewFrameResolver
             from,
             to,
             [
-                new ResolvedDesignGradientStop(0, new ResolvedDesignColorRef($"{baseColorToken}.relief.start.{N(startBrightnessMultiplier)}", baseColorToken, "debug_red", startBrightnessMultiplier)),
-                new ResolvedDesignGradientStop(1, new ResolvedDesignColorRef($"{baseColorToken}.relief.end.{N(endBrightnessMultiplier)}", baseColorToken, "debug_red", endBrightnessMultiplier)),
+                new ResolvedDesignGradientStop(0, new ResolvedDesignColorRef($"{baseColorToken}.relief.start.0", baseColorToken, "debug_red", 0)),
+                new ResolvedDesignGradientStop(0.5, new ResolvedDesignColorRef($"{baseColorToken}.relief.center.{N(startBrightnessMultiplier)}", baseColorToken, "debug_red", startBrightnessMultiplier)),
+                new ResolvedDesignGradientStop(1, new ResolvedDesignColorRef($"{baseColorToken}.relief.end.0", baseColorToken, "debug_red", 0)),
             ]);
     }
 
