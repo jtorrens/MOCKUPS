@@ -4,6 +4,7 @@ using Mockups.DesktopEditorShell.EditorShell;
 using Mockups.DesktopEditorShell.Preview.Resolved;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.Json.Nodes;
@@ -638,6 +639,8 @@ internal static class DesignPreviewFrameResolver
         var totalDistance = extent + spread;
         var totalLayers = Math.Max(1, (int)Math.Ceiling(totalDistance));
         var layers = new List<ResolvedDesignNode>(totalLayers * 2);
+        var horizontalWeight = Math.Abs(lightX);
+        var verticalWeight = Math.Abs(lightY);
         for (var index = 0; index < totalLayers; index++)
         {
             var distance = Math.Min(index + 1, totalDistance);
@@ -649,47 +652,107 @@ internal static class DesignPreviewFrameResolver
             var blurRadius = hardCoverage > 0 || spread <= 0
                 ? 0
                 : Math.Max(0.1, spread) * fadeDistance / spread;
-            layers.Add(ReliefStroke(
-                $"component.label.relief.top.{index + 1}",
+            AddReliefEdge(
+                layers,
+                $"component.label.relief.top.y.{index + 1}",
                 bounds,
                 cornerRadius,
                 baseColorToken,
-                -lightX * distance,
+                lightY < 0 ? ReliefSide.Top : ReliefSide.Bottom,
+                0,
                 -lightY * distance,
-                topIntensity * fade,
-                blurRadius));
-            layers.Add(ReliefStroke(
-                $"component.label.relief.bottom.{index + 1}",
+                topIntensity * fade * verticalWeight,
+                blurRadius);
+            AddReliefEdge(
+                layers,
+                $"component.label.relief.top.x.{index + 1}",
                 bounds,
                 cornerRadius,
                 baseColorToken,
-                lightX * distance,
+                lightX < 0 ? ReliefSide.Left : ReliefSide.Right,
+                -lightX * distance,
+                0,
+                topIntensity * fade * horizontalWeight,
+                blurRadius);
+            AddReliefEdge(
+                layers,
+                $"component.label.relief.bottom.y.{index + 1}",
+                bounds,
+                cornerRadius,
+                baseColorToken,
+                lightY < 0 ? ReliefSide.Bottom : ReliefSide.Top,
+                0,
                 lightY * distance,
-                bottomIntensity * fade,
-                blurRadius));
+                bottomIntensity * fade * verticalWeight,
+                blurRadius);
+            AddReliefEdge(
+                layers,
+                $"component.label.relief.bottom.x.{index + 1}",
+                bounds,
+                cornerRadius,
+                baseColorToken,
+                lightX < 0 ? ReliefSide.Right : ReliefSide.Left,
+                lightX * distance,
+                0,
+                bottomIntensity * fade * horizontalWeight,
+                blurRadius);
         }
 
         return layers;
     }
 
-    private static ResolvedDesignRectNode ReliefStroke(
+    private static void AddReliefEdge(
+        ICollection<ResolvedDesignNode> layers,
         string id,
         DesignRect bounds,
         double cornerRadius,
         string baseColorToken,
+        ReliefSide side,
         double offsetX,
         double offsetY,
         double brightnessMultiplier,
         double blurRadius)
     {
-        return new ResolvedDesignRectNode
+        if (Math.Abs(brightnessMultiplier) < 0.0001)
+        {
+            return;
+        }
+
+        layers.Add(new ResolvedDesignSvgNode
         {
             Id = id,
             Bounds = new DesignRect(offsetX, offsetY, bounds.Width, bounds.Height),
-            Stroke = new ResolvedDesignStroke(ThemePaintAdjusted(baseColorToken, brightnessMultiplier), 1),
-            Radius = cornerRadius,
+            Markup = ReliefEdgeSvg(bounds.Width, bounds.Height, cornerRadius, side),
+            Fit = "fill",
+            Tint = ThemePaintAdjusted(baseColorToken, brightnessMultiplier),
             Effects = blurRadius > 0 ? [new ResolvedDesignBlurEffect(blurRadius)] : null,
+        });
+    }
+
+    private static string ReliefEdgeSvg(double width, double height, double radius, ReliefSide side)
+    {
+        var r = Math.Max(0, Math.Min(radius, Math.Min(width, height) / 2));
+        var d = side switch
+        {
+            ReliefSide.Top => $"M 0 {N(r)} Q 0 0 {N(r)} 0 H {N(width - r)} Q {N(width)} 0 {N(width)} {N(r)}",
+            ReliefSide.Bottom => $"M 0 {N(height - r)} Q 0 {N(height)} {N(r)} {N(height)} H {N(width - r)} Q {N(width)} {N(height)} {N(width)} {N(height - r)}",
+            ReliefSide.Left => $"M {N(r)} 0 Q 0 0 0 {N(r)} V {N(height - r)} Q 0 {N(height)} {N(r)} {N(height)}",
+            _ => $"M {N(width - r)} 0 Q {N(width)} 0 {N(width)} {N(r)} V {N(height - r)} Q {N(width)} {N(height)} {N(width - r)} {N(height)}",
         };
+        return $"""<svg xmlns="http://www.w3.org/2000/svg" width="{N(width)}" height="{N(height)}" viewBox="0 0 {N(width)} {N(height)}"><path d="{d}" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/></svg>""";
+    }
+
+    private static string N(double value)
+    {
+        return value.ToString("0.###", CultureInfo.InvariantCulture);
+    }
+
+    private enum ReliefSide
+    {
+        Top,
+        Right,
+        Bottom,
+        Left,
     }
 
     private static IReadOnlyDictionary<string, string> ComponentStyleMetadata(

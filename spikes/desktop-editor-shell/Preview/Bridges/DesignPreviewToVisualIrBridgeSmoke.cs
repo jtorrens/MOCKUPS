@@ -84,7 +84,9 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
 
         if (payload.Kind == "componentClass"
             && payload.ComponentType == "label"
-            && !Flatten(document.Root).OfType<VisualIrRectNode>().Any((rect) => rect.Id.StartsWith("component.label.relief.top.", StringComparison.Ordinal)))
+            && !Flatten(document.Root).OfType<VisualIrSvgNode>().Any((svg) =>
+                svg.Id.StartsWith("component.label.relief.top.", StringComparison.Ordinal)
+                && svg.Markup?.Contains("stroke=\"currentColor\"", StringComparison.Ordinal) == true))
         {
             throw new InvalidOperationException("Expected label component relief layer.");
         }
@@ -111,7 +113,7 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
         {
             var zeroExtentPayload = WithReliefExtent(payload, 0);
             var zeroExtentDocument = DesignPreviewToVisualIrBridge.Convert(zeroExtentPayload, Metrics, "set_night");
-            if (Flatten(zeroExtentDocument.Root).OfType<VisualIrRectNode>().Any((rect) => rect.Id.StartsWith("component.label.relief.", StringComparison.Ordinal)))
+            if (Flatten(zeroExtentDocument.Root).OfType<VisualIrSvgNode>().Any((svg) => svg.Id.StartsWith("component.label.relief.", StringComparison.Ordinal)))
             {
                 throw new InvalidOperationException("Expected zero relief extent to emit no relief layers.");
             }
