@@ -44,15 +44,15 @@ internal sealed class IconThemeSearchDialog
             BackgroundAnimationEnabled = false,
         };
 
-        var queryBox = new TextBox { PlaceholderText = "telephone" };
-        var tokenBox = new TextBox { PlaceholderText = "phone_call" };
-        var categoryBox = new TextBox { PlaceholderText = "phone" };
-        var descriptionBox = new TextBox
+        var queryBox = EditorTextBoxBehavior.Configure(new TextBox { PlaceholderText = "telephone" });
+        var tokenBox = EditorTextBoxBehavior.Configure(new TextBox { PlaceholderText = "phone_call" });
+        var categoryBox = EditorTextBoxBehavior.Configure(new TextBox { PlaceholderText = "phone" });
+        var descriptionBox = EditorTextBoxBehavior.Configure(new TextBox
         {
             PlaceholderText = "Phone call icon",
             AcceptsReturn = true,
             MinHeight = 70,
-        };
+        });
         var lucideList = new ListBox { MinHeight = 190, MaxHeight = 230 };
         var materialList = new ListBox { MinHeight = 190, MaxHeight = 230 };
         var errorText = new TextBlock

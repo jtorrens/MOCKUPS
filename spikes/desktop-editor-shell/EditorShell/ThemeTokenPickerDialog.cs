@@ -55,11 +55,11 @@ internal sealed class ThemeTokenPickerDialog
             SelectedItem = themes.FirstOrDefault((option) => option.Value == selectedThemeId),
         };
         EditorComboBoxBehavior.Configure(themeCombo);
-        var searchBox = new TextBox
+        var searchBox = EditorTextBoxBehavior.Configure(new TextBox
         {
             PlaceholderText = "Search tokens…",
             MinWidth = 220,
-        };
+        });
         var selectedText = new TextBlock
         {
             TextWrapping = TextWrapping.Wrap,

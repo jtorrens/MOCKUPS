@@ -46,11 +46,11 @@ internal static class PaletteColorPickerDialog
             BackgroundTransitionTime = 0.05,
         };
 
-        var searchBox = new TextBox
+        var searchBox = EditorTextBoxBehavior.Configure(new TextBox
         {
             PlaceholderText = "Search palette colors...",
             MinWidth = 260,
-        };
+        });
         var selectedText = new TextBlock
         {
             TextWrapping = TextWrapping.Wrap,
