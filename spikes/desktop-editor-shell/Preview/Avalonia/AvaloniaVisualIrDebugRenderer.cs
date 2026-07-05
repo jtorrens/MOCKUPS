@@ -11,7 +11,7 @@ namespace Mockups.DesktopEditorShell.Preview.Avalonia;
 
 internal sealed class AvaloniaVisualIrDebugRenderer : IVisualIrRenderer
 {
-    private static readonly IBrush BoundsBrush = new SolidColorBrush(Color.Parse("#94A3B8"));
+    private static readonly IBrush BoundsBrush = new SolidColorBrush(Color.Parse("#FF00FF"));
     private static readonly IBrush PlaceholderBrush = new SolidColorBrush(Color.Parse("#27272A"));
     private static readonly IBrush PlaceholderBorderBrush = new SolidColorBrush(Color.Parse("#A3A3A3"));
 
