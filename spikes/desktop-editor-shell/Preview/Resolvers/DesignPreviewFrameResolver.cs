@@ -145,9 +145,7 @@ internal static class DesignPreviewFrameResolver
                 Id = "component.label.background",
                 Bounds = new DesignRect(0, 0, bounds.Width, bounds.Height),
                 Fill = backgroundVisible
-                    ? reliefEnabled
-                        ? ReliefSurfaceGradient(bounds.Height, backgroundColorToken, reliefTopIntensity, reliefBottomIntensity)
-                        : ThemePaint(backgroundColorToken)
+                    ? ThemePaint(backgroundColorToken)
                     : StaticPaint("component.label.background.transparent", "#00000000"),
                 Stroke = borderWidth > 0
                     ? new ResolvedDesignStroke(ThemePaint(borderColorToken), borderWidth)
@@ -652,7 +650,7 @@ internal static class DesignPreviewFrameResolver
                 ? 1
                 : Math.Max(0, 1 - fadeDistance / (spread + 1));
             var blurRadius = hardCoverage > 0 || spread <= 0
-                ? 0
+                ? 0.45
                 : Math.Max(0.1, spread) * fadeDistance / spread;
             AddReliefEdge(
                 layers,
@@ -760,21 +758,6 @@ internal static class DesignPreviewFrameResolver
             [
                 new ResolvedDesignGradientStop(0, new ResolvedDesignColorRef($"{baseColorToken}.relief.start.{N(startBrightnessMultiplier)}", baseColorToken, "debug_red", startBrightnessMultiplier)),
                 new ResolvedDesignGradientStop(1, new ResolvedDesignColorRef($"{baseColorToken}.relief.end.{N(endBrightnessMultiplier)}", baseColorToken, "debug_red", endBrightnessMultiplier)),
-            ]);
-    }
-
-    private static ResolvedDesignLinearGradientPaint ReliefSurfaceGradient(
-        double height,
-        string baseColorToken,
-        double topBrightnessMultiplier,
-        double bottomBrightnessMultiplier)
-    {
-        return new ResolvedDesignLinearGradientPaint(
-            new DesignPoint(0, 0),
-            new DesignPoint(0, height),
-            [
-                new ResolvedDesignGradientStop(0, new ResolvedDesignColorRef($"{baseColorToken}.relief.surface.top.{N(topBrightnessMultiplier)}", baseColorToken, "debug_red", topBrightnessMultiplier)),
-                new ResolvedDesignGradientStop(1, new ResolvedDesignColorRef($"{baseColorToken}.relief.surface.bottom.{N(bottomBrightnessMultiplier)}", baseColorToken, "debug_red", bottomBrightnessMultiplier)),
             ]);
     }
 
