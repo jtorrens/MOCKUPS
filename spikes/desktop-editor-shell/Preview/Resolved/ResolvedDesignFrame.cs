@@ -50,6 +50,13 @@ internal sealed record ResolvedDesignSvgNode : ResolvedDesignNode
     public ResolvedDesignPaint? Tint { get; init; }
 }
 
+internal sealed record ResolvedDesignPathNode : ResolvedDesignNode
+{
+    public required string Data { get; init; }
+    public ResolvedDesignPaint? Fill { get; init; }
+    public ResolvedDesignStroke? Stroke { get; init; }
+}
+
 internal sealed record ResolvedDesignTextStyle
 {
     public ResolvedDesignPaint? Fill { get; init; }
@@ -60,7 +67,18 @@ internal sealed record ResolvedDesignTextStyle
     public double? LineHeight { get; init; }
 }
 
-internal sealed record ResolvedDesignPaint(ResolvedDesignColorRef Color);
+internal abstract record ResolvedDesignPaint;
+
+internal sealed record ResolvedDesignSolidPaint(ResolvedDesignColorRef Color) : ResolvedDesignPaint;
+
+internal sealed record ResolvedDesignLinearGradientPaint(
+    DesignPoint From,
+    DesignPoint To,
+    IReadOnlyList<ResolvedDesignGradientStop> Stops) : ResolvedDesignPaint;
+
+internal sealed record ResolvedDesignGradientStop(double Offset, ResolvedDesignColorRef Color);
+
+internal sealed record DesignPoint(double X, double Y);
 
 internal sealed record ResolvedDesignColorRef(
     string Id,
@@ -70,7 +88,9 @@ internal sealed record ResolvedDesignColorRef(
 
 internal sealed record ResolvedDesignStroke(
     ResolvedDesignPaint Paint,
-    double Width);
+    double Width,
+    string? LineCap = null,
+    string? LineJoin = null);
 
 internal abstract record ResolvedDesignEffect;
 

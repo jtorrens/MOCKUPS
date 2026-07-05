@@ -32,6 +32,7 @@ class Program
 
         if (args.Contains("--visual-ir-debug-renderer-smoke", StringComparer.Ordinal))
         {
+            BuildAvaloniaApp().SetupWithoutStarting();
             VisualIrDebugRendererSmoke.Validate();
             Console.WriteLine("Visual IR debug renderer smoke validated.");
             return;
@@ -39,6 +40,7 @@ class Program
 
         if (args.Contains("--design-preview-ir-bridge-smoke", StringComparer.Ordinal))
         {
+            BuildAvaloniaApp().SetupWithoutStarting();
             DesignPreviewToVisualIrBridgeSmoke.Validate();
             Console.WriteLine("Design preview to Visual IR bridge smoke validated.");
             return;

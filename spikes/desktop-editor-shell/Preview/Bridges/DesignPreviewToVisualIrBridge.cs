@@ -103,6 +103,17 @@ internal static class DesignPreviewToVisualIrBridge
                 Tint = Paint(svg.Tint, payload),
                 Metadata = MetadataWithColor(svg.Metadata, "tint", svg.Tint, payload),
             },
+            ResolvedDesignPathNode path => new VisualIrPathNode
+            {
+                Id = path.Id,
+                Bounds = Rect(path.Bounds),
+                Opacity = path.Opacity,
+                Effects = Effects(path.Effects, payload),
+                Data = path.Data,
+                Fill = Paint(path.Fill, payload),
+                Stroke = Stroke(path.Stroke, payload),
+                Metadata = MetadataWithColor(MetadataWithColor(path.Metadata, "fill", path.Fill, payload), "stroke", path.Stroke?.Paint, payload),
+            },
             _ => throw new InvalidOperationException($"Unsupported resolved design node: {node.GetType().Name}"),
         };
     }
@@ -114,12 +125,29 @@ internal static class DesignPreviewToVisualIrBridge
 
     private static VisualIrPaint? Paint(ResolvedDesignPaint? paint, DesignPreviewPayload payload)
     {
-        return paint is null ? null : new VisualIrSolidPaint(Color(paint.Color, payload));
+        return paint switch
+        {
+            null => null,
+            ResolvedDesignSolidPaint solid => new VisualIrSolidPaint(Color(solid.Color, payload)),
+            ResolvedDesignLinearGradientPaint gradient => new VisualIrLinearGradientPaint(
+                new VisualIrPoint(gradient.From.X, gradient.From.Y),
+                new VisualIrPoint(gradient.To.X, gradient.To.Y),
+                gradient.Stops
+                    .Select((stop) => new VisualIrGradientStop(stop.Offset, Color(stop.Color, payload)))
+                    .ToList()),
+            _ => throw new InvalidOperationException($"Unsupported resolved design paint: {paint.GetType().Name}"),
+        };
     }
 
     private static VisualIrStroke? Stroke(ResolvedDesignStroke? stroke, DesignPreviewPayload payload)
     {
-        return stroke is null ? null : new VisualIrStroke(Paint(stroke.Paint, payload) ?? new VisualIrNonePaint(), stroke.Width);
+        return stroke is null
+            ? null
+            : new VisualIrStroke(
+                Paint(stroke.Paint, payload) ?? new VisualIrNonePaint(),
+                stroke.Width,
+                LineCap: stroke.LineCap,
+                LineJoin: stroke.LineJoin);
     }
 
     private static IReadOnlyList<VisualIrEffect>? Effects(
@@ -154,7 +182,12 @@ internal static class DesignPreviewToVisualIrBridge
         var result = metadata is null
             ? new Dictionary<string, string>()
             : new Dictionary<string, string>(metadata, StringComparer.Ordinal);
-        var color = paint.Color;
+        if (paint is not ResolvedDesignSolidPaint solid)
+        {
+            return metadata;
+        }
+
+        var color = solid.Color;
         result[$"{prefix}.colorRef"] = color.Id;
         if (!string.IsNullOrWhiteSpace(color.ThemeTokenId)
             && ThemeColorTokenCatalog.TryGet(color.ThemeTokenId, out var paths))

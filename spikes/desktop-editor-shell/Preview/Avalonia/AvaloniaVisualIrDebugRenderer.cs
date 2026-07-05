@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Shapes;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Mockups.DesktopEditorShell.Common;
@@ -46,7 +47,7 @@ internal sealed class AvaloniaVisualIrDebugRenderer : IVisualIrRenderer
             VisualIrRectNode rect => RenderRect(rect, document, options),
             VisualIrTextNode text => RenderText(text, document, options),
             VisualIrEllipseNode ellipse => RenderPlaceholder(ellipse, "ellipse", options),
-            VisualIrPathNode path => RenderPlaceholder(path, "path", options),
+            VisualIrPathNode path => RenderPath(path, document, options),
             VisualIrImageNode image => RenderPlaceholder(image, "image", options),
             VisualIrVideoNode video => RenderPlaceholder(video, "video", options),
             VisualIrSvgNode svg => RenderSvg(svg, document, options),
@@ -166,6 +167,28 @@ internal sealed class AvaloniaVisualIrDebugRenderer : IVisualIrRenderer
         }
 
         return WrapWithBounds(textControl, text.Bounds.Width, text.Bounds.Height);
+    }
+
+    private Control RenderPath(
+        VisualIrPathNode path,
+        VisualIrDocument document,
+        VisualIrRenderOptions options)
+    {
+        var shape = new Path
+        {
+            Width = path.Bounds.Width,
+            Height = path.Bounds.Height,
+            Data = Geometry.Parse(path.Data),
+            Fill = BrushFromPaint(path.Fill, document, options),
+            Stroke = BrushFromStroke(path.Stroke, document, options),
+            StrokeThickness = path.Stroke?.Width ?? 0,
+            StrokeLineCap = PenLineCap(path.Stroke?.LineCap),
+            StrokeJoin = PenLineJoin(path.Stroke?.LineJoin),
+        };
+
+        return options.ShowBounds
+            ? WrapWithBounds(shape, path.Bounds.Width, path.Bounds.Height)
+            : shape;
     }
 
     private Control RenderPlaceholder(
@@ -501,6 +524,26 @@ internal sealed class AvaloniaVisualIrDebugRenderer : IVisualIrRenderer
             >= 500 => FontWeight.Medium,
             <= 300 => FontWeight.Light,
             _ => FontWeight.Normal,
+        };
+    }
+
+    private static PenLineCap PenLineCap(string? value)
+    {
+        return value switch
+        {
+            "round" => global::Avalonia.Media.PenLineCap.Round,
+            "square" => global::Avalonia.Media.PenLineCap.Square,
+            _ => global::Avalonia.Media.PenLineCap.Flat,
+        };
+    }
+
+    private static PenLineJoin PenLineJoin(string? value)
+    {
+        return value switch
+        {
+            "bevel" => global::Avalonia.Media.PenLineJoin.Bevel,
+            "round" => global::Avalonia.Media.PenLineJoin.Round,
+            _ => global::Avalonia.Media.PenLineJoin.Miter,
         };
     }
 }

@@ -519,7 +519,7 @@ internal static class DesignPreviewFrameResolver
                     Text = $"Unsupported design payload: {payload.Kind}",
                     Style = new ResolvedDesignTextStyle
                     {
-                        Fill = new ResolvedDesignPaint(new ResolvedDesignColorRef(
+                        Fill = new ResolvedDesignSolidPaint(new ResolvedDesignColorRef(
                             "debug.unsupported",
                             null,
                             "debug_red")),
@@ -576,17 +576,17 @@ internal static class DesignPreviewFrameResolver
 
     private static ResolvedDesignPaint ThemePaint(string tokenId, string fallback)
     {
-        return new ResolvedDesignPaint(new ResolvedDesignColorRef(tokenId, tokenId, fallback));
+        return new ResolvedDesignSolidPaint(new ResolvedDesignColorRef(tokenId, tokenId, fallback));
     }
 
     private static ResolvedDesignPaint ThemePaintAdjusted(string tokenId, double brightnessMultiplier)
     {
-        return new ResolvedDesignPaint(new ResolvedDesignColorRef($"{tokenId}.brightness.{brightnessMultiplier:0.###}", tokenId, "debug_red", brightnessMultiplier));
+        return new ResolvedDesignSolidPaint(new ResolvedDesignColorRef($"{tokenId}.brightness.{brightnessMultiplier:0.###}", tokenId, "debug_red", brightnessMultiplier));
     }
 
     private static ResolvedDesignPaint StaticPaint(string id, string value)
     {
-        return new ResolvedDesignPaint(new ResolvedDesignColorRef(id, null, value));
+        return new ResolvedDesignSolidPaint(new ResolvedDesignColorRef(id, null, value));
     }
 
     private static DesignRect Centered(DesignMetrics metrics, double width, double height)
@@ -662,6 +662,7 @@ internal static class DesignPreviewFrameResolver
                 0,
                 -lightY * distance,
                 topIntensity * fade * verticalWeight,
+                bottomIntensity * fade * verticalWeight,
                 blurRadius);
             AddReliefEdge(
                 layers,
@@ -673,6 +674,7 @@ internal static class DesignPreviewFrameResolver
                 -lightX * distance,
                 0,
                 topIntensity * fade * horizontalWeight,
+                bottomIntensity * fade * horizontalWeight,
                 blurRadius);
             AddReliefEdge(
                 layers,
@@ -684,6 +686,7 @@ internal static class DesignPreviewFrameResolver
                 0,
                 lightY * distance,
                 bottomIntensity * fade * verticalWeight,
+                topIntensity * fade * verticalWeight,
                 blurRadius);
             AddReliefEdge(
                 layers,
@@ -695,6 +698,7 @@ internal static class DesignPreviewFrameResolver
                 lightX * distance,
                 0,
                 bottomIntensity * fade * horizontalWeight,
+                topIntensity * fade * horizontalWeight,
                 blurRadius);
         }
 
@@ -710,36 +714,61 @@ internal static class DesignPreviewFrameResolver
         ReliefSide side,
         double offsetX,
         double offsetY,
-        double brightnessMultiplier,
+        double startBrightnessMultiplier,
+        double endBrightnessMultiplier,
         double blurRadius)
     {
-        if (Math.Abs(brightnessMultiplier) < 0.0001)
+        if (Math.Abs(startBrightnessMultiplier) < 0.0001
+            && Math.Abs(endBrightnessMultiplier) < 0.0001)
         {
             return;
         }
 
-        layers.Add(new ResolvedDesignSvgNode
+        layers.Add(new ResolvedDesignPathNode
         {
             Id = id,
             Bounds = new DesignRect(offsetX, offsetY, bounds.Width, bounds.Height),
-            Markup = ReliefEdgeSvg(bounds.Width, bounds.Height, cornerRadius, side),
-            Fit = "fill",
-            Tint = ThemePaintAdjusted(baseColorToken, brightnessMultiplier),
+            Data = ReliefEdgePath(bounds.Width, bounds.Height, cornerRadius, side),
+            Stroke = new ResolvedDesignStroke(
+                ReliefGradient(bounds.Width, bounds.Height, side, baseColorToken, startBrightnessMultiplier, endBrightnessMultiplier),
+                1,
+                "round",
+                "round"),
             Effects = blurRadius > 0 ? [new ResolvedDesignBlurEffect(blurRadius)] : null,
         });
     }
 
-    private static string ReliefEdgeSvg(double width, double height, double radius, ReliefSide side)
+    private static ResolvedDesignLinearGradientPaint ReliefGradient(
+        double width,
+        double height,
+        ReliefSide side,
+        string baseColorToken,
+        double startBrightnessMultiplier,
+        double endBrightnessMultiplier)
+    {
+        var from = new DesignPoint(0, 0);
+        var to = side is ReliefSide.Top or ReliefSide.Bottom
+            ? new DesignPoint(width, 0)
+            : new DesignPoint(0, height);
+        return new ResolvedDesignLinearGradientPaint(
+            from,
+            to,
+            [
+                new ResolvedDesignGradientStop(0, new ResolvedDesignColorRef($"{baseColorToken}.relief.start.{N(startBrightnessMultiplier)}", baseColorToken, "debug_red", startBrightnessMultiplier)),
+                new ResolvedDesignGradientStop(1, new ResolvedDesignColorRef($"{baseColorToken}.relief.end.{N(endBrightnessMultiplier)}", baseColorToken, "debug_red", endBrightnessMultiplier)),
+            ]);
+    }
+
+    private static string ReliefEdgePath(double width, double height, double radius, ReliefSide side)
     {
         var r = Math.Max(0, Math.Min(radius, Math.Min(width, height) / 2));
-        var d = side switch
+        return side switch
         {
             ReliefSide.Top => $"M 0 {N(r)} Q 0 0 {N(r)} 0 H {N(width - r)} Q {N(width)} 0 {N(width)} {N(r)}",
             ReliefSide.Bottom => $"M 0 {N(height - r)} Q 0 {N(height)} {N(r)} {N(height)} H {N(width - r)} Q {N(width)} {N(height)} {N(width)} {N(height - r)}",
             ReliefSide.Left => $"M {N(r)} 0 Q 0 0 0 {N(r)} V {N(height - r)} Q 0 {N(height)} {N(r)} {N(height)}",
             _ => $"M {N(width - r)} 0 Q {N(width)} 0 {N(width)} {N(r)} V {N(height - r)} Q {N(width)} {N(height)} {N(width - r)} {N(height)}",
         };
-        return $"""<svg xmlns="http://www.w3.org/2000/svg" width="{N(width)}" height="{N(height)}" viewBox="0 0 {N(width)} {N(height)}"><path d="{d}" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/></svg>""";
     }
 
     private static string N(double value)
