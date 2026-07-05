@@ -16,6 +16,7 @@ internal sealed class EditorPreviewController
     private readonly Func<ProjectTreeNode?> _selectedNode;
     private readonly RuntimeWebPreviewPane _runtimePreviewPane = new();
     private readonly DesignWebPreviewPane _designPreviewPane = new();
+    private readonly VisualIrDesignPreviewPane _visualIrPreviewPane = new();
     private string? _projectId;
     private string? _selectedThemeId;
     private string _selectedMode = "light";
@@ -28,6 +29,7 @@ internal sealed class EditorPreviewController
         ComboBox modeComboBox,
         ContentControl runtimePreviewHost,
         ContentControl designPreviewHost,
+        ContentControl visualIrPreviewHost,
         Func<bool> isDark,
         Func<ProjectTreeNode?> selectedNode)
     {
@@ -40,6 +42,7 @@ internal sealed class EditorPreviewController
 
         runtimePreviewHost.Content = _runtimePreviewPane;
         designPreviewHost.Content = _designPreviewPane;
+        visualIrPreviewHost.Content = _visualIrPreviewPane;
     }
 
     public string? SelectedDeviceId { get; private set; }
@@ -138,12 +141,19 @@ internal sealed class EditorPreviewController
         var metrics = _database.GetDevicePreviewMetrics(SelectedDeviceId);
         var themeName = _themeComboBox.SelectedItem is FieldOption option ? option.Label : "No theme";
         _runtimePreviewPane.Update(metrics, _isDark(), themeName, _selectedMode);
+        var designPayload = DesignPreviewPayloadFactory.Create(_database, _selectedNode(), _selectedThemeId);
         _designPreviewPane.Update(
             metrics,
             _isDark(),
             themeName,
             _selectedMode,
-            DesignPreviewPayloadFactory.Create(_database, _selectedNode(), _selectedThemeId));
+            designPayload);
+        _visualIrPreviewPane.Update(
+            metrics,
+            _isDark(),
+            themeName,
+            _selectedMode,
+            designPayload);
     }
 
     private void EnsureSelectedOptionsExist()

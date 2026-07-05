@@ -63,6 +63,7 @@ public partial class MainWindow : SukiWindow
             PreviewModeComboBox,
             RuntimePreviewHost,
             DesignPreviewHost,
+            VisualIrPreviewHost,
             () => _isDark,
             () => _selectedNode);
         _shellState = new EditorShellStateService(this, ShellColumns);
