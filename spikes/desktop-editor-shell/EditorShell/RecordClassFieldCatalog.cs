@@ -198,6 +198,13 @@ internal static class RecordClassFieldCatalog
         ["theme.typography.weight"] = new("theme.typography.weight", "Weight", ValueKind.OptionToken),
         ["theme.typography.style"] = new("theme.typography.style", "Style", ValueKind.OptionToken),
         ["theme.radii.none"] = new("theme.radii.none", "None", ValueKind.Integer),
+        ["theme.radii.control"] = new("theme.radii.control", "Control", ValueKind.Integer),
+        ["theme.radii.card"] = new("theme.radii.card", "Card", ValueKind.Integer),
+        ["theme.radii.panel"] = new("theme.radii.panel", "Panel", ValueKind.Integer),
+        ["theme.radii.surface"] = new("theme.radii.surface", "Surface", ValueKind.Integer),
+        ["theme.radii.pill"] = new("theme.radii.pill", "Pill", ValueKind.Integer),
+        ["theme.radii.avatar"] = new("theme.radii.avatar", "Avatar", ValueKind.Integer),
+        ["theme.radii.full"] = new("theme.radii.full", "Full", ValueKind.Integer),
 
         ["actor.shortName"] = new("actor.shortName", "Short name", ValueKind.StringSingleLine),
         ["actor.defaultDeviceId"] = new("actor.defaultDeviceId", "Default device", ValueKind.OptionToken),

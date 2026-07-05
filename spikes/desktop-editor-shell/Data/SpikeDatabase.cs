@@ -2029,7 +2029,14 @@ internal sealed partial class SpikeDatabase
                   "order": 10,
                   "visible": true,
                   "fields": [
-                    { "id": "theme.radii.none", "order": 10, "visible": true }
+                    { "id": "theme.radii.none", "order": 10, "visible": true },
+                    { "id": "theme.radii.control", "order": 20, "visible": true },
+                    { "id": "theme.radii.card", "order": 30, "visible": true },
+                    { "id": "theme.radii.panel", "order": 40, "visible": true },
+                    { "id": "theme.radii.surface", "order": 50, "visible": true },
+                    { "id": "theme.radii.pill", "order": 60, "visible": true },
+                    { "id": "theme.radii.avatar", "order": 70, "visible": true },
+                    { "id": "theme.radii.full", "order": 80, "visible": true }
                   ]
                 }
               ]
