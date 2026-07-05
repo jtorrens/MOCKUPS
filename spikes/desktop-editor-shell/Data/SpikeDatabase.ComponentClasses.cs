@@ -87,6 +87,54 @@ internal sealed partial class SpikeDatabase
         return [new FieldOption(recordClassId, string.IsNullOrWhiteSpace(name) ? recordClassId : name)];
     }
 
+    private bool EmbeddedComponentDiffersFromBase(
+        string projectId,
+        string configJson,
+        EmbeddedComponentSlotDefinition slot)
+    {
+        var config = ParseJsonObject(string.IsNullOrWhiteSpace(configJson) ? "{}" : configJson);
+        var overrides = EmbeddedOverrides(config, slot, createIfMissing: false);
+        if (overrides is null)
+        {
+            return false;
+        }
+
+        using var connection = OpenConnection();
+        var baseConfig = ParseJsonObject(GetComponentClassBaseConfigJson(connection, projectId, slot.EmbeddedComponentType));
+        return HasEffectiveJsonDifference(overrides, baseConfig, []);
+    }
+
+    private static bool HasEffectiveJsonDifference(
+        JsonObject overrides,
+        JsonObject baseConfig,
+        IReadOnlyList<string> path)
+    {
+        foreach (var child in overrides)
+        {
+            var childPath = path.Concat([child.Key]).ToArray();
+            if (child.Value is JsonObject childObject)
+            {
+                if (HasEffectiveJsonDifference(childObject, baseConfig, childPath))
+                {
+                    return true;
+                }
+
+                continue;
+            }
+
+            if (child.Value is not null)
+            {
+                var baseValue = JsonPath.Get(baseConfig, childPath);
+                if (baseValue is null || !JsonNode.DeepEquals(child.Value, baseValue))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     private static ComponentClassSettings GetComponentClassSettings(SqliteConnection connection, string componentClassId)
     {
         using var command = connection.CreateCommand();
@@ -123,6 +171,9 @@ internal sealed partial class SpikeDatabase
         var options = descriptor.ValueKind == ValueKind.EmbeddedComponent
             ? EmbeddedComponentOptions(settings.ProjectId, descriptor.DefaultValue)
             : descriptor.Options;
+        var isHighlighted = descriptor.ValueKind == ValueKind.EmbeddedComponent
+            && EmbeddedComponentSlotCatalog.TryGet(fieldId, out var slot)
+            && EmbeddedComponentDiffersFromBase(settings.ProjectId, settings.ConfigJson, slot);
 
         return new FieldValue(
             new FieldDefinition(
@@ -134,7 +185,8 @@ internal sealed partial class SpikeDatabase
                 Options: options,
                 PairLabels: descriptor.PairLabels,
                 Number: descriptor.Number),
-            value);
+            value,
+            IsHighlighted: isHighlighted);
     }
 
     public void UpdateComponentClassField(string componentClassId, string fieldId, string value)

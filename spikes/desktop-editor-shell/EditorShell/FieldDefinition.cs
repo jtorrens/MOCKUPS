@@ -77,7 +77,8 @@ internal sealed record FieldDefinition(
 internal sealed record FieldValue(
     FieldDefinition Definition,
     string Value,
-    bool IsInherited = false)
+    bool IsInherited = false,
+    bool IsHighlighted = false)
 {
     public bool HasLocalOverride => Definition.CanInherit && !IsInherited;
     public bool IsDefault => Definition.CanInherit ? IsInherited : Value == Definition.DefaultValue;

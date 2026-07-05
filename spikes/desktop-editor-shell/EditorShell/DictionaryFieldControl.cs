@@ -53,7 +53,8 @@ internal sealed class DictionaryFieldControl : Grid
         _valueControl = AddValueControl(DictionaryValueControlFactory.Create(
             _definition,
             _value,
-            services));
+            services,
+            fieldValue.IsHighlighted));
 
         if (_definition.ValueKind is ValueKind.DirectoryPath or ValueKind.ImageFilePath)
         {

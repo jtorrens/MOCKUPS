@@ -10,14 +10,17 @@ internal sealed class DictionaryEmbeddedComponentControl : Grid, IDictionaryValu
 {
     private readonly FieldDefinition _definition;
     private readonly TextBlock _label;
+    private readonly bool _isHighlighted;
     private string _value;
 
     public DictionaryEmbeddedComponentControl(
         FieldDefinition definition,
         string value,
+        bool isHighlighted,
         Func<string, Task>? openEmbeddedComponent)
     {
         _definition = definition;
+        _isHighlighted = isHighlighted;
         _value = value;
         ColumnDefinitions = new ColumnDefinitions("*,Auto");
         ColumnSpacing = 8;
@@ -92,22 +95,19 @@ internal sealed class DictionaryEmbeddedComponentControl : Grid, IDictionaryValu
         return string.IsNullOrWhiteSpace(value) ? "Embedded component" : value;
     }
 
-    private static IBrush? LabelBrush(FieldDefinition definition, string value)
+    private static IBrush LabelBrush()
     {
-        return !string.Equals(value, definition.DefaultValue, StringComparison.Ordinal)
-            ? new SolidColorBrush(Color.Parse("#D6A638"))
-            : null;
+        return new SolidColorBrush(Color.Parse("#D6A638"));
     }
 
     private void ApplyLabelBrush()
     {
-        var brush = LabelBrush(_definition, _value);
-        if (brush is null)
+        if (_isHighlighted)
         {
-            _label.ClearValue(TextBlock.ForegroundProperty);
+            _label.Foreground = LabelBrush();
             return;
         }
 
-        _label.Foreground = brush;
+        _label.ClearValue(TextBlock.ForegroundProperty);
     }
 }

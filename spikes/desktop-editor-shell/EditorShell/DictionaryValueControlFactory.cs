@@ -5,7 +5,8 @@ internal static class DictionaryValueControlFactory
     public static IDictionaryValueControl Create(
         FieldDefinition definition,
         string value,
-        DictionaryFieldServices services)
+        DictionaryFieldServices services,
+        bool isHighlighted = false)
     {
         return definition.ValueKind switch
         {
@@ -38,7 +39,7 @@ internal static class DictionaryValueControlFactory
                 definition.IsEditable,
                 services.ShowIconTokenPicker,
                 services.CreateIconPreview),
-            ValueKind.EmbeddedComponent => new DictionaryEmbeddedComponentControl(definition, value, services.OpenEmbeddedComponent),
+            ValueKind.EmbeddedComponent => new DictionaryEmbeddedComponentControl(definition, value, isHighlighted, services.OpenEmbeddedComponent),
             _ => new DictionaryTextControl(definition, value),
         };
     }
