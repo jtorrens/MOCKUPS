@@ -39,13 +39,18 @@ function tokenValueForMode(
 
   const root = parseObject(payload.themeTokensJson);
   const modeRoot = asRecord(asRecord(root.modes)[mode]);
-  const parts = token.replace(/^theme\./, "").split(".");
+  const semanticKey = token.replace(/^theme\./, "");
+  const parts = semanticKey.split(".");
   for (const source of [modeRoot, root]) {
     let current: unknown = source;
     for (const part of parts) {
       current = asRecord(current)[part];
     }
     if (current !== undefined) return current;
+
+    const colors = asRecord(asRecord(source).colors);
+    if (colors[semanticKey] !== undefined) return colors[semanticKey];
+    if (colors[token] !== undefined) return colors[token];
   }
 
   throw new Error(`Missing theme token ${token} for mode ${mode}`);
