@@ -633,26 +633,27 @@ internal static class DesignPreviewFrameResolver
         var lightRadians = angleDegrees * Math.PI / 180;
         var lightX = Math.Cos(lightRadians);
         var lightY = -Math.Sin(lightRadians);
-        var hardLayers = Math.Max(1, (int)Math.Ceiling(Math.Abs(extent)));
-        var fadeLayers = Math.Max(0, (int)Math.Ceiling(Math.Abs(spread)));
-        var totalLayers = Math.Max(1, hardLayers + fadeLayers);
+        var totalDistance = extent + spread;
+        var totalLayers = Math.Max(1, (int)Math.Ceiling(totalDistance));
         var layers = new List<ResolvedDesignNode>(totalLayers * 2);
         for (var index = 0; index < totalLayers; index++)
         {
-            var distance = index + 1;
-            var fade = index < hardLayers || fadeLayers == 0
+            var distance = Math.Min(index + 1, totalDistance);
+            var hardCoverage = Math.Clamp(extent - index, 0, 1);
+            var fadeDistance = Math.Max(0, distance - extent);
+            var fade = hardCoverage > 0 || spread <= 0
                 ? 1
-                : Math.Max(0, 1 - (index - hardLayers + 1d) / (fadeLayers + 1));
-            var blurRadius = index < hardLayers || fadeLayers == 0
+                : Math.Max(0, 1 - fadeDistance / (spread + 1));
+            var blurRadius = hardCoverage > 0 || spread <= 0
                 ? 0
-                : Math.Max(0.5, spread) * (index - hardLayers + 1d) / fadeLayers;
+                : Math.Max(0.1, spread) * fadeDistance / spread;
             layers.Add(ReliefStroke(
                 $"component.label.relief.top.{index + 1}",
                 bounds,
                 cornerRadius,
                 baseColorToken,
-                -lightX * distance,
-                -lightY * distance,
+                lightX * distance,
+                lightY * distance,
                 topIntensity * fade,
                 blurRadius));
             layers.Add(ReliefStroke(
@@ -660,8 +661,8 @@ internal static class DesignPreviewFrameResolver
                 bounds,
                 cornerRadius,
                 baseColorToken,
-                lightX * distance,
-                lightY * distance,
+                -lightX * distance,
+                -lightY * distance,
                 bottomIntensity * fade,
                 blurRadius));
         }

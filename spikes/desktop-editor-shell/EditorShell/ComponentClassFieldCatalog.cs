@@ -93,8 +93,20 @@ internal static class ComponentClassFieldCatalog
         ["component.style.borderColorToken"] = new("component.style.borderColorToken", "Border color", ValueKind.ThemeToken, ["style", "borderColorToken"], "theme.borders.primary", Options: ThemeColorOptions),
         ["component.style.cornerRadiusToken"] = new("component.style.cornerRadiusToken", "Corner radius", ValueKind.ThemeToken, ["style", "cornerRadiusToken"], "theme.radii.surface", Options: RadiusTokenOptions),
         ["component.style.reliefAngle"] = new("component.style.reliefAngle", "Relief angle", ValueKind.Integer, ["style", "reliefAngle"], "-45"),
-        ["component.style.reliefExtent"] = new("component.style.reliefExtent", "Relief extent", ValueKind.Integer, ["style", "reliefExtent"], "1"),
-        ["component.style.reliefSpread"] = new("component.style.reliefSpread", "Relief spread", ValueKind.Integer, ["style", "reliefSpread"], "0"),
+        ["component.style.reliefExtent"] = new(
+            "component.style.reliefExtent",
+            "Relief extent",
+            ValueKind.Decimal,
+            ["style", "reliefExtent"],
+            "1",
+            Number: new NumberDefinition(0, 12, 0.05m, 2)),
+        ["component.style.reliefSpread"] = new(
+            "component.style.reliefSpread",
+            "Relief spread",
+            ValueKind.Decimal,
+            ["style", "reliefSpread"],
+            "0",
+            Number: new NumberDefinition(0, 12, 0.05m, 2)),
         ["component.style.reliefTopIntensity"] = new(
             "component.style.reliefTopIntensity",
             "Relief top",
