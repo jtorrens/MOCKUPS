@@ -40,7 +40,10 @@ If the same algorithm appears in a second place, extract it before continuing.
   - reusable whitespace tokenization.
 - `Common/IconTokenRules.cs`
   - icon token derivation from text;
-  - category derivation from icon tokens.
+  - category derivation from icon tokens;
+  - mapping token list parsing;
+  - icon theme mapping/category JSON rebuilding;
+  - SVG token set discovery when it is filesystem-only and DB-free.
 - `Common/DeviceMetricRules.cs`
   - normalized device metrics JSON construction;
   - preview metric fallbacks;
@@ -68,26 +71,10 @@ If the same algorithm appears in a second place, extract it before continuing.
 
 ## Remaining extraction candidates
 
-### Icon theme mapping helpers
+No high-priority duplicated base routine remains from this audit.
 
-Current locations:
-
-- `Data/SpikeDatabase.IconThemes.cs`
-- `EditorShell/IconThemeSearchDialog.cs`
-- `EditorShell/IconThemeTokensCollectionEditor.cs`
-- `EditorShell/IconTokenPickerDialog.cs`
-- `EditorShell/EditorIcons.cs`
-
-Target:
-
-- `Common/IconTokenRules.cs`
-
-Move:
-
-- mapping token list parsing;
-- SVG token set discovery when it is filesystem-only and DB-free.
-
-Repository writes and UI row construction stay where they are.
+Keep repository writes, UI row construction and Suki-specific styling in their
+owning classes unless a second non-UI owner appears.
 
 ## Visual IR-specific cleanup
 
@@ -130,8 +117,8 @@ Completed:
 
 Next low-risk pass:
 
-1. Finish icon theme mapping helpers only where parsing is filesystem/JSON-only.
-2. Audit remaining private helpers with `rg` before extracting anything else.
-3. Leave UI-specific row layout, repository writes and transitional component layout in their owning classes.
+1. Audit remaining private helpers with `rg` before extracting anything else.
+2. Leave UI-specific row layout, repository writes and transitional component layout in their owning classes.
+3. Treat any new reusable algorithm as common/shared before adding a second copy.
 
 Each step should compile and keep the app usable before moving to the next.
