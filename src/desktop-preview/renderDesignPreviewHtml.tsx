@@ -5,8 +5,10 @@ import { RenderableReactAdapter } from "../visual/adapters/react/RenderableReact
 import { RenderableNodeSchema } from "../visual/renderable/schema.js";
 import type { RenderableNode } from "../visual/renderable/types.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
+import { resolveAvatarComponent } from "./avatarComponentResolver.js";
 import { resolveLabelComponent } from "./labelComponentResolver.js";
 import {
+  avatarComponentToRenderable,
   labelComponentToRenderable,
   navigationBarToRenderable,
   statusBarToRenderable,
@@ -83,6 +85,9 @@ function componentRenderableForPayload(
     payload.componentType || readString(preview, "componentType", "component");
   if (componentType === "label") {
     return labelComponentToRenderable(payload, resolveLabelComponent(payload));
+  }
+  if (componentType === "avatar") {
+    return avatarComponentToRenderable(payload, resolveAvatarComponent(payload));
   }
 
   const box = {

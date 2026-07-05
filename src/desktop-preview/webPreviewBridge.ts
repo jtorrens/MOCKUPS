@@ -2,8 +2,9 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { NavigationBarModule } from "../visual/modules/atomic/NavigationBarModule.js";
 import { StatusBarModule } from "../visual/modules/atomic/StatusBarModule.js";
-import type { RenderableNode } from "../visual/renderable/types.js";
+import type { RenderableBox, RenderableNode } from "../visual/renderable/types.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
+import type { AvatarDesignContract } from "./avatarComponentResolver.js";
 import type { LabelDesignContract } from "./labelComponentResolver.js";
 import type {
   NavigationBarDesignContract,
@@ -160,6 +161,16 @@ function labelTextWidth(text: string, fontSize: number) {
   return text.length * fontSize * 0.58;
 }
 
+export function measureLabelComponent(
+  label: LabelDesignContract,
+  payload: DesignPreviewPayload,
+) {
+  const scale = renderScale(payload);
+  const fontSize = numberToken(payload, label.textSizeToken) * scale;
+  const subtextFontSize = numberToken(payload, label.subtextSizeToken) * scale;
+  return labelSize(label, fontSize, subtextFontSize, scale);
+}
+
 function labelSize(
   label: LabelDesignContract,
   fontSize: number,
@@ -201,11 +212,23 @@ export function labelComponentToRenderable(
   payload: DesignPreviewPayload,
   label: LabelDesignContract,
 ): RenderableNode {
+  const size = measureLabelComponent(label, payload);
+  return labelComponentToRenderableAt(
+    payload,
+    label,
+    centerBox(payload, size.width, size.height),
+  );
+}
+
+export function labelComponentToRenderableAt(
+  payload: DesignPreviewPayload,
+  label: LabelDesignContract,
+  box: RenderableBox,
+): RenderableNode {
   const scale = renderScale(payload);
   const fontSize = numberToken(payload, label.textSizeToken) * scale;
   const subtextFontSize = numberToken(payload, label.subtextSizeToken) * scale;
   const size = labelSize(label, fontSize, subtextFontSize, scale);
-  const box = centerBox(payload, size.width, size.height);
   const borderWidth = label.surface.borderWidth * scale;
   const background = selectedColor(
     payload,
@@ -305,6 +328,167 @@ export function labelComponentToRenderable(
       route: "component-resolver.web-bridge",
       componentType: "label",
     },
+  };
+}
+
+export function avatarComponentToRenderable(
+  payload: DesignPreviewPayload,
+  avatar: AvatarDesignContract,
+): RenderableNode {
+  const scale = renderScale(payload);
+  const avatarSize = avatar.size * scale;
+  const labelSize = avatar.labelSlot.label
+    ? measureLabelComponent(avatar.labelSlot.label, payload)
+    : undefined;
+  const gap = avatar.labelSlot.label ? avatar.labelSlot.gap * scale : 0;
+  const position = avatar.labelSlot.position;
+  const groupWidth =
+    labelSize && (position === "left" || position === "right")
+      ? avatarSize + gap + labelSize.width
+      : Math.max(avatarSize, labelSize?.width ?? 0);
+  const groupHeight =
+    labelSize && (position === "top" || position === "bottom")
+      ? avatarSize + gap + labelSize.height
+      : Math.max(avatarSize, labelSize?.height ?? 0);
+  const groupBox = centerBox(payload, groupWidth, groupHeight);
+  const avatarBox = avatarBoxForSlot(groupBox, avatarSize, position, gap, labelSize);
+  const labelBox =
+    avatar.labelSlot.label && labelSize
+      ? labelBoxForSlot(groupBox, avatarBox, avatarSize, position, gap, labelSize)
+      : undefined;
+  const borderWidth = avatar.surface.borderWidth * scale;
+  const surfaceRelief = avatar.surface.reliefEnabled
+    ? {
+        angleDeg: avatar.surface.reliefAngle,
+        extension: avatar.surface.reliefExtent * scale,
+        spread: avatar.surface.reliefSpread * scale,
+        upperIntensity: avatar.surface.reliefTopIntensity,
+        lowerIntensity: avatar.surface.reliefBottomIntensity,
+      }
+    : undefined;
+
+  return {
+    id: avatar.id,
+    type: "component_avatar",
+    frame: 0,
+    box: groupBox,
+    style: {
+      overflow: "visible",
+    },
+    children: [
+      {
+        id: `${avatar.id}.placeholder`,
+        type: "avatar",
+        frame: 0,
+        box: avatarBox,
+        style: {
+          borderRadius: numberToken(payload, avatar.cornerRadiusToken) * scale,
+          borderWidth,
+          borderColor: selectedColor(payload, avatar.surface.borderColorToken),
+          shadow: avatar.surface.shadowEnabled ? shadow(payload) : undefined,
+          surfaceRelief,
+        },
+        metadata: {
+          label: "A",
+        },
+      },
+      ...(avatar.labelSlot.label && labelBox
+        ? [
+            labelComponentToRenderableAt(
+              payload,
+              avatar.labelSlot.label,
+              labelBox,
+            ),
+          ]
+        : []),
+    ],
+    metadata: {
+      route: "component-resolver.web-bridge",
+      componentType: "avatar",
+    },
+  };
+}
+
+function avatarBoxForSlot(
+  groupBox: RenderableBox,
+  avatarSize: number,
+  position: "top" | "bottom" | "left" | "right",
+  gap: number,
+  labelSize: { width: number; height: number } | undefined,
+): RenderableBox {
+  const labelWidth = labelSize?.width ?? 0;
+  const labelHeight = labelSize?.height ?? 0;
+  if (position === "top") {
+    return {
+      x: groupBox.x + (groupBox.width - avatarSize) / 2,
+      y: groupBox.y + labelHeight + gap,
+      width: avatarSize,
+      height: avatarSize,
+    };
+  }
+  if (position === "bottom") {
+    return {
+      x: groupBox.x + (groupBox.width - avatarSize) / 2,
+      y: groupBox.y,
+      width: avatarSize,
+      height: avatarSize,
+    };
+  }
+  if (position === "left") {
+    return {
+      x: groupBox.x + labelWidth + gap,
+      y: groupBox.y + (groupBox.height - avatarSize) / 2,
+      width: avatarSize,
+      height: avatarSize,
+    };
+  }
+
+  return {
+    x: groupBox.x,
+    y: groupBox.y + (groupBox.height - avatarSize) / 2,
+    width: avatarSize,
+    height: avatarSize,
+  };
+}
+
+function labelBoxForSlot(
+  groupBox: RenderableBox,
+  avatarBox: RenderableBox,
+  avatarSize: number,
+  position: "top" | "bottom" | "left" | "right",
+  gap: number,
+  labelSize: { width: number; height: number },
+): RenderableBox {
+  if (position === "top") {
+    return {
+      x: groupBox.x + (groupBox.width - labelSize.width) / 2,
+      y: groupBox.y,
+      width: labelSize.width,
+      height: labelSize.height,
+    };
+  }
+  if (position === "bottom") {
+    return {
+      x: groupBox.x + (groupBox.width - labelSize.width) / 2,
+      y: avatarBox.y + avatarSize + gap,
+      width: labelSize.width,
+      height: labelSize.height,
+    };
+  }
+  if (position === "left") {
+    return {
+      x: groupBox.x,
+      y: groupBox.y + (groupBox.height - labelSize.height) / 2,
+      width: labelSize.width,
+      height: labelSize.height,
+    };
+  }
+
+  return {
+    x: avatarBox.x + avatarSize + gap,
+    y: groupBox.y + (groupBox.height - labelSize.height) / 2,
+    width: labelSize.width,
+    height: labelSize.height,
   };
 }
 

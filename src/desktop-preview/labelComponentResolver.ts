@@ -1,7 +1,7 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 
 export interface LabelDesignContract {
-  id: "component.label";
+  id: string;
   text: string;
   subtext: string;
   dimensionMode: "content" | "fixed";
@@ -113,6 +113,14 @@ export function resolveLabelComponent(
 ): LabelDesignContract {
   const config = parseObject(payload.configJson);
   const preview = parseObject(payload.designPreviewJson);
+  return resolveLabelComponentFromRecords(config, preview, "component.label");
+}
+
+export function resolveLabelComponentFromRecords(
+  config: Record<string, unknown>,
+  preview: Record<string, unknown>,
+  id: string,
+): LabelDesignContract {
   const label = asRecord(config.label);
   const style = asRecord(config.style);
   const size = requiredPair(label, "size", "component.label.size");
@@ -146,7 +154,7 @@ export function resolveLabelComponent(
   }
 
   return {
-    id: "component.label",
+    id,
     text: requiredString(preview, "sampleText", "component.label.preview.sampleText"),
     subtext: requiredText(
       preview,
