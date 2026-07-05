@@ -25,10 +25,10 @@ internal sealed class DictionaryEmbeddedComponentControl : Grid, IDictionaryValu
         _label = new TextBlock
         {
             Text = DisplayText(definition, value),
-            Foreground = LabelBrush(definition, value),
             VerticalAlignment = VerticalAlignment.Center,
             Opacity = 0.82,
         };
+        ApplyLabelBrush();
         SetColumn(_label, 0);
         Children.Add(_label);
 
@@ -73,7 +73,7 @@ internal sealed class DictionaryEmbeddedComponentControl : Grid, IDictionaryValu
 
         _value = value;
         _label.Text = DisplayText(_definition, value);
-        _label.Foreground = LabelBrush(_definition, value);
+        ApplyLabelBrush();
     }
 
     private static string DisplayText(FieldDefinition definition, string value)
@@ -97,5 +97,17 @@ internal sealed class DictionaryEmbeddedComponentControl : Grid, IDictionaryValu
         return !string.Equals(value, definition.DefaultValue, StringComparison.Ordinal)
             ? new SolidColorBrush(Color.Parse("#D6A638"))
             : null;
+    }
+
+    private void ApplyLabelBrush()
+    {
+        var brush = LabelBrush(_definition, _value);
+        if (brush is null)
+        {
+            _label.ClearValue(TextBlock.ForegroundProperty);
+            return;
+        }
+
+        _label.Foreground = brush;
     }
 }
