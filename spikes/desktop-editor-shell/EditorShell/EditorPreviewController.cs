@@ -10,7 +10,7 @@ internal sealed class EditorPreviewController
 {
     private readonly SpikeDatabase _database;
     private readonly EditorInstantComboBox _deviceComboBox;
-    private readonly ComboBox _themeComboBox;
+    private readonly EditorInstantComboBox _themeComboBox;
     private readonly EditorInstantComboBox _modeComboBox;
     private readonly Func<bool> _isDark;
     private readonly Func<ProjectTreeNode?> _selectedNode;
@@ -25,7 +25,7 @@ internal sealed class EditorPreviewController
     public EditorPreviewController(
         SpikeDatabase database,
         EditorInstantComboBox deviceComboBox,
-        ComboBox themeComboBox,
+        EditorInstantComboBox themeComboBox,
         EditorInstantComboBox modeComboBox,
         ContentControl runtimePreviewHost,
         ContentControl designPreviewHost,
@@ -49,8 +49,6 @@ internal sealed class EditorPreviewController
 
     public void Initialize(IReadOnlyList<ProjectTreeNode> treeRoots)
     {
-        EditorComboBoxBehavior.Configure(_themeComboBox);
-
         RefreshOptions(treeRoots);
     }
 
@@ -111,7 +109,7 @@ internal sealed class EditorPreviewController
 
     public void OnThemeChanged()
     {
-        if (_themeComboBox.SelectedItem is not FieldOption option) return;
+        if (_themeComboBox.SelectedItem is not { } option) return;
 
         _selectedThemeId = option.Value;
         if (!_isRefreshingOptions)
@@ -137,7 +135,7 @@ internal sealed class EditorPreviewController
         if (string.IsNullOrWhiteSpace(SelectedDeviceId)) return;
 
         var metrics = _database.GetDevicePreviewMetrics(SelectedDeviceId);
-        var themeName = _themeComboBox.SelectedItem is FieldOption option ? option.Label : "No theme";
+        var themeName = _themeComboBox.SelectedItem?.Label ?? "No theme";
         _runtimePreviewPane.Update(metrics, _isDark(), themeName, _selectedMode);
         var designPayload = DesignPreviewPayloadFactory.Create(_database, _selectedNode(), _selectedThemeId);
         _designPreviewPane.Update(

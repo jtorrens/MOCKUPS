@@ -67,6 +67,7 @@ public partial class MainWindow : SukiWindow
             () => _isDark,
             () => _selectedNode);
         PreviewDeviceComboBox.SelectionChanged += (_, _) => _previewController.OnDeviceChanged();
+        PreviewThemeComboBox.SelectionChanged += (_, _) => _previewController.OnThemeChanged();
         PreviewModeComboBox.SelectionChanged += (_, _) => _previewController.OnModeChanged();
         _shellState = new EditorShellStateService(this, ShellColumns);
         _navigationRenderer = new EditorNavigationRenderer(
@@ -170,11 +171,6 @@ public partial class MainWindow : SukiWindow
     private void InitializePreviewOptions()
     {
         _previewController.Initialize(_treeRoots);
-    }
-
-    private void OnPreviewThemeChanged(object? sender, SelectionChangedEventArgs e)
-    {
-        _previewController.OnThemeChanged();
     }
 
     private void RefreshPreviewDevice()

@@ -6,20 +6,13 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class DictionaryOptionTokenControl : Grid, IDictionaryValueControl
 {
     private readonly FieldDefinition _definition;
-    private readonly ComboBox _comboBox;
+    private readonly EditorInstantComboBox _comboBox;
     private bool _isUpdating;
 
     public DictionaryOptionTokenControl(FieldDefinition definition, string value)
     {
         _definition = definition;
-        _comboBox = new ComboBox
-        {
-            MinHeight = 36,
-            MinWidth = 220,
-            IsEnabled = definition.IsEditable,
-            ItemsSource = definition.Options ?? [],
-        };
-        EditorComboBoxBehavior.Configure(_comboBox);
+        _comboBox = DictionaryOptionSelector.CreateComboBox(definition, value);
         SetValue(value);
         _comboBox.SelectionChanged += (_, _) =>
         {

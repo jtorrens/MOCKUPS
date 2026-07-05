@@ -1,23 +1,18 @@
-using Avalonia.Controls;
 using System.Linq;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal static class DictionaryOptionSelector
 {
-    public static ComboBox CreateComboBox(FieldDefinition definition, string value)
+    public static EditorInstantComboBox CreateComboBox(FieldDefinition definition, string value)
     {
-        var comboBox = new ComboBox
+        var comboBox = new EditorInstantComboBox
         {
             MinHeight = 36,
             MinWidth = 220,
             IsEnabled = definition.IsEditable,
             ItemsSource = definition.Options ?? [],
-            ItemTemplate = definition.ValueKind is ValueKind.PaletteColorToken or ValueKind.PaletteColorPair or ValueKind.PaletteColorAlphaPair
-                ? DictionaryPaletteOptionTemplate.Create()
-                : null,
         };
-        EditorComboBoxBehavior.Configure(comboBox);
         comboBox.SelectedItem = SelectedOption(definition, value);
         return comboBox;
     }
@@ -28,7 +23,7 @@ internal static class DictionaryOptionSelector
             ?? (definition.Options ?? []).FirstOrDefault();
     }
 
-    public static string Value(ComboBox comboBox)
+    public static string Value(EditorInstantComboBox comboBox)
     {
         return comboBox.SelectedItem is FieldOption option ? option.Value : "";
     }
