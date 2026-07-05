@@ -21,7 +21,7 @@ internal static class DesignPreviewToVisualIrBridge
             {
                 Id = "device.screen",
                 Bounds = new VisualIrRect(metrics.ScreenX, metrics.ScreenY, metrics.ScreenWidth, metrics.ScreenHeight),
-                Fill = new VisualIrSolidPaint(VisualIrColor.Static("#0b1020")),
+                Fill = new VisualIrSolidPaint(VariantColor("#F7F9FC", "#101827")),
                 Radius = metrics.CornerRadius,
             },
         };
@@ -371,4 +371,3 @@ internal static class DesignPreviewToVisualIrBridge
         public string TokenOrLabel => string.IsNullOrWhiteSpace(Token) ? Label : Token;
     }
 }
-

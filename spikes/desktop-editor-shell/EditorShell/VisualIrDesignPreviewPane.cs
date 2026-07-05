@@ -22,8 +22,8 @@ internal sealed class VisualIrDesignPreviewPane : Grid
     {
         Children.Clear();
 
-        var panelText = isDark ? "#E8EEF8" : "#172033";
-        var panelBackground = isDark ? "#162238" : "#EDF4FC";
+        var panelText = isDark ? "#F3F4F6" : "#111827";
+        var panelBackground = isDark ? "#121417" : "#F3F4F6";
         Background = new SolidColorBrush(Color.Parse(panelBackground));
 
         if (payload is null)
@@ -72,7 +72,7 @@ internal sealed class VisualIrDesignPreviewPane : Grid
         {
             Width = metrics.CanvasWidth,
             Height = metrics.CanvasHeight,
-            BorderBrush = new SolidColorBrush(Color.Parse("#111827")),
+            BorderBrush = new SolidColorBrush(Color.Parse("#18181B")),
             BorderThickness = new Thickness(10),
             CornerRadius = new CornerRadius(metrics.CornerRadius),
             IsHitTestVisible = false,
@@ -82,7 +82,7 @@ internal sealed class VisualIrDesignPreviewPane : Grid
         {
             Text = $"IR · {payload.Kind} · {metrics.Name} · {themeName} · {themeMode}",
             Foreground = Brushes.White,
-            Background = new SolidColorBrush(Color.Parse("#990F172A")),
+            Background = new SolidColorBrush(Color.Parse("#AA18181B")),
             FontSize = 10,
             Padding = new Thickness(8, 4),
         };
