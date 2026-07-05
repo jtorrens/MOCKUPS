@@ -23,9 +23,13 @@ public sealed class EditorInstantComboBox : Grid
     private TopLevel? _dismissRoot;
     private IReadOnlyList<FieldOption> _items = [];
     private FieldOption? _selectedItem;
+    private int _highlightedIndex = -1;
 
     public EditorInstantComboBox()
     {
+        Focusable = true;
+        KeyDown += OnKeyDown;
+
         _button = new Button
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -45,16 +49,17 @@ public sealed class EditorInstantComboBox : Grid
         _indicator = new TextBlock
         {
             Text = ">",
-            Width = 18,
+            Width = 16,
             FontSize = 13,
             FontWeight = FontWeight.Bold,
             TextAlignment = TextAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Right,
             VerticalAlignment = VerticalAlignment.Center,
             Opacity = 0.72,
         };
         var buttonContent = new Grid
         {
-            ColumnDefinitions = new ColumnDefinitions("*,Auto"),
+            ColumnDefinitions = new ColumnDefinitions("*,22"),
         };
         Grid.SetColumn(_label, 0);
         Grid.SetColumn(_indicator, 1);
@@ -124,10 +129,12 @@ public sealed class EditorInstantComboBox : Grid
         if (isOpen && _popup.Child is Border border)
         {
             border.Width = Math.Max(_button.Bounds.Width, 112);
+            _highlightedIndex = SelectedIndex();
         }
 
         _popup.IsOpen = isOpen;
         _indicator.Text = isOpen ? "v" : ">";
+        RebuildItems();
         if (isOpen)
         {
             AttachDismissHandler();
@@ -142,6 +149,69 @@ public sealed class EditorInstantComboBox : Grid
     {
         SetPopupOpen(false);
         SelectedItem = option;
+    }
+
+    private void SelectHighlighted()
+    {
+        if (_highlightedIndex < 0 || _highlightedIndex >= _items.Count) return;
+
+        Select(_items[_highlightedIndex]);
+    }
+
+    private void MoveHighlight(int delta)
+    {
+        if (_items.Count == 0) return;
+
+        if (!_popup.IsOpen)
+        {
+            SetPopupOpen(true);
+        }
+
+        var index = _highlightedIndex < 0 ? SelectedIndex() : _highlightedIndex;
+        if (index < 0) index = 0;
+        index = Math.Clamp(index + delta, 0, _items.Count - 1);
+        if (_highlightedIndex == index) return;
+
+        _highlightedIndex = index;
+        RebuildItems();
+    }
+
+    private int SelectedIndex()
+    {
+        if (_selectedItem is null) return _items.Count > 0 ? 0 : -1;
+        var index = _items.ToList().FindIndex((item) => Equals(item, _selectedItem));
+        return index >= 0 ? index : (_items.Count > 0 ? 0 : -1);
+    }
+
+    private void OnKeyDown(object? sender, KeyEventArgs args)
+    {
+        switch (args.Key)
+        {
+            case Key.Enter:
+            case Key.Space:
+                if (_popup.IsOpen)
+                {
+                    SelectHighlighted();
+                }
+                else
+                {
+                    SetPopupOpen(true);
+                }
+                args.Handled = true;
+                break;
+            case Key.Down:
+                MoveHighlight(1);
+                args.Handled = true;
+                break;
+            case Key.Up:
+                MoveHighlight(-1);
+                args.Handled = true;
+                break;
+            case Key.Escape:
+                SetPopupOpen(false);
+                args.Handled = true;
+                break;
+        }
     }
 
     private void AttachDismissHandler()
@@ -177,9 +247,11 @@ public sealed class EditorInstantComboBox : Grid
     private void RebuildItems()
     {
         _itemsPanel.Children.Clear();
-        foreach (var item in _items)
+        for (var index = 0; index < _items.Count; index++)
         {
+            var item = _items[index];
             var isSelected = Equals(item, _selectedItem);
+            var isHighlighted = _popup.IsOpen && index == _highlightedIndex;
             var button = new Button
             {
                 Content = item.Label,
@@ -187,7 +259,9 @@ public sealed class EditorInstantComboBox : Grid
                 HorizontalContentAlignment = HorizontalAlignment.Left,
                 MinHeight = 30,
                 Padding = new Thickness(8, 5),
-                Background = isSelected ? new SolidColorBrush(Color.Parse("#223388FF")) : Brushes.Transparent,
+                Background = isHighlighted
+                    ? new SolidColorBrush(Color.Parse("#334B8DFF"))
+                    : isSelected ? new SolidColorBrush(Color.Parse("#223388FF")) : Brushes.Transparent,
                 Cursor = new Cursor(StandardCursorType.Hand),
                 Focusable = false,
             };
