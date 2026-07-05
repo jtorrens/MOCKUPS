@@ -30,10 +30,10 @@ internal sealed class DictionaryPaletteAlphaPairControl : Grid, IDictionaryValue
 
         _firstColorControl = new DictionaryPaletteTokenControl($"{definition.Label} · {labels.First}", definition.Options, pair.First.ColorToken, definition.IsEditable);
         _secondColorControl = new DictionaryPaletteTokenControl($"{definition.Label} · {labels.Second}", definition.Options, pair.Second.ColorToken, definition.IsEditable);
-        _firstAlphaSlider = CreateSlider(pair.First.Alpha, definition.IsEditable);
-        _secondAlphaSlider = CreateSlider(pair.Second.Alpha, definition.IsEditable);
-        _firstAlphaBox = CreateAlphaBox(pair.First.Alpha, definition.IsEditable);
-        _secondAlphaBox = CreateAlphaBox(pair.Second.Alpha, definition.IsEditable);
+        _firstAlphaSlider = DictionaryAlphaControl.CreateSlider(pair.First.Alpha, definition.IsEditable);
+        _secondAlphaSlider = DictionaryAlphaControl.CreateSlider(pair.Second.Alpha, definition.IsEditable);
+        _firstAlphaBox = DictionaryAlphaControl.CreateAlphaBox(pair.First.Alpha, definition.IsEditable);
+        _secondAlphaBox = DictionaryAlphaControl.CreateAlphaBox(pair.Second.Alpha, definition.IsEditable);
 
         Hook(_firstColorControl);
         Hook(_secondColorControl);
@@ -150,33 +150,6 @@ internal sealed class DictionaryPaletteAlphaPairControl : Grid, IDictionaryValue
         ValueCommitted?.Invoke(this, value);
     }
 
-    private static Slider CreateSlider(double value, bool isEditable)
-    {
-        return new Slider
-        {
-            Minimum = 0,
-            Maximum = 1,
-            Value = PaletteAlphaPair.ClampAlpha(value),
-            TickFrequency = 0.05,
-            SmallChange = 0.05,
-            LargeChange = 0.1,
-            Width = 126,
-            IsEnabled = isEditable,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-    }
-
-    private static TextBox CreateAlphaBox(double value, bool isEditable)
-    {
-        return EditorTextBoxBehavior.Configure(new TextBox
-        {
-            Text = PaletteAlphaPair.FormatAlpha(value),
-            Width = 54,
-            IsReadOnly = !isEditable,
-            VerticalContentAlignment = VerticalAlignment.Center,
-        });
-    }
-
     private static Border CreateGroup(
         string label,
         Control colorControl,
@@ -235,8 +208,6 @@ internal sealed class DictionaryPaletteAlphaPairControl : Grid, IDictionaryValue
 
     private static void SetAlpha(Slider slider, TextBox box, double value)
     {
-        var alpha = PaletteAlphaPair.ClampAlpha(value);
-        slider.Value = alpha;
-        box.Text = PaletteAlphaPair.FormatAlpha(alpha);
+        DictionaryAlphaControl.SetAlpha(slider, box, value);
     }
 }

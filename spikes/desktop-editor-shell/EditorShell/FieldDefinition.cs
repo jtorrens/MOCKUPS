@@ -16,6 +16,7 @@ internal enum ValueKind
     OptionToken,
     ThemeToken,
     HexColor,
+    Alpha,
     PaletteColorToken,
     PaletteColorPair,
     PaletteColorAlphaPair,

@@ -2233,9 +2233,14 @@ internal sealed partial class SpikeDatabase
                   { "id": "component.label.padding", "order": 30, "visible": true },
                   { "id": "component.label.backgroundVisible", "order": 40, "visible": true },
                   { "id": "component.label.backgroundColorToken", "order": 50, "visible": true },
-                  { "id": "component.label.textColorToken", "order": 60, "visible": true },
-                  { "id": "component.label.textSizeToken", "order": 70, "visible": true },
-                  { "id": "component.label.textStyle", "order": 80, "visible": true }
+                  { "id": "component.label.textColorToken", "order": 90, "visible": true },
+                  { "id": "component.label.textSizeToken", "order": 100, "visible": true },
+                  { "id": "component.label.textStyle", "order": 110, "visible": true }
+                ] },
+                { "id": "labelTransparency", "label": "Transparency", "order": 20, "visible": true, "fields": [
+                  { "id": "component.label.backgroundAlpha", "order": 10, "visible": true },
+                  { "id": "component.label.borderAlpha", "order": 20, "visible": true },
+                  { "id": "component.label.reliefAlpha", "order": 30, "visible": true }
                 ] }
               ]
             }

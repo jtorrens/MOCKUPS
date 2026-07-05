@@ -77,6 +77,25 @@ function readPair(
   };
 }
 
+function readAlpha(value: Record<string, unknown>, key: string, fallback = 1) {
+  const raw = value[key];
+  return typeof raw === "number" && Number.isFinite(raw)
+    ? Math.max(0, Math.min(1, raw))
+    : fallback;
+}
+
+function colorWithAlpha(color: string, alpha: number) {
+  const clamped = Math.max(0, Math.min(1, alpha));
+  if (clamped >= 1 || color === "transparent") return color;
+  const match = /^#([0-9a-f]{6})$/i.exec(color.trim());
+  if (!match) return color;
+  const hex = match[1];
+  const red = Number.parseInt(hex.slice(0, 2), 16);
+  const green = Number.parseInt(hex.slice(2, 4), 16);
+  const blue = Number.parseInt(hex.slice(4, 6), 16);
+  return `rgba(${red}, ${green}, ${blue}, ${clamped})`;
+}
+
 function renderScale(payload: DesignPreviewPayload) {
   const scale = payload.device.scaleToPixels;
   return typeof scale === "number" && Number.isFinite(scale) && scale > 0
@@ -400,6 +419,9 @@ function componentRenderableForPayload(
     const lineHeight = Math.max(fontSize * 1.2, fontSize + paddingY * 0.5);
     const fixedWidth = size.first * scale;
     const fixedHeight = size.second * scale;
+    const backgroundAlpha = readAlpha(label, "backgroundAlpha");
+    const borderAlpha = readAlpha(label, "borderAlpha");
+    const reliefAlpha = readAlpha(label, "reliefAlpha");
     const contentWidth = Math.max(
       1,
       sampleText.length * fontSize * 0.58 + paddingX * 2,
@@ -408,6 +430,17 @@ function componentRenderableForPayload(
     const isFixed = readString(label, "dimensionMode", "content") === "fixed";
     const width = isFixed ? fixedWidth : contentWidth;
     const height = isFixed ? fixedHeight : contentHeight;
+    const labelSurface = {
+      ...surface,
+      borderColor: colorWithAlpha(surface.borderColor, borderAlpha),
+      surfaceRelief: surface.surfaceRelief
+        ? {
+            ...surface.surfaceRelief,
+            upperIntensity: surface.surfaceRelief.upperIntensity * reliefAlpha,
+            lowerIntensity: surface.surfaceRelief.lowerIntensity * reliefAlpha,
+          }
+        : undefined,
+    };
     return {
       id: "design:label",
       type: "message_bubble_label",
@@ -418,7 +451,10 @@ function componentRenderableForPayload(
         backgroundColor:
           label.backgroundVisible === false
             ? "transparent"
-            : themeTokenColor(payload, label.backgroundColorToken, "#FFFFFF"),
+            : colorWithAlpha(
+                themeTokenColor(payload, label.backgroundColorToken, "#FFFFFF"),
+                backgroundAlpha,
+              ),
         textColor: themeTokenColor(payload, label.textColorToken, "#111827"),
         fontSize,
         lineHeight,
@@ -427,7 +463,7 @@ function componentRenderableForPayload(
         textAlign: "center",
         fontStyle: readString(label, "textStyle", "normal"),
         whiteSpace: "nowrap",
-        ...surface,
+        ...labelSurface,
       },
     };
   }
