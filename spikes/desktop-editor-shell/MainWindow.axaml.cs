@@ -100,7 +100,7 @@ public partial class MainWindow : SukiWindow
         _fieldPostCommitEffects = new EditorFieldPostCommitEffects(
             _database,
             () => _previewController.SelectedDeviceId,
-            (title) => EditorTitle.Text = title,
+            SetEditorRootTitle,
             RebuildNavigationCards,
             RefreshPreviewDevice,
             RefreshPreviewOptions);
@@ -298,8 +298,7 @@ public partial class MainWindow : SukiWindow
 
         _selectedNode = node;
         _embeddedEditorContext = null;
-        EditorBackButton.IsVisible = false;
-        EditorTitle.Text = node.Name;
+        SetEditorRootTitle(node.Name);
         BuildEditorCards(node);
         if (keepEditorViewState)
         {
@@ -445,8 +444,7 @@ public partial class MainWindow : SukiWindow
 
             var context = new EmbeddedEditorContext(node, slot);
             _embeddedEditorContext = context;
-            EditorBackButton.IsVisible = true;
-            EditorTitle.Text = $"{node.Name} > {context.Slot.Label}";
+            SetEditorEmbeddedTitle(context);
             BuildEmbeddedComponentCards(context);
             RefreshPreviewDevice();
         }
@@ -456,13 +454,6 @@ public partial class MainWindow : SukiWindow
         }
 
         return Task.CompletedTask;
-    }
-
-    private void OnEditorBackClick(object? sender, RoutedEventArgs e)
-    {
-        if (_embeddedEditorContext is null) return;
-
-        ShowNode(_embeddedEditorContext.OwnerNode, rebuildTree: false);
     }
 
     private void BuildEmbeddedComponentCards(EmbeddedEditorContext context)
@@ -607,6 +598,21 @@ public partial class MainWindow : SukiWindow
         }
 
         return card;
+    }
+
+    private void SetEditorRootTitle(string title)
+    {
+        EditorBreadcrumbBar.Render(EditorBreadcrumbPanel, [
+            new EditorBreadcrumbItem(title),
+        ]);
+    }
+
+    private void SetEditorEmbeddedTitle(EmbeddedEditorContext context)
+    {
+        EditorBreadcrumbBar.Render(EditorBreadcrumbPanel, [
+            new EditorBreadcrumbItem(context.OwnerNode.Name, () => ShowNode(context.OwnerNode, rebuildTree: false)),
+            new EditorBreadcrumbItem(context.Slot.Label),
+        ]);
     }
 
     private async Task AddChild(ProjectTreeNode parent)
