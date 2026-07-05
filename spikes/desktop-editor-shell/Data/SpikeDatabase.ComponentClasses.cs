@@ -261,6 +261,7 @@ internal sealed partial class SpikeDatabase
             var designPreview = ParseJsonObject(string.IsNullOrWhiteSpace(row.DesignPreviewJson) ? "{}" : row.DesignPreviewJson);
             var designPreviewDefaults = ParseJsonObject(DefaultComponentDesignPreviewJson(row.ComponentType));
             var designPreviewChanged = JsonPath.MergeMissing(designPreview, designPreviewDefaults);
+            designPreviewChanged |= EnsureComponentDesignPreviewText(row.ComponentType, designPreview);
 
             if (!configChanged && !designPreviewChanged)
             {
@@ -291,6 +292,22 @@ internal sealed partial class SpikeDatabase
         }
 
         style[key] = JsonValue.Create(Math.Clamp(value / 100, -1, 1));
+        return true;
+    }
+
+    private static bool EnsureComponentDesignPreviewText(string componentType, JsonObject designPreview)
+    {
+        if (componentType != "avatar")
+        {
+            return false;
+        }
+
+        if (JsonPath.String(designPreview, "sampleSubtext", "").Trim().Length > 0)
+        {
+            return false;
+        }
+
+        designPreview["sampleSubtext"] = "Subtitle";
         return true;
     }
 
@@ -546,7 +563,7 @@ internal sealed partial class SpikeDatabase
                 "video" => "0:12",
                 _ => "Sample",
             },
-            sampleSubtext = componentType == "label" ? "Subtitle" : "",
+            sampleSubtext = componentType is "label" or "avatar" ? "Subtitle" : "",
             sampleSize = 256,
         });
     }
