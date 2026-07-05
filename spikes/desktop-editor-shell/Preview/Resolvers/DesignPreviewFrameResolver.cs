@@ -112,11 +112,15 @@ internal static class DesignPreviewFrameResolver
         var label = config["label"] as JsonObject ?? [];
         var size = SizePair(JsonPath.String(label, "size", "120|32"), 120, 32);
         var padding = SizePair(JsonPath.String(label, "padding", "8|4"), 8, 4);
-        var bounds = Centered(metrics, size.Width, size.Height);
         var backgroundVisible = JsonPath.Bool(label, "backgroundVisible", true);
         var text = JsonPath.String(preview, "sampleText", "Sample");
         var textSize = JsonPath.Number(label, "textSize", 12);
         var textStyle = JsonPath.String(label, "textStyle", "normal");
+        var dimensionMode = JsonPath.String(label, "dimensionMode", "content");
+        var contentSize = LabelContentSize(text, textSize, padding);
+        var width = dimensionMode == "fixed" ? size.Width : contentSize.Width;
+        var height = dimensionMode == "fixed" ? size.Height : contentSize.Height;
+        var bounds = Centered(metrics, width, height);
 
         return new ResolvedDesignGroupNode
         {
@@ -159,6 +163,7 @@ internal static class DesignPreviewFrameResolver
             {
                 ["legacyKind"] = payload.Kind,
                 ["componentType"] = payload.ComponentType,
+                ["dimensionMode"] = dimensionMode,
             },
         };
     }
@@ -536,6 +541,15 @@ internal static class DesignPreviewFrameResolver
         return new DesignSize(
             parts.Length > 0 ? NumericText.Double(parts[0], fallbackWidth) : fallbackWidth,
             parts.Length > 1 ? NumericText.Double(parts[1], fallbackHeight) : fallbackHeight);
+    }
+
+    private static DesignSize LabelContentSize(string text, double textSize, DesignSize padding)
+    {
+        var measuredWidth = Math.Max(textSize, text.Length * textSize * 0.58);
+        var measuredHeight = Math.Max(textSize, textSize * 1.35);
+        return new DesignSize(
+            Math.Max(1, measuredWidth + padding.Width * 2),
+            Math.Max(1, measuredHeight + padding.Height * 2));
     }
 
     private static string? IconMarkup(DesignPreviewPayload payload, string token)

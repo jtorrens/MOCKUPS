@@ -51,9 +51,23 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
 
         if (payload.Kind == "componentClass"
             && payload.ComponentType == "label"
-            && !Flatten(document.Root).OfType<VisualIrTextNode>().Any((text) => text.Id == "component.label.text" && text.Text == "Sample"))
+            && !Flatten(document.Root).OfType<VisualIrGroupNode>().Any((group) =>
+                group.Id == "component.label"
+                && group.Metadata?.TryGetValue("dimensionMode", out var dimensionMode) == true
+                && dimensionMode == "content"))
         {
-            throw new InvalidOperationException("Expected label component text node.");
+            throw new InvalidOperationException("Expected content-sized label component group.");
+        }
+
+        if (payload.Kind == "componentClass"
+            && payload.ComponentType == "label"
+            && !Flatten(document.Root).OfType<VisualIrTextNode>().Any((text) =>
+                text.Id == "component.label.text"
+                && text.Text == "Sample"
+                && text.Style.FontSize == 18
+                && text.Style.FontStyle == "italic"))
+        {
+            throw new InvalidOperationException("Expected label component text style.");
         }
 
         var renderer = new AvaloniaVisualIrDebugRenderer();
@@ -150,13 +164,14 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
             """
             {
               "label": {
-                "size": "120|32",
-                "padding": "8|4",
+                "dimensionMode": "content",
+                "size": "180|64",
+                "padding": "12|6",
                 "backgroundVisible": true,
                 "backgroundColorToken": "theme.colors.background",
                 "textColorToken": "theme.colors.textPrimary",
-                "textSize": 12,
-                "textStyle": "normal"
+                "textSize": 18,
+                "textStyle": "italic"
               }
             }
             """,
