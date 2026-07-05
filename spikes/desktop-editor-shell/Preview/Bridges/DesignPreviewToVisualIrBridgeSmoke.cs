@@ -5,6 +5,7 @@ using Mockups.DesktopEditorShell.VisualIr;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.Preview.Bridges;
 
@@ -88,6 +89,17 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
             throw new InvalidOperationException("Expected label component relief layer.");
         }
 
+        if (payload.Kind == "componentClass"
+            && payload.ComponentType == "label")
+        {
+            var zeroExtentPayload = WithReliefExtent(payload, 0);
+            var zeroExtentDocument = DesignPreviewToVisualIrBridge.Convert(zeroExtentPayload, Metrics, "set_night");
+            if (Flatten(zeroExtentDocument.Root).OfType<VisualIrRectNode>().Any((rect) => rect.Id.StartsWith("component.label.relief.", StringComparison.Ordinal)))
+            {
+                throw new InvalidOperationException("Expected zero relief extent to emit no relief layers.");
+            }
+        }
+
         var renderer = new AvaloniaVisualIrDebugRenderer();
         renderer.Render(document, new VisualIrRenderOptions(ShowBounds: true));
     }
@@ -104,6 +116,16 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
         {
             yield return child;
         }
+    }
+
+    private static DesignPreviewPayload WithReliefExtent(DesignPreviewPayload payload, double extent)
+    {
+        var config = JsonNode.Parse(payload.ConfigJson)?.AsObject()
+            ?? throw new InvalidOperationException("Invalid label component config JSON.");
+        var style = config["style"]?.AsObject()
+            ?? throw new InvalidOperationException("Missing label component style config.");
+        style["reliefExtent"] = extent;
+        return payload with { ConfigJson = config.ToJsonString() };
     }
 
     private static DesignPreviewPayload StatusPayload()

@@ -606,6 +606,11 @@ internal static class DesignPreviewFrameResolver
         double topIntensity,
         double bottomIntensity)
     {
+        if (extent <= 0)
+        {
+            return [];
+        }
+
         var radians = angleDegrees * Math.PI / 180;
         var directionX = Math.Cos(radians);
         var directionY = Math.Sin(radians);
