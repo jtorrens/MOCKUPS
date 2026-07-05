@@ -75,6 +75,7 @@ internal sealed class IconThemeSvgReplaceDialog
             ItemsSource = new[] { "Positive SVG", "Negative / cutout SVG" },
             SelectedIndex = 0,
         };
+        EditorComboBoxBehavior.Configure(modeBox);
         var loadFileButton = new Button
         {
             Content = "Open SVG file",
