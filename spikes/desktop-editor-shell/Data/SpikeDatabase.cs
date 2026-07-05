@@ -2201,8 +2201,7 @@ internal sealed partial class SpikeDatabase
                 { "id": "avatarLabel", "label": "Label", "order": 20, "visible": true, "fields": [
                   { "id": "component.avatar.label.showLabel", "order": 10, "visible": true },
                   { "id": "component.avatar.label.showSubtext", "order": 20, "visible": true },
-                  { "id": "component.avatar.label.position", "order": 30, "visible": true },
-                  { "id": "component.avatar.label.gap", "order": 40, "visible": true },
+                  { "id": "component.avatar.label.placement", "order": 30, "visible": true },
                   { "id": "component.avatar.label.editor", "order": 50, "visible": true }
                 ] }
               ]

@@ -2,7 +2,10 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import type { RenderableBox, RenderableNode } from "../visual/renderable/types.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import type { AvatarDesignContract } from "./avatarComponentResolver.js";
+import type {
+  AlignmentPlacementContract,
+  AvatarDesignContract,
+} from "./avatarComponentResolver.js";
 import type { LabelDesignContract } from "./labelComponentResolver.js";
 import type {
   NavigationBarDesignContract,
@@ -339,16 +342,18 @@ export function avatarComponentToRenderable(
   const labelSize = avatar.labelSlot.label
     ? measureLabelComponent(avatar.labelSlot.label, payload)
     : undefined;
-  const gap = avatar.labelSlot.label ? avatar.labelSlot.gap * scale : 0;
-  const position = avatar.labelSlot.position;
-  const groupWidth =
-    labelSize && (position === "left" || position === "right")
-      ? avatarSize + gap + labelSize.width
-      : Math.max(avatarSize, labelSize?.width ?? 0);
-  const groupHeight =
-    labelSize && (position === "top" || position === "bottom")
-      ? avatarSize + gap + labelSize.height
-      : Math.max(avatarSize, labelSize?.height ?? 0);
+  const avatarLocalBox = { x: 0, y: 0, width: avatarSize, height: avatarSize };
+  const labelLocalBox = labelSize
+    ? placeChild(
+        avatarLocalBox,
+        labelSize,
+        scalePlacement(avatar.labelSlot.placement, scale),
+      )
+    : undefined;
+  const contentBounds = unionBoxes([
+    avatarLocalBox,
+    ...(labelLocalBox ? [labelLocalBox] : []),
+  ]);
   const borderWidth = avatar.surface.borderWidth * scale;
   const surfaceRelief = avatar.surface.reliefEnabled
     ? {
@@ -362,26 +367,15 @@ export function avatarComponentToRenderable(
   const visualPadding = avatarVisualPadding(borderWidth, avatarShadow, surfaceRelief);
   const groupBox = boundedCenterBox(
     payload,
-    groupWidth + visualPadding * 2,
-    groupHeight + visualPadding * 2,
+    contentBounds.width + visualPadding * 2,
+    contentBounds.height + visualPadding * 2,
   );
-  const contentBox = {
-    x: groupBox.x + visualPadding,
-    y: groupBox.y + visualPadding,
-    width: groupWidth,
-    height: groupHeight,
+  const contentOrigin = {
+    x: groupBox.x + visualPadding - contentBounds.x,
+    y: groupBox.y + visualPadding - contentBounds.y,
   };
-  const avatarBox = avatarBoxForSlot(
-    contentBox,
-    avatarSize,
-    position,
-    gap,
-    labelSize,
-  );
-  const labelBox =
-    avatar.labelSlot.label && labelSize
-      ? labelBoxForSlot(contentBox, avatarBox, avatarSize, position, gap, labelSize)
-      : undefined;
+  const avatarBox = translateBox(avatarLocalBox, contentOrigin);
+  const labelBox = labelLocalBox ? translateBox(labelLocalBox, contentOrigin) : undefined;
 
   return {
     id: avatar.id,
@@ -468,6 +462,79 @@ function boundedCenterBox(
   };
 }
 
+function scalePlacement(
+  placement: AlignmentPlacementContract,
+  scale: number,
+): AlignmentPlacementContract {
+  return {
+    ...placement,
+    offsetX: placement.offsetX * scale,
+    offsetY: placement.offsetY * scale,
+  };
+}
+
+function placeChild(
+  parent: RenderableBox,
+  childSize: { width: number; height: number },
+  placement: AlignmentPlacementContract,
+): RenderableBox {
+  return {
+    x: placeAxis(parent.x, parent.width, childSize.width, placement.alignX, placement.offsetX, placement.mode),
+    y: placeAxis(parent.y, parent.height, childSize.height, placement.alignY, placement.offsetY, placement.mode),
+    width: childSize.width,
+    height: childSize.height,
+  };
+}
+
+function placeAxis(
+  parentStart: number,
+  parentSize: number,
+  childSize: number,
+  align: number,
+  offset: number,
+  mode: "center" | "edge",
+) {
+  const clamped = Math.max(0, Math.min(1, align));
+  if (mode === "center") {
+    return parentStart + parentSize * clamped - childSize / 2 + offset;
+  }
+
+  const center = parentStart + parentSize / 2 - childSize / 2;
+  if (clamped <= 0.5) {
+    const outsideStart = parentStart - childSize;
+    return lerp(outsideStart, center, clamped / 0.5) + offset;
+  }
+
+  const outsideEnd = parentStart + parentSize;
+  return lerp(center, outsideEnd, (clamped - 0.5) / 0.5) + offset;
+}
+
+function lerp(start: number, end: number, amount: number) {
+  return start + (end - start) * amount;
+}
+
+function unionBoxes(boxes: RenderableBox[]): RenderableBox {
+  const minX = Math.min(...boxes.map((box) => box.x));
+  const minY = Math.min(...boxes.map((box) => box.y));
+  const maxX = Math.max(...boxes.map((box) => box.x + box.width));
+  const maxY = Math.max(...boxes.map((box) => box.y + box.height));
+  return {
+    x: minX,
+    y: minY,
+    width: maxX - minX,
+    height: maxY - minY,
+  };
+}
+
+function translateBox(box: RenderableBox, origin: { x: number; y: number }): RenderableBox {
+  return {
+    x: box.x + origin.x,
+    y: box.y + origin.y,
+    width: box.width,
+    height: box.height,
+  };
+}
+
 function sampleAvatarUri() {
   const svg = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
@@ -491,89 +558,6 @@ function sampleAvatarUri() {
   <path d="M112 128c12 10 25 10 37 0" fill="none" stroke="#7E4D43" stroke-width="6" stroke-linecap="round"/>
 </svg>`;
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-}
-
-function avatarBoxForSlot(
-  groupBox: RenderableBox,
-  avatarSize: number,
-  position: "top" | "bottom" | "left" | "right",
-  gap: number,
-  labelSize: { width: number; height: number } | undefined,
-): RenderableBox {
-  const labelWidth = labelSize?.width ?? 0;
-  const labelHeight = labelSize?.height ?? 0;
-  if (position === "top") {
-    return {
-      x: groupBox.x + (groupBox.width - avatarSize) / 2,
-      y: groupBox.y + labelHeight + gap,
-      width: avatarSize,
-      height: avatarSize,
-    };
-  }
-  if (position === "bottom") {
-    return {
-      x: groupBox.x + (groupBox.width - avatarSize) / 2,
-      y: groupBox.y,
-      width: avatarSize,
-      height: avatarSize,
-    };
-  }
-  if (position === "left") {
-    return {
-      x: groupBox.x + labelWidth + gap,
-      y: groupBox.y + (groupBox.height - avatarSize) / 2,
-      width: avatarSize,
-      height: avatarSize,
-    };
-  }
-
-  return {
-    x: groupBox.x,
-    y: groupBox.y + (groupBox.height - avatarSize) / 2,
-    width: avatarSize,
-    height: avatarSize,
-  };
-}
-
-function labelBoxForSlot(
-  groupBox: RenderableBox,
-  avatarBox: RenderableBox,
-  avatarSize: number,
-  position: "top" | "bottom" | "left" | "right",
-  gap: number,
-  labelSize: { width: number; height: number },
-): RenderableBox {
-  if (position === "top") {
-    return {
-      x: groupBox.x + (groupBox.width - labelSize.width) / 2,
-      y: groupBox.y,
-      width: labelSize.width,
-      height: labelSize.height,
-    };
-  }
-  if (position === "bottom") {
-    return {
-      x: groupBox.x + (groupBox.width - labelSize.width) / 2,
-      y: avatarBox.y + avatarSize + gap,
-      width: labelSize.width,
-      height: labelSize.height,
-    };
-  }
-  if (position === "left") {
-    return {
-      x: groupBox.x,
-      y: groupBox.y + (groupBox.height - labelSize.height) / 2,
-      width: labelSize.width,
-      height: labelSize.height,
-    };
-  }
-
-  return {
-    x: avatarBox.x + avatarSize + gap,
-    y: groupBox.y + (groupBox.height - labelSize.height) / 2,
-    width: labelSize.width,
-    height: labelSize.height,
-  };
 }
 
 export function statusBarToRenderable(

@@ -26,7 +26,7 @@ parent component class
 The parent owns:
 
 - slot visibility and placement fields;
-- slot-level layout such as position and gap;
+- slot-level layout such as generic alignment placement;
 - an `overrides` object containing only deliberate local edits.
 
 The embedded child owns:
@@ -164,6 +164,22 @@ Disallowed renderer responsibilities:
 `component.avatar` embeds `component.label` through
 `component.avatar.label.editor`.
 
+Avatar label placement uses the generic alignment placement value:
+
+```json
+{
+  "mode": "edge",
+  "alignX": 1,
+  "alignY": 0.5,
+  "offsetX": 4,
+  "offsetY": 0
+}
+```
+
+`mode: "center"` places the child center on a normalized parent point.
+`mode: "edge"` interpolates from outside-start edge, through center, to
+outside-end edge. Offsets are design pixels and are scaled by the bridge.
+
 Current storage shape:
 
 ```json
@@ -172,8 +188,13 @@ Current storage shape:
     "labelSlot": {
       "showLabel": true,
       "showSubtext": true,
-      "position": "right",
-      "gap": 4,
+      "placement": {
+        "mode": "edge",
+        "alignX": 1,
+        "alignY": 0.5,
+        "offsetX": 4,
+        "offsetY": 0
+      },
       "overrides": {
         "label": {
           "textSizeToken": "theme.textSize.xl"

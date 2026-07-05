@@ -40,6 +40,7 @@ internal static class DictionaryValueControlFactory
                 services.ShowIconTokenPicker,
                 services.CreateIconPreview),
             ValueKind.EmbeddedComponent => new DictionaryEmbeddedComponentControl(definition, value, isHighlighted, services.OpenEmbeddedComponent),
+            ValueKind.AlignmentPlacement => new DictionaryAlignmentPlacementControl(definition, value),
             _ => new DictionaryTextControl(definition, value),
         };
     }

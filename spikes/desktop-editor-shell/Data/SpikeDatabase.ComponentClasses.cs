@@ -311,7 +311,8 @@ internal sealed partial class SpikeDatabase
         {
             var config = ParseJsonObject(string.IsNullOrWhiteSpace(row.ConfigJson) ? "{}" : row.ConfigJson);
             var defaults = ParseJsonObject(DefaultComponentClassConfigJson(row.ComponentType));
-            var configChanged = JsonPath.MergeMissing(config, defaults);
+            var configChanged = NormalizeAvatarLabelPlacement(row.ComponentType, config);
+            configChanged |= JsonPath.MergeMissing(config, defaults);
             configChanged |= NormalizeReliefIntensity(config, "reliefTopIntensity");
             configChanged |= NormalizeReliefIntensity(config, "reliefBottomIntensity");
 
@@ -332,6 +333,25 @@ internal sealed partial class SpikeDatabase
                 ("$configJson", config.ToJsonString()),
                 ("$designPreviewJson", designPreview.ToJsonString()));
         }
+    }
+
+    private static bool NormalizeAvatarLabelPlacement(string componentType, JsonObject config)
+    {
+        if (componentType != "avatar")
+        {
+            return false;
+        }
+
+        var labelSlot = JsonPath.Get(config, ["avatar", "labelSlot"]) as JsonObject;
+        if (labelSlot is null || labelSlot["placement"] is not null)
+        {
+            return false;
+        }
+
+        var position = JsonPath.String(labelSlot, "position", "bottom");
+        var gap = JsonPath.Number(labelSlot, "gap", 4);
+        labelSlot["placement"] = JsonNode.Parse(AlignmentPlacementValue.FromLegacyPosition(position, gap).ToJsonString());
+        return true;
     }
 
     private static bool NormalizeReliefIntensity(JsonObject config, string key)
@@ -423,6 +443,9 @@ internal sealed partial class SpikeDatabase
             ValueKind.IntegerPair => node is JsonValue pairValue && pairValue.TryGetValue<string>(out var pairText)
                 ? pairText
                 : descriptor.DefaultValue,
+            ValueKind.AlignmentPlacement => node is JsonObject
+                ? node.ToJsonString()
+                : descriptor.DefaultValue,
             ValueKind.IconSlots => node.ToJsonString(),
             _ => node is JsonValue stringValue && stringValue.TryGetValue<string>(out var text)
                 ? text
@@ -438,6 +461,8 @@ internal sealed partial class SpikeDatabase
             ValueKind.Integer => NumberNode(value),
             ValueKind.Decimal => NumberNode(value),
             ValueKind.Alpha => NumberNode(value),
+            ValueKind.AlignmentPlacement => JsonNode.Parse(value)
+                ?? throw new InvalidOperationException("Alignment placement value must be valid JSON."),
             ValueKind.IconSlots => JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? ComponentClassFieldCatalog.EmptyIconSlots : value)
                 ?? JsonNode.Parse(ComponentClassFieldCatalog.EmptyIconSlots)!,
             _ => JsonValue.Create(value)!,
@@ -523,8 +548,7 @@ internal sealed partial class SpikeDatabase
                     {
                         ["showLabel"] = false,
                         ["showSubtext"] = false,
-                        ["position"] = "bottom",
-                        ["gap"] = 4,
+                        ["placement"] = JsonNode.Parse(AlignmentPlacementValue.Default.ToJsonString()),
                         ["overrides"] = new JsonObject(),
                     },
                 };

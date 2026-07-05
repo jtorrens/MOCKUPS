@@ -10,8 +10,7 @@ export interface AvatarDesignContract {
   labelSlot: {
     showLabel: boolean;
     showSubtext: boolean;
-    position: "top" | "bottom" | "left" | "right";
-    gap: number;
+    placement: AlignmentPlacementContract;
     label?: LabelDesignContract;
   };
   surface: {
@@ -25,6 +24,14 @@ export interface AvatarDesignContract {
     reliefTopIntensity: number;
     reliefBottomIntensity: number;
   };
+}
+
+export interface AlignmentPlacementContract {
+  mode: "center" | "edge";
+  alignX: number;
+  alignY: number;
+  offsetX: number;
+  offsetY: number;
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -84,6 +91,30 @@ function requiredNumber(
   throw new Error(`Missing numeric component value ${path}`);
 }
 
+function requiredPlacement(
+  value: Record<string, unknown>,
+  key: string,
+  path: string,
+): AlignmentPlacementContract {
+  const raw = requiredRecord(value, key, path);
+  const mode = requiredString(raw, "mode", `${path}.mode`);
+  if (mode !== "center" && mode !== "edge") {
+    throw new Error(`Unsupported alignment placement mode ${mode}`);
+  }
+
+  return {
+    mode,
+    alignX: clamp01(requiredNumber(raw, "alignX", `${path}.alignX`)),
+    alignY: clamp01(requiredNumber(raw, "alignY", `${path}.alignY`)),
+    offsetX: requiredNumber(raw, "offsetX", `${path}.offsetX`),
+    offsetY: requiredNumber(raw, "offsetY", `${path}.offsetY`),
+  };
+}
+
+function clamp01(value: number) {
+  return Math.max(0, Math.min(1, value));
+}
+
 function labelPreview(
   preview: Record<string, unknown>,
   showSubtext: boolean,
@@ -103,15 +134,6 @@ export function resolveAvatarComponent(
   const avatar = asRecord(config.avatar);
   const labelSlot = asRecord(avatar.labelSlot);
   const style = asRecord(config.style);
-  const position = requiredString(
-    labelSlot,
-    "position",
-    "component.avatar.label.position",
-  );
-  if (!["top", "bottom", "left", "right"].includes(position)) {
-    throw new Error(`Unsupported avatar label position ${position}`);
-  }
-
   const showLabel = requiredBoolean(
     labelSlot,
     "showLabel",
@@ -139,8 +161,11 @@ export function resolveAvatarComponent(
     labelSlot: {
       showLabel,
       showSubtext,
-      position: position as "top" | "bottom" | "left" | "right",
-      gap: requiredNumber(labelSlot, "gap", "component.avatar.label.gap"),
+      placement: requiredPlacement(
+        labelSlot,
+        "placement",
+        "component.avatar.label.placement",
+      ),
       label: showLabel
         ? resolveLabelComponentFromRecords(
             embeddedLabelConfig,

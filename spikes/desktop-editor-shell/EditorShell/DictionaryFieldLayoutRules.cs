@@ -16,6 +16,7 @@ internal static class DictionaryFieldLayoutRules
             ValueKind.IntegerPair => new ColumnDefinitions("180,*,Auto"),
             ValueKind.IconSlots => new ColumnDefinitions("180,*,Auto"),
             ValueKind.EmbeddedComponent => new ColumnDefinitions("180,*,Auto"),
+            ValueKind.AlignmentPlacement => new ColumnDefinitions("180,*,Auto"),
             ValueKind.ThemeToken => new ColumnDefinitions("180,*,Auto"),
             ValueKind.OptionToken => new ColumnDefinitions("180,*,Auto"),
             ValueKind.PaletteColorToken => new ColumnDefinitions("180,*,Auto"),
@@ -30,27 +31,28 @@ internal static class DictionaryFieldLayoutRules
         {
             ValueKind.StringMultiline => 96,
             ValueKind.IconSlots => 150,
+            ValueKind.AlignmentPlacement => 156,
             _ => 40,
         };
     }
 
     public static VerticalAlignment LabelVerticalAlignment(ValueKind valueKind)
     {
-        return valueKind is ValueKind.StringMultiline or ValueKind.IconSlots
+        return valueKind is ValueKind.StringMultiline or ValueKind.IconSlots or ValueKind.AlignmentPlacement
             ? VerticalAlignment.Top
             : VerticalAlignment.Center;
     }
 
     public static Avalonia.Thickness LabelMargin(ValueKind valueKind)
     {
-        return valueKind is ValueKind.StringMultiline or ValueKind.IconSlots
+        return valueKind is ValueKind.StringMultiline or ValueKind.IconSlots or ValueKind.AlignmentPlacement
             ? new Avalonia.Thickness(0, 7, 0, 0)
             : new Avalonia.Thickness(0);
     }
 
     public static VerticalAlignment RestoreButtonVerticalAlignment(ValueKind valueKind)
     {
-        return valueKind == ValueKind.StringMultiline
+        return valueKind is ValueKind.StringMultiline or ValueKind.AlignmentPlacement
             ? VerticalAlignment.Top
             : VerticalAlignment.Center;
     }
