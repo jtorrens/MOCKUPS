@@ -4,6 +4,7 @@ using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Globalization;
 using System.IO;
@@ -235,9 +236,7 @@ internal sealed class DictionaryImageFileControl : Grid, IDictionaryValueControl
 
     private static double ParseDouble(string value, double fallback)
     {
-        return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var invariant)
-            ? invariant
-            : double.TryParse(value, out var local) ? local : fallback;
+        return NumericText.Double(value, fallback);
     }
 
     private static (string First, string Second) SplitPair(string value)

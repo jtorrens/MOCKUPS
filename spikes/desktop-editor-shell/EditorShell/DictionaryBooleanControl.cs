@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Layout;
+using Mockups.DesktopEditorShell.Common;
 using System;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -42,12 +43,11 @@ internal sealed class DictionaryBooleanControl : Grid, IDictionaryValueControl
 
     private static bool StringToBool(string value)
     {
-        return value.Equals("true", StringComparison.OrdinalIgnoreCase)
-            || value == "1";
+        return BooleanText.Parse(value);
     }
 
     private static string BoolToString(bool value)
     {
-        return value ? "true" : "false";
+        return BooleanText.Format(value);
     }
 }

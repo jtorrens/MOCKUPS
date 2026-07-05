@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Layout;
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Globalization;
 
@@ -87,13 +88,11 @@ internal sealed class DictionaryIntegerControl : Grid, IDictionaryValueControl
 
     private static string Format(decimal value)
     {
-        return Math.Round(value).ToString("0", CultureInfo.InvariantCulture);
+        return NumericText.IntegerString(value);
     }
 
     private static decimal ParseInteger(string value, decimal fallback)
     {
-        return decimal.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var invariant)
-            ? Math.Round(invariant)
-            : decimal.TryParse(value, out var local) ? Math.Round(local) : fallback;
+        return NumericText.Integer(value, fallback);
     }
 }

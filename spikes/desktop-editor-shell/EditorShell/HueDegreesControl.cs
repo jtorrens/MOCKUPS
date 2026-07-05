@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Globalization;
 
@@ -148,9 +149,7 @@ internal sealed class HueDegreesControl : Grid, IDictionaryValueControl
 
     private static double HueNumber(string value)
     {
-        return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
-            ? Math.Clamp(parsed, 0, 360)
-            : 0;
+        return NumericText.ClampedDouble(value, 0, 0, 360);
     }
 
     private static string NormalizeHue(string value)

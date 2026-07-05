@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Layout;
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Globalization;
 
@@ -94,8 +95,6 @@ internal sealed class DictionaryDecimalControl : Grid, IDictionaryValueControl
 
     private static decimal ParseDecimal(string value, decimal fallback)
     {
-        return decimal.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var invariant)
-            ? invariant
-            : decimal.TryParse(value, out var local) ? local : fallback;
+        return NumericText.Decimal(value, fallback);
     }
 }

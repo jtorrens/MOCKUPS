@@ -2914,12 +2914,12 @@ internal sealed partial class SpikeDatabase
 
     private static bool StringToBool(string value)
     {
-        return value.Equals("true", StringComparison.OrdinalIgnoreCase) || value == "1";
+        return BooleanText.Parse(value);
     }
 
     private static string BoolToString(bool value)
     {
-        return value ? "true" : "false";
+        return BooleanText.Format(value);
     }
 
     private static JsonObject ParseJsonObject(string json)

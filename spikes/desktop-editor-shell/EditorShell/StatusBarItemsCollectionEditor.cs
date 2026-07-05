@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Linq;
@@ -213,8 +214,8 @@ internal sealed class StatusBarItemsCollectionEditor
         _onChanged();
     }
 
-    private static string BoolToString(bool value) => value ? "true" : "false";
+    private static string BoolToString(bool value) => BooleanText.Format(value);
 
     private static bool StringToBool(string value) =>
-        value.Equals("true", StringComparison.OrdinalIgnoreCase) || value == "1";
+        BooleanText.Parse(value);
 }

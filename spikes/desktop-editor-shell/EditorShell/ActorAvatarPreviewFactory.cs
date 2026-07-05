@@ -151,7 +151,7 @@ internal sealed class ActorAvatarPreviewFactory
 
     private static double ParseDouble(string value, double fallback)
     {
-        return double.TryParse(value, out var parsed) ? parsed : fallback;
+        return NumericText.Double(value, fallback);
     }
 
     private static (string First, string Second) SplitPair(string value)
@@ -162,6 +162,6 @@ internal sealed class ActorAvatarPreviewFactory
 
     private static bool StringToBool(string value)
     {
-        return value.Equals("true", StringComparison.OrdinalIgnoreCase) || value == "1";
+        return BooleanText.Parse(value);
     }
 }

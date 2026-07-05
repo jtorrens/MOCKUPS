@@ -1,3 +1,4 @@
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Collections.Generic;
@@ -438,7 +439,7 @@ internal sealed class RecordClassFieldValueService
             && field.ValueKind != ValueKind.PaletteColorPair;
     }
 
-    private static string BoolToString(bool value) => value ? "true" : "false";
+    private static string BoolToString(bool value) => BooleanText.Format(value);
 
     private static string ExportFfmpegArgs(string exportJson)
     {
