@@ -35,6 +35,38 @@ internal static class RuntimeValueGuard
         return JsonPath.NumberAt(tokens, token.Path, 0);
     }
 
+    public static bool RequiredBool(JsonObject root, string key, string fieldId)
+    {
+        var node = JsonPath.Get(root, [key]);
+        if (node is null)
+        {
+            throw MissingRequired(fieldId);
+        }
+
+        if (bool.TryParse(node.ToString(), out var value))
+        {
+            return value;
+        }
+
+        throw new InvalidOperationException($"Invalid boolean runtime value for '{fieldId}'.");
+    }
+
+    public static double RequiredNumber(JsonObject root, string key, string fieldId)
+    {
+        var node = JsonPath.Get(root, [key]);
+        if (node is null)
+        {
+            throw MissingRequired(fieldId);
+        }
+
+        if (double.TryParse(node.ToString(), System.Globalization.NumberStyles.Float, CultureInfo.InvariantCulture, out var value))
+        {
+            return value;
+        }
+
+        throw new InvalidOperationException($"Invalid numeric runtime value for '{fieldId}'.");
+    }
+
     public static T UseFallback<T>(
         ICollection<string> warnings,
         string fieldId,

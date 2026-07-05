@@ -123,55 +123,79 @@ internal static class DesignPreviewFrameResolver
         var width = dimensionMode == "fixed" ? size.Width : contentSize.Width;
         var height = dimensionMode == "fixed" ? size.Height : contentSize.Height;
         var bounds = Centered(metrics, width, height);
-        var borderWidth = JsonPath.Number(style, "borderWidth", 0);
+        var borderWidth = RuntimeValueGuard.RequiredNumber(style, "borderWidth", "component.style.borderWidth");
         var cornerRadiusToken = RuntimeValueGuard.RequiredString(style, "cornerRadiusToken", "component.style.cornerRadiusToken");
         var cornerRadius = RuntimeValueGuard.RequiredThemeNumber(payload.ThemeTokensJson, cornerRadiusToken, "component.style.cornerRadiusToken");
         var borderColorToken = RuntimeValueGuard.RequiredString(style, "borderColorToken", "component.style.borderColorToken");
-        var shadowEnabled = JsonPath.Bool(style, "shadowEnabled", false);
+        var shadowEnabled = RuntimeValueGuard.RequiredBool(style, "shadowEnabled", "component.style.shadowEnabled");
+        var reliefEnabled = RuntimeValueGuard.RequiredBool(style, "reliefEnabled", "component.style.reliefEnabled");
+        var reliefAngle = RuntimeValueGuard.RequiredNumber(style, "reliefAngle", "component.style.reliefAngle");
+        var reliefExtent = RuntimeValueGuard.RequiredNumber(style, "reliefExtent", "component.style.reliefExtent");
+        var reliefSpread = RuntimeValueGuard.RequiredNumber(style, "reliefSpread", "component.style.reliefSpread");
+        var reliefTopIntensity = RuntimeValueGuard.RequiredNumber(style, "reliefTopIntensity", "component.style.reliefTopIntensity");
+        var reliefBottomIntensity = RuntimeValueGuard.RequiredNumber(style, "reliefBottomIntensity", "component.style.reliefBottomIntensity");
         var backgroundColorToken = RuntimeValueGuard.RequiredString(label, "backgroundColorToken", "component.label.backgroundColorToken");
         var textColorToken = RuntimeValueGuard.RequiredString(label, "textColorToken", "component.label.textColorToken");
+        var children = new List<ResolvedDesignNode>
+        {
+            new ResolvedDesignRectNode
+            {
+                Id = "component.label.background",
+                Bounds = new DesignRect(0, 0, bounds.Width, bounds.Height),
+                Fill = backgroundVisible
+                    ? ThemePaint(backgroundColorToken)
+                    : StaticPaint("component.label.background.transparent", "#00000000"),
+                Stroke = borderWidth > 0
+                    ? new ResolvedDesignStroke(ThemePaint(borderColorToken), borderWidth)
+                    : null,
+                Radius = cornerRadius,
+                Effects = shadowEnabled ? [new ResolvedDesignShadowEffect(0, 3, 10, new ResolvedDesignColorRef("component.style.shadow", null, "#33000000"))] : null,
+                Metadata = ComponentStyleMetadata(
+                    style,
+                    borderWidth,
+                    borderColorToken,
+                    cornerRadiusToken,
+                    cornerRadius,
+                    shadowEnabled,
+                    reliefEnabled,
+                    reliefAngle,
+                    reliefExtent,
+                    reliefSpread,
+                    reliefTopIntensity,
+                    reliefBottomIntensity),
+            },
+        };
+        if (reliefEnabled)
+        {
+            children.AddRange(ReliefLayers(bounds, cornerRadius, reliefAngle, reliefExtent, reliefSpread, reliefTopIntensity, reliefBottomIntensity));
+        }
+
+        children.Add(new ResolvedDesignTextNode
+        {
+            Id = "component.label.text",
+            Bounds = new DesignRect(
+                padding.Width,
+                padding.Height,
+                Math.Max(1, bounds.Width - padding.Width * 2),
+                Math.Max(1, bounds.Height - padding.Height * 2)),
+            Text = text,
+            Style = new ResolvedDesignTextStyle
+            {
+                Fill = ThemePaint(textColorToken),
+                FontFamily = "Inter",
+                FontSize = textSize,
+                FontStyle = textStyle == "italic" ? "italic" : null,
+                LineHeight = Math.Max(1, bounds.Height - padding.Height * 2),
+            },
+            TextAlign = "center",
+            VerticalAlign = "middle",
+        });
 
         return new ResolvedDesignGroupNode
         {
             Id = "component.label",
             Bounds = bounds,
-            Children =
-            [
-                new ResolvedDesignRectNode
-                {
-                    Id = "component.label.background",
-                    Bounds = new DesignRect(0, 0, bounds.Width, bounds.Height),
-                    Fill = backgroundVisible
-                        ? ThemePaint(backgroundColorToken)
-                        : StaticPaint("component.label.background.transparent", "#00000000"),
-                    Stroke = borderWidth > 0
-                        ? new ResolvedDesignStroke(ThemePaint(borderColorToken), borderWidth)
-                        : null,
-                    Radius = cornerRadius,
-                    Effects = shadowEnabled ? [new ResolvedDesignShadowEffect(0, 3, 10, new ResolvedDesignColorRef("component.style.shadow", null, "#33000000"))] : null,
-                    Metadata = ComponentStyleMetadata(style, borderWidth, borderColorToken, cornerRadiusToken, cornerRadius, shadowEnabled),
-                },
-                new ResolvedDesignTextNode
-                {
-                    Id = "component.label.text",
-                    Bounds = new DesignRect(
-                        padding.Width,
-                        padding.Height,
-                        Math.Max(1, bounds.Width - padding.Width * 2),
-                        Math.Max(1, bounds.Height - padding.Height * 2)),
-                    Text = text,
-                    Style = new ResolvedDesignTextStyle
-                    {
-                        Fill = ThemePaint(textColorToken),
-                        FontFamily = "Inter",
-                        FontSize = textSize,
-                        FontStyle = textStyle == "italic" ? "italic" : null,
-                        LineHeight = Math.Max(1, bounds.Height - padding.Height * 2),
-                    },
-                    TextAlign = "center",
-                    VerticalAlign = "middle",
-                },
-            ],
+            Children = children,
             Metadata = new Dictionary<string, string>
             {
                 ["legacyKind"] = payload.Kind,
@@ -566,27 +590,71 @@ internal static class DesignPreviewFrameResolver
             Math.Max(1, measuredHeight + padding.Height * 2));
     }
 
+    private static IReadOnlyList<ResolvedDesignNode> ReliefLayers(
+        DesignRect bounds,
+        double cornerRadius,
+        double angleDegrees,
+        double extent,
+        double spread,
+        double topIntensity,
+        double bottomIntensity)
+    {
+        var radians = angleDegrees * Math.PI / 180;
+        var offsetX = Math.Cos(radians) * extent;
+        var offsetY = Math.Sin(radians) * extent;
+        return
+        [
+            new ResolvedDesignRectNode
+            {
+                Id = "component.label.relief.top",
+                Bounds = new DesignRect(-offsetX - spread, -offsetY - spread, bounds.Width + spread * 2, bounds.Height + spread * 2),
+                Fill = StaticPaint("component.style.relief.top", IntensityColor(topIntensity)),
+                Radius = cornerRadius,
+            },
+            new ResolvedDesignRectNode
+            {
+                Id = "component.label.relief.bottom",
+                Bounds = new DesignRect(offsetX - spread, offsetY - spread, bounds.Width + spread * 2, bounds.Height + spread * 2),
+                Fill = StaticPaint("component.style.relief.bottom", IntensityColor(bottomIntensity)),
+                Radius = cornerRadius,
+            },
+        ];
+    }
+
+    private static string IntensityColor(double intensity)
+    {
+        var alpha = (int)Math.Clamp(Math.Abs(intensity) / 100 * 255, 0, 255);
+        var channel = intensity >= 0 ? "FFFFFF" : "000000";
+        return $"#{alpha:X2}{channel}";
+    }
+
     private static IReadOnlyDictionary<string, string> ComponentStyleMetadata(
         JsonObject style,
         double borderWidth,
         string borderColorToken,
         string cornerRadiusToken,
         double cornerRadius,
-        bool shadowEnabled)
+        bool shadowEnabled,
+        bool reliefEnabled,
+        double reliefAngle,
+        double reliefExtent,
+        double reliefSpread,
+        double reliefTopIntensity,
+        double reliefBottomIntensity)
     {
         return new Dictionary<string, string>
         {
             ["style.shadowEnabled"] = shadowEnabled ? "true" : "false",
-            ["style.reliefEnabled"] = JsonPath.Bool(style, "reliefEnabled", false) ? "true" : "false",
+            ["style.reliefEnabled"] = reliefEnabled ? "true" : "false",
             ["style.borderWidth"] = borderWidth.ToString(System.Globalization.CultureInfo.InvariantCulture),
             ["style.borderColorToken"] = borderColorToken,
             ["style.cornerRadiusToken"] = cornerRadiusToken,
             ["style.cornerRadius"] = cornerRadius.ToString(System.Globalization.CultureInfo.InvariantCulture),
-            ["style.reliefAngle"] = JsonPath.Number(style, "reliefAngle", -45).ToString(System.Globalization.CultureInfo.InvariantCulture),
-            ["style.reliefExtent"] = JsonPath.Number(style, "reliefExtent", 1).ToString(System.Globalization.CultureInfo.InvariantCulture),
-            ["style.reliefSpread"] = JsonPath.Number(style, "reliefSpread", 0).ToString(System.Globalization.CultureInfo.InvariantCulture),
-            ["style.reliefTopIntensity"] = JsonPath.Number(style, "reliefTopIntensity", 12).ToString(System.Globalization.CultureInfo.InvariantCulture),
-            ["style.reliefBottomIntensity"] = JsonPath.Number(style, "reliefBottomIntensity", -10).ToString(System.Globalization.CultureInfo.InvariantCulture),
+            ["style.reliefAngle"] = reliefAngle.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            ["style.reliefExtent"] = reliefExtent.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            ["style.reliefSpread"] = reliefSpread.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            ["style.reliefTopIntensity"] = reliefTopIntensity.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            ["style.reliefBottomIntensity"] = reliefBottomIntensity.ToString(System.Globalization.CultureInfo.InvariantCulture),
         };
     }
 

@@ -81,6 +81,13 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
             throw new InvalidOperationException("Expected label component card style.");
         }
 
+        if (payload.Kind == "componentClass"
+            && payload.ComponentType == "label"
+            && !Flatten(document.Root).OfType<VisualIrRectNode>().Any((rect) => rect.Id == "component.label.relief.top"))
+        {
+            throw new InvalidOperationException("Expected label component relief layer.");
+        }
+
         var renderer = new AvaloniaVisualIrDebugRenderer();
         renderer.Render(document, new VisualIrRenderOptions(ShowBounds: true));
     }

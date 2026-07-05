@@ -68,7 +68,9 @@ internal sealed partial class SpikeDatabase
         }
 
         return options
-            .OrderBy((option) => option.Token, StringComparer.Ordinal)
+            .OrderBy(ThemeTokenSortGroup)
+            .ThenBy(ThemeTokenSortValue)
+            .ThenBy((option) => option.Token, StringComparer.Ordinal)
             .ToList();
     }
 
@@ -252,6 +254,25 @@ internal sealed partial class SpikeDatabase
                 null,
                 null);
         }
+    }
+
+    private static int ThemeTokenSortGroup(ThemeTokenOption option)
+    {
+        return option.Token.StartsWith("theme.typography.sizes.", StringComparison.Ordinal)
+            ? 1
+            : 0;
+    }
+
+    private static double ThemeTokenSortValue(ThemeTokenOption option)
+    {
+        if (!option.Token.StartsWith("theme.typography.sizes.", StringComparison.Ordinal))
+        {
+            return 0;
+        }
+
+        return double.TryParse(option.Value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var value)
+            ? value
+            : double.MaxValue;
     }
 
     private static string? PaletteHex(IReadOnlyDictionary<string, string> palette, string token)
