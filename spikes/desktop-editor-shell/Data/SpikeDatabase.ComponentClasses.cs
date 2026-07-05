@@ -87,34 +87,22 @@ internal sealed partial class SpikeDatabase
         return [new FieldOption(recordClassId, string.IsNullOrWhiteSpace(name) ? recordClassId : name)];
     }
 
-    private bool EmbeddedComponentDiffersFromBase(
-        string projectId,
+    private static bool EmbeddedComponentHasOverrides(
         string configJson,
         EmbeddedComponentSlotDefinition slot)
     {
         var config = ParseJsonObject(string.IsNullOrWhiteSpace(configJson) ? "{}" : configJson);
         var overrides = EmbeddedOverrides(config, slot, createIfMissing: false);
-        if (overrides is null)
-        {
-            return false;
-        }
-
-        using var connection = OpenConnection();
-        var baseConfig = ParseJsonObject(GetComponentClassBaseConfigJson(connection, projectId, slot.EmbeddedComponentType));
-        return HasEffectiveJsonDifference(overrides, baseConfig, []);
+        return overrides is not null && HasEffectiveJsonValue(overrides);
     }
 
-    private static bool HasEffectiveJsonDifference(
-        JsonObject overrides,
-        JsonObject baseConfig,
-        IReadOnlyList<string> path)
+    private static bool HasEffectiveJsonValue(JsonObject value)
     {
-        foreach (var child in overrides)
+        foreach (var child in value)
         {
-            var childPath = path.Concat([child.Key]).ToArray();
             if (child.Value is JsonObject childObject)
             {
-                if (HasEffectiveJsonDifference(childObject, baseConfig, childPath))
+                if (HasEffectiveJsonValue(childObject))
                 {
                     return true;
                 }
@@ -124,11 +112,7 @@ internal sealed partial class SpikeDatabase
 
             if (child.Value is not null)
             {
-                var baseValue = JsonPath.Get(baseConfig, childPath);
-                if (baseValue is null || !JsonNode.DeepEquals(child.Value, baseValue))
-                {
-                    return true;
-                }
+                return true;
             }
         }
 
@@ -173,7 +157,7 @@ internal sealed partial class SpikeDatabase
             : descriptor.Options;
         var isHighlighted = descriptor.ValueKind == ValueKind.EmbeddedComponent
             && EmbeddedComponentSlotCatalog.TryGet(fieldId, out var slot)
-            && EmbeddedComponentDiffersFromBase(settings.ProjectId, settings.ConfigJson, slot);
+            && EmbeddedComponentHasOverrides(settings.ConfigJson, slot);
 
         return new FieldValue(
             new FieldDefinition(
