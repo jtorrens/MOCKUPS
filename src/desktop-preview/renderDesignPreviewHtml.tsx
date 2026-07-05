@@ -11,33 +11,9 @@ import { TextInputBarModule } from "../visual/modules/atomic/TextInputBarModule.
 import { RenderableReactAdapter } from "../visual/adapters/react/RenderableReactAdapter.js";
 import { RenderableNodeSchema } from "../visual/renderable/schema.js";
 import type { RenderableNode } from "../visual/renderable/types.js";
-
-interface DevicePayload {
-  canvasWidth: number;
-  canvasHeight: number;
-  screenX: number;
-  screenY: number;
-  screenWidth: number;
-  screenHeight: number;
-  statusBarHeight?: number;
-  safeAreaBottom?: number;
-  scaleToPixels?: number;
-}
-
-interface DesignPreviewPayload {
-  kind: "statusBar" | "navigationBar" | "componentClass";
-  componentType?: string;
-  configJson: string;
-  designPreviewJson?: string;
-  device: DevicePayload;
-  iconAssetRoot?: string;
-  iconMappingJson?: string;
-  paletteColors?: Record<string, string>;
-  projectMediaRoot?: string;
-  showMarks?: boolean;
-  themeMode: "light" | "dark";
-  themeTokensJson: string;
-}
+import type { DesignPreviewPayload } from "./designPreviewPayload.js";
+import { resolveLabelComponent } from "./labelComponentResolver.js";
+import { labelComponentToRenderable } from "./webPreviewBridge.js";
 
 function asRecord(value: unknown): Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
@@ -75,18 +51,6 @@ function readPair(
     first: Number.isFinite(first) ? first : fallbackFirst,
     second: Number.isFinite(second) ? second : fallbackSecond,
   };
-}
-
-function readAlpha(value: Record<string, unknown>, key: string, path: string) {
-  const raw = value[key];
-  const numeric =
-    typeof raw === "number"
-      ? raw
-      : typeof raw === "string"
-        ? Number(raw.replace(",", "."))
-        : NaN;
-  if (Number.isFinite(numeric)) return Math.max(0, Math.min(1, numeric));
-  throw new Error(`Missing alpha component value ${path}`);
 }
 
 function requiredNumber(value: Record<string, unknown>, key: string, path: string) {
@@ -321,6 +285,10 @@ function componentRenderableForPayload(
   const preview = parseObject(payload.designPreviewJson ?? "{}");
   const componentType =
     payload.componentType || readString(preview, "componentType", "component");
+  if (componentType === "label") {
+    return labelComponentToRenderable(payload, resolveLabelComponent(payload));
+  }
+
   const scale = renderScale(payload);
   const surface = componentSurfaceStyle(payload, config);
   const tokens = modeTokens(payload);
@@ -445,60 +413,6 @@ function componentRenderableForPayload(
         pressedEffect: keyboard.pressedEffect,
       } as never,
     });
-  }
-
-  if (componentType === "label") {
-    const label = asRecord(config.label);
-    const size = readPair(label.size, 120, 32);
-    const padding = readPair(label.padding, 8, 4);
-    const paddingX = padding.first * scale;
-    const paddingY = padding.second * scale;
-    const fontSize = themeTokenNumber(payload, label.textSizeToken, 12) * scale;
-    const lineHeight = Math.max(fontSize * 1.2, fontSize + paddingY * 0.5);
-    const fixedWidth = size.first * scale;
-    const fixedHeight = size.second * scale;
-    const alpha = readAlpha(label, "alpha", "component.label.alpha");
-    const contentWidth = Math.max(
-      1,
-      sampleText.length * fontSize * 0.58 + paddingX * 2,
-    );
-    const contentHeight = Math.max(1, lineHeight + paddingY * 2);
-    const isFixed = readString(label, "dimensionMode", "content") === "fixed";
-    const width = isFixed ? fixedWidth : contentWidth;
-    const height = isFixed ? fixedHeight : contentHeight;
-    const labelSurface = {
-      ...surface,
-      borderColor: colorWithAlpha(surface.borderColor, alpha),
-      surfaceRelief: surface.surfaceRelief
-        ? {
-            ...surface.surfaceRelief,
-            upperIntensity: surface.surfaceRelief.upperIntensity * alpha,
-            lowerIntensity: surface.surfaceRelief.lowerIntensity * alpha,
-          }
-        : undefined,
-    };
-    return {
-      id: "design:label",
-      type: "message_bubble_label",
-      frame: 0,
-      box: centerBox(payload, width, height),
-      text: sampleText,
-      style: {
-        ...labelSurface,
-        background: colorWithAlpha(
-          themeTokenColor(payload, label.backgroundColorToken, "#FFFFFF"),
-          alpha,
-        ),
-        textColor: themeTokenColor(payload, label.textColorToken, "#111827"),
-        fontSize,
-        lineHeight,
-        paddingX,
-        paddingY,
-        textAlign: "center",
-        fontStyle: readString(label, "textStyle", "normal"),
-        whiteSpace: "nowrap",
-      },
-    };
   }
 
   if (componentType === "buttonIcon") {

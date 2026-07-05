@@ -1409,7 +1409,7 @@ function RenderNode({
               display: "block",
               whiteSpace: "nowrap",
             }
-        : node.type === "message_bubble_label"
+        : node.type === "message_bubble_label" || node.type === "component_label"
           ? {
               display: "flex",
               alignItems: "center",
