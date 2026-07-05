@@ -326,7 +326,7 @@ internal sealed class AvaloniaVisualIrDebugRenderer : IVisualIrRenderer
     {
         var objectFit = fit is "cover" ? "cover" : "contain";
         var cssTintColor = CssColor(tintColor);
-        var paintedSvg = SvgMarkupNormalizer.ApplyCurrentColorTint(svg, tintColor);
+        var paintedSvg = SvgMarkupNormalizer.ApplyCurrentColorTint(svg, cssTintColor);
         return $$"""
             <!doctype html>
             <html>

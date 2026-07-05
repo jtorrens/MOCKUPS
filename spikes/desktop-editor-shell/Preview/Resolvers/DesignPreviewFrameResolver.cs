@@ -169,7 +169,7 @@ internal static class DesignPreviewFrameResolver
             {
                 Id = $"statusBar.item.{item.Id}",
                 Bounds = new DesignRect(x, y, width, height),
-                Text = string.IsNullOrWhiteSpace(item.Value) ? item.Label : item.Value,
+                Text = item.Value,
                 Style = new ResolvedDesignTextStyle
                 {
                     Fill = StatusForegroundPaint,
@@ -424,7 +424,7 @@ internal static class DesignPreviewFrameResolver
             "generatedBattery" => itemSize * 1.55,
             "generatedSignal" => itemSize * 1.08,
             "iconToken" => itemSize,
-            _ => Math.Max(itemSize, (string.IsNullOrWhiteSpace(item.Value) ? item.Label : item.Value).Length * itemSize * 0.58),
+            _ => Math.Max(itemSize, item.Value.Length * itemSize * 0.58),
         };
     }
 

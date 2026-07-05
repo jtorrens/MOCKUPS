@@ -42,7 +42,7 @@ internal sealed class VisualIrDesignPreviewPane : Grid
             var document = DesignPreviewToVisualIrBridge.Convert(payload, metrics, colorVariant);
             var rendered = _renderer.Render(document, new VisualIrRenderOptions(
                 SelectedColorVariant: colorVariant,
-                ShowBounds: true,
+                ShowBounds: false,
                 ShowUnsupportedPlaceholders: true));
 
             Children.Add(DeviceFrame(

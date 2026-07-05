@@ -116,7 +116,7 @@ internal sealed class StatusBarItemsCollectionEditor
                         new FieldOption("right", "Right"),
                     ]),
                 item.Zone),
-            (value) => UpdateItem(node, index, item with { Zone = value })));
+            (value) => UpdateItem(node, index, (current) => current with { Zone = value })));
 
         controlsPanel.Children.Add(CreateInlineField(
             new FieldValue(
@@ -126,7 +126,7 @@ internal sealed class StatusBarItemsCollectionEditor
                     ValueKind.Integer,
                     DefaultValue: item.Order.ToString()),
                 item.Order.ToString()),
-            (value) => UpdateItem(node, index, item with { Order = NumericText.Int32(value, item.Order) })));
+            (value) => UpdateItem(node, index, (current) => current with { Order = NumericText.Int32(value, current.Order) })));
 
         panel.Children.Add(controlsPanel);
         return row;
@@ -142,7 +142,7 @@ internal sealed class StatusBarItemsCollectionEditor
                     ValueKind.StringSingleLine,
                     DefaultValue: item.Value),
                 item.Value),
-            (value) => UpdateItem(node, index, item with { Value = value }));
+            (value) => UpdateItem(node, index, (current) => current with { Value = value }));
     }
 
     private Control CreateIconTokenControl(ProjectTreeNode node, string projectId, int index, SpikeDatabase.StatusBarItem item)
@@ -155,7 +155,7 @@ internal sealed class StatusBarItemsCollectionEditor
                     ValueKind.IconToken,
                     DefaultValue: item.Token),
                 item.Token),
-            (value) => UpdateItem(node, index, item with { Token = value }),
+            (value) => UpdateItem(node, index, (current) => current with { Token = value }),
             new DictionaryFieldServices(
                 BrowsePath: _browsePath,
                 ShowIconTokenPicker: (currentValue, allowMultiple) => _showIconTokenPicker(projectId, currentValue, allowMultiple),
@@ -177,7 +177,7 @@ internal sealed class StatusBarItemsCollectionEditor
                     ValueKind.Integer,
                     DefaultValue: item.Value),
                 item.Value),
-            (value) => UpdateItem(node, index, item with { Value = value })));
+            (value) => UpdateItem(node, index, (current) => current with { Value = value })));
 
         if (includeCharging)
         {
@@ -189,7 +189,7 @@ internal sealed class StatusBarItemsCollectionEditor
                         ValueKind.Boolean,
                         DefaultValue: BoolToString(item.Charging)),
                     BoolToString(item.Charging)),
-                (value) => UpdateItem(node, index, item with { Charging = StringToBool(value) }));
+                (value) => UpdateItem(node, index, (current) => current with { Charging = StringToBool(value) }));
             Grid.SetColumn(charging, 1);
             grid.Children.Add(charging);
         }
@@ -208,8 +208,15 @@ internal sealed class StatusBarItemsCollectionEditor
         return control;
     }
 
-    private void UpdateItem(ProjectTreeNode node, int index, SpikeDatabase.StatusBarItem nextItem)
+    private void UpdateItem(ProjectTreeNode node, int index, Func<SpikeDatabase.StatusBarItem, SpikeDatabase.StatusBarItem> patch)
     {
+        var current = _database.GetStatusBarItems(node.Id).ElementAtOrDefault(index);
+        if (current is null)
+        {
+            return;
+        }
+
+        var nextItem = patch(current);
         _database.UpdateStatusBarItem(node.Id, index, nextItem);
         _onChanged();
     }

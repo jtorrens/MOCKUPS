@@ -20,6 +20,12 @@ internal static class SvgMarkupNormalizerSmoke
               <path d="M417-154q-27-27-27-63t27-63h126q27 27 27 63t-27 63Z"/>
             </svg>
             """;
+        const string lucideStrokeSource = """
+            <svg class="lucide lucide-volume-off" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 9a5 5 0 0 1 .95 2.293" />
+              <path d="m2 2 20 20" />
+            </svg>
+            """;
         const string tint = "#FF8A80";
 
         var normalized = SvgMarkupNormalizer.NormalizeTintableSvg(source);
@@ -48,6 +54,18 @@ internal static class SvgMarkupNormalizerSmoke
         if (!implicitBlackFill.Contains("fill=\"currentColor\"", StringComparison.Ordinal))
         {
             throw new InvalidOperationException("Tintable SVG normalization must convert implicit black fill to currentColor.");
+        }
+
+        var lucideStroke = SvgMarkupNormalizer.NormalizeTintableSvg(lucideStrokeSource);
+        if (!lucideStroke.Contains("stroke=\"currentColor\"", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("Tintable SVG normalization must preserve lucide currentColor stroke.");
+        }
+
+        var paintedLucideStroke = SvgMarkupNormalizer.ApplyCurrentColorTint(lucideStroke, "rgb(255, 138, 128)");
+        if (!paintedLucideStroke.Contains("stroke=\"rgb(255, 138, 128)\"", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("Tinted SVG materialization must apply CSS tint to lucide strokes.");
         }
     }
 }
