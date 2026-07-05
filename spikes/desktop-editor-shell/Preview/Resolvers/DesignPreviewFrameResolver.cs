@@ -662,7 +662,6 @@ internal static class DesignPreviewFrameResolver
                 0,
                 -lightY * distance,
                 topIntensity * fade * verticalWeight,
-                bottomIntensity * fade * verticalWeight,
                 blurRadius);
             AddReliefEdge(
                 layers,
@@ -674,7 +673,6 @@ internal static class DesignPreviewFrameResolver
                 -lightX * distance,
                 0,
                 topIntensity * fade * horizontalWeight,
-                bottomIntensity * fade * horizontalWeight,
                 blurRadius);
             AddReliefEdge(
                 layers,
@@ -686,7 +684,6 @@ internal static class DesignPreviewFrameResolver
                 0,
                 lightY * distance,
                 bottomIntensity * fade * verticalWeight,
-                topIntensity * fade * verticalWeight,
                 blurRadius);
             AddReliefEdge(
                 layers,
@@ -698,7 +695,6 @@ internal static class DesignPreviewFrameResolver
                 lightX * distance,
                 0,
                 bottomIntensity * fade * horizontalWeight,
-                topIntensity * fade * horizontalWeight,
                 blurRadius);
         }
 
@@ -714,12 +710,10 @@ internal static class DesignPreviewFrameResolver
         ReliefSide side,
         double offsetX,
         double offsetY,
-        double startBrightnessMultiplier,
-        double endBrightnessMultiplier,
+        double brightnessMultiplier,
         double blurRadius)
     {
-        if (Math.Abs(startBrightnessMultiplier) < 0.0001
-            && Math.Abs(endBrightnessMultiplier) < 0.0001)
+        if (Math.Abs(brightnessMultiplier) < 0.0001)
         {
             return;
         }
@@ -737,7 +731,7 @@ internal static class DesignPreviewFrameResolver
                     Bounds = new DesignRect(0, 0, bounds.Width, bounds.Height),
                     Data = ReliefEdgePath(bounds.Width, bounds.Height, cornerRadius, side),
                     Stroke = new ResolvedDesignStroke(
-                        ReliefGradient(bounds.Width, bounds.Height, side, baseColorToken, startBrightnessMultiplier, endBrightnessMultiplier),
+                        ReliefGradient(bounds.Width, bounds.Height, side, baseColorToken, brightnessMultiplier, brightnessMultiplier),
                         1,
                         "round",
                         "round"),
