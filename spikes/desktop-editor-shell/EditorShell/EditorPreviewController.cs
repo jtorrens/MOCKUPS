@@ -11,7 +11,7 @@ internal sealed class EditorPreviewController
     private readonly SpikeDatabase _database;
     private readonly ComboBox _deviceComboBox;
     private readonly ComboBox _themeComboBox;
-    private readonly ComboBox _modeComboBox;
+    private readonly EditorInstantComboBox _modeComboBox;
     private readonly Func<bool> _isDark;
     private readonly Func<ProjectTreeNode?> _selectedNode;
     private readonly RuntimeWebPreviewPane _runtimePreviewPane = new();
@@ -26,7 +26,7 @@ internal sealed class EditorPreviewController
         SpikeDatabase database,
         ComboBox deviceComboBox,
         ComboBox themeComboBox,
-        ComboBox modeComboBox,
+        EditorInstantComboBox modeComboBox,
         ContentControl runtimePreviewHost,
         ContentControl designPreviewHost,
         ContentControl visualIrPreviewHost,
@@ -51,7 +51,6 @@ internal sealed class EditorPreviewController
     {
         EditorComboBoxBehavior.Configure(_deviceComboBox);
         EditorComboBoxBehavior.Configure(_themeComboBox);
-        EditorComboBoxBehavior.Configure(_modeComboBox);
 
         RefreshOptions(treeRoots);
     }
@@ -90,7 +89,7 @@ internal sealed class EditorPreviewController
             };
             _modeComboBox.ItemsSource = modeOptions;
             _modeComboBox.SelectedItem = modeOptions.FirstOrDefault((option) => option.Value == _selectedMode) ?? modeOptions[0];
-            _selectedMode = ((FieldOption)_modeComboBox.SelectedItem).Value;
+            _selectedMode = _modeComboBox.SelectedItem?.Value ?? "light";
         }
         finally
         {
@@ -124,7 +123,7 @@ internal sealed class EditorPreviewController
 
     public void OnModeChanged()
     {
-        if (_modeComboBox.SelectedItem is not FieldOption option) return;
+        if (_modeComboBox.SelectedItem is not { } option) return;
 
         _selectedMode = option.Value;
         if (!_isRefreshingOptions)

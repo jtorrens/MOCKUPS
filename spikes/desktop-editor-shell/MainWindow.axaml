@@ -1,6 +1,7 @@
 <suki:SukiWindow xmlns="https://github.com/avaloniaui"
                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                 xmlns:editor="using:Mockups.DesktopEditorShell.EditorShell"
                  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                  xmlns:suki="clr-namespace:SukiUI.Controls;assembly=SukiUI"
                  mc:Ignorable="d" d:DesignWidth="1440" d:DesignHeight="900"
@@ -139,10 +140,9 @@
                                     <TextBlock FontSize="11"
                                                FontWeight="SemiBold"
                                                Text="MODE" />
-                                    <ComboBox x:Name="PreviewModeComboBox"
-                                              MinHeight="36"
-                                              HorizontalAlignment="Stretch"
-                                              SelectionChanged="OnPreviewModeChanged" />
+                                    <editor:EditorInstantComboBox x:Name="PreviewModeComboBox"
+                                                                  MinHeight="36"
+                                                                  HorizontalAlignment="Stretch" />
                                 </StackPanel>
                             </Grid>
                         </Border>
