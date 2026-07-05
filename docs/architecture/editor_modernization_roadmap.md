@@ -23,6 +23,8 @@ editor layout metadata
 
 The editor shell should organize and delegate. It should not know individual field storage rules, value-specific controls, or record-specific visual behavior.
 
+Generic routines must be extracted before they spread. Shared algorithms belong in common/editor-shell services, not inside whichever editor, bridge, renderer, importer, or repository first needed them.
+
 ## Phase 1: make rules explicit
 
 Keep the operational rules in:
@@ -172,6 +174,7 @@ Reject new changes that add:
 - field behavior inferred from string suffixes when metadata can declare it;
 - preview logic that reads editor controls or form state;
 - another value control path parallel to `ValueKind`.
+- reusable SVG, theme-token, color, JSON-path, numeric parsing, import mapping, or device metric routines inside a single module instead of a common/shared class.
 
 Allowed custom editor chrome:
 

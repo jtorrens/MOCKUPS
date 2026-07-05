@@ -18,8 +18,9 @@ Two rules override local convenience:
 
 1. `MainWindow` is shell-only. It must not accumulate editor-specific logic.
 2. Editable fields go through `FieldDefinition` and dictionary controls. If the dictionary cannot express the field yet, extend the dictionary first.
+3. Generic routines live in common/shared code. If an algorithm can be reused by more than one editor, resolver, bridge, renderer, importer, or repository, extract it before using it.
 
-If a requested change appears to require breaking either rule, stop and clarify the architecture before implementing.
+If a requested change appears to require breaking any of these rules, stop and clarify the architecture before implementing.
 
 ## 1. Editor and runtime are separate systems
 
@@ -247,6 +248,24 @@ The runtime visuals must resolve through:
 - module/app/screen inheritance where applicable.
 
 No primitive color literals should leak beyond palette/theme definition layers.
+
+## 6A. Generic routines live in common libraries
+
+Reusable behavior must not be implemented inside the first module that needs it.
+
+This applies to routines such as:
+
+- SVG normalization, tinting conventions, and generated SVG primitives;
+- theme token path catalogs and color variant resolution;
+- palette color/alpha serialization;
+- JSON path read/write helpers;
+- numeric parsing and slider stepping rules;
+- device metric normalization;
+- import mapping that is provider-independent.
+
+Per-editor, per-module, per-bridge, and per-renderer classes may orchestrate these routines, but they must not own the generic algorithm.
+
+If a feature needs reusable behavior and the common routine does not exist yet, create or extend the common routine first. Do not add a local helper and plan to clean it later unless it is marked with `TODO(editor-architecture)` and removed in the same phase.
 
 ## 7. Inheritance is recursive and uniform
 

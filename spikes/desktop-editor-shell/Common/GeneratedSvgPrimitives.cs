@@ -1,7 +1,7 @@
 using System;
 using System.Globalization;
 
-namespace Mockups.DesktopEditorShell.Preview.Bridges;
+namespace Mockups.DesktopEditorShell.Common;
 
 internal sealed record GeneratedSvgPrimitive(string Markup, double Width, double Height);
 

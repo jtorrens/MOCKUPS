@@ -390,7 +390,7 @@ internal sealed class RecordClassFieldValueService
                 new FieldOption("normal", "Normal"),
                 new FieldOption("italic", "Italic"),
             ],
-            _ => field.ValueKind is ValueKind.PaletteColorToken or ValueKind.PaletteColorPair
+            _ => field.ValueKind is ValueKind.PaletteColorToken or ValueKind.PaletteColorPair or ValueKind.PaletteColorAlphaPair
                 ? _database.GetPaletteColorOptions(settings.ProjectId)
                 : field.Options,
         };
@@ -403,7 +403,7 @@ internal sealed class RecordClassFieldValueService
         {
             "actor.defaultDeviceId" => _database.GetDeviceOptions(settings.ProjectId),
             "actor.defaultThemeId" => _database.GetThemeOptions(settings.ProjectId),
-            _ => field.ValueKind is ValueKind.PaletteColorToken or ValueKind.PaletteColorPair
+            _ => field.ValueKind is ValueKind.PaletteColorToken or ValueKind.PaletteColorPair or ValueKind.PaletteColorAlphaPair
                 ? _database.GetPaletteColorOptions(settings.ProjectId)
                 : field.Options,
         };

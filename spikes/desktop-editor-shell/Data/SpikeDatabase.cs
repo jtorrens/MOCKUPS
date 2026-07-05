@@ -3056,8 +3056,8 @@ internal sealed partial class SpikeDatabase
     private static JsonNode NumberNode(string value)
     {
         return value.Contains('.', StringComparison.Ordinal)
-            ? JsonValue.Create(double.TryParse(value, out var decimalValue) ? decimalValue : 0)!
-            : JsonValue.Create(int.TryParse(value, out var integerValue) ? integerValue : 0)!;
+            ? JsonValue.Create(double.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var decimalValue) ? decimalValue : 0)!
+            : JsonValue.Create(int.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var integerValue) ? integerValue : 0)!;
     }
 
     private static void EnsureShotColumns(SqliteConnection connection)

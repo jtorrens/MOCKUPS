@@ -1,4 +1,5 @@
 ﻿using Avalonia;
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Preview.Avalonia;
 using Mockups.DesktopEditorShell.Preview.Bridges;
 using Mockups.DesktopEditorShell.VisualIr;
@@ -19,6 +20,13 @@ class Program
         {
             VisualIrSmokeFixture.ValidateRoundTrip();
             Console.WriteLine("Visual IR smoke fixture validated.");
+            return;
+        }
+
+        if (args.Contains("--svg-tint-smoke", StringComparer.Ordinal))
+        {
+            SvgMarkupNormalizerSmoke.Validate();
+            Console.WriteLine("SVG tint normalization smoke validated.");
             return;
         }
 

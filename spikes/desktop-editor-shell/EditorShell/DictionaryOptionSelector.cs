@@ -13,7 +13,7 @@ internal static class DictionaryOptionSelector
             MinWidth = 220,
             IsEnabled = definition.IsEditable,
             ItemsSource = definition.Options ?? [],
-            ItemTemplate = definition.ValueKind is ValueKind.PaletteColorToken or ValueKind.PaletteColorPair
+            ItemTemplate = definition.ValueKind is ValueKind.PaletteColorToken or ValueKind.PaletteColorPair or ValueKind.PaletteColorAlphaPair
                 ? DictionaryPaletteOptionTemplate.Create()
                 : null,
         };

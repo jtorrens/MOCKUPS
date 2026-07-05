@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace Mockups.DesktopEditorShell.EditorShell;
+namespace Mockups.DesktopEditorShell.Common;
 
 internal static class SvgReplacementService
 {

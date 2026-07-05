@@ -23,6 +23,7 @@ internal static class DictionaryValueControlFactory
                 services.CreateIconPreview),
             ValueKind.ThemeToken => new DictionaryThemeTokenControl(definition, value, services.ShowThemeTokenPicker),
             ValueKind.PaletteColorPair => new DictionaryPalettePairControl(definition, value),
+            ValueKind.PaletteColorAlphaPair => new DictionaryPaletteAlphaPairControl(definition, value),
             ValueKind.HexColor => new DictionaryHexColorControl(definition, value),
             ValueKind.HueDegrees => new HueDegreesControl(value, definition.IsEditable),
             ValueKind.Integer => new DictionaryIntegerControl(definition, value),

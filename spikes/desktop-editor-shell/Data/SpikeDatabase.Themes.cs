@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Collections.Generic;
@@ -10,30 +11,19 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SpikeDatabase
 {
-    private static readonly Dictionary<string, (string[] Light, string[] Dark)> ThemeColorPairPaths = new()
-    {
-        ["theme.colors.background"] = (["modes", "light", "colors", "background"], ["modes", "dark", "colors", "background"]),
-        ["theme.colors.textPrimary"] = (["modes", "light", "colors", "textPrimary"], ["modes", "dark", "colors", "textPrimary"]),
-        ["theme.colors.textSecondary"] = (["modes", "light", "colors", "textSecondary"], ["modes", "dark", "colors", "textSecondary"]),
-        ["theme.colors.accent"] = (["modes", "light", "colors", "accent"], ["modes", "dark", "colors", "accent"]),
-        ["theme.icons.primary"] = (["modes", "light", "colors", "icons.primary"], ["modes", "dark", "colors", "icons.primary"]),
-        ["theme.icons.secondary"] = (["modes", "light", "colors", "icons.secondary"], ["modes", "dark", "colors", "icons.secondary"]),
-        ["theme.icons.accent"] = (["modes", "light", "colors", "icons.accent"], ["modes", "dark", "colors", "icons.accent"]),
-        ["theme.borders.primary"] = (["modes", "light", "colors", "borders.primary"], ["modes", "dark", "colors", "borders.primary"]),
-        ["theme.borders.secondary"] = (["modes", "light", "colors", "borders.secondary"], ["modes", "dark", "colors", "borders.secondary"]),
-        ["theme.borders.alternate"] = (["modes", "light", "colors", "borders.alternate"], ["modes", "dark", "colors", "borders.alternate"]),
-        ["theme.cursor.color"] = (["modes", "light", "colors", "theme.cursor.color"], ["modes", "dark", "colors", "theme.cursor.color"]),
-        ["theme.statusBar.foreground"] = (["modes", "light", "statusBar", "foreground"], ["modes", "dark", "statusBar", "foreground"]),
-        ["theme.statusBar.background"] = (["modes", "light", "statusBar", "background", "color"], ["modes", "dark", "statusBar", "background", "color"]),
-        ["theme.navigationBar.foreground"] = (["modes", "light", "navigationBar", "foreground"], ["modes", "dark", "navigationBar", "foreground"]),
-        ["theme.navigationBar.background"] = (["modes", "light", "navigationBar", "background", "color"], ["modes", "dark", "navigationBar", "background", "color"]),
-        ["theme.keyboard.background"] = (["modes", "light", "keyboard", "background"], ["modes", "dark", "keyboard", "background"]),
-        ["theme.keyboard.keyBackground"] = (["modes", "light", "keyboard", "keyBackground"], ["modes", "dark", "keyboard", "keyBackground"]),
-        ["theme.keyboard.specialKeyBackground"] = (["modes", "light", "keyboard", "specialKeyBackground"], ["modes", "dark", "keyboard", "specialKeyBackground"]),
-        ["theme.keyboard.pressedKeyBackground"] = (["modes", "light", "keyboard", "pressedKeyBackground"], ["modes", "dark", "keyboard", "pressedKeyBackground"]),
-        ["theme.keyboard.popoverBackground"] = (["modes", "light", "keyboard", "popoverBackground"], ["modes", "dark", "keyboard", "popoverBackground"]),
-        ["theme.keyboard.text"] = (["modes", "light", "keyboard", "text"], ["modes", "dark", "keyboard", "text"]),
-    };
+    private static readonly Dictionary<string, (string[] Light, string[] Dark)> ThemeColorPairPaths =
+        ThemeColorTokenCatalog.ColorTokens.ToDictionary(
+            (token) => token.Id,
+            (token) => (token.LightPath.ToArray(), token.DarkPath.ToArray()),
+            StringComparer.Ordinal);
+
+    private static readonly Dictionary<string, (string[] Light, string[] Dark)> ThemeAlphaPairPaths =
+        ThemeColorTokenCatalog.ColorTokens
+            .Where((token) => token.HasAlpha)
+            .ToDictionary(
+                (token) => token.Id,
+                (token) => (token.LightAlphaPath!.ToArray(), token.DarkAlphaPath!.ToArray()),
+                StringComparer.Ordinal);
 
     public IReadOnlyList<FieldOption> GetThemeOptions(string projectId)
     {
@@ -111,7 +101,15 @@ internal sealed partial class SpikeDatabase
         var tokens = ParseJsonObject(string.IsNullOrWhiteSpace(settings.TokensJson) ? "{}" : settings.TokensJson);
         if (ThemeColorPairPaths.TryGetValue(fieldId, out var colorPairPaths))
         {
-            return $"{JsonString(tokens, colorPairPaths.Light)}|{JsonString(tokens, colorPairPaths.Dark)}";
+            var colors = $"{JsonString(tokens, colorPairPaths.Light)}|{JsonString(tokens, colorPairPaths.Dark)}";
+            if (!ThemeAlphaPairPaths.TryGetValue(fieldId, out var alphaPairPaths))
+            {
+                return colors;
+            }
+
+            var lightAlpha = JsonNumberString(tokens, alphaPairPaths.Light, "1");
+            var darkAlpha = JsonNumberString(tokens, alphaPairPaths.Dark, "1");
+            return $"{colors}||{lightAlpha}|{darkAlpha}";
         }
 
         return fieldId switch
@@ -282,7 +280,16 @@ internal sealed partial class SpikeDatabase
 
         if (ThemeColorPairPaths.TryGetValue(fieldId, out var colorPairPaths))
         {
-            SetPair(tokens, value, colorPairPaths.Light, colorPairPaths.Dark, asNumber: false);
+            if (ThemeAlphaPairPaths.TryGetValue(fieldId, out var alphaPairPaths))
+            {
+                var pair = PaletteAlphaPair.Split(value);
+                SetPair(tokens, $"{pair.First.ColorToken}|{pair.Second.ColorToken}", colorPairPaths.Light, colorPairPaths.Dark, asNumber: false);
+                SetPair(tokens, $"{PaletteAlphaPair.FormatAlpha(pair.First.Alpha)}|{PaletteAlphaPair.FormatAlpha(pair.Second.Alpha)}", alphaPairPaths.Light, alphaPairPaths.Dark, asNumber: true);
+            }
+            else
+            {
+                SetPair(tokens, value, colorPairPaths.Light, colorPairPaths.Dark, asNumber: false);
+            }
             Execute(connection, "UPDATE themes SET tokens_json = $tokensJson WHERE id = $id", ("$id", themeId), ("$tokensJson", tokens.ToJsonString()));
             return;
         }

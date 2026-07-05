@@ -1,10 +1,11 @@
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using Mockups.DesktopEditorShell.EditorShell;
+using Mockups.DesktopEditorShell.Preview.Resolved;
+using Mockups.DesktopEditorShell.Preview.Resolvers;
 using Mockups.DesktopEditorShell.VisualIr;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
@@ -13,34 +14,25 @@ namespace Mockups.DesktopEditorShell.Preview.Bridges;
 
 internal static class DesignPreviewToVisualIrBridge
 {
-    private sealed record ThemeChromeColors(VisualIrColor Foreground, VisualIrColor Background);
-
     public static VisualIrDocument Convert(
         DesignPreviewPayload payload,
         SpikeDatabase.DevicePreviewMetrics metrics,
         string selectedColorVariant = "set_night")
     {
-        var rootChildren = new List<VisualIrNode>
-        {
-            new VisualIrRectNode
-            {
-                Id = "device.screen",
-                Bounds = new VisualIrRect(metrics.ScreenX, metrics.ScreenY, metrics.ScreenWidth, metrics.ScreenHeight),
-                Fill = new VisualIrSolidPaint(ThemeBackground(payload)),
-                Radius = metrics.CornerRadius,
-            },
-        };
+        var frame = DesignPreviewFrameResolver.Resolve(payload, metrics);
+        var document = Convert(frame, payload, selectedColorVariant);
+        VisualIrValidator.ThrowIfInvalid(document);
+        return document;
+    }
 
-        rootChildren.Add(payload.Kind switch
+    private static VisualIrDocument Convert(
+        ResolvedDesignFrame frame,
+        DesignPreviewPayload payload,
+        string selectedColorVariant)
+    {
+        return new VisualIrDocument
         {
-            "statusBar" => StatusBar(payload, metrics),
-            "navigationBar" => NavigationBar(payload, metrics),
-            _ => UnsupportedPayload(payload, metrics),
-        });
-
-        var document = new VisualIrDocument
-        {
-            Viewport = new VisualIrViewport(metrics.CanvasWidth, metrics.CanvasHeight, metrics.ScaleToPixels),
+            Viewport = new VisualIrViewport(frame.Width, frame.Height, 1),
             Resources = new VisualIrResources
             {
                 ColorVariants = ["set_day", "set_night"],
@@ -49,401 +41,153 @@ internal static class DesignPreviewToVisualIrBridge
             Root = new VisualIrGroupNode
             {
                 Id = "root",
-                Bounds = new VisualIrRect(0, 0, metrics.CanvasWidth, metrics.CanvasHeight),
-                Children = rootChildren,
+                Bounds = new VisualIrRect(0, 0, frame.Width, frame.Height),
+                Children = frame.Children.Select((node) => ConvertNode(node, payload)).ToList(),
             },
-            Metadata = new Dictionary<string, string>
-            {
-                ["source"] = "DesignPreviewPayload",
-                ["sourceKind"] = payload.Kind,
-                ["name"] = payload.Name,
-            },
-        };
-        VisualIrValidator.ThrowIfInvalid(document);
-        return document;
-    }
-
-    private static VisualIrGroupNode StatusBar(
-        DesignPreviewPayload payload,
-        SpikeDatabase.DevicePreviewMetrics metrics)
-    {
-        var config = ParseObject(payload.ConfigJson);
-        var layout = config["layout"] as JsonObject ?? [];
-        var scale = RenderScale(metrics);
-        var height = ScaledNumber(layout, "height", metrics.StatusBarHeight > 0 ? metrics.StatusBarHeight : 54 * scale, scale);
-        var itemSize = ScaledNumber(layout, "itemSize", 18 * scale, scale);
-        var gap = ScaledNumber(layout, "gap", 6 * scale, scale);
-        var sidePadding = ScaledNumber(layout, "sidePadding", 24 * scale, scale);
-        var chrome = ThemeChrome(payload, "statusBar");
-        var bounds = new VisualIrRect(metrics.ScreenX, metrics.ScreenY, metrics.ScreenWidth, height);
-        var children = new List<VisualIrNode>
-        {
-            new VisualIrRectNode
-            {
-                Id = "statusBar.background",
-                Bounds = new VisualIrRect(0, 0, bounds.Width, bounds.Height),
-                Fill = new VisualIrSolidPaint(chrome.Background),
-            },
-        };
-
-        var items = Items(config)
-            .Where((item) => item.Zone is "left" or "right")
-            .OrderBy((item) => item.Order)
-            .ToList();
-        children.AddRange(StatusItemsForZone(payload, items.Where((item) => item.Zone == "left"), "left", itemSize, gap, sidePadding, bounds, chrome.Foreground));
-        children.AddRange(StatusItemsForZone(payload, items.Where((item) => item.Zone == "right"), "right", itemSize, gap, sidePadding, bounds, chrome.Foreground));
-
-        return new VisualIrGroupNode
-        {
-            Id = "statusBar",
-            Bounds = bounds,
-            Children = children,
-            Metadata = new Dictionary<string, string>
-            {
-                ["legacyKind"] = payload.Kind,
-            },
+            Metadata = frame.Metadata,
         };
     }
 
-    private static IEnumerable<VisualIrNode> StatusItemsForZone(
-        DesignPreviewPayload payload,
-        IEnumerable<PreviewItem> items,
-        string zone,
-        double itemSize,
-        double gap,
-        double sidePadding,
-        VisualIrRect barBounds,
-        VisualIrColor foreground)
+    private static VisualIrNode ConvertNode(ResolvedDesignNode node, DesignPreviewPayload payload)
     {
-        var list = items.ToList();
-        var widths = list.Select((item) => StatusItemWidth(item, itemSize)).ToList();
-        var totalWidth = widths.Sum() + Math.Max(0, widths.Count - 1) * gap;
-        var x = zone == "left" ? sidePadding : barBounds.Width - sidePadding - totalWidth;
-        var y = (barBounds.Height - itemSize) / 2;
-
-        for (var index = 0; index < list.Count; index++)
+        return node switch
         {
-            var item = list[index];
-            var width = widths[index];
-            yield return StatusItem(payload, item, x, y, width, itemSize, foreground);
-            x += width + gap;
-        }
-    }
-
-    private static VisualIrNode StatusItem(
-        DesignPreviewPayload payload,
-        PreviewItem item,
-        double x,
-        double y,
-        double width,
-        double height,
-        VisualIrColor foreground)
-    {
-        if (item.Kind == "text")
-        {
-            return new VisualIrTextNode
+            ResolvedDesignGroupNode group => new VisualIrGroupNode
             {
-                Id = $"statusBar.item.{item.Id}",
-                Bounds = new VisualIrRect(x, y, width, height),
-                Text = string.IsNullOrWhiteSpace(item.Value) ? item.Label : item.Value,
+                Id = group.Id,
+                Bounds = Rect(group.Bounds),
+                Opacity = group.Opacity,
+                ClipRect = group.ClipRect is null ? null : Rect(group.ClipRect),
+                Children = group.Children.Select((child) => ConvertNode(child, payload)).ToList(),
+                Metadata = group.Metadata,
+            },
+            ResolvedDesignRectNode rect => new VisualIrRectNode
+            {
+                Id = rect.Id,
+                Bounds = Rect(rect.Bounds),
+                Opacity = rect.Opacity,
+                Fill = Paint(rect.Fill, payload),
+                Radius = rect.Radius,
+                Metadata = MetadataWithColor(rect.Metadata, "fill", rect.Fill, payload),
+            },
+            ResolvedDesignTextNode text => new VisualIrTextNode
+            {
+                Id = text.Id,
+                Bounds = Rect(text.Bounds),
+                Opacity = text.Opacity,
+                Text = text.Text,
                 Style = new VisualIrTextStyle
                 {
-                    Fill = new VisualIrSolidPaint(foreground),
-                    FontFamily = "Inter",
-                    FontSize = height,
-                    FontWeight = 600,
-                    LineHeight = height,
+                    Fill = Paint(text.Style.Fill, payload),
+                    FontFamily = text.Style.FontFamily,
+                    FontSize = text.Style.FontSize,
+                    FontWeight = text.Style.FontWeight,
+                    FontStyle = text.Style.FontStyle,
+                    LineHeight = text.Style.LineHeight,
                 },
-                TextAlign = "center",
-                VerticalAlign = "middle",
-                Metadata = MetadataFor(item),
-            };
-        }
-
-        if (item.Kind == "generatedSignal")
-        {
-            var primitive = GeneratedSvgPrimitives.StatusSignal(NumberValue(item.Value, 0), height);
-            return new VisualIrSvgNode
-            {
-                Id = $"statusBar.item.{item.Id}",
-                Bounds = new VisualIrRect(x, y + (height - primitive.Height) / 2, primitive.Width, primitive.Height),
-                Markup = primitive.Markup,
-                Fit = "fill",
-                Tint = new VisualIrSolidPaint(foreground),
-                Metadata = MetadataFor(item),
-            };
-        }
-
-        if (item.Kind == "generatedBattery")
-        {
-            var primitive = GeneratedSvgPrimitives.StatusBattery(NumberValue(item.Value, 100), item.Charging, height);
-            return new VisualIrSvgNode
-            {
-                Id = $"statusBar.item.{item.Id}",
-                Bounds = new VisualIrRect(x, y + (height - primitive.Height) / 2, primitive.Width, primitive.Height),
-                Markup = primitive.Markup,
-                Fit = "fill",
-                Tint = new VisualIrSolidPaint(foreground),
-                Metadata = MetadataFor(item),
-            };
-        }
-
-        var iconMarkup = IconMarkup(payload, item.Token);
-        if (!string.IsNullOrWhiteSpace(iconMarkup))
-        {
-            var glyph = new VisualIrSvgNode
-            {
-                Id = $"statusBar.item.{item.Id}.glyph",
-                Bounds = new VisualIrRect(0, 0, height, height),
-                Markup = iconMarkup,
-                Fit = "contain",
-                Tint = new VisualIrSolidPaint(foreground),
-                Metadata = MetadataFor(item),
-            };
-            return new VisualIrGroupNode
-            {
-                Id = $"statusBar.item.{item.Id}",
-                Bounds = new VisualIrRect(x, y, height, height),
-                ClipRect = new VisualIrRect(0, 0, height, height),
-                Children = [glyph],
-                Metadata = MetadataFor(item),
-            };
-        }
-
-        return new VisualIrSvgNode
-        {
-            Id = $"statusBar.item.{item.Id}",
-            Bounds = new VisualIrRect(x, y, width, height),
-            Markup = FallbackIconSvg(item.TokenOrLabel),
-            Fit = "contain",
-            Tint = new VisualIrSolidPaint(foreground),
-            Metadata = MetadataFor(item),
-        };
-    }
-
-    private static VisualIrGroupNode NavigationBar(
-        DesignPreviewPayload payload,
-        SpikeDatabase.DevicePreviewMetrics metrics)
-    {
-        var config = ParseObject(payload.ConfigJson);
-        var layout = config["layout"] as JsonObject ?? [];
-        var scale = RenderScale(metrics);
-        var height = ScaledNumber(layout, "height", 34 * scale, scale);
-        var itemSize = ScaledNumber(layout, "itemSize", 18 * scale, scale);
-        var sidePadding = ScaledNumber(layout, "sidePadding", 40 * scale, scale);
-        var strokeWidth = ScaledNumber(layout, "strokeWidth", 2 * scale, scale);
-        var cornerRadius = ScaledNumber(layout, "cornerRadius", 3 * scale, scale);
-        var gap = 6 * scale;
-        var chrome = ThemeChrome(payload, "navigationBar");
-        var bounds = new VisualIrRect(metrics.ScreenX, metrics.ScreenY + metrics.ScreenHeight - height, metrics.ScreenWidth, height);
-        var children = new List<VisualIrNode>
-        {
-            new VisualIrRectNode
-            {
-                Id = "navigationBar.background",
-                Bounds = new VisualIrRect(0, 0, bounds.Width, bounds.Height),
-                Fill = new VisualIrSolidPaint(chrome.Background),
+                TextAlign = text.TextAlign,
+                VerticalAlign = text.VerticalAlign,
+                Metadata = MetadataWithColor(text.Metadata, "textFill", text.Style.Fill, payload),
             },
-        };
-
-        var items = Items(config)
-            .Where((item) => item.Zone is "left" or "center" or "right")
-            .OrderBy((item) => item.Order)
-            .ToList();
-        foreach (var zone in new[] { "left", "center", "right" })
-        {
-            children.AddRange(NavigationItemsForZone(items.Where((item) => item.Zone == zone), zone, itemSize, sidePadding, gap, bounds, strokeWidth, cornerRadius, Bool(layout, "filled", false), chrome.Foreground));
-        }
-
-        return new VisualIrGroupNode
-        {
-            Id = "navigationBar",
-            Bounds = bounds,
-            Children = children,
-            Metadata = new Dictionary<string, string>
+            ResolvedDesignSvgNode svg => new VisualIrSvgNode
             {
-                ["legacyKind"] = payload.Kind,
+                Id = svg.Id,
+                Bounds = Rect(svg.Bounds),
+                Opacity = svg.Opacity,
+                Markup = svg.Markup,
+                Fit = svg.Fit,
+                Tint = Paint(svg.Tint, payload),
+                Metadata = MetadataWithColor(svg.Metadata, "tint", svg.Tint, payload),
             },
+            _ => throw new InvalidOperationException($"Unsupported resolved design node: {node.GetType().Name}"),
         };
     }
 
-    private static IEnumerable<VisualIrNode> NavigationItemsForZone(
-        IEnumerable<PreviewItem> items,
-        string zone,
-        double itemSize,
-        double sidePadding,
-        double gap,
-        VisualIrRect barBounds,
-        double strokeWidth,
-        double cornerRadius,
-        bool filled,
-        VisualIrColor foreground)
+    private static VisualIrRect Rect(DesignRect rect)
     {
-        var list = items.ToList();
-        if (list.Count == 0)
+        return new VisualIrRect(rect.X, rect.Y, rect.Width, rect.Height);
+    }
+
+    private static VisualIrPaint? Paint(ResolvedDesignPaint? paint, DesignPreviewPayload payload)
+    {
+        return paint is null ? null : new VisualIrSolidPaint(Color(paint.Color, payload));
+    }
+
+    private static IReadOnlyDictionary<string, string>? MetadataWithColor(
+        IReadOnlyDictionary<string, string>? metadata,
+        string prefix,
+        ResolvedDesignPaint? paint,
+        DesignPreviewPayload payload)
+    {
+        if (paint is null)
         {
-            yield break;
+            return metadata;
         }
 
-        var totalWidth = list.Count * itemSize + Math.Max(0, list.Count - 1) * gap;
-        var x = zone switch
+        var result = metadata is null
+            ? new Dictionary<string, string>()
+            : new Dictionary<string, string>(metadata, StringComparer.Ordinal);
+        var color = paint.Color;
+        result[$"{prefix}.colorRef"] = color.Id;
+        if (!string.IsNullOrWhiteSpace(color.ThemeTokenId)
+            && ThemeColorTokenCatalog.TryGet(color.ThemeTokenId, out var paths))
         {
-            "left" => sidePadding,
-            "center" => (barBounds.Width - totalWidth) / 2,
-            _ => barBounds.Width - sidePadding - totalWidth,
-        };
-        var y = (barBounds.Height - itemSize) / 2;
-
-        foreach (var item in list)
-        {
-            var primitive = GeneratedSvgPrimitives.NavigationButton(
-                item.Kind,
-                itemSize,
-                strokeWidth,
-                cornerRadius,
-                filled);
-            yield return new VisualIrSvgNode
-            {
-                Id = $"navigationBar.item.{item.Id}",
-                Bounds = new VisualIrRect(x, y, primitive.Width, primitive.Height),
-                Markup = primitive.Markup,
-                Fit = "fill",
-                Tint = new VisualIrSolidPaint(foreground),
-                Metadata = MetadataFor(item),
-            };
-            x += itemSize + gap;
+            result[$"{prefix}.themeToken"] = color.ThemeTokenId;
+            result[$"{prefix}.set_day"] = ThemeColor(payload, paths.LightPath, paths.LightAlphaPath, color.FallbackValue);
+            result[$"{prefix}.set_night"] = ThemeColor(payload, paths.DarkPath, paths.DarkAlphaPath, color.FallbackValue);
         }
-    }
-
-    private static VisualIrGroupNode UnsupportedPayload(
-        DesignPreviewPayload payload,
-        SpikeDatabase.DevicePreviewMetrics metrics)
-    {
-        return new VisualIrGroupNode
+        else
         {
-            Id = $"unsupported.{payload.Kind}",
-            Bounds = new VisualIrRect(metrics.ScreenX, metrics.ScreenY, metrics.ScreenWidth, metrics.ScreenHeight),
-            Children =
-            [
-                new VisualIrTextNode
-                {
-                    Id = $"unsupported.{payload.Kind}.label",
-                    Bounds = new VisualIrRect(24, 24, Math.Max(1, metrics.ScreenWidth - 48), 32),
-                    Text = $"Unsupported design payload: {payload.Kind}",
-                    Style = new VisualIrTextStyle
-                    {
-                        Fill = new VisualIrSolidPaint(VisualIrColor.Static("#ff00ff")),
-                        FontFamily = "Inter",
-                        FontSize = 16,
-                        FontWeight = 700,
-                    },
-                },
-            ],
-        };
-    }
-
-    private static IReadOnlyList<PreviewItem> Items(JsonObject config)
-    {
-        if (config["items"] is not JsonArray array)
-        {
-            return [];
+            result[$"{prefix}.static"] = ResolveColorValue(payload, color.FallbackValue);
         }
 
-        return array
-            .OfType<JsonObject>()
-            .Select((item, index) => new PreviewItem(
-                String(item, "id", $"item_{index}"),
-                String(item, "label", $"Item {index + 1}"),
-                String(item, "kind", "text"),
-                String(item, "value", ""),
-                String(item, "token", ""),
-                String(item, "zone", "off"),
-                Number(item, "order", index * 10),
-                Bool(item, "charging", false)))
-            .ToList();
+        return result;
     }
 
-    private static double StatusItemWidth(PreviewItem item, double itemSize)
+    private static VisualIrColor Color(ResolvedDesignColorRef color, DesignPreviewPayload payload)
     {
-        return item.Kind switch
+        var fallback = ResolveColorValue(payload, color.FallbackValue);
+        if (string.IsNullOrWhiteSpace(color.ThemeTokenId))
         {
-            "generatedBattery" => itemSize * 1.55,
-            "generatedSignal" => itemSize * 1.08,
-            "iconToken" => itemSize,
-            _ => Math.Max(itemSize, (string.IsNullOrWhiteSpace(item.Value) ? item.Label : item.Value).Length * itemSize * 0.58),
-        };
-    }
+            return VisualIrColor.Static(IsVisualIrColor(fallback) ? fallback : "#ff00ff");
+        }
 
-    private static double RenderScale(SpikeDatabase.DevicePreviewMetrics metrics)
-    {
-        return metrics.ScaleToPixels > 0 ? metrics.ScaleToPixels : 1;
-    }
+        if (!ThemeColorTokenCatalog.TryGet(color.ThemeTokenId, out var paths))
+        {
+            return VisualIrColor.Static(IsVisualIrColor(fallback) ? fallback : "#ff00ff");
+        }
 
-    private static double ScaledNumber(JsonObject json, string key, double fallback, double scale)
-    {
-        return json.TryGetPropertyValue(key, out var node)
-            && node is not null
-            && double.TryParse(node.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
-            ? parsed * scale
-            : fallback;
-    }
-
-    private static VisualIrVariantColor VariantColor(string setDay, string setNight)
-    {
         return VisualIrColor.Variant(
             new Dictionary<string, string>
             {
-                ["set_day"] = setDay,
-                ["set_night"] = setNight,
+                ["set_day"] = ThemeColor(payload, paths.LightPath, paths.LightAlphaPath, color.FallbackValue),
+                ["set_night"] = ThemeColor(payload, paths.DarkPath, paths.DarkAlphaPath, color.FallbackValue),
             },
-            setNight);
+            IsVisualIrColor(fallback) ? fallback : "#ff00ff");
     }
 
-    private static VisualIrColor ThemeBackground(DesignPreviewPayload payload)
-    {
-        return VisualIrColor.Variant(
-            new Dictionary<string, string>
-            {
-                ["set_day"] = ThemeColor(payload, "light", ["colors", "background"], "#F7F9FC"),
-                ["set_night"] = ThemeColor(payload, "dark", ["colors", "background"], "#101827"),
-            },
-            "#101827");
-    }
-
-    private static ThemeChromeColors ThemeChrome(DesignPreviewPayload payload, string key)
-    {
-        return new ThemeChromeColors(
-            VisualIrColor.Variant(
-                new Dictionary<string, string>
-                {
-                    ["set_day"] = ThemeColor(payload, "light", [key, "foreground"], "#111827"),
-                    ["set_night"] = ThemeColor(payload, "dark", [key, "foreground"], "#F8FAFC"),
-                },
-                "#F8FAFC"),
-            VisualIrColor.Variant(
-                new Dictionary<string, string>
-                {
-                    ["set_day"] = ThemeColor(payload, "light", [key, "background", "color"], "#00000000"),
-                    ["set_night"] = ThemeColor(payload, "dark", [key, "background", "color"], "#00000000"),
-                },
-                "#00000000"));
-    }
-
-    private static string ThemeColor(DesignPreviewPayload payload, string mode, IReadOnlyList<string> path, string fallback)
+    private static string ThemeColor(
+        DesignPreviewPayload payload,
+        IReadOnlyList<string> path,
+        IReadOnlyList<string>? alphaPath,
+        string fallback)
     {
         var tokens = ParseObject(payload.ThemeTokensJson);
-        var modes = tokens["modes"] as JsonObject;
-        var current = modes?[mode];
+        JsonNode? current = tokens;
         foreach (var part in path)
         {
             current = current is JsonObject obj ? obj[part] : null;
         }
 
-        var resolved = ResolvePalette(payload, current?.ToString() ?? fallback);
-        return IsVisualIrColor(resolved) ? resolved : fallback;
+        var resolved = ResolveColorValue(payload, current?.ToString() ?? fallback);
+        var resolvedFallback = ResolveColorValue(payload, fallback);
+        var color = IsVisualIrColor(resolved)
+            ? resolved
+            : IsVisualIrColor(resolvedFallback) ? resolvedFallback : "#ff00ff";
+        return alphaPath is null ? color : WithAlpha(color, NumberAt(tokens, alphaPath, 1));
     }
 
-    private static string ResolvePalette(DesignPreviewPayload payload, string value)
+    private static string ResolveColorValue(DesignPreviewPayload payload, string value)
     {
         if (string.IsNullOrWhiteSpace(value))
         {
@@ -464,97 +208,6 @@ internal static class DesignPreviewToVisualIrBridge
         return Regex.IsMatch(value, "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$");
     }
 
-    private static string? IconMarkup(DesignPreviewPayload payload, string token)
-    {
-        if (string.IsNullOrWhiteSpace(token)
-            || string.IsNullOrWhiteSpace(payload.ProjectMediaRoot)
-            || string.IsNullOrWhiteSpace(payload.IconAssetRoot))
-        {
-            return null;
-        }
-
-        try
-        {
-            var mapping = ParseObject(payload.IconMappingJson);
-            var tokens = mapping["tokens"] as JsonObject;
-            var tokenObject = tokens?[token] as JsonObject;
-            var file = tokenObject is null ? "" : String(tokenObject, "file", "");
-            if (string.IsNullOrWhiteSpace(file))
-            {
-                return null;
-            }
-
-            var path = Path.Combine(payload.ProjectMediaRoot, payload.IconAssetRoot, file);
-            return File.Exists(path) ? NormalizeInlineSvg(File.ReadAllText(path)) : null;
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    private static string NormalizeInlineSvg(string markup)
-    {
-        var withoutDeclarations = Regex
-            .Replace(markup, @"<\?xml[\s\S]*?\?>", "", RegexOptions.IgnoreCase)
-            .Replace("<!DOCTYPE", "<!doctype", StringComparison.Ordinal)
-            .Trim();
-        withoutDeclarations = Regex.Replace(withoutDeclarations, @"<!doctype[\s\S]*?>", "", RegexOptions.IgnoreCase).Trim();
-        var tinted = Regex.Replace(
-            withoutDeclarations,
-            "\\sfill=([\"'])(?!none\\1|transparent\\1|currentColor\\1)[^\"']*\\1",
-            " fill=\"currentColor\"",
-            RegexOptions.IgnoreCase);
-        tinted = Regex.Replace(
-            tinted,
-            "\\sstroke=([\"'])(?!none\\1|transparent\\1|currentColor\\1)[^\"']*\\1",
-            " stroke=\"currentColor\"",
-            RegexOptions.IgnoreCase);
-        tinted = Regex.Replace(tinted, "fill\\s*:\\s*(?!none\\b|transparent\\b|currentColor\\b)[^;\"]+", "fill:currentColor", RegexOptions.IgnoreCase);
-        tinted = Regex.Replace(tinted, "stroke\\s*:\\s*(?!none\\b|transparent\\b|currentColor\\b)[^;\"]+", "stroke:currentColor", RegexOptions.IgnoreCase);
-        return Regex.Replace(
-            tinted,
-            "<svg\\b([^>]*)>",
-            (match) =>
-            {
-                var attrs = Regex.Replace(match.Groups[1].Value, "\\s(width|height|style|preserveAspectRatio)=([\"']).*?\\2", "", RegexOptions.IgnoreCase);
-                return $"<svg{attrs} width=\"100%\" height=\"100%\" preserveAspectRatio=\"xMidYMid meet\" style=\"display:block;width:100%;height:100%;overflow:visible;\">";
-            },
-            RegexOptions.IgnoreCase);
-    }
-
-    private static string FallbackIconSvg(string label)
-    {
-        var escapedLabel = label
-            .Replace("&", "&amp;", StringComparison.Ordinal)
-            .Replace("<", "&lt;", StringComparison.Ordinal)
-            .Replace(">", "&gt;", StringComparison.Ordinal);
-        return $"""
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%" style="display:block;overflow:visible">
-              <circle cx="50" cy="50" r="30" fill="none" stroke="currentColor" stroke-width="8"/>
-              <text x="50" y="57" text-anchor="middle" font-size="18" fill="currentColor">{escapedLabel[..Math.Min(escapedLabel.Length, 4)]}</text>
-            </svg>
-            """;
-    }
-
-    private static IReadOnlyDictionary<string, string> MetadataFor(
-        PreviewItem item,
-        params (string Key, string Value)[] extra)
-    {
-        var metadata = new Dictionary<string, string>
-        {
-            ["legacyKind"] = item.Kind,
-            ["legacyZone"] = item.Zone,
-            ["legacyLabel"] = item.Label,
-        };
-        foreach (var (key, value) in extra)
-        {
-            metadata[key] = value;
-        }
-
-        return metadata;
-    }
-
     private static JsonObject ParseObject(string json)
     {
         try
@@ -567,52 +220,29 @@ internal static class DesignPreviewToVisualIrBridge
         }
     }
 
-    private static string String(JsonObject json, string key, string fallback)
+    private static double NumberAt(JsonObject tokens, IReadOnlyList<string> path, double fallback)
     {
-        return json.TryGetPropertyValue(key, out var node) && node is not null
-            ? node.ToString()
-            : fallback;
-    }
-
-    private static double Number(JsonObject json, string key, double fallback)
-    {
-        if (!json.TryGetPropertyValue(key, out var node) || node is null)
+        JsonNode? current = tokens;
+        foreach (var part in path)
         {
-            return fallback;
+            current = current is JsonObject obj ? obj[part] : null;
         }
 
-        return double.TryParse(node.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
-            ? parsed
+        return double.TryParse(current?.ToString(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsed)
+            ? Math.Clamp(parsed, 0, 1)
             : fallback;
     }
 
-    private static double NumberValue(string value, double fallback)
+    private static string WithAlpha(string color, double alpha)
     {
-        return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
-            ? parsed
-            : fallback;
-    }
-
-    private static bool Bool(JsonObject json, string key, bool fallback)
-    {
-        if (!json.TryGetPropertyValue(key, out var node) || node is null)
+        if (!Regex.IsMatch(color, "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"))
         {
-            return fallback;
+            return color;
         }
 
-        return bool.TryParse(node.ToString(), out var parsed) ? parsed : fallback;
+        var rgb = color.Length == 9 ? color[..7] : color;
+        var alphaByte = (int)Math.Round(Math.Clamp(alpha, 0, 1) * 255);
+        return $"{rgb}{alphaByte:X2}";
     }
 
-    private sealed record PreviewItem(
-        string Id,
-        string Label,
-        string Kind,
-        string Value,
-        string Token,
-        string Zone,
-        double Order,
-        bool Charging)
-    {
-        public string TokenOrLabel => string.IsNullOrWhiteSpace(Token) ? Label : Token;
-    }
 }

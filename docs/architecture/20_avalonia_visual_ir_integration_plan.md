@@ -185,6 +185,80 @@ flags, but the returned document must already contain concrete visual values.
 
 The renderer should not call database services from inside `Render`.
 
+## Component, bridge and renderer contracts
+
+Visual IR is a document contract, not a component API. Each layer has a narrow
+responsibility.
+
+Component resolvers own component decisions. They receive already resolved
+editor data, inheritance, component overrides, device metrics, current frame
+state and resource references, then emit standard design atoms:
+
+- `group`
+- `rect`
+- `text`
+- `svg`
+- `image`
+- `video`
+- future primitive atoms such as `path`, `ellipse`, `clip`, `mask` or effects
+
+Those atoms must already contain:
+
+- bounds in design units;
+- z/order through child ordering;
+- text content;
+- generated SVG markup when internal geometry matters;
+- normalized icon SVG markup or explicit asset references;
+- media references;
+- opacity, clipping and fit;
+- chosen semantic color references.
+
+Component resolvers decide layout. That includes positions, sizes, gaps,
+padding, text alignment, generated shape dimensions, icon boxes, media boxes and
+component-specific fallback geometry. If a value changes where something is or
+what shape it has, it belongs before the bridge.
+
+Reusable resolver behavior belongs in shared/base routines, not inside the
+first component resolver that needs it. SVG normalization, generated SVG
+primitives, icon tint conventions, theme token catalogs, color variant math and
+device metric conversions must be common routines. Component resolvers may call
+those routines, but they must not fork the algorithms locally.
+
+The Visual IR bridge owns representation conversion. It receives design atoms
+and creates a valid `VisualIrDocument`. It may:
+
+- map standard atoms to Visual IR node types;
+- resolve semantic color references to concrete variant color values;
+- package resources and asset identifiers;
+- preserve debug metadata;
+- validate the final document.
+
+Color fallback values must be visibly diagnostic. Do not use plausible theme
+colors as fallback values for unresolved references, because they can hide
+broken token paths. The desktop seed provides the protected palette token
+`debug_red` for this purpose; bridges should resolve that token to concrete hex
+before emitting Visual IR.
+
+The bridge must not compute component layout. It must not decide status-bar item
+gaps, navigation-button dimensions, bubble geometry, avatar image placement,
+text alignment or media crop rules. If a temporary legacy bridge needs those
+decisions, they must live in an isolated resolver next to the bridge and remain
+searchable as transitional code.
+
+The renderer owns pixels. It receives `VisualIrDocument` plus render options and
+draws only Visual IR primitives. It may choose selected color variant, zoom, fit,
+device-frame overlay, debug bounds and target output scale. It must not call the
+database, resolve themes, inspect component classes, or know names such as
+`statusBar`, `navigationBar`, `chat`, `bubble`, `themeToken` or `paletteColor`.
+
+Short rule:
+
+```text
+component resolver -> geometry and content in design units
+bridge             -> Visual IR shape and concrete color variants
+renderer/viewer    -> presentation, zoom and output pixels
+```
+
 ## Resolved model and frame model
 
 Avalonia should preserve the React architecture split between resolved model
@@ -198,12 +272,12 @@ What are the final values after ownership, inheritance and resource resolution?
 
 Examples:
 
-- concrete theme colors for the active mode;
+- semantic theme color references selected after inheritance and overrides;
 - resolved font family, weight, style, size and line height;
 - component class properties plus local overrides;
 - resolved media/icon/font references;
 - device metrics and orientation;
-- design-space values converted to render-space values.
+- design-space values used for component layout.
 
 The frame model answers:
 
@@ -250,20 +324,39 @@ document, not part of the document.
 
 ## Units and output scale
 
-Stored visual values are design-space values until the resolver says otherwise.
+Visual IR uses design-space units.
+
+Stored visual values, component layout, Visual IR bounds and Visual IR font
+metrics stay in the logical design coordinate space of the document. The Visual
+IR document declares that space through its viewport/root dimensions. The
+renderer or viewer maps the document to a concrete panel, device frame, pixel
+ratio, export size or render preset.
 
 Target flow:
 
 ```text
 stored design value
-  -> device scale / render-space conversion in resolver
-  -> Visual IR bounds/style values
-  -> output scale in renderer/export
+  -> resolver/component layout in design units
+  -> Visual IR bounds/style values in design units
+  -> renderer/viewer output scale
 ```
 
-Visual modules and renderers should not guess whether a value has already been
-scaled. If a legacy binding mixes scaled and unscaled values, the adapter must
-make that conversion explicitly before Visual IR.
+This lets the debug/design viewer change zoom, available panel size, selected
+display frame or final output scale without requesting a new Visual IR payload.
+A new payload is required only when scene data changes: content, component
+layout, selected logical device, frame state, assets, theme, color variants,
+text, language or animation state.
+
+`scaleToPixels`, device pixel ratio and render-preset scale are output mapping
+inputs. They must not be baked into Visual IR geometry. If a legacy binding
+mixes scaled and unscaled values, the transitional resolver must normalize them
+before the bridge and mark the exception explicitly.
+
+The current Avalonia design-preview bridge starts from legacy device preview
+metrics whose canvas/screen values are render pixels. Its transitional resolver
+divides those values by `scaleToPixels` before creating design atoms. Future
+device metric services should expose design-space metrics directly to avoid
+this adapter step.
 
 ## Resource and packaging rules
 
@@ -375,9 +468,10 @@ Resolvers should be small and composable:
 - frame evaluators: animation, write-on, video/audio progress;
 - screen resolvers: device metrics, orientation, ordering and transitions.
 
-Resolvers may validate stored JSON, resolve references, compute timing and scale
-design-space values. They should not draw, call preview APIs, contain editor UI
-layout, or carry long-term legacy fallbacks.
+Resolvers may validate stored JSON, resolve references, compute timing and
+produce component layout in design units. They should not draw, call preview
+APIs, contain editor UI layout, output-scale Visual IR geometry, or carry
+long-term legacy fallbacks.
 
 ## Transitional bridge
 
@@ -385,6 +479,7 @@ The current `DesignPreviewPayloadFactory` can become the first bridge source:
 
 ```text
 DesignPreviewPayload
+  -> DesignPreviewFrameResolver
   -> DesignPreviewToVisualIrBridge
   -> VisualIrDocument
   -> renderer adapter

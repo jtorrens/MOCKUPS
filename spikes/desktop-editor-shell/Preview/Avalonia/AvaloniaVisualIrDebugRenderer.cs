@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.VisualIr;
 using System;
 using System.Linq;
@@ -117,7 +118,6 @@ internal sealed class AvaloniaVisualIrDebugRenderer : IVisualIrRenderer
         var textBlock = new TextBlock
         {
             Width = text.Bounds.Width,
-            Height = text.Bounds.Height,
             Text = text.Text,
             FontSize = text.Style.FontSize,
             FontFamily = string.IsNullOrWhiteSpace(text.Style.FontFamily)
@@ -132,6 +132,14 @@ internal sealed class AvaloniaVisualIrDebugRenderer : IVisualIrRenderer
             VerticalAlignment = verticalAlign ? VerticalAlignment.Center : VerticalAlignment.Top,
             TextWrapping = TextWrapping.NoWrap,
         };
+        if (!verticalAlign)
+        {
+            textBlock.Height = text.Bounds.Height;
+        }
+        if (text.Style.LineHeight is { } lineHeight)
+        {
+            textBlock.LineHeight = lineHeight;
+        }
 
         Control textControl = verticalAlign
             ? new Grid
@@ -272,7 +280,7 @@ internal sealed class AvaloniaVisualIrDebugRenderer : IVisualIrRenderer
         {
             null => null,
             VisualIrNonePaint => null,
-            VisualIrSolidPaint solid => new SolidColorBrush(Color.Parse(ResolveColor(solid.Color, document, options))),
+            VisualIrSolidPaint solid => new SolidColorBrush(ParseIrColor(ResolveColor(solid.Color, document, options))),
             VisualIrLinearGradientPaint gradient => LinearGradientBrush(gradient, document, options),
             VisualIrRadialGradientPaint gradient => RadialGradientBrush(gradient, document, options),
             _ => null,
@@ -317,6 +325,8 @@ internal sealed class AvaloniaVisualIrDebugRenderer : IVisualIrRenderer
     private static string SvgHtml(string svg, string tintColor, string fit)
     {
         var objectFit = fit is "cover" ? "cover" : "contain";
+        var cssTintColor = CssColor(tintColor);
+        var paintedSvg = SvgMarkupNormalizer.ApplyCurrentColorTint(svg, tintColor);
         return $$"""
             <!doctype html>
             <html>
@@ -336,10 +346,11 @@ internal sealed class AvaloniaVisualIrDebugRenderer : IVisualIrRenderer
                 body {
                   display: grid;
                   place-items: center;
-                  color: {{tintColor}};
+                  color: {{cssTintColor}};
                 }
 
                 svg {
+                  color: {{cssTintColor}};
                   display: block;
                   width: 100%;
                   height: 100%;
@@ -348,10 +359,26 @@ internal sealed class AvaloniaVisualIrDebugRenderer : IVisualIrRenderer
                   object-fit: {{objectFit}};
                   overflow: visible;
                 }
+
+                svg * {
+                  color: {{cssTintColor}};
+                }
+
+                [fill="currentColor"] {
+                  fill: {{cssTintColor}} !important;
+                }
+
+                [stroke="currentColor"] {
+                  stroke: {{cssTintColor}} !important;
+                }
+
+                [color="currentColor"] {
+                  color: {{cssTintColor}} !important;
+                }
               </style>
             </head>
             <body>
-              {{svg}}
+              {{paintedSvg}}
             </body>
             </html>
             """;
@@ -369,7 +396,7 @@ internal sealed class AvaloniaVisualIrDebugRenderer : IVisualIrRenderer
         };
         foreach (var stop in gradient.Stops)
         {
-            brush.GradientStops.Add(new GradientStop(Color.Parse(ResolveColor(stop.Color, document, options)), stop.Offset));
+            brush.GradientStops.Add(new GradientStop(ParseIrColor(ResolveColor(stop.Color, document, options)), stop.Offset));
         }
 
         return brush;
@@ -386,7 +413,7 @@ internal sealed class AvaloniaVisualIrDebugRenderer : IVisualIrRenderer
         };
         foreach (var stop in gradient.Stops)
         {
-            brush.GradientStops.Add(new GradientStop(Color.Parse(ResolveColor(stop.Color, document, options)), stop.Offset));
+            brush.GradientStops.Add(new GradientStop(ParseIrColor(ResolveColor(stop.Color, document, options)), stop.Offset));
         }
 
         return brush;
@@ -416,6 +443,34 @@ internal sealed class AvaloniaVisualIrDebugRenderer : IVisualIrRenderer
         }
 
         return string.IsNullOrWhiteSpace(variantColor.Fallback) ? "#ff00ff" : variantColor.Fallback;
+    }
+
+    private static Color ParseIrColor(string value)
+    {
+        var normalized = string.IsNullOrWhiteSpace(value) ? "#ff00ff" : value.Trim();
+        if (normalized.Length == 9
+            && normalized[0] == '#'
+            && byte.TryParse(normalized.AsSpan(1, 2), System.Globalization.NumberStyles.HexNumber, null, out var red)
+            && byte.TryParse(normalized.AsSpan(3, 2), System.Globalization.NumberStyles.HexNumber, null, out var green)
+            && byte.TryParse(normalized.AsSpan(5, 2), System.Globalization.NumberStyles.HexNumber, null, out var blue)
+            && byte.TryParse(normalized.AsSpan(7, 2), System.Globalization.NumberStyles.HexNumber, null, out var alpha))
+        {
+            return Color.FromArgb(alpha, red, green, blue);
+        }
+
+        return Color.Parse(normalized);
+    }
+
+    private static string CssColor(string value)
+    {
+        var color = ParseIrColor(value);
+        if (color.A == 255)
+        {
+            return $"#{color.R:X2}{color.G:X2}{color.B:X2}";
+        }
+
+        var alpha = (color.A / 255d).ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+        return $"rgba({color.R}, {color.G}, {color.B}, {alpha})";
     }
 
     private static FontWeight FontWeightFrom(int? weight)
