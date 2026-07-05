@@ -33,12 +33,6 @@
         <Style Selector="Button">
             <Setter Property="Transitions" Value="{x:Null}" />
         </Style>
-        <Style Selector="ComboBox">
-            <Setter Property="Transitions" Value="{x:Null}" />
-        </Style>
-        <Style Selector="ComboBoxItem">
-            <Setter Property="Transitions" Value="{x:Null}" />
-        </Style>
         <Style Selector="ListBoxItem">
             <Setter Property="Transitions" Value="{x:Null}" />
         </Style>

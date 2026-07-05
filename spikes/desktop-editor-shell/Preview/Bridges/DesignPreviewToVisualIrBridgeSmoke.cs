@@ -27,16 +27,25 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
     {
         ValidatePayload(StatusPayload());
         ValidatePayload(NavigationPayload());
+        ValidatePayload(NavigationGesturePayload(), expectGeneratedSvg: false);
     }
 
-    private static void ValidatePayload(DesignPreviewPayload payload)
+    private static void ValidatePayload(DesignPreviewPayload payload, bool expectGeneratedSvg = true)
     {
         var document = DesignPreviewToVisualIrBridge.Convert(payload, Metrics);
         VisualIrValidator.ThrowIfInvalid(document);
-        if (payload.Kind is "statusBar" or "navigationBar"
+        if (expectGeneratedSvg
+            && payload.Kind is "statusBar" or "navigationBar"
             && !Flatten(document.Root).OfType<VisualIrSvgNode>().Any((svg) => svg.Markup?.Contains("currentColor", StringComparison.Ordinal) == true))
         {
             throw new InvalidOperationException($"Expected generated SVG markup for {payload.Kind}.");
+        }
+
+        if (!expectGeneratedSvg
+            && payload.Kind == "navigationBar"
+            && !Flatten(document.Root).OfType<VisualIrRectNode>().Any((rect) => rect.Id == "navigationBar.gesture"))
+        {
+            throw new InvalidOperationException("Expected gesture navigation bar rect.");
         }
 
         var renderer = new AvaloniaVisualIrDebugRenderer();
@@ -87,6 +96,30 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
             """
             {
               "layout": { "height": 34, "itemSize": 18, "sidePadding": 40 },
+              "items": [
+                { "id": "back", "label": "Back", "kind": "generatedBack", "zone": "left", "order": 10 },
+                { "id": "home", "label": "Home", "kind": "generatedHome", "zone": "center", "order": 10 },
+                { "id": "recents", "label": "Recents", "kind": "generatedRecents", "zone": "right", "order": 10 }
+              ]
+            }
+            """,
+            "{}",
+            new Dictionary<string, string>(),
+            "",
+            "",
+            "{}");
+    }
+
+    private static DesignPreviewPayload NavigationGesturePayload()
+    {
+        return new DesignPreviewPayload(
+            "navigationBar",
+            "Smoke Gesture Navigation Bar",
+            """
+            {
+              "type": "gestureBar",
+              "layout": { "height": 34, "itemSize": 18, "sidePadding": 40 },
+              "gesture": { "width": 134, "height": 5, "cornerRadius": 3 },
               "items": [
                 { "id": "back", "label": "Back", "kind": "generatedBack", "zone": "left", "order": 10 },
                 { "id": "home", "label": "Home", "kind": "generatedHome", "zone": "center", "order": 10 },

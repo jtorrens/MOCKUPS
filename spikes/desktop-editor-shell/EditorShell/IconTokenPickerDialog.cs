@@ -47,13 +47,12 @@ internal sealed class IconTokenPickerDialog
             BackgroundAnimationEnabled = false,
         };
 
-        var themeCombo = new ComboBox
+        var themeCombo = new EditorInstantComboBox
         {
             MinWidth = 220,
             ItemsSource = iconThemes,
             SelectedItem = iconThemes.FirstOrDefault((option) => option.Value == selectedThemeId),
         };
-        EditorComboBoxBehavior.Configure(themeCombo);
         var searchBox = EditorTextBoxBehavior.Configure(new TextBox
         {
             PlaceholderText = "Search icons…",

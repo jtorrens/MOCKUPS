@@ -48,13 +48,12 @@ internal sealed class ThemeTokenPickerDialog
             BackgroundAnimationEnabled = false,
         };
 
-        var themeCombo = new ComboBox
+        var themeCombo = new EditorInstantComboBox
         {
             MinWidth = 220,
             ItemsSource = themes,
             SelectedItem = themes.FirstOrDefault((option) => option.Value == selectedThemeId),
         };
-        EditorComboBoxBehavior.Configure(themeCombo);
         var searchBox = EditorTextBoxBehavior.Configure(new TextBox
         {
             PlaceholderText = "Search tokens…",

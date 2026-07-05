@@ -256,6 +256,7 @@ internal static class DesignPreviewFrameResolver
         var sidePadding = JsonPath.Number(layout, "sidePadding", 40);
         var strokeWidth = JsonPath.Number(layout, "strokeWidth", 2);
         var cornerRadius = JsonPath.Number(layout, "cornerRadius", 3);
+        var type = JsonPath.String(config, "type", "buttons");
         var gap = 6;
         var bounds = new DesignRect(metrics.ScreenX, metrics.ScreenY + metrics.ScreenHeight - height, metrics.ScreenWidth, height);
         var children = new List<ResolvedDesignNode>
@@ -268,6 +269,27 @@ internal static class DesignPreviewFrameResolver
             },
         };
 
+        if (type == "gestureBar")
+        {
+            var gesture = config["gesture"] as JsonObject ?? [];
+            var gestureWidth = JsonPath.Number(gesture, "width", 134);
+            var gestureHeight = JsonPath.Number(gesture, "height", 5);
+            var gestureRadius = JsonPath.Number(gesture, "cornerRadius", gestureHeight / 2);
+            children.Add(new ResolvedDesignRectNode
+            {
+                Id = "navigationBar.gesture",
+                Bounds = new DesignRect(
+                    (bounds.Width - gestureWidth) / 2,
+                    (bounds.Height - gestureHeight) / 2,
+                    gestureWidth,
+                    gestureHeight),
+                Fill = NavigationForegroundPaint,
+                Radius = gestureRadius,
+            });
+
+            return NavigationGroup(payload, bounds, children);
+        }
+
         var items = Items(config)
             .Where((item) => item.Zone is "left" or "center" or "right")
             .OrderBy((item) => item.Order)
@@ -277,6 +299,14 @@ internal static class DesignPreviewFrameResolver
             children.AddRange(NavigationItemsForZone(items.Where((item) => item.Zone == zone), zone, itemSize, sidePadding, gap, bounds, strokeWidth, cornerRadius, JsonPath.Bool(layout, "filled", false)));
         }
 
+        return NavigationGroup(payload, bounds, children);
+    }
+
+    private static ResolvedDesignGroupNode NavigationGroup(
+        DesignPreviewPayload payload,
+        DesignRect bounds,
+        IReadOnlyList<ResolvedDesignNode> children)
+    {
         return new ResolvedDesignGroupNode
         {
             Id = "navigationBar",

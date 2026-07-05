@@ -69,13 +69,17 @@ internal sealed class IconThemeSvgReplaceDialog
             Text = original.SvgText,
             PlaceholderText = "<svg viewBox=\"0 0 24 24\">...</svg>",
         });
-        var modeBox = new ComboBox
+        var modeOptions = new[]
+        {
+            new FieldOption("positive", "Positive SVG"),
+            new FieldOption("negative", "Negative / cutout SVG"),
+        };
+        var modeBox = new EditorInstantComboBox
         {
             MinWidth = 180,
-            ItemsSource = new[] { "Positive SVG", "Negative / cutout SVG" },
-            SelectedIndex = 0,
+            ItemsSource = modeOptions,
+            SelectedItem = modeOptions[0],
         };
-        EditorComboBoxBehavior.Configure(modeBox);
         var loadFileButton = new Button
         {
             Content = "Open SVG file",
@@ -133,7 +137,7 @@ internal sealed class IconThemeSvgReplaceDialog
                 transformedSvg = SvgReplacementService.Transform(
                     svgBox.Text ?? "",
                     new SvgReplacementService.TransformOptions(
-                        modeBox.SelectedIndex == 1 ? "negative" : "positive",
+                        SelectedMode(),
                         currentPadding,
                         Number(radius),
                         Number(stroke),
@@ -302,11 +306,16 @@ internal sealed class IconThemeSvgReplaceDialog
         };
         void UpdateMode()
         {
-            radiusEditor.IsVisible = modeBox.SelectedIndex == 1;
+            radiusEditor.IsVisible = SelectedMode() == "negative";
             UpdatePreview();
         }
         modeBox.SelectionChanged += (_, _) => UpdateMode();
         UpdateMode();
+
+        string SelectedMode()
+        {
+            return modeBox.SelectedItem?.Value == "negative" ? "negative" : "positive";
+        }
 
         var svgHeader = new Grid
         {
