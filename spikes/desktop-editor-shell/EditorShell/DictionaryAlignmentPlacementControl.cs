@@ -2,14 +2,22 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Layout;
+using Avalonia.Media;
+using Avalonia.Styling;
 using Mockups.DesktopEditorShell.Common;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryValueControl
 {
+    private readonly Border _card;
+    private readonly Button _headerButton;
+    private readonly TextBlock _chevron;
+    private readonly TextBlock _summary;
+    private readonly StackPanel _content;
     private readonly EditorInstantComboBox _modeCombo;
     private readonly Slider _alignXSlider;
     private readonly Slider _alignYSlider;
@@ -17,15 +25,73 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
     private readonly TextBox _alignYBox;
     private readonly TextBox _offsetXBox;
     private readonly TextBox _offsetYBox;
+    private readonly List<PresetButton> _presetButtons = [];
     private AlignmentPlacementValue _value;
     private bool _isUpdating;
+    private bool _isExpanded;
+
+    private sealed record PresetButton(Button Button, double AlignX, double AlignY);
 
     public DictionaryAlignmentPlacementControl(FieldDefinition definition, string value)
     {
         _value = AlignmentPlacementValue.Parse(value);
-        RowDefinitions = new RowDefinitions("Auto,Auto,Auto");
-        RowSpacing = 8;
         HorizontalAlignment = HorizontalAlignment.Stretch;
+
+        _chevron = new TextBlock
+        {
+            FontSize = 14,
+            FontWeight = FontWeight.Bold,
+            VerticalAlignment = VerticalAlignment.Center,
+            Width = 18,
+            TextAlignment = TextAlignment.Center,
+        };
+        _summary = new TextBlock
+        {
+            VerticalAlignment = VerticalAlignment.Center,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+            FontWeight = FontWeight.SemiBold,
+        };
+        var header = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("Auto,*"),
+            ColumnSpacing = 6,
+        };
+        header.Children.Add(_chevron);
+        Grid.SetColumn(_summary, 1);
+        header.Children.Add(_summary);
+        _headerButton = new Button
+        {
+            Content = header,
+            MinHeight = 36,
+            Padding = new Avalonia.Thickness(8, 5),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            HorizontalContentAlignment = HorizontalAlignment.Stretch,
+            BorderThickness = new Avalonia.Thickness(0),
+        };
+        _headerButton.Click += (_, _) => ToggleExpanded();
+
+        _content = new StackPanel
+        {
+            Spacing = 8,
+            IsVisible = false,
+            Margin = new Avalonia.Thickness(8, 0, 8, 8),
+        };
+
+        _card = new Border
+        {
+            CornerRadius = new Avalonia.CornerRadius(8),
+            BorderThickness = new Avalonia.Thickness(1),
+            Child = new StackPanel
+            {
+                Spacing = 8,
+                Children =
+                {
+                    _headerButton,
+                    _content,
+                },
+            },
+        };
+        Children.Add(_card);
 
         _modeCombo = new EditorInstantComboBox
         {
@@ -52,8 +118,7 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
         topRow.Children.Add(Label("Mode"));
         Grid.SetColumn(_modeCombo, 1);
         topRow.Children.Add(_modeCombo);
-        Grid.SetRow(topRow, 0);
-        Children.Add(topRow);
+        _content.Children.Add(topRow);
 
         var alignGrid = new Grid
         {
@@ -68,8 +133,7 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
         _alignYBox = CreateDecimalBox(_value.AlignY, definition.IsEditable);
         AddSliderRow(alignGrid, 0, "Align X", _alignXSlider, _alignXBox);
         AddSliderRow(alignGrid, 1, "Align Y", _alignYSlider, _alignYBox);
-        Grid.SetRow(alignGrid, 1);
-        Children.Add(alignGrid);
+        _content.Children.Add(alignGrid);
 
         var bottomRow = new Grid
         {
@@ -94,10 +158,11 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
         var preset = CreatePresetGrid(definition.IsEditable);
         Grid.SetColumn(preset, 5);
         bottomRow.Children.Add(preset);
-        Grid.SetRow(bottomRow, 2);
-        Children.Add(bottomRow);
+        _content.Children.Add(bottomRow);
 
         Hook();
+        ActualThemeVariantChanged += (_, _) => ApplyThemeBrushes();
+        ApplyThemeBrushes();
         UpdateControls();
     }
 
@@ -161,6 +226,7 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
                 Grid.SetColumn(button, x);
                 Grid.SetRow(button, y);
                 grid.Children.Add(button);
+                _presetButtons.Add(new PresetButton(button, alignX, alignY));
             }
         }
 
@@ -199,7 +265,41 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
         _alignYBox.Text = FormatAlign(_value.AlignY);
         _offsetXBox.Text = _value.OffsetX.ToString(CultureInfo.InvariantCulture);
         _offsetYBox.Text = _value.OffsetY.ToString(CultureInfo.InvariantCulture);
+        _summary.Text = Summary(_value);
+        _chevron.Text = _isExpanded ? "v" : ">";
+        UpdatePresetBrushes();
         _isUpdating = false;
+    }
+
+    private void ToggleExpanded()
+    {
+        _isExpanded = !_isExpanded;
+        _content.IsVisible = _isExpanded;
+        _chevron.Text = _isExpanded ? "v" : ">";
+    }
+
+    private void ApplyThemeBrushes()
+    {
+        var isLight = ActualThemeVariant == ThemeVariant.Light;
+        _card.Background = new SolidColorBrush(Color.Parse(isLight ? "#12000000" : "#12FFFFFF"));
+        _card.BorderBrush = new SolidColorBrush(Color.Parse(isLight ? "#22000000" : "#22FFFFFF"));
+        _headerButton.Background = Brushes.Transparent;
+        UpdatePresetBrushes();
+    }
+
+    private void UpdatePresetBrushes()
+    {
+        foreach (var preset in _presetButtons)
+        {
+            var isSelected = AreSamePreset(_value.AlignX, preset.AlignX) && AreSamePreset(_value.AlignY, preset.AlignY);
+            preset.Button.Background = isSelected
+                ? new SolidColorBrush(Color.Parse("#1D6FE8"))
+                : Brushes.Transparent;
+            preset.Button.Foreground = isSelected ? Brushes.White : null;
+            preset.Button.BorderBrush = isSelected
+                ? new SolidColorBrush(Color.Parse("#2F8CFF"))
+                : null;
+        }
     }
 
     private static Slider CreateAlignSlider(double value, bool isEditable)
@@ -322,8 +422,21 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
         return Math.Clamp(value, 0, 1);
     }
 
+    private static bool AreSamePreset(double left, double right)
+    {
+        return Math.Abs(left - right) < 0.001;
+    }
+
     private static string FormatAlign(double value)
     {
         return Clamp01(value).ToString("0.###", CultureInfo.InvariantCulture);
+    }
+
+    private static string Summary(AlignmentPlacementValue value)
+    {
+        var mode = value.Mode == AlignmentPlacementValue.CenterMode ? "center" : "edge";
+        return string.Create(
+            CultureInfo.InvariantCulture,
+            $"{mode} ({FormatAlign(value.AlignX)}, {FormatAlign(value.AlignY)}) ({value.OffsetX}, {value.OffsetY})");
     }
 }

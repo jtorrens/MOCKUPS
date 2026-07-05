@@ -31,7 +31,6 @@ internal static class DictionaryFieldLayoutRules
         {
             ValueKind.StringMultiline => 96,
             ValueKind.IconSlots => 150,
-            ValueKind.AlignmentPlacement => 156,
             _ => 40,
         };
     }
