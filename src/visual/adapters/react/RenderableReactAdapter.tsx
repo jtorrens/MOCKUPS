@@ -931,6 +931,29 @@ function nodeContent(node: RenderableNode): ReactNode {
   if (node.type === "navigation_bar_item") {
     return generatedNavigationButtonNode(node);
   }
+  if (node.type === "component_button_icon_glyph") {
+    return (
+      <svg
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+        style={{
+          display: "block",
+          width: "100%",
+          height: "100%",
+          overflow: "visible",
+        }}
+      >
+        <path
+          d="M12 5.2A6.8 6.8 0 1 0 12 18.8A6.8 6.8 0 1 0 12 5.2 M12 8.4V15.6 M8.4 12H15.6"
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.7"
+        />
+      </svg>
+    );
+  }
   if (node.type === "message_bubble_tail") {
     return messageBubbleTailNode(node);
   }
@@ -1443,6 +1466,13 @@ function RenderNode({
               paddingRight: 12,
               whiteSpace: "nowrap",
               overflow: "hidden",
+            }
+        : node.type === "component_button_icon_glyph"
+          ? {
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              overflow: "visible",
             }
         : node.type === "text" && node.role === "actor_label_text"
           ? {

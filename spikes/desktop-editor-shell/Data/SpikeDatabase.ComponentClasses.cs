@@ -359,6 +359,7 @@ internal sealed partial class SpikeDatabase
             var config = ParseJsonObject(string.IsNullOrWhiteSpace(row.ConfigJson) ? "{}" : row.ConfigJson);
             var defaults = ParseJsonObject(DefaultComponentClassConfigJson(row.ComponentType));
             var configChanged = NormalizeAvatarLabelPlacement(row.ComponentType, config);
+            configChanged |= NormalizeButtonIconLabelSlot(row.ComponentType, config);
             configChanged |= JsonPath.MergeMissing(config, defaults);
             configChanged |= NormalizeReliefIntensity(config, "reliefTopIntensity");
             configChanged |= NormalizeReliefIntensity(config, "reliefBottomIntensity");
@@ -367,6 +368,7 @@ internal sealed partial class SpikeDatabase
             var designPreviewDefaults = ParseJsonObject(DefaultComponentDesignPreviewJson(row.ComponentType));
             var designPreviewChanged = JsonPath.MergeMissing(designPreview, designPreviewDefaults);
             designPreviewChanged |= EnsureComponentDesignPreviewText(row.ComponentType, designPreview);
+            designPreviewChanged |= EnsureButtonIconPreviewSize(row.ComponentType, designPreview);
 
             if (!configChanged && !designPreviewChanged)
             {
@@ -401,6 +403,32 @@ internal sealed partial class SpikeDatabase
         return true;
     }
 
+    private static bool NormalizeButtonIconLabelSlot(string componentType, JsonObject config)
+    {
+        if (componentType != "buttonIcon")
+        {
+            return false;
+        }
+
+        var buttonIcon = JsonPath.Get(config, ["buttonIcon"]) as JsonObject;
+        if (buttonIcon is null || buttonIcon["labelSlot"] is not null)
+        {
+            return false;
+        }
+
+        var labelEnabled = JsonBool(buttonIcon, ["labelEnabled"]);
+        var labelPosition = JsonPath.String(buttonIcon, "labelPosition", "bottom");
+        var labelPadding = JsonPath.Number(buttonIcon, "labelPadding", 3);
+        buttonIcon["labelSlot"] = new JsonObject
+        {
+            ["showLabel"] = labelEnabled,
+            ["showSubtext"] = false,
+            ["placement"] = JsonNode.Parse(AlignmentPlacementValue.FromLegacyPosition(labelPosition, labelPadding).ToJsonString()),
+            ["overrides"] = new JsonObject(),
+        };
+        return true;
+    }
+
     private static bool NormalizeReliefIntensity(JsonObject config, string key)
     {
         var style = JsonPath.Get(config, ["style"]) as JsonObject;
@@ -432,6 +460,23 @@ internal sealed partial class SpikeDatabase
         }
 
         designPreview["sampleSubtext"] = "Subtitle";
+        return true;
+    }
+
+    private static bool EnsureButtonIconPreviewSize(string componentType, JsonObject designPreview)
+    {
+        if (componentType != "buttonIcon")
+        {
+            return false;
+        }
+
+        var sampleSize = JsonPath.Number(designPreview, "sampleSize", 0);
+        if (sampleSize > 0 && sampleSize <= 96)
+        {
+            return false;
+        }
+
+        designPreview["sampleSize"] = 48;
         return true;
     }
 
@@ -627,10 +672,16 @@ internal sealed partial class SpikeDatabase
                 config["buttonIcon"] = new JsonObject
                 {
                     ["iconPadding"] = 6,
-                    ["labelEnabled"] = false,
-                    ["labelPosition"] = "bottom",
-                    ["labelSize"] = 10,
-                    ["labelPadding"] = 3,
+                    ["backgroundColorToken"] = "theme.colors.button",
+                    ["backgroundAlpha"] = 1,
+                    ["iconColorToken"] = "theme.colors.icon",
+                    ["labelSlot"] = new JsonObject
+                    {
+                        ["showLabel"] = false,
+                        ["showSubtext"] = false,
+                        ["placement"] = JsonNode.Parse(AlignmentPlacementValue.FromLegacyPosition("bottom", 3).ToJsonString()),
+                        ["overrides"] = new JsonObject(),
+                    },
                 };
                 break;
             case "label":
@@ -691,8 +742,8 @@ internal sealed partial class SpikeDatabase
                 "video" => "0:12",
                 _ => "Sample",
             },
-            sampleSubtext = componentType is "label" or "avatar" ? "Subtitle" : "",
-            sampleSize = 256,
+            sampleSubtext = componentType is "label" or "avatar" or "buttonIcon" ? "Subtitle" : "",
+            sampleSize = componentType == "buttonIcon" ? 48 : 256,
         });
     }
 

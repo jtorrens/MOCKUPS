@@ -20,6 +20,12 @@ internal static class EmbeddedComponentSlotCatalog
             "Label",
             "component.label",
             ["avatar", "labelSlot"]),
+        new(
+            "component.buttonIcon.label.editor",
+            "label",
+            "Label",
+            "component.label",
+            ["buttonIcon", "labelSlot"]),
     ];
 
     public static bool TryGet(string fieldId, out EmbeddedComponentSlotDefinition slot)

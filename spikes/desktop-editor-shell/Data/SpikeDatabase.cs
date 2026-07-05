@@ -2265,10 +2265,15 @@ internal sealed partial class SpikeDatabase
               "groups": [
                 { "id": "buttonIcon", "label": "Button icon", "order": 10, "visible": true, "fields": [
                   { "id": "component.buttonIcon.iconPadding", "order": 10, "visible": true },
-                  { "id": "component.buttonIcon.labelEnabled", "order": 20, "visible": true },
-                  { "id": "component.buttonIcon.labelPosition", "order": 30, "visible": true },
-                  { "id": "component.buttonIcon.labelSize", "order": 40, "visible": true },
-                  { "id": "component.buttonIcon.labelPadding", "order": 50, "visible": true }
+                  { "id": "component.buttonIcon.backgroundColorToken", "order": 20, "visible": true },
+                  { "id": "component.buttonIcon.backgroundAlpha", "order": 30, "visible": true },
+                  { "id": "component.buttonIcon.iconColorToken", "order": 40, "visible": true }
+                ] },
+                { "id": "buttonIconLabel", "label": "Label", "order": 20, "visible": true, "fields": [
+                  { "id": "component.buttonIcon.label.showLabel", "order": 10, "visible": true },
+                  { "id": "component.buttonIcon.label.showSubtext", "order": 20, "visible": true },
+                  { "id": "component.buttonIcon.label.placement", "order": 30, "visible": true },
+                  { "id": "component.buttonIcon.label.editor", "order": 40, "visible": true }
                 ] }
               ]
             }

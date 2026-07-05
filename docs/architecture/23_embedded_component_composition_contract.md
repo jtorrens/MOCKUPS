@@ -164,6 +164,9 @@ Disallowed renderer responsibilities:
 `component.avatar` embeds `component.label` through
 `component.avatar.label.editor`.
 
+`component.buttonIcon` embeds `component.label` through
+`component.buttonIcon.label.editor`.
+
 Avatar label placement uses the generic alignment placement value:
 
 ```json
@@ -219,6 +222,12 @@ DesignPreviewPayloadFactory
 ```
 
 This is the reference path for future embedded components.
+
+`component.buttonIcon` follows the same route with
+`resolveButtonIconComponent` and `buttonIconComponentToRenderable`. Its own
+fields are limited to icon surface concerns such as icon padding, background
+token, background alpha and icon color token. Label text styling remains owned
+by the embedded label component and is overridden through `labelSlot.overrides`.
 
 ## Migration Rule
 

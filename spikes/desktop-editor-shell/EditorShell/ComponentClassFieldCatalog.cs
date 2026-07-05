@@ -88,12 +88,6 @@ internal static class ComponentClassFieldCatalog
         new("content", "Content + padding"),
     ];
 
-    private static readonly FieldOption[] LabelPositionOptions =
-    [
-        new("top", "Top"),
-        new("bottom", "Bottom"),
-    ];
-
     private static readonly FieldOption[] PressedEffectOptions =
     [
         new("popup", "Popup"),
@@ -180,10 +174,13 @@ internal static class ComponentClassFieldCatalog
         ["component.keyboard.bottomIconSlots"] = new("component.keyboard.bottomIconSlots", "Bottom icons", ValueKind.IconSlots, ["keyboard", "bottomIconSlots"], EmptyIconSlots),
 
         ["component.buttonIcon.iconPadding"] = new("component.buttonIcon.iconPadding", "Icon padding", ValueKind.Integer, ["buttonIcon", "iconPadding"], "6"),
-        ["component.buttonIcon.labelEnabled"] = new("component.buttonIcon.labelEnabled", "Show label", ValueKind.Boolean, ["buttonIcon", "labelEnabled"], "false"),
-        ["component.buttonIcon.labelPosition"] = new("component.buttonIcon.labelPosition", "Label position", ValueKind.OptionToken, ["buttonIcon", "labelPosition"], "bottom", Options: LabelPositionOptions),
-        ["component.buttonIcon.labelSize"] = new("component.buttonIcon.labelSize", "Label size", ValueKind.Integer, ["buttonIcon", "labelSize"], "10"),
-        ["component.buttonIcon.labelPadding"] = new("component.buttonIcon.labelPadding", "Label padding", ValueKind.Integer, ["buttonIcon", "labelPadding"], "3"),
+        ["component.buttonIcon.backgroundColorToken"] = new("component.buttonIcon.backgroundColorToken", "Background", ValueKind.ThemeToken, ["buttonIcon", "backgroundColorToken"], "theme.colors.button", Options: ThemeColorOptions),
+        ["component.buttonIcon.backgroundAlpha"] = new("component.buttonIcon.backgroundAlpha", "Surface alpha", ValueKind.Alpha, ["buttonIcon", "backgroundAlpha"], "1"),
+        ["component.buttonIcon.iconColorToken"] = new("component.buttonIcon.iconColorToken", "Icon color", ValueKind.ThemeToken, ["buttonIcon", "iconColorToken"], "theme.colors.icon", Options: ThemeColorOptions),
+        ["component.buttonIcon.label.showLabel"] = new("component.buttonIcon.label.showLabel", "Show label", ValueKind.Boolean, ["buttonIcon", "labelSlot", "showLabel"], "false"),
+        ["component.buttonIcon.label.showSubtext"] = new("component.buttonIcon.label.showSubtext", "Show subtext", ValueKind.Boolean, ["buttonIcon", "labelSlot", "showSubtext"], "false"),
+        ["component.buttonIcon.label.placement"] = new("component.buttonIcon.label.placement", "Placement", ValueKind.AlignmentPlacement, ["buttonIcon", "labelSlot", "placement"], """{"mode":"edge","alignX":0.5,"alignY":1,"offsetX":0,"offsetY":3}"""),
+        ["component.buttonIcon.label.editor"] = new("component.buttonIcon.label.editor", "Label", ValueKind.EmbeddedComponent, [], "component.label"),
 
         ["component.label.dimensionMode"] = new("component.label.dimensionMode", "Dimension mode", ValueKind.OptionToken, ["label", "dimensionMode"], "content", Options: DimensionModeOptions),
         ["component.label.size"] = new("component.label.size", "Size", ValueKind.IntegerPair, ["label", "size"], "120|32", PairLabels: new("W", "H")),

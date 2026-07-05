@@ -6,9 +6,11 @@ import { RenderableNodeSchema } from "../visual/renderable/schema.js";
 import type { RenderableNode } from "../visual/renderable/types.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { resolveAvatarComponent } from "./avatarComponentResolver.js";
+import { resolveButtonIconComponent } from "./buttonIconComponentResolver.js";
 import { resolveLabelComponent } from "./labelComponentResolver.js";
 import {
   avatarComponentToRenderable,
+  buttonIconComponentToRenderable,
   labelComponentToRenderable,
   navigationBarToRenderable,
   statusBarToRenderable,
@@ -86,6 +88,12 @@ function componentRenderableForPayload(
   }
   if (componentType === "avatar") {
     return avatarComponentToRenderable(payload, resolveAvatarComponent(payload));
+  }
+  if (componentType === "buttonIcon") {
+    return buttonIconComponentToRenderable(
+      payload,
+      resolveButtonIconComponent(payload),
+    );
   }
 
   const box = {

@@ -2,10 +2,9 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import type { RenderableBox, RenderableNode } from "../visual/renderable/types.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import type {
-  AlignmentPlacementContract,
-  AvatarDesignContract,
-} from "./avatarComponentResolver.js";
+import type { AvatarDesignContract } from "./avatarComponentResolver.js";
+import type { ButtonIconDesignContract } from "./buttonIconComponentResolver.js";
+import type { AlignmentPlacementContract } from "./componentResolverCommon.js";
 import type { LabelDesignContract } from "./labelComponentResolver.js";
 import type {
   NavigationBarDesignContract,
@@ -420,6 +419,136 @@ export function avatarComponentToRenderable(
     metadata: {
       route: "component-resolver.web-bridge",
       componentType: "avatar",
+    },
+  };
+}
+
+export function buttonIconComponentToRenderable(
+  payload: DesignPreviewPayload,
+  buttonIcon: ButtonIconDesignContract,
+): RenderableNode {
+  const scale = renderScale(payload);
+  const iconSize = buttonIcon.iconSize * scale;
+  const iconPadding = buttonIcon.iconPadding * scale;
+  const surfaceSize = iconSize + iconPadding * 2;
+  const iconShadow = buttonIcon.surface.shadowEnabled ? shadow(payload) : undefined;
+  const labelSize = buttonIcon.labelSlot.label
+    ? measureLabelComponent(buttonIcon.labelSlot.label, payload)
+    : undefined;
+  const buttonLocalBox = { x: 0, y: 0, width: surfaceSize, height: surfaceSize };
+  const labelLocalBox = labelSize
+    ? placeChild(
+        buttonLocalBox,
+        labelSize,
+        scalePlacement(buttonIcon.labelSlot.placement, scale),
+      )
+    : undefined;
+  const contentBounds = unionBoxes([
+    buttonLocalBox,
+    ...(labelLocalBox ? [labelLocalBox] : []),
+  ]);
+  const borderWidth = buttonIcon.surface.borderWidth * scale;
+  const surfaceRelief = buttonIcon.surface.reliefEnabled
+    ? {
+        angleDeg: buttonIcon.surface.reliefAngle,
+        extension: buttonIcon.surface.reliefExtent * scale,
+        spread: buttonIcon.surface.reliefSpread * scale,
+        upperIntensity: buttonIcon.surface.reliefTopIntensity * buttonIcon.backgroundAlpha,
+        lowerIntensity: buttonIcon.surface.reliefBottomIntensity * buttonIcon.backgroundAlpha,
+      }
+    : undefined;
+  const visualPadding = avatarVisualPadding(borderWidth, iconShadow, surfaceRelief);
+  const groupBox = boundedCenterBox(
+    payload,
+    contentBounds.width + visualPadding * 2,
+    contentBounds.height + visualPadding * 2,
+  );
+  const contentOrigin = {
+    x: groupBox.x + visualPadding - contentBounds.x,
+    y: groupBox.y + visualPadding - contentBounds.y,
+  };
+  const buttonBox = translateBox(buttonLocalBox, contentOrigin);
+  const labelBox = labelLocalBox ? translateBox(labelLocalBox, contentOrigin) : undefined;
+  const iconBox = {
+    x: buttonBox.x + iconPadding,
+    y: buttonBox.y + iconPadding,
+    width: iconSize,
+    height: iconSize,
+  };
+
+  return {
+    id: buttonIcon.id,
+    type: "component_button_icon",
+    frame: 0,
+    box: groupBox,
+    style: {
+      overflow: "visible",
+    },
+    children: [
+      {
+        id: `${buttonIcon.id}.surface`,
+        type: "component_button_icon_surface",
+        frame: 0,
+        box: buttonBox,
+        style: {
+          background: selectedColor(
+            payload,
+            buttonIcon.backgroundColorToken,
+            buttonIcon.backgroundAlpha,
+          ),
+          borderRadius: numberToken(payload, buttonIcon.surface.cornerRadiusToken) * scale,
+          borderWidth,
+          borderColor: selectedColor(
+            payload,
+            buttonIcon.surface.borderColorToken,
+            buttonIcon.backgroundAlpha,
+          ),
+          shadow: iconShadow,
+          surfaceRelief,
+          colorModes: Object.fromEntries(
+            variants(payload).map((mode) => [
+              mode,
+              {
+                background: colorForMode(
+                  payload,
+                  buttonIcon.backgroundColorToken,
+                  mode,
+                  buttonIcon.backgroundAlpha,
+                ),
+                color: colorForMode(payload, buttonIcon.iconColorToken, mode),
+                borderColor: colorForMode(
+                  payload,
+                  buttonIcon.surface.borderColorToken,
+                  mode,
+                  buttonIcon.backgroundAlpha,
+                ),
+              },
+            ]),
+          ),
+        },
+      },
+      {
+        id: `${buttonIcon.id}.glyph`,
+        type: "component_button_icon_glyph",
+        frame: 0,
+        box: iconBox,
+        style: {
+          color: selectedColor(payload, buttonIcon.iconColorToken),
+        },
+      },
+      ...(buttonIcon.labelSlot.label && labelBox
+        ? [
+            labelComponentToRenderableAt(
+              payload,
+              buttonIcon.labelSlot.label,
+              labelBox,
+            ),
+          ]
+        : []),
+    ],
+    metadata: {
+      route: "component-resolver.web-bridge",
+      componentType: "buttonIcon",
     },
   };
 }

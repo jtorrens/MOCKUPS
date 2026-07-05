@@ -3,6 +3,7 @@ import { mergeComponentDefaults } from "./componentPreviewDefaults.js";
 import {
   asRecord,
   parseObject,
+  requiredAlpha,
   requiredBoolean,
   requiredNumber,
   requiredPlacement,
@@ -13,10 +14,13 @@ import {
 import type { LabelDesignContract } from "./labelComponentResolver.js";
 import { resolveLabelComponentFromRecords } from "./labelComponentResolver.js";
 
-export interface AvatarDesignContract {
-  id: "component.avatar";
-  size: number;
-  cornerRadiusToken: string;
+export interface ButtonIconDesignContract {
+  id: "component.buttonIcon";
+  iconSize: number;
+  iconPadding: number;
+  backgroundColorToken: string;
+  backgroundAlpha: number;
+  iconColorToken: string;
   labelSlot: {
     showLabel: boolean;
     showSubtext: boolean;
@@ -28,6 +32,7 @@ export interface AvatarDesignContract {
     reliefEnabled: boolean;
     borderWidth: number;
     borderColorToken: string;
+    cornerRadiusToken: string;
     reliefAngle: number;
     reliefExtent: number;
     reliefSpread: number;
@@ -46,24 +51,24 @@ function labelPreview(
   };
 }
 
-export function resolveAvatarComponent(
+export function resolveButtonIconComponent(
   payload: DesignPreviewPayload,
-): AvatarDesignContract {
+): ButtonIconDesignContract {
   const config = parseObject(payload.configJson);
   const preview = parseObject(payload.designPreviewJson);
   const componentBaseConfigs = parseObject(payload.componentBaseConfigsJson);
-  const avatar = asRecord(config.avatar);
-  const labelSlot = asRecord(avatar.labelSlot);
+  const buttonIcon = asRecord(config.buttonIcon);
+  const labelSlot = asRecord(buttonIcon.labelSlot);
   const style = asRecord(config.style);
   const showLabel = requiredBoolean(
     labelSlot,
     "showLabel",
-    "component.avatar.label.showLabel",
+    "component.buttonIcon.label.showLabel",
   );
   const showSubtext = requiredBoolean(
     labelSlot,
     "showSubtext",
-    "component.avatar.label.showSubtext",
+    "component.buttonIcon.label.showSubtext",
   );
   const overrides = asRecord(labelSlot.overrides);
   const embeddedLabelConfig = mergeComponentDefaults(
@@ -72,12 +77,31 @@ export function resolveAvatarComponent(
   );
 
   return {
-    id: "component.avatar",
-    size: requiredNumber(avatar, "defaultSize", "component.avatar.defaultSize"),
-    cornerRadiusToken: requiredString(
-      avatar,
-      "cornerRadiusToken",
-      "component.avatar.cornerRadiusToken",
+    id: "component.buttonIcon",
+    iconSize: requiredNumber(
+      preview,
+      "sampleSize",
+      "component.buttonIcon.preview.sampleSize",
+    ),
+    iconPadding: requiredNumber(
+      buttonIcon,
+      "iconPadding",
+      "component.buttonIcon.iconPadding",
+    ),
+    backgroundColorToken: requiredString(
+      buttonIcon,
+      "backgroundColorToken",
+      "component.buttonIcon.backgroundColorToken",
+    ),
+    backgroundAlpha: requiredAlpha(
+      buttonIcon,
+      "backgroundAlpha",
+      "component.buttonIcon.backgroundAlpha",
+    ),
+    iconColorToken: requiredString(
+      buttonIcon,
+      "iconColorToken",
+      "component.buttonIcon.iconColorToken",
     ),
     labelSlot: {
       showLabel,
@@ -85,13 +109,13 @@ export function resolveAvatarComponent(
       placement: requiredPlacement(
         labelSlot,
         "placement",
-        "component.avatar.label.placement",
+        "component.buttonIcon.label.placement",
       ),
       label: showLabel
         ? resolveLabelComponentFromRecords(
             embeddedLabelConfig,
             labelPreview(preview, showSubtext),
-            "component.avatar.label",
+            "component.buttonIcon.label",
           )
         : undefined,
     },
@@ -111,6 +135,11 @@ export function resolveAvatarComponent(
         style,
         "borderColorToken",
         "component.style.borderColorToken",
+      ),
+      cornerRadiusToken: requiredString(
+        style,
+        "cornerRadiusToken",
+        "component.style.cornerRadiusToken",
       ),
       reliefAngle: requiredNumber(style, "reliefAngle", "component.style.reliefAngle"),
       reliefExtent: requiredNumber(style, "reliefExtent", "component.style.reliefExtent"),
