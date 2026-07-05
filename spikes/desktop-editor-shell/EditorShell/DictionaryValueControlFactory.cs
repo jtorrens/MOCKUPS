@@ -38,6 +38,7 @@ internal static class DictionaryValueControlFactory
                 definition.IsEditable,
                 services.ShowIconTokenPicker,
                 services.CreateIconPreview),
+            ValueKind.EmbeddedComponent => new DictionaryEmbeddedComponentControl(definition, value, services.OpenEmbeddedComponent),
             _ => new DictionaryTextControl(definition, value),
         };
     }

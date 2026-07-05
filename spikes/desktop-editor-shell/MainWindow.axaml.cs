@@ -26,6 +26,10 @@ namespace Mockups.DesktopEditorShell;
 
 public partial class MainWindow : SukiWindow
 {
+    private sealed record EmbeddedEditorContext(
+        ProjectTreeNode OwnerNode,
+        EmbeddedComponentSlotDefinition Slot);
+
     private bool _isDark = true;
     private readonly SpikeDatabase _database = new(SpikeDatabase.DefaultDatabasePath());
     private readonly CoreFieldValueService _coreFieldValues;
@@ -49,6 +53,7 @@ public partial class MainWindow : SukiWindow
     private readonly HashSet<string> _expandedNodeIds = [];
     private List<ProjectTreeNode> _treeRoots = [];
     private ProjectTreeNode? _selectedNode;
+    private EmbeddedEditorContext? _embeddedEditorContext;
 
     public MainWindow()
     {
@@ -292,6 +297,8 @@ public partial class MainWindow : SukiWindow
         }
 
         _selectedNode = node;
+        _embeddedEditorContext = null;
+        EditorBackButton.IsVisible = false;
         EditorTitle.Text = node.Name;
         BuildEditorCards(node);
         if (keepEditorViewState)
@@ -352,7 +359,8 @@ public partial class MainWindow : SukiWindow
                 var field = _fieldValues.Create(node, layoutField.Id);
                 var services = _dictionaryFieldServices.ForNode(
                     node,
-                    (fieldId) => _activeFieldControls.ValueOrStored(fieldId, (id) => _fieldValues.CurrentStoredValue(node, id)));
+                    (fieldId) => _activeFieldControls.ValueOrStored(fieldId, (id) => _fieldValues.CurrentStoredValue(node, id)),
+                    (fieldId) => OpenEmbeddedComponentEditor(node, fieldId));
                 var control = new DictionaryFieldControl(
                     field,
                     services);
@@ -415,6 +423,170 @@ public partial class MainWindow : SukiWindow
             {
                 EditorCardHeader.SetOverrideState(headerIcon, controls);
                 _actorAvatarPreviews.Refresh(node, _activeFieldControls.ControlsByFieldId);
+            };
+        }
+
+        return card;
+    }
+
+    private Task OpenEmbeddedComponentEditor(ProjectTreeNode node, string slotFieldId)
+    {
+        if (node.Kind != ProjectTreeNodeKind.ComponentClass)
+        {
+            return Task.CompletedTask;
+        }
+
+        if (!EmbeddedComponentSlotCatalog.TryGet(slotFieldId, out var slot))
+        {
+            return Task.CompletedTask;
+        }
+
+        var context = new EmbeddedEditorContext(node, slot);
+        _embeddedEditorContext = context;
+        EditorBackButton.IsVisible = true;
+        EditorTitle.Text = $"{node.Name} > {context.Slot.Label}";
+        BuildEmbeddedComponentCards(context);
+        RefreshPreviewDevice();
+        return Task.CompletedTask;
+    }
+
+    private void OnEditorBackClick(object? sender, RoutedEventArgs e)
+    {
+        if (_embeddedEditorContext is null) return;
+
+        ShowNode(_embeddedEditorContext.OwnerNode, rebuildTree: false);
+    }
+
+    private void BuildEmbeddedComponentCards(EmbeddedEditorContext context)
+    {
+        _editorCardHost.Clear();
+        _activeFieldControls.Clear();
+        _actorAvatarPreviews.Reset();
+
+        var layout = _database.LoadEditorLayout(context.Slot.RecordClassId);
+        foreach (var layoutCard in layout.Cards
+                     .Where((card) => card.Visible)
+                     .OrderBy((card) => card.Order)
+                     .ThenBy((card) => card.Label))
+        {
+            _editorCardHost.Add(CreateEmbeddedLayoutCard(context, layoutCard));
+        }
+    }
+
+    private InstantEditorCard CreateEmbeddedLayoutCard(EmbeddedEditorContext context, EditorLayoutCard layoutCard)
+    {
+        var body = new StackPanel
+        {
+            Spacing = 12,
+        };
+        var controls = new List<DictionaryFieldControl>();
+        var headerIcon = EditorIcons.Create(layoutCard.Icon, 18);
+        var visibleGroups = layoutCard.VisibleGroups.ToList();
+        var useSectionChrome = visibleGroups.Count > 1;
+
+        foreach (var group in visibleGroups)
+        {
+            var groupPanel = new StackPanel
+            {
+                Spacing = 12,
+            };
+
+            foreach (var layoutField in group.VisibleFields)
+            {
+                var field = _componentClassFieldValues.CreateEmbeddedFieldValue(
+                    context.OwnerNode,
+                    context.Slot.FieldId,
+                    context.Slot.EmbeddedComponentType,
+                    layoutField.Id);
+                var services = _dictionaryFieldServices.ForNode(
+                    context.OwnerNode,
+                    (fieldId) => _activeFieldControls.ValueOrStored(fieldId, (id) =>
+                        _componentClassFieldValues.CreateEmbeddedFieldValue(
+                            context.OwnerNode,
+                            context.Slot.FieldId,
+                            context.Slot.EmbeddedComponentType,
+                            id).Value));
+                var control = new DictionaryFieldControl(field, services);
+                controls.Add(control);
+                _activeFieldControls.Register(control);
+                control.ValueCommitted += (_, value) =>
+                {
+                    try
+                    {
+                        if (value == field.Definition.InheritedStorageValue)
+                        {
+                            _componentClassFieldValues.CommitEmbeddedFieldValue(
+                                context.OwnerNode,
+                                context.Slot.FieldId,
+                                context.Slot.EmbeddedComponentType,
+                                field.Definition.Id,
+                                value);
+                            control.AcceptInheritedValueAsDefault();
+                            _activeFieldControls.RefreshPreviews();
+                            RefreshPreviewDevice();
+                            return;
+                        }
+
+                        _fieldCommitCoordinator.Commit(
+                            control,
+                            value,
+                            (draftValue) => draftValue,
+                            () =>
+                            {
+                                var current = _componentClassFieldValues.CreateEmbeddedFieldValue(
+                                    context.OwnerNode,
+                                    context.Slot.FieldId,
+                                    context.Slot.EmbeddedComponentType,
+                                    field.Definition.Id);
+                                return current.IsInherited
+                                    ? current.Definition.InheritedStorageValue
+                                    : current.Value;
+                            },
+                            (storedValue) => _componentClassFieldValues.CommitEmbeddedFieldValue(
+                                context.OwnerNode,
+                                context.Slot.FieldId,
+                                context.Slot.EmbeddedComponentType,
+                                field.Definition.Id,
+                                storedValue));
+                        _activeFieldControls.RefreshPreviews();
+                        RefreshPreviewDevice();
+                    }
+                    catch (Exception exception)
+                    {
+                        _messages.Error($"Embedded field {field.Definition.Id}", exception);
+                    }
+                };
+                groupPanel.Children.Add(control);
+            }
+
+            if (groupPanel.Children.Count > 0)
+            {
+                body.Children.Add(useSectionChrome
+                    ? EditorGroupBlock.Create(group, groupPanel)
+                    : EditorGroupBlock.CreatePlain(group, groupPanel));
+            }
+        }
+
+        var embeddedBody = new Border
+        {
+            Padding = new Thickness(10),
+            BorderThickness = new Thickness(3, 0, 0, 0),
+            BorderBrush = new SolidColorBrush(Color.FromArgb(150, 214, 166, 56)),
+            Child = body,
+        };
+        var card = new InstantEditorCard(
+            EditorCardHeader.Create(layoutCard.Label, $"Embedded override · {context.OwnerNode.Name}", headerIcon),
+            embeddedBody,
+            layoutCard.DefaultOpen)
+        {
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+        EditorCardHeader.SetOverrideState(headerIcon, controls);
+        foreach (var control in controls)
+        {
+            control.ValueChanged += (_, _) =>
+            {
+                EditorCardHeader.SetOverrideState(headerIcon, controls);
             };
         }
 

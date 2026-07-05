@@ -2197,6 +2197,13 @@ internal sealed partial class SpikeDatabase
                 { "id": "avatar", "label": "Avatar", "order": 10, "visible": true, "fields": [
                   { "id": "component.avatar.defaultSize", "order": 10, "visible": true },
                   { "id": "component.avatar.cornerRadiusToken", "order": 20, "visible": true }
+                ] },
+                { "id": "avatarLabel", "label": "Label", "order": 20, "visible": true, "fields": [
+                  { "id": "component.avatar.label.showLabel", "order": 10, "visible": true },
+                  { "id": "component.avatar.label.showSubtext", "order": 20, "visible": true },
+                  { "id": "component.avatar.label.position", "order": 30, "visible": true },
+                  { "id": "component.avatar.label.gap", "order": 40, "visible": true },
+                  { "id": "component.avatar.label.editor", "order": 50, "visible": true }
                 ] }
               ]
             }
@@ -3075,6 +3082,11 @@ internal sealed partial class SpikeDatabase
     private static void SetJsonValue(JsonObject root, IReadOnlyList<string> path, JsonNode value)
     {
         JsonPath.Set(root, path, value);
+    }
+
+    private static bool RemoveJsonValue(JsonObject root, IReadOnlyList<string> path)
+    {
+        return JsonPath.Remove(root, path);
     }
 
     private static void SetJsonNumber(JsonObject root, IReadOnlyList<string> path, int value)

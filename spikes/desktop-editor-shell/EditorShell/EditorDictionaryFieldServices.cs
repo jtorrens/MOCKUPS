@@ -1,5 +1,6 @@
 using Mockups.DesktopEditorShell.Data;
 using System;
+using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -19,7 +20,10 @@ internal sealed class EditorDictionaryFieldServices
         _domainDialogs = domainDialogs;
     }
 
-    public DictionaryFieldServices ForNode(ProjectTreeNode node, Func<string, string> getFieldValue)
+    public DictionaryFieldServices ForNode(
+        ProjectTreeNode node,
+        Func<string, string> getFieldValue,
+        Func<string, Task>? openEmbeddedComponent = null)
     {
         var projectId = ProjectAncestor(node).Id;
         return new DictionaryFieldServices(
@@ -28,7 +32,8 @@ internal sealed class EditorDictionaryFieldServices
             (currentValue, allowedOptions) => _domainDialogs.ShowThemeTokenPicker(projectId, currentValue, allowedOptions),
             (token) => SvgIconPreview.CreateProjectIconTokenPreview(_database, projectId, token, 18),
             _pathBrowser.ResolveImagePath,
-            getFieldValue);
+            getFieldValue,
+            openEmbeddedComponent);
     }
 
     private static ProjectTreeNode ProjectAncestor(ProjectTreeNode node)
@@ -42,4 +47,3 @@ internal sealed class EditorDictionaryFieldServices
         return current;
     }
 }
-

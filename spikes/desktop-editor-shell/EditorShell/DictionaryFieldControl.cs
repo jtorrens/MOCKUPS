@@ -126,6 +126,16 @@ internal sealed class DictionaryFieldControl : Grid
         UpdateState();
     }
 
+    public void AcceptInheritedValueAsDefault()
+    {
+        if (!_definition.CanInherit) return;
+
+        _isInherited = true;
+        SetDisplayedValue(_definition.InheritedValue);
+        _lastCommittedValue = _definition.InheritedStorageValue;
+        UpdateState();
+    }
+
     public void SetValue(string value, bool commit = false)
     {
         if (_value == value)

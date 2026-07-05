@@ -37,4 +37,42 @@ internal sealed class ComponentClassFieldValueService
 
         _database.UpdateComponentClassField(node.Id, fieldId, value);
     }
+
+    public FieldValue CreateEmbeddedFieldValue(
+        ProjectTreeNode node,
+        string slotFieldId,
+        string embeddedComponentType,
+        string embeddedFieldId)
+    {
+        if (node.Kind != ProjectTreeNodeKind.ComponentClass)
+        {
+            throw new InvalidOperationException($"Embedded component field '{embeddedFieldId}' is not supported for '{node.Kind}'.");
+        }
+
+        return _database.CreateEmbeddedComponentFieldValue(
+            node.Id,
+            slotFieldId,
+            embeddedComponentType,
+            embeddedFieldId);
+    }
+
+    public void CommitEmbeddedFieldValue(
+        ProjectTreeNode node,
+        string slotFieldId,
+        string embeddedComponentType,
+        string embeddedFieldId,
+        string value)
+    {
+        if (node.Kind != ProjectTreeNodeKind.ComponentClass)
+        {
+            throw new InvalidOperationException($"Embedded component field '{embeddedFieldId}' is not supported for '{node.Kind}'.");
+        }
+
+        _database.UpdateEmbeddedComponentField(
+            node.Id,
+            slotFieldId,
+            embeddedComponentType,
+            embeddedFieldId,
+            value);
+    }
 }

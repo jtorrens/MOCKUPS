@@ -22,6 +22,7 @@ internal enum ValueKind
     PaletteColorAlphaPair,
     IconToken,
     IconSlots,
+    EmbeddedComponent,
     Boolean,
 }
 

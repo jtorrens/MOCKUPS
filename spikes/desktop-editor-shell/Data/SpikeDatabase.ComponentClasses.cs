@@ -86,6 +86,84 @@ internal sealed partial class SpikeDatabase
         }
     }
 
+    public FieldValue CreateEmbeddedComponentFieldValue(
+        string componentClassId,
+        string slotFieldId,
+        string embeddedComponentType,
+        string embeddedFieldId)
+    {
+        var slot = EmbeddedComponentSlotCatalog.Get(slotFieldId);
+        if (!slot.EmbeddedComponentType.Equals(embeddedComponentType, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException($"Embedded component '{embeddedComponentType}' is not supported for slot '{slotFieldId}'.");
+        }
+
+        var settings = GetComponentClassSettings(componentClassId);
+        var descriptor = ComponentClassFieldCatalog.Get(embeddedFieldId);
+        var inheritedConfigJson = DefaultComponentClassConfigJson(embeddedComponentType);
+        var inheritedValue = ComponentConfigFieldValue(inheritedConfigJson, descriptor);
+        var config = ParseJsonObject(string.IsNullOrWhiteSpace(settings.ConfigJson) ? "{}" : settings.ConfigJson);
+        var overrides = EmbeddedOverrides(config, slot, createIfMissing: false);
+        var hasOverride = overrides is not null && GetJsonValue(overrides, descriptor.JsonPath) is not null;
+        var localValue = hasOverride && overrides is not null
+            ? ComponentConfigFieldValue(overrides.ToJsonString(), descriptor)
+            : inheritedValue;
+
+        return new FieldValue(
+            new FieldDefinition(
+                descriptor.Id,
+                descriptor.Label,
+                descriptor.ValueKind,
+                descriptor.IsEditable,
+                descriptor.DefaultValue,
+                CanInherit: true,
+                InheritedValue: inheritedValue,
+                Options: descriptor.Options,
+                PairLabels: descriptor.PairLabels,
+                Number: descriptor.Number),
+            localValue,
+            IsInherited: !hasOverride);
+    }
+
+    public void UpdateEmbeddedComponentField(
+        string componentClassId,
+        string slotFieldId,
+        string embeddedComponentType,
+        string embeddedFieldId,
+        string value)
+    {
+        var slot = EmbeddedComponentSlotCatalog.Get(slotFieldId);
+        if (!slot.EmbeddedComponentType.Equals(embeddedComponentType, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException($"Embedded component '{embeddedComponentType}' is not supported for slot '{slotFieldId}'.");
+        }
+
+        var descriptor = ComponentClassFieldCatalog.Get(embeddedFieldId);
+        lock (WriteGate)
+        {
+            using var connection = OpenConnection();
+            var settings = GetComponentClassSettings(connection, componentClassId);
+            var config = ParseJsonObject(string.IsNullOrWhiteSpace(settings.ConfigJson) ? "{}" : settings.ConfigJson);
+            var overrides = EmbeddedOverrides(config, slot, createIfMissing: true)
+                ?? throw new InvalidOperationException($"Missing embedded override slot '{slotFieldId}'.");
+
+            if (value.Equals("inherited", StringComparison.Ordinal))
+            {
+                RemoveJsonValue(overrides, descriptor.JsonPath);
+            }
+            else
+            {
+                SetJsonValue(overrides, descriptor.JsonPath, ComponentConfigJsonValue(descriptor.ValueKind, value));
+            }
+
+            Execute(
+                connection,
+                "UPDATE component_classes SET config_json = $configJson WHERE id = $id",
+                ("$id", componentClassId),
+                ("$configJson", config.ToJsonString()));
+        }
+    }
+
     private static void SeedComponentClassesIfEmpty(SqliteConnection connection)
     {
         var projectIds = QueryProjectRows(connection).Select((project) => project.Id).ToList();
@@ -197,6 +275,11 @@ internal sealed partial class SpikeDatabase
 
     private static string ComponentConfigFieldValue(string configJson, ComponentClassFieldDescriptor descriptor)
     {
+        if (descriptor.ValueKind == ValueKind.EmbeddedComponent)
+        {
+            return descriptor.DefaultValue;
+        }
+
         var config = ParseJsonObject(string.IsNullOrWhiteSpace(configJson) ? "{}" : configJson);
         var node = GetJsonValue(config, descriptor.JsonPath);
         if (node is null)
@@ -232,6 +315,29 @@ internal sealed partial class SpikeDatabase
                 ?? JsonNode.Parse(ComponentClassFieldCatalog.EmptyIconSlots)!,
             _ => JsonValue.Create(value)!,
         };
+    }
+
+    private static JsonObject? EmbeddedOverrides(JsonObject config, EmbeddedComponentSlotDefinition slot, bool createIfMissing)
+    {
+        var slotNode = JsonPath.Get(config, slot.SlotPath) as JsonObject;
+        if (slotNode is null)
+        {
+            if (!createIfMissing) return null;
+
+            slotNode = [];
+            JsonPath.Set(config, slot.SlotPath, slotNode);
+        }
+
+        if (slotNode["overrides"] is JsonObject overrides)
+        {
+            return overrides;
+        }
+
+        if (!createIfMissing) return null;
+
+        overrides = [];
+        slotNode["overrides"] = overrides;
+        return overrides;
     }
 
     private static string ComponentTypeLabel(string componentType)
@@ -286,6 +392,14 @@ internal sealed partial class SpikeDatabase
                 {
                     ["defaultSize"] = 48,
                     ["cornerRadiusToken"] = "theme.radii.avatar",
+                    ["labelSlot"] = new JsonObject
+                    {
+                        ["showLabel"] = false,
+                        ["showSubtext"] = false,
+                        ["position"] = "bottom",
+                        ["gap"] = 4,
+                        ["overrides"] = new JsonObject(),
+                    },
                 };
                 break;
             case "textInputBar":

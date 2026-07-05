@@ -74,6 +74,27 @@ internal static class JsonPath
         current[path[^1]] = value;
     }
 
+    public static bool Remove(JsonObject root, IReadOnlyList<string> path)
+    {
+        if (path.Count == 0)
+        {
+            return false;
+        }
+
+        var current = root;
+        for (var index = 0; index < path.Count - 1; index++)
+        {
+            if (current[path[index]] is not JsonObject child)
+            {
+                return false;
+            }
+
+            current = child;
+        }
+
+        return current.Remove(path[^1]);
+    }
+
     public static void SetNumber(JsonObject root, IReadOnlyList<string> path, int value)
     {
         Set(root, path, JsonValue.Create(value)!);

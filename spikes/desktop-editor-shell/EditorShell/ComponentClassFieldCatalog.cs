@@ -107,6 +107,14 @@ internal static class ComponentClassFieldCatalog
         new("right", "Right"),
     ];
 
+    private static readonly FieldOption[] EmbeddedLabelPositionOptions =
+    [
+        new("top", "Top"),
+        new("bottom", "Bottom"),
+        new("left", "Left"),
+        new("right", "Right"),
+    ];
+
     private static readonly Dictionary<string, ComponentClassFieldDescriptor> Fields = new(StringComparer.Ordinal)
     {
         ["component.type"] = new("component.type", "Component Type", ValueKind.StringReadOnly, [], "", false),
@@ -147,6 +155,11 @@ internal static class ComponentClassFieldCatalog
 
         ["component.avatar.defaultSize"] = new("component.avatar.defaultSize", "Default size", ValueKind.Integer, ["avatar", "defaultSize"], "48"),
         ["component.avatar.cornerRadiusToken"] = new("component.avatar.cornerRadiusToken", "Avatar radius", ValueKind.ThemeToken, ["avatar", "cornerRadiusToken"], "theme.radii.avatar", Options: RadiusTokenOptions),
+        ["component.avatar.label.showLabel"] = new("component.avatar.label.showLabel", "Show label", ValueKind.Boolean, ["avatar", "labelSlot", "showLabel"], "false"),
+        ["component.avatar.label.showSubtext"] = new("component.avatar.label.showSubtext", "Show subtext", ValueKind.Boolean, ["avatar", "labelSlot", "showSubtext"], "false"),
+        ["component.avatar.label.position"] = new("component.avatar.label.position", "Position", ValueKind.OptionToken, ["avatar", "labelSlot", "position"], "bottom", Options: EmbeddedLabelPositionOptions),
+        ["component.avatar.label.gap"] = new("component.avatar.label.gap", "Gap", ValueKind.Decimal, ["avatar", "labelSlot", "gap"], "4", Number: new NumberDefinition(-64, 64, 0.5m, 2)),
+        ["component.avatar.label.editor"] = new("component.avatar.label.editor", "Label", ValueKind.EmbeddedComponent, [], "component.label"),
 
         ["component.textInput.height"] = new("component.textInput.height", "Height", ValueKind.Integer, ["textInput", "height"], "44"),
         ["component.textInput.placeholder"] = new("component.textInput.placeholder", "Placeholder", ValueKind.StringSingleLine, ["textInput", "placeholder"], "Message"),

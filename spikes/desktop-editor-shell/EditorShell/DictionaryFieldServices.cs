@@ -11,5 +11,5 @@ internal sealed record DictionaryFieldServices(
     Func<string, IReadOnlyList<FieldOption>?, Task<string?>>? ShowThemeTokenPicker = null,
     Func<string, Control>? CreateIconPreview = null,
     Func<string, string?>? ResolveImagePath = null,
-    Func<string, string>? GetFieldValue = null);
-
+    Func<string, string>? GetFieldValue = null,
+    Func<string, Task>? OpenEmbeddedComponent = null);
