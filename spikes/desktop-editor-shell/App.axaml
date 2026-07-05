@@ -1,6 +1,5 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:animation="using:Avalonia.Animation"
              xmlns:converters="using:Avalonia.Controls.Converters"
              xmlns:pc="using:Avalonia.Controls.Primitives.Converters"
              xmlns:suki="clr-namespace:SukiUI;assembly=SukiUI"
@@ -29,12 +28,6 @@
             <Setter Property="Transitions" Value="{x:Null}" />
         </Style>
         <Style Selector="Popup">
-            <Setter Property="Transitions" Value="{x:Null}" />
-        </Style>
-        <Style Selector="Expander">
-            <Setter Property="ContentTransition">
-                <animation:CrossFade Duration="0:0:0.05" />
-            </Setter>
             <Setter Property="Transitions" Value="{x:Null}" />
         </Style>
         <Style Selector="Button">
