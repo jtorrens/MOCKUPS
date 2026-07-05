@@ -24,7 +24,7 @@ internal sealed class DictionaryEmbeddedComponentControl : Grid, IDictionaryValu
 
         _label = new TextBlock
         {
-            Text = DisplayText(value),
+            Text = DisplayText(definition, value),
             Foreground = LabelBrush(definition, value),
             VerticalAlignment = VerticalAlignment.Center,
             Opacity = 0.82,
@@ -72,12 +72,23 @@ internal sealed class DictionaryEmbeddedComponentControl : Grid, IDictionaryValu
         if (_value == value) return;
 
         _value = value;
-        _label.Text = DisplayText(value);
+        _label.Text = DisplayText(_definition, value);
         _label.Foreground = LabelBrush(_definition, value);
     }
 
-    private static string DisplayText(string value)
+    private static string DisplayText(FieldDefinition definition, string value)
     {
+        if (definition.Options is not null)
+        {
+            foreach (var option in definition.Options)
+            {
+                if (option.Value.Equals(value, StringComparison.Ordinal))
+                {
+                    return option.Label;
+                }
+            }
+        }
+
         return string.IsNullOrWhiteSpace(value) ? "Embedded component" : value;
     }
 

@@ -69,6 +69,24 @@ internal sealed partial class SpikeDatabase
         return configJson;
     }
 
+    private IReadOnlyList<FieldOption> EmbeddedComponentOptions(string projectId, string recordClassId)
+    {
+        using var connection = OpenConnection();
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT name
+            FROM component_classes
+            WHERE project_id = $projectId
+              AND record_class_id = $recordClassId
+            ORDER BY CASE WHEN id = 'component_' || $projectId || '_' || component_type THEN 0 ELSE 1 END, name
+            LIMIT 1
+            """;
+        command.Parameters.AddWithValue("$projectId", projectId);
+        command.Parameters.AddWithValue("$recordClassId", recordClassId);
+        var name = command.ExecuteScalar() as string;
+        return [new FieldOption(recordClassId, string.IsNullOrWhiteSpace(name) ? recordClassId : name)];
+    }
+
     private static ComponentClassSettings GetComponentClassSettings(SqliteConnection connection, string componentClassId)
     {
         using var command = connection.CreateCommand();
@@ -102,6 +120,9 @@ internal sealed partial class SpikeDatabase
         var value = fieldId == "component.type"
             ? ComponentTypeLabel(settings.ComponentType)
             : ComponentConfigFieldValue(settings.ConfigJson, descriptor);
+        var options = descriptor.ValueKind == ValueKind.EmbeddedComponent
+            ? EmbeddedComponentOptions(settings.ProjectId, descriptor.DefaultValue)
+            : descriptor.Options;
 
         return new FieldValue(
             new FieldDefinition(
@@ -110,7 +131,7 @@ internal sealed partial class SpikeDatabase
                 descriptor.ValueKind,
                 descriptor.IsEditable,
                 descriptor.DefaultValue,
-                Options: descriptor.Options,
+                Options: options,
                 PairLabels: descriptor.PairLabels,
                 Number: descriptor.Number),
             value);
