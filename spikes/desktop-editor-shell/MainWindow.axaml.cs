@@ -62,6 +62,7 @@ public partial class MainWindow : SukiWindow
             PreviewThemeComboBox,
             PreviewModeComboBox,
             PreviewScaleComboBox,
+            PreviewMarksToggle,
             RuntimePreviewHost,
             DesignPreviewHost,
             VisualIrPreviewHost,
@@ -71,6 +72,13 @@ public partial class MainWindow : SukiWindow
         PreviewThemeComboBox.SelectionChanged += (_, _) => _previewController.OnThemeChanged();
         PreviewModeComboBox.SelectionChanged += (_, _) => _previewController.OnModeChanged();
         PreviewScaleComboBox.SelectionChanged += (_, _) => _previewController.OnScaleChanged();
+        PreviewMarksToggle.PropertyChanged += (_, change) =>
+        {
+            if (change.Property == ToggleSwitch.IsCheckedProperty)
+            {
+                _previewController.OnMarksChanged();
+            }
+        };
         _shellState = new EditorShellStateService(this, ShellColumns);
         _navigationRenderer = new EditorNavigationRenderer(
             () => _selectedNode,

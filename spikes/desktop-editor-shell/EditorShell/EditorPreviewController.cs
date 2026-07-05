@@ -13,6 +13,7 @@ internal sealed class EditorPreviewController
     private readonly EditorInstantComboBox _themeComboBox;
     private readonly EditorInstantComboBox _modeComboBox;
     private readonly EditorInstantComboBox _scaleComboBox;
+    private readonly ToggleSwitch _marksToggle;
     private readonly Func<bool> _isDark;
     private readonly Func<ProjectTreeNode?> _selectedNode;
     private readonly RuntimeWebPreviewPane _runtimePreviewPane = new();
@@ -23,6 +24,7 @@ internal sealed class EditorPreviewController
     private ProjectTreeNode? _lastDesignPreviewNode;
     private string _selectedMode = "light";
     private string _selectedScale = "fit";
+    private bool _showDesignMarks = true;
     private bool _isRefreshingOptions;
 
     public EditorPreviewController(
@@ -31,6 +33,7 @@ internal sealed class EditorPreviewController
         EditorInstantComboBox themeComboBox,
         EditorInstantComboBox modeComboBox,
         EditorInstantComboBox scaleComboBox,
+        ToggleSwitch marksToggle,
         ContentControl runtimePreviewHost,
         ContentControl designPreviewHost,
         ContentControl visualIrPreviewHost,
@@ -42,6 +45,7 @@ internal sealed class EditorPreviewController
         _themeComboBox = themeComboBox;
         _modeComboBox = modeComboBox;
         _scaleComboBox = scaleComboBox;
+        _marksToggle = marksToggle;
         _isDark = isDark;
         _selectedNode = selectedNode;
 
@@ -101,6 +105,7 @@ internal sealed class EditorPreviewController
             _scaleComboBox.ItemsSource = scaleOptions;
             _scaleComboBox.SelectedItem = scaleOptions.FirstOrDefault((option) => option.Value == _selectedScale) ?? scaleOptions[0];
             _selectedScale = _scaleComboBox.SelectedItem?.Value ?? "fit";
+            _marksToggle.IsChecked = _showDesignMarks;
         }
         finally
         {
@@ -154,6 +159,15 @@ internal sealed class EditorPreviewController
         }
     }
 
+    public void OnMarksChanged()
+    {
+        _showDesignMarks = _marksToggle.IsChecked == true;
+        if (!_isRefreshingOptions)
+        {
+            Refresh();
+        }
+    }
+
     public void Refresh()
     {
         EnsureSelectedOptionsExist();
@@ -176,6 +190,7 @@ internal sealed class EditorPreviewController
             themeName,
             _selectedMode,
             _selectedScale,
+            _showDesignMarks,
             designPayload);
     }
 

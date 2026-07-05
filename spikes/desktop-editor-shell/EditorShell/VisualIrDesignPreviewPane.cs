@@ -22,6 +22,7 @@ internal sealed class VisualIrDesignPreviewPane : Grid
         string themeName,
         string themeMode,
         string scaleMode,
+        bool showDesignMarks,
         DesignPreviewPayload? payload)
     {
         Children.Clear();
@@ -43,7 +44,7 @@ internal sealed class VisualIrDesignPreviewPane : Grid
             var document = DesignPreviewToVisualIrBridge.Convert(payload, metrics, colorVariant);
             var rendered = _renderer.Render(document, new VisualIrRenderOptions(
                 SelectedColorVariant: colorVariant,
-                ShowBounds: true,
+                ShowBounds: showDesignMarks,
                 ShowUnsupportedPlaceholders: true));
 
             Children.Add(DeviceFrame(
@@ -81,6 +82,7 @@ internal sealed class VisualIrDesignPreviewPane : Grid
         DesignPreviewPayload payload)
     {
         const double frameBorderThickness = 10;
+        const double shadowPadding = 40;
         var scale = metrics.ScaleToPixels > 0 ? metrics.ScaleToPixels : 1;
         var cornerRadius = metrics.CornerRadius / scale;
         var candyOffset = frameBorderThickness / 2;
@@ -133,15 +135,24 @@ internal sealed class VisualIrDesignPreviewPane : Grid
 
         canvas.HorizontalAlignment = HorizontalAlignment.Center;
         canvas.VerticalAlignment = VerticalAlignment.Center;
+        canvas.Margin = new Thickness(shadowPadding);
+
+        var elevatedSurface = new Grid
+        {
+            Width = canvas.Width + shadowPadding * 2,
+            Height = canvas.Height + shadowPadding * 2,
+            ClipToBounds = false,
+            Children = { canvas },
+        };
 
         Control content = scaleMode == "actual"
-            ? canvas
+            ? elevatedSurface
             : new Viewbox
             {
                 Stretch = Stretch.Uniform,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
-                Child = canvas,
+                Child = elevatedSurface,
             };
 
         return new Grid
