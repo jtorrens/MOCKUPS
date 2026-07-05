@@ -249,6 +249,7 @@ internal abstract class WebPreviewPane : Grid
                 const renderHeight = {{Number(height)}};
                 const cornerRadius = {{Number(cornerRadius)}};
                 const scaleMode = "{{Html(PreviewScaleMode.WebMode(scaleMode))}}";
+                const previewStateKey = `mockups.preview.{{Html(previewMode)}}.${renderWidth}x${renderHeight}.center`;
                 let translateX = 0;
                 let translateY = 0;
                 let dragStartX = 0;
@@ -265,6 +266,30 @@ internal abstract class WebPreviewPane : Grid
 
                 function applyViewportTransform() {
                   viewport.style.transform = `translate(${translateX}px, ${translateY}px)`;
+                }
+
+                function savedCenter() {
+                  try {
+                    const parsed = JSON.parse(localStorage.getItem(previewStateKey) ?? "null");
+                    if (
+                      parsed &&
+                      Number.isFinite(parsed.x) &&
+                      Number.isFinite(parsed.y)
+                    ) {
+                      return parsed;
+                    }
+                  } catch {
+                  }
+                  return { x: renderWidth / 2, y: renderHeight / 2 };
+                }
+
+                function saveCenter(scale, displayWidth, displayHeight) {
+                  if (fixedScale() === null) return;
+                  const center = {
+                    x: (displayWidth / 2 - translateX) / scale,
+                    y: (displayHeight / 2 - translateY) / scale,
+                  };
+                  localStorage.setItem(previewStateKey, JSON.stringify(center));
                 }
 
                 function calculatePreviewFit() {
@@ -286,6 +311,10 @@ internal abstract class WebPreviewPane : Grid
                   if (explicitScale === null) {
                     translateX = 0;
                     translateY = 0;
+                  } else if (!isDragging) {
+                    const center = savedCenter();
+                    translateX = displayWidth / 2 - center.x * scale;
+                    translateY = displayHeight / 2 - center.y * scale;
                   }
                   applyViewportTransform();
                 }
@@ -307,6 +336,10 @@ internal abstract class WebPreviewPane : Grid
                   translateX = startTranslateX + event.clientX - dragStartX;
                   translateY = startTranslateY + event.clientY - dragStartY;
                   applyViewportTransform();
+                  const scale = fixedScale();
+                  if (scale !== null) {
+                    saveCenter(scale, renderWidth * scale, renderHeight * scale);
+                  }
                   event.preventDefault();
                 });
 

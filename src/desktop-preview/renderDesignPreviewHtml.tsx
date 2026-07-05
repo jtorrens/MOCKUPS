@@ -157,11 +157,18 @@ function themeBackground(payload: DesignPreviewPayload) {
 function themeTokenValue(payload: DesignPreviewPayload, token: unknown) {
   if (typeof token !== "string" || !token.startsWith("theme.")) return token;
   const parts = token.replace(/^theme\./, "").split(".");
-  let value: unknown = modeTokens(payload);
-  for (const part of parts) {
-    value = asRecord(value)[part];
+  const sources = [modeTokens(payload), parseObject(payload.themeTokensJson)];
+  for (const source of sources) {
+    let value: unknown = source;
+    for (const part of parts) {
+      value = asRecord(value)[part];
+    }
+    if (value !== undefined) {
+      return resolvePaletteValue(payload, value);
+    }
   }
-  return resolvePaletteValue(payload, value);
+
+  return undefined;
 }
 
 function themeTokenNumber(
@@ -211,9 +218,8 @@ function componentSurfaceStyle(
           angleDeg: readNumber(style, "reliefAngle", -45),
           extension: readNumber(style, "reliefExtent", 1) * renderScale(payload),
           spread: readNumber(style, "reliefSpread", 0) * renderScale(payload),
-          upperIntensity: readNumber(style, "reliefTopIntensity", 12) / 100,
-          lowerIntensity:
-            readNumber(style, "reliefBottomIntensity", -10) / 100,
+          upperIntensity: readNumber(style, "reliefTopIntensity", 0.12),
+          lowerIntensity: readNumber(style, "reliefBottomIntensity", -0.1),
         }
       : undefined,
     borderWidth,
