@@ -1872,15 +1872,54 @@ internal sealed partial class SpikeDatabase
                   "visible": true,
                   "fields": [
                     { "id": "theme.colors.background", "order": 10, "visible": true },
-                    { "id": "theme.colors.textPrimary", "order": 20, "visible": true },
-                    { "id": "theme.colors.textSecondary", "order": 30, "visible": true },
+                    { "id": "theme.colors.surface", "order": 20, "visible": true },
+                    { "id": "theme.colors.card", "order": 30, "visible": true },
                     { "id": "theme.colors.accent", "order": 40, "visible": true }
+                  ]
+                },
+                {
+                  "id": "contentColors",
+                  "label": "Content colors",
+                  "order": 30,
+                  "visible": true,
+                  "fields": [
+                    { "id": "theme.colors.label", "order": 10, "visible": true },
+                    { "id": "theme.colors.text", "order": 20, "visible": true },
+                    { "id": "theme.colors.textPrimary", "order": 30, "visible": true },
+                    { "id": "theme.colors.textSecondary", "order": 40, "visible": true },
+                    { "id": "theme.colors.icon", "order": 50, "visible": true }
+                  ]
+                },
+                {
+                  "id": "actionInputColors",
+                  "label": "Action and input colors",
+                  "order": 40,
+                  "visible": true,
+                  "fields": [
+                    { "id": "theme.colors.button", "order": 10, "visible": true },
+                    { "id": "theme.colors.field", "order": 20, "visible": true },
+                    { "id": "theme.colors.checkbox", "order": 30, "visible": true },
+                    { "id": "theme.colors.radio", "order": 40, "visible": true },
+                    { "id": "theme.colors.switch", "order": 50, "visible": true }
+                  ]
+                },
+                {
+                  "id": "navigationFeedbackColors",
+                  "label": "Navigation and feedback colors",
+                  "order": 50,
+                  "visible": true,
+                  "fields": [
+                    { "id": "theme.colors.tab", "order": 10, "visible": true },
+                    { "id": "theme.colors.menuItem", "order": 20, "visible": true },
+                    { "id": "theme.colors.badge", "order": 30, "visible": true },
+                    { "id": "theme.colors.toast", "order": 40, "visible": true },
+                    { "id": "theme.colors.divider", "order": 50, "visible": true }
                   ]
                 },
                 {
                   "id": "borderColors",
                   "label": "Border colors",
-                  "order": 30,
+                  "order": 60,
                   "visible": true,
                   "fields": [
                     { "id": "theme.borders.primary", "order": 10, "visible": true },
@@ -1891,7 +1930,7 @@ internal sealed partial class SpikeDatabase
                 {
                   "id": "cursor",
                   "label": "Cursor",
-                  "order": 40,
+                  "order": 70,
                   "visible": true,
                   "fields": [
                     { "id": "theme.cursor.color", "order": 10, "visible": true },
@@ -1902,7 +1941,7 @@ internal sealed partial class SpikeDatabase
                 {
                   "id": "iconColors",
                   "label": "Icon colors",
-                  "order": 50,
+                  "order": 80,
                   "visible": true,
                   "fields": [
                     { "id": "theme.icons.primary", "order": 10, "visible": true },
@@ -1913,7 +1952,7 @@ internal sealed partial class SpikeDatabase
                 {
                   "id": "keyboard",
                   "label": "Keyboard",
-                  "order": 60,
+                  "order": 90,
                   "visible": true,
                   "fields": [
                     { "id": "theme.keyboard.background", "order": 10, "visible": true },

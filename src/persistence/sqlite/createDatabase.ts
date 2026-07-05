@@ -833,15 +833,31 @@ function defaultChatBubbleStatusConfig(): Record<string, unknown> {
   };
 }
 
-function defaultThemeSemanticColorTokens() {
+function defaultThemeSemanticColorTokens(mode: "light" | "dark" = "light") {
+  const dark = mode === "dark";
   return {
     "debug.red": "debug_red",
-    "icons.primary": "gray_000",
-    "icons.secondary": "gray_040",
-    "icons.accent": "blue",
-    "borders.primary": "gray_080",
-    "borders.secondary": "gray_070",
-    "borders.alternate": "gray_090",
+    surface: dark ? "gray_020" : "gray_100",
+    card: dark ? "gray_030" : "gray_100",
+    label: dark ? "gray_070" : "gray_040",
+    text: dark ? "gray_100" : "gray_000",
+    icon: dark ? "gray_100" : "gray_000",
+    button: dark ? "blue_bright" : "blue",
+    field: dark ? "gray_030" : "gray_100",
+    checkbox: dark ? "blue_bright" : "blue",
+    radio: dark ? "blue_bright" : "blue",
+    switch: dark ? "blue_bright" : "blue",
+    tab: dark ? "blue_bright" : "blue",
+    menuItem: dark ? "gray_100" : "gray_000",
+    badge: "red",
+    toast: dark ? "gray_030" : "gray_020",
+    divider: dark ? "gray_040" : "gray_080",
+    "icons.primary": dark ? "gray_100" : "gray_000",
+    "icons.secondary": dark ? "gray_070" : "gray_040",
+    "icons.accent": dark ? "blue_bright" : "blue",
+    "borders.primary": dark ? "gray_040" : "gray_080",
+    "borders.secondary": dark ? "gray_030" : "gray_070",
+    "borders.alternate": dark ? "gray_050" : "gray_090",
   };
 }
 
@@ -882,7 +898,7 @@ function ensureThemeSemanticColorGroups(tokens: Record<string, unknown>) {
     return {
       ...modeRoot,
       colors: {
-        ...defaultThemeSemanticColorTokens(),
+        ...defaultThemeSemanticColorTokens(mode),
         ...Object.fromEntries(
           Object.entries(legacyIcons).map(([key, value]) => [`icons.${key}`, value]),
         ),
@@ -2656,6 +2672,28 @@ function applyAdditiveV39Migration(database: SQLiteDatabase): void {
   database.pragma("user_version = 39");
 }
 
+function applyAdditiveV40Migration(database: SQLiteDatabase): void {
+  const themeRows = database
+    .prepare("SELECT id, tokens_json FROM themes ORDER BY id")
+    .all() as { id: string; tokens_json: string }[];
+  const updateTheme = database.prepare(
+    "UPDATE themes SET tokens_json = ? WHERE id = ?",
+  );
+  for (const row of themeRows) {
+    try {
+      const tokens = JSON.parse(row.tokens_json) as Record<string, unknown>;
+      const nextTokens = ensureThemeSemanticColorGroups(tokens);
+      const nextJson = JSON.stringify(nextTokens);
+      if (nextJson !== row.tokens_json) {
+        updateTheme.run(nextJson, row.id);
+      }
+    } catch {
+      // Malformed JSON is handled by validation paths; skip migration here.
+    }
+  }
+  database.pragma("user_version = 40");
+}
+
 export function applyInitialSchema(database: SQLiteDatabase): void {
   database.exec(readFileSync(schemaPath, "utf8"));
   applyAdditiveV2Migration(database);
@@ -2696,6 +2734,7 @@ export function applyInitialSchema(database: SQLiteDatabase): void {
   applyAdditiveV37Migration(database);
   applyAdditiveV38Migration(database);
   applyAdditiveV39Migration(database);
+  applyAdditiveV40Migration(database);
   database.pragma("foreign_keys = ON");
 }
 
