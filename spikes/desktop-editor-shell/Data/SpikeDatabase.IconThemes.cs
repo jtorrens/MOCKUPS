@@ -396,8 +396,7 @@ internal sealed partial class SpikeDatabase
 
     private static string IconTokenCategory(string token)
     {
-        var index = token.IndexOf('_', StringComparison.Ordinal);
-        return index <= 0 ? "misc" : token[..index];
+        return IconTokenRules.CategoryFromToken(token);
     }
 
     private static string ProjectIdForIconTheme(SqliteConnection connection, string iconThemeId)
