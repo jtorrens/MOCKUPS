@@ -495,9 +495,7 @@ export function ComponentClassRecordEditor({
                         "borderColorToken",
                         "borders.primary",
                       )}
-                      {tokenNumberRow("Background alpha", "backgroundAlpha", 1)}
-                      {tokenNumberRow("Border alpha", "borderAlpha", 1)}
-                      {tokenNumberRow("Relief alpha", "reliefAlpha", 1)}
+                      {tokenNumberRow("Surface alpha", "alpha", 1)}
                     </>,
                   )}
                   {componentAccordion(

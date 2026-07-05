@@ -2238,9 +2238,7 @@ internal sealed partial class SpikeDatabase
                   { "id": "component.label.textStyle", "order": 110, "visible": true }
                 ] },
                 { "id": "labelTransparency", "label": "Transparency", "order": 20, "visible": true, "fields": [
-                  { "id": "component.label.backgroundAlpha", "order": 10, "visible": true },
-                  { "id": "component.label.borderAlpha", "order": 20, "visible": true },
-                  { "id": "component.label.reliefAlpha", "order": 30, "visible": true }
+                  { "id": "component.label.alpha", "order": 10, "visible": true }
                 ] }
               ]
             }

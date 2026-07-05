@@ -419,9 +419,7 @@ function componentRenderableForPayload(
     const lineHeight = Math.max(fontSize * 1.2, fontSize + paddingY * 0.5);
     const fixedWidth = size.first * scale;
     const fixedHeight = size.second * scale;
-    const backgroundAlpha = readAlpha(label, "backgroundAlpha");
-    const borderAlpha = readAlpha(label, "borderAlpha");
-    const reliefAlpha = readAlpha(label, "reliefAlpha");
+    const alpha = readAlpha(label, "alpha");
     const contentWidth = Math.max(
       1,
       sampleText.length * fontSize * 0.58 + paddingX * 2,
@@ -432,12 +430,12 @@ function componentRenderableForPayload(
     const height = isFixed ? fixedHeight : contentHeight;
     const labelSurface = {
       ...surface,
-      borderColor: colorWithAlpha(surface.borderColor, borderAlpha),
+      borderColor: colorWithAlpha(surface.borderColor, alpha),
       surfaceRelief: surface.surfaceRelief
         ? {
             ...surface.surfaceRelief,
-            upperIntensity: surface.surfaceRelief.upperIntensity * reliefAlpha,
-            lowerIntensity: surface.surfaceRelief.lowerIntensity * reliefAlpha,
+            upperIntensity: surface.surfaceRelief.upperIntensity * alpha,
+            lowerIntensity: surface.surfaceRelief.lowerIntensity * alpha,
           }
         : undefined,
     };
@@ -453,7 +451,7 @@ function componentRenderableForPayload(
             ? "transparent"
             : colorWithAlpha(
                 themeTokenColor(payload, label.backgroundColorToken, "#FFFFFF"),
-                backgroundAlpha,
+                alpha,
               ),
         textColor: themeTokenColor(payload, label.textColorToken, "#111827"),
         fontSize,
