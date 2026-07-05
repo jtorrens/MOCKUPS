@@ -48,6 +48,7 @@ public partial class MainWindow : SukiWindow
     private readonly EditorViewStateController _editorViewState;
     private readonly EditorCardHostController _editorCardHost;
     private readonly EditorFieldValueRouter _fieldValues;
+    private readonly EditorEmbeddedUsageNavigator _embeddedUsageNavigator;
     private readonly EditorFieldCommitCoordinator _fieldCommitCoordinator = new();
     private readonly EditorActiveFieldControls _activeFieldControls = new();
     private readonly HashSet<string> _expandedNodeIds = [];
@@ -121,6 +122,15 @@ public partial class MainWindow : SukiWindow
             _componentClassFieldValues,
             _actorAvatarPreviews,
             _fieldPostCommitEffects);
+        _embeddedUsageNavigator = new EditorEmbeddedUsageNavigator(
+            _database,
+            this,
+            () => _isDark,
+            SelectNodeById,
+            LoadProjectTree,
+            () => _selectedNode,
+            OpenEmbeddedComponentEditor,
+            _messages);
         _collectionCards = new EditorCollectionCardFactory(
             _database,
             () => _isDark,
@@ -604,7 +614,7 @@ public partial class MainWindow : SukiWindow
     {
         EditorBreadcrumbBar.Render(EditorBreadcrumbPanel, [
             new EditorBreadcrumbItem(title),
-        ]);
+        ], CreateStructureButtonForSelectedComponent());
     }
 
     private void SetEditorEmbeddedTitle(EmbeddedEditorContext context)
@@ -612,7 +622,18 @@ public partial class MainWindow : SukiWindow
         EditorBreadcrumbBar.Render(EditorBreadcrumbPanel, [
             new EditorBreadcrumbItem(context.OwnerNode.Name, () => ShowNode(context.OwnerNode, rebuildTree: false)),
             new EditorBreadcrumbItem(context.Slot.Label),
-        ]);
+        ], EditorStructureButton.Create(async () => await _embeddedUsageNavigator.ShowForEmbedded(context.OwnerNode, context.Slot)));
+    }
+
+    private Control? CreateStructureButtonForSelectedComponent()
+    {
+        if (_selectedNode?.Kind != ProjectTreeNodeKind.ComponentClass)
+        {
+            return null;
+        }
+
+        var node = _selectedNode;
+        return EditorStructureButton.Create(async () => await _embeddedUsageNavigator.ShowForComponent(node));
     }
 
     private async Task AddChild(ProjectTreeNode parent)

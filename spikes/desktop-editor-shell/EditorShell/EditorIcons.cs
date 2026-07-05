@@ -16,6 +16,7 @@ internal static class EditorIcons
     public const string Duplicate = "duplicate";
     public const string Expand = "expand";
     public const string Collapse = "collapse";
+    public const string Structure = "structure";
 
     public const string Project = "project";
     public const string Apps = "apps";
@@ -279,6 +280,7 @@ internal static class EditorIcons
             Duplicate => "M8 8H18V18H8Z M5 5H15V8 M5 5V15H8",
             Expand => "M9 5L16 12L9 19Z",
             Collapse => "M5 15L12 8L19 15Z",
+            Structure => "M12 4V8 M6 14V17 M18 14V17 M12 8H6V11 M12 8H18V11 M4.5 11H7.5V14H4.5Z M10.5 17H13.5V20H10.5Z M16.5 11H19.5V14H16.5Z",
 
             Project => "M4 9.5L12 4L20 9.5V20C20 20.55 19.55 21 19 21H14V15H10V21H5C4.45 21 4 20.55 4 20V9.5Z",
             Apps => "M5 5H11V11H5Z M13 5H19V11H13Z M5 13H11V19H5Z M13 13H19V19H13Z",

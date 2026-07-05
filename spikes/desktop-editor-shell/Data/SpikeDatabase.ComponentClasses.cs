@@ -11,10 +11,57 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SpikeDatabase
 {
+    public sealed record EmbeddedComponentUsage(
+        string ParentComponentClassId,
+        string ParentComponentName,
+        string ParentComponentType,
+        string SlotFieldId,
+        string SlotLabel,
+        bool HasOverrides);
+
     public ComponentClassSettings GetComponentClassSettings(string componentClassId)
     {
         using var connection = OpenConnection();
         return GetComponentClassSettings(connection, componentClassId);
+    }
+
+    public IReadOnlyList<EmbeddedComponentUsage> GetEmbeddedComponentUsages(
+        string projectId,
+        string componentType,
+        string? excludedComponentClassId = null)
+    {
+        using var connection = OpenConnection();
+        var rows = QueryComponentClassRows(connection)
+            .Where((row) => row.ProjectId.Equals(projectId, StringComparison.Ordinal))
+            .Where((row) => !row.Id.Equals(excludedComponentClassId, StringComparison.Ordinal))
+            .ToList();
+        var usages = new List<EmbeddedComponentUsage>();
+        foreach (var row in rows)
+        {
+            var config = ParseJsonObject(string.IsNullOrWhiteSpace(row.ConfigJson) ? "{}" : row.ConfigJson);
+            foreach (var slot in EmbeddedComponentSlotCatalog.All()
+                         .Where((candidate) => candidate.EmbeddedComponentType.Equals(componentType, StringComparison.Ordinal)))
+            {
+                if (JsonPath.Get(config, slot.SlotPath) is not JsonObject)
+                {
+                    continue;
+                }
+
+                usages.Add(new EmbeddedComponentUsage(
+                    row.Id,
+                    row.Name,
+                    row.ComponentType,
+                    slot.FieldId,
+                    slot.Label,
+                    EmbeddedComponentHasOverrides(row.ConfigJson, slot)));
+            }
+        }
+
+        return usages
+            .OrderBy((usage) => usage.ParentComponentType)
+            .ThenBy((usage) => usage.ParentComponentName)
+            .ThenBy((usage) => usage.SlotLabel)
+            .ToList();
     }
 
     public string GetComponentClassBaseConfigsJson(string projectId)

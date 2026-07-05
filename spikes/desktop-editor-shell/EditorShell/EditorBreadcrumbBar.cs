@@ -10,9 +10,14 @@ internal sealed record EditorBreadcrumbItem(string Label, Action? Activate = nul
 
 internal static class EditorBreadcrumbBar
 {
-    public static void Render(Panel target, IEnumerable<EditorBreadcrumbItem> items)
+    public static void Render(Panel target, IEnumerable<EditorBreadcrumbItem> items, Control? leading = null)
     {
         target.Children.Clear();
+        if (leading is not null)
+        {
+            target.Children.Add(leading);
+        }
+
         var itemList = new List<EditorBreadcrumbItem>(items);
         var isFirst = true;
         for (var index = 0; index < itemList.Count; index++)

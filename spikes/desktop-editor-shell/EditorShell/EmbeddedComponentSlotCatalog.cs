@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -36,6 +37,11 @@ internal static class EmbeddedComponentSlotCatalog
 
         slot = new EmbeddedComponentSlotDefinition("", "", "", "", []);
         return false;
+    }
+
+    public static IReadOnlyList<EmbeddedComponentSlotDefinition> All()
+    {
+        return Slots;
     }
 
     public static EmbeddedComponentSlotDefinition Get(string fieldId)
