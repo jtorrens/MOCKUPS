@@ -55,6 +55,7 @@ internal sealed record VisualIrGroupNode : VisualIrNode
 {
     public IReadOnlyList<VisualIrNode> Children { get; init; } = [];
     public VisualIrRect? ClipRect { get; init; }
+    public double ClipRadius { get; init; }
 }
 
 internal sealed record VisualIrRectNode : VisualIrNode

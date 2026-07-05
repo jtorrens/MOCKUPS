@@ -72,6 +72,15 @@ internal sealed class AvaloniaVisualIrDebugRenderer : IVisualIrRenderer
             ClipToBounds = group.ClipRect is not null,
             Background = Brushes.Transparent,
         };
+        if (group.ClipRect is { } clipRect)
+        {
+            canvas.Clip = new RectangleGeometry
+            {
+                Rect = new Rect(clipRect.X, clipRect.Y, clipRect.Width, clipRect.Height),
+                RadiusX = group.ClipRadius,
+                RadiusY = group.ClipRadius,
+            };
+        }
 
         foreach (var child in group.Children)
         {

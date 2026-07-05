@@ -57,6 +57,7 @@ internal static class DesignPreviewToVisualIrBridge
                 Opacity = group.Opacity,
                 Effects = Effects(group.Effects, payload),
                 ClipRect = group.ClipRect is null ? null : Rect(group.ClipRect),
+                ClipRadius = group.ClipRadius,
                 Children = group.Children.Select((child) => ConvertNode(child, payload)).ToList(),
                 Metadata = group.Metadata,
             },

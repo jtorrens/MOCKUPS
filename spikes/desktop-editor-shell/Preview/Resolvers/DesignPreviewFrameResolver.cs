@@ -176,6 +176,7 @@ internal static class DesignPreviewFrameResolver
                     Id = "component.label.relief",
                     Bounds = new DesignRect(0, 0, bounds.Width, bounds.Height),
                     ClipRect = new DesignRect(0, 0, bounds.Width, bounds.Height),
+                    ClipRadius = cornerRadius,
                     Children = reliefLayers,
                 });
             }

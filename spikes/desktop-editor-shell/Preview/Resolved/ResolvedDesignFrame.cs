@@ -25,6 +25,7 @@ internal sealed record ResolvedDesignGroupNode : ResolvedDesignNode
 {
     public IReadOnlyList<ResolvedDesignNode> Children { get; init; } = [];
     public DesignRect? ClipRect { get; init; }
+    public double ClipRadius { get; init; }
 }
 
 internal sealed record ResolvedDesignRectNode : ResolvedDesignNode

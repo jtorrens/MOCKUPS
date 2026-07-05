@@ -89,6 +89,11 @@ internal static partial class VisualIrValidator
         switch (node)
         {
             case VisualIrGroupNode group:
+                if (group.ClipRadius < 0 || double.IsNaN(group.ClipRadius) || double.IsInfinity(group.ClipRadius))
+                {
+                    diagnostics.Add(new VisualIrDiagnostic("group.clipRadius", "Group clip radius must be finite and non-negative.", $"{path}.clipRadius"));
+                }
+
                 for (var index = 0; index < group.Children.Count; index++)
                 {
                     ValidateNode(group.Children[index], $"{path}.children[{index}]", colorVariants, diagnostics);
