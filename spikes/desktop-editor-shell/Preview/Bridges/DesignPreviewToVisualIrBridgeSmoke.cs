@@ -85,7 +85,7 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
         if (payload.Kind == "componentClass"
             && payload.ComponentType == "label"
             && !Flatten(document.Root).OfType<VisualIrPathNode>().Any((path) =>
-                path.Id.StartsWith("component.label.relief.top.", StringComparison.Ordinal)
+                path.Id.StartsWith("component.label.relief.core.top.", StringComparison.Ordinal)
                 && path.Stroke?.Paint is VisualIrLinearGradientPaint))
         {
             throw new InvalidOperationException("Expected label component relief gradient path layer.");

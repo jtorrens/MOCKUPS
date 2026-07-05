@@ -636,69 +636,116 @@ internal static class DesignPreviewFrameResolver
         var lightRadians = angleDegrees * Math.PI / 180;
         var lightX = Math.Cos(lightRadians);
         var lightY = -Math.Sin(lightRadians);
-        var totalDistance = extent + spread;
-        var totalLayers = Math.Max(1, (int)Math.Ceiling(totalDistance));
-        var layers = new List<ResolvedDesignNode>(totalLayers * 2);
+        var spreadLayers = Math.Max(0, (int)Math.Ceiling(spread));
+        var layers = new List<ResolvedDesignNode>((spreadLayers + 1) * 4);
         var horizontalWeight = Math.Abs(lightX);
         var verticalWeight = Math.Abs(lightY);
-        for (var index = 0; index < totalLayers; index++)
+        var coreDistance = extent / 2;
+        AddReliefEdges(
+            layers,
+            "component.label.relief.core",
+            bounds,
+            cornerRadius,
+            baseColorToken,
+            lightX,
+            lightY,
+            coreDistance,
+            extent,
+            topIntensity,
+            bottomIntensity,
+            horizontalWeight,
+            verticalWeight,
+            0);
+        for (var index = 0; index < spreadLayers; index++)
         {
-            var distance = Math.Min(index + 1, totalDistance);
-            var hardCoverage = Math.Clamp(extent - index, 0, 1);
-            var fadeDistance = Math.Max(0, distance - extent);
-            var fade = hardCoverage > 0 || spread <= 0
-                ? 1
-                : Math.Max(0, 1 - fadeDistance / (spread + 1));
-            var blurRadius = hardCoverage > 0 || spread <= 0
-                ? 0
-                : Math.Max(0.1, spread) * fadeDistance / spread;
-            AddReliefEdge(
+            var fadeDistance = index + 1;
+            var distance = extent + fadeDistance;
+            var fade = Math.Max(0, 1 - fadeDistance / (spread + 1));
+            var blurRadius = Math.Max(0.1, spread) * fadeDistance / spread;
+            AddReliefEdges(
                 layers,
-                $"component.label.relief.top.y.{index + 1}",
+                $"component.label.relief.spread.{index + 1}",
                 bounds,
                 cornerRadius,
                 baseColorToken,
-                lightY < 0 ? ReliefSide.Top : ReliefSide.Bottom,
-                0,
-                -lightY * distance,
-                topIntensity * fade * verticalWeight,
-                blurRadius);
-            AddReliefEdge(
-                layers,
-                $"component.label.relief.top.x.{index + 1}",
-                bounds,
-                cornerRadius,
-                baseColorToken,
-                lightX < 0 ? ReliefSide.Left : ReliefSide.Right,
-                -lightX * distance,
-                0,
-                topIntensity * fade * horizontalWeight,
-                blurRadius);
-            AddReliefEdge(
-                layers,
-                $"component.label.relief.bottom.y.{index + 1}",
-                bounds,
-                cornerRadius,
-                baseColorToken,
-                lightY < 0 ? ReliefSide.Bottom : ReliefSide.Top,
-                0,
-                lightY * distance,
-                bottomIntensity * fade * verticalWeight,
-                blurRadius);
-            AddReliefEdge(
-                layers,
-                $"component.label.relief.bottom.x.{index + 1}",
-                bounds,
-                cornerRadius,
-                baseColorToken,
-                lightX < 0 ? ReliefSide.Right : ReliefSide.Left,
-                lightX * distance,
-                0,
-                bottomIntensity * fade * horizontalWeight,
+                lightX,
+                lightY,
+                distance,
+                1,
+                topIntensity * fade,
+                bottomIntensity * fade,
+                horizontalWeight,
+                verticalWeight,
                 blurRadius);
         }
 
         return layers;
+    }
+
+    private static void AddReliefEdges(
+        ICollection<ResolvedDesignNode> layers,
+        string idPrefix,
+        DesignRect bounds,
+        double cornerRadius,
+        string baseColorToken,
+        double lightX,
+        double lightY,
+        double distance,
+        double strokeWidth,
+        double topIntensity,
+        double bottomIntensity,
+        double horizontalWeight,
+        double verticalWeight,
+        double blurRadius)
+    {
+        AddReliefEdge(
+            layers,
+            $"{idPrefix}.top.y",
+            bounds,
+            cornerRadius,
+            baseColorToken,
+            lightY < 0 ? ReliefSide.Top : ReliefSide.Bottom,
+            0,
+            -lightY * distance,
+            topIntensity * verticalWeight,
+            strokeWidth,
+            blurRadius);
+        AddReliefEdge(
+            layers,
+            $"{idPrefix}.top.x",
+            bounds,
+            cornerRadius,
+            baseColorToken,
+            lightX < 0 ? ReliefSide.Left : ReliefSide.Right,
+            -lightX * distance,
+            0,
+            topIntensity * horizontalWeight,
+            strokeWidth,
+            blurRadius);
+        AddReliefEdge(
+            layers,
+            $"{idPrefix}.bottom.y",
+            bounds,
+            cornerRadius,
+            baseColorToken,
+            lightY < 0 ? ReliefSide.Bottom : ReliefSide.Top,
+            0,
+            lightY * distance,
+            bottomIntensity * verticalWeight,
+            strokeWidth,
+            blurRadius);
+        AddReliefEdge(
+            layers,
+            $"{idPrefix}.bottom.x",
+            bounds,
+            cornerRadius,
+            baseColorToken,
+            lightX < 0 ? ReliefSide.Right : ReliefSide.Left,
+            lightX * distance,
+            0,
+            bottomIntensity * horizontalWeight,
+            strokeWidth,
+            blurRadius);
     }
 
     private static void AddReliefEdge(
@@ -711,9 +758,10 @@ internal static class DesignPreviewFrameResolver
         double offsetX,
         double offsetY,
         double brightnessMultiplier,
+        double strokeWidth,
         double blurRadius)
     {
-        if (Math.Abs(brightnessMultiplier) < 0.0001)
+        if (Math.Abs(brightnessMultiplier) < 0.0001 || strokeWidth <= 0)
         {
             return;
         }
@@ -731,7 +779,7 @@ internal static class DesignPreviewFrameResolver
                     Data = ReliefEdgePath(bounds.Width, bounds.Height, cornerRadius, side),
                     Stroke = new ResolvedDesignStroke(
                         ReliefGradient(bounds.Width, bounds.Height, side, baseColorToken, brightnessMultiplier),
-                        1,
+                        strokeWidth,
                         "round",
                         "round"),
                     Effects = blurRadius > 0 ? [new ResolvedDesignBlurEffect(blurRadius)] : null,
