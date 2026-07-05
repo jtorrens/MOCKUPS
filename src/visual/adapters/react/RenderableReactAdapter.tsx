@@ -1079,7 +1079,9 @@ function RenderNode({
               minWidth: stringValue(node.style?.maskImage)
                 ? numberValue(node.style?.fontSize)
                 : 0,
-              width: stringValue(node.style?.maskImage)
+              width: node.box
+                ? node.box.width
+                : stringValue(node.style?.maskImage)
                 ? numberValue(node.style?.fontSize)
                 : undefined,
               height: numberValue(node.style?.lineHeight),

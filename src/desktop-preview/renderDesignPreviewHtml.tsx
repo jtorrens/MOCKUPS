@@ -623,6 +623,70 @@ function resolveStatusBarItems(
   });
 }
 
+function statusItemWidth(item: Record<string, unknown>, itemSize: number) {
+  const kind = readString(item, "kind", "text");
+  if (kind === "generatedBattery") return itemSize * 1.55;
+  if (kind === "generatedSignal") return itemSize * 1.08;
+  if (kind === "iconToken") return itemSize;
+  return Math.max(itemSize, readString(item, "value", "").length * itemSize * 0.58);
+}
+
+function boxedStatusItems(
+  payload: DesignPreviewPayload,
+  config: Record<string, unknown>,
+  statusBarHeight: number,
+) {
+  const layout = asRecord(config.layout);
+  const itemSize = readNumber(layout, "itemSize", 18);
+  const gap = readNumber(layout, "gap", 6);
+  const sidePadding = readNumber(layout, "sidePadding", 24);
+  const foreground = statusBarTokens(payload).foreground;
+  const y = payload.device.screenY + (statusBarHeight - itemSize) / 2;
+  const items = resolveStatusBarItems(payload, config)
+    .map((item) => asRecord(item))
+    .filter((item) => ["left", "right"].includes(readString(item, "zone", "off")))
+    .sort((left, right) => readNumber(left, "order", 0) - readNumber(right, "order", 0));
+
+  return (["left", "right"] as const).flatMap((zone) => {
+    const zoneItems = items.filter((item) => readString(item, "zone", "off") === zone);
+    const widths = zoneItems.map((item) => statusItemWidth(item, itemSize));
+    const totalWidth = widths.reduce((sum, width) => sum + width, 0)
+      + Math.max(0, widths.length - 1) * gap;
+    let x = zone === "left"
+      ? payload.device.screenX + sidePadding
+      : payload.device.screenX + payload.device.screenWidth - sidePadding - totalWidth;
+
+    return zoneItems.map((item, index) => {
+      const width = widths[index] ?? itemSize;
+      const kind = readString(item, "kind", "text");
+      const id = readString(item, "id", readString(item, "label", `item_${index}`));
+      const iconUri = readString(item, "iconUri", "");
+      const node = {
+        id: `status_bar:${zone}:${id}`,
+        type: "status_bar_item",
+        role: kind,
+        frame: 0,
+        text: kind === "text" ? readString(item, "value", "") : readString(item, "token", readString(item, "label", "")),
+        box: { x, y, width, height: itemSize },
+        style: {
+          color: foreground,
+          fontSize: itemSize,
+          lineHeight: itemSize,
+          ...(iconUri
+            ? {
+                maskImage: `url("${iconUri.replace(/"/g, '\\"')}")`,
+                WebkitMaskImage: `url("${iconUri.replace(/"/g, '\\"')}")`,
+              }
+            : {}),
+        },
+        metadata: { ...item },
+      };
+      x += width + gap;
+      return node;
+    });
+  });
+}
+
 function renderableForPayload(payload: DesignPreviewPayload): RenderableNode {
   if (payload.kind === "componentClass") {
     const component = componentRenderableForPayload(payload);
@@ -708,6 +772,7 @@ function renderableForPayload(payload: DesignPreviewPayload): RenderableNode {
             width: viewport.width,
             height: statusBarHeight,
           },
+          children: boxedStatusItems(payload, configForRender, statusBarHeight),
         }
       : {
           ...NavigationBarModule.render({
