@@ -30,6 +30,7 @@ internal sealed class DictionaryThemeTokenControl : Button, IDictionaryValueCont
         HorizontalContentAlignment = HorizontalAlignment.Stretch;
         Padding = new Avalonia.Thickness(10, 6);
         BorderThickness = new Avalonia.Thickness(0);
+        CornerRadius = new Avalonia.CornerRadius(8);
         IsEnabled = definition.IsEditable && showThemeTokenPicker is not null;
         Click += async (_, _) => await ShowPicker();
         ActualThemeVariantChanged += (_, _) => ApplyThemeBrushes();

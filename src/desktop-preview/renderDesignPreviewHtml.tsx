@@ -77,11 +77,16 @@ function readPair(
   };
 }
 
-function readAlpha(value: Record<string, unknown>, key: string, fallback = 1) {
+function readAlpha(value: Record<string, unknown>, key: string, path: string) {
   const raw = value[key];
-  return typeof raw === "number" && Number.isFinite(raw)
-    ? Math.max(0, Math.min(1, raw))
-    : fallback;
+  const numeric =
+    typeof raw === "number"
+      ? raw
+      : typeof raw === "string"
+        ? Number(raw.replace(",", "."))
+        : NaN;
+  if (Number.isFinite(numeric)) return Math.max(0, Math.min(1, numeric));
+  throw new Error(`Missing alpha component value ${path}`);
 }
 
 function requiredNumber(value: Record<string, unknown>, key: string, path: string) {
@@ -97,13 +102,17 @@ function requiredAlpha(value: Record<string, unknown>, key: string, path: string
 function colorWithAlpha(color: string, alpha: number) {
   const clamped = Math.max(0, Math.min(1, alpha));
   if (clamped >= 1 || color === "transparent") return color;
-  const match = /^#([0-9a-f]{6})$/i.exec(color.trim());
+  const match = /^#([0-9a-f]{6})([0-9a-f]{2})?$/i.exec(color.trim());
   if (!match) return color;
   const hex = match[1];
+  const sourceAlpha = match[2]
+    ? Number.parseInt(match[2], 16) / 255
+    : 1;
+  const resolvedAlpha = Math.max(0, Math.min(1, clamped * sourceAlpha));
   const red = Number.parseInt(hex.slice(0, 2), 16);
   const green = Number.parseInt(hex.slice(2, 4), 16);
   const blue = Number.parseInt(hex.slice(4, 6), 16);
-  return `rgba(${red}, ${green}, ${blue}, ${clamped})`;
+  return `rgba(${red}, ${green}, ${blue}, ${resolvedAlpha})`;
 }
 
 function renderScale(payload: DesignPreviewPayload) {
@@ -448,7 +457,7 @@ function componentRenderableForPayload(
     const lineHeight = Math.max(fontSize * 1.2, fontSize + paddingY * 0.5);
     const fixedWidth = size.first * scale;
     const fixedHeight = size.second * scale;
-    const alpha = readAlpha(label, "alpha");
+    const alpha = readAlpha(label, "alpha", "component.label.alpha");
     const contentWidth = Math.max(
       1,
       sampleText.length * fontSize * 0.58 + paddingX * 2,

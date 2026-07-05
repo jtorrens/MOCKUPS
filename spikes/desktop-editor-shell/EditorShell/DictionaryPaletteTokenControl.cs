@@ -30,6 +30,7 @@ internal sealed class DictionaryPaletteTokenControl : Button, IDictionaryValueCo
         HorizontalContentAlignment = HorizontalAlignment.Stretch;
         Padding = new Avalonia.Thickness(10, 6);
         BorderThickness = new Avalonia.Thickness(0);
+        CornerRadius = new Avalonia.CornerRadius(8);
         IsEnabled = isEditable;
         Content = ContentForValue(value);
         ActualThemeVariantChanged += (_, _) => ApplyThemeBrushes();
