@@ -8,6 +8,7 @@ using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Mockups.DesktopEditorShell.Common;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -193,19 +194,7 @@ internal sealed class PhoneSpecsDeviceCatalogProvider : IDeviceCatalogProvider
 
     private static double GuessScale(IReadOnlyList<string> values, string osFamily, int width, int height)
     {
-        var ppiText = values.FirstOrDefault((value) => value.Contains("ppi", StringComparison.OrdinalIgnoreCase));
-        if (ppiText is not null)
-        {
-            var match = Regex.Match(ppiText, @"(?<ppi>\d{3,4})\s*ppi", RegexOptions.IgnoreCase);
-            if (match.Success && int.TryParse(match.Groups["ppi"].Value, out var ppi))
-            {
-                if (ppi >= 430) return 3;
-                if (ppi >= 300) return 2;
-            }
-        }
-
-        if (osFamily == "ios") return Math.Max(width, height) >= 2200 ? 3 : 2;
-        return Math.Max(width, height) >= 2400 ? 3 : 2;
+        return DeviceMetricRules.GuessScaleFromText(values, osFamily, width, height);
     }
 
     private static string InferOsFamily(string manufacturer, IReadOnlyList<string> values)

@@ -1,6 +1,6 @@
 using Microsoft.Data.Sqlite;
+using Mockups.DesktopEditorShell.Common;
 using System;
-using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.Data;
 
@@ -10,35 +10,20 @@ internal sealed partial class SpikeDatabase
     {
         var settings = GetDeviceSettings(deviceId);
         var metrics = ParseJsonObject(settings.MetricsJson);
-        var canvasWidth = JsonNumberDouble(metrics, ["canvas", "width"], JsonNumberDouble(metrics, ["renderSize", "width"], 1080));
-        var canvasHeight = JsonNumberDouble(metrics, ["canvas", "height"], JsonNumberDouble(metrics, ["renderSize", "height"], 1920));
-        var screenX = JsonNumberDouble(metrics, ["screen", "x"], 0);
-        var screenY = JsonNumberDouble(metrics, ["screen", "y"], 0);
-        var screenWidth = JsonNumberDouble(metrics, ["screen", "width"], canvasWidth);
-        var screenHeight = JsonNumberDouble(metrics, ["screen", "height"], canvasHeight);
-        var cornerRadius = JsonNumberDouble(metrics, ["cornerRadius"], 0);
-        var statusBarHeight = JsonNumberDouble(metrics, ["statusBar", "height"], JsonNumberDouble(metrics, ["safeArea", "top"], 0));
-        var safeAreaBottom = JsonNumberDouble(metrics, ["safeArea", "bottom"], 0);
-        var scaleToPixels = JsonNumberDouble(metrics, ["scaleToPixels"], 0);
-        if (scaleToPixels <= 0)
-        {
-            var renderWidth = JsonNumberDouble(metrics, ["renderSize", "width"], canvasWidth);
-            var designWidth = JsonNumberDouble(metrics, ["designSpace", "width"], 0);
-            scaleToPixels = designWidth > 0 ? renderWidth / designWidth : JsonNumberDouble(metrics, ["pixelRatio"], 1);
-        }
+        var values = DeviceMetricRules.PreviewValues(metrics);
 
         return new DevicePreviewMetrics(
             settings.Name,
-            canvasWidth,
-            canvasHeight,
-            screenX,
-            screenY,
-            screenWidth,
-            screenHeight,
-            cornerRadius,
-            statusBarHeight,
-            safeAreaBottom,
-            scaleToPixels);
+            values.CanvasWidth,
+            values.CanvasHeight,
+            values.ScreenX,
+            values.ScreenY,
+            values.ScreenWidth,
+            values.ScreenHeight,
+            values.CornerRadius,
+            values.StatusBarHeight,
+            values.SafeAreaBottom,
+            values.ScaleToPixels);
     }
 
     public DeviceSettings GetDeviceSettings(string deviceId)
@@ -186,41 +171,7 @@ internal sealed partial class SpikeDatabase
 
     private static string DeviceMetricsJson(int width, int height, double scale, bool includeDynamicIsland)
     {
-        var statusBarHeight = (int)Math.Round(height * 0.063);
-        var bottomInset = (int)Math.Round(height * 0.0365);
-        var cornerRadius = (int)Math.Round(width * 0.128);
-        var root = new JsonObject
-        {
-            ["designSpace"] = new JsonObject
-            {
-                ["width"] = (int)Math.Round(width / scale),
-                ["height"] = (int)Math.Round(height / scale),
-                ["unit"] = "logical",
-            },
-            ["renderSize"] = new JsonObject { ["width"] = width, ["height"] = height },
-            ["scaleToPixels"] = scale,
-            ["canvas"] = new JsonObject { ["width"] = width, ["height"] = height },
-            ["screen"] = new JsonObject { ["x"] = 0, ["y"] = 0, ["width"] = width, ["height"] = height },
-            ["viewport"] = new JsonObject { ["x"] = 0, ["y"] = 0, ["width"] = width, ["height"] = height },
-            ["safeArea"] = new JsonObject { ["top"] = statusBarHeight, ["right"] = 0, ["bottom"] = bottomInset, ["left"] = 0 },
-            ["statusBar"] = new JsonObject { ["x"] = 0, ["y"] = 0, ["width"] = width, ["height"] = statusBarHeight },
-            ["cornerRadius"] = cornerRadius,
-            ["pixelRatio"] = scale,
-            ["defaultScreenScale"] = 1,
-        };
-
-        if (includeDynamicIsland)
-        {
-            root["dynamicIsland"] = new JsonObject
-            {
-                ["x"] = 462,
-                ["y"] = 33,
-                ["width"] = 366,
-                ["height"] = 111,
-            };
-        }
-
-        return root.ToJsonString();
+        return DeviceMetricRules.CreateMetricsJson(width, height, scale, includeDynamicIsland);
     }
 
     private static readonly DeviceSeedRow[] DeviceSeedRows =
