@@ -126,7 +126,7 @@ internal sealed class StatusBarItemsCollectionEditor
                     ValueKind.Integer,
                     DefaultValue: item.Order.ToString()),
                 item.Order.ToString()),
-            (value) => UpdateItem(node, index, item with { Order = int.TryParse(value, out var parsed) ? parsed : item.Order })));
+            (value) => UpdateItem(node, index, item with { Order = NumericText.Int32(value, item.Order) })));
 
         panel.Children.Add(controlsPanel);
         return row;

@@ -2454,7 +2454,7 @@ internal sealed partial class SpikeDatabase
             _ => throw new InvalidOperationException($"Unknown shot field '{fieldId}'."),
         };
         object nextValue = fieldId is "shot.version" or "shot.sortOrder" or "shot.fps" or "shot.durationFrames"
-            ? int.TryParse(value, out var parsed) ? parsed : 0
+            ? NumericText.Int32(value, 0)
             : value;
 
         Execute(
@@ -2552,7 +2552,7 @@ internal sealed partial class SpikeDatabase
                     connection,
                     "UPDATE modules SET sort_order = $value WHERE id = $id",
                     ("$id", moduleId),
-                    ("$value", int.TryParse(value, out var parsed) ? parsed : 0));
+                    ("$value", NumericText.Int32(value, 0)));
                 return;
             case "module.metadata":
                 Execute(

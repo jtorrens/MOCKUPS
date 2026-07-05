@@ -407,7 +407,7 @@ internal sealed partial class SpikeDatabase
             ["setName"] = manifestSetName,
             ["package"] = string.IsNullOrWhiteSpace(source) ? "material-symbols" : source,
             ["style"] = string.IsNullOrWhiteSpace(style) ? "rounded" : style,
-            ["weight"] = int.TryParse(weight, out var parsedWeight) && parsedWeight > 0 ? parsedWeight : 400,
+            ["weight"] = Math.Max(1, NumericText.Int32(weight, 400)),
             ["fillMode"] = "filled",
         };
     }

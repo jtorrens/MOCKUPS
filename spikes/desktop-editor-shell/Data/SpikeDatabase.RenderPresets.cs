@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Collections.Generic;
@@ -61,7 +62,7 @@ internal sealed partial class SpikeDatabase
             _ => throw new InvalidOperationException($"Unknown render preset field '{fieldId}'."),
         };
         object nextValue = fieldId is "renderPreset.width" or "renderPreset.height" or "renderPreset.fps"
-            ? int.TryParse(value, out var parsed) ? parsed : 0
+            ? NumericText.Int32(value, 0)
             : value;
 
         Execute(

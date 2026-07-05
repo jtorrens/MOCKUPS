@@ -17,6 +17,13 @@ internal static class NumericText
         return Math.Round(Decimal(value, fallback));
     }
 
+    public static int Int32(string value, int fallback)
+    {
+        return int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var invariant)
+            ? invariant
+            : int.TryParse(value, out var local) ? local : fallback;
+    }
+
     public static double Double(string value, double fallback)
     {
         return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var invariant)

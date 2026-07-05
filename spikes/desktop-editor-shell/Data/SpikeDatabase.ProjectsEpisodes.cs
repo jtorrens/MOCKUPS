@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
 
@@ -27,7 +28,7 @@ internal sealed partial class SpikeDatabase
             connection,
             $"UPDATE projects SET {column} = $value WHERE id = $id",
             ("$id", projectId),
-            ("$value", fieldId == "project.defaultFps" && int.TryParse(value, out var fps) ? fps : value));
+            ("$value", fieldId == "project.defaultFps" ? NumericText.Int32(value, 0) : value));
     }
 
     public EpisodeSettings GetEpisodeSettings(string episodeId)
@@ -61,7 +62,7 @@ internal sealed partial class SpikeDatabase
             connection,
             $"UPDATE episodes SET {column} = $value WHERE id = $id",
             ("$id", episodeId),
-            ("$value", fieldId == "episode.sortOrder" && int.TryParse(value, out var sortOrder) ? sortOrder : value));
+            ("$value", fieldId == "episode.sortOrder" ? NumericText.Int32(value, 0) : value));
     }
 
     private static List<ProjectRow> QueryProjectRows(SqliteConnection connection)

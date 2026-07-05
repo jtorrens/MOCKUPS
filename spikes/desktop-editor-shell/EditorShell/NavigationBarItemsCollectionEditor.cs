@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Linq;
@@ -108,7 +109,7 @@ internal sealed class NavigationBarItemsCollectionEditor
                     ValueKind.Integer,
                     DefaultValue: item.Order.ToString()),
                 item.Order.ToString()),
-            (value) => UpdateItem(node, index, item with { Order = int.TryParse(value, out var parsed) ? parsed : item.Order })));
+            (value) => UpdateItem(node, index, item with { Order = NumericText.Int32(value, item.Order) })));
 
         return row;
     }

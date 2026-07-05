@@ -1,3 +1,4 @@
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -63,7 +64,7 @@ internal sealed partial class SpikeDatabase
             command.CommandText = "SELECT config_json FROM status_bars WHERE id = $id";
             command.Parameters.AddWithValue("$id", statusBarId);
             var config = StatusBarConfig(command.ExecuteScalar() as string ?? "{}");
-            var nextValue = int.TryParse(value, out var parsed) ? parsed : 0;
+            var nextValue = NumericText.Int32(value, 0);
             switch (fieldId)
             {
                 case "statusBar.layout.height":
@@ -183,31 +184,31 @@ internal sealed partial class SpikeDatabase
                     SetJsonValue(config, ["type"], JsonValue.Create(type)!);
                     break;
                 case "navigationBar.layout.height":
-                    SetJsonNumber(config, ["layout", "height"], int.TryParse(value, out var height) ? height : 0);
+                    SetJsonNumber(config, ["layout", "height"], NumericText.Int32(value, 0));
                     break;
                 case "navigationBar.layout.itemSize":
-                    SetJsonNumber(config, ["layout", "itemSize"], int.TryParse(value, out var itemSize) ? itemSize : 0);
+                    SetJsonNumber(config, ["layout", "itemSize"], NumericText.Int32(value, 0));
                     break;
                 case "navigationBar.layout.sidePadding":
-                    SetJsonNumber(config, ["layout", "sidePadding"], int.TryParse(value, out var sidePadding) ? sidePadding : 0);
+                    SetJsonNumber(config, ["layout", "sidePadding"], NumericText.Int32(value, 0));
                     break;
                 case "navigationBar.layout.strokeWidth":
                     SetJsonValue(config, ["layout", "strokeWidth"], NumberNode(value));
                     break;
                 case "navigationBar.layout.cornerRadius":
-                    SetJsonNumber(config, ["layout", "cornerRadius"], int.TryParse(value, out var cornerRadius) ? cornerRadius : 0);
+                    SetJsonNumber(config, ["layout", "cornerRadius"], NumericText.Int32(value, 0));
                     break;
                 case "navigationBar.layout.filled":
                     SetJsonValue(config, ["layout", "filled"], JsonValue.Create(value.Equals("true", StringComparison.OrdinalIgnoreCase))!);
                     break;
                 case "navigationBar.gesture.width":
-                    SetJsonNumber(config, ["gesture", "width"], int.TryParse(value, out var gestureWidth) ? gestureWidth : 0);
+                    SetJsonNumber(config, ["gesture", "width"], NumericText.Int32(value, 0));
                     break;
                 case "navigationBar.gesture.height":
-                    SetJsonNumber(config, ["gesture", "height"], int.TryParse(value, out var gestureHeight) ? gestureHeight : 0);
+                    SetJsonNumber(config, ["gesture", "height"], NumericText.Int32(value, 0));
                     break;
                 case "navigationBar.gesture.cornerRadius":
-                    SetJsonNumber(config, ["gesture", "cornerRadius"], int.TryParse(value, out var gestureCornerRadius) ? gestureCornerRadius : 0);
+                    SetJsonNumber(config, ["gesture", "cornerRadius"], NumericText.Int32(value, 0));
                     break;
                 default:
                     throw new InvalidOperationException($"Unknown navigation bar field '{fieldId}'.");
@@ -329,7 +330,7 @@ internal sealed partial class SpikeDatabase
                 JsonString(item, ["token"]) is { Length: > 0 } token ? token : fallback.Token,
                 JsonBool(item, ["charging"]),
                 zone,
-                int.TryParse(JsonNumberString(item, ["order"]), out var order) ? order : fallback.Order);
+                NumericText.Int32(JsonNumberString(item, ["order"]), fallback.Order));
         }).ToList();
     }
 
@@ -349,7 +350,7 @@ internal sealed partial class SpikeDatabase
         }
         else if (item.Kind == "generatedBattery" || item.Kind == "generatedSignal")
         {
-            json["value"] = int.TryParse(item.Value, out var number) ? number : 0;
+            json["value"] = NumericText.Int32(item.Value, 0);
             if (item.Kind == "generatedBattery")
             {
                 json["charging"] = item.Charging;
@@ -462,7 +463,7 @@ internal sealed partial class SpikeDatabase
                 JsonString(item, ["label"]) is { Length: > 0 } label ? label : fallback.Label,
                 kind,
                 zone,
-                int.TryParse(JsonNumberString(item, ["order"]), out var order) ? order : fallback.Order);
+                NumericText.Int32(JsonNumberString(item, ["order"]), fallback.Order));
         }).ToList();
     }
 
