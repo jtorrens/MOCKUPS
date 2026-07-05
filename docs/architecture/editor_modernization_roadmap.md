@@ -177,6 +177,7 @@ Reject new changes that add:
 - preview logic that reads editor controls or form state;
 - another value control path parallel to `ValueKind`.
 - reusable SVG, theme-token, color, JSON-path, numeric parsing, import mapping, or device metric routines inside a single module instead of a common/shared class.
+- development-only runtime fallbacks with plausible values. Missing current-model data must be migrated or fail visibly; defensive render fallbacks must use obvious diagnostics such as `debug_red` or unsupported placeholders.
 
 Allowed custom editor chrome:
 

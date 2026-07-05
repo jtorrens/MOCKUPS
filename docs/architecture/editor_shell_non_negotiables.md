@@ -412,6 +412,16 @@ If a field is missing because the current schema needs migration, migrate it.
 
 Do not add silent fallback paths that hide schema problems.
 
+Do not add development-only fallbacks with plausible production values. Values
+such as `12`, `#FFFFFF`, `#111827`, `0`, `"normal"` or a hardcoded token are not
+acceptable inside runtime resolvers just to keep an incomplete payload rendering.
+They make broken data look valid. Required current-model data must be created by
+seed/migration/default normalization before runtime code consumes it.
+
+When a defensive visual fallback is truly needed after resolved data is already
+being rendered, it must be intentionally obvious, normally the protected
+`debug_red` sentinel or an explicit unsupported placeholder.
+
 Any fallback must be:
 
 - explicit;

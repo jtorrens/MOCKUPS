@@ -124,10 +124,12 @@ internal static class DesignPreviewFrameResolver
         var height = dimensionMode == "fixed" ? size.Height : contentSize.Height;
         var bounds = Centered(metrics, width, height);
         var borderWidth = JsonPath.Number(style, "borderWidth", 0);
-        var cornerRadiusToken = JsonPath.String(style, "cornerRadiusToken", "theme.radii.surface");
-        var cornerRadius = ThemeNumber(payload.ThemeTokensJson, cornerRadiusToken, 0);
-        var borderColorToken = JsonPath.String(style, "borderColorToken", "theme.borders.primary");
+        var cornerRadiusToken = RequiredString(style, "cornerRadiusToken", "component.style.cornerRadiusToken");
+        var cornerRadius = RequiredThemeNumber(payload.ThemeTokensJson, cornerRadiusToken, "component.style.cornerRadiusToken");
+        var borderColorToken = RequiredString(style, "borderColorToken", "component.style.borderColorToken");
         var shadowEnabled = JsonPath.Bool(style, "shadowEnabled", false);
+        var backgroundColorToken = RequiredString(label, "backgroundColorToken", "component.label.backgroundColorToken");
+        var textColorToken = RequiredString(label, "textColorToken", "component.label.textColorToken");
 
         return new ResolvedDesignGroupNode
         {
@@ -140,7 +142,7 @@ internal static class DesignPreviewFrameResolver
                     Id = "component.label.background",
                     Bounds = new DesignRect(0, 0, bounds.Width, bounds.Height),
                     Fill = backgroundVisible
-                        ? ThemePaint(JsonPath.String(label, "backgroundColorToken", "theme.colors.background"), "#FFFFFF")
+                        ? ThemePaint(backgroundColorToken)
                         : StaticPaint("component.label.background.transparent", "#00000000"),
                     Stroke = borderWidth > 0
                         ? new ResolvedDesignStroke(ThemePaint(borderColorToken), borderWidth)
@@ -160,7 +162,7 @@ internal static class DesignPreviewFrameResolver
                     Text = text,
                     Style = new ResolvedDesignTextStyle
                     {
-                        Fill = ThemePaint(JsonPath.String(label, "textColorToken", "theme.colors.textPrimary"), "#111827"),
+                        Fill = ThemePaint(textColorToken),
                         FontFamily = "Inter",
                         FontSize = textSize,
                         FontStyle = textStyle == "italic" ? "italic" : null,
@@ -564,17 +566,6 @@ internal static class DesignPreviewFrameResolver
             Math.Max(1, measuredHeight + padding.Height * 2));
     }
 
-    private static double ThemeNumber(string themeTokensJson, string tokenId, double fallback)
-    {
-        if (!ThemeNumericTokenCatalog.TryGet(tokenId, out var token))
-        {
-            return fallback;
-        }
-
-        var tokens = JsonPath.ParseObject(themeTokensJson);
-        return JsonPath.NumberAt(tokens, token.Path, fallback);
-    }
-
     private static double RequiredThemeNumber(string themeTokensJson, string tokenId, string fieldId)
     {
         if (string.IsNullOrWhiteSpace(tokenId) || !ThemeNumericTokenCatalog.TryGet(tokenId, out var token))
@@ -590,6 +581,17 @@ internal static class DesignPreviewFrameResolver
         }
 
         return JsonPath.NumberAt(tokens, token.Path, 0);
+    }
+
+    private static string RequiredString(JsonObject root, string key, string fieldId)
+    {
+        var value = JsonPath.String(root, key, "");
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new InvalidOperationException($"Missing required value for {fieldId}.");
+        }
+
+        return value;
     }
 
     private static IReadOnlyDictionary<string, string> ComponentStyleMetadata(
