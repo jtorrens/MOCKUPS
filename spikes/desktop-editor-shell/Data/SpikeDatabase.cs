@@ -7,7 +7,6 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Text.RegularExpressions;
 
 namespace Mockups.DesktopEditorShell.Data;
 
@@ -2841,20 +2840,12 @@ internal sealed partial class SpikeDatabase
 
     private static string Slug(string value)
     {
-        var slug = Regex.Replace(value.Trim().ToLowerInvariant(), "[^a-z0-9]+", "_").Trim('_');
-        return string.IsNullOrWhiteSpace(slug) ? "font" : slug;
+        return SlugText.LowerSnake(value, "font");
     }
 
     private static string SlugOrName(string slug, string name, string fallback)
     {
-        if (!string.IsNullOrWhiteSpace(slug)) return SlugValue(slug, fallback);
-        return SlugValue(name, fallback);
-    }
-
-    private static string SlugValue(string value, string fallback)
-    {
-        var slug = Regex.Replace(value.Trim().ToLowerInvariant(), "[^a-z0-9]+", "_").Trim('_');
-        return string.IsNullOrWhiteSpace(slug) ? fallback : slug;
+        return SlugText.LowerSnakeOrName(slug, name, fallback);
     }
 
     private static string ResolveProjectPath(string path)
