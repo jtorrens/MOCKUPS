@@ -30,7 +30,7 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
     private bool _isUpdating;
     private bool _isExpanded;
 
-    private sealed record PresetButton(Button Button, double AlignX, double AlignY);
+    private sealed record PresetButton(Button Button, Border Dot, double AlignX, double AlignY);
 
     public DictionaryAlignmentPlacementControl(FieldDefinition definition, string value)
     {
@@ -214,9 +214,17 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
             {
                 var alignX = x * 0.5;
                 var alignY = y * 0.5;
+                var dot = new Border
+                {
+                    Width = 6,
+                    Height = 6,
+                    CornerRadius = new Avalonia.CornerRadius(3),
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center,
+                };
                 var button = new Button
                 {
-                    Content = "•",
+                    Content = dot,
                     Width = 22,
                     Height = 22,
                     Padding = new Avalonia.Thickness(0),
@@ -226,7 +234,7 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
                 Grid.SetColumn(button, x);
                 Grid.SetRow(button, y);
                 grid.Children.Add(button);
-                _presetButtons.Add(new PresetButton(button, alignX, alignY));
+                _presetButtons.Add(new PresetButton(button, dot, alignX, alignY));
             }
         }
 
@@ -289,16 +297,17 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
 
     private void UpdatePresetBrushes()
     {
+        var isLight = ActualThemeVariant == ThemeVariant.Light;
+        var selectedDot = new SolidColorBrush(Color.Parse("#2F8CFF"));
+        var neutralDot = new SolidColorBrush(Color.Parse(isLight ? "#73000000" : "#8AFFFFFF"));
+        var selectedBackground = new SolidColorBrush(Color.Parse("#241D6FE8"));
+        var selectedBorder = new SolidColorBrush(Color.Parse("#802F8CFF"));
         foreach (var preset in _presetButtons)
         {
             var isSelected = AreSamePreset(_value.AlignX, preset.AlignX) && AreSamePreset(_value.AlignY, preset.AlignY);
-            preset.Button.Background = isSelected
-                ? new SolidColorBrush(Color.Parse("#1D6FE8"))
-                : Brushes.Transparent;
-            preset.Button.Foreground = isSelected ? Brushes.White : null;
-            preset.Button.BorderBrush = isSelected
-                ? new SolidColorBrush(Color.Parse("#2F8CFF"))
-                : null;
+            preset.Button.Background = isSelected ? selectedBackground : Brushes.Transparent;
+            preset.Button.BorderBrush = isSelected ? selectedBorder : Brushes.Transparent;
+            preset.Dot.Background = isSelected ? selectedDot : neutralDot;
         }
     }
 
