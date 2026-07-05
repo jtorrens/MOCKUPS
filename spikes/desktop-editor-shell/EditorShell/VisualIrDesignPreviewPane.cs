@@ -1,5 +1,7 @@
 using Avalonia;
+using Avalonia.Collections;
 using Avalonia.Controls;
+using Avalonia.Controls.Shapes;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Mockups.DesktopEditorShell.Data;
@@ -56,6 +58,7 @@ internal sealed class VisualIrDesignPreviewPane : Grid
                 themeName,
                 themeMode,
                 scaleMode,
+                showDesignMarks,
                 colorVariant,
                 document,
                 payload));
@@ -77,6 +80,7 @@ internal sealed class VisualIrDesignPreviewPane : Grid
         string themeName,
         string themeMode,
         string scaleMode,
+        bool showDesignMarks,
         string colorVariant,
         VisualIrDocument document,
         DesignPreviewPayload payload)
@@ -110,6 +114,14 @@ internal sealed class VisualIrDesignPreviewPane : Grid
         Canvas.SetLeft(clippedDesign, candyOffset);
         Canvas.SetTop(clippedDesign, candyOffset);
         canvas.Children.Add(clippedDesign);
+        if (showDesignMarks)
+        {
+            var guides = DesignGuides(frameWidth, frameHeight);
+            Canvas.SetLeft(guides, candyOffset);
+            Canvas.SetTop(guides, candyOffset);
+            canvas.Children.Add(guides);
+        }
+
         var frameBorder = new Border
         {
             Width = frameWidth + frameBorderThickness,
@@ -162,6 +174,44 @@ internal sealed class VisualIrDesignPreviewPane : Grid
             {
                 content,
             },
+        };
+    }
+
+    private static Canvas DesignGuides(double width, double height)
+    {
+        var canvas = new Canvas
+        {
+            Width = width,
+            Height = height,
+            ClipToBounds = true,
+            IsHitTestVisible = false,
+        };
+        var guideBrush = new SolidColorBrush(Color.Parse("#80FF00FF"));
+        foreach (var ratio in new[] { 0.25, 0.5, 0.75 })
+        {
+            var isCenter = ratio == 0.5;
+            canvas.Children.Add(GuideLine(width * ratio, 0, width * ratio, height, guideBrush, isCenter));
+            canvas.Children.Add(GuideLine(0, height * ratio, width, height * ratio, guideBrush, isCenter));
+        }
+
+        return canvas;
+    }
+
+    private static Line GuideLine(
+        double startX,
+        double startY,
+        double endX,
+        double endY,
+        IBrush brush,
+        bool isCenter)
+    {
+        return new Line
+        {
+            StartPoint = new Point(startX, startY),
+            EndPoint = new Point(endX, endY),
+            Stroke = brush,
+            StrokeThickness = 1,
+            StrokeDashArray = isCenter ? null : new AvaloniaList<double> { 6, 6 },
         };
     }
 
