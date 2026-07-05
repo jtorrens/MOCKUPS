@@ -431,22 +431,30 @@ public partial class MainWindow : SukiWindow
 
     private Task OpenEmbeddedComponentEditor(ProjectTreeNode node, string slotFieldId)
     {
-        if (node.Kind != ProjectTreeNodeKind.ComponentClass)
+        try
         {
-            return Task.CompletedTask;
+            if (node.Kind != ProjectTreeNodeKind.ComponentClass)
+            {
+                return Task.CompletedTask;
+            }
+
+            if (!EmbeddedComponentSlotCatalog.TryGet(slotFieldId, out var slot))
+            {
+                return Task.CompletedTask;
+            }
+
+            var context = new EmbeddedEditorContext(node, slot);
+            _embeddedEditorContext = context;
+            EditorBackButton.IsVisible = true;
+            EditorTitle.Text = $"{node.Name} > {context.Slot.Label}";
+            BuildEmbeddedComponentCards(context);
+            RefreshPreviewDevice();
+        }
+        catch (Exception exception)
+        {
+            _messages.Error($"Embedded component {slotFieldId}", exception);
         }
 
-        if (!EmbeddedComponentSlotCatalog.TryGet(slotFieldId, out var slot))
-        {
-            return Task.CompletedTask;
-        }
-
-        var context = new EmbeddedEditorContext(node, slot);
-        _embeddedEditorContext = context;
-        EditorBackButton.IsVisible = true;
-        EditorTitle.Text = $"{node.Name} > {context.Slot.Label}";
-        BuildEmbeddedComponentCards(context);
-        RefreshPreviewDevice();
         return Task.CompletedTask;
     }
 
@@ -465,12 +473,19 @@ public partial class MainWindow : SukiWindow
 
         var layout = _database.LoadEditorLayout(context.Slot.RecordClassId);
         foreach (var layoutCard in layout.Cards
-                     .Where((card) => card.Visible)
+                     .Where((card) => card.Visible && EmbeddedCardHasFields(card))
                      .OrderBy((card) => card.Order)
                      .ThenBy((card) => card.Label))
         {
             _editorCardHost.Add(CreateEmbeddedLayoutCard(context, layoutCard));
         }
+    }
+
+    private static bool EmbeddedCardHasFields(EditorLayoutCard layoutCard)
+    {
+        return layoutCard.VisibleGroups
+            .SelectMany((group) => group.VisibleFields)
+            .Any((field) => field.Id.StartsWith("component.", StringComparison.Ordinal));
     }
 
     private InstantEditorCard CreateEmbeddedLayoutCard(EmbeddedEditorContext context, EditorLayoutCard layoutCard)
@@ -491,7 +506,8 @@ public partial class MainWindow : SukiWindow
                 Spacing = 12,
             };
 
-            foreach (var layoutField in group.VisibleFields)
+            foreach (var layoutField in group.VisibleFields
+                         .Where((field) => field.Id.StartsWith("component.", StringComparison.Ordinal)))
             {
                 var field = _componentClassFieldValues.CreateEmbeddedFieldValue(
                     context.OwnerNode,
