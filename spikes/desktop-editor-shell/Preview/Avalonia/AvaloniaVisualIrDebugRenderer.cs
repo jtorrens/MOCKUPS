@@ -270,18 +270,28 @@ internal sealed class AvaloniaVisualIrDebugRenderer : IVisualIrRenderer
         VisualIrDocument document,
         VisualIrRenderOptions options)
     {
-        var shadow = node.Effects?.FirstOrDefault((effect) => !effect.Inset);
-        if (shadow is null)
+        var visualShadow = node.Effects?.OfType<VisualIrShadowEffect>().FirstOrDefault((effect) => !effect.Inset);
+        if (visualShadow is not null)
+        {
+            control.Effect = new DropShadowEffect
+            {
+                OffsetX = visualShadow.X,
+                OffsetY = visualShadow.Y,
+                BlurRadius = visualShadow.Blur,
+                Color = ColorValue.ParseIrHex(ResolveColor(visualShadow.Color, document, options)),
+            };
+            return;
+        }
+
+        var blur = node.Effects?.OfType<VisualIrBlurEffect>().FirstOrDefault((effect) => effect.Radius > 0);
+        if (blur is null)
         {
             return;
         }
 
-        control.Effect = new DropShadowEffect
+        control.Effect = new BlurEffect
         {
-            OffsetX = shadow.X,
-            OffsetY = shadow.Y,
-            BlurRadius = shadow.Blur,
-            Color = ColorValue.ParseIrHex(ResolveColor(shadow.Color, document, options)),
+            Radius = blur.Radius,
         };
     }
 

@@ -121,16 +121,21 @@ internal static class DesignPreviewToVisualIrBridge
         return stroke is null ? null : new VisualIrStroke(Paint(stroke.Paint, payload) ?? new VisualIrNonePaint(), stroke.Width);
     }
 
-    private static IReadOnlyList<VisualIrShadowEffect>? Effects(
-        IReadOnlyList<ResolvedDesignShadowEffect>? effects,
+    private static IReadOnlyList<VisualIrEffect>? Effects(
+        IReadOnlyList<ResolvedDesignEffect>? effects,
         DesignPreviewPayload payload)
     {
-        return effects?.Select((effect) => new VisualIrShadowEffect(
-                effect.X,
-                effect.Y,
-                effect.Blur,
-                Color(effect.Color, payload),
-                effect.Inset))
+        return effects?.Select((effect) => effect switch
+            {
+                ResolvedDesignShadowEffect shadow => (VisualIrEffect)new VisualIrShadowEffect(
+                    shadow.X,
+                    shadow.Y,
+                    shadow.Blur,
+                    Color(shadow.Color, payload),
+                    shadow.Inset),
+                ResolvedDesignBlurEffect blur => (VisualIrEffect)new VisualIrBlurEffect(blur.Radius),
+                _ => throw new InvalidOperationException($"Unsupported resolved design effect: {effect.GetType().Name}"),
+            })
             .ToList();
     }
 

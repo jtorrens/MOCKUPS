@@ -90,6 +90,13 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
         }
 
         if (payload.Kind == "componentClass"
+            && payload.ComponentType == "label"
+            && !Flatten(document.Root).Any((node) => node.Effects?.OfType<VisualIrBlurEffect>().Any() == true))
+        {
+            throw new InvalidOperationException("Expected label component relief spread blur.");
+        }
+
+        if (payload.Kind == "componentClass"
             && payload.ComponentType == "label")
         {
             var zeroExtentPayload = WithReliefExtent(payload, 0);

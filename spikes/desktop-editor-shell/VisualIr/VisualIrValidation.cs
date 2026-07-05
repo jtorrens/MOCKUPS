@@ -67,7 +67,22 @@ internal static partial class VisualIrValidator
         {
             for (var index = 0; index < node.Effects.Count; index++)
             {
-                ValidateColor(node.Effects[index].Color, $"{path}.effects[{index}].color", colorVariants, diagnostics);
+                switch (node.Effects[index])
+                {
+                    case VisualIrShadowEffect shadow:
+                        ValidateColor(shadow.Color, $"{path}.effects[{index}].color", colorVariants, diagnostics);
+                        if (shadow.Blur < 0 || double.IsNaN(shadow.Blur) || double.IsInfinity(shadow.Blur))
+                        {
+                            diagnostics.Add(new VisualIrDiagnostic("effect.shadow.blur", "Shadow blur must be finite and non-negative.", $"{path}.effects[{index}].blur"));
+                        }
+                        break;
+                    case VisualIrBlurEffect blur:
+                        if (blur.Radius < 0 || double.IsNaN(blur.Radius) || double.IsInfinity(blur.Radius))
+                        {
+                            diagnostics.Add(new VisualIrDiagnostic("effect.blur.radius", "Blur radius must be finite and non-negative.", $"{path}.effects[{index}].radius"));
+                        }
+                        break;
+                }
             }
         }
 
@@ -265,4 +280,3 @@ internal static partial class VisualIrValidator
     [GeneratedRegex("^#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$")]
     private static partial Regex HexColorRegex();
 }
-

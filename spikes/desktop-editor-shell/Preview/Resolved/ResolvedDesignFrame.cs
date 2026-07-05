@@ -17,7 +17,7 @@ internal abstract record ResolvedDesignNode
     public required string Id { get; init; }
     public required DesignRect Bounds { get; init; }
     public double Opacity { get; init; } = 1;
-    public IReadOnlyList<ResolvedDesignShadowEffect>? Effects { get; init; }
+    public IReadOnlyList<ResolvedDesignEffect>? Effects { get; init; }
     public IReadOnlyDictionary<string, string>? Metadata { get; init; }
 }
 
@@ -71,9 +71,13 @@ internal sealed record ResolvedDesignStroke(
     ResolvedDesignPaint Paint,
     double Width);
 
+internal abstract record ResolvedDesignEffect;
+
 internal sealed record ResolvedDesignShadowEffect(
     double X,
     double Y,
     double Blur,
     ResolvedDesignColorRef Color,
-    bool Inset = false);
+    bool Inset = false) : ResolvedDesignEffect;
+
+internal sealed record ResolvedDesignBlurEffect(double Radius) : ResolvedDesignEffect;

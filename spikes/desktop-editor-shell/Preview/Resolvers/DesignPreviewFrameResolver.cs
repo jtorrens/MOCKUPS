@@ -624,6 +624,9 @@ internal static class DesignPreviewFrameResolver
             var fade = index < hardLayers || fadeLayers == 0
                 ? 1
                 : Math.Max(0, 1 - (index - hardLayers + 1d) / (fadeLayers + 1));
+            var blurRadius = index < hardLayers || fadeLayers == 0
+                ? 0
+                : Math.Max(0.5, spread) * (index - hardLayers + 1d) / fadeLayers;
             layers.Add(ReliefStroke(
                 $"component.label.relief.top.{index + 1}",
                 bounds,
@@ -631,7 +634,8 @@ internal static class DesignPreviewFrameResolver
                 baseColorToken,
                 -directionX * distance,
                 -directionY * distance,
-                topIntensity * fade));
+                topIntensity * fade,
+                blurRadius));
             layers.Add(ReliefStroke(
                 $"component.label.relief.bottom.{index + 1}",
                 bounds,
@@ -639,7 +643,8 @@ internal static class DesignPreviewFrameResolver
                 baseColorToken,
                 directionX * distance,
                 directionY * distance,
-                bottomIntensity * fade));
+                bottomIntensity * fade,
+                blurRadius));
         }
 
         return layers;
@@ -652,7 +657,8 @@ internal static class DesignPreviewFrameResolver
         string baseColorToken,
         double offsetX,
         double offsetY,
-        double brightnessMultiplier)
+        double brightnessMultiplier,
+        double blurRadius)
     {
         return new ResolvedDesignRectNode
         {
@@ -660,6 +666,7 @@ internal static class DesignPreviewFrameResolver
             Bounds = new DesignRect(offsetX, offsetY, bounds.Width, bounds.Height),
             Stroke = new ResolvedDesignStroke(ThemePaintAdjusted(baseColorToken, brightnessMultiplier), 1),
             Radius = cornerRadius,
+            Effects = blurRadius > 0 ? [new ResolvedDesignBlurEffect(blurRadius)] : null,
         };
     }
 

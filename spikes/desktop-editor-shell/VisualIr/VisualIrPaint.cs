@@ -36,10 +36,16 @@ internal sealed record VisualIrStroke(
     IReadOnlyList<double>? Dash = null,
     double? DashOffset = null);
 
+[JsonPolymorphic(TypeDiscriminatorPropertyName = "kind")]
+[JsonDerivedType(typeof(VisualIrShadowEffect), "shadow")]
+[JsonDerivedType(typeof(VisualIrBlurEffect), "blur")]
+internal abstract record VisualIrEffect;
+
 internal sealed record VisualIrShadowEffect(
     double X,
     double Y,
     double Blur,
     VisualIrColor Color,
-    bool Inset = false);
+    bool Inset = false) : VisualIrEffect;
 
+internal sealed record VisualIrBlurEffect(double Radius) : VisualIrEffect;

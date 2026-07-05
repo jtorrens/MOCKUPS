@@ -47,7 +47,7 @@ internal abstract record VisualIrNode
     public required string Id { get; init; }
     public required VisualIrRect Bounds { get; init; }
     public double Opacity { get; init; } = 1;
-    public IReadOnlyList<VisualIrShadowEffect>? Effects { get; init; }
+    public IReadOnlyList<VisualIrEffect>? Effects { get; init; }
     public IReadOnlyDictionary<string, string>? Metadata { get; init; }
 }
 
