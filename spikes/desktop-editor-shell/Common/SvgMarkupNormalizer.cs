@@ -20,7 +20,8 @@ internal static class SvgMarkupNormalizer
     private static string StripDeclarations(string markup)
     {
         var withoutXml = Regex.Replace(markup, @"<\?xml[\s\S]*?\?>", "", RegexOptions.IgnoreCase).Trim();
-        return Regex.Replace(withoutXml, @"<!doctype[\s\S]*?>", "", RegexOptions.IgnoreCase).Trim();
+        var withoutDoctype = Regex.Replace(withoutXml, @"<!doctype[\s\S]*?>", "", RegexOptions.IgnoreCase).Trim();
+        return Regex.Replace(withoutDoctype, @"<!--[\s\S]*?-->", "").Trim();
     }
 
     private static string NormalizeTintablePaint(string markup)

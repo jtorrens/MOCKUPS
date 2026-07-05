@@ -19,6 +19,7 @@ internal sealed class EditorPreviewController
     private readonly VisualIrDesignPreviewPane _visualIrPreviewPane = new();
     private string? _projectId;
     private string? _selectedThemeId;
+    private ProjectTreeNode? _lastDesignPreviewNode;
     private string _selectedMode = "light";
     private bool _isRefreshingOptions;
 
@@ -137,7 +138,7 @@ internal sealed class EditorPreviewController
         var metrics = _database.GetDevicePreviewMetrics(SelectedDeviceId);
         var themeName = _themeComboBox.SelectedItem?.Label ?? "No theme";
         _runtimePreviewPane.Update(metrics, _isDark(), themeName, _selectedMode);
-        var designPayload = DesignPreviewPayloadFactory.Create(_database, _selectedNode(), _selectedThemeId);
+        var designPayload = DesignPreviewPayloadForSelection();
         _designPreviewPane.Update(
             metrics,
             _isDark(),
@@ -150,6 +151,21 @@ internal sealed class EditorPreviewController
             themeName,
             _selectedMode,
             designPayload);
+    }
+
+    private DesignPreviewPayload? DesignPreviewPayloadForSelection()
+    {
+        var selectedNode = _selectedNode();
+        var selectedPayload = DesignPreviewPayloadFactory.Create(_database, selectedNode, _selectedThemeId);
+        if (selectedPayload is not null)
+        {
+            _lastDesignPreviewNode = selectedNode;
+            return selectedPayload;
+        }
+
+        return _lastDesignPreviewNode is null
+            ? null
+            : DesignPreviewPayloadFactory.Create(_database, _lastDesignPreviewNode, _selectedThemeId);
     }
 
     private void EnsureSelectedOptionsExist()
