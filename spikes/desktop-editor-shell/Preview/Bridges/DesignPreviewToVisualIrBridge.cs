@@ -13,6 +13,8 @@ namespace Mockups.DesktopEditorShell.Preview.Bridges;
 
 internal static class DesignPreviewToVisualIrBridge
 {
+    private sealed record ThemeChromeColors(VisualIrColor Foreground, VisualIrColor Background);
+
     public static VisualIrDocument Convert(
         DesignPreviewPayload payload,
         SpikeDatabase.DevicePreviewMetrics metrics,
@@ -24,7 +26,7 @@ internal static class DesignPreviewToVisualIrBridge
             {
                 Id = "device.screen",
                 Bounds = new VisualIrRect(metrics.ScreenX, metrics.ScreenY, metrics.ScreenWidth, metrics.ScreenHeight),
-                Fill = new VisualIrSolidPaint(VariantColor("#F7F9FC", "#101827")),
+                Fill = new VisualIrSolidPaint(ThemeBackground(payload)),
                 Radius = metrics.CornerRadius,
             },
         };
@@ -72,6 +74,7 @@ internal static class DesignPreviewToVisualIrBridge
         var itemSize = ScaledNumber(layout, "itemSize", 18 * scale, scale);
         var gap = ScaledNumber(layout, "gap", 6 * scale, scale);
         var sidePadding = ScaledNumber(layout, "sidePadding", 24 * scale, scale);
+        var chrome = ThemeChrome(payload, "statusBar");
         var bounds = new VisualIrRect(metrics.ScreenX, metrics.ScreenY, metrics.ScreenWidth, height);
         var children = new List<VisualIrNode>
         {
@@ -79,7 +82,7 @@ internal static class DesignPreviewToVisualIrBridge
             {
                 Id = "statusBar.background",
                 Bounds = new VisualIrRect(0, 0, bounds.Width, bounds.Height),
-                Fill = new VisualIrSolidPaint(VariantColor("#ffffff", "#10151f")),
+                Fill = new VisualIrSolidPaint(chrome.Background),
             },
         };
 
@@ -87,8 +90,8 @@ internal static class DesignPreviewToVisualIrBridge
             .Where((item) => item.Zone is "left" or "right")
             .OrderBy((item) => item.Order)
             .ToList();
-        children.AddRange(StatusItemsForZone(payload, items.Where((item) => item.Zone == "left"), "left", itemSize, gap, sidePadding, bounds));
-        children.AddRange(StatusItemsForZone(payload, items.Where((item) => item.Zone == "right"), "right", itemSize, gap, sidePadding, bounds));
+        children.AddRange(StatusItemsForZone(payload, items.Where((item) => item.Zone == "left"), "left", itemSize, gap, sidePadding, bounds, chrome.Foreground));
+        children.AddRange(StatusItemsForZone(payload, items.Where((item) => item.Zone == "right"), "right", itemSize, gap, sidePadding, bounds, chrome.Foreground));
 
         return new VisualIrGroupNode
         {
@@ -109,7 +112,8 @@ internal static class DesignPreviewToVisualIrBridge
         double itemSize,
         double gap,
         double sidePadding,
-        VisualIrRect barBounds)
+        VisualIrRect barBounds,
+        VisualIrColor foreground)
     {
         var list = items.ToList();
         var widths = list.Select((item) => StatusItemWidth(item, itemSize)).ToList();
@@ -121,7 +125,7 @@ internal static class DesignPreviewToVisualIrBridge
         {
             var item = list[index];
             var width = widths[index];
-            yield return StatusItem(payload, item, x, y, width, itemSize);
+            yield return StatusItem(payload, item, x, y, width, itemSize, foreground);
             x += width + gap;
         }
     }
@@ -132,7 +136,8 @@ internal static class DesignPreviewToVisualIrBridge
         double x,
         double y,
         double width,
-        double height)
+        double height,
+        VisualIrColor foreground)
     {
         if (item.Kind == "text")
         {
@@ -143,12 +148,14 @@ internal static class DesignPreviewToVisualIrBridge
                 Text = string.IsNullOrWhiteSpace(item.Value) ? item.Label : item.Value,
                 Style = new VisualIrTextStyle
                 {
-                    Fill = new VisualIrSolidPaint(VariantColor("#111111", "#f7f7f7")),
+                    Fill = new VisualIrSolidPaint(foreground),
                     FontFamily = "Inter",
                     FontSize = height,
                     FontWeight = 600,
                     LineHeight = height,
                 },
+                TextAlign = "center",
+                VerticalAlign = "middle",
                 Metadata = MetadataFor(item),
             };
         }
@@ -162,7 +169,7 @@ internal static class DesignPreviewToVisualIrBridge
                 Bounds = new VisualIrRect(x, y + (height - primitive.Height) / 2, primitive.Width, primitive.Height),
                 Markup = primitive.Markup,
                 Fit = "fill",
-                Tint = new VisualIrSolidPaint(VariantColor("#111111", "#f7f7f7")),
+                Tint = new VisualIrSolidPaint(foreground),
                 Metadata = MetadataFor(item),
             };
         }
@@ -176,7 +183,7 @@ internal static class DesignPreviewToVisualIrBridge
                 Bounds = new VisualIrRect(x, y + (height - primitive.Height) / 2, primitive.Width, primitive.Height),
                 Markup = primitive.Markup,
                 Fit = "fill",
-                Tint = new VisualIrSolidPaint(VariantColor("#111111", "#f7f7f7")),
+                Tint = new VisualIrSolidPaint(foreground),
                 Metadata = MetadataFor(item),
             };
         }
@@ -190,7 +197,7 @@ internal static class DesignPreviewToVisualIrBridge
                 Bounds = new VisualIrRect(0, 0, height, height),
                 Markup = iconMarkup,
                 Fit = "contain",
-                Tint = new VisualIrSolidPaint(VariantColor("#111111", "#f7f7f7")),
+                Tint = new VisualIrSolidPaint(foreground),
                 Metadata = MetadataFor(item),
             };
             return new VisualIrGroupNode
@@ -209,7 +216,7 @@ internal static class DesignPreviewToVisualIrBridge
             Bounds = new VisualIrRect(x, y, width, height),
             Markup = FallbackIconSvg(item.TokenOrLabel),
             Fit = "contain",
-            Tint = new VisualIrSolidPaint(VariantColor("#111111", "#f7f7f7")),
+            Tint = new VisualIrSolidPaint(foreground),
             Metadata = MetadataFor(item),
         };
     }
@@ -224,7 +231,10 @@ internal static class DesignPreviewToVisualIrBridge
         var height = ScaledNumber(layout, "height", 34 * scale, scale);
         var itemSize = ScaledNumber(layout, "itemSize", 18 * scale, scale);
         var sidePadding = ScaledNumber(layout, "sidePadding", 40 * scale, scale);
-        var gap = 10 * scale;
+        var strokeWidth = ScaledNumber(layout, "strokeWidth", 2 * scale, scale);
+        var cornerRadius = ScaledNumber(layout, "cornerRadius", 3 * scale, scale);
+        var gap = 6 * scale;
+        var chrome = ThemeChrome(payload, "navigationBar");
         var bounds = new VisualIrRect(metrics.ScreenX, metrics.ScreenY + metrics.ScreenHeight - height, metrics.ScreenWidth, height);
         var children = new List<VisualIrNode>
         {
@@ -232,7 +242,7 @@ internal static class DesignPreviewToVisualIrBridge
             {
                 Id = "navigationBar.background",
                 Bounds = new VisualIrRect(0, 0, bounds.Width, bounds.Height),
-                Fill = new VisualIrSolidPaint(VariantColor("#ffffff", "#10151f")),
+                Fill = new VisualIrSolidPaint(chrome.Background),
             },
         };
 
@@ -242,7 +252,7 @@ internal static class DesignPreviewToVisualIrBridge
             .ToList();
         foreach (var zone in new[] { "left", "center", "right" })
         {
-            children.AddRange(NavigationItemsForZone(items.Where((item) => item.Zone == zone), zone, itemSize, sidePadding, gap, bounds, layout));
+            children.AddRange(NavigationItemsForZone(items.Where((item) => item.Zone == zone), zone, itemSize, sidePadding, gap, bounds, strokeWidth, cornerRadius, Bool(layout, "filled", false), chrome.Foreground));
         }
 
         return new VisualIrGroupNode
@@ -264,7 +274,10 @@ internal static class DesignPreviewToVisualIrBridge
         double sidePadding,
         double gap,
         VisualIrRect barBounds,
-        JsonObject layout)
+        double strokeWidth,
+        double cornerRadius,
+        bool filled,
+        VisualIrColor foreground)
     {
         var list = items.ToList();
         if (list.Count == 0)
@@ -286,16 +299,16 @@ internal static class DesignPreviewToVisualIrBridge
             var primitive = GeneratedSvgPrimitives.NavigationButton(
                 item.Kind,
                 itemSize,
-                Number(layout, "strokeWidth", 2),
-                Number(layout, "cornerRadius", 3),
-                Bool(layout, "filled", false));
+                strokeWidth,
+                cornerRadius,
+                filled);
             yield return new VisualIrSvgNode
             {
                 Id = $"navigationBar.item.{item.Id}",
                 Bounds = new VisualIrRect(x, y, primitive.Width, primitive.Height),
                 Markup = primitive.Markup,
                 Fit = "fill",
-                Tint = new VisualIrSolidPaint(VariantColor("#111111", "#f7f7f7")),
+                Tint = new VisualIrSolidPaint(foreground),
                 Metadata = MetadataFor(item),
             };
             x += itemSize + gap;
@@ -386,6 +399,71 @@ internal static class DesignPreviewToVisualIrBridge
             setNight);
     }
 
+    private static VisualIrColor ThemeBackground(DesignPreviewPayload payload)
+    {
+        return VisualIrColor.Variant(
+            new Dictionary<string, string>
+            {
+                ["set_day"] = ThemeColor(payload, "light", ["colors", "background"], "#F7F9FC"),
+                ["set_night"] = ThemeColor(payload, "dark", ["colors", "background"], "#101827"),
+            },
+            "#101827");
+    }
+
+    private static ThemeChromeColors ThemeChrome(DesignPreviewPayload payload, string key)
+    {
+        return new ThemeChromeColors(
+            VisualIrColor.Variant(
+                new Dictionary<string, string>
+                {
+                    ["set_day"] = ThemeColor(payload, "light", [key, "foreground"], "#111827"),
+                    ["set_night"] = ThemeColor(payload, "dark", [key, "foreground"], "#F8FAFC"),
+                },
+                "#F8FAFC"),
+            VisualIrColor.Variant(
+                new Dictionary<string, string>
+                {
+                    ["set_day"] = ThemeColor(payload, "light", [key, "background", "color"], "#00000000"),
+                    ["set_night"] = ThemeColor(payload, "dark", [key, "background", "color"], "#00000000"),
+                },
+                "#00000000"));
+    }
+
+    private static string ThemeColor(DesignPreviewPayload payload, string mode, IReadOnlyList<string> path, string fallback)
+    {
+        var tokens = ParseObject(payload.ThemeTokensJson);
+        var modes = tokens["modes"] as JsonObject;
+        var current = modes?[mode];
+        foreach (var part in path)
+        {
+            current = current is JsonObject obj ? obj[part] : null;
+        }
+
+        var resolved = ResolvePalette(payload, current?.ToString() ?? fallback);
+        return IsVisualIrColor(resolved) ? resolved : fallback;
+    }
+
+    private static string ResolvePalette(DesignPreviewPayload payload, string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return "#00000000";
+        }
+
+        if (value.StartsWith("#", StringComparison.Ordinal)
+            || value.Equals("transparent", StringComparison.OrdinalIgnoreCase))
+        {
+            return value.Equals("transparent", StringComparison.OrdinalIgnoreCase) ? "#00000000" : value;
+        }
+
+        return payload.PaletteColors.TryGetValue(value, out var resolved) ? resolved : value;
+    }
+
+    private static bool IsVisualIrColor(string value)
+    {
+        return Regex.IsMatch(value, "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$");
+    }
+
     private static string? IconMarkup(DesignPreviewPayload payload, string token)
     {
         if (string.IsNullOrWhiteSpace(token)
@@ -459,14 +537,22 @@ internal static class DesignPreviewToVisualIrBridge
             """;
     }
 
-    private static IReadOnlyDictionary<string, string> MetadataFor(PreviewItem item)
+    private static IReadOnlyDictionary<string, string> MetadataFor(
+        PreviewItem item,
+        params (string Key, string Value)[] extra)
     {
-        return new Dictionary<string, string>
+        var metadata = new Dictionary<string, string>
         {
             ["legacyKind"] = item.Kind,
             ["legacyZone"] = item.Zone,
             ["legacyLabel"] = item.Label,
         };
+        foreach (var (key, value) in extra)
+        {
+            metadata[key] = value;
+        }
+
+        return metadata;
     }
 
     private static JsonObject ParseObject(string json)

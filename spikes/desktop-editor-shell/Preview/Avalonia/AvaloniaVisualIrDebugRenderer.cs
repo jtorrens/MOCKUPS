@@ -112,6 +112,8 @@ internal sealed class AvaloniaVisualIrDebugRenderer : IVisualIrRenderer
         VisualIrDocument document,
         VisualIrRenderOptions options)
     {
+        var textAlign = text.TextAlign == "center";
+        var verticalAlign = text.VerticalAlign == "middle";
         var textBlock = new TextBlock
         {
             Width = text.Bounds.Width,
@@ -124,16 +126,28 @@ internal sealed class AvaloniaVisualIrDebugRenderer : IVisualIrRenderer
             FontWeight = FontWeightFrom(text.Style.FontWeight),
             FontStyle = text.Style.FontStyle == "italic" ? FontStyle.Italic : FontStyle.Normal,
             Foreground = BrushFromPaint(text.Style.Fill, document, options) ?? Brushes.White,
+            TextAlignment = textAlign ? TextAlignment.Center : TextAlignment.Left,
             TextTrimming = TextTrimming.CharacterEllipsis,
-            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = verticalAlign ? VerticalAlignment.Center : VerticalAlignment.Top,
+            TextWrapping = TextWrapping.NoWrap,
         };
+
+        Control textControl = verticalAlign
+            ? new Grid
+            {
+                Width = text.Bounds.Width,
+                Height = text.Bounds.Height,
+                Children = { textBlock },
+            }
+            : textBlock;
 
         if (!options.ShowBounds)
         {
-            return textBlock;
+            return textControl;
         }
 
-        return WrapWithBounds(textBlock, text.Bounds.Width, text.Bounds.Height);
+        return WrapWithBounds(textControl, text.Bounds.Width, text.Bounds.Height);
     }
 
     private Control RenderPlaceholder(

@@ -82,6 +82,8 @@ internal sealed record VisualIrTextNode : VisualIrNode
 {
     public required string Text { get; init; }
     public required VisualIrTextStyle Style { get; init; }
+    public string TextAlign { get; init; } = "left";
+    public string VerticalAlign { get; init; } = "top";
 }
 
 internal sealed record VisualIrTextStyle
@@ -117,4 +119,3 @@ internal sealed record VisualIrSvgNode : VisualIrNode
     public string Fit { get; init; } = "fill";
     public VisualIrPaint? Tint { get; init; }
 }
-
