@@ -28,9 +28,8 @@ internal sealed class DictionaryNumberSliderControl : Grid, IDictionaryValueCont
 
         _value = Normalize(value);
         _lastCommittedValue = _value;
-        ColumnDefinitions = new ColumnDefinitions("*,Auto");
-        ColumnSpacing = 8;
-        Width = 188;
+        ColumnDefinitions = new ColumnDefinitions("*,78");
+        ColumnSpacing = 10;
         VerticalAlignment = VerticalAlignment.Center;
 
         _slider = new Slider
@@ -41,14 +40,13 @@ internal sealed class DictionaryNumberSliderControl : Grid, IDictionaryValueCont
             TickFrequency = (double)number.Increment,
             SmallChange = (double)number.Increment,
             LargeChange = (double)Math.Max(number.Increment, number.Increment * 2),
-            Width = 126,
             IsEnabled = definition.IsEditable,
             VerticalAlignment = VerticalAlignment.Center,
         };
         _box = EditorTextBoxBehavior.Configure(new TextBox
         {
             Text = _value,
-            Width = 54,
+            Width = 78,
             IsReadOnly = !definition.IsEditable,
             VerticalContentAlignment = VerticalAlignment.Center,
         });
