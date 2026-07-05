@@ -59,14 +59,13 @@ System bar preview routes:
 
 | Preview | Status | Route |
 | --- | --- | --- |
-| status bar | migrated for desktop preview | `resolveStatusBar` -> `statusBarToRenderable` -> web renderer |
-| navigation bar | migrated for desktop preview | `resolveNavigationBar` -> `navigationBarToRenderable` -> web renderer |
+| status bar | migrated for desktop preview | `resolveStatusBar` -> normalized status atoms -> `statusBarToRenderable` -> web renderer |
+| navigation bar | migrated for desktop preview | `resolveNavigationBar` -> normalized navigation atoms -> `navigationBarToRenderable` -> web renderer |
 
-Status/navigation currently reuse the existing web atomic modules as renderer
-helpers. This is allowed because it stays inside the web rendering layer. It
-must not become a shortcut for component-class preview or embedded-component
-composition. If status/navigation become component classes later, they must get
-component resolvers and bridge functions like label/avatar.
+Status/navigation no longer call the old web atomic modules from desktop
+preview. Their resolvers own item visibility, zone assignment and ordering. The
+bridge owns token/color/icon resolution, pixel scaling and final renderable node
+creation.
 
 No active desktop preview path may use:
 

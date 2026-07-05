@@ -1,7 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { NavigationBarModule } from "../visual/modules/atomic/NavigationBarModule.js";
-import { StatusBarModule } from "../visual/modules/atomic/StatusBarModule.js";
 import type { RenderableBox, RenderableNode } from "../visual/renderable/types.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import type { AvatarDesignContract } from "./avatarComponentResolver.js";
@@ -583,6 +581,7 @@ export function statusBarToRenderable(
   statusBar: StatusBarDesignContract,
 ): RenderableNode {
   const scale = renderScale(payload);
+  const tokens = systemBarTokens(payload, "statusBar");
   const layout = {
     height: statusBar.layout.height * scale,
     itemSize: statusBar.layout.itemSize * scale,
@@ -590,26 +589,27 @@ export function statusBarToRenderable(
     sidePadding: statusBar.layout.sidePadding * scale,
   };
   const viewport = designViewport(payload);
-  const statusBarForRender = {
-    layout,
-    items: statusBar.items.map((item) => statusBarItemForRender(payload, item)),
-  };
   const statusBarHeight = layout.height;
   return {
-    ...StatusBarModule.render({
-      frame: 0,
-      viewport,
-      statusBarHeight,
-      statusBar: statusBarForRender,
-      tokens: systemBarTokens(payload, "statusBar"),
-    }),
+    id: "status_bar",
+    type: "status_bar",
+    role: "device_status",
+    frame: 0,
     box: {
       x: viewport.x,
       y: viewport.y,
       width: viewport.width,
       height: statusBarHeight,
     },
-    children: boxedStatusItems(payload, statusBarForRender, statusBarHeight),
+    style: {
+      foreground: tokens.foreground,
+      background: tokens.background,
+      fontSize: layout.itemSize,
+      lineHeight: layout.itemSize,
+      gap: layout.gap,
+      paddingX: layout.sidePadding,
+    },
+    children: boxedStatusItems(payload, statusBar, layout, statusBarHeight),
     metadata: {
       route: "system-bar-resolver.web-bridge",
       systemBarType: "statusBar",
@@ -622,6 +622,7 @@ export function navigationBarToRenderable(
   navigationBar: NavigationBarDesignContract,
 ): RenderableNode {
   const scale = renderScale(payload);
+  const tokens = systemBarTokens(payload, "navigationBar");
   const layout = {
     height: navigationBar.layout.height * scale,
     itemSize: navigationBar.layout.itemSize * scale,
@@ -630,30 +631,71 @@ export function navigationBarToRenderable(
     cornerRadius: navigationBar.layout.cornerRadius * scale,
     filled: navigationBar.layout.filled,
   };
-  const navigationBarForRender = {
-    type: navigationBar.type,
-    layout,
-    gesture: {
-      width: navigationBar.gesture.width * scale,
-      height: navigationBar.gesture.height * scale,
-      cornerRadius: navigationBar.gesture.cornerRadius * scale,
-    },
-    items: navigationBar.items,
+  const gesture = {
+    width: navigationBar.gesture.width * scale,
+    height: navigationBar.gesture.height * scale,
+    cornerRadius: navigationBar.gesture.cornerRadius * scale,
   };
   const viewport = designViewport(payload);
-  return {
-    ...NavigationBarModule.render({
+  const box = {
+    x: viewport.x,
+    y: viewport.y + viewport.height - layout.height,
+    width: viewport.width,
+    height: layout.height,
+  };
+  if (navigationBar.type === "gestureBar") {
+    return {
+      id: "navigation_bar",
+      type: "navigation_bar",
+      role: "device_navigation",
       frame: 0,
-      viewport,
-      navigationBar: navigationBarForRender,
-      tokens: systemBarTokens(payload, "navigationBar"),
-    }),
-    box: {
-      x: viewport.x,
-      y: viewport.y + viewport.height - layout.height,
-      width: viewport.width,
-      height: layout.height,
+      box,
+      style: {
+        background: tokens.background,
+      },
+      children: [
+        {
+          id: "navigation_bar:gesture",
+          type: "navigation_bar_gesture",
+          role: "gesture_bar",
+          frame: 0,
+          box: {
+            x: viewport.x + (viewport.width - gesture.width) / 2,
+            y: box.y + (layout.height - gesture.height) / 2,
+            width: gesture.width,
+            height: gesture.height,
+          },
+          style: {
+            background: tokens.foreground,
+            cornerRadius: gesture.cornerRadius,
+          },
+        },
+      ],
+      metadata: {
+        route: "system-bar-resolver.web-bridge",
+        systemBarType: "navigationBar",
+      },
+    };
+  }
+
+  return {
+    id: "navigation_bar",
+    type: "navigation_bar",
+    role: "device_navigation",
+    frame: 0,
+    box,
+    style: {
+      foreground: tokens.foreground,
+      background: tokens.background,
+      fontSize: layout.itemSize,
+      lineHeight: layout.itemSize,
+      paddingX: layout.sidePadding,
     },
+    children: [
+      navigationZoneNode(navigationBar, layout, tokens.foreground, "left"),
+      navigationZoneNode(navigationBar, layout, tokens.foreground, "center"),
+      navigationZoneNode(navigationBar, layout, tokens.foreground, "right"),
+    ],
     metadata: {
       route: "system-bar-resolver.web-bridge",
       systemBarType: "navigationBar",
@@ -714,22 +756,16 @@ function statusBarItemForRender(
 
 function boxedStatusItems(
   payload: DesignPreviewPayload,
-  statusBar: {
-    layout: { itemSize: number; gap: number; sidePadding: number };
-    items: Record<string, unknown>[];
-  },
+  statusBar: StatusBarDesignContract,
+  layout: { itemSize: number; gap: number; sidePadding: number },
   statusBarHeight: number,
 ) {
-  const { itemSize, gap, sidePadding } = statusBar.layout;
+  const { itemSize, gap, sidePadding } = layout;
   const foreground = systemBarTokens(payload, "statusBar").foreground;
   const y = payload.device.screenY + (statusBarHeight - itemSize) / 2;
-  const items = statusBar.items
-    .filter((item) => ["left", "right"].includes(stringValue(item.zone, "off")))
-    .filter((item) => stringValue(item.kind, "text") !== "text" || stringValue(item.value).trim())
-    .sort((left, right) => numberValue(left.order, 0) - numberValue(right.order, 0));
 
   return (["left", "right"] as const).flatMap((zone) => {
-    const zoneItems = items.filter((item) => stringValue(item.zone, "off") === zone);
+    const zoneItems = statusBar.zones[zone].map((item) => statusBarItemForRender(payload, item));
     const widths = zoneItems.map((item) => statusItemWidth(item, itemSize));
     const totalWidth = widths.reduce((sum, width) => sum + width, 0)
       + Math.max(0, widths.length - 1) * gap;
@@ -768,6 +804,52 @@ function boxedStatusItems(
       return node;
     });
   });
+}
+
+function navigationZoneNode(
+  navigationBar: NavigationBarDesignContract,
+  layout: {
+    itemSize: number;
+    strokeWidth: number;
+    cornerRadius: number;
+    filled: boolean;
+  },
+  foreground: string,
+  zone: "left" | "center" | "right",
+): RenderableNode {
+  return {
+    id: `navigation_bar:${zone}`,
+    type: "navigation_bar_zone",
+    role: zone,
+    frame: 0,
+    style: {
+      color: foreground,
+      itemSize: layout.itemSize,
+      justifyContent:
+        zone === "left"
+          ? "flex-start"
+          : zone === "right"
+            ? "flex-end"
+            : "center",
+    },
+    children: navigationBar.zones[zone].map((item) => ({
+      id: `navigation_bar:${zone}:${item.id || item.label || "item"}`,
+      type: "navigation_bar_item",
+      role: item.kind || "generatedHome",
+      frame: 0,
+      style: {
+        color: foreground,
+        fontSize: layout.itemSize,
+        lineHeight: layout.itemSize,
+      },
+      metadata: {
+        ...item,
+        filled: layout.filled,
+        strokeWidth: layout.strokeWidth,
+        cornerRadius: layout.cornerRadius,
+      },
+    })),
+  };
 }
 
 function statusItemWidth(item: Record<string, unknown>, itemSize: number) {

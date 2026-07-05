@@ -99,6 +99,7 @@ Allowed resolver responsibilities:
 - merge child base class config with slot-local overrides;
 - validate required fields;
 - decide component semantics such as whether a child is present;
+- normalize child/owned atom visibility, zone/group assignment and ordering;
 - keep dimensions in design units;
 - keep colors/radius/text-size references as tokens.
 
@@ -134,6 +135,7 @@ Disallowed bridge responsibilities:
 
 - reading or merging component config JSON directly;
 - deciding whether an embedded child exists from raw config;
+- deciding which owned atoms exist or which zone/group they belong to;
 - applying editor inheritance or override rules;
 - reaching into SQLite or desktop editor services;
 - hiding missing data behind plausible colors, sizes or spacing.

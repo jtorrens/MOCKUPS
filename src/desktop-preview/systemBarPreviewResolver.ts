@@ -11,6 +11,9 @@ export interface SystemBarItemContract {
   charging: boolean;
 }
 
+export type StatusBarZone = "left" | "right";
+export type NavigationBarZone = "left" | "center" | "right";
+
 export interface StatusBarDesignContract {
   id: "statusBar";
   layout: {
@@ -19,7 +22,7 @@ export interface StatusBarDesignContract {
     gap: number;
     sidePadding: number;
   };
-  items: SystemBarItemContract[];
+  zones: Record<StatusBarZone, SystemBarItemContract[]>;
 }
 
 export interface NavigationBarDesignContract {
@@ -38,7 +41,7 @@ export interface NavigationBarDesignContract {
     height: number;
     cornerRadius: number;
   };
-  items: SystemBarItemContract[];
+  zones: Record<NavigationBarZone, SystemBarItemContract[]>;
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -137,6 +140,26 @@ function items(value: unknown): SystemBarItemContract[] {
   });
 }
 
+function sortedVisibleItems(
+  value: unknown,
+  zones: readonly string[],
+  dropEmptyText: boolean,
+): Record<string, SystemBarItemContract[]> {
+  const visible = items(value)
+    .filter((item) => zones.includes(item.zone))
+    .filter((item) => !dropEmptyText || item.kind !== "text" || String(item.value).trim());
+  const byZone = Object.fromEntries(zones.map((zone) => [zone, [] as SystemBarItemContract[]]));
+  for (const item of visible) {
+    byZone[item.zone]?.push(item);
+  }
+
+  for (const zone of zones) {
+    byZone[zone]?.sort((left, right) => left.order - right.order);
+  }
+
+  return byZone;
+}
+
 export function resolveStatusBar(
   payload: DesignPreviewPayload,
 ): StatusBarDesignContract {
@@ -154,7 +177,10 @@ export function resolveStatusBar(
         "statusBar.layout.sidePadding",
       ),
     },
-    items: items(config.items),
+    zones: sortedVisibleItems(config.items, ["left", "right"], true) as Record<
+      StatusBarZone,
+      SystemBarItemContract[]
+    >,
   };
 }
 
@@ -205,6 +231,9 @@ export function resolveNavigationBar(
         "navigationBar.gesture.cornerRadius",
       ),
     },
-    items: items(config.items),
+    zones: sortedVisibleItems(config.items, ["left", "center", "right"], false) as Record<
+      NavigationBarZone,
+      SystemBarItemContract[]
+    >,
   };
 }
