@@ -48,7 +48,7 @@ internal sealed class AvaloniaVisualIrDebugRenderer : IVisualIrRenderer
             VisualIrPathNode path => RenderPlaceholder(path, "path", options),
             VisualIrImageNode image => RenderPlaceholder(image, "image", options),
             VisualIrVideoNode video => RenderPlaceholder(video, "video", options),
-            VisualIrSvgNode svg => RenderPlaceholder(svg, "svg", options),
+            VisualIrSvgNode svg => RenderSvg(svg, document, options),
             _ => RenderPlaceholder(node, node.GetType().Name, options),
         };
 
@@ -174,6 +174,49 @@ internal sealed class AvaloniaVisualIrDebugRenderer : IVisualIrRenderer
             : placeholder;
     }
 
+    private Control RenderSvg(
+        VisualIrSvgNode svg,
+        VisualIrDocument document,
+        VisualIrRenderOptions options)
+    {
+        if (string.IsNullOrWhiteSpace(svg.Markup))
+        {
+            return RenderPlaceholder(svg, "svg", options);
+        }
+
+        try
+        {
+            var validatedSvg = ValidateSvgMarkup(svg.Markup);
+            var tintColor = ColorFromPaint(svg.Tint, document, options) ?? "#FFFFFF";
+            var webView = new NativeWebView
+            {
+                Width = svg.Bounds.Width,
+                Height = svg.Bounds.Height,
+                Background = Brushes.Transparent,
+                IsHitTestVisible = false,
+            };
+            webView.NavigateToString(
+                SvgHtml(validatedSvg, tintColor, svg.Fit),
+                new Uri("https://mockups.local/visual-ir-svg/"));
+
+            var frame = new Border
+            {
+                Width = svg.Bounds.Width,
+                Height = svg.Bounds.Height,
+                ClipToBounds = svg.Fit != "overflow",
+                Child = webView,
+            };
+
+            return options.ShowBounds
+                ? WrapWithBounds(frame, svg.Bounds.Width, svg.Bounds.Height)
+                : frame;
+        }
+        catch
+        {
+            return RenderPlaceholder(svg, "svg", options);
+        }
+    }
+
     private static Control WrapWithBounds(Control child, double width, double height)
     {
         var grid = new Grid
@@ -220,6 +263,84 @@ internal sealed class AvaloniaVisualIrDebugRenderer : IVisualIrRenderer
             VisualIrRadialGradientPaint gradient => RadialGradientBrush(gradient, document, options),
             _ => null,
         };
+    }
+
+    private static string? ColorFromPaint(
+        VisualIrPaint? paint,
+        VisualIrDocument document,
+        VisualIrRenderOptions options)
+    {
+        return paint is VisualIrSolidPaint solid
+            ? ResolveColor(solid.Color, document, options)
+            : null;
+    }
+
+    private static string ValidateSvgMarkup(string svg)
+    {
+        var trimmed = svg.Trim();
+        if (!trimmed.StartsWith("<svg", StringComparison.OrdinalIgnoreCase)
+            && !trimmed.StartsWith("<?xml", StringComparison.OrdinalIgnoreCase)
+            && !trimmed.StartsWith("<!DOCTYPE", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("SVG markup must contain an <svg> root.");
+        }
+
+        if (!trimmed.Contains("<svg", StringComparison.OrdinalIgnoreCase)
+            || !trimmed.Contains("</svg>", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("SVG markup must contain a complete <svg> element.");
+        }
+
+        if (trimmed.Contains("<script", StringComparison.OrdinalIgnoreCase)
+            || trimmed.Contains("javascript:", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("SVG markup contains unsupported executable content.");
+        }
+
+        return trimmed;
+    }
+
+    private static string SvgHtml(string svg, string tintColor, string fit)
+    {
+        var objectFit = fit is "cover" ? "cover" : "contain";
+        return $$"""
+            <!doctype html>
+            <html>
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1">
+              <style>
+                html,
+                body {
+                  width: 100%;
+                  height: 100%;
+                  margin: 0;
+                  overflow: hidden;
+                  background: transparent;
+                }
+
+                body {
+                  display: grid;
+                  place-items: center;
+                  color: {{tintColor}};
+                }
+
+                svg {
+                  display: block;
+                  width: 100%;
+                  height: 100%;
+                  max-width: 100%;
+                  max-height: 100%;
+                  object-fit: {{objectFit}};
+                  overflow: visible;
+                }
+              </style>
+            </head>
+            <body>
+              {{svg}}
+            </body>
+            </html>
+            """;
     }
 
     private static LinearGradientBrush LinearGradientBrush(
