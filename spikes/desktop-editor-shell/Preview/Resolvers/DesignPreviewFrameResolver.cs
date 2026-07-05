@@ -114,7 +114,6 @@ internal static class DesignPreviewFrameResolver
         var style = config["style"] as JsonObject ?? [];
         var size = SizePair(JsonPath.String(label, "size", "120|32"), 120, 32);
         var padding = SizePair(JsonPath.String(label, "padding", "8|4"), 8, 4);
-        var backgroundVisible = JsonPath.Bool(label, "backgroundVisible", true);
         var text = JsonPath.String(preview, "sampleText", "Sample");
         var textSizeToken = JsonPath.String(label, "textSizeToken", "");
         var textSize = RuntimeValueGuard.RequiredThemeNumber(payload.ThemeTokensJson, textSizeToken, "component.label.textSizeToken");
@@ -137,6 +136,7 @@ internal static class DesignPreviewFrameResolver
         var reliefBottomIntensity = RuntimeValueGuard.RequiredNumber(style, "reliefBottomIntensity", "component.style.reliefBottomIntensity");
         var backgroundColorToken = RuntimeValueGuard.RequiredString(label, "backgroundColorToken", "component.label.backgroundColorToken");
         var textColorToken = RuntimeValueGuard.RequiredString(label, "textColorToken", "component.label.textColorToken");
+        var surfaceAlpha = Math.Clamp(JsonPath.NumberAt(label, ["alpha"], 1), 0, 1);
         var reliefBaseColorToken = borderWidth > 0 ? borderColorToken : backgroundColorToken;
         var children = new List<ResolvedDesignNode>
         {
@@ -144,14 +144,12 @@ internal static class DesignPreviewFrameResolver
             {
                 Id = "component.label.background",
                 Bounds = new DesignRect(0, 0, bounds.Width, bounds.Height),
-                Fill = backgroundVisible
-                    ? ThemePaint(backgroundColorToken)
-                    : StaticPaint("component.label.background.transparent", "#00000000"),
+                Fill = ThemePaint(backgroundColorToken, surfaceAlpha),
                 Stroke = borderWidth > 0
-                    ? new ResolvedDesignStroke(ThemePaint(borderColorToken), borderWidth)
+                    ? new ResolvedDesignStroke(ThemePaint(borderColorToken, surfaceAlpha), borderWidth)
                     : null,
                 Radius = cornerRadius,
-                Effects = shadowEnabled ? [new ResolvedDesignShadowEffect(0, 3, 10, new ResolvedDesignColorRef("component.style.shadow", null, "#33000000"))] : null,
+                Effects = shadowEnabled ? [ShadowEffect(payload, style)] : null,
                 Metadata = ComponentStyleMetadata(
                     style,
                     borderWidth,
@@ -176,7 +174,7 @@ internal static class DesignPreviewFrameResolver
                 bounds.Width + reliefFrameOutset * 2,
                 bounds.Height + reliefFrameOutset * 2);
             var reliefRadius = cornerRadius + reliefFrameOutset;
-            var reliefLayers = ReliefLayers(reliefFrame, reliefRadius, reliefBaseColorToken, reliefAngle, reliefExtent, reliefSpread, reliefTopIntensity, reliefBottomIntensity);
+            var reliefLayers = ReliefLayers(reliefFrame, reliefRadius, reliefBaseColorToken, surfaceAlpha, reliefAngle, reliefExtent, reliefSpread, reliefTopIntensity, reliefBottomIntensity);
             if (reliefLayers.Count > 0)
             {
                 children.Add(new ResolvedDesignGroupNode
@@ -574,9 +572,19 @@ internal static class DesignPreviewFrameResolver
         return ThemePaint(tokenId, "debug_red");
     }
 
+    private static ResolvedDesignPaint ThemePaint(string tokenId, double alpha)
+    {
+        return ThemePaint(tokenId, "debug_red", alpha);
+    }
+
     private static ResolvedDesignPaint ThemePaint(string tokenId, string fallback)
     {
-        return new ResolvedDesignSolidPaint(new ResolvedDesignColorRef(tokenId, tokenId, fallback));
+        return ThemePaint(tokenId, fallback, 1);
+    }
+
+    private static ResolvedDesignPaint ThemePaint(string tokenId, string fallback, double alpha)
+    {
+        return new ResolvedDesignSolidPaint(new ResolvedDesignColorRef(tokenId, tokenId, fallback, Alpha: alpha));
     }
 
     private static ResolvedDesignPaint ThemePaintAdjusted(string tokenId, double brightnessMultiplier)
@@ -587,6 +595,42 @@ internal static class DesignPreviewFrameResolver
     private static ResolvedDesignPaint StaticPaint(string id, string value)
     {
         return new ResolvedDesignSolidPaint(new ResolvedDesignColorRef(id, null, value));
+    }
+
+    private static ResolvedDesignShadowEffect ShadowEffect(DesignPreviewPayload payload, JsonObject style)
+    {
+        var token = RuntimeValueGuard.RequiredString(style, "shadowToken", "component.style.shadowToken");
+        var tokens = JsonPath.ParseObject(payload.ThemeTokensJson);
+        var pathPrefix = new[] { "shadows", token };
+        var colorToken = RequiredThemeString(tokens, [.. pathPrefix, "color", "color"], $"theme.shadows.{token}.color.color");
+        var alpha = RequiredThemeNumber(tokens, [.. pathPrefix, "color", "alpha"], $"theme.shadows.{token}.color.alpha");
+        return new ResolvedDesignShadowEffect(
+            RequiredThemeNumber(tokens, [.. pathPrefix, "offsetX"], $"theme.shadows.{token}.offsetX"),
+            RequiredThemeNumber(tokens, [.. pathPrefix, "offsetY"], $"theme.shadows.{token}.offsetY"),
+            RequiredThemeNumber(tokens, [.. pathPrefix, "blur"], $"theme.shadows.{token}.blur"),
+            new ResolvedDesignColorRef($"theme.shadows.{token}.color", null, colorToken, Alpha: alpha));
+    }
+
+    private static string RequiredThemeString(JsonObject root, IReadOnlyList<string> path, string fieldId)
+    {
+        var value = JsonPath.String(root, path);
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new InvalidOperationException($"Theme token '{fieldId}' is not defined.");
+        }
+
+        return value;
+    }
+
+    private static double RequiredThemeNumber(JsonObject root, IReadOnlyList<string> path, string fieldId)
+    {
+        var node = JsonPath.Get(root, path);
+        if (node is null)
+        {
+            throw new InvalidOperationException($"Theme token '{fieldId}' is not defined.");
+        }
+
+        return JsonPath.NumberAt(root, path, 0);
     }
 
     private static DesignRect Centered(DesignMetrics metrics, double width, double height)
@@ -619,6 +663,7 @@ internal static class DesignPreviewFrameResolver
         DesignRect bounds,
         double cornerRadius,
         string baseColorToken,
+        double alpha,
         double angleDegrees,
         double extent,
         double spread,
@@ -647,6 +692,7 @@ internal static class DesignPreviewFrameResolver
             bounds,
             cornerRadius,
             baseColorToken,
+            alpha,
             lightX,
             lightY,
             coreDistance,
@@ -668,6 +714,7 @@ internal static class DesignPreviewFrameResolver
                 bounds,
                 cornerRadius,
                 baseColorToken,
+                alpha,
                 lightX,
                 lightY,
                 distance,
@@ -688,6 +735,7 @@ internal static class DesignPreviewFrameResolver
         DesignRect bounds,
         double cornerRadius,
         string baseColorToken,
+        double alpha,
         double lightX,
         double lightY,
         double distance,
@@ -704,6 +752,7 @@ internal static class DesignPreviewFrameResolver
             bounds,
             cornerRadius,
             baseColorToken,
+            alpha,
             lightY < 0 ? ReliefSide.Top : ReliefSide.Bottom,
             0,
             -lightY * distance,
@@ -716,6 +765,7 @@ internal static class DesignPreviewFrameResolver
             bounds,
             cornerRadius,
             baseColorToken,
+            alpha,
             lightX < 0 ? ReliefSide.Left : ReliefSide.Right,
             -lightX * distance,
             0,
@@ -728,6 +778,7 @@ internal static class DesignPreviewFrameResolver
             bounds,
             cornerRadius,
             baseColorToken,
+            alpha,
             lightY < 0 ? ReliefSide.Bottom : ReliefSide.Top,
             0,
             lightY * distance,
@@ -740,6 +791,7 @@ internal static class DesignPreviewFrameResolver
             bounds,
             cornerRadius,
             baseColorToken,
+            alpha,
             lightX < 0 ? ReliefSide.Right : ReliefSide.Left,
             lightX * distance,
             0,
@@ -754,6 +806,7 @@ internal static class DesignPreviewFrameResolver
         DesignRect bounds,
         double cornerRadius,
         string baseColorToken,
+        double alpha,
         ReliefSide side,
         double offsetX,
         double offsetY,
@@ -778,7 +831,7 @@ internal static class DesignPreviewFrameResolver
                     Bounds = new DesignRect(0, 0, bounds.Width, bounds.Height),
                     Data = ReliefEdgePath(bounds.Width, bounds.Height, cornerRadius, side),
                     Stroke = new ResolvedDesignStroke(
-                        ReliefGradient(bounds.Width, bounds.Height, side, baseColorToken, brightnessMultiplier),
+                        ReliefGradient(bounds.Width, bounds.Height, side, baseColorToken, alpha, brightnessMultiplier),
                         strokeWidth,
                         "round",
                         "round"),
@@ -793,6 +846,7 @@ internal static class DesignPreviewFrameResolver
         double height,
         ReliefSide side,
         string baseColorToken,
+        double alpha,
         double brightnessMultiplier)
     {
         var (from, to) = side switch
@@ -806,8 +860,8 @@ internal static class DesignPreviewFrameResolver
             from,
             to,
             [
-                new ResolvedDesignGradientStop(0, new ResolvedDesignColorRef($"{baseColorToken}.relief.edge.{N(brightnessMultiplier)}", baseColorToken, "debug_red", brightnessMultiplier)),
-                new ResolvedDesignGradientStop(1, new ResolvedDesignColorRef($"{baseColorToken}.relief.inner.0", baseColorToken, "debug_red", 0)),
+                new ResolvedDesignGradientStop(0, new ResolvedDesignColorRef($"{baseColorToken}.relief.edge.{N(brightnessMultiplier)}", baseColorToken, "debug_red", brightnessMultiplier, alpha)),
+                new ResolvedDesignGradientStop(1, new ResolvedDesignColorRef($"{baseColorToken}.relief.inner.0", baseColorToken, "debug_red", 0, alpha)),
             ]);
     }
 

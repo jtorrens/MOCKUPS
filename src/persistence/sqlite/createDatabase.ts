@@ -1508,7 +1508,7 @@ function defaultAvatarComponentTokens() {
     borderWidth: 0,
     borderColorToken: "borders.primary",
     shadowEnabled: false,
-    shadowToken: "system",
+    shadowToken: "elevated",
     surfaceReliefEnabled: true,
   });
 }
@@ -1522,7 +1522,7 @@ function defaultButtonIconComponentTokens() {
     borderWidth: 0,
     borderColorToken: "borders.primary",
     shadowEnabled: false,
-    shadowToken: "system",
+    shadowToken: "elevated",
     surfaceReliefEnabled: false,
     labelEnabled: false,
     labelPosition: "bottom",
@@ -1544,13 +1544,12 @@ function defaultLabelComponentTokens() {
     cornerRadius: 10,
     borderWidth: 0,
     borderColorToken: "borders.primary",
-    backgroundVisible: true,
     backgroundColorToken: "background",
     alpha: 1,
     textColorToken: "textPrimary",
     fontSize: 12,
     shadowEnabled: false,
-    shadowToken: "system",
+    shadowToken: "elevated",
     surfaceReliefEnabled: false,
   });
 }
@@ -1582,7 +1581,7 @@ function defaultAudioMessageComponentTokens() {
     borderWidth: 0,
     borderColorToken: "borders.primary",
     shadowEnabled: false,
-    shadowToken: "system",
+    shadowToken: "elevated",
     surfaceReliefEnabled: false,
   });
 }
@@ -1595,7 +1594,7 @@ function defaultVideoMessageComponentTokens() {
     borderWidth: 0,
     borderColorToken: "borders.primary",
     shadowEnabled: false,
-    shadowToken: "system",
+    shadowToken: "elevated",
     surfaceReliefEnabled: false,
     playOverlayEnabled: true,
     playCircleSize: 44,

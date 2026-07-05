@@ -59,6 +59,12 @@ internal static class ComponentClassFieldCatalog
         new("theme.radii.full", "radii.full"),
     ];
 
+    private static readonly FieldOption[] ShadowTokenOptions =
+    [
+        new("avatar", "Avatar"),
+        new("elevated", "Elevated"),
+    ];
+
     private static readonly FieldOption[] TypographySizeOptions =
     [
         new("theme.typography.sizes.xs", "typography.sizes.xs"),
@@ -103,6 +109,7 @@ internal static class ComponentClassFieldCatalog
     {
         ["component.type"] = new("component.type", "Component Type", ValueKind.StringReadOnly, [], "", false),
         ["component.style.shadowEnabled"] = new("component.style.shadowEnabled", "Shadow", ValueKind.Boolean, ["style", "shadowEnabled"], "false"),
+        ["component.style.shadowToken"] = new("component.style.shadowToken", "Shadow token", ValueKind.OptionToken, ["style", "shadowToken"], "elevated", Options: ShadowTokenOptions),
         ["component.style.reliefEnabled"] = new("component.style.reliefEnabled", "Relief", ValueKind.Boolean, ["style", "reliefEnabled"], "false"),
         ["component.style.borderWidth"] = new("component.style.borderWidth", "Border width", ValueKind.Integer, ["style", "borderWidth"], "0"),
         ["component.style.borderColorToken"] = new("component.style.borderColorToken", "Border color", ValueKind.ThemeToken, ["style", "borderColorToken"], "theme.borders.primary", Options: ThemeColorOptions),
@@ -176,7 +183,6 @@ internal static class ComponentClassFieldCatalog
         ["component.label.dimensionMode"] = new("component.label.dimensionMode", "Dimension mode", ValueKind.OptionToken, ["label", "dimensionMode"], "content", Options: DimensionModeOptions),
         ["component.label.size"] = new("component.label.size", "Size", ValueKind.IntegerPair, ["label", "size"], "120|32", PairLabels: new("W", "H")),
         ["component.label.padding"] = new("component.label.padding", "Padding", ValueKind.IntegerPair, ["label", "padding"], "8|4", PairLabels: new("X", "Y")),
-        ["component.label.backgroundVisible"] = new("component.label.backgroundVisible", "Show background", ValueKind.Boolean, ["label", "backgroundVisible"], "true"),
         ["component.label.backgroundColorToken"] = new("component.label.backgroundColorToken", "Background", ValueKind.ThemeToken, ["label", "backgroundColorToken"], "theme.colors.background", Options: ThemeColorOptions),
         ["component.label.alpha"] = new("component.label.alpha", "Surface alpha", ValueKind.Alpha, ["label", "alpha"], "1"),
         ["component.label.textColorToken"] = new("component.label.textColorToken", "Text color", ValueKind.ThemeToken, ["label", "textColorToken"], "theme.colors.textPrimary", Options: ThemeColorOptions),

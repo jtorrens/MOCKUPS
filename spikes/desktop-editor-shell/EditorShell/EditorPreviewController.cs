@@ -19,7 +19,6 @@ internal sealed class EditorPreviewController
     private readonly Func<ProjectTreeNode?> _selectedNode;
     private readonly RuntimeWebPreviewPane _runtimePreviewPane = new();
     private readonly DesignWebPreviewPane _designPreviewPane = new();
-    private readonly VisualIrDesignPreviewPane _visualIrPreviewPane = new();
     private string? _projectId;
     private string? _selectedThemeId;
     private PreviewNodeKey? _lastDesignPreviewNode;
@@ -38,7 +37,6 @@ internal sealed class EditorPreviewController
         IEditorShellMessageSink messages,
         ContentControl runtimePreviewHost,
         ContentControl designPreviewHost,
-        ContentControl visualIrPreviewHost,
         Func<bool> isDark,
         Func<ProjectTreeNode?> selectedNode)
     {
@@ -54,7 +52,6 @@ internal sealed class EditorPreviewController
 
         runtimePreviewHost.Content = _runtimePreviewPane;
         designPreviewHost.Content = _designPreviewPane;
-        visualIrPreviewHost.Content = _visualIrPreviewPane;
     }
 
     public string? SelectedDeviceId { get; private set; }
@@ -197,22 +194,7 @@ internal sealed class EditorPreviewController
                 _selectedScale,
                 _showDesignMarks,
                 designPayload);
-            var irMessage = _visualIrPreviewPane.Update(
-                metrics,
-                _isDark(),
-                themeName,
-                _selectedMode,
-                _selectedScale,
-                _showDesignMarks,
-                designPayload);
-            if (string.IsNullOrWhiteSpace(irMessage))
-            {
-                _messages.Clear();
-            }
-            else
-            {
-                _messages.Error("IR", irMessage);
-            }
+            _messages.Clear();
         }
         catch (Exception exception)
         {

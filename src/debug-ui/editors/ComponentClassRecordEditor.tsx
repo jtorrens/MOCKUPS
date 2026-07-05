@@ -566,11 +566,6 @@ export function ComponentClassRecordEditor({
                   {componentAccordion(
                     "appearance",
                     <>
-                      {tokenCheckboxRow(
-                        "Background visible",
-                        "backgroundVisible",
-                        true,
-                      )}
                       {tokenThemeColorRow(
                         "Background theme color",
                         "backgroundColorToken",

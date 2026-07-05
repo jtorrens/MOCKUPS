@@ -86,6 +86,18 @@ internal sealed partial class SpikeDatabase
                 StringComparer.Ordinal);
     }
 
+    public IReadOnlyDictionary<string, bool> GetPaletteNeutralMap(string projectId)
+    {
+        using var connection = OpenConnection();
+        return QueryPaletteColorRows(connection)
+            .Where((color) => color.ProjectId == projectId)
+            .GroupBy((color) => color.Token, StringComparer.Ordinal)
+            .ToDictionary(
+                (group) => group.Key,
+                (group) => group.First().IsNeutral,
+                StringComparer.Ordinal);
+    }
+
     private static void SeedPaletteColorsIfEmpty(SqliteConnection connection)
     {
         var projectIds = QueryProjectRows(connection).Select((project) => project.Id).ToList();

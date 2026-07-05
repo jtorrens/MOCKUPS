@@ -446,13 +446,10 @@ function componentRenderableForPayload(
       box: centerBox(payload, width, height),
       text: sampleText,
       style: {
-        backgroundColor:
-          label.backgroundVisible === false
-            ? "transparent"
-            : colorWithAlpha(
-                themeTokenColor(payload, label.backgroundColorToken, "#FFFFFF"),
-                alpha,
-              ),
+        backgroundColor: colorWithAlpha(
+          themeTokenColor(payload, label.backgroundColorToken, "#FFFFFF"),
+          alpha,
+        ),
         textColor: themeTokenColor(payload, label.textColorToken, "#111827"),
         fontSize,
         lineHeight,

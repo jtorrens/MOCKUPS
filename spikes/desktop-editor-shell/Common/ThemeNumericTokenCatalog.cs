@@ -28,6 +28,14 @@ internal static class ThemeNumericTokenCatalog
         Token("theme.radii.pill", ["radii", "pill"]),
         Token("theme.radii.avatar", ["radii", "avatar"]),
         Token("theme.radii.full", ["radii", "full"]),
+        Token("theme.shadows.avatar.alpha", ["shadows", "avatar", "color", "alpha"]),
+        Token("theme.shadows.avatar.offsetX", ["shadows", "avatar", "offsetX"]),
+        Token("theme.shadows.avatar.offsetY", ["shadows", "avatar", "offsetY"]),
+        Token("theme.shadows.avatar.blur", ["shadows", "avatar", "blur"]),
+        Token("theme.shadows.elevated.alpha", ["shadows", "elevated", "color", "alpha"]),
+        Token("theme.shadows.elevated.offsetX", ["shadows", "elevated", "offsetX"]),
+        Token("theme.shadows.elevated.offsetY", ["shadows", "elevated", "offsetY"]),
+        Token("theme.shadows.elevated.blur", ["shadows", "elevated", "blur"]),
     ];
 
     public static bool TryGet(string id, out ThemeNumericTokenPath token)

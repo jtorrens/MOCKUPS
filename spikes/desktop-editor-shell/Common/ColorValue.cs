@@ -83,6 +83,27 @@ internal static class ColorValue
             : $"#{red:X2}{green:X2}{blue:X2}{parsed.A:X2}";
     }
 
+    public static string ApplyNeutralTint(string color, double hueDeg, double saturation)
+    {
+        if (!IsHexColor(color))
+        {
+            return color;
+        }
+
+        var clampedSaturation = Math.Clamp(saturation, 0, 1);
+        if (clampedSaturation <= 0)
+        {
+            return color.ToUpperInvariant();
+        }
+
+        var parsed = ParseIrHex(color);
+        var (_, _, lightness) = RgbToHsl(parsed.R / 255d, parsed.G / 255d, parsed.B / 255d);
+        var (red, green, blue) = HslToRgb(NormalizeHue(hueDeg) / 360d, clampedSaturation, lightness);
+        return parsed.A == 255
+            ? $"#{ClampByte(red * 255):X2}{ClampByte(green * 255):X2}{ClampByte(blue * 255):X2}"
+            : $"#{ClampByte(red * 255):X2}{ClampByte(green * 255):X2}{ClampByte(blue * 255):X2}{parsed.A:X2}";
+    }
+
     public static string CssColor(string value)
     {
         var color = ParseIrHex(value);
@@ -114,5 +135,59 @@ internal static class ColorValue
     private static byte ClampByte(double value)
     {
         return (byte)Math.Clamp(Math.Round(value), 0, 255);
+    }
+
+    private static double NormalizeHue(double hueDeg)
+    {
+        var normalized = hueDeg % 360;
+        return normalized < 0 ? normalized + 360 : normalized;
+    }
+
+    private static (double Hue, double Saturation, double Lightness) RgbToHsl(double red, double green, double blue)
+    {
+        var max = Math.Max(red, Math.Max(green, blue));
+        var min = Math.Min(red, Math.Min(green, blue));
+        var lightness = (max + min) / 2;
+        if (Math.Abs(max - min) < 0.000001)
+        {
+            return (0, 0, lightness);
+        }
+
+        var delta = max - min;
+        var saturation = lightness > 0.5 ? delta / (2 - max - min) : delta / (max + min);
+        var hue = max == red
+            ? (green - blue) / delta + (green < blue ? 6 : 0)
+            : max == green
+                ? (blue - red) / delta + 2
+                : (red - green) / delta + 4;
+        return (hue / 6, saturation, lightness);
+    }
+
+    private static (double Red, double Green, double Blue) HslToRgb(double hue, double saturation, double lightness)
+    {
+        if (saturation <= 0)
+        {
+            return (lightness, lightness, lightness);
+        }
+
+        var q = lightness < 0.5
+            ? lightness * (1 + saturation)
+            : lightness + saturation - lightness * saturation;
+        var p = 2 * lightness - q;
+        return (
+            HueToRgb(p, q, hue + 1d / 3d),
+            HueToRgb(p, q, hue),
+            HueToRgb(p, q, hue - 1d / 3d));
+    }
+
+    private static double HueToRgb(double p, double q, double hue)
+    {
+        var next = hue;
+        if (next < 0) next += 1;
+        if (next > 1) next -= 1;
+        if (next < 1d / 6d) return p + (q - p) * 6 * next;
+        if (next < 1d / 2d) return q;
+        if (next < 2d / 3d) return p + (q - p) * (2d / 3d - next) * 6;
+        return p;
     }
 }

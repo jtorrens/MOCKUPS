@@ -1,6 +1,5 @@
 using Mockups.DesktopEditorShell.Data;
 using Mockups.DesktopEditorShell.EditorShell;
-using Mockups.DesktopEditorShell.Preview.Avalonia;
 using Mockups.DesktopEditorShell.VisualIr;
 using System;
 using System.Collections.Generic;
@@ -118,9 +117,6 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
                 throw new InvalidOperationException("Expected zero relief extent to emit no relief layers.");
             }
         }
-
-        var renderer = new AvaloniaVisualIrDebugRenderer();
-        renderer.Render(document, new VisualIrRenderOptions(ShowBounds: true));
     }
 
     private static IEnumerable<VisualIrNode> Flatten(VisualIrNode node)
@@ -164,6 +160,7 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
             """,
             "{}",
             new Dictionary<string, string>(),
+            new Dictionary<string, bool>(),
             "",
             "",
             "{}");
@@ -186,6 +183,7 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
             """,
             "{}",
             new Dictionary<string, string>(),
+            new Dictionary<string, bool>(),
             "",
             "",
             "{}");
@@ -210,6 +208,7 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
             """,
             "{}",
             new Dictionary<string, string>(),
+            new Dictionary<string, bool>(),
             "",
             "",
             "{}");
@@ -224,6 +223,7 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
             {
               "style": {
                 "shadowEnabled": true,
+                "shadowToken": "elevated",
                 "reliefEnabled": true,
                 "borderWidth": 2,
                 "borderColorToken": "theme.borders.primary",
@@ -238,8 +238,8 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
                 "dimensionMode": "content",
                 "size": "180|64",
                 "padding": "12|6",
-                "backgroundVisible": true,
                 "backgroundColorToken": "theme.colors.background",
+                "alpha": 1,
                 "textColorToken": "theme.colors.textPrimary",
                 "textSizeToken": "theme.typography.sizes.l",
                 "textStyle": "italic"
@@ -250,13 +250,25 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
             {
               "radii": { "surface": 9 },
               "typography": { "sizes": { "l": 18 } },
+              "shadows": {
+                "elevated": {
+                  "color": { "color": "gray_000", "alpha": 0.18 },
+                  "offsetX": 0,
+                  "offsetY": 4,
+                  "blur": 18
+                }
+              },
               "modes": {
                 "light": { "colors": { "background": "#FFFFFF", "textPrimary": "#111827", "borders.primary": "#111827" } },
                 "dark": { "colors": { "background": "#111827", "textPrimary": "#FFFFFF", "borders.primary": "#FFFFFF" } }
               }
             }
             """,
-            new Dictionary<string, string>(),
+            new Dictionary<string, string>
+            {
+                ["gray_000"] = "#000000",
+            },
+            new Dictionary<string, bool>(),
             "",
             "",
             "{}",

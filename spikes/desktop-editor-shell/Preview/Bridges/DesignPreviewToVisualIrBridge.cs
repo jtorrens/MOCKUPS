@@ -209,21 +209,27 @@ internal static class DesignPreviewToVisualIrBridge
         var fallback = ResolveColorValue(payload, color.FallbackValue);
         if (string.IsNullOrWhiteSpace(color.ThemeTokenId))
         {
-            return VisualIrColor.Static(IsVisualIrColor(fallback) ? AdjustColor(fallback, color.BrightnessMultiplier) : "#ff00ff");
+            return VisualIrColor.Static(IsVisualIrColor(fallback) ? ApplyColorAdjustments(fallback, color) : "#ff00ff");
         }
 
         if (!ThemeColorTokenCatalog.TryGet(color.ThemeTokenId, out var paths))
         {
-            return VisualIrColor.Static(IsVisualIrColor(fallback) ? AdjustColor(fallback, color.BrightnessMultiplier) : "#ff00ff");
+            return VisualIrColor.Static(IsVisualIrColor(fallback) ? ApplyColorAdjustments(fallback, color) : "#ff00ff");
         }
 
         return VisualIrColor.Variant(
             new Dictionary<string, string>
             {
-                ["set_day"] = AdjustColor(ThemeColor(payload, paths.LightPath, paths.LightAlphaPath, color.FallbackValue), color.BrightnessMultiplier),
-                ["set_night"] = AdjustColor(ThemeColor(payload, paths.DarkPath, paths.DarkAlphaPath, color.FallbackValue), color.BrightnessMultiplier),
+                ["set_day"] = ApplyColorAdjustments(ThemeColor(payload, paths.LightPath, paths.LightAlphaPath, color.FallbackValue), color),
+                ["set_night"] = ApplyColorAdjustments(ThemeColor(payload, paths.DarkPath, paths.DarkAlphaPath, color.FallbackValue), color),
             },
-            IsVisualIrColor(fallback) ? AdjustColor(fallback, color.BrightnessMultiplier) : "#ff00ff");
+            IsVisualIrColor(fallback) ? ApplyColorAdjustments(fallback, color) : "#ff00ff");
+    }
+
+    private static string ApplyColorAdjustments(string value, ResolvedDesignColorRef color)
+    {
+        var adjusted = AdjustColor(value, color.BrightnessMultiplier);
+        return color.Alpha >= 1 ? adjusted : ColorValue.WithAlpha(adjusted, color.Alpha);
     }
 
     private static string ThemeColor(
@@ -255,7 +261,20 @@ internal static class DesignPreviewToVisualIrBridge
             return value.Equals("transparent", StringComparison.OrdinalIgnoreCase) ? "#00000000" : value;
         }
 
-        return payload.PaletteColors.TryGetValue(value, out var resolved) ? resolved : value;
+        if (!payload.PaletteColors.TryGetValue(value, out var resolved))
+        {
+            return value;
+        }
+
+        if (!payload.PaletteNeutralColors.TryGetValue(value, out var isNeutral) || !isNeutral)
+        {
+            return resolved;
+        }
+
+        var tokens = JsonPath.ParseObject(payload.ThemeTokensJson);
+        var hueDeg = JsonPath.NumberAt(tokens, ["neutralTint", "hueDeg"], 0);
+        var saturation = JsonPath.NumberAt(tokens, ["neutralTint", "saturation"], 0);
+        return ColorValue.ApplyNeutralTint(resolved, hueDeg, saturation);
     }
 
     private static bool IsVisualIrColor(string value)

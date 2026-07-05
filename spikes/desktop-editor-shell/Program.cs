@@ -1,6 +1,5 @@
 ﻿using Avalonia;
 using Mockups.DesktopEditorShell.Common;
-using Mockups.DesktopEditorShell.Preview.Avalonia;
 using Mockups.DesktopEditorShell.Preview.Bridges;
 using Mockups.DesktopEditorShell.VisualIr;
 using System;
@@ -27,14 +26,6 @@ class Program
         {
             SvgMarkupNormalizerSmoke.Validate();
             Console.WriteLine("SVG tint normalization smoke validated.");
-            return;
-        }
-
-        if (args.Contains("--visual-ir-debug-renderer-smoke", StringComparer.Ordinal))
-        {
-            BuildAvaloniaApp().SetupWithoutStarting();
-            VisualIrDebugRendererSmoke.Validate();
-            Console.WriteLine("Visual IR debug renderer smoke validated.");
             return;
         }
 

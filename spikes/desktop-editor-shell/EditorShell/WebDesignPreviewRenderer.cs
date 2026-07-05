@@ -30,6 +30,7 @@ internal static class WebDesignPreviewRenderer
                 themeMode = themeMode is "dark" ? "dark" : "light",
                 themeTokensJson = payload.ThemeTokensJson,
                 paletteColors = payload.PaletteColors,
+                paletteNeutralColors = payload.PaletteNeutralColors,
                 projectMediaRoot = payload.ProjectMediaRoot,
                 iconAssetRoot = payload.IconAssetRoot,
                 iconMappingJson = payload.IconMappingJson,

@@ -1,4 +1,3 @@
-using Mockups.DesktopEditorShell.Preview.Avalonia;
 using Mockups.DesktopEditorShell.Preview.Bridges;
 using Mockups.DesktopEditorShell.VisualIr;
 using System;
@@ -14,7 +13,6 @@ internal static class EditorIrDiagnosticsService
         try
         {
             VisualIrSmokeFixture.ValidateRoundTrip();
-            VisualIrDebugRendererSmoke.Validate();
             DesignPreviewToVisualIrBridgeSmoke.Validate();
             return new EditorIrDiagnosticsResult(true, $"IR checks OK · {DateTime.Now:HH:mm:ss}");
         }
@@ -24,4 +22,3 @@ internal static class EditorIrDiagnosticsService
         }
     }
 }
-

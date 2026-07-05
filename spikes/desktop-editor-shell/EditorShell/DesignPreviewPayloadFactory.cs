@@ -10,6 +10,7 @@ internal sealed record DesignPreviewPayload(
     string ConfigJson,
     string ThemeTokensJson,
     IReadOnlyDictionary<string, string> PaletteColors,
+    IReadOnlyDictionary<string, bool> PaletteNeutralColors,
     string ProjectMediaRoot,
     string IconAssetRoot,
     string IconMappingJson,
@@ -38,15 +39,16 @@ internal static class DesignPreviewPayloadFactory
             return null;
         }
         var paletteColors = database.GetPaletteColorMap(theme.ProjectId);
+        var paletteNeutralColors = database.GetPaletteNeutralMap(theme.ProjectId);
         var projectMediaRoot = database.GetProjectSettings(theme.ProjectId).MediaRoot;
         var iconTheme = !string.IsNullOrWhiteSpace(theme.IconThemeId)
             ? database.GetIconThemeSettings(theme.IconThemeId)
             : null;
         return node.Kind switch
         {
-            ProjectTreeNodeKind.StatusBar => FromStatusBar(database, node, theme.TokensJson, paletteColors, projectMediaRoot, iconTheme),
-            ProjectTreeNodeKind.NavigationBar => FromNavigationBar(database, node, theme.TokensJson, paletteColors, projectMediaRoot, iconTheme),
-            ProjectTreeNodeKind.ComponentClass => FromComponentClass(database, node, theme.TokensJson, paletteColors, projectMediaRoot, iconTheme),
+            ProjectTreeNodeKind.StatusBar => FromStatusBar(database, node, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme),
+            ProjectTreeNodeKind.NavigationBar => FromNavigationBar(database, node, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme),
+            ProjectTreeNodeKind.ComponentClass => FromComponentClass(database, node, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme),
             _ => null,
         };
     }
@@ -56,6 +58,7 @@ internal static class DesignPreviewPayloadFactory
         ProjectTreeNode node,
         string themeTokensJson,
         IReadOnlyDictionary<string, string> paletteColors,
+        IReadOnlyDictionary<string, bool> paletteNeutralColors,
         string projectMediaRoot,
         SpikeDatabase.IconThemeSettings? iconTheme)
     {
@@ -66,6 +69,7 @@ internal static class DesignPreviewPayloadFactory
             settings.ConfigJson,
             themeTokensJson,
             paletteColors,
+            paletteNeutralColors,
             projectMediaRoot,
             iconTheme?.AssetRoot ?? "",
             iconTheme?.MappingJson ?? "{}");
@@ -76,6 +80,7 @@ internal static class DesignPreviewPayloadFactory
         ProjectTreeNode node,
         string themeTokensJson,
         IReadOnlyDictionary<string, string> paletteColors,
+        IReadOnlyDictionary<string, bool> paletteNeutralColors,
         string projectMediaRoot,
         SpikeDatabase.IconThemeSettings? iconTheme)
     {
@@ -86,6 +91,7 @@ internal static class DesignPreviewPayloadFactory
             settings.ConfigJson,
             themeTokensJson,
             paletteColors,
+            paletteNeutralColors,
             projectMediaRoot,
             iconTheme?.AssetRoot ?? "",
             iconTheme?.MappingJson ?? "{}");
@@ -96,6 +102,7 @@ internal static class DesignPreviewPayloadFactory
         ProjectTreeNode node,
         string themeTokensJson,
         IReadOnlyDictionary<string, string> paletteColors,
+        IReadOnlyDictionary<string, bool> paletteNeutralColors,
         string projectMediaRoot,
         SpikeDatabase.IconThemeSettings? iconTheme)
     {
@@ -106,6 +113,7 @@ internal static class DesignPreviewPayloadFactory
             settings.ConfigJson,
             themeTokensJson,
             paletteColors,
+            paletteNeutralColors,
             projectMediaRoot,
             iconTheme?.AssetRoot ?? "",
             iconTheme?.MappingJson ?? "{}",
