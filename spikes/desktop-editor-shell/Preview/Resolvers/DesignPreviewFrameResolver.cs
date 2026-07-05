@@ -145,7 +145,9 @@ internal static class DesignPreviewFrameResolver
                 Id = "component.label.background",
                 Bounds = new DesignRect(0, 0, bounds.Width, bounds.Height),
                 Fill = backgroundVisible
-                    ? ThemePaint(backgroundColorToken)
+                    ? reliefEnabled
+                        ? ReliefSurfaceGradient(bounds.Height, backgroundColorToken, reliefTopIntensity, reliefBottomIntensity)
+                        : ThemePaint(backgroundColorToken)
                     : StaticPaint("component.label.background.transparent", "#00000000"),
                 Stroke = borderWidth > 0
                     ? new ResolvedDesignStroke(ThemePaint(borderColorToken), borderWidth)
@@ -758,6 +760,21 @@ internal static class DesignPreviewFrameResolver
             [
                 new ResolvedDesignGradientStop(0, new ResolvedDesignColorRef($"{baseColorToken}.relief.start.{N(startBrightnessMultiplier)}", baseColorToken, "debug_red", startBrightnessMultiplier)),
                 new ResolvedDesignGradientStop(1, new ResolvedDesignColorRef($"{baseColorToken}.relief.end.{N(endBrightnessMultiplier)}", baseColorToken, "debug_red", endBrightnessMultiplier)),
+            ]);
+    }
+
+    private static ResolvedDesignLinearGradientPaint ReliefSurfaceGradient(
+        double height,
+        string baseColorToken,
+        double topBrightnessMultiplier,
+        double bottomBrightnessMultiplier)
+    {
+        return new ResolvedDesignLinearGradientPaint(
+            new DesignPoint(0, 0),
+            new DesignPoint(0, height),
+            [
+                new ResolvedDesignGradientStop(0, new ResolvedDesignColorRef($"{baseColorToken}.relief.surface.top.{N(topBrightnessMultiplier)}", baseColorToken, "debug_red", topBrightnessMultiplier)),
+                new ResolvedDesignGradientStop(1, new ResolvedDesignColorRef($"{baseColorToken}.relief.surface.bottom.{N(bottomBrightnessMultiplier)}", baseColorToken, "debug_red", bottomBrightnessMultiplier)),
             ]);
     }
 
