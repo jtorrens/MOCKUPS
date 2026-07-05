@@ -2,8 +2,10 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.VisualTree;
 using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Collections.Generic;
@@ -14,8 +16,11 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 public sealed class EditorInstantComboBox : Grid
 {
     private readonly Button _button;
+    private readonly TextBlock _label;
+    private readonly TextBlock _indicator;
     private readonly Popup _popup;
     private readonly StackPanel _itemsPanel;
+    private TopLevel? _dismissRoot;
     private IReadOnlyList<FieldOption> _items = [];
     private FieldOption? _selectedItem;
 
@@ -27,9 +32,35 @@ public sealed class EditorInstantComboBox : Grid
             HorizontalContentAlignment = HorizontalAlignment.Stretch,
             MinHeight = 36,
             Padding = new Thickness(10, 6),
+            Focusable = false,
         };
         _button.Click += (_, _) => TogglePopup();
         Children.Add(_button);
+
+        _label = new TextBlock
+        {
+            VerticalAlignment = VerticalAlignment.Center,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+        };
+        _indicator = new TextBlock
+        {
+            Text = ">",
+            Width = 18,
+            FontSize = 13,
+            FontWeight = FontWeight.Bold,
+            TextAlignment = TextAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Opacity = 0.72,
+        };
+        var buttonContent = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("*,Auto"),
+        };
+        Grid.SetColumn(_label, 0);
+        Grid.SetColumn(_indicator, 1);
+        buttonContent.Children.Add(_label);
+        buttonContent.Children.Add(_indicator);
+        _button.Content = buttonContent;
 
         _itemsPanel = new StackPanel
         {
@@ -85,18 +116,62 @@ public sealed class EditorInstantComboBox : Grid
     {
         if (_items.Count == 0) return;
 
-        if (_popup.Child is Border border)
+        SetPopupOpen(!_popup.IsOpen);
+    }
+
+    private void SetPopupOpen(bool isOpen)
+    {
+        if (isOpen && _popup.Child is Border border)
         {
             border.Width = Math.Max(_button.Bounds.Width, 112);
         }
 
-        _popup.IsOpen = !_popup.IsOpen;
+        _popup.IsOpen = isOpen;
+        _indicator.Text = isOpen ? "v" : ">";
+        if (isOpen)
+        {
+            AttachDismissHandler();
+        }
+        else
+        {
+            DetachDismissHandler();
+        }
     }
 
     private void Select(FieldOption option)
     {
-        _popup.IsOpen = false;
+        SetPopupOpen(false);
         SelectedItem = option;
+    }
+
+    private void AttachDismissHandler()
+    {
+        var root = TopLevel.GetTopLevel(this);
+        if (root is null || ReferenceEquals(root, _dismissRoot)) return;
+
+        DetachDismissHandler();
+        _dismissRoot = root;
+        root.AddHandler(PointerPressedEvent, OnRootPointerPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
+    }
+
+    private void DetachDismissHandler()
+    {
+        if (_dismissRoot is null) return;
+
+        _dismissRoot.RemoveHandler(PointerPressedEvent, OnRootPointerPressed);
+        _dismissRoot = null;
+    }
+
+    private void OnRootPointerPressed(object? sender, PointerPressedEventArgs args)
+    {
+        if (args.Source is Visual source
+            && (_button.IsVisualAncestorOf(source)
+                || (_popup.Child is Visual popupChild && popupChild.IsVisualAncestorOf(source))))
+        {
+            return;
+        }
+
+        SetPopupOpen(false);
     }
 
     private void RebuildItems()
@@ -114,6 +189,7 @@ public sealed class EditorInstantComboBox : Grid
                 Padding = new Thickness(8, 5),
                 Background = isSelected ? new SolidColorBrush(Color.Parse("#223388FF")) : Brushes.Transparent,
                 Cursor = new Cursor(StandardCursorType.Hand),
+                Focusable = false,
             };
             button.Click += (_, _) => Select(item);
             _itemsPanel.Children.Add(button);
@@ -122,27 +198,6 @@ public sealed class EditorInstantComboBox : Grid
 
     private void UpdateButtonContent()
     {
-        _button.Content = new Grid
-        {
-            ColumnDefinitions = new ColumnDefinitions("*,Auto"),
-            Children =
-            {
-                new TextBlock
-                {
-                    Text = _selectedItem?.Label ?? "",
-                    VerticalAlignment = VerticalAlignment.Center,
-                    TextTrimming = TextTrimming.CharacterEllipsis,
-                },
-                new TextBlock
-                {
-                    Text = "v",
-                    Width = 18,
-                    TextAlignment = TextAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    Opacity = 0.72,
-                    [Grid.ColumnProperty] = 1,
-                },
-            },
-        };
+        _label.Text = _selectedItem?.Label ?? "";
     }
 }
