@@ -104,6 +104,9 @@ internal sealed class EditorPreviewController
             {
                 new FieldOption("fit", "Fit"),
                 new FieldOption("actual", "1:1"),
+                new FieldOption("2x", "2:1"),
+                new FieldOption("3x", "3:1"),
+                new FieldOption("4x", "4:1"),
             };
             _scaleComboBox.ItemsSource = scaleOptions;
             _scaleComboBox.SelectedItem = scaleOptions.FirstOrDefault((option) => option.Value == _selectedScale) ?? scaleOptions[0];

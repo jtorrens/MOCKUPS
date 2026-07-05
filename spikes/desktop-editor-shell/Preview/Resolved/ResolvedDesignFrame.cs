@@ -64,7 +64,8 @@ internal sealed record ResolvedDesignPaint(ResolvedDesignColorRef Color);
 internal sealed record ResolvedDesignColorRef(
     string Id,
     string? ThemeTokenId,
-    string FallbackValue);
+    string FallbackValue,
+    double BrightnessMultiplier = 0);
 
 internal sealed record ResolvedDesignStroke(
     ResolvedDesignPaint Paint,

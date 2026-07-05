@@ -66,6 +66,23 @@ internal static class ColorValue
         return $"{rgb}{alphaByte:X2}";
     }
 
+    public static string AdjustBrightness(string color, double multiplier)
+    {
+        if (!IsHexColor(color))
+        {
+            return color;
+        }
+
+        var parsed = ParseIrHex(color);
+        var factor = Math.Max(0, 1 + multiplier);
+        var red = ClampByte(parsed.R * factor);
+        var green = ClampByte(parsed.G * factor);
+        var blue = ClampByte(parsed.B * factor);
+        return parsed.A == 255
+            ? $"#{red:X2}{green:X2}{blue:X2}"
+            : $"#{red:X2}{green:X2}{blue:X2}{parsed.A:X2}";
+    }
+
     public static string CssColor(string value)
     {
         var color = ParseIrHex(value);
@@ -92,5 +109,10 @@ internal static class ColorValue
         }
 
         return Color.Parse(normalized);
+    }
+
+    private static byte ClampByte(double value)
+    {
+        return (byte)Math.Clamp(Math.Round(value), 0, 255);
     }
 }

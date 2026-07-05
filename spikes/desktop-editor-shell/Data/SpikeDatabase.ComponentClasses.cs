@@ -123,7 +123,10 @@ internal sealed partial class SpikeDatabase
         {
             var config = ParseJsonObject(string.IsNullOrWhiteSpace(row.ConfigJson) ? "{}" : row.ConfigJson);
             var defaults = ParseJsonObject(DefaultComponentClassConfigJson(row.ComponentType));
-            if (!JsonPath.MergeMissing(config, defaults))
+            var changed = JsonPath.MergeMissing(config, defaults);
+            changed |= NormalizeReliefIntensity(config, "reliefTopIntensity");
+            changed |= NormalizeReliefIntensity(config, "reliefBottomIntensity");
+            if (!changed)
             {
                 continue;
             }
@@ -134,6 +137,24 @@ internal sealed partial class SpikeDatabase
                 ("$id", row.Id),
                 ("$configJson", config.ToJsonString()));
         }
+    }
+
+    private static bool NormalizeReliefIntensity(JsonObject config, string key)
+    {
+        var style = JsonPath.Get(config, ["style"]) as JsonObject;
+        if (style is null)
+        {
+            return false;
+        }
+
+        var value = JsonPath.Number(style, key, 0);
+        if (Math.Abs(value) <= 1)
+        {
+            return false;
+        }
+
+        style[key] = JsonValue.Create(Math.Clamp(value / 100, -1, 1));
+        return true;
     }
 
     private static List<ComponentClassRow> QueryComponentClassRows(SqliteConnection connection)
@@ -245,8 +266,8 @@ internal sealed partial class SpikeDatabase
                 ["reliefAngle"] = -45,
                 ["reliefExtent"] = 1,
                 ["reliefSpread"] = 0,
-                ["reliefTopIntensity"] = 12,
-                ["reliefBottomIntensity"] = -10,
+                ["reliefTopIntensity"] = 0.12,
+                ["reliefBottomIntensity"] = -0.1,
             },
         };
 

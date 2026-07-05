@@ -136,6 +136,7 @@ internal static class DesignPreviewFrameResolver
         var reliefBottomIntensity = RuntimeValueGuard.RequiredNumber(style, "reliefBottomIntensity", "component.style.reliefBottomIntensity");
         var backgroundColorToken = RuntimeValueGuard.RequiredString(label, "backgroundColorToken", "component.label.backgroundColorToken");
         var textColorToken = RuntimeValueGuard.RequiredString(label, "textColorToken", "component.label.textColorToken");
+        var reliefBaseColorToken = borderWidth > 0 ? borderColorToken : backgroundColorToken;
         var children = new List<ResolvedDesignNode>
         {
             new ResolvedDesignRectNode
@@ -167,7 +168,7 @@ internal static class DesignPreviewFrameResolver
         };
         if (reliefEnabled)
         {
-            children.AddRange(ReliefLayers(bounds, cornerRadius, reliefAngle, reliefExtent, reliefSpread, reliefTopIntensity, reliefBottomIntensity));
+            children.AddRange(ReliefLayers(bounds, cornerRadius, reliefBaseColorToken, reliefAngle, reliefExtent, reliefSpread, reliefTopIntensity, reliefBottomIntensity));
         }
 
         children.Add(new ResolvedDesignTextNode
@@ -559,6 +560,11 @@ internal static class DesignPreviewFrameResolver
         return new ResolvedDesignPaint(new ResolvedDesignColorRef(tokenId, tokenId, fallback));
     }
 
+    private static ResolvedDesignPaint ThemePaintAdjusted(string tokenId, double brightnessMultiplier)
+    {
+        return new ResolvedDesignPaint(new ResolvedDesignColorRef($"{tokenId}.brightness.{brightnessMultiplier:0.###}", tokenId, "debug_red", brightnessMultiplier));
+    }
+
     private static ResolvedDesignPaint StaticPaint(string id, string value)
     {
         return new ResolvedDesignPaint(new ResolvedDesignColorRef(id, null, value));
@@ -593,6 +599,7 @@ internal static class DesignPreviewFrameResolver
     private static IReadOnlyList<ResolvedDesignNode> ReliefLayers(
         DesignRect bounds,
         double cornerRadius,
+        string baseColorToken,
         double angleDegrees,
         double extent,
         double spread,
@@ -600,32 +607,55 @@ internal static class DesignPreviewFrameResolver
         double bottomIntensity)
     {
         var radians = angleDegrees * Math.PI / 180;
-        var offsetX = Math.Cos(radians) * extent;
-        var offsetY = Math.Sin(radians) * extent;
-        return
-        [
-            new ResolvedDesignRectNode
-            {
-                Id = "component.label.relief.top",
-                Bounds = new DesignRect(-offsetX - spread, -offsetY - spread, bounds.Width + spread * 2, bounds.Height + spread * 2),
-                Fill = StaticPaint("component.style.relief.top", IntensityColor(topIntensity)),
-                Radius = cornerRadius,
-            },
-            new ResolvedDesignRectNode
-            {
-                Id = "component.label.relief.bottom",
-                Bounds = new DesignRect(offsetX - spread, offsetY - spread, bounds.Width + spread * 2, bounds.Height + spread * 2),
-                Fill = StaticPaint("component.style.relief.bottom", IntensityColor(bottomIntensity)),
-                Radius = cornerRadius,
-            },
-        ];
+        var directionX = Math.Cos(radians);
+        var directionY = Math.Sin(radians);
+        var hardLayers = Math.Max(1, (int)Math.Ceiling(Math.Abs(extent)));
+        var fadeLayers = Math.Max(0, (int)Math.Ceiling(Math.Abs(spread)));
+        var totalLayers = Math.Max(1, hardLayers + fadeLayers);
+        var layers = new List<ResolvedDesignNode>(totalLayers * 2);
+        for (var index = 0; index < totalLayers; index++)
+        {
+            var distance = index + 1;
+            var fade = index < hardLayers || fadeLayers == 0
+                ? 1
+                : Math.Max(0, 1 - (index - hardLayers + 1d) / (fadeLayers + 1));
+            layers.Add(ReliefStroke(
+                $"component.label.relief.top.{index + 1}",
+                bounds,
+                cornerRadius,
+                baseColorToken,
+                -directionX * distance,
+                -directionY * distance,
+                topIntensity * fade));
+            layers.Add(ReliefStroke(
+                $"component.label.relief.bottom.{index + 1}",
+                bounds,
+                cornerRadius,
+                baseColorToken,
+                directionX * distance,
+                directionY * distance,
+                bottomIntensity * fade));
+        }
+
+        return layers;
     }
 
-    private static string IntensityColor(double intensity)
+    private static ResolvedDesignRectNode ReliefStroke(
+        string id,
+        DesignRect bounds,
+        double cornerRadius,
+        string baseColorToken,
+        double offsetX,
+        double offsetY,
+        double brightnessMultiplier)
     {
-        var alpha = (int)Math.Clamp(Math.Abs(intensity) / 100 * 255, 0, 255);
-        var channel = intensity >= 0 ? "FFFFFF" : "000000";
-        return $"#{alpha:X2}{channel}";
+        return new ResolvedDesignRectNode
+        {
+            Id = id,
+            Bounds = new DesignRect(offsetX, offsetY, bounds.Width, bounds.Height),
+            Stroke = new ResolvedDesignStroke(ThemePaintAdjusted(baseColorToken, brightnessMultiplier), 1),
+            Radius = cornerRadius,
+        };
     }
 
     private static IReadOnlyDictionary<string, string> ComponentStyleMetadata(

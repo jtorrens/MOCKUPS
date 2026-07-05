@@ -95,8 +95,20 @@ internal static class ComponentClassFieldCatalog
         ["component.style.reliefAngle"] = new("component.style.reliefAngle", "Relief angle", ValueKind.Integer, ["style", "reliefAngle"], "-45"),
         ["component.style.reliefExtent"] = new("component.style.reliefExtent", "Relief extent", ValueKind.Integer, ["style", "reliefExtent"], "1"),
         ["component.style.reliefSpread"] = new("component.style.reliefSpread", "Relief spread", ValueKind.Integer, ["style", "reliefSpread"], "0"),
-        ["component.style.reliefTopIntensity"] = new("component.style.reliefTopIntensity", "Relief top", ValueKind.Integer, ["style", "reliefTopIntensity"], "12"),
-        ["component.style.reliefBottomIntensity"] = new("component.style.reliefBottomIntensity", "Relief bottom", ValueKind.Integer, ["style", "reliefBottomIntensity"], "-10"),
+        ["component.style.reliefTopIntensity"] = new(
+            "component.style.reliefTopIntensity",
+            "Relief top",
+            ValueKind.Decimal,
+            ["style", "reliefTopIntensity"],
+            "0.12",
+            Number: new NumberDefinition(-1, 1, 0.05m, 2)),
+        ["component.style.reliefBottomIntensity"] = new(
+            "component.style.reliefBottomIntensity",
+            "Relief bottom",
+            ValueKind.Decimal,
+            ["style", "reliefBottomIntensity"],
+            "-0.1",
+            Number: new NumberDefinition(-1, 1, 0.05m, 2)),
 
         ["component.avatar.defaultSize"] = new("component.avatar.defaultSize", "Default size", ValueKind.Integer, ["avatar", "defaultSize"], "48"),
         ["component.avatar.cornerRadiusToken"] = new("component.avatar.cornerRadiusToken", "Avatar radius", ValueKind.ThemeToken, ["avatar", "cornerRadiusToken"], "theme.radii.avatar", Options: RadiusTokenOptions),

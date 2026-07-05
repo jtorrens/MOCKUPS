@@ -154,12 +154,12 @@ internal static class DesignPreviewToVisualIrBridge
             && ThemeColorTokenCatalog.TryGet(color.ThemeTokenId, out var paths))
         {
             result[$"{prefix}.themeToken"] = color.ThemeTokenId;
-            result[$"{prefix}.set_day"] = ThemeColor(payload, paths.LightPath, paths.LightAlphaPath, color.FallbackValue);
-            result[$"{prefix}.set_night"] = ThemeColor(payload, paths.DarkPath, paths.DarkAlphaPath, color.FallbackValue);
+            result[$"{prefix}.set_day"] = AdjustColor(ThemeColor(payload, paths.LightPath, paths.LightAlphaPath, color.FallbackValue), color.BrightnessMultiplier);
+            result[$"{prefix}.set_night"] = AdjustColor(ThemeColor(payload, paths.DarkPath, paths.DarkAlphaPath, color.FallbackValue), color.BrightnessMultiplier);
         }
         else
         {
-            result[$"{prefix}.static"] = ResolveColorValue(payload, color.FallbackValue);
+            result[$"{prefix}.static"] = AdjustColor(ResolveColorValue(payload, color.FallbackValue), color.BrightnessMultiplier);
         }
 
         return result;
@@ -170,21 +170,21 @@ internal static class DesignPreviewToVisualIrBridge
         var fallback = ResolveColorValue(payload, color.FallbackValue);
         if (string.IsNullOrWhiteSpace(color.ThemeTokenId))
         {
-            return VisualIrColor.Static(IsVisualIrColor(fallback) ? fallback : "#ff00ff");
+            return VisualIrColor.Static(IsVisualIrColor(fallback) ? AdjustColor(fallback, color.BrightnessMultiplier) : "#ff00ff");
         }
 
         if (!ThemeColorTokenCatalog.TryGet(color.ThemeTokenId, out var paths))
         {
-            return VisualIrColor.Static(IsVisualIrColor(fallback) ? fallback : "#ff00ff");
+            return VisualIrColor.Static(IsVisualIrColor(fallback) ? AdjustColor(fallback, color.BrightnessMultiplier) : "#ff00ff");
         }
 
         return VisualIrColor.Variant(
             new Dictionary<string, string>
             {
-                ["set_day"] = ThemeColor(payload, paths.LightPath, paths.LightAlphaPath, color.FallbackValue),
-                ["set_night"] = ThemeColor(payload, paths.DarkPath, paths.DarkAlphaPath, color.FallbackValue),
+                ["set_day"] = AdjustColor(ThemeColor(payload, paths.LightPath, paths.LightAlphaPath, color.FallbackValue), color.BrightnessMultiplier),
+                ["set_night"] = AdjustColor(ThemeColor(payload, paths.DarkPath, paths.DarkAlphaPath, color.FallbackValue), color.BrightnessMultiplier),
             },
-            IsVisualIrColor(fallback) ? fallback : "#ff00ff");
+            IsVisualIrColor(fallback) ? AdjustColor(fallback, color.BrightnessMultiplier) : "#ff00ff");
     }
 
     private static string ThemeColor(
@@ -222,6 +222,11 @@ internal static class DesignPreviewToVisualIrBridge
     private static bool IsVisualIrColor(string value)
     {
         return ColorValue.IsHexColor(value);
+    }
+
+    private static string AdjustColor(string color, double brightnessMultiplier)
+    {
+        return brightnessMultiplier == 0 ? color : ColorValue.AdjustBrightness(color, brightnessMultiplier);
     }
 
 }

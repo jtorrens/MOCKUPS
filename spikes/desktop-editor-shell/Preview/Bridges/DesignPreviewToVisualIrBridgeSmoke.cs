@@ -83,7 +83,7 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
 
         if (payload.Kind == "componentClass"
             && payload.ComponentType == "label"
-            && !Flatten(document.Root).OfType<VisualIrRectNode>().Any((rect) => rect.Id == "component.label.relief.top"))
+            && !Flatten(document.Root).OfType<VisualIrRectNode>().Any((rect) => rect.Id.StartsWith("component.label.relief.top.", StringComparison.Ordinal)))
         {
             throw new InvalidOperationException("Expected label component relief layer.");
         }
@@ -190,8 +190,8 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
                 "reliefAngle": -30,
                 "reliefExtent": 2,
                 "reliefSpread": 1,
-                "reliefTopIntensity": 14,
-                "reliefBottomIntensity": -8
+                "reliefTopIntensity": 0.14,
+                "reliefBottomIntensity": -0.08
               },
               "label": {
                 "dimensionMode": "content",

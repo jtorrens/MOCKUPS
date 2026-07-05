@@ -163,8 +163,8 @@ internal sealed class VisualIrDesignPreviewPane : Grid
             Children = { canvas },
         };
 
-        Control content = scaleMode == "actual"
-            ? elevatedSurface
+        Control content = PreviewScaleMode.TryFixedScale(scaleMode, out var fixedScale)
+            ? new DraggablePreviewSurface(elevatedSurface, fixedScale)
             : new Viewbox
             {
                 Stretch = Stretch.Uniform,
