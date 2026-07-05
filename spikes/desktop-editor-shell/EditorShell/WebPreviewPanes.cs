@@ -101,6 +101,15 @@ internal abstract class WebPreviewPane : Grid
                   border-radius: 0;
                   background: transparent;
                   box-shadow: none;
+                  touch-action: none;
+                }
+
+                .preview-viewport.is-draggable {
+                  cursor: grab;
+                }
+
+                .preview-viewport.is-dragging {
+                  cursor: grabbing;
                 }
 
                 .preview-scale {
@@ -201,25 +210,79 @@ internal abstract class WebPreviewPane : Grid
                 const renderWidth = {{Number(width)}};
                 const renderHeight = {{Number(height)}};
                 const cornerRadius = {{Number(cornerRadius)}};
-                const scaleMode = "{{Html(scaleMode == "actual" ? "actual" : "fit")}}";
+                const scaleMode = "{{Html(PreviewScaleMode.WebMode(scaleMode))}}";
+                let translateX = 0;
+                let translateY = 0;
+                let dragStartX = 0;
+                let dragStartY = 0;
+                let startTranslateX = 0;
+                let startTranslateY = 0;
+                let isDragging = false;
+
+                function fixedScale() {
+                  if (scaleMode === "fit") return null;
+                  const parsed = Number.parseFloat(scaleMode);
+                  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+                }
+
+                function applyViewportTransform() {
+                  viewport.style.transform = `translate(${translateX}px, ${translateY}px)`;
+                }
 
                 function calculatePreviewFit() {
                   const availableWidth = Math.max(1, host.clientWidth - 36);
                   const availableHeight = Math.max(1, host.clientHeight - 36);
-                  const scale = scaleMode === "actual"
-                    ? 1
-                    : Math.min(availableWidth / renderWidth, availableHeight / renderHeight);
+                  const explicitScale = fixedScale();
+                  const scale = explicitScale ?? Math.min(availableWidth / renderWidth, availableHeight / renderHeight);
                   const displayWidth = Math.max(1, Math.round(renderWidth * scale));
                   const displayHeight = Math.max(1, Math.round(renderHeight * scale));
                   viewport.style.width = `${displayWidth}px`;
                   viewport.style.height = `${displayHeight}px`;
+                  viewport.classList.toggle("is-draggable", explicitScale !== null);
                   scaleLayer.style.transform = `scale(${scale})`;
                   scaleLayer.style.borderRadius = `${cornerRadius}px`;
                   frame.style.setProperty("--preview-frame-border", `${Math.max(1, 10 * scale)}px`);
                   frame.style.setProperty("--preview-frame-radius", `${cornerRadius * scale}px`);
                   frame.style.setProperty("--preview-frame-shadow-y", `${10 * scale}px`);
                   frame.style.setProperty("--preview-frame-shadow-blur", `${28 * scale}px`);
+                  if (explicitScale === null) {
+                    translateX = 0;
+                    translateY = 0;
+                  }
+                  applyViewportTransform();
                 }
+
+                viewport.addEventListener("pointerdown", (event) => {
+                  if (fixedScale() === null || event.button !== 0) return;
+                  isDragging = true;
+                  dragStartX = event.clientX;
+                  dragStartY = event.clientY;
+                  startTranslateX = translateX;
+                  startTranslateY = translateY;
+                  viewport.classList.add("is-dragging");
+                  viewport.setPointerCapture(event.pointerId);
+                  event.preventDefault();
+                });
+
+                viewport.addEventListener("pointermove", (event) => {
+                  if (!isDragging) return;
+                  translateX = startTranslateX + event.clientX - dragStartX;
+                  translateY = startTranslateY + event.clientY - dragStartY;
+                  applyViewportTransform();
+                  event.preventDefault();
+                });
+
+                function stopDragging(event) {
+                  if (!isDragging) return;
+                  isDragging = false;
+                  viewport.classList.remove("is-dragging");
+                  if (event.pointerId !== undefined && viewport.hasPointerCapture(event.pointerId)) {
+                    viewport.releasePointerCapture(event.pointerId);
+                  }
+                }
+
+                viewport.addEventListener("pointerup", stopDragging);
+                viewport.addEventListener("pointercancel", stopDragging);
 
                 const resizeObserver = new ResizeObserver(calculatePreviewFit);
                 resizeObserver.observe(host);
