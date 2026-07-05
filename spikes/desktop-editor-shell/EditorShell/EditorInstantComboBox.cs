@@ -28,6 +28,7 @@ public sealed class EditorInstantComboBox : Grid
     public EditorInstantComboBox()
     {
         Focusable = true;
+        ColumnDefinitions = new ColumnDefinitions("*,22");
         KeyDown += OnKeyDown;
 
         _button = new Button
@@ -39,10 +40,13 @@ public sealed class EditorInstantComboBox : Grid
             Focusable = false,
         };
         _button.Click += (_, _) => TogglePopup();
+        Grid.SetColumnSpan(_button, 2);
         Children.Add(_button);
 
         _label = new TextBlock
         {
+            Margin = new Thickness(10, 0, 4, 0),
+            IsHitTestVisible = false,
             VerticalAlignment = VerticalAlignment.Center,
             TextTrimming = TextTrimming.CharacterEllipsis,
         };
@@ -56,16 +60,12 @@ public sealed class EditorInstantComboBox : Grid
             HorizontalAlignment = HorizontalAlignment.Right,
             VerticalAlignment = VerticalAlignment.Center,
             Opacity = 0.72,
-        };
-        var buttonContent = new Grid
-        {
-            ColumnDefinitions = new ColumnDefinitions("*,22"),
+            IsHitTestVisible = false,
         };
         Grid.SetColumn(_label, 0);
         Grid.SetColumn(_indicator, 1);
-        buttonContent.Children.Add(_label);
-        buttonContent.Children.Add(_indicator);
-        _button.Content = buttonContent;
+        Children.Add(_label);
+        Children.Add(_indicator);
 
         _itemsPanel = new StackPanel
         {
