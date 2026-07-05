@@ -28,6 +28,7 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
         ValidatePayload(StatusPayload());
         ValidatePayload(NavigationPayload());
         ValidatePayload(NavigationGesturePayload(), expectGeneratedSvg: false);
+        ValidatePayload(LabelComponentPayload(), expectGeneratedSvg: false);
     }
 
     private static void ValidatePayload(DesignPreviewPayload payload, bool expectGeneratedSvg = true)
@@ -46,6 +47,13 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
             && !Flatten(document.Root).OfType<VisualIrRectNode>().Any((rect) => rect.Id == "navigationBar.gesture"))
         {
             throw new InvalidOperationException("Expected gesture navigation bar rect.");
+        }
+
+        if (payload.Kind == "componentClass"
+            && payload.ComponentType == "label"
+            && !Flatten(document.Root).OfType<VisualIrTextNode>().Any((text) => text.Id == "component.label.text" && text.Text == "Sample"))
+        {
+            throw new InvalidOperationException("Expected label component text node.");
         }
 
         var renderer = new AvaloniaVisualIrDebugRenderer();
@@ -132,5 +140,32 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
             "",
             "",
             "{}");
+    }
+
+    private static DesignPreviewPayload LabelComponentPayload()
+    {
+        return new DesignPreviewPayload(
+            "componentClass",
+            "Smoke Label Component",
+            """
+            {
+              "label": {
+                "size": "120|32",
+                "padding": "8|4",
+                "backgroundVisible": true,
+                "backgroundColorToken": "theme.colors.background",
+                "textColorToken": "theme.colors.textPrimary",
+                "textSize": 12,
+                "textStyle": "normal"
+              }
+            }
+            """,
+            "{}",
+            new Dictionary<string, string>(),
+            "",
+            "",
+            "{}",
+            "label",
+            """{ "sampleText": "Sample" }""");
     }
 }

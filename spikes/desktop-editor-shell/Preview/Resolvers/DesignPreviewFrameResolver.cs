@@ -72,6 +72,7 @@ internal static class DesignPreviewFrameResolver
         {
             "statusBar" => StatusBar(payload, designMetrics),
             "navigationBar" => NavigationBar(payload, designMetrics),
+            "componentClass" => ComponentClass(payload, designMetrics),
             _ => UnsupportedPayload(payload, designMetrics),
         });
 
@@ -87,6 +88,77 @@ internal static class DesignPreviewFrameResolver
                 ["name"] = payload.Name,
                 ["coordinateSpace"] = "design",
                 ["bridge"] = "legacy-design-preview",
+            },
+        };
+    }
+
+    private static ResolvedDesignNode ComponentClass(
+        DesignPreviewPayload payload,
+        DesignMetrics metrics)
+    {
+        return payload.ComponentType switch
+        {
+            "label" => LabelComponent(payload, metrics),
+            _ => UnsupportedPayload(payload, metrics),
+        };
+    }
+
+    private static ResolvedDesignGroupNode LabelComponent(
+        DesignPreviewPayload payload,
+        DesignMetrics metrics)
+    {
+        var config = JsonPath.ParseObject(payload.ConfigJson);
+        var preview = JsonPath.ParseObject(payload.DesignPreviewJson);
+        var label = config["label"] as JsonObject ?? [];
+        var size = SizePair(JsonPath.String(label, "size", "120|32"), 120, 32);
+        var padding = SizePair(JsonPath.String(label, "padding", "8|4"), 8, 4);
+        var bounds = Centered(metrics, size.Width, size.Height);
+        var backgroundVisible = JsonPath.Bool(label, "backgroundVisible", true);
+        var text = JsonPath.String(preview, "sampleText", "Sample");
+        var textSize = JsonPath.Number(label, "textSize", 12);
+        var textStyle = JsonPath.String(label, "textStyle", "normal");
+
+        return new ResolvedDesignGroupNode
+        {
+            Id = "component.label",
+            Bounds = bounds,
+            ClipRect = new DesignRect(0, 0, bounds.Width, bounds.Height),
+            Children =
+            [
+                new ResolvedDesignRectNode
+                {
+                    Id = "component.label.background",
+                    Bounds = new DesignRect(0, 0, bounds.Width, bounds.Height),
+                    Fill = backgroundVisible
+                        ? ThemePaint(JsonPath.String(label, "backgroundColorToken", "theme.colors.background"), "#FFFFFF")
+                        : StaticPaint("component.label.background.transparent", "#00000000"),
+                    Radius = 0,
+                },
+                new ResolvedDesignTextNode
+                {
+                    Id = "component.label.text",
+                    Bounds = new DesignRect(
+                        padding.Width,
+                        padding.Height,
+                        Math.Max(1, bounds.Width - padding.Width * 2),
+                        Math.Max(1, bounds.Height - padding.Height * 2)),
+                    Text = text,
+                    Style = new ResolvedDesignTextStyle
+                    {
+                        Fill = ThemePaint(JsonPath.String(label, "textColorToken", "theme.colors.textPrimary"), "#111827"),
+                        FontFamily = "Inter",
+                        FontSize = textSize,
+                        FontStyle = textStyle == "italic" ? "italic" : null,
+                        LineHeight = Math.Max(1, bounds.Height - padding.Height * 2),
+                    },
+                    TextAlign = "center",
+                    VerticalAlign = "middle",
+                },
+            ],
+            Metadata = new Dictionary<string, string>
+            {
+                ["legacyKind"] = payload.Kind,
+                ["componentType"] = payload.ComponentType,
             },
         };
     }
@@ -436,7 +508,34 @@ internal static class DesignPreviewFrameResolver
 
     private static ResolvedDesignPaint ThemePaint(string tokenId)
     {
-        return new ResolvedDesignPaint(new ResolvedDesignColorRef(tokenId, tokenId, "debug_red"));
+        return ThemePaint(tokenId, "debug_red");
+    }
+
+    private static ResolvedDesignPaint ThemePaint(string tokenId, string fallback)
+    {
+        return new ResolvedDesignPaint(new ResolvedDesignColorRef(tokenId, tokenId, fallback));
+    }
+
+    private static ResolvedDesignPaint StaticPaint(string id, string value)
+    {
+        return new ResolvedDesignPaint(new ResolvedDesignColorRef(id, null, value));
+    }
+
+    private static DesignRect Centered(DesignMetrics metrics, double width, double height)
+    {
+        return new DesignRect(
+            metrics.ScreenX + (metrics.ScreenWidth - width) / 2,
+            metrics.ScreenY + (metrics.ScreenHeight - height) / 2,
+            width,
+            height);
+    }
+
+    private static DesignSize SizePair(string value, double fallbackWidth, double fallbackHeight)
+    {
+        var parts = value.Split('|', 2, StringSplitOptions.TrimEntries);
+        return new DesignSize(
+            parts.Length > 0 ? NumericText.Double(parts[0], fallbackWidth) : fallbackWidth,
+            parts.Length > 1 ? NumericText.Double(parts[1], fallbackHeight) : fallbackHeight);
     }
 
     private static string? IconMarkup(DesignPreviewPayload payload, string token)
@@ -517,4 +616,6 @@ internal static class DesignPreviewFrameResolver
     {
         public string TokenOrLabel => string.IsNullOrWhiteSpace(Token) ? Label : Token;
     }
+
+    private sealed record DesignSize(double Width, double Height);
 }

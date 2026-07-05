@@ -133,17 +133,20 @@ internal sealed class VisualIrDesignPreviewPane : Grid
         };
         canvas.Children.Add(frameBorder);
 
-        var meta = new TextBlock
+        if (showDesignMarks)
         {
-            Text = $"IR · {payload.Kind} · {metrics.Name} · {themeName} · {themeMode}{ColorSummary(document, payload.Kind, colorVariant)}",
-            Foreground = Brushes.White,
-            Background = new SolidColorBrush(Color.Parse("#AA18181B")),
-            FontSize = 10,
-            Padding = new Thickness(8, 4),
-        };
-        Canvas.SetLeft(meta, candyOffset + 12);
-        Canvas.SetTop(meta, candyOffset + frameHeight - 30);
-        canvas.Children.Add(meta);
+            var meta = new TextBlock
+            {
+                Text = $"IR · {payload.Kind} · {metrics.Name} · {themeName} · {themeMode}{ColorSummary(document, payload.Kind, colorVariant)}",
+                Foreground = Brushes.White,
+                Background = new SolidColorBrush(Color.Parse("#AA18181B")),
+                FontSize = 10,
+                Padding = new Thickness(8, 4),
+            };
+            Canvas.SetLeft(meta, candyOffset + 12);
+            Canvas.SetTop(meta, candyOffset + frameHeight - 30);
+            canvas.Children.Add(meta);
+        }
 
         canvas.HorizontalAlignment = HorizontalAlignment.Center;
         canvas.VerticalAlignment = VerticalAlignment.Center;
