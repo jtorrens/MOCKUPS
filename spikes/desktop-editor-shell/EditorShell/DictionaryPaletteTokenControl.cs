@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Styling;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,8 +27,13 @@ internal sealed class DictionaryPaletteTokenControl : Button, IDictionaryValueCo
         MinHeight = 36;
         MinWidth = 180;
         HorizontalAlignment = HorizontalAlignment.Left;
+        HorizontalContentAlignment = HorizontalAlignment.Stretch;
+        Padding = new Avalonia.Thickness(10, 6);
+        BorderThickness = new Avalonia.Thickness(0);
         IsEnabled = isEditable;
         Content = ContentForValue(value);
+        ActualThemeVariantChanged += (_, _) => ApplyThemeBrushes();
+        ApplyThemeBrushes();
         Click += async (_, _) =>
         {
             var owner = TopLevel.GetTopLevel(this) as Window;
@@ -66,16 +72,35 @@ internal sealed class DictionaryPaletteTokenControl : Button, IDictionaryValueCo
             Width = 142,
         };
         Grid.SetColumn(label, 1);
+        var chevron = new TextBlock
+        {
+            Text = ">",
+            Width = 16,
+            FontSize = 13,
+            FontWeight = FontWeight.Bold,
+            TextAlignment = TextAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Center,
+            Opacity = 0.72,
+        };
+        Grid.SetColumn(chevron, 2);
 
         return new Grid
         {
-            ColumnDefinitions = new ColumnDefinitions("24,*"),
+            ColumnDefinitions = new ColumnDefinitions("24,*,Auto"),
             ColumnSpacing = 8,
             Children =
             {
                 swatch,
                 label,
+                chevron,
             },
         };
+    }
+
+    private void ApplyThemeBrushes()
+    {
+        var isLight = ActualThemeVariant == ThemeVariant.Light;
+        Background = new SolidColorBrush(Color.Parse(isLight ? "#14000000" : "#10FFFFFF"));
     }
 }

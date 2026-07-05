@@ -463,13 +463,9 @@ export function resolveMessageBubble({
         tickSingleIconUri: statusTokens.tickSingleIconUri ?? "",
         tickDoubleIconUri: statusTokens.tickDoubleIconUri ?? "",
       },
-      shadow: isRecord(themeTokens.shadows?.elevated)
-        ? themeTokens.shadows.elevated
-        : isRecord(themeTokens.shadows?.avatar)
-          ? themeTokens.shadows.avatar
-          : isRecord(themeTokens.shadows?.notification)
-            ? themeTokens.shadows.notification
-            : {},
+      shadow: isRecord(themeTokens.shadows?.default)
+        ? themeTokens.shadows.default
+        : {},
       surfaceRelief:
         bubbleStyleTokens.surfaceReliefEnabled === true
           ? isRecord(bubbleStyleTokens.surfaceRelief)

@@ -870,10 +870,7 @@ function messageLabelNode(
     box: layout.labelBox,
     text,
     style: {
-      backgroundColor:
-        labelStyle.backgroundVisible === false
-          ? "transparent"
-          : readString(labelStyle.backgroundColor, input.style.backgroundColor),
+      backgroundColor: readString(labelStyle.backgroundColor, input.style.backgroundColor),
       borderRadius: readNumber(labelStyle.cornerRadius, 0),
       borderColor: readString(labelStyle.borderColor, "transparent"),
       borderWidth,

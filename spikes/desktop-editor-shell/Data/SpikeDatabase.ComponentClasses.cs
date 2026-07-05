@@ -259,7 +259,6 @@ internal sealed partial class SpikeDatabase
             ["style"] = new JsonObject
             {
                 ["shadowEnabled"] = false,
-                ["shadowToken"] = "elevated",
                 ["reliefEnabled"] = false,
                 ["borderWidth"] = 0,
                 ["borderColorToken"] = "theme.borders.primary",

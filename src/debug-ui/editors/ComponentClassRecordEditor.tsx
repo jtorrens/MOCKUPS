@@ -596,7 +596,6 @@ export function ComponentClassRecordEditor({
                     "effects",
                     <>
                       {tokenCheckboxRow("Shadow", "shadowEnabled")}
-                      {tokenTextRow("Shadow token", "shadowToken", "system")}
                       {surfaceReliefRow()}
                     </>,
                   )}

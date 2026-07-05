@@ -229,105 +229,53 @@ export const THEME_FIELDS = defineFields({
       step: 1,
     },
   },
-  shadowAvatarColor: {
-    id: "theme.shadows.avatar.color",
+  shadowDefaultColor: {
+    id: "theme.shadows.default.color",
     kind: "paletteColorToken",
     defaultValue: "gray_000",
     ui: {
-      label: "Avatar color",
+      label: "Color",
       group: GROUPS.shadows,
     },
   },
-  shadowAvatarAlpha: {
-    id: "theme.shadows.avatar.alpha",
+  shadowDefaultAlpha: {
+    id: "theme.shadows.default.alpha",
     kind: "alpha",
     defaultValue: 0.18,
     ui: {
-      label: "Avatar alpha",
+      label: "Alpha",
       group: GROUPS.shadows,
       min: 0,
       max: 1,
       step: 0.01,
     },
   },
-  shadowAvatarOffsetX: {
-    id: "theme.shadows.avatar.offsetX",
+  shadowDefaultOffsetX: {
+    id: "theme.shadows.default.offsetX",
     kind: "decimal",
     defaultValue: 0,
     ui: {
-      label: "Avatar offset X",
+      label: "Offset X",
       group: GROUPS.shadows,
       step: 1,
     },
   },
-  shadowAvatarOffsetY: {
-    id: "theme.shadows.avatar.offsetY",
+  shadowDefaultOffsetY: {
+    id: "theme.shadows.default.offsetY",
     kind: "decimal",
     defaultValue: 4,
     ui: {
-      label: "Avatar offset Y",
+      label: "Offset Y",
       group: GROUPS.shadows,
       step: 1,
     },
   },
-  shadowAvatarBlur: {
-    id: "theme.shadows.avatar.blur",
+  shadowDefaultBlur: {
+    id: "theme.shadows.default.blur",
     kind: "decimal",
     defaultValue: 18,
     ui: {
-      label: "Avatar blur",
-      group: GROUPS.shadows,
-      min: 0,
-      step: 1,
-    },
-  },
-  shadowElevatedColor: {
-    id: "theme.shadows.elevated.color",
-    kind: "paletteColorToken",
-    defaultValue: "gray_000",
-    ui: {
-      label: "Elevated color",
-      group: GROUPS.shadows,
-    },
-  },
-  shadowElevatedAlpha: {
-    id: "theme.shadows.elevated.alpha",
-    kind: "alpha",
-    defaultValue: 0.18,
-    ui: {
-      label: "Elevated alpha",
-      group: GROUPS.shadows,
-      min: 0,
-      max: 1,
-      step: 0.01,
-    },
-  },
-  shadowElevatedOffsetX: {
-    id: "theme.shadows.elevated.offsetX",
-    kind: "decimal",
-    defaultValue: 0,
-    ui: {
-      label: "Elevated offset X",
-      group: GROUPS.shadows,
-      step: 1,
-    },
-  },
-  shadowElevatedOffsetY: {
-    id: "theme.shadows.elevated.offsetY",
-    kind: "decimal",
-    defaultValue: 4,
-    ui: {
-      label: "Elevated offset Y",
-      group: GROUPS.shadows,
-      step: 1,
-    },
-  },
-  shadowElevatedBlur: {
-    id: "theme.shadows.elevated.blur",
-    kind: "decimal",
-    defaultValue: 18,
-    ui: {
-      label: "Elevated blur",
+      label: "Blur",
       group: GROUPS.shadows,
       min: 0,
       step: 1,
@@ -1194,44 +1142,24 @@ export const THEME_TOKEN_BINDINGS = [
     field: THEME_FIELDS.radiusFull,
   },
   {
-    outputPath: ["shadows", "avatar", "color", "color"],
-    field: THEME_FIELDS.shadowAvatarColor,
+    outputPath: ["shadows", "default", "color", "color"],
+    field: THEME_FIELDS.shadowDefaultColor,
   },
   {
-    outputPath: ["shadows", "avatar", "color", "alpha"],
-    field: THEME_FIELDS.shadowAvatarAlpha,
+    outputPath: ["shadows", "default", "color", "alpha"],
+    field: THEME_FIELDS.shadowDefaultAlpha,
   },
   {
-    outputPath: ["shadows", "avatar", "offsetX"],
-    field: THEME_FIELDS.shadowAvatarOffsetX,
+    outputPath: ["shadows", "default", "offsetX"],
+    field: THEME_FIELDS.shadowDefaultOffsetX,
   },
   {
-    outputPath: ["shadows", "avatar", "offsetY"],
-    field: THEME_FIELDS.shadowAvatarOffsetY,
+    outputPath: ["shadows", "default", "offsetY"],
+    field: THEME_FIELDS.shadowDefaultOffsetY,
   },
   {
-    outputPath: ["shadows", "avatar", "blur"],
-    field: THEME_FIELDS.shadowAvatarBlur,
-  },
-  {
-    outputPath: ["shadows", "elevated", "color", "color"],
-    field: THEME_FIELDS.shadowElevatedColor,
-  },
-  {
-    outputPath: ["shadows", "elevated", "color", "alpha"],
-    field: THEME_FIELDS.shadowElevatedAlpha,
-  },
-  {
-    outputPath: ["shadows", "elevated", "offsetX"],
-    field: THEME_FIELDS.shadowElevatedOffsetX,
-  },
-  {
-    outputPath: ["shadows", "elevated", "offsetY"],
-    field: THEME_FIELDS.shadowElevatedOffsetY,
-  },
-  {
-    outputPath: ["shadows", "elevated", "blur"],
-    field: THEME_FIELDS.shadowElevatedBlur,
+    outputPath: ["shadows", "default", "blur"],
+    field: THEME_FIELDS.shadowDefaultBlur,
   },
   {
     outputPath: ["surfaceRelief", "default", "angleDeg"],

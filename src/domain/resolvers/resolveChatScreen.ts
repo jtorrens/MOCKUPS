@@ -1051,15 +1051,7 @@ function resolveDefaultAvatarComponent(
     palette,
   ) as Record<string, unknown>;
   const shadows = isObject(themeTokens.shadows) ? themeTokens.shadows : {};
-  const shadowToken = stringValue(resolvedTokens.shadowToken, "avatar");
-  const shadow =
-    isObject(shadows[shadowToken])
-      ? shadows[shadowToken]
-      : isObject(shadows.avatar)
-        ? shadows.avatar
-        : isObject(shadows.elevated)
-          ? shadows.elevated
-          : {};
+  const shadow = isObject(shadows.default) ? shadows.default : {};
   const borderColorToken = stringValue(
     rawTokens.borderColorToken,
     "borders.primary",
@@ -1126,15 +1118,7 @@ function resolveDefaultButtonIconComponent(
     palette,
   ) as Record<string, unknown>;
   const shadows = isObject(themeTokens.shadows) ? themeTokens.shadows : {};
-  const shadowToken = stringValue(resolvedTokens.shadowToken, "system");
-  const shadow =
-    isObject(shadows[shadowToken])
-      ? shadows[shadowToken]
-      : isObject(shadows.elevated)
-        ? shadows.elevated
-        : isObject(shadows.avatar)
-          ? shadows.avatar
-          : {};
+  const shadow = isObject(shadows.default) ? shadows.default : {};
   const borderColorToken = stringValue(
     rawTokens.borderColorToken,
     "borders.primary",
@@ -1208,7 +1192,6 @@ function resolveDefaultLabelComponent(
   const borderColorToken = stringValue(tokens.borderColorToken, "borders.primary");
   const backgroundColorToken = stringValue(tokens.backgroundColorToken, "background");
   const textColorToken = stringValue(tokens.textColorToken, "textPrimary");
-  const shadowToken = stringValue(tokens.shadowToken, "system");
   const themeFonts = isObject(themeTokens.fonts) ? themeTokens.fonts : {};
   const hasLocalFontStyle =
     Object.hasOwn(tokens, "fontStyle") || Object.hasOwn(tokens, "fontWeight");
@@ -1228,7 +1211,6 @@ function resolveDefaultLabelComponent(
     cornerRadius: numberValue(tokens.cornerRadius, 10) * renderScale,
     borderWidth: numberValue(tokens.borderWidth, 0) * renderScale,
     borderColor: themeColor(themeTokens, palette, borderColorToken, "#D1D1D6"),
-    backgroundVisible: tokens.backgroundVisible !== false,
     backgroundColor: themeColor(
       themeTokens,
       palette,
@@ -1246,13 +1228,7 @@ function resolveDefaultLabelComponent(
       resolvedFontWeightToken(themeFonts.fontWeight ?? themeFonts.weight) ??
       400,
     shadowEnabled: tokens.shadowEnabled === true,
-    shadow: isObject(shadows[shadowToken])
-      ? shadows[shadowToken]
-      : isObject(shadows.system)
-        ? shadows.system
-        : isObject(shadows.elevated)
-          ? shadows.elevated
-          : {},
+    shadow: isObject(shadows.default) ? shadows.default : {},
     surfaceReliefEnabled: tokens.surfaceReliefEnabled === true,
     surfaceRelief: isObject(surfaceRelief.default) ? surfaceRelief.default : {},
   };
@@ -1365,7 +1341,6 @@ function resolveDefaultAudioMessageComponent(
   const playCircleColorToken = stringValue(tokens.playCircleColorToken, "icons.accent");
   const playIconColorToken = stringValue(tokens.playIconColorToken, "icons.secondary");
   const borderColorToken = stringValue(tokens.borderColorToken, "borders.primary");
-  const shadowToken = stringValue(tokens.shadowToken, "system");
   const waveformColorToken = stringValue(tokens.waveformColorToken, "icons.primary");
   const waveformPlayedColorToken = stringValue(
     tokens.waveformPlayedColorToken,
@@ -1414,13 +1389,7 @@ function resolveDefaultAudioMessageComponent(
     borderWidth: numberValue(tokens.borderWidth, 0) * renderScale,
     borderColor: themeColor(themeTokens, palette, borderColorToken, "#D1D1D6"),
     shadowEnabled: tokens.shadowEnabled === true,
-    shadow: isObject(shadows[shadowToken])
-      ? shadows[shadowToken]
-      : isObject(shadows.system)
-        ? shadows.system
-        : isObject(shadows.elevated)
-          ? shadows.elevated
-          : {},
+    shadow: isObject(shadows.default) ? shadows.default : {},
     surfaceReliefEnabled: tokens.surfaceReliefEnabled === true,
     surfaceRelief: isObject(surfaceRelief.default) ? surfaceRelief.default : {},
   };
@@ -1450,7 +1419,6 @@ function resolveDefaultVideoMessageComponent(
     ? themeTokens.surfaceRelief
     : {};
   const borderColorToken = stringValue(tokens.borderColorToken, "borders.primary");
-  const shadowToken = stringValue(tokens.shadowToken, "system");
   const playCircleColorToken = stringValue(tokens.playCircleColorToken, "icons.accent");
   const playIconColorToken = stringValue(tokens.playIconColorToken, "icons.secondary");
   const statusColorToken = stringValue(tokens.statusColorToken, "icons.secondary");
@@ -1470,13 +1438,7 @@ function resolveDefaultVideoMessageComponent(
     borderWidth: numberValue(tokens.borderWidth, 0) * renderScale,
     borderColor: themeColor(themeTokens, palette, borderColorToken, "#D1D1D6"),
     shadowEnabled: tokens.shadowEnabled === true,
-    shadow: isObject(shadows[shadowToken])
-      ? shadows[shadowToken]
-      : isObject(shadows.system)
-        ? shadows.system
-        : isObject(shadows.elevated)
-          ? shadows.elevated
-          : {},
+    shadow: isObject(shadows.default) ? shadows.default : {},
     surfaceReliefEnabled: tokens.surfaceReliefEnabled === true,
     surfaceRelief: isObject(surfaceRelief.default) ? surfaceRelief.default : {},
     playOverlayEnabled: tokens.playOverlayEnabled !== false,
@@ -1767,18 +1729,7 @@ function normalizeChatVisualTokenGroups(
     },
     shadows: {
       ...shadows,
-      avatar: isObject(shadows.avatar)
-        ? shadows.avatar
-        : isObject(shadows.elevated)
-          ? shadows.elevated
-        : isObject(shadows.notification)
-          ? shadows.notification
-          : {
-              color: "rgba(0,0,0,0.18)",
-              offsetX: 0,
-              offsetY: 4,
-              blur: 18,
-            },
+      default: isObject(shadows.default) ? shadows.default : {},
     },
   };
 }
@@ -1842,15 +1793,9 @@ const DESIGN_UNIT_TOKEN_PATHS = [
   ["chatBubbles", "status", "gap"],
   ["chatBubbles", "status", "offsetX"],
   ["chatBubbles", "status", "offsetY"],
-  ["shadows", "elevated", "offsetX"],
-  ["shadows", "elevated", "offsetY"],
-  ["shadows", "elevated", "blur"],
-  ["shadows", "avatar", "offsetX"],
-  ["shadows", "avatar", "offsetY"],
-  ["shadows", "avatar", "blur"],
-  ["shadows", "notification", "offsetX"],
-  ["shadows", "notification", "offsetY"],
-  ["shadows", "notification", "blur"],
+  ["shadows", "default", "offsetX"],
+  ["shadows", "default", "offsetY"],
+  ["shadows", "default", "blur"],
   ["radii", "control"],
   ["radii", "card"],
   ["radii", "panel"],
@@ -3190,11 +3135,9 @@ export function resolveChatScreen({
     moduleData.header.subtitle,
     localFrame,
   );
-  const systemShadow = isObject(themeTokens.shadows?.elevated)
-    ? themeTokens.shadows.elevated
-    : isObject(themeTokens.shadows?.avatar)
-      ? themeTokens.shadows.avatar
-      : {};
+  const systemShadow = isObject(themeTokens.shadows?.default)
+    ? themeTokens.shadows.default
+    : {};
 
   return ResolvedChatScreenPropsSchema.parse({
     frame: localFrame,

@@ -149,7 +149,7 @@ internal static class DesignPreviewFrameResolver
                     ? new ResolvedDesignStroke(ThemePaint(borderColorToken, surfaceAlpha), borderWidth)
                     : null,
                 Radius = cornerRadius,
-                Effects = shadowEnabled ? [ShadowEffect(payload, style)] : null,
+                Effects = shadowEnabled ? [ShadowEffect(payload)] : null,
                 Metadata = ComponentStyleMetadata(
                     style,
                     borderWidth,
@@ -597,18 +597,17 @@ internal static class DesignPreviewFrameResolver
         return new ResolvedDesignSolidPaint(new ResolvedDesignColorRef(id, null, value));
     }
 
-    private static ResolvedDesignShadowEffect ShadowEffect(DesignPreviewPayload payload, JsonObject style)
+    private static ResolvedDesignShadowEffect ShadowEffect(DesignPreviewPayload payload)
     {
-        var token = RuntimeValueGuard.RequiredString(style, "shadowToken", "component.style.shadowToken");
         var tokens = JsonPath.ParseObject(payload.ThemeTokensJson);
-        var pathPrefix = new[] { "shadows", token };
-        var colorToken = RequiredThemeString(tokens, [.. pathPrefix, "color", "color"], $"theme.shadows.{token}.color.color");
-        var alpha = RequiredThemeNumber(tokens, [.. pathPrefix, "color", "alpha"], $"theme.shadows.{token}.color.alpha");
+        var pathPrefix = new[] { "shadows", "default" };
+        var colorToken = RequiredThemeString(tokens, [.. pathPrefix, "color", "color"], "theme.shadows.default.color.color");
+        var alpha = RequiredThemeNumber(tokens, [.. pathPrefix, "color", "alpha"], "theme.shadows.default.color.alpha");
         return new ResolvedDesignShadowEffect(
-            RequiredThemeNumber(tokens, [.. pathPrefix, "offsetX"], $"theme.shadows.{token}.offsetX"),
-            RequiredThemeNumber(tokens, [.. pathPrefix, "offsetY"], $"theme.shadows.{token}.offsetY"),
-            RequiredThemeNumber(tokens, [.. pathPrefix, "blur"], $"theme.shadows.{token}.blur"),
-            new ResolvedDesignColorRef($"theme.shadows.{token}.color", null, colorToken, Alpha: alpha));
+            RequiredThemeNumber(tokens, [.. pathPrefix, "offsetX"], "theme.shadows.default.offsetX"),
+            RequiredThemeNumber(tokens, [.. pathPrefix, "offsetY"], "theme.shadows.default.offsetY"),
+            RequiredThemeNumber(tokens, [.. pathPrefix, "blur"], "theme.shadows.default.blur"),
+            new ResolvedDesignColorRef("theme.shadows.default.color", null, colorToken, Alpha: alpha));
     }
 
     private static string RequiredThemeString(JsonObject root, IReadOnlyList<string> path, string fieldId)

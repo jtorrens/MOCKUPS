@@ -59,12 +59,6 @@ internal static class ComponentClassFieldCatalog
         new("theme.radii.full", "radii.full"),
     ];
 
-    private static readonly FieldOption[] ShadowTokenOptions =
-    [
-        new("avatar", "Avatar"),
-        new("elevated", "Elevated"),
-    ];
-
     private static readonly FieldOption[] TypographySizeOptions =
     [
         new("theme.typography.sizes.xs", "typography.sizes.xs"),
@@ -109,7 +103,6 @@ internal static class ComponentClassFieldCatalog
     {
         ["component.type"] = new("component.type", "Component Type", ValueKind.StringReadOnly, [], "", false),
         ["component.style.shadowEnabled"] = new("component.style.shadowEnabled", "Shadow", ValueKind.Boolean, ["style", "shadowEnabled"], "false"),
-        ["component.style.shadowToken"] = new("component.style.shadowToken", "Shadow token", ValueKind.OptionToken, ["style", "shadowToken"], "elevated", Options: ShadowTokenOptions),
         ["component.style.reliefEnabled"] = new("component.style.reliefEnabled", "Relief", ValueKind.Boolean, ["style", "reliefEnabled"], "false"),
         ["component.style.borderWidth"] = new("component.style.borderWidth", "Border width", ValueKind.Integer, ["style", "borderWidth"], "0"),
         ["component.style.borderColorToken"] = new("component.style.borderColorToken", "Border color", ValueKind.ThemeToken, ["style", "borderColorToken"], "theme.borders.primary", Options: ThemeColorOptions),

@@ -2015,38 +2015,25 @@ internal sealed partial class SpikeDatabase
               ]
             },
             {
-              "id": "shadows",
-              "label": "Shadows",
-              "subtitle": "Reusable shadow tokens",
+              "id": "shadow",
+              "label": "Shadow",
+              "subtitle": "Single reusable shadow token",
               "icon": "{{EditorIcons.Shadow}}",
               "order": 50,
               "visible": true,
               "defaultOpen": false,
               "groups": [
                 {
-                  "id": "avatar",
-                  "label": "Avatar",
+                  "id": "default",
+                  "label": "Shadow",
                   "order": 10,
                   "visible": true,
                   "fields": [
-                    { "id": "theme.shadows.avatar.color", "order": 10, "visible": true },
-                    { "id": "theme.shadows.avatar.alpha", "order": 20, "visible": true },
-                    { "id": "theme.shadows.avatar.offsetX", "order": 30, "visible": true },
-                    { "id": "theme.shadows.avatar.offsetY", "order": 40, "visible": true },
-                    { "id": "theme.shadows.avatar.blur", "order": 50, "visible": true }
-                  ]
-                },
-                {
-                  "id": "elevated",
-                  "label": "Elevated",
-                  "order": 20,
-                  "visible": true,
-                  "fields": [
-                    { "id": "theme.shadows.elevated.color", "order": 10, "visible": true },
-                    { "id": "theme.shadows.elevated.alpha", "order": 20, "visible": true },
-                    { "id": "theme.shadows.elevated.offsetX", "order": 30, "visible": true },
-                    { "id": "theme.shadows.elevated.offsetY", "order": 40, "visible": true },
-                    { "id": "theme.shadows.elevated.blur", "order": 50, "visible": true }
+                    { "id": "theme.shadows.default.color", "order": 10, "visible": true },
+                    { "id": "theme.shadows.default.alpha", "order": 20, "visible": true },
+                    { "id": "theme.shadows.default.offsetX", "order": 30, "visible": true },
+                    { "id": "theme.shadows.default.offsetY", "order": 40, "visible": true },
+                    { "id": "theme.shadows.default.blur", "order": 50, "visible": true }
                   ]
                 }
               ]
@@ -2339,16 +2326,15 @@ internal sealed partial class SpikeDatabase
           "groups": [
             { "id": "style", "label": "Surface style", "order": 10, "visible": true, "fields": [
               { "id": "component.style.shadowEnabled", "order": 10, "visible": true },
-              { "id": "component.style.shadowToken", "order": 20, "visible": true },
-              { "id": "component.style.reliefEnabled", "order": 30, "visible": true },
-              { "id": "component.style.borderWidth", "order": 40, "visible": true },
-              { "id": "component.style.borderColorToken", "order": 50, "visible": true },
-              { "id": "component.style.cornerRadiusToken", "order": 60, "visible": true },
-              { "id": "component.style.reliefAngle", "order": 70, "visible": true },
-              { "id": "component.style.reliefExtent", "order": 80, "visible": true },
-              { "id": "component.style.reliefSpread", "order": 90, "visible": true },
-              { "id": "component.style.reliefTopIntensity", "order": 100, "visible": true },
-              { "id": "component.style.reliefBottomIntensity", "order": 110, "visible": true }
+              { "id": "component.style.reliefEnabled", "order": 20, "visible": true },
+              { "id": "component.style.borderWidth", "order": 30, "visible": true },
+              { "id": "component.style.borderColorToken", "order": 40, "visible": true },
+              { "id": "component.style.cornerRadiusToken", "order": 50, "visible": true },
+              { "id": "component.style.reliefAngle", "order": 60, "visible": true },
+              { "id": "component.style.reliefExtent", "order": 70, "visible": true },
+              { "id": "component.style.reliefSpread", "order": 80, "visible": true },
+              { "id": "component.style.reliefTopIntensity", "order": 90, "visible": true },
+              { "id": "component.style.reliefBottomIntensity", "order": 100, "visible": true }
             ] }
           ]
         }

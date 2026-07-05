@@ -84,6 +84,16 @@ function readAlpha(value: Record<string, unknown>, key: string, fallback = 1) {
     : fallback;
 }
 
+function requiredNumber(value: Record<string, unknown>, key: string, path: string) {
+  const raw = value[key];
+  if (typeof raw === "number" && Number.isFinite(raw)) return raw;
+  throw new Error(`Missing numeric theme value ${path}`);
+}
+
+function requiredAlpha(value: Record<string, unknown>, key: string, path: string) {
+  return Math.max(0, Math.min(1, requiredNumber(value, key, path)));
+}
+
 function colorWithAlpha(color: string, alpha: number) {
   const clamped = Math.max(0, Math.min(1, alpha));
   if (clamped >= 1 || color === "transparent") return color;
@@ -224,15 +234,7 @@ function componentSurfaceStyle(
     themeTokenNumber(payload, style.cornerRadiusToken, 0) * renderScale(payload);
   const reliefEnabled = style.reliefEnabled === true;
   return {
-    shadow:
-      style.shadowEnabled === true
-        ? {
-            offsetX: 0,
-            offsetY: 4 * renderScale(payload),
-            blur: 16 * renderScale(payload),
-            color: "rgba(0,0,0,0.22)",
-          }
-        : undefined,
+    shadow: style.shadowEnabled === true ? themeShadow(payload) : undefined,
     surfaceRelief: reliefEnabled
       ? {
           angleDeg: readNumber(style, "reliefAngle", -45),
@@ -245,6 +247,33 @@ function componentSurfaceStyle(
     borderWidth,
     borderColor,
     borderRadius,
+  };
+}
+
+function themeShadow(payload: DesignPreviewPayload) {
+  const tokens = parseObject(payload.themeTokensJson);
+  const shadow = asRecord(asRecord(tokens.shadows).default);
+  const color = asRecord(shadow.color);
+  const colorToken = color.color;
+  const resolvedColor = resolvePaletteValue(payload, colorToken);
+  if (typeof resolvedColor !== "string" || !resolvedColor.trim()) {
+    throw new Error("Missing theme.shadows.default.color.color");
+  }
+
+  return {
+    offsetX:
+      requiredNumber(shadow, "offsetX", "theme.shadows.default.offsetX") *
+      renderScale(payload),
+    offsetY:
+      requiredNumber(shadow, "offsetY", "theme.shadows.default.offsetY") *
+      renderScale(payload),
+    blur:
+      requiredNumber(shadow, "blur", "theme.shadows.default.blur") *
+      renderScale(payload),
+    color: colorWithAlpha(
+      resolvedColor,
+      requiredAlpha(color, "alpha", "theme.shadows.default.color.alpha"),
+    ),
   };
 }
 
@@ -446,7 +475,8 @@ function componentRenderableForPayload(
       box: centerBox(payload, width, height),
       text: sampleText,
       style: {
-        backgroundColor: colorWithAlpha(
+        ...labelSurface,
+        background: colorWithAlpha(
           themeTokenColor(payload, label.backgroundColorToken, "#FFFFFF"),
           alpha,
         ),
@@ -458,7 +488,6 @@ function componentRenderableForPayload(
         textAlign: "center",
         fontStyle: readString(label, "textStyle", "normal"),
         whiteSpace: "nowrap",
-        ...labelSurface,
       },
     };
   }

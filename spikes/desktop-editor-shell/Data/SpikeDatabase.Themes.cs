@@ -128,8 +128,7 @@ internal sealed partial class SpikeDatabase
             "theme.defaultMode" => JsonString(tokens, ["defaultMode"]) is { Length: > 0 } mode ? mode : "light",
             "theme.neutralTint.hueDeg" => JsonNumberString(tokens, ["neutralTint", "hueDeg"]),
             "theme.neutralTint.saturation" => JsonNumberString(tokens, ["neutralTint", "saturation"]),
-            "theme.shadows.avatar.color" => JsonString(tokens, ["shadows", "avatar", "color", "color"]),
-            "theme.shadows.elevated.color" => JsonString(tokens, ["shadows", "elevated", "color", "color"]),
+            "theme.shadows.default.color" => JsonString(tokens, ["shadows", "default", "color", "color"]),
             "theme.typography.fontFamilyId" => JsonString(tokens, ["typography", "fontFamilyId"]),
             "theme.typography.emojiFontFamilyId" => JsonString(tokens, ["typography", "emojiFontFamilyId"]),
             "theme.typography.style" => JsonString(tokens, ["typography", "style"]) is { Length: > 0 } style ? style : "normal",
@@ -323,11 +322,8 @@ internal sealed partial class SpikeDatabase
             case "theme.neutralTint.saturation":
                 SetJsonValue(tokens, ["neutralTint", "saturation"], NumberNode(value));
                 break;
-            case "theme.shadows.avatar.color":
-                SetJsonValue(tokens, ["shadows", "avatar", "color", "color"], JsonValue.Create(value)!);
-                break;
-            case "theme.shadows.elevated.color":
-                SetJsonValue(tokens, ["shadows", "elevated", "color", "color"], JsonValue.Create(value)!);
+            case "theme.shadows.default.color":
+                SetJsonValue(tokens, ["shadows", "default", "color", "color"], JsonValue.Create(value)!);
                 break;
             case "theme.typography.fontFamilyId":
                 SetJsonValue(tokens, ["typography", "fontFamilyId"], JsonValue.Create(value)!);
@@ -390,18 +386,7 @@ internal sealed partial class SpikeDatabase
             },
             ["shadows"] = new JsonObject
             {
-                ["avatar"] = new JsonObject
-                {
-                    ["color"] = new JsonObject
-                    {
-                        ["color"] = "gray_000",
-                        ["alpha"] = 0.18,
-                    },
-                    ["offsetX"] = 0,
-                    ["offsetY"] = 4,
-                    ["blur"] = 18,
-                },
-                ["elevated"] = new JsonObject
+                ["default"] = new JsonObject
                 {
                     ["color"] = new JsonObject
                     {

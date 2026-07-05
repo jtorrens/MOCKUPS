@@ -1715,13 +1715,7 @@ function defaultThemeTokens(family: "ios" | "android") {
       full: 9999,
     },
     shadows: {
-      avatar: {
-        color: { color: "gray_000", alpha: 0.18 },
-        offsetX: 0,
-        offsetY: 4,
-        blur: 18,
-      },
-      elevated: {
+      default: {
         color: { color: "gray_000", alpha: 0.18 },
         offsetX: 0,
         offsetY: 4,

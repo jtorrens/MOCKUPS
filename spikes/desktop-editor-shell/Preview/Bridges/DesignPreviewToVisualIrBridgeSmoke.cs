@@ -223,7 +223,6 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
             {
               "style": {
                 "shadowEnabled": true,
-                "shadowToken": "elevated",
                 "reliefEnabled": true,
                 "borderWidth": 2,
                 "borderColorToken": "theme.borders.primary",
@@ -251,7 +250,7 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
               "radii": { "surface": 9 },
               "typography": { "sizes": { "l": 18 } },
               "shadows": {
-                "elevated": {
+                "default": {
                   "color": { "color": "gray_000", "alpha": 0.18 },
                   "offsetX": 0,
                   "offsetY": 4,
