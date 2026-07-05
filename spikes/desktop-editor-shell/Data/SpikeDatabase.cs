@@ -2859,13 +2859,12 @@ internal sealed partial class SpikeDatabase
 
     private static string ResolveProjectPath(string path)
     {
-        if (Path.IsPathFullyQualified(path)) return path;
-        return Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", path));
+        return ProjectPathService.ResolveProjectPath(path);
     }
 
     private static string NormalizeRelativePath(string path)
     {
-        return path.Replace(Path.DirectorySeparatorChar, '/').Replace(Path.AltDirectorySeparatorChar, '/');
+        return ProjectPathService.NormalizeRelativePath(path);
     }
 
     private static string MetadataString(string metadataJson, string key)

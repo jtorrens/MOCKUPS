@@ -53,7 +53,7 @@ internal sealed class ActorAvatarPreviewFactory
         };
 
         var mediaRoot = _database.GetProjectSettings(settings.ProjectId).MediaRoot;
-        var fullPath = MediaPathService.ResolveLocalPath(imagePath, mediaRoot);
+        var fullPath = ProjectPathService.ResolveLocalPath(imagePath, mediaRoot);
         if (!useInitials && !string.IsNullOrWhiteSpace(fullPath) && File.Exists(fullPath))
         {
             try
@@ -100,7 +100,7 @@ internal sealed class ActorAvatarPreviewFactory
     {
         var settings = _database.GetActorSettings(actorId);
         var mediaRoot = _database.GetProjectSettings(settings.ProjectId).MediaRoot;
-        return MediaPathService.RelativePathIfInsideMediaRoot(path, mediaRoot);
+        return ProjectPathService.RelativePathIfInsideMediaRoot(path, mediaRoot);
     }
 
     private string PreviewField(

@@ -1,4 +1,5 @@
 using Avalonia.Platform.Storage;
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using System;
 using System.IO;
@@ -64,7 +65,7 @@ internal sealed class EditorPathBrowser
 
     public string? ResolveImagePath(string path)
     {
-        return MediaPathService.ResolveLocalPath(path, SelectedProjectMediaRoot());
+        return ProjectPathService.ResolveLocalPath(path, SelectedProjectMediaRoot());
     }
 
     private async Task<string?> BrowseDirectory(string currentPath)
@@ -134,7 +135,7 @@ internal sealed class EditorPathBrowser
         if (files.Count == 0) return null;
 
         var selectedPath = files[0].Path.LocalPath;
-        return MediaPathService.RelativePathIfInsideMediaRoot(selectedPath, mediaRoot);
+        return ProjectPathService.RelativePathIfInsideMediaRoot(selectedPath, mediaRoot);
     }
 
     private static ProjectTreeNode ProjectAncestor(ProjectTreeNode node)

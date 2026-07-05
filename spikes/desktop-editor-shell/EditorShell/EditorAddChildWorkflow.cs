@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using SukiUI.Controls;
 using System;
@@ -209,7 +210,6 @@ internal sealed class EditorAddChildWorkflow
 
     private static string ResolveProjectMediaRoot(string mediaRoot)
     {
-        if (Path.IsPathFullyQualified(mediaRoot)) return mediaRoot;
-        return Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", mediaRoot));
+        return ProjectPathService.ResolveProjectPath(mediaRoot);
     }
 }
