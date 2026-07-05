@@ -76,26 +76,11 @@ No high-priority duplicated base routine remains from this audit.
 Keep repository writes, UI row construction and Suki-specific styling in their
 owning classes unless a second non-UI owner appears.
 
-## Visual IR-specific cleanup
-
-Keep Visual IR base routines in `VisualIr/` when they are part of the IR
-contract rather than editor-wide utilities.
-
-Candidates:
-
-- variant color selection;
-- IR color validation;
-- static/variant color serialization;
-- renderer-independent IR diagnostics.
-
-Do not put component names, database concepts, theme ids or editor field ids in
-`VisualIr/`.
-
 ## Not generic
 
 Do not extract these just because they are helper methods:
 
-- status/nav/component layout decisions inside transitional resolvers;
+- status/nav/component layout decisions inside web preview resolvers;
 - editor card composition;
 - modal row layout;
 - Suki-specific control styling;

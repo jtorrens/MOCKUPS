@@ -1,7 +1,5 @@
 ﻿using Avalonia;
 using Mockups.DesktopEditorShell.Common;
-using Mockups.DesktopEditorShell.Preview.Bridges;
-using Mockups.DesktopEditorShell.VisualIr;
 using System;
 using System.Linq;
 
@@ -15,25 +13,10 @@ class Program
     [STAThread]
     public static void Main(string[] args)
     {
-        if (args.Contains("--visual-ir-smoke", StringComparer.Ordinal))
-        {
-            VisualIrSmokeFixture.ValidateRoundTrip();
-            Console.WriteLine("Visual IR smoke fixture validated.");
-            return;
-        }
-
         if (args.Contains("--svg-tint-smoke", StringComparer.Ordinal))
         {
             SvgMarkupNormalizerSmoke.Validate();
             Console.WriteLine("SVG tint normalization smoke validated.");
-            return;
-        }
-
-        if (args.Contains("--design-preview-ir-bridge-smoke", StringComparer.Ordinal))
-        {
-            BuildAvaloniaApp().SetupWithoutStarting();
-            DesignPreviewToVisualIrBridgeSmoke.Validate();
-            Console.WriteLine("Design preview to Visual IR bridge smoke validated.");
             return;
         }
 

@@ -21,36 +21,24 @@ values. The rule is:
   These exist so runtime code can be strict afterwards.
 - Dictionary-control parse fallbacks while a user is typing.
   These are editing safeguards, not final resolver behavior.
-- Visual IR unsupported placeholders.
-  They intentionally show unsupported content.
 - Diagnostic color fallback `#ff00ff` / `debug_red`.
   This is acceptable only when the result is visibly broken.
 
 ## Fixed in this pass
 
-- `component.label` IR no longer falls back to plausible background/text colors.
+- `component.label` preview no longer falls back to plausible background/text colors.
   `backgroundColorToken` and `textColorToken` are required.
-- `component.label` IR no longer falls back to a plausible text size number.
-  `textSizeToken` is required and must resolve through
-  `ThemeNumericTokenCatalog`.
+- `component.label` preview no longer falls back to a plausible text size number.
+  `textSizeToken` is required and must resolve through the web bridge.
 - `component.label` style radius no longer falls back to zero. The
   `cornerRadiusToken` must exist and resolve.
+- Status/navigation design previews moved to the web resolver/bridge path and
+  no longer keep a parallel Visual IR resolver.
+- The desktop Visual IR spike has been removed. The web preview is the source of
+  truth for design preview rendering.
 
 ## Needs Follow-Up
 
-- `DesignPreviewFrameResolver.StatusBar` and `NavigationBar` still read some
-  layout values with local numeric defaults. These should be replaced by
-  current-model normalization/migration before those resolvers are treated as
-  final.
-- `DesignPreviewFrameResolver.FallbackIconSvg` creates a placeholder icon when a
-  status token cannot resolve. This is useful during the icon-system migration,
-  but should become an obvious unsupported placeholder or a hard resolver error
-  once icon sets are stable.
-- `DesignPreviewToVisualIrBridge` still has color `FallbackValue` plumbing.
-  This is acceptable only when the fallback is diagnostic. Avoid passing
-  plausible colors into `ResolvedDesignColorRef`.
-- `AvaloniaVisualIrDebugRenderer` uses `#ff00ff` for unresolved Visual IR
-  variant colors. This is acceptable because it is diagnostic.
 - Device metric parsing still has defensive defaults in `DeviceMetricRules`.
   These should be audited separately when imported devices become part of the
   trusted data contract.
