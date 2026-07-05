@@ -1421,6 +1421,16 @@ function RenderNode({
               whiteSpace: "nowrap",
               overflow: "visible",
             }
+        : node.type === "component_preview_unsupported"
+          ? {
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              paddingLeft: 12,
+              paddingRight: 12,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+            }
         : node.type === "text" && node.role === "actor_label_text"
           ? {
               display: "flex",

@@ -152,6 +152,18 @@ editable data
 
 The preview should consume resolved data. It should not know editor forms, draft controls, inheritance rules, or component override rules.
 
+### Component class preview migration guardrail
+
+Component class previews must not keep ad hoc legacy render branches in
+`renderDesignPreviewHtml.tsx`. A component class may render only after it has a
+component-specific resolver and a web bridge function, following the pattern
+established by `component.label`.
+
+Until a component class is migrated, its design preview must use an obvious
+unsupported placeholder. Do not reuse runtime `message_bubble_*` nodes,
+component-specific module shortcuts, or plausible layout defaults to make an
+unmigrated component look partially correct.
+
 ### Bubble component migration guardrail
 
 When message bubble rendering is migrated to the new preview path, migrate the
