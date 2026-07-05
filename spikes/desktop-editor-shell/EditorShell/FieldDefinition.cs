@@ -43,7 +43,8 @@ internal sealed record NumberDefinition(
     decimal? Minimum = null,
     decimal? Maximum = null,
     decimal Increment = 1,
-    int DecimalPlaces = 0);
+    int DecimalPlaces = 0,
+    bool UseSlider = false);
 
 internal enum ImagePreviewMode
 {

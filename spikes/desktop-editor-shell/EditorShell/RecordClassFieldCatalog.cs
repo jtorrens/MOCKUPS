@@ -139,7 +139,11 @@ internal static class RecordClassFieldCatalog
         ["theme.navigationBarId"] = new("theme.navigationBarId", "Navigation bar", ValueKind.OptionToken),
         ["theme.defaultMode"] = new("theme.defaultMode", "Default mode", ValueKind.OptionToken),
         ["theme.neutralTint.hueDeg"] = new("theme.neutralTint.hueDeg", "Hue", ValueKind.HueDegrees),
-        ["theme.neutralTint.saturation"] = new("theme.neutralTint.saturation", "Saturation", ValueKind.Alpha),
+        ["theme.neutralTint.saturation"] = new(
+            "theme.neutralTint.saturation",
+            "Saturation",
+            ValueKind.Decimal,
+            Number: new NumberDefinition(0, 1, 0.05m, 2, UseSlider: true)),
         ["theme.colors.background"] = new("theme.colors.background", "Background", ValueKind.PaletteColorPair),
         ["theme.colors.surface"] = new("theme.colors.surface", "Surface", ValueKind.PaletteColorPair),
         ["theme.colors.card"] = new("theme.colors.card", "Card", ValueKind.PaletteColorPair),

@@ -27,6 +27,8 @@ internal static class DictionaryValueControlFactory
             ValueKind.PaletteColorAlphaPair => new DictionaryPaletteAlphaPairControl(definition, value),
             ValueKind.HexColor => new DictionaryHexColorControl(definition, value),
             ValueKind.HueDegrees => new HueDegreesControl(value, definition.IsEditable),
+            ValueKind.Integer when definition.Number?.UseSlider == true => new DictionaryNumberSliderControl(definition, value),
+            ValueKind.Decimal when definition.Number?.UseSlider == true => new DictionaryNumberSliderControl(definition, value),
             ValueKind.Integer => new DictionaryIntegerControl(definition, value),
             ValueKind.Decimal => new DictionaryDecimalControl(definition, value),
             ValueKind.IntegerPair => new DictionaryIntegerPairControl(definition, value),
