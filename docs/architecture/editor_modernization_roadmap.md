@@ -152,6 +152,30 @@ editable data
 
 The preview should consume resolved data. It should not know editor forms, draft controls, inheritance rules, or component override rules.
 
+### Bubble component migration guardrail
+
+When message bubble rendering is migrated to the new preview path, migrate the
+bubble and all of its owned subcomponents together. Do not partially migrate the
+bubble while leaving actor label, avatar, media, audio, video, icon button,
+tail/chrome, or status subcomponents on legacy render paths.
+
+The target route for each bubble-owned component is:
+
+```text
+component/module data
+  -> component-specific resolver
+  -> shared design atoms
+  -> web bridge
+  -> web renderer
+```
+
+The web renderer must not contain bubble-specific fallback branches that read
+component config, resolve theme tokens, infer geometry, or preserve old
+`message_bubble_*` behavior for migrated component classes. Any remaining
+legacy `message_bubble_*` render types must be explicitly tied to unmigrated
+runtime chat rendering and removed when that runtime path moves to the shared
+resolver/bridge contract.
+
 ## Phase 8: split repositories after field extraction
 
 Do not start by splitting `SpikeDatabase`. First remove field and shell coupling.

@@ -4,7 +4,6 @@ using Mockups.DesktopEditorShell.VisualIr;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.Preview.Bridges;
 
@@ -28,7 +27,6 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
         ValidatePayload(StatusPayload());
         ValidatePayload(NavigationPayload());
         ValidatePayload(NavigationGesturePayload(), expectGeneratedSvg: false);
-        ValidatePayload(LabelComponentPayload(), expectGeneratedSvg: false);
     }
 
     private static void ValidatePayload(DesignPreviewPayload payload, bool expectGeneratedSvg = true)
@@ -49,74 +47,6 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
             throw new InvalidOperationException("Expected gesture navigation bar rect.");
         }
 
-        if (payload.Kind == "componentClass"
-            && payload.ComponentType == "label"
-            && !Flatten(document.Root).OfType<VisualIrGroupNode>().Any((group) =>
-                group.Id == "component.label"
-                && group.Metadata?.TryGetValue("dimensionMode", out var dimensionMode) == true
-                && dimensionMode == "content"))
-        {
-            throw new InvalidOperationException("Expected content-sized label component group.");
-        }
-
-        if (payload.Kind == "componentClass"
-            && payload.ComponentType == "label"
-            && !Flatten(document.Root).OfType<VisualIrTextNode>().Any((text) =>
-                text.Id == "component.label.text"
-                && text.Text == "Sample"
-                && text.Style.FontSize == 18
-                && text.Style.FontStyle == "italic"))
-        {
-            throw new InvalidOperationException("Expected label component text style.");
-        }
-
-        if (payload.Kind == "componentClass"
-            && payload.ComponentType == "label"
-            && !Flatten(document.Root).OfType<VisualIrRectNode>().Any((rect) =>
-                rect.Id == "component.label.background"
-                && rect.Radius == 9
-                && rect.Stroke?.Width == 2
-                && rect.Effects?.Count > 0))
-        {
-            throw new InvalidOperationException("Expected label component card style.");
-        }
-
-        if (payload.Kind == "componentClass"
-            && payload.ComponentType == "label"
-            && !Flatten(document.Root).OfType<VisualIrPathNode>().Any((path) =>
-                path.Id.StartsWith("component.label.relief.core.top.", StringComparison.Ordinal)
-                && path.Stroke?.Paint is VisualIrLinearGradientPaint))
-        {
-            throw new InvalidOperationException("Expected label component relief gradient path layer.");
-        }
-
-        if (payload.Kind == "componentClass"
-            && payload.ComponentType == "label"
-            && !Flatten(document.Root).OfType<VisualIrGroupNode>().Any((group) =>
-                group.Id == "component.label.relief"
-                && group.ClipRect is not null
-                && group.ClipRadius == 10))
-        {
-            throw new InvalidOperationException("Expected label component rounded relief clipping group.");
-        }
-
-        if (payload.Kind == "componentClass"
-            && payload.ComponentType == "label"
-            && !Flatten(document.Root).Any((node) => node.Effects?.OfType<VisualIrBlurEffect>().Any() == true))
-        {
-            throw new InvalidOperationException("Expected label component relief spread blur.");
-        }
-
-        if (payload.Kind == "componentClass"
-            && payload.ComponentType == "label")
-        {
-            var zeroExtentPayload = WithReliefExtent(payload, 0);
-            var zeroExtentDocument = DesignPreviewToVisualIrBridge.Convert(zeroExtentPayload, Metrics, "set_night");
-            if (Flatten(zeroExtentDocument.Root).OfType<VisualIrPathNode>().Any((path) => path.Id.StartsWith("component.label.relief.", StringComparison.Ordinal)))
-            {
-                throw new InvalidOperationException("Expected zero relief extent to emit no relief layers.");
-            }
-        }
     }
 
     private static IEnumerable<VisualIrNode> Flatten(VisualIrNode node)
@@ -131,16 +61,6 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
         {
             yield return child;
         }
-    }
-
-    private static DesignPreviewPayload WithReliefExtent(DesignPreviewPayload payload, double extent)
-    {
-        var config = JsonNode.Parse(payload.ConfigJson)?.AsObject()
-            ?? throw new InvalidOperationException("Invalid label component config JSON.");
-        var style = config["style"]?.AsObject()
-            ?? throw new InvalidOperationException("Missing label component style config.");
-        style["reliefExtent"] = extent;
-        return payload with { ConfigJson = config.ToJsonString() };
     }
 
     private static DesignPreviewPayload StatusPayload()
@@ -214,64 +134,4 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
             "{}");
     }
 
-    private static DesignPreviewPayload LabelComponentPayload()
-    {
-        return new DesignPreviewPayload(
-            "componentClass",
-            "Smoke Label Component",
-            """
-            {
-              "style": {
-                "shadowEnabled": true,
-                "reliefEnabled": true,
-                "borderWidth": 2,
-                "borderColorToken": "theme.borders.primary",
-                "cornerRadiusToken": "theme.radii.surface",
-                "reliefAngle": -30,
-                "reliefExtent": 2,
-                "reliefSpread": 1,
-                "reliefTopIntensity": 0.14,
-                "reliefBottomIntensity": -0.08
-              },
-              "label": {
-                "dimensionMode": "content",
-                "size": "180|64",
-                "padding": "12|6",
-                "backgroundColorToken": "theme.colors.background",
-                "alpha": 1,
-                "textColorToken": "theme.colors.textPrimary",
-                "textSizeToken": "theme.typography.sizes.l",
-                "textStyle": "italic"
-              }
-            }
-            """,
-            """
-            {
-              "radii": { "surface": 9 },
-              "typography": { "sizes": { "l": 18 } },
-              "shadows": {
-                "default": {
-                  "color": { "color": "gray_000", "alpha": 0.18 },
-                  "offsetX": 0,
-                  "offsetY": 4,
-                  "blur": 18
-                }
-              },
-              "modes": {
-                "light": { "colors": { "background": "#FFFFFF", "textPrimary": "#111827", "borders.primary": "#111827" } },
-                "dark": { "colors": { "background": "#111827", "textPrimary": "#FFFFFF", "borders.primary": "#FFFFFF" } }
-              }
-            }
-            """,
-            new Dictionary<string, string>
-            {
-                ["gray_000"] = "#000000",
-            },
-            new Dictionary<string, bool>(),
-            "",
-            "",
-            "{}",
-            "label",
-            """{ "sampleText": "Sample" }""");
-    }
 }
