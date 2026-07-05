@@ -1,6 +1,15 @@
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
+import { NavigationBarModule } from "../visual/modules/atomic/NavigationBarModule.js";
+import { StatusBarModule } from "../visual/modules/atomic/StatusBarModule.js";
 import type { RenderableNode } from "../visual/renderable/types.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import type { LabelDesignContract } from "./labelComponentResolver.js";
+import type {
+  NavigationBarDesignContract,
+  StatusBarDesignContract,
+  SystemBarItemContract,
+} from "./systemBarPreviewResolver.js";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -99,6 +108,10 @@ function numberToken(payload: DesignPreviewPayload, token: string) {
 
 function numberValue(value: unknown, fallback: number) {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function stringValue(value: unknown, fallback = "") {
+  return typeof value === "string" ? value : fallback;
 }
 
 function requiredNumberValue(value: unknown, path: string) {
@@ -239,6 +252,206 @@ export function labelComponentToRenderable(
       componentType: "label",
     },
   };
+}
+
+export function statusBarToRenderable(
+  payload: DesignPreviewPayload,
+  statusBar: StatusBarDesignContract,
+): RenderableNode {
+  const scale = renderScale(payload);
+  const layout = {
+    height: statusBar.layout.height * scale,
+    itemSize: statusBar.layout.itemSize * scale,
+    gap: statusBar.layout.gap * scale,
+    sidePadding: statusBar.layout.sidePadding * scale,
+  };
+  const viewport = designViewport(payload);
+  const statusBarForRender = {
+    layout,
+    items: statusBar.items.map((item) => statusBarItemForRender(payload, item)),
+  };
+  const statusBarHeight = layout.height;
+  return {
+    ...StatusBarModule.render({
+      frame: 0,
+      viewport,
+      statusBarHeight,
+      statusBar: statusBarForRender,
+      tokens: systemBarTokens(payload, "statusBar"),
+    }),
+    box: {
+      x: viewport.x,
+      y: viewport.y,
+      width: viewport.width,
+      height: statusBarHeight,
+    },
+    children: boxedStatusItems(payload, statusBarForRender, statusBarHeight),
+    metadata: {
+      route: "system-bar-resolver.web-bridge",
+      systemBarType: "statusBar",
+    },
+  };
+}
+
+export function navigationBarToRenderable(
+  payload: DesignPreviewPayload,
+  navigationBar: NavigationBarDesignContract,
+): RenderableNode {
+  const scale = renderScale(payload);
+  const layout = {
+    height: navigationBar.layout.height * scale,
+    itemSize: navigationBar.layout.itemSize * scale,
+    sidePadding: navigationBar.layout.sidePadding * scale,
+    strokeWidth: navigationBar.layout.strokeWidth * scale,
+    cornerRadius: navigationBar.layout.cornerRadius * scale,
+    filled: navigationBar.layout.filled,
+  };
+  const navigationBarForRender = {
+    type: navigationBar.type,
+    layout,
+    gesture: {
+      width: navigationBar.gesture.width * scale,
+      height: navigationBar.gesture.height * scale,
+      cornerRadius: navigationBar.gesture.cornerRadius * scale,
+    },
+    items: navigationBar.items,
+  };
+  const viewport = designViewport(payload);
+  return {
+    ...NavigationBarModule.render({
+      frame: 0,
+      viewport,
+      navigationBar: navigationBarForRender,
+      tokens: systemBarTokens(payload, "navigationBar"),
+    }),
+    box: {
+      x: viewport.x,
+      y: viewport.y + viewport.height - layout.height,
+      width: viewport.width,
+      height: layout.height,
+    },
+    metadata: {
+      route: "system-bar-resolver.web-bridge",
+      systemBarType: "navigationBar",
+    },
+  };
+}
+
+export function iconUriForToken(payload: DesignPreviewPayload, token: string) {
+  const mapping = parseObject(payload.iconMappingJson ?? "{}");
+  const tokens = asRecord(mapping.tokens);
+  const iconToken = asRecord(tokens[token]);
+  const file = typeof iconToken.file === "string" ? iconToken.file : "";
+  const assetRoot = payload.iconAssetRoot?.replace(/\/+$/g, "") ?? "";
+  if (!file || !assetRoot) return "";
+
+  const candidates = [
+    path.resolve(payload.projectMediaRoot ?? "", assetRoot, file),
+    path.resolve("assets/FOQN_S2", assetRoot, file),
+    path.resolve("assets", assetRoot, file),
+    path.resolve(assetRoot, file),
+  ];
+  const fullPath = candidates.find((candidate) => existsSync(candidate));
+  if (!fullPath) return "";
+
+  const svg = readFileSync(fullPath);
+  return `data:image/svg+xml;base64,${svg.toString("base64")}`;
+}
+
+function designViewport(payload: DesignPreviewPayload) {
+  return {
+    x: payload.device.screenX,
+    y: payload.device.screenY,
+    width: payload.device.screenWidth,
+    height: payload.device.screenHeight,
+    safeArea: { top: 0, right: 0, bottom: 0, left: 0 },
+  };
+}
+
+function systemBarTokens(
+  payload: DesignPreviewPayload,
+  key: "statusBar" | "navigationBar",
+) {
+  const prefix = key === "statusBar" ? "theme.statusBar" : "theme.navigationBar";
+  return {
+    foreground: selectedColor(payload, `${prefix}.foreground`),
+    background: selectedColor(payload, `${prefix}.background`),
+  };
+}
+
+function statusBarItemForRender(
+  payload: DesignPreviewPayload,
+  item: SystemBarItemContract,
+): Record<string, unknown> {
+  const iconUri =
+    item.kind === "iconToken" && item.token ? iconUriForToken(payload, item.token) : "";
+  return iconUri ? { ...item, iconUri } : { ...item };
+}
+
+function boxedStatusItems(
+  payload: DesignPreviewPayload,
+  statusBar: {
+    layout: { itemSize: number; gap: number; sidePadding: number };
+    items: Record<string, unknown>[];
+  },
+  statusBarHeight: number,
+) {
+  const { itemSize, gap, sidePadding } = statusBar.layout;
+  const foreground = systemBarTokens(payload, "statusBar").foreground;
+  const y = payload.device.screenY + (statusBarHeight - itemSize) / 2;
+  const items = statusBar.items
+    .filter((item) => ["left", "right"].includes(stringValue(item.zone, "off")))
+    .filter((item) => stringValue(item.kind, "text") !== "text" || stringValue(item.value).trim())
+    .sort((left, right) => numberValue(left.order, 0) - numberValue(right.order, 0));
+
+  return (["left", "right"] as const).flatMap((zone) => {
+    const zoneItems = items.filter((item) => stringValue(item.zone, "off") === zone);
+    const widths = zoneItems.map((item) => statusItemWidth(item, itemSize));
+    const totalWidth = widths.reduce((sum, width) => sum + width, 0)
+      + Math.max(0, widths.length - 1) * gap;
+    let x = zone === "left"
+      ? payload.device.screenX + sidePadding
+      : payload.device.screenX + payload.device.screenWidth - sidePadding - totalWidth;
+
+    return zoneItems.map((item, index) => {
+      const width = widths[index] ?? itemSize;
+      const kind = stringValue(item.kind, "text");
+      const id = stringValue(item.id, stringValue(item.label, `item_${index}`));
+      const iconUri = stringValue(item.iconUri);
+      const node = {
+        id: `status_bar:${zone}:${id}`,
+        type: "status_bar_item",
+        role: kind,
+        frame: 0,
+        text: kind === "text"
+          ? stringValue(item.value)
+          : stringValue(item.token, stringValue(item.label)),
+        box: { x, y, width, height: itemSize },
+        style: {
+          color: foreground,
+          fontSize: itemSize,
+          lineHeight: itemSize,
+          ...(iconUri
+            ? {
+                maskImage: `url("${iconUri.replace(/"/g, '\\"')}")`,
+                WebkitMaskImage: `url("${iconUri.replace(/"/g, '\\"')}")`,
+              }
+            : {}),
+        },
+        metadata: { ...item },
+      };
+      x += width + gap;
+      return node;
+    });
+  });
+}
+
+function statusItemWidth(item: Record<string, unknown>, itemSize: number) {
+  const kind = stringValue(item.kind, "text");
+  if (kind === "generatedBattery") return itemSize * 1.55;
+  if (kind === "generatedSignal") return itemSize * 1.08;
+  if (kind === "iconToken") return itemSize;
+  return Math.max(itemSize, stringValue(item.value).length * itemSize * 0.58);
 }
 
 function cssColorWithAlpha(color: string, alpha: number) {

@@ -1,19 +1,24 @@
-import { existsSync, readFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
-import path from "node:path";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { AvatarModule } from "../visual/modules/atomic/AvatarModule.js";
 import { KeyboardModule } from "../visual/modules/atomic/KeyboardModule.js";
-import { NavigationBarModule } from "../visual/modules/atomic/NavigationBarModule.js";
-import { StatusBarModule } from "../visual/modules/atomic/StatusBarModule.js";
 import { TextInputBarModule } from "../visual/modules/atomic/TextInputBarModule.js";
 import { RenderableReactAdapter } from "../visual/adapters/react/RenderableReactAdapter.js";
 import { RenderableNodeSchema } from "../visual/renderable/schema.js";
 import type { RenderableNode } from "../visual/renderable/types.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { resolveLabelComponent } from "./labelComponentResolver.js";
-import { labelComponentToRenderable } from "./webPreviewBridge.js";
+import {
+  iconUriForToken,
+  labelComponentToRenderable,
+  navigationBarToRenderable,
+  statusBarToRenderable,
+} from "./webPreviewBridge.js";
+import {
+  resolveNavigationBar,
+  resolveStatusBar,
+} from "./systemBarPreviewResolver.js";
 
 function asRecord(value: unknown): Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
@@ -115,21 +120,6 @@ function safeAreaViewport(box: {
   return {
     ...box,
     safeArea: { top: 0, right: 0, bottom: 0, left: 0 },
-  };
-}
-
-function scaleLayout(
-  layout: Record<string, unknown>,
-  scale: number,
-  keys: string[],
-) {
-  return {
-    ...layout,
-    ...Object.fromEntries(
-      keys
-        .filter((key) => typeof layout[key] === "number")
-        .map((key) => [key, (layout[key] as number) * scale]),
-    ),
   };
 }
 
@@ -578,136 +568,6 @@ function componentRenderableForPayload(
   };
 }
 
-function statusBarTokens(payload: DesignPreviewPayload) {
-  const statusBar = asRecord(modeTokens(payload).statusBar);
-  return {
-    foreground:
-      typeof statusBar.foreground === "string" ? statusBar.foreground : "#111827",
-    background:
-      typeof statusBar.background === "object" && statusBar.background !== null
-        ? (asRecord(statusBar.background).color as string | undefined) ?? "transparent"
-        : typeof statusBar.background === "string"
-          ? statusBar.background
-          : "transparent",
-  };
-}
-
-function navigationBarTokens(payload: DesignPreviewPayload) {
-  const navigationBar = asRecord(modeTokens(payload).navigationBar);
-  return {
-    foreground:
-      typeof navigationBar.foreground === "string"
-        ? navigationBar.foreground
-        : "#111827",
-    background:
-      typeof navigationBar.background === "object" && navigationBar.background !== null
-        ? (asRecord(navigationBar.background).color as string | undefined) ?? "transparent"
-        : typeof navigationBar.background === "string"
-          ? navigationBar.background
-          : "transparent",
-  };
-}
-
-function iconUriForToken(payload: DesignPreviewPayload, token: string) {
-  const mapping = parseObject(payload.iconMappingJson ?? "{}");
-  const tokens = asRecord(mapping.tokens);
-  const iconToken = asRecord(tokens[token]);
-  const file = typeof iconToken.file === "string" ? iconToken.file : "";
-  const assetRoot = payload.iconAssetRoot?.replace(/\/+$/g, "") ?? "";
-  if (!file || !assetRoot) return "";
-
-  const candidates = [
-    path.resolve(payload.projectMediaRoot ?? "", assetRoot, file),
-    path.resolve("assets/FOQN_S2", assetRoot, file),
-    path.resolve("assets", assetRoot, file),
-    path.resolve(assetRoot, file),
-  ];
-  const fullPath = candidates.find((candidate) => existsSync(candidate));
-  if (!fullPath) return "";
-
-  const svg = readFileSync(fullPath);
-  return `data:image/svg+xml;base64,${svg.toString("base64")}`;
-}
-
-function resolveStatusBarItems(
-  payload: DesignPreviewPayload,
-  config: Record<string, unknown>,
-) {
-  const items = Array.isArray(config.items) ? config.items : [];
-  return items.map((item) => {
-    const row = asRecord(item);
-    const kind = typeof row.kind === "string" ? row.kind : "";
-    const token = typeof row.token === "string" ? row.token : "";
-    const iconUri = kind === "iconToken" && token ? iconUriForToken(payload, token) : "";
-    return iconUri ? { ...row, iconUri } : row;
-  });
-}
-
-function statusItemWidth(item: Record<string, unknown>, itemSize: number) {
-  const kind = readString(item, "kind", "text");
-  if (kind === "generatedBattery") return itemSize * 1.55;
-  if (kind === "generatedSignal") return itemSize * 1.08;
-  if (kind === "iconToken") return itemSize;
-  return Math.max(itemSize, readString(item, "value", "").length * itemSize * 0.58);
-}
-
-function boxedStatusItems(
-  payload: DesignPreviewPayload,
-  config: Record<string, unknown>,
-  statusBarHeight: number,
-) {
-  const layout = asRecord(config.layout);
-  const itemSize = readNumber(layout, "itemSize", 18);
-  const gap = readNumber(layout, "gap", 6);
-  const sidePadding = readNumber(layout, "sidePadding", 24);
-  const foreground = statusBarTokens(payload).foreground;
-  const y = payload.device.screenY + (statusBarHeight - itemSize) / 2;
-  const items = resolveStatusBarItems(payload, config)
-    .map((item) => asRecord(item))
-    .filter((item) => ["left", "right"].includes(readString(item, "zone", "off")))
-    .filter((item) => readString(item, "kind", "text") !== "text" || readString(item, "value", "").trim())
-    .sort((left, right) => readNumber(left, "order", 0) - readNumber(right, "order", 0));
-
-  return (["left", "right"] as const).flatMap((zone) => {
-    const zoneItems = items.filter((item) => readString(item, "zone", "off") === zone);
-    const widths = zoneItems.map((item) => statusItemWidth(item, itemSize));
-    const totalWidth = widths.reduce((sum, width) => sum + width, 0)
-      + Math.max(0, widths.length - 1) * gap;
-    let x = zone === "left"
-      ? payload.device.screenX + sidePadding
-      : payload.device.screenX + payload.device.screenWidth - sidePadding - totalWidth;
-
-    return zoneItems.map((item, index) => {
-      const width = widths[index] ?? itemSize;
-      const kind = readString(item, "kind", "text");
-      const id = readString(item, "id", readString(item, "label", `item_${index}`));
-      const iconUri = readString(item, "iconUri", "");
-      const node = {
-        id: `status_bar:${zone}:${id}`,
-        type: "status_bar_item",
-        role: kind,
-        frame: 0,
-        text: kind === "text" ? readString(item, "value", "") : readString(item, "token", readString(item, "label", "")),
-        box: { x, y, width, height: itemSize },
-        style: {
-          color: foreground,
-          fontSize: itemSize,
-          lineHeight: itemSize,
-          ...(iconUri
-            ? {
-                maskImage: `url("${iconUri.replace(/"/g, '\\"')}")`,
-                WebkitMaskImage: `url("${iconUri.replace(/"/g, '\\"')}")`,
-              }
-            : {}),
-        },
-        metadata: { ...item },
-      };
-      x += width + gap;
-      return node;
-    });
-  });
-}
-
 function renderableForPayload(payload: DesignPreviewPayload): RenderableNode {
   if (payload.kind === "componentClass") {
     const component = componentRenderableForPayload(payload);
@@ -728,87 +588,9 @@ function renderableForPayload(payload: DesignPreviewPayload): RenderableNode {
     });
   }
 
-  const config = parseObject(payload.configJson);
-  const viewport = {
-    x: payload.device.screenX,
-    y: payload.device.screenY,
-    width: payload.device.screenWidth,
-    height: payload.device.screenHeight,
-    safeArea: { top: 0, right: 0, bottom: 0, left: 0 },
-  };
-  const scale = renderScale(payload);
-  const rawLayout = asRecord(config.layout);
-  const configForRender =
-    payload.kind === "statusBar"
-      ? {
-          ...config,
-          layout: scaleLayout(rawLayout, scale, [
-            "height",
-            "itemSize",
-            "gap",
-            "sidePadding",
-          ]),
-          items: resolveStatusBarItems(payload, config),
-        }
-      : {
-          ...config,
-          layout: scaleLayout(rawLayout, scale, [
-            "height",
-            "itemSize",
-            "sidePadding",
-            "strokeWidth",
-            "cornerRadius",
-          ]),
-          gesture: scaleLayout(asRecord(config.gesture), scale, [
-            "width",
-            "height",
-            "cornerRadius",
-          ]),
-        };
-  const layout = asRecord(configForRender.layout);
-  const statusBarHeight =
-    readNumber(
-      layout,
-      "height",
-      typeof payload.device.statusBarHeight === "number" &&
-        Number.isFinite(payload.device.statusBarHeight) &&
-        payload.device.statusBarHeight > 0
-        ? payload.device.statusBarHeight
-        : 54,
-    );
-  const navigationBarHeight = readNumber(layout, "height", 0);
-  const child =
-    payload.kind === "statusBar"
-      ? {
-          ...StatusBarModule.render({
-            frame: 0,
-            viewport,
-            statusBarHeight,
-            statusBar: configForRender,
-            tokens: statusBarTokens(payload),
-          }),
-          box: {
-            x: viewport.x,
-            y: viewport.y,
-            width: viewport.width,
-            height: statusBarHeight,
-          },
-          children: boxedStatusItems(payload, configForRender, statusBarHeight),
-        }
-      : {
-          ...NavigationBarModule.render({
-            frame: 0,
-            viewport,
-            navigationBar: configForRender,
-            tokens: navigationBarTokens(payload),
-          }),
-          box: {
-            x: viewport.x,
-            y: viewport.y + viewport.height - navigationBarHeight,
-            width: viewport.width,
-            height: navigationBarHeight,
-          },
-        };
+  const child = payload.kind === "statusBar"
+    ? statusBarToRenderable(payload, resolveStatusBar(payload))
+    : navigationBarToRenderable(payload, resolveNavigationBar(payload));
 
   return RenderableNodeSchema.parse({
     id: "design_preview_surface",

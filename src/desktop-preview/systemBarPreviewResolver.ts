@@ -1,0 +1,210 @@
+import type { DesignPreviewPayload } from "./designPreviewPayload.js";
+
+export interface SystemBarItemContract {
+  id: string;
+  label: string;
+  kind: string;
+  value: string | number | boolean;
+  token: string;
+  zone: string;
+  order: number;
+  charging: boolean;
+}
+
+export interface StatusBarDesignContract {
+  id: "statusBar";
+  layout: {
+    height: number;
+    itemSize: number;
+    gap: number;
+    sidePadding: number;
+  };
+  items: SystemBarItemContract[];
+}
+
+export interface NavigationBarDesignContract {
+  id: "navigationBar";
+  type: "buttons" | "gestureBar";
+  layout: {
+    height: number;
+    itemSize: number;
+    sidePadding: number;
+    strokeWidth: number;
+    cornerRadius: number;
+    filled: boolean;
+  };
+  gesture: {
+    width: number;
+    height: number;
+    cornerRadius: number;
+  };
+  items: SystemBarItemContract[];
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function parseObject(json: string | undefined) {
+  return asRecord(JSON.parse(json || "{}"));
+}
+
+function requiredString(
+  value: Record<string, unknown>,
+  key: string,
+  path: string,
+) {
+  const raw = value[key];
+  if (typeof raw === "string" && raw.trim()) return raw;
+  throw new Error(`Missing string system bar value ${path}`);
+}
+
+function optionalString(value: Record<string, unknown>, key: string) {
+  const raw = value[key];
+  return typeof raw === "string" ? raw : "";
+}
+
+function requiredBoolean(
+  value: Record<string, unknown>,
+  key: string,
+  path: string,
+) {
+  const raw = value[key];
+  if (typeof raw === "boolean") return raw;
+  throw new Error(`Missing boolean system bar value ${path}`);
+}
+
+function requiredNumber(
+  value: Record<string, unknown>,
+  key: string,
+  path: string,
+) {
+  const raw = value[key];
+  if (typeof raw === "number" && Number.isFinite(raw)) return raw;
+  if (typeof raw === "string") {
+    const parsed = Number(raw.replace(",", "."));
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  throw new Error(`Missing numeric system bar value ${path}`);
+}
+
+function optionalNumber(
+  value: Record<string, unknown>,
+  key: string,
+  fallback: number,
+) {
+  const raw = value[key];
+  if (typeof raw === "number" && Number.isFinite(raw)) return raw;
+  if (typeof raw === "string") {
+    const parsed = Number(raw.replace(",", "."));
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return fallback;
+}
+
+function itemValue(value: unknown) {
+  if (
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  ) {
+    return value;
+  }
+  return "";
+}
+
+function items(value: unknown): SystemBarItemContract[] {
+  if (!Array.isArray(value)) {
+    throw new Error("Missing system bar value items");
+  }
+
+  return value.map((raw, index) => {
+    const item = asRecord(raw);
+    return {
+      id: requiredString(item, "id", `items.${index}.id`),
+      label: optionalString(item, "label"),
+      kind: requiredString(item, "kind", `items.${index}.kind`),
+      value: itemValue(item.value),
+      token: optionalString(item, "token"),
+      zone: requiredString(item, "zone", `items.${index}.zone`),
+      order: optionalNumber(item, "order", index * 10),
+      charging: item.charging === undefined
+        ? false
+        : requiredBoolean(item, "charging", `items.${index}.charging`),
+    };
+  });
+}
+
+export function resolveStatusBar(
+  payload: DesignPreviewPayload,
+): StatusBarDesignContract {
+  const config = parseObject(payload.configJson);
+  const layout = asRecord(config.layout);
+  return {
+    id: "statusBar",
+    layout: {
+      height: requiredNumber(layout, "height", "statusBar.layout.height"),
+      itemSize: requiredNumber(layout, "itemSize", "statusBar.layout.itemSize"),
+      gap: requiredNumber(layout, "gap", "statusBar.layout.gap"),
+      sidePadding: requiredNumber(
+        layout,
+        "sidePadding",
+        "statusBar.layout.sidePadding",
+      ),
+    },
+    items: items(config.items),
+  };
+}
+
+export function resolveNavigationBar(
+  payload: DesignPreviewPayload,
+): NavigationBarDesignContract {
+  const config = parseObject(payload.configJson);
+  const layout = asRecord(config.layout);
+  const gesture = asRecord(config.gesture);
+  const type = requiredString(config, "type", "navigationBar.type");
+  if (type !== "buttons" && type !== "gestureBar") {
+    throw new Error(`Unsupported navigation bar type ${type}`);
+  }
+
+  return {
+    id: "navigationBar",
+    type,
+    layout: {
+      height: requiredNumber(layout, "height", "navigationBar.layout.height"),
+      itemSize: requiredNumber(
+        layout,
+        "itemSize",
+        "navigationBar.layout.itemSize",
+      ),
+      sidePadding: requiredNumber(
+        layout,
+        "sidePadding",
+        "navigationBar.layout.sidePadding",
+      ),
+      strokeWidth: requiredNumber(
+        layout,
+        "strokeWidth",
+        "navigationBar.layout.strokeWidth",
+      ),
+      cornerRadius: requiredNumber(
+        layout,
+        "cornerRadius",
+        "navigationBar.layout.cornerRadius",
+      ),
+      filled: requiredBoolean(layout, "filled", "navigationBar.layout.filled"),
+    },
+    gesture: {
+      width: requiredNumber(gesture, "width", "navigationBar.gesture.width"),
+      height: requiredNumber(gesture, "height", "navigationBar.gesture.height"),
+      cornerRadius: requiredNumber(
+        gesture,
+        "cornerRadius",
+        "navigationBar.gesture.cornerRadius",
+      ),
+    },
+    items: items(config.items),
+  };
+}
