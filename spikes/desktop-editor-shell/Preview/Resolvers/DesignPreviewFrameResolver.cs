@@ -730,7 +730,7 @@ internal static class DesignPreviewFrameResolver
                     Bounds = new DesignRect(0, 0, bounds.Width, bounds.Height),
                     Data = ReliefEdgePath(bounds.Width, bounds.Height, cornerRadius, side),
                     Stroke = new ResolvedDesignStroke(
-                        ReliefGradient(bounds.Width, bounds.Height, side, baseColorToken, brightnessMultiplier, brightnessMultiplier),
+                        ReliefGradient(bounds.Width, bounds.Height, side, baseColorToken, brightnessMultiplier),
                         1,
                         "round",
                         "round"),
@@ -745,20 +745,21 @@ internal static class DesignPreviewFrameResolver
         double height,
         ReliefSide side,
         string baseColorToken,
-        double startBrightnessMultiplier,
-        double endBrightnessMultiplier)
+        double brightnessMultiplier)
     {
-        var from = new DesignPoint(0, 0);
-        var to = side is ReliefSide.Top or ReliefSide.Bottom
-            ? new DesignPoint(width, 0)
-            : new DesignPoint(0, height);
+        var (from, to) = side switch
+        {
+            ReliefSide.Top => (new DesignPoint(0, 0), new DesignPoint(0, height)),
+            ReliefSide.Bottom => (new DesignPoint(0, height), new DesignPoint(0, 0)),
+            ReliefSide.Left => (new DesignPoint(0, 0), new DesignPoint(width, 0)),
+            _ => (new DesignPoint(width, 0), new DesignPoint(0, 0)),
+        };
         return new ResolvedDesignLinearGradientPaint(
             from,
             to,
             [
-                new ResolvedDesignGradientStop(0, new ResolvedDesignColorRef($"{baseColorToken}.relief.start.0", baseColorToken, "debug_red", 0)),
-                new ResolvedDesignGradientStop(0.5, new ResolvedDesignColorRef($"{baseColorToken}.relief.center.{N(startBrightnessMultiplier)}", baseColorToken, "debug_red", startBrightnessMultiplier)),
-                new ResolvedDesignGradientStop(1, new ResolvedDesignColorRef($"{baseColorToken}.relief.end.0", baseColorToken, "debug_red", 0)),
+                new ResolvedDesignGradientStop(0, new ResolvedDesignColorRef($"{baseColorToken}.relief.edge.{N(brightnessMultiplier)}", baseColorToken, "debug_red", brightnessMultiplier)),
+                new ResolvedDesignGradientStop(1, new ResolvedDesignColorRef($"{baseColorToken}.relief.inner.0", baseColorToken, "debug_red", 0)),
             ]);
     }
 
