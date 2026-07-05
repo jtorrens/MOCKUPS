@@ -23,8 +23,7 @@ internal sealed class VisualIrDesignPreviewPane : Grid
         Children.Clear();
 
         var panelText = isDark ? "#F3F4F6" : "#111827";
-        var panelBackground = isDark ? "#121417" : "#F3F4F6";
-        Background = new SolidColorBrush(Color.Parse(panelBackground));
+        Background = Brushes.Transparent;
 
         if (payload is null)
         {

@@ -3,6 +3,7 @@ using Mockups.DesktopEditorShell.EditorShell;
 using Mockups.DesktopEditorShell.VisualIr;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text.Json.Nodes;
 
@@ -64,10 +65,11 @@ internal static class DesignPreviewToVisualIrBridge
     {
         var config = ParseObject(payload.ConfigJson);
         var layout = config["layout"] as JsonObject ?? [];
-        var height = Number(layout, "height", metrics.StatusBarHeight > 0 ? metrics.StatusBarHeight : 54);
-        var itemSize = Number(layout, "itemSize", 18);
-        var gap = Number(layout, "gap", 6);
-        var sidePadding = Number(layout, "sidePadding", 24);
+        var scale = RenderScale(metrics);
+        var height = ScaledNumber(layout, "height", metrics.StatusBarHeight > 0 ? metrics.StatusBarHeight : 54 * scale, scale);
+        var itemSize = ScaledNumber(layout, "itemSize", 18 * scale, scale);
+        var gap = ScaledNumber(layout, "gap", 6 * scale, scale);
+        var sidePadding = ScaledNumber(layout, "sidePadding", 24 * scale, scale);
         var bounds = new VisualIrRect(metrics.ScreenX, metrics.ScreenY, metrics.ScreenWidth, height);
         var children = new List<VisualIrNode>
         {
@@ -164,9 +166,11 @@ internal static class DesignPreviewToVisualIrBridge
     {
         var config = ParseObject(payload.ConfigJson);
         var layout = config["layout"] as JsonObject ?? [];
-        var height = Number(layout, "height", 34);
-        var itemSize = Number(layout, "itemSize", 18);
-        var sidePadding = Number(layout, "sidePadding", 40);
+        var scale = RenderScale(metrics);
+        var height = ScaledNumber(layout, "height", 34 * scale, scale);
+        var itemSize = ScaledNumber(layout, "itemSize", 18 * scale, scale);
+        var sidePadding = ScaledNumber(layout, "sidePadding", 40 * scale, scale);
+        var gap = 10 * scale;
         var bounds = new VisualIrRect(metrics.ScreenX, metrics.ScreenY + metrics.ScreenHeight - height, metrics.ScreenWidth, height);
         var children = new List<VisualIrNode>
         {
@@ -184,7 +188,7 @@ internal static class DesignPreviewToVisualIrBridge
             .ToList();
         foreach (var zone in new[] { "left", "center", "right" })
         {
-            children.AddRange(NavigationItemsForZone(items.Where((item) => item.Zone == zone), zone, itemSize, sidePadding, bounds));
+            children.AddRange(NavigationItemsForZone(items.Where((item) => item.Zone == zone), zone, itemSize, sidePadding, gap, bounds));
         }
 
         return new VisualIrGroupNode
@@ -204,6 +208,7 @@ internal static class DesignPreviewToVisualIrBridge
         string zone,
         double itemSize,
         double sidePadding,
+        double gap,
         VisualIrRect barBounds)
     {
         var list = items.ToList();
@@ -212,7 +217,6 @@ internal static class DesignPreviewToVisualIrBridge
             yield break;
         }
 
-        const double gap = 10;
         var totalWidth = list.Count * itemSize + Math.Max(0, list.Count - 1) * gap;
         var x = zone switch
         {
@@ -295,6 +299,20 @@ internal static class DesignPreviewToVisualIrBridge
         };
     }
 
+    private static double RenderScale(SpikeDatabase.DevicePreviewMetrics metrics)
+    {
+        return metrics.ScaleToPixels > 0 ? metrics.ScaleToPixels : 1;
+    }
+
+    private static double ScaledNumber(JsonObject json, string key, double fallback, double scale)
+    {
+        return json.TryGetPropertyValue(key, out var node)
+            && node is not null
+            && double.TryParse(node.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
+            ? parsed * scale
+            : fallback;
+    }
+
     private static VisualIrVariantColor VariantColor(string setDay, string setNight)
     {
         return VisualIrColor.Variant(
@@ -356,7 +374,9 @@ internal static class DesignPreviewToVisualIrBridge
             return fallback;
         }
 
-        return double.TryParse(node.ToString(), out var parsed) ? parsed : fallback;
+        return double.TryParse(node.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
+            ? parsed
+            : fallback;
     }
 
     private sealed record PreviewItem(
