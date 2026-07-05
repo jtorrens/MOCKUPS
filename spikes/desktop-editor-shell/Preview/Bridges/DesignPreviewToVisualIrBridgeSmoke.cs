@@ -24,29 +24,12 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
 
     public static void Validate()
     {
-        ValidatePayload(StatusPayload());
-        ValidatePayload(NavigationPayload());
-        ValidatePayload(NavigationGesturePayload(), expectGeneratedSvg: false);
-    }
-
-    private static void ValidatePayload(DesignPreviewPayload payload, bool expectGeneratedSvg = true)
-    {
-        var document = DesignPreviewToVisualIrBridge.Convert(payload, Metrics);
+        var document = DesignPreviewToVisualIrBridge.Convert(UnsupportedStatusPayload(), Metrics);
         VisualIrValidator.ThrowIfInvalid(document);
-        if (expectGeneratedSvg
-            && payload.Kind is "statusBar" or "navigationBar"
-            && !Flatten(document.Root).OfType<VisualIrSvgNode>().Any((svg) => svg.Markup?.Contains("currentColor", StringComparison.Ordinal) == true))
+        if (!Flatten(document.Root).Any((node) => node.Id == "unsupported.statusBar"))
         {
-            throw new InvalidOperationException($"Expected generated SVG markup for {payload.Kind}.");
+            throw new InvalidOperationException("Expected migrated system bars to be unsupported by the legacy Visual IR bridge.");
         }
-
-        if (!expectGeneratedSvg
-            && payload.Kind == "navigationBar"
-            && !Flatten(document.Root).OfType<VisualIrRectNode>().Any((rect) => rect.Id == "navigationBar.gesture"))
-        {
-            throw new InvalidOperationException("Expected gesture navigation bar rect.");
-        }
-
     }
 
     private static IEnumerable<VisualIrNode> Flatten(VisualIrNode node)
@@ -63,21 +46,12 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
         }
     }
 
-    private static DesignPreviewPayload StatusPayload()
+    private static DesignPreviewPayload UnsupportedStatusPayload()
     {
         return new DesignPreviewPayload(
             "statusBar",
-            "Smoke Status Bar",
-            """
-            {
-              "layout": { "height": 54, "itemSize": 18, "gap": 6, "sidePadding": 24 },
-              "items": [
-                { "id": "time", "label": "Time", "kind": "text", "value": "9:41", "zone": "left", "order": 10 },
-                { "id": "wifi", "label": "Wi-Fi", "kind": "iconToken", "token": "status_wifi", "zone": "right", "order": 20 },
-                { "id": "battery", "label": "Battery", "kind": "generatedBattery", "value": 85, "zone": "right", "order": 30 }
-              ]
-            }
-            """,
+            "Migrated Status Bar",
+            "{}",
             "{}",
             new Dictionary<string, string>(),
             new Dictionary<string, bool>(),
@@ -85,53 +59,4 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
             "",
             "{}");
     }
-
-    private static DesignPreviewPayload NavigationPayload()
-    {
-        return new DesignPreviewPayload(
-            "navigationBar",
-            "Smoke Navigation Bar",
-            """
-            {
-              "layout": { "height": 34, "itemSize": 18, "sidePadding": 40 },
-              "items": [
-                { "id": "back", "label": "Back", "kind": "generatedBack", "zone": "left", "order": 10 },
-                { "id": "home", "label": "Home", "kind": "generatedHome", "zone": "center", "order": 10 },
-                { "id": "recents", "label": "Recents", "kind": "generatedRecents", "zone": "right", "order": 10 }
-              ]
-            }
-            """,
-            "{}",
-            new Dictionary<string, string>(),
-            new Dictionary<string, bool>(),
-            "",
-            "",
-            "{}");
-    }
-
-    private static DesignPreviewPayload NavigationGesturePayload()
-    {
-        return new DesignPreviewPayload(
-            "navigationBar",
-            "Smoke Gesture Navigation Bar",
-            """
-            {
-              "type": "gestureBar",
-              "layout": { "height": 34, "itemSize": 18, "sidePadding": 40 },
-              "gesture": { "width": 134, "height": 5, "cornerRadius": 3 },
-              "items": [
-                { "id": "back", "label": "Back", "kind": "generatedBack", "zone": "left", "order": 10 },
-                { "id": "home", "label": "Home", "kind": "generatedHome", "zone": "center", "order": 10 },
-                { "id": "recents", "label": "Recents", "kind": "generatedRecents", "zone": "right", "order": 10 }
-              ]
-            }
-            """,
-            "{}",
-            new Dictionary<string, string>(),
-            new Dictionary<string, bool>(),
-            "",
-            "",
-            "{}");
-    }
-
 }
