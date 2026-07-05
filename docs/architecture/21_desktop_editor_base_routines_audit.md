@@ -12,6 +12,40 @@ If the same algorithm appears in a second place, extract it before continuing.
 
 ## Extracted in this phase
 
+- `Common/JsonPath.cs`
+  - safe object parsing;
+  - path read/write for strings, numbers, booleans and nodes;
+  - number-node creation;
+  - merge-missing behavior for generic JSON defaults.
+- `Common/ColorValue.cs`
+  - hex normalization;
+  - safe hex parsing;
+  - alpha application;
+  - contrast text brush calculation;
+  - `#RRGGBBAA` parsing.
+- `Common/NumericText.cs`
+  - invariant decimal parsing;
+  - clamp helpers;
+  - stable numeric formatting;
+  - slider snap step derived from semantic scale.
+- `Common/BooleanText.cs`
+  - tolerant string-to-bool;
+  - stable bool-to-storage string.
+- `Common/ProjectPathService.cs`
+  - project-relative path normalization;
+  - media-root absolute path resolution;
+  - safe combine inside project/media roots.
+- `Common/SearchText.cs`
+  - lowercase/diacritic-insensitive token normalization;
+  - reusable whitespace tokenization.
+- `Common/IconTokenRules.cs`
+  - icon token derivation from text;
+  - category derivation from icon tokens.
+- `Common/DeviceMetricRules.cs`
+  - normalized device metrics JSON construction;
+  - preview metric fallbacks;
+  - scale-to-pixels resolution;
+  - default scale guesses, including PPI-aware catalog guesses.
 - `Common/SvgMarkupNormalizer.cs`
   - tintable SVG normalization;
   - XML/doctype stripping for inline SVG;
@@ -32,166 +66,7 @@ If the same algorithm appears in a second place, extract it before continuing.
   - `color|color||alpha|alpha` parsing;
   - alpha clamping, formatting and slider snapping.
 
-## High-priority remaining extractions
-
-### JSON path helpers
-
-Current locations:
-
-- `Data/SpikeDatabase.cs`
-- `Preview/Bridges/DesignPreviewToVisualIrBridge.cs`
-- `Preview/Resolvers/DesignPreviewFrameResolver.cs`
-- `Data/SpikeDatabase.IconThemeSearch.cs`
-- `EditorShell/IconSlotsControl.cs`
-
-Target:
-
-- `Common/JsonPath.cs`
-
-Move:
-
-- safe object parsing;
-- path read for string/number/bool;
-- path write;
-- number node creation;
-- merge-missing behavior if it remains generic.
-
-Do not move record-specific default JSON builders.
-
-### Color and hex helpers
-
-Current locations:
-
-- `Data/SpikeDatabase.Palette.cs`
-- `EditorShell/DictionaryFieldColorValue.cs`
-- `EditorShell/HexColorPickerDialog.cs`
-- `EditorShell/EditorNavigationVisuals.cs`
-- `EditorShell/ActorAvatarPreviewFactory.cs`
-- `EditorShell/PaletteColorPickerDialog.cs`
-- `EditorShell/ThemeTokenPickerDialog.cs`
-- `Preview/Avalonia/AvaloniaVisualIrDebugRenderer.cs`
-- `Preview/Bridges/DesignPreviewToVisualIrBridge.cs`
-
-Target:
-
-- `Common/ColorValue.cs`
-- `VisualIr/VisualIrColorResolver.cs` for IR-specific variant selection.
-
-Move:
-
-- hex normalization;
-- safe hex parsing;
-- alpha application;
-- contrast text brush calculation;
-- `#RRGGBBAA` parsing.
-
-Do not move Suki/Avalonia theme resource assignment into common base routines.
-
-### Numeric parsing, formatting and step rules
-
-Current locations:
-
-- `EditorShell/DictionaryIntegerControl.cs`
-- `EditorShell/DictionaryDecimalControl.cs`
-- `EditorShell/HueDegreesControl.cs`
-- `EditorShell/DictionaryImageFileControl.cs`
-- `EditorShell/ActorAvatarPreviewFactory.cs`
-- `EditorShell/IconThemeSvgReplaceDialog.cs`
-- `Preview/Resolvers/DesignPreviewFrameResolver.cs`
-- `Data/SpikeDatabase.cs`
-
-Target:
-
-- `Common/NumericText.cs`
-- `Common/SliderStepRules.cs`
-
-Move:
-
-- invariant decimal parsing;
-- clamp helpers;
-- stable numeric formatting;
-- slider snap step derived from semantic scale.
-
-### Boolean text conversion
-
-Current locations:
-
-- `Data/SpikeDatabase.cs`
-- `EditorShell/DictionaryBooleanControl.cs`
-- `EditorShell/StatusBarItemsCollectionEditor.cs`
-- `EditorShell/RecordClassFieldValueService.cs`
-
-Target:
-
-- `Common/BooleanText.cs`
-
-Move:
-
-- tolerant string-to-bool;
-- stable bool-to-storage string.
-
-### Project/media path helpers
-
-Current locations:
-
-- `EditorShell/MediaPathService.cs`
-- `EditorShell/EditorAddChildWorkflow.cs`
-- `Data/SpikeDatabase.cs`
-- `Data/SpikeDatabase.IconThemeAssets.cs`
-- `Data/SpikeDatabase.IconThemes.cs`
-- `Preview/Resolvers/DesignPreviewFrameResolver.cs`
-
-Target:
-
-- `Common/ProjectPathService.cs`
-
-Move:
-
-- project-relative path normalization;
-- media-root absolute path resolution;
-- safe combine inside project/media roots.
-
-Keep database table-specific queries in repositories.
-
-### Search text normalization
-
-Current locations:
-
-- `EditorShell/EditorSearchMatcher.cs`
-- `EditorShell/IconThemeSearchDialog.cs`
-- `Data/SpikeDatabase.IconThemeSearch.cs`
-
-Target:
-
-- `Common/SearchText.cs`
-
-Move:
-
-- lowercase/diacritic-insensitive token normalization;
-- token/category derivation if reused by icon/theme searches.
-
-Provider-specific API parsing stays inside the provider.
-
-### Device metric normalization
-
-Current locations:
-
-- `Preview/Resolvers/DesignPreviewFrameResolver.cs`
-- `EditorShell/DeviceImportMapper.cs`
-- `EditorShell/PhoneSpecsDeviceCatalogProvider.cs`
-- `Data/SpikeDatabase.Devices.cs`
-
-Target:
-
-- `Common/DeviceMetricRules.cs`
-
-Move:
-
-- design-unit conversion from pixel metrics;
-- default scale guesses;
-- sane metric fallbacks.
-
-Do not move provider-specific raw field extraction from external APIs.
+## Remaining extraction candidates
 
 ### Icon theme mapping helpers
 
@@ -209,7 +84,6 @@ Target:
 
 Move:
 
-- token/category derivation;
 - mapping token list parsing;
 - SVG token set discovery when it is filesystem-only and DB-free.
 
@@ -245,11 +119,19 @@ They can be moved later only if a second owner appears.
 
 ## Suggested order
 
+Completed:
+
 1. JSON path helpers.
 2. Color/hex helpers and IR color resolver.
 3. Numeric/boolean text helpers.
 4. Project/media path helpers.
 5. Search text and icon token rules.
 6. Device metric rules.
+
+Next low-risk pass:
+
+1. Finish icon theme mapping helpers only where parsing is filesystem/JSON-only.
+2. Audit remaining private helpers with `rg` before extracting anything else.
+3. Leave UI-specific row layout, repository writes and transitional component layout in their owning classes.
 
 Each step should compile and keep the app usable before moving to the next.
