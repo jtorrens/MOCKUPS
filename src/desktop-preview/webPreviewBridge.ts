@@ -337,6 +337,7 @@ export function avatarComponentToRenderable(
 ): RenderableNode {
   const scale = renderScale(payload);
   const avatarSize = avatar.size * scale;
+  const avatarShadow = avatar.surface.shadowEnabled ? shadow(payload) : undefined;
   const labelSize = avatar.labelSlot.label
     ? measureLabelComponent(avatar.labelSlot.label, payload)
     : undefined;
@@ -350,12 +351,6 @@ export function avatarComponentToRenderable(
     labelSize && (position === "top" || position === "bottom")
       ? avatarSize + gap + labelSize.height
       : Math.max(avatarSize, labelSize?.height ?? 0);
-  const groupBox = centerBox(payload, groupWidth, groupHeight);
-  const avatarBox = avatarBoxForSlot(groupBox, avatarSize, position, gap, labelSize);
-  const labelBox =
-    avatar.labelSlot.label && labelSize
-      ? labelBoxForSlot(groupBox, avatarBox, avatarSize, position, gap, labelSize)
-      : undefined;
   const borderWidth = avatar.surface.borderWidth * scale;
   const surfaceRelief = avatar.surface.reliefEnabled
     ? {
@@ -366,6 +361,29 @@ export function avatarComponentToRenderable(
         lowerIntensity: avatar.surface.reliefBottomIntensity,
       }
     : undefined;
+  const visualPadding = avatarVisualPadding(borderWidth, avatarShadow, surfaceRelief);
+  const groupBox = centerBox(
+    payload,
+    groupWidth + visualPadding * 2,
+    groupHeight + visualPadding * 2,
+  );
+  const contentBox = {
+    x: groupBox.x + visualPadding,
+    y: groupBox.y + visualPadding,
+    width: groupWidth,
+    height: groupHeight,
+  };
+  const avatarBox = avatarBoxForSlot(
+    contentBox,
+    avatarSize,
+    position,
+    gap,
+    labelSize,
+  );
+  const labelBox =
+    avatar.labelSlot.label && labelSize
+      ? labelBoxForSlot(contentBox, avatarBox, avatarSize, position, gap, labelSize)
+      : undefined;
 
   return {
     id: avatar.id,
@@ -385,11 +403,16 @@ export function avatarComponentToRenderable(
           borderRadius: numberToken(payload, avatar.cornerRadiusToken) * scale,
           borderWidth,
           borderColor: selectedColor(payload, avatar.surface.borderColorToken),
-          shadow: avatar.surface.shadowEnabled ? shadow(payload) : undefined,
+          shadow: avatarShadow,
           surfaceRelief,
         },
+        asset: {
+          type: "image",
+          uri: sampleAvatarUri(),
+        },
         metadata: {
-          label: "A",
+          label: "Avatar preview",
+          imageBaseSize: 256,
         },
       },
       ...(avatar.labelSlot.label && labelBox
@@ -407,6 +430,51 @@ export function avatarComponentToRenderable(
       componentType: "avatar",
     },
   };
+}
+
+function avatarVisualPadding(
+  borderWidth: number,
+  shadowValue: Record<string, unknown> | undefined,
+  surfaceRelief: Record<string, unknown> | undefined,
+) {
+  const shadowPadding = shadowValue
+    ? Math.max(
+        Math.abs(typeof shadowValue.offsetX === "number" ? shadowValue.offsetX : 0),
+        Math.abs(typeof shadowValue.offsetY === "number" ? shadowValue.offsetY : 0),
+      ) + (typeof shadowValue.blur === "number" ? shadowValue.blur : 0)
+    : 0;
+  const reliefPadding = surfaceRelief
+    ? Math.max(
+        typeof surfaceRelief.extension === "number" ? surfaceRelief.extension : 0,
+        typeof surfaceRelief.spread === "number" ? surfaceRelief.spread : 0,
+      )
+    : 0;
+  return Math.ceil(Math.max(borderWidth, shadowPadding, reliefPadding, 0));
+}
+
+function sampleAvatarUri() {
+  const svg = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="bg" x1="40" y1="24" x2="216" y2="232" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#DCE6F3"/>
+      <stop offset="0.52" stop-color="#AEBBD0"/>
+      <stop offset="1" stop-color="#63738E"/>
+    </linearGradient>
+    <linearGradient id="skin" x1="86" y1="54" x2="170" y2="152" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F4C8AA"/>
+      <stop offset="1" stop-color="#C98970"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" fill="url(#bg)"/>
+  <circle cx="128" cy="99" r="50" fill="url(#skin)"/>
+  <path d="M46 246c10-58 45-86 82-86s72 28 82 86H46z" fill="#26354F"/>
+  <path d="M78 92c9-40 35-60 63-52 24 7 39 27 41 54-24-10-47-23-64-44-8 21-20 35-40 42z" fill="#3A2B26"/>
+  <circle cx="109" cy="104" r="5" fill="#332A2A"/>
+  <circle cx="148" cy="104" r="5" fill="#332A2A"/>
+  <path d="M112 128c12 10 25 10 37 0" fill="none" stroke="#7E4D43" stroke-width="6" stroke-linecap="round"/>
+</svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 
 function avatarBoxForSlot(
