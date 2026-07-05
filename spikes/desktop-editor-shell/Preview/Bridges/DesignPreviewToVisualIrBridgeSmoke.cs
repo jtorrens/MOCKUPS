@@ -193,7 +193,7 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
                 "backgroundVisible": true,
                 "backgroundColorToken": "theme.colors.background",
                 "textColorToken": "theme.colors.textPrimary",
-                "textSize": 18,
+                "textSizeToken": "theme.typography.sizes.l",
                 "textStyle": "italic"
               }
             }
@@ -201,6 +201,7 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
             """
             {
               "radii": { "surface": 9 },
+              "typography": { "sizes": { "l": 18 } },
               "modes": {
                 "light": { "colors": { "background": "#FFFFFF", "textPrimary": "#111827", "borders.primary": "#111827" } },
                 "dark": { "colors": { "background": "#111827", "textPrimary": "#FFFFFF", "borders.primary": "#FFFFFF" } }

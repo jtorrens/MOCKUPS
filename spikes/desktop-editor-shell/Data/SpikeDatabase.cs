@@ -1309,6 +1309,7 @@ internal sealed partial class SpikeDatabase
         SeedNavigationBarsIfEmpty(connection);
         SeedRenderPresetsIfEmpty(connection);
         SeedComponentClassesIfEmpty(connection);
+        EnsureComponentClassConfigDefaults(connection);
         SeedThemesIfEmpty(connection);
         ClearShotRenderPresetReferences(connection);
         EnsureThemeTokens(connection);
@@ -1963,8 +1964,13 @@ internal sealed partial class SpikeDatabase
                     { "id": "theme.typography.fontFamilyId", "order": 10, "visible": true },
                     { "id": "theme.typography.emojiFontFamilyId", "order": 20, "visible": true },
                     { "id": "theme.typography.size", "order": 30, "visible": true },
-                    { "id": "theme.typography.weight", "order": 40, "visible": true },
-                    { "id": "theme.typography.style", "order": 50, "visible": true }
+                    { "id": "theme.typography.sizes.xs", "order": 40, "visible": true },
+                    { "id": "theme.typography.sizes.s", "order": 50, "visible": true },
+                    { "id": "theme.typography.sizes.m", "order": 60, "visible": true },
+                    { "id": "theme.typography.sizes.l", "order": 70, "visible": true },
+                    { "id": "theme.typography.sizes.xl", "order": 80, "visible": true },
+                    { "id": "theme.typography.weight", "order": 90, "visible": true },
+                    { "id": "theme.typography.style", "order": 100, "visible": true }
                   ]
                 }
               ]
@@ -2189,7 +2195,7 @@ internal sealed partial class SpikeDatabase
                   { "id": "component.label.backgroundVisible", "order": 40, "visible": true },
                   { "id": "component.label.backgroundColorToken", "order": 50, "visible": true },
                   { "id": "component.label.textColorToken", "order": 60, "visible": true },
-                  { "id": "component.label.textSize", "order": 70, "visible": true },
+                  { "id": "component.label.textSizeToken", "order": 70, "visible": true },
                   { "id": "component.label.textStyle", "order": 80, "visible": true }
                 ] }
               ]

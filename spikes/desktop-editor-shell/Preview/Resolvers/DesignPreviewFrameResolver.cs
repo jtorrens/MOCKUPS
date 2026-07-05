@@ -115,7 +115,8 @@ internal static class DesignPreviewFrameResolver
         var padding = SizePair(JsonPath.String(label, "padding", "8|4"), 8, 4);
         var backgroundVisible = JsonPath.Bool(label, "backgroundVisible", true);
         var text = JsonPath.String(preview, "sampleText", "Sample");
-        var textSize = JsonPath.Number(label, "textSize", 12);
+        var textSizeToken = JsonPath.String(label, "textSizeToken", "");
+        var textSize = RequiredThemeNumber(payload.ThemeTokensJson, textSizeToken, "component.label.textSizeToken");
         var textStyle = JsonPath.String(label, "textStyle", "normal");
         var dimensionMode = JsonPath.String(label, "dimensionMode", "content");
         var contentSize = LabelContentSize(text, textSize, padding);
@@ -174,6 +175,7 @@ internal static class DesignPreviewFrameResolver
                 ["legacyKind"] = payload.Kind,
                 ["componentType"] = payload.ComponentType,
                 ["dimensionMode"] = dimensionMode,
+                ["textSizeToken"] = textSizeToken,
             },
         };
     }
@@ -571,6 +573,23 @@ internal static class DesignPreviewFrameResolver
 
         var tokens = JsonPath.ParseObject(themeTokensJson);
         return JsonPath.NumberAt(tokens, token.Path, fallback);
+    }
+
+    private static double RequiredThemeNumber(string themeTokensJson, string tokenId, string fieldId)
+    {
+        if (string.IsNullOrWhiteSpace(tokenId) || !ThemeNumericTokenCatalog.TryGet(tokenId, out var token))
+        {
+            throw new InvalidOperationException($"Missing numeric theme token for {fieldId}.");
+        }
+
+        var tokens = JsonPath.ParseObject(themeTokensJson);
+        var node = JsonPath.Get(tokens, token.Path);
+        if (node is null)
+        {
+            throw new InvalidOperationException($"Theme token '{tokenId}' is not defined.");
+        }
+
+        return JsonPath.NumberAt(tokens, token.Path, 0);
     }
 
     private static IReadOnlyDictionary<string, string> ComponentStyleMetadata(

@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Styling;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -27,8 +28,12 @@ internal sealed class DictionaryThemeTokenControl : Button, IDictionaryValueCont
         MinWidth = 260;
         HorizontalAlignment = HorizontalAlignment.Left;
         HorizontalContentAlignment = HorizontalAlignment.Stretch;
+        Padding = new Avalonia.Thickness(10, 6);
+        BorderThickness = new Avalonia.Thickness(0);
         IsEnabled = definition.IsEditable && showThemeTokenPicker is not null;
         Click += async (_, _) => await ShowPicker();
+        ActualThemeVariantChanged += (_, _) => ApplyThemeBrushes();
+        ApplyThemeBrushes();
     }
 
     public event EventHandler<string>? ValueChanged;
@@ -63,8 +68,17 @@ internal sealed class DictionaryThemeTokenControl : Button, IDictionaryValueCont
         };
         Grid.SetColumn(label, 0);
 
-        var chevron = EditorIcons.Create(EditorIcons.Dropdown, 14);
-        chevron.Opacity = 0.72;
+        var chevron = new TextBlock
+        {
+            Text = ">",
+            Width = 16,
+            FontSize = 13,
+            FontWeight = FontWeight.Bold,
+            TextAlignment = TextAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Center,
+            Opacity = 0.72,
+        };
         Grid.SetColumn(chevron, 1);
 
         return new Grid
@@ -77,5 +91,11 @@ internal sealed class DictionaryThemeTokenControl : Button, IDictionaryValueCont
                 chevron,
             },
         };
+    }
+
+    private void ApplyThemeBrushes()
+    {
+        var isLight = ActualThemeVariant == ThemeVariant.Light;
+        Background = new SolidColorBrush(Color.Parse(isLight ? "#14000000" : "#10FFFFFF"));
     }
 }

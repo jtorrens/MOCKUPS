@@ -44,6 +44,15 @@ internal static class ComponentClassFieldCatalog
         new("theme.radii.full", "radii.full"),
     ];
 
+    private static readonly FieldOption[] TypographySizeOptions =
+    [
+        new("theme.typography.sizes.xs", "typography.sizes.xs"),
+        new("theme.typography.sizes.s", "typography.sizes.s"),
+        new("theme.typography.sizes.m", "typography.sizes.m"),
+        new("theme.typography.sizes.l", "typography.sizes.l"),
+        new("theme.typography.sizes.xl", "typography.sizes.xl"),
+    ];
+
     private static readonly FieldOption[] TextStyleOptions =
     [
         new("normal", "Normal"),
@@ -131,7 +140,7 @@ internal static class ComponentClassFieldCatalog
         ["component.label.backgroundVisible"] = new("component.label.backgroundVisible", "Show background", ValueKind.Boolean, ["label", "backgroundVisible"], "true"),
         ["component.label.backgroundColorToken"] = new("component.label.backgroundColorToken", "Background", ValueKind.ThemeToken, ["label", "backgroundColorToken"], "theme.colors.background", Options: ThemeColorOptions),
         ["component.label.textColorToken"] = new("component.label.textColorToken", "Text color", ValueKind.ThemeToken, ["label", "textColorToken"], "theme.colors.textPrimary", Options: ThemeColorOptions),
-        ["component.label.textSize"] = new("component.label.textSize", "Text size", ValueKind.Integer, ["label", "textSize"], "12"),
+        ["component.label.textSizeToken"] = new("component.label.textSizeToken", "Text size", ValueKind.ThemeToken, ["label", "textSizeToken"], "theme.typography.sizes.s", Options: TypographySizeOptions),
         ["component.label.textStyle"] = new("component.label.textStyle", "Text style", ValueKind.OptionToken, ["label", "textStyle"], "normal", Options: TextStyleOptions),
 
         ["component.audio.size"] = new("component.audio.size", "Size", ValueKind.IntegerPair, ["audio", "size"], "230|54", PairLabels: new("W", "H")),

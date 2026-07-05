@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Collections.Generic;
@@ -113,6 +114,25 @@ internal sealed partial class SpikeDatabase
                     ("$designPreviewJson", seed.DesignPreviewJson),
                     ("$metadataJson", seed.MetadataJson));
             }
+        }
+    }
+
+    private static void EnsureComponentClassConfigDefaults(SqliteConnection connection)
+    {
+        foreach (var row in QueryComponentClassRows(connection))
+        {
+            var config = ParseJsonObject(string.IsNullOrWhiteSpace(row.ConfigJson) ? "{}" : row.ConfigJson);
+            var defaults = ParseJsonObject(DefaultComponentClassConfigJson(row.ComponentType));
+            if (!JsonPath.MergeMissing(config, defaults))
+            {
+                continue;
+            }
+
+            Execute(
+                connection,
+                "UPDATE component_classes SET config_json = $configJson WHERE id = $id",
+                ("$id", row.Id),
+                ("$configJson", config.ToJsonString()));
         }
     }
 
@@ -281,7 +301,7 @@ internal sealed partial class SpikeDatabase
                     ["backgroundVisible"] = true,
                     ["backgroundColorToken"] = "theme.colors.background",
                     ["textColorToken"] = "theme.colors.textPrimary",
-                    ["textSize"] = 12,
+                    ["textSizeToken"] = "theme.typography.sizes.s",
                     ["textStyle"] = "normal",
                 };
                 break;

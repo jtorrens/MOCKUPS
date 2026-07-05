@@ -166,6 +166,11 @@ internal static class RecordClassFieldCatalog
         ["theme.typography.fontFamilyId"] = new("theme.typography.fontFamilyId", "Text font", ValueKind.OptionToken),
         ["theme.typography.emojiFontFamilyId"] = new("theme.typography.emojiFontFamilyId", "Emoji font", ValueKind.OptionToken),
         ["theme.typography.size"] = new("theme.typography.size", "Size", ValueKind.Integer),
+        ["theme.typography.sizes.xs"] = new("theme.typography.sizes.xs", "Text XS", ValueKind.Integer),
+        ["theme.typography.sizes.s"] = new("theme.typography.sizes.s", "Text S", ValueKind.Integer),
+        ["theme.typography.sizes.m"] = new("theme.typography.sizes.m", "Text M", ValueKind.Integer),
+        ["theme.typography.sizes.l"] = new("theme.typography.sizes.l", "Text L", ValueKind.Integer),
+        ["theme.typography.sizes.xl"] = new("theme.typography.sizes.xl", "Text XL", ValueKind.Integer),
         ["theme.typography.weight"] = new("theme.typography.weight", "Weight", ValueKind.OptionToken),
         ["theme.typography.style"] = new("theme.typography.style", "Style", ValueKind.OptionToken),
 

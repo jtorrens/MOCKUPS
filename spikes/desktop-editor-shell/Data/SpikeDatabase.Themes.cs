@@ -112,6 +112,11 @@ internal sealed partial class SpikeDatabase
             return $"{colors}||{lightAlpha}|{darkAlpha}";
         }
 
+        if (ThemeNumericTokenCatalog.TryGet(fieldId, out var numericToken))
+        {
+            return JsonNumberString(tokens, numericToken.Path.ToArray());
+        }
+
         return fieldId switch
         {
             "theme.family" => settings.Family,
@@ -121,12 +126,8 @@ internal sealed partial class SpikeDatabase
             "theme.defaultMode" => JsonString(tokens, ["defaultMode"]) is { Length: > 0 } mode ? mode : "light",
             "theme.neutralTint.hueDeg" => JsonNumberString(tokens, ["neutralTint", "hueDeg"]),
             "theme.neutralTint.saturation" => JsonNumberString(tokens, ["neutralTint", "saturation"]),
-            "theme.cursor.width" => JsonNumberString(tokens, ["cursor", "width"]),
-            "theme.cursor.blinkFrames" => JsonNumberString(tokens, ["cursor", "blinkFrames"]),
             "theme.typography.fontFamilyId" => JsonString(tokens, ["typography", "fontFamilyId"]),
             "theme.typography.emojiFontFamilyId" => JsonString(tokens, ["typography", "emojiFontFamilyId"]),
-            "theme.typography.size" => JsonNumberString(tokens, ["typography", "size"]),
-            "theme.typography.weight" => JsonNumberString(tokens, ["typography", "weight"]),
             "theme.typography.style" => JsonString(tokens, ["typography", "style"]) is { Length: > 0 } style ? style : "normal",
             _ => throw new InvalidOperationException($"Unknown theme field '{fieldId}'."),
         };
@@ -241,26 +242,13 @@ internal sealed partial class SpikeDatabase
 
     private static IEnumerable<ThemeTokenOption> NumericThemeTokenOptions(JsonObject tokens)
     {
-        foreach (var (token, path) in new (string Token, string[] Path)[]
-        {
-            ("theme.cursor.width", ["cursor", "width"]),
-            ("theme.cursor.blinkFrames", ["cursor", "blinkFrames"]),
-            ("theme.typography.size", ["typography", "size"]),
-            ("theme.typography.weight", ["typography", "weight"]),
-            ("theme.radii.control", ["radii", "control"]),
-            ("theme.radii.card", ["radii", "card"]),
-            ("theme.radii.panel", ["radii", "panel"]),
-            ("theme.radii.surface", ["radii", "surface"]),
-            ("theme.radii.pill", ["radii", "pill"]),
-            ("theme.radii.avatar", ["radii", "avatar"]),
-            ("theme.radii.full", ["radii", "full"]),
-        })
+        foreach (var token in ThemeNumericTokenCatalog.NumericTokens)
         {
             yield return new ThemeTokenOption(
-                token,
-                token.Replace("theme.", "", StringComparison.Ordinal),
+                token.Id,
+                token.Id.Replace("theme.", "", StringComparison.Ordinal),
                 "number",
-                JsonNumberString(tokens, path, "—"),
+                JsonNumberString(tokens, token.Path.ToArray(), "—"),
                 null,
                 null);
         }
@@ -294,6 +282,13 @@ internal sealed partial class SpikeDatabase
             return;
         }
 
+        if (ThemeNumericTokenCatalog.TryGet(fieldId, out var numericToken))
+        {
+            JsonPath.Set(tokens, numericToken.Path, NumberNode(value));
+            Execute(connection, "UPDATE themes SET tokens_json = $tokensJson WHERE id = $id", ("$id", themeId), ("$tokensJson", tokens.ToJsonString()));
+            return;
+        }
+
         switch (fieldId)
         {
             case "theme.defaultMode":
@@ -305,23 +300,11 @@ internal sealed partial class SpikeDatabase
             case "theme.neutralTint.saturation":
                 SetJsonValue(tokens, ["neutralTint", "saturation"], NumberNode(value));
                 break;
-            case "theme.cursor.width":
-                SetJsonValue(tokens, ["cursor", "width"], NumberNode(value));
-                break;
-            case "theme.cursor.blinkFrames":
-                SetJsonValue(tokens, ["cursor", "blinkFrames"], NumberNode(value));
-                break;
             case "theme.typography.fontFamilyId":
                 SetJsonValue(tokens, ["typography", "fontFamilyId"], JsonValue.Create(value)!);
                 break;
             case "theme.typography.emojiFontFamilyId":
                 SetJsonValue(tokens, ["typography", "emojiFontFamilyId"], JsonValue.Create(value)!);
-                break;
-            case "theme.typography.size":
-                SetJsonValue(tokens, ["typography", "size"], NumberNode(value));
-                break;
-            case "theme.typography.weight":
-                SetJsonValue(tokens, ["typography", "weight"], NumberNode(value));
                 break;
             case "theme.typography.style":
                 SetJsonValue(tokens, ["typography", "style"], JsonValue.Create(value)!);
@@ -355,6 +338,14 @@ internal sealed partial class SpikeDatabase
                 ["fontFamilyId"] = "",
                 ["emojiFontFamilyId"] = "",
                 ["size"] = isAndroid ? 15 : 16,
+                ["sizes"] = new JsonObject
+                {
+                    ["xs"] = 10,
+                    ["s"] = 12,
+                    ["m"] = isAndroid ? 15 : 16,
+                    ["l"] = isAndroid ? 18 : 19,
+                    ["xl"] = isAndroid ? 22 : 24,
+                },
                 ["weight"] = 400,
                 ["style"] = "normal",
             },
