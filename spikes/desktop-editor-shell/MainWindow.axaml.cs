@@ -375,10 +375,7 @@ public partial class MainWindow : SukiWindow
                         (draftValue) => _fieldValues.ToStorageValue(node, field.Definition.Id, draftValue),
                         () => _fieldValues.CurrentStoredValue(node, field.Definition.Id),
                         (storedValue) => _fieldValues.Commit(node, field.Definition.Id, storedValue));
-                    if (node.Kind == ProjectTreeNodeKind.Actor)
-                    {
-                        _actorAvatarPreviews.Refresh(node, _activeFieldControls.ControlsByFieldId);
-                    }
+                    _actorAvatarPreviews.Refresh(node, _activeFieldControls.ControlsByFieldId);
                     _activeFieldControls.RefreshPreviews();
                     RefreshPreviewDevice();
                 };
@@ -419,10 +416,7 @@ public partial class MainWindow : SukiWindow
             control.ValueChanged += (_, _) =>
             {
                 EditorCardHeader.SetOverrideState(headerIcon, controls);
-                if (node.Kind == ProjectTreeNodeKind.Actor)
-                {
-                    _actorAvatarPreviews.Refresh(node, _activeFieldControls.ControlsByFieldId);
-                }
+                _actorAvatarPreviews.Refresh(node, _activeFieldControls.ControlsByFieldId);
             };
         }
 
