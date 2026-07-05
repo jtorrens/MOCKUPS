@@ -2,7 +2,9 @@ using Mockups.DesktopEditorShell.Data;
 using Mockups.DesktopEditorShell.EditorShell;
 using Mockups.DesktopEditorShell.Preview.Avalonia;
 using Mockups.DesktopEditorShell.VisualIr;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Mockups.DesktopEditorShell.Preview.Bridges;
 
@@ -31,8 +33,28 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
     {
         var document = DesignPreviewToVisualIrBridge.Convert(payload, Metrics);
         VisualIrValidator.ThrowIfInvalid(document);
+        if (payload.Kind is "statusBar" or "navigationBar"
+            && !Flatten(document.Root).OfType<VisualIrSvgNode>().Any((svg) => svg.Markup?.Contains("currentColor", StringComparison.Ordinal) == true))
+        {
+            throw new InvalidOperationException($"Expected generated SVG markup for {payload.Kind}.");
+        }
+
         var renderer = new AvaloniaVisualIrDebugRenderer();
         renderer.Render(document, new VisualIrRenderOptions(ShowBounds: true));
+    }
+
+    private static IEnumerable<VisualIrNode> Flatten(VisualIrNode node)
+    {
+        yield return node;
+        if (node is not VisualIrGroupNode group)
+        {
+            yield break;
+        }
+
+        foreach (var child in group.Children.SelectMany(Flatten))
+        {
+            yield return child;
+        }
     }
 
     private static DesignPreviewPayload StatusPayload()
@@ -79,4 +101,3 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
             "{}");
     }
 }
-

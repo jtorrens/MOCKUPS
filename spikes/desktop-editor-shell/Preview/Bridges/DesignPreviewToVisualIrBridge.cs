@@ -4,8 +4,10 @@ using Mockups.DesktopEditorShell.VisualIr;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 
 namespace Mockups.DesktopEditorShell.Preview.Bridges;
 
@@ -85,8 +87,8 @@ internal static class DesignPreviewToVisualIrBridge
             .Where((item) => item.Zone is "left" or "right")
             .OrderBy((item) => item.Order)
             .ToList();
-        children.AddRange(StatusItemsForZone(items.Where((item) => item.Zone == "left"), "left", itemSize, gap, sidePadding, bounds));
-        children.AddRange(StatusItemsForZone(items.Where((item) => item.Zone == "right"), "right", itemSize, gap, sidePadding, bounds));
+        children.AddRange(StatusItemsForZone(payload, items.Where((item) => item.Zone == "left"), "left", itemSize, gap, sidePadding, bounds));
+        children.AddRange(StatusItemsForZone(payload, items.Where((item) => item.Zone == "right"), "right", itemSize, gap, sidePadding, bounds));
 
         return new VisualIrGroupNode
         {
@@ -101,6 +103,7 @@ internal static class DesignPreviewToVisualIrBridge
     }
 
     private static IEnumerable<VisualIrNode> StatusItemsForZone(
+        DesignPreviewPayload payload,
         IEnumerable<PreviewItem> items,
         string zone,
         double itemSize,
@@ -118,12 +121,13 @@ internal static class DesignPreviewToVisualIrBridge
         {
             var item = list[index];
             var width = widths[index];
-            yield return StatusItem(item, x, y, width, itemSize);
+            yield return StatusItem(payload, item, x, y, width, itemSize);
             x += width + gap;
         }
     }
 
     private static VisualIrNode StatusItem(
+        DesignPreviewPayload payload,
         PreviewItem item,
         double x,
         double y,
@@ -149,11 +153,61 @@ internal static class DesignPreviewToVisualIrBridge
             };
         }
 
+        if (item.Kind == "generatedSignal")
+        {
+            var primitive = GeneratedSvgPrimitives.StatusSignal(NumberValue(item.Value, 0), height);
+            return new VisualIrSvgNode
+            {
+                Id = $"statusBar.item.{item.Id}",
+                Bounds = new VisualIrRect(x, y + (height - primitive.Height) / 2, primitive.Width, primitive.Height),
+                Markup = primitive.Markup,
+                Fit = "fill",
+                Tint = new VisualIrSolidPaint(VariantColor("#111111", "#f7f7f7")),
+                Metadata = MetadataFor(item),
+            };
+        }
+
+        if (item.Kind == "generatedBattery")
+        {
+            var primitive = GeneratedSvgPrimitives.StatusBattery(NumberValue(item.Value, 100), item.Charging, height);
+            return new VisualIrSvgNode
+            {
+                Id = $"statusBar.item.{item.Id}",
+                Bounds = new VisualIrRect(x, y + (height - primitive.Height) / 2, primitive.Width, primitive.Height),
+                Markup = primitive.Markup,
+                Fit = "fill",
+                Tint = new VisualIrSolidPaint(VariantColor("#111111", "#f7f7f7")),
+                Metadata = MetadataFor(item),
+            };
+        }
+
+        var iconMarkup = IconMarkup(payload, item.Token);
+        if (!string.IsNullOrWhiteSpace(iconMarkup))
+        {
+            var glyph = new VisualIrSvgNode
+            {
+                Id = $"statusBar.item.{item.Id}.glyph",
+                Bounds = new VisualIrRect(0, 0, height, height),
+                Markup = iconMarkup,
+                Fit = "contain",
+                Tint = new VisualIrSolidPaint(VariantColor("#111111", "#f7f7f7")),
+                Metadata = MetadataFor(item),
+            };
+            return new VisualIrGroupNode
+            {
+                Id = $"statusBar.item.{item.Id}",
+                Bounds = new VisualIrRect(x, y, height, height),
+                ClipRect = new VisualIrRect(0, 0, height, height),
+                Children = [glyph],
+                Metadata = MetadataFor(item),
+            };
+        }
+
         return new VisualIrSvgNode
         {
             Id = $"statusBar.item.{item.Id}",
             Bounds = new VisualIrRect(x, y, width, height),
-            Markup = PlaceholderSvg(item.Kind, item.TokenOrLabel),
+            Markup = FallbackIconSvg(item.TokenOrLabel),
             Fit = "contain",
             Tint = new VisualIrSolidPaint(VariantColor("#111111", "#f7f7f7")),
             Metadata = MetadataFor(item),
@@ -188,7 +242,7 @@ internal static class DesignPreviewToVisualIrBridge
             .ToList();
         foreach (var zone in new[] { "left", "center", "right" })
         {
-            children.AddRange(NavigationItemsForZone(items.Where((item) => item.Zone == zone), zone, itemSize, sidePadding, gap, bounds));
+            children.AddRange(NavigationItemsForZone(items.Where((item) => item.Zone == zone), zone, itemSize, sidePadding, gap, bounds, layout));
         }
 
         return new VisualIrGroupNode
@@ -209,7 +263,8 @@ internal static class DesignPreviewToVisualIrBridge
         double itemSize,
         double sidePadding,
         double gap,
-        VisualIrRect barBounds)
+        VisualIrRect barBounds,
+        JsonObject layout)
     {
         var list = items.ToList();
         if (list.Count == 0)
@@ -228,12 +283,18 @@ internal static class DesignPreviewToVisualIrBridge
 
         foreach (var item in list)
         {
+            var primitive = GeneratedSvgPrimitives.NavigationButton(
+                item.Kind,
+                itemSize,
+                Number(layout, "strokeWidth", 2),
+                Number(layout, "cornerRadius", 3),
+                Bool(layout, "filled", false));
             yield return new VisualIrSvgNode
             {
                 Id = $"navigationBar.item.{item.Id}",
-                Bounds = new VisualIrRect(x, y, itemSize, itemSize),
-                Markup = PlaceholderSvg(item.Kind, item.Label),
-                Fit = "contain",
+                Bounds = new VisualIrRect(x, y, primitive.Width, primitive.Height),
+                Markup = primitive.Markup,
+                Fit = "fill",
                 Tint = new VisualIrSolidPaint(VariantColor("#111111", "#f7f7f7")),
                 Metadata = MetadataFor(item),
             };
@@ -284,7 +345,8 @@ internal static class DesignPreviewToVisualIrBridge
                 String(item, "value", ""),
                 String(item, "token", ""),
                 String(item, "zone", "off"),
-                Number(item, "order", index * 10)))
+                Number(item, "order", index * 10),
+                Bool(item, "charging", false)))
             .ToList();
     }
 
@@ -324,16 +386,75 @@ internal static class DesignPreviewToVisualIrBridge
             setNight);
     }
 
-    private static string PlaceholderSvg(string kind, string label)
+    private static string? IconMarkup(DesignPreviewPayload payload, string token)
+    {
+        if (string.IsNullOrWhiteSpace(token)
+            || string.IsNullOrWhiteSpace(payload.ProjectMediaRoot)
+            || string.IsNullOrWhiteSpace(payload.IconAssetRoot))
+        {
+            return null;
+        }
+
+        try
+        {
+            var mapping = ParseObject(payload.IconMappingJson);
+            var tokens = mapping["tokens"] as JsonObject;
+            var tokenObject = tokens?[token] as JsonObject;
+            var file = tokenObject is null ? "" : String(tokenObject, "file", "");
+            if (string.IsNullOrWhiteSpace(file))
+            {
+                return null;
+            }
+
+            var path = Path.Combine(payload.ProjectMediaRoot, payload.IconAssetRoot, file);
+            return File.Exists(path) ? NormalizeInlineSvg(File.ReadAllText(path)) : null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static string NormalizeInlineSvg(string markup)
+    {
+        var withoutDeclarations = Regex
+            .Replace(markup, @"<\?xml[\s\S]*?\?>", "", RegexOptions.IgnoreCase)
+            .Replace("<!DOCTYPE", "<!doctype", StringComparison.Ordinal)
+            .Trim();
+        withoutDeclarations = Regex.Replace(withoutDeclarations, @"<!doctype[\s\S]*?>", "", RegexOptions.IgnoreCase).Trim();
+        var tinted = Regex.Replace(
+            withoutDeclarations,
+            "\\sfill=([\"'])(?!none\\1|transparent\\1|currentColor\\1)[^\"']*\\1",
+            " fill=\"currentColor\"",
+            RegexOptions.IgnoreCase);
+        tinted = Regex.Replace(
+            tinted,
+            "\\sstroke=([\"'])(?!none\\1|transparent\\1|currentColor\\1)[^\"']*\\1",
+            " stroke=\"currentColor\"",
+            RegexOptions.IgnoreCase);
+        tinted = Regex.Replace(tinted, "fill\\s*:\\s*(?!none\\b|transparent\\b|currentColor\\b)[^;\"]+", "fill:currentColor", RegexOptions.IgnoreCase);
+        tinted = Regex.Replace(tinted, "stroke\\s*:\\s*(?!none\\b|transparent\\b|currentColor\\b)[^;\"]+", "stroke:currentColor", RegexOptions.IgnoreCase);
+        return Regex.Replace(
+            tinted,
+            "<svg\\b([^>]*)>",
+            (match) =>
+            {
+                var attrs = Regex.Replace(match.Groups[1].Value, "\\s(width|height|style|preserveAspectRatio)=([\"']).*?\\2", "", RegexOptions.IgnoreCase);
+                return $"<svg{attrs} width=\"100%\" height=\"100%\" preserveAspectRatio=\"xMidYMid meet\" style=\"display:block;width:100%;height:100%;overflow:visible;\">";
+            },
+            RegexOptions.IgnoreCase);
+    }
+
+    private static string FallbackIconSvg(string label)
     {
         var escapedLabel = label
             .Replace("&", "&amp;", StringComparison.Ordinal)
             .Replace("<", "&lt;", StringComparison.Ordinal)
             .Replace(">", "&gt;", StringComparison.Ordinal);
         return $"""
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
-              <rect x="8" y="8" width="84" height="84" rx="16" fill="none" stroke="currentColor" stroke-width="8"/>
-              <text x="50" y="56" text-anchor="middle" font-size="18" fill="currentColor">{escapedLabel[..Math.Min(escapedLabel.Length, 4)]}</text>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%" style="display:block;overflow:visible">
+              <circle cx="50" cy="50" r="30" fill="none" stroke="currentColor" stroke-width="8"/>
+              <text x="50" y="57" text-anchor="middle" font-size="18" fill="currentColor">{escapedLabel[..Math.Min(escapedLabel.Length, 4)]}</text>
             </svg>
             """;
     }
@@ -379,6 +500,23 @@ internal static class DesignPreviewToVisualIrBridge
             : fallback;
     }
 
+    private static double NumberValue(string value, double fallback)
+    {
+        return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
+            ? parsed
+            : fallback;
+    }
+
+    private static bool Bool(JsonObject json, string key, bool fallback)
+    {
+        if (!json.TryGetPropertyValue(key, out var node) || node is null)
+        {
+            return fallback;
+        }
+
+        return bool.TryParse(node.ToString(), out var parsed) ? parsed : fallback;
+    }
+
     private sealed record PreviewItem(
         string Id,
         string Label,
@@ -386,7 +524,8 @@ internal static class DesignPreviewToVisualIrBridge
         string Value,
         string Token,
         string Zone,
-        double Order)
+        double Order,
+        bool Charging)
     {
         public string TokenOrLabel => string.IsNullOrWhiteSpace(Token) ? Label : Token;
     }
