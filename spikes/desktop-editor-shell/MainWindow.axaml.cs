@@ -61,6 +61,7 @@ public partial class MainWindow : SukiWindow
             PreviewDeviceComboBox,
             PreviewThemeComboBox,
             PreviewModeComboBox,
+            PreviewScaleComboBox,
             RuntimePreviewHost,
             DesignPreviewHost,
             VisualIrPreviewHost,
@@ -69,6 +70,7 @@ public partial class MainWindow : SukiWindow
         PreviewDeviceComboBox.SelectionChanged += (_, _) => _previewController.OnDeviceChanged();
         PreviewThemeComboBox.SelectionChanged += (_, _) => _previewController.OnThemeChanged();
         PreviewModeComboBox.SelectionChanged += (_, _) => _previewController.OnModeChanged();
+        PreviewScaleComboBox.SelectionChanged += (_, _) => _previewController.OnScaleChanged();
         _shellState = new EditorShellStateService(this, ShellColumns);
         _navigationRenderer = new EditorNavigationRenderer(
             () => _selectedNode,

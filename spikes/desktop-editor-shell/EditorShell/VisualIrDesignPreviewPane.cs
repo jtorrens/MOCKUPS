@@ -21,6 +21,7 @@ internal sealed class VisualIrDesignPreviewPane : Grid
         bool isDark,
         string themeName,
         string themeMode,
+        string scaleMode,
         DesignPreviewPayload? payload)
     {
         Children.Clear();
@@ -53,6 +54,7 @@ internal sealed class VisualIrDesignPreviewPane : Grid
                 panelText,
                 themeName,
                 themeMode,
+                scaleMode,
                 colorVariant,
                 document,
                 payload));
@@ -73,6 +75,7 @@ internal sealed class VisualIrDesignPreviewPane : Grid
         string panelText,
         string themeName,
         string themeMode,
+        string scaleMode,
         string colorVariant,
         VisualIrDocument document,
         DesignPreviewPayload payload)
@@ -114,19 +117,25 @@ internal sealed class VisualIrDesignPreviewPane : Grid
         Canvas.SetTop(meta, frameHeight - 30);
         canvas.Children.Add(meta);
 
+        canvas.HorizontalAlignment = HorizontalAlignment.Center;
+        canvas.VerticalAlignment = VerticalAlignment.Center;
+
+        Control content = scaleMode == "actual"
+            ? canvas
+            : new Viewbox
+            {
+                Stretch = Stretch.Uniform,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                Child = canvas,
+            };
+
         return new Grid
         {
             Margin = new Thickness(18),
             Children =
             {
-                new Viewbox
-                {
-                    Stretch = Stretch.Uniform,
-                    StretchDirection = StretchDirection.DownOnly,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    Child = canvas,
-                },
+                content,
             },
         };
     }

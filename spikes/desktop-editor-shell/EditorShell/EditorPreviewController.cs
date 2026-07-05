@@ -12,6 +12,7 @@ internal sealed class EditorPreviewController
     private readonly EditorInstantComboBox _deviceComboBox;
     private readonly EditorInstantComboBox _themeComboBox;
     private readonly EditorInstantComboBox _modeComboBox;
+    private readonly EditorInstantComboBox _scaleComboBox;
     private readonly Func<bool> _isDark;
     private readonly Func<ProjectTreeNode?> _selectedNode;
     private readonly RuntimeWebPreviewPane _runtimePreviewPane = new();
@@ -21,6 +22,7 @@ internal sealed class EditorPreviewController
     private string? _selectedThemeId;
     private ProjectTreeNode? _lastDesignPreviewNode;
     private string _selectedMode = "light";
+    private string _selectedScale = "fit";
     private bool _isRefreshingOptions;
 
     public EditorPreviewController(
@@ -28,6 +30,7 @@ internal sealed class EditorPreviewController
         EditorInstantComboBox deviceComboBox,
         EditorInstantComboBox themeComboBox,
         EditorInstantComboBox modeComboBox,
+        EditorInstantComboBox scaleComboBox,
         ContentControl runtimePreviewHost,
         ContentControl designPreviewHost,
         ContentControl visualIrPreviewHost,
@@ -38,6 +41,7 @@ internal sealed class EditorPreviewController
         _deviceComboBox = deviceComboBox;
         _themeComboBox = themeComboBox;
         _modeComboBox = modeComboBox;
+        _scaleComboBox = scaleComboBox;
         _isDark = isDark;
         _selectedNode = selectedNode;
 
@@ -88,6 +92,15 @@ internal sealed class EditorPreviewController
             _modeComboBox.ItemsSource = modeOptions;
             _modeComboBox.SelectedItem = modeOptions.FirstOrDefault((option) => option.Value == _selectedMode) ?? modeOptions[0];
             _selectedMode = _modeComboBox.SelectedItem?.Value ?? "light";
+
+            var scaleOptions = new[]
+            {
+                new FieldOption("fit", "Fit"),
+                new FieldOption("actual", "1:1"),
+            };
+            _scaleComboBox.ItemsSource = scaleOptions;
+            _scaleComboBox.SelectedItem = scaleOptions.FirstOrDefault((option) => option.Value == _selectedScale) ?? scaleOptions[0];
+            _selectedScale = _scaleComboBox.SelectedItem?.Value ?? "fit";
         }
         finally
         {
@@ -130,6 +143,17 @@ internal sealed class EditorPreviewController
         }
     }
 
+    public void OnScaleChanged()
+    {
+        if (_scaleComboBox.SelectedItem is not { } option) return;
+
+        _selectedScale = option.Value;
+        if (!_isRefreshingOptions)
+        {
+            Refresh();
+        }
+    }
+
     public void Refresh()
     {
         EnsureSelectedOptionsExist();
@@ -137,19 +161,21 @@ internal sealed class EditorPreviewController
 
         var metrics = _database.GetDevicePreviewMetrics(SelectedDeviceId);
         var themeName = _themeComboBox.SelectedItem?.Label ?? "No theme";
-        _runtimePreviewPane.Update(metrics, _isDark(), themeName, _selectedMode);
+        _runtimePreviewPane.Update(metrics, _isDark(), themeName, _selectedMode, _selectedScale);
         var designPayload = DesignPreviewPayloadForSelection();
         _designPreviewPane.Update(
             metrics,
             _isDark(),
             themeName,
             _selectedMode,
+            _selectedScale,
             designPayload);
         _visualIrPreviewPane.Update(
             metrics,
             _isDark(),
             themeName,
             _selectedMode,
+            _selectedScale,
             designPayload);
     }
 

@@ -33,6 +33,7 @@ internal abstract class WebPreviewPane : Grid
         bool isDark,
         string themeName,
         string themeMode,
+        string scaleMode,
         string previewMode,
         string bodyContent)
     {
@@ -200,15 +201,14 @@ internal abstract class WebPreviewPane : Grid
                 const renderWidth = {{Number(width)}};
                 const renderHeight = {{Number(height)}};
                 const cornerRadius = {{Number(cornerRadius)}};
+                const scaleMode = "{{Html(scaleMode == "actual" ? "actual" : "fit")}}";
 
                 function calculatePreviewFit() {
                   const availableWidth = Math.max(1, host.clientWidth - 36);
                   const availableHeight = Math.max(1, host.clientHeight - 36);
-                  const scale = Math.min(
-                    availableWidth / renderWidth,
-                    availableHeight / renderHeight,
-                    1
-                  );
+                  const scale = scaleMode === "actual"
+                    ? 1
+                    : Math.min(availableWidth / renderWidth, availableHeight / renderHeight);
                   const displayWidth = Math.max(1, Math.round(renderWidth * scale));
                   const displayHeight = Math.max(1, Math.round(renderHeight * scale));
                   viewport.style.width = `${displayWidth}px`;
@@ -260,13 +260,15 @@ internal sealed class RuntimeWebPreviewPane : WebPreviewPane
         SpikeDatabase.DevicePreviewMetrics metrics,
         bool isDark,
         string themeName,
-        string themeMode)
+        string themeMode,
+        string scaleMode)
     {
         LoadHtml(DeviceHtml(
             metrics,
             isDark,
             themeName,
             themeMode,
+            scaleMode,
             "Runtime preview",
             Placeholder(
                 "Runtime WebView host",
@@ -283,6 +285,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         bool isDark,
         string themeName,
         string themeMode,
+        string scaleMode,
         DesignPreviewPayload? payload)
     {
         var updateVersion = ++_updateVersion;
@@ -294,6 +297,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 isDark,
                 themeName,
                 themeMode,
+                scaleMode,
                 "Design preview",
                 Placeholder(
                     "Design WebView host",
@@ -326,6 +330,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             isDark,
             themeName,
             themeMode,
+            scaleMode,
             "Design preview",
             bodyContent));
     }
