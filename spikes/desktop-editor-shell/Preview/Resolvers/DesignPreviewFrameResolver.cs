@@ -722,7 +722,6 @@ internal static class DesignPreviewFrameResolver
         {
             Id = id,
             Bounds = new DesignRect(offsetX, offsetY, bounds.Width, bounds.Height),
-            ClipRect = ReliefEdgeClipRect(bounds.Width, bounds.Height, side, offsetX, offsetY, blurRadius),
             Children =
             [
                 new ResolvedDesignPathNode
@@ -739,27 +738,6 @@ internal static class DesignPreviewFrameResolver
                 },
             ],
         });
-    }
-
-    private static DesignRect ReliefEdgeClipRect(
-        double width,
-        double height,
-        ReliefSide side,
-        double offsetX,
-        double offsetY,
-        double blurRadius)
-    {
-        var perpendicularOffset = side is ReliefSide.Top or ReliefSide.Bottom
-            ? Math.Abs(offsetY)
-            : Math.Abs(offsetX);
-        var band = Math.Max(4, Math.Ceiling(perpendicularOffset + blurRadius + 2));
-        return side switch
-        {
-            ReliefSide.Top => new DesignRect(0, 0, width, Math.Min(height, band)),
-            ReliefSide.Bottom => new DesignRect(0, Math.Max(0, height - band), width, Math.Min(height, band)),
-            ReliefSide.Left => new DesignRect(0, 0, Math.Min(width, band), height),
-            _ => new DesignRect(Math.Max(0, width - band), 0, Math.Min(width, band), height),
-        };
     }
 
     private static ResolvedDesignLinearGradientPaint ReliefGradient(
