@@ -645,6 +645,7 @@ function boxedStatusItems(
   const items = resolveStatusBarItems(payload, config)
     .map((item) => asRecord(item))
     .filter((item) => ["left", "right"].includes(readString(item, "zone", "off")))
+    .filter((item) => readString(item, "kind", "text") !== "text" || readString(item, "value", "").trim())
     .sort((left, right) => readNumber(left, "order", 0) - readNumber(right, "order", 0));
 
   return (["left", "right"] as const).flatMap((zone) => {

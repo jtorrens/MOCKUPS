@@ -109,6 +109,7 @@ internal abstract class WebPreviewPane : Grid
                   width: {{Number(width)}}px;
                   height: {{Number(height)}}px;
                   transform-origin: top left;
+                  overflow: hidden;
                   background: var(--preview-screen-background);
                 }
 
@@ -213,6 +214,7 @@ internal abstract class WebPreviewPane : Grid
                   viewport.style.width = `${displayWidth}px`;
                   viewport.style.height = `${displayHeight}px`;
                   scaleLayer.style.transform = `scale(${scale})`;
+                  scaleLayer.style.borderRadius = `${cornerRadius}px`;
                   frame.style.setProperty("--preview-frame-border", `${Math.max(1, 10 * scale)}px`);
                   frame.style.setProperty("--preview-frame-radius", `${cornerRadius * scale}px`);
                   frame.style.setProperty("--preview-frame-shadow-y", `${10 * scale}px`);

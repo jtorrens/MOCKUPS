@@ -114,6 +114,7 @@ internal static class DesignPreviewFrameResolver
 
         var items = Items(config)
             .Where((item) => item.Zone is "left" or "right")
+            .Where(IsVisibleStatusItem)
             .OrderBy((item) => item.Order)
             .ToList();
         children.AddRange(StatusItemsForZone(payload, items.Where((item) => item.Zone == "left"), "left", itemSize, gap, sidePadding, bounds));
@@ -426,6 +427,11 @@ internal static class DesignPreviewFrameResolver
             "iconToken" => itemSize,
             _ => Math.Max(itemSize, item.Value.Length * itemSize * 0.58),
         };
+    }
+
+    private static bool IsVisibleStatusItem(PreviewItem item)
+    {
+        return item.Kind != "text" || !string.IsNullOrWhiteSpace(item.Value);
     }
 
     private static ResolvedDesignPaint ThemePaint(string tokenId)

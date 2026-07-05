@@ -84,7 +84,14 @@ internal sealed class VisualIrDesignPreviewPane : Grid
             Height = frameHeight,
             ClipToBounds = true,
         };
-        canvas.Children.Add(rendered);
+        canvas.Children.Add(new Border
+        {
+            Width = frameWidth,
+            Height = frameHeight,
+            CornerRadius = new CornerRadius(metrics.CornerRadius / scale),
+            ClipToBounds = true,
+            Child = rendered,
+        });
         canvas.Children.Add(new Border
         {
             Width = frameWidth,
@@ -115,6 +122,7 @@ internal sealed class VisualIrDesignPreviewPane : Grid
                 new Viewbox
                 {
                     Stretch = Stretch.Uniform,
+                    StretchDirection = StretchDirection.DownOnly,
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Center,
                     Child = canvas,
