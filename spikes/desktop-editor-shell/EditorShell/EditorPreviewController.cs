@@ -193,7 +193,8 @@ internal sealed class EditorPreviewController
                 _selectedMode,
                 _selectedScale,
                 _showDesignMarks,
-                designPayload);
+                designPayload,
+                _messages);
             _messages.Clear();
         }
         catch (Exception exception)

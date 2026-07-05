@@ -438,7 +438,8 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         string themeMode,
         string scaleMode,
         bool showDesignMarks,
-        DesignPreviewPayload? payload)
+        DesignPreviewPayload? payload,
+        IEditorShellMessageSink messages)
     {
         var updateVersion = ++_updateVersion;
 
@@ -459,6 +460,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         }
 
         string bodyContent;
+        Exception? renderError = null;
         try
         {
             bodyContent = await WebDesignPreviewRenderer.RenderBodyAsync(
@@ -469,14 +471,20 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         }
         catch (Exception error)
         {
+            renderError = error;
             bodyContent = Placeholder(
                 $"{payload.Name} · {payload.Kind}",
-                $"Design preview renderer failed: {error.Message}");
+                "Preview unavailable. See Messages.");
         }
 
         if (updateVersion != _updateVersion)
         {
             return;
+        }
+
+        if (renderError is not null)
+        {
+            messages.Error("Design preview", renderError);
         }
 
         LoadHtml(DeviceHtml(
