@@ -631,7 +631,7 @@ internal static class DesignPreviewFrameResolver
         var layers = new List<ResolvedDesignNode>(totalLayers * 2);
         for (var index = 0; index < totalLayers; index++)
         {
-            var distance = index + 1;
+            var distance = index + 0.5;
             var fade = index < hardLayers || fadeLayers == 0
                 ? 1
                 : Math.Max(0, 1 - (index - hardLayers + 1d) / (fadeLayers + 1));
