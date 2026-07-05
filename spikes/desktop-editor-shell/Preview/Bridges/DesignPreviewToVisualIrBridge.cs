@@ -55,6 +55,7 @@ internal static class DesignPreviewToVisualIrBridge
                 Id = group.Id,
                 Bounds = Rect(group.Bounds),
                 Opacity = group.Opacity,
+                Effects = Effects(group.Effects, payload),
                 ClipRect = group.ClipRect is null ? null : Rect(group.ClipRect),
                 Children = group.Children.Select((child) => ConvertNode(child, payload)).ToList(),
                 Metadata = group.Metadata,
@@ -64,15 +65,18 @@ internal static class DesignPreviewToVisualIrBridge
                 Id = rect.Id,
                 Bounds = Rect(rect.Bounds),
                 Opacity = rect.Opacity,
+                Effects = Effects(rect.Effects, payload),
                 Fill = Paint(rect.Fill, payload),
+                Stroke = Stroke(rect.Stroke, payload),
                 Radius = rect.Radius,
-                Metadata = MetadataWithColor(rect.Metadata, "fill", rect.Fill, payload),
+                Metadata = MetadataWithColor(MetadataWithColor(rect.Metadata, "fill", rect.Fill, payload), "stroke", rect.Stroke?.Paint, payload),
             },
             ResolvedDesignTextNode text => new VisualIrTextNode
             {
                 Id = text.Id,
                 Bounds = Rect(text.Bounds),
                 Opacity = text.Opacity,
+                Effects = Effects(text.Effects, payload),
                 Text = text.Text,
                 Style = new VisualIrTextStyle
                 {
@@ -92,6 +96,7 @@ internal static class DesignPreviewToVisualIrBridge
                 Id = svg.Id,
                 Bounds = Rect(svg.Bounds),
                 Opacity = svg.Opacity,
+                Effects = Effects(svg.Effects, payload),
                 Markup = svg.Markup,
                 Fit = svg.Fit,
                 Tint = Paint(svg.Tint, payload),
@@ -109,6 +114,24 @@ internal static class DesignPreviewToVisualIrBridge
     private static VisualIrPaint? Paint(ResolvedDesignPaint? paint, DesignPreviewPayload payload)
     {
         return paint is null ? null : new VisualIrSolidPaint(Color(paint.Color, payload));
+    }
+
+    private static VisualIrStroke? Stroke(ResolvedDesignStroke? stroke, DesignPreviewPayload payload)
+    {
+        return stroke is null ? null : new VisualIrStroke(Paint(stroke.Paint, payload) ?? new VisualIrNonePaint(), stroke.Width);
+    }
+
+    private static IReadOnlyList<VisualIrShadowEffect>? Effects(
+        IReadOnlyList<ResolvedDesignShadowEffect>? effects,
+        DesignPreviewPayload payload)
+    {
+        return effects?.Select((effect) => new VisualIrShadowEffect(
+                effect.X,
+                effect.Y,
+                effect.Blur,
+                Color(effect.Color, payload),
+                effect.Inset))
+            .ToList();
     }
 
     private static IReadOnlyDictionary<string, string>? MetadataWithColor(

@@ -17,6 +17,7 @@ internal abstract record ResolvedDesignNode
     public required string Id { get; init; }
     public required DesignRect Bounds { get; init; }
     public double Opacity { get; init; } = 1;
+    public IReadOnlyList<ResolvedDesignShadowEffect>? Effects { get; init; }
     public IReadOnlyDictionary<string, string>? Metadata { get; init; }
 }
 
@@ -29,6 +30,7 @@ internal sealed record ResolvedDesignGroupNode : ResolvedDesignNode
 internal sealed record ResolvedDesignRectNode : ResolvedDesignNode
 {
     public ResolvedDesignPaint? Fill { get; init; }
+    public ResolvedDesignStroke? Stroke { get; init; }
     public double Radius { get; init; }
 }
 
@@ -63,3 +65,14 @@ internal sealed record ResolvedDesignColorRef(
     string Id,
     string? ThemeTokenId,
     string FallbackValue);
+
+internal sealed record ResolvedDesignStroke(
+    ResolvedDesignPaint Paint,
+    double Width);
+
+internal sealed record ResolvedDesignShadowEffect(
+    double X,
+    double Y,
+    double Blur,
+    ResolvedDesignColorRef Color,
+    bool Inset = false);

@@ -70,6 +70,17 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
             throw new InvalidOperationException("Expected label component text style.");
         }
 
+        if (payload.Kind == "componentClass"
+            && payload.ComponentType == "label"
+            && !Flatten(document.Root).OfType<VisualIrRectNode>().Any((rect) =>
+                rect.Id == "component.label.background"
+                && rect.Radius == 9
+                && rect.Stroke?.Width == 2
+                && rect.Effects?.Count > 0))
+        {
+            throw new InvalidOperationException("Expected label component card style.");
+        }
+
         var renderer = new AvaloniaVisualIrDebugRenderer();
         renderer.Render(document, new VisualIrRenderOptions(ShowBounds: true));
     }
@@ -163,6 +174,18 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
             "Smoke Label Component",
             """
             {
+              "style": {
+                "shadowEnabled": true,
+                "reliefEnabled": true,
+                "borderWidth": 2,
+                "borderColorToken": "theme.borders.primary",
+                "cornerRadiusToken": "theme.radii.surface",
+                "reliefAngle": -30,
+                "reliefExtent": 2,
+                "reliefSpread": 1,
+                "reliefTopIntensity": 14,
+                "reliefBottomIntensity": -8
+              },
               "label": {
                 "dimensionMode": "content",
                 "size": "180|64",
@@ -175,7 +198,15 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
               }
             }
             """,
-            "{}",
+            """
+            {
+              "radii": { "surface": 9 },
+              "modes": {
+                "light": { "colors": { "background": "#FFFFFF", "textPrimary": "#111827", "borders.primary": "#111827" } },
+                "dark": { "colors": { "background": "#111827", "textPrimary": "#FFFFFF", "borders.primary": "#FFFFFF" } }
+              }
+            }
+            """,
             new Dictionary<string, string>(),
             "",
             "",

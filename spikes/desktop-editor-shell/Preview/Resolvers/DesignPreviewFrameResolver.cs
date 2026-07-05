@@ -110,6 +110,7 @@ internal static class DesignPreviewFrameResolver
         var config = JsonPath.ParseObject(payload.ConfigJson);
         var preview = JsonPath.ParseObject(payload.DesignPreviewJson);
         var label = config["label"] as JsonObject ?? [];
+        var style = config["style"] as JsonObject ?? [];
         var size = SizePair(JsonPath.String(label, "size", "120|32"), 120, 32);
         var padding = SizePair(JsonPath.String(label, "padding", "8|4"), 8, 4);
         var backgroundVisible = JsonPath.Bool(label, "backgroundVisible", true);
@@ -121,12 +122,16 @@ internal static class DesignPreviewFrameResolver
         var width = dimensionMode == "fixed" ? size.Width : contentSize.Width;
         var height = dimensionMode == "fixed" ? size.Height : contentSize.Height;
         var bounds = Centered(metrics, width, height);
+        var borderWidth = JsonPath.Number(style, "borderWidth", 0);
+        var cornerRadiusToken = JsonPath.String(style, "cornerRadiusToken", "theme.radii.surface");
+        var cornerRadius = ThemeNumber(payload.ThemeTokensJson, cornerRadiusToken, 0);
+        var borderColorToken = JsonPath.String(style, "borderColorToken", "theme.borders.primary");
+        var shadowEnabled = JsonPath.Bool(style, "shadowEnabled", false);
 
         return new ResolvedDesignGroupNode
         {
             Id = "component.label",
             Bounds = bounds,
-            ClipRect = new DesignRect(0, 0, bounds.Width, bounds.Height),
             Children =
             [
                 new ResolvedDesignRectNode
@@ -136,7 +141,12 @@ internal static class DesignPreviewFrameResolver
                     Fill = backgroundVisible
                         ? ThemePaint(JsonPath.String(label, "backgroundColorToken", "theme.colors.background"), "#FFFFFF")
                         : StaticPaint("component.label.background.transparent", "#00000000"),
-                    Radius = 0,
+                    Stroke = borderWidth > 0
+                        ? new ResolvedDesignStroke(ThemePaint(borderColorToken), borderWidth)
+                        : null,
+                    Radius = cornerRadius,
+                    Effects = shadowEnabled ? [new ResolvedDesignShadowEffect(0, 3, 10, new ResolvedDesignColorRef("component.style.shadow", null, "#33000000"))] : null,
+                    Metadata = ComponentStyleMetadata(style, borderWidth, borderColorToken, cornerRadiusToken, cornerRadius, shadowEnabled),
                 },
                 new ResolvedDesignTextNode
                 {
@@ -550,6 +560,41 @@ internal static class DesignPreviewFrameResolver
         return new DesignSize(
             Math.Max(1, measuredWidth + padding.Width * 2),
             Math.Max(1, measuredHeight + padding.Height * 2));
+    }
+
+    private static double ThemeNumber(string themeTokensJson, string tokenId, double fallback)
+    {
+        if (!ThemeNumericTokenCatalog.TryGet(tokenId, out var token))
+        {
+            return fallback;
+        }
+
+        var tokens = JsonPath.ParseObject(themeTokensJson);
+        return JsonPath.NumberAt(tokens, token.Path, fallback);
+    }
+
+    private static IReadOnlyDictionary<string, string> ComponentStyleMetadata(
+        JsonObject style,
+        double borderWidth,
+        string borderColorToken,
+        string cornerRadiusToken,
+        double cornerRadius,
+        bool shadowEnabled)
+    {
+        return new Dictionary<string, string>
+        {
+            ["style.shadowEnabled"] = shadowEnabled ? "true" : "false",
+            ["style.reliefEnabled"] = JsonPath.Bool(style, "reliefEnabled", false) ? "true" : "false",
+            ["style.borderWidth"] = borderWidth.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            ["style.borderColorToken"] = borderColorToken,
+            ["style.cornerRadiusToken"] = cornerRadiusToken,
+            ["style.cornerRadius"] = cornerRadius.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            ["style.reliefAngle"] = JsonPath.Number(style, "reliefAngle", -45).ToString(System.Globalization.CultureInfo.InvariantCulture),
+            ["style.reliefExtent"] = JsonPath.Number(style, "reliefExtent", 1).ToString(System.Globalization.CultureInfo.InvariantCulture),
+            ["style.reliefSpread"] = JsonPath.Number(style, "reliefSpread", 0).ToString(System.Globalization.CultureInfo.InvariantCulture),
+            ["style.reliefTopIntensity"] = JsonPath.Number(style, "reliefTopIntensity", 12).ToString(System.Globalization.CultureInfo.InvariantCulture),
+            ["style.reliefBottomIntensity"] = JsonPath.Number(style, "reliefBottomIntensity", -10).ToString(System.Globalization.CultureInfo.InvariantCulture),
+        };
     }
 
     private static string? IconMarkup(DesignPreviewPayload payload, string token)

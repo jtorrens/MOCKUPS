@@ -26,6 +26,7 @@ internal sealed class DictionaryThemeTokenControl : Button, IDictionaryValueCont
         MinHeight = 36;
         MinWidth = 260;
         HorizontalAlignment = HorizontalAlignment.Left;
+        HorizontalContentAlignment = HorizontalAlignment.Stretch;
         IsEnabled = definition.IsEditable && showThemeTokenPicker is not null;
         Click += async (_, _) => await ShowPicker();
     }
@@ -54,11 +55,27 @@ internal sealed class DictionaryThemeTokenControl : Button, IDictionaryValueCont
 
     private static Control ContentForValue(string value)
     {
-        return new TextBlock
+        var label = new TextBlock
         {
             Text = string.IsNullOrWhiteSpace(value) ? "Select theme token..." : value,
             TextTrimming = TextTrimming.CharacterEllipsis,
             VerticalAlignment = VerticalAlignment.Center,
+        };
+        Grid.SetColumn(label, 0);
+
+        var chevron = EditorIcons.Create(EditorIcons.Dropdown, 14);
+        chevron.Opacity = 0.72;
+        Grid.SetColumn(chevron, 1);
+
+        return new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("*,Auto"),
+            ColumnSpacing = 8,
+            Children =
+            {
+                label,
+                chevron,
+            },
         };
     }
 }

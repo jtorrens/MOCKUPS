@@ -14,6 +14,7 @@ internal static class EditorIcons
     public const string Add = "add";
     public const string Delete = "delete";
     public const string Duplicate = "duplicate";
+    public const string Dropdown = "dropdown";
     public const string Expand = "expand";
     public const string Collapse = "collapse";
 
@@ -277,6 +278,7 @@ internal static class EditorIcons
             Add => "M6 3H14L19 8V21H6Z M14 3V8H19 M10 14H15 M12.5 11.5V16.5",
             Delete => "M7 7H17V20H7Z M9 4H15V6H20V8H4V6H9Z M9 10H11V18H9Z M13 10H15V18H13Z",
             Duplicate => "M8 8H18V18H8Z M5 5H15V8 M5 5V15H8",
+            Dropdown => "M7 9L12 14L17 9",
             Expand => "M9 5L16 12L9 19Z",
             Collapse => "M5 15L12 8L19 15Z",
 

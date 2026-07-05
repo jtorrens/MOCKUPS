@@ -53,6 +53,7 @@ internal sealed class AvaloniaVisualIrDebugRenderer : IVisualIrRenderer
             _ => RenderPlaceholder(node, node.GetType().Name, options),
         };
 
+        ApplyEffects(control, node, document, options);
         control.Opacity = node.Opacity;
         Canvas.SetLeft(control, node.Bounds.X);
         Canvas.SetTop(control, node.Bounds.Y);
@@ -260,6 +261,27 @@ internal sealed class AvaloniaVisualIrDebugRenderer : IVisualIrRenderer
             BorderBrush = BoundsBrush,
             BorderThickness = new Thickness(1),
             IsHitTestVisible = false,
+        };
+    }
+
+    private static void ApplyEffects(
+        Control control,
+        VisualIrNode node,
+        VisualIrDocument document,
+        VisualIrRenderOptions options)
+    {
+        var shadow = node.Effects?.FirstOrDefault((effect) => !effect.Inset);
+        if (shadow is null)
+        {
+            return;
+        }
+
+        control.Effect = new DropShadowEffect
+        {
+            OffsetX = shadow.X,
+            OffsetY = shadow.Y,
+            BlurRadius = shadow.Blur,
+            Color = ColorValue.ParseIrHex(ResolveColor(shadow.Color, document, options)),
         };
     }
 
