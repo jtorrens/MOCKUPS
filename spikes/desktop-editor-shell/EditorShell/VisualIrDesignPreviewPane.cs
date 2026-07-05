@@ -80,7 +80,9 @@ internal sealed class VisualIrDesignPreviewPane : Grid
         VisualIrDocument document,
         DesignPreviewPayload payload)
     {
+        const double frameBorderThickness = 10;
         var scale = metrics.ScaleToPixels > 0 ? metrics.ScaleToPixels : 1;
+        var cornerRadius = metrics.CornerRadius / scale;
         var canvas = new Canvas
         {
             Width = frameWidth,
@@ -91,19 +93,22 @@ internal sealed class VisualIrDesignPreviewPane : Grid
         {
             Width = frameWidth,
             Height = frameHeight,
-            CornerRadius = new CornerRadius(metrics.CornerRadius / scale),
+            CornerRadius = new CornerRadius(cornerRadius),
             ClipToBounds = true,
             Child = rendered,
         });
-        canvas.Children.Add(new Border
+        var frameBorder = new Border
         {
-            Width = frameWidth,
-            Height = frameHeight,
+            Width = frameWidth + frameBorderThickness,
+            Height = frameHeight + frameBorderThickness,
             BorderBrush = new SolidColorBrush(Color.Parse("#18181B")),
-            BorderThickness = new Thickness(10),
-            CornerRadius = new CornerRadius(metrics.CornerRadius / scale),
+            BorderThickness = new Thickness(frameBorderThickness),
+            CornerRadius = new CornerRadius(cornerRadius + frameBorderThickness / 2),
             IsHitTestVisible = false,
-        });
+        };
+        Canvas.SetLeft(frameBorder, -frameBorderThickness / 2);
+        Canvas.SetTop(frameBorder, -frameBorderThickness / 2);
+        canvas.Children.Add(frameBorder);
 
         var meta = new TextBlock
         {
