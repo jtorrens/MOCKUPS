@@ -96,12 +96,12 @@ internal static class DesignPreviewFrameResolver
         DesignPreviewPayload payload,
         DesignMetrics metrics)
     {
-        var config = ParseObject(payload.ConfigJson);
+        var config = JsonPath.ParseObject(payload.ConfigJson);
         var layout = config["layout"] as JsonObject ?? [];
-        var height = Number(layout, "height", metrics.StatusBarHeight > 0 ? metrics.StatusBarHeight : 54);
-        var itemSize = Number(layout, "itemSize", 18);
-        var gap = Number(layout, "gap", 6);
-        var sidePadding = Number(layout, "sidePadding", 24);
+        var height = JsonPath.Number(layout, "height", metrics.StatusBarHeight > 0 ? metrics.StatusBarHeight : 54);
+        var itemSize = JsonPath.Number(layout, "itemSize", 18);
+        var gap = JsonPath.Number(layout, "gap", 6);
+        var sidePadding = JsonPath.Number(layout, "sidePadding", 24);
         var bounds = new DesignRect(metrics.ScreenX, metrics.ScreenY, metrics.ScreenWidth, height);
         var children = new List<ResolvedDesignNode>
         {
@@ -250,13 +250,13 @@ internal static class DesignPreviewFrameResolver
         DesignPreviewPayload payload,
         DesignMetrics metrics)
     {
-        var config = ParseObject(payload.ConfigJson);
+        var config = JsonPath.ParseObject(payload.ConfigJson);
         var layout = config["layout"] as JsonObject ?? [];
-        var height = Number(layout, "height", 34);
-        var itemSize = Number(layout, "itemSize", 18);
-        var sidePadding = Number(layout, "sidePadding", 40);
-        var strokeWidth = Number(layout, "strokeWidth", 2);
-        var cornerRadius = Number(layout, "cornerRadius", 3);
+        var height = JsonPath.Number(layout, "height", 34);
+        var itemSize = JsonPath.Number(layout, "itemSize", 18);
+        var sidePadding = JsonPath.Number(layout, "sidePadding", 40);
+        var strokeWidth = JsonPath.Number(layout, "strokeWidth", 2);
+        var cornerRadius = JsonPath.Number(layout, "cornerRadius", 3);
         var gap = 6;
         var bounds = new DesignRect(metrics.ScreenX, metrics.ScreenY + metrics.ScreenHeight - height, metrics.ScreenWidth, height);
         var children = new List<ResolvedDesignNode>
@@ -275,7 +275,7 @@ internal static class DesignPreviewFrameResolver
             .ToList();
         foreach (var zone in new[] { "left", "center", "right" })
         {
-            children.AddRange(NavigationItemsForZone(items.Where((item) => item.Zone == zone), zone, itemSize, sidePadding, gap, bounds, strokeWidth, cornerRadius, Bool(layout, "filled", false)));
+            children.AddRange(NavigationItemsForZone(items.Where((item) => item.Zone == zone), zone, itemSize, sidePadding, gap, bounds, strokeWidth, cornerRadius, JsonPath.Bool(layout, "filled", false)));
         }
 
         return new ResolvedDesignGroupNode
@@ -377,14 +377,14 @@ internal static class DesignPreviewFrameResolver
         return array
             .OfType<JsonObject>()
             .Select((item, index) => new PreviewItem(
-                String(item, "id", $"item_{index}"),
-                String(item, "label", $"Item {index + 1}"),
-                String(item, "kind", "text"),
-                String(item, "value", ""),
-                String(item, "token", ""),
-                String(item, "zone", "off"),
-                Number(item, "order", index * 10),
-                Bool(item, "charging", false)))
+                JsonPath.String(item, "id", $"item_{index}"),
+                JsonPath.String(item, "label", $"Item {index + 1}"),
+                JsonPath.String(item, "kind", "text"),
+                JsonPath.String(item, "value", ""),
+                JsonPath.String(item, "token", ""),
+                JsonPath.String(item, "zone", "off"),
+                JsonPath.Number(item, "order", index * 10),
+                JsonPath.Bool(item, "charging", false)))
             .ToList();
     }
 
@@ -415,10 +415,10 @@ internal static class DesignPreviewFrameResolver
 
         try
         {
-            var mapping = ParseObject(payload.IconMappingJson);
+            var mapping = JsonPath.ParseObject(payload.IconMappingJson);
             var tokens = mapping["tokens"] as JsonObject;
             var tokenObject = tokens?[token] as JsonObject;
-            var file = tokenObject is null ? "" : String(tokenObject, "file", "");
+            var file = tokenObject is null ? "" : JsonPath.String(tokenObject, "file", "");
             if (string.IsNullOrWhiteSpace(file))
             {
                 return null;
@@ -465,52 +465,11 @@ internal static class DesignPreviewFrameResolver
         return metadata;
     }
 
-    private static JsonObject ParseObject(string json)
-    {
-        try
-        {
-            return JsonNode.Parse(string.IsNullOrWhiteSpace(json) ? "{}" : json) as JsonObject ?? [];
-        }
-        catch
-        {
-            return [];
-        }
-    }
-
-    private static string String(JsonObject json, string key, string fallback)
-    {
-        return json.TryGetPropertyValue(key, out var node) && node is not null
-            ? node.ToString()
-            : fallback;
-    }
-
-    private static double Number(JsonObject json, string key, double fallback)
-    {
-        if (!json.TryGetPropertyValue(key, out var node) || node is null)
-        {
-            return fallback;
-        }
-
-        return double.TryParse(node.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
-            ? parsed
-            : fallback;
-    }
-
     private static double NumberValue(string value, double fallback)
     {
         return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
             ? parsed
             : fallback;
-    }
-
-    private static bool Bool(JsonObject json, string key, bool fallback)
-    {
-        if (!json.TryGetPropertyValue(key, out var node) || node is null)
-        {
-            return fallback;
-        }
-
-        return bool.TryParse(node.ToString(), out var parsed) ? parsed : fallback;
     }
 
     private sealed record PreviewItem(

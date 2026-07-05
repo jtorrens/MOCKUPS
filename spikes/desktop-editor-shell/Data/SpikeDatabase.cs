@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Collections.Generic;
@@ -2923,97 +2924,47 @@ internal sealed partial class SpikeDatabase
 
     private static JsonObject ParseJsonObject(string json)
     {
-        return JsonNode.Parse(json)?.AsObject() ?? [];
+        return JsonPath.ParseObject(json);
     }
 
     private static bool MergeMissing(JsonObject target, JsonObject defaults)
     {
-        var changed = false;
-        foreach (var pair in defaults)
-        {
-            if (!target.TryGetPropertyValue(pair.Key, out var existing) || existing is null)
-            {
-                target[pair.Key] = pair.Value?.DeepClone();
-                changed = true;
-                continue;
-            }
-
-            if (existing is JsonObject existingObject && pair.Value is JsonObject defaultObject)
-            {
-                changed |= MergeMissing(existingObject, defaultObject);
-            }
-        }
-
-        return changed;
+        return JsonPath.MergeMissing(target, defaults);
     }
 
     private static string MetricPair(string metricsJson, IReadOnlyList<string> firstPath, IReadOnlyList<string> secondPath)
     {
-        var metrics = ParseJsonObject(metricsJson);
-        return $"{JsonNumberString(metrics, firstPath)}|{JsonNumberString(metrics, secondPath)}";
+        return JsonPath.Pair(ParseJsonObject(metricsJson), firstPath, secondPath);
     }
 
     private static string JsonNumberString(JsonObject root, IReadOnlyList<string> path)
     {
-        var node = GetJsonValue(root, path);
-        if (node is null) return "0";
-        if (node.GetValueKind() == JsonValueKind.Number)
-        {
-            return node.ToJsonString();
-        }
-
-        return node.GetValue<string?>() ?? "0";
+        return JsonPath.NumberString(root, path);
     }
 
     private static string JsonNumberString(JsonObject root, IReadOnlyList<string> path, string fallback)
     {
-        var value = JsonNumberString(root, path);
-        return value == "0" && GetJsonValue(root, path) is null ? fallback : value;
+        return JsonPath.NumberString(root, path, fallback);
     }
 
     private static double JsonNumberDouble(JsonObject root, IReadOnlyList<string> path, double fallback)
     {
-        var node = GetJsonValue(root, path);
-        if (node is null) return fallback;
-        if (node is JsonValue value)
-        {
-            if (value.TryGetValue<double>(out var number)) return number;
-            if (value.TryGetValue<string>(out var text) && double.TryParse(text, out var parsed)) return parsed;
-        }
-
-        return fallback;
+        return JsonPath.NumberDouble(root, path, fallback);
     }
 
     private static string JsonString(JsonObject root, IReadOnlyList<string> path)
     {
-        var node = GetJsonValue(root, path);
-        if (node is null) return "";
-        if (node is JsonValue value && value.TryGetValue<string>(out var text))
-        {
-            return text;
-        }
-
-        return node.ToJsonString().Trim('"');
+        return JsonPath.String(root, path);
     }
 
     private static bool JsonBool(JsonObject root, IReadOnlyList<string> path)
     {
-        var node = GetJsonValue(root, path);
-        return node is JsonValue value && value.TryGetValue<bool>(out var boolean) && boolean;
+        return JsonPath.Bool(root, path);
     }
 
     private static JsonNode? GetJsonValue(JsonObject root, IReadOnlyList<string> path)
     {
-        JsonNode? current = root;
-        foreach (var part in path)
-        {
-            if (current is not JsonObject currentObject || !currentObject.TryGetPropertyValue(part, out current))
-            {
-                return null;
-            }
-        }
-
-        return current;
+        return JsonPath.Get(root, path);
     }
 
     private static void SetPair(
@@ -3023,41 +2974,22 @@ internal sealed partial class SpikeDatabase
         IReadOnlyList<string> secondPath,
         bool asNumber = true)
     {
-        var parts = pairValue.Split('|', 2);
-        var first = parts.ElementAtOrDefault(0) ?? "";
-        var second = parts.ElementAtOrDefault(1) ?? "";
-        SetJsonValue(root, firstPath, asNumber ? NumberNode(first) : JsonValue.Create(first)!);
-        SetJsonValue(root, secondPath, asNumber ? NumberNode(second) : JsonValue.Create(second)!);
+        JsonPath.SetPair(root, pairValue, firstPath, secondPath, asNumber);
     }
 
     private static void SetJsonValue(JsonObject root, IReadOnlyList<string> path, JsonNode value)
     {
-        var current = root;
-        for (var index = 0; index < path.Count - 1; index++)
-        {
-            var part = path[index];
-            if (current[part] is not JsonObject child)
-            {
-                child = [];
-                current[part] = child;
-            }
-
-            current = child;
-        }
-
-        current[path[^1]] = value;
+        JsonPath.Set(root, path, value);
     }
 
     private static void SetJsonNumber(JsonObject root, IReadOnlyList<string> path, int value)
     {
-        SetJsonValue(root, path, JsonValue.Create(value)!);
+        JsonPath.SetNumber(root, path, value);
     }
 
     private static JsonNode NumberNode(string value)
     {
-        return value.Contains('.', StringComparison.Ordinal)
-            ? JsonValue.Create(double.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var decimalValue) ? decimalValue : 0)!
-            : JsonValue.Create(int.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var integerValue) ? integerValue : 0)!;
+        return JsonPath.NumberNode(value);
     }
 
     private static void EnsureShotColumns(SqliteConnection connection)

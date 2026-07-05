@@ -7,7 +7,6 @@ using Mockups.DesktopEditorShell.VisualIr;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
 namespace Mockups.DesktopEditorShell.Preview.Bridges;
@@ -172,19 +171,14 @@ internal static class DesignPreviewToVisualIrBridge
         IReadOnlyList<string>? alphaPath,
         string fallback)
     {
-        var tokens = ParseObject(payload.ThemeTokensJson);
-        JsonNode? current = tokens;
-        foreach (var part in path)
-        {
-            current = current is JsonObject obj ? obj[part] : null;
-        }
-
+        var tokens = JsonPath.ParseObject(payload.ThemeTokensJson);
+        var current = JsonPath.Get(tokens, path);
         var resolved = ResolveColorValue(payload, current?.ToString() ?? fallback);
         var resolvedFallback = ResolveColorValue(payload, fallback);
         var color = IsVisualIrColor(resolved)
             ? resolved
             : IsVisualIrColor(resolvedFallback) ? resolvedFallback : "#ff00ff";
-        return alphaPath is null ? color : WithAlpha(color, NumberAt(tokens, alphaPath, 1));
+        return alphaPath is null ? color : WithAlpha(color, JsonPath.NumberAt(tokens, alphaPath, 1));
     }
 
     private static string ResolveColorValue(DesignPreviewPayload payload, string value)
@@ -206,31 +200,6 @@ internal static class DesignPreviewToVisualIrBridge
     private static bool IsVisualIrColor(string value)
     {
         return Regex.IsMatch(value, "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$");
-    }
-
-    private static JsonObject ParseObject(string json)
-    {
-        try
-        {
-            return JsonNode.Parse(string.IsNullOrWhiteSpace(json) ? "{}" : json) as JsonObject ?? [];
-        }
-        catch
-        {
-            return [];
-        }
-    }
-
-    private static double NumberAt(JsonObject tokens, IReadOnlyList<string> path, double fallback)
-    {
-        JsonNode? current = tokens;
-        foreach (var part in path)
-        {
-            current = current is JsonObject obj ? obj[part] : null;
-        }
-
-        return double.TryParse(current?.ToString(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsed)
-            ? Math.Clamp(parsed, 0, 1)
-            : fallback;
     }
 
     private static string WithAlpha(string color, double alpha)
