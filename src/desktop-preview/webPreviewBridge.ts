@@ -362,7 +362,7 @@ export function avatarComponentToRenderable(
       }
     : undefined;
   const visualPadding = avatarVisualPadding(borderWidth, avatarShadow, surfaceRelief);
-  const groupBox = centerBox(
+  const groupBox = boundedCenterBox(
     payload,
     groupWidth + visualPadding * 2,
     groupHeight + visualPadding * 2,
@@ -441,7 +441,7 @@ function avatarVisualPadding(
     ? Math.max(
         Math.abs(typeof shadowValue.offsetX === "number" ? shadowValue.offsetX : 0),
         Math.abs(typeof shadowValue.offsetY === "number" ? shadowValue.offsetY : 0),
-      ) + (typeof shadowValue.blur === "number" ? shadowValue.blur : 0)
+      ) + (typeof shadowValue.blur === "number" ? shadowValue.blur * 2 : 0)
     : 0;
   const reliefPadding = surfaceRelief
     ? Math.max(
@@ -450,6 +450,24 @@ function avatarVisualPadding(
       )
     : 0;
   return Math.ceil(Math.max(borderWidth, shadowPadding, reliefPadding, 0));
+}
+
+function boundedCenterBox(
+  payload: DesignPreviewPayload,
+  width: number,
+  height: number,
+) {
+  const centered = centerBox(payload, width, height);
+  const minX = payload.device.screenX;
+  const minY = payload.device.screenY;
+  const maxX = payload.device.screenX + payload.device.screenWidth - width;
+  const maxY = payload.device.screenY + payload.device.screenHeight - height;
+  return {
+    x: maxX >= minX ? Math.min(Math.max(centered.x, minX), maxX) : minX,
+    y: maxY >= minY ? Math.min(Math.max(centered.y, minY), maxY) : minY,
+    width,
+    height,
+  };
 }
 
 function sampleAvatarUri() {
