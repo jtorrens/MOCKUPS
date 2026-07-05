@@ -622,16 +622,17 @@ internal static class DesignPreviewFrameResolver
             return [];
         }
 
-        var radians = angleDegrees * Math.PI / 180;
-        var directionX = Math.Cos(radians);
-        var directionY = Math.Sin(radians);
+        // Angle describes the light source direction: 90 means light from top.
+        var lightRadians = angleDegrees * Math.PI / 180;
+        var lightX = Math.Cos(lightRadians);
+        var lightY = -Math.Sin(lightRadians);
         var hardLayers = Math.Max(1, (int)Math.Ceiling(Math.Abs(extent)));
         var fadeLayers = Math.Max(0, (int)Math.Ceiling(Math.Abs(spread)));
         var totalLayers = Math.Max(1, hardLayers + fadeLayers);
         var layers = new List<ResolvedDesignNode>(totalLayers * 2);
         for (var index = 0; index < totalLayers; index++)
         {
-            var distance = index + 0.5;
+            var distance = index + 1;
             var fade = index < hardLayers || fadeLayers == 0
                 ? 1
                 : Math.Max(0, 1 - (index - hardLayers + 1d) / (fadeLayers + 1));
@@ -643,8 +644,8 @@ internal static class DesignPreviewFrameResolver
                 bounds,
                 cornerRadius,
                 baseColorToken,
-                -directionX * distance,
-                -directionY * distance,
+                lightX * distance,
+                lightY * distance,
                 topIntensity * fade,
                 blurRadius));
             layers.Add(ReliefStroke(
@@ -652,8 +653,8 @@ internal static class DesignPreviewFrameResolver
                 bounds,
                 cornerRadius,
                 baseColorToken,
-                directionX * distance,
-                directionY * distance,
+                -lightX * distance,
+                -lightY * distance,
                 bottomIntensity * fade,
                 blurRadius));
         }
