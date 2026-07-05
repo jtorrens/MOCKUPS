@@ -91,6 +91,13 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
 
         if (payload.Kind == "componentClass"
             && payload.ComponentType == "label"
+            && !Flatten(document.Root).OfType<VisualIrGroupNode>().Any((group) => group.Id == "component.label.relief" && group.ClipRect is not null))
+        {
+            throw new InvalidOperationException("Expected label component relief clipping group.");
+        }
+
+        if (payload.Kind == "componentClass"
+            && payload.ComponentType == "label"
             && !Flatten(document.Root).Any((node) => node.Effects?.OfType<VisualIrBlurEffect>().Any() == true))
         {
             throw new InvalidOperationException("Expected label component relief spread blur.");

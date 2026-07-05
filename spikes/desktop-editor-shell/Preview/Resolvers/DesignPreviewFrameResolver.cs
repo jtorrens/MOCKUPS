@@ -168,7 +168,17 @@ internal static class DesignPreviewFrameResolver
         };
         if (reliefEnabled)
         {
-            children.AddRange(ReliefLayers(bounds, cornerRadius, reliefBaseColorToken, reliefAngle, reliefExtent, reliefSpread, reliefTopIntensity, reliefBottomIntensity));
+            var reliefLayers = ReliefLayers(bounds, cornerRadius, reliefBaseColorToken, reliefAngle, reliefExtent, reliefSpread, reliefTopIntensity, reliefBottomIntensity);
+            if (reliefLayers.Count > 0)
+            {
+                children.Add(new ResolvedDesignGroupNode
+                {
+                    Id = "component.label.relief",
+                    Bounds = new DesignRect(0, 0, bounds.Width, bounds.Height),
+                    ClipRect = new DesignRect(0, 0, bounds.Width, bounds.Height),
+                    Children = reliefLayers,
+                });
+            }
         }
 
         children.Add(new ResolvedDesignTextNode
