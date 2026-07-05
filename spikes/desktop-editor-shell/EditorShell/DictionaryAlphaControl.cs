@@ -14,9 +14,8 @@ internal sealed class DictionaryAlphaControl : Grid, IDictionaryValueControl
 
     public DictionaryAlphaControl(string value, bool isEditable)
     {
-        ColumnDefinitions = new ColumnDefinitions("*,Auto");
-        ColumnSpacing = 8;
-        Width = 188;
+        ColumnDefinitions = new ColumnDefinitions("*,78");
+        ColumnSpacing = 10;
         VerticalAlignment = VerticalAlignment.Center;
 
         var alpha = PaletteAlphaPair.TryParseAlpha(value, out var parsed) ? parsed : 1;
@@ -127,7 +126,6 @@ internal sealed class DictionaryAlphaControl : Grid, IDictionaryValueControl
             TickFrequency = 0.05,
             SmallChange = 0.05,
             LargeChange = 0.1,
-            Width = 126,
             IsEnabled = isEditable,
             VerticalAlignment = VerticalAlignment.Center,
         };
@@ -138,7 +136,7 @@ internal sealed class DictionaryAlphaControl : Grid, IDictionaryValueControl
         return EditorTextBoxBehavior.Configure(new TextBox
         {
             Text = PaletteAlphaPair.FormatAlpha(value),
-            Width = 54,
+            Width = 78,
             IsReadOnly = !isEditable,
             VerticalContentAlignment = VerticalAlignment.Center,
         });
