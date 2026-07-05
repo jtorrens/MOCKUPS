@@ -752,7 +752,7 @@ internal static class DesignPreviewFrameResolver
         var perpendicularOffset = side is ReliefSide.Top or ReliefSide.Bottom
             ? Math.Abs(offsetY)
             : Math.Abs(offsetX);
-        var band = Math.Max(2, Math.Ceiling(perpendicularOffset + blurRadius + 1));
+        var band = Math.Max(4, Math.Ceiling(perpendicularOffset + blurRadius + 2));
         return side switch
         {
             ReliefSide.Top => new DesignRect(0, 0, width, Math.Min(height, band)),
