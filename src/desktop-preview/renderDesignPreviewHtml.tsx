@@ -62,6 +62,20 @@ function readString(
   return typeof raw === "string" ? raw : fallback;
 }
 
+function readPair(
+  value: unknown,
+  fallbackFirst: number,
+  fallbackSecond: number,
+) {
+  const parts = String(value ?? "").split("|");
+  const first = Number(parts[0]);
+  const second = Number(parts[1]);
+  return {
+    first: Number.isFinite(first) ? first : fallbackFirst,
+    second: Number.isFinite(second) ? second : fallbackSecond,
+  };
+}
+
 function renderScale(payload: DesignPreviewPayload) {
   const scale = payload.device.scaleToPixels;
   return typeof scale === "number" && Number.isFinite(scale) && scale > 0
@@ -371,12 +385,25 @@ function componentRenderableForPayload(
 
   if (componentType === "label") {
     const label = asRecord(config.label);
-    const pair = String(label.size ?? "120|32").split("|");
-    const width = (Number(pair[0]) || 120) * scale;
-    const height = (Number(pair[1]) || 32) * scale;
+    const size = readPair(label.size, 120, 32);
+    const padding = readPair(label.padding, 8, 4);
+    const paddingX = padding.first * scale;
+    const paddingY = padding.second * scale;
+    const fontSize = themeTokenNumber(payload, label.textSizeToken, 12) * scale;
+    const lineHeight = Math.max(fontSize * 1.2, fontSize + paddingY * 0.5);
+    const fixedWidth = size.first * scale;
+    const fixedHeight = size.second * scale;
+    const contentWidth = Math.max(
+      1,
+      sampleText.length * fontSize * 0.58 + paddingX * 2,
+    );
+    const contentHeight = Math.max(1, lineHeight + paddingY * 2);
+    const isFixed = readString(label, "dimensionMode", "content") === "fixed";
+    const width = isFixed ? fixedWidth : contentWidth;
+    const height = isFixed ? fixedHeight : contentHeight;
     return {
       id: "design:label",
-      type: "component_label_preview",
+      type: "message_bubble_label",
       frame: 0,
       box: centerBox(payload, width, height),
       text: sampleText,
@@ -386,10 +413,13 @@ function componentRenderableForPayload(
             ? "transparent"
             : themeTokenColor(payload, label.backgroundColorToken, "#FFFFFF"),
         textColor: themeTokenColor(payload, label.textColorToken, "#111827"),
-        fontSize: readNumber(label, "textSize", 12) * scale,
-        lineHeight: height,
+        fontSize,
+        lineHeight,
+        paddingX,
+        paddingY,
         textAlign: "center",
         fontStyle: readString(label, "textStyle", "normal"),
+        whiteSpace: "nowrap",
         ...surface,
       },
     };

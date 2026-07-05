@@ -22,7 +22,7 @@ internal sealed class EditorPreviewController
     private readonly VisualIrDesignPreviewPane _visualIrPreviewPane = new();
     private string? _projectId;
     private string? _selectedThemeId;
-    private ProjectTreeNode? _lastDesignPreviewNode;
+    private PreviewNodeKey? _lastDesignPreviewNode;
     private string _selectedMode = "light";
     private string _selectedScale = "fit";
     private bool _showDesignMarks = true;
@@ -195,6 +195,7 @@ internal sealed class EditorPreviewController
                 themeName,
                 _selectedMode,
                 _selectedScale,
+                _showDesignMarks,
                 designPayload);
             var irMessage = _visualIrPreviewPane.Update(
                 metrics,
@@ -223,15 +224,15 @@ internal sealed class EditorPreviewController
     {
         var selectedNode = _selectedNode();
         var selectedPayload = DesignPreviewPayloadFactory.Create(_database, selectedNode, _selectedThemeId);
-        if (selectedPayload is not null)
+        if (selectedPayload is not null && selectedNode is not null)
         {
-            _lastDesignPreviewNode = selectedNode;
+            _lastDesignPreviewNode = PreviewNodeKey.From(selectedNode);
             return selectedPayload;
         }
 
         return _lastDesignPreviewNode is null
             ? null
-            : DesignPreviewPayloadFactory.Create(_database, _lastDesignPreviewNode, _selectedThemeId);
+            : DesignPreviewPayloadFactory.Create(_database, _lastDesignPreviewNode.ToNode(), _selectedThemeId);
     }
 
     private void EnsureSelectedOptionsExist()
@@ -267,6 +268,19 @@ internal sealed class EditorPreviewController
         finally
         {
             _isRefreshingOptions = false;
+        }
+    }
+
+    private sealed record PreviewNodeKey(ProjectTreeNodeKind Kind, string Id)
+    {
+        public static PreviewNodeKey From(ProjectTreeNode node)
+        {
+            return new PreviewNodeKey(node.Kind, node.Id);
+        }
+
+        public ProjectTreeNode ToNode()
+        {
+            return new ProjectTreeNode(Kind, Id, "", "", "");
         }
     }
 }

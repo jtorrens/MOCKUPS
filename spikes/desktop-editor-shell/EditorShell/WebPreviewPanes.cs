@@ -35,6 +35,7 @@ internal abstract class WebPreviewPane : Grid
         string themeMode,
         string scaleMode,
         string previewMode,
+        bool showDesignMarks,
         string bodyContent)
     {
         var width = Math.Max(1, metrics.CanvasWidth);
@@ -133,6 +134,42 @@ internal abstract class WebPreviewPane : Grid
                   box-shadow: 0 var(--preview-frame-shadow-y) var(--preview-frame-shadow-blur) rgba(15, 23, 42, 0.28);
                 }
 
+                .preview-design-marks {
+                  position: absolute;
+                  inset: 0;
+                  z-index: 25;
+                  pointer-events: none;
+                  overflow: hidden;
+                }
+
+                .preview-guide {
+                  position: absolute;
+                  background: rgba(255, 0, 255, .5);
+                }
+
+                .preview-guide.is-vertical {
+                  top: 0;
+                  width: 1px;
+                  height: 100%;
+                }
+
+                .preview-guide.is-horizontal {
+                  left: 0;
+                  width: 100%;
+                  height: 1px;
+                }
+
+                .preview-guide.is-dashed {
+                  background: none;
+                  background-image: linear-gradient(to bottom, rgba(255, 0, 255, .5) 0 50%, transparent 50% 100%);
+                  background-size: 1px 12px;
+                }
+
+                .preview-guide.is-horizontal.is-dashed {
+                  background-image: linear-gradient(to right, rgba(255, 0, 255, .5) 0 50%, transparent 50% 100%);
+                  background-size: 12px 1px;
+                }
+
                 .preview-placeholder {
                   width: 100%;
                   height: 100%;
@@ -195,6 +232,7 @@ internal abstract class WebPreviewPane : Grid
                   <div class="preview-scale" id="previewScale">
                     {{bodyContent}}
                   </div>
+                  {{DesignMarksHtml(showDesignMarks)}}
                   <div aria-hidden="true" class="preview-phone-frame" id="previewPhoneFrame"></div>
                   <div class="preview-meta">
                     <strong>{{Html(previewMode)}}</strong>
@@ -306,6 +344,22 @@ internal abstract class WebPreviewPane : Grid
             """;
     }
 
+    private static string DesignMarksHtml(bool showDesignMarks)
+    {
+        return !showDesignMarks
+            ? ""
+            : """
+                  <div aria-hidden="true" class="preview-design-marks">
+                    <div class="preview-guide is-vertical is-dashed" style="left:25%"></div>
+                    <div class="preview-guide is-vertical" style="left:50%"></div>
+                    <div class="preview-guide is-vertical is-dashed" style="left:75%"></div>
+                    <div class="preview-guide is-horizontal is-dashed" style="top:25%"></div>
+                    <div class="preview-guide is-horizontal" style="top:50%"></div>
+                    <div class="preview-guide is-horizontal is-dashed" style="top:75%"></div>
+                  </div>
+              """;
+    }
+
     protected static string Html(string value)
     {
         return WebUtility.HtmlEncode(value);
@@ -333,6 +387,7 @@ internal sealed class RuntimeWebPreviewPane : WebPreviewPane
             themeMode,
             scaleMode,
             "Runtime preview",
+            false,
             Placeholder(
                 "Runtime WebView host",
                 "Next step: load the existing React preview runtime and feed it the resolver payload. No Avalonia duplicate renderer is used here.")));
@@ -349,6 +404,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         string themeName,
         string themeMode,
         string scaleMode,
+        bool showDesignMarks,
         DesignPreviewPayload? payload)
     {
         var updateVersion = ++_updateVersion;
@@ -362,6 +418,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 themeMode,
                 scaleMode,
                 "Design preview",
+                showDesignMarks,
                 Placeholder(
                     "Design WebView host",
                     "Select a status bar or navigation bar to preview it through the existing visual modules.")));
@@ -395,6 +452,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             themeMode,
             scaleMode,
             "Design preview",
+            showDesignMarks,
             bodyContent));
     }
 }
