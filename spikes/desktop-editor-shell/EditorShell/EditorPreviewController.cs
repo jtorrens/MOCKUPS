@@ -9,7 +9,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class EditorPreviewController
 {
     private readonly SpikeDatabase _database;
-    private readonly ComboBox _deviceComboBox;
+    private readonly EditorInstantComboBox _deviceComboBox;
     private readonly ComboBox _themeComboBox;
     private readonly EditorInstantComboBox _modeComboBox;
     private readonly Func<bool> _isDark;
@@ -24,7 +24,7 @@ internal sealed class EditorPreviewController
 
     public EditorPreviewController(
         SpikeDatabase database,
-        ComboBox deviceComboBox,
+        EditorInstantComboBox deviceComboBox,
         ComboBox themeComboBox,
         EditorInstantComboBox modeComboBox,
         ContentControl runtimePreviewHost,
@@ -49,7 +49,6 @@ internal sealed class EditorPreviewController
 
     public void Initialize(IReadOnlyList<ProjectTreeNode> treeRoots)
     {
-        EditorComboBoxBehavior.Configure(_deviceComboBox);
         EditorComboBoxBehavior.Configure(_themeComboBox);
 
         RefreshOptions(treeRoots);
@@ -101,7 +100,7 @@ internal sealed class EditorPreviewController
 
     public void OnDeviceChanged()
     {
-        if (_deviceComboBox.SelectedItem is not FieldOption option) return;
+        if (_deviceComboBox.SelectedItem is not { } option) return;
 
         SelectedDeviceId = option.Value;
         if (!_isRefreshingOptions)

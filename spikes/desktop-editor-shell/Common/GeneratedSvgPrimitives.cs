@@ -90,7 +90,9 @@ internal static class GeneratedSvgPrimitives
     public static GeneratedSvgPrimitive NavigationButton(string role, double itemSize, double strokeWidth, double cornerRadius, bool filled)
     {
         var fill = filled ? "currentColor" : "none";
-        var radius = Math.Clamp(cornerRadius, 0, 22);
+        var radius = itemSize > 0
+            ? Math.Clamp(cornerRadius / itemSize * 100, 0, 22)
+            : 0;
         var common = $"vector-effect=\"non-scaling-stroke\" stroke=\"currentColor\" stroke-width=\"{N(strokeWidth)}\" stroke-linecap=\"round\" stroke-linejoin=\"round\"";
         var child = role switch
         {

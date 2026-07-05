@@ -5,6 +5,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Mockups.DesktopEditorShell.Data;
 using System;
@@ -16,6 +17,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 public sealed class EditorInstantComboBox : Grid
 {
     private readonly Button _button;
+    private readonly Border _popupBorder;
     private readonly TextBlock _label;
     private readonly TextBlock _indicator;
     private readonly Popup _popup;
@@ -37,6 +39,7 @@ public sealed class EditorInstantComboBox : Grid
             HorizontalContentAlignment = HorizontalAlignment.Stretch,
             MinHeight = 36,
             Padding = new Thickness(10, 6),
+            BorderThickness = new Thickness(0),
             Focusable = false,
         };
         _button.Click += (_, _) => TogglePopup();
@@ -72,23 +75,24 @@ public sealed class EditorInstantComboBox : Grid
         {
             Spacing = 1,
         };
+        _popupBorder = new Border
+        {
+            MinWidth = 112,
+            Padding = new Thickness(4),
+            CornerRadius = new CornerRadius(8),
+            BorderThickness = new Thickness(0),
+            Child = _itemsPanel,
+        };
         _popup = new Popup
         {
             PlacementTarget = _button,
             Placement = PlacementMode.Bottom,
             IsLightDismissEnabled = true,
-            Child = new Border
-            {
-                MinWidth = 112,
-                Padding = new Thickness(4),
-                CornerRadius = new CornerRadius(8),
-                Background = new SolidColorBrush(Color.Parse("#F01A2433")),
-                BorderThickness = new Thickness(1),
-                BorderBrush = new SolidColorBrush(Color.Parse("#55708AA8")),
-                Child = _itemsPanel,
-            },
+            Child = _popupBorder,
         };
         Children.Add(_popup);
+        ActualThemeVariantChanged += (_, _) => ApplyThemeBrushes();
+        ApplyThemeBrushes();
         UpdateButtonContent();
     }
 
@@ -127,9 +131,9 @@ public sealed class EditorInstantComboBox : Grid
 
     private void SetPopupOpen(bool isOpen)
     {
-        if (isOpen && _popup.Child is Border border)
+        if (isOpen)
         {
-            border.Width = Math.Max(_button.Bounds.Width, 112);
+            _popupBorder.Width = Math.Max(_button.Bounds.Width, 112);
             _highlightedIndex = SelectedIndex();
         }
 
@@ -263,6 +267,7 @@ public sealed class EditorInstantComboBox : Grid
                 Background = isHighlighted
                     ? new SolidColorBrush(Color.Parse("#334B8DFF"))
                     : isSelected ? new SolidColorBrush(Color.Parse("#223388FF")) : Brushes.Transparent,
+                BorderThickness = new Thickness(0),
                 Cursor = new Cursor(StandardCursorType.Hand),
                 Focusable = false,
             };
@@ -274,5 +279,14 @@ public sealed class EditorInstantComboBox : Grid
     private void UpdateButtonContent()
     {
         _label.Text = _selectedItem?.Label ?? "";
+    }
+
+    private void ApplyThemeBrushes()
+    {
+        var isLight = ActualThemeVariant == ThemeVariant.Light;
+        var background = isLight ? "#14000000" : "#18FFFFFF";
+        var popupBackground = isLight ? "#F4F6FA" : "#F01A2433";
+        _button.Background = new SolidColorBrush(Color.Parse(background));
+        _popupBorder.Background = new SolidColorBrush(Color.Parse(popupBackground));
     }
 }
