@@ -168,15 +168,22 @@ internal static class DesignPreviewFrameResolver
         };
         if (reliefEnabled)
         {
-            var reliefLayers = ReliefLayers(bounds, cornerRadius, reliefBaseColorToken, reliefAngle, reliefExtent, reliefSpread, reliefTopIntensity, reliefBottomIntensity);
+            const double reliefFrameOutset = 1;
+            var reliefFrame = new DesignRect(
+                -reliefFrameOutset,
+                -reliefFrameOutset,
+                bounds.Width + reliefFrameOutset * 2,
+                bounds.Height + reliefFrameOutset * 2);
+            var reliefRadius = cornerRadius + reliefFrameOutset;
+            var reliefLayers = ReliefLayers(reliefFrame, reliefRadius, reliefBaseColorToken, reliefAngle, reliefExtent, reliefSpread, reliefTopIntensity, reliefBottomIntensity);
             if (reliefLayers.Count > 0)
             {
                 children.Add(new ResolvedDesignGroupNode
                 {
                     Id = "component.label.relief",
-                    Bounds = new DesignRect(0, 0, bounds.Width, bounds.Height),
-                    ClipRect = new DesignRect(0, 0, bounds.Width, bounds.Height),
-                    ClipRadius = cornerRadius,
+                    Bounds = reliefFrame,
+                    ClipRect = new DesignRect(0, 0, reliefFrame.Width, reliefFrame.Height),
+                    ClipRadius = reliefRadius,
                     Children = reliefLayers,
                 });
             }
@@ -644,8 +651,8 @@ internal static class DesignPreviewFrameResolver
                 bounds,
                 cornerRadius,
                 baseColorToken,
-                lightX * distance,
-                lightY * distance,
+                -lightX * distance,
+                -lightY * distance,
                 topIntensity * fade,
                 blurRadius));
             layers.Add(ReliefStroke(
@@ -653,8 +660,8 @@ internal static class DesignPreviewFrameResolver
                 bounds,
                 cornerRadius,
                 baseColorToken,
-                -lightX * distance,
-                -lightY * distance,
+                lightX * distance,
+                lightY * distance,
                 bottomIntensity * fade,
                 blurRadius));
         }

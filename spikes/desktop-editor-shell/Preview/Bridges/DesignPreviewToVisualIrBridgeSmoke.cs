@@ -94,7 +94,7 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
             && !Flatten(document.Root).OfType<VisualIrGroupNode>().Any((group) =>
                 group.Id == "component.label.relief"
                 && group.ClipRect is not null
-                && group.ClipRadius == 9))
+                && group.ClipRadius == 10))
         {
             throw new InvalidOperationException("Expected label component rounded relief clipping group.");
         }
