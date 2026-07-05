@@ -242,7 +242,6 @@ export function labelComponentToRenderable(
       surfaceRelief,
       paddingX: label.padding.x * scale,
       paddingY: label.padding.y * scale,
-      textGap: size.hasSubtext ? label.textGap * scale : 0,
       whiteSpace: "nowrap",
       colorModes: Object.fromEntries(
         variants(payload).map((mode) => [
@@ -292,6 +291,7 @@ export function labelComponentToRenderable(
                 textColor: selectedColor(payload, label.subtextColorToken),
                 fontSize: subtextFontSize,
                 lineHeight: size.subtextLineHeight,
+                marginTop: label.textGap * scale,
                 textAlign: "center",
                 fontStyle:
                   label.subtextStyle === "italic" ? "italic" : undefined,

@@ -1031,9 +1031,6 @@ function RenderNode({
   const currentOrigin = node.box
     ? { x: node.box.x, y: node.box.y }
     : parentOrigin;
-  const hasPositionlessChildren = node.children?.some(
-    (child) => child.box === undefined,
-  );
   const inlineCursorChildTypes = new Set([
     "text_input_bar_cursor",
     "message_text_cursor",
@@ -1415,7 +1412,6 @@ function RenderNode({
               alignItems: "center",
               justifyContent: "center",
               flexDirection: node.type === "component_label" ? "column" : undefined,
-              gap: numberValue(node.style?.textGap),
               paddingLeft: numberValue(node.style?.paddingX),
               paddingRight: numberValue(node.style?.paddingX),
               paddingTop: numberValue(node.style?.paddingY),
@@ -1428,6 +1424,10 @@ function RenderNode({
           ? {
               display: "block",
               width: "100%",
+              marginTop:
+                node.type === "component_label_subtext"
+                  ? numberValue(node.style?.marginTop)
+                  : undefined,
               whiteSpace: "nowrap",
               overflow: "hidden",
               textAlign: "center",
@@ -1480,7 +1480,6 @@ function RenderNode({
       style={{
         ...nodeStyle(node, parentOrigin),
         ...semanticStyle,
-        ...(hasPositionlessChildren ? { gap: 20 } : {}),
         ...(showBounds
           ? {
               outline: "1px solid rgba(255, 0, 255, 0.72)",
