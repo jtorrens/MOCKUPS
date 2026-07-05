@@ -464,6 +464,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             bodyContent = await WebDesignPreviewRenderer.RenderBodyAsync(
                 metrics,
                 themeMode,
+                showDesignMarks,
                 payload);
         }
         catch (Exception error)

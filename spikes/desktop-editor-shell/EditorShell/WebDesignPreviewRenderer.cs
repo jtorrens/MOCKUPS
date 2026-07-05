@@ -13,6 +13,7 @@ internal static class WebDesignPreviewRenderer
     public static async Task<string> RenderBodyAsync(
         SpikeDatabase.DevicePreviewMetrics metrics,
         string themeMode,
+        bool showMarks,
         DesignPreviewPayload payload)
     {
         var root = FindRepositoryRoot();
@@ -25,6 +26,7 @@ internal static class WebDesignPreviewRenderer
                 componentType = payload.ComponentType,
                 configJson = payload.ConfigJson,
                 designPreviewJson = payload.DesignPreviewJson,
+                showMarks,
                 themeMode = themeMode is "dark" ? "dark" : "light",
                 themeTokensJson = payload.ThemeTokensJson,
                 paletteColors = payload.PaletteColors,

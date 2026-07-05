@@ -34,6 +34,7 @@ interface DesignPreviewPayload {
   iconMappingJson?: string;
   paletteColors?: Record<string, string>;
   projectMediaRoot?: string;
+  showMarks?: boolean;
   themeMode: "light" | "dark";
   themeTokensJson: string;
 }
@@ -854,7 +855,10 @@ async function main() {
   ) as DesignPreviewPayload;
   const renderable = renderableForPayload(payload);
   const markup = renderToStaticMarkup(
-    React.createElement(RenderableReactAdapter, { tree: renderable }),
+    React.createElement(RenderableReactAdapter, {
+      tree: renderable,
+      showBounds: payload.showMarks === true,
+    }),
   );
   process.stdout.write(markup);
 }

@@ -6,6 +6,7 @@ import type {
 
 export interface RenderableReactAdapterProps {
   tree: RenderableNode;
+  showBounds?: boolean;
 }
 
 function cssString(value: unknown): string {
@@ -1021,9 +1022,11 @@ function nodeContent(node: RenderableNode): ReactNode {
 function RenderNode({
   node,
   parentOrigin,
+  showBounds = false,
 }: {
   node: RenderableNode;
   parentOrigin: { x: number; y: number };
+  showBounds?: boolean;
 }) {
   const currentOrigin = node.box
     ? { x: node.box.x, y: node.box.y }
@@ -1457,11 +1460,22 @@ function RenderNode({
         ...nodeStyle(node, parentOrigin),
         ...semanticStyle,
         ...(hasPositionlessChildren ? { gap: 20 } : {}),
+        ...(showBounds
+          ? {
+              outline: "1px solid rgba(255, 0, 255, 0.72)",
+              outlineOffset: "-1px",
+            }
+          : {}),
       }}
     >
       {nodeContent(node)}
       {renderChildren?.map((child) => (
-        <RenderNode key={child.id} node={child} parentOrigin={currentOrigin} />
+        <RenderNode
+          key={child.id}
+          node={child}
+          parentOrigin={currentOrigin}
+          showBounds={showBounds}
+        />
       ))}
     </div>
   );
@@ -1469,12 +1483,17 @@ function RenderNode({
 
 export const RenderableReactAdapter = ({
   tree,
+  showBounds = false,
 }: RenderableReactAdapterProps) => {
   const css = fontFaceCss(tree);
   return (
     <>
       {css ? <style>{css}</style> : null}
-      <RenderNode node={tree} parentOrigin={{ x: 0, y: 0 }} />
+      <RenderNode
+        node={tree}
+        parentOrigin={{ x: 0, y: 0 }}
+        showBounds={showBounds}
+      />
     </>
   );
 };
