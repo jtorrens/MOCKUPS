@@ -28,7 +28,7 @@ internal static class DesignPreviewToVisualIrBridgeSmoke
         VisualIrValidator.ThrowIfInvalid(document);
         if (!Flatten(document.Root).Any((node) => node.Id == "unsupported.statusBar"))
         {
-            throw new InvalidOperationException("Expected migrated system bars to be unsupported by the legacy Visual IR bridge.");
+            throw new InvalidOperationException("Expected migrated system bars to be unsupported by the Visual IR bridge.");
         }
     }
 

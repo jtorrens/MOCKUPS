@@ -79,7 +79,7 @@ internal static class DesignPreviewFrameResolver
                 {
                     Id = $"unsupported.{payload.Kind}.label",
                     Bounds = new DesignRect(24, 24, Math.Max(1, metrics.ScreenWidth - 48), 32),
-                    Text = $"Unsupported legacy design payload: {payload.Kind}",
+                    Text = $"Unsupported migrated design payload: {payload.Kind}",
                     Style = new ResolvedDesignTextStyle
                     {
                         Fill = new ResolvedDesignSolidPaint(new ResolvedDesignColorRef(

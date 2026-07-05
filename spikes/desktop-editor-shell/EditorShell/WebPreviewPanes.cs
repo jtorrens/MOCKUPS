@@ -234,10 +234,7 @@ internal abstract class WebPreviewPane : Grid
                   </div>
                   {{DesignMarksHtml(showDesignMarks)}}
                   <div aria-hidden="true" class="preview-phone-frame" id="previewPhoneFrame"></div>
-                  <div class="preview-meta">
-                    <strong>{{Html(previewMode)}}</strong>
-                    <span> · {{Html(metrics.Name)}} · {{Html(themeName)}} · {{Html(themeMode)}}</span>
-                  </div>
+                  {{PreviewMetaHtml(showDesignMarks, previewMode, metrics.Name, themeName, themeMode)}}
                 </section>
               </main>
               <script>
@@ -389,6 +386,23 @@ internal abstract class WebPreviewPane : Grid
                     <div class="preview-guide is-horizontal is-dashed" style="top:25%"></div>
                     <div class="preview-guide is-horizontal" style="top:50%"></div>
                     <div class="preview-guide is-horizontal is-dashed" style="top:75%"></div>
+                  </div>
+              """;
+    }
+
+    private static string PreviewMetaHtml(
+        bool showDesignMarks,
+        string previewMode,
+        string deviceName,
+        string themeName,
+        string themeMode)
+    {
+        return !showDesignMarks
+            ? ""
+            : $$"""
+                  <div class="preview-meta">
+                    <strong>{{Html(previewMode)}}</strong>
+                    <span> · {{Html(deviceName)}} · {{Html(themeName)}} · {{Html(themeMode)}}</span>
                   </div>
               """;
     }
