@@ -116,7 +116,7 @@ internal static class DesignPreviewFrameResolver
         var backgroundVisible = JsonPath.Bool(label, "backgroundVisible", true);
         var text = JsonPath.String(preview, "sampleText", "Sample");
         var textSizeToken = JsonPath.String(label, "textSizeToken", "");
-        var textSize = RequiredThemeNumber(payload.ThemeTokensJson, textSizeToken, "component.label.textSizeToken");
+        var textSize = RuntimeValueGuard.RequiredThemeNumber(payload.ThemeTokensJson, textSizeToken, "component.label.textSizeToken");
         var textStyle = JsonPath.String(label, "textStyle", "normal");
         var dimensionMode = JsonPath.String(label, "dimensionMode", "content");
         var contentSize = LabelContentSize(text, textSize, padding);
@@ -124,12 +124,12 @@ internal static class DesignPreviewFrameResolver
         var height = dimensionMode == "fixed" ? size.Height : contentSize.Height;
         var bounds = Centered(metrics, width, height);
         var borderWidth = JsonPath.Number(style, "borderWidth", 0);
-        var cornerRadiusToken = RequiredString(style, "cornerRadiusToken", "component.style.cornerRadiusToken");
-        var cornerRadius = RequiredThemeNumber(payload.ThemeTokensJson, cornerRadiusToken, "component.style.cornerRadiusToken");
-        var borderColorToken = RequiredString(style, "borderColorToken", "component.style.borderColorToken");
+        var cornerRadiusToken = RuntimeValueGuard.RequiredString(style, "cornerRadiusToken", "component.style.cornerRadiusToken");
+        var cornerRadius = RuntimeValueGuard.RequiredThemeNumber(payload.ThemeTokensJson, cornerRadiusToken, "component.style.cornerRadiusToken");
+        var borderColorToken = RuntimeValueGuard.RequiredString(style, "borderColorToken", "component.style.borderColorToken");
         var shadowEnabled = JsonPath.Bool(style, "shadowEnabled", false);
-        var backgroundColorToken = RequiredString(label, "backgroundColorToken", "component.label.backgroundColorToken");
-        var textColorToken = RequiredString(label, "textColorToken", "component.label.textColorToken");
+        var backgroundColorToken = RuntimeValueGuard.RequiredString(label, "backgroundColorToken", "component.label.backgroundColorToken");
+        var textColorToken = RuntimeValueGuard.RequiredString(label, "textColorToken", "component.label.textColorToken");
 
         return new ResolvedDesignGroupNode
         {
@@ -564,34 +564,6 @@ internal static class DesignPreviewFrameResolver
         return new DesignSize(
             Math.Max(1, measuredWidth + padding.Width * 2),
             Math.Max(1, measuredHeight + padding.Height * 2));
-    }
-
-    private static double RequiredThemeNumber(string themeTokensJson, string tokenId, string fieldId)
-    {
-        if (string.IsNullOrWhiteSpace(tokenId) || !ThemeNumericTokenCatalog.TryGet(tokenId, out var token))
-        {
-            throw new InvalidOperationException($"Missing numeric theme token for {fieldId}.");
-        }
-
-        var tokens = JsonPath.ParseObject(themeTokensJson);
-        var node = JsonPath.Get(tokens, token.Path);
-        if (node is null)
-        {
-            throw new InvalidOperationException($"Theme token '{tokenId}' is not defined.");
-        }
-
-        return JsonPath.NumberAt(tokens, token.Path, 0);
-    }
-
-    private static string RequiredString(JsonObject root, string key, string fieldId)
-    {
-        var value = JsonPath.String(root, key, "");
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            throw new InvalidOperationException($"Missing required value for {fieldId}.");
-        }
-
-        return value;
     }
 
     private static IReadOnlyDictionary<string, string> ComponentStyleMetadata(

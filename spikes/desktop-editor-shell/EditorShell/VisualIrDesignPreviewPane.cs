@@ -18,7 +18,7 @@ internal sealed class VisualIrDesignPreviewPane : Grid
 {
     private readonly IVisualIrRenderer _renderer = new AvaloniaVisualIrDebugRenderer();
 
-    public void Update(
+    public string? Update(
         SpikeDatabase.DevicePreviewMetrics metrics,
         bool isDark,
         string themeName,
@@ -37,7 +37,7 @@ internal sealed class VisualIrDesignPreviewPane : Grid
             Children.Add(Placeholder(
                 "Visual IR debug preview",
                 "Select a status bar or navigation bar to inspect the bridge output."));
-            return;
+            return null;
         }
 
         try
@@ -62,12 +62,15 @@ internal sealed class VisualIrDesignPreviewPane : Grid
                 colorVariant,
                 document,
                 payload));
+            return null;
         }
         catch (System.Exception exception)
         {
+            var message = $"IR error · {payload.Name} · {payload.Kind} · {exception.GetType().Name}: {exception.Message}";
             Children.Add(Placeholder(
                 $"{payload.Name} · {payload.Kind}",
-                $"Visual IR bridge failed: {exception.Message}"));
+                message));
+            return message;
         }
     }
 

@@ -34,6 +34,7 @@ public partial class MainWindow : SukiWindow
     private readonly ActorAvatarPreviewController _actorAvatarPreviews;
     private readonly EditorCollectionCardFactory _collectionCards;
     private readonly EditorPreviewController _previewController;
+    private readonly IEditorShellMessageSink _messages;
     private readonly EditorShellStateService _shellState;
     private readonly EditorNavigationRenderer _navigationRenderer;
     private readonly EditorFieldPostCommitEffects _fieldPostCommitEffects;
@@ -56,6 +57,7 @@ public partial class MainWindow : SukiWindow
         _recordClassFieldValues = new RecordClassFieldValueService(_database);
         _componentClassFieldValues = new ComponentClassFieldValueService(_database);
         _actorAvatarPreviews = new ActorAvatarPreviewController(_database, () => _isDark);
+        _messages = new EditorShellMessageSink(ShellMessagesTextBox);
         _previewController = new EditorPreviewController(
             _database,
             PreviewDeviceComboBox,
@@ -63,6 +65,7 @@ public partial class MainWindow : SukiWindow
             PreviewModeComboBox,
             PreviewScaleComboBox,
             PreviewMarksToggle,
+            _messages,
             RuntimePreviewHost,
             DesignPreviewHost,
             VisualIrPreviewHost,
@@ -155,6 +158,14 @@ public partial class MainWindow : SukiWindow
         IrDiagnosticsLabel.Foreground = result.Success
             ? new SolidColorBrush(Color.Parse("#4ADE80"))
             : new SolidColorBrush(Color.Parse("#F87171"));
+        if (result.Success)
+        {
+            _messages.Info("IR diagnostics", result.Message);
+        }
+        else
+        {
+            _messages.Error("IR diagnostics", result.Message);
+        }
     }
 
     private void ApplyTheme()
@@ -367,15 +378,22 @@ public partial class MainWindow : SukiWindow
                 _activeFieldControls.Register(control);
                 control.ValueCommitted += (_, value) =>
                 {
-                    _fieldCommitCoordinator.Commit(
-                        control,
-                        value,
-                        (draftValue) => _fieldValues.ToStorageValue(node, field.Definition.Id, draftValue),
-                        () => _fieldValues.CurrentStoredValue(node, field.Definition.Id),
-                        (storedValue) => _fieldValues.Commit(node, field.Definition.Id, storedValue));
-                    _actorAvatarPreviews.Refresh(node, _activeFieldControls.ControlsByFieldId);
-                    _activeFieldControls.RefreshPreviews();
-                    RefreshPreviewDevice();
+                    try
+                    {
+                        _fieldCommitCoordinator.Commit(
+                            control,
+                            value,
+                            (draftValue) => _fieldValues.ToStorageValue(node, field.Definition.Id, draftValue),
+                            () => _fieldValues.CurrentStoredValue(node, field.Definition.Id),
+                            (storedValue) => _fieldValues.Commit(node, field.Definition.Id, storedValue));
+                        _actorAvatarPreviews.Refresh(node, _activeFieldControls.ControlsByFieldId);
+                        _activeFieldControls.RefreshPreviews();
+                        RefreshPreviewDevice();
+                    }
+                    catch (Exception exception)
+                    {
+                        _messages.Error($"Editor field {field.Definition.Id}", exception);
+                    }
                 };
                 groupPanel.Children.Add(control);
             }

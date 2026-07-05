@@ -6,7 +6,7 @@
                  xmlns:suki="clr-namespace:SukiUI.Controls;assembly=SukiUI"
                  mc:Ignorable="d" d:DesignWidth="1440" d:DesignHeight="900"
                  x:Class="Mockups.DesktopEditorShell.MainWindow"
-                 Title="Mockups Desktop Editor Shell · codex/editor-modernization-rules · v0.139.0"
+                 Title="Mockups Desktop Editor Shell · codex/editor-modernization-rules · v0.140.0"
                  Width="1440"
                  Height="900"
                  MinWidth="1040"
@@ -20,7 +20,7 @@
                 Padding="18,12">
             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
                 <StackPanel>
-                    <TextBlock FontSize="11" FontWeight="SemiBold" Text="SPIKE / DESKTOP EDITOR SHELL · codex/editor-modernization-rules · v0.139.0" />
+                    <TextBlock FontSize="11" FontWeight="SemiBold" Text="SPIKE / DESKTOP EDITOR SHELL · codex/editor-modernization-rules · v0.140.0" />
                     <TextBlock FontSize="17" FontWeight="Bold" Text="Three resizable panels · shared light/dark palette" />
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
@@ -107,7 +107,7 @@
                         </StackPanel>
                     </Border>
                     <Grid Margin="22"
-                          RowDefinitions="Auto,*"
+                          RowDefinitions="Auto,Auto,*"
                           RowSpacing="14">
                         <Border Grid.Row="0"
                                 Padding="12"
@@ -164,7 +164,22 @@
                                 </StackPanel>
                             </Grid>
                         </Border>
-                        <TabControl Grid.Row="1">
+                        <Border Grid.Row="1"
+                                Padding="10,6"
+                                CornerRadius="8"
+                                Background="#14000000">
+                            <TextBox x:Name="ShellMessagesTextBox"
+                                     MinHeight="30"
+                                     MaxHeight="96"
+                                     AcceptsReturn="True"
+                                     IsReadOnly="True"
+                                     TextWrapping="Wrap"
+                                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                     BorderThickness="0"
+                                     Background="Transparent"
+                                     Text="No messages" />
+                        </Border>
+                        <TabControl Grid.Row="2">
                             <TabItem Header="Preview">
                                 <Border Padding="12"
                                         CornerRadius="12"

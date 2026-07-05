@@ -14,6 +14,7 @@ internal sealed class EditorPreviewController
     private readonly EditorInstantComboBox _modeComboBox;
     private readonly EditorInstantComboBox _scaleComboBox;
     private readonly ToggleSwitch _marksToggle;
+    private readonly IEditorShellMessageSink _messages;
     private readonly Func<bool> _isDark;
     private readonly Func<ProjectTreeNode?> _selectedNode;
     private readonly RuntimeWebPreviewPane _runtimePreviewPane = new();
@@ -34,6 +35,7 @@ internal sealed class EditorPreviewController
         EditorInstantComboBox modeComboBox,
         EditorInstantComboBox scaleComboBox,
         ToggleSwitch marksToggle,
+        IEditorShellMessageSink messages,
         ContentControl runtimePreviewHost,
         ContentControl designPreviewHost,
         ContentControl visualIrPreviewHost,
@@ -46,6 +48,7 @@ internal sealed class EditorPreviewController
         _modeComboBox = modeComboBox;
         _scaleComboBox = scaleComboBox;
         _marksToggle = marksToggle;
+        _messages = messages;
         _isDark = isDark;
         _selectedNode = selectedNode;
 
@@ -170,28 +173,47 @@ internal sealed class EditorPreviewController
 
     public void Refresh()
     {
-        EnsureSelectedOptionsExist();
-        if (string.IsNullOrWhiteSpace(SelectedDeviceId)) return;
+        try
+        {
+            EnsureSelectedOptionsExist();
+            if (string.IsNullOrWhiteSpace(SelectedDeviceId))
+            {
+                _messages.Warning("Preview", "No device selected.");
+                return;
+            }
 
-        var metrics = _database.GetDevicePreviewMetrics(SelectedDeviceId);
-        var themeName = _themeComboBox.SelectedItem?.Label ?? "No theme";
-        _runtimePreviewPane.Update(metrics, _isDark(), themeName, _selectedMode, _selectedScale);
-        var designPayload = DesignPreviewPayloadForSelection();
-        _designPreviewPane.Update(
-            metrics,
-            _isDark(),
-            themeName,
-            _selectedMode,
-            _selectedScale,
-            designPayload);
-        _visualIrPreviewPane.Update(
-            metrics,
-            _isDark(),
-            themeName,
-            _selectedMode,
-            _selectedScale,
-            _showDesignMarks,
-            designPayload);
+            var metrics = _database.GetDevicePreviewMetrics(SelectedDeviceId);
+            var themeName = _themeComboBox.SelectedItem?.Label ?? "No theme";
+            _runtimePreviewPane.Update(metrics, _isDark(), themeName, _selectedMode, _selectedScale);
+            var designPayload = DesignPreviewPayloadForSelection();
+            _designPreviewPane.Update(
+                metrics,
+                _isDark(),
+                themeName,
+                _selectedMode,
+                _selectedScale,
+                designPayload);
+            var irMessage = _visualIrPreviewPane.Update(
+                metrics,
+                _isDark(),
+                themeName,
+                _selectedMode,
+                _selectedScale,
+                _showDesignMarks,
+                designPayload);
+            if (string.IsNullOrWhiteSpace(irMessage))
+            {
+                _messages.Clear();
+            }
+            else
+            {
+                _messages.Error("IR", irMessage);
+            }
+        }
+        catch (Exception exception)
+        {
+            _messages.Error("Preview", exception);
+        }
     }
 
     private DesignPreviewPayload? DesignPreviewPayloadForSelection()

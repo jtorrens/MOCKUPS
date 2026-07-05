@@ -65,3 +65,6 @@ When adding a new component/editor path:
 4. Use `debug_red` or unsupported placeholders only for defensive rendering.
 5. Do not pass plausible colors, sizes, radius, spacing, labels or layout values
    as runtime fallbacks.
+6. If a temporary fallback is explicitly approved, it must go through
+   `RuntimeValueGuard.UseFallback` so the shell can surface a warning instead of
+   hiding the decision in a field-specific branch.
