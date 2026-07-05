@@ -841,7 +841,7 @@ function nodeContent(node: RenderableNode): ReactNode {
           height: "100%",
           borderRadius: avatarRadius,
           overflow: "visible",
-          filter: avatarShadow ? `drop-shadow(${avatarShadow})` : undefined,
+          boxShadow: avatarShadow,
         }}
         title={node.asset?.uri}
       >
