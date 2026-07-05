@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Collections.Generic;
@@ -138,14 +139,7 @@ internal sealed class ActorAvatarPreviewFactory
 
     private static IBrush SafeColorBrush(string? hex, string fallback)
     {
-        try
-        {
-            return new SolidColorBrush(Color.Parse(string.IsNullOrWhiteSpace(hex) ? fallback : hex));
-        }
-        catch (FormatException)
-        {
-            return new SolidColorBrush(Color.Parse(fallback));
-        }
+        return ColorValue.SafeBrush(hex, fallback);
     }
 
     private static string Initials(string shortName, string displayName)

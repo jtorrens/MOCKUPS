@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Styling;
+using Mockups.DesktopEditorShell.Common;
 using SukiUI.Controls;
 using System;
 using System.Threading.Tasks;
@@ -148,29 +149,11 @@ internal static class HexColorPickerDialog
 
     private static string ColorToHex(Color color)
     {
-        return $"#{color.R:X2}{color.G:X2}{color.B:X2}";
+        return ColorValue.ToHex(color);
     }
 
     private static Color ParseColor(string value)
     {
-        try
-        {
-            return Color.Parse(string.IsNullOrWhiteSpace(value) ? "#808080" : NormalizeHex(value));
-        }
-        catch (FormatException)
-        {
-            return Color.Parse("#808080");
-        }
-    }
-
-    private static string NormalizeHex(string value)
-    {
-        var trimmed = value.Trim();
-        if (trimmed.Length == 6 && !trimmed.StartsWith("#", StringComparison.Ordinal))
-        {
-            trimmed = $"#{trimmed}";
-        }
-
-        return trimmed;
+        return ColorValue.Parse(value);
     }
 }

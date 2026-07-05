@@ -7,7 +7,6 @@ using Mockups.DesktopEditorShell.VisualIr;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace Mockups.DesktopEditorShell.Preview.Bridges;
 
@@ -178,7 +177,7 @@ internal static class DesignPreviewToVisualIrBridge
         var color = IsVisualIrColor(resolved)
             ? resolved
             : IsVisualIrColor(resolvedFallback) ? resolvedFallback : "#ff00ff";
-        return alphaPath is null ? color : WithAlpha(color, JsonPath.NumberAt(tokens, alphaPath, 1));
+        return alphaPath is null ? color : ColorValue.WithAlpha(color, JsonPath.NumberAt(tokens, alphaPath, 1));
     }
 
     private static string ResolveColorValue(DesignPreviewPayload payload, string value)
@@ -199,19 +198,7 @@ internal static class DesignPreviewToVisualIrBridge
 
     private static bool IsVisualIrColor(string value)
     {
-        return Regex.IsMatch(value, "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$");
-    }
-
-    private static string WithAlpha(string color, double alpha)
-    {
-        if (!Regex.IsMatch(color, "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"))
-        {
-            return color;
-        }
-
-        var rgb = color.Length == 9 ? color[..7] : color;
-        var alphaByte = (int)Math.Round(Math.Clamp(alpha, 0, 1) * 255);
-        return $"{rgb}{alphaByte:X2}";
+        return ColorValue.IsHexColor(value);
     }
 
 }

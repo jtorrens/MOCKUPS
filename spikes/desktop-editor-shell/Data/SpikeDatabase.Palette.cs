@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Collections.Generic;
@@ -174,13 +175,7 @@ internal sealed partial class SpikeDatabase
 
     private static string NormalizeHex(string value)
     {
-        var trimmed = value.Trim();
-        if (trimmed.Length == 6 && !trimmed.StartsWith("#", StringComparison.Ordinal))
-        {
-            trimmed = $"#{trimmed}";
-        }
-
-        return trimmed;
+        return ColorValue.NormalizeHex(value);
     }
 
     private static readonly PaletteSeedRow[] PaletteSeedRows =

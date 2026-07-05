@@ -280,7 +280,7 @@ internal sealed class AvaloniaVisualIrDebugRenderer : IVisualIrRenderer
         {
             null => null,
             VisualIrNonePaint => null,
-            VisualIrSolidPaint solid => new SolidColorBrush(ParseIrColor(ResolveColor(solid.Color, document, options))),
+            VisualIrSolidPaint solid => new SolidColorBrush(ColorValue.ParseIrHex(ResolveColor(solid.Color, document, options))),
             VisualIrLinearGradientPaint gradient => LinearGradientBrush(gradient, document, options),
             VisualIrRadialGradientPaint gradient => RadialGradientBrush(gradient, document, options),
             _ => null,
@@ -396,7 +396,7 @@ internal sealed class AvaloniaVisualIrDebugRenderer : IVisualIrRenderer
         };
         foreach (var stop in gradient.Stops)
         {
-            brush.GradientStops.Add(new GradientStop(ParseIrColor(ResolveColor(stop.Color, document, options)), stop.Offset));
+            brush.GradientStops.Add(new GradientStop(ColorValue.ParseIrHex(ResolveColor(stop.Color, document, options)), stop.Offset));
         }
 
         return brush;
@@ -413,7 +413,7 @@ internal sealed class AvaloniaVisualIrDebugRenderer : IVisualIrRenderer
         };
         foreach (var stop in gradient.Stops)
         {
-            brush.GradientStops.Add(new GradientStop(ParseIrColor(ResolveColor(stop.Color, document, options)), stop.Offset));
+            brush.GradientStops.Add(new GradientStop(ColorValue.ParseIrHex(ResolveColor(stop.Color, document, options)), stop.Offset));
         }
 
         return brush;
@@ -445,32 +445,9 @@ internal sealed class AvaloniaVisualIrDebugRenderer : IVisualIrRenderer
         return string.IsNullOrWhiteSpace(variantColor.Fallback) ? "#ff00ff" : variantColor.Fallback;
     }
 
-    private static Color ParseIrColor(string value)
-    {
-        var normalized = string.IsNullOrWhiteSpace(value) ? "#ff00ff" : value.Trim();
-        if (normalized.Length == 9
-            && normalized[0] == '#'
-            && byte.TryParse(normalized.AsSpan(1, 2), System.Globalization.NumberStyles.HexNumber, null, out var red)
-            && byte.TryParse(normalized.AsSpan(3, 2), System.Globalization.NumberStyles.HexNumber, null, out var green)
-            && byte.TryParse(normalized.AsSpan(5, 2), System.Globalization.NumberStyles.HexNumber, null, out var blue)
-            && byte.TryParse(normalized.AsSpan(7, 2), System.Globalization.NumberStyles.HexNumber, null, out var alpha))
-        {
-            return Color.FromArgb(alpha, red, green, blue);
-        }
-
-        return Color.Parse(normalized);
-    }
-
     private static string CssColor(string value)
     {
-        var color = ParseIrColor(value);
-        if (color.A == 255)
-        {
-            return $"#{color.R:X2}{color.G:X2}{color.B:X2}";
-        }
-
-        var alpha = (color.A / 255d).ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
-        return $"rgba({color.R}, {color.G}, {color.B}, {alpha})";
+        return ColorValue.CssColor(value);
     }
 
     private static FontWeight FontWeightFrom(int? weight)

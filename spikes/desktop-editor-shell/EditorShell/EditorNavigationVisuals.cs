@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Mockups.DesktopEditorShell.Common;
 using System;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -86,13 +87,6 @@ internal static class EditorNavigationVisuals
 
     public static IBrush SafeColorBrush(string? hex, string fallback)
     {
-        try
-        {
-            return new SolidColorBrush(Color.Parse(string.IsNullOrWhiteSpace(hex) ? fallback : hex));
-        }
-        catch (FormatException)
-        {
-            return new SolidColorBrush(Color.Parse(fallback));
-        }
+        return ColorValue.SafeBrush(hex, fallback);
     }
 }

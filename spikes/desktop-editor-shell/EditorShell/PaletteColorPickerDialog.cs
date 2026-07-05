@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Mockups.DesktopEditorShell.Common;
 using SukiUI.Controls;
 using System;
 using System.Collections.Generic;
@@ -244,9 +245,7 @@ internal static class PaletteColorPickerDialog
 
     private static IBrush ContrastBrush(string? hex)
     {
-        var color = DictionaryFieldColorValue.Parse(hex ?? "#808080");
-        var luminance = (0.299 * color.R + 0.587 * color.G + 0.114 * color.B) / 255;
-        return new SolidColorBrush(luminance > 0.58 ? Color.Parse("#111827") : Color.Parse("#FFFFFF"));
+        return ColorValue.ContrastBrush(hex);
     }
 
     private static ColumnDefinitions PaletteColumns()

@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using SukiUI.Controls;
 using System;
@@ -292,13 +293,6 @@ internal sealed class ThemeTokenPickerDialog
 
     private static IBrush SafeBrush(string? hex)
     {
-        try
-        {
-            return new SolidColorBrush(Color.Parse(string.IsNullOrWhiteSpace(hex) ? "#808080" : hex));
-        }
-        catch
-        {
-            return new SolidColorBrush(Color.Parse("#808080"));
-        }
+        return ColorValue.SafeBrush(hex, "#808080");
     }
 }
