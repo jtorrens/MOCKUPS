@@ -247,7 +247,7 @@ internal sealed partial class SpikeDatabase
         var rows = QueryIconThemeRows(connection).Where((row) => row.ProjectId == projectId).ToList();
         var tokensBySet = rows.ToDictionary(
             (row) => row.Id,
-            (row) => SvgTokenSet(Path.Combine(mediaRoot, row.AssetRoot)));
+            (row) => IconTokenRules.SvgTokenSet(Path.Combine(mediaRoot, row.AssetRoot)));
         var commonTokens = tokensBySet.Values.FirstOrDefault()?.ToHashSet(StringComparer.OrdinalIgnoreCase) ?? [];
         foreach (var setTokens in tokensBySet.Values.Skip(1))
         {
@@ -305,87 +305,20 @@ internal sealed partial class SpikeDatabase
         return (row, file);
     }
 
-    private static HashSet<string> SvgTokenSet(string directory)
-    {
-        if (!Directory.Exists(directory)) return [];
-        return Directory
-            .EnumerateFiles(directory, "*.svg", SearchOption.TopDirectoryOnly)
-            .Select((file) => Path.GetFileNameWithoutExtension(file))
-            .Where((token) => !string.IsNullOrWhiteSpace(token))
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-    }
-
     private static JsonObject BuildIconThemeMapping(string currentMappingJson, HashSet<string> commonTokens)
     {
-        var current = ParseJsonObject(string.IsNullOrWhiteSpace(currentMappingJson) ? "{}" : currentMappingJson);
-        var currentTokens = current["tokens"] as JsonObject ?? [];
-        var nextTokens = new JsonObject();
-        var categories = new SortedDictionary<string, JsonArray>(StringComparer.OrdinalIgnoreCase);
-        foreach (var token in commonTokens.OrderBy((token) => token, StringComparer.OrdinalIgnoreCase))
-        {
-            var existing = currentTokens[token] as JsonObject ?? [];
-            var category = JsonString(existing, ["category"]);
-            if (string.IsNullOrWhiteSpace(category)) category = IconTokenCategory(token);
-            nextTokens[token] = new JsonObject
-            {
-                ["category"] = category,
-                ["file"] = $"{token}.svg",
-                ["description"] = JsonString(existing, ["description"]),
-            };
-            if (!categories.TryGetValue(category, out var categoryTokens))
-            {
-                categoryTokens = [];
-                categories[category] = categoryTokens;
-            }
-
-            categoryTokens.Add(token);
-        }
-
-        return new JsonObject
-        {
-            ["schemaVersion"] = 1,
-            ["tokens"] = nextTokens,
-            ["categories"] = new JsonObject(categories.Select((pair) => KeyValuePair.Create<string, JsonNode?>(pair.Key, pair.Value))),
-        };
+        return IconTokenRules.BuildMapping(currentMappingJson, commonTokens);
     }
 
     private static JsonObject IconThemeCategories(JsonObject tokens)
     {
-        var categories = new SortedDictionary<string, JsonArray>(StringComparer.OrdinalIgnoreCase);
-        foreach (var pair in tokens.OrderBy((pair) => pair.Key, StringComparer.OrdinalIgnoreCase))
-        {
-            var tokenObject = pair.Value as JsonObject ?? [];
-            var category = JsonString(tokenObject, ["category"]);
-            if (string.IsNullOrWhiteSpace(category)) category = IconTokenCategory(pair.Key);
-            if (!categories.TryGetValue(category, out var categoryTokens))
-            {
-                categoryTokens = [];
-                categories[category] = categoryTokens;
-            }
-
-            categoryTokens.Add(pair.Key);
-        }
-
-        return new JsonObject(categories.Select((pair) => KeyValuePair.Create<string, JsonNode?>(pair.Key, pair.Value)));
+        return IconTokenRules.Categories(tokens);
     }
 
     private static IReadOnlyList<IconThemeToken> IconThemeTokens(string mappingJson)
     {
-        var mapping = ParseJsonObject(string.IsNullOrWhiteSpace(mappingJson) ? "{}" : mappingJson);
-        var tokens = mapping["tokens"] as JsonObject;
-        if (tokens is null) return [];
-
-        return tokens
-            .OrderBy((pair) => pair.Key, StringComparer.OrdinalIgnoreCase)
-            .Select((pair) =>
-            {
-                var tokenObject = pair.Value as JsonObject ?? [];
-                return new IconThemeToken(
-                    pair.Key,
-                    JsonString(tokenObject, ["category"]),
-                    JsonString(tokenObject, ["file"]),
-                    JsonString(tokenObject, ["description"]));
-            })
+        return IconTokenRules.Tokens(mappingJson)
+            .Select((token) => new IconThemeToken(token.Token, token.Category, token.File, token.Description))
             .ToList();
     }
 
