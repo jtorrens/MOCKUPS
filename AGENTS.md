@@ -31,6 +31,12 @@ It must not contain:
 
 If an editor needs special behavior, put it in that editor's own class. If the behavior can be reused, extract it to a shared editor-shell class. `MainWindow` should only instantiate or delegate.
 
+## Hard rule: check common before adding helpers
+
+Before creating any routine that could be generic, check `spikes/desktop-editor-shell/Common` and the base-routines audit for an existing equivalent.
+
+If an analogous helper already exists, reuse or extend it there. If the new behavior is reusable by more than one editor, resolver, bridge, renderer, importer, or repository, put it in common/shared code first instead of adding a local private helper.
+
 ## Hard rule: editable fields go through the dictionary
 
 Every editable scalar field must be defined by `FieldDefinition` and rendered through the dictionary/control path.

@@ -25,6 +25,8 @@ The editor shell should organize and delegate. It should not know individual fie
 
 Generic routines must be extracted before they spread. Shared algorithms belong in common/editor-shell services, not inside whichever editor, bridge, renderer, importer, or repository first needed them.
 
+Before adding a private helper for parsing, normalization, paths, colors, numeric conversion, SVG processing, token mapping, metrics, or other cross-cutting behavior, check `spikes/desktop-editor-shell/Common` and `docs/architecture/21_desktop_editor_base_routines_audit.md`. If an analogous routine exists, reuse or extend it in common rather than creating another local variant.
+
 ## Phase 1: make rules explicit
 
 Keep the operational rules in:

@@ -19,6 +19,7 @@ Two rules override local convenience:
 1. `MainWindow` is shell-only. It must not accumulate editor-specific logic.
 2. Editable fields go through `FieldDefinition` and dictionary controls. If the dictionary cannot express the field yet, extend the dictionary first.
 3. Generic routines live in common/shared code. If an algorithm can be reused by more than one editor, resolver, bridge, renderer, importer, or repository, extract it before using it.
+4. Before creating any helper that could be generic, check `spikes/desktop-editor-shell/Common` and the base-routines audit for an existing equivalent. Reuse or extend common first.
 
 If a requested change appears to require breaking any of these rules, stop and clarify the architecture before implementing.
 

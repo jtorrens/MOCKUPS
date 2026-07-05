@@ -4,7 +4,6 @@ using Mockups.DesktopEditorShell.EditorShell;
 using Mockups.DesktopEditorShell.Preview.Resolved;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.Json.Nodes;
@@ -467,9 +466,7 @@ internal static class DesignPreviewFrameResolver
 
     private static double NumberValue(string value, double fallback)
     {
-        return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
-            ? parsed
-            : fallback;
+        return NumericText.Double(value, fallback);
     }
 
     private sealed record PreviewItem(

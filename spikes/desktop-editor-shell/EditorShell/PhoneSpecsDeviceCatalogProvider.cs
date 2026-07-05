@@ -70,7 +70,7 @@ internal sealed class PhoneSpecsDeviceCatalogProvider : IDeviceCatalogProvider
             osFamily,
             resolution.Value.Width,
             resolution.Value.Height,
-            GuessScale(flattened, osFamily, resolution.Value.Width, resolution.Value.Height),
+            DeviceMetricRules.GuessScaleFromText(flattened, osFamily, resolution.Value.Width, resolution.Value.Height),
             SourceName);
     }
 
@@ -190,11 +190,6 @@ internal sealed class PhoneSpecsDeviceCatalogProvider : IDeviceCatalogProvider
         }
 
         return null;
-    }
-
-    private static double GuessScale(IReadOnlyList<string> values, string osFamily, int width, int height)
-    {
-        return DeviceMetricRules.GuessScaleFromText(values, osFamily, width, height);
     }
 
     private static string InferOsFamily(string manufacturer, IReadOnlyList<string> values)

@@ -42,7 +42,7 @@ internal sealed partial class SpikeDatabase
                 Execute(connection, "UPDATE palette_colors SET token = $value WHERE id = $id", ("$id", colorId), ("$value", value));
                 return;
             case "palette.valueHex":
-                Execute(connection, "UPDATE palette_colors SET value_hex = $value WHERE id = $id", ("$id", colorId), ("$value", NormalizeHex(value)));
+                Execute(connection, "UPDATE palette_colors SET value_hex = $value WHERE id = $id", ("$id", colorId), ("$value", ColorValue.NormalizeHex(value)));
                 return;
             case "palette.isNeutral":
                 Execute(connection, "UPDATE palette_colors SET is_neutral = $value WHERE id = $id", ("$id", colorId), ("$value", StringToBool(value) ? 1 : 0));
@@ -171,11 +171,6 @@ internal sealed partial class SpikeDatabase
             "UPDATE palette_colors SET metadata_json = $metadataJson WHERE id = $id",
             ("$id", colorId),
             ("$metadataJson", JsonSerializer.Serialize(metadata)));
-    }
-
-    private static string NormalizeHex(string value)
-    {
-        return ColorValue.NormalizeHex(value);
     }
 
     private static readonly PaletteSeedRow[] PaletteSeedRows =
