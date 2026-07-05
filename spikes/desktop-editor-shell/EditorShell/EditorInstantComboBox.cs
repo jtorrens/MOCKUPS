@@ -54,6 +54,7 @@ public sealed class EditorInstantComboBox : Grid
         {
             Text = ">",
             Width = 16,
+            Margin = new Thickness(0, 0, 10, 0),
             FontSize = 13,
             FontWeight = FontWeight.Bold,
             TextAlignment = TextAlignment.Center,
