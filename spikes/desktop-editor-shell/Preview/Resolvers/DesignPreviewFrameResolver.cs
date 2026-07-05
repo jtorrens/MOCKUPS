@@ -630,6 +630,8 @@ internal static class DesignPreviewFrameResolver
         }
 
         // Angle describes the light source direction: 90 means light from top.
+        // With clipped full contours, the highlight contour moves opposite to the light
+        // so its near edge appears inside the component bounds.
         var lightRadians = angleDegrees * Math.PI / 180;
         var lightX = Math.Cos(lightRadians);
         var lightY = -Math.Sin(lightRadians);
@@ -652,8 +654,8 @@ internal static class DesignPreviewFrameResolver
                 bounds,
                 cornerRadius,
                 baseColorToken,
-                lightX * distance,
-                lightY * distance,
+                -lightX * distance,
+                -lightY * distance,
                 topIntensity * fade,
                 blurRadius));
             layers.Add(ReliefStroke(
@@ -661,8 +663,8 @@ internal static class DesignPreviewFrameResolver
                 bounds,
                 cornerRadius,
                 baseColorToken,
-                -lightX * distance,
-                -lightY * distance,
+                lightX * distance,
+                lightY * distance,
                 bottomIntensity * fade,
                 blurRadius));
         }
