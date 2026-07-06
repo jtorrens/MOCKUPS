@@ -22,7 +22,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
     private readonly DispatcherTimer _playbackTimer;
     private readonly StackPanel _rowsPanel;
     private readonly Dictionary<string, string> _values = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, CheckBox> _booleanInputs = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, ToggleSwitch> _booleanInputs = new(StringComparer.Ordinal);
     private Button? _playbackButton;
     private string _scopeKey = "";
     private string _componentType = "";
@@ -206,7 +206,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
         }
         if (SupportsPlayback(payload.ComponentType))
         {
-            preview["currentTimeSeconds"] = CurrentPlaybackSeconds();
+            preview["currentTimeSeconds"] = NormalizedPlaybackSeconds(CurrentPlaybackSeconds());
         }
 
         return payload with { DesignPreviewJson = preview.ToJsonString() };
@@ -290,6 +290,8 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
         var numeric = EditorNumericUpDownBehavior.Configure(new NumericUpDown
         {
             MinHeight = 36,
+            MinWidth = 120,
+            HorizontalAlignment = HorizontalAlignment.Left,
             Minimum = input.Minimum,
             Maximum = input.Maximum,
             Increment = input.Increment,
@@ -307,19 +309,19 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
 
     private Control CreateBooleanInput(DesignPreviewInput input)
     {
-        var checkBox = new CheckBox
+        var toggle = new ToggleSwitch
         {
             MinHeight = 36,
             IsChecked = StringToBool(Value(input)),
             VerticalAlignment = VerticalAlignment.Center,
         };
-        _booleanInputs[StorageKey(input)] = checkBox;
-        checkBox.IsCheckedChanged += (_, _) =>
+        _booleanInputs[StorageKey(input)] = toggle;
+        toggle.IsCheckedChanged += (_, _) =>
         {
             if (_isUpdating) return;
-            SetValue(input, checkBox.IsChecked == true ? "true" : "false");
+            SetValue(input, toggle.IsChecked == true ? "true" : "false");
         };
-        return checkBox;
+        return toggle;
     }
 
     private Control CreateTextInput(DesignPreviewInput input)
@@ -467,7 +469,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
             return;
         }
 
-        _values[$"{_scopeKey}:currentTimeSeconds"] = CurrentPlaybackSeconds().ToString(CultureInfo.InvariantCulture);
+        _values[$"{_scopeKey}:currentTimeSeconds"] = NormalizedPlaybackSeconds(CurrentPlaybackSeconds()).ToString(CultureInfo.InvariantCulture);
         _refreshPreview();
     }
 
@@ -477,21 +479,18 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
         var stored = ParseDouble(_values.GetValueOrDefault($"{_scopeKey}:currentTimeSeconds", "0"));
         if (!_playbackTimer.IsEnabled)
         {
-            return Math.Clamp(stored, 0, duration);
+            return NormalizedPlaybackSeconds(stored);
         }
 
         var elapsed = (DateTime.UtcNow - _playbackStartedAtUtc).TotalSeconds;
-        return PositiveModulo(_playbackStartSeconds + elapsed, duration);
+        return NormalizedPlaybackSeconds(_playbackStartSeconds + elapsed);
     }
 
     private void ClampCurrentPlaybackToDuration()
     {
         if (!SupportsPlayback()) return;
 
-        _values[$"{_scopeKey}:currentTimeSeconds"] = Math.Clamp(
-            CurrentPlaybackSeconds(),
-            0,
-            DurationSeconds()).ToString(CultureInfo.InvariantCulture);
+        _values[$"{_scopeKey}:currentTimeSeconds"] = NormalizedPlaybackSeconds(CurrentPlaybackSeconds()).ToString(CultureInfo.InvariantCulture);
     }
 
     private double DurationSeconds()
@@ -509,14 +508,19 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
         var stateKey = $"{_scopeKey}:isPlaying";
         if (isPlaying)
         {
-            _playbackStartSeconds = PositiveModulo(CurrentPlaybackSeconds(), DurationSeconds());
+            _playbackStartSeconds = NormalizedPlaybackSeconds(CurrentPlaybackSeconds());
             _playbackStartedAtUtc = DateTime.UtcNow;
             _values[stateKey] = "true";
             return;
         }
 
-        _values[$"{_scopeKey}:currentTimeSeconds"] = CurrentPlaybackSeconds().ToString(CultureInfo.InvariantCulture);
+        _values[$"{_scopeKey}:currentTimeSeconds"] = NormalizedPlaybackSeconds(CurrentPlaybackSeconds()).ToString(CultureInfo.InvariantCulture);
         _values[stateKey] = "false";
+    }
+
+    private double NormalizedPlaybackSeconds(double seconds)
+    {
+        return PositiveModulo(seconds, DurationSeconds());
     }
 
     private bool SupportsPlayback()

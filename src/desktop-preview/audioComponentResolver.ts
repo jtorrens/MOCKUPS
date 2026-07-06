@@ -56,16 +56,13 @@ export function resolveAudioComponent(
       ),
     ),
   );
-  const currentTimeSeconds = Math.max(
-    0,
-    Math.min(
-      durationSeconds,
-      requiredNumber(
-        preview,
-        "currentTimeSeconds",
-        "component.audio.preview.currentTimeSeconds",
-      ),
+  const currentTimeSeconds = normalizePlaybackTime(
+    requiredNumber(
+      preview,
+      "currentTimeSeconds",
+      "component.audio.preview.currentTimeSeconds",
     ),
+    durationSeconds,
   );
 
   return {
@@ -226,6 +223,12 @@ function formatDuration(totalSeconds: number) {
   const minutes = Math.floor(seconds / 60);
   const remainder = seconds % 60;
   return `${minutes}:${remainder.toString().padStart(2, "0")}`;
+}
+
+function normalizePlaybackTime(seconds: number, durationSeconds: number) {
+  if (durationSeconds <= 0) return 0;
+  const normalized = seconds % durationSeconds;
+  return normalized < 0 ? normalized + durationSeconds : normalized;
 }
 
 function parsePair(value: string) {

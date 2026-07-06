@@ -547,10 +547,22 @@ internal sealed partial class SpikeDatabase
             changed = true;
         }
 
+        changed |= NormalizeNumber(audio, "playCircleSize", 32, minimum: 8);
+        changed |= NormalizeNumber(audio, "textSize", 11, minimum: 6);
+        changed |= NormalizeNumber(audio, "waveformBarCount", 28, minimum: 4);
+        changed |= NormalizeNumber(audio, "waveformGap", 2, minimum: 0);
+        changed |= NormalizeNumber(audio, "waveformMinHeight", 4, minimum: 1);
+        changed |= NormalizeNumber(audio, "waveformMaxHeight", 22, minimum: 2);
+        changed |= NormalizeNumber(audio, "progressKnobSize", 9, minimum: 4);
+
         if (audio["waveformBarWidth"] is null)
         {
             audio["waveformBarWidth"] = 3;
             changed = true;
+        }
+        else
+        {
+            changed |= NormalizeNumber(audio, "waveformBarWidth", 3, minimum: 1);
         }
 
         if (audio["progressKnobSize"] is null && audio["knobSize"] is not null)
@@ -620,6 +632,25 @@ internal sealed partial class SpikeDatabase
         }
 
         return changed;
+    }
+
+    private static bool NormalizeNumber(
+        JsonObject owner,
+        string property,
+        double replacement,
+        double minimum)
+    {
+        var value = owner[property];
+        if (value is not JsonValue jsonValue
+            || !jsonValue.TryGetValue<double>(out var number)
+            || !double.IsFinite(number)
+            || number < minimum)
+        {
+            owner[property] = replacement;
+            return true;
+        }
+
+        return false;
     }
 
     private static bool NormalizeReliefIntensity(JsonObject config, string key)
