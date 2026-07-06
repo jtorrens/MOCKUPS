@@ -680,6 +680,16 @@ for (const forbiddenLegacyLayoutTerm of [
     `legacy system bar layout term ${forbiddenLegacyLayoutTerm} must not return; use component layouts`,
   );
 }
+assertMatches(
+  "src/domain/fields/themeFields.ts",
+  /statusBarId:[\s\S]*?tableId:\s*"component_presets"/,
+  "theme status bar field must reference component presets, not legacy status_bars",
+);
+assertMatches(
+  "src/domain/fields/themeFields.ts",
+  /navigationBarId:[\s\S]*?tableId:\s*"component_presets"/,
+  "theme navigation bar field must reference component presets, not legacy navigation_bars",
+);
 for (const forbiddenComponentInputControl of [
   "EditorInstantComboBox",
   "new ComboBox",

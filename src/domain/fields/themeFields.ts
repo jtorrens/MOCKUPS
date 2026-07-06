@@ -65,8 +65,8 @@ export const THEME_FIELDS = defineFields({
     id: "theme.statusBarId",
     kind: "recordReference",
     ui: {
-      label: "Status bar",
-      tableId: "status_bars",
+      label: "Status bar preset",
+      tableId: "component_presets",
       labelColumn: "name",
       allowEmpty: true,
     },
@@ -75,8 +75,8 @@ export const THEME_FIELDS = defineFields({
     id: "theme.navigationBarId",
     kind: "recordReference",
     ui: {
-      label: "Navigation bar",
-      tableId: "navigation_bars",
+      label: "Navigation bar preset",
+      tableId: "component_presets",
       labelColumn: "name",
       allowEmpty: true,
     },
