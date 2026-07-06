@@ -232,6 +232,11 @@ assertNoTerms("src/desktop-preview/DesktopRenderableHtmlAdapter.tsx", [
   "video_message",
   "status_indicators",
 ]);
+assertDoesNotContain(
+  "src/desktop-preview/DesktopRenderableHtmlAdapter.tsx",
+  "./previewColorHelpers.js",
+  "desktop HTML adapter must not import token/color resolution helpers",
+);
 
 assertNoTerms("src/desktop-preview/componentRenderableCommon.ts", [
   "label",

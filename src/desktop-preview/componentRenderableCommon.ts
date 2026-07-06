@@ -2,12 +2,14 @@ export {
   colorForMode,
   cssColorWithAlpha,
   numberToken,
-  numberValue,
   selectedColor,
   selectedPaletteColor,
-  stringValue,
   variants,
 } from "./previewColorHelpers.js";
+export {
+  numberValue,
+  stringValue,
+} from "./previewValueHelpers.js";
 export {
   boundedCenterBox,
   centerBox,

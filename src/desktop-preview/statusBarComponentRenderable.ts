@@ -1,6 +1,7 @@
 import type { RenderableBox, RenderableNode } from "../visual/renderable/types.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import { selectedColor, numberValue, stringValue } from "./previewColorHelpers.js";
+import { selectedColor } from "./previewColorHelpers.js";
+import { numberValue, stringValue } from "./previewValueHelpers.js";
 import { renderScale, previewScreenBox } from "./previewGeometryHelpers.js";
 import { iconTokenStyle } from "./previewIconHelpers.js";
 import type {

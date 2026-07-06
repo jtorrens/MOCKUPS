@@ -1,5 +1,6 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { asRecord, parseObject } from "./previewJsonHelpers.js";
+import { numberValue } from "./previewValueHelpers.js";
 
 export function variants(payload: DesignPreviewPayload) {
   const tokens = parseObject(payload.themeTokensJson);
@@ -79,19 +80,6 @@ export function numberToken(payload: DesignPreviewPayload, token: string) {
   const value = numberValue(raw, NaN);
   if (Number.isFinite(value)) return value;
   throw new Error(`Theme token ${token} is not numeric`);
-}
-
-export function numberValue(value: unknown, fallback: number) {
-  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
-}
-
-export function stringValue(value: unknown, fallback = "") {
-  return typeof value === "string" ? value : fallback;
-}
-
-export function requiredNumberValue(value: unknown, path: string) {
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  throw new Error(`Missing numeric theme value ${path}`);
 }
 
 export function cssColorWithAlpha(color: string, alpha: number) {
@@ -193,4 +181,3 @@ function hueToRgb(p: number, q: number, t: number) {
   if (value < 2 / 3) return p + (q - p) * (2 / 3 - value) * 6;
   return p;
 }
-

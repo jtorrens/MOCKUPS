@@ -6,7 +6,7 @@ import type {
 import {
   numberValue as commonNumberValue,
   stringValue as commonStringValue,
-} from "./previewColorHelpers.js";
+} from "./previewValueHelpers.js";
 import { asRecord } from "./previewJsonHelpers.js";
 
 export interface DesktopRenderableHtmlAdapterProps {

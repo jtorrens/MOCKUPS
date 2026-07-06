@@ -5,6 +5,19 @@ import type {
 } from "./previewComponentContracts.js";
 import { asRecord } from "./previewJsonHelpers.js";
 
+export function numberValue(value: unknown, fallback: number) {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+export function stringValue(value: unknown, fallback = "") {
+  return typeof value === "string" ? value : fallback;
+}
+
+export function requiredNumberValue(value: unknown, path: string) {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  throw new Error(`Missing numeric theme value ${path}`);
+}
+
 export function requiredRecord(
   value: Record<string, unknown>,
   key: string,

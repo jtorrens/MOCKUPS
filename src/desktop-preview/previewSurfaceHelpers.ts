@@ -1,11 +1,11 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
   cssColorWithAlpha,
-  requiredNumberValue,
   resolvePaletteColor,
 } from "./previewColorHelpers.js";
 import { renderScale } from "./previewGeometryHelpers.js";
 import { asRecord, parseObject } from "./previewJsonHelpers.js";
+import { requiredNumberValue } from "./previewValueHelpers.js";
 
 export function shadow(payload: DesignPreviewPayload) {
   const root = parseObject(payload.themeTokensJson);
@@ -53,4 +53,3 @@ export function surfaceVisualPadding(
     : 0;
   return Math.ceil(Math.max(borderWidth, shadowPadding, reliefPadding, 0));
 }
-

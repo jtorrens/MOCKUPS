@@ -3,7 +3,6 @@ import {
   componentPresetConfig,
   mergeComponentDefaults,
 } from "./componentPreviewDefaults.js";
-import { stringValue } from "./previewColorHelpers.js";
 import {
   asRecord,
   parseObject,
@@ -12,6 +11,7 @@ import {
   requiredPlacement,
   requiredRecord,
   requiredString,
+  stringValue,
 } from "./componentResolverCommon.js";
 import type { AvatarDesignContract } from "./avatarComponentContract.js";
 import { resolveLabelComponentFromRecords } from "./labelComponentResolver.js";
