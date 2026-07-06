@@ -21,7 +21,6 @@ export interface RenderableAsset {
 export interface RenderableNode {
   id: string;
   type: string;
-  role?: string;
   frame?: number;
   box?: RenderableBox;
   transform?: RenderableTransform;

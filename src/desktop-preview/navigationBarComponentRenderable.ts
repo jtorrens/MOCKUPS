@@ -121,12 +121,11 @@ function navigationButtonNode(
   },
   foreground: string,
 ): RenderableNode {
-  const role = item.kind || "generatedHome";
-  if (role === "generatedBack") {
+  const kind = item.kind || "generatedHome";
+  if (kind === "generatedBack") {
     return {
       id,
       type: "path",
-      role,
       frame: 0,
       box,
       style: {
@@ -148,9 +147,8 @@ function navigationButtonNode(
   return {
     id,
     type: "surface",
-    role,
     frame: 0,
-    box: role === "generatedHome"
+    box: kind === "generatedHome"
       ? {
           x: box.x + box.width * 0.25,
           y: box.y + box.height * 0.25,
@@ -166,7 +164,7 @@ function navigationButtonNode(
     style: {
       background: layout.filled ? foreground : "transparent",
       borderColor: foreground,
-      borderRadius: role === "generatedHome"
+      borderRadius: kind === "generatedHome"
         ? box.width
         : layout.cornerRadius,
       borderWidth: layout.strokeWidth,

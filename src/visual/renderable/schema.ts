@@ -25,7 +25,6 @@ export const RenderableNodeSchema: z.ZodType<RenderableNode> = z.lazy(() =>
   z.object({
     id: z.string().min(1),
     type: z.string().min(1),
-    role: z.string().min(1).optional(),
     frame: z.number().int().min(0).optional(),
     box: RenderableBoxSchema.optional(),
     transform: RenderableTransformSchema.optional(),
