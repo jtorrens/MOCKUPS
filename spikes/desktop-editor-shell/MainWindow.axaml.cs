@@ -1,12 +1,8 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Templates;
-using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
-using Avalonia.Platform.Storage;
 using Avalonia.Styling;
-using Avalonia.VisualTree;
 using Mockups.DesktopEditorShell.Data;
 using Mockups.DesktopEditorShell.EditorShell;
 using SukiUI;
@@ -14,25 +10,13 @@ using SukiUI.Controls;
 using SukiUI.Enums;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
 using System.Linq;
-using System.Text;
-using System.Text.Json;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell;
 
 public partial class MainWindow : SukiWindow
 {
-    private sealed record EmbeddedEditorContext(
-        ProjectTreeNode OwnerNode,
-        IReadOnlyList<EmbeddedComponentSlotDefinition> Slots)
-    {
-        public EmbeddedComponentSlotDefinition Slot => Slots[^1];
-    }
-
     private bool _isDark = true;
     private readonly SpikeDatabase _database = new(SpikeDatabase.DefaultDatabasePath());
     private readonly CoreFieldValueService _coreFieldValues;
@@ -51,6 +35,7 @@ public partial class MainWindow : SukiWindow
     private readonly EditorViewStateController _editorViewState;
     private readonly EditorCardHostController _editorCardHost;
     private readonly EditorFieldValueRouter _fieldValues;
+    private readonly EditorLayoutCardFactory _layoutCards;
     private readonly EditorEmbeddedUsageNavigator _embeddedUsageNavigator;
     private readonly EditorFieldCommitCoordinator _fieldCommitCoordinator = new();
     private readonly EditorActiveFieldControls _activeFieldControls = new();
@@ -58,7 +43,7 @@ public partial class MainWindow : SukiWindow
     private readonly Dictionary<string, string> _lastComponentPresetNodeIds = new(StringComparer.Ordinal);
     private List<ProjectTreeNode> _treeRoots = [];
     private ProjectTreeNode? _selectedNode;
-    private EmbeddedEditorContext? _embeddedEditorContext;
+    private EditorEmbeddedContext? _embeddedEditorContext;
 
     public MainWindow()
     {
@@ -130,6 +115,17 @@ public partial class MainWindow : SukiWindow
             _componentClassFieldValues,
             _actorAvatarPreviews,
             _fieldPostCommitEffects);
+        _layoutCards = new EditorLayoutCardFactory(
+            _fieldValues,
+            _componentClassFieldValues,
+            _actorAvatarPreviews,
+            _dictionaryFieldServices,
+            _fieldCommitCoordinator,
+            _activeFieldControls,
+            _messages,
+            OpenEmbeddedComponentEditor,
+            OpenEmbeddedComponentEditor,
+            RefreshPreviewDevice);
         _embeddedUsageNavigator = new EditorEmbeddedUsageNavigator(
             _database,
             this,
@@ -349,108 +345,13 @@ public partial class MainWindow : SukiWindow
                      .OrderBy((card) => card.Order)
                      .ThenBy((card) => card.Label))
         {
-            _editorCardHost.Add(CreateLayoutCard(dataNode, layoutCard));
+            _editorCardHost.Add(_layoutCards.Create(dataNode, layoutCard));
         }
 
         foreach (var collectionCard in _collectionCards.Create(dataNode))
         {
             _editorCardHost.Add(collectionCard);
         }
-    }
-
-    private InstantEditorCard CreateLayoutCard(ProjectTreeNode node, EditorLayoutCard layoutCard)
-    {
-        var body = new StackPanel
-        {
-            Spacing = 12,
-        };
-        var controls = new List<DictionaryFieldControl>();
-        var headerIcon = EditorIcons.Create(layoutCard.Icon, 18);
-        var visibleGroups = layoutCard.VisibleGroups.ToList();
-        var useSectionChrome = visibleGroups.Count > 1;
-
-        foreach (var group in visibleGroups)
-        {
-            var groupPanel = new StackPanel
-            {
-                Spacing = 12,
-            };
-
-            _actorAvatarPreviews.AddIfNeeded(node, layoutCard, groupPanel);
-
-            foreach (var layoutField in group.VisibleFields)
-            {
-                var field = _fieldValues.Create(node, layoutField.Id);
-                var services = _dictionaryFieldServices.ForNode(
-                    node,
-                    (fieldId) => _activeFieldControls.ValueOrStored(fieldId, (id) => _fieldValues.CurrentStoredValue(node, id)),
-                    (fieldId) => OpenEmbeddedComponentEditor(node, fieldId));
-                var control = new DictionaryFieldControl(
-                    field,
-                    services);
-                controls.Add(control);
-                _activeFieldControls.Register(control);
-                control.ValueCommitted += (_, value) =>
-                {
-                    try
-                    {
-                        _fieldCommitCoordinator.Commit(
-                            control,
-                            value,
-                            (draftValue) => _fieldValues.ToStorageValue(node, field.Definition.Id, draftValue),
-                            () => _fieldValues.CurrentStoredValue(node, field.Definition.Id),
-                            (storedValue) => _fieldValues.Commit(node, field.Definition.Id, storedValue));
-                        _actorAvatarPreviews.Refresh(node, _activeFieldControls.ControlsByFieldId);
-                        _activeFieldControls.RefreshPreviews();
-                        RefreshPreviewDevice();
-                    }
-                    catch (Exception exception)
-                    {
-                        _messages.Error($"Editor field {field.Definition.Id}", exception);
-                    }
-                };
-                groupPanel.Children.Add(control);
-            }
-
-            if (groupPanel.Children.Count > 0)
-            {
-                body.Children.Add(useSectionChrome
-                    ? EditorGroupBlock.Create(group, groupPanel)
-                    : EditorGroupBlock.CreatePlain(group, groupPanel));
-            }
-        }
-
-        if (body.Children.Count == 0)
-        {
-            body.Children.Add(new TextBlock
-            {
-                Text = "No fields in this card yet.",
-                TextWrapping = TextWrapping.Wrap,
-            });
-        }
-
-        var card = new InstantEditorCard(
-            EditorCardHeader.Create(layoutCard.Label, EditorCardHeader.Subtitle(layoutCard), headerIcon),
-            new Border
-            {
-                Padding = new Avalonia.Thickness(10),
-                Child = body,
-            },
-            layoutCard.DefaultOpen)
-        {
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-        };
-        EditorCardHeader.SetOverrideState(headerIcon, controls);
-        foreach (var control in controls)
-        {
-            control.ValueChanged += (_, _) =>
-            {
-                EditorCardHeader.SetOverrideState(headerIcon, controls);
-                _actorAvatarPreviews.Refresh(node, _activeFieldControls.ControlsByFieldId);
-            };
-        }
-
-        return card;
     }
 
     private Task OpenEmbeddedComponentEditor(ProjectTreeNode node, string slotFieldId)
@@ -467,7 +368,7 @@ public partial class MainWindow : SukiWindow
                 return Task.CompletedTask;
             }
 
-            ShowEmbeddedContext(new EmbeddedEditorContext(node, [slot]));
+            ShowEmbeddedContext(new EditorEmbeddedContext(node, [slot]));
         }
         catch (Exception exception)
         {
@@ -477,7 +378,7 @@ public partial class MainWindow : SukiWindow
         return Task.CompletedTask;
     }
 
-    private Task OpenEmbeddedComponentEditor(EmbeddedEditorContext parentContext, string slotFieldId)
+    private Task OpenEmbeddedComponentEditor(EditorEmbeddedContext parentContext, string slotFieldId)
     {
         try
         {
@@ -486,7 +387,7 @@ public partial class MainWindow : SukiWindow
                 return Task.CompletedTask;
             }
 
-            ShowEmbeddedContext(new EmbeddedEditorContext(parentContext.OwnerNode, [.. parentContext.Slots, slot]));
+            ShowEmbeddedContext(new EditorEmbeddedContext(parentContext.OwnerNode, [.. parentContext.Slots, slot]));
         }
         catch (Exception exception)
         {
@@ -496,7 +397,7 @@ public partial class MainWindow : SukiWindow
         return Task.CompletedTask;
     }
 
-    private void ShowEmbeddedContext(EmbeddedEditorContext context)
+    private void ShowEmbeddedContext(EditorEmbeddedContext context)
     {
         _embeddedEditorContext = context;
         SetEditorEmbeddedTitle(context);
@@ -504,7 +405,7 @@ public partial class MainWindow : SukiWindow
         RefreshPreviewDevice();
     }
 
-    private void BuildEmbeddedComponentCards(EmbeddedEditorContext context)
+    private void BuildEmbeddedComponentCards(EditorEmbeddedContext context)
     {
         _editorCardHost.Clear();
         _activeFieldControls.Clear();
@@ -512,136 +413,12 @@ public partial class MainWindow : SukiWindow
 
         var layout = _database.LoadEditorLayout(context.Slot.RecordClassId);
         foreach (var layoutCard in layout.Cards
-                     .Where((card) => card.Visible && EmbeddedCardHasFields(card))
+                     .Where((card) => card.Visible && EditorLayoutCardFactory.EmbeddedCardHasFields(card))
                      .OrderBy((card) => card.Order)
                      .ThenBy((card) => card.Label))
         {
-            _editorCardHost.Add(CreateEmbeddedLayoutCard(context, layoutCard));
+            _editorCardHost.Add(_layoutCards.CreateEmbedded(context, layoutCard));
         }
-    }
-
-    private static bool EmbeddedCardHasFields(EditorLayoutCard layoutCard)
-    {
-        return layoutCard.VisibleGroups
-            .SelectMany((group) => group.VisibleFields)
-            .Any((field) => field.Id.StartsWith("component.", StringComparison.Ordinal));
-    }
-
-    private InstantEditorCard CreateEmbeddedLayoutCard(EmbeddedEditorContext context, EditorLayoutCard layoutCard)
-    {
-        var body = new StackPanel
-        {
-            Spacing = 12,
-        };
-        var controls = new List<DictionaryFieldControl>();
-        var headerIcon = EditorIcons.Create(layoutCard.Icon, 18);
-        var visibleGroups = layoutCard.VisibleGroups.ToList();
-        var useSectionChrome = visibleGroups.Count > 1;
-
-        foreach (var group in visibleGroups)
-        {
-            var groupPanel = new StackPanel
-            {
-                Spacing = 12,
-            };
-
-            foreach (var layoutField in group.VisibleFields
-                         .Where((field) => field.Id.StartsWith("component.", StringComparison.Ordinal)))
-            {
-                var field = _componentClassFieldValues.CreateEmbeddedFieldValue(
-                    context.OwnerNode,
-                    context.Slots,
-                    layoutField.Id);
-                var services = _dictionaryFieldServices.ForNode(
-                    context.OwnerNode,
-                    (fieldId) => _activeFieldControls.ValueOrStored(fieldId, (id) =>
-                        _componentClassFieldValues.CreateEmbeddedFieldValue(
-                            context.OwnerNode,
-                            context.Slots,
-                            id).Value),
-                    (fieldId) => OpenEmbeddedComponentEditor(context, fieldId));
-                var control = new DictionaryFieldControl(field, services);
-                controls.Add(control);
-                _activeFieldControls.Register(control);
-                control.ValueCommitted += (_, value) =>
-                {
-                    try
-                    {
-                        if (value == field.Definition.InheritedStorageValue)
-                        {
-                            _componentClassFieldValues.CommitEmbeddedFieldValue(
-                                context.OwnerNode,
-                                context.Slots,
-                                field.Definition.Id,
-                                value);
-                            control.AcceptInheritedValueAsDefault();
-                            _activeFieldControls.RefreshPreviews();
-                            RefreshPreviewDevice();
-                            return;
-                        }
-
-                        _fieldCommitCoordinator.Commit(
-                            control,
-                            value,
-                            (draftValue) => draftValue,
-                            () =>
-                            {
-                                var current = _componentClassFieldValues.CreateEmbeddedFieldValue(
-                                    context.OwnerNode,
-                                    context.Slots,
-                                    field.Definition.Id);
-                                return current.IsInherited
-                                    ? current.Definition.InheritedStorageValue
-                                    : current.Value;
-                            },
-                            (storedValue) => _componentClassFieldValues.CommitEmbeddedFieldValue(
-                                context.OwnerNode,
-                                context.Slots,
-                                field.Definition.Id,
-                                storedValue));
-                        _activeFieldControls.RefreshPreviews();
-                        RefreshPreviewDevice();
-                    }
-                    catch (Exception exception)
-                    {
-                        _messages.Error($"Embedded field {field.Definition.Id}", exception);
-                    }
-                };
-                groupPanel.Children.Add(control);
-            }
-
-            if (groupPanel.Children.Count > 0)
-            {
-                body.Children.Add(useSectionChrome
-                    ? EditorGroupBlock.Create(group, groupPanel)
-                    : EditorGroupBlock.CreatePlain(group, groupPanel));
-            }
-        }
-
-        var embeddedBody = new Border
-        {
-            Padding = new Thickness(10),
-            BorderThickness = new Thickness(3, 0, 0, 0),
-            BorderBrush = new SolidColorBrush(Color.FromArgb(150, 214, 166, 56)),
-            Child = body,
-        };
-        var card = new InstantEditorCard(
-            EditorCardHeader.Create(layoutCard.Label, $"Embedded override · {context.OwnerNode.Name}", headerIcon),
-            embeddedBody,
-            layoutCard.DefaultOpen)
-        {
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-        };
-        EditorCardHeader.SetOverrideState(headerIcon, controls);
-        foreach (var control in controls)
-        {
-            control.ValueChanged += (_, _) =>
-            {
-                EditorCardHeader.SetOverrideState(headerIcon, controls);
-            };
-        }
-
-        return card;
     }
 
     private void SetEditorRootTitle(string title)
@@ -662,7 +439,7 @@ public partial class MainWindow : SukiWindow
         };
     }
 
-    private void SetEditorEmbeddedTitle(EmbeddedEditorContext context)
+    private void SetEditorEmbeddedTitle(EditorEmbeddedContext context)
     {
         var activePresetName = _database.GetEmbeddedComponentPresetName(context.OwnerNode, context.Slots);
         SetEditorPresetText(string.IsNullOrWhiteSpace(activePresetName) ? null : $"Preset: {activePresetName}");
@@ -688,7 +465,7 @@ public partial class MainWindow : SukiWindow
             var slotIndex = index + 1;
             items.Add(new EditorBreadcrumbItem(
                 label,
-                () => ShowEmbeddedContext(new EmbeddedEditorContext(context.OwnerNode, context.Slots.Take(slotIndex).ToArray()))));
+                () => ShowEmbeddedContext(new EditorEmbeddedContext(context.OwnerNode, context.Slots.Take(slotIndex).ToArray()))));
         }
 
         EditorBreadcrumbBar.Render(
