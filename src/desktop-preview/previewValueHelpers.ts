@@ -1,5 +1,6 @@
 import type {
   AlignmentPlacementContract,
+  IconSlotsContract,
   SurfaceStyleContract,
 } from "./previewComponentContracts.js";
 import { asRecord } from "./previewJsonHelpers.js";
@@ -130,6 +131,32 @@ export function resolveSurfaceStyle(
       `${path}.reliefBottomIntensity`,
     ),
   };
+}
+
+export function requiredIconSlots(
+  value: Record<string, unknown>,
+  key: string,
+  path: string,
+): IconSlotsContract {
+  const raw = requiredRecord(value, key, path);
+  return {
+    left: requiredStringArray(raw, "left", `${path}.left`),
+    center: requiredStringArray(raw, "center", `${path}.center`),
+    right: requiredStringArray(raw, "right", `${path}.right`),
+  };
+}
+
+function requiredStringArray(
+  value: Record<string, unknown>,
+  key: string,
+  path: string,
+) {
+  const raw = value[key];
+  if (Array.isArray(raw) && raw.every((entry) => typeof entry === "string")) {
+    return raw;
+  }
+
+  throw new Error(`Missing string array value ${path}`);
 }
 
 function clamp01(value: number) {

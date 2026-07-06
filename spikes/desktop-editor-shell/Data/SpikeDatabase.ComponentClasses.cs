@@ -1487,13 +1487,12 @@ internal sealed partial class SpikeDatabase
         {
             var config = ParseJsonObject(string.IsNullOrWhiteSpace(row.ConfigJson) ? "{}" : row.ConfigJson);
             var defaults = ParseJsonObject(DefaultComponentClassConfigJson(row.ComponentType));
-            var configChanged = NormalizeAvatarLabelPlacement(row.ComponentType, config);
-            configChanged |= NormalizeButtonIconLabelSlot(row.ComponentType, config);
-            configChanged |= NormalizeAudioEmbeddedSlots(row.ComponentType, config);
-            configChanged |= NormalizeEmbeddedSlotPresetIds(connection, row.ProjectId, config);
-            configChanged |= JsonPath.MergeMissing(config, defaults);
-            configChanged |= NormalizeReliefIntensity(config, "reliefTopIntensity");
-            configChanged |= NormalizeReliefIntensity(config, "reliefBottomIntensity");
+            var configChanged = NormalizeComponentConfigDefaults(
+                connection,
+                row.ProjectId,
+                row.ComponentType,
+                config,
+                defaults);
 
             var designPreview = ParseJsonObject(string.IsNullOrWhiteSpace(row.DesignPreviewJson) ? "{}" : row.DesignPreviewJson);
             var designPreviewDefaults = ParseJsonObject(DefaultComponentDesignPreviewJson(row.ComponentType));
@@ -1504,7 +1503,12 @@ internal sealed partial class SpikeDatabase
 
             var metadata = ParseJsonObject(string.IsNullOrWhiteSpace(row.MetadataJson) ? "{}" : row.MetadataJson);
             var metadataChanged = EnsureDefaultComponentPreset(metadata, config);
-            metadataChanged |= NormalizeComponentPresetConfigs(connection, row.ProjectId, metadata);
+            metadataChanged |= NormalizeComponentPresetConfigs(
+                connection,
+                row.ProjectId,
+                row.ComponentType,
+                metadata,
+                defaults);
 
             if (!configChanged && !designPreviewChanged && !metadataChanged)
             {
@@ -1568,28 +1572,61 @@ internal sealed partial class SpikeDatabase
         return true;
     }
 
-    private static bool NormalizeComponentPresetConfigs(SqliteConnection connection, string projectId, JsonObject metadata)
+    private static bool NormalizeComponentPresetConfigs(
+        SqliteConnection connection,
+        string projectId,
+        string componentType,
+        JsonObject metadata,
+        JsonObject defaults)
     {
         var changed = false;
         foreach (var preset in EnsurePresetArray(metadata).OfType<JsonObject>())
         {
-            if (preset["configJson"] is not JsonValue configValue
-                || !configValue.TryGetValue<string>(out var configJson)
-                || string.IsNullOrWhiteSpace(configJson))
+            JsonObject presetConfig;
+            if (preset["config"] is JsonObject configObject)
+            {
+                presetConfig = configObject;
+            }
+            else if (preset["configJson"] is JsonValue configValue
+                && configValue.TryGetValue<string>(out var configJson)
+                && !string.IsNullOrWhiteSpace(configJson))
+            {
+                presetConfig = ParseJsonObject(configJson);
+                preset["config"] = presetConfig;
+                changed = true;
+            }
+            else
+            {
+                presetConfig = ParseJsonObject(defaults.ToJsonString());
+                preset["config"] = presetConfig;
+                changed = true;
+            }
+
+            if (!NormalizeComponentConfigDefaults(connection, projectId, componentType, presetConfig, defaults))
             {
                 continue;
             }
 
-            var presetConfig = ParseJsonObject(configJson);
-            if (!NormalizeEmbeddedSlotPresetIds(connection, projectId, presetConfig))
-            {
-                continue;
-            }
-
-            preset["configJson"] = presetConfig.ToJsonString();
             changed = true;
         }
 
+        return changed;
+    }
+
+    private static bool NormalizeComponentConfigDefaults(
+        SqliteConnection connection,
+        string projectId,
+        string componentType,
+        JsonObject config,
+        JsonObject defaults)
+    {
+        var changed = NormalizeAvatarLabelPlacement(componentType, config);
+        changed |= NormalizeButtonIconLabelSlot(componentType, config);
+        changed |= NormalizeAudioEmbeddedSlots(componentType, config);
+        changed |= NormalizeEmbeddedSlotPresetIds(connection, projectId, config);
+        changed |= JsonPath.MergeMissing(config, defaults);
+        changed |= NormalizeReliefIntensity(config, "reliefTopIntensity");
+        changed |= NormalizeReliefIntensity(config, "reliefBottomIntensity");
         return changed;
     }
 
@@ -2179,7 +2216,10 @@ internal sealed partial class SpikeDatabase
                 {
                     ["height"] = 44,
                     ["placeholder"] = "Message",
+                    ["backgroundColorToken"] = "theme.colors.field",
+                    ["backgroundAlpha"] = 1,
                     ["idleTextColorToken"] = "theme.colors.textSecondary",
+                    ["textSizeToken"] = "theme.typography.sizes.s",
                     ["cursorColorToken"] = "theme.cursor.color",
                     ["cursorWidth"] = 2,
                     ["cursorBlinkFrames"] = 18,
@@ -2188,6 +2228,11 @@ internal sealed partial class SpikeDatabase
             case "keyboard":
                 config["keyboard"] = new JsonObject
                 {
+                    ["backgroundColorToken"] = "theme.colors.surface",
+                    ["backgroundAlpha"] = 1,
+                    ["keyBackgroundColorToken"] = "theme.colors.field",
+                    ["keyTextColorToken"] = "theme.colors.textPrimary",
+                    ["bottomIconColorToken"] = "theme.icons.secondary",
                     ["keyPadding"] = 4,
                     ["keyCornerRadius"] = 6,
                     ["keyShadowEnabled"] = false,
@@ -2293,9 +2338,12 @@ internal sealed partial class SpikeDatabase
             case "video":
                 config["video"] = new JsonObject
                 {
+                    ["backgroundColorToken"] = "theme.colors.card",
+                    ["backgroundAlpha"] = 1,
                     ["statusVisible"] = true,
                     ["statusHeight"] = 24,
                     ["statusIconSlots"] = JsonNode.Parse("""{"left":["app_camera"],"center":[],"right":[]}"""),
+                    ["statusTextColorToken"] = "theme.colors.textPrimary",
                     ["playOverlayVisible"] = true,
                     ["playColorToken"] = "theme.icons.accent",
                 };

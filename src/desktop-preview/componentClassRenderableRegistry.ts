@@ -12,10 +12,16 @@ import {
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { labelComponentToRenderable } from "./labelComponentRenderable.js";
 import { resolveLabelComponent } from "./labelComponentResolver.js";
+import { keyboardComponentToRenderable } from "./keyboardComponentRenderable.js";
+import { resolveKeyboardComponent } from "./keyboardComponentResolver.js";
 import { navigationBarComponentToRenderable } from "./navigationBarComponentRenderable.js";
 import { resolveNavigationBarComponent } from "./navigationBarComponentResolver.js";
 import { statusBarComponentToRenderable } from "./statusBarComponentRenderable.js";
 import { resolveStatusBarComponent } from "./statusBarComponentResolver.js";
+import { textInputBarComponentToRenderable } from "./textInputBarComponentRenderable.js";
+import { resolveTextInputBarComponent } from "./textInputBarComponentResolver.js";
+import { videoComponentToRenderable } from "./videoComponentRenderable.js";
+import { resolveVideoComponent } from "./videoComponentResolver.js";
 
 type ComponentRenderableFactory = (payload: DesignPreviewPayload) => RenderableNode;
 
@@ -25,6 +31,11 @@ export const componentRenderableFactories = {
   audio: (payload) => audioComponentToRenderable(payload, resolveAudioComponent(payload)),
   buttonIcon: (payload) =>
     buttonIconComponentToRenderable(payload, resolveButtonIconComponent(payload)),
+  textInputBar: (payload) =>
+    textInputBarComponentToRenderable(payload, resolveTextInputBarComponent(payload)),
+  keyboard: (payload) =>
+    keyboardComponentToRenderable(payload, resolveKeyboardComponent(payload)),
+  video: (payload) => videoComponentToRenderable(payload, resolveVideoComponent(payload)),
   status_bar: (payload) =>
     statusBarComponentToRenderable(payload, resolveStatusBarComponent(payload)),
   navigation_bar: (payload) =>

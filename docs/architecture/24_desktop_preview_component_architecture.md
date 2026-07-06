@@ -529,7 +529,7 @@ export const desktopPreviewComponents = {
     contract: "./buttonIconComponentContract",
     resolver: "./buttonIconComponentResolver",
     renderable: "./buttonIconComponentRenderable",
-    embeds: []
+    embeds: ["label"]
   },
 
   audio: {
@@ -540,19 +540,11 @@ export const desktopPreviewComponents = {
     embeds: ["avatar", "buttonIcon"]
   },
 
-  statusBar: {
+  textInputBar: {
     category: "system",
-    contract: "./statusBarComponentContract",
-    resolver: "./statusBarComponentResolver",
-    renderable: "./statusBarComponentRenderable",
-    embeds: []
-  },
-
-  navigationBar: {
-    category: "system",
-    contract: "./navigationBarComponentContract",
-    resolver: "./navigationBarComponentResolver",
-    renderable: "./navigationBarComponentRenderable",
+    contract: "./textInputBarComponentContract",
+    resolver: "./textInputBarComponentResolver",
+    renderable: "./textInputBarComponentRenderable",
     embeds: []
   },
 
@@ -562,12 +554,47 @@ export const desktopPreviewComponents = {
     resolver: "./keyboardComponentResolver",
     renderable: "./keyboardComponentRenderable",
     embeds: []
+  },
+
+  video: {
+    category: "component",
+    contract: "./videoComponentContract",
+    resolver: "./videoComponentResolver",
+    renderable: "./videoComponentRenderable",
+    embeds: []
+  },
+
+  status_bar: {
+    category: "system",
+    contract: "./statusBarComponentContract",
+    resolver: "./statusBarComponentResolver",
+    renderable: "./statusBarComponentRenderable",
+    embeds: []
+  },
+
+  navigation_bar: {
+    category: "system",
+    contract: "./navigationBarComponentContract",
+    resolver: "./navigationBarComponentResolver",
+    renderable: "./navigationBarComponentRenderable",
+    embeds: []
   }
 } as const;
 ```
 
 The registry may continue to exist, but it should be generated from or validated
 against the manifest.
+
+Current migrated component routes:
+
+- `label`, `avatar`, `buttonIcon` and `audio` are active functional examples of
+  the recursive route.
+- `status_bar` and `navigation_bar` are system components in the same manifest
+  route.
+- `textInputBar`, `keyboard` and `video` are structurally migrated: they have
+  contracts, resolvers, renderables, registry entries and dictionary-backed
+  fields, but their final runtime behavior is intentionally deferred to later
+  feature phases.
 
 Allowed registry responsibility:
 
@@ -893,8 +920,11 @@ Tasks:
   - avatar;
   - buttonIcon;
   - audio;
-  - statusBar;
-  - navigationBar;
+  - textInputBar;
+  - keyboard;
+  - video;
+  - status_bar;
+  - navigation_bar;
 - include `category`, `contract`, `resolver`, `renderable`, `embeds`;
 - validate current registry against the manifest;
 - replace hardcoded embedded import allowlists with manifest-derived rules.

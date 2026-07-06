@@ -2121,10 +2121,13 @@ internal sealed partial class SpikeDatabase
                 { "id": "textInput", "label": "Text input", "order": 10, "visible": true, "fields": [
                   { "id": "component.textInput.height", "order": 10, "visible": true },
                   { "id": "component.textInput.placeholder", "order": 20, "visible": true },
-                  { "id": "component.textInput.idleTextColorToken", "order": 30, "visible": true },
-                  { "id": "component.textInput.cursorColorToken", "order": 40, "visible": true },
-                  { "id": "component.textInput.cursorWidth", "order": 50, "visible": true },
-                  { "id": "component.textInput.cursorBlinkFrames", "order": 60, "visible": true }
+                  { "id": "component.textInput.backgroundColorToken", "order": 30, "visible": true },
+                  { "id": "component.textInput.backgroundAlpha", "order": 40, "visible": true },
+                  { "id": "component.textInput.idleTextColorToken", "order": 50, "visible": true },
+                  { "id": "component.textInput.textSizeToken", "order": 60, "visible": true },
+                  { "id": "component.textInput.cursorColorToken", "order": 70, "visible": true },
+                  { "id": "component.textInput.cursorWidth", "order": 80, "visible": true },
+                  { "id": "component.textInput.cursorBlinkFrames", "order": 90, "visible": true }
                 ] }
               ]
             }
@@ -2141,13 +2144,18 @@ internal sealed partial class SpikeDatabase
               "defaultOpen": false,
               "groups": [
                 { "id": "keys", "label": "Keys", "order": 10, "visible": true, "fields": [
-                  { "id": "component.keyboard.keyPadding", "order": 10, "visible": true },
-                  { "id": "component.keyboard.keyCornerRadius", "order": 20, "visible": true },
-                  { "id": "component.keyboard.keyShadowEnabled", "order": 30, "visible": true },
-                  { "id": "component.keyboard.pressedEffect", "order": 40, "visible": true },
-                  { "id": "component.keyboard.specialKeyTextScale", "order": 50, "visible": true },
-                  { "id": "component.keyboard.emojiScale", "order": 60, "visible": true },
-                  { "id": "component.keyboard.bottomIconSlots", "order": 70, "visible": true }
+                  { "id": "component.keyboard.backgroundColorToken", "order": 10, "visible": true },
+                  { "id": "component.keyboard.backgroundAlpha", "order": 20, "visible": true },
+                  { "id": "component.keyboard.keyBackgroundColorToken", "order": 30, "visible": true },
+                  { "id": "component.keyboard.keyTextColorToken", "order": 40, "visible": true },
+                  { "id": "component.keyboard.bottomIconColorToken", "order": 50, "visible": true },
+                  { "id": "component.keyboard.keyPadding", "order": 60, "visible": true },
+                  { "id": "component.keyboard.keyCornerRadius", "order": 70, "visible": true },
+                  { "id": "component.keyboard.keyShadowEnabled", "order": 80, "visible": true },
+                  { "id": "component.keyboard.pressedEffect", "order": 90, "visible": true },
+                  { "id": "component.keyboard.specialKeyTextScale", "order": 100, "visible": true },
+                  { "id": "component.keyboard.emojiScale", "order": 110, "visible": true },
+                  { "id": "component.keyboard.bottomIconSlots", "order": 120, "visible": true }
                 ] }
               ]
             }
@@ -2274,11 +2282,14 @@ internal sealed partial class SpikeDatabase
               "defaultOpen": false,
               "groups": [
                 { "id": "video", "label": "Video", "order": 10, "visible": true, "fields": [
-                  { "id": "component.video.statusVisible", "order": 10, "visible": true },
-                  { "id": "component.video.statusHeight", "order": 20, "visible": true },
-                  { "id": "component.video.statusIconSlots", "order": 30, "visible": true },
-                  { "id": "component.video.playOverlayVisible", "order": 40, "visible": true },
-                  { "id": "component.video.playColorToken", "order": 50, "visible": true }
+                  { "id": "component.video.backgroundColorToken", "order": 10, "visible": true },
+                  { "id": "component.video.backgroundAlpha", "order": 20, "visible": true },
+                  { "id": "component.video.statusVisible", "order": 30, "visible": true },
+                  { "id": "component.video.statusHeight", "order": 40, "visible": true },
+                  { "id": "component.video.statusIconSlots", "order": 50, "visible": true },
+                  { "id": "component.video.statusTextColorToken", "order": 60, "visible": true },
+                  { "id": "component.video.playOverlayVisible", "order": 70, "visible": true },
+                  { "id": "component.video.playColorToken", "order": 80, "visible": true }
                 ] }
               ]
             }

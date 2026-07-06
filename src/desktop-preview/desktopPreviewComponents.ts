@@ -37,6 +37,27 @@ export const desktopPreviewComponents = {
     renderable: "./audioComponentRenderable",
     embeds: ["avatar", "buttonIcon"],
   },
+  textInputBar: {
+    category: "system",
+    contract: "./textInputBarComponentContract",
+    resolver: "./textInputBarComponentResolver",
+    renderable: "./textInputBarComponentRenderable",
+    embeds: [],
+  },
+  keyboard: {
+    category: "system",
+    contract: "./keyboardComponentContract",
+    resolver: "./keyboardComponentResolver",
+    renderable: "./keyboardComponentRenderable",
+    embeds: [],
+  },
+  video: {
+    category: "component",
+    contract: "./videoComponentContract",
+    resolver: "./videoComponentResolver",
+    renderable: "./videoComponentRenderable",
+    embeds: [],
+  },
   status_bar: {
     category: "system",
     contract: "./statusBarComponentContract",

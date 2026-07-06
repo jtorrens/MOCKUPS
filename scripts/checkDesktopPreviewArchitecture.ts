@@ -116,12 +116,18 @@ assertNoTerms("src/desktop-preview/renderDesignPreviewHtml.tsx", [
   "avatar",
   "buttonIcon",
   "audio",
+  "textInputBar",
+  "keyboard",
+  "video",
   "statusBar",
   "navigationBar",
   "component_label",
   "component_avatar",
   "component_button",
   "component_audio",
+  "component_text_input",
+  "component_keyboard",
+  "component_video",
   "status_bar",
   "navigation_bar",
 ]);
@@ -131,6 +137,9 @@ assertNoTerms("src/desktop-preview/componentRenderableCommon.ts", [
   "avatar",
   "buttonIcon",
   "audio",
+  "textInputBar",
+  "keyboard",
+  "video",
   "statusBar",
   "navigationBar",
   "waveform",
@@ -139,6 +148,9 @@ assertNoTerms("src/desktop-preview/componentRenderableCommon.ts", [
   "component_avatar",
   "component_button",
   "component_audio",
+  "component_text_input",
+  "component_keyboard",
+  "component_video",
 ]);
 assertContains(
   "src/desktop-preview/componentResolverCommon.ts",
@@ -499,6 +511,21 @@ assertContains(
   "desktop preview component manifest must use the current button icon component type",
 );
 assertContains(
+  "src/desktop-preview/desktopPreviewComponents.ts",
+  "textInputBar: {",
+  "desktop preview component manifest must route text input bar as an owning component module",
+);
+assertContains(
+  "src/desktop-preview/desktopPreviewComponents.ts",
+  "keyboard: {",
+  "desktop preview component manifest must route keyboard as an owning component module",
+);
+assertContains(
+  "src/desktop-preview/desktopPreviewComponents.ts",
+  "video: {",
+  "desktop preview component manifest must route video as an owning component module",
+);
+assertContains(
   "src/desktop-preview/componentClassRenderableRegistry.ts",
   "audio: (payload)",
   "component renderable registry must route the current audio component type",
@@ -507,6 +534,21 @@ assertContains(
   "src/desktop-preview/componentClassRenderableRegistry.ts",
   "buttonIcon: (payload)",
   "component renderable registry must route the current button icon component type",
+);
+assertContains(
+  "src/desktop-preview/componentClassRenderableRegistry.ts",
+  "textInputBar: (payload)",
+  "component renderable registry must route the current text input bar component type",
+);
+assertContains(
+  "src/desktop-preview/componentClassRenderableRegistry.ts",
+  "keyboard: (payload)",
+  "component renderable registry must route the current keyboard component type",
+);
+assertContains(
+  "src/desktop-preview/componentClassRenderableRegistry.ts",
+  "video: (payload)",
+  "component renderable registry must route the current video component type",
 );
 assertDoesNotContain(
   "src/desktop-preview/desktopPreviewComponents.ts",

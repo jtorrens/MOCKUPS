@@ -18,3 +18,9 @@ export interface SurfaceStyleContract {
   reliefTopIntensity: number;
   reliefBottomIntensity: number;
 }
+
+export interface IconSlotsContract {
+  left: string[];
+  center: string[];
+  right: string[];
+}

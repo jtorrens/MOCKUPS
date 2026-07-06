@@ -149,11 +149,19 @@ internal static class ComponentClassFieldCatalog
 
         ["component.textInput.height"] = new("component.textInput.height", "Height", ValueKind.Integer, ["textInput", "height"], "44"),
         ["component.textInput.placeholder"] = new("component.textInput.placeholder", "Placeholder", ValueKind.StringSingleLine, ["textInput", "placeholder"], "Message"),
+        ["component.textInput.backgroundColorToken"] = new("component.textInput.backgroundColorToken", "Background", ValueKind.ThemeToken, ["textInput", "backgroundColorToken"], "theme.colors.field", Options: ThemeColorOptions),
+        ["component.textInput.backgroundAlpha"] = new("component.textInput.backgroundAlpha", "Surface alpha", ValueKind.Alpha, ["textInput", "backgroundAlpha"], "1"),
         ["component.textInput.idleTextColorToken"] = new("component.textInput.idleTextColorToken", "Idle text color", ValueKind.ThemeToken, ["textInput", "idleTextColorToken"], "theme.colors.textSecondary", Options: ThemeColorOptions),
+        ["component.textInput.textSizeToken"] = new("component.textInput.textSizeToken", "Text size", ValueKind.ThemeToken, ["textInput", "textSizeToken"], "theme.typography.sizes.s", Options: TypographySizeOptions),
         ["component.textInput.cursorColorToken"] = new("component.textInput.cursorColorToken", "Cursor color", ValueKind.ThemeToken, ["textInput", "cursorColorToken"], "theme.cursor.color", Options: ThemeColorOptions),
         ["component.textInput.cursorWidth"] = new("component.textInput.cursorWidth", "Cursor width", ValueKind.Integer, ["textInput", "cursorWidth"], "2"),
         ["component.textInput.cursorBlinkFrames"] = new("component.textInput.cursorBlinkFrames", "Blink frames", ValueKind.Integer, ["textInput", "cursorBlinkFrames"], "18"),
 
+        ["component.keyboard.backgroundColorToken"] = new("component.keyboard.backgroundColorToken", "Background", ValueKind.ThemeToken, ["keyboard", "backgroundColorToken"], "theme.colors.surface", Options: ThemeColorOptions),
+        ["component.keyboard.backgroundAlpha"] = new("component.keyboard.backgroundAlpha", "Surface alpha", ValueKind.Alpha, ["keyboard", "backgroundAlpha"], "1"),
+        ["component.keyboard.keyBackgroundColorToken"] = new("component.keyboard.keyBackgroundColorToken", "Key background", ValueKind.ThemeToken, ["keyboard", "keyBackgroundColorToken"], "theme.colors.field", Options: ThemeColorOptions),
+        ["component.keyboard.keyTextColorToken"] = new("component.keyboard.keyTextColorToken", "Key text", ValueKind.ThemeToken, ["keyboard", "keyTextColorToken"], "theme.colors.textPrimary", Options: ThemeColorOptions),
+        ["component.keyboard.bottomIconColorToken"] = new("component.keyboard.bottomIconColorToken", "Bottom icons", ValueKind.ThemeToken, ["keyboard", "bottomIconColorToken"], "theme.icons.secondary", Options: ThemeColorOptions),
         ["component.keyboard.keyPadding"] = new("component.keyboard.keyPadding", "Key padding", ValueKind.Integer, ["keyboard", "keyPadding"], "4"),
         ["component.keyboard.keyCornerRadius"] = new("component.keyboard.keyCornerRadius", "Key radius", ValueKind.Integer, ["keyboard", "keyCornerRadius"], "6"),
         ["component.keyboard.keyShadowEnabled"] = new("component.keyboard.keyShadowEnabled", "Key shadow", ValueKind.Boolean, ["keyboard", "keyShadowEnabled"], "false"),
@@ -245,9 +253,12 @@ internal static class ComponentClassFieldCatalog
         ["component.navigationBar.gesture.height"] = new("component.navigationBar.gesture.height", "Height", ValueKind.Integer, ["gesture", "height"], "5"),
         ["component.navigationBar.gesture.cornerRadius"] = new("component.navigationBar.gesture.cornerRadius", "Corner radius", ValueKind.Integer, ["gesture", "cornerRadius"], "999"),
 
+        ["component.video.backgroundColorToken"] = new("component.video.backgroundColorToken", "Background", ValueKind.ThemeToken, ["video", "backgroundColorToken"], "theme.colors.card", Options: ThemeColorOptions),
+        ["component.video.backgroundAlpha"] = new("component.video.backgroundAlpha", "Surface alpha", ValueKind.Alpha, ["video", "backgroundAlpha"], "1"),
         ["component.video.statusVisible"] = new("component.video.statusVisible", "Show status", ValueKind.Boolean, ["video", "statusVisible"], "true"),
         ["component.video.statusHeight"] = new("component.video.statusHeight", "Status height", ValueKind.Integer, ["video", "statusHeight"], "24"),
         ["component.video.statusIconSlots"] = new("component.video.statusIconSlots", "Status icons", ValueKind.IconSlots, ["video", "statusIconSlots"], """{"left":["app_camera"],"center":[],"right":[]}"""),
+        ["component.video.statusTextColorToken"] = new("component.video.statusTextColorToken", "Status text", ValueKind.ThemeToken, ["video", "statusTextColorToken"], "theme.colors.textPrimary", Options: ThemeColorOptions),
         ["component.video.playOverlayVisible"] = new("component.video.playOverlayVisible", "Play overlay", ValueKind.Boolean, ["video", "playOverlayVisible"], "true"),
         ["component.video.playColorToken"] = new("component.video.playColorToken", "Play color", ValueKind.ThemeToken, ["video", "playColorToken"], "theme.icons.accent", Options: ThemeColorOptions),
     };
