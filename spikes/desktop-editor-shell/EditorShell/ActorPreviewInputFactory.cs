@@ -10,6 +10,27 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal static class ActorPreviewInputFactory
 {
+    public static JsonObject CreateSample()
+    {
+        return new JsonObject
+        {
+            ["id"] = "sample_actor",
+            ["displayName"] = "Sample",
+            ["shortName"] = "Sample",
+            ["initials"] = "S",
+            ["avatar"] = new JsonObject
+            {
+                ["imageUri"] = "",
+                ["backgroundColor"] = "#B8C8DE",
+                ["textColor"] = "#1A1A1A",
+                ["scale"] = 1,
+                ["offsetX"] = 0,
+                ["offsetY"] = 0,
+                ["baseSize"] = 640,
+            },
+        };
+    }
+
     public static JsonObject Create(
         SpikeDatabase database,
         string actorId,

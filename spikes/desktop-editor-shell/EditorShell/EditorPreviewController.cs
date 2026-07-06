@@ -191,7 +191,7 @@ internal sealed class EditorPreviewController
             _designInputsPanel.UpdateForPayload(designPayload, _projectId);
             designPayload = designPayload is null
                 ? null
-                : _designInputsPanel.ApplyInputs(designPayload, _selectedMode);
+                : _designInputsPanel.ApplyInputs(designPayload, _selectedMode, _projectId);
             _designPreviewPane.Update(
                 metrics,
                 _isDark(),

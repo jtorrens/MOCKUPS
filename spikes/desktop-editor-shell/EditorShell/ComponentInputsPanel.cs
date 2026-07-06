@@ -84,7 +84,7 @@ internal sealed class ComponentInputsPanel : ContentControl
             }
 
             IsVisible = true;
-            var scopeKey = $"{payload.Kind}:{payload.ComponentType}:{payload.Name}";
+            var scopeKey = ScopeKey(payload);
             var inputSignature = string.Join("|", inputs.Select((input) => input.Id));
             var shouldRebuild = scopeKey != _scopeKey
                 || projectId != _projectId
@@ -173,9 +173,9 @@ internal sealed class ComponentInputsPanel : ContentControl
         return header;
     }
 
-    public DesignPreviewPayload ApplyInputs(DesignPreviewPayload payload, string themeMode)
+    public DesignPreviewPayload ApplyInputs(DesignPreviewPayload payload, string themeMode, string? projectId)
     {
-        if (!IsVisible || string.IsNullOrWhiteSpace(_scopeKey))
+        if (payload.Kind != "componentClass")
         {
             return payload;
         }
@@ -183,9 +183,25 @@ internal sealed class ComponentInputsPanel : ContentControl
         var preview = ParseJsonObject(payload.DesignPreviewJson);
         var inputs = ReadInputs(preview).ToList();
         _animation = ReadAnimation(preview);
-        if (!string.IsNullOrWhiteSpace(_projectId))
+        if (inputs.Count == 0)
         {
-            EnsureActorValues(inputs, _projectId);
+            return payload;
+        }
+
+        if (string.IsNullOrWhiteSpace(_scopeKey))
+        {
+            _scopeKey = ScopeKey(payload);
+        }
+
+        foreach (var input in inputs)
+        {
+            EnsureValue(input, preview);
+        }
+
+        var effectiveProjectId = string.IsNullOrWhiteSpace(projectId) ? _projectId : projectId;
+        if (!string.IsNullOrWhiteSpace(effectiveProjectId))
+        {
+            EnsureActorValues(inputs, effectiveProjectId);
         }
 
         foreach (var input in inputs)
@@ -208,6 +224,10 @@ internal sealed class ComponentInputsPanel : ContentControl
                     {
                         preview["actor"] = ActorPreviewInputFactory.Create(_database, value, themeMode, payload.PaletteColors);
                     }
+                    else
+                    {
+                        preview["actor"] = ActorPreviewInputFactory.CreateSample();
+                    }
                     break;
                 default:
                     preview[input.JsonKey] = value;
@@ -220,6 +240,11 @@ internal sealed class ComponentInputsPanel : ContentControl
         }
 
         return payload with { DesignPreviewJson = preview.ToJsonString() };
+    }
+
+    private static string ScopeKey(DesignPreviewPayload payload)
+    {
+        return $"{payload.Kind}:{payload.ComponentType}:{payload.Name}";
     }
 
     private Control CreateInputRow(ComponentInputDefinition input, string projectId)
