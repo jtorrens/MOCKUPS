@@ -304,11 +304,16 @@ internal sealed class EditorNavigationRenderer
             e.Handled = true;
             if (node.Children.Count > 0)
             {
+                var wasExpanded = _isExpanded(node);
                 if (node.CanOpenEditor)
                 {
                     _showNode(node);
                 }
-                _toggleGroup(node);
+
+                if (!node.CanOpenEditor || wasExpanded)
+                {
+                    _toggleGroup(node);
+                }
                 return;
             }
 
