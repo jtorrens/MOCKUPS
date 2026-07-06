@@ -558,6 +558,11 @@ assertContains(
   "componentPresetConfig(componentBaseConfigs, \"buttonIcon\", badgeSlot.presetId)",
   "audio badge preview must resolve the selected button icon preset, not the default button icon config",
 );
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
+  "NormalizeComponentConfigJsonForPreview",
+  "design preview payloads must normalize embedded preset references before web rendering",
+);
 for (const embeddedPresetField of [
   "component.avatar.label.presetId",
   "component.buttonIcon.label.presetId",

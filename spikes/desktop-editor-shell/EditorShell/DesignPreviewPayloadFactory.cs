@@ -64,10 +64,11 @@ internal static class DesignPreviewPayloadFactory
     {
         var settings = database.GetComponentClassSettings(node.Id);
         var componentBaseConfigsJson = database.GetComponentClassBaseConfigsJson(settings.ProjectId);
+        var configJson = database.NormalizeComponentConfigJsonForPreview(settings.ProjectId, settings.ConfigJson);
         return new DesignPreviewPayload(
             "componentClass",
             settings.Name,
-            settings.ConfigJson,
+            configJson,
             themeTokensJson,
             paletteColors,
             paletteNeutralColors,
@@ -90,10 +91,11 @@ internal static class DesignPreviewPayloadFactory
     {
         var settings = database.GetComponentPresetSettings(node);
         var componentBaseConfigsJson = database.GetComponentClassBaseConfigsJson(settings.ProjectId);
+        var configJson = database.NormalizeComponentConfigJsonForPreview(settings.ProjectId, settings.ConfigJson);
         return new DesignPreviewPayload(
             "componentClass",
             settings.Name,
-            settings.ConfigJson,
+            configJson,
             themeTokensJson,
             paletteColors,
             paletteNeutralColors,

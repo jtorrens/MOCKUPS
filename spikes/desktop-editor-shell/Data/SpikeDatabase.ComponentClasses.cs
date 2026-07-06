@@ -729,29 +729,41 @@ internal sealed partial class SpikeDatabase
                 classConfigJson,
                 "",
                 metadataJson);
-            AddComponentPresetConfigs(presets, row);
+            AddComponentPresetConfigs(connection, presets, row);
             if (configs.ContainsKey(componentType))
             {
                 continue;
             }
 
-            configs[componentType] = ParseJsonObject(DefaultComponentPresetConfigJson(
+            var defaultConfig = ParseJsonObject(DefaultComponentPresetConfigJson(
                 classConfigJson,
                 metadataJson));
+            NormalizeEmbeddedSlotPresetIds(connection, projectId, defaultConfig);
+            configs[componentType] = defaultConfig;
         }
 
         configs["presets"] = presets;
         return configs.ToJsonString();
     }
 
-    private static void AddComponentPresetConfigs(JsonObject target, ComponentClassRow row)
+    public string NormalizeComponentConfigJsonForPreview(string projectId, string configJson)
+    {
+        using var connection = OpenConnection();
+        var config = ParseJsonObject(string.IsNullOrWhiteSpace(configJson) ? "{}" : configJson);
+        NormalizeEmbeddedSlotPresetIds(connection, projectId, config);
+        return config.ToJsonString();
+    }
+
+    private static void AddComponentPresetConfigs(SqliteConnection connection, JsonObject target, ComponentClassRow row)
     {
         foreach (var preset in ComponentClassPresetsOrDefault(row))
         {
-            target[ComponentPresetNodeId(row.Id, preset.Id)] = ParseJsonObject(
+            var config = ParseJsonObject(
                 string.IsNullOrWhiteSpace(preset.ConfigJson) || preset.ConfigJson == "{}"
                     ? row.ConfigJson
                     : preset.ConfigJson);
+            NormalizeEmbeddedSlotPresetIds(connection, row.ProjectId, config);
+            target[ComponentPresetNodeId(row.Id, preset.Id)] = config;
         }
     }
 
