@@ -707,15 +707,28 @@ public partial class MainWindow : SukiWindow
 
     private Button CreateSavePresetButton(ProjectTreeNode node)
     {
-        var icon = EditorIcons.Create(EditorIcons.Add, 18);
+        var icon = EditorIcons.Create(EditorIcons.Add, 15);
         EditorIcons.ApplyBrush(icon, new SolidColorBrush(Color.Parse("#D6A638")));
         var button = new Button
         {
-            Content = icon,
-            Width = 34,
+            Content = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = 7,
+                Children =
+                {
+                    icon,
+                    new TextBlock
+                    {
+                        Text = "Save preset",
+                        FontWeight = FontWeight.SemiBold,
+                        VerticalAlignment = VerticalAlignment.Center,
+                    },
+                },
+            },
             Height = 34,
-            MinWidth = 34,
-            Padding = new Thickness(0),
+            MinWidth = 126,
+            Padding = new Thickness(10, 0),
             Background = Brushes.Transparent,
             BorderBrush = new SolidColorBrush(Color.Parse("#80D6A638")),
             BorderThickness = new Thickness(1),
