@@ -52,11 +52,21 @@ Active component class preview routes:
 
 | Component | Status | Route |
 | --- | --- | --- |
-| `component.label` | migrated | `resolveLabelComponent` -> `labelComponentToRenderable` -> web renderer |
-| `component.avatar` | migrated | `resolveAvatarComponent` -> `avatarComponentToRenderable` -> embedded label renderable |
+| `surface` | structurally migrated | `resolveSurfaceComponent` -> `surfaceComponentToRenderable` -> web renderer |
+| `label` | migrated | `resolveLabelComponent` -> `labelComponentToRenderable` -> web renderer |
+| `avatar` | migrated | `resolveAvatarComponent` -> `avatarComponentToRenderable` -> embedded label renderable |
+| `buttonIcon` | migrated | `resolveButtonIconComponent` -> `buttonIconComponentToRenderable` -> embedded surface/label renderables |
+| `audio` | migrated/evolving | `resolveAudioComponent` -> `audioComponentToRenderable` -> embedded surface/avatar/button icon renderables |
 | `status_bar` | migrated | `resolveStatusBarComponent` -> `statusBarComponentToRenderable` -> web renderer |
 | `navigation_bar` | migrated | `resolveNavigationBarComponent` -> `navigationBarComponentToRenderable` -> web renderer |
-| other component classes | blocked intentionally | `component_preview_unsupported` with `debug_red` |
+| `textInputBar` | structurally migrated | `resolveTextInputBarComponent` -> `textInputBarComponentToRenderable` -> web renderer |
+| `keyboard` | structurally migrated | `resolveKeyboardComponent` -> `keyboardComponentToRenderable` -> web renderer |
+| `video` | structurally migrated | `resolveVideoComponent` -> `videoComponentToRenderable` -> web renderer |
+
+Known component classes must route through the manifest and
+`componentClassRenderableRegistry.ts`. The magenta unsupported surface is only a
+defensive result for an unknown or unrouted component type, not a normal
+migration state for seeded desktop component classes.
 
 Status/navigation no longer call the old web atomic modules from desktop
 preview. Their resolvers own item visibility, zone assignment and ordering. The
@@ -74,9 +84,9 @@ No active desktop preview path may use:
 
 ## Boundary Watch List
 
-- `renderDesignPreviewHtml.tsx` should remain a dispatcher. It may select the
-  component resolver by type and wrap the result in the preview surface, but it
-  must not grow component-specific field logic.
+- `renderDesignPreviewHtml.tsx` should remain a generic render host. Component
+  routing belongs in `componentClassRenderableRegistry.ts`, and concrete
+  resolver/renderable work belongs in each component module.
 - The old central `webPreviewBridge.ts` path has been removed. Component and
   category `system` component preview paths should stay behind explicit
   resolver/renderable modules plus a registry, not move back into a shared
