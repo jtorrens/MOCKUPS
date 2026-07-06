@@ -47,57 +47,9 @@ internal static class DesignPreviewPayloadFactory
             : null;
         return node.Kind switch
         {
-            ProjectTreeNodeKind.StatusBar => FromStatusBar(database, node, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme),
-            ProjectTreeNodeKind.NavigationBar => FromNavigationBar(database, node, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme),
             ProjectTreeNodeKind.ComponentClass => FromComponentClass(database, node, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme),
             _ => null,
         };
-    }
-
-    private static DesignPreviewPayload FromStatusBar(
-        SpikeDatabase database,
-        ProjectTreeNode node,
-        string themeTokensJson,
-        IReadOnlyDictionary<string, string> paletteColors,
-        IReadOnlyDictionary<string, bool> paletteNeutralColors,
-        string projectMediaRoot,
-        SpikeDatabase.IconThemeSettings? iconTheme)
-    {
-        var settings = database.GetStatusBarSettings(node.Id);
-        return new DesignPreviewPayload(
-            "componentClass",
-            settings.Name,
-            settings.ConfigJson,
-            themeTokensJson,
-            paletteColors,
-            paletteNeutralColors,
-            projectMediaRoot,
-            iconTheme?.AssetRoot ?? "",
-            iconTheme?.MappingJson ?? "{}",
-            "status_bar");
-    }
-
-    private static DesignPreviewPayload FromNavigationBar(
-        SpikeDatabase database,
-        ProjectTreeNode node,
-        string themeTokensJson,
-        IReadOnlyDictionary<string, string> paletteColors,
-        IReadOnlyDictionary<string, bool> paletteNeutralColors,
-        string projectMediaRoot,
-        SpikeDatabase.IconThemeSettings? iconTheme)
-    {
-        var settings = database.GetNavigationBarSettings(node.Id);
-        return new DesignPreviewPayload(
-            "componentClass",
-            settings.Name,
-            settings.ConfigJson,
-            themeTokensJson,
-            paletteColors,
-            paletteNeutralColors,
-            projectMediaRoot,
-            iconTheme?.AssetRoot ?? "",
-            iconTheme?.MappingJson ?? "{}",
-            "navigation_bar");
     }
 
     private static DesignPreviewPayload FromComponentClass(
