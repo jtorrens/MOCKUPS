@@ -42,6 +42,16 @@
     "layout": {
       "screenGutter": 24
     },
+    "radii": {
+      "none": 0,
+      "control": 8,
+      "card": 12,
+      "panel": 16,
+      "surface": 12,
+      "pill": 999,
+      "avatar": 12,
+      "full": 9999
+    },
     "header": {
       "height": 96,
       "background": "#FFFFFF",

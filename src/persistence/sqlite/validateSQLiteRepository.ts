@@ -212,8 +212,8 @@ try {
     "production_fonts must contain the normal/emoji category column",
   );
   assert(
-    Number(database.pragma("user_version", { simple: true })) === 40,
-    "SQLite schema version must be 40",
+    Number(database.pragma("user_version", { simple: true })) === 41,
+    "SQLite schema version must be 41",
   );
   const themeTokens = JSON.parse(
     (
@@ -286,7 +286,7 @@ try {
   console.log("✓ schema and seed validated in isolated in-memory SQLite");
   console.log("✓ all required domain tables exist");
   console.log("✓ module_theme_configs exists and seeds core.chat tokens");
-  console.log("✓ screen_instances references, module_instances content/behavior/animation, component classes, production font families/categories, palette-neutral colors, screen durations, semantic icon/border/debug colors, semantic category colors, stable message ids, normalized production font tokens, and semantic chat header tokens exist in schema v40");
+  console.log("✓ screen_instances references, module_instances content/behavior/animation, component classes, production font families/categories, palette-neutral colors, screen durations, semantic icon/border/debug colors, semantic category colors, stable message ids, normalized production font tokens, and semantic chat header tokens exist in schema v41");
   console.log("✓ SQLiteRepository resolved ChatScreen props with Zod");
   console.log("✓ SQLite and in-memory chat props are equivalent");
   console.log("✓ Chat module instance JSON and actor-based output validated");

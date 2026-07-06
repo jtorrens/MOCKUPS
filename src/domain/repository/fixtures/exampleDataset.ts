@@ -690,6 +690,30 @@ export function createExampleDataset(): RepositoryDataset {
     },
     metadata_json: { source: "seed" },
   });
+  const statusBarComponentClass = ComponentClassSchema.parse({
+    id: `${production.id}:status_bar_default`,
+    production_id: production.id,
+    component_type: "status_bar",
+    name: "Default status bar",
+    tokens_json: {
+      componentType: "status_bar",
+      family: statusBar.family,
+      ...statusBar.config_json,
+    },
+    metadata_json: { source: "seed" },
+  });
+  const navigationBarComponentClass = ComponentClassSchema.parse({
+    id: `${production.id}:navigation_bar_default`,
+    production_id: production.id,
+    component_type: "navigation_bar",
+    name: "Default navigation bar",
+    tokens_json: {
+      componentType: "navigation_bar",
+      family: navigationBar.family,
+      ...navigationBar.config_json,
+    },
+    metadata_json: { source: "seed" },
+  });
   const textInputBarComponentClass = ComponentClassSchema.parse({
     id: `${production.id}:text_input_bar_default`,
     production_id: production.id,
@@ -779,6 +803,8 @@ export function createExampleDataset(): RepositoryDataset {
       buttonIconComponentClass,
       labelComponentClass,
       videoMessageComponentClass,
+      statusBarComponentClass,
+      navigationBarComponentClass,
       textInputBarComponentClass,
       keyboardComponentClass,
     ],

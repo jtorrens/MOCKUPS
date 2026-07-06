@@ -1606,6 +1606,56 @@ function defaultVideoMessageComponentTokens() {
   });
 }
 
+function defaultStatusBarComponentTokens() {
+  return JSON.stringify({
+    schemaVersion: 2,
+    componentType: "status_bar",
+    family: "ios",
+    layout: {
+      height: 54,
+      itemSize: 18,
+      gap: 6,
+      sidePadding: 24,
+    },
+    items: [
+      { id: "time", label: "Time", kind: "text", value: "9:41", zone: "left", order: 10 },
+      { id: "carrier", label: "Carrier", kind: "text", value: "", zone: "off", order: 20 },
+      { id: "signal", label: "Signal", kind: "generatedSignal", value: 4, zone: "right", order: 10 },
+      { id: "wifi", label: "Wi-Fi", kind: "iconToken", token: "status_wifi", zone: "right", order: 20 },
+      { id: "soundOff", label: "Sound Off", kind: "iconToken", token: "media_volume_off", zone: "off", order: 30 },
+      { id: "bluetooth", label: "Bluetooth", kind: "iconToken", token: "status_bluetooth", zone: "off", order: 40 },
+      { id: "battery", label: "Battery", kind: "generatedBattery", value: 85, charging: false, zone: "right", order: 50 },
+    ],
+  });
+}
+
+function defaultNavigationBarComponentTokens() {
+  return JSON.stringify({
+    schemaVersion: 1,
+    componentType: "navigation_bar",
+    family: "ios",
+    type: "gestureBar",
+    layout: {
+      height: 34,
+      itemSize: 18,
+      sidePadding: 40,
+      strokeWidth: 2,
+      cornerRadius: 3,
+      filled: false,
+    },
+    gesture: {
+      width: 134,
+      height: 5,
+      cornerRadius: 999,
+    },
+    items: [
+      { id: "back", label: "Back", kind: "generatedBack", zone: "left", order: 10 },
+      { id: "home", label: "Home", kind: "generatedHome", zone: "center", order: 10 },
+      { id: "recents", label: "Recents", kind: "generatedRecents", zone: "right", order: 10 },
+    ],
+  });
+}
+
 function defaultTextInputBarComponentTokens() {
   return JSON.stringify({
     schemaVersion: 1,
@@ -1721,6 +1771,18 @@ function seedDefaultComponentClasses(database: SQLiteDatabase): void {
         type: "video_message",
         name: "Default video message",
         tokens: defaultVideoMessageComponentTokens(),
+      },
+      {
+        id: `${production.id}:status_bar_default`,
+        type: "status_bar",
+        name: "Default status bar",
+        tokens: defaultStatusBarComponentTokens(),
+      },
+      {
+        id: `${production.id}:navigation_bar_default`,
+        type: "navigation_bar",
+        name: "Default navigation bar",
+        tokens: defaultNavigationBarComponentTokens(),
       },
       {
         id: `${production.id}:text_input_bar_default`,
