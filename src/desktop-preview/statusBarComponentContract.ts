@@ -1,4 +1,5 @@
 export type StatusBarZone = "left" | "right";
+export type StatusBarItemZone = StatusBarZone | "off";
 
 export interface StatusBarItemContract {
   id: string;
@@ -6,7 +7,7 @@ export interface StatusBarItemContract {
   kind: string;
   value: string | number | boolean;
   token: string;
-  zone: StatusBarZone;
+  zone: StatusBarItemZone;
   order: number;
   charging: boolean;
 }

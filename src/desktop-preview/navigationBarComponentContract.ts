@@ -1,4 +1,5 @@
 export type NavigationBarZone = "left" | "center" | "right";
+export type NavigationBarItemZone = NavigationBarZone | "off";
 
 export interface NavigationBarItemContract {
   id: string;
@@ -6,7 +7,7 @@ export interface NavigationBarItemContract {
   kind: string;
   value: string | number | boolean;
   token: string;
-  zone: NavigationBarZone;
+  zone: NavigationBarItemZone;
   order: number;
   charging: boolean;
 }

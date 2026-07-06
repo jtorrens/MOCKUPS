@@ -32,7 +32,7 @@ function statusBarItems(value: unknown): StatusBarItemContract[] {
   return value.map((raw, index) => {
     const item = asRecord(raw);
     const zone = requiredString(item, "zone", `items.${index}.zone`);
-    if (zone !== "left" && zone !== "right") {
+    if (zone !== "off" && zone !== "left" && zone !== "right") {
       throw new Error(`Unsupported status bar zone ${zone}`);
     }
 
@@ -61,6 +61,7 @@ function sortedVisibleStatusBarItems(value: unknown): Record<
     right: [],
   };
   for (const item of statusBarItems(value)) {
+    if (item.zone === "off") continue;
     if (item.kind === "text" && !String(item.value).trim()) continue;
     byZone[item.zone].push(item);
   }

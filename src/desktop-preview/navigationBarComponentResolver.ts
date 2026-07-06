@@ -32,7 +32,7 @@ function navigationBarItems(value: unknown): NavigationBarItemContract[] {
   return value.map((raw, index) => {
     const item = asRecord(raw);
     const zone = requiredString(item, "zone", `items.${index}.zone`);
-    if (zone !== "left" && zone !== "center" && zone !== "right") {
+    if (zone !== "off" && zone !== "left" && zone !== "center" && zone !== "right") {
       throw new Error(`Unsupported navigation bar zone ${zone}`);
     }
 
@@ -62,6 +62,7 @@ function sortedNavigationBarItems(value: unknown): Record<
     right: [],
   };
   for (const item of navigationBarItems(value)) {
+    if (item.zone === "off") continue;
     byZone[item.zone].push(item);
   }
 
