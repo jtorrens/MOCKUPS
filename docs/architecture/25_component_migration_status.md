@@ -94,6 +94,10 @@ legacy/new fragments.
 - component renderables emit only allowed generic primitive node types;
 - component renderables do not emit component identity metadata into the final
   paint tree;
+- the desktop HTML adapter supports only the generic paint primitive list and
+  does not keep compatibility support for removed semantic/special node types;
+- paint tree metadata may not spread component contracts or carry component
+  semantic keys such as kind, zone, order, value or componentType;
 - concrete component imports only follow declared manifest ownership;
 - no shared `systemBar*` route exists; status/navigation are normal manifest
   components with category `system`;

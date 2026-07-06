@@ -663,6 +663,17 @@ componentClass
 
 The final paint tree should use generic primitives only.
 
+Current executable desktop preview primitive node types:
+
+```text
+group
+surface
+path
+text
+image
+icon
+```
+
 Preferred primitive names:
 
 ```text
@@ -681,10 +692,13 @@ barSeries, only if genuinely generic
 Avoid:
 
 ```text
+component_preview_unsupported
+design_preview_surface
 component_label
 component_avatar
 component_button_icon
 component_audio
+icon_token
 waveform_bar
 statusBar
 navigationBar
