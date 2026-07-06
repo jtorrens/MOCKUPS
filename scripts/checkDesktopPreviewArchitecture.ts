@@ -80,6 +80,16 @@ function assertContains(relativePath: string, term: string, message: string) {
   }
 }
 
+function assertAnyContains(relativePaths: string[], term: string, message: string) {
+  const found = relativePaths.some((relativePath) => {
+    const fullPath = path.join(root, relativePath);
+    return existsSync(fullPath) && readText(relativePath).includes(term);
+  });
+  if (!found) {
+    addViolation(relativePaths.join(", "), message);
+  }
+}
+
 function assertDoesNotContain(relativePath: string, term: string, message: string) {
   const source = readText(relativePath);
   if (source.includes(term)) {
@@ -505,9 +515,9 @@ const componentSeedSource = componentSeedSourceFiles
   .filter((relativePath) => existsSync(path.join(root, relativePath)))
   .map((relativePath) => readText(relativePath))
   .join("\n");
-const spikeDatabaseSource = readText(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
-);
+const spikeDatabaseDataPaths = readdirSync(path.join(root, "spikes/desktop-editor-shell/Data"))
+  .filter((entry) => /^SpikeDatabase.*\.cs$/.test(entry))
+  .map((entry) => `spikes/desktop-editor-shell/Data/${entry}`);
 const editorLayoutSource = readText(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.EditorLayouts.cs",
 );
@@ -880,13 +890,13 @@ assertContains(
   "ProjectTreeNodeKind.ComponentPreset, id",
   "theme system bar references must mark component presets, not parent classes",
 );
-assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
+assertAnyContains(
+  spikeDatabaseDataPaths,
   "GetComponentPresetReferenceOptionsByType(projectId, \"status_bar\"",
   "theme status bar selector must list component presets",
 );
-assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
+assertAnyContains(
+  spikeDatabaseDataPaths,
   "GetComponentPresetReferenceOptionsByType(projectId, \"navigation_bar\"",
   "theme navigation bar selector must list component presets",
 );

@@ -1,6 +1,8 @@
 using Microsoft.Data.Sqlite;
 using Mockups.DesktopEditorShell.Common;
+using Mockups.DesktopEditorShell.EditorShell;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Mockups.DesktopEditorShell.Data;
@@ -213,4 +215,36 @@ internal sealed partial class SpikeDatabase
         new("device_samsung_galaxy_s24_ultra", "Samsung Galaxy S24 Ultra", "Samsung", "Galaxy S24 Ultra", "android", DeviceMetricsJson(1440, 3120, 3, includeDynamicIsland: false)),
         new("device_google_pixel_8_pro", "Google Pixel 8 Pro", "Google", "Pixel 8 Pro", "android", DeviceMetricsJson(1344, 2992, 3, includeDynamicIsland: false)),
     ];
+
+    public IReadOnlyList<FieldOption> GetDeviceOptions(string projectId)
+    {
+        using var connection = OpenConnection();
+        return QueryDeviceRows(connection)
+            .Where((device) => device.ProjectId == projectId)
+            .OrderBy((device) => device.Name)
+            .Select((device) => new FieldOption(device.Id, device.Name))
+            .ToList();
+    }
+
+    private static List<DeviceRow> QueryDeviceRows(SqliteConnection connection)
+    {
+        var rows = new List<DeviceRow>();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT id, project_id, name, manufacturer, model, os_family, metrics_json FROM devices ORDER BY name";
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            rows.Add(new DeviceRow(
+                reader.GetString(0),
+                reader.GetString(1),
+                reader.GetString(2),
+                ReadString(reader, 3),
+                ReadString(reader, 4),
+                ReadString(reader, 5),
+                reader.GetString(6)));
+        }
+
+        return rows;
+    }
+
 }

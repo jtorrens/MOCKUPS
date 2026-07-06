@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using Mockups.DesktopEditorShell.Common;
+using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -600,4 +601,54 @@ internal sealed partial class SpikeDatabase
     {
         return NavigationBarItems(NavigationBarConfig(configJson)).Count;
     }
+    public IReadOnlyList<FieldOption> GetStatusBarOptions(string projectId)
+    {
+        return GetComponentPresetReferenceOptionsByType(projectId, "status_bar", includeNone: true);
+    }
+
+    public IReadOnlyList<FieldOption> GetNavigationBarOptions(string projectId)
+    {
+        return GetComponentPresetReferenceOptionsByType(projectId, "navigation_bar", includeNone: true);
+    }
+
+    private static List<StatusBarRow> QueryStatusBarRows(SqliteConnection connection)
+    {
+        var rows = new List<StatusBarRow>();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT id, project_id, name, family, config_json, metadata_json FROM status_bars ORDER BY name";
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            rows.Add(new StatusBarRow(
+                reader.GetString(0),
+                reader.GetString(1),
+                reader.GetString(2),
+                ReadString(reader, 3),
+                ReadString(reader, 4),
+                ReadString(reader, 5)));
+        }
+
+        return rows;
+    }
+
+    private static List<NavigationBarRow> QueryNavigationBarRows(SqliteConnection connection)
+    {
+        var rows = new List<NavigationBarRow>();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT id, project_id, name, family, config_json, metadata_json FROM navigation_bars ORDER BY name";
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            rows.Add(new NavigationBarRow(
+                reader.GetString(0),
+                reader.GetString(1),
+                reader.GetString(2),
+                ReadString(reader, 3),
+                ReadString(reader, 4),
+                ReadString(reader, 5)));
+        }
+
+        return rows;
+    }
+
 }
