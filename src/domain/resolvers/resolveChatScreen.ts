@@ -1080,7 +1080,7 @@ function resolveDefaultAvatarComponent(
 function resolveDefaultComponentTokens(
   repository: DomainRepository,
   productionId: string,
-  componentType: "text_input_bar" | "keyboard",
+  componentType: "textInputBar" | "keyboard",
   palette: Map<string, string>,
 ) {
   const component =
@@ -1108,9 +1108,9 @@ function resolveDefaultButtonIconComponent(
 ) {
   const component =
     repository
-      .getComponentClasses(productionId, "button_icon")
+      .getComponentClasses(productionId, "buttonIcon")
       .find((entry) => entry.name === "Default icon button") ??
-    repository.getComponentClasses(productionId, "button_icon")[0];
+    repository.getComponentClasses(productionId, "buttonIcon")[0];
   const rawTokens = isObject(component?.tokens_json)
     ? component.tokens_json
     : {};
@@ -1144,7 +1144,7 @@ function resolveDefaultButtonIconComponent(
   return {
     id: component?.id ?? null,
     name: component?.name ?? "Default icon button",
-    componentType: "button_icon",
+    componentType: "buttonIcon",
     cornerRadius: numberValue(resolvedTokens.cornerRadius, 0) * renderScale,
     iconPadding: numberValue(resolvedTokens.iconPadding, 2) * renderScale,
     borderWidth: numberValue(resolvedTokens.borderWidth, 0) * renderScale,
@@ -1331,9 +1331,9 @@ function resolveDefaultAudioMessageComponent(
 ) {
   const component =
     repository
-      .getComponentClasses(productionId, "audio_message")
+      .getComponentClasses(productionId, "audio")
       .find((entry) => entry.name === "Default audio message") ??
-    repository.getComponentClasses(productionId, "audio_message")[0];
+    repository.getComponentClasses(productionId, "audio")[0];
   const tokens = isObject(component?.tokens_json) ? component.tokens_json : {};
   const shadows = isObject(themeTokens.shadows) ? themeTokens.shadows : {};
   const surfaceRelief = isObject(themeTokens.surfaceRelief)
@@ -1356,7 +1356,7 @@ function resolveDefaultAudioMessageComponent(
   return {
     id: component?.id ?? null,
     name: component?.name ?? "Default audio message",
-    componentType: "audio_message",
+    componentType: "audio",
     width: numberValue(tokens.width, 260) * renderScale,
     height: numberValue(tokens.height, 58) * renderScale,
     avatarSize: numberValue(tokens.avatarSize, 38) * renderScale,
@@ -1411,9 +1411,9 @@ function resolveDefaultVideoMessageComponent(
 ) {
   const component =
     repository
-      .getComponentClasses(productionId, "video_message")
+      .getComponentClasses(productionId, "video")
       .find((entry) => entry.name === "Default video message") ??
-    repository.getComponentClasses(productionId, "video_message")[0];
+    repository.getComponentClasses(productionId, "video")[0];
   const tokens = isObject(component?.tokens_json) ? component.tokens_json : {};
   const shadows = isObject(themeTokens.shadows) ? themeTokens.shadows : {};
   const surfaceRelief = isObject(themeTokens.surfaceRelief)
@@ -1434,7 +1434,7 @@ function resolveDefaultVideoMessageComponent(
   return {
     id: component?.id ?? null,
     name: component?.name ?? "Default video message",
-    componentType: "video_message",
+    componentType: "video",
     cornerRadius: numberValue(tokens.cornerRadius, 18) * renderScale,
     borderWidth: numberValue(tokens.borderWidth, 0) * renderScale,
     borderColor: themeColor(themeTokens, palette, borderColorToken, "#D1D1D6"),
@@ -2682,7 +2682,7 @@ export function resolveChatScreen({
   const textInputBarComponent = resolveDefaultComponentTokens(
     repository,
     theme.production_id,
-    "text_input_bar",
+    "textInputBar",
     palette,
   );
   const keyboardComponent = resolveDefaultComponentTokens(

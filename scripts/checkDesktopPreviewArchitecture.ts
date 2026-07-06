@@ -859,6 +859,54 @@ assertDoesNotContain(
   "video_message",
   "legacy video_message component type must not return to the preview registry",
 );
+for (const legacyComponentTypeFile of [
+  "src/domain/schemas/componentClass.ts",
+  "src/domain/fields/componentClassFields.ts",
+  "src/domain/repository/fixtures/exampleDataset.ts",
+  "src/domain/resolvers/resolveChatScreen.ts",
+]) {
+  for (const legacyComponentType of [
+    "audio_message",
+    "button_icon",
+    "text_input_bar",
+    "video_message",
+  ]) {
+    assertDoesNotContain(
+      legacyComponentTypeFile,
+      legacyComponentType,
+      `legacy component type ${legacyComponentType} must not return to ${legacyComponentTypeFile}`,
+    );
+  }
+}
+for (const legacySeededComponentType of [
+  "audio_message",
+  "button_icon",
+  "text_input_bar",
+  "video_message",
+]) {
+  assertDoesNotContain(
+    "src/persistence/sqlite/createDatabase.ts",
+    `componentType: "${legacySeededComponentType}"`,
+    `legacy component type ${legacySeededComponentType} must not be seeded as componentType`,
+  );
+  assertDoesNotContain(
+    "src/persistence/sqlite/createDatabase.ts",
+    `type: "${legacySeededComponentType}"`,
+    `legacy component type ${legacySeededComponentType} must not be seeded as component_type`,
+  );
+}
+for (const componentType of Object.keys(desktopPreviewComponents)) {
+  assertContains(
+    "src/domain/schemas/componentClass.ts",
+    `"${componentType}"`,
+    `component class schema must include manifest component type ${componentType}`,
+  );
+  assertContains(
+    "src/domain/fields/componentClassFields.ts",
+    `"${componentType}"`,
+    `component class field options must include manifest component type ${componentType}`,
+  );
+}
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/FieldDefinition.cs",
   "ComponentPreset",

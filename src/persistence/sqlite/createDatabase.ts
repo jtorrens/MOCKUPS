@@ -1006,7 +1006,7 @@ function normalizeComponentSemanticColorTokens(tokens: Record<string, unknown>) 
       next[key] = replacements[value];
     }
   }
-  if (next.componentType === "video_message") {
+  if (next.componentType === "video") {
     return {
       statusVisible: true,
       statusIconToken: "media_video",
@@ -1515,7 +1515,7 @@ function defaultAvatarComponentTokens() {
 function defaultButtonIconComponentTokens() {
   return JSON.stringify({
     schemaVersion: 1,
-    componentType: "button_icon",
+    componentType: "buttonIcon",
     cornerRadius: 0,
     iconPadding: 2,
     borderWidth: 0,
@@ -1551,10 +1551,10 @@ function defaultLabelComponentTokens() {
   });
 }
 
-function defaultAudioMessageComponentTokens() {
+function defaultAudioComponentTokens() {
   return JSON.stringify({
     schemaVersion: 1,
-    componentType: "audio_message",
+    componentType: "audio",
     width: 260,
     height: 58,
     avatarSize: 38,
@@ -1582,10 +1582,10 @@ function defaultAudioMessageComponentTokens() {
   });
 }
 
-function defaultVideoMessageComponentTokens() {
+function defaultVideoComponentTokens() {
   return JSON.stringify({
     schemaVersion: 1,
-    componentType: "video_message",
+    componentType: "video",
     cornerRadius: 18,
     borderWidth: 0,
     borderColorToken: "borders.primary",
@@ -1659,7 +1659,7 @@ function defaultNavigationBarComponentTokens() {
 function defaultTextInputBarComponentTokens() {
   return JSON.stringify({
     schemaVersion: 1,
-    componentType: "text_input_bar",
+    componentType: "textInputBar",
     placeholder: "Mensaje",
     cursorVisible: true,
     idleTextColor: "icons.secondary",
@@ -1749,8 +1749,8 @@ function seedDefaultComponentClasses(database: SQLiteDatabase): void {
         tokens: defaultAvatarComponentTokens(),
       },
       {
-        id: `${production.id}:button_icon_default`,
-        type: "button_icon",
+        id: `${production.id}:buttonIcon_default`,
+        type: "buttonIcon",
         name: "Default icon button",
         tokens: defaultButtonIconComponentTokens(),
       },
@@ -1761,16 +1761,16 @@ function seedDefaultComponentClasses(database: SQLiteDatabase): void {
         tokens: defaultLabelComponentTokens(),
       },
       {
-        id: `${production.id}:audio_message_default`,
-        type: "audio_message",
+        id: `${production.id}:audio_default`,
+        type: "audio",
         name: "Default audio message",
-        tokens: defaultAudioMessageComponentTokens(),
+        tokens: defaultAudioComponentTokens(),
       },
       {
-        id: `${production.id}:video_message_default`,
-        type: "video_message",
+        id: `${production.id}:video_default`,
+        type: "video",
         name: "Default video message",
-        tokens: defaultVideoMessageComponentTokens(),
+        tokens: defaultVideoComponentTokens(),
       },
       {
         id: `${production.id}:status_bar_default`,
@@ -1785,8 +1785,8 @@ function seedDefaultComponentClasses(database: SQLiteDatabase): void {
         tokens: defaultNavigationBarComponentTokens(),
       },
       {
-        id: `${production.id}:text_input_bar_default`,
-        type: "text_input_bar",
+        id: `${production.id}:textInputBar_default`,
+        type: "textInputBar",
         name: "Default text input bar",
         tokens: defaultTextInputBarComponentTokens(),
       },
@@ -2752,6 +2752,47 @@ function applyAdditiveV40Migration(database: SQLiteDatabase): void {
   database.pragma("user_version = 40");
 }
 
+const CURRENT_COMPONENT_TYPE_BY_LEGACY: Record<string, string> = {
+  audio_message: "audio",
+  button_icon: "buttonIcon",
+  text_input_bar: "textInputBar",
+  video_message: "video",
+};
+
+function currentComponentType(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  return CURRENT_COMPONENT_TYPE_BY_LEGACY[value] ?? value;
+}
+
+function normalizeComponentClassTypeNames(database: SQLiteDatabase): void {
+  const rows = database
+    .prepare("SELECT id, component_type, tokens_json FROM component_classes ORDER BY id")
+    .all() as { id: string; component_type: string; tokens_json: string }[];
+  const update = database.prepare(
+    "UPDATE component_classes SET component_type = ?, tokens_json = ? WHERE id = ?",
+  );
+  for (const row of rows) {
+    const componentType = currentComponentType(row.component_type) ?? row.component_type;
+    let tokensJson = row.tokens_json;
+    try {
+      const tokens = JSON.parse(row.tokens_json) as Record<string, unknown>;
+      const tokenComponentType = currentComponentType(tokens.componentType);
+      if (tokenComponentType && tokenComponentType !== tokens.componentType) {
+        tokensJson = JSON.stringify({
+          ...tokens,
+          componentType: tokenComponentType,
+        });
+      }
+    } catch {
+      // Malformed JSON is handled by validation paths; keep it visible there.
+    }
+
+    if (componentType !== row.component_type || tokensJson !== row.tokens_json) {
+      update.run(componentType, tokensJson, row.id);
+    }
+  }
+}
+
 function applyAdditiveV41Migration(database: SQLiteDatabase): void {
   const themeRows = database
     .prepare("SELECT id, tokens_json FROM themes ORDER BY id")
@@ -2784,6 +2825,7 @@ function applyAdditiveV41Migration(database: SQLiteDatabase): void {
       // Malformed JSON is handled by validation paths; skip migration here.
     }
   }
+  normalizeComponentClassTypeNames(database);
   database.pragma("user_version = 41");
 }
 

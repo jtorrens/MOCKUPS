@@ -591,13 +591,13 @@ export function createExampleDataset(): RepositoryDataset {
     metadata_json: { source: "seed" },
   });
   const buttonIconComponentClass = ComponentClassSchema.parse({
-    id: `${production.id}:button_icon_default`,
+    id: `${production.id}:buttonIcon_default`,
     production_id: production.id,
-    component_type: "button_icon",
+    component_type: "buttonIcon",
     name: "Default icon button",
     tokens_json: {
       schemaVersion: 1,
-      componentType: "button_icon",
+      componentType: "buttonIcon",
       cornerRadius: 0,
       iconPadding: 2,
       borderWidth: 0,
@@ -638,13 +638,13 @@ export function createExampleDataset(): RepositoryDataset {
     metadata_json: { source: "seed" },
   });
   const audioMessageComponentClass = ComponentClassSchema.parse({
-    id: `${production.id}:audio_message_default`,
+    id: `${production.id}:audio_default`,
     production_id: production.id,
-    component_type: "audio_message",
+    component_type: "audio",
     name: "Default audio message",
     tokens_json: {
       schemaVersion: 1,
-      componentType: "audio_message",
+      componentType: "audio",
       width: 260,
       height: 58,
       avatarSize: 38,
@@ -668,13 +668,13 @@ export function createExampleDataset(): RepositoryDataset {
     metadata_json: { source: "seed" },
   });
   const videoMessageComponentClass = ComponentClassSchema.parse({
-    id: `${production.id}:video_message_default`,
+    id: `${production.id}:video_default`,
     production_id: production.id,
-    component_type: "video_message",
+    component_type: "video",
     name: "Default video message",
     tokens_json: {
       schemaVersion: 1,
-      componentType: "video_message",
+      componentType: "video",
       playOverlayEnabled: true,
       playCircleSize: 44,
       playCircleColorToken: "icons.accent",
@@ -715,13 +715,13 @@ export function createExampleDataset(): RepositoryDataset {
     metadata_json: { source: "seed" },
   });
   const textInputBarComponentClass = ComponentClassSchema.parse({
-    id: `${production.id}:text_input_bar_default`,
+    id: `${production.id}:textInputBar_default`,
     production_id: production.id,
-    component_type: "text_input_bar",
+    component_type: "textInputBar",
     name: "Default text input bar",
     tokens_json: {
       schemaVersion: 1,
-      componentType: "text_input_bar",
+      componentType: "textInputBar",
       placeholder: "Mensaje",
       cursorVisible: true,
       idleTextColor: "icons.secondary",
