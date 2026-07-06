@@ -217,10 +217,15 @@ assertDoesNotContain(
   "desktop design preview must use the clean desktop HTML adapter, not the legacy React renderable adapter",
 );
 assertNoTerms("src/desktop-preview/DesktopRenderableHtmlAdapter.tsx", [
+  "component_preview_unsupported",
+  "design_preview_surface",
+  "icon_token",
   "message_bubble",
   "audio_message",
   "button_icon",
+  "status_bar",
   "status_bar_item",
+  "navigation_bar",
   "navigation_bar_item",
   "keyboard_key",
   "text_input_bar_",
