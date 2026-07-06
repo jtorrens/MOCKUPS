@@ -1,20 +1,8 @@
-import { existsSync, readFileSync } from "node:fs";
-import path from "node:path";
 import type { RenderableBox } from "../visual/renderable/types.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import type { AlignmentPlacementContract } from "./componentResolverCommon.js";
-
-type JsonRecord = Record<string, unknown>;
-
-function asRecord(value: unknown): JsonRecord {
-  return typeof value === "object" && value !== null && !Array.isArray(value)
-    ? (value as JsonRecord)
-    : {};
-}
-
-function parseObject(json: string | undefined) {
-  return asRecord(JSON.parse(json || "{}"));
-}
+import { iconUriForToken } from "./previewAssetResolver.js";
+import { asRecord, parseObject } from "./previewJsonHelpers.js";
 
 export function renderScale(payload: DesignPreviewPayload) {
   const scale = payload.previewFrame.scaleToPixels;
@@ -301,27 +289,6 @@ export function translateBox(box: RenderableBox, origin: { x: number; y: number 
     width: box.width,
     height: box.height,
   };
-}
-
-function iconUriForToken(payload: DesignPreviewPayload, token: string) {
-  const mapping = parseObject(payload.iconMappingJson ?? "{}");
-  const tokens = asRecord(mapping.tokens);
-  const iconToken = asRecord(tokens[token]);
-  const file = typeof iconToken.file === "string" ? iconToken.file : "";
-  const assetRoot = payload.iconAssetRoot?.replace(/\/+$/g, "") ?? "";
-  if (!file || !assetRoot) return "";
-
-  const candidates = [
-    path.resolve(payload.projectMediaRoot ?? "", assetRoot, file),
-    path.resolve("assets/FOQN_S2", assetRoot, file),
-    path.resolve("assets", assetRoot, file),
-    path.resolve(assetRoot, file),
-  ];
-  const fullPath = candidates.find((candidate) => existsSync(candidate));
-  if (!fullPath) return "";
-
-  const svg = readFileSync(fullPath);
-  return `data:image/svg+xml;base64,${svg.toString("base64")}`;
 }
 
 export function cssColorWithAlpha(color: string, alpha: number) {
