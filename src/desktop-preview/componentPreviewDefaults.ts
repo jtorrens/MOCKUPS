@@ -2,6 +2,29 @@ import { asRecord } from "./previewJsonHelpers.js";
 
 type JsonRecord = Record<string, unknown>;
 
+export function componentPresetConfig(
+  componentBaseConfigs: JsonRecord,
+  componentType: string,
+  presetReference: unknown,
+): JsonRecord {
+  const reference = typeof presetReference === "string" ? presetReference.trim() : "";
+  if (!reference) {
+    throw new Error(`Missing component preset reference for ${componentType}`);
+  }
+
+  if (!reference.includes("::preset::")) {
+    throw new Error(`Unsupported legacy component preset reference ${reference}`);
+  }
+
+  const presets = asRecord(componentBaseConfigs.presets);
+  const config = presets[reference];
+  if (config === undefined) {
+    throw new Error(`Missing component preset config ${reference}`);
+  }
+
+  return asRecord(config);
+}
+
 export function mergeComponentDefaults(
   defaults: JsonRecord,
   overrides: JsonRecord,

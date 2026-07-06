@@ -169,6 +169,18 @@ child preset and opens the embedded child editor from the same row. Do not show
 `*.presetId` as a separate editor row for slots such as Avatar Label, Button
 Icon Label, Audio Avatar or Audio Badge.
 
+The stored value for a selected embedded preset is a full component preset
+reference, not a short preset id:
+
+```text
+componentClassId::preset::presetId
+```
+
+This is required because multiple component classes of the same type can define
+presets with the same local id. A slot such as Audio Badge must therefore know
+both "Button Icon class = Icon Badge" and "preset = Icon Badge" before the editor
+or web preview resolves inherited values.
+
 Inside an embedded editor, reset/inherit restores the selected preset for that
 slot, not the child component's `default` preset. Ancestor slot overrides may
 affect nested slot selection, but the overrides of the slot currently being

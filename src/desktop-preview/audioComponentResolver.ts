@@ -1,5 +1,8 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import { mergeComponentDefaults } from "./componentPreviewDefaults.js";
+import {
+  componentPresetConfig,
+  mergeComponentDefaults,
+} from "./componentPreviewDefaults.js";
 import type { AudioDesignContract } from "./audioComponentContract.js";
 import { resolveAvatarComponentFromRecords } from "./avatarComponentResolver.js";
 import { resolveButtonIconComponentFromRecords } from "./buttonIconComponentResolver.js";
@@ -9,7 +12,6 @@ import {
   requiredBoolean,
   requiredNumber,
   requiredPlacement,
-  requiredRecord,
   requiredString,
   resolveSurfaceStyle,
 } from "./componentResolverCommon.js";
@@ -35,15 +37,11 @@ export function resolveAudioComponent(
     "component.audio.badge.showBadge",
   );
   const avatarConfig = mergeComponentDefaults(
-    requiredRecord(componentBaseConfigs, "avatar", "componentBaseConfigs.avatar"),
+    componentPresetConfig(componentBaseConfigs, "avatar", avatarSlot.presetId),
     asRecord(avatarSlot.overrides),
   );
   const badgeConfig = mergeComponentDefaults(
-    requiredRecord(
-      componentBaseConfigs,
-      "buttonIcon",
-      "componentBaseConfigs.buttonIcon",
-    ),
+    componentPresetConfig(componentBaseConfigs, "buttonIcon", badgeSlot.presetId),
     asRecord(badgeSlot.overrides),
   );
   const durationSeconds = Math.max(

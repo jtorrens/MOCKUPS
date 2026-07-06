@@ -543,6 +543,21 @@ assertContains(
   "index < slots.Count - 1 && overrides is not null",
   "embedded inherited values must apply ancestor overrides only, so reset restores the selected child preset",
 );
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
+  "return GetComponentPresetReferenceOptionsByType(projectId, componentType);",
+  "embedded component preset selectors must store full component preset references, not short preset ids",
+);
+assertContains(
+  "src/desktop-preview/componentPreviewDefaults.ts",
+  "componentPresetConfig",
+  "desktop preview resolvers must resolve embedded child presets through the shared preset helper",
+);
+assertContains(
+  "src/desktop-preview/audioComponentResolver.ts",
+  "componentPresetConfig(componentBaseConfigs, \"buttonIcon\", badgeSlot.presetId)",
+  "audio badge preview must resolve the selected button icon preset, not the default button icon config",
+);
 for (const embeddedPresetField of [
   "component.avatar.label.presetId",
   "component.buttonIcon.label.presetId",

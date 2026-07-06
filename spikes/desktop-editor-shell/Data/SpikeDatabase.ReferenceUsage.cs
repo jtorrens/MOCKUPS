@@ -125,6 +125,7 @@ internal sealed partial class SpikeDatabase
                 foreach (var usage in ComponentPresetUsageSources(
                              componentClasses,
                              presetOwner.ProjectId,
+                             presetOwner.Id,
                              presetOwner.ComponentType,
                              preset.Id))
                 {
@@ -156,19 +157,20 @@ internal sealed partial class SpikeDatabase
     private static IEnumerable<string> ComponentPresetUsageSources(
         IReadOnlyList<ComponentClassRow> componentClasses,
         string projectId,
+        string componentClassId,
         string componentType,
         string presetId)
     {
         foreach (var row in componentClasses.Where((candidate) => candidate.ProjectId.Equals(projectId, StringComparison.Ordinal)))
         {
-            if (ComponentPresetIsUsedByConfig(row.ConfigJson, componentType, presetId))
+            if (ComponentPresetIsUsedByConfig(row.ConfigJson, componentClassId, componentType, presetId))
             {
                 yield return $"Component Class: {row.Name}";
             }
 
             foreach (var preset in ComponentClassPresets(row.MetadataJson))
             {
-                if (ComponentPresetIsUsedByConfig(preset.ConfigJson, componentType, presetId))
+                if (ComponentPresetIsUsedByConfig(preset.ConfigJson, componentClassId, componentType, presetId))
                 {
                     yield return $"Component Preset: {row.Name} · {preset.Name}";
                 }

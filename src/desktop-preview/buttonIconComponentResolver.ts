@@ -1,5 +1,8 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import { mergeComponentDefaults } from "./componentPreviewDefaults.js";
+import {
+  componentPresetConfig,
+  mergeComponentDefaults,
+} from "./componentPreviewDefaults.js";
 import {
   asRecord,
   parseObject,
@@ -7,7 +10,6 @@ import {
   requiredBoolean,
   requiredNumber,
   requiredPlacement,
-  requiredRecord,
   requiredString,
   resolveSurfaceStyle,
 } from "./componentResolverCommon.js";
@@ -68,7 +70,7 @@ export function resolveButtonIconComponentFromRecords(
   );
   const overrides = asRecord(labelSlot.overrides);
   const embeddedLabelConfig = mergeComponentDefaults(
-    requiredRecord(componentBaseConfigs, "label", "componentBaseConfigs.label"),
+    componentPresetConfig(componentBaseConfigs, "label", labelSlot.presetId),
     overrides,
   );
 

@@ -1,5 +1,8 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import { mergeComponentDefaults } from "./componentPreviewDefaults.js";
+import {
+  componentPresetConfig,
+  mergeComponentDefaults,
+} from "./componentPreviewDefaults.js";
 import { stringValue } from "./previewColorHelpers.js";
 import {
   asRecord,
@@ -60,7 +63,7 @@ export function resolveAvatarComponentFromRecords(
   );
   const overrides = asRecord(labelSlot.overrides);
   const embeddedLabelConfig = mergeComponentDefaults(
-    requiredRecord(componentBaseConfigs, "label", "componentBaseConfigs.label"),
+    componentPresetConfig(componentBaseConfigs, "label", labelSlot.presetId),
     overrides,
   );
   const actor = resolveActorPreview(preview);

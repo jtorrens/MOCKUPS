@@ -305,6 +305,7 @@ internal sealed partial class SpikeDatabase
                 row.Name,
                 row.Id,
                 row.ConfigJson,
+                componentClassId,
                 owner.ComponentType,
                 presetId);
 
@@ -317,6 +318,7 @@ internal sealed partial class SpikeDatabase
                     $"{row.Name} · {preset.Name}",
                     ComponentPresetNodeId(row.Id, preset.Id),
                     preset.ConfigJson,
+                    componentClassId,
                     owner.ComponentType,
                     presetId);
             }
@@ -361,6 +363,7 @@ internal sealed partial class SpikeDatabase
         string sourceName,
         string sourceNodeId,
         string configJson,
+        string componentClassId,
         string componentType,
         string presetId)
     {
@@ -377,7 +380,7 @@ internal sealed partial class SpikeDatabase
                 continue;
             }
 
-            if (!JsonPath.String(slotNode, "presetId", DefaultComponentPresetId).Equals(presetId, StringComparison.Ordinal))
+            if (!SlotPresetMatches(slotNode, componentClassId, presetId))
             {
                 continue;
             }
@@ -401,6 +404,7 @@ internal sealed partial class SpikeDatabase
 
     private static bool ComponentPresetIsUsedByConfig(
         string configJson,
+        string componentClassId,
         string componentType,
         string presetId)
     {
@@ -417,13 +421,25 @@ internal sealed partial class SpikeDatabase
                 continue;
             }
 
-            if (JsonPath.String(slotNode, "presetId", DefaultComponentPresetId).Equals(presetId, StringComparison.Ordinal))
+            if (SlotPresetMatches(slotNode, componentClassId, presetId))
             {
                 return true;
             }
         }
 
         return false;
+    }
+
+    private static bool SlotPresetMatches(JsonObject slotNode, string componentClassId, string presetId)
+    {
+        var value = JsonPath.String(slotNode, "presetId", DefaultComponentPresetId);
+        if (TryParseComponentPresetNodeId(value, out var referencedClassId, out var referencedPresetId))
+        {
+            return referencedClassId.Equals(componentClassId, StringComparison.Ordinal)
+                && referencedPresetId.Equals(presetId, StringComparison.Ordinal);
+        }
+
+        return value.Equals(presetId, StringComparison.Ordinal);
     }
 
     private static JsonArray EnsurePresetArray(JsonObject metadata)
@@ -687,9 +703,10 @@ internal sealed partial class SpikeDatabase
     {
         using var connection = OpenConnection();
         var configs = new JsonObject();
+        var presets = new JsonObject();
         using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT component_type, config_json, metadata_json
+            SELECT id, component_type, config_json, metadata_json
             FROM component_classes
             WHERE project_id = $projectId
             ORDER BY CASE WHEN id = 'component_' || $projectId || '_' || component_type THEN 0 ELSE 1 END, name
@@ -698,18 +715,44 @@ internal sealed partial class SpikeDatabase
         using var reader = command.ExecuteReader();
         while (reader.Read())
         {
-            var componentType = reader.GetString(0);
+            var componentClassId = reader.GetString(0);
+            var componentType = reader.GetString(1);
+            var classConfigJson = ReadString(reader, 2);
+            var metadataJson = ReadString(reader, 3);
+            var row = new ComponentClassRow(
+                componentClassId,
+                projectId,
+                componentType,
+                "",
+                "",
+                "",
+                classConfigJson,
+                "",
+                metadataJson);
+            AddComponentPresetConfigs(presets, row);
             if (configs.ContainsKey(componentType))
             {
                 continue;
             }
 
             configs[componentType] = ParseJsonObject(DefaultComponentPresetConfigJson(
-                ReadString(reader, 1),
-                ReadString(reader, 2)));
+                classConfigJson,
+                metadataJson));
         }
 
+        configs["presets"] = presets;
         return configs.ToJsonString();
+    }
+
+    private static void AddComponentPresetConfigs(JsonObject target, ComponentClassRow row)
+    {
+        foreach (var preset in ComponentClassPresetsOrDefault(row))
+        {
+            target[ComponentPresetNodeId(row.Id, preset.Id)] = ParseJsonObject(
+                string.IsNullOrWhiteSpace(preset.ConfigJson) || preset.ConfigJson == "{}"
+                    ? row.ConfigJson
+                    : preset.ConfigJson);
+        }
     }
 
     public IReadOnlyList<FieldOption> GetComponentClassOptionsByType(
@@ -845,8 +888,23 @@ internal sealed partial class SpikeDatabase
         SqliteConnection connection,
         string projectId,
         string componentType,
-        string presetId)
+        string presetReference)
     {
+        if (TryParseComponentPresetNodeId(presetReference, out var componentClassId, out var referencedPresetId))
+        {
+            var referencedRow = QueryComponentClassRows(connection)
+                .FirstOrDefault((row) =>
+                    row.ProjectId.Equals(projectId, StringComparison.Ordinal)
+                    && row.Id.Equals(componentClassId, StringComparison.Ordinal)
+                    && row.ComponentType.Equals(componentType, StringComparison.Ordinal));
+            if (referencedRow is null)
+            {
+                throw new InvalidOperationException($"Missing component preset reference '{presetReference}'.");
+            }
+
+            return ComponentPresetConfigJson(referencedRow, referencedPresetId);
+        }
+
         using var command = connection.CreateCommand();
         command.CommandText = """
             SELECT config_json, metadata_json
@@ -866,6 +924,16 @@ internal sealed partial class SpikeDatabase
 
         var classConfigJson = ReadString(reader, 0);
         var metadataJson = ReadString(reader, 1);
+        return ComponentPresetConfigJson(classConfigJson, metadataJson, presetReference);
+    }
+
+    private static string ComponentPresetConfigJson(ComponentClassRow row, string presetId)
+    {
+        return ComponentPresetConfigJson(row.ConfigJson, row.MetadataJson, presetId);
+    }
+
+    private static string ComponentPresetConfigJson(string classConfigJson, string metadataJson, string presetId)
+    {
         var preset = ComponentClassPresets(metadataJson)
             .FirstOrDefault((candidate) => candidate.Id.Equals(presetId, StringComparison.Ordinal));
         return string.IsNullOrWhiteSpace(preset?.ConfigJson) || preset.ConfigJson == "{}"
@@ -893,36 +961,33 @@ internal sealed partial class SpikeDatabase
 
     private IReadOnlyList<FieldOption> ComponentPresetOptions(string projectId, string componentType)
     {
-        using var connection = OpenConnection();
-        using var command = connection.CreateCommand();
-        command.CommandText = """
-            SELECT metadata_json
-            FROM component_classes
-            WHERE project_id = $projectId
-              AND component_type = $componentType
-            ORDER BY CASE WHEN id = 'component_' || $projectId || '_' || component_type THEN 0 ELSE 1 END, name
-            LIMIT 1
-            """;
-        command.Parameters.AddWithValue("$projectId", projectId);
-        command.Parameters.AddWithValue("$componentType", componentType);
-        var metadataJson = command.ExecuteScalar() as string ?? "";
-        var options = ComponentClassPresets(metadataJson)
-            .Select((preset) => new FieldOption(preset.Id, preset.Name))
-            .ToList();
-        if (options.Count == 0)
-        {
-            options.Add(new FieldOption(DefaultComponentPresetId, "Default"));
-        }
-
-        return options;
+        return GetComponentPresetReferenceOptionsByType(projectId, componentType);
     }
 
     private static string ComponentPresetName(
         SqliteConnection connection,
         string projectId,
         string componentType,
-        string presetId)
+        string presetReference)
     {
+        if (TryParseComponentPresetNodeId(presetReference, out var componentClassId, out var referencedPresetId))
+        {
+            var row = QueryComponentClassRows(connection)
+                .FirstOrDefault((candidate) =>
+                    candidate.ProjectId.Equals(projectId, StringComparison.Ordinal)
+                    && candidate.Id.Equals(componentClassId, StringComparison.Ordinal)
+                    && candidate.ComponentType.Equals(componentType, StringComparison.Ordinal));
+            if (row is null)
+            {
+                return presetReference;
+            }
+
+            var referencedPreset = ComponentClassPresetsOrDefault(row)
+                .FirstOrDefault((candidate) => candidate.Id.Equals(referencedPresetId, StringComparison.Ordinal));
+            var presetName = string.IsNullOrWhiteSpace(referencedPreset?.Name) ? referencedPresetId : referencedPreset.Name;
+            return $"{row.Name} · {presetName}";
+        }
+
         using var command = connection.CreateCommand();
         command.CommandText = """
             SELECT metadata_json
@@ -936,8 +1001,8 @@ internal sealed partial class SpikeDatabase
         command.Parameters.AddWithValue("$componentType", componentType);
         var metadataJson = command.ExecuteScalar() as string ?? "";
         var preset = ComponentClassPresets(metadataJson)
-            .FirstOrDefault((candidate) => candidate.Id.Equals(presetId, StringComparison.Ordinal));
-        return string.IsNullOrWhiteSpace(preset?.Name) ? presetId : preset.Name;
+            .FirstOrDefault((candidate) => candidate.Id.Equals(presetReference, StringComparison.Ordinal));
+        return string.IsNullOrWhiteSpace(preset?.Name) ? presetReference : preset.Name;
     }
 
     private IReadOnlyList<FieldOption>? ComponentClassFieldOptions(
@@ -1426,7 +1491,7 @@ internal sealed partial class SpikeDatabase
             var configChanged = NormalizeAvatarLabelPlacement(row.ComponentType, config);
             configChanged |= NormalizeButtonIconLabelSlot(row.ComponentType, config);
             configChanged |= NormalizeAudioEmbeddedSlots(row.ComponentType, config);
-            configChanged |= NormalizeEmbeddedSlotPresetIds(config);
+            configChanged |= NormalizeEmbeddedSlotPresetIds(connection, row.ProjectId, config);
             configChanged |= JsonPath.MergeMissing(config, defaults);
             configChanged |= NormalizeReliefIntensity(config, "reliefTopIntensity");
             configChanged |= NormalizeReliefIntensity(config, "reliefBottomIntensity");
@@ -1440,6 +1505,7 @@ internal sealed partial class SpikeDatabase
 
             var metadata = ParseJsonObject(string.IsNullOrWhiteSpace(row.MetadataJson) ? "{}" : row.MetadataJson);
             var metadataChanged = EnsureDefaultComponentPreset(metadata, config);
+            metadataChanged |= NormalizeComponentPresetConfigs(connection, row.ProjectId, metadata);
 
             if (!configChanged && !designPreviewChanged && !metadataChanged)
             {
@@ -1501,6 +1567,31 @@ internal sealed partial class SpikeDatabase
             ["config"] = JsonNode.Parse(config.ToJsonString()),
         });
         return true;
+    }
+
+    private static bool NormalizeComponentPresetConfigs(SqliteConnection connection, string projectId, JsonObject metadata)
+    {
+        var changed = false;
+        foreach (var preset in EnsurePresetArray(metadata).OfType<JsonObject>())
+        {
+            if (preset["configJson"] is not JsonValue configValue
+                || !configValue.TryGetValue<string>(out var configJson)
+                || string.IsNullOrWhiteSpace(configJson))
+            {
+                continue;
+            }
+
+            var presetConfig = ParseJsonObject(configJson);
+            if (!NormalizeEmbeddedSlotPresetIds(connection, projectId, presetConfig))
+            {
+                continue;
+            }
+
+            preset["configJson"] = presetConfig.ToJsonString();
+            changed = true;
+        }
+
+        return changed;
     }
 
     private static IReadOnlyList<ComponentClassPreset> ComponentClassPresets(string metadataJson)
@@ -1705,7 +1796,7 @@ internal sealed partial class SpikeDatabase
         return changed;
     }
 
-    private static bool NormalizeEmbeddedSlotPresetIds(JsonObject config)
+    private static bool NormalizeEmbeddedSlotPresetIds(SqliteConnection connection, string projectId, JsonObject config)
     {
         var changed = false;
         foreach (var slot in EmbeddedComponentSlotCatalog.All())
@@ -1715,12 +1806,18 @@ internal sealed partial class SpikeDatabase
                 continue;
             }
 
-            if (!string.IsNullOrWhiteSpace(JsonPath.String(slotNode, "presetId", "")))
+            var currentValue = JsonPath.String(slotNode, "presetId", "");
+            var normalizedValue = NormalizeComponentPresetReference(
+                connection,
+                projectId,
+                slot.EmbeddedComponentType,
+                currentValue);
+            if (currentValue.Equals(normalizedValue, StringComparison.Ordinal))
             {
                 continue;
             }
 
-            slotNode["presetId"] = DefaultComponentPresetId;
+            slotNode["presetId"] = normalizedValue;
             changed = true;
         }
 
