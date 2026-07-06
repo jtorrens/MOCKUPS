@@ -10,35 +10,26 @@ internal sealed class EditorCollectionCardFactory
     private readonly SpikeDatabase _database;
     private readonly Func<bool> _isDark;
     private readonly Func<string, string, Task> _showInfo;
-    private readonly Func<string, Task<bool>> _confirmIconTokenDelete;
-    private readonly Func<ProjectTreeNode, Task> _showIconThemeSearch;
-    private readonly Func<ProjectTreeNode, string, Task> _showIconThemeSvgReplace;
+    private readonly EditorDomainDialogService _domainDialogs;
     private readonly Action<ProjectTreeNode> _reloadAndSelect;
     private readonly Func<string, ValueKind, Task<string?>> _browsePath;
-    private readonly Func<string, string, bool, Task<string?>> _showIconTokenPicker;
     private readonly Action _onChanged;
 
     public EditorCollectionCardFactory(
         SpikeDatabase database,
         Func<bool> isDark,
         Func<string, string, Task> showInfo,
-        Func<string, Task<bool>> confirmIconTokenDelete,
-        Func<ProjectTreeNode, Task> showIconThemeSearch,
-        Func<ProjectTreeNode, string, Task> showIconThemeSvgReplace,
+        EditorDomainDialogService domainDialogs,
         Action<ProjectTreeNode> reloadAndSelect,
         Func<string, ValueKind, Task<string?>> browsePath,
-        Func<string, string, bool, Task<string?>> showIconTokenPicker,
         Action onChanged)
     {
         _database = database;
         _isDark = isDark;
         _showInfo = showInfo;
-        _confirmIconTokenDelete = confirmIconTokenDelete;
-        _showIconThemeSearch = showIconThemeSearch;
-        _showIconThemeSvgReplace = showIconThemeSvgReplace;
+        _domainDialogs = domainDialogs;
         _reloadAndSelect = reloadAndSelect;
         _browsePath = browsePath;
-        _showIconTokenPicker = showIconTokenPicker;
         _onChanged = onChanged;
     }
 
@@ -52,9 +43,9 @@ internal sealed class EditorCollectionCardFactory
                     _database,
                     _isDark(),
                     _showInfo,
-                    _confirmIconTokenDelete,
-                    _showIconThemeSearch,
-                    _showIconThemeSvgReplace,
+                    _domainDialogs.ConfirmIconTokenDelete,
+                    _domainDialogs.ShowIconThemeSearch,
+                    _domainDialogs.ShowIconThemeSvgReplace,
                     _reloadAndSelect).Create(node),
             ],
             ProjectTreeNodeKind.ComponentClass =>
@@ -74,7 +65,7 @@ internal sealed class EditorCollectionCardFactory
                     _database,
                     _isDark(),
                     _browsePath,
-                    _showIconTokenPicker,
+                    _domainDialogs.ShowIconTokenPicker,
                     _onChanged).Create(node),
             ],
             "navigation_bar" =>

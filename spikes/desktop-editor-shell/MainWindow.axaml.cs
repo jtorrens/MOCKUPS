@@ -142,12 +142,9 @@ public partial class MainWindow : SukiWindow
             _database,
             () => _themeController.IsDark,
             _nodeCommands.ShowInfoDialog,
-            _domainDialogs.ConfirmIconTokenDelete,
-            _domainDialogs.ShowIconThemeSearch,
-            _domainDialogs.ShowIconThemeSvgReplace,
+            _domainDialogs,
             ReloadAndSelect,
             _pathBrowser.BrowsePath,
-            _domainDialogs.ShowIconTokenPicker,
             RefreshPreviewDevice);
         _editorContent = new EditorContentController(
             _database,

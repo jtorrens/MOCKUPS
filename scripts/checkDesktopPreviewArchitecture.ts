@@ -557,6 +557,15 @@ for (const componentClass of Object.keys(desktopPreviewComponents)) {
 
 assertNoTerms("spikes/desktop-editor-shell/MainWindow.axaml.cs", [
   "Current class values",
+  "ProjectTreeNodeKind.",
+  "ValueKind.",
+  "new TextBox",
+  "new ComboBox",
+  "new CheckBox",
+  "IconTheme",
+  "IconToken",
+  "SvgReplace",
+  "ColorPicker",
 ]);
 assertPropertyBlockDoesNotContain(
   "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
