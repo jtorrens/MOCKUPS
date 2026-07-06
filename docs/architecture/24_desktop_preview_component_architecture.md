@@ -1047,11 +1047,14 @@ Tasks:
 - there is no shared `systemBar*` contract/resolver/renderable layer;
 - their resolvers own their own layout metrics.
 
-Remaining non-preview follow-up:
+Non-preview follow-up resolved for the desktop spike:
 
-- review whether legacy desktop persistence tables/roots named
-  `status_bars`/`navigation_bars` should be removed or kept as compatibility
-  wrappers around component presets.
+- the desktop editor no longer seeds, edits or queries legacy
+  `status_bars`/`navigation_bars` rows;
+- the physical tables remain only as persistence/schema compatibility for
+  non-desktop/runtime code until that layer is redesigned;
+- status/navigation editing and theme selection must go through component class
+  presets.
 
 Validation:
 

@@ -97,6 +97,8 @@ legacy/new fragments.
 - concrete component imports only follow declared manifest ownership;
 - no shared `systemBar*` route exists; status/navigation are normal manifest
   components with category `system`;
+- the desktop spike cannot seed, query or edit legacy `status_bars` /
+  `navigation_bars` rows;
 - legacy `audio_message`, `button_icon`, `text_input_bar` and `video_message`
   names do not return to the desktop preview manifest or registry.
 
