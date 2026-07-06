@@ -126,6 +126,7 @@ Examples:
 - `fontStyle`
 - `iconToken`
 - `iconTokenList`
+- `recordReference` (`tableId`, record id, display name)
 - `surfaceStyle`
 - `componentOverride`
 
