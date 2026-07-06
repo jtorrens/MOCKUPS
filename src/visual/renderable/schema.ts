@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { RenderableNode } from "./types.js";
+import { renderableNodeTypes, type RenderableNode } from "./types.js";
 
 const RenderableBoxSchema = z.object({
   x: z.number(),
@@ -21,14 +21,7 @@ const RenderableAssetSchema = z.object({
   uri: z.string().min(1),
 });
 
-const RenderableNodeTypeSchema = z.enum([
-  "group",
-  "icon",
-  "image",
-  "path",
-  "surface",
-  "text",
-]);
+const RenderableNodeTypeSchema = z.enum(renderableNodeTypes);
 
 const RenderableMetadataSchema = z.object({
   fontFaces: z.array(z.object({

@@ -5,6 +5,7 @@ import {
   type DesktopPreviewComponentManifestEntry,
 } from "../src/desktop-preview/desktopPreviewComponents.js";
 import { componentRenderableFactories } from "../src/desktop-preview/componentClassRenderableRegistry.js";
+import { renderableNodeTypes } from "../src/visual/renderable/types.js";
 
 const root = process.cwd();
 const previewRoot = path.join(root, "src", "desktop-preview");
@@ -277,8 +278,13 @@ assertContains(
 );
 assertContains(
   "src/visual/renderable/types.ts",
-  "export type RenderableNodeType",
-  "renderable node type must stay as an explicit primitive union",
+  "export const renderableNodeTypes",
+  "renderable primitive list must stay explicit and shared",
+);
+assertContains(
+  "src/visual/renderable/types.ts",
+  "export type RenderableNodeType = (typeof renderableNodeTypes)[number];",
+  "renderable node type must be derived from the shared primitive list",
 );
 assertContains(
   "src/visual/renderable/types.ts",
@@ -302,8 +308,8 @@ assertDoesNotContain(
 );
 assertContains(
   "src/visual/renderable/schema.ts",
-  "const RenderableNodeTypeSchema = z.enum",
-  "renderable schema must validate node type through an explicit enum",
+  "const RenderableNodeTypeSchema = z.enum(renderableNodeTypes);",
+  "renderable schema must validate node type through the shared primitive list",
 );
 assertContains(
   "src/visual/renderable/schema.ts",
@@ -314,21 +320,11 @@ assertStringSetEquals(
   "src/visual/renderable/types.ts",
   quotedStringsFromBlock(
     "src/visual/renderable/types.ts",
-    /export type RenderableNodeType\s*=([\s\S]*?);/,
-    "renderable node type primitive union must be parseable",
+    /export const renderableNodeTypes\s*=\s*\[([\s\S]*?)\]\s*as const;/,
+    "renderable primitive list must be parseable",
   ),
   desktopPreviewPaintNodeTypes,
-  "renderable node type union",
-);
-assertStringSetEquals(
-  "src/visual/renderable/schema.ts",
-  quotedStringsFromBlock(
-    "src/visual/renderable/schema.ts",
-    /const RenderableNodeTypeSchema\s*=\s*z\.enum\(\[([\s\S]*?)\]\);/,
-    "renderable node type schema enum must be parseable",
-  ),
-  desktopPreviewPaintNodeTypes,
-  "renderable node type schema",
+  "shared renderable primitive list",
 );
 
 assertNoTerms("src/desktop-preview/componentRenderableCommon.ts", [
@@ -640,32 +636,17 @@ for (const filePath of walkFiles(previewRoot)) {
 const payloadSource = readText("src/desktop-preview/designPreviewPayload.ts");
 {
   const adapterSource = readText("src/desktop-preview/DesktopRenderableHtmlAdapter.tsx");
-  const supportedNodeTypesMatch = /supportedNodeTypes\s*=\s*new Set\(\[([\s\S]*?)\]\)/.exec(adapterSource);
-  if (!supportedNodeTypesMatch) {
+  assertStringSetEquals(
+    "src/visual/renderable/types.ts",
+    new Set(renderableNodeTypes),
+    desktopPreviewPaintNodeTypes,
+    "runtime renderable primitive list",
+  );
+  if (!adapterSource.includes("const supportedNodeTypes = new Set(renderableNodeTypes);")) {
     addViolation(
       "src/desktop-preview/DesktopRenderableHtmlAdapter.tsx",
-      "desktop renderer must declare its supported primitive node types explicitly",
+      "desktop renderer must use the shared renderable primitive list",
     );
-  } else {
-    const supportedTypes = new Set(
-      [...supportedNodeTypesMatch[1].matchAll(/"([^"]+)"/g)].map((match) => match[1] ?? ""),
-    );
-    for (const primitiveType of desktopPreviewPaintNodeTypes) {
-      if (!supportedTypes.has(primitiveType)) {
-        addViolation(
-          "src/desktop-preview/DesktopRenderableHtmlAdapter.tsx",
-          `desktop renderer does not support allowed primitive node type "${primitiveType}"`,
-        );
-      }
-    }
-    for (const supportedType of supportedTypes) {
-      if (!desktopPreviewPaintNodeTypes.has(supportedType)) {
-        addViolation(
-          "src/desktop-preview/DesktopRenderableHtmlAdapter.tsx",
-          `desktop renderer supports non-allowlisted primitive node type "${supportedType}"`,
-        );
-      }
-    }
   }
 }
 if (payloadSource.includes("device:")) {

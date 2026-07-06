@@ -92,8 +92,9 @@ legacy/new fragments.
 - registry routes every manifest component;
 - manifest entries and desktop component seeds match;
 - component renderables emit only allowed generic primitive node types;
-- `RenderableNodeType`, the renderable runtime schema and the HTML adapter
-  supported type list all match the same explicit primitive allowlist;
+- the shared `renderableNodeTypes` list matches the explicit primitive
+  allowlist, and `RenderableNodeType`, the renderable runtime schema and the
+  HTML adapter supported type list derive from it;
 - component renderables do not emit component identity metadata into the final
   paint tree;
 - the desktop HTML adapter supports only the generic paint primitive list and

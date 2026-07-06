@@ -1,7 +1,8 @@
 import React, { type CSSProperties, type ReactNode } from "react";
-import type {
-  RenderableBox,
-  RenderableNode,
+import {
+  renderableNodeTypes,
+  type RenderableBox,
+  type RenderableNode,
 } from "../visual/renderable/types.js";
 import {
   numberValue as commonNumberValue,
@@ -14,14 +15,7 @@ export interface DesktopRenderableHtmlAdapterProps {
   showBounds?: boolean;
 }
 
-const supportedNodeTypes = new Set([
-  "group",
-  "icon",
-  "image",
-  "path",
-  "surface",
-  "text",
-]);
+const supportedNodeTypes = new Set(renderableNodeTypes);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);

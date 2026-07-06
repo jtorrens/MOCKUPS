@@ -293,8 +293,9 @@ image
 icon
 ```
 
-The TypeScript `RenderableNodeType` union, the runtime Zod schema and the HTML
-adapter supported-type list must stay in sync with that primitive list. Adding a
+The shared `renderableNodeTypes` list is the code-level source of truth for
+these primitives. The TypeScript `RenderableNodeType` type, the runtime Zod
+schema and the HTML adapter supported-type list must derive from it. Adding a
 new node type is allowed only when it is a reusable visual primitive, not a
 shortcut for a component or a legacy render node.
 

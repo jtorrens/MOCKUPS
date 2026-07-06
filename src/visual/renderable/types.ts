@@ -18,13 +18,16 @@ export interface RenderableAsset {
   uri: string;
 }
 
-export type RenderableNodeType =
-  | "group"
-  | "icon"
-  | "image"
-  | "path"
-  | "surface"
-  | "text";
+export const renderableNodeTypes = [
+  "group",
+  "icon",
+  "image",
+  "path",
+  "surface",
+  "text",
+] as const;
+
+export type RenderableNodeType = (typeof renderableNodeTypes)[number];
 
 export interface RenderableFontFace {
   family: string;
