@@ -246,7 +246,7 @@ function keyboardBottomIconNodes(
   return tokens.map((token, index) => {
     const node = {
       id: `${keyboard.id}.bottomIcon.${index}`,
-      type: "icon_token",
+      type: "icon",
       frame: 0,
       box: {
         x,
@@ -257,9 +257,6 @@ function keyboardBottomIconNodes(
       text: token,
       style: {
         ...iconTokenStyle(payload, token, iconColor),
-      },
-      metadata: {
-        token,
       },
     };
     x += iconSize + gap;

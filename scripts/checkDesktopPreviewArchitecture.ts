@@ -15,7 +15,7 @@ const desktopPreviewPaintNodeTypes = new Set([
   "component_preview_unsupported",
   "design_preview_surface",
   "group",
-  "icon_token",
+  "icon",
   "image",
   "path",
   "surface",
@@ -29,6 +29,7 @@ const forbiddenDesktopPreviewNodeTypes = new Set([
   "navigation_bar_zone",
   "navigation_bar_item",
   "navigation_bar_gesture",
+  "icon_token",
   "waveform_bar",
 ]);
 

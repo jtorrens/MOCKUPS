@@ -98,7 +98,7 @@ function statusBarItemNode(
   if (kind === "iconToken") {
     return {
       id,
-      type: "surface",
+      type: "icon",
       frame: 0,
       text: item.token || item.label,
       box,

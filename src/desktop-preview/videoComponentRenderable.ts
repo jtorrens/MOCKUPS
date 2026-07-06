@@ -105,15 +105,12 @@ function videoStatusNodes(
       };
       return {
         id: `${video.id}.status.icon.${index}`,
-        type: "icon_token",
+        type: "icon",
         frame: 0,
         box,
         text: token,
         style: {
           ...iconTokenStyle(payload, token, statusTextColor),
-        },
-        metadata: {
-          token,
         },
       } satisfies RenderableNode;
     });

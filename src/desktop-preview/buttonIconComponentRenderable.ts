@@ -179,7 +179,7 @@ function buttonIconRenderableNode(
       },
       {
         id: `${buttonIcon.id}.glyph`,
-        type: "icon_token",
+        type: "icon",
         frame: 0,
         box: iconBox,
         text: buttonIcon.iconToken,
@@ -189,9 +189,6 @@ function buttonIconRenderableNode(
             buttonIcon.iconToken,
             buttonIconColor(payload, buttonIcon),
           ),
-        },
-        metadata: {
-          token: buttonIcon.iconToken,
         },
       },
       ...(buttonIcon.labelSlot.label && labelBox

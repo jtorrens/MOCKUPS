@@ -18,7 +18,7 @@ const supportedNodeTypes = new Set([
   "component_preview_unsupported",
   "design_preview_surface",
   "group",
-  "icon_token",
+  "icon",
   "image",
   "path",
   "surface",
@@ -316,12 +316,12 @@ function imageContent(node: RenderableNode): ReactNode {
   );
 }
 
-function iconTokenContent(node: RenderableNode): ReactNode {
-  const token = optionalStringValue(node.metadata?.token) ?? node.text ?? "";
+function iconContent(node: RenderableNode): ReactNode {
+  const label = node.text ?? "";
   if (optionalStringValue(node.style?.maskImage) || optionalStringValue(node.style?.WebkitMaskImage)) {
-    return <span title={token} />;
+    return <span title={label} />;
   }
-  return <span title={token}>{iconTokenLabel(token)}</span>;
+  return <span title={label}>{iconTokenLabel(label)}</span>;
 }
 
 function nodeContent(node: RenderableNode): ReactNode {
@@ -330,7 +330,7 @@ function nodeContent(node: RenderableNode): ReactNode {
   }
   if (node.type === "image") return imageContent(node);
   if (node.type === "path") return pathContent(node);
-  if (node.type === "icon_token") return iconTokenContent(node);
+  if (node.type === "icon") return iconContent(node);
   if (node.children?.some((child) => child.type === "text")) return null;
   return node.text;
 }
@@ -362,7 +362,7 @@ function semanticStyle(node: RenderableNode): CSSProperties {
       whiteSpace: "nowrap",
     };
   }
-  if (node.type === "icon_token") {
+  if (node.type === "icon") {
     return {
       alignItems: "center",
       backgroundColor: optionalStringValue(node.style?.maskImage) ? "currentColor" : undefined,
