@@ -10,31 +10,9 @@ import {
   requiredRecord,
   requiredString,
   resolveSurfaceStyle,
-  type AlignmentPlacementContract,
-  type SurfaceStyleContract,
 } from "./componentResolverCommon.js";
-import type { LabelDesignContract } from "./labelComponentResolver.js";
+import type { ButtonIconDesignContract } from "./buttonIconComponentContract.js";
 import { resolveLabelComponentFromRecords } from "./labelComponentResolver.js";
-
-export interface ButtonIconDesignContract {
-  id: string;
-  buttonSize: number;
-  iconSize: number;
-  iconToken: string;
-  iconPadding: number;
-  backgroundColorToken: string;
-  backgroundAlpha: number;
-  iconColorToken: string;
-  backgroundPaletteColor?: string;
-  iconPaletteColor?: string;
-  labelSlot: {
-    showLabel: boolean;
-    showSubtext: boolean;
-    placement: AlignmentPlacementContract;
-    label?: LabelDesignContract;
-  };
-  surface: SurfaceStyleContract;
-}
 
 function labelPreview(
   preview: Record<string, unknown>,

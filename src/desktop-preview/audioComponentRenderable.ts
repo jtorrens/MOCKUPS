@@ -1,15 +1,12 @@
 import type { RenderableBox, RenderableNode } from "../visual/renderable/types.js";
-import type { AudioDesignContract } from "./audioComponentResolver.js";
+import type { AudioDesignContract } from "./audioComponentContract.js";
+import { avatarComponentToRenderableAt } from "./avatarComponentRenderable.js";
+import { buttonIconComponentToRenderableAt } from "./buttonIconComponentRenderable.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
-  avatarComponentToRenderableAt,
-  avatarVisualPadding,
   boundedCenterBox,
-  buttonIconComponentToRenderableAt,
   colorForMode,
-  deterministicWaveformValue,
   expandBoxXY,
-  hashString,
   numberToken,
   placeChild,
   renderScale,
@@ -19,7 +16,21 @@ import {
   translateBox,
   unionBoxes,
   variants,
-} from "./componentClassRenderables.js";
+} from "./componentRenderableCommon.js";
+
+function hashString(value: string) {
+  let hash = 2166136261;
+  for (const char of value) {
+    hash ^= char.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function deterministicWaveformValue(seed: number, index: number) {
+  const value = Math.sin((seed + index * 97.13) * 0.017) * 43758.5453;
+  return value - Math.floor(value);
+}
 
 export function audioComponentToRenderable(
   payload: DesignPreviewPayload,

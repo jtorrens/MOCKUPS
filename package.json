@@ -8,6 +8,7 @@
     "validate:examples": "tsx src/domain/validation/validateExamples.ts",
     "validate:resolver": "tsx src/domain/validation/validateResolver.ts",
     "validate:visual": "tsx src/visual/validation/validateVisualModules.ts",
+    "check:architecture": "tsx scripts/checkDesktopPreviewArchitecture.ts",
     "validate:editor-dictionary": "tsx src/debug-ui/validation/validateEditorDictionary.ts",
     "validate:preview": "tsx src/debug-ui/preview/validatePreviewSizing.ts",
     "remotion:studio": "remotion studio src/remotion/index.ts",
@@ -32,7 +33,7 @@
     "app:persistence-check": "tsx src/debug-server/checkPersistence.ts",
     "electron": "concurrently -k -n api,ui,electron -c blue,magenta,green \"npm run debug:server\" \"npm run debug:ui\" \"tsx src/electron/startElectron.ts\"",
     "electron:check": "tsx src/electron/checkElectronSetup.ts",
-    "test": "npm run typecheck && npm run validate:examples && npm run validate:resolver && npm run validate:visual && npm run validate:sqlite"
+    "test": "npm run typecheck && npm run check:architecture && npm run validate:examples && npm run validate:resolver && npm run validate:visual && npm run validate:sqlite"
   },
   "dependencies": {
     "better-sqlite3": "^12.11.1",

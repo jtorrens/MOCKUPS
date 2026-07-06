@@ -226,6 +226,21 @@ The bridge must not contain `componentType` branches, hardcoded field names, or 
 
 There must not be a central web preview bridge acting as a component catalog. Do not add functions such as `labelComponentToRenderable`, `avatarComponentToRenderable`, `audioComponentToRenderable`, `statusBarToRenderable`, `navigationBarToRenderable`, or any equivalent per-component bridge entry point to a shared bridge file. Component classes and system bars use their own resolver/renderable modules and are selected only through an explicit registry.
 
+A registry may name components only to route to their owning module. It must not contain component layout, style, defaults, token resolution, or renderable construction logic.
+
+Each migrated component must keep this shape:
+
+```text
+component contract/resolver
+  -> component renderable module
+  -> common preview helpers
+  -> generic web renderer
+```
+
+Common preview helpers must not import concrete component resolvers/renderables or contain concrete component names. Embedded component imports are allowed only when the parent component explicitly owns that child slot, for example avatar -> label or audio -> avatar/button icon.
+
+Run `npm run check:architecture` before closing any preview/component migration phase. The check must fail if component-specific names or imports leak into central preview files, common helpers, or undeclared component dependencies.
+
 When touching a migrated component, the preferred direction is:
 
 ```text

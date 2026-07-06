@@ -1,8 +1,7 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { mergeComponentDefaults } from "./componentPreviewDefaults.js";
-import type { AvatarDesignContract } from "./avatarComponentResolver.js";
+import type { AudioDesignContract } from "./audioComponentContract.js";
 import { resolveAvatarComponentFromRecords } from "./avatarComponentResolver.js";
-import type { ButtonIconDesignContract } from "./buttonIconComponentResolver.js";
 import { resolveButtonIconComponentFromRecords } from "./buttonIconComponentResolver.js";
 import {
   asRecord,
@@ -13,50 +12,7 @@ import {
   requiredRecord,
   requiredString,
   resolveSurfaceStyle,
-  type AlignmentPlacementContract,
-  type SurfaceStyleContract,
 } from "./componentResolverCommon.js";
-
-export interface AudioDesignContract {
-  id: string;
-  playback: {
-    durationSeconds: number;
-    currentTimeSeconds: number;
-    progress: number;
-    durationText: string;
-  };
-  padding: { x: number; y: number };
-  backgroundColorToken: string;
-  backgroundAlpha: number;
-  textSize: number;
-  textColorToken: string;
-  playCircleSize: number;
-  playIconPadding: number;
-  playColorToken: string;
-  playIconColorToken: string;
-  waveformColorToken: string;
-  waveformPlayedColorToken: string;
-  waveformBarCount: number;
-  waveformBarWidth: number;
-  waveformGap: number;
-  waveformMinHeight: number;
-  waveformMaxHeight: number;
-  progressKnobSize: number;
-  surface: SurfaceStyleContract;
-  avatarSlot: {
-    showAvatar: boolean;
-    placement: AlignmentPlacementContract;
-    avatar?: AvatarDesignContract;
-  };
-  badgeSlot: {
-    showBadge: boolean;
-    iconToken: string;
-    backgroundColor: string;
-    iconColor: string;
-    placement: AlignmentPlacementContract;
-    badge?: ButtonIconDesignContract;
-  };
-}
 
 export function resolveAudioComponent(
   payload: DesignPreviewPayload,

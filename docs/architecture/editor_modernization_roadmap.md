@@ -239,6 +239,7 @@ Reject new changes that add:
 - another value control path parallel to `ValueKind`.
 - reusable SVG, theme-token, color, JSON-path, numeric parsing, import mapping, or device metric routines inside a single module instead of a common/shared class.
 - development-only runtime fallbacks with plausible values. Missing current-model data must be migrated or fail visibly; defensive render fallbacks must use obvious diagnostics such as `debug_red` or unsupported placeholders.
+- component-specific preview/render imports outside the owning component module, an explicit registry, or a declared embedded-component relationship. Run `npm run check:architecture` before closing preview/component migration phases.
 
 Allowed custom editor chrome:
 

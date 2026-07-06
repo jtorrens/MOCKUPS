@@ -1,15 +1,13 @@
 import type { RenderableNode } from "../visual/renderable/types.js";
 import { audioComponentToRenderable } from "./audioComponentRenderable.js";
 import { resolveAudioComponent } from "./audioComponentResolver.js";
+import { avatarComponentToRenderable } from "./avatarComponentRenderable.js";
 import { resolveAvatarComponent } from "./avatarComponentResolver.js";
+import { buttonIconComponentToRenderable } from "./buttonIconComponentRenderable.js";
 import { resolveButtonIconComponent } from "./buttonIconComponentResolver.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
+import { labelComponentToRenderable } from "./labelComponentRenderable.js";
 import { resolveLabelComponent } from "./labelComponentResolver.js";
-import {
-  avatarComponentToRenderable,
-  buttonIconComponentToRenderable,
-  labelComponentToRenderable,
-} from "./componentClassRenderables.js";
 
 type ComponentRenderableFactory = (payload: DesignPreviewPayload) => RenderableNode;
 
