@@ -822,7 +822,7 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/MainWindow.axaml.cs",
-  "BuildEditorCards(editorNode, node)",
+  "_editorContent.Build(editorNode, node)",
   "component editor layout node and data node must stay separated so presets edit preset config",
 );
 assertContains(

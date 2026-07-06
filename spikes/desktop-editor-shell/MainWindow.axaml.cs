@@ -32,9 +32,9 @@ public partial class MainWindow : SukiWindow
     private readonly EditorDomainDialogService _domainDialogs;
     private readonly EditorDictionaryFieldServices _dictionaryFieldServices;
     private readonly EditorViewStateController _editorViewState;
-    private readonly EditorCardHostController _editorCardHost;
     private readonly EditorFieldValueRouter _fieldValues;
     private readonly EditorLayoutCardFactory _layoutCards;
+    private readonly EditorContentController _editorContent;
     private readonly EditorEmbeddedUsageNavigator _embeddedUsageNavigator;
     private readonly EditorHeaderController _editorHeader;
     private readonly EditorTreeExpansionState _treeExpansion = new();
@@ -116,7 +116,6 @@ public partial class MainWindow : SukiWindow
             ReloadAndSelect);
         _dictionaryFieldServices = new EditorDictionaryFieldServices(_database, _pathBrowser, _domainDialogs);
         _editorViewState = new EditorViewStateController(EditorScrollViewer);
-        _editorCardHost = new EditorCardHostController(EditorCardsPanel);
         _fieldValues = new EditorFieldValueRouter(
             _coreFieldValues,
             _recordClassFieldValues,
@@ -165,6 +164,13 @@ public partial class MainWindow : SukiWindow
             _pathBrowser.BrowsePath,
             _domainDialogs.ShowIconTokenPicker,
             RefreshPreviewDevice);
+        _editorContent = new EditorContentController(
+            _database,
+            EditorCardsPanel,
+            _activeFieldControls,
+            _actorAvatarPreviews,
+            _layoutCards,
+            _collectionCards);
         _shellState.Restore();
         Closing += (_, _) => _shellState.Save();
         ApplyTheme();
@@ -276,7 +282,7 @@ public partial class MainWindow : SukiWindow
         var keepEditorViewState = _editorViewState.ShouldPreserve(previousNode, node);
         if (keepEditorViewState)
         {
-            _editorViewState.Capture(previousNode, _editorCardHost.Cards);
+            _editorViewState.Capture(previousNode, _editorContent.Cards);
         }
 
         _selectedNode = node;
@@ -285,37 +291,16 @@ public partial class MainWindow : SukiWindow
         _embeddedEditorContext = null;
         var editorNode = EditorNodeSelectionState.EditorNodeForSelection(node);
         SetEditorRootTitle(editorNode.Name);
-        BuildEditorCards(editorNode, node);
+        _editorContent.Build(editorNode, node);
         if (keepEditorViewState)
         {
-            _editorViewState.Restore(node, _editorCardHost.Cards);
+            _editorViewState.Restore(node, _editorContent.Cards);
         }
 
         RefreshPreviewDevice();
         if (rebuildTree)
         {
             RebuildNavigationCards();
-        }
-    }
-
-    private void BuildEditorCards(ProjectTreeNode layoutNode, ProjectTreeNode dataNode)
-    {
-        _editorCardHost.Clear();
-        _activeFieldControls.Clear();
-        _actorAvatarPreviews.Reset();
-
-        var layout = _database.LoadEditorLayout(layoutNode.RecordClassId);
-        foreach (var layoutCard in layout.Cards
-                     .Where((card) => card.Visible)
-                     .OrderBy((card) => card.Order)
-                     .ThenBy((card) => card.Label))
-        {
-            _editorCardHost.Add(_layoutCards.Create(dataNode, layoutCard));
-        }
-
-        foreach (var collectionCard in _collectionCards.Create(dataNode))
-        {
-            _editorCardHost.Add(collectionCard);
         }
     }
 
@@ -366,24 +351,8 @@ public partial class MainWindow : SukiWindow
     {
         _embeddedEditorContext = context;
         SetEditorEmbeddedTitle(context);
-        BuildEmbeddedComponentCards(context);
+        _editorContent.BuildEmbedded(context);
         RefreshPreviewDevice();
-    }
-
-    private void BuildEmbeddedComponentCards(EditorEmbeddedContext context)
-    {
-        _editorCardHost.Clear();
-        _activeFieldControls.Clear();
-        _actorAvatarPreviews.Reset();
-
-        var layout = _database.LoadEditorLayout(context.Slot.RecordClassId);
-        foreach (var layoutCard in layout.Cards
-                     .Where((card) => card.Visible && EditorLayoutCardFactory.EmbeddedCardHasFields(card))
-                     .OrderBy((card) => card.Order)
-                     .ThenBy((card) => card.Label))
-        {
-            _editorCardHost.Add(_layoutCards.CreateEmbedded(context, layoutCard));
-        }
     }
 
     private void SetEditorRootTitle(string title)
