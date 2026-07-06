@@ -804,8 +804,8 @@ internal sealed partial class SpikeDatabase
             _ => $"Theme {index}",
         };
         var iconThemeId = FirstId(connection, "icon_themes", project.Id);
-        var statusBarId = FirstId(connection, "status_bars", project.Id);
-        var navigationBarId = FirstId(connection, "navigation_bars", project.Id);
+        var statusBarId = FirstComponentClassIdByType(connection, project.Id, "status_bar");
+        var navigationBarId = FirstComponentClassIdByType(connection, project.Id, "navigation_bar");
         Execute(
             connection,
             """
@@ -1311,6 +1311,7 @@ internal sealed partial class SpikeDatabase
         SeedComponentClassesIfEmpty(connection);
         EnsureComponentClassConfigDefaults(connection);
         SeedThemesIfEmpty(connection);
+        EnsureThemeSystemBarComponentReferences(connection);
         ClearShotRenderPresetReferences(connection);
         EnsureThemeTokens(connection);
     }
@@ -1533,6 +1534,8 @@ internal sealed partial class SpikeDatabase
             "navigation_bar",
             "render_preset",
             "component.avatar",
+            "component.status_bar",
+            "component.navigation_bar",
             "component.text_input_bar",
             "component.keyboard",
             "component.button_icon",
@@ -2207,6 +2210,54 @@ internal sealed partial class SpikeDatabase
               ]
             }
             """,
+            "component.status_bar" => $$"""
+            ,
+            {
+              "id": "statusBar",
+              "label": "Status Bar",
+              "subtitle": "Reusable device status bar composition",
+              "icon": "{{EditorIcons.Status}}",
+              "order": 20,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "layout", "label": "Layout", "order": 10, "visible": true, "fields": [
+                  { "id": "component.statusBar.layout.height", "order": 10, "visible": true },
+                  { "id": "component.statusBar.layout.itemSize", "order": 20, "visible": true },
+                  { "id": "component.statusBar.layout.gap", "order": 30, "visible": true },
+                  { "id": "component.statusBar.layout.sidePadding", "order": 40, "visible": true }
+                ] }
+              ]
+            }
+            """,
+            "component.navigation_bar" => $$"""
+            ,
+            {
+              "id": "navigationBar",
+              "label": "Navigation Bar",
+              "subtitle": "Reusable device navigation bar composition",
+              "icon": "{{EditorIcons.Navigation}}",
+              "order": 20,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "layout", "label": "Layout", "order": 10, "visible": true, "fields": [
+                  { "id": "component.navigationBar.type", "order": 10, "visible": true },
+                  { "id": "component.navigationBar.layout.height", "order": 20, "visible": true },
+                  { "id": "component.navigationBar.layout.itemSize", "order": 30, "visible": true },
+                  { "id": "component.navigationBar.layout.sidePadding", "order": 40, "visible": true },
+                  { "id": "component.navigationBar.layout.strokeWidth", "order": 50, "visible": true },
+                  { "id": "component.navigationBar.layout.cornerRadius", "order": 60, "visible": true },
+                  { "id": "component.navigationBar.layout.filled", "order": 70, "visible": true }
+                ] },
+                { "id": "gesture", "label": "Gesture", "order": 20, "visible": true, "fields": [
+                  { "id": "component.navigationBar.gesture.width", "order": 10, "visible": true },
+                  { "id": "component.navigationBar.gesture.height", "order": 20, "visible": true },
+                  { "id": "component.navigationBar.gesture.cornerRadius", "order": 30, "visible": true }
+                ] }
+              ]
+            }
+            """,
             "component.text_input_bar" => $$"""
             ,
             {
@@ -2528,26 +2579,12 @@ internal sealed partial class SpikeDatabase
 
     public IReadOnlyList<FieldOption> GetStatusBarOptions(string projectId)
     {
-        using var connection = OpenConnection();
-        var options = QueryStatusBarRows(connection)
-            .Where((statusBar) => statusBar.ProjectId == projectId)
-            .OrderBy((statusBar) => statusBar.Name)
-            .Select((statusBar) => new FieldOption(statusBar.Id, statusBar.Name))
-            .ToList();
-        options.Insert(0, new FieldOption("", "None"));
-        return options;
+        return GetComponentClassOptionsByType(projectId, "status_bar", includeNone: true);
     }
 
     public IReadOnlyList<FieldOption> GetNavigationBarOptions(string projectId)
     {
-        using var connection = OpenConnection();
-        var options = QueryNavigationBarRows(connection)
-            .Where((navigationBar) => navigationBar.ProjectId == projectId)
-            .OrderBy((navigationBar) => navigationBar.Name)
-            .Select((navigationBar) => new FieldOption(navigationBar.Id, navigationBar.Name))
-            .ToList();
-        options.Insert(0, new FieldOption("", "None"));
-        return options;
+        return GetComponentClassOptionsByType(projectId, "navigation_bar", includeNone: true);
     }
 
     public ShotSettings GetShotSettings(string shotId)

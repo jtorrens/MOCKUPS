@@ -95,6 +95,12 @@ internal static class ComponentClassFieldCatalog
         new("none", "None"),
     ];
 
+    private static readonly FieldOption[] NavigationBarTypeOptions =
+    [
+        new("buttons", "Buttons"),
+        new("gestureBar", "Gesture Bar"),
+    ];
+
     private static readonly Dictionary<string, ComponentClassFieldDescriptor> Fields = new(StringComparer.Ordinal)
     {
         ["component.type"] = new("component.type", "Component Type", ValueKind.StringReadOnly, [], "", false),
@@ -218,6 +224,22 @@ internal static class ComponentClassFieldCatalog
         ["component.audio.badge.iconColor"] = new("component.audio.badge.iconColor", "Icon color", ValueKind.PaletteColorToken, ["audio", "badgeSlot", "iconColor"], "gray_100"),
         ["component.audio.badge.placement"] = new("component.audio.badge.placement", "Placement", ValueKind.AlignmentPlacement, ["audio", "badgeSlot", "placement"], """{"mode":"center","alignX":1,"alignY":1,"offsetX":0,"offsetY":0}"""),
         ["component.audio.badge.editor"] = new("component.audio.badge.editor", "Badge", ValueKind.EmbeddedComponent, [], "component.button_icon"),
+
+        ["component.statusBar.layout.height"] = new("component.statusBar.layout.height", "Height", ValueKind.Integer, ["layout", "height"], "54"),
+        ["component.statusBar.layout.itemSize"] = new("component.statusBar.layout.itemSize", "Item size", ValueKind.Integer, ["layout", "itemSize"], "18"),
+        ["component.statusBar.layout.gap"] = new("component.statusBar.layout.gap", "Gap", ValueKind.Integer, ["layout", "gap"], "6"),
+        ["component.statusBar.layout.sidePadding"] = new("component.statusBar.layout.sidePadding", "Side padding", ValueKind.Integer, ["layout", "sidePadding"], "24"),
+
+        ["component.navigationBar.type"] = new("component.navigationBar.type", "Type", ValueKind.OptionToken, ["type"], "buttons", Options: NavigationBarTypeOptions),
+        ["component.navigationBar.layout.height"] = new("component.navigationBar.layout.height", "Height", ValueKind.Integer, ["layout", "height"], "34"),
+        ["component.navigationBar.layout.itemSize"] = new("component.navigationBar.layout.itemSize", "Item size", ValueKind.Integer, ["layout", "itemSize"], "18"),
+        ["component.navigationBar.layout.sidePadding"] = new("component.navigationBar.layout.sidePadding", "Side padding", ValueKind.Integer, ["layout", "sidePadding"], "40"),
+        ["component.navigationBar.layout.strokeWidth"] = new("component.navigationBar.layout.strokeWidth", "Stroke width", ValueKind.Integer, ["layout", "strokeWidth"], "2"),
+        ["component.navigationBar.layout.cornerRadius"] = new("component.navigationBar.layout.cornerRadius", "Corner radius", ValueKind.Integer, ["layout", "cornerRadius"], "3"),
+        ["component.navigationBar.layout.filled"] = new("component.navigationBar.layout.filled", "Filled", ValueKind.Boolean, ["layout", "filled"], "false"),
+        ["component.navigationBar.gesture.width"] = new("component.navigationBar.gesture.width", "Width", ValueKind.Integer, ["gesture", "width"], "134"),
+        ["component.navigationBar.gesture.height"] = new("component.navigationBar.gesture.height", "Height", ValueKind.Integer, ["gesture", "height"], "5"),
+        ["component.navigationBar.gesture.cornerRadius"] = new("component.navigationBar.gesture.cornerRadius", "Corner radius", ValueKind.Integer, ["gesture", "cornerRadius"], "999"),
 
         ["component.video.statusVisible"] = new("component.video.statusVisible", "Show status", ValueKind.Boolean, ["video", "statusVisible"], "true"),
         ["component.video.statusHeight"] = new("component.video.statusHeight", "Status height", ValueKind.Integer, ["video", "statusHeight"], "24"),

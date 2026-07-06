@@ -91,6 +91,43 @@ internal sealed partial class SpikeDatabase
         return configs.ToJsonString();
     }
 
+    public IReadOnlyList<FieldOption> GetComponentClassOptionsByType(
+        string projectId,
+        string componentType,
+        bool includeNone = false)
+    {
+        using var connection = OpenConnection();
+        var options = QueryComponentClassRows(connection)
+            .Where((row) => row.ProjectId.Equals(projectId, StringComparison.Ordinal))
+            .Where((row) => row.ComponentType.Equals(componentType, StringComparison.Ordinal))
+            .OrderBy((row) => row.Id.Equals($"component_{projectId}_{componentType}", StringComparison.Ordinal) ? 0 : 1)
+            .ThenBy((row) => row.Name, StringComparer.Ordinal)
+            .Select((row) => new FieldOption(row.Id, row.Name))
+            .ToList();
+        if (includeNone)
+        {
+            options.Insert(0, new FieldOption("", "None"));
+        }
+
+        return options;
+    }
+
+    private static string FirstComponentClassIdByType(SqliteConnection connection, string projectId, string componentType)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT id
+            FROM component_classes
+            WHERE project_id = $projectId
+              AND component_type = $componentType
+            ORDER BY CASE WHEN id = 'component_' || $projectId || '_' || $componentType THEN 0 ELSE 1 END, name
+            LIMIT 1
+            """;
+        command.Parameters.AddWithValue("$projectId", projectId);
+        command.Parameters.AddWithValue("$componentType", componentType);
+        return command.ExecuteScalar() as string ?? "";
+    }
+
     private static string GetComponentClassBaseConfigJson(
         SqliteConnection connection,
         string projectId,
@@ -417,13 +454,17 @@ internal sealed partial class SpikeDatabase
         var projectIds = QueryProjectRows(connection).Select((project) => project.Id).ToList();
         foreach (var projectId in projectIds)
         {
-            if (ScalarLong(connection, "SELECT COUNT(*) FROM component_classes WHERE project_id = $projectId", ("$projectId", projectId)) > 0)
-            {
-                continue;
-            }
-
             foreach (var seed in ComponentSeedRows)
             {
+                if (ScalarLong(
+                        connection,
+                        "SELECT COUNT(*) FROM component_classes WHERE project_id = $projectId AND component_type = $componentType",
+                        ("$projectId", projectId),
+                        ("$componentType", seed.ComponentType)) > 0)
+                {
+                    continue;
+                }
+
                 Execute(
                     connection,
                     """
@@ -916,6 +957,8 @@ internal sealed partial class SpikeDatabase
         return componentType switch
         {
             "avatar" => "Avatar component",
+            "status_bar" => "Status bar component",
+            "navigation_bar" => "Navigation bar component",
             "textInputBar" => "Text input bar component",
             "keyboard" => "Keyboard component",
             "buttonIcon" => "Button icon component",
@@ -1081,6 +1124,10 @@ internal sealed partial class SpikeDatabase
                     },
                 };
                 break;
+            case "status_bar":
+                return DefaultStatusBarConfigJson();
+            case "navigation_bar":
+                return DefaultNavigationBarConfigJson();
             case "video":
                 config["video"] = new JsonObject
                 {
@@ -1182,6 +1229,8 @@ internal sealed partial class SpikeDatabase
     private static readonly ComponentSeedRow[] ComponentSeedRows =
     [
         NewComponentSeed("avatar", "component.avatar", "Default Avatar"),
+        NewComponentSeed("status_bar", "component.status_bar", "Default Status Bar"),
+        NewComponentSeed("navigation_bar", "component.navigation_bar", "Default Navigation Bar"),
         NewComponentSeed("textInputBar", "component.text_input_bar", "Default Text Input Bar"),
         NewComponentSeed("keyboard", "component.keyboard", "Default Keyboard"),
         NewComponentSeed("buttonIcon", "component.button_icon", "Default Button Icon"),

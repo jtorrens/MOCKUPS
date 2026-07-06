@@ -170,8 +170,8 @@ internal sealed partial class SpikeDatabase
             }
 
             var iconThemeId = FirstId(connection, "icon_themes", projectId);
-            var statusBarId = FirstId(connection, "status_bars", projectId);
-            var navigationBarId = FirstId(connection, "navigation_bars", projectId);
+            var statusBarId = FirstComponentClassIdByType(connection, projectId, "status_bar");
+            var navigationBarId = FirstComponentClassIdByType(connection, projectId, "navigation_bar");
             Execute(
                 connection,
                 """
@@ -187,6 +187,53 @@ internal sealed partial class SpikeDatabase
                 ("$navigationBarId", navigationBarId),
                 ("$tokensJson", DefaultThemeTokensJson("ios")),
                 ("$metadataJson", JsonSerializer.Serialize(new { note = "Default iOS-style production theme." })));
+        }
+    }
+
+    private static void EnsureThemeSystemBarComponentReferences(SqliteConnection connection)
+    {
+        foreach (var project in QueryProjectRows(connection))
+        {
+            var statusBarId = FirstComponentClassIdByType(connection, project.Id, "status_bar");
+            var navigationBarId = FirstComponentClassIdByType(connection, project.Id, "navigation_bar");
+            Execute(
+                connection,
+                """
+                UPDATE themes
+                SET status_bar_id = $statusBarId
+                WHERE project_id = $projectId
+                  AND (
+                    status_bar_id = ''
+                    OR NOT EXISTS (
+                      SELECT 1
+                      FROM component_classes
+                      WHERE component_classes.id = themes.status_bar_id
+                        AND component_classes.project_id = themes.project_id
+                        AND component_classes.component_type = 'status_bar'
+                    )
+                  )
+                """,
+                ("$projectId", project.Id),
+                ("$statusBarId", statusBarId));
+            Execute(
+                connection,
+                """
+                UPDATE themes
+                SET navigation_bar_id = $navigationBarId
+                WHERE project_id = $projectId
+                  AND (
+                    navigation_bar_id = ''
+                    OR NOT EXISTS (
+                      SELECT 1
+                      FROM component_classes
+                      WHERE component_classes.id = themes.navigation_bar_id
+                        AND component_classes.project_id = themes.project_id
+                        AND component_classes.component_type = 'navigation_bar'
+                    )
+                  )
+                """,
+                ("$projectId", project.Id),
+                ("$navigationBarId", navigationBarId));
         }
     }
 
