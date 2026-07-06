@@ -37,9 +37,9 @@ public partial class MainWindow : SukiWindow
     private readonly EditorFieldValueRouter _fieldValues;
     private readonly EditorLayoutCardFactory _layoutCards;
     private readonly EditorEmbeddedUsageNavigator _embeddedUsageNavigator;
+    private readonly EditorTreeExpansionState _treeExpansion = new();
     private readonly EditorFieldCommitCoordinator _fieldCommitCoordinator = new();
     private readonly EditorActiveFieldControls _activeFieldControls = new();
-    private readonly HashSet<string> _expandedNodeIds = [];
     private readonly Dictionary<string, string> _lastComponentPresetNodeIds = new(StringComparer.Ordinal);
     private List<ProjectTreeNode> _treeRoots = [];
     private ProjectTreeNode? _selectedNode;
@@ -83,7 +83,7 @@ public partial class MainWindow : SukiWindow
         _navigationRenderer = new EditorNavigationRenderer(
             () => _selectedNode,
             () => _isDark,
-            (node) => _expandedNodeIds.Contains(node.Id),
+            _treeExpansion.IsExpanded,
             SelectTreeNode,
             (node) => ShowNode(ResolveSelectionNode(node)),
             ToggleTreeGroup,
@@ -208,10 +208,7 @@ public partial class MainWindow : SukiWindow
     private void LoadProjectTree()
     {
         _treeRoots = _database.LoadProjectTree();
-        if (_expandedNodeIds.Count == 0 && _treeRoots.Count > 0)
-        {
-            _expandedNodeIds.Add(_treeRoots[0].Id);
-        }
+        _treeExpansion.EnsureInitial(_treeRoots);
 
         if (_treeRoots.Count > 0)
         {
@@ -222,7 +219,7 @@ public partial class MainWindow : SukiWindow
             selected ??= _treeRoots.FirstOrDefault((node) => node.CanOpenEditor) ?? _treeRoots[0];
             selected = ResolveSelectionNode(selected);
 
-            ExpandAncestors(selected);
+            _treeExpansion.ExpandAncestors(selected);
             RebuildNavigationCards();
             ShowNode(selected, rebuildTree: false);
             return;
@@ -244,59 +241,8 @@ public partial class MainWindow : SukiWindow
 
     private void ToggleTreeGroup(ProjectTreeNode node)
     {
-        if (node.Children.Count == 0) return;
-
-        if (_expandedNodeIds.Contains(node.Id))
-        {
-            CollapseNodeAndDescendants(node);
-        }
-        else
-        {
-            CollapseVisibleNavigationPeers(node);
-            _expandedNodeIds.Add(node.Id);
-        }
-
+        _treeExpansion.Toggle(node);
         RebuildNavigationCards();
-    }
-
-    private void CollapseSiblingNodes(ProjectTreeNode node)
-    {
-        if (node.Parent is null) return;
-
-        foreach (var sibling in node.Parent.Children.Where((child) => child.Id != node.Id))
-        {
-            CollapseNodeAndDescendants(sibling);
-        }
-    }
-
-    private void CollapseVisibleNavigationPeers(ProjectTreeNode node)
-    {
-        if (node.Kind == ProjectTreeNodeKind.Project)
-        {
-            foreach (var child in node.Children)
-            {
-                CollapseNodeAndDescendants(child);
-            }
-            return;
-        }
-
-        if (node.Parent?.Kind == ProjectTreeNodeKind.Project)
-        {
-            CollapseNodeAndDescendants(node.Parent);
-            CollapseSiblingNodes(node);
-            return;
-        }
-
-        CollapseSiblingNodes(node);
-    }
-
-    private void CollapseNodeAndDescendants(ProjectTreeNode node)
-    {
-        _expandedNodeIds.Remove(node.Id);
-        foreach (var child in node.Children)
-        {
-            CollapseNodeAndDescendants(child);
-        }
     }
 
     private void RebuildNavigationCards()
@@ -316,7 +262,7 @@ public partial class MainWindow : SukiWindow
 
         _selectedNode = node;
         RememberComponentPresetSelection(node);
-        ExpandAncestors(node);
+        _treeExpansion.ExpandAncestors(node);
         _embeddedEditorContext = null;
         var editorNode = EditorNodeForSelection(node);
         SetEditorRootTitle(editorNode.Name);
@@ -703,7 +649,7 @@ public partial class MainWindow : SukiWindow
 
         var selectableNode = CanSelectTreeNode(node) ? node : ClosestEditableNode(node);
         selectableNode = ResolveSelectionNode(selectableNode);
-        ExpandAncestors(selectableNode);
+        _treeExpansion.ExpandAncestors(selectableNode);
         ShowNode(selectableNode, rebuildTree: true);
         return true;
     }
@@ -786,18 +732,4 @@ public partial class MainWindow : SukiWindow
         return null;
     }
 
-    private void ExpandAncestors(ProjectTreeNode node)
-    {
-        var parent = node.Parent;
-        while (parent is not null)
-        {
-            if (EditorNavigationMetadata.CollapseSiblingsWhenOpenedBySelection(parent))
-            {
-                CollapseSiblingNodes(parent);
-            }
-
-            _expandedNodeIds.Add(parent.Id);
-            parent = parent.Parent;
-        }
-    }
 }
