@@ -1,0 +1,317 @@
+using Mockups.DesktopEditorShell.EditorShell;
+using System;
+
+namespace Mockups.DesktopEditorShell.Data;
+
+internal sealed partial class SpikeDatabase
+{
+    private static string ComponentClassLayoutCardsJson(string recordClassId)
+    {
+        var typeSpecific = recordClassId switch
+        {
+            "component.surface" => $$"""
+            ,
+            {
+              "id": "surface",
+              "label": "Surface",
+              "subtitle": "Reusable visual surface appearance",
+              "icon": "{{EditorIcons.Style}}",
+              "order": 20,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "surface", "label": "Surface", "order": 10, "visible": true, "fields": [
+                  { "id": "component.surface.backgroundColorToken", "order": 10, "visible": true },
+                  { "id": "component.surface.backgroundAlpha", "order": 20, "visible": true },
+                  { "id": "component.surface.borderAlpha", "order": 30, "visible": true }
+                ] }
+              ]
+            }
+            """,
+            "component.avatar" => $$"""
+            ,
+            {
+              "id": "avatar",
+              "label": "Avatar",
+              "subtitle": "Reusable avatar presentation defaults",
+              "icon": "{{EditorIcons.Avatar}}",
+              "order": 20,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "avatar", "label": "Avatar", "order": 10, "visible": true, "fields": [
+                  { "id": "component.avatar.defaultSize", "order": 10, "visible": true },
+                  { "id": "component.avatar.cornerRadiusToken", "order": 20, "visible": true }
+                ] },
+                { "id": "avatarLabel", "label": "Label", "order": 20, "visible": true, "fields": [
+                  { "id": "component.avatar.label.showLabel", "order": 10, "visible": true },
+                  { "id": "component.avatar.label.showSubtext", "order": 20, "visible": true },
+                  { "id": "component.avatar.label.placement", "order": 30, "visible": true },
+                  { "id": "component.avatar.label.editor", "order": 40, "visible": true }
+                ] }
+              ]
+            }
+            """,
+            "component.status_bar" => $$"""
+            ,
+            {
+              "id": "statusBar",
+              "label": "Status Bar",
+              "subtitle": "Reusable device status bar composition",
+              "icon": "{{EditorIcons.Status}}",
+              "order": 20,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "layout", "label": "Layout", "order": 10, "visible": true, "fields": [
+                  { "id": "component.statusBar.layout.height", "order": 10, "visible": true },
+                  { "id": "component.statusBar.layout.itemSize", "order": 20, "visible": true },
+                  { "id": "component.statusBar.layout.gap", "order": 30, "visible": true },
+                  { "id": "component.statusBar.layout.sidePadding", "order": 40, "visible": true }
+                ] }
+              ]
+            }
+            """,
+            "component.navigation_bar" => $$"""
+            ,
+            {
+              "id": "navigationBar",
+              "label": "Navigation Bar",
+              "subtitle": "Reusable device navigation bar composition",
+              "icon": "{{EditorIcons.Navigation}}",
+              "order": 20,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "layout", "label": "Layout", "order": 10, "visible": true, "fields": [
+                  { "id": "component.navigationBar.type", "order": 10, "visible": true },
+                  { "id": "component.navigationBar.layout.height", "order": 20, "visible": true },
+                  { "id": "component.navigationBar.layout.itemSize", "order": 30, "visible": true },
+                  { "id": "component.navigationBar.layout.sidePadding", "order": 40, "visible": true },
+                  { "id": "component.navigationBar.layout.strokeWidth", "order": 50, "visible": true },
+                  { "id": "component.navigationBar.layout.cornerRadius", "order": 60, "visible": true },
+                  { "id": "component.navigationBar.layout.filled", "order": 70, "visible": true }
+                ] },
+                { "id": "gesture", "label": "Gesture", "order": 20, "visible": true, "fields": [
+                  { "id": "component.navigationBar.gesture.width", "order": 10, "visible": true },
+                  { "id": "component.navigationBar.gesture.height", "order": 20, "visible": true },
+                  { "id": "component.navigationBar.gesture.cornerRadius", "order": 30, "visible": true }
+                ] }
+              ]
+            }
+            """,
+            "component.text_input_bar" => $$"""
+            ,
+            {
+              "id": "textInput",
+              "label": "Text Input",
+              "subtitle": "Input bar, idle text and cursor behavior",
+              "icon": "{{EditorIcons.TextInput}}",
+              "order": 20,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "textInput", "label": "Text input", "order": 10, "visible": true, "fields": [
+                  { "id": "component.textInput.height", "order": 10, "visible": true },
+                  { "id": "component.textInput.placeholder", "order": 20, "visible": true },
+                  { "id": "component.textInput.surface.editor", "order": 30, "visible": true },
+                  { "id": "component.textInput.idleTextColorToken", "order": 50, "visible": true },
+                  { "id": "component.textInput.textSizeToken", "order": 60, "visible": true },
+                  { "id": "component.textInput.cursorColorToken", "order": 70, "visible": true },
+                  { "id": "component.textInput.cursorWidth", "order": 80, "visible": true },
+                  { "id": "component.textInput.cursorBlinkFrames", "order": 90, "visible": true }
+                ] }
+              ]
+            }
+            """,
+            "component.keyboard" => $$"""
+            ,
+            {
+              "id": "keyboard",
+              "label": "Keyboard",
+              "subtitle": "Key shape, pressed behavior and icon slots",
+              "icon": "{{EditorIcons.Keyboard}}",
+              "order": 20,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "keys", "label": "Keys", "order": 10, "visible": true, "fields": [
+                  { "id": "component.keyboard.backgroundColorToken", "order": 10, "visible": true },
+                  { "id": "component.keyboard.backgroundAlpha", "order": 20, "visible": true },
+                  { "id": "component.keyboard.keyBackgroundColorToken", "order": 30, "visible": true },
+                  { "id": "component.keyboard.keyTextColorToken", "order": 40, "visible": true },
+                  { "id": "component.keyboard.bottomIconColorToken", "order": 50, "visible": true },
+                  { "id": "component.keyboard.keyPadding", "order": 60, "visible": true },
+                  { "id": "component.keyboard.keyCornerRadius", "order": 70, "visible": true },
+                  { "id": "component.keyboard.keyShadowEnabled", "order": 80, "visible": true },
+                  { "id": "component.keyboard.pressedEffect", "order": 90, "visible": true },
+                  { "id": "component.keyboard.specialKeyTextScale", "order": 100, "visible": true },
+                  { "id": "component.keyboard.emojiScale", "order": 110, "visible": true },
+                  { "id": "component.keyboard.bottomIconSlots", "order": 120, "visible": true }
+                ] }
+              ]
+            }
+            """,
+            "component.button_icon" => $$"""
+            ,
+            {
+              "id": "buttonIcon",
+              "label": "Button Icon",
+              "subtitle": "Icon padding and optional label",
+              "icon": "{{EditorIcons.ButtonIcon}}",
+              "order": 20,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "buttonIcon", "label": "Button icon", "order": 10, "visible": true, "fields": [
+                  { "id": "component.buttonIcon.size", "order": 10, "visible": true },
+                  { "id": "component.buttonIcon.iconPadding", "order": 20, "visible": true },
+                  { "id": "component.buttonIcon.surface.editor", "order": 30, "visible": true },
+                  { "id": "component.buttonIcon.iconColorToken", "order": 50, "visible": true }
+                ] },
+                { "id": "buttonIconLabel", "label": "Label", "order": 20, "visible": true, "fields": [
+                  { "id": "component.buttonIcon.label.showLabel", "order": 10, "visible": true },
+                  { "id": "component.buttonIcon.label.showSubtext", "order": 20, "visible": true },
+                  { "id": "component.buttonIcon.label.placement", "order": 30, "visible": true },
+                  { "id": "component.buttonIcon.label.editor", "order": 40, "visible": true }
+                ] }
+              ]
+            }
+            """,
+            "component.label" => $$"""
+            ,
+            {
+              "id": "label",
+              "label": "Label",
+              "subtitle": "Centered text label dimensions and colors",
+              "icon": "{{EditorIcons.Label}}",
+              "order": 20,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "label", "label": "Label", "order": 10, "visible": true, "fields": [
+                  { "id": "component.label.dimensionMode", "order": 10, "visible": true },
+                  { "id": "component.label.size", "order": 20, "visible": true },
+                  { "id": "component.label.padding", "order": 30, "visible": true },
+                  { "id": "component.label.surface.editor", "order": 40, "visible": true },
+                  { "id": "component.label.textColorToken", "order": 90, "visible": true },
+                  { "id": "component.label.textSizeToken", "order": 100, "visible": true },
+                  { "id": "component.label.textStyle", "order": 110, "visible": true },
+                  { "id": "component.label.textAlign", "order": 120, "visible": true }
+                ] },
+                { "id": "labelSubtext", "label": "Subtext", "order": 20, "visible": true, "fields": [
+                  { "id": "component.label.textGap", "order": 10, "visible": true },
+                  { "id": "component.label.subtextColorToken", "order": 20, "visible": true },
+                  { "id": "component.label.subtextSizeToken", "order": 30, "visible": true },
+                  { "id": "component.label.subtextStyle", "order": 40, "visible": true }
+                ] },
+                { "id": "labelTransparency", "label": "Transparency", "order": 30, "visible": false, "fields": [] }
+              ]
+            }
+            """,
+            "component.audio" => $$"""
+            ,
+            {
+              "id": "audio",
+              "label": "Audio",
+              "subtitle": "Audio bubble layout and waveform defaults",
+              "icon": "{{EditorIcons.Audio}}",
+              "order": 20,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "audio", "label": "Audio", "order": 10, "visible": true, "fields": [
+                  { "id": "component.audio.padding", "order": 10, "visible": true },
+                  { "id": "component.audio.surface.editor", "order": 20, "visible": true },
+                  { "id": "component.audio.textSize", "order": 40, "visible": true },
+                  { "id": "component.audio.textColorToken", "order": 50, "visible": true }
+                ] },
+                { "id": "audioPlayback", "label": "Playback", "order": 20, "visible": true, "fields": [
+                  { "id": "component.audio.playCircleSize", "order": 10, "visible": true },
+                  { "id": "component.audio.playIconPadding", "order": 20, "visible": true },
+                  { "id": "component.audio.playColorToken", "order": 30, "visible": true },
+                  { "id": "component.audio.playIconColorToken", "order": 40, "visible": true },
+                  { "id": "component.audio.progressKnobSize", "order": 50, "visible": true }
+                ] },
+                { "id": "audioWaveform", "label": "Waveform", "order": 30, "visible": true, "fields": [
+                  { "id": "component.audio.waveformBarCount", "order": 10, "visible": true },
+                  { "id": "component.audio.waveformBarWidth", "order": 20, "visible": true },
+                  { "id": "component.audio.waveformGap", "order": 30, "visible": true },
+                  { "id": "component.audio.waveformMinHeight", "order": 40, "visible": true },
+                  { "id": "component.audio.waveformMaxHeight", "order": 50, "visible": true },
+                  { "id": "component.audio.waveformColorToken", "order": 60, "visible": true },
+                  { "id": "component.audio.waveformPlayedColorToken", "order": 70, "visible": true }
+                ] },
+                { "id": "audioAvatar", "label": "Avatar", "order": 40, "visible": true, "fields": [
+                  { "id": "component.audio.avatar.showAvatar", "order": 10, "visible": true },
+                  { "id": "component.audio.avatar.placement", "order": 20, "visible": true },
+                  { "id": "component.audio.avatar.editor", "order": 30, "visible": true }
+                ] },
+                { "id": "audioBadge", "label": "Badge", "order": 50, "visible": true, "fields": [
+                  { "id": "component.audio.badge.showBadge", "order": 10, "visible": true },
+                  { "id": "component.audio.badge.iconToken", "order": 20, "visible": true },
+                  { "id": "component.audio.badge.backgroundColor", "order": 30, "visible": true },
+                  { "id": "component.audio.badge.iconColor", "order": 40, "visible": true },
+                  { "id": "component.audio.badge.placement", "order": 50, "visible": true },
+                  { "id": "component.audio.badge.editor", "order": 60, "visible": true }
+                ] }
+              ]
+            }
+            """,
+            "component.video" => $$"""
+            ,
+            {
+              "id": "video",
+              "label": "Video",
+              "subtitle": "Video status bar and play overlay defaults",
+              "icon": "{{EditorIcons.Video}}",
+              "order": 20,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "video", "label": "Video", "order": 10, "visible": true, "fields": [
+                  { "id": "component.video.surface.editor", "order": 10, "visible": true },
+                  { "id": "component.video.statusVisible", "order": 30, "visible": true },
+                  { "id": "component.video.statusHeight", "order": 40, "visible": true },
+                  { "id": "component.video.statusIconSlots", "order": 50, "visible": true },
+                  { "id": "component.video.statusTextColorToken", "order": 60, "visible": true },
+                  { "id": "component.video.playOverlayVisible", "order": 70, "visible": true },
+                  { "id": "component.video.playColorToken", "order": 80, "visible": true }
+                ] }
+              ]
+            }
+            """,
+            _ => "",
+        };
+
+        var style = $$"""
+        ,
+        {
+          "id": "style",
+          "label": "Style",
+          "subtitle": "Shared surface style defaults",
+          "icon": "{{EditorIcons.Style}}",
+          "order": 90,
+          "visible": true,
+          "defaultOpen": false,
+          "groups": [
+            { "id": "style", "label": "Surface style", "order": 10, "visible": true, "fields": [
+              { "id": "component.style.shadowEnabled", "order": 10, "visible": true },
+              { "id": "component.style.reliefEnabled", "order": 20, "visible": true },
+              { "id": "component.style.borderWidth", "order": 30, "visible": true },
+              { "id": "component.style.borderColorToken", "order": 40, "visible": true },
+              { "id": "component.style.cornerRadiusToken", "order": 50, "visible": true },
+              { "id": "component.style.reliefAngle", "order": 60, "visible": true },
+              { "id": "component.style.reliefExtent", "order": 70, "visible": true },
+              { "id": "component.style.reliefSpread", "order": 80, "visible": true },
+              { "id": "component.style.reliefTopIntensity", "order": 90, "visible": true },
+              { "id": "component.style.reliefBottomIntensity", "order": 100, "visible": true }
+            ] }
+          ]
+        }
+        """;
+
+        var ownsSurfaceStyle = recordClassId is "component.surface" or "component.avatar" or "component.keyboard";
+        return ownsSurfaceStyle ? typeSpecific + style : typeSpecific;
+    }
+}
