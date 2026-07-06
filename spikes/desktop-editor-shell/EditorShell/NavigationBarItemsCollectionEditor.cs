@@ -124,19 +124,10 @@ internal sealed class NavigationBarItemsCollectionEditor
 
     private void UpdateItem(ProjectTreeNode node, int index, SpikeDatabase.NavigationBarItem nextItem)
     {
-        if (node.Kind == ProjectTreeNodeKind.ComponentClass)
-        {
-            _database.UpdateNavigationBarComponentItem(node.Id, index, nextItem);
-        }
-        else
-        {
-            _database.UpdateNavigationBarItem(node.Id, index, nextItem);
-        }
+        _database.UpdateNavigationBarComponentItem(node.Id, index, nextItem);
         _onChanged();
     }
 
     private IReadOnlyList<SpikeDatabase.NavigationBarItem> Items(ProjectTreeNode node) =>
-        node.Kind == ProjectTreeNodeKind.ComponentClass
-            ? _database.GetNavigationBarComponentItems(node.Id)
-            : _database.GetNavigationBarItems(node.Id);
+        _database.GetNavigationBarComponentItems(node.Id);
 }

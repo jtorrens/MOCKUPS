@@ -57,23 +57,6 @@ internal sealed class EditorCollectionCardFactory
                     _showIconThemeSvgReplace,
                     _reloadAndSelect).Create(node),
             ],
-            ProjectTreeNodeKind.StatusBar =>
-            [
-                new StatusBarItemsCollectionEditor(
-                    _database,
-                    _isDark(),
-                    _browsePath,
-                    _showIconTokenPicker,
-                    _onChanged).Create(node),
-            ],
-            ProjectTreeNodeKind.NavigationBar =>
-            [
-                new NavigationBarItemsCollectionEditor(
-                    _database,
-                    _isDark(),
-                    _browsePath,
-                    _onChanged).Create(node),
-            ],
             ProjectTreeNodeKind.ComponentClass =>
                 CreateComponentClassCollectionCards(node),
             _ => [],

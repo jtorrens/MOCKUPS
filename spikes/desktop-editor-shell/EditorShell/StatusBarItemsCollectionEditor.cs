@@ -36,7 +36,7 @@ internal sealed class StatusBarItemsCollectionEditor
     public InstantEditorCard Create(ProjectTreeNode node)
     {
         var icon = EditorIcons.Create(EditorIcons.Status, 18);
-        var projectId = ProjectId(node);
+        var projectId = _database.GetComponentClassSettings(node.Id).ProjectId;
         var items = Items(node).ToList();
         var body = new StackPanel
         {
@@ -218,26 +218,12 @@ internal sealed class StatusBarItemsCollectionEditor
         }
 
         var nextItem = patch(current);
-        if (node.Kind == ProjectTreeNodeKind.ComponentClass)
-        {
-            _database.UpdateStatusBarComponentItem(node.Id, index, nextItem);
-        }
-        else
-        {
-            _database.UpdateStatusBarItem(node.Id, index, nextItem);
-        }
+        _database.UpdateStatusBarComponentItem(node.Id, index, nextItem);
         _onChanged();
     }
 
     private IReadOnlyList<SpikeDatabase.StatusBarItem> Items(ProjectTreeNode node) =>
-        node.Kind == ProjectTreeNodeKind.ComponentClass
-            ? _database.GetStatusBarComponentItems(node.Id)
-            : _database.GetStatusBarItems(node.Id);
-
-    private string ProjectId(ProjectTreeNode node) =>
-        node.Kind == ProjectTreeNodeKind.ComponentClass
-            ? _database.GetComponentClassSettings(node.Id).ProjectId
-            : _database.GetStatusBarSettings(node.Id).ProjectId;
+        _database.GetStatusBarComponentItems(node.Id);
 
     private static string BoolToString(bool value) => BooleanText.Format(value);
 
