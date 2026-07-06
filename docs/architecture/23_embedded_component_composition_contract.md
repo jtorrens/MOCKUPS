@@ -17,6 +17,7 @@ An embedded component is a slot, not a duplicated class.
 parent component class
   -> embedded slot metadata
   -> child component base class
+  -> child component active preset
   -> slot-local overrides
   -> component resolver
   -> web bridge
@@ -33,6 +34,7 @@ The embedded child owns:
 
 - its normal field catalog;
 - its normal dictionary controls;
+- its reusable presets;
 - its normal resolver contract;
 - its normal bridge/render path.
 
@@ -56,6 +58,43 @@ Therefore:
 - an empty `overrides` object is not an override by itself;
 - nested objects count only when they contain a concrete leaf value.
 
+## Preset Layer
+
+Every component class has one or more named presets. A preset is a named config
+snapshot stored with the component class metadata. It is not a separate
+component class and it must not duplicate resolver/render code.
+
+The effective base for a component instance is:
+
+```text
+component class
+  -> selected preset config
+  -> slot-local overrides
+  -> runtime inputs
+```
+
+Rules:
+
+- every component class must have a protected `Default` preset;
+- `Default` cannot be renamed or deleted;
+- duplicated presets can be renamed/deleted unless usage checks block deletion;
+- selecting a component class in the tree must resolve to a concrete preset;
+- if no preset has been selected for that component class in the current
+  session, the editor selects `Default`;
+- if a preset was selected earlier in the session, navigating back to that class
+  selects the last used preset;
+- selecting a preset in the tree changes the design-preview base config to that
+  preset;
+- the editor may still show the parent component class layout, but the active
+  preset name must be visible and the preset node must be selected in the tree.
+
+An embedded slot references a child preset by `presetId`. When a field is
+restored to inherited state, it restores to the selected preset value, not to
+the component class's mutable current config.
+
+Changing a base preset does not remove slot-local overrides. Override identity
+is explicit and survives coincidental equality with the preset value.
+
 ## Editor Boundary
 
 The Avalonia editor edits structured data. It does not render final visuals.
@@ -63,8 +102,11 @@ The Avalonia editor edits structured data. It does not render final visuals.
 Allowed editor responsibilities:
 
 - list embedded slots from `EmbeddedComponentSlotCatalog`;
+- list component presets under their owning component class;
+- remember the last selected preset per component class for the current editor
+  session;
 - open the child component editor in an embedded context;
-- show inherited values from the child base class;
+- show inherited values from the child selected preset;
 - save local edits into the parent slot's `overrides`;
 - show visual affordances for embedded context and override state.
 
@@ -76,6 +118,8 @@ Disallowed editor responsibilities:
 - generating final renderable geometry for the web renderer;
 - adding component-specific logic to `MainWindow` beyond generic embedded-editor
   hosting.
+- opening a component class as a special "current class values" design target
+  when a concrete preset exists.
 
 The dictionary route remains mandatory:
 

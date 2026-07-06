@@ -53,6 +53,8 @@ The design preview path is:
 
 ```text
 Editor / catalog schema
+  -> selected component preset
+  -> runtime input values
   -> component resolver
   -> component contract
   -> component renderable
@@ -66,6 +68,7 @@ Short form:
 
 ```text
 The editor edits fields.
+Preset selection provides the effective base config.
 The component understands semantics.
 Generic helpers resolve shared values.
 The component renderable emits paint primitives.
@@ -84,9 +87,10 @@ generic translation layer must not become component-aware.
 Allowed responsibilities:
 
 - component class metadata;
+- component preset metadata;
 - field names and field definitions;
 - field value kinds / dictionary types;
-- inheritance, override and restore editor state;
+- inheritance, override, preset selection and restore editor state;
 - component category for grouping and UX;
 - token references as editable data.
 
@@ -397,13 +401,37 @@ unless Audio directly declares a Label slot in the manifest.
 ## Embedded Override Semantics
 
 An embedded child is not copied field groups. It is a component instance/slot
-whose base class values can be locally overridden by the owning parent slot.
+whose selected preset values can be locally overridden by the owning parent
+slot.
+
+Effective config order:
+
+```text
+component class
+  -> selected preset
+  -> parent slot overrides
+  -> runtime inputs
+```
+
+The component class owns the preset list. A preset is a named config snapshot
+stored with the class, not a separate component implementation. Every component
+class must have a protected `Default` preset. `Default` cannot be renamed or
+deleted. User-created presets can be duplicated, renamed and deleted only when
+usage checks allow it.
+
+Selecting a component class in the editor tree must select a concrete preset:
+
+- first selection in a session uses `Default`;
+- returning to a component class uses the last selected preset for that class;
+- the selected preset node is the active blue tree node;
+- design preview uses the selected preset config;
+- embedded restore/inherit restores to the selected preset value.
 
 Invariant:
 
 ```text
-An override remains an override even if the parent/base value later changes to
-that same value by coincidence.
+An override remains an override even if the selected preset value later changes
+to that same value by coincidence.
 ```
 
 The override only returns to inherited state through explicit restore/inherit.
@@ -532,6 +560,7 @@ Forbidden registry responsibilities:
 - token resolution;
 - default values;
 - embedded override merging;
+- preset selection or preset merge semantics;
 - renderable construction;
 - component business rules.
 
@@ -765,6 +794,25 @@ Tests:
 - copied field groups are not treated as embedded components;
 - parent merges only direct owned child overrides;
 - parent cannot skip child owner and merge grandchild overrides directly.
+
+### `check:component-preset-semantics`
+
+Purpose: protect component presets as the effective base layer for component
+editing and preview.
+
+Checks:
+
+- every component class has a protected `Default` preset;
+- protected presets cannot be renamed or deleted;
+- selecting a component class resolves to a concrete preset;
+- first session selection resolves to `Default`;
+- returning to a component class in the same session resolves to the last
+  selected preset for that class;
+- selected preset is the blue active tree node;
+- design preview payload for a preset uses the preset config, not mutable class
+  config;
+- embedded restore/inherit uses the selected preset as base;
+- deleting a preset is blocked while any component slot references it.
 
 ### `check:component-migration-completeness`
 
