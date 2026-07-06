@@ -1,16 +1,14 @@
 import type { RenderableNode } from "../visual/renderable/types.js";
 import {
   boundedCenterBox,
-  colorForMode,
   iconTokenStyle,
-  numberToken,
   renderScale,
   selectedColor,
   shadow,
   surfaceVisualPadding,
-  variants,
 } from "./componentRenderableCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
+import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
 import type { VideoDesignContract } from "./videoComponentContract.js";
 
 export function videoComponentToRenderable(
@@ -20,17 +18,19 @@ export function videoComponentToRenderable(
   const scale = renderScale(payload);
   const width = Math.min(payload.previewFrame.screenWidth * 0.78, 520 * scale);
   const height = width * 9 / 16;
-  const borderWidth = video.surface.borderWidth * scale;
-  const surfaceRelief = video.surface.reliefEnabled
+  const borderWidth = video.surface.surface.borderWidth * scale;
+  const surfaceRelief = video.surface.surface.reliefEnabled
     ? {
-        angleDeg: video.surface.reliefAngle,
-        extension: video.surface.reliefExtent * scale,
-        spread: video.surface.reliefSpread * scale,
-        upperIntensity: video.surface.reliefTopIntensity * video.backgroundAlpha,
-        lowerIntensity: video.surface.reliefBottomIntensity * video.backgroundAlpha,
+        angleDeg: video.surface.surface.reliefAngle,
+        extension: video.surface.surface.reliefExtent * scale,
+        spread: video.surface.surface.reliefSpread * scale,
+        upperIntensity:
+          video.surface.surface.reliefTopIntensity * video.surface.backgroundAlpha,
+        lowerIntensity:
+          video.surface.surface.reliefBottomIntensity * video.surface.backgroundAlpha,
       }
     : undefined;
-  const videoShadow = video.surface.shadowEnabled ? shadow(payload) : undefined;
+  const videoShadow = video.surface.surface.shadowEnabled ? shadow(payload) : undefined;
   const visualPadding = surfaceVisualPadding(borderWidth, videoShadow, surfaceRelief);
   const outerBox = boundedCenterBox(
     payload,
@@ -49,6 +49,11 @@ export function videoComponentToRenderable(
   const playNodes = video.playOverlayVisible
     ? videoPlayNodes(payload, video, videoBox)
     : [];
+  const videoSurfaceNode = surfaceComponentToRenderableAt(
+    payload,
+    video.surface,
+    videoBox,
+  );
 
   return {
     id: video.id,
@@ -61,41 +66,12 @@ export function videoComponentToRenderable(
     },
     children: [
       {
+        ...videoSurfaceNode,
         id: `${video.id}.surface`,
-        type: "surface",
         role: "video_surface",
-        frame: 0,
-        box: videoBox,
         style: {
-          background: selectedColor(
-            payload,
-            video.backgroundColorToken,
-            video.backgroundAlpha,
-          ),
-          borderColor: selectedColor(payload, video.surface.borderColorToken),
-          borderRadius: numberToken(payload, video.surface.cornerRadiusToken) * scale,
-          borderWidth,
-          shadow: videoShadow,
-          surfaceRelief,
+          ...videoSurfaceNode.style,
           overflow: "hidden",
-          colorModes: Object.fromEntries(
-            variants(payload).map((mode) => [
-              mode,
-              {
-                background: colorForMode(
-                  payload,
-                  video.backgroundColorToken,
-                  mode,
-                  video.backgroundAlpha,
-                ),
-                borderColor: colorForMode(
-                  payload,
-                  video.surface.borderColorToken,
-                  mode,
-                ),
-              },
-            ]),
-          ),
         },
       },
       ...statusNodes,

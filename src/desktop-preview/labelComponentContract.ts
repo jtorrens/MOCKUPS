@@ -1,4 +1,4 @@
-import type { SurfaceStyleContract } from "./previewComponentContracts.js";
+import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
 
 export interface LabelDesignContract {
   id: string;
@@ -7,8 +7,6 @@ export interface LabelDesignContract {
   dimensionMode: "content" | "fixed";
   size: { width: number; height: number };
   padding: { x: number; y: number };
-  backgroundColorToken: string;
-  surfaceAlpha: number;
   textColorToken: string;
   textSizeToken: string;
   textStyle: "normal" | "italic";
@@ -17,5 +15,5 @@ export interface LabelDesignContract {
   subtextColorToken: string;
   subtextSizeToken: string;
   subtextStyle: "normal" | "italic";
-  surface: SurfaceStyleContract;
+  surface: SurfaceDesignContract;
 }

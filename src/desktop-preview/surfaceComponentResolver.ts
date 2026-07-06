@@ -48,3 +48,15 @@ export function resolveSurfaceComponentFromRecords(
     surface: resolveSurfaceStyle(style),
   };
 }
+
+export function resolveSurfaceComponentAtSize(
+  config: Record<string, unknown>,
+  size: { width: number; height: number },
+  id: string,
+): SurfaceDesignContract {
+  return resolveSurfaceComponentFromRecords(
+    config,
+    { size: `${size.width}|${size.height}` },
+    id,
+  );
+}

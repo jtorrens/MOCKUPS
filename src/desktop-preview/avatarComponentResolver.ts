@@ -89,6 +89,7 @@ export function resolveAvatarComponentFromRecords(
         ? resolveLabelComponentFromRecords(
             embeddedLabelConfig,
             labelPreview(preview, actor.displayName, showSubtext),
+            componentBaseConfigs,
             `${id}.label`,
           )
         : undefined,

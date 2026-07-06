@@ -5,18 +5,15 @@ import { buttonIconComponentToRenderableAt } from "./buttonIconComponentRenderab
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
   boundedCenterBox,
-  colorForMode,
   expandBoxXY,
-  numberToken,
   placeChild,
   renderScale,
   scalePlacement,
   selectedColor,
-  shadow,
   translateBox,
   unionBoxes,
-  variants,
 } from "./componentRenderableCommon.js";
+import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
 
 function hashString(value: string) {
   let hash = 2166136261;
@@ -163,17 +160,6 @@ export function audioComponentToRenderable(
   const badgeNode = audio.badgeSlot.badge && badgeBox
     ? buttonIconComponentToRenderableAt(payload, audio.badgeSlot.badge, badgeBox)
     : undefined;
-  const audioBorderWidth = audio.surface.borderWidth * scale;
-  const audioRelief = audio.surface.reliefEnabled
-    ? {
-        angleDeg: audio.surface.reliefAngle,
-        extension: audio.surface.reliefExtent * scale,
-        spread: audio.surface.reliefSpread * scale,
-        upperIntensity: audio.surface.reliefTopIntensity * audio.backgroundAlpha,
-        lowerIntensity: audio.surface.reliefBottomIntensity * audio.backgroundAlpha,
-      }
-    : undefined;
-  const audioShadow = audio.surface.shadowEnabled ? shadow(payload) : undefined;
 
   return {
     id: audio.id,
@@ -186,41 +172,9 @@ export function audioComponentToRenderable(
     },
     children: [
       {
+        ...surfaceComponentToRenderableAt(payload, audio.surface, audioBox),
         id: `${audio.id}.surface`,
-        type: "surface",
         role: "audio_surface",
-        frame: 0,
-        box: audioBox,
-        style: {
-          background: selectedColor(
-            payload,
-            audio.backgroundColorToken,
-            audio.backgroundAlpha,
-          ),
-          borderRadius: numberToken(payload, audio.surface.cornerRadiusToken) * scale,
-          borderWidth: audioBorderWidth,
-          borderColor: selectedColor(payload, audio.surface.borderColorToken),
-          shadow: audioShadow,
-          surfaceRelief: audioRelief,
-          colorModes: Object.fromEntries(
-            variants(payload).map((mode) => [
-              mode,
-              {
-                background: colorForMode(
-                  payload,
-                  audio.backgroundColorToken,
-                  mode,
-                  audio.backgroundAlpha,
-                ),
-                borderColor: colorForMode(
-                  payload,
-                  audio.surface.borderColorToken,
-                  mode,
-                ),
-              },
-            ]),
-          ),
-        },
       },
       {
         id: `${audio.id}.play`,

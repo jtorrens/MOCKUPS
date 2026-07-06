@@ -13,8 +13,8 @@ import {
   requiredNumber,
   requiredPlacement,
   requiredString,
-  resolveSurfaceStyle,
 } from "./componentResolverCommon.js";
+import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
 
 export function resolveAudioComponent(
   payload: DesignPreviewPayload,
@@ -23,7 +23,7 @@ export function resolveAudioComponent(
   const preview = parseObject(payload.designPreviewJson);
   const componentBaseConfigs = parseObject(payload.componentBaseConfigsJson);
   const audio = asRecord(config.audio);
-  const style = asRecord(config.style);
+  const surfaceSlot = asRecord(audio.surfaceSlot);
   const avatarSlot = asRecord(audio.avatarSlot);
   const badgeSlot = asRecord(audio.badgeSlot);
   const showAvatar = requiredBoolean(
@@ -43,6 +43,10 @@ export function resolveAudioComponent(
   const badgeConfig = mergeComponentDefaults(
     componentPresetConfig(componentBaseConfigs, "buttonIcon", badgeSlot.presetId),
     asRecord(badgeSlot.overrides),
+  );
+  const surfaceConfig = mergeComponentDefaults(
+    componentPresetConfig(componentBaseConfigs, "surface", surfaceSlot.presetId),
+    asRecord(surfaceSlot.overrides),
   );
   const durationSeconds = Math.max(
     1,
@@ -72,16 +76,6 @@ export function resolveAudioComponent(
       durationText: formatDuration(durationSeconds - currentTimeSeconds),
     },
     padding: parsePair(requiredString(audio, "padding", "component.audio.padding")),
-    backgroundColorToken: requiredString(
-      audio,
-      "backgroundColorToken",
-      "component.audio.backgroundColorToken",
-    ),
-    backgroundAlpha: requiredNumber(
-      audio,
-      "backgroundAlpha",
-      "component.audio.backgroundAlpha",
-    ),
     textSize: requiredNumber(audio, "textSize", "component.audio.textSize"),
     textColorToken: requiredString(
       audio,
@@ -148,7 +142,11 @@ export function resolveAudioComponent(
       "progressKnobSize",
       "component.audio.progressKnobSize",
     ),
-    surface: resolveSurfaceStyle(style),
+    surface: resolveSurfaceComponentAtSize(
+      surfaceConfig,
+      { width: 240, height: 72 },
+      "component.audio.surface",
+    ),
     avatarSlot: {
       showAvatar,
       placement: requiredPlacement(

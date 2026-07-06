@@ -7,9 +7,9 @@ import {
   numberToken,
   renderScale,
   selectedColor,
-  shadow,
   variants,
 } from "./componentRenderableCommon.js";
+import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
 
 function labelTextWidth(text: string, fontSize: number) {
   return text.length * fontSize * 0.58;
@@ -83,37 +83,17 @@ export function labelComponentToRenderableAt(
   const fontSize = numberToken(payload, label.textSizeToken) * scale;
   const subtextFontSize = numberToken(payload, label.subtextSizeToken) * scale;
   const size = labelSize(label, fontSize, subtextFontSize, scale);
-  const borderWidth = label.surface.borderWidth * scale;
-  const background = selectedColor(
-    payload,
-    label.backgroundColorToken,
-    label.surfaceAlpha,
-  );
-  const borderColor = selectedColor(payload, label.surface.borderColorToken);
-  const cornerRadius = numberToken(payload, label.surface.cornerRadiusToken) * scale;
-  const surfaceRelief = label.surface.reliefEnabled
-    ? {
-        angleDeg: label.surface.reliefAngle,
-        extension: label.surface.reliefExtent * scale,
-        spread: label.surface.reliefSpread * scale,
-        upperIntensity: label.surface.reliefTopIntensity * label.surfaceAlpha,
-        lowerIntensity: label.surface.reliefBottomIntensity * label.surfaceAlpha,
-      }
-    : undefined;
+  const surfaceNode = surfaceComponentToRenderableAt(payload, label.surface, box);
+  const surfaceColorModes = surfaceNode.style?.colorModes as
+    | Record<string, Record<string, unknown>>
+    | undefined;
 
   return {
+    ...surfaceNode,
     id: label.id,
-    type: "surface",
     role: "label",
-    frame: 0,
-    box,
     style: {
-      background,
-      borderWidth,
-      borderColor,
-      borderRadius: cornerRadius,
-      shadow: label.surface.shadowEnabled ? shadow(payload) : undefined,
-      surfaceRelief,
+      ...surfaceNode.style,
       paddingX: label.padding.x * scale,
       paddingY: label.padding.y * scale,
       display: "flex",
@@ -126,19 +106,9 @@ export function labelComponentToRenderableAt(
         variants(payload).map((mode) => [
           mode,
           {
-            background: colorForMode(
-              payload,
-              label.backgroundColorToken,
-              mode,
-              label.surfaceAlpha,
-            ),
+            ...(surfaceColorModes?.[mode] ?? {}),
             textColor: colorForMode(payload, label.textColorToken, mode),
             subtextColor: colorForMode(payload, label.subtextColorToken, mode),
-            borderColor: colorForMode(
-              payload,
-              label.surface.borderColorToken,
-              mode,
-            ),
           },
         ]),
       ),

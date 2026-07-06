@@ -1,15 +1,14 @@
 import type { RenderableNode } from "../visual/renderable/types.js";
 import {
   boundedCenterBox,
-  colorForMode,
   numberToken,
   renderScale,
   selectedColor,
   shadow,
   surfaceVisualPadding,
-  variants,
 } from "./componentRenderableCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
+import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
 import type { TextInputBarDesignContract } from "./textInputBarComponentContract.js";
 
 export function textInputBarComponentToRenderable(
@@ -23,19 +22,23 @@ export function textInputBarComponentToRenderable(
     Math.max(240 * scale, 520 * scale),
   );
   const fontSize = numberToken(payload, textInput.textSizeToken) * scale;
-  const borderWidth = textInput.surface.borderWidth * scale;
-  const surfaceRelief = textInput.surface.reliefEnabled
+  const borderWidth = textInput.surface.surface.borderWidth * scale;
+  const surfaceRelief = textInput.surface.surface.reliefEnabled
     ? {
-        angleDeg: textInput.surface.reliefAngle,
-        extension: textInput.surface.reliefExtent * scale,
-        spread: textInput.surface.reliefSpread * scale,
+        angleDeg: textInput.surface.surface.reliefAngle,
+        extension: textInput.surface.surface.reliefExtent * scale,
+        spread: textInput.surface.surface.reliefSpread * scale,
         upperIntensity:
-          textInput.surface.reliefTopIntensity * textInput.backgroundAlpha,
+          textInput.surface.surface.reliefTopIntensity *
+          textInput.surface.backgroundAlpha,
         lowerIntensity:
-          textInput.surface.reliefBottomIntensity * textInput.backgroundAlpha,
+          textInput.surface.surface.reliefBottomIntensity *
+          textInput.surface.backgroundAlpha,
       }
     : undefined;
-  const inputShadow = textInput.surface.shadowEnabled ? shadow(payload) : undefined;
+  const inputShadow = textInput.surface.surface.shadowEnabled
+    ? shadow(payload)
+    : undefined;
   const visualPadding = surfaceVisualPadding(borderWidth, inputShadow, surfaceRelief);
   const outerBox = boundedCenterBox(
     payload,
@@ -82,41 +85,9 @@ export function textInputBarComponentToRenderable(
     },
     children: [
       {
+        ...surfaceComponentToRenderableAt(payload, textInput.surface, fieldBox),
         id: `${textInput.id}.surface`,
-        type: "surface",
         role: "textInputBarSurface",
-        frame: 0,
-        box: fieldBox,
-        style: {
-          background: selectedColor(
-            payload,
-            textInput.backgroundColorToken,
-            textInput.backgroundAlpha,
-          ),
-          borderColor: selectedColor(payload, textInput.surface.borderColorToken),
-          borderRadius: numberToken(payload, textInput.surface.cornerRadiusToken) * scale,
-          borderWidth,
-          shadow: inputShadow,
-          surfaceRelief,
-          colorModes: Object.fromEntries(
-            variants(payload).map((mode) => [
-              mode,
-              {
-                background: colorForMode(
-                  payload,
-                  textInput.backgroundColorToken,
-                  mode,
-                  textInput.backgroundAlpha,
-                ),
-                borderColor: colorForMode(
-                  payload,
-                  textInput.surface.borderColorToken,
-                  mode,
-                ),
-              },
-            ]),
-          ),
-        },
       },
       {
         id: `${textInput.id}.text`,

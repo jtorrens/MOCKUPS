@@ -1,13 +1,16 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
+  componentPresetConfig,
+  mergeComponentDefaults,
+} from "./componentPreviewDefaults.js";
+import {
   asRecord,
   parseObject,
-  requiredAlpha,
   requiredNumber,
   requiredString,
-  resolveSurfaceStyle,
 } from "./componentResolverCommon.js";
 import type { LabelDesignContract } from "./labelComponentContract.js";
+import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
 
 function requiredText(
   value: Record<string, unknown>,
@@ -39,16 +42,27 @@ export function resolveLabelComponent(
 ): LabelDesignContract {
   const config = parseObject(payload.configJson);
   const preview = parseObject(payload.designPreviewJson);
-  return resolveLabelComponentFromRecords(config, preview, "component.label");
+  const componentBaseConfigs = parseObject(payload.componentBaseConfigsJson);
+  return resolveLabelComponentFromRecords(
+    config,
+    preview,
+    componentBaseConfigs,
+    "component.label",
+  );
 }
 
 export function resolveLabelComponentFromRecords(
   config: Record<string, unknown>,
   preview: Record<string, unknown>,
+  componentBaseConfigs: Record<string, unknown>,
   id: string,
 ): LabelDesignContract {
   const label = asRecord(config.label);
-  const style = asRecord(config.style);
+  const surfaceSlot = asRecord(label.surfaceSlot);
+  const embeddedSurfaceConfig = mergeComponentDefaults(
+    componentPresetConfig(componentBaseConfigs, "surface", surfaceSlot.presetId),
+    asRecord(surfaceSlot.overrides),
+  );
   const size = requiredPair(label, "size", "component.label.size");
   const padding = requiredPair(label, "padding", "component.label.padding");
   const dimensionMode = requiredString(
@@ -90,12 +104,6 @@ export function resolveLabelComponentFromRecords(
     dimensionMode,
     size: { width: size.first, height: size.second },
     padding: { x: padding.first, y: padding.second },
-    backgroundColorToken: requiredString(
-      label,
-      "backgroundColorToken",
-      "component.label.backgroundColorToken",
-    ),
-    surfaceAlpha: requiredAlpha(label, "alpha", "component.label.alpha"),
     textColorToken: requiredString(
       label,
       "textColorToken",
@@ -120,6 +128,10 @@ export function resolveLabelComponentFromRecords(
       "component.label.subtextSizeToken",
     ),
     subtextStyle,
-    surface: resolveSurfaceStyle(style),
+    surface: resolveSurfaceComponentAtSize(
+      embeddedSurfaceConfig,
+      { width: size.first, height: size.second },
+      `${id}.surface`,
+    ),
   };
 }

@@ -21,11 +21,35 @@ internal static class EmbeddedComponentSlotCatalog
             "component.label",
             ["avatar", "labelSlot"]),
         new(
+            "component.textInput.surface.editor",
+            "surface",
+            "Surface",
+            "component.surface",
+            ["textInput", "surfaceSlot"]),
+        new(
+            "component.buttonIcon.surface.editor",
+            "surface",
+            "Surface",
+            "component.surface",
+            ["buttonIcon", "surfaceSlot"]),
+        new(
             "component.buttonIcon.label.editor",
             "label",
             "Label",
             "component.label",
             ["buttonIcon", "labelSlot"]),
+        new(
+            "component.label.surface.editor",
+            "surface",
+            "Surface",
+            "component.surface",
+            ["label", "surfaceSlot"]),
+        new(
+            "component.audio.surface.editor",
+            "surface",
+            "Surface",
+            "component.surface",
+            ["audio", "surfaceSlot"]),
         new(
             "component.audio.avatar.editor",
             "avatar",
@@ -38,6 +62,12 @@ internal static class EmbeddedComponentSlotCatalog
             "Badge",
             "component.button_icon",
             ["audio", "badgeSlot"]),
+        new(
+            "component.video.surface.editor",
+            "surface",
+            "Surface",
+            "component.surface",
+            ["video", "surfaceSlot"]),
     ];
 
     public static bool TryGet(string fieldId, out EmbeddedComponentSlotDefinition slot)

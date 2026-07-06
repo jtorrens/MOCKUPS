@@ -849,10 +849,41 @@ internal sealed partial class SpikeDatabase
             {
                 return ComponentPresetNodeId(rowByPresetId.Id, currentValue);
             }
+
+            var normalizedLookup = ComponentPresetLookupKey(currentValue);
+            foreach (var row in rows)
+            {
+                var preset = ComponentClassPresetsOrDefault(row)
+                    .FirstOrDefault((candidate) => ComponentPresetMatchesLookup(candidate, normalizedLookup));
+                if (preset is not null)
+                {
+                    return ComponentPresetNodeId(row.Id, preset.Id);
+                }
+            }
         }
 
         var first = rows[0];
         return ComponentPresetNodeId(first.Id, PreferredPresetId(first));
+    }
+
+    private static bool ComponentPresetMatchesLookup(ComponentClassPreset preset, string normalizedLookup)
+    {
+        if (string.IsNullOrWhiteSpace(normalizedLookup))
+        {
+            return false;
+        }
+
+        return ComponentPresetLookupKey(preset.Id).Equals(normalizedLookup, StringComparison.Ordinal)
+            || ComponentPresetLookupKey(preset.Name).Equals(normalizedLookup, StringComparison.Ordinal)
+            || ComponentPresetLookupKey(preset.Name).EndsWith(normalizedLookup, StringComparison.Ordinal);
+    }
+
+    private static string ComponentPresetLookupKey(string value)
+    {
+        return new string(value
+            .Where(char.IsLetterOrDigit)
+            .Select(char.ToLowerInvariant)
+            .ToArray());
     }
 
     private static List<ComponentClassRow> ComponentClassRowsByType(
@@ -1623,6 +1654,7 @@ internal sealed partial class SpikeDatabase
         var changed = NormalizeAvatarLabelPlacement(componentType, config);
         changed |= NormalizeButtonIconLabelSlot(componentType, config);
         changed |= NormalizeAudioEmbeddedSlots(componentType, config);
+        changed |= NormalizeSurfaceSlots(componentType, config);
         changed |= NormalizeEmbeddedSlotPresetIds(connection, projectId, config);
         changed |= JsonPath.MergeMissing(config, defaults);
         changed |= NormalizeReliefIntensity(config, "reliefTopIntensity");
@@ -1854,6 +1886,44 @@ internal sealed partial class SpikeDatabase
             }
 
             slotNode["presetId"] = normalizedValue;
+            changed = true;
+        }
+
+        return changed;
+    }
+
+    private static bool NormalizeSurfaceSlots(string componentType, JsonObject config)
+    {
+        var (ownerPath, preferredPresetName) = componentType switch
+        {
+            "label" => (new[] { "label" }, "Label"),
+            "buttonIcon" => (new[] { "buttonIcon" }, "IconButton"),
+            "textInputBar" => (new[] { "textInput" }, "InputBox"),
+            "audio" => (new[] { "audio" }, DefaultComponentPresetId),
+            "video" => (new[] { "video" }, DefaultComponentPresetId),
+            _ => (Array.Empty<string>(), ""),
+        };
+        if (ownerPath.Length == 0 || JsonPath.Get(config, ownerPath) is not JsonObject owner)
+        {
+            return false;
+        }
+
+        var changed = false;
+        if (owner["surfaceSlot"] is not JsonObject surfaceSlot)
+        {
+            owner["surfaceSlot"] = ComponentSurfaceSlot(preferredPresetName);
+            return true;
+        }
+
+        if (string.IsNullOrWhiteSpace(JsonPath.String(surfaceSlot, "presetId", "")))
+        {
+            surfaceSlot["presetId"] = preferredPresetName;
+            changed = true;
+        }
+
+        if (surfaceSlot["overrides"] is not JsonObject)
+        {
+            surfaceSlot["overrides"] = new JsonObject();
             changed = true;
         }
 
@@ -2176,6 +2246,15 @@ internal sealed partial class SpikeDatabase
             JsonSerializer.Serialize(new { note = "Seeded reusable component class." }));
     }
 
+    private static JsonObject ComponentSurfaceSlot(string presetName)
+    {
+        return new JsonObject
+        {
+            ["presetId"] = presetName,
+            ["overrides"] = new JsonObject(),
+        };
+    }
+
     private static string DefaultComponentClassConfigJson(string componentType)
     {
         var config = new JsonObject
@@ -2225,8 +2304,7 @@ internal sealed partial class SpikeDatabase
                 {
                     ["height"] = 44,
                     ["placeholder"] = "Message",
-                    ["backgroundColorToken"] = "theme.colors.field",
-                    ["backgroundAlpha"] = 1,
+                    ["surfaceSlot"] = ComponentSurfaceSlot("InputBox"),
                     ["idleTextColorToken"] = "theme.colors.textSecondary",
                     ["textSizeToken"] = "theme.typography.sizes.s",
                     ["cursorColorToken"] = "theme.cursor.color",
@@ -2257,8 +2335,7 @@ internal sealed partial class SpikeDatabase
                     ["size"] = 48,
                     ["iconToken"] = "media_mic",
                     ["iconPadding"] = 6,
-                    ["backgroundColorToken"] = "theme.colors.button",
-                    ["backgroundAlpha"] = 1,
+                    ["surfaceSlot"] = ComponentSurfaceSlot("IconButton"),
                     ["iconColorToken"] = "theme.colors.icon",
                     ["labelSlot"] = new JsonObject
                     {
@@ -2276,8 +2353,7 @@ internal sealed partial class SpikeDatabase
                     ["dimensionMode"] = "content",
                     ["size"] = "120|32",
                     ["padding"] = "8|4",
-                    ["backgroundColorToken"] = "theme.colors.background",
-                    ["alpha"] = 1,
+                    ["surfaceSlot"] = ComponentSurfaceSlot("Label"),
                     ["textColorToken"] = "theme.colors.textPrimary",
                     ["textSizeToken"] = "theme.typography.sizes.s",
                     ["textStyle"] = "normal",
@@ -2292,8 +2368,7 @@ internal sealed partial class SpikeDatabase
                 config["audio"] = new JsonObject
                 {
                     ["padding"] = "10|8",
-                    ["backgroundColorToken"] = "theme.colors.surface",
-                    ["backgroundAlpha"] = 1,
+                    ["surfaceSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
                     ["textSize"] = 11,
                     ["textColorToken"] = "theme.icons.secondary",
                     ["playCircleSize"] = 32,
@@ -2347,8 +2422,7 @@ internal sealed partial class SpikeDatabase
             case "video":
                 config["video"] = new JsonObject
                 {
-                    ["backgroundColorToken"] = "theme.colors.card",
-                    ["backgroundAlpha"] = 1,
+                    ["surfaceSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
                     ["statusVisible"] = true,
                     ["statusHeight"] = 24,
                     ["statusIconSlots"] = JsonNode.Parse("""{"left":["app_camera"],"center":[],"right":[]}"""),

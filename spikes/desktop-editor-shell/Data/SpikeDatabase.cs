@@ -2133,8 +2133,7 @@ internal sealed partial class SpikeDatabase
                 { "id": "textInput", "label": "Text input", "order": 10, "visible": true, "fields": [
                   { "id": "component.textInput.height", "order": 10, "visible": true },
                   { "id": "component.textInput.placeholder", "order": 20, "visible": true },
-                  { "id": "component.textInput.backgroundColorToken", "order": 30, "visible": true },
-                  { "id": "component.textInput.backgroundAlpha", "order": 40, "visible": true },
+                  { "id": "component.textInput.surface.editor", "order": 30, "visible": true },
                   { "id": "component.textInput.idleTextColorToken", "order": 50, "visible": true },
                   { "id": "component.textInput.textSizeToken", "order": 60, "visible": true },
                   { "id": "component.textInput.cursorColorToken", "order": 70, "visible": true },
@@ -2186,8 +2185,7 @@ internal sealed partial class SpikeDatabase
                 { "id": "buttonIcon", "label": "Button icon", "order": 10, "visible": true, "fields": [
                   { "id": "component.buttonIcon.size", "order": 10, "visible": true },
                   { "id": "component.buttonIcon.iconPadding", "order": 20, "visible": true },
-                  { "id": "component.buttonIcon.backgroundColorToken", "order": 30, "visible": true },
-                  { "id": "component.buttonIcon.backgroundAlpha", "order": 40, "visible": true },
+                  { "id": "component.buttonIcon.surface.editor", "order": 30, "visible": true },
                   { "id": "component.buttonIcon.iconColorToken", "order": 50, "visible": true }
                 ] },
                 { "id": "buttonIconLabel", "label": "Label", "order": 20, "visible": true, "fields": [
@@ -2214,7 +2212,7 @@ internal sealed partial class SpikeDatabase
                   { "id": "component.label.dimensionMode", "order": 10, "visible": true },
                   { "id": "component.label.size", "order": 20, "visible": true },
                   { "id": "component.label.padding", "order": 30, "visible": true },
-                  { "id": "component.label.backgroundColorToken", "order": 40, "visible": true },
+                  { "id": "component.label.surface.editor", "order": 40, "visible": true },
                   { "id": "component.label.textColorToken", "order": 90, "visible": true },
                   { "id": "component.label.textSizeToken", "order": 100, "visible": true },
                   { "id": "component.label.textStyle", "order": 110, "visible": true },
@@ -2226,9 +2224,7 @@ internal sealed partial class SpikeDatabase
                   { "id": "component.label.subtextSizeToken", "order": 30, "visible": true },
                   { "id": "component.label.subtextStyle", "order": 40, "visible": true }
                 ] },
-                { "id": "labelTransparency", "label": "Transparency", "order": 30, "visible": true, "fields": [
-                  { "id": "component.label.alpha", "order": 10, "visible": true }
-                ] }
+                { "id": "labelTransparency", "label": "Transparency", "order": 30, "visible": false, "fields": [] }
               ]
             }
             """,
@@ -2245,8 +2241,7 @@ internal sealed partial class SpikeDatabase
               "groups": [
                 { "id": "audio", "label": "Audio", "order": 10, "visible": true, "fields": [
                   { "id": "component.audio.padding", "order": 10, "visible": true },
-                  { "id": "component.audio.backgroundColorToken", "order": 20, "visible": true },
-                  { "id": "component.audio.backgroundAlpha", "order": 30, "visible": true },
+                  { "id": "component.audio.surface.editor", "order": 20, "visible": true },
                   { "id": "component.audio.textSize", "order": 40, "visible": true },
                   { "id": "component.audio.textColorToken", "order": 50, "visible": true }
                 ] },
@@ -2294,8 +2289,7 @@ internal sealed partial class SpikeDatabase
               "defaultOpen": false,
               "groups": [
                 { "id": "video", "label": "Video", "order": 10, "visible": true, "fields": [
-                  { "id": "component.video.backgroundColorToken", "order": 10, "visible": true },
-                  { "id": "component.video.backgroundAlpha", "order": 20, "visible": true },
+                  { "id": "component.video.surface.editor", "order": 10, "visible": true },
                   { "id": "component.video.statusVisible", "order": 30, "visible": true },
                   { "id": "component.video.statusHeight", "order": 40, "visible": true },
                   { "id": "component.video.statusIconSlots", "order": 50, "visible": true },
@@ -2336,7 +2330,8 @@ internal sealed partial class SpikeDatabase
         }
         """;
 
-        return typeSpecific + style;
+        var ownsSurfaceStyle = recordClassId is "component.surface" or "component.avatar" or "component.keyboard";
+        return ownsSurfaceStyle ? typeSpecific + style : typeSpecific;
     }
 
     private static void SeedShot(SqliteConnection connection, string id, string episodeId, string name, int sortOrder)

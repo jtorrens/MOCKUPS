@@ -2,8 +2,8 @@ import type { AvatarDesignContract } from "./avatarComponentContract.js";
 import type { ButtonIconDesignContract } from "./buttonIconComponentContract.js";
 import type {
   AlignmentPlacementContract,
-  SurfaceStyleContract,
 } from "./previewComponentContracts.js";
+import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
 
 export interface AudioDesignContract {
   id: string;
@@ -14,8 +14,6 @@ export interface AudioDesignContract {
     durationText: string;
   };
   padding: { x: number; y: number };
-  backgroundColorToken: string;
-  backgroundAlpha: number;
   textSize: number;
   textColorToken: string;
   playCircleSize: number;
@@ -30,7 +28,7 @@ export interface AudioDesignContract {
   waveformMinHeight: number;
   waveformMaxHeight: number;
   progressKnobSize: number;
-  surface: SurfaceStyleContract;
+  surface: SurfaceDesignContract;
   avatarSlot: {
     showAvatar: boolean;
     placement: AlignmentPlacementContract;

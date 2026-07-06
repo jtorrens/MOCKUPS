@@ -1,8 +1,8 @@
 import type {
   AlignmentPlacementContract,
-  SurfaceStyleContract,
 } from "./previewComponentContracts.js";
 import type { LabelDesignContract } from "./labelComponentContract.js";
+import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
 
 export interface ButtonIconDesignContract {
   id: string;
@@ -10,8 +10,6 @@ export interface ButtonIconDesignContract {
   iconSize: number;
   iconToken: string;
   iconPadding: number;
-  backgroundColorToken: string;
-  backgroundAlpha: number;
   iconColorToken: string;
   backgroundPaletteColor?: string;
   iconPaletteColor?: string;
@@ -21,5 +19,5 @@ export interface ButtonIconDesignContract {
     placement: AlignmentPlacementContract;
     label?: LabelDesignContract;
   };
-  surface: SurfaceStyleContract;
+  surface: SurfaceDesignContract;
 }

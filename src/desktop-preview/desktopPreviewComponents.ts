@@ -17,7 +17,7 @@ export const desktopPreviewComponents = {
     contract: "./labelComponentContract",
     resolver: "./labelComponentResolver",
     renderable: "./labelComponentRenderable",
-    embeds: [],
+    embeds: ["surface"],
   },
   surface: {
     category: "atom",
@@ -41,7 +41,7 @@ export const desktopPreviewComponents = {
     contract: "./buttonIconComponentContract",
     resolver: "./buttonIconComponentResolver",
     renderable: "./buttonIconComponentRenderable",
-    embeds: ["label"],
+    embeds: ["surface", "label"],
   },
   audio: {
     category: "component",
@@ -49,7 +49,7 @@ export const desktopPreviewComponents = {
     contract: "./audioComponentContract",
     resolver: "./audioComponentResolver",
     renderable: "./audioComponentRenderable",
-    embeds: ["avatar", "buttonIcon"],
+    embeds: ["surface", "avatar", "buttonIcon"],
   },
   textInputBar: {
     category: "system",
@@ -57,7 +57,7 @@ export const desktopPreviewComponents = {
     contract: "./textInputBarComponentContract",
     resolver: "./textInputBarComponentResolver",
     renderable: "./textInputBarComponentRenderable",
-    embeds: [],
+    embeds: ["surface"],
   },
   keyboard: {
     category: "system",
@@ -73,7 +73,7 @@ export const desktopPreviewComponents = {
     contract: "./videoComponentContract",
     resolver: "./videoComponentResolver",
     renderable: "./videoComponentRenderable",
-    embeds: [],
+    embeds: ["surface"],
   },
   status_bar: {
     category: "system",

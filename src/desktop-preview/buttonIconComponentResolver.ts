@@ -6,15 +6,14 @@ import {
 import {
   asRecord,
   parseObject,
-  requiredAlpha,
   requiredBoolean,
   requiredNumber,
   requiredPlacement,
   requiredString,
-  resolveSurfaceStyle,
 } from "./componentResolverCommon.js";
 import type { ButtonIconDesignContract } from "./buttonIconComponentContract.js";
 import { resolveLabelComponentFromRecords } from "./labelComponentResolver.js";
+import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
 
 function labelPreview(
   preview: Record<string, unknown>,
@@ -57,7 +56,7 @@ export function resolveButtonIconComponentFromRecords(
 ): ButtonIconDesignContract {
   const buttonIcon = asRecord(config.buttonIcon);
   const labelSlot = asRecord(buttonIcon.labelSlot);
-  const style = asRecord(config.style);
+  const surfaceSlot = asRecord(buttonIcon.surfaceSlot);
   const showLabel = requiredBoolean(
     labelSlot,
     "showLabel",
@@ -73,35 +72,29 @@ export function resolveButtonIconComponentFromRecords(
     componentPresetConfig(componentBaseConfigs, "label", labelSlot.presetId),
     overrides,
   );
+  const buttonSize = requiredNumber(buttonIcon, "size", "component.buttonIcon.size");
+  const iconPadding = requiredNumber(
+    buttonIcon,
+    "iconPadding",
+    "component.buttonIcon.iconPadding",
+  );
+  const embeddedSurfaceConfig = mergeComponentDefaults(
+    componentPresetConfig(componentBaseConfigs, "surface", surfaceSlot.presetId),
+    asRecord(surfaceSlot.overrides),
+  );
 
   return {
     id,
-    buttonSize: requiredNumber(buttonIcon, "size", "component.buttonIcon.size"),
+    buttonSize,
     iconSize: Math.max(
       1,
-      requiredNumber(buttonIcon, "size", "component.buttonIcon.size") -
-        requiredNumber(buttonIcon, "iconPadding", "component.buttonIcon.iconPadding") *
-          2,
+      buttonSize - iconPadding * 2,
     ),
-    iconPadding: requiredNumber(
-      buttonIcon,
-      "iconPadding",
-      "component.buttonIcon.iconPadding",
-    ),
+    iconPadding,
     iconToken: inputString(
       preview,
       "iconToken",
       requiredString(buttonIcon, "iconToken", "component.buttonIcon.iconToken"),
-    ),
-    backgroundColorToken: requiredString(
-      buttonIcon,
-      "backgroundColorToken",
-      "component.buttonIcon.backgroundColorToken",
-    ),
-    backgroundAlpha: requiredAlpha(
-      buttonIcon,
-      "backgroundAlpha",
-      "component.buttonIcon.backgroundAlpha",
     ),
     iconColorToken: requiredString(
       buttonIcon,
@@ -120,10 +113,15 @@ export function resolveButtonIconComponentFromRecords(
         ? resolveLabelComponentFromRecords(
             embeddedLabelConfig,
             labelPreview(preview, showSubtext),
+            componentBaseConfigs,
             `${id}.label`,
           )
         : undefined,
     },
-    surface: resolveSurfaceStyle(style),
+    surface: resolveSurfaceComponentAtSize(
+      embeddedSurfaceConfig,
+      { width: buttonSize, height: buttonSize },
+      `${id}.surface`,
+    ),
   };
 }

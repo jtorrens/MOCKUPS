@@ -31,7 +31,7 @@ export function buttonIconComponentToRenderable(
   const iconSize = buttonIcon.iconSize * scale;
   const iconPadding = buttonIcon.iconPadding * scale;
   const surfaceSize = iconSize + iconPadding * 2;
-  const iconShadow = buttonIcon.surface.shadowEnabled ? shadow(payload) : undefined;
+  const iconShadow = buttonIcon.surface.surface.shadowEnabled ? shadow(payload) : undefined;
   const labelSize = buttonIcon.labelSlot.label
     ? measureLabelComponent(buttonIcon.labelSlot.label, payload)
     : undefined;
@@ -47,7 +47,7 @@ export function buttonIconComponentToRenderable(
     buttonLocalBox,
     ...(labelLocalBox ? [labelLocalBox] : []),
   ]);
-  const borderWidth = buttonIcon.surface.borderWidth * scale;
+  const borderWidth = buttonIcon.surface.surface.borderWidth * scale;
   const surfaceRelief = buttonIconSurfaceRelief(buttonIcon, scale);
   const visualPadding = surfaceVisualPadding(borderWidth, iconShadow, surfaceRelief);
   const groupBox = boundedCenterBox(
@@ -86,7 +86,7 @@ export function buttonIconComponentToRenderableAt(
   const scale = renderScale(payload);
   const iconPadding = buttonIcon.iconPadding * scale;
   const iconSize = Math.max(1, buttonBox.width - iconPadding * 2);
-  const iconShadow = buttonIcon.surface.shadowEnabled ? shadow(payload) : undefined;
+  const iconShadow = buttonIcon.surface.surface.shadowEnabled ? shadow(payload) : undefined;
   const labelSize = buttonIcon.labelSlot.label
     ? measureLabelComponent(buttonIcon.labelSlot.label, payload)
     : undefined;
@@ -97,7 +97,7 @@ export function buttonIconComponentToRenderableAt(
         scalePlacement(buttonIcon.labelSlot.placement, scale),
       )
     : undefined;
-  const borderWidth = buttonIcon.surface.borderWidth * scale;
+  const borderWidth = buttonIcon.surface.surface.borderWidth * scale;
   const surfaceRelief = buttonIconSurfaceRelief(buttonIcon, scale);
   const visualPadding = surfaceVisualPadding(borderWidth, iconShadow, surfaceRelief);
   const contentBounds = unionBoxes([
@@ -131,8 +131,8 @@ function buttonIconRenderableNode(
   labelBox: RenderableBox | undefined,
 ): RenderableNode {
   const scale = renderScale(payload);
-  const iconShadow = buttonIcon.surface.shadowEnabled ? shadow(payload) : undefined;
-  const borderWidth = buttonIcon.surface.borderWidth * scale;
+  const iconShadow = buttonIcon.surface.surface.shadowEnabled ? shadow(payload) : undefined;
+  const borderWidth = buttonIcon.surface.surface.borderWidth * scale;
   const surfaceRelief = buttonIconSurfaceRelief(buttonIcon, scale);
 
   return {
@@ -153,9 +153,13 @@ function buttonIconRenderableNode(
         box: buttonBox,
         style: {
           background: buttonBackgroundColor(payload, buttonIcon),
-          borderRadius: numberToken(payload, buttonIcon.surface.cornerRadiusToken) * scale,
+          borderRadius: numberToken(payload, buttonIcon.surface.surface.cornerRadiusToken) * scale,
           borderWidth,
-          borderColor: selectedColor(payload, buttonIcon.surface.borderColorToken),
+          borderColor: selectedColor(
+            payload,
+            buttonIcon.surface.surface.borderColorToken,
+            buttonIcon.surface.borderAlpha,
+          ),
           shadow: iconShadow,
           surfaceRelief,
           colorModes: Object.fromEntries(
@@ -166,8 +170,9 @@ function buttonIconRenderableNode(
                 color: buttonIconColorForMode(payload, buttonIcon, mode),
                 borderColor: colorForMode(
                   payload,
-                  buttonIcon.surface.borderColorToken,
+                  buttonIcon.surface.surface.borderColorToken,
                   mode,
+                  buttonIcon.surface.borderAlpha,
                 ),
               },
             ]),
@@ -209,13 +214,17 @@ function buttonIconSurfaceRelief(
   buttonIcon: ButtonIconDesignContract,
   scale: number,
 ) {
-  return buttonIcon.surface.reliefEnabled
+  return buttonIcon.surface.surface.reliefEnabled
     ? {
-        angleDeg: buttonIcon.surface.reliefAngle,
-        extension: buttonIcon.surface.reliefExtent * scale,
-        spread: buttonIcon.surface.reliefSpread * scale,
-        upperIntensity: buttonIcon.surface.reliefTopIntensity * buttonIcon.backgroundAlpha,
-        lowerIntensity: buttonIcon.surface.reliefBottomIntensity * buttonIcon.backgroundAlpha,
+        angleDeg: buttonIcon.surface.surface.reliefAngle,
+        extension: buttonIcon.surface.surface.reliefExtent * scale,
+        spread: buttonIcon.surface.surface.reliefSpread * scale,
+        upperIntensity:
+          buttonIcon.surface.surface.reliefTopIntensity *
+          buttonIcon.surface.backgroundAlpha,
+        lowerIntensity:
+          buttonIcon.surface.surface.reliefBottomIntensity *
+          buttonIcon.surface.backgroundAlpha,
       }
     : undefined;
 }
@@ -223,11 +232,11 @@ function buttonIconSurfaceRelief(
 function buttonBackgroundColor(
   payload: DesignPreviewPayload,
   buttonIcon: ButtonIconDesignContract,
-  alpha = buttonIcon.backgroundAlpha,
+  alpha = buttonIcon.surface.backgroundAlpha,
 ) {
   return buttonIcon.backgroundPaletteColor
     ? selectedPaletteColor(payload, buttonIcon.backgroundPaletteColor, alpha)
-    : selectedColor(payload, buttonIcon.backgroundColorToken, alpha);
+    : selectedColor(payload, buttonIcon.surface.backgroundColorToken, alpha);
 }
 
 function buttonIconColor(
@@ -248,13 +257,13 @@ function buttonBackgroundColorForMode(
     ? selectedPaletteColor(
         payload,
         buttonIcon.backgroundPaletteColor,
-        buttonIcon.backgroundAlpha,
+        buttonIcon.surface.backgroundAlpha,
       )
     : colorForMode(
         payload,
-        buttonIcon.backgroundColorToken,
+        buttonIcon.surface.backgroundColorToken,
         mode,
-        buttonIcon.backgroundAlpha,
+        buttonIcon.surface.backgroundAlpha,
       );
 }
 

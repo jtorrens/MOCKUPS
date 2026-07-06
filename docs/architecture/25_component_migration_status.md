@@ -47,15 +47,15 @@ field `migrationStatus`.
 | Component type | Category | Status | Notes |
 | --- | --- | --- | --- |
 | `surface` | atom | Structural reference | Reusable visual surface appearance. Size is supplied as runtime input/parent box; preset owns background, alphas, border, radius, shadow and relief. |
-| `label` | atom | Functional reference | Text/subtext, sizing, typography tokens, alpha, text align and surface style are on the new route. |
+| `label` | atom | Functional reference | Text/subtext, sizing, typography tokens and text align are on the new route. Visual surface is an embedded `surface` preset. |
 | `avatar` | component | Functional reference | Embeds `label`; actor input and label/subtext sample values work through the generic input path. |
-| `buttonIcon` | atom | Functional reference | Embeds `label`; icon input and optional label are on the recursive route. |
-| `audio` | component | Functional reference, still evolving | Embeds `avatar` and `buttonIcon`; playback inputs are generic frame inputs. Future work may refine waveform behavior, badge semantics and animation details. |
+| `buttonIcon` | atom | Functional reference | Embeds `surface` and `label`; icon input and optional label are on the recursive route. |
+| `audio` | component | Functional reference, still evolving | Embeds `surface`, `avatar` and `buttonIcon`; playback inputs are generic frame inputs. Future work may refine waveform behavior, badge semantics and animation details. |
 | `status_bar` | system | Structural/functional enough for current preview | Routed as a system component with its own resolver/renderable. Further device-specific preset work may refine it. |
 | `navigation_bar` | system | Structural/functional enough for current preview | Routed as a system component with its own resolver/renderable. Further device-specific preset work may refine it. |
-| `textInputBar` | system | Structurally migrated | Preview renders a generic input surface, text and cursor. It currently declares a text runtime input; final text-entry behavior and accessory slots still need definition. |
+| `textInputBar` | system | Structurally migrated | Preview renders an embedded `surface` preset, text and cursor. It currently declares a text runtime input; final text-entry behavior and accessory slots still need definition. |
 | `keyboard` | system | Structurally migrated | Preview renders a generic keyboard surface, keys and bottom icons. Final keyboard layout model and interaction states still need definition. |
-| `video` | component | Structurally migrated | Preview renders a generic video surface, status row and play overlay. It currently declares a duration text runtime input; final media, timeline, controls and embedding semantics still need definition. |
+| `video` | component | Structurally migrated | Preview renders an embedded `surface` preset, status row and play overlay. It currently declares a duration text runtime input; final media, timeline, controls and embedding semantics still need definition. |
 
 ## Legacy Runtime Paths Removed
 
