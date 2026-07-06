@@ -47,8 +47,6 @@ internal sealed partial class SpikeDatabase
         var themes = QueryThemeRows(connection);
         var productionFonts = QueryProductionFontRows(connection);
         var iconThemes = QueryIconThemeRows(connection);
-        var statusBars = QueryStatusBarRows(connection);
-        var navigationBars = QueryNavigationBarRows(connection);
         var renderPresets = QueryRenderPresetRows(connection);
         var componentClasses = QueryComponentClassRows(connection);
         var referenceUsageIndex = BuildReferenceUsageIndex(
@@ -58,8 +56,6 @@ internal sealed partial class SpikeDatabase
             paletteColors,
             productionFonts,
             iconThemes,
-            statusBars,
-            navigationBars,
             renderPresets,
             componentClasses);
 
@@ -79,8 +75,6 @@ internal sealed partial class SpikeDatabase
         var themeRootNodes = new Dictionary<string, ProjectTreeNode>();
         var productionFontRootNodes = new Dictionary<string, ProjectTreeNode>();
         var iconThemeRootNodes = new Dictionary<string, ProjectTreeNode>();
-        var statusBarRootNodes = new Dictionary<string, ProjectTreeNode>();
-        var navigationBarRootNodes = new Dictionary<string, ProjectTreeNode>();
         var renderPresetRootNodes = new Dictionary<string, ProjectTreeNode>();
         var componentClassRootNodes = new Dictionary<string, ProjectTreeNode>();
         var episodeRootNodes = new Dictionary<string, ProjectTreeNode>();
@@ -323,34 +317,6 @@ internal sealed partial class SpikeDatabase
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.IconTheme),
                 iconThemesRoot,
                 isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.IconTheme, iconTheme.Id)));
-        }
-
-        foreach (var statusBar in statusBars.OrderBy((statusBar) => statusBar.Name))
-        {
-            if (!statusBarRootNodes.TryGetValue(statusBar.ProjectId, out var statusBarsRoot)) continue;
-
-            statusBarsRoot.AddChild(new ProjectTreeNode(
-                ProjectTreeNodeKind.StatusBar,
-                statusBar.Id,
-                statusBar.Name,
-                $"{statusBar.Family} · {StatusBarItemCount(statusBar.ConfigJson)} items",
-                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.StatusBar),
-                statusBarsRoot,
-                isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.StatusBar, statusBar.Id)));
-        }
-
-        foreach (var navigationBar in navigationBars.OrderBy((navigationBar) => navigationBar.Name))
-        {
-            if (!navigationBarRootNodes.TryGetValue(navigationBar.ProjectId, out var navigationBarsRoot)) continue;
-
-            navigationBarsRoot.AddChild(new ProjectTreeNode(
-                ProjectTreeNodeKind.NavigationBar,
-                navigationBar.Id,
-                navigationBar.Name,
-                $"{navigationBar.Family} · {NavigationBarItemCount(navigationBar.ConfigJson)} buttons",
-                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.NavigationBar),
-                navigationBarsRoot,
-                isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.NavigationBar, navigationBar.Id)));
         }
 
         foreach (var renderPreset in renderPresets.OrderBy((renderPreset) => renderPreset.Name))

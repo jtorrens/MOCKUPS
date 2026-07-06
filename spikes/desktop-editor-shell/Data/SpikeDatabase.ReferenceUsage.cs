@@ -56,8 +56,6 @@ internal sealed partial class SpikeDatabase
         IReadOnlyList<PaletteColorRow> paletteColors,
         IReadOnlyList<ProductionFontRow> productionFonts,
         IReadOnlyList<IconThemeRow> iconThemes,
-        IReadOnlyList<StatusBarRow> statusBars,
-        IReadOnlyList<NavigationBarRow> navigationBars,
         IReadOnlyList<RenderPresetRow> renderPresets,
         IReadOnlyList<ComponentClassRow> componentClasses)
     {
@@ -107,16 +105,6 @@ internal sealed partial class SpikeDatabase
             foreach (var iconTheme in iconThemes)
             {
                 AddUsageIfContains(index, ProjectTreeNodeKind.IconTheme, iconTheme.Id, componentText, $"Component Class: {componentClass.Name}");
-            }
-
-            foreach (var statusBar in statusBars)
-            {
-                AddUsageIfContains(index, ProjectTreeNodeKind.StatusBar, statusBar.Id, componentText, $"Component Class: {componentClass.Name}");
-            }
-
-            foreach (var navigationBar in navigationBars)
-            {
-                AddUsageIfContains(index, ProjectTreeNodeKind.NavigationBar, navigationBar.Id, componentText, $"Component Class: {componentClass.Name}");
             }
 
             foreach (var renderPreset in renderPresets)

@@ -80,6 +80,13 @@ function assertContains(relativePath: string, term: string, message: string) {
   }
 }
 
+function assertDoesNotContain(relativePath: string, term: string, message: string) {
+  const source = readText(relativePath);
+  if (source.includes(term)) {
+    addViolation(relativePath, message);
+  }
+}
+
 function assertPropertyBlockDoesNotContain(
   relativePath: string,
   propertyName: string,
@@ -375,15 +382,71 @@ assertPropertyBlockDoesNotContain(
 );
 assertPropertyBlockDoesNotContain(
   "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+  "CanAddChild",
+  "ProjectTreeNodeKind.StatusBarsRoot",
+  "legacy status bar root must not expose Add; system bars are component presets",
+);
+assertPropertyBlockDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+  "CanAddChild",
+  "ProjectTreeNodeKind.NavigationBarsRoot",
+  "legacy navigation bar root must not expose Add; system bars are component presets",
+);
+assertPropertyBlockDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
   "CanDuplicate",
   "ProjectTreeNodeKind.ComponentClass",
   "parent component classes must not expose Duplicate; use presets instead",
 );
 assertPropertyBlockDoesNotContain(
   "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+  "CanDuplicate",
+  "ProjectTreeNodeKind.StatusBar",
+  "legacy status bars must not expose Duplicate; use component presets instead",
+);
+assertPropertyBlockDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+  "CanDuplicate",
+  "ProjectTreeNodeKind.NavigationBar",
+  "legacy navigation bars must not expose Duplicate; use component presets instead",
+);
+assertPropertyBlockDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
   "CanDelete",
   "ProjectTreeNodeKind.ComponentClass",
   "parent component classes must not expose Delete; they are internal",
+);
+assertPropertyBlockDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+  "CanDelete",
+  "ProjectTreeNodeKind.StatusBar",
+  "legacy status bars must not expose Delete; use component presets instead",
+);
+assertPropertyBlockDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+  "CanDelete",
+  "ProjectTreeNodeKind.NavigationBar",
+  "legacy navigation bars must not expose Delete; use component presets instead",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
+  "var statusBars = QueryStatusBarRows(connection);",
+  "project tree must not load legacy status bars as navigation nodes",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
+  "var navigationBars = QueryNavigationBarRows(connection);",
+  "project tree must not load legacy navigation bars as navigation nodes",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
+  "foreach (var statusBar in statusBars.OrderBy",
+  "project tree must not add legacy status bar nodes",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
+  "foreach (var navigationBar in navigationBars.OrderBy",
+  "project tree must not add legacy navigation bar nodes",
 );
 
 assertContains(

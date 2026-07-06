@@ -59,7 +59,7 @@ internal static class EditorNavigationMetadata
             ProjectTreeNodeKind.Project => "Episodes, shots, screens and modules",
             ProjectTreeNodeKind.AppsRoot => "Apps and module defaults",
             ProjectTreeNodeKind.ProductionDataRoot => "Actors, devices and production themes",
-            ProjectTreeNodeKind.SystemDataRoot => "Icon sets, bars, palette, fonts, media and presets",
+            ProjectTreeNodeKind.SystemDataRoot => "Icon sets, component presets, palette, fonts, media and render presets",
             ProjectTreeNodeKind.ProductionFontsRoot => "Approved production font families",
             ProjectTreeNodeKind.IconThemesRoot => "Semantic icon tokens shared by every set",
             ProjectTreeNodeKind.StatusBarsRoot => "Reusable status bar definitions",

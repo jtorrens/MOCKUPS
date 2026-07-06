@@ -77,8 +77,6 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.App
         or ProjectTreeNodeKind.PaletteRoot
         or ProjectTreeNodeKind.IconThemesRoot
-        or ProjectTreeNodeKind.StatusBarsRoot
-        or ProjectTreeNodeKind.NavigationBarsRoot
         or ProjectTreeNodeKind.RenderPresetsRoot
         or ProjectTreeNodeKind.DevicesRoot
         or ProjectTreeNodeKind.ActorsRoot
@@ -92,8 +90,6 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.Shot
         or ProjectTreeNodeKind.PaletteColor
         or ProjectTreeNodeKind.IconTheme
-        or ProjectTreeNodeKind.StatusBar
-        or ProjectTreeNodeKind.NavigationBar
         or ProjectTreeNodeKind.RenderPreset
         or ProjectTreeNodeKind.ComponentPreset
         or ProjectTreeNodeKind.Device
@@ -107,8 +103,6 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.Shot
         or ProjectTreeNodeKind.PaletteColor
         or ProjectTreeNodeKind.IconTheme
-        or ProjectTreeNodeKind.StatusBar
-        or ProjectTreeNodeKind.NavigationBar
         or ProjectTreeNodeKind.RenderPreset
         or ProjectTreeNodeKind.Device
         or ProjectTreeNodeKind.Actor

@@ -111,6 +111,10 @@ Deleting a preset is blocked when any component class slot or any other preset
 slot references it.
 System component selectors, such as Theme Status Bar and Navigation Bar, must
 store preset references, not parent component class ids.
+Status Bar and Navigation Bar must not be exposed as separate editable tree
+sections once their component classes exist. Legacy storage may remain only as a
+temporary compatibility layer; all new editing and Theme assignment goes through
+component class presets.
 
 ## Editor Boundary
 
