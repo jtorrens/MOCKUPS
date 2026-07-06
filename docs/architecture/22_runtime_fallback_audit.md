@@ -53,19 +53,15 @@ Active component class preview routes:
 | --- | --- | --- |
 | `component.label` | migrated | `resolveLabelComponent` -> `labelComponentToRenderable` -> web renderer |
 | `component.avatar` | migrated | `resolveAvatarComponent` -> `avatarComponentToRenderable` -> embedded label bridge |
+| `status_bar` | migrated | `resolveStatusBarComponent` -> `statusBarComponentToRenderable` -> web renderer |
+| `navigation_bar` | migrated | `resolveNavigationBarComponent` -> `navigationBarComponentToRenderable` -> web renderer |
 | other component classes | blocked intentionally | `component_preview_unsupported` with `debug_red` |
-
-System bar preview routes:
-
-| Preview | Status | Route |
-| --- | --- | --- |
-| status bar | migrated for desktop preview | `resolveStatusBar` -> normalized status atoms -> `statusBarToRenderable` -> web renderer |
-| navigation bar | migrated for desktop preview | `resolveNavigationBar` -> normalized navigation atoms -> `navigationBarToRenderable` -> web renderer |
 
 Status/navigation no longer call the old web atomic modules from desktop
 preview. Their resolvers own item visibility, zone assignment and ordering. The
-bridge owns token/color/icon resolution, pixel scaling and final renderable node
-creation.
+component renderable modules use only common preview helpers for token/color/icon
+resolution, pixel scaling and final renderable node creation. There is no shared
+`systemBar*` contract, resolver or renderable route.
 
 No active desktop preview path may use:
 
@@ -81,17 +77,17 @@ No active desktop preview path may use:
   component resolver by type and wrap the result in the preview surface, but it
   must not grow component-specific field logic.
 - The old central `webPreviewBridge.ts` path has been removed. Component and
-  system-bar preview paths should stay behind explicit resolver/renderable
-  modules plus a registry, not move back into a shared bridge.
+  category `system` component preview paths should stay behind explicit
+  resolver/renderable modules plus a registry, not move back into a shared
+  bridge.
 - `MainWindow.axaml.cs` still hosts the generic embedded-editor navigation and
   card rebuilding. This is acceptable only while it remains generic shell
   orchestration. Component-specific embedded behavior belongs in
   `EmbeddedComponentSlotCatalog`, field catalogs, field value services and
   resolvers.
-- `systemBarPreviewResolver.ts` uses optional item fields for label/token/value
-  because those collection rows allow item-type-dependent payloads. Keep that
-  limited to collection normalization; required layout/style data should stay
-  strict.
+- Status/navigation collection rows allow item-type-dependent payloads for
+  label/token/value. Keep that limited to each owning component resolver;
+  required layout/style data should stay strict.
 
 ## Needs Follow-Up
 
