@@ -15,7 +15,7 @@ import type { LabelDesignContract } from "./labelComponentResolver.js";
 import { resolveLabelComponentFromRecords } from "./labelComponentResolver.js";
 
 export interface ButtonIconDesignContract {
-  id: "component.buttonIcon";
+  id: string;
   iconSize: number;
   iconPadding: number;
   backgroundColorToken: string;
@@ -57,6 +57,20 @@ export function resolveButtonIconComponent(
   const config = parseObject(payload.configJson);
   const preview = parseObject(payload.designPreviewJson);
   const componentBaseConfigs = parseObject(payload.componentBaseConfigsJson);
+  return resolveButtonIconComponentFromRecords(
+    config,
+    preview,
+    componentBaseConfigs,
+    "component.buttonIcon",
+  );
+}
+
+export function resolveButtonIconComponentFromRecords(
+  config: Record<string, unknown>,
+  preview: Record<string, unknown>,
+  componentBaseConfigs: Record<string, unknown>,
+  id: string,
+): ButtonIconDesignContract {
   const buttonIcon = asRecord(config.buttonIcon);
   const labelSlot = asRecord(buttonIcon.labelSlot);
   const style = asRecord(config.style);
@@ -77,7 +91,7 @@ export function resolveButtonIconComponent(
   );
 
   return {
-    id: "component.buttonIcon",
+    id,
     iconSize: requiredNumber(
       preview,
       "sampleSize",
@@ -115,7 +129,7 @@ export function resolveButtonIconComponent(
         ? resolveLabelComponentFromRecords(
             embeddedLabelConfig,
             labelPreview(preview, showSubtext),
-            "component.buttonIcon.label",
+            `${id}.label`,
           )
         : undefined,
     },

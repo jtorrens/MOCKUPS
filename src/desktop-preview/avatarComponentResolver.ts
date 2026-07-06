@@ -14,7 +14,7 @@ import type { LabelDesignContract } from "./labelComponentResolver.js";
 import { resolveLabelComponentFromRecords } from "./labelComponentResolver.js";
 
 export interface AvatarDesignContract {
-  id: "component.avatar";
+  id: string;
   size: number;
   cornerRadiusToken: string;
   labelSlot: {
@@ -52,6 +52,20 @@ export function resolveAvatarComponent(
   const config = parseObject(payload.configJson);
   const preview = parseObject(payload.designPreviewJson);
   const componentBaseConfigs = parseObject(payload.componentBaseConfigsJson);
+  return resolveAvatarComponentFromRecords(
+    config,
+    preview,
+    componentBaseConfigs,
+    "component.avatar",
+  );
+}
+
+export function resolveAvatarComponentFromRecords(
+  config: Record<string, unknown>,
+  preview: Record<string, unknown>,
+  componentBaseConfigs: Record<string, unknown>,
+  id: string,
+): AvatarDesignContract {
   const avatar = asRecord(config.avatar);
   const labelSlot = asRecord(avatar.labelSlot);
   const style = asRecord(config.style);
@@ -72,7 +86,7 @@ export function resolveAvatarComponent(
   );
 
   return {
-    id: "component.avatar",
+    id,
     size: requiredNumber(avatar, "defaultSize", "component.avatar.defaultSize"),
     cornerRadiusToken: requiredString(
       avatar,
@@ -91,7 +105,7 @@ export function resolveAvatarComponent(
         ? resolveLabelComponentFromRecords(
             embeddedLabelConfig,
             labelPreview(preview, showSubtext),
-            "component.avatar.label",
+            `${id}.label`,
           )
         : undefined,
     },

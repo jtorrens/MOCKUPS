@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import type { RenderableBox, RenderableNode } from "../visual/renderable/types.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
+import type { AudioDesignContract } from "./audioComponentResolver.js";
 import type { AvatarDesignContract } from "./avatarComponentResolver.js";
 import type { ButtonIconDesignContract } from "./buttonIconComponentResolver.js";
 import type { AlignmentPlacementContract } from "./componentResolverCommon.js";
@@ -20,8 +21,16 @@ function asRecord(value: unknown): JsonRecord {
     : {};
 }
 
-function parseObject(json: string) {
+function parseObject(json: string | undefined) {
   return asRecord(JSON.parse(json || "{}"));
+}
+
+function parsePreviewText(payload: DesignPreviewPayload) {
+  const preview = parseObject(payload.designPreviewJson);
+  const sampleText = preview.sampleText;
+  if (typeof sampleText === "string") return sampleText;
+
+  throw new Error("Missing design preview sampleText");
 }
 
 function renderScale(payload: DesignPreviewPayload) {
@@ -423,6 +432,230 @@ export function avatarComponentToRenderable(
   };
 }
 
+export function audioComponentToRenderable(
+  payload: DesignPreviewPayload,
+  audio: AudioDesignContract,
+): RenderableNode {
+  const scale = renderScale(payload);
+  const audioBoxLocal = {
+    x: 0,
+    y: 0,
+    width: audio.size.width * scale,
+    height: audio.size.height * scale,
+  };
+  const avatarSize = audio.avatarSlot.avatar
+    ? audio.avatarSlot.avatar.size * scale
+    : 0;
+  const avatarBoxLocal = audio.avatarSlot.avatar
+    ? placeChild(
+        audioBoxLocal,
+        { width: avatarSize, height: avatarSize },
+        scalePlacement(audio.avatarSlot.placement, scale),
+      )
+    : undefined;
+  const badgeSurfaceSize = audio.badgeSlot.badge
+    ? (audio.badgeSlot.badge.iconSize + audio.badgeSlot.badge.iconPadding * 2) * scale
+    : 0;
+  const badgeBoxLocal = audio.badgeSlot.badge && avatarBoxLocal
+    ? placeChild(
+        avatarBoxLocal,
+        { width: badgeSurfaceSize, height: badgeSurfaceSize },
+        scalePlacement(audio.badgeSlot.placement, scale),
+      )
+    : undefined;
+  const localBounds = unionBoxes([
+    audioBoxLocal,
+    ...(avatarBoxLocal ? [avatarBoxLocal] : []),
+    ...(badgeBoxLocal ? [badgeBoxLocal] : []),
+  ]);
+  const groupBox = boundedCenterBox(payload, localBounds.width, localBounds.height);
+  const origin = {
+    x: groupBox.x - localBounds.x,
+    y: groupBox.y - localBounds.y,
+  };
+  const audioBox = translateBox(audioBoxLocal, origin);
+  const avatarBox = avatarBoxLocal ? translateBox(avatarBoxLocal, origin) : undefined;
+  const badgeBox = badgeBoxLocal ? translateBox(badgeBoxLocal, origin) : undefined;
+  const playSize = Math.min(audioBox.height * 0.46, audioBox.width * 0.14);
+  const playBox = {
+    x: audioBox.x + audioBox.height * 0.22,
+    y: audioBox.y + (audioBox.height - playSize) / 2,
+    width: playSize,
+    height: playSize,
+  };
+  const textBox = {
+    x: audioBox.x + audioBox.width - audioBox.height * 1.12,
+    y: audioBox.y + audioBox.height * 0.18,
+    width: audioBox.height,
+    height: audioBox.height * 0.32,
+  };
+  const waveformBox = {
+    x: playBox.x + playBox.width + audioBox.height * 0.18,
+    y: audioBox.y + audioBox.height * 0.36,
+    width: Math.max(1, textBox.x - playBox.x - playBox.width - audioBox.height * 0.36),
+    height: audioBox.height * 0.28,
+  };
+  const knobSize = audio.knobSize * scale;
+  const knobBox = {
+    x: waveformBox.x + waveformBox.width * 0.42 - knobSize / 2,
+    y: waveformBox.y + waveformBox.height / 2 - knobSize / 2,
+    width: knobSize,
+    height: knobSize,
+  };
+
+  return {
+    id: audio.id,
+    type: "component_audio",
+    frame: 0,
+    box: groupBox,
+    style: {
+      overflow: "visible",
+    },
+    children: [
+      {
+        id: `${audio.id}.play`,
+        type: "component_audio_play",
+        frame: 0,
+        box: playBox,
+        text: "▶",
+        style: {
+          color: selectedColor(payload, audio.playColorToken),
+          fontSize: playSize * 0.9,
+          lineHeight: playSize,
+          textAlign: "center",
+        },
+      },
+      {
+        id: `${audio.id}.waveform`,
+        type: "component_audio_waveform",
+        frame: 0,
+        box: waveformBox,
+        style: {
+          backgroundImage: `repeating-linear-gradient(to right, transparent 0px, transparent ${2 * scale}px, ${selectedColor(payload, audio.waveformColorToken)} ${2 * scale}px, ${selectedColor(payload, audio.waveformColorToken)} ${3.5 * scale}px, transparent ${3.5 * scale}px, transparent ${7 * scale}px)`,
+          backgroundSize: `${7 * scale}px 100%`,
+          borderRadius: waveformBox.height / 2,
+          opacity: 0.95,
+        },
+      },
+      {
+        id: `${audio.id}.knob`,
+        type: "component_audio_knob",
+        frame: 0,
+        box: knobBox,
+        style: {
+          background: selectedColor(payload, audio.playColorToken),
+          borderRadius: knobSize / 2,
+        },
+      },
+      {
+        id: `${audio.id}.duration`,
+        type: "component_audio_duration",
+        frame: 0,
+        box: textBox,
+        text: parsePreviewText(payload),
+        style: {
+          color: selectedColor(payload, audio.waveformColorToken),
+          fontSize: audio.textSize * scale,
+          lineHeight: textBox.height,
+          textAlign: "center",
+          whiteSpace: "nowrap",
+        },
+      },
+      ...(audio.avatarSlot.avatar && avatarBox
+        ? [avatarComponentToRenderableAt(payload, audio.avatarSlot.avatar, avatarBox)]
+        : []),
+      ...(audio.badgeSlot.badge && badgeBox
+        ? [buttonIconComponentToRenderableAt(payload, audio.badgeSlot.badge, badgeBox)]
+        : []),
+    ],
+    metadata: {
+      route: "component-resolver.web-bridge",
+      componentType: "audio",
+    },
+  };
+}
+
+function avatarComponentToRenderableAt(
+  payload: DesignPreviewPayload,
+  avatar: AvatarDesignContract,
+  avatarBox: RenderableBox,
+): RenderableNode {
+  const scale = renderScale(payload);
+  const avatarShadow = avatar.surface.shadowEnabled ? shadow(payload) : undefined;
+  const labelSize = avatar.labelSlot.label
+    ? measureLabelComponent(avatar.labelSlot.label, payload)
+    : undefined;
+  const labelBox = labelSize
+    ? placeChild(
+        avatarBox,
+        labelSize,
+        scalePlacement(avatar.labelSlot.placement, scale),
+      )
+    : undefined;
+  const borderWidth = avatar.surface.borderWidth * scale;
+  const surfaceRelief = avatar.surface.reliefEnabled
+    ? {
+        angleDeg: avatar.surface.reliefAngle,
+        extension: avatar.surface.reliefExtent * scale,
+        spread: avatar.surface.reliefSpread * scale,
+        upperIntensity: avatar.surface.reliefTopIntensity,
+        lowerIntensity: avatar.surface.reliefBottomIntensity,
+      }
+    : undefined;
+  const visualPadding = avatarVisualPadding(borderWidth, avatarShadow, surfaceRelief);
+  const contentBounds = unionBoxes([
+    avatarBox,
+    ...(labelBox ? [labelBox] : []),
+  ]);
+  const groupBox = expandBox(contentBounds, visualPadding);
+
+  return {
+    id: avatar.id,
+    type: "component_avatar",
+    frame: 0,
+    box: groupBox,
+    style: {
+      overflow: "visible",
+    },
+    children: [
+      {
+        id: `${avatar.id}.placeholder`,
+        type: "avatar",
+        frame: 0,
+        box: avatarBox,
+        style: {
+          borderRadius: numberToken(payload, avatar.cornerRadiusToken) * scale,
+          borderWidth,
+          borderColor: selectedColor(payload, avatar.surface.borderColorToken),
+          shadow: avatarShadow,
+          surfaceRelief,
+        },
+        asset: {
+          type: "image",
+          uri: sampleAvatarUri(),
+        },
+        metadata: {
+          label: "Avatar preview",
+          imageBaseSize: 256,
+        },
+      },
+      ...(avatar.labelSlot.label && labelBox
+        ? [
+            labelComponentToRenderableAt(
+              payload,
+              avatar.labelSlot.label,
+              labelBox,
+            ),
+          ]
+        : []),
+    ],
+    metadata: {
+      route: "component-resolver.web-bridge",
+      componentType: "avatar",
+    },
+  };
+}
+
 export function buttonIconComponentToRenderable(
   payload: DesignPreviewPayload,
   buttonIcon: ButtonIconDesignContract,
@@ -469,6 +702,125 @@ export function buttonIconComponentToRenderable(
   };
   const buttonBox = translateBox(buttonLocalBox, contentOrigin);
   const labelBox = labelLocalBox ? translateBox(labelLocalBox, contentOrigin) : undefined;
+  const iconBox = {
+    x: buttonBox.x + iconPadding,
+    y: buttonBox.y + iconPadding,
+    width: iconSize,
+    height: iconSize,
+  };
+
+  return {
+    id: buttonIcon.id,
+    type: "component_button_icon",
+    frame: 0,
+    box: groupBox,
+    style: {
+      overflow: "visible",
+    },
+    children: [
+      {
+        id: `${buttonIcon.id}.surface`,
+        type: "component_button_icon_surface",
+        frame: 0,
+        box: buttonBox,
+        style: {
+          background: selectedColor(
+            payload,
+            buttonIcon.backgroundColorToken,
+            buttonIcon.backgroundAlpha,
+          ),
+          borderRadius: numberToken(payload, buttonIcon.surface.cornerRadiusToken) * scale,
+          borderWidth,
+          borderColor: selectedColor(
+            payload,
+            buttonIcon.surface.borderColorToken,
+            buttonIcon.backgroundAlpha,
+          ),
+          shadow: iconShadow,
+          surfaceRelief,
+          colorModes: Object.fromEntries(
+            variants(payload).map((mode) => [
+              mode,
+              {
+                background: colorForMode(
+                  payload,
+                  buttonIcon.backgroundColorToken,
+                  mode,
+                  buttonIcon.backgroundAlpha,
+                ),
+                color: colorForMode(payload, buttonIcon.iconColorToken, mode),
+                borderColor: colorForMode(
+                  payload,
+                  buttonIcon.surface.borderColorToken,
+                  mode,
+                  buttonIcon.backgroundAlpha,
+                ),
+              },
+            ]),
+          ),
+        },
+      },
+      {
+        id: `${buttonIcon.id}.glyph`,
+        type: "component_button_icon_glyph",
+        frame: 0,
+        box: iconBox,
+        style: {
+          color: selectedColor(payload, buttonIcon.iconColorToken),
+        },
+      },
+      ...(buttonIcon.labelSlot.label && labelBox
+        ? [
+            labelComponentToRenderableAt(
+              payload,
+              buttonIcon.labelSlot.label,
+              labelBox,
+            ),
+          ]
+        : []),
+    ],
+    metadata: {
+      route: "component-resolver.web-bridge",
+      componentType: "buttonIcon",
+    },
+  };
+}
+
+function buttonIconComponentToRenderableAt(
+  payload: DesignPreviewPayload,
+  buttonIcon: ButtonIconDesignContract,
+  buttonBox: RenderableBox,
+): RenderableNode {
+  const scale = renderScale(payload);
+  const iconPadding = buttonIcon.iconPadding * scale;
+  const iconSize = Math.max(1, buttonBox.width - iconPadding * 2);
+  const iconShadow = buttonIcon.surface.shadowEnabled ? shadow(payload) : undefined;
+  const labelSize = buttonIcon.labelSlot.label
+    ? measureLabelComponent(buttonIcon.labelSlot.label, payload)
+    : undefined;
+  const labelBox = labelSize
+    ? placeChild(
+        buttonBox,
+        labelSize,
+        scalePlacement(buttonIcon.labelSlot.placement, scale),
+      )
+    : undefined;
+  const borderWidth = buttonIcon.surface.borderWidth * scale;
+  const surfaceRelief = buttonIcon.surface.reliefEnabled
+    ? {
+        angleDeg: buttonIcon.surface.reliefAngle,
+        extension: buttonIcon.surface.reliefExtent * scale,
+        spread: buttonIcon.surface.reliefSpread * scale,
+        upperIntensity: buttonIcon.surface.reliefTopIntensity * buttonIcon.backgroundAlpha,
+        lowerIntensity: buttonIcon.surface.reliefBottomIntensity * buttonIcon.backgroundAlpha,
+      }
+    : undefined;
+  const visualPadding = avatarVisualPadding(borderWidth, iconShadow, surfaceRelief);
+  const contentBounds = unionBoxes([
+    buttonBox,
+    ...(labelBox ? [labelBox] : []),
+  ]);
+  const groupBox = expandBox(contentBounds, visualPadding);
   const iconBox = {
     x: buttonBox.x + iconPadding,
     y: buttonBox.y + iconPadding,
@@ -652,6 +1004,15 @@ function unionBoxes(boxes: RenderableBox[]): RenderableBox {
     y: minY,
     width: maxX - minX,
     height: maxY - minY,
+  };
+}
+
+function expandBox(box: RenderableBox, padding: number): RenderableBox {
+  return {
+    x: box.x - padding,
+    y: box.y - padding,
+    width: box.width + padding * 2,
+    height: box.height + padding * 2,
   };
 }
 

@@ -5,11 +5,13 @@ import { RenderableReactAdapter } from "../visual/adapters/react/RenderableReact
 import { RenderableNodeSchema } from "../visual/renderable/schema.js";
 import type { RenderableNode } from "../visual/renderable/types.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
+import { resolveAudioComponent } from "./audioComponentResolver.js";
 import { resolveAvatarComponent } from "./avatarComponentResolver.js";
 import { resolveButtonIconComponent } from "./buttonIconComponentResolver.js";
 import { resolveLabelComponent } from "./labelComponentResolver.js";
 import {
   avatarComponentToRenderable,
+  audioComponentToRenderable,
   buttonIconComponentToRenderable,
   labelComponentToRenderable,
   navigationBarToRenderable,
@@ -88,6 +90,9 @@ function componentRenderableForPayload(
   }
   if (componentType === "avatar") {
     return avatarComponentToRenderable(payload, resolveAvatarComponent(payload));
+  }
+  if (componentType === "audio") {
+    return audioComponentToRenderable(payload, resolveAudioComponent(payload));
   }
   if (componentType === "buttonIcon") {
     return buttonIconComponentToRenderable(
