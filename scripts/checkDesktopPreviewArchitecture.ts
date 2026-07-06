@@ -104,11 +104,51 @@ function assertPropertyBlockDoesNotContain(
   }
 }
 
+function componentLayoutFieldIds(source: string) {
+  const ids = new Set<string>();
+  const pattern = /\{\s*"id"\s*:\s*"(component\.[^"]+)"/g;
+  let match: RegExpExecArray | null;
+  while ((match = pattern.exec(source)) !== null) {
+    ids.add(match[1] ?? "");
+  }
+  return ids;
+}
+
+function componentFieldCatalogIds(source: string) {
+  const ids = new Set<string>();
+  const pattern = /\["(component\.[^"]+)"\]\s*=/g;
+  let match: RegExpExecArray | null;
+  while ((match = pattern.exec(source)) !== null) {
+    ids.add(match[1] ?? "");
+  }
+  return ids;
+}
+
 if (existsSync(path.join(previewRoot, "webPreviewBridge.ts"))) {
   addViolation(
     "src/desktop-preview/webPreviewBridge.ts",
     "central web preview bridge must not exist",
   );
+}
+
+const componentLayoutPath =
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassLayouts.cs";
+const componentFieldCatalogPath =
+  "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldCatalog.cs";
+if (
+  existsSync(path.join(root, componentLayoutPath)) &&
+  existsSync(path.join(root, componentFieldCatalogPath))
+) {
+  const layoutIds = componentLayoutFieldIds(readText(componentLayoutPath));
+  const catalogIds = componentFieldCatalogIds(readText(componentFieldCatalogPath));
+  for (const fieldId of layoutIds) {
+    if (!catalogIds.has(fieldId)) {
+      addViolation(
+        componentLayoutPath,
+        `layout references component field "${fieldId}" without a ComponentClassFieldCatalog entry`,
+      );
+    }
+  }
 }
 
 for (const removedLegacyPath of [
@@ -457,9 +497,14 @@ if (payloadSource.includes('"statusBar"') || payloadSource.includes('"navigation
   );
 }
 
-const componentSeedSource = readText(
+const componentSeedSourceFiles = [
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
-);
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassDefaults.cs",
+];
+const componentSeedSource = componentSeedSourceFiles
+  .filter((relativePath) => existsSync(path.join(root, relativePath)))
+  .map((relativePath) => readText(relativePath))
+  .join("\n");
 const spikeDatabaseSource = readText(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
 );
@@ -471,13 +516,13 @@ const seededComponentClasses = new Set(
 for (const componentClass of seededComponentClasses) {
   if (!desktopPreviewComponents[componentClass]) {
     addViolation(
-      "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
+      "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassDefaults.cs",
       `seeded component class "${componentClass}" is missing from desktop preview manifest`,
     );
   }
   if (!routedComponentClasses.has(componentClass)) {
     addViolation(
-      "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
+      "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassDefaults.cs",
       `seeded component class "${componentClass}" is missing from desktop preview registry`,
     );
   }
