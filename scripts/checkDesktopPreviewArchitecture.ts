@@ -449,6 +449,16 @@ assertDoesNotContain(
   "project tree must not add legacy navigation bar nodes",
 );
 assertDoesNotContain(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
+  "if (parent.Kind == ProjectTreeNodeKind.StatusBarsRoot)",
+  "legacy status bar add workflow must not remain; use component presets instead",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
+  "if (parent.Kind == ProjectTreeNodeKind.NavigationBarsRoot)",
+  "legacy navigation bar add workflow must not remain; use component presets instead",
+);
+assertDoesNotContain(
   "src/desktop-preview/desktopPreviewComponents.ts",
   "./systemBar",
   "system bars must be declared as explicit status/navigation component modules, not shared manifest entrypoints",

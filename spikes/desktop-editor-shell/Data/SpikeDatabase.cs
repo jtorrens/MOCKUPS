@@ -513,60 +513,6 @@ internal sealed partial class SpikeDatabase
             throw new InvalidOperationException("Icon themes are rebuilt through Refresh Sets.");
         }
 
-        if (parent.Kind == ProjectTreeNodeKind.StatusBarsRoot)
-        {
-            var project = ProjectAncestor(parent);
-            var index = ScalarLong(connection, "SELECT COUNT(*) FROM status_bars WHERE project_id = $projectId", ("$projectId", project.Id)) + 1;
-            var id = $"status_bar_{Guid.NewGuid():N}";
-            var name = $"Status Bar {index}";
-            Execute(
-                connection,
-                """
-                INSERT INTO status_bars (id, project_id, name, family, config_json, metadata_json)
-                VALUES ($id, $projectId, $name, 'custom', $configJson, $metadataJson)
-                """,
-                ("$id", id),
-                ("$projectId", project.Id),
-                ("$name", name),
-                ("$configJson", DefaultStatusBarConfigJson()),
-                ("$metadataJson", JsonSerializer.Serialize(new { note = "Custom reusable status bar composition." })));
-
-            return new ProjectTreeNode(
-                ProjectTreeNodeKind.StatusBar,
-                id,
-                name,
-                $"custom · {DefaultStatusBarItems().Count} items",
-                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.StatusBar),
-                parent);
-        }
-
-        if (parent.Kind == ProjectTreeNodeKind.NavigationBarsRoot)
-        {
-            var project = ProjectAncestor(parent);
-            var index = ScalarLong(connection, "SELECT COUNT(*) FROM navigation_bars WHERE project_id = $projectId", ("$projectId", project.Id)) + 1;
-            var id = $"navigation_bar_{Guid.NewGuid():N}";
-            var name = $"Navigation Bar {index}";
-            Execute(
-                connection,
-                """
-                INSERT INTO navigation_bars (id, project_id, name, family, config_json, metadata_json)
-                VALUES ($id, $projectId, $name, 'custom', $configJson, $metadataJson)
-                """,
-                ("$id", id),
-                ("$projectId", project.Id),
-                ("$name", name),
-                ("$configJson", DefaultNavigationBarConfigJson()),
-                ("$metadataJson", JsonSerializer.Serialize(new { note = "Custom reusable navigation bar composition." })));
-
-            return new ProjectTreeNode(
-                ProjectTreeNodeKind.NavigationBar,
-                id,
-                name,
-                $"custom · {DefaultNavigationBarItems().Count} buttons",
-                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.NavigationBar),
-                parent);
-        }
-
         if (parent.Kind == ProjectTreeNodeKind.RenderPresetsRoot)
         {
             var project = ProjectAncestor(parent);
@@ -963,42 +909,6 @@ internal sealed partial class SpikeDatabase
             }
 
             return new ProjectTreeNode(ProjectTreeNodeKind.IconTheme, id, name, node.Notes, node.RecordClassId, node.Parent);
-        }
-
-        if (node.Kind == ProjectTreeNodeKind.StatusBar)
-        {
-            var id = $"status_bar_{Guid.NewGuid():N}";
-            Execute(
-                connection,
-                """
-                INSERT INTO status_bars (id, project_id, name, family, config_json, metadata_json)
-                SELECT $id, project_id, $name, family, config_json, metadata_json
-                FROM status_bars
-                WHERE id = $sourceId
-                """,
-                ("$id", id),
-                ("$name", $"{node.Name} copy"),
-                ("$sourceId", node.Id));
-
-            return new ProjectTreeNode(ProjectTreeNodeKind.StatusBar, id, $"{node.Name} copy", node.Notes, node.RecordClassId, node.Parent);
-        }
-
-        if (node.Kind == ProjectTreeNodeKind.NavigationBar)
-        {
-            var id = $"navigation_bar_{Guid.NewGuid():N}";
-            Execute(
-                connection,
-                """
-                INSERT INTO navigation_bars (id, project_id, name, family, config_json, metadata_json)
-                SELECT $id, project_id, $name, family, config_json, metadata_json
-                FROM navigation_bars
-                WHERE id = $sourceId
-                """,
-                ("$id", id),
-                ("$name", $"{node.Name} copy"),
-                ("$sourceId", node.Id));
-
-            return new ProjectTreeNode(ProjectTreeNodeKind.NavigationBar, id, $"{node.Name} copy", node.Notes, node.RecordClassId, node.Parent);
         }
 
         if (node.Kind == ProjectTreeNodeKind.RenderPreset)
