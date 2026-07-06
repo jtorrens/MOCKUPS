@@ -14,6 +14,7 @@ export {
   expandBox,
   expandBoxXY,
   placeChild,
+  previewScreenBox,
   renderScale,
   scalePlacement,
   translateBox,

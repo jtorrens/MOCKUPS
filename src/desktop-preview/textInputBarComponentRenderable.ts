@@ -1,7 +1,7 @@
 import type { RenderableNode } from "../visual/renderable/types.js";
 import {
-  boundedCenterBox,
   numberToken,
+  previewScreenBox,
   renderScale,
   selectedColor,
   shadow,
@@ -17,10 +17,18 @@ export function textInputBarComponentToRenderable(
 ): RenderableNode {
   const scale = renderScale(payload);
   const height = Math.max(1, textInput.height * scale);
-  const width = Math.min(
-    payload.previewFrame.screenWidth * 0.82,
-    Math.max(240 * scale, 520 * scale),
-  );
+  const screenBox = previewScreenBox(payload);
+  const barPaddingX = Math.max(0, textInput.barPadding.first * scale);
+  const barPaddingY = Math.max(0, textInput.barPadding.second * scale);
+  const textPaddingX = Math.max(0, textInput.textPadding.first * scale);
+  const textPaddingY = Math.max(0, textInput.textPadding.second * scale);
+  const barBox = {
+    x: screenBox.x,
+    y: screenBox.y + (screenBox.height - height - barPaddingY * 2) / 2,
+    width: screenBox.width,
+    height: height + barPaddingY * 2,
+  };
+  const width = Math.max(1, screenBox.width - barPaddingX * 2);
   const fontSize = numberToken(payload, textInput.textSizeToken) * scale;
   const borderWidth = textInput.surface.surface.borderWidth * scale;
   const surfaceRelief = textInput.surface.surface.reliefEnabled
@@ -40,23 +48,23 @@ export function textInputBarComponentToRenderable(
     ? shadow(payload)
     : undefined;
   const visualPadding = surfaceVisualPadding(borderWidth, inputShadow, surfaceRelief);
-  const outerBox = boundedCenterBox(
-    payload,
-    width + visualPadding * 2,
-    height + visualPadding * 2,
-  );
+  const outerBox = {
+    x: screenBox.x,
+    y: barBox.y - visualPadding,
+    width: screenBox.width,
+    height: barBox.height + visualPadding * 2,
+  };
   const fieldBox = {
-    x: outerBox.x + visualPadding,
-    y: outerBox.y + visualPadding,
+    x: screenBox.x + barPaddingX,
+    y: barBox.y + barPaddingY,
     width,
     height,
   };
-  const horizontalPadding = Math.max(12 * scale, height * 0.28);
   const textBox = {
-    x: fieldBox.x + horizontalPadding,
-    y: fieldBox.y,
-    width: Math.max(1, fieldBox.width - horizontalPadding * 2),
-    height: fieldBox.height,
+    x: fieldBox.x + textPaddingX,
+    y: fieldBox.y + textPaddingY,
+    width: Math.max(1, fieldBox.width - textPaddingX * 2),
+    height: Math.max(1, fieldBox.height - textPaddingY * 2),
   };
   const textValue = textInput.text.trim().length > 0
     ? textInput.text

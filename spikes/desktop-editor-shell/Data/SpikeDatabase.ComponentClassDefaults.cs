@@ -93,6 +93,9 @@ internal sealed partial class SpikeDatabase
                 config["textInput"] = new JsonObject
                 {
                     ["height"] = 44,
+                    ["barPadding"] = "12|8",
+                    ["textPadding"] = "14|0",
+                    ["iconGap"] = 8,
                     ["placeholder"] = "Message",
                     ["surfaceSlot"] = ComponentSurfaceSlot("InputBox"),
                     ["idleTextColorToken"] = "theme.colors.textSecondary",

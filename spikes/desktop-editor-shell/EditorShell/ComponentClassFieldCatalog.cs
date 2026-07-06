@@ -152,6 +152,9 @@ internal static class ComponentClassFieldCatalog
         ["component.avatar.label.editor"] = new("component.avatar.label.editor", "Label", ValueKind.ComponentPreset, ["avatar", "labelSlot", "presetId"], "default"),
 
         ["component.textInput.height"] = new("component.textInput.height", "Height", ValueKind.Integer, ["textInput", "height"], "44"),
+        ["component.textInput.barPadding"] = new("component.textInput.barPadding", "Bar padding", ValueKind.IntegerPair, ["textInput", "barPadding"], "12|8", PairLabels: new("X", "Y")),
+        ["component.textInput.textPadding"] = new("component.textInput.textPadding", "Text padding", ValueKind.IntegerPair, ["textInput", "textPadding"], "14|0", PairLabels: new("X", "Y")),
+        ["component.textInput.iconGap"] = new("component.textInput.iconGap", "Icon gap", ValueKind.Integer, ["textInput", "iconGap"], "8"),
         ["component.textInput.placeholder"] = new("component.textInput.placeholder", "Placeholder", ValueKind.StringSingleLine, ["textInput", "placeholder"], "Message"),
         ["component.textInput.surface.editor"] = new("component.textInput.surface.editor", "Surface", ValueKind.ComponentPreset, ["textInput", "surfaceSlot", "presetId"], "InputBox"),
         ["component.textInput.idleTextColorToken"] = new("component.textInput.idleTextColorToken", "Idle text color", ValueKind.ThemeToken, ["textInput", "idleTextColorToken"], "theme.colors.textSecondary", Options: ThemeColorOptions),

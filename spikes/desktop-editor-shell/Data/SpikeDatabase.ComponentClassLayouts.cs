@@ -113,13 +113,16 @@ internal sealed partial class SpikeDatabase
               "groups": [
                 { "id": "textInput", "label": "Text input", "order": 10, "visible": true, "fields": [
                   { "id": "component.textInput.height", "order": 10, "visible": true },
-                  { "id": "component.textInput.placeholder", "order": 20, "visible": true },
-                  { "id": "component.textInput.surface.editor", "order": 30, "visible": true },
-                  { "id": "component.textInput.idleTextColorToken", "order": 50, "visible": true },
-                  { "id": "component.textInput.textSizeToken", "order": 60, "visible": true },
-                  { "id": "component.textInput.cursorColorToken", "order": 70, "visible": true },
-                  { "id": "component.textInput.cursorWidth", "order": 80, "visible": true },
-                  { "id": "component.textInput.cursorBlinkFrames", "order": 90, "visible": true }
+                  { "id": "component.textInput.barPadding", "order": 20, "visible": true },
+                  { "id": "component.textInput.textPadding", "order": 30, "visible": true },
+                  { "id": "component.textInput.iconGap", "order": 40, "visible": true },
+                  { "id": "component.textInput.placeholder", "order": 50, "visible": true },
+                  { "id": "component.textInput.surface.editor", "order": 60, "visible": true },
+                  { "id": "component.textInput.idleTextColorToken", "order": 70, "visible": true },
+                  { "id": "component.textInput.textSizeToken", "order": 80, "visible": true },
+                  { "id": "component.textInput.cursorColorToken", "order": 90, "visible": true },
+                  { "id": "component.textInput.cursorWidth", "order": 100, "visible": true },
+                  { "id": "component.textInput.cursorBlinkFrames", "order": 110, "visible": true }
                 ] }
               ]
             }

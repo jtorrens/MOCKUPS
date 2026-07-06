@@ -8,6 +8,7 @@ import {
   asRecord,
   parseObject,
   requiredNumber,
+  requiredNumberPair,
   requiredString,
 } from "./componentResolverCommon.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
@@ -34,6 +35,17 @@ export function resolveTextInputBarComponent(
   return {
     id: "component.textInputBar",
     height,
+    barPadding: requiredNumberPair(
+      textInput,
+      "barPadding",
+      "component.textInput.barPadding",
+    ),
+    textPadding: requiredNumberPair(
+      textInput,
+      "textPadding",
+      "component.textInput.textPadding",
+    ),
+    iconGap: requiredNumber(textInput, "iconGap", "component.textInput.iconGap"),
     text: requiredString(preview, "sampleText", "component.textInput.preview.sampleText"),
     placeholder,
     idleTextColorToken: requiredString(
