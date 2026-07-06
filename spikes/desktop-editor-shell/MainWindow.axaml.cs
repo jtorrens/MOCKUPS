@@ -734,7 +734,12 @@ public partial class MainWindow : SukiWindow
 
         var presetSourceNode = _selectedNode?.Kind == ProjectTreeNodeKind.ComponentPreset
             ? _selectedNode
-            : node;
+            : PreferredPresetNode(node);
+        if (presetSourceNode.Kind != ProjectTreeNodeKind.ComponentPreset)
+        {
+            return null;
+        }
+
         return new StackPanel
         {
             Orientation = Orientation.Horizontal,

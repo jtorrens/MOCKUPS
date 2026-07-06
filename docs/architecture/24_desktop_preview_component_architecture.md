@@ -419,6 +419,12 @@ class must have a protected `Default` preset. `Default` cannot be renamed or
 deleted. User-created presets can be duplicated, renamed and deleted only when
 usage checks allow it.
 
+Composition never uses a parent component class as the reusable visual value.
+The parent class owns schema, field catalog, resolver identity, preset list and
+declared child slots. Any concrete placement in another component, theme,
+screen, module or future batch renderer references a concrete preset of that
+class.
+
 Selecting a component class in the editor tree must select a concrete preset:
 
 - first selection in a session uses `Default`;
@@ -429,6 +435,19 @@ Selecting a component class in the editor tree must select a concrete preset:
   preset config, while the owning component class supplies the field layout;
 - saving a new preset from an active preset copies that preset config;
 - embedded restore/inherit restores to the selected preset value.
+
+Saving a preset is only valid from a selected preset. It must never clone a
+mutable "current class values" config, because that reintroduces an ambiguous
+base layer outside the preset contract.
+
+Preset references stored inside component config are full references:
+
+```text
+componentClassId::preset::presetId
+```
+
+Short references such as `default` are migration input only. New stored config,
+preview payloads and runtime composition payloads must use full references.
 
 Invariant:
 
@@ -820,6 +839,10 @@ Checks:
   config;
 - editor field commits for a selected preset write to that preset config, not
   mutable class config;
+- saving a preset is only accepted from a selected preset and copies that preset
+  config;
+- persisted embedded preset references use `componentClassId::preset::presetId`,
+  not short local preset ids;
 - embedded restore/inherit uses the selected preset as base;
 - deleting a preset is blocked while any component class slot or any component
   preset slot references it.

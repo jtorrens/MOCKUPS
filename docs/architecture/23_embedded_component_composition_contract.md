@@ -91,6 +91,9 @@ Rules:
   selects the last used preset;
 - selecting a preset in the tree changes the design-preview base config to that
   preset;
+- composition, embedded slots, Theme Status Bar and Theme Navigation Bar must
+  reference a concrete preset, never the parent component class as a reusable
+  visual value;
 - the editor may still show the parent component class layout, but the active
   preset name must be visible and the preset node must be selected in the tree.
 - editor fields shown while a preset is selected read and write that preset's
@@ -98,10 +101,17 @@ Rules:
   class;
 - saving a new preset while another preset is selected copies the active preset
   config, not the component class's mutable config.
+- saving a preset is only valid from a selected preset. The component class is
+  schema/ownership, not a cloneable visual base.
 
-An embedded slot references a child preset by `presetId`. When a field is
-restored to inherited state, it restores to the selected preset value, not to
-the component class's mutable current config.
+An embedded slot stores a full child preset reference in its `presetId` field:
+
+```text
+componentClassId::preset::presetId
+```
+
+When a field is restored to inherited state, it restores to the selected preset
+value, not to the component class's mutable current config.
 
 Changing a base preset does not remove slot-local overrides. Override identity
 is explicit and survives coincidental equality with the preset value.

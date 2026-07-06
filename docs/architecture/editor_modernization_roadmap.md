@@ -189,6 +189,17 @@ decide override state by comparing effective values with the base component.
 Override state is stored state and only disappears when the override entry is
 removed.
 
+Composition must reference component presets, not parent component classes. The
+parent class owns schema and presets; each concrete embedded/system/component
+usage selects a preset by full reference:
+
+```text
+componentClassId::preset::presetId
+```
+
+Short preset ids are legacy migration input only. Saving a new preset must clone
+the active selected preset config, never ambiguous "current class values".
+
 ### Bubble component migration guardrail
 
 When message bubble rendering is migrated to the new preview path, migrate the

@@ -593,8 +593,18 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+  "presetSourceNode.Kind != ProjectTreeNodeKind.ComponentPreset",
+  "Save preset must only be offered for a concrete selected component preset",
+);
+assertContains(
+  "spikes/desktop-editor-shell/MainWindow.axaml.cs",
   "EndsWith(\"::preset::default\", StringComparison.Ordinal)",
   "first component class selection must prefer the protected Default preset",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
+  "Component presets can only be saved from an active selected preset.",
+  "component preset saving must reject ambiguous parent component class configs",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",

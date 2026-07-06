@@ -93,6 +93,8 @@ Animation is also frame data. Resolvers own the component state for the requeste
 
 Component inputs are runtime component inputs, not preview-only controls. The preview panel may provide sample values for isolated inspection, but screens/modules must later supply real values through the same declared input contract. Do not add component-specific input catalogs or animation behavior to the preview shell.
 
+Component composition must reference concrete component presets, not parent component classes. Parent classes own schema, resolver identity and preset lists; reusable visual instances store full preset references in the form `componentClassId::preset::presetId`. Short preset ids are legacy migration input only. Saving a new preset must clone the active selected preset config, never ambiguous "current class values".
+
 If a change appears to require `if componentType == ...` behavior in the bridge or renderer, stop and move that responsibility to the component resolver or to a parameterized common helper.
 
 ## When in doubt
