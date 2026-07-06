@@ -134,16 +134,17 @@ internal sealed partial class SpikeDatabase
         {
             foreach (var preset in ComponentClassPresets(presetOwner.MetadataJson))
             {
-                foreach (var componentClass in componentClasses.Where((candidate) => candidate.ProjectId == presetOwner.ProjectId))
+                foreach (var usage in ComponentPresetUsageSources(
+                             componentClasses,
+                             presetOwner.ProjectId,
+                             presetOwner.ComponentType,
+                             preset.Id))
                 {
-                    if (ComponentPresetIsUsedByConfig(componentClass.ConfigJson, presetOwner.ComponentType, preset.Id))
-                    {
-                        AddUsage(
-                            index,
-                            ProjectTreeNodeKind.ComponentPreset,
-                            ComponentPresetNodeId(presetOwner.Id, preset.Id),
-                            $"Component Class: {componentClass.Name}");
-                    }
+                    AddUsage(
+                        index,
+                        ProjectTreeNodeKind.ComponentPreset,
+                        ComponentPresetNodeId(presetOwner.Id, preset.Id),
+                        usage);
                 }
             }
         }
@@ -162,6 +163,29 @@ internal sealed partial class SpikeDatabase
     private static bool IsUsed(IReadOnlyDictionary<string, List<string>> index, ProjectTreeNodeKind kind, string id)
     {
         return index.ContainsKey(ReferenceKey(kind, id));
+    }
+
+    private static IEnumerable<string> ComponentPresetUsageSources(
+        IReadOnlyList<ComponentClassRow> componentClasses,
+        string projectId,
+        string componentType,
+        string presetId)
+    {
+        foreach (var row in componentClasses.Where((candidate) => candidate.ProjectId.Equals(projectId, StringComparison.Ordinal)))
+        {
+            if (ComponentPresetIsUsedByConfig(row.ConfigJson, componentType, presetId))
+            {
+                yield return $"Component Class: {row.Name}";
+            }
+
+            foreach (var preset in ComponentClassPresets(row.MetadataJson))
+            {
+                if (ComponentPresetIsUsedByConfig(preset.ConfigJson, componentType, presetId))
+                {
+                    yield return $"Component Preset: {row.Name} · {preset.Name}";
+                }
+            }
+        }
     }
 
     private static void AddUsage(

@@ -316,6 +316,11 @@ assertContains(
   "component preset fields must write to preset config",
 );
 assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ReferenceUsage.cs",
+  "Component Preset: {row.Name} · {preset.Name}",
+  "component preset usage must scan references stored inside other presets",
+);
+assertContains(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
   "[\"id\"] = DefaultComponentPresetId",
   "component class normalization must create a Default preset",

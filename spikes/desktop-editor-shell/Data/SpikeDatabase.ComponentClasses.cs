@@ -243,13 +243,13 @@ internal sealed partial class SpikeDatabase
 
         var owner = GetComponentClassSettings(connection, componentClassId);
         var usages = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var row in QueryComponentClassRows(connection)
-                     .Where((row) => row.ProjectId.Equals(owner.ProjectId, StringComparison.Ordinal)))
+        foreach (var usage in ComponentPresetUsageSources(
+                     QueryComponentClassRows(connection),
+                     owner.ProjectId,
+                     owner.ComponentType,
+                     presetId))
         {
-            if (ComponentPresetIsUsedByConfig(row.ConfigJson, owner.ComponentType, presetId))
-            {
-                usages.Add($"Component Class: {row.Name}");
-            }
+            usages.Add(usage);
         }
 
         return usages.ToList();
