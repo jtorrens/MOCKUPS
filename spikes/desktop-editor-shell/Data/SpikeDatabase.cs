@@ -40,6 +40,7 @@ internal sealed partial class SpikeDatabase
         SeedIfEmpty(connection);
         SeedPaletteColorsIfEmpty(connection);
         SeedDevicesIfEmpty(connection);
+        EnsureDeviceMetricDefaults(connection);
         SeedActorsIfEmpty(connection);
         SeedProductionFontsIfEmpty(connection);
         SeedRenderPresetsIfEmpty(connection);

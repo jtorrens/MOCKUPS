@@ -45,6 +45,10 @@ values. The rule is:
 - The design preview surface no longer invents a plausible light/dark
   background color when the theme background token is missing. Missing
   background now fails visibly.
+- Device preview metrics no longer fall back to plausible `1080x1920`, `0`
+  insets or derived scales during preview rendering. Device seeds/imports and
+  DB initialization normalization must create complete metrics first; preview
+  reads fail visibly when required metric paths are missing or non-numeric.
 
 ## Component Preview Boundary Audit
 
@@ -102,9 +106,9 @@ No active desktop preview path may use:
 
 ## Needs Follow-Up
 
-- Device metric parsing still has defensive defaults in `DeviceMetricRules`.
-  These should be audited separately when imported devices become part of the
-  trusted data contract.
+- Device import and DB initialization still use heuristics to create or complete
+  `metrics_json` from external/legacy data. That is accepted as normalization,
+  not as preview/runtime fallback.
 - The old runtime visual modules under `src/visual/modules/**` have been
   removed from this repository. If chat runtime behavior is needed later, use
   the previous React repository as visual reference and recreate the component

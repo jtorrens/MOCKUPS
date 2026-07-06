@@ -75,16 +75,16 @@ internal static class DeviceMetricRules
 
     public static DevicePreviewMetricValues PreviewValues(JsonObject metrics)
     {
-        var canvasWidth = JsonPath.NumberAt(metrics, ["canvas", "width"], JsonPath.NumberAt(metrics, ["renderSize", "width"], 1080));
-        var canvasHeight = JsonPath.NumberAt(metrics, ["canvas", "height"], JsonPath.NumberAt(metrics, ["renderSize", "height"], 1920));
-        var screenX = JsonPath.NumberAt(metrics, ["screen", "x"], 0);
-        var screenY = JsonPath.NumberAt(metrics, ["screen", "y"], 0);
-        var screenWidth = JsonPath.NumberAt(metrics, ["screen", "width"], canvasWidth);
-        var screenHeight = JsonPath.NumberAt(metrics, ["screen", "height"], canvasHeight);
-        var cornerRadius = JsonPath.NumberAt(metrics, ["cornerRadius"], 0);
-        var statusBarHeight = JsonPath.NumberAt(metrics, ["statusBar", "height"], JsonPath.NumberAt(metrics, ["safeArea", "top"], 0));
-        var safeAreaBottom = JsonPath.NumberAt(metrics, ["safeArea", "bottom"], 0);
-        var scaleToPixels = ResolveScaleToPixels(metrics, canvasWidth);
+        var canvasWidth = RequiredPositiveNumber(metrics, ["canvas", "width"]);
+        var canvasHeight = RequiredPositiveNumber(metrics, ["canvas", "height"]);
+        var screenX = RequiredNumber(metrics, ["screen", "x"]);
+        var screenY = RequiredNumber(metrics, ["screen", "y"]);
+        var screenWidth = RequiredPositiveNumber(metrics, ["screen", "width"]);
+        var screenHeight = RequiredPositiveNumber(metrics, ["screen", "height"]);
+        var cornerRadius = RequiredNumber(metrics, ["cornerRadius"]);
+        var statusBarHeight = RequiredNumber(metrics, ["statusBar", "height"]);
+        var safeAreaBottom = RequiredNumber(metrics, ["safeArea", "bottom"]);
+        var scaleToPixels = RequiredPositiveNumber(metrics, ["scaleToPixels"]);
 
         return new DevicePreviewMetricValues(
             canvasWidth,
@@ -97,6 +97,31 @@ internal static class DeviceMetricRules
             statusBarHeight,
             safeAreaBottom,
             scaleToPixels);
+    }
+
+    public static bool EnsurePreviewMetricDefaults(JsonObject metrics, string osFamily)
+    {
+        var width = FirstPositiveNumber(
+            metrics,
+            ["canvas", "width"],
+            ["renderSize", "width"],
+            ["screen", "width"]) ?? 1080;
+        var height = FirstPositiveNumber(
+            metrics,
+            ["canvas", "height"],
+            ["renderSize", "height"],
+            ["screen", "height"]) ?? 1920;
+        var scale = OptionalPositiveNumber(metrics, ["scaleToPixels"])
+            ?? OptionalPositiveNumber(metrics, ["pixelRatio"])
+            ?? GuessScale((int)Math.Round(width), (int)Math.Round(height), osFamily);
+        var includeDynamicIsland = JsonPath.Get(metrics, ["dynamicIsland"]) is JsonObject;
+        var defaults = JsonPath.ParseObject(CreateMetricsJson(
+            (int)Math.Round(width),
+            (int)Math.Round(height),
+            scale,
+            includeDynamicIsland));
+
+        return JsonPath.MergeMissing(metrics, defaults);
     }
 
     public static double GuessScale(int width, int height, string osFamily)
@@ -125,14 +150,81 @@ internal static class DeviceMetricRules
         return GuessScale(width, height, osFamily);
     }
 
-    private static double ResolveScaleToPixels(JsonObject metrics, double canvasWidth)
+    private static double RequiredPositiveNumber(JsonObject metrics, IReadOnlyList<string> path)
     {
-        var scaleToPixels = JsonPath.NumberAt(metrics, ["scaleToPixels"], 0);
-        if (scaleToPixels > 0) return scaleToPixels;
+        var value = RequiredNumber(metrics, path);
+        if (value > 0) return value;
 
-        var renderWidth = JsonPath.NumberAt(metrics, ["renderSize", "width"], canvasWidth);
-        var designWidth = JsonPath.NumberAt(metrics, ["designSpace", "width"], 0);
-        return designWidth > 0 ? renderWidth / designWidth : JsonPath.NumberAt(metrics, ["pixelRatio"], 1);
+        throw new InvalidOperationException(
+            $"Device metrics path '{PathLabel(path)}' must be greater than zero.");
+    }
+
+    private static double RequiredNumber(JsonObject metrics, IReadOnlyList<string> path)
+    {
+        var node = JsonPath.Get(metrics, path)
+            ?? throw new InvalidOperationException(
+                $"Device metrics path '{PathLabel(path)}' is required.");
+
+        if (node is JsonValue value)
+        {
+            if (value.TryGetValue<double>(out var number) && double.IsFinite(number))
+            {
+                return number;
+            }
+
+            if (value.TryGetValue<string>(out var text)
+                && double.TryParse(text, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsed)
+                && double.IsFinite(parsed))
+            {
+                return parsed;
+            }
+        }
+
+        throw new InvalidOperationException(
+            $"Device metrics path '{PathLabel(path)}' must be numeric.");
+    }
+
+    private static string PathLabel(IReadOnlyList<string> path)
+    {
+        return string.Join(".", path);
+    }
+
+    private static double? FirstPositiveNumber(JsonObject metrics, params IReadOnlyList<string>[] paths)
+    {
+        foreach (var path in paths)
+        {
+            var value = OptionalPositiveNumber(metrics, path);
+            if (value is not null)
+            {
+                return value;
+            }
+        }
+
+        return null;
+    }
+
+    private static double? OptionalPositiveNumber(JsonObject metrics, IReadOnlyList<string> path)
+    {
+        var node = JsonPath.Get(metrics, path);
+        if (node is not JsonValue value)
+        {
+            return null;
+        }
+
+        if (value.TryGetValue<double>(out var number) && double.IsFinite(number) && number > 0)
+        {
+            return number;
+        }
+
+        if (value.TryGetValue<string>(out var text)
+            && double.TryParse(text, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsed)
+            && double.IsFinite(parsed)
+            && parsed > 0)
+        {
+            return parsed;
+        }
+
+        return null;
     }
 
     private static int StatusBarHeight(int height)

@@ -196,6 +196,24 @@ internal sealed partial class SpikeDatabase
         }
     }
 
+    private static void EnsureDeviceMetricDefaults(SqliteConnection connection)
+    {
+        foreach (var row in QueryDeviceRows(connection))
+        {
+            var metrics = ParseJsonObject(row.MetricsJson);
+            if (!DeviceMetricRules.EnsurePreviewMetricDefaults(metrics, row.OsFamily))
+            {
+                continue;
+            }
+
+            Execute(
+                connection,
+                "UPDATE devices SET metrics_json = $metricsJson WHERE id = $id",
+                ("$id", row.Id),
+                ("$metricsJson", metrics.ToJsonString()));
+        }
+    }
+
     private static string DefaultDeviceMetricsJson(int width, int height, double scale)
     {
         return DeviceMetricsJson(width, height, scale, includeDynamicIsland: false);

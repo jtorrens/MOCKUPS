@@ -948,6 +948,11 @@ assertDoesNotContain(
   "SeedNavigationBarsIfEmpty",
   "desktop database initialization must not seed legacy navigation_bars rows; use navigation_bar component presets",
 );
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/Common/DeviceMetricRules.cs",
+  "JsonPath.NumberAt(metrics,",
+  "device preview metric reads must be strict; defaults belong in seed/import normalization, not preview rendering",
+);
 for (const forbiddenLegacySystemBarMethod of [
   "GetStatusBarSettings",
   "GetStatusBarFieldValue",
