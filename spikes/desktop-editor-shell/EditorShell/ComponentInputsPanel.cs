@@ -20,7 +20,6 @@ internal sealed class ComponentInputsPanel : ContentControl
     private readonly Action _refreshPreview;
     private readonly Window _owner;
     private readonly DispatcherTimer _playbackTimer;
-    private readonly StackPanel _rowsPanel;
     private readonly Dictionary<string, string> _values = new(StringComparer.Ordinal);
     private readonly Dictionary<string, DictionaryFieldControl> _booleanInputs = new(StringComparer.Ordinal);
     private Button? _playbackButton;
@@ -44,11 +43,6 @@ internal sealed class ComponentInputsPanel : ContentControl
         };
         _playbackTimer.Tick += (_, _) => AdvancePlaybackFrame();
         IsVisible = false;
-
-        _rowsPanel = new StackPanel
-        {
-            Spacing = 8,
-        };
     }
 
     public void UpdateForPayload(DesignPreviewPayload? payload, string? projectId)
@@ -114,11 +108,14 @@ internal sealed class ComponentInputsPanel : ContentControl
 
     private void RebuildCard(IReadOnlyList<ComponentInputDefinition> inputs, string projectId)
     {
-        _rowsPanel.Children.Clear();
+        var rowsPanel = new StackPanel
+        {
+            Spacing = 8,
+        };
         _booleanInputs.Clear();
         foreach (var input in inputs)
         {
-            _rowsPanel.Children.Add(CreateInputRow(input, projectId));
+            rowsPanel.Children.Add(CreateInputRow(input, projectId));
         }
 
         var icon = EditorIcons.Create(EditorIcons.Design, 18);
@@ -131,7 +128,7 @@ internal sealed class ComponentInputsPanel : ContentControl
                 {
                     MaxHeight = 5 * 46,
                     VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                    Content = _rowsPanel,
+                    Content = rowsPanel,
                 },
             },
             isExpanded: true)
