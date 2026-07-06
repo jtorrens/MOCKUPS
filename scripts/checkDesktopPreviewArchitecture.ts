@@ -1,5 +1,10 @@
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
+import {
+  desktopPreviewComponents,
+  type DesktopPreviewComponentManifestEntry,
+} from "../src/desktop-preview/desktopPreviewComponents.js";
+import { componentRenderableFactoryKeys } from "../src/desktop-preview/componentClassRenderableRegistry.js";
 
 const root = process.cwd();
 const previewRoot = path.join(root, "src", "desktop-preview");
@@ -108,28 +113,62 @@ const registryFiles = new Set([
   "src/desktop-preview/designPreviewRenderableRegistry.ts",
 ]);
 
-const allowedComponentImports: Record<string, Set<string>> = {
-  "src/desktop-preview/avatarComponentResolver.ts": new Set([
-    "./labelComponentResolver.js",
-  ]),
-  "src/desktop-preview/avatarComponentRenderable.ts": new Set([
-    "./labelComponentRenderable.js",
-  ]),
-  "src/desktop-preview/buttonIconComponentResolver.ts": new Set([
-    "./labelComponentResolver.js",
-  ]),
-  "src/desktop-preview/buttonIconComponentRenderable.ts": new Set([
-    "./labelComponentRenderable.js",
-  ]),
-  "src/desktop-preview/audioComponentResolver.ts": new Set([
-    "./avatarComponentResolver.js",
-    "./buttonIconComponentResolver.js",
-  ]),
-  "src/desktop-preview/audioComponentRenderable.ts": new Set([
-    "./avatarComponentRenderable.js",
-    "./buttonIconComponentRenderable.js",
-  ]),
-};
+const manifestEntries = Object.entries(desktopPreviewComponents);
+
+function moduleFile(entry: DesktopPreviewComponentManifestEntry, kind: "resolver" | "renderable") {
+  return `src/desktop-preview/${entry[kind].replace(/^\.\//, "")}.ts`;
+}
+
+function moduleImport(entry: DesktopPreviewComponentManifestEntry, kind: "resolver" | "renderable") {
+  return `${entry[kind]}.js`;
+}
+
+for (const [componentClass, entry] of manifestEntries) {
+  for (const kind of ["contract", "resolver", "renderable"] as const) {
+    const filePath = path.join(previewRoot, `${entry[kind].replace(/^\.\//, "")}.ts`);
+    if (!existsSync(filePath)) {
+      addViolation(
+        "src/desktop-preview/desktopPreviewComponents.ts",
+        `manifest entry "${componentClass}" points to missing ${kind} file "${entry[kind]}"`,
+      );
+    }
+  }
+
+  for (const child of entry.embeds) {
+    if (!desktopPreviewComponents[child]) {
+      addViolation(
+        "src/desktop-preview/desktopPreviewComponents.ts",
+        `manifest entry "${componentClass}" embeds unknown component "${child}"`,
+      );
+    }
+  }
+}
+
+const routedComponentClasses = new Set(componentRenderableFactoryKeys);
+for (const [componentClass, entry] of manifestEntries) {
+  if (entry.category === "system") continue;
+  if (!routedComponentClasses.has(componentClass as (typeof componentRenderableFactoryKeys)[number])) {
+    addViolation(
+      "src/desktop-preview/componentClassRenderableRegistry.ts",
+      `component class "${componentClass}" is missing from component renderable registry`,
+    );
+  }
+}
+
+const allowedComponentImports: Record<string, Set<string>> = {};
+for (const [, entry] of manifestEntries) {
+  for (const kind of ["resolver", "renderable"] as const) {
+    const filePath = moduleFile(entry, kind);
+    const allowed = allowedComponentImports[filePath] ?? new Set<string>();
+    for (const child of entry.embeds) {
+      const childEntry = desktopPreviewComponents[child];
+      if (childEntry) {
+        allowed.add(moduleImport(childEntry, kind));
+      }
+    }
+    allowedComponentImports[filePath] = allowed;
+  }
+}
 
 for (const filePath of walkFiles(previewRoot)) {
   const relativePath = relative(filePath);
