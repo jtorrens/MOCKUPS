@@ -30,6 +30,180 @@ internal sealed partial class SpikeDatabase
     private static string ComponentPresetNodeId(string componentClassId, string presetId) =>
         $"{componentClassId}::preset::{presetId}";
 
+    private static bool TryParseComponentPresetNodeId(string nodeId, out string componentClassId, out string presetId)
+    {
+        const string separator = "::preset::";
+        var separatorIndex = nodeId.IndexOf(separator, StringComparison.Ordinal);
+        if (separatorIndex <= 0 || separatorIndex + separator.Length >= nodeId.Length)
+        {
+            componentClassId = "";
+            presetId = "";
+            return false;
+        }
+
+        componentClassId = nodeId[..separatorIndex];
+        presetId = nodeId[(separatorIndex + separator.Length)..];
+        return true;
+    }
+
+    private ProjectTreeNode DuplicateComponentPreset(ProjectTreeNode node)
+    {
+        if (!TryParseComponentPresetNodeId(node.Id, out var componentClassId, out var presetId))
+        {
+            throw new InvalidOperationException($"Invalid component preset node id '{node.Id}'.");
+        }
+
+        lock (WriteGate)
+        {
+            using var connection = OpenConnection();
+            var settings = GetComponentClassSettings(connection, componentClassId);
+            var metadata = ParseJsonObject(string.IsNullOrWhiteSpace(settings.MetadataJson) ? "{}" : settings.MetadataJson);
+            var presets = EnsurePresetArray(metadata);
+            var source = FindPreset(presets, presetId)
+                ?? throw new InvalidOperationException($"Missing component preset '{presetId}'.");
+            var sourceName = JsonPath.String(source, "name", presetId);
+            var copyName = $"{sourceName} copy";
+            var copyId = UniquePresetId(presets, copyName);
+            presets.Add(new JsonObject
+            {
+                ["id"] = copyId,
+                ["name"] = copyName,
+                ["protected"] = false,
+                ["config"] = (source["config"] as JsonObject)?.DeepClone() ?? ParseJsonObject(settings.ConfigJson),
+            });
+            Execute(
+                connection,
+                "UPDATE component_classes SET metadata_json = $metadataJson WHERE id = $id",
+                ("$id", componentClassId),
+                ("$metadataJson", metadata.ToJsonString()));
+
+            return new ProjectTreeNode(
+                ProjectTreeNodeKind.ComponentPreset,
+                ComponentPresetNodeId(componentClassId, copyId),
+                copyName,
+                "Component preset",
+                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ComponentPreset),
+                node.Parent);
+        }
+    }
+
+    private void DeleteComponentPreset(ProjectTreeNode node)
+    {
+        if (!TryParseComponentPresetNodeId(node.Id, out var componentClassId, out var presetId))
+        {
+            throw new InvalidOperationException($"Invalid component preset node id '{node.Id}'.");
+        }
+
+        lock (WriteGate)
+        {
+            using var connection = OpenConnection();
+            var settings = GetComponentClassSettings(connection, componentClassId);
+            var metadata = ParseJsonObject(string.IsNullOrWhiteSpace(settings.MetadataJson) ? "{}" : settings.MetadataJson);
+            var presets = EnsurePresetArray(metadata);
+            for (var index = 0; index < presets.Count; index++)
+            {
+                if (presets[index] is not JsonObject preset
+                    || !JsonPath.String(preset, "id", "").Equals(presetId, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                if (JsonBool(preset, ["protected"]))
+                {
+                    throw new InvalidOperationException("Protected component presets cannot be deleted.");
+                }
+
+                var usages = GetComponentPresetReferenceUsages(connection, node);
+                if (usages.Count > 0)
+                {
+                    throw new InvalidOperationException($"This component preset is still used and cannot be deleted.\n\n{string.Join(Environment.NewLine, usages.Take(12))}");
+                }
+
+                presets.RemoveAt(index);
+                Execute(
+                    connection,
+                    "UPDATE component_classes SET metadata_json = $metadataJson WHERE id = $id",
+                    ("$id", componentClassId),
+                    ("$metadataJson", metadata.ToJsonString()));
+                return;
+            }
+        }
+
+        throw new InvalidOperationException($"Missing component preset '{presetId}'.");
+    }
+
+    private static IReadOnlyList<string> GetComponentPresetReferenceUsages(SqliteConnection connection, ProjectTreeNode node)
+    {
+        if (!TryParseComponentPresetNodeId(node.Id, out var componentClassId, out var presetId))
+        {
+            return [];
+        }
+
+        var owner = GetComponentClassSettings(connection, componentClassId);
+        var usages = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var row in QueryComponentClassRows(connection)
+                     .Where((row) => row.ProjectId.Equals(owner.ProjectId, StringComparison.Ordinal)))
+        {
+            if (row.Id.Equals(componentClassId, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            if (row.ConfigJson.Contains($"\"presetId\":\"{presetId}\"", StringComparison.Ordinal)
+                || row.ConfigJson.Contains($"\"presetId\": \"{presetId}\"", StringComparison.Ordinal))
+            {
+                usages.Add($"Component Class: {row.Name}");
+            }
+        }
+
+        return usages.ToList();
+    }
+
+    private static JsonArray EnsurePresetArray(JsonObject metadata)
+    {
+        if (metadata["presets"] is JsonArray presets)
+        {
+            return presets;
+        }
+
+        presets = [];
+        metadata["presets"] = presets;
+        return presets;
+    }
+
+    private static JsonObject? FindPreset(JsonArray presets, string presetId) =>
+        presets
+            .OfType<JsonObject>()
+            .FirstOrDefault((preset) => JsonPath.String(preset, "id", "").Equals(presetId, StringComparison.Ordinal));
+
+    private static string UniquePresetId(JsonArray presets, string name)
+    {
+        var baseId = new string(name
+                .Trim()
+                .ToLowerInvariant()
+                .Select((character) => char.IsLetterOrDigit(character) ? character : '_')
+                .ToArray())
+            .Trim('_');
+        if (string.IsNullOrWhiteSpace(baseId))
+        {
+            baseId = "preset";
+        }
+
+        var existing = presets
+            .OfType<JsonObject>()
+            .Select((preset) => JsonPath.String(preset, "id", ""))
+            .ToHashSet(StringComparer.Ordinal);
+        var candidate = baseId;
+        var suffix = 2;
+        while (existing.Contains(candidate))
+        {
+            candidate = $"{baseId}_{suffix}";
+            suffix++;
+        }
+
+        return candidate;
+    }
+
     public ComponentClassSettings GetComponentClassSettings(string componentClassId)
     {
         using var connection = OpenConnection();

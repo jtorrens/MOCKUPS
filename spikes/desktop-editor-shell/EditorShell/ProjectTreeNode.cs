@@ -47,7 +47,8 @@ internal sealed class ProjectTreeNode
         string recordClassId,
         ProjectTreeNode? parent = null,
         string? colorHex = null,
-        bool isUsed = false)
+        bool isUsed = false,
+        bool isProtected = false)
     {
         Kind = kind;
         Id = id;
@@ -57,6 +58,7 @@ internal sealed class ProjectTreeNode
         Parent = parent;
         ColorHex = colorHex;
         IsUsed = isUsed;
+        IsProtected = isProtected;
     }
 
     public ProjectTreeNodeKind Kind { get; }
@@ -67,6 +69,7 @@ internal sealed class ProjectTreeNode
     public ProjectTreeNode? Parent { get; private set; }
     public string? ColorHex { get; set; }
     public bool IsUsed { get; }
+    public bool IsProtected { get; }
     public List<ProjectTreeNode> Children { get; } = [];
 
     public int Level => Parent is null ? 0 : Parent.Level + 1;
@@ -94,6 +97,7 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.NavigationBar
         or ProjectTreeNodeKind.RenderPreset
         or ProjectTreeNodeKind.ComponentClass
+        or ProjectTreeNodeKind.ComponentPreset
         or ProjectTreeNodeKind.Device
         or ProjectTreeNodeKind.Actor
         or ProjectTreeNodeKind.Theme;
@@ -110,7 +114,8 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.Device
         or ProjectTreeNodeKind.Actor
         or ProjectTreeNodeKind.Theme
-        or ProjectTreeNodeKind.ProductionFont;
+        or ProjectTreeNodeKind.ProductionFont
+        || (Kind == ProjectTreeNodeKind.ComponentPreset && !IsProtected);
     public bool CanOpenEditor => Kind is not ProjectTreeNodeKind.ProductionDataRoot
         and not ProjectTreeNodeKind.SystemDataRoot
         and not ProjectTreeNodeKind.AppsRoot

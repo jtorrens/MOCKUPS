@@ -390,7 +390,8 @@ internal sealed partial class SpikeDatabase
                     preset.IsProtected ? "Protected component preset" : "Component preset",
                     ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ComponentPreset),
                     componentNode,
-                    isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.ComponentPreset, ComponentPresetNodeId(componentClass.Id, preset.Id))));
+                    isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.ComponentPreset, ComponentPresetNodeId(componentClass.Id, preset.Id)),
+                    isProtected: preset.IsProtected));
             }
         }
 
@@ -1101,11 +1102,22 @@ internal sealed partial class SpikeDatabase
             return new ProjectTreeNode(ProjectTreeNodeKind.ComponentClass, id, $"{node.Name} copy", node.Notes, node.RecordClassId, node.Parent);
         }
 
+        if (node.Kind == ProjectTreeNodeKind.ComponentPreset)
+        {
+            return DuplicateComponentPreset(node);
+        }
+
         throw new InvalidOperationException($"Cannot duplicate {node.Kind}.");
     }
 
     public void Delete(ProjectTreeNode node)
     {
+        if (node.Kind == ProjectTreeNodeKind.ComponentPreset)
+        {
+            DeleteComponentPreset(node);
+            return;
+        }
+
         using var connection = OpenConnection();
         var table = node.Kind switch
         {
@@ -1142,6 +1154,12 @@ internal sealed partial class SpikeDatabase
 
     public IReadOnlyList<string> GetReferenceUsages(ProjectTreeNode node)
     {
+        if (node.Kind == ProjectTreeNodeKind.ComponentPreset)
+        {
+            using var presetConnection = OpenConnection();
+            return GetComponentPresetReferenceUsages(presetConnection, node);
+        }
+
         using var connection = OpenConnection();
         return GetReferenceUsages(connection, node.Kind, node.Id, ReferenceSearchValue(connection, node));
     }

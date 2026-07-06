@@ -130,6 +130,30 @@ internal sealed partial class SpikeDatabase
             }
         }
 
+        foreach (var presetOwner in componentClasses)
+        {
+            foreach (var preset in ComponentClassPresets(presetOwner.MetadataJson))
+            {
+                foreach (var componentClass in componentClasses.Where((candidate) => candidate.ProjectId == presetOwner.ProjectId))
+                {
+                    if (componentClass.Id == presetOwner.Id)
+                    {
+                        continue;
+                    }
+
+                    if (componentClass.ConfigJson.Contains($"\"presetId\":\"{preset.Id}\"", StringComparison.Ordinal)
+                        || componentClass.ConfigJson.Contains($"\"presetId\": \"{preset.Id}\"", StringComparison.Ordinal))
+                    {
+                        AddUsage(
+                            index,
+                            ProjectTreeNodeKind.ComponentPreset,
+                            ComponentPresetNodeId(presetOwner.Id, preset.Id),
+                            $"Component Class: {componentClass.Name}");
+                    }
+                }
+            }
+        }
+
         foreach (var actor in actors)
         {
             foreach (var color in paletteColors)
