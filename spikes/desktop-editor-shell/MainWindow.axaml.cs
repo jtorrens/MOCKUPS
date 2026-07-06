@@ -5,7 +5,6 @@ using SukiUI.Controls;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell;
 
@@ -31,6 +30,7 @@ public partial class MainWindow : SukiWindow
     private readonly EditorFieldValueRouter _fieldValues;
     private readonly EditorLayoutCardFactory _layoutCards;
     private readonly EditorContentController _editorContent;
+    private readonly EditorEmbeddedEditorController _embeddedEditors;
     private readonly EditorEmbeddedUsageNavigator _embeddedUsageNavigator;
     private readonly EditorHeaderController _editorHeader;
     private readonly EditorTreeExpansionState _treeExpansion = new();
@@ -39,7 +39,6 @@ public partial class MainWindow : SukiWindow
     private readonly EditorActiveFieldControls _activeFieldControls = new();
     private List<ProjectTreeNode> _treeRoots = [];
     private ProjectTreeNode? _selectedNode;
-    private EditorEmbeddedContext? _embeddedEditorContext;
 
     public MainWindow()
     {
@@ -113,6 +112,7 @@ public partial class MainWindow : SukiWindow
             ReloadAndSelect);
         _dictionaryFieldServices = new EditorDictionaryFieldServices(_database, _pathBrowser, _domainDialogs);
         _editorViewState = new EditorViewStateController(EditorScrollViewer);
+        _embeddedEditors = new EditorEmbeddedEditorController(ShowEmbeddedContext, _messages);
         _fieldValues = new EditorFieldValueRouter(
             _coreFieldValues,
             _recordClassFieldValues,
@@ -127,8 +127,8 @@ public partial class MainWindow : SukiWindow
             _fieldCommitCoordinator,
             _activeFieldControls,
             _messages,
-            OpenEmbeddedComponentEditor,
-            OpenEmbeddedComponentEditor,
+            _embeddedEditors.Open,
+            _embeddedEditors.OpenNested,
             RefreshPreviewDevice);
         _embeddedUsageNavigator = new EditorEmbeddedUsageNavigator(
             _database,
@@ -137,7 +137,7 @@ public partial class MainWindow : SukiWindow
             SelectNodeById,
             LoadProjectTree,
             () => _selectedNode,
-            OpenEmbeddedComponentEditor,
+            _embeddedEditors.Open,
             _messages);
         _editorHeader = new EditorHeaderController(
             EditorBreadcrumbPanel,
@@ -263,7 +263,6 @@ public partial class MainWindow : SukiWindow
         _selectedNode = node;
         _nodeSelection.RememberComponentPresetSelection(node);
         _treeExpansion.ExpandAncestors(node);
-        _embeddedEditorContext = null;
         var editorNode = EditorNodeSelectionState.EditorNodeForSelection(node);
         SetEditorRootTitle(editorNode.Name);
         _editorContent.Build(editorNode, node);
@@ -279,52 +278,8 @@ public partial class MainWindow : SukiWindow
         }
     }
 
-    private Task OpenEmbeddedComponentEditor(ProjectTreeNode node, string slotFieldId)
-    {
-        try
-        {
-            if (node.Kind is not ProjectTreeNodeKind.ComponentClass and not ProjectTreeNodeKind.ComponentPreset)
-            {
-                return Task.CompletedTask;
-            }
-
-            if (!EmbeddedComponentSlotCatalog.TryGet(slotFieldId, out var slot))
-            {
-                return Task.CompletedTask;
-            }
-
-            ShowEmbeddedContext(new EditorEmbeddedContext(node, [slot]));
-        }
-        catch (Exception exception)
-        {
-            _messages.Error($"Embedded component {slotFieldId}", exception);
-        }
-
-        return Task.CompletedTask;
-    }
-
-    private Task OpenEmbeddedComponentEditor(EditorEmbeddedContext parentContext, string slotFieldId)
-    {
-        try
-        {
-            if (!EmbeddedComponentSlotCatalog.TryGet(slotFieldId, out var slot))
-            {
-                return Task.CompletedTask;
-            }
-
-            ShowEmbeddedContext(new EditorEmbeddedContext(parentContext.OwnerNode, [.. parentContext.Slots, slot]));
-        }
-        catch (Exception exception)
-        {
-            _messages.Error($"Embedded component {slotFieldId}", exception);
-        }
-
-        return Task.CompletedTask;
-    }
-
     private void ShowEmbeddedContext(EditorEmbeddedContext context)
     {
-        _embeddedEditorContext = context;
         SetEditorEmbeddedTitle(context);
         _editorContent.BuildEmbedded(context);
         RefreshPreviewDevice();
