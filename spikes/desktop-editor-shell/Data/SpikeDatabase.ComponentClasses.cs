@@ -87,11 +87,11 @@ internal sealed partial class SpikeDatabase
         }
     }
 
-    public ProjectTreeNode SaveComponentPreset(ProjectTreeNode componentClassNode, string name)
+    public ProjectTreeNode SaveComponentPreset(ProjectTreeNode sourceNode, string name)
     {
-        if (componentClassNode.Kind != ProjectTreeNodeKind.ComponentClass)
+        if (sourceNode.Kind is not ProjectTreeNodeKind.ComponentClass and not ProjectTreeNodeKind.ComponentPreset)
         {
-            throw new InvalidOperationException("Component presets can only be saved from a component class.");
+            throw new InvalidOperationException("Component presets can only be saved from a component class or preset.");
         }
 
         var presetName = name.Trim();
@@ -103,7 +103,24 @@ internal sealed partial class SpikeDatabase
         lock (WriteGate)
         {
             using var connection = OpenConnection();
-            var settings = GetComponentClassSettings(connection, componentClassNode.Id);
+            var componentClassId = sourceNode.Id;
+            var sourceConfigJson = "";
+            if (sourceNode.Kind == ProjectTreeNodeKind.ComponentPreset)
+            {
+                if (!TryParseComponentPresetNodeId(sourceNode.Id, out componentClassId, out _))
+                {
+                    throw new InvalidOperationException($"Invalid component preset node id '{sourceNode.Id}'.");
+                }
+
+                sourceConfigJson = GetComponentPresetSettings(connection, sourceNode).ConfigJson;
+            }
+
+            var settings = GetComponentClassSettings(connection, componentClassId);
+            if (string.IsNullOrWhiteSpace(sourceConfigJson))
+            {
+                sourceConfigJson = settings.ConfigJson;
+            }
+
             var metadata = ParseJsonObject(string.IsNullOrWhiteSpace(settings.MetadataJson) ? "{}" : settings.MetadataJson);
             var presets = EnsurePresetArray(metadata);
             var presetId = UniquePresetId(presets, presetName);
@@ -112,21 +129,23 @@ internal sealed partial class SpikeDatabase
                 ["id"] = presetId,
                 ["name"] = presetName,
                 ["protected"] = false,
-                ["config"] = JsonNode.Parse(settings.ConfigJson),
+                ["config"] = JsonNode.Parse(sourceConfigJson),
             });
             Execute(
                 connection,
                 "UPDATE component_classes SET metadata_json = $metadataJson WHERE id = $id",
-                ("$id", componentClassNode.Id),
+                ("$id", componentClassId),
                 ("$metadataJson", metadata.ToJsonString()));
 
             return new ProjectTreeNode(
                 ProjectTreeNodeKind.ComponentPreset,
-                ComponentPresetNodeId(componentClassNode.Id, presetId),
+                ComponentPresetNodeId(componentClassId, presetId),
                 presetName,
                 "Component preset",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ComponentPreset),
-                componentClassNode);
+                sourceNode.Kind == ProjectTreeNodeKind.ComponentPreset
+                    ? sourceNode.Parent
+                    : sourceNode);
         }
     }
 

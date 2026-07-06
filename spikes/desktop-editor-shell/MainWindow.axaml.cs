@@ -730,13 +730,16 @@ public partial class MainWindow : SukiWindow
             return null;
         }
 
+        var presetSourceNode = _selectedNode?.Kind == ProjectTreeNodeKind.ComponentPreset
+            ? _selectedNode
+            : node;
         return new StackPanel
         {
             Orientation = Orientation.Horizontal,
             Spacing = 6,
             Children =
             {
-                CreateSavePresetButton(node),
+                CreateSavePresetButton(presetSourceNode),
             },
         };
     }

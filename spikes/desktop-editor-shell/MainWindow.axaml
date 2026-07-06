@@ -6,7 +6,7 @@
                  xmlns:suki="clr-namespace:SukiUI.Controls;assembly=SukiUI"
                  mc:Ignorable="d" d:DesignWidth="1440" d:DesignHeight="900"
                  x:Class="Mockups.DesktopEditorShell.MainWindow"
-                 Title="Mockups Desktop Editor Shell · codex/editor-modernization-rules · v0.219.0"
+                 Title="Mockups Desktop Editor Shell · codex/editor-modernization-rules · v0.220.0"
                  Width="1440"
                  Height="900"
                  MinWidth="1040"
