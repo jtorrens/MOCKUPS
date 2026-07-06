@@ -18,6 +18,8 @@ internal static class EditorIcons
     public const string Expand = "expand";
     public const string Collapse = "collapse";
     public const string Structure = "structure";
+    public const string Lock = "lock";
+    public const string Unlock = "unlock";
 
     public const string Project = "project";
     public const string Apps = "apps";
@@ -203,6 +205,8 @@ internal static class EditorIcons
             Duplicate => "system_duplicate.svg",
             Edit => "system_edit.svg",
             Structure => "system_tree.svg",
+            Lock => "system_lock.svg",
+            Unlock => "system_unlock.svg",
             Project => "editor_general.svg",
             Apps => "editor_design.svg",
             App => "editor_layout.svg",
@@ -284,6 +288,8 @@ internal static class EditorIcons
             Expand => "M9 5L16 12L9 19Z",
             Collapse => "M5 15L12 8L19 15Z",
             Structure => "M9 3H15V8H9Z M12 8V11 M6 11H18 M6 11V14 M18 11V14 M3.5 14H8.5V20H3.5Z M15.5 14H20.5V20H15.5Z M10 16H14V19H10Z",
+            Lock => "M7 10V8C7 5.24 9.24 3 12 3C14.76 3 17 5.24 17 8V10 M6 10H18V20H6Z M12 14V17",
+            Unlock => "M8 10V8C8 5.24 10.24 3 13 3C15.05 3 16.8 4.23 17.57 5.99 M6 10H18V20H6Z M12 14V17",
 
             Project => "M4 9.5L12 4L20 9.5V20C20 20.55 19.55 21 19 21H14V15H10V21H5C4.45 21 4 20.55 4 20V9.5Z",
             Apps => "M5 5H11V11H5Z M13 5H19V11H13Z M5 13H11V19H5Z M13 13H19V19H13Z",

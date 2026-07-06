@@ -78,6 +78,8 @@ public partial class MainWindow : SukiWindow
             _messages,
             RuntimePreviewHost,
             DesignPreviewHost,
+            PreviewContextTextBlock,
+            PreviewContextLockButton,
             () => _isDark,
             () => _selectedNode,
             this);

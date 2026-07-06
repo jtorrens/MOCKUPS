@@ -17,16 +17,22 @@ internal sealed class EditorPreviewController
     private readonly IEditorShellMessageSink _messages;
     private readonly Func<bool> _isDark;
     private readonly Func<ProjectTreeNode?> _selectedNode;
+    private readonly TextBlock _designContextText;
+    private readonly Button _designContextLockButton;
     private readonly RuntimeWebPreviewPane _runtimePreviewPane = new();
     private readonly DesignWebPreviewPane _designPreviewPane = new();
     private readonly ComponentInputsPanel _designInputsPanel;
     private string? _projectId;
     private string? _selectedThemeId;
     private PreviewNodeKey? _lastDesignPreviewNode;
+    private PreviewNodeKey? _activeDesignPreviewNode;
+    private PreviewNodeKey? _lockedDesignPreviewNode;
     private string _selectedMode = "light";
     private string _selectedScale = "fit";
     private bool _showDesignMarks = true;
+    private bool _isDesignPreviewContextLocked;
     private bool _isRefreshingOptions;
+    private bool? _renderedLockState;
 
     public EditorPreviewController(
         SpikeDatabase database,
@@ -38,6 +44,8 @@ internal sealed class EditorPreviewController
         IEditorShellMessageSink messages,
         ContentControl runtimePreviewHost,
         ContentControl designPreviewHost,
+        TextBlock designContextText,
+        Button designContextLockButton,
         Func<bool> isDark,
         Func<ProjectTreeNode?> selectedNode,
         Window owner)
@@ -51,10 +59,14 @@ internal sealed class EditorPreviewController
         _messages = messages;
         _isDark = isDark;
         _selectedNode = selectedNode;
+        _designContextText = designContextText;
+        _designContextLockButton = designContextLockButton;
         _designInputsPanel = new ComponentInputsPanel(database, Refresh, owner);
 
         runtimePreviewHost.Content = _runtimePreviewPane;
         designPreviewHost.Content = CreateDesignPreviewLayout();
+        _designContextLockButton.Click += (_, _) => ToggleDesignPreviewContextLock();
+        UpdateDesignContextChrome(null);
     }
 
     public string? SelectedDeviceId { get; private set; }
@@ -193,6 +205,7 @@ internal sealed class EditorPreviewController
             designPayload = designPayload is null
                 ? null
                 : _designInputsPanel.ApplyInputs(designPayload, _selectedMode, _projectId);
+            UpdateDesignContextChrome(designPayload);
             _designPreviewPane.Update(
                 metrics,
                 _isDark(),
@@ -226,17 +239,84 @@ internal sealed class EditorPreviewController
 
     private DesignPreviewPayload? DesignPreviewPayloadForSelection()
     {
+        if (_isDesignPreviewContextLocked && _lockedDesignPreviewNode is not null)
+        {
+            var lockedPayload = DesignPreviewPayloadFactory.Create(_database, _lockedDesignPreviewNode.ToNode(), _selectedThemeId);
+            if (lockedPayload is not null)
+            {
+                _activeDesignPreviewNode = _lockedDesignPreviewNode;
+                return lockedPayload;
+            }
+
+            _isDesignPreviewContextLocked = false;
+            _lockedDesignPreviewNode = null;
+        }
+
         var selectedNode = _selectedNode();
         var selectedPayload = DesignPreviewPayloadFactory.Create(_database, selectedNode, _selectedThemeId);
         if (selectedPayload is not null && selectedNode is not null)
         {
             _lastDesignPreviewNode = PreviewNodeKey.From(selectedNode);
+            _activeDesignPreviewNode = _lastDesignPreviewNode;
             return selectedPayload;
         }
 
-        return _lastDesignPreviewNode is null
-            ? null
-            : DesignPreviewPayloadFactory.Create(_database, _lastDesignPreviewNode.ToNode(), _selectedThemeId);
+        if (_lastDesignPreviewNode is null)
+        {
+            _activeDesignPreviewNode = null;
+            return null;
+        }
+
+        var fallbackPayload = DesignPreviewPayloadFactory.Create(_database, _lastDesignPreviewNode.ToNode(), _selectedThemeId);
+        _activeDesignPreviewNode = fallbackPayload is null ? null : _lastDesignPreviewNode;
+        return fallbackPayload;
+    }
+
+    private void ToggleDesignPreviewContextLock()
+    {
+        if (_isDesignPreviewContextLocked)
+        {
+            _isDesignPreviewContextLocked = false;
+            _lockedDesignPreviewNode = null;
+            UpdateDesignContextChrome(null);
+            Refresh();
+            return;
+        }
+
+        var currentNode = _activeDesignPreviewNode ?? _lastDesignPreviewNode;
+        if (currentNode is null)
+        {
+            UpdateDesignContextChrome(null);
+            return;
+        }
+
+        _lockedDesignPreviewNode = currentNode;
+        _isDesignPreviewContextLocked = true;
+        UpdateDesignContextChrome(null);
+        Refresh();
+    }
+
+    private void UpdateDesignContextChrome(DesignPreviewPayload? payload)
+    {
+        _designContextText.Text = payload?.Name ?? "";
+        _designContextText.IsVisible = !string.IsNullOrWhiteSpace(_designContextText.Text);
+
+        _designContextLockButton.IsEnabled = _activeDesignPreviewNode is not null
+            || _lastDesignPreviewNode is not null
+            || _lockedDesignPreviewNode is not null;
+        if (_renderedLockState != _isDesignPreviewContextLocked)
+        {
+            _designContextLockButton.Content = EditorIcons.Create(
+                _isDesignPreviewContextLocked ? EditorIcons.Lock : EditorIcons.Unlock,
+                15);
+            _renderedLockState = _isDesignPreviewContextLocked;
+        }
+
+        ToolTip.SetTip(
+            _designContextLockButton,
+            _isDesignPreviewContextLocked
+                ? "Release design context"
+                : "Keep current design context");
     }
 
     private void EnsureSelectedOptionsExist()
