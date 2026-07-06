@@ -75,6 +75,10 @@ component class
 
 Rules:
 
+- parent component classes are internal system definitions;
+- the tree must not expose Add on the Component Classes root;
+- the tree must not expose Duplicate/Delete on parent component class nodes;
+- user variation happens through presets and embedded overrides;
 - every component class must have a protected `Default` preset;
 - `Default` cannot be renamed or deleted;
 - duplicated presets can be renamed/deleted unless usage checks block deletion;

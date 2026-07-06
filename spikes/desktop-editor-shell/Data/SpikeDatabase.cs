@@ -630,37 +630,6 @@ internal sealed partial class SpikeDatabase
                 parent);
         }
 
-        if (parent.Kind == ProjectTreeNodeKind.ComponentClassesRoot)
-        {
-            var project = ProjectAncestor(parent);
-            var index = ScalarLong(connection, "SELECT COUNT(*) FROM component_classes WHERE project_id = $projectId", ("$projectId", project.Id)) + 1;
-            var id = $"component_{Guid.NewGuid():N}";
-            var name = $"Avatar Component {index}";
-            var recordClassId = "component.avatar";
-            Execute(
-                connection,
-                """
-                INSERT INTO component_classes (id, project_id, component_type, record_class_id, name, notes, config_json, design_preview_json, metadata_json)
-                VALUES ($id, $projectId, 'avatar', $recordClassId, $name, $notes, $configJson, $designPreviewJson, $metadataJson)
-                """,
-                ("$id", id),
-                ("$projectId", project.Id),
-                ("$recordClassId", recordClassId),
-                ("$name", name),
-                ("$notes", "Custom reusable avatar component class."),
-                ("$configJson", DefaultComponentClassConfigJson("avatar")),
-                ("$designPreviewJson", DefaultComponentDesignPreviewJson("avatar")),
-                ("$metadataJson", JsonSerializer.Serialize(new { note = "Custom reusable component class." })));
-
-            return new ProjectTreeNode(
-                ProjectTreeNodeKind.ComponentClass,
-                id,
-                name,
-                "Custom reusable avatar component class.",
-                recordClassId,
-                parent);
-        }
-
         if (parent.Kind == ProjectTreeNodeKind.App)
         {
             var index = NextSortOrder(connection, "modules", "app_id", parent.Id);
@@ -1084,24 +1053,6 @@ internal sealed partial class SpikeDatabase
             return new ProjectTreeNode(ProjectTreeNodeKind.RenderPreset, id, $"{node.Name} copy", node.Notes, node.RecordClassId, node.Parent);
         }
 
-        if (node.Kind == ProjectTreeNodeKind.ComponentClass)
-        {
-            var id = $"component_{Guid.NewGuid():N}";
-            Execute(
-                connection,
-                """
-                INSERT INTO component_classes (id, project_id, component_type, record_class_id, name, notes, config_json, design_preview_json, metadata_json)
-                SELECT $id, project_id, component_type, record_class_id, $name, notes, config_json, design_preview_json, metadata_json
-                FROM component_classes
-                WHERE id = $sourceId
-                """,
-                ("$id", id),
-                ("$name", $"{node.Name} copy"),
-                ("$sourceId", node.Id));
-
-            return new ProjectTreeNode(ProjectTreeNodeKind.ComponentClass, id, $"{node.Name} copy", node.Notes, node.RecordClassId, node.Parent);
-        }
-
         if (node.Kind == ProjectTreeNodeKind.ComponentPreset)
         {
             return DuplicateComponentPreset(node);
@@ -1134,7 +1085,6 @@ internal sealed partial class SpikeDatabase
             ProjectTreeNodeKind.StatusBar => "status_bars",
             ProjectTreeNodeKind.NavigationBar => "navigation_bars",
             ProjectTreeNodeKind.RenderPreset => "render_presets",
-            ProjectTreeNodeKind.ComponentClass => "component_classes",
             _ => throw new InvalidOperationException($"Cannot delete {node.Kind}."),
         };
 

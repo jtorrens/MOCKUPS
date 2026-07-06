@@ -80,6 +80,23 @@ function assertContains(relativePath: string, term: string, message: string) {
   }
 }
 
+function assertPropertyBlockDoesNotContain(
+  relativePath: string,
+  propertyName: string,
+  term: string,
+  message: string,
+) {
+  const source = readText(relativePath);
+  const match = new RegExp(`public bool ${propertyName} =>[\\s\\S]*?;`).exec(source);
+  if (!match) {
+    addViolation(relativePath, `could not find ${propertyName} permission block`);
+    return;
+  }
+  if (match[0].includes(term)) {
+    addViolation(relativePath, message);
+  }
+}
+
 if (existsSync(path.join(previewRoot, "webPreviewBridge.ts"))) {
   addViolation(
     "src/desktop-preview/webPreviewBridge.ts",
@@ -350,6 +367,24 @@ if (payloadSource.includes('"statusBar"') || payloadSource.includes('"navigation
 assertNoTerms("spikes/desktop-editor-shell/MainWindow.axaml.cs", [
   "Current class values",
 ]);
+assertPropertyBlockDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+  "CanAddChild",
+  "ProjectTreeNodeKind.ComponentClassesRoot",
+  "component class root must not expose Add; parent component classes are internal",
+);
+assertPropertyBlockDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+  "CanDuplicate",
+  "ProjectTreeNodeKind.ComponentClass",
+  "parent component classes must not expose Duplicate; use presets instead",
+);
+assertPropertyBlockDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+  "CanDelete",
+  "ProjectTreeNodeKind.ComponentClass",
+  "parent component classes must not expose Delete; they are internal",
+);
 
 assertContains(
   "spikes/desktop-editor-shell/MainWindow.axaml.cs",

@@ -80,7 +80,6 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.StatusBarsRoot
         or ProjectTreeNodeKind.NavigationBarsRoot
         or ProjectTreeNodeKind.RenderPresetsRoot
-        or ProjectTreeNodeKind.ComponentClassesRoot
         or ProjectTreeNodeKind.DevicesRoot
         or ProjectTreeNodeKind.ActorsRoot
         or ProjectTreeNodeKind.ThemesRoot
@@ -96,7 +95,6 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.StatusBar
         or ProjectTreeNodeKind.NavigationBar
         or ProjectTreeNodeKind.RenderPreset
-        or ProjectTreeNodeKind.ComponentClass
         or ProjectTreeNodeKind.ComponentPreset
         or ProjectTreeNodeKind.Device
         or ProjectTreeNodeKind.Actor
@@ -111,7 +109,6 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.StatusBar
         or ProjectTreeNodeKind.NavigationBar
         or ProjectTreeNodeKind.RenderPreset
-        or ProjectTreeNodeKind.ComponentClass
         or ProjectTreeNodeKind.Device
         or ProjectTreeNodeKind.Actor
         or ProjectTreeNodeKind.Theme
