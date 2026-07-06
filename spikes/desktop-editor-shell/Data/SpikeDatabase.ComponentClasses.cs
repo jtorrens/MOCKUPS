@@ -1987,7 +1987,7 @@ internal sealed partial class SpikeDatabase
                 slots[index].EmbeddedComponentType,
                 presetId));
             var overrides = slotNode?["overrides"] as JsonObject;
-            if (overrides is not null)
+            if (index < slots.Count - 1 && overrides is not null)
             {
                 MergeOverride(child, overrides);
             }

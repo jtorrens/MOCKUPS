@@ -169,6 +169,11 @@ child preset and opens the embedded child editor from the same row. Do not show
 `*.presetId` as a separate editor row for slots such as Avatar Label, Button
 Icon Label, Audio Avatar or Audio Badge.
 
+Inside an embedded editor, reset/inherit restores the selected preset for that
+slot, not the child component's `default` preset. Ancestor slot overrides may
+affect nested slot selection, but the overrides of the slot currently being
+edited are never part of its inherited value.
+
 ## Resolver Boundary
 
 Component resolvers consume current-model data and produce a typed design

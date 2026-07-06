@@ -538,6 +538,11 @@ assertContains(
   "ValueKind.ComponentPreset",
   "component preset fields must use their dedicated dictionary control",
 );
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
+  "index < slots.Count - 1 && overrides is not null",
+  "embedded inherited values must apply ancestor overrides only, so reset restores the selected child preset",
+);
 for (const embeddedPresetField of [
   "component.avatar.label.presetId",
   "component.buttonIcon.label.presetId",
