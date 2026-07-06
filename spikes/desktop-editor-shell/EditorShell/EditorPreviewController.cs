@@ -65,6 +65,7 @@ internal sealed class EditorPreviewController
 
         runtimePreviewHost.Content = _runtimePreviewPane;
         designPreviewHost.Content = CreateDesignPreviewLayout();
+        AttachControlEvents();
         _designContextLockButton.Click += (_, _) => ToggleDesignPreviewContextLock();
         UpdateDesignContextChrome(null);
     }
@@ -133,7 +134,22 @@ internal sealed class EditorPreviewController
         Refresh();
     }
 
-    public void OnDeviceChanged()
+    private void AttachControlEvents()
+    {
+        _deviceComboBox.SelectionChanged += (_, _) => OnDeviceChanged();
+        _themeComboBox.SelectionChanged += (_, _) => OnThemeChanged();
+        _modeComboBox.SelectionChanged += (_, _) => OnModeChanged();
+        _scaleComboBox.SelectionChanged += (_, _) => OnScaleChanged();
+        _marksToggle.PropertyChanged += (_, change) =>
+        {
+            if (change.Property == ToggleSwitch.IsCheckedProperty)
+            {
+                OnMarksChanged();
+            }
+        };
+    }
+
+    private void OnDeviceChanged()
     {
         if (_deviceComboBox.SelectedItem is not { } option) return;
 
@@ -144,7 +160,7 @@ internal sealed class EditorPreviewController
         }
     }
 
-    public void OnThemeChanged()
+    private void OnThemeChanged()
     {
         if (_themeComboBox.SelectedItem is not { } option) return;
 
@@ -155,7 +171,7 @@ internal sealed class EditorPreviewController
         }
     }
 
-    public void OnModeChanged()
+    private void OnModeChanged()
     {
         if (_modeComboBox.SelectedItem is not { } option) return;
 
@@ -166,7 +182,7 @@ internal sealed class EditorPreviewController
         }
     }
 
-    public void OnScaleChanged()
+    private void OnScaleChanged()
     {
         if (_scaleComboBox.SelectedItem is not { } option) return;
 
@@ -177,7 +193,7 @@ internal sealed class EditorPreviewController
         }
     }
 
-    public void OnMarksChanged()
+    private void OnMarksChanged()
     {
         _showDesignMarks = _marksToggle.IsChecked == true;
         if (!_isRefreshingOptions)

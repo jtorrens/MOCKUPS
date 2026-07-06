@@ -1,4 +1,3 @@
-using Avalonia.Controls;
 using Mockups.DesktopEditorShell.Data;
 using Mockups.DesktopEditorShell.EditorShell;
 using SukiUI.Controls;
@@ -64,17 +63,6 @@ public partial class MainWindow : SukiWindow
             () => _themeController.IsDark,
             () => _selectedNode,
             this);
-        PreviewDeviceComboBox.SelectionChanged += (_, _) => _previewController.OnDeviceChanged();
-        PreviewThemeComboBox.SelectionChanged += (_, _) => _previewController.OnThemeChanged();
-        PreviewModeComboBox.SelectionChanged += (_, _) => _previewController.OnModeChanged();
-        PreviewScaleComboBox.SelectionChanged += (_, _) => _previewController.OnScaleChanged();
-        PreviewMarksToggle.PropertyChanged += (_, change) =>
-        {
-            if (change.Property == ToggleSwitch.IsCheckedProperty)
-            {
-                _previewController.OnMarksChanged();
-            }
-        };
         _nodeCommands = new EditorNodeCommandController(
             this,
             _database,
