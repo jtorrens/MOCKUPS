@@ -460,6 +460,9 @@ if (payloadSource.includes('"statusBar"') || payloadSource.includes('"navigation
 const componentSeedSource = readText(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
 );
+const spikeDatabaseSource = readText(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
+);
 const seededComponentClasses = new Set(
   [...componentSeedSource.matchAll(/NewComponentSeed\("([^"]+)"/g)]
     .map((match) => match[1])
@@ -478,6 +481,12 @@ for (const componentClass of seededComponentClasses) {
       `seeded component class "${componentClass}" is missing from desktop preview registry`,
     );
   }
+}
+if (!spikeDatabaseSource.includes("ComponentSeedRows.Select((seed) => seed.RecordClassId)")) {
+  addViolation(
+    "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
+    "component editor layouts must be seeded from ComponentSeedRows so new components get layouts automatically",
+  );
 }
 for (const componentClass of Object.keys(desktopPreviewComponents)) {
   if (!seededComponentClasses.has(componentClass)) {

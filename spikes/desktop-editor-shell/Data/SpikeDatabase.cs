@@ -1350,7 +1350,7 @@ internal sealed partial class SpikeDatabase
 
     private static void SeedEditorLayouts(SqliteConnection connection)
     {
-        foreach (var recordClassId in new[]
+        var recordClassIds = new[]
         {
             "project",
             "navigation.production_data",
@@ -1382,16 +1382,9 @@ internal sealed partial class SpikeDatabase
             "status_bar",
             "navigation_bar",
             "render_preset",
-            "component.avatar",
-            "component.status_bar",
-            "component.navigation_bar",
-            "component.text_input_bar",
-            "component.keyboard",
-            "component.button_icon",
-            "component.label",
-            "component.audio",
-            "component.video",
-        })
+        }.Concat(ComponentSeedRows.Select((seed) => seed.RecordClassId));
+
+        foreach (var recordClassId in recordClassIds)
         {
             Execute(
                 connection,
