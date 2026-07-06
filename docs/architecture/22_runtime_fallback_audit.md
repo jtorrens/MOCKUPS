@@ -80,9 +80,9 @@ No active desktop preview path may use:
 - `renderDesignPreviewHtml.tsx` should remain a dispatcher. It may select the
   component resolver by type and wrap the result in the preview surface, but it
   must not grow component-specific field logic.
-- `webPreviewBridge.ts` is now the largest active preview file. Its current role
-  is acceptable, but future generic color/token/icon/pixel routines should move
-  to shared desktop-preview helpers before they spread.
+- The old central `webPreviewBridge.ts` path has been removed. Component and
+  system-bar preview paths should stay behind explicit resolver/renderable
+  modules plus a registry, not move back into a shared bridge.
 - `MainWindow.axaml.cs` still hosts the generic embedded-editor navigation and
   card rebuilding. This is acceptable only while it remains generic shell
   orchestration. Component-specific embedded behavior belongs in

@@ -43,8 +43,6 @@ internal static class WebDesignPreviewRenderer
                     screenY = metrics.ScreenY,
                     screenWidth = metrics.ScreenWidth,
                     screenHeight = metrics.ScreenHeight,
-                    statusBarHeight = metrics.StatusBarHeight,
-                    safeAreaBottom = metrics.SafeAreaBottom,
                     scaleToPixels = metrics.ScaleToPixels,
                 },
             };

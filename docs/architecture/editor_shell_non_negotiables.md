@@ -224,7 +224,7 @@ The bridge owns only generic translation:
 
 The bridge must not contain `componentType` branches, hardcoded field names, or layout/business rules for a concrete component class. If a component cannot be represented with current atoms, add a generic atom or extend the component resolver output first.
 
-`webPreviewBridge` is not a component catalog. It must not add new functions such as `labelComponentToRenderable`, `avatarComponentToRenderable`, `audioComponentToRenderable`, or any equivalent per-component bridge entry point. Existing per-component bridge functions are transitional debt from the migration. They may remain only until their component is moved to resolver-emitted standard atoms, and they must not be expanded as the normal way to add component behavior.
+There must not be a central web preview bridge acting as a component catalog. Do not add functions such as `labelComponentToRenderable`, `avatarComponentToRenderable`, `audioComponentToRenderable`, `statusBarToRenderable`, `navigationBarToRenderable`, or any equivalent per-component bridge entry point to a shared bridge file. Component classes and system bars use their own resolver/renderable modules and are selected only through an explicit registry.
 
 When touching a migrated component, the preferred direction is:
 

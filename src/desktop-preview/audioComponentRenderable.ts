@@ -19,7 +19,7 @@ import {
   translateBox,
   unionBoxes,
   variants,
-} from "./webPreviewBridge.js";
+} from "./componentClassRenderables.js";
 
 export function audioComponentToRenderable(
   payload: DesignPreviewPayload,

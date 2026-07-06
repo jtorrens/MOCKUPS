@@ -5,8 +5,6 @@ export interface DevicePayload {
   screenY: number;
   screenWidth: number;
   screenHeight: number;
-  statusBarHeight?: number;
-  safeAreaBottom?: number;
   scaleToPixels?: number;
 }
 
