@@ -15,7 +15,7 @@ using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed class DesignPreviewInputsPanel : ContentControl
+internal sealed class ComponentInputsPanel : ContentControl
 {
     private readonly SpikeDatabase _database;
     private readonly Action _refreshPreview;
@@ -28,12 +28,12 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
     private string _componentType = "";
     private string _projectId = "";
     private string _inputSignature = "";
-    private DesignPreviewAnimation? _animation;
+    private ComponentInputAnimation? _animation;
     private DateTime _playbackStartedAtUtc;
     private double _playbackStartSeconds;
     private bool _isUpdating;
 
-    public DesignPreviewInputsPanel(SpikeDatabase database, Action refreshPreview)
+    public ComponentInputsPanel(SpikeDatabase database, Action refreshPreview)
     {
         _database = database;
         _refreshPreview = refreshPreview;
@@ -111,7 +111,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
         }
     }
 
-    private void RebuildCard(IReadOnlyList<DesignPreviewInput> inputs, string projectId)
+    private void RebuildCard(IReadOnlyList<ComponentInputDefinition> inputs, string projectId)
     {
         _rowsPanel.Children.Clear();
         _booleanInputs.Clear();
@@ -148,7 +148,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
             ColumnSpacing = 10,
             VerticalAlignment = VerticalAlignment.Center,
         };
-        header.Children.Add(EditorCardHeader.Create("Inputs", "Preview sample values", icon));
+        header.Children.Add(EditorCardHeader.Create("Inputs", "Component input values", icon));
         if (SupportsPlayback())
         {
             _playbackButton = new Button
@@ -193,16 +193,16 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
             var value = Value(input);
             switch (input.Kind)
             {
-                case DesignPreviewInputKind.Number:
+                case ComponentInputKind.Number:
                     if (double.TryParse(value.Replace(",", "."), NumberStyles.Float, CultureInfo.InvariantCulture, out var number))
                     {
                         preview[input.JsonKey] = number;
                     }
                     break;
-                case DesignPreviewInputKind.Boolean:
+                case ComponentInputKind.Boolean:
                     preview[input.JsonKey] = StringToBool(value);
                     break;
-                case DesignPreviewInputKind.Actor:
+                case ComponentInputKind.Actor:
                     preview[input.JsonKey] = value;
                     if (!string.IsNullOrWhiteSpace(value))
                     {
@@ -222,7 +222,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
         return payload with { DesignPreviewJson = preview.ToJsonString() };
     }
 
-    private Control CreateInputRow(DesignPreviewInput input, string projectId)
+    private Control CreateInputRow(ComponentInputDefinition input, string projectId)
     {
         var row = new Grid
         {
@@ -241,10 +241,10 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
 
         var control = input.Kind switch
         {
-            DesignPreviewInputKind.Option => CreateOptionInput(input),
-            DesignPreviewInputKind.Actor => CreateActorInput(input, projectId),
-            DesignPreviewInputKind.Number => CreateNumberInput(input),
-            DesignPreviewInputKind.Boolean => CreateBooleanInput(input),
+            ComponentInputKind.Option => CreateOptionInput(input),
+            ComponentInputKind.Actor => CreateActorInput(input, projectId),
+            ComponentInputKind.Number => CreateNumberInput(input),
+            ComponentInputKind.Boolean => CreateBooleanInput(input),
             _ => CreateTextInput(input),
         };
         Grid.SetColumn(control, 1);
@@ -252,7 +252,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
         return row;
     }
 
-    private Control CreateOptionInput(DesignPreviewInput input)
+    private Control CreateOptionInput(ComponentInputDefinition input)
     {
         var options = input.Options ?? [];
         var combo = new EditorInstantComboBox
@@ -270,7 +270,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
         return combo;
     }
 
-    private Control CreateActorInput(DesignPreviewInput input, string projectId)
+    private Control CreateActorInput(ComponentInputDefinition input, string projectId)
     {
         var combo = new EditorInstantComboBox
         {
@@ -295,7 +295,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
         return combo;
     }
 
-    private Control CreateNumberInput(DesignPreviewInput input)
+    private Control CreateNumberInput(ComponentInputDefinition input)
     {
         var numeric = EditorNumericUpDownBehavior.Configure(new NumericUpDown
         {
@@ -317,7 +317,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
         return numeric;
     }
 
-    private Control CreateBooleanInput(DesignPreviewInput input)
+    private Control CreateBooleanInput(ComponentInputDefinition input)
     {
         var toggle = new ToggleSwitch
         {
@@ -334,7 +334,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
         return toggle;
     }
 
-    private Control CreateTextInput(DesignPreviewInput input)
+    private Control CreateTextInput(ComponentInputDefinition input)
     {
         var textBox = DictionaryTextBoxFactory.Create(new FieldDefinition(
             input.Id,
@@ -350,7 +350,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
         return textBox;
     }
 
-    private void EnsureValue(DesignPreviewInput input, JsonObject preview)
+    private void EnsureValue(ComponentInputDefinition input, JsonObject preview)
     {
         var key = StorageKey(input);
         if (_values.ContainsKey(key)) return;
@@ -366,9 +366,9 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
         };
     }
 
-    private void EnsureActorValues(IReadOnlyList<DesignPreviewInput> inputs, string projectId)
+    private void EnsureActorValues(IReadOnlyList<ComponentInputDefinition> inputs, string projectId)
     {
-        if (!inputs.Any((input) => input.Kind == DesignPreviewInputKind.Actor))
+        if (!inputs.Any((input) => input.Kind == ComponentInputKind.Actor))
         {
             return;
         }
@@ -380,7 +380,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
             return;
         }
 
-        foreach (var input in inputs.Where((candidate) => candidate.Kind == DesignPreviewInputKind.Actor))
+        foreach (var input in inputs.Where((candidate) => candidate.Kind == ComponentInputKind.Actor))
         {
             var key = StorageKey(input);
             if (string.IsNullOrWhiteSpace(_values.GetValueOrDefault(key)))
@@ -390,12 +390,12 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
         }
     }
 
-    private string Value(DesignPreviewInput input)
+    private string Value(ComponentInputDefinition input)
     {
         return _values.TryGetValue(StorageKey(input), out var value) ? value : input.DefaultValue;
     }
 
-    private void SetValue(DesignPreviewInput input, string value)
+    private void SetValue(ComponentInputDefinition input, string value)
     {
         if (SupportsPlayback() && input.Id == _animation!.PlayInputId)
         {
@@ -414,7 +414,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
         _refreshPreview();
     }
 
-    private string StorageKey(DesignPreviewInput input)
+    private string StorageKey(ComponentInputDefinition input)
     {
         return $"{_scopeKey}:{input.Id}";
     }
@@ -594,7 +594,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
         }
     }
 
-    private static IEnumerable<DesignPreviewInput> ReadInputs(JsonObject preview)
+    private static IEnumerable<ComponentInputDefinition> ReadInputs(JsonObject preview)
     {
         if (preview["inputs"] is not JsonArray inputs)
         {
@@ -615,7 +615,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
                 continue;
             }
 
-            yield return new DesignPreviewInput(
+            yield return new ComponentInputDefinition(
                 id,
                 label,
                 jsonKey,
@@ -628,7 +628,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
         }
     }
 
-    private static DesignPreviewAnimation? ReadAnimation(JsonObject preview)
+    private static ComponentInputAnimation? ReadAnimation(JsonObject preview)
     {
         if (preview["animation"] is not JsonObject animation)
         {
@@ -645,7 +645,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
             return null;
         }
 
-        return new DesignPreviewAnimation(playInputId, durationInputId, timeJsonKey);
+        return new ComponentInputAnimation(playInputId, durationInputId, timeJsonKey);
     }
 
     private static IReadOnlyList<FieldOption> ReadOptions(JsonObject input)
@@ -662,15 +662,15 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
             .ToList();
     }
 
-    private static DesignPreviewInputKind ParseKind(string kind)
+    private static ComponentInputKind ParseKind(string kind)
     {
         return kind.Trim().ToLowerInvariant() switch
         {
-            "number" => DesignPreviewInputKind.Number,
-            "boolean" => DesignPreviewInputKind.Boolean,
-            "option" => DesignPreviewInputKind.Option,
-            "actor" => DesignPreviewInputKind.Actor,
-            _ => DesignPreviewInputKind.Text,
+            "number" => ComponentInputKind.Number,
+            "boolean" => ComponentInputKind.Boolean,
+            "option" => ComponentInputKind.Option,
+            "actor" => ComponentInputKind.Actor,
+            _ => ComponentInputKind.Text,
         };
     }
 
@@ -694,7 +694,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
     }
 }
 
-internal enum DesignPreviewInputKind
+internal enum ComponentInputKind
 {
     Text,
     Number,
@@ -703,18 +703,18 @@ internal enum DesignPreviewInputKind
     Actor,
 }
 
-internal sealed record DesignPreviewInput(
+internal sealed record ComponentInputDefinition(
     string Id,
     string Label,
     string JsonKey,
-    DesignPreviewInputKind Kind,
+    ComponentInputKind Kind,
     string DefaultValue,
     IReadOnlyList<FieldOption>? Options = null,
     decimal Minimum = 0,
     decimal Maximum = 9999,
     decimal Increment = 1);
 
-internal sealed record DesignPreviewAnimation(
+internal sealed record ComponentInputAnimation(
     string PlayInputId,
     string DurationInputId,
     string TimeJsonKey);

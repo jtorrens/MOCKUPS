@@ -19,7 +19,7 @@ internal sealed class EditorPreviewController
     private readonly Func<ProjectTreeNode?> _selectedNode;
     private readonly RuntimeWebPreviewPane _runtimePreviewPane = new();
     private readonly DesignWebPreviewPane _designPreviewPane = new();
-    private readonly DesignPreviewInputsPanel _designInputsPanel;
+    private readonly ComponentInputsPanel _designInputsPanel;
     private string? _projectId;
     private string? _selectedThemeId;
     private PreviewNodeKey? _lastDesignPreviewNode;
@@ -50,7 +50,7 @@ internal sealed class EditorPreviewController
         _messages = messages;
         _isDark = isDark;
         _selectedNode = selectedNode;
-        _designInputsPanel = new DesignPreviewInputsPanel(database, Refresh);
+        _designInputsPanel = new ComponentInputsPanel(database, Refresh);
 
         runtimePreviewHost.Content = _runtimePreviewPane;
         designPreviewHost.Content = CreateDesignPreviewLayout();

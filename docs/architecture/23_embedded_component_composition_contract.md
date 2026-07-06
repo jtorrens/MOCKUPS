@@ -117,6 +117,38 @@ Disallowed resolver responsibilities:
 Missing required current-model values must fail visibly and reach the editor
 message area.
 
+## Component Input Boundary
+
+Component inputs are runtime inputs, not preview-only controls.
+
+They are the values supplied by the surrounding composition process when a
+component is resolved for a frame. In isolated design preview those values come
+from sample controls. In a real screen they come from the screen/module payload,
+shot state, actor selection, playback state, timing, or other declared runtime
+data.
+
+Examples:
+
+- a label exposes text/subtext inputs when those strings are supplied by a
+  parent module;
+- an avatar exposes actor input when actor data is supplied externally;
+- audio exposes playback state, duration and actor input;
+- future bubbles will expose message, sender, status, media and timing inputs.
+
+Rules:
+
+- input declarations belong to the component contract/data, not to the preview
+  panel;
+- preview may edit sample values, but must not define component-specific
+  catalogs;
+- animation controls are generic clock/input state and ask the resolver for a
+  frame with filled input values;
+- screen composition must use the same input declarations and replace preview
+  sample values with real module/frame values;
+- resolvers decide how input values affect component atoms;
+- bridge and web renderer must not infer missing inputs or know which concrete
+  component declared them.
+
 ## Bridge Boundary
 
 The web bridge converts validated component contracts into final web renderable

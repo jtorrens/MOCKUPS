@@ -234,7 +234,7 @@ Resolver owns component semantics:
 - which children exist;
 - how embedded slots are assembled;
 - what component fields mean;
-- how preview input state affects the component contract;
+- how declared component input state affects the component contract;
 - frame-specific state for animation.
 
 Examples:

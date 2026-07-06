@@ -90,6 +90,8 @@ The web renderer is even stricter: it paints the final resolved nodes. It must n
 
 Animation is also frame data. Resolvers own the component state for the requested frame, and the bridge may translate that resolved frame into final pixels. The web preview/render layer must not run its own timers, CSS animations, countdowns, or component-specific interpolation. For web preview, an animated component is just a succession of resolved frames.
 
+Component inputs are runtime component inputs, not preview-only controls. The preview panel may provide sample values for isolated inspection, but screens/modules must later supply real values through the same declared input contract. Do not add component-specific input catalogs or animation behavior to the preview shell.
+
 If a change appears to require `if componentType == ...` behavior in the bridge or renderer, stop and move that responsibility to the component resolver or to a parameterized common helper.
 
 ## When in doubt

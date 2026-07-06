@@ -22,6 +22,7 @@ Two rules override local convenience:
 3. Generic routines live in common/shared code. If an algorithm can be reused by more than one editor, resolver, bridge, renderer, importer, or repository, extract it before using it.
 4. Before creating any helper that could be generic, check `spikes/desktop-editor-shell/Common` and the base-routines audit for an existing equivalent. Reuse or extend common first.
 5. Component-specific preview decisions must not cross preview boundaries. Component resolvers own component composition; the bridge translates standard atoms; the web renderer paints final resolved nodes.
+6. Component inputs are runtime component inputs, not preview-only controls. Preview may provide sample values for them, but the same input contract must feed screen/frame composition.
 
 If a requested change appears to require breaking any of these rules, stop and clarify the architecture before implementing.
 
@@ -238,6 +239,33 @@ component contract/resolver
 ```
 
 Common preview helpers must not import concrete component resolvers/renderables or contain concrete component names. Embedded component imports are allowed only when the parent component explicitly owns that child slot, for example avatar -> label or audio -> avatar/button icon.
+
+## 5C. Component inputs are not preview-only
+
+Inputs exposed by a component are part of the component runtime contract.
+
+They represent values supplied from outside the component while composing a
+frame, for example actor, playback state, duration, text content, record state
+or future module-provided data. The design preview panel is only one temporary
+producer of those values so the component can be inspected in isolation.
+
+The route must stay generic:
+
+```text
+component input declarations
+  -> preview/sample input values or screen/module input values
+  -> component resolver
+  -> frame-specific component contract
+  -> bridge/renderable pipeline
+```
+
+The preview shell may render controls from the declarations and may maintain
+generic animation clock state declared by those inputs. It must not contain
+component-specific input catalogs, playback rules, actor rules, waveform rules,
+label rules, badge rules, or any equivalent branch for a concrete component.
+
+When a screen is composed, it must use the same component input declarations
+and provide real screen/module values instead of preview sample values.
 
 Run `npm run check:architecture` before closing any preview/component migration phase. The check must fail if component-specific names or imports leak into central preview files, common helpers, or undeclared component dependencies.
 

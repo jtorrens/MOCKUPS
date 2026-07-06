@@ -1073,7 +1073,7 @@ internal sealed partial class SpikeDatabase
             },
             ["sampleSubtext"] = componentType is "label" or "avatar" or "buttonIcon" ? "Subtitle" : "",
             ["sampleSize"] = componentType == "buttonIcon" ? 48 : 256,
-            ["inputs"] = PreviewInputsForComponent(componentType),
+            ["inputs"] = ComponentInputsForComponent(componentType),
         };
         if (componentType == "audio")
         {
@@ -1088,35 +1088,35 @@ internal sealed partial class SpikeDatabase
         return preview.ToJsonString();
     }
 
-    private static JsonArray PreviewInputsForComponent(string componentType)
+    private static JsonArray ComponentInputsForComponent(string componentType)
     {
         return componentType switch
         {
             "label" =>
             [
-                PreviewInput("sampleText", "Text", "sampleText", "text", "Sample"),
-                PreviewInput("sampleSubtext", "Subtext", "sampleSubtext", "text", "Subtitle"),
+                ComponentInput("sampleText", "Text", "sampleText", "text", "Sample"),
+                ComponentInput("sampleSubtext", "Subtext", "sampleSubtext", "text", "Subtitle"),
             ],
             "avatar" =>
             [
-                PreviewInput("actorId", "Actor", "actorId", "actor", ""),
+                ComponentInput("actorId", "Actor", "actorId", "actor", ""),
             ],
             "buttonIcon" =>
             [
-                PreviewInput("sampleText", "Text", "sampleText", "text", "Action"),
-                PreviewInput("sampleSubtext", "Subtext", "sampleSubtext", "text", "Subtitle"),
+                ComponentInput("sampleText", "Text", "sampleText", "text", "Action"),
+                ComponentInput("sampleSubtext", "Subtext", "sampleSubtext", "text", "Subtitle"),
             ],
             "audio" =>
             [
-                PreviewInput("isPlaying", "Playing", "isPlaying", "boolean", "false"),
-                PreviewInput("durationSeconds", "Duration", "durationSeconds", "number", "65", minimum: 1, maximum: 86400, increment: 1),
-                PreviewInput("actorId", "Actor", "actorId", "actor", ""),
+                ComponentInput("isPlaying", "Playing", "isPlaying", "boolean", "false"),
+                ComponentInput("durationSeconds", "Duration", "durationSeconds", "number", "65", minimum: 1, maximum: 86400, increment: 1),
+                ComponentInput("actorId", "Actor", "actorId", "actor", ""),
             ],
             _ => [],
         };
     }
 
-    private static JsonObject PreviewInput(
+    private static JsonObject ComponentInput(
         string id,
         string label,
         string jsonKey,
