@@ -216,6 +216,12 @@ internal sealed partial class SpikeDatabase
         string id,
         string usage)
     {
+        if (TryParseComponentPresetNodeId(id, out _, out _))
+        {
+            AddUsage(index, ProjectTreeNodeKind.ComponentPreset, id, usage);
+            return;
+        }
+
         if (componentClasses.Any((componentClass) => componentClass.Id.Equals(id, StringComparison.Ordinal)))
         {
             AddUsage(index, ProjectTreeNodeKind.ComponentClass, id, usage);

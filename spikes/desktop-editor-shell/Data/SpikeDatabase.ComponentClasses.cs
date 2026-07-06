@@ -46,6 +46,36 @@ internal sealed partial class SpikeDatabase
         return true;
     }
 
+    private ProjectTreeNode RenameComponentClass(ProjectTreeNode node, string name)
+    {
+        var nextName = name.Trim();
+        if (string.IsNullOrWhiteSpace(nextName))
+        {
+            throw new InvalidOperationException("Component class name cannot be empty.");
+        }
+
+        lock (WriteGate)
+        {
+            using var connection = OpenConnection();
+            Execute(
+                connection,
+                "UPDATE component_classes SET name = $name WHERE id = $id",
+                ("$id", node.Id),
+                ("$name", nextName));
+        }
+
+        return new ProjectTreeNode(
+            ProjectTreeNodeKind.ComponentClass,
+            node.Id,
+            nextName,
+            node.Notes,
+            node.RecordClassId,
+            node.Parent,
+            node.ColorHex,
+            node.IsUsed,
+            node.IsProtected);
+    }
+
     private ProjectTreeNode DuplicateComponentPreset(ProjectTreeNode node)
     {
         if (!TryParseComponentPresetNodeId(node.Id, out var componentClassId, out var presetId))
@@ -250,6 +280,21 @@ internal sealed partial class SpikeDatabase
                      presetId))
         {
             usages.Add(usage);
+        }
+
+        foreach (var theme in QueryThemeRows(connection).Where((candidate) => candidate.ProjectId.Equals(owner.ProjectId, StringComparison.Ordinal)))
+        {
+            if (owner.ComponentType.Equals("status_bar", StringComparison.Ordinal)
+                && theme.StatusBarId.Equals(node.Id, StringComparison.Ordinal))
+            {
+                usages.Add($"Theme: {theme.Name}");
+            }
+
+            if (owner.ComponentType.Equals("navigation_bar", StringComparison.Ordinal)
+                && theme.NavigationBarId.Equals(node.Id, StringComparison.Ordinal))
+            {
+                usages.Add($"Theme: {theme.Name}");
+            }
         }
 
         return usages.ToList();
@@ -561,6 +606,28 @@ internal sealed partial class SpikeDatabase
         return options;
     }
 
+    public IReadOnlyList<FieldOption> GetComponentPresetReferenceOptionsByType(
+        string projectId,
+        string componentType,
+        bool includeNone = false)
+    {
+        using var connection = OpenConnection();
+        var rows = ComponentClassRowsByType(connection, projectId, componentType);
+        var showClassName = rows.Count > 1;
+        var options = rows
+            .SelectMany((row) => ComponentClassPresetsOrDefault(row)
+                .Select((preset) => new FieldOption(
+                    ComponentPresetNodeId(row.Id, preset.Id),
+                    showClassName ? $"{row.Name} · {preset.Name}" : preset.Name)))
+            .ToList();
+        if (includeNone)
+        {
+            options.Insert(0, new FieldOption("", "None"));
+        }
+
+        return options;
+    }
+
     private static string FirstComponentClassIdByType(SqliteConnection connection, string projectId, string componentType)
     {
         using var command = connection.CreateCommand();
@@ -575,6 +642,76 @@ internal sealed partial class SpikeDatabase
         command.Parameters.AddWithValue("$projectId", projectId);
         command.Parameters.AddWithValue("$componentType", componentType);
         return command.ExecuteScalar() as string ?? "";
+    }
+
+    private static string NormalizeComponentPresetReference(
+        SqliteConnection connection,
+        string projectId,
+        string componentType,
+        string currentValue)
+    {
+        var rows = ComponentClassRowsByType(connection, projectId, componentType);
+        if (rows.Count == 0)
+        {
+            return "";
+        }
+
+        if (!string.IsNullOrWhiteSpace(currentValue)
+            && TryParseComponentPresetNodeId(currentValue, out var componentClassId, out var presetId))
+        {
+            var row = rows.FirstOrDefault((candidate) => candidate.Id.Equals(componentClassId, StringComparison.Ordinal));
+            if (row is not null && ComponentClassPresetsOrDefault(row).Any((preset) => preset.Id.Equals(presetId, StringComparison.Ordinal)))
+            {
+                return currentValue;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(currentValue))
+        {
+            var rowByClassId = rows.FirstOrDefault((candidate) => candidate.Id.Equals(currentValue, StringComparison.Ordinal));
+            if (rowByClassId is not null)
+            {
+                return ComponentPresetNodeId(rowByClassId.Id, PreferredPresetId(rowByClassId));
+            }
+
+            var rowByPresetId = rows.FirstOrDefault((candidate) =>
+                ComponentClassPresetsOrDefault(candidate).Any((preset) => preset.Id.Equals(currentValue, StringComparison.Ordinal)));
+            if (rowByPresetId is not null)
+            {
+                return ComponentPresetNodeId(rowByPresetId.Id, currentValue);
+            }
+        }
+
+        var first = rows[0];
+        return ComponentPresetNodeId(first.Id, PreferredPresetId(first));
+    }
+
+    private static List<ComponentClassRow> ComponentClassRowsByType(
+        SqliteConnection connection,
+        string projectId,
+        string componentType)
+    {
+        return QueryComponentClassRows(connection)
+            .Where((row) => row.ProjectId.Equals(projectId, StringComparison.Ordinal))
+            .Where((row) => row.ComponentType.Equals(componentType, StringComparison.Ordinal))
+            .OrderBy((row) => row.Id.Equals($"component_{projectId}_{componentType}", StringComparison.Ordinal) ? 0 : 1)
+            .ThenBy((row) => row.Name, StringComparer.Ordinal)
+            .ToList();
+    }
+
+    private static IReadOnlyList<ComponentClassPreset> ComponentClassPresetsOrDefault(ComponentClassRow row)
+    {
+        var presets = ComponentClassPresets(row.MetadataJson);
+        return presets.Count > 0
+            ? presets
+            : [new ComponentClassPreset(DefaultComponentPresetId, "Default", true, row.ConfigJson)];
+    }
+
+    private static string PreferredPresetId(ComponentClassRow row)
+    {
+        var presets = ComponentClassPresetsOrDefault(row);
+        return presets.FirstOrDefault((preset) => preset.Id.Equals(DefaultComponentPresetId, StringComparison.Ordinal))?.Id
+            ?? presets[0].Id;
     }
 
     private static string GetComponentClassPresetConfigJson(

@@ -82,6 +82,8 @@ Rules:
 - every component class must have a protected `Default` preset;
 - `Default` cannot be renamed or deleted;
 - duplicated presets can be renamed/deleted unless usage checks block deletion;
+- parent component classes may be renamed from the tree, but they must not be
+  duplicated or deleted;
 - selecting a component class in the tree must resolve to a concrete preset;
 - if no preset has been selected for that component class in the current
   session, the editor selects `Default`;
@@ -107,6 +109,8 @@ is explicit and survives coincidental equality with the preset value.
 Usage checks must inspect both component class config and every preset config.
 Deleting a preset is blocked when any component class slot or any other preset
 slot references it.
+System component selectors, such as Theme Status Bar and Navigation Bar, must
+store preset references, not parent component class ids.
 
 ## Editor Boundary
 

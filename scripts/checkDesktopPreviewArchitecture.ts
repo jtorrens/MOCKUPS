@@ -408,7 +408,12 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
-  "CanRenameDirectly => Kind is ProjectTreeNodeKind.ComponentPreset && !IsProtected",
+  "Kind == ProjectTreeNodeKind.ComponentClass",
+  "parent component classes must expose direct rename",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+  "Kind == ProjectTreeNodeKind.ComponentPreset && !IsProtected",
   "protected component presets must not expose direct rename",
 );
 assertContains(
@@ -445,6 +450,21 @@ assertContains(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ReferenceUsage.cs",
   "Component Preset: {row.Name} · {preset.Name}",
   "component preset usage must scan references stored inside other presets",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ReferenceUsage.cs",
+  "ProjectTreeNodeKind.ComponentPreset, id",
+  "theme system bar references must mark component presets, not parent classes",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
+  "GetComponentPresetReferenceOptionsByType(projectId, \"status_bar\"",
+  "theme status bar selector must list component presets",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
+  "GetComponentPresetReferenceOptionsByType(projectId, \"navigation_bar\"",
+  "theme navigation bar selector must list component presets",
 );
 assertContains(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",

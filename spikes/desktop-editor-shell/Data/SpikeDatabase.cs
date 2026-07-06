@@ -769,8 +769,8 @@ internal sealed partial class SpikeDatabase
             _ => $"Theme {index}",
         };
         var iconThemeId = FirstId(connection, "icon_themes", project.Id);
-        var statusBarId = FirstComponentClassIdByType(connection, project.Id, "status_bar");
-        var navigationBarId = FirstComponentClassIdByType(connection, project.Id, "navigation_bar");
+        var statusBarId = NormalizeComponentPresetReference(connection, project.Id, "status_bar", "");
+        var navigationBarId = NormalizeComponentPresetReference(connection, project.Id, "navigation_bar", "");
         Execute(
             connection,
             """
@@ -1244,6 +1244,7 @@ internal sealed partial class SpikeDatabase
     {
         return node.Kind switch
         {
+            ProjectTreeNodeKind.ComponentClass => RenameComponentClass(node, name),
             ProjectTreeNodeKind.ComponentPreset => RenameComponentPreset(node, name),
             _ => throw new InvalidOperationException($"Cannot rename {node.Kind} directly."),
         };
@@ -2555,12 +2556,12 @@ internal sealed partial class SpikeDatabase
 
     public IReadOnlyList<FieldOption> GetStatusBarOptions(string projectId)
     {
-        return GetComponentClassOptionsByType(projectId, "status_bar", includeNone: true);
+        return GetComponentPresetReferenceOptionsByType(projectId, "status_bar", includeNone: true);
     }
 
     public IReadOnlyList<FieldOption> GetNavigationBarOptions(string projectId)
     {
-        return GetComponentClassOptionsByType(projectId, "navigation_bar", includeNone: true);
+        return GetComponentPresetReferenceOptionsByType(projectId, "navigation_bar", includeNone: true);
     }
 
     public ShotSettings GetShotSettings(string shotId)

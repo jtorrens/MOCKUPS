@@ -99,7 +99,8 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.Device
         or ProjectTreeNodeKind.Actor
         or ProjectTreeNodeKind.Theme;
-    public bool CanRenameDirectly => Kind is ProjectTreeNodeKind.ComponentPreset && !IsProtected;
+    public bool CanRenameDirectly => Kind == ProjectTreeNodeKind.ComponentClass
+        || (Kind == ProjectTreeNodeKind.ComponentPreset && !IsProtected);
     public bool CanDelete => Kind is ProjectTreeNodeKind.App
         or ProjectTreeNodeKind.Module
         or ProjectTreeNodeKind.Episode
