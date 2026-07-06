@@ -261,8 +261,8 @@ function nodeStyle(
   const alignItems = stringValue(style.alignItems);
   const justifyContent = stringValue(style.justifyContent);
   const flexDirection = stringValue(style.flexDirection);
-  const width = stringValue(style.width) ?? numberValue(style.width);
-  const height = stringValue(style.height) ?? numberValue(style.height);
+  const width = stringValue(style.width) ?? numberValue(style.width) ?? node.box?.width;
+  const height = stringValue(style.height) ?? numberValue(style.height) ?? node.box?.height;
   const marginTop = numberValue(style.marginTop);
   const paddingX = numberValue(style.paddingX);
   const paddingY = numberValue(style.paddingY);
