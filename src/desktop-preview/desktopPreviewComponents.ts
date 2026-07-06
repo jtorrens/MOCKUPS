@@ -1,7 +1,9 @@
 export type DesktopPreviewComponentCategory = "system" | "atom" | "component";
+export type DesktopPreviewComponentMigrationStatus = "structural" | "functional";
 
 export interface DesktopPreviewComponentManifestEntry {
   category: DesktopPreviewComponentCategory;
+  migrationStatus: DesktopPreviewComponentMigrationStatus;
   contract: string;
   resolver: string;
   renderable: string;
@@ -11,6 +13,7 @@ export interface DesktopPreviewComponentManifestEntry {
 export const desktopPreviewComponents = {
   label: {
     category: "atom",
+    migrationStatus: "functional",
     contract: "./labelComponentContract",
     resolver: "./labelComponentResolver",
     renderable: "./labelComponentRenderable",
@@ -18,6 +21,7 @@ export const desktopPreviewComponents = {
   },
   avatar: {
     category: "component",
+    migrationStatus: "functional",
     contract: "./avatarComponentContract",
     resolver: "./avatarComponentResolver",
     renderable: "./avatarComponentRenderable",
@@ -25,6 +29,7 @@ export const desktopPreviewComponents = {
   },
   buttonIcon: {
     category: "atom",
+    migrationStatus: "functional",
     contract: "./buttonIconComponentContract",
     resolver: "./buttonIconComponentResolver",
     renderable: "./buttonIconComponentRenderable",
@@ -32,6 +37,7 @@ export const desktopPreviewComponents = {
   },
   audio: {
     category: "component",
+    migrationStatus: "functional",
     contract: "./audioComponentContract",
     resolver: "./audioComponentResolver",
     renderable: "./audioComponentRenderable",
@@ -39,6 +45,7 @@ export const desktopPreviewComponents = {
   },
   textInputBar: {
     category: "system",
+    migrationStatus: "structural",
     contract: "./textInputBarComponentContract",
     resolver: "./textInputBarComponentResolver",
     renderable: "./textInputBarComponentRenderable",
@@ -46,6 +53,7 @@ export const desktopPreviewComponents = {
   },
   keyboard: {
     category: "system",
+    migrationStatus: "structural",
     contract: "./keyboardComponentContract",
     resolver: "./keyboardComponentResolver",
     renderable: "./keyboardComponentRenderable",
@@ -53,6 +61,7 @@ export const desktopPreviewComponents = {
   },
   video: {
     category: "component",
+    migrationStatus: "structural",
     contract: "./videoComponentContract",
     resolver: "./videoComponentResolver",
     renderable: "./videoComponentRenderable",
@@ -60,6 +69,7 @@ export const desktopPreviewComponents = {
   },
   status_bar: {
     category: "system",
+    migrationStatus: "functional",
     contract: "./statusBarComponentContract",
     resolver: "./statusBarComponentResolver",
     renderable: "./statusBarComponentRenderable",
@@ -67,6 +77,7 @@ export const desktopPreviewComponents = {
   },
   navigation_bar: {
     category: "system",
+    migrationStatus: "functional",
     contract: "./navigationBarComponentContract",
     resolver: "./navigationBarComponentResolver",
     renderable: "./navigationBarComponentRenderable",

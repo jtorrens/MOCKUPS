@@ -41,6 +41,9 @@ is to remove legacy routing risk first.
 
 ## Current Desktop Component Route
 
+The executable source of truth for the status column is the component manifest
+field `migrationStatus`.
+
 | Component type | Category | Status | Notes |
 | --- | --- | --- | --- |
 | `label` | atom | Functional reference | Text/subtext, sizing, typography tokens, alpha, text align and surface style are on the new route. |
