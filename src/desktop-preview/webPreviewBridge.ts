@@ -523,24 +523,17 @@ export function audioComponentToRenderable(
   const textHeight = audio.textSize * scale * 1.25;
   const waveformColumnWidth = Math.max(waveformWidth, durationWidth);
   const verticalGap = Math.max(2 * scale, paddingY * 0.5);
-  const audioBoxLocal = {
-    x: 0,
-    y: 0,
-    width: paddingX + playSize + paddingX + waveformColumnWidth + paddingX,
-    height: Math.max(
-      paddingY + playSize + paddingY,
-      paddingY + waveformHeight + verticalGap + textHeight + paddingY,
-    ),
-  };
+  const waveformColumnHeight = waveformHeight + verticalGap + textHeight;
+  const contentHeight = Math.max(playSize, waveformColumnHeight);
   const playBoxLocal = {
-    x: paddingX,
-    y: (audioBoxLocal.height - playSize) / 2,
+    x: 0,
+    y: (contentHeight - playSize) / 2,
     width: playSize,
     height: playSize,
   };
   const waveformBoxLocal = {
     x: playBoxLocal.x + playBoxLocal.width + paddingX,
-    y: paddingY,
+    y: (contentHeight - waveformColumnHeight) / 2,
     width: waveformWidth,
     height: waveformHeight,
   };
@@ -571,12 +564,22 @@ export function audioComponentToRenderable(
         scalePlacement(audio.badgeSlot.placement, scale),
       )
     : undefined;
-  const localBounds = unionBoxes([
-    audioBoxLocal,
+  const avatarNodeLocal = audio.avatarSlot.avatar && avatarBoxLocal
+    ? avatarComponentToRenderableAt(payload, audio.avatarSlot.avatar, avatarBoxLocal)
+    : undefined;
+  const badgeNodeLocal = audio.badgeSlot.badge && badgeBoxLocal
+    ? buttonIconComponentToRenderableAt(payload, audio.badgeSlot.badge, badgeBoxLocal)
+    : undefined;
+  const childBoxes: RenderableBox[] = [
+    playBoxLocal,
+    waveformBoxLocal,
     textBoxLocal,
-    ...(avatarBoxLocal ? [avatarBoxLocal] : []),
-    ...(badgeBoxLocal ? [badgeBoxLocal] : []),
-  ]);
+  ];
+  if (avatarNodeLocal?.box) childBoxes.push(avatarNodeLocal.box);
+  if (badgeNodeLocal?.box) childBoxes.push(badgeNodeLocal.box);
+  const childrenBounds = unionBoxes(childBoxes);
+  const audioBoxLocal = expandBoxXY(childrenBounds, paddingX, paddingY);
+  const localBounds = audioBoxLocal;
   const groupBox = boundedCenterBox(payload, localBounds.width, localBounds.height);
   const origin = {
     x: groupBox.x - localBounds.x,
@@ -606,7 +609,7 @@ export function audioComponentToRenderable(
     const height = minBarHeight + normalized * (maxBarHeight - minBarHeight);
     const box = {
       x: waveformBox.x + index * (barWidth + waveformGap),
-      y: audioBox.y + audioBox.height / 2 - height / 2,
+      y: waveformBox.y + waveformBox.height / 2 - height / 2,
       width: barWidth,
       height,
     };
@@ -1210,6 +1213,19 @@ function expandBox(box: RenderableBox, padding: number): RenderableBox {
     y: box.y - padding,
     width: box.width + padding * 2,
     height: box.height + padding * 2,
+  };
+}
+
+function expandBoxXY(
+  box: RenderableBox,
+  paddingX: number,
+  paddingY: number,
+): RenderableBox {
+  return {
+    x: box.x - paddingX,
+    y: box.y - paddingY,
+    width: box.width + paddingX * 2,
+    height: box.height + paddingY * 2,
   };
 }
 
