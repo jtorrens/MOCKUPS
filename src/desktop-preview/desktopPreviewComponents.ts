@@ -39,16 +39,16 @@ export const desktopPreviewComponents = {
   },
   status_bar: {
     category: "system",
-    contract: "./systemBarComponentContract",
-    resolver: "./systemBarPreviewResolver",
-    renderable: "./systemBarRenderables",
+    contract: "./statusBarComponentContract",
+    resolver: "./statusBarComponentResolver",
+    renderable: "./statusBarComponentRenderable",
     embeds: [],
   },
   navigation_bar: {
     category: "system",
-    contract: "./systemBarComponentContract",
-    resolver: "./systemBarPreviewResolver",
-    renderable: "./systemBarRenderables",
+    contract: "./navigationBarComponentContract",
+    resolver: "./navigationBarComponentResolver",
+    renderable: "./navigationBarComponentRenderable",
     embeds: [],
   },
 } as const satisfies Record<string, DesktopPreviewComponentManifestEntry>;

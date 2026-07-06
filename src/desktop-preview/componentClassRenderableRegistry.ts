@@ -12,14 +12,10 @@ import {
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { labelComponentToRenderable } from "./labelComponentRenderable.js";
 import { resolveLabelComponent } from "./labelComponentResolver.js";
-import {
-  navigationBarToRenderable,
-  statusBarToRenderable,
-} from "./systemBarRenderables.js";
-import {
-  resolveNavigationBar,
-  resolveStatusBar,
-} from "./systemBarPreviewResolver.js";
+import { navigationBarComponentToRenderable } from "./navigationBarComponentRenderable.js";
+import { resolveNavigationBarComponent } from "./navigationBarComponentResolver.js";
+import { statusBarComponentToRenderable } from "./statusBarComponentRenderable.js";
+import { resolveStatusBarComponent } from "./statusBarComponentResolver.js";
 
 type ComponentRenderableFactory = (payload: DesignPreviewPayload) => RenderableNode;
 
@@ -29,9 +25,10 @@ export const componentRenderableFactories = {
   audio_message: (payload) => audioComponentToRenderable(payload, resolveAudioComponent(payload)),
   button_icon: (payload) =>
     buttonIconComponentToRenderable(payload, resolveButtonIconComponent(payload)),
-  status_bar: (payload) => statusBarToRenderable(payload, resolveStatusBar(payload)),
+  status_bar: (payload) =>
+    statusBarComponentToRenderable(payload, resolveStatusBarComponent(payload)),
   navigation_bar: (payload) =>
-    navigationBarToRenderable(payload, resolveNavigationBar(payload)),
+    navigationBarComponentToRenderable(payload, resolveNavigationBarComponent(payload)),
 } satisfies Record<DesktopPreviewComponentClass, ComponentRenderableFactory>;
 
 export function componentClassToRenderable(payload: DesignPreviewPayload): RenderableNode {

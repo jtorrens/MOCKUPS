@@ -448,6 +448,16 @@ assertDoesNotContain(
   "foreach (var navigationBar in navigationBars.OrderBy",
   "project tree must not add legacy navigation bar nodes",
 );
+assertDoesNotContain(
+  "src/desktop-preview/desktopPreviewComponents.ts",
+  "./systemBar",
+  "system bars must be declared as explicit status/navigation component modules, not shared manifest entrypoints",
+);
+assertDoesNotContain(
+  "src/desktop-preview/componentClassRenderableRegistry.ts",
+  "./systemBar",
+  "component registry must route status/navigation through their explicit component modules",
+);
 
 assertContains(
   "spikes/desktop-editor-shell/MainWindow.axaml.cs",

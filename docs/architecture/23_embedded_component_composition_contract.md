@@ -115,6 +115,10 @@ Status Bar and Navigation Bar must not be exposed as separate editable tree
 sections once their component classes exist. Legacy storage may remain only as a
 temporary compatibility layer; all new editing and Theme assignment goes through
 component class presets.
+Their preview manifest and registry entries must also use explicit component
+modules (`statusBarComponent...` and `navigationBarComponent...`). They may
+share family helpers internally, but those helpers are not public component
+entrypoints and must not be used by the registry as a shortcut.
 
 ## Editor Boundary
 
