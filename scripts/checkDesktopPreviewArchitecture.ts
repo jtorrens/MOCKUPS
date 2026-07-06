@@ -103,6 +103,34 @@ function assertMatches(relativePath: string, pattern: RegExp, message: string) {
   }
 }
 
+function quotedStringsFromBlock(relativePath: string, pattern: RegExp, message: string) {
+  const source = readText(relativePath);
+  const match = pattern.exec(source);
+  if (!match) {
+    addViolation(relativePath, message);
+    return new Set<string>();
+  }
+  return new Set([...match[1].matchAll(/"([^"]+)"/g)].map((item) => item[1] ?? ""));
+}
+
+function assertStringSetEquals(
+  relativePath: string,
+  actual: Set<string>,
+  expected: Set<string>,
+  label: string,
+) {
+  for (const value of expected) {
+    if (!actual.has(value)) {
+      addViolation(relativePath, `${label} is missing primitive "${value}"`);
+    }
+  }
+  for (const value of actual) {
+    if (!expected.has(value)) {
+      addViolation(relativePath, `${label} contains non-allowlisted primitive "${value}"`);
+    }
+  }
+}
+
 function assertPropertyBlockDoesNotContain(
   relativePath: string,
   propertyName: string,
@@ -271,6 +299,36 @@ assertDoesNotContain(
   "src/visual/renderable/schema.ts",
   "metadata: z.record(z.string(), z.unknown()).optional()",
   "renderable schema must not accept arbitrary metadata",
+);
+assertContains(
+  "src/visual/renderable/schema.ts",
+  "const RenderableNodeTypeSchema = z.enum",
+  "renderable schema must validate node type through an explicit enum",
+);
+assertContains(
+  "src/visual/renderable/schema.ts",
+  "type: RenderableNodeTypeSchema,",
+  "renderable schema must validate node type with the explicit primitive enum",
+);
+assertStringSetEquals(
+  "src/visual/renderable/types.ts",
+  quotedStringsFromBlock(
+    "src/visual/renderable/types.ts",
+    /export type RenderableNodeType\s*=([\s\S]*?);/,
+    "renderable node type primitive union must be parseable",
+  ),
+  desktopPreviewPaintNodeTypes,
+  "renderable node type union",
+);
+assertStringSetEquals(
+  "src/visual/renderable/schema.ts",
+  quotedStringsFromBlock(
+    "src/visual/renderable/schema.ts",
+    /const RenderableNodeTypeSchema\s*=\s*z\.enum\(\[([\s\S]*?)\]\);/,
+    "renderable node type schema enum must be parseable",
+  ),
+  desktopPreviewPaintNodeTypes,
+  "renderable node type schema",
 );
 
 assertNoTerms("src/desktop-preview/componentRenderableCommon.ts", [

@@ -282,6 +282,22 @@ Forbidden responsibilities:
 After the component renderable/helper boundary, preview data should contain only
 generic paint primitives and resolved values.
 
+The allowed node primitive types are intentionally small and explicit:
+
+```text
+group
+surface
+path
+text
+image
+icon
+```
+
+The TypeScript `RenderableNodeType` union, the runtime Zod schema and the HTML
+adapter supported-type list must stay in sync with that primitive list. Adding a
+new node type is allowed only when it is a reusable visual primitive, not a
+shortcut for a component or a legacy render node.
+
 Allowed:
 
 - x, y, width, height;
@@ -306,6 +322,16 @@ Forbidden:
 - DB/editor state;
 - component-specific node types.
 - component identity metadata such as `componentType` or `systemBarType`.
+
+Forbidden examples:
+
+```text
+component_label
+component_audio
+status_bar_item
+waveform_bar
+icon_token
+```
 
 Color values should use named mode variants, not a fixed light/dark-only shape:
 
