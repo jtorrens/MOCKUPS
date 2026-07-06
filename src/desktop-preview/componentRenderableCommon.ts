@@ -17,7 +17,7 @@ function parseObject(json: string | undefined) {
 }
 
 export function renderScale(payload: DesignPreviewPayload) {
-  const scale = payload.device.scaleToPixels;
+  const scale = payload.previewFrame.scaleToPixels;
   return typeof scale === "number" && Number.isFinite(scale) && scale > 0
     ? scale
     : 1;
@@ -161,10 +161,10 @@ export function shadow(payload: DesignPreviewPayload) {
 }
 
 export function centerBox(payload: DesignPreviewPayload, width: number, height: number) {
-  const { device } = payload;
+  const { previewFrame } = payload;
   return {
-    x: device.screenX + (device.screenWidth - width) / 2,
-    y: device.screenY + (device.screenHeight - height) / 2,
+    x: previewFrame.screenX + (previewFrame.screenWidth - width) / 2,
+    y: previewFrame.screenY + (previewFrame.screenHeight - height) / 2,
     width,
     height,
   };
@@ -196,10 +196,10 @@ export function boundedCenterBox(
   height: number,
 ) {
   const centered = centerBox(payload, width, height);
-  const minX = payload.device.screenX;
-  const minY = payload.device.screenY;
-  const maxX = payload.device.screenX + payload.device.screenWidth - width;
-  const maxY = payload.device.screenY + payload.device.screenHeight - height;
+  const minX = payload.previewFrame.screenX;
+  const minY = payload.previewFrame.screenY;
+  const maxX = payload.previewFrame.screenX + payload.previewFrame.screenWidth - width;
+  const maxY = payload.previewFrame.screenY + payload.previewFrame.screenHeight - height;
   return {
     x: maxX >= minX ? Math.min(Math.max(centered.x, minX), maxX) : minX,
     y: maxY >= minY ? Math.min(Math.max(centered.y, minY), maxY) : minY,

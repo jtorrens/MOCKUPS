@@ -65,8 +65,8 @@ function renderableForPayload(payload: DesignPreviewPayload): RenderableNode {
     box: {
       x: 0,
       y: 0,
-      width: payload.device.canvasWidth,
-      height: payload.device.canvasHeight,
+      width: payload.previewFrame.canvasWidth,
+      height: payload.previewFrame.canvasHeight,
     },
     style: {
       backgroundColor: themeBackground(payload),

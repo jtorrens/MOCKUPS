@@ -43,9 +43,9 @@ export function componentClassToRenderable(payload: DesignPreviewPayload): Rende
   }
 
   const box = {
-    x: payload.device.screenX + payload.device.screenWidth * 0.16,
-    y: payload.device.screenY + payload.device.screenHeight * 0.42,
-    width: payload.device.screenWidth * 0.68,
+    x: payload.previewFrame.screenX + payload.previewFrame.screenWidth * 0.16,
+    y: payload.previewFrame.screenY + payload.previewFrame.screenHeight * 0.42,
+    width: payload.previewFrame.screenWidth * 0.68,
     height: 88,
   };
   return {

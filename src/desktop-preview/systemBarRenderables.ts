@@ -21,7 +21,7 @@ function parseObject(json: string | undefined) {
 }
 
 function renderScale(payload: DesignPreviewPayload) {
-  const scale = payload.device.scaleToPixels;
+  const scale = payload.previewFrame.scaleToPixels;
   return typeof scale === "number" && Number.isFinite(scale) && scale > 0
     ? scale
     : 1;
@@ -144,10 +144,10 @@ function shadow(payload: DesignPreviewPayload) {
 }
 
 function centerBox(payload: DesignPreviewPayload, width: number, height: number) {
-  const { device } = payload;
+  const { previewFrame } = payload;
   return {
-    x: device.screenX + (device.screenWidth - width) / 2,
-    y: device.screenY + (device.screenHeight - height) / 2,
+    x: previewFrame.screenX + (previewFrame.screenWidth - width) / 2,
+    y: previewFrame.screenY + (previewFrame.screenHeight - height) / 2,
     width,
     height,
   };
@@ -303,10 +303,10 @@ export function iconUriForToken(payload: DesignPreviewPayload, token: string) {
 
 function designViewport(payload: DesignPreviewPayload) {
   return {
-    x: payload.device.screenX,
-    y: payload.device.screenY,
-    width: payload.device.screenWidth,
-    height: payload.device.screenHeight,
+    x: payload.previewFrame.screenX,
+    y: payload.previewFrame.screenY,
+    width: payload.previewFrame.screenWidth,
+    height: payload.previewFrame.screenHeight,
     safeArea: { top: 0, right: 0, bottom: 0, left: 0 },
   };
 }
@@ -339,7 +339,7 @@ function boxedStatusItems(
 ) {
   const { itemSize, gap, sidePadding } = layout;
   const foreground = systemBarTokens(payload, "statusBar").foreground;
-  const y = payload.device.screenY + (barHeight - itemSize) / 2;
+  const y = payload.previewFrame.screenY + (barHeight - itemSize) / 2;
 
   return (["left", "right"] as const).flatMap((zone) => {
     const zoneItems = statusBar.zones[zone].map((item) => statusBarItemForRender(payload, item));
@@ -347,8 +347,8 @@ function boxedStatusItems(
     const totalWidth = widths.reduce((sum, width) => sum + width, 0)
       + Math.max(0, widths.length - 1) * gap;
     let x = zone === "left"
-      ? payload.device.screenX + sidePadding
-      : payload.device.screenX + payload.device.screenWidth - sidePadding - totalWidth;
+      ? payload.previewFrame.screenX + sidePadding
+      : payload.previewFrame.screenX + payload.previewFrame.screenWidth - sidePadding - totalWidth;
 
     return zoneItems.map((item, index) => {
       const width = widths[index] ?? itemSize;

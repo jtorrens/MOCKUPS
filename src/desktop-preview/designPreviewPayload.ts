@@ -1,4 +1,4 @@
-export interface DevicePayload {
+export interface PreviewFramePayload {
   canvasWidth: number;
   canvasHeight: number;
   screenX: number;
@@ -14,7 +14,7 @@ export interface DesignPreviewPayload {
   componentBaseConfigsJson?: string;
   configJson: string;
   designPreviewJson?: string;
-  device: DevicePayload;
+  previewFrame: PreviewFramePayload;
   iconAssetRoot?: string;
   iconMappingJson?: string;
   paletteColors?: Record<string, string>;
