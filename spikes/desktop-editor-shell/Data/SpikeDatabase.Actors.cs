@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using System;
+using System.Linq;
 using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.Data;
@@ -102,6 +103,33 @@ internal sealed partial class SpikeDatabase
             "actor.avatar.initialsPadding" => JsonNumberString(metadata, ["avatar", "initialsPadding"]),
             _ => throw new InvalidOperationException($"Unknown actor field '{fieldId}'."),
         };
+    }
+
+    private static void SeedActorsIfEmpty(SqliteConnection connection)
+    {
+        var projectIds = QueryProjectRows(connection).Select((project) => project.Id).ToList();
+        foreach (var projectId in projectIds)
+        {
+            if (ScalarLong(connection, "SELECT COUNT(*) FROM actors WHERE project_id = $projectId", ("$projectId", projectId)) > 0)
+            {
+                continue;
+            }
+
+            foreach (var seed in ActorSeedRows)
+            {
+                Execute(
+                    connection,
+                    """
+                    INSERT INTO actors (id, project_id, display_name, short_name, default_device_id, default_theme_id, metadata_json)
+                    VALUES ($id, $projectId, $displayName, $shortName, '', '', $metadataJson)
+                    """,
+                    ("$id", seed.Id),
+                    ("$projectId", projectId),
+                    ("$displayName", seed.DisplayName),
+                    ("$shortName", seed.ShortName),
+                    ("$metadataJson", seed.MetadataJson));
+            }
+        }
     }
 
     private static string DefaultActorMetadataJson(string colorToken, string avatarTextColorToken)

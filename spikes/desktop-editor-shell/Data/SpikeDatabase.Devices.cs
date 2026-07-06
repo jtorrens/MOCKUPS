@@ -1,6 +1,7 @@
 using Microsoft.Data.Sqlite;
 using Mockups.DesktopEditorShell.Common;
 using System;
+using System.Linq;
 
 namespace Mockups.DesktopEditorShell.Data;
 
@@ -162,6 +163,35 @@ internal sealed partial class SpikeDatabase
             "device.metrics.cornerRadius" => JsonNumberString(ParseJsonObject(settings.MetricsJson), ["cornerRadius"]),
             _ => throw new InvalidOperationException($"Unknown device metrics field '{fieldId}'."),
         };
+    }
+
+    private static void SeedDevicesIfEmpty(SqliteConnection connection)
+    {
+        var projectIds = QueryProjectRows(connection).Select((project) => project.Id).ToList();
+        foreach (var projectId in projectIds)
+        {
+            if (ScalarLong(connection, "SELECT COUNT(*) FROM devices WHERE project_id = $projectId", ("$projectId", projectId)) > 0)
+            {
+                continue;
+            }
+
+            foreach (var seed in DeviceSeedRows)
+            {
+                Execute(
+                    connection,
+                    """
+                    INSERT INTO devices (id, project_id, name, manufacturer, model, os_family, metrics_json)
+                    VALUES ($id, $projectId, $name, $manufacturer, $model, $osFamily, $metricsJson)
+                    """,
+                    ("$id", seed.Id),
+                    ("$projectId", projectId),
+                    ("$name", seed.Name),
+                    ("$manufacturer", seed.Manufacturer),
+                    ("$model", seed.Model),
+                    ("$osFamily", seed.OsFamily),
+                    ("$metricsJson", seed.MetricsJson));
+            }
+        }
     }
 
     private static string DefaultDeviceMetricsJson(int width, int height, double scale)

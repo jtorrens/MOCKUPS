@@ -1,3 +1,4 @@
+using Microsoft.Data.Sqlite;
 using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
@@ -9,6 +10,56 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SpikeDatabase
 {
+    private static void SeedStatusBarsIfEmpty(SqliteConnection connection)
+    {
+        var projectIds = QueryProjectRows(connection).Select((project) => project.Id).ToList();
+        foreach (var projectId in projectIds)
+        {
+            if (ScalarLong(connection, "SELECT COUNT(*) FROM status_bars WHERE project_id = $projectId", ("$projectId", projectId)) > 0)
+            {
+                continue;
+            }
+
+            Execute(
+                connection,
+                """
+                INSERT INTO status_bars (id, project_id, name, family, config_json, metadata_json)
+                VALUES ($id, $projectId, $name, $family, $configJson, $metadataJson)
+                """,
+                ("$id", $"status_bar_{projectId}_ios_default"),
+                ("$projectId", projectId),
+                ("$name", "iOS Default Status Bar"),
+                ("$family", "ios"),
+                ("$configJson", DefaultStatusBarConfigJson()),
+                ("$metadataJson", JsonSerializer.Serialize(new { note = "Reusable iOS-style status bar composition." })));
+        }
+    }
+
+    private static void SeedNavigationBarsIfEmpty(SqliteConnection connection)
+    {
+        var projectIds = QueryProjectRows(connection).Select((project) => project.Id).ToList();
+        foreach (var projectId in projectIds)
+        {
+            if (ScalarLong(connection, "SELECT COUNT(*) FROM navigation_bars WHERE project_id = $projectId", ("$projectId", projectId)) > 0)
+            {
+                continue;
+            }
+
+            Execute(
+                connection,
+                """
+                INSERT INTO navigation_bars (id, project_id, name, family, config_json, metadata_json)
+                VALUES ($id, $projectId, $name, $family, $configJson, $metadataJson)
+                """,
+                ("$id", $"navigation_bar_{projectId}_ios_default"),
+                ("$projectId", projectId),
+                ("$name", "iOS Default Navigation Bar"),
+                ("$family", "ios"),
+                ("$configJson", DefaultNavigationBarConfigJson()),
+                ("$metadataJson", JsonSerializer.Serialize(new { note = "Reusable iOS-style navigation bar composition." })));
+        }
+    }
+
     public StatusBarSettings GetStatusBarSettings(string statusBarId)
     {
         using var connection = OpenConnection();
