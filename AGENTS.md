@@ -71,6 +71,8 @@ The bridge may only translate standard resolved atoms into final preview values:
 
 The bridge must not contain branches or layout rules for a specific component class such as label, avatar, button icon, audio, video, bubble, status bar, or navigation bar. If a component needs custom composition, create or extend that component resolver so it emits the standard atoms the bridge already understands.
 
+`webPreviewBridge` must not grow new component-specific functions or rules. Existing component-specific bridge functions are transitional debt and must not be used as a pattern for new work. As components are migrated, remove those functions by moving component composition into the component resolver and passing only standard atoms through generic bridge helpers.
+
 The web renderer is even stricter: it paints the final resolved nodes. It must not know inheritance, class config, component defaults, theme token names, palette tokens, database records, or per-component business/layout rules. If the renderer needs a new visual primitive, add a generic primitive and feed it fully resolved style/data.
 
 If a change appears to require `if componentType == ...` behavior in the bridge or renderer, stop and move that responsibility to the component resolver or to a parameterized common helper.

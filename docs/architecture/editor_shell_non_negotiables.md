@@ -224,6 +224,19 @@ The bridge owns only generic translation:
 
 The bridge must not contain `componentType` branches, hardcoded field names, or layout/business rules for a concrete component class. If a component cannot be represented with current atoms, add a generic atom or extend the component resolver output first.
 
+`webPreviewBridge` is not a component catalog. It must not add new functions such as `labelComponentToRenderable`, `avatarComponentToRenderable`, `audioComponentToRenderable`, or any equivalent per-component bridge entry point. Existing per-component bridge functions are transitional debt from the migration. They may remain only until their component is moved to resolver-emitted standard atoms, and they must not be expanded as the normal way to add component behavior.
+
+When touching a migrated component, the preferred direction is:
+
+```text
+component resolver
+  -> standard atoms already containing component layout/style decisions
+  -> generic bridge helpers
+  -> generic web renderable nodes
+```
+
+Do not add new bridge branches for component fields like `waveformBarCount`, `labelSlot`, `avatarSlot`, `playCircleSize`, or component-specific defaults. Move those decisions to the resolver or to a common parameterized helper used by the resolver.
+
 The web renderer is the narrowest layer. It must not know:
 
 - database records;
