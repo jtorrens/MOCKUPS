@@ -25,13 +25,13 @@ function labelPreview(
   };
 }
 
-function inputString(
+function optionalInputStringOrConfiguredValue(
   value: Record<string, unknown>,
   key: string,
-  fallback: string,
+  configuredValue: string,
 ) {
   const raw = value[key];
-  return typeof raw === "string" && raw.trim() ? raw : fallback;
+  return typeof raw === "string" && raw.trim() ? raw : configuredValue;
 }
 
 export function resolveButtonIconComponent(
@@ -91,7 +91,7 @@ export function resolveButtonIconComponentFromRecords(
       buttonSize - iconPadding * 2,
     ),
     iconPadding,
-    iconToken: inputString(
+    iconToken: optionalInputStringOrConfiguredValue(
       preview,
       "iconToken",
       requiredString(buttonIcon, "iconToken", "component.buttonIcon.iconToken"),
