@@ -1142,6 +1142,7 @@ internal sealed partial class SpikeDatabase
             ],
             "buttonIcon" =>
             [
+                ComponentInput("iconToken", "Icon", "iconToken", "icon", "media_mic"),
                 ComponentInput("sampleText", "Text", "sampleText", "text", "Action"),
                 ComponentInput("sampleSubtext", "Subtext", "sampleSubtext", "text", "Subtitle"),
             ],

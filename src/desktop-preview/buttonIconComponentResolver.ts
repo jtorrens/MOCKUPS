@@ -24,6 +24,15 @@ function labelPreview(
   };
 }
 
+function inputString(
+  value: Record<string, unknown>,
+  key: string,
+  fallback: string,
+) {
+  const raw = value[key];
+  return typeof raw === "string" && raw.trim() ? raw : fallback;
+}
+
 export function resolveButtonIconComponent(
   payload: DesignPreviewPayload,
 ): ButtonIconDesignContract {
@@ -77,10 +86,10 @@ export function resolveButtonIconComponentFromRecords(
       "iconPadding",
       "component.buttonIcon.iconPadding",
     ),
-    iconToken: requiredString(
-      buttonIcon,
+    iconToken: inputString(
+      preview,
       "iconToken",
-      "component.buttonIcon.iconToken",
+      requiredString(buttonIcon, "iconToken", "component.buttonIcon.iconToken"),
     ),
     backgroundColorToken: requiredString(
       buttonIcon,

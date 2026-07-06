@@ -1,7 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
-using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
@@ -19,10 +18,11 @@ internal sealed class ComponentInputsPanel : ContentControl
 {
     private readonly SpikeDatabase _database;
     private readonly Action _refreshPreview;
+    private readonly Window _owner;
     private readonly DispatcherTimer _playbackTimer;
     private readonly StackPanel _rowsPanel;
     private readonly Dictionary<string, string> _values = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, ToggleSwitch> _booleanInputs = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, IDictionaryValueControl> _booleanInputs = new(StringComparer.Ordinal);
     private Button? _playbackButton;
     private string _scopeKey = "";
     private string _componentType = "";
@@ -33,10 +33,11 @@ internal sealed class ComponentInputsPanel : ContentControl
     private double _playbackStartSeconds;
     private bool _isUpdating;
 
-    public ComponentInputsPanel(SpikeDatabase database, Action refreshPreview)
+    public ComponentInputsPanel(SpikeDatabase database, Action refreshPreview, Window owner)
     {
         _database = database;
         _refreshPreview = refreshPreview;
+        _owner = owner;
         _playbackTimer = new DispatcherTimer
         {
             Interval = TimeSpan.FromMilliseconds(80),
@@ -268,6 +269,7 @@ internal sealed class ComponentInputsPanel : ContentControl
         {
             ComponentInputKind.Option => CreateOptionInput(input),
             ComponentInputKind.Actor => CreateActorInput(input, projectId),
+            ComponentInputKind.Icon => CreateIconInput(input, projectId),
             ComponentInputKind.Number => CreateNumberInput(input),
             ComponentInputKind.Boolean => CreateBooleanInput(input),
             _ => CreateTextInput(input),
@@ -320,59 +322,85 @@ internal sealed class ComponentInputsPanel : ContentControl
         return combo;
     }
 
+    private Control CreateIconInput(ComponentInputDefinition input, string projectId)
+    {
+        var control = new DictionaryIconTokenControl(
+            Value(input),
+            true,
+            (currentValue, allowMultiple) =>
+                new IconTokenPickerDialog(_owner, _database).Show(projectId, currentValue, allowMultiple),
+            (token) => SvgIconPreview.CreateProjectIconTokenPreview(_database, projectId, token, 18));
+        control.ValueChanged += (_, value) =>
+        {
+            if (_isUpdating) return;
+            SetValue(input, value);
+        };
+        control.ValueCommitted += (_, value) =>
+        {
+            if (_isUpdating) return;
+            SetValue(input, value);
+        };
+        return control;
+    }
+
     private Control CreateNumberInput(ComponentInputDefinition input)
     {
-        var numeric = EditorNumericUpDownBehavior.Configure(new NumericUpDown
+        var definition = new FieldDefinition(
+            input.Id,
+            input.Label,
+            ValueKind.Decimal,
+            DefaultValue: input.DefaultValue,
+            Number: new NumberDefinition(input.Minimum, input.Maximum, input.Increment, 2));
+        var control = new DictionaryDecimalControl(definition, Value(input));
+        control.ValueChanged += (_, value) =>
         {
-            MinHeight = 36,
-            MinWidth = 120,
-            HorizontalAlignment = HorizontalAlignment.Left,
-            Minimum = input.Minimum,
-            Maximum = input.Maximum,
-            Increment = input.Increment,
-            Value = decimal.TryParse(Value(input).Replace(",", "."), NumberStyles.Float, CultureInfo.InvariantCulture, out var value)
-                ? value
-                : decimal.Parse(input.DefaultValue, CultureInfo.InvariantCulture),
-        });
-        numeric.ValueChanged += (_, args) =>
-        {
-            if (_isUpdating || args.NewValue is null) return;
-            SetValue(input, args.NewValue.Value.ToString(CultureInfo.InvariantCulture));
+            if (_isUpdating) return;
+            SetValue(input, value);
         };
-        return numeric;
+        control.ValueCommitted += (_, value) =>
+        {
+            if (_isUpdating) return;
+            SetValue(input, value);
+        };
+        return control;
     }
 
     private Control CreateBooleanInput(ComponentInputDefinition input)
     {
-        var toggle = new ToggleSwitch
-        {
-            MinHeight = 36,
-            IsChecked = StringToBool(Value(input)),
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        _booleanInputs[StorageKey(input)] = toggle;
-        toggle.IsCheckedChanged += (_, _) =>
+        var control = new DictionaryBooleanControl(Value(input), true);
+        _booleanInputs[StorageKey(input)] = control;
+        control.ValueChanged += (_, value) =>
         {
             if (_isUpdating) return;
-            SetValue(input, toggle.IsChecked == true ? "true" : "false");
+            SetValue(input, value);
         };
-        return toggle;
+        control.ValueCommitted += (_, value) =>
+        {
+            if (_isUpdating) return;
+            SetValue(input, value);
+        };
+        return control;
     }
 
     private Control CreateTextInput(ComponentInputDefinition input)
     {
-        var textBox = DictionaryTextBoxFactory.Create(new FieldDefinition(
+        var definition = new FieldDefinition(
             input.Id,
             input.Label,
             ValueKind.StringSingleLine,
-            DefaultValue: input.DefaultValue));
-        textBox.Text = Value(input);
-        textBox.TextChanged += (_, _) =>
+            DefaultValue: input.DefaultValue);
+        var control = new DictionaryTextControl(definition, Value(input));
+        control.ValueChanged += (_, value) =>
         {
             if (_isUpdating) return;
-            SetValue(input, textBox.Text ?? "");
+            SetValue(input, value);
         };
-        return textBox;
+        control.ValueCommitted += (_, value) =>
+        {
+            if (_isUpdating) return;
+            SetValue(input, value);
+        };
+        return control;
     }
 
     private void EnsureValue(ComponentInputDefinition input, JsonObject preview)
@@ -585,7 +613,7 @@ internal sealed class ComponentInputsPanel : ContentControl
         _isUpdating = true;
         try
         {
-            input.IsChecked = StringToBool(_values.GetValueOrDefault(key, "false"));
+            input.SetValue(_values.GetValueOrDefault(key, "false"));
         }
         finally
         {
@@ -695,6 +723,7 @@ internal sealed class ComponentInputsPanel : ContentControl
             "boolean" => ComponentInputKind.Boolean,
             "option" => ComponentInputKind.Option,
             "actor" => ComponentInputKind.Actor,
+            "icon" => ComponentInputKind.Icon,
             _ => ComponentInputKind.Text,
         };
     }
@@ -726,6 +755,7 @@ internal enum ComponentInputKind
     Boolean,
     Option,
     Actor,
+    Icon,
 }
 
 internal sealed record ComponentInputDefinition(

@@ -39,7 +39,8 @@ internal sealed class EditorPreviewController
         ContentControl runtimePreviewHost,
         ContentControl designPreviewHost,
         Func<bool> isDark,
-        Func<ProjectTreeNode?> selectedNode)
+        Func<ProjectTreeNode?> selectedNode,
+        Window owner)
     {
         _database = database;
         _deviceComboBox = deviceComboBox;
@@ -50,7 +51,7 @@ internal sealed class EditorPreviewController
         _messages = messages;
         _isDark = isDark;
         _selectedNode = selectedNode;
-        _designInputsPanel = new ComponentInputsPanel(database, Refresh);
+        _designInputsPanel = new ComponentInputsPanel(database, Refresh, owner);
 
         runtimePreviewHost.Content = _runtimePreviewPane;
         designPreviewHost.Content = CreateDesignPreviewLayout();

@@ -78,7 +78,8 @@ public partial class MainWindow : SukiWindow
             RuntimePreviewHost,
             DesignPreviewHost,
             () => _isDark,
-            () => _selectedNode);
+            () => _selectedNode,
+            this);
         PreviewDeviceComboBox.SelectionChanged += (_, _) => _previewController.OnDeviceChanged();
         PreviewThemeComboBox.SelectionChanged += (_, _) => _previewController.OnThemeChanged();
         PreviewModeComboBox.SelectionChanged += (_, _) => _previewController.OnModeChanged();
