@@ -704,6 +704,25 @@ for (const forbiddenComponentInputControl of [
     `component inputs must use dictionary controls, not local ${forbiddenComponentInputControl}`,
   );
 }
+for (const collectionEditorPath of [
+  "spikes/desktop-editor-shell/EditorShell/StatusBarItemsCollectionEditor.cs",
+  "spikes/desktop-editor-shell/EditorShell/NavigationBarItemsCollectionEditor.cs",
+]) {
+  for (const forbiddenCollectionControl of [
+    "EditorInstantComboBox",
+    "new ComboBox",
+    "new TextBox",
+    "new CheckBox",
+    "new ToggleSwitch",
+    "new NumericUpDown",
+  ]) {
+    assertDoesNotContain(
+      collectionEditorPath,
+      forbiddenCollectionControl,
+      `${collectionEditorPath} item scalar fields must use dictionary controls, not local ${forbiddenCollectionControl}`,
+    );
+  }
+}
 assertDoesNotContain(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassDefaults.cs",
   "\"actor\",",
