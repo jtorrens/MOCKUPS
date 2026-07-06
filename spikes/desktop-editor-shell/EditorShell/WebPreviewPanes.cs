@@ -4,6 +4,8 @@ using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Globalization;
 using System.Net;
+using System.Text.Json.Nodes;
+using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -443,9 +445,10 @@ internal sealed class RuntimeWebPreviewPane : WebPreviewPane
 
 internal sealed class DesignWebPreviewPane : WebPreviewPane
 {
-    private int _updateVersion;
+    private DesignPreviewUpdate? _pendingUpdate;
+    private bool _isRendering;
 
-    public async void Update(
+    public void Update(
         SpikeDatabase.DevicePreviewMetrics metrics,
         bool isDark,
         string themeName,
@@ -455,18 +458,65 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         DesignPreviewPayload? payload,
         IEditorShellMessageSink messages)
     {
-        var updateVersion = ++_updateVersion;
+        var nextUpdate = new DesignPreviewUpdate(
+            metrics,
+            isDark,
+            themeName,
+            themeMode,
+            scaleMode,
+            showDesignMarks,
+            payload,
+            messages);
 
-        if (payload is null)
+        if (_pendingUpdate is not null && nextUpdate.IsAnimationOnlyUpdateOf(_pendingUpdate))
+        {
+            return;
+        }
+
+        _pendingUpdate = nextUpdate;
+
+        if (!_isRendering)
+        {
+            _ = ProcessPendingUpdatesAsync();
+        }
+    }
+
+    private async Task ProcessPendingUpdatesAsync()
+    {
+        if (_isRendering) return;
+
+        _isRendering = true;
+        try
+        {
+            while (_pendingUpdate is not null)
+            {
+                var update = _pendingUpdate;
+                _pendingUpdate = null;
+                await RenderUpdateAsync(update);
+            }
+        }
+        finally
+        {
+            _isRendering = false;
+            if (_pendingUpdate is not null)
+            {
+                _ = ProcessPendingUpdatesAsync();
+            }
+        }
+    }
+
+    private async Task RenderUpdateAsync(DesignPreviewUpdate update)
+    {
+        if (update.Payload is null)
         {
             LoadHtml(DeviceHtml(
-                metrics,
-                isDark,
-                themeName,
-                themeMode,
-                scaleMode,
+                update.Metrics,
+                update.IsDark,
+                update.ThemeName,
+                update.ThemeMode,
+                update.ScaleMode,
                 "Design preview",
-                showDesignMarks,
+                update.ShowDesignMarks,
                 Placeholder(
                     "Design WebView host",
                     "Select a status bar or navigation bar to preview it through the existing visual modules.")));
@@ -478,37 +528,99 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         try
         {
             bodyContent = await WebDesignPreviewRenderer.RenderBodyAsync(
-                metrics,
-                themeMode,
-                showDesignMarks,
-                payload);
+                update.Metrics,
+                update.ThemeMode,
+                update.ShowDesignMarks,
+                update.Payload);
         }
         catch (Exception error)
         {
             renderError = error;
             bodyContent = Placeholder(
-                $"{payload.Name} · {payload.Kind}",
+                $"{update.Payload.Name} · {update.Payload.Kind}",
                 "Preview unavailable. See Messages.");
-        }
-
-        if (updateVersion != _updateVersion)
-        {
-            return;
         }
 
         if (renderError is not null)
         {
-            messages.Error("Design preview", renderError);
+            update.Messages.Error("Design preview", renderError);
         }
 
         LoadHtml(DeviceHtml(
-            metrics,
-            isDark,
-            themeName,
-            themeMode,
-            scaleMode,
+            update.Metrics,
+            update.IsDark,
+            update.ThemeName,
+            update.ThemeMode,
+            update.ScaleMode,
             "Design preview",
-            showDesignMarks,
+            update.ShowDesignMarks,
             bodyContent));
+    }
+
+    private sealed record DesignPreviewUpdate(
+        SpikeDatabase.DevicePreviewMetrics Metrics,
+        bool IsDark,
+        string ThemeName,
+        string ThemeMode,
+        string ScaleMode,
+        bool ShowDesignMarks,
+        DesignPreviewPayload? Payload,
+        IEditorShellMessageSink Messages)
+    {
+        public bool IsAnimationOnlyUpdateOf(DesignPreviewUpdate other)
+        {
+            return Metrics.Equals(other.Metrics)
+                && IsDark == other.IsDark
+                && ThemeName == other.ThemeName
+                && ThemeMode == other.ThemeMode
+                && ScaleMode == other.ScaleMode
+                && ShowDesignMarks == other.ShowDesignMarks
+                && StablePayloadSignature(Payload) == StablePayloadSignature(other.Payload)
+                && CurrentTimeSignature(Payload) != CurrentTimeSignature(other.Payload);
+        }
+
+        private static string StablePayloadSignature(DesignPreviewPayload? payload)
+        {
+            if (payload is null) return "";
+
+            return string.Join(
+                "\u001f",
+                payload.Kind,
+                payload.ComponentType,
+                payload.Name,
+                payload.ConfigJson,
+                payload.ThemeTokensJson,
+                payload.ComponentBaseConfigsJson,
+                StablePreviewJson(payload.DesignPreviewJson));
+        }
+
+        private static string StablePreviewJson(string json)
+        {
+            try
+            {
+                var preview = JsonNode.Parse(string.IsNullOrWhiteSpace(json) ? "{}" : json) as JsonObject ?? new JsonObject();
+                preview.Remove("currentTimeSeconds");
+                return preview.ToJsonString();
+            }
+            catch
+            {
+                return json;
+            }
+        }
+
+        private static string CurrentTimeSignature(DesignPreviewPayload? payload)
+        {
+            if (payload is null) return "";
+
+            try
+            {
+                var preview = JsonNode.Parse(string.IsNullOrWhiteSpace(payload.DesignPreviewJson) ? "{}" : payload.DesignPreviewJson) as JsonObject;
+                return preview?["currentTimeSeconds"]?.ToJsonString() ?? "";
+            }
+            catch
+            {
+                return "";
+            }
+        }
     }
 }

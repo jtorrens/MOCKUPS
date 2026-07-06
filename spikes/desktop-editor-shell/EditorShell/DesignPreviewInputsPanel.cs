@@ -22,6 +22,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
     private readonly DispatcherTimer _playbackTimer;
     private readonly StackPanel _rowsPanel;
     private readonly Dictionary<string, string> _values = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, CheckBox> _booleanInputs = new(StringComparer.Ordinal);
     private Button? _playbackButton;
     private string _scopeKey = "";
     private string _componentType = "";
@@ -37,7 +38,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
         _refreshPreview = refreshPreview;
         _playbackTimer = new DispatcherTimer
         {
-            Interval = TimeSpan.FromMilliseconds(120),
+            Interval = TimeSpan.FromMilliseconds(80),
         };
         _playbackTimer.Tick += (_, _) => AdvancePlaybackFrame();
         IsVisible = false;
@@ -110,6 +111,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
     private void RebuildCard(IReadOnlyList<DesignPreviewInput> inputs, string projectId)
     {
         _rowsPanel.Children.Clear();
+        _booleanInputs.Clear();
         foreach (var input in inputs)
         {
             _rowsPanel.Children.Add(CreateInputRow(input, projectId));
@@ -144,7 +146,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
             VerticalAlignment = VerticalAlignment.Center,
         };
         header.Children.Add(EditorCardHeader.Create("Inputs", "Preview sample values", icon));
-        if (_componentType == "audio")
+        if (SupportsPlayback())
         {
             _playbackButton = new Button
             {
@@ -202,7 +204,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
                     break;
             }
         }
-        if (payload.ComponentType == "audio")
+        if (SupportsPlayback(payload.ComponentType))
         {
             preview["currentTimeSeconds"] = CurrentPlaybackSeconds();
         }
@@ -311,6 +313,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
             IsChecked = StringToBool(Value(input)),
             VerticalAlignment = VerticalAlignment.Center,
         };
+        _booleanInputs[StorageKey(input)] = checkBox;
         checkBox.IsCheckedChanged += (_, _) =>
         {
             if (_isUpdating) return;
@@ -382,8 +385,16 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
 
     private void SetValue(DesignPreviewInput input, string value)
     {
-        _values[StorageKey(input)] = value;
-        if (_componentType == "audio" && input.Id == "durationSeconds")
+        if (SupportsPlayback() && input.Id == "isPlaying")
+        {
+            SetPlaybackState(StringToBool(value));
+        }
+        else
+        {
+            _values[StorageKey(input)] = value;
+        }
+
+        if (SupportsPlayback() && input.Id == "durationSeconds")
         {
             ClampCurrentPlaybackToDuration();
         }
@@ -398,7 +409,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
 
     private void SyncPlaybackTimer()
     {
-        if (_componentType != "audio")
+        if (!SupportsPlayback())
         {
             StopPlayback();
             UpdatePlaybackButton();
@@ -423,21 +434,12 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
 
     private void TogglePlayback()
     {
-        if (_componentType != "audio") return;
+        if (!SupportsPlayback()) return;
 
         var stateKey = $"{_scopeKey}:isPlaying";
-        if (IsPlaying())
-        {
-            _values[$"{_scopeKey}:currentTimeSeconds"] = CurrentPlaybackSeconds().ToString(CultureInfo.InvariantCulture);
-            _values[stateKey] = "false";
-        }
-        else
-        {
-            _playbackStartSeconds = CurrentPlaybackSeconds();
-            _playbackStartedAtUtc = DateTime.UtcNow;
-            _values[stateKey] = "true";
-        }
+        SetPlaybackState(!IsPlaying());
 
+        SyncBooleanInput(stateKey);
         SyncPlaybackTimer();
         _refreshPreview();
     }
@@ -458,7 +460,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
 
     private void AdvancePlaybackFrame()
     {
-        if (_componentType != "audio"
+        if (!SupportsPlayback()
             || !IsPlaying())
         {
             StopPlayback();
@@ -484,7 +486,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
 
     private void ClampCurrentPlaybackToDuration()
     {
-        if (_componentType != "audio") return;
+        if (!SupportsPlayback()) return;
 
         _values[$"{_scopeKey}:currentTimeSeconds"] = Math.Clamp(
             CurrentPlaybackSeconds(),
@@ -500,6 +502,48 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
     private bool IsPlaying()
     {
         return StringToBool(_values.GetValueOrDefault($"{_scopeKey}:isPlaying", "false"));
+    }
+
+    private void SetPlaybackState(bool isPlaying)
+    {
+        var stateKey = $"{_scopeKey}:isPlaying";
+        if (isPlaying)
+        {
+            _playbackStartSeconds = PositiveModulo(CurrentPlaybackSeconds(), DurationSeconds());
+            _playbackStartedAtUtc = DateTime.UtcNow;
+            _values[stateKey] = "true";
+            return;
+        }
+
+        _values[$"{_scopeKey}:currentTimeSeconds"] = CurrentPlaybackSeconds().ToString(CultureInfo.InvariantCulture);
+        _values[stateKey] = "false";
+    }
+
+    private bool SupportsPlayback()
+    {
+        return SupportsPlayback(_componentType);
+    }
+
+    private static bool SupportsPlayback(string componentType)
+    {
+        var inputs = DesignPreviewInputCatalog.ForComponent(componentType).ToList();
+        return inputs.Any((input) => input.Id == "isPlaying")
+            && inputs.Any((input) => input.Id == "durationSeconds");
+    }
+
+    private void SyncBooleanInput(string key)
+    {
+        if (!_booleanInputs.TryGetValue(key, out var input)) return;
+
+        _isUpdating = true;
+        try
+        {
+            input.IsChecked = StringToBool(_values.GetValueOrDefault(key, "false"));
+        }
+        finally
+        {
+            _isUpdating = false;
+        }
     }
 
     private static double ParseDouble(string? value)
