@@ -46,8 +46,8 @@ If the same algorithm appears in a second place, extract it before continuing.
   - SVG token set discovery when it is filesystem-only and DB-free.
 - `Common/DeviceMetricRules.cs`
   - normalized device metrics JSON construction;
-  - preview metric fallbacks;
-  - scale-to-pixels resolution;
+  - strict preview metric reads;
+  - incomplete metric normalization during seed/import/DB initialization;
   - default scale guesses, including PPI-aware catalog guesses.
 - `Common/SvgMarkupNormalizer.cs`
   - tintable SVG normalization;
