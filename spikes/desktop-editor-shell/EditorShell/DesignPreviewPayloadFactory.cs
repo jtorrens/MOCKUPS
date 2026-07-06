@@ -74,7 +74,7 @@ internal static class DesignPreviewPayloadFactory
             projectMediaRoot,
             iconTheme?.AssetRoot ?? "",
             iconTheme?.MappingJson ?? "{}",
-            "statusBar");
+            "status_bar");
     }
 
     private static DesignPreviewPayload FromNavigationBar(
@@ -97,7 +97,7 @@ internal static class DesignPreviewPayloadFactory
             projectMediaRoot,
             iconTheme?.AssetRoot ?? "",
             iconTheme?.MappingJson ?? "{}",
-            "navigationBar");
+            "navigation_bar");
     }
 
     private static DesignPreviewPayload FromComponentClass(

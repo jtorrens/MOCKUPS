@@ -28,8 +28,8 @@ export const componentRenderableFactoryKeys = [
   "avatar",
   "audio_message",
   "button_icon",
-  "statusBar",
-  "navigationBar",
+  "status_bar",
+  "navigation_bar",
 ] as const satisfies readonly DesktopPreviewComponentClass[];
 
 const ComponentRenderableFactories: Record<
@@ -41,8 +41,8 @@ const ComponentRenderableFactories: Record<
   audio_message: (payload) => audioComponentToRenderable(payload, resolveAudioComponent(payload)),
   button_icon: (payload) =>
     buttonIconComponentToRenderable(payload, resolveButtonIconComponent(payload)),
-  statusBar: (payload) => statusBarToRenderable(payload, resolveStatusBar(payload)),
-  navigationBar: (payload) =>
+  status_bar: (payload) => statusBarToRenderable(payload, resolveStatusBar(payload)),
+  navigation_bar: (payload) =>
     navigationBarToRenderable(payload, resolveNavigationBar(payload)),
 };
 

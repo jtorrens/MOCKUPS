@@ -8,6 +8,8 @@ export const ComponentClassTypeSchema = z.enum([
   "text_input_bar",
   "keyboard",
   "label",
+  "navigation_bar",
+  "status_bar",
   "video_message",
 ]);
 

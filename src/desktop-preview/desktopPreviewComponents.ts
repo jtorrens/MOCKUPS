@@ -37,14 +37,14 @@ export const desktopPreviewComponents = {
     renderable: "./audioComponentRenderable",
     embeds: ["avatar", "button_icon"],
   },
-  statusBar: {
+  status_bar: {
     category: "system",
     contract: "./systemBarPreviewResolver",
     resolver: "./systemBarPreviewResolver",
     renderable: "./systemBarRenderables",
     embeds: [],
   },
-  navigationBar: {
+  navigation_bar: {
     category: "system",
     contract: "./systemBarPreviewResolver",
     resolver: "./systemBarPreviewResolver",
@@ -60,4 +60,3 @@ export function isDesktopPreviewComponentClass(
 ): value is DesktopPreviewComponentClass {
   return Object.hasOwn(desktopPreviewComponents, value);
 }
-
