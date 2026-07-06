@@ -19,17 +19,19 @@ import {
 
 export interface AudioDesignContract {
   id: string;
-  size: { width: number; height: number };
+  padding: { x: number; y: number };
   backgroundColorToken: string;
   backgroundAlpha: number;
   textSize: number;
   textColorToken: string;
   playCircleSize: number;
+  playIconPadding: number;
   playColorToken: string;
   playIconColorToken: string;
   waveformColorToken: string;
   waveformPlayedColorToken: string;
   waveformBarCount: number;
+  waveformBarWidth: number;
   waveformGap: number;
   waveformMinHeight: number;
   waveformMaxHeight: number;
@@ -85,7 +87,7 @@ export function resolveAudioComponent(
 
   return {
     id: "component.audio",
-    size: parseSize(requiredString(audio, "size", "component.audio.size")),
+    padding: parsePair(requiredString(audio, "padding", "component.audio.padding")),
     backgroundColorToken: requiredString(
       audio,
       "backgroundColorToken",
@@ -106,6 +108,11 @@ export function resolveAudioComponent(
       audio,
       "playCircleSize",
       "component.audio.playCircleSize",
+    ),
+    playIconPadding: requiredNumber(
+      audio,
+      "playIconPadding",
+      "component.audio.playIconPadding",
     ),
     playColorToken: requiredString(
       audio,
@@ -131,6 +138,11 @@ export function resolveAudioComponent(
       audio,
       "waveformBarCount",
       "component.audio.waveformBarCount",
+    ),
+    waveformBarWidth: requiredNumber(
+      audio,
+      "waveformBarWidth",
+      "component.audio.waveformBarWidth",
     ),
     waveformGap: requiredNumber(
       audio,
@@ -220,13 +232,13 @@ export function resolveAudioComponent(
   };
 }
 
-function parseSize(value: string) {
-  const [widthRaw, heightRaw] = value.split("|", 2);
-  const width = Number(widthRaw?.replace(",", "."));
-  const height = Number(heightRaw?.replace(",", "."));
-  if (!Number.isFinite(width) || !Number.isFinite(height)) {
-    throw new Error(`Invalid component.audio.size ${value}`);
+function parsePair(value: string) {
+  const [xRaw, yRaw] = value.split("|", 2);
+  const x = Number(xRaw?.replace(",", "."));
+  const y = Number(yRaw?.replace(",", "."));
+  if (!Number.isFinite(x) || !Number.isFinite(y)) {
+    throw new Error(`Invalid component.audio numeric pair ${value}`);
   }
 
-  return { width, height };
+  return { x, y };
 }

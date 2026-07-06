@@ -535,6 +535,24 @@ internal sealed partial class SpikeDatabase
         }
 
         var changed = false;
+        if (audio["padding"] is null)
+        {
+            audio["padding"] = "10|8";
+            changed = true;
+        }
+
+        if (audio["playIconPadding"] is null)
+        {
+            audio["playIconPadding"] = 9;
+            changed = true;
+        }
+
+        if (audio["waveformBarWidth"] is null)
+        {
+            audio["waveformBarWidth"] = 3;
+            changed = true;
+        }
+
         if (audio["progressKnobSize"] is null && audio["knobSize"] is not null)
         {
             audio["progressKnobSize"] = audio["knobSize"]?.DeepClone();
@@ -947,17 +965,19 @@ internal sealed partial class SpikeDatabase
             case "audio":
                 config["audio"] = new JsonObject
                 {
-                    ["size"] = "260|58",
+                    ["padding"] = "10|8",
                     ["backgroundColorToken"] = "theme.colors.surface",
                     ["backgroundAlpha"] = 1,
                     ["textSize"] = 11,
                     ["textColorToken"] = "theme.icons.secondary",
                     ["playCircleSize"] = 32,
+                    ["playIconPadding"] = 9,
                     ["playColorToken"] = "theme.icons.accent",
                     ["playIconColorToken"] = "theme.icons.secondary",
                     ["waveformColorToken"] = "theme.icons.primary",
                     ["waveformPlayedColorToken"] = "theme.icons.accent",
                     ["waveformBarCount"] = 28,
+                    ["waveformBarWidth"] = 3,
                     ["waveformGap"] = 2,
                     ["waveformMinHeight"] = 4,
                     ["waveformMaxHeight"] = 22,

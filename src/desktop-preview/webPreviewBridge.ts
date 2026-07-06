@@ -506,37 +506,50 @@ export function audioComponentToRenderable(
   audio: AudioDesignContract,
 ): RenderableNode {
   const scale = renderScale(payload);
+  const paddingX = Math.max(0, audio.padding.x * scale);
+  const paddingY = Math.max(0, audio.padding.y * scale);
+  const playSize = Math.max(1, audio.playCircleSize * scale);
+  const playIconPadding = Math.max(0, audio.playIconPadding * scale);
+  const barCount = Math.max(4, Math.round(audio.waveformBarCount));
+  const waveformGap = Math.max(0, audio.waveformGap * scale);
+  const barWidth = Math.max(1, audio.waveformBarWidth * scale);
+  const waveformWidth = barCount * barWidth + (barCount - 1) * waveformGap;
+  const minBarHeight = Math.max(1, audio.waveformMinHeight * scale);
+  const maxBarHeight = Math.max(minBarHeight, audio.waveformMaxHeight * scale);
+  const knobSize = audio.progressKnobSize * scale;
+  const waveformHeight = Math.max(maxBarHeight, knobSize);
+  const durationText = parsePreviewText(payload);
+  const durationWidth = Math.ceil(durationText.length * audio.textSize * scale * 0.58);
+  const textHeight = audio.textSize * scale * 1.25;
+  const waveformColumnWidth = Math.max(waveformWidth, durationWidth);
+  const verticalGap = Math.max(2 * scale, paddingY * 0.5);
   const audioBoxLocal = {
     x: 0,
     y: 0,
-    width: audio.size.width * scale,
-    height: audio.size.height * scale,
+    width: paddingX + playSize + paddingX + waveformColumnWidth + paddingX,
+    height: Math.max(
+      paddingY + playSize + paddingY,
+      paddingY + waveformHeight + verticalGap + textHeight + paddingY,
+    ),
   };
-  const playSize = Math.min(audioBoxLocal.height, audio.playCircleSize * scale);
   const playBoxLocal = {
-    x: audioBoxLocal.height * 0.22,
+    x: paddingX,
     y: (audioBoxLocal.height - playSize) / 2,
     width: playSize,
     height: playSize,
   };
   const waveformBoxLocal = {
-    x: playBoxLocal.x + playBoxLocal.width + audioBoxLocal.height * 0.18,
-    y: audioBoxLocal.height * 0.31,
-    width: Math.max(
-      1,
-      audioBoxLocal.width -
-        (playBoxLocal.x + playBoxLocal.width + audioBoxLocal.height * 0.4),
-    ),
-    height: audioBoxLocal.height * 0.28,
+    x: playBoxLocal.x + playBoxLocal.width + paddingX,
+    y: paddingY,
+    width: waveformWidth,
+    height: waveformHeight,
   };
   const playbackBoxLocal = unionBoxes([playBoxLocal, waveformBoxLocal]);
-  const durationText = parsePreviewText(payload);
-  const durationWidth = Math.ceil(durationText.length * audio.textSize * scale * 0.58);
   const textBoxLocal = {
-    x: waveformBoxLocal.x + waveformBoxLocal.width - durationWidth,
-    y: waveformBoxLocal.y + waveformBoxLocal.height + audioBoxLocal.height * 0.08,
+    x: waveformBoxLocal.x + waveformColumnWidth - durationWidth,
+    y: waveformBoxLocal.y + waveformBoxLocal.height + verticalGap,
     width: durationWidth,
-    height: audio.textSize * scale * 1.25,
+    height: textHeight,
   };
   const avatarSize = audio.avatarSlot.avatar
     ? audio.avatarSlot.avatar.size * scale
@@ -575,20 +588,11 @@ export function audioComponentToRenderable(
   const textBox = translateBox(textBoxLocal, origin);
   const avatarBox = avatarBoxLocal ? translateBox(avatarBoxLocal, origin) : undefined;
   const badgeBox = badgeBoxLocal ? translateBox(badgeBoxLocal, origin) : undefined;
-  const knobSize = audio.progressKnobSize * scale;
   const progress = 0.42;
-  const barCount = Math.max(4, Math.round(audio.waveformBarCount));
-  const waveformGap = Math.max(0, audio.waveformGap * scale);
-  const barWidth = Math.max(
-    1,
-    Math.floor((waveformBox.width - waveformGap * (barCount - 1)) / barCount),
-  );
   const actualWaveformEnd =
     waveformBox.x + (barCount - 1) * (barWidth + waveformGap) + barWidth;
   const firstBarCenter = waveformBox.x + barWidth / 2;
   const lastBarCenter = actualWaveformEnd - barWidth / 2;
-  const minBarHeight = Math.max(1, audio.waveformMinHeight * scale);
-  const maxBarHeight = Math.max(minBarHeight, audio.waveformMaxHeight * scale);
   const playedBars = Math.floor(barCount * progress);
   const waveformSeed = hashString(audio.id);
   const knobBox = {
@@ -700,11 +704,11 @@ export function audioComponentToRenderable(
           borderRadius: playSize / 2,
           color: selectedColor(payload, audio.playIconColorToken),
           display: "flex",
-          fontSize: playSize * 0.44,
+          fontSize: Math.max(1, playSize - playIconPadding * 2),
           justifyContent: "center",
           lineHeight: playSize,
           textAlign: "center",
-          paddingLeft: playSize * 0.07,
+          paddingLeft: Math.max(0, playSize - playIconPadding * 2) * 0.08,
         },
       },
       ...waveformBars,
