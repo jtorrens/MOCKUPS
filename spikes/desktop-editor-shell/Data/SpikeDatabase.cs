@@ -150,20 +150,6 @@ internal sealed partial class SpikeDatabase
                 "Icon sets and shared semantic icon tokens.",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.IconThemesRoot),
                 systemDataRoot);
-            var statusBarsRoot = new ProjectTreeNode(
-                ProjectTreeNodeKind.StatusBarsRoot,
-                $"status_bars_root_{project.Id}",
-                "Status Bars",
-                "Reusable device status bar compositions.",
-                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.StatusBarsRoot),
-                systemDataRoot);
-            var navigationBarsRoot = new ProjectTreeNode(
-                ProjectTreeNodeKind.NavigationBarsRoot,
-                $"navigation_bars_root_{project.Id}",
-                "Navigation Bars",
-                "Reusable device navigation bar compositions.",
-                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.NavigationBarsRoot),
-                systemDataRoot);
             var renderPresetsRoot = new ProjectTreeNode(
                 ProjectTreeNodeKind.RenderPresetsRoot,
                 $"render_presets_root_{project.Id}",
@@ -191,8 +177,6 @@ internal sealed partial class SpikeDatabase
             productionDataRoot.AddChild(themesRoot);
             systemDataRoot.AddChild(paletteRoot);
             systemDataRoot.AddChild(iconThemesRoot);
-            systemDataRoot.AddChild(statusBarsRoot);
-            systemDataRoot.AddChild(navigationBarsRoot);
             systemDataRoot.AddChild(renderPresetsRoot);
             systemDataRoot.AddChild(productionFontsRoot);
             systemDataRoot.AddChild(componentClassesRoot);
@@ -207,8 +191,6 @@ internal sealed partial class SpikeDatabase
             themeRootNodes[project.Id] = themesRoot;
             productionFontRootNodes[project.Id] = productionFontsRoot;
             iconThemeRootNodes[project.Id] = iconThemesRoot;
-            statusBarRootNodes[project.Id] = statusBarsRoot;
-            navigationBarRootNodes[project.Id] = navigationBarsRoot;
             renderPresetRootNodes[project.Id] = renderPresetsRoot;
             componentClassRootNodes[project.Id] = componentClassesRoot;
             episodeRootNodes[project.Id] = episodesRoot;
