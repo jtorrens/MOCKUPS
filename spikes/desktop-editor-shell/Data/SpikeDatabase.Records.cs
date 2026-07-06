@@ -84,12 +84,6 @@ internal sealed partial class SpikeDatabase
         IReadOnlyList<IconThemeSearchCandidate> Lucide,
         IReadOnlyList<IconThemeSearchCandidate> Material);
     public sealed record IconThemeGenerateResult(string Token, int WrittenFileCount, IconThemeRefreshResult RefreshResult);
-    public sealed record StatusBarSettings(
-        string ProjectId,
-        string Name,
-        string Family,
-        string ConfigJson,
-        string MetadataJson);
     public sealed record StatusBarItem(
         string Id,
         string Label,
@@ -99,12 +93,6 @@ internal sealed partial class SpikeDatabase
         bool Charging,
         string Zone,
         int Order);
-    public sealed record NavigationBarSettings(
-        string ProjectId,
-        string Name,
-        string Family,
-        string ConfigJson,
-        string MetadataJson);
     public sealed record RenderPresetSettings(
         string ProjectId,
         string Name,
@@ -150,8 +138,6 @@ internal sealed partial class SpikeDatabase
     private sealed record ProductionFontRow(string Id, string ProjectId, string FamilyName, string Category, string SourceDirectory, string FilesJson);
     private sealed record IconThemeRow(string Id, string ProjectId, string Name, string AssetRoot, string MappingJson, string MetadataJson);
     private sealed record IconThemeAssetMoveResult(string AssetRoot, string Name);
-    private sealed record StatusBarRow(string Id, string ProjectId, string Name, string Family, string ConfigJson, string MetadataJson);
-    private sealed record NavigationBarRow(string Id, string ProjectId, string Name, string Family, string ConfigJson, string MetadataJson);
     private sealed record RenderPresetRow(
         string Id,
         string ProjectId,

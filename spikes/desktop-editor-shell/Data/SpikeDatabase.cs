@@ -42,8 +42,6 @@ internal sealed partial class SpikeDatabase
         SeedDevicesIfEmpty(connection);
         SeedActorsIfEmpty(connection);
         SeedProductionFontsIfEmpty(connection);
-        SeedStatusBarsIfEmpty(connection);
-        SeedNavigationBarsIfEmpty(connection);
         SeedRenderPresetsIfEmpty(connection);
         SeedComponentClassesIfEmpty(connection);
         EnsureComponentClassConfigDefaults(connection);
