@@ -57,7 +57,7 @@ internal sealed class EditorEmbeddedUsageDialog
             FontWeight = FontWeight.Bold,
         });
 
-        content.Children.Add(CreateTabs(
+        content.Children.Add(CreateUsageSwitch(
             classUsages,
             presetName,
             presetUsages ?? [],
@@ -95,35 +95,81 @@ internal sealed class EditorEmbeddedUsageDialog
         return selected;
     }
 
-    private Control CreateTabs(
+    private Control CreateUsageSwitch(
         IReadOnlyList<SpikeDatabase.EmbeddedComponentUsage> classUsages,
         string? presetName,
         IReadOnlyList<SpikeDatabase.ComponentPresetReferenceUsage> presetUsages,
         Window dialog,
         System.Action<Selection> select)
     {
-        return new TabControl
+        var classContent = classUsages.Count == 0
+            ? EmptyText("No embedded usages.")
+            : CreateUsageTree(classUsages, dialog, select);
+        var presetContent = string.IsNullOrWhiteSpace(presetName)
+            ? EmptyText("No active preset selected.")
+            : presetUsages.Count == 0
+                ? EmptyText($"No usages for preset {presetName}.")
+                : CreatePresetUsageList(presetUsages, dialog, select);
+        var contentHost = new ContentControl
         {
-            Items =
+            Content = classContent,
+        };
+        var classButton = CreateSegmentButton("Class");
+        var presetButton = CreateSegmentButton("Preset");
+        void Select(bool preset)
+        {
+            contentHost.Content = preset ? presetContent : classContent;
+            SetSegmentState(classButton, !preset);
+            SetSegmentState(presetButton, preset);
+        }
+
+        classButton.Click += (_, _) => Select(false);
+        presetButton.Click += (_, _) => Select(true);
+        Select(false);
+
+        var switchGrid = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("*,*"),
+            MaxWidth = 280,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Children =
             {
-                new TabItem
-                {
-                    Header = "Class usage",
-                    Content = classUsages.Count == 0
-                        ? EmptyText("No embedded usages.")
-                        : CreateUsageTree(classUsages, dialog, select),
-                },
-                new TabItem
-                {
-                    Header = "Preset usage",
-                    Content = string.IsNullOrWhiteSpace(presetName)
-                        ? EmptyText("No active preset selected.")
-                        : presetUsages.Count == 0
-                            ? EmptyText($"No usages for preset {presetName}.")
-                            : CreatePresetUsageList(presetUsages, dialog, select),
-                },
+                classButton,
+                presetButton,
             },
         };
+        Grid.SetColumn(presetButton, 1);
+
+        return new StackPanel
+        {
+            Spacing = 10,
+            Children =
+            {
+                switchGrid,
+                contentHost,
+            },
+        };
+    }
+
+    private Button CreateSegmentButton(string label)
+    {
+        return new Button
+        {
+            Content = label,
+            Height = 32,
+            Padding = new Avalonia.Thickness(12, 0),
+            BorderThickness = new Avalonia.Thickness(1),
+            FontWeight = FontWeight.SemiBold,
+        };
+    }
+
+    private void SetSegmentState(Button button, bool selected)
+    {
+        button.Background = new SolidColorBrush(Color.Parse(selected
+            ? (_isDark ? "#2AD6A638" : "#26D6A638")
+            : (_isDark ? "#12FFFFFF" : "#0D000000")));
+        button.BorderBrush = new SolidColorBrush(Color.Parse(selected ? "#D6A638" : (_isDark ? "#24FFFFFF" : "#20000000")));
+        button.Foreground = new SolidColorBrush(Color.Parse(selected ? "#D6A638" : (_isDark ? "#F2F5FA" : "#172033")));
     }
 
     private static Control EmptyText(string text)
