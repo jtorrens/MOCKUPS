@@ -907,6 +907,8 @@ Tasks:
   - surface/shadow/relief helpers;
   - asset/icon resolver;
   - diagnostics;
+- split resolver-side helpers into focused modules for component contracts,
+  JSON parsing and value validation;
 - keep helpers generic;
 - ensure no helper imports concrete components.
 

@@ -105,6 +105,21 @@ assertNoTerms("src/desktop-preview/componentRenderableCommon.ts", [
   "component_button",
   "component_audio",
 ]);
+assertContains(
+  "src/desktop-preview/componentResolverCommon.ts",
+  "from \"./previewComponentContracts.js\"",
+  "component resolver common must re-export shared contracts instead of defining them locally",
+);
+assertContains(
+  "src/desktop-preview/componentResolverCommon.ts",
+  "from \"./previewValueHelpers.js\"",
+  "component resolver common must re-export shared value helpers instead of defining them locally",
+);
+assertContains(
+  "src/desktop-preview/componentResolverCommon.ts",
+  "from \"./previewJsonHelpers.js\"",
+  "component resolver common must re-export shared JSON helpers instead of defining them locally",
+);
 
 const centralCommonFiles = new Set([
   "src/desktop-preview/componentRenderableCommon.ts",

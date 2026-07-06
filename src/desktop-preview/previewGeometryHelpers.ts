@@ -1,5 +1,5 @@
 import type { RenderableBox } from "../visual/renderable/types.js";
-import type { AlignmentPlacementContract } from "./componentResolverCommon.js";
+import type { AlignmentPlacementContract } from "./previewComponentContracts.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 
 export function renderScale(payload: DesignPreviewPayload) {
@@ -131,4 +131,3 @@ export function translateBox(box: RenderableBox, origin: { x: number; y: number 
     height: box.height,
   };
 }
-

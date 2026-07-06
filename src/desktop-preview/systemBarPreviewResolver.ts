@@ -1,4 +1,12 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
+import { asRecord, parseObject } from "./previewJsonHelpers.js";
+import {
+  optionalNumber,
+  optionalString,
+  requiredBoolean,
+  requiredNumber,
+  requiredString,
+} from "./previewValueHelpers.js";
 
 export interface SystemBarItemContract {
   id: string;
@@ -42,69 +50,6 @@ export interface NavigationBarDesignContract {
     cornerRadius: number;
   };
   zones: Record<NavigationBarZone, SystemBarItemContract[]>;
-}
-
-function asRecord(value: unknown): Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {};
-}
-
-function parseObject(json: string | undefined) {
-  return asRecord(JSON.parse(json || "{}"));
-}
-
-function requiredString(
-  value: Record<string, unknown>,
-  key: string,
-  path: string,
-) {
-  const raw = value[key];
-  if (typeof raw === "string" && raw.trim()) return raw;
-  throw new Error(`Missing string system bar value ${path}`);
-}
-
-function optionalString(value: Record<string, unknown>, key: string) {
-  const raw = value[key];
-  return typeof raw === "string" ? raw : "";
-}
-
-function requiredBoolean(
-  value: Record<string, unknown>,
-  key: string,
-  path: string,
-) {
-  const raw = value[key];
-  if (typeof raw === "boolean") return raw;
-  throw new Error(`Missing boolean system bar value ${path}`);
-}
-
-function requiredNumber(
-  value: Record<string, unknown>,
-  key: string,
-  path: string,
-) {
-  const raw = value[key];
-  if (typeof raw === "number" && Number.isFinite(raw)) return raw;
-  if (typeof raw === "string") {
-    const parsed = Number(raw.replace(",", "."));
-    if (Number.isFinite(parsed)) return parsed;
-  }
-  throw new Error(`Missing numeric system bar value ${path}`);
-}
-
-function optionalNumber(
-  value: Record<string, unknown>,
-  key: string,
-  fallback: number,
-) {
-  const raw = value[key];
-  if (typeof raw === "number" && Number.isFinite(raw)) return raw;
-  if (typeof raw === "string") {
-    const parsed = Number(raw.replace(",", "."));
-    if (Number.isFinite(parsed)) return parsed;
-  }
-  return fallback;
 }
 
 function itemValue(value: unknown) {

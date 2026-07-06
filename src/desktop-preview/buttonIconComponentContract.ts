@@ -1,7 +1,7 @@
 import type {
   AlignmentPlacementContract,
   SurfaceStyleContract,
-} from "./componentResolverCommon.js";
+} from "./previewComponentContracts.js";
 import type { LabelDesignContract } from "./labelComponentContract.js";
 
 export interface ButtonIconDesignContract {

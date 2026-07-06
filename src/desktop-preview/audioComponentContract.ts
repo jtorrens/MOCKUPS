@@ -3,7 +3,7 @@ import type { ButtonIconDesignContract } from "./buttonIconComponentContract.js"
 import type {
   AlignmentPlacementContract,
   SurfaceStyleContract,
-} from "./componentResolverCommon.js";
+} from "./previewComponentContracts.js";
 
 export interface AudioDesignContract {
   id: string;

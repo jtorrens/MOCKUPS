@@ -1,4 +1,4 @@
-import type { SurfaceStyleContract } from "./componentResolverCommon.js";
+import type { SurfaceStyleContract } from "./previewComponentContracts.js";
 
 export interface LabelDesignContract {
   id: string;
