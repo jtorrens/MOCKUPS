@@ -45,6 +45,7 @@ internal sealed partial class SpikeDatabase
         SeedRenderPresetsIfEmpty(connection);
         SeedComponentClassesIfEmpty(connection);
         EnsureComponentClassConfigDefaults(connection);
+        EnsureComponentClassRecordClassIds(connection);
         SeedThemesIfEmpty(connection);
         EnsureThemeComponentPresetReferences(connection);
         ClearShotRenderPresetReferences(connection);

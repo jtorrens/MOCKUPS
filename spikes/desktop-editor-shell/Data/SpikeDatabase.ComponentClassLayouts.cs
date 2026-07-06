@@ -100,7 +100,7 @@ internal sealed partial class SpikeDatabase
               ]
             }
             """,
-            "component.text_input_bar" => $$"""
+            "component.textInputBar" => $$"""
             ,
             {
               "id": "textInput",
@@ -155,7 +155,7 @@ internal sealed partial class SpikeDatabase
               ]
             }
             """,
-            "component.button_icon" => $$"""
+            "component.buttonIcon" => $$"""
             ,
             {
               "id": "buttonIcon",

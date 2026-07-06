@@ -907,6 +907,22 @@ for (const componentType of Object.keys(desktopPreviewComponents)) {
     `component class field options must include manifest component type ${componentType}`,
   );
 }
+for (const legacyComponentRecordClassId of [
+  "component.button_icon",
+  "component.text_input_bar",
+]) {
+  for (const filePath of [
+    "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassDefaults.cs",
+    "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassLayouts.cs",
+    "spikes/desktop-editor-shell/EditorShell/EmbeddedComponentSlotCatalog.cs",
+  ]) {
+    assertDoesNotContain(
+      filePath,
+      legacyComponentRecordClassId,
+      `legacy component record class id ${legacyComponentRecordClassId} must not return to ${filePath}`,
+    );
+  }
+}
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/FieldDefinition.cs",
   "ComponentPreset",

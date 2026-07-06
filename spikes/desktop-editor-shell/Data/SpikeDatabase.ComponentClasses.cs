@@ -1512,6 +1512,18 @@ internal sealed partial class SpikeDatabase
         }
     }
 
+    private static void EnsureComponentClassRecordClassIds(SqliteConnection connection)
+    {
+        foreach (var seed in ComponentSeedRows)
+        {
+            Execute(
+                connection,
+                "UPDATE component_classes SET record_class_id = $recordClassId WHERE component_type = $componentType AND record_class_id <> $recordClassId",
+                ("$componentType", seed.ComponentType),
+                ("$recordClassId", seed.RecordClassId));
+        }
+    }
+
     private static void EnsureComponentClassConfigDefaults(SqliteConnection connection)
     {
         foreach (var row in QueryComponentClassRows(connection))

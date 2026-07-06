@@ -60,7 +60,7 @@ internal static class EmbeddedComponentSlotCatalog
             "component.audio.badge.editor",
             "buttonIcon",
             "Badge",
-            "component.button_icon",
+            "component.buttonIcon",
             ["audio", "badgeSlot"]),
         new(
             "component.video.surface.editor",
