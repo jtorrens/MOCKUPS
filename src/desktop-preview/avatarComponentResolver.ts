@@ -14,10 +14,12 @@ import { resolveLabelComponentFromRecords } from "./labelComponentResolver.js";
 
 function labelPreview(
   preview: Record<string, unknown>,
+  title: string,
   showSubtext: boolean,
 ): Record<string, unknown> {
   return {
     ...preview,
+    sampleText: title,
     sampleSubtext: showSubtext ? preview.sampleSubtext : "",
   };
 }
@@ -60,10 +62,11 @@ export function resolveAvatarComponentFromRecords(
     requiredRecord(componentBaseConfigs, "label", "componentBaseConfigs.label"),
     overrides,
   );
+  const actor = resolveActorPreview(preview);
 
   return {
     id,
-    actor: resolveActorPreview(preview),
+    actor,
     size: requiredNumber(avatar, "defaultSize", "component.avatar.defaultSize"),
     cornerRadiusToken: requiredString(
       avatar,
@@ -81,7 +84,7 @@ export function resolveAvatarComponentFromRecords(
       label: showLabel
         ? resolveLabelComponentFromRecords(
             embeddedLabelConfig,
-            labelPreview(preview, showSubtext),
+            labelPreview(preview, actor.displayName, showSubtext),
             `${id}.label`,
           )
         : undefined,

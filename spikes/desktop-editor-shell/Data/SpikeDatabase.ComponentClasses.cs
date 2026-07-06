@@ -459,6 +459,7 @@ internal sealed partial class SpikeDatabase
             var designPreview = ParseJsonObject(string.IsNullOrWhiteSpace(row.DesignPreviewJson) ? "{}" : row.DesignPreviewJson);
             var designPreviewDefaults = ParseJsonObject(DefaultComponentDesignPreviewJson(row.ComponentType));
             var designPreviewChanged = JsonPath.MergeMissing(designPreview, designPreviewDefaults);
+            designPreviewChanged |= EnsureComponentInputs(designPreview, designPreviewDefaults);
             designPreviewChanged |= EnsureComponentDesignPreviewText(row.ComponentType, designPreview);
             designPreviewChanged |= EnsureButtonIconPreviewSize(row.ComponentType, designPreview);
 
@@ -685,6 +686,43 @@ internal sealed partial class SpikeDatabase
 
         designPreview["sampleSubtext"] = "Subtitle";
         return true;
+    }
+
+    private static bool EnsureComponentInputs(
+        JsonObject designPreview,
+        JsonObject designPreviewDefaults)
+    {
+        if (designPreviewDefaults["inputs"] is not JsonArray defaultInputs)
+        {
+            return false;
+        }
+
+        if (designPreview["inputs"] is not JsonArray inputs)
+        {
+            designPreview["inputs"] = JsonNode.Parse(defaultInputs.ToJsonString());
+            return true;
+        }
+
+        var existingIds = inputs
+            .OfType<JsonObject>()
+            .Select((input) => JsonPath.String(input, "id", ""))
+            .Where((id) => !string.IsNullOrWhiteSpace(id))
+            .ToHashSet(StringComparer.Ordinal);
+        var changed = false;
+        foreach (var defaultInput in defaultInputs.OfType<JsonObject>())
+        {
+            var id = JsonPath.String(defaultInput, "id", "");
+            if (string.IsNullOrWhiteSpace(id) || existingIds.Contains(id))
+            {
+                continue;
+            }
+
+            inputs.Add(JsonNode.Parse(defaultInput.ToJsonString()));
+            existingIds.Add(id);
+            changed = true;
+        }
+
+        return changed;
     }
 
     private static bool EnsureButtonIconPreviewSize(string componentType, JsonObject designPreview)
@@ -1100,6 +1138,7 @@ internal sealed partial class SpikeDatabase
             "avatar" =>
             [
                 ComponentInput("actorId", "Actor", "actorId", "actor", ""),
+                ComponentInput("sampleSubtext", "Subtitle", "sampleSubtext", "text", "Subtitle"),
             ],
             "buttonIcon" =>
             [
