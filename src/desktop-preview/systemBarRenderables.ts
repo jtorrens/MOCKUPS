@@ -5,7 +5,7 @@ import type {
   NavigationBarDesignContract,
   StatusBarDesignContract,
   SystemBarItemContract,
-} from "./systemBarPreviewResolver.js";
+} from "./systemBarComponentContract.js";
 
 type JsonRecord = Record<string, unknown>;
 

@@ -39,14 +39,14 @@ export const desktopPreviewComponents = {
   },
   status_bar: {
     category: "system",
-    contract: "./systemBarPreviewResolver",
+    contract: "./systemBarComponentContract",
     resolver: "./systemBarPreviewResolver",
     renderable: "./systemBarRenderables",
     embeds: [],
   },
   navigation_bar: {
     category: "system",
-    contract: "./systemBarPreviewResolver",
+    contract: "./systemBarComponentContract",
     resolver: "./systemBarPreviewResolver",
     renderable: "./systemBarRenderables",
     embeds: [],

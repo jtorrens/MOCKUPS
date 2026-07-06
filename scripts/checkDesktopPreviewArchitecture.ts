@@ -216,8 +216,11 @@ const desktopPreviewPaintTreeSourceFiles = new Set([
   "src/desktop-preview/designPreviewRenderableRegistry.ts",
   "src/desktop-preview/renderDesignPreviewHtml.tsx",
 ]);
+const manifestComponentEntrypointImports = new Set<string>();
 for (const [, entry] of manifestEntries) {
   desktopPreviewPaintTreeSourceFiles.add(moduleFile(entry, "renderable"));
+  manifestComponentEntrypointImports.add(moduleImport(entry, "resolver"));
+  manifestComponentEntrypointImports.add(moduleImport(entry, "renderable"));
   for (const kind of ["resolver", "renderable"] as const) {
     const filePath = moduleFile(entry, kind);
     const allowed = allowedComponentImports[filePath] ?? new Set<string>();
@@ -276,8 +279,7 @@ for (const filePath of walkFiles(previewRoot)) {
   }
 
   for (const target of imports) {
-    const isConcreteComponentImport =
-      /(?:label|avatar|buttonIcon|audio)Component(?:Resolver|Renderable)\.js$/.test(target);
+    const isConcreteComponentImport = manifestComponentEntrypointImports.has(target);
     if (!isConcreteComponentImport) continue;
 
     const allowed = allowedComponentImports[relativePath];

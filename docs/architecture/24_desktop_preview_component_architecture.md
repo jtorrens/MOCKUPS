@@ -686,6 +686,8 @@ Forbidden:
 - registry -> component internals beyond routing.
 
 Allowed parent-to-child dependencies must come from the manifest `embeds` field.
+The check derives concrete resolver/renderable entrypoints from the manifest
+instead of maintaining a separate hardcoded component-name list.
 
 ### `check:paint-tree-schema`
 
