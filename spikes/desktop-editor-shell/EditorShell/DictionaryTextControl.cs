@@ -1,5 +1,4 @@
 using Avalonia.Controls;
-using Avalonia.Input;
 using System;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -23,7 +22,10 @@ internal sealed class DictionaryTextControl : Grid, IDictionaryValueControl
 
             SetLocalValue(_textBox.Text ?? "");
         };
-        AttachDeferredCommit(_textBox);
+        EditorTextBoxBehavior.AttachDeferredCommit(
+            _textBox,
+            CommitValue,
+            commitOnEnter: _definition.ValueKind != ValueKind.StringMultiline);
         Children.Add(_textBox);
     }
 
@@ -47,18 +49,6 @@ internal sealed class DictionaryTextControl : Grid, IDictionaryValueControl
 
         _value = value;
         ValueChanged?.Invoke(this, _value);
-    }
-
-    private void AttachDeferredCommit(TextBox textBox)
-    {
-        textBox.LostFocus += (_, _) => CommitValue();
-        textBox.KeyDown += (_, args) =>
-        {
-            if (args.Key != Key.Enter || _definition.ValueKind == ValueKind.StringMultiline) return;
-
-            CommitValue();
-            args.Handled = true;
-        };
     }
 
     private void CommitValue()

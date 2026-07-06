@@ -1,6 +1,5 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using System;
@@ -35,7 +34,7 @@ internal sealed class DictionaryHexColorControl : Grid, IDictionaryValueControl
             SetLocalValue(DictionaryFieldColorValue.NormalizeHex(_textBox.Text ?? ""));
             UpdateColorControlsFromValue();
         };
-        AttachDeferredCommit(_textBox);
+        EditorTextBoxBehavior.AttachDeferredCommit(_textBox, CommitValue);
         SetColumn(_textBox, 1);
         Children.Add(_textBox);
 
@@ -79,18 +78,6 @@ internal sealed class DictionaryHexColorControl : Grid, IDictionaryValueControl
 
         _value = value;
         ValueChanged?.Invoke(this, _value);
-    }
-
-    private void AttachDeferredCommit(TextBox textBox)
-    {
-        textBox.LostFocus += (_, _) => CommitValue();
-        textBox.KeyDown += (_, args) =>
-        {
-            if (args.Key != Key.Enter) return;
-
-            CommitValue();
-            args.Handled = true;
-        };
     }
 
     private void CommitValue()

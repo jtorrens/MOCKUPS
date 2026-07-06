@@ -1,6 +1,5 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
@@ -49,7 +48,7 @@ internal sealed class DictionaryImageFileControl : Grid, IDictionaryValueControl
 
             SetLocalValue(_textBox.Text ?? "");
         };
-        AttachDeferredCommit(_textBox);
+        EditorTextBoxBehavior.AttachDeferredCommit(_textBox, CommitValue);
 
         var pathRow = new Grid
         {
@@ -130,18 +129,6 @@ internal sealed class DictionaryImageFileControl : Grid, IDictionaryValueControl
 
         RefreshPreview();
         ValueChanged?.Invoke(this, _value);
-    }
-
-    private void AttachDeferredCommit(TextBox textBox)
-    {
-        textBox.LostFocus += (_, _) => CommitValue();
-        textBox.KeyDown += (_, args) =>
-        {
-            if (args.Key != Key.Enter) return;
-
-            CommitValue();
-            args.Handled = true;
-        };
     }
 
     private void CommitValue()

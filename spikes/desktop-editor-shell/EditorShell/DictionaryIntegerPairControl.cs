@@ -1,5 +1,4 @@
 using Avalonia.Controls;
-using Avalonia.Input;
 using Avalonia.Layout;
 using System;
 
@@ -26,7 +25,7 @@ internal sealed class DictionaryIntegerPairControl : Grid, IDictionaryValueContr
 
         _firstTextBox = DictionaryTextBoxFactory.CreateCompactPair(pair.First);
         _firstTextBox.TextChanged += (_, _) => SetValueFromTextBoxes();
-        AttachDeferredCommit(_firstTextBox);
+        EditorTextBoxBehavior.AttachDeferredCommit(_firstTextBox, CommitValue);
         SetColumn(_firstTextBox, 1);
 
         var secondLabel = CreateLabel(labels.Second);
@@ -34,7 +33,7 @@ internal sealed class DictionaryIntegerPairControl : Grid, IDictionaryValueContr
 
         _secondTextBox = DictionaryTextBoxFactory.CreateCompactPair(pair.Second);
         _secondTextBox.TextChanged += (_, _) => SetValueFromTextBoxes();
-        AttachDeferredCommit(_secondTextBox);
+        EditorTextBoxBehavior.AttachDeferredCommit(_secondTextBox, CommitValue);
         SetColumn(_secondTextBox, 3);
 
         Children.Add(firstLabel);
@@ -71,18 +70,6 @@ internal sealed class DictionaryIntegerPairControl : Grid, IDictionaryValueContr
         ValueChanged?.Invoke(this, DictionaryFieldPairText.Join(
             _firstTextBox.Text ?? "",
             _secondTextBox.Text ?? ""));
-    }
-
-    private void AttachDeferredCommit(TextBox textBox)
-    {
-        textBox.LostFocus += (_, _) => CommitValue();
-        textBox.KeyDown += (_, args) =>
-        {
-            if (args.Key != Key.Enter) return;
-
-            CommitValue();
-            args.Handled = true;
-        };
     }
 
     private void CommitValue()

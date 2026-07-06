@@ -1,5 +1,4 @@
 using Avalonia.Controls;
-using Avalonia.Input;
 using System;
 using System.Threading.Tasks;
 
@@ -30,7 +29,7 @@ internal sealed class DictionaryPathControl : Grid, IDictionaryValueControl
 
             SetLocalValue(_textBox.Text ?? "");
         };
-        AttachDeferredCommit(_textBox);
+        EditorTextBoxBehavior.AttachDeferredCommit(_textBox, CommitValue);
         Children.Add(_textBox);
 
         _browseButton = new DictionaryPathBrowseButton(definition.ValueKind, value, definition.IsEditable, browsePath);
@@ -72,18 +71,6 @@ internal sealed class DictionaryPathControl : Grid, IDictionaryValueControl
         }
 
         ValueChanged?.Invoke(this, _value);
-    }
-
-    private void AttachDeferredCommit(TextBox textBox)
-    {
-        textBox.LostFocus += (_, _) => CommitValue();
-        textBox.KeyDown += (_, args) =>
-        {
-            if (args.Key != Key.Enter) return;
-
-            CommitValue();
-            args.Handled = true;
-        };
     }
 
     private void CommitValue()
