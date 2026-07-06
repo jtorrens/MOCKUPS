@@ -1,9 +1,8 @@
 import type { RenderableBox, RenderableNode } from "../visual/renderable/types.js";
 import {
   boundedCenterBox,
-  colorForMode,
   renderScale,
-  variants,
+  selectedColor,
 } from "./componentRenderableCommon.js";
 import type { CursorDesignContract } from "./cursorComponentContract.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
@@ -29,25 +28,15 @@ export function cursorComponentToRenderableAt(
 ): RenderableNode {
   return {
     id: cursor.id,
-    type: "surface",
+    type: "path",
     frame: 0,
     box,
     style: {
-      background: colorForMode(
-        payload,
-        cursor.colorToken,
-        payload.themeMode || "light",
-      ),
-      borderRadius: Math.max(0.5, box.width / 2),
+      fill: selectedColor(payload, cursor.colorToken),
+      pathData: "M0 0H100V100H0Z",
+      preserveAspectRatio: "none",
+      viewBox: "0 0 100 100",
       opacity: 1,
-      colorModes: Object.fromEntries(
-        variants(payload).map((mode) => [
-          mode,
-          {
-            background: colorForMode(payload, cursor.colorToken, mode),
-          },
-        ]),
-      ),
     },
   };
 }
