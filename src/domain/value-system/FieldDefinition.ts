@@ -42,6 +42,14 @@ export interface FieldDefinition {
 
 export function defineField(definition: FieldDefinition): FieldDefinition {
   ValueRegistry.definition(definition.kind);
+  if (definition.kind === "recordReference") {
+    if (!definition.ui?.tableId?.trim()) {
+      throw new Error(`Record reference field ${definition.id} is missing ui.tableId.`);
+    }
+    if (!definition.ui?.labelColumn?.trim()) {
+      throw new Error(`Record reference field ${definition.id} is missing ui.labelColumn.`);
+    }
+  }
   if (definition.defaultValue !== undefined) {
     ValueRegistry.assert(definition.kind, definition.defaultValue);
   }
