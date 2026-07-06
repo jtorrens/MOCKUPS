@@ -519,7 +519,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 update.ShowDesignMarks,
                 Placeholder(
                     "Design WebView host",
-                    "Select a status bar or navigation bar to preview it through the existing visual modules.")));
+                    "Select a component preset to preview it through the desktop component route.")));
             return;
         }
 
