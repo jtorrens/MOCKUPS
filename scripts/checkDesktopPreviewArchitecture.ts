@@ -777,9 +777,14 @@ assertContains(
   "embedded component preset selection must have a dedicated dictionary value kind",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DictionaryValueControlFactory.cs",
+  "spikes/desktop-editor-shell/EditorShell/DictionaryControlRegistry.cs",
   "ValueKind.ComponentPreset",
   "component preset fields must use their dedicated dictionary control",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/DictionaryFieldControl.cs",
+  "DictionaryControlRegistry.Create",
+  "dictionary field rows must host controls through the dictionary control registry",
 );
 assertContains(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",

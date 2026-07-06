@@ -50,7 +50,7 @@ internal sealed class DictionaryFieldControl : Grid
         };
         SetColumn(_label, 0);
 
-        _valueControl = AddValueControl(DictionaryValueControlFactory.Create(
+        _valueControl = AddValueControl(DictionaryControlRegistry.Create(
             _definition,
             _value,
             services,
