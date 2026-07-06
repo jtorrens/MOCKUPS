@@ -641,7 +641,8 @@ public partial class MainWindow : SukiWindow
             : null);
         EditorBreadcrumbBar.Render(EditorBreadcrumbPanel, [
             new EditorBreadcrumbItem(title),
-        ], CreateHeaderActionsForSelectedComponent());
+        ], CreateStructureButtonForSelectedComponent());
+        SetEditorHeaderActions(CreateHeaderActionsForSelectedComponent());
     }
 
     private void SetEditorEmbeddedTitle(EmbeddedEditorContext context)
@@ -677,12 +678,33 @@ public partial class MainWindow : SukiWindow
             EditorBreadcrumbPanel,
             items,
             EditorStructureButton.Create(async () => await _embeddedUsageNavigator.ShowForEmbedded(context.OwnerNode, context.Slot)));
+        SetEditorHeaderActions(null);
     }
 
     private void SetEditorPresetText(string? text)
     {
         EditorPresetTextBlock.Text = text ?? "";
         EditorPresetTextBlock.IsVisible = !string.IsNullOrWhiteSpace(text);
+    }
+
+    private void SetEditorHeaderActions(Control? content)
+    {
+        EditorHeaderActionsPanel.Children.Clear();
+        if (content is not null)
+        {
+            EditorHeaderActionsPanel.Children.Add(content);
+        }
+    }
+
+    private Control? CreateStructureButtonForSelectedComponent()
+    {
+        if (_selectedNode?.Kind != ProjectTreeNodeKind.ComponentClass)
+        {
+            return null;
+        }
+
+        var node = _selectedNode;
+        return EditorStructureButton.Create(async () => await _embeddedUsageNavigator.ShowForComponent(node));
     }
 
     private Control? CreateHeaderActionsForSelectedComponent()
@@ -699,7 +721,6 @@ public partial class MainWindow : SukiWindow
             Spacing = 6,
             Children =
             {
-                EditorStructureButton.Create(async () => await _embeddedUsageNavigator.ShowForComponent(node)),
                 CreateSavePresetButton(node),
             },
         };
