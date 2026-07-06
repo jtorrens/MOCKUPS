@@ -77,8 +77,8 @@ internal sealed partial class SpikeDatabase
         foreach (var theme in themes)
         {
             AddUsage(index, ProjectTreeNodeKind.IconTheme, theme.IconThemeId, $"Theme: {theme.Name}");
-            AddUsage(index, ProjectTreeNodeKind.StatusBar, theme.StatusBarId, $"Theme: {theme.Name}");
-            AddUsage(index, ProjectTreeNodeKind.NavigationBar, theme.NavigationBarId, $"Theme: {theme.Name}");
+            AddSystemBarUsage(index, componentClasses, ProjectTreeNodeKind.StatusBar, theme.StatusBarId, $"Theme: {theme.Name}");
+            AddSystemBarUsage(index, componentClasses, ProjectTreeNodeKind.NavigationBar, theme.NavigationBarId, $"Theme: {theme.Name}");
 
             foreach (var font in productionFonts)
             {
@@ -207,6 +207,22 @@ internal sealed partial class SpikeDatabase
         {
             usages.Add(usage);
         }
+    }
+
+    private static void AddSystemBarUsage(
+        IDictionary<string, List<string>> index,
+        IReadOnlyList<ComponentClassRow> componentClasses,
+        ProjectTreeNodeKind legacyKind,
+        string id,
+        string usage)
+    {
+        if (componentClasses.Any((componentClass) => componentClass.Id.Equals(id, StringComparison.Ordinal)))
+        {
+            AddUsage(index, ProjectTreeNodeKind.ComponentClass, id, usage);
+            return;
+        }
+
+        AddUsage(index, legacyKind, id, usage);
     }
 
     private static void AddUsageIfContains(
