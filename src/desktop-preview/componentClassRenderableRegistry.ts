@@ -23,19 +23,7 @@ import {
 
 type ComponentRenderableFactory = (payload: DesignPreviewPayload) => RenderableNode;
 
-export const componentRenderableFactoryKeys = [
-  "label",
-  "avatar",
-  "audio_message",
-  "button_icon",
-  "status_bar",
-  "navigation_bar",
-] as const satisfies readonly DesktopPreviewComponentClass[];
-
-const ComponentRenderableFactories: Record<
-  (typeof componentRenderableFactoryKeys)[number],
-  ComponentRenderableFactory
-> = {
+export const componentRenderableFactories = {
   label: (payload) => labelComponentToRenderable(payload, resolveLabelComponent(payload)),
   avatar: (payload) => avatarComponentToRenderable(payload, resolveAvatarComponent(payload)),
   audio_message: (payload) => audioComponentToRenderable(payload, resolveAudioComponent(payload)),
@@ -44,12 +32,12 @@ const ComponentRenderableFactories: Record<
   status_bar: (payload) => statusBarToRenderable(payload, resolveStatusBar(payload)),
   navigation_bar: (payload) =>
     navigationBarToRenderable(payload, resolveNavigationBar(payload)),
-};
+} satisfies Record<DesktopPreviewComponentClass, ComponentRenderableFactory>;
 
 export function componentClassToRenderable(payload: DesignPreviewPayload): RenderableNode {
   const componentType = payload.componentType ?? "";
   const factory = isRoutedComponentClass(componentType)
-    ? ComponentRenderableFactories[componentType]
+    ? componentRenderableFactories[componentType]
     : undefined;
   if (factory) {
     return factory(payload);
@@ -85,7 +73,7 @@ export function componentClassToRenderable(payload: DesignPreviewPayload): Rende
 
 function isRoutedComponentClass(
   value: string,
-): value is (typeof componentRenderableFactoryKeys)[number] {
+): value is keyof typeof componentRenderableFactories {
   return isDesktopPreviewComponentClass(value)
-    && Object.hasOwn(ComponentRenderableFactories, value);
+    && Object.hasOwn(componentRenderableFactories, value);
 }

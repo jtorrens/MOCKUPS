@@ -4,7 +4,7 @@ import {
   desktopPreviewComponents,
   type DesktopPreviewComponentManifestEntry,
 } from "../src/desktop-preview/desktopPreviewComponents.js";
-import { componentRenderableFactoryKeys } from "../src/desktop-preview/componentClassRenderableRegistry.js";
+import { componentRenderableFactories } from "../src/desktop-preview/componentClassRenderableRegistry.js";
 
 const root = process.cwd();
 const previewRoot = path.join(root, "src", "desktop-preview");
@@ -166,13 +166,20 @@ for (const [componentClass, entry] of manifestEntries) {
   }
 }
 
-const routedComponentClasses = new Set(componentRenderableFactoryKeys);
+const routedComponentClasses = new Set(Object.keys(componentRenderableFactories));
 for (const [componentClass, entry] of manifestEntries) {
-  if (entry.category === "system") continue;
-  if (!routedComponentClasses.has(componentClass as (typeof componentRenderableFactoryKeys)[number])) {
+  if (!routedComponentClasses.has(componentClass)) {
     addViolation(
       "src/desktop-preview/componentClassRenderableRegistry.ts",
       `component class "${componentClass}" is missing from component renderable registry`,
+    );
+  }
+}
+for (const componentClass of routedComponentClasses) {
+  if (!desktopPreviewComponents[componentClass]) {
+    addViolation(
+      "src/desktop-preview/componentClassRenderableRegistry.ts",
+      `component renderable registry contains unknown class "${componentClass}"`,
     );
   }
 }

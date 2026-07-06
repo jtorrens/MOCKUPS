@@ -658,7 +658,7 @@ Checks:
 - every entry has category, contract, resolver, renderable and embeds;
 - every listed file exists;
 - every entry follows naming conventions;
-- the registry matches the manifest;
+- the registry matches the manifest without a second hardcoded key list;
 - system/atom/component are categories only.
 
 ### `check:preview-import-graph`
