@@ -673,6 +673,20 @@ for (const forbiddenLegacyLayoutTerm of [
     `legacy system bar layout term ${forbiddenLegacyLayoutTerm} must not return; use component layouts`,
   );
 }
+for (const forbiddenComponentInputControl of [
+  "EditorInstantComboBox",
+  "new ComboBox",
+  "new TextBox",
+  "new CheckBox",
+  "new ToggleSwitch",
+  "new NumericUpDown",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+    forbiddenComponentInputControl,
+    `component inputs must use dictionary controls, not local ${forbiddenComponentInputControl}`,
+  );
+}
 assertDoesNotContain(
   "spikes/desktop-editor-shell/EditorShell/RecordClassFieldValueService.cs",
   "ProjectTreeNodeKind.StatusBar => fieldId.StartsWith(\"statusBar.\"",

@@ -16,6 +16,7 @@ internal static class DictionaryControlRegistry
         {
             [ValueKind.Boolean] = (request) => new DictionaryBooleanControl(request.Value, request.Definition.IsEditable),
             [ValueKind.OptionToken] = (request) => new DictionaryOptionTokenControl(request.Definition, request.Value),
+            [ValueKind.RecordReference] = CreateRecordReferenceControl,
             [ValueKind.PaletteColorToken] = (request) => new DictionaryPaletteTokenControl(
                 request.Definition.Label,
                 request.Definition.Options,
@@ -85,5 +86,15 @@ internal static class DictionaryControlRegistry
             : request.Definition.ValueKind == ValueKind.Integer
                 ? new DictionaryIntegerControl(request.Definition, request.Value)
                 : new DictionaryDecimalControl(request.Definition, request.Value);
+    }
+
+    private static IDictionaryValueControl CreateRecordReferenceControl(DictionaryControlRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Definition.RecordReference?.TableId))
+        {
+            throw new InvalidOperationException($"Record reference field '{request.Definition.Id}' is missing a table id.");
+        }
+
+        return new DictionaryOptionTokenControl(request.Definition, request.Value);
     }
 }

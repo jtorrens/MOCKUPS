@@ -244,37 +244,14 @@ internal sealed class ComponentInputsPanel : ContentControl
 
     private Control CreateInputRow(ComponentInputDefinition input, string projectId)
     {
-        if (input.Kind != ComponentInputKind.Actor)
-        {
-            return CreateDictionaryInput(input, projectId);
-        }
-
-        var row = new Grid
-        {
-            ColumnDefinitions = new ColumnDefinitions("120,*"),
-            ColumnSpacing = 10,
-            MinHeight = 38,
-        };
-        row.Children.Add(new TextBlock
-        {
-            Text = input.Label,
-            VerticalAlignment = VerticalAlignment.Center,
-            FontWeight = FontWeight.SemiBold,
-            FontSize = 12,
-            Opacity = 0.86,
-        });
-
-        var control = CreateActorInput(input, projectId);
-        Grid.SetColumn(control, 1);
-        row.Children.Add(control);
-        return row;
+        return CreateDictionaryInput(input, projectId);
     }
 
     private Control CreateDictionaryInput(ComponentInputDefinition input, string projectId)
     {
         var field = new DictionaryFieldControl(
             new FieldValue(
-                CreateFieldDefinition(input),
+                CreateFieldDefinition(input, projectId),
                 Value(input)),
             CreateDictionaryServices(projectId));
         if (input.Kind == ComponentInputKind.Boolean)
@@ -295,7 +272,7 @@ internal sealed class ComponentInputsPanel : ContentControl
         return field;
     }
 
-    private FieldDefinition CreateFieldDefinition(ComponentInputDefinition input)
+    private FieldDefinition CreateFieldDefinition(ComponentInputDefinition input, string projectId)
     {
         return input.Kind switch
         {
@@ -322,6 +299,13 @@ internal sealed class ComponentInputsPanel : ContentControl
                 ValueKind.OptionToken,
                 DefaultValue: input.DefaultValue,
                 Options: input.Options),
+            ComponentInputKind.Actor => new FieldDefinition(
+                input.Id,
+                input.Label,
+                ValueKind.RecordReference,
+                DefaultValue: input.DefaultValue,
+                Options: _database.GetActorOptions(projectId),
+                RecordReference: new RecordReferenceDefinition("actors")),
             ComponentInputKind.Icon => new FieldDefinition(
                 input.Id,
                 input.Label,
@@ -342,31 +326,6 @@ internal sealed class ComponentInputsPanel : ContentControl
                 new IconTokenPickerDialog(_owner, _database).Show(projectId, currentValue, allowMultiple),
             CreateIconPreview: (token) =>
                 SvgIconPreview.CreateProjectIconTokenPreview(_database, projectId, token, 18));
-    }
-
-    private Control CreateActorInput(ComponentInputDefinition input, string projectId)
-    {
-        var combo = new EditorInstantComboBox
-        {
-            MinHeight = 36,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-        };
-        var options = _database.GetActorOptions(projectId).ToList();
-        combo.ItemsSource = options;
-        var selected = options.FirstOrDefault((option) => option.Value == Value(input))
-            ?? options.FirstOrDefault((option) => !string.IsNullOrWhiteSpace(option.Value))
-            ?? options.FirstOrDefault();
-        if (string.IsNullOrWhiteSpace(Value(input)) && selected is not null)
-        {
-            _values[StorageKey(input)] = selected.Value;
-        }
-        combo.SelectedItem = selected;
-        combo.SelectionChanged += (_, _) =>
-        {
-            if (_isUpdating || combo.SelectedItem is null) return;
-            SetValue(input, combo.SelectedItem.Value);
-        };
-        return combo;
     }
 
     private void EnsureValue(ComponentInputDefinition input, JsonObject preview)

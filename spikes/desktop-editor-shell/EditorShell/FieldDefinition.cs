@@ -14,6 +14,7 @@ internal enum ValueKind
     DirectoryPath,
     ImageFilePath,
     OptionToken,
+    RecordReference,
     ThemeToken,
     HexColor,
     Alpha,
@@ -49,6 +50,8 @@ internal sealed record NumberDefinition(
     int DecimalPlaces = 0,
     bool UseSlider = false);
 
+internal sealed record RecordReferenceDefinition(string TableId);
+
 internal enum ImagePreviewMode
 {
     Aspect,
@@ -74,7 +77,8 @@ internal sealed record FieldDefinition(
     IReadOnlyList<FieldOption>? Options = null,
     PairFieldLabels? PairLabels = null,
     ImagePreviewDefinition? ImagePreview = null,
-    NumberDefinition? Number = null);
+    NumberDefinition? Number = null,
+    RecordReferenceDefinition? RecordReference = null);
 
 internal sealed record FieldValue(
     FieldDefinition Definition,
