@@ -655,7 +655,6 @@ public partial class MainWindow : SukiWindow
     {
         return _selectedNode?.Kind switch
         {
-            ProjectTreeNodeKind.ComponentClass => "Preset: Current class values",
             ProjectTreeNodeKind.ComponentPreset => $"Preset: {_selectedNode.Name}",
             _ => null,
         };

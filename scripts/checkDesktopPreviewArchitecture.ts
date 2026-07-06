@@ -62,6 +62,13 @@ function assertNoTerms(relativePath: string, terms: string[]) {
   }
 }
 
+function assertContains(relativePath: string, term: string, message: string) {
+  const source = readText(relativePath);
+  if (!source.includes(term)) {
+    addViolation(relativePath, message);
+  }
+}
+
 if (existsSync(path.join(previewRoot, "webPreviewBridge.ts"))) {
   addViolation(
     "src/desktop-preview/webPreviewBridge.ts",
@@ -248,6 +255,56 @@ if (payloadSource.includes('"statusBar"') || payloadSource.includes('"navigation
     "status/navigation bars must route as componentClass, not top-level preview kinds",
   );
 }
+
+assertNoTerms("spikes/desktop-editor-shell/MainWindow.axaml.cs", [
+  "Current class values",
+]);
+
+assertContains(
+  "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+  "private readonly Dictionary<string, string> _lastComponentPresetNodeIds",
+  "component preset navigation must remember the last selected preset per component class",
+);
+assertContains(
+  "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+  "ResolveSelectionNode",
+  "component class navigation must resolve to a concrete preset selection",
+);
+assertContains(
+  "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+  "EndsWith(\"::preset::default\", StringComparison.Ordinal)",
+  "first component class selection must prefer the protected Default preset",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+  "CanRenameDirectly => Kind is ProjectTreeNodeKind.ComponentPreset && !IsProtected",
+  "protected component presets must not expose direct rename",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+  "Kind == ProjectTreeNodeKind.ComponentPreset && !IsProtected",
+  "protected component presets must not be deletable",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
+  "ProjectTreeNodeKind.ComponentPreset => FromComponentPreset",
+  "design preview must route selected component preset nodes",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
+  "database.GetComponentPresetSettings(node)",
+  "component preset preview payload must load preset config",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
+  "[\"id\"] = DefaultComponentPresetId",
+  "component class normalization must create a Default preset",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
+  "[\"protected\"] = true",
+  "Default component preset must be protected in stored metadata",
+);
 
 if (violations.length > 0) {
   console.error("Desktop preview architecture check failed:");
