@@ -21,6 +21,7 @@ Two rules override local convenience:
 2. Editable fields go through `FieldDefinition` and dictionary controls. If the dictionary cannot express the field yet, extend the dictionary first.
 3. Generic routines live in common/shared code. If an algorithm can be reused by more than one editor, resolver, bridge, renderer, importer, or repository, extract it before using it.
 4. Before creating any helper that could be generic, check `spikes/desktop-editor-shell/Common` and the base-routines audit for an existing equivalent. Reuse or extend common first.
+5. Component-specific preview decisions must not cross preview boundaries. Component resolvers own component composition; the bridge translates standard atoms; the web renderer paints final resolved nodes.
 
 If a requested change appears to require breaking any of these rules, stop and clarify the architecture before implementing.
 
@@ -193,7 +194,48 @@ The short version:
 This is intentionally recursive. A child component can later embed another
 component through the same slot/override mechanism.
 
-## 5B. `MainWindow` is shell-only
+## 5B. Preview boundaries must not leak component knowledge
+
+Preview work has three separate responsibilities:
+
+```text
+component resolver
+  -> standard resolved atoms
+  -> bridge
+  -> final web renderable nodes
+  -> web renderer
+```
+
+The component resolver owns all component-specific decisions:
+
+- which children exist;
+- component-local layout;
+- component-specific defaults after inheritance/overrides are merged;
+- semantic meaning of fields such as audio waveform bars, label subtext, avatar badge, navigation button mode, or bubble tail shape;
+- composition of embedded components.
+
+The bridge owns only generic translation:
+
+- token/palette/alpha/neutral tint resolution;
+- design units to final pixels;
+- generic placement math;
+- generic atoms such as boxes, text, SVG/image/video, surfaces, shadows, relief and marks;
+- diagnostic errors for unresolved required values.
+
+The bridge must not contain `componentType` branches, hardcoded field names, or layout/business rules for a concrete component class. If a component cannot be represented with current atoms, add a generic atom or extend the component resolver output first.
+
+The web renderer is the narrowest layer. It must not know:
+
+- database records;
+- component class config;
+- inheritance or overrides;
+- theme token names or palette tokens;
+- component-specific layout rules;
+- plausible fallbacks for missing values.
+
+The web renderer may add support for a new generic primitive, but that primitive must receive final resolved style/data. It must not infer behavior from component names such as `label`, `avatar`, `buttonIcon`, `audio`, `video`, `bubble`, `statusBar`, or `navigationBar`.
+
+## 5C. `MainWindow` is shell-only
 
 `MainWindow` may orchestrate the desktop shell, but it must not implement individual editors.
 

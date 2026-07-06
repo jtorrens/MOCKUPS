@@ -58,6 +58,23 @@ If a needed control does not exist, add or extend the dictionary value kind/cont
 
 Collection editors are allowed for structured lists, but simple fields inside those collections must still use dictionary definitions and dictionary controls.
 
+## Hard rule: no component-specific knowledge across preview boundaries
+
+Component-specific decisions must stay inside that component's resolver/contract.
+
+The bridge may only translate standard resolved atoms into final preview values:
+
+- theme tokens, palette colors, alpha and neutral tint resolution;
+- device/design units to final pixels;
+- generic placement, boxes, text, images, SVGs, surfaces and shadows;
+- generic validation/error reporting for unresolved values.
+
+The bridge must not contain branches or layout rules for a specific component class such as label, avatar, button icon, audio, video, bubble, status bar, or navigation bar. If a component needs custom composition, create or extend that component resolver so it emits the standard atoms the bridge already understands.
+
+The web renderer is even stricter: it paints the final resolved nodes. It must not know inheritance, class config, component defaults, theme token names, palette tokens, database records, or per-component business/layout rules. If the renderer needs a new visual primitive, add a generic primitive and feed it fully resolved style/data.
+
+If a change appears to require `if componentType == ...` behavior in the bridge or renderer, stop and move that responsibility to the component resolver or to a parameterized common helper.
+
 ## When in doubt
 
 Stop and extract. Do not add a local exception to make one editor work.
