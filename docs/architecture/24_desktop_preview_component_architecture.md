@@ -1036,15 +1036,22 @@ Validation:
 
 ### Phase 7: Move System Chrome Into Manifest Route
 
+Status: complete for desktop preview routing.
+
 Goal: make Status Bar and Navigation Bar normal system components.
 
 Tasks:
 
-- move Status Bar to manifest entry with category `system`;
-- move Navigation Bar to manifest entry with category `system`;
-- remove top-level special preview kinds or keep only temporary shims with
-  removal notes;
-- ensure their resolvers own their own layout metrics.
+- Status Bar is a manifest entry with category `system`;
+- Navigation Bar is a manifest entry with category `system`;
+- there is no shared `systemBar*` contract/resolver/renderable layer;
+- their resolvers own their own layout metrics.
+
+Remaining non-preview follow-up:
+
+- review whether legacy desktop persistence tables/roots named
+  `status_bars`/`navigation_bars` should be removed or kept as compatibility
+  wrappers around component presets.
 
 Validation:
 
