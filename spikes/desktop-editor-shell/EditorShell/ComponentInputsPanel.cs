@@ -21,6 +21,7 @@ internal sealed class ComponentInputsPanel : ContentControl
     private readonly Window _owner;
     private readonly DispatcherTimer _playbackTimer;
     private readonly Dictionary<string, string> _values = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> _inputDefaults = new(StringComparer.Ordinal);
     private readonly Dictionary<string, DictionaryFieldControl> _booleanInputs = new(StringComparer.Ordinal);
     private Button? _playbackButton;
     private string _scopeKey = "";
@@ -375,6 +376,7 @@ internal sealed class ComponentInputsPanel : ContentControl
     private void EnsureValue(ComponentInputDefinition input, JsonObject preview)
     {
         var key = StorageKey(input);
+        _inputDefaults[key] = input.DefaultValue;
         if (_values.ContainsKey(key)) return;
 
         var stored = preview[input.JsonKey];
@@ -527,12 +529,14 @@ internal sealed class ComponentInputsPanel : ContentControl
 
     private double DurationSeconds()
     {
-        return Math.Max(1, ParseDouble(_values.GetValueOrDefault(PlaybackDurationKey(), "65")));
+        var key = PlaybackDurationKey();
+        return Math.Max(1, ParseDouble(_values.GetValueOrDefault(key, InputDefault(key, "1"))));
     }
 
     private bool IsPlaying()
     {
-        return StringToBool(_values.GetValueOrDefault(PlaybackStateKey(), "false"));
+        var key = PlaybackStateKey();
+        return StringToBool(_values.GetValueOrDefault(key, InputDefault(key, "false")));
     }
 
     private void SetPlaybackState(bool isPlaying)
@@ -562,17 +566,28 @@ internal sealed class ComponentInputsPanel : ContentControl
 
     private string PlaybackStateKey()
     {
-        return $"{_scopeKey}:{_animation?.PlayInputId ?? "isPlaying"}";
+        return $"{_scopeKey}:{PlaybackAnimation().PlayInputId}";
     }
 
     private string PlaybackDurationKey()
     {
-        return $"{_scopeKey}:{_animation?.DurationInputId ?? "durationSeconds"}";
+        return $"{_scopeKey}:{PlaybackAnimation().DurationInputId}";
     }
 
     private string PlaybackTimeKey()
     {
-        return $"{_scopeKey}:{_animation?.TimeJsonKey ?? "currentTimeSeconds"}";
+        return $"{_scopeKey}:{PlaybackAnimation().TimeJsonKey}";
+    }
+
+    private ComponentInputAnimation PlaybackAnimation()
+    {
+        return _animation
+            ?? throw new InvalidOperationException("Playback animation is not available for the active component inputs.");
+    }
+
+    private string InputDefault(string key, string defaultValue)
+    {
+        return _inputDefaults.GetValueOrDefault(key, defaultValue);
     }
 
     private void SyncBooleanInput(string key)
@@ -582,7 +597,7 @@ internal sealed class ComponentInputsPanel : ContentControl
         _isUpdating = true;
         try
         {
-            input.SetValue(_values.GetValueOrDefault(key, "false"));
+            input.SetValue(_values.GetValueOrDefault(key, InputDefault(key, "false")));
         }
         finally
         {
