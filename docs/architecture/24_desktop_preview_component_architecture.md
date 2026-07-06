@@ -695,6 +695,8 @@ Checks:
 
 - node types are in the generic primitive allowlist;
 - no component-specific node types;
+- desktop preview renderables can emit only the generic allowlisted paint node
+  types;
 - no component field names;
 - no slot names;
 - no unresolved token names;

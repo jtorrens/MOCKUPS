@@ -11,6 +11,17 @@ const previewRoot = path.join(root, "src", "desktop-preview");
 
 const violations: string[] = [];
 const allowedComponentNodeTypes = new Set(["component_preview_unsupported"]);
+const desktopPreviewPaintNodeTypes = new Set([
+  "avatar",
+  "component_preview_unsupported",
+  "design_preview_surface",
+  "group",
+  "icon_token",
+  "image",
+  "path",
+  "surface",
+  "text",
+]);
 const forbiddenDesktopPreviewNodeTypes = new Set([
   "status_bar",
   "status_bar_zone",
@@ -200,7 +211,13 @@ for (const componentClass of routedComponentClasses) {
 }
 
 const allowedComponentImports: Record<string, Set<string>> = {};
+const desktopPreviewPaintTreeSourceFiles = new Set([
+  "src/desktop-preview/componentClassRenderableRegistry.ts",
+  "src/desktop-preview/designPreviewRenderableRegistry.ts",
+  "src/desktop-preview/renderDesignPreviewHtml.tsx",
+]);
 for (const [, entry] of manifestEntries) {
+  desktopPreviewPaintTreeSourceFiles.add(moduleFile(entry, "renderable"));
   for (const kind of ["resolver", "renderable"] as const) {
     const filePath = moduleFile(entry, kind);
     const allowed = allowedComponentImports[filePath] ?? new Set<string>();
@@ -231,6 +248,15 @@ for (const filePath of walkFiles(previewRoot)) {
       addViolation(
         relativePath,
         `desktop preview semantic node type "${nodeType}" must be emitted as generic primitives`,
+      );
+    }
+    if (
+      desktopPreviewPaintTreeSourceFiles.has(relativePath)
+      && !desktopPreviewPaintNodeTypes.has(nodeType)
+    ) {
+      addViolation(
+        relativePath,
+        `desktop preview paint node type "${nodeType}" is not in the generic primitive allowlist`,
       );
     }
   }
