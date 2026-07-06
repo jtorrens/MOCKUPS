@@ -91,7 +91,8 @@ Modules never query repositories or open files. Their output is pure and determi
 module input + frame/context → RenderableNode
 ```
 
-Renderer integrations such as Remotion only adapt the resulting tree.
+Renderer integrations only adapt the resulting tree. The removed React/Remotion
+prototype is historical reference, not an active integration path.
 
 ## Chat-owned data
 
@@ -139,6 +140,17 @@ The generic JSON tree editor is a fallback editing surface, not the final UX for
 
 The app/debug UI must show sources separately: project hierarchy, library resources, module-instance content, module-instance behavior, app tokens, module theme configs, reusable theme tokens, device metrics/state, and calculated renderable output. `RenderableNode` is derived output and is never directly edited. Shot-specific content belongs to a module editor; reusable global design belongs to a theme editor; app-wide defaults belong to an app editor; reusable module-specific design belongs to a module theme config editor.
 
-The initial local app shell now implements this boundary over SQLite. Its HTTP API owns persistence and validation, then routes saved records through `SQLiteRepository` and the existing resolvers/modules. The React preview and Remotion export both reuse the neutral `RenderableReactAdapter` from `src/visual/adapters/react/`; neither Remotion nor the browser is a source of truth. The preview shell may scale and overlay a device frame, but it must not change the renderable's internal size, padding, border, or coordinate system. Device chrome is an external overlay; the renderable viewport remains exactly the device render size, and final PNG output applies only the selected output scale. The current Project workspace can create productions, episodes, and shots with conservative defaults; deep duplicate/delete and screen-instance creation remain future workflow decisions.
+The Avalonia desktop shell now implements this boundary over SQLite. The desktop
+editor owns persistence and validation, then routes saved records through
+`SQLiteRepository` and the component resolver/renderable registry. The final web
+preview is the visual source of truth. The preview shell may scale and overlay a
+device frame, but it must not change the renderable's internal size, padding,
+border, or coordinate system. Device chrome is an external overlay; the
+renderable viewport remains exactly the device render size, and final export
+must apply only the selected output scale. The current Project workspace can
+create productions, episodes, and shots with conservative defaults; deep
+duplicate/delete and screen-instance creation remain future workflow decisions.
 
-`npm run render:frame` renders the shared Remotion composition at the canonical check frame to `out/current-frame.png`. This PNG is ignored by git and is intended as a quick parity check between the debug preview and the final render path. `npm run validate:preview` validates the preview sizing helper used by the debug shell.
+`npm run check:architecture` enforces the current preview boundaries. Removed
+React/debug/remotion routes must not be restored; future frame export checks must
+use the same final web route as the desktop preview.

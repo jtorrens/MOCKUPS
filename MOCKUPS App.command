@@ -21,8 +21,8 @@ if [[ ! -f data/mockups-dev.sqlite ]]; then
 fi
 
 echo
-echo "Abriendo MOCKUPS en Electron..."
+echo "Abriendo MOCKUPS Desktop Editor..."
 echo "Pulsa Ctrl+C para detener la app."
 echo
 
-npm run electron
+exec "$SCRIPT_DIR/run-desktop-spike.sh"

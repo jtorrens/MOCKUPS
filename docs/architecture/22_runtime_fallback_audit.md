@@ -98,10 +98,10 @@ No active desktop preview path may use:
 - Device metric parsing still has defensive defaults in `DeviceMetricRules`.
   These should be audited separately when imported devices become part of the
   trusted data contract.
-- The old runtime visual modules under `src/visual/modules/**` are still present
-  for existing web runtime paths. They are not component-class preview
-  compatibility. When a component is migrated to the new component resolver path,
-  do not reuse old module-specific branches to make it look correct.
+- The old runtime visual modules under `src/visual/modules/**` have been
+  removed from this repository. If chat runtime behavior is needed later, use
+  the previous React repository as visual reference and recreate the component
+  graph through the current component/preset/resolver/renderable route.
 - Message bubble migration must be all-owned-subcomponents-at-once, following
   `docs/architecture/23_embedded_component_composition_contract.md`.
 

@@ -358,7 +358,7 @@ DesignPreviewPayloadFactory
   -> resolveLabelComponentFromRecords
   -> avatarComponentToRenderable
   -> labelComponentToRenderableAt
-  -> RenderableReactAdapter
+  -> DesktopRenderableHtmlAdapter
 ```
 
 This is the reference path for future embedded components.

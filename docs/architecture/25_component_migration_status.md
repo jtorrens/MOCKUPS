@@ -56,30 +56,34 @@ field `migrationStatus`.
 | `keyboard` | system | Structurally migrated | Preview renders a generic keyboard surface, keys and bottom icons. Final keyboard layout model and interaction states still need definition. |
 | `video` | component | Structurally migrated | Preview renders a generic video surface, status row and play overlay. It currently declares a duration text runtime input; final media, timeline, controls and embedding semantics still need definition. |
 
-## Legacy Runtime Paths Still Present
+## Legacy Runtime Paths Removed
 
-The React runtime still contains modules and renderer support for older runtime
-nodes such as:
+The React/debug/remotion runtime route has been removed from this repository.
+Removed paths include:
 
-- `text_input_bar`;
-- `keyboard`;
-- `keyboard_key`;
-- `message_bubble_video_*`;
-- other `message_bubble_*` nodes.
+- `src/debug-ui`;
+- `src/debug-server`;
+- `src/electron`;
+- `src/remotion`;
+- `src/visual/adapters/react`;
+- `src/visual/layout`;
+- `src/visual/modules`;
+- `src/visual/validation`.
 
-These are outside the desktop component-class preview route. They must not be
-used as shortcuts for migrated desktop components.
-
-When a runtime module is moved to the new component route, migrate its owned
-component graph together. In particular, the bubble migration must move bubble,
-labels, avatar, media, audio, video, icon button, tail/chrome and status pieces
-as one planned phase, not as mixed legacy/new fragments.
+When chat/screen module rendering is rebuilt, use the previous React app only as
+an external reference for behavior and visual parity. Do not restore old runtime
+modules or `message_bubble_*`, `text_input_bar`, `keyboard_key`,
+`status_bar_item`, or `navigation_bar_item` render nodes. In particular, the
+bubble migration must move bubble, labels, avatar, media, audio, video, icon
+button, tail/chrome and status pieces as one planned phase, not as mixed
+legacy/new fragments.
 
 ## Enforcement
 
 `npm run check:architecture` currently verifies:
 
 - no central `webPreviewBridge.ts` exists;
+- removed React/debug/remotion legacy route directories do not reappear;
 - desktop design preview uses the clean desktop HTML adapter instead of the
   legacy React renderable adapter;
 - central desktop preview renderer/common helpers do not contain component names;

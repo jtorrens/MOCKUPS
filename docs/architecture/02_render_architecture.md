@@ -44,7 +44,14 @@ module_instances.content_json
 
 `module_instances.behavior_json` is the sole per-instance behavior source. `module_instances.animation_json` is the reserved per-instance parameter-animation source. Visual design tokens are resolved from Theme → App → Module Theme Config and are not overridden at app/module instance level. Chat resolution has no `data_ref_json`/conversation/message fallback.
 
-Preview and final render should use the same resolvers, resolved props, module registry, visual modules, and React render adapter. The debug preview shell may fit/scale the renderable and draw optional external overlays such as a device frame, but it must not affect the renderable coordinate system. Rendering must be frame-based and deterministic: the same production data, shot, frame, assets, and configuration must produce the same output, without wall-clock time, hidden mutable state, or live network dependencies.
+Preview and final render should use the same resolver contracts and final web
+HTML render path. The old React/Vite/Remotion debug route has been removed from
+this repository. Future screen/module render work must be recreated through the
+desktop component route instead of restoring those legacy modules.
+
+Rendering must be frame-based and deterministic: the same production data, shot,
+frame, assets, and configuration must produce the same output, without wall-clock
+time, hidden mutable state, or live network dependencies.
 
 The preview shell contract is intentionally strict:
 
@@ -52,9 +59,22 @@ The preview shell contract is intentionally strict:
 - Browser preview zoom is a display-only scale calculated from the available panel size.
 - Device chrome, borders, shadows, debug overlays, and preview controls live outside the renderable coordinate system.
 - Preview shell borders or overlays must never be included in module layout calculations.
-- Export PNG resolution is the device render size multiplied by the selected output scale, currently read from the screen-instance transform scale.
-- Debug frame PNGs are written under the production media root when configured, using `renders/frames/<production>_<episode>_<shot>_vNN_fNNNNNN.png`; the browser response also exposes that frame-specific filename for open/save flows. The browser preview header reports both render size and preview zoom.
+- Export PNG resolution will be the device render size multiplied by the selected output scale.
+- Debug frame artifacts, when reintroduced, must be produced from the same final web render path used by the desktop preview.
 
-`src/debug-ui/preview/RenderSurface.tsx` is the browser-only pure preview surface: it receives a `RenderableNode`, display fit, and optional external frame flag, then paints only the scaled renderable plus chrome overlay. `PreviewPanel` owns measurement, headers, controls, and state; `RenderSurface` owns the visual surface. `src/visual/adapters/react/RenderableReactAdapter.tsx` is the shared adapter used by both the debug preview and Remotion. `npm run render:frame` renders the canonical check frame to `out/current-frame.png` so preview/render parity can be checked visually. `npm run validate:preview` checks the preview-fit math so display zoom cannot silently change render dimensions.
+The desktop preview route is:
+
+```text
+component contract/resolver
+  -> component renderable module
+  -> common preview helpers
+  -> DesktopRenderableHtmlAdapter
+  -> final web HTML
+```
+
+`DesktopRenderableHtmlAdapter` may use React server rendering as an internal
+HTML-generation detail, but it only paints generic resolved desktop primitives.
+It must not import component resolvers, theme/database records, legacy visual
+modules, or the removed React runtime adapter.
 
 Text has an approximate renderer-agnostic measurement mode and a final renderer-assisted mode. Preview and final export must share the final strategy. See `09_foundational_module_contracts.md`.

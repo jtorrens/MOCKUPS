@@ -2,7 +2,7 @@
 
 ## Current state
 
-Initial architecture/data schema documentation, the visual token/layout contract, and the foundational module contracts are complete and reviewed. TypeScript/Zod schemas, in-memory and SQLite repository paths, renderer-agnostic visual modules/layout, a minimal Remotion proof of concept, SQLite persistence, the first local core app shell, structured JSON/token editors, module theme configs, module-scoped editor hint contracts, a production-first Project/App/Production Data browser, a persistence audit/check, a minimal Electron development shell, and explicit module-instance persistence now exist. The shell is still local/dev-only and not a final production editor; no export pipeline, asset manager, deep duplicate/cascade delete workflow, packaging/installer, or final module-instance creation workflow has been implemented.
+Initial architecture/data schema documentation, the visual token/layout contract, and the foundational module contracts are complete and reviewed. TypeScript/Zod schemas, in-memory and SQLite repository paths, SQLite persistence, the Avalonia desktop editor shell, structured dictionary/token editors, component class presets, component-owned preview resolvers/renderables, a production-first Project/App/Production Data browser, a persistence audit/check, and explicit module-instance persistence now exist. The old React/Vite/Remotion debug route has been removed. The shell is still local/dev-only and not a final production editor; no export pipeline, asset manager, deep duplicate/cascade delete workflow, packaging/installer, or final module-instance creation workflow has been implemented.
 
 The current app shell is now substantially more usable for authoring: it has a production-first layout, accordion-based Project/App/Production Data navigation, resizable left/editor/preview panels, independent panel scrolling, responsive preview fitting, screen-instance editors organized by conceptual accordion cards, module-theme-config token editors grouped by friendly labels, inherited/override rows with restore behavior, installed-font discovery where available, typed controls for number/text/color/font/select values, centralized mode-aware color editors, and structured Chat `Module Content` cards for participants and messages.
 
@@ -26,14 +26,13 @@ The accepted foundation is production-scoped and shot-centered, where production
 - Added `npm run validate:resolver`; resolved chat and message-bubble props validate with Zod.
 - Added a recursive Zod-validated `RenderableNode` tree and a renderer-agnostic visual module interface.
 - Added ChatScreen, MessageBubble, StatusBar, ChatHeader, and Avatar module stubs plus a static registry.
-- Added `npm run validate:visual`; resolved chat props produce a deterministic validated renderable tree.
+- Added the original visual-module validation path; this has since been superseded by `npm run check:architecture` and the desktop component preview route.
 - Defined canonical ownership and precedence for theme tokens, device metrics/state, instance props, resolved props, and renderable metadata.
 - Added decisions D010–D014 and aligned examples, resolvers, schemas, and modules with the visual token contract.
 - Added isolated approximate text measurement and renderer-agnostic ChatScreen/MessageBubble layout helpers.
 - Added token-driven screen/header/status/message/avatar boxes, sent/received alignment, deterministic stacking, and keep-latest-visible overflow.
 - Expanded visual validation to cover bounds, alignment, stacking, text/avatar boxes, determinism, and overflow.
-- Added a Remotion adapter that recursively renders the existing `RenderableNode` tree without replacing domain resolvers or visual modules.
-- Added the `ChatScreenPreview` composition and Remotion Studio/composition-check commands.
+- Built an early final-render prototype around a recursive `RenderableNode` adapter; that route has since been removed in favor of the desktop component preview architecture.
 - Added the initial 19-table SQLite schema with relational fields and JSON TEXT columns.
 - Added an idempotent example seed and `SQLiteRepository` implementing the existing resolver-facing contract.
 - Added `db:init`, `db:seed`, and `validate:sqlite`; SQLite and in-memory resolve equivalent example ChatScreen props.
@@ -45,17 +44,17 @@ The accepted foundation is production-scoped and shot-centered, where production
 - Added explicit `module_instances`; Chat content now resolves from `module_instances.content_json` and per-shot behavior resolves from `module_instances.behavior_json`.
 - Removed per-instance visual token overrides from the active resolver/editor model; visual values now resolve from reusable Theme → App → Module Theme Config layers.
 - Removed the Chat runtime fallback to `data_ref_json`, conversations, conversation participants, messages, and generic props; legacy SQLite tables remain physically present but the canonical fixture seeds no Chat rows into them.
-- Added resolver/SQLite validation proving senderParticipantId direction and operation without legacy Chat records; Remotion continues through the same canonical resolver path.
-- Added a local React/Vite debug calibration UI with production/shot/screen selection, frame calibration, SQLite-backed preview, six validated editable JSON sources, and read-only resolved/RenderableNode inspectors.
+- Added resolver/SQLite validation proving senderParticipantId direction and operation without legacy Chat records.
+- Built an early local browser debug calibration UI with production/shot/screen selection, frame calibration, SQLite-backed preview, six validated editable JSON sources, and read-only resolved/RenderableNode inspectors; that route has since been removed.
 - Added a minimal local HTTP API that validates edits, writes them transactionally to SQLite, re-runs the existing resolver/module pipeline, and returns refreshed calculated output.
-- Added `debug`, `debug:server`, `debug:ui`, `debug:check`, and `debug:build` scripts; visual browser smoke checks cover loading, invalid JSON blocking, save/re-resolve, and state restoration.
+- Built visual browser smoke checks for the old debug route; those scripts were removed with the route.
 - Evolved the debug UI into the first practical app shell with a left editable workspace and a persistent right preview/output panel.
 - Added the project hierarchy `Productions → Episodes → Shots → Screen Instances`, with reusable resources separated into a Library area.
 - Added a Project/Library browser: Project exposes compact collapsible hierarchy panels; Library exposes reusable resource tables such as actors, themes, module theme configs, devices, device states, render presets, apps, animation presets, and screen templates.
 - Added a safe first create flow for productions, episodes, and shots. Newly created episodes attach to the selected production; newly created shots attach to the selected episode and receive conservative defaults.
 - Added debounced autosave for editable scalar fields and JSON object fields, with per-field save state and invalid JSON blocking before persistence.
 - Added app-core HTTP endpoints for loading table definitions/records/options, creating supported hierarchy records, patching validated records, and resolving the current preview context.
-- Kept Chat as the reference visual module through the existing resolver → RenderableNode → Remotion adapter path, with read-only resolved props and RenderableNode inspectors.
+- Kept Chat as the first reference runtime model through the original resolver path; desktop preview work now recreates components through component contracts, presets, resolvers, and renderable modules.
 - Added `app`, `app:check`, and `app:build` aliases over the local app/debug workflow.
 - Added a reusable schema-hintable JSON tree/value editor for all current app-shell JSON fields, with collapsible object/array navigation and primitive value controls.
 - Added raw JSON fallback mode that shares the existing autosave pipeline and blocks invalid JSON before persistence.
@@ -72,11 +71,11 @@ The accepted foundation is production-scoped and shot-centered, where production
 - Exposed Module Theme Configs as a core app-shell tab.
 - Added inherited JSON parent data to the app API for `module_theme_configs.tokens_json`.
 - Updated the structured JSON editor to mark differing inherited overrides in amber and offer a Restore inherited action.
-- Added accepted decisions D031–D038 covering Chat typography, episode hierarchy, shot owner runtime defaults, Chat text+media messages, Project/Library browser direction, extensible module editor hint contracts, non-destructive SQLite startup/validation, and the minimal Electron shell boundary.
+- Added accepted decisions D031–D038 covering Chat typography, episode hierarchy, shot owner runtime defaults, Chat text+media messages, Project/Library browser direction, extensible module editor hint contracts, non-destructive SQLite startup/validation, and the desktop shell boundary.
 - Audited the SQLite save path. Current UI autosave reaches backend validation and SQLite writes; `app:persistence-check` verifies scalar and JSON edits survive database reopen and are used by preview resolution.
 - Fixed a persistence-risk bug: `validate:sqlite` now uses isolated in-memory SQLite instead of reseeding `data/mockups-dev.sqlite`.
 - Made `db:seed` non-destructive when the development database already has productions, and added explicit destructive `db:reset` for restoring fixture data.
-- Added a minimal Electron shell that loads the existing Vite app/debug server workflow with `contextIsolation` enabled, renderer Node integration disabled, and a narrow `window.mockupsNative` preload boundary for future native file/font APIs.
+- Built an early native desktop shell prototype for the browser debug workflow; the active editor is now the Avalonia desktop shell.
 - Added a production switcher and production action modal shell; production add is implemented, while deep duplicate/delete remains intentionally deferred.
 - Reworked the app layout into resizable left navigation/editor and right preview panes with independent scrolling and preview scaling that fits both width and height.
 - Removed read-only resolver/adapter inspector panels from the main preview surface to prioritize authoring and visual feedback.
@@ -85,7 +84,7 @@ The accepted foundation is production-scoped and shot-centered, where production
 - Added tabbed module theme config editing: Design and Theme. Design tabs follow token groups; nested conceptual groups render as sections only when they contain multiple rows.
 - Added a token/override editor that shows Property, Token/Internal Path, and Override columns. Property labels are friendly and compacted by group; the Token column intentionally stays internal.
 - Added typed override controls for booleans, numbers, text, colors, font families, and font styles/weights.
-- Added installed-font discovery through `queryLocalFonts` when available and through Electron's narrow `mockups:listFonts` bridge on macOS, with fallback font families/styles.
+- Added installed-font discovery for local desktop authoring, with fallback font families/styles.
 - Added accepted decisions D039–D041 covering production-owned workspace/templates, screen-template inheritance, and structured editor label/group conventions.
 - Added accepted decisions D042–D044 covering removal of Screen Templates from active runtime/editor inheritance, logical design-unit scaling, and the inspector-first accordion/module-content UI direction.
 - Added App-level token/default editing through existing App records and centralized mode-aware color editing for Theme/App/Module levels.
@@ -98,5 +97,5 @@ The accepted foundation is production-scoped and shot-centered, where production
 
 ## Next
 
-- Review the current app shell visually and choose the next workflow: continue unifying accordion sections around field descriptors, module-instance creation/duplication UI, screen-instance creation, asset registration/native file picker, production duplicate/delete policy, stronger UI smoke tests for content editing, or Electron menu/package polish.
+- Review the current app shell visually and choose the next workflow: continue unifying accordion sections around field descriptors, module-instance creation/duplication UI, screen-instance creation, asset registration/native file picker, production duplicate/delete policy, stronger UI smoke tests for content editing, or desktop menu/package polish.
 - Create an Architecture Question before changing any accepted decision.

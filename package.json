@@ -7,14 +7,7 @@
     "typecheck": "tsc --noEmit",
     "validate:examples": "tsx src/domain/validation/validateExamples.ts",
     "validate:resolver": "tsx src/domain/validation/validateResolver.ts",
-    "validate:visual": "tsx src/visual/validation/validateVisualModules.ts",
     "check:architecture": "tsx scripts/checkDesktopPreviewArchitecture.ts",
-    "validate:editor-dictionary": "tsx src/debug-ui/validation/validateEditorDictionary.ts",
-    "validate:preview": "tsx src/debug-ui/preview/validatePreviewSizing.ts",
-    "remotion:studio": "remotion studio src/remotion/index.ts",
-    "remotion:preview": "remotion studio src/remotion/index.ts",
-    "remotion:check": "remotion compositions src/remotion/index.ts",
-    "render:frame": "remotion still src/remotion/index.ts ChatScreenPreview out/current-frame.png --frame=50 --overwrite",
     "db:init": "tsx src/persistence/sqlite/initializeDevelopmentDatabase.ts",
     "db:seed": "tsx src/persistence/sqlite/seedDevelopmentDatabase.ts",
     "db:reset": "tsx src/persistence/sqlite/resetDevelopmentDatabase.ts",
@@ -22,36 +15,24 @@
     "validate:sqlite": "tsx src/persistence/sqlite/validateSQLiteRepository.ts",
     "audit:current-model": "tsx src/persistence/audit/auditCurrentModel.ts",
     "db:normalize-current-model": "tsx src/persistence/audit/normalizeCurrentModel.ts",
-    "debug:server": "tsx src/debug-server/server.ts",
-    "debug:ui": "vite",
-    "debug": "concurrently -k -n api,ui -c blue,magenta \"npm run debug:server\" \"npm run debug:ui\"",
-    "debug:check": "tsx src/debug-server/checkDebugService.ts",
-    "debug:build": "vite build",
-    "app": "npm run debug",
-    "app:check": "npm run debug:check",
-    "app:build": "npm run debug:build",
-    "app:persistence-check": "tsx src/debug-server/checkPersistence.ts",
-    "electron": "concurrently -k -n api,ui,electron -c blue,magenta,green \"npm run debug:server\" \"npm run debug:ui\" \"tsx src/electron/startElectron.ts\"",
-    "electron:check": "tsx src/electron/checkElectronSetup.ts",
-    "test": "npm run typecheck && npm run check:architecture && npm run validate:examples && npm run validate:resolver && npm run validate:visual && npm run validate:sqlite"
+    "desktop": "dotnet run --project spikes/desktop-editor-shell/Mockups.DesktopEditorShell.csproj",
+    "desktop:build": "dotnet build spikes/desktop-editor-shell/Mockups.DesktopEditorShell.csproj",
+    "app": "npm run desktop",
+    "app:check": "npm run desktop:build",
+    "app:build": "npm run desktop:build",
+    "test": "npm run typecheck && npm run check:architecture && npm run validate:examples && npm run validate:resolver && npm run validate:sqlite"
   },
   "dependencies": {
     "better-sqlite3": "^12.11.1",
     "react": "^19.2.7",
-    "react-colorful": "^5.7.0",
     "react-dom": "^19.2.7",
-    "remotion": "4.0.481",
     "zod": "4.3.6"
   },
   "devDependencies": {
-    "@remotion/cli": "4.0.481",
     "@types/better-sqlite3": "^7.6.13",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
-    "concurrently": "^10.0.3",
-    "electron": "^42.4.1",
     "tsx": "4.22.4",
-    "typescript": "6.0.3",
-    "vite": "^8.0.16"
+    "typescript": "6.0.3"
   }
 }

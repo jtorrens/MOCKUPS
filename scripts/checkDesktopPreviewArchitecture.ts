@@ -111,6 +111,27 @@ if (existsSync(path.join(previewRoot, "webPreviewBridge.ts"))) {
   );
 }
 
+for (const removedLegacyPath of [
+  "src/debug-ui",
+  "src/debug-server",
+  "src/electron",
+  "src/remotion",
+  "src/visual/adapters/react",
+  "src/visual/layout",
+  "src/visual/modules",
+  "src/visual/validation",
+  "index.html",
+  "remotion.config.ts",
+  "vite.config.ts",
+]) {
+  if (existsSync(path.join(root, removedLegacyPath))) {
+    addViolation(
+      removedLegacyPath,
+      "legacy React/debug/remotion render route must not be restored in this repository",
+    );
+  }
+}
+
 assertNoTerms("src/desktop-preview/renderDesignPreviewHtml.tsx", [
   "label",
   "avatar",

@@ -5,7 +5,7 @@ set -e
 SCRIPT_DIR="${0:A:h}"
 cd "$SCRIPT_DIR"
 
-echo "MOCKUPS — Core app shell"
+echo "MOCKUPS — Desktop Editor"
 echo "Directorio: $SCRIPT_DIR"
 echo
 
@@ -21,10 +21,8 @@ if [[ ! -f data/mockups-dev.sqlite ]]; then
 fi
 
 echo
-echo "Abriendo http://127.0.0.1:4173"
-(sleep 2 && open "http://127.0.0.1:4173") &
-
+echo "Abriendo MOCKUPS Desktop Editor..."
 echo "Pulsa Ctrl+C para detener MOCKUPS."
 echo
 
-npm run app
+exec "$SCRIPT_DIR/run-desktop-spike.sh"

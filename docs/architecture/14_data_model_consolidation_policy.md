@@ -174,7 +174,8 @@ fallbacks, migration helpers or duplicated JSON shapes start accumulating again.
 
 ```bash
 npm run typecheck
-npm run validate:visual
+npm run check:architecture
+npm run validate:resolver
 npm run validate:sqlite
 git status -sb
 ```
@@ -273,7 +274,7 @@ After the audit passes:
 ```bash
 npm run typecheck
 npm run validate:resolver
-npm run validate:visual
+npm run check:architecture
 npm run validate:sqlite
 npm run audit:current-model
 git diff --check
