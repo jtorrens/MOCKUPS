@@ -55,6 +55,7 @@ public partial class MainWindow : SukiWindow
     private readonly EditorFieldCommitCoordinator _fieldCommitCoordinator = new();
     private readonly EditorActiveFieldControls _activeFieldControls = new();
     private readonly HashSet<string> _expandedNodeIds = [];
+    private readonly Dictionary<string, string> _lastComponentPresetNodeIds = new(StringComparer.Ordinal);
     private List<ProjectTreeNode> _treeRoots = [];
     private ProjectTreeNode? _selectedNode;
     private EmbeddedEditorContext? _embeddedEditorContext;
@@ -97,7 +98,7 @@ public partial class MainWindow : SukiWindow
             () => _isDark,
             (node) => _expandedNodeIds.Contains(node.Id),
             SelectTreeNode,
-            (node) => ShowNode(node),
+            (node) => ShowNode(ResolveSelectionNode(node)),
             ToggleTreeGroup,
             AddChild,
             DuplicateNode,
@@ -214,8 +215,6 @@ public partial class MainWindow : SukiWindow
             _expandedNodeIds.Add(_treeRoots[0].Id);
         }
 
-        RebuildNavigationCards();
-
         if (_treeRoots.Count > 0)
         {
             var selected = _selectedNode is not null
@@ -223,10 +222,15 @@ public partial class MainWindow : SukiWindow
                 : null;
             selected = selected is not null && CanSelectTreeNode(selected) ? selected : null;
             selected ??= _treeRoots.FirstOrDefault((node) => node.CanOpenEditor) ?? _treeRoots[0];
+            selected = ResolveSelectionNode(selected);
 
             ExpandAncestors(selected);
+            RebuildNavigationCards();
             ShowNode(selected, rebuildTree: false);
+            return;
         }
+
+        RebuildNavigationCards();
     }
 
     private void SelectTreeNode(ProjectTreeNode node)
@@ -304,6 +308,7 @@ public partial class MainWindow : SukiWindow
 
     private void ShowNode(ProjectTreeNode node, bool rebuildTree = true)
     {
+        node = ResolveSelectionNode(node);
         var previousNode = _selectedNode;
         var keepEditorViewState = _editorViewState.ShouldPreserve(previousNode, node);
         if (keepEditorViewState)
@@ -312,6 +317,8 @@ public partial class MainWindow : SukiWindow
         }
 
         _selectedNode = node;
+        RememberComponentPresetSelection(node);
+        ExpandAncestors(node);
         _embeddedEditorContext = null;
         var editorNode = EditorNodeForSelection(node);
         SetEditorRootTitle(editorNode.Name);
@@ -908,8 +915,9 @@ public partial class MainWindow : SukiWindow
             return false;
         }
 
-        ExpandAncestors(node);
         var selectableNode = CanSelectTreeNode(node) ? node : ClosestEditableNode(node);
+        selectableNode = ResolveSelectionNode(selectableNode);
+        ExpandAncestors(selectableNode);
         ShowNode(selectableNode, rebuildTree: true);
         return true;
     }
@@ -917,6 +925,37 @@ public partial class MainWindow : SukiWindow
     private static bool CanSelectTreeNode(ProjectTreeNode node)
     {
         return node.CanOpenEditor || node.Kind == ProjectTreeNodeKind.ComponentPreset;
+    }
+
+    private ProjectTreeNode ResolveSelectionNode(ProjectTreeNode node)
+    {
+        return node.Kind == ProjectTreeNodeKind.ComponentClass
+            ? PreferredPresetNode(node)
+            : node;
+    }
+
+    private ProjectTreeNode PreferredPresetNode(ProjectTreeNode componentClassNode)
+    {
+        if (_lastComponentPresetNodeIds.TryGetValue(componentClassNode.Id, out var presetNodeId)
+            && componentClassNode.Children.FirstOrDefault((child) => child.Id.Equals(presetNodeId, StringComparison.Ordinal)) is { } rememberedPreset)
+        {
+            return rememberedPreset;
+        }
+
+        return componentClassNode.Children.FirstOrDefault((child) =>
+                child.Kind == ProjectTreeNodeKind.ComponentPreset
+                && child.Id.EndsWith("::preset::default", StringComparison.Ordinal))
+            ?? componentClassNode.Children.FirstOrDefault((child) => child.Kind == ProjectTreeNodeKind.ComponentPreset)
+            ?? componentClassNode;
+    }
+
+    private void RememberComponentPresetSelection(ProjectTreeNode node)
+    {
+        if (node.Kind == ProjectTreeNodeKind.ComponentPreset
+            && node.Parent?.Kind == ProjectTreeNodeKind.ComponentClass)
+        {
+            _lastComponentPresetNodeIds[node.Parent.Id] = node.Id;
+        }
     }
 
     private static ProjectTreeNode EditorNodeForSelection(ProjectTreeNode node)
