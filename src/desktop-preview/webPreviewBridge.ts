@@ -161,6 +161,23 @@ function buttonIconColorForMode(
     : colorForMode(payload, buttonIcon.iconColorToken, mode);
 }
 
+function iconTokenStyle(
+  payload: DesignPreviewPayload,
+  token: string,
+  color: string,
+) {
+  const iconUri = iconUriForToken(payload, token);
+  return {
+    color,
+    ...(iconUri
+      ? {
+          maskImage: `url("${iconUri.replace(/"/g, '\\"')}")`,
+          WebkitMaskImage: `url("${iconUri.replace(/"/g, '\\"')}")`,
+        }
+      : {}),
+  };
+}
+
 function numberToken(payload: DesignPreviewPayload, token: string) {
   const raw = tokenValueForMode(payload, token, payload.themeMode || "light");
   const value = numberValue(raw, NaN);
@@ -495,18 +512,44 @@ export function audioComponentToRenderable(
     width: audio.size.width * scale,
     height: audio.size.height * scale,
   };
+  const playSize = Math.min(audioBoxLocal.height, audio.playCircleSize * scale);
+  const playBoxLocal = {
+    x: audioBoxLocal.height * 0.22,
+    y: (audioBoxLocal.height - playSize) / 2,
+    width: playSize,
+    height: playSize,
+  };
+  const waveformBoxLocal = {
+    x: playBoxLocal.x + playBoxLocal.width + audioBoxLocal.height * 0.18,
+    y: audioBoxLocal.height * 0.31,
+    width: Math.max(
+      1,
+      audioBoxLocal.width -
+        (playBoxLocal.x + playBoxLocal.width + audioBoxLocal.height * 0.4),
+    ),
+    height: audioBoxLocal.height * 0.28,
+  };
+  const playbackBoxLocal = unionBoxes([playBoxLocal, waveformBoxLocal]);
+  const durationText = parsePreviewText(payload);
+  const durationWidth = Math.ceil(durationText.length * audio.textSize * scale * 0.58);
+  const textBoxLocal = {
+    x: waveformBoxLocal.x + waveformBoxLocal.width - durationWidth,
+    y: waveformBoxLocal.y + waveformBoxLocal.height + audioBoxLocal.height * 0.08,
+    width: durationWidth,
+    height: audio.textSize * scale * 1.25,
+  };
   const avatarSize = audio.avatarSlot.avatar
     ? audio.avatarSlot.avatar.size * scale
     : 0;
   const avatarBoxLocal = audio.avatarSlot.avatar
     ? placeChild(
-        audioBoxLocal,
+        playbackBoxLocal,
         { width: avatarSize, height: avatarSize },
         scalePlacement(audio.avatarSlot.placement, scale),
       )
     : undefined;
   const badgeSurfaceSize = audio.badgeSlot.badge
-    ? (audio.badgeSlot.badge.iconSize + audio.badgeSlot.badge.iconPadding * 2) * scale
+    ? audio.badgeSlot.badge.buttonSize * scale
     : 0;
   const badgeBoxLocal = audio.badgeSlot.badge && avatarBoxLocal
     ? placeChild(
@@ -517,6 +560,7 @@ export function audioComponentToRenderable(
     : undefined;
   const localBounds = unionBoxes([
     audioBoxLocal,
+    textBoxLocal,
     ...(avatarBoxLocal ? [avatarBoxLocal] : []),
     ...(badgeBoxLocal ? [badgeBoxLocal] : []),
   ]);
@@ -526,27 +570,11 @@ export function audioComponentToRenderable(
     y: groupBox.y - localBounds.y,
   };
   const audioBox = translateBox(audioBoxLocal, origin);
+  const playBox = translateBox(playBoxLocal, origin);
+  const waveformBox = translateBox(waveformBoxLocal, origin);
+  const textBox = translateBox(textBoxLocal, origin);
   const avatarBox = avatarBoxLocal ? translateBox(avatarBoxLocal, origin) : undefined;
   const badgeBox = badgeBoxLocal ? translateBox(badgeBoxLocal, origin) : undefined;
-  const playSize = Math.min(audioBox.height, audio.playCircleSize * scale);
-  const playBox = {
-    x: audioBox.x + audioBox.height * 0.22,
-    y: audioBox.y + (audioBox.height - playSize) / 2,
-    width: playSize,
-    height: playSize,
-  };
-  const textBox = {
-    x: audioBox.x + audioBox.width - audioBox.height * 1.12,
-    y: audioBox.y + audioBox.height * 0.18,
-    width: audioBox.height,
-    height: audioBox.height * 0.32,
-  };
-  const waveformBox = {
-    x: playBox.x + playBox.width + audioBox.height * 0.18,
-    y: audioBox.y + audioBox.height * 0.36,
-    width: Math.max(1, textBox.x - playBox.x - playBox.width - audioBox.height * 0.36),
-    height: audioBox.height * 0.28,
-  };
   const knobSize = audio.progressKnobSize * scale;
   const progress = 0.42;
   const barCount = Math.max(4, Math.round(audio.waveformBarCount));
@@ -595,6 +623,20 @@ export function audioComponentToRenderable(
       },
     };
   });
+  const badgeNode = audio.badgeSlot.badge && badgeBox
+    ? buttonIconComponentToRenderableAt(payload, audio.badgeSlot.badge, badgeBox)
+    : undefined;
+  const audioBorderWidth = audio.surface.borderWidth * scale;
+  const audioRelief = audio.surface.reliefEnabled
+    ? {
+        angleDeg: audio.surface.reliefAngle,
+        extension: audio.surface.reliefExtent * scale,
+        spread: audio.surface.reliefSpread * scale,
+        upperIntensity: audio.surface.reliefTopIntensity * audio.backgroundAlpha,
+        lowerIntensity: audio.surface.reliefBottomIntensity * audio.backgroundAlpha,
+      }
+    : undefined;
+  const audioShadow = audio.surface.shadowEnabled ? shadow(payload) : undefined;
 
   return {
     id: audio.id,
@@ -616,7 +658,34 @@ export function audioComponentToRenderable(
             audio.backgroundColorToken,
             audio.backgroundAlpha,
           ),
-          borderRadius: audioBox.height / 2,
+          borderRadius: numberToken(payload, audio.surface.cornerRadiusToken) * scale,
+          borderWidth: audioBorderWidth,
+          borderColor: selectedColor(
+            payload,
+            audio.surface.borderColorToken,
+            audio.backgroundAlpha,
+          ),
+          shadow: audioShadow,
+          surfaceRelief: audioRelief,
+          colorModes: Object.fromEntries(
+            variants(payload).map((mode) => [
+              mode,
+              {
+                background: colorForMode(
+                  payload,
+                  audio.backgroundColorToken,
+                  mode,
+                  audio.backgroundAlpha,
+                ),
+                borderColor: colorForMode(
+                  payload,
+                  audio.surface.borderColorToken,
+                  mode,
+                  audio.backgroundAlpha,
+                ),
+              },
+            ]),
+          ),
         },
       },
       {
@@ -654,12 +723,12 @@ export function audioComponentToRenderable(
         type: "component_audio_duration",
         frame: 0,
         box: textBox,
-        text: parsePreviewText(payload),
+        text: durationText,
         style: {
           color: selectedColor(payload, audio.textColorToken),
           fontSize: audio.textSize * scale,
           lineHeight: textBox.height,
-          textAlign: "center",
+          textAlign: "right",
           whiteSpace: "nowrap",
         },
       },
@@ -667,7 +736,15 @@ export function audioComponentToRenderable(
         ? [avatarComponentToRenderableAt(payload, audio.avatarSlot.avatar, avatarBox)]
         : []),
       ...(audio.badgeSlot.badge && badgeBox
-        ? [buttonIconComponentToRenderableAt(payload, audio.badgeSlot.badge, badgeBox)]
+        ? [
+            {
+              ...badgeNode!,
+              style: {
+                ...badgeNode!.style,
+                zIndex: 20,
+              },
+            },
+          ]
         : []),
     ],
     metadata: {
@@ -855,11 +932,20 @@ export function buttonIconComponentToRenderable(
       },
       {
         id: `${buttonIcon.id}.glyph`,
-        type: "component_button_icon_glyph",
+        type: "icon_token",
+        role: "iconToken",
         frame: 0,
         box: iconBox,
+        text: buttonIcon.iconToken,
         style: {
-          color: buttonIconColor(payload, buttonIcon),
+          ...iconTokenStyle(
+            payload,
+            buttonIcon.iconToken,
+            buttonIconColor(payload, buttonIcon),
+          ),
+        },
+        metadata: {
+          token: buttonIcon.iconToken,
         },
       },
       ...(buttonIcon.labelSlot.label && labelBox
@@ -965,11 +1051,20 @@ function buttonIconComponentToRenderableAt(
       },
       {
         id: `${buttonIcon.id}.glyph`,
-        type: "component_button_icon_glyph",
+        type: "icon_token",
+        role: "iconToken",
         frame: 0,
         box: iconBox,
+        text: buttonIcon.iconToken,
         style: {
-          color: buttonIconColor(payload, buttonIcon),
+          ...iconTokenStyle(
+            payload,
+            buttonIcon.iconToken,
+            buttonIconColor(payload, buttonIcon),
+          ),
+        },
+        metadata: {
+          token: buttonIcon.iconToken,
         },
       },
       ...(buttonIcon.labelSlot.label && labelBox

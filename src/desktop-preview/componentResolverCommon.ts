@@ -6,6 +6,19 @@ export interface AlignmentPlacementContract {
   offsetY: number;
 }
 
+export interface SurfaceStyleContract {
+  shadowEnabled: boolean;
+  reliefEnabled: boolean;
+  borderWidth: number;
+  borderColorToken: string;
+  cornerRadiusToken: string;
+  reliefAngle: number;
+  reliefExtent: number;
+  reliefSpread: number;
+  reliefTopIntensity: number;
+  reliefBottomIntensity: number;
+}
+
 export function asRecord(value: unknown): Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
     ? (value as Record<string, unknown>)
@@ -88,6 +101,40 @@ export function requiredPlacement(
     alignY: clamp01(requiredNumber(raw, "alignY", `${path}.alignY`)),
     offsetX: requiredNumber(raw, "offsetX", `${path}.offsetX`),
     offsetY: requiredNumber(raw, "offsetY", `${path}.offsetY`),
+  };
+}
+
+export function resolveSurfaceStyle(
+  style: Record<string, unknown>,
+  path = "component.style",
+): SurfaceStyleContract {
+  return {
+    shadowEnabled: requiredBoolean(style, "shadowEnabled", `${path}.shadowEnabled`),
+    reliefEnabled: requiredBoolean(style, "reliefEnabled", `${path}.reliefEnabled`),
+    borderWidth: requiredNumber(style, "borderWidth", `${path}.borderWidth`),
+    borderColorToken: requiredString(
+      style,
+      "borderColorToken",
+      `${path}.borderColorToken`,
+    ),
+    cornerRadiusToken: requiredString(
+      style,
+      "cornerRadiusToken",
+      `${path}.cornerRadiusToken`,
+    ),
+    reliefAngle: requiredNumber(style, "reliefAngle", `${path}.reliefAngle`),
+    reliefExtent: requiredNumber(style, "reliefExtent", `${path}.reliefExtent`),
+    reliefSpread: requiredNumber(style, "reliefSpread", `${path}.reliefSpread`),
+    reliefTopIntensity: requiredNumber(
+      style,
+      "reliefTopIntensity",
+      `${path}.reliefTopIntensity`,
+    ),
+    reliefBottomIntensity: requiredNumber(
+      style,
+      "reliefBottomIntensity",
+      `${path}.reliefBottomIntensity`,
+    ),
   };
 }
 

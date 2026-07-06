@@ -931,6 +931,13 @@ function nodeContent(node: RenderableNode): ReactNode {
   if (node.type === "navigation_bar_item") {
     return generatedNavigationButtonNode(node);
   }
+  if (node.type === "icon_token") {
+    const token = stringValue(node.metadata?.token) ?? node.text ?? "";
+    if (stringValue(node.style?.maskImage)) {
+      return <span title={token} />;
+    }
+    return <span title={token}>{iconTokenLabel(token)}</span>;
+  }
   if (node.type === "component_button_icon_glyph") {
     return (
       <svg
@@ -1472,6 +1479,30 @@ function RenderNode({
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              overflow: "visible",
+            }
+        : node.type === "icon_token"
+          ? {
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: stringValue(node.style?.maskImage)
+                ? "currentColor"
+                : undefined,
+              maskImage: stringValue(node.style?.maskImage),
+              maskPosition: stringValue(node.style?.maskImage) ? "center" : undefined,
+              maskRepeat: stringValue(node.style?.maskImage) ? "no-repeat" : undefined,
+              maskSize: stringValue(node.style?.maskImage) ? "contain" : undefined,
+              WebkitMaskImage: stringValue(node.style?.WebkitMaskImage),
+              WebkitMaskPosition: stringValue(node.style?.WebkitMaskImage)
+                ? "center"
+                : undefined,
+              WebkitMaskRepeat: stringValue(node.style?.WebkitMaskImage)
+                ? "no-repeat"
+                : undefined,
+              WebkitMaskSize: stringValue(node.style?.WebkitMaskImage)
+                ? "contain"
+                : undefined,
               overflow: "visible",
             }
         : node.type === "text" && node.role === "actor_label_text"

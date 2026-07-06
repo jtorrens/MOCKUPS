@@ -566,6 +566,7 @@ internal sealed partial class SpikeDatabase
             badgeSlot = new JsonObject
             {
                 ["showBadge"] = false,
+                ["iconToken"] = "media_mic",
                 ["backgroundColor"] = "blue",
                 ["iconColor"] = "gray_100",
                 ["placement"] = JsonNode.Parse("""{"mode":"center","alignX":1,"alignY":1,"offsetX":0,"offsetY":0}"""),
@@ -585,6 +586,12 @@ internal sealed partial class SpikeDatabase
         if (badgeSlot["backgroundColor"] is null)
         {
             badgeSlot["backgroundColor"] = "blue";
+            changed = true;
+        }
+
+        if (badgeSlot["iconToken"] is null)
+        {
+            badgeSlot["iconToken"] = "media_mic";
             changed = true;
         }
 
@@ -905,6 +912,7 @@ internal sealed partial class SpikeDatabase
                 config["buttonIcon"] = new JsonObject
                 {
                     ["size"] = 48,
+                    ["iconToken"] = "media_mic",
                     ["iconPadding"] = 6,
                     ["backgroundColorToken"] = "theme.colors.button",
                     ["backgroundAlpha"] = 1,
@@ -969,6 +977,7 @@ internal sealed partial class SpikeDatabase
                     ["badgeSlot"] = new JsonObject
                     {
                         ["showBadge"] = false,
+                        ["iconToken"] = "media_mic",
                         ["backgroundColor"] = "blue",
                         ["iconColor"] = "gray_100",
                         ["placement"] = JsonNode.Parse("""{"mode":"center","alignX":1,"alignY":1,"offsetX":0,"offsetY":0}"""),

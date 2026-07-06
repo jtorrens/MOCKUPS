@@ -168,6 +168,7 @@ internal static class ComponentClassFieldCatalog
         ["component.keyboard.bottomIconSlots"] = new("component.keyboard.bottomIconSlots", "Bottom icons", ValueKind.IconSlots, ["keyboard", "bottomIconSlots"], EmptyIconSlots),
 
         ["component.buttonIcon.size"] = new("component.buttonIcon.size", "Button size", ValueKind.Integer, ["buttonIcon", "size"], "48"),
+        ["component.buttonIcon.iconToken"] = new("component.buttonIcon.iconToken", "Icon", ValueKind.IconToken, ["buttonIcon", "iconToken"], "media_mic"),
         ["component.buttonIcon.iconPadding"] = new("component.buttonIcon.iconPadding", "Icon padding", ValueKind.Integer, ["buttonIcon", "iconPadding"], "6"),
         ["component.buttonIcon.backgroundColorToken"] = new("component.buttonIcon.backgroundColorToken", "Background", ValueKind.ThemeToken, ["buttonIcon", "backgroundColorToken"], "theme.colors.button", Options: ThemeColorOptions),
         ["component.buttonIcon.backgroundAlpha"] = new("component.buttonIcon.backgroundAlpha", "Surface alpha", ValueKind.Alpha, ["buttonIcon", "backgroundAlpha"], "1"),
@@ -210,6 +211,7 @@ internal static class ComponentClassFieldCatalog
         ["component.audio.avatar.placement"] = new("component.audio.avatar.placement", "Placement", ValueKind.AlignmentPlacement, ["audio", "avatarSlot", "placement"], """{"mode":"edge","alignX":1,"alignY":0.5,"offsetX":4,"offsetY":0}"""),
         ["component.audio.avatar.editor"] = new("component.audio.avatar.editor", "Avatar", ValueKind.EmbeddedComponent, [], "component.avatar"),
         ["component.audio.badge.showBadge"] = new("component.audio.badge.showBadge", "Show badge", ValueKind.Boolean, ["audio", "badgeSlot", "showBadge"], "false"),
+        ["component.audio.badge.iconToken"] = new("component.audio.badge.iconToken", "Icon", ValueKind.IconToken, ["audio", "badgeSlot", "iconToken"], "media_mic"),
         ["component.audio.badge.backgroundColor"] = new("component.audio.badge.backgroundColor", "Badge color", ValueKind.PaletteColorToken, ["audio", "badgeSlot", "backgroundColor"], "blue"),
         ["component.audio.badge.iconColor"] = new("component.audio.badge.iconColor", "Icon color", ValueKind.PaletteColorToken, ["audio", "badgeSlot", "iconColor"], "gray_100"),
         ["component.audio.badge.placement"] = new("component.audio.badge.placement", "Placement", ValueKind.AlignmentPlacement, ["audio", "badgeSlot", "placement"], """{"mode":"center","alignX":1,"alignY":1,"offsetX":0,"offsetY":0}"""),

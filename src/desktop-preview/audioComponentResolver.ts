@@ -12,7 +12,9 @@ import {
   requiredPlacement,
   requiredRecord,
   requiredString,
+  resolveSurfaceStyle,
   type AlignmentPlacementContract,
+  type SurfaceStyleContract,
 } from "./componentResolverCommon.js";
 
 export interface AudioDesignContract {
@@ -32,6 +34,7 @@ export interface AudioDesignContract {
   waveformMinHeight: number;
   waveformMaxHeight: number;
   progressKnobSize: number;
+  surface: SurfaceStyleContract;
   avatarSlot: {
     showAvatar: boolean;
     placement: AlignmentPlacementContract;
@@ -39,6 +42,7 @@ export interface AudioDesignContract {
   };
   badgeSlot: {
     showBadge: boolean;
+    iconToken: string;
     backgroundColor: string;
     iconColor: string;
     placement: AlignmentPlacementContract;
@@ -53,6 +57,7 @@ export function resolveAudioComponent(
   const preview = parseObject(payload.designPreviewJson);
   const componentBaseConfigs = parseObject(payload.componentBaseConfigsJson);
   const audio = asRecord(config.audio);
+  const style = asRecord(config.style);
   const avatarSlot = asRecord(audio.avatarSlot);
   const badgeSlot = asRecord(audio.badgeSlot);
   const showAvatar = requiredBoolean(
@@ -147,6 +152,7 @@ export function resolveAudioComponent(
       "progressKnobSize",
       "component.audio.progressKnobSize",
     ),
+    surface: resolveSurfaceStyle(style),
     avatarSlot: {
       showAvatar,
       placement: requiredPlacement(
@@ -165,6 +171,11 @@ export function resolveAudioComponent(
     },
     badgeSlot: {
       showBadge,
+      iconToken: requiredString(
+        badgeSlot,
+        "iconToken",
+        "component.audio.badge.iconToken",
+      ),
       backgroundColor: requiredString(
         badgeSlot,
         "backgroundColor",
@@ -187,6 +198,11 @@ export function resolveAudioComponent(
               preview,
               componentBaseConfigs,
               "component.audio.badge",
+            ),
+            iconToken: requiredString(
+              badgeSlot,
+              "iconToken",
+              "component.audio.badge.iconToken",
             ),
             backgroundPaletteColor: requiredString(
               badgeSlot,

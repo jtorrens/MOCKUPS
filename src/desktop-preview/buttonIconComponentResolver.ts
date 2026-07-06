@@ -9,7 +9,9 @@ import {
   requiredPlacement,
   requiredRecord,
   requiredString,
+  resolveSurfaceStyle,
   type AlignmentPlacementContract,
+  type SurfaceStyleContract,
 } from "./componentResolverCommon.js";
 import type { LabelDesignContract } from "./labelComponentResolver.js";
 import { resolveLabelComponentFromRecords } from "./labelComponentResolver.js";
@@ -18,6 +20,7 @@ export interface ButtonIconDesignContract {
   id: string;
   buttonSize: number;
   iconSize: number;
+  iconToken: string;
   iconPadding: number;
   backgroundColorToken: string;
   backgroundAlpha: number;
@@ -30,18 +33,7 @@ export interface ButtonIconDesignContract {
     placement: AlignmentPlacementContract;
     label?: LabelDesignContract;
   };
-  surface: {
-    shadowEnabled: boolean;
-    reliefEnabled: boolean;
-    borderWidth: number;
-    borderColorToken: string;
-    cornerRadiusToken: string;
-    reliefAngle: number;
-    reliefExtent: number;
-    reliefSpread: number;
-    reliefTopIntensity: number;
-    reliefBottomIntensity: number;
-  };
+  surface: SurfaceStyleContract;
 }
 
 function labelPreview(
@@ -107,6 +99,11 @@ export function resolveButtonIconComponentFromRecords(
       "iconPadding",
       "component.buttonIcon.iconPadding",
     ),
+    iconToken: requiredString(
+      buttonIcon,
+      "iconToken",
+      "component.buttonIcon.iconToken",
+    ),
     backgroundColorToken: requiredString(
       buttonIcon,
       "backgroundColorToken",
@@ -138,41 +135,6 @@ export function resolveButtonIconComponentFromRecords(
           )
         : undefined,
     },
-    surface: {
-      shadowEnabled: requiredBoolean(
-        style,
-        "shadowEnabled",
-        "component.style.shadowEnabled",
-      ),
-      reliefEnabled: requiredBoolean(
-        style,
-        "reliefEnabled",
-        "component.style.reliefEnabled",
-      ),
-      borderWidth: requiredNumber(style, "borderWidth", "component.style.borderWidth"),
-      borderColorToken: requiredString(
-        style,
-        "borderColorToken",
-        "component.style.borderColorToken",
-      ),
-      cornerRadiusToken: requiredString(
-        style,
-        "cornerRadiusToken",
-        "component.style.cornerRadiusToken",
-      ),
-      reliefAngle: requiredNumber(style, "reliefAngle", "component.style.reliefAngle"),
-      reliefExtent: requiredNumber(style, "reliefExtent", "component.style.reliefExtent"),
-      reliefSpread: requiredNumber(style, "reliefSpread", "component.style.reliefSpread"),
-      reliefTopIntensity: requiredNumber(
-        style,
-        "reliefTopIntensity",
-        "component.style.reliefTopIntensity",
-      ),
-      reliefBottomIntensity: requiredNumber(
-        style,
-        "reliefBottomIntensity",
-        "component.style.reliefBottomIntensity",
-      ),
-    },
+    surface: resolveSurfaceStyle(style),
   };
 }

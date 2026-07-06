@@ -1,4 +1,13 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
+import {
+  asRecord,
+  parseObject,
+  requiredAlpha,
+  requiredNumber,
+  requiredString,
+  resolveSurfaceStyle,
+  type SurfaceStyleContract,
+} from "./componentResolverCommon.js";
 
 export interface LabelDesignContract {
   id: string;
@@ -17,38 +26,7 @@ export interface LabelDesignContract {
   subtextColorToken: string;
   subtextSizeToken: string;
   subtextStyle: "normal" | "italic";
-  surface: {
-    shadowEnabled: boolean;
-    reliefEnabled: boolean;
-    borderWidth: number;
-    borderColorToken: string;
-    cornerRadiusToken: string;
-    reliefAngle: number;
-    reliefExtent: number;
-    reliefSpread: number;
-    reliefTopIntensity: number;
-    reliefBottomIntensity: number;
-  };
-}
-
-function asRecord(value: unknown): Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {};
-}
-
-function parseObject(json: string | undefined) {
-  return asRecord(JSON.parse(json || "{}"));
-}
-
-function requiredString(
-  value: Record<string, unknown>,
-  key: string,
-  path: string,
-) {
-  const raw = value[key];
-  if (typeof raw === "string" && raw.trim()) return raw;
-  throw new Error(`Missing string component value ${path}`);
+  surface: SurfaceStyleContract;
 }
 
 function requiredText(
@@ -59,38 +37,6 @@ function requiredText(
   const raw = value[key];
   if (typeof raw === "string") return raw;
   throw new Error(`Missing text component value ${path}`);
-}
-
-function requiredBoolean(
-  value: Record<string, unknown>,
-  key: string,
-  path: string,
-) {
-  const raw = value[key];
-  if (typeof raw === "boolean") return raw;
-  throw new Error(`Missing boolean component value ${path}`);
-}
-
-function requiredNumber(
-  value: Record<string, unknown>,
-  key: string,
-  path: string,
-) {
-  const raw = value[key];
-  if (typeof raw === "number" && Number.isFinite(raw)) return raw;
-  if (typeof raw === "string") {
-    const parsed = Number(raw.replace(",", "."));
-    if (Number.isFinite(parsed)) return parsed;
-  }
-  throw new Error(`Missing numeric component value ${path}`);
-}
-
-function requiredAlpha(
-  value: Record<string, unknown>,
-  key: string,
-  path: string,
-) {
-  return Math.max(0, Math.min(1, requiredNumber(value, key, path)));
 }
 
 function requiredPair(
@@ -194,41 +140,6 @@ export function resolveLabelComponentFromRecords(
       "component.label.subtextSizeToken",
     ),
     subtextStyle,
-    surface: {
-      shadowEnabled: requiredBoolean(
-        style,
-        "shadowEnabled",
-        "component.style.shadowEnabled",
-      ),
-      reliefEnabled: requiredBoolean(
-        style,
-        "reliefEnabled",
-        "component.style.reliefEnabled",
-      ),
-      borderWidth: requiredNumber(style, "borderWidth", "component.style.borderWidth"),
-      borderColorToken: requiredString(
-        style,
-        "borderColorToken",
-        "component.style.borderColorToken",
-      ),
-      cornerRadiusToken: requiredString(
-        style,
-        "cornerRadiusToken",
-        "component.style.cornerRadiusToken",
-      ),
-      reliefAngle: requiredNumber(style, "reliefAngle", "component.style.reliefAngle"),
-      reliefExtent: requiredNumber(style, "reliefExtent", "component.style.reliefExtent"),
-      reliefSpread: requiredNumber(style, "reliefSpread", "component.style.reliefSpread"),
-      reliefTopIntensity: requiredNumber(
-        style,
-        "reliefTopIntensity",
-        "component.style.reliefTopIntensity",
-      ),
-      reliefBottomIntensity: requiredNumber(
-        style,
-        "reliefBottomIntensity",
-        "component.style.reliefBottomIntensity",
-      ),
-    },
+    surface: resolveSurfaceStyle(style),
   };
 }

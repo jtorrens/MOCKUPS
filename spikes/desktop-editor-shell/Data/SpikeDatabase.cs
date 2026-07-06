@@ -2351,10 +2351,11 @@ internal sealed partial class SpikeDatabase
                 ] },
                 { "id": "audioBadge", "label": "Badge", "order": 50, "visible": true, "fields": [
                   { "id": "component.audio.badge.showBadge", "order": 10, "visible": true },
-                  { "id": "component.audio.badge.backgroundColor", "order": 20, "visible": true },
-                  { "id": "component.audio.badge.iconColor", "order": 30, "visible": true },
-                  { "id": "component.audio.badge.placement", "order": 40, "visible": true },
-                  { "id": "component.audio.badge.editor", "order": 50, "visible": true }
+                  { "id": "component.audio.badge.iconToken", "order": 20, "visible": true },
+                  { "id": "component.audio.badge.backgroundColor", "order": 30, "visible": true },
+                  { "id": "component.audio.badge.iconColor", "order": 40, "visible": true },
+                  { "id": "component.audio.badge.placement", "order": 50, "visible": true },
+                  { "id": "component.audio.badge.editor", "order": 60, "visible": true }
                 ] }
               ]
             }
