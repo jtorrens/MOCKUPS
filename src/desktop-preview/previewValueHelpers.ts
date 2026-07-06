@@ -86,6 +86,22 @@ export function requiredNumberPair(
   throw new Error(`Missing numeric pair value ${path}`);
 }
 
+export function requiredStringPair(
+  value: Record<string, unknown>,
+  key: string,
+  path: string,
+) {
+  const raw = requiredString(value, key, path);
+  const [firstRaw, secondRaw] = raw.split("|", 2);
+  const first = firstRaw?.trim() ?? "";
+  const second = secondRaw?.trim() ?? "";
+  if (first.length > 0 && second.length > 0) {
+    return { first, second };
+  }
+
+  throw new Error(`Missing string pair value ${path}`);
+}
+
 export function optionalNumber(
   value: Record<string, unknown>,
   key: string,

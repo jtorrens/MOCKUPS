@@ -83,8 +83,8 @@ export function resolveStatusBarComponent(
     layout: {
       height: requiredNumber(layout, "height", "statusBar.layout.height"),
       itemSize: requiredNumber(layout, "itemSize", "statusBar.layout.itemSize"),
-      gap: requiredNumber(layout, "gap", "statusBar.layout.gap"),
-      sidePadding: requiredNumber(
+      gapToken: requiredString(layout, "gap", "statusBar.layout.gap"),
+      sidePaddingToken: requiredString(
         layout,
         "sidePadding",
         "statusBar.layout.sidePadding",

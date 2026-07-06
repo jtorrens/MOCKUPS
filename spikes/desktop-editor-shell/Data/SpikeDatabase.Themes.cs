@@ -395,6 +395,16 @@ internal sealed partial class SpikeDatabase
                 ["weight"] = 400,
                 ["style"] = "normal",
             },
+            ["spacing"] = new JsonObject
+            {
+                ["none"] = 0,
+                ["xs"] = 2,
+                ["s"] = 4,
+                ["m"] = 8,
+                ["l"] = 12,
+                ["xl"] = 16,
+                ["xxl"] = 24,
+            },
             ["radii"] = new JsonObject
             {
                 ["none"] = 0,

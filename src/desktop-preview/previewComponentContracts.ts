@@ -19,6 +19,11 @@ export interface SurfaceStyleContract {
   reliefBottomIntensity: number;
 }
 
+export interface SpacingPairContract {
+  xToken: string;
+  yToken: string;
+}
+
 export interface IconSlotsContract {
   left: string[];
   center: string[];

@@ -13,6 +13,7 @@ import {
   requiredNumber,
   requiredPlacement,
   requiredString,
+  requiredStringPair,
 } from "./componentResolverCommon.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
 
@@ -75,7 +76,7 @@ export function resolveAudioComponent(
       progress: currentTimeSeconds / durationSeconds,
       durationText: formatDuration(durationSeconds - currentTimeSeconds),
     },
-    padding: parsePair(requiredString(audio, "padding", "component.audio.padding")),
+    padding: toSpacingPair(requiredStringPair(audio, "padding", "component.audio.padding")),
     textSize: requiredNumber(audio, "textSize", "component.audio.textSize"),
     textColorToken: requiredString(
       audio,
@@ -87,7 +88,7 @@ export function resolveAudioComponent(
       "playCircleSize",
       "component.audio.playCircleSize",
     ),
-    playIconPadding: requiredNumber(
+    playIconPaddingToken: requiredString(
       audio,
       "playIconPadding",
       "component.audio.playIconPadding",
@@ -122,7 +123,7 @@ export function resolveAudioComponent(
       "waveformBarWidth",
       "component.audio.waveformBarWidth",
     ),
-    waveformGap: requiredNumber(
+    waveformGapToken: requiredString(
       audio,
       "waveformGap",
       "component.audio.waveformGap",
@@ -214,6 +215,10 @@ export function resolveAudioComponent(
   };
 }
 
+function toSpacingPair(pair: { first: string; second: string }) {
+  return { xToken: pair.first, yToken: pair.second };
+}
+
 function formatDuration(totalSeconds: number) {
   const seconds = Math.max(0, Math.round(totalSeconds));
   const minutes = Math.floor(seconds / 60);
@@ -225,15 +230,4 @@ function normalizePlaybackTime(seconds: number, durationSeconds: number) {
   if (durationSeconds <= 0) return 0;
   const normalized = seconds % durationSeconds;
   return normalized < 0 ? normalized + durationSeconds : normalized;
-}
-
-function parsePair(value: string) {
-  const [xRaw, yRaw] = value.split("|", 2);
-  const x = Number(xRaw?.replace(",", "."));
-  const y = Number(yRaw?.replace(",", "."));
-  if (!Number.isFinite(x) || !Number.isFinite(y)) {
-    throw new Error(`Invalid component.audio numeric pair ${value}`);
-  }
-
-  return { x, y };
 }

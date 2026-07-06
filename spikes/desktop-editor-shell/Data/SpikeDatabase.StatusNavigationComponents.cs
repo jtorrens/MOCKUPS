@@ -85,8 +85,8 @@ internal sealed partial class SpikeDatabase
             {
                 ["height"] = 54,
                 ["itemSize"] = 18,
-                ["gap"] = 6,
-                ["sidePadding"] = 24,
+                ["gap"] = "theme.spacing.m",
+                ["sidePadding"] = "theme.spacing.xxl",
             },
             ["items"] = new JsonArray(DefaultStatusBarItems().Select(StatusBarItemToJson).ToArray<JsonNode?>()),
         };
@@ -208,7 +208,7 @@ internal sealed partial class SpikeDatabase
             {
                 ["height"] = 34,
                 ["itemSize"] = 18,
-                ["sidePadding"] = 40,
+                ["sidePadding"] = "theme.spacing.xxl",
                 ["strokeWidth"] = 2,
                 ["cornerRadius"] = 3,
                 ["filled"] = false,

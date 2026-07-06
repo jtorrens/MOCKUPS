@@ -1,3 +1,4 @@
+import type { SpacingPairContract } from "./previewComponentContracts.js";
 import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
 
 export interface LabelDesignContract {
@@ -6,7 +7,7 @@ export interface LabelDesignContract {
   subtext: string;
   dimensionMode: "content" | "fixed";
   size: { width: number; height: number };
-  padding: { x: number; y: number };
+  padding: SpacingPairContract;
   textColorToken: string;
   textSizeToken: string;
   textStyle: "normal" | "italic";

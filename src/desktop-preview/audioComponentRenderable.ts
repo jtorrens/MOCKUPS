@@ -6,6 +6,7 @@ import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
   boundedCenterBox,
   expandBoxXY,
+  numberToken,
   placeChild,
   renderScale,
   scalePlacement,
@@ -34,12 +35,12 @@ export function audioComponentToRenderable(
   audio: AudioDesignContract,
 ): RenderableNode {
   const scale = renderScale(payload);
-  const paddingX = Math.max(0, audio.padding.x * scale);
-  const paddingY = Math.max(0, audio.padding.y * scale);
+  const paddingX = Math.max(0, numberToken(payload, audio.padding.xToken) * scale);
+  const paddingY = Math.max(0, numberToken(payload, audio.padding.yToken) * scale);
   const playSize = Math.max(1, audio.playCircleSize * scale);
-  const playIconPadding = Math.max(0, audio.playIconPadding * scale);
+  const playIconPadding = Math.max(0, numberToken(payload, audio.playIconPaddingToken) * scale);
   const barCount = Math.max(4, Math.round(audio.waveformBarCount));
-  const waveformGap = Math.max(0, audio.waveformGap * scale);
+  const waveformGap = Math.max(0, numberToken(payload, audio.waveformGapToken) * scale);
   const barWidth = Math.max(1, audio.waveformBarWidth * scale);
   const waveformWidth = barCount * barWidth + (barCount - 1) * waveformGap;
   const minBarHeight = Math.max(1, audio.waveformMinHeight * scale);

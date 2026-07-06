@@ -50,8 +50,9 @@ export function keyboardComponentToRenderable(
     width,
     height,
   };
-  const padding = Math.max(6 * scale, keyboard.keyPadding * scale * 1.5);
-  const rowGap = Math.max(5 * scale, keyboard.keyPadding * scale);
+  const keyPadding = numberToken(payload, keyboard.keyPaddingToken) * scale;
+  const padding = Math.max(6 * scale, keyPadding * 1.5);
+  const rowGap = Math.max(5 * scale, keyPadding);
   const bottomHeight = Math.max(26 * scale, 32 * scale);
   const rowHeight = Math.max(
     1,
@@ -151,7 +152,7 @@ function keyboardRowNodes(
   keyShadow: Record<string, unknown> | undefined,
 ): RenderableNode[] {
   const scale = renderScale(payload);
-  const gap = Math.max(3 * scale, keyboard.keyPadding * scale);
+  const gap = Math.max(3 * scale, numberToken(payload, keyboard.keyPaddingToken) * scale);
   const rowWidth = keyboardBox.width - padding * 2;
   const rowY = keyboardBox.y + padding + rowIndex * (rowHeight + rowGap);
   const weights = row.map((label) =>

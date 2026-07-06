@@ -17,8 +17,8 @@ export interface StatusBarDesignContract {
   layout: {
     height: number;
     itemSize: number;
-    gap: number;
-    sidePadding: number;
+    gapToken: string;
+    sidePaddingToken: string;
   };
   zones: Record<StatusBarZone, StatusBarItemContract[]>;
 }

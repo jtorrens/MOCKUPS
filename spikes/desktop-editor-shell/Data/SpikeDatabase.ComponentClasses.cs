@@ -3,6 +3,7 @@ using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -1669,6 +1670,7 @@ internal sealed partial class SpikeDatabase
         changed |= NormalizeSurfaceSlots(componentType, config);
         changed |= NormalizeEmbeddedSlotPresetIds(connection, projectId, config);
         changed |= JsonPath.MergeMissing(config, defaults);
+        changed |= NormalizeComponentSpacingTokens(config);
         changed |= NormalizeReliefIntensity(config, "reliefTopIntensity");
         changed |= NormalizeReliefIntensity(config, "reliefBottomIntensity");
         return changed;
@@ -1708,6 +1710,145 @@ internal sealed partial class SpikeDatabase
         return string.IsNullOrWhiteSpace(defaultPreset?.ConfigJson) || defaultPreset.ConfigJson == "{}"
             ? classConfigJson
             : defaultPreset.ConfigJson;
+    }
+
+    private static bool NormalizeComponentSpacingTokens(JsonObject config)
+    {
+        var changed = false;
+        changed |= NormalizeSpacingPair(config, ["textInput", "barPadding"]);
+        changed |= NormalizeSpacingPair(config, ["textInput", "textPadding"]);
+        changed |= NormalizeSpacingToken(config, ["textInput", "iconGap"]);
+        changed |= NormalizeSpacingToken(config, ["keyboard", "keyPadding"]);
+        changed |= NormalizeSpacingToken(config, ["buttonIcon", "iconPadding"]);
+        changed |= NormalizeSpacingPair(config, ["label", "padding"]);
+        changed |= NormalizeSpacingPair(config, ["audio", "padding"]);
+        changed |= NormalizeSpacingToken(config, ["audio", "playIconPadding"]);
+        changed |= NormalizeSpacingToken(config, ["audio", "waveformGap"]);
+        changed |= NormalizeSpacingToken(config, ["layout", "gap"]);
+        changed |= NormalizeSpacingToken(config, ["layout", "sidePadding"]);
+
+        foreach (var child in config.Select((pair) => pair.Value).OfType<JsonObject>())
+        {
+            changed |= NormalizeComponentSpacingTokens(child);
+        }
+
+        foreach (var child in config.Select((pair) => pair.Value).OfType<JsonArray>())
+        {
+            foreach (var item in child.OfType<JsonObject>())
+            {
+                changed |= NormalizeComponentSpacingTokens(item);
+            }
+        }
+
+        return changed;
+    }
+
+    private static bool NormalizeSpacingToken(JsonObject config, string[] path)
+    {
+        var node = JsonPath.Get(config, path);
+        if (node is null)
+        {
+            return false;
+        }
+
+        if (!TrySpacingToken(node, out var token) || SpacingNodeIsToken(node, token))
+        {
+            return false;
+        }
+
+        JsonPath.Set(config, path, JsonValue.Create(token)!);
+        return true;
+    }
+
+    private static bool NormalizeSpacingPair(JsonObject config, string[] path)
+    {
+        var node = JsonPath.Get(config, path);
+        if (node is null)
+        {
+            return false;
+        }
+
+        if (node is not JsonValue value || !value.TryGetValue<string>(out var pairText))
+        {
+            return false;
+        }
+
+        var parts = pairText.Split('|', 2);
+        var first = NormalizeSpacingPart(parts.ElementAtOrDefault(0) ?? "");
+        var second = NormalizeSpacingPart(parts.ElementAtOrDefault(1) ?? "");
+        var next = DictionaryFieldPairText.Join(first, second);
+        if (next.Equals(pairText, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        JsonPath.Set(config, path, JsonValue.Create(next)!);
+        return true;
+    }
+
+    private static string NormalizeSpacingPart(string value)
+    {
+        return value.StartsWith("theme.spacing.", StringComparison.Ordinal)
+            ? value
+            : double.TryParse(value.Replace(",", "."), NumberStyles.Float, CultureInfo.InvariantCulture, out var number)
+                ? ClosestSpacingToken(number)
+                : value;
+    }
+
+    private static bool TrySpacingToken(JsonNode node, out string token)
+    {
+        if (node is JsonValue value)
+        {
+            if (value.TryGetValue<string>(out var text))
+            {
+                if (text.StartsWith("theme.spacing.", StringComparison.Ordinal))
+                {
+                    token = text;
+                    return true;
+                }
+
+                if (double.TryParse(text.Replace(",", "."), NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed))
+                {
+                    token = ClosestSpacingToken(parsed);
+                    return true;
+                }
+            }
+
+            if (value.TryGetValue<double>(out var number))
+            {
+                token = ClosestSpacingToken(number);
+                return true;
+            }
+        }
+
+        token = "";
+        return false;
+    }
+
+    private static bool SpacingNodeIsToken(JsonNode node, string token)
+    {
+        return node is JsonValue value
+            && value.TryGetValue<string>(out var text)
+            && text.Equals(token, StringComparison.Ordinal);
+    }
+
+    private static string ClosestSpacingToken(double value)
+    {
+        var tokens = new (string Token, double Value)[]
+        {
+            ("theme.spacing.none", 0),
+            ("theme.spacing.xs", 2),
+            ("theme.spacing.s", 4),
+            ("theme.spacing.m", 8),
+            ("theme.spacing.l", 12),
+            ("theme.spacing.xl", 16),
+            ("theme.spacing.xxl", 24),
+        };
+        return tokens
+            .OrderBy((token) => Math.Abs(token.Value - value))
+            .ThenByDescending((token) => token.Value)
+            .First()
+            .Token;
     }
 
     private static bool NormalizeAvatarLabelPlacement(string componentType, JsonObject config)
@@ -1777,20 +1918,24 @@ internal sealed partial class SpikeDatabase
         var changed = false;
         if (audio["padding"] is null)
         {
-            audio["padding"] = "10|8";
+            audio["padding"] = "theme.spacing.l|theme.spacing.m";
             changed = true;
         }
 
         if (audio["playIconPadding"] is null)
         {
-            audio["playIconPadding"] = 9;
+            audio["playIconPadding"] = "theme.spacing.m";
             changed = true;
         }
 
         changed |= NormalizeNumber(audio, "playCircleSize", 32, minimum: 8);
         changed |= NormalizeNumber(audio, "textSize", 11, minimum: 6);
         changed |= NormalizeNumber(audio, "waveformBarCount", 28, minimum: 4);
-        changed |= NormalizeNumber(audio, "waveformGap", 2, minimum: 0);
+        if (audio["waveformGap"] is null)
+        {
+            audio["waveformGap"] = "theme.spacing.xs";
+            changed = true;
+        }
         changed |= NormalizeNumber(audio, "waveformMinHeight", 4, minimum: 1);
         changed |= NormalizeNumber(audio, "waveformMaxHeight", 22, minimum: 2);
         changed |= NormalizeNumber(audio, "progressKnobSize", 9, minimum: 4);
@@ -1847,7 +1992,7 @@ internal sealed partial class SpikeDatabase
                     ["buttonIcon"] = new JsonObject
                     {
                         ["size"] = 16,
-                        ["iconPadding"] = 3,
+                        ["iconPadding"] = "theme.spacing.s",
                     },
                 },
             };

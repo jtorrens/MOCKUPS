@@ -16,6 +16,7 @@ internal enum ValueKind
     OptionToken,
     RecordReference,
     ThemeToken,
+    ThemeTokenPair,
     HexColor,
     Alpha,
     PaletteColorToken,

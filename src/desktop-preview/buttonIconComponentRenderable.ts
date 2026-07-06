@@ -28,9 +28,9 @@ export function buttonIconComponentToRenderable(
   buttonIcon: ButtonIconDesignContract,
 ): RenderableNode {
   const scale = renderScale(payload);
-  const iconSize = buttonIcon.iconSize * scale;
-  const iconPadding = buttonIcon.iconPadding * scale;
-  const surfaceSize = iconSize + iconPadding * 2;
+  const iconPadding = numberToken(payload, buttonIcon.iconPaddingToken) * scale;
+  const surfaceSize = buttonIcon.buttonSize * scale;
+  const iconSize = Math.max(1, surfaceSize - iconPadding * 2);
   const iconShadow = buttonIcon.surface.surface.shadowEnabled ? shadow(payload) : undefined;
   const labelSize = buttonIcon.labelSlot.label
     ? measureLabelComponent(buttonIcon.labelSlot.label, payload)
@@ -84,7 +84,7 @@ export function buttonIconComponentToRenderableAt(
   buttonBox: RenderableBox,
 ): RenderableNode {
   const scale = renderScale(payload);
-  const iconPadding = buttonIcon.iconPadding * scale;
+  const iconPadding = numberToken(payload, buttonIcon.iconPaddingToken) * scale;
   const iconSize = Math.max(1, buttonBox.width - iconPadding * 2);
   const iconShadow = buttonIcon.surface.surface.shadowEnabled ? shadow(payload) : undefined;
   const labelSize = buttonIcon.labelSlot.label

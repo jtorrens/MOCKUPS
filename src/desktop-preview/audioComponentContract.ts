@@ -2,6 +2,7 @@ import type { AvatarDesignContract } from "./avatarComponentContract.js";
 import type { ButtonIconDesignContract } from "./buttonIconComponentContract.js";
 import type {
   AlignmentPlacementContract,
+  SpacingPairContract,
 } from "./previewComponentContracts.js";
 import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
 
@@ -13,18 +14,18 @@ export interface AudioDesignContract {
     progress: number;
     durationText: string;
   };
-  padding: { x: number; y: number };
+  padding: SpacingPairContract;
   textSize: number;
   textColorToken: string;
   playCircleSize: number;
-  playIconPadding: number;
+  playIconPaddingToken: string;
   playColorToken: string;
   playIconColorToken: string;
   waveformColorToken: string;
   waveformPlayedColorToken: string;
   waveformBarCount: number;
   waveformBarWidth: number;
-  waveformGap: number;
+  waveformGapToken: string;
   waveformMinHeight: number;
   waveformMaxHeight: number;
   progressKnobSize: number;

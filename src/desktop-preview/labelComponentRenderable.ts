@@ -22,7 +22,7 @@ export function measureLabelComponent(
   const scale = renderScale(payload);
   const fontSize = numberToken(payload, label.textSizeToken) * scale;
   const subtextFontSize = numberToken(payload, label.subtextSizeToken) * scale;
-  return labelSize(label, fontSize, subtextFontSize, scale);
+  return labelSize(label, fontSize, subtextFontSize, scale, payload);
 }
 
 function labelSize(
@@ -30,9 +30,10 @@ function labelSize(
   fontSize: number,
   subtextFontSize: number,
   scale: number,
+  payload: DesignPreviewPayload,
 ) {
-  const paddingX = label.padding.x * scale;
-  const paddingY = label.padding.y * scale;
+  const paddingX = numberToken(payload, label.padding.xToken) * scale;
+  const paddingY = numberToken(payload, label.padding.yToken) * scale;
   const hasSubtext = label.subtext.trim().length > 0;
   const lineHeight = Math.max(fontSize * 1.2, fontSize);
   const subtextLineHeight = Math.max(subtextFontSize * 1.2, subtextFontSize);
@@ -82,7 +83,9 @@ export function labelComponentToRenderableAt(
   const scale = renderScale(payload);
   const fontSize = numberToken(payload, label.textSizeToken) * scale;
   const subtextFontSize = numberToken(payload, label.subtextSizeToken) * scale;
-  const size = labelSize(label, fontSize, subtextFontSize, scale);
+  const paddingX = numberToken(payload, label.padding.xToken) * scale;
+  const paddingY = numberToken(payload, label.padding.yToken) * scale;
+  const size = labelSize(label, fontSize, subtextFontSize, scale, payload);
   const surfaceNode = surfaceComponentToRenderableAt(payload, label.surface, box);
   const surfaceColorModes = surfaceNode.style?.colorModes as
     | Record<string, Record<string, unknown>>
@@ -93,8 +96,8 @@ export function labelComponentToRenderableAt(
     id: label.id,
     style: {
       ...surfaceNode.style,
-      paddingX: label.padding.x * scale,
-      paddingY: label.padding.y * scale,
+      paddingX,
+      paddingY,
       display: "flex",
       alignItems: "center",
       justifyContent: "center",

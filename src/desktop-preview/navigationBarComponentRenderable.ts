@@ -6,6 +6,7 @@ import type {
 } from "./navigationBarComponentContract.js";
 import { selectedColor } from "./previewColorHelpers.js";
 import { renderScale, previewScreenBox } from "./previewGeometryHelpers.js";
+import { numberToken } from "./componentRenderableCommon.js";
 
 export function navigationBarComponentToRenderable(
   payload: DesignPreviewPayload,
@@ -19,7 +20,7 @@ export function navigationBarComponentToRenderable(
   const layout = {
     height: navigationBar.layout.height * scale,
     itemSize: navigationBar.layout.itemSize * scale,
-    sidePadding: navigationBar.layout.sidePadding * scale,
+    sidePadding: numberToken(payload, navigationBar.layout.sidePaddingToken) * scale,
     strokeWidth: navigationBar.layout.strokeWidth * scale,
     cornerRadius: navigationBar.layout.cornerRadius * scale,
     filled: navigationBar.layout.filled,

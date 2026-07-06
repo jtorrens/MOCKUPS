@@ -69,6 +69,17 @@ internal static class ComponentClassFieldCatalog
         new("theme.typography.sizes.xl", "typography.sizes.xl"),
     ];
 
+    private static readonly FieldOption[] SpacingTokenOptions =
+    [
+        new("theme.spacing.none", "spacing.none"),
+        new("theme.spacing.xs", "spacing.xs"),
+        new("theme.spacing.s", "spacing.s"),
+        new("theme.spacing.m", "spacing.m"),
+        new("theme.spacing.l", "spacing.l"),
+        new("theme.spacing.xl", "spacing.xl"),
+        new("theme.spacing.xxl", "spacing.xxl"),
+    ];
+
     private static readonly FieldOption[] TextStyleOptions =
     [
         new("normal", "Normal"),
@@ -157,9 +168,9 @@ internal static class ComponentClassFieldCatalog
         ["component.avatar.label.editor"] = new("component.avatar.label.editor", "Label", ValueKind.ComponentPreset, ["avatar", "labelSlot", "presetId"], "default"),
 
         ["component.textInput.height"] = new("component.textInput.height", "Height", ValueKind.Integer, ["textInput", "height"], "44"),
-        ["component.textInput.barPadding"] = new("component.textInput.barPadding", "Bar padding", ValueKind.IntegerPair, ["textInput", "barPadding"], "12|8", PairLabels: new("X", "Y")),
-        ["component.textInput.textPadding"] = new("component.textInput.textPadding", "Text padding", ValueKind.IntegerPair, ["textInput", "textPadding"], "14|0", PairLabels: new("X", "Y")),
-        ["component.textInput.iconGap"] = new("component.textInput.iconGap", "Icon gap", ValueKind.Integer, ["textInput", "iconGap"], "8"),
+        ["component.textInput.barPadding"] = new("component.textInput.barPadding", "Bar padding", ValueKind.ThemeTokenPair, ["textInput", "barPadding"], "theme.spacing.l|theme.spacing.m", PairLabels: new("X", "Y"), Options: SpacingTokenOptions),
+        ["component.textInput.textPadding"] = new("component.textInput.textPadding", "Text padding", ValueKind.ThemeTokenPair, ["textInput", "textPadding"], "theme.spacing.xl|theme.spacing.none", PairLabels: new("X", "Y"), Options: SpacingTokenOptions),
+        ["component.textInput.iconGap"] = new("component.textInput.iconGap", "Icon gap", ValueKind.ThemeToken, ["textInput", "iconGap"], "theme.spacing.m", Options: SpacingTokenOptions),
         ["component.textInput.placeholder"] = new("component.textInput.placeholder", "Placeholder", ValueKind.StringSingleLine, ["textInput", "placeholder"], "Message"),
         ["component.textInput.surface.editor"] = new("component.textInput.surface.editor", "Surface", ValueKind.ComponentPreset, ["textInput", "surfaceSlot", "presetId"], "InputBox"),
         ["component.textInput.idleTextColorToken"] = new("component.textInput.idleTextColorToken", "Idle text color", ValueKind.ThemeToken, ["textInput", "idleTextColorToken"], "theme.colors.textSecondary", Options: ThemeColorOptions),
@@ -173,7 +184,7 @@ internal static class ComponentClassFieldCatalog
         ["component.keyboard.keyBackgroundColorToken"] = new("component.keyboard.keyBackgroundColorToken", "Key background", ValueKind.ThemeToken, ["keyboard", "keyBackgroundColorToken"], "theme.colors.field", Options: ThemeColorOptions),
         ["component.keyboard.keyTextColorToken"] = new("component.keyboard.keyTextColorToken", "Key text", ValueKind.ThemeToken, ["keyboard", "keyTextColorToken"], "theme.colors.textPrimary", Options: ThemeColorOptions),
         ["component.keyboard.bottomIconColorToken"] = new("component.keyboard.bottomIconColorToken", "Bottom icons", ValueKind.ThemeToken, ["keyboard", "bottomIconColorToken"], "theme.icons.secondary", Options: ThemeColorOptions),
-        ["component.keyboard.keyPadding"] = new("component.keyboard.keyPadding", "Key padding", ValueKind.Integer, ["keyboard", "keyPadding"], "4"),
+        ["component.keyboard.keyPadding"] = new("component.keyboard.keyPadding", "Key padding", ValueKind.ThemeToken, ["keyboard", "keyPadding"], "theme.spacing.s", Options: SpacingTokenOptions),
         ["component.keyboard.keyCornerRadius"] = new("component.keyboard.keyCornerRadius", "Key radius", ValueKind.Integer, ["keyboard", "keyCornerRadius"], "6"),
         ["component.keyboard.keyShadowEnabled"] = new("component.keyboard.keyShadowEnabled", "Key shadow", ValueKind.Boolean, ["keyboard", "keyShadowEnabled"], "false"),
         ["component.keyboard.pressedEffect"] = new("component.keyboard.pressedEffect", "Pressed effect", ValueKind.OptionToken, ["keyboard", "pressedEffect"], "popup", Options: PressedEffectOptions),
@@ -195,7 +206,7 @@ internal static class ComponentClassFieldCatalog
 
         ["component.buttonIcon.size"] = new("component.buttonIcon.size", "Button size", ValueKind.Integer, ["buttonIcon", "size"], "48"),
         ["component.buttonIcon.iconToken"] = new("component.buttonIcon.iconToken", "Icon", ValueKind.IconToken, ["buttonIcon", "iconToken"], "media_mic"),
-        ["component.buttonIcon.iconPadding"] = new("component.buttonIcon.iconPadding", "Icon padding", ValueKind.Integer, ["buttonIcon", "iconPadding"], "6"),
+        ["component.buttonIcon.iconPadding"] = new("component.buttonIcon.iconPadding", "Icon padding", ValueKind.ThemeToken, ["buttonIcon", "iconPadding"], "theme.spacing.m", Options: SpacingTokenOptions),
         ["component.buttonIcon.surface.editor"] = new("component.buttonIcon.surface.editor", "Surface", ValueKind.ComponentPreset, ["buttonIcon", "surfaceSlot", "presetId"], "IconButton"),
         ["component.buttonIcon.iconColorToken"] = new("component.buttonIcon.iconColorToken", "Icon color", ValueKind.ThemeToken, ["buttonIcon", "iconColorToken"], "theme.colors.icon", Options: ThemeColorOptions),
         ["component.buttonIcon.label.showLabel"] = new("component.buttonIcon.label.showLabel", "Show label", ValueKind.Boolean, ["buttonIcon", "labelSlot", "showLabel"], "false"),
@@ -206,7 +217,7 @@ internal static class ComponentClassFieldCatalog
 
         ["component.label.dimensionMode"] = new("component.label.dimensionMode", "Dimension mode", ValueKind.OptionToken, ["label", "dimensionMode"], "content", Options: DimensionModeOptions),
         ["component.label.size"] = new("component.label.size", "Size", ValueKind.IntegerPair, ["label", "size"], "120|32", PairLabels: new("W", "H")),
-        ["component.label.padding"] = new("component.label.padding", "Padding", ValueKind.IntegerPair, ["label", "padding"], "8|4", PairLabels: new("X", "Y")),
+        ["component.label.padding"] = new("component.label.padding", "Padding", ValueKind.ThemeTokenPair, ["label", "padding"], "theme.spacing.m|theme.spacing.s", PairLabels: new("X", "Y"), Options: SpacingTokenOptions),
         ["component.label.surface.editor"] = new("component.label.surface.editor", "Surface", ValueKind.ComponentPreset, ["label", "surfaceSlot", "presetId"], "Label"),
         ["component.label.textColorToken"] = new("component.label.textColorToken", "Text color", ValueKind.ThemeToken, ["label", "textColorToken"], "theme.colors.textPrimary", Options: ThemeColorOptions),
         ["component.label.textSizeToken"] = new("component.label.textSizeToken", "Text size", ValueKind.ThemeToken, ["label", "textSizeToken"], "theme.typography.sizes.s", Options: TypographySizeOptions),
@@ -217,19 +228,19 @@ internal static class ComponentClassFieldCatalog
         ["component.label.subtextSizeToken"] = new("component.label.subtextSizeToken", "Subtext size", ValueKind.ThemeToken, ["label", "subtextSizeToken"], "theme.typography.sizes.xs", Options: TypographySizeOptions),
         ["component.label.subtextStyle"] = new("component.label.subtextStyle", "Subtext style", ValueKind.OptionToken, ["label", "subtextStyle"], "normal", Options: TextStyleOptions),
 
-        ["component.audio.padding"] = new("component.audio.padding", "Padding", ValueKind.IntegerPair, ["audio", "padding"], "10|8", PairLabels: new("X", "Y")),
+        ["component.audio.padding"] = new("component.audio.padding", "Padding", ValueKind.ThemeTokenPair, ["audio", "padding"], "theme.spacing.l|theme.spacing.m", PairLabels: new("X", "Y"), Options: SpacingTokenOptions),
         ["component.audio.surface.editor"] = new("component.audio.surface.editor", "Surface", ValueKind.ComponentPreset, ["audio", "surfaceSlot", "presetId"], "default"),
         ["component.audio.textSize"] = new("component.audio.textSize", "Text size", ValueKind.Integer, ["audio", "textSize"], "13"),
         ["component.audio.textColorToken"] = new("component.audio.textColorToken", "Text color", ValueKind.ThemeToken, ["audio", "textColorToken"], "theme.icons.secondary", Options: ThemeColorOptions),
         ["component.audio.playCircleSize"] = new("component.audio.playCircleSize", "Play size", ValueKind.Integer, ["audio", "playCircleSize"], "32"),
-        ["component.audio.playIconPadding"] = new("component.audio.playIconPadding", "Play icon padding", ValueKind.Integer, ["audio", "playIconPadding"], "9"),
+        ["component.audio.playIconPadding"] = new("component.audio.playIconPadding", "Play icon padding", ValueKind.ThemeToken, ["audio", "playIconPadding"], "theme.spacing.m", Options: SpacingTokenOptions),
         ["component.audio.playColorToken"] = new("component.audio.playColorToken", "Play color", ValueKind.ThemeToken, ["audio", "playColorToken"], "theme.icons.accent", Options: ThemeColorOptions),
         ["component.audio.playIconColorToken"] = new("component.audio.playIconColorToken", "Play icon color", ValueKind.ThemeToken, ["audio", "playIconColorToken"], "theme.icons.secondary", Options: ThemeColorOptions),
         ["component.audio.waveformColorToken"] = new("component.audio.waveformColorToken", "Waveform color", ValueKind.ThemeToken, ["audio", "waveformColorToken"], "theme.icons.primary", Options: ThemeColorOptions),
         ["component.audio.waveformPlayedColorToken"] = new("component.audio.waveformPlayedColorToken", "Waveform played", ValueKind.ThemeToken, ["audio", "waveformPlayedColorToken"], "theme.icons.accent", Options: ThemeColorOptions),
         ["component.audio.waveformBarCount"] = new("component.audio.waveformBarCount", "Waveform bars", ValueKind.Integer, ["audio", "waveformBarCount"], "28"),
         ["component.audio.waveformBarWidth"] = new("component.audio.waveformBarWidth", "Waveform bar width", ValueKind.Integer, ["audio", "waveformBarWidth"], "3"),
-        ["component.audio.waveformGap"] = new("component.audio.waveformGap", "Waveform gap", ValueKind.Integer, ["audio", "waveformGap"], "2"),
+        ["component.audio.waveformGap"] = new("component.audio.waveformGap", "Waveform gap", ValueKind.ThemeToken, ["audio", "waveformGap"], "theme.spacing.xs", Options: SpacingTokenOptions),
         ["component.audio.waveformMinHeight"] = new("component.audio.waveformMinHeight", "Waveform min height", ValueKind.Integer, ["audio", "waveformMinHeight"], "4"),
         ["component.audio.waveformMaxHeight"] = new("component.audio.waveformMaxHeight", "Waveform max height", ValueKind.Integer, ["audio", "waveformMaxHeight"], "22"),
         ["component.audio.progressKnobSize"] = new("component.audio.progressKnobSize", "Progress knob", ValueKind.Integer, ["audio", "progressKnobSize"], "9"),
@@ -247,13 +258,13 @@ internal static class ComponentClassFieldCatalog
 
         ["component.statusBar.layout.height"] = new("component.statusBar.layout.height", "Height", ValueKind.Integer, ["layout", "height"], "54"),
         ["component.statusBar.layout.itemSize"] = new("component.statusBar.layout.itemSize", "Item size", ValueKind.Integer, ["layout", "itemSize"], "18"),
-        ["component.statusBar.layout.gap"] = new("component.statusBar.layout.gap", "Gap", ValueKind.Integer, ["layout", "gap"], "6"),
-        ["component.statusBar.layout.sidePadding"] = new("component.statusBar.layout.sidePadding", "Side padding", ValueKind.Integer, ["layout", "sidePadding"], "24"),
+        ["component.statusBar.layout.gap"] = new("component.statusBar.layout.gap", "Gap", ValueKind.ThemeToken, ["layout", "gap"], "theme.spacing.m", Options: SpacingTokenOptions),
+        ["component.statusBar.layout.sidePadding"] = new("component.statusBar.layout.sidePadding", "Side padding", ValueKind.ThemeToken, ["layout", "sidePadding"], "theme.spacing.xxl", Options: SpacingTokenOptions),
 
         ["component.navigationBar.type"] = new("component.navigationBar.type", "Type", ValueKind.OptionToken, ["type"], "buttons", Options: NavigationBarTypeOptions),
         ["component.navigationBar.layout.height"] = new("component.navigationBar.layout.height", "Height", ValueKind.Integer, ["layout", "height"], "34"),
         ["component.navigationBar.layout.itemSize"] = new("component.navigationBar.layout.itemSize", "Item size", ValueKind.Integer, ["layout", "itemSize"], "18"),
-        ["component.navigationBar.layout.sidePadding"] = new("component.navigationBar.layout.sidePadding", "Side padding", ValueKind.Integer, ["layout", "sidePadding"], "40"),
+        ["component.navigationBar.layout.sidePadding"] = new("component.navigationBar.layout.sidePadding", "Side padding", ValueKind.ThemeToken, ["layout", "sidePadding"], "theme.spacing.xxl", Options: SpacingTokenOptions),
         ["component.navigationBar.layout.strokeWidth"] = new("component.navigationBar.layout.strokeWidth", "Stroke width", ValueKind.Integer, ["layout", "strokeWidth"], "2"),
         ["component.navigationBar.layout.cornerRadius"] = new("component.navigationBar.layout.cornerRadius", "Corner radius", ValueKind.Integer, ["layout", "cornerRadius"], "3"),
         ["component.navigationBar.layout.filled"] = new("component.navigationBar.layout.filled", "Filled", ValueKind.Boolean, ["layout", "filled"], "false"),

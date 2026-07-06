@@ -18,10 +18,10 @@ export function textInputBarComponentToRenderable(
   const scale = renderScale(payload);
   const height = Math.max(1, textInput.height * scale);
   const screenBox = previewScreenBox(payload);
-  const barPaddingX = Math.max(0, textInput.barPadding.first * scale);
-  const barPaddingY = Math.max(0, textInput.barPadding.second * scale);
-  const textPaddingX = Math.max(0, textInput.textPadding.first * scale);
-  const textPaddingY = Math.max(0, textInput.textPadding.second * scale);
+  const barPaddingX = Math.max(0, numberToken(payload, textInput.barPadding.xToken) * scale);
+  const barPaddingY = Math.max(0, numberToken(payload, textInput.barPadding.yToken) * scale);
+  const textPaddingX = Math.max(0, numberToken(payload, textInput.textPadding.xToken) * scale);
+  const textPaddingY = Math.max(0, numberToken(payload, textInput.textPadding.yToken) * scale);
   const barBox = {
     x: screenBox.x,
     y: screenBox.y + (screenBox.height - height - barPaddingY * 2) / 2,

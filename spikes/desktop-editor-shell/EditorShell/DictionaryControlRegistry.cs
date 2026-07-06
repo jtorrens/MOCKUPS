@@ -31,6 +31,10 @@ internal static class DictionaryControlRegistry
                 request.Definition,
                 request.Value,
                 request.Services.ShowThemeTokenPicker),
+            [ValueKind.ThemeTokenPair] = (request) => new DictionaryThemeTokenPairControl(
+                request.Definition,
+                request.Value,
+                request.Services.ShowThemeTokenPicker),
             [ValueKind.Alpha] = (request) => new DictionaryAlphaControl(request.Value, request.Definition.IsEditable),
             [ValueKind.PaletteColorPair] = (request) => new DictionaryPalettePairControl(request.Definition, request.Value),
             [ValueKind.PaletteColorAlphaPair] = (request) => new DictionaryPaletteAlphaPairControl(request.Definition, request.Value),

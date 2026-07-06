@@ -10,7 +10,7 @@ export interface KeyboardDesignContract {
   keyBackgroundColorToken: string;
   keyTextColorToken: string;
   bottomIconColorToken: string;
-  keyPadding: number;
+  keyPaddingToken: string;
   keyCornerRadius: number;
   keyShadowEnabled: boolean;
   pressedEffect: "popup" | "scale" | "none";

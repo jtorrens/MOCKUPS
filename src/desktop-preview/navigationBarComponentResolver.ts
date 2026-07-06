@@ -94,7 +94,7 @@ export function resolveNavigationBarComponent(
         "itemSize",
         "navigationBar.layout.itemSize",
       ),
-      sidePadding: requiredNumber(
+      sidePaddingToken: requiredString(
         layout,
         "sidePadding",
         "navigationBar.layout.sidePadding",

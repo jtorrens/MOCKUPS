@@ -8,6 +8,7 @@ import {
   parseObject,
   requiredNumber,
   requiredString,
+  requiredStringPair,
 } from "./componentResolverCommon.js";
 import type { LabelDesignContract } from "./labelComponentContract.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
@@ -64,7 +65,7 @@ export function resolveLabelComponentFromRecords(
     asRecord(surfaceSlot.overrides),
   );
   const size = requiredPair(label, "size", "component.label.size");
-  const padding = requiredPair(label, "padding", "component.label.padding");
+  const padding = requiredStringPair(label, "padding", "component.label.padding");
   const dimensionMode = requiredString(
     label,
     "dimensionMode",
@@ -103,7 +104,7 @@ export function resolveLabelComponentFromRecords(
     ),
     dimensionMode,
     size: { width: size.first, height: size.second },
-    padding: { x: padding.first, y: padding.second },
+    padding: { xToken: padding.first, yToken: padding.second },
     textColorToken: requiredString(
       label,
       "textColorToken",

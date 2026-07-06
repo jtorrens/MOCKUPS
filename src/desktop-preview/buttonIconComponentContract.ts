@@ -7,9 +7,8 @@ import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
 export interface ButtonIconDesignContract {
   id: string;
   buttonSize: number;
-  iconSize: number;
   iconToken: string;
-  iconPadding: number;
+  iconPaddingToken: string;
   iconColorToken: string;
   backgroundPaletteColor?: string;
   iconPaletteColor?: string;

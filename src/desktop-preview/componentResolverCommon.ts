@@ -14,6 +14,7 @@ export {
   requiredPlacement,
   requiredRecord,
   requiredString,
+  requiredStringPair,
   resolveSurfaceStyle,
   stringValue,
 } from "./previewValueHelpers.js";

@@ -18,7 +18,7 @@ export interface NavigationBarDesignContract {
   layout: {
     height: number;
     itemSize: number;
-    sidePadding: number;
+    sidePaddingToken: string;
     strokeWidth: number;
     cornerRadius: number;
     filled: boolean;

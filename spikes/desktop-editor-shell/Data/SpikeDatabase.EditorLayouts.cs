@@ -507,6 +507,32 @@ internal sealed partial class SpikeDatabase
               ]
             },
             {
+              "id": "spacing",
+              "label": "Spacing",
+              "subtitle": "Shared padding and gap tokens",
+              "icon": "{{EditorIcons.Layout}}",
+              "order": 45,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                {
+                  "id": "spacing",
+                  "label": "Spacing",
+                  "order": 10,
+                  "visible": true,
+                  "fields": [
+                    { "id": "theme.spacing.none", "order": 10, "visible": true },
+                    { "id": "theme.spacing.xs", "order": 20, "visible": true },
+                    { "id": "theme.spacing.s", "order": 30, "visible": true },
+                    { "id": "theme.spacing.m", "order": 40, "visible": true },
+                    { "id": "theme.spacing.l", "order": 50, "visible": true },
+                    { "id": "theme.spacing.xl", "order": 60, "visible": true },
+                    { "id": "theme.spacing.xxl", "order": 70, "visible": true }
+                  ]
+                }
+              ]
+            },
+            {
               "id": "radii",
               "label": "Radii",
               "subtitle": "Shared corner radius tokens",

@@ -53,7 +53,7 @@ export function resolveKeyboardComponent(
       "bottomIconColorToken",
       "component.keyboard.bottomIconColorToken",
     ),
-    keyPadding: requiredNumber(
+    keyPaddingToken: requiredString(
       keyboard,
       "keyPadding",
       "component.keyboard.keyPadding",

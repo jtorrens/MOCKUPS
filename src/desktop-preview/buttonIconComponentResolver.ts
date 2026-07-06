@@ -73,7 +73,7 @@ export function resolveButtonIconComponentFromRecords(
     overrides,
   );
   const buttonSize = requiredNumber(buttonIcon, "size", "component.buttonIcon.size");
-  const iconPadding = requiredNumber(
+  const iconPaddingToken = requiredString(
     buttonIcon,
     "iconPadding",
     "component.buttonIcon.iconPadding",
@@ -86,11 +86,7 @@ export function resolveButtonIconComponentFromRecords(
   return {
     id,
     buttonSize,
-    iconSize: Math.max(
-      1,
-      buttonSize - iconPadding * 2,
-    ),
-    iconPadding,
+    iconPaddingToken,
     iconToken: optionalInputStringOrConfiguredValue(
       preview,
       "iconToken",

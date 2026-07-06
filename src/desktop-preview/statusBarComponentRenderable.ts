@@ -3,6 +3,7 @@ import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { selectedColor } from "./previewColorHelpers.js";
 import { numberValue, stringValue } from "./previewValueHelpers.js";
 import { renderScale, previewScreenBox } from "./previewGeometryHelpers.js";
+import { numberToken } from "./componentRenderableCommon.js";
 import { iconTokenStyle } from "./previewIconHelpers.js";
 import type {
   StatusBarDesignContract,
@@ -21,8 +22,8 @@ export function statusBarComponentToRenderable(
   const layout = {
     height: statusBar.layout.height * scale,
     itemSize: statusBar.layout.itemSize * scale,
-    gap: statusBar.layout.gap * scale,
-    sidePadding: statusBar.layout.sidePadding * scale,
+    gap: numberToken(payload, statusBar.layout.gapToken) * scale,
+    sidePadding: numberToken(payload, statusBar.layout.sidePaddingToken) * scale,
   };
   const screen = previewScreenBox(payload);
   const box = {

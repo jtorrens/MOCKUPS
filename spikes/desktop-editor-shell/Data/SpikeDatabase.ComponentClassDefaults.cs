@@ -103,9 +103,9 @@ internal sealed partial class SpikeDatabase
                 config["textInput"] = new JsonObject
                 {
                     ["height"] = 44,
-                    ["barPadding"] = "12|8",
-                    ["textPadding"] = "14|0",
-                    ["iconGap"] = 8,
+                    ["barPadding"] = "theme.spacing.l|theme.spacing.m",
+                    ["textPadding"] = "theme.spacing.xl|theme.spacing.none",
+                    ["iconGap"] = "theme.spacing.m",
                     ["placeholder"] = "Message",
                     ["surfaceSlot"] = ComponentSurfaceSlot("InputBox"),
                     ["idleTextColorToken"] = "theme.colors.textSecondary",
@@ -123,7 +123,7 @@ internal sealed partial class SpikeDatabase
                     ["keyBackgroundColorToken"] = "theme.colors.field",
                     ["keyTextColorToken"] = "theme.colors.textPrimary",
                     ["bottomIconColorToken"] = "theme.icons.secondary",
-                    ["keyPadding"] = 4,
+                    ["keyPadding"] = "theme.spacing.s",
                     ["keyCornerRadius"] = 6,
                     ["keyShadowEnabled"] = false,
                     ["pressedEffect"] = "popup",
@@ -137,7 +137,7 @@ internal sealed partial class SpikeDatabase
                 {
                     ["size"] = 48,
                     ["iconToken"] = "media_mic",
-                    ["iconPadding"] = 6,
+                    ["iconPadding"] = "theme.spacing.m",
                     ["surfaceSlot"] = ComponentSurfaceSlot("IconButton"),
                     ["iconColorToken"] = "theme.colors.icon",
                     ["labelSlot"] = new JsonObject
@@ -155,7 +155,7 @@ internal sealed partial class SpikeDatabase
                 {
                     ["dimensionMode"] = "content",
                     ["size"] = "120|32",
-                    ["padding"] = "8|4",
+                    ["padding"] = "theme.spacing.m|theme.spacing.s",
                     ["surfaceSlot"] = ComponentSurfaceSlot("Label"),
                     ["textColorToken"] = "theme.colors.textPrimary",
                     ["textSizeToken"] = "theme.typography.sizes.s",
@@ -170,19 +170,19 @@ internal sealed partial class SpikeDatabase
             case "audio":
                 config["audio"] = new JsonObject
                 {
-                    ["padding"] = "10|8",
+                    ["padding"] = "theme.spacing.l|theme.spacing.m",
                     ["surfaceSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
                     ["textSize"] = 11,
                     ["textColorToken"] = "theme.icons.secondary",
                     ["playCircleSize"] = 32,
-                    ["playIconPadding"] = 9,
+                    ["playIconPadding"] = "theme.spacing.m",
                     ["playColorToken"] = "theme.icons.accent",
                     ["playIconColorToken"] = "theme.icons.secondary",
                     ["waveformColorToken"] = "theme.icons.primary",
                     ["waveformPlayedColorToken"] = "theme.icons.accent",
                     ["waveformBarCount"] = 28,
                     ["waveformBarWidth"] = 3,
-                    ["waveformGap"] = 2,
+                    ["waveformGap"] = "theme.spacing.xs",
                     ["waveformMinHeight"] = 4,
                     ["waveformMaxHeight"] = 22,
                     ["progressKnobSize"] = 9,
@@ -212,7 +212,7 @@ internal sealed partial class SpikeDatabase
                             ["buttonIcon"] = new JsonObject
                             {
                                 ["size"] = 16,
-                                ["iconPadding"] = 3,
+                                ["iconPadding"] = "theme.spacing.s",
                             },
                         },
                     },

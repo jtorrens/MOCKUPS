@@ -2829,6 +2829,46 @@ function applyAdditiveV41Migration(database: SQLiteDatabase): void {
   database.pragma("user_version = 41");
 }
 
+function ensureThemeSpacingTokens(tokens: Record<string, unknown>): Record<string, unknown> {
+  const spacing =
+    tokens.spacing && typeof tokens.spacing === "object" && !Array.isArray(tokens.spacing)
+      ? (tokens.spacing as Record<string, unknown>)
+      : {};
+  return {
+    ...tokens,
+    spacing: {
+      none: typeof spacing.none === "number" ? spacing.none : 0,
+      xs: typeof spacing.xs === "number" ? spacing.xs : 2,
+      s: typeof spacing.s === "number" ? spacing.s : 4,
+      m: typeof spacing.m === "number" ? spacing.m : 8,
+      l: typeof spacing.l === "number" ? spacing.l : 12,
+      xl: typeof spacing.xl === "number" ? spacing.xl : 16,
+      xxl: typeof spacing.xxl === "number" ? spacing.xxl : 24,
+    },
+  };
+}
+
+function applyAdditiveV42Migration(database: SQLiteDatabase): void {
+  const themeRows = database
+    .prepare("SELECT id, tokens_json FROM themes ORDER BY id")
+    .all() as { id: string; tokens_json: string }[];
+  const updateTheme = database.prepare(
+    "UPDATE themes SET tokens_json = ? WHERE id = ?",
+  );
+  for (const row of themeRows) {
+    try {
+      const tokens = JSON.parse(row.tokens_json) as Record<string, unknown>;
+      const nextJson = JSON.stringify(ensureThemeSpacingTokens(tokens));
+      if (nextJson !== row.tokens_json) {
+        updateTheme.run(nextJson, row.id);
+      }
+    } catch {
+      // Malformed JSON is handled by validation paths; skip migration here.
+    }
+  }
+  database.pragma("user_version = 42");
+}
+
 export function applyInitialSchema(database: SQLiteDatabase): void {
   database.exec(readFileSync(schemaPath, "utf8"));
   applyAdditiveV2Migration(database);
@@ -2871,6 +2911,7 @@ export function applyInitialSchema(database: SQLiteDatabase): void {
   applyAdditiveV39Migration(database);
   applyAdditiveV40Migration(database);
   applyAdditiveV41Migration(database);
+  applyAdditiveV42Migration(database);
   database.pragma("foreign_keys = ON");
 }
 
