@@ -1,7 +1,5 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Layout;
-using Avalonia.Media;
 using Avalonia.Styling;
 using Mockups.DesktopEditorShell.Data;
 using Mockups.DesktopEditorShell.EditorShell;
@@ -26,6 +24,7 @@ public partial class MainWindow : SukiWindow
     private readonly EditorCollectionCardFactory _collectionCards;
     private readonly EditorPreviewController _previewController;
     private readonly IEditorShellMessageSink _messages;
+    private readonly EditorNodeCommandController _nodeCommands;
     private readonly EditorShellStateService _shellState;
     private readonly EditorNavigationRenderer _navigationRenderer;
     private readonly EditorFieldPostCommitEffects _fieldPostCommitEffects;
@@ -80,6 +79,14 @@ public partial class MainWindow : SukiWindow
                 _previewController.OnMarksChanged();
             }
         };
+        _nodeCommands = new EditorNodeCommandController(
+            this,
+            _database,
+            () => _isDark,
+            () => _treeRoots,
+            LoadProjectTree,
+            ReloadAndSelect,
+            _messages);
         _shellState = new EditorShellStateService(this, ShellColumns);
         _navigationRenderer = new EditorNavigationRenderer(
             () => _selectedNode,
@@ -88,10 +95,10 @@ public partial class MainWindow : SukiWindow
             SelectTreeNode,
             (node) => ShowNode(_nodeSelection.ResolveSelectionNode(node)),
             ToggleTreeGroup,
-            AddChild,
-            DuplicateNode,
-            RenameNode,
-            DeleteNode);
+            _nodeCommands.AddChild,
+            _nodeCommands.DuplicateNode,
+            _nodeCommands.RenameNode,
+            _nodeCommands.DeleteNode);
         _fieldPostCommitEffects = new EditorFieldPostCommitEffects(
             _database,
             () => _previewController.SelectedDeviceId,
@@ -104,7 +111,7 @@ public partial class MainWindow : SukiWindow
             this,
             _database,
             () => _isDark,
-            ShowInfoDialog,
+            _nodeCommands.ShowInfoDialog,
             _pathBrowser.BrowseSvgFile,
             ReloadAndSelect);
         _dictionaryFieldServices = new EditorDictionaryFieldServices(_database, _pathBrowser, _domainDialogs);
@@ -146,11 +153,11 @@ public partial class MainWindow : SukiWindow
             _embeddedUsageNavigator,
             ShowNode,
             ShowEmbeddedContext,
-            SaveCurrentComponentPreset);
+            _nodeCommands.SaveCurrentComponentPreset);
         _collectionCards = new EditorCollectionCardFactory(
             _database,
             () => _isDark,
-            ShowInfoDialog,
+            _nodeCommands.ShowInfoDialog,
             _domainDialogs.ConfirmIconTokenDelete,
             _domainDialogs.ShowIconThemeSearch,
             _domainDialogs.ShowIconThemeSvgReplace,
@@ -387,129 +394,6 @@ public partial class MainWindow : SukiWindow
     private void SetEditorEmbeddedTitle(EditorEmbeddedContext context)
     {
         _editorHeader.SetEmbeddedTitle(context);
-    }
-
-    private async Task SaveCurrentComponentPreset(ProjectTreeNode node)
-    {
-        var presetName = await new EditorDialogService(this, _isDark).PromptText(
-            "Save preset",
-            "Preset name",
-            $"{node.Name} preset");
-        if (string.IsNullOrWhiteSpace(presetName))
-        {
-            return;
-        }
-
-        try
-        {
-            var preset = _database.SaveComponentPreset(node, presetName);
-            ReloadAndSelect(preset);
-        }
-        catch (Exception exception)
-        {
-            _messages.Error($"Save preset {node.Name}", exception);
-        }
-    }
-
-    private async Task AddChild(ProjectTreeNode parent)
-    {
-        var workflow = new EditorAddChildWorkflow(this, _database, ShowInfoDialog);
-        var child = await workflow.TryAdd(parent);
-        if (child is null) return;
-
-        if (parent.Kind == ProjectTreeNodeKind.IconThemesRoot)
-        {
-            LoadProjectTree();
-            return;
-        }
-
-        ReloadAndSelect(child);
-    }
-
-    private async Task ShowInfoDialog(string title, string message)
-    {
-        await new EditorDialogService(this, _isDark).ShowInfo(title, message);
-    }
-
-    private void DuplicateNode(ProjectTreeNode node)
-    {
-        if (node.Parent is null) return;
-
-        var copy = _database.Duplicate(node);
-        ReloadAndSelect(copy);
-    }
-
-    private async Task RenameNode(ProjectTreeNode node)
-    {
-        if (!node.CanRenameDirectly)
-        {
-            return;
-        }
-
-        var nextName = await new EditorDialogService(this, _isDark).PromptText(
-            "Rename",
-            "Name",
-            node.Name);
-        if (string.IsNullOrWhiteSpace(nextName) || nextName.Trim().Equals(node.Name, StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        try
-        {
-            var renamed = _database.RenameDirectNode(node, nextName);
-            ReloadAndSelect(renamed);
-        }
-        catch (Exception exception)
-        {
-            _messages.Error($"Rename {node.Name}", exception);
-        }
-    }
-
-    private async Task DeleteNode(ProjectTreeNode node)
-    {
-        if (node.Parent is null) return;
-
-        var deleteNodeId = node.Id;
-        LoadProjectTree();
-        node = EditorNodeSelectionState.FindNodeById(_treeRoots, deleteNodeId) ?? node;
-        if (node.Parent is null) return;
-
-        var usages = _database.GetReferenceUsages(node);
-        if (usages.Count > 0)
-        {
-            await ShowInfoDialog(
-                "Cannot delete used item",
-                $"{node.Name} is still used in:\n\n{string.Join(Environment.NewLine, usages.Take(12))}\n\nClean these references first, then delete it.");
-            return;
-        }
-
-        var confirmed = await ConfirmDelete(node);
-        if (!confirmed) return;
-
-        var nextSelectionId = node.Parent.Id;
-        try
-        {
-            _database.Delete(node);
-        }
-        catch (Exception exception)
-        {
-            await ShowInfoDialog("Delete failed", exception.Message);
-            return;
-        }
-
-        var nextSelection = new ProjectTreeNode(
-            node.Parent.Kind,
-            nextSelectionId,
-            node.Parent.Name,
-            node.Parent.Notes,
-            node.Parent.RecordClassId);
-        ReloadAndSelect(nextSelection);
-    }
-
-    private async Task<bool> ConfirmDelete(ProjectTreeNode node)
-    {
-        return await new EditorDialogService(this, _isDark).ConfirmDelete(node);
     }
 
     private void ReloadAndSelect(ProjectTreeNode node)
