@@ -52,9 +52,9 @@ field `migrationStatus`.
 | `audio` | component | Functional reference, still evolving | Embeds `avatar` and `buttonIcon`; playback inputs are generic frame inputs. Future work may refine waveform behavior, badge semantics and animation details. |
 | `status_bar` | system | Structural/functional enough for current preview | Routed as a system component with its own resolver/renderable. Further device-specific preset work may refine it. |
 | `navigation_bar` | system | Structural/functional enough for current preview | Routed as a system component with its own resolver/renderable. Further device-specific preset work may refine it. |
-| `textInputBar` | system | Structurally migrated | Preview renders a generic input surface, text and cursor. Final text-entry behavior, accessory slots and runtime input contract still need definition. |
+| `textInputBar` | system | Structurally migrated | Preview renders a generic input surface, text and cursor. It currently declares a text runtime input; final text-entry behavior and accessory slots still need definition. |
 | `keyboard` | system | Structurally migrated | Preview renders a generic keyboard surface, keys and bottom icons. Final keyboard layout model and interaction states still need definition. |
-| `video` | component | Structurally migrated | Preview renders a generic video surface, status row and play overlay. Final media, timeline, controls and embedding semantics still need definition. |
+| `video` | component | Structurally migrated | Preview renders a generic video surface, status row and play overlay. It currently declares a duration text runtime input; final media, timeline, controls and embedding semantics still need definition. |
 
 ## Legacy Runtime Paths Still Present
 

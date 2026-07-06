@@ -2403,11 +2403,19 @@ internal sealed partial class SpikeDatabase
                 ComponentInput("sampleText", "Text", "sampleText", "text", "Action"),
                 ComponentInput("sampleSubtext", "Subtext", "sampleSubtext", "text", "Subtitle"),
             ],
+            "textInputBar" =>
+            [
+                ComponentInput("sampleText", "Text", "sampleText", "text", "Message"),
+            ],
             "audio" =>
             [
                 ComponentInput("isPlaying", "Playing", "isPlaying", "boolean", "false"),
                 ComponentInput("durationSeconds", "Duration", "durationSeconds", "number", "65", minimum: 1, maximum: 86400, increment: 1),
                 ComponentInput("actorId", "Actor", "actorId", "actor", ""),
+            ],
+            "video" =>
+            [
+                ComponentInput("durationText", "Duration", "sampleText", "text", "0:12"),
             ],
             _ => [],
         };
