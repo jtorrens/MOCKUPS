@@ -789,6 +789,16 @@ assertNoTerms("spikes/desktop-editor-shell/EditorShell/DictionaryFieldControl.cs
   "ValueKind.DirectoryPath",
   "ValueKind.ImageFilePath",
 ]);
+assertNoTerms("spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs", [
+  "\"audio\"",
+  "\"avatar\"",
+  "\"buttonIcon\"",
+  "\"navigation_bar\"",
+  "\"status_bar\"",
+  "\"textInputBar\"",
+  "\"keyboard\"",
+  "\"video\"",
+]);
 assertContains(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
   "index < slots.Count - 1 && overrides is not null",
