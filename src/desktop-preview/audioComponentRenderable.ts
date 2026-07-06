@@ -145,7 +145,7 @@ export function audioComponentToRenderable(
     };
     return {
       id: `${audio.id}.waveform.${index}`,
-      type: "component_audio_waveform_bar",
+      type: "waveform_bar",
       role: index < playedBars ? "played" : "unplayed",
       frame: 0,
       box,
@@ -177,7 +177,8 @@ export function audioComponentToRenderable(
 
   return {
     id: audio.id,
-    type: "component_audio",
+    type: "group",
+    role: "audio",
     frame: 0,
     box: groupBox,
     style: {
@@ -186,7 +187,8 @@ export function audioComponentToRenderable(
     children: [
       {
         id: `${audio.id}.surface`,
-        type: "component_audio_surface",
+        type: "surface",
+        role: "audio_surface",
         frame: 0,
         box: audioBox,
         style: {
@@ -222,7 +224,8 @@ export function audioComponentToRenderable(
       },
       {
         id: `${audio.id}.play`,
-        type: "component_audio_play",
+        type: "surface",
+        role: "play_control",
         frame: 0,
         box: playBox,
         text: "▶",
@@ -242,7 +245,8 @@ export function audioComponentToRenderable(
       ...waveformBars,
       {
         id: `${audio.id}.knob`,
-        type: "component_audio_knob",
+        type: "surface",
+        role: "progress_knob",
         frame: 0,
         box: knobBox,
         style: {
@@ -252,13 +256,15 @@ export function audioComponentToRenderable(
       },
       {
         id: `${audio.id}.duration`,
-        type: "component_audio_duration",
+        type: "text",
+        role: "duration",
         frame: 0,
         box: textBox,
         text: durationText,
         style: {
           color: selectedColor(payload, audio.textColorToken),
           fontSize: audio.textSize * scale,
+          display: "block",
           lineHeight: textBox.height,
           textAlign: "right",
           whiteSpace: "nowrap",

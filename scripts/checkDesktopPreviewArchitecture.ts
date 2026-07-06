@@ -5,6 +5,7 @@ const root = process.cwd();
 const previewRoot = path.join(root, "src", "desktop-preview");
 
 const violations: string[] = [];
+const allowedComponentNodeTypes = new Set(["component_preview_unsupported"]);
 
 function relative(filePath: string) {
   return path.relative(root, filePath);
@@ -132,9 +133,21 @@ const allowedComponentImports: Record<string, Set<string>> = {
 
 for (const filePath of walkFiles(previewRoot)) {
   const relativePath = relative(filePath);
+  const source = readFileSync(filePath, "utf8");
+  const nodeTypePattern = /type:\s*["'](component_[^"']+)["']/g;
+  let nodeTypeMatch: RegExpExecArray | null;
+  while ((nodeTypeMatch = nodeTypePattern.exec(source)) !== null) {
+    const nodeType = nodeTypeMatch[1] ?? "";
+    if (!allowedComponentNodeTypes.has(nodeType)) {
+      addViolation(
+        relativePath,
+        `component-specific renderable node type "${nodeType}" must be a generic primitive type`,
+      );
+    }
+  }
   if (registryFiles.has(relativePath)) continue;
 
-  const imports = importTargets(readFileSync(filePath, "utf8"));
+  const imports = importTargets(source);
   for (const target of imports) {
     const isConcreteComponentImport =
       /(?:label|avatar|buttonIcon|audio)Component(?:Resolver|Renderable)\.js$/.test(target);

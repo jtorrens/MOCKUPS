@@ -257,8 +257,28 @@ function nodeStyle(
   const zIndex = numberValue(style.zIndex);
   const opacity = node.transform?.opacity;
   const separatorWidth = numberValue(style.separatorWidth);
+  const display = stringValue(style.display);
+  const alignItems = stringValue(style.alignItems);
+  const justifyContent = stringValue(style.justifyContent);
+  const flexDirection = stringValue(style.flexDirection);
+  const width = stringValue(style.width) ?? numberValue(style.width);
+  const height = stringValue(style.height) ?? numberValue(style.height);
+  const marginTop = numberValue(style.marginTop);
+  const paddingX = numberValue(style.paddingX);
+  const paddingY = numberValue(style.paddingY);
   return {
     ...boxStyle(node.box, parentOrigin),
+    display: display as CSSProperties["display"],
+    alignItems: alignItems as CSSProperties["alignItems"],
+    justifyContent: justifyContent as CSSProperties["justifyContent"],
+    flexDirection: flexDirection as CSSProperties["flexDirection"],
+    width,
+    height,
+    marginTop,
+    paddingLeft: paddingX,
+    paddingRight: paddingX,
+    paddingTop: paddingY,
+    paddingBottom: paddingY,
     backgroundColor,
     backgroundImage:
       node.type === "message_bubble_media_image" ? undefined : backgroundImage,
@@ -942,29 +962,6 @@ function nodeContent(node: RenderableNode): ReactNode {
     }
     return <span title={token}>{iconTokenLabel(token)}</span>;
   }
-  if (node.type === "component_button_icon_glyph") {
-    return (
-      <svg
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-        style={{
-          display: "block",
-          width: "100%",
-          height: "100%",
-          overflow: "visible",
-        }}
-      >
-        <path
-          d="M12 5.2A6.8 6.8 0 1 0 12 18.8A6.8 6.8 0 1 0 12 5.2 M12 8.4V15.6 M8.4 12H15.6"
-          fill="none"
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="1.7"
-        />
-      </svg>
-    );
-  }
   if (node.type === "message_bubble_tail") {
     return messageBubbleTailNode(node);
   }
@@ -1440,33 +1437,17 @@ function RenderNode({
               display: "block",
               whiteSpace: "nowrap",
             }
-        : node.type === "message_bubble_label" || node.type === "component_label"
+        : node.type === "message_bubble_label"
           ? {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              flexDirection: node.type === "component_label" ? "column" : undefined,
               paddingLeft: numberValue(node.style?.paddingX),
               paddingRight: numberValue(node.style?.paddingX),
               paddingTop: numberValue(node.style?.paddingY),
               paddingBottom: numberValue(node.style?.paddingY),
               whiteSpace: "nowrap",
               overflow: "visible",
-            }
-        : node.type === "component_label_text" ||
-            node.type === "component_label_subtext"
-          ? {
-              display: "block",
-              width: "100%",
-              marginTop:
-                node.type === "component_label_subtext"
-                  ? numberValue(node.style?.marginTop)
-                  : undefined,
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textAlign:
-                (stringValue(node.style?.textAlign) as CSSProperties["textAlign"]) ??
-                "center",
             }
         : node.type === "component_preview_unsupported"
           ? {
@@ -1477,13 +1458,6 @@ function RenderNode({
               paddingRight: 12,
               whiteSpace: "nowrap",
               overflow: "hidden",
-            }
-        : node.type === "component_button_icon_glyph"
-          ? {
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              overflow: "visible",
             }
         : node.type === "icon_token"
           ? {
@@ -1525,9 +1499,11 @@ function RenderNode({
             }
         : node.type === "text"
           ? {
-              whiteSpace: "pre-wrap",
-              overflow: "hidden",
-              display: "inline",
+              whiteSpace: stringValue(node.style?.whiteSpace) ?? "pre-wrap",
+              overflow: stringValue(node.style?.overflow) ?? "hidden",
+              display:
+                (stringValue(node.style?.display) as CSSProperties["display"]) ??
+                "inline",
             }
           : node.type === "message_text_cursor"
             ? {

@@ -103,7 +103,8 @@ export function labelComponentToRenderableAt(
 
   return {
     id: label.id,
-    type: "component_label",
+    type: "surface",
+    role: "label",
     frame: 0,
     box,
     style: {
@@ -115,7 +116,12 @@ export function labelComponentToRenderableAt(
       surfaceRelief,
       paddingX: label.padding.x * scale,
       paddingY: label.padding.y * scale,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      flexDirection: "column",
       whiteSpace: "nowrap",
+      overflow: "visible",
       colorModes: Object.fromEntries(
         variants(payload).map((mode) => [
           mode,
@@ -140,7 +146,8 @@ export function labelComponentToRenderableAt(
     children: [
       {
         id: `${label.id}.text`,
-        type: "component_label_text",
+        type: "text",
+        role: "label_primary",
         frame: 0,
         text: label.text,
         style: {
@@ -148,6 +155,9 @@ export function labelComponentToRenderableAt(
           fontSize,
           lineHeight: size.lineHeight,
           textAlign: label.textAlign,
+          display: "block",
+          width: "100%",
+          overflow: "hidden",
           fontStyle: label.textStyle === "italic" ? "italic" : undefined,
           whiteSpace: "nowrap",
         },
@@ -156,7 +166,8 @@ export function labelComponentToRenderableAt(
         ? [
             {
               id: `${label.id}.subtext`,
-              type: "component_label_subtext",
+              type: "text",
+              role: "label_secondary",
               frame: 0,
               text: label.subtext,
               style: {
@@ -165,6 +176,9 @@ export function labelComponentToRenderableAt(
                 lineHeight: size.subtextLineHeight,
                 marginTop: label.textGap * scale,
                 textAlign: label.textAlign,
+                display: "block",
+                width: "100%",
+                overflow: "hidden",
                 fontStyle:
                   label.subtextStyle === "italic" ? "italic" : undefined,
                 whiteSpace: "nowrap",

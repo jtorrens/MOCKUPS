@@ -126,7 +126,8 @@ function avatarRenderableNode(
 
   return {
     id: avatar.id,
-    type: "component_avatar",
+    type: "group",
+    role: "avatar",
     frame: 0,
     box: groupBox,
     style: {

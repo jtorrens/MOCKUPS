@@ -691,11 +691,13 @@ Please review:
 
 12. Should generic renderable node `type` values like `component_label` be renamed to avoid component-specific node types in the generic renderer?
 
-## 11. Potential inconsistency to inspect closely
+Resolved after review: yes. Migrated component renderable modules must emit generic primitive types such as `group`, `surface`, `text`, `avatar`, `icon_token`, and `waveform_bar`.
+
+## 11. Resolved component node-type inconsistency
 
 The architecture says the web renderer must paint generic primitives and not know component classes.
 
-However, current renderable nodes still use type strings such as:
+Earlier migrated component renderable nodes used type strings such as:
 
 ```text
 component_label
@@ -705,9 +707,7 @@ component_audio
 component_audio_waveform_bar
 ```
 
-These type strings are emitted only by component renderable modules, not by the central renderer. If `RenderableReactAdapter` contains component-specific handling for these types, that may violate the spirit of the architecture.
-
-Possible future direction:
+Those names were removed from migrated component output and from `RenderableReactAdapter`. The agreed direction is:
 
 Move toward generic renderable node types:
 
@@ -728,7 +728,7 @@ and use metadata only for debugging:
 metadata: { componentType: "label" }
 ```
 
-This is not solved by the current enforcement script and should be reviewed.
+The enforcement script now rejects those component-specific renderable node types if a component module tries to emit them again.
 
 ## 12. Current validation commands
 
@@ -753,4 +753,3 @@ Known unrelated build warning:
 ```text
 SQLitePCLRaw.lib.e_sqlite3 2.1.11 has a known high severity vulnerability warning.
 ```
-
