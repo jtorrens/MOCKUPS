@@ -75,8 +75,8 @@ internal sealed partial class SpikeDatabase
         foreach (var theme in themes)
         {
             AddUsage(index, ProjectTreeNodeKind.IconTheme, theme.IconThemeId, $"Theme: {theme.Name}");
-            AddSystemBarUsage(index, componentClasses, theme.StatusBarId, $"Theme: {theme.Name}");
-            AddSystemBarUsage(index, componentClasses, theme.NavigationBarId, $"Theme: {theme.Name}");
+            AddThemeComponentPresetUsage(index, componentClasses, theme.StatusBarId, $"Theme: {theme.Name}");
+            AddThemeComponentPresetUsage(index, componentClasses, theme.NavigationBarId, $"Theme: {theme.Name}");
 
             foreach (var font in productionFonts)
             {
@@ -199,7 +199,7 @@ internal sealed partial class SpikeDatabase
         }
     }
 
-    private static void AddSystemBarUsage(
+    private static void AddThemeComponentPresetUsage(
         IDictionary<string, List<string>> index,
         IReadOnlyList<ComponentClassRow> componentClasses,
         string id,

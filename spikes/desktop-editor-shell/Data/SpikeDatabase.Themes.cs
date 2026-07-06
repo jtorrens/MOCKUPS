@@ -190,7 +190,7 @@ internal sealed partial class SpikeDatabase
         }
     }
 
-    private static void EnsureThemeSystemBarComponentReferences(SqliteConnection connection)
+    private static void EnsureThemeComponentPresetReferences(SqliteConnection connection)
     {
         foreach (var theme in QueryThemeRows(connection))
         {
