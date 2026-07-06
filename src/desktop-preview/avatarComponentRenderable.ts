@@ -136,15 +136,23 @@ function avatarRenderableNode(
     children: [
       {
         id: `${avatar.id}.placeholder`,
-        type: "avatar",
+        type: "image",
         frame: 0,
         box: avatarBox,
+        text: avatar.actor.initials.toUpperCase(),
         style: {
+          alignItems: "center",
           background: avatar.actor.avatar.backgroundColor,
           borderRadius: numberToken(payload, avatar.cornerRadiusToken) * scale,
           borderWidth,
           borderColor: selectedColor(payload, avatar.surface.borderColorToken),
           color: avatar.actor.avatar.textColor,
+          display: "flex",
+          fontSize: avatarBox.width * 0.45,
+          fontWeight: 700,
+          justifyContent: "center",
+          overflow: "hidden",
+          position: "relative",
           shadow: avatarShadow,
           surfaceRelief,
         },
@@ -155,7 +163,7 @@ function avatarRenderableNode(
             }
           : undefined,
         metadata: {
-          label: avatar.actor.initials,
+          fallbackText: avatar.actor.initials.toUpperCase(),
           imageBaseSize: avatar.actor.avatar.baseSize,
           imageOffsetX: avatar.actor.avatar.offsetX,
           imageOffsetY: avatar.actor.avatar.offsetY,

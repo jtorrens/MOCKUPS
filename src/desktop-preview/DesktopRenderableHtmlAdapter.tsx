@@ -15,7 +15,6 @@ export interface DesktopRenderableHtmlAdapterProps {
 }
 
 const supportedNodeTypes = new Set([
-  "avatar",
   "component_preview_unsupported",
   "design_preview_surface",
   "group",
@@ -267,125 +266,52 @@ function pathContent(node: RenderableNode): ReactNode {
   );
 }
 
-function avatarContent(node: RenderableNode): ReactNode {
-  const label = optionalStringValue(node.metadata?.label) ?? "?";
-  const radius = optionalNumberValue(node.style?.borderRadius);
-  const avatarUri = optionalStringValue(node.asset?.uri);
-  const borderColor = optionalStringValue(node.style?.borderColor);
-  const borderWidth = optionalNumberValue(node.style?.borderWidth);
-  const avatarRadius = radius !== undefined ? `${radius}px` : "50%";
-  const avatarShadow = shadowValue(node.style?.shadow);
-  const avatarRelief = surfaceReliefValue(node.style?.surfaceRelief);
-  const avatarBackground =
-    optionalStringValue(node.style?.background ?? node.style?.backgroundColor) ??
-    "linear-gradient(145deg, #8e8e93, #3a3a3c)";
-  const avatarColor = optionalStringValue(node.style?.color ?? node.style?.textColor) ?? "white";
-  const imageScale = Math.max(0.01, optionalNumberValue(node.metadata?.imageScale) ?? 1);
-  const imageBaseSize = Math.max(1, optionalNumberValue(node.metadata?.imageBaseSize) ?? 640);
-  const avatarBoxWidth = Math.max(1, optionalNumberValue(node.box?.width) ?? 1);
-  const imageOffsetX =
-    ((optionalNumberValue(node.metadata?.imageOffsetX) ?? 0) / imageBaseSize) *
-    avatarBoxWidth;
-  const imageOffsetY =
-    ((optionalNumberValue(node.metadata?.imageOffsetY) ?? 0) / imageBaseSize) *
-    avatarBoxWidth;
-
-  return (
-    <div
-      style={{
-        borderRadius: avatarRadius,
-        boxShadow: avatarShadow,
-        height: "100%",
-        overflow: "visible",
-        position: "relative",
-        width: "100%",
-      }}
-      title={avatarUri}
-    >
-      <div
-        style={{
-          alignItems: "center",
-          background: avatarBackground,
-          borderRadius: "inherit",
-          color: avatarColor,
-          display: "flex",
-          fontSize: "45%",
-          fontWeight: 700,
-          height: "100%",
-          justifyContent: "center",
-          overflow: "hidden",
-          position: "relative",
-          width: "100%",
-        }}
-      >
-        {avatarUri ? (
-          <img
-            alt={label}
-            draggable={false}
-            src={avatarUri}
-            style={{
-              display: "block",
-              height: `${imageScale * 100}%`,
-              left: "50%",
-              maxHeight: "none",
-              maxWidth: "none",
-              objectFit: "cover",
-              position: "absolute",
-              top: "50%",
-              transform: `translate(calc(-50% + ${imageOffsetX}px), calc(-50% + ${imageOffsetY}px))`,
-              width: `${imageScale * 100}%`,
-              zIndex: 0,
-            }}
-          />
-        ) : (
-          label.toUpperCase()
-        )}
-        {borderColor && borderWidth && borderWidth > 0 ? (
-          <span
-            aria-hidden="true"
-            style={{
-              border: `${borderWidth}px solid ${borderColor}`,
-              borderRadius: "inherit",
-              boxSizing: "border-box",
-              inset: 0,
-              pointerEvents: "none",
-              position: "absolute",
-              zIndex: 1,
-            }}
-          />
-        ) : null}
-        {avatarRelief ? (
-          <span
-            aria-hidden="true"
-            style={{
-              borderRadius: "inherit",
-              boxShadow: avatarRelief,
-              inset: 0,
-              pointerEvents: "none",
-              position: "absolute",
-              zIndex: 2,
-            }}
-          />
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
 function imageContent(node: RenderableNode): ReactNode {
   const uri = optionalStringValue(node.asset?.uri);
-  if (!uri) return node.text;
+  const fallbackText = optionalStringValue(node.metadata?.fallbackText) ?? node.text ?? "";
+  if (!uri) return fallbackText;
+  const imageScale = Math.max(0.01, optionalNumberValue(node.metadata?.imageScale) ?? 1);
+  const imageBaseSize = Math.max(
+    1,
+    optionalNumberValue(node.metadata?.imageBaseSize) ??
+      optionalNumberValue(node.box?.width) ??
+      1,
+  );
+  const boxWidth = Math.max(1, optionalNumberValue(node.box?.width) ?? 1);
+  const imageOffsetX =
+    ((optionalNumberValue(node.metadata?.imageOffsetX) ?? 0) / imageBaseSize) *
+    boxWidth;
+  const imageOffsetY =
+    ((optionalNumberValue(node.metadata?.imageOffsetY) ?? 0) / imageBaseSize) *
+    boxWidth;
+  const hasCustomPlacement =
+    node.metadata?.imageScale !== undefined ||
+    node.metadata?.imageOffsetX !== undefined ||
+    node.metadata?.imageOffsetY !== undefined;
   return (
     <img
-      alt={node.text ?? ""}
+      alt={fallbackText}
       draggable={false}
       src={uri}
-      style={{
-        display: "block",
-        height: "100%",
-        objectFit: (optionalStringValue(node.style?.objectFit) ?? "cover") as CSSProperties["objectFit"],
-        width: "100%",
-      }}
+      style={hasCustomPlacement
+        ? {
+            display: "block",
+            height: `${imageScale * 100}%`,
+            left: "50%",
+            maxHeight: "none",
+            maxWidth: "none",
+            objectFit: "cover",
+            position: "absolute",
+            top: "50%",
+            transform: `translate(calc(-50% + ${imageOffsetX}px), calc(-50% + ${imageOffsetY}px))`,
+            width: `${imageScale * 100}%`,
+          }
+        : {
+            display: "block",
+            height: "100%",
+            objectFit: (optionalStringValue(node.style?.objectFit) ?? "cover") as CSSProperties["objectFit"],
+            width: "100%",
+          }}
     />
   );
 }
@@ -402,7 +328,6 @@ function nodeContent(node: RenderableNode): ReactNode {
   if (!supportedNodeTypes.has(node.type)) {
     return `Unsupported desktop primitive: ${node.type}`;
   }
-  if (node.type === "avatar") return avatarContent(node);
   if (node.type === "image") return imageContent(node);
   if (node.type === "path") return pathContent(node);
   if (node.type === "icon_token") return iconTokenContent(node);

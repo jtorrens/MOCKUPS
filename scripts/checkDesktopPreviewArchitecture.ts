@@ -12,7 +12,6 @@ const previewRoot = path.join(root, "src", "desktop-preview");
 const violations: string[] = [];
 const allowedComponentNodeTypes = new Set(["component_preview_unsupported"]);
 const desktopPreviewPaintNodeTypes = new Set([
-  "avatar",
   "component_preview_unsupported",
   "design_preview_surface",
   "group",
