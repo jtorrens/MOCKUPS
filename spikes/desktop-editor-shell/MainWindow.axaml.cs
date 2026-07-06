@@ -38,9 +38,9 @@ public partial class MainWindow : SukiWindow
     private readonly EditorLayoutCardFactory _layoutCards;
     private readonly EditorEmbeddedUsageNavigator _embeddedUsageNavigator;
     private readonly EditorTreeExpansionState _treeExpansion = new();
+    private readonly EditorNodeSelectionState _nodeSelection = new();
     private readonly EditorFieldCommitCoordinator _fieldCommitCoordinator = new();
     private readonly EditorActiveFieldControls _activeFieldControls = new();
-    private readonly Dictionary<string, string> _lastComponentPresetNodeIds = new(StringComparer.Ordinal);
     private List<ProjectTreeNode> _treeRoots = [];
     private ProjectTreeNode? _selectedNode;
     private EditorEmbeddedContext? _embeddedEditorContext;
@@ -85,7 +85,7 @@ public partial class MainWindow : SukiWindow
             () => _isDark,
             _treeExpansion.IsExpanded,
             SelectTreeNode,
-            (node) => ShowNode(ResolveSelectionNode(node)),
+            (node) => ShowNode(_nodeSelection.ResolveSelectionNode(node)),
             ToggleTreeGroup,
             AddChild,
             DuplicateNode,
@@ -213,11 +213,11 @@ public partial class MainWindow : SukiWindow
         if (_treeRoots.Count > 0)
         {
             var selected = _selectedNode is not null
-                ? FindNodeById(_treeRoots, _selectedNode.Id)
+                ? EditorNodeSelectionState.FindNodeById(_treeRoots, _selectedNode.Id)
                 : null;
-            selected = selected is not null && CanSelectTreeNode(selected) ? selected : null;
+            selected = selected is not null && EditorNodeSelectionState.CanSelectTreeNode(selected) ? selected : null;
             selected ??= _treeRoots.FirstOrDefault((node) => node.CanOpenEditor) ?? _treeRoots[0];
-            selected = ResolveSelectionNode(selected);
+            selected = _nodeSelection.ResolveSelectionNode(selected);
 
             _treeExpansion.ExpandAncestors(selected);
             RebuildNavigationCards();
@@ -230,7 +230,7 @@ public partial class MainWindow : SukiWindow
 
     private void SelectTreeNode(ProjectTreeNode node)
     {
-        if (!CanSelectTreeNode(node))
+        if (!EditorNodeSelectionState.CanSelectTreeNode(node))
         {
             ToggleTreeGroup(node);
             return;
@@ -252,7 +252,7 @@ public partial class MainWindow : SukiWindow
 
     private void ShowNode(ProjectTreeNode node, bool rebuildTree = true)
     {
-        node = ResolveSelectionNode(node);
+        node = _nodeSelection.ResolveSelectionNode(node);
         var previousNode = _selectedNode;
         var keepEditorViewState = _editorViewState.ShouldPreserve(previousNode, node);
         if (keepEditorViewState)
@@ -261,10 +261,10 @@ public partial class MainWindow : SukiWindow
         }
 
         _selectedNode = node;
-        RememberComponentPresetSelection(node);
+        _nodeSelection.RememberComponentPresetSelection(node);
         _treeExpansion.ExpandAncestors(node);
         _embeddedEditorContext = null;
-        var editorNode = EditorNodeForSelection(node);
+        var editorNode = EditorNodeSelectionState.EditorNodeForSelection(node);
         SetEditorRootTitle(editorNode.Name);
         BuildEditorCards(editorNode, node);
         if (keepEditorViewState)
@@ -438,7 +438,7 @@ public partial class MainWindow : SukiWindow
 
     private Control? CreateStructureButtonForSelectedComponent()
     {
-        var node = SelectedComponentClassNode();
+        var node = EditorNodeSelectionState.SelectedComponentClassNode(_selectedNode);
         if (node is null)
         {
             return null;
@@ -449,7 +449,7 @@ public partial class MainWindow : SukiWindow
 
     private Control? CreateHeaderActionsForSelectedComponent()
     {
-        var node = SelectedComponentClassNode();
+        var node = EditorNodeSelectionState.SelectedComponentClassNode(_selectedNode);
         if (node is null)
         {
             return null;
@@ -457,7 +457,7 @@ public partial class MainWindow : SukiWindow
 
         var presetSourceNode = _selectedNode?.Kind == ProjectTreeNodeKind.ComponentPreset
             ? _selectedNode
-            : PreferredPresetNode(node);
+            : _nodeSelection.PreferredPresetNode(node);
         if (presetSourceNode.Kind != ProjectTreeNodeKind.ComponentPreset)
         {
             return null;
@@ -591,7 +591,7 @@ public partial class MainWindow : SukiWindow
 
         var deleteNodeId = node.Id;
         LoadProjectTree();
-        node = FindNodeById(_treeRoots, deleteNodeId) ?? node;
+        node = EditorNodeSelectionState.FindNodeById(_treeRoots, deleteNodeId) ?? node;
         if (node.Parent is null) return;
 
         var usages = _database.GetReferenceUsages(node);
@@ -641,95 +641,18 @@ public partial class MainWindow : SukiWindow
 
     private bool SelectNodeById(string nodeId)
     {
-        var node = FindNodeById(_treeRoots, nodeId);
+        var node = EditorNodeSelectionState.FindNodeById(_treeRoots, nodeId);
         if (node is null)
         {
             return false;
         }
 
-        var selectableNode = CanSelectTreeNode(node) ? node : ClosestEditableNode(node);
-        selectableNode = ResolveSelectionNode(selectableNode);
+        var selectableNode = EditorNodeSelectionState.CanSelectTreeNode(node) ? node : EditorNodeSelectionState.ClosestEditableNode(node);
+        selectableNode = _nodeSelection.ResolveSelectionNode(selectableNode);
         _treeExpansion.ExpandAncestors(selectableNode);
         ShowNode(selectableNode, rebuildTree: true);
         return true;
     }
 
-    private static bool CanSelectTreeNode(ProjectTreeNode node)
-    {
-        return node.CanOpenEditor || node.Kind == ProjectTreeNodeKind.ComponentPreset;
-    }
-
-    private ProjectTreeNode ResolveSelectionNode(ProjectTreeNode node)
-    {
-        return node.Kind == ProjectTreeNodeKind.ComponentClass
-            ? PreferredPresetNode(node)
-            : node;
-    }
-
-    private ProjectTreeNode PreferredPresetNode(ProjectTreeNode componentClassNode)
-    {
-        if (_lastComponentPresetNodeIds.TryGetValue(componentClassNode.Id, out var presetNodeId)
-            && componentClassNode.Children.FirstOrDefault((child) => child.Id.Equals(presetNodeId, StringComparison.Ordinal)) is { } rememberedPreset)
-        {
-            return rememberedPreset;
-        }
-
-        return componentClassNode.Children.FirstOrDefault((child) =>
-                child.Kind == ProjectTreeNodeKind.ComponentPreset
-                && child.Id.EndsWith("::preset::default", StringComparison.Ordinal))
-            ?? componentClassNode.Children.FirstOrDefault((child) => child.Kind == ProjectTreeNodeKind.ComponentPreset)
-            ?? componentClassNode;
-    }
-
-    private void RememberComponentPresetSelection(ProjectTreeNode node)
-    {
-        if (node.Kind == ProjectTreeNodeKind.ComponentPreset
-            && node.Parent?.Kind == ProjectTreeNodeKind.ComponentClass)
-        {
-            _lastComponentPresetNodeIds[node.Parent.Id] = node.Id;
-        }
-    }
-
-    private static ProjectTreeNode EditorNodeForSelection(ProjectTreeNode node)
-    {
-        return node.Kind == ProjectTreeNodeKind.ComponentPreset && node.Parent is not null
-            ? node.Parent
-            : node;
-    }
-
-    private ProjectTreeNode? SelectedComponentClassNode()
-    {
-        var node = _selectedNode is null ? null : EditorNodeForSelection(_selectedNode);
-        return node?.Kind == ProjectTreeNodeKind.ComponentClass ? node : null;
-    }
-
-    private static ProjectTreeNode ClosestEditableNode(ProjectTreeNode node)
-    {
-        for (var current = node; current is not null; current = current.Parent)
-        {
-            if (current.CanOpenEditor)
-            {
-                return current;
-            }
-        }
-
-        return node;
-    }
-
-    private static ProjectTreeNode? FindNodeById(IEnumerable<ProjectTreeNode> nodes, string nodeId)
-    {
-        foreach (var node in nodes)
-        {
-            if (node.Id == nodeId) return node;
-
-            var child = FindNodeById(node.Children, nodeId);
-            if (child is not null)
-            {
-                return child;
-            }
-        }
-
-        return null;
-    }
 
 }

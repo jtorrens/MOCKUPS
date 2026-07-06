@@ -811,7 +811,7 @@ for (const embeddedPresetField of [
 }
 
 assertContains(
-  "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+  "spikes/desktop-editor-shell/EditorShell/EditorNodeSelectionState.cs",
   "private readonly Dictionary<string, string> _lastComponentPresetNodeIds",
   "component preset navigation must remember the last selected preset per component class",
 );
@@ -831,7 +831,7 @@ assertContains(
   "Save preset must only be offered for a concrete selected component preset",
 );
 assertContains(
-  "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+  "spikes/desktop-editor-shell/EditorShell/EditorNodeSelectionState.cs",
   "EndsWith(\"::preset::default\", StringComparison.Ordinal)",
   "first component class selection must prefer the protected Default preset",
 );
