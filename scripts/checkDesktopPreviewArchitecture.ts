@@ -123,6 +123,11 @@ const registryFiles = new Set([
   "src/desktop-preview/designPreviewRenderableRegistry.ts",
 ]);
 
+const filesystemAllowedPreviewFiles = new Set([
+  "src/desktop-preview/previewAssetResolver.ts",
+  "src/desktop-preview/renderDesignPreviewHtml.tsx",
+]);
+
 const manifestEntries = Object.entries(desktopPreviewComponents);
 
 function moduleFile(entry: DesktopPreviewComponentManifestEntry, kind: "resolver" | "renderable") {
@@ -204,6 +209,18 @@ for (const filePath of walkFiles(previewRoot)) {
 
   const imports = importTargets(source);
   for (const target of imports) {
+    if (
+      (target === "node:fs" || target === "node:fs/promises")
+      && !filesystemAllowedPreviewFiles.has(relativePath)
+    ) {
+      addViolation(
+        relativePath,
+        `filesystem access "${target}" belongs in preview asset/request boundary helpers only`,
+      );
+    }
+  }
+
+  for (const target of imports) {
     const isConcreteComponentImport =
       /(?:label|avatar|buttonIcon|audio)Component(?:Resolver|Renderable)\.js$/.test(target);
     if (!isConcreteComponentImport) continue;
@@ -216,6 +233,20 @@ for (const filePath of walkFiles(previewRoot)) {
       );
     }
   }
+}
+
+const payloadSource = readText("src/desktop-preview/designPreviewPayload.ts");
+if (payloadSource.includes("device:")) {
+  addViolation(
+    "src/desktop-preview/designPreviewPayload.ts",
+    "design preview payload must expose previewFrame, not device",
+  );
+}
+if (payloadSource.includes('"statusBar"') || payloadSource.includes('"navigationBar"')) {
+  addViolation(
+    "src/desktop-preview/designPreviewPayload.ts",
+    "status/navigation bars must route as componentClass, not top-level preview kinds",
+  );
 }
 
 if (violations.length > 0) {
