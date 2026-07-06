@@ -20,8 +20,9 @@ parent component class
   -> child component active preset
   -> slot-local overrides
   -> component resolver
-  -> web bridge
-  -> web renderer
+  -> component renderable
+  -> generic preview helpers
+  -> generic web renderer
 ```
 
 The parent owns:
@@ -36,7 +37,7 @@ The embedded child owns:
 - its normal dictionary controls;
 - its reusable presets;
 - its normal resolver contract;
-- its normal bridge/render path.
+- its normal resolver/renderable/helper path.
 
 The parent must not duplicate the child component's scalar fields. If a child
 field is editable inside the parent, the editor must open the embedded editor
@@ -257,12 +258,13 @@ Rules:
 - bridge and web renderer must not infer missing inputs or know which concrete
   component declared them.
 
-## Bridge Boundary
+## Generic Preview Helper Boundary
 
-The web bridge converts validated component contracts into final web renderable
-nodes.
+Generic preview helpers convert reusable values inside validated component
+contracts into final web renderable node data. They replace the useful generic
+parts of the old bridge without becoming a component catalog.
 
-Allowed bridge responsibilities:
+Allowed helper responsibilities:
 
 - resolve theme tokens for the selected theme mode;
 - resolve all available color variants for mode switching;
@@ -271,7 +273,7 @@ Allowed bridge responsibilities:
 - resolve icon/SVG file references into web-consumable assets;
 - compose renderable nodes with explicit boxes and styles.
 
-Disallowed bridge responsibilities:
+Disallowed helper responsibilities:
 
 - reading or merging component config JSON directly;
 - deciding whether an embedded child exists from raw config;
@@ -321,7 +323,8 @@ Avatar label placement uses the generic alignment placement value:
 
 `mode: "center"` places the child center on a normalized parent point.
 `mode: "edge"` interpolates from outside-start edge, through center, to
-outside-end edge. Offsets are design pixels and are scaled by the bridge.
+outside-end edge. Offsets are design pixels and are scaled by generic preview
+helpers.
 
 Current storage shape:
 

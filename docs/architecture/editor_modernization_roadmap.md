@@ -156,8 +156,8 @@ The preview should consume resolved data. It should not know editor forms, draft
 
 Component class previews must not keep ad hoc legacy render branches in
 `renderDesignPreviewHtml.tsx`. A component class may render only after it has a
-component-specific resolver and a web bridge function, following the pattern
-established by `component.label`.
+component-specific resolver and renderable module that emit the shared generic
+paint primitives, following the pattern established by `component.label`.
 
 Until a component class is migrated, its design preview must use an obvious
 unsupported placeholder. Do not reuse runtime `message_bubble_*` nodes,
@@ -180,8 +180,9 @@ parent component slot
   -> child base component config
   -> slot-local overrides
   -> child resolver contract
-  -> bridge token/pixel resolution
-  -> web renderable
+  -> component renderable module
+  -> generic preview helpers
+  -> web renderable primitives
 ```
 
 Do not add child scalar fields directly to the parent field catalog. Do not
@@ -212,9 +213,9 @@ The target route for each bubble-owned component is:
 ```text
 component/module data
   -> component-specific resolver
-  -> shared design atoms
-  -> web bridge
-  -> web renderer
+  -> component renderable module
+  -> generic preview helpers
+  -> generic web renderer
 ```
 
 The web renderer must not contain bubble-specific fallback branches that read
@@ -222,7 +223,7 @@ component config, resolve theme tokens, infer geometry, or preserve old
 `message_bubble_*` behavior for migrated component classes. Any remaining
 legacy `message_bubble_*` render types must be explicitly tied to unmigrated
 runtime chat rendering and removed when that runtime path moves to the shared
-resolver/bridge contract.
+resolver/renderable/helper contract.
 
 ## Phase 8: split repositories after field extraction
 

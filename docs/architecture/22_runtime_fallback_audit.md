@@ -29,14 +29,15 @@ values. The rule is:
 - `component.label` preview no longer falls back to plausible background/text colors.
   `backgroundColorToken` and `textColorToken` are required.
 - `component.label` preview no longer falls back to a plausible text size number.
-  `textSizeToken` is required and must resolve through the web bridge.
+  `textSizeToken` is required and must resolve through generic preview helpers.
 - `component.label` style radius no longer falls back to zero. The
   `cornerRadiusToken` must exist and resolve.
-- Status/navigation design previews moved to the web resolver/bridge path and
-  no longer keep a parallel Visual IR resolver.
+- Status/navigation design previews moved to the resolver/renderable/helper path
+  and no longer keep a parallel Visual IR resolver.
 - The desktop Visual IR spike has been removed. The web preview is the source of
   truth for design preview rendering.
-- `component.avatar` now renders through the component resolver/web bridge path.
+- `component.avatar` now renders through the component resolver/renderable/helper
+  path.
   Its embedded `component.label` is resolved from the label base class plus
   slot-local overrides; it is not duplicated into the avatar class.
 - Embedded component override highlighting now tracks stored override presence,
@@ -52,7 +53,7 @@ Active component class preview routes:
 | Component | Status | Route |
 | --- | --- | --- |
 | `component.label` | migrated | `resolveLabelComponent` -> `labelComponentToRenderable` -> web renderer |
-| `component.avatar` | migrated | `resolveAvatarComponent` -> `avatarComponentToRenderable` -> embedded label bridge |
+| `component.avatar` | migrated | `resolveAvatarComponent` -> `avatarComponentToRenderable` -> embedded label renderable |
 | `status_bar` | migrated | `resolveStatusBarComponent` -> `statusBarComponentToRenderable` -> web renderer |
 | `navigation_bar` | migrated | `resolveNavigationBarComponent` -> `navigationBarComponentToRenderable` -> web renderer |
 | other component classes | blocked intentionally | `component_preview_unsupported` with `debug_red` |
@@ -79,7 +80,7 @@ No active desktop preview path may use:
 - The old central `webPreviewBridge.ts` path has been removed. Component and
   category `system` component preview paths should stay behind explicit
   resolver/renderable modules plus a registry, not move back into a shared
-  bridge.
+  component-aware bridge.
 - `MainWindow.axaml.cs` still hosts the generic embedded-editor navigation and
   card rebuilding. This is acceptable only while it remains generic shell
   orchestration. Component-specific embedded behavior belongs in
