@@ -11,6 +11,8 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SpikeDatabase
 {
+    private const string DefaultComponentPresetId = "default";
+
     public sealed record EmbeddedComponentUsage(
         string ParentComponentClassId,
         string ParentComponentName,
@@ -18,6 +20,15 @@ internal sealed partial class SpikeDatabase
         string SlotFieldId,
         string SlotLabel,
         bool HasOverrides);
+
+    public sealed record ComponentClassPreset(
+        string Id,
+        string Name,
+        bool IsProtected,
+        string ConfigJson);
+
+    private static string ComponentPresetNodeId(string componentClassId, string presetId) =>
+        $"{componentClassId}::preset::{presetId}";
 
     public ComponentClassSettings GetComponentClassSettings(string componentClassId)
     {
@@ -504,18 +515,96 @@ internal sealed partial class SpikeDatabase
             designPreviewChanged |= EnsureComponentDesignPreviewText(row.ComponentType, designPreview);
             designPreviewChanged |= EnsureButtonIconPreviewSize(row.ComponentType, designPreview);
 
-            if (!configChanged && !designPreviewChanged)
+            var metadata = ParseJsonObject(string.IsNullOrWhiteSpace(row.MetadataJson) ? "{}" : row.MetadataJson);
+            var metadataChanged = EnsureDefaultComponentPreset(metadata, config);
+
+            if (!configChanged && !designPreviewChanged && !metadataChanged)
             {
                 continue;
             }
 
             Execute(
                 connection,
-                "UPDATE component_classes SET config_json = $configJson, design_preview_json = $designPreviewJson WHERE id = $id",
+                "UPDATE component_classes SET config_json = $configJson, design_preview_json = $designPreviewJson, metadata_json = $metadataJson WHERE id = $id",
                 ("$id", row.Id),
                 ("$configJson", config.ToJsonString()),
-                ("$designPreviewJson", designPreview.ToJsonString()));
+                ("$designPreviewJson", designPreview.ToJsonString()),
+                ("$metadataJson", metadata.ToJsonString()));
         }
+    }
+
+    private static bool EnsureDefaultComponentPreset(JsonObject metadata, JsonObject config)
+    {
+        if (metadata["presets"] is not JsonArray presets)
+        {
+            presets = [];
+            metadata["presets"] = presets;
+        }
+
+        foreach (var presetNode in presets.OfType<JsonObject>())
+        {
+            if (!JsonPath.String(presetNode, "id", "").Equals(DefaultComponentPresetId, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var changed = false;
+            if (!JsonPath.String(presetNode, "name", "").Equals("Default", StringComparison.Ordinal))
+            {
+                presetNode["name"] = "Default";
+                changed = true;
+            }
+
+            if (!JsonBool(presetNode, ["protected"]))
+            {
+                presetNode["protected"] = true;
+                changed = true;
+            }
+
+            if (presetNode["config"] is not JsonObject)
+            {
+                presetNode["config"] = JsonNode.Parse(config.ToJsonString());
+                changed = true;
+            }
+
+            return changed;
+        }
+
+        presets.Insert(0, new JsonObject
+        {
+            ["id"] = DefaultComponentPresetId,
+            ["name"] = "Default",
+            ["protected"] = true,
+            ["config"] = JsonNode.Parse(config.ToJsonString()),
+        });
+        return true;
+    }
+
+    private static IReadOnlyList<ComponentClassPreset> ComponentClassPresets(string metadataJson)
+    {
+        var metadata = ParseJsonObject(string.IsNullOrWhiteSpace(metadataJson) ? "{}" : metadataJson);
+        if (metadata["presets"] is not JsonArray presets)
+        {
+            return [];
+        }
+
+        return presets
+            .OfType<JsonObject>()
+            .Select((preset) =>
+            {
+                var id = JsonPath.String(preset, "id", "");
+                var name = JsonPath.String(preset, "name", id);
+                var config = preset["config"] is JsonObject configObject ? configObject.ToJsonString() : "{}";
+                return new ComponentClassPreset(
+                    id,
+                    string.IsNullOrWhiteSpace(name) ? id : name,
+                    JsonBool(preset, ["protected"]),
+                    config);
+            })
+            .Where((preset) => !string.IsNullOrWhiteSpace(preset.Id))
+            .OrderBy((preset) => preset.Id.Equals(DefaultComponentPresetId, StringComparison.Ordinal) ? 0 : 1)
+            .ThenBy((preset) => preset.Name, StringComparer.Ordinal)
+            .ToList();
     }
 
     private static bool NormalizeAvatarLabelPlacement(string componentType, JsonObject config)

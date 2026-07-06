@@ -30,6 +30,7 @@ internal enum ProjectTreeNodeKind
     NavigationBar,
     RenderPreset,
     ComponentClass,
+    ComponentPreset,
     Device,
     Actor,
     Theme,
@@ -123,7 +124,8 @@ internal sealed class ProjectTreeNode
         and not ProjectTreeNodeKind.ActorsRoot
         and not ProjectTreeNodeKind.ThemesRoot
         and not ProjectTreeNodeKind.ProductionFontsRoot
-        and not ProjectTreeNodeKind.EpisodesRoot;
+        and not ProjectTreeNodeKind.EpisodesRoot
+        and not ProjectTreeNodeKind.ComponentPreset;
 
     public string Display => Name;
 
@@ -162,6 +164,7 @@ internal sealed class ProjectTreeNode
             ProjectTreeNodeKind.NavigationBar => "navigation_bar",
             ProjectTreeNodeKind.RenderPreset => "render_preset",
             ProjectTreeNodeKind.ComponentClass => "component.avatar",
+            ProjectTreeNodeKind.ComponentPreset => "component.preset",
             ProjectTreeNodeKind.Device => "device",
             ProjectTreeNodeKind.Actor => "actor",
             ProjectTreeNodeKind.Theme => "theme",

@@ -371,14 +371,27 @@ internal sealed partial class SpikeDatabase
         {
             if (!componentClassRootNodes.TryGetValue(componentClass.ProjectId, out var componentClassesRoot)) continue;
 
-            componentClassesRoot.AddChild(new ProjectTreeNode(
+            var componentNode = new ProjectTreeNode(
                 ProjectTreeNodeKind.ComponentClass,
                 componentClass.Id,
                 componentClass.Name,
                 string.IsNullOrWhiteSpace(componentClass.Notes) ? ComponentTypeLabel(componentClass.ComponentType) : componentClass.Notes,
                 componentClass.RecordClassId,
                 componentClassesRoot,
-                isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.ComponentClass, componentClass.Id)));
+                isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.ComponentClass, componentClass.Id));
+            componentClassesRoot.AddChild(componentNode);
+
+            foreach (var preset in ComponentClassPresets(componentClass.MetadataJson))
+            {
+                componentNode.AddChild(new ProjectTreeNode(
+                    ProjectTreeNodeKind.ComponentPreset,
+                    ComponentPresetNodeId(componentClass.Id, preset.Id),
+                    preset.Name,
+                    preset.IsProtected ? "Protected component preset" : "Component preset",
+                    ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ComponentPreset),
+                    componentNode,
+                    isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.ComponentPreset, ComponentPresetNodeId(componentClass.Id, preset.Id))));
+            }
         }
 
         foreach (var shot in shots.OrderBy((shot) => shot.SortOrder).ThenBy((shot) => shot.Name))
