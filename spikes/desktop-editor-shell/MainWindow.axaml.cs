@@ -78,7 +78,7 @@ public partial class MainWindow : SukiWindow
             RuntimePreviewHost,
             DesignPreviewHost,
             () => _isDark,
-            () => _selectedNode,
+            () => PreviewSelectionNode(),
             this);
         PreviewDeviceComboBox.SelectionChanged += (_, _) => _previewController.OnDeviceChanged();
         PreviewThemeComboBox.SelectionChanged += (_, _) => _previewController.OnThemeChanged();
@@ -221,7 +221,7 @@ public partial class MainWindow : SukiWindow
             var selected = _selectedNode is not null
                 ? FindNodeById(_treeRoots, _selectedNode.Id)
                 : null;
-            selected = selected?.CanOpenEditor == true ? selected : null;
+            selected = selected is not null && CanSelectTreeNode(selected) ? selected : null;
             selected ??= _treeRoots.FirstOrDefault((node) => node.CanOpenEditor) ?? _treeRoots[0];
 
             ExpandAncestors(selected);
@@ -231,7 +231,7 @@ public partial class MainWindow : SukiWindow
 
     private void SelectTreeNode(ProjectTreeNode node)
     {
-        if (!node.CanOpenEditor)
+        if (!CanSelectTreeNode(node))
         {
             ToggleTreeGroup(node);
             return;
@@ -313,8 +313,9 @@ public partial class MainWindow : SukiWindow
 
         _selectedNode = node;
         _embeddedEditorContext = null;
-        SetEditorRootTitle(node.Name);
-        BuildEditorCards(node);
+        var editorNode = EditorNodeForSelection(node);
+        SetEditorRootTitle(editorNode.Name);
+        BuildEditorCards(editorNode);
         if (keepEditorViewState)
         {
             _editorViewState.Restore(node, _editorCardHost.Cards);
@@ -636,13 +637,21 @@ public partial class MainWindow : SukiWindow
 
     private void SetEditorRootTitle(string title)
     {
-        SetEditorPresetText(_selectedNode?.Kind == ProjectTreeNodeKind.ComponentClass
-            ? "Preset: Current class values"
-            : null);
+        SetEditorPresetText(EditorPresetTextForSelection());
         EditorBreadcrumbBar.Render(EditorBreadcrumbPanel, [
             new EditorBreadcrumbItem(title),
         ], CreateStructureButtonForSelectedComponent());
         SetEditorHeaderActions(CreateHeaderActionsForSelectedComponent());
+    }
+
+    private string? EditorPresetTextForSelection()
+    {
+        return _selectedNode?.Kind switch
+        {
+            ProjectTreeNodeKind.ComponentClass => "Preset: Current class values",
+            ProjectTreeNodeKind.ComponentPreset => $"Preset: {_selectedNode.Name}",
+            _ => null,
+        };
     }
 
     private void SetEditorEmbeddedTitle(EmbeddedEditorContext context)
@@ -698,23 +707,23 @@ public partial class MainWindow : SukiWindow
 
     private Control? CreateStructureButtonForSelectedComponent()
     {
-        if (_selectedNode?.Kind != ProjectTreeNodeKind.ComponentClass)
+        var node = SelectedComponentClassNode();
+        if (node is null)
         {
             return null;
         }
 
-        var node = _selectedNode;
         return EditorStructureButton.Create(async () => await _embeddedUsageNavigator.ShowForComponent(node));
     }
 
     private Control? CreateHeaderActionsForSelectedComponent()
     {
-        if (_selectedNode?.Kind != ProjectTreeNodeKind.ComponentClass)
+        var node = SelectedComponentClassNode();
+        if (node is null)
         {
             return null;
         }
 
-        var node = _selectedNode;
         return new StackPanel
         {
             Orientation = Orientation.Horizontal,
@@ -900,9 +909,32 @@ public partial class MainWindow : SukiWindow
         }
 
         ExpandAncestors(node);
-        var editableNode = ClosestEditableNode(node);
-        ShowNode(editableNode, rebuildTree: true);
+        var selectableNode = CanSelectTreeNode(node) ? node : ClosestEditableNode(node);
+        ShowNode(selectableNode, rebuildTree: true);
         return true;
+    }
+
+    private ProjectTreeNode? PreviewSelectionNode()
+    {
+        return _selectedNode is null ? null : EditorNodeForSelection(_selectedNode);
+    }
+
+    private static bool CanSelectTreeNode(ProjectTreeNode node)
+    {
+        return node.CanOpenEditor || node.Kind == ProjectTreeNodeKind.ComponentPreset;
+    }
+
+    private static ProjectTreeNode EditorNodeForSelection(ProjectTreeNode node)
+    {
+        return node.Kind == ProjectTreeNodeKind.ComponentPreset && node.Parent is not null
+            ? node.Parent
+            : node;
+    }
+
+    private ProjectTreeNode? SelectedComponentClassNode()
+    {
+        var node = _selectedNode is null ? null : EditorNodeForSelection(_selectedNode);
+        return node?.Kind == ProjectTreeNodeKind.ComponentClass ? node : null;
     }
 
     private static ProjectTreeNode ClosestEditableNode(ProjectTreeNode node)
