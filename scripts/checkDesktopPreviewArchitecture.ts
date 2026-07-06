@@ -488,6 +488,28 @@ assertDoesNotContain(
   "./systemBar",
   "component registry must route status/navigation through their explicit component modules",
 );
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/FieldDefinition.cs",
+  "ComponentPreset",
+  "embedded component preset selection must have a dedicated dictionary value kind",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/DictionaryValueControlFactory.cs",
+  "ValueKind.ComponentPreset",
+  "component preset fields must use their dedicated dictionary control",
+);
+for (const embeddedPresetField of [
+  "component.avatar.label.presetId",
+  "component.buttonIcon.label.presetId",
+  "component.audio.avatar.presetId",
+  "component.audio.badge.presetId",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
+    `{ "id": "${embeddedPresetField}"`,
+    `embedded preset field "${embeddedPresetField}" must not be shown as a separate layout row`,
+  );
+}
 
 assertContains(
   "spikes/desktop-editor-shell/MainWindow.axaml.cs",

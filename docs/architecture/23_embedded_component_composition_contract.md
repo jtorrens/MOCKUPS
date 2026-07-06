@@ -163,6 +163,12 @@ embedded editor context
   -> parent slot overrides
 ```
 
+Embedded component slots use a dedicated dictionary value kind for preset
+selection. The visible slot row is one `ComponentPreset` control: it selects the
+child preset and opens the embedded child editor from the same row. Do not show
+`*.presetId` as a separate editor row for slots such as Avatar Label, Button
+Icon Label, Audio Avatar or Audio Badge.
+
 ## Resolver Boundary
 
 Component resolvers consume current-model data and produce a typed design

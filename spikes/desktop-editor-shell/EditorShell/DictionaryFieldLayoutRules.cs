@@ -16,6 +16,7 @@ internal static class DictionaryFieldLayoutRules
             ValueKind.IntegerPair => new ColumnDefinitions("180,*,Auto"),
             ValueKind.IconSlots => new ColumnDefinitions("180,*,Auto"),
             ValueKind.EmbeddedComponent => new ColumnDefinitions("180,*,Auto"),
+            ValueKind.ComponentPreset => new ColumnDefinitions("180,*,Auto"),
             ValueKind.AlignmentPlacement => new ColumnDefinitions("180,*,Auto"),
             ValueKind.ThemeToken => new ColumnDefinitions("180,*,Auto"),
             ValueKind.OptionToken => new ColumnDefinitions("180,*,Auto"),

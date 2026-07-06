@@ -23,6 +23,7 @@ internal enum ValueKind
     IconToken,
     IconSlots,
     EmbeddedComponent,
+    ComponentPreset,
     AlignmentPlacement,
     Boolean,
 }

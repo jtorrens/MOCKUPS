@@ -947,6 +947,8 @@ internal sealed partial class SpikeDatabase
         return descriptor.ValueKind switch
         {
             ValueKind.EmbeddedComponent => EmbeddedComponentOptions(projectId, descriptor.DefaultValue),
+            ValueKind.ComponentPreset when EmbeddedComponentSlotCatalog.TryGet(descriptor.Id, out var slot)
+                => ComponentPresetOptions(projectId, slot.EmbeddedComponentType),
             ValueKind.OptionToken when EmbeddedComponentPresetType(descriptor.Id) is { } componentType
                 => ComponentPresetOptions(projectId, componentType),
             ValueKind.PaletteColorToken or ValueKind.PaletteColorPair or ValueKind.PaletteColorAlphaPair
@@ -1034,7 +1036,7 @@ internal sealed partial class SpikeDatabase
             ? ComponentTypeLabel(settings.ComponentType)
             : ComponentConfigFieldValue(settings.ConfigJson, descriptor);
         var options = ComponentClassFieldOptions(settings.ProjectId, descriptor);
-        var isHighlighted = descriptor.ValueKind == ValueKind.EmbeddedComponent
+        var isHighlighted = descriptor.ValueKind is ValueKind.EmbeddedComponent or ValueKind.ComponentPreset
             && EmbeddedComponentSlotCatalog.TryGet(fieldId, out var slot)
             && EmbeddedComponentHasOverrides(settings.ConfigJson, slot);
 
@@ -1060,7 +1062,7 @@ internal sealed partial class SpikeDatabase
             ? ComponentTypeLabel(settings.ComponentType)
             : ComponentConfigFieldValue(settings.ConfigJson, descriptor);
         var options = ComponentClassFieldOptions(settings.ProjectId, descriptor);
-        var isHighlighted = descriptor.ValueKind == ValueKind.EmbeddedComponent
+        var isHighlighted = descriptor.ValueKind is ValueKind.EmbeddedComponent or ValueKind.ComponentPreset
             && EmbeddedComponentSlotCatalog.TryGet(fieldId, out var slot)
             && EmbeddedComponentHasOverrides(settings.ConfigJson, slot);
 
@@ -1183,7 +1185,7 @@ internal sealed partial class SpikeDatabase
             ? ComponentConfigFieldValue(overrides.ToJsonString(), descriptor)
             : inheritedValue;
         var options = ComponentClassFieldOptions(settings.ProjectId, descriptor);
-        var isHighlighted = descriptor.ValueKind == ValueKind.EmbeddedComponent
+        var isHighlighted = descriptor.ValueKind is ValueKind.EmbeddedComponent or ValueKind.ComponentPreset
             && EmbeddedComponentSlotCatalog.TryGet(embeddedFieldId, out var nestedSlot)
             && EmbeddedComponentHasOverrides(config, [.. slots, nestedSlot]);
 
@@ -1236,7 +1238,7 @@ internal sealed partial class SpikeDatabase
             ? ComponentConfigFieldValue(overrides.ToJsonString(), descriptor)
             : inheritedValue;
         var options = ComponentClassFieldOptions(settings.ProjectId, descriptor);
-        var isHighlighted = descriptor.ValueKind == ValueKind.EmbeddedComponent
+        var isHighlighted = descriptor.ValueKind is ValueKind.EmbeddedComponent or ValueKind.ComponentPreset
             && EmbeddedComponentSlotCatalog.TryGet(embeddedFieldId, out var nestedSlot)
             && EmbeddedComponentHasOverrides(config, [.. slots, nestedSlot]);
 

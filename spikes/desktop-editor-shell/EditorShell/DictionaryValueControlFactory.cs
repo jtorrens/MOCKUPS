@@ -39,6 +39,7 @@ internal static class DictionaryValueControlFactory
                 definition.IsEditable,
                 services.ShowIconTokenPicker,
                 services.CreateIconPreview),
+            ValueKind.ComponentPreset => new DictionaryComponentPresetControl(definition, value, isHighlighted, services.OpenEmbeddedComponent),
             ValueKind.EmbeddedComponent => new DictionaryEmbeddedComponentControl(definition, value, isHighlighted, services.OpenEmbeddedComponent),
             ValueKind.AlignmentPlacement => new DictionaryAlignmentPlacementControl(definition, value),
             _ => new DictionaryTextControl(definition, value),

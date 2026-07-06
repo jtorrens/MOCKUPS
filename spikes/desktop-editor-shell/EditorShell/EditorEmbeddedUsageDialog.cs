@@ -114,31 +114,41 @@ internal sealed class EditorEmbeddedUsageDialog
         {
             Content = classContent,
         };
-        var classButton = CreateSegmentButton("Class");
-        var presetButton = CreateSegmentButton("Preset");
+        var classLabel = SwitchLabel("Class", selected: true);
+        var presetLabel = SwitchLabel("Preset", selected: false);
+        var usageSwitch = new ToggleSwitch
+        {
+            IsChecked = false,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
         void Select(bool preset)
         {
             contentHost.Content = preset ? presetContent : classContent;
-            SetSegmentState(classButton, !preset);
-            SetSegmentState(presetButton, preset);
+            SetSwitchLabelState(classLabel, !preset);
+            SetSwitchLabelState(presetLabel, preset);
         }
 
-        classButton.Click += (_, _) => Select(false);
-        presetButton.Click += (_, _) => Select(true);
+        usageSwitch.PropertyChanged += (_, change) =>
+        {
+            if (change.Property != ToggleSwitch.IsCheckedProperty) return;
+            Select(usageSwitch.IsChecked == true);
+        };
         Select(false);
 
         var switchGrid = new Grid
         {
-            ColumnDefinitions = new ColumnDefinitions("*,*"),
-            MaxWidth = 280,
+            ColumnDefinitions = new ColumnDefinitions("Auto,Auto,Auto"),
+            ColumnSpacing = 10,
             HorizontalAlignment = HorizontalAlignment.Left,
             Children =
             {
-                classButton,
-                presetButton,
+                classLabel,
+                usageSwitch,
+                presetLabel,
             },
         };
-        Grid.SetColumn(presetButton, 1);
+        Grid.SetColumn(usageSwitch, 1);
+        Grid.SetColumn(presetLabel, 2);
 
         return new StackPanel
         {
@@ -151,25 +161,22 @@ internal sealed class EditorEmbeddedUsageDialog
         };
     }
 
-    private Button CreateSegmentButton(string label)
+    private TextBlock SwitchLabel(string label, bool selected)
     {
-        return new Button
+        var text = new TextBlock
         {
-            Content = label,
-            Height = 32,
-            Padding = new Avalonia.Thickness(12, 0),
-            BorderThickness = new Avalonia.Thickness(1),
+            Text = label,
             FontWeight = FontWeight.SemiBold,
+            VerticalAlignment = VerticalAlignment.Center,
         };
+        SetSwitchLabelState(text, selected);
+        return text;
     }
 
-    private void SetSegmentState(Button button, bool selected)
+    private void SetSwitchLabelState(TextBlock label, bool selected)
     {
-        button.Background = new SolidColorBrush(Color.Parse(selected
-            ? (_isDark ? "#2AD6A638" : "#26D6A638")
-            : (_isDark ? "#12FFFFFF" : "#0D000000")));
-        button.BorderBrush = new SolidColorBrush(Color.Parse(selected ? "#D6A638" : (_isDark ? "#24FFFFFF" : "#20000000")));
-        button.Foreground = new SolidColorBrush(Color.Parse(selected ? "#D6A638" : (_isDark ? "#F2F5FA" : "#172033")));
+        label.Foreground = new SolidColorBrush(Color.Parse(selected ? "#D6A638" : (_isDark ? "#B8C2D4" : "#526071")));
+        label.Opacity = selected ? 1 : 0.72;
     }
 
     private static Control EmptyText(string text)
