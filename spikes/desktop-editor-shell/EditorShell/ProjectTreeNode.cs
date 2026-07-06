@@ -11,8 +11,6 @@ internal enum ProjectTreeNodeKind
     AppsRoot,
     PaletteRoot,
     IconThemesRoot,
-    StatusBarsRoot,
-    NavigationBarsRoot,
     RenderPresetsRoot,
     ComponentClassesRoot,
     DevicesRoot,
@@ -26,8 +24,6 @@ internal enum ProjectTreeNodeKind
     Shot,
     PaletteColor,
     IconTheme,
-    StatusBar,
-    NavigationBar,
     RenderPreset,
     ComponentClass,
     ComponentPreset,
@@ -114,8 +110,6 @@ internal sealed class ProjectTreeNode
         and not ProjectTreeNodeKind.AppsRoot
         and not ProjectTreeNodeKind.PaletteRoot
         and not ProjectTreeNodeKind.IconThemesRoot
-        and not ProjectTreeNodeKind.StatusBarsRoot
-        and not ProjectTreeNodeKind.NavigationBarsRoot
         and not ProjectTreeNodeKind.RenderPresetsRoot
         and not ProjectTreeNodeKind.ComponentClassesRoot
         and not ProjectTreeNodeKind.DevicesRoot
@@ -143,8 +137,6 @@ internal sealed class ProjectTreeNode
             ProjectTreeNodeKind.AppsRoot => "navigation.apps",
             ProjectTreeNodeKind.PaletteRoot => "navigation.palette",
             ProjectTreeNodeKind.IconThemesRoot => "navigation.icon_themes",
-            ProjectTreeNodeKind.StatusBarsRoot => "navigation.status_bars",
-            ProjectTreeNodeKind.NavigationBarsRoot => "navigation.navigation_bars",
             ProjectTreeNodeKind.RenderPresetsRoot => "navigation.render_presets",
             ProjectTreeNodeKind.ComponentClassesRoot => "navigation.component_classes",
             ProjectTreeNodeKind.DevicesRoot => "navigation.devices",
@@ -158,8 +150,6 @@ internal sealed class ProjectTreeNode
             ProjectTreeNodeKind.Shot => "shot",
             ProjectTreeNodeKind.PaletteColor => "palette_color",
             ProjectTreeNodeKind.IconTheme => "icon_theme",
-            ProjectTreeNodeKind.StatusBar => "status_bar",
-            ProjectTreeNodeKind.NavigationBar => "navigation_bar",
             ProjectTreeNodeKind.RenderPreset => "render_preset",
             ProjectTreeNodeKind.ComponentClass => "component.avatar",
             ProjectTreeNodeKind.ComponentPreset => "component.preset",

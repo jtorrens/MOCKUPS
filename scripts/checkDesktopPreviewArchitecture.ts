@@ -649,6 +649,30 @@ assertDoesNotContain(
   "if (parent.Kind == ProjectTreeNodeKind.NavigationBarsRoot)",
   "legacy navigation bar add workflow must not remain; use component presets instead",
 );
+for (const forbiddenLegacyTreeTerm of [
+  "StatusBarsRoot",
+  "NavigationBarsRoot",
+  "ProjectTreeNodeKind.StatusBar",
+  "ProjectTreeNodeKind.NavigationBar",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+    forbiddenLegacyTreeTerm,
+    `legacy system bar tree term ${forbiddenLegacyTreeTerm} must not return; use component presets`,
+  );
+}
+for (const forbiddenLegacyLayoutTerm of [
+  "\"navigation.status_bars\"",
+  "\"navigation.navigation_bars\"",
+  "recordClassId == \"status_bar\"",
+  "recordClassId == \"navigation_bar\"",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/Data/SpikeDatabase.EditorLayouts.cs",
+    forbiddenLegacyLayoutTerm,
+    `legacy system bar layout term ${forbiddenLegacyLayoutTerm} must not return; use component layouts`,
+  );
+}
 assertDoesNotContain(
   "spikes/desktop-editor-shell/EditorShell/RecordClassFieldValueService.cs",
   "ProjectTreeNodeKind.StatusBar => fieldId.StartsWith(\"statusBar.\"",

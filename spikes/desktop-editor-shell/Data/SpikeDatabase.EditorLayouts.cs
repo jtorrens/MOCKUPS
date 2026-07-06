@@ -35,8 +35,6 @@ internal sealed partial class SpikeDatabase
             "navigation.themes",
             "navigation.production_fonts",
             "navigation.icon_themes",
-            "navigation.status_bars",
-            "navigation.navigation_bars",
             "navigation.render_presets",
             "navigation.component_classes",
             "navigation.episodes",
@@ -52,8 +50,6 @@ internal sealed partial class SpikeDatabase
             "theme",
             "production_font",
             "icon_theme",
-            "status_bar",
-            "navigation_bar",
             "render_preset",
         }.Concat(ComponentSeedRows.Select((seed) => seed.RecordClassId));
 
@@ -190,17 +186,6 @@ internal sealed partial class SpikeDatabase
                     { "id": "iconTheme.assetRoot", "order": 20, "visible": true },
                     { "id": "iconTheme.tokenCount", "order": 30, "visible": true },
                     { "id": "iconTheme.metadata", "order": 40, "visible": false }
-                  """
-            : recordClassId == "status_bar"
-                ? """
-                    { "id": "core.name", "order": 10, "visible": true },
-                    { "id": "statusBar.family", "order": 20, "visible": true }
-                  """
-            : recordClassId == "navigation_bar"
-                ? """
-                    { "id": "core.name", "order": 10, "visible": true },
-                    { "id": "navigationBar.family", "order": 20, "visible": true },
-                    { "id": "navigationBar.type", "order": 30, "visible": true }
                   """
             : """
                     { "id": "core.name", "order": 10, "visible": true },
@@ -574,86 +559,6 @@ internal sealed partial class SpikeDatabase
             }
             """
             : "";
-        var statusBarCards = recordClassId == "status_bar"
-            ? $$"""
-            ,
-            {
-              "id": "layout",
-              "label": "Layout",
-              "subtitle": "Height, item size, gap and padding",
-              "icon": "{{EditorIcons.Layout}}",
-              "order": 20,
-              "visible": true,
-              "defaultOpen": false,
-              "groups": [
-                {
-                  "id": "layout",
-                  "label": "Layout values",
-                  "order": 10,
-                  "visible": true,
-                  "fields": [
-                    { "id": "statusBar.layout.height", "order": 10, "visible": true },
-                    { "id": "statusBar.layout.itemSize", "order": 20, "visible": true },
-                    { "id": "statusBar.layout.gap", "order": 30, "visible": true },
-                    { "id": "statusBar.layout.sidePadding", "order": 40, "visible": true }
-                  ]
-                }
-              ]
-            }
-            """
-            : "";
-        var navigationBarCards = recordClassId == "navigation_bar"
-            ? $$"""
-            ,
-            {
-              "id": "buttons",
-              "label": "Buttons",
-              "subtitle": "Size and generated button shape",
-              "icon": "{{EditorIcons.Navigation}}",
-              "order": 20,
-              "visible": true,
-              "defaultOpen": false,
-              "groups": [
-                {
-                  "id": "layout",
-                  "label": "Layout values",
-                  "order": 10,
-                  "visible": true,
-                  "fields": [
-                    { "id": "navigationBar.layout.height", "order": 10, "visible": true },
-                    { "id": "navigationBar.layout.itemSize", "order": 20, "visible": true },
-                    { "id": "navigationBar.layout.sidePadding", "order": 30, "visible": true },
-                    { "id": "navigationBar.layout.strokeWidth", "order": 40, "visible": true },
-                    { "id": "navigationBar.layout.cornerRadius", "order": 50, "visible": true },
-                    { "id": "navigationBar.layout.filled", "order": 60, "visible": true }
-                  ]
-                }
-              ]
-            },
-            {
-              "id": "gestureBar",
-              "label": "Gesture Bar",
-              "subtitle": "Home indicator dimensions",
-              "icon": "{{EditorIcons.Navigation}}",
-              "order": 30,
-              "visible": true,
-              "defaultOpen": false,
-              "groups": [
-                {
-                  "id": "gesture",
-                  "label": "Gesture bar values",
-                  "order": 10,
-                  "visible": true,
-                  "fields": [
-                    { "id": "navigationBar.gesture.width", "order": 10, "visible": true },
-                    { "id": "navigationBar.gesture.height", "order": 20, "visible": true },
-                    { "id": "navigationBar.gesture.cornerRadius", "order": 30, "visible": true }
-                  ]
-                }
-              ]
-            }
-            """
-            : "";
         var componentCards = recordClassId.StartsWith("component.", StringComparison.Ordinal)
             ? ComponentClassLayoutCardsJson(recordClassId)
             : "";
@@ -680,7 +585,7 @@ internal sealed partial class SpikeDatabase
                   ]
                 }
               ]
-            }{{appCards}}{{actorCards}}{{themeCards}}{{statusBarCards}}{{navigationBarCards}}{{componentCards}}
+            }{{appCards}}{{actorCards}}{{themeCards}}{{componentCards}}
           ]
         }
         """;

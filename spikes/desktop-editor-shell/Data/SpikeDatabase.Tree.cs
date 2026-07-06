@@ -934,8 +934,6 @@ internal sealed partial class SpikeDatabase
             ProjectTreeNodeKind.Theme => "themes",
             ProjectTreeNodeKind.ProductionFont => "production_fonts",
             ProjectTreeNodeKind.IconTheme => "icon_themes",
-            ProjectTreeNodeKind.StatusBar => "status_bars",
-            ProjectTreeNodeKind.NavigationBar => "navigation_bars",
             ProjectTreeNodeKind.RenderPreset => "render_presets",
             _ => throw new InvalidOperationException($"Cannot delete {node.Kind}."),
         };
@@ -982,8 +980,6 @@ internal sealed partial class SpikeDatabase
             ProjectTreeNodeKind.Theme => "themes",
             ProjectTreeNodeKind.ProductionFont => "production_fonts",
             ProjectTreeNodeKind.IconTheme => "icon_themes",
-            ProjectTreeNodeKind.StatusBar => "status_bars",
-            ProjectTreeNodeKind.NavigationBar => "navigation_bars",
             ProjectTreeNodeKind.RenderPreset => "render_presets",
             ProjectTreeNodeKind.ComponentClass => "component_classes",
             _ => "",
@@ -1051,26 +1047,6 @@ internal sealed partial class SpikeDatabase
                 ("$name", renamedAssets.Name),
                 ("$assetRoot", renamedAssets.AssetRoot),
                 ("$metadataJson", metadata.ToJsonString()));
-            return;
-        }
-
-        if (node.Kind == ProjectTreeNodeKind.StatusBar)
-        {
-            Execute(
-                connection,
-                "UPDATE status_bars SET name = $name WHERE id = $id",
-                ("$id", node.Id),
-                ("$name", node.Name));
-            return;
-        }
-
-        if (node.Kind == ProjectTreeNodeKind.NavigationBar)
-        {
-            Execute(
-                connection,
-                "UPDATE navigation_bars SET name = $name WHERE id = $id",
-                ("$id", node.Id),
-                ("$name", node.Name));
             return;
         }
 

@@ -75,8 +75,8 @@ internal sealed partial class SpikeDatabase
         foreach (var theme in themes)
         {
             AddUsage(index, ProjectTreeNodeKind.IconTheme, theme.IconThemeId, $"Theme: {theme.Name}");
-            AddSystemBarUsage(index, componentClasses, ProjectTreeNodeKind.StatusBar, theme.StatusBarId, $"Theme: {theme.Name}");
-            AddSystemBarUsage(index, componentClasses, ProjectTreeNodeKind.NavigationBar, theme.NavigationBarId, $"Theme: {theme.Name}");
+            AddSystemBarUsage(index, componentClasses, theme.StatusBarId, $"Theme: {theme.Name}");
+            AddSystemBarUsage(index, componentClasses, theme.NavigationBarId, $"Theme: {theme.Name}");
 
             foreach (var font in productionFonts)
             {
@@ -202,7 +202,6 @@ internal sealed partial class SpikeDatabase
     private static void AddSystemBarUsage(
         IDictionary<string, List<string>> index,
         IReadOnlyList<ComponentClassRow> componentClasses,
-        ProjectTreeNodeKind legacyKind,
         string id,
         string usage)
     {
@@ -218,7 +217,6 @@ internal sealed partial class SpikeDatabase
             return;
         }
 
-        AddUsage(index, legacyKind, id, usage);
     }
 
     private static void AddUsageIfContains(
@@ -285,8 +283,6 @@ internal sealed partial class SpikeDatabase
             ProjectTreeNodeKind.Theme => "themes",
             ProjectTreeNodeKind.ProductionFont => "production_fonts",
             ProjectTreeNodeKind.IconTheme => "icon_themes",
-            ProjectTreeNodeKind.StatusBar => "status_bars",
-            ProjectTreeNodeKind.NavigationBar => "navigation_bars",
             ProjectTreeNodeKind.RenderPreset => "render_presets",
             ProjectTreeNodeKind.ComponentClass => "component_classes",
             _ => "",
