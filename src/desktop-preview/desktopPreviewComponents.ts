@@ -23,19 +23,19 @@ export const desktopPreviewComponents = {
     renderable: "./avatarComponentRenderable",
     embeds: ["label"],
   },
-  button_icon: {
+  buttonIcon: {
     category: "atom",
     contract: "./buttonIconComponentContract",
     resolver: "./buttonIconComponentResolver",
     renderable: "./buttonIconComponentRenderable",
     embeds: ["label"],
   },
-  audio_message: {
+  audio: {
     category: "component",
     contract: "./audioComponentContract",
     resolver: "./audioComponentResolver",
     renderable: "./audioComponentRenderable",
-    embeds: ["avatar", "button_icon"],
+    embeds: ["avatar", "buttonIcon"],
   },
   status_bar: {
     category: "system",

@@ -22,8 +22,8 @@ type ComponentRenderableFactory = (payload: DesignPreviewPayload) => RenderableN
 export const componentRenderableFactories = {
   label: (payload) => labelComponentToRenderable(payload, resolveLabelComponent(payload)),
   avatar: (payload) => avatarComponentToRenderable(payload, resolveAvatarComponent(payload)),
-  audio_message: (payload) => audioComponentToRenderable(payload, resolveAudioComponent(payload)),
-  button_icon: (payload) =>
+  audio: (payload) => audioComponentToRenderable(payload, resolveAudioComponent(payload)),
+  buttonIcon: (payload) =>
     buttonIconComponentToRenderable(payload, resolveButtonIconComponent(payload)),
   status_bar: (payload) =>
     statusBarComponentToRenderable(payload, resolveStatusBarComponent(payload)),

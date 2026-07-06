@@ -489,6 +489,46 @@ assertDoesNotContain(
   "component registry must route status/navigation through their explicit component modules",
 );
 assertContains(
+  "src/desktop-preview/desktopPreviewComponents.ts",
+  "audio: {",
+  "desktop preview component manifest must use the current audio component type",
+);
+assertContains(
+  "src/desktop-preview/desktopPreviewComponents.ts",
+  "buttonIcon: {",
+  "desktop preview component manifest must use the current button icon component type",
+);
+assertContains(
+  "src/desktop-preview/componentClassRenderableRegistry.ts",
+  "audio: (payload)",
+  "component renderable registry must route the current audio component type",
+);
+assertContains(
+  "src/desktop-preview/componentClassRenderableRegistry.ts",
+  "buttonIcon: (payload)",
+  "component renderable registry must route the current button icon component type",
+);
+assertDoesNotContain(
+  "src/desktop-preview/desktopPreviewComponents.ts",
+  "audio_message",
+  "legacy audio_message component type must not return to the preview manifest",
+);
+assertDoesNotContain(
+  "src/desktop-preview/desktopPreviewComponents.ts",
+  "button_icon",
+  "legacy button_icon component type must not return to the preview manifest",
+);
+assertDoesNotContain(
+  "src/desktop-preview/componentClassRenderableRegistry.ts",
+  "audio_message",
+  "legacy audio_message component type must not return to the preview registry",
+);
+assertDoesNotContain(
+  "src/desktop-preview/componentClassRenderableRegistry.ts",
+  "button_icon",
+  "legacy button_icon component type must not return to the preview registry",
+);
+assertContains(
   "spikes/desktop-editor-shell/EditorShell/FieldDefinition.cs",
   "ComponentPreset",
   "embedded component preset selection must have a dedicated dictionary value kind",
