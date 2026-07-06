@@ -4,7 +4,6 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Styling;
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;

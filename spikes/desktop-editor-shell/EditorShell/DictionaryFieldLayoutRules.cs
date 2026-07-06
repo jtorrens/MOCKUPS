@@ -7,21 +7,7 @@ internal static class DictionaryFieldLayoutRules
 {
     public static ColumnDefinitions Columns(ValueKind valueKind)
     {
-        return valueKind switch
-        {
-            ValueKind.HexColor => new ColumnDefinitions("180,*,Auto"),
-            ValueKind.HueDegrees => new ColumnDefinitions("180,*,Auto"),
-            ValueKind.IntegerPair => new ColumnDefinitions("180,*,Auto"),
-            ValueKind.IconSlots => new ColumnDefinitions("180,*,Auto"),
-            ValueKind.EmbeddedComponent => new ColumnDefinitions("180,*,Auto"),
-            ValueKind.ComponentPreset => new ColumnDefinitions("180,*,Auto"),
-            ValueKind.AlignmentPlacement => new ColumnDefinitions("180,*,Auto"),
-            ValueKind.ThemeToken => new ColumnDefinitions("180,*,Auto"),
-            ValueKind.OptionToken => new ColumnDefinitions("180,*,Auto"),
-            ValueKind.PaletteColorToken => new ColumnDefinitions("180,*,Auto"),
-            ValueKind.PaletteColorPair => new ColumnDefinitions("180,*,Auto"),
-            _ => new ColumnDefinitions("180,*,Auto"),
-        };
+        return new ColumnDefinitions("180,*,Auto");
     }
 
     public static double MinHeight(ValueKind valueKind)
@@ -55,12 +41,5 @@ internal static class DictionaryFieldLayoutRules
             : VerticalAlignment.Center;
     }
 
-    public static int RestoreButtonColumn(ValueKind valueKind)
-    {
-        return valueKind switch
-        {
-            ValueKind.HexColor => 2,
-            _ => 2,
-        };
-    }
+    public static int RestoreButtonColumn(ValueKind valueKind) => 2;
 }
