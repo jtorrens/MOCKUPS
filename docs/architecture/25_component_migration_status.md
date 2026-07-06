@@ -95,6 +95,8 @@ legacy/new fragments.
 - component renderables do not emit component identity metadata into the final
   paint tree;
 - concrete component imports only follow declared manifest ownership;
+- no shared `systemBar*` route exists; status/navigation are normal manifest
+  components with category `system`;
 - legacy `audio_message`, `button_icon`, `text_input_bar` and `video_message`
   names do not return to the desktop preview manifest or registry.
 

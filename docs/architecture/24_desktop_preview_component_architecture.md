@@ -38,6 +38,7 @@ state, override state, database/editor state, or component-specific node types.
 ```text
 System, Atom and Component are manifest categories.
 They must not create separate render paths.
+There must not be a shared `systemBar*` contract, resolver or renderable layer.
 ```
 
 ```text
@@ -644,8 +645,8 @@ They are useful for:
 
 They must not create separate render paths.
 
-Status Bar, Navigation Bar and Keyboard should become normal component classes
-with category `system`.
+Status Bar, Navigation Bar, Text Input Bar and Keyboard are normal component
+classes with category `system`.
 
 All categories use:
 

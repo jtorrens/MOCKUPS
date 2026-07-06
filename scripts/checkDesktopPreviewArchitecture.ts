@@ -170,6 +170,9 @@ for (const removedLegacyPath of [
   "src/visual/layout",
   "src/visual/modules",
   "src/visual/validation",
+  "src/desktop-preview/systemBarComponentContract.ts",
+  "src/desktop-preview/systemBarPreviewResolver.ts",
+  "src/desktop-preview/systemBarRenderables.ts",
   "index.html",
   "remotion.config.ts",
   "vite.config.ts",
@@ -337,11 +340,6 @@ for (const [, entry] of manifestEntries) {
     "system component renderables must not emit system-bar identity metadata into the final paint tree",
   );
 }
-assertDoesNotContain(
-  "src/desktop-preview/systemBarRenderables.ts",
-  "systemBarType:",
-  "shared system bar renderables must not emit system-bar identity metadata into the final paint tree",
-);
 for (const [, entry] of manifestEntries) {
   const renderableFile = moduleFile(entry, "renderable");
   for (const legacyTerm of [

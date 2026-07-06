@@ -37,6 +37,15 @@ export function boundedCenterBox(
   };
 }
 
+export function previewScreenBox(payload: DesignPreviewPayload): RenderableBox {
+  return {
+    x: payload.previewFrame.screenX,
+    y: payload.previewFrame.screenY,
+    width: payload.previewFrame.screenWidth,
+    height: payload.previewFrame.screenHeight,
+  };
+}
+
 export function scalePlacement(
   placement: AlignmentPlacementContract,
   scale: number,

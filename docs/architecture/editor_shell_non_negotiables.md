@@ -227,7 +227,7 @@ The bridge owns only generic translation:
 
 The bridge must not contain `componentType` branches, hardcoded field names, or layout/business rules for a concrete component class. If a component cannot be represented with current atoms, add a generic atom or extend the component resolver output first.
 
-There must not be a central web preview bridge acting as a component catalog. Do not add functions such as `labelComponentToRenderable`, `avatarComponentToRenderable`, `audioComponentToRenderable`, `statusBarToRenderable`, `navigationBarToRenderable`, or any equivalent per-component bridge entry point to a shared bridge file. Component classes and system bars use their own resolver/renderable modules and are selected only through an explicit registry.
+There must not be a central web preview bridge acting as a component catalog. Do not add functions such as `labelComponentToRenderable`, `avatarComponentToRenderable`, `audioComponentToRenderable`, `statusBarToRenderable`, `navigationBarToRenderable`, or any equivalent per-component bridge entry point to a shared bridge file. All component classes, including category `system` classes such as status/navigation/text input/keyboard, use their own resolver/renderable modules and are selected only through an explicit registry. There must not be a shared `systemBar*` contract, resolver or renderable layer.
 
 A registry may name components only to route to their owning module. It must not contain component layout, style, defaults, token resolution, or renderable construction logic.
 
