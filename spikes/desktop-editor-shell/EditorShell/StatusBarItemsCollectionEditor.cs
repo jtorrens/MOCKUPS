@@ -5,6 +5,7 @@ using Avalonia.Media;
 using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -35,8 +36,8 @@ internal sealed class StatusBarItemsCollectionEditor
     public InstantEditorCard Create(ProjectTreeNode node)
     {
         var icon = EditorIcons.Create(EditorIcons.Status, 18);
-        var settings = _database.GetStatusBarSettings(node.Id);
-        var items = _database.GetStatusBarItems(node.Id).ToList();
+        var projectId = ProjectId(node);
+        var items = Items(node).ToList();
         var body = new StackPanel
         {
             Spacing = 10,
@@ -51,7 +52,7 @@ internal sealed class StatusBarItemsCollectionEditor
 
         for (var index = 0; index < items.Count; index++)
         {
-            body.Children.Add(CreateItemRow(node, settings.ProjectId, index, items[index]));
+            body.Children.Add(CreateItemRow(node, projectId, index, items[index]));
         }
 
         return new InstantEditorCard(
@@ -210,16 +211,33 @@ internal sealed class StatusBarItemsCollectionEditor
 
     private void UpdateItem(ProjectTreeNode node, int index, Func<SpikeDatabase.StatusBarItem, SpikeDatabase.StatusBarItem> patch)
     {
-        var current = _database.GetStatusBarItems(node.Id).ElementAtOrDefault(index);
+        var current = Items(node).ElementAtOrDefault(index);
         if (current is null)
         {
             return;
         }
 
         var nextItem = patch(current);
-        _database.UpdateStatusBarItem(node.Id, index, nextItem);
+        if (node.Kind == ProjectTreeNodeKind.ComponentClass)
+        {
+            _database.UpdateStatusBarComponentItem(node.Id, index, nextItem);
+        }
+        else
+        {
+            _database.UpdateStatusBarItem(node.Id, index, nextItem);
+        }
         _onChanged();
     }
+
+    private IReadOnlyList<SpikeDatabase.StatusBarItem> Items(ProjectTreeNode node) =>
+        node.Kind == ProjectTreeNodeKind.ComponentClass
+            ? _database.GetStatusBarComponentItems(node.Id)
+            : _database.GetStatusBarItems(node.Id);
+
+    private string ProjectId(ProjectTreeNode node) =>
+        node.Kind == ProjectTreeNodeKind.ComponentClass
+            ? _database.GetComponentClassSettings(node.Id).ProjectId
+            : _database.GetStatusBarSettings(node.Id).ProjectId;
 
     private static string BoolToString(bool value) => BooleanText.Format(value);
 

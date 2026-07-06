@@ -74,6 +74,34 @@ internal sealed class EditorCollectionCardFactory
                     _browsePath,
                     _onChanged).Create(node),
             ],
+            ProjectTreeNodeKind.ComponentClass =>
+                CreateComponentClassCollectionCards(node),
+            _ => [],
+        };
+    }
+
+    private IReadOnlyList<InstantEditorCard> CreateComponentClassCollectionCards(ProjectTreeNode node)
+    {
+        var settings = _database.GetComponentClassSettings(node.Id);
+        return settings.ComponentType switch
+        {
+            "status_bar" =>
+            [
+                new StatusBarItemsCollectionEditor(
+                    _database,
+                    _isDark(),
+                    _browsePath,
+                    _showIconTokenPicker,
+                    _onChanged).Create(node),
+            ],
+            "navigation_bar" =>
+            [
+                new NavigationBarItemsCollectionEditor(
+                    _database,
+                    _isDark(),
+                    _browsePath,
+                    _onChanged).Create(node),
+            ],
             _ => [],
         };
     }

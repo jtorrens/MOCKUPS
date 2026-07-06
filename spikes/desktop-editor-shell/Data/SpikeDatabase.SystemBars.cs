@@ -49,6 +49,11 @@ internal sealed partial class SpikeDatabase
         return StatusBarItems(StatusBarConfig(GetStatusBarSettings(statusBarId).ConfigJson));
     }
 
+    public IReadOnlyList<StatusBarItem> GetStatusBarComponentItems(string componentClassId)
+    {
+        return StatusBarItems(StatusBarConfig(GetComponentClassSettings(componentClassId).ConfigJson));
+    }
+
     public void UpdateStatusBarField(string statusBarId, string fieldId, string value)
     {
         lock (WriteGate)
@@ -116,6 +121,34 @@ internal sealed partial class SpikeDatabase
         }
     }
 
+    public void UpdateStatusBarComponentItem(string componentClassId, int index, StatusBarItem patch)
+    {
+        lock (WriteGate)
+        {
+            using var connection = OpenConnection();
+            var settings = GetComponentClassSettings(connection, componentClassId);
+            if (!settings.ComponentType.Equals("status_bar", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException($"Component class '{componentClassId}' is not a status bar.");
+            }
+
+            var config = StatusBarConfig(settings.ConfigJson);
+            var items = config["items"] as JsonArray ?? new JsonArray();
+            while (items.Count <= index)
+            {
+                items.Add(JsonSerializer.SerializeToNode(DefaultStatusBarItems().ElementAtOrDefault(items.Count) ?? DefaultStatusBarItems()[0])!);
+            }
+
+            items[index] = StatusBarItemToJson(patch);
+            config["items"] = items;
+            Execute(
+                connection,
+                "UPDATE component_classes SET config_json = $configJson WHERE id = $id",
+                ("$id", componentClassId),
+                ("$configJson", config.ToJsonString()));
+        }
+    }
+
     public NavigationBarSettings GetNavigationBarSettings(string navigationBarId)
     {
         using var connection = OpenConnection();
@@ -160,6 +193,11 @@ internal sealed partial class SpikeDatabase
     public IReadOnlyList<NavigationBarItem> GetNavigationBarItems(string navigationBarId)
     {
         return NavigationBarItems(NavigationBarConfig(GetNavigationBarSettings(navigationBarId).ConfigJson));
+    }
+
+    public IReadOnlyList<NavigationBarItem> GetNavigationBarComponentItems(string componentClassId)
+    {
+        return NavigationBarItems(NavigationBarConfig(GetComponentClassSettings(componentClassId).ConfigJson));
     }
 
     public void UpdateNavigationBarField(string navigationBarId, string fieldId, string value)
@@ -243,6 +281,34 @@ internal sealed partial class SpikeDatabase
                 connection,
                 "UPDATE navigation_bars SET config_json = $configJson WHERE id = $id",
                 ("$id", navigationBarId),
+                ("$configJson", config.ToJsonString()));
+        }
+    }
+
+    public void UpdateNavigationBarComponentItem(string componentClassId, int index, NavigationBarItem patch)
+    {
+        lock (WriteGate)
+        {
+            using var connection = OpenConnection();
+            var settings = GetComponentClassSettings(connection, componentClassId);
+            if (!settings.ComponentType.Equals("navigation_bar", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException($"Component class '{componentClassId}' is not a navigation bar.");
+            }
+
+            var config = NavigationBarConfig(settings.ConfigJson);
+            var items = config["items"] as JsonArray ?? new JsonArray();
+            while (items.Count <= index)
+            {
+                items.Add(NavigationBarItemToJson(DefaultNavigationBarItems().ElementAtOrDefault(items.Count) ?? DefaultNavigationBarItems()[0]));
+            }
+
+            items[index] = NavigationBarItemToJson(patch);
+            config["items"] = items;
+            Execute(
+                connection,
+                "UPDATE component_classes SET config_json = $configJson WHERE id = $id",
+                ("$id", componentClassId),
                 ("$configJson", config.ToJsonString()));
         }
     }

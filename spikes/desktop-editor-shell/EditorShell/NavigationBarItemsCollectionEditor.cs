@@ -5,6 +5,7 @@ using Avalonia.Media;
 using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -32,7 +33,7 @@ internal sealed class NavigationBarItemsCollectionEditor
     public InstantEditorCard Create(ProjectTreeNode node)
     {
         var icon = EditorIcons.Create(EditorIcons.Navigation, 18);
-        var items = _database.GetNavigationBarItems(node.Id).ToList();
+        var items = Items(node).ToList();
         var body = new StackPanel
         {
             Spacing = 10,
@@ -123,7 +124,19 @@ internal sealed class NavigationBarItemsCollectionEditor
 
     private void UpdateItem(ProjectTreeNode node, int index, SpikeDatabase.NavigationBarItem nextItem)
     {
-        _database.UpdateNavigationBarItem(node.Id, index, nextItem);
+        if (node.Kind == ProjectTreeNodeKind.ComponentClass)
+        {
+            _database.UpdateNavigationBarComponentItem(node.Id, index, nextItem);
+        }
+        else
+        {
+            _database.UpdateNavigationBarItem(node.Id, index, nextItem);
+        }
         _onChanged();
     }
+
+    private IReadOnlyList<SpikeDatabase.NavigationBarItem> Items(ProjectTreeNode node) =>
+        node.Kind == ProjectTreeNodeKind.ComponentClass
+            ? _database.GetNavigationBarComponentItems(node.Id)
+            : _database.GetNavigationBarItems(node.Id);
 }
