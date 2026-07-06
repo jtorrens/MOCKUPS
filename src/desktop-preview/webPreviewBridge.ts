@@ -523,17 +523,16 @@ export function audioComponentToRenderable(
   const textHeight = audio.textSize * scale * 1.25;
   const waveformColumnWidth = Math.max(waveformWidth, durationWidth);
   const verticalGap = Math.max(2 * scale, paddingY * 0.5);
-  const waveformColumnHeight = waveformHeight + verticalGap + textHeight;
-  const contentHeight = Math.max(playSize, waveformColumnHeight);
+  const playbackHeight = Math.max(playSize, waveformHeight);
   const playBoxLocal = {
     x: 0,
-    y: (contentHeight - playSize) / 2,
+    y: (playbackHeight - playSize) / 2,
     width: playSize,
     height: playSize,
   };
   const waveformBoxLocal = {
     x: playBoxLocal.x + playBoxLocal.width + paddingX,
-    y: (contentHeight - waveformColumnHeight) / 2,
+    y: (playbackHeight - waveformHeight) / 2,
     width: waveformWidth,
     height: waveformHeight,
   };
