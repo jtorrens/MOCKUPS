@@ -27,6 +27,14 @@ export const desktopPreviewComponents = {
     renderable: "./surfaceComponentRenderable",
     embeds: [],
   },
+  cursor: {
+    category: "atom",
+    migrationStatus: "structural",
+    contract: "./cursorComponentContract",
+    resolver: "./cursorComponentResolver",
+    renderable: "./cursorComponentRenderable",
+    embeds: [],
+  },
   avatar: {
     category: "component",
     migrationStatus: "functional",

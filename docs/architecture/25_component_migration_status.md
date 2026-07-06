@@ -47,6 +47,7 @@ field `migrationStatus`.
 | Component type | Category | Status | Notes |
 | --- | --- | --- | --- |
 | `surface` | atom | Structural reference | Reusable visual surface appearance. Size is supplied as runtime input/parent box; preset owns background, alphas, border, radius, shadow and relief. |
+| `cursor` | atom | Structurally migrated | Reusable text cursor atom. Height is supplied as runtime input; preset owns theme color token, width, minimum fade alpha and fade frame timing. Animation remains resolver frame data, not renderer state. |
 | `label` | atom | Functional reference | Text/subtext, sizing, typography tokens and text align are on the new route. Visual surface is an embedded `surface` preset. |
 | `avatar` | component | Functional reference | Embeds `label`; actor input and label/subtext sample values work through the generic input path. |
 | `buttonIcon` | atom | Functional reference | Embeds `surface` and `label`; icon input and optional label are on the recursive route. |

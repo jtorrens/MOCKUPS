@@ -5,6 +5,7 @@ export const ComponentClassTypeSchema = z.enum([
   "avatar",
   "audio",
   "buttonIcon",
+  "cursor",
   "keyboard",
   "label",
   "navigation_bar",

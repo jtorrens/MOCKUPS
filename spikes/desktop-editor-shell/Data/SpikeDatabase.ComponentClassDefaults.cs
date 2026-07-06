@@ -15,6 +15,7 @@ internal sealed partial class SpikeDatabase
             "status_bar" => "Status bar component",
             "navigation_bar" => "Navigation bar component",
             "surface" => "Surface component",
+            "cursor" => "Cursor component",
             "textInputBar" => "Text input bar component",
             "keyboard" => "Keyboard component",
             "buttonIcon" => "Button icon component",
@@ -72,6 +73,15 @@ internal sealed partial class SpikeDatabase
                     ["backgroundColorToken"] = "theme.colors.surface",
                     ["backgroundAlpha"] = 1,
                     ["borderAlpha"] = 1,
+                };
+                break;
+            case "cursor":
+                config["cursor"] = new JsonObject
+                {
+                    ["colorToken"] = "theme.cursor.color",
+                    ["width"] = 2,
+                    ["minimumFade"] = 0.15,
+                    ["fadeFrames"] = 12,
                 };
                 break;
             case "avatar":
@@ -250,6 +260,10 @@ internal sealed partial class SpikeDatabase
         {
             preview["size"] = "180|104";
         }
+        if (componentType == "cursor")
+        {
+            preview["height"] = 32;
+        }
 
         if (componentType == "audio")
         {
@@ -276,6 +290,10 @@ internal sealed partial class SpikeDatabase
             "surface" =>
             [
                 ComponentInput("size", "Size", "size", "integerPair", "180|104"),
+            ],
+            "cursor" =>
+            [
+                ComponentInput("height", "Height", "height", "number", "32", minimum: 1, maximum: 9999, increment: 1),
             ],
             "avatar" =>
             [
@@ -351,6 +369,7 @@ internal sealed partial class SpikeDatabase
     [
         NewComponentSeed("avatar", "component.avatar", "Default Avatar"),
         NewComponentSeed("surface", "component.surface", "Default Surface"),
+        NewComponentSeed("cursor", "component.cursor", "Default Cursor"),
         NewComponentSeed("status_bar", "component.status_bar", "Default Status Bar"),
         NewComponentSeed("navigation_bar", "component.navigation_bar", "Default Navigation Bar"),
         NewComponentSeed("textInputBar", "component.textInputBar", "Default Text Input Bar"),

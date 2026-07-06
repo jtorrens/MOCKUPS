@@ -5,6 +5,8 @@ import { avatarComponentToRenderable } from "./avatarComponentRenderable.js";
 import { resolveAvatarComponent } from "./avatarComponentResolver.js";
 import { buttonIconComponentToRenderable } from "./buttonIconComponentRenderable.js";
 import { resolveButtonIconComponent } from "./buttonIconComponentResolver.js";
+import { cursorComponentToRenderable } from "./cursorComponentRenderable.js";
+import { resolveCursorComponent } from "./cursorComponentResolver.js";
 import {
   isDesktopPreviewComponentClass,
   type DesktopPreviewComponentClass,
@@ -31,6 +33,8 @@ export const componentRenderableFactories = {
   label: (payload) => labelComponentToRenderable(payload, resolveLabelComponent(payload)),
   surface: (payload) =>
     surfaceComponentToRenderable(payload, resolveSurfaceComponent(payload)),
+  cursor: (payload) =>
+    cursorComponentToRenderable(payload, resolveCursorComponent(payload)),
   avatar: (payload) => avatarComponentToRenderable(payload, resolveAvatarComponent(payload)),
   audio: (payload) => audioComponentToRenderable(payload, resolveAudioComponent(payload)),
   buttonIcon: (payload) =>

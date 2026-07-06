@@ -28,6 +28,26 @@ internal sealed partial class SpikeDatabase
               ]
             }
             """,
+            "component.cursor" => $$"""
+            ,
+            {
+              "id": "cursor",
+              "label": "Cursor",
+              "subtitle": "Theme color and fade timing",
+              "icon": "{{EditorIcons.TextInput}}",
+              "order": 20,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "cursor", "label": "Cursor", "order": 10, "visible": true, "fields": [
+                  { "id": "component.cursor.colorToken", "order": 10, "visible": true },
+                  { "id": "component.cursor.width", "order": 20, "visible": true },
+                  { "id": "component.cursor.minimumFade", "order": 30, "visible": true },
+                  { "id": "component.cursor.fadeFrames", "order": 40, "visible": true }
+                ] }
+              ]
+            }
+            """,
             "component.avatar" => $$"""
             ,
             {
