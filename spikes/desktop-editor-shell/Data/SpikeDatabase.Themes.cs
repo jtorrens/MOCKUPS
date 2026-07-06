@@ -70,6 +70,7 @@ internal sealed partial class SpikeDatabase
         return options
             .OrderBy(ThemeTokenSortGroup)
             .ThenBy(ThemeTokenSortValue)
+            .ThenBy((option) => option.Kind, StringComparer.Ordinal)
             .ThenBy((option) => option.Token, StringComparer.Ordinal)
             .ToList();
     }
@@ -280,19 +281,20 @@ internal sealed partial class SpikeDatabase
 
     private static int ThemeTokenSortGroup(ThemeTokenOption option)
     {
-        return option.Token.StartsWith("theme.typography.sizes.", StringComparison.Ordinal)
+        return option.Kind.Equals("number", StringComparison.Ordinal)
             ? 1
             : 0;
     }
 
     private static double ThemeTokenSortValue(ThemeTokenOption option)
     {
-        if (!option.Token.StartsWith("theme.typography.sizes.", StringComparison.Ordinal))
+        if (!option.Kind.Equals("number", StringComparison.Ordinal))
         {
             return 0;
         }
 
-        return double.TryParse(option.Value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var value)
+        var normalized = option.Value.Replace(",", ".", StringComparison.Ordinal);
+        return double.TryParse(normalized, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var value)
             ? value
             : double.MaxValue;
     }
