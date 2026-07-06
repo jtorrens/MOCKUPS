@@ -37,6 +37,7 @@ public partial class MainWindow : SukiWindow
     private readonly EditorFieldValueRouter _fieldValues;
     private readonly EditorLayoutCardFactory _layoutCards;
     private readonly EditorEmbeddedUsageNavigator _embeddedUsageNavigator;
+    private readonly EditorHeaderController _editorHeader;
     private readonly EditorTreeExpansionState _treeExpansion = new();
     private readonly EditorNodeSelectionState _nodeSelection = new();
     private readonly EditorFieldCommitCoordinator _fieldCommitCoordinator = new();
@@ -135,6 +136,17 @@ public partial class MainWindow : SukiWindow
             () => _selectedNode,
             OpenEmbeddedComponentEditor,
             _messages);
+        _editorHeader = new EditorHeaderController(
+            EditorBreadcrumbPanel,
+            EditorPresetTextBlock,
+            EditorHeaderActionsPanel,
+            _database,
+            () => _selectedNode,
+            _nodeSelection,
+            _embeddedUsageNavigator,
+            ShowNode,
+            ShowEmbeddedContext,
+            SaveCurrentComponentPreset);
         _collectionCards = new EditorCollectionCardFactory(
             _database,
             () => _isDark,
@@ -369,143 +381,12 @@ public partial class MainWindow : SukiWindow
 
     private void SetEditorRootTitle(string title)
     {
-        SetEditorPresetText(EditorPresetTextForSelection());
-        EditorBreadcrumbBar.Render(EditorBreadcrumbPanel, [
-            new EditorBreadcrumbItem(title),
-        ], CreateStructureButtonForSelectedComponent());
-        SetEditorHeaderActions(CreateHeaderActionsForSelectedComponent());
-    }
-
-    private string? EditorPresetTextForSelection()
-    {
-        return _selectedNode?.Kind switch
-        {
-            ProjectTreeNodeKind.ComponentPreset => $"Preset: {_selectedNode.Name}",
-            _ => null,
-        };
+        _editorHeader.SetRootTitle(title);
     }
 
     private void SetEditorEmbeddedTitle(EditorEmbeddedContext context)
     {
-        var activePresetName = _database.GetEmbeddedComponentPresetName(context.OwnerNode, context.Slots);
-        SetEditorPresetText(string.IsNullOrWhiteSpace(activePresetName) ? null : $"Preset: {activePresetName}");
-        var items = new List<EditorBreadcrumbItem>
-        {
-            new(context.OwnerNode.Name, () => ShowNode(context.OwnerNode, rebuildTree: false)),
-        };
-        for (var index = 0; index < context.Slots.Count; index++)
-        {
-            var slot = context.Slots[index];
-            var slotPresetName = _database.GetEmbeddedComponentPresetName(
-                context.OwnerNode,
-                context.Slots.Take(index + 1).ToArray());
-            var label = string.IsNullOrWhiteSpace(slotPresetName)
-                ? slot.Label
-                : $"{slot.Label} · {slotPresetName}";
-            if (index == context.Slots.Count - 1)
-            {
-                items.Add(new EditorBreadcrumbItem(label));
-                continue;
-            }
-
-            var slotIndex = index + 1;
-            items.Add(new EditorBreadcrumbItem(
-                label,
-                () => ShowEmbeddedContext(new EditorEmbeddedContext(context.OwnerNode, context.Slots.Take(slotIndex).ToArray()))));
-        }
-
-        EditorBreadcrumbBar.Render(
-            EditorBreadcrumbPanel,
-            items,
-            EditorStructureButton.Create(async () => await _embeddedUsageNavigator.ShowForEmbedded(context.OwnerNode, context.Slot)));
-        SetEditorHeaderActions(null);
-    }
-
-    private void SetEditorPresetText(string? text)
-    {
-        EditorPresetTextBlock.Text = text ?? "";
-        EditorPresetTextBlock.IsVisible = !string.IsNullOrWhiteSpace(text);
-    }
-
-    private void SetEditorHeaderActions(Control? content)
-    {
-        EditorHeaderActionsPanel.Children.Clear();
-        if (content is not null)
-        {
-            EditorHeaderActionsPanel.Children.Add(content);
-        }
-    }
-
-    private Control? CreateStructureButtonForSelectedComponent()
-    {
-        var node = EditorNodeSelectionState.SelectedComponentClassNode(_selectedNode);
-        if (node is null)
-        {
-            return null;
-        }
-
-        return EditorStructureButton.Create(async () => await _embeddedUsageNavigator.ShowForComponent(node));
-    }
-
-    private Control? CreateHeaderActionsForSelectedComponent()
-    {
-        var node = EditorNodeSelectionState.SelectedComponentClassNode(_selectedNode);
-        if (node is null)
-        {
-            return null;
-        }
-
-        var presetSourceNode = _selectedNode?.Kind == ProjectTreeNodeKind.ComponentPreset
-            ? _selectedNode
-            : _nodeSelection.PreferredPresetNode(node);
-        if (presetSourceNode.Kind != ProjectTreeNodeKind.ComponentPreset)
-        {
-            return null;
-        }
-
-        return new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            Spacing = 6,
-            Children =
-            {
-                CreateSavePresetButton(presetSourceNode),
-            },
-        };
-    }
-
-    private Button CreateSavePresetButton(ProjectTreeNode node)
-    {
-        var icon = EditorIcons.Create(EditorIcons.Add, 15);
-        EditorIcons.ApplyBrush(icon, new SolidColorBrush(Color.Parse("#D6A638")));
-        var button = new Button
-        {
-            Content = new StackPanel
-            {
-                Orientation = Orientation.Horizontal,
-                Spacing = 7,
-                Children =
-                {
-                    icon,
-                    new TextBlock
-                    {
-                        Text = "Save preset",
-                        FontWeight = FontWeight.SemiBold,
-                        VerticalAlignment = VerticalAlignment.Center,
-                    },
-                },
-            },
-            Height = 34,
-            MinWidth = 126,
-            Padding = new Thickness(10, 0),
-            Background = Brushes.Transparent,
-            BorderBrush = new SolidColorBrush(Color.Parse("#80D6A638")),
-            BorderThickness = new Thickness(1),
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        ToolTip.SetTip(button, "Save preset");
-        button.Click += async (_, _) => await SaveCurrentComponentPreset(node);
-        return button;
+        _editorHeader.SetEmbeddedTitle(context);
     }
 
     private async Task SaveCurrentComponentPreset(ProjectTreeNode node)

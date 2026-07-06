@@ -826,7 +826,7 @@ assertContains(
   "component editor layout node and data node must stay separated so presets edit preset config",
 );
 assertContains(
-  "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+  "spikes/desktop-editor-shell/EditorShell/EditorHeaderController.cs",
   "presetSourceNode.Kind != ProjectTreeNodeKind.ComponentPreset",
   "Save preset must only be offered for a concrete selected component preset",
 );
