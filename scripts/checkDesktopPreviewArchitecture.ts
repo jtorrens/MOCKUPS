@@ -97,6 +97,13 @@ function assertDoesNotContain(relativePath: string, term: string, message: strin
   }
 }
 
+function assertMatches(relativePath: string, pattern: RegExp, message: string) {
+  const source = readText(relativePath);
+  if (!pattern.test(source)) {
+    addViolation(relativePath, message);
+  }
+}
+
 function assertPropertyBlockDoesNotContain(
   relativePath: string,
   propertyName: string,
@@ -904,9 +911,14 @@ for (const embeddedPresetField of [
   "component.audio.badge.presetId",
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
+    "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassLayouts.cs",
     `{ "id": "${embeddedPresetField}"`,
     `embedded preset field "${embeddedPresetField}" must not be shown as a separate layout row`,
+  );
+  assertMatches(
+    "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldCatalog.cs",
+    new RegExp(`\\["${embeddedPresetField.replaceAll(".", "\\.")}"\\][\\s\\S]*?ValueKind\\.OptionToken`),
+    `embedded preset field "${embeddedPresetField}" must keep the slot preset route, not generic recordReference`,
   );
 }
 

@@ -12,8 +12,7 @@ internal sealed record ComponentClassFieldDescriptor(
     bool IsEditable = true,
     IReadOnlyList<FieldOption>? Options = null,
     PairFieldLabels? PairLabels = null,
-    NumberDefinition? Number = null,
-    RecordReferenceDefinition? RecordReference = null);
+    NumberDefinition? Number = null);
 
 internal static class ComponentClassFieldCatalog
 {
@@ -149,13 +148,7 @@ internal static class ComponentClassFieldCatalog
         ["component.avatar.label.showLabel"] = new("component.avatar.label.showLabel", "Show label", ValueKind.Boolean, ["avatar", "labelSlot", "showLabel"], "false"),
         ["component.avatar.label.showSubtext"] = new("component.avatar.label.showSubtext", "Show subtext", ValueKind.Boolean, ["avatar", "labelSlot", "showSubtext"], "false"),
         ["component.avatar.label.placement"] = new("component.avatar.label.placement", "Placement", ValueKind.AlignmentPlacement, ["avatar", "labelSlot", "placement"], """{"mode":"edge","alignX":1,"alignY":0.5,"offsetX":4,"offsetY":0}"""),
-        ["component.avatar.label.presetId"] = new(
-            "component.avatar.label.presetId",
-            "Preset",
-            ValueKind.RecordReference,
-            ["avatar", "labelSlot", "presetId"],
-            "default",
-            RecordReference: new RecordReferenceDefinition("component_presets")),
+        ["component.avatar.label.presetId"] = new("component.avatar.label.presetId", "Preset", ValueKind.OptionToken, ["avatar", "labelSlot", "presetId"], "default"),
         ["component.avatar.label.editor"] = new("component.avatar.label.editor", "Label", ValueKind.ComponentPreset, ["avatar", "labelSlot", "presetId"], "default"),
 
         ["component.textInput.height"] = new("component.textInput.height", "Height", ValueKind.Integer, ["textInput", "height"], "44"),
@@ -203,13 +196,7 @@ internal static class ComponentClassFieldCatalog
         ["component.buttonIcon.label.showLabel"] = new("component.buttonIcon.label.showLabel", "Show label", ValueKind.Boolean, ["buttonIcon", "labelSlot", "showLabel"], "false"),
         ["component.buttonIcon.label.showSubtext"] = new("component.buttonIcon.label.showSubtext", "Show subtext", ValueKind.Boolean, ["buttonIcon", "labelSlot", "showSubtext"], "false"),
         ["component.buttonIcon.label.placement"] = new("component.buttonIcon.label.placement", "Placement", ValueKind.AlignmentPlacement, ["buttonIcon", "labelSlot", "placement"], """{"mode":"edge","alignX":0.5,"alignY":1,"offsetX":0,"offsetY":3}"""),
-        ["component.buttonIcon.label.presetId"] = new(
-            "component.buttonIcon.label.presetId",
-            "Preset",
-            ValueKind.RecordReference,
-            ["buttonIcon", "labelSlot", "presetId"],
-            "default",
-            RecordReference: new RecordReferenceDefinition("component_presets")),
+        ["component.buttonIcon.label.presetId"] = new("component.buttonIcon.label.presetId", "Preset", ValueKind.OptionToken, ["buttonIcon", "labelSlot", "presetId"], "default"),
         ["component.buttonIcon.label.editor"] = new("component.buttonIcon.label.editor", "Label", ValueKind.ComponentPreset, ["buttonIcon", "labelSlot", "presetId"], "default"),
 
         ["component.label.dimensionMode"] = new("component.label.dimensionMode", "Dimension mode", ValueKind.OptionToken, ["label", "dimensionMode"], "content", Options: DimensionModeOptions),
@@ -243,26 +230,14 @@ internal static class ComponentClassFieldCatalog
         ["component.audio.progressKnobSize"] = new("component.audio.progressKnobSize", "Progress knob", ValueKind.Integer, ["audio", "progressKnobSize"], "9"),
         ["component.audio.avatar.showAvatar"] = new("component.audio.avatar.showAvatar", "Show avatar", ValueKind.Boolean, ["audio", "avatarSlot", "showAvatar"], "true"),
         ["component.audio.avatar.placement"] = new("component.audio.avatar.placement", "Placement", ValueKind.AlignmentPlacement, ["audio", "avatarSlot", "placement"], """{"mode":"edge","alignX":1,"alignY":0.5,"offsetX":4,"offsetY":0}"""),
-        ["component.audio.avatar.presetId"] = new(
-            "component.audio.avatar.presetId",
-            "Preset",
-            ValueKind.RecordReference,
-            ["audio", "avatarSlot", "presetId"],
-            "default",
-            RecordReference: new RecordReferenceDefinition("component_presets")),
+        ["component.audio.avatar.presetId"] = new("component.audio.avatar.presetId", "Preset", ValueKind.OptionToken, ["audio", "avatarSlot", "presetId"], "default"),
         ["component.audio.avatar.editor"] = new("component.audio.avatar.editor", "Avatar", ValueKind.ComponentPreset, ["audio", "avatarSlot", "presetId"], "default"),
         ["component.audio.badge.showBadge"] = new("component.audio.badge.showBadge", "Show badge", ValueKind.Boolean, ["audio", "badgeSlot", "showBadge"], "false"),
         ["component.audio.badge.iconToken"] = new("component.audio.badge.iconToken", "Icon", ValueKind.IconToken, ["audio", "badgeSlot", "iconToken"], "media_mic"),
         ["component.audio.badge.backgroundColor"] = new("component.audio.badge.backgroundColor", "Badge color", ValueKind.PaletteColorToken, ["audio", "badgeSlot", "backgroundColor"], "blue"),
         ["component.audio.badge.iconColor"] = new("component.audio.badge.iconColor", "Icon color", ValueKind.PaletteColorToken, ["audio", "badgeSlot", "iconColor"], "gray_100"),
         ["component.audio.badge.placement"] = new("component.audio.badge.placement", "Placement", ValueKind.AlignmentPlacement, ["audio", "badgeSlot", "placement"], """{"mode":"center","alignX":1,"alignY":1,"offsetX":0,"offsetY":0}"""),
-        ["component.audio.badge.presetId"] = new(
-            "component.audio.badge.presetId",
-            "Preset",
-            ValueKind.RecordReference,
-            ["audio", "badgeSlot", "presetId"],
-            "default",
-            RecordReference: new RecordReferenceDefinition("component_presets")),
+        ["component.audio.badge.presetId"] = new("component.audio.badge.presetId", "Preset", ValueKind.OptionToken, ["audio", "badgeSlot", "presetId"], "default"),
         ["component.audio.badge.editor"] = new("component.audio.badge.editor", "Badge", ValueKind.ComponentPreset, ["audio", "badgeSlot", "presetId"], "default"),
 
         ["component.statusBar.layout.height"] = new("component.statusBar.layout.height", "Height", ValueKind.Integer, ["layout", "height"], "54"),
