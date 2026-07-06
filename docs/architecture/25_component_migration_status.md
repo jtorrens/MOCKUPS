@@ -100,7 +100,19 @@ legacy/new fragments.
 - the desktop spike cannot seed, query or edit legacy `status_bars` /
   `navigation_bars` rows;
 - legacy `audio_message`, `button_icon`, `text_input_bar` and `video_message`
-  names do not return to the desktop preview manifest or registry.
+  names do not return to the desktop preview manifest, registry, domain
+  component schema, domain field options, domain fixtures, chat resolver
+  component lookup, or SQLite component seeds;
+- migrated desktop component record-class ids use the current component names
+  such as `component.buttonIcon` and `component.textInputBar`, not legacy
+  snake-case ids.
+
+Compatibility note:
+
+- legacy `status_bars` and `navigation_bars` physical tables still exist in the
+  TypeScript persistence/runtime compatibility layer. They are not part of the
+  desktop editor or desktop preview component route. Removing them belongs to a
+  future screen/module runtime rebuild, not to component preview cleanup.
 
 ## Next Safe Work
 

@@ -1055,6 +1055,10 @@ Non-preview follow-up resolved for the desktop spike:
   non-desktop/runtime code until that layer is redesigned;
 - status/navigation editing and theme selection must go through component class
   presets.
+- component class record-class ids for migrated components use the current
+  manifest/component names. For example, use `component.buttonIcon` and
+  `component.textInputBar`, not legacy `component.button_icon` or
+  `component.text_input_bar`.
 
 Validation:
 
