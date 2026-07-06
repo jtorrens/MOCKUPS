@@ -2264,10 +2264,11 @@ internal sealed partial class SpikeDatabase
               "defaultOpen": false,
               "groups": [
                 { "id": "buttonIcon", "label": "Button icon", "order": 10, "visible": true, "fields": [
-                  { "id": "component.buttonIcon.iconPadding", "order": 10, "visible": true },
-                  { "id": "component.buttonIcon.backgroundColorToken", "order": 20, "visible": true },
-                  { "id": "component.buttonIcon.backgroundAlpha", "order": 30, "visible": true },
-                  { "id": "component.buttonIcon.iconColorToken", "order": 40, "visible": true }
+                  { "id": "component.buttonIcon.size", "order": 10, "visible": true },
+                  { "id": "component.buttonIcon.iconPadding", "order": 20, "visible": true },
+                  { "id": "component.buttonIcon.backgroundColorToken", "order": 30, "visible": true },
+                  { "id": "component.buttonIcon.backgroundAlpha", "order": 40, "visible": true },
+                  { "id": "component.buttonIcon.iconColorToken", "order": 50, "visible": true }
                 ] },
                 { "id": "buttonIconLabel", "label": "Label", "order": 20, "visible": true, "fields": [
                   { "id": "component.buttonIcon.label.showLabel", "order": 10, "visible": true },
@@ -2324,20 +2325,36 @@ internal sealed partial class SpikeDatabase
               "groups": [
                 { "id": "audio", "label": "Audio", "order": 10, "visible": true, "fields": [
                   { "id": "component.audio.size", "order": 10, "visible": true },
+                  { "id": "component.audio.backgroundColorToken", "order": 20, "visible": true },
+                  { "id": "component.audio.backgroundAlpha", "order": 30, "visible": true },
                   { "id": "component.audio.textSize", "order": 40, "visible": true },
-                  { "id": "component.audio.playColorToken", "order": 50, "visible": true },
-                  { "id": "component.audio.waveformColorToken", "order": 60, "visible": true },
-                  { "id": "component.audio.knobSize", "order": 70, "visible": true }
+                  { "id": "component.audio.textColorToken", "order": 50, "visible": true }
                 ] },
-                { "id": "audioAvatar", "label": "Avatar", "order": 20, "visible": true, "fields": [
+                { "id": "audioPlayback", "label": "Playback", "order": 20, "visible": true, "fields": [
+                  { "id": "component.audio.playCircleSize", "order": 10, "visible": true },
+                  { "id": "component.audio.playColorToken", "order": 20, "visible": true },
+                  { "id": "component.audio.playIconColorToken", "order": 30, "visible": true },
+                  { "id": "component.audio.progressKnobSize", "order": 40, "visible": true }
+                ] },
+                { "id": "audioWaveform", "label": "Waveform", "order": 30, "visible": true, "fields": [
+                  { "id": "component.audio.waveformBarCount", "order": 10, "visible": true },
+                  { "id": "component.audio.waveformGap", "order": 20, "visible": true },
+                  { "id": "component.audio.waveformMinHeight", "order": 30, "visible": true },
+                  { "id": "component.audio.waveformMaxHeight", "order": 40, "visible": true },
+                  { "id": "component.audio.waveformColorToken", "order": 50, "visible": true },
+                  { "id": "component.audio.waveformPlayedColorToken", "order": 60, "visible": true }
+                ] },
+                { "id": "audioAvatar", "label": "Avatar", "order": 40, "visible": true, "fields": [
                   { "id": "component.audio.avatar.showAvatar", "order": 10, "visible": true },
                   { "id": "component.audio.avatar.placement", "order": 20, "visible": true },
                   { "id": "component.audio.avatar.editor", "order": 30, "visible": true }
                 ] },
-                { "id": "audioBadge", "label": "Badge", "order": 30, "visible": true, "fields": [
+                { "id": "audioBadge", "label": "Badge", "order": 50, "visible": true, "fields": [
                   { "id": "component.audio.badge.showBadge", "order": 10, "visible": true },
-                  { "id": "component.audio.badge.placement", "order": 20, "visible": true },
-                  { "id": "component.audio.badge.editor", "order": 30, "visible": true }
+                  { "id": "component.audio.badge.backgroundColor", "order": 20, "visible": true },
+                  { "id": "component.audio.badge.iconColor", "order": 30, "visible": true },
+                  { "id": "component.audio.badge.placement", "order": 40, "visible": true },
+                  { "id": "component.audio.badge.editor", "order": 50, "visible": true }
                 ] }
               ]
             }

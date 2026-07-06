@@ -18,10 +18,20 @@ import {
 export interface AudioDesignContract {
   id: string;
   size: { width: number; height: number };
+  backgroundColorToken: string;
+  backgroundAlpha: number;
   textSize: number;
+  textColorToken: string;
+  playCircleSize: number;
   playColorToken: string;
+  playIconColorToken: string;
   waveformColorToken: string;
-  knobSize: number;
+  waveformPlayedColorToken: string;
+  waveformBarCount: number;
+  waveformGap: number;
+  waveformMinHeight: number;
+  waveformMaxHeight: number;
+  progressKnobSize: number;
   avatarSlot: {
     showAvatar: boolean;
     placement: AlignmentPlacementContract;
@@ -29,6 +39,8 @@ export interface AudioDesignContract {
   };
   badgeSlot: {
     showBadge: boolean;
+    backgroundColor: string;
+    iconColor: string;
     placement: AlignmentPlacementContract;
     badge?: ButtonIconDesignContract;
   };
@@ -69,18 +81,72 @@ export function resolveAudioComponent(
   return {
     id: "component.audio",
     size: parseSize(requiredString(audio, "size", "component.audio.size")),
+    backgroundColorToken: requiredString(
+      audio,
+      "backgroundColorToken",
+      "component.audio.backgroundColorToken",
+    ),
+    backgroundAlpha: requiredNumber(
+      audio,
+      "backgroundAlpha",
+      "component.audio.backgroundAlpha",
+    ),
     textSize: requiredNumber(audio, "textSize", "component.audio.textSize"),
+    textColorToken: requiredString(
+      audio,
+      "textColorToken",
+      "component.audio.textColorToken",
+    ),
+    playCircleSize: requiredNumber(
+      audio,
+      "playCircleSize",
+      "component.audio.playCircleSize",
+    ),
     playColorToken: requiredString(
       audio,
       "playColorToken",
       "component.audio.playColorToken",
+    ),
+    playIconColorToken: requiredString(
+      audio,
+      "playIconColorToken",
+      "component.audio.playIconColorToken",
     ),
     waveformColorToken: requiredString(
       audio,
       "waveformColorToken",
       "component.audio.waveformColorToken",
     ),
-    knobSize: requiredNumber(audio, "knobSize", "component.audio.knobSize"),
+    waveformPlayedColorToken: requiredString(
+      audio,
+      "waveformPlayedColorToken",
+      "component.audio.waveformPlayedColorToken",
+    ),
+    waveformBarCount: requiredNumber(
+      audio,
+      "waveformBarCount",
+      "component.audio.waveformBarCount",
+    ),
+    waveformGap: requiredNumber(
+      audio,
+      "waveformGap",
+      "component.audio.waveformGap",
+    ),
+    waveformMinHeight: requiredNumber(
+      audio,
+      "waveformMinHeight",
+      "component.audio.waveformMinHeight",
+    ),
+    waveformMaxHeight: requiredNumber(
+      audio,
+      "waveformMaxHeight",
+      "component.audio.waveformMaxHeight",
+    ),
+    progressKnobSize: requiredNumber(
+      audio,
+      "progressKnobSize",
+      "component.audio.progressKnobSize",
+    ),
     avatarSlot: {
       showAvatar,
       placement: requiredPlacement(
@@ -99,18 +165,40 @@ export function resolveAudioComponent(
     },
     badgeSlot: {
       showBadge,
+      backgroundColor: requiredString(
+        badgeSlot,
+        "backgroundColor",
+        "component.audio.badge.backgroundColor",
+      ),
+      iconColor: requiredString(
+        badgeSlot,
+        "iconColor",
+        "component.audio.badge.iconColor",
+      ),
       placement: requiredPlacement(
         badgeSlot,
         "placement",
         "component.audio.badge.placement",
       ),
       badge: showBadge
-        ? resolveButtonIconComponentFromRecords(
-            badgeConfig,
-            preview,
-            componentBaseConfigs,
-            "component.audio.badge",
-          )
+        ? {
+            ...resolveButtonIconComponentFromRecords(
+              badgeConfig,
+              preview,
+              componentBaseConfigs,
+              "component.audio.badge",
+            ),
+            backgroundPaletteColor: requiredString(
+              badgeSlot,
+              "backgroundColor",
+              "component.audio.badge.backgroundColor",
+            ),
+            iconPaletteColor: requiredString(
+              badgeSlot,
+              "iconColor",
+              "component.audio.badge.iconColor",
+            ),
+          }
         : undefined,
     },
   };

@@ -16,11 +16,14 @@ import { resolveLabelComponentFromRecords } from "./labelComponentResolver.js";
 
 export interface ButtonIconDesignContract {
   id: string;
+  buttonSize: number;
   iconSize: number;
   iconPadding: number;
   backgroundColorToken: string;
   backgroundAlpha: number;
   iconColorToken: string;
+  backgroundPaletteColor?: string;
+  iconPaletteColor?: string;
   labelSlot: {
     showLabel: boolean;
     showSubtext: boolean;
@@ -92,10 +95,12 @@ export function resolveButtonIconComponentFromRecords(
 
   return {
     id,
-    iconSize: requiredNumber(
-      preview,
-      "sampleSize",
-      "component.buttonIcon.preview.sampleSize",
+    buttonSize: requiredNumber(buttonIcon, "size", "component.buttonIcon.size"),
+    iconSize: Math.max(
+      1,
+      requiredNumber(buttonIcon, "size", "component.buttonIcon.size") -
+        requiredNumber(buttonIcon, "iconPadding", "component.buttonIcon.iconPadding") *
+          2,
     ),
     iconPadding: requiredNumber(
       buttonIcon,

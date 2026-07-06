@@ -134,6 +134,19 @@ internal sealed partial class SpikeDatabase
         return [new FieldOption(recordClassId, string.IsNullOrWhiteSpace(name) ? recordClassId : name)];
     }
 
+    private IReadOnlyList<FieldOption>? ComponentClassFieldOptions(
+        string projectId,
+        ComponentClassFieldDescriptor descriptor)
+    {
+        return descriptor.ValueKind switch
+        {
+            ValueKind.EmbeddedComponent => EmbeddedComponentOptions(projectId, descriptor.DefaultValue),
+            ValueKind.PaletteColorToken or ValueKind.PaletteColorPair or ValueKind.PaletteColorAlphaPair
+                => GetPaletteColorOptions(projectId),
+            _ => descriptor.Options,
+        };
+    }
+
     private static bool EmbeddedComponentHasOverrides(
         string configJson,
         EmbeddedComponentSlotDefinition slot)
@@ -199,9 +212,7 @@ internal sealed partial class SpikeDatabase
         var value = fieldId == "component.type"
             ? ComponentTypeLabel(settings.ComponentType)
             : ComponentConfigFieldValue(settings.ConfigJson, descriptor);
-        var options = descriptor.ValueKind == ValueKind.EmbeddedComponent
-            ? EmbeddedComponentOptions(settings.ProjectId, descriptor.DefaultValue)
-            : descriptor.Options;
+        var options = ComponentClassFieldOptions(settings.ProjectId, descriptor);
         var isHighlighted = descriptor.ValueKind == ValueKind.EmbeddedComponent
             && EmbeddedComponentSlotCatalog.TryGet(fieldId, out var slot)
             && EmbeddedComponentHasOverrides(settings.ConfigJson, slot);
@@ -275,7 +286,7 @@ internal sealed partial class SpikeDatabase
                 descriptor.DefaultValue,
                 CanInherit: true,
                 InheritedValue: inheritedValue,
-                Options: descriptor.Options,
+                Options: ComponentClassFieldOptions(settings.ProjectId, descriptor),
                 PairLabels: descriptor.PairLabels,
                 Number: descriptor.Number),
             localValue,
@@ -303,9 +314,7 @@ internal sealed partial class SpikeDatabase
         var localValue = hasOverride && overrides is not null
             ? ComponentConfigFieldValue(overrides.ToJsonString(), descriptor)
             : inheritedValue;
-        var options = descriptor.ValueKind == ValueKind.EmbeddedComponent
-            ? EmbeddedComponentOptions(settings.ProjectId, descriptor.DefaultValue)
-            : descriptor.Options;
+        var options = ComponentClassFieldOptions(settings.ProjectId, descriptor);
         var isHighlighted = descriptor.ValueKind == ValueKind.EmbeddedComponent
             && EmbeddedComponentSlotCatalog.TryGet(embeddedFieldId, out var nestedSlot)
             && EmbeddedComponentHasOverrides(config, [.. slots, nestedSlot]);
@@ -526,6 +535,12 @@ internal sealed partial class SpikeDatabase
         }
 
         var changed = false;
+        if (audio["progressKnobSize"] is null && audio["knobSize"] is not null)
+        {
+            audio["progressKnobSize"] = audio["knobSize"]?.DeepClone();
+            changed = true;
+        }
+
         if (audio["avatarSlot"] is null)
         {
             var avatarPosition = JsonPath.String(audio, "avatarPosition", "right");
@@ -545,14 +560,37 @@ internal sealed partial class SpikeDatabase
             changed = true;
         }
 
-        if (audio["badgeSlot"] is null)
+        var badgeSlot = audio["badgeSlot"] as JsonObject;
+        if (badgeSlot is null)
         {
-            audio["badgeSlot"] = new JsonObject
+            badgeSlot = new JsonObject
             {
                 ["showBadge"] = false,
+                ["backgroundColor"] = "blue",
+                ["iconColor"] = "gray_100",
                 ["placement"] = JsonNode.Parse("""{"mode":"center","alignX":1,"alignY":1,"offsetX":0,"offsetY":0}"""),
-                ["overrides"] = new JsonObject(),
+                ["overrides"] = new JsonObject
+                {
+                    ["buttonIcon"] = new JsonObject
+                    {
+                        ["size"] = 16,
+                        ["iconPadding"] = 3,
+                    },
+                },
             };
+            audio["badgeSlot"] = badgeSlot;
+            changed = true;
+        }
+
+        if (badgeSlot["backgroundColor"] is null)
+        {
+            badgeSlot["backgroundColor"] = "blue";
+            changed = true;
+        }
+
+        if (badgeSlot["iconColor"] is null)
+        {
+            badgeSlot["iconColor"] = "gray_100";
             changed = true;
         }
 
@@ -866,6 +904,7 @@ internal sealed partial class SpikeDatabase
             case "buttonIcon":
                 config["buttonIcon"] = new JsonObject
                 {
+                    ["size"] = 48,
                     ["iconPadding"] = 6,
                     ["backgroundColorToken"] = "theme.colors.button",
                     ["backgroundAlpha"] = 1,
@@ -900,28 +939,47 @@ internal sealed partial class SpikeDatabase
             case "audio":
                 config["audio"] = new JsonObject
                 {
-                    ["size"] = "230|54",
-                    ["textSize"] = 13,
+                    ["size"] = "260|58",
+                    ["backgroundColorToken"] = "theme.colors.surface",
+                    ["backgroundAlpha"] = 1,
+                    ["textSize"] = 11,
+                    ["textColorToken"] = "theme.icons.secondary",
+                    ["playCircleSize"] = 32,
                     ["playColorToken"] = "theme.icons.accent",
+                    ["playIconColorToken"] = "theme.icons.secondary",
                     ["waveformColorToken"] = "theme.icons.primary",
-                    ["knobSize"] = 10,
+                    ["waveformPlayedColorToken"] = "theme.icons.accent",
+                    ["waveformBarCount"] = 28,
+                    ["waveformGap"] = 2,
+                    ["waveformMinHeight"] = 4,
+                    ["waveformMaxHeight"] = 22,
+                    ["progressKnobSize"] = 9,
                     ["avatarSlot"] = new JsonObject
                     {
                         ["showAvatar"] = true,
-                        ["placement"] = JsonNode.Parse(AlignmentPlacementValue.FromLegacyPosition("right", 4).ToJsonString()),
+                        ["placement"] = JsonNode.Parse(AlignmentPlacementValue.FromLegacyPosition("left", 8).ToJsonString()),
                         ["overrides"] = new JsonObject
                         {
                             ["avatar"] = new JsonObject
                             {
-                                ["defaultSize"] = 32,
+                                ["defaultSize"] = 38,
                             },
                         },
                     },
                     ["badgeSlot"] = new JsonObject
                     {
                         ["showBadge"] = false,
+                        ["backgroundColor"] = "blue",
+                        ["iconColor"] = "gray_100",
                         ["placement"] = JsonNode.Parse("""{"mode":"center","alignX":1,"alignY":1,"offsetX":0,"offsetY":0}"""),
-                        ["overrides"] = new JsonObject(),
+                        ["overrides"] = new JsonObject
+                        {
+                            ["buttonIcon"] = new JsonObject
+                            {
+                                ["size"] = 16,
+                                ["iconPadding"] = 3,
+                            },
+                        },
                     },
                 };
                 break;

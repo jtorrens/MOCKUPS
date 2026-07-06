@@ -109,6 +109,58 @@ function selectedColor(payload: DesignPreviewPayload, token: string, alpha = 1) 
   return colorForMode(payload, token, payload.themeMode || "light", alpha);
 }
 
+function selectedPaletteColor(payload: DesignPreviewPayload, token: string, alpha = 1) {
+  return cssColorWithAlpha(resolvePaletteColor(payload, token), alpha);
+}
+
+function buttonBackgroundColor(
+  payload: DesignPreviewPayload,
+  buttonIcon: ButtonIconDesignContract,
+  alpha = buttonIcon.backgroundAlpha,
+) {
+  return buttonIcon.backgroundPaletteColor
+    ? selectedPaletteColor(payload, buttonIcon.backgroundPaletteColor, alpha)
+    : selectedColor(payload, buttonIcon.backgroundColorToken, alpha);
+}
+
+function buttonIconColor(
+  payload: DesignPreviewPayload,
+  buttonIcon: ButtonIconDesignContract,
+) {
+  return buttonIcon.iconPaletteColor
+    ? selectedPaletteColor(payload, buttonIcon.iconPaletteColor)
+    : selectedColor(payload, buttonIcon.iconColorToken);
+}
+
+function buttonBackgroundColorForMode(
+  payload: DesignPreviewPayload,
+  buttonIcon: ButtonIconDesignContract,
+  mode: string,
+) {
+  return buttonIcon.backgroundPaletteColor
+    ? selectedPaletteColor(
+        payload,
+        buttonIcon.backgroundPaletteColor,
+        buttonIcon.backgroundAlpha,
+      )
+    : colorForMode(
+        payload,
+        buttonIcon.backgroundColorToken,
+        mode,
+        buttonIcon.backgroundAlpha,
+      );
+}
+
+function buttonIconColorForMode(
+  payload: DesignPreviewPayload,
+  buttonIcon: ButtonIconDesignContract,
+  mode: string,
+) {
+  return buttonIcon.iconPaletteColor
+    ? selectedPaletteColor(payload, buttonIcon.iconPaletteColor)
+    : colorForMode(payload, buttonIcon.iconColorToken, mode);
+}
+
 function numberToken(payload: DesignPreviewPayload, token: string) {
   const raw = tokenValueForMode(payload, token, payload.themeMode || "light");
   const value = numberValue(raw, NaN);
@@ -476,7 +528,7 @@ export function audioComponentToRenderable(
   const audioBox = translateBox(audioBoxLocal, origin);
   const avatarBox = avatarBoxLocal ? translateBox(avatarBoxLocal, origin) : undefined;
   const badgeBox = badgeBoxLocal ? translateBox(badgeBoxLocal, origin) : undefined;
-  const playSize = Math.min(audioBox.height * 0.46, audioBox.width * 0.14);
+  const playSize = Math.min(audioBox.height, audio.playCircleSize * scale);
   const playBox = {
     x: audioBox.x + audioBox.height * 0.22,
     y: audioBox.y + (audioBox.height - playSize) / 2,
@@ -495,13 +547,54 @@ export function audioComponentToRenderable(
     width: Math.max(1, textBox.x - playBox.x - playBox.width - audioBox.height * 0.36),
     height: audioBox.height * 0.28,
   };
-  const knobSize = audio.knobSize * scale;
+  const knobSize = audio.progressKnobSize * scale;
+  const progress = 0.42;
+  const barCount = Math.max(4, Math.round(audio.waveformBarCount));
+  const waveformGap = Math.max(0, audio.waveformGap * scale);
+  const barWidth = Math.max(
+    1,
+    Math.floor((waveformBox.width - waveformGap * (barCount - 1)) / barCount),
+  );
+  const actualWaveformEnd =
+    waveformBox.x + (barCount - 1) * (barWidth + waveformGap) + barWidth;
+  const firstBarCenter = waveformBox.x + barWidth / 2;
+  const lastBarCenter = actualWaveformEnd - barWidth / 2;
+  const minBarHeight = Math.max(1, audio.waveformMinHeight * scale);
+  const maxBarHeight = Math.max(minBarHeight, audio.waveformMaxHeight * scale);
+  const playedBars = Math.floor(barCount * progress);
+  const waveformSeed = hashString(audio.id);
   const knobBox = {
-    x: waveformBox.x + waveformBox.width * 0.42 - knobSize / 2,
+    x: firstBarCenter + (lastBarCenter - firstBarCenter) * progress - knobSize / 2,
     y: waveformBox.y + waveformBox.height / 2 - knobSize / 2,
     width: knobSize,
     height: knobSize,
   };
+  const waveformBars = Array.from({ length: barCount }, (_, index) => {
+    const normalized = deterministicWaveformValue(waveformSeed, index);
+    const height = minBarHeight + normalized * (maxBarHeight - minBarHeight);
+    const box = {
+      x: waveformBox.x + index * (barWidth + waveformGap),
+      y: audioBox.y + audioBox.height / 2 - height / 2,
+      width: barWidth,
+      height,
+    };
+    return {
+      id: `${audio.id}.waveform.${index}`,
+      type: "component_audio_waveform_bar",
+      role: index < playedBars ? "played" : "unplayed",
+      frame: 0,
+      box,
+      style: {
+        background: selectedColor(
+          payload,
+          index < playedBars
+            ? audio.waveformPlayedColorToken
+            : audio.waveformColorToken,
+        ),
+        borderRadius: Math.max(1, barWidth / 2),
+      },
+    };
+  });
 
   return {
     id: audio.id,
@@ -513,30 +606,39 @@ export function audioComponentToRenderable(
     },
     children: [
       {
+        id: `${audio.id}.surface`,
+        type: "component_audio_surface",
+        frame: 0,
+        box: audioBox,
+        style: {
+          background: selectedColor(
+            payload,
+            audio.backgroundColorToken,
+            audio.backgroundAlpha,
+          ),
+          borderRadius: audioBox.height / 2,
+        },
+      },
+      {
         id: `${audio.id}.play`,
         type: "component_audio_play",
         frame: 0,
         box: playBox,
         text: "▶",
         style: {
-          color: selectedColor(payload, audio.playColorToken),
-          fontSize: playSize * 0.9,
+          alignItems: "center",
+          background: selectedColor(payload, audio.playColorToken),
+          borderRadius: playSize / 2,
+          color: selectedColor(payload, audio.playIconColorToken),
+          display: "flex",
+          fontSize: playSize * 0.44,
+          justifyContent: "center",
           lineHeight: playSize,
           textAlign: "center",
+          paddingLeft: playSize * 0.07,
         },
       },
-      {
-        id: `${audio.id}.waveform`,
-        type: "component_audio_waveform",
-        frame: 0,
-        box: waveformBox,
-        style: {
-          backgroundImage: `repeating-linear-gradient(to right, transparent 0px, transparent ${2 * scale}px, ${selectedColor(payload, audio.waveformColorToken)} ${2 * scale}px, ${selectedColor(payload, audio.waveformColorToken)} ${3.5 * scale}px, transparent ${3.5 * scale}px, transparent ${7 * scale}px)`,
-          backgroundSize: `${7 * scale}px 100%`,
-          borderRadius: waveformBox.height / 2,
-          opacity: 0.95,
-        },
-      },
+      ...waveformBars,
       {
         id: `${audio.id}.knob`,
         type: "component_audio_knob",
@@ -554,7 +656,7 @@ export function audioComponentToRenderable(
         box: textBox,
         text: parsePreviewText(payload),
         style: {
-          color: selectedColor(payload, audio.waveformColorToken),
+          color: selectedColor(payload, audio.textColorToken),
           fontSize: audio.textSize * scale,
           lineHeight: textBox.height,
           textAlign: "center",
@@ -724,11 +826,7 @@ export function buttonIconComponentToRenderable(
         frame: 0,
         box: buttonBox,
         style: {
-          background: selectedColor(
-            payload,
-            buttonIcon.backgroundColorToken,
-            buttonIcon.backgroundAlpha,
-          ),
+          background: buttonBackgroundColor(payload, buttonIcon),
           borderRadius: numberToken(payload, buttonIcon.surface.cornerRadiusToken) * scale,
           borderWidth,
           borderColor: selectedColor(
@@ -742,13 +840,8 @@ export function buttonIconComponentToRenderable(
             variants(payload).map((mode) => [
               mode,
               {
-                background: colorForMode(
-                  payload,
-                  buttonIcon.backgroundColorToken,
-                  mode,
-                  buttonIcon.backgroundAlpha,
-                ),
-                color: colorForMode(payload, buttonIcon.iconColorToken, mode),
+                background: buttonBackgroundColorForMode(payload, buttonIcon, mode),
+                color: buttonIconColorForMode(payload, buttonIcon, mode),
                 borderColor: colorForMode(
                   payload,
                   buttonIcon.surface.borderColorToken,
@@ -766,7 +859,7 @@ export function buttonIconComponentToRenderable(
         frame: 0,
         box: iconBox,
         style: {
-          color: selectedColor(payload, buttonIcon.iconColorToken),
+          color: buttonIconColor(payload, buttonIcon),
         },
       },
       ...(buttonIcon.labelSlot.label && labelBox
@@ -843,11 +936,7 @@ function buttonIconComponentToRenderableAt(
         frame: 0,
         box: buttonBox,
         style: {
-          background: selectedColor(
-            payload,
-            buttonIcon.backgroundColorToken,
-            buttonIcon.backgroundAlpha,
-          ),
+          background: buttonBackgroundColor(payload, buttonIcon),
           borderRadius: numberToken(payload, buttonIcon.surface.cornerRadiusToken) * scale,
           borderWidth,
           borderColor: selectedColor(
@@ -861,13 +950,8 @@ function buttonIconComponentToRenderableAt(
             variants(payload).map((mode) => [
               mode,
               {
-                background: colorForMode(
-                  payload,
-                  buttonIcon.backgroundColorToken,
-                  mode,
-                  buttonIcon.backgroundAlpha,
-                ),
-                color: colorForMode(payload, buttonIcon.iconColorToken, mode),
+                background: buttonBackgroundColorForMode(payload, buttonIcon, mode),
+                color: buttonIconColorForMode(payload, buttonIcon, mode),
                 borderColor: colorForMode(
                   payload,
                   buttonIcon.surface.borderColorToken,
@@ -885,7 +969,7 @@ function buttonIconComponentToRenderableAt(
         frame: 0,
         box: iconBox,
         style: {
-          color: selectedColor(payload, buttonIcon.iconColorToken),
+          color: buttonIconColor(payload, buttonIcon),
         },
       },
       ...(buttonIcon.labelSlot.label && labelBox
@@ -992,6 +1076,20 @@ function placeAxis(
 
 function lerp(start: number, end: number, amount: number) {
   return start + (end - start) * amount;
+}
+
+function hashString(value: string) {
+  let hash = 2166136261;
+  for (const char of value) {
+    hash ^= char.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function deterministicWaveformValue(seed: number, index: number) {
+  const value = Math.sin((seed + index * 97.13) * 0.017) * 43758.5453;
+  return value - Math.floor(value);
 }
 
 function unionBoxes(boxes: RenderableBox[]): RenderableBox {

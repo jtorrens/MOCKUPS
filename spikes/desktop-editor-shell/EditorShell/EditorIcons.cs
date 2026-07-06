@@ -200,6 +200,7 @@ internal static class EditorIcons
             Add => "system_add.svg",
             Delete => "system_delete.svg",
             Duplicate => "system_duplicate.svg",
+            Structure => "system_tree.svg",
             Project => "editor_general.svg",
             Apps => "editor_design.svg",
             App => "editor_layout.svg",
