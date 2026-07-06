@@ -144,19 +144,40 @@ internal sealed partial class SpikeDatabase
         foreach (var row in QueryComponentClassRows(connection)
                      .Where((row) => row.ProjectId.Equals(owner.ProjectId, StringComparison.Ordinal)))
         {
-            if (row.Id.Equals(componentClassId, StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            if (row.ConfigJson.Contains($"\"presetId\":\"{presetId}\"", StringComparison.Ordinal)
-                || row.ConfigJson.Contains($"\"presetId\": \"{presetId}\"", StringComparison.Ordinal))
+            if (ComponentPresetIsUsedByConfig(row.ConfigJson, owner.ComponentType, presetId))
             {
                 usages.Add($"Component Class: {row.Name}");
             }
         }
 
         return usages.ToList();
+    }
+
+    private static bool ComponentPresetIsUsedByConfig(
+        string configJson,
+        string componentType,
+        string presetId)
+    {
+        var config = ParseJsonObject(string.IsNullOrWhiteSpace(configJson) ? "{}" : configJson);
+        foreach (var slot in EmbeddedComponentSlotCatalog.All())
+        {
+            if (!slot.EmbeddedComponentType.Equals(componentType, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            if (JsonPath.Get(config, slot.SlotPath) is not JsonObject slotNode)
+            {
+                continue;
+            }
+
+            if (JsonPath.String(slotNode, "presetId", DefaultComponentPresetId).Equals(presetId, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static JsonArray EnsurePresetArray(JsonObject metadata)
@@ -365,6 +386,32 @@ internal sealed partial class SpikeDatabase
         return [new FieldOption(recordClassId, string.IsNullOrWhiteSpace(name) ? recordClassId : name)];
     }
 
+    private IReadOnlyList<FieldOption> ComponentPresetOptions(string projectId, string componentType)
+    {
+        using var connection = OpenConnection();
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT metadata_json
+            FROM component_classes
+            WHERE project_id = $projectId
+              AND component_type = $componentType
+            ORDER BY CASE WHEN id = 'component_' || $projectId || '_' || component_type THEN 0 ELSE 1 END, name
+            LIMIT 1
+            """;
+        command.Parameters.AddWithValue("$projectId", projectId);
+        command.Parameters.AddWithValue("$componentType", componentType);
+        var metadataJson = command.ExecuteScalar() as string ?? "";
+        var options = ComponentClassPresets(metadataJson)
+            .Select((preset) => new FieldOption(preset.Id, preset.Name))
+            .ToList();
+        if (options.Count == 0)
+        {
+            options.Add(new FieldOption(DefaultComponentPresetId, "Default"));
+        }
+
+        return options;
+    }
+
     private IReadOnlyList<FieldOption>? ComponentClassFieldOptions(
         string projectId,
         ComponentClassFieldDescriptor descriptor)
@@ -372,10 +419,25 @@ internal sealed partial class SpikeDatabase
         return descriptor.ValueKind switch
         {
             ValueKind.EmbeddedComponent => EmbeddedComponentOptions(projectId, descriptor.DefaultValue),
+            ValueKind.OptionToken when EmbeddedComponentPresetType(descriptor.Id) is { } componentType
+                => ComponentPresetOptions(projectId, componentType),
             ValueKind.PaletteColorToken or ValueKind.PaletteColorPair or ValueKind.PaletteColorAlphaPair
                 => GetPaletteColorOptions(projectId),
             _ => descriptor.Options,
         };
+    }
+
+    private static string? EmbeddedComponentPresetType(string fieldId)
+    {
+        if (!fieldId.EndsWith(".presetId", StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        var slotEditorFieldId = string.Concat(fieldId.AsSpan(0, fieldId.Length - ".presetId".Length), ".editor");
+        return EmbeddedComponentSlotCatalog.TryGet(slotEditorFieldId, out var slot)
+            ? slot.EmbeddedComponentType
+            : null;
     }
 
     private static bool EmbeddedComponentHasOverrides(

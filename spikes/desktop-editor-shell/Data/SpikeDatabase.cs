@@ -2218,6 +2218,7 @@ internal sealed partial class SpikeDatabase
                   { "id": "component.avatar.label.showLabel", "order": 10, "visible": true },
                   { "id": "component.avatar.label.showSubtext", "order": 20, "visible": true },
                   { "id": "component.avatar.label.placement", "order": 30, "visible": true },
+                  { "id": "component.avatar.label.presetId", "order": 40, "visible": true },
                   { "id": "component.avatar.label.editor", "order": 50, "visible": true }
                 ] }
               ]
@@ -2338,7 +2339,8 @@ internal sealed partial class SpikeDatabase
                   { "id": "component.buttonIcon.label.showLabel", "order": 10, "visible": true },
                   { "id": "component.buttonIcon.label.showSubtext", "order": 20, "visible": true },
                   { "id": "component.buttonIcon.label.placement", "order": 30, "visible": true },
-                  { "id": "component.buttonIcon.label.editor", "order": 40, "visible": true }
+                  { "id": "component.buttonIcon.label.presetId", "order": 40, "visible": true },
+                  { "id": "component.buttonIcon.label.editor", "order": 50, "visible": true }
                 ] }
               ]
             }
@@ -2413,7 +2415,8 @@ internal sealed partial class SpikeDatabase
                 { "id": "audioAvatar", "label": "Avatar", "order": 40, "visible": true, "fields": [
                   { "id": "component.audio.avatar.showAvatar", "order": 10, "visible": true },
                   { "id": "component.audio.avatar.placement", "order": 20, "visible": true },
-                  { "id": "component.audio.avatar.editor", "order": 30, "visible": true }
+                  { "id": "component.audio.avatar.presetId", "order": 30, "visible": true },
+                  { "id": "component.audio.avatar.editor", "order": 40, "visible": true }
                 ] },
                 { "id": "audioBadge", "label": "Badge", "order": 50, "visible": true, "fields": [
                   { "id": "component.audio.badge.showBadge", "order": 10, "visible": true },
@@ -2421,7 +2424,8 @@ internal sealed partial class SpikeDatabase
                   { "id": "component.audio.badge.backgroundColor", "order": 30, "visible": true },
                   { "id": "component.audio.badge.iconColor", "order": 40, "visible": true },
                   { "id": "component.audio.badge.placement", "order": 50, "visible": true },
-                  { "id": "component.audio.badge.editor", "order": 60, "visible": true }
+                  { "id": "component.audio.badge.presetId", "order": 60, "visible": true },
+                  { "id": "component.audio.badge.editor", "order": 70, "visible": true }
                 ] }
               ]
             }

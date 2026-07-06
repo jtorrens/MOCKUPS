@@ -136,13 +136,7 @@ internal sealed partial class SpikeDatabase
             {
                 foreach (var componentClass in componentClasses.Where((candidate) => candidate.ProjectId == presetOwner.ProjectId))
                 {
-                    if (componentClass.Id == presetOwner.Id)
-                    {
-                        continue;
-                    }
-
-                    if (componentClass.ConfigJson.Contains($"\"presetId\":\"{preset.Id}\"", StringComparison.Ordinal)
-                        || componentClass.ConfigJson.Contains($"\"presetId\": \"{preset.Id}\"", StringComparison.Ordinal))
+                    if (ComponentPresetIsUsedByConfig(componentClass.ConfigJson, presetOwner.ComponentType, preset.Id))
                     {
                         AddUsage(
                             index,
