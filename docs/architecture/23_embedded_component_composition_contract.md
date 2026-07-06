@@ -87,6 +87,11 @@ Rules:
   preset;
 - the editor may still show the parent component class layout, but the active
   preset name must be visible and the preset node must be selected in the tree.
+- editor fields shown while a preset is selected read and write that preset's
+  `config`, even though the visible layout comes from the owning component
+  class;
+- saving a new preset while another preset is selected copies the active preset
+  config, not the component class's mutable config.
 
 An embedded slot references a child preset by `presetId`. When a field is
 restored to inherited state, it restores to the selected preset value, not to
@@ -94,6 +99,10 @@ the component class's mutable current config.
 
 Changing a base preset does not remove slot-local overrides. Override identity
 is explicit and survives coincidental equality with the preset value.
+
+Usage checks must inspect both component class config and every preset config.
+Deleting a preset is blocked when any component class slot or any other preset
+slot references it.
 
 ## Editor Boundary
 

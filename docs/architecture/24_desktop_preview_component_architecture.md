@@ -425,6 +425,9 @@ Selecting a component class in the editor tree must select a concrete preset:
 - returning to a component class uses the last selected preset for that class;
 - the selected preset node is the active blue tree node;
 - design preview uses the selected preset config;
+- editor fields shown while a preset is selected read and write the selected
+  preset config, while the owning component class supplies the field layout;
+- saving a new preset from an active preset copies that preset config;
 - embedded restore/inherit restores to the selected preset value.
 
 Invariant:
@@ -811,8 +814,11 @@ Checks:
 - selected preset is the blue active tree node;
 - design preview payload for a preset uses the preset config, not mutable class
   config;
+- editor field commits for a selected preset write to that preset config, not
+  mutable class config;
 - embedded restore/inherit uses the selected preset as base;
-- deleting a preset is blocked while any component slot references it.
+- deleting a preset is blocked while any component class slot or any component
+  preset slot references it.
 
 ### `check:component-migration-completeness`
 
