@@ -248,6 +248,8 @@ The web renderer is the narrowest layer. It must not know:
 
 The web renderer may add support for a new generic primitive, but that primitive must receive final resolved style/data. It must not infer behavior from component names such as `label`, `avatar`, `buttonIcon`, `audio`, `video`, `bubble`, `statusBar`, or `navigationBar`.
 
+Animation follows the same boundary. Resolvers own component state for the requested frame, and the bridge may translate that resolved frame into final pixels. The web preview/render layer must not run timers, CSS animations, countdowns, or component-specific interpolation. For web preview, an animated component is only a succession of resolved frames.
+
 ## 5C. `MainWindow` is shell-only
 
 `MainWindow` may orchestrate the desktop shell, but it must not implement individual editors.

@@ -19,6 +19,7 @@ internal sealed class EditorPreviewController
     private readonly Func<ProjectTreeNode?> _selectedNode;
     private readonly RuntimeWebPreviewPane _runtimePreviewPane = new();
     private readonly DesignWebPreviewPane _designPreviewPane = new();
+    private readonly DesignPreviewInputsPanel _designInputsPanel;
     private string? _projectId;
     private string? _selectedThemeId;
     private PreviewNodeKey? _lastDesignPreviewNode;
@@ -49,9 +50,10 @@ internal sealed class EditorPreviewController
         _messages = messages;
         _isDark = isDark;
         _selectedNode = selectedNode;
+        _designInputsPanel = new DesignPreviewInputsPanel(database, Refresh);
 
         runtimePreviewHost.Content = _runtimePreviewPane;
-        designPreviewHost.Content = _designPreviewPane;
+        designPreviewHost.Content = CreateDesignPreviewLayout();
     }
 
     public string? SelectedDeviceId { get; private set; }
@@ -186,6 +188,10 @@ internal sealed class EditorPreviewController
             var themeName = _themeComboBox.SelectedItem?.Label ?? "No theme";
             _runtimePreviewPane.Update(metrics, _isDark(), themeName, _selectedMode, _selectedScale);
             var designPayload = DesignPreviewPayloadForSelection();
+            _designInputsPanel.UpdateForPayload(designPayload, _projectId);
+            designPayload = designPayload is null
+                ? null
+                : _designInputsPanel.ApplyInputs(designPayload);
             _designPreviewPane.Update(
                 metrics,
                 _isDark(),
@@ -201,6 +207,20 @@ internal sealed class EditorPreviewController
         {
             _messages.Error("Preview", exception);
         }
+    }
+
+    private Control CreateDesignPreviewLayout()
+    {
+        var layout = new Grid
+        {
+            RowDefinitions = new RowDefinitions("Auto,*"),
+            RowSpacing = 10,
+        };
+        Grid.SetRow(_designInputsPanel, 0);
+        Grid.SetRow(_designPreviewPane, 1);
+        layout.Children.Add(_designInputsPanel);
+        layout.Children.Add(_designPreviewPane);
+        return layout;
     }
 
     private DesignPreviewPayload? DesignPreviewPayloadForSelection()

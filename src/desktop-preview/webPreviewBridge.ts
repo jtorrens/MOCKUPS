@@ -513,7 +513,7 @@ export function audioComponentToRenderable(
   const maxBarHeight = Math.max(minBarHeight, audio.waveformMaxHeight * scale);
   const knobSize = audio.progressKnobSize * scale;
   const waveformHeight = Math.max(maxBarHeight, knobSize);
-  const durationText = parsePreviewText(payload);
+  const durationText = audio.playback.durationText;
   const durationWidth = Math.ceil(durationText.length * audio.textSize * scale * 0.58);
   const textHeight = audio.textSize * scale * 1.25;
   const waveformColumnWidth = Math.max(waveformWidth, durationWidth);
@@ -585,7 +585,7 @@ export function audioComponentToRenderable(
   const textBox = translateBox(textBoxLocal, origin);
   const avatarBox = avatarBoxLocal ? translateBox(avatarBoxLocal, origin) : undefined;
   const badgeBox = badgeBoxLocal ? translateBox(badgeBoxLocal, origin) : undefined;
-  const progress = 0.42;
+  const progress = audio.playback.progress;
   const actualWaveformEnd =
     waveformBox.x + (barCount - 1) * (barWidth + waveformGap) + barWidth;
   const firstBarCenter = waveformBox.x + barWidth / 2;

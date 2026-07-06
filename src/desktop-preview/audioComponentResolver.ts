@@ -19,6 +19,12 @@ import {
 
 export interface AudioDesignContract {
   id: string;
+  playback: {
+    durationSeconds: number;
+    currentTimeSeconds: number;
+    progress: number;
+    durationText: string;
+  };
   padding: { x: number; y: number };
   backgroundColorToken: string;
   backgroundAlpha: number;
@@ -84,9 +90,36 @@ export function resolveAudioComponent(
     ),
     asRecord(badgeSlot.overrides),
   );
+  const durationSeconds = Math.max(
+    1,
+    Math.round(
+      requiredNumber(
+        preview,
+        "durationSeconds",
+        "component.audio.preview.durationSeconds",
+      ),
+    ),
+  );
+  const currentTimeSeconds = Math.max(
+    0,
+    Math.min(
+      durationSeconds,
+      requiredNumber(
+        preview,
+        "currentTimeSeconds",
+        "component.audio.preview.currentTimeSeconds",
+      ),
+    ),
+  );
 
   return {
     id: "component.audio",
+    playback: {
+      durationSeconds,
+      currentTimeSeconds,
+      progress: currentTimeSeconds / durationSeconds,
+      durationText: formatDuration(durationSeconds - currentTimeSeconds),
+    },
     padding: parsePair(requiredString(audio, "padding", "component.audio.padding")),
     backgroundColorToken: requiredString(
       audio,
@@ -230,6 +263,13 @@ export function resolveAudioComponent(
         : undefined,
     },
   };
+}
+
+function formatDuration(totalSeconds: number) {
+  const seconds = Math.max(0, Math.round(totalSeconds));
+  const minutes = Math.floor(seconds / 60);
+  const remainder = seconds % 60;
+  return `${minutes}:${remainder.toString().padStart(2, "0")}`;
 }
 
 function parsePair(value: string) {
