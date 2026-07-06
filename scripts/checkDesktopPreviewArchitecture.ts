@@ -754,7 +754,7 @@ for (const forbiddenLegacySystemBarMethod of [
   "QueryNavigationBarRows",
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/Data/SpikeDatabase.SystemBars.cs",
+    "spikes/desktop-editor-shell/Data/SpikeDatabase.StatusNavigationComponents.cs",
     forbiddenLegacySystemBarMethod,
     `legacy system bar database method ${forbiddenLegacySystemBarMethod} must not return; use component class presets`,
   );
