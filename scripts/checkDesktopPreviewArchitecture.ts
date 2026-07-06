@@ -508,6 +508,9 @@ const componentSeedSource = componentSeedSourceFiles
 const spikeDatabaseSource = readText(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
 );
+const editorLayoutSource = readText(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.EditorLayouts.cs",
+);
 const seededComponentClasses = new Set(
   [...componentSeedSource.matchAll(/NewComponentSeed\("([^"]+)"/g)]
     .map((match) => match[1])
@@ -527,9 +530,9 @@ for (const componentClass of seededComponentClasses) {
     );
   }
 }
-if (!spikeDatabaseSource.includes("ComponentSeedRows.Select((seed) => seed.RecordClassId)")) {
+if (!editorLayoutSource.includes("ComponentSeedRows.Select((seed) => seed.RecordClassId)")) {
   addViolation(
-    "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
+    "spikes/desktop-editor-shell/Data/SpikeDatabase.EditorLayouts.cs",
     "component editor layouts must be seeded from ComponentSeedRows so new components get layouts automatically",
   );
 }
