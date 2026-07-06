@@ -769,8 +769,22 @@ public partial class MainWindow : SukiWindow
         }
 
         ExpandAncestors(node);
-        ShowNode(node, rebuildTree: true);
+        var editableNode = ClosestEditableNode(node);
+        ShowNode(editableNode, rebuildTree: true);
         return true;
+    }
+
+    private static ProjectTreeNode ClosestEditableNode(ProjectTreeNode node)
+    {
+        for (var current = node; current is not null; current = current.Parent)
+        {
+            if (current.CanOpenEditor)
+            {
+                return current;
+            }
+        }
+
+        return node;
     }
 
     private static ProjectTreeNode? FindNodeById(IEnumerable<ProjectTreeNode> nodes, string nodeId)
