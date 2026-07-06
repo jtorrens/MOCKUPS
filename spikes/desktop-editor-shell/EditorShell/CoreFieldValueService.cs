@@ -84,8 +84,6 @@ internal sealed class CoreFieldValueService
             or ProjectTreeNodeKind.Theme
             or ProjectTreeNodeKind.ProductionFont
             or ProjectTreeNodeKind.IconTheme
-            or ProjectTreeNodeKind.StatusBar
-            or ProjectTreeNodeKind.NavigationBar
             or ProjectTreeNodeKind.RenderPreset
             or ProjectTreeNodeKind.ComponentClass;
     }

@@ -459,6 +459,26 @@ assertDoesNotContain(
   "legacy navigation bar add workflow must not remain; use component presets instead",
 );
 assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/RecordClassFieldValueService.cs",
+  "ProjectTreeNodeKind.StatusBar => fieldId.StartsWith(\"statusBar.\"",
+  "legacy status bars must not be exposed through record-class field editing",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/RecordClassFieldValueService.cs",
+  "ProjectTreeNodeKind.NavigationBar => fieldId.StartsWith(\"navigationBar.\"",
+  "legacy navigation bars must not be exposed through record-class field editing",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/RecordClassFieldValueService.cs",
+  "UpdateStatusBarField",
+  "legacy status bar field writes must not remain in generic record editing",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/RecordClassFieldValueService.cs",
+  "UpdateNavigationBarField",
+  "legacy navigation bar field writes must not remain in generic record editing",
+);
+assertDoesNotContain(
   "src/desktop-preview/desktopPreviewComponents.ts",
   "./systemBar",
   "system bars must be declared as explicit status/navigation component modules, not shared manifest entrypoints",

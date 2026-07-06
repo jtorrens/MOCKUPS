@@ -88,19 +88,5 @@ internal sealed class EditorFieldPostCommitEffects
             return;
         }
 
-        if (node.Kind == ProjectTreeNodeKind.StatusBar && fieldId == "statusBar.family")
-        {
-            var itemCount = _database.GetStatusBarItems(node.Id).Count;
-            node.Notes = $"{value} · {itemCount} items";
-            _rebuildNavigation();
-            return;
-        }
-
-        if (node.Kind == ProjectTreeNodeKind.NavigationBar && fieldId == "navigationBar.family")
-        {
-            var itemCount = _database.GetNavigationBarItems(node.Id).Count;
-            node.Notes = $"{value} · {itemCount} buttons";
-            _rebuildNavigation();
-        }
     }
 }

@@ -30,8 +30,6 @@ internal sealed class RecordClassFieldValueService
             ProjectTreeNodeKind.Actor => fieldId.StartsWith("actor.", StringComparison.Ordinal),
             ProjectTreeNodeKind.ProductionFont => fieldId.StartsWith("font.", StringComparison.Ordinal),
             ProjectTreeNodeKind.IconTheme => fieldId.StartsWith("iconTheme.", StringComparison.Ordinal),
-            ProjectTreeNodeKind.StatusBar => fieldId.StartsWith("statusBar.", StringComparison.Ordinal),
-            ProjectTreeNodeKind.NavigationBar => fieldId.StartsWith("navigationBar.", StringComparison.Ordinal),
             _ => false,
         };
     }
@@ -53,8 +51,6 @@ internal sealed class RecordClassFieldValueService
             ProjectTreeNodeKind.Actor => ActorFieldValue(node.Id, field.Id),
             ProjectTreeNodeKind.ProductionFont => ProductionFontFieldValue(node.Id, field.Id),
             ProjectTreeNodeKind.IconTheme => IconThemeFieldValue(node.Id, field.Id),
-            ProjectTreeNodeKind.StatusBar => StatusBarFieldValue(node.Id, field.Id),
-            ProjectTreeNodeKind.NavigationBar => NavigationBarFieldValue(node.Id, field.Id),
             _ => throw new InvalidOperationException($"Record class field '{fieldId}' is not supported for '{node.Kind}'."),
         };
         var options = node.Kind switch
@@ -65,7 +61,6 @@ internal sealed class RecordClassFieldValueService
             ProjectTreeNodeKind.Shot => ShotFieldOptions(node.Id, field),
             ProjectTreeNodeKind.RenderPreset => RenderPresetFieldOptions(field),
             ProjectTreeNodeKind.ProductionFont => ProductionFontFieldOptions(field),
-            ProjectTreeNodeKind.NavigationBar => NavigationBarFieldOptions(field),
             _ => field.Options,
         };
 
@@ -122,12 +117,6 @@ internal sealed class RecordClassFieldValueService
                 _database.UpdateProductionFontField(node.Id, fieldId, value);
                 return;
             case ProjectTreeNodeKind.IconTheme when fieldId.StartsWith("iconTheme.", StringComparison.Ordinal):
-                return;
-            case ProjectTreeNodeKind.StatusBar when fieldId.StartsWith("statusBar.", StringComparison.Ordinal):
-                _database.UpdateStatusBarField(node.Id, fieldId, value);
-                return;
-            case ProjectTreeNodeKind.NavigationBar when fieldId.StartsWith("navigationBar.", StringComparison.Ordinal):
-                _database.UpdateNavigationBarField(node.Id, fieldId, value);
                 return;
             default:
                 throw new InvalidOperationException($"Record class field '{fieldId}' is not supported for '{node.Kind}'.");
@@ -276,16 +265,6 @@ internal sealed class RecordClassFieldValueService
         return _database.GetIconThemeFieldValue(iconThemeId, fieldId);
     }
 
-    private string StatusBarFieldValue(string statusBarId, string fieldId)
-    {
-        return _database.GetStatusBarFieldValue(statusBarId, fieldId);
-    }
-
-    private string NavigationBarFieldValue(string navigationBarId, string fieldId)
-    {
-        return _database.GetNavigationBarFieldValue(navigationBarId, fieldId);
-    }
-
     private static IReadOnlyList<FieldOption>? ProductionFontFieldOptions(RecordClassFieldDescriptor field)
     {
         return field.Id == "font.category"
@@ -340,17 +319,6 @@ internal sealed class RecordClassFieldValueService
             ],
             _ => field.Options,
         };
-    }
-
-    private static IReadOnlyList<FieldOption>? NavigationBarFieldOptions(RecordClassFieldDescriptor field)
-    {
-        return field.Id == "navigationBar.type"
-            ?
-            [
-                new FieldOption("buttons", "Buttons"),
-                new FieldOption("gestureBar", "Gesture Bar"),
-            ]
-            : field.Options;
     }
 
     private IReadOnlyList<FieldOption>? ThemeFieldOptions(string themeId, RecordClassFieldDescriptor field)
