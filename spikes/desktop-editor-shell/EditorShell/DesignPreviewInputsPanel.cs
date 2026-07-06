@@ -5,6 +5,7 @@ using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Collections.Generic;
@@ -93,6 +94,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
             {
                 EnsureValue(input, preview);
             }
+            EnsureActorValues(inputs, projectId);
             if (shouldRebuild)
             {
                 RebuildCard(inputs, projectId);
@@ -150,7 +152,6 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
                 HorizontalAlignment = HorizontalAlignment.Right,
                 VerticalAlignment = VerticalAlignment.Center,
             };
-            _playbackButton.PointerPressed += (_, args) => args.Handled = true;
             _playbackButton.Click += (_, args) =>
             {
                 args.Handled = true;
@@ -167,7 +168,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
         return header;
     }
 
-    public DesignPreviewPayload ApplyInputs(DesignPreviewPayload payload)
+    public DesignPreviewPayload ApplyInputs(DesignPreviewPayload payload, string themeMode)
     {
         if (!IsVisible || string.IsNullOrWhiteSpace(_scopeKey))
         {
@@ -184,6 +185,16 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
                     if (double.TryParse(value.Replace(",", "."), NumberStyles.Float, CultureInfo.InvariantCulture, out var number))
                     {
                         preview[input.JsonKey] = number;
+                    }
+                    break;
+                case DesignPreviewInputKind.Boolean:
+                    preview[input.JsonKey] = StringToBool(value);
+                    break;
+                case DesignPreviewInputKind.Actor:
+                    preview[input.JsonKey] = value;
+                    if (!string.IsNullOrWhiteSpace(value))
+                    {
+                        preview["actor"] = ActorPreviewInputFactory.Create(_database, value, themeMode, payload.PaletteColors);
                     }
                     break;
                 default:
@@ -221,6 +232,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
             DesignPreviewInputKind.Option => CreateOptionInput(input),
             DesignPreviewInputKind.Actor => CreateActorInput(input, projectId),
             DesignPreviewInputKind.Number => CreateNumberInput(input),
+            DesignPreviewInputKind.Boolean => CreateBooleanInput(input),
             _ => CreateTextInput(input),
         };
         Grid.SetColumn(control, 1);
@@ -253,11 +265,16 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
             MinHeight = 36,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
-        var options = _database.GetActorOptions(projectId);
+        var options = _database.GetActorOptions(projectId).ToList();
         combo.ItemsSource = options;
-        combo.SelectedItem = options.FirstOrDefault((option) => option.Value == Value(input))
+        var selected = options.FirstOrDefault((option) => option.Value == Value(input))
             ?? options.FirstOrDefault((option) => !string.IsNullOrWhiteSpace(option.Value))
             ?? options.FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(Value(input)) && selected is not null)
+        {
+            _values[StorageKey(input)] = selected.Value;
+        }
+        combo.SelectedItem = selected;
         combo.SelectionChanged += (_, _) =>
         {
             if (_isUpdating || combo.SelectedItem is null) return;
@@ -284,6 +301,22 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
             SetValue(input, args.NewValue.Value.ToString(CultureInfo.InvariantCulture));
         };
         return numeric;
+    }
+
+    private Control CreateBooleanInput(DesignPreviewInput input)
+    {
+        var checkBox = new CheckBox
+        {
+            MinHeight = 36,
+            IsChecked = StringToBool(Value(input)),
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        checkBox.IsCheckedChanged += (_, _) =>
+        {
+            if (_isUpdating) return;
+            SetValue(input, checkBox.IsChecked == true ? "true" : "false");
+        };
+        return checkBox;
     }
 
     private Control CreateTextInput(DesignPreviewInput input)
@@ -313,8 +346,33 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
             JsonValue jsonValue when jsonValue.TryGetValue<string>(out var text) => text,
             JsonValue jsonValue when jsonValue.TryGetValue<double>(out var number) => number.ToString(CultureInfo.InvariantCulture),
             JsonValue jsonValue when jsonValue.TryGetValue<int>(out var integer) => integer.ToString(CultureInfo.InvariantCulture),
+            JsonValue jsonValue when jsonValue.TryGetValue<bool>(out var boolean) => boolean ? "true" : "false",
             _ => input.DefaultValue,
         };
+    }
+
+    private void EnsureActorValues(IReadOnlyList<DesignPreviewInput> inputs, string projectId)
+    {
+        if (!inputs.Any((input) => input.Kind == DesignPreviewInputKind.Actor))
+        {
+            return;
+        }
+
+        var firstActor = _database.GetActorOptions(projectId)
+            .FirstOrDefault((option) => !string.IsNullOrWhiteSpace(option.Value));
+        if (firstActor is null)
+        {
+            return;
+        }
+
+        foreach (var input in inputs.Where((candidate) => candidate.Kind == DesignPreviewInputKind.Actor))
+        {
+            var key = StorageKey(input);
+            if (string.IsNullOrWhiteSpace(_values.GetValueOrDefault(key)))
+            {
+                _values[key] = firstActor.Value;
+            }
+        }
     }
 
     private string Value(DesignPreviewInput input)
@@ -347,8 +405,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
             return;
         }
 
-        var state = _values.GetValueOrDefault($"{_scopeKey}:playbackState", "paused");
-        if (state == "playing")
+        if (IsPlaying())
         {
             if (!_playbackTimer.IsEnabled)
             {
@@ -368,18 +425,17 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
     {
         if (_componentType != "audio") return;
 
-        var stateKey = $"{_scopeKey}:playbackState";
-        var state = _values.GetValueOrDefault(stateKey, "paused");
-        if (state == "playing")
+        var stateKey = $"{_scopeKey}:isPlaying";
+        if (IsPlaying())
         {
             _values[$"{_scopeKey}:currentTimeSeconds"] = CurrentPlaybackSeconds().ToString(CultureInfo.InvariantCulture);
-            _values[stateKey] = "paused";
+            _values[stateKey] = "false";
         }
         else
         {
             _playbackStartSeconds = CurrentPlaybackSeconds();
             _playbackStartedAtUtc = DateTime.UtcNow;
-            _values[stateKey] = "playing";
+            _values[stateKey] = "true";
         }
 
         SyncPlaybackTimer();
@@ -390,8 +446,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
     {
         if (_playbackButton is null) return;
 
-        var state = _values.GetValueOrDefault($"{_scopeKey}:playbackState", "paused");
-        _playbackButton.Content = state == "playing" ? "Pause" : "Play";
+        _playbackButton.Content = IsPlaying() ? "Pause" : "Play";
     }
 
     private void StopPlayback()
@@ -404,7 +459,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
     private void AdvancePlaybackFrame()
     {
         if (_componentType != "audio"
-            || _values.GetValueOrDefault($"{_scopeKey}:playbackState", "paused") != "playing")
+            || !IsPlaying())
         {
             StopPlayback();
             return;
@@ -442,6 +497,11 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
         return Math.Max(1, ParseDouble(_values.GetValueOrDefault($"{_scopeKey}:durationSeconds", "65")));
     }
 
+    private bool IsPlaying()
+    {
+        return StringToBool(_values.GetValueOrDefault($"{_scopeKey}:isPlaying", "false"));
+    }
+
     private static double ParseDouble(string? value)
     {
         return double.TryParse((value ?? "").Replace(",", "."), NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
@@ -467,12 +527,18 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
             return new JsonObject();
         }
     }
+
+    private static bool StringToBool(string? value)
+    {
+        return BooleanText.Parse(value ?? "");
+    }
 }
 
 internal enum DesignPreviewInputKind
 {
     Text,
     Number,
+    Boolean,
     Option,
     Actor,
 }
@@ -510,6 +576,7 @@ internal static class DesignPreviewInputCatalog
             ],
             "audio" =>
             [
+                new("isPlaying", "Playing", "isPlaying", DesignPreviewInputKind.Boolean, "false"),
                 new("durationSeconds", "Duration", "durationSeconds", DesignPreviewInputKind.Number, "65", Minimum: 1, Maximum: 86400, Increment: 1),
                 new("actorId", "Actor", "actorId", DesignPreviewInputKind.Actor, ""),
             ],

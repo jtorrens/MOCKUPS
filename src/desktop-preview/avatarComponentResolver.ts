@@ -63,6 +63,7 @@ export function resolveAvatarComponentFromRecords(
 
   return {
     id,
+    actor: resolveActorPreview(preview),
     size: requiredNumber(avatar, "defaultSize", "component.avatar.defaultSize"),
     cornerRadiusToken: requiredString(
       avatar,
@@ -117,4 +118,62 @@ export function resolveAvatarComponentFromRecords(
       ),
     },
   };
+}
+
+function resolveActorPreview(
+  preview: Record<string, unknown>,
+) {
+  const actor = requiredRecord(preview, "actor", "component.avatar.preview.actor");
+  const avatar = requiredRecord(actor, "avatar", "component.avatar.preview.actor.avatar");
+  return {
+    id: requiredString(actor, "id", "component.avatar.preview.actor.id"),
+    displayName: requiredString(
+      actor,
+      "displayName",
+      "component.avatar.preview.actor.displayName",
+    ),
+    shortName: stringValue(actor.shortName),
+    initials: requiredString(
+      actor,
+      "initials",
+      "component.avatar.preview.actor.initials",
+    ),
+    avatar: {
+      imageUri: stringValue(avatar.imageUri),
+      backgroundColor: requiredString(
+        avatar,
+        "backgroundColor",
+        "component.avatar.preview.actor.avatar.backgroundColor",
+      ),
+      textColor: requiredString(
+        avatar,
+        "textColor",
+        "component.avatar.preview.actor.avatar.textColor",
+      ),
+      scale: requiredNumber(
+        avatar,
+        "scale",
+        "component.avatar.preview.actor.avatar.scale",
+      ),
+      offsetX: requiredNumber(
+        avatar,
+        "offsetX",
+        "component.avatar.preview.actor.avatar.offsetX",
+      ),
+      offsetY: requiredNumber(
+        avatar,
+        "offsetY",
+        "component.avatar.preview.actor.avatar.offsetY",
+      ),
+      baseSize: requiredNumber(
+        avatar,
+        "baseSize",
+        "component.avatar.preview.actor.avatar.baseSize",
+      ),
+    },
+  };
+}
+
+function stringValue(value: unknown) {
+  return typeof value === "string" ? value : "";
 }

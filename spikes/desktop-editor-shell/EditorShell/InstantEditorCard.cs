@@ -25,6 +25,11 @@ internal sealed class InstantEditorCard : Grid
         };
         headerRow.PointerPressed += (_, args) =>
         {
+            if (args.Source is Button)
+            {
+                return;
+            }
+
             IsExpanded = !IsExpanded;
             args.Handled = true;
         };

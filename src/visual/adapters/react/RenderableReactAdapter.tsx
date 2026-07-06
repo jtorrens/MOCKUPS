@@ -824,6 +824,10 @@ function nodeContent(node: RenderableNode): ReactNode {
     const avatarRadius = radius !== undefined ? `${radius}px` : "50%";
     const avatarShadow = shadowValue(node.style?.shadow);
     const avatarSurfaceRelief = surfaceReliefValue(node.style?.surfaceRelief);
+    const avatarBackground =
+      stringValue(node.style?.backgroundColor ?? node.style?.background) ??
+      "linear-gradient(145deg, #8e8e93, #3a3a3c)";
+    const avatarColor = stringValue(node.style?.color ?? node.style?.textColor) ?? "white";
     const imageScale = Math.max(0.01, numberValue(node.metadata?.imageScale) ?? 1);
     const imageBaseSize = Math.max(1, numberValue(node.metadata?.imageBaseSize) ?? 640);
     const avatarBoxWidth = Math.max(1, numberValue(node.box?.width) ?? 1);
@@ -855,8 +859,8 @@ function nodeContent(node: RenderableNode): ReactNode {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "linear-gradient(145deg, #8e8e93, #3a3a3c)",
-          color: "white",
+          background: avatarBackground,
+          color: avatarColor,
           fontWeight: 700,
           fontSize: "45%",
         }}
@@ -881,7 +885,7 @@ function nodeContent(node: RenderableNode): ReactNode {
             }}
           />
         ) : (
-          Array.from(label)[0]?.toUpperCase() ?? "?"
+          label.toUpperCase()
         )}
         {borderColor && borderWidth && borderWidth > 0 ? (
           <span

@@ -3,8 +3,25 @@ import type {
 } from "./componentResolverCommon.js";
 import type { LabelDesignContract } from "./labelComponentContract.js";
 
+export interface AvatarActorDesignContract {
+  id: string;
+  displayName: string;
+  shortName: string;
+  initials: string;
+  avatar: {
+    imageUri: string;
+    backgroundColor: string;
+    textColor: string;
+    scale: number;
+    offsetX: number;
+    offsetY: number;
+    baseSize: number;
+  };
+}
+
 export interface AvatarDesignContract {
   id: string;
+  actor: AvatarActorDesignContract;
   size: number;
   cornerRadiusToken: string;
   labelSlot: {
