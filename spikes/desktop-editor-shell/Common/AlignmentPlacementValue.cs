@@ -34,7 +34,7 @@ internal sealed record AlignmentPlacementValue(
             RequiredInteger(node, "offsetY"));
     }
 
-    public static AlignmentPlacementValue FromLegacyPosition(string position, double gap)
+    public static AlignmentPlacementValue FromDirectionalEdge(string position, double gap)
     {
         return position switch
         {

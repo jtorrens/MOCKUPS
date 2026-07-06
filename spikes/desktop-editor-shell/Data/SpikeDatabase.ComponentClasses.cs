@@ -1713,7 +1713,7 @@ internal sealed partial class SpikeDatabase
 
         var position = JsonPath.String(labelSlot, "position", "bottom");
         var gap = JsonPath.Number(labelSlot, "gap", 4);
-        labelSlot["placement"] = JsonNode.Parse(AlignmentPlacementValue.FromLegacyPosition(position, gap).ToJsonString());
+        labelSlot["placement"] = JsonNode.Parse(AlignmentPlacementValue.FromDirectionalEdge(position, gap).ToJsonString());
         if (labelSlot["presetId"] is null)
         {
             labelSlot["presetId"] = DefaultComponentPresetId;
@@ -1743,7 +1743,7 @@ internal sealed partial class SpikeDatabase
             ["showLabel"] = labelEnabled,
             ["showSubtext"] = false,
             ["presetId"] = DefaultComponentPresetId,
-            ["placement"] = JsonNode.Parse(AlignmentPlacementValue.FromLegacyPosition(labelPosition, labelPadding).ToJsonString()),
+                ["placement"] = JsonNode.Parse(AlignmentPlacementValue.FromDirectionalEdge(labelPosition, labelPadding).ToJsonString()),
             ["overrides"] = new JsonObject(),
         };
         return true;
@@ -1813,7 +1813,7 @@ internal sealed partial class SpikeDatabase
             {
                 ["showAvatar"] = true,
                 ["presetId"] = DefaultComponentPresetId,
-                ["placement"] = JsonNode.Parse(AlignmentPlacementValue.FromLegacyPosition(avatarPosition, 4).ToJsonString()),
+                ["placement"] = JsonNode.Parse(AlignmentPlacementValue.FromDirectionalEdge(avatarPosition, 4).ToJsonString()),
                 ["overrides"] = avatarOverrides,
             };
             changed = true;

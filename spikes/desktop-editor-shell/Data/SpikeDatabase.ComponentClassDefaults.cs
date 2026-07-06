@@ -132,7 +132,7 @@ internal sealed partial class SpikeDatabase
                         ["showLabel"] = false,
                         ["showSubtext"] = false,
                         ["presetId"] = DefaultComponentPresetId,
-                        ["placement"] = JsonNode.Parse(AlignmentPlacementValue.FromLegacyPosition("bottom", 3).ToJsonString()),
+                        ["placement"] = JsonNode.Parse(AlignmentPlacementValue.FromDirectionalEdge("bottom", 3).ToJsonString()),
                         ["overrides"] = new JsonObject(),
                     },
                 };
@@ -177,7 +177,7 @@ internal sealed partial class SpikeDatabase
                     {
                         ["showAvatar"] = true,
                         ["presetId"] = DefaultComponentPresetId,
-                        ["placement"] = JsonNode.Parse(AlignmentPlacementValue.FromLegacyPosition("left", 8).ToJsonString()),
+                        ["placement"] = JsonNode.Parse(AlignmentPlacementValue.FromDirectionalEdge("left", 8).ToJsonString()),
                         ["overrides"] = new JsonObject
                         {
                             ["avatar"] = new JsonObject
