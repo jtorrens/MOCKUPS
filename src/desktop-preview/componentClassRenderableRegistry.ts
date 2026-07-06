@@ -18,6 +18,8 @@ import { navigationBarComponentToRenderable } from "./navigationBarComponentRend
 import { resolveNavigationBarComponent } from "./navigationBarComponentResolver.js";
 import { statusBarComponentToRenderable } from "./statusBarComponentRenderable.js";
 import { resolveStatusBarComponent } from "./statusBarComponentResolver.js";
+import { surfaceComponentToRenderable } from "./surfaceComponentRenderable.js";
+import { resolveSurfaceComponent } from "./surfaceComponentResolver.js";
 import { textInputBarComponentToRenderable } from "./textInputBarComponentRenderable.js";
 import { resolveTextInputBarComponent } from "./textInputBarComponentResolver.js";
 import { videoComponentToRenderable } from "./videoComponentRenderable.js";
@@ -27,6 +29,8 @@ type ComponentRenderableFactory = (payload: DesignPreviewPayload) => RenderableN
 
 export const componentRenderableFactories = {
   label: (payload) => labelComponentToRenderable(payload, resolveLabelComponent(payload)),
+  surface: (payload) =>
+    surfaceComponentToRenderable(payload, resolveSurfaceComponent(payload)),
   avatar: (payload) => avatarComponentToRenderable(payload, resolveAvatarComponent(payload)),
   audio: (payload) => audioComponentToRenderable(payload, resolveAudioComponent(payload)),
   buttonIcon: (payload) =>

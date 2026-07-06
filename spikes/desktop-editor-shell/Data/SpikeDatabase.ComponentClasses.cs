@@ -2154,6 +2154,7 @@ internal sealed partial class SpikeDatabase
             "avatar" => "Avatar component",
             "status_bar" => "Status bar component",
             "navigation_bar" => "Navigation bar component",
+            "surface" => "Surface component",
             "textInputBar" => "Text input bar component",
             "keyboard" => "Keyboard component",
             "buttonIcon" => "Button icon component",
@@ -2196,6 +2197,14 @@ internal sealed partial class SpikeDatabase
 
         switch (componentType)
         {
+            case "surface":
+                config["surface"] = new JsonObject
+                {
+                    ["backgroundColorToken"] = "theme.colors.surface",
+                    ["backgroundAlpha"] = 1,
+                    ["borderAlpha"] = 1,
+                };
+                break;
             case "avatar":
                 config["avatar"] = new JsonObject
                 {
@@ -2370,6 +2379,11 @@ internal sealed partial class SpikeDatabase
             ["sampleSize"] = componentType == "buttonIcon" ? 48 : 256,
             ["inputs"] = ComponentInputsForComponent(componentType),
         };
+        if (componentType == "surface")
+        {
+            preview["size"] = "180|104";
+        }
+
         if (componentType == "audio")
         {
             preview["animation"] = new JsonObject
@@ -2391,6 +2405,10 @@ internal sealed partial class SpikeDatabase
             [
                 ComponentInput("sampleText", "Text", "sampleText", "text", "Sample"),
                 ComponentInput("sampleSubtext", "Subtext", "sampleSubtext", "text", "Subtitle"),
+            ],
+            "surface" =>
+            [
+                ComponentInput("size", "Size", "size", "integerPair", "180|104"),
             ],
             "avatar" =>
             [
@@ -2447,6 +2465,7 @@ internal sealed partial class SpikeDatabase
     private static readonly ComponentSeedRow[] ComponentSeedRows =
     [
         NewComponentSeed("avatar", "component.avatar", "Default Avatar"),
+        NewComponentSeed("surface", "component.surface", "Default Surface"),
         NewComponentSeed("status_bar", "component.status_bar", "Default Status Bar"),
         NewComponentSeed("navigation_bar", "component.navigation_bar", "Default Navigation Bar"),
         NewComponentSeed("textInputBar", "component.text_input_bar", "Default Text Input Bar"),

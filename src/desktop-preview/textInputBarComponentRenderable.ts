@@ -144,7 +144,10 @@ export function textInputBarComponentToRenderable(
         style: {
           background: selectedColor(payload, textInput.cursorColorToken),
           borderRadius: Math.max(1, cursorBox.width / 2),
-          opacity: textInput.cursorBlinkFrames > 0 ? 1 : 0,
+          opacity:
+            textInput.text.trim().length > 0 && textInput.cursorBlinkFrames > 0
+              ? 1
+              : 0,
         },
       },
     ],

@@ -367,6 +367,7 @@ for (const filePath of walkFiles(previewRoot)) {
       "requiredAlpha",
       "requiredBoolean",
       "requiredNumber",
+      "requiredNumberPair",
       "requiredNumberValue",
       "requiredPlacement",
       "requiredRecord",

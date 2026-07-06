@@ -57,6 +57,22 @@ export function requiredNumber(
   throw new Error(`Missing numeric value ${path}`);
 }
 
+export function requiredNumberPair(
+  value: Record<string, unknown>,
+  key: string,
+  path: string,
+) {
+  const raw = requiredString(value, key, path);
+  const [firstRaw, secondRaw] = raw.split("|", 2);
+  const first = Number((firstRaw ?? "").replace(",", "."));
+  const second = Number((secondRaw ?? "").replace(",", "."));
+  if (Number.isFinite(first) && Number.isFinite(second)) {
+    return { first, second };
+  }
+
+  throw new Error(`Missing numeric pair value ${path}`);
+}
+
 export function optionalNumber(
   value: Record<string, unknown>,
   key: string,

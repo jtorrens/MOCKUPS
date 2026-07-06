@@ -308,6 +308,12 @@ internal sealed class ComponentInputsPanel : ContentControl
                 ValueKind.Decimal,
                 DefaultValue: input.DefaultValue,
                 Number: new NumberDefinition(input.Minimum, input.Maximum, input.Increment, 2)),
+            ComponentInputKind.IntegerPair => new FieldDefinition(
+                input.Id,
+                input.Label,
+                ValueKind.IntegerPair,
+                DefaultValue: input.DefaultValue,
+                PairLabels: new PairFieldLabels("W", "H")),
             ComponentInputKind.Boolean => new FieldDefinition(
                 input.Id,
                 input.Label,
@@ -683,6 +689,7 @@ internal sealed class ComponentInputsPanel : ContentControl
         return kind.Trim().ToLowerInvariant() switch
         {
             "number" => ComponentInputKind.Number,
+            "integerpair" or "integer_pair" or "size" => ComponentInputKind.IntegerPair,
             "boolean" => ComponentInputKind.Boolean,
             "option" => ComponentInputKind.Option,
             "actor" => ComponentInputKind.Actor,
@@ -715,6 +722,7 @@ internal enum ComponentInputKind
 {
     Text,
     Number,
+    IntegerPair,
     Boolean,
     Option,
     Actor,

@@ -2035,6 +2035,25 @@ internal sealed partial class SpikeDatabase
     {
         var typeSpecific = recordClassId switch
         {
+            "component.surface" => $$"""
+            ,
+            {
+              "id": "surface",
+              "label": "Surface",
+              "subtitle": "Reusable visual surface appearance",
+              "icon": "{{EditorIcons.Style}}",
+              "order": 20,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "surface", "label": "Surface", "order": 10, "visible": true, "fields": [
+                  { "id": "component.surface.backgroundColorToken", "order": 10, "visible": true },
+                  { "id": "component.surface.backgroundAlpha", "order": 20, "visible": true },
+                  { "id": "component.surface.borderAlpha", "order": 30, "visible": true }
+                ] }
+              ]
+            }
+            """,
             "component.avatar" => $$"""
             ,
             {

@@ -19,6 +19,14 @@ export const desktopPreviewComponents = {
     renderable: "./labelComponentRenderable",
     embeds: [],
   },
+  surface: {
+    category: "atom",
+    migrationStatus: "structural",
+    contract: "./surfaceComponentContract",
+    resolver: "./surfaceComponentResolver",
+    renderable: "./surfaceComponentRenderable",
+    embeds: [],
+  },
   avatar: {
     category: "component",
     migrationStatus: "functional",

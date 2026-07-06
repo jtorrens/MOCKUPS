@@ -10,6 +10,7 @@ export {
   requiredBoolean,
   requiredIconSlots,
   requiredNumber,
+  requiredNumberPair,
   requiredPlacement,
   requiredRecord,
   requiredString,

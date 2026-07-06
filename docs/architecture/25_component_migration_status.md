@@ -46,6 +46,7 @@ field `migrationStatus`.
 
 | Component type | Category | Status | Notes |
 | --- | --- | --- | --- |
+| `surface` | atom | Structural reference | Reusable visual surface appearance. Size is supplied as runtime input/parent box; preset owns background, alphas, border, radius, shadow and relief. |
 | `label` | atom | Functional reference | Text/subtext, sizing, typography tokens, alpha, text align and surface style are on the new route. |
 | `avatar` | component | Functional reference | Embeds `label`; actor input and label/subtext sample values work through the generic input path. |
 | `buttonIcon` | atom | Functional reference | Embeds `label`; icon input and optional label are on the recursive route. |
