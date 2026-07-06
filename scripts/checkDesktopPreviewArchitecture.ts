@@ -572,6 +572,19 @@ assertNoTerms("spikes/desktop-editor-shell/MainWindow.axaml.cs", [
   "SvgReplace",
   "ColorPicker",
 ]);
+{
+  const mainWindowSource = readText("spikes/desktop-editor-shell/MainWindow.axaml.cs");
+  const directDatabaseCalls = [...mainWindowSource.matchAll(/_database\.([A-Za-z0-9_]+)/g)]
+    .map((match) => match[1])
+    .filter((call): call is string => typeof call === "string");
+  const forbiddenDirectDatabaseCalls = directDatabaseCalls.filter((call) => call !== "LoadProjectTree");
+  if (forbiddenDirectDatabaseCalls.length > 0) {
+    addViolation(
+      "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+      `MainWindow must remain shell-only; direct database calls are limited to LoadProjectTree, found ${[...new Set(forbiddenDirectDatabaseCalls)].join(", ")}`,
+    );
+  }
+}
 assertPropertyBlockDoesNotContain(
   "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
   "CanAddChild",
