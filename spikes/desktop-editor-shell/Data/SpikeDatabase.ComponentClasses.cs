@@ -255,7 +255,7 @@ internal sealed partial class SpikeDatabase
         var configs = new JsonObject();
         using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT component_type, config_json
+            SELECT component_type, config_json, metadata_json
             FROM component_classes
             WHERE project_id = $projectId
             ORDER BY CASE WHEN id = 'component_' || $projectId || '_' || component_type THEN 0 ELSE 1 END, name
@@ -270,7 +270,9 @@ internal sealed partial class SpikeDatabase
                 continue;
             }
 
-            configs[componentType] = ParseJsonObject(ReadString(reader, 1));
+            configs[componentType] = ParseJsonObject(DefaultComponentPresetConfigJson(
+                ReadString(reader, 1),
+                ReadString(reader, 2)));
         }
 
         return configs.ToJsonString();
@@ -313,14 +315,15 @@ internal sealed partial class SpikeDatabase
         return command.ExecuteScalar() as string ?? "";
     }
 
-    private static string GetComponentClassBaseConfigJson(
+    private static string GetComponentClassPresetConfigJson(
         SqliteConnection connection,
         string projectId,
-        string componentType)
+        string componentType,
+        string presetId)
     {
         using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT config_json
+            SELECT config_json, metadata_json
             FROM component_classes
             WHERE project_id = $projectId
               AND component_type = $componentType
@@ -329,13 +332,19 @@ internal sealed partial class SpikeDatabase
             """;
         command.Parameters.AddWithValue("$projectId", projectId);
         command.Parameters.AddWithValue("$componentType", componentType);
-        var configJson = command.ExecuteScalar() as string;
-        if (string.IsNullOrWhiteSpace(configJson))
+        using var reader = command.ExecuteReader();
+        if (!reader.Read())
         {
             throw new InvalidOperationException($"Missing base component class '{componentType}' for project '{projectId}'.");
         }
 
-        return configJson;
+        var classConfigJson = ReadString(reader, 0);
+        var metadataJson = ReadString(reader, 1);
+        var preset = ComponentClassPresets(metadataJson)
+            .FirstOrDefault((candidate) => candidate.Id.Equals(presetId, StringComparison.Ordinal));
+        return string.IsNullOrWhiteSpace(preset?.ConfigJson) || preset.ConfigJson == "{}"
+            ? classConfigJson
+            : preset.ConfigJson;
     }
 
     private IReadOnlyList<FieldOption> EmbeddedComponentOptions(string projectId, string recordClassId)
@@ -490,9 +499,9 @@ internal sealed partial class SpikeDatabase
         var settings = GetComponentClassSettings(componentClassId);
         var descriptor = ComponentClassFieldCatalog.Get(embeddedFieldId);
         using var connection = OpenConnection();
-        var inheritedConfigJson = GetComponentClassBaseConfigJson(connection, settings.ProjectId, embeddedComponentType);
-        var inheritedValue = ComponentConfigFieldValue(inheritedConfigJson, descriptor);
         var config = ParseJsonObject(string.IsNullOrWhiteSpace(settings.ConfigJson) ? "{}" : settings.ConfigJson);
+        var inheritedConfigJson = EffectiveEmbeddedBaseConfig(connection, settings.ProjectId, config, [slot]).ToJsonString();
+        var inheritedValue = ComponentConfigFieldValue(inheritedConfigJson, descriptor);
         var overrides = EmbeddedOverrides(config, slot, createIfMissing: false);
         var hasOverride = overrides is not null && GetJsonValue(overrides, descriptor.JsonPath) is not null;
         var localValue = hasOverride && overrides is not null
@@ -528,9 +537,9 @@ internal sealed partial class SpikeDatabase
         var settings = GetComponentClassSettings(componentClassId);
         var descriptor = ComponentClassFieldCatalog.Get(embeddedFieldId);
         using var connection = OpenConnection();
-        var inheritedConfig = EffectiveEmbeddedBaseConfig(connection, settings.ProjectId, slots);
-        var inheritedValue = ComponentConfigFieldValue(inheritedConfig.ToJsonString(), descriptor);
         var config = ParseJsonObject(string.IsNullOrWhiteSpace(settings.ConfigJson) ? "{}" : settings.ConfigJson);
+        var inheritedConfig = EffectiveEmbeddedBaseConfig(connection, settings.ProjectId, config, slots);
+        var inheritedValue = ComponentConfigFieldValue(inheritedConfig.ToJsonString(), descriptor);
         var overrides = EmbeddedOverrides(config, slots, createIfMissing: false);
         var hasOverride = overrides is not null && GetJsonValue(overrides, descriptor.JsonPath) is not null;
         var localValue = hasOverride && overrides is not null
@@ -678,6 +687,7 @@ internal sealed partial class SpikeDatabase
             var configChanged = NormalizeAvatarLabelPlacement(row.ComponentType, config);
             configChanged |= NormalizeButtonIconLabelSlot(row.ComponentType, config);
             configChanged |= NormalizeAudioEmbeddedSlots(row.ComponentType, config);
+            configChanged |= NormalizeEmbeddedSlotPresetIds(config);
             configChanged |= JsonPath.MergeMissing(config, defaults);
             configChanged |= NormalizeReliefIntensity(config, "reliefTopIntensity");
             configChanged |= NormalizeReliefIntensity(config, "reliefBottomIntensity");
@@ -781,6 +791,15 @@ internal sealed partial class SpikeDatabase
             .ToList();
     }
 
+    private static string DefaultComponentPresetConfigJson(string classConfigJson, string metadataJson)
+    {
+        var defaultPreset = ComponentClassPresets(metadataJson)
+            .FirstOrDefault((preset) => preset.Id.Equals(DefaultComponentPresetId, StringComparison.Ordinal));
+        return string.IsNullOrWhiteSpace(defaultPreset?.ConfigJson) || defaultPreset.ConfigJson == "{}"
+            ? classConfigJson
+            : defaultPreset.ConfigJson;
+    }
+
     private static bool NormalizeAvatarLabelPlacement(string componentType, JsonObject config)
     {
         if (componentType != "avatar")
@@ -797,6 +816,11 @@ internal sealed partial class SpikeDatabase
         var position = JsonPath.String(labelSlot, "position", "bottom");
         var gap = JsonPath.Number(labelSlot, "gap", 4);
         labelSlot["placement"] = JsonNode.Parse(AlignmentPlacementValue.FromLegacyPosition(position, gap).ToJsonString());
+        if (labelSlot["presetId"] is null)
+        {
+            labelSlot["presetId"] = DefaultComponentPresetId;
+        }
+
         return true;
     }
 
@@ -820,6 +844,7 @@ internal sealed partial class SpikeDatabase
         {
             ["showLabel"] = labelEnabled,
             ["showSubtext"] = false,
+            ["presetId"] = DefaultComponentPresetId,
             ["placement"] = JsonNode.Parse(AlignmentPlacementValue.FromLegacyPosition(labelPosition, labelPadding).ToJsonString()),
             ["overrides"] = new JsonObject(),
         };
@@ -889,6 +914,7 @@ internal sealed partial class SpikeDatabase
             audio["avatarSlot"] = new JsonObject
             {
                 ["showAvatar"] = true,
+                ["presetId"] = DefaultComponentPresetId,
                 ["placement"] = JsonNode.Parse(AlignmentPlacementValue.FromLegacyPosition(avatarPosition, 4).ToJsonString()),
                 ["overrides"] = avatarOverrides,
             };
@@ -904,6 +930,7 @@ internal sealed partial class SpikeDatabase
                 ["iconToken"] = "media_mic",
                 ["backgroundColor"] = "blue",
                 ["iconColor"] = "gray_100",
+                ["presetId"] = DefaultComponentPresetId,
                 ["placement"] = JsonNode.Parse("""{"mode":"center","alignX":1,"alignY":1,"offsetX":0,"offsetY":0}"""),
                 ["overrides"] = new JsonObject
                 {
@@ -933,6 +960,28 @@ internal sealed partial class SpikeDatabase
         if (badgeSlot["iconColor"] is null)
         {
             badgeSlot["iconColor"] = "gray_100";
+            changed = true;
+        }
+
+        return changed;
+    }
+
+    private static bool NormalizeEmbeddedSlotPresetIds(JsonObject config)
+    {
+        var changed = false;
+        foreach (var slot in EmbeddedComponentSlotCatalog.All())
+        {
+            if (JsonPath.Get(config, slot.SlotPath) is not JsonObject slotNode)
+            {
+                continue;
+            }
+
+            if (!string.IsNullOrWhiteSpace(JsonPath.String(slotNode, "presetId", "")))
+            {
+                continue;
+            }
+
+            slotNode["presetId"] = DefaultComponentPresetId;
             changed = true;
         }
 
@@ -1182,22 +1231,33 @@ internal sealed partial class SpikeDatabase
     private static JsonObject EffectiveEmbeddedBaseConfig(
         SqliteConnection connection,
         string projectId,
+        JsonObject ownerConfig,
         IReadOnlyList<EmbeddedComponentSlotDefinition> slots)
     {
-        var current = ParseJsonObject(GetComponentClassBaseConfigJson(connection, projectId, slots[0].EmbeddedComponentType));
-        for (var index = 1; index < slots.Count; index++)
+        JsonObject? currentContainer = ownerConfig;
+        JsonObject? current = null;
+        for (var index = 0; index < slots.Count; index++)
         {
-            var child = ParseJsonObject(GetComponentClassBaseConfigJson(connection, projectId, slots[index].EmbeddedComponentType));
-            var overrides = EmbeddedOverrides(current, slots[index], createIfMissing: false);
+            var slotNode = currentContainer is null
+                ? null
+                : JsonPath.Get(currentContainer, slots[index].SlotPath) as JsonObject;
+            var presetId = JsonPath.String(slotNode ?? [], "presetId", DefaultComponentPresetId);
+            var child = ParseJsonObject(GetComponentClassPresetConfigJson(
+                connection,
+                projectId,
+                slots[index].EmbeddedComponentType,
+                presetId));
+            var overrides = slotNode?["overrides"] as JsonObject;
             if (overrides is not null)
             {
                 MergeOverride(child, overrides);
             }
 
             current = child;
+            currentContainer = current;
         }
 
-        return current;
+        return current ?? [];
     }
 
     private static void MergeOverride(JsonObject target, JsonObject overrides)
@@ -1273,6 +1333,7 @@ internal sealed partial class SpikeDatabase
                     {
                         ["showLabel"] = false,
                         ["showSubtext"] = false,
+                        ["presetId"] = DefaultComponentPresetId,
                         ["placement"] = JsonNode.Parse(AlignmentPlacementValue.Default.ToJsonString()),
                         ["overrides"] = new JsonObject(),
                     },
@@ -1314,6 +1375,7 @@ internal sealed partial class SpikeDatabase
                     {
                         ["showLabel"] = false,
                         ["showSubtext"] = false,
+                        ["presetId"] = DefaultComponentPresetId,
                         ["placement"] = JsonNode.Parse(AlignmentPlacementValue.FromLegacyPosition("bottom", 3).ToJsonString()),
                         ["overrides"] = new JsonObject(),
                     },
@@ -1360,6 +1422,7 @@ internal sealed partial class SpikeDatabase
                     ["avatarSlot"] = new JsonObject
                     {
                         ["showAvatar"] = true,
+                        ["presetId"] = DefaultComponentPresetId,
                         ["placement"] = JsonNode.Parse(AlignmentPlacementValue.FromLegacyPosition("left", 8).ToJsonString()),
                         ["overrides"] = new JsonObject
                         {
@@ -1375,6 +1438,7 @@ internal sealed partial class SpikeDatabase
                         ["iconToken"] = "media_mic",
                         ["backgroundColor"] = "blue",
                         ["iconColor"] = "gray_100",
+                        ["presetId"] = DefaultComponentPresetId,
                         ["placement"] = JsonNode.Parse("""{"mode":"center","alignX":1,"alignY":1,"offsetX":0,"offsetY":0}"""),
                         ["overrides"] = new JsonObject
                         {
