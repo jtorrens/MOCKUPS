@@ -15,8 +15,6 @@ export interface DesktopRenderableHtmlAdapterProps {
 }
 
 const supportedNodeTypes = new Set([
-  "component_preview_unsupported",
-  "design_preview_surface",
   "group",
   "icon",
   "image",
@@ -349,17 +347,6 @@ function semanticStyle(node: RenderableNode): CSSProperties {
       overflow: "hidden",
       padding: 8,
       textAlign: "center",
-    };
-  }
-  if (node.type === "component_preview_unsupported") {
-    return {
-      alignItems: "center",
-      display: "flex",
-      justifyContent: "center",
-      overflow: "hidden",
-      paddingLeft: 12,
-      paddingRight: 12,
-      whiteSpace: "nowrap",
     };
   }
   if (node.type === "icon") {

@@ -17,18 +17,25 @@ export function designPreviewPayloadToRenderable(
   };
   return {
     id: "design_preview.unsupported",
-    type: "component_preview_unsupported",
+    type: "surface",
     frame: 0,
     box,
     text: `Unsupported design preview: ${payload.kind}`,
     style: {
+      alignItems: "center",
       backgroundColor: "#ff00ff",
       borderRadius: 6,
       color: "#ffffff",
+      display: "flex",
       fontSize: 14,
       fontWeight: 700,
+      justifyContent: "center",
       lineHeight: box.height,
+      overflow: "hidden",
+      paddingLeft: 12,
+      paddingRight: 12,
       textAlign: "center",
+      whiteSpace: "nowrap",
     },
   };
 }

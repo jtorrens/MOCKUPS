@@ -63,18 +63,25 @@ export function componentClassToRenderable(payload: DesignPreviewPayload): Rende
   };
   return {
     id: "component.preview.unsupported",
-    type: "component_preview_unsupported",
+    type: "surface",
     frame: 0,
     box,
     text: `Unsupported component preview: ${componentType}`,
     style: {
+      alignItems: "center",
       backgroundColor: "#ff00ff",
       borderRadius: 6,
       color: "#ffffff",
+      display: "flex",
       fontSize: 14,
       fontWeight: 700,
+      justifyContent: "center",
       lineHeight: box.height,
+      overflow: "hidden",
+      paddingLeft: 12,
+      paddingRight: 12,
       textAlign: "center",
+      whiteSpace: "nowrap",
     },
   };
 }

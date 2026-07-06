@@ -12,8 +12,8 @@ function renderableForPayload(payload: DesignPreviewPayload): RenderableNode {
   const child = designPreviewPayloadToRenderable(payload);
 
   return RenderableNodeSchema.parse({
-    id: "design_preview_surface",
-    type: "design_preview_surface",
+    id: "design_preview.surface",
+    type: "surface",
     frame: 0,
     box: {
       x: 0,

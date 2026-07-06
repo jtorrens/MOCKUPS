@@ -10,10 +10,7 @@ const root = process.cwd();
 const previewRoot = path.join(root, "src", "desktop-preview");
 
 const violations: string[] = [];
-const allowedComponentNodeTypes = new Set(["component_preview_unsupported"]);
 const desktopPreviewPaintNodeTypes = new Set([
-  "component_preview_unsupported",
-  "design_preview_surface",
   "group",
   "icon",
   "image",
@@ -29,6 +26,8 @@ const forbiddenDesktopPreviewNodeTypes = new Set([
   "navigation_bar_zone",
   "navigation_bar_item",
   "navigation_bar_gesture",
+  "component_preview_unsupported",
+  "design_preview_surface",
   "icon_token",
   "waveform_bar",
 ]);
@@ -484,7 +483,7 @@ for (const filePath of walkFiles(previewRoot)) {
   let nodeTypeMatch: RegExpExecArray | null;
   while ((nodeTypeMatch = nodeTypePattern.exec(source)) !== null) {
     const nodeType = nodeTypeMatch[1] ?? "";
-    if (nodeType.startsWith("component_") && !allowedComponentNodeTypes.has(nodeType)) {
+    if (nodeType.startsWith("component_")) {
       addViolation(
         relativePath,
         `component-specific renderable node type "${nodeType}" must be a generic primitive type`,
