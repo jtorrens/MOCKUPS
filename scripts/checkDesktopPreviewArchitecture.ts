@@ -272,6 +272,11 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+  "BuildEditorCards(editorNode, node)",
+  "component editor layout node and data node must stay separated so presets edit preset config",
+);
+assertContains(
+  "spikes/desktop-editor-shell/MainWindow.axaml.cs",
   "EndsWith(\"::preset::default\", StringComparison.Ordinal)",
   "first component class selection must prefer the protected Default preset",
 );
@@ -294,6 +299,21 @@ assertContains(
   "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
   "database.GetComponentPresetSettings(node)",
   "component preset preview payload must load preset config",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldValueService.cs",
+  "ProjectTreeNodeKind.ComponentClass or ProjectTreeNodeKind.ComponentPreset",
+  "component field service must support component presets as editable data contexts",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
+  "CreateComponentPresetFieldValue",
+  "component preset fields must read from preset config",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
+  "UpdateComponentPresetField",
+  "component preset fields must write to preset config",
 );
 assertContains(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",

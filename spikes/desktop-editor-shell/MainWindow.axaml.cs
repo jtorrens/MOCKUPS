@@ -322,7 +322,7 @@ public partial class MainWindow : SukiWindow
         _embeddedEditorContext = null;
         var editorNode = EditorNodeForSelection(node);
         SetEditorRootTitle(editorNode.Name);
-        BuildEditorCards(editorNode);
+        BuildEditorCards(editorNode, node);
         if (keepEditorViewState)
         {
             _editorViewState.Restore(node, _editorCardHost.Cards);
@@ -335,22 +335,22 @@ public partial class MainWindow : SukiWindow
         }
     }
 
-    private void BuildEditorCards(ProjectTreeNode node)
+    private void BuildEditorCards(ProjectTreeNode layoutNode, ProjectTreeNode dataNode)
     {
         _editorCardHost.Clear();
         _activeFieldControls.Clear();
         _actorAvatarPreviews.Reset();
 
-        var layout = _database.LoadEditorLayout(node.RecordClassId);
+        var layout = _database.LoadEditorLayout(layoutNode.RecordClassId);
         foreach (var layoutCard in layout.Cards
                      .Where((card) => card.Visible)
                      .OrderBy((card) => card.Order)
                      .ThenBy((card) => card.Label))
         {
-            _editorCardHost.Add(CreateLayoutCard(node, layoutCard));
+            _editorCardHost.Add(CreateLayoutCard(dataNode, layoutCard));
         }
 
-        foreach (var collectionCard in _collectionCards.Create(node))
+        foreach (var collectionCard in _collectionCards.Create(dataNode))
         {
             _editorCardHost.Add(collectionCard);
         }
@@ -455,7 +455,7 @@ public partial class MainWindow : SukiWindow
     {
         try
         {
-            if (node.Kind != ProjectTreeNodeKind.ComponentClass)
+            if (node.Kind is not ProjectTreeNodeKind.ComponentClass and not ProjectTreeNodeKind.ComponentPreset)
             {
                 return Task.CompletedTask;
             }
@@ -662,7 +662,7 @@ public partial class MainWindow : SukiWindow
 
     private void SetEditorEmbeddedTitle(EmbeddedEditorContext context)
     {
-        var activePresetName = _database.GetEmbeddedComponentPresetName(context.OwnerNode.Id, context.Slots);
+        var activePresetName = _database.GetEmbeddedComponentPresetName(context.OwnerNode, context.Slots);
         SetEditorPresetText(string.IsNullOrWhiteSpace(activePresetName) ? null : $"Preset: {activePresetName}");
         var items = new List<EditorBreadcrumbItem>
         {
@@ -672,7 +672,7 @@ public partial class MainWindow : SukiWindow
         {
             var slot = context.Slots[index];
             var slotPresetName = _database.GetEmbeddedComponentPresetName(
-                context.OwnerNode.Id,
+                context.OwnerNode,
                 context.Slots.Take(index + 1).ToArray());
             var label = string.IsNullOrWhiteSpace(slotPresetName)
                 ? slot.Label

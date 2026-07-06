@@ -316,13 +316,18 @@ internal sealed partial class SpikeDatabase
 
     public ComponentClassSettings GetComponentPresetSettings(ProjectTreeNode presetNode)
     {
+        using var connection = OpenConnection();
+        return GetComponentPresetSettings(connection, presetNode);
+    }
+
+    private static ComponentClassSettings GetComponentPresetSettings(SqliteConnection connection, ProjectTreeNode presetNode)
+    {
         if (presetNode.Kind != ProjectTreeNodeKind.ComponentPreset
             || !TryParseComponentPresetNodeId(presetNode.Id, out var componentClassId, out var presetId))
         {
             throw new InvalidOperationException($"Invalid component preset node id '{presetNode.Id}'.");
         }
 
-        using var connection = OpenConnection();
         var settings = GetComponentClassSettings(connection, componentClassId);
         var metadata = ParseJsonObject(string.IsNullOrWhiteSpace(settings.MetadataJson) ? "{}" : settings.MetadataJson);
         if (metadata["presets"] is not JsonArray presets)
@@ -347,6 +352,35 @@ internal sealed partial class SpikeDatabase
                 : $"{settings.Name} · {presetName}",
             ConfigJson = config,
         };
+    }
+
+    private static JsonObject ComponentPresetConfigForUpdate(
+        SqliteConnection connection,
+        ProjectTreeNode presetNode,
+        out string componentClassId,
+        out JsonObject metadata)
+    {
+        if (presetNode.Kind != ProjectTreeNodeKind.ComponentPreset
+            || !TryParseComponentPresetNodeId(presetNode.Id, out componentClassId, out var presetId))
+        {
+            throw new InvalidOperationException($"Invalid component preset node id '{presetNode.Id}'.");
+        }
+
+        var settings = GetComponentClassSettings(connection, componentClassId);
+        metadata = ParseJsonObject(string.IsNullOrWhiteSpace(settings.MetadataJson) ? "{}" : settings.MetadataJson);
+        if (metadata["presets"] is not JsonArray presets)
+        {
+            throw new InvalidOperationException($"Component class '{componentClassId}' has no presets.");
+        }
+
+        var preset = FindPreset(presets, presetId)
+            ?? throw new InvalidOperationException($"Missing component preset '{presetId}'.");
+        if (preset["config"] is not JsonObject config)
+        {
+            throw new InvalidOperationException($"Component preset '{presetId}' has no config.");
+        }
+
+        return config;
     }
 
     public IReadOnlyList<EmbeddedComponentUsage> GetEmbeddedComponentUsages(
@@ -400,6 +434,35 @@ internal sealed partial class SpikeDatabase
         using var connection = OpenConnection();
         var settings = GetComponentClassSettings(connection, componentClassId);
         var ownerConfig = ParseJsonObject(string.IsNullOrWhiteSpace(settings.ConfigJson) ? "{}" : settings.ConfigJson);
+        return GetEmbeddedComponentPresetName(connection, settings, ownerConfig, slots);
+    }
+
+    public string GetEmbeddedComponentPresetName(
+        ProjectTreeNode ownerNode,
+        IReadOnlyList<EmbeddedComponentSlotDefinition> slots)
+    {
+        if (slots.Count == 0)
+        {
+            return "";
+        }
+
+        using var connection = OpenConnection();
+        var settings = ownerNode.Kind switch
+        {
+            ProjectTreeNodeKind.ComponentClass => GetComponentClassSettings(connection, ownerNode.Id),
+            ProjectTreeNodeKind.ComponentPreset => GetComponentPresetSettings(connection, ownerNode),
+            _ => throw new InvalidOperationException($"Embedded component presets are not supported for '{ownerNode.Kind}'."),
+        };
+        var ownerConfig = ParseJsonObject(string.IsNullOrWhiteSpace(settings.ConfigJson) ? "{}" : settings.ConfigJson);
+        return GetEmbeddedComponentPresetName(connection, settings, ownerConfig, slots);
+    }
+
+    private static string GetEmbeddedComponentPresetName(
+        SqliteConnection connection,
+        ComponentClassSettings settings,
+        JsonObject ownerConfig,
+        IReadOnlyList<EmbeddedComponentSlotDefinition> slots)
+    {
         JsonObject? currentContainer = ownerConfig;
         for (var index = 0; index < slots.Count; index++)
         {
@@ -706,6 +769,32 @@ internal sealed partial class SpikeDatabase
             IsHighlighted: isHighlighted);
     }
 
+    public FieldValue CreateComponentPresetFieldValue(ProjectTreeNode presetNode, string fieldId)
+    {
+        var settings = GetComponentPresetSettings(presetNode);
+        var descriptor = ComponentClassFieldCatalog.Get(fieldId);
+        var value = fieldId == "component.type"
+            ? ComponentTypeLabel(settings.ComponentType)
+            : ComponentConfigFieldValue(settings.ConfigJson, descriptor);
+        var options = ComponentClassFieldOptions(settings.ProjectId, descriptor);
+        var isHighlighted = descriptor.ValueKind == ValueKind.EmbeddedComponent
+            && EmbeddedComponentSlotCatalog.TryGet(fieldId, out var slot)
+            && EmbeddedComponentHasOverrides(settings.ConfigJson, slot);
+
+        return new FieldValue(
+            new FieldDefinition(
+                descriptor.Id,
+                descriptor.Label,
+                descriptor.ValueKind,
+                descriptor.IsEditable,
+                descriptor.DefaultValue,
+                Options: options,
+                PairLabels: descriptor.PairLabels,
+                Number: descriptor.Number),
+            value,
+            IsHighlighted: isHighlighted);
+    }
+
     public void UpdateComponentClassField(string componentClassId, string fieldId, string value)
     {
         var descriptor = ComponentClassFieldCatalog.Get(fieldId);
@@ -725,6 +814,27 @@ internal sealed partial class SpikeDatabase
                 "UPDATE component_classes SET config_json = $configJson WHERE id = $id",
                 ("$id", componentClassId),
                 ("$configJson", config.ToJsonString()));
+        }
+    }
+
+    public void UpdateComponentPresetField(ProjectTreeNode presetNode, string fieldId, string value)
+    {
+        var descriptor = ComponentClassFieldCatalog.Get(fieldId);
+        if (!descriptor.IsEditable || descriptor.JsonPath.Length == 0)
+        {
+            return;
+        }
+
+        lock (WriteGate)
+        {
+            using var connection = OpenConnection();
+            var config = ComponentPresetConfigForUpdate(connection, presetNode, out var componentClassId, out var metadata);
+            SetJsonValue(config, descriptor.JsonPath, ComponentConfigJsonValue(descriptor.ValueKind, value));
+            Execute(
+                connection,
+                "UPDATE component_classes SET metadata_json = $metadataJson WHERE id = $id",
+                ("$id", componentClassId),
+                ("$metadataJson", metadata.ToJsonString()));
         }
     }
 
@@ -779,6 +889,59 @@ internal sealed partial class SpikeDatabase
         }
 
         var settings = GetComponentClassSettings(componentClassId);
+        var descriptor = ComponentClassFieldCatalog.Get(embeddedFieldId);
+        using var connection = OpenConnection();
+        var config = ParseJsonObject(string.IsNullOrWhiteSpace(settings.ConfigJson) ? "{}" : settings.ConfigJson);
+        var inheritedConfig = EffectiveEmbeddedBaseConfig(connection, settings.ProjectId, config, slots);
+        var inheritedValue = ComponentConfigFieldValue(inheritedConfig.ToJsonString(), descriptor);
+        var overrides = EmbeddedOverrides(config, slots, createIfMissing: false);
+        var hasOverride = overrides is not null && GetJsonValue(overrides, descriptor.JsonPath) is not null;
+        var localValue = hasOverride && overrides is not null
+            ? ComponentConfigFieldValue(overrides.ToJsonString(), descriptor)
+            : inheritedValue;
+        var options = ComponentClassFieldOptions(settings.ProjectId, descriptor);
+        var isHighlighted = descriptor.ValueKind == ValueKind.EmbeddedComponent
+            && EmbeddedComponentSlotCatalog.TryGet(embeddedFieldId, out var nestedSlot)
+            && EmbeddedComponentHasOverrides(config, [.. slots, nestedSlot]);
+
+        return new FieldValue(
+            new FieldDefinition(
+                descriptor.Id,
+                descriptor.Label,
+                descriptor.ValueKind,
+                descriptor.IsEditable,
+                descriptor.DefaultValue,
+                CanInherit: true,
+                InheritedValue: inheritedValue,
+                Options: options,
+                PairLabels: descriptor.PairLabels,
+                Number: descriptor.Number),
+            localValue,
+            IsInherited: !hasOverride,
+            IsHighlighted: isHighlighted);
+    }
+
+    public FieldValue CreateEmbeddedComponentFieldValue(
+        ProjectTreeNode ownerNode,
+        IReadOnlyList<EmbeddedComponentSlotDefinition> slots,
+        string embeddedFieldId)
+    {
+        if (ownerNode.Kind == ProjectTreeNodeKind.ComponentClass)
+        {
+            return CreateEmbeddedComponentFieldValue(ownerNode.Id, slots, embeddedFieldId);
+        }
+
+        if (ownerNode.Kind != ProjectTreeNodeKind.ComponentPreset)
+        {
+            throw new InvalidOperationException($"Embedded component field '{embeddedFieldId}' is not supported for '{ownerNode.Kind}'.");
+        }
+
+        if (slots.Count == 0)
+        {
+            throw new InvalidOperationException($"Embedded component field '{embeddedFieldId}' needs at least one slot.");
+        }
+
+        var settings = GetComponentPresetSettings(ownerNode);
         var descriptor = ComponentClassFieldCatalog.Get(embeddedFieldId);
         using var connection = OpenConnection();
         var config = ParseJsonObject(string.IsNullOrWhiteSpace(settings.ConfigJson) ? "{}" : settings.ConfigJson);
@@ -884,6 +1047,53 @@ internal sealed partial class SpikeDatabase
                 "UPDATE component_classes SET config_json = $configJson WHERE id = $id",
                 ("$id", componentClassId),
                 ("$configJson", config.ToJsonString()));
+        }
+    }
+
+    public void UpdateEmbeddedComponentField(
+        ProjectTreeNode ownerNode,
+        IReadOnlyList<EmbeddedComponentSlotDefinition> slots,
+        string embeddedFieldId,
+        string value)
+    {
+        if (ownerNode.Kind == ProjectTreeNodeKind.ComponentClass)
+        {
+            UpdateEmbeddedComponentField(ownerNode.Id, slots, embeddedFieldId, value);
+            return;
+        }
+
+        if (ownerNode.Kind != ProjectTreeNodeKind.ComponentPreset)
+        {
+            throw new InvalidOperationException($"Embedded component field '{embeddedFieldId}' is not supported for '{ownerNode.Kind}'.");
+        }
+
+        if (slots.Count == 0)
+        {
+            throw new InvalidOperationException($"Embedded component field '{embeddedFieldId}' needs at least one slot.");
+        }
+
+        var descriptor = ComponentClassFieldCatalog.Get(embeddedFieldId);
+        lock (WriteGate)
+        {
+            using var connection = OpenConnection();
+            var config = ComponentPresetConfigForUpdate(connection, ownerNode, out var componentClassId, out var metadata);
+            var overrides = EmbeddedOverrides(config, slots, createIfMissing: true)
+                ?? throw new InvalidOperationException($"Missing embedded override slot '{slots[^1].FieldId}'.");
+
+            if (value.Equals("inherited", StringComparison.Ordinal))
+            {
+                RemoveJsonValue(overrides, descriptor.JsonPath);
+            }
+            else
+            {
+                SetJsonValue(overrides, descriptor.JsonPath, ComponentConfigJsonValue(descriptor.ValueKind, value));
+            }
+
+            Execute(
+                connection,
+                "UPDATE component_classes SET metadata_json = $metadataJson WHERE id = $id",
+                ("$id", componentClassId),
+                ("$metadataJson", metadata.ToJsonString()));
         }
     }
 

@@ -15,7 +15,7 @@ internal sealed class ComponentClassFieldValueService
 
     public bool CanHandle(ProjectTreeNodeKind nodeKind, string fieldId)
     {
-        return nodeKind == ProjectTreeNodeKind.ComponentClass
+        return nodeKind is ProjectTreeNodeKind.ComponentClass or ProjectTreeNodeKind.ComponentPreset
             && fieldId.StartsWith("component.", StringComparison.Ordinal);
     }
 
@@ -26,7 +26,9 @@ internal sealed class ComponentClassFieldValueService
             throw new InvalidOperationException($"Component class field '{fieldId}' is not supported for '{node.Kind}'.");
         }
 
-        return _database.CreateComponentClassFieldValue(node.Id, fieldId);
+        return node.Kind == ProjectTreeNodeKind.ComponentPreset
+            ? _database.CreateComponentPresetFieldValue(node, fieldId)
+            : _database.CreateComponentClassFieldValue(node.Id, fieldId);
     }
 
     public void CommitFieldValue(ProjectTreeNode node, string fieldId, string value)
@@ -34,6 +36,12 @@ internal sealed class ComponentClassFieldValueService
         if (!CanHandle(node.Kind, fieldId))
         {
             throw new InvalidOperationException($"Component class field '{fieldId}' is not supported for '{node.Kind}'.");
+        }
+
+        if (node.Kind == ProjectTreeNodeKind.ComponentPreset)
+        {
+            _database.UpdateComponentPresetField(node, fieldId, value);
+            return;
         }
 
         _database.UpdateComponentClassField(node.Id, fieldId, value);
@@ -45,16 +53,18 @@ internal sealed class ComponentClassFieldValueService
         string embeddedComponentType,
         string embeddedFieldId)
     {
-        if (node.Kind != ProjectTreeNodeKind.ComponentClass)
+        if (node.Kind is not ProjectTreeNodeKind.ComponentClass and not ProjectTreeNodeKind.ComponentPreset)
         {
             throw new InvalidOperationException($"Embedded component field '{embeddedFieldId}' is not supported for '{node.Kind}'.");
         }
 
-        return _database.CreateEmbeddedComponentFieldValue(
-            node.Id,
-            slotFieldId,
-            embeddedComponentType,
-            embeddedFieldId);
+        var slot = EmbeddedComponentSlotCatalog.Get(slotFieldId);
+        if (!slot.EmbeddedComponentType.Equals(embeddedComponentType, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException($"Embedded component '{embeddedComponentType}' is not supported for slot '{slotFieldId}'.");
+        }
+
+        return _database.CreateEmbeddedComponentFieldValue(node, [slot], embeddedFieldId);
     }
 
     public FieldValue CreateEmbeddedFieldValue(
@@ -62,12 +72,12 @@ internal sealed class ComponentClassFieldValueService
         IReadOnlyList<EmbeddedComponentSlotDefinition> slots,
         string embeddedFieldId)
     {
-        if (node.Kind != ProjectTreeNodeKind.ComponentClass)
+        if (node.Kind is not ProjectTreeNodeKind.ComponentClass and not ProjectTreeNodeKind.ComponentPreset)
         {
             throw new InvalidOperationException($"Embedded component field '{embeddedFieldId}' is not supported for '{node.Kind}'.");
         }
 
-        return _database.CreateEmbeddedComponentFieldValue(node.Id, slots, embeddedFieldId);
+        return _database.CreateEmbeddedComponentFieldValue(node, slots, embeddedFieldId);
     }
 
     public void CommitEmbeddedFieldValue(
@@ -77,17 +87,18 @@ internal sealed class ComponentClassFieldValueService
         string embeddedFieldId,
         string value)
     {
-        if (node.Kind != ProjectTreeNodeKind.ComponentClass)
+        if (node.Kind is not ProjectTreeNodeKind.ComponentClass and not ProjectTreeNodeKind.ComponentPreset)
         {
             throw new InvalidOperationException($"Embedded component field '{embeddedFieldId}' is not supported for '{node.Kind}'.");
         }
 
-        _database.UpdateEmbeddedComponentField(
-            node.Id,
-            slotFieldId,
-            embeddedComponentType,
-            embeddedFieldId,
-            value);
+        var slot = EmbeddedComponentSlotCatalog.Get(slotFieldId);
+        if (!slot.EmbeddedComponentType.Equals(embeddedComponentType, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException($"Embedded component '{embeddedComponentType}' is not supported for slot '{slotFieldId}'.");
+        }
+
+        _database.UpdateEmbeddedComponentField(node, [slot], embeddedFieldId, value);
     }
 
     public void CommitEmbeddedFieldValue(
@@ -96,15 +107,11 @@ internal sealed class ComponentClassFieldValueService
         string embeddedFieldId,
         string value)
     {
-        if (node.Kind != ProjectTreeNodeKind.ComponentClass)
+        if (node.Kind is not ProjectTreeNodeKind.ComponentClass and not ProjectTreeNodeKind.ComponentPreset)
         {
             throw new InvalidOperationException($"Embedded component field '{embeddedFieldId}' is not supported for '{node.Kind}'.");
         }
 
-        _database.UpdateEmbeddedComponentField(
-            node.Id,
-            slots,
-            embeddedFieldId,
-            value);
+        _database.UpdateEmbeddedComponentField(node, slots, embeddedFieldId, value);
     }
 }
