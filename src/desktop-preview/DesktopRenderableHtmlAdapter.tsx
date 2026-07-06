@@ -143,8 +143,8 @@ function svgStrokeLinejoin(value: unknown): "miter" | "round" | "bevel" | "inher
     : undefined;
 }
 
-function iconTokenLabel(token: string) {
-  const parts = token.split("_").filter(Boolean);
+function iconFallbackLabel(sourceText: string) {
+  const parts = sourceText.split("_").filter(Boolean);
   return parts.at(-1)?.slice(0, 2).toUpperCase() ?? "IC";
 }
 
@@ -319,7 +319,7 @@ function iconContent(node: RenderableNode): ReactNode {
   if (optionalStringValue(node.style?.maskImage) || optionalStringValue(node.style?.WebkitMaskImage)) {
     return <span title={label} />;
   }
-  return <span title={label}>{iconTokenLabel(label)}</span>;
+  return <span title={label}>{iconFallbackLabel(label)}</span>;
 }
 
 function nodeContent(node: RenderableNode): ReactNode {

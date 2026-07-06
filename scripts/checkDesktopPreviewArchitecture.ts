@@ -237,6 +237,31 @@ assertDoesNotContain(
   "./previewColorHelpers.js",
   "desktop HTML adapter must not import token/color resolution helpers",
 );
+assertDoesNotContain(
+  "src/desktop-preview/DesktopRenderableHtmlAdapter.tsx",
+  "iconTokenLabel",
+  "desktop HTML adapter icon fallback must not use token-specific naming",
+);
+assertContains(
+  "src/visual/renderable/types.ts",
+  "export interface RenderableMetadata",
+  "renderable metadata must stay explicitly typed",
+);
+assertDoesNotContain(
+  "src/visual/renderable/types.ts",
+  "metadata?: Record<string, unknown>",
+  "renderable nodes must not expose arbitrary metadata",
+);
+assertContains(
+  "src/visual/renderable/schema.ts",
+  "const RenderableMetadataSchema",
+  "renderable schema must validate metadata through an explicit schema",
+);
+assertDoesNotContain(
+  "src/visual/renderable/schema.ts",
+  "metadata: z.record(z.string(), z.unknown()).optional()",
+  "renderable schema must not accept arbitrary metadata",
+);
 
 assertNoTerms("src/desktop-preview/componentRenderableCommon.ts", [
   "label",

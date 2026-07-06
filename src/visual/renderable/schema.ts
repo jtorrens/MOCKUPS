@@ -21,6 +21,20 @@ const RenderableAssetSchema = z.object({
   uri: z.string().min(1),
 });
 
+const RenderableMetadataSchema = z.object({
+  fontFaces: z.array(z.object({
+    family: z.string().min(1),
+    uri: z.string().min(1),
+    weight: z.union([z.number(), z.string()]).optional(),
+    style: z.string().optional(),
+  }).strict()).optional(),
+  fallbackText: z.string().optional(),
+  imageBaseSize: z.number().optional(),
+  imageOffsetX: z.number().optional(),
+  imageOffsetY: z.number().optional(),
+  imageScale: z.number().optional(),
+}).strict();
+
 export const RenderableNodeSchema: z.ZodType<RenderableNode> = z.lazy(() =>
   z.object({
     id: z.string().min(1),
@@ -32,6 +46,6 @@ export const RenderableNodeSchema: z.ZodType<RenderableNode> = z.lazy(() =>
     text: z.string().optional(),
     asset: RenderableAssetSchema.optional(),
     children: z.array(RenderableNodeSchema).optional(),
-    metadata: z.record(z.string(), z.unknown()).optional(),
+    metadata: RenderableMetadataSchema.optional(),
   }),
 );

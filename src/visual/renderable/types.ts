@@ -18,6 +18,22 @@ export interface RenderableAsset {
   uri: string;
 }
 
+export interface RenderableFontFace {
+  family: string;
+  uri: string;
+  weight?: number | string;
+  style?: string;
+}
+
+export interface RenderableMetadata {
+  fontFaces?: RenderableFontFace[];
+  fallbackText?: string;
+  imageBaseSize?: number;
+  imageOffsetX?: number;
+  imageOffsetY?: number;
+  imageScale?: number;
+}
+
 export interface RenderableNode {
   id: string;
   type: string;
@@ -28,5 +44,5 @@ export interface RenderableNode {
   text?: string;
   asset?: RenderableAsset;
   children?: RenderableNode[];
-  metadata?: Record<string, unknown>;
+  metadata?: RenderableMetadata;
 }
