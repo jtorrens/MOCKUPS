@@ -383,6 +383,37 @@ if (payloadSource.includes('"statusBar"') || payloadSource.includes('"navigation
   );
 }
 
+const componentSeedSource = readText(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
+);
+const seededComponentClasses = new Set(
+  [...componentSeedSource.matchAll(/NewComponentSeed\("([^"]+)"/g)]
+    .map((match) => match[1])
+    .filter((value): value is string => typeof value === "string" && value.length > 0),
+);
+for (const componentClass of seededComponentClasses) {
+  if (!desktopPreviewComponents[componentClass]) {
+    addViolation(
+      "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
+      `seeded component class "${componentClass}" is missing from desktop preview manifest`,
+    );
+  }
+  if (!routedComponentClasses.has(componentClass)) {
+    addViolation(
+      "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
+      `seeded component class "${componentClass}" is missing from desktop preview registry`,
+    );
+  }
+}
+for (const componentClass of Object.keys(desktopPreviewComponents)) {
+  if (!seededComponentClasses.has(componentClass)) {
+    addViolation(
+      "src/desktop-preview/desktopPreviewComponents.ts",
+      `manifest component class "${componentClass}" is not seeded in the desktop editor`,
+    );
+  }
+}
+
 assertNoTerms("spikes/desktop-editor-shell/MainWindow.axaml.cs", [
   "Current class values",
 ]);
@@ -561,6 +592,16 @@ assertDoesNotContain(
   "legacy button_icon component type must not return to the preview manifest",
 );
 assertDoesNotContain(
+  "src/desktop-preview/desktopPreviewComponents.ts",
+  "text_input_bar",
+  "legacy text_input_bar component type must not return to the preview manifest",
+);
+assertDoesNotContain(
+  "src/desktop-preview/desktopPreviewComponents.ts",
+  "video_message",
+  "legacy video_message component type must not return to the preview manifest",
+);
+assertDoesNotContain(
   "src/desktop-preview/componentClassRenderableRegistry.ts",
   "audio_message",
   "legacy audio_message component type must not return to the preview registry",
@@ -569,6 +610,16 @@ assertDoesNotContain(
   "src/desktop-preview/componentClassRenderableRegistry.ts",
   "button_icon",
   "legacy button_icon component type must not return to the preview registry",
+);
+assertDoesNotContain(
+  "src/desktop-preview/componentClassRenderableRegistry.ts",
+  "text_input_bar",
+  "legacy text_input_bar component type must not return to the preview registry",
+);
+assertDoesNotContain(
+  "src/desktop-preview/componentClassRenderableRegistry.ts",
+  "video_message",
+  "legacy video_message component type must not return to the preview registry",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/FieldDefinition.cs",
