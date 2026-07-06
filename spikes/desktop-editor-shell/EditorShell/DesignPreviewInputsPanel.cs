@@ -28,6 +28,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
     private string _componentType = "";
     private string _projectId = "";
     private string _inputSignature = "";
+    private DesignPreviewAnimation? _animation;
     private DateTime _playbackStartedAtUtc;
     private double _playbackStartSeconds;
     private bool _isUpdating;
@@ -66,7 +67,9 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
                 return;
             }
 
-            var inputs = DesignPreviewInputCatalog.ForComponent(payload.ComponentType).ToList();
+            var preview = ParseJsonObject(payload.DesignPreviewJson);
+            var inputs = ReadInputs(preview).ToList();
+            _animation = ReadAnimation(preview);
             if (inputs.Count == 0)
             {
                 IsVisible = false;
@@ -74,6 +77,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
                 _componentType = "";
                 _projectId = "";
                 _inputSignature = "";
+                _animation = null;
                 Content = null;
                 StopPlayback();
                 return;
@@ -90,7 +94,6 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
             _componentType = payload.ComponentType;
             _projectId = projectId;
             _inputSignature = inputSignature;
-            var preview = ParseJsonObject(payload.DesignPreviewJson);
             foreach (var input in inputs)
             {
                 EnsureValue(input, preview);
@@ -177,8 +180,9 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
             return payload;
         }
 
-        var inputs = DesignPreviewInputCatalog.ForComponent(payload.ComponentType).ToList();
         var preview = ParseJsonObject(payload.DesignPreviewJson);
+        var inputs = ReadInputs(preview).ToList();
+        _animation = ReadAnimation(preview);
         if (!string.IsNullOrWhiteSpace(_projectId))
         {
             EnsureActorValues(inputs, _projectId);
@@ -210,9 +214,9 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
                     break;
             }
         }
-        if (SupportsPlayback(payload.ComponentType))
+        if (SupportsPlayback())
         {
-            preview["currentTimeSeconds"] = NormalizedPlaybackSeconds(CurrentPlaybackSeconds());
+            preview[_animation!.TimeJsonKey] = NormalizedPlaybackSeconds(CurrentPlaybackSeconds());
         }
 
         return payload with { DesignPreviewJson = preview.ToJsonString() };
@@ -393,7 +397,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
 
     private void SetValue(DesignPreviewInput input, string value)
     {
-        if (SupportsPlayback() && input.Id == "isPlaying")
+        if (SupportsPlayback() && input.Id == _animation!.PlayInputId)
         {
             SetPlaybackState(StringToBool(value));
         }
@@ -402,7 +406,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
             _values[StorageKey(input)] = value;
         }
 
-        if (SupportsPlayback() && input.Id == "durationSeconds")
+        if (SupportsPlayback() && input.Id == _animation!.DurationInputId)
         {
             ClampCurrentPlaybackToDuration();
         }
@@ -444,7 +448,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
     {
         if (!SupportsPlayback()) return;
 
-        var stateKey = $"{_scopeKey}:isPlaying";
+        var stateKey = PlaybackStateKey();
         SetPlaybackState(!IsPlaying());
 
         SyncBooleanInput(stateKey);
@@ -475,14 +479,14 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
             return;
         }
 
-        _values[$"{_scopeKey}:currentTimeSeconds"] = NormalizedPlaybackSeconds(CurrentPlaybackSeconds()).ToString(CultureInfo.InvariantCulture);
+        _values[PlaybackTimeKey()] = NormalizedPlaybackSeconds(CurrentPlaybackSeconds()).ToString(CultureInfo.InvariantCulture);
         _refreshPreview();
     }
 
     private double CurrentPlaybackSeconds()
     {
         var duration = DurationSeconds();
-        var stored = ParseDouble(_values.GetValueOrDefault($"{_scopeKey}:currentTimeSeconds", "0"));
+        var stored = ParseDouble(_values.GetValueOrDefault(PlaybackTimeKey(), "0"));
         if (!_playbackTimer.IsEnabled)
         {
             return NormalizedPlaybackSeconds(stored);
@@ -496,22 +500,22 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
     {
         if (!SupportsPlayback()) return;
 
-        _values[$"{_scopeKey}:currentTimeSeconds"] = NormalizedPlaybackSeconds(CurrentPlaybackSeconds()).ToString(CultureInfo.InvariantCulture);
+        _values[PlaybackTimeKey()] = NormalizedPlaybackSeconds(CurrentPlaybackSeconds()).ToString(CultureInfo.InvariantCulture);
     }
 
     private double DurationSeconds()
     {
-        return Math.Max(1, ParseDouble(_values.GetValueOrDefault($"{_scopeKey}:durationSeconds", "65")));
+        return Math.Max(1, ParseDouble(_values.GetValueOrDefault(PlaybackDurationKey(), "65")));
     }
 
     private bool IsPlaying()
     {
-        return StringToBool(_values.GetValueOrDefault($"{_scopeKey}:isPlaying", "false"));
+        return StringToBool(_values.GetValueOrDefault(PlaybackStateKey(), "false"));
     }
 
     private void SetPlaybackState(bool isPlaying)
     {
-        var stateKey = $"{_scopeKey}:isPlaying";
+        var stateKey = PlaybackStateKey();
         if (isPlaying)
         {
             _playbackStartSeconds = NormalizedPlaybackSeconds(CurrentPlaybackSeconds());
@@ -520,7 +524,7 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
             return;
         }
 
-        _values[$"{_scopeKey}:currentTimeSeconds"] = NormalizedPlaybackSeconds(CurrentPlaybackSeconds()).ToString(CultureInfo.InvariantCulture);
+        _values[PlaybackTimeKey()] = NormalizedPlaybackSeconds(CurrentPlaybackSeconds()).ToString(CultureInfo.InvariantCulture);
         _values[stateKey] = "false";
     }
 
@@ -531,14 +535,22 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
 
     private bool SupportsPlayback()
     {
-        return SupportsPlayback(_componentType);
+        return _animation is not null;
     }
 
-    private static bool SupportsPlayback(string componentType)
+    private string PlaybackStateKey()
     {
-        var inputs = DesignPreviewInputCatalog.ForComponent(componentType).ToList();
-        return inputs.Any((input) => input.Id == "isPlaying")
-            && inputs.Any((input) => input.Id == "durationSeconds");
+        return $"{_scopeKey}:{_animation?.PlayInputId ?? "isPlaying"}";
+    }
+
+    private string PlaybackDurationKey()
+    {
+        return $"{_scopeKey}:{_animation?.DurationInputId ?? "durationSeconds"}";
+    }
+
+    private string PlaybackTimeKey()
+    {
+        return $"{_scopeKey}:{_animation?.TimeJsonKey ?? "currentTimeSeconds"}";
     }
 
     private void SyncBooleanInput(string key)
@@ -582,6 +594,100 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
         }
     }
 
+    private static IEnumerable<DesignPreviewInput> ReadInputs(JsonObject preview)
+    {
+        if (preview["inputs"] is not JsonArray inputs)
+        {
+            yield break;
+        }
+
+        foreach (var item in inputs.OfType<JsonObject>())
+        {
+            var id = JsonString(item, "id");
+            var label = JsonString(item, "label");
+            var jsonKey = JsonString(item, "jsonKey");
+            var kind = JsonString(item, "kind");
+            if (string.IsNullOrWhiteSpace(id)
+                || string.IsNullOrWhiteSpace(label)
+                || string.IsNullOrWhiteSpace(jsonKey)
+                || string.IsNullOrWhiteSpace(kind))
+            {
+                continue;
+            }
+
+            yield return new DesignPreviewInput(
+                id,
+                label,
+                jsonKey,
+                ParseKind(kind),
+                JsonString(item, "defaultValue"),
+                ReadOptions(item),
+                JsonDecimal(item, "minimum", 0),
+                JsonDecimal(item, "maximum", 9999),
+                JsonDecimal(item, "increment", 1));
+        }
+    }
+
+    private static DesignPreviewAnimation? ReadAnimation(JsonObject preview)
+    {
+        if (preview["animation"] is not JsonObject animation)
+        {
+            return null;
+        }
+
+        var playInputId = JsonString(animation, "playInputId");
+        var durationInputId = JsonString(animation, "durationInputId");
+        var timeJsonKey = JsonString(animation, "timeJsonKey");
+        if (string.IsNullOrWhiteSpace(playInputId)
+            || string.IsNullOrWhiteSpace(durationInputId)
+            || string.IsNullOrWhiteSpace(timeJsonKey))
+        {
+            return null;
+        }
+
+        return new DesignPreviewAnimation(playInputId, durationInputId, timeJsonKey);
+    }
+
+    private static IReadOnlyList<FieldOption> ReadOptions(JsonObject input)
+    {
+        if (input["options"] is not JsonArray options)
+        {
+            return [];
+        }
+
+        return options
+            .OfType<JsonObject>()
+            .Select((option) => new FieldOption(JsonString(option, "value"), JsonString(option, "label")))
+            .Where((option) => !string.IsNullOrWhiteSpace(option.Value))
+            .ToList();
+    }
+
+    private static DesignPreviewInputKind ParseKind(string kind)
+    {
+        return kind.Trim().ToLowerInvariant() switch
+        {
+            "number" => DesignPreviewInputKind.Number,
+            "boolean" => DesignPreviewInputKind.Boolean,
+            "option" => DesignPreviewInputKind.Option,
+            "actor" => DesignPreviewInputKind.Actor,
+            _ => DesignPreviewInputKind.Text,
+        };
+    }
+
+    private static string JsonString(JsonObject owner, string key)
+    {
+        return owner[key] is JsonValue value && value.TryGetValue<string>(out var text)
+            ? text
+            : "";
+    }
+
+    private static decimal JsonDecimal(JsonObject owner, string key, decimal fallback)
+    {
+        return owner[key] is JsonValue value && value.TryGetValue<decimal>(out var number)
+            ? number
+            : fallback;
+    }
+
     private static bool StringToBool(string? value)
     {
         return BooleanText.Parse(value ?? "");
@@ -608,33 +714,7 @@ internal sealed record DesignPreviewInput(
     decimal Maximum = 9999,
     decimal Increment = 1);
 
-internal static class DesignPreviewInputCatalog
-{
-    public static IEnumerable<DesignPreviewInput> ForComponent(string componentType)
-    {
-        return componentType switch
-        {
-            "label" =>
-            [
-                new("sampleText", "Text", "sampleText", DesignPreviewInputKind.Text, "Sample"),
-                new("sampleSubtext", "Subtext", "sampleSubtext", DesignPreviewInputKind.Text, "Subtitle"),
-            ],
-            "avatar" =>
-            [
-                new("actorId", "Actor", "actorId", DesignPreviewInputKind.Actor, ""),
-            ],
-            "buttonIcon" =>
-            [
-                new("sampleText", "Text", "sampleText", DesignPreviewInputKind.Text, "Action"),
-                new("sampleSubtext", "Subtext", "sampleSubtext", DesignPreviewInputKind.Text, "Subtitle"),
-            ],
-            "audio" =>
-            [
-                new("isPlaying", "Playing", "isPlaying", DesignPreviewInputKind.Boolean, "false"),
-                new("durationSeconds", "Duration", "durationSeconds", DesignPreviewInputKind.Number, "65", Minimum: 1, Maximum: 86400, Increment: 1),
-                new("actorId", "Actor", "actorId", DesignPreviewInputKind.Actor, ""),
-            ],
-            _ => [],
-        };
-    }
-}
+internal sealed record DesignPreviewAnimation(
+    string PlayInputId,
+    string DurationInputId,
+    string TimeJsonKey);

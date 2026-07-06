@@ -1060,10 +1060,10 @@ internal sealed partial class SpikeDatabase
 
     private static string DefaultComponentDesignPreviewJson(string componentType)
     {
-        return JsonSerializer.Serialize(new
+        var preview = new JsonObject
         {
-            componentType,
-            sampleText = componentType switch
+            ["componentType"] = componentType,
+            ["sampleText"] = componentType switch
             {
                 "label" => "Alex",
                 "textInputBar" => "Message",
@@ -1071,9 +1071,72 @@ internal sealed partial class SpikeDatabase
                 "video" => "0:12",
                 _ => "Sample",
             },
-            sampleSubtext = componentType is "label" or "avatar" or "buttonIcon" ? "Subtitle" : "",
-            sampleSize = componentType == "buttonIcon" ? 48 : 256,
-        });
+            ["sampleSubtext"] = componentType is "label" or "avatar" or "buttonIcon" ? "Subtitle" : "",
+            ["sampleSize"] = componentType == "buttonIcon" ? 48 : 256,
+            ["inputs"] = PreviewInputsForComponent(componentType),
+        };
+        if (componentType == "audio")
+        {
+            preview["animation"] = new JsonObject
+            {
+                ["playInputId"] = "isPlaying",
+                ["durationInputId"] = "durationSeconds",
+                ["timeJsonKey"] = "currentTimeSeconds",
+            };
+        }
+
+        return preview.ToJsonString();
+    }
+
+    private static JsonArray PreviewInputsForComponent(string componentType)
+    {
+        return componentType switch
+        {
+            "label" =>
+            [
+                PreviewInput("sampleText", "Text", "sampleText", "text", "Sample"),
+                PreviewInput("sampleSubtext", "Subtext", "sampleSubtext", "text", "Subtitle"),
+            ],
+            "avatar" =>
+            [
+                PreviewInput("actorId", "Actor", "actorId", "actor", ""),
+            ],
+            "buttonIcon" =>
+            [
+                PreviewInput("sampleText", "Text", "sampleText", "text", "Action"),
+                PreviewInput("sampleSubtext", "Subtext", "sampleSubtext", "text", "Subtitle"),
+            ],
+            "audio" =>
+            [
+                PreviewInput("isPlaying", "Playing", "isPlaying", "boolean", "false"),
+                PreviewInput("durationSeconds", "Duration", "durationSeconds", "number", "65", minimum: 1, maximum: 86400, increment: 1),
+                PreviewInput("actorId", "Actor", "actorId", "actor", ""),
+            ],
+            _ => [],
+        };
+    }
+
+    private static JsonObject PreviewInput(
+        string id,
+        string label,
+        string jsonKey,
+        string kind,
+        string defaultValue,
+        decimal minimum = 0,
+        decimal maximum = 9999,
+        decimal increment = 1)
+    {
+        return new JsonObject
+        {
+            ["id"] = id,
+            ["label"] = label,
+            ["jsonKey"] = jsonKey,
+            ["kind"] = kind,
+            ["defaultValue"] = defaultValue,
+            ["minimum"] = minimum,
+            ["maximum"] = maximum,
+            ["increment"] = increment,
+        };
     }
 
     private static readonly ComponentSeedRow[] ComponentSeedRows =
