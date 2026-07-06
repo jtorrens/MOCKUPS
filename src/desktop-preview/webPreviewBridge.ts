@@ -313,11 +313,7 @@ export function labelComponentToRenderableAt(
     label.backgroundColorToken,
     label.surfaceAlpha,
   );
-  const borderColor = selectedColor(
-    payload,
-    label.surface.borderColorToken,
-    label.surfaceAlpha,
-  );
+  const borderColor = selectedColor(payload, label.surface.borderColorToken);
   const cornerRadius = numberToken(payload, label.surface.cornerRadiusToken) * scale;
   const surfaceRelief = label.surface.reliefEnabled
     ? {
@@ -360,7 +356,6 @@ export function labelComponentToRenderableAt(
               payload,
               label.surface.borderColorToken,
               mode,
-              label.surfaceAlpha,
             ),
           },
         ]),
@@ -666,11 +661,7 @@ export function audioComponentToRenderable(
           ),
           borderRadius: numberToken(payload, audio.surface.cornerRadiusToken) * scale,
           borderWidth: audioBorderWidth,
-          borderColor: selectedColor(
-            payload,
-            audio.surface.borderColorToken,
-            audio.backgroundAlpha,
-          ),
+          borderColor: selectedColor(payload, audio.surface.borderColorToken),
           shadow: audioShadow,
           surfaceRelief: audioRelief,
           colorModes: Object.fromEntries(
@@ -687,7 +678,6 @@ export function audioComponentToRenderable(
                   payload,
                   audio.surface.borderColorToken,
                   mode,
-                  audio.backgroundAlpha,
                 ),
               },
             ]),
@@ -912,11 +902,7 @@ export function buttonIconComponentToRenderable(
           background: buttonBackgroundColor(payload, buttonIcon),
           borderRadius: numberToken(payload, buttonIcon.surface.cornerRadiusToken) * scale,
           borderWidth,
-          borderColor: selectedColor(
-            payload,
-            buttonIcon.surface.borderColorToken,
-            buttonIcon.backgroundAlpha,
-          ),
+          borderColor: selectedColor(payload, buttonIcon.surface.borderColorToken),
           shadow: iconShadow,
           surfaceRelief,
           colorModes: Object.fromEntries(
@@ -929,7 +915,6 @@ export function buttonIconComponentToRenderable(
                   payload,
                   buttonIcon.surface.borderColorToken,
                   mode,
-                  buttonIcon.backgroundAlpha,
                 ),
               },
             ]),
@@ -1031,11 +1016,7 @@ function buttonIconComponentToRenderableAt(
           background: buttonBackgroundColor(payload, buttonIcon),
           borderRadius: numberToken(payload, buttonIcon.surface.cornerRadiusToken) * scale,
           borderWidth,
-          borderColor: selectedColor(
-            payload,
-            buttonIcon.surface.borderColorToken,
-            buttonIcon.backgroundAlpha,
-          ),
+          borderColor: selectedColor(payload, buttonIcon.surface.borderColorToken),
           shadow: iconShadow,
           surfaceRelief,
           colorModes: Object.fromEntries(
@@ -1048,7 +1029,6 @@ function buttonIconComponentToRenderableAt(
                   payload,
                   buttonIcon.surface.borderColorToken,
                   mode,
-                  buttonIcon.backgroundAlpha,
                 ),
               },
             ]),
