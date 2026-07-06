@@ -670,6 +670,36 @@ assertDoesNotContain(
   "legacy navigation bar field writes must not remain in generic record editing",
 );
 assertDoesNotContain(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
+  "SeedStatusBarsIfEmpty",
+  "desktop database initialization must not seed legacy status_bars rows; use status_bar component presets",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
+  "SeedNavigationBarsIfEmpty",
+  "desktop database initialization must not seed legacy navigation_bars rows; use navigation_bar component presets",
+);
+for (const forbiddenLegacySystemBarMethod of [
+  "GetStatusBarSettings",
+  "GetStatusBarFieldValue",
+  "GetStatusBarItems",
+  "UpdateStatusBarField",
+  "UpdateStatusBarItem",
+  "QueryStatusBarRows",
+  "GetNavigationBarSettings",
+  "GetNavigationBarFieldValue",
+  "GetNavigationBarItems",
+  "UpdateNavigationBarField",
+  "UpdateNavigationBarItem",
+  "QueryNavigationBarRows",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/Data/SpikeDatabase.SystemBars.cs",
+    forbiddenLegacySystemBarMethod,
+    `legacy system bar database method ${forbiddenLegacySystemBarMethod} must not return; use component class presets`,
+  );
+}
+assertDoesNotContain(
   "src/desktop-preview/desktopPreviewComponents.ts",
   "./systemBar",
   "system bars must be declared as explicit status/navigation component modules, not shared manifest entrypoints",
