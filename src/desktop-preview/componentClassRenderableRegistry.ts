@@ -76,10 +76,6 @@ export function componentClassToRenderable(payload: DesignPreviewPayload): Rende
       lineHeight: box.height,
       textAlign: "center",
     },
-    metadata: {
-      route: "component-preview.unsupported",
-      componentType,
-    },
   };
 }
 

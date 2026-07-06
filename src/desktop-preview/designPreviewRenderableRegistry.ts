@@ -30,9 +30,5 @@ export function designPreviewPayloadToRenderable(
       lineHeight: box.height,
       textAlign: "center",
     },
-    metadata: {
-      route: "design-preview.unsupported",
-      kind: payload.kind,
-    },
   };
 }

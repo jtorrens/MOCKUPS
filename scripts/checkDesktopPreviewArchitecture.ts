@@ -454,6 +454,30 @@ for (const filePath of walkFiles(previewRoot)) {
       "desktop preview paint tree metadata must not spread component contracts into final nodes",
     );
   }
+  if (desktopPreviewPaintTreeSourceFiles.has(relativePath)) {
+    const metadataPattern = /metadata:\s*\{[\s\S]*?\}/g;
+    let metadataMatch: RegExpExecArray | null;
+    while ((metadataMatch = metadataPattern.exec(source)) !== null) {
+      const metadataSource = metadataMatch[0];
+      for (const forbiddenMetadataKey of [
+        "charging",
+        "componentType",
+        "kind",
+        "label",
+        "order",
+        "route",
+        "value",
+        "zone",
+      ]) {
+        if (new RegExp(`\\b${forbiddenMetadataKey}\\s*:`).test(metadataSource)) {
+          addViolation(
+            relativePath,
+            `desktop preview paint tree metadata must not contain component semantic key "${forbiddenMetadataKey}"`,
+          );
+        }
+      }
+    }
+  }
 
   const nodeTypePattern = /type:\s*["']([^"']+)["']/g;
   let nodeTypeMatch: RegExpExecArray | null;
