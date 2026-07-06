@@ -70,4 +70,9 @@ internal static class EditorNavigationMetadata
             _ => node.Notes,
         };
     }
+
+    public static bool CollapseSiblingsWhenOpenedBySelection(ProjectTreeNode node)
+    {
+        return node.Kind is ProjectTreeNodeKind.ComponentClass;
+    }
 }

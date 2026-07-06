@@ -1014,6 +1014,11 @@ public partial class MainWindow : SukiWindow
         var parent = node.Parent;
         while (parent is not null)
         {
+            if (EditorNavigationMetadata.CollapseSiblingsWhenOpenedBySelection(parent))
+            {
+                CollapseSiblingNodes(parent);
+            }
+
             _expandedNodeIds.Add(parent.Id);
             parent = parent.Parent;
         }
