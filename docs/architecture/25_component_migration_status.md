@@ -85,6 +85,8 @@ legacy/new fragments.
 
 - no central `webPreviewBridge.ts` exists;
 - removed React/debug/remotion legacy route directories do not reappear;
+- removed renderable fallback helpers do not reappear under
+  `src/visual/renderable/helpers.ts`;
 - desktop design preview uses the clean desktop HTML adapter instead of the
   legacy React renderable adapter;
 - central desktop preview renderer/common helpers do not contain component names;

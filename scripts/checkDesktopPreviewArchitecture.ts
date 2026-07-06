@@ -202,6 +202,7 @@ for (const removedLegacyPath of [
   "src/electron",
   "src/remotion",
   "src/visual/adapters/react",
+  "src/visual/renderable/helpers.ts",
   "src/visual/layout",
   "src/visual/modules",
   "src/visual/validation",
