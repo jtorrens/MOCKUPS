@@ -511,6 +511,16 @@ if (payloadSource.includes("device:")) {
     "design preview payload must expose previewFrame, not device",
   );
 }
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/WebDesignPreviewRenderer.cs",
+  "device =",
+  "web design preview renderer must serialize previewFrame, not a device object",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/WebDesignPreviewRenderer.cs",
+  "previewFrame = new",
+  "web design preview renderer must provide previewFrame geometry to the web renderer",
+);
 if (payloadSource.includes('"statusBar"') || payloadSource.includes('"navigationBar"')) {
   addViolation(
     "src/desktop-preview/designPreviewPayload.ts",
