@@ -101,10 +101,6 @@ export function videoComponentToRenderable(
       ...statusNodes,
       ...playNodes,
     ],
-    metadata: {
-      route: "component-resolver.video-renderable",
-      componentType: "video",
-    },
   };
 }
 

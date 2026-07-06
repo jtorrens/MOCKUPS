@@ -85,6 +85,8 @@ as one planned phase, not as mixed legacy/new fragments.
 - registry routes every manifest component;
 - manifest entries and desktop component seeds match;
 - component renderables emit only allowed generic primitive node types;
+- component renderables do not emit component identity metadata into the final
+  paint tree;
 - concrete component imports only follow declared manifest ownership;
 - legacy `audio_message`, `button_icon`, `text_input_bar` and `video_message`
   names do not return to the desktop preview manifest or registry.

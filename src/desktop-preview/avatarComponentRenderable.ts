@@ -172,9 +172,5 @@ function avatarRenderableNode(
           ]
         : []),
     ],
-    metadata: {
-      route: "component-resolver.avatar-renderable",
-      componentType: "avatar",
-    },
   };
 }

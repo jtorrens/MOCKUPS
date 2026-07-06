@@ -187,9 +187,5 @@ export function labelComponentToRenderableAt(
           ]
         : []),
     ],
-    metadata: {
-      route: "component-resolver.label-renderable",
-      componentType: "label",
-    },
   };
 }

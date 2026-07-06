@@ -285,9 +285,5 @@ export function audioComponentToRenderable(
           ]
         : []),
     ],
-    metadata: {
-      route: "component-resolver.audio-renderable",
-      componentType: "audio",
-    },
   };
 }

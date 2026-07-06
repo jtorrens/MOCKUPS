@@ -237,6 +237,25 @@ for (const [componentClass, entry] of manifestEntries) {
   }
 }
 
+for (const [, entry] of manifestEntries) {
+  const renderableFile = moduleFile(entry, "renderable");
+  assertDoesNotContain(
+    renderableFile,
+    "componentType:",
+    "component renderables must not emit component identity metadata into the final paint tree",
+  );
+  assertDoesNotContain(
+    renderableFile,
+    "systemBarType:",
+    "system component renderables must not emit system-bar identity metadata into the final paint tree",
+  );
+}
+assertDoesNotContain(
+  "src/desktop-preview/systemBarRenderables.ts",
+  "systemBarType:",
+  "shared system bar renderables must not emit system-bar identity metadata into the final paint tree",
+);
+
 const routedComponentClasses = new Set(Object.keys(componentRenderableFactories));
 for (const [componentClass, entry] of manifestEntries) {
   if (!routedComponentClasses.has(componentClass)) {

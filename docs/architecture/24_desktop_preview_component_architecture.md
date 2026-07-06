@@ -304,6 +304,7 @@ Forbidden:
 - override state;
 - DB/editor state;
 - component-specific node types.
+- component identity metadata such as `componentType` or `systemBarType`.
 
 Color values should use named mode variants, not a fixed light/dark-only shape:
 

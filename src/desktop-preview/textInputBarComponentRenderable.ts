@@ -148,9 +148,5 @@ export function textInputBarComponentToRenderable(
         },
       },
     ],
-    metadata: {
-      route: "component-resolver.text-input-bar-renderable",
-      componentType: "textInputBar",
-    },
   };
 }

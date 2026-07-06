@@ -202,10 +202,6 @@ function buttonIconRenderableNode(
           ]
         : []),
     ],
-    metadata: {
-      route: "component-resolver.button-icon-renderable",
-      componentType: "buttonIcon",
-    },
   };
 }
 

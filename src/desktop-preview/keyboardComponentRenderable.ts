@@ -136,10 +136,6 @@ export function keyboardComponentToRenderable(
       ...keyNodes,
       ...bottomNodes,
     ],
-    metadata: {
-      route: "component-resolver.keyboard-renderable",
-      componentType: "keyboard",
-    },
   };
 }
 

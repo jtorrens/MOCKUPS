@@ -42,10 +42,6 @@ export function statusBarToRenderable(
       background: tokens.background,
     },
     children: boxedStatusItems(payload, statusBar, layout, barHeight),
-    metadata: {
-      route: "system-component.renderable",
-      systemBarType: "statusBar",
-    },
   };
 }
 
@@ -103,10 +99,6 @@ export function navigationBarToRenderable(
           },
         },
       ],
-      metadata: {
-        route: "system-component.renderable",
-        systemBarType: "navigationBar",
-      },
     };
   }
 
@@ -120,10 +112,6 @@ export function navigationBarToRenderable(
       background: tokens.background,
     },
     children: boxedNavigationItems(box, navigationBar, layout, tokens.foreground),
-    metadata: {
-      route: "system-component.renderable",
-      systemBarType: "navigationBar",
-    },
   };
 }
 
