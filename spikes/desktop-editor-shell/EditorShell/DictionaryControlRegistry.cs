@@ -38,9 +38,14 @@ internal static class DictionaryControlRegistry
             [ValueKind.Integer] = CreateNumberControl,
             [ValueKind.Decimal] = CreateNumberControl,
             [ValueKind.IntegerPair] = (request) => new DictionaryIntegerPairControl(request.Definition, request.Value),
+            [ValueKind.DirectoryPath] = (request) => new DictionaryPathControl(
+                request.Definition,
+                request.Value,
+                request.Services.BrowsePath),
             [ValueKind.ImageFilePath] = (request) => new DictionaryImageFileControl(
                 request.Definition,
                 request.Value,
+                request.Services.BrowsePath,
                 request.Services.ResolveImagePath,
                 request.Services.GetFieldValue),
             [ValueKind.IconSlots] = (request) => new IconSlotsControl(

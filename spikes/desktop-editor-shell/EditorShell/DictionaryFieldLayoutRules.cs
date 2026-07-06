@@ -9,8 +9,6 @@ internal static class DictionaryFieldLayoutRules
     {
         return valueKind switch
         {
-            ValueKind.DirectoryPath => new ColumnDefinitions("180,*,Auto,Auto"),
-            ValueKind.ImageFilePath => new ColumnDefinitions("180,*,Auto,Auto"),
             ValueKind.HexColor => new ColumnDefinitions("180,*,Auto"),
             ValueKind.HueDegrees => new ColumnDefinitions("180,*,Auto"),
             ValueKind.IntegerPair => new ColumnDefinitions("180,*,Auto"),
@@ -61,8 +59,6 @@ internal static class DictionaryFieldLayoutRules
     {
         return valueKind switch
         {
-            ValueKind.DirectoryPath => 3,
-            ValueKind.ImageFilePath => 3,
             ValueKind.HexColor => 2,
             _ => 2,
         };

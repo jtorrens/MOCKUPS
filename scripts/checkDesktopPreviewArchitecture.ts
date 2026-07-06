@@ -786,6 +786,11 @@ assertContains(
   "DictionaryControlRegistry.Create",
   "dictionary field rows must host controls through the dictionary control registry",
 );
+assertNoTerms("spikes/desktop-editor-shell/EditorShell/DictionaryFieldControl.cs", [
+  "DictionaryPathBrowseButton",
+  "ValueKind.DirectoryPath",
+  "ValueKind.ImageFilePath",
+]);
 assertContains(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
   "index < slots.Count - 1 && overrides is not null",

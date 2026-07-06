@@ -8,6 +8,7 @@ using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Globalization;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -17,6 +18,7 @@ internal sealed class DictionaryImageFileControl : Grid, IDictionaryValueControl
     private readonly Func<string, string?>? _resolveImagePath;
     private readonly Func<string, string>? _getFieldValue;
     private readonly TextBox _textBox;
+    private readonly DictionaryPathBrowseButton _browseButton;
     private readonly Border _previewFrame;
     private readonly Image _previewImage;
     private readonly TextBlock _emptyPreviewText;
@@ -27,6 +29,7 @@ internal sealed class DictionaryImageFileControl : Grid, IDictionaryValueControl
     public DictionaryImageFileControl(
         FieldDefinition definition,
         string value,
+        Func<string, ValueKind, Task<string?>>? browsePath,
         Func<string, string?>? resolveImagePath,
         Func<string, string>? getFieldValue)
     {
@@ -47,7 +50,25 @@ internal sealed class DictionaryImageFileControl : Grid, IDictionaryValueControl
             SetLocalValue(_textBox.Text ?? "");
         };
         AttachDeferredCommit(_textBox);
-        Children.Add(_textBox);
+
+        var pathRow = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("*,Auto"),
+            ColumnSpacing = 10,
+            Children =
+            {
+                _textBox,
+            },
+        };
+        _browseButton = new DictionaryPathBrowseButton(definition.ValueKind, value, definition.IsEditable, browsePath);
+        _browseButton.ValueCommitted += (_, selectedPath) =>
+        {
+            SetLocalValue(selectedPath, updateTextBox: true);
+            CommitValue();
+        };
+        SetColumn(_browseButton, 1);
+        pathRow.Children.Add(_browseButton);
+        Children.Add(pathRow);
 
         _previewImage = new Image();
 
@@ -87,17 +108,26 @@ internal sealed class DictionaryImageFileControl : Grid, IDictionaryValueControl
         if (_value == value) return;
 
         _value = value;
+        _browseButton.SetValue(value);
         _isUpdating = true;
         _textBox.Text = value;
         _isUpdating = false;
         RefreshPreview();
     }
 
-    private void SetLocalValue(string value)
+    private void SetLocalValue(string value, bool updateTextBox = false)
     {
         if (_value == value) return;
 
         _value = value;
+        _browseButton.SetValue(value);
+        if (updateTextBox)
+        {
+            _isUpdating = true;
+            _textBox.Text = value;
+            _isUpdating = false;
+        }
+
         RefreshPreview();
         ValueChanged?.Invoke(this, _value);
     }

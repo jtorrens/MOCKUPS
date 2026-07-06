@@ -14,7 +14,6 @@ internal sealed class DictionaryFieldControl : Grid
     private readonly FieldDefinition _definition;
     private readonly TextBlock _label;
     private readonly IDictionaryValueControl? _valueControl;
-    private readonly DictionaryPathBrowseButton? _pathBrowseButton;
     private readonly Button _restoreButton;
     private bool _isInherited;
     private string _value;
@@ -55,17 +54,6 @@ internal sealed class DictionaryFieldControl : Grid
             _value,
             services,
             fieldValue.IsHighlighted));
-
-        if (_definition.ValueKind is ValueKind.DirectoryPath or ValueKind.ImageFilePath)
-        {
-            _pathBrowseButton = new DictionaryPathBrowseButton(_definition.ValueKind, _value, _definition.IsEditable, services.BrowsePath);
-            _pathBrowseButton.ValueCommitted += (_, value) =>
-            {
-                SetValue(value, commit: true);
-            };
-            SetColumn(_pathBrowseButton, 2);
-            Children.Add(_pathBrowseButton);
-        }
 
         _restoreButton = new Button
         {
@@ -152,7 +140,6 @@ internal sealed class DictionaryFieldControl : Grid
         _value = value;
         _isInherited = false;
         _valueControl?.SetValue(value);
-        _pathBrowseButton?.SetValue(value);
 
         UpdateState();
         ValueChanged?.Invoke(this, _value);
@@ -199,7 +186,6 @@ internal sealed class DictionaryFieldControl : Grid
     {
         _value = value;
         _valueControl?.SetValue(value);
-        _pathBrowseButton?.SetValue(value);
     }
 
     private IDictionaryValueControl AddValueControl(IDictionaryValueControl valueControl)
