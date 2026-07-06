@@ -177,8 +177,14 @@ internal sealed class DesignPreviewInputsPanel : ContentControl
             return payload;
         }
 
+        var inputs = DesignPreviewInputCatalog.ForComponent(payload.ComponentType).ToList();
         var preview = ParseJsonObject(payload.DesignPreviewJson);
-        foreach (var input in DesignPreviewInputCatalog.ForComponent(payload.ComponentType))
+        if (!string.IsNullOrWhiteSpace(_projectId))
+        {
+            EnsureActorValues(inputs, _projectId);
+        }
+
+        foreach (var input in inputs)
         {
             var value = Value(input);
             switch (input.Kind)
