@@ -540,6 +540,36 @@ for (const filePath of walkFiles(previewRoot)) {
 }
 
 const payloadSource = readText("src/desktop-preview/designPreviewPayload.ts");
+{
+  const adapterSource = readText("src/desktop-preview/DesktopRenderableHtmlAdapter.tsx");
+  const supportedNodeTypesMatch = /supportedNodeTypes\s*=\s*new Set\(\[([\s\S]*?)\]\)/.exec(adapterSource);
+  if (!supportedNodeTypesMatch) {
+    addViolation(
+      "src/desktop-preview/DesktopRenderableHtmlAdapter.tsx",
+      "desktop renderer must declare its supported primitive node types explicitly",
+    );
+  } else {
+    const supportedTypes = new Set(
+      [...supportedNodeTypesMatch[1].matchAll(/"([^"]+)"/g)].map((match) => match[1] ?? ""),
+    );
+    for (const primitiveType of desktopPreviewPaintNodeTypes) {
+      if (!supportedTypes.has(primitiveType)) {
+        addViolation(
+          "src/desktop-preview/DesktopRenderableHtmlAdapter.tsx",
+          `desktop renderer does not support allowed primitive node type "${primitiveType}"`,
+        );
+      }
+    }
+    for (const supportedType of supportedTypes) {
+      if (!desktopPreviewPaintNodeTypes.has(supportedType)) {
+        addViolation(
+          "src/desktop-preview/DesktopRenderableHtmlAdapter.tsx",
+          `desktop renderer supports non-allowlisted primitive node type "${supportedType}"`,
+        );
+      }
+    }
+  }
+}
 if (payloadSource.includes("device:")) {
   addViolation(
     "src/desktop-preview/designPreviewPayload.ts",
