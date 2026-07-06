@@ -113,6 +113,8 @@ legacy/new fragments.
 - migrated desktop component record-class ids use the current component names
   such as `component.buttonIcon` and `component.textInputBar`, not legacy
   snake-case ids.
+- component runtime inputs use generic `recordReference` + `tableId`, not
+  specialized record input kinds such as `ActorReference`.
 
 Compatibility note:
 

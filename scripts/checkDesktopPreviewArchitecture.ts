@@ -901,6 +901,23 @@ assertDoesNotContain(
   "\"actor\",",
   "component input seeds must use generic recordReference + tableId, not a special actor input kind",
 );
+for (const recordReferenceSpecializationPath of [
+  "spikes/desktop-editor-shell/EditorShell/FieldDefinition.cs",
+  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassDefaults.cs",
+]) {
+  for (const forbiddenRecordReferenceSpecialization of [
+    "ActorReference",
+    "ComponentInputKind.Actor",
+    "ValueKind.Actor",
+  ]) {
+    assertDoesNotContain(
+      recordReferenceSpecializationPath,
+      forbiddenRecordReferenceSpecialization,
+      "record references must stay generic through recordReference + tableId",
+    );
+  }
+}
 assertDoesNotContain(
   "spikes/desktop-editor-shell/EditorShell/RecordClassFieldValueService.cs",
   "ProjectTreeNodeKind.StatusBar => fieldId.StartsWith(\"statusBar.\"",

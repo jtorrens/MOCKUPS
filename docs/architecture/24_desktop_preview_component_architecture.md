@@ -518,6 +518,8 @@ Rules:
 - input declarations belong to the component contract/data;
 - preview may edit sample values, but must not define component-specific
   catalogs;
+- record inputs must use the generic `recordReference` kind with a `tableId`,
+  not specialized kinds such as `ActorReference`;
 - screen/module composition must use the same declarations and provide real
   frame values;
 - resolvers decide how input values affect component atoms;
