@@ -58,7 +58,6 @@ export function videoComponentToRenderable(
   return {
     id: video.id,
     type: "group",
-    role: "video",
     frame: 0,
     box: outerBox,
     style: {
@@ -68,7 +67,6 @@ export function videoComponentToRenderable(
       {
         ...videoSurfaceNode,
         id: `${video.id}.surface`,
-        role: "video_surface",
         style: {
           ...videoSurfaceNode.style,
           overflow: "hidden",
@@ -108,7 +106,6 @@ function videoStatusNodes(
       return {
         id: `${video.id}.status.icon.${index}`,
         type: "icon_token",
-        role: "video_status_icon",
         frame: 0,
         box,
         text: token,
@@ -125,7 +122,6 @@ function videoStatusNodes(
     {
       id: `${video.id}.status.background`,
       type: "surface",
-      role: "video_status_background",
       frame: 0,
       box: topBox,
       style: {
@@ -136,7 +132,6 @@ function videoStatusNodes(
     {
       id: `${video.id}.status.duration`,
       type: "text",
-      role: "video_status_duration",
       frame: 0,
       box: {
         x: topBox.x + topBox.width - padding - durationWidth,
@@ -176,7 +171,6 @@ function videoPlayNodes(
     {
       id: `${video.id}.play`,
       type: "surface",
-      role: "video_play_overlay",
       frame: 0,
       box,
       text: "▶",

@@ -33,7 +33,6 @@ export function statusBarComponentToRenderable(
   return {
     id: "status_bar",
     type: "group",
-    role: "device_status",
     frame: 0,
     box,
     style: {
@@ -100,7 +99,6 @@ function statusBarItemNode(
     return {
       id,
       type: "surface",
-      role: "status_icon",
       frame: 0,
       text: item.token || item.label,
       box,
@@ -112,7 +110,6 @@ function statusBarItemNode(
   return {
     id,
     type: "text",
-    role: "status_text",
     frame: 0,
     text: stringValue(item.value),
     box,
@@ -148,14 +145,12 @@ function generatedBatteryRenderable(
   return {
     id,
     type: "group",
-    role: "status_battery",
     frame: 0,
     box,
     children: [
       {
         id: `${id}:body`,
         type: "surface",
-        role: "battery_body",
         frame: 0,
         box: { x: bodyX, y: bodyY, width: bodyWidth, height: bodyHeight },
         style: {
@@ -167,7 +162,6 @@ function generatedBatteryRenderable(
       {
         id: `${id}:fill`,
         type: "surface",
-        role: "battery_fill",
         frame: 0,
         box: {
           x: bodyX + innerInset,
@@ -183,7 +177,6 @@ function generatedBatteryRenderable(
       {
         id: `${id}:cap`,
         type: "surface",
-        role: "battery_cap",
         frame: 0,
         box: {
           x: bodyX + bodyWidth + stroke * 0.5,
@@ -201,7 +194,6 @@ function generatedBatteryRenderable(
             {
               id: `${id}:charging`,
               type: "path",
-              role: "battery_charging",
               frame: 0,
               box: {
                 x: bodyX + bodyWidth * 0.36,
@@ -235,7 +227,6 @@ function generatedSignalRenderable(
   return {
     id,
     type: "group",
-    role: "status_signal",
     frame: 0,
     box,
     children: [1, 2, 3, 4].map((bar) => {
@@ -243,7 +234,6 @@ function generatedSignalRenderable(
       return {
         id: `${id}:bar:${bar}`,
         type: "surface",
-        role: "signal_bar",
         frame: 0,
         box: {
           x: box.x + (bar - 1) * (barWidth + gap),

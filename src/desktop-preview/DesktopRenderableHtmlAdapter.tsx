@@ -395,7 +395,6 @@ function RenderNode({
     : parentOrigin;
   return (
     <div
-      data-renderable-role={node.role}
       data-renderable-type={node.type}
       style={{
         ...nodeStyle(node, parentOrigin),

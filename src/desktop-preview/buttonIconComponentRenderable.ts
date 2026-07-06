@@ -138,7 +138,6 @@ function buttonIconRenderableNode(
   return {
     id: buttonIcon.id,
     type: "group",
-    role: "buttonIcon",
     frame: 0,
     box: groupBox,
     style: {
@@ -148,7 +147,6 @@ function buttonIconRenderableNode(
       {
         id: `${buttonIcon.id}.surface`,
         type: "surface",
-        role: "buttonIconSurface",
         frame: 0,
         box: buttonBox,
         style: {
@@ -182,7 +180,6 @@ function buttonIconRenderableNode(
       {
         id: `${buttonIcon.id}.glyph`,
         type: "icon_token",
-        role: "iconToken",
         frame: 0,
         box: iconBox,
         text: buttonIcon.iconToken,

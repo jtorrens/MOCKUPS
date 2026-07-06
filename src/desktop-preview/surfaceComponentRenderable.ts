@@ -42,7 +42,6 @@ export function surfaceComponentToRenderable(
   return {
     id: surface.id,
     type: "group",
-    role: "surfacePreview",
     frame: 0,
     box: groupBox,
     style: {
@@ -64,7 +63,6 @@ export function surfaceComponentToRenderableAt(
   return {
     id: surface.id,
     type: "surface",
-    role: "surface",
     frame: 0,
     box,
     style: {

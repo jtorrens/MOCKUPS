@@ -442,6 +442,13 @@ for (const filePath of walkFiles(previewRoot)) {
     }
   }
 
+  if (desktopPreviewPaintTreeSourceFiles.has(relativePath) && /role:\s*["']/.test(source)) {
+    addViolation(
+      relativePath,
+      "desktop preview paint tree nodes must not emit role metadata; use generic node types and marks only",
+    );
+  }
+
   const nodeTypePattern = /type:\s*["']([^"']+)["']/g;
   let nodeTypeMatch: RegExpExecArray | null;
   while ((nodeTypeMatch = nodeTypePattern.exec(source)) !== null) {

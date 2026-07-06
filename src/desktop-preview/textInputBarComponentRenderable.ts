@@ -85,7 +85,6 @@ export function textInputBarComponentToRenderable(
   return {
     id: textInput.id,
     type: "group",
-    role: "textInputBar",
     frame: 0,
     box: outerBox,
     style: {
@@ -95,12 +94,10 @@ export function textInputBarComponentToRenderable(
       {
         ...surfaceComponentToRenderableAt(payload, textInput.surface, fieldBox),
         id: `${textInput.id}.surface`,
-        role: "textInputBarSurface",
       },
       {
         id: `${textInput.id}.text`,
         type: "text",
-        role: "textInputBarText",
         frame: 0,
         box: textBox,
         text: textValue,
@@ -117,7 +114,6 @@ export function textInputBarComponentToRenderable(
       {
         id: `${textInput.id}.cursor`,
         type: "surface",
-        role: "textInputBarCursor",
         frame: 0,
         box: cursorBox,
         style: {

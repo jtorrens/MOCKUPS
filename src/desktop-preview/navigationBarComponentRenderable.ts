@@ -40,7 +40,6 @@ export function navigationBarComponentToRenderable(
     return {
       id: "navigation_bar",
       type: "group",
-      role: "device_navigation",
       frame: 0,
       box,
       style: {
@@ -50,7 +49,6 @@ export function navigationBarComponentToRenderable(
         {
           id: "navigation_bar:gesture",
           type: "surface",
-          role: "gesture_bar",
           frame: 0,
           box: {
             x: screen.x + (screen.width - gesture.width) / 2,
@@ -70,7 +68,6 @@ export function navigationBarComponentToRenderable(
   return {
     id: "navigation_bar",
     type: "group",
-    role: "device_navigation",
     frame: 0,
     box,
     style: {

@@ -89,7 +89,6 @@ export function keyboardComponentToRenderable(
   return {
     id: keyboard.id,
     type: "group",
-    role: "keyboard",
     frame: 0,
     box: outerBox,
     style: {
@@ -99,7 +98,6 @@ export function keyboardComponentToRenderable(
       {
         id: `${keyboard.id}.surface`,
         type: "surface",
-        role: "keyboard_surface",
         frame: 0,
         box: keyboardBox,
         style: {
@@ -187,7 +185,6 @@ function keyboardRowNodes(
       {
         id: `${keyboard.id}.key.${rowIndex}.${index}.surface`,
         type: "surface",
-        role: "keyboardKeySurface",
         frame: 0,
         box,
         style: {
@@ -199,7 +196,6 @@ function keyboardRowNodes(
       {
         id: `${keyboard.id}.key.${rowIndex}.${index}.text`,
         type: "text",
-        role: "keyboardKeyText",
         frame: 0,
         box,
         text: displayText,
@@ -251,7 +247,6 @@ function keyboardBottomIconNodes(
     const node = {
       id: `${keyboard.id}.bottomIcon.${index}`,
       type: "icon_token",
-      role: "keyboard_bottom_icon",
       frame: 0,
       box: {
         x,

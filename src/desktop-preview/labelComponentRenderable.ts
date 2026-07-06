@@ -91,7 +91,6 @@ export function labelComponentToRenderableAt(
   return {
     ...surfaceNode,
     id: label.id,
-    role: "label",
     style: {
       ...surfaceNode.style,
       paddingX: label.padding.x * scale,
@@ -117,7 +116,6 @@ export function labelComponentToRenderableAt(
       {
         id: `${label.id}.text`,
         type: "text",
-        role: "label_primary",
         frame: 0,
         text: label.text,
         style: {
@@ -137,7 +135,6 @@ export function labelComponentToRenderableAt(
             {
               id: `${label.id}.subtext`,
               type: "text",
-              role: "label_secondary",
               frame: 0,
               text: label.subtext,
               style: {

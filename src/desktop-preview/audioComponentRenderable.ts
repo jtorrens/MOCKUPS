@@ -164,7 +164,6 @@ export function audioComponentToRenderable(
   return {
     id: audio.id,
     type: "group",
-    role: "audio",
     frame: 0,
     box: groupBox,
     style: {
@@ -174,12 +173,10 @@ export function audioComponentToRenderable(
       {
         ...surfaceComponentToRenderableAt(payload, audio.surface, audioBox),
         id: `${audio.id}.surface`,
-        role: "audio_surface",
       },
       {
         id: `${audio.id}.play`,
         type: "surface",
-        role: "play_control",
         frame: 0,
         box: playBox,
         text: "▶",
@@ -200,7 +197,6 @@ export function audioComponentToRenderable(
       {
         id: `${audio.id}.knob`,
         type: "surface",
-        role: "progress_knob",
         frame: 0,
         box: knobBox,
         style: {
@@ -211,7 +207,6 @@ export function audioComponentToRenderable(
       {
         id: `${audio.id}.duration`,
         type: "text",
-        role: "duration",
         frame: 0,
         box: textBox,
         text: durationText,
