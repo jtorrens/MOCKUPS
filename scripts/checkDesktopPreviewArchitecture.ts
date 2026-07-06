@@ -688,6 +688,11 @@ for (const forbiddenComponentInputControl of [
   );
 }
 assertDoesNotContain(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassDefaults.cs",
+  "\"actor\",",
+  "component input seeds must use generic recordReference + tableId, not a special actor input kind",
+);
+assertDoesNotContain(
   "spikes/desktop-editor-shell/EditorShell/RecordClassFieldValueService.cs",
   "ProjectTreeNodeKind.StatusBar => fieldId.StartsWith(\"statusBar.\"",
   "legacy status bars must not be exposed through record-class field editing",

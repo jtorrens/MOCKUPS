@@ -279,7 +279,14 @@ internal sealed partial class SpikeDatabase
             ],
             "avatar" =>
             [
-                ComponentInput("actorId", "Actor", "actorId", "actor", ""),
+                ComponentInput(
+                    "actorId",
+                    "Actor",
+                    "actorId",
+                    "recordReference",
+                    "",
+                    tableId: "actors",
+                    resolvedJsonKey: "actor"),
                 ComponentInput("sampleSubtext", "Subtitle", "sampleSubtext", "text", "Subtitle"),
             ],
             "buttonIcon" =>
@@ -296,7 +303,14 @@ internal sealed partial class SpikeDatabase
             [
                 ComponentInput("isPlaying", "Playing", "isPlaying", "boolean", "false"),
                 ComponentInput("durationSeconds", "Duration", "durationSeconds", "number", "65", minimum: 1, maximum: 86400, increment: 1),
-                ComponentInput("actorId", "Actor", "actorId", "actor", ""),
+                ComponentInput(
+                    "actorId",
+                    "Actor",
+                    "actorId",
+                    "recordReference",
+                    "",
+                    tableId: "actors",
+                    resolvedJsonKey: "actor"),
             ],
             "video" =>
             [
@@ -314,7 +328,9 @@ internal sealed partial class SpikeDatabase
         string defaultValue,
         decimal minimum = 0,
         decimal maximum = 9999,
-        decimal increment = 1)
+        decimal increment = 1,
+        string tableId = "",
+        string resolvedJsonKey = "")
     {
         return new JsonObject
         {
@@ -326,6 +342,8 @@ internal sealed partial class SpikeDatabase
             ["minimum"] = minimum,
             ["maximum"] = maximum,
             ["increment"] = increment,
+            ["tableId"] = tableId,
+            ["resolvedJsonKey"] = resolvedJsonKey,
         };
     }
 

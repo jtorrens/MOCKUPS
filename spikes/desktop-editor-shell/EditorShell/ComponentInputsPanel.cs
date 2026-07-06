@@ -90,7 +90,7 @@ internal sealed class ComponentInputsPanel : ContentControl
             {
                 EnsureValue(input, preview);
             }
-            EnsureActorValues(inputs, projectId);
+            EnsureRecordReferenceValues(inputs, projectId);
             if (shouldRebuild)
             {
                 RebuildCard(inputs, projectId);
@@ -196,7 +196,7 @@ internal sealed class ComponentInputsPanel : ContentControl
         var effectiveProjectId = string.IsNullOrWhiteSpace(projectId) ? _projectId : projectId;
         if (!string.IsNullOrWhiteSpace(effectiveProjectId))
         {
-            EnsureActorValues(inputs, effectiveProjectId);
+            EnsureRecordReferenceValues(inputs, effectiveProjectId);
         }
 
         foreach (var input in inputs)
@@ -213,16 +213,8 @@ internal sealed class ComponentInputsPanel : ContentControl
                 case ComponentInputKind.Boolean:
                     preview[input.JsonKey] = StringToBool(value);
                     break;
-                case ComponentInputKind.Actor:
-                    preview[input.JsonKey] = value;
-                    if (!string.IsNullOrWhiteSpace(value))
-                    {
-                        preview["actor"] = ActorPreviewInputFactory.Create(_database, value, themeMode, payload.PaletteColors);
-                    }
-                    else
-                    {
-                        preview["actor"] = ActorPreviewInputFactory.CreateSample();
-                    }
+                case ComponentInputKind.RecordReference:
+                    ApplyRecordReferenceInput(preview, input, value, themeMode, payload.PaletteColors);
                     break;
                 default:
                     preview[input.JsonKey] = value;
@@ -299,13 +291,13 @@ internal sealed class ComponentInputsPanel : ContentControl
                 ValueKind.OptionToken,
                 DefaultValue: input.DefaultValue,
                 Options: input.Options),
-            ComponentInputKind.Actor => new FieldDefinition(
+            ComponentInputKind.RecordReference => new FieldDefinition(
                 input.Id,
                 input.Label,
                 ValueKind.RecordReference,
                 DefaultValue: input.DefaultValue,
-                Options: _database.GetActorOptions(projectId),
-                RecordReference: new RecordReferenceDefinition("actors")),
+                Options: RecordReferenceOptions(input, projectId),
+                RecordReference: new RecordReferenceDefinition(input.TableId)),
             ComponentInputKind.Icon => new FieldDefinition(
                 input.Id,
                 input.Label,
@@ -345,28 +337,101 @@ internal sealed class ComponentInputsPanel : ContentControl
         };
     }
 
-    private void EnsureActorValues(IReadOnlyList<ComponentInputDefinition> inputs, string projectId)
+    private void EnsureRecordReferenceValues(IReadOnlyList<ComponentInputDefinition> inputs, string projectId)
     {
-        if (!inputs.Any((input) => input.Kind == ComponentInputKind.Actor))
+        var recordInputs = inputs
+            .Where((input) => input.Kind == ComponentInputKind.RecordReference)
+            .ToList();
+        if (recordInputs.Count == 0)
         {
             return;
         }
 
-        var firstActor = _database.GetActorOptions(projectId)
-            .FirstOrDefault((option) => !string.IsNullOrWhiteSpace(option.Value));
-        if (firstActor is null)
-        {
-            return;
-        }
-
-        foreach (var input in inputs.Where((candidate) => candidate.Kind == ComponentInputKind.Actor))
+        foreach (var input in recordInputs)
         {
             var key = StorageKey(input);
-            if (string.IsNullOrWhiteSpace(_values.GetValueOrDefault(key)))
+            if (!string.IsNullOrWhiteSpace(_values.GetValueOrDefault(key)))
             {
-                _values[key] = firstActor.Value;
+                continue;
+            }
+
+            var firstRecord = RecordReferenceOptions(input, projectId)
+                .FirstOrDefault((option) => !string.IsNullOrWhiteSpace(option.Value));
+            if (firstRecord is not null)
+            {
+                _values[key] = firstRecord.Value;
             }
         }
+    }
+
+    private void ApplyRecordReferenceInput(
+        JsonObject preview,
+        ComponentInputDefinition input,
+        string value,
+        string themeMode,
+        IReadOnlyDictionary<string, string> paletteColors)
+    {
+        preview[input.JsonKey] = value;
+        if (string.IsNullOrWhiteSpace(input.ResolvedJsonKey))
+        {
+            return;
+        }
+
+        preview[input.ResolvedJsonKey] = input.TableId switch
+        {
+            "actors" => !string.IsNullOrWhiteSpace(value)
+                ? ActorPreviewInputFactory.Create(_database, value, themeMode, paletteColors)
+                : ActorPreviewInputFactory.CreateSample(),
+            _ => throw new InvalidOperationException(
+                $"Unsupported record reference input table '{input.TableId}' for '{input.Id}'."),
+        };
+    }
+
+    private IReadOnlyList<FieldOption> RecordReferenceOptions(ComponentInputDefinition input, string projectId)
+    {
+        return input.TableId switch
+        {
+            "actors" => _database.GetActorOptions(projectId),
+            _ => throw new InvalidOperationException(
+                $"Unsupported record reference input table '{input.TableId}' for '{input.Id}'."),
+        };
+    }
+
+    private static ComponentInputDefinition CreateInputDefinition(
+        string id,
+        string label,
+        string jsonKey,
+        string kind,
+        string defaultValue,
+        IReadOnlyList<FieldOption> options,
+        decimal minimum,
+        decimal maximum,
+        decimal increment,
+        string tableId,
+        string resolvedJsonKey)
+    {
+        var normalizedKind = ParseKind(kind);
+        var normalizedTableId = tableId;
+        var normalizedResolvedJsonKey = resolvedJsonKey;
+        if (kind.Trim().Equals("actor", StringComparison.OrdinalIgnoreCase))
+        {
+            normalizedKind = ComponentInputKind.RecordReference;
+            normalizedTableId = string.IsNullOrWhiteSpace(tableId) ? "actors" : tableId;
+            normalizedResolvedJsonKey = string.IsNullOrWhiteSpace(resolvedJsonKey) ? "actor" : resolvedJsonKey;
+        }
+
+        return new ComponentInputDefinition(
+            id,
+            label,
+            jsonKey,
+            normalizedKind,
+            defaultValue,
+            options,
+            minimum,
+            maximum,
+            increment,
+            normalizedTableId,
+            normalizedResolvedJsonKey);
     }
 
     private string Value(ComponentInputDefinition input)
@@ -607,16 +672,18 @@ internal sealed class ComponentInputsPanel : ContentControl
                 continue;
             }
 
-            yield return new ComponentInputDefinition(
+            yield return CreateInputDefinition(
                 id,
                 label,
                 jsonKey,
-                ParseKind(kind),
+                kind,
                 JsonString(item, "defaultValue"),
                 ReadOptions(item),
                 JsonDecimal(item, "minimum", 0),
                 JsonDecimal(item, "maximum", 9999),
-                JsonDecimal(item, "increment", 1));
+                JsonDecimal(item, "increment", 1),
+                JsonString(item, "tableId"),
+                JsonString(item, "resolvedJsonKey"));
         }
     }
 
@@ -662,7 +729,7 @@ internal sealed class ComponentInputsPanel : ContentControl
             "integerpair" or "integer_pair" or "size" => ComponentInputKind.IntegerPair,
             "boolean" => ComponentInputKind.Boolean,
             "option" => ComponentInputKind.Option,
-            "actor" => ComponentInputKind.Actor,
+            "recordreference" or "record_reference" => ComponentInputKind.RecordReference,
             "icon" => ComponentInputKind.Icon,
             _ => ComponentInputKind.Text,
         };
@@ -695,7 +762,7 @@ internal enum ComponentInputKind
     IntegerPair,
     Boolean,
     Option,
-    Actor,
+    RecordReference,
     Icon,
 }
 
@@ -708,7 +775,9 @@ internal sealed record ComponentInputDefinition(
     IReadOnlyList<FieldOption>? Options = null,
     decimal Minimum = 0,
     decimal Maximum = 9999,
-    decimal Increment = 1);
+    decimal Increment = 1,
+    string TableId = "",
+    string ResolvedJsonKey = "");
 
 internal sealed record ComponentInputAnimation(
     string PlayInputId,
