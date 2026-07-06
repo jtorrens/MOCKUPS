@@ -314,6 +314,41 @@ internal sealed partial class SpikeDatabase
         return GetComponentClassSettings(connection, componentClassId);
     }
 
+    public ComponentClassSettings GetComponentPresetSettings(ProjectTreeNode presetNode)
+    {
+        if (presetNode.Kind != ProjectTreeNodeKind.ComponentPreset
+            || !TryParseComponentPresetNodeId(presetNode.Id, out var componentClassId, out var presetId))
+        {
+            throw new InvalidOperationException($"Invalid component preset node id '{presetNode.Id}'.");
+        }
+
+        using var connection = OpenConnection();
+        var settings = GetComponentClassSettings(connection, componentClassId);
+        var metadata = ParseJsonObject(string.IsNullOrWhiteSpace(settings.MetadataJson) ? "{}" : settings.MetadataJson);
+        if (metadata["presets"] is not JsonArray presets)
+        {
+            throw new InvalidOperationException($"Component class '{componentClassId}' has no presets.");
+        }
+
+        var preset = FindPreset(presets, presetId)
+            ?? throw new InvalidOperationException($"Missing component preset '{presetId}'.");
+        if (preset["config"] is not JsonObject configObject)
+        {
+            throw new InvalidOperationException($"Component preset '{presetId}' has no config.");
+        }
+
+        var config = configObject.ToJsonString();
+        var presetName = JsonPath.String(preset, "name", presetId);
+
+        return settings with
+        {
+            Name = string.IsNullOrWhiteSpace(presetName)
+                ? settings.Name
+                : $"{settings.Name} · {presetName}",
+            ConfigJson = config,
+        };
+    }
+
     public IReadOnlyList<EmbeddedComponentUsage> GetEmbeddedComponentUsages(
         string projectId,
         string componentType,

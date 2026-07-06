@@ -48,6 +48,7 @@ internal static class DesignPreviewPayloadFactory
         return node.Kind switch
         {
             ProjectTreeNodeKind.ComponentClass => FromComponentClass(database, node, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme),
+            ProjectTreeNodeKind.ComponentPreset => FromComponentPreset(database, node, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme),
             _ => null,
         };
     }
@@ -62,6 +63,32 @@ internal static class DesignPreviewPayloadFactory
         SpikeDatabase.IconThemeSettings? iconTheme)
     {
         var settings = database.GetComponentClassSettings(node.Id);
+        var componentBaseConfigsJson = database.GetComponentClassBaseConfigsJson(settings.ProjectId);
+        return new DesignPreviewPayload(
+            "componentClass",
+            settings.Name,
+            settings.ConfigJson,
+            themeTokensJson,
+            paletteColors,
+            paletteNeutralColors,
+            projectMediaRoot,
+            iconTheme?.AssetRoot ?? "",
+            iconTheme?.MappingJson ?? "{}",
+            settings.ComponentType,
+            settings.DesignPreviewJson,
+            componentBaseConfigsJson);
+    }
+
+    private static DesignPreviewPayload FromComponentPreset(
+        SpikeDatabase database,
+        ProjectTreeNode node,
+        string themeTokensJson,
+        IReadOnlyDictionary<string, string> paletteColors,
+        IReadOnlyDictionary<string, bool> paletteNeutralColors,
+        string projectMediaRoot,
+        SpikeDatabase.IconThemeSettings? iconTheme)
+    {
+        var settings = database.GetComponentPresetSettings(node);
         var componentBaseConfigsJson = database.GetComponentClassBaseConfigsJson(settings.ProjectId);
         return new DesignPreviewPayload(
             "componentClass",

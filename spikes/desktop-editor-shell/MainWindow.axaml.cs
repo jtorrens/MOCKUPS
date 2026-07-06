@@ -78,7 +78,7 @@ public partial class MainWindow : SukiWindow
             RuntimePreviewHost,
             DesignPreviewHost,
             () => _isDark,
-            () => PreviewSelectionNode(),
+            () => _selectedNode,
             this);
         PreviewDeviceComboBox.SelectionChanged += (_, _) => _previewController.OnDeviceChanged();
         PreviewThemeComboBox.SelectionChanged += (_, _) => _previewController.OnThemeChanged();
@@ -912,11 +912,6 @@ public partial class MainWindow : SukiWindow
         var selectableNode = CanSelectTreeNode(node) ? node : ClosestEditableNode(node);
         ShowNode(selectableNode, rebuildTree: true);
         return true;
-    }
-
-    private ProjectTreeNode? PreviewSelectionNode()
-    {
-        return _selectedNode is null ? null : EditorNodeForSelection(_selectedNode);
     }
 
     private static bool CanSelectTreeNode(ProjectTreeNode node)
