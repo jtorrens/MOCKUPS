@@ -448,6 +448,12 @@ for (const filePath of walkFiles(previewRoot)) {
       "desktop preview paint tree nodes must not emit role metadata; use generic node types and marks only",
     );
   }
+  if (desktopPreviewPaintTreeSourceFiles.has(relativePath) && /metadata:\s*\{\s*\.\.\./.test(source)) {
+    addViolation(
+      relativePath,
+      "desktop preview paint tree metadata must not spread component contracts into final nodes",
+    );
+  }
 
   const nodeTypePattern = /type:\s*["']([^"']+)["']/g;
   let nodeTypeMatch: RegExpExecArray | null;

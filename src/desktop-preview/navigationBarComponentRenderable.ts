@@ -140,7 +140,6 @@ function navigationButtonNode(
         vectorEffect: "non-scaling-stroke",
         viewBox: "0 0 100 100",
       },
-      metadata: { ...item },
     };
   }
 
@@ -169,6 +168,5 @@ function navigationButtonNode(
         : layout.cornerRadius,
       borderWidth: layout.strokeWidth,
     },
-    metadata: { ...item },
   };
 }

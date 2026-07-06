@@ -103,7 +103,6 @@ function statusBarItemNode(
       text: item.token || item.label,
       box,
       style: iconTokenStyle(payload, item.token, foreground),
-      metadata: { ...item },
     };
   }
 
@@ -123,7 +122,6 @@ function statusBarItemNode(
       textAlign: "center",
       whiteSpace: "nowrap",
     },
-    metadata: { ...item },
   };
 }
 
@@ -211,7 +209,6 @@ function generatedBatteryRenderable(
           ]
         : []),
     ],
-    metadata: { value: level, charging },
   };
 }
 
@@ -248,7 +245,6 @@ function generatedSignalRenderable(
         },
       };
     }),
-    metadata: { value: bars },
   };
 }
 
