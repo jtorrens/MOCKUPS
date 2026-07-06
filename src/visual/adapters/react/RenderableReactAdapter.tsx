@@ -37,6 +37,18 @@ function numberValue(value: unknown): number | undefined {
   return typeof value === "number" ? value : undefined;
 }
 
+function svgStrokeLinecap(value: unknown): "butt" | "round" | "square" | "inherit" | undefined {
+  return value === "butt" || value === "round" || value === "square" || value === "inherit"
+    ? value
+    : undefined;
+}
+
+function svgStrokeLinejoin(value: unknown): "miter" | "round" | "bevel" | "inherit" | undefined {
+  return value === "miter" || value === "round" || value === "bevel" || value === "inherit"
+    ? value
+    : undefined;
+}
+
 function fontFaceCss(tree: RenderableNode) {
   const fontFaces = Array.isArray(tree.metadata?.fontFaces)
     ? tree.metadata.fontFaces
@@ -250,6 +262,8 @@ function nodeStyle(
   const backgroundPosition = stringValue(style.backgroundPosition);
   const backgroundRepeat = stringValue(style.backgroundRepeat);
   const color = stringValue(style.textColor ?? style.color ?? style.foreground);
+  const maskImage = stringValue(style.maskImage);
+  const webkitMaskImage = stringValue(style.WebkitMaskImage);
   const textAlign = stringValue(style.textAlign);
   const borderRadius = numberValue(style.borderRadius ?? style.cornerRadius);
   const borderColor = node.type === "avatar" ? undefined : stringValue(style.borderColor);
@@ -279,7 +293,9 @@ function nodeStyle(
     paddingRight: paddingX,
     paddingTop: paddingY,
     paddingBottom: paddingY,
-    backgroundColor,
+    backgroundColor: maskImage || webkitMaskImage
+      ? backgroundColor ?? "currentColor"
+      : backgroundColor,
     backgroundImage:
       node.type === "message_bubble_media_image" ? undefined : backgroundImage,
     backgroundSize,
@@ -321,6 +337,14 @@ function nodeStyle(
       node.type !== "message_bubble_shape" && borderColor && borderWidth
         ? `${borderWidth}px solid ${borderColor}`
         : undefined,
+    maskImage,
+    maskPosition: maskImage ? "center" : undefined,
+    maskRepeat: maskImage ? "no-repeat" : undefined,
+    maskSize: maskImage ? "contain" : undefined,
+    WebkitMaskImage: webkitMaskImage,
+    WebkitMaskPosition: webkitMaskImage ? "center" : undefined,
+    WebkitMaskRepeat: webkitMaskImage ? "no-repeat" : undefined,
+    WebkitMaskSize: webkitMaskImage ? "contain" : undefined,
     borderBottom:
       separatorWidth && separatorWidth > 0
         ? `${separatorWidth}px solid ${stringValue(style.separatorColor) ?? "transparent"}`
@@ -964,6 +988,34 @@ function nodeContent(node: RenderableNode): ReactNode {
   }
   if (node.type === "message_bubble_tail") {
     return messageBubbleTailNode(node);
+  }
+  if (node.type === "path") {
+    const pathData = stringValue(node.style?.pathData);
+    if (!pathData) return null;
+    const viewBox = stringValue(node.style?.viewBox) ?? "0 0 100 100";
+    return (
+      <svg
+        viewBox={viewBox}
+        preserveAspectRatio={stringValue(node.style?.preserveAspectRatio) ?? "none"}
+        aria-hidden="true"
+        style={{
+          display: "block",
+          width: "100%",
+          height: "100%",
+          overflow: "visible",
+        }}
+      >
+        <path
+          d={pathData}
+          fill={stringValue(node.style?.fill) ?? "currentColor"}
+          stroke={stringValue(node.style?.stroke)}
+          strokeLinecap={svgStrokeLinecap(node.style?.strokeLinecap)}
+          strokeLinejoin={svgStrokeLinejoin(node.style?.strokeLinejoin)}
+          strokeWidth={numberValue(node.style?.strokeWidth)}
+          vectorEffect={stringValue(node.style?.vectorEffect)}
+        />
+      </svg>
+    );
   }
   if (
     node.type === "message_bubble_status_icon" ||

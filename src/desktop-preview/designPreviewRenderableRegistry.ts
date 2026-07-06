@@ -1,26 +1,12 @@
 import type { RenderableNode } from "../visual/renderable/types.js";
 import { componentClassToRenderable } from "./componentClassRenderableRegistry.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import {
-  navigationBarToRenderable,
-  statusBarToRenderable,
-} from "./systemBarRenderables.js";
-import {
-  resolveNavigationBar,
-  resolveStatusBar,
-} from "./systemBarPreviewResolver.js";
 
 export function designPreviewPayloadToRenderable(
   payload: DesignPreviewPayload,
 ): RenderableNode {
   if (payload.kind === "componentClass") {
     return componentClassToRenderable(payload);
-  }
-  if (payload.kind === "statusBar") {
-    return statusBarToRenderable(payload, resolveStatusBar(payload));
-  }
-  if (payload.kind === "navigationBar") {
-    return navigationBarToRenderable(payload, resolveNavigationBar(payload));
   }
 
   const box = {

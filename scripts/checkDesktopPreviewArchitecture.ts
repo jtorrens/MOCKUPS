@@ -11,6 +11,16 @@ const previewRoot = path.join(root, "src", "desktop-preview");
 
 const violations: string[] = [];
 const allowedComponentNodeTypes = new Set(["component_preview_unsupported"]);
+const forbiddenDesktopPreviewNodeTypes = new Set([
+  "status_bar",
+  "status_bar_zone",
+  "status_bar_item",
+  "navigation_bar",
+  "navigation_bar_zone",
+  "navigation_bar_item",
+  "navigation_bar_gesture",
+  "waveform_bar",
+]);
 
 function relative(filePath: string) {
   return path.relative(root, filePath);
@@ -173,14 +183,20 @@ for (const [, entry] of manifestEntries) {
 for (const filePath of walkFiles(previewRoot)) {
   const relativePath = relative(filePath);
   const source = readFileSync(filePath, "utf8");
-  const nodeTypePattern = /type:\s*["'](component_[^"']+)["']/g;
+  const nodeTypePattern = /type:\s*["']([^"']+)["']/g;
   let nodeTypeMatch: RegExpExecArray | null;
   while ((nodeTypeMatch = nodeTypePattern.exec(source)) !== null) {
     const nodeType = nodeTypeMatch[1] ?? "";
-    if (!allowedComponentNodeTypes.has(nodeType)) {
+    if (nodeType.startsWith("component_") && !allowedComponentNodeTypes.has(nodeType)) {
       addViolation(
         relativePath,
         `component-specific renderable node type "${nodeType}" must be a generic primitive type`,
+      );
+    }
+    if (forbiddenDesktopPreviewNodeTypes.has(nodeType)) {
+      addViolation(
+        relativePath,
+        `desktop preview semantic node type "${nodeType}" must be emitted as generic primitives`,
       );
     }
   }

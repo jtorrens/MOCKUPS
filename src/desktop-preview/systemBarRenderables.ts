@@ -168,7 +168,7 @@ export function statusBarToRenderable(
   const barHeight = layout.height;
   return {
     id: "status_bar",
-    type: "status_bar",
+    type: "group",
     role: "device_status",
     frame: 0,
     box: {
@@ -178,16 +178,11 @@ export function statusBarToRenderable(
       height: barHeight,
     },
     style: {
-      foreground: tokens.foreground,
       background: tokens.background,
-      fontSize: layout.itemSize,
-      lineHeight: layout.itemSize,
-      gap: layout.gap,
-      paddingX: layout.sidePadding,
     },
     children: boxedStatusItems(payload, statusBar, layout, barHeight),
     metadata: {
-      route: "system-bar-resolver.web-bridge",
+      route: "system-component.renderable",
       systemBarType: "statusBar",
     },
   };
@@ -222,7 +217,7 @@ export function navigationBarToRenderable(
   if (navigationBar.type === "gestureBar") {
     return {
       id: "navigation_bar",
-      type: "navigation_bar",
+      type: "group",
       role: "device_navigation",
       frame: 0,
       box,
@@ -232,7 +227,7 @@ export function navigationBarToRenderable(
       children: [
         {
           id: "navigation_bar:gesture",
-          type: "navigation_bar_gesture",
+          type: "surface",
           role: "gesture_bar",
           frame: 0,
           box: {
@@ -248,7 +243,7 @@ export function navigationBarToRenderable(
         },
       ],
       metadata: {
-        route: "system-bar-resolver.web-bridge",
+        route: "system-component.renderable",
         systemBarType: "navigationBar",
       },
     };
@@ -256,24 +251,16 @@ export function navigationBarToRenderable(
 
   return {
     id: "navigation_bar",
-    type: "navigation_bar",
+    type: "group",
     role: "device_navigation",
     frame: 0,
     box,
     style: {
-      foreground: tokens.foreground,
       background: tokens.background,
-      fontSize: layout.itemSize,
-      lineHeight: layout.itemSize,
-      paddingX: layout.sidePadding,
     },
-    children: [
-      navigationZoneNode(navigationBar, layout, tokens.foreground, "left"),
-      navigationZoneNode(navigationBar, layout, tokens.foreground, "center"),
-      navigationZoneNode(navigationBar, layout, tokens.foreground, "right"),
-    ],
+    children: boxedNavigationItems(box, navigationBar, layout, tokens.foreground),
     metadata: {
-      route: "system-bar-resolver.web-bridge",
+      route: "system-component.renderable",
       systemBarType: "navigationBar",
     },
   };
@@ -333,36 +320,247 @@ function boxedStatusItems(
       const kind = stringValue(item.kind, "text");
       const id = stringValue(item.id, stringValue(item.label, `item_${index}`));
       const iconUri = stringValue(item.iconUri);
-      const node = {
-        id: `status_bar:${zone}:${id}`,
-        type: "status_bar_item",
-        role: kind,
-        frame: 0,
-        text: kind === "text"
-          ? stringValue(item.value)
-          : stringValue(item.token, stringValue(item.label)),
-        box: { x, y, width, height: itemSize },
-        style: {
-          color: foreground,
-          fontSize: itemSize,
-          lineHeight: itemSize,
-          ...(iconUri
-            ? {
-                maskImage: `url("${iconUri.replace(/"/g, '\\"')}")`,
-                WebkitMaskImage: `url("${iconUri.replace(/"/g, '\\"')}")`,
-              }
-            : {}),
-        },
-        metadata: { ...item },
-      };
+      const box = { x, y, width, height: itemSize };
+      const node = statusBarItemNode(
+        `status_bar:${zone}:${id}`,
+        kind,
+        item,
+        box,
+        itemSize,
+        foreground,
+        iconUri,
+      );
       x += width + gap;
       return node;
     });
   });
 }
 
-function navigationZoneNode(
+function statusBarItemNode(
+  id: string,
+  kind: string,
+  item: Record<string, unknown>,
+  box: RenderableBox,
+  itemSize: number,
+  foreground: string,
+  iconUri: string,
+): RenderableNode {
+  if (kind === "generatedBattery") {
+    return generatedBatteryRenderable(id, box, foreground, numberValue(item.value, 0), item.charging === true);
+  }
+  if (kind === "generatedSignal") {
+    return generatedSignalRenderable(id, box, foreground, numberValue(item.value, 0));
+  }
+  if (kind === "iconToken") {
+    return {
+      id,
+      type: "surface",
+      role: "status_icon",
+      frame: 0,
+      text: stringValue(item.token, stringValue(item.label)),
+      box,
+      style: {
+        color: foreground,
+        ...(iconUri
+          ? {
+              maskImage: `url("${iconUri.replace(/"/g, '\\"')}")`,
+              WebkitMaskImage: `url("${iconUri.replace(/"/g, '\\"')}")`,
+            }
+          : {}),
+      },
+      metadata: { ...item },
+    };
+  }
+
+  return {
+    id,
+    type: "text",
+    role: "status_text",
+    frame: 0,
+    text: stringValue(item.value),
+    box,
+    style: {
+      color: foreground,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontSize: itemSize,
+      lineHeight: itemSize,
+      textAlign: "center",
+      whiteSpace: "nowrap",
+    },
+    metadata: { ...item },
+  };
+}
+
+function generatedBatteryRenderable(
+  id: string,
+  box: RenderableBox,
+  foreground: string,
+  rawLevel: number,
+  charging: boolean,
+): RenderableNode {
+  const level = Math.max(0, Math.min(100, rawLevel));
+  const bodyWidth = box.height * 1.32;
+  const bodyHeight = box.height * 0.62;
+  const bodyX = box.x + (box.width - bodyWidth) / 2;
+  const bodyY = box.y + (box.height - bodyHeight) / 2;
+  const stroke = Math.max(1, box.height * 0.09);
+  const innerInset = stroke * 1.35;
+  const fillWidth = Math.max(0, (bodyWidth - innerInset * 2) * (level / 100));
+  return {
+    id,
+    type: "group",
+    role: "status_battery",
+    frame: 0,
+    box,
+    children: [
+      {
+        id: `${id}:body`,
+        type: "surface",
+        role: "battery_body",
+        frame: 0,
+        box: { x: bodyX, y: bodyY, width: bodyWidth, height: bodyHeight },
+        style: {
+          borderColor: foreground,
+          borderRadius: bodyHeight * 0.18,
+          borderWidth: stroke,
+        },
+      },
+      {
+        id: `${id}:fill`,
+        type: "surface",
+        role: "battery_fill",
+        frame: 0,
+        box: {
+          x: bodyX + innerInset,
+          y: bodyY + innerInset,
+          width: fillWidth,
+          height: Math.max(0, bodyHeight - innerInset * 2),
+        },
+        style: {
+          background: foreground,
+          borderRadius: bodyHeight * 0.08,
+        },
+      },
+      {
+        id: `${id}:cap`,
+        type: "surface",
+        role: "battery_cap",
+        frame: 0,
+        box: {
+          x: bodyX + bodyWidth + stroke * 0.5,
+          y: bodyY + bodyHeight * 0.34,
+          width: stroke * 1.45,
+          height: bodyHeight * 0.32,
+        },
+        style: {
+          background: foreground,
+          borderRadius: stroke,
+        },
+      },
+      ...(charging
+        ? [
+            {
+              id: `${id}:charging`,
+              type: "path",
+              role: "battery_charging",
+              frame: 0,
+              box: {
+                x: bodyX + bodyWidth * 0.36,
+                y: bodyY + bodyHeight * 0.08,
+                width: bodyWidth * 0.28,
+                height: bodyHeight * 0.84,
+              },
+              style: {
+                fill: "#34c759",
+                pathData:
+                  "M58 0 L18 48 L45 48 L32 100 L84 38 L56 38 Z",
+                viewBox: "0 0 100 100",
+              },
+            },
+          ]
+        : []),
+    ],
+    metadata: { value: level, charging },
+  };
+}
+
+function generatedSignalRenderable(
+  id: string,
+  box: RenderableBox,
+  foreground: string,
+  rawBars: number,
+): RenderableNode {
+  const bars = Math.max(0, Math.min(4, Math.round(rawBars)));
+  const gap = box.width * 0.06;
+  const barWidth = (box.width - gap * 3) / 4;
+  return {
+    id,
+    type: "group",
+    role: "status_signal",
+    frame: 0,
+    box,
+    children: [1, 2, 3, 4].map((bar) => {
+      const height = box.height * (0.24 + bar * 0.16);
+      return {
+        id: `${id}:bar:${bar}`,
+        type: "surface",
+        role: "signal_bar",
+        frame: 0,
+        box: {
+          x: box.x + (bar - 1) * (barWidth + gap),
+          y: box.y + box.height - height,
+          width: barWidth,
+          height,
+        },
+        style: {
+          background: foreground,
+          borderRadius: Math.max(1, barWidth * 0.32),
+          opacity: bar <= bars ? 1 : 0.24,
+        },
+      };
+    }),
+    metadata: { value: bars },
+  };
+}
+
+function boxedNavigationItems(
+  barBox: RenderableBox,
   navigationBar: NavigationBarDesignContract,
+  layout: {
+    itemSize: number;
+    sidePadding: number;
+    strokeWidth: number;
+    cornerRadius: number;
+    filled: boolean;
+  },
+  foreground: string,
+): RenderableNode[] {
+  return (["left", "center", "right"] as const).flatMap((zone) => {
+    const zoneItems = navigationBar.zones[zone];
+    const totalWidth =
+      zoneItems.length * layout.itemSize +
+      Math.max(0, zoneItems.length - 1) * layout.sidePadding * 0.5;
+    let x = zone === "left"
+      ? barBox.x + layout.sidePadding
+      : zone === "right"
+        ? barBox.x + barBox.width - layout.sidePadding - totalWidth
+        : barBox.x + (barBox.width - totalWidth) / 2;
+    const y = barBox.y + (barBox.height - layout.itemSize) / 2;
+    return zoneItems.map((item, index) => {
+      const id = `navigation_bar:${zone}:${item.id || item.label || index}`;
+      const box = { x, y, width: layout.itemSize, height: layout.itemSize };
+      x += layout.itemSize + layout.sidePadding * 0.5;
+      return navigationButtonNode(id, item, box, layout, foreground);
+    });
+  });
+}
+
+function navigationButtonNode(
+  id: string,
+  item: SystemBarItemContract,
+  box: RenderableBox,
   layout: {
     itemSize: number;
     strokeWidth: number;
@@ -370,40 +568,58 @@ function navigationZoneNode(
     filled: boolean;
   },
   foreground: string,
-  zone: "left" | "center" | "right",
 ): RenderableNode {
-  return {
-    id: `navigation_bar:${zone}`,
-    type: "navigation_bar_zone",
-    role: zone,
-    frame: 0,
-    style: {
-      color: foreground,
-      itemSize: layout.itemSize,
-      justifyContent:
-        zone === "left"
-          ? "flex-start"
-          : zone === "right"
-            ? "flex-end"
-            : "center",
-    },
-    children: navigationBar.zones[zone].map((item) => ({
-      id: `navigation_bar:${zone}:${item.id || item.label || "item"}`,
-      type: "navigation_bar_item",
-      role: item.kind || "generatedHome",
+  const role = item.kind || "generatedHome";
+  if (role === "generatedBack") {
+    return {
+      id,
+      type: "path",
+      role,
       frame: 0,
+      box,
       style: {
         color: foreground,
-        fontSize: layout.itemSize,
-        lineHeight: layout.itemSize,
-      },
-      metadata: {
-        ...item,
-        filled: layout.filled,
+        fill: layout.filled ? "currentColor" : "none",
+        pathData: "M64 20 Q64 20 64 20 L28 50 L64 80",
+        preserveAspectRatio: "xMidYMid meet",
+        stroke: "currentColor",
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
         strokeWidth: layout.strokeWidth,
-        cornerRadius: layout.cornerRadius,
+        vectorEffect: "non-scaling-stroke",
+        viewBox: "0 0 100 100",
       },
-    })),
+      metadata: { ...item },
+    };
+  }
+
+  return {
+    id,
+    type: "surface",
+    role,
+    frame: 0,
+    box: role === "generatedHome"
+      ? {
+          x: box.x + box.width * 0.25,
+          y: box.y + box.height * 0.25,
+          width: box.width * 0.5,
+          height: box.height * 0.5,
+        }
+      : {
+          x: box.x + box.width * 0.28,
+          y: box.y + box.height * 0.28,
+          width: box.width * 0.44,
+          height: box.height * 0.44,
+        },
+    style: {
+      background: layout.filled ? foreground : "transparent",
+      borderColor: foreground,
+      borderRadius: role === "generatedHome"
+        ? box.width
+        : layout.cornerRadius,
+      borderWidth: layout.strokeWidth,
+    },
+    metadata: { ...item },
   };
 }
 

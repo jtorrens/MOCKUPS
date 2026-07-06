@@ -65,7 +65,7 @@ internal static class DesignPreviewPayloadFactory
     {
         var settings = database.GetStatusBarSettings(node.Id);
         return new DesignPreviewPayload(
-            "statusBar",
+            "componentClass",
             settings.Name,
             settings.ConfigJson,
             themeTokensJson,
@@ -73,7 +73,8 @@ internal static class DesignPreviewPayloadFactory
             paletteNeutralColors,
             projectMediaRoot,
             iconTheme?.AssetRoot ?? "",
-            iconTheme?.MappingJson ?? "{}");
+            iconTheme?.MappingJson ?? "{}",
+            "statusBar");
     }
 
     private static DesignPreviewPayload FromNavigationBar(
@@ -87,7 +88,7 @@ internal static class DesignPreviewPayloadFactory
     {
         var settings = database.GetNavigationBarSettings(node.Id);
         return new DesignPreviewPayload(
-            "navigationBar",
+            "componentClass",
             settings.Name,
             settings.ConfigJson,
             themeTokensJson,
@@ -95,7 +96,8 @@ internal static class DesignPreviewPayloadFactory
             paletteNeutralColors,
             projectMediaRoot,
             iconTheme?.AssetRoot ?? "",
-            iconTheme?.MappingJson ?? "{}");
+            iconTheme?.MappingJson ?? "{}",
+            "navigationBar");
     }
 
     private static DesignPreviewPayload FromComponentClass(

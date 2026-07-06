@@ -9,7 +9,7 @@ export interface PreviewFramePayload {
 }
 
 export interface DesignPreviewPayload {
-  kind: "statusBar" | "navigationBar" | "componentClass";
+  kind: "componentClass";
   componentType?: string;
   componentBaseConfigsJson?: string;
   configJson: string;

@@ -145,7 +145,7 @@ export function audioComponentToRenderable(
     };
     return {
       id: `${audio.id}.waveform.${index}`,
-      type: "waveform_bar",
+      type: "surface",
       role: index < playedBars ? "played" : "unplayed",
       frame: 0,
       box,
