@@ -1044,7 +1044,7 @@ internal sealed partial class SpikeDatabase
             ValueKind.EmbeddedComponent => EmbeddedComponentOptions(projectId, descriptor.DefaultValue),
             ValueKind.ComponentPreset when EmbeddedComponentSlotCatalog.TryGet(descriptor.Id, out var slot)
                 => ComponentPresetOptions(projectId, slot.EmbeddedComponentType),
-            ValueKind.OptionToken when EmbeddedComponentPresetType(descriptor.Id) is { } componentType
+            ValueKind.RecordReference when EmbeddedComponentPresetType(descriptor.Id) is { } componentType
                 => ComponentPresetOptions(projectId, componentType),
             ValueKind.PaletteColorToken or ValueKind.PaletteColorPair or ValueKind.PaletteColorAlphaPair
                 => GetPaletteColorOptions(projectId),
@@ -1144,7 +1144,8 @@ internal sealed partial class SpikeDatabase
                 descriptor.DefaultValue,
                 Options: options,
                 PairLabels: descriptor.PairLabels,
-                Number: descriptor.Number),
+                Number: descriptor.Number,
+                RecordReference: descriptor.RecordReference),
             value,
             IsHighlighted: isHighlighted);
     }
@@ -1170,7 +1171,8 @@ internal sealed partial class SpikeDatabase
                 descriptor.DefaultValue,
                 Options: options,
                 PairLabels: descriptor.PairLabels,
-                Number: descriptor.Number),
+                Number: descriptor.Number,
+                RecordReference: descriptor.RecordReference),
             value,
             IsHighlighted: isHighlighted);
     }
@@ -1253,7 +1255,8 @@ internal sealed partial class SpikeDatabase
                 InheritedValue: inheritedValue,
                 Options: ComponentClassFieldOptions(settings.ProjectId, descriptor),
                 PairLabels: descriptor.PairLabels,
-                Number: descriptor.Number),
+                Number: descriptor.Number,
+                RecordReference: descriptor.RecordReference),
             localValue,
             IsInherited: !hasOverride);
     }
@@ -1295,7 +1298,8 @@ internal sealed partial class SpikeDatabase
                 InheritedValue: inheritedValue,
                 Options: options,
                 PairLabels: descriptor.PairLabels,
-                Number: descriptor.Number),
+                Number: descriptor.Number,
+                RecordReference: descriptor.RecordReference),
             localValue,
             IsInherited: !hasOverride,
             IsHighlighted: isHighlighted);
@@ -1348,7 +1352,8 @@ internal sealed partial class SpikeDatabase
                 InheritedValue: inheritedValue,
                 Options: options,
                 PairLabels: descriptor.PairLabels,
-                Number: descriptor.Number),
+                Number: descriptor.Number,
+                RecordReference: descriptor.RecordReference),
             localValue,
             IsInherited: !hasOverride,
             IsHighlighted: isHighlighted);
