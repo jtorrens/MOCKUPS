@@ -14,6 +14,7 @@ For the cleanup order and migration guardrails, also read:
 
 - `docs/architecture/editor_modernization_roadmap.md`
 - `docs/architecture/23_embedded_component_composition_contract.md`
+- `docs/architecture/24_desktop_preview_component_architecture.md`
 
 Two rules override local convenience:
 
