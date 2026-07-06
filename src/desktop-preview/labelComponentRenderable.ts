@@ -150,7 +150,7 @@ export function labelComponentToRenderableAt(
                   label.subtextStyle === "italic" ? "italic" : undefined,
                 whiteSpace: "nowrap",
               },
-            },
+            } satisfies RenderableNode,
           ]
         : []),
     ],

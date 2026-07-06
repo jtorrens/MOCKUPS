@@ -21,6 +21,15 @@ const RenderableAssetSchema = z.object({
   uri: z.string().min(1),
 });
 
+const RenderableNodeTypeSchema = z.enum([
+  "group",
+  "icon",
+  "image",
+  "path",
+  "surface",
+  "text",
+]);
+
 const RenderableMetadataSchema = z.object({
   fontFaces: z.array(z.object({
     family: z.string().min(1),
@@ -38,7 +47,7 @@ const RenderableMetadataSchema = z.object({
 export const RenderableNodeSchema: z.ZodType<RenderableNode> = z.lazy(() =>
   z.object({
     id: z.string().min(1),
-    type: z.string().min(1),
+    type: RenderableNodeTypeSchema,
     frame: z.number().int().min(0).optional(),
     box: RenderableBoxSchema.optional(),
     transform: RenderableTransformSchema.optional(),

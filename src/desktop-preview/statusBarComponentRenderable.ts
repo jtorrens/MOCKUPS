@@ -206,7 +206,7 @@ function generatedBatteryRenderable(
                   "M58 0 L18 48 L45 48 L32 100 L84 38 L56 38 Z",
                 viewBox: "0 0 100 100",
               },
-            },
+            } satisfies RenderableNode,
           ]
         : []),
     ],

@@ -18,6 +18,14 @@ export interface RenderableAsset {
   uri: string;
 }
 
+export type RenderableNodeType =
+  | "group"
+  | "icon"
+  | "image"
+  | "path"
+  | "surface"
+  | "text";
+
 export interface RenderableFontFace {
   family: string;
   uri: string;
@@ -36,7 +44,7 @@ export interface RenderableMetadata {
 
 export interface RenderableNode {
   id: string;
-  type: string;
+  type: RenderableNodeType;
   frame?: number;
   box?: RenderableBox;
   transform?: RenderableTransform;

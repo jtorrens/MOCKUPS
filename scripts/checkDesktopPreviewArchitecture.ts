@@ -247,6 +247,16 @@ assertContains(
   "export interface RenderableMetadata",
   "renderable metadata must stay explicitly typed",
 );
+assertContains(
+  "src/visual/renderable/types.ts",
+  "export type RenderableNodeType",
+  "renderable node type must stay as an explicit primitive union",
+);
+assertContains(
+  "src/visual/renderable/types.ts",
+  "type: RenderableNodeType;",
+  "renderable node type must not accept arbitrary strings",
+);
 assertDoesNotContain(
   "src/visual/renderable/types.ts",
   "metadata?: Record<string, unknown>",

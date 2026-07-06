@@ -258,7 +258,7 @@ function keyboardBottomIconNodes(
       style: {
         ...iconTokenStyle(payload, token, iconColor),
       },
-    };
+    } satisfies RenderableNode;
     x += iconSize + gap;
     return node;
   });

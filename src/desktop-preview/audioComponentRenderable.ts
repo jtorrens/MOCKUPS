@@ -131,7 +131,7 @@ export function audioComponentToRenderable(
     width: knobSize,
     height: knobSize,
   };
-  const waveformBars = Array.from({ length: barCount }, (_, index) => {
+  const waveformBars: RenderableNode[] = Array.from({ length: barCount }, (_, index) => {
     const normalized = deterministicWaveformValue(waveformSeed, index);
     const height = minBarHeight + normalized * (maxBarHeight - minBarHeight);
     const box = {
@@ -154,7 +154,7 @@ export function audioComponentToRenderable(
         ),
         borderRadius: Math.max(1, barWidth / 2),
       },
-    };
+    } satisfies RenderableNode;
   });
   const badgeNode = audio.badgeSlot.badge && badgeBox
     ? buttonIconComponentToRenderableAt(payload, audio.badgeSlot.badge, badgeBox)
