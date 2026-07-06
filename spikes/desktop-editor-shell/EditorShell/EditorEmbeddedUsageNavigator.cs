@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Mockups.DesktopEditorShell.Data;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -47,10 +48,19 @@ internal sealed class EditorEmbeddedUsageNavigator
 
             var settings = _database.GetComponentClassSettings(node.Id);
             var usages = _database.GetEmbeddedComponentUsages(settings.ProjectId, settings.ComponentType, node.Id);
-            var selected = await new EditorEmbeddedUsageDialog(_owner, _isDark()).Show(settings.Name, settings.ComponentType, usages);
+            var presetNode = ActivePresetNodeFor(node);
+            var presetUsages = presetNode is null
+                ? []
+                : _database.GetComponentPresetReferenceUsageDetails(presetNode);
+            var selected = await new EditorEmbeddedUsageDialog(_owner, _isDark()).Show(
+                settings.Name,
+                settings.ComponentType,
+                usages,
+                presetNode?.Name,
+                presetUsages);
             if (selected is not null)
             {
-                await NavigateToEmbeddedUsage(selected);
+                await NavigateToSelection(selected);
             }
         }
         catch (Exception exception)
@@ -73,7 +83,7 @@ internal sealed class EditorEmbeddedUsageNavigator
                 usages);
             if (selected is not null)
             {
-                await NavigateToEmbeddedUsage(selected);
+                await NavigateToSelection(selected);
             }
         }
         catch (Exception exception)
@@ -82,15 +92,40 @@ internal sealed class EditorEmbeddedUsageNavigator
         }
     }
 
-    private async Task NavigateToEmbeddedUsage(SpikeDatabase.EmbeddedComponentUsage usage)
+    private ProjectTreeNode? ActivePresetNodeFor(ProjectTreeNode componentClassNode)
     {
-        if (!_selectNodeById(usage.ParentComponentClassId))
+        var selected = _selectedNode();
+        return selected?.Kind == ProjectTreeNodeKind.ComponentPreset
+               && selected.Parent?.Id.Equals(componentClassNode.Id, StringComparison.Ordinal) == true
+            ? selected
+            : componentClassNode.Children.FirstOrDefault((child) =>
+                child.Kind == ProjectTreeNodeKind.ComponentPreset
+                && child.Id.EndsWith("::preset::default", StringComparison.Ordinal))
+              ?? componentClassNode.Children.FirstOrDefault((child) => child.Kind == ProjectTreeNodeKind.ComponentPreset);
+    }
+
+    private async Task NavigateToSelection(EditorEmbeddedUsageDialog.Selection selection)
+    {
+        if (selection.EmbeddedUsage is not null)
         {
-            _loadProjectTree();
-            if (!_selectNodeById(usage.ParentComponentClassId))
-            {
-                return;
-            }
+            await NavigateToEmbeddedUsage(selection.EmbeddedUsage, selection.TargetNodeId);
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(selection.TargetNodeId))
+        {
+            NavigateToNode(selection.TargetNodeId);
+        }
+    }
+
+    private async Task NavigateToEmbeddedUsage(SpikeDatabase.EmbeddedComponentUsage usage, string targetNodeId)
+    {
+        var nodeId = string.IsNullOrWhiteSpace(targetNodeId)
+            ? usage.ParentComponentClassId
+            : targetNodeId;
+        if (!NavigateToNode(nodeId))
+        {
+            return;
         }
 
         var node = _selectedNode();
@@ -98,5 +133,16 @@ internal sealed class EditorEmbeddedUsageNavigator
         {
             await _openEmbeddedComponentEditor(node, usage.SlotFieldId);
         }
+    }
+
+    private bool NavigateToNode(string nodeId)
+    {
+        if (_selectNodeById(nodeId))
+        {
+            return true;
+        }
+
+        _loadProjectTree();
+        return _selectNodeById(nodeId);
     }
 }

@@ -119,6 +119,11 @@ Their preview manifest and registry entries must also use explicit component
 modules (`statusBarComponent...` and `navigationBarComponent...`). They may
 share family helpers internally, but those helpers are not public component
 entrypoints and must not be used by the registry as a shortcut.
+The editor structure modal must separate class usage from preset usage:
+class usage answers where the component type is embedded structurally, while
+preset usage answers where the active preset is referenced. Theme Status Bar and
+Navigation Bar references appear only in preset usage, because Theme selects a
+concrete preset, not the generic component class.
 
 ## Editor Boundary
 

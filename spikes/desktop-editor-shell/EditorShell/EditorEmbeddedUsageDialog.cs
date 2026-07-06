@@ -14,24 +14,30 @@ internal sealed class EditorEmbeddedUsageDialog
     private readonly Window _owner;
     private readonly bool _isDark;
 
+    public sealed record Selection(
+        SpikeDatabase.EmbeddedComponentUsage? EmbeddedUsage,
+        string TargetNodeId);
+
     public EditorEmbeddedUsageDialog(Window owner, bool isDark)
     {
         _owner = owner;
         _isDark = isDark;
     }
 
-    public async Task<SpikeDatabase.EmbeddedComponentUsage?> Show(
+    public async Task<Selection?> Show(
         string componentName,
         string componentType,
-        IReadOnlyList<SpikeDatabase.EmbeddedComponentUsage> usages)
+        IReadOnlyList<SpikeDatabase.EmbeddedComponentUsage> classUsages,
+        string? presetName = null,
+        IReadOnlyList<SpikeDatabase.ComponentPresetReferenceUsage>? presetUsages = null)
     {
-        SpikeDatabase.EmbeddedComponentUsage? selected = null;
+        Selection? selected = null;
         var dialog = new SukiWindow
         {
             Title = $"Embedded structure · {componentName}",
-            Width = 520,
+            Width = 620,
             Height = 460,
-            MinWidth = 520,
+            MinWidth = 560,
             MinHeight = 360,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             IsMenuVisible = false,
@@ -51,18 +57,12 @@ internal sealed class EditorEmbeddedUsageDialog
             FontWeight = FontWeight.Bold,
         });
 
-        if (usages.Count == 0)
-        {
-            content.Children.Add(new TextBlock
-            {
-                Text = "No embedded usages.",
-                Opacity = 0.75,
-            });
-        }
-        else
-        {
-            content.Children.Add(CreateUsageTree(usages, dialog, (usage) => selected = usage));
-        }
+        content.Children.Add(CreateTabs(
+            classUsages,
+            presetName,
+            presetUsages ?? [],
+            dialog,
+            (selection) => selected = selection));
 
         var closeButton = new Button
         {
@@ -95,16 +95,60 @@ internal sealed class EditorEmbeddedUsageDialog
         return selected;
     }
 
+    private Control CreateTabs(
+        IReadOnlyList<SpikeDatabase.EmbeddedComponentUsage> classUsages,
+        string? presetName,
+        IReadOnlyList<SpikeDatabase.ComponentPresetReferenceUsage> presetUsages,
+        Window dialog,
+        System.Action<Selection> select)
+    {
+        return new TabControl
+        {
+            Items =
+            {
+                new TabItem
+                {
+                    Header = "Class usage",
+                    Content = classUsages.Count == 0
+                        ? EmptyText("No embedded usages.")
+                        : CreateUsageTree(classUsages, dialog, select),
+                },
+                new TabItem
+                {
+                    Header = "Preset usage",
+                    Content = string.IsNullOrWhiteSpace(presetName)
+                        ? EmptyText("No active preset selected.")
+                        : presetUsages.Count == 0
+                            ? EmptyText($"No usages for preset {presetName}.")
+                            : CreatePresetUsageList(presetUsages, dialog, select),
+                },
+            },
+        };
+    }
+
+    private static Control EmptyText(string text)
+    {
+        return new TextBlock
+        {
+            Text = text,
+            Opacity = 0.75,
+            Margin = new Avalonia.Thickness(0, 12, 0, 0),
+        };
+    }
+
     private Control CreateUsageTree(
         IReadOnlyList<SpikeDatabase.EmbeddedComponentUsage> usages,
         Window dialog,
-        System.Action<SpikeDatabase.EmbeddedComponentUsage> select)
+        System.Action<Selection> select)
     {
         var root = new StackPanel
         {
             Spacing = 10,
         };
-        foreach (var group in usages.GroupBy((usage) => usage.ParentComponentClassId))
+        foreach (var group in usages.GroupBy((usage) =>
+                     string.IsNullOrWhiteSpace(usage.SourceNodeId)
+                         ? usage.ParentComponentClassId
+                         : usage.SourceNodeId))
         {
             var first = group.First();
             var branchHeaderIcon = EditorIcons.Create(EditorIcons.Component, 16);
@@ -156,7 +200,7 @@ internal sealed class EditorEmbeddedUsageDialog
     private static Button CreateLeafButton(
         SpikeDatabase.EmbeddedComponentUsage usage,
         Window dialog,
-        System.Action<SpikeDatabase.EmbeddedComponentUsage> select)
+        System.Action<Selection> select)
     {
         var label = usage.HasOverrides
             ? $"{usage.SlotLabel} · overrides"
@@ -178,7 +222,80 @@ internal sealed class EditorEmbeddedUsageDialog
         };
         button.Click += (_, _) =>
         {
-            select(usage);
+            select(new Selection(usage, string.IsNullOrWhiteSpace(usage.SourceNodeId) ? usage.ParentComponentClassId : usage.SourceNodeId));
+            dialog.Close();
+        };
+        return button;
+    }
+
+    private Control CreatePresetUsageList(
+        IReadOnlyList<SpikeDatabase.ComponentPresetReferenceUsage> usages,
+        Window dialog,
+        System.Action<Selection> select)
+    {
+        var root = new StackPanel
+        {
+            Spacing = 10,
+            Margin = new Avalonia.Thickness(0, 12, 0, 0),
+        };
+        foreach (var group in usages.GroupBy((usage) => usage.SourceKind))
+        {
+            var branch = new StackPanel
+            {
+                Spacing = 5,
+            };
+            branch.Children.Add(new TextBlock
+            {
+                Text = group.Key,
+                FontWeight = FontWeight.SemiBold,
+            });
+            foreach (var usage in group.OrderBy((item) => item.SourceName).ThenBy((item) => item.Detail))
+            {
+                var leaf = CreatePresetUsageButton(usage, dialog, select);
+                leaf.Margin = new Avalonia.Thickness(18, 0, 0, 0);
+                branch.Children.Add(leaf);
+            }
+
+            root.Children.Add(new Border
+            {
+                Padding = new Avalonia.Thickness(10),
+                CornerRadius = new Avalonia.CornerRadius(8),
+                BorderThickness = new Avalonia.Thickness(1),
+                Background = new SolidColorBrush(Color.Parse(_isDark ? "#10FFFFFF" : "#10000000")),
+                BorderBrush = new SolidColorBrush(Color.Parse(_isDark ? "#24FFFFFF" : "#20000000")),
+                Child = branch,
+            });
+        }
+
+        return root;
+    }
+
+    private static Button CreatePresetUsageButton(
+        SpikeDatabase.ComponentPresetReferenceUsage usage,
+        Window dialog,
+        System.Action<Selection> select)
+    {
+        var label = string.IsNullOrWhiteSpace(usage.Detail)
+            ? usage.SourceName
+            : $"{usage.SourceName} · {usage.Detail}";
+        var text = new TextBlock
+        {
+            Text = label,
+            TextDecorations = TextDecorations.Underline,
+            Foreground = new SolidColorBrush(Color.Parse("#D6A638")),
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        var button = new Button
+        {
+            Content = text,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Padding = new Avalonia.Thickness(6, 2),
+            Background = Brushes.Transparent,
+            BorderThickness = new Avalonia.Thickness(0),
+        };
+        button.Click += (_, _) =>
+        {
+            select(new Selection(usage.EmbeddedUsage, usage.TargetNodeId));
             dialog.Close();
         };
         return button;

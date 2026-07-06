@@ -19,7 +19,15 @@ internal sealed partial class SpikeDatabase
         string ParentComponentType,
         string SlotFieldId,
         string SlotLabel,
-        bool HasOverrides);
+        bool HasOverrides,
+        string SourceNodeId = "");
+
+    public sealed record ComponentPresetReferenceUsage(
+        string SourceKind,
+        string SourceName,
+        string Detail,
+        string TargetNodeId,
+        EmbeddedComponentUsage? EmbeddedUsage);
 
     public sealed record ComponentClassPreset(
         string Id,
@@ -264,7 +272,22 @@ internal sealed partial class SpikeDatabase
             isProtected: node.IsProtected);
     }
 
+    public IReadOnlyList<ComponentPresetReferenceUsage> GetComponentPresetReferenceUsageDetails(ProjectTreeNode node)
+    {
+        using var connection = OpenConnection();
+        return GetComponentPresetReferenceUsageDetails(connection, node);
+    }
+
     private static IReadOnlyList<string> GetComponentPresetReferenceUsages(SqliteConnection connection, ProjectTreeNode node)
+    {
+        return GetComponentPresetReferenceUsageDetails(connection, node)
+            .Select((usage) => $"{usage.SourceKind}: {usage.SourceName}{(string.IsNullOrWhiteSpace(usage.Detail) ? "" : $" · {usage.Detail}")}")
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy((usage) => usage, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static IReadOnlyList<ComponentPresetReferenceUsage> GetComponentPresetReferenceUsageDetails(SqliteConnection connection, ProjectTreeNode node)
     {
         if (!TryParseComponentPresetNodeId(node.Id, out var componentClassId, out var presetId))
         {
@@ -272,14 +295,31 @@ internal sealed partial class SpikeDatabase
         }
 
         var owner = GetComponentClassSettings(connection, componentClassId);
-        var usages = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var usage in ComponentPresetUsageSources(
-                     QueryComponentClassRows(connection),
-                     owner.ProjectId,
-                     owner.ComponentType,
-                     presetId))
+        var usages = new List<ComponentPresetReferenceUsage>();
+        foreach (var row in QueryComponentClassRows(connection).Where((candidate) => candidate.ProjectId.Equals(owner.ProjectId, StringComparison.Ordinal)))
         {
-            usages.Add(usage);
+            AddComponentPresetEmbeddedReferenceUsage(
+                usages,
+                row,
+                "Component Class",
+                row.Name,
+                row.Id,
+                row.ConfigJson,
+                owner.ComponentType,
+                presetId);
+
+            foreach (var preset in ComponentClassPresets(row.MetadataJson))
+            {
+                AddComponentPresetEmbeddedReferenceUsage(
+                    usages,
+                    row,
+                    "Component Preset",
+                    $"{row.Name} · {preset.Name}",
+                    ComponentPresetNodeId(row.Id, preset.Id),
+                    preset.ConfigJson,
+                    owner.ComponentType,
+                    presetId);
+            }
         }
 
         foreach (var theme in QueryThemeRows(connection).Where((candidate) => candidate.ProjectId.Equals(owner.ProjectId, StringComparison.Ordinal)))
@@ -287,17 +327,76 @@ internal sealed partial class SpikeDatabase
             if (owner.ComponentType.Equals("status_bar", StringComparison.Ordinal)
                 && theme.StatusBarId.Equals(node.Id, StringComparison.Ordinal))
             {
-                usages.Add($"Theme: {theme.Name}");
+                usages.Add(new ComponentPresetReferenceUsage(
+                    "Theme",
+                    theme.Name,
+                    "Status Bar",
+                    theme.Id,
+                    null));
             }
 
             if (owner.ComponentType.Equals("navigation_bar", StringComparison.Ordinal)
                 && theme.NavigationBarId.Equals(node.Id, StringComparison.Ordinal))
             {
-                usages.Add($"Theme: {theme.Name}");
+                usages.Add(new ComponentPresetReferenceUsage(
+                    "Theme",
+                    theme.Name,
+                    "Navigation Bar",
+                    theme.Id,
+                    null));
             }
         }
 
-        return usages.ToList();
+        return usages
+            .OrderBy((usage) => usage.SourceKind, StringComparer.OrdinalIgnoreCase)
+            .ThenBy((usage) => usage.SourceName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy((usage) => usage.Detail, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static void AddComponentPresetEmbeddedReferenceUsage(
+        ICollection<ComponentPresetReferenceUsage> usages,
+        ComponentClassRow row,
+        string sourceKind,
+        string sourceName,
+        string sourceNodeId,
+        string configJson,
+        string componentType,
+        string presetId)
+    {
+        var config = ParseJsonObject(string.IsNullOrWhiteSpace(configJson) ? "{}" : configJson);
+        foreach (var slot in EmbeddedComponentSlotCatalog.All())
+        {
+            if (!slot.EmbeddedComponentType.Equals(componentType, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            if (JsonPath.Get(config, slot.SlotPath) is not JsonObject slotNode)
+            {
+                continue;
+            }
+
+            if (!JsonPath.String(slotNode, "presetId", DefaultComponentPresetId).Equals(presetId, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var embeddedUsage = new EmbeddedComponentUsage(
+                row.Id,
+                row.Name,
+                row.ComponentType,
+                slot.FieldId,
+                slot.Label,
+                EmbeddedComponentHasOverrides(configJson, slot),
+                sourceNodeId);
+            usages.Add(new ComponentPresetReferenceUsage(
+                sourceKind,
+                sourceName,
+                embeddedUsage.HasOverrides ? $"{slot.Label} · overrides" : slot.Label,
+                sourceNodeId,
+                embeddedUsage));
+        }
     }
 
     private static bool ComponentPresetIsUsedByConfig(
@@ -460,22 +559,22 @@ internal sealed partial class SpikeDatabase
         var usages = new List<EmbeddedComponentUsage>();
         foreach (var row in rows)
         {
-            var config = ParseJsonObject(string.IsNullOrWhiteSpace(row.ConfigJson) ? "{}" : row.ConfigJson);
-            foreach (var slot in EmbeddedComponentSlotCatalog.All()
-                         .Where((candidate) => candidate.EmbeddedComponentType.Equals(componentType, StringComparison.Ordinal)))
+            AddEmbeddedComponentUsages(
+                usages,
+                row,
+                row.Name,
+                row.Id,
+                row.ConfigJson,
+                componentType);
+            foreach (var preset in ComponentClassPresets(row.MetadataJson))
             {
-                if (JsonPath.Get(config, slot.SlotPath) is not JsonObject)
-                {
-                    continue;
-                }
-
-                usages.Add(new EmbeddedComponentUsage(
-                    row.Id,
-                    row.Name,
-                    row.ComponentType,
-                    slot.FieldId,
-                    slot.Label,
-                    EmbeddedComponentHasOverrides(row.ConfigJson, slot)));
+                AddEmbeddedComponentUsages(
+                    usages,
+                    row,
+                    $"{row.Name} · {preset.Name}",
+                    ComponentPresetNodeId(row.Id, preset.Id),
+                    preset.ConfigJson,
+                    componentType);
             }
         }
 
@@ -484,6 +583,34 @@ internal sealed partial class SpikeDatabase
             .ThenBy((usage) => usage.ParentComponentName)
             .ThenBy((usage) => usage.SlotLabel)
             .ToList();
+    }
+
+    private static void AddEmbeddedComponentUsages(
+        ICollection<EmbeddedComponentUsage> usages,
+        ComponentClassRow row,
+        string sourceName,
+        string sourceNodeId,
+        string configJson,
+        string componentType)
+    {
+        var config = ParseJsonObject(string.IsNullOrWhiteSpace(configJson) ? "{}" : configJson);
+        foreach (var slot in EmbeddedComponentSlotCatalog.All()
+                     .Where((candidate) => candidate.EmbeddedComponentType.Equals(componentType, StringComparison.Ordinal)))
+        {
+            if (JsonPath.Get(config, slot.SlotPath) is not JsonObject)
+            {
+                continue;
+            }
+
+            usages.Add(new EmbeddedComponentUsage(
+                row.Id,
+                sourceName,
+                row.ComponentType,
+                slot.FieldId,
+                slot.Label,
+                EmbeddedComponentHasOverrides(configJson, slot),
+                sourceNodeId));
+        }
     }
 
     public string GetEmbeddedComponentPresetName(
