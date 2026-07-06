@@ -25,7 +25,6 @@ internal sealed class ComponentInputsPanel : ContentControl
     private readonly Dictionary<string, DictionaryFieldControl> _booleanInputs = new(StringComparer.Ordinal);
     private Button? _playbackButton;
     private string _scopeKey = "";
-    private string _componentType = "";
     private string _projectId = "";
     private string _inputSignature = "";
     private ComponentInputAnimation? _animation;
@@ -55,7 +54,6 @@ internal sealed class ComponentInputsPanel : ContentControl
             {
                 IsVisible = false;
                 _scopeKey = "";
-                _componentType = "";
                 _projectId = "";
                 _inputSignature = "";
                 Content = null;
@@ -70,7 +68,6 @@ internal sealed class ComponentInputsPanel : ContentControl
             {
                 IsVisible = false;
                 _scopeKey = "";
-                _componentType = "";
                 _projectId = "";
                 _inputSignature = "";
                 _animation = null;
@@ -87,7 +84,6 @@ internal sealed class ComponentInputsPanel : ContentControl
                 || inputSignature != _inputSignature
                 || Content is null;
             _scopeKey = scopeKey;
-            _componentType = payload.ComponentType;
             _projectId = projectId;
             _inputSignature = inputSignature;
             foreach (var input in inputs)
