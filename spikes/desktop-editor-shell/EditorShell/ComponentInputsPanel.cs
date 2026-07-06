@@ -22,7 +22,7 @@ internal sealed class ComponentInputsPanel : ContentControl
     private readonly DispatcherTimer _playbackTimer;
     private readonly StackPanel _rowsPanel;
     private readonly Dictionary<string, string> _values = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, IDictionaryValueControl> _booleanInputs = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, DictionaryFieldControl> _booleanInputs = new(StringComparer.Ordinal);
     private Button? _playbackButton;
     private string _scopeKey = "";
     private string _componentType = "";
@@ -250,6 +250,11 @@ internal sealed class ComponentInputsPanel : ContentControl
 
     private Control CreateInputRow(ComponentInputDefinition input, string projectId)
     {
+        if (input.Kind != ComponentInputKind.Actor)
+        {
+            return CreateDictionaryInput(input, projectId);
+        }
+
         var row = new Grid
         {
             ColumnDefinitions = new ColumnDefinitions("120,*"),
@@ -265,36 +270,78 @@ internal sealed class ComponentInputsPanel : ContentControl
             Opacity = 0.86,
         });
 
-        var control = input.Kind switch
-        {
-            ComponentInputKind.Option => CreateOptionInput(input),
-            ComponentInputKind.Actor => CreateActorInput(input, projectId),
-            ComponentInputKind.Icon => CreateIconInput(input, projectId),
-            ComponentInputKind.Number => CreateNumberInput(input),
-            ComponentInputKind.Boolean => CreateBooleanInput(input),
-            _ => CreateTextInput(input),
-        };
+        var control = CreateActorInput(input, projectId);
         Grid.SetColumn(control, 1);
         row.Children.Add(control);
         return row;
     }
 
-    private Control CreateOptionInput(ComponentInputDefinition input)
+    private Control CreateDictionaryInput(ComponentInputDefinition input, string projectId)
     {
-        var options = input.Options ?? [];
-        var combo = new EditorInstantComboBox
+        var field = new DictionaryFieldControl(
+            new FieldValue(
+                CreateFieldDefinition(input),
+                Value(input)),
+            CreateDictionaryServices(projectId));
+        if (input.Kind == ComponentInputKind.Boolean)
         {
-            MinHeight = 36,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-        };
-        combo.ItemsSource = options;
-        combo.SelectedItem = options.FirstOrDefault((option) => option.Value == Value(input)) ?? options.FirstOrDefault();
-        combo.SelectionChanged += (_, _) =>
+            _booleanInputs[StorageKey(input)] = field;
+        }
+
+        field.ValueChanged += (_, value) =>
         {
-            if (_isUpdating || combo.SelectedItem is null) return;
-            SetValue(input, combo.SelectedItem.Value);
+            if (_isUpdating) return;
+            SetValue(input, value);
         };
-        return combo;
+        field.ValueCommitted += (_, value) =>
+        {
+            if (_isUpdating) return;
+            SetValue(input, value);
+        };
+        return field;
+    }
+
+    private FieldDefinition CreateFieldDefinition(ComponentInputDefinition input)
+    {
+        return input.Kind switch
+        {
+            ComponentInputKind.Number => new FieldDefinition(
+                input.Id,
+                input.Label,
+                ValueKind.Decimal,
+                DefaultValue: input.DefaultValue,
+                Number: new NumberDefinition(input.Minimum, input.Maximum, input.Increment, 2)),
+            ComponentInputKind.Boolean => new FieldDefinition(
+                input.Id,
+                input.Label,
+                ValueKind.Boolean,
+                DefaultValue: input.DefaultValue),
+            ComponentInputKind.Option => new FieldDefinition(
+                input.Id,
+                input.Label,
+                ValueKind.OptionToken,
+                DefaultValue: input.DefaultValue,
+                Options: input.Options),
+            ComponentInputKind.Icon => new FieldDefinition(
+                input.Id,
+                input.Label,
+                ValueKind.IconToken,
+                DefaultValue: input.DefaultValue),
+            _ => new FieldDefinition(
+                input.Id,
+                input.Label,
+                ValueKind.StringSingleLine,
+                DefaultValue: input.DefaultValue),
+        };
+    }
+
+    private DictionaryFieldServices CreateDictionaryServices(string projectId)
+    {
+        return new DictionaryFieldServices(
+            ShowIconTokenPicker: (currentValue, allowMultiple) =>
+                new IconTokenPickerDialog(_owner, _database).Show(projectId, currentValue, allowMultiple),
+            CreateIconPreview: (token) =>
+                SvgIconPreview.CreateProjectIconTokenPreview(_database, projectId, token, 18));
     }
 
     private Control CreateActorInput(ComponentInputDefinition input, string projectId)
@@ -320,87 +367,6 @@ internal sealed class ComponentInputsPanel : ContentControl
             SetValue(input, combo.SelectedItem.Value);
         };
         return combo;
-    }
-
-    private Control CreateIconInput(ComponentInputDefinition input, string projectId)
-    {
-        var control = new DictionaryIconTokenControl(
-            Value(input),
-            true,
-            (currentValue, allowMultiple) =>
-                new IconTokenPickerDialog(_owner, _database).Show(projectId, currentValue, allowMultiple),
-            (token) => SvgIconPreview.CreateProjectIconTokenPreview(_database, projectId, token, 18));
-        control.ValueChanged += (_, value) =>
-        {
-            if (_isUpdating) return;
-            SetValue(input, value);
-        };
-        control.ValueCommitted += (_, value) =>
-        {
-            if (_isUpdating) return;
-            SetValue(input, value);
-        };
-        return control;
-    }
-
-    private Control CreateNumberInput(ComponentInputDefinition input)
-    {
-        var definition = new FieldDefinition(
-            input.Id,
-            input.Label,
-            ValueKind.Decimal,
-            DefaultValue: input.DefaultValue,
-            Number: new NumberDefinition(input.Minimum, input.Maximum, input.Increment, 2));
-        var control = new DictionaryDecimalControl(definition, Value(input));
-        control.ValueChanged += (_, value) =>
-        {
-            if (_isUpdating) return;
-            SetValue(input, value);
-        };
-        control.ValueCommitted += (_, value) =>
-        {
-            if (_isUpdating) return;
-            SetValue(input, value);
-        };
-        return control;
-    }
-
-    private Control CreateBooleanInput(ComponentInputDefinition input)
-    {
-        var control = new DictionaryBooleanControl(Value(input), true);
-        _booleanInputs[StorageKey(input)] = control;
-        control.ValueChanged += (_, value) =>
-        {
-            if (_isUpdating) return;
-            SetValue(input, value);
-        };
-        control.ValueCommitted += (_, value) =>
-        {
-            if (_isUpdating) return;
-            SetValue(input, value);
-        };
-        return control;
-    }
-
-    private Control CreateTextInput(ComponentInputDefinition input)
-    {
-        var definition = new FieldDefinition(
-            input.Id,
-            input.Label,
-            ValueKind.StringSingleLine,
-            DefaultValue: input.DefaultValue);
-        var control = new DictionaryTextControl(definition, Value(input));
-        control.ValueChanged += (_, value) =>
-        {
-            if (_isUpdating) return;
-            SetValue(input, value);
-        };
-        control.ValueCommitted += (_, value) =>
-        {
-            if (_isUpdating) return;
-            SetValue(input, value);
-        };
-        return control;
     }
 
     private void EnsureValue(ComponentInputDefinition input, JsonObject preview)
