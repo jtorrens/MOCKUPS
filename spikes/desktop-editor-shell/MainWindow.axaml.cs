@@ -28,7 +28,10 @@ public partial class MainWindow : SukiWindow
 {
     private sealed record EmbeddedEditorContext(
         ProjectTreeNode OwnerNode,
-        EmbeddedComponentSlotDefinition Slot);
+        IReadOnlyList<EmbeddedComponentSlotDefinition> Slots)
+    {
+        public EmbeddedComponentSlotDefinition Slot => Slots[^1];
+    }
 
     private bool _isDark = true;
     private readonly SpikeDatabase _database = new(SpikeDatabase.DefaultDatabasePath());
@@ -452,11 +455,7 @@ public partial class MainWindow : SukiWindow
                 return Task.CompletedTask;
             }
 
-            var context = new EmbeddedEditorContext(node, slot);
-            _embeddedEditorContext = context;
-            SetEditorEmbeddedTitle(context);
-            BuildEmbeddedComponentCards(context);
-            RefreshPreviewDevice();
+            ShowEmbeddedContext(new EmbeddedEditorContext(node, [slot]));
         }
         catch (Exception exception)
         {
@@ -464,6 +463,33 @@ public partial class MainWindow : SukiWindow
         }
 
         return Task.CompletedTask;
+    }
+
+    private Task OpenEmbeddedComponentEditor(EmbeddedEditorContext parentContext, string slotFieldId)
+    {
+        try
+        {
+            if (!EmbeddedComponentSlotCatalog.TryGet(slotFieldId, out var slot))
+            {
+                return Task.CompletedTask;
+            }
+
+            ShowEmbeddedContext(new EmbeddedEditorContext(parentContext.OwnerNode, [.. parentContext.Slots, slot]));
+        }
+        catch (Exception exception)
+        {
+            _messages.Error($"Embedded component {slotFieldId}", exception);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private void ShowEmbeddedContext(EmbeddedEditorContext context)
+    {
+        _embeddedEditorContext = context;
+        SetEditorEmbeddedTitle(context);
+        BuildEmbeddedComponentCards(context);
+        RefreshPreviewDevice();
     }
 
     private void BuildEmbeddedComponentCards(EmbeddedEditorContext context)
@@ -512,17 +538,16 @@ public partial class MainWindow : SukiWindow
             {
                 var field = _componentClassFieldValues.CreateEmbeddedFieldValue(
                     context.OwnerNode,
-                    context.Slot.FieldId,
-                    context.Slot.EmbeddedComponentType,
+                    context.Slots,
                     layoutField.Id);
                 var services = _dictionaryFieldServices.ForNode(
                     context.OwnerNode,
                     (fieldId) => _activeFieldControls.ValueOrStored(fieldId, (id) =>
                         _componentClassFieldValues.CreateEmbeddedFieldValue(
                             context.OwnerNode,
-                            context.Slot.FieldId,
-                            context.Slot.EmbeddedComponentType,
-                            id).Value));
+                            context.Slots,
+                            id).Value),
+                    (fieldId) => OpenEmbeddedComponentEditor(context, fieldId));
                 var control = new DictionaryFieldControl(field, services);
                 controls.Add(control);
                 _activeFieldControls.Register(control);
@@ -534,8 +559,7 @@ public partial class MainWindow : SukiWindow
                         {
                             _componentClassFieldValues.CommitEmbeddedFieldValue(
                                 context.OwnerNode,
-                                context.Slot.FieldId,
-                                context.Slot.EmbeddedComponentType,
+                                context.Slots,
                                 field.Definition.Id,
                                 value);
                             control.AcceptInheritedValueAsDefault();
@@ -552,8 +576,7 @@ public partial class MainWindow : SukiWindow
                             {
                                 var current = _componentClassFieldValues.CreateEmbeddedFieldValue(
                                     context.OwnerNode,
-                                    context.Slot.FieldId,
-                                    context.Slot.EmbeddedComponentType,
+                                    context.Slots,
                                     field.Definition.Id);
                                 return current.IsInherited
                                     ? current.Definition.InheritedStorageValue
@@ -561,8 +584,7 @@ public partial class MainWindow : SukiWindow
                             },
                             (storedValue) => _componentClassFieldValues.CommitEmbeddedFieldValue(
                                 context.OwnerNode,
-                                context.Slot.FieldId,
-                                context.Slot.EmbeddedComponentType,
+                                context.Slots,
                                 field.Definition.Id,
                                 storedValue));
                         _activeFieldControls.RefreshPreviews();
@@ -619,10 +641,29 @@ public partial class MainWindow : SukiWindow
 
     private void SetEditorEmbeddedTitle(EmbeddedEditorContext context)
     {
-        EditorBreadcrumbBar.Render(EditorBreadcrumbPanel, [
-            new EditorBreadcrumbItem(context.OwnerNode.Name, () => ShowNode(context.OwnerNode, rebuildTree: false)),
-            new EditorBreadcrumbItem(context.Slot.Label),
-        ], EditorStructureButton.Create(async () => await _embeddedUsageNavigator.ShowForEmbedded(context.OwnerNode, context.Slot)));
+        var items = new List<EditorBreadcrumbItem>
+        {
+            new(context.OwnerNode.Name, () => ShowNode(context.OwnerNode, rebuildTree: false)),
+        };
+        for (var index = 0; index < context.Slots.Count; index++)
+        {
+            var slot = context.Slots[index];
+            if (index == context.Slots.Count - 1)
+            {
+                items.Add(new EditorBreadcrumbItem(slot.Label));
+                continue;
+            }
+
+            var slotIndex = index + 1;
+            items.Add(new EditorBreadcrumbItem(
+                slot.Label,
+                () => ShowEmbeddedContext(new EmbeddedEditorContext(context.OwnerNode, context.Slots.Take(slotIndex).ToArray()))));
+        }
+
+        EditorBreadcrumbBar.Render(
+            EditorBreadcrumbPanel,
+            items,
+            EditorStructureButton.Create(async () => await _embeddedUsageNavigator.ShowForEmbedded(context.OwnerNode, context.Slot)));
     }
 
     private Control? CreateStructureButtonForSelectedComponent()

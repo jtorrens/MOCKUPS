@@ -95,12 +95,6 @@ internal static class ComponentClassFieldCatalog
         new("none", "None"),
     ];
 
-    private static readonly FieldOption[] AvatarPositionOptions =
-    [
-        new("left", "Left"),
-        new("right", "Right"),
-    ];
-
     private static readonly Dictionary<string, ComponentClassFieldDescriptor> Fields = new(StringComparer.Ordinal)
     {
         ["component.type"] = new("component.type", "Component Type", ValueKind.StringReadOnly, [], "", false),
@@ -197,12 +191,16 @@ internal static class ComponentClassFieldCatalog
         ["component.label.subtextStyle"] = new("component.label.subtextStyle", "Subtext style", ValueKind.OptionToken, ["label", "subtextStyle"], "normal", Options: TextStyleOptions),
 
         ["component.audio.size"] = new("component.audio.size", "Size", ValueKind.IntegerPair, ["audio", "size"], "230|54", PairLabels: new("W", "H")),
-        ["component.audio.avatarPosition"] = new("component.audio.avatarPosition", "Avatar position", ValueKind.OptionToken, ["audio", "avatarPosition"], "right", Options: AvatarPositionOptions),
-        ["component.audio.avatarSize"] = new("component.audio.avatarSize", "Avatar size", ValueKind.Integer, ["audio", "avatarSize"], "32"),
         ["component.audio.textSize"] = new("component.audio.textSize", "Text size", ValueKind.Integer, ["audio", "textSize"], "13"),
         ["component.audio.playColorToken"] = new("component.audio.playColorToken", "Play color", ValueKind.ThemeToken, ["audio", "playColorToken"], "theme.icons.accent", Options: ThemeColorOptions),
         ["component.audio.waveformColorToken"] = new("component.audio.waveformColorToken", "Waveform color", ValueKind.ThemeToken, ["audio", "waveformColorToken"], "theme.icons.primary", Options: ThemeColorOptions),
         ["component.audio.knobSize"] = new("component.audio.knobSize", "Knob size", ValueKind.Integer, ["audio", "knobSize"], "10"),
+        ["component.audio.avatar.showAvatar"] = new("component.audio.avatar.showAvatar", "Show avatar", ValueKind.Boolean, ["audio", "avatarSlot", "showAvatar"], "true"),
+        ["component.audio.avatar.placement"] = new("component.audio.avatar.placement", "Placement", ValueKind.AlignmentPlacement, ["audio", "avatarSlot", "placement"], """{"mode":"edge","alignX":1,"alignY":0.5,"offsetX":4,"offsetY":0}"""),
+        ["component.audio.avatar.editor"] = new("component.audio.avatar.editor", "Avatar", ValueKind.EmbeddedComponent, [], "component.avatar"),
+        ["component.audio.badge.showBadge"] = new("component.audio.badge.showBadge", "Show badge", ValueKind.Boolean, ["audio", "badgeSlot", "showBadge"], "false"),
+        ["component.audio.badge.placement"] = new("component.audio.badge.placement", "Placement", ValueKind.AlignmentPlacement, ["audio", "badgeSlot", "placement"], """{"mode":"center","alignX":1,"alignY":1,"offsetX":0,"offsetY":0}"""),
+        ["component.audio.badge.editor"] = new("component.audio.badge.editor", "Badge", ValueKind.EmbeddedComponent, [], "component.button_icon"),
 
         ["component.video.statusVisible"] = new("component.video.statusVisible", "Show status", ValueKind.Boolean, ["video", "statusVisible"], "true"),
         ["component.video.statusHeight"] = new("component.video.statusHeight", "Status height", ValueKind.Integer, ["video", "statusHeight"], "24"),

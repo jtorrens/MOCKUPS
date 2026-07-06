@@ -282,6 +282,51 @@ internal sealed partial class SpikeDatabase
             IsInherited: !hasOverride);
     }
 
+    public FieldValue CreateEmbeddedComponentFieldValue(
+        string componentClassId,
+        IReadOnlyList<EmbeddedComponentSlotDefinition> slots,
+        string embeddedFieldId)
+    {
+        if (slots.Count == 0)
+        {
+            throw new InvalidOperationException($"Embedded component field '{embeddedFieldId}' needs at least one slot.");
+        }
+
+        var settings = GetComponentClassSettings(componentClassId);
+        var descriptor = ComponentClassFieldCatalog.Get(embeddedFieldId);
+        using var connection = OpenConnection();
+        var inheritedConfig = EffectiveEmbeddedBaseConfig(connection, settings.ProjectId, slots);
+        var inheritedValue = ComponentConfigFieldValue(inheritedConfig.ToJsonString(), descriptor);
+        var config = ParseJsonObject(string.IsNullOrWhiteSpace(settings.ConfigJson) ? "{}" : settings.ConfigJson);
+        var overrides = EmbeddedOverrides(config, slots, createIfMissing: false);
+        var hasOverride = overrides is not null && GetJsonValue(overrides, descriptor.JsonPath) is not null;
+        var localValue = hasOverride && overrides is not null
+            ? ComponentConfigFieldValue(overrides.ToJsonString(), descriptor)
+            : inheritedValue;
+        var options = descriptor.ValueKind == ValueKind.EmbeddedComponent
+            ? EmbeddedComponentOptions(settings.ProjectId, descriptor.DefaultValue)
+            : descriptor.Options;
+        var isHighlighted = descriptor.ValueKind == ValueKind.EmbeddedComponent
+            && EmbeddedComponentSlotCatalog.TryGet(embeddedFieldId, out var nestedSlot)
+            && EmbeddedComponentHasOverrides(config, [.. slots, nestedSlot]);
+
+        return new FieldValue(
+            new FieldDefinition(
+                descriptor.Id,
+                descriptor.Label,
+                descriptor.ValueKind,
+                descriptor.IsEditable,
+                descriptor.DefaultValue,
+                CanInherit: true,
+                InheritedValue: inheritedValue,
+                Options: options,
+                PairLabels: descriptor.PairLabels,
+                Number: descriptor.Number),
+            localValue,
+            IsInherited: !hasOverride,
+            IsHighlighted: isHighlighted);
+    }
+
     public void UpdateEmbeddedComponentField(
         string componentClassId,
         string slotFieldId,
@@ -303,6 +348,43 @@ internal sealed partial class SpikeDatabase
             var config = ParseJsonObject(string.IsNullOrWhiteSpace(settings.ConfigJson) ? "{}" : settings.ConfigJson);
             var overrides = EmbeddedOverrides(config, slot, createIfMissing: true)
                 ?? throw new InvalidOperationException($"Missing embedded override slot '{slotFieldId}'.");
+
+            if (value.Equals("inherited", StringComparison.Ordinal))
+            {
+                RemoveJsonValue(overrides, descriptor.JsonPath);
+            }
+            else
+            {
+                SetJsonValue(overrides, descriptor.JsonPath, ComponentConfigJsonValue(descriptor.ValueKind, value));
+            }
+
+            Execute(
+                connection,
+                "UPDATE component_classes SET config_json = $configJson WHERE id = $id",
+                ("$id", componentClassId),
+                ("$configJson", config.ToJsonString()));
+        }
+    }
+
+    public void UpdateEmbeddedComponentField(
+        string componentClassId,
+        IReadOnlyList<EmbeddedComponentSlotDefinition> slots,
+        string embeddedFieldId,
+        string value)
+    {
+        if (slots.Count == 0)
+        {
+            throw new InvalidOperationException($"Embedded component field '{embeddedFieldId}' needs at least one slot.");
+        }
+
+        var descriptor = ComponentClassFieldCatalog.Get(embeddedFieldId);
+        lock (WriteGate)
+        {
+            using var connection = OpenConnection();
+            var settings = GetComponentClassSettings(connection, componentClassId);
+            var config = ParseJsonObject(string.IsNullOrWhiteSpace(settings.ConfigJson) ? "{}" : settings.ConfigJson);
+            var overrides = EmbeddedOverrides(config, slots, createIfMissing: true)
+                ?? throw new InvalidOperationException($"Missing embedded override slot '{slots[^1].FieldId}'.");
 
             if (value.Equals("inherited", StringComparison.Ordinal))
             {
@@ -360,6 +442,7 @@ internal sealed partial class SpikeDatabase
             var defaults = ParseJsonObject(DefaultComponentClassConfigJson(row.ComponentType));
             var configChanged = NormalizeAvatarLabelPlacement(row.ComponentType, config);
             configChanged |= NormalizeButtonIconLabelSlot(row.ComponentType, config);
+            configChanged |= NormalizeAudioEmbeddedSlots(row.ComponentType, config);
             configChanged |= JsonPath.MergeMissing(config, defaults);
             configChanged |= NormalizeReliefIntensity(config, "reliefTopIntensity");
             configChanged |= NormalizeReliefIntensity(config, "reliefBottomIntensity");
@@ -427,6 +510,53 @@ internal sealed partial class SpikeDatabase
             ["overrides"] = new JsonObject(),
         };
         return true;
+    }
+
+    private static bool NormalizeAudioEmbeddedSlots(string componentType, JsonObject config)
+    {
+        if (componentType != "audio")
+        {
+            return false;
+        }
+
+        var audio = JsonPath.Get(config, ["audio"]) as JsonObject;
+        if (audio is null)
+        {
+            return false;
+        }
+
+        var changed = false;
+        if (audio["avatarSlot"] is null)
+        {
+            var avatarPosition = JsonPath.String(audio, "avatarPosition", "right");
+            var avatarSize = JsonPath.Get(audio, ["avatarSize"]);
+            var avatarOverrides = new JsonObject();
+            if (avatarSize is not null)
+            {
+                JsonPath.Set(avatarOverrides, ["avatar", "defaultSize"], avatarSize.DeepClone());
+            }
+
+            audio["avatarSlot"] = new JsonObject
+            {
+                ["showAvatar"] = true,
+                ["placement"] = JsonNode.Parse(AlignmentPlacementValue.FromLegacyPosition(avatarPosition, 4).ToJsonString()),
+                ["overrides"] = avatarOverrides,
+            };
+            changed = true;
+        }
+
+        if (audio["badgeSlot"] is null)
+        {
+            audio["badgeSlot"] = new JsonObject
+            {
+                ["showBadge"] = false,
+                ["placement"] = JsonNode.Parse("""{"mode":"center","alignX":1,"alignY":1,"offsetX":0,"offsetY":0}"""),
+                ["overrides"] = new JsonObject(),
+            };
+            changed = true;
+        }
+
+        return changed;
     }
 
     private static bool NormalizeReliefIntensity(JsonObject config, string key)
@@ -584,6 +714,71 @@ internal sealed partial class SpikeDatabase
         return overrides;
     }
 
+    private static JsonObject? EmbeddedOverrides(
+        JsonObject config,
+        IReadOnlyList<EmbeddedComponentSlotDefinition> slots,
+        bool createIfMissing)
+    {
+        JsonObject? currentConfig = config;
+        JsonObject? overrides = null;
+        foreach (var slot in slots)
+        {
+            if (currentConfig is null)
+            {
+                return null;
+            }
+
+            overrides = EmbeddedOverrides(currentConfig, slot, createIfMissing);
+            currentConfig = overrides;
+        }
+
+        return overrides;
+    }
+
+    private static bool EmbeddedComponentHasOverrides(
+        JsonObject config,
+        IReadOnlyList<EmbeddedComponentSlotDefinition> slots)
+    {
+        var overrides = EmbeddedOverrides(config, slots, createIfMissing: false);
+        return overrides is not null && HasEffectiveJsonValue(overrides);
+    }
+
+    private static JsonObject EffectiveEmbeddedBaseConfig(
+        SqliteConnection connection,
+        string projectId,
+        IReadOnlyList<EmbeddedComponentSlotDefinition> slots)
+    {
+        var current = ParseJsonObject(GetComponentClassBaseConfigJson(connection, projectId, slots[0].EmbeddedComponentType));
+        for (var index = 1; index < slots.Count; index++)
+        {
+            var child = ParseJsonObject(GetComponentClassBaseConfigJson(connection, projectId, slots[index].EmbeddedComponentType));
+            var overrides = EmbeddedOverrides(current, slots[index], createIfMissing: false);
+            if (overrides is not null)
+            {
+                MergeOverride(child, overrides);
+            }
+
+            current = child;
+        }
+
+        return current;
+    }
+
+    private static void MergeOverride(JsonObject target, JsonObject overrides)
+    {
+        foreach (var pair in overrides)
+        {
+            if (pair.Value is JsonObject overrideObject
+                && target[pair.Key] is JsonObject targetObject)
+            {
+                MergeOverride(targetObject, overrideObject);
+                continue;
+            }
+
+            target[pair.Key] = pair.Value?.DeepClone();
+        }
+    }
+
     private static string ComponentTypeLabel(string componentType)
     {
         return componentType switch
@@ -706,12 +901,28 @@ internal sealed partial class SpikeDatabase
                 config["audio"] = new JsonObject
                 {
                     ["size"] = "230|54",
-                    ["avatarPosition"] = "right",
-                    ["avatarSize"] = 32,
                     ["textSize"] = 13,
                     ["playColorToken"] = "theme.icons.accent",
                     ["waveformColorToken"] = "theme.icons.primary",
                     ["knobSize"] = 10,
+                    ["avatarSlot"] = new JsonObject
+                    {
+                        ["showAvatar"] = true,
+                        ["placement"] = JsonNode.Parse(AlignmentPlacementValue.FromLegacyPosition("right", 4).ToJsonString()),
+                        ["overrides"] = new JsonObject
+                        {
+                            ["avatar"] = new JsonObject
+                            {
+                                ["defaultSize"] = 32,
+                            },
+                        },
+                    },
+                    ["badgeSlot"] = new JsonObject
+                    {
+                        ["showBadge"] = false,
+                        ["placement"] = JsonNode.Parse("""{"mode":"center","alignX":1,"alignY":1,"offsetX":0,"offsetY":0}"""),
+                        ["overrides"] = new JsonObject(),
+                    },
                 };
                 break;
             case "video":

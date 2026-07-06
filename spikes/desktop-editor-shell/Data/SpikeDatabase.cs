@@ -2324,12 +2324,20 @@ internal sealed partial class SpikeDatabase
               "groups": [
                 { "id": "audio", "label": "Audio", "order": 10, "visible": true, "fields": [
                   { "id": "component.audio.size", "order": 10, "visible": true },
-                  { "id": "component.audio.avatarPosition", "order": 20, "visible": true },
-                  { "id": "component.audio.avatarSize", "order": 30, "visible": true },
                   { "id": "component.audio.textSize", "order": 40, "visible": true },
                   { "id": "component.audio.playColorToken", "order": 50, "visible": true },
                   { "id": "component.audio.waveformColorToken", "order": 60, "visible": true },
                   { "id": "component.audio.knobSize", "order": 70, "visible": true }
+                ] },
+                { "id": "audioAvatar", "label": "Avatar", "order": 20, "visible": true, "fields": [
+                  { "id": "component.audio.avatar.showAvatar", "order": 10, "visible": true },
+                  { "id": "component.audio.avatar.placement", "order": 20, "visible": true },
+                  { "id": "component.audio.avatar.editor", "order": 30, "visible": true }
+                ] },
+                { "id": "audioBadge", "label": "Badge", "order": 30, "visible": true, "fields": [
+                  { "id": "component.audio.badge.showBadge", "order": 10, "visible": true },
+                  { "id": "component.audio.badge.placement", "order": 20, "visible": true },
+                  { "id": "component.audio.badge.editor", "order": 30, "visible": true }
                 ] }
               ]
             }

@@ -1,5 +1,6 @@
 using Mockups.DesktopEditorShell.Data;
 using System;
+using System.Collections.Generic;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -56,6 +57,19 @@ internal sealed class ComponentClassFieldValueService
             embeddedFieldId);
     }
 
+    public FieldValue CreateEmbeddedFieldValue(
+        ProjectTreeNode node,
+        IReadOnlyList<EmbeddedComponentSlotDefinition> slots,
+        string embeddedFieldId)
+    {
+        if (node.Kind != ProjectTreeNodeKind.ComponentClass)
+        {
+            throw new InvalidOperationException($"Embedded component field '{embeddedFieldId}' is not supported for '{node.Kind}'.");
+        }
+
+        return _database.CreateEmbeddedComponentFieldValue(node.Id, slots, embeddedFieldId);
+    }
+
     public void CommitEmbeddedFieldValue(
         ProjectTreeNode node,
         string slotFieldId,
@@ -72,6 +86,24 @@ internal sealed class ComponentClassFieldValueService
             node.Id,
             slotFieldId,
             embeddedComponentType,
+            embeddedFieldId,
+            value);
+    }
+
+    public void CommitEmbeddedFieldValue(
+        ProjectTreeNode node,
+        IReadOnlyList<EmbeddedComponentSlotDefinition> slots,
+        string embeddedFieldId,
+        string value)
+    {
+        if (node.Kind != ProjectTreeNodeKind.ComponentClass)
+        {
+            throw new InvalidOperationException($"Embedded component field '{embeddedFieldId}' is not supported for '{node.Kind}'.");
+        }
+
+        _database.UpdateEmbeddedComponentField(
+            node.Id,
+            slots,
             embeddedFieldId,
             value);
     }
