@@ -20,6 +20,7 @@ internal sealed class EditorNavigationRenderer
     private readonly Action<ProjectTreeNode> _toggleGroup;
     private readonly Func<ProjectTreeNode, Task> _addChild;
     private readonly Action<ProjectTreeNode> _duplicateNode;
+    private readonly Func<ProjectTreeNode, Task> _renameNode;
     private readonly Func<ProjectTreeNode, Task> _deleteNode;
 
     public EditorNavigationRenderer(
@@ -31,6 +32,7 @@ internal sealed class EditorNavigationRenderer
         Action<ProjectTreeNode> toggleGroup,
         Func<ProjectTreeNode, Task> addChild,
         Action<ProjectTreeNode> duplicateNode,
+        Func<ProjectTreeNode, Task> renameNode,
         Func<ProjectTreeNode, Task> deleteNode)
     {
         _selectedNode = selectedNode;
@@ -41,6 +43,7 @@ internal sealed class EditorNavigationRenderer
         _toggleGroup = toggleGroup;
         _addChild = addChild;
         _duplicateNode = duplicateNode;
+        _renameNode = renameNode;
         _deleteNode = deleteNode;
     }
 
@@ -347,6 +350,15 @@ internal sealed class EditorNavigationRenderer
             {
                 e.Handled = true;
                 _duplicateNode(node);
+            }));
+        }
+
+        if (node.CanRenameDirectly)
+        {
+            actions.Children.Add(CreateTreeActionButton(EditorIcons.Create(EditorIcons.Edit, 14), "Rename", async (_, e) =>
+            {
+                e.Handled = true;
+                await _renameNode(node);
             }));
         }
 

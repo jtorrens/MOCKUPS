@@ -14,6 +14,7 @@ internal static class EditorIcons
     public const string Add = "add";
     public const string Delete = "delete";
     public const string Duplicate = "duplicate";
+    public const string Edit = "edit";
     public const string Expand = "expand";
     public const string Collapse = "collapse";
     public const string Structure = "structure";
@@ -200,6 +201,7 @@ internal static class EditorIcons
             Add => "system_add.svg",
             Delete => "system_delete.svg",
             Duplicate => "system_duplicate.svg",
+            Edit => "system_edit.svg",
             Structure => "system_tree.svg",
             Project => "editor_general.svg",
             Apps => "editor_design.svg",

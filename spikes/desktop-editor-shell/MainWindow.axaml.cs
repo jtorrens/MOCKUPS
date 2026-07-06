@@ -101,6 +101,7 @@ public partial class MainWindow : SukiWindow
             ToggleTreeGroup,
             AddChild,
             DuplicateNode,
+            RenameNode,
             DeleteNode);
         _fieldPostCommitEffects = new EditorFieldPostCommitEffects(
             _database,
@@ -704,6 +705,33 @@ public partial class MainWindow : SukiWindow
 
         var copy = _database.Duplicate(node);
         ReloadAndSelect(copy);
+    }
+
+    private async Task RenameNode(ProjectTreeNode node)
+    {
+        if (!node.CanRenameDirectly)
+        {
+            return;
+        }
+
+        var nextName = await new EditorDialogService(this, _isDark).PromptText(
+            "Rename",
+            "Name",
+            node.Name);
+        if (string.IsNullOrWhiteSpace(nextName) || nextName.Trim().Equals(node.Name, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        try
+        {
+            var renamed = _database.RenameDirectNode(node, nextName);
+            ReloadAndSelect(renamed);
+        }
+        catch (Exception exception)
+        {
+            _messages.Error($"Rename {node.Name}", exception);
+        }
     }
 
     private async Task DeleteNode(ProjectTreeNode node)

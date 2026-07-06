@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using SukiUI.Controls;
@@ -75,6 +76,94 @@ internal sealed class EditorDialogService
             message,
             width: 420,
             height: 220);
+    }
+
+    public Task<string?> PromptText(
+        string title,
+        string label,
+        string currentValue,
+        double width = 420,
+        double height = 220)
+    {
+        var dialog = CreateDialog(title, width, height);
+        var root = new Border
+        {
+            Padding = new Thickness(22),
+            Child = new Grid
+            {
+                RowDefinitions = new RowDefinitions("*,Auto"),
+                RowSpacing = 18,
+            },
+        };
+
+        var textBox = EditorTextBoxBehavior.Configure(new TextBox
+        {
+            Text = currentValue,
+            MinHeight = 36,
+            VerticalContentAlignment = VerticalAlignment.Center,
+        });
+        var saveButton = new Button
+        {
+            Content = "Save",
+            MinWidth = 92,
+        };
+        void RefreshSave()
+        {
+            saveButton.IsEnabled = !string.IsNullOrWhiteSpace(textBox.Text);
+        }
+
+        textBox.TextChanged += (_, _) => RefreshSave();
+        textBox.KeyDown += (_, e) =>
+        {
+            if (e.Key != Key.Enter || saveButton.IsEnabled != true)
+            {
+                return;
+            }
+
+            e.Handled = true;
+            dialog.Close(textBox.Text?.Trim());
+        };
+
+        var content = new StackPanel
+        {
+            Spacing = 8,
+        };
+        content.Children.Add(new TextBlock
+        {
+            Text = label,
+            FontWeight = FontWeight.Bold,
+        });
+        content.Children.Add(textBox);
+
+        var actions = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Spacing = 10,
+        };
+        var cancelButton = new Button
+        {
+            Content = "Cancel",
+            MinWidth = 92,
+        };
+        cancelButton.Click += (_, _) => dialog.Close(null);
+        saveButton.Click += (_, _) => dialog.Close(textBox.Text?.Trim());
+
+        actions.Children.Add(cancelButton);
+        actions.Children.Add(saveButton);
+        Grid.SetRow(content, 0);
+        Grid.SetRow(actions, 1);
+        ((Grid)root.Child).Children.Add(content);
+        ((Grid)root.Child).Children.Add(actions);
+        dialog.Content = root;
+        dialog.Opened += (_, _) =>
+        {
+            RefreshSave();
+            textBox.Focus();
+            textBox.SelectAll();
+        };
+
+        return dialog.ShowDialog<string?>(_owner);
     }
 
     private Task<bool> Confirm(

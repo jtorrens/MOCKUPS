@@ -132,6 +132,46 @@ internal sealed partial class SpikeDatabase
         throw new InvalidOperationException($"Missing component preset '{presetId}'.");
     }
 
+    public ProjectTreeNode RenameComponentPreset(ProjectTreeNode node, string name)
+    {
+        if (!TryParseComponentPresetNodeId(node.Id, out var componentClassId, out var presetId))
+        {
+            throw new InvalidOperationException($"Invalid component preset node id '{node.Id}'.");
+        }
+
+        var nextName = name.Trim();
+        if (string.IsNullOrWhiteSpace(nextName))
+        {
+            throw new InvalidOperationException("Preset name cannot be empty.");
+        }
+
+        lock (WriteGate)
+        {
+            using var connection = OpenConnection();
+            var settings = GetComponentClassSettings(connection, componentClassId);
+            var metadata = ParseJsonObject(string.IsNullOrWhiteSpace(settings.MetadataJson) ? "{}" : settings.MetadataJson);
+            var presets = EnsurePresetArray(metadata);
+            var preset = FindPreset(presets, presetId)
+                ?? throw new InvalidOperationException($"Missing component preset '{presetId}'.");
+            preset["name"] = nextName;
+            Execute(
+                connection,
+                "UPDATE component_classes SET metadata_json = $metadataJson WHERE id = $id",
+                ("$id", componentClassId),
+                ("$metadataJson", metadata.ToJsonString()));
+        }
+
+        return new ProjectTreeNode(
+            ProjectTreeNodeKind.ComponentPreset,
+            node.Id,
+            nextName,
+            node.Notes,
+            node.RecordClassId,
+            node.Parent,
+            isUsed: node.IsUsed,
+            isProtected: node.IsProtected);
+    }
+
     private static IReadOnlyList<string> GetComponentPresetReferenceUsages(SqliteConnection connection, ProjectTreeNode node)
     {
         if (!TryParseComponentPresetNodeId(node.Id, out var componentClassId, out var presetId))

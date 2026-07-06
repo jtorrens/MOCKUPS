@@ -1290,6 +1290,15 @@ internal sealed partial class SpikeDatabase
             ("$notes", node.Notes));
     }
 
+    public ProjectTreeNode RenameDirectNode(ProjectTreeNode node, string name)
+    {
+        return node.Kind switch
+        {
+            ProjectTreeNodeKind.ComponentPreset => RenameComponentPreset(node, name),
+            _ => throw new InvalidOperationException($"Cannot rename {node.Kind} directly."),
+        };
+    }
+
     public EditorLayout LoadEditorLayout(string recordClassId)
     {
         using var connection = OpenConnection();
