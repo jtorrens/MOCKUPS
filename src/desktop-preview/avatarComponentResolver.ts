@@ -1,5 +1,6 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { mergeComponentDefaults } from "./componentPreviewDefaults.js";
+import { stringValue } from "./previewColorHelpers.js";
 import {
   asRecord,
   parseObject,
@@ -175,8 +176,4 @@ function resolveActorPreview(
       ),
     },
   };
-}
-
-function stringValue(value: unknown) {
-  return typeof value === "string" ? value : "";
 }

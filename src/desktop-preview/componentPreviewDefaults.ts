@@ -1,10 +1,6 @@
-type JsonRecord = Record<string, unknown>;
+import { asRecord } from "./previewJsonHelpers.js";
 
-function asRecord(value: unknown): JsonRecord {
-  return typeof value === "object" && value !== null && !Array.isArray(value)
-    ? (value as JsonRecord)
-    : {};
-}
+type JsonRecord = Record<string, unknown>;
 
 export function mergeComponentDefaults(
   defaults: JsonRecord,
