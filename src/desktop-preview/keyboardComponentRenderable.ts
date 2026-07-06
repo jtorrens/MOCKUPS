@@ -187,7 +187,7 @@ function keyboardRowNodes(
       {
         id: `${keyboard.id}.key.${rowIndex}.${index}.surface`,
         type: "surface",
-        role: "keyboard_key_surface",
+        role: "keyboardKeySurface",
         frame: 0,
         box,
         style: {
@@ -199,7 +199,7 @@ function keyboardRowNodes(
       {
         id: `${keyboard.id}.key.${rowIndex}.${index}.text`,
         type: "text",
-        role: "keyboard_key_text",
+        role: "keyboardKeyText",
         frame: 0,
         box,
         text: displayText,

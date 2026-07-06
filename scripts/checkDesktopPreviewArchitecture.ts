@@ -131,6 +131,22 @@ assertNoTerms("src/desktop-preview/renderDesignPreviewHtml.tsx", [
   "status_bar",
   "navigation_bar",
 ]);
+assertDoesNotContain(
+  "src/desktop-preview/renderDesignPreviewHtml.tsx",
+  "../visual/adapters/react/RenderableReactAdapter.js",
+  "desktop design preview must use the clean desktop HTML adapter, not the legacy React renderable adapter",
+);
+assertNoTerms("src/desktop-preview/DesktopRenderableHtmlAdapter.tsx", [
+  "message_bubble",
+  "audio_message",
+  "button_icon",
+  "status_bar_item",
+  "navigation_bar_item",
+  "keyboard_key",
+  "text_input_bar_",
+  "video_message",
+  "status_indicators",
+]);
 
 assertNoTerms("src/desktop-preview/componentRenderableCommon.ts", [
   "label",
@@ -255,6 +271,23 @@ assertDoesNotContain(
   "systemBarType:",
   "shared system bar renderables must not emit system-bar identity metadata into the final paint tree",
 );
+for (const [, entry] of manifestEntries) {
+  const renderableFile = moduleFile(entry, "renderable");
+  for (const legacyTerm of [
+    "message_bubble",
+    "audio_message",
+    "button_icon",
+    "text_input_bar",
+    "keyboard_key",
+    "video_message",
+  ]) {
+    assertDoesNotContain(
+      renderableFile,
+      legacyTerm,
+      `component renderables must not emit legacy desktop/runtime term "${legacyTerm}"`,
+    );
+  }
+}
 
 const routedComponentClasses = new Set(Object.keys(componentRenderableFactories));
 for (const [componentClass, entry] of manifestEntries) {

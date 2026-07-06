@@ -74,7 +74,7 @@ export function textInputBarComponentToRenderable(
   return {
     id: textInput.id,
     type: "group",
-    role: "text_input_bar",
+    role: "textInputBar",
     frame: 0,
     box: outerBox,
     style: {
@@ -84,7 +84,7 @@ export function textInputBarComponentToRenderable(
       {
         id: `${textInput.id}.surface`,
         type: "surface",
-        role: "text_input_bar_surface",
+        role: "textInputBarSurface",
         frame: 0,
         box: fieldBox,
         style: {
@@ -121,7 +121,7 @@ export function textInputBarComponentToRenderable(
       {
         id: `${textInput.id}.text`,
         type: "text",
-        role: "text_input_bar_text",
+        role: "textInputBarText",
         frame: 0,
         box: textBox,
         text: textValue,
@@ -138,7 +138,7 @@ export function textInputBarComponentToRenderable(
       {
         id: `${textInput.id}.cursor`,
         type: "surface",
-        role: "text_input_bar_cursor",
+        role: "textInputBarCursor",
         frame: 0,
         box: cursorBox,
         style: {

@@ -1,9 +1,9 @@
 import { readFile } from "node:fs/promises";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { RenderableReactAdapter } from "../visual/adapters/react/RenderableReactAdapter.js";
 import { RenderableNodeSchema } from "../visual/renderable/schema.js";
 import type { RenderableNode } from "../visual/renderable/types.js";
+import { DesktopRenderableHtmlAdapter } from "./DesktopRenderableHtmlAdapter.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { designPreviewPayloadToRenderable } from "./designPreviewRenderableRegistry.js";
 import { selectedColor } from "./previewColorHelpers.js";
@@ -39,7 +39,7 @@ async function main() {
   ) as DesignPreviewPayload;
   const renderable = renderableForPayload(payload);
   const markup = renderToStaticMarkup(
-    React.createElement(RenderableReactAdapter, {
+    React.createElement(DesktopRenderableHtmlAdapter, {
       tree: renderable,
       showBounds: payload.showMarks === true,
     }),

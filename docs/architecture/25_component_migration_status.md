@@ -80,6 +80,8 @@ as one planned phase, not as mixed legacy/new fragments.
 `npm run check:architecture` currently verifies:
 
 - no central `webPreviewBridge.ts` exists;
+- desktop design preview uses the clean desktop HTML adapter instead of the
+  legacy React renderable adapter;
 - central desktop preview renderer/common helpers do not contain component names;
 - manifest entries point to real contract/resolver/renderable modules;
 - registry routes every manifest component;

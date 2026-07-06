@@ -345,6 +345,12 @@ CSS animations, countdowns or component-specific interpolation. The preview
 shell may maintain a generic clock and request successive frames from the
 resolver path.
 
+The desktop editor uses `src/desktop-preview/DesktopRenderableHtmlAdapter.tsx`
+as its HTML adapter. It may use React server rendering as an implementation
+detail, but it must only paint the final generic desktop primitives. It must not
+import or delegate to the legacy `RenderableReactAdapter`, because that adapter
+still carries old runtime branches for chat/debug/remotion paths.
+
 ## Recursive Embedded Components
 
 Components are not isolated leaf nodes. The system intentionally supports
