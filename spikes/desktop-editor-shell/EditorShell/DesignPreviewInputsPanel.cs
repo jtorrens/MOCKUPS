@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
@@ -13,15 +14,18 @@ using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed class DesignPreviewInputsPanel : Border
+internal sealed class DesignPreviewInputsPanel : ContentControl
 {
     private readonly SpikeDatabase _database;
     private readonly Action _refreshPreview;
     private readonly DispatcherTimer _playbackTimer;
     private readonly StackPanel _rowsPanel;
     private readonly Dictionary<string, string> _values = new(StringComparer.Ordinal);
+    private Button? _playbackButton;
     private string _scopeKey = "";
     private string _componentType = "";
+    private string _projectId = "";
+    private string _inputSignature = "";
     private DateTime _playbackStartedAtUtc;
     private double _playbackStartSeconds;
     private bool _isUpdating;
@@ -35,36 +39,12 @@ internal sealed class DesignPreviewInputsPanel : Border
             Interval = TimeSpan.FromMilliseconds(120),
         };
         _playbackTimer.Tick += (_, _) => AdvancePlaybackFrame();
-        CornerRadius = new CornerRadius(10);
-        Padding = new Thickness(10);
-        Background = new SolidColorBrush(Color.FromArgb(20, 0, 0, 0));
-        BorderBrush = new SolidColorBrush(Color.FromArgb(34, 255, 255, 255));
-        BorderThickness = new Thickness(1);
         IsVisible = false;
 
         _rowsPanel = new StackPanel
         {
             Spacing = 8,
         };
-
-        var content = new StackPanel
-        {
-            Spacing = 8,
-        };
-        content.Children.Add(new TextBlock
-        {
-            Text = "INPUTS",
-            FontSize = 11,
-            FontWeight = FontWeight.SemiBold,
-            Opacity = 0.78,
-        });
-        content.Children.Add(new ScrollViewer
-        {
-            MaxHeight = 5 * 46,
-            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-            Content = _rowsPanel,
-        });
-        Child = content;
     }
 
     public void UpdateForPayload(DesignPreviewPayload? payload, string? projectId)
@@ -72,12 +52,14 @@ internal sealed class DesignPreviewInputsPanel : Border
         _isUpdating = true;
         try
         {
-            _rowsPanel.Children.Clear();
             if (payload is null || payload.Kind != "componentClass" || string.IsNullOrWhiteSpace(projectId))
             {
                 IsVisible = false;
                 _scopeKey = "";
                 _componentType = "";
+                _projectId = "";
+                _inputSignature = "";
+                Content = null;
                 StopPlayback();
                 return;
             }
@@ -88,18 +70,32 @@ internal sealed class DesignPreviewInputsPanel : Border
                 IsVisible = false;
                 _scopeKey = "";
                 _componentType = "";
+                _projectId = "";
+                _inputSignature = "";
+                Content = null;
                 StopPlayback();
                 return;
             }
 
             IsVisible = true;
-            _scopeKey = $"{payload.Kind}:{payload.ComponentType}:{payload.Name}";
+            var scopeKey = $"{payload.Kind}:{payload.ComponentType}:{payload.Name}";
+            var inputSignature = string.Join("|", inputs.Select((input) => input.Id));
+            var shouldRebuild = scopeKey != _scopeKey
+                || projectId != _projectId
+                || inputSignature != _inputSignature
+                || Content is null;
+            _scopeKey = scopeKey;
             _componentType = payload.ComponentType;
+            _projectId = projectId;
+            _inputSignature = inputSignature;
             var preview = ParseJsonObject(payload.DesignPreviewJson);
             foreach (var input in inputs)
             {
                 EnsureValue(input, preview);
-                _rowsPanel.Children.Add(CreateInputRow(input, projectId));
+            }
+            if (shouldRebuild)
+            {
+                RebuildCard(inputs, projectId);
             }
             SyncPlaybackTimer();
         }
@@ -107,6 +103,68 @@ internal sealed class DesignPreviewInputsPanel : Border
         {
             _isUpdating = false;
         }
+    }
+
+    private void RebuildCard(IReadOnlyList<DesignPreviewInput> inputs, string projectId)
+    {
+        _rowsPanel.Children.Clear();
+        foreach (var input in inputs)
+        {
+            _rowsPanel.Children.Add(CreateInputRow(input, projectId));
+        }
+
+        var icon = EditorIcons.Create(EditorIcons.Design, 18);
+        Content = new InstantEditorCard(
+            CreateHeader(icon),
+            new Border
+            {
+                Padding = new Thickness(10),
+                Child = new ScrollViewer
+                {
+                    MaxHeight = 5 * 46,
+                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                    Content = _rowsPanel,
+                },
+            },
+            isExpanded: true)
+        {
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+        UpdatePlaybackButton();
+    }
+
+    private Control CreateHeader(Control icon)
+    {
+        var header = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("*,Auto"),
+            ColumnSpacing = 10,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        header.Children.Add(EditorCardHeader.Create("Inputs", "Preview sample values", icon));
+        if (_componentType == "audio")
+        {
+            _playbackButton = new Button
+            {
+                MinWidth = 72,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            _playbackButton.PointerPressed += (_, args) => args.Handled = true;
+            _playbackButton.Click += (_, args) =>
+            {
+                args.Handled = true;
+                TogglePlayback();
+            };
+            Grid.SetColumn(_playbackButton, 1);
+            header.Children.Add(_playbackButton);
+        }
+        else
+        {
+            _playbackButton = null;
+        }
+
+        return header;
     }
 
     public DesignPreviewPayload ApplyInputs(DesignPreviewPayload payload)
@@ -266,11 +324,6 @@ internal sealed class DesignPreviewInputsPanel : Border
 
     private void SetValue(DesignPreviewInput input, string value)
     {
-        if (_componentType == "audio" && input.Id == "playbackState" && value == "paused")
-        {
-            _values[$"{_scopeKey}:currentTimeSeconds"] = CurrentPlaybackSeconds().ToString(CultureInfo.InvariantCulture);
-        }
-
         _values[StorageKey(input)] = value;
         if (_componentType == "audio" && input.Id == "durationSeconds")
         {
@@ -290,6 +343,7 @@ internal sealed class DesignPreviewInputsPanel : Border
         if (_componentType != "audio")
         {
             StopPlayback();
+            UpdatePlaybackButton();
             return;
         }
 
@@ -302,10 +356,42 @@ internal sealed class DesignPreviewInputsPanel : Border
                 _playbackStartedAtUtc = DateTime.UtcNow;
                 _playbackTimer.Start();
             }
+            UpdatePlaybackButton();
             return;
         }
 
         StopPlayback();
+        UpdatePlaybackButton();
+    }
+
+    private void TogglePlayback()
+    {
+        if (_componentType != "audio") return;
+
+        var stateKey = $"{_scopeKey}:playbackState";
+        var state = _values.GetValueOrDefault(stateKey, "paused");
+        if (state == "playing")
+        {
+            _values[$"{_scopeKey}:currentTimeSeconds"] = CurrentPlaybackSeconds().ToString(CultureInfo.InvariantCulture);
+            _values[stateKey] = "paused";
+        }
+        else
+        {
+            _playbackStartSeconds = CurrentPlaybackSeconds();
+            _playbackStartedAtUtc = DateTime.UtcNow;
+            _values[stateKey] = "playing";
+        }
+
+        SyncPlaybackTimer();
+        _refreshPreview();
+    }
+
+    private void UpdatePlaybackButton()
+    {
+        if (_playbackButton is null) return;
+
+        var state = _values.GetValueOrDefault($"{_scopeKey}:playbackState", "paused");
+        _playbackButton.Content = state == "playing" ? "Pause" : "Play";
     }
 
     private void StopPlayback()
@@ -404,12 +490,6 @@ internal sealed record DesignPreviewInput(
 
 internal static class DesignPreviewInputCatalog
 {
-    private static readonly FieldOption[] PlaybackStateOptions =
-    [
-        new("paused", "Paused"),
-        new("playing", "Playing"),
-    ];
-
     public static IEnumerable<DesignPreviewInput> ForComponent(string componentType)
     {
         return componentType switch
@@ -430,7 +510,6 @@ internal static class DesignPreviewInputCatalog
             ],
             "audio" =>
             [
-                new("playbackState", "State", "playbackState", DesignPreviewInputKind.Option, "paused", PlaybackStateOptions),
                 new("durationSeconds", "Duration", "durationSeconds", DesignPreviewInputKind.Number, "65", Minimum: 1, Maximum: 86400, Increment: 1),
                 new("actorId", "Actor", "actorId", DesignPreviewInputKind.Actor, ""),
             ],
