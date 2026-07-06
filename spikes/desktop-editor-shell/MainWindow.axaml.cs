@@ -1,11 +1,7 @@
-using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Styling;
 using Mockups.DesktopEditorShell.Data;
 using Mockups.DesktopEditorShell.EditorShell;
-using SukiUI;
 using SukiUI.Controls;
-using SukiUI.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,7 +11,6 @@ namespace Mockups.DesktopEditorShell;
 
 public partial class MainWindow : SukiWindow
 {
-    private bool _isDark = true;
     private readonly SpikeDatabase _database = new(SpikeDatabase.DefaultDatabasePath());
     private readonly CoreFieldValueService _coreFieldValues;
     private readonly RecordClassFieldValueService _recordClassFieldValues;
@@ -24,6 +19,7 @@ public partial class MainWindow : SukiWindow
     private readonly EditorCollectionCardFactory _collectionCards;
     private readonly EditorPreviewController _previewController;
     private readonly IEditorShellMessageSink _messages;
+    private readonly EditorThemeController _themeController;
     private readonly EditorNodeCommandController _nodeCommands;
     private readonly EditorShellStateService _shellState;
     private readonly EditorNavigationRenderer _navigationRenderer;
@@ -51,7 +47,8 @@ public partial class MainWindow : SukiWindow
         _coreFieldValues = new CoreFieldValueService(_database);
         _recordClassFieldValues = new RecordClassFieldValueService(_database);
         _componentClassFieldValues = new ComponentClassFieldValueService(_database);
-        _actorAvatarPreviews = new ActorAvatarPreviewController(_database, () => _isDark);
+        _themeController = new EditorThemeController(this, ThemeLabel, ThemeToggleButton, RefreshPreviewDevice);
+        _actorAvatarPreviews = new ActorAvatarPreviewController(_database, () => _themeController.IsDark);
         _messages = new EditorShellMessageSink(ShellMessagesTextBox);
         _previewController = new EditorPreviewController(
             _database,
@@ -65,7 +62,7 @@ public partial class MainWindow : SukiWindow
             DesignPreviewHost,
             PreviewContextTextBlock,
             PreviewContextLockButton,
-            () => _isDark,
+            () => _themeController.IsDark,
             () => _selectedNode,
             this);
         PreviewDeviceComboBox.SelectionChanged += (_, _) => _previewController.OnDeviceChanged();
@@ -82,7 +79,7 @@ public partial class MainWindow : SukiWindow
         _nodeCommands = new EditorNodeCommandController(
             this,
             _database,
-            () => _isDark,
+            () => _themeController.IsDark,
             () => _treeRoots,
             LoadProjectTree,
             ReloadAndSelect,
@@ -90,7 +87,7 @@ public partial class MainWindow : SukiWindow
         _shellState = new EditorShellStateService(this, ShellColumns);
         _navigationRenderer = new EditorNavigationRenderer(
             () => _selectedNode,
-            () => _isDark,
+            () => _themeController.IsDark,
             _treeExpansion.IsExpanded,
             SelectTreeNode,
             (node) => ShowNode(_nodeSelection.ResolveSelectionNode(node)),
@@ -110,7 +107,7 @@ public partial class MainWindow : SukiWindow
         _domainDialogs = new EditorDomainDialogService(
             this,
             _database,
-            () => _isDark,
+            () => _themeController.IsDark,
             _nodeCommands.ShowInfoDialog,
             _pathBrowser.BrowseSvgFile,
             ReloadAndSelect);
@@ -136,7 +133,7 @@ public partial class MainWindow : SukiWindow
         _embeddedUsageNavigator = new EditorEmbeddedUsageNavigator(
             _database,
             this,
-            () => _isDark,
+            () => _themeController.IsDark,
             SelectNodeById,
             LoadProjectTree,
             () => _selectedNode,
@@ -155,7 +152,7 @@ public partial class MainWindow : SukiWindow
             _nodeCommands.SaveCurrentComponentPreset);
         _collectionCards = new EditorCollectionCardFactory(
             _database,
-            () => _isDark,
+            () => _themeController.IsDark,
             _nodeCommands.ShowInfoDialog,
             _domainDialogs.ConfirmIconTokenDelete,
             _domainDialogs.ShowIconThemeSearch,
@@ -173,15 +170,14 @@ public partial class MainWindow : SukiWindow
             _collectionCards);
         _shellState.Restore();
         Closing += (_, _) => _shellState.Save();
-        ApplyTheme();
+        _themeController.Apply();
         LoadProjectTree();
         InitializePreviewOptions();
     }
 
     private void OnToggleThemeClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
-        _isDark = !_isDark;
-        ApplyTheme();
+        _themeController.Toggle();
     }
 
     private void OnRefreshUsageClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -192,27 +188,6 @@ public partial class MainWindow : SukiWindow
         {
             SelectNodeById(selectedId);
         }
-    }
-
-    private void ApplyTheme()
-    {
-        var themeVariant = _isDark ? ThemeVariant.Dark : ThemeVariant.Light;
-        RequestedThemeVariant = themeVariant;
-        Application.Current!.RequestedThemeVariant = themeVariant;
-        SukiTheme.GetInstance().ChangeBaseTheme(themeVariant);
-        SukiTheme.GetInstance().ChangeColorTheme(SukiColor.Blue);
-
-        if (_isDark)
-        {
-            ThemeLabel.Text = "Dark mode";
-            ThemeToggleButton.Content = "Switch to light";
-            RefreshPreviewDevice();
-            return;
-        }
-
-        ThemeLabel.Text = "Light mode";
-        ThemeToggleButton.Content = "Switch to dark";
-        RefreshPreviewDevice();
     }
 
     private void InitializePreviewOptions()
