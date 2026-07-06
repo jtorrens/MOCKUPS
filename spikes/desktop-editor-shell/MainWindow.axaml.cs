@@ -636,13 +636,18 @@ public partial class MainWindow : SukiWindow
 
     private void SetEditorRootTitle(string title)
     {
+        SetEditorPresetText(_selectedNode?.Kind == ProjectTreeNodeKind.ComponentClass
+            ? "Preset: Current class values"
+            : null);
         EditorBreadcrumbBar.Render(EditorBreadcrumbPanel, [
             new EditorBreadcrumbItem(title),
-        ], CreateStructureButtonForSelectedComponent());
+        ], CreateHeaderActionsForSelectedComponent());
     }
 
     private void SetEditorEmbeddedTitle(EmbeddedEditorContext context)
     {
+        var activePresetName = _database.GetEmbeddedComponentPresetName(context.OwnerNode.Id, context.Slots);
+        SetEditorPresetText(string.IsNullOrWhiteSpace(activePresetName) ? null : $"Preset: {activePresetName}");
         var items = new List<EditorBreadcrumbItem>
         {
             new(context.OwnerNode.Name, () => ShowNode(context.OwnerNode, rebuildTree: false)),
@@ -650,15 +655,21 @@ public partial class MainWindow : SukiWindow
         for (var index = 0; index < context.Slots.Count; index++)
         {
             var slot = context.Slots[index];
+            var slotPresetName = _database.GetEmbeddedComponentPresetName(
+                context.OwnerNode.Id,
+                context.Slots.Take(index + 1).ToArray());
+            var label = string.IsNullOrWhiteSpace(slotPresetName)
+                ? slot.Label
+                : $"{slot.Label} · {slotPresetName}";
             if (index == context.Slots.Count - 1)
             {
-                items.Add(new EditorBreadcrumbItem(slot.Label));
+                items.Add(new EditorBreadcrumbItem(label));
                 continue;
             }
 
             var slotIndex = index + 1;
             items.Add(new EditorBreadcrumbItem(
-                slot.Label,
+                label,
                 () => ShowEmbeddedContext(new EmbeddedEditorContext(context.OwnerNode, context.Slots.Take(slotIndex).ToArray()))));
         }
 
@@ -668,7 +679,13 @@ public partial class MainWindow : SukiWindow
             EditorStructureButton.Create(async () => await _embeddedUsageNavigator.ShowForEmbedded(context.OwnerNode, context.Slot)));
     }
 
-    private Control? CreateStructureButtonForSelectedComponent()
+    private void SetEditorPresetText(string? text)
+    {
+        EditorPresetTextBlock.Text = text ?? "";
+        EditorPresetTextBlock.IsVisible = !string.IsNullOrWhiteSpace(text);
+    }
+
+    private Control? CreateHeaderActionsForSelectedComponent()
     {
         if (_selectedNode?.Kind != ProjectTreeNodeKind.ComponentClass)
         {
@@ -676,7 +693,59 @@ public partial class MainWindow : SukiWindow
         }
 
         var node = _selectedNode;
-        return EditorStructureButton.Create(async () => await _embeddedUsageNavigator.ShowForComponent(node));
+        return new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 6,
+            Children =
+            {
+                EditorStructureButton.Create(async () => await _embeddedUsageNavigator.ShowForComponent(node)),
+                CreateSavePresetButton(node),
+            },
+        };
+    }
+
+    private Button CreateSavePresetButton(ProjectTreeNode node)
+    {
+        var icon = EditorIcons.Create(EditorIcons.Add, 18);
+        EditorIcons.ApplyBrush(icon, new SolidColorBrush(Color.Parse("#D6A638")));
+        var button = new Button
+        {
+            Content = icon,
+            Width = 34,
+            Height = 34,
+            MinWidth = 34,
+            Padding = new Thickness(0),
+            Background = Brushes.Transparent,
+            BorderBrush = new SolidColorBrush(Color.Parse("#80D6A638")),
+            BorderThickness = new Thickness(1),
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        ToolTip.SetTip(button, "Save preset");
+        button.Click += async (_, _) => await SaveCurrentComponentPreset(node);
+        return button;
+    }
+
+    private async Task SaveCurrentComponentPreset(ProjectTreeNode node)
+    {
+        var presetName = await new EditorDialogService(this, _isDark).PromptText(
+            "Save preset",
+            "Preset name",
+            $"{node.Name} preset");
+        if (string.IsNullOrWhiteSpace(presetName))
+        {
+            return;
+        }
+
+        try
+        {
+            var preset = _database.SaveComponentPreset(node, presetName);
+            ReloadAndSelect(preset);
+        }
+        catch (Exception exception)
+        {
+            _messages.Error($"Save preset {node.Name}", exception);
+        }
     }
 
     private async Task AddChild(ProjectTreeNode parent)
