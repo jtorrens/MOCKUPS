@@ -156,6 +156,15 @@ const registryFiles = new Set([
   "src/desktop-preview/designPreviewRenderableRegistry.ts",
 ]);
 
+const sharedPreviewHelperFiles = new Set([
+  "src/desktop-preview/previewColorHelpers.ts",
+  "src/desktop-preview/previewComponentContracts.ts",
+  "src/desktop-preview/previewGeometryHelpers.ts",
+  "src/desktop-preview/previewJsonHelpers.ts",
+  "src/desktop-preview/previewSurfaceHelpers.ts",
+  "src/desktop-preview/previewValueHelpers.ts",
+]);
+
 const filesystemAllowedPreviewFiles = new Set([
   "src/desktop-preview/previewAssetResolver.ts",
   "src/desktop-preview/renderDesignPreviewHtml.tsx",
@@ -237,6 +246,38 @@ for (const [, entry] of manifestEntries) {
 for (const filePath of walkFiles(previewRoot)) {
   const relativePath = relative(filePath);
   const source = readFileSync(filePath, "utf8");
+  if (!sharedPreviewHelperFiles.has(relativePath)) {
+    for (const helperName of [
+      "applyNeutralTint",
+      "asRecord",
+      "colorForMode",
+      "cssColorWithAlpha",
+      "numberValue",
+      "parseObject",
+      "renderScale",
+      "requiredAlpha",
+      "requiredBoolean",
+      "requiredNumber",
+      "requiredNumberValue",
+      "requiredPlacement",
+      "requiredRecord",
+      "requiredString",
+      "resolvePaletteColor",
+      "resolveSurfaceStyle",
+      "selectedColor",
+      "stringValue",
+      "tokenValueForMode",
+      "variants",
+    ]) {
+      if (new RegExp(`function\\s+${helperName}\\s*\\(`).test(source)) {
+        addViolation(
+          relativePath,
+          `shared preview helper "${helperName}" must be imported from common helpers, not redefined locally`,
+        );
+      }
+    }
+  }
+
   const nodeTypePattern = /type:\s*["']([^"']+)["']/g;
   let nodeTypeMatch: RegExpExecArray | null;
   while ((nodeTypeMatch = nodeTypePattern.exec(source)) !== null) {

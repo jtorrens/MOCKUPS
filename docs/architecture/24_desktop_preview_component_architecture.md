@@ -915,6 +915,8 @@ Tasks:
   JSON parsing and value validation;
 - keep helpers generic;
 - ensure no helper imports concrete components.
+- enforce that shared helper names are imported from common modules rather than
+  redefined locally in component/resolver/renderable files.
 
 Validation:
 
