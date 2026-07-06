@@ -75,7 +75,8 @@ internal sealed class RecordClassFieldValueService
                 Options: options,
                 PairLabels: field.PairLabels,
                 ImagePreview: field.ImagePreview,
-                Number: field.Number),
+                Number: field.Number,
+                RecordReference: field.RecordReference),
             value);
     }
 

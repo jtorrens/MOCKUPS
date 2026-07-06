@@ -11,7 +11,8 @@ internal sealed record RecordClassFieldDescriptor(
     IReadOnlyList<FieldOption>? Options = null,
     PairFieldLabels? PairLabels = null,
     ImagePreviewDefinition? ImagePreview = null,
-    NumberDefinition? Number = null);
+    NumberDefinition? Number = null,
+    RecordReferenceDefinition? RecordReference = null);
 
 internal static class RecordClassFieldCatalog
 {
@@ -29,9 +30,17 @@ internal static class RecordClassFieldCatalog
         ["shot.sortOrder"] = new("shot.sortOrder", "Sort Order", ValueKind.Integer),
         ["shot.durationFrames"] = new("shot.durationFrames", "Duration Frames", ValueKind.Integer, IsEditable: false),
         ["shot.fps"] = new("shot.fps", "FPS", ValueKind.Integer),
-        ["shot.ownerActorId"] = new("shot.ownerActorId", "Owner Actor", ValueKind.OptionToken),
+        ["shot.ownerActorId"] = new(
+            "shot.ownerActorId",
+            "Owner Actor",
+            ValueKind.RecordReference,
+            RecordReference: new RecordReferenceDefinition("actors")),
         ["shot.ownerDevice"] = new("shot.ownerDevice", "Device", ValueKind.StringReadOnly, IsEditable: false),
-        ["shot.renderPresetId"] = new("shot.renderPresetId", "Render Preset", ValueKind.OptionToken),
+        ["shot.renderPresetId"] = new(
+            "shot.renderPresetId",
+            "Render Preset",
+            ValueKind.RecordReference,
+            RecordReference: new RecordReferenceDefinition("render_presets")),
         ["shot.renderName"] = new("shot.renderName", "Render Name", ValueKind.StringReadOnly, IsEditable: false),
         ["shot.canvas"] = new("shot.canvas", "Canvas", ValueKind.StringMultiline),
         ["shot.metadata"] = new("shot.metadata", "Metadata", ValueKind.StringMultiline),
@@ -134,9 +143,21 @@ internal static class RecordClassFieldCatalog
         ["device.metrics.dynamicIsland.size"] = new("device.metrics.dynamicIsland.size", "Dynamic island size", ValueKind.IntegerPair),
 
         ["theme.family"] = new("theme.family", "Family", ValueKind.OptionToken),
-        ["theme.iconThemeId"] = new("theme.iconThemeId", "Icon theme", ValueKind.OptionToken),
-        ["theme.statusBarId"] = new("theme.statusBarId", "Status bar", ValueKind.OptionToken),
-        ["theme.navigationBarId"] = new("theme.navigationBarId", "Navigation bar", ValueKind.OptionToken),
+        ["theme.iconThemeId"] = new(
+            "theme.iconThemeId",
+            "Icon theme",
+            ValueKind.RecordReference,
+            RecordReference: new RecordReferenceDefinition("icon_themes")),
+        ["theme.statusBarId"] = new(
+            "theme.statusBarId",
+            "Status bar",
+            ValueKind.RecordReference,
+            RecordReference: new RecordReferenceDefinition("component_presets")),
+        ["theme.navigationBarId"] = new(
+            "theme.navigationBarId",
+            "Navigation bar",
+            ValueKind.RecordReference,
+            RecordReference: new RecordReferenceDefinition("component_presets")),
         ["theme.defaultMode"] = new("theme.defaultMode", "Default mode", ValueKind.OptionToken),
         ["theme.neutralTint.hueDeg"] = new("theme.neutralTint.hueDeg", "Hue", ValueKind.HueDegrees),
         ["theme.neutralTint.saturation"] = new(
@@ -187,8 +208,16 @@ internal static class RecordClassFieldCatalog
         ["theme.keyboard.pressedKeyBackground"] = new("theme.keyboard.pressedKeyBackground", "Pressed key background", ValueKind.PaletteColorPair),
         ["theme.keyboard.popoverBackground"] = new("theme.keyboard.popoverBackground", "Popover background", ValueKind.PaletteColorPair),
         ["theme.keyboard.text"] = new("theme.keyboard.text", "Text", ValueKind.PaletteColorPair),
-        ["theme.typography.fontFamilyId"] = new("theme.typography.fontFamilyId", "Text font", ValueKind.OptionToken),
-        ["theme.typography.emojiFontFamilyId"] = new("theme.typography.emojiFontFamilyId", "Emoji font", ValueKind.OptionToken),
+        ["theme.typography.fontFamilyId"] = new(
+            "theme.typography.fontFamilyId",
+            "Text font",
+            ValueKind.RecordReference,
+            RecordReference: new RecordReferenceDefinition("production_fonts")),
+        ["theme.typography.emojiFontFamilyId"] = new(
+            "theme.typography.emojiFontFamilyId",
+            "Emoji font",
+            ValueKind.RecordReference,
+            RecordReference: new RecordReferenceDefinition("production_fonts")),
         ["theme.typography.size"] = new("theme.typography.size", "Size", ValueKind.Integer),
         ["theme.typography.sizes.xs"] = new("theme.typography.sizes.xs", "Text XS", ValueKind.Integer),
         ["theme.typography.sizes.s"] = new("theme.typography.sizes.s", "Text S", ValueKind.Integer),
@@ -207,8 +236,16 @@ internal static class RecordClassFieldCatalog
         ["theme.radii.full"] = new("theme.radii.full", "Full", ValueKind.Integer),
 
         ["actor.shortName"] = new("actor.shortName", "Short name", ValueKind.StringSingleLine),
-        ["actor.defaultDeviceId"] = new("actor.defaultDeviceId", "Default device", ValueKind.OptionToken),
-        ["actor.defaultThemeId"] = new("actor.defaultThemeId", "Default theme", ValueKind.OptionToken),
+        ["actor.defaultDeviceId"] = new(
+            "actor.defaultDeviceId",
+            "Default device",
+            ValueKind.RecordReference,
+            RecordReference: new RecordReferenceDefinition("devices")),
+        ["actor.defaultThemeId"] = new(
+            "actor.defaultThemeId",
+            "Default theme",
+            ValueKind.RecordReference,
+            RecordReference: new RecordReferenceDefinition("themes")),
         ["actor.color.modes"] = new("actor.color.modes", "Actor Color", ValueKind.PaletteColorPair),
         ["actor.avatarTextColor.modes"] = new("actor.avatarTextColor.modes", "Actor Text Color", ValueKind.PaletteColorPair),
         ["actor.avatar.filePath"] = new(
