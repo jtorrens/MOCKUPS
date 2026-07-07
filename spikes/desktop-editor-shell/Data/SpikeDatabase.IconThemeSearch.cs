@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -113,13 +114,7 @@ internal sealed partial class SpikeDatabase
         var scriptPath = scriptCandidates.FirstOrDefault(File.Exists)
             ?? throw new InvalidOperationException($"Icon theme script not found. Checked: {string.Join(", ", scriptCandidates)}");
         var workingDirectory = Directory.GetParent(scriptPath)?.Parent?.Parent?.FullName ?? AppContext.BaseDirectory;
-        var startInfo = new System.Diagnostics.ProcessStartInfo
-        {
-            FileName = "node",
-            WorkingDirectory = workingDirectory,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-        };
+        var startInfo = DesktopChildProcess.CreateHiddenStartInfo("node", workingDirectory);
         startInfo.ArgumentList.Add(scriptPath);
         foreach (var argument in arguments)
         {

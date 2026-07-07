@@ -1,4 +1,5 @@
 using Mockups.DesktopEditorShell.Data;
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -90,14 +91,7 @@ internal static class WebDesignPreviewRenderer
         var executable = Path.Combine(root, "node_modules", ".bin", executableName);
         var script = Path.Combine(root, "src", "desktop-preview", "renderDesignPreviewHtml.tsx");
 
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = executable,
-            WorkingDirectory = root,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-        };
+        var startInfo = DesktopChildProcess.CreateHiddenStartInfo(executable, root);
         startInfo.ArgumentList.Add(script);
         startInfo.ArgumentList.Add(requestPath);
 
