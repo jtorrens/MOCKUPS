@@ -13,6 +13,13 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class EditorThemeController
 {
+    private static readonly SukiColor[] AllowedAccentColors =
+    [
+        SukiColor.Blue,
+        SukiColor.Green,
+        SukiColor.Red,
+    ];
+
     private readonly Window _window;
     private readonly Border _rootShell;
     private readonly ToggleSwitch _modeSwitch;
@@ -40,8 +47,8 @@ internal sealed class EditorThemeController
             IsDark = _modeSwitch.IsChecked == true;
             Apply();
         };
-        _colorCombo.ItemsSource = Enum.GetNames<SukiColor>()
-            .Select((name) => new FieldOption(name, name));
+        _colorCombo.ItemsSource = AllowedAccentColors
+            .Select((color) => new FieldOption(color.ToString(), color.ToString()));
         _colorCombo.SelectionChanged += (_, _) =>
         {
             if (_isUpdating || _colorCombo.SelectedItem is not FieldOption option) return;

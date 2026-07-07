@@ -43,7 +43,6 @@ internal static class EditorSukiWindowTheme
         {
             SukiColor.Red => Color.Parse("#E64A3C"),
             SukiColor.Green => Color.Parse("#31A66A"),
-            SukiColor.Orange => Color.Parse("#D98928"),
             _ => Color.Parse("#3388FF"),
         };
     }
