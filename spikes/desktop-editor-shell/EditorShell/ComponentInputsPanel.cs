@@ -16,6 +16,9 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class ComponentInputsPanel : ContentControl
 {
+    private static readonly IBrush InputCardBackground = new SolidColorBrush(Color.Parse("#18000000"));
+    private static readonly IBrush EmbeddedInputCardBackground = new SolidColorBrush(Color.Parse("#12000000"));
+
     private readonly SpikeDatabase _database;
     private readonly Action _refreshPreview;
     private readonly Window _owner;
@@ -131,30 +134,36 @@ internal sealed class ComponentInputsPanel : ContentControl
             var groupLabel = groupInputs
                 .Select((input) => input.UiGroupLabel)
                 .FirstOrDefault((label) => !string.IsNullOrWhiteSpace(label)) ?? "Embedded inputs";
-            contentPanel.Children.Add(new InstantEditorCard(
-                EditorCardHeader.Create(groupLabel, "Embedded control inputs", EditorIcons.Create(EditorIcons.Component, 16)),
-                new Border
-                {
-                    Padding = new Thickness(10),
-                    Child = CreateInputRowsPanel(groupInputs, projectId, maxVisibleRows: 5),
-                },
-                isExpanded: false)
+            contentPanel.Children.Add(new Border
             {
+                Background = EmbeddedInputCardBackground,
+                CornerRadius = new CornerRadius(8),
                 HorizontalAlignment = HorizontalAlignment.Stretch,
+                Child = new InstantEditorCard(
+                    EditorCardHeader.Create(groupLabel, "Embedded control inputs", EditorIcons.Create(EditorIcons.Component, 16)),
+                    new Border
+                    {
+                        Padding = new Thickness(10),
+                        Child = CreateInputRowsPanel(groupInputs, projectId, maxVisibleRows: 5),
+                    },
+                    isExpanded: false),
             });
         }
 
         var icon = EditorIcons.Create(EditorIcons.Design, 18);
-        Content = new InstantEditorCard(
-            CreateHeader(icon),
-            new Border
-            {
-                Padding = new Thickness(10),
-                Child = contentPanel,
-            },
-            isExpanded: true)
+        Content = new Border
         {
+            Background = InputCardBackground,
+            CornerRadius = new CornerRadius(10),
             HorizontalAlignment = HorizontalAlignment.Stretch,
+            Child = new InstantEditorCard(
+                CreateHeader(icon),
+                new Border
+                {
+                    Padding = new Thickness(10),
+                    Child = contentPanel,
+                },
+                isExpanded: true),
         };
         UpdatePlaybackButton();
     }
