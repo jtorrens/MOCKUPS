@@ -33,12 +33,12 @@ internal static class DictionaryTextBoxFactory
 
     public static TextBox CreateCompactPair(string value)
     {
-        return EditorTextBoxBehavior.Configure(new TextBox
+        return EditorNumericTextStyle.Apply(EditorTextBoxBehavior.Configure(new TextBox
         {
             Text = value,
             Width = EditorUiDensity.TextAwareWidth(90),
             MinHeight = 36,
             VerticalContentAlignment = VerticalAlignment.Center,
-        });
+        }));
     }
 }

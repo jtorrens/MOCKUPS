@@ -11,6 +11,7 @@ internal static class EditorNumericUpDownBehavior
 {
     public static NumericUpDown Configure(NumericUpDown numeric)
     {
+        EditorNumericTextStyle.Apply(numeric);
         numeric.ContextFlyout = null;
         numeric.ContextMenu = null;
         numeric.AddHandler(
@@ -38,6 +39,7 @@ internal static class EditorNumericUpDownBehavior
         foreach (var textBox in numeric.GetVisualDescendants().OfType<TextBox>())
         {
             EditorTextBoxBehavior.Configure(textBox);
+            EditorNumericTextStyle.Apply(textBox);
         }
     }
 }

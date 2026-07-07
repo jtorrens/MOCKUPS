@@ -84,7 +84,7 @@ internal sealed class EditorShellSettingsDialog
             "UI text scale",
             _shellState.UiTextScale,
             0.5,
-            3,
+            1.75,
             (value) =>
             {
                 _shellState.SetUiTextScale(value);
@@ -175,12 +175,12 @@ internal sealed class EditorShellSettingsDialog
             LargeChange = 0.1,
             VerticalAlignment = VerticalAlignment.Center,
         };
-        var box = EditorTextBoxBehavior.Configure(new TextBox
+        var box = EditorNumericTextStyle.Apply(EditorTextBoxBehavior.Configure(new TextBox
         {
             Text = Format(value),
             Width = 68,
             VerticalContentAlignment = VerticalAlignment.Center,
-        });
+        }));
 
         void SetValue(double nextValue, bool updateBox)
         {

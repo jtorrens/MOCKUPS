@@ -14,15 +14,16 @@ internal static class EditorUiTextScale
 
     public static void Apply(Visual root, double scale, params Visual[] excludedRoots)
     {
-        var normalizedScale = Math.Clamp(scale, 0.5, 3);
-        if (root is TemplatedControl templatedRoot)
-        {
-            ApplyTemplatedControl(templatedRoot, normalizedScale);
-        }
+        var normalizedScale = Math.Clamp(scale, 0.5, 1.75);
 
         foreach (var child in root.GetVisualChildren())
         {
             ApplyRecursive(child, normalizedScale, excludedRoots);
+        }
+
+        if (root is TemplatedControl templatedRoot)
+        {
+            ApplyTemplatedControl(templatedRoot, normalizedScale);
         }
     }
 
@@ -33,17 +34,32 @@ internal static class EditorUiTextScale
             return;
         }
 
+        foreach (var child in visual.GetVisualChildren())
+        {
+            ApplyRecursive(child, scale, excludedRoots);
+        }
+
         switch (visual)
         {
             case TextBlock textBlock when textBlock.IsSet(TextBlock.FontSizeProperty):
                 ApplyTextBlock(textBlock, scale);
                 break;
+            case TemplatedControl control when ShouldScaleControl(control):
+                ApplyTemplatedControl(control, scale);
+                break;
         }
+    }
 
-        foreach (var child in visual.GetVisualChildren())
-        {
-            ApplyRecursive(child, scale, excludedRoots);
-        }
+    private static bool ShouldScaleControl(TemplatedControl control)
+    {
+        return control.IsSet(TemplatedControl.FontSizeProperty)
+            || control is TextBox
+            || control is NumericUpDown
+            || control is Button
+            || control is ComboBox
+            || control is ComboBoxItem
+            || control is CheckBox
+            || control is ToggleSwitch;
     }
 
     private static void ApplyTextBlock(TextBlock textBlock, double scale)

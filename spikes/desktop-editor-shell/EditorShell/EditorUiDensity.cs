@@ -9,7 +9,7 @@ internal static class EditorUiDensity
 
     public static void Configure(double textScale, double cardPaddingScale)
     {
-        TextScale = ClampScale(textScale, 0.5, 3);
+        TextScale = ClampScale(textScale, 0.5, 1.75);
         CardPaddingScale = ClampScale(cardPaddingScale, 0.1, 1.5);
     }
 

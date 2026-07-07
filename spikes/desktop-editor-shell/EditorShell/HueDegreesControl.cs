@@ -84,6 +84,7 @@ internal sealed class HueDegreesControl : Grid, IDictionaryValueControl
             VerticalContentAlignment = VerticalAlignment.Center,
         };
         EditorTextBoxBehavior.Configure(_textBox);
+        EditorNumericTextStyle.Apply(_textBox);
         _textBox.TextChanged += (_, _) =>
         {
             if (_isUpdating) return;
