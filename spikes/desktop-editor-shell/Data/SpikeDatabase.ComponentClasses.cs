@@ -89,7 +89,7 @@ internal sealed partial class SpikeDatabase
     {
         if (!TryParseComponentPresetNodeId(node.Id, out var componentClassId, out var presetId))
         {
-            throw new InvalidOperationException($"Invalid component preset node id '{node.Id}'.");
+            throw new InvalidOperationException($"Invalid component variant node id '{node.Id}'.");
         }
 
         lock (WriteGate)
@@ -99,7 +99,7 @@ internal sealed partial class SpikeDatabase
             var metadata = ParseJsonObject(string.IsNullOrWhiteSpace(settings.MetadataJson) ? "{}" : settings.MetadataJson);
             var presets = EnsurePresetArray(metadata);
             var source = FindPreset(presets, presetId)
-                ?? throw new InvalidOperationException($"Missing component preset '{presetId}'.");
+                ?? throw new InvalidOperationException($"Missing component variant '{presetId}'.");
             var sourceName = JsonPath.String(source, "name", presetId);
             var copyName = $"{sourceName} copy";
             var copyId = UniquePresetId(presets, copyName);
@@ -120,7 +120,7 @@ internal sealed partial class SpikeDatabase
                 ProjectTreeNodeKind.ComponentPreset,
                 ComponentPresetNodeId(componentClassId, copyId),
                 copyName,
-                "Component preset",
+                "Component variant",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ComponentPreset),
                 node.Parent);
         }
@@ -130,13 +130,13 @@ internal sealed partial class SpikeDatabase
     {
         if (sourceNode.Kind is not ProjectTreeNodeKind.ComponentPreset)
         {
-            throw new InvalidOperationException("Component presets can only be saved from an active selected preset.");
+            throw new InvalidOperationException("Component variants can only be saved from an active selected variant.");
         }
 
         var presetName = name.Trim();
         if (string.IsNullOrWhiteSpace(presetName))
         {
-            throw new InvalidOperationException("Preset name cannot be empty.");
+            throw new InvalidOperationException("Variant name cannot be empty.");
         }
 
         lock (WriteGate)
@@ -144,7 +144,7 @@ internal sealed partial class SpikeDatabase
             using var connection = OpenConnection();
             if (!TryParseComponentPresetNodeId(sourceNode.Id, out var componentClassId, out _))
             {
-                throw new InvalidOperationException($"Invalid component preset node id '{sourceNode.Id}'.");
+                throw new InvalidOperationException($"Invalid component variant node id '{sourceNode.Id}'.");
             }
 
             var sourceConfigJson = GetComponentPresetSettings(connection, sourceNode).ConfigJson;
@@ -169,7 +169,7 @@ internal sealed partial class SpikeDatabase
                 ProjectTreeNodeKind.ComponentPreset,
                 ComponentPresetNodeId(componentClassId, presetId),
                 presetName,
-                "Component preset",
+                "Component variant",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ComponentPreset),
                 sourceNode.Parent);
         }
@@ -179,7 +179,7 @@ internal sealed partial class SpikeDatabase
     {
         if (!TryParseComponentPresetNodeId(node.Id, out var componentClassId, out var presetId))
         {
-            throw new InvalidOperationException($"Invalid component preset node id '{node.Id}'.");
+            throw new InvalidOperationException($"Invalid component variant node id '{node.Id}'.");
         }
 
         lock (WriteGate)
@@ -198,13 +198,13 @@ internal sealed partial class SpikeDatabase
 
                 if (JsonBool(preset, ["protected"]))
                 {
-                    throw new InvalidOperationException("Protected component presets cannot be deleted.");
+                    throw new InvalidOperationException("Protected component variants cannot be deleted.");
                 }
 
                 var usages = GetComponentPresetReferenceUsages(connection, node);
                 if (usages.Count > 0)
                 {
-                    throw new InvalidOperationException($"This component preset is still used and cannot be deleted.\n\n{string.Join(Environment.NewLine, usages.Take(12))}");
+                    throw new InvalidOperationException($"This component variant is still used and cannot be deleted.\n\n{string.Join(Environment.NewLine, usages.Take(12))}");
                 }
 
                 presets.RemoveAt(index);
@@ -217,20 +217,20 @@ internal sealed partial class SpikeDatabase
             }
         }
 
-        throw new InvalidOperationException($"Missing component preset '{presetId}'.");
+        throw new InvalidOperationException($"Missing component variant '{presetId}'.");
     }
 
     public ProjectTreeNode RenameComponentPreset(ProjectTreeNode node, string name)
     {
         if (!TryParseComponentPresetNodeId(node.Id, out var componentClassId, out var presetId))
         {
-            throw new InvalidOperationException($"Invalid component preset node id '{node.Id}'.");
+            throw new InvalidOperationException($"Invalid component variant node id '{node.Id}'.");
         }
 
         var nextName = name.Trim();
         if (string.IsNullOrWhiteSpace(nextName))
         {
-            throw new InvalidOperationException("Preset name cannot be empty.");
+            throw new InvalidOperationException("Variant name cannot be empty.");
         }
 
         lock (WriteGate)
@@ -240,7 +240,7 @@ internal sealed partial class SpikeDatabase
             var metadata = ParseJsonObject(string.IsNullOrWhiteSpace(settings.MetadataJson) ? "{}" : settings.MetadataJson);
             var presets = EnsurePresetArray(metadata);
             var preset = FindPreset(presets, presetId)
-                ?? throw new InvalidOperationException($"Missing component preset '{presetId}'.");
+                ?? throw new InvalidOperationException($"Missing component variant '{presetId}'.");
             preset["name"] = nextName;
             Execute(
                 connection,
@@ -302,7 +302,7 @@ internal sealed partial class SpikeDatabase
                 AddComponentPresetEmbeddedReferenceUsage(
                     usages,
                     row,
-                    "Component Preset",
+                    "Component Variant",
                     $"{row.Name} · {preset.Name}",
                     ComponentPresetNodeId(row.Id, preset.Id),
                     preset.ConfigJson,
@@ -492,21 +492,21 @@ internal sealed partial class SpikeDatabase
         if (presetNode.Kind != ProjectTreeNodeKind.ComponentPreset
             || !TryParseComponentPresetNodeId(presetNode.Id, out var componentClassId, out var presetId))
         {
-            throw new InvalidOperationException($"Invalid component preset node id '{presetNode.Id}'.");
+            throw new InvalidOperationException($"Invalid component variant node id '{presetNode.Id}'.");
         }
 
         var settings = GetComponentClassSettings(connection, componentClassId);
         var metadata = ParseJsonObject(string.IsNullOrWhiteSpace(settings.MetadataJson) ? "{}" : settings.MetadataJson);
         if (metadata["presets"] is not JsonArray presets)
         {
-            throw new InvalidOperationException($"Component class '{componentClassId}' has no presets.");
+            throw new InvalidOperationException($"Component class '{componentClassId}' has no variants.");
         }
 
         var preset = FindPreset(presets, presetId)
-            ?? throw new InvalidOperationException($"Missing component preset '{presetId}'.");
+            ?? throw new InvalidOperationException($"Missing component variant '{presetId}'.");
         if (preset["config"] is not JsonObject configObject)
         {
-            throw new InvalidOperationException($"Component preset '{presetId}' has no config.");
+            throw new InvalidOperationException($"Component variant '{presetId}' has no config.");
         }
 
         var config = configObject.ToJsonString();
@@ -530,21 +530,21 @@ internal sealed partial class SpikeDatabase
         if (presetNode.Kind != ProjectTreeNodeKind.ComponentPreset
             || !TryParseComponentPresetNodeId(presetNode.Id, out componentClassId, out var presetId))
         {
-            throw new InvalidOperationException($"Invalid component preset node id '{presetNode.Id}'.");
+            throw new InvalidOperationException($"Invalid component variant node id '{presetNode.Id}'.");
         }
 
         var settings = GetComponentClassSettings(connection, componentClassId);
         metadata = ParseJsonObject(string.IsNullOrWhiteSpace(settings.MetadataJson) ? "{}" : settings.MetadataJson);
         if (metadata["presets"] is not JsonArray presets)
         {
-            throw new InvalidOperationException($"Component class '{componentClassId}' has no presets.");
+            throw new InvalidOperationException($"Component class '{componentClassId}' has no variants.");
         }
 
         var preset = FindPreset(presets, presetId)
-            ?? throw new InvalidOperationException($"Missing component preset '{presetId}'.");
+            ?? throw new InvalidOperationException($"Missing component variant '{presetId}'.");
         if (preset["config"] is not JsonObject config)
         {
-            throw new InvalidOperationException($"Component preset '{presetId}' has no config.");
+            throw new InvalidOperationException($"Component variant '{presetId}' has no config.");
         }
 
         return config;
@@ -646,7 +646,7 @@ internal sealed partial class SpikeDatabase
         {
             ProjectTreeNodeKind.ComponentClass => GetComponentClassSettings(connection, ownerNode.Id),
             ProjectTreeNodeKind.ComponentPreset => GetComponentPresetSettings(connection, ownerNode),
-            _ => throw new InvalidOperationException($"Embedded component presets are not supported for '{ownerNode.Kind}'."),
+            _ => throw new InvalidOperationException($"Embedded component variants are not supported for '{ownerNode.Kind}'."),
         };
         var ownerConfig = ParseJsonObject(string.IsNullOrWhiteSpace(settings.ConfigJson) ? "{}" : settings.ConfigJson);
         return GetEmbeddedComponentPresetName(connection, settings, ownerConfig, slots);
@@ -930,7 +930,7 @@ internal sealed partial class SpikeDatabase
                     && row.ComponentType.Equals(componentType, StringComparison.Ordinal));
             if (referencedRow is null)
             {
-                throw new InvalidOperationException($"Missing component preset reference '{presetReference}'.");
+                throw new InvalidOperationException($"Missing component variant reference '{presetReference}'.");
             }
 
             return ComponentPresetConfigJson(referencedRow, referencedPresetId);

@@ -342,7 +342,7 @@ internal sealed partial class SpikeDatabase
                     ProjectTreeNodeKind.ComponentPreset,
                     ComponentPresetNodeId(componentClass.Id, preset.Id),
                     preset.Name,
-                    preset.IsProtected ? "Protected component preset" : "Component preset",
+                    preset.IsProtected ? "Protected component variant" : "Component variant",
                     ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ComponentPreset),
                     componentNode,
                     isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.ComponentPreset, ComponentPresetNodeId(componentClass.Id, preset.Id)),

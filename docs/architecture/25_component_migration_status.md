@@ -18,7 +18,7 @@ A component is structurally migrated when it has:
 - an owning renderable module;
 - a registry route in `componentClassRenderableRegistry.ts`;
 - dictionary-backed desktop fields;
-- a seeded protected `Default` preset;
+- a seeded protected `Default` variant;
 - no component-specific branches in central desktop preview helpers or renderer.
 
 This means it can be selected and previewed without falling back to the magenta
@@ -46,19 +46,19 @@ field `migrationStatus`.
 
 | Component type | Category | Status | Notes |
 | --- | --- | --- | --- |
-| `surface` | atom | Structural reference | Reusable visual surface appearance. Size is supplied as runtime input/parent box; preset owns background, alphas, border, radius, shadow and relief. |
-| `cursor` | atom | Structurally migrated | Reusable text cursor atom. Height is supplied as runtime input; preset owns theme color token, width, minimum fade alpha and fade frame timing. Animation remains resolver frame data, not renderer state. |
-| `textBox` | atom | Structurally migrated | Reusable text field atom. Size and text are runtime inputs; preset owns surface, padding, typography, text colors, alignment, overflow mode and embedded cursor preset. |
-| `iconRow` | atom | Structurally migrated | Reusable row/column of `buttonIcon` instances. Preset owns base button-icon preset, size, gap and orientation; runtime input supplies the ordered icon token list. |
-| `label` | atom | Functional reference | Text/subtext, sizing, typography tokens and text align are on the new route. Visual surface is an embedded `surface` preset. |
+| `surface` | atom | Structural reference | Reusable visual surface appearance. Size is supplied as runtime input/parent box; variant owns background, alphas, border, radius, shadow and relief. |
+| `cursor` | atom | Structurally migrated | Reusable text cursor atom. Height is supplied as runtime input; variant owns theme color token, width, minimum fade alpha and fade frame timing. Animation remains resolver frame data, not renderer state. |
+| `textBox` | atom | Structurally migrated | Reusable text field atom. Size and text are runtime inputs; variant owns surface, padding, typography, text colors, alignment, overflow mode and embedded cursor variant. |
+| `iconRow` | atom | Structurally migrated | Reusable row/column of `buttonIcon` instances. Variant owns base button-icon variant, size, gap and orientation; runtime input supplies the ordered icon token list. |
+| `label` | atom | Functional reference | Text/subtext, sizing, typography tokens and text align are on the new route. Visual surface is an embedded `surface` variant. |
 | `avatar` | component | Functional reference | Embeds `label`; actor input and label/subtext sample values work through the generic input path. |
 | `buttonIcon` | atom | Functional reference | Embeds `surface` and `label`; icon input and optional label are on the recursive route. |
 | `audio` | component | Functional reference, still evolving | Embeds `surface`, `avatar` and `buttonIcon`; playback inputs are generic frame inputs. Future work may refine waveform behavior, badge semantics and animation details. |
-| `status_bar` | system | Structural/functional enough for current preview | Routed as a system component with its own resolver/renderable. Further device-specific preset work may refine it. |
-| `navigation_bar` | system | Structural/functional enough for current preview | Routed as a system component with its own resolver/renderable. Further device-specific preset work may refine it. |
-| `textInputBar` | system | Structurally migrated | Preview renders a screen-width bar with embedded `surface` preset plus left/right `iconRow` slots. Text remains on the current structural path; the next functional pass should replace it with the `textBox` atom. |
+| `status_bar` | system | Structural/functional enough for current preview | Routed as a system component with its own resolver/renderable. Further device-specific variant work may refine it. |
+| `navigation_bar` | system | Structural/functional enough for current preview | Routed as a system component with its own resolver/renderable. Further device-specific variant work may refine it. |
+| `textInputBar` | system | Structurally migrated | Preview renders a screen-width bar with embedded `surface` variant plus left/right `iconRow` slots. Text remains on the current structural path; the next functional pass should replace it with the `textBox` atom. |
 | `keyboard` | system | Structurally migrated | Preview renders a generic keyboard surface, keys and bottom icons. Final keyboard layout model and interaction states still need definition. |
-| `video` | component | Structurally migrated | Preview renders an embedded `surface` preset, status row and play overlay. It currently declares a duration text runtime input; final media, timeline, controls and embedding semantics still need definition. |
+| `video` | component | Structurally migrated | Preview renders an embedded `surface` variant, status row and play overlay. It currently declares a duration text runtime input; final media, timeline, controls and embedding semantics still need definition. |
 
 ## Legacy Runtime Paths Removed
 

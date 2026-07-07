@@ -172,7 +172,7 @@ internal sealed partial class SpikeDatabase
             {
                 if (ComponentPresetIsUsedByConfig(preset.ConfigJson, componentClassId, componentType, presetId))
                 {
-                    yield return $"Component Preset: {row.Name} · {preset.Name}";
+                    yield return $"Component Variant: {row.Name} · {preset.Name}";
                 }
             }
         }

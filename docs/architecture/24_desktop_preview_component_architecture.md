@@ -54,7 +54,7 @@ The design preview path is:
 
 ```text
 Editor / catalog schema
-  -> selected component preset
+  -> selected component variant
   -> runtime input values
   -> component resolver
   -> component contract
@@ -69,7 +69,7 @@ Short form:
 
 ```text
 The editor edits fields.
-Preset selection provides the effective base config.
+Variant selection provides the effective base config.
 The component understands semantics.
 Generic helpers resolve shared values.
 The component renderable emits paint primitives.
@@ -114,10 +114,10 @@ generic translation layer must not become component-aware.
 Allowed responsibilities:
 
 - component class metadata;
-- component preset metadata;
+- component variant metadata;
 - field names and field definitions;
 - field value kinds / dictionary types;
-- inheritance, override, preset selection and restore editor state;
+- inheritance, override, variant selection and restore editor state;
 - component category for grouping and UX;
 - token references as editable data.
 
@@ -462,46 +462,46 @@ unless Audio directly declares a Label slot in the manifest.
 ## Embedded Override Semantics
 
 An embedded child is not copied field groups. It is a component instance/slot
-whose selected preset values can be locally overridden by the owning parent
+whose selected variant values can be locally overridden by the owning parent
 slot.
 
 Effective config order:
 
 ```text
 component class
-  -> selected preset
+  -> selected variant
   -> parent slot overrides
   -> runtime inputs
 ```
 
-The component class owns the preset list. A preset is a named config snapshot
+The component class owns the variant list. A variant is a named config snapshot
 stored with the class, not a separate component implementation. Every component
-class must have a protected `Default` preset. `Default` cannot be renamed or
-deleted. User-created presets can be duplicated, renamed and deleted only when
+class must have a protected `Default` variant. `Default` cannot be renamed or
+deleted. User-created variants can be duplicated, renamed and deleted only when
 usage checks allow it.
 
 Composition never uses a parent component class as the reusable visual value.
-The parent class owns schema, field catalog, resolver identity, preset list and
+The parent class owns schema, field catalog, resolver identity, variant list and
 declared child slots. Any concrete placement in another component, theme,
-screen, module or future batch renderer references a concrete preset of that
+screen, module or future batch renderer references a concrete variant of that
 class.
 
-Selecting a component class in the editor tree must select a concrete preset:
+Selecting a component class in the editor tree must select a concrete variant:
 
 - first selection in a session uses `Default`;
-- returning to a component class uses the last selected preset for that class;
-- the selected preset node is the active blue tree node;
-- design preview uses the selected preset config;
-- editor fields shown while a preset is selected read and write the selected
-  preset config, while the owning component class supplies the field layout;
-- saving a new preset from an active preset copies that preset config;
-- embedded restore/inherit restores to the selected preset value.
+- returning to a component class uses the last selected variant for that class;
+- the selected variant node is the active blue tree node;
+- design preview uses the selected variant config;
+- editor fields shown while a variant is selected read and write the selected
+  variant config, while the owning component class supplies the field layout;
+- saving a new variant from an active variant copies that variant config;
+- embedded restore/inherit restores to the selected variant value.
 
-Saving a preset is only valid from a selected preset. It must never clone a
+Saving a variant is only valid from a selected variant. It must never clone a
 mutable "current class values" config, because that reintroduces an ambiguous
-base layer outside the preset contract.
+base layer outside the variant contract.
 
-Preset references stored inside component config are full references:
+Variant references stored inside component config are full references:
 
 ```text
 componentClassId::preset::presetId
@@ -513,7 +513,7 @@ preview payloads and runtime composition payloads must use full references.
 Invariant:
 
 ```text
-An override remains an override even if the selected preset value later changes
+An override remains an override even if the selected variant value later changes
 to that same value by coincidence.
 ```
 
@@ -692,7 +692,7 @@ Forbidden registry responsibilities:
 - token resolution;
 - default values;
 - embedded override merging;
-- preset selection or preset merge semantics;
+- variant selection or variant merge semantics;
 - renderable construction;
 - component business rules.
 
@@ -947,29 +947,33 @@ Tests:
 
 ### `check:component-preset-semantics`
 
-Purpose: protect component presets as the effective base layer for component
+Purpose: protect component variants as the effective base layer for component
 editing and preview.
 
 Checks:
 
-- every component class has a protected `Default` preset;
-- protected presets cannot be renamed or deleted;
-- selecting a component class resolves to a concrete preset;
+- every component class has a protected `Default` variant;
+- protected variants cannot be renamed or deleted;
+- selecting a component class resolves to a concrete variant;
 - first session selection resolves to `Default`;
 - returning to a component class in the same session resolves to the last
-  selected preset for that class;
-- selected preset is the blue active tree node;
-- design preview payload for a preset uses the preset config, not mutable class
+  selected variant for that class;
+- selected variant is the blue active tree node;
+- design preview payload for a variant uses the variant config, not mutable class
   config;
-- editor field commits for a selected preset write to that preset config, not
+- editor field commits for a selected variant write to that variant config, not
   mutable class config;
-- saving a preset is only accepted from a selected preset and copies that preset
-  config;
-- persisted embedded preset references use `componentClassId::preset::presetId`,
+- saving a variant is only accepted from a selected variant and copies that
+  variant config;
+- persisted embedded variant references use `componentClassId::preset::presetId`,
   not short local preset ids;
-- embedded restore/inherit uses the selected preset as base;
-- deleting a preset is blocked while any component class slot or any component
-  preset slot references it.
+- embedded restore/inherit uses the selected variant as base;
+- deleting a variant is blocked while any component class slot or any component
+  variant slot references it.
+
+The check name and persisted reference spelling still use `preset` because the
+storage contract has not yet been renamed. User-facing terminology and new
+architecture prose should say `variant`.
 
 ### `check:component-migration-completeness`
 
@@ -1134,7 +1138,7 @@ Non-preview follow-up resolved for the desktop spike:
 - the physical tables remain only as persistence/schema compatibility for
   non-desktop/runtime code until that layer is redesigned;
 - status/navigation editing and theme selection must go through component class
-  presets.
+  variants.
 - component class record-class ids for migrated components use the current
   manifest/component names. For example, use `component.buttonIcon` and
   `component.textInputBar`, not legacy `component.button_icon` or

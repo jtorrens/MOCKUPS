@@ -38,9 +38,9 @@ internal sealed class EditorNodeCommandController
     public async Task SaveCurrentComponentPreset(ProjectTreeNode node)
     {
         var presetName = await Dialogs().PromptText(
-            "Save preset",
-            "Preset name",
-            $"{node.Name} preset");
+            "Save variant",
+            "Variant name",
+            $"{node.Name} variant");
         if (string.IsNullOrWhiteSpace(presetName))
         {
             return;
@@ -53,7 +53,7 @@ internal sealed class EditorNodeCommandController
         }
         catch (Exception exception)
         {
-            _messages.Error($"Save preset {node.Name}", exception);
+            _messages.Error($"Save variant {node.Name}", exception);
         }
     }
 

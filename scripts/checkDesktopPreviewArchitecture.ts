@@ -1253,8 +1253,8 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
-  "Component presets can only be saved from an active selected preset.",
-  "component preset saving must reject ambiguous parent component class configs",
+  "Component variants can only be saved from an active selected variant.",
+  "component variant saving must reject ambiguous parent component class configs",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
@@ -1298,8 +1298,8 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ReferenceUsage.cs",
-  "Component Preset: {row.Name} · {preset.Name}",
-  "component preset usage must scan references stored inside other presets",
+  "Component Variant: {row.Name} · {preset.Name}",
+  "component variant usage must scan references stored inside other variants",
 );
 assertContains(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ReferenceUsage.cs",

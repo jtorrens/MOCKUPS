@@ -59,7 +59,7 @@ internal sealed class EditorHeaderController
     public void SetEmbeddedTitle(EditorEmbeddedContext context)
     {
         var activePresetName = _database.GetEmbeddedComponentPresetName(context.OwnerNode, context.Slots);
-        SetPresetText(string.IsNullOrWhiteSpace(activePresetName) ? null : $"Preset: {activePresetName}");
+        SetPresetText(string.IsNullOrWhiteSpace(activePresetName) ? null : $"Variant: {activePresetName}");
         var items = new List<EditorBreadcrumbItem>
         {
             new(context.OwnerNode.Name, () => _showNode(context.OwnerNode, false)),
@@ -96,7 +96,7 @@ internal sealed class EditorHeaderController
     {
         return _selectedNode()?.Kind switch
         {
-            ProjectTreeNodeKind.ComponentPreset => $"Preset: {_selectedNode()!.Name}",
+            ProjectTreeNodeKind.ComponentPreset => $"Variant: {_selectedNode()!.Name}",
             _ => null,
         };
     }
@@ -170,7 +170,7 @@ internal sealed class EditorHeaderController
                     icon,
                     new TextBlock
                     {
-                        Text = "Save preset",
+                        Text = "Save variant",
                         FontWeight = FontWeight.SemiBold,
                         VerticalAlignment = VerticalAlignment.Center,
                     },
@@ -184,7 +184,7 @@ internal sealed class EditorHeaderController
             BorderThickness = new Thickness(1),
             VerticalAlignment = VerticalAlignment.Center,
         };
-        ToolTip.SetTip(button, "Save preset");
+        ToolTip.SetTip(button, "Save variant");
         button.Click += async (_, _) => await _savePreset(node);
         return button;
     }

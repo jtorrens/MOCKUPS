@@ -106,16 +106,16 @@ internal sealed class EditorEmbeddedUsageDialog
             ? EmptyText("No embedded usages.")
             : CreateUsageTree(classUsages, dialog, select);
         var presetContent = string.IsNullOrWhiteSpace(presetName)
-            ? EmptyText("No active preset selected.")
+            ? EmptyText("No active variant selected.")
             : presetUsages.Count == 0
-                ? EmptyText($"No usages for preset {presetName}.")
+                ? EmptyText($"No usages for variant {presetName}.")
                 : CreatePresetUsageList(presetUsages, dialog, select);
         var contentHost = new ContentControl
         {
             Content = classContent,
         };
         var classLabel = SwitchLabel("Class", selected: true);
-        var presetLabel = SwitchLabel("Preset", selected: false);
+        var presetLabel = SwitchLabel("Variant", selected: false);
         var usageSwitch = new ToggleSwitch
         {
             IsChecked = false,

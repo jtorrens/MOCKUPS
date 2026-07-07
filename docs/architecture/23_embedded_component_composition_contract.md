@@ -17,7 +17,7 @@ An embedded component is a slot, not a duplicated class.
 parent component class
   -> embedded slot metadata
   -> child component base class
-  -> child component active preset
+  -> child component active variant
   -> slot-local overrides
   -> component resolver
   -> component renderable
@@ -35,7 +35,7 @@ The embedded child owns:
 
 - its normal field catalog;
 - its normal dictionary controls;
-- its reusable presets;
+- its reusable variants;
 - its normal resolver contract;
 - its normal resolver/renderable/helper path.
 
@@ -59,9 +59,9 @@ Therefore:
 - an empty `overrides` object is not an override by itself;
 - nested objects count only when they contain a concrete leaf value.
 
-## Preset Layer
+## Variant Layer
 
-Every component class has one or more named presets. A preset is a named config
+Every component class has one or more named variants. A variant is a named config
 snapshot stored with the component class metadata. It is not a separate
 component class and it must not duplicate resolver/render code.
 
@@ -69,7 +69,7 @@ The effective base for a component instance is:
 
 ```text
 component class
-  -> selected preset config
+  -> selected variant config
   -> slot-local overrides
   -> runtime inputs
 ```
@@ -79,63 +79,67 @@ Rules:
 - parent component classes are internal system definitions;
 - the tree must not expose Add on the Component Classes root;
 - the tree must not expose Duplicate/Delete on parent component class nodes;
-- user variation happens through presets and embedded overrides;
-- every component class must have a protected `Default` preset;
+- user variation happens through variants and embedded overrides;
+- every component class must have a protected `Default` variant;
 - `Default` cannot be renamed or deleted;
-- duplicated presets can be renamed/deleted unless usage checks block deletion;
+- duplicated variants can be renamed/deleted unless usage checks block deletion;
 - parent component classes may be renamed from the tree, but they must not be
   duplicated or deleted;
-- selecting a component class in the tree must resolve to a concrete preset;
-- if no preset has been selected for that component class in the current
+- selecting a component class in the tree must resolve to a concrete variant;
+- if no variant has been selected for that component class in the current
   session, the editor selects `Default`;
-- if a preset was selected earlier in the session, navigating back to that class
-  selects the last used preset;
-- selecting a preset in the tree changes the design-preview base config to that
-  preset;
+- if a variant was selected earlier in the session, navigating back to that class
+  selects the last used variant;
+- selecting a variant in the tree changes the design-preview base config to that
+  variant;
 - composition, embedded slots, Theme Status Bar and Theme Navigation Bar must
-  reference a concrete preset, never the parent component class as a reusable
+  reference a concrete variant, never the parent component class as a reusable
   visual value;
 - the editor may still show the parent component class layout, but the active
-  preset name must be visible and the preset node must be selected in the tree.
-- editor fields shown while a preset is selected read and write that preset's
+  variant name must be visible and the variant node must be selected in the tree.
+- editor fields shown while a variant is selected read and write that variant's
   `config`, even though the visible layout comes from the owning component
   class;
-- saving a new preset while another preset is selected copies the active preset
+- saving a new variant while another variant is selected copies the active variant
   config, not the component class's mutable config.
-- saving a preset is only valid from a selected preset. The component class is
+- saving a variant is only valid from a selected variant. The component class is
   schema/ownership, not a cloneable visual base.
 
-An embedded slot stores a full child preset reference in its `presetId` field:
+An embedded slot stores a full child variant reference in its `presetId` field:
 
 ```text
 componentClassId::preset::presetId
 ```
 
-When a field is restored to inherited state, it restores to the selected preset
+The persisted field and delimiter keep `preset` until a dedicated storage
+migration renames them. They should be treated as internal compatibility
+spelling.
+
+When a field is restored to inherited state, it restores to the selected variant
 value, not to the component class's mutable current config.
 
-Changing a base preset does not remove slot-local overrides. Override identity
-is explicit and survives coincidental equality with the preset value.
+Changing a base variant does not remove slot-local overrides. Override identity
+is explicit and survives coincidental equality with the variant value.
 
-Usage checks must inspect both component class config and every preset config.
-Deleting a preset is blocked when any component class slot or any other preset
+Usage checks must inspect both component class config and every variant config.
+Deleting a variant is blocked when any component class slot or any other variant
 slot references it.
 System component selectors, such as Theme Status Bar and Navigation Bar, must
-store preset references, not parent component class ids.
+store variant references, not parent component class ids.
 Status Bar and Navigation Bar must not be exposed as separate editable tree
 sections once their component classes exist. Legacy storage may remain only as a
 temporary compatibility layer; all new editing and Theme assignment goes through
-component class presets.
+component class variants.
 Their preview manifest and registry entries must also use explicit component
 modules (`statusBarComponent...` and `navigationBarComponent...`). They may
 share family helpers internally, but those helpers are not public component
 entrypoints and must not be used by the registry as a shortcut.
-The editor structure modal must separate class usage from preset usage with a
+The editor structure modal must separate class usage from variant usage with a
 compact switch:
 class usage answers where the component type is embedded structurally, while
-preset usage answers where the active preset is referenced. Theme Status Bar and
-Navigation Bar references appear only in preset usage, because Theme selects a
-concrete preset, not the generic component class.
+variant usage answers where the active variant is referenced. Theme Status Bar and
+Navigation Bar references appear only in variant usage, because Theme selects a
+concrete variant, not the generic component class.
 
 ## Editor Boundary
 
@@ -144,11 +148,11 @@ The Avalonia editor edits structured data. It does not render final visuals.
 Allowed editor responsibilities:
 
 - list embedded slots from `EmbeddedComponentSlotCatalog`;
-- list component presets under their owning component class;
-- remember the last selected preset per component class for the current editor
+- list component variants under their owning component class;
+- remember the last selected variant per component class for the current editor
   session;
 - open the child component editor in an embedded context;
-- show inherited values from the child selected preset;
+- show inherited values from the child selected variant;
 - save local edits into the parent slot's `overrides`;
 - show visual affordances for embedded context and override state.
 
@@ -161,7 +165,7 @@ Disallowed editor responsibilities:
 - adding component-specific logic to `MainWindow` beyond generic embedded-editor
   hosting.
 - opening a component class as a special "current class values" design target
-  when a concrete preset exists.
+  when a concrete variant exists.
 
 The dictionary route remains mandatory:
 
@@ -174,26 +178,30 @@ embedded editor context
   -> parent slot overrides
 ```
 
-Embedded component slots use a dedicated dictionary value kind for preset
+Embedded component slots use a dedicated dictionary value kind for variant
 selection. The visible slot row is one `ComponentPreset` control: it selects the
-child preset and opens the embedded child editor from the same row. Do not show
+child variant and opens the embedded child editor from the same row. Do not show
 `*.presetId` as a separate editor row for slots such as Avatar Label, Button
 Icon Label, Audio Avatar or Audio Badge.
 
-The stored value for a selected embedded preset is a full component preset
-reference, not a short preset id:
+The stored value for a selected embedded variant is a full component variant
+reference, not a short local id:
 
 ```text
 componentClassId::preset::presetId
 ```
 
-This is required because multiple component classes of the same type can define
-presets with the same local id. A slot such as Audio Badge must therefore know
-both "Button Icon class = Icon Badge" and "preset = Icon Badge" before the editor
-or web preview resolves inherited values.
+The persisted reference still uses `preset` internally until a dedicated storage
+migration renames it. In UI and architecture language, this is a component
+variant.
 
-Inside an embedded editor, reset/inherit restores the selected preset for that
-slot, not the child component's `default` preset. Ancestor slot overrides may
+This is required because multiple component classes of the same type can define
+variants with the same local id. A slot such as Audio Badge must therefore know
+both "Button Icon class = Icon Badge" and "variant = Icon Badge" before the
+editor or web preview resolves inherited values.
+
+Inside an embedded editor, reset/inherit restores the selected variant for that
+slot, not the child component's `Default` variant. Ancestor slot overrides may
 affect nested slot selection, but the overrides of the slot currently being
 edited are never part of its inherited value.
 

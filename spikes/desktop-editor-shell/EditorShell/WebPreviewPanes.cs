@@ -519,7 +519,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 update.ShowDesignMarks,
                 Placeholder(
                     "Design WebView host",
-                    "Select a component preset to preview it through the desktop component route.")));
+                    "Select a component variant to preview it through the desktop component route.")));
             return;
         }
 
