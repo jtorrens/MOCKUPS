@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Mockups.DesktopEditorShell.Data;
 using SukiUI.Controls;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -18,13 +19,15 @@ internal sealed class EditorContentController
     public EditorContentController(
         SpikeDatabase database,
         Panel host,
+        Func<double>? availableWidth,
+        Control? widthObserver,
         EditorActiveFieldControls activeFieldControls,
         ActorAvatarPreviewController actorAvatarPreviews,
         EditorLayoutCardFactory layoutCards,
         EditorCollectionCardFactory collectionCards)
     {
         _database = database;
-        _cardHost = new EditorCardHostController(host);
+        _cardHost = new EditorCardHostController(host, availableWidth, widthObserver);
         _activeFieldControls = activeFieldControls;
         _actorAvatarPreviews = actorAvatarPreviews;
         _layoutCards = layoutCards;

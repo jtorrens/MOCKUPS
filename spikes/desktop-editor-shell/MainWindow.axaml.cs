@@ -153,6 +153,8 @@ public partial class MainWindow : SukiWindow
         _editorContent = new EditorContentController(
             _database,
             EditorCardsPanel,
+            () => Math.Max(1, EditorScrollViewer.Bounds.Width - EditorScrollViewer.Padding.Left - EditorScrollViewer.Padding.Right),
+            EditorScrollViewer,
             _activeFieldControls,
             _actorAvatarPreviews,
             _layoutCards,

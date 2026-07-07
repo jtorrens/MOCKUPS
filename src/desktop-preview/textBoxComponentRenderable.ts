@@ -238,8 +238,6 @@ export function textBoxComponentToRenderableAt(
     width: Math.max(1, box.width - paddingX * 2 - iconInset.total),
     height: Math.max(1, box.height - size.paddingY * 2),
   };
-  const bottomIconY = (iconHeight: number) =>
-    box.y + box.height - size.paddingY - iconHeight;
   const textIsEmpty = textBox.text.trim().length === 0;
   const cursorWidth = Math.max(1, textBox.cursor.width * scale);
   const wrappedLines = approximateWrappedTextLines(
@@ -247,6 +245,10 @@ export function textBoxComponentToRenderableAt(
     size.typography.fontSize,
     textFrame.width,
   );
+  const iconY = (iconHeight: number) =>
+    wrappedLines.length <= 1
+      ? box.y + Math.max(0, (box.height - iconHeight) * 0.5)
+      : box.y + box.height - size.paddingY - iconHeight;
   const lineHeight = size.typography.lineHeight;
   const textContentHeight = Math.max(1, wrappedLines.length) * lineHeight;
   const textOverflowsFrame = textContentHeight > textFrame.height;
@@ -283,7 +285,7 @@ export function textBoxComponentToRenderableAt(
       ...(size.hasLeftIcons
         ? [iconRowComponentToRenderableAt(payload, textBox.leftIconRow, {
             x: box.x + paddingX,
-            y: bottomIconY(size.leftIconSize.height),
+            y: iconY(size.leftIconSize.height),
             width: size.leftIconSize.width,
             height: size.leftIconSize.height,
           })]
@@ -291,7 +293,7 @@ export function textBoxComponentToRenderableAt(
       ...(size.hasRightIcons
         ? [iconRowComponentToRenderableAt(payload, textBox.rightIconRow, {
             x: box.x + box.width - paddingX - size.rightIconSize.width,
-            y: bottomIconY(size.rightIconSize.height),
+            y: iconY(size.rightIconSize.height),
             width: size.rightIconSize.width,
             height: size.rightIconSize.height,
           })]
