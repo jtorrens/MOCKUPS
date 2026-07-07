@@ -27,10 +27,11 @@ export function surfaceShapeDataUri({
   tail,
 }: SurfaceShapeSvgInput) {
   const tailBox = surfaceTailBox(body, tail);
-  const minX = Math.min(body.x, tailBox.x);
-  const minY = Math.min(body.y, tailBox.y);
-  const maxX = Math.max(body.x + body.width, tailBox.x + tailBox.width);
-  const maxY = Math.max(body.y + body.height, tailBox.y + tailBox.height);
+  const borderPadding = Math.ceil(Math.max(0, borderWidth)) + (borderWidth > 0 ? 1 : 0);
+  const minX = Math.min(body.x, tailBox.x) - borderPadding;
+  const minY = Math.min(body.y, tailBox.y) - borderPadding;
+  const maxX = Math.max(body.x + body.width, tailBox.x + tailBox.width) + borderPadding;
+  const maxY = Math.max(body.y + body.height, tailBox.y + tailBox.height) + borderPadding;
   const width = Math.max(1, maxX - minX);
   const height = Math.max(1, maxY - minY);
   const bodyX = body.x - minX;
