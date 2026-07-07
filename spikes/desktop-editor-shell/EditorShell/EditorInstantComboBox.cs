@@ -253,6 +253,9 @@ public sealed class EditorInstantComboBox : Grid
     private void RebuildItems()
     {
         _itemsPanel.Children.Clear();
+        var isLight = ActualThemeVariant == ThemeVariant.Light;
+        var highlightedBackground = new SolidColorBrush(Color.Parse(isLight ? "#14000000" : "#14FFFFFF"));
+        var selectedBackground = new SolidColorBrush(Color.Parse(isLight ? "#1C000000" : "#1CFFFFFF"));
         for (var index = 0; index < _items.Count; index++)
         {
             var item = _items[index];
@@ -266,9 +269,10 @@ public sealed class EditorInstantComboBox : Grid
                 MinHeight = 30,
                 Padding = new Thickness(8, 5),
                 Background = isHighlighted
-                    ? EditorSukiWindowTheme.AccentBrush(0x33)
-                    : isSelected ? EditorSukiWindowTheme.AccentBrush(0x22) : Brushes.Transparent,
-                BorderThickness = new Thickness(0),
+                    ? highlightedBackground
+                    : isSelected ? selectedBackground : Brushes.Transparent,
+                BorderBrush = isSelected ? EditorSukiWindowTheme.AccentBrush() : Brushes.Transparent,
+                BorderThickness = isSelected ? new Thickness(3, 0, 0, 0) : new Thickness(0),
                 Cursor = new Cursor(StandardCursorType.Hand),
                 Focusable = false,
             };
