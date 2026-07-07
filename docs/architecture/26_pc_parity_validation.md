@@ -133,3 +133,69 @@ Capture:
 - any message shown in the app message panel.
 
 Then compare the DB and assets against the committed versions before changing component code.
+
+## PC validation log rule
+
+The PC environment is a validation environment, not the primary code-fix environment. When a PC validation run finds failures, record them in the cumulative log:
+
+```text
+docs/architecture/pc_parity_validation_log.md
+```
+
+Use one timestamped entry per validation run. The entry should include:
+
+- local timestamp and timezone;
+- branch and commit hash;
+- Windows validation path;
+- Node.js, npm, .NET SDK, and WebView2 versions;
+- parity file presence checks;
+- passed commands;
+- failed commands;
+- full error output when it is actionable for Mac;
+- the specific action required on Mac.
+
+Preferred entry shape:
+
+````markdown
+## YYYY-MM-DD HH:mm:ss +TZ - `branch-name` @ `commit`
+
+### Environment
+
+- Windows validation path: `D:\PROYECTOS\MOCKUPS`
+- Branch: `branch-name`
+- Commit: `short-hash commit subject`
+- Node.js: `version`
+- npm: `version`
+- .NET SDK: `version`
+- WebView2 Runtime: `version or status`
+
+### Parity files
+
+- `data/desktop-editor-spike.sqlite`: present/missing
+- `assets/FOQN_S2`: present/missing
+- `assets/system/system_icons`: present/missing
+
+### Passed checks
+
+- `command`: result
+
+### Failed checks
+
+`command` failed.
+
+Summary:
+
+- concise failure category
+
+Full output:
+
+```text
+paste actionable error output here
+```
+
+### Mac action required
+
+- concrete next action for Mac development
+````
+
+From PC, normally commit and push only validation logs or other explicitly requested diagnostic artifacts. Do not commit code fixes, regenerated databases, local reset output, or asset changes from PC unless that exception is explicitly agreed before the change.
