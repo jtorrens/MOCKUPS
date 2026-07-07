@@ -28,7 +28,8 @@ export function surfaceShapeDataUri({
   tail,
 }: SurfaceShapeSvgInput) {
   const tailBox = surfaceTailBox(body, tail);
-  const borderPadding = 0;
+  const borderPadding =
+    Math.ceil(Math.max(0, borderWidth) * 2) + (borderWidth > 0 ? 2 : 0);
   const minX = Math.min(body.x, tailBox.x) - borderPadding;
   const minY = Math.min(body.y, tailBox.y) - borderPadding;
   const maxX = Math.max(body.x + body.width, tailBox.x + tailBox.width) + borderPadding;
@@ -54,19 +55,11 @@ export function surfaceShapeDataUri({
     })}" transform="translate(${tailX} ${tailY})"/>`;
   const borderMarkup =
     borderWidth > 0 && borderColor !== "transparent"
-      ? `<defs>
-          <filter id="surface-shape-border" filterUnits="userSpaceOnUse" x="0" y="0" width="${width}" height="${height}">
-            <feMorphology in="SourceAlpha" operator="erode" radius="${borderWidth}" result="inner"/>
-            <feComposite in="SourceAlpha" in2="inner" operator="out" result="borderShape"/>
-            <feFlood flood-color="${escapedBorderColor}" result="borderColor"/>
-            <feComposite in="borderColor" in2="borderShape" operator="in"/>
-          </filter>
-        </defs>
-        <g fill="${escapedColor}" filter="url(#surface-shape-border)">${shapeMarkup}</g>`
+      ? `<g fill="none" stroke="${escapedBorderColor}" stroke-width="${borderWidth * 2}" stroke-linejoin="round" stroke-linecap="round">${shapeMarkup}</g>`
       : "";
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="100%" height="100%" preserveAspectRatio="none" style="display:block;overflow:visible">
-    <g fill="${escapedColor}">${shapeMarkup}</g>
     ${borderMarkup}
+    <g fill="${escapedColor}">${shapeMarkup}</g>
   </svg>`;
 
   return {
