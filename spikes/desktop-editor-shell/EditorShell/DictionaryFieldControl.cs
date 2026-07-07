@@ -27,7 +27,8 @@ internal sealed class DictionaryFieldControl : Grid
 
     public DictionaryFieldControl(
         FieldValue fieldValue,
-        DictionaryFieldServices? services)
+        DictionaryFieldServices? services,
+        bool compact = false)
     {
         services ??= new DictionaryFieldServices();
         _definition = fieldValue.Definition;
@@ -35,7 +36,7 @@ internal sealed class DictionaryFieldControl : Grid
         _value = fieldValue.IsInherited ? fieldValue.Definition.InheritedValue : fieldValue.Value;
         _lastCommittedValue = fieldValue.IsInherited ? fieldValue.Definition.InheritedStorageValue : fieldValue.Value;
 
-        ColumnDefinitions = DictionaryFieldLayoutRules.Columns(_definition.ValueKind);
+        ColumnDefinitions = DictionaryFieldLayoutRules.Columns(_definition.ValueKind, compact);
         ColumnSpacing = 12;
         MinHeight = DictionaryFieldLayoutRules.MinHeight(_definition.ValueKind);
 

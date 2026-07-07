@@ -5,9 +5,9 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal static class DictionaryFieldLayoutRules
 {
-    public static ColumnDefinitions Columns(ValueKind valueKind)
+    public static ColumnDefinitions Columns(ValueKind valueKind, bool compact = false)
     {
-        return new ColumnDefinitions("180,*,Auto");
+        return new ColumnDefinitions(compact ? "132,*,Auto" : "180,*,Auto");
     }
 
     public static double MinHeight(ValueKind valueKind)

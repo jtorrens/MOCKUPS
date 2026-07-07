@@ -11,6 +11,7 @@ import {
   requiredString,
   requiredStringPair,
 } from "./componentResolverCommon.js";
+import { resolveIconRowComponentFromRecords } from "./iconRowComponentResolver.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
 import { resolveTextBoxComponentFromRecords } from "./textBoxComponentResolver.js";
 
@@ -47,7 +48,13 @@ export function resolveTextInputBarComponent(
     "sampleText",
     "component.textInput.preview.sampleText",
   );
+  const isTyping = sampleText.trim().length > 0;
   const height = requiredNumber(textInput, "height", "component.textInput.height");
+  const iconButtonPresetId = requiredString(
+    textInput,
+    "iconButtonPresetId",
+    "component.textInput.iconButtonPresetId",
+  );
   const embeddedBarSurfaceConfig = mergeComponentDefaults(
     componentPresetConfig(componentBaseConfigs, "surface", barSurfaceSlot.presetId),
     asRecord(barSurfaceSlot.overrides),
@@ -69,6 +76,15 @@ export function resolveTextInputBarComponent(
       embeddedBarSurfaceConfig,
       { width: 520, height },
       "component.textInputBar.barSurface",
+    ),
+    iconGapToken: requiredString(textInput, "iconGap", "component.textInput.iconGap"),
+    leftIconRow: resolveTextInputIconRow(
+      textInput,
+      isTyping ? "typingLeftIconRowSlot" : "idleLeftIconRowSlot",
+      isTyping ? "typingLeftIconRowInputs" : "idleLeftIconRowInputs",
+      iconButtonPresetId,
+      componentBaseConfigs,
+      "component.textInputBar.leftIcons",
     ),
     textBox: resolveTextBoxComponentFromRecords(
       embeddedTextBoxConfig,
@@ -108,7 +124,44 @@ export function resolveTextInputBarComponent(
       componentBaseConfigs,
       "component.textInputBar.textBox",
     ),
+    rightIconRow: resolveTextInputIconRow(
+      textInput,
+      isTyping ? "typingRightIconRowSlot" : "idleRightIconRowSlot",
+      isTyping ? "typingRightIconRowInputs" : "idleRightIconRowInputs",
+      iconButtonPresetId,
+      componentBaseConfigs,
+      "component.textInputBar.rightIcons",
+    ),
   };
+}
+
+function resolveTextInputIconRow(
+  textInput: Record<string, unknown>,
+  slotKey: string,
+  inputsKey: string,
+  iconButtonPresetId: string,
+  componentBaseConfigs: Record<string, unknown>,
+  id: string,
+) {
+  const slot = asRecord(textInput[slotKey]);
+  const inputs = {
+    ...asRecord(textInput[inputsKey]),
+    buttonIconPresetId: iconButtonPresetId,
+  };
+  const config = mergeComponentDefaults(
+    componentPresetConfig(
+      componentBaseConfigs,
+      "iconRow",
+      requiredString(slot, "presetId", `component.textInput.${slotKey}.presetId`),
+    ),
+    asRecord(slot.overrides),
+  );
+  return resolveIconRowComponentFromRecords(
+    config,
+    inputs,
+    componentBaseConfigs,
+    id,
+  );
 }
 
 function componentInputSlot(

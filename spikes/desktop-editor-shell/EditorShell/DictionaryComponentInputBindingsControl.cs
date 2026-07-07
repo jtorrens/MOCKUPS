@@ -182,7 +182,6 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
         var header = new StackPanel
         {
             Spacing = 1,
-            Margin = new Thickness(0, 0, 0, 8),
         };
         header.Children.Add(new TextBlock
         {
@@ -192,34 +191,19 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
         });
         header.Children.Add(new TextBlock
         {
-            Text = "Embedded component inputs",
+            Text = $"{DisplayValue(embeddedInput)} · Embedded inputs",
             FontSize = 12,
             Opacity = 0.64,
+            TextTrimming = TextTrimming.CharacterEllipsis,
         });
 
-        var content = new StackPanel
-        {
-            Spacing = 8,
-        };
-        content.Children.Add(header);
-        content.Children.Add(groupRows);
-
-        return new Border
-        {
-            CornerRadius = new CornerRadius(10),
-            Padding = new Thickness(10),
-            Background = new SolidColorBrush(Color.FromArgb(24, 255, 255, 255)),
-            BorderBrush = new SolidColorBrush(Color.FromArgb(36, 255, 255, 255)),
-            BorderThickness = new Thickness(1),
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            Child = content,
-        };
+        return new CompactInputCard(header, groupRows);
     }
 
     private DictionaryFieldControl CreateInputField(ComponentInputBindingDefinition input)
     {
         var services = ServicesFor(input);
-        var field = new DictionaryFieldControl(CreateFieldValue(input), services)
+        var field = new DictionaryFieldControl(CreateFieldValue(input), services, compact: true)
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
@@ -423,6 +407,98 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
             out var number)
             ? JsonValue.Create(number)!
             : JsonValue.Create(0)!;
+    }
+
+    private sealed class CompactInputCard : Border
+    {
+        private readonly TextBlock _indicator = new();
+        private readonly Border _contentHost;
+        private bool _isExpanded;
+
+        public CompactInputCard(Control header, Control content)
+        {
+            CornerRadius = new CornerRadius(10);
+            BorderThickness = new Thickness(1);
+            Background = new SolidColorBrush(Color.FromArgb(24, 255, 255, 255));
+            BorderBrush = new SolidColorBrush(Color.FromArgb(36, 255, 255, 255));
+            HorizontalAlignment = HorizontalAlignment.Stretch;
+
+            var root = new Grid
+            {
+                RowDefinitions = new RowDefinitions("Auto,Auto"),
+            };
+
+            var headerRow = new Border
+            {
+                Padding = new Thickness(10, 8),
+                Cursor = new Cursor(StandardCursorType.Hand),
+                Background = Brushes.Transparent,
+            };
+            headerRow.PointerPressed += (_, args) =>
+            {
+                if (args.Source is Button)
+                {
+                    return;
+                }
+
+                IsExpanded = !IsExpanded;
+                args.Handled = true;
+            };
+
+            var headerGrid = new Grid
+            {
+                ColumnDefinitions = new ColumnDefinitions("*,Auto"),
+                ColumnSpacing = 8,
+            };
+            Grid.SetColumn(header, 0);
+            headerGrid.Children.Add(header);
+
+            _indicator.Width = 24;
+            _indicator.FontSize = 18;
+            _indicator.FontWeight = FontWeight.Bold;
+            _indicator.Opacity = 0.72;
+            _indicator.TextAlignment = TextAlignment.Center;
+            _indicator.VerticalAlignment = VerticalAlignment.Center;
+            Grid.SetColumn(_indicator, 1);
+            headerGrid.Children.Add(_indicator);
+
+            headerRow.Child = headerGrid;
+            Grid.SetRow(headerRow, 0);
+            root.Children.Add(headerRow);
+
+            _contentHost = new Border
+            {
+                Padding = new Thickness(10, 0, 10, 10),
+                Child = content,
+            };
+            Grid.SetRow(_contentHost, 1);
+            root.Children.Add(_contentHost);
+
+            Child = root;
+            ApplyExpandedState();
+        }
+
+        private bool IsExpanded
+        {
+            get => _isExpanded;
+            set
+            {
+                if (_isExpanded == value) return;
+
+                _isExpanded = value;
+                ApplyExpandedState();
+                if (_isExpanded)
+                {
+                    DeferredBringIntoView.Request(_contentHost);
+                }
+            }
+        }
+
+        private void ApplyExpandedState()
+        {
+            _contentHost.IsVisible = _isExpanded;
+            _indicator.Text = _isExpanded ? "v" : ">";
+        }
     }
 
     private void ApplyThemeBrushes()
