@@ -1676,6 +1676,7 @@ internal sealed partial class SpikeDatabase
         changed |= NormalizeEmbeddedSlotPresetIds(connection, projectId, config);
         changed |= NormalizeComponentTypographyStyles(config);
         changed |= JsonPath.MergeMissing(config, defaults);
+        changed |= NormalizeEmbeddedSlotPresetIds(connection, projectId, config);
         changed |= NormalizeComponentSpacingTokens(config);
         changed |= NormalizeReliefIntensity(config, "reliefTopIntensity");
         changed |= NormalizeReliefIntensity(config, "reliefBottomIntensity");
@@ -1724,6 +1725,7 @@ internal sealed partial class SpikeDatabase
         changed |= NormalizeSpacingPair(config, ["textInput", "barPadding"]);
         changed |= NormalizeSpacingPair(config, ["textInput", "textPadding"]);
         changed |= NormalizeSpacingToken(config, ["textInput", "iconGap"]);
+        changed |= NormalizeSpacingToken(config, ["iconRow", "gap"]);
         changed |= NormalizeSpacingToken(config, ["keyboard", "keyPadding"]);
         changed |= NormalizeSpacingToken(config, ["buttonIcon", "iconPadding"]);
         changed |= NormalizeSpacingPair(config, ["label", "padding"]);
@@ -2440,6 +2442,9 @@ internal sealed partial class SpikeDatabase
             ValueKind.TypographyStyle => node is JsonObject
                 ? node.ToJsonString()
                 : descriptor.DefaultValue,
+            ValueKind.IconTokenList => node is JsonArray
+                ? node.ToJsonString()
+                : descriptor.DefaultValue,
             ValueKind.IconSlots => node.ToJsonString(),
             _ => node is JsonValue stringValue && stringValue.TryGetValue<string>(out var text)
                 ? text
@@ -2459,6 +2464,8 @@ internal sealed partial class SpikeDatabase
                 ?? throw new InvalidOperationException("Alignment placement value must be valid JSON."),
             ValueKind.TypographyStyle => JsonNode.Parse(value)
                 ?? throw new InvalidOperationException("Typography style value must be valid JSON."),
+            ValueKind.IconTokenList => JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? "[]" : value)
+                ?? new JsonArray(),
             ValueKind.IconSlots => JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? ComponentClassFieldCatalog.EmptyIconSlots : value)
                 ?? JsonNode.Parse(ComponentClassFieldCatalog.EmptyIconSlots)!,
             _ => JsonValue.Create(value)!,

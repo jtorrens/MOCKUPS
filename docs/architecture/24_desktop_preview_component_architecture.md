@@ -598,6 +598,15 @@ export const desktopPreviewComponents = {
     embeds: ["label"]
   },
 
+  iconRow: {
+    category: "atom",
+    migrationStatus: "structural",
+    contract: "./iconRowComponentContract",
+    resolver: "./iconRowComponentResolver",
+    renderable: "./iconRowComponentRenderable",
+    embeds: ["buttonIcon"]
+  },
+
   audio: {
     category: "component",
     migrationStatus: "functional",
@@ -613,7 +622,7 @@ export const desktopPreviewComponents = {
     contract: "./textInputBarComponentContract",
     resolver: "./textInputBarComponentResolver",
     renderable: "./textInputBarComponentRenderable",
-    embeds: []
+    embeds: ["surface", "iconRow"]
   },
 
   keyboard: {
@@ -661,6 +670,8 @@ Current migrated component routes:
 
 - `label`, `avatar`, `buttonIcon` and `audio` are active functional examples of
   the recursive route.
+- `iconRow` is a structural atom that embeds `buttonIcon` and takes an ordered
+  icon token list as runtime input.
 - `status_bar` and `navigation_bar` are system components in the same manifest
   route.
 - `textInputBar`, `keyboard` and `video` are structurally migrated: they have

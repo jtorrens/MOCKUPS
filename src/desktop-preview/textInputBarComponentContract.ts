@@ -1,4 +1,5 @@
 import type { SpacingPairContract } from "./previewComponentContracts.js";
+import type { IconRowDesignContract } from "./iconRowComponentContract.js";
 import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
 
 export interface TextInputBarDesignContract {
@@ -15,4 +16,6 @@ export interface TextInputBarDesignContract {
   cursorWidth: number;
   cursorBlinkFrames: number;
   surface: SurfaceDesignContract;
+  leftIconRow: IconRowDesignContract;
+  rightIconRow: IconRowDesignContract;
 }

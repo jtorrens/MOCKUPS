@@ -21,6 +21,7 @@ export const COMPONENT_CLASS_FIELDS = defineFields({
         "audio",
         "buttonIcon",
         "cursor",
+        "iconRow",
         "keyboard",
         "label",
         "navigation_bar",

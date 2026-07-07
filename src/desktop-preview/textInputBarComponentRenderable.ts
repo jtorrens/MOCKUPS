@@ -9,6 +9,10 @@ import {
 } from "./componentRenderableCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
+import {
+  iconRowComponentToRenderableAt,
+  measureIconRowComponent,
+} from "./iconRowComponentRenderable.js";
 import type { TextInputBarDesignContract } from "./textInputBarComponentContract.js";
 
 export function textInputBarComponentToRenderable(
@@ -22,6 +26,11 @@ export function textInputBarComponentToRenderable(
   const barPaddingY = Math.max(0, numberToken(payload, textInput.barPadding.yToken) * scale);
   const textPaddingX = Math.max(0, numberToken(payload, textInput.textPadding.xToken) * scale);
   const textPaddingY = Math.max(0, numberToken(payload, textInput.textPadding.yToken) * scale);
+  const iconGap = Math.max(0, numberToken(payload, textInput.iconGapToken) * scale);
+  const leftIconSize = measureIconRowComponent(payload, textInput.leftIconRow);
+  const rightIconSize = measureIconRowComponent(payload, textInput.rightIconRow);
+  const hasLeftIcons = textInput.leftIconRow.icons.length > 0;
+  const hasRightIcons = textInput.rightIconRow.icons.length > 0;
   const barBox = {
     x: screenBox.x,
     y: screenBox.y + (screenBox.height - height - barPaddingY * 2) / 2,
@@ -55,10 +64,27 @@ export function textInputBarComponentToRenderable(
     height: barBox.height + visualPadding * 2,
   };
   const fieldBox = {
-    x: screenBox.x + barPaddingX,
+    x: screenBox.x + barPaddingX + (hasLeftIcons ? leftIconSize.width + iconGap : 0),
     y: barBox.y + barPaddingY,
-    width,
+    width: Math.max(
+      1,
+      width
+        - (hasLeftIcons ? leftIconSize.width + iconGap : 0)
+        - (hasRightIcons ? rightIconSize.width + iconGap : 0),
+    ),
     height,
+  };
+  const leftIconBox = {
+    x: screenBox.x + barPaddingX,
+    y: fieldBox.y + Math.max(0, (height - leftIconSize.height) * 0.5),
+    width: leftIconSize.width,
+    height: leftIconSize.height,
+  };
+  const rightIconBox = {
+    x: screenBox.x + screenBox.width - barPaddingX - rightIconSize.width,
+    y: fieldBox.y + Math.max(0, (height - rightIconSize.height) * 0.5),
+    width: rightIconSize.width,
+    height: rightIconSize.height,
   };
   const textBox = {
     x: fieldBox.x + textPaddingX,
@@ -84,6 +110,12 @@ export function textInputBarComponentToRenderable(
         ...surfaceComponentToRenderableAt(payload, textInput.surface, fieldBox),
         id: `${textInput.id}.surface`,
       },
+      ...(hasLeftIcons
+        ? [iconRowComponentToRenderableAt(payload, textInput.leftIconRow, leftIconBox)]
+        : []),
+      ...(hasRightIcons
+        ? [iconRowComponentToRenderableAt(payload, textInput.rightIconRow, rightIconBox)]
+        : []),
       {
         id: `${textInput.id}.text`,
         type: "text",

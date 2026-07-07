@@ -113,6 +113,12 @@ internal static class ComponentClassFieldCatalog
         new("scroll", "Scroll"),
     ];
 
+    private static readonly FieldOption[] IconRowOrientationOptions =
+    [
+        new("horizontal", "Horizontal"),
+        new("vertical", "Vertical"),
+    ];
+
     private static readonly FieldOption[] PressedEffectOptions =
     [
         new("popup", "Popup"),
@@ -186,6 +192,11 @@ internal static class ComponentClassFieldCatalog
         ["component.textBox.cursor.showCursor"] = new("component.textBox.cursor.showCursor", "Show cursor", ValueKind.Boolean, ["textBox", "cursorSlot", "showCursor"], "true"),
         ["component.textBox.cursor.editor"] = new("component.textBox.cursor.editor", "Cursor", ValueKind.ComponentPreset, ["textBox", "cursorSlot", "presetId"], "default"),
 
+        ["component.iconRow.orientation"] = new("component.iconRow.orientation", "Orientation", ValueKind.OptionToken, ["iconRow", "orientation"], "horizontal", Options: IconRowOrientationOptions),
+        ["component.iconRow.size"] = new("component.iconRow.size", "Size", ValueKind.Integer, ["iconRow", "size"], "36"),
+        ["component.iconRow.gap"] = new("component.iconRow.gap", "Gap", ValueKind.ThemeToken, ["iconRow", "gap"], "theme.spacing.s", Options: SpacingTokenOptions),
+        ["component.iconRow.buttonIcon.editor"] = new("component.iconRow.buttonIcon.editor", "Button icon", ValueKind.ComponentPreset, ["iconRow", "buttonIconSlot", "presetId"], "default"),
+
         ["component.avatar.defaultSize"] = new("component.avatar.defaultSize", "Default size", ValueKind.Integer, ["avatar", "defaultSize"], "48"),
         ["component.avatar.cornerRadiusToken"] = new("component.avatar.cornerRadiusToken", "Avatar radius", ValueKind.ThemeToken, ["avatar", "cornerRadiusToken"], "theme.radii.avatar", Options: RadiusTokenOptions),
         ["component.avatar.label.showLabel"] = new("component.avatar.label.showLabel", "Show label", ValueKind.Boolean, ["avatar", "labelSlot", "showLabel"], "false"),
@@ -200,6 +211,8 @@ internal static class ComponentClassFieldCatalog
         ["component.textInput.iconGap"] = new("component.textInput.iconGap", "Icon gap", ValueKind.ThemeToken, ["textInput", "iconGap"], "theme.spacing.m", Options: SpacingTokenOptions),
         ["component.textInput.placeholder"] = new("component.textInput.placeholder", "Placeholder", ValueKind.StringSingleLine, ["textInput", "placeholder"], "Message"),
         ["component.textInput.surface.editor"] = new("component.textInput.surface.editor", "Surface", ValueKind.ComponentPreset, ["textInput", "surfaceSlot", "presetId"], "InputBox"),
+        ["component.textInput.leftIconRow.editor"] = new("component.textInput.leftIconRow.editor", "Left icons", ValueKind.ComponentPreset, ["textInput", "leftIconRowSlot", "presetId"], "default"),
+        ["component.textInput.rightIconRow.editor"] = new("component.textInput.rightIconRow.editor", "Right icons", ValueKind.ComponentPreset, ["textInput", "rightIconRowSlot", "presetId"], "default"),
         ["component.textInput.idleTextColorToken"] = new("component.textInput.idleTextColorToken", "Idle text color", ValueKind.ThemeToken, ["textInput", "idleTextColorToken"], "theme.colors.textSecondary", Options: ThemeColorOptions),
         ["component.textInput.textSizeToken"] = new("component.textInput.textSizeToken", "Text size", ValueKind.ThemeToken, ["textInput", "textSizeToken"], "theme.typography.sizes.s", Options: TypographySizeOptions),
         ["component.textInput.cursorColorToken"] = new("component.textInput.cursorColorToken", "Cursor color", ValueKind.ThemeToken, ["textInput", "cursorColorToken"], "theme.cursor.color", Options: ThemeColorOptions),

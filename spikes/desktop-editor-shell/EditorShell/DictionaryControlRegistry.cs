@@ -28,6 +28,11 @@ internal static class DictionaryControlRegistry
                 request.Definition.IsEditable,
                 request.Services.ShowIconTokenPicker,
                 request.Services.CreateIconPreview),
+            [ValueKind.IconTokenList] = (request) => new DictionaryIconTokenListControl(
+                request.Value,
+                request.Definition.IsEditable,
+                request.Services.ShowIconTokenPicker,
+                request.Services.CreateIconPreview),
             [ValueKind.ThemeToken] = (request) => new DictionaryThemeTokenControl(
                 request.Definition,
                 request.Value,

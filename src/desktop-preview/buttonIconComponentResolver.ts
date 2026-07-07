@@ -5,6 +5,7 @@ import {
 } from "./componentPreviewDefaults.js";
 import {
   asRecord,
+  optionalString,
   parseObject,
   requiredBoolean,
   requiredNumber,
@@ -97,6 +98,8 @@ export function resolveButtonIconComponentFromRecords(
       "iconColorToken",
       "component.buttonIcon.iconColorToken",
     ),
+    backgroundPaletteColor: optionalString(buttonIcon, "backgroundPaletteColor") || undefined,
+    iconPaletteColor: optionalString(buttonIcon, "iconPaletteColor") || undefined,
     labelSlot: {
       showLabel,
       showSubtext,

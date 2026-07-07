@@ -27,6 +27,18 @@ internal static class EmbeddedComponentSlotCatalog
             "component.surface",
             ["textInput", "surfaceSlot"]),
         new(
+            "component.textInput.leftIconRow.editor",
+            "iconRow",
+            "Left icons",
+            "component.iconRow",
+            ["textInput", "leftIconRowSlot"]),
+        new(
+            "component.textInput.rightIconRow.editor",
+            "iconRow",
+            "Right icons",
+            "component.iconRow",
+            ["textInput", "rightIconRowSlot"]),
+        new(
             "component.buttonIcon.surface.editor",
             "surface",
             "Surface",
@@ -50,6 +62,12 @@ internal static class EmbeddedComponentSlotCatalog
             "Cursor",
             "component.cursor",
             ["textBox", "cursorSlot"]),
+        new(
+            "component.iconRow.buttonIcon.editor",
+            "buttonIcon",
+            "Button icon",
+            "component.buttonIcon",
+            ["iconRow", "buttonIconSlot"]),
         new(
             "component.label.surface.editor",
             "surface",

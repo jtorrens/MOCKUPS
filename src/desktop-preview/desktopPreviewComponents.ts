@@ -43,6 +43,14 @@ export const desktopPreviewComponents = {
     renderable: "./textBoxComponentRenderable",
     embeds: ["surface", "cursor"],
   },
+  iconRow: {
+    category: "atom",
+    migrationStatus: "structural",
+    contract: "./iconRowComponentContract",
+    resolver: "./iconRowComponentResolver",
+    renderable: "./iconRowComponentRenderable",
+    embeds: ["buttonIcon"],
+  },
   avatar: {
     category: "component",
     migrationStatus: "functional",
@@ -73,7 +81,7 @@ export const desktopPreviewComponents = {
     contract: "./textInputBarComponentContract",
     resolver: "./textInputBarComponentResolver",
     renderable: "./textInputBarComponentRenderable",
-    embeds: ["surface"],
+    embeds: ["surface", "iconRow"],
   },
   keyboard: {
     category: "system",

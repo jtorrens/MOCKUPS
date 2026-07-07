@@ -78,6 +78,26 @@ internal sealed partial class SpikeDatabase
               ]
             }
             """,
+            "component.iconRow" => $$"""
+            ,
+            {
+              "id": "iconRow",
+              "label": "Icon Row",
+              "subtitle": "Reusable row of button icons",
+              "icon": "{{EditorIcons.ButtonIcon}}",
+              "order": 20,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "iconRow", "label": "Icon row", "order": 10, "visible": true, "fields": [
+                  { "id": "component.iconRow.orientation", "order": 10, "visible": true },
+                  { "id": "component.iconRow.size", "order": 20, "visible": true },
+                  { "id": "component.iconRow.gap", "order": 30, "visible": true },
+                  { "id": "component.iconRow.buttonIcon.editor", "order": 40, "visible": true }
+                ] }
+              ]
+            }
+            """,
             "component.avatar" => $$"""
             ,
             {
@@ -168,11 +188,13 @@ internal sealed partial class SpikeDatabase
                   { "id": "component.textInput.iconGap", "order": 40, "visible": true },
                   { "id": "component.textInput.placeholder", "order": 50, "visible": true },
                   { "id": "component.textInput.surface.editor", "order": 60, "visible": true },
-                  { "id": "component.textInput.idleTextColorToken", "order": 70, "visible": true },
-                  { "id": "component.textInput.textSizeToken", "order": 80, "visible": true },
-                  { "id": "component.textInput.cursorColorToken", "order": 90, "visible": true },
-                  { "id": "component.textInput.cursorWidth", "order": 100, "visible": true },
-                  { "id": "component.textInput.cursorBlinkFrames", "order": 110, "visible": true }
+                  { "id": "component.textInput.leftIconRow.editor", "order": 70, "visible": true },
+                  { "id": "component.textInput.rightIconRow.editor", "order": 80, "visible": true },
+                  { "id": "component.textInput.idleTextColorToken", "order": 90, "visible": true },
+                  { "id": "component.textInput.textSizeToken", "order": 100, "visible": true },
+                  { "id": "component.textInput.cursorColorToken", "order": 110, "visible": true },
+                  { "id": "component.textInput.cursorWidth", "order": 120, "visible": true },
+                  { "id": "component.textInput.cursorBlinkFrames", "order": 130, "visible": true }
                 ] }
               ]
             }

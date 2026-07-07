@@ -215,6 +215,9 @@ internal sealed class ComponentInputsPanel : ContentControl
                 case ComponentInputKind.Boolean:
                     preview[input.JsonKey] = StringToBool(value);
                     break;
+                case ComponentInputKind.IconList:
+                    preview[input.JsonKey] = JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? "[]" : value) ?? new JsonArray();
+                    break;
                 case ComponentInputKind.RecordReference:
                     ApplyRecordReferenceInput(preview, input, value, themeMode, payload.PaletteColors);
                     break;
@@ -305,6 +308,11 @@ internal sealed class ComponentInputsPanel : ContentControl
                 input.Label,
                 ValueKind.IconToken,
                 DefaultValue: input.DefaultValue),
+            ComponentInputKind.IconList => new FieldDefinition(
+                input.Id,
+                input.Label,
+                ValueKind.IconTokenList,
+                DefaultValue: input.DefaultValue),
             ComponentInputKind.MultilineText => new FieldDefinition(
                 input.Id,
                 input.Label,
@@ -340,6 +348,7 @@ internal sealed class ComponentInputsPanel : ContentControl
             JsonValue jsonValue when jsonValue.TryGetValue<double>(out var number) => number.ToString(CultureInfo.InvariantCulture),
             JsonValue jsonValue when jsonValue.TryGetValue<int>(out var integer) => integer.ToString(CultureInfo.InvariantCulture),
             JsonValue jsonValue when jsonValue.TryGetValue<bool>(out var boolean) => boolean ? "true" : "false",
+            JsonArray jsonArray => jsonArray.ToJsonString(),
             _ => input.DefaultValue,
         };
     }
@@ -786,6 +795,7 @@ internal sealed class ComponentInputsPanel : ContentControl
             "option" => ComponentInputKind.Option,
             "recordreference" or "record_reference" => ComponentInputKind.RecordReference,
             "icon" => ComponentInputKind.Icon,
+            "iconlist" or "icon_list" or "icons" => ComponentInputKind.IconList,
             "multilinetext" or "multiline_text" or "textmultiline" or "text_multiline" => ComponentInputKind.MultilineText,
             _ => ComponentInputKind.Text,
         };
@@ -825,6 +835,7 @@ internal enum ComponentInputKind
     Option,
     RecordReference,
     Icon,
+    IconList,
     MultilineText,
 }
 

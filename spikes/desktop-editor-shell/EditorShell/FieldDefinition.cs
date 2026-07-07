@@ -24,6 +24,7 @@ internal enum ValueKind
     PaletteColorPair,
     PaletteColorAlphaPair,
     IconToken,
+    IconTokenList,
     IconSlots,
     EmbeddedComponent,
     ComponentPreset,

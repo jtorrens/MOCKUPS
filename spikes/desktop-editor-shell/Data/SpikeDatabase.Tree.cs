@@ -399,7 +399,7 @@ internal sealed partial class SpikeDatabase
         return componentType switch
         {
             "status_bar" or "navigation_bar" or "keyboard" => ComponentClassNavigationGroup.System,
-            "surface" or "cursor" or "textBox" => ComponentClassNavigationGroup.Atoms,
+            "surface" or "cursor" or "textBox" or "iconRow" => ComponentClassNavigationGroup.Atoms,
             _ => ComponentClassNavigationGroup.Components,
         };
     }

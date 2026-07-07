@@ -17,6 +17,7 @@ internal sealed partial class SpikeDatabase
             "surface" => "Surface component",
             "cursor" => "Cursor component",
             "textBox" => "Text box component",
+            "iconRow" => "Icon row component",
             "textInputBar" => "Text input bar component",
             "keyboard" => "Keyboard component",
             "buttonIcon" => "Button icon component",
@@ -121,6 +122,25 @@ internal sealed partial class SpikeDatabase
                     },
                 };
                 break;
+            case "iconRow":
+                config["iconRow"] = new JsonObject
+                {
+                    ["orientation"] = "horizontal",
+                    ["size"] = 36,
+                    ["gap"] = "theme.spacing.s",
+                    ["buttonIconSlot"] = new JsonObject
+                    {
+                        ["presetId"] = DefaultComponentPresetId,
+                        ["overrides"] = new JsonObject
+                        {
+                            ["buttonIcon"] = new JsonObject
+                            {
+                                ["size"] = 36,
+                            },
+                        },
+                    },
+                };
+                break;
             case "textInputBar":
                 config["textInput"] = new JsonObject
                 {
@@ -130,6 +150,8 @@ internal sealed partial class SpikeDatabase
                     ["iconGap"] = "theme.spacing.m",
                     ["placeholder"] = "Message",
                     ["surfaceSlot"] = ComponentSurfaceSlot("InputBox"),
+                    ["leftIconRowSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["rightIconRowSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
                     ["idleTextColorToken"] = "theme.colors.textSecondary",
                     ["textSizeToken"] = "theme.typography.sizes.s",
                     ["cursorColorToken"] = "theme.cursor.color",
@@ -356,6 +378,10 @@ internal sealed partial class SpikeDatabase
                     visibleWhenPath: "textBox.dimensionMode",
                     visibleWhenValue: "growVertical"),
             ],
+            "iconRow" =>
+            [
+                ComponentInput("icons", "Icons", "icons", "iconList", """["media_mic","chat_send"]"""),
+            ],
             "avatar" =>
             [
                 ComponentInput(
@@ -377,6 +403,8 @@ internal sealed partial class SpikeDatabase
             "textInputBar" =>
             [
                 ComponentInput("sampleText", "Text", "sampleText", "text", "Message"),
+                ComponentInput("leftIcons", "Left icons", "leftIcons", "iconList", "[]"),
+                ComponentInput("rightIcons", "Right icons", "rightIcons", "iconList", """["media_mic","chat_send"]"""),
             ],
             "audio" =>
             [
@@ -440,6 +468,7 @@ internal sealed partial class SpikeDatabase
         NewComponentSeed("surface", "component.surface", "Default Surface"),
         NewComponentSeed("cursor", "component.cursor", "Default Cursor"),
         NewComponentSeed("textBox", "component.textBox", "Default Text Box"),
+        NewComponentSeed("iconRow", "component.iconRow", "Default Icon Row"),
         NewComponentSeed("status_bar", "component.status_bar", "Default Status Bar"),
         NewComponentSeed("navigation_bar", "component.navigation_bar", "Default Navigation Bar"),
         NewComponentSeed("textInputBar", "component.textInputBar", "Default Text Input Bar"),
