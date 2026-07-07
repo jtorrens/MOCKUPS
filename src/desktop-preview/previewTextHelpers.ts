@@ -75,39 +75,75 @@ export function approximateWrappedTextSize(
   lineHeight: number,
   maxWidth: number,
 ) {
-  const wrapWidth = Math.max(1, maxWidth);
-  let width = 1;
-  let lineCount = 0;
+  const lines = approximateWrappedTextLines(text, fontSize, maxWidth);
+  const width = Math.max(
+    1,
+    ...lines.map((line) => approximateTextWidth(line, fontSize)),
+  );
 
-  for (const sourceLine of text.split(/\r\n|\r|\n/u)) {
-    const graphemes = textGraphemes(sourceLine);
-    if (graphemes.length === 0) {
-      lineCount += 1;
-      continue;
+  return {
+    width: Math.min(Math.max(1, maxWidth), width),
+    height: Math.max(1, lines.length) * lineHeight,
+    lineCount: Math.max(1, lines.length),
+  };
+}
+
+export function approximateWrappedTextLines(
+  text: string,
+  fontSize: number,
+  maxWidth: number,
+) {
+  const wrapWidth = Math.max(1, maxWidth);
+  return text.split(/\r\n|\r|\n/u).flatMap((sourceLine) => {
+    const normalizedLine = sourceLine.replace(/[ \t\f\v]+/gu, " ").trim();
+    if (normalizedLine.length === 0) {
+      return [""];
     }
 
-    let currentWidth = 0;
-    for (const grapheme of graphemes) {
-      const advance = graphemeAdvance(grapheme) * fontSize;
-      if (currentWidth > 0 && currentWidth + advance > wrapWidth) {
-        width = Math.max(width, currentWidth);
-        lineCount += 1;
-        currentWidth = advance;
+    const lines: string[] = [];
+    let current = "";
+    for (const word of normalizedLine.split(" ")) {
+      const candidate = current ? `${current} ${word}` : word;
+      if (approximateTextWidth(candidate, fontSize) <= wrapWidth) {
+        current = candidate;
         continue;
       }
 
-      currentWidth += advance;
+      if (current) {
+        lines.push(current);
+        current = "";
+      }
+
+      if (approximateTextWidth(word, fontSize) <= wrapWidth) {
+        current = word;
+        continue;
+      }
+
+      const pieces = splitLongWord(word, fontSize, wrapWidth);
+      lines.push(...pieces.slice(0, -1));
+      current = pieces.at(-1) ?? "";
     }
 
-    width = Math.max(width, currentWidth);
-    lineCount += 1;
+    return [...lines, current].filter((line, index, all) =>
+      line.length > 0 || all.length === 1 || index < all.length - 1);
+  });
+}
+
+function splitLongWord(word: string, fontSize: number, maxWidth: number) {
+  const lines: string[] = [];
+  let current = "";
+  for (const grapheme of textGraphemes(word)) {
+    const candidate = `${current}${grapheme}`;
+    if (current && approximateTextWidth(candidate, fontSize) > maxWidth) {
+      lines.push(current);
+      current = grapheme;
+      continue;
+    }
+
+    current = candidate;
   }
 
-  return {
-    width: Math.min(wrapWidth, Math.max(1, width)),
-    height: Math.max(1, lineCount) * lineHeight,
-    lineCount: Math.max(1, lineCount),
-  };
+  return [...lines, current || word];
 }
 
 export function resolveTypographyStyle(

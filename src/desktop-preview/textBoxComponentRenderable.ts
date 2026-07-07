@@ -10,6 +10,7 @@ import {
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
   approximateMultilineTextSize,
+  approximateWrappedTextLines,
   approximateWrappedTextSize,
   resolveTypographyStyle,
 } from "./previewTextHelpers.js";
@@ -177,47 +178,47 @@ export function textBoxComponentToRenderableAt(
   };
   const textIsEmpty = textBox.text.trim().length === 0;
   const cursorWidth = Math.max(1, textBox.cursor.width * scale);
-  const wrappedContentSize = approximateWrappedTextSize(
+  const wrappedLines = approximateWrappedTextLines(
     size.contentText,
     size.typography.fontSize,
-    size.typography.lineHeight,
     textFrame.width,
   );
-  const isMultiline = wrappedContentSize.lineCount > 1;
-  const textOverflowsFrame = wrappedContentSize.height > textFrame.height;
-  const scrollJustification = textOverflowsFrame
-    ? "flex-end"
-    : isMultiline ? "flex-start" : "center";
-  const textContentHeight = Math.max(textFrame.height, wrappedContentSize.height);
-  const textNode: RenderableNode = {
-    id: `${textBox.id}.text`,
+  const lineHeight = size.typography.lineHeight;
+  const textContentHeight = Math.max(1, wrappedLines.length) * lineHeight;
+  const textOverflowsFrame = textContentHeight > textFrame.height;
+  const textContentY = textOverflowsFrame && textBox.overflowMode === "scroll"
+      ? textFrame.y - (textContentHeight - textFrame.height)
+    : wrappedLines.length === 1
+      ? textFrame.y + Math.max(0, (textFrame.height - textContentHeight) * 0.5)
+      : textFrame.y;
+  const textStyle = {
+    textColor: selectedColor(
+      payload,
+      textIsEmpty ? textBox.placeholderColorToken : textBox.textColorToken,
+    ),
+    display: "block",
+    fontSize: size.typography.fontSize,
+    fontFamily: size.typography.fontFamily,
+    fontStyle: size.typography.fontStyle,
+    fontWeight: size.typography.fontWeight,
+    lineHeight: size.typography.lineHeight,
+    overflow: "visible",
+    textAlign: textBox.textAlign,
+    whiteSpace: "pre",
+  };
+  const lineNodes: RenderableNode[] = wrappedLines.map((line, index) => ({
+    id: `${textBox.id}.text.line.${index}`,
     type: "text",
     frame: 0,
     box: {
       x: textFrame.x,
-      y: textFrame.y,
+      y: textContentY + index * lineHeight,
       width: textFrame.width,
-      height: textContentHeight,
+      height: lineHeight,
     },
-    text: size.contentText,
-    style: {
-      textColor: selectedColor(
-        payload,
-        textIsEmpty ? textBox.placeholderColorToken : textBox.textColorToken,
-      ),
-      display: isMultiline ? "block" : "flex",
-      alignItems: isMultiline ? "flex-start" : "center",
-      fontSize: size.typography.fontSize,
-      fontFamily: size.typography.fontFamily,
-      fontStyle: size.typography.fontStyle,
-      fontWeight: size.typography.fontWeight,
-      justifyContent: textBoxJustify(textBox.textAlign),
-      lineHeight: size.typography.lineHeight,
-      overflow: "hidden",
-      textAlign: textBox.textAlign,
-      whiteSpace: "pre-line",
-    },
-    metadata: textBox.cursorVisible && !textIsEmpty
+    text: line,
+    style: textStyle,
+    metadata: index === wrappedLines.length - 1 && textBox.cursorVisible && !textIsEmpty
       ? {
           inlineCursor: {
             color: selectedColor(payload, textBox.cursor.colorToken),
@@ -226,7 +227,7 @@ export function textBoxComponentToRenderableAt(
           },
         }
       : undefined,
-  };
+  }));
 
   return {
     id: textBox.id,
@@ -243,37 +244,16 @@ export function textBoxComponentToRenderableAt(
     },
     children: [
       surfaceComponentToRenderableAt(payload, textBox.surface, box),
-      textBox.overflowMode === "scroll"
-        ? {
-            id: `${textBox.id}.textClip`,
-            type: "group",
-            frame: 0,
-            box: textFrame,
-            style: {
-              alignItems: "stretch",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: scrollJustification,
-              overflow: "hidden",
-            },
-            children: [
-              {
-                ...textNode,
-                box: undefined,
-                style: {
-                  ...textNode.style,
-                  display: "block",
-                  height: undefined,
-                  overflow: "visible",
-                  width: "100%",
-                },
-              },
-            ],
-          }
-        : {
-            ...textNode,
-            box: textFrame,
-          },
+      {
+        id: `${textBox.id}.textClip`,
+        type: "group",
+        frame: 0,
+        box: textFrame,
+        style: {
+          overflow: "hidden",
+        },
+        children: lineNodes,
+      },
     ],
   };
 }
@@ -301,10 +281,4 @@ function growingHeight(
   const maximumContentHeight = Math.max(1, Math.floor(maxLines)) * lineHeight;
   const visibleContentHeight = Math.min(contentHeight, maximumContentHeight);
   return Math.max(1, minimumHeight, visibleContentHeight + paddingY * 2);
-}
-
-function textBoxJustify(textAlign: TextBoxDesignContract["textAlign"]) {
-  return textAlign === "right"
-    ? "flex-end"
-    : textAlign === "center" ? "center" : "flex-start";
 }
