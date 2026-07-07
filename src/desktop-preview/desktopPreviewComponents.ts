@@ -81,7 +81,7 @@ export const desktopPreviewComponents = {
     contract: "./textInputBarComponentContract",
     resolver: "./textInputBarComponentResolver",
     renderable: "./textInputBarComponentRenderable",
-    embeds: ["surface", "iconRow"],
+    embeds: ["surface", "textBox", "iconRow"],
   },
   keyboard: {
     category: "system",

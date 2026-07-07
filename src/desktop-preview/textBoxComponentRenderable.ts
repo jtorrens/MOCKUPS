@@ -4,8 +4,6 @@ import {
   numberToken,
   renderScale,
   selectedColor,
-  shadow,
-  surfaceVisualPadding,
 } from "./componentRenderableCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
@@ -155,20 +153,6 @@ export function textBoxComponentToRenderableAt(
 ): RenderableNode {
   const scale = renderScale(payload);
   const size = measureTextBoxComponent(payload, textBox);
-  const borderWidth = textBox.surface.surface.borderWidth * scale;
-  const surfaceShadow = textBox.surface.surface.shadowEnabled ? shadow(payload) : undefined;
-  const surfaceRelief = textBox.surface.surface.reliefEnabled
-    ? {
-        angleDeg: textBox.surface.surface.reliefAngle,
-        extension: textBox.surface.surface.reliefExtent * scale,
-        spread: textBox.surface.surface.reliefSpread * scale,
-        upperIntensity:
-          textBox.surface.surface.reliefTopIntensity * textBox.surface.backgroundAlpha,
-        lowerIntensity:
-          textBox.surface.surface.reliefBottomIntensity * textBox.surface.backgroundAlpha,
-      }
-    : undefined;
-  const visualPadding = surfaceVisualPadding(borderWidth, surfaceShadow, surfaceRelief);
   const paddingX = size.basePaddingX + effectiveCornerTextInset(size.cornerRadius, box.width, box.height);
   const textFrame = {
     x: box.x + paddingX,
@@ -210,12 +194,7 @@ export function textBoxComponentToRenderableAt(
     id: textBox.id,
     type: "group",
     frame: 0,
-    box: {
-      x: box.x - visualPadding,
-      y: box.y - visualPadding,
-      width: box.width + visualPadding * 2,
-      height: box.height + visualPadding * 2,
-    },
+    box,
     style: {
       overflow: "visible",
     },

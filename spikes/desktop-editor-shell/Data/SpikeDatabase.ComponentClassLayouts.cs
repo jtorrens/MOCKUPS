@@ -190,16 +190,8 @@ internal sealed partial class SpikeDatabase
               "defaultOpen": false,
               "groups": [
                 { "id": "textBox", "label": "Text box", "order": 10, "visible": true, "fields": [
-                  { "id": "component.textInput.textPadding", "order": 10, "visible": true },
-                  { "id": "component.textInput.placeholder", "order": 20, "visible": true },
-                  { "id": "component.textInput.surface.editor", "order": 30, "visible": true },
-                  { "id": "component.textInput.idleTextColorToken", "order": 40, "visible": true },
-                  { "id": "component.textInput.textSizeToken", "order": 50, "visible": true }
-                ] },
-                { "id": "cursor", "label": "Cursor", "order": 20, "visible": true, "fields": [
-                  { "id": "component.textInput.cursorColorToken", "order": 10, "visible": true },
-                  { "id": "component.textInput.cursorWidth", "order": 20, "visible": true },
-                  { "id": "component.textInput.cursorBlinkFrames", "order": 30, "visible": true }
+                  { "id": "component.textInput.textBox.editor", "order": 10, "visible": true },
+                  { "id": "component.textInput.textBox.inputs", "order": 20, "visible": true }
                 ] }
               ]
             },

@@ -1681,7 +1681,7 @@ internal sealed partial class SpikeDatabase
         var changed = NormalizeAvatarLabelPlacement(componentType, config);
         changed |= NormalizeButtonIconLabelSlot(componentType, config);
         changed |= NormalizeAudioEmbeddedSlots(componentType, config);
-        changed |= NormalizeSurfaceSlots(componentType, config);
+        changed |= NormalizeComponentSlots(componentType, config);
         changed |= NormalizeTextInputBarSlots(connection, projectId, componentType, config);
         changed |= NormalizeEmbeddedSlotPresetIds(connection, projectId, config);
         changed |= NormalizeComponentInputBindingPresetIds(connection, projectId, config);
@@ -2238,7 +2238,7 @@ internal sealed partial class SpikeDatabase
         return changed;
     }
 
-    private static bool NormalizeSurfaceSlots(string componentType, JsonObject config)
+    private static bool NormalizeComponentSlots(string componentType, JsonObject config)
     {
         var (ownerPath, preferredPresetName) = componentType switch
         {
@@ -2289,8 +2289,19 @@ internal sealed partial class SpikeDatabase
         }
 
         var changed = false;
-        changed |= NormalizeSurfaceSlot(textInput, "barSurfaceSlot", DefaultComponentPresetId);
-        changed |= NormalizeSurfaceSlot(textInput, "surfaceSlot", "InputBox");
+        changed |= NormalizeComponentSlot(textInput, "barSurfaceSlot", DefaultComponentPresetId);
+        changed |= NormalizeComponentSlot(textInput, "textBoxSlot", DefaultComponentPresetId);
+        if (textInput["textBoxInputs"] is not JsonObject)
+        {
+            textInput["textBoxInputs"] = TextBoxInputBindings();
+            changed = true;
+        }
+        else if (string.IsNullOrWhiteSpace(JsonPath.String(textInput, ["textBoxInputs", "placeholder"])))
+        {
+            SetJsonValue(textInput, ["textBoxInputs", "placeholder"], JsonValue.Create("Message")!);
+            changed = true;
+        }
+        changed |= NormalizeComponentSlot(textInput, "surfaceSlot", "InputBox");
         changed |= NormalizeComponentPresetString(
             connection,
             projectId,
@@ -2300,7 +2311,7 @@ internal sealed partial class SpikeDatabase
         return changed;
     }
 
-    private static bool NormalizeSurfaceSlot(JsonObject owner, string key, string preferredPresetName)
+    private static bool NormalizeComponentSlot(JsonObject owner, string key, string preferredPresetName)
     {
         var changed = false;
         if (owner[key] is not JsonObject slot)

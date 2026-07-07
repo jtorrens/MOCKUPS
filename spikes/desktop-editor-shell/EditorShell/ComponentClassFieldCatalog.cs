@@ -165,6 +165,40 @@ internal static class ComponentClassFieldCatalog
             "[]"),
     ];
 
+    private static readonly ComponentInputBindingDefinition[] TextBoxParentInputBindings =
+    [
+        new(
+            "sampleText",
+            "Text",
+            "sampleText",
+            ValueKind.StringMultiline,
+            ComponentInputBindingSource.Runtime,
+            "Message"),
+        new(
+            "placeholder",
+            "Placeholder",
+            "placeholder",
+            ValueKind.StringSingleLine,
+            ComponentInputBindingSource.Variant,
+            "Message"),
+        new(
+            "size",
+            "Size",
+            "size",
+            ValueKind.IntegerPair,
+            ComponentInputBindingSource.Calculated,
+            "220|44",
+            Number: new NumberDefinition(1, 9999, 1, 0)),
+        new(
+            "maxWidth",
+            "Max width",
+            "maxWidth",
+            ValueKind.Integer,
+            ComponentInputBindingSource.Calculated,
+            "220",
+            Number: new NumberDefinition(1, 9999, 1, 0)),
+    ];
+
     internal static IReadOnlyList<ComponentInputBindingDefinition> RuntimeInputBindingsForComponent(string componentType)
     {
         return componentType switch
@@ -265,11 +299,16 @@ internal static class ComponentClassFieldCatalog
         ["component.textInput.height"] = new("component.textInput.height", "Height", ValueKind.Integer, ["textInput", "height"], "44"),
         ["component.textInput.barPadding"] = new("component.textInput.barPadding", "Bar padding", ValueKind.ThemeTokenPair, ["textInput", "barPadding"], "theme.spacing.l|theme.spacing.m", PairLabels: new("X", "Y"), Options: SpacingTokenOptions),
         ["component.textInput.barSurface.editor"] = new("component.textInput.barSurface.editor", "Bar surface", ValueKind.ComponentPreset, ["textInput", "barSurfaceSlot", "presetId"], "default"),
-        ["component.textInput.textPadding"] = new("component.textInput.textPadding", "Text padding", ValueKind.ThemeTokenPair, ["textInput", "textPadding"], "theme.spacing.xl|theme.spacing.none", PairLabels: new("X", "Y"), Options: SpacingTokenOptions),
         ["component.textInput.iconGap"] = new("component.textInput.iconGap", "Icon gap", ValueKind.ThemeToken, ["textInput", "iconGap"], "theme.spacing.m", Options: SpacingTokenOptions),
         ["component.textInput.iconButton.presetId"] = new("component.textInput.iconButton.presetId", "Icon button variant", ValueKind.OptionToken, ["textInput", "iconButtonPresetId"], "default", ComponentPresetType: "buttonIcon"),
-        ["component.textInput.placeholder"] = new("component.textInput.placeholder", "Placeholder", ValueKind.StringSingleLine, ["textInput", "placeholder"], "Message"),
-        ["component.textInput.surface.editor"] = new("component.textInput.surface.editor", "Text box surface", ValueKind.ComponentPreset, ["textInput", "surfaceSlot", "presetId"], "InputBox"),
+        ["component.textInput.textBox.editor"] = new("component.textInput.textBox.editor", "Text box variant", ValueKind.ComponentPreset, ["textInput", "textBoxSlot", "presetId"], "default"),
+        ["component.textInput.textBox.inputs"] = new(
+            "component.textInput.textBox.inputs",
+            "Text box inputs",
+            ValueKind.ComponentInputBindings,
+            ["textInput", "textBoxInputs"],
+            """{"placeholder":"Message"}""",
+            ComponentInputBindings: TextBoxParentInputBindings),
         ["component.textInput.leftIconRow.editor"] = new("component.textInput.leftIconRow.editor", "Left row variant", ValueKind.ComponentPreset, ["textInput", "leftIconRowSlot", "presetId"], "default"),
         ["component.textInput.leftIconRow.inputs"] = new(
             "component.textInput.leftIconRow.inputs",
@@ -286,11 +325,6 @@ internal static class ComponentClassFieldCatalog
             ["textInput", "rightIconRowInputs"],
             """{"size":44,"gap":"theme.spacing.m","orientation":"horizontal"}""",
             ComponentInputBindings: IconRowParentInputBindings),
-        ["component.textInput.idleTextColorToken"] = new("component.textInput.idleTextColorToken", "Idle text color", ValueKind.ThemeToken, ["textInput", "idleTextColorToken"], "theme.colors.textSecondary", Options: ThemeColorOptions),
-        ["component.textInput.textSizeToken"] = new("component.textInput.textSizeToken", "Text size", ValueKind.ThemeToken, ["textInput", "textSizeToken"], "theme.typography.sizes.s", Options: TypographySizeOptions),
-        ["component.textInput.cursorColorToken"] = new("component.textInput.cursorColorToken", "Cursor color", ValueKind.ThemeToken, ["textInput", "cursorColorToken"], "theme.cursor.color", Options: ThemeColorOptions),
-        ["component.textInput.cursorWidth"] = new("component.textInput.cursorWidth", "Cursor width", ValueKind.Integer, ["textInput", "cursorWidth"], "2"),
-        ["component.textInput.cursorBlinkFrames"] = new("component.textInput.cursorBlinkFrames", "Blink frames", ValueKind.Integer, ["textInput", "cursorBlinkFrames"], "18"),
 
         ["component.keyboard.backgroundColorToken"] = new("component.keyboard.backgroundColorToken", "Background", ValueKind.ThemeToken, ["keyboard", "backgroundColorToken"], "theme.colors.surface", Options: ThemeColorOptions),
         ["component.keyboard.backgroundAlpha"] = new("component.keyboard.backgroundAlpha", "Surface alpha", ValueKind.Alpha, ["keyboard", "backgroundAlpha"], "1"),

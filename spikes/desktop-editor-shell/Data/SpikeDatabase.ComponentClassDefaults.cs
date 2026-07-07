@@ -150,6 +150,8 @@ internal sealed partial class SpikeDatabase
                     ["height"] = 44,
                     ["barPadding"] = "theme.spacing.l|theme.spacing.m",
                     ["barSurfaceSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["textBoxSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["textBoxInputs"] = TextBoxInputBindings(),
                     ["textPadding"] = "theme.spacing.xl|theme.spacing.none",
                     ["iconGap"] = "theme.spacing.m",
                     ["iconButtonPresetId"] = DefaultComponentPresetId,
@@ -557,6 +559,14 @@ internal sealed partial class SpikeDatabase
             ["size"] = 44,
             ["gap"] = "theme.spacing.m",
             ["orientation"] = "horizontal",
+        };
+    }
+
+    private static JsonObject TextBoxInputBindings()
+    {
+        return new JsonObject
+        {
+            ["placeholder"] = "Message",
         };
     }
 

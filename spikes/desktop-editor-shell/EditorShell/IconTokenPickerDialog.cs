@@ -34,6 +34,7 @@ internal sealed class IconTokenPickerDialog
         var selectedThemeId = iconThemes.FirstOrDefault()?.Value ?? "";
         string query = "";
         string? result = null;
+        var visibleButtons = new Dictionary<string, Button>(StringComparer.Ordinal);
 
         var dialog = new SukiWindow
         {
@@ -83,7 +84,8 @@ internal sealed class IconTokenPickerDialog
                 selectedSet.Clear();
                 selected.Add(token);
                 selectedSet.Add(token);
-                RefreshList();
+                RefreshSelectedText();
+                RefreshVisibleSelection();
                 return;
             }
 
@@ -98,12 +100,31 @@ internal sealed class IconTokenPickerDialog
                 selected.Add(token);
             }
 
-            RefreshList();
+            RefreshSelectedText();
+            RefreshVisibleSelection();
+        }
+
+        void ApplyTokenButtonState(Button button, string token)
+        {
+            var isSelected = selectedSet.Contains(token);
+            button.BorderThickness = isSelected ? new Thickness(2) : new Thickness(1);
+            button.BorderBrush = isSelected
+                ? new SolidColorBrush(Color.Parse("#3388FF"))
+                : new SolidColorBrush(Color.Parse("#4B5F7A"));
+        }
+
+        void RefreshVisibleSelection()
+        {
+            foreach (var (token, button) in visibleButtons)
+            {
+                ApplyTokenButtonState(button, token);
+            }
         }
 
         void RefreshList()
         {
             listPanel.Children.Clear();
+            visibleButtons.Clear();
             RefreshSelectedText();
             if (string.IsNullOrWhiteSpace(selectedThemeId))
             {
@@ -118,7 +139,6 @@ internal sealed class IconTokenPickerDialog
 
             foreach (var token in tokens)
             {
-                var isSelected = selectedSet.Contains(token.Token);
                 var content = new Grid
                 {
                     ColumnDefinitions = new ColumnDefinitions("72,180"),
@@ -166,12 +186,10 @@ internal sealed class IconTokenPickerDialog
                     Width = 285,
                     MinHeight = 52,
                     Margin = new Thickness(0, 0, 8, 8),
-                    BorderThickness = isSelected ? new Thickness(2) : new Thickness(1),
-                    BorderBrush = isSelected
-                        ? new SolidColorBrush(Color.Parse("#3388FF"))
-                        : new SolidColorBrush(Color.Parse("#4B5F7A")),
                 };
+                ApplyTokenButtonState(button, token.Token);
                 button.Click += (_, _) => ToggleToken(token.Token);
+                visibleButtons[token.Token] = button;
                 listPanel.Children.Add(button);
             }
 

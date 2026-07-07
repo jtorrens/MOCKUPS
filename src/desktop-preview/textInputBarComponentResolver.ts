@@ -13,6 +13,7 @@ import {
 } from "./componentResolverCommon.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
 import { resolveIconRowComponentFromRecords } from "./iconRowComponentResolver.js";
+import { resolveTextBoxComponentFromRecords } from "./textBoxComponentResolver.js";
 
 export function resolveTextInputBarComponent(
   payload: DesignPreviewPayload,
@@ -22,16 +23,12 @@ export function resolveTextInputBarComponent(
   const componentBaseConfigs = parseObject(payload.componentBaseConfigsJson);
   const textInput = asRecord(config.textInput);
   const barSurfaceSlot = asRecord(textInput.barSurfaceSlot);
-  const surfaceSlot = asRecord(textInput.surfaceSlot);
+  const textBoxSlot = asRecord(textInput.textBoxSlot);
+  const textBoxInputs = asRecord(textInput.textBoxInputs);
   const leftIconRowSlot = asRecord(textInput.leftIconRowSlot);
   const rightIconRowSlot = asRecord(textInput.rightIconRowSlot);
   const leftIconRowInputs = asRecord(textInput.leftIconRowInputs);
   const rightIconRowInputs = asRecord(textInput.rightIconRowInputs);
-  const placeholder = requiredString(
-    textInput,
-    "placeholder",
-    "component.textInput.placeholder",
-  );
   const height = requiredNumber(textInput, "height", "component.textInput.height");
   const iconButtonPresetId = requiredString(
     textInput,
@@ -42,9 +39,9 @@ export function resolveTextInputBarComponent(
     componentPresetConfig(componentBaseConfigs, "surface", barSurfaceSlot.presetId),
     asRecord(barSurfaceSlot.overrides),
   );
-  const embeddedSurfaceConfig = mergeComponentDefaults(
-    componentPresetConfig(componentBaseConfigs, "surface", surfaceSlot.presetId),
-    asRecord(surfaceSlot.overrides),
+  const embeddedTextBoxConfig = mergeComponentDefaults(
+    componentPresetConfig(componentBaseConfigs, "textBox", textBoxSlot.presetId),
+    asRecord(textBoxSlot.overrides),
   );
   const embeddedLeftIconRowConfig = mergeComponentDefaults(
     componentPresetConfig(componentBaseConfigs, "iconRow", leftIconRowSlot.presetId),
@@ -63,48 +60,26 @@ export function resolveTextInputBarComponent(
       "barPadding",
       "component.textInput.barPadding",
     )),
-    textPadding: toSpacingPair(requiredStringPair(
-      textInput,
-      "textPadding",
-      "component.textInput.textPadding",
-    )),
     iconGapToken: requiredString(textInput, "iconGap", "component.textInput.iconGap"),
-    text: requiredString(preview, "sampleText", "component.textInput.preview.sampleText"),
-    placeholder,
-    idleTextColorToken: requiredString(
-      textInput,
-      "idleTextColorToken",
-      "component.textInput.idleTextColorToken",
-    ),
-    textSizeToken: requiredString(
-      textInput,
-      "textSizeToken",
-      "component.textInput.textSizeToken",
-    ),
-    cursorColorToken: requiredString(
-      textInput,
-      "cursorColorToken",
-      "component.textInput.cursorColorToken",
-    ),
-    cursorWidth: requiredNumber(
-      textInput,
-      "cursorWidth",
-      "component.textInput.cursorWidth",
-    ),
-    cursorBlinkFrames: requiredNumber(
-      textInput,
-      "cursorBlinkFrames",
-      "component.textInput.cursorBlinkFrames",
-    ),
     barSurface: resolveSurfaceComponentAtSize(
       embeddedBarSurfaceConfig,
       { width: 520, height },
       "component.textInputBar.barSurface",
     ),
-    surface: resolveSurfaceComponentAtSize(
-      embeddedSurfaceConfig,
-      { width: 520, height },
-      "component.textInputBar.surface",
+    textBox: resolveTextBoxComponentFromRecords(
+      embeddedTextBoxConfig,
+      {
+        sampleText: requiredString(preview, "sampleText", "component.textInput.preview.sampleText"),
+        placeholder: requiredString(
+          textBoxInputs,
+          "placeholder",
+          "component.textInput.textBox.placeholder",
+        ),
+        size: `520|${height}`,
+        maxWidth: 520,
+      },
+      componentBaseConfigs,
+      "component.textInputBar.textBox",
     ),
     leftIconRow: resolveIconRowComponentFromRecords(
       embeddedLeftIconRowConfig,

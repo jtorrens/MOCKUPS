@@ -3,10 +3,10 @@ import {
   numberToken,
   previewScreenBox,
   renderScale,
-  selectedColor,
 } from "./componentRenderableCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
+import { textBoxComponentToRenderableAt } from "./textBoxComponentRenderable.js";
 import {
   iconRowComponentToRenderableAt,
   measureIconRowComponent,
@@ -22,8 +22,6 @@ export function textInputBarComponentToRenderable(
   const screenBox = previewScreenBox(payload);
   const barPaddingX = Math.max(0, numberToken(payload, textInput.barPadding.xToken) * scale);
   const barPaddingY = Math.max(0, numberToken(payload, textInput.barPadding.yToken) * scale);
-  const textPaddingX = Math.max(0, numberToken(payload, textInput.textPadding.xToken) * scale);
-  const textPaddingY = Math.max(0, numberToken(payload, textInput.textPadding.yToken) * scale);
   const iconGap = Math.max(0, numberToken(payload, textInput.iconGapToken) * scale);
   const leftIconSize = measureIconRowComponent(payload, textInput.leftIconRow);
   const rightIconSize = measureIconRowComponent(payload, textInput.rightIconRow);
@@ -36,7 +34,6 @@ export function textInputBarComponentToRenderable(
     height: height + barPaddingY * 2,
   };
   const width = Math.max(1, screenBox.width - barPaddingX * 2);
-  const fontSize = numberToken(payload, textInput.textSizeToken) * scale;
   const fieldBox = {
     x: screenBox.x + barPaddingX + (hasLeftIcons ? leftIconSize.width + iconGap : 0),
     y: barBox.y + barPaddingY,
@@ -60,16 +57,13 @@ export function textInputBarComponentToRenderable(
     width: rightIconSize.width,
     height: rightIconSize.height,
   };
-  const textBox = {
-    x: fieldBox.x + textPaddingX,
-    y: fieldBox.y + textPaddingY,
-    width: Math.max(1, fieldBox.width - textPaddingX * 2),
-    height: Math.max(1, fieldBox.height - textPaddingY * 2),
+  const resolvedTextBox = {
+    ...textInput.textBox,
+    size: {
+      width: Math.max(1, fieldBox.width / scale),
+      height: Math.max(1, fieldBox.height / scale),
+    },
   };
-  const textValue = textInput.text.trim().length > 0
-    ? textInput.text
-    : textInput.placeholder;
-  const cursorWidth = Math.max(1, textInput.cursorWidth * scale);
 
   return {
     id: textInput.id,
@@ -84,41 +78,13 @@ export function textInputBarComponentToRenderable(
         ...surfaceComponentToRenderableAt(payload, textInput.barSurface, barBox),
         id: `${textInput.id}.barSurface`,
       },
-      {
-        ...surfaceComponentToRenderableAt(payload, textInput.surface, fieldBox),
-        id: `${textInput.id}.surface`,
-      },
+      textBoxComponentToRenderableAt(payload, resolvedTextBox, fieldBox),
       ...(hasLeftIcons
         ? [iconRowComponentToRenderableAt(payload, textInput.leftIconRow, leftIconBox)]
         : []),
       ...(hasRightIcons
         ? [iconRowComponentToRenderableAt(payload, textInput.rightIconRow, rightIconBox)]
         : []),
-      {
-        id: `${textInput.id}.text`,
-        type: "text",
-        frame: 0,
-        box: textBox,
-        text: textValue,
-        style: {
-          color: selectedColor(payload, textInput.idleTextColorToken),
-          display: "flex",
-          alignItems: "center",
-          fontSize,
-          lineHeight: textBox.height,
-          overflow: "hidden",
-          whiteSpace: "nowrap",
-        },
-        metadata: textInput.text.trim().length > 0 && textInput.cursorBlinkFrames > 0
-          ? {
-              inlineCursor: {
-                color: selectedColor(payload, textInput.cursorColorToken),
-                width: cursorWidth,
-                opacity: 1,
-              },
-            }
-          : undefined,
-      },
     ],
   };
 }

@@ -27,11 +27,11 @@ internal static class EmbeddedComponentSlotCatalog
             "component.surface",
             ["textInput", "barSurfaceSlot"]),
         new(
-            "component.textInput.surface.editor",
-            "surface",
-            "Text box surface",
-            "component.surface",
-            ["textInput", "surfaceSlot"]),
+            "component.textInput.textBox.editor",
+            "textBox",
+            "Text box",
+            "component.textBox",
+            ["textInput", "textBoxSlot"]),
         new(
             "component.textInput.leftIconRow.editor",
             "iconRow",
