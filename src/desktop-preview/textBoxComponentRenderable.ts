@@ -186,9 +186,8 @@ export function textBoxComponentToRenderableAt(
   const lineHeight = size.typography.lineHeight;
   const textContentHeight = Math.max(1, wrappedLines.length) * lineHeight;
   const textOverflowsFrame = textContentHeight > textFrame.height;
-  const textContentY = textOverflowsFrame && textBox.overflowMode === "scroll"
-      ? textFrame.y - (textContentHeight - textFrame.height)
-    : wrappedLines.length === 1
+  const scrollAnchorsToBottom = textOverflowsFrame && textBox.overflowMode === "scroll";
+  const textContentY = wrappedLines.length === 1
       ? textFrame.y + Math.max(0, (textFrame.height - textContentHeight) * 0.5)
       : textFrame.y;
   const textStyle = {
@@ -228,31 +227,55 @@ export function textBoxComponentToRenderableAt(
         frame: 0,
         box: textFrame,
         style: {
+          alignItems: scrollAnchorsToBottom ? "stretch" : undefined,
+          display: scrollAnchorsToBottom ? "flex" : undefined,
+          flexDirection: scrollAnchorsToBottom ? "column" : undefined,
+          justifyContent: scrollAnchorsToBottom ? "flex-end" : undefined,
           overflow: "hidden",
         },
         children: [
-          {
-            id: `${textBox.id}.text`,
-            type: "text",
-            frame: 0,
-            box: {
-              x: textFrame.x,
-              y: textContentY,
-              width: textFrame.width,
-              height: Math.max(textFrame.height, textContentHeight),
-            },
-            text: size.contentText,
-            style: textStyle,
-            metadata: textBox.cursorVisible && !textIsEmpty
-              ? {
-                  inlineCursor: {
-                    color: selectedColor(payload, textBox.cursor.colorToken),
-                    width: cursorWidth,
-                    opacity: 1,
-                  },
-                }
-              : undefined,
-          },
+          scrollAnchorsToBottom
+            ? {
+                id: `${textBox.id}.text`,
+                type: "text",
+                frame: 0,
+                text: size.contentText,
+                style: {
+                  ...textStyle,
+                  width: "100%",
+                },
+                metadata: textBox.cursorVisible && !textIsEmpty
+                  ? {
+                      inlineCursor: {
+                        color: selectedColor(payload, textBox.cursor.colorToken),
+                        width: cursorWidth,
+                        opacity: 1,
+                      },
+                    }
+                  : undefined,
+              }
+            : {
+                id: `${textBox.id}.text`,
+                type: "text",
+                frame: 0,
+                box: {
+                  x: textFrame.x,
+                  y: textContentY,
+                  width: textFrame.width,
+                  height: Math.max(textFrame.height, textContentHeight),
+                },
+                text: size.contentText,
+                style: textStyle,
+                metadata: textBox.cursorVisible && !textIsEmpty
+                  ? {
+                      inlineCursor: {
+                        color: selectedColor(payload, textBox.cursor.colorToken),
+                        width: cursorWidth,
+                        opacity: 1,
+                      },
+                    }
+                  : undefined,
+              },
         ],
       },
     ],

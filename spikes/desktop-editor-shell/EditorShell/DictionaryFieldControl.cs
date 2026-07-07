@@ -104,6 +104,13 @@ internal sealed class DictionaryFieldControl : Grid
 
     public void AcceptCurrentValueAsDefault()
     {
+        if (_definition.CanInherit && _isInherited)
+        {
+            _lastCommittedValue = _definition.InheritedStorageValue;
+            UpdateState();
+            return;
+        }
+
         _lastCommittedValue = _value;
         _isInherited = false;
         UpdateState();
@@ -127,6 +134,12 @@ internal sealed class DictionaryFieldControl : Grid
 
     public void SetValue(string value, bool commit = false)
     {
+        if (_definition.CanInherit && value == _definition.InheritedStorageValue)
+        {
+            SetInheritedValue(commit);
+            return;
+        }
+
         if (_value == value)
         {
             if (commit)
@@ -151,6 +164,20 @@ internal sealed class DictionaryFieldControl : Grid
 
     private void SetLocalValue(string value)
     {
+        if (_definition.CanInherit && value == _definition.InheritedStorageValue)
+        {
+            if (_isInherited)
+            {
+                return;
+            }
+
+            _isInherited = true;
+            SetDisplayedValue(_definition.InheritedValue);
+            UpdateState();
+            ValueChanged?.Invoke(this, _definition.InheritedStorageValue);
+            return;
+        }
+
         if (!_isInherited && _value == value) return;
 
         _value = value;
