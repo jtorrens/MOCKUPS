@@ -317,6 +317,34 @@ function iconContent(node: RenderableNode): ReactNode {
   return <span title={label}>{iconFallbackLabel(label)}</span>;
 }
 
+function textContent(node: RenderableNode): ReactNode {
+  const inlineCursor = asRecord(node.metadata?.inlineCursor);
+  const cursorColor = optionalStringValue(inlineCursor.color);
+  const cursorWidth = optionalNumberValue(inlineCursor.width);
+  if (!cursorColor || !cursorWidth) return node.text;
+
+  return (
+    <>
+      {node.text}
+      <span
+        aria-hidden="true"
+        style={{
+          background: cursorColor,
+          borderRadius: Math.min(cursorWidth * 0.5, 2),
+          display: "inline-block",
+          flex: "0 0 auto",
+          height: "1.05em",
+          marginLeft: "0.01em",
+          minWidth: cursorWidth,
+          opacity: optionalNumberValue(inlineCursor.opacity) ?? 1,
+          verticalAlign: "text-bottom",
+          width: cursorWidth,
+        }}
+      />
+    </>
+  );
+}
+
 function nodeContent(node: RenderableNode): ReactNode {
   if (!supportedNodeTypes.has(node.type)) {
     return `Unsupported desktop primitive: ${node.type}`;
@@ -324,6 +352,7 @@ function nodeContent(node: RenderableNode): ReactNode {
   if (node.type === "image") return imageContent(node);
   if (node.type === "path") return pathContent(node);
   if (node.type === "icon") return iconContent(node);
+  if (node.type === "text") return textContent(node);
   if (node.children?.some((child) => child.type === "text")) return null;
   return node.text;
 }

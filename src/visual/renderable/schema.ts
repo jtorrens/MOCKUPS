@@ -35,6 +35,11 @@ const RenderableMetadataSchema = z.object({
   imageOffsetX: z.number().optional(),
   imageOffsetY: z.number().optional(),
   imageScale: z.number().optional(),
+  inlineCursor: z.object({
+    color: z.string().min(1),
+    width: z.number().positive(),
+    opacity: z.number().min(0).max(1).optional(),
+  }).strict().optional(),
 }).strict();
 
 export const RenderableNodeSchema: z.ZodType<RenderableNode> = z.lazy(() =>

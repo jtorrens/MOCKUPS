@@ -8,7 +8,6 @@ import {
   surfaceVisualPadding,
 } from "./componentRenderableCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import { approximateTextWidth } from "./previewTextHelpers.js";
 import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
 import type { TextInputBarDesignContract } from "./textInputBarComponentContract.js";
 
@@ -70,18 +69,7 @@ export function textInputBarComponentToRenderable(
   const textValue = textInput.text.trim().length > 0
     ? textInput.text
     : textInput.placeholder;
-  const cursorHeight = Math.max(1, fontSize * 1.15);
   const cursorWidth = Math.max(1, textInput.cursorWidth * scale);
-  const cursorOffset = Math.max(
-    0,
-    Math.min(textBox.width - cursorWidth, approximateTextWidth(textValue, fontSize)),
-  );
-  const cursorBox = {
-    x: textBox.x + cursorOffset,
-    y: textBox.y + (textBox.height - cursorHeight) / 2,
-    width: cursorWidth,
-    height: cursorHeight,
-  };
 
   return {
     id: textInput.id,
@@ -111,20 +99,15 @@ export function textInputBarComponentToRenderable(
           overflow: "hidden",
           whiteSpace: "nowrap",
         },
-      },
-      {
-        id: `${textInput.id}.cursor`,
-        type: "surface",
-        frame: 0,
-        box: cursorBox,
-        style: {
-          background: selectedColor(payload, textInput.cursorColorToken),
-          borderRadius: Math.max(1, cursorBox.width / 2),
-          opacity:
-            textInput.text.trim().length > 0 && textInput.cursorBlinkFrames > 0
-              ? 1
-              : 0,
-        },
+        metadata: textInput.text.trim().length > 0 && textInput.cursorBlinkFrames > 0
+          ? {
+              inlineCursor: {
+                color: selectedColor(payload, textInput.cursorColorToken),
+                width: cursorWidth,
+                opacity: 1,
+              },
+            }
+          : undefined,
       },
     ],
   };

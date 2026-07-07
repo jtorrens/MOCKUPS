@@ -7,7 +7,6 @@ import {
   shadow,
   surfaceVisualPadding,
 } from "./componentRenderableCommon.js";
-import { cursorComponentToRenderableAt } from "./cursorComponentRenderable.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
   approximateTextWidth,
@@ -87,14 +86,6 @@ export function textBoxComponentToRenderableAt(
   };
   const textIsEmpty = textBox.text.trim().length === 0;
   const cursorWidth = Math.max(1, textBox.cursor.width * scale);
-  const cursorHeight = Math.max(1, size.typography.fontSize);
-  const cursorX = cursorXForText(textBox.textAlign, textFrame, textBox.text, size.typography.fontSize, cursorWidth);
-  const cursorBox = {
-    x: cursorX,
-    y: textFrame.y + (textFrame.height - cursorHeight) / 2,
-    width: cursorWidth,
-    height: cursorHeight,
-  };
 
   return {
     id: textBox.id,
@@ -133,10 +124,16 @@ export function textBoxComponentToRenderableAt(
           textAlign: textBox.textAlign,
           whiteSpace: "nowrap",
         },
+        metadata: textBox.cursorVisible && !textIsEmpty
+          ? {
+              inlineCursor: {
+                color: selectedColor(payload, textBox.cursor.colorToken),
+                width: cursorWidth,
+                opacity: 1,
+              },
+            }
+          : undefined,
       },
-      ...(textBox.cursorVisible && !textIsEmpty
-        ? [cursorComponentToRenderableAt(payload, textBox.cursor, cursorBox)]
-        : []),
     ],
   };
 }
@@ -149,24 +146,4 @@ function textBoxJustify(textAlign: TextBoxDesignContract["textAlign"]) {
   return textAlign === "right"
     ? "flex-end"
     : textAlign === "center" ? "center" : "flex-start";
-}
-
-function cursorXForText(
-  textAlign: TextBoxDesignContract["textAlign"],
-  box: RenderableBox,
-  text: string,
-  fontSize: number,
-  cursorWidth: number,
-) {
-  const textWidth = Math.min(box.width, approximateTextWidth(text, fontSize));
-  if (textAlign === "right") {
-    return Math.max(box.x, box.x + box.width - cursorWidth);
-  }
-  if (textAlign === "center") {
-    return Math.max(
-      box.x,
-      Math.min(box.x + box.width - cursorWidth, box.x + (box.width + textWidth) / 2),
-    );
-  }
-  return Math.max(box.x, Math.min(box.x + box.width - cursorWidth, box.x + textWidth));
 }
