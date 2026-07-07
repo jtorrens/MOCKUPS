@@ -32,6 +32,7 @@ internal static class EditorNavigationMetadata
             ProjectTreeNodeKind.IconThemesRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.IconTheme),
             ProjectTreeNodeKind.RenderPresetsRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.RenderPreset),
             ProjectTreeNodeKind.ComponentClassesRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.ComponentClass),
+            ProjectTreeNodeKind.ComponentClassGroup => EditorIcons.ForTreeNode(ProjectTreeNodeKind.ComponentClass),
             ProjectTreeNodeKind.DevicesRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.Device),
             ProjectTreeNodeKind.ActorsRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.Actor),
             ProjectTreeNodeKind.ThemesRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.Theme),
@@ -62,6 +63,7 @@ internal static class EditorNavigationMetadata
             ProjectTreeNodeKind.IconThemesRoot => "Semantic icon tokens shared by every set",
             ProjectTreeNodeKind.RenderPresetsRoot => "Reusable render output definitions",
             ProjectTreeNodeKind.ComponentClassesRoot => "Reusable component defaults",
+            ProjectTreeNodeKind.ComponentClassGroup => "Component class group",
             ProjectTreeNodeKind.ThemesRoot => "Visual theme definitions",
             _ => node.Notes,
         };

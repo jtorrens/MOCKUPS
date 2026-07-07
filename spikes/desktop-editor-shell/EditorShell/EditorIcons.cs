@@ -85,6 +85,7 @@ internal static class EditorIcons
             ProjectTreeNodeKind.IconThemesRoot => Icon,
             ProjectTreeNodeKind.RenderPresetsRoot => Render,
             ProjectTreeNodeKind.ComponentClassesRoot => Component,
+            ProjectTreeNodeKind.ComponentClassGroup => Component,
             ProjectTreeNodeKind.DevicesRoot => Device,
             ProjectTreeNodeKind.ActorsRoot => Actor,
             ProjectTreeNodeKind.ThemesRoot => Theme,

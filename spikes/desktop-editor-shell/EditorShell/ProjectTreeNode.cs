@@ -13,6 +13,7 @@ internal enum ProjectTreeNodeKind
     IconThemesRoot,
     RenderPresetsRoot,
     ComponentClassesRoot,
+    ComponentClassGroup,
     DevicesRoot,
     ActorsRoot,
     ThemesRoot,
@@ -112,6 +113,7 @@ internal sealed class ProjectTreeNode
         and not ProjectTreeNodeKind.IconThemesRoot
         and not ProjectTreeNodeKind.RenderPresetsRoot
         and not ProjectTreeNodeKind.ComponentClassesRoot
+        and not ProjectTreeNodeKind.ComponentClassGroup
         and not ProjectTreeNodeKind.DevicesRoot
         and not ProjectTreeNodeKind.ActorsRoot
         and not ProjectTreeNodeKind.ThemesRoot
@@ -139,6 +141,7 @@ internal sealed class ProjectTreeNode
             ProjectTreeNodeKind.IconThemesRoot => "navigation.icon_themes",
             ProjectTreeNodeKind.RenderPresetsRoot => "navigation.render_presets",
             ProjectTreeNodeKind.ComponentClassesRoot => "navigation.component_classes",
+            ProjectTreeNodeKind.ComponentClassGroup => "navigation.component_class_group",
             ProjectTreeNodeKind.DevicesRoot => "navigation.devices",
             ProjectTreeNodeKind.ActorsRoot => "navigation.actors",
             ProjectTreeNodeKind.ThemesRoot => "navigation.themes",

@@ -9,6 +9,13 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SpikeDatabase
 {
+    private enum ComponentClassNavigationGroup
+    {
+        Components,
+        Atoms,
+        System,
+    }
+
     public List<ProjectTreeNode> LoadProjectTree()
     {
         using var connection = OpenConnection();
@@ -52,7 +59,7 @@ internal sealed partial class SpikeDatabase
         var productionFontRootNodes = new Dictionary<string, ProjectTreeNode>();
         var iconThemeRootNodes = new Dictionary<string, ProjectTreeNode>();
         var renderPresetRootNodes = new Dictionary<string, ProjectTreeNode>();
-        var componentClassRootNodes = new Dictionary<string, ProjectTreeNode>();
+        var componentClassGroupNodes = new Dictionary<string, Dictionary<ComponentClassNavigationGroup, ProjectTreeNode>>();
         var episodeRootNodes = new Dictionary<string, ProjectTreeNode>();
         var episodeNodes = new Dictionary<string, ProjectTreeNode>();
         foreach (var project in projectNodes.Values)
@@ -134,6 +141,11 @@ internal sealed partial class SpikeDatabase
                 "Reusable visual component defaults.",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ComponentClassesRoot),
                 systemDataRoot);
+            var componentGroups = CreateComponentClassGroupNodes(project.Id, componentClassesRoot);
+            foreach (var group in ComponentClassNavigationGroups())
+            {
+                componentClassesRoot.AddChild(componentGroups[group]);
+            }
             var episodesRoot = new ProjectTreeNode(
                 ProjectTreeNodeKind.EpisodesRoot,
                 $"episodes_root_{project.Id}",
@@ -162,7 +174,7 @@ internal sealed partial class SpikeDatabase
             productionFontRootNodes[project.Id] = productionFontsRoot;
             iconThemeRootNodes[project.Id] = iconThemesRoot;
             renderPresetRootNodes[project.Id] = renderPresetsRoot;
-            componentClassRootNodes[project.Id] = componentClassesRoot;
+            componentClassGroupNodes[project.Id] = componentGroups;
             episodeRootNodes[project.Id] = episodesRoot;
         }
 
@@ -311,7 +323,8 @@ internal sealed partial class SpikeDatabase
 
         foreach (var componentClass in componentClasses.OrderBy((componentClass) => componentClass.ComponentType).ThenBy((componentClass) => componentClass.Name))
         {
-            if (!componentClassRootNodes.TryGetValue(componentClass.ProjectId, out var componentClassesRoot)) continue;
+            if (!componentClassGroupNodes.TryGetValue(componentClass.ProjectId, out var componentGroups)) continue;
+            var groupNode = componentGroups[ComponentClassNavigationGroupFor(componentClass.ComponentType)];
 
             var componentNode = new ProjectTreeNode(
                 ProjectTreeNodeKind.ComponentClass,
@@ -319,9 +332,9 @@ internal sealed partial class SpikeDatabase
                 componentClass.Name,
                 string.IsNullOrWhiteSpace(componentClass.Notes) ? ComponentTypeLabel(componentClass.ComponentType) : componentClass.Notes,
                 componentClass.RecordClassId,
-                componentClassesRoot,
+                groupNode,
                 isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.ComponentClass, componentClass.Id));
-            componentClassesRoot.AddChild(componentNode);
+            groupNode.AddChild(componentNode);
 
             foreach (var preset in ComponentClassPresets(componentClass.MetadataJson))
             {
@@ -353,6 +366,75 @@ internal sealed partial class SpikeDatabase
         return projectNodes.Values
             .OrderBy((node) => node.Name)
             .ToList();
+    }
+
+    private static IReadOnlyList<ComponentClassNavigationGroup> ComponentClassNavigationGroups()
+    {
+        return
+        [
+            ComponentClassNavigationGroup.Components,
+            ComponentClassNavigationGroup.Atoms,
+            ComponentClassNavigationGroup.System,
+        ];
+    }
+
+    private static Dictionary<ComponentClassNavigationGroup, ProjectTreeNode> CreateComponentClassGroupNodes(
+        string projectId,
+        ProjectTreeNode root)
+    {
+        return ComponentClassNavigationGroups()
+            .ToDictionary(
+                (group) => group,
+                (group) => new ProjectTreeNode(
+                    ProjectTreeNodeKind.ComponentClassGroup,
+                    $"component_classes_{ComponentClassNavigationGroupId(group)}_{projectId}",
+                    ComponentClassNavigationGroupTitle(group),
+                    ComponentClassNavigationGroupSubtitle(group),
+                    ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ComponentClassGroup),
+                    root));
+    }
+
+    private static ComponentClassNavigationGroup ComponentClassNavigationGroupFor(string componentType)
+    {
+        return componentType switch
+        {
+            "status_bar" or "navigation_bar" or "keyboard" => ComponentClassNavigationGroup.System,
+            "surface" or "cursor" or "textBox" => ComponentClassNavigationGroup.Atoms,
+            _ => ComponentClassNavigationGroup.Components,
+        };
+    }
+
+    private static string ComponentClassNavigationGroupId(ComponentClassNavigationGroup group)
+    {
+        return group switch
+        {
+            ComponentClassNavigationGroup.Components => "components",
+            ComponentClassNavigationGroup.Atoms => "atoms",
+            ComponentClassNavigationGroup.System => "system",
+            _ => throw new InvalidOperationException($"Unknown component class group {group}."),
+        };
+    }
+
+    private static string ComponentClassNavigationGroupTitle(ComponentClassNavigationGroup group)
+    {
+        return group switch
+        {
+            ComponentClassNavigationGroup.Components => "Components",
+            ComponentClassNavigationGroup.Atoms => "Atoms",
+            ComponentClassNavigationGroup.System => "System",
+            _ => throw new InvalidOperationException($"Unknown component class group {group}."),
+        };
+    }
+
+    private static string ComponentClassNavigationGroupSubtitle(ComponentClassNavigationGroup group)
+    {
+        return group switch
+        {
+            ComponentClassNavigationGroup.Components => "Reusable composed component classes",
+            ComponentClassNavigationGroup.Atoms => "Primitive component building blocks",
+            ComponentClassNavigationGroup.System => "System UI component classes",
+            _ => throw new InvalidOperationException($"Unknown component class group {group}."),
+        };
     }
 
     public ProjectTreeNode AddChild(ProjectTreeNode parent)
