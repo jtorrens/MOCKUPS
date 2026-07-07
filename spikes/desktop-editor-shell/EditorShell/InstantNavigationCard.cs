@@ -13,6 +13,13 @@ internal sealed class InstantNavigationCard : Border
         CornerRadius = new CornerRadius(10);
         BoxShadow = BoxShadows.Parse("0 4 10 0 #18000000");
 
+        var contentHost = new Border
+        {
+            Padding = new Thickness(7, 0, 7, 7),
+            IsVisible = isExpanded,
+            Child = content,
+        };
+
         Child = new GlassCard
         {
             Content = new StackPanel
@@ -21,14 +28,14 @@ internal sealed class InstantNavigationCard : Border
                 Children =
                 {
                     header,
-                    new Border
-                    {
-                        Padding = new Thickness(7, 0, 7, 7),
-                        IsVisible = isExpanded,
-                        Child = content,
-                    },
+                    contentHost,
                 },
             },
         };
+
+        if (isExpanded)
+        {
+            AttachedToVisualTree += (_, _) => DeferredBringIntoView.Request(contentHost);
+        }
     }
 }

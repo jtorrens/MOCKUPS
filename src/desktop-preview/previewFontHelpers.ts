@@ -17,6 +17,7 @@ function themeTypographyFontId(payload: DesignPreviewPayload, key: string) {
 
 function familyForFontId(payload: DesignPreviewPayload, fontId: string) {
   if (!fontId.trim()) return "";
+  if (fontId === "system") return "";
   return payload.fontFaces?.find((face) => face.fontId === fontId)?.family ?? "";
 }
 

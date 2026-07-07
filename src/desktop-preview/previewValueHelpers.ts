@@ -41,6 +41,16 @@ export function requiredString(
   throw new Error(`Missing string value ${path}`);
 }
 
+export function requiredFontFamilyId(
+  value: Record<string, unknown>,
+  key: string,
+  path: string,
+) {
+  const raw = value[key];
+  if (typeof raw === "string") return raw.trim() ? raw : "system";
+  throw new Error(`Missing string value ${path}`);
+}
+
 export function optionalString(value: Record<string, unknown>, key: string) {
   const raw = value[key];
   return typeof raw === "string" ? raw : "";

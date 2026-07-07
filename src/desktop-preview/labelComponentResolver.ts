@@ -6,6 +6,7 @@ import {
 import {
   asRecord,
   parseObject,
+  requiredFontFamilyId,
   requiredNumber,
   requiredString,
   requiredStringPair,
@@ -54,7 +55,7 @@ function requiredTypographyStyle(
   }
 
   return {
-    fontFamilyId: requiredString(
+    fontFamilyId: requiredFontFamilyId(
       typography,
       "fontFamilyId",
       `${path}.fontFamilyId`,

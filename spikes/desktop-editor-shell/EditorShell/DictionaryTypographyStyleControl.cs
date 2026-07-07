@@ -198,7 +198,14 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
 
     private static IReadOnlyList<FieldOption> FontOptions(IReadOnlyList<FieldOption>? options)
     {
-        return [new FieldOption("theme", "Theme"), .. options ?? []];
+        return
+        [
+            new FieldOption("theme", "Theme"),
+            .. (options ?? []).Select((option) =>
+                string.IsNullOrWhiteSpace(option.Value)
+                    ? new FieldOption("system", option.Label, option.ColorHex, option.IsNeutral)
+                    : option),
+        ];
     }
 
     private void AddOptionRow(int row, string label, string key, IReadOnlyList<FieldOption> options, string fallback)
@@ -277,9 +284,12 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
 
     private string ValueFor(string key, string fallback)
     {
-        return _localValues.ContainsKey(key)
+        var value = _localValues.ContainsKey(key)
             ? ValueString(_localValues, key, fallback)
             : ValueString(_inheritedValues, key, fallback);
+        return key == TypographyStyleValue.FontFamilyId && string.IsNullOrWhiteSpace(value)
+            ? "system"
+            : value;
     }
 
     private static string ValueString(JsonObject values, string key, string fallback)
@@ -304,8 +314,6 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
 
     private void RestoreSubValue(string key)
     {
-        if (!_definition.CanInherit) return;
-
         _localValues.Remove(key);
         RefreshRows();
         ValueChanged?.Invoke(this, StorageValue());

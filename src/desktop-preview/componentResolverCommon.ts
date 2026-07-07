@@ -8,6 +8,7 @@ export {
   optionalString,
   requiredAlpha,
   requiredBoolean,
+  requiredFontFamilyId,
   requiredIconSlots,
   requiredNumber,
   requiredNumberPair,

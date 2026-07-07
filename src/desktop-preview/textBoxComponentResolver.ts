@@ -8,6 +8,7 @@ import {
   optionalString,
   parseObject,
   requiredBoolean,
+  requiredFontFamilyId,
   requiredNumber,
   requiredNumberPair,
   requiredString,
@@ -141,7 +142,7 @@ function requiredTypographyStyle(
   }
 
   return {
-    fontFamilyId: requiredString(
+    fontFamilyId: requiredFontFamilyId(
       typography,
       "fontFamilyId",
       `${path}.fontFamilyId`,

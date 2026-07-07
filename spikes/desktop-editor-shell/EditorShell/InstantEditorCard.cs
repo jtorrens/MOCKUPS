@@ -83,6 +83,7 @@ internal sealed class InstantEditorCard : Grid
             ApplyExpandedState();
             if (_isExpanded)
             {
+                DeferredBringIntoView.Request(_contentHost);
                 Expanded?.Invoke(this, EventArgs.Empty);
             }
         }
