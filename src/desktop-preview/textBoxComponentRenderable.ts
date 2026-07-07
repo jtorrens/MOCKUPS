@@ -184,6 +184,10 @@ export function textBoxComponentToRenderableAt(
     textFrame.width,
   );
   const isMultiline = wrappedContentSize.lineCount > 1;
+  const textOverflowsFrame = wrappedContentSize.height > textFrame.height;
+  const scrollJustification = textOverflowsFrame
+    ? "flex-end"
+    : isMultiline ? "flex-start" : "center";
   const textContentHeight = Math.max(textFrame.height, wrappedContentSize.height);
   const textNode: RenderableNode = {
     id: `${textBox.id}.text`,
@@ -249,7 +253,7 @@ export function textBoxComponentToRenderableAt(
               alignItems: "stretch",
               display: "flex",
               flexDirection: "column",
-              justifyContent: "flex-end",
+              justifyContent: scrollJustification,
               overflow: "hidden",
             },
             children: [
