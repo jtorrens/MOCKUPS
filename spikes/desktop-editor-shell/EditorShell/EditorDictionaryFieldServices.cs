@@ -23,7 +23,8 @@ internal sealed class EditorDictionaryFieldServices
     public DictionaryFieldServices ForNode(
         ProjectTreeNode node,
         Func<string, string> getFieldValue,
-        Func<string, Task>? openEmbeddedComponent = null)
+        Func<string, Task>? openEmbeddedComponent = null,
+        Func<FieldDefinition, ComponentInputBindingDefinition, Task>? openComponentInputBinding = null)
     {
         var projectId = ProjectAncestor(node).Id;
         return new DictionaryFieldServices(
@@ -35,7 +36,8 @@ internal sealed class EditorDictionaryFieldServices
             getFieldValue,
             () => _database.GetPaletteColorOptions(projectId),
             (componentType) => _database.GetComponentPresetReferenceOptionsByType(projectId, componentType),
-            openEmbeddedComponent);
+            openEmbeddedComponent,
+            openComponentInputBinding);
     }
 
     private static ProjectTreeNode ProjectAncestor(ProjectTreeNode node)

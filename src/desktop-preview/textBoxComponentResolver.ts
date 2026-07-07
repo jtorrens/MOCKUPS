@@ -86,7 +86,7 @@ export function resolveTextBoxComponentFromRecords(
     componentPresetConfig(componentBaseConfigs, "cursor", cursorSlot.presetId),
     asRecord(cursorSlot.overrides),
   );
-  const iconButtonPresetId = optionalString(inputs, "buttonIconPresetId");
+  const iconButtonSlot = componentInputSlot(inputs, "buttonIconSlot", "buttonIconPresetId");
   const leftIconRowInputs = textBoxIconRowInputs(inputs, "left");
   const rightIconRowInputs = textBoxIconRowInputs(inputs, "right");
 
@@ -133,7 +133,8 @@ export function resolveTextBoxComponentFromRecords(
     leftIconRow: resolveOptionalIconRowComponentFromRecords(
       inputs,
       leftIconRowInputs,
-      iconButtonPresetId,
+      iconButtonSlot,
+      "leftIconRowSlot",
       "leftIconRowPresetId",
       componentBaseConfigs,
       `${id}.leftIcons`,
@@ -141,7 +142,8 @@ export function resolveTextBoxComponentFromRecords(
     rightIconRow: resolveOptionalIconRowComponentFromRecords(
       inputs,
       rightIconRowInputs,
-      iconButtonPresetId,
+      iconButtonSlot,
+      "rightIconRowSlot",
       "rightIconRowPresetId",
       componentBaseConfigs,
       `${id}.rightIcons`,
@@ -152,8 +154,9 @@ export function resolveTextBoxComponentFromRecords(
 function resolveOptionalIconRowComponentFromRecords(
   parentInputs: Record<string, unknown>,
   iconRowInputs: Record<string, unknown>,
-  buttonIconPresetId: string,
-  presetInputKey: string,
+  buttonIconSlot: { presetId: string; overrides: Record<string, unknown> },
+  slotInputKey: string,
+  legacyPresetInputKey: string,
   componentBaseConfigs: Record<string, unknown>,
   id: string,
 ) {
@@ -173,28 +176,36 @@ function resolveOptionalIconRowComponentFromRecords(
     };
   }
 
+  const iconRowSlot = componentInputSlot(parentInputs, slotInputKey, legacyPresetInputKey);
   const iconRowConfig = componentPresetConfig(
     componentBaseConfigs,
     "iconRow",
-    requiredString(
-      parentInputs,
-      presetInputKey,
-      `component.textBox.input.${presetInputKey}`,
-    ),
+    iconRowSlot.presetId,
   );
   return resolveIconRowComponentFromRecords(
-    iconRowConfig,
+    mergeComponentDefaults(iconRowConfig, iconRowSlot.overrides),
     iconRowInputsFromParent(
       iconRowInputs,
-      buttonIconPresetId || requiredString(
-        parentInputs,
-        "buttonIconPresetId",
-        "component.textBox.input.buttonIconPresetId",
-      ),
+      buttonIconSlot,
     ),
     componentBaseConfigs,
     id,
   );
+}
+
+function componentInputSlot(
+  inputs: Record<string, unknown>,
+  slotKey: string,
+  legacyPresetKey: string,
+) {
+  const slot = asRecord(inputs[slotKey]);
+  const presetId = typeof slot.presetId === "string"
+    ? slot.presetId
+    : requiredString(inputs, legacyPresetKey, `component.textBox.input.${legacyPresetKey}`);
+  return {
+    presetId,
+    overrides: asRecord(slot.overrides),
+  };
 }
 
 function textBoxIconRowInputs(inputs: Record<string, unknown>, side: "left" | "right") {
@@ -220,11 +231,12 @@ function textBoxIconRowInputs(inputs: Record<string, unknown>, side: "left" | "r
 
 function iconRowInputsFromParent(
   parentInputs: Record<string, unknown>,
-  buttonIconPresetId: string,
+  buttonIconSlot: { presetId: string; overrides: Record<string, unknown> },
 ) {
   return {
     ...parentInputs,
-    buttonIconPresetId,
+    buttonIconPresetId: buttonIconSlot.presetId,
+    buttonIconOverrides: buttonIconSlot.overrides,
   };
 }
 

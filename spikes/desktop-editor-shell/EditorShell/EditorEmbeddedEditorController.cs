@@ -30,7 +30,7 @@ internal sealed class EditorEmbeddedEditorController
                 return Task.CompletedTask;
             }
 
-            _showContext(new EditorEmbeddedContext(node, [slot]));
+            return OpenSlot(node, slot);
         }
         catch (Exception exception)
         {
@@ -49,11 +49,42 @@ internal sealed class EditorEmbeddedEditorController
                 return Task.CompletedTask;
             }
 
-            _showContext(new EditorEmbeddedContext(parentContext.OwnerNode, [.. parentContext.Slots, slot]));
+            return OpenNestedSlot(parentContext, slot);
         }
         catch (Exception exception)
         {
             _messages.Error($"Embedded component {slotFieldId}", exception);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public Task OpenSlot(ProjectTreeNode node, EmbeddedComponentSlotDefinition slot)
+    {
+        try
+        {
+            if (node.Kind is ProjectTreeNodeKind.ComponentClass or ProjectTreeNodeKind.ComponentPreset)
+            {
+                _showContext(new EditorEmbeddedContext(node, [slot]));
+            }
+        }
+        catch (Exception exception)
+        {
+            _messages.Error($"Embedded component {slot.FieldId}", exception);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public Task OpenNestedSlot(EditorEmbeddedContext parentContext, EmbeddedComponentSlotDefinition slot)
+    {
+        try
+        {
+            _showContext(new EditorEmbeddedContext(parentContext.OwnerNode, [.. parentContext.Slots, slot]));
+        }
+        catch (Exception exception)
+        {
+            _messages.Error($"Embedded component {slot.FieldId}", exception);
         }
 
         return Task.CompletedTask;

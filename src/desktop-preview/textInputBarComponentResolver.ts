@@ -24,24 +24,30 @@ export function resolveTextInputBarComponent(
   const barSurfaceSlot = asRecord(textInput.barSurfaceSlot);
   const textBoxSlot = asRecord(textInput.textBoxSlot);
   const textBoxInputs = asRecord(textInput.textBoxInputs);
+  const leftTextBoxIconRowSlot = componentInputSlot(
+    textBoxInputs,
+    "leftIconRowSlot",
+    "leftIconRowPresetId",
+    "component.textInput.textBox.leftIconRowSlot",
+  );
+  const rightTextBoxIconRowSlot = componentInputSlot(
+    textBoxInputs,
+    "rightIconRowSlot",
+    "rightIconRowPresetId",
+    "component.textInput.textBox.rightIconRowSlot",
+  );
+  const textBoxButtonIconSlot = componentInputSlot(
+    textBoxInputs,
+    "buttonIconSlot",
+    "buttonIconPresetId",
+    "component.textInput.textBox.buttonIconSlot",
+  );
   const sampleText = requiredPossiblyEmptyString(
     preview,
     "sampleText",
     "component.textInput.preview.sampleText",
   );
-  const isTyping = sampleText.trim().length > 0;
-  const leftIconRowInputs = asRecord(
-    isTyping ? textInput.typingLeftIconRowInputs : textInput.idleLeftIconRowInputs,
-  );
-  const rightIconRowInputs = asRecord(
-    isTyping ? textInput.typingRightIconRowInputs : textInput.idleRightIconRowInputs,
-  );
   const height = requiredNumber(textInput, "height", "component.textInput.height");
-  const textBoxButtonIconPresetId = requiredString(
-    textBoxInputs,
-    "buttonIconPresetId",
-    "component.textInput.textBox.buttonIconPresetId",
-  );
   const embeddedBarSurfaceConfig = mergeComponentDefaults(
     componentPresetConfig(componentBaseConfigs, "surface", barSurfaceSlot.presetId),
     asRecord(barSurfaceSlot.overrides),
@@ -78,29 +84,19 @@ export function resolveTextInputBarComponent(
           "maxLines",
           "component.textInput.textBox.maxLines",
         ),
-        leftIconRowPresetId: requiredString(
-          textBoxInputs,
-          "leftIconRowPresetId",
-          "component.textInput.textBox.leftIconRowPresetId",
-        ),
+        leftIconRowSlot: leftTextBoxIconRowSlot,
         leftIconRowInputs: iconRowInputsForTextBox(
           textBoxInputs,
-          leftIconRowInputs,
           "left",
-          textBoxButtonIconPresetId,
+          textBoxButtonIconSlot.presetId,
         ),
-        rightIconRowPresetId: requiredString(
-          textBoxInputs,
-          "rightIconRowPresetId",
-          "component.textInput.textBox.rightIconRowPresetId",
-        ),
+        rightIconRowSlot: rightTextBoxIconRowSlot,
         rightIconRowInputs: iconRowInputsForTextBox(
           textBoxInputs,
-          rightIconRowInputs,
           "right",
-          textBoxButtonIconPresetId,
+          textBoxButtonIconSlot.presetId,
         ),
-        buttonIconPresetId: textBoxButtonIconPresetId,
+        buttonIconSlot: textBoxButtonIconSlot,
         iconGap: requiredString(
           textBoxInputs,
           "iconGap",
@@ -115,9 +111,24 @@ export function resolveTextInputBarComponent(
   };
 }
 
+function componentInputSlot(
+  inputs: Record<string, unknown>,
+  slotKey: string,
+  legacyPresetKey: string,
+  path: string,
+) {
+  const slot = asRecord(inputs[slotKey]);
+  const presetId = typeof slot.presetId === "string"
+    ? slot.presetId
+    : requiredString(inputs, legacyPresetKey, `${path}.presetId`);
+  return {
+    presetId,
+    overrides: asRecord(slot.overrides),
+  };
+}
+
 function iconRowInputsForTextBox(
   textBoxInputs: Record<string, unknown>,
-  stateInputs: Record<string, unknown>,
   side: "left" | "right",
   buttonIconPresetId: string,
 ) {
@@ -126,9 +137,7 @@ function iconRowInputsForTextBox(
     `${side}Icons`,
     `component.textInput.textBox.${side}Icons`,
   );
-  const stateIcons = stateInputs.icons;
   return {
-    ...stateInputs,
     size: requiredNumber(
       textBoxInputs,
       "iconRowSize",
@@ -144,7 +153,7 @@ function iconRowInputsForTextBox(
       "iconRowOrientation",
       "component.textInput.textBox.iconRowOrientation",
     ),
-    icons: variantIcons.length > 0 ? variantIcons : stateIcons,
+    icons: variantIcons,
     buttonIconPresetId,
   };
 }

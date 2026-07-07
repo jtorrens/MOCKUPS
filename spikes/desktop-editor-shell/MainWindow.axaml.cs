@@ -118,7 +118,9 @@ public partial class MainWindow : SukiWindow
             _activeFieldControls,
             _messages,
             _embeddedEditors.Open,
+            _embeddedEditors.OpenSlot,
             _embeddedEditors.OpenNested,
+            _embeddedEditors.OpenNestedSlot,
             RefreshPreviewDevice);
         _embeddedUsageNavigator = new EditorEmbeddedUsageNavigator(
             _database,

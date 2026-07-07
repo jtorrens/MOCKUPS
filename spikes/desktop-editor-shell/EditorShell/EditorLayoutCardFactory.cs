@@ -19,7 +19,9 @@ internal sealed class EditorLayoutCardFactory
     private readonly EditorActiveFieldControls _activeFieldControls;
     private readonly IEditorShellMessageSink _messages;
     private readonly Func<ProjectTreeNode, string, Task> _openEmbeddedComponentEditor;
+    private readonly Func<ProjectTreeNode, EmbeddedComponentSlotDefinition, Task> _openEmbeddedComponentSlotEditor;
     private readonly Func<EditorEmbeddedContext, string, Task> _openNestedEmbeddedComponentEditor;
+    private readonly Func<EditorEmbeddedContext, EmbeddedComponentSlotDefinition, Task> _openNestedEmbeddedComponentSlotEditor;
     private readonly Action _refreshPreview;
 
     public EditorLayoutCardFactory(
@@ -31,7 +33,9 @@ internal sealed class EditorLayoutCardFactory
         EditorActiveFieldControls activeFieldControls,
         IEditorShellMessageSink messages,
         Func<ProjectTreeNode, string, Task> openEmbeddedComponentEditor,
+        Func<ProjectTreeNode, EmbeddedComponentSlotDefinition, Task> openEmbeddedComponentSlotEditor,
         Func<EditorEmbeddedContext, string, Task> openNestedEmbeddedComponentEditor,
+        Func<EditorEmbeddedContext, EmbeddedComponentSlotDefinition, Task> openNestedEmbeddedComponentSlotEditor,
         Action refreshPreview)
     {
         _fieldValues = fieldValues;
@@ -42,7 +46,9 @@ internal sealed class EditorLayoutCardFactory
         _activeFieldControls = activeFieldControls;
         _messages = messages;
         _openEmbeddedComponentEditor = openEmbeddedComponentEditor;
+        _openEmbeddedComponentSlotEditor = openEmbeddedComponentSlotEditor;
         _openNestedEmbeddedComponentEditor = openNestedEmbeddedComponentEditor;
+        _openNestedEmbeddedComponentSlotEditor = openNestedEmbeddedComponentSlotEditor;
         _refreshPreview = refreshPreview;
     }
 
@@ -72,7 +78,8 @@ internal sealed class EditorLayoutCardFactory
                 var services = _dictionaryFieldServices.ForNode(
                     node,
                     (fieldId) => _activeFieldControls.ValueOrStored(fieldId, (id) => _fieldValues.CurrentStoredValue(node, id)),
-                    (fieldId) => _openEmbeddedComponentEditor(node, fieldId));
+                    (fieldId) => _openEmbeddedComponentEditor(node, fieldId),
+                    (definition, input) => _openEmbeddedComponentSlotEditor(node, ComponentInputSlot(definition, input)));
                 var control = new DictionaryFieldControl(
                     field,
                     services);
@@ -173,7 +180,8 @@ internal sealed class EditorLayoutCardFactory
                             context.OwnerNode,
                             context.Slots,
                             id).Value),
-                    (fieldId) => _openNestedEmbeddedComponentEditor(context, fieldId));
+                    (fieldId) => _openNestedEmbeddedComponentEditor(context, fieldId),
+                    (definition, input) => _openNestedEmbeddedComponentSlotEditor(context, ComponentInputSlot(definition, input)));
                 var control = new DictionaryFieldControl(field, services);
                 controls.Add(control);
                 _activeFieldControls.Register(control);
@@ -263,5 +271,23 @@ internal sealed class EditorLayoutCardFactory
         return layoutCard.VisibleGroups
             .SelectMany((group) => group.VisibleFields)
             .Any((field) => field.Id.StartsWith("component.", StringComparison.Ordinal));
+    }
+
+    private static EmbeddedComponentSlotDefinition ComponentInputSlot(
+        FieldDefinition definition,
+        ComponentInputBindingDefinition input)
+    {
+        if (string.IsNullOrWhiteSpace(input.ComponentType))
+        {
+            throw new InvalidOperationException($"Component input '{input.Id}' has no component type.");
+        }
+
+        var descriptor = ComponentClassFieldCatalog.Get(definition.Id);
+        return new EmbeddedComponentSlotDefinition(
+            $"{definition.Id}.{input.Id}",
+            input.ComponentType,
+            input.Label,
+            $"component.{input.ComponentType}",
+            [.. descriptor.JsonPath, input.JsonKey]);
     }
 }

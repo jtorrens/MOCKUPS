@@ -131,23 +131,43 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
         _rows.Children.Clear();
         foreach (var input in VariantInputs())
         {
-            var field = new DictionaryFieldControl(CreateFieldValue(input), _services);
+            var services = ServicesFor(input);
+            var field = new DictionaryFieldControl(CreateFieldValue(input), services);
             field.ValueChanged += (_, next) => SetInputValue(input, next, commit: false);
             field.ValueCommitted += (_, next) => SetInputValue(input, next, commit: true);
             _rows.Children.Add(field);
         }
     }
 
+    private DictionaryFieldServices ServicesFor(ComponentInputBindingDefinition input)
+    {
+        if (input.ValueKind != ValueKind.ComponentPreset
+            || string.IsNullOrWhiteSpace(input.ComponentType)
+            || _services.OpenComponentInputBinding is null)
+        {
+            return _services;
+        }
+
+        return _services with
+        {
+            OpenEmbeddedComponent = async (_) =>
+            {
+                EnsureComponentPresetSlot(input, commit: true);
+                await _services.OpenComponentInputBinding(_definition, input);
+            },
+        };
+    }
+
     private FieldValue CreateFieldValue(ComponentInputBindingDefinition input)
     {
         var options = OptionsFor(input) ?? [];
-        var value = StringValue(_value[input.JsonKey], input.DefaultValue);
+        var value = InputValue(input, options);
         if (string.IsNullOrWhiteSpace(value) && input.ValueKind == ValueKind.ComponentPreset)
         {
             value = options.FirstOrDefault((option) => !string.IsNullOrWhiteSpace(option.Value))?.Value ?? "";
             if (!string.IsNullOrWhiteSpace(value))
             {
-                _value[input.JsonKey] = value;
+                _value[input.JsonKey] = ComponentPresetSlotNode(input, value);
             }
         }
 
@@ -187,7 +207,9 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
 
     private void SetInputValue(ComponentInputBindingDefinition input, string next, bool commit)
     {
-        _value[input.JsonKey] = ToJsonValue(input.ValueKind, next);
+        _value[input.JsonKey] = input.ValueKind == ValueKind.ComponentPreset && !string.IsNullOrWhiteSpace(input.ComponentType)
+            ? ComponentPresetSlotNode(input, next)
+            : ToJsonValue(input.ValueKind, next);
         var json = _value.ToJsonString();
         ValueChanged?.Invoke(this, json);
         RefreshSummary();
@@ -209,9 +231,54 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
 
     private string DisplayValue(ComponentInputBindingDefinition input)
     {
-        var value = StringValue(_value[input.JsonKey], input.DefaultValue);
+        var value = InputValue(input, OptionsFor(input) ?? []);
         var option = OptionsFor(input)?.FirstOrDefault((candidate) => candidate.Value == value);
         return option?.Label ?? value;
+    }
+
+    private string InputValue(ComponentInputBindingDefinition input, IReadOnlyList<FieldOption> options)
+    {
+        if (input.ValueKind != ValueKind.ComponentPreset)
+        {
+            return StringValue(_value[input.JsonKey], input.DefaultValue);
+        }
+
+        var node = _value[input.JsonKey];
+        if (node is JsonObject slot)
+        {
+            return JsonText(slot["presetId"], input.DefaultValue);
+        }
+
+        var value = StringValue(node, input.DefaultValue);
+        return string.IsNullOrWhiteSpace(value)
+            ? options.FirstOrDefault((option) => !string.IsNullOrWhiteSpace(option.Value))?.Value ?? ""
+            : value;
+    }
+
+    private void EnsureComponentPresetSlot(ComponentInputBindingDefinition input, bool commit)
+    {
+        var value = InputValue(input, OptionsFor(input) ?? []);
+        if (string.IsNullOrWhiteSpace(value)) return;
+
+        _value[input.JsonKey] = ComponentPresetSlotNode(input, value);
+        if (!commit) return;
+
+        var json = _value.ToJsonString();
+        ValueChanged?.Invoke(this, json);
+        ValueCommitted?.Invoke(this, json);
+    }
+
+    private JsonObject ComponentPresetSlotNode(ComponentInputBindingDefinition input, string presetId)
+    {
+        var existing = _value[input.JsonKey] as JsonObject;
+        var overrides = existing?["overrides"] is JsonObject existingOverrides
+            ? JsonNode.Parse(existingOverrides.ToJsonString()) as JsonObject ?? new JsonObject()
+            : new JsonObject();
+        return new JsonObject
+        {
+            ["presetId"] = presetId,
+            ["overrides"] = overrides,
+        };
     }
 
     private static JsonObject ParseValue(string value)
@@ -237,6 +304,13 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
             JsonObject obj => obj.ToJsonString(),
             _ => fallback,
         };
+    }
+
+    private static string JsonText(JsonNode? node, string fallback)
+    {
+        return node is JsonValue value && value.TryGetValue<string>(out var text)
+            ? text
+            : fallback;
     }
 
     private static JsonNode ToJsonValue(ValueKind kind, string value)

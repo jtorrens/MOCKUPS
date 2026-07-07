@@ -45,12 +45,15 @@ export function resolveIconRowComponentFromRecords(
   }
 
   const baseButtonIconConfig = mergeComponentDefaults(
-    componentPresetConfig(
-      componentBaseConfigs,
-      "buttonIcon",
-      requiredString(inputs, "buttonIconPresetId", "component.iconRow.input.buttonIconPresetId"),
+    mergeComponentDefaults(
+      componentPresetConfig(
+        componentBaseConfigs,
+        "buttonIcon",
+        requiredString(inputs, "buttonIconPresetId", "component.iconRow.input.buttonIconPresetId"),
+      ),
+      asRecord(buttonSlot.overrides),
     ),
-    asRecord(buttonSlot.overrides),
+    asRecord(inputs.buttonIconOverrides),
   );
   const size = requiredNumber(inputs, "size", "component.iconRow.input.size");
   const icons = requiredStringArray(inputs, "icons", "component.iconRow.input.icons");

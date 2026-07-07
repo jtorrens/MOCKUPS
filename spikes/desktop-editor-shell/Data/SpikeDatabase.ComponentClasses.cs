@@ -1714,9 +1714,54 @@ internal sealed partial class SpikeDatabase
         changed |= NormalizeComponentInputBindingPresetId(connection, projectId, config, ["textInput", "idleRightIconRowInputs", "buttonIconPresetId"], "buttonIcon");
         changed |= NormalizeComponentInputBindingPresetId(connection, projectId, config, ["textInput", "typingLeftIconRowInputs", "buttonIconPresetId"], "buttonIcon");
         changed |= NormalizeComponentInputBindingPresetId(connection, projectId, config, ["textInput", "typingRightIconRowInputs", "buttonIconPresetId"], "buttonIcon");
-        changed |= NormalizeComponentInputBindingPresetId(connection, projectId, config, ["textInput", "textBoxInputs", "leftIconRowPresetId"], "iconRow");
-        changed |= NormalizeComponentInputBindingPresetId(connection, projectId, config, ["textInput", "textBoxInputs", "rightIconRowPresetId"], "iconRow");
-        changed |= NormalizeComponentInputBindingPresetId(connection, projectId, config, ["textInput", "textBoxInputs", "buttonIconPresetId"], "buttonIcon");
+        changed |= NormalizeComponentInputBindingSlot(connection, projectId, config, ["textInput", "textBoxInputs", "leftIconRowSlot"], ["textInput", "textBoxInputs", "leftIconRowPresetId"], "iconRow");
+        changed |= NormalizeComponentInputBindingSlot(connection, projectId, config, ["textInput", "textBoxInputs", "rightIconRowSlot"], ["textInput", "textBoxInputs", "rightIconRowPresetId"], "iconRow");
+        changed |= NormalizeComponentInputBindingSlot(connection, projectId, config, ["textInput", "textBoxInputs", "buttonIconSlot"], ["textInput", "textBoxInputs", "buttonIconPresetId"], "buttonIcon");
+        return changed;
+    }
+
+    private static bool NormalizeComponentInputBindingSlot(
+        SqliteConnection connection,
+        string projectId,
+        JsonObject config,
+        string[] slotPath,
+        string[] legacyPresetPath,
+        string componentType)
+    {
+        var changed = false;
+        var legacyPresetId = JsonPath.String(config, legacyPresetPath);
+        if (JsonPath.Get(config, slotPath) is not JsonObject slot)
+        {
+            var currentValue = string.IsNullOrWhiteSpace(legacyPresetId) ? DefaultComponentPresetId : legacyPresetId;
+            slot = ComponentSurfaceSlot(currentValue);
+            JsonPath.Set(config, slotPath, slot);
+            changed = true;
+        }
+
+        var presetId = JsonPath.String(slot, ["presetId"]);
+        var normalizedValue = NormalizeComponentPresetReference(
+            connection,
+            projectId,
+            componentType,
+            string.IsNullOrWhiteSpace(presetId) ? legacyPresetId : presetId);
+        if (!string.IsNullOrWhiteSpace(normalizedValue) && !normalizedValue.Equals(presetId, StringComparison.Ordinal))
+        {
+            slot["presetId"] = normalizedValue;
+            changed = true;
+        }
+
+        if (slot["overrides"] is not JsonObject)
+        {
+            slot["overrides"] = new JsonObject();
+            changed = true;
+        }
+
+        if (JsonPath.Get(config, legacyPresetPath) is not null)
+        {
+            RemoveJsonValue(config, legacyPresetPath);
+            changed = true;
+        }
+
         return changed;
     }
 
