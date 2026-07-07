@@ -28,7 +28,7 @@ export function surfaceShapeDataUri({
   tail,
 }: SurfaceShapeSvgInput) {
   const tailBox = surfaceTailBox(body, tail);
-  const borderPadding = Math.ceil(Math.max(0, borderWidth) * 2) + (borderWidth > 0 ? 4 : 0);
+  const borderPadding = 0;
   const minX = Math.min(body.x, tailBox.x) - borderPadding;
   const minY = Math.min(body.y, tailBox.y) - borderPadding;
   const maxX = Math.max(body.x + body.width, tailBox.x + tailBox.width) + borderPadding;
@@ -55,18 +55,18 @@ export function surfaceShapeDataUri({
   const borderMarkup =
     borderWidth > 0 && borderColor !== "transparent"
       ? `<defs>
-          <filter id="surface-shape-border" filterUnits="userSpaceOnUse" x="${-borderPadding}" y="${-borderPadding}" width="${width + borderPadding * 2}" height="${height + borderPadding * 2}">
-            <feMorphology in="SourceAlpha" operator="dilate" radius="${borderWidth}" result="expanded"/>
+          <filter id="surface-shape-border" filterUnits="userSpaceOnUse" x="0" y="0" width="${width}" height="${height}">
+            <feMorphology in="SourceAlpha" operator="erode" radius="${borderWidth}" result="inner"/>
+            <feComposite in="SourceAlpha" in2="inner" operator="out" result="borderShape"/>
             <feFlood flood-color="${escapedBorderColor}" result="borderColor"/>
-            <feComposite in="borderColor" in2="expanded" operator="in" result="borderShape"/>
-            <feComposite in="borderShape" in2="SourceAlpha" operator="out"/>
+            <feComposite in="borderColor" in2="borderShape" operator="in"/>
           </filter>
         </defs>
         <g fill="${escapedColor}" filter="url(#surface-shape-border)">${shapeMarkup}</g>`
       : "";
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="100%" height="100%" preserveAspectRatio="none" style="display:block;overflow:visible">
-    ${borderMarkup}
     <g fill="${escapedColor}">${shapeMarkup}</g>
+    ${borderMarkup}
   </svg>`;
 
   return {
