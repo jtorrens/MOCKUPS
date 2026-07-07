@@ -384,16 +384,12 @@ function semanticStyle(node: RenderableNode): CSSProperties {
   }
   if (node.type === "text") {
     const textAlign = optionalStringValue(node.style?.textAlign) as CSSProperties["textAlign"];
-    const textAlignLast = textAlign === "center" || textAlign === "right"
-      ? textAlign
-      : "left";
     return {
       display: (optionalStringValue(node.style?.display) as CSSProperties["display"]) ?? "inline",
       letterSpacing: 0,
       overflow: (optionalStringValue(node.style?.overflow) as CSSProperties["overflow"]) ?? "hidden",
       overflowWrap: "normal",
       textAlign: textAlign ?? "left",
-      textAlignLast,
       whiteSpace: (optionalStringValue(node.style?.whiteSpace) as CSSProperties["whiteSpace"]) ?? "pre-wrap",
       wordBreak: "normal",
       wordSpacing: "normal",
