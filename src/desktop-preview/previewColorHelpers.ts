@@ -82,6 +82,28 @@ export function numberToken(payload: DesignPreviewPayload, token: string) {
   throw new Error(`Theme token ${token} is not numeric`);
 }
 
+export function numberOrThemeToken(payload: DesignPreviewPayload, value: number | string) {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.startsWith("theme.")) {
+    return numberToken(payload, value);
+  }
+  if (typeof value === "string") {
+    const parsed = Number(value.replace(",", "."));
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  throw new Error(`Value ${value} is not numeric`);
+}
+
+export function stringThemeToken(payload: DesignPreviewPayload, token: string) {
+  const raw = tokenValueForMode(payload, token, payload.themeMode || "light");
+  if (typeof raw === "string" && raw.trim()) return raw;
+  throw new Error(`Theme token ${token} is not a string`);
+}
+
+export function stringOrThemeToken(payload: DesignPreviewPayload, value: string) {
+  return value.startsWith("theme.") ? stringThemeToken(payload, value) : value;
+}
+
 export function cssColorWithAlpha(color: string, alpha: number) {
   if (color === "transparent") return color;
   const clamped = Math.max(0, Math.min(1, alpha));

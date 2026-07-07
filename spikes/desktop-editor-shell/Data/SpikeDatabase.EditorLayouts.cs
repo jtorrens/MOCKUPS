@@ -501,7 +501,12 @@ internal sealed partial class SpikeDatabase
                     { "id": "theme.typography.sizes.l", "order": 70, "visible": true },
                     { "id": "theme.typography.sizes.xl", "order": 80, "visible": true },
                     { "id": "theme.typography.weight", "order": 90, "visible": true },
-                    { "id": "theme.typography.style", "order": 100, "visible": true }
+                    { "id": "theme.typography.style", "order": 100, "visible": true },
+                    { "id": "theme.typography.lineHeights.tight", "order": 110, "visible": true },
+                    { "id": "theme.typography.lineHeights.compact", "order": 120, "visible": true },
+                    { "id": "theme.typography.lineHeights.normal", "order": 130, "visible": true },
+                    { "id": "theme.typography.lineHeights.relaxed", "order": 140, "visible": true },
+                    { "id": "theme.typography.lineHeights.loose", "order": 150, "visible": true }
                   ]
                 }
               ]

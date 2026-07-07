@@ -2,8 +2,10 @@ export {
   colorForMode,
   cssColorWithAlpha,
   numberToken,
+  numberOrThemeToken,
   selectedColor,
   selectedPaletteColor,
+  stringOrThemeToken,
   variants,
 } from "./previewColorHelpers.js";
 export {

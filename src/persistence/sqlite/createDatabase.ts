@@ -2848,6 +2848,32 @@ function ensureThemeSpacingTokens(tokens: Record<string, unknown>): Record<strin
   };
 }
 
+function ensureThemeLineHeightTokens(tokens: Record<string, unknown>): Record<string, unknown> {
+  const typography =
+    tokens.typography && typeof tokens.typography === "object" && !Array.isArray(tokens.typography)
+      ? (tokens.typography as Record<string, unknown>)
+      : {};
+  const lineHeights =
+    typography.lineHeights &&
+    typeof typography.lineHeights === "object" &&
+    !Array.isArray(typography.lineHeights)
+      ? (typography.lineHeights as Record<string, unknown>)
+      : {};
+  return {
+    ...tokens,
+    typography: {
+      ...typography,
+      lineHeights: {
+        tight: typeof lineHeights.tight === "number" ? lineHeights.tight : 1,
+        compact: typeof lineHeights.compact === "number" ? lineHeights.compact : 1.1,
+        normal: typeof lineHeights.normal === "number" ? lineHeights.normal : 1.2,
+        relaxed: typeof lineHeights.relaxed === "number" ? lineHeights.relaxed : 1.35,
+        loose: typeof lineHeights.loose === "number" ? lineHeights.loose : 1.5,
+      },
+    },
+  };
+}
+
 function applyAdditiveV42Migration(database: SQLiteDatabase): void {
   const themeRows = database
     .prepare("SELECT id, tokens_json FROM themes ORDER BY id")
@@ -2867,6 +2893,27 @@ function applyAdditiveV42Migration(database: SQLiteDatabase): void {
     }
   }
   database.pragma("user_version = 42");
+}
+
+function applyAdditiveV43Migration(database: SQLiteDatabase): void {
+  const themeRows = database
+    .prepare("SELECT id, tokens_json FROM themes ORDER BY id")
+    .all() as { id: string; tokens_json: string }[];
+  const updateTheme = database.prepare(
+    "UPDATE themes SET tokens_json = ? WHERE id = ?",
+  );
+  for (const row of themeRows) {
+    try {
+      const tokens = JSON.parse(row.tokens_json) as Record<string, unknown>;
+      const nextJson = JSON.stringify(ensureThemeLineHeightTokens(tokens));
+      if (nextJson !== row.tokens_json) {
+        updateTheme.run(nextJson, row.id);
+      }
+    } catch {
+      // Malformed JSON is handled by validation paths; skip migration here.
+    }
+  }
+  database.pragma("user_version = 43");
 }
 
 export function applyInitialSchema(database: SQLiteDatabase): void {
@@ -2912,6 +2959,7 @@ export function applyInitialSchema(database: SQLiteDatabase): void {
   applyAdditiveV40Migration(database);
   applyAdditiveV41Migration(database);
   applyAdditiveV42Migration(database);
+  applyAdditiveV43Migration(database);
   database.pragma("foreign_keys = ON");
 }
 

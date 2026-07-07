@@ -1796,9 +1796,9 @@ internal sealed partial class SpikeDatabase
         string legacySizeKey,
         string legacyStyleKey)
     {
-        if (owner[typographyKey] is JsonObject)
+        if (owner[typographyKey] is JsonObject existingTypography)
         {
-            return false;
+            return NormalizeTypographyLineHeight(existingTypography);
         }
 
         var typography = new JsonObject();
@@ -1819,6 +1819,57 @@ internal sealed partial class SpikeDatabase
 
         owner[typographyKey] = typography;
         return true;
+    }
+
+    private static bool NormalizeTypographyLineHeight(JsonObject typography)
+    {
+        if (typography[TypographyStyleValue.LineHeight] is not JsonValue lineHeightValue)
+        {
+            return false;
+        }
+
+        decimal? numericValue = null;
+        if (lineHeightValue.TryGetValue<decimal>(out var number))
+        {
+            numericValue = number;
+        }
+        else if (lineHeightValue.TryGetValue<string>(out var text))
+        {
+            if (text.StartsWith("theme.typography.lineHeights.", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            if (decimal.TryParse(text.Replace(",", ".", StringComparison.Ordinal), NumberStyles.Number, CultureInfo.InvariantCulture, out var parsed))
+            {
+                numericValue = parsed;
+            }
+        }
+
+        if (numericValue is null)
+        {
+            return false;
+        }
+
+        typography[TypographyStyleValue.LineHeight] = ClosestLineHeightToken(numericValue.Value);
+        return true;
+    }
+
+    private static string ClosestLineHeightToken(decimal value)
+    {
+        (string Token, decimal Value)[] candidates =
+        [
+            ("theme.typography.lineHeights.tight", 1m),
+            ("theme.typography.lineHeights.compact", 1.1m),
+            ("theme.typography.lineHeights.normal", 1.2m),
+            ("theme.typography.lineHeights.relaxed", 1.35m),
+            ("theme.typography.lineHeights.loose", 1.5m),
+        ];
+
+        return candidates
+            .OrderBy((candidate) => Math.Abs(candidate.Value - value))
+            .First()
+            .Token;
     }
 
     private static bool NormalizeSpacingToken(JsonObject config, string[] path)

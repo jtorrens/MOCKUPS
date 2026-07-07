@@ -45,9 +45,12 @@ function requiredTypographyStyle(
   path: string,
 ): TypographyStyleContract {
   const typography = asRecord(value[key]);
-  const style = requiredString(typography, "style", `${path}.style`);
-  if (style !== "normal" && style !== "italic") {
-    throw new Error(`Unsupported typography style ${style}`);
+  const lineHeight = typography.lineHeight;
+  if (
+    typeof lineHeight !== "string" &&
+    !(typeof lineHeight === "number" && Number.isFinite(lineHeight))
+  ) {
+    throw new Error(`Missing line height value ${path}.lineHeight`);
   }
 
   return {
@@ -57,9 +60,9 @@ function requiredTypographyStyle(
       `${path}.fontFamilyId`,
     ),
     weight: requiredString(typography, "weight", `${path}.weight`),
-    style,
+    style: requiredString(typography, "style", `${path}.style`),
     sizeToken: requiredString(typography, "sizeToken", `${path}.sizeToken`),
-    lineHeight: requiredNumber(typography, "lineHeight", `${path}.lineHeight`),
+    lineHeight,
   };
 }
 

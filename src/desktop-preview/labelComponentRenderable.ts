@@ -4,9 +4,11 @@ import type { LabelDesignContract } from "./labelComponentContract.js";
 import {
   centerBox,
   colorForMode,
+  numberOrThemeToken,
   numberToken,
   renderScale,
   selectedColor,
+  stringOrThemeToken,
   variants,
 } from "./componentRenderableCommon.js";
 import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
@@ -35,8 +37,14 @@ function labelSize(
   const paddingX = numberToken(payload, label.padding.xToken) * scale;
   const paddingY = numberToken(payload, label.padding.yToken) * scale;
   const hasSubtext = label.subtext.trim().length > 0;
-  const lineHeight = Math.max(fontSize * label.textTypography.lineHeight, fontSize);
-  const subtextLineHeight = Math.max(subtextFontSize * label.subtextTypography.lineHeight, subtextFontSize);
+  const lineHeight = Math.max(
+    fontSize * numberOrThemeToken(payload, label.textTypography.lineHeight),
+    fontSize,
+  );
+  const subtextLineHeight = Math.max(
+    subtextFontSize * numberOrThemeToken(payload, label.subtextTypography.lineHeight),
+    subtextFontSize,
+  );
   const textGap = hasSubtext ? label.textGap * scale : 0;
   const contentWidth = Math.max(
     labelTextWidth(label.text, fontSize),
@@ -86,6 +94,10 @@ export function labelComponentToRenderableAt(
   const paddingX = numberToken(payload, label.padding.xToken) * scale;
   const paddingY = numberToken(payload, label.padding.yToken) * scale;
   const size = labelSize(label, fontSize, subtextFontSize, scale, payload);
+  const textStyle = stringOrThemeToken(payload, label.textTypography.style);
+  const subtextStyle = stringOrThemeToken(payload, label.subtextTypography.style);
+  const textWeight = numberOrThemeToken(payload, label.textTypography.weight);
+  const subtextWeight = numberOrThemeToken(payload, label.subtextTypography.weight);
   const surfaceNode = surfaceComponentToRenderableAt(payload, label.surface, box);
   const surfaceColorModes = surfaceNode.style?.colorModes as
     | Record<string, Record<string, unknown>>
@@ -129,8 +141,8 @@ export function labelComponentToRenderableAt(
           display: "block",
           width: "100%",
           overflow: "hidden",
-          fontStyle: label.textTypography.style === "italic" ? "italic" : undefined,
-          fontWeight: label.textTypography.weight,
+          fontStyle: textStyle === "italic" ? "italic" : undefined,
+          fontWeight: textWeight,
           whiteSpace: "nowrap",
         },
       },
@@ -151,8 +163,8 @@ export function labelComponentToRenderableAt(
                 width: "100%",
                 overflow: "hidden",
                 fontStyle:
-                  label.subtextTypography.style === "italic" ? "italic" : undefined,
-                fontWeight: label.subtextTypography.weight,
+                  subtextStyle === "italic" ? "italic" : undefined,
+                fontWeight: subtextWeight,
                 whiteSpace: "nowrap",
               },
             } satisfies RenderableNode,

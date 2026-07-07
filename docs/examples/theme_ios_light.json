@@ -144,6 +144,15 @@
       "weight": "Regular",
       "source": "production_font"
     },
+    "typography": {
+      "lineHeights": {
+        "tight": 1,
+        "compact": 1.1,
+        "normal": 1.2,
+        "relaxed": 1.35,
+        "loose": 1.5
+      }
+    },
     "colors": {
       "debug.red": "debug_red",
       "background": "gray_100",

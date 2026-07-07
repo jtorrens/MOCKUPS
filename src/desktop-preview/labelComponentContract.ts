@@ -4,9 +4,9 @@ import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
 export interface TypographyStyleContract {
   fontFamilyId: string;
   weight: string;
-  style: "normal" | "italic";
+  style: string;
   sizeToken: string;
-  lineHeight: number;
+  lineHeight: number | string;
 }
 
 export interface LabelDesignContract {

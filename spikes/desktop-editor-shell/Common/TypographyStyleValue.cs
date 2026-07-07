@@ -12,7 +12,11 @@ internal static class TypographyStyleValue
     public const string SizeToken = "sizeToken";
     public const string LineHeight = "lineHeight";
 
-    public static string CreateDefault(string sizeToken, string weight = "400", string style = "normal", decimal lineHeight = 1.2m)
+    public static string CreateDefault(
+        string sizeToken,
+        string weight = "theme.typography.weight",
+        string style = "theme.typography.style",
+        string lineHeight = "theme.typography.lineHeights.normal")
     {
         return new JsonObject
         {
@@ -20,7 +24,7 @@ internal static class TypographyStyleValue
             [Weight] = weight,
             [Style] = style,
             [SizeToken] = sizeToken,
-            [LineHeight] = JsonValue.Create(lineHeight),
+            [LineHeight] = lineHeight,
         }.ToJsonString();
     }
 

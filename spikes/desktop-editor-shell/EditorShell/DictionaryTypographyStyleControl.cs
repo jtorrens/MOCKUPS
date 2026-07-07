@@ -15,6 +15,7 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
 {
     private static readonly FieldOption[] WeightOptions =
     [
+        new("theme.typography.weight", "typography.weight"),
         new("100", "100"),
         new("200", "200"),
         new("300", "300"),
@@ -28,6 +29,7 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
 
     private static readonly FieldOption[] StyleOptions =
     [
+        new("theme.typography.style", "typography.style"),
         new("normal", "Normal"),
         new("italic", "Italic"),
     ];
@@ -41,11 +43,21 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
         new("theme.typography.sizes.xl", "typography.sizes.xl"),
     ];
 
+    private static readonly FieldOption[] LineHeightTokenOptions =
+    [
+        new("theme.typography.lineHeights.tight", "lineHeights.tight"),
+        new("theme.typography.lineHeights.compact", "lineHeights.compact"),
+        new("theme.typography.lineHeights.normal", "lineHeights.normal"),
+        new("theme.typography.lineHeights.relaxed", "lineHeights.relaxed"),
+        new("theme.typography.lineHeights.loose", "lineHeights.loose"),
+    ];
+
     private readonly FieldDefinition _definition;
     private readonly JsonObject _inheritedValues;
     private readonly JsonObject _localValues;
     private readonly Dictionary<string, IDictionaryValueControl> _controls = [];
     private readonly Dictionary<string, Button> _restoreButtons = [];
+    private readonly Border _container;
     private readonly Button _headerButton;
     private readonly TextBlock _summaryText;
     private readonly Grid _contentGrid;
@@ -69,8 +81,20 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
             ? []
             : TypographyStyleValue.Parse(value);
 
-        RowDefinitions = new RowDefinitions("Auto,Auto");
+        RowDefinitions = new RowDefinitions("Auto");
         HorizontalAlignment = HorizontalAlignment.Stretch;
+
+        var innerGrid = new Grid
+        {
+            RowDefinitions = new RowDefinitions("Auto,Auto"),
+        };
+        _container = new Border
+        {
+            CornerRadius = new CornerRadius(8),
+            BorderThickness = new Thickness(1),
+            Child = innerGrid,
+        };
+        Children.Add(_container);
 
         _summaryText = new TextBlock
         {
@@ -94,6 +118,7 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
             HorizontalAlignment = HorizontalAlignment.Stretch,
             HorizontalContentAlignment = HorizontalAlignment.Stretch,
             Padding = new Thickness(10, 6),
+            Background = Brushes.Transparent,
             BorderThickness = new Thickness(0),
             CornerRadius = new CornerRadius(8),
             Content = new Grid
@@ -107,7 +132,7 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
                 },
             },
         };
-        Children.Add(_headerButton);
+        innerGrid.Children.Add(_headerButton);
 
         _contentGrid = new Grid
         {
@@ -115,24 +140,33 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
             RowDefinitions = new RowDefinitions("Auto,Auto,Auto,Auto,Auto"),
             RowSpacing = 8,
             ColumnSpacing = 8,
-            Margin = new Thickness(0, 8, 0, 0),
+            Margin = new Thickness(10, 2, 10, 10),
             IsVisible = false,
         };
         SetRow(_contentGrid, 1);
-        Children.Add(_contentGrid);
+        innerGrid.Children.Add(_contentGrid);
         _headerButton.Click += (_, _) =>
         {
             _isOpen = !_isOpen;
             _contentGrid.IsVisible = _isOpen;
             chevron.Text = _isOpen ? "∨" : ">";
+            ApplyThemeBrushes();
         };
 
         AddOptionRow(0, "Font", TypographyStyleValue.FontFamilyId, FontOptions(definition.Options), "theme");
-        AddOptionRow(1, "Weight", TypographyStyleValue.Weight, WeightOptions, "400");
-        AddOptionRow(2, "Style", TypographyStyleValue.Style, StyleOptions, "normal");
+        AddOptionRow(1, "Weight", TypographyStyleValue.Weight, WeightOptions, "theme.typography.weight");
+        AddOptionRow(2, "Style", TypographyStyleValue.Style, StyleOptions, "theme.typography.style");
         AddThemeTokenRow(3, "Size", TypographyStyleValue.SizeToken, showThemeTokenPicker);
-        AddDecimalRow(4, "Line", TypographyStyleValue.LineHeight, "1.2");
+        AddThemeTokenRow(
+            4,
+            "Line",
+            TypographyStyleValue.LineHeight,
+            showThemeTokenPicker,
+            "theme.typography.lineHeights.normal",
+            LineHeightTokenOptions);
 
+        ActualThemeVariantChanged += (_, _) => ApplyThemeBrushes();
+        ApplyThemeBrushes();
         RefreshRows();
     }
 
@@ -180,31 +214,18 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
         int row,
         string label,
         string key,
-        Func<string, IReadOnlyList<FieldOption>?, Task<string?>>? showThemeTokenPicker)
+        Func<string, IReadOnlyList<FieldOption>?, Task<string?>>? showThemeTokenPicker,
+        string fallback = "theme.typography.sizes.s",
+        IReadOnlyList<FieldOption>? options = null)
     {
         var controlDefinition = new FieldDefinition(
             $"{_definition.Id}.{key}",
             label,
             ValueKind.ThemeToken,
             _definition.IsEditable,
-            "theme.typography.sizes.s",
-            Options: SizeTokenOptions);
-        var control = new DictionaryThemeTokenControl(controlDefinition, ValueFor(key, "theme.typography.sizes.s"), showThemeTokenPicker);
-        control.ValueChanged += (_, value) => SetSubValue(key, value);
-        control.ValueCommitted += (_, value) => CommitSubValue(key, value);
-        AddRow(row, label, key, control);
-    }
-
-    private void AddDecimalRow(int row, string label, string key, string fallback)
-    {
-        var controlDefinition = new FieldDefinition(
-            $"{_definition.Id}.{key}",
-            label,
-            ValueKind.Decimal,
-            _definition.IsEditable,
             fallback,
-            Number: new NumberDefinition(0.5m, 3, 0.05m, 2));
-        var control = new DictionaryDecimalControl(controlDefinition, ValueFor(key, fallback));
+            Options: options ?? SizeTokenOptions);
+        var control = new DictionaryThemeTokenControl(controlDefinition, ValueFor(key, fallback), showThemeTokenPicker);
         control.ValueChanged += (_, value) => SetSubValue(key, value);
         control.ValueCommitted += (_, value) => CommitSubValue(key, value);
         AddRow(row, label, key, control);
@@ -256,18 +277,14 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
 
     private static string ValueString(JsonObject values, string key, string fallback)
     {
-        return key.Equals(TypographyStyleValue.LineHeight, StringComparison.Ordinal)
-            ? TypographyStyleValue.NumberString(values, key, fallback)
-            : TypographyStyleValue.String(values, key, fallback);
+        return TypographyStyleValue.String(values, key, fallback);
     }
 
     private void SetSubValue(string key, string value)
     {
         if (_isUpdating) return;
 
-        _localValues[key] = key.Equals(TypographyStyleValue.LineHeight, StringComparison.Ordinal)
-            ? JsonPath.NumberNode(value)
-            : JsonValue.Create(value);
+        _localValues[key] = JsonValue.Create(value);
         RefreshRows();
         ValueChanged?.Invoke(this, StorageValue());
     }
@@ -335,11 +352,27 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
     private string SummaryText()
     {
         var font = ValueFor(TypographyStyleValue.FontFamilyId, "theme");
-        var weight = ValueFor(TypographyStyleValue.Weight, "400");
-        var style = ValueFor(TypographyStyleValue.Style, "normal");
+        var weight = ShortToken(ValueFor(TypographyStyleValue.Weight, "theme.typography.weight"));
+        var style = ShortToken(ValueFor(TypographyStyleValue.Style, "theme.typography.style"));
         var size = ValueFor(TypographyStyleValue.SizeToken, "theme.typography.sizes.s")
             .Replace("theme.", "", StringComparison.Ordinal);
-        var lineHeight = ValueFor(TypographyStyleValue.LineHeight, "1.2");
+        var lineHeight = ShortToken(ValueFor(TypographyStyleValue.LineHeight, "theme.typography.lineHeights.normal"));
         return $"{font} · {weight} · {style} · {size} · {lineHeight}";
+    }
+
+    private static string ShortToken(string value)
+    {
+        return value.StartsWith("theme.typography.", StringComparison.Ordinal)
+            ? value.Replace("theme.typography.", "", StringComparison.Ordinal)
+            : value;
+    }
+
+    private void ApplyThemeBrushes()
+    {
+        var isDark = string.Equals(ActualThemeVariant?.Key?.ToString(), "Dark", StringComparison.OrdinalIgnoreCase);
+        _container.Background = new SolidColorBrush(Color.Parse(isDark
+            ? (_isOpen ? "#18263B" : "#142238")
+            : (_isOpen ? "#F4F6FA" : "#FFFFFF")));
+        _container.BorderBrush = new SolidColorBrush(Color.Parse(isDark ? "#3B4C66" : "#CDD6E3"));
     }
 }
