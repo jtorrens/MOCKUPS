@@ -215,7 +215,7 @@ export function textBoxComponentToRenderableAt(
       lineHeight: size.typography.lineHeight,
       overflow: "hidden",
       textAlign: textBox.textAlign,
-      whiteSpace: "pre-wrap",
+      whiteSpace: "pre-line",
     },
     metadata: textBox.cursorVisible && !textIsEmpty
       ? {
