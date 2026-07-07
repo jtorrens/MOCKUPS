@@ -9,13 +9,18 @@ internal static class EditorUiDensity
 
     public static void Configure(double textScale, double cardPaddingScale)
     {
-        TextScale = ClampScale(textScale, 0.75, 1.15);
-        CardPaddingScale = ClampScale(cardPaddingScale, 0.6, 1.15);
+        TextScale = ClampScale(textScale, 0.5, 3);
+        CardPaddingScale = ClampScale(cardPaddingScale, 0.1, 1.5);
     }
 
     public static double Card(double value)
     {
         return value * CardPaddingScale;
+    }
+
+    public static double TextAwareWidth(double value)
+    {
+        return value * System.Math.Max(1, TextScale);
     }
 
     public static Thickness CardThickness(double uniform)

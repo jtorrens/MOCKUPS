@@ -19,10 +19,10 @@ internal sealed class DictionaryThemeTokenPairControl : Grid, IDictionaryValueCo
         string value,
         Func<string, IReadOnlyList<FieldOption>?, Task<string?>>? showThemeTokenPicker)
     {
-        ColumnDefinitions = new ColumnDefinitions("Auto,260,Auto,260");
+        ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto,*");
         ColumnSpacing = 8;
         VerticalAlignment = VerticalAlignment.Center;
-        HorizontalAlignment = HorizontalAlignment.Left;
+        HorizontalAlignment = HorizontalAlignment.Stretch;
 
         var pair = DictionaryFieldPairText.Split(value);
         var labels = DictionaryFieldPairText.Labels(definition);

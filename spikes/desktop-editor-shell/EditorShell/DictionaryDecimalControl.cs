@@ -22,7 +22,7 @@ internal sealed class DictionaryDecimalControl : Grid, IDictionaryValueControl
         _numeric = EditorNumericUpDownBehavior.Configure(new NumericUpDown
         {
             MinHeight = 36,
-            Width = 140,
+            Width = EditorUiDensity.TextAwareWidth(140),
             HorizontalAlignment = HorizontalAlignment.Left,
             IsEnabled = definition.IsEditable,
             Increment = definition.Number?.Increment ?? 0.1m,

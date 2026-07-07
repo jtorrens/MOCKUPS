@@ -25,8 +25,8 @@ internal sealed class DictionaryThemeTokenControl : Button, IDictionaryValueCont
 
         Content = ContentForValue(value);
         MinHeight = 36;
-        MinWidth = 260;
-        HorizontalAlignment = HorizontalAlignment.Left;
+        MinWidth = 0;
+        HorizontalAlignment = HorizontalAlignment.Stretch;
         HorizontalContentAlignment = HorizontalAlignment.Stretch;
         Padding = new Avalonia.Thickness(10, 6);
         BorderThickness = new Avalonia.Thickness(0);

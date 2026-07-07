@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Layout;
 using System;
+using System.Globalization;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -12,7 +13,9 @@ internal sealed class DictionaryIntegerPairControl : Grid, IDictionaryValueContr
 
     public DictionaryIntegerPairControl(FieldDefinition definition, string value)
     {
-        ColumnDefinitions = new ColumnDefinitions("Auto,90,Auto,90");
+        var boxWidth = EditorUiDensity.TextAwareWidth(90);
+        var boxColumn = boxWidth.ToString(CultureInfo.InvariantCulture);
+        ColumnDefinitions = new ColumnDefinitions($"Auto,{boxColumn},Auto,{boxColumn}");
         ColumnSpacing = 8;
         VerticalAlignment = VerticalAlignment.Center;
         HorizontalAlignment = HorizontalAlignment.Left;

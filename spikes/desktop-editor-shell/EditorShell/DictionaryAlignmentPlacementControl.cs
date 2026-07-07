@@ -331,7 +331,7 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
         return EditorTextBoxBehavior.Configure(new TextBox
         {
             Text = FormatAlign(value),
-            Width = 78,
+            Width = EditorUiDensity.TextAwareWidth(78),
             IsReadOnly = !isEditable,
             VerticalContentAlignment = VerticalAlignment.Center,
         });

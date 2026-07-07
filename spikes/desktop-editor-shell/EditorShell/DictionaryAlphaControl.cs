@@ -3,6 +3,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using Mockups.DesktopEditorShell.Common;
 using System;
+using System.Globalization;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -14,7 +15,8 @@ internal sealed class DictionaryAlphaControl : Grid, IDictionaryValueControl
 
     public DictionaryAlphaControl(string value, bool isEditable)
     {
-        ColumnDefinitions = new ColumnDefinitions("*,78");
+        var boxWidth = EditorUiDensity.TextAwareWidth(78);
+        ColumnDefinitions = new ColumnDefinitions($"*,{boxWidth.ToString(CultureInfo.InvariantCulture)}");
         ColumnSpacing = 10;
         VerticalAlignment = VerticalAlignment.Center;
 
@@ -136,7 +138,7 @@ internal sealed class DictionaryAlphaControl : Grid, IDictionaryValueControl
         return EditorTextBoxBehavior.Configure(new TextBox
         {
             Text = PaletteAlphaPair.FormatAlpha(value),
-            Width = 78,
+            Width = EditorUiDensity.TextAwareWidth(78),
             IsReadOnly = !isEditable,
             VerticalContentAlignment = VerticalAlignment.Center,
         });

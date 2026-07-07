@@ -14,7 +14,7 @@ internal static class EditorUiTextScale
 
     public static void Apply(Visual root, double scale, params Visual[] excludedRoots)
     {
-        var normalizedScale = Math.Clamp(scale, 0.75, 1.15);
+        var normalizedScale = Math.Clamp(scale, 0.5, 3);
         if (root is TemplatedControl templatedRoot)
         {
             ApplyTemplatedControl(templatedRoot, normalizedScale);

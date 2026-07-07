@@ -20,7 +20,7 @@ internal sealed class DictionaryIntegerControl : Grid, IDictionaryValueControl
         _numeric = EditorNumericUpDownBehavior.Configure(new NumericUpDown
         {
             MinHeight = 36,
-            Width = 120,
+            Width = EditorUiDensity.TextAwareWidth(120),
             HorizontalAlignment = HorizontalAlignment.Left,
             IsEnabled = definition.IsEditable,
             Increment = definition.Number?.Increment ?? 1,

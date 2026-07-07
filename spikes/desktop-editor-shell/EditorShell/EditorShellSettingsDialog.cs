@@ -83,8 +83,8 @@ internal sealed class EditorShellSettingsDialog
         var textScaleRow = CreateScaleRow(
             "UI text scale",
             _shellState.UiTextScale,
-            0.75,
-            1.15,
+            0.5,
+            3,
             (value) =>
             {
                 _shellState.SetUiTextScale(value);
@@ -93,8 +93,8 @@ internal sealed class EditorShellSettingsDialog
         var cardPaddingRow = CreateScaleRow(
             "Card padding",
             _shellState.UiCardPaddingScale,
-            0.6,
-            1.15,
+            0.1,
+            1.5,
             (value) =>
             {
                 _shellState.SetUiCardPaddingScale(value);

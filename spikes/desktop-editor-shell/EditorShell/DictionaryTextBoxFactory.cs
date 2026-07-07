@@ -36,7 +36,7 @@ internal static class DictionaryTextBoxFactory
         return EditorTextBoxBehavior.Configure(new TextBox
         {
             Text = value,
-            Width = 90,
+            Width = EditorUiDensity.TextAwareWidth(90),
             MinHeight = 36,
             VerticalContentAlignment = VerticalAlignment.Center,
         });

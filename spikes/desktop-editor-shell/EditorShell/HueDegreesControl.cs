@@ -21,7 +21,8 @@ internal sealed class HueDegreesControl : Grid, IDictionaryValueControl
     {
         _value = NormalizeHue(value);
         _lastCommittedValue = _value;
-        ColumnDefinitions = new ColumnDefinitions("*,78");
+        var boxWidth = EditorUiDensity.TextAwareWidth(78);
+        ColumnDefinitions = new ColumnDefinitions($"*,{boxWidth.ToString(CultureInfo.InvariantCulture)}");
         ColumnSpacing = 10;
         VerticalAlignment = VerticalAlignment.Center;
 
@@ -79,7 +80,7 @@ internal sealed class HueDegreesControl : Grid, IDictionaryValueControl
             Text = _value,
             IsReadOnly = !isEditable,
             MinHeight = 36,
-            Width = 78,
+            Width = boxWidth,
             VerticalContentAlignment = VerticalAlignment.Center,
         };
         EditorTextBoxBehavior.Configure(_textBox);

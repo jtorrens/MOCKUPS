@@ -28,7 +28,8 @@ internal sealed class DictionaryNumberSliderControl : Grid, IDictionaryValueCont
 
         _value = Normalize(value);
         _lastCommittedValue = _value;
-        ColumnDefinitions = new ColumnDefinitions("*,78");
+        var boxWidth = EditorUiDensity.TextAwareWidth(78);
+        ColumnDefinitions = new ColumnDefinitions($"*,{boxWidth.ToString(CultureInfo.InvariantCulture)}");
         ColumnSpacing = 10;
         VerticalAlignment = VerticalAlignment.Center;
 
@@ -46,7 +47,7 @@ internal sealed class DictionaryNumberSliderControl : Grid, IDictionaryValueCont
         _box = EditorTextBoxBehavior.Configure(new TextBox
         {
             Text = _value,
-            Width = 78,
+            Width = boxWidth,
             IsReadOnly = !definition.IsEditable,
             VerticalContentAlignment = VerticalAlignment.Center,
         });

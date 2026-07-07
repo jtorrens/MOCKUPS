@@ -57,8 +57,8 @@ internal sealed class EditorShellStateService
 
             IsDark = state.IsDark ?? true;
             SukiColor = string.IsNullOrWhiteSpace(state.SukiColor) ? "Blue" : state.SukiColor;
-            UiTextScale = ClampScale(state.UiTextScale, 1, 0.75, 1.15);
-            UiCardPaddingScale = ClampScale(state.UiCardPaddingScale, 1, 0.6, 1.15);
+            UiTextScale = ClampScale(state.UiTextScale, 1, 0.5, 3);
+            UiCardPaddingScale = ClampScale(state.UiCardPaddingScale, 1, 0.1, 1.5);
         }
         catch
         {
@@ -74,12 +74,12 @@ internal sealed class EditorShellStateService
 
     public void SetUiTextScale(double value)
     {
-        UiTextScale = ClampScale(value, 1, 0.75, 1.15);
+        UiTextScale = ClampScale(value, 1, 0.5, 3);
     }
 
     public void SetUiCardPaddingScale(double value)
     {
-        UiCardPaddingScale = ClampScale(value, 1, 0.6, 1.15);
+        UiCardPaddingScale = ClampScale(value, 1, 0.1, 1.5);
     }
 
     public void Save()
