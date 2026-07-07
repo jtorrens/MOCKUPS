@@ -3,6 +3,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import type { RenderableFontFace } from "../visual/renderable/types.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
+import { previewFontFaceFamily } from "./previewFontHelpers.js";
 import { asRecord, parseObject } from "./previewJsonHelpers.js";
 
 export function iconUriForToken(payload: DesignPreviewPayload, token: string) {
@@ -34,7 +35,7 @@ export function fontFacesForPayload(
     if (!existsSync(fullPath)) return [];
 
     return [{
-      family: face.family,
+      family: previewFontFaceFamily(face.fontId),
       uri: `${pathToFileURL(fullPath).href}?v=${fontVersion(fullPath)}`,
       weight: face.weight,
       style: face.style,

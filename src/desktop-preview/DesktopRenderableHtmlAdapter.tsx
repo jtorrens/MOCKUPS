@@ -389,11 +389,15 @@ function semanticStyle(node: RenderableNode): CSSProperties {
       : "left";
     return {
       display: (optionalStringValue(node.style?.display) as CSSProperties["display"]) ?? "inline",
+      fontKerning: "normal",
+      fontSynthesis: "none",
+      fontVariantLigatures: "normal",
       letterSpacing: 0,
       overflow: (optionalStringValue(node.style?.overflow) as CSSProperties["overflow"]) ?? "hidden",
       overflowWrap: "normal",
       textAlign: textAlign ?? "left",
       textAlignLast,
+      textRendering: "geometricPrecision",
       whiteSpace: (optionalStringValue(node.style?.whiteSpace) as CSSProperties["whiteSpace"]) ?? "pre-wrap",
       wordBreak: "normal",
       wordSpacing: "normal",

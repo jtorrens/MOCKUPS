@@ -4,6 +4,11 @@ import { asRecord, parseObject } from "./previewJsonHelpers.js";
 export const previewTextFontFamily =
   "system-ui, -apple-system, BlinkMacSystemFont, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Noto Color Emoji\", sans-serif";
 
+export function previewFontFaceFamily(fontId: string) {
+  const normalized = fontId.trim().replace(/[^a-zA-Z0-9_-]/g, "_");
+  return normalized ? `MockupsFont_${normalized}` : "";
+}
+
 function quoteFamily(family: string) {
   return `"${family.replace(/"/g, '\\"')}"`;
 }
@@ -18,7 +23,9 @@ function themeTypographyFontId(payload: DesignPreviewPayload, key: string) {
 function familyForFontId(payload: DesignPreviewPayload, fontId: string) {
   if (!fontId.trim()) return "";
   if (fontId === "system") return "";
-  return payload.fontFaces?.find((face) => face.fontId === fontId)?.family ?? "";
+  return payload.fontFaces?.some((face) => face.fontId === fontId)
+    ? previewFontFaceFamily(fontId)
+    : "";
 }
 
 export function fontFamilyForTypography(
