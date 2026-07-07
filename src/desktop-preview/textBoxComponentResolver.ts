@@ -41,7 +41,6 @@ export function resolveTextBoxComponentFromRecords(
   const textBox = asRecord(config.textBox);
   const surfaceSlot = asRecord(textBox.surfaceSlot);
   const cursorSlot = asRecord(textBox.cursorSlot);
-  const size = requiredNumberPair(inputs, "size", "component.textBox.input.size");
   const dimensionMode = requiredString(
     textBox,
     "dimensionMode",
@@ -54,6 +53,12 @@ export function resolveTextBoxComponentFromRecords(
   ) {
     throw new Error(`Unsupported text box dimension mode ${dimensionMode}`);
   }
+  const size = dimensionMode === "content"
+    ? {
+        first: requiredNumber(inputs, "maxWidth", "component.textBox.input.maxWidth"),
+        second: 0,
+      }
+    : requiredNumberPair(inputs, "size", "component.textBox.input.size");
 
   const textAlign = requiredString(textBox, "textAlign", "component.textBox.textAlign");
   if (textAlign !== "left" && textAlign !== "center" && textAlign !== "right") {

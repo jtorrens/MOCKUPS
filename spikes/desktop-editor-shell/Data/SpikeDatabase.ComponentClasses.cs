@@ -2280,6 +2280,18 @@ internal sealed partial class SpikeDatabase
             return false;
         }
 
+        if (componentType == "textBox")
+        {
+            var defaultJson = defaultInputs.ToJsonString();
+            if (designPreview["inputs"]?.ToJsonString() != defaultJson)
+            {
+                designPreview["inputs"] = JsonNode.Parse(defaultJson);
+                return true;
+            }
+
+            return false;
+        }
+
         if (designPreview["inputs"] is not JsonArray inputs)
         {
             designPreview["inputs"] = JsonNode.Parse(defaultInputs.ToJsonString());

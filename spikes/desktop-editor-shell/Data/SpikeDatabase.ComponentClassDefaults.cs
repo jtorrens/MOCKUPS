@@ -284,6 +284,7 @@ internal sealed partial class SpikeDatabase
         if (componentType == "textBox")
         {
             preview["size"] = "220|44";
+            preview["maxWidth"] = 220;
         }
         if (componentType == "cursor")
         {
@@ -323,7 +324,37 @@ internal sealed partial class SpikeDatabase
             "textBox" =>
             [
                 ComponentInput("sampleText", "Text", "sampleText", "multilineText", "Message"),
-                ComponentInput("size", "Size", "size", "integerPair", "220|44"),
+                ComponentInput(
+                    "fixedSize",
+                    "Size",
+                    "size",
+                    "integerPair",
+                    "220|44",
+                    pairFirstLabel: "W",
+                    pairSecondLabel: "H",
+                    visibleWhenPath: "textBox.dimensionMode",
+                    visibleWhenValue: "fixed"),
+                ComponentInput(
+                    "contentMaxWidth",
+                    "Max width",
+                    "maxWidth",
+                    "number",
+                    "220",
+                    minimum: 1,
+                    maximum: 9999,
+                    increment: 1,
+                    visibleWhenPath: "textBox.dimensionMode",
+                    visibleWhenValue: "content"),
+                ComponentInput(
+                    "growSize",
+                    "Size",
+                    "size",
+                    "integerPair",
+                    "220|44",
+                    pairFirstLabel: "W",
+                    pairSecondLabel: "Min H",
+                    visibleWhenPath: "textBox.dimensionMode",
+                    visibleWhenValue: "growVertical"),
             ],
             "avatar" =>
             [
@@ -378,7 +409,11 @@ internal sealed partial class SpikeDatabase
         decimal maximum = 9999,
         decimal increment = 1,
         string tableId = "",
-        string resolvedJsonKey = "")
+        string resolvedJsonKey = "",
+        string pairFirstLabel = "W",
+        string pairSecondLabel = "H",
+        string visibleWhenPath = "",
+        string visibleWhenValue = "")
     {
         return new JsonObject
         {
@@ -392,6 +427,10 @@ internal sealed partial class SpikeDatabase
             ["increment"] = increment,
             ["tableId"] = tableId,
             ["resolvedJsonKey"] = resolvedJsonKey,
+            ["pairFirstLabel"] = pairFirstLabel,
+            ["pairSecondLabel"] = pairSecondLabel,
+            ["visibleWhenPath"] = visibleWhenPath,
+            ["visibleWhenValue"] = visibleWhenValue,
         };
     }
 

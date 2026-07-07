@@ -62,7 +62,8 @@ internal sealed class ComponentInputsPanel : ContentControl
             }
 
             var preview = ParseJsonObject(payload.DesignPreviewJson);
-            var inputs = ReadInputs(preview).ToList();
+            var config = ParseJsonObject(payload.ConfigJson);
+            var inputs = ReadInputs(preview, config).ToList();
             _animation = ReadAnimation(preview);
             if (inputs.Count == 0)
             {
@@ -78,7 +79,7 @@ internal sealed class ComponentInputsPanel : ContentControl
 
             IsVisible = true;
             var scopeKey = ScopeKey(payload);
-            var inputSignature = string.Join("|", inputs.Select((input) => input.Id));
+            var inputSignature = string.Join("|", inputs.Select(InputSignature));
             var shouldRebuild = scopeKey != _scopeKey
                 || projectId != _projectId
                 || inputSignature != _inputSignature
@@ -176,7 +177,8 @@ internal sealed class ComponentInputsPanel : ContentControl
         }
 
         var preview = ParseJsonObject(payload.DesignPreviewJson);
-        var inputs = ReadInputs(preview).ToList();
+        var config = ParseJsonObject(payload.ConfigJson);
+        var inputs = ReadInputs(preview, config).ToList();
         _animation = ReadAnimation(preview);
         if (inputs.Count == 0)
         {
@@ -279,7 +281,7 @@ internal sealed class ComponentInputsPanel : ContentControl
                 input.Label,
                 ValueKind.IntegerPair,
                 DefaultValue: input.DefaultValue,
-                PairLabels: new PairFieldLabels("W", "H")),
+                PairLabels: input.PairLabels),
             ComponentInputKind.Boolean => new FieldDefinition(
                 input.Id,
                 input.Label,
@@ -413,7 +415,8 @@ internal sealed class ComponentInputsPanel : ContentControl
         decimal maximum,
         decimal increment,
         string tableId,
-        string resolvedJsonKey)
+        string resolvedJsonKey,
+        PairFieldLabels pairLabels)
     {
         var normalizedKind = ParseKind(kind);
         var normalizedTableId = tableId;
@@ -436,7 +439,8 @@ internal sealed class ComponentInputsPanel : ContentControl
             maximum,
             increment,
             normalizedTableId,
-            normalizedResolvedJsonKey);
+            normalizedResolvedJsonKey,
+            pairLabels);
     }
 
     private string Value(ComponentInputDefinition input)
@@ -465,7 +469,7 @@ internal sealed class ComponentInputsPanel : ContentControl
 
     private string StorageKey(ComponentInputDefinition input)
     {
-        return $"{_scopeKey}:{input.Id}";
+        return $"{_scopeKey}:{input.JsonKey}";
     }
 
     private void SyncPlaybackTimer()
@@ -656,7 +660,7 @@ internal sealed class ComponentInputsPanel : ContentControl
         }
     }
 
-    private static IEnumerable<ComponentInputDefinition> ReadInputs(JsonObject preview)
+    private static IEnumerable<ComponentInputDefinition> ReadInputs(JsonObject preview, JsonObject config)
     {
         if (preview["inputs"] is not JsonArray inputs)
         {
@@ -665,6 +669,11 @@ internal sealed class ComponentInputsPanel : ContentControl
 
         foreach (var item in inputs.OfType<JsonObject>())
         {
+            if (!InputIsVisible(item, config))
+            {
+                continue;
+            }
+
             var id = JsonString(item, "id");
             var label = JsonString(item, "label");
             var jsonKey = JsonString(item, "jsonKey");
@@ -688,8 +697,49 @@ internal sealed class ComponentInputsPanel : ContentControl
                 JsonDecimal(item, "maximum", 9999),
                 JsonDecimal(item, "increment", 1),
                 JsonString(item, "tableId"),
-                JsonString(item, "resolvedJsonKey"));
+                JsonString(item, "resolvedJsonKey"),
+                new PairFieldLabels(
+                    JsonString(item, "pairFirstLabel", "W"),
+                    JsonString(item, "pairSecondLabel", "H")));
         }
+    }
+
+    private static bool InputIsVisible(JsonObject input, JsonObject config)
+    {
+        var path = JsonString(input, "visibleWhenPath");
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return true;
+        }
+
+        var expected = JsonString(input, "visibleWhenValue");
+        if (string.IsNullOrWhiteSpace(expected))
+        {
+            return true;
+        }
+
+        var current = JsonPath.Get(config, path.Split('.', StringSplitOptions.RemoveEmptyEntries));
+        return current is JsonValue value
+            && value.TryGetValue<string>(out var text)
+            && text.Equals(expected, StringComparison.Ordinal);
+    }
+
+    private static string InputSignature(ComponentInputDefinition input)
+    {
+        return string.Join(
+            ":",
+            input.Id,
+            input.Label,
+            input.JsonKey,
+            input.Kind,
+            input.DefaultValue,
+            input.PairLabels.First,
+            input.PairLabels.Second,
+            input.Minimum.ToString(CultureInfo.InvariantCulture),
+            input.Maximum.ToString(CultureInfo.InvariantCulture),
+            input.Increment.ToString(CultureInfo.InvariantCulture),
+            input.TableId,
+            input.ResolvedJsonKey);
     }
 
     private static ComponentInputAnimation? ReadAnimation(JsonObject preview)
@@ -743,9 +793,14 @@ internal sealed class ComponentInputsPanel : ContentControl
 
     private static string JsonString(JsonObject owner, string key)
     {
+        return JsonString(owner, key, "");
+    }
+
+    private static string JsonString(JsonObject owner, string key, string fallback)
+    {
         return owner[key] is JsonValue value && value.TryGetValue<string>(out var text)
             ? text
-            : "";
+            : fallback;
     }
 
     private static decimal JsonDecimal(JsonObject owner, string key, decimal fallback)
@@ -784,7 +839,8 @@ internal sealed record ComponentInputDefinition(
     decimal Maximum = 9999,
     decimal Increment = 1,
     string TableId = "",
-    string ResolvedJsonKey = "");
+    string ResolvedJsonKey = "",
+    PairFieldLabels PairLabels = null!);
 
 internal sealed record ComponentInputAnimation(
     string PlayInputId,
