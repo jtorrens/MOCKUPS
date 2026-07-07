@@ -86,29 +86,9 @@ export function resolveTextBoxComponentFromRecords(
     componentPresetConfig(componentBaseConfigs, "cursor", cursorSlot.presetId),
     asRecord(cursorSlot.overrides),
   );
-  const iconButtonPresetId = requiredString(
-    inputs,
-    "buttonIconPresetId",
-    "component.textBox.input.buttonIconPresetId",
-  );
-  const leftIconRowConfig = componentPresetConfig(
-    componentBaseConfigs,
-    "iconRow",
-    requiredString(
-      inputs,
-      "leftIconRowPresetId",
-      "component.textBox.input.leftIconRowPresetId",
-    ),
-  );
-  const rightIconRowConfig = componentPresetConfig(
-    componentBaseConfigs,
-    "iconRow",
-    requiredString(
-      inputs,
-      "rightIconRowPresetId",
-      "component.textBox.input.rightIconRowPresetId",
-    ),
-  );
+  const iconButtonPresetId = optionalString(inputs, "buttonIconPresetId");
+  const leftIconRowInputs = textBoxIconRowInputs(inputs, "left");
+  const rightIconRowInputs = textBoxIconRowInputs(inputs, "right");
 
   return {
     id,
@@ -150,19 +130,71 @@ export function resolveTextBoxComponentFromRecords(
     ),
     cursor: resolveCursorComponentAtHeight(embeddedCursorConfig, 1, `${id}.cursor`),
     iconGapToken: requiredString(inputs, "iconGap", "component.textBox.input.iconGap"),
-    leftIconRow: resolveIconRowComponentFromRecords(
-      leftIconRowConfig,
-      iconRowInputsFromParent(textBoxIconRowInputs(inputs, "left"), iconButtonPresetId),
+    leftIconRow: resolveOptionalIconRowComponentFromRecords(
+      inputs,
+      leftIconRowInputs,
+      iconButtonPresetId,
+      "leftIconRowPresetId",
       componentBaseConfigs,
       `${id}.leftIcons`,
     ),
-    rightIconRow: resolveIconRowComponentFromRecords(
-      rightIconRowConfig,
-      iconRowInputsFromParent(textBoxIconRowInputs(inputs, "right"), iconButtonPresetId),
+    rightIconRow: resolveOptionalIconRowComponentFromRecords(
+      inputs,
+      rightIconRowInputs,
+      iconButtonPresetId,
+      "rightIconRowPresetId",
       componentBaseConfigs,
       `${id}.rightIcons`,
     ),
   };
+}
+
+function resolveOptionalIconRowComponentFromRecords(
+  parentInputs: Record<string, unknown>,
+  iconRowInputs: Record<string, unknown>,
+  buttonIconPresetId: string,
+  presetInputKey: string,
+  componentBaseConfigs: Record<string, unknown>,
+  id: string,
+) {
+  const icons = iconRowInputs.icons;
+  const hasIcons = Array.isArray(icons)
+    && icons.some((entry) => typeof entry === "string" && entry.trim().length > 0);
+  if (!hasIcons) {
+    return {
+      id,
+      orientation: iconRowInputs.orientation === "vertical" ? "vertical" as const : "horizontal" as const,
+      gapToken: typeof iconRowInputs.gap === "string" ? iconRowInputs.gap : "theme.spacing.s",
+      size: typeof iconRowInputs.size === "number" && Number.isFinite(iconRowInputs.size)
+        ? iconRowInputs.size
+        : 36,
+      icons: [],
+      buttons: [],
+    };
+  }
+
+  const iconRowConfig = componentPresetConfig(
+    componentBaseConfigs,
+    "iconRow",
+    requiredString(
+      parentInputs,
+      presetInputKey,
+      `component.textBox.input.${presetInputKey}`,
+    ),
+  );
+  return resolveIconRowComponentFromRecords(
+    iconRowConfig,
+    iconRowInputsFromParent(
+      iconRowInputs,
+      buttonIconPresetId || requiredString(
+        parentInputs,
+        "buttonIconPresetId",
+        "component.textBox.input.buttonIconPresetId",
+      ),
+    ),
+    componentBaseConfigs,
+    id,
+  );
 }
 
 function textBoxIconRowInputs(inputs: Record<string, unknown>, side: "left" | "right") {
