@@ -93,6 +93,7 @@ function surfaceComponentTailRenderable(
     tail: {
       cornerRadius,
       height: surface.tail.height * scale,
+      outerCornerRadius: surface.tail.outerCornerRadius * scale,
       side: surface.tail.side,
       style: surface.tail.style,
       vertical: surface.tail.vertical,

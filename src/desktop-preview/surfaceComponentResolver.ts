@@ -4,6 +4,7 @@ import {
   parseObject,
   requiredAlpha,
   requiredBoolean,
+  requiredNumber,
   requiredNumberPair,
   requiredString,
   resolveSurfaceStyle,
@@ -106,5 +107,13 @@ function resolveSurfaceTail(
     vertical,
     width: Math.max(0, size.first),
     height: Math.max(0, size.second),
+    outerCornerRadius: Math.max(
+      0,
+      requiredNumber(
+        tail,
+        "outerCornerRadius",
+        "component.surface.tail.outerCornerRadius",
+      ),
+    ),
   };
 }

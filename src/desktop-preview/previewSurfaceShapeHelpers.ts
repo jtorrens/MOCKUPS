@@ -7,6 +7,7 @@ export interface SurfaceTailShape {
   width: number;
   height: number;
   cornerRadius: number;
+  outerCornerRadius: number;
 }
 
 export interface SurfaceShapeSvgInput {
@@ -45,6 +46,7 @@ export function surfaceShapeDataUri({
     <rect x="${bodyX}" y="${bodyY}" width="${body.width}" height="${body.height}" rx="${safeRadius}" ry="${safeRadius}"/>
     <path d="${surfaceTailPath({
       height: tailBox.height,
+      outerCornerRadius: tail.outerCornerRadius,
       side: tail.side,
       style: tail.style,
       vertical: tail.vertical,
@@ -97,12 +99,14 @@ export function surfaceTailBox(
 
 function surfaceTailPath({
   height,
+  outerCornerRadius,
   side,
   style,
   vertical,
   width,
 }: {
   height: number;
+  outerCornerRadius: number;
   side: "left" | "right";
   style: string;
   vertical: "top" | "bottom";
@@ -116,10 +120,36 @@ function surfaceTailPath({
   const y1 = height;
 
   if (style === "simple_triangle" || style === "cut_corner") {
-    if (left && top) return `M ${x1} ${y1} L ${x0} ${y0} L ${x1} ${y0} Z`;
-    if (!left && top) return `M ${x0} ${y1} L ${x1} ${y0} L ${x0} ${y0} Z`;
-    if (left && !top) return `M ${x1} ${y0} L ${x0} ${y1} L ${x1} ${y1} Z`;
-    return `M ${x0} ${y0} L ${x1} ${y1} L ${x0} ${y1} Z`;
+    if (left && top) {
+      return roundedTrianglePath(
+        { x: x1, y: y1 },
+        { x: x0, y: y0 },
+        { x: x1, y: y0 },
+        outerCornerRadius,
+      );
+    }
+    if (!left && top) {
+      return roundedTrianglePath(
+        { x: x0, y: y1 },
+        { x: x1, y: y0 },
+        { x: x0, y: y0 },
+        outerCornerRadius,
+      );
+    }
+    if (left && !top) {
+      return roundedTrianglePath(
+        { x: x1, y: y0 },
+        { x: x0, y: y1 },
+        { x: x1, y: y1 },
+        outerCornerRadius,
+      );
+    }
+    return roundedTrianglePath(
+      { x: x0, y: y0 },
+      { x: x1, y: y1 },
+      { x: x0, y: y1 },
+      outerCornerRadius,
+    );
   }
 
   if (style === "curved_hook") {
@@ -145,6 +175,52 @@ function surfaceTailPath({
     return `M ${x1} ${y0} C ${width * 0.76} ${height * 0.26} ${width * 0.42} ${height * 0.7} ${x0} ${y1} L ${x1} ${y1} Z`;
   }
   return `M ${x0} ${y0} C ${width * 0.24} ${height * 0.26} ${width * 0.58} ${height * 0.7} ${x1} ${y1} L ${x0} ${y1} Z`;
+}
+
+interface Point {
+  x: number;
+  y: number;
+}
+
+function roundedTrianglePath(
+  previous: Point,
+  corner: Point,
+  next: Point,
+  radius: number,
+) {
+  const distanceToPrevious = distance(corner, previous);
+  const distanceToNext = distance(corner, next);
+  const clampedRadius = Math.max(
+    0,
+    Math.min(radius, distanceToPrevious * 0.45, distanceToNext * 0.45),
+  );
+  if (clampedRadius <= 0) {
+    return `M ${previous.x} ${previous.y} L ${corner.x} ${corner.y} L ${next.x} ${next.y} Z`;
+  }
+
+  const beforeCorner = pointToward(corner, previous, clampedRadius);
+  const afterCorner = pointToward(corner, next, clampedRadius);
+  return [
+    `M ${previous.x} ${previous.y}`,
+    `L ${beforeCorner.x} ${beforeCorner.y}`,
+    `Q ${corner.x} ${corner.y} ${afterCorner.x} ${afterCorner.y}`,
+    `L ${next.x} ${next.y}`,
+    "Z",
+  ].join(" ");
+}
+
+function pointToward(start: Point, target: Point, distanceFromStart: number) {
+  const total = distance(start, target);
+  if (total <= 0) return start;
+  const amount = distanceFromStart / total;
+  return {
+    x: start.x + (target.x - start.x) * amount,
+    y: start.y + (target.y - start.y) * amount,
+  };
+}
+
+function distance(first: Point, second: Point) {
+  return Math.hypot(first.x - second.x, first.y - second.y);
 }
 
 function svgAttribute(value: string) {

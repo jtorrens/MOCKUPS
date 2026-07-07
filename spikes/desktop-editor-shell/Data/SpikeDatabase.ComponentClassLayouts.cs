@@ -30,7 +30,8 @@ internal sealed partial class SpikeDatabase
                   { "id": "component.surface.tail.style", "order": 20, "visible": true },
                   { "id": "component.surface.tail.side", "order": 30, "visible": true },
                   { "id": "component.surface.tail.vertical", "order": 40, "visible": true },
-                  { "id": "component.surface.tail.size", "order": 50, "visible": true }
+                  { "id": "component.surface.tail.size", "order": 50, "visible": true },
+                  { "id": "component.surface.tail.outerCornerRadius", "order": 60, "visible": true }
                 ] }
               ]
             }

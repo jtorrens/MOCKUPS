@@ -7,6 +7,7 @@ export interface SurfaceTailContract {
   vertical: "top" | "bottom";
   width: number;
   height: number;
+  outerCornerRadius: number;
 }
 
 export interface SurfaceDesignContract {

@@ -397,6 +397,13 @@ internal static class ComponentClassFieldCatalog
         ["component.surface.tail.side"] = new("component.surface.tail.side", "Tail side", ValueKind.OptionToken, ["surface", "tail", "side"], "left", Options: SurfaceTailSideOptions),
         ["component.surface.tail.vertical"] = new("component.surface.tail.vertical", "Tail vertical", ValueKind.OptionToken, ["surface", "tail", "vertical"], "bottom", Options: SurfaceTailVerticalOptions),
         ["component.surface.tail.size"] = new("component.surface.tail.size", "Tail size", ValueKind.IntegerPair, ["surface", "tail", "size"], "18|14", PairLabels: new("W", "H")),
+        ["component.surface.tail.outerCornerRadius"] = new(
+            "component.surface.tail.outerCornerRadius",
+            "Tail outer radius",
+            ValueKind.Integer,
+            ["surface", "tail", "outerCornerRadius"],
+            "0",
+            Number: new NumberDefinition(0, 64, 1, 0)),
 
         ["component.cursor.colorToken"] = new("component.cursor.colorToken", "Color", ValueKind.ThemeToken, ["cursor", "colorToken"], "theme.cursor.color", Options: ThemeColorOptions),
         ["component.cursor.width"] = new("component.cursor.width", "Width", ValueKind.Integer, ["cursor", "width"], "2"),

@@ -85,6 +85,7 @@ internal sealed partial class SpikeDatabase
                         ["side"] = "left",
                         ["vertical"] = "bottom",
                         ["size"] = "18|14",
+                        ["outerCornerRadius"] = 0,
                     },
                 };
                 break;
