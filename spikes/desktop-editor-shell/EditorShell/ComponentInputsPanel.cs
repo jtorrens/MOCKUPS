@@ -106,14 +106,42 @@ internal sealed class ComponentInputsPanel : ContentControl
 
     private void RebuildCard(IReadOnlyList<ComponentInputDefinition> inputs, string projectId)
     {
-        var rowsPanel = new StackPanel
+        var contentPanel = new StackPanel
         {
-            Spacing = 8,
+            Spacing = 10,
         };
         _booleanInputs.Clear();
-        foreach (var input in inputs)
+
+        var ownInputs = inputs
+            .Where((input) => input.UiOrigin != ComponentInputUiOrigin.Embedded)
+            .ToList();
+        var embeddedGroups = inputs
+            .Where((input) => input.UiOrigin == ComponentInputUiOrigin.Embedded)
+            .GroupBy((input) => string.IsNullOrWhiteSpace(input.UiGroupId) ? input.Id : input.UiGroupId)
+            .ToList();
+
+        if (ownInputs.Count > 0)
         {
-            rowsPanel.Children.Add(CreateInputRow(input, projectId));
+            contentPanel.Children.Add(CreateInputRowsPanel(ownInputs, projectId, maxVisibleRows: 5));
+        }
+
+        foreach (var group in embeddedGroups)
+        {
+            var groupInputs = group.ToList();
+            var groupLabel = groupInputs
+                .Select((input) => input.UiGroupLabel)
+                .FirstOrDefault((label) => !string.IsNullOrWhiteSpace(label)) ?? "Embedded inputs";
+            contentPanel.Children.Add(new InstantEditorCard(
+                EditorCardHeader.Create(groupLabel, "Embedded control inputs", EditorIcons.Create(EditorIcons.Component, 16)),
+                new Border
+                {
+                    Padding = new Thickness(10),
+                    Child = CreateInputRowsPanel(groupInputs, projectId, maxVisibleRows: 5),
+                },
+                isExpanded: false)
+            {
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+            });
         }
 
         var icon = EditorIcons.Create(EditorIcons.Design, 18);
@@ -122,18 +150,35 @@ internal sealed class ComponentInputsPanel : ContentControl
             new Border
             {
                 Padding = new Thickness(10),
-                Child = new ScrollViewer
-                {
-                    MaxHeight = 5 * 46,
-                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                    Content = rowsPanel,
-                },
+                Child = contentPanel,
             },
             isExpanded: true)
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
         UpdatePlaybackButton();
+    }
+
+    private Control CreateInputRowsPanel(
+        IReadOnlyList<ComponentInputDefinition> inputs,
+        string projectId,
+        int maxVisibleRows)
+    {
+        var rowsPanel = new StackPanel
+        {
+            Spacing = 8,
+        };
+        foreach (var input in inputs)
+        {
+            rowsPanel.Children.Add(CreateInputRow(input, projectId));
+        }
+
+        return new ScrollViewer
+        {
+            MaxHeight = maxVisibleRows * 46,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            Content = rowsPanel,
+        };
     }
 
     private Control CreateHeader(Control icon)
@@ -435,7 +480,10 @@ internal sealed class ComponentInputsPanel : ContentControl
         string resolvedJsonKey,
         string componentType,
         ComponentInputSource source,
-        PairFieldLabels pairLabels)
+        PairFieldLabels pairLabels,
+        ComponentInputUiOrigin uiOrigin,
+        string uiGroupId,
+        string uiGroupLabel)
     {
         var normalizedKind = ParseKind(kind);
         var normalizedValueKind = ParseValueKind(valueKind, normalizedKind);
@@ -464,7 +512,10 @@ internal sealed class ComponentInputsPanel : ContentControl
             normalizedResolvedJsonKey,
             componentType,
             source,
-            pairLabels);
+            pairLabels,
+            uiOrigin,
+            uiGroupId,
+            uiGroupLabel);
     }
 
     private string Value(ComponentInputDefinition input)
@@ -733,7 +784,10 @@ internal sealed class ComponentInputsPanel : ContentControl
                 source,
                 new PairFieldLabels(
                     JsonString(item, "pairFirstLabel", "W"),
-                    JsonString(item, "pairSecondLabel", "H")));
+                    JsonString(item, "pairSecondLabel", "H")),
+                ParseInputUiOrigin(JsonString(item, "uiOrigin")),
+                JsonString(item, "uiGroupId"),
+                JsonString(item, "uiGroupLabel"));
         }
     }
 
@@ -776,6 +830,9 @@ internal sealed class ComponentInputsPanel : ContentControl
             input.ResolvedJsonKey,
             input.ComponentType,
             input.Source,
+            input.UiOrigin,
+            input.UiGroupId,
+            input.UiGroupLabel,
             string.Join(",", input.Options?.Select((option) => $"{option.Value}={option.Label}") ?? []));
     }
 
@@ -864,6 +921,15 @@ internal sealed class ComponentInputsPanel : ContentControl
         };
     }
 
+    private static ComponentInputUiOrigin ParseInputUiOrigin(string origin)
+    {
+        return origin.Trim().ToLowerInvariant() switch
+        {
+            "embedded" => ComponentInputUiOrigin.Embedded,
+            _ => ComponentInputUiOrigin.Self,
+        };
+    }
+
     private static string JsonString(JsonObject owner, string key)
     {
         return JsonString(owner, key, "");
@@ -911,6 +977,12 @@ internal enum ComponentInputSource
     Calculated,
 }
 
+internal enum ComponentInputUiOrigin
+{
+    Self,
+    Embedded,
+}
+
 internal sealed record ComponentInputDefinition(
     string Id,
     string Label,
@@ -926,7 +998,10 @@ internal sealed record ComponentInputDefinition(
     string ResolvedJsonKey = "",
     string ComponentType = "",
     ComponentInputSource Source = ComponentInputSource.Runtime,
-    PairFieldLabels PairLabels = null!);
+    PairFieldLabels PairLabels = null!,
+    ComponentInputUiOrigin UiOrigin = ComponentInputUiOrigin.Self,
+    string UiGroupId = "",
+    string UiGroupLabel = "");
 
 internal sealed record ComponentInputAnimation(
     string PlayInputId,

@@ -56,6 +56,7 @@ public partial class MainWindow : SukiWindow
             PreviewScaleComboBox,
             PreviewMarksToggle,
             _messages,
+            PreviewInputsHost,
             RuntimePreviewHost,
             DesignPreviewHost,
             PreviewContextTextBlock,

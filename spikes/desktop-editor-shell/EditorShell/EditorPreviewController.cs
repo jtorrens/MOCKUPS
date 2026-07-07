@@ -42,6 +42,7 @@ internal sealed class EditorPreviewController
         EditorInstantComboBox scaleComboBox,
         ToggleSwitch marksToggle,
         IEditorShellMessageSink messages,
+        ContentControl previewInputsHost,
         ContentControl runtimePreviewHost,
         ContentControl designPreviewHost,
         TextBlock designContextText,
@@ -63,8 +64,9 @@ internal sealed class EditorPreviewController
         _designContextLockButton = designContextLockButton;
         _designInputsPanel = new ComponentInputsPanel(database, Refresh, owner);
 
+        previewInputsHost.Content = _designInputsPanel;
         runtimePreviewHost.Content = _runtimePreviewPane;
-        designPreviewHost.Content = CreateDesignPreviewLayout();
+        designPreviewHost.Content = _designPreviewPane;
         AttachControlEvents();
         _designContextLockButton.Click += (_, _) => ToggleDesignPreviewContextLock();
         UpdateDesignContextChrome(null);
@@ -237,20 +239,6 @@ internal sealed class EditorPreviewController
         {
             _messages.Error("Preview", exception);
         }
-    }
-
-    private Control CreateDesignPreviewLayout()
-    {
-        var layout = new Grid
-        {
-            RowDefinitions = new RowDefinitions("Auto,*"),
-            RowSpacing = 10,
-        };
-        Grid.SetRow(_designInputsPanel, 0);
-        Grid.SetRow(_designPreviewPane, 1);
-        layout.Children.Add(_designInputsPanel);
-        layout.Children.Add(_designPreviewPane);
-        return layout;
     }
 
     private DesignPreviewPayload? DesignPreviewPayloadForSelection()
