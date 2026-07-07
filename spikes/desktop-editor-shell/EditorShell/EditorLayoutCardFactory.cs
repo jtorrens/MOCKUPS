@@ -65,6 +65,7 @@ internal sealed class EditorLayoutCardFactory
         var headerIcon = EditorIcons.Create(layoutCard.Icon, 18);
         var visibleGroups = layoutCard.VisibleGroups.ToList();
         var useSectionChrome = visibleGroups.Count > 1;
+        var exclusiveGroupCards = new List<InstantEditorCard>();
 
         foreach (var group in visibleGroups)
         {
@@ -112,11 +113,11 @@ internal sealed class EditorLayoutCardFactory
 
             if (groupPanel.Children.Count > 0)
             {
-                body.Children.Add(useSectionChrome
-                    ? EditorGroupBlock.Create(group, groupPanel)
-                    : EditorGroupBlock.CreatePlain(group, groupPanel));
+                body.Children.Add(GroupControl(group, groupPanel, useSectionChrome, exclusiveGroupCards));
             }
         }
+
+        WireExclusiveGroups(exclusiveGroupCards);
 
         if (body.Children.Count == 0)
         {
@@ -162,6 +163,7 @@ internal sealed class EditorLayoutCardFactory
         var headerIcon = EditorIcons.Create(layoutCard.Icon, 18);
         var visibleGroups = layoutCard.VisibleGroups.ToList();
         var useSectionChrome = visibleGroups.Count > 1;
+        var exclusiveGroupCards = new List<InstantEditorCard>();
 
         foreach (var group in visibleGroups)
         {
@@ -238,11 +240,11 @@ internal sealed class EditorLayoutCardFactory
 
             if (groupPanel.Children.Count > 0)
             {
-                body.Children.Add(useSectionChrome
-                    ? EditorGroupBlock.Create(group, groupPanel)
-                    : EditorGroupBlock.CreatePlain(group, groupPanel));
+                body.Children.Add(GroupControl(group, groupPanel, useSectionChrome, exclusiveGroupCards));
             }
         }
+
+        WireExclusiveGroups(exclusiveGroupCards);
 
         var embeddedBody = new Border
         {
@@ -323,5 +325,50 @@ internal sealed class EditorLayoutCardFactory
             await _toggleVariantLock(node);
         };
         return button;
+    }
+
+    private static Control GroupControl(
+        EditorLayoutGroup group,
+        Control groupPanel,
+        bool useSectionChrome,
+        List<InstantEditorCard> exclusiveGroupCards)
+    {
+        if (group.Collapsible)
+        {
+            var control = EditorGroupBlock.CreateCollapsible(group, groupPanel, out var card);
+            if (group.Exclusive)
+            {
+                exclusiveGroupCards.Add(card);
+            }
+
+            return control;
+        }
+
+        return useSectionChrome
+            ? EditorGroupBlock.Create(group, groupPanel)
+            : EditorGroupBlock.CreatePlain(group, groupPanel);
+    }
+
+    private static void WireExclusiveGroups(IReadOnlyList<InstantEditorCard> cards)
+    {
+        foreach (var card in cards)
+        {
+            card.Expanded += (_, _) =>
+            {
+                foreach (var other in cards)
+                {
+                    if (!ReferenceEquals(other, card))
+                    {
+                        other.IsExpanded = false;
+                    }
+                }
+            };
+        }
+
+        var openCards = cards.Where((card) => card.IsExpanded).ToList();
+        foreach (var extraOpenCard in openCards.Skip(1))
+        {
+            extraOpenCard.IsExpanded = false;
+        }
     }
 }

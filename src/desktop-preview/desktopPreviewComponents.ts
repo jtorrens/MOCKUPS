@@ -89,7 +89,7 @@ export const desktopPreviewComponents = {
     contract: "./keyboardComponentContract",
     resolver: "./keyboardComponentResolver",
     renderable: "./keyboardComponentRenderable",
-    embeds: [],
+    embeds: ["iconRow"],
   },
   video: {
     category: "component",

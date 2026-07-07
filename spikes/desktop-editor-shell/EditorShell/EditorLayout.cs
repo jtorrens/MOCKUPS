@@ -57,6 +57,15 @@ internal sealed class EditorLayoutGroup
     [JsonPropertyName("fields")]
     public List<EditorLayoutField> Fields { get; init; } = [];
 
+    [JsonPropertyName("collapsible")]
+    public bool Collapsible { get; init; }
+
+    [JsonPropertyName("exclusive")]
+    public bool Exclusive { get; init; }
+
+    [JsonPropertyName("defaultOpen")]
+    public bool DefaultOpen { get; init; }
+
     public IEnumerable<EditorLayoutField> VisibleFields =>
         Fields.Where((layoutField) => layoutField.Visible)
             .OrderBy((layoutField) => layoutField.Order)

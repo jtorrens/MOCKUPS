@@ -186,18 +186,32 @@ internal sealed partial class SpikeDatabase
             case "keyboard":
                 config["keyboard"] = new JsonObject
                 {
-                    ["backgroundColorToken"] = "theme.colors.surface",
+                    ["language"] = "es",
+                    ["backgroundColorToken"] = "theme.keyboard.background",
                     ["backgroundAlpha"] = 1,
-                    ["keyBackgroundColorToken"] = "theme.colors.field",
-                    ["keyTextColorToken"] = "theme.colors.textPrimary",
-                    ["bottomIconColorToken"] = "theme.icons.secondary",
+                    ["keyBackgroundColorToken"] = "theme.keyboard.keyBackground",
+                    ["specialKeyBackgroundColorToken"] = "theme.keyboard.specialKeyBackground",
+                    ["pressedKeyBackgroundColorToken"] = "theme.keyboard.pressedKeyBackground",
+                    ["keyTextColorToken"] = "theme.keyboard.text",
                     ["keyPadding"] = "theme.spacing.s",
-                    ["keyCornerRadius"] = 6,
+                    ["keyCornerRadiusToken"] = "theme.radii.control",
+                    ["keyBorderColorToken"] = "theme.borders.secondary",
+                    ["keyBorderWidth"] = 0,
                     ["keyShadowEnabled"] = false,
                     ["pressedEffect"] = "popup",
                     ["specialKeyTextScale"] = "0.65",
                     ["emojiScale"] = "1.2",
-                    ["bottomIconSlots"] = JsonNode.Parse(ComponentClassFieldCatalog.EmptyIconSlots),
+                    ["typography"] = JsonNode.Parse(TypographyStyleValue.CreateDefault("theme.typography.sizes.s")),
+                    ["iconRowPlacement"] = "bottom",
+                    ["iconRowsHeight"] = 52,
+                    ["iconRowsEdgePadding"] = "theme.spacing.m",
+                    ["iconButtonSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["leftIconRowSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["leftIconRowInputs"] = IconRowInputBindings(new JsonArray("app_language"), actionIconNumber: 0),
+                    ["centerIconRowSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["centerIconRowInputs"] = IconRowInputBindings(),
+                    ["rightIconRowSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["rightIconRowInputs"] = IconRowInputBindings(new JsonArray("media_mic"), actionIconNumber: 0),
                 };
                 break;
             case "buttonIcon":
@@ -487,6 +501,14 @@ internal sealed partial class SpikeDatabase
             "textInputBar" =>
             [
                 ComponentInput("sampleText", "Text", "sampleText", ValueKind.StringMultiline, "Message"),
+            ],
+            "keyboard" =>
+            [
+                ComponentInput("text", "Text", "text", "multilineText", "Hola 😀😃😄"),
+                ComponentInput("currentCharacter", "Current character", "currentCharacter", "number", "1", minimum: 1, maximum: 9999, increment: 1),
+                ComponentInput("leftIcons", "Left icons", "leftIcons", "iconList", """["app_language"]""", uiOrigin: "embedded", uiGroupId: "leftIconRow", uiGroupLabel: "Left icon row"),
+                ComponentInput("centerIcons", "Center icons", "centerIcons", "iconList", "[]", uiOrigin: "embedded", uiGroupId: "centerIconRow", uiGroupLabel: "Center icon row"),
+                ComponentInput("rightIcons", "Right icons", "rightIcons", "iconList", """["media_mic"]""", uiOrigin: "embedded", uiGroupId: "rightIconRow", uiGroupLabel: "Right icon row"),
             ],
             "audio" =>
             [

@@ -239,25 +239,47 @@ internal sealed partial class SpikeDatabase
             {
               "id": "keyboard",
               "label": "Keyboard",
-              "subtitle": "Key shape, pressed behavior and icon slots",
+              "subtitle": "Key shape, pressed behavior and icon rows",
               "icon": "{{EditorIcons.Keyboard}}",
               "order": 20,
               "visible": true,
               "defaultOpen": false,
               "groups": [
-                { "id": "keys", "label": "Keys", "order": 10, "visible": true, "fields": [
-                  { "id": "component.keyboard.backgroundColorToken", "order": 10, "visible": true },
-                  { "id": "component.keyboard.backgroundAlpha", "order": 20, "visible": true },
-                  { "id": "component.keyboard.keyBackgroundColorToken", "order": 30, "visible": true },
-                  { "id": "component.keyboard.keyTextColorToken", "order": 40, "visible": true },
-                  { "id": "component.keyboard.bottomIconColorToken", "order": 50, "visible": true },
-                  { "id": "component.keyboard.keyPadding", "order": 60, "visible": true },
-                  { "id": "component.keyboard.keyCornerRadius", "order": 70, "visible": true },
-                  { "id": "component.keyboard.keyShadowEnabled", "order": 80, "visible": true },
-                  { "id": "component.keyboard.pressedEffect", "order": 90, "visible": true },
-                  { "id": "component.keyboard.specialKeyTextScale", "order": 100, "visible": true },
-                  { "id": "component.keyboard.emojiScale", "order": 110, "visible": true },
-                  { "id": "component.keyboard.bottomIconSlots", "order": 120, "visible": true }
+                { "id": "keys", "label": "Keys", "order": 10, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": true, "fields": [
+                  { "id": "component.keyboard.language", "order": 10, "visible": true },
+                  { "id": "component.keyboard.backgroundColorToken", "order": 20, "visible": true },
+                  { "id": "component.keyboard.backgroundAlpha", "order": 30, "visible": true },
+                  { "id": "component.keyboard.keyBackgroundColorToken", "order": 40, "visible": true },
+                  { "id": "component.keyboard.specialKeyBackgroundColorToken", "order": 50, "visible": true },
+                  { "id": "component.keyboard.pressedKeyBackgroundColorToken", "order": 60, "visible": true },
+                  { "id": "component.keyboard.keyTextColorToken", "order": 70, "visible": true },
+                  { "id": "component.keyboard.typography", "order": 80, "visible": true },
+                  { "id": "component.keyboard.keyPadding", "order": 90, "visible": true },
+                  { "id": "component.keyboard.keyCornerRadiusToken", "order": 100, "visible": true },
+                  { "id": "component.keyboard.keyBorderWidth", "order": 110, "visible": true },
+                  { "id": "component.keyboard.keyBorderColorToken", "order": 120, "visible": true },
+                  { "id": "component.keyboard.keyShadowEnabled", "order": 130, "visible": true },
+                  { "id": "component.keyboard.pressedEffect", "order": 140, "visible": true },
+                  { "id": "component.keyboard.specialKeyTextScale", "order": 150, "visible": true },
+                  { "id": "component.keyboard.emojiScale", "order": 160, "visible": true }
+                ] },
+                { "id": "iconRows", "label": "Icon rows", "order": 20, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": false, "fields": [
+                  { "id": "component.keyboard.iconRowPlacement", "order": 10, "visible": true },
+                  { "id": "component.keyboard.iconRowsHeight", "order": 20, "visible": true },
+                  { "id": "component.keyboard.iconRowsEdgePadding", "order": 30, "visible": true },
+                  { "id": "component.keyboard.iconButton.editor", "order": 40, "visible": true }
+                ] },
+                { "id": "leftIconRow", "label": "Left", "order": 30, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": false, "fields": [
+                  { "id": "component.keyboard.leftIconRow.editor", "order": 10, "visible": true },
+                  { "id": "component.keyboard.leftIconRow.inputs", "order": 20, "visible": true }
+                ] },
+                { "id": "centerIconRow", "label": "Center", "order": 40, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": false, "fields": [
+                  { "id": "component.keyboard.centerIconRow.editor", "order": 10, "visible": true },
+                  { "id": "component.keyboard.centerIconRow.inputs", "order": 20, "visible": true }
+                ] },
+                { "id": "rightIconRow", "label": "Right", "order": 50, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": false, "fields": [
+                  { "id": "component.keyboard.rightIconRow.editor", "order": 10, "visible": true },
+                  { "id": "component.keyboard.rightIconRow.inputs", "order": 20, "visible": true }
                 ] }
               ]
             }

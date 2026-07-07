@@ -1749,6 +1749,7 @@ internal sealed partial class SpikeDatabase
         changed |= NormalizeAudioEmbeddedSlots(componentType, config);
         changed |= NormalizeComponentSlots(componentType, config);
         changed |= NormalizeTextInputBarSlots(connection, projectId, componentType, config);
+        changed |= NormalizeKeyboardSlots(connection, projectId, componentType, config);
         changed |= NormalizeEmbeddedSlotPresetIds(connection, projectId, config);
         changed |= NormalizeComponentInputBindingPresetIds(connection, projectId, config);
         changed |= NormalizeComponentTypographyStyles(config);
@@ -2448,6 +2449,94 @@ internal sealed partial class SpikeDatabase
             ["iconButtonPresetId"],
             "buttonIcon");
         return changed;
+    }
+
+    private static bool NormalizeKeyboardSlots(
+        SqliteConnection connection,
+        string projectId,
+        string componentType,
+        JsonObject config)
+    {
+        if (componentType != "keyboard"
+            || JsonPath.Get(config, ["keyboard"]) is not JsonObject keyboard)
+        {
+            return false;
+        }
+
+        var changed = false;
+        if (keyboard["iconButtonSlot"] is not JsonObject)
+        {
+            keyboard["iconButtonSlot"] = ComponentSurfaceSlot(JsonPath.String(keyboard, "iconButtonPresetId", DefaultComponentPresetId));
+            changed = true;
+        }
+
+        changed |= NormalizeComponentSlot(keyboard, "iconButtonSlot", DefaultComponentPresetId);
+        changed |= NormalizeComponentSlot(keyboard, "leftIconRowSlot", DefaultComponentPresetId);
+        changed |= NormalizeComponentSlot(keyboard, "centerIconRowSlot", DefaultComponentPresetId);
+        changed |= NormalizeComponentSlot(keyboard, "rightIconRowSlot", DefaultComponentPresetId);
+        changed |= NormalizeKeyboardIconRowInputs(keyboard, "leftIconRowInputs", IconRowInputBindings(new JsonArray("app_language")));
+        changed |= NormalizeKeyboardIconRowInputs(keyboard, "centerIconRowInputs", IconRowInputBindings());
+        changed |= NormalizeKeyboardIconRowInputs(keyboard, "rightIconRowInputs", IconRowInputBindings(new JsonArray("media_mic")));
+        changed |= NormalizeComponentPresetString(connection, projectId, keyboard, ["iconButtonSlot", "presetId"], "buttonIcon");
+        changed |= NormalizeComponentPresetString(connection, projectId, keyboard, ["leftIconRowSlot", "presetId"], "iconRow");
+        changed |= NormalizeComponentPresetString(connection, projectId, keyboard, ["centerIconRowSlot", "presetId"], "iconRow");
+        changed |= NormalizeComponentPresetString(connection, projectId, keyboard, ["rightIconRowSlot", "presetId"], "iconRow");
+
+        if (keyboard.Remove("iconButtonPresetId"))
+        {
+            changed = true;
+        }
+
+        if (keyboard["bottomIconSlots"] is JsonObject bottomIconSlots)
+        {
+            changed |= MoveKeyboardIconSlots(bottomIconSlots, keyboard, "left", "leftIconRowInputs");
+            changed |= MoveKeyboardIconSlots(bottomIconSlots, keyboard, "center", "centerIconRowInputs");
+            changed |= MoveKeyboardIconSlots(bottomIconSlots, keyboard, "right", "rightIconRowInputs");
+            keyboard.Remove("bottomIconSlots");
+            changed = true;
+        }
+
+        if (keyboard.Remove("bottomIconColorToken"))
+        {
+            changed = true;
+        }
+
+        if (keyboard.Remove("keyCornerRadius"))
+        {
+            changed = true;
+        }
+
+        return changed;
+    }
+
+    private static bool NormalizeKeyboardIconRowInputs(
+        JsonObject keyboard,
+        string key,
+        JsonObject defaults)
+    {
+        if (keyboard[key] is not JsonObject inputs)
+        {
+            keyboard[key] = JsonNode.Parse(defaults.ToJsonString());
+            return true;
+        }
+
+        return JsonPath.MergeMissing(inputs, defaults);
+    }
+
+    private static bool MoveKeyboardIconSlots(
+        JsonObject bottomIconSlots,
+        JsonObject keyboard,
+        string zone,
+        string inputKey)
+    {
+        if (bottomIconSlots[zone] is not JsonArray icons
+            || keyboard[inputKey] is not JsonObject inputs)
+        {
+            return false;
+        }
+
+        inputs["icons"] = JsonNode.Parse(icons.ToJsonString());
+        return true;
     }
 
     private static bool NormalizeTextInputIconRowInputs(

@@ -120,42 +120,16 @@ internal sealed class DictionaryIconTokenListControl : Grid, IDictionaryValueCon
                 Child = _createIconPreview?.Invoke(token),
             };
 
-            var label = new TextBlock
-            {
-                Text = token,
-                Foreground = TextBrushForTheme(),
-                VerticalAlignment = VerticalAlignment.Center,
-                TextTrimming = TextTrimming.CharacterEllipsis,
-                MaxWidth = 132,
-            };
-
             _tokenPanel.Children.Add(new Border
             {
                 CornerRadius = new CornerRadius(8),
-                Padding = new Thickness(6, 3),
+                Padding = new Thickness(4),
                 BorderThickness = new Thickness(1),
                 BorderBrush = BorderBrushForTheme(),
                 Background = Brushes.Transparent,
-                Child = new StackPanel
-                {
-                    Orientation = Orientation.Horizontal,
-                    Spacing = 6,
-                    Children =
-                    {
-                        iconFrame,
-                        label,
-                    },
-                },
+                Child = iconFrame,
             });
         }
-    }
-
-    private IBrush TextBrushForTheme()
-    {
-        return new SolidColorBrush(
-            ActualThemeVariant == ThemeVariant.Light
-                ? Color.Parse("#172033")
-                : Color.Parse("#F4F7FB"));
     }
 
     private IBrush BorderBrushForTheme()

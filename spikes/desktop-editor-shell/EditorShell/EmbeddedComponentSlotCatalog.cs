@@ -87,6 +87,30 @@ internal static class EmbeddedComponentSlotCatalog
             "component.buttonIcon",
             ["iconRow", "buttonIconSlot"]),
         new(
+            "component.keyboard.leftIconRow.editor",
+            "iconRow",
+            "Left row",
+            "component.iconRow",
+            ["keyboard", "leftIconRowSlot"]),
+        new(
+            "component.keyboard.iconButton.editor",
+            "buttonIcon",
+            "Icon button",
+            "component.buttonIcon",
+            ["keyboard", "iconButtonSlot"]),
+        new(
+            "component.keyboard.centerIconRow.editor",
+            "iconRow",
+            "Center row",
+            "component.iconRow",
+            ["keyboard", "centerIconRowSlot"]),
+        new(
+            "component.keyboard.rightIconRow.editor",
+            "iconRow",
+            "Right row",
+            "component.iconRow",
+            ["keyboard", "rightIconRowSlot"]),
+        new(
             "component.label.surface.editor",
             "surface",
             "Surface",

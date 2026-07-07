@@ -50,6 +50,12 @@ internal static class ComponentClassFieldCatalog
         new("theme.borders.secondary", "borders.secondary"),
         new("theme.borders.alternate", "borders.alternate"),
         new("theme.cursor.color", "cursor.color"),
+        new("theme.keyboard.background", "keyboard.background"),
+        new("theme.keyboard.keyBackground", "keyboard.keyBackground"),
+        new("theme.keyboard.specialKeyBackground", "keyboard.specialKeyBackground"),
+        new("theme.keyboard.pressedKeyBackground", "keyboard.pressedKeyBackground"),
+        new("theme.keyboard.popoverBackground", "keyboard.popoverBackground"),
+        new("theme.keyboard.text", "keyboard.text"),
     ];
 
     private static readonly FieldOption[] RadiusTokenOptions =
@@ -215,6 +221,11 @@ internal static class ComponentClassFieldCatalog
             "[]"),
     ];
 
+    private static readonly ComponentInputBindingDefinition[] IconRowStyleInputBindings =
+        IconRowParentInputBindings
+            .Where((binding) => binding.Id != "icons")
+            .ToArray();
+
     private static readonly ComponentInputBindingDefinition[] TextBoxParentInputBindings =
     [
         new(
@@ -343,6 +354,18 @@ internal static class ComponentClassFieldCatalog
         new("popup", "Popup"),
         new("scale", "Scale in place"),
         new("none", "None"),
+    ];
+
+    private static readonly FieldOption[] KeyboardLanguageOptions =
+    [
+        new("es", "Spanish"),
+        new("en", "English"),
+    ];
+
+    private static readonly FieldOption[] KeyboardIconRowPlacementOptions =
+    [
+        new("top", "Top"),
+        new("bottom", "Bottom"),
     ];
 
     private static readonly FieldOption[] NavigationBarTypeOptions =
@@ -481,13 +504,18 @@ internal static class ComponentClassFieldCatalog
             """{"size":44,"gap":"theme.spacing.m","orientation":"horizontal","icons":["chat_send"],"actionIconNumber":1,"actionBackgroundAlpha":1,"actionBackgroundColor":"aqua_green","actionIconColor":"gray_100"}""",
             ComponentInputBindings: IconRowParentInputBindings),
 
-        ["component.keyboard.backgroundColorToken"] = new("component.keyboard.backgroundColorToken", "Background", ValueKind.ThemeToken, ["keyboard", "backgroundColorToken"], "theme.colors.surface", Options: ThemeColorOptions),
-        ["component.keyboard.backgroundAlpha"] = new("component.keyboard.backgroundAlpha", "Surface alpha", ValueKind.Alpha, ["keyboard", "backgroundAlpha"], "1"),
-        ["component.keyboard.keyBackgroundColorToken"] = new("component.keyboard.keyBackgroundColorToken", "Key background", ValueKind.ThemeToken, ["keyboard", "keyBackgroundColorToken"], "theme.colors.field", Options: ThemeColorOptions),
-        ["component.keyboard.keyTextColorToken"] = new("component.keyboard.keyTextColorToken", "Key text", ValueKind.ThemeToken, ["keyboard", "keyTextColorToken"], "theme.colors.textPrimary", Options: ThemeColorOptions),
-        ["component.keyboard.bottomIconColorToken"] = new("component.keyboard.bottomIconColorToken", "Bottom icons", ValueKind.ThemeToken, ["keyboard", "bottomIconColorToken"], "theme.icons.secondary", Options: ThemeColorOptions),
+        ["component.keyboard.language"] = new("component.keyboard.language", "Language", ValueKind.OptionToken, ["keyboard", "language"], "es", Options: KeyboardLanguageOptions),
+        ["component.keyboard.backgroundColorToken"] = new("component.keyboard.backgroundColorToken", "Background", ValueKind.ThemeToken, ["keyboard", "backgroundColorToken"], "theme.keyboard.background", Options: ThemeColorOptions),
+        ["component.keyboard.backgroundAlpha"] = new("component.keyboard.backgroundAlpha", "Background alpha", ValueKind.Alpha, ["keyboard", "backgroundAlpha"], "1"),
+        ["component.keyboard.keyBackgroundColorToken"] = new("component.keyboard.keyBackgroundColorToken", "Key background", ValueKind.ThemeToken, ["keyboard", "keyBackgroundColorToken"], "theme.keyboard.keyBackground", Options: ThemeColorOptions),
+        ["component.keyboard.specialKeyBackgroundColorToken"] = new("component.keyboard.specialKeyBackgroundColorToken", "Special key background", ValueKind.ThemeToken, ["keyboard", "specialKeyBackgroundColorToken"], "theme.keyboard.specialKeyBackground", Options: ThemeColorOptions),
+        ["component.keyboard.pressedKeyBackgroundColorToken"] = new("component.keyboard.pressedKeyBackgroundColorToken", "Pressed key background", ValueKind.ThemeToken, ["keyboard", "pressedKeyBackgroundColorToken"], "theme.keyboard.pressedKeyBackground", Options: ThemeColorOptions),
+        ["component.keyboard.keyTextColorToken"] = new("component.keyboard.keyTextColorToken", "Key text", ValueKind.ThemeToken, ["keyboard", "keyTextColorToken"], "theme.keyboard.text", Options: ThemeColorOptions),
+        ["component.keyboard.typography"] = new("component.keyboard.typography", "Typography", ValueKind.TypographyStyle, ["keyboard", "typography"], TypographyStyleValue.CreateDefault("theme.typography.sizes.s")),
         ["component.keyboard.keyPadding"] = new("component.keyboard.keyPadding", "Key padding", ValueKind.ThemeToken, ["keyboard", "keyPadding"], "theme.spacing.s", Options: SpacingTokenOptions),
-        ["component.keyboard.keyCornerRadius"] = new("component.keyboard.keyCornerRadius", "Key radius", ValueKind.Integer, ["keyboard", "keyCornerRadius"], "6"),
+        ["component.keyboard.keyCornerRadiusToken"] = new("component.keyboard.keyCornerRadiusToken", "Key radius", ValueKind.ThemeToken, ["keyboard", "keyCornerRadiusToken"], "theme.radii.control", Options: RadiusTokenOptions),
+        ["component.keyboard.keyBorderWidth"] = new("component.keyboard.keyBorderWidth", "Key border width", ValueKind.Decimal, ["keyboard", "keyBorderWidth"], "0", Number: new NumberDefinition(0, 32, 0.5m, 2)),
+        ["component.keyboard.keyBorderColorToken"] = new("component.keyboard.keyBorderColorToken", "Key border color", ValueKind.ThemeToken, ["keyboard", "keyBorderColorToken"], "theme.borders.secondary", Options: ThemeColorOptions),
         ["component.keyboard.keyShadowEnabled"] = new("component.keyboard.keyShadowEnabled", "Key shadow", ValueKind.Boolean, ["keyboard", "keyShadowEnabled"], "false"),
         ["component.keyboard.pressedEffect"] = new("component.keyboard.pressedEffect", "Pressed effect", ValueKind.OptionToken, ["keyboard", "pressedEffect"], "popup", Options: PressedEffectOptions),
         ["component.keyboard.specialKeyTextScale"] = new(
@@ -504,7 +532,34 @@ internal static class ComponentClassFieldCatalog
             ["keyboard", "emojiScale"],
             "1.2",
             Number: new NumberDefinition(0.1m, 4, 0.05m, 2)),
-        ["component.keyboard.bottomIconSlots"] = new("component.keyboard.bottomIconSlots", "Bottom icons", ValueKind.IconSlots, ["keyboard", "bottomIconSlots"], EmptyIconSlots),
+        ["component.keyboard.iconRowPlacement"] = new("component.keyboard.iconRowPlacement", "Placement", ValueKind.OptionToken, ["keyboard", "iconRowPlacement"], "bottom", Options: KeyboardIconRowPlacementOptions),
+        ["component.keyboard.iconRowsHeight"] = new("component.keyboard.iconRowsHeight", "Icon zone height", ValueKind.Integer, ["keyboard", "iconRowsHeight"], "52", Number: new NumberDefinition(0, 240, 1, 0)),
+        ["component.keyboard.iconRowsEdgePadding"] = new("component.keyboard.iconRowsEdgePadding", "Edge padding", ValueKind.ThemeToken, ["keyboard", "iconRowsEdgePadding"], "theme.spacing.m", Options: SpacingTokenOptions),
+        ["component.keyboard.iconButton.editor"] = new("component.keyboard.iconButton.editor", "Icon button", ValueKind.ComponentPreset, ["keyboard", "iconButtonSlot", "presetId"], "default"),
+        ["component.keyboard.leftIconRow.editor"] = new("component.keyboard.leftIconRow.editor", "Left row variant", ValueKind.ComponentPreset, ["keyboard", "leftIconRowSlot", "presetId"], "default"),
+        ["component.keyboard.leftIconRow.inputs"] = new(
+            "component.keyboard.leftIconRow.inputs",
+            "Left row settings",
+            ValueKind.ComponentInputBindings,
+            ["keyboard", "leftIconRowInputs"],
+            """{"size":44,"gap":"theme.spacing.m","orientation":"horizontal","icons":["app_language"]}""",
+            ComponentInputBindings: IconRowStyleInputBindings),
+        ["component.keyboard.centerIconRow.editor"] = new("component.keyboard.centerIconRow.editor", "Center row variant", ValueKind.ComponentPreset, ["keyboard", "centerIconRowSlot", "presetId"], "default"),
+        ["component.keyboard.centerIconRow.inputs"] = new(
+            "component.keyboard.centerIconRow.inputs",
+            "Center row settings",
+            ValueKind.ComponentInputBindings,
+            ["keyboard", "centerIconRowInputs"],
+            """{"size":44,"gap":"theme.spacing.m","orientation":"horizontal","icons":[]}""",
+            ComponentInputBindings: IconRowStyleInputBindings),
+        ["component.keyboard.rightIconRow.editor"] = new("component.keyboard.rightIconRow.editor", "Right row variant", ValueKind.ComponentPreset, ["keyboard", "rightIconRowSlot", "presetId"], "default"),
+        ["component.keyboard.rightIconRow.inputs"] = new(
+            "component.keyboard.rightIconRow.inputs",
+            "Right row settings",
+            ValueKind.ComponentInputBindings,
+            ["keyboard", "rightIconRowInputs"],
+            """{"size":44,"gap":"theme.spacing.m","orientation":"horizontal","icons":["media_mic"]}""",
+            ComponentInputBindings: IconRowStyleInputBindings),
 
         ["component.buttonIcon.size"] = new("component.buttonIcon.size", "Button size", ValueKind.Integer, ["buttonIcon", "size"], "48"),
         ["component.buttonIcon.iconToken"] = new("component.buttonIcon.iconToken", "Icon", ValueKind.IconToken, ["buttonIcon", "iconToken"], "media_mic"),
