@@ -64,7 +64,6 @@ internal sealed partial class SpikeDatabase
                   { "id": "component.textBox.maxLines", "order": 20, "visible": true },
                   { "id": "component.textBox.padding", "order": 30, "visible": true },
                   { "id": "component.textBox.surface.editor", "order": 40, "visible": true },
-                  { "id": "component.textBox.placeholder", "order": 50, "visible": true },
                   { "id": "component.textBox.textColorToken", "order": 60, "visible": true },
                   { "id": "component.textBox.placeholderColorToken", "order": 70, "visible": true },
                   { "id": "component.textBox.typography", "order": 80, "visible": true },
@@ -182,12 +181,14 @@ internal sealed partial class SpikeDatabase
                   { "id": "component.textInput.placeholder", "order": 50, "visible": true },
                   { "id": "component.textInput.surface.editor", "order": 60, "visible": true },
                   { "id": "component.textInput.leftIconRow.editor", "order": 70, "visible": true },
-                  { "id": "component.textInput.rightIconRow.editor", "order": 80, "visible": true },
-                  { "id": "component.textInput.idleTextColorToken", "order": 90, "visible": true },
-                  { "id": "component.textInput.textSizeToken", "order": 100, "visible": true },
-                  { "id": "component.textInput.cursorColorToken", "order": 110, "visible": true },
-                  { "id": "component.textInput.cursorWidth", "order": 120, "visible": true },
-                  { "id": "component.textInput.cursorBlinkFrames", "order": 130, "visible": true }
+                  { "id": "component.textInput.leftIconRow.inputs", "order": 80, "visible": true },
+                  { "id": "component.textInput.rightIconRow.editor", "order": 90, "visible": true },
+                  { "id": "component.textInput.rightIconRow.inputs", "order": 100, "visible": true },
+                  { "id": "component.textInput.idleTextColorToken", "order": 110, "visible": true },
+                  { "id": "component.textInput.textSizeToken", "order": 120, "visible": true },
+                  { "id": "component.textInput.cursorColorToken", "order": 130, "visible": true },
+                  { "id": "component.textInput.cursorWidth", "order": 140, "visible": true },
+                  { "id": "component.textInput.cursorBlinkFrames", "order": 150, "visible": true }
                 ] }
               ]
             }

@@ -542,12 +542,25 @@ inspection.
 Rules:
 
 - input declarations belong to the component contract/data;
+- input declarations have an explicit source:
+  - `Runtime`: supplied from outside the component and visible in Design sample
+    inputs;
+  - `Variant`: stored by the owning component variant, edited in the parent
+    variant when the parent intentionally fixes that value;
+  - `Calculated`: produced by the parent resolver and hidden from editor input
+    panels;
 - preview may edit sample values, but must not define component-specific
   catalogs;
 - record inputs must use the generic `recordReference` kind with a `tableId`,
   not specialized kinds such as `ActorReference`;
 - screen/module composition must use the same declarations and provide real
   frame values;
+- when a component embeds a child, the child's `Runtime` inputs automatically
+  become runtime inputs of the parent unless the parent deliberately converts a
+  specific value into a `Variant` decision;
+- parent-owned variant bindings for embedded children must be edited through the
+  generic component input-bindings dictionary control, not by copying child
+  scalar fields into the parent field catalog;
 - resolvers decide how input values affect component atoms;
 - generic preview shell may hold generic clock/play state only;
 - helpers and renderer must not infer missing inputs or know which concrete

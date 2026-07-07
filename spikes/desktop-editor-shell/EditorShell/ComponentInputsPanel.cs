@@ -347,7 +347,9 @@ internal sealed class ComponentInputsPanel : ContentControl
             ShowThemeTokenPicker: (currentValue, allowedOptions) =>
                 new ThemeTokenPickerDialog(_owner, _database).Show(projectId, currentValue, allowedOptions),
             CreateIconPreview: (token) =>
-                SvgIconPreview.CreateProjectIconTokenPreview(_database, projectId, token, 18));
+                SvgIconPreview.CreateProjectIconTokenPreview(_database, projectId, token, 18),
+            GetComponentPresetOptions: (componentType) =>
+                _database.GetComponentPresetReferenceOptionsByType(projectId, componentType));
     }
 
     private void EnsureValue(ComponentInputDefinition input, JsonObject preview)
@@ -475,6 +477,7 @@ internal sealed class ComponentInputsPanel : ContentControl
         string tableId,
         string resolvedJsonKey,
         string componentType,
+        ComponentInputSource source,
         PairFieldLabels pairLabels)
     {
         var normalizedKind = ParseKind(kind);
@@ -500,6 +503,7 @@ internal sealed class ComponentInputsPanel : ContentControl
             normalizedTableId,
             normalizedResolvedJsonKey,
             componentType,
+            source,
             pairLabels);
     }
 
@@ -746,6 +750,12 @@ internal sealed class ComponentInputsPanel : ContentControl
                 continue;
             }
 
+            var source = ParseInputSource(JsonString(item, "source"));
+            if (source != ComponentInputSource.Runtime)
+            {
+                continue;
+            }
+
             yield return CreateInputDefinition(
                 id,
                 label,
@@ -759,6 +769,7 @@ internal sealed class ComponentInputsPanel : ContentControl
                 JsonString(item, "tableId"),
                 JsonString(item, "resolvedJsonKey"),
                 JsonString(item, "componentType"),
+                source,
                 new PairFieldLabels(
                     JsonString(item, "pairFirstLabel", "W"),
                     JsonString(item, "pairSecondLabel", "H")));
@@ -802,6 +813,7 @@ internal sealed class ComponentInputsPanel : ContentControl
             input.TableId,
             input.ResolvedJsonKey,
             input.ComponentType,
+            input.Source,
             string.Join(",", input.Options?.Select((option) => $"{option.Value}={option.Label}") ?? []));
     }
 
@@ -857,6 +869,16 @@ internal sealed class ComponentInputsPanel : ContentControl
         };
     }
 
+    private static ComponentInputSource ParseInputSource(string source)
+    {
+        return source.Trim().ToLowerInvariant() switch
+        {
+            "variant" => ComponentInputSource.Variant,
+            "calculated" => ComponentInputSource.Calculated,
+            _ => ComponentInputSource.Runtime,
+        };
+    }
+
     private static string JsonString(JsonObject owner, string key)
     {
         return JsonString(owner, key, "");
@@ -897,6 +919,13 @@ internal enum ComponentInputKind
     MultilineText,
 }
 
+internal enum ComponentInputSource
+{
+    Runtime,
+    Variant,
+    Calculated,
+}
+
 internal sealed record ComponentInputDefinition(
     string Id,
     string Label,
@@ -910,6 +939,7 @@ internal sealed record ComponentInputDefinition(
     string TableId = "",
     string ResolvedJsonKey = "",
     string ComponentType = "",
+    ComponentInputSource Source = ComponentInputSource.Runtime,
     PairFieldLabels PairLabels = null!);
 
 internal sealed record ComponentInputAnimation(

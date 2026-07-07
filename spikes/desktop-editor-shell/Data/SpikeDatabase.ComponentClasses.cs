@@ -1147,7 +1147,8 @@ internal sealed partial class SpikeDatabase
                 descriptor.DefaultValue,
                 Options: options,
                 PairLabels: descriptor.PairLabels,
-                Number: descriptor.Number),
+                Number: descriptor.Number,
+                ComponentInputBindings: descriptor.ComponentInputBindings),
             value,
             IsHighlighted: isHighlighted);
     }
@@ -1173,7 +1174,8 @@ internal sealed partial class SpikeDatabase
                 descriptor.DefaultValue,
                 Options: options,
                 PairLabels: descriptor.PairLabels,
-                Number: descriptor.Number),
+                Number: descriptor.Number,
+                ComponentInputBindings: descriptor.ComponentInputBindings),
             value,
             IsHighlighted: isHighlighted);
     }
@@ -1256,7 +1258,8 @@ internal sealed partial class SpikeDatabase
                 InheritedValue: inheritedValue,
                 Options: ComponentClassFieldOptions(settings.ProjectId, descriptor),
                 PairLabels: descriptor.PairLabels,
-                Number: descriptor.Number),
+                Number: descriptor.Number,
+                ComponentInputBindings: descriptor.ComponentInputBindings),
             localValue,
             IsInherited: !hasOverride);
     }
@@ -1298,7 +1301,8 @@ internal sealed partial class SpikeDatabase
                 InheritedValue: inheritedValue,
                 Options: options,
                 PairLabels: descriptor.PairLabels,
-                Number: descriptor.Number),
+                Number: descriptor.Number,
+                ComponentInputBindings: descriptor.ComponentInputBindings),
             localValue,
             IsInherited: !hasOverride,
             IsHighlighted: isHighlighted);
@@ -1351,7 +1355,8 @@ internal sealed partial class SpikeDatabase
                 InheritedValue: inheritedValue,
                 Options: options,
                 PairLabels: descriptor.PairLabels,
-                Number: descriptor.Number),
+                Number: descriptor.Number,
+                ComponentInputBindings: descriptor.ComponentInputBindings),
             localValue,
             IsInherited: !hasOverride,
             IsHighlighted: isHighlighted);
@@ -1674,13 +1679,54 @@ internal sealed partial class SpikeDatabase
         changed |= NormalizeAudioEmbeddedSlots(componentType, config);
         changed |= NormalizeSurfaceSlots(componentType, config);
         changed |= NormalizeEmbeddedSlotPresetIds(connection, projectId, config);
+        changed |= NormalizeComponentInputBindingPresetIds(connection, projectId, config);
         changed |= NormalizeComponentTypographyStyles(config);
         changed |= JsonPath.MergeMissing(config, defaults);
         changed |= NormalizeEmbeddedSlotPresetIds(connection, projectId, config);
+        changed |= NormalizeComponentInputBindingPresetIds(connection, projectId, config);
         changed |= NormalizeComponentSpacingTokens(config);
         changed |= NormalizeReliefIntensity(config, "reliefTopIntensity");
         changed |= NormalizeReliefIntensity(config, "reliefBottomIntensity");
         return changed;
+    }
+
+    private static bool NormalizeComponentInputBindingPresetIds(
+        SqliteConnection connection,
+        string projectId,
+        JsonObject config)
+    {
+        var changed = false;
+        changed |= NormalizeComponentInputBindingPresetId(
+            connection,
+            projectId,
+            config,
+            ["textInput", "leftIconRowInputs", "buttonIconPresetId"],
+            "buttonIcon");
+        changed |= NormalizeComponentInputBindingPresetId(
+            connection,
+            projectId,
+            config,
+            ["textInput", "rightIconRowInputs", "buttonIconPresetId"],
+            "buttonIcon");
+        return changed;
+    }
+
+    private static bool NormalizeComponentInputBindingPresetId(
+        SqliteConnection connection,
+        string projectId,
+        JsonObject config,
+        string[] path,
+        string componentType)
+    {
+        var currentValue = JsonPath.String(config, path);
+        var normalizedValue = NormalizeComponentPresetReference(connection, projectId, componentType, currentValue);
+        if (string.IsNullOrWhiteSpace(normalizedValue) || normalizedValue.Equals(currentValue, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        SetJsonValue(config, path, JsonValue.Create(normalizedValue)!);
+        return true;
     }
 
     private static IReadOnlyList<ComponentClassPreset> ComponentClassPresets(string metadataJson)
@@ -1725,6 +1771,8 @@ internal sealed partial class SpikeDatabase
         changed |= NormalizeSpacingPair(config, ["textInput", "barPadding"]);
         changed |= NormalizeSpacingPair(config, ["textInput", "textPadding"]);
         changed |= NormalizeSpacingToken(config, ["textInput", "iconGap"]);
+        changed |= NormalizeSpacingToken(config, ["textInput", "leftIconRowInputs", "gap"]);
+        changed |= NormalizeSpacingToken(config, ["textInput", "rightIconRowInputs", "gap"]);
         changed |= NormalizeSpacingToken(config, ["iconRow", "gap"]);
         changed |= NormalizeSpacingToken(config, ["keyboard", "keyPadding"]);
         changed |= NormalizeSpacingToken(config, ["buttonIcon", "iconPadding"]);
@@ -2357,6 +2405,7 @@ internal sealed partial class SpikeDatabase
             changed |= SyncComponentInputDefinition(input, defaultInput, "pairSecondLabel");
             changed |= SyncComponentInputDefinition(input, defaultInput, "visibleWhenPath");
             changed |= SyncComponentInputDefinition(input, defaultInput, "visibleWhenValue");
+            changed |= SyncComponentInputDefinition(input, defaultInput, "source");
             changed |= SyncComponentInputDefinition(input, defaultInput, "options");
         }
 
@@ -2470,6 +2519,9 @@ internal sealed partial class SpikeDatabase
                 ? node.ToJsonString()
                 : descriptor.DefaultValue,
             ValueKind.IconSlots => node.ToJsonString(),
+            ValueKind.ComponentInputBindings => node is JsonObject
+                ? node.ToJsonString()
+                : descriptor.DefaultValue,
             _ => node is JsonValue stringValue && stringValue.TryGetValue<string>(out var text)
                 ? text
                 : node.ToJsonString().Trim('"'),
@@ -2492,6 +2544,8 @@ internal sealed partial class SpikeDatabase
                 ?? new JsonArray(),
             ValueKind.IconSlots => JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? ComponentClassFieldCatalog.EmptyIconSlots : value)
                 ?? JsonNode.Parse(ComponentClassFieldCatalog.EmptyIconSlots)!,
+            ValueKind.ComponentInputBindings => JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? "{}" : value)
+                ?? new JsonObject(),
             _ => JsonValue.Create(value)!,
         };
     }

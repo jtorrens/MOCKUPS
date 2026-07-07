@@ -95,7 +95,7 @@ export function resolveTextBoxComponentFromRecords(
     ),
     padding: { xToken: padding.first, yToken: padding.second },
     text: optionalString(inputs, "sampleText"),
-    placeholder: optionalString(textBox, "placeholder"),
+    placeholder: optionalString(inputs, "placeholder"),
     textColorToken: requiredString(
       textBox,
       "textColorToken",

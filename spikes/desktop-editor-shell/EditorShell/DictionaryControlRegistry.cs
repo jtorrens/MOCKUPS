@@ -74,6 +74,10 @@ internal static class DictionaryControlRegistry
                 request.Value,
                 request.IsHighlighted,
                 request.Services.OpenEmbeddedComponent),
+            [ValueKind.ComponentInputBindings] = (request) => new DictionaryComponentInputBindingsControl(
+                request.Definition,
+                request.Value,
+                request.Services),
             [ValueKind.EmbeddedComponent] = (request) => new DictionaryEmbeddedComponentControl(
                 request.Definition,
                 request.Value,

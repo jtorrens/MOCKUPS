@@ -28,6 +28,7 @@ internal enum ValueKind
     IconSlots,
     EmbeddedComponent,
     ComponentPreset,
+    ComponentInputBindings,
     AlignmentPlacement,
     Boolean,
 }
@@ -55,6 +56,24 @@ internal sealed record NumberDefinition(
 
 internal sealed record RecordReferenceDefinition(string TableId);
 
+internal enum ComponentInputBindingSource
+{
+    Variant,
+    Runtime,
+    Calculated,
+}
+
+internal sealed record ComponentInputBindingDefinition(
+    string Id,
+    string Label,
+    string JsonKey,
+    ValueKind ValueKind,
+    ComponentInputBindingSource Source,
+    string DefaultValue = "",
+    IReadOnlyList<FieldOption>? Options = null,
+    NumberDefinition? Number = null,
+    string ComponentType = "");
+
 internal enum ImagePreviewMode
 {
     Aspect,
@@ -81,7 +100,8 @@ internal sealed record FieldDefinition(
     PairFieldLabels? PairLabels = null,
     ImagePreviewDefinition? ImagePreview = null,
     NumberDefinition? Number = null,
-    RecordReferenceDefinition? RecordReference = null);
+    RecordReferenceDefinition? RecordReference = null,
+    IReadOnlyList<ComponentInputBindingDefinition>? ComponentInputBindings = null);
 
 internal sealed record FieldValue(
     FieldDefinition Definition,

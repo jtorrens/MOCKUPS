@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Mockups.DesktopEditorShell.Common;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -13,7 +14,8 @@ internal sealed record ComponentClassFieldDescriptor(
     bool IsEditable = true,
     IReadOnlyList<FieldOption>? Options = null,
     PairFieldLabels? PairLabels = null,
-    NumberDefinition? Number = null);
+    NumberDefinition? Number = null,
+    IReadOnlyList<ComponentInputBindingDefinition>? ComponentInputBindings = null);
 
 internal static class ComponentClassFieldCatalog
 {
@@ -119,6 +121,60 @@ internal static class ComponentClassFieldCatalog
         new("vertical", "Vertical"),
     ];
 
+    private static readonly ComponentInputBindingDefinition[] IconRowParentInputBindings =
+    [
+        new(
+            "size",
+            "Size",
+            "size",
+            ValueKind.Decimal,
+            ComponentInputBindingSource.Variant,
+            "36",
+            Number: new NumberDefinition(1, 9999, 1, 2)),
+        new(
+            "gap",
+            "Gap",
+            "gap",
+            ValueKind.ThemeToken,
+            ComponentInputBindingSource.Variant,
+            "theme.spacing.s",
+            Options: SpacingTokenOptions),
+        new(
+            "orientation",
+            "Orientation",
+            "orientation",
+            ValueKind.OptionToken,
+            ComponentInputBindingSource.Variant,
+            "horizontal",
+            Options: IconRowOrientationOptions),
+        new(
+            "buttonIconPresetId",
+            "Button icon",
+            "buttonIconPresetId",
+            ValueKind.ComponentPreset,
+            ComponentInputBindingSource.Variant,
+            "",
+            ComponentType: "buttonIcon"),
+        new(
+            "icons",
+            "Icons",
+            "icons",
+            ValueKind.IconTokenList,
+            ComponentInputBindingSource.Runtime,
+            "[]"),
+    ];
+
+    internal static IReadOnlyList<ComponentInputBindingDefinition> RuntimeInputBindingsForComponent(string componentType)
+    {
+        return componentType switch
+        {
+            "iconRow" => IconRowParentInputBindings
+                .Where((binding) => binding.Source == ComponentInputBindingSource.Runtime)
+                .ToList(),
+            _ => [],
+        };
+    }
+
     private static readonly FieldOption[] PressedEffectOptions =
     [
         new("popup", "Popup"),
@@ -212,7 +268,21 @@ internal static class ComponentClassFieldCatalog
         ["component.textInput.placeholder"] = new("component.textInput.placeholder", "Placeholder", ValueKind.StringSingleLine, ["textInput", "placeholder"], "Message"),
         ["component.textInput.surface.editor"] = new("component.textInput.surface.editor", "Surface", ValueKind.ComponentPreset, ["textInput", "surfaceSlot", "presetId"], "InputBox"),
         ["component.textInput.leftIconRow.editor"] = new("component.textInput.leftIconRow.editor", "Left icons", ValueKind.ComponentPreset, ["textInput", "leftIconRowSlot", "presetId"], "default"),
+        ["component.textInput.leftIconRow.inputs"] = new(
+            "component.textInput.leftIconRow.inputs",
+            "Left icon inputs",
+            ValueKind.ComponentInputBindings,
+            ["textInput", "leftIconRowInputs"],
+            """{"size":44,"gap":"theme.spacing.m","orientation":"horizontal","buttonIconPresetId":""}""",
+            ComponentInputBindings: IconRowParentInputBindings),
         ["component.textInput.rightIconRow.editor"] = new("component.textInput.rightIconRow.editor", "Right icons", ValueKind.ComponentPreset, ["textInput", "rightIconRowSlot", "presetId"], "default"),
+        ["component.textInput.rightIconRow.inputs"] = new(
+            "component.textInput.rightIconRow.inputs",
+            "Right icon inputs",
+            ValueKind.ComponentInputBindings,
+            ["textInput", "rightIconRowInputs"],
+            """{"size":44,"gap":"theme.spacing.m","orientation":"horizontal","buttonIconPresetId":""}""",
+            ComponentInputBindings: IconRowParentInputBindings),
         ["component.textInput.idleTextColorToken"] = new("component.textInput.idleTextColorToken", "Idle text color", ValueKind.ThemeToken, ["textInput", "idleTextColorToken"], "theme.colors.textSecondary", Options: ThemeColorOptions),
         ["component.textInput.textSizeToken"] = new("component.textInput.textSizeToken", "Text size", ValueKind.ThemeToken, ["textInput", "textSizeToken"], "theme.typography.sizes.s", Options: TypographySizeOptions),
         ["component.textInput.cursorColorToken"] = new("component.textInput.cursorColorToken", "Cursor color", ValueKind.ThemeToken, ["textInput", "cursorColorToken"], "theme.cursor.color", Options: ThemeColorOptions),

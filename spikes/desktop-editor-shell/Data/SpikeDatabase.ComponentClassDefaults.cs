@@ -1,6 +1,8 @@
 using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.EditorShell;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -152,7 +154,9 @@ internal sealed partial class SpikeDatabase
                     ["placeholder"] = "Message",
                     ["surfaceSlot"] = ComponentSurfaceSlot("InputBox"),
                     ["leftIconRowSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["leftIconRowInputs"] = IconRowInputBindings(),
                     ["rightIconRowSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["rightIconRowInputs"] = IconRowInputBindings(),
                     ["idleTextColorToken"] = "theme.colors.textSecondary",
                     ["textSizeToken"] = "theme.typography.sizes.s",
                     ["cursorColorToken"] = "theme.cursor.color",
@@ -347,6 +351,7 @@ internal sealed partial class SpikeDatabase
             "textBox" =>
             [
                 ComponentInput("sampleText", "Text", "sampleText", "multilineText", "Message"),
+                ComponentInput("placeholder", "Placeholder", "placeholder", "text", "Message"),
                 ComponentInput(
                     "fixedSize",
                     "Size",
@@ -430,8 +435,8 @@ internal sealed partial class SpikeDatabase
             "textInputBar" =>
             [
                 ComponentInput("sampleText", "Text", "sampleText", "text", "Message"),
-                ComponentInput("leftIcons", "Left icons", "leftIcons", "iconList", "[]"),
-                ComponentInput("rightIcons", "Right icons", "rightIcons", "iconList", """["media_mic","chat_send"]"""),
+                ProjectRuntimeInput("iconRow", "icons", "leftIcons", "Left icons", "leftIcons", "[]"),
+                ProjectRuntimeInput("iconRow", "icons", "rightIcons", "Right icons", "rightIcons", """["media_mic","chat_send"]"""),
             ],
             "audio" =>
             [
@@ -470,7 +475,8 @@ internal sealed partial class SpikeDatabase
         string pairFirstLabel = "W",
         string pairSecondLabel = "H",
         string visibleWhenPath = "",
-        string visibleWhenValue = "")
+        string visibleWhenValue = "",
+        string source = "runtime")
     {
         return new JsonObject
         {
@@ -490,6 +496,61 @@ internal sealed partial class SpikeDatabase
             ["pairSecondLabel"] = pairSecondLabel,
             ["visibleWhenPath"] = visibleWhenPath,
             ["visibleWhenValue"] = visibleWhenValue,
+            ["source"] = source,
+        };
+    }
+
+    private static JsonObject ProjectRuntimeInput(
+        string componentType,
+        string inputId,
+        string id,
+        string label,
+        string jsonKey,
+        string defaultValue)
+    {
+        var binding = ComponentClassFieldCatalog.RuntimeInputBindingsForComponent(componentType)
+            .FirstOrDefault((candidate) => candidate.Id == inputId)
+            ?? throw new InvalidOperationException($"Component '{componentType}' does not expose runtime input '{inputId}'.");
+        return ComponentInput(
+            id,
+            label,
+            jsonKey,
+            InputKindForValueKind(binding.ValueKind),
+            defaultValue,
+            minimum: binding.Number?.Minimum ?? 0,
+            maximum: binding.Number?.Maximum ?? 9999,
+            increment: binding.Number?.Increment ?? 1,
+            componentType: binding.ComponentType,
+            options: binding.Options,
+            source: "runtime");
+    }
+
+    private static string InputKindForValueKind(ValueKind valueKind)
+    {
+        return valueKind switch
+        {
+            ValueKind.Decimal or ValueKind.Integer or ValueKind.Alpha => "number",
+            ValueKind.IntegerPair => "integerPair",
+            ValueKind.Boolean => "boolean",
+            ValueKind.OptionToken => "option",
+            ValueKind.RecordReference => "recordReference",
+            ValueKind.ComponentPreset => "componentPreset",
+            ValueKind.ThemeToken => "themeToken",
+            ValueKind.IconToken => "icon",
+            ValueKind.IconTokenList => "iconList",
+            ValueKind.StringMultiline => "multilineText",
+            _ => "text",
+        };
+    }
+
+    private static JsonObject IconRowInputBindings()
+    {
+        return new JsonObject
+        {
+            ["size"] = 44,
+            ["gap"] = "theme.spacing.m",
+            ["orientation"] = "horizontal",
+            ["buttonIconPresetId"] = DefaultComponentPresetId,
         };
     }
 

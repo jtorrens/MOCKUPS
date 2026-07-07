@@ -24,6 +24,8 @@ export function resolveTextInputBarComponent(
   const surfaceSlot = asRecord(textInput.surfaceSlot);
   const leftIconRowSlot = asRecord(textInput.leftIconRowSlot);
   const rightIconRowSlot = asRecord(textInput.rightIconRowSlot);
+  const leftIconRowInputs = asRecord(textInput.leftIconRowInputs);
+  const rightIconRowInputs = asRecord(textInput.rightIconRowInputs);
   const placeholder = requiredString(
     textInput,
     "placeholder",
@@ -92,11 +94,16 @@ export function resolveTextInputBarComponent(
     leftIconRow: resolveIconRowComponentFromRecords(
       embeddedLeftIconRowConfig,
       {
-        size: height,
-        gap: requiredString(textInput, "iconGap", "component.textInput.iconGap"),
-        orientation: "horizontal",
-        buttonIconPresetId: iconRowButtonIconPresetId(
-          embeddedLeftIconRowConfig,
+        size: requiredNumber(leftIconRowInputs, "size", "component.textInput.leftIconRow.size"),
+        gap: requiredString(leftIconRowInputs, "gap", "component.textInput.leftIconRow.gap"),
+        orientation: requiredString(
+          leftIconRowInputs,
+          "orientation",
+          "component.textInput.leftIconRow.orientation",
+        ),
+        buttonIconPresetId: requiredString(
+          leftIconRowInputs,
+          "buttonIconPresetId",
           "component.textInput.leftIconRow.buttonIconPresetId",
         ),
         icons: requiredStringArray(preview, "leftIcons", "component.textInput.input.leftIcons"),
@@ -107,11 +114,16 @@ export function resolveTextInputBarComponent(
     rightIconRow: resolveIconRowComponentFromRecords(
       embeddedRightIconRowConfig,
       {
-        size: height,
-        gap: requiredString(textInput, "iconGap", "component.textInput.iconGap"),
-        orientation: "horizontal",
-        buttonIconPresetId: iconRowButtonIconPresetId(
-          embeddedRightIconRowConfig,
+        size: requiredNumber(rightIconRowInputs, "size", "component.textInput.rightIconRow.size"),
+        gap: requiredString(rightIconRowInputs, "gap", "component.textInput.rightIconRow.gap"),
+        orientation: requiredString(
+          rightIconRowInputs,
+          "orientation",
+          "component.textInput.rightIconRow.orientation",
+        ),
+        buttonIconPresetId: requiredString(
+          rightIconRowInputs,
+          "buttonIconPresetId",
           "component.textInput.rightIconRow.buttonIconPresetId",
         ),
         icons: requiredStringArray(preview, "rightIcons", "component.textInput.input.rightIcons"),
@@ -124,12 +136,6 @@ export function resolveTextInputBarComponent(
 
 function toSpacingPair(pair: { first: string; second: string }) {
   return { xToken: pair.first, yToken: pair.second };
-}
-
-function iconRowButtonIconPresetId(config: Record<string, unknown>, path: string) {
-  const iconRow = asRecord(config.iconRow);
-  const buttonSlot = asRecord(iconRow.buttonIconSlot);
-  return requiredString(buttonSlot, "presetId", path);
 }
 
 function requiredStringArray(
