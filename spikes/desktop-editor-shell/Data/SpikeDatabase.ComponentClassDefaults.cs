@@ -89,6 +89,7 @@ internal sealed partial class SpikeDatabase
                 config["textBox"] = new JsonObject
                 {
                     ["dimensionMode"] = "fixed",
+                    ["maxLines"] = 4,
                     ["padding"] = "theme.spacing.m|theme.spacing.s",
                     ["surfaceSlot"] = ComponentSurfaceSlot("InputBox"),
                     ["placeholder"] = "Message",

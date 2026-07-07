@@ -100,6 +100,13 @@ internal static class ComponentClassFieldCatalog
         new("content", "Content + padding"),
     ];
 
+    private static readonly FieldOption[] TextBoxDimensionModeOptions =
+    [
+        new("fixed", "Fixed size"),
+        new("content", "Content + padding"),
+        new("growVertical", "Grow vertical"),
+    ];
+
     private static readonly FieldOption[] TextBoxOverflowOptions =
     [
         new("clip", "Clip"),
@@ -166,7 +173,8 @@ internal static class ComponentClassFieldCatalog
         ["component.cursor.minimumFade"] = new("component.cursor.minimumFade", "Minimum fade", ValueKind.Alpha, ["cursor", "minimumFade"], "0.15"),
         ["component.cursor.fadeFrames"] = new("component.cursor.fadeFrames", "Fade frames", ValueKind.Integer, ["cursor", "fadeFrames"], "12"),
 
-        ["component.textBox.dimensionMode"] = new("component.textBox.dimensionMode", "Dimension mode", ValueKind.OptionToken, ["textBox", "dimensionMode"], "fixed", Options: DimensionModeOptions),
+        ["component.textBox.dimensionMode"] = new("component.textBox.dimensionMode", "Dimension mode", ValueKind.OptionToken, ["textBox", "dimensionMode"], "fixed", Options: TextBoxDimensionModeOptions),
+        ["component.textBox.maxLines"] = new("component.textBox.maxLines", "Max lines", ValueKind.Integer, ["textBox", "maxLines"], "4", Number: new NumberDefinition(1, 64, 1, 0)),
         ["component.textBox.padding"] = new("component.textBox.padding", "Padding", ValueKind.ThemeTokenPair, ["textBox", "padding"], "theme.spacing.m|theme.spacing.s", PairLabels: new("X", "Y"), Options: SpacingTokenOptions),
         ["component.textBox.surface.editor"] = new("component.textBox.surface.editor", "Surface", ValueKind.ComponentPreset, ["textBox", "surfaceSlot", "presetId"], "InputBox"),
         ["component.textBox.placeholder"] = new("component.textBox.placeholder", "Placeholder", ValueKind.StringSingleLine, ["textBox", "placeholder"], "Message"),

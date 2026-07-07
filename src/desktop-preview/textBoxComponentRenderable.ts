@@ -51,10 +51,79 @@ export function measureTextBoxComponent(
     };
   }
 
-  const height = Math.max(1, contentSize.height + paddingY * 2);
-  const paddingX = basePaddingX + effectiveCornerTextInset(cornerRadius, Number.POSITIVE_INFINITY, height);
+  if (textBox.dimensionMode === "growVertical") {
+    const width = textBox.size.width * scale;
+    const minimumHeight = textBox.size.height * scale;
+    let paddingX = basePaddingX + effectiveCornerTextInset(
+      cornerRadius,
+      width,
+      minimumHeight,
+    );
+    let wrappedContentSize = approximateWrappedTextSize(
+      contentText,
+      typography.fontSize,
+      typography.lineHeight,
+      Math.max(1, width - paddingX * 2),
+    );
+    let height = growingHeight(
+      minimumHeight,
+      paddingY,
+      typography.lineHeight,
+      textBox.maxLines,
+      wrappedContentSize.height,
+    );
+    paddingX = basePaddingX + effectiveCornerTextInset(cornerRadius, width, height);
+    wrappedContentSize = approximateWrappedTextSize(
+      contentText,
+      typography.fontSize,
+      typography.lineHeight,
+      Math.max(1, width - paddingX * 2),
+    );
+    height = growingHeight(
+      minimumHeight,
+      paddingY,
+      typography.lineHeight,
+      textBox.maxLines,
+      wrappedContentSize.height,
+    );
+
+    return {
+      width,
+      height,
+      typography,
+      basePaddingX,
+      paddingX,
+      paddingY,
+      cornerRadius,
+      contentText,
+      contentTextHeight: wrappedContentSize.height,
+    };
+  }
+
+  const maximumWidth = Math.max(1, textBox.size.width * scale);
+  let height = Math.max(1, contentSize.height + paddingY * 2);
+  let paddingX = basePaddingX + effectiveCornerTextInset(cornerRadius, maximumWidth, height);
+  let wrappedContentSize = approximateWrappedTextSize(
+    contentText,
+    typography.fontSize,
+    typography.lineHeight,
+    Math.max(1, maximumWidth - paddingX * 2),
+  );
+  height = Math.max(1, wrappedContentSize.height + paddingY * 2);
+  paddingX = basePaddingX + effectiveCornerTextInset(cornerRadius, maximumWidth, height);
+  wrappedContentSize = approximateWrappedTextSize(
+    contentText,
+    typography.fontSize,
+    typography.lineHeight,
+    Math.max(1, maximumWidth - paddingX * 2),
+  );
+  height = Math.max(1, wrappedContentSize.height + paddingY * 2);
+  const width = Math.min(
+    maximumWidth,
+    Math.max(1, wrappedContentSize.width + paddingX * 2),
+  );
   return {
-    width: Math.max(1, contentSize.width + paddingX * 2),
+    width,
     height,
     typography,
     basePaddingX,
@@ -62,7 +131,7 @@ export function measureTextBoxComponent(
     paddingY,
     cornerRadius,
     contentText,
-    contentTextHeight: contentSize.height,
+    contentTextHeight: wrappedContentSize.height,
   };
 }
 
@@ -216,6 +285,18 @@ function effectiveCornerTextInset(cornerRadius: number, width: number, height: n
     Math.max(0, height) * 0.5,
   );
   return Math.min(effectiveRadius * 0.35, Math.max(0, height) * 0.18);
+}
+
+function growingHeight(
+  minimumHeight: number,
+  paddingY: number,
+  lineHeight: number,
+  maxLines: number,
+  contentHeight: number,
+) {
+  const maximumContentHeight = Math.max(1, Math.floor(maxLines)) * lineHeight;
+  const visibleContentHeight = Math.min(contentHeight, maximumContentHeight);
+  return Math.max(1, minimumHeight, visibleContentHeight + paddingY * 2);
 }
 
 function textBoxJustify(textAlign: TextBoxDesignContract["textAlign"]) {

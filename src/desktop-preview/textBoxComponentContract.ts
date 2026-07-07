@@ -7,8 +7,9 @@ import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
 
 export interface TextBoxDesignContract {
   id: string;
-  dimensionMode: "fixed" | "content";
+  dimensionMode: "fixed" | "content" | "growVertical";
   size: { width: number; height: number };
+  maxLines: number;
   padding: SpacingPairContract;
   text: string;
   placeholder: string;

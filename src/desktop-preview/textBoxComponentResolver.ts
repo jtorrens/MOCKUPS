@@ -8,6 +8,7 @@ import {
   optionalString,
   parseObject,
   requiredBoolean,
+  requiredNumber,
   requiredNumberPair,
   requiredString,
   requiredStringPair,
@@ -46,7 +47,11 @@ export function resolveTextBoxComponentFromRecords(
     "dimensionMode",
     "component.textBox.dimensionMode",
   );
-  if (dimensionMode !== "fixed" && dimensionMode !== "content") {
+  if (
+    dimensionMode !== "fixed" &&
+    dimensionMode !== "content" &&
+    dimensionMode !== "growVertical"
+  ) {
     throw new Error(`Unsupported text box dimension mode ${dimensionMode}`);
   }
 
@@ -78,6 +83,10 @@ export function resolveTextBoxComponentFromRecords(
     id,
     dimensionMode,
     size: { width: size.first, height: size.second },
+    maxLines: Math.max(
+      1,
+      Math.floor(requiredNumber(textBox, "maxLines", "component.textBox.maxLines")),
+    ),
     padding: { xToken: padding.first, yToken: padding.second },
     text: optionalString(inputs, "sampleText"),
     placeholder: optionalString(textBox, "placeholder"),
