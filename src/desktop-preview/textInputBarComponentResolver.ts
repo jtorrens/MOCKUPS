@@ -75,6 +75,11 @@ export function resolveTextInputBarComponent(
           "placeholder",
           "component.textInput.textBox.placeholder",
         ),
+        maxLines: requiredNumber(
+          textBoxInputs,
+          "maxLines",
+          "component.textInput.textBox.maxLines",
+        ),
         size: `520|${height}`,
         maxWidth: 520,
       },

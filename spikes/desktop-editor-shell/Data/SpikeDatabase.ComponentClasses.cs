@@ -2301,6 +2301,11 @@ internal sealed partial class SpikeDatabase
             SetJsonValue(textInput, ["textBoxInputs", "placeholder"], JsonValue.Create("Message")!);
             changed = true;
         }
+        if (JsonPath.Get(textInput, ["textBoxInputs", "maxLines"]) is null)
+        {
+            SetJsonValue(textInput, ["textBoxInputs", "maxLines"], JsonValue.Create(4)!);
+            changed = true;
+        }
         changed |= NormalizeComponentSlot(textInput, "surfaceSlot", "InputBox");
         changed |= NormalizeComponentPresetString(
             connection,

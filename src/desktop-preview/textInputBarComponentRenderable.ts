@@ -6,7 +6,10 @@ import {
 } from "./componentRenderableCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
-import { textBoxComponentToRenderableAt } from "./textBoxComponentRenderable.js";
+import {
+  measureTextBoxComponent,
+  textBoxComponentToRenderableAt,
+} from "./textBoxComponentRenderable.js";
 import {
   iconRowComponentToRenderableAt,
   measureIconRowComponent,
@@ -27,33 +30,43 @@ export function textInputBarComponentToRenderable(
   const rightIconSize = measureIconRowComponent(payload, textInput.rightIconRow);
   const hasLeftIcons = textInput.leftIconRow.icons.length > 0;
   const hasRightIcons = textInput.rightIconRow.icons.length > 0;
+  const width = Math.max(1, screenBox.width - barPaddingX * 2);
+  const fieldWidth = Math.max(
+    1,
+    width
+      - (hasLeftIcons ? leftIconSize.width + iconGap : 0)
+      - (hasRightIcons ? rightIconSize.width + iconGap : 0),
+  );
+  const measuredTextBox = {
+    ...textInput.textBox,
+    size: {
+      width: Math.max(1, fieldWidth / scale),
+      height: Math.max(1, height / scale),
+    },
+  };
+  const measuredTextBoxSize = measureTextBoxComponent(payload, measuredTextBox);
+  const fieldHeight = Math.max(height, measuredTextBoxSize.height);
   const barBox = {
     x: screenBox.x,
-    y: screenBox.y + (screenBox.height - height - barPaddingY * 2) / 2,
+    y: screenBox.y + (screenBox.height - fieldHeight - barPaddingY * 2) / 2,
     width: screenBox.width,
-    height: height + barPaddingY * 2,
+    height: fieldHeight + barPaddingY * 2,
   };
-  const width = Math.max(1, screenBox.width - barPaddingX * 2);
   const fieldBox = {
     x: screenBox.x + barPaddingX + (hasLeftIcons ? leftIconSize.width + iconGap : 0),
     y: barBox.y + barPaddingY,
-    width: Math.max(
-      1,
-      width
-        - (hasLeftIcons ? leftIconSize.width + iconGap : 0)
-        - (hasRightIcons ? rightIconSize.width + iconGap : 0),
-    ),
-    height,
+    width: fieldWidth,
+    height: fieldHeight,
   };
   const leftIconBox = {
     x: screenBox.x + barPaddingX,
-    y: fieldBox.y + Math.max(0, (height - leftIconSize.height) * 0.5),
+    y: fieldBox.y + Math.max(0, fieldBox.height - leftIconSize.height),
     width: leftIconSize.width,
     height: leftIconSize.height,
   };
   const rightIconBox = {
     x: screenBox.x + screenBox.width - barPaddingX - rightIconSize.width,
-    y: fieldBox.y + Math.max(0, (height - rightIconSize.height) * 0.5),
+    y: fieldBox.y + Math.max(0, fieldBox.height - rightIconSize.height),
     width: rightIconSize.width,
     height: rightIconSize.height,
   };

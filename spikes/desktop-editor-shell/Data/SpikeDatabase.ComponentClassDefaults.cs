@@ -316,6 +316,7 @@ internal sealed partial class SpikeDatabase
         {
             preview["size"] = "220|44";
             preview["maxWidth"] = 220;
+            preview["maxLines"] = 4;
         }
         if (componentType == "cursor")
         {
@@ -361,6 +362,7 @@ internal sealed partial class SpikeDatabase
             [
                 ComponentInput("sampleText", "Text", "sampleText", "multilineText", "Message"),
                 ComponentInput("placeholder", "Placeholder", "placeholder", "text", "Message"),
+                ComponentInput("maxLines", "Max lines", "maxLines", ValueKind.Integer, "4", minimum: 1, maximum: 64, increment: 1),
                 ComponentInput(
                     "fixedSize",
                     "Size",
@@ -443,7 +445,7 @@ internal sealed partial class SpikeDatabase
             ],
             "textInputBar" =>
             [
-                ComponentInput("sampleText", "Text", "sampleText", "multilineText", "Message"),
+                ComponentInput("sampleText", "Text", "sampleText", ValueKind.StringMultiline, "Message"),
                 ProjectRuntimeInput("iconRow", "icons", "leftIcons", "Left icon tokens", "leftIcons", "[]"),
                 ProjectRuntimeInput("iconRow", "icons", "rightIcons", "Right icon tokens", "rightIcons", """["media_mic","chat_send"]"""),
             ],
@@ -472,7 +474,7 @@ internal sealed partial class SpikeDatabase
         string id,
         string label,
         string jsonKey,
-        string kind,
+        ValueKind valueKind,
         string defaultValue,
         decimal minimum = 0,
         decimal maximum = 9999,
@@ -487,12 +489,54 @@ internal sealed partial class SpikeDatabase
         string visibleWhenValue = "",
         string source = "runtime")
     {
+        return ComponentInput(
+            id,
+            label,
+            jsonKey,
+            InputKindForValueKind(valueKind),
+            defaultValue,
+            minimum,
+            maximum,
+            increment,
+            tableId,
+            resolvedJsonKey,
+            componentType,
+            options,
+            pairFirstLabel,
+            pairSecondLabel,
+            visibleWhenPath,
+            visibleWhenValue,
+            source,
+            valueKind.ToString());
+    }
+
+    private static JsonObject ComponentInput(
+        string id,
+        string label,
+        string jsonKey,
+        string kind,
+        string defaultValue,
+        decimal minimum = 0,
+        decimal maximum = 9999,
+        decimal increment = 1,
+        string tableId = "",
+        string resolvedJsonKey = "",
+        string componentType = "",
+        IReadOnlyList<FieldOption>? options = null,
+        string pairFirstLabel = "W",
+        string pairSecondLabel = "H",
+        string visibleWhenPath = "",
+        string visibleWhenValue = "",
+        string source = "runtime",
+        string valueKind = "")
+    {
         return new JsonObject
         {
             ["id"] = id,
             ["label"] = label,
             ["jsonKey"] = jsonKey,
             ["kind"] = kind,
+            ["valueKind"] = string.IsNullOrWhiteSpace(valueKind) ? ValueKindForInputKind(kind) : valueKind,
             ["defaultValue"] = defaultValue,
             ["minimum"] = minimum,
             ["maximum"] = maximum,
@@ -531,7 +575,8 @@ internal sealed partial class SpikeDatabase
             increment: binding.Number?.Increment ?? 1,
             componentType: binding.ComponentType,
             options: binding.Options,
-            source: "runtime");
+            source: "runtime",
+            valueKind: binding.ValueKind.ToString());
     }
 
     private static string InputKindForValueKind(ValueKind valueKind)
@@ -552,6 +597,24 @@ internal sealed partial class SpikeDatabase
         };
     }
 
+    private static string ValueKindForInputKind(string kind)
+    {
+        return kind.Trim().ToLowerInvariant() switch
+        {
+            "number" => ValueKind.Decimal.ToString(),
+            "integerpair" or "integer_pair" or "size" => ValueKind.IntegerPair.ToString(),
+            "boolean" => ValueKind.Boolean.ToString(),
+            "option" => ValueKind.OptionToken.ToString(),
+            "recordreference" or "record_reference" => ValueKind.RecordReference.ToString(),
+            "componentpreset" or "component_preset" => ValueKind.ComponentPreset.ToString(),
+            "themetoken" or "theme_token" => ValueKind.ThemeToken.ToString(),
+            "icon" => ValueKind.IconToken.ToString(),
+            "iconlist" or "icon_list" or "icons" => ValueKind.IconTokenList.ToString(),
+            "multilinetext" or "multiline_text" or "textmultiline" or "text_multiline" => ValueKind.StringMultiline.ToString(),
+            _ => ValueKind.StringSingleLine.ToString(),
+        };
+    }
+
     private static JsonObject IconRowInputBindings()
     {
         return new JsonObject
@@ -567,6 +630,7 @@ internal sealed partial class SpikeDatabase
         return new JsonObject
         {
             ["placeholder"] = "Message",
+            ["maxLines"] = 4,
         };
     }
 

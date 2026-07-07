@@ -61,7 +61,6 @@ internal sealed partial class SpikeDatabase
               "groups": [
                 { "id": "textBox", "label": "Text box", "order": 10, "visible": true, "fields": [
                   { "id": "component.textBox.dimensionMode", "order": 10, "visible": true },
-                  { "id": "component.textBox.maxLines", "order": 20, "visible": true },
                   { "id": "component.textBox.padding", "order": 30, "visible": true },
                   { "id": "component.textBox.surface.editor", "order": 40, "visible": true },
                   { "id": "component.textBox.textColorToken", "order": 60, "visible": true },

@@ -91,7 +91,7 @@ export function resolveTextBoxComponentFromRecords(
     size: { width: size.first, height: size.second },
     maxLines: Math.max(
       1,
-      Math.floor(requiredNumber(textBox, "maxLines", "component.textBox.maxLines")),
+      Math.floor(requiredNumber(inputs, "maxLines", "component.textBox.input.maxLines")),
     ),
     padding: { xToken: padding.first, yToken: padding.second },
     text: optionalString(inputs, "sampleText"),

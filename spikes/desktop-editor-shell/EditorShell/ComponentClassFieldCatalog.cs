@@ -182,6 +182,14 @@ internal static class ComponentClassFieldCatalog
             ComponentInputBindingSource.Variant,
             "Message"),
         new(
+            "maxLines",
+            "Max lines",
+            "maxLines",
+            ValueKind.Integer,
+            ComponentInputBindingSource.Variant,
+            "4",
+            Number: new NumberDefinition(1, 64, 1, 0)),
+        new(
             "size",
             "Size",
             "size",
@@ -271,7 +279,6 @@ internal static class ComponentClassFieldCatalog
         ["component.cursor.fadeFrames"] = new("component.cursor.fadeFrames", "Fade frames", ValueKind.Integer, ["cursor", "fadeFrames"], "12"),
 
         ["component.textBox.dimensionMode"] = new("component.textBox.dimensionMode", "Dimension mode", ValueKind.OptionToken, ["textBox", "dimensionMode"], "fixed", Options: TextBoxDimensionModeOptions),
-        ["component.textBox.maxLines"] = new("component.textBox.maxLines", "Max lines", ValueKind.Integer, ["textBox", "maxLines"], "4", Number: new NumberDefinition(1, 64, 1, 0)),
         ["component.textBox.padding"] = new("component.textBox.padding", "Padding", ValueKind.ThemeTokenPair, ["textBox", "padding"], "theme.spacing.m|theme.spacing.s", PairLabels: new("X", "Y"), Options: SpacingTokenOptions),
         ["component.textBox.surface.editor"] = new("component.textBox.surface.editor", "Surface", ValueKind.ComponentPreset, ["textBox", "surfaceSlot", "presetId"], "InputBox"),
         ["component.textBox.placeholder"] = new("component.textBox.placeholder", "Placeholder", ValueKind.StringSingleLine, ["textBox", "placeholder"], "Message"),

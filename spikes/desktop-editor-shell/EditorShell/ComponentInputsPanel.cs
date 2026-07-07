@@ -272,71 +272,24 @@ internal sealed class ComponentInputsPanel : ContentControl
 
     private FieldDefinition CreateFieldDefinition(ComponentInputDefinition input, string projectId)
     {
-        return input.Kind switch
-        {
-            ComponentInputKind.Number => new FieldDefinition(
-                input.Id,
-                input.Label,
-                ValueKind.Decimal,
-                DefaultValue: input.DefaultValue,
-                Number: new NumberDefinition(input.Minimum, input.Maximum, input.Increment, 2)),
-            ComponentInputKind.IntegerPair => new FieldDefinition(
-                input.Id,
-                input.Label,
-                ValueKind.IntegerPair,
-                DefaultValue: input.DefaultValue,
-                PairLabels: input.PairLabels),
-            ComponentInputKind.Boolean => new FieldDefinition(
-                input.Id,
-                input.Label,
-                ValueKind.Boolean,
-                DefaultValue: input.DefaultValue),
-            ComponentInputKind.Option => new FieldDefinition(
-                input.Id,
-                input.Label,
-                ValueKind.OptionToken,
-                DefaultValue: input.DefaultValue,
-                Options: input.Options),
-            ComponentInputKind.RecordReference => new FieldDefinition(
-                input.Id,
-                input.Label,
-                ValueKind.RecordReference,
-                DefaultValue: input.DefaultValue,
-                Options: RecordReferenceOptions(input, projectId),
-                RecordReference: new RecordReferenceDefinition(input.TableId)),
-            ComponentInputKind.ComponentPreset => new FieldDefinition(
-                input.Id,
-                input.Label,
-                ValueKind.ComponentPreset,
-                DefaultValue: input.DefaultValue,
-                Options: ComponentPresetOptions(input, projectId)),
-            ComponentInputKind.ThemeToken => new FieldDefinition(
-                input.Id,
-                input.Label,
-                ValueKind.ThemeToken,
-                DefaultValue: input.DefaultValue,
-                Options: input.Options),
-            ComponentInputKind.Icon => new FieldDefinition(
-                input.Id,
-                input.Label,
-                ValueKind.IconToken,
-                DefaultValue: input.DefaultValue),
-            ComponentInputKind.IconList => new FieldDefinition(
-                input.Id,
-                input.Label,
-                ValueKind.IconTokenList,
-                DefaultValue: input.DefaultValue),
-            ComponentInputKind.MultilineText => new FieldDefinition(
-                input.Id,
-                input.Label,
-                ValueKind.StringMultiline,
-                DefaultValue: input.DefaultValue),
-            _ => new FieldDefinition(
-                input.Id,
-                input.Label,
-                ValueKind.StringSingleLine,
-                DefaultValue: input.DefaultValue),
-        };
+        return new FieldDefinition(
+            input.Id,
+            input.Label,
+            input.ValueKind,
+            DefaultValue: input.DefaultValue,
+            Options: input.ValueKind switch
+            {
+                ValueKind.RecordReference => RecordReferenceOptions(input, projectId),
+                ValueKind.ComponentPreset => ComponentPresetOptions(input, projectId),
+                _ => input.Options,
+            },
+            PairLabels: input.ValueKind == ValueKind.IntegerPair ? input.PairLabels : null,
+            Number: input.ValueKind is ValueKind.Decimal or ValueKind.Integer or ValueKind.Alpha
+                ? new NumberDefinition(input.Minimum, input.Maximum, input.Increment, input.ValueKind == ValueKind.Integer ? 0 : 2)
+                : null,
+            RecordReference: input.ValueKind == ValueKind.RecordReference
+                ? new RecordReferenceDefinition(input.TableId)
+                : null);
     }
 
     private DictionaryFieldServices CreateDictionaryServices(string projectId)
@@ -469,6 +422,7 @@ internal sealed class ComponentInputsPanel : ContentControl
         string label,
         string jsonKey,
         string kind,
+        string valueKind,
         string defaultValue,
         IReadOnlyList<FieldOption> options,
         decimal minimum,
@@ -481,11 +435,13 @@ internal sealed class ComponentInputsPanel : ContentControl
         PairFieldLabels pairLabels)
     {
         var normalizedKind = ParseKind(kind);
+        var normalizedValueKind = ParseValueKind(valueKind, normalizedKind);
         var normalizedTableId = tableId;
         var normalizedResolvedJsonKey = resolvedJsonKey;
         if (kind.Trim().Equals("actor", StringComparison.OrdinalIgnoreCase))
         {
             normalizedKind = ComponentInputKind.RecordReference;
+            normalizedValueKind = ValueKind.RecordReference;
             normalizedTableId = string.IsNullOrWhiteSpace(tableId) ? "actors" : tableId;
             normalizedResolvedJsonKey = string.IsNullOrWhiteSpace(resolvedJsonKey) ? "actor" : resolvedJsonKey;
         }
@@ -495,6 +451,7 @@ internal sealed class ComponentInputsPanel : ContentControl
             label,
             jsonKey,
             normalizedKind,
+            normalizedValueKind,
             defaultValue,
             options,
             minimum,
@@ -761,6 +718,7 @@ internal sealed class ComponentInputsPanel : ContentControl
                 label,
                 jsonKey,
                 kind,
+                JsonString(item, "valueKind"),
                 JsonString(item, "defaultValue"),
                 ReadOptions(item),
                 JsonDecimal(item, "minimum", 0),
@@ -804,6 +762,7 @@ internal sealed class ComponentInputsPanel : ContentControl
             input.Label,
             input.JsonKey,
             input.Kind,
+            input.ValueKind,
             input.DefaultValue,
             input.PairLabels.First,
             input.PairLabels.Second,
@@ -869,6 +828,29 @@ internal sealed class ComponentInputsPanel : ContentControl
         };
     }
 
+    private static ValueKind ParseValueKind(string valueKind, ComponentInputKind fallbackKind)
+    {
+        if (Enum.TryParse<ValueKind>(valueKind, ignoreCase: true, out var parsed))
+        {
+            return parsed;
+        }
+
+        return fallbackKind switch
+        {
+            ComponentInputKind.Number => ValueKind.Decimal,
+            ComponentInputKind.IntegerPair => ValueKind.IntegerPair,
+            ComponentInputKind.Boolean => ValueKind.Boolean,
+            ComponentInputKind.Option => ValueKind.OptionToken,
+            ComponentInputKind.RecordReference => ValueKind.RecordReference,
+            ComponentInputKind.ComponentPreset => ValueKind.ComponentPreset,
+            ComponentInputKind.ThemeToken => ValueKind.ThemeToken,
+            ComponentInputKind.Icon => ValueKind.IconToken,
+            ComponentInputKind.IconList => ValueKind.IconTokenList,
+            ComponentInputKind.MultilineText => ValueKind.StringMultiline,
+            _ => ValueKind.StringSingleLine,
+        };
+    }
+
     private static ComponentInputSource ParseInputSource(string source)
     {
         return source.Trim().ToLowerInvariant() switch
@@ -931,6 +913,7 @@ internal sealed record ComponentInputDefinition(
     string Label,
     string JsonKey,
     ComponentInputKind Kind,
+    ValueKind ValueKind,
     string DefaultValue,
     IReadOnlyList<FieldOption>? Options = null,
     decimal Minimum = 0,
