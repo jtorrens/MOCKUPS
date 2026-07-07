@@ -10,6 +10,7 @@ import {
   variants,
 } from "./componentRenderableCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
+import { surfaceShapeDataUri } from "./previewSurfaceShapeHelpers.js";
 import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
 
 export function surfaceComponentToRenderable(
@@ -33,6 +34,10 @@ export function surfaceComponentToRenderableAt(
   surface: SurfaceDesignContract,
   box: RenderableBox,
 ): RenderableNode {
+  if (surface.tail.enabled && surface.tail.width > 0 && surface.tail.height > 0) {
+    return surfaceComponentTailRenderable(payload, surface, box);
+  }
+
   const visualPadding = surfaceComponentVisualPadding(payload, surface);
   const surfaceNode = surfaceComponentSurfaceNode(payload, surface, box);
   if (visualPadding <= 0) {
@@ -56,6 +61,87 @@ export function surfaceComponentToRenderableAt(
       {
         ...surfaceNode,
         id: `${surface.id}.surface`,
+      },
+    ],
+  };
+}
+
+function surfaceComponentTailRenderable(
+  payload: DesignPreviewPayload,
+  surface: SurfaceDesignContract,
+  box: RenderableBox,
+): RenderableNode {
+  const scale = renderScale(payload);
+  const cornerRadius = numberToken(payload, surface.surface.cornerRadiusToken) * scale;
+  const background = selectedColor(
+    payload,
+    surface.backgroundColorToken,
+    surface.backgroundAlpha,
+  );
+  const borderColor = selectedColor(
+    payload,
+    surface.surface.borderColorToken,
+    surface.borderAlpha,
+  );
+  const surfaceShadow = surface.surface.shadowEnabled ? shadow(payload) : undefined;
+  const shape = surfaceShapeDataUri({
+    body: box,
+    borderColor,
+    borderWidth: surface.surface.borderWidth * scale,
+    color: background,
+    cornerRadius,
+    tail: {
+      cornerRadius,
+      height: surface.tail.height * scale,
+      side: surface.tail.side,
+      style: surface.tail.style,
+      vertical: surface.tail.vertical,
+      width: surface.tail.width * scale,
+    },
+  });
+
+  return {
+    id: surface.id,
+    type: "group",
+    frame: 0,
+    box,
+    style: {
+      overflow: "visible",
+      colorModes: Object.fromEntries(
+        variants(payload).map((mode) => [
+          mode,
+          {
+            background: colorForMode(
+              payload,
+              surface.backgroundColorToken,
+              mode,
+              surface.backgroundAlpha,
+            ),
+            borderColor: colorForMode(
+              payload,
+              surface.surface.borderColorToken,
+              mode,
+              surface.borderAlpha,
+            ),
+          },
+        ]),
+      ),
+    },
+    children: [
+      {
+        id: `${surface.id}.shape`,
+        type: "image",
+        frame: 0,
+        box: shape.box,
+        asset: {
+          type: "image",
+          uri: shape.uri,
+        },
+        style: {
+          filter: dropShadowFilter(surfaceShadow),
+          objectFit: "fill",
+          overflow: "visible",
+        },
       },
     ],
   };
@@ -139,4 +225,13 @@ function surfaceComponentRelief(
           surface.surface.reliefBottomIntensity * surface.backgroundAlpha,
       }
     : undefined;
+}
+
+function dropShadowFilter(shadowValue: Record<string, unknown> | undefined) {
+  if (!shadowValue) return undefined;
+  const offsetX = typeof shadowValue.offsetX === "number" ? shadowValue.offsetX : 0;
+  const offsetY = typeof shadowValue.offsetY === "number" ? shadowValue.offsetY : 0;
+  const blur = typeof shadowValue.blur === "number" ? shadowValue.blur : 0;
+  const color = typeof shadowValue.color === "string" ? shadowValue.color : "transparent";
+  return `drop-shadow(${offsetX}px ${offsetY}px ${blur}px ${color})`;
 }

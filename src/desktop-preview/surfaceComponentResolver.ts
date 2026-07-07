@@ -3,11 +3,15 @@ import {
   asRecord,
   parseObject,
   requiredAlpha,
+  requiredBoolean,
   requiredNumberPair,
   requiredString,
   resolveSurfaceStyle,
 } from "./componentResolverCommon.js";
-import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
+import type {
+  SurfaceDesignContract,
+  SurfaceTailContract,
+} from "./surfaceComponentContract.js";
 
 export function resolveSurfaceComponent(
   payload: DesignPreviewPayload,
@@ -23,6 +27,7 @@ export function resolveSurfaceComponentFromRecords(
   id: string,
 ): SurfaceDesignContract {
   const surface = asRecord(config.surface);
+  const tail = asRecord(surface.tail);
   const style = asRecord(config.style);
   const size = requiredNumberPair(inputs, "size", "component.surface.input.size");
 
@@ -45,6 +50,7 @@ export function resolveSurfaceComponentFromRecords(
       "borderAlpha",
       "component.surface.borderAlpha",
     ),
+    tail: resolveSurfaceTail(tail),
     surface: resolveSurfaceStyle(style),
   };
 }
@@ -59,4 +65,46 @@ export function resolveSurfaceComponentAtSize(
     { size: `${size.width}|${size.height}` },
     id,
   );
+}
+
+function resolveSurfaceTail(
+  tail: Record<string, unknown>,
+): SurfaceTailContract {
+  const style = requiredString(tail, "style", "component.surface.tail.style");
+  if (
+    style !== "rounded_wedge" &&
+    style !== "curved_hook" &&
+    style !== "simple_triangle" &&
+    style !== "cut_corner"
+  ) {
+    throw new Error(`Unsupported surface tail style ${style}`);
+  }
+
+  const side = requiredString(tail, "side", "component.surface.tail.side");
+  if (side !== "left" && side !== "right") {
+    throw new Error(`Unsupported surface tail side ${side}`);
+  }
+
+  const vertical = requiredString(
+    tail,
+    "vertical",
+    "component.surface.tail.vertical",
+  );
+  if (vertical !== "top" && vertical !== "bottom") {
+    throw new Error(`Unsupported surface tail vertical ${vertical}`);
+  }
+
+  const size = requiredNumberPair(tail, "size", "component.surface.tail.size");
+  return {
+    enabled: requiredBoolean(
+      tail,
+      "enabled",
+      "component.surface.tail.enabled",
+    ),
+    style,
+    side,
+    vertical,
+    width: Math.max(0, size.first),
+    height: Math.max(0, size.second),
+  };
 }

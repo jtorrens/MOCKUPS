@@ -179,6 +179,7 @@ function nodeStyle(
   const alignItems = optionalStringValue(style.alignItems);
   const justifyContent = optionalStringValue(style.justifyContent);
   const flexDirection = optionalStringValue(style.flexDirection);
+  const filter = optionalStringValue(style.filter);
   const width = optionalStringValue(style.width) ?? optionalNumberValue(style.width) ?? node.box?.width;
   const height = optionalStringValue(style.height) ?? optionalNumberValue(style.height) ?? node.box?.height;
 
@@ -198,6 +199,7 @@ function nodeStyle(
     color,
     display: display as CSSProperties["display"],
     flexDirection: flexDirection as CSSProperties["flexDirection"],
+    filter,
     fontFamily: optionalStringValue(style.fontFamily) ?? (node.type === "text" ? previewTextFontFamily : undefined),
     fontSize: optionalNumberValue(style.fontSize),
     fontStyle: optionalStringValue(style.fontStyle) as CSSProperties["fontStyle"],

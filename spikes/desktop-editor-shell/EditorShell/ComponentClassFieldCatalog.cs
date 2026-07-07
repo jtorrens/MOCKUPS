@@ -122,6 +122,26 @@ internal static class ComponentClassFieldCatalog
         new("vertical", "Vertical"),
     ];
 
+    private static readonly FieldOption[] SurfaceTailStyleOptions =
+    [
+        new("rounded_wedge", "Rounded wedge"),
+        new("curved_hook", "Curved hook"),
+        new("simple_triangle", "Simple triangle"),
+        new("cut_corner", "Cut corner"),
+    ];
+
+    private static readonly FieldOption[] SurfaceTailSideOptions =
+    [
+        new("left", "Left"),
+        new("right", "Right"),
+    ];
+
+    private static readonly FieldOption[] SurfaceTailVerticalOptions =
+    [
+        new("top", "Top"),
+        new("bottom", "Bottom"),
+    ];
+
     private static readonly ComponentInputBindingDefinition[] IconRowParentInputBindings =
     [
         new(
@@ -372,6 +392,11 @@ internal static class ComponentClassFieldCatalog
         ["component.surface.backgroundColorToken"] = new("component.surface.backgroundColorToken", "Background", ValueKind.ThemeToken, ["surface", "backgroundColorToken"], "theme.colors.surface", Options: ThemeColorOptions),
         ["component.surface.backgroundAlpha"] = new("component.surface.backgroundAlpha", "Surface alpha", ValueKind.Alpha, ["surface", "backgroundAlpha"], "1"),
         ["component.surface.borderAlpha"] = new("component.surface.borderAlpha", "Border alpha", ValueKind.Alpha, ["surface", "borderAlpha"], "1"),
+        ["component.surface.tail.enabled"] = new("component.surface.tail.enabled", "Tail", ValueKind.Boolean, ["surface", "tail", "enabled"], "false"),
+        ["component.surface.tail.style"] = new("component.surface.tail.style", "Tail style", ValueKind.OptionToken, ["surface", "tail", "style"], "rounded_wedge", Options: SurfaceTailStyleOptions),
+        ["component.surface.tail.side"] = new("component.surface.tail.side", "Tail side", ValueKind.OptionToken, ["surface", "tail", "side"], "left", Options: SurfaceTailSideOptions),
+        ["component.surface.tail.vertical"] = new("component.surface.tail.vertical", "Tail vertical", ValueKind.OptionToken, ["surface", "tail", "vertical"], "bottom", Options: SurfaceTailVerticalOptions),
+        ["component.surface.tail.size"] = new("component.surface.tail.size", "Tail size", ValueKind.IntegerPair, ["surface", "tail", "size"], "18|14", PairLabels: new("W", "H")),
 
         ["component.cursor.colorToken"] = new("component.cursor.colorToken", "Color", ValueKind.ThemeToken, ["cursor", "colorToken"], "theme.cursor.color", Options: ThemeColorOptions),
         ["component.cursor.width"] = new("component.cursor.width", "Width", ValueKind.Integer, ["cursor", "width"], "2"),

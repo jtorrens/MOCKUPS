@@ -78,6 +78,14 @@ internal sealed partial class SpikeDatabase
                     ["backgroundColorToken"] = "theme.colors.surface",
                     ["backgroundAlpha"] = 1,
                     ["borderAlpha"] = 1,
+                    ["tail"] = new JsonObject
+                    {
+                        ["enabled"] = false,
+                        ["style"] = "rounded_wedge",
+                        ["side"] = "left",
+                        ["vertical"] = "bottom",
+                        ["size"] = "18|14",
+                    },
                 };
                 break;
             case "cursor":

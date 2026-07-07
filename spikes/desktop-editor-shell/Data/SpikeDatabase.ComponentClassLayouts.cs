@@ -24,6 +24,13 @@ internal sealed partial class SpikeDatabase
                   { "id": "component.surface.backgroundColorToken", "order": 10, "visible": true },
                   { "id": "component.surface.backgroundAlpha", "order": 20, "visible": true },
                   { "id": "component.surface.borderAlpha", "order": 30, "visible": true }
+                ] },
+                { "id": "tail", "label": "Tail", "order": 20, "visible": true, "fields": [
+                  { "id": "component.surface.tail.enabled", "order": 10, "visible": true },
+                  { "id": "component.surface.tail.style", "order": 20, "visible": true },
+                  { "id": "component.surface.tail.side", "order": 30, "visible": true },
+                  { "id": "component.surface.tail.vertical", "order": 40, "visible": true },
+                  { "id": "component.surface.tail.size", "order": 50, "visible": true }
                 ] }
               ]
             }
