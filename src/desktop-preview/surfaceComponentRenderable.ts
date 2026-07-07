@@ -84,12 +84,14 @@ function surfaceComponentTailRenderable(
     surface.borderAlpha,
   );
   const surfaceShadow = surface.surface.shadowEnabled ? shadow(payload) : undefined;
+  const surfaceRelief = surfaceComponentRelief(surface, scale);
   const shape = surfaceShapeDataUri({
     body: box,
     borderColor,
     borderWidth: surface.surface.borderWidth * scale,
     color: background,
     cornerRadius,
+    relief: surfaceRelief,
     tail: {
       cornerRadius,
       height: surface.tail.height * scale,

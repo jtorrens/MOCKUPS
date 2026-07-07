@@ -16,7 +16,16 @@ export interface SurfaceShapeSvgInput {
   borderWidth: number;
   color: string;
   cornerRadius: number;
+  relief?: SurfaceShapeRelief;
   tail: SurfaceTailShape;
+}
+
+export interface SurfaceShapeRelief {
+  angleDeg: number;
+  extension: number;
+  spread: number;
+  upperIntensity: number;
+  lowerIntensity: number;
 }
 
 export function surfaceShapeDataUri({
@@ -25,11 +34,15 @@ export function surfaceShapeDataUri({
   borderWidth,
   color,
   cornerRadius,
+  relief,
   tail,
 }: SurfaceShapeSvgInput) {
   const tailBox = surfaceTailBox(body, tail);
+  const reliefPadding = relief
+    ? Math.ceil(Math.max(relief.extension, relief.spread, 0) * 2) + 2
+    : 0;
   const borderPadding =
-    Math.ceil(Math.max(0, borderWidth) * 2) + (borderWidth > 0 ? 2 : 0);
+    Math.ceil(Math.max(0, borderWidth) * 2) + reliefPadding + (borderWidth > 0 ? 2 : 0);
   const minX = Math.min(body.x, tailBox.x) - borderPadding;
   const minY = Math.min(body.y, tailBox.y) - borderPadding;
   const maxX = Math.max(body.x + body.width, tailBox.x + tailBox.width) + borderPadding;
@@ -57,14 +70,80 @@ export function surfaceShapeDataUri({
     borderWidth > 0 && borderColor !== "transparent"
       ? `<g fill="none" stroke="${escapedBorderColor}" stroke-width="${borderWidth * 2}" stroke-linejoin="round" stroke-linecap="round">${shapeMarkup}</g>`
       : "";
+  const reliefMarkup = surfaceReliefFilterMarkup(relief, width, height, reliefPadding);
+  const fillFilter = reliefMarkup ? ` filter="url(#surface-shape-relief)"` : "";
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="100%" height="100%" preserveAspectRatio="none" style="display:block;overflow:visible">
+    ${reliefMarkup}
     ${borderMarkup}
-    <g fill="${escapedColor}">${shapeMarkup}</g>
+    <g fill="${escapedColor}"${fillFilter}>${shapeMarkup}</g>
   </svg>`;
 
   return {
     box: { x: minX, y: minY, width, height },
     uri: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`,
+  };
+}
+
+function surfaceReliefFilterMarkup(
+  relief: SurfaceShapeRelief | undefined,
+  width: number,
+  height: number,
+  padding: number,
+) {
+  if (!relief) return "";
+  const upperPaint = reliefPaint(relief.upperIntensity);
+  const lowerPaint = reliefPaint(relief.lowerIntensity);
+  if (!upperPaint && !lowerPaint) return "";
+
+  const angleRad = (relief.angleDeg * Math.PI) / 180;
+  const dx = Math.cos(angleRad) * relief.extension;
+  const dy = Math.sin(angleRad) * relief.extension;
+  const blur = Math.max(0, relief.spread);
+  const regionX = -padding;
+  const regionY = -padding;
+  const regionWidth = width + padding * 2;
+  const regionHeight = height + padding * 2;
+
+  return `<defs>
+    <filter id="surface-shape-relief" filterUnits="userSpaceOnUse" x="${regionX}" y="${regionY}" width="${regionWidth}" height="${regionHeight}">
+      ${reliefLayerMarkup("upper", upperPaint, dx, dy, blur)}
+      ${reliefLayerMarkup("lower", lowerPaint, -dx, -dy, blur)}
+      <feMerge>
+        <feMergeNode in="SourceGraphic"/>
+        ${upperPaint ? `<feMergeNode in="upperRelief"/>` : ""}
+        ${lowerPaint ? `<feMergeNode in="lowerRelief"/>` : ""}
+      </feMerge>
+    </filter>
+  </defs>`;
+}
+
+interface ReliefPaint {
+  color: "black" | "white";
+  opacity: number;
+}
+
+function reliefLayerMarkup(
+  id: "upper" | "lower",
+  paint: ReliefPaint | undefined,
+  dx: number,
+  dy: number,
+  blur: number,
+) {
+  if (!paint) return "";
+  return `
+      <feOffset in="SourceAlpha" dx="${dx}" dy="${dy}" result="${id}Offset"/>
+      <feComposite in="SourceAlpha" in2="${id}Offset" operator="out" result="${id}Edge"/>
+      <feGaussianBlur in="${id}Edge" stdDeviation="${blur}" result="${id}Blur"/>
+      <feFlood flood-color="${paint.color}" flood-opacity="${paint.opacity}" result="${id}Color"/>
+      <feComposite in="${id}Color" in2="${id}Blur" operator="in" result="${id}Relief"/>`;
+}
+
+function reliefPaint(intensity: number): ReliefPaint | undefined {
+  if (!Number.isFinite(intensity) || intensity === 0) return undefined;
+  const alpha = Math.min(1, Math.abs(intensity));
+  return {
+    color: intensity > 0 ? "white" : "black",
+    opacity: alpha,
   };
 }
 
