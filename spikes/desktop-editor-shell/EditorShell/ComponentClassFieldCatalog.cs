@@ -15,7 +15,8 @@ internal sealed record ComponentClassFieldDescriptor(
     IReadOnlyList<FieldOption>? Options = null,
     PairFieldLabels? PairLabels = null,
     NumberDefinition? Number = null,
-    IReadOnlyList<ComponentInputBindingDefinition>? ComponentInputBindings = null);
+    IReadOnlyList<ComponentInputBindingDefinition>? ComponentInputBindings = null,
+    string ComponentPresetType = "");
 
 internal static class ComponentClassFieldCatalog
 {
@@ -152,7 +153,7 @@ internal static class ComponentClassFieldCatalog
             "Button icon",
             "buttonIconPresetId",
             ValueKind.ComponentPreset,
-            ComponentInputBindingSource.Variant,
+            ComponentInputBindingSource.Calculated,
             "",
             ComponentType: "buttonIcon"),
         new(
@@ -263,25 +264,27 @@ internal static class ComponentClassFieldCatalog
 
         ["component.textInput.height"] = new("component.textInput.height", "Height", ValueKind.Integer, ["textInput", "height"], "44"),
         ["component.textInput.barPadding"] = new("component.textInput.barPadding", "Bar padding", ValueKind.ThemeTokenPair, ["textInput", "barPadding"], "theme.spacing.l|theme.spacing.m", PairLabels: new("X", "Y"), Options: SpacingTokenOptions),
+        ["component.textInput.barSurface.editor"] = new("component.textInput.barSurface.editor", "Bar surface", ValueKind.ComponentPreset, ["textInput", "barSurfaceSlot", "presetId"], "default"),
         ["component.textInput.textPadding"] = new("component.textInput.textPadding", "Text padding", ValueKind.ThemeTokenPair, ["textInput", "textPadding"], "theme.spacing.xl|theme.spacing.none", PairLabels: new("X", "Y"), Options: SpacingTokenOptions),
         ["component.textInput.iconGap"] = new("component.textInput.iconGap", "Icon gap", ValueKind.ThemeToken, ["textInput", "iconGap"], "theme.spacing.m", Options: SpacingTokenOptions),
+        ["component.textInput.iconButton.presetId"] = new("component.textInput.iconButton.presetId", "Icon button variant", ValueKind.OptionToken, ["textInput", "iconButtonPresetId"], "default", ComponentPresetType: "buttonIcon"),
         ["component.textInput.placeholder"] = new("component.textInput.placeholder", "Placeholder", ValueKind.StringSingleLine, ["textInput", "placeholder"], "Message"),
-        ["component.textInput.surface.editor"] = new("component.textInput.surface.editor", "Surface", ValueKind.ComponentPreset, ["textInput", "surfaceSlot", "presetId"], "InputBox"),
-        ["component.textInput.leftIconRow.editor"] = new("component.textInput.leftIconRow.editor", "Left icons", ValueKind.ComponentPreset, ["textInput", "leftIconRowSlot", "presetId"], "default"),
+        ["component.textInput.surface.editor"] = new("component.textInput.surface.editor", "Text box surface", ValueKind.ComponentPreset, ["textInput", "surfaceSlot", "presetId"], "InputBox"),
+        ["component.textInput.leftIconRow.editor"] = new("component.textInput.leftIconRow.editor", "Left row variant", ValueKind.ComponentPreset, ["textInput", "leftIconRowSlot", "presetId"], "default"),
         ["component.textInput.leftIconRow.inputs"] = new(
             "component.textInput.leftIconRow.inputs",
-            "Left icon inputs",
+            "Left row settings",
             ValueKind.ComponentInputBindings,
             ["textInput", "leftIconRowInputs"],
-            """{"size":44,"gap":"theme.spacing.m","orientation":"horizontal","buttonIconPresetId":""}""",
+            """{"size":44,"gap":"theme.spacing.m","orientation":"horizontal"}""",
             ComponentInputBindings: IconRowParentInputBindings),
-        ["component.textInput.rightIconRow.editor"] = new("component.textInput.rightIconRow.editor", "Right icons", ValueKind.ComponentPreset, ["textInput", "rightIconRowSlot", "presetId"], "default"),
+        ["component.textInput.rightIconRow.editor"] = new("component.textInput.rightIconRow.editor", "Right row variant", ValueKind.ComponentPreset, ["textInput", "rightIconRowSlot", "presetId"], "default"),
         ["component.textInput.rightIconRow.inputs"] = new(
             "component.textInput.rightIconRow.inputs",
-            "Right icon inputs",
+            "Right row settings",
             ValueKind.ComponentInputBindings,
             ["textInput", "rightIconRowInputs"],
-            """{"size":44,"gap":"theme.spacing.m","orientation":"horizontal","buttonIconPresetId":""}""",
+            """{"size":44,"gap":"theme.spacing.m","orientation":"horizontal"}""",
             ComponentInputBindings: IconRowParentInputBindings),
         ["component.textInput.idleTextColorToken"] = new("component.textInput.idleTextColorToken", "Idle text color", ValueKind.ThemeToken, ["textInput", "idleTextColorToken"], "theme.colors.textSecondary", Options: ThemeColorOptions),
         ["component.textInput.textSizeToken"] = new("component.textInput.textSizeToken", "Text size", ValueKind.ThemeToken, ["textInput", "textSizeToken"], "theme.typography.sizes.s", Options: TypographySizeOptions),

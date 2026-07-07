@@ -21,6 +21,7 @@ export function resolveTextInputBarComponent(
   const preview = parseObject(payload.designPreviewJson);
   const componentBaseConfigs = parseObject(payload.componentBaseConfigsJson);
   const textInput = asRecord(config.textInput);
+  const barSurfaceSlot = asRecord(textInput.barSurfaceSlot);
   const surfaceSlot = asRecord(textInput.surfaceSlot);
   const leftIconRowSlot = asRecord(textInput.leftIconRowSlot);
   const rightIconRowSlot = asRecord(textInput.rightIconRowSlot);
@@ -32,6 +33,15 @@ export function resolveTextInputBarComponent(
     "component.textInput.placeholder",
   );
   const height = requiredNumber(textInput, "height", "component.textInput.height");
+  const iconButtonPresetId = requiredString(
+    textInput,
+    "iconButtonPresetId",
+    "component.textInput.iconButtonPresetId",
+  );
+  const embeddedBarSurfaceConfig = mergeComponentDefaults(
+    componentPresetConfig(componentBaseConfigs, "surface", barSurfaceSlot.presetId),
+    asRecord(barSurfaceSlot.overrides),
+  );
   const embeddedSurfaceConfig = mergeComponentDefaults(
     componentPresetConfig(componentBaseConfigs, "surface", surfaceSlot.presetId),
     asRecord(surfaceSlot.overrides),
@@ -86,6 +96,11 @@ export function resolveTextInputBarComponent(
       "cursorBlinkFrames",
       "component.textInput.cursorBlinkFrames",
     ),
+    barSurface: resolveSurfaceComponentAtSize(
+      embeddedBarSurfaceConfig,
+      { width: 520, height },
+      "component.textInputBar.barSurface",
+    ),
     surface: resolveSurfaceComponentAtSize(
       embeddedSurfaceConfig,
       { width: 520, height },
@@ -101,11 +116,7 @@ export function resolveTextInputBarComponent(
           "orientation",
           "component.textInput.leftIconRow.orientation",
         ),
-        buttonIconPresetId: requiredString(
-          leftIconRowInputs,
-          "buttonIconPresetId",
-          "component.textInput.leftIconRow.buttonIconPresetId",
-        ),
+        buttonIconPresetId: iconButtonPresetId,
         icons: requiredStringArray(preview, "leftIcons", "component.textInput.input.leftIcons"),
       },
       componentBaseConfigs,
@@ -121,11 +132,7 @@ export function resolveTextInputBarComponent(
           "orientation",
           "component.textInput.rightIconRow.orientation",
         ),
-        buttonIconPresetId: requiredString(
-          rightIconRowInputs,
-          "buttonIconPresetId",
-          "component.textInput.rightIconRow.buttonIconPresetId",
-        ),
+        buttonIconPresetId: iconButtonPresetId,
         icons: requiredStringArray(preview, "rightIcons", "component.textInput.input.rightIcons"),
       },
       componentBaseConfigs,

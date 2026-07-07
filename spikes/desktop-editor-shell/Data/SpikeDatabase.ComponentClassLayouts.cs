@@ -165,30 +165,64 @@ internal sealed partial class SpikeDatabase
             "component.textInputBar" => $$"""
             ,
             {
-              "id": "textInput",
-              "label": "Text Input",
-              "subtitle": "Input bar, idle text and cursor behavior",
+              "id": "textInputBar",
+              "label": "Bar",
+              "subtitle": "Overall input bar frame and surface",
               "icon": "{{EditorIcons.TextInput}}",
               "order": 20,
               "visible": true,
               "defaultOpen": false,
               "groups": [
-                { "id": "textInput", "label": "Text input", "order": 10, "visible": true, "fields": [
+                { "id": "bar", "label": "Bar", "order": 10, "visible": true, "fields": [
                   { "id": "component.textInput.height", "order": 10, "visible": true },
                   { "id": "component.textInput.barPadding", "order": 20, "visible": true },
-                  { "id": "component.textInput.textPadding", "order": 30, "visible": true },
-                  { "id": "component.textInput.iconGap", "order": 40, "visible": true },
-                  { "id": "component.textInput.placeholder", "order": 50, "visible": true },
-                  { "id": "component.textInput.surface.editor", "order": 60, "visible": true },
-                  { "id": "component.textInput.leftIconRow.editor", "order": 70, "visible": true },
-                  { "id": "component.textInput.leftIconRow.inputs", "order": 80, "visible": true },
-                  { "id": "component.textInput.rightIconRow.editor", "order": 90, "visible": true },
-                  { "id": "component.textInput.rightIconRow.inputs", "order": 100, "visible": true },
-                  { "id": "component.textInput.idleTextColorToken", "order": 110, "visible": true },
-                  { "id": "component.textInput.textSizeToken", "order": 120, "visible": true },
-                  { "id": "component.textInput.cursorColorToken", "order": 130, "visible": true },
-                  { "id": "component.textInput.cursorWidth", "order": 140, "visible": true },
-                  { "id": "component.textInput.cursorBlinkFrames", "order": 150, "visible": true }
+                  { "id": "component.textInput.barSurface.editor", "order": 30, "visible": true }
+                ] }
+              ]
+            },
+            {
+              "id": "textInputBox",
+              "label": "Text Box",
+              "subtitle": "Text field surface, typography and cursor",
+              "icon": "{{EditorIcons.TextInput}}",
+              "order": 30,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "textBox", "label": "Text box", "order": 10, "visible": true, "fields": [
+                  { "id": "component.textInput.textPadding", "order": 10, "visible": true },
+                  { "id": "component.textInput.placeholder", "order": 20, "visible": true },
+                  { "id": "component.textInput.surface.editor", "order": 30, "visible": true },
+                  { "id": "component.textInput.idleTextColorToken", "order": 40, "visible": true },
+                  { "id": "component.textInput.textSizeToken", "order": 50, "visible": true }
+                ] },
+                { "id": "cursor", "label": "Cursor", "order": 20, "visible": true, "fields": [
+                  { "id": "component.textInput.cursorColorToken", "order": 10, "visible": true },
+                  { "id": "component.textInput.cursorWidth", "order": 20, "visible": true },
+                  { "id": "component.textInput.cursorBlinkFrames", "order": 30, "visible": true }
+                ] }
+              ]
+            },
+            {
+              "id": "textInputIcons",
+              "label": "Icons",
+              "subtitle": "Shared icon spacing and left/right icon rows",
+              "icon": "{{EditorIcons.Icon}}",
+              "order": 40,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "iconDefaults", "label": "Icons", "order": 10, "visible": true, "fields": [
+                  { "id": "component.textInput.iconGap", "order": 10, "visible": true },
+                  { "id": "component.textInput.iconButton.presetId", "order": 20, "visible": true }
+                ] },
+                { "id": "leftIcons", "label": "Left", "order": 20, "visible": true, "fields": [
+                  { "id": "component.textInput.leftIconRow.editor", "order": 10, "visible": true },
+                  { "id": "component.textInput.leftIconRow.inputs", "order": 20, "visible": true }
+                ] },
+                { "id": "rightIcons", "label": "Right", "order": 30, "visible": true, "fields": [
+                  { "id": "component.textInput.rightIconRow.editor", "order": 10, "visible": true },
+                  { "id": "component.textInput.rightIconRow.inputs", "order": 20, "visible": true }
                 ] }
               ]
             }

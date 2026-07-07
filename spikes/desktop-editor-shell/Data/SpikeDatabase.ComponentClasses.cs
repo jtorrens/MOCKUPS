@@ -1045,6 +1045,10 @@ internal sealed partial class SpikeDatabase
             ValueKind.EmbeddedComponent => EmbeddedComponentOptions(projectId, descriptor.DefaultValue),
             ValueKind.ComponentPreset when EmbeddedComponentSlotCatalog.TryGet(descriptor.Id, out var slot)
                 => ComponentPresetOptions(projectId, slot.EmbeddedComponentType),
+            ValueKind.ComponentPreset when !string.IsNullOrWhiteSpace(descriptor.ComponentPresetType)
+                => ComponentPresetOptions(projectId, descriptor.ComponentPresetType),
+            ValueKind.OptionToken when !string.IsNullOrWhiteSpace(descriptor.ComponentPresetType)
+                => ComponentPresetOptions(projectId, descriptor.ComponentPresetType),
             ValueKind.OptionToken when EmbeddedComponentPresetType(descriptor.Id) is { } componentType
                 => ComponentPresetOptions(projectId, componentType),
             ValueKind.PaletteColorToken or ValueKind.PaletteColorPair or ValueKind.PaletteColorAlphaPair
@@ -1678,6 +1682,7 @@ internal sealed partial class SpikeDatabase
         changed |= NormalizeButtonIconLabelSlot(componentType, config);
         changed |= NormalizeAudioEmbeddedSlots(componentType, config);
         changed |= NormalizeSurfaceSlots(componentType, config);
+        changed |= NormalizeTextInputBarSlots(connection, projectId, componentType, config);
         changed |= NormalizeEmbeddedSlotPresetIds(connection, projectId, config);
         changed |= NormalizeComponentInputBindingPresetIds(connection, projectId, config);
         changed |= NormalizeComponentTypographyStyles(config);
@@ -1718,6 +1723,11 @@ internal sealed partial class SpikeDatabase
         string[] path,
         string componentType)
     {
+        if (JsonPath.Get(config, path) is null)
+        {
+            return false;
+        }
+
         var currentValue = JsonPath.String(config, path);
         var normalizedValue = NormalizeComponentPresetReference(connection, projectId, componentType, currentValue);
         if (string.IsNullOrWhiteSpace(normalizedValue) || normalizedValue.Equals(currentValue, StringComparison.Ordinal))
@@ -2235,7 +2245,6 @@ internal sealed partial class SpikeDatabase
             "label" => (new[] { "label" }, "Label"),
             "buttonIcon" => (new[] { "buttonIcon" }, "IconButton"),
             "textBox" => (new[] { "textBox" }, "InputBox"),
-            "textInputBar" => (new[] { "textInput" }, "InputBox"),
             "audio" => (new[] { "audio" }, DefaultComponentPresetId),
             "video" => (new[] { "video" }, DefaultComponentPresetId),
             _ => (Array.Empty<string>(), ""),
@@ -2265,6 +2274,72 @@ internal sealed partial class SpikeDatabase
         }
 
         return changed;
+    }
+
+    private static bool NormalizeTextInputBarSlots(
+        SqliteConnection connection,
+        string projectId,
+        string componentType,
+        JsonObject config)
+    {
+        if (componentType != "textInputBar"
+            || JsonPath.Get(config, ["textInput"]) is not JsonObject textInput)
+        {
+            return false;
+        }
+
+        var changed = false;
+        changed |= NormalizeSurfaceSlot(textInput, "barSurfaceSlot", DefaultComponentPresetId);
+        changed |= NormalizeSurfaceSlot(textInput, "surfaceSlot", "InputBox");
+        changed |= NormalizeComponentPresetString(
+            connection,
+            projectId,
+            textInput,
+            ["iconButtonPresetId"],
+            "buttonIcon");
+        return changed;
+    }
+
+    private static bool NormalizeSurfaceSlot(JsonObject owner, string key, string preferredPresetName)
+    {
+        var changed = false;
+        if (owner[key] is not JsonObject slot)
+        {
+            owner[key] = ComponentSurfaceSlot(preferredPresetName);
+            return true;
+        }
+
+        if (string.IsNullOrWhiteSpace(JsonPath.String(slot, "presetId", "")))
+        {
+            slot["presetId"] = preferredPresetName;
+            changed = true;
+        }
+
+        if (slot["overrides"] is not JsonObject)
+        {
+            slot["overrides"] = new JsonObject();
+            changed = true;
+        }
+
+        return changed;
+    }
+
+    private static bool NormalizeComponentPresetString(
+        SqliteConnection connection,
+        string projectId,
+        JsonObject owner,
+        string[] path,
+        string componentType)
+    {
+        var currentValue = JsonPath.String(owner, path);
+        var normalizedValue = NormalizeComponentPresetReference(connection, projectId, componentType, currentValue);
+        if (string.IsNullOrWhiteSpace(normalizedValue) || normalizedValue.Equals(currentValue, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        SetJsonValue(owner, path, JsonValue.Create(normalizedValue)!);
+        return true;
     }
 
     private static bool NormalizeNumber(

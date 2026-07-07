@@ -15,6 +15,7 @@ export interface TextInputBarDesignContract {
   cursorColorToken: string;
   cursorWidth: number;
   cursorBlinkFrames: number;
+  barSurface: SurfaceDesignContract;
   surface: SurfaceDesignContract;
   leftIconRow: IconRowDesignContract;
   rightIconRow: IconRowDesignContract;

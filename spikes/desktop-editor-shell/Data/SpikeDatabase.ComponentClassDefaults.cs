@@ -149,8 +149,10 @@ internal sealed partial class SpikeDatabase
                 {
                     ["height"] = 44,
                     ["barPadding"] = "theme.spacing.l|theme.spacing.m",
+                    ["barSurfaceSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
                     ["textPadding"] = "theme.spacing.xl|theme.spacing.none",
                     ["iconGap"] = "theme.spacing.m",
+                    ["iconButtonPresetId"] = DefaultComponentPresetId,
                     ["placeholder"] = "Message",
                     ["surfaceSlot"] = ComponentSurfaceSlot("InputBox"),
                     ["leftIconRowSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
@@ -317,6 +319,11 @@ internal sealed partial class SpikeDatabase
         {
             preview["height"] = 32;
         }
+        if (componentType == "textInputBar")
+        {
+            preview["leftIcons"] = new JsonArray();
+            preview["rightIcons"] = new JsonArray("media_mic", "chat_send");
+        }
 
         if (componentType == "audio")
         {
@@ -435,8 +442,8 @@ internal sealed partial class SpikeDatabase
             "textInputBar" =>
             [
                 ComponentInput("sampleText", "Text", "sampleText", "text", "Message"),
-                ProjectRuntimeInput("iconRow", "icons", "leftIcons", "Left icons", "leftIcons", "[]"),
-                ProjectRuntimeInput("iconRow", "icons", "rightIcons", "Right icons", "rightIcons", """["media_mic","chat_send"]"""),
+                ProjectRuntimeInput("iconRow", "icons", "leftIcons", "Left icon tokens", "leftIcons", "[]"),
+                ProjectRuntimeInput("iconRow", "icons", "rightIcons", "Right icon tokens", "rightIcons", """["media_mic","chat_send"]"""),
             ],
             "audio" =>
             [
@@ -550,7 +557,6 @@ internal sealed partial class SpikeDatabase
             ["size"] = 44,
             ["gap"] = "theme.spacing.m",
             ["orientation"] = "horizontal",
-            ["buttonIconPresetId"] = DefaultComponentPresetId,
         };
     }
 

@@ -21,9 +21,15 @@ internal static class EmbeddedComponentSlotCatalog
             "component.label",
             ["avatar", "labelSlot"]),
         new(
+            "component.textInput.barSurface.editor",
+            "surface",
+            "Bar surface",
+            "component.surface",
+            ["textInput", "barSurfaceSlot"]),
+        new(
             "component.textInput.surface.editor",
             "surface",
-            "Surface",
+            "Text box surface",
             "component.surface",
             ["textInput", "surfaceSlot"]),
         new(

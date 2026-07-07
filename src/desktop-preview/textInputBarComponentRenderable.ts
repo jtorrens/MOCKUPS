@@ -4,8 +4,6 @@ import {
   previewScreenBox,
   renderScale,
   selectedColor,
-  shadow,
-  surfaceVisualPadding,
 } from "./componentRenderableCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
@@ -39,30 +37,6 @@ export function textInputBarComponentToRenderable(
   };
   const width = Math.max(1, screenBox.width - barPaddingX * 2);
   const fontSize = numberToken(payload, textInput.textSizeToken) * scale;
-  const borderWidth = textInput.surface.surface.borderWidth * scale;
-  const surfaceRelief = textInput.surface.surface.reliefEnabled
-    ? {
-        angleDeg: textInput.surface.surface.reliefAngle,
-        extension: textInput.surface.surface.reliefExtent * scale,
-        spread: textInput.surface.surface.reliefSpread * scale,
-        upperIntensity:
-          textInput.surface.surface.reliefTopIntensity *
-          textInput.surface.backgroundAlpha,
-        lowerIntensity:
-          textInput.surface.surface.reliefBottomIntensity *
-          textInput.surface.backgroundAlpha,
-      }
-    : undefined;
-  const inputShadow = textInput.surface.surface.shadowEnabled
-    ? shadow(payload)
-    : undefined;
-  const visualPadding = surfaceVisualPadding(borderWidth, inputShadow, surfaceRelief);
-  const outerBox = {
-    x: screenBox.x,
-    y: barBox.y - visualPadding,
-    width: screenBox.width,
-    height: barBox.height + visualPadding * 2,
-  };
   const fieldBox = {
     x: screenBox.x + barPaddingX + (hasLeftIcons ? leftIconSize.width + iconGap : 0),
     y: barBox.y + barPaddingY,
@@ -101,11 +75,15 @@ export function textInputBarComponentToRenderable(
     id: textInput.id,
     type: "group",
     frame: 0,
-    box: outerBox,
+    box: barBox,
     style: {
       overflow: "visible",
     },
     children: [
+      {
+        ...surfaceComponentToRenderableAt(payload, textInput.barSurface, barBox),
+        id: `${textInput.id}.barSurface`,
+      },
       {
         ...surfaceComponentToRenderableAt(payload, textInput.surface, fieldBox),
         id: `${textInput.id}.surface`,

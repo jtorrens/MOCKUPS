@@ -19,39 +19,49 @@ export function surfaceComponentToRenderable(
   const scale = renderScale(payload);
   const sampleWidth = surface.width * scale;
   const sampleHeight = surface.height * scale;
-  const borderWidth = surface.surface.borderWidth * scale;
-  const surfaceShadow = surface.surface.shadowEnabled ? shadow(payload) : undefined;
-  const surfaceRelief = surfaceComponentRelief(surface, scale);
-  const visualPadding = surfaceVisualPadding(
-    borderWidth,
-    surfaceShadow,
-    surfaceRelief,
-  );
   const groupBox = boundedCenterBox(
     payload,
-    sampleWidth + visualPadding * 2,
-    sampleHeight + visualPadding * 2,
+    sampleWidth,
+    sampleHeight,
   );
-  const surfaceBox = {
-    x: groupBox.x + visualPadding,
-    y: groupBox.y + visualPadding,
-    width: sampleWidth,
-    height: sampleHeight,
-  };
+
+  return surfaceComponentToRenderableAt(payload, surface, groupBox);
+}
+
+export function surfaceComponentToRenderableAt(
+  payload: DesignPreviewPayload,
+  surface: SurfaceDesignContract,
+  box: RenderableBox,
+): RenderableNode {
+  const visualPadding = surfaceComponentVisualPadding(payload, surface);
+  const surfaceNode = surfaceComponentSurfaceNode(payload, surface, box);
+  if (visualPadding <= 0) {
+    return surfaceNode;
+  }
 
   return {
     id: surface.id,
     type: "group",
     frame: 0,
-    box: groupBox,
+    box: {
+      x: box.x - visualPadding,
+      y: box.y - visualPadding,
+      width: box.width + visualPadding * 2,
+      height: box.height + visualPadding * 2,
+    },
     style: {
       overflow: "visible",
     },
-    children: [surfaceComponentToRenderableAt(payload, surface, surfaceBox)],
+    children: [
+      {
+        ...surfaceNode,
+        id: `${surface.id}.surface`,
+      },
+    ],
   };
 }
 
-export function surfaceComponentToRenderableAt(
+function surfaceComponentSurfaceNode(
   payload: DesignPreviewPayload,
   surface: SurfaceDesignContract,
   box: RenderableBox,
@@ -101,6 +111,17 @@ export function surfaceComponentToRenderableAt(
       ),
     },
   };
+}
+
+function surfaceComponentVisualPadding(
+  payload: DesignPreviewPayload,
+  surface: SurfaceDesignContract,
+) {
+  const scale = renderScale(payload);
+  const borderWidth = surface.surface.borderWidth * scale;
+  const surfaceShadow = surface.surface.shadowEnabled ? shadow(payload) : undefined;
+  const surfaceRelief = surfaceComponentRelief(surface, scale);
+  return surfaceVisualPadding(borderWidth, surfaceShadow, surfaceRelief);
 }
 
 function surfaceComponentRelief(
