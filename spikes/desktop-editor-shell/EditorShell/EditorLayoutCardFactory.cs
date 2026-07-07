@@ -59,7 +59,7 @@ internal sealed class EditorLayoutCardFactory
     {
         var body = new StackPanel
         {
-            Spacing = 12,
+            Spacing = EditorUiDensity.Card(12),
         };
         var controls = new List<DictionaryFieldControl>();
         var headerIcon = EditorIcons.Create(layoutCard.Icon, 18);
@@ -70,7 +70,7 @@ internal sealed class EditorLayoutCardFactory
         {
             var groupPanel = new StackPanel
             {
-                Spacing = 12,
+                Spacing = EditorUiDensity.Card(12),
             };
 
             _actorAvatarPreviews.AddIfNeeded(node, layoutCard, groupPanel);
@@ -131,7 +131,7 @@ internal sealed class EditorLayoutCardFactory
             EditorCardHeader.Create(layoutCard.Label, EditorCardHeader.Subtitle(layoutCard), headerIcon),
             new Border
             {
-                Padding = new Thickness(10),
+                Padding = EditorUiDensity.CardThickness(10),
                 Child = body,
             },
             layoutCard.DefaultOpen,
@@ -156,7 +156,7 @@ internal sealed class EditorLayoutCardFactory
     {
         var body = new StackPanel
         {
-            Spacing = 12,
+            Spacing = EditorUiDensity.Card(12),
         };
         var controls = new List<DictionaryFieldControl>();
         var headerIcon = EditorIcons.Create(layoutCard.Icon, 18);
@@ -167,7 +167,7 @@ internal sealed class EditorLayoutCardFactory
         {
             var groupPanel = new StackPanel
             {
-                Spacing = 12,
+                Spacing = EditorUiDensity.Card(12),
             };
 
             foreach (var layoutField in group.VisibleFields
@@ -246,7 +246,7 @@ internal sealed class EditorLayoutCardFactory
 
         var embeddedBody = new Border
         {
-            Padding = new Thickness(10),
+            Padding = EditorUiDensity.CardThickness(10),
             BorderThickness = new Thickness(3, 0, 0, 0),
             BorderBrush = new SolidColorBrush(Color.FromArgb(150, 214, 166, 56)),
             Child = body,

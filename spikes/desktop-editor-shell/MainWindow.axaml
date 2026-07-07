@@ -29,13 +29,13 @@
                     <Button x:Name="UsageRefreshButton"
                             Click="OnRefreshUsageClick"
                             Content="Update usage" />
-                    <ToggleSwitch x:Name="ThemeModeSwitch"
-                                  IsChecked="True"
-                                  VerticalAlignment="Center" />
-                    <editor:EditorInstantComboBox x:Name="SukiColorComboBox"
-                                                  MinWidth="112"
-                                                  MinHeight="36"
-                                                  VerticalAlignment="Center" />
+                    <Button x:Name="ShellSettingsButton"
+                            Click="OnShellSettingsClick"
+                            Width="38"
+                            Height="36"
+                            Padding="0"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center" />
                 </StackPanel>
             </Grid>
         </Border>

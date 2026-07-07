@@ -20,6 +20,7 @@ internal static class EditorIcons
     public const string Structure = "structure";
     public const string Lock = "lock";
     public const string Unlock = "unlock";
+    public const string Settings = "settings";
 
     public const string Project = "project";
     public const string Apps = "apps";
@@ -204,6 +205,7 @@ internal static class EditorIcons
             Structure => "system_tree.svg",
             Lock => "system_lock.svg",
             Unlock => "system_unlock.svg",
+            Settings => "system_settings.svg",
             Project => "editor_general.svg",
             Apps => "editor_design.svg",
             App => "editor_layout.svg",
@@ -287,6 +289,7 @@ internal static class EditorIcons
             Structure => "M9 3H15V8H9Z M12 8V11 M6 11H18 M6 11V14 M18 11V14 M3.5 14H8.5V20H3.5Z M15.5 14H20.5V20H15.5Z M10 16H14V19H10Z",
             Lock => "M7 10V8C7 5.24 9.24 3 12 3C14.76 3 17 5.24 17 8V10 M6 10H18V20H6Z M12 14V17",
             Unlock => "M8 10V8C8 5.24 10.24 3 13 3C15.05 3 16.8 4.23 17.57 5.99 M6 10H18V20H6Z M12 14V17",
+            Settings => "M12 15.5A3.5 3.5 0 1 0 12 8.5A3.5 3.5 0 0 0 12 15.5Z M19.4 13.5A7.9 7.9 0 0 0 19.4 10.5L21.2 9.1L19.2 5.7L17.1 6.6A8.1 8.1 0 0 0 14.5 5.1L14.2 3H9.8L9.5 5.1A8.1 8.1 0 0 0 6.9 6.6L4.8 5.7L2.8 9.1L4.6 10.5A7.9 7.9 0 0 0 4.6 13.5L2.8 14.9L4.8 18.3L6.9 17.4A8.1 8.1 0 0 0 9.5 18.9L9.8 21H14.2L14.5 18.9A8.1 8.1 0 0 0 17.1 17.4L19.2 18.3L21.2 14.9Z",
 
             Project => "M4 9.5L12 4L20 9.5V20C20 20.55 19.55 21 19 21H14V15H10V21H5C4.45 21 4 20.55 4 20V9.5Z",
             Apps => "M5 5H11V11H5Z M13 5H19V11H13Z M5 13H11V19H5Z M13 13H19V19H13Z",

@@ -18,6 +18,11 @@ internal sealed class EditorShellStateService
         _shellColumns = shellColumns;
     }
 
+    public bool IsDark { get; private set; } = true;
+    public string SukiColor { get; private set; } = "Blue";
+    public double UiTextScale { get; private set; } = 1;
+    public double UiCardPaddingScale { get; private set; } = 1;
+
     public void Restore()
     {
         var path = ShellStatePath();
@@ -49,11 +54,32 @@ internal sealed class EditorShellStateService
                 _shellColumns.ColumnDefinitions[2].Width = new GridLength(state.EditorPanelWidth);
                 _shellColumns.ColumnDefinitions[4].Width = new GridLength(1, GridUnitType.Star);
             }
+
+            IsDark = state.IsDark ?? true;
+            SukiColor = string.IsNullOrWhiteSpace(state.SukiColor) ? "Blue" : state.SukiColor;
+            UiTextScale = ClampScale(state.UiTextScale, 1, 0.75, 1.15);
+            UiCardPaddingScale = ClampScale(state.UiCardPaddingScale, 1, 0.6, 1.15);
         }
         catch
         {
             // Local UI state should never block opening the editor shell.
         }
+    }
+
+    public void SetTheme(bool isDark, string color)
+    {
+        IsDark = isDark;
+        SukiColor = string.IsNullOrWhiteSpace(color) ? "Blue" : color;
+    }
+
+    public void SetUiTextScale(double value)
+    {
+        UiTextScale = ClampScale(value, 1, 0.75, 1.15);
+    }
+
+    public void SetUiCardPaddingScale(double value)
+    {
+        UiCardPaddingScale = ClampScale(value, 1, 0.6, 1.15);
     }
 
     public void Save()
@@ -72,6 +98,10 @@ internal sealed class EditorShellStateService
                 LeftPanelWidth = _shellColumns.ColumnDefinitions[0].ActualWidth,
                 EditorPanelWidth = _shellColumns.ColumnDefinitions[2].ActualWidth,
                 RightPanelWidth = _shellColumns.ColumnDefinitions[4].ActualWidth,
+                IsDark = IsDark,
+                SukiColor = SukiColor,
+                UiTextScale = UiTextScale,
+                UiCardPaddingScale = UiCardPaddingScale,
             };
 
             File.WriteAllText(path, JsonSerializer.Serialize(state, new JsonSerializerOptions
@@ -91,6 +121,16 @@ internal sealed class EditorShellStateService
         return Path.GetFullPath(Path.Combine(root, "..", "..", "..", "data", "window-state.json"));
     }
 
+    private static double ClampScale(double? value, double fallback, double min, double max)
+    {
+        if (value is null || double.IsNaN(value.Value) || double.IsInfinity(value.Value))
+        {
+            return fallback;
+        }
+
+        return Math.Clamp(value.Value, min, max);
+    }
+
     private sealed class ShellWindowState
     {
         public double Width { get; init; }
@@ -100,5 +140,9 @@ internal sealed class EditorShellStateService
         public double LeftPanelWidth { get; init; }
         public double EditorPanelWidth { get; init; }
         public double RightPanelWidth { get; init; }
+        public bool? IsDark { get; init; }
+        public string? SukiColor { get; init; }
+        public double? UiTextScale { get; init; }
+        public double? UiCardPaddingScale { get; init; }
     }
 }

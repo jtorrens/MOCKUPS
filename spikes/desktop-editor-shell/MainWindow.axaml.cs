@@ -45,7 +45,7 @@ public partial class MainWindow : SukiWindow
         _coreFieldValues = new CoreFieldValueService(_database);
         _recordClassFieldValues = new RecordClassFieldValueService(_database);
         _componentClassFieldValues = new ComponentClassFieldValueService(_database);
-        _themeController = new EditorThemeController(this, RootShell, ThemeModeSwitch, SukiColorComboBox, RefreshShellTheme);
+        _themeController = new EditorThemeController(this, RootShell, RefreshShellTheme);
         _actorAvatarPreviews = new ActorAvatarPreviewController(_database, () => _themeController.IsDark);
         _messages = new EditorShellMessageSink(ShellMessagesTextBox);
         _previewController = new EditorPreviewController(
@@ -160,11 +160,15 @@ public partial class MainWindow : SukiWindow
             _actorAvatarPreviews,
             _layoutCards,
             _collectionCards);
+        ShellSettingsButton.Content = EditorIcons.Create(EditorIcons.Settings, 18);
         _shellState.Restore();
+        _themeController.SetState(_shellState.IsDark, _shellState.SukiColor);
+        EditorUiDensity.Configure(_shellState.UiTextScale, _shellState.UiCardPaddingScale);
         Closing += (_, _) => _shellState.Save();
         _themeController.Apply();
         LoadProjectTree();
         InitializePreviewOptions();
+        ApplyUiTextScale();
     }
 
     private void OnRefreshUsageClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -175,6 +179,15 @@ public partial class MainWindow : SukiWindow
         {
             SelectNodeById(selectedId);
         }
+    }
+
+    private async void OnShellSettingsClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        await new EditorShellSettingsDialog(
+            this,
+            _themeController,
+            _shellState,
+            ApplyUiDensity).Show();
     }
 
     private void InitializePreviewOptions()
@@ -191,6 +204,7 @@ public partial class MainWindow : SukiWindow
     {
         RebuildNavigationCards();
         RefreshPreviewDevice();
+        ApplyUiTextScale();
     }
 
     private void RefreshPreviewOptions()
@@ -241,6 +255,7 @@ public partial class MainWindow : SukiWindow
     private void RebuildNavigationCards()
     {
         _navigationRenderer.Rebuild(NavigationCardsPanel, _treeRoots);
+        ApplyUiTextScale();
     }
 
     private void ShowNode(ProjectTreeNode node, bool rebuildTree = true)
@@ -269,6 +284,7 @@ public partial class MainWindow : SukiWindow
         {
             RebuildNavigationCards();
         }
+        ApplyUiTextScale();
     }
 
     private void ShowEmbeddedContext(EditorEmbeddedContext context)
@@ -276,6 +292,7 @@ public partial class MainWindow : SukiWindow
         SetEditorEmbeddedTitle(context);
         _editorContent.BuildEmbedded(context);
         RefreshPreviewDevice();
+        ApplyUiTextScale();
     }
 
     private void SetEditorRootTitle(string title)
@@ -311,5 +328,21 @@ public partial class MainWindow : SukiWindow
         return true;
     }
 
+    private void ApplyUiDensity(bool rebuildCards)
+    {
+        EditorUiDensity.Configure(_shellState.UiTextScale, _shellState.UiCardPaddingScale);
+        if (rebuildCards && _selectedNode is not null)
+        {
+            ShowNode(_selectedNode, rebuildTree: true);
+            return;
+        }
+
+        ApplyUiTextScale();
+    }
+
+    private void ApplyUiTextScale()
+    {
+        EditorUiTextScale.Apply(this, _shellState.UiTextScale, RuntimePreviewHost, DesignPreviewHost);
+    }
 
 }

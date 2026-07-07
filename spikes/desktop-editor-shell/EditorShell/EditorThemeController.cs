@@ -1,12 +1,12 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Primitives;
 using Avalonia.Styling;
 using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using SukiUI;
 using SukiUI.Enums;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -22,48 +22,59 @@ internal sealed class EditorThemeController
 
     private readonly Window _window;
     private readonly Border _rootShell;
-    private readonly ToggleSwitch _modeSwitch;
-    private readonly EditorInstantComboBox _colorCombo;
     private readonly Action _onChanged;
-    private bool _isUpdating;
 
     public EditorThemeController(
         Window window,
         Border rootShell,
-        ToggleSwitch modeSwitch,
-        EditorInstantComboBox colorCombo,
         Action onChanged)
     {
         _window = window;
         _rootShell = rootShell;
-        _modeSwitch = modeSwitch;
-        _colorCombo = colorCombo;
         _onChanged = onChanged;
-
-        _modeSwitch.PropertyChanged += (_, change) =>
-        {
-            if (_isUpdating || change.Property != ToggleSwitch.IsCheckedProperty) return;
-
-            IsDark = _modeSwitch.IsChecked == true;
-            Apply();
-        };
-        _colorCombo.ItemsSource = AllowedAccentColors
-            .Select((color) => new FieldOption(color.ToString(), color.ToString()));
-        _colorCombo.SelectionChanged += (_, _) =>
-        {
-            if (_isUpdating || _colorCombo.SelectedItem is not FieldOption option) return;
-
-            if (Enum.TryParse<SukiColor>(option.Value, out var color))
-            {
-                SelectedColor = color;
-                Apply();
-            }
-        };
     }
 
     public bool IsDark { get; private set; } = true;
 
-    private SukiColor SelectedColor { get; set; } = SukiColor.Blue;
+    public SukiColor SelectedColor { get; private set; } = SukiColor.Blue;
+
+    public static IReadOnlyList<FieldOption> AccentColorOptions()
+    {
+        return AllowedAccentColors
+            .Select((color) => new FieldOption(color.ToString(), color.ToString()))
+            .ToList();
+    }
+
+    public void SetState(bool isDark, string? colorName)
+    {
+        IsDark = isDark;
+        if (!string.IsNullOrWhiteSpace(colorName) && Enum.TryParse<SukiColor>(colorName, out var color)
+            && AllowedAccentColors.Contains(color))
+        {
+            SelectedColor = color;
+        }
+    }
+
+    public void SetDark(bool isDark)
+    {
+        if (IsDark == isDark) return;
+
+        IsDark = isDark;
+        Apply();
+    }
+
+    public void SetColor(string value)
+    {
+        if (!Enum.TryParse<SukiColor>(value, out var color) || !AllowedAccentColors.Contains(color))
+        {
+            return;
+        }
+
+        if (SelectedColor == color) return;
+
+        SelectedColor = color;
+        Apply();
+    }
 
     public void Apply()
     {
@@ -74,19 +85,6 @@ internal sealed class EditorThemeController
         SukiTheme.GetInstance().ChangeColorTheme(SelectedColor);
         EditorSukiWindowTheme.SetAccentColor(SelectedColor);
         EditorSukiWindowTheme.ApplyNeutralBackground(_window, _rootShell, IsDark);
-
-        _isUpdating = true;
-        try
-        {
-            _modeSwitch.IsChecked = IsDark;
-            _colorCombo.SelectedItem = _colorCombo.ItemsSource?
-                .OfType<FieldOption>()
-                .FirstOrDefault((option) => option.Value == SelectedColor.ToString());
-        }
-        finally
-        {
-            _isUpdating = false;
-        }
         _onChanged();
     }
 }

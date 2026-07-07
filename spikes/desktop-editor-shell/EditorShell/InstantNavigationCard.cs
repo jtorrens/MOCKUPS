@@ -15,7 +15,7 @@ internal sealed class InstantNavigationCard : Border
 
         var contentHost = new Border
         {
-            Padding = new Thickness(7, 0, 7, 7),
+            Padding = EditorUiDensity.CardThickness(7, 0, 7, 7),
             IsVisible = isExpanded,
             Child = content,
         };

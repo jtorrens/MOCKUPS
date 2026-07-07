@@ -16,7 +16,7 @@ internal static class EditorGroupBlock
 
         var panel = new StackPanel
         {
-            Spacing = 10,
+            Spacing = EditorUiDensity.Card(10),
         };
         panel.Children.Add(new TextBlock
         {
@@ -33,7 +33,7 @@ internal static class EditorGroupBlock
     {
         var panel = new StackPanel
         {
-            Spacing = 10,
+            Spacing = EditorUiDensity.Card(10),
         };
 
         if (!string.IsNullOrWhiteSpace(group.Label))
@@ -52,7 +52,7 @@ internal static class EditorGroupBlock
         return new Border
         {
             CornerRadius = new CornerRadius(14),
-            Padding = new Thickness(12),
+            Padding = EditorUiDensity.CardThickness(12),
             Background = new SolidColorBrush(Color.FromArgb(28, 255, 255, 255)),
             BorderBrush = new SolidColorBrush(Color.FromArgb(42, 255, 255, 255)),
             BorderThickness = new Thickness(1),
