@@ -53,7 +53,7 @@ export function surfaceShapeDataUri({
   const borderMarkup =
     borderWidth > 0 && borderColor !== "transparent"
       ? `<defs>
-          <filter id="surface-shape-border" x="-20%" y="-20%" width="140%" height="140%">
+          <filter id="surface-shape-border" filterUnits="userSpaceOnUse" x="0" y="0" width="${width}" height="${height}">
             <feMorphology in="SourceAlpha" operator="dilate" radius="${borderWidth}" result="expanded"/>
             <feFlood flood-color="${escapedBorderColor}" result="borderColor"/>
             <feComposite in="borderColor" in2="expanded" operator="in" result="borderShape"/>
