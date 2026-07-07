@@ -416,6 +416,10 @@ internal sealed partial class SpikeDatabase
                         new FieldOption("horizontal", "Horizontal"),
                         new FieldOption("vertical", "Vertical"),
                     ]),
+                ComponentInput("actionIconNumber", "Action icon #", "actionIconNumber", ValueKind.Integer, "0", minimum: 0, maximum: 10, increment: 1),
+                ComponentInput("actionBackgroundAlpha", "Action bg alpha", "actionBackgroundAlpha", ValueKind.Alpha, "1", minimum: 0, maximum: 1, increment: 0.05m),
+                ComponentInput("actionBackgroundColor", "Action bg color", "actionBackgroundColor", ValueKind.PaletteColorToken, "aqua_green"),
+                ComponentInput("actionIconColor", "Action icon color", "actionIconColor", ValueKind.PaletteColorToken, "gray_100"),
                 ComponentInput(
                     "buttonIconPresetId",
                     "Button icon",
@@ -622,6 +626,10 @@ internal sealed partial class SpikeDatabase
             ["size"] = 44,
             ["gap"] = "theme.spacing.m",
             ["orientation"] = "horizontal",
+            ["actionIconNumber"] = 0,
+            ["actionBackgroundAlpha"] = 1,
+            ["actionBackgroundColor"] = "aqua_green",
+            ["actionIconColor"] = "gray_100",
         };
     }
 

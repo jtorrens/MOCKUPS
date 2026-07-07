@@ -33,6 +33,7 @@ internal sealed class EditorDictionaryFieldServices
             (token) => SvgIconPreview.CreateProjectIconTokenPreview(_database, projectId, token, 18),
             _pathBrowser.ResolveImagePath,
             getFieldValue,
+            () => _database.GetPaletteColorOptions(projectId),
             (componentType) => _database.GetComponentPresetReferenceOptionsByType(projectId, componentType),
             openEmbeddedComponent);
     }

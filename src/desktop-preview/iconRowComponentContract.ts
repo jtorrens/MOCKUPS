@@ -2,6 +2,7 @@ import type { ButtonIconDesignContract } from "./buttonIconComponentContract.js"
 
 export interface IconRowHighlightContract {
   index: number;
+  backgroundAlpha?: number;
   backgroundPaletteColor?: string;
   iconPaletteColor?: string;
 }

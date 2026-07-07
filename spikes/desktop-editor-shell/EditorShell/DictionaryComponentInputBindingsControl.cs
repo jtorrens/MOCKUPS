@@ -170,6 +170,11 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
             return _services.GetComponentPresetOptions?.Invoke(input.ComponentType) ?? [];
         }
 
+        if (input.ValueKind == ValueKind.PaletteColorToken)
+        {
+            return _services.GetPaletteColorOptions?.Invoke() ?? [];
+        }
+
         return input.Options;
     }
 

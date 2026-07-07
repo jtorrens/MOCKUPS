@@ -5,6 +5,8 @@ import {
 } from "./componentPreviewDefaults.js";
 import {
   asRecord,
+  optionalNumber,
+  optionalString,
   parseObject,
   requiredNumber,
   requiredString,
@@ -52,13 +54,10 @@ export function resolveIconRowComponentFromRecords(
   );
   const size = requiredNumber(inputs, "size", "component.iconRow.input.size");
   const icons = requiredStringArray(inputs, "icons", "component.iconRow.input.icons");
-  const highlight = optionalHighlight(inputs.highlight);
+  const highlight = optionalHighlight(inputs);
   const buttons = icons.map((iconToken, index) => {
     const highlightOverrides = highlight && highlight.index === index
-      ? {
-          backgroundPaletteColor: highlight.backgroundPaletteColor,
-          iconPaletteColor: highlight.iconPaletteColor,
-        }
+      ? iconButtonHighlightOverrides(highlight)
       : {};
     return resolveButtonIconComponentFromRecords(
       mergeComponentDefaults(baseButtonIconConfig, {
@@ -89,6 +88,28 @@ export function resolveIconRowComponentFromRecords(
   };
 }
 
+function iconButtonHighlightOverrides(
+  highlight: IconRowHighlightContract,
+): Record<string, unknown> {
+  const buttonIcon: Record<string, unknown> = {};
+  if (highlight.backgroundPaletteColor) {
+    buttonIcon.backgroundPaletteColor = highlight.backgroundPaletteColor;
+  }
+  if (highlight.iconPaletteColor) {
+    buttonIcon.iconPaletteColor = highlight.iconPaletteColor;
+  }
+  if (highlight.backgroundAlpha !== undefined) {
+    buttonIcon.surfaceSlot = {
+      overrides: {
+        surface: {
+          backgroundAlpha: highlight.backgroundAlpha,
+        },
+      },
+    };
+  }
+  return buttonIcon;
+}
+
 function requiredStringArray(
   value: Record<string, unknown>,
   key: string,
@@ -102,7 +123,21 @@ function requiredStringArray(
   throw new Error(`Missing string array value ${path}`);
 }
 
-function optionalHighlight(value: unknown): IconRowHighlightContract | undefined {
+function optionalHighlight(inputs: Record<string, unknown>): IconRowHighlightContract | undefined {
+  const actionIconNumber = optionalNumber(inputs, "actionIconNumber", 0);
+  if (actionIconNumber > 0) {
+    return {
+      index: Math.floor(actionIconNumber) - 1,
+      backgroundAlpha: Math.max(
+        0,
+        Math.min(1, optionalNumber(inputs, "actionBackgroundAlpha", 1)),
+      ),
+      backgroundPaletteColor: optionalString(inputs, "actionBackgroundColor") || undefined,
+      iconPaletteColor: optionalString(inputs, "actionIconColor") || undefined,
+    };
+  }
+
+  const value = inputs.highlight;
   const highlight = asRecord(value);
   if (!Object.keys(highlight).length) return undefined;
   const index = typeof highlight.index === "number" && Number.isFinite(highlight.index)
@@ -111,6 +146,9 @@ function optionalHighlight(value: unknown): IconRowHighlightContract | undefined
   if (index === undefined) return undefined;
   return {
     index,
+    backgroundAlpha: typeof highlight.backgroundAlpha === "number"
+      ? Math.max(0, Math.min(1, highlight.backgroundAlpha))
+      : undefined,
     backgroundPaletteColor: typeof highlight.backgroundPaletteColor === "string"
       ? highlight.backgroundPaletteColor
       : undefined,

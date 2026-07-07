@@ -281,6 +281,7 @@ internal sealed class ComponentInputsPanel : ContentControl
             {
                 ValueKind.RecordReference => RecordReferenceOptions(input, projectId),
                 ValueKind.ComponentPreset => ComponentPresetOptions(input, projectId),
+                ValueKind.PaletteColorToken => _database.GetPaletteColorOptions(projectId),
                 _ => input.Options,
             },
             PairLabels: input.ValueKind == ValueKind.IntegerPair ? input.PairLabels : null,
@@ -301,6 +302,8 @@ internal sealed class ComponentInputsPanel : ContentControl
                 new ThemeTokenPickerDialog(_owner, _database).Show(projectId, currentValue, allowedOptions),
             CreateIconPreview: (token) =>
                 SvgIconPreview.CreateProjectIconTokenPreview(_database, projectId, token, 18),
+            GetPaletteColorOptions: () =>
+                _database.GetPaletteColorOptions(projectId),
             GetComponentPresetOptions: (componentType) =>
                 _database.GetComponentPresetReferenceOptionsByType(projectId, componentType));
     }
