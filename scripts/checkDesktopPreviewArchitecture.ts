@@ -34,7 +34,7 @@ const forbiddenDesktopPreviewNodeTypes = new Set([
 ]);
 
 function relative(filePath: string) {
-  return path.relative(root, filePath);
+  return path.relative(root, filePath).replace(/\\/g, "/");
 }
 
 function readText(relativePath: string) {
