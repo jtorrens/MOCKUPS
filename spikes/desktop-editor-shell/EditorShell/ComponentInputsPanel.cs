@@ -477,8 +477,13 @@ internal sealed class ComponentInputsPanel : ContentControl
         foreach (var input in presetInputs)
         {
             var key = StorageKey(input);
-            if (!string.IsNullOrWhiteSpace(_values.GetValueOrDefault(key)))
+            var normalized = _database.NormalizeComponentPresetReferenceValue(
+                projectId,
+                input.ComponentType,
+                _values.GetValueOrDefault(key, input.DefaultValue));
+            if (!string.IsNullOrWhiteSpace(normalized))
             {
+                _values[key] = normalized;
                 continue;
             }
 

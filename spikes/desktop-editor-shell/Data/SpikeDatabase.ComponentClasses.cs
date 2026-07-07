@@ -798,6 +798,15 @@ internal sealed partial class SpikeDatabase
         return options;
     }
 
+    public string NormalizeComponentPresetReferenceValue(
+        string projectId,
+        string componentType,
+        string currentValue)
+    {
+        using var connection = OpenConnection();
+        return NormalizeComponentPresetReference(connection, projectId, componentType, currentValue);
+    }
+
     private static string FirstComponentClassIdByType(SqliteConnection connection, string projectId, string componentType)
     {
         using var command = connection.CreateCommand();
