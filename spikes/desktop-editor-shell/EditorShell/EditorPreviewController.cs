@@ -1,4 +1,6 @@
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Media;
 using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Collections.Generic;
@@ -42,6 +44,7 @@ internal sealed class EditorPreviewController
         EditorInstantComboBox scaleComboBox,
         ToggleSwitch marksToggle,
         IEditorShellMessageSink messages,
+        ContentControl previewSetupHost,
         ContentControl previewInputsHost,
         ContentControl runtimePreviewHost,
         ContentControl designPreviewHost,
@@ -64,12 +67,36 @@ internal sealed class EditorPreviewController
         _designContextLockButton = designContextLockButton;
         _designInputsPanel = new ComponentInputsPanel(database, Refresh, owner);
 
+        WrapPreviewSetup(previewSetupHost);
         previewInputsHost.Content = _designInputsPanel;
         runtimePreviewHost.Content = _runtimePreviewPane;
         designPreviewHost.Content = _designPreviewPane;
         AttachControlEvents();
         _designContextLockButton.Click += (_, _) => ToggleDesignPreviewContextLock();
         UpdateDesignContextChrome(null);
+    }
+
+    private static void WrapPreviewSetup(ContentControl previewSetupHost)
+    {
+        if (previewSetupHost.Content is not Control setupContent)
+        {
+            return;
+        }
+
+        previewSetupHost.Content = null;
+        previewSetupHost.Content = new Border
+        {
+            Background = new SolidColorBrush(Color.Parse("#22000000")),
+            CornerRadius = new CornerRadius(12),
+            Child = new InstantEditorCard(
+                EditorCardHeader.Create("Preview setup", "Context and component inputs", EditorIcons.Create(EditorIcons.Design, 18)),
+                new Border
+                {
+                    Padding = new Thickness(12, 0, 12, 12),
+                    Child = setupContent,
+                },
+                isExpanded: true),
+        };
     }
 
     public string? SelectedDeviceId { get; private set; }
