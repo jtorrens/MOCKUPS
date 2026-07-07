@@ -340,6 +340,15 @@ internal sealed class EditorNavigationRenderer
             HorizontalAlignment = HorizontalAlignment.Right,
         };
 
+        if (node.CanRenameDirectly)
+        {
+            actions.Children.Add(CreateTreeActionButton(EditorIcons.Create(EditorIcons.Edit, 14), "Rename", async (_, e) =>
+            {
+                e.Handled = true;
+                await _renameNode(node);
+            }));
+        }
+
         if (node.CanAddChild)
         {
             actions.Children.Add(CreateTreeActionButton(EditorIcons.Create(EditorIcons.Add, 14), "Add child", async (_, e) =>
@@ -355,15 +364,6 @@ internal sealed class EditorNavigationRenderer
             {
                 e.Handled = true;
                 _duplicateNode(node);
-            }));
-        }
-
-        if (node.CanRenameDirectly)
-        {
-            actions.Children.Add(CreateTreeActionButton(EditorIcons.Create(EditorIcons.Edit, 14), "Rename", async (_, e) =>
-            {
-                e.Handled = true;
-                await _renameNode(node);
             }));
         }
 
