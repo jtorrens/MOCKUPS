@@ -39,6 +39,16 @@ Before creating any routine that could be generic, check `spikes/desktop-editor-
 
 If an analogous helper already exists, reuse or extend it there. If the new behavior is reusable by more than one editor, resolver, bridge, renderer, importer, or repository, put it in common/shared code first instead of adding a local private helper.
 
+## Hard rule: commit parity data and assets
+
+When a change affects desktop editor behavior, preview output, icons, fonts, media references, or seeded component/theme data, include the corresponding parity files in the same commit:
+
+- `data/desktop-editor-spike.sqlite`;
+- changed files under `assets/FOQN_S2`;
+- changed files under `assets/system/system_icons`.
+
+Do not leave the desktop DB or required assets as local-only changes when the user asks for a working branch/push.
+
 ## Hard rule: editable fields go through the dictionary
 
 Every editable scalar field must be defined by `FieldDefinition` and rendered through the dictionary/control path.

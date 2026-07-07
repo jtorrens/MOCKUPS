@@ -23,8 +23,20 @@ internal sealed partial class SpikeDatabase
 
     public static string DefaultDatabasePath()
     {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            if (File.Exists(Path.Combine(directory.FullName, "package.json"))
+                && Directory.Exists(Path.Combine(directory.FullName, "assets")))
+            {
+                return Path.Combine(directory.FullName, "data", "desktop-editor-spike.sqlite");
+            }
+
+            directory = directory.Parent;
+        }
+
         var root = AppContext.BaseDirectory;
-        return Path.GetFullPath(Path.Combine(root, "..", "..", "..", "data", "desktop-editor-spike.sqlite"));
+        return Path.GetFullPath(Path.Combine(root, "..", "..", "..", "..", "..", "data", "desktop-editor-spike.sqlite"));
     }
 
     private void Initialize()
