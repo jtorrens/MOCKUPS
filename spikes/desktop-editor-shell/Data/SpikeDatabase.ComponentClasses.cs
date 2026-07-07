@@ -2319,49 +2319,73 @@ internal sealed partial class SpikeDatabase
             changed = true;
         }
 
-        changed |= NormalizeComponentInputKinds(componentType, inputs, defaultInputs);
+        changed |= NormalizeComponentInputDefinitions(componentType, inputs, defaultInputs);
         return changed;
     }
 
-    private static bool NormalizeComponentInputKinds(
+    private static bool NormalizeComponentInputDefinitions(
         string componentType,
         JsonArray inputs,
         JsonArray defaultInputs)
     {
         var changed = false;
-        var defaultKindsById = defaultInputs
+        var defaultsById = defaultInputs
             .OfType<JsonObject>()
-            .Select((input) => (
-                Id: JsonPath.String(input, "id", ""),
-                Kind: JsonPath.String(input, "kind", "")))
-            .Where((input) => !string.IsNullOrWhiteSpace(input.Id)
-                && !string.IsNullOrWhiteSpace(input.Kind))
-            .ToDictionary((input) => input.Id, (input) => input.Kind, StringComparer.Ordinal);
+            .Select((input) => (Id: JsonPath.String(input, "id", ""), Input: input))
+            .Where((input) => !string.IsNullOrWhiteSpace(input.Id))
+            .ToDictionary((input) => input.Id, (input) => input.Input, StringComparer.Ordinal);
 
         foreach (var input in inputs.OfType<JsonObject>())
         {
             var id = JsonPath.String(input, "id", "");
             if (string.IsNullOrWhiteSpace(id)
-                || !defaultKindsById.TryGetValue(id, out var defaultKind))
+                || !defaultsById.TryGetValue(id, out var defaultInput))
             {
                 continue;
             }
 
-            if (componentType != "textBox" || id != "sampleText")
-            {
-                continue;
-            }
-
-            if (JsonPath.String(input, "kind", "") == defaultKind)
-            {
-                continue;
-            }
-
-            input["kind"] = defaultKind;
-            changed = true;
+            changed |= SyncComponentInputDefinition(input, defaultInput, "label");
+            changed |= SyncComponentInputDefinition(input, defaultInput, "jsonKey");
+            changed |= SyncComponentInputDefinition(input, defaultInput, "kind");
+            changed |= SyncComponentInputDefinition(input, defaultInput, "minimum");
+            changed |= SyncComponentInputDefinition(input, defaultInput, "maximum");
+            changed |= SyncComponentInputDefinition(input, defaultInput, "increment");
+            changed |= SyncComponentInputDefinition(input, defaultInput, "tableId");
+            changed |= SyncComponentInputDefinition(input, defaultInput, "resolvedJsonKey");
+            changed |= SyncComponentInputDefinition(input, defaultInput, "componentType");
+            changed |= SyncComponentInputDefinition(input, defaultInput, "pairFirstLabel");
+            changed |= SyncComponentInputDefinition(input, defaultInput, "pairSecondLabel");
+            changed |= SyncComponentInputDefinition(input, defaultInput, "visibleWhenPath");
+            changed |= SyncComponentInputDefinition(input, defaultInput, "visibleWhenValue");
+            changed |= SyncComponentInputDefinition(input, defaultInput, "options");
         }
 
         return changed;
+    }
+
+    private static bool SyncComponentInputDefinition(JsonObject input, JsonObject defaultInput, string key)
+    {
+        var next = defaultInput[key];
+        var current = input[key];
+        if (next is null)
+        {
+            if (current is null)
+            {
+                return false;
+            }
+
+            input.Remove(key);
+            return true;
+        }
+
+        var nextJson = next.ToJsonString();
+        if (current?.ToJsonString() == nextJson)
+        {
+            return false;
+        }
+
+        input[key] = JsonNode.Parse(nextJson);
+        return true;
     }
 
     private static bool EnsureButtonIconPreviewSize(string componentType, JsonObject designPreview)
