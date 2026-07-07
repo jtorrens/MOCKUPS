@@ -57,10 +57,18 @@ export function textInputBarComponentToRenderable(
     width: screenBox.width,
     height: fieldHeight + barPaddingY * 2,
   };
+  const textLineCount = Math.max(
+    1,
+    Math.ceil(measuredTextBoxSize.contentTextHeight / measuredTextBoxSize.typography.lineHeight),
+  );
+  const iconY = (iconHeight: number) =>
+    textLineCount <= 1
+      ? barBox.y + barPaddingY + Math.max(0, (fieldHeight - iconHeight) * 0.5)
+      : barBox.y + barPaddingY + fieldHeight - iconHeight;
   const fieldStartX = screenBox.x + barPaddingX;
   const leftIconBox = {
     x: fieldStartX,
-    y: barBox.y + barPaddingY + fieldHeight - leftIconSize.height,
+    y: iconY(leftIconSize.height),
     width: leftIconSize.width,
     height: leftIconSize.height,
   };
@@ -72,7 +80,7 @@ export function textInputBarComponentToRenderable(
   };
   const rightIconBox = {
     x: fieldBox.x + fieldBox.width + rightGap,
-    y: barBox.y + barPaddingY + fieldHeight - rightIconSize.height,
+    y: iconY(rightIconSize.height),
     width: rightIconSize.width,
     height: rightIconSize.height,
   };
