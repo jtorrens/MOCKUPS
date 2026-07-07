@@ -61,6 +61,10 @@ export function resolveIconRowComponentFromRecords(
         buttonIcon: {
           size,
           iconToken,
+          labelSlot: {
+            showLabel: false,
+            showSubtext: false,
+          },
           ...highlightOverrides,
         },
       }),
