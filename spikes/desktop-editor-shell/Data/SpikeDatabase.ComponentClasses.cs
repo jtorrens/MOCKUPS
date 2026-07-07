@@ -2516,6 +2516,7 @@ internal sealed partial class SpikeDatabase
             changed |= SyncComponentInputDefinition(input, defaultInput, "uiOrigin");
             changed |= SyncComponentInputDefinition(input, defaultInput, "uiGroupId");
             changed |= SyncComponentInputDefinition(input, defaultInput, "uiGroupLabel");
+            changed |= SyncComponentInputDefinition(input, defaultInput, "uiParentGroupId");
             changed |= SyncComponentInputDefinition(input, defaultInput, "options");
         }
 

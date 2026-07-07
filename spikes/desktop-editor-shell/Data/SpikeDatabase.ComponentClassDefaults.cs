@@ -373,7 +373,7 @@ internal sealed partial class SpikeDatabase
                 ComponentInput("leftIcons", "Icons", "leftIcons", "iconList", "[]", uiOrigin: "embedded", uiGroupId: "leftIconRow", uiGroupLabel: "Left icon row"),
                 ComponentInput("rightIconRowPresetId", "Variant", "rightIconRowPresetId", "componentPreset", "iconRow::preset::default", componentType: "iconRow", uiOrigin: "embedded", uiGroupId: "rightIconRow", uiGroupLabel: "Right icon row"),
                 ComponentInput("rightIcons", "Icons", "rightIcons", "iconList", "[]", uiOrigin: "embedded", uiGroupId: "rightIconRow", uiGroupLabel: "Right icon row"),
-                ComponentInput("buttonIconPresetId", "Variant", "buttonIconPresetId", "componentPreset", "buttonIcon::preset::default", componentType: "buttonIcon", uiOrigin: "embedded", uiGroupId: "buttonIcon", uiGroupLabel: "Icon button"),
+                ComponentInput("buttonIconPresetId", "Variant", "buttonIconPresetId", "componentPreset", "buttonIcon::preset::default", componentType: "buttonIcon", uiOrigin: "embedded", uiGroupId: "buttonIcon", uiGroupLabel: "Icon button", uiParentGroupId: "iconRowShared"),
                 ComponentInput("iconGap", "Gap to text", "iconGap", "themeToken", "theme.spacing.m", options: ComponentClassFieldCatalog.SpacingTokenOptions, uiOrigin: "embedded", uiGroupId: "iconRowShared", uiGroupLabel: "Icon row shared"),
                 ComponentInput("iconRowSize", "Size", "iconRowSize", "number", "36", minimum: 1, maximum: 9999, increment: 1, uiOrigin: "embedded", uiGroupId: "iconRowShared", uiGroupLabel: "Icon row shared"),
                 ComponentInput("iconRowGap", "Gap", "iconRowGap", "themeToken", "theme.spacing.s", options: ComponentClassFieldCatalog.SpacingTokenOptions, uiOrigin: "embedded", uiGroupId: "iconRowShared", uiGroupLabel: "Icon row shared"),
@@ -520,7 +520,8 @@ internal sealed partial class SpikeDatabase
         string source = "runtime",
         string uiOrigin = "",
         string uiGroupId = "",
-        string uiGroupLabel = "")
+        string uiGroupLabel = "",
+        string uiParentGroupId = "")
     {
         return ComponentInput(
             id,
@@ -543,7 +544,8 @@ internal sealed partial class SpikeDatabase
             valueKind.ToString(),
             uiOrigin,
             uiGroupId,
-            uiGroupLabel);
+            uiGroupLabel,
+            uiParentGroupId);
     }
 
     private static JsonObject ComponentInput(
@@ -567,7 +569,8 @@ internal sealed partial class SpikeDatabase
         string valueKind = "",
         string uiOrigin = "",
         string uiGroupId = "",
-        string uiGroupLabel = "")
+        string uiGroupLabel = "",
+        string uiParentGroupId = "")
     {
         return new JsonObject
         {
@@ -592,6 +595,7 @@ internal sealed partial class SpikeDatabase
             ["uiOrigin"] = uiOrigin,
             ["uiGroupId"] = uiGroupId,
             ["uiGroupLabel"] = uiGroupLabel,
+            ["uiParentGroupId"] = uiParentGroupId,
         };
     }
 

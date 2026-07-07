@@ -6,6 +6,7 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
+using SukiUI.Controls;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -16,10 +17,11 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class ComponentInputsPanel : ContentControl
 {
-    private static readonly IBrush InputCardBackground = new SolidColorBrush(Color.Parse("#18000000"));
-    private static readonly IBrush EmbeddedInputCardBackground = new SolidColorBrush(Color.Parse("#12000000"));
+    private static readonly IBrush EmbeddedInputCardBackground = new SolidColorBrush(Color.FromArgb(28, 255, 255, 255));
+    private static readonly IBrush EmbeddedInputCardBorder = new SolidColorBrush(Color.FromArgb(42, 255, 255, 255));
 
     private readonly SpikeDatabase _database;
+    private readonly ComponentPreviewRecordInputResolver _recordInputResolver;
     private readonly Action _refreshPreview;
     private readonly Window _owner;
     private readonly DispatcherTimer _playbackTimer;
@@ -38,6 +40,7 @@ internal sealed class ComponentInputsPanel : ContentControl
     public ComponentInputsPanel(SpikeDatabase database, Action refreshPreview, Window owner)
     {
         _database = database;
+        _recordInputResolver = new ComponentPreviewRecordInputResolver(database);
         _refreshPreview = refreshPreview;
         _owner = owner;
         _playbackTimer = new DispatcherTimer
@@ -121,42 +124,23 @@ internal sealed class ComponentInputsPanel : ContentControl
         var embeddedGroups = inputs
             .Where((input) => input.UiOrigin == ComponentInputUiOrigin.Embedded)
             .GroupBy((input) => string.IsNullOrWhiteSpace(input.UiGroupId) ? input.Id : input.UiGroupId)
-            .ToList();
+            .ToDictionary((group) => group.Key, (group) => group.ToList(), StringComparer.Ordinal);
 
         if (ownInputs.Count > 0)
         {
             contentPanel.Children.Add(CreateInputRowsPanel(ownInputs, projectId, maxVisibleRows: 5));
         }
 
-        foreach (var group in embeddedGroups)
+        foreach (var groupId in TopLevelGroupIds(embeddedGroups))
         {
-            var groupInputs = group.ToList();
-            var groupLabel = groupInputs
-                .Select((input) => input.UiGroupLabel)
-                .FirstOrDefault((label) => !string.IsNullOrWhiteSpace(label)) ?? "Embedded inputs";
-            contentPanel.Children.Add(new Border
-            {
-                Background = EmbeddedInputCardBackground,
-                CornerRadius = new CornerRadius(8),
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                Child = new InstantEditorCard(
-                    EditorCardHeader.Create(groupLabel, "Embedded control inputs", EditorIcons.Create(EditorIcons.Component, 16)),
-                    new Border
-                    {
-                        Padding = new Thickness(10),
-                        Child = CreateInputRowsPanel(groupInputs, projectId, maxVisibleRows: 5),
-                    },
-                    isExpanded: false),
-            });
+            contentPanel.Children.Add(CreateEmbeddedGroupCard(groupId, embeddedGroups, projectId));
         }
 
         var icon = EditorIcons.Create(EditorIcons.Design, 18);
-        Content = new Border
+        Content = new GlassCard
         {
-            Background = InputCardBackground,
-            CornerRadius = new CornerRadius(10),
             HorizontalAlignment = HorizontalAlignment.Stretch,
-            Child = new InstantEditorCard(
+            Content = new InstantEditorCard(
                 CreateHeader(icon),
                 new Border
                 {
@@ -166,6 +150,79 @@ internal sealed class ComponentInputsPanel : ContentControl
                 isExpanded: true),
         };
         UpdatePlaybackButton();
+    }
+
+    private Control CreateEmbeddedGroupCard(
+        string groupId,
+        IReadOnlyDictionary<string, List<ComponentInputDefinition>> groupsById,
+        string projectId)
+    {
+        var groupInputs = groupsById[groupId];
+        var contentPanel = new StackPanel
+        {
+            Spacing = 10,
+        };
+        if (groupInputs.Count > 0)
+        {
+            contentPanel.Children.Add(CreateInputRowsPanel(groupInputs, projectId, maxVisibleRows: 5));
+        }
+
+        foreach (var childGroupId in ChildGroupIds(groupId, groupsById))
+        {
+            contentPanel.Children.Add(CreateEmbeddedGroupCard(childGroupId, groupsById, projectId));
+        }
+
+        return new Border
+        {
+            Background = EmbeddedInputCardBackground,
+            BorderBrush = EmbeddedInputCardBorder,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Child = new InstantEditorCard(
+                EditorCardHeader.Create(GroupLabel(groupInputs), "Embedded control inputs", EditorIcons.Create(EditorIcons.Component, 16)),
+                new Border
+                {
+                    Padding = new Thickness(10),
+                    Child = contentPanel,
+                },
+                isExpanded: false),
+        };
+    }
+
+    private static IEnumerable<string> TopLevelGroupIds(
+        IReadOnlyDictionary<string, List<ComponentInputDefinition>> groupsById)
+    {
+        return groupsById
+            .Where((group) =>
+            {
+                var parent = GroupParentId(group.Value);
+                return string.IsNullOrWhiteSpace(parent) || !groupsById.ContainsKey(parent);
+            })
+            .Select((group) => group.Key);
+    }
+
+    private static IEnumerable<string> ChildGroupIds(
+        string parentGroupId,
+        IReadOnlyDictionary<string, List<ComponentInputDefinition>> groupsById)
+    {
+        return groupsById
+            .Where((group) => string.Equals(GroupParentId(group.Value), parentGroupId, StringComparison.Ordinal))
+            .Select((group) => group.Key);
+    }
+
+    private static string GroupParentId(IReadOnlyList<ComponentInputDefinition> groupInputs)
+    {
+        return groupInputs
+            .Select((input) => input.UiParentGroupId)
+            .FirstOrDefault((parent) => !string.IsNullOrWhiteSpace(parent)) ?? "";
+    }
+
+    private static string GroupLabel(IReadOnlyList<ComponentInputDefinition> groupInputs)
+    {
+        return groupInputs
+            .Select((input) => input.UiGroupLabel)
+            .FirstOrDefault((label) => !string.IsNullOrWhiteSpace(label)) ?? "Embedded inputs";
     }
 
     private Control CreateInputRowsPanel(
@@ -447,24 +504,17 @@ internal sealed class ComponentInputsPanel : ContentControl
             return;
         }
 
-        preview[input.ResolvedJsonKey] = input.TableId switch
-        {
-            "actors" => !string.IsNullOrWhiteSpace(value)
-                ? ActorPreviewInputFactory.Create(_database, value, themeMode, paletteColors)
-                : ActorPreviewInputFactory.CreateSample(),
-            _ => throw new InvalidOperationException(
-                $"Unsupported record reference input table '{input.TableId}' for '{input.Id}'."),
-        };
+        preview[input.ResolvedJsonKey] = _recordInputResolver.ResolvedPreviewValue(
+            input.TableId,
+            value,
+            themeMode,
+            paletteColors,
+            input.Id);
     }
 
     private IReadOnlyList<FieldOption> RecordReferenceOptions(ComponentInputDefinition input, string projectId)
     {
-        return input.TableId switch
-        {
-            "actors" => _database.GetActorOptions(projectId),
-            _ => throw new InvalidOperationException(
-                $"Unsupported record reference input table '{input.TableId}' for '{input.Id}'."),
-        };
+        return _recordInputResolver.Options(projectId, input.TableId, input.Id);
     }
 
     private IReadOnlyList<FieldOption> ComponentPresetOptions(ComponentInputDefinition input, string projectId)
@@ -492,20 +542,11 @@ internal sealed class ComponentInputsPanel : ContentControl
         PairFieldLabels pairLabels,
         ComponentInputUiOrigin uiOrigin,
         string uiGroupId,
-        string uiGroupLabel)
+        string uiGroupLabel,
+        string uiParentGroupId)
     {
         var normalizedKind = ParseKind(kind);
         var normalizedValueKind = ParseValueKind(valueKind, normalizedKind);
-        var normalizedTableId = tableId;
-        var normalizedResolvedJsonKey = resolvedJsonKey;
-        if (kind.Trim().Equals("actor", StringComparison.OrdinalIgnoreCase))
-        {
-            normalizedKind = ComponentInputKind.RecordReference;
-            normalizedValueKind = ValueKind.RecordReference;
-            normalizedTableId = string.IsNullOrWhiteSpace(tableId) ? "actors" : tableId;
-            normalizedResolvedJsonKey = string.IsNullOrWhiteSpace(resolvedJsonKey) ? "actor" : resolvedJsonKey;
-        }
-
         return new ComponentInputDefinition(
             id,
             label,
@@ -517,14 +558,15 @@ internal sealed class ComponentInputsPanel : ContentControl
             minimum,
             maximum,
             increment,
-            normalizedTableId,
-            normalizedResolvedJsonKey,
+            tableId,
+            resolvedJsonKey,
             componentType,
             source,
             pairLabels,
             uiOrigin,
             uiGroupId,
-            uiGroupLabel);
+            uiGroupLabel,
+            uiParentGroupId);
     }
 
     private string Value(ComponentInputDefinition input)
@@ -796,7 +838,8 @@ internal sealed class ComponentInputsPanel : ContentControl
                     JsonString(item, "pairSecondLabel", "H")),
                 ParseInputUiOrigin(JsonString(item, "uiOrigin")),
                 JsonString(item, "uiGroupId"),
-                JsonString(item, "uiGroupLabel"));
+                JsonString(item, "uiGroupLabel"),
+                JsonString(item, "uiParentGroupId"));
         }
     }
 
@@ -842,6 +885,7 @@ internal sealed class ComponentInputsPanel : ContentControl
             input.UiOrigin,
             input.UiGroupId,
             input.UiGroupLabel,
+            input.UiParentGroupId,
             string.Join(",", input.Options?.Select((option) => $"{option.Value}={option.Label}") ?? []));
     }
 
@@ -1010,7 +1054,8 @@ internal sealed record ComponentInputDefinition(
     PairFieldLabels PairLabels = null!,
     ComponentInputUiOrigin UiOrigin = ComponentInputUiOrigin.Self,
     string UiGroupId = "",
-    string UiGroupLabel = "");
+    string UiGroupLabel = "",
+    string UiParentGroupId = "");
 
 internal sealed record ComponentInputAnimation(
     string PlayInputId,
