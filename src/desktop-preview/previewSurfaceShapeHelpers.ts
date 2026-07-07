@@ -28,7 +28,7 @@ export function surfaceShapeDataUri({
   tail,
 }: SurfaceShapeSvgInput) {
   const tailBox = surfaceTailBox(body, tail);
-  const borderPadding = Math.ceil(Math.max(0, borderWidth)) + (borderWidth > 0 ? 1 : 0);
+  const borderPadding = Math.ceil(Math.max(0, borderWidth) * 2) + (borderWidth > 0 ? 4 : 0);
   const minX = Math.min(body.x, tailBox.x) - borderPadding;
   const minY = Math.min(body.y, tailBox.y) - borderPadding;
   const maxX = Math.max(body.x + body.width, tailBox.x + tailBox.width) + borderPadding;
@@ -55,7 +55,7 @@ export function surfaceShapeDataUri({
   const borderMarkup =
     borderWidth > 0 && borderColor !== "transparent"
       ? `<defs>
-          <filter id="surface-shape-border" filterUnits="userSpaceOnUse" x="0" y="0" width="${width}" height="${height}">
+          <filter id="surface-shape-border" filterUnits="userSpaceOnUse" x="${-borderPadding}" y="${-borderPadding}" width="${width + borderPadding * 2}" height="${height + borderPadding * 2}">
             <feMorphology in="SourceAlpha" operator="dilate" radius="${borderWidth}" result="expanded"/>
             <feFlood flood-color="${escapedBorderColor}" result="borderColor"/>
             <feComposite in="borderColor" in2="expanded" operator="in" result="borderShape"/>
