@@ -16,6 +16,7 @@ internal sealed partial class SpikeDatabase
             "navigation_bar" => "Navigation bar component",
             "surface" => "Surface component",
             "cursor" => "Cursor component",
+            "textBox" => "Text box component",
             "textInputBar" => "Text input bar component",
             "keyboard" => "Keyboard component",
             "buttonIcon" => "Button icon component",
@@ -82,6 +83,26 @@ internal sealed partial class SpikeDatabase
                     ["width"] = 2,
                     ["minimumFade"] = 0.15,
                     ["fadeFrames"] = 12,
+                };
+                break;
+            case "textBox":
+                config["textBox"] = new JsonObject
+                {
+                    ["dimensionMode"] = "fixed",
+                    ["padding"] = "theme.spacing.m|theme.spacing.s",
+                    ["surfaceSlot"] = ComponentSurfaceSlot("InputBox"),
+                    ["placeholder"] = "Message",
+                    ["textColorToken"] = "theme.colors.textPrimary",
+                    ["placeholderColorToken"] = "theme.colors.textSecondary",
+                    ["typography"] = JsonNode.Parse(TypographyStyleValue.CreateDefault("theme.typography.sizes.s")),
+                    ["textAlign"] = "left",
+                    ["overflowMode"] = "clip",
+                    ["cursorSlot"] = new JsonObject
+                    {
+                        ["showCursor"] = true,
+                        ["presetId"] = DefaultComponentPresetId,
+                        ["overrides"] = new JsonObject(),
+                    },
                 };
                 break;
             case "avatar":
@@ -245,6 +266,7 @@ internal sealed partial class SpikeDatabase
             ["sampleText"] = componentType switch
             {
                 "label" => "Alex",
+                "textBox" => "Message",
                 "textInputBar" => "Message",
                 "audio" => "0:05",
                 "video" => "0:12",
@@ -257,6 +279,10 @@ internal sealed partial class SpikeDatabase
         if (componentType == "surface")
         {
             preview["size"] = "180|104";
+        }
+        if (componentType == "textBox")
+        {
+            preview["size"] = "220|44";
         }
         if (componentType == "cursor")
         {
@@ -292,6 +318,11 @@ internal sealed partial class SpikeDatabase
             "cursor" =>
             [
                 ComponentInput("height", "Height", "height", "number", "32", minimum: 1, maximum: 9999, increment: 1),
+            ],
+            "textBox" =>
+            [
+                ComponentInput("sampleText", "Text", "sampleText", "text", "Message"),
+                ComponentInput("size", "Size", "size", "integerPair", "220|44"),
             ],
             "avatar" =>
             [
@@ -368,6 +399,7 @@ internal sealed partial class SpikeDatabase
         NewComponentSeed("avatar", "component.avatar", "Default Avatar"),
         NewComponentSeed("surface", "component.surface", "Default Surface"),
         NewComponentSeed("cursor", "component.cursor", "Default Cursor"),
+        NewComponentSeed("textBox", "component.textBox", "Default Text Box"),
         NewComponentSeed("status_bar", "component.status_bar", "Default Status Bar"),
         NewComponentSeed("navigation_bar", "component.navigation_bar", "Default Navigation Bar"),
         NewComponentSeed("textInputBar", "component.textInputBar", "Default Text Input Bar"),

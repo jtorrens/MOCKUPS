@@ -4,60 +4,50 @@ import type { LabelDesignContract } from "./labelComponentContract.js";
 import {
   centerBox,
   colorForMode,
-  numberOrThemeToken,
   numberToken,
   renderScale,
   selectedColor,
-  stringOrThemeToken,
   variants,
 } from "./componentRenderableCommon.js";
+import {
+  approximateTextWidth,
+  resolveTypographyStyle,
+} from "./previewTextHelpers.js";
 import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
-
-function labelTextWidth(text: string, fontSize: number) {
-  return text.length * fontSize * 0.58;
-}
 
 export function measureLabelComponent(
   label: LabelDesignContract,
   payload: DesignPreviewPayload,
 ) {
   const scale = renderScale(payload);
-  const fontSize = numberToken(payload, label.textTypography.sizeToken) * scale;
-  const subtextFontSize = numberToken(payload, label.subtextTypography.sizeToken) * scale;
-  return labelSize(label, fontSize, subtextFontSize, scale, payload);
+  const textTypography = resolveTypographyStyle(payload, label.textTypography, scale);
+  const subtextTypography = resolveTypographyStyle(payload, label.subtextTypography, scale);
+  return labelSize(label, textTypography, subtextTypography, scale, payload);
 }
 
 function labelSize(
   label: LabelDesignContract,
-  fontSize: number,
-  subtextFontSize: number,
+  textTypography: ReturnType<typeof resolveTypographyStyle>,
+  subtextTypography: ReturnType<typeof resolveTypographyStyle>,
   scale: number,
   payload: DesignPreviewPayload,
 ) {
   const paddingX = numberToken(payload, label.padding.xToken) * scale;
   const paddingY = numberToken(payload, label.padding.yToken) * scale;
   const hasSubtext = label.subtext.trim().length > 0;
-  const lineHeight = Math.max(
-    fontSize * numberOrThemeToken(payload, label.textTypography.lineHeight),
-    fontSize,
-  );
-  const subtextLineHeight = Math.max(
-    subtextFontSize * numberOrThemeToken(payload, label.subtextTypography.lineHeight),
-    subtextFontSize,
-  );
   const textGap = hasSubtext ? label.textGap * scale : 0;
   const contentWidth = Math.max(
-    labelTextWidth(label.text, fontSize),
-    hasSubtext ? labelTextWidth(label.subtext, subtextFontSize) : 0,
+    approximateTextWidth(label.text, textTypography.fontSize),
+    hasSubtext ? approximateTextWidth(label.subtext, subtextTypography.fontSize) : 0,
   );
   const contentHeight =
-    lineHeight + (hasSubtext ? textGap + subtextLineHeight : 0);
+    textTypography.lineHeight + (hasSubtext ? textGap + subtextTypography.lineHeight : 0);
   if (label.dimensionMode === "fixed") {
     return {
       width: label.size.width * scale,
       height: label.size.height * scale,
-      lineHeight,
-      subtextLineHeight,
+      lineHeight: textTypography.lineHeight,
+      subtextLineHeight: subtextTypography.lineHeight,
       hasSubtext,
     };
   }
@@ -65,8 +55,8 @@ function labelSize(
   return {
     width: Math.max(1, contentWidth + paddingX * 2),
     height: Math.max(1, contentHeight + paddingY * 2),
-    lineHeight,
-    subtextLineHeight,
+    lineHeight: textTypography.lineHeight,
+    subtextLineHeight: subtextTypography.lineHeight,
     hasSubtext,
   };
 }
@@ -89,15 +79,11 @@ export function labelComponentToRenderableAt(
   box: RenderableBox,
 ): RenderableNode {
   const scale = renderScale(payload);
-  const fontSize = numberToken(payload, label.textTypography.sizeToken) * scale;
-  const subtextFontSize = numberToken(payload, label.subtextTypography.sizeToken) * scale;
+  const textTypography = resolveTypographyStyle(payload, label.textTypography, scale);
+  const subtextTypography = resolveTypographyStyle(payload, label.subtextTypography, scale);
   const paddingX = numberToken(payload, label.padding.xToken) * scale;
   const paddingY = numberToken(payload, label.padding.yToken) * scale;
-  const size = labelSize(label, fontSize, subtextFontSize, scale, payload);
-  const textStyle = stringOrThemeToken(payload, label.textTypography.style);
-  const subtextStyle = stringOrThemeToken(payload, label.subtextTypography.style);
-  const textWeight = numberOrThemeToken(payload, label.textTypography.weight);
-  const subtextWeight = numberOrThemeToken(payload, label.subtextTypography.weight);
+  const size = labelSize(label, textTypography, subtextTypography, scale, payload);
   const surfaceNode = surfaceComponentToRenderableAt(payload, label.surface, box);
   const surfaceColorModes = surfaceNode.style?.colorModes as
     | Record<string, Record<string, unknown>>
@@ -132,17 +118,17 @@ export function labelComponentToRenderableAt(
         id: `${label.id}.text`,
         type: "text",
         frame: 0,
-        text: label.text,
-        style: {
-          textColor: selectedColor(payload, label.textColorToken),
-          fontSize,
+          text: label.text,
+          style: {
+            textColor: selectedColor(payload, label.textColorToken),
+          fontSize: textTypography.fontSize,
           lineHeight: size.lineHeight,
           textAlign: label.textAlign,
           display: "block",
           width: "100%",
           overflow: "hidden",
-          fontStyle: textStyle === "italic" ? "italic" : undefined,
-          fontWeight: textWeight,
+          fontStyle: textTypography.fontStyle,
+          fontWeight: textTypography.fontWeight,
           whiteSpace: "nowrap",
         },
       },
@@ -155,16 +141,15 @@ export function labelComponentToRenderableAt(
               text: label.subtext,
               style: {
                 textColor: selectedColor(payload, label.subtextColorToken),
-                fontSize: subtextFontSize,
+                fontSize: subtextTypography.fontSize,
                 lineHeight: size.subtextLineHeight,
                 marginTop: label.textGap * scale,
                 textAlign: label.textAlign,
                 display: "block",
                 width: "100%",
                 overflow: "hidden",
-                fontStyle:
-                  subtextStyle === "italic" ? "italic" : undefined,
-                fontWeight: subtextWeight,
+                fontStyle: subtextTypography.fontStyle,
+                fontWeight: subtextTypography.fontWeight,
                 whiteSpace: "nowrap",
               },
             } satisfies RenderableNode,

@@ -11,6 +11,7 @@ export const ComponentClassTypeSchema = z.enum([
   "navigation_bar",
   "status_bar",
   "surface",
+  "textBox",
   "textInputBar",
   "video",
 ]);

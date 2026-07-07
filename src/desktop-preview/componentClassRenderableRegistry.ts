@@ -22,6 +22,8 @@ import { statusBarComponentToRenderable } from "./statusBarComponentRenderable.j
 import { resolveStatusBarComponent } from "./statusBarComponentResolver.js";
 import { surfaceComponentToRenderable } from "./surfaceComponentRenderable.js";
 import { resolveSurfaceComponent } from "./surfaceComponentResolver.js";
+import { textBoxComponentToRenderable } from "./textBoxComponentRenderable.js";
+import { resolveTextBoxComponent } from "./textBoxComponentResolver.js";
 import { textInputBarComponentToRenderable } from "./textInputBarComponentRenderable.js";
 import { resolveTextInputBarComponent } from "./textInputBarComponentResolver.js";
 import { videoComponentToRenderable } from "./videoComponentRenderable.js";
@@ -35,6 +37,8 @@ export const componentRenderableFactories = {
     surfaceComponentToRenderable(payload, resolveSurfaceComponent(payload)),
   cursor: (payload) =>
     cursorComponentToRenderable(payload, resolveCursorComponent(payload)),
+  textBox: (payload) =>
+    textBoxComponentToRenderable(payload, resolveTextBoxComponent(payload)),
   avatar: (payload) => avatarComponentToRenderable(payload, resolveAvatarComponent(payload)),
   audio: (payload) => audioComponentToRenderable(payload, resolveAudioComponent(payload)),
   buttonIcon: (payload) =>

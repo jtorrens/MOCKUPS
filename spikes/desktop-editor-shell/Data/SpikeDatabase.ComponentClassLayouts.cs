@@ -48,6 +48,35 @@ internal sealed partial class SpikeDatabase
               ]
             }
             """,
+            "component.textBox" => $$"""
+            ,
+            {
+              "id": "textBox",
+              "label": "Text Box",
+              "subtitle": "Reusable text field content box",
+              "icon": "{{EditorIcons.TextInput}}",
+              "order": 20,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "textBox", "label": "Text box", "order": 10, "visible": true, "fields": [
+                  { "id": "component.textBox.dimensionMode", "order": 10, "visible": true },
+                  { "id": "component.textBox.padding", "order": 20, "visible": true },
+                  { "id": "component.textBox.surface.editor", "order": 30, "visible": true },
+                  { "id": "component.textBox.placeholder", "order": 40, "visible": true },
+                  { "id": "component.textBox.textColorToken", "order": 50, "visible": true },
+                  { "id": "component.textBox.placeholderColorToken", "order": 60, "visible": true },
+                  { "id": "component.textBox.typography", "order": 70, "visible": true },
+                  { "id": "component.textBox.textAlign", "order": 80, "visible": true },
+                  { "id": "component.textBox.overflowMode", "order": 90, "visible": true }
+                ] },
+                { "id": "textBoxCursor", "label": "Cursor", "order": 20, "visible": true, "fields": [
+                  { "id": "component.textBox.cursor.showCursor", "order": 10, "visible": true },
+                  { "id": "component.textBox.cursor.editor", "order": 20, "visible": true }
+                ] }
+              ]
+            }
+            """,
             "component.avatar" => $$"""
             ,
             {

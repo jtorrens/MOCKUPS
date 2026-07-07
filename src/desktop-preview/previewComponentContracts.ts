@@ -24,6 +24,14 @@ export interface SpacingPairContract {
   yToken: string;
 }
 
+export interface TypographyStyleContract {
+  fontFamilyId: string;
+  weight: string;
+  style: string;
+  sizeToken: string;
+  lineHeight: number | string;
+}
+
 export interface IconSlotsContract {
   left: string[];
   center: string[];

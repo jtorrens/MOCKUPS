@@ -26,6 +26,7 @@ export const COMPONENT_CLASS_FIELDS = defineFields({
         "navigation_bar",
         "status_bar",
         "surface",
+        "textBox",
         "textInputBar",
         "video",
       ],

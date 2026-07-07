@@ -100,6 +100,12 @@ internal static class ComponentClassFieldCatalog
         new("content", "Content + padding"),
     ];
 
+    private static readonly FieldOption[] TextBoxOverflowOptions =
+    [
+        new("clip", "Clip"),
+        new("scroll", "Scroll"),
+    ];
+
     private static readonly FieldOption[] PressedEffectOptions =
     [
         new("popup", "Popup"),
@@ -159,6 +165,18 @@ internal static class ComponentClassFieldCatalog
         ["component.cursor.width"] = new("component.cursor.width", "Width", ValueKind.Integer, ["cursor", "width"], "2"),
         ["component.cursor.minimumFade"] = new("component.cursor.minimumFade", "Minimum fade", ValueKind.Alpha, ["cursor", "minimumFade"], "0.15"),
         ["component.cursor.fadeFrames"] = new("component.cursor.fadeFrames", "Fade frames", ValueKind.Integer, ["cursor", "fadeFrames"], "12"),
+
+        ["component.textBox.dimensionMode"] = new("component.textBox.dimensionMode", "Dimension mode", ValueKind.OptionToken, ["textBox", "dimensionMode"], "fixed", Options: DimensionModeOptions),
+        ["component.textBox.padding"] = new("component.textBox.padding", "Padding", ValueKind.ThemeTokenPair, ["textBox", "padding"], "theme.spacing.m|theme.spacing.s", PairLabels: new("X", "Y"), Options: SpacingTokenOptions),
+        ["component.textBox.surface.editor"] = new("component.textBox.surface.editor", "Surface", ValueKind.ComponentPreset, ["textBox", "surfaceSlot", "presetId"], "InputBox"),
+        ["component.textBox.placeholder"] = new("component.textBox.placeholder", "Placeholder", ValueKind.StringSingleLine, ["textBox", "placeholder"], "Message"),
+        ["component.textBox.textColorToken"] = new("component.textBox.textColorToken", "Text color", ValueKind.ThemeToken, ["textBox", "textColorToken"], "theme.colors.textPrimary", Options: ThemeColorOptions),
+        ["component.textBox.placeholderColorToken"] = new("component.textBox.placeholderColorToken", "Placeholder color", ValueKind.ThemeToken, ["textBox", "placeholderColorToken"], "theme.colors.textSecondary", Options: ThemeColorOptions),
+        ["component.textBox.typography"] = new("component.textBox.typography", "Typography", ValueKind.TypographyStyle, ["textBox", "typography"], TypographyStyleValue.CreateDefault("theme.typography.sizes.s")),
+        ["component.textBox.textAlign"] = new("component.textBox.textAlign", "Text align", ValueKind.OptionToken, ["textBox", "textAlign"], "left", Options: TextAlignOptions),
+        ["component.textBox.overflowMode"] = new("component.textBox.overflowMode", "Overflow", ValueKind.OptionToken, ["textBox", "overflowMode"], "clip", Options: TextBoxOverflowOptions),
+        ["component.textBox.cursor.showCursor"] = new("component.textBox.cursor.showCursor", "Show cursor", ValueKind.Boolean, ["textBox", "cursorSlot", "showCursor"], "true"),
+        ["component.textBox.cursor.editor"] = new("component.textBox.cursor.editor", "Cursor", ValueKind.ComponentPreset, ["textBox", "cursorSlot", "presetId"], "default"),
 
         ["component.avatar.defaultSize"] = new("component.avatar.defaultSize", "Default size", ValueKind.Integer, ["avatar", "defaultSize"], "48"),
         ["component.avatar.cornerRadiusToken"] = new("component.avatar.cornerRadiusToken", "Avatar radius", ValueKind.ThemeToken, ["avatar", "cornerRadiusToken"], "theme.radii.avatar", Options: RadiusTokenOptions),

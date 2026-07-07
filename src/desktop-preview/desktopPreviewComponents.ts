@@ -35,6 +35,14 @@ export const desktopPreviewComponents = {
     renderable: "./cursorComponentRenderable",
     embeds: [],
   },
+  textBox: {
+    category: "atom",
+    migrationStatus: "structural",
+    contract: "./textBoxComponentContract",
+    resolver: "./textBoxComponentResolver",
+    renderable: "./textBoxComponentRenderable",
+    embeds: ["surface", "cursor"],
+  },
   avatar: {
     category: "component",
     migrationStatus: "functional",

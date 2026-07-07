@@ -226,6 +226,7 @@ assertNoTerms("src/desktop-preview/renderDesignPreviewHtml.tsx", [
   "avatar",
   "buttonIcon",
   "audio",
+  "textBox",
   "textInputBar",
   "keyboard",
   "video",
@@ -235,6 +236,7 @@ assertNoTerms("src/desktop-preview/renderDesignPreviewHtml.tsx", [
   "component_avatar",
   "component_button",
   "component_audio",
+  "component_text_box",
   "component_text_input",
   "component_keyboard",
   "component_video",
@@ -333,6 +335,7 @@ assertNoTerms("src/desktop-preview/componentRenderableCommon.ts", [
   "avatar",
   "buttonIcon",
   "audio",
+  "textBox",
   "textInputBar",
   "keyboard",
   "video",
@@ -344,6 +347,7 @@ assertNoTerms("src/desktop-preview/componentRenderableCommon.ts", [
   "component_avatar",
   "component_button",
   "component_audio",
+  "component_text_box",
   "component_text_input",
   "component_keyboard",
   "component_video",
@@ -996,6 +1000,11 @@ assertContains(
 );
 assertContains(
   "src/desktop-preview/desktopPreviewComponents.ts",
+  "textBox: {",
+  "desktop preview component manifest must route text box as an owning component module",
+);
+assertContains(
+  "src/desktop-preview/desktopPreviewComponents.ts",
   "textInputBar: {",
   "desktop preview component manifest must route text input bar as an owning component module",
 );
@@ -1018,6 +1027,11 @@ assertContains(
   "src/desktop-preview/componentClassRenderableRegistry.ts",
   "buttonIcon: (payload)",
   "component renderable registry must route the current button icon component type",
+);
+assertContains(
+  "src/desktop-preview/componentClassRenderableRegistry.ts",
+  "textBox: (payload)",
+  "component renderable registry must route the current text box component type",
 );
 assertContains(
   "src/desktop-preview/componentClassRenderableRegistry.ts",
@@ -1162,6 +1176,7 @@ assertNoTerms("spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
   "\"audio\"",
   "\"avatar\"",
   "\"buttonIcon\"",
+  "\"textBox\"",
   "\"navigation_bar\"",
   "\"status_bar\"",
   "\"textInputBar\"",

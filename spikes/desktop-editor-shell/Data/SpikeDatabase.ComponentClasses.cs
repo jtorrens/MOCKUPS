@@ -2184,6 +2184,7 @@ internal sealed partial class SpikeDatabase
         {
             "label" => (new[] { "label" }, "Label"),
             "buttonIcon" => (new[] { "buttonIcon" }, "IconButton"),
+            "textBox" => (new[] { "textBox" }, "InputBox"),
             "textInputBar" => (new[] { "textInput" }, "InputBox"),
             "audio" => (new[] { "audio" }, DefaultComponentPresetId),
             "video" => (new[] { "video" }, DefaultComponentPresetId),

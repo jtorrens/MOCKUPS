@@ -39,6 +39,18 @@ internal static class EmbeddedComponentSlotCatalog
             "component.label",
             ["buttonIcon", "labelSlot"]),
         new(
+            "component.textBox.surface.editor",
+            "surface",
+            "Surface",
+            "component.surface",
+            ["textBox", "surfaceSlot"]),
+        new(
+            "component.textBox.cursor.editor",
+            "cursor",
+            "Cursor",
+            "component.cursor",
+            ["textBox", "cursorSlot"]),
+        new(
             "component.label.surface.editor",
             "surface",
             "Surface",

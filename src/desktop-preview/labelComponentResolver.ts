@@ -11,7 +11,7 @@ import {
   requiredStringPair,
 } from "./componentResolverCommon.js";
 import type { LabelDesignContract } from "./labelComponentContract.js";
-import type { TypographyStyleContract } from "./labelComponentContract.js";
+import type { TypographyStyleContract } from "./previewComponentContracts.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
 
 function requiredText(
