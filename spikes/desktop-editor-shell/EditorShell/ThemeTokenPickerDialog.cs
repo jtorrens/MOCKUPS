@@ -47,6 +47,7 @@ internal sealed class ThemeTokenPickerDialog
             IsMenuVisible = false,
             BackgroundAnimationEnabled = false,
         };
+        EditorSukiWindowTheme.ApplyDialogChrome(dialog, _owner);
 
         var themeCombo = new EditorInstantComboBox
         {
@@ -159,7 +160,7 @@ internal sealed class ThemeTokenPickerDialog
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     BorderThickness = selected ? new Thickness(2) : new Thickness(1),
                     BorderBrush = selected
-                        ? new SolidColorBrush(Color.Parse("#3388FF"))
+                        ? EditorSukiWindowTheme.AccentBrush()
                         : new SolidColorBrush(Color.Parse("#4B5F7A")),
                 };
                 button.Click += (_, _) =>

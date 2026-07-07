@@ -23,7 +23,7 @@ internal static class HexColorPickerDialog
         var selectedTabBackground = new SolidColorBrush(Color.Parse(isLight ? "#E7F1FF" : "#20314D"));
         var pointerBackground = new SolidColorBrush(Color.Parse(isLight ? "#EDF4FF" : "#263B5C"));
         var borderBrush = new SolidColorBrush(Color.Parse(isLight ? "#D0D7E2" : "#34445A"));
-        var accentBrush = new SolidColorBrush(Color.Parse(isLight ? "#1368CE" : "#7DB7FF"));
+        var accentBrush = EditorSukiWindowTheme.AccentBrush();
 
         var colorView = new ColorView
         {
@@ -66,6 +66,7 @@ internal static class HexColorPickerDialog
             RequestedThemeVariant = themeVariant,
             Content = panel,
         };
+        EditorSukiWindowTheme.ApplyDialogChrome(window, owner);
         ApplyColorPickerThemeResources(
             window,
             foreground,

@@ -43,6 +43,7 @@ internal sealed class IconThemeSearchDialog
             IsMenuVisible = false,
             BackgroundAnimationEnabled = false,
         };
+        EditorSukiWindowTheme.ApplyDialogChrome(dialog, _owner);
 
         var queryBox = EditorTextBoxBehavior.Configure(new TextBox { PlaceholderText = "telephone" });
         var tokenBox = EditorTextBoxBehavior.Configure(new TextBox { PlaceholderText = "phone_call" });

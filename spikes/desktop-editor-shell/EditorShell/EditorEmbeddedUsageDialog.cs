@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using SukiUI.Controls;
 using System.Collections.Generic;
@@ -45,6 +46,7 @@ internal sealed class EditorEmbeddedUsageDialog
             BackgroundTransitionsEnabled = false,
             BackgroundTransitionTime = 0.05,
         };
+        EditorSukiWindowTheme.ApplyDialogChrome(dialog, _owner);
 
         var content = new StackPanel
         {

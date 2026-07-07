@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Mockups.DesktopEditorShell.Common;
 using SukiUI.Controls;
 using System.Threading.Tasks;
 
@@ -239,9 +240,9 @@ internal sealed class EditorDialogService
         return dialog.ShowDialog<bool>(_owner);
     }
 
-    private static SukiWindow CreateDialog(string title, double width, double height)
+    private SukiWindow CreateDialog(string title, double width, double height)
     {
-        return new SukiWindow
+        var dialog = new SukiWindow
         {
             Title = title,
             Width = width,
@@ -255,5 +256,7 @@ internal sealed class EditorDialogService
             BackgroundTransitionsEnabled = false,
             BackgroundTransitionTime = 0.05,
         };
+        EditorSukiWindowTheme.ApplyDialogChrome(dialog, _owner);
+        return dialog;
     }
 }

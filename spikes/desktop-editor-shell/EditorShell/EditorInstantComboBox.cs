@@ -7,6 +7,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Collections.Generic;
@@ -265,8 +266,8 @@ public sealed class EditorInstantComboBox : Grid
                 MinHeight = 30,
                 Padding = new Thickness(8, 5),
                 Background = isHighlighted
-                    ? new SolidColorBrush(Color.Parse("#334B8DFF"))
-                    : isSelected ? new SolidColorBrush(Color.Parse("#223388FF")) : Brushes.Transparent,
+                    ? EditorSukiWindowTheme.AccentBrush(0x33)
+                    : isSelected ? EditorSukiWindowTheme.AccentBrush(0x22) : Brushes.Transparent,
                 BorderThickness = new Thickness(0),
                 Cursor = new Cursor(StandardCursorType.Hand),
                 Focusable = false,

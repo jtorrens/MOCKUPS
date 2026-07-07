@@ -50,6 +50,7 @@ internal sealed class IconThemeSvgReplaceDialog
             BackgroundTransitionsEnabled = false,
             BackgroundTransitionTime = 0.05,
         };
+        EditorSukiWindowTheme.ApplyDialogChrome(dialog, _owner);
 
         var originalPreview = new SvgMarkupPreview();
         var newPreview = new SvgMarkupPreview();

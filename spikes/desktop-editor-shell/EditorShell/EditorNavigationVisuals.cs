@@ -13,21 +13,21 @@ internal static class EditorNavigationVisuals
     public static IBrush RowBackground(bool isSelected, bool isDark)
     {
         return isSelected
-            ? new SolidColorBrush(Color.Parse(isDark ? "#253f5f" : "#dfefff"))
+            ? EditorSukiWindowTheme.SelectionBackgroundBrush(isDark)
             : Brushes.Transparent;
     }
 
     public static IBrush TextBrush(bool isSelected, bool isDark)
     {
         return isSelected
-            ? new SolidColorBrush(Color.Parse(isDark ? "#7DB7FF" : "#1368CE"))
+            ? EditorSukiWindowTheme.AccentBrush()
             : new SolidColorBrush(Color.Parse(isDark ? "#F1F5F9" : "#1F2937"));
     }
 
     public static IBrush MutedTextBrush(bool isSelected, bool isDark)
     {
         return isSelected
-            ? new SolidColorBrush(Color.Parse(isDark ? "#A8CEFF" : "#2F7EDB"))
+            ? EditorSukiWindowTheme.AccentBrush(isDark ? (byte)0xCC : (byte)0xDD)
             : new SolidColorBrush(Color.Parse(isDark ? "#B8C0CE" : "#667085"));
     }
 

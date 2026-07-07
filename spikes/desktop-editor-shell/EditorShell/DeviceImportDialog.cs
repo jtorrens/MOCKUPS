@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Mockups.DesktopEditorShell.Common;
 using SukiUI.Controls;
 using System;
 using System.Collections.Generic;
@@ -66,6 +67,7 @@ internal sealed class DeviceImportDialog
             BackgroundTransitionsEnabled = false,
             BackgroundTransitionTime = 0.05,
         };
+        EditorSukiWindowTheme.ApplyDialogChrome(dialog, _owner);
 
         var searchGrid = new Grid
         {

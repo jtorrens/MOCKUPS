@@ -298,10 +298,10 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
     private void UpdatePresetBrushes()
     {
         var isLight = ActualThemeVariant == ThemeVariant.Light;
-        var selectedDot = new SolidColorBrush(Color.Parse("#2F8CFF"));
+        var selectedDot = EditorSukiWindowTheme.AccentBrush();
         var neutralDot = new SolidColorBrush(Color.Parse(isLight ? "#73000000" : "#8AFFFFFF"));
-        var selectedBackground = new SolidColorBrush(Color.Parse("#241D6FE8"));
-        var selectedBorder = new SolidColorBrush(Color.Parse("#802F8CFF"));
+        var selectedBackground = EditorSukiWindowTheme.AccentBrush(0x24);
+        var selectedBorder = EditorSukiWindowTheme.AccentBrush(0x80);
         foreach (var preset in _presetButtons)
         {
             var isSelected = AreSamePreset(_value.AlignX, preset.AlignX) && AreSamePreset(_value.AlignY, preset.AlignY);

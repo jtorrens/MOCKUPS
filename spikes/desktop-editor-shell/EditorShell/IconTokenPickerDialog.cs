@@ -5,6 +5,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.Threading;
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using SukiUI.Controls;
 using System;
@@ -50,6 +51,7 @@ internal sealed class IconTokenPickerDialog
             IsMenuVisible = false,
             BackgroundAnimationEnabled = false,
         };
+        EditorSukiWindowTheme.ApplyDialogChrome(dialog, _owner);
 
         var themeCombo = new EditorInstantComboBox
         {
@@ -115,7 +117,7 @@ internal sealed class IconTokenPickerDialog
             var isSelected = selectedSet.Contains(token);
             button.BorderThickness = isSelected ? new Thickness(2) : new Thickness(1);
             button.BorderBrush = isSelected
-                ? new SolidColorBrush(Color.Parse("#3388FF"))
+                ? EditorSukiWindowTheme.AccentBrush()
                 : new SolidColorBrush(Color.Parse("#4B5F7A"));
         }
 

@@ -102,6 +102,7 @@ internal sealed class EditorAddChildWorkflow
             BackgroundTransitionsEnabled = false,
             BackgroundTransitionTime = 0.05,
         };
+        EditorSukiWindowTheme.ApplyDialogChrome(dialog, _owner);
 
         var cancelButton = new Button { Content = "Cancel", MinWidth = 92 };
         cancelButton.Click += (_, _) => dialog.Close(null);

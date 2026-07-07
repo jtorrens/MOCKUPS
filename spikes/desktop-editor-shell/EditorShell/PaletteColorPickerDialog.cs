@@ -45,6 +45,7 @@ internal static class PaletteColorPickerDialog
             BackgroundTransitionsEnabled = false,
             BackgroundTransitionTime = 0.05,
         };
+        EditorSukiWindowTheme.ApplyDialogChrome(dialog, owner);
 
         var searchBox = EditorTextBoxBehavior.Configure(new TextBox
         {
@@ -140,7 +141,7 @@ internal static class PaletteColorPickerDialog
                         ItemGap),
                     BorderThickness = isSelected ? new Thickness(2) : new Thickness(1),
                     BorderBrush = isSelected
-                        ? new SolidColorBrush(Color.Parse("#3388FF"))
+                        ? EditorSukiWindowTheme.AccentBrush()
                         : new SolidColorBrush(Color.Parse("#4B5F7A")),
                 };
                 button.Click += (_, _) =>

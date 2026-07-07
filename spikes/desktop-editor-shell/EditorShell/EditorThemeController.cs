@@ -1,8 +1,8 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
-using Avalonia.Media;
 using Avalonia.Styling;
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using SukiUI;
 using SukiUI.Enums;
@@ -65,9 +65,8 @@ internal sealed class EditorThemeController
         Application.Current!.RequestedThemeVariant = themeVariant;
         SukiTheme.GetInstance().ChangeBaseTheme(themeVariant);
         SukiTheme.GetInstance().ChangeColorTheme(SelectedColor);
-        var appBackground = new SolidColorBrush(IsDark ? Color.Parse("#181A1F") : Color.Parse("#ECEDEF"));
-        _window.Background = appBackground;
-        _rootShell.Background = appBackground;
+        EditorSukiWindowTheme.SetAccentColor(SelectedColor);
+        EditorSukiWindowTheme.ApplyNeutralBackground(_window, _rootShell, IsDark);
 
         _isUpdating = true;
         try
