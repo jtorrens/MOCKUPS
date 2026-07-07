@@ -1,7 +1,9 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Threading;
 using Mockups.DesktopEditorShell.Data;
 using SukiUI.Controls;
 using System;
@@ -68,6 +70,7 @@ internal sealed class IconTokenPickerDialog
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
+        ScrollViewer? scroll = null;
 
         void RefreshSelectedText()
         {
@@ -197,6 +200,15 @@ internal sealed class IconTokenPickerDialog
             {
                 listPanel.Children.Add(new TextBlock { Text = "No icons match the current search.", Opacity = 0.72 });
             }
+
+            listPanel.InvalidateMeasure();
+            scroll?.InvalidateMeasure();
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (scroll is null) return;
+                scroll.Offset = new Vector(0, 0);
+                scroll.InvalidateMeasure();
+            }, DispatcherPriority.Background);
         }
 
         themeCombo.SelectionChanged += (_, _) =>
@@ -251,12 +263,20 @@ internal sealed class IconTokenPickerDialog
         root.Children.Add(selectedText);
         Grid.SetRow(actions, 3);
         root.Children.Add(actions);
-        var scroll = new ScrollViewer
+        scroll = new ScrollViewer
         {
             Content = listPanel,
+            ClipToBounds = true,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
         };
-        Grid.SetRow(scroll, 2);
-        root.Children.Add(scroll);
+        var scrollClip = new Border
+        {
+            ClipToBounds = true,
+            Child = scroll,
+        };
+        Grid.SetRow(scrollClip, 2);
+        root.Children.Add(scrollClip);
 
         dialog.Content = new Border
         {
