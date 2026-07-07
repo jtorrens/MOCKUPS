@@ -443,7 +443,7 @@ internal sealed partial class SpikeDatabase
             ],
             "textInputBar" =>
             [
-                ComponentInput("sampleText", "Text", "sampleText", "text", "Message"),
+                ComponentInput("sampleText", "Text", "sampleText", "multilineText", "Message"),
                 ProjectRuntimeInput("iconRow", "icons", "leftIcons", "Left icon tokens", "leftIcons", "[]"),
                 ProjectRuntimeInput("iconRow", "icons", "rightIcons", "Right icon tokens", "rightIcons", """["media_mic","chat_send"]"""),
             ],
