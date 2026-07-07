@@ -48,7 +48,7 @@ field `migrationStatus`.
 | --- | --- | --- | --- |
 | `surface` | atom | Structural reference | Reusable visual surface appearance. Size is supplied as runtime input/parent box; variant owns background, alphas, border, radius, shadow and relief. |
 | `cursor` | atom | Structurally migrated | Reusable text cursor atom. Height is supplied as runtime input; variant owns theme color token, width, minimum fade alpha and fade frame timing. Animation remains resolver frame data, not renderer state. |
-| `textBox` | atom | Structurally migrated | Reusable text field atom. Size, text and placeholder are runtime inputs; variant owns surface, padding, typography, text colors, alignment, overflow mode and embedded cursor variant. |
+| `textBox` | atom | Structurally migrated | Reusable text field atom. Size, text, placeholder and internal left/right icon row data are runtime inputs; variant owns surface, padding, typography, text colors, alignment, overflow mode and embedded cursor variant. |
 | `iconRow` | atom | Structurally migrated | Reusable row/column of `buttonIcon` instances. Its inputs can stay runtime or be fixed by a parent variant. In `textInputBar`, each icon row state stores size/gap/orientation/icons/action styling as parent variant data. |
 | `label` | atom | Functional reference | Text/subtext, sizing, typography tokens and text align are on the new route. Visual surface is an embedded `surface` variant. |
 | `avatar` | component | Functional reference | Embeds `label`; actor input and label/subtext sample values work through the generic input path. |

@@ -5,6 +5,7 @@ import {
 } from "./componentPreviewDefaults.js";
 import {
   asRecord,
+  optionalNumber,
   optionalString,
   parseObject,
   requiredBoolean,
@@ -15,6 +16,7 @@ import {
   requiredStringPair,
 } from "./componentResolverCommon.js";
 import { resolveCursorComponentAtHeight } from "./cursorComponentResolver.js";
+import { resolveIconRowComponentFromRecords } from "./iconRowComponentResolver.js";
 import type { TextBoxDesignContract } from "./textBoxComponentContract.js";
 import type { TypographyStyleContract } from "./previewComponentContracts.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
@@ -84,6 +86,29 @@ export function resolveTextBoxComponentFromRecords(
     componentPresetConfig(componentBaseConfigs, "cursor", cursorSlot.presetId),
     asRecord(cursorSlot.overrides),
   );
+  const iconButtonPresetId = requiredString(
+    inputs,
+    "buttonIconPresetId",
+    "component.textBox.input.buttonIconPresetId",
+  );
+  const leftIconRowConfig = componentPresetConfig(
+    componentBaseConfigs,
+    "iconRow",
+    requiredString(
+      inputs,
+      "leftIconRowPresetId",
+      "component.textBox.input.leftIconRowPresetId",
+    ),
+  );
+  const rightIconRowConfig = componentPresetConfig(
+    componentBaseConfigs,
+    "iconRow",
+    requiredString(
+      inputs,
+      "rightIconRowPresetId",
+      "component.textBox.input.rightIconRowPresetId",
+    ),
+  );
 
   return {
     id,
@@ -124,6 +149,50 @@ export function resolveTextBoxComponentFromRecords(
       `${id}.surface`,
     ),
     cursor: resolveCursorComponentAtHeight(embeddedCursorConfig, 1, `${id}.cursor`),
+    iconGapToken: requiredString(inputs, "iconGap", "component.textBox.input.iconGap"),
+    leftIconRow: resolveIconRowComponentFromRecords(
+      leftIconRowConfig,
+      iconRowInputsFromParent(textBoxIconRowInputs(inputs, "left"), iconButtonPresetId),
+      componentBaseConfigs,
+      `${id}.leftIcons`,
+    ),
+    rightIconRow: resolveIconRowComponentFromRecords(
+      rightIconRowConfig,
+      iconRowInputsFromParent(textBoxIconRowInputs(inputs, "right"), iconButtonPresetId),
+      componentBaseConfigs,
+      `${id}.rightIcons`,
+    ),
+  };
+}
+
+function textBoxIconRowInputs(inputs: Record<string, unknown>, side: "left" | "right") {
+  const nested = asRecord(inputs[`${side}IconRowInputs`]);
+  if (Object.keys(nested).length > 0) {
+    return nested;
+  }
+
+  const icons = inputs[`${side}Icons`];
+  return {
+    size: optionalNumber(inputs, "iconRowSize", 36),
+    gap: optionalString(inputs, "iconRowGap") || "theme.spacing.s",
+    orientation: optionalString(inputs, "iconRowOrientation") || "horizontal",
+    icons: Array.isArray(icons) && icons.every((entry) => typeof entry === "string")
+      ? icons
+      : [],
+    actionIconNumber: optionalNumber(inputs, `${side}ActionIconNumber`, 0),
+    actionBackgroundAlpha: optionalNumber(inputs, `${side}ActionBackgroundAlpha`, 1),
+    actionBackgroundColor: optionalString(inputs, `${side}ActionBackgroundColor`),
+    actionIconColor: optionalString(inputs, `${side}ActionIconColor`),
+  };
+}
+
+function iconRowInputsFromParent(
+  parentInputs: Record<string, unknown>,
+  buttonIconPresetId: string,
+) {
+  return {
+    ...parentInputs,
+    buttonIconPresetId,
   };
 }
 

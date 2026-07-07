@@ -41,7 +41,7 @@ export const desktopPreviewComponents = {
     contract: "./textBoxComponentContract",
     resolver: "./textBoxComponentResolver",
     renderable: "./textBoxComponentRenderable",
-    embeds: ["surface", "cursor"],
+    embeds: ["surface", "cursor", "iconRow"],
   },
   iconRow: {
     category: "atom",

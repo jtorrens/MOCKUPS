@@ -12,7 +12,6 @@ import {
   requiredStringPair,
 } from "./componentResolverCommon.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
-import { resolveIconRowComponentFromRecords } from "./iconRowComponentResolver.js";
 import { resolveTextBoxComponentFromRecords } from "./textBoxComponentResolver.js";
 
 export function resolveTextInputBarComponent(
@@ -57,14 +56,6 @@ export function resolveTextInputBarComponent(
     componentPresetConfig(componentBaseConfigs, "textBox", textBoxSlot.presetId),
     asRecord(textBoxSlot.overrides),
   );
-  const embeddedLeftIconRowConfig = mergeComponentDefaults(
-    componentPresetConfig(componentBaseConfigs, "iconRow", leftIconRowSlot.presetId),
-    asRecord(leftIconRowSlot.overrides),
-  );
-  const embeddedRightIconRowConfig = mergeComponentDefaults(
-    componentPresetConfig(componentBaseConfigs, "iconRow", rightIconRowSlot.presetId),
-    asRecord(rightIconRowSlot.overrides),
-  );
 
   return {
     id: "component.textInputBar",
@@ -74,7 +65,6 @@ export function resolveTextInputBarComponent(
       "barPadding",
       "component.textInput.barPadding",
     )),
-    iconGapToken: requiredString(textInput, "iconGap", "component.textInput.iconGap"),
     barSurface: resolveSurfaceComponentAtSize(
       embeddedBarSurfaceConfig,
       { width: 520, height },
@@ -94,29 +84,23 @@ export function resolveTextInputBarComponent(
           "maxLines",
           "component.textInput.textBox.maxLines",
         ),
+        leftIconRowPresetId: leftIconRowSlot.presetId,
+        leftIconRowInputs: iconRowInputsFromParent(
+          leftIconRowInputs,
+          iconButtonPresetId,
+        ),
+        rightIconRowPresetId: rightIconRowSlot.presetId,
+        rightIconRowInputs: iconRowInputsFromParent(
+          rightIconRowInputs,
+          iconButtonPresetId,
+        ),
+        buttonIconPresetId: iconButtonPresetId,
+        iconGap: requiredString(textInput, "iconGap", "component.textInput.iconGap"),
         size: `520|${height}`,
         maxWidth: 520,
       },
       componentBaseConfigs,
       "component.textInputBar.textBox",
-    ),
-    leftIconRow: resolveIconRowComponentFromRecords(
-      embeddedLeftIconRowConfig,
-      iconRowInputsFromParent(
-        leftIconRowInputs,
-        iconButtonPresetId,
-      ),
-      componentBaseConfigs,
-      "component.textInputBar.leftIcons",
-    ),
-    rightIconRow: resolveIconRowComponentFromRecords(
-      embeddedRightIconRowConfig,
-      iconRowInputsFromParent(
-        rightIconRowInputs,
-        iconButtonPresetId,
-      ),
-      componentBaseConfigs,
-      "component.textInputBar.rightIcons",
     ),
   };
 }

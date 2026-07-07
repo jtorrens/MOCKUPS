@@ -3,6 +3,7 @@ import type {
   TypographyStyleContract,
 } from "./previewComponentContracts.js";
 import type { CursorDesignContract } from "./cursorComponentContract.js";
+import type { IconRowDesignContract } from "./iconRowComponentContract.js";
 import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
 
 export interface TextBoxDesignContract {
@@ -21,4 +22,7 @@ export interface TextBoxDesignContract {
   cursorVisible: boolean;
   surface: SurfaceDesignContract;
   cursor: CursorDesignContract;
+  iconGapToken: string;
+  leftIconRow: IconRowDesignContract;
+  rightIconRow: IconRowDesignContract;
 }

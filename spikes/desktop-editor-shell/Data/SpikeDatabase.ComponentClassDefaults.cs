@@ -369,6 +369,25 @@ internal sealed partial class SpikeDatabase
                 ComponentInput("sampleText", "Text", "sampleText", "multilineText", "Message"),
                 ComponentInput("placeholder", "Placeholder", "placeholder", "text", "Message"),
                 ComponentInput("maxLines", "Max lines", "maxLines", ValueKind.Integer, "4", minimum: 1, maximum: 64, increment: 1),
+                ComponentInput("leftIconRowPresetId", "Left icon row", "leftIconRowPresetId", "componentPreset", "iconRow::preset::default", componentType: "iconRow"),
+                ComponentInput("rightIconRowPresetId", "Right icon row", "rightIconRowPresetId", "componentPreset", "iconRow::preset::default", componentType: "iconRow"),
+                ComponentInput("buttonIconPresetId", "Icon button", "buttonIconPresetId", "componentPreset", "buttonIcon::preset::default", componentType: "buttonIcon"),
+                ComponentInput("iconGap", "Icon gap", "iconGap", "themeToken", "theme.spacing.m", options: ComponentClassFieldCatalog.SpacingTokenOptions),
+                ComponentInput("iconRowSize", "Icon size", "iconRowSize", "number", "36", minimum: 1, maximum: 9999, increment: 1),
+                ComponentInput("iconRowGap", "Icon row gap", "iconRowGap", "themeToken", "theme.spacing.s", options: ComponentClassFieldCatalog.SpacingTokenOptions),
+                ComponentInput(
+                    "iconRowOrientation",
+                    "Icon row orientation",
+                    "iconRowOrientation",
+                    "option",
+                    "horizontal",
+                    options:
+                    [
+                        new FieldOption("horizontal", "Horizontal"),
+                        new FieldOption("vertical", "Vertical"),
+                    ]),
+                ComponentInput("leftIcons", "Left icons", "leftIcons", "iconList", "[]"),
+                ComponentInput("rightIcons", "Right icons", "rightIcons", "iconList", "[]"),
                 ComponentInput(
                     "fixedSize",
                     "Size",
