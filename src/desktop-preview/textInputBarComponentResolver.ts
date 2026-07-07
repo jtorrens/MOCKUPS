@@ -25,7 +25,11 @@ export function resolveTextInputBarComponent(
   const barSurfaceSlot = asRecord(textInput.barSurfaceSlot);
   const textBoxSlot = asRecord(textInput.textBoxSlot);
   const textBoxInputs = asRecord(textInput.textBoxInputs);
-  const sampleText = requiredString(preview, "sampleText", "component.textInput.preview.sampleText");
+  const sampleText = requiredPossiblyEmptyString(
+    preview,
+    "sampleText",
+    "component.textInput.preview.sampleText",
+  );
   const isTyping = sampleText.trim().length > 0;
   const leftIconRowSlot = asRecord(
     isTyping ? textInput.typingLeftIconRowSlot : textInput.idleLeftIconRowSlot,
@@ -129,4 +133,14 @@ function iconRowInputsFromParent(
 
 function toSpacingPair(pair: { first: string; second: string }) {
   return { xToken: pair.first, yToken: pair.second };
+}
+
+function requiredPossiblyEmptyString(
+  value: Record<string, unknown>,
+  key: string,
+  path: string,
+) {
+  const raw = value[key];
+  if (typeof raw === "string") return raw;
+  throw new Error(`Missing string value ${path}`);
 }
