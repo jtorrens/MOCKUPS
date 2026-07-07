@@ -347,14 +347,14 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
 
         foreach (var pair in _restoreButtons)
         {
-            var hasLocalValue = _definition.CanInherit && _localValues.ContainsKey(pair.Key);
+            var hasLocalValue = HasLocalSubValue(pair.Key);
             pair.Value.IsVisible = hasLocalValue && _definition.IsEditable;
             pair.Value.Foreground = hasLocalValue ? new SolidColorBrush(Color.Parse("#D6A638")) : null;
         }
 
         foreach (var pair in _rowLabels)
         {
-            var hasLocalValue = _definition.CanInherit && _localValues.ContainsKey(pair.Key);
+            var hasLocalValue = HasLocalSubValue(pair.Key);
             if (hasLocalValue)
             {
                 pair.Value.Foreground = new SolidColorBrush(Color.Parse("#D6A638"));
@@ -366,7 +366,7 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
         }
 
         _summaryText.Text = SummaryText();
-        if (_definition.CanInherit && _localValues.Count > 0)
+        if (_controls.Keys.Any(HasLocalSubValue))
         {
             _summaryText.Foreground = new SolidColorBrush(Color.Parse("#D6A638"));
         }
@@ -375,6 +375,16 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
             _summaryText.ClearValue(TextBlock.ForegroundProperty);
         }
         _isUpdating = false;
+    }
+
+    private bool HasLocalSubValue(string key)
+    {
+        if (_definition.CanInherit)
+        {
+            return _localValues.ContainsKey(key);
+        }
+
+        return ValueString(_localValues, key, "") != ValueString(_inheritedValues, key, "");
     }
 
     private string SummaryText()

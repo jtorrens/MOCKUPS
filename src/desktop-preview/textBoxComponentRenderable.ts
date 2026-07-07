@@ -204,7 +204,7 @@ export function textBoxComponentToRenderableAt(
     lineHeight: size.typography.lineHeight,
     overflow: "visible",
     textAlign: textBox.textAlign,
-    whiteSpace: "pre-wrap",
+    whiteSpace: "pre-line",
   };
 
   return {
