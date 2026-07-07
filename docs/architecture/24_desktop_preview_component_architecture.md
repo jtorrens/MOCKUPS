@@ -77,6 +77,32 @@ The generic renderer paints primitives.
 The WebView displays HTML.
 ```
 
+The desktop `Preview` / `Design` surface is a WebView displaying HTML/CSS.
+That makes the web result the preview truth for component design, not an
+Avalonia approximation.
+
+Text rendering must therefore stay aligned with the web path. If native
+HTML/CSS font handling is not stable enough for a production use case, the
+candidate replacement is a generic shared text-rendering service, not a
+component-specific preview workaround:
+
+```text
+text + typography + emoji policy
+  -> native HTML text or generated SVG text primitive
+  -> same output usable by desktop preview, web preview and final web render
+```
+
+Potential libraries/strategies to evaluate:
+
+- Satori-style HTML/CSS to SVG text rendering;
+- text-to-path libraries such as fontkit/opentype.js for normal font outlines;
+- Twemoji/SVG emoji replacement for stable color emoji;
+- raster output only for export paths where vector/editability is not required.
+
+Any generated-SVG text path must be introduced as a generic paint primitive or
+generic text helper. It must not give the renderer or bridge component-specific
+knowledge.
+
 The old central `webPreviewBridge` failure mode must not return. Removing the
 old bridge does not mean removing all generic translation logic. It means the
 generic translation layer must not become component-aware.
