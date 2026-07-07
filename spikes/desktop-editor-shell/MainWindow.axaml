@@ -91,8 +91,12 @@
                         </Grid>
                     </Border>
                     <ScrollViewer x:Name="EditorScrollViewer"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  VerticalScrollBarVisibility="Auto"
                                   Padding="22">
-                        <StackPanel x:Name="EditorCardsPanel" Spacing="10" />
+                        <StackPanel x:Name="EditorCardsPanel"
+                                    Spacing="10"
+                                    HorizontalAlignment="Stretch" />
                     </ScrollViewer>
                     </DockPanel>
                 </suki:GlassCard>

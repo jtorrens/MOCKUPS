@@ -41,8 +41,10 @@ internal sealed class EditorCardHostController
             Margin = new Thickness(0, 0, 0, 12),
             CornerRadius = new CornerRadius(14),
             BoxShadow = BoxShadows.Parse("0 6 14 0 #22000000"),
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
             Child = new GlassCard
             {
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
                 Content = card,
             },
         });
