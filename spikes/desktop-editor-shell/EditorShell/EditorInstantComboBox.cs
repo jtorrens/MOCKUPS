@@ -254,8 +254,8 @@ public sealed class EditorInstantComboBox : Grid
     {
         _itemsPanel.Children.Clear();
         var isLight = ActualThemeVariant == ThemeVariant.Light;
-        var highlightedBackground = new SolidColorBrush(Color.Parse(isLight ? "#14000000" : "#14FFFFFF"));
-        var selectedBackground = new SolidColorBrush(Color.Parse(isLight ? "#1C000000" : "#1CFFFFFF"));
+        var highlightedBackground = new SolidColorBrush(Color.Parse(isLight ? "#ECEEF1" : "#32343A"));
+        var selectedBackground = new SolidColorBrush(Color.Parse(isLight ? "#E0E2E5" : "#3A3D44"));
         for (var index = 0; index < _items.Count; index++)
         {
             var item = _items[index];
@@ -268,9 +268,9 @@ public sealed class EditorInstantComboBox : Grid
                 HorizontalContentAlignment = HorizontalAlignment.Left,
                 MinHeight = 30,
                 Padding = new Thickness(8, 5),
-                Background = isHighlighted
-                    ? highlightedBackground
-                    : isSelected ? selectedBackground : Brushes.Transparent,
+                Background = isSelected
+                    ? selectedBackground
+                    : isHighlighted ? highlightedBackground : Brushes.Transparent,
                 BorderBrush = isSelected ? EditorSukiWindowTheme.AccentBrush() : Brushes.Transparent,
                 BorderThickness = isSelected ? new Thickness(3, 0, 0, 0) : new Thickness(0),
                 Cursor = new Cursor(StandardCursorType.Hand),
@@ -290,7 +290,7 @@ public sealed class EditorInstantComboBox : Grid
     {
         var isLight = ActualThemeVariant == ThemeVariant.Light;
         var background = isLight ? "#14000000" : "#10FFFFFF";
-        var popupBackground = isLight ? "#F4F6FA" : "#F01A2433";
+        var popupBackground = isLight ? "#F7F7F8" : "#24262B";
         _button.Background = new SolidColorBrush(Color.Parse(background));
         _popupBorder.Background = new SolidColorBrush(Color.Parse(popupBackground));
     }
