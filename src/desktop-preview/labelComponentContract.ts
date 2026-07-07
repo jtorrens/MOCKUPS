@@ -1,6 +1,14 @@
 import type { SpacingPairContract } from "./previewComponentContracts.js";
 import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
 
+export interface TypographyStyleContract {
+  fontFamilyId: string;
+  weight: string;
+  style: "normal" | "italic";
+  sizeToken: string;
+  lineHeight: number;
+}
+
 export interface LabelDesignContract {
   id: string;
   text: string;
@@ -9,12 +17,10 @@ export interface LabelDesignContract {
   size: { width: number; height: number };
   padding: SpacingPairContract;
   textColorToken: string;
-  textSizeToken: string;
-  textStyle: "normal" | "italic";
+  textTypography: TypographyStyleContract;
   textAlign: "left" | "center" | "right";
   textGap: number;
   subtextColorToken: string;
-  subtextSizeToken: string;
-  subtextStyle: "normal" | "italic";
+  subtextTypography: TypographyStyleContract;
   surface: SurfaceDesignContract;
 }

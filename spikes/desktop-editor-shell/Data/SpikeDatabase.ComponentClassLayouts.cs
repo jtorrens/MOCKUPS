@@ -218,15 +218,13 @@ internal sealed partial class SpikeDatabase
                   { "id": "component.label.padding", "order": 30, "visible": true },
                   { "id": "component.label.surface.editor", "order": 40, "visible": true },
                   { "id": "component.label.textColorToken", "order": 90, "visible": true },
-                  { "id": "component.label.textSizeToken", "order": 100, "visible": true },
-                  { "id": "component.label.textStyle", "order": 110, "visible": true },
+                  { "id": "component.label.textTypography", "order": 100, "visible": true },
                   { "id": "component.label.textAlign", "order": 120, "visible": true }
                 ] },
                 { "id": "labelSubtext", "label": "Subtext", "order": 20, "visible": true, "fields": [
                   { "id": "component.label.textGap", "order": 10, "visible": true },
                   { "id": "component.label.subtextColorToken", "order": 20, "visible": true },
-                  { "id": "component.label.subtextSizeToken", "order": 30, "visible": true },
-                  { "id": "component.label.subtextStyle", "order": 40, "visible": true }
+                  { "id": "component.label.subtextTypography", "order": 30, "visible": true }
                 ] },
                 { "id": "labelTransparency", "label": "Transparency", "order": 30, "visible": false, "fields": [] }
               ]

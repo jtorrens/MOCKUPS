@@ -11,6 +11,7 @@ import {
   requiredStringPair,
 } from "./componentResolverCommon.js";
 import type { LabelDesignContract } from "./labelComponentContract.js";
+import type { TypographyStyleContract } from "./labelComponentContract.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
 
 function requiredText(
@@ -36,6 +37,30 @@ function requiredPair(
     return { first, second };
   }
   throw new Error(`Missing numeric pair component value ${path}`);
+}
+
+function requiredTypographyStyle(
+  value: Record<string, unknown>,
+  key: string,
+  path: string,
+): TypographyStyleContract {
+  const typography = asRecord(value[key]);
+  const style = requiredString(typography, "style", `${path}.style`);
+  if (style !== "normal" && style !== "italic") {
+    throw new Error(`Unsupported typography style ${style}`);
+  }
+
+  return {
+    fontFamilyId: requiredString(
+      typography,
+      "fontFamilyId",
+      `${path}.fontFamilyId`,
+    ),
+    weight: requiredString(typography, "weight", `${path}.weight`),
+    style,
+    sizeToken: requiredString(typography, "sizeToken", `${path}.sizeToken`),
+    lineHeight: requiredNumber(typography, "lineHeight", `${path}.lineHeight`),
+  };
 }
 
 export function resolveLabelComponent(
@@ -75,23 +100,9 @@ export function resolveLabelComponentFromRecords(
     throw new Error(`Unsupported label dimension mode ${dimensionMode}`);
   }
 
-  const textStyle = requiredString(label, "textStyle", "component.label.textStyle");
-  if (textStyle !== "normal" && textStyle !== "italic") {
-    throw new Error(`Unsupported label text style ${textStyle}`);
-  }
-
   const textAlign = requiredString(label, "textAlign", "component.label.textAlign");
   if (textAlign !== "left" && textAlign !== "center" && textAlign !== "right") {
     throw new Error(`Unsupported label text align ${textAlign}`);
-  }
-
-  const subtextStyle = requiredString(
-    label,
-    "subtextStyle",
-    "component.label.subtextStyle",
-  );
-  if (subtextStyle !== "normal" && subtextStyle !== "italic") {
-    throw new Error(`Unsupported label subtext style ${subtextStyle}`);
   }
 
   return {
@@ -110,12 +121,11 @@ export function resolveLabelComponentFromRecords(
       "textColorToken",
       "component.label.textColorToken",
     ),
-    textSizeToken: requiredString(
+    textTypography: requiredTypographyStyle(
       label,
-      "textSizeToken",
-      "component.label.textSizeToken",
+      "textTypography",
+      "component.label.textTypography",
     ),
-    textStyle,
     textAlign,
     textGap: requiredNumber(label, "textGap", "component.label.textGap"),
     subtextColorToken: requiredString(
@@ -123,12 +133,11 @@ export function resolveLabelComponentFromRecords(
       "subtextColorToken",
       "component.label.subtextColorToken",
     ),
-    subtextSizeToken: requiredString(
+    subtextTypography: requiredTypographyStyle(
       label,
-      "subtextSizeToken",
-      "component.label.subtextSizeToken",
+      "subtextTypography",
+      "component.label.subtextTypography",
     ),
-    subtextStyle,
     surface: resolveSurfaceComponentAtSize(
       embeddedSurfaceConfig,
       { width: size.first, height: size.second },

@@ -7,7 +7,8 @@ internal sealed record DictionaryControlRequest(
     FieldDefinition Definition,
     string Value,
     DictionaryFieldServices Services,
-    bool IsHighlighted);
+    bool IsHighlighted,
+    bool IsInherited);
 
 internal static class DictionaryControlRegistry
 {
@@ -34,6 +35,11 @@ internal static class DictionaryControlRegistry
             [ValueKind.ThemeTokenPair] = (request) => new DictionaryThemeTokenPairControl(
                 request.Definition,
                 request.Value,
+                request.Services.ShowThemeTokenPicker),
+            [ValueKind.TypographyStyle] = (request) => new DictionaryTypographyStyleControl(
+                request.Definition,
+                request.Value,
+                request.IsInherited,
                 request.Services.ShowThemeTokenPicker),
             [ValueKind.Alpha] = (request) => new DictionaryAlphaControl(request.Value, request.Definition.IsEditable),
             [ValueKind.PaletteColorPair] = (request) => new DictionaryPalettePairControl(request.Definition, request.Value),
@@ -75,9 +81,10 @@ internal static class DictionaryControlRegistry
         FieldDefinition definition,
         string value,
         DictionaryFieldServices services,
-        bool isHighlighted = false)
+        bool isHighlighted = false,
+        bool isInherited = false)
     {
-        var request = new DictionaryControlRequest(definition, value, services, isHighlighted);
+        var request = new DictionaryControlRequest(definition, value, services, isHighlighted, isInherited);
         return Controls.TryGetValue(definition.ValueKind, out var factory)
             ? factory(request)
             : new DictionaryTextControl(definition, value);

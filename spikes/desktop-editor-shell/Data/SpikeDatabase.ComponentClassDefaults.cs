@@ -158,13 +158,11 @@ internal sealed partial class SpikeDatabase
                     ["padding"] = "theme.spacing.m|theme.spacing.s",
                     ["surfaceSlot"] = ComponentSurfaceSlot("Label"),
                     ["textColorToken"] = "theme.colors.textPrimary",
-                    ["textSizeToken"] = "theme.typography.sizes.s",
-                    ["textStyle"] = "normal",
+                    ["textTypography"] = JsonNode.Parse(TypographyStyleValue.CreateDefault("theme.typography.sizes.s")),
                     ["textAlign"] = "center",
                     ["textGap"] = 2,
                     ["subtextColorToken"] = "theme.colors.textSecondary",
-                    ["subtextSizeToken"] = "theme.typography.sizes.xs",
-                    ["subtextStyle"] = "normal",
+                    ["subtextTypography"] = JsonNode.Parse(TypographyStyleValue.CreateDefault("theme.typography.sizes.xs")),
                 };
                 break;
             case "audio":

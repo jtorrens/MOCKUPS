@@ -52,7 +52,8 @@ internal sealed class DictionaryFieldControl : Grid
             _definition,
             _value,
             services,
-            fieldValue.IsHighlighted));
+            fieldValue.IsHighlighted,
+            fieldValue.IsInherited));
 
         _restoreButton = new Button
         {

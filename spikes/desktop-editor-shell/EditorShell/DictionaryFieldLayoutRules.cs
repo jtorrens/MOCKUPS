@@ -22,21 +22,21 @@ internal static class DictionaryFieldLayoutRules
 
     public static VerticalAlignment LabelVerticalAlignment(ValueKind valueKind)
     {
-        return valueKind is ValueKind.StringMultiline or ValueKind.IconSlots or ValueKind.AlignmentPlacement
+        return valueKind is ValueKind.StringMultiline or ValueKind.IconSlots or ValueKind.AlignmentPlacement or ValueKind.TypographyStyle
             ? VerticalAlignment.Top
             : VerticalAlignment.Center;
     }
 
     public static Avalonia.Thickness LabelMargin(ValueKind valueKind)
     {
-        return valueKind is ValueKind.StringMultiline or ValueKind.IconSlots or ValueKind.AlignmentPlacement
+        return valueKind is ValueKind.StringMultiline or ValueKind.IconSlots or ValueKind.AlignmentPlacement or ValueKind.TypographyStyle
             ? new Avalonia.Thickness(0, 7, 0, 0)
             : new Avalonia.Thickness(0);
     }
 
     public static VerticalAlignment RestoreButtonVerticalAlignment(ValueKind valueKind)
     {
-        return valueKind is ValueKind.StringMultiline or ValueKind.AlignmentPlacement
+        return valueKind is ValueKind.StringMultiline or ValueKind.AlignmentPlacement or ValueKind.TypographyStyle
             ? VerticalAlignment.Top
             : VerticalAlignment.Center;
     }

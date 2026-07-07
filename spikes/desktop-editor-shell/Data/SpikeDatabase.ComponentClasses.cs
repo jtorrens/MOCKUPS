@@ -1049,6 +1049,8 @@ internal sealed partial class SpikeDatabase
                 => ComponentPresetOptions(projectId, componentType),
             ValueKind.PaletteColorToken or ValueKind.PaletteColorPair or ValueKind.PaletteColorAlphaPair
                 => GetPaletteColorOptions(projectId),
+            ValueKind.TypographyStyle
+                => [new FieldOption("theme", "Theme"), .. GetProductionFontOptions(projectId, "text")],
             _ => descriptor.Options,
         };
     }
@@ -1377,7 +1379,8 @@ internal sealed partial class SpikeDatabase
             var overrides = EmbeddedOverrides(config, slot, createIfMissing: true)
                 ?? throw new InvalidOperationException($"Missing embedded override slot '{slotFieldId}'.");
 
-            if (value.Equals("inherited", StringComparison.Ordinal))
+            if (value.Equals("inherited", StringComparison.Ordinal)
+                || descriptor.ValueKind == ValueKind.TypographyStyle && TypographyStyleValue.IsEmpty(value))
             {
                 RemoveJsonValue(overrides, descriptor.JsonPath);
             }
@@ -1414,7 +1417,8 @@ internal sealed partial class SpikeDatabase
             var overrides = EmbeddedOverrides(config, slots, createIfMissing: true)
                 ?? throw new InvalidOperationException($"Missing embedded override slot '{slots[^1].FieldId}'.");
 
-            if (value.Equals("inherited", StringComparison.Ordinal))
+            if (value.Equals("inherited", StringComparison.Ordinal)
+                || descriptor.ValueKind == ValueKind.TypographyStyle && TypographyStyleValue.IsEmpty(value))
             {
                 RemoveJsonValue(overrides, descriptor.JsonPath);
             }
@@ -1461,7 +1465,8 @@ internal sealed partial class SpikeDatabase
             var overrides = EmbeddedOverrides(config, slots, createIfMissing: true)
                 ?? throw new InvalidOperationException($"Missing embedded override slot '{slots[^1].FieldId}'.");
 
-            if (value.Equals("inherited", StringComparison.Ordinal))
+            if (value.Equals("inherited", StringComparison.Ordinal)
+                || descriptor.ValueKind == ValueKind.TypographyStyle && TypographyStyleValue.IsEmpty(value))
             {
                 RemoveJsonValue(overrides, descriptor.JsonPath);
             }
@@ -1669,6 +1674,7 @@ internal sealed partial class SpikeDatabase
         changed |= NormalizeAudioEmbeddedSlots(componentType, config);
         changed |= NormalizeSurfaceSlots(componentType, config);
         changed |= NormalizeEmbeddedSlotPresetIds(connection, projectId, config);
+        changed |= NormalizeComponentTypographyStyles(config);
         changed |= JsonPath.MergeMissing(config, defaults);
         changed |= NormalizeComponentSpacingTokens(config);
         changed |= NormalizeReliefIntensity(config, "reliefTopIntensity");
@@ -1741,6 +1747,78 @@ internal sealed partial class SpikeDatabase
         }
 
         return changed;
+    }
+
+    private static bool NormalizeComponentTypographyStyles(JsonObject config)
+    {
+        var changed = NormalizeLabelTypography(config);
+
+        foreach (var child in config.Select((pair) => pair.Value).OfType<JsonObject>())
+        {
+            changed |= NormalizeComponentTypographyStyles(child);
+        }
+
+        foreach (var child in config.Select((pair) => pair.Value).OfType<JsonArray>())
+        {
+            foreach (var item in child.OfType<JsonObject>())
+            {
+                changed |= NormalizeComponentTypographyStyles(item);
+            }
+        }
+
+        return changed;
+    }
+
+    private static bool NormalizeLabelTypography(JsonObject config)
+    {
+        if (JsonPath.Get(config, ["label"]) is not JsonObject label)
+        {
+            return false;
+        }
+
+        var changed = false;
+        changed |= NormalizeTypographyObject(
+            label,
+            "textTypography",
+            "textSizeToken",
+            "textStyle");
+        changed |= NormalizeTypographyObject(
+            label,
+            "subtextTypography",
+            "subtextSizeToken",
+            "subtextStyle");
+        return changed;
+    }
+
+    private static bool NormalizeTypographyObject(
+        JsonObject owner,
+        string typographyKey,
+        string legacySizeKey,
+        string legacyStyleKey)
+    {
+        if (owner[typographyKey] is JsonObject)
+        {
+            return false;
+        }
+
+        var typography = new JsonObject();
+        if (owner[legacySizeKey] is JsonValue sizeValue && sizeValue.TryGetValue<string>(out var sizeToken))
+        {
+            typography[TypographyStyleValue.SizeToken] = sizeToken;
+        }
+
+        if (owner[legacyStyleKey] is JsonValue styleValue && styleValue.TryGetValue<string>(out var style))
+        {
+            typography[TypographyStyleValue.Style] = style;
+        }
+
+        if (typography.Count == 0)
+        {
+            return false;
+        }
+
+        owner[typographyKey] = typography;
+        return true;
     }
 
     private static bool NormalizeSpacingToken(JsonObject config, string[] path)
@@ -2252,6 +2330,9 @@ internal sealed partial class SpikeDatabase
             ValueKind.AlignmentPlacement => node is JsonObject
                 ? node.ToJsonString()
                 : descriptor.DefaultValue,
+            ValueKind.TypographyStyle => node is JsonObject
+                ? node.ToJsonString()
+                : descriptor.DefaultValue,
             ValueKind.IconSlots => node.ToJsonString(),
             _ => node is JsonValue stringValue && stringValue.TryGetValue<string>(out var text)
                 ? text
@@ -2269,6 +2350,8 @@ internal sealed partial class SpikeDatabase
             ValueKind.Alpha => NumberNode(value),
             ValueKind.AlignmentPlacement => JsonNode.Parse(value)
                 ?? throw new InvalidOperationException("Alignment placement value must be valid JSON."),
+            ValueKind.TypographyStyle => JsonNode.Parse(value)
+                ?? throw new InvalidOperationException("Typography style value must be valid JSON."),
             ValueKind.IconSlots => JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? ComponentClassFieldCatalog.EmptyIconSlots : value)
                 ?? JsonNode.Parse(ComponentClassFieldCatalog.EmptyIconSlots)!,
             _ => JsonValue.Create(value)!,
