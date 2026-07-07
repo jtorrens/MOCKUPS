@@ -14,8 +14,18 @@ internal sealed class EditorPreviewController
     private readonly EditorInstantComboBox _deviceComboBox;
     private readonly EditorInstantComboBox _themeComboBox;
     private readonly EditorInstantComboBox _modeComboBox;
-    private readonly EditorInstantComboBox _scaleComboBox;
-    private readonly ToggleSwitch _marksToggle;
+    private readonly EditorInstantComboBox _orientationComboBox;
+    private readonly EditorInstantComboBox _scaleComboBox = new()
+    {
+        MinWidth = 96,
+        MinHeight = 36,
+        VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+    };
+    private readonly ToggleSwitch _marksToggle = new()
+    {
+        IsChecked = true,
+        VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+    };
     private readonly IEditorShellMessageSink _messages;
     private readonly Func<bool> _isDark;
     private readonly Func<ProjectTreeNode?> _selectedNode;
@@ -30,6 +40,7 @@ internal sealed class EditorPreviewController
     private PreviewNodeKey? _activeDesignPreviewNode;
     private PreviewNodeKey? _lockedDesignPreviewNode;
     private string _selectedMode = "light";
+    private string _selectedOrientation = "portrait";
     private string _selectedScale = "fit";
     private bool _showDesignMarks = true;
     private bool _isDesignPreviewContextLocked;
@@ -41,8 +52,7 @@ internal sealed class EditorPreviewController
         EditorInstantComboBox deviceComboBox,
         EditorInstantComboBox themeComboBox,
         EditorInstantComboBox modeComboBox,
-        EditorInstantComboBox scaleComboBox,
-        ToggleSwitch marksToggle,
+        EditorInstantComboBox orientationComboBox,
         IEditorShellMessageSink messages,
         ContentControl previewSetupHost,
         ContentControl previewInputsHost,
@@ -58,8 +68,7 @@ internal sealed class EditorPreviewController
         _deviceComboBox = deviceComboBox;
         _themeComboBox = themeComboBox;
         _modeComboBox = modeComboBox;
-        _scaleComboBox = scaleComboBox;
-        _marksToggle = marksToggle;
+        _orientationComboBox = orientationComboBox;
         _messages = messages;
         _isDark = isDark;
         _selectedNode = selectedNode;
@@ -76,7 +85,7 @@ internal sealed class EditorPreviewController
         UpdateDesignContextChrome(null);
     }
 
-    private static void WrapPreviewSetup(ContentControl previewSetupHost)
+    private void WrapPreviewSetup(ContentControl previewSetupHost)
     {
         if (previewSetupHost.Content is not Control setupContent)
         {
@@ -84,10 +93,32 @@ internal sealed class EditorPreviewController
         }
 
         previewSetupHost.Content = null;
+        var header = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("*,Auto"),
+            ColumnSpacing = 12,
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+        };
+        header.Children.Add(EditorCardHeader.Create(
+            "Preview setup",
+            "Context and component inputs",
+            EditorIcons.Create(EditorIcons.Design, 18)));
+
+        var actions = new StackPanel
+        {
+            Orientation = Avalonia.Layout.Orientation.Horizontal,
+            Spacing = 10,
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+        };
+        actions.Children.Add(_scaleComboBox);
+        actions.Children.Add(_marksToggle);
+        Grid.SetColumn(actions, 1);
+        header.Children.Add(actions);
+
         previewSetupHost.Content = new GlassCard
         {
             Content = new InstantEditorCard(
-                EditorCardHeader.Create("Preview setup", "Context and component inputs", EditorIcons.Create(EditorIcons.Design, 18)),
+                header,
                 new Border
                 {
                     Padding = new Thickness(12, 0, 12, 12),
@@ -140,6 +171,15 @@ internal sealed class EditorPreviewController
             _modeComboBox.SelectedItem = modeOptions.FirstOrDefault((option) => option.Value == _selectedMode) ?? modeOptions[0];
             _selectedMode = _modeComboBox.SelectedItem?.Value ?? "light";
 
+            var orientationOptions = new[]
+            {
+                new FieldOption("portrait", "Portrait"),
+                new FieldOption("landscape", "Landscape"),
+            };
+            _orientationComboBox.ItemsSource = orientationOptions;
+            _orientationComboBox.SelectedItem = orientationOptions.FirstOrDefault((option) => option.Value == _selectedOrientation) ?? orientationOptions[0];
+            _selectedOrientation = _orientationComboBox.SelectedItem?.Value ?? "portrait";
+
             var scaleOptions = new[]
             {
                 new FieldOption("fit", "Fit"),
@@ -166,6 +206,7 @@ internal sealed class EditorPreviewController
         _deviceComboBox.SelectionChanged += (_, _) => OnDeviceChanged();
         _themeComboBox.SelectionChanged += (_, _) => OnThemeChanged();
         _modeComboBox.SelectionChanged += (_, _) => OnModeChanged();
+        _orientationComboBox.SelectionChanged += (_, _) => OnOrientationChanged();
         _scaleComboBox.SelectionChanged += (_, _) => OnScaleChanged();
         _marksToggle.PropertyChanged += (_, change) =>
         {
@@ -209,6 +250,17 @@ internal sealed class EditorPreviewController
         }
     }
 
+    private void OnOrientationChanged()
+    {
+        if (_orientationComboBox.SelectedItem is not { } option) return;
+
+        _selectedOrientation = option.Value;
+        if (!_isRefreshingOptions)
+        {
+            Refresh();
+        }
+    }
+
     private void OnScaleChanged()
     {
         if (_scaleComboBox.SelectedItem is not { } option) return;
@@ -240,7 +292,7 @@ internal sealed class EditorPreviewController
                 return;
             }
 
-            var metrics = _database.GetDevicePreviewMetrics(SelectedDeviceId);
+            var metrics = ApplyPreviewOrientation(_database.GetDevicePreviewMetrics(SelectedDeviceId));
             var themeName = _themeComboBox.SelectedItem?.Label ?? "No theme";
             _runtimePreviewPane.Update(metrics, _isDark(), themeName, _selectedMode, _selectedScale);
             var designPayload = DesignPreviewPayloadForSelection();
@@ -264,6 +316,24 @@ internal sealed class EditorPreviewController
         {
             _messages.Error("Preview", exception);
         }
+    }
+
+    private SpikeDatabase.DevicePreviewMetrics ApplyPreviewOrientation(SpikeDatabase.DevicePreviewMetrics metrics)
+    {
+        if (_selectedOrientation != "landscape")
+        {
+            return metrics;
+        }
+
+        return metrics with
+        {
+            CanvasWidth = metrics.CanvasHeight,
+            CanvasHeight = metrics.CanvasWidth,
+            ScreenX = metrics.ScreenY,
+            ScreenY = metrics.ScreenX,
+            ScreenWidth = metrics.ScreenHeight,
+            ScreenHeight = metrics.ScreenWidth,
+        };
     }
 
     private DesignPreviewPayload? DesignPreviewPayloadForSelection()

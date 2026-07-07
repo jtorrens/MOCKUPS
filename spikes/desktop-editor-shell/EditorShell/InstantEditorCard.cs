@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.VisualTree;
 using System;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -25,7 +26,11 @@ internal sealed class InstantEditorCard : Grid
         };
         headerRow.PointerPressed += (_, args) =>
         {
-            if (args.Source is Button)
+            if (args.Source is Control source
+                && (source is Button
+                    || source is ToggleSwitch
+                    || source.FindAncestorOfType<Button>() is not null
+                    || source.FindAncestorOfType<ToggleSwitch>() is not null))
             {
                 return;
             }
