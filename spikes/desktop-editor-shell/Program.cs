@@ -13,6 +13,7 @@ class Program
     [STAThread]
     public static void Main(string[] args)
     {
+        var avaloniaArgs = DesktopEditorLaunchOptions.Configure(args);
         if (args.Contains("--svg-tint-smoke", StringComparer.Ordinal))
         {
             SvgMarkupNormalizerSmoke.Validate();
@@ -21,7 +22,7 @@ class Program
         }
 
         BuildAvaloniaApp()
-            .StartWithClassicDesktopLifetime(args);
+            .StartWithClassicDesktopLifetime(avaloniaArgs);
     }
 
     // Avalonia configuration, don't remove; also used by visual designer.

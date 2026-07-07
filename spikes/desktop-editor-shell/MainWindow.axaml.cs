@@ -9,7 +9,7 @@ namespace Mockups.DesktopEditorShell;
 
 public partial class MainWindow : SukiWindow
 {
-    private readonly SpikeDatabase _database = new(SpikeDatabase.DefaultDatabasePath());
+    private readonly SpikeDatabase _database;
     private readonly CoreFieldValueService _coreFieldValues;
     private readonly RecordClassFieldValueService _recordClassFieldValues;
     private readonly ComponentClassFieldValueService _componentClassFieldValues;
@@ -40,7 +40,13 @@ public partial class MainWindow : SukiWindow
     private ProjectTreeNode? _selectedNode;
 
     public MainWindow()
+        : this(SpikeDatabase.DefaultDatabasePath())
     {
+    }
+
+    public MainWindow(string databasePath)
+    {
+        _database = new SpikeDatabase(databasePath);
         InitializeComponent();
         _coreFieldValues = new CoreFieldValueService(_database);
         _recordClassFieldValues = new RecordClassFieldValueService(_database);

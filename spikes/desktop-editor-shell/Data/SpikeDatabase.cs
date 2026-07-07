@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.IO;
 
@@ -11,6 +12,8 @@ internal sealed partial class SpikeDatabase
 
     public SpikeDatabase(string databasePath)
     {
+        databasePath = Path.GetFullPath(databasePath);
+        ProjectPathService.ConfigureProjectRoot(ProjectRootForDatabase(databasePath));
         Directory.CreateDirectory(Path.GetDirectoryName(databasePath)!);
         _connectionString = new SqliteConnectionStringBuilder
         {
@@ -63,5 +66,17 @@ internal sealed partial class SpikeDatabase
         EnsureThemeComponentPresetReferences(connection);
         ClearShotRenderPresetReferences(connection);
         EnsureThemeTokens(connection);
+    }
+
+    private static string ProjectRootForDatabase(string databasePath)
+    {
+        var databaseDirectory = Path.GetDirectoryName(databasePath) ?? AppContext.BaseDirectory;
+        var directoryName = Path.GetFileName(databaseDirectory);
+        if (string.Equals(directoryName, "data", StringComparison.OrdinalIgnoreCase))
+        {
+            return Directory.GetParent(databaseDirectory)?.FullName ?? databaseDirectory;
+        }
+
+        return databaseDirectory;
     }
 }

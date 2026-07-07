@@ -114,7 +114,7 @@ internal static class WebDesignPreviewRenderer
             "renderDesignPreviewHtml.cjs");
         if (File.Exists(packagedRenderer))
         {
-            return new RendererCommand("node", AppContext.BaseDirectory, packagedRenderer);
+            return new RendererCommand(ResolveNodeExecutable(), AppContext.BaseDirectory, packagedRenderer);
         }
 
         var root = FindRepositoryRoot();
@@ -128,6 +128,29 @@ internal static class WebDesignPreviewRenderer
     }
 
     private sealed record RendererCommand(string Executable, string WorkingDirectory, string Script);
+
+    private static string ResolveNodeExecutable()
+    {
+        var executableName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+            ? "node.exe"
+            : "node";
+        var candidates = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+            ? new[]
+            {
+                Path.Combine(AppContext.BaseDirectory, "node", executableName),
+                executableName,
+            }
+            : new[]
+            {
+                Path.Combine(AppContext.BaseDirectory, "node", "bin", executableName),
+                "/opt/homebrew/bin/node",
+                "/usr/local/bin/node",
+                "/usr/bin/node",
+                executableName,
+            };
+
+        return candidates.FirstOrDefault(File.Exists) ?? executableName;
+    }
 
     private static string FindRepositoryRoot()
     {

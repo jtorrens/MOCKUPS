@@ -50,9 +50,7 @@ internal sealed class EditorPathBrowser
         var mediaRoot = SelectedProjectMediaRoot();
         if (!string.IsNullOrWhiteSpace(mediaRoot))
         {
-            var fullMediaRoot = Path.IsPathFullyQualified(mediaRoot)
-                ? mediaRoot
-                : Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", mediaRoot));
+            var fullMediaRoot = ProjectPathService.ResolveProjectPath(mediaRoot);
             if (Directory.Exists(fullMediaRoot))
             {
                 options.SuggestedStartLocation = await _storageProvider.TryGetFolderFromPathAsync(fullMediaRoot);
@@ -78,9 +76,7 @@ internal sealed class EditorPathBrowser
 
         if (!string.IsNullOrWhiteSpace(currentPath))
         {
-            var fullPath = Path.IsPathFullyQualified(currentPath)
-                ? currentPath
-                : Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", currentPath));
+            var fullPath = ProjectPathService.ResolveProjectPath(currentPath);
             if (Directory.Exists(fullPath))
             {
                 options.SuggestedStartLocation = await _storageProvider.TryGetFolderFromPathAsync(fullPath);
@@ -122,8 +118,8 @@ internal sealed class EditorPathBrowser
             var fullPath = Path.IsPathFullyQualified(currentPath)
                 ? currentPath
                 : !string.IsNullOrWhiteSpace(mediaRoot)
-                    ? Path.GetFullPath(Path.Combine(mediaRoot, currentPath))
-                    : Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", currentPath));
+                    ? Path.GetFullPath(Path.Combine(ProjectPathService.ResolveProjectPath(mediaRoot), currentPath))
+                    : ProjectPathService.ResolveProjectPath(currentPath);
             var parent = Path.GetDirectoryName(fullPath);
             if (!string.IsNullOrWhiteSpace(parent) && Directory.Exists(parent))
             {
