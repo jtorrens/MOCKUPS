@@ -134,3 +134,53 @@ Desktop preview architecture check failed:
 - Fix the architecture violations in the Mac development environment.
 - Re-run `npm run check:architecture` on Mac before pushing.
 - After the branch is updated, pull on PC and append a new timestamped entry to this log.
+
+## 2026-07-07 20:52:40 +02:00 - `codex/editor-modernization-rules` @ `8601783`
+
+### Environment
+
+- Windows validation path: `D:\PROYECTOS\MOCKUPS`
+- Branch: `codex/editor-modernization-rules`
+- Commit: `8601783 Normalize architecture check paths across platforms`
+- Node.js: `v24.13.0`
+- npm: `11.6.2`
+- .NET SDK: `10.0.301 [C:\Program Files\dotnet\sdk]`
+- WebView2 Runtime: installed
+
+### Parity files
+
+- `data/desktop-editor-spike.sqlite`: present
+- `assets/FOQN_S2`: present
+- `assets/system/system_icons`: present
+
+### Passed checks
+
+- `npm.cmd run check:architecture`: passed.
+- `npm.cmd run typecheck`: passed.
+- `npm.cmd run validate:sqlite`: passed.
+- `npm.cmd run app:check`: passed with the known `NU1903` warning.
+
+### Failed checks
+
+No automated check failed in this run.
+
+Manual PC behavior observed:
+
+- A transient terminal/console window appears above the desktop app when the design preview refreshes.
+
+Likely cause from code inspection:
+
+- `spikes/desktop-editor-shell/EditorShell/WebDesignPreviewRenderer.cs` launches `node_modules\.bin\tsx.cmd` for design preview rendering.
+- The `ProcessStartInfo` redirects stdout/stderr and sets `UseShellExecute = false`, but does not set `CreateNoWindow = true`.
+- On Windows, launching a `.cmd` subprocess from a GUI app can flash or foreground a console window during preview refresh.
+
+Secondary related process launch to review:
+
+- `spikes/desktop-editor-shell/Data/SpikeDatabase.IconThemeSearch.cs` also starts a Node process for icon theme search/generation. It is probably unrelated to normal preview refresh, but should follow the same no-window process policy on Windows.
+
+### Mac action required
+
+- Update the design preview renderer process startup so preview refresh does not create or foreground a Windows console window.
+- Prefer a root-cause fix in `WebDesignPreviewRenderer.cs`, for example setting `CreateNoWindow = true` and/or avoiding direct `.cmd` execution by launching Node with the underlying script.
+- Apply the same hidden-process policy to the icon theme script launcher if appropriate.
+- Re-run the documented PC parity checks after the Mac fix is pushed.
