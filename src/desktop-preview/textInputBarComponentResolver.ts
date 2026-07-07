@@ -88,36 +88,36 @@ export function resolveTextInputBarComponent(
     ),
     leftIconRow: resolveIconRowComponentFromRecords(
       embeddedLeftIconRowConfig,
-      {
-        size: requiredNumber(leftIconRowInputs, "size", "component.textInput.leftIconRow.size"),
-        gap: requiredString(leftIconRowInputs, "gap", "component.textInput.leftIconRow.gap"),
-        orientation: requiredString(
-          leftIconRowInputs,
-          "orientation",
-          "component.textInput.leftIconRow.orientation",
-        ),
-        buttonIconPresetId: iconButtonPresetId,
-        icons: requiredStringArray(preview, "leftIcons", "component.textInput.input.leftIcons"),
-      },
+      iconRowInputsFromParent(
+        leftIconRowInputs,
+        iconButtonPresetId,
+        requiredStringArray(preview, "leftIcons", "component.textInput.input.leftIcons"),
+      ),
       componentBaseConfigs,
       "component.textInputBar.leftIcons",
     ),
     rightIconRow: resolveIconRowComponentFromRecords(
       embeddedRightIconRowConfig,
-      {
-        size: requiredNumber(rightIconRowInputs, "size", "component.textInput.rightIconRow.size"),
-        gap: requiredString(rightIconRowInputs, "gap", "component.textInput.rightIconRow.gap"),
-        orientation: requiredString(
-          rightIconRowInputs,
-          "orientation",
-          "component.textInput.rightIconRow.orientation",
-        ),
-        buttonIconPresetId: iconButtonPresetId,
-        icons: requiredStringArray(preview, "rightIcons", "component.textInput.input.rightIcons"),
-      },
+      iconRowInputsFromParent(
+        rightIconRowInputs,
+        iconButtonPresetId,
+        requiredStringArray(preview, "rightIcons", "component.textInput.input.rightIcons"),
+      ),
       componentBaseConfigs,
       "component.textInputBar.rightIcons",
     ),
+  };
+}
+
+function iconRowInputsFromParent(
+  parentInputs: Record<string, unknown>,
+  buttonIconPresetId: string,
+  icons: string[],
+) {
+  return {
+    ...parentInputs,
+    buttonIconPresetId,
+    icons,
   };
 }
 
