@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Styling;
 using Avalonia.Threading;
 using Mockups.DesktopEditorShell.Data;
 using SukiUI.Controls;
@@ -64,6 +65,7 @@ internal sealed class IconTokenPickerDialog
         var selectedText = new TextBlock
         {
             TextWrapping = TextWrapping.Wrap,
+            Foreground = TextBrush(),
             Opacity = 0.78,
         };
         var listPanel = new WrapPanel
@@ -74,6 +76,7 @@ internal sealed class IconTokenPickerDialog
 
         void RefreshSelectedText()
         {
+            selectedText.Foreground = TextBrush();
             selectedText.Text = selected.Count == 0
                 ? "No icon selected"
                 : string.Join(", ", selected);
@@ -166,6 +169,7 @@ internal sealed class IconTokenPickerDialog
                             new TextBlock
                             {
                                 Text = token.Token,
+                                Foreground = TextBrush(),
                                 FontWeight = FontWeight.SemiBold,
                                 TextTrimming = TextTrimming.CharacterEllipsis,
                                 Width = 180,
@@ -173,6 +177,7 @@ internal sealed class IconTokenPickerDialog
                             new TextBlock
                             {
                                 Text = token.Category,
+                                Foreground = TextBrush(),
                                 FontSize = 11,
                                 Opacity = 0.65,
                                 Width = 180,
@@ -224,6 +229,7 @@ internal sealed class IconTokenPickerDialog
             query = searchBox.Text ?? "";
             RefreshList();
         };
+        dialog.ActualThemeVariantChanged += (_, _) => RefreshList();
 
         var cancelButton = new Button { Content = "Cancel", MinWidth = 90 };
         cancelButton.Click += (_, _) => dialog.Close();
@@ -287,5 +293,13 @@ internal sealed class IconTokenPickerDialog
         RefreshList();
         await dialog.ShowDialog(_owner);
         return result;
+
+        IBrush TextBrush()
+        {
+            return new SolidColorBrush(
+                dialog.ActualThemeVariant == ThemeVariant.Light
+                    ? Color.Parse("#172033")
+                    : Color.Parse("#F4F7FB"));
+        }
     }
 }

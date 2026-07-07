@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Styling;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -73,6 +74,7 @@ internal sealed class DictionaryIconTokenListControl : Grid, IDictionaryValueCon
         SetColumn(clearButton, 2);
         Children.Add(clearButton);
 
+        ActualThemeVariantChanged += (_, _) => RefreshPreview();
         RefreshPreview();
     }
 
@@ -106,14 +108,62 @@ internal sealed class DictionaryIconTokenListControl : Grid, IDictionaryValueCon
 
         foreach (var token in tokens)
         {
+            var iconFrame = new Border
+            {
+                Width = 28,
+                Height = 28,
+                CornerRadius = new CornerRadius(7),
+                BorderThickness = new Thickness(1),
+                BorderBrush = BorderBrushForTheme(),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                Child = _createIconPreview?.Invoke(token),
+            };
+
+            var label = new TextBlock
+            {
+                Text = token,
+                Foreground = TextBrushForTheme(),
+                VerticalAlignment = VerticalAlignment.Center,
+                TextTrimming = TextTrimming.CharacterEllipsis,
+                MaxWidth = 132,
+            };
+
             _tokenPanel.Children.Add(new Border
             {
                 CornerRadius = new CornerRadius(8),
                 Padding = new Thickness(6, 3),
-                Background = new SolidColorBrush(Color.Parse("#20314D")),
-                Child = _createIconPreview?.Invoke(token) ?? new TextBlock { Text = token },
+                BorderThickness = new Thickness(1),
+                BorderBrush = BorderBrushForTheme(),
+                Background = Brushes.Transparent,
+                Child = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    Spacing = 6,
+                    Children =
+                    {
+                        iconFrame,
+                        label,
+                    },
+                },
             });
         }
+    }
+
+    private IBrush TextBrushForTheme()
+    {
+        return new SolidColorBrush(
+            ActualThemeVariant == ThemeVariant.Light
+                ? Color.Parse("#172033")
+                : Color.Parse("#F4F7FB"));
+    }
+
+    private IBrush BorderBrushForTheme()
+    {
+        return new SolidColorBrush(
+            ActualThemeVariant == ThemeVariant.Light
+                ? Color.Parse("#6F7A8C")
+                : Color.Parse("#6E82A3"));
     }
 
     private void SetTokens(IEnumerable<string> tokens)
