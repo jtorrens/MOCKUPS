@@ -32,7 +32,7 @@ internal sealed class DictionaryOptionTokenControl : Grid, IDictionaryValueContr
     public void SetValue(string value)
     {
         _isUpdating = true;
-        _comboBox.SelectedItem = DictionaryOptionSelector.SelectedOption(_definition, value);
+        DictionaryOptionSelector.SetValue(_comboBox, _definition, value);
         _isUpdating = false;
     }
 }

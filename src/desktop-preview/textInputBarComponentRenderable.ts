@@ -8,6 +8,7 @@ import {
   surfaceVisualPadding,
 } from "./componentRenderableCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
+import { approximateTextWidth } from "./previewTextHelpers.js";
 import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
 import type { TextInputBarDesignContract } from "./textInputBarComponentContract.js";
 
@@ -73,7 +74,7 @@ export function textInputBarComponentToRenderable(
   const cursorWidth = Math.max(1, textInput.cursorWidth * scale);
   const cursorOffset = Math.max(
     0,
-    Math.min(textBox.width - cursorWidth, textValue.length * fontSize * 0.55),
+    Math.min(textBox.width - cursorWidth, approximateTextWidth(textValue, fontSize)),
   );
   const cursorBox = {
     x: textBox.x + cursorOffset,

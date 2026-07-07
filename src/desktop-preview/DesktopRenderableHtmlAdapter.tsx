@@ -9,6 +9,7 @@ import {
   stringValue as commonStringValue,
 } from "./previewValueHelpers.js";
 import { asRecord } from "./previewJsonHelpers.js";
+import { previewTextFontFamily } from "./previewTextHelpers.js";
 
 export interface DesktopRenderableHtmlAdapterProps {
   tree: RenderableNode;
@@ -197,7 +198,7 @@ function nodeStyle(
     color,
     display: display as CSSProperties["display"],
     flexDirection: flexDirection as CSSProperties["flexDirection"],
-    fontFamily: optionalStringValue(style.fontFamily),
+    fontFamily: optionalStringValue(style.fontFamily) ?? (node.type === "text" ? previewTextFontFamily : undefined),
     fontSize: optionalNumberValue(style.fontSize),
     fontStyle: optionalStringValue(style.fontStyle) as CSSProperties["fontStyle"],
     fontWeight: cssFontWeight(style.fontWeight),
