@@ -14,6 +14,7 @@ internal sealed record DesignPreviewPayload(
     string ProjectMediaRoot,
     string IconAssetRoot,
     string IconMappingJson,
+    IReadOnlyList<SpikeDatabase.ProductionFontFace> FontFaces,
     string ComponentType = "",
     string DesignPreviewJson = "",
     string ComponentBaseConfigsJson = "{}");
@@ -42,13 +43,14 @@ internal static class DesignPreviewPayloadFactory
         var paletteColors = database.GetPaletteColorMap(theme.ProjectId);
         var paletteNeutralColors = database.GetPaletteNeutralMap(theme.ProjectId);
         var projectMediaRoot = database.GetProjectSettings(theme.ProjectId).MediaRoot;
+        var fontFaces = database.GetProductionFontFaces(theme.ProjectId);
         var iconTheme = !string.IsNullOrWhiteSpace(theme.IconThemeId)
             ? database.GetIconThemeSettings(theme.IconThemeId)
             : null;
         return node.Kind switch
         {
-            ProjectTreeNodeKind.ComponentClass => FromComponentClass(database, node, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme),
-            ProjectTreeNodeKind.ComponentPreset => FromComponentPreset(database, node, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme),
+            ProjectTreeNodeKind.ComponentClass => FromComponentClass(database, node, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces),
+            ProjectTreeNodeKind.ComponentPreset => FromComponentPreset(database, node, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces),
             _ => null,
         };
     }
@@ -60,7 +62,8 @@ internal static class DesignPreviewPayloadFactory
         IReadOnlyDictionary<string, string> paletteColors,
         IReadOnlyDictionary<string, bool> paletteNeutralColors,
         string projectMediaRoot,
-        SpikeDatabase.IconThemeSettings? iconTheme)
+        SpikeDatabase.IconThemeSettings? iconTheme,
+        IReadOnlyList<SpikeDatabase.ProductionFontFace> fontFaces)
     {
         var settings = database.GetComponentClassSettings(node.Id);
         var componentBaseConfigsJson = database.GetComponentClassBaseConfigsJson(settings.ProjectId);
@@ -75,6 +78,7 @@ internal static class DesignPreviewPayloadFactory
             projectMediaRoot,
             iconTheme?.AssetRoot ?? "",
             iconTheme?.MappingJson ?? "{}",
+            fontFaces,
             settings.ComponentType,
             settings.DesignPreviewJson,
             componentBaseConfigsJson);
@@ -87,7 +91,8 @@ internal static class DesignPreviewPayloadFactory
         IReadOnlyDictionary<string, string> paletteColors,
         IReadOnlyDictionary<string, bool> paletteNeutralColors,
         string projectMediaRoot,
-        SpikeDatabase.IconThemeSettings? iconTheme)
+        SpikeDatabase.IconThemeSettings? iconTheme,
+        IReadOnlyList<SpikeDatabase.ProductionFontFace> fontFaces)
     {
         var settings = database.GetComponentPresetSettings(node);
         var componentBaseConfigsJson = database.GetComponentClassBaseConfigsJson(settings.ProjectId);
@@ -102,6 +107,7 @@ internal static class DesignPreviewPayloadFactory
             projectMediaRoot,
             iconTheme?.AssetRoot ?? "",
             iconTheme?.MappingJson ?? "{}",
+            fontFaces,
             settings.ComponentType,
             settings.DesignPreviewJson,
             componentBaseConfigsJson);

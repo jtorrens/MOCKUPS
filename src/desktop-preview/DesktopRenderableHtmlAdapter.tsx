@@ -9,7 +9,7 @@ import {
   stringValue as commonStringValue,
 } from "./previewValueHelpers.js";
 import { asRecord } from "./previewJsonHelpers.js";
-import { previewTextFontFamily } from "./previewTextHelpers.js";
+import { previewTextFontFamily } from "./previewFontHelpers.js";
 
 export interface DesktopRenderableHtmlAdapterProps {
   tree: RenderableNode;

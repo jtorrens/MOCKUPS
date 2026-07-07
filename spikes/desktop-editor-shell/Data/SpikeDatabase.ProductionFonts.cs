@@ -26,6 +26,15 @@ internal sealed partial class SpikeDatabase
         return fonts;
     }
 
+    public IReadOnlyList<ProductionFontFace> GetProductionFontFaces(string projectId)
+    {
+        using var connection = OpenConnection();
+        return QueryProductionFontRows(connection)
+            .Where((font) => font.ProjectId == projectId)
+            .SelectMany(FontFaces)
+            .ToList();
+    }
+
     public ProjectTreeNode ImportProductionFont(ProjectTreeNode fontsRoot, IReadOnlyList<string> selectedFilePaths)
     {
         if (fontsRoot.Kind != ProjectTreeNodeKind.ProductionFontsRoot)
@@ -238,6 +247,47 @@ internal sealed partial class SpikeDatabase
         return value.GetValueKind() == JsonValueKind.String
             ? value.GetValue<string>()
             : value.ToJsonString();
+    }
+
+    private static IEnumerable<ProductionFontFace> FontFaces(ProductionFontRow font)
+    {
+        if (string.IsNullOrWhiteSpace(font.FilesJson))
+        {
+            yield break;
+        }
+
+        JsonArray? files;
+        try
+        {
+            files = JsonNode.Parse(font.FilesJson) as JsonArray;
+        }
+        catch (JsonException)
+        {
+            yield break;
+        }
+
+        if (files is null)
+        {
+            yield break;
+        }
+
+        foreach (var file in files.OfType<JsonObject>())
+        {
+            var relativePath = JsonNodeString(file, "relativePath");
+            if (string.IsNullOrWhiteSpace(relativePath))
+            {
+                continue;
+            }
+
+            var weightText = JsonNodeString(file, "weight");
+            yield return new ProductionFontFace(
+                font.Id,
+                font.FamilyName,
+                font.Category,
+                NormalizeRelativePath(relativePath),
+                int.TryParse(weightText, out var weight) ? weight : 400,
+                JsonNodeString(file, "style") == "italic" ? "italic" : "normal");
+        }
     }
 
     private static IReadOnlyList<string> ExpandFontFamilyFiles(IReadOnlyList<string> selectedFilePaths)

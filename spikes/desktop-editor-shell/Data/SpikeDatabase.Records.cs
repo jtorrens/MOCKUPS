@@ -66,6 +66,13 @@ internal sealed partial class SpikeDatabase
         string Category,
         string SourceDirectory,
         string FilesJson);
+    public sealed record ProductionFontFace(
+        string FontId,
+        string FamilyName,
+        string Category,
+        string RelativePath,
+        int Weight,
+        string Style);
     public sealed record IconThemeSettings(
         string Name,
         string AssetRoot,

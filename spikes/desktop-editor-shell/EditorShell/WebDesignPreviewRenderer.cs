@@ -2,6 +2,7 @@ using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -32,6 +33,15 @@ internal static class WebDesignPreviewRenderer
                 paletteColors = payload.PaletteColors,
                 paletteNeutralColors = payload.PaletteNeutralColors,
                 projectMediaRoot = payload.ProjectMediaRoot,
+                fontFaces = payload.FontFaces.Select((face) => new
+                {
+                    fontId = face.FontId,
+                    family = face.FamilyName,
+                    category = face.Category,
+                    relativePath = face.RelativePath,
+                    weight = face.Weight,
+                    style = face.Style,
+                }),
                 iconAssetRoot = payload.IconAssetRoot,
                 iconMappingJson = payload.IconMappingJson,
                 componentBaseConfigsJson = payload.ComponentBaseConfigsJson,

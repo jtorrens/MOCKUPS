@@ -5,6 +5,7 @@ import {
   numberToken,
   stringOrThemeToken,
 } from "./previewColorHelpers.js";
+import { fontFamilyForTypography } from "./previewFontHelpers.js";
 
 export interface ResolvedTypographyStyle {
   fontFamily: string;
@@ -13,9 +14,6 @@ export interface ResolvedTypographyStyle {
   fontStyle: "italic" | undefined;
   fontWeight: number;
 }
-
-export const previewTextFontFamily =
-  "system-ui, -apple-system, BlinkMacSystemFont, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Noto Color Emoji\", sans-serif";
 
 type GraphemeSegmenter = {
   segment(value: string): Iterable<{ segment: string }>;
@@ -83,7 +81,7 @@ export function resolveTypographyStyle(
   }
 
   return {
-    fontFamily: previewTextFontFamily,
+    fontFamily: fontFamilyForTypography(payload, typography.fontFamilyId),
     fontSize,
     lineHeight: Math.max(
       fontSize * numberOrThemeToken(payload, typography.lineHeight),

@@ -6,6 +6,7 @@ import type { RenderableNode } from "../visual/renderable/types.js";
 import { DesktopRenderableHtmlAdapter } from "./DesktopRenderableHtmlAdapter.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { designPreviewPayloadToRenderable } from "./designPreviewRenderableRegistry.js";
+import { fontFacesForPayload } from "./previewAssetResolver.js";
 import { selectedColor } from "./previewColorHelpers.js";
 
 function renderableForPayload(payload: DesignPreviewPayload): RenderableNode {
@@ -23,6 +24,9 @@ function renderableForPayload(payload: DesignPreviewPayload): RenderableNode {
     },
     style: {
       backgroundColor: selectedColor(payload, "theme.colors.background"),
+    },
+    metadata: {
+      fontFaces: fontFacesForPayload(payload),
     },
     children: [child],
   });

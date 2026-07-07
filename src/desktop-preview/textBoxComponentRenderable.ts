@@ -37,6 +37,7 @@ export function measureTextBoxComponent(
       paddingX,
       paddingY,
       contentText,
+      contentTextHeight: contentSize.height,
     };
   }
 
@@ -47,6 +48,7 @@ export function measureTextBoxComponent(
     paddingX,
     paddingY,
     contentText,
+    contentTextHeight: contentSize.height,
   };
 }
 
@@ -91,6 +93,49 @@ export function textBoxComponentToRenderableAt(
   };
   const textIsEmpty = textBox.text.trim().length === 0;
   const cursorWidth = Math.max(1, textBox.cursor.width * scale);
+  const isMultiline = size.contentText.includes("\n");
+  const textContentHeight = Math.max(textFrame.height, size.contentTextHeight);
+  const scrollOffset = textBox.overflowMode === "scroll"
+    ? Math.max(0, textContentHeight - textFrame.height)
+    : 0;
+  const textNode: RenderableNode = {
+    id: `${textBox.id}.text`,
+    type: "text",
+    frame: 0,
+    box: {
+      x: textFrame.x,
+      y: textFrame.y - scrollOffset,
+      width: textFrame.width,
+      height: textContentHeight,
+    },
+    text: size.contentText,
+    style: {
+      textColor: selectedColor(
+        payload,
+        textIsEmpty ? textBox.placeholderColorToken : textBox.textColorToken,
+      ),
+      display: isMultiline ? "block" : "flex",
+      alignItems: isMultiline ? "flex-start" : "center",
+      fontSize: size.typography.fontSize,
+      fontFamily: size.typography.fontFamily,
+      fontStyle: size.typography.fontStyle,
+      fontWeight: size.typography.fontWeight,
+      justifyContent: textBoxJustify(textBox.textAlign),
+      lineHeight: size.typography.lineHeight,
+      overflow: "hidden",
+      textAlign: textBox.textAlign,
+      whiteSpace: "pre-wrap",
+    },
+    metadata: textBox.cursorVisible && !textIsEmpty
+      ? {
+          inlineCursor: {
+            color: selectedColor(payload, textBox.cursor.colorToken),
+            width: cursorWidth,
+            opacity: 1,
+          },
+        }
+      : undefined,
+  };
 
   return {
     id: textBox.id,
@@ -107,39 +152,21 @@ export function textBoxComponentToRenderableAt(
     },
     children: [
       surfaceComponentToRenderableAt(payload, textBox.surface, box),
-      {
-        id: `${textBox.id}.text`,
-        type: "text",
-        frame: 0,
-        box: textFrame,
-        text: size.contentText,
-        style: {
-          textColor: selectedColor(
-            payload,
-            textIsEmpty ? textBox.placeholderColorToken : textBox.textColorToken,
-          ),
-          display: size.contentText.includes("\n") ? "block" : "flex",
-          alignItems: size.contentText.includes("\n") ? "flex-start" : "center",
-          fontSize: size.typography.fontSize,
-          fontFamily: size.typography.fontFamily,
-          fontStyle: size.typography.fontStyle,
-          fontWeight: size.typography.fontWeight,
-          justifyContent: textBoxJustify(textBox.textAlign),
-          lineHeight: size.typography.lineHeight,
-          overflow: textBox.overflowMode === "scroll" ? "auto" : "hidden",
-          textAlign: textBox.textAlign,
-          whiteSpace: "pre-wrap",
-        },
-        metadata: textBox.cursorVisible && !textIsEmpty
-          ? {
-              inlineCursor: {
-                color: selectedColor(payload, textBox.cursor.colorToken),
-                width: cursorWidth,
-                opacity: 1,
-              },
-            }
-          : undefined,
-      },
+      textBox.overflowMode === "scroll"
+        ? {
+            id: `${textBox.id}.textClip`,
+            type: "group",
+            frame: 0,
+            box: textFrame,
+            style: {
+              overflow: "hidden",
+            },
+            children: [textNode],
+          }
+        : {
+            ...textNode,
+            box: textFrame,
+          },
     ],
   };
 }

@@ -8,6 +8,15 @@ export interface PreviewFramePayload {
   scaleToPixels?: number;
 }
 
+export interface DesignPreviewFontFacePayload {
+  fontId: string;
+  family: string;
+  category: string;
+  relativePath: string;
+  weight: number;
+  style: string;
+}
+
 export interface DesignPreviewPayload {
   kind: "componentClass";
   componentType?: string;
@@ -17,6 +26,7 @@ export interface DesignPreviewPayload {
   previewFrame: PreviewFramePayload;
   iconAssetRoot?: string;
   iconMappingJson?: string;
+  fontFaces?: DesignPreviewFontFacePayload[];
   paletteColors?: Record<string, string>;
   paletteNeutralColors?: Record<string, boolean>;
   projectMediaRoot?: string;
