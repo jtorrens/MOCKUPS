@@ -26,7 +26,7 @@ export function measureTextBoxComponent(
     0,
     numberToken(payload, textBox.surface.surface.cornerRadiusToken) * scale,
   );
-  const paddingX = numberToken(payload, textBox.padding.xToken) * scale + cornerRadius;
+  const basePaddingX = numberToken(payload, textBox.padding.xToken) * scale;
   const paddingY = numberToken(payload, textBox.padding.yToken) * scale;
   const contentText = visibleText(textBox);
   const contentSize = approximateMultilineTextSize(
@@ -35,10 +35,14 @@ export function measureTextBoxComponent(
     typography.lineHeight,
   );
   if (textBox.dimensionMode === "fixed") {
+    const width = textBox.size.width * scale;
+    const height = textBox.size.height * scale;
+    const paddingX = basePaddingX + effectiveCornerInset(cornerRadius, width, height);
     return {
-      width: textBox.size.width * scale,
-      height: textBox.size.height * scale,
+      width,
+      height,
       typography,
+      basePaddingX,
       paddingX,
       paddingY,
       cornerRadius,
@@ -47,10 +51,13 @@ export function measureTextBoxComponent(
     };
   }
 
+  const height = Math.max(1, contentSize.height + paddingY * 2);
+  const paddingX = basePaddingX + Math.min(cornerRadius, height * 0.5);
   return {
     width: Math.max(1, contentSize.width + paddingX * 2),
-    height: Math.max(1, contentSize.height + paddingY * 2),
+    height,
     typography,
+    basePaddingX,
     paddingX,
     paddingY,
     cornerRadius,
@@ -92,10 +99,11 @@ export function textBoxComponentToRenderableAt(
       }
     : undefined;
   const visualPadding = surfaceVisualPadding(borderWidth, surfaceShadow, surfaceRelief);
+  const paddingX = size.basePaddingX + effectiveCornerInset(size.cornerRadius, box.width, box.height);
   const textFrame = {
-    x: box.x + size.paddingX,
+    x: box.x + paddingX,
     y: box.y + size.paddingY,
-    width: Math.max(1, box.width - size.paddingX * 2),
+    width: Math.max(1, box.width - paddingX * 2),
     height: Math.max(1, box.height - size.paddingY * 2),
   };
   const textIsEmpty = textBox.text.trim().length === 0;
@@ -186,6 +194,14 @@ export function textBoxComponentToRenderableAt(
 
 function visibleText(textBox: TextBoxDesignContract) {
   return textBox.text.trim().length > 0 ? textBox.text : textBox.placeholder;
+}
+
+function effectiveCornerInset(cornerRadius: number, width: number, height: number) {
+  return Math.min(
+    Math.max(0, cornerRadius),
+    Math.max(0, width) * 0.5,
+    Math.max(0, height) * 0.5,
+  );
 }
 
 function textBoxJustify(textAlign: TextBoxDesignContract["textAlign"]) {
