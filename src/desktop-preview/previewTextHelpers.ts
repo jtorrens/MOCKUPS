@@ -69,6 +69,47 @@ export function approximateMultilineTextSize(
   };
 }
 
+export function approximateWrappedTextSize(
+  text: string,
+  fontSize: number,
+  lineHeight: number,
+  maxWidth: number,
+) {
+  const wrapWidth = Math.max(1, maxWidth);
+  let width = 1;
+  let lineCount = 0;
+
+  for (const sourceLine of text.split(/\r\n|\r|\n/u)) {
+    const graphemes = textGraphemes(sourceLine);
+    if (graphemes.length === 0) {
+      lineCount += 1;
+      continue;
+    }
+
+    let currentWidth = 0;
+    for (const grapheme of graphemes) {
+      const advance = graphemeAdvance(grapheme) * fontSize;
+      if (currentWidth > 0 && currentWidth + advance > wrapWidth) {
+        width = Math.max(width, currentWidth);
+        lineCount += 1;
+        currentWidth = advance;
+        continue;
+      }
+
+      currentWidth += advance;
+    }
+
+    width = Math.max(width, currentWidth);
+    lineCount += 1;
+  }
+
+  return {
+    width: Math.min(wrapWidth, Math.max(1, width)),
+    height: Math.max(1, lineCount) * lineHeight,
+    lineCount: Math.max(1, lineCount),
+  };
+}
+
 export function resolveTypographyStyle(
   payload: DesignPreviewPayload,
   typography: TypographyStyleContract,

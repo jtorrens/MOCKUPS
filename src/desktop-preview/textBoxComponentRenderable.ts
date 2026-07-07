@@ -10,6 +10,7 @@ import {
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
   approximateMultilineTextSize,
+  approximateWrappedTextSize,
   resolveTypographyStyle,
 } from "./previewTextHelpers.js";
 import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
@@ -21,7 +22,11 @@ export function measureTextBoxComponent(
 ) {
   const scale = renderScale(payload);
   const typography = resolveTypographyStyle(payload, textBox.typography, scale);
-  const paddingX = numberToken(payload, textBox.padding.xToken) * scale;
+  const cornerRadius = Math.max(
+    0,
+    numberToken(payload, textBox.surface.surface.cornerRadiusToken) * scale,
+  );
+  const paddingX = numberToken(payload, textBox.padding.xToken) * scale + cornerRadius;
   const paddingY = numberToken(payload, textBox.padding.yToken) * scale;
   const contentText = visibleText(textBox);
   const contentSize = approximateMultilineTextSize(
@@ -36,6 +41,7 @@ export function measureTextBoxComponent(
       typography,
       paddingX,
       paddingY,
+      cornerRadius,
       contentText,
       contentTextHeight: contentSize.height,
     };
@@ -47,6 +53,7 @@ export function measureTextBoxComponent(
     typography,
     paddingX,
     paddingY,
+    cornerRadius,
     contentText,
     contentTextHeight: contentSize.height,
   };
@@ -93,8 +100,14 @@ export function textBoxComponentToRenderableAt(
   };
   const textIsEmpty = textBox.text.trim().length === 0;
   const cursorWidth = Math.max(1, textBox.cursor.width * scale);
-  const isMultiline = size.contentText.includes("\n");
-  const textContentHeight = Math.max(textFrame.height, size.contentTextHeight);
+  const wrappedContentSize = approximateWrappedTextSize(
+    size.contentText,
+    size.typography.fontSize,
+    size.typography.lineHeight,
+    textFrame.width,
+  );
+  const isMultiline = wrappedContentSize.lineCount > 1;
+  const textContentHeight = Math.max(textFrame.height, wrappedContentSize.height);
   const scrollOffset = textBox.overflowMode === "scroll"
     ? Math.max(0, textContentHeight - textFrame.height)
     : 0;
@@ -122,7 +135,7 @@ export function textBoxComponentToRenderableAt(
       fontWeight: size.typography.fontWeight,
       justifyContent: textBoxJustify(textBox.textAlign),
       lineHeight: size.typography.lineHeight,
-      overflow: "hidden",
+      overflow: textBox.overflowMode === "scroll" ? "visible" : "hidden",
       textAlign: textBox.textAlign,
       whiteSpace: "pre-wrap",
     },
