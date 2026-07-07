@@ -204,8 +204,9 @@ export function textBoxComponentToRenderableAt(
     fontWeight: size.typography.fontWeight,
     lineHeight: size.typography.lineHeight,
     overflow: "visible",
-    textAlign: textBox.textAlign,
-    whiteSpace: "pre",
+    textAlign: "left",
+    whiteSpace: "nowrap",
+    width: "max-content",
   };
   const lineNodes: RenderableNode[] = wrappedLines.map((line, index) => {
     const hasCursor = index === wrappedLines.length - 1 && textBox.cursorVisible && !textIsEmpty;

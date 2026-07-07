@@ -95,7 +95,7 @@ export function approximateWrappedTextLines(
 ) {
   const wrapWidth = Math.max(1, maxWidth);
   return text.split(/\r\n|\r|\n/u).flatMap((sourceLine) => {
-    const normalizedLine = sourceLine.replace(/[ \t\f\v]+/gu, " ").trim();
+    const normalizedLine = sourceLine.replace(/[^\S\r\n]+/gu, " ").trim();
     if (normalizedLine.length === 0) {
       return [""];
     }
