@@ -91,13 +91,15 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
         _container = new Border
         {
             CornerRadius = new CornerRadius(8),
-            BorderThickness = new Thickness(1),
+            BorderThickness = new Thickness(0),
             Child = innerGrid,
         };
         Children.Add(_container);
 
         _summaryText = new TextBlock
         {
+            Margin = new Thickness(10, 0, 4, 0),
+            IsHitTestVisible = false,
             TextTrimming = TextTrimming.CharacterEllipsis,
             VerticalAlignment = VerticalAlignment.Center,
         };
@@ -112,6 +114,12 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
             HorizontalAlignment = HorizontalAlignment.Right,
             VerticalAlignment = VerticalAlignment.Center,
             Opacity = 0.72,
+            IsHitTestVisible = false,
+        };
+        var headerGrid = new Grid
+        {
+            MinHeight = 36,
+            ColumnDefinitions = new ColumnDefinitions("*,22"),
         };
         SetColumn(_summaryText, 0);
         SetColumn(chevron, 1);
@@ -120,21 +128,16 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
             MinHeight = 36,
             HorizontalAlignment = HorizontalAlignment.Stretch,
             HorizontalContentAlignment = HorizontalAlignment.Stretch,
-            Padding = new Thickness(10, 6, 0, 6),
+            Padding = new Thickness(0),
             Background = Brushes.Transparent,
             BorderThickness = new Thickness(0),
             CornerRadius = new CornerRadius(8),
-            Content = new Grid
-            {
-                ColumnDefinitions = new ColumnDefinitions("*,22"),
-                Children =
-                {
-                    _summaryText,
-                    chevron,
-                },
-            },
         };
-        innerGrid.Children.Add(_headerButton);
+        SetColumnSpan(_headerButton, 2);
+        headerGrid.Children.Add(_headerButton);
+        headerGrid.Children.Add(_summaryText);
+        headerGrid.Children.Add(chevron);
+        innerGrid.Children.Add(headerGrid);
 
         _contentGrid = new Grid
         {
@@ -373,11 +376,8 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
     {
         var isLight = ActualThemeVariant == Avalonia.Styling.ThemeVariant.Light;
         var closedBackground = isLight ? "#14000000" : "#10FFFFFF";
-        var openBackground = isLight ? "#F4F6FA" : "#F01A2433";
-        _container.Background = new SolidColorBrush(Color.Parse(_isOpen ? openBackground : closedBackground));
-        _container.BorderBrush = _isOpen
-            ? new SolidColorBrush(Color.Parse(isLight ? "#CDD6E3" : "#3B4C66"))
-            : Brushes.Transparent;
-        _container.BorderThickness = new Thickness(_isOpen ? 1 : 0);
+        _container.Background = new SolidColorBrush(Color.Parse(closedBackground));
+        _container.BorderBrush = Brushes.Transparent;
+        _container.BorderThickness = new Thickness(0);
     }
 }
