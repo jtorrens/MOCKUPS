@@ -12,10 +12,12 @@
                  MinWidth="1040"
                  MinHeight="680"
                  IsMenuVisible="False"
+                 BackgroundStyle="Flat"
                  BackgroundAnimationEnabled="False"
                  BackgroundTransitionsEnabled="False"
                  BackgroundTransitionTime="0.05">
-    <Grid Margin="10" RowDefinitions="Auto,*">
+    <Border x:Name="RootShell" Padding="10">
+    <Grid RowDefinitions="Auto,*">
         <Border Grid.Row="0"
                 Padding="18,12">
             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
@@ -29,8 +31,6 @@
                             Content="Update usage" />
                     <ToggleSwitch x:Name="ThemeModeSwitch"
                                   IsChecked="True"
-                                  OnContent="Dark"
-                                  OffContent="Light"
                                   VerticalAlignment="Center" />
                     <editor:EditorInstantComboBox x:Name="SukiColorComboBox"
                                                   MinWidth="112"
@@ -234,4 +234,5 @@
             </Border>
         </Grid>
     </Grid>
+    </Border>
 </suki:SukiWindow>

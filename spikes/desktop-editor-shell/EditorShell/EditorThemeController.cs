@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Media;
 using Avalonia.Styling;
 using Mockups.DesktopEditorShell.Data;
 using SukiUI;
@@ -13,6 +14,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class EditorThemeController
 {
     private readonly Window _window;
+    private readonly Border _rootShell;
     private readonly ToggleSwitch _modeSwitch;
     private readonly EditorInstantComboBox _colorCombo;
     private readonly Action _onChanged;
@@ -20,11 +22,13 @@ internal sealed class EditorThemeController
 
     public EditorThemeController(
         Window window,
+        Border rootShell,
         ToggleSwitch modeSwitch,
         EditorInstantComboBox colorCombo,
         Action onChanged)
     {
         _window = window;
+        _rootShell = rootShell;
         _modeSwitch = modeSwitch;
         _colorCombo = colorCombo;
         _onChanged = onChanged;
@@ -61,13 +65,14 @@ internal sealed class EditorThemeController
         Application.Current!.RequestedThemeVariant = themeVariant;
         SukiTheme.GetInstance().ChangeBaseTheme(themeVariant);
         SukiTheme.GetInstance().ChangeColorTheme(SelectedColor);
+        var appBackground = new SolidColorBrush(IsDark ? Color.Parse("#181A1F") : Color.Parse("#ECEDEF"));
+        _window.Background = appBackground;
+        _rootShell.Background = appBackground;
 
         _isUpdating = true;
         try
         {
             _modeSwitch.IsChecked = IsDark;
-            _modeSwitch.OnContent = "Dark";
-            _modeSwitch.OffContent = "Light";
             _colorCombo.SelectedItem = _colorCombo.ItemsSource?
                 .OfType<FieldOption>()
                 .FirstOrDefault((option) => option.Value == SelectedColor.ToString());

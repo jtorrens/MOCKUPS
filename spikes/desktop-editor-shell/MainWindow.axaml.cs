@@ -45,7 +45,7 @@ public partial class MainWindow : SukiWindow
         _coreFieldValues = new CoreFieldValueService(_database);
         _recordClassFieldValues = new RecordClassFieldValueService(_database);
         _componentClassFieldValues = new ComponentClassFieldValueService(_database);
-        _themeController = new EditorThemeController(this, ThemeModeSwitch, SukiColorComboBox, RefreshPreviewDevice);
+        _themeController = new EditorThemeController(this, RootShell, ThemeModeSwitch, SukiColorComboBox, RefreshPreviewDevice);
         _actorAvatarPreviews = new ActorAvatarPreviewController(_database, () => _themeController.IsDark);
         _messages = new EditorShellMessageSink(ShellMessagesTextBox);
         _previewController = new EditorPreviewController(
