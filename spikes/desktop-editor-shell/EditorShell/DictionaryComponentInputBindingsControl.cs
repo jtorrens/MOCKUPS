@@ -129,14 +129,103 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
     private void RefreshRows()
     {
         _rows.Children.Clear();
+        var topLevelInputs = new List<ComponentInputBindingDefinition>();
+        var groups = new List<List<ComponentInputBindingDefinition>>();
+        List<ComponentInputBindingDefinition>? currentGroup = null;
         foreach (var input in VariantInputs())
         {
-            var services = ServicesFor(input);
-            var field = new DictionaryFieldControl(CreateFieldValue(input), services);
-            field.ValueChanged += (_, next) => SetInputValue(input, next, commit: false);
-            field.ValueCommitted += (_, next) => SetInputValue(input, next, commit: true);
-            _rows.Children.Add(field);
+            if (IsEmbeddedComponentInput(input))
+            {
+                currentGroup = [input];
+                groups.Add(currentGroup);
+                continue;
+            }
+
+            if (currentGroup is null)
+            {
+                topLevelInputs.Add(input);
+            }
+            else
+            {
+                currentGroup.Add(input);
+            }
         }
+
+        foreach (var input in topLevelInputs)
+        {
+            _rows.Children.Add(CreateInputField(input));
+        }
+
+        foreach (var group in groups)
+        {
+            _rows.Children.Add(CreateInputGroup(group));
+        }
+    }
+
+    private static bool IsEmbeddedComponentInput(ComponentInputBindingDefinition input)
+    {
+        return input.ValueKind == ValueKind.ComponentPreset && !string.IsNullOrWhiteSpace(input.ComponentType);
+    }
+
+    private Control CreateInputGroup(IReadOnlyList<ComponentInputBindingDefinition> inputs)
+    {
+        var embeddedInput = inputs[0];
+        var groupRows = new StackPanel
+        {
+            Spacing = 8,
+        };
+        foreach (var input in inputs)
+        {
+            groupRows.Children.Add(CreateInputField(input));
+        }
+
+        var header = new StackPanel
+        {
+            Spacing = 1,
+            Margin = new Thickness(0, 0, 0, 8),
+        };
+        header.Children.Add(new TextBlock
+        {
+            Text = embeddedInput.Label,
+            FontWeight = FontWeight.SemiBold,
+            FontSize = 13,
+        });
+        header.Children.Add(new TextBlock
+        {
+            Text = "Embedded component inputs",
+            FontSize = 12,
+            Opacity = 0.64,
+        });
+
+        var content = new StackPanel
+        {
+            Spacing = 8,
+        };
+        content.Children.Add(header);
+        content.Children.Add(groupRows);
+
+        return new Border
+        {
+            CornerRadius = new CornerRadius(10),
+            Padding = new Thickness(10),
+            Background = new SolidColorBrush(Color.FromArgb(24, 255, 255, 255)),
+            BorderBrush = new SolidColorBrush(Color.FromArgb(36, 255, 255, 255)),
+            BorderThickness = new Thickness(1),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Child = content,
+        };
+    }
+
+    private DictionaryFieldControl CreateInputField(ComponentInputBindingDefinition input)
+    {
+        var services = ServicesFor(input);
+        var field = new DictionaryFieldControl(CreateFieldValue(input), services)
+        {
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+        field.ValueChanged += (_, next) => SetInputValue(input, next, commit: false);
+        field.ValueCommitted += (_, next) => SetInputValue(input, next, commit: true);
+        return field;
     }
 
     private DictionaryFieldServices ServicesFor(ComponentInputBindingDefinition input)
