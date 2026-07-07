@@ -37,7 +37,7 @@ export function measureTextBoxComponent(
   if (textBox.dimensionMode === "fixed") {
     const width = textBox.size.width * scale;
     const height = textBox.size.height * scale;
-    const paddingX = basePaddingX + effectiveCornerInset(cornerRadius, width, height);
+    const paddingX = basePaddingX + effectiveCornerTextInset(cornerRadius, width, height);
     return {
       width,
       height,
@@ -52,7 +52,7 @@ export function measureTextBoxComponent(
   }
 
   const height = Math.max(1, contentSize.height + paddingY * 2);
-  const paddingX = basePaddingX + Math.min(cornerRadius, height * 0.5);
+  const paddingX = basePaddingX + effectiveCornerTextInset(cornerRadius, Number.POSITIVE_INFINITY, height);
   return {
     width: Math.max(1, contentSize.width + paddingX * 2),
     height,
@@ -99,7 +99,7 @@ export function textBoxComponentToRenderableAt(
       }
     : undefined;
   const visualPadding = surfaceVisualPadding(borderWidth, surfaceShadow, surfaceRelief);
-  const paddingX = size.basePaddingX + effectiveCornerInset(size.cornerRadius, box.width, box.height);
+  const paddingX = size.basePaddingX + effectiveCornerTextInset(size.cornerRadius, box.width, box.height);
   const textFrame = {
     x: box.x + paddingX,
     y: box.y + size.paddingY,
@@ -116,16 +116,13 @@ export function textBoxComponentToRenderableAt(
   );
   const isMultiline = wrappedContentSize.lineCount > 1;
   const textContentHeight = Math.max(textFrame.height, wrappedContentSize.height);
-  const scrollOffset = textBox.overflowMode === "scroll"
-    ? Math.max(0, textContentHeight - textFrame.height)
-    : 0;
   const textNode: RenderableNode = {
     id: `${textBox.id}.text`,
     type: "text",
     frame: 0,
     box: {
       x: textFrame.x,
-      y: textFrame.y - scrollOffset,
+      y: textFrame.y,
       width: textFrame.width,
       height: textContentHeight,
     },
@@ -143,7 +140,7 @@ export function textBoxComponentToRenderableAt(
       fontWeight: size.typography.fontWeight,
       justifyContent: textBoxJustify(textBox.textAlign),
       lineHeight: size.typography.lineHeight,
-      overflow: textBox.overflowMode === "scroll" ? "visible" : "hidden",
+      overflow: "hidden",
       textAlign: textBox.textAlign,
       whiteSpace: "pre-wrap",
     },
@@ -180,9 +177,25 @@ export function textBoxComponentToRenderableAt(
             frame: 0,
             box: textFrame,
             style: {
+              alignItems: "stretch",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "flex-end",
               overflow: "hidden",
             },
-            children: [textNode],
+            children: [
+              {
+                ...textNode,
+                box: undefined,
+                style: {
+                  ...textNode.style,
+                  display: "block",
+                  height: undefined,
+                  overflow: "visible",
+                  width: "100%",
+                },
+              },
+            ],
           }
         : {
             ...textNode,
@@ -196,12 +209,13 @@ function visibleText(textBox: TextBoxDesignContract) {
   return textBox.text.trim().length > 0 ? textBox.text : textBox.placeholder;
 }
 
-function effectiveCornerInset(cornerRadius: number, width: number, height: number) {
-  return Math.min(
+function effectiveCornerTextInset(cornerRadius: number, width: number, height: number) {
+  const effectiveRadius = Math.min(
     Math.max(0, cornerRadius),
     Math.max(0, width) * 0.5,
     Math.max(0, height) * 0.5,
   );
+  return Math.min(effectiveRadius * 0.35, Math.max(0, height) * 0.18);
 }
 
 function textBoxJustify(textAlign: TextBoxDesignContract["textAlign"]) {
