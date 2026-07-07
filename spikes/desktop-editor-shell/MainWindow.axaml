@@ -27,12 +27,15 @@
                     <Button x:Name="UsageRefreshButton"
                             Click="OnRefreshUsageClick"
                             Content="Update usage" />
-                    <TextBlock x:Name="ThemeLabel"
-                               VerticalAlignment="Center"
-                               Text="Dark mode" />
-                    <Button x:Name="ThemeToggleButton"
-                            Click="OnToggleThemeClick"
-                            Content="Switch to light" />
+                    <ToggleSwitch x:Name="ThemeModeSwitch"
+                                  IsChecked="True"
+                                  OnContent="Dark"
+                                  OffContent="Light"
+                                  VerticalAlignment="Center" />
+                    <editor:EditorInstantComboBox x:Name="SukiColorComboBox"
+                                                  MinWidth="112"
+                                                  MinHeight="36"
+                                                  VerticalAlignment="Center" />
                 </StackPanel>
             </Grid>
         </Border>

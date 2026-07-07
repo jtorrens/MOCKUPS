@@ -1,38 +1,58 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Styling;
+using Mockups.DesktopEditorShell.Data;
 using SukiUI;
 using SukiUI.Enums;
 using System;
+using System.Linq;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class EditorThemeController
 {
     private readonly Window _window;
-    private readonly TextBlock _label;
-    private readonly ContentControl _toggleButton;
+    private readonly ToggleSwitch _modeSwitch;
+    private readonly EditorInstantComboBox _colorCombo;
     private readonly Action _onChanged;
+    private bool _isUpdating;
 
     public EditorThemeController(
         Window window,
-        TextBlock label,
-        ContentControl toggleButton,
+        ToggleSwitch modeSwitch,
+        EditorInstantComboBox colorCombo,
         Action onChanged)
     {
         _window = window;
-        _label = label;
-        _toggleButton = toggleButton;
+        _modeSwitch = modeSwitch;
+        _colorCombo = colorCombo;
         _onChanged = onChanged;
+
+        _modeSwitch.PropertyChanged += (_, change) =>
+        {
+            if (_isUpdating || change.Property != ToggleSwitch.IsCheckedProperty) return;
+
+            IsDark = _modeSwitch.IsChecked == true;
+            Apply();
+        };
+        _colorCombo.ItemsSource = Enum.GetNames<SukiColor>()
+            .Select((name) => new FieldOption(name, name));
+        _colorCombo.SelectionChanged += (_, _) =>
+        {
+            if (_isUpdating || _colorCombo.SelectedItem is not FieldOption option) return;
+
+            if (Enum.TryParse<SukiColor>(option.Value, out var color))
+            {
+                SelectedColor = color;
+                Apply();
+            }
+        };
     }
 
     public bool IsDark { get; private set; } = true;
 
-    public void Toggle()
-    {
-        IsDark = !IsDark;
-        Apply();
-    }
+    private SukiColor SelectedColor { get; set; } = SukiColor.Blue;
 
     public void Apply()
     {
@@ -40,18 +60,22 @@ internal sealed class EditorThemeController
         _window.RequestedThemeVariant = themeVariant;
         Application.Current!.RequestedThemeVariant = themeVariant;
         SukiTheme.GetInstance().ChangeBaseTheme(themeVariant);
-        SukiTheme.GetInstance().ChangeColorTheme(SukiColor.Blue);
+        SukiTheme.GetInstance().ChangeColorTheme(SelectedColor);
 
-        if (IsDark)
+        _isUpdating = true;
+        try
         {
-            _label.Text = "Dark mode";
-            _toggleButton.Content = "Switch to light";
-            _onChanged();
-            return;
+            _modeSwitch.IsChecked = IsDark;
+            _modeSwitch.OnContent = "Dark";
+            _modeSwitch.OffContent = "Light";
+            _colorCombo.SelectedItem = _colorCombo.ItemsSource?
+                .OfType<FieldOption>()
+                .FirstOrDefault((option) => option.Value == SelectedColor.ToString());
         }
-
-        _label.Text = "Light mode";
-        _toggleButton.Content = "Switch to dark";
+        finally
+        {
+            _isUpdating = false;
+        }
         _onChanged();
     }
 }
