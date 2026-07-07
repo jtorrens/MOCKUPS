@@ -382,7 +382,13 @@ internal sealed partial class SpikeDatabase
             "iconRow" =>
             [
                 ComponentInput("size", "Size", "size", "number", "36", minimum: 1, maximum: 9999, increment: 1),
-                ComponentInput("gap", "Gap", "gap", "themeToken", "theme.spacing.s"),
+                ComponentInput(
+                    "gap",
+                    "Gap",
+                    "gap",
+                    "themeToken",
+                    "theme.spacing.s",
+                    options: ComponentClassFieldCatalog.SpacingTokenOptions),
                 ComponentInput(
                     "orientation",
                     "Orientation",

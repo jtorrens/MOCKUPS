@@ -70,7 +70,7 @@ internal static class ComponentClassFieldCatalog
         new("theme.typography.sizes.xl", "typography.sizes.xl"),
     ];
 
-    private static readonly FieldOption[] SpacingTokenOptions =
+    internal static readonly FieldOption[] SpacingTokenOptions =
     [
         new("theme.spacing.none", "spacing.none"),
         new("theme.spacing.xs", "spacing.xs"),
