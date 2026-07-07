@@ -30,12 +30,6 @@ export function resolveTextInputBarComponent(
     "component.textInput.preview.sampleText",
   );
   const isTyping = sampleText.trim().length > 0;
-  const leftIconRowSlot = asRecord(
-    isTyping ? textInput.typingLeftIconRowSlot : textInput.idleLeftIconRowSlot,
-  );
-  const rightIconRowSlot = asRecord(
-    isTyping ? textInput.typingRightIconRowSlot : textInput.idleRightIconRowSlot,
-  );
   const leftIconRowInputs = asRecord(
     isTyping ? textInput.typingLeftIconRowInputs : textInput.idleLeftIconRowInputs,
   );
@@ -43,10 +37,10 @@ export function resolveTextInputBarComponent(
     isTyping ? textInput.typingRightIconRowInputs : textInput.idleRightIconRowInputs,
   );
   const height = requiredNumber(textInput, "height", "component.textInput.height");
-  const iconButtonPresetId = requiredString(
-    textInput,
-    "iconButtonPresetId",
-    "component.textInput.iconButtonPresetId",
+  const textBoxButtonIconPresetId = requiredString(
+    textBoxInputs,
+    "buttonIconPresetId",
+    "component.textInput.textBox.buttonIconPresetId",
   );
   const embeddedBarSurfaceConfig = mergeComponentDefaults(
     componentPresetConfig(componentBaseConfigs, "surface", barSurfaceSlot.presetId),
@@ -84,18 +78,34 @@ export function resolveTextInputBarComponent(
           "maxLines",
           "component.textInput.textBox.maxLines",
         ),
-        leftIconRowPresetId: leftIconRowSlot.presetId,
-        leftIconRowInputs: iconRowInputsFromParent(
+        leftIconRowPresetId: requiredString(
+          textBoxInputs,
+          "leftIconRowPresetId",
+          "component.textInput.textBox.leftIconRowPresetId",
+        ),
+        leftIconRowInputs: iconRowInputsForTextBox(
+          textBoxInputs,
           leftIconRowInputs,
-          iconButtonPresetId,
+          "left",
+          textBoxButtonIconPresetId,
         ),
-        rightIconRowPresetId: rightIconRowSlot.presetId,
-        rightIconRowInputs: iconRowInputsFromParent(
+        rightIconRowPresetId: requiredString(
+          textBoxInputs,
+          "rightIconRowPresetId",
+          "component.textInput.textBox.rightIconRowPresetId",
+        ),
+        rightIconRowInputs: iconRowInputsForTextBox(
+          textBoxInputs,
           rightIconRowInputs,
-          iconButtonPresetId,
+          "right",
+          textBoxButtonIconPresetId,
         ),
-        buttonIconPresetId: iconButtonPresetId,
-        iconGap: requiredString(textInput, "iconGap", "component.textInput.iconGap"),
+        buttonIconPresetId: textBoxButtonIconPresetId,
+        iconGap: requiredString(
+          textBoxInputs,
+          "iconGap",
+          "component.textInput.textBox.iconGap",
+        ),
         size: `520|${height}`,
         maxWidth: 520,
       },
@@ -105,12 +115,36 @@ export function resolveTextInputBarComponent(
   };
 }
 
-function iconRowInputsFromParent(
-  parentInputs: Record<string, unknown>,
+function iconRowInputsForTextBox(
+  textBoxInputs: Record<string, unknown>,
+  stateInputs: Record<string, unknown>,
+  side: "left" | "right",
   buttonIconPresetId: string,
 ) {
+  const variantIcons = requiredIconList(
+    textBoxInputs,
+    `${side}Icons`,
+    `component.textInput.textBox.${side}Icons`,
+  );
+  const stateIcons = stateInputs.icons;
   return {
-    ...parentInputs,
+    ...stateInputs,
+    size: requiredNumber(
+      textBoxInputs,
+      "iconRowSize",
+      "component.textInput.textBox.iconRowSize",
+    ),
+    gap: requiredString(
+      textBoxInputs,
+      "iconRowGap",
+      "component.textInput.textBox.iconRowGap",
+    ),
+    orientation: requiredString(
+      textBoxInputs,
+      "iconRowOrientation",
+      "component.textInput.textBox.iconRowOrientation",
+    ),
+    icons: variantIcons.length > 0 ? variantIcons : stateIcons,
     buttonIconPresetId,
   };
 }
@@ -127,4 +161,17 @@ function requiredPossiblyEmptyString(
   const raw = value[key];
   if (typeof raw === "string") return raw;
   throw new Error(`Missing string value ${path}`);
+}
+
+function requiredIconList(
+  value: Record<string, unknown>,
+  key: string,
+  path: string,
+) {
+  const raw = value[key];
+  if (Array.isArray(raw) && raw.every((entry) => typeof entry === "string")) {
+    return raw;
+  }
+
+  throw new Error(`Missing icon list value ${path}`);
 }

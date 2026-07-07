@@ -1714,6 +1714,9 @@ internal sealed partial class SpikeDatabase
         changed |= NormalizeComponentInputBindingPresetId(connection, projectId, config, ["textInput", "idleRightIconRowInputs", "buttonIconPresetId"], "buttonIcon");
         changed |= NormalizeComponentInputBindingPresetId(connection, projectId, config, ["textInput", "typingLeftIconRowInputs", "buttonIconPresetId"], "buttonIcon");
         changed |= NormalizeComponentInputBindingPresetId(connection, projectId, config, ["textInput", "typingRightIconRowInputs", "buttonIconPresetId"], "buttonIcon");
+        changed |= NormalizeComponentInputBindingPresetId(connection, projectId, config, ["textInput", "textBoxInputs", "leftIconRowPresetId"], "iconRow");
+        changed |= NormalizeComponentInputBindingPresetId(connection, projectId, config, ["textInput", "textBoxInputs", "rightIconRowPresetId"], "iconRow");
+        changed |= NormalizeComponentInputBindingPresetId(connection, projectId, config, ["textInput", "textBoxInputs", "buttonIconPresetId"], "buttonIcon");
         return changed;
     }
 
@@ -1786,6 +1789,8 @@ internal sealed partial class SpikeDatabase
         changed |= NormalizeSpacingToken(config, ["textInput", "idleRightIconRowInputs", "gap"]);
         changed |= NormalizeSpacingToken(config, ["textInput", "typingLeftIconRowInputs", "gap"]);
         changed |= NormalizeSpacingToken(config, ["textInput", "typingRightIconRowInputs", "gap"]);
+        changed |= NormalizeSpacingToken(config, ["textInput", "textBoxInputs", "iconGap"]);
+        changed |= NormalizeSpacingToken(config, ["textInput", "textBoxInputs", "iconRowGap"]);
         changed |= NormalizeSpacingToken(config, ["iconRow", "gap"]);
         changed |= NormalizeSpacingToken(config, ["keyboard", "keyPadding"]);
         changed |= NormalizeSpacingToken(config, ["buttonIcon", "iconPadding"]);
@@ -2307,15 +2312,20 @@ internal sealed partial class SpikeDatabase
             textInput["textBoxInputs"] = TextBoxInputBindings();
             changed = true;
         }
-        else if (string.IsNullOrWhiteSpace(JsonPath.String(textInput, ["textBoxInputs", "placeholder"])))
+        else if (textInput["textBoxInputs"] is JsonObject textBoxInputs)
         {
-            SetJsonValue(textInput, ["textBoxInputs", "placeholder"], JsonValue.Create("Message")!);
-            changed = true;
-        }
-        if (JsonPath.Get(textInput, ["textBoxInputs", "maxLines"]) is null)
-        {
-            SetJsonValue(textInput, ["textBoxInputs", "maxLines"], JsonValue.Create(4)!);
-            changed = true;
+            changed |= JsonPath.MergeMissing(textBoxInputs, TextBoxInputBindings());
+            if (string.IsNullOrWhiteSpace(JsonPath.String(textInput, ["textBoxInputs", "placeholder"])))
+            {
+                SetJsonValue(textInput, ["textBoxInputs", "placeholder"], JsonValue.Create("Message")!);
+                changed = true;
+            }
+
+            if (JsonPath.Get(textInput, ["textBoxInputs", "maxLines"]) is null)
+            {
+                SetJsonValue(textInput, ["textBoxInputs", "maxLines"], JsonValue.Create(4)!);
+                changed = true;
+            }
         }
         changed |= NormalizeComponentSlot(textInput, "surfaceSlot", "InputBox");
         changed |= NormalizeComponentPresetString(

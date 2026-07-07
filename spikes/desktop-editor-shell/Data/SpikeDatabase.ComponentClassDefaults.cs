@@ -684,6 +684,15 @@ internal sealed partial class SpikeDatabase
         {
             ["placeholder"] = "Message",
             ["maxLines"] = 4,
+            ["leftIconRowPresetId"] = "iconRow::preset::default",
+            ["leftIcons"] = new JsonArray(),
+            ["rightIconRowPresetId"] = "iconRow::preset::default",
+            ["rightIcons"] = new JsonArray(),
+            ["buttonIconPresetId"] = "buttonIcon::preset::default",
+            ["iconGap"] = "theme.spacing.m",
+            ["iconRowSize"] = 36,
+            ["iconRowGap"] = "theme.spacing.s",
+            ["iconRowOrientation"] = "horizontal",
         };
     }
 
