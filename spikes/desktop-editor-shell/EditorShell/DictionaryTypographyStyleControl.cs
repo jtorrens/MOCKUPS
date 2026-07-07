@@ -56,6 +56,7 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
     private readonly JsonObject _inheritedValues;
     private readonly JsonObject _localValues;
     private readonly Dictionary<string, IDictionaryValueControl> _controls = [];
+    private readonly Dictionary<string, TextBlock> _rowLabels = [];
     private readonly Dictionary<string, Button> _restoreButtons = [];
     private readonly Border _container;
     private readonly Button _headerButton;
@@ -270,6 +271,7 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
         _contentGrid.Children.Add(restoreButton);
 
         _controls[key] = control;
+        _rowLabels[key] = labelBlock;
         _restoreButtons[key] = restoreButton;
     }
 
@@ -350,7 +352,28 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
             pair.Value.Foreground = hasLocalValue ? new SolidColorBrush(Color.Parse("#D6A638")) : null;
         }
 
+        foreach (var pair in _rowLabels)
+        {
+            var hasLocalValue = _definition.CanInherit && _localValues.ContainsKey(pair.Key);
+            if (hasLocalValue)
+            {
+                pair.Value.Foreground = new SolidColorBrush(Color.Parse("#D6A638"));
+            }
+            else
+            {
+                pair.Value.ClearValue(TextBlock.ForegroundProperty);
+            }
+        }
+
         _summaryText.Text = SummaryText();
+        if (_definition.CanInherit && _localValues.Count > 0)
+        {
+            _summaryText.Foreground = new SolidColorBrush(Color.Parse("#D6A638"));
+        }
+        else
+        {
+            _summaryText.ClearValue(TextBlock.ForegroundProperty);
+        }
         _isUpdating = false;
     }
 
