@@ -35,6 +35,11 @@ internal sealed class DictionaryEmbeddedComponentControl : Grid, IDictionaryValu
         SetColumn(_label, 0);
         Children.Add(_label);
 
+        if (openEmbeddedComponent is null)
+        {
+            return;
+        }
+
         var button = new Button
         {
             Content = "···",
@@ -46,12 +51,10 @@ internal sealed class DictionaryEmbeddedComponentControl : Grid, IDictionaryValu
             Foreground = new SolidColorBrush(Color.Parse("#D6A638")),
             HorizontalContentAlignment = HorizontalAlignment.Center,
             VerticalContentAlignment = VerticalAlignment.Center,
-            IsEnabled = definition.IsEditable && openEmbeddedComponent is not null,
+            IsEnabled = definition.IsEditable,
         };
         button.Click += async (_, _) =>
         {
-            if (openEmbeddedComponent is null) return;
-
             await openEmbeddedComponent(_definition.Id);
         };
         SetColumn(button, 1);
