@@ -18,7 +18,6 @@ internal static class WebDesignPreviewRenderer
         bool showMarks,
         DesignPreviewPayload payload)
     {
-        var root = FindRepositoryRoot();
         var requestPath = Path.Combine(Path.GetTempPath(), $"mockups-design-preview-{Guid.NewGuid():N}.json");
         try
         {
@@ -65,7 +64,7 @@ internal static class WebDesignPreviewRenderer
                     WriteIndented = true,
                 }));
 
-            return await RunRendererAsync(root, requestPath);
+            return await RunRendererAsync(requestPath);
         }
         finally
         {
@@ -83,16 +82,11 @@ internal static class WebDesignPreviewRenderer
         }
     }
 
-    private static async Task<string> RunRendererAsync(string root, string requestPath)
+    private static async Task<string> RunRendererAsync(string requestPath)
     {
-        var executableName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-            ? "tsx.cmd"
-            : "tsx";
-        var executable = Path.Combine(root, "node_modules", ".bin", executableName);
-        var script = Path.Combine(root, "src", "desktop-preview", "renderDesignPreviewHtml.tsx");
-
-        var startInfo = DesktopChildProcess.CreateHiddenStartInfo(executable, root);
-        startInfo.ArgumentList.Add(script);
+        var renderer = ResolveRendererCommand();
+        var startInfo = DesktopChildProcess.CreateHiddenStartInfo(renderer.Executable, renderer.WorkingDirectory);
+        startInfo.ArgumentList.Add(renderer.Script);
         startInfo.ArgumentList.Add(requestPath);
 
         using var process = Process.Start(startInfo)
@@ -111,6 +105,29 @@ internal static class WebDesignPreviewRenderer
 
         return stdout;
     }
+
+    private static RendererCommand ResolveRendererCommand()
+    {
+        var packagedRenderer = Path.Combine(
+            AppContext.BaseDirectory,
+            "desktop-preview",
+            "renderDesignPreviewHtml.cjs");
+        if (File.Exists(packagedRenderer))
+        {
+            return new RendererCommand("node", AppContext.BaseDirectory, packagedRenderer);
+        }
+
+        var root = FindRepositoryRoot();
+        var executableName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+            ? "tsx.cmd"
+            : "tsx";
+        var executable = Path.Combine(root, "node_modules", ".bin", executableName);
+        var script = Path.Combine(root, "src", "desktop-preview", "renderDesignPreviewHtml.tsx");
+
+        return new RendererCommand(executable, root, script);
+    }
+
+    private sealed record RendererCommand(string Executable, string WorkingDirectory, string Script);
 
     private static string FindRepositoryRoot()
     {
