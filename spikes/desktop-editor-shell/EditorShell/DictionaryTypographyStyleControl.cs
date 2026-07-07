@@ -105,7 +105,10 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
         {
             Text = ">",
             Width = 16,
+            Margin = new Thickness(0, 0, 10, 0),
+            FontSize = 13,
             FontWeight = FontWeight.Bold,
+            TextAlignment = TextAlignment.Center,
             HorizontalAlignment = HorizontalAlignment.Right,
             VerticalAlignment = VerticalAlignment.Center,
             Opacity = 0.72,
@@ -117,14 +120,13 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
             MinHeight = 36,
             HorizontalAlignment = HorizontalAlignment.Stretch,
             HorizontalContentAlignment = HorizontalAlignment.Stretch,
-            Padding = new Thickness(10, 6),
+            Padding = new Thickness(10, 6, 0, 6),
             Background = Brushes.Transparent,
             BorderThickness = new Thickness(0),
             CornerRadius = new CornerRadius(8),
             Content = new Grid
             {
-                ColumnDefinitions = new ColumnDefinitions("*,Auto"),
-                ColumnSpacing = 8,
+                ColumnDefinitions = new ColumnDefinitions("*,22"),
                 Children =
                 {
                     _summaryText,
@@ -149,7 +151,7 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
         {
             _isOpen = !_isOpen;
             _contentGrid.IsVisible = _isOpen;
-            chevron.Text = _isOpen ? "∨" : ">";
+            chevron.Text = _isOpen ? "v" : ">";
             ApplyThemeBrushes();
         };
 
@@ -369,10 +371,13 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
 
     private void ApplyThemeBrushes()
     {
-        var isDark = string.Equals(ActualThemeVariant?.Key?.ToString(), "Dark", StringComparison.OrdinalIgnoreCase);
-        _container.Background = new SolidColorBrush(Color.Parse(isDark
-            ? (_isOpen ? "#18263B" : "#142238")
-            : (_isOpen ? "#F4F6FA" : "#FFFFFF")));
-        _container.BorderBrush = new SolidColorBrush(Color.Parse(isDark ? "#3B4C66" : "#CDD6E3"));
+        var isLight = ActualThemeVariant == Avalonia.Styling.ThemeVariant.Light;
+        var closedBackground = isLight ? "#14000000" : "#10FFFFFF";
+        var openBackground = isLight ? "#F4F6FA" : "#F01A2433";
+        _container.Background = new SolidColorBrush(Color.Parse(_isOpen ? openBackground : closedBackground));
+        _container.BorderBrush = _isOpen
+            ? new SolidColorBrush(Color.Parse(isLight ? "#CDD6E3" : "#3B4C66"))
+            : Brushes.Transparent;
+        _container.BorderThickness = new Thickness(_isOpen ? 1 : 0);
     }
 }
