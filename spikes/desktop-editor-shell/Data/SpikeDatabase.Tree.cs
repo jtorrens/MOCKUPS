@@ -346,7 +346,8 @@ internal sealed partial class SpikeDatabase
                     ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ComponentPreset),
                     componentNode,
                     isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.ComponentPreset, ComponentPresetNodeId(componentClass.Id, preset.Id)),
-                    isProtected: preset.IsProtected));
+                    isProtected: preset.IsProtected,
+                    isLocked: preset.IsLocked));
             }
         }
 

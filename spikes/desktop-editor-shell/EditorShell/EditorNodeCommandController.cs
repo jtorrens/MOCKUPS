@@ -107,6 +107,26 @@ internal sealed class EditorNodeCommandController
         }
     }
 
+    public Task ToggleComponentPresetLock(ProjectTreeNode node)
+    {
+        if (node.Kind != ProjectTreeNodeKind.ComponentPreset)
+        {
+            return Task.CompletedTask;
+        }
+
+        try
+        {
+            var toggled = _database.ToggleComponentPresetLock(node);
+            _reloadAndSelect(toggled);
+        }
+        catch (Exception exception)
+        {
+            _messages.Error($"Toggle variant lock {node.Name}", exception);
+        }
+
+        return Task.CompletedTask;
+    }
+
     public async Task DeleteNode(ProjectTreeNode node)
     {
         if (node.Parent is null) return;

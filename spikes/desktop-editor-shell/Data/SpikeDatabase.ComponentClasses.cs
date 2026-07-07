@@ -34,6 +34,7 @@ internal sealed partial class SpikeDatabase
         string Id,
         string Name,
         bool IsProtected,
+        bool IsLocked,
         string ConfigJson);
 
     private static string ComponentPresetNodeId(string componentClassId, string presetId) =>
@@ -108,6 +109,7 @@ internal sealed partial class SpikeDatabase
                 ["id"] = copyId,
                 ["name"] = copyName,
                 ["protected"] = false,
+                ["locked"] = false,
                 ["config"] = (source["config"] as JsonObject)?.DeepClone() ?? ParseJsonObject(settings.ConfigJson),
             });
             Execute(
@@ -157,6 +159,7 @@ internal sealed partial class SpikeDatabase
                 ["id"] = presetId,
                 ["name"] = presetName,
                 ["protected"] = false,
+                ["locked"] = false,
                 ["config"] = JsonNode.Parse(sourceConfigJson),
             });
             Execute(
@@ -199,6 +202,11 @@ internal sealed partial class SpikeDatabase
                 if (JsonBool(preset, ["protected"]))
                 {
                     throw new InvalidOperationException("Protected component variants cannot be deleted.");
+                }
+
+                if (ComponentPresetIsLocked(preset))
+                {
+                    throw new InvalidOperationException("Locked component variants cannot be deleted.");
                 }
 
                 var usages = GetComponentPresetReferenceUsages(connection, node);
@@ -257,7 +265,44 @@ internal sealed partial class SpikeDatabase
             node.RecordClassId,
             node.Parent,
             isUsed: node.IsUsed,
-            isProtected: node.IsProtected);
+            isProtected: node.IsProtected,
+            isLocked: node.IsLocked);
+    }
+
+    public ProjectTreeNode ToggleComponentPresetLock(ProjectTreeNode node)
+    {
+        if (!TryParseComponentPresetNodeId(node.Id, out var componentClassId, out var presetId))
+        {
+            throw new InvalidOperationException($"Invalid component variant node id '{node.Id}'.");
+        }
+
+        lock (WriteGate)
+        {
+            using var connection = OpenConnection();
+            var settings = GetComponentClassSettings(connection, componentClassId);
+            var metadata = ParseJsonObject(string.IsNullOrWhiteSpace(settings.MetadataJson) ? "{}" : settings.MetadataJson);
+            var presets = EnsurePresetArray(metadata);
+            var preset = FindPreset(presets, presetId)
+                ?? throw new InvalidOperationException($"Missing component variant '{presetId}'.");
+            var nextLocked = !ComponentPresetIsLocked(preset);
+            preset["locked"] = nextLocked;
+            Execute(
+                connection,
+                "UPDATE component_classes SET metadata_json = $metadataJson WHERE id = $id",
+                ("$id", componentClassId),
+                ("$metadataJson", metadata.ToJsonString()));
+
+            return new ProjectTreeNode(
+                ProjectTreeNodeKind.ComponentPreset,
+                node.Id,
+                node.Name,
+                node.Notes,
+                node.RecordClassId,
+                node.Parent,
+                isUsed: node.IsUsed,
+                isProtected: node.IsProtected,
+                isLocked: nextLocked);
+        }
     }
 
     public IReadOnlyList<ComponentPresetReferenceUsage> GetComponentPresetReferenceUsageDetails(ProjectTreeNode node)
@@ -542,6 +587,11 @@ internal sealed partial class SpikeDatabase
 
         var preset = FindPreset(presets, presetId)
             ?? throw new InvalidOperationException($"Missing component variant '{presetId}'.");
+        if (ComponentPresetIsLocked(preset))
+        {
+            throw new InvalidOperationException($"Component variant '{presetId}' is locked.");
+        }
+
         if (preset["config"] is not JsonObject config)
         {
             throw new InvalidOperationException($"Component variant '{presetId}' has no config.");
@@ -914,7 +964,7 @@ internal sealed partial class SpikeDatabase
         var presets = ComponentClassPresets(row.MetadataJson);
         return presets.Count > 0
             ? presets
-            : [new ComponentClassPreset(DefaultComponentPresetId, "Default", true, row.ConfigJson)];
+            : [new ComponentClassPreset(DefaultComponentPresetId, "Default", true, true, row.ConfigJson)];
     }
 
     private static string PreferredPresetId(ComponentClassRow row)
@@ -1620,6 +1670,12 @@ internal sealed partial class SpikeDatabase
                 changed = true;
             }
 
+            if (JsonPath.Get(presetNode, ["locked"]) is null)
+            {
+                presetNode["locked"] = true;
+                changed = true;
+            }
+
             if (presetNode["config"] is not JsonObject)
             {
                 presetNode["config"] = JsonNode.Parse(config.ToJsonString());
@@ -1634,6 +1690,7 @@ internal sealed partial class SpikeDatabase
             ["id"] = DefaultComponentPresetId,
             ["name"] = "Default",
             ["protected"] = true,
+            ["locked"] = true,
             ["config"] = JsonNode.Parse(config.ToJsonString()),
         });
         return true;
@@ -1807,12 +1864,23 @@ internal sealed partial class SpikeDatabase
                     id,
                     string.IsNullOrWhiteSpace(name) ? id : name,
                     JsonBool(preset, ["protected"]),
+                    ComponentPresetIsLocked(preset),
                     config);
             })
             .Where((preset) => !string.IsNullOrWhiteSpace(preset.Id))
             .OrderBy((preset) => preset.Id.Equals(DefaultComponentPresetId, StringComparison.Ordinal) ? 0 : 1)
             .ThenBy((preset) => preset.Name, StringComparer.Ordinal)
             .ToList();
+    }
+
+    private static bool ComponentPresetIsLocked(JsonObject preset)
+    {
+        if (JsonPath.Get(preset, ["locked"]) is not null)
+        {
+            return JsonBool(preset, ["locked"]);
+        }
+
+        return JsonPath.String(preset, "id", "").Equals(DefaultComponentPresetId, StringComparison.Ordinal);
     }
 
     private static string DefaultComponentPresetConfigJson(string classConfigJson, string metadataJson)

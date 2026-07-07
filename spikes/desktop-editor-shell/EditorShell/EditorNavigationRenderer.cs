@@ -22,6 +22,7 @@ internal sealed class EditorNavigationRenderer
     private readonly Action<ProjectTreeNode> _duplicateNode;
     private readonly Func<ProjectTreeNode, Task> _renameNode;
     private readonly Func<ProjectTreeNode, Task> _deleteNode;
+    private readonly Func<ProjectTreeNode, Task> _toggleVariantLock;
 
     public EditorNavigationRenderer(
         Func<ProjectTreeNode?> selectedNode,
@@ -33,7 +34,8 @@ internal sealed class EditorNavigationRenderer
         Func<ProjectTreeNode, Task> addChild,
         Action<ProjectTreeNode> duplicateNode,
         Func<ProjectTreeNode, Task> renameNode,
-        Func<ProjectTreeNode, Task> deleteNode)
+        Func<ProjectTreeNode, Task> deleteNode,
+        Func<ProjectTreeNode, Task> toggleVariantLock)
     {
         _selectedNode = selectedNode;
         _isDark = isDark;
@@ -45,6 +47,7 @@ internal sealed class EditorNavigationRenderer
         _duplicateNode = duplicateNode;
         _renameNode = renameNode;
         _deleteNode = deleteNode;
+        _toggleVariantLock = toggleVariantLock;
     }
 
     public void Rebuild(StackPanel target, IReadOnlyList<ProjectTreeNode> treeRoots)
@@ -349,6 +352,11 @@ internal sealed class EditorNavigationRenderer
             }));
         }
 
+        if (node.Kind == ProjectTreeNodeKind.ComponentPreset)
+        {
+            actions.Children.Add(CreateVariantLockButton(node));
+        }
+
         if (node.CanAddChild)
         {
             actions.Children.Add(CreateTreeActionButton(EditorIcons.Create(EditorIcons.Add, 14), "Add child", async (_, e) =>
@@ -377,6 +385,17 @@ internal sealed class EditorNavigationRenderer
         }
 
         return actions;
+    }
+
+    private Button CreateVariantLockButton(ProjectTreeNode node)
+    {
+        var icon = EditorIcons.Create(node.IsLocked ? EditorIcons.Lock : EditorIcons.Unlock, 14);
+        EditorIcons.ApplyBrush(icon, EditorNavigationVisuals.VariantLockBrush(node.IsLocked));
+        return CreateTreeActionButton(icon, node.IsLocked ? "Unlock variant editing" : "Lock variant editing", async (_, e) =>
+        {
+            e.Handled = true;
+            await _toggleVariantLock(node);
+        });
     }
 
     private static Button CreateTreeActionButton(

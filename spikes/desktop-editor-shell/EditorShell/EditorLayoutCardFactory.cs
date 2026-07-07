@@ -22,6 +22,7 @@ internal sealed class EditorLayoutCardFactory
     private readonly Func<ProjectTreeNode, EmbeddedComponentSlotDefinition, Task> _openEmbeddedComponentSlotEditor;
     private readonly Func<EditorEmbeddedContext, string, Task> _openNestedEmbeddedComponentEditor;
     private readonly Func<EditorEmbeddedContext, EmbeddedComponentSlotDefinition, Task> _openNestedEmbeddedComponentSlotEditor;
+    private readonly Func<ProjectTreeNode, Task> _toggleVariantLock;
     private readonly Action _refreshPreview;
 
     public EditorLayoutCardFactory(
@@ -36,6 +37,7 @@ internal sealed class EditorLayoutCardFactory
         Func<ProjectTreeNode, EmbeddedComponentSlotDefinition, Task> openEmbeddedComponentSlotEditor,
         Func<EditorEmbeddedContext, string, Task> openNestedEmbeddedComponentEditor,
         Func<EditorEmbeddedContext, EmbeddedComponentSlotDefinition, Task> openNestedEmbeddedComponentSlotEditor,
+        Func<ProjectTreeNode, Task> toggleVariantLock,
         Action refreshPreview)
     {
         _fieldValues = fieldValues;
@@ -49,6 +51,7 @@ internal sealed class EditorLayoutCardFactory
         _openEmbeddedComponentSlotEditor = openEmbeddedComponentSlotEditor;
         _openNestedEmbeddedComponentEditor = openNestedEmbeddedComponentEditor;
         _openNestedEmbeddedComponentSlotEditor = openNestedEmbeddedComponentSlotEditor;
+        _toggleVariantLock = toggleVariantLock;
         _refreshPreview = refreshPreview;
     }
 
@@ -131,7 +134,8 @@ internal sealed class EditorLayoutCardFactory
                 Padding = new Thickness(10),
                 Child = body,
             },
-            layoutCard.DefaultOpen)
+            layoutCard.DefaultOpen,
+            VariantLockButton(node, layoutCard))
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
@@ -289,5 +293,35 @@ internal sealed class EditorLayoutCardFactory
             input.Label,
             $"component.{input.ComponentType}",
             [.. descriptor.JsonPath, input.JsonKey]);
+    }
+
+    private Button? VariantLockButton(ProjectTreeNode node, EditorLayoutCard layoutCard)
+    {
+        if (node.Kind != ProjectTreeNodeKind.ComponentPreset
+            || !layoutCard.Id.Equals("general", StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        var icon = EditorIcons.Create(node.IsLocked ? EditorIcons.Lock : EditorIcons.Unlock, 15);
+        EditorIcons.ApplyBrush(icon, EditorNavigationVisuals.VariantLockBrush(node.IsLocked));
+        var button = new Button
+        {
+            Content = icon,
+            Width = 30,
+            Height = 30,
+            Padding = new Thickness(0),
+            Background = Brushes.Transparent,
+            BorderBrush = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        ToolTip.SetTip(button, node.IsLocked ? "Unlock variant editing" : "Lock variant editing");
+        button.Click += async (_, e) =>
+        {
+            e.Handled = true;
+            await _toggleVariantLock(node);
+        };
+        return button;
     }
 }

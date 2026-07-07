@@ -31,6 +31,11 @@ internal static class EditorNavigationVisuals
             : new SolidColorBrush(Color.Parse(isDark ? "#B8C0CE" : "#667085"));
     }
 
+    public static IBrush VariantLockBrush(bool isLocked)
+    {
+        return new SolidColorBrush(Color.Parse(isLocked ? "#D6A638" : "#FFFFFF"));
+    }
+
     public static Avalonia.Controls.Shapes.Ellipse UsedDot(ProjectTreeNode node, bool isDark)
     {
         return new Avalonia.Controls.Shapes.Ellipse

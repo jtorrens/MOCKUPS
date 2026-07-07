@@ -83,7 +83,8 @@ public partial class MainWindow : SukiWindow
             _nodeCommands.AddChild,
             _nodeCommands.DuplicateNode,
             _nodeCommands.RenameNode,
-            _nodeCommands.DeleteNode);
+            _nodeCommands.DeleteNode,
+            _nodeCommands.ToggleComponentPresetLock);
         _fieldPostCommitEffects = new EditorFieldPostCommitEffects(
             _database,
             () => _previewController.SelectedDeviceId,
@@ -120,6 +121,7 @@ public partial class MainWindow : SukiWindow
             _embeddedEditors.OpenSlot,
             _embeddedEditors.OpenNested,
             _embeddedEditors.OpenNestedSlot,
+            _nodeCommands.ToggleComponentPresetLock,
             RefreshPreviewDevice);
         _embeddedUsageNavigator = new EditorEmbeddedUsageNavigator(
             _database,

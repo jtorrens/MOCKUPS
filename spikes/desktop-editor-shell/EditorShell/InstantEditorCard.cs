@@ -14,7 +14,7 @@ internal sealed class InstantEditorCard : Grid
     private readonly ContentControl _contentHost;
     private bool _isExpanded;
 
-    public InstantEditorCard(Control header, Control content, bool isExpanded)
+    public InstantEditorCard(Control header, Control content, bool isExpanded, Control? headerTrailing = null)
     {
         RowDefinitions = new RowDefinitions("Auto,Auto");
 
@@ -41,12 +41,22 @@ internal sealed class InstantEditorCard : Grid
 
         var headerGrid = new Grid
         {
-            ColumnDefinitions = new ColumnDefinitions("*,Auto"),
+            ColumnDefinitions = headerTrailing is null
+                ? new ColumnDefinitions("*,Auto")
+                : new ColumnDefinitions("*,Auto,Auto"),
             ColumnSpacing = 12,
             VerticalAlignment = VerticalAlignment.Center,
         };
         Grid.SetColumn(header, 0);
         headerGrid.Children.Add(header);
+
+        var indicatorColumn = 1;
+        if (headerTrailing is not null)
+        {
+            Grid.SetColumn(headerTrailing, 1);
+            headerGrid.Children.Add(headerTrailing);
+            indicatorColumn = 2;
+        }
 
         _indicator = new TextBlock
         {
@@ -57,7 +67,7 @@ internal sealed class InstantEditorCard : Grid
             VerticalAlignment = VerticalAlignment.Center,
             TextAlignment = TextAlignment.Center,
         };
-        Grid.SetColumn(_indicator, 1);
+        Grid.SetColumn(_indicator, indicatorColumn);
         headerGrid.Children.Add(_indicator);
 
         headerRow.Child = headerGrid;

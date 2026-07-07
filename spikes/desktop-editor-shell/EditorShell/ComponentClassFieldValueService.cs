@@ -26,9 +26,10 @@ internal sealed class ComponentClassFieldValueService
             throw new InvalidOperationException($"Component class field '{fieldId}' is not supported for '{node.Kind}'.");
         }
 
-        return node.Kind == ProjectTreeNodeKind.ComponentPreset
+        var fieldValue = node.Kind == ProjectTreeNodeKind.ComponentPreset
             ? _database.CreateComponentPresetFieldValue(node, fieldId)
             : _database.CreateComponentClassFieldValue(node.Id, fieldId);
+        return ApplyPresetLock(node, fieldValue);
     }
 
     public void CommitFieldValue(ProjectTreeNode node, string fieldId, string value)
@@ -40,6 +41,8 @@ internal sealed class ComponentClassFieldValueService
 
         if (node.Kind == ProjectTreeNodeKind.ComponentPreset)
         {
+            if (node.IsLocked) return;
+
             _database.UpdateComponentPresetField(node, fieldId, value);
             return;
         }
@@ -64,7 +67,7 @@ internal sealed class ComponentClassFieldValueService
             throw new InvalidOperationException($"Embedded component '{embeddedComponentType}' is not supported for slot '{slotFieldId}'.");
         }
 
-        return _database.CreateEmbeddedComponentFieldValue(node, [slot], embeddedFieldId);
+        return ApplyPresetLock(node, _database.CreateEmbeddedComponentFieldValue(node, [slot], embeddedFieldId));
     }
 
     public FieldValue CreateEmbeddedFieldValue(
@@ -77,7 +80,7 @@ internal sealed class ComponentClassFieldValueService
             throw new InvalidOperationException($"Embedded component field '{embeddedFieldId}' is not supported for '{node.Kind}'.");
         }
 
-        return _database.CreateEmbeddedComponentFieldValue(node, slots, embeddedFieldId);
+        return ApplyPresetLock(node, _database.CreateEmbeddedComponentFieldValue(node, slots, embeddedFieldId));
     }
 
     public void CommitEmbeddedFieldValue(
@@ -98,6 +101,8 @@ internal sealed class ComponentClassFieldValueService
             throw new InvalidOperationException($"Embedded component '{embeddedComponentType}' is not supported for slot '{slotFieldId}'.");
         }
 
+        if (node.IsLocked) return;
+
         _database.UpdateEmbeddedComponentField(node, [slot], embeddedFieldId, value);
     }
 
@@ -112,6 +117,21 @@ internal sealed class ComponentClassFieldValueService
             throw new InvalidOperationException($"Embedded component field '{embeddedFieldId}' is not supported for '{node.Kind}'.");
         }
 
+        if (node.IsLocked) return;
+
         _database.UpdateEmbeddedComponentField(node, slots, embeddedFieldId, value);
+    }
+
+    private static FieldValue ApplyPresetLock(ProjectTreeNode node, FieldValue fieldValue)
+    {
+        if (node.Kind != ProjectTreeNodeKind.ComponentPreset || !node.IsLocked)
+        {
+            return fieldValue;
+        }
+
+        return fieldValue with
+        {
+            Definition = fieldValue.Definition with { IsEditable = false },
+        };
     }
 }
