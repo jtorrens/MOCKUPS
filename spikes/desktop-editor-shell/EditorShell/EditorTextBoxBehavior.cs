@@ -35,8 +35,7 @@ internal static class EditorTextBoxBehavior
         {
             if (args.Key != Key.Enter || !commitOnEnter) return;
 
-            commit();
-            args.Handled = true;
+            Dispatcher.UIThread.Post(commit);
         };
     }
 

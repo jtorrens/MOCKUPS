@@ -9,7 +9,7 @@ import {
 } from "./componentRenderableCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
-  approximateTextWidth,
+  approximateMultilineTextSize,
   resolveTypographyStyle,
 } from "./previewTextHelpers.js";
 import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
@@ -24,6 +24,11 @@ export function measureTextBoxComponent(
   const paddingX = numberToken(payload, textBox.padding.xToken) * scale;
   const paddingY = numberToken(payload, textBox.padding.yToken) * scale;
   const contentText = visibleText(textBox);
+  const contentSize = approximateMultilineTextSize(
+    contentText,
+    typography.fontSize,
+    typography.lineHeight,
+  );
   if (textBox.dimensionMode === "fixed") {
     return {
       width: textBox.size.width * scale,
@@ -36,8 +41,8 @@ export function measureTextBoxComponent(
   }
 
   return {
-    width: Math.max(1, approximateTextWidth(contentText, typography.fontSize) + paddingX * 2),
-    height: Math.max(1, typography.lineHeight + paddingY * 2),
+    width: Math.max(1, contentSize.width + paddingX * 2),
+    height: Math.max(1, contentSize.height + paddingY * 2),
     typography,
     paddingX,
     paddingY,
@@ -113,16 +118,17 @@ export function textBoxComponentToRenderableAt(
             payload,
             textIsEmpty ? textBox.placeholderColorToken : textBox.textColorToken,
           ),
-          display: "flex",
-          alignItems: "center",
+          display: size.contentText.includes("\n") ? "block" : "flex",
+          alignItems: size.contentText.includes("\n") ? "flex-start" : "center",
           fontSize: size.typography.fontSize,
+          fontFamily: size.typography.fontFamily,
           fontStyle: size.typography.fontStyle,
           fontWeight: size.typography.fontWeight,
           justifyContent: textBoxJustify(textBox.textAlign),
           lineHeight: size.typography.lineHeight,
           overflow: textBox.overflowMode === "scroll" ? "auto" : "hidden",
           textAlign: textBox.textAlign,
-          whiteSpace: "nowrap",
+          whiteSpace: "pre-wrap",
         },
         metadata: textBox.cursorVisible && !textIsEmpty
           ? {

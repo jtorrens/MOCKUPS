@@ -303,6 +303,11 @@ internal sealed class ComponentInputsPanel : ContentControl
                 input.Label,
                 ValueKind.IconToken,
                 DefaultValue: input.DefaultValue),
+            ComponentInputKind.MultilineText => new FieldDefinition(
+                input.Id,
+                input.Label,
+                ValueKind.StringMultiline,
+                DefaultValue: input.DefaultValue),
             _ => new FieldDefinition(
                 input.Id,
                 input.Label,
@@ -731,6 +736,7 @@ internal sealed class ComponentInputsPanel : ContentControl
             "option" => ComponentInputKind.Option,
             "recordreference" or "record_reference" => ComponentInputKind.RecordReference,
             "icon" => ComponentInputKind.Icon,
+            "multilinetext" or "multiline_text" or "textmultiline" or "text_multiline" => ComponentInputKind.MultilineText,
             _ => ComponentInputKind.Text,
         };
     }
@@ -764,6 +770,7 @@ internal enum ComponentInputKind
     Option,
     RecordReference,
     Icon,
+    MultilineText,
 }
 
 internal sealed record ComponentInputDefinition(

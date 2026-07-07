@@ -58,6 +58,19 @@ export function approximateTextWidth(text: string, fontSize: number) {
   ) * fontSize;
 }
 
+export function approximateMultilineTextSize(
+  text: string,
+  fontSize: number,
+  lineHeight: number,
+) {
+  const lines = text.split(/\r\n|\r|\n/u);
+  return {
+    width: Math.max(1, ...lines.map((line) => approximateTextWidth(line, fontSize))),
+    height: Math.max(1, lines.length) * lineHeight,
+    lineCount: Math.max(1, lines.length),
+  };
+}
+
 export function resolveTypographyStyle(
   payload: DesignPreviewPayload,
   typography: TypographyStyleContract,

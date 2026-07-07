@@ -321,7 +321,7 @@ internal sealed partial class SpikeDatabase
             ],
             "textBox" =>
             [
-                ComponentInput("sampleText", "Text", "sampleText", "text", "Message"),
+                ComponentInput("sampleText", "Text", "sampleText", "multilineText", "Message"),
                 ComponentInput("size", "Size", "size", "integerPair", "220|44"),
             ],
             "avatar" =>

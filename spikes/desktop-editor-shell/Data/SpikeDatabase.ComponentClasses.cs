@@ -1546,7 +1546,7 @@ internal sealed partial class SpikeDatabase
             var designPreview = ParseJsonObject(string.IsNullOrWhiteSpace(row.DesignPreviewJson) ? "{}" : row.DesignPreviewJson);
             var designPreviewDefaults = ParseJsonObject(DefaultComponentDesignPreviewJson(row.ComponentType));
             var designPreviewChanged = JsonPath.MergeMissing(designPreview, designPreviewDefaults);
-            designPreviewChanged |= EnsureComponentInputs(designPreview, designPreviewDefaults);
+            designPreviewChanged |= EnsureComponentInputs(row.ComponentType, designPreview, designPreviewDefaults);
             designPreviewChanged |= EnsureComponentDesignPreviewText(row.ComponentType, designPreview);
             designPreviewChanged |= EnsureButtonIconPreviewSize(row.ComponentType, designPreview);
 
@@ -2271,6 +2271,7 @@ internal sealed partial class SpikeDatabase
     }
 
     private static bool EnsureComponentInputs(
+        string componentType,
         JsonObject designPreview,
         JsonObject designPreviewDefaults)
     {
@@ -2301,6 +2302,48 @@ internal sealed partial class SpikeDatabase
 
             inputs.Add(JsonNode.Parse(defaultInput.ToJsonString()));
             existingIds.Add(id);
+            changed = true;
+        }
+
+        changed |= NormalizeComponentInputKinds(componentType, inputs, defaultInputs);
+        return changed;
+    }
+
+    private static bool NormalizeComponentInputKinds(
+        string componentType,
+        JsonArray inputs,
+        JsonArray defaultInputs)
+    {
+        var changed = false;
+        var defaultKindsById = defaultInputs
+            .OfType<JsonObject>()
+            .Select((input) => (
+                Id: JsonPath.String(input, "id", ""),
+                Kind: JsonPath.String(input, "kind", "")))
+            .Where((input) => !string.IsNullOrWhiteSpace(input.Id)
+                && !string.IsNullOrWhiteSpace(input.Kind))
+            .ToDictionary((input) => input.Id, (input) => input.Kind, StringComparer.Ordinal);
+
+        foreach (var input in inputs.OfType<JsonObject>())
+        {
+            var id = JsonPath.String(input, "id", "");
+            if (string.IsNullOrWhiteSpace(id)
+                || !defaultKindsById.TryGetValue(id, out var defaultKind))
+            {
+                continue;
+            }
+
+            if (componentType != "textBox" || id != "sampleText")
+            {
+                continue;
+            }
+
+            if (JsonPath.String(input, "kind", "") == defaultKind)
+            {
+                continue;
+            }
+
+            input["kind"] = defaultKind;
             changed = true;
         }
 

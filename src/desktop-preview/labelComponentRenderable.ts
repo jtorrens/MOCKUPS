@@ -122,6 +122,7 @@ export function labelComponentToRenderableAt(
           style: {
             textColor: selectedColor(payload, label.textColorToken),
           fontSize: textTypography.fontSize,
+          fontFamily: textTypography.fontFamily,
           lineHeight: size.lineHeight,
           textAlign: label.textAlign,
           display: "block",
@@ -142,6 +143,7 @@ export function labelComponentToRenderableAt(
               style: {
                 textColor: selectedColor(payload, label.subtextColorToken),
                 fontSize: subtextTypography.fontSize,
+                fontFamily: subtextTypography.fontFamily,
                 lineHeight: size.subtextLineHeight,
                 marginTop: label.textGap * scale,
                 textAlign: label.textAlign,
