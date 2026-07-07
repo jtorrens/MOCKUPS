@@ -1701,18 +1701,10 @@ internal sealed partial class SpikeDatabase
         JsonObject config)
     {
         var changed = false;
-        changed |= NormalizeComponentInputBindingPresetId(
-            connection,
-            projectId,
-            config,
-            ["textInput", "leftIconRowInputs", "buttonIconPresetId"],
-            "buttonIcon");
-        changed |= NormalizeComponentInputBindingPresetId(
-            connection,
-            projectId,
-            config,
-            ["textInput", "rightIconRowInputs", "buttonIconPresetId"],
-            "buttonIcon");
+        changed |= NormalizeComponentInputBindingPresetId(connection, projectId, config, ["textInput", "idleLeftIconRowInputs", "buttonIconPresetId"], "buttonIcon");
+        changed |= NormalizeComponentInputBindingPresetId(connection, projectId, config, ["textInput", "idleRightIconRowInputs", "buttonIconPresetId"], "buttonIcon");
+        changed |= NormalizeComponentInputBindingPresetId(connection, projectId, config, ["textInput", "typingLeftIconRowInputs", "buttonIconPresetId"], "buttonIcon");
+        changed |= NormalizeComponentInputBindingPresetId(connection, projectId, config, ["textInput", "typingRightIconRowInputs", "buttonIconPresetId"], "buttonIcon");
         return changed;
     }
 
@@ -1781,8 +1773,10 @@ internal sealed partial class SpikeDatabase
         changed |= NormalizeSpacingPair(config, ["textInput", "barPadding"]);
         changed |= NormalizeSpacingPair(config, ["textInput", "textPadding"]);
         changed |= NormalizeSpacingToken(config, ["textInput", "iconGap"]);
-        changed |= NormalizeSpacingToken(config, ["textInput", "leftIconRowInputs", "gap"]);
-        changed |= NormalizeSpacingToken(config, ["textInput", "rightIconRowInputs", "gap"]);
+        changed |= NormalizeSpacingToken(config, ["textInput", "idleLeftIconRowInputs", "gap"]);
+        changed |= NormalizeSpacingToken(config, ["textInput", "idleRightIconRowInputs", "gap"]);
+        changed |= NormalizeSpacingToken(config, ["textInput", "typingLeftIconRowInputs", "gap"]);
+        changed |= NormalizeSpacingToken(config, ["textInput", "typingRightIconRowInputs", "gap"]);
         changed |= NormalizeSpacingToken(config, ["iconRow", "gap"]);
         changed |= NormalizeSpacingToken(config, ["keyboard", "keyPadding"]);
         changed |= NormalizeSpacingToken(config, ["buttonIcon", "iconPadding"]);
@@ -2291,6 +2285,14 @@ internal sealed partial class SpikeDatabase
         var changed = false;
         changed |= NormalizeComponentSlot(textInput, "barSurfaceSlot", DefaultComponentPresetId);
         changed |= NormalizeComponentSlot(textInput, "textBoxSlot", DefaultComponentPresetId);
+        changed |= NormalizeComponentSlot(textInput, "idleLeftIconRowSlot", DefaultComponentPresetId);
+        changed |= NormalizeComponentSlot(textInput, "idleRightIconRowSlot", DefaultComponentPresetId);
+        changed |= NormalizeComponentSlot(textInput, "typingLeftIconRowSlot", DefaultComponentPresetId);
+        changed |= NormalizeComponentSlot(textInput, "typingRightIconRowSlot", DefaultComponentPresetId);
+        changed |= NormalizeTextInputIconRowInputs(textInput, "idleLeftIconRowInputs", IconRowInputBindings());
+        changed |= NormalizeTextInputIconRowInputs(textInput, "idleRightIconRowInputs", IconRowInputBindings(new JsonArray("media_mic")));
+        changed |= NormalizeTextInputIconRowInputs(textInput, "typingLeftIconRowInputs", IconRowInputBindings());
+        changed |= NormalizeTextInputIconRowInputs(textInput, "typingRightIconRowInputs", IconRowInputBindings(new JsonArray("chat_send"), actionIconNumber: 1));
         if (textInput["textBoxInputs"] is not JsonObject)
         {
             textInput["textBoxInputs"] = TextBoxInputBindings();
@@ -2314,6 +2316,20 @@ internal sealed partial class SpikeDatabase
             ["iconButtonPresetId"],
             "buttonIcon");
         return changed;
+    }
+
+    private static bool NormalizeTextInputIconRowInputs(
+        JsonObject textInput,
+        string key,
+        JsonObject defaults)
+    {
+        if (textInput[key] is not JsonObject inputs)
+        {
+            textInput[key] = JsonNode.Parse(defaults.ToJsonString());
+            return true;
+        }
+
+        return JsonPath.MergeMissing(inputs, defaults);
     }
 
     private static bool NormalizeComponentSlot(JsonObject owner, string key, string preferredPresetName)
@@ -2421,7 +2437,7 @@ internal sealed partial class SpikeDatabase
             return false;
         }
 
-        if (componentType == "textBox")
+        if (componentType is "textBox" or "textInputBar")
         {
             var defaultJson = defaultInputs.ToJsonString();
             if (designPreview["inputs"]?.ToJsonString() != defaultJson)

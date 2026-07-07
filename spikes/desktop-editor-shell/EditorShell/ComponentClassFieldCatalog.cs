@@ -191,7 +191,7 @@ internal static class ComponentClassFieldCatalog
             "Icons",
             "icons",
             ValueKind.IconTokenList,
-            ComponentInputBindingSource.Runtime,
+            ComponentInputBindingSource.Variant,
             "[]"),
     ];
 
@@ -346,21 +346,37 @@ internal static class ComponentClassFieldCatalog
             ["textInput", "textBoxInputs"],
             """{"placeholder":"Message"}""",
             ComponentInputBindings: TextBoxParentInputBindings),
-        ["component.textInput.leftIconRow.editor"] = new("component.textInput.leftIconRow.editor", "Left row variant", ValueKind.ComponentPreset, ["textInput", "leftIconRowSlot", "presetId"], "default"),
-        ["component.textInput.leftIconRow.inputs"] = new(
-            "component.textInput.leftIconRow.inputs",
-            "Left row settings",
+        ["component.textInput.idleLeftIconRow.editor"] = new("component.textInput.idleLeftIconRow.editor", "Idle left row variant", ValueKind.ComponentPreset, ["textInput", "idleLeftIconRowSlot", "presetId"], "default"),
+        ["component.textInput.idleLeftIconRow.inputs"] = new(
+            "component.textInput.idleLeftIconRow.inputs",
+            "Idle left row settings",
             ValueKind.ComponentInputBindings,
-            ["textInput", "leftIconRowInputs"],
-            """{"size":44,"gap":"theme.spacing.m","orientation":"horizontal"}""",
+            ["textInput", "idleLeftIconRowInputs"],
+            """{"size":44,"gap":"theme.spacing.m","orientation":"horizontal","icons":[]}""",
             ComponentInputBindings: IconRowParentInputBindings),
-        ["component.textInput.rightIconRow.editor"] = new("component.textInput.rightIconRow.editor", "Right row variant", ValueKind.ComponentPreset, ["textInput", "rightIconRowSlot", "presetId"], "default"),
-        ["component.textInput.rightIconRow.inputs"] = new(
-            "component.textInput.rightIconRow.inputs",
-            "Right row settings",
+        ["component.textInput.idleRightIconRow.editor"] = new("component.textInput.idleRightIconRow.editor", "Idle right row variant", ValueKind.ComponentPreset, ["textInput", "idleRightIconRowSlot", "presetId"], "default"),
+        ["component.textInput.idleRightIconRow.inputs"] = new(
+            "component.textInput.idleRightIconRow.inputs",
+            "Idle right row settings",
             ValueKind.ComponentInputBindings,
-            ["textInput", "rightIconRowInputs"],
-            """{"size":44,"gap":"theme.spacing.m","orientation":"horizontal"}""",
+            ["textInput", "idleRightIconRowInputs"],
+            """{"size":44,"gap":"theme.spacing.m","orientation":"horizontal","icons":["media_mic"]}""",
+            ComponentInputBindings: IconRowParentInputBindings),
+        ["component.textInput.typingLeftIconRow.editor"] = new("component.textInput.typingLeftIconRow.editor", "Typing left row variant", ValueKind.ComponentPreset, ["textInput", "typingLeftIconRowSlot", "presetId"], "default"),
+        ["component.textInput.typingLeftIconRow.inputs"] = new(
+            "component.textInput.typingLeftIconRow.inputs",
+            "Typing left row settings",
+            ValueKind.ComponentInputBindings,
+            ["textInput", "typingLeftIconRowInputs"],
+            """{"size":44,"gap":"theme.spacing.m","orientation":"horizontal","icons":[]}""",
+            ComponentInputBindings: IconRowParentInputBindings),
+        ["component.textInput.typingRightIconRow.editor"] = new("component.textInput.typingRightIconRow.editor", "Typing right row variant", ValueKind.ComponentPreset, ["textInput", "typingRightIconRowSlot", "presetId"], "default"),
+        ["component.textInput.typingRightIconRow.inputs"] = new(
+            "component.textInput.typingRightIconRow.inputs",
+            "Typing right row settings",
+            ValueKind.ComponentInputBindings,
+            ["textInput", "typingRightIconRowInputs"],
+            """{"size":44,"gap":"theme.spacing.m","orientation":"horizontal","icons":["chat_send"],"actionIconNumber":1,"actionBackgroundAlpha":1,"actionBackgroundColor":"aqua_green","actionIconColor":"gray_100"}""",
             ComponentInputBindings: IconRowParentInputBindings),
 
         ["component.keyboard.backgroundColorToken"] = new("component.keyboard.backgroundColorToken", "Background", ValueKind.ThemeToken, ["keyboard", "backgroundColorToken"], "theme.colors.surface", Options: ThemeColorOptions),

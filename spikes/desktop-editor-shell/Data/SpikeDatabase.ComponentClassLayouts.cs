@@ -207,13 +207,21 @@ internal sealed partial class SpikeDatabase
                   { "id": "component.textInput.iconGap", "order": 10, "visible": true },
                   { "id": "component.textInput.iconButton.presetId", "order": 20, "visible": true }
                 ] },
-                { "id": "leftIcons", "label": "Left", "order": 20, "visible": true, "fields": [
-                  { "id": "component.textInput.leftIconRow.editor", "order": 10, "visible": true },
-                  { "id": "component.textInput.leftIconRow.inputs", "order": 20, "visible": true }
+                { "id": "idleLeftIcons", "label": "Idle left", "order": 20, "visible": true, "fields": [
+                  { "id": "component.textInput.idleLeftIconRow.editor", "order": 10, "visible": true },
+                  { "id": "component.textInput.idleLeftIconRow.inputs", "order": 20, "visible": true }
                 ] },
-                { "id": "rightIcons", "label": "Right", "order": 30, "visible": true, "fields": [
-                  { "id": "component.textInput.rightIconRow.editor", "order": 10, "visible": true },
-                  { "id": "component.textInput.rightIconRow.inputs", "order": 20, "visible": true }
+                { "id": "idleRightIcons", "label": "Idle right", "order": 30, "visible": true, "fields": [
+                  { "id": "component.textInput.idleRightIconRow.editor", "order": 10, "visible": true },
+                  { "id": "component.textInput.idleRightIconRow.inputs", "order": 20, "visible": true }
+                ] },
+                { "id": "typingLeftIcons", "label": "Typing left", "order": 40, "visible": true, "fields": [
+                  { "id": "component.textInput.typingLeftIconRow.editor", "order": 10, "visible": true },
+                  { "id": "component.textInput.typingLeftIconRow.inputs", "order": 20, "visible": true }
+                ] },
+                { "id": "typingRightIcons", "label": "Typing right", "order": 50, "visible": true, "fields": [
+                  { "id": "component.textInput.typingRightIconRow.editor", "order": 10, "visible": true },
+                  { "id": "component.textInput.typingRightIconRow.inputs", "order": 20, "visible": true }
                 ] }
               ]
             }

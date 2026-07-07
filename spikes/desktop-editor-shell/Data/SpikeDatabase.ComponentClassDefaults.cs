@@ -157,10 +157,16 @@ internal sealed partial class SpikeDatabase
                     ["iconButtonPresetId"] = DefaultComponentPresetId,
                     ["placeholder"] = "Message",
                     ["surfaceSlot"] = ComponentSurfaceSlot("InputBox"),
-                    ["leftIconRowSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
-                    ["leftIconRowInputs"] = IconRowInputBindings(),
-                    ["rightIconRowSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
-                    ["rightIconRowInputs"] = IconRowInputBindings(),
+                    ["idleLeftIconRowSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["idleLeftIconRowInputs"] = IconRowInputBindings(),
+                    ["idleRightIconRowSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["idleRightIconRowInputs"] = IconRowInputBindings(new JsonArray("media_mic")),
+                    ["typingLeftIconRowSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["typingLeftIconRowInputs"] = IconRowInputBindings(),
+                    ["typingRightIconRowSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["typingRightIconRowInputs"] = IconRowInputBindings(
+                        new JsonArray("chat_send"),
+                        actionIconNumber: 1),
                     ["idleTextColorToken"] = "theme.colors.textSecondary",
                     ["textSizeToken"] = "theme.typography.sizes.s",
                     ["cursorColorToken"] = "theme.cursor.color",
@@ -324,8 +330,8 @@ internal sealed partial class SpikeDatabase
         }
         if (componentType == "textInputBar")
         {
-            preview["leftIcons"] = new JsonArray();
-            preview["rightIcons"] = new JsonArray("media_mic", "chat_send");
+            preview.Remove("leftIcons");
+            preview.Remove("rightIcons");
         }
 
         if (componentType == "audio")
@@ -450,8 +456,6 @@ internal sealed partial class SpikeDatabase
             "textInputBar" =>
             [
                 ComponentInput("sampleText", "Text", "sampleText", ValueKind.StringMultiline, "Message"),
-                ProjectRuntimeInput("iconRow", "icons", "leftIcons", "Left icon tokens", "leftIcons", "[]"),
-                ProjectRuntimeInput("iconRow", "icons", "rightIcons", "Right icon tokens", "rightIcons", """["media_mic","chat_send"]"""),
             ],
             "audio" =>
             [
@@ -619,14 +623,17 @@ internal sealed partial class SpikeDatabase
         };
     }
 
-    private static JsonObject IconRowInputBindings()
+    private static JsonObject IconRowInputBindings(
+        JsonArray? icons = null,
+        int actionIconNumber = 0)
     {
         return new JsonObject
         {
             ["size"] = 44,
             ["gap"] = "theme.spacing.m",
             ["orientation"] = "horizontal",
-            ["actionIconNumber"] = 0,
+            ["icons"] = icons ?? [],
+            ["actionIconNumber"] = actionIconNumber,
             ["actionBackgroundAlpha"] = 1,
             ["actionBackgroundColor"] = "aqua_green",
             ["actionIconColor"] = "gray_100",
