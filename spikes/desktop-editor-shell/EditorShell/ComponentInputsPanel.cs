@@ -199,6 +199,7 @@ internal sealed class ComponentInputsPanel : ContentControl
         if (!string.IsNullOrWhiteSpace(effectiveProjectId))
         {
             EnsureRecordReferenceValues(inputs, effectiveProjectId);
+            EnsureComponentPresetReferenceValues(inputs, effectiveProjectId);
         }
 
         foreach (var input in inputs)
@@ -303,6 +304,18 @@ internal sealed class ComponentInputsPanel : ContentControl
                 DefaultValue: input.DefaultValue,
                 Options: RecordReferenceOptions(input, projectId),
                 RecordReference: new RecordReferenceDefinition(input.TableId)),
+            ComponentInputKind.ComponentPreset => new FieldDefinition(
+                input.Id,
+                input.Label,
+                ValueKind.ComponentPreset,
+                DefaultValue: input.DefaultValue,
+                Options: ComponentPresetOptions(input, projectId)),
+            ComponentInputKind.ThemeToken => new FieldDefinition(
+                input.Id,
+                input.Label,
+                ValueKind.ThemeToken,
+                DefaultValue: input.DefaultValue,
+                Options: input.Options),
             ComponentInputKind.Icon => new FieldDefinition(
                 input.Id,
                 input.Label,
@@ -331,6 +344,8 @@ internal sealed class ComponentInputsPanel : ContentControl
         return new DictionaryFieldServices(
             ShowIconTokenPicker: (currentValue, allowMultiple) =>
                 new IconTokenPickerDialog(_owner, _database).Show(projectId, currentValue, allowMultiple),
+            ShowThemeTokenPicker: (currentValue, allowedOptions) =>
+                new ThemeTokenPickerDialog(_owner, _database).Show(projectId, currentValue, allowedOptions),
             CreateIconPreview: (token) =>
                 SvgIconPreview.CreateProjectIconTokenPreview(_database, projectId, token, 18));
     }
@@ -380,6 +395,33 @@ internal sealed class ComponentInputsPanel : ContentControl
         }
     }
 
+    private void EnsureComponentPresetReferenceValues(IReadOnlyList<ComponentInputDefinition> inputs, string projectId)
+    {
+        var presetInputs = inputs
+            .Where((input) => input.Kind == ComponentInputKind.ComponentPreset)
+            .ToList();
+        if (presetInputs.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var input in presetInputs)
+        {
+            var key = StorageKey(input);
+            if (!string.IsNullOrWhiteSpace(_values.GetValueOrDefault(key)))
+            {
+                continue;
+            }
+
+            var firstPreset = ComponentPresetOptions(input, projectId)
+                .FirstOrDefault((option) => !string.IsNullOrWhiteSpace(option.Value));
+            if (firstPreset is not null)
+            {
+                _values[key] = firstPreset.Value;
+            }
+        }
+    }
+
     private void ApplyRecordReferenceInput(
         JsonObject preview,
         ComponentInputDefinition input,
@@ -413,6 +455,13 @@ internal sealed class ComponentInputsPanel : ContentControl
         };
     }
 
+    private IReadOnlyList<FieldOption> ComponentPresetOptions(ComponentInputDefinition input, string projectId)
+    {
+        return string.IsNullOrWhiteSpace(input.ComponentType)
+            ? []
+            : _database.GetComponentPresetReferenceOptionsByType(projectId, input.ComponentType);
+    }
+
     private static ComponentInputDefinition CreateInputDefinition(
         string id,
         string label,
@@ -425,6 +474,7 @@ internal sealed class ComponentInputsPanel : ContentControl
         decimal increment,
         string tableId,
         string resolvedJsonKey,
+        string componentType,
         PairFieldLabels pairLabels)
     {
         var normalizedKind = ParseKind(kind);
@@ -449,6 +499,7 @@ internal sealed class ComponentInputsPanel : ContentControl
             increment,
             normalizedTableId,
             normalizedResolvedJsonKey,
+            componentType,
             pairLabels);
     }
 
@@ -707,6 +758,7 @@ internal sealed class ComponentInputsPanel : ContentControl
                 JsonDecimal(item, "increment", 1),
                 JsonString(item, "tableId"),
                 JsonString(item, "resolvedJsonKey"),
+                JsonString(item, "componentType"),
                 new PairFieldLabels(
                     JsonString(item, "pairFirstLabel", "W"),
                     JsonString(item, "pairSecondLabel", "H")));
@@ -748,7 +800,9 @@ internal sealed class ComponentInputsPanel : ContentControl
             input.Maximum.ToString(CultureInfo.InvariantCulture),
             input.Increment.ToString(CultureInfo.InvariantCulture),
             input.TableId,
-            input.ResolvedJsonKey);
+            input.ResolvedJsonKey,
+            input.ComponentType,
+            string.Join(",", input.Options?.Select((option) => $"{option.Value}={option.Label}") ?? []));
     }
 
     private static ComponentInputAnimation? ReadAnimation(JsonObject preview)
@@ -794,6 +848,8 @@ internal sealed class ComponentInputsPanel : ContentControl
             "boolean" => ComponentInputKind.Boolean,
             "option" => ComponentInputKind.Option,
             "recordreference" or "record_reference" => ComponentInputKind.RecordReference,
+            "componentpreset" or "component_preset" => ComponentInputKind.ComponentPreset,
+            "themetoken" or "theme_token" => ComponentInputKind.ThemeToken,
             "icon" => ComponentInputKind.Icon,
             "iconlist" or "icon_list" or "icons" => ComponentInputKind.IconList,
             "multilinetext" or "multiline_text" or "textmultiline" or "text_multiline" => ComponentInputKind.MultilineText,
@@ -834,6 +890,8 @@ internal enum ComponentInputKind
     Boolean,
     Option,
     RecordReference,
+    ComponentPreset,
+    ThemeToken,
     Icon,
     IconList,
     MultilineText,
@@ -851,6 +909,7 @@ internal sealed record ComponentInputDefinition(
     decimal Increment = 1,
     string TableId = "",
     string ResolvedJsonKey = "",
+    string ComponentType = "",
     PairFieldLabels PairLabels = null!);
 
 internal sealed record ComponentInputAnimation(

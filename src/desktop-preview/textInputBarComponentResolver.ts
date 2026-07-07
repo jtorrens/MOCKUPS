@@ -91,13 +91,31 @@ export function resolveTextInputBarComponent(
     ),
     leftIconRow: resolveIconRowComponentFromRecords(
       embeddedLeftIconRowConfig,
-      { icons: requiredStringArray(preview, "leftIcons", "component.textInput.input.leftIcons") },
+      {
+        size: height,
+        gap: requiredString(textInput, "iconGap", "component.textInput.iconGap"),
+        orientation: "horizontal",
+        buttonIconPresetId: iconRowButtonIconPresetId(
+          embeddedLeftIconRowConfig,
+          "component.textInput.leftIconRow.buttonIconPresetId",
+        ),
+        icons: requiredStringArray(preview, "leftIcons", "component.textInput.input.leftIcons"),
+      },
       componentBaseConfigs,
       "component.textInputBar.leftIcons",
     ),
     rightIconRow: resolveIconRowComponentFromRecords(
       embeddedRightIconRowConfig,
-      { icons: requiredStringArray(preview, "rightIcons", "component.textInput.input.rightIcons") },
+      {
+        size: height,
+        gap: requiredString(textInput, "iconGap", "component.textInput.iconGap"),
+        orientation: "horizontal",
+        buttonIconPresetId: iconRowButtonIconPresetId(
+          embeddedRightIconRowConfig,
+          "component.textInput.rightIconRow.buttonIconPresetId",
+        ),
+        icons: requiredStringArray(preview, "rightIcons", "component.textInput.input.rightIcons"),
+      },
       componentBaseConfigs,
       "component.textInputBar.rightIcons",
     ),
@@ -106,6 +124,12 @@ export function resolveTextInputBarComponent(
 
 function toSpacingPair(pair: { first: string; second: string }) {
   return { xToken: pair.first, yToken: pair.second };
+}
+
+function iconRowButtonIconPresetId(config: Record<string, unknown>, path: string) {
+  const iconRow = asRecord(config.iconRow);
+  const buttonSlot = asRecord(iconRow.buttonIconSlot);
+  return requiredString(buttonSlot, "presetId", path);
 }
 
 function requiredStringArray(

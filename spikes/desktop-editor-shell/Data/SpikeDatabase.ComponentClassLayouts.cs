@@ -88,14 +88,7 @@ internal sealed partial class SpikeDatabase
               "order": 20,
               "visible": true,
               "defaultOpen": false,
-              "groups": [
-                { "id": "iconRow", "label": "Icon row", "order": 10, "visible": true, "fields": [
-                  { "id": "component.iconRow.orientation", "order": 10, "visible": true },
-                  { "id": "component.iconRow.size", "order": 20, "visible": true },
-                  { "id": "component.iconRow.gap", "order": 30, "visible": true },
-                  { "id": "component.iconRow.buttonIcon.editor", "order": 40, "visible": true }
-                ] }
-              ]
+              "groups": []
             }
             """,
             "component.avatar" => $$"""

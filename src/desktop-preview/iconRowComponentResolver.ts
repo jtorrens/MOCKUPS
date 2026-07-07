@@ -37,16 +37,20 @@ export function resolveIconRowComponentFromRecords(
 ): IconRowDesignContract {
   const iconRow = asRecord(config.iconRow);
   const buttonSlot = asRecord(iconRow.buttonIconSlot);
-  const orientation = requiredString(iconRow, "orientation", "component.iconRow.orientation");
+  const orientation = requiredString(inputs, "orientation", "component.iconRow.input.orientation");
   if (orientation !== "horizontal" && orientation !== "vertical") {
     throw new Error(`Unsupported icon row orientation ${orientation}`);
   }
 
   const baseButtonIconConfig = mergeComponentDefaults(
-    componentPresetConfig(componentBaseConfigs, "buttonIcon", buttonSlot.presetId),
+    componentPresetConfig(
+      componentBaseConfigs,
+      "buttonIcon",
+      requiredString(inputs, "buttonIconPresetId", "component.iconRow.input.buttonIconPresetId"),
+    ),
     asRecord(buttonSlot.overrides),
   );
-  const size = requiredNumber(iconRow, "size", "component.iconRow.size");
+  const size = requiredNumber(inputs, "size", "component.iconRow.input.size");
   const icons = requiredStringArray(inputs, "icons", "component.iconRow.input.icons");
   const highlight = optionalHighlight(inputs.highlight);
   const buttons = icons.map((iconToken, index) => {
@@ -77,7 +81,7 @@ export function resolveIconRowComponentFromRecords(
   return {
     id,
     orientation,
-    gapToken: requiredString(iconRow, "gap", "component.iconRow.gap"),
+    gapToken: requiredString(inputs, "gap", "component.iconRow.input.gap"),
     size,
     icons,
     highlight,

@@ -670,8 +670,9 @@ Current migrated component routes:
 
 - `label`, `avatar`, `buttonIcon` and `audio` are active functional examples of
   the recursive route.
-- `iconRow` is a structural atom that embeds `buttonIcon` and takes an ordered
-  icon token list as runtime input.
+- `iconRow` is a structural atom that embeds `buttonIcon`; size, gap,
+  orientation, button icon variant and ordered icon token list are runtime
+  inputs supplied by its parent or by the isolated preview panel.
 - `status_bar` and `navigation_bar` are system components in the same manifest
   route.
 - `textInputBar`, `keyboard` and `video` are structurally migrated: they have

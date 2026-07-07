@@ -1,5 +1,6 @@
 using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.EditorShell;
+using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -380,6 +381,26 @@ internal sealed partial class SpikeDatabase
             ],
             "iconRow" =>
             [
+                ComponentInput("size", "Size", "size", "number", "36", minimum: 1, maximum: 9999, increment: 1),
+                ComponentInput("gap", "Gap", "gap", "themeToken", "theme.spacing.s"),
+                ComponentInput(
+                    "orientation",
+                    "Orientation",
+                    "orientation",
+                    "option",
+                    "horizontal",
+                    options:
+                    [
+                        new FieldOption("horizontal", "Horizontal"),
+                        new FieldOption("vertical", "Vertical"),
+                    ]),
+                ComponentInput(
+                    "buttonIconPresetId",
+                    "Button icon",
+                    "buttonIconPresetId",
+                    "componentPreset",
+                    "",
+                    componentType: "buttonIcon"),
                 ComponentInput("icons", "Icons", "icons", "iconList", """["media_mic","chat_send"]"""),
             ],
             "avatar" =>
@@ -438,6 +459,8 @@ internal sealed partial class SpikeDatabase
         decimal increment = 1,
         string tableId = "",
         string resolvedJsonKey = "",
+        string componentType = "",
+        IReadOnlyList<FieldOption>? options = null,
         string pairFirstLabel = "W",
         string pairSecondLabel = "H",
         string visibleWhenPath = "",
@@ -455,11 +478,30 @@ internal sealed partial class SpikeDatabase
             ["increment"] = increment,
             ["tableId"] = tableId,
             ["resolvedJsonKey"] = resolvedJsonKey,
+            ["componentType"] = componentType,
+            ["options"] = OptionsJson(options),
             ["pairFirstLabel"] = pairFirstLabel,
             ["pairSecondLabel"] = pairSecondLabel,
             ["visibleWhenPath"] = visibleWhenPath,
             ["visibleWhenValue"] = visibleWhenValue,
         };
+    }
+
+    private static JsonArray OptionsJson(IReadOnlyList<FieldOption>? options)
+    {
+        var array = new JsonArray();
+        if (options is null) return array;
+
+        foreach (var option in options)
+        {
+            array.Add(new JsonObject
+            {
+                ["value"] = option.Value,
+                ["label"] = option.Label,
+            });
+        }
+
+        return array;
     }
 
     private static readonly ComponentSeedRow[] ComponentSeedRows =
