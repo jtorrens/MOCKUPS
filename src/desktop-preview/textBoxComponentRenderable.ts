@@ -10,6 +10,7 @@ import {
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
   approximateMultilineTextSize,
+  approximateTextWidth,
   approximateWrappedTextLines,
   approximateWrappedTextSize,
   resolveTypographyStyle,
@@ -206,28 +207,38 @@ export function textBoxComponentToRenderableAt(
     textAlign: textBox.textAlign,
     whiteSpace: "pre",
   };
-  const lineNodes: RenderableNode[] = wrappedLines.map((line, index) => ({
-    id: `${textBox.id}.text.line.${index}`,
-    type: "text",
-    frame: 0,
-    box: {
-      x: textFrame.x,
-      y: textContentY + index * lineHeight,
-      width: textFrame.width,
-      height: lineHeight,
-    },
-    text: line,
-    style: textStyle,
-    metadata: index === wrappedLines.length - 1 && textBox.cursorVisible && !textIsEmpty
-      ? {
-          inlineCursor: {
-            color: selectedColor(payload, textBox.cursor.colorToken),
-            width: cursorWidth,
-            opacity: 1,
-          },
-        }
-      : undefined,
-  }));
+  const lineNodes: RenderableNode[] = wrappedLines.map((line, index) => {
+    const hasCursor = index === wrappedLines.length - 1 && textBox.cursorVisible && !textIsEmpty;
+    const lineWidth = Math.min(
+      textFrame.width,
+      Math.max(
+        1,
+        approximateTextWidth(line, size.typography.fontSize) + (hasCursor ? cursorWidth : 0) + 2,
+      ),
+    );
+    return {
+      id: `${textBox.id}.text.line.${index}`,
+      type: "text",
+      frame: 0,
+      box: {
+        x: textLineX(textFrame, lineWidth, textBox.textAlign),
+        y: textContentY + index * lineHeight,
+        width: lineWidth,
+        height: lineHeight,
+      },
+      text: line,
+      style: textStyle,
+      metadata: hasCursor
+        ? {
+            inlineCursor: {
+              color: selectedColor(payload, textBox.cursor.colorToken),
+              width: cursorWidth,
+              opacity: 1,
+            },
+          }
+        : undefined,
+    };
+  });
 
   return {
     id: textBox.id,
@@ -281,4 +292,20 @@ function growingHeight(
   const maximumContentHeight = Math.max(1, Math.floor(maxLines)) * lineHeight;
   const visibleContentHeight = Math.min(contentHeight, maximumContentHeight);
   return Math.max(1, minimumHeight, visibleContentHeight + paddingY * 2);
+}
+
+function textLineX(
+  textFrame: RenderableBox,
+  lineWidth: number,
+  textAlign: TextBoxDesignContract["textAlign"],
+) {
+  if (textAlign === "right") {
+    return textFrame.x + Math.max(0, textFrame.width - lineWidth);
+  }
+
+  if (textAlign === "center") {
+    return textFrame.x + Math.max(0, (textFrame.width - lineWidth) * 0.5);
+  }
+
+  return textFrame.x;
 }
