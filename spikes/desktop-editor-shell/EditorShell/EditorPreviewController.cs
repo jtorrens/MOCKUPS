@@ -410,15 +410,20 @@ internal sealed class EditorPreviewController
     private static IEnumerable<DesignPreviewPayload> PlaybackFramePayloads(DesignPreviewPayload payload, int projectFps)
     {
         var fps = PreviewPlaybackTiming.PreviewFrameRate(projectFps);
-        if (JsonNode.Parse(string.IsNullOrWhiteSpace(payload.DesignPreviewJson) ? "{}" : payload.DesignPreviewJson) is not JsonObject preview
-            || preview["animation"] is not JsonObject animation)
+        if (JsonNode.Parse(string.IsNullOrWhiteSpace(payload.DesignPreviewJson) ? "{}" : payload.DesignPreviewJson) is not JsonObject preview)
         {
             yield break;
         }
 
-        var timeJsonKey = JsonString(animation, "timeJsonKey");
-        var durationInputId = JsonString(animation, "durationInputId");
-        var animationDurationSeconds = JsonNumber(animation, "durationSeconds", 0);
+        var action = PlaybackFrameAction(preview);
+        if (action is null)
+        {
+            yield break;
+        }
+
+        var timeJsonKey = action.TimeJsonKey;
+        var durationInputId = action.DurationInputId;
+        var animationDurationSeconds = action.DurationSeconds;
         if (string.IsNullOrWhiteSpace(timeJsonKey)
             || (string.IsNullOrWhiteSpace(durationInputId) && animationDurationSeconds <= 0))
         {
@@ -438,6 +443,7 @@ internal sealed class EditorPreviewController
         {
             var framePreview = JsonNode.Parse(preview.ToJsonString()) as JsonObject ?? new JsonObject();
             framePreview[timeJsonKey] = Math.Min(duration, frame / (double)fps);
+            framePreview[action.PlayInputId] = true;
             yield return payload with { DesignPreviewJson = framePreview.ToJsonString() };
         }
     }
@@ -446,24 +452,45 @@ internal sealed class EditorPreviewController
     {
         try
         {
-            if (JsonNode.Parse(string.IsNullOrWhiteSpace(payload.DesignPreviewJson) ? "{}" : payload.DesignPreviewJson) is not JsonObject preview
-                || preview["animation"] is not JsonObject animation)
+            if (JsonNode.Parse(string.IsNullOrWhiteSpace(payload.DesignPreviewJson) ? "{}" : payload.DesignPreviewJson) is not JsonObject preview)
             {
                 return "";
             }
 
-            var timeJsonKey = JsonString(animation, "timeJsonKey");
-            if (string.IsNullOrWhiteSpace(timeJsonKey))
+            var action = PlaybackFrameAction(preview);
+            if (action is null || string.IsNullOrWhiteSpace(action.TimeJsonKey))
             {
                 return "";
             }
 
-            return preview[timeJsonKey]?.ToJsonString() ?? "";
+            return preview[action.TimeJsonKey]?.ToJsonString() ?? "";
         }
         catch
         {
             return "";
         }
+    }
+
+    private static ComponentPreviewActionDefinition? PlaybackFrameAction(JsonObject preview)
+    {
+        var actions = ComponentPreviewActions.Read(preview);
+        return actions.FirstOrDefault((action) => JsonBoolean(preview, action.PlayInputId))
+            ?? actions.FirstOrDefault();
+    }
+
+    private static bool JsonBoolean(JsonObject owner, string key)
+    {
+        if (owner[key] is not JsonValue value)
+        {
+            return false;
+        }
+
+        if (value.TryGetValue<bool>(out var boolean))
+        {
+            return boolean;
+        }
+
+        return value.TryGetValue<string>(out var text) && BooleanText.Parse(text);
     }
 
     private static string JsonString(JsonObject owner, string key)

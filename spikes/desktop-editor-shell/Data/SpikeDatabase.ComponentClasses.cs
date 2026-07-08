@@ -1736,6 +1736,7 @@ internal sealed partial class SpikeDatabase
             designPreviewChanged |= EnsureComponentInputs(row.ComponentType, designPreview, designPreviewDefaults);
             designPreviewChanged |= EnsureComponentDesignPreviewText(row.ComponentType, designPreview);
             designPreviewChanged |= EnsureButtonIconPreviewSize(row.ComponentType, designPreview);
+            designPreviewChanged |= EnsureComponentPreviewActions(row.ComponentType, designPreview, designPreviewDefaults);
 
             var metadata = ParseJsonObject(string.IsNullOrWhiteSpace(row.MetadataJson) ? "{}" : row.MetadataJson);
             var metadataChanged = EnsureDefaultComponentPreset(metadata, config);
@@ -3092,6 +3093,39 @@ internal sealed partial class SpikeDatabase
 
         designPreview["sampleSize"] = 48;
         return true;
+    }
+
+    private static bool EnsureComponentPreviewActions(
+        string componentType,
+        JsonObject designPreview,
+        JsonObject designPreviewDefaults)
+    {
+        if (componentType is not ("audio" or "keyboard" or "media")
+            || designPreviewDefaults["actions"] is not JsonArray defaultActions)
+        {
+            return false;
+        }
+
+        var changed = false;
+        var defaultActionsJson = defaultActions.ToJsonString();
+        if (designPreview["actions"]?.ToJsonString() != defaultActionsJson)
+        {
+            designPreview["actions"] = JsonNode.Parse(defaultActionsJson);
+            changed = true;
+        }
+
+        if (designPreview.Remove("animation"))
+        {
+            changed = true;
+        }
+
+        if (componentType == "media" && designPreview["fullScreenTransition"] is null)
+        {
+            designPreview["fullScreenTransition"] = false;
+            changed = true;
+        }
+
+        return changed;
     }
 
     private static List<ComponentClassRow> QueryComponentClassRows(SqliteConnection connection)

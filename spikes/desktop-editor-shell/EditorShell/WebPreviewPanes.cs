@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -796,15 +797,16 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 var preview = JsonNode.Parse(string.IsNullOrWhiteSpace(json) ? "{}" : json) as JsonObject ?? new JsonObject();
                 preview.Remove("currentTimeSeconds");
                 preview.Remove("motionTimeSeconds");
-                var animationTimeKey = AnimationTimeKey(preview);
-                if (!string.IsNullOrWhiteSpace(animationTimeKey))
+                foreach (var action in ComponentPreviewActions.Read(preview))
                 {
-                    preview.Remove(animationTimeKey);
-                }
-                var animationPlayKey = AnimationPlayKey(preview);
-                if (!string.IsNullOrWhiteSpace(animationPlayKey))
-                {
-                    preview.Remove(animationPlayKey);
+                    if (!string.IsNullOrWhiteSpace(action.TimeJsonKey))
+                    {
+                        preview.Remove(action.TimeJsonKey);
+                    }
+                    if (!string.IsNullOrWhiteSpace(action.PlayInputId))
+                    {
+                        preview.Remove(action.PlayInputId);
+                    }
                 }
                 return preview.ToJsonString();
             }
@@ -826,11 +828,14 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                     return "";
                 }
 
-                var animationTimeKey = AnimationTimeKey(preview);
-                if (!string.IsNullOrWhiteSpace(animationTimeKey)
-                    && preview[animationTimeKey] is not null)
+                var actionTimes = ComponentPreviewActions.Read(preview)
+                    .Where((action) => !string.IsNullOrWhiteSpace(action.TimeJsonKey)
+                        && preview[action.TimeJsonKey] is not null)
+                    .Select((action) => $"{action.Id}:{preview[action.TimeJsonKey]?.ToJsonString() ?? ""}")
+                    .ToList();
+                if (actionTimes.Count > 0)
                 {
-                    return preview[animationTimeKey]?.ToJsonString() ?? "";
+                    return string.Join("|", actionTimes);
                 }
 
                 return preview["currentTimeSeconds"]?.ToJsonString()
@@ -841,24 +846,6 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             {
                 return "";
             }
-        }
-
-        private static string AnimationTimeKey(JsonObject preview)
-        {
-            return preview["animation"] is JsonObject animation
-                && animation["timeJsonKey"] is JsonValue value
-                && value.TryGetValue<string>(out var key)
-                    ? key
-                    : "";
-        }
-
-        private static string AnimationPlayKey(JsonObject preview)
-        {
-            return preview["animation"] is JsonObject animation
-                && animation["playInputId"] is JsonValue value
-                && value.TryGetValue<string>(out var key)
-                    ? key
-                    : "";
         }
     }
 }

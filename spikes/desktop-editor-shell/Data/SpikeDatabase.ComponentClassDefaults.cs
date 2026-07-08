@@ -369,20 +369,30 @@ internal sealed partial class SpikeDatabase
 
         if (componentType == "audio")
         {
-            preview["animation"] = new JsonObject
+            preview["actions"] = new JsonArray
             {
-                ["playInputId"] = "isPlaying",
-                ["durationInputId"] = "durationSeconds",
-                ["timeJsonKey"] = "currentTimeSeconds",
+                new JsonObject
+                {
+                    ["id"] = "play",
+                    ["label"] = "Play",
+                    ["playInputId"] = "isPlaying",
+                    ["durationInputId"] = "durationSeconds",
+                    ["timeJsonKey"] = "currentTimeSeconds",
+                },
             };
         }
         if (componentType == "keyboard")
         {
-            preview["animation"] = new JsonObject
+            preview["actions"] = new JsonArray
             {
-                ["playInputId"] = "trigger",
-                ["durationMotionConfigPath"] = "keyboard.motion",
-                ["timeJsonKey"] = "motionTimeSeconds",
+                new JsonObject
+                {
+                    ["id"] = "in",
+                    ["label"] = "In",
+                    ["playInputId"] = "trigger",
+                    ["durationMotionConfigPath"] = "keyboard.motion",
+                    ["timeJsonKey"] = "motionTimeSeconds",
+                },
             };
         }
         if (componentType == "media")
@@ -396,14 +406,28 @@ internal sealed partial class SpikeDatabase
             preview["currentTimeSeconds"] = 0;
             preview["durationSeconds"] = 12;
             preview["isFullScreen"] = false;
+            preview["fullScreenTransition"] = false;
             preview["fullframeOrientation"] = "portrait";
             preview["controlsElapsedMs"] = 0;
-            preview["animation"] = new JsonObject
+            preview["actions"] = new JsonArray
             {
-                ["playInputId"] = "isPlaying",
-                ["activateInputIds"] = new JsonArray { "isFullScreen" },
-                ["durationMotionConfigPath"] = "media.motion",
-                ["timeJsonKey"] = "motionTimeSeconds",
+                new JsonObject
+                {
+                    ["id"] = "play",
+                    ["label"] = "Play",
+                    ["playInputId"] = "isPlaying",
+                    ["durationInputId"] = "durationSeconds",
+                    ["timeJsonKey"] = "currentTimeSeconds",
+                },
+                new JsonObject
+                {
+                    ["id"] = "fullScreen",
+                    ["label"] = "Full screen",
+                    ["playInputId"] = "fullScreenTransition",
+                    ["activateInputIds"] = new JsonArray { "isFullScreen" },
+                    ["durationMotionConfigPath"] = "media.motion",
+                    ["timeJsonKey"] = "motionTimeSeconds",
+                },
             };
         }
 

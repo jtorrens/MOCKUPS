@@ -47,6 +47,11 @@ export function resolveMediaComponent(
     "isFullScreen",
     "component.media.input.isFullScreen",
   );
+  const fullScreenTransition = requiredBoolean(
+    preview,
+    "fullScreenTransition",
+    "component.media.input.fullScreenTransition",
+  );
   const playbackState: MediaPlaybackState = isPlaying ? "playing" : "idle";
   const displayState: MediaDisplayState = isFullScreen ? "fullframe" : "inline";
   const controlBarHeight = Math.max(
@@ -151,7 +156,7 @@ export function resolveMediaComponent(
     ),
     motion: requiredMotionContract(media, "motion", "component.media.motion"),
     motionFrame: {
-      trigger: isPlaying && isFullScreen,
+      trigger: fullScreenTransition && isFullScreen,
       timeSeconds: optionalNumber(preview, "motionTimeSeconds", 0),
     },
   };

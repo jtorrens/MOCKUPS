@@ -566,6 +566,39 @@ Rules:
 - helpers and renderer must not infer missing inputs or know which concrete
   component declared them.
 
+### Preview Actions
+
+The design preview panel may expose generic action buttons for sample/runtime
+inspection. These actions are not component behavior in the renderer. They are
+only declarative controls that mutate declared preview input/time keys and then
+request frames through the same resolver path.
+
+The preview action contract lives under `designPreviewJson.actions`:
+
+```json
+{
+  "id": "fullScreen",
+  "label": "Full screen",
+  "playInputId": "fullScreenTransition",
+  "activateInputIds": ["isFullScreen"],
+  "durationMotionConfigPath": "media.motion",
+  "timeJsonKey": "motionTimeSeconds"
+}
+```
+
+Rules:
+
+- actions are generic and may not be switched by component type in the panel;
+- one action maps to one `playInputId` and one `timeJsonKey`;
+- a component may expose multiple actions, and the panel must render one
+  action button per action instead of binding every trigger to one global play
+  button;
+- `activateInputIds` may turn on ordinary runtime inputs before playback, for
+  example moving a component to its target state before resolving transition
+  frames;
+- the resolver interprets the resulting input values for each frame;
+- the web renderer still receives only final resolved paint primitives.
+
 ## Component Manifest
 
 The manifest is the source of truth for:

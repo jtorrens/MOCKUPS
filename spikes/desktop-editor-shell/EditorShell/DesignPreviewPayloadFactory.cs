@@ -2,6 +2,7 @@ using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -70,7 +71,7 @@ internal static class DesignPreviewPayloadFactory
         var settings = database.GetComponentClassSettings(node.Id);
         var componentBaseConfigsJson = database.GetComponentClassBaseConfigsJson(settings.ProjectId);
         var configJson = database.NormalizeComponentConfigJsonForPreview(settings.ProjectId, settings.ConfigJson);
-        var designPreviewJson = ResolveAnimationDurationJson(configJson, themeTokensJson, settings.DesignPreviewJson);
+        var designPreviewJson = ResolveActionDurationsJson(configJson, themeTokensJson, settings.DesignPreviewJson);
         return new DesignPreviewPayload(
             "componentClass",
             settings.Name,
@@ -100,7 +101,7 @@ internal static class DesignPreviewPayloadFactory
         var settings = database.GetComponentPresetSettings(node);
         var componentBaseConfigsJson = database.GetComponentClassBaseConfigsJson(settings.ProjectId);
         var configJson = database.NormalizeComponentConfigJsonForPreview(settings.ProjectId, settings.ConfigJson);
-        var designPreviewJson = ResolveAnimationDurationJson(configJson, themeTokensJson, settings.DesignPreviewJson);
+        var designPreviewJson = ResolveActionDurationsJson(configJson, themeTokensJson, settings.DesignPreviewJson);
         return new DesignPreviewPayload(
             "componentClass",
             settings.Name,
@@ -117,42 +118,57 @@ internal static class DesignPreviewPayloadFactory
             componentBaseConfigsJson);
     }
 
-    private static string ResolveAnimationDurationJson(
+    private static string ResolveActionDurationsJson(
         string configJson,
         string themeTokensJson,
         string designPreviewJson)
     {
         var preview = JsonPath.ParseObject(designPreviewJson);
-        if (preview["animation"] is not JsonObject animation)
+        var changed = false;
+        var config = JsonPath.ParseObject(configJson);
+        var themeTokens = JsonPath.ParseObject(themeTokensJson);
+
+        if (preview["animation"] is JsonObject animation)
         {
-            return designPreviewJson;
+            changed |= ResolveActionDuration(config, themeTokens, animation);
         }
 
-        var motionConfigPath = JsonPath.String(animation, "durationMotionConfigPath", "");
+        if (preview["actions"] is JsonArray actions)
+        {
+            foreach (var action in actions.OfType<JsonObject>())
+            {
+                changed |= ResolveActionDuration(config, themeTokens, action);
+            }
+        }
+
+        return changed ? preview.ToJsonString() : designPreviewJson;
+    }
+
+    private static bool ResolveActionDuration(JsonObject config, JsonObject themeTokens, JsonObject action)
+    {
+        var motionConfigPath = JsonPath.String(action, "durationMotionConfigPath", "");
         if (string.IsNullOrWhiteSpace(motionConfigPath))
         {
-            return designPreviewJson;
+            return false;
         }
 
-        var config = JsonPath.ParseObject(configJson);
         var motion = JsonPath.Get(config, motionConfigPath.Split('.', StringSplitOptions.RemoveEmptyEntries)) as JsonObject;
         var transition = motion is null ? "" : JsonPath.String(motion, "transition", "");
         if (string.IsNullOrWhiteSpace(transition))
         {
-            return designPreviewJson;
+            return false;
         }
 
-        var themeTokens = JsonPath.ParseObject(themeTokensJson);
         var durationMs = JsonPath.NumberDouble(
             themeTokens,
             ["motion", "transitions", transition, "durationMs"],
             0);
         if (durationMs <= 0)
         {
-            return designPreviewJson;
+            return false;
         }
 
-        animation["durationSeconds"] = durationMs / 1000.0;
-        return preview.ToJsonString();
+        action["durationSeconds"] = durationMs / 1000.0;
+        return true;
     }
 }

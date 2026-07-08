@@ -31,13 +31,14 @@ internal sealed class ComponentInputsPanel : ContentControl
     private readonly Dictionary<string, string> _values = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _inputDefaults = new(StringComparer.Ordinal);
     private readonly Dictionary<string, DictionaryFieldControl> _booleanInputs = new(StringComparer.Ordinal);
-    private Button? _playbackButton;
+    private readonly Dictionary<string, Button> _actionButtons = new(StringComparer.Ordinal);
     private string _scopeKey = "";
     private string _projectId = "";
     private string _inputSignature = "";
-    private ComponentInputAnimation? _animation;
+    private IReadOnlyList<ComponentPreviewActionDefinition> _actions = [];
+    private string _activeActionId = "";
     private bool _isUpdating;
-    private bool _isPreparingPlayback;
+    private string _preparingActionId = "";
     private int _playbackFrameRate = 25;
 
     public ComponentInputsPanel(
@@ -71,6 +72,8 @@ internal sealed class ComponentInputsPanel : ContentControl
                 _projectId = "";
                 _inputSignature = "";
                 Content = null;
+                _actions = [];
+                _activeActionId = "";
                 StopPlayback();
                 return;
             }
@@ -79,14 +82,15 @@ internal sealed class ComponentInputsPanel : ContentControl
             var preview = ParseJsonObject(payload.DesignPreviewJson);
             var config = ParseJsonObject(payload.ConfigJson);
             var inputs = ReadInputs(preview, config).ToList();
-            _animation = ReadAnimation(preview);
+            _actions = ComponentPreviewActions.Read(preview);
             if (inputs.Count == 0)
             {
                 IsVisible = false;
                 _scopeKey = "";
                 _projectId = "";
                 _inputSignature = "";
-                _animation = null;
+                _actions = [];
+                _activeActionId = "";
                 Content = null;
                 StopPlayback();
                 return;
@@ -94,7 +98,7 @@ internal sealed class ComponentInputsPanel : ContentControl
 
             IsVisible = true;
             var scopeKey = ScopeKey(payload);
-            var inputSignature = string.Join("|", inputs.Select(InputSignature));
+            var inputSignature = string.Join("|", inputs.Select(InputSignature).Concat(_actions.Select(ActionSignature)));
             var shouldRebuild = scopeKey != _scopeKey
                 || projectId != _projectId
                 || inputSignature != _inputSignature
@@ -106,6 +110,7 @@ internal sealed class ComponentInputsPanel : ContentControl
             {
                 EnsureValue(input, preview);
             }
+            EnsureActionValues(preview);
             EnsureRecordReferenceValues(inputs, projectId);
             if (shouldRebuild)
             {
@@ -158,7 +163,7 @@ internal sealed class ComponentInputsPanel : ContentControl
                 },
                 isExpanded: true),
         };
-        UpdatePlaybackButton();
+        UpdateActionButtons();
     }
 
     private Control CreateEmbeddedGroupCard(
@@ -265,28 +270,63 @@ internal sealed class ComponentInputsPanel : ContentControl
             VerticalAlignment = VerticalAlignment.Center,
         };
         header.Children.Add(EditorCardHeader.Create("Inputs", "Component input values", icon));
+        _actionButtons.Clear();
         if (SupportsPlayback())
         {
-            _playbackButton = new Button
+            var actions = new StackPanel
             {
-                MinWidth = 72,
+                Orientation = Orientation.Horizontal,
+                Spacing = 6,
                 HorizontalAlignment = HorizontalAlignment.Right,
                 VerticalAlignment = VerticalAlignment.Center,
             };
-            _playbackButton.Click += (_, args) =>
+
+            foreach (var action in _actions)
             {
-                args.Handled = true;
-                TogglePlayback();
-            };
-            Grid.SetColumn(_playbackButton, 1);
-            header.Children.Add(_playbackButton);
-        }
-        else
-        {
-            _playbackButton = null;
+                var button = new Button
+                {
+                    Width = 118,
+                    MinWidth = 118,
+                    HorizontalAlignment = HorizontalAlignment.Right,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    ClipToBounds = true,
+                    Content = CreateActionButtonContent(action, false),
+                };
+                ToolTip.SetTip(button, action.Label);
+                button.Click += (_, args) =>
+                {
+                    args.Handled = true;
+                    TogglePlayback(action);
+                };
+                _actionButtons[action.Id] = button;
+                actions.Children.Add(button);
+            }
+
+            Grid.SetColumn(actions, 1);
+            header.Children.Add(actions);
         }
 
         return header;
+    }
+
+    private static Control CreateActionButtonContent(ComponentPreviewActionDefinition action, bool isLoading)
+    {
+        var content = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("Auto,*"),
+            ColumnSpacing = 6,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        content.Children.Add(EditorIcons.Create(EditorIcons.Play, 12));
+        var label = new TextBlock
+        {
+            Text = isLoading ? "Loading" : action.Label,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        Grid.SetColumn(label, 1);
+        content.Children.Add(label);
+        return content;
     }
 
     public DesignPreviewPayload ApplyInputs(DesignPreviewPayload payload, string themeMode, string? projectId)
@@ -299,7 +339,7 @@ internal sealed class ComponentInputsPanel : ContentControl
         var preview = ParseJsonObject(payload.DesignPreviewJson);
         var config = ParseJsonObject(payload.ConfigJson);
         var inputs = ReadInputs(preview, config).ToList();
-        _animation = ReadAnimation(preview);
+        _actions = ComponentPreviewActions.Read(preview);
         if (inputs.Count == 0)
         {
             return payload;
@@ -314,6 +354,7 @@ internal sealed class ComponentInputsPanel : ContentControl
         {
             EnsureValue(input, preview);
         }
+        EnsureActionValues(preview);
 
         var effectiveProjectId = string.IsNullOrWhiteSpace(projectId) ? _projectId : projectId;
         if (!string.IsNullOrWhiteSpace(effectiveProjectId))
@@ -347,9 +388,10 @@ internal sealed class ComponentInputsPanel : ContentControl
                     break;
             }
         }
-        if (SupportsPlayback())
+        foreach (var action in _actions)
         {
-            preview[_animation!.TimeJsonKey] = NormalizedPlaybackSeconds(CurrentPlaybackSeconds());
+            preview[action.PlayInputId] = IsPlaying(action);
+            preview[action.TimeJsonKey] = NormalizedPlaybackSeconds(action, CurrentPlaybackSeconds(action));
         }
 
         return payload with { DesignPreviewJson = preview.ToJsonString() };
@@ -458,6 +500,35 @@ internal sealed class ComponentInputsPanel : ContentControl
             JsonArray jsonArray => jsonArray.ToJsonString(),
             _ => input.DefaultValue,
         };
+    }
+
+    private void EnsureActionValues(JsonObject preview)
+    {
+        foreach (var action in _actions)
+        {
+            var stateKey = ActionStateKey(action);
+            if (!_values.ContainsKey(stateKey))
+            {
+                _values[stateKey] = preview[action.PlayInputId] switch
+                {
+                    JsonValue jsonValue when jsonValue.TryGetValue<bool>(out var boolean) => boolean ? "true" : "false",
+                    JsonValue jsonValue when jsonValue.TryGetValue<string>(out var text) => text,
+                    _ => "false",
+                };
+            }
+
+            var timeKey = ActionTimeKey(action);
+            if (!_values.ContainsKey(timeKey))
+            {
+                _values[timeKey] = preview[action.TimeJsonKey] switch
+                {
+                    JsonValue jsonValue when jsonValue.TryGetValue<double>(out var number) => number.ToString(CultureInfo.InvariantCulture),
+                    JsonValue jsonValue when jsonValue.TryGetValue<int>(out var integer) => integer.ToString(CultureInfo.InvariantCulture),
+                    JsonValue jsonValue when jsonValue.TryGetValue<string>(out var text) => text,
+                    _ => "0",
+                };
+            }
+        }
     }
 
     private void EnsureRecordReferenceValues(IReadOnlyList<ComponentInputDefinition> inputs, string projectId)
@@ -604,25 +675,24 @@ internal sealed class ComponentInputsPanel : ContentControl
 
     private void SetValue(ComponentInputDefinition input, string value)
     {
-        var startsPlayback = SupportsPlayback()
-            && input.Id == _animation!.PlayInputId
-            && StringToBool(value);
-        if (SupportsPlayback() && input.Id == _animation!.PlayInputId)
+        var action = ActionForPlayInput(input.Id);
+        var startsPlayback = action is not null && StringToBool(value);
+        if (action is not null)
         {
-            SetPlaybackState(StringToBool(value));
+            SetPlaybackState(action, StringToBool(value));
         }
         else
         {
             _values[StorageKey(input)] = value;
         }
 
-        if (SupportsPlayback() && input.Id == _animation!.DurationInputId)
+        foreach (var durationAction in _actions.Where((candidate) => candidate.DurationInputId == input.Id))
         {
-            ClampCurrentPlaybackToDuration();
+            ClampCurrentPlaybackToDuration(durationAction);
         }
         if (startsPlayback)
         {
-            _ = StartPlaybackAsync();
+            _ = StartPlaybackAsync(action!);
             return;
         }
 
@@ -640,22 +710,23 @@ internal sealed class ComponentInputsPanel : ContentControl
         if (!SupportsPlayback())
         {
             StopPlayback();
-            UpdatePlaybackButton();
+            UpdateActionButtons();
             return;
         }
 
-        if (IsPlaying())
+        var activeAction = ActiveAction();
+        if (activeAction is not null && IsPlaying(activeAction))
         {
             if (!_playbackTimer.IsEnabled)
             {
                 _playbackTimer.Start();
             }
-            UpdatePlaybackButton();
+            UpdateActionButtons();
             return;
         }
 
         StopPlayback();
-        UpdatePlaybackButton();
+        UpdateActionButtons();
     }
 
     private void ApplyProjectFrameRate(string projectId)
@@ -682,28 +753,28 @@ internal sealed class ComponentInputsPanel : ContentControl
         }
     }
 
-    private void TogglePlayback()
+    private void TogglePlayback(ComponentPreviewActionDefinition action)
     {
-        if (!SupportsPlayback()) return;
-
-        var stateKey = PlaybackStateKey();
-        var startsPlayback = !IsPlaying();
+        var stateKey = ActionStateKey(action);
+        var startsPlayback = !IsPlaying(action);
         PreviewDebugLog.Write(
             "preview.playback.toggle",
             ("scope", _scopeKey),
+            ("action", action.Id),
+            ("label", action.Label),
             ("startsPlayback", startsPlayback),
             ("fps", _playbackFrameRate),
-            ("durationSec", DurationSeconds()));
-        SetPlaybackState(startsPlayback);
+            ("durationSec", DurationSeconds(action)));
+        SetPlaybackState(action, startsPlayback);
 
         SyncBooleanInput(stateKey);
         if (startsPlayback)
         {
-            SyncActivatedPlaybackInputs();
+            SyncActivatedPlaybackInputs(action);
         }
         if (startsPlayback)
         {
-            _ = StartPlaybackAsync();
+            _ = StartPlaybackAsync(action);
             return;
         }
 
@@ -711,29 +782,33 @@ internal sealed class ComponentInputsPanel : ContentControl
         _refreshPreview();
     }
 
-    private void UpdatePlaybackButton()
+    private void UpdateActionButtons()
     {
-        if (_playbackButton is null) return;
+        foreach (var action in _actions)
+        {
+            if (!_actionButtons.TryGetValue(action.Id, out var button))
+            {
+                continue;
+            }
 
-        _playbackButton.Content = _isPreparingPlayback
-            ? "Loading"
-            : IsPlaying() ? "Pause" : "Play";
+            button.Content = CreateActionButtonContent(action, _preparingActionId == action.Id);
+        }
     }
 
-    private async Task StartPlaybackAsync()
+    private async Task StartPlaybackAsync(ComponentPreviewActionDefinition action)
     {
-        if (!SupportsPlayback()) return;
-
         StopPlayback();
-        _isPreparingPlayback = true;
-        UpdatePlaybackButton();
+        _activeActionId = action.Id;
+        _preparingActionId = action.Id;
+        UpdateActionButtons();
         var stopwatch = Stopwatch.StartNew();
         PreviewDebugLog.Write(
             "preview.playback.prepare.start",
             ("scope", _scopeKey),
+            ("action", action.Id),
             ("fps", _playbackFrameRate),
-            ("durationSec", DurationSeconds()),
-            ("timeKey", PlaybackAnimation().TimeJsonKey));
+            ("durationSec", DurationSeconds(action)),
+            ("timeKey", action.TimeJsonKey));
         try
         {
             if (_preparePlaybackFrames is not null)
@@ -743,27 +818,29 @@ internal sealed class ComponentInputsPanel : ContentControl
         }
         finally
         {
-            _isPreparingPlayback = false;
+            _preparingActionId = "";
             PreviewDebugLog.Write(
                 "preview.playback.prepare.end",
                 ("scope", _scopeKey),
+                ("action", action.Id),
                 ("ms", stopwatch.Elapsed.TotalMilliseconds));
         }
 
-        if (!SupportsPlayback() || !IsPlaying())
+        if (!SupportsPlayback() || !IsPlaying(action))
         {
-            UpdatePlaybackButton();
+            UpdateActionButtons();
             return;
         }
 
-        _values[PlaybackTimeKey()] = "0";
+        _values[ActionTimeKey(action)] = "0";
         PreviewDebugLog.Write(
             "preview.playback.start",
             ("scope", _scopeKey),
+            ("action", action.Id),
             ("fps", _playbackFrameRate),
-            ("durationSec", DurationSeconds()));
+            ("durationSec", DurationSeconds(action)));
         SyncPlaybackTimer();
-        UpdatePlaybackButton();
+        UpdateActionButtons();
         _refreshPreview();
     }
 
@@ -773,147 +850,169 @@ internal sealed class ComponentInputsPanel : ContentControl
 
         _playbackTimer.Stop();
         var hasPlayback = SupportsPlayback();
+        var activeAction = ActiveAction();
         PreviewDebugLog.Write(
             "preview.playback.stop",
             ("scope", _scopeKey),
-            ("timeSec", hasPlayback ? CurrentPlaybackSeconds() : 0),
-            ("durationSec", hasPlayback ? DurationSeconds() : 0));
+            ("action", activeAction?.Id ?? ""),
+            ("timeSec", hasPlayback && activeAction is not null ? CurrentPlaybackSeconds(activeAction) : 0),
+            ("durationSec", hasPlayback && activeAction is not null ? DurationSeconds(activeAction) : 0));
     }
 
     private void AdvancePlaybackFrame()
     {
+        var activeAction = ActiveAction();
         if (!SupportsPlayback()
-            || !IsPlaying())
+            || activeAction is null
+            || !IsPlaying(activeAction))
         {
             StopPlayback();
             return;
         }
 
-        var current = NextPlaybackFrameSeconds();
-        _values[PlaybackTimeKey()] = current.ToString(CultureInfo.InvariantCulture);
+        var current = NextPlaybackFrameSeconds(activeAction);
+        _values[ActionTimeKey(activeAction)] = current.ToString(CultureInfo.InvariantCulture);
         PreviewDebugLog.Write(
             "preview.playback.tick",
             ("scope", _scopeKey),
+            ("action", activeAction.Id),
             ("timeSec", current),
-            ("durationSec", DurationSeconds()),
+            ("durationSec", DurationSeconds(activeAction)),
             ("fps", _playbackFrameRate));
-        if (current >= DurationSeconds())
+        if (current >= DurationSeconds(activeAction))
         {
-            _values[PlaybackStateKey()] = "false";
-            SyncBooleanInput(PlaybackStateKey());
+            _values[ActionStateKey(activeAction)] = "false";
+            SyncBooleanInput(ActionStateKey(activeAction));
             StopPlayback();
-            UpdatePlaybackButton();
+            UpdateActionButtons();
         }
 
         _refreshPreview();
     }
 
-    private double CurrentPlaybackSeconds()
+    private double CurrentPlaybackSeconds(ComponentPreviewActionDefinition action)
     {
-        var stored = ParseDouble(_values.GetValueOrDefault(PlaybackTimeKey(), "0"));
-        return NormalizedPlaybackSeconds(stored);
+        var stored = ParseDouble(_values.GetValueOrDefault(ActionTimeKey(action), "0"));
+        return NormalizedPlaybackSeconds(action, stored);
     }
 
-    private double NextPlaybackFrameSeconds()
+    private double NextPlaybackFrameSeconds(ComponentPreviewActionDefinition action)
     {
-        return NormalizedPlaybackSeconds(CurrentPlaybackSeconds() + 1.0 / Math.Max(1, _playbackFrameRate));
+        return NormalizedPlaybackSeconds(action, CurrentPlaybackSeconds(action) + 1.0 / Math.Max(1, _playbackFrameRate));
     }
 
-    private void ClampCurrentPlaybackToDuration()
+    private void ClampCurrentPlaybackToDuration(ComponentPreviewActionDefinition action)
     {
         if (!SupportsPlayback()) return;
 
-        _values[PlaybackTimeKey()] = NormalizedPlaybackSeconds(CurrentPlaybackSeconds()).ToString(CultureInfo.InvariantCulture);
+        _values[ActionTimeKey(action)] = NormalizedPlaybackSeconds(action, CurrentPlaybackSeconds(action)).ToString(CultureInfo.InvariantCulture);
     }
 
-    private double DurationSeconds()
+    private double DurationSeconds(ComponentPreviewActionDefinition action)
     {
-        var animation = PlaybackAnimation();
-        if (animation.DurationSeconds > 0)
+        if (action.DurationSeconds > 0)
         {
-            return animation.DurationSeconds;
+            return action.DurationSeconds;
         }
 
-        var key = PlaybackDurationKey();
+        var key = ActionDurationKey(action);
         return Math.Max(1, ParseDouble(_values.GetValueOrDefault(key, InputDefault(key, "1"))));
     }
 
-    private bool IsPlaying()
+    private bool IsPlaying(ComponentPreviewActionDefinition action)
     {
-        var key = PlaybackStateKey();
+        var key = ActionStateKey(action);
         return StringToBool(_values.GetValueOrDefault(key, InputDefault(key, "false")));
     }
 
-    private void SetPlaybackState(bool isPlaying)
+    private void SetPlaybackState(ComponentPreviewActionDefinition action, bool isPlaying)
     {
-        var stateKey = PlaybackStateKey();
+        var stateKey = ActionStateKey(action);
         if (isPlaying)
         {
             StopPlayback();
-            _values[PlaybackTimeKey()] = "0";
+            foreach (var otherAction in _actions)
+            {
+                if (otherAction.Id == action.Id)
+                {
+                    continue;
+                }
+
+                _values[ActionStateKey(otherAction)] = "false";
+                SyncBooleanInput(ActionStateKey(otherAction));
+            }
+
+            _activeActionId = action.Id;
+            _values[ActionTimeKey(action)] = "0";
             _values[stateKey] = "true";
-            foreach (var key in ActivatedPlaybackInputKeys())
+            foreach (var key in ActivatedPlaybackInputKeys(action))
             {
                 _values[key] = "true";
             }
             return;
         }
 
-        _values[PlaybackTimeKey()] = NormalizedPlaybackSeconds(CurrentPlaybackSeconds()).ToString(CultureInfo.InvariantCulture);
+        _values[ActionTimeKey(action)] = NormalizedPlaybackSeconds(action, CurrentPlaybackSeconds(action)).ToString(CultureInfo.InvariantCulture);
         _values[stateKey] = "false";
     }
 
-    private double NormalizedPlaybackSeconds(double seconds)
+    private double NormalizedPlaybackSeconds(ComponentPreviewActionDefinition action, double seconds)
     {
-        var clamped = Math.Max(0, Math.Min(DurationSeconds(), seconds));
+        var durationSeconds = DurationSeconds(action);
+        var clamped = Math.Max(0, Math.Min(durationSeconds, seconds));
         var frameRate = Math.Max(1, _playbackFrameRate);
         var snapped = Math.Round(clamped * frameRate, MidpointRounding.AwayFromZero) / frameRate;
-        return Math.Max(0, Math.Min(DurationSeconds(), snapped));
+        return Math.Max(0, Math.Min(durationSeconds, snapped));
     }
 
     private bool SupportsPlayback()
     {
-        return _animation is not null;
+        return _actions.Count > 0;
     }
 
-    private string PlaybackStateKey()
+    private string ActionStateKey(ComponentPreviewActionDefinition action)
     {
-        return $"{_scopeKey}:{PlaybackAnimation().PlayInputId}";
+        return $"{_scopeKey}:{action.PlayInputId}";
     }
 
-    private string PlaybackDurationKey()
+    private string ActionDurationKey(ComponentPreviewActionDefinition action)
     {
-        var durationInputId = PlaybackAnimation().DurationInputId;
+        var durationInputId = action.DurationInputId;
         return string.IsNullOrWhiteSpace(durationInputId)
             ? ""
             : $"{_scopeKey}:{durationInputId}";
     }
 
-    private string PlaybackTimeKey()
+    private string ActionTimeKey(ComponentPreviewActionDefinition action)
     {
-        return $"{_scopeKey}:{PlaybackAnimation().TimeJsonKey}";
+        return $"{_scopeKey}:{action.TimeJsonKey}";
     }
 
-    private IEnumerable<string> ActivatedPlaybackInputKeys()
+    private IEnumerable<string> ActivatedPlaybackInputKeys(ComponentPreviewActionDefinition action)
     {
-        return PlaybackAnimation()
-            .ActivateInputIds
+        return action.ActivateInputIds
             .Where((id) => !string.IsNullOrWhiteSpace(id))
             .Select((id) => $"{_scopeKey}:{id}");
     }
 
-    private void SyncActivatedPlaybackInputs()
+    private void SyncActivatedPlaybackInputs(ComponentPreviewActionDefinition action)
     {
-        foreach (var key in ActivatedPlaybackInputKeys())
+        foreach (var key in ActivatedPlaybackInputKeys(action))
         {
             SyncBooleanInput(key);
         }
     }
 
-    private ComponentInputAnimation PlaybackAnimation()
+    private ComponentPreviewActionDefinition? ActiveAction()
     {
-        return _animation
-            ?? throw new InvalidOperationException("Playback animation is not available for the active component inputs.");
+        return _actions.FirstOrDefault((action) => action.Id == _activeActionId)
+            ?? _actions.FirstOrDefault((action) => IsPlaying(action))
+            ?? _actions.FirstOrDefault();
+    }
+
+    private ComponentPreviewActionDefinition? ActionForPlayInput(string inputId)
+    {
+        return _actions.FirstOrDefault((action) => action.PlayInputId == inputId);
     }
 
     private string InputDefault(string key, string defaultValue)
@@ -941,24 +1040,6 @@ internal sealed class ComponentInputsPanel : ContentControl
         return double.TryParse((value ?? "").Replace(",", "."), NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
             ? parsed
             : 0;
-    }
-
-    private static double JsonNumber(JsonObject owner, string key, double fallback)
-    {
-        if (owner[key] is not JsonValue value)
-        {
-            return fallback;
-        }
-
-        if (value.TryGetValue<double>(out var number))
-        {
-            return number;
-        }
-
-        return value.TryGetValue<string>(out var text)
-            && double.TryParse(text.Replace(",", "."), NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
-                ? parsed
-                : fallback;
     }
 
     private static JsonObject ParseJsonObject(string json)
@@ -1076,44 +1157,18 @@ internal sealed class ComponentInputsPanel : ContentControl
             string.Join(",", input.Options?.Select((option) => $"{option.Value}={option.Label}") ?? []));
     }
 
-    private static ComponentInputAnimation? ReadAnimation(JsonObject preview)
+    private static string ActionSignature(ComponentPreviewActionDefinition action)
     {
-        if (preview["animation"] is not JsonObject animation)
-        {
-            return null;
-        }
-
-        var playInputId = JsonString(animation, "playInputId");
-        var durationInputId = JsonString(animation, "durationInputId");
-        var durationSeconds = JsonNumber(animation, "durationSeconds", 0);
-        var timeJsonKey = JsonString(animation, "timeJsonKey");
-        if (string.IsNullOrWhiteSpace(playInputId)
-            || (string.IsNullOrWhiteSpace(durationInputId) && durationSeconds <= 0)
-            || string.IsNullOrWhiteSpace(timeJsonKey))
-        {
-            return null;
-        }
-
-        return new ComponentInputAnimation(
-            playInputId,
-            durationInputId,
-            durationSeconds,
-            timeJsonKey,
-            JsonStringArray(animation, "activateInputIds"));
-    }
-
-    private static IReadOnlyList<string> JsonStringArray(JsonObject owner, string key)
-    {
-        if (owner[key] is not JsonArray values)
-        {
-            return [];
-        }
-
-        return values
-            .OfType<JsonValue>()
-            .Select((value) => value.TryGetValue<string>(out var text) ? text : "")
-            .Where((text) => !string.IsNullOrWhiteSpace(text))
-            .ToList();
+        return string.Join(
+            ":",
+            "action",
+            action.Id,
+            action.Label,
+            action.PlayInputId,
+            action.DurationInputId,
+            action.DurationSeconds.ToString(CultureInfo.InvariantCulture),
+            action.TimeJsonKey,
+            string.Join(",", action.ActivateInputIds));
     }
 
     private static IReadOnlyList<FieldOption> ReadOptions(JsonObject input)
@@ -1263,10 +1318,3 @@ internal sealed record ComponentInputDefinition(
     string UiGroupId = "",
     string UiGroupLabel = "",
     string UiParentGroupId = "");
-
-internal sealed record ComponentInputAnimation(
-    string PlayInputId,
-    string DurationInputId,
-    double DurationSeconds,
-    string TimeJsonKey,
-    IReadOnlyList<string> ActivateInputIds);
