@@ -269,7 +269,7 @@ internal sealed partial class SpikeDatabase
             {
               "id": "textInputIcons",
               "label": "Icons",
-              "subtitle": "Shared icon spacing and left/right icon rows",
+              "subtitle": "Shared icon spacing and icon bar variant",
               "icon": "{{EditorIcons.Icon}}",
               "order": 40,
               "visible": true,
@@ -277,23 +277,7 @@ internal sealed partial class SpikeDatabase
               "groups": [
                 { "id": "iconDefaults", "label": "Icons", "order": 10, "visible": true, "fields": [
                   { "id": "component.textInput.iconGap", "order": 10, "visible": true },
-                  { "id": "component.textInput.iconButton.presetId", "order": 20, "visible": true }
-                ] },
-                { "id": "idleLeftIcons", "label": "Idle left", "order": 20, "visible": true, "fields": [
-                  { "id": "component.textInput.idleLeftIconRow.editor", "order": 10, "visible": true },
-                  { "id": "component.textInput.idleLeftIconRow.inputs", "order": 20, "visible": true }
-                ] },
-                { "id": "idleRightIcons", "label": "Idle right", "order": 30, "visible": true, "fields": [
-                  { "id": "component.textInput.idleRightIconRow.editor", "order": 10, "visible": true },
-                  { "id": "component.textInput.idleRightIconRow.inputs", "order": 20, "visible": true }
-                ] },
-                { "id": "typingLeftIcons", "label": "Typing left", "order": 40, "visible": true, "fields": [
-                  { "id": "component.textInput.typingLeftIconRow.editor", "order": 10, "visible": true },
-                  { "id": "component.textInput.typingLeftIconRow.inputs", "order": 20, "visible": true }
-                ] },
-                { "id": "typingRightIcons", "label": "Typing right", "order": 50, "visible": true, "fields": [
-                  { "id": "component.textInput.typingRightIconRow.editor", "order": 10, "visible": true },
-                  { "id": "component.textInput.typingRightIconRow.inputs", "order": 20, "visible": true }
+                  { "id": "component.textInput.iconBar.editor", "order": 20, "visible": true }
                 ] }
               ]
             }
@@ -303,7 +287,7 @@ internal sealed partial class SpikeDatabase
             {
               "id": "keyboard",
               "label": "Keyboard",
-              "subtitle": "Key shape, pressed behavior and icon rows",
+              "subtitle": "Key shape, pressed behavior and icon bar",
               "icon": "{{EditorIcons.Keyboard}}",
               "order": 20,
               "visible": true,
@@ -327,23 +311,10 @@ internal sealed partial class SpikeDatabase
                   { "id": "component.keyboard.specialKeyTextScale", "order": 150, "visible": true },
                   { "id": "component.keyboard.emojiScale", "order": 160, "visible": true }
                 ] },
-                { "id": "iconRows", "label": "Icon rows", "order": 20, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": false, "fields": [
+                { "id": "iconRows", "label": "Icon bar", "order": 20, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": false, "fields": [
                   { "id": "component.keyboard.iconRowPlacement", "order": 10, "visible": true },
                   { "id": "component.keyboard.iconRowsHeight", "order": 20, "visible": true },
-                  { "id": "component.keyboard.iconRowsEdgePadding", "order": 30, "visible": true },
-                  { "id": "component.keyboard.iconButton.editor", "order": 40, "visible": true }
-                ] },
-                { "id": "leftIconRow", "label": "Left", "order": 30, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": false, "fields": [
-                  { "id": "component.keyboard.leftIconRow.editor", "order": 10, "visible": true },
-                  { "id": "component.keyboard.leftIconRow.inputs", "order": 20, "visible": true }
-                ] },
-                { "id": "centerIconRow", "label": "Center", "order": 40, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": false, "fields": [
-                  { "id": "component.keyboard.centerIconRow.editor", "order": 10, "visible": true },
-                  { "id": "component.keyboard.centerIconRow.inputs", "order": 20, "visible": true }
-                ] },
-                { "id": "rightIconRow", "label": "Right", "order": 50, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": false, "fields": [
-                  { "id": "component.keyboard.rightIconRow.editor", "order": 10, "visible": true },
-                  { "id": "component.keyboard.rightIconRow.inputs", "order": 20, "visible": true }
+                  { "id": "component.keyboard.iconBar.editor", "order": 30, "visible": true }
                 ] }
               ]
             }

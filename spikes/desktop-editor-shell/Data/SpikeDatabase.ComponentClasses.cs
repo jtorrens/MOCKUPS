@@ -1770,10 +1770,6 @@ internal sealed partial class SpikeDatabase
         JsonObject config)
     {
         var changed = false;
-        changed |= NormalizeComponentInputBindingPresetId(connection, projectId, config, ["textInput", "idleLeftIconRowInputs", "buttonIconPresetId"], "buttonIcon");
-        changed |= NormalizeComponentInputBindingPresetId(connection, projectId, config, ["textInput", "idleRightIconRowInputs", "buttonIconPresetId"], "buttonIcon");
-        changed |= NormalizeComponentInputBindingPresetId(connection, projectId, config, ["textInput", "typingLeftIconRowInputs", "buttonIconPresetId"], "buttonIcon");
-        changed |= NormalizeComponentInputBindingPresetId(connection, projectId, config, ["textInput", "typingRightIconRowInputs", "buttonIconPresetId"], "buttonIcon");
         changed |= NormalizeComponentInputBindingSlot(connection, projectId, config, ["textInput", "textBoxInputs", "leftIconRowSlot"], ["textInput", "textBoxInputs", "leftIconRowPresetId"], "iconRow");
         changed |= NormalizeComponentInputBindingSlot(connection, projectId, config, ["textInput", "textBoxInputs", "rightIconRowSlot"], ["textInput", "textBoxInputs", "rightIconRowPresetId"], "iconRow");
         changed |= NormalizeComponentInputBindingSlot(connection, projectId, config, ["textInput", "textBoxInputs", "buttonIconSlot"], ["textInput", "textBoxInputs", "buttonIconPresetId"], "buttonIcon");
@@ -1823,29 +1819,6 @@ internal sealed partial class SpikeDatabase
         }
 
         return changed;
-    }
-
-    private static bool NormalizeComponentInputBindingPresetId(
-        SqliteConnection connection,
-        string projectId,
-        JsonObject config,
-        string[] path,
-        string componentType)
-    {
-        if (JsonPath.Get(config, path) is null)
-        {
-            return false;
-        }
-
-        var currentValue = JsonPath.String(config, path);
-        var normalizedValue = NormalizeComponentPresetReference(connection, projectId, componentType, currentValue);
-        if (string.IsNullOrWhiteSpace(normalizedValue) || normalizedValue.Equals(currentValue, StringComparison.Ordinal))
-        {
-            return false;
-        }
-
-        SetJsonValue(config, path, JsonValue.Create(normalizedValue)!);
-        return true;
     }
 
     private static IReadOnlyList<ComponentClassPreset> ComponentClassPresets(string metadataJson)
@@ -1901,10 +1874,6 @@ internal sealed partial class SpikeDatabase
         changed |= NormalizeSpacingPair(config, ["textInput", "barPadding"]);
         changed |= NormalizeSpacingPair(config, ["textInput", "textPadding"]);
         changed |= NormalizeSpacingToken(config, ["textInput", "iconGap"]);
-        changed |= NormalizeSpacingToken(config, ["textInput", "idleLeftIconRowInputs", "gap"]);
-        changed |= NormalizeSpacingToken(config, ["textInput", "idleRightIconRowInputs", "gap"]);
-        changed |= NormalizeSpacingToken(config, ["textInput", "typingLeftIconRowInputs", "gap"]);
-        changed |= NormalizeSpacingToken(config, ["textInput", "typingRightIconRowInputs", "gap"]);
         changed |= NormalizeSpacingToken(config, ["textInput", "textBoxInputs", "iconGap"]);
         changed |= NormalizeSpacingToken(config, ["textInput", "textBoxInputs", "iconRowGap"]);
         changed |= NormalizeSpacingToken(config, ["iconRow", "gap"]);
@@ -1943,10 +1912,6 @@ internal sealed partial class SpikeDatabase
     private static bool NormalizeComponentIconSizeTokens(JsonObject config)
     {
         var changed = false;
-        changed |= NormalizeIconSizeToken(config, ["textInput", "idleLeftIconRowInputs", "size"]);
-        changed |= NormalizeIconSizeToken(config, ["textInput", "idleRightIconRowInputs", "size"]);
-        changed |= NormalizeIconSizeToken(config, ["textInput", "typingLeftIconRowInputs", "size"]);
-        changed |= NormalizeIconSizeToken(config, ["textInput", "typingRightIconRowInputs", "size"]);
         changed |= NormalizeIconSizeToken(config, ["textInput", "textBoxInputs", "iconRowSize"]);
         changed |= NormalizeIconSizeToken(config, ["iconRow", "size"]);
         changed |= NormalizeIconSizeToken(config, ["iconBar", "idleLeftIconRowInputs", "size"]);
@@ -1955,9 +1920,6 @@ internal sealed partial class SpikeDatabase
         changed |= NormalizeIconSizeToken(config, ["iconBar", "activeLeftIconRowInputs", "size"]);
         changed |= NormalizeIconSizeToken(config, ["iconBar", "activeCenterIconRowInputs", "size"]);
         changed |= NormalizeIconSizeToken(config, ["iconBar", "activeRightIconRowInputs", "size"]);
-        changed |= NormalizeIconSizeToken(config, ["keyboard", "leftIconRowInputs", "size"]);
-        changed |= NormalizeIconSizeToken(config, ["keyboard", "centerIconRowInputs", "size"]);
-        changed |= NormalizeIconSizeToken(config, ["keyboard", "rightIconRowInputs", "size"]);
         if (JsonPath.Get(config, ["iconRow", "buttonIconSlot", "overrides", "buttonIcon"]) is JsonObject buttonIconOverrides
             && buttonIconOverrides.Remove("size"))
         {
@@ -2555,14 +2517,22 @@ internal sealed partial class SpikeDatabase
         var changed = false;
         changed |= NormalizeComponentSlot(textInput, "barSurfaceSlot", DefaultComponentPresetId);
         changed |= NormalizeComponentSlot(textInput, "textBoxSlot", DefaultComponentPresetId);
-        changed |= NormalizeComponentSlot(textInput, "idleLeftIconRowSlot", DefaultComponentPresetId);
-        changed |= NormalizeComponentSlot(textInput, "idleRightIconRowSlot", DefaultComponentPresetId);
-        changed |= NormalizeComponentSlot(textInput, "typingLeftIconRowSlot", DefaultComponentPresetId);
-        changed |= NormalizeComponentSlot(textInput, "typingRightIconRowSlot", DefaultComponentPresetId);
-        changed |= NormalizeTextInputIconRowInputs(textInput, "idleLeftIconRowInputs", IconRowInputBindings());
-        changed |= NormalizeTextInputIconRowInputs(textInput, "idleRightIconRowInputs", IconRowInputBindings(new JsonArray("media_mic")));
-        changed |= NormalizeTextInputIconRowInputs(textInput, "typingLeftIconRowInputs", IconRowInputBindings());
-        changed |= NormalizeTextInputIconRowInputs(textInput, "typingRightIconRowInputs", IconRowInputBindings(new JsonArray("chat_send"), actionIconNumber: 1));
+        changed |= NormalizeComponentSlot(textInput, "iconBarSlot", DefaultComponentPresetId);
+        changed |= RemoveJsonProperties(
+            textInput,
+            "iconButtonPresetId",
+            "leftIconRowSlot",
+            "leftIconRowInputs",
+            "rightIconRowSlot",
+            "rightIconRowInputs",
+            "idleLeftIconRowSlot",
+            "idleLeftIconRowInputs",
+            "idleRightIconRowSlot",
+            "idleRightIconRowInputs",
+            "typingLeftIconRowSlot",
+            "typingLeftIconRowInputs",
+            "typingRightIconRowSlot",
+            "typingRightIconRowInputs");
         if (textInput["textBoxInputs"] is not JsonObject)
         {
             textInput["textBoxInputs"] = TextBoxInputBindings();
@@ -2584,12 +2554,7 @@ internal sealed partial class SpikeDatabase
             }
         }
         changed |= NormalizeComponentSlot(textInput, "surfaceSlot", "InputBox");
-        changed |= NormalizeComponentPresetString(
-            connection,
-            projectId,
-            textInput,
-            ["iconButtonPresetId"],
-            "buttonIcon");
+        changed |= NormalizeComponentPresetString(connection, projectId, textInput, ["iconBarSlot", "presetId"], "iconBar");
         return changed;
     }
 
@@ -2606,19 +2571,25 @@ internal sealed partial class SpikeDatabase
         }
 
         var changed = false;
-        if (keyboard["iconButtonSlot"] is not JsonObject)
+        if (config.Remove("textInput"))
         {
-            keyboard["iconButtonSlot"] = ComponentSurfaceSlot(JsonPath.String(keyboard, "iconButtonPresetId", DefaultComponentPresetId));
             changed = true;
         }
 
-        changed |= NormalizeComponentSlot(keyboard, "iconButtonSlot", DefaultComponentPresetId);
-        changed |= NormalizeComponentSlot(keyboard, "leftIconRowSlot", DefaultComponentPresetId);
-        changed |= NormalizeComponentSlot(keyboard, "centerIconRowSlot", DefaultComponentPresetId);
-        changed |= NormalizeComponentSlot(keyboard, "rightIconRowSlot", DefaultComponentPresetId);
-        changed |= NormalizeKeyboardIconRowInputs(keyboard, "leftIconRowInputs", IconRowInputBindings(new JsonArray("app_language")));
-        changed |= NormalizeKeyboardIconRowInputs(keyboard, "centerIconRowInputs", IconRowInputBindings());
-        changed |= NormalizeKeyboardIconRowInputs(keyboard, "rightIconRowInputs", IconRowInputBindings(new JsonArray("media_mic")));
+        changed |= NormalizeComponentSlot(keyboard, "iconBarSlot", DefaultComponentPresetId);
+        changed |= RemoveJsonProperties(
+            keyboard,
+            "iconRowsEdgePadding",
+            "iconButtonSlot",
+            "iconButtonPresetId",
+            "leftIconRowSlot",
+            "leftIconRowInputs",
+            "centerIconRowSlot",
+            "centerIconRowInputs",
+            "rightIconRowSlot",
+            "rightIconRowInputs",
+            "bottomIconSlots",
+            "bottomIconColorToken");
         if (keyboard["motion"] is not JsonObject)
         {
             keyboard["motion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString());
@@ -2647,29 +2618,7 @@ internal sealed partial class SpikeDatabase
             }
         }
 
-        changed |= NormalizeComponentPresetString(connection, projectId, keyboard, ["iconButtonSlot", "presetId"], "buttonIcon");
-        changed |= NormalizeComponentPresetString(connection, projectId, keyboard, ["leftIconRowSlot", "presetId"], "iconRow");
-        changed |= NormalizeComponentPresetString(connection, projectId, keyboard, ["centerIconRowSlot", "presetId"], "iconRow");
-        changed |= NormalizeComponentPresetString(connection, projectId, keyboard, ["rightIconRowSlot", "presetId"], "iconRow");
-
-        if (keyboard.Remove("iconButtonPresetId"))
-        {
-            changed = true;
-        }
-
-        if (keyboard["bottomIconSlots"] is JsonObject bottomIconSlots)
-        {
-            changed |= MoveKeyboardIconSlots(bottomIconSlots, keyboard, "left", "leftIconRowInputs");
-            changed |= MoveKeyboardIconSlots(bottomIconSlots, keyboard, "center", "centerIconRowInputs");
-            changed |= MoveKeyboardIconSlots(bottomIconSlots, keyboard, "right", "rightIconRowInputs");
-            keyboard.Remove("bottomIconSlots");
-            changed = true;
-        }
-
-        if (keyboard.Remove("bottomIconColorToken"))
-        {
-            changed = true;
-        }
+        changed |= NormalizeComponentPresetString(connection, projectId, keyboard, ["iconBarSlot", "presetId"], "iconBar");
 
         if (keyboard.Remove("keyCornerRadius"))
         {
@@ -2677,50 +2626,6 @@ internal sealed partial class SpikeDatabase
         }
 
         return changed;
-    }
-
-    private static bool NormalizeKeyboardIconRowInputs(
-        JsonObject keyboard,
-        string key,
-        JsonObject defaults)
-    {
-        if (keyboard[key] is not JsonObject inputs)
-        {
-            keyboard[key] = JsonNode.Parse(defaults.ToJsonString());
-            return true;
-        }
-
-        return JsonPath.MergeMissing(inputs, defaults);
-    }
-
-    private static bool MoveKeyboardIconSlots(
-        JsonObject bottomIconSlots,
-        JsonObject keyboard,
-        string zone,
-        string inputKey)
-    {
-        if (bottomIconSlots[zone] is not JsonArray icons
-            || keyboard[inputKey] is not JsonObject inputs)
-        {
-            return false;
-        }
-
-        inputs["icons"] = JsonNode.Parse(icons.ToJsonString());
-        return true;
-    }
-
-    private static bool NormalizeTextInputIconRowInputs(
-        JsonObject textInput,
-        string key,
-        JsonObject defaults)
-    {
-        if (textInput[key] is not JsonObject inputs)
-        {
-            textInput[key] = JsonNode.Parse(defaults.ToJsonString());
-            return true;
-        }
-
-        return JsonPath.MergeMissing(inputs, defaults);
     }
 
     private static bool NormalizeComponentSlot(JsonObject owner, string key, string preferredPresetName)
@@ -2742,6 +2647,20 @@ internal sealed partial class SpikeDatabase
         {
             slot["overrides"] = new JsonObject();
             changed = true;
+        }
+
+        return changed;
+    }
+
+    private static bool RemoveJsonProperties(JsonObject owner, params string[] keys)
+    {
+        var changed = false;
+        foreach (var key in keys)
+        {
+            if (owner.Remove(key))
+            {
+                changed = true;
+            }
         }
 
         return changed;

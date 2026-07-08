@@ -244,11 +244,6 @@ internal static class ComponentClassFieldCatalog
             "[]"),
     ];
 
-    private static readonly ComponentInputBindingDefinition[] IconRowStyleInputBindings =
-        IconRowParentInputBindings
-            .Where((binding) => binding.Id != "icons")
-            .ToArray();
-
     private static readonly ComponentInputBindingDefinition[] TextBoxParentInputBindings =
     [
         new(
@@ -536,7 +531,7 @@ internal static class ComponentClassFieldCatalog
         ["component.textInput.barPadding"] = new("component.textInput.barPadding", "Bar padding", ValueKind.ThemeTokenPair, ["textInput", "barPadding"], "theme.spacing.l|theme.spacing.m", PairLabels: new("X", "Y"), Options: SpacingTokenOptions),
         ["component.textInput.barSurface.editor"] = new("component.textInput.barSurface.editor", "Bar surface", ValueKind.ComponentPreset, ["textInput", "barSurfaceSlot", "presetId"], "default"),
         ["component.textInput.iconGap"] = new("component.textInput.iconGap", "Icon gap", ValueKind.ThemeToken, ["textInput", "iconGap"], "theme.spacing.m", Options: SpacingTokenOptions),
-        ["component.textInput.iconButton.presetId"] = new("component.textInput.iconButton.presetId", "Icon button variant", ValueKind.OptionToken, ["textInput", "iconButtonPresetId"], "default", ComponentPresetType: "buttonIcon"),
+        ["component.textInput.iconBar.editor"] = new("component.textInput.iconBar.editor", "Icon bar", ValueKind.ComponentPreset, ["textInput", "iconBarSlot", "presetId"], "default"),
         ["component.textInput.textBox.editor"] = new("component.textInput.textBox.editor", "Text box variant", ValueKind.ComponentPreset, ["textInput", "textBoxSlot", "presetId"], "default"),
         ["component.textInput.textBox.inputs"] = new(
             "component.textInput.textBox.inputs",
@@ -545,38 +540,6 @@ internal static class ComponentClassFieldCatalog
             ["textInput", "textBoxInputs"],
             """{"placeholder":"Message"}""",
             ComponentInputBindings: TextBoxParentInputBindings),
-        ["component.textInput.idleLeftIconRow.editor"] = new("component.textInput.idleLeftIconRow.editor", "Idle left row variant", ValueKind.ComponentPreset, ["textInput", "idleLeftIconRowSlot", "presetId"], "default"),
-        ["component.textInput.idleLeftIconRow.inputs"] = new(
-            "component.textInput.idleLeftIconRow.inputs",
-            "Idle left row settings",
-            ValueKind.ComponentInputBindings,
-            ["textInput", "idleLeftIconRowInputs"],
-            """{"size":"theme.iconSizes.xl","gap":"theme.spacing.m","orientation":"horizontal","icons":[]}""",
-            ComponentInputBindings: IconRowParentInputBindings),
-        ["component.textInput.idleRightIconRow.editor"] = new("component.textInput.idleRightIconRow.editor", "Idle right row variant", ValueKind.ComponentPreset, ["textInput", "idleRightIconRowSlot", "presetId"], "default"),
-        ["component.textInput.idleRightIconRow.inputs"] = new(
-            "component.textInput.idleRightIconRow.inputs",
-            "Idle right row settings",
-            ValueKind.ComponentInputBindings,
-            ["textInput", "idleRightIconRowInputs"],
-            """{"size":"theme.iconSizes.xl","gap":"theme.spacing.m","orientation":"horizontal","icons":["media_mic"]}""",
-            ComponentInputBindings: IconRowParentInputBindings),
-        ["component.textInput.typingLeftIconRow.editor"] = new("component.textInput.typingLeftIconRow.editor", "Typing left row variant", ValueKind.ComponentPreset, ["textInput", "typingLeftIconRowSlot", "presetId"], "default"),
-        ["component.textInput.typingLeftIconRow.inputs"] = new(
-            "component.textInput.typingLeftIconRow.inputs",
-            "Typing left row settings",
-            ValueKind.ComponentInputBindings,
-            ["textInput", "typingLeftIconRowInputs"],
-            """{"size":"theme.iconSizes.xl","gap":"theme.spacing.m","orientation":"horizontal","icons":[]}""",
-            ComponentInputBindings: IconRowParentInputBindings),
-        ["component.textInput.typingRightIconRow.editor"] = new("component.textInput.typingRightIconRow.editor", "Typing right row variant", ValueKind.ComponentPreset, ["textInput", "typingRightIconRowSlot", "presetId"], "default"),
-        ["component.textInput.typingRightIconRow.inputs"] = new(
-            "component.textInput.typingRightIconRow.inputs",
-            "Typing right row settings",
-            ValueKind.ComponentInputBindings,
-            ["textInput", "typingRightIconRowInputs"],
-            """{"size":"theme.iconSizes.xl","gap":"theme.spacing.m","orientation":"horizontal","icons":["chat_send"],"actionIconNumber":1,"actionBackgroundAlpha":1,"actionBackgroundColor":"aqua_green","actionIconColor":"gray_100"}""",
-            ComponentInputBindings: IconRowParentInputBindings),
 
         ["component.keyboard.language"] = new("component.keyboard.language", "Language", ValueKind.OptionToken, ["keyboard", "language"], "es", Options: KeyboardLanguageOptions),
         ["component.keyboard.backgroundColorToken"] = new("component.keyboard.backgroundColorToken", "Background", ValueKind.ThemeToken, ["keyboard", "backgroundColorToken"], "theme.keyboard.background", Options: ThemeColorOptions),
@@ -614,32 +577,7 @@ internal static class ComponentClassFieldCatalog
             MotionVariantValue.Default.ToJsonString()),
         ["component.keyboard.iconRowPlacement"] = new("component.keyboard.iconRowPlacement", "Placement", ValueKind.OptionToken, ["keyboard", "iconRowPlacement"], "bottom", Options: KeyboardIconRowPlacementOptions),
         ["component.keyboard.iconRowsHeight"] = new("component.keyboard.iconRowsHeight", "Icon zone height", ValueKind.Integer, ["keyboard", "iconRowsHeight"], "52", Number: new NumberDefinition(0, 240, 1, 0)),
-        ["component.keyboard.iconRowsEdgePadding"] = new("component.keyboard.iconRowsEdgePadding", "Edge padding", ValueKind.ThemeToken, ["keyboard", "iconRowsEdgePadding"], "theme.spacing.m", Options: SpacingTokenOptions),
-        ["component.keyboard.iconButton.editor"] = new("component.keyboard.iconButton.editor", "Icon button", ValueKind.ComponentPreset, ["keyboard", "iconButtonSlot", "presetId"], "default"),
-        ["component.keyboard.leftIconRow.editor"] = new("component.keyboard.leftIconRow.editor", "Left row variant", ValueKind.ComponentPreset, ["keyboard", "leftIconRowSlot", "presetId"], "default"),
-        ["component.keyboard.leftIconRow.inputs"] = new(
-            "component.keyboard.leftIconRow.inputs",
-            "Left row settings",
-            ValueKind.ComponentInputBindings,
-            ["keyboard", "leftIconRowInputs"],
-            """{"size":"theme.iconSizes.xl","gap":"theme.spacing.m","orientation":"horizontal","icons":["app_language"]}""",
-            ComponentInputBindings: IconRowStyleInputBindings),
-        ["component.keyboard.centerIconRow.editor"] = new("component.keyboard.centerIconRow.editor", "Center row variant", ValueKind.ComponentPreset, ["keyboard", "centerIconRowSlot", "presetId"], "default"),
-        ["component.keyboard.centerIconRow.inputs"] = new(
-            "component.keyboard.centerIconRow.inputs",
-            "Center row settings",
-            ValueKind.ComponentInputBindings,
-            ["keyboard", "centerIconRowInputs"],
-            """{"size":"theme.iconSizes.xl","gap":"theme.spacing.m","orientation":"horizontal","icons":[]}""",
-            ComponentInputBindings: IconRowStyleInputBindings),
-        ["component.keyboard.rightIconRow.editor"] = new("component.keyboard.rightIconRow.editor", "Right row variant", ValueKind.ComponentPreset, ["keyboard", "rightIconRowSlot", "presetId"], "default"),
-        ["component.keyboard.rightIconRow.inputs"] = new(
-            "component.keyboard.rightIconRow.inputs",
-            "Right row settings",
-            ValueKind.ComponentInputBindings,
-            ["keyboard", "rightIconRowInputs"],
-            """{"size":"theme.iconSizes.xl","gap":"theme.spacing.m","orientation":"horizontal","icons":["media_mic"]}""",
-            ComponentInputBindings: IconRowStyleInputBindings),
+        ["component.keyboard.iconBar.editor"] = new("component.keyboard.iconBar.editor", "Icon bar", ValueKind.ComponentPreset, ["keyboard", "iconBarSlot", "presetId"], "default"),
 
         ["component.buttonIcon.sizeMode"] = new("component.buttonIcon.sizeMode", "Size mode", ValueKind.OptionToken, ["buttonIcon", "sizeMode"], "fixed", Options: ButtonIconSizeModeOptions),
         ["component.buttonIcon.size"] = new("component.buttonIcon.size", "Fixed size", ValueKind.Integer, ["buttonIcon", "size"], "48"),

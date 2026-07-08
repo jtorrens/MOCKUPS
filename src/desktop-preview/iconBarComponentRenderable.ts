@@ -63,6 +63,14 @@ export function iconBarComponentToRenderableAt(
   };
 }
 
+export function measureIconBarZoneComponent(
+  payload: DesignPreviewPayload,
+  iconBar: IconBarDesignContract,
+  zone: IconBarZone,
+) {
+  return measureIconRowComponent(payload, iconBar.rows[zone]);
+}
+
 function zoneX(
   zone: IconBarZone,
   box: RenderableBox,

@@ -11,7 +11,7 @@ import {
   requiredString,
   requiredStringPair,
 } from "./componentResolverCommon.js";
-import { resolveIconRowComponentFromRecords } from "./iconRowComponentResolver.js";
+import { resolveIconBarComponentFromRecords } from "./iconBarComponentResolver.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
 import { resolveTextBoxComponentFromRecords } from "./textBoxComponentResolver.js";
 
@@ -24,6 +24,7 @@ export function resolveTextInputBarComponent(
   const textInput = asRecord(config.textInput);
   const barSurfaceSlot = asRecord(textInput.barSurfaceSlot);
   const textBoxSlot = asRecord(textInput.textBoxSlot);
+  const iconBarSlot = asRecord(textInput.iconBarSlot);
   const textBoxInputs = asRecord(textInput.textBoxInputs);
   const leftTextBoxIconRowSlot = componentInputSlot(
     textBoxInputs,
@@ -50,11 +51,6 @@ export function resolveTextInputBarComponent(
   );
   const isTyping = sampleText.trim().length > 0;
   const height = requiredNumber(textInput, "height", "component.textInput.height");
-  const iconButtonPresetId = requiredString(
-    textInput,
-    "iconButtonPresetId",
-    "component.textInput.iconButtonPresetId",
-  );
   const embeddedBarSurfaceConfig = mergeComponentDefaults(
     componentPresetConfig(componentBaseConfigs, "surface", barSurfaceSlot.presetId),
     asRecord(barSurfaceSlot.overrides),
@@ -62,6 +58,14 @@ export function resolveTextInputBarComponent(
   const embeddedTextBoxConfig = mergeComponentDefaults(
     componentPresetConfig(componentBaseConfigs, "textBox", textBoxSlot.presetId),
     asRecord(textBoxSlot.overrides),
+  );
+  const embeddedIconBarConfig = mergeComponentDefaults(
+    componentPresetConfig(
+      componentBaseConfigs,
+      "iconBar",
+      requiredString(iconBarSlot, "presetId", "component.textInput.iconBarSlot.presetId"),
+    ),
+    asRecord(iconBarSlot.overrides),
   );
 
   return {
@@ -78,13 +82,14 @@ export function resolveTextInputBarComponent(
       "component.textInputBar.barSurface",
     ),
     iconGapToken: requiredString(textInput, "iconGap", "component.textInput.iconGap"),
-    leftIconRow: resolveTextInputIconRow(
-      textInput,
-      isTyping ? "typingLeftIconRowSlot" : "idleLeftIconRowSlot",
-      isTyping ? "typingLeftIconRowInputs" : "idleLeftIconRowInputs",
-      iconButtonPresetId,
+    iconBar: resolveIconBarComponentFromRecords(
+      embeddedIconBarConfig,
+      {
+        state: isTyping ? "active" : "idle",
+        size: `520|${height}`,
+      },
       componentBaseConfigs,
-      "component.textInputBar.leftIcons",
+      "component.textInputBar.iconBar",
     ),
     textBox: resolveTextBoxComponentFromRecords(
       embeddedTextBoxConfig,
@@ -124,44 +129,7 @@ export function resolveTextInputBarComponent(
       componentBaseConfigs,
       "component.textInputBar.textBox",
     ),
-    rightIconRow: resolveTextInputIconRow(
-      textInput,
-      isTyping ? "typingRightIconRowSlot" : "idleRightIconRowSlot",
-      isTyping ? "typingRightIconRowInputs" : "idleRightIconRowInputs",
-      iconButtonPresetId,
-      componentBaseConfigs,
-      "component.textInputBar.rightIcons",
-    ),
   };
-}
-
-function resolveTextInputIconRow(
-  textInput: Record<string, unknown>,
-  slotKey: string,
-  inputsKey: string,
-  iconButtonPresetId: string,
-  componentBaseConfigs: Record<string, unknown>,
-  id: string,
-) {
-  const slot = asRecord(textInput[slotKey]);
-  const inputs = {
-    ...asRecord(textInput[inputsKey]),
-    buttonIconPresetId: iconButtonPresetId,
-  };
-  const config = mergeComponentDefaults(
-    componentPresetConfig(
-      componentBaseConfigs,
-      "iconRow",
-      requiredString(slot, "presetId", `component.textInput.${slotKey}.presetId`),
-    ),
-    asRecord(slot.overrides),
-  );
-  return resolveIconRowComponentFromRecords(
-    config,
-    inputs,
-    componentBaseConfigs,
-    id,
-  );
 }
 
 function componentInputSlot(

@@ -4,7 +4,7 @@ import type {
   SurfaceStyleContract,
   TypographyStyleContract,
 } from "./previewComponentContracts.js";
-import type { IconRowDesignContract } from "./iconRowComponentContract.js";
+import type { IconBarDesignContract } from "./iconBarComponentContract.js";
 
 export type KeyboardMode = "lowercase" | "shift" | "numeric" | "symbols" | "emoji";
 
@@ -38,10 +38,7 @@ export interface KeyboardDesignContract {
   rows: KeyboardKeyContract[][];
   iconRowPlacement: "top" | "bottom";
   iconRowsHeight: number;
-  iconRowsEdgePaddingToken: string;
-  leftIconRow: IconRowDesignContract;
-  centerIconRow: IconRowDesignContract;
-  rightIconRow: IconRowDesignContract;
+  iconBar: IconBarDesignContract;
   surface: SurfaceStyleContract;
   motion: ComponentMotionContract;
   motionFrame: ComponentMotionFrameContract;

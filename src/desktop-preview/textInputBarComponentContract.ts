@@ -1,5 +1,5 @@
 import type { SpacingPairContract } from "./previewComponentContracts.js";
-import type { IconRowDesignContract } from "./iconRowComponentContract.js";
+import type { IconBarDesignContract } from "./iconBarComponentContract.js";
 import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
 import type { TextBoxDesignContract } from "./textBoxComponentContract.js";
 
@@ -9,7 +9,6 @@ export interface TextInputBarDesignContract {
   barPadding: SpacingPairContract;
   barSurface: SurfaceDesignContract;
   iconGapToken: string;
-  leftIconRow: IconRowDesignContract;
+  iconBar: IconBarDesignContract;
   textBox: TextBoxDesignContract;
-  rightIconRow: IconRowDesignContract;
 }

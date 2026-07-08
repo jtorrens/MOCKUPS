@@ -12,11 +12,7 @@ import {
 } from "./componentRenderableCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { resolveTypographyStyle } from "./previewTextHelpers.js";
-import {
-  iconRowComponentToRenderableAt,
-  measureIconRowComponent,
-} from "./iconRowComponentRenderable.js";
-import type { IconRowDesignContract } from "./iconRowComponentContract.js";
+import { iconBarComponentToRenderableAt } from "./iconBarComponentRenderable.js";
 import type {
   KeyboardDesignContract,
   KeyboardKeyContract,
@@ -60,11 +56,7 @@ export function keyboardComponentToRenderable(
   const keyPadding = numberToken(payload, keyboard.keyPaddingToken) * scale;
   const padding = Math.max(6 * scale, keyPadding);
   const rowGap = 8 * scale;
-  const iconRows = [keyboard.leftIconRow, keyboard.centerIconRow, keyboard.rightIconRow];
-  const hasIconRows = iconRows.some((row) => row.buttons.length > 0);
-  const iconRowsHeight = hasIconRows
-    ? Math.max(keyboard.iconRowsHeight * scale, 1)
-    : 0;
+  const iconRowsHeight = Math.max(keyboard.iconRowsHeight * scale, 0);
   const rowCount = Math.max(1, keyboard.rows.length);
   const rowHeight = Math.max(
     1,
@@ -156,7 +148,7 @@ export function keyboardComponentToRenderable(
         },
       },
       ...keyNodes,
-      ...keyboardIconRowNodes(
+      ...keyboardIconBarNodes(
         payload,
         keyboard,
         keyboardBox,
@@ -426,7 +418,7 @@ function scaleBox(box: RenderableBox, amount: number): RenderableBox {
   };
 }
 
-function keyboardIconRowNodes(
+function keyboardIconBarNodes(
   payload: DesignPreviewPayload,
   keyboard: KeyboardDesignContract,
   keyboardBox: RenderableBox,
@@ -434,60 +426,15 @@ function keyboardIconRowNodes(
 ): RenderableNode[] {
   if (iconRowsHeight <= 0) return [];
 
-  const scale = renderScale(payload);
-  const edgePadding = Math.max(0, numberToken(payload, keyboard.iconRowsEdgePaddingToken) * scale);
-  const verticalPadding = Math.min(edgePadding, Math.max(0, iconRowsHeight / 2 - 1));
-  const rowAreaHeight = Math.max(1, iconRowsHeight - verticalPadding * 2);
   const y = keyboard.iconRowPlacement === "top"
-    ? keyboardBox.y + verticalPadding
-    : keyboardBox.y + keyboardBox.height - iconRowsHeight + verticalPadding;
+    ? keyboardBox.y
+    : keyboardBox.y + keyboardBox.height - iconRowsHeight;
   return [
-    iconRowZoneNode(
-      payload,
-      keyboard.leftIconRow,
-      "left",
-      keyboardBox.x + edgePadding,
+    iconBarComponentToRenderableAt(payload, keyboard.iconBar, {
+      x: keyboardBox.x,
       y,
-      rowAreaHeight,
-    ),
-    iconRowZoneNode(
-      payload,
-      keyboard.centerIconRow,
-      "center",
-      keyboardBox.x + keyboardBox.width / 2,
-      y,
-      rowAreaHeight,
-    ),
-    iconRowZoneNode(
-      payload,
-      keyboard.rightIconRow,
-      "right",
-      keyboardBox.x + keyboardBox.width - edgePadding,
-      y,
-      rowAreaHeight,
-    ),
-  ].filter((node): node is RenderableNode => node !== undefined);
-}
-
-function iconRowZoneNode(
-  payload: DesignPreviewPayload,
-  iconRow: IconRowDesignContract,
-  zone: "left" | "center" | "right",
-  anchorX: number,
-  y: number,
-  rowAreaHeight: number,
-): RenderableNode | undefined {
-  if (iconRow.buttons.length === 0) return undefined;
-  const size = measureIconRowComponent(payload, iconRow);
-  const x = zone === "left"
-    ? anchorX
-    : zone === "right"
-      ? anchorX - size.width
-      : anchorX - size.width / 2;
-  return iconRowComponentToRenderableAt(payload, iconRow, {
-    x,
-    y: y + (rowAreaHeight - size.height) / 2,
-    width: size.width,
-    height: size.height,
-  });
+      width: keyboardBox.width,
+      height: iconRowsHeight,
+    }),
+  ];
 }

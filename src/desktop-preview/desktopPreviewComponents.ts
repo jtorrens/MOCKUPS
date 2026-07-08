@@ -89,7 +89,7 @@ export const desktopPreviewComponents = {
     contract: "./textInputBarComponentContract",
     resolver: "./textInputBarComponentResolver",
     renderable: "./textInputBarComponentRenderable",
-    embeds: ["surface", "textBox", "iconRow"],
+    embeds: ["surface", "textBox", "iconBar"],
   },
   keyboard: {
     category: "system",
@@ -97,7 +97,7 @@ export const desktopPreviewComponents = {
     contract: "./keyboardComponentContract",
     resolver: "./keyboardComponentResolver",
     renderable: "./keyboardComponentRenderable",
-    embeds: ["iconRow"],
+    embeds: ["iconBar"],
   },
   video: {
     category: "component",

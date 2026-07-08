@@ -19,7 +19,7 @@ import {
   requiredString,
   resolveSurfaceStyle,
 } from "./componentResolverCommon.js";
-import { resolveIconRowComponentFromRecords } from "./iconRowComponentResolver.js";
+import { resolveIconBarComponentFromRecords } from "./iconBarComponentResolver.js";
 import type { TypographyStyleContract } from "./previewComponentContracts.js";
 import { requiredMotionContract } from "./previewMotionHelpers.js";
 
@@ -57,13 +57,15 @@ export function resolveKeyboardComponent(
   if (iconRowPlacement !== "top" && iconRowPlacement !== "bottom") {
     throw new Error(`Unsupported keyboard icon row placement ${iconRowPlacement}`);
   }
-  const iconButtonSlot = asRecord(keyboard.iconButtonSlot);
-  const iconButtonPresetId = requiredString(
-    iconButtonSlot,
-    "presetId",
-    "component.keyboard.iconButtonSlot.presetId",
+  const iconBarSlot = asRecord(keyboard.iconBarSlot);
+  const embeddedIconBarConfig = mergeComponentDefaults(
+    componentPresetConfig(
+      componentBaseConfigs,
+      "iconBar",
+      requiredString(iconBarSlot, "presetId", "component.keyboard.iconBarSlot.presetId"),
+    ),
+    asRecord(iconBarSlot.overrides),
   );
-  const iconButtonOverrides = asRecord(iconButtonSlot.overrides);
   const parsedRows = parseKeyboardRows(STANDARD_IOS_KEYBOARD_LAYOUT, mode, language);
   const extraEmojis = keyboardExtraEmojis(fullText, currentCharacter);
   const rowsWithMode = mode === "emoji"
@@ -155,40 +157,18 @@ export function resolveKeyboardComponent(
       "iconRowsHeight",
       "component.keyboard.iconRowsHeight",
     ),
-    iconRowsEdgePaddingToken: requiredString(
-      keyboard,
-      "iconRowsEdgePadding",
-      "component.keyboard.iconRowsEdgePadding",
-    ),
-    leftIconRow: resolveKeyboardIconRow(
-      keyboard,
-      "leftIconRowSlot",
-      "leftIconRowInputs",
-      optionalStringArray(preview, "leftIcons", ["app_language"]),
-      iconButtonPresetId,
-      iconButtonOverrides,
+    iconBar: resolveIconBarComponentFromRecords(
+      embeddedIconBarConfig,
+      {
+        state: "idle",
+        size: `${payload.previewFrame.screenWidth}|${requiredNumber(
+          keyboard,
+          "iconRowsHeight",
+          "component.keyboard.iconRowsHeight",
+        )}`,
+      },
       componentBaseConfigs,
-      "component.keyboard.leftIconRow",
-    ),
-    centerIconRow: resolveKeyboardIconRow(
-      keyboard,
-      "centerIconRowSlot",
-      "centerIconRowInputs",
-      optionalStringArray(preview, "centerIcons", []),
-      iconButtonPresetId,
-      iconButtonOverrides,
-      componentBaseConfigs,
-      "component.keyboard.centerIconRow",
-    ),
-    rightIconRow: resolveKeyboardIconRow(
-      keyboard,
-      "rightIconRowSlot",
-      "rightIconRowInputs",
-      optionalStringArray(preview, "rightIcons", ["media_mic"]),
-      iconButtonPresetId,
-      iconButtonOverrides,
-      componentBaseConfigs,
-      "component.keyboard.rightIconRow",
+      "component.keyboard.iconBar",
     ),
     rows,
     surface: resolveSurfaceStyle(style),
@@ -226,34 +206,6 @@ function requiredTypographyStyle(
   };
 }
 
-function resolveKeyboardIconRow(
-  keyboard: Record<string, unknown>,
-  slotKey: string,
-  inputsKey: string,
-  icons: readonly string[],
-  iconButtonPresetId: string,
-  iconButtonOverrides: Record<string, unknown>,
-  componentBaseConfigs: Record<string, unknown>,
-  id: string,
-) {
-  const slot = asRecord(keyboard[slotKey]);
-  const inputs = {
-    ...asRecord(keyboard[inputsKey]),
-    buttonIconPresetId: iconButtonPresetId,
-    buttonIconOverrides: iconButtonOverrides,
-    icons: [...icons],
-  };
-  const config = mergeComponentDefaults(
-    componentPresetConfig(
-      componentBaseConfigs,
-      "iconRow",
-      requiredString(slot, "presetId", `component.keyboard.${slotKey}.presetId`),
-    ),
-    asRecord(slot.overrides),
-  );
-  return resolveIconRowComponentFromRecords(config, inputs, componentBaseConfigs, id);
-}
-
 function keyboardMode(pressedKey: string): KeyboardMode {
   if (pressedKey) {
     if (/\p{Extended_Pictographic}/u.test(pressedKey)) return "emoji";
@@ -265,19 +217,6 @@ function keyboardMode(pressedKey: string): KeyboardMode {
   }
 
   return STANDARD_IOS_KEYBOARD_LAYOUT.defaultMode;
-}
-
-function optionalStringArray(
-  value: Record<string, unknown>,
-  key: string,
-  fallback: readonly string[],
-) {
-  const raw = value[key];
-  if (Array.isArray(raw) && raw.every((entry) => typeof entry === "string")) {
-    return raw.filter((entry) => entry.trim().length > 0);
-  }
-
-  return fallback;
 }
 
 function optionalBoolean(value: Record<string, unknown>, key: string) {
