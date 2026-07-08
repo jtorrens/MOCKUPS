@@ -35,11 +35,17 @@ export function textInputBarComponentToRenderable(
   const hasLeftIcons = leftIconRow.buttons.length > 0;
   const hasRightIcons = rightIconRow.buttons.length > 0;
   const iconGap = Math.max(0, numberToken(payload, textInput.iconGapToken) * scale);
+  const iconBarEdgePadding = Math.max(
+    0,
+    numberToken(payload, textInput.iconBar.edgePaddingToken) * scale,
+  );
+  const leftIconFrameWidth = hasLeftIcons ? iconBarEdgePadding + leftIconSize.width : 0;
+  const rightIconFrameWidth = hasRightIcons ? iconBarEdgePadding + rightIconSize.width : 0;
   const leftGap = hasLeftIcons ? iconGap : 0;
   const rightGap = hasRightIcons ? iconGap : 0;
   const textBoxWidth = Math.max(
     1,
-    width - leftIconSize.width - rightIconSize.width - leftGap - rightGap,
+    width - leftIconFrameWidth - rightIconFrameWidth - leftGap - rightGap,
   );
   const measuredTextBox = {
     ...textInput.textBox,
@@ -71,7 +77,7 @@ export function textInputBarComponentToRenderable(
       : barBox.y + barPaddingY + fieldHeight - iconHeight;
   const fieldStartX = screenBox.x + barPaddingX;
   const fieldBox = {
-    x: fieldStartX + leftIconSize.width + leftGap,
+    x: fieldStartX + leftIconFrameWidth + leftGap,
     y: barBox.y + barPaddingY,
     width: textBoxWidth,
     height: fieldHeight,
