@@ -1,4 +1,6 @@
 import type {
+  ComponentMotionContract,
+  ComponentMotionFrameContract,
   SurfaceStyleContract,
   TypographyStyleContract,
 } from "./previewComponentContracts.js";
@@ -41,4 +43,6 @@ export interface KeyboardDesignContract {
   centerIconRow: IconRowDesignContract;
   rightIconRow: IconRowDesignContract;
   surface: SurfaceStyleContract;
+  motion: ComponentMotionContract;
+  motionFrame: ComponentMotionFrameContract;
 }

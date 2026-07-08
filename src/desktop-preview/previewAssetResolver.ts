@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import type { RenderableFontFace } from "../visual/renderable/types.js";
 import type {
   DesignPreviewFontFacePayload,
@@ -44,7 +45,7 @@ export function fontFacesForPayload(
 
     return [{
       family: previewFontFaceFamily(face.fontId),
-      uri: fontDataUri(fullPath),
+      uri: fontFileUri(fullPath),
       weight: fontFaceWeight(face),
       style: face.style,
     }];
@@ -170,24 +171,6 @@ function fontStyleValue(value: unknown, fallback = "normal") {
   return style === "italic" ? "italic" : "normal";
 }
 
-function fontDataUri(fullPath: string) {
-  const mimeType = fontMimeType(fullPath);
-  const data = readFileSync(fullPath).toString("base64");
-  return `data:${mimeType};base64,${data}`;
-}
-
-function fontMimeType(fullPath: string) {
-  switch (path.extname(fullPath).toLowerCase()) {
-    case ".otf":
-      return "font/otf";
-    case ".ttf":
-    case ".ttc":
-      return "font/ttf";
-    case ".woff":
-      return "font/woff";
-    case ".woff2":
-      return "font/woff2";
-    default:
-      return "application/octet-stream";
-  }
+function fontFileUri(fullPath: string) {
+  return pathToFileURL(fullPath).href;
 }

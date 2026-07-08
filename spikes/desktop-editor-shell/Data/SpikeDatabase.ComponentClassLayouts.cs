@@ -441,7 +441,27 @@ internal sealed partial class SpikeDatabase
         }
         """;
 
+        var behavior = recordClassId == "component.keyboard"
+            ? $$"""
+        ,
+        {
+          "id": "behavior",
+          "label": "Behavior",
+          "subtitle": "Interaction and transition behavior",
+          "icon": "{{EditorIcons.Animation}}",
+          "order": 95,
+          "visible": true,
+          "defaultOpen": false,
+          "groups": [
+            { "id": "motion", "label": "Motion", "order": 10, "visible": true, "fields": [
+              { "id": "component.keyboard.motion", "order": 10, "visible": true }
+            ] }
+          ]
+        }
+        """
+            : "";
+
         var ownsSurfaceStyle = recordClassId is "component.surface" or "component.avatar" or "component.keyboard";
-        return ownsSurfaceStyle ? typeSpecific + style : typeSpecific;
+        return ownsSurfaceStyle ? typeSpecific + style + behavior : typeSpecific + behavior;
     }
 }

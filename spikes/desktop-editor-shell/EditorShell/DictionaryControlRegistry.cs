@@ -84,6 +84,8 @@ internal static class DictionaryControlRegistry
                 request.IsHighlighted,
                 request.Services.OpenEmbeddedComponent),
             [ValueKind.AlignmentPlacement] = (request) => new DictionaryAlignmentPlacementControl(request.Definition, request.Value),
+            [ValueKind.Motion] = (request) => new DictionaryMotionControl(request.Definition, request.Value),
+            [ValueKind.MotionTiming] = (request) => new DictionaryMotionTimingControl(request.Definition, request.Value),
         };
 
     public static IDictionaryValueControl Create(

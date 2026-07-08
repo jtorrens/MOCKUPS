@@ -1,6 +1,8 @@
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -68,6 +70,7 @@ internal static class DesignPreviewPayloadFactory
         var settings = database.GetComponentClassSettings(node.Id);
         var componentBaseConfigsJson = database.GetComponentClassBaseConfigsJson(settings.ProjectId);
         var configJson = database.NormalizeComponentConfigJsonForPreview(settings.ProjectId, settings.ConfigJson);
+        var designPreviewJson = ResolveAnimationDurationJson(configJson, themeTokensJson, settings.DesignPreviewJson);
         return new DesignPreviewPayload(
             "componentClass",
             settings.Name,
@@ -80,7 +83,7 @@ internal static class DesignPreviewPayloadFactory
             iconTheme?.MappingJson ?? "{}",
             fontFaces,
             settings.ComponentType,
-            settings.DesignPreviewJson,
+            designPreviewJson,
             componentBaseConfigsJson);
     }
 
@@ -97,6 +100,7 @@ internal static class DesignPreviewPayloadFactory
         var settings = database.GetComponentPresetSettings(node);
         var componentBaseConfigsJson = database.GetComponentClassBaseConfigsJson(settings.ProjectId);
         var configJson = database.NormalizeComponentConfigJsonForPreview(settings.ProjectId, settings.ConfigJson);
+        var designPreviewJson = ResolveAnimationDurationJson(configJson, themeTokensJson, settings.DesignPreviewJson);
         return new DesignPreviewPayload(
             "componentClass",
             settings.Name,
@@ -109,7 +113,46 @@ internal static class DesignPreviewPayloadFactory
             iconTheme?.MappingJson ?? "{}",
             fontFaces,
             settings.ComponentType,
-            settings.DesignPreviewJson,
+            designPreviewJson,
             componentBaseConfigsJson);
+    }
+
+    private static string ResolveAnimationDurationJson(
+        string configJson,
+        string themeTokensJson,
+        string designPreviewJson)
+    {
+        var preview = JsonPath.ParseObject(designPreviewJson);
+        if (preview["animation"] is not JsonObject animation)
+        {
+            return designPreviewJson;
+        }
+
+        var motionConfigPath = JsonPath.String(animation, "durationMotionConfigPath", "");
+        if (string.IsNullOrWhiteSpace(motionConfigPath))
+        {
+            return designPreviewJson;
+        }
+
+        var config = JsonPath.ParseObject(configJson);
+        var motion = JsonPath.Get(config, motionConfigPath.Split('.', StringSplitOptions.RemoveEmptyEntries)) as JsonObject;
+        var transition = motion is null ? "" : JsonPath.String(motion, "transition", "");
+        if (string.IsNullOrWhiteSpace(transition))
+        {
+            return designPreviewJson;
+        }
+
+        var themeTokens = JsonPath.ParseObject(themeTokensJson);
+        var durationMs = JsonPath.NumberDouble(
+            themeTokens,
+            ["motion", "transitions", transition, "durationMs"],
+            0);
+        if (durationMs <= 0)
+        {
+            return designPreviewJson;
+        }
+
+        animation["durationSeconds"] = durationMs / 1000.0;
+        return preview.ToJsonString();
     }
 }

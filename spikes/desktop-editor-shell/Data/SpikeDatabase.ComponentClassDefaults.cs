@@ -212,6 +212,7 @@ internal sealed partial class SpikeDatabase
                     ["centerIconRowInputs"] = IconRowInputBindings(),
                     ["rightIconRowSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
                     ["rightIconRowInputs"] = IconRowInputBindings(new JsonArray("media_mic"), actionIconNumber: 0),
+                    ["motion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString()),
                 };
                 break;
             case "buttonIcon":
@@ -366,6 +367,15 @@ internal sealed partial class SpikeDatabase
                 ["timeJsonKey"] = "currentTimeSeconds",
             };
         }
+        if (componentType == "keyboard")
+        {
+            preview["animation"] = new JsonObject
+            {
+                ["playInputId"] = "trigger",
+                ["durationMotionConfigPath"] = "keyboard.motion",
+                ["timeJsonKey"] = "motionTimeSeconds",
+            };
+        }
 
         return preview.ToJsonString();
     }
@@ -506,6 +516,7 @@ internal sealed partial class SpikeDatabase
             [
                 ComponentInput("text", "Text", "text", "multilineText", "Hola 😀😃😄"),
                 ComponentInput("currentCharacter", "Current character", "currentCharacter", "number", "1", minimum: 1, maximum: 9999, increment: 1),
+                ComponentInput("trigger", "Trigger", "trigger", "boolean", "false"),
                 ComponentInput("leftIcons", "Left icons", "leftIcons", "iconList", """["app_language"]""", uiOrigin: "embedded", uiGroupId: "leftIconRow", uiGroupLabel: "Left icon row"),
                 ComponentInput("centerIcons", "Center icons", "centerIcons", "iconList", "[]", uiOrigin: "embedded", uiGroupId: "centerIconRow", uiGroupLabel: "Center icon row"),
                 ComponentInput("rightIcons", "Right icons", "rightIcons", "iconList", """["media_mic"]""", uiOrigin: "embedded", uiGroupId: "rightIconRow", uiGroupLabel: "Right icon row"),

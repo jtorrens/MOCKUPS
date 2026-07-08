@@ -1,9 +1,9 @@
 import type { RenderableBox, RenderableNode } from "../visual/renderable/types.js";
 import {
-  boundedCenterBox,
   colorForMode,
   iconTokenStyle,
   numberToken,
+  previewScreenBox,
   renderScale,
   selectedColor,
   shadow,
@@ -21,6 +21,7 @@ import type {
   KeyboardDesignContract,
   KeyboardKeyContract,
 } from "./keyboardComponentContract.js";
+import { wrapMotionFrame } from "./previewMotionHelpers.js";
 
 export function keyboardComponentToRenderable(
   payload: DesignPreviewPayload,
@@ -41,11 +42,14 @@ export function keyboardComponentToRenderable(
     : undefined;
   const keyboardShadow = keyboard.surface.shadowEnabled ? shadow(payload) : undefined;
   const visualPadding = surfaceVisualPadding(borderWidth, keyboardShadow, keyboardRelief);
-  const outerBox = boundedCenterBox(
-    payload,
-    width + visualPadding * 2,
-    height + visualPadding * 2,
-  );
+  const outerWidth = width + visualPadding * 2;
+  const outerHeight = height + visualPadding * 2;
+  const outerBox = {
+    x: payload.previewFrame.screenX + (payload.previewFrame.screenWidth - outerWidth) / 2,
+    y: payload.previewFrame.screenY + payload.previewFrame.screenHeight - outerHeight,
+    width: outerWidth,
+    height: outerHeight,
+  };
   const keyboardBox = {
     x: outerBox.x + visualPadding,
     y: outerBox.y + visualPadding,
@@ -106,7 +110,7 @@ export function keyboardComponentToRenderable(
     ),
   );
 
-  return {
+  const node: RenderableNode = {
     id: keyboard.id,
     type: "group",
     frame: 0,
@@ -160,6 +164,17 @@ export function keyboardComponentToRenderable(
       ),
     ],
   };
+  const motionBounds = keyboard.motion.bounds === "screen"
+    ? previewScreenBox(payload)
+    : outerBox;
+  return wrapMotionFrame(
+    payload,
+    node,
+    keyboard.motion,
+    keyboard.motionFrame,
+    outerBox,
+    motionBounds,
+  );
 }
 
 function keyboardRowNodes(

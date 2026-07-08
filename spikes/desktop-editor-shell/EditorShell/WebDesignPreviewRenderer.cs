@@ -1,70 +1,158 @@
 using Mockups.DesktopEditorShell.Data;
 using Mockups.DesktopEditorShell.Common;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal static class WebDesignPreviewRenderer
 {
+    private const int DefaultFrameCacheCapacity = 180;
+    private const int MaximumFrameCacheCapacity = 4096;
+    private static readonly object CacheGate = new();
+    private static readonly Dictionary<string, LinkedListNode<FrameCacheEntry>> FrameCache = new(StringComparer.Ordinal);
+    private static readonly LinkedList<FrameCacheEntry> FrameCacheOrder = [];
+    private static readonly PersistentPreviewRenderer PersistentRenderer = new();
+    private static int _frameCacheCapacity = DefaultFrameCacheCapacity;
+
     public static async Task<string> RenderBodyAsync(
         SpikeDatabase.DevicePreviewMetrics metrics,
         string themeMode,
         bool showMarks,
         DesignPreviewPayload payload)
     {
+        var stopwatch = Stopwatch.StartNew();
+        var request = CreateRequest(metrics, themeMode, showMarks, payload);
+        var requestJson = JsonSerializer.Serialize(request);
+        if (TryGetCachedFrame(requestJson, out var cachedHtml))
+        {
+            PreviewDebugLog.Write(
+                "preview.render.body",
+                ("route", "cache-hit"),
+                ("component", payload.ComponentType),
+                ("name", payload.Name),
+                ("themeMode", themeMode),
+                ("showMarks", showMarks),
+                ("ms", stopwatch.Elapsed.TotalMilliseconds),
+                ("htmlChars", cachedHtml.Length),
+                ("cacheSize", CacheSize()));
+            return cachedHtml;
+        }
+
+        var renderer = ResolveRendererCommand();
+        var html = await PersistentRenderer.RenderAsync(renderer, requestJson);
+        CacheFrame(requestJson, html);
+        PreviewDebugLog.Write(
+            "preview.render.body",
+            ("route", "rendered"),
+            ("component", payload.ComponentType),
+            ("name", payload.Name),
+            ("themeMode", themeMode),
+            ("showMarks", showMarks),
+            ("ms", stopwatch.Elapsed.TotalMilliseconds),
+            ("htmlChars", html.Length),
+            ("cacheSize", CacheSize()));
+        return html;
+    }
+
+    public static async Task PrewarmBodyAsync(
+        SpikeDatabase.DevicePreviewMetrics metrics,
+        string themeMode,
+        bool showMarks,
+        DesignPreviewPayload payload)
+    {
+        _ = await RenderBodyAsync(metrics, themeMode, showMarks, payload);
+    }
+
+    public static void ReserveFrameCacheCapacity(int frameCount)
+    {
+        if (frameCount <= DefaultFrameCacheCapacity)
+        {
+            PreviewDebugLog.Write(
+                "preview.cache.reserve",
+                ("requestedFrames", frameCount),
+                ("capacity", _frameCacheCapacity),
+                ("changed", false));
+            return;
+        }
+
+        lock (CacheGate)
+        {
+            _frameCacheCapacity = Math.Clamp(frameCount, DefaultFrameCacheCapacity, MaximumFrameCacheCapacity);
+            PreviewDebugLog.Write(
+                "preview.cache.reserve",
+                ("requestedFrames", frameCount),
+                ("capacity", _frameCacheCapacity),
+                ("changed", true));
+        }
+    }
+
+    private static object CreateRequest(
+        SpikeDatabase.DevicePreviewMetrics metrics,
+        string themeMode,
+        bool showMarks,
+        DesignPreviewPayload payload)
+    {
+        return new
+        {
+            kind = payload.Kind,
+            componentType = payload.ComponentType,
+            configJson = payload.ConfigJson,
+            designPreviewJson = payload.DesignPreviewJson,
+            showMarks,
+            themeMode = themeMode is "dark" ? "dark" : "light",
+            themeTokensJson = payload.ThemeTokensJson,
+            paletteColors = payload.PaletteColors,
+            paletteNeutralColors = payload.PaletteNeutralColors,
+            projectMediaRoot = payload.ProjectMediaRoot,
+            fontFaces = payload.FontFaces.Select((face) => new
+            {
+                fontId = face.FontId,
+                family = face.FamilyName,
+                category = face.Category,
+                relativePath = face.RelativePath,
+                weight = face.Weight,
+                style = face.Style,
+            }),
+            iconAssetRoot = payload.IconAssetRoot,
+            iconMappingJson = payload.IconMappingJson,
+            componentBaseConfigsJson = payload.ComponentBaseConfigsJson,
+            previewFrame = new
+            {
+                canvasWidth = metrics.CanvasWidth,
+                canvasHeight = metrics.CanvasHeight,
+                screenX = metrics.ScreenX,
+                screenY = metrics.ScreenY,
+                screenWidth = metrics.ScreenWidth,
+                screenHeight = metrics.ScreenHeight,
+                scaleToPixels = metrics.ScaleToPixels,
+            },
+        };
+    }
+
+    private static async Task<string> RenderBodyOneShotAsync(string requestJson)
+    {
+        var stopwatch = Stopwatch.StartNew();
         var requestPath = Path.Combine(Path.GetTempPath(), $"mockups-design-preview-{Guid.NewGuid():N}.json");
         try
         {
-            var request = new
-            {
-                kind = payload.Kind,
-                componentType = payload.ComponentType,
-                configJson = payload.ConfigJson,
-                designPreviewJson = payload.DesignPreviewJson,
-                showMarks,
-                themeMode = themeMode is "dark" ? "dark" : "light",
-                themeTokensJson = payload.ThemeTokensJson,
-                paletteColors = payload.PaletteColors,
-                paletteNeutralColors = payload.PaletteNeutralColors,
-                projectMediaRoot = payload.ProjectMediaRoot,
-                fontFaces = payload.FontFaces.Select((face) => new
-                {
-                    fontId = face.FontId,
-                    family = face.FamilyName,
-                    category = face.Category,
-                    relativePath = face.RelativePath,
-                    weight = face.Weight,
-                    style = face.Style,
-                }),
-                iconAssetRoot = payload.IconAssetRoot,
-                iconMappingJson = payload.IconMappingJson,
-                componentBaseConfigsJson = payload.ComponentBaseConfigsJson,
-                previewFrame = new
-                {
-                    canvasWidth = metrics.CanvasWidth,
-                    canvasHeight = metrics.CanvasHeight,
-                    screenX = metrics.ScreenX,
-                    screenY = metrics.ScreenY,
-                    screenWidth = metrics.ScreenWidth,
-                    screenHeight = metrics.ScreenHeight,
-                    scaleToPixels = metrics.ScaleToPixels,
-                },
-            };
+            await File.WriteAllTextAsync(requestPath, requestJson);
 
-            await File.WriteAllTextAsync(
-                requestPath,
-                JsonSerializer.Serialize(request, new JsonSerializerOptions
-                {
-                    WriteIndented = true,
-                }));
-
-            return await RunRendererAsync(requestPath);
+            var html = await RunRendererAsync(requestPath);
+            PreviewDebugLog.Write(
+                "preview.renderer.oneshot",
+                ("ms", stopwatch.Elapsed.TotalMilliseconds),
+                ("htmlChars", html.Length));
+            return html;
         }
         finally
         {
@@ -112,9 +200,17 @@ internal static class WebDesignPreviewRenderer
             AppContext.BaseDirectory,
             "desktop-preview",
             "renderDesignPreviewHtml.cjs");
+        var packagedServer = Path.Combine(
+            AppContext.BaseDirectory,
+            "desktop-preview",
+            "renderDesignPreviewHtmlServer.cjs");
         if (File.Exists(packagedRenderer))
         {
-            return new RendererCommand(ResolveNodeExecutable(), AppContext.BaseDirectory, packagedRenderer);
+            return new RendererCommand(
+                ResolveNodeExecutable(),
+                AppContext.BaseDirectory,
+                packagedRenderer,
+                File.Exists(packagedServer) ? packagedServer : "");
         }
 
         var root = FindRepositoryRoot();
@@ -123,11 +219,208 @@ internal static class WebDesignPreviewRenderer
             : "tsx";
         var executable = Path.Combine(root, "node_modules", ".bin", executableName);
         var script = Path.Combine(root, "src", "desktop-preview", "renderDesignPreviewHtml.tsx");
+        var serverScript = Path.Combine(root, "src", "desktop-preview", "renderDesignPreviewHtmlServer.ts");
 
-        return new RendererCommand(executable, root, script);
+        return new RendererCommand(executable, root, script, serverScript);
     }
 
-    private sealed record RendererCommand(string Executable, string WorkingDirectory, string Script);
+    private sealed record RendererCommand(string Executable, string WorkingDirectory, string Script, string ServerScript);
+
+    private sealed record FrameCacheEntry(string Key, string Html);
+
+    private static bool TryGetCachedFrame(string key, out string html)
+    {
+        lock (CacheGate)
+        {
+            if (FrameCache.TryGetValue(key, out var node))
+            {
+                FrameCacheOrder.Remove(node);
+                FrameCacheOrder.AddFirst(node);
+                html = node.Value.Html;
+                return true;
+            }
+        }
+
+        html = "";
+        return false;
+    }
+
+    private static void CacheFrame(string key, string html)
+    {
+        lock (CacheGate)
+        {
+            if (FrameCache.TryGetValue(key, out var existing))
+            {
+                existing.Value = existing.Value with { Html = html };
+                FrameCacheOrder.Remove(existing);
+                FrameCacheOrder.AddFirst(existing);
+                return;
+            }
+
+            var node = new LinkedListNode<FrameCacheEntry>(new FrameCacheEntry(key, html));
+            FrameCacheOrder.AddFirst(node);
+            FrameCache[key] = node;
+            while (FrameCache.Count > _frameCacheCapacity && FrameCacheOrder.Last is not null)
+            {
+                var last = FrameCacheOrder.Last;
+                FrameCacheOrder.RemoveLast();
+                FrameCache.Remove(last.Value.Key);
+            }
+        }
+    }
+
+    private static int CacheSize()
+    {
+        lock (CacheGate)
+        {
+            return FrameCache.Count;
+        }
+    }
+
+    private sealed class PersistentPreviewRenderer
+    {
+        private readonly SemaphoreSlim _gate = new(1, 1);
+        private Process? _process;
+        private RendererCommand? _command;
+        private readonly StringBuilder _stderr = new();
+        private int _nextId;
+
+        public async Task<string> RenderAsync(RendererCommand command, string requestJson)
+        {
+            if (string.IsNullOrWhiteSpace(command.ServerScript) || !File.Exists(command.ServerScript))
+            {
+                PreviewDebugLog.Write(
+                    "preview.renderer.route",
+                    ("route", "oneshot"),
+                    ("reason", "server-script-missing"),
+                    ("script", command.Script));
+                return await RenderBodyOneShotAsync(requestJson);
+            }
+
+            await _gate.WaitAsync();
+            try
+            {
+                try
+                {
+                    var stopwatch = Stopwatch.StartNew();
+                    EnsureStarted(command);
+                    var process = _process
+                        ?? throw new InvalidOperationException("Persistent design preview renderer did not start.");
+                    var id = (++_nextId).ToString();
+                    await process.StandardInput.WriteLineAsync(JsonSerializer.Serialize(new
+                    {
+                        id,
+                        payload = JsonSerializer.Deserialize<JsonElement>(requestJson),
+                    }));
+                    await process.StandardInput.FlushAsync();
+
+                    var line = await process.StandardOutput.ReadLineAsync();
+                    if (line is null)
+                    {
+                        PreviewDebugLog.Write(
+                            "preview.renderer.route",
+                            ("route", "oneshot"),
+                            ("reason", "server-output-ended"),
+                            ("script", command.Script));
+                        Restart();
+                        return await RenderBodyOneShotAsync(requestJson);
+                    }
+
+                    var response = JsonSerializer.Deserialize<RendererResponse>(line)
+                        ?? throw new InvalidOperationException("Design preview renderer returned an empty response.");
+                    if (!response.Ok)
+                    {
+                        throw new InvalidOperationException(response.Error ?? "Design preview renderer failed.");
+                    }
+
+                    var html = response.Html ?? "";
+                    PreviewDebugLog.Write(
+                        "preview.renderer.persistent",
+                        ("id", id),
+                        ("ms", stopwatch.Elapsed.TotalMilliseconds),
+                        ("htmlChars", html.Length));
+                    return html;
+                }
+                catch (Exception error)
+                {
+                    PreviewDebugLog.Write(
+                        "preview.renderer.error",
+                        ("message", error.Message));
+                    Restart();
+                    throw;
+                }
+            }
+            finally
+            {
+                _gate.Release();
+            }
+        }
+
+        private void EnsureStarted(RendererCommand command)
+        {
+            if (_process is not null
+                && !_process.HasExited
+                && _command == command)
+            {
+                return;
+            }
+
+            Restart();
+            _command = command;
+            _stderr.Clear();
+            var startInfo = DesktopChildProcess.CreateHiddenStartInfo(command.Executable, command.WorkingDirectory);
+            startInfo.ArgumentList.Add(command.ServerScript);
+            startInfo.RedirectStandardInput = true;
+            var process = Process.Start(startInfo)
+                ?? throw new InvalidOperationException("Could not start persistent design preview renderer.");
+            PreviewDebugLog.Write(
+                "preview.renderer.start",
+                ("executable", command.Executable),
+                ("script", command.ServerScript),
+                ("workingDirectory", command.WorkingDirectory));
+            process.ErrorDataReceived += (_, args) =>
+            {
+                if (!string.IsNullOrEmpty(args.Data))
+                {
+                    _stderr.AppendLine(args.Data);
+                }
+            };
+            process.BeginErrorReadLine();
+            _process = process;
+        }
+
+        private void Restart()
+        {
+            if (_process is null)
+            {
+                return;
+            }
+
+            try
+            {
+                if (!_process.HasExited)
+                {
+                    PreviewDebugLog.Write("preview.renderer.restart");
+                    _process.Kill(entireProcessTree: true);
+                }
+            }
+            catch
+            {
+                // Renderer restart is best-effort; next render can fall back to one-shot.
+            }
+            finally
+            {
+                _process.Dispose();
+                _process = null;
+            }
+        }
+    }
+
+    private sealed record RendererResponse(
+        [property: JsonPropertyName("id")] string Id,
+        [property: JsonPropertyName("ok")] bool Ok,
+        [property: JsonPropertyName("html")] string? Html,
+        [property: JsonPropertyName("error")] string? Error);
 
     private static string ResolveNodeExecutable()
     {

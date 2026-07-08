@@ -60,10 +60,10 @@ internal sealed class InstantEditorCard : Grid
 
         _indicator = new TextBlock
         {
-            Width = 28,
-            FontSize = 24,
-            FontWeight = FontWeight.Bold,
-            Opacity = 0.7,
+            Width = 22,
+            FontSize = 17,
+            FontWeight = FontWeight.SemiBold,
+            Opacity = 0.78,
             VerticalAlignment = VerticalAlignment.Center,
             TextAlignment = TextAlignment.Center,
         };

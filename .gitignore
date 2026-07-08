@@ -13,3 +13,4 @@ assets/*/media/
 *.db-shm
 !data/desktop-editor-spike.sqlite
 spikes/desktop-editor-shell/data/window-state.json
+logs/

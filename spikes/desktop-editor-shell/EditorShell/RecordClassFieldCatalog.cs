@@ -16,6 +16,16 @@ internal sealed record RecordClassFieldDescriptor(
 
 internal static class RecordClassFieldCatalog
 {
+    private static readonly FieldOption[] MotionEasingOptions =
+    [
+        new("linear", "Linear"),
+        new("ease-in", "Ease in"),
+        new("ease-out", "Ease out"),
+        new("ease", "Ease"),
+        new("spring", "Spring"),
+        new("bounce", "Bounce"),
+    ];
+
     private static readonly Dictionary<string, RecordClassFieldDescriptor> Fields = new(StringComparer.Ordinal)
     {
         ["project.slug"] = new("project.slug", "Slug", ValueKind.StringSingleLine),
@@ -208,6 +218,10 @@ internal static class RecordClassFieldCatalog
         ["theme.keyboard.pressedKeyBackground"] = new("theme.keyboard.pressedKeyBackground", "Pressed key background", ValueKind.PaletteColorPair),
         ["theme.keyboard.popoverBackground"] = new("theme.keyboard.popoverBackground", "Popover background", ValueKind.PaletteColorPair),
         ["theme.keyboard.text"] = new("theme.keyboard.text", "Text", ValueKind.PaletteColorPair),
+        ["theme.motion.fade"] = new("theme.motion.fade", "Fade", ValueKind.MotionTiming, Options: MotionEasingOptions),
+        ["theme.motion.slide"] = new("theme.motion.slide", "Slide", ValueKind.MotionTiming, Options: MotionEasingOptions),
+        ["theme.motion.swipe"] = new("theme.motion.swipe", "Swipe", ValueKind.MotionTiming, Options: MotionEasingOptions),
+        ["theme.motion.scale"] = new("theme.motion.scale", "Scale", ValueKind.MotionTiming, Options: MotionEasingOptions),
         ["theme.typography.fontFamilyId"] = new(
             "theme.typography.fontFamilyId",
             "Text font",

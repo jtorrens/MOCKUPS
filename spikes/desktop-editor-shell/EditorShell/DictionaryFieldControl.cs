@@ -43,6 +43,7 @@ internal sealed class DictionaryFieldControl : Grid
         _label = new TextBlock
         {
             Text = _definition.Label,
+            FontSize = 13,
             FontWeight = FontWeight.SemiBold,
             VerticalAlignment = DictionaryFieldLayoutRules.LabelVerticalAlignment(_definition.ValueKind),
             Margin = DictionaryFieldLayoutRules.LabelMargin(_definition.ValueKind),

@@ -128,6 +128,145 @@ bubble layout
 
 ---
 
+### 1.1 Dictionary field control boundary
+
+There is a second boundary that should be stated explicitly because it affects the editor UI, not only the preview renderer.
+
+Dictionary field types already define which control edits them. Any UI that edits a typed field must reuse the control registered for that dictionary field type. Panels, inspectors, property sheets, dialogs, nested component editors, bulk editors, and any future field-editing UI must not recreate field controls locally.
+
+The rule should be:
+
+```text
+A panel does not choose or invent the input control.
+A panel renders fields.
+The dictionary field type exposes the field control.
+The field control registry resolves type -> control.
+```
+
+Stronger invariant:
+
+```text
+No dictionary field type may exist without a public registered control.
+```
+
+This still allows generic UI controls internally, but only as implementation details of a dictionary field control.
+
+For example, this is acceptable:
+
+```text
+ColorTokenFieldControl
+  -> internally uses GenericTokenPicker
+
+IconTokenFieldControl
+  -> internally uses GenericTokenPicker
+
+TypographyTokenFieldControl
+  -> internally uses GenericTokenPicker
+```
+
+This is not acceptable:
+
+```text
+ComponentPanel
+  -> sees field.type === "colorToken"
+  -> directly creates GenericTokenPicker
+```
+
+Even if several dictionary types share the same generic implementation, each type should still expose its own registered control entry or wrapper:
+
+```text
+colorToken    -> ColorTokenFieldControl
+iconToken     -> IconTokenFieldControl
+typography    -> TypographyFieldControl
+spacing       -> SpacingFieldControl
+radius        -> RadiusFieldControl
+shadow        -> ShadowFieldControl
+mediaRef      -> MediaReferenceFieldControl
+dictionaryEnum -> DictionaryEnumFieldControl
+```
+
+The wrapper may be thin. The important point is that the public extension point belongs to the field type, not to the panel.
+
+Target flow:
+
+```text
+component field definition
+  -> dictionary field type
+  -> field control registry
+  -> registered field control for that exact type
+  -> panel composition
+```
+
+The panel may know:
+
+```text
+field id
+field label
+field description
+field type id
+current value
+validation state
+read-only state
+inherit / override / restore state
+layout/grouping of rows or sections
+```
+
+The panel should not know:
+
+```text
+which concrete input edits a color token
+which concrete input edits an icon token
+which concrete input edits a typography token
+which concrete input edits a dictionary enum
+which concrete input edits a media reference
+which concrete input edits a spacing/radius/shadow value
+how to parse or validate the internal value of a dictionary type
+```
+
+Those responsibilities belong to the registered field control for the dictionary type.
+
+This should apply everywhere in the UI, not only in the main field editor. If any UI edits a typed field, it should go through the same field-control registry.
+
+Allowed local panel logic:
+
+```text
+which fields are shown
+field order
+section grouping
+conditional visibility based on schema/editor state
+inherit/override affordances around the field
+layout of the inspector panel
+```
+
+Forbidden local panel logic:
+
+```text
+switching on field.type to create ad hoc controls
+creating a new color picker for a color field
+creating a new icon selector for an icon field
+creating local dropdown options for a dictionary enum
+reusing a generic control directly from a panel for a typed field
+reimplementing token resolution or token display
+reimplementing validation/parsing for a dictionary type
+importing concrete field controls directly from arbitrary panels
+branching on component field names to build custom inputs
+```
+
+A new field control should only be introduced by extending the dictionary field type/control registry. It should not be introduced as a one-off input inside a component panel.
+
+This is the same architectural principle as the preview boundary:
+
+```text
+Component panels understand field composition.
+Dictionary field controls understand how a field type is edited.
+Generic UI controls may exist only below registered dictionary field controls.
+No panel should reinvent or directly select a registered field control.
+```
+
+The reason for forcing this is practical: if the control for a dictionary type changes later, the change should happen in one place, at the type/control registration boundary. No editor, panel, inspector, or dialog should need to be touched.
+
+---
+
 ### 2. Component layer
 
 This layer owns semantic interpretation.
@@ -740,6 +879,36 @@ The remaining thing is to make the primitive allowlist strict and avoid new sema
 
 ---
 
+### 13. Should panels create controls for typed fields?
+
+No. Panels should render field rows and sections, but the concrete input control should come from the dictionary field type/control registry.
+
+If a dictionary type already has a registered custom control, every UI surface that edits that type must reuse it. This includes the main field editor, component panels, nested editors, dialogs, bulk editors, and future inspector surfaces.
+
+The only acceptable place to choose a concrete control for a dictionary field type is the control registry, or a thin generic renderer that delegates to that registry.
+
+A panel may decide:
+
+```text
+which fields to show
+how to group them
+where to place them
+when to show inheritance/override controls
+```
+
+A panel should not decide:
+
+```text
+which color picker edits a color token
+which icon selector edits an icon field
+which dropdown options represent a dictionary type
+how a typed value is parsed, validated, serialized, or displayed internally
+```
+
+This should be enforced because otherwise every new panel can accidentally fork the editor behavior for the same field type.
+
+---
+
 ## Safeguard script plan
 
 I would split enforcement into several focused checks instead of growing one large lexical script forever.
@@ -798,7 +967,97 @@ This makes the manifest the source of truth.
 
 ---
 
-### 3. `check:preview-import-graph`
+### 3. `check:field-control-boundaries`
+
+Purpose: ensure all typed-field editing UI reuses the registered dictionary field controls instead of inventing or directly selecting local inputs.
+
+Core rule:
+
+```text
+No dictionary field type without a registered public control.
+No typed-field UI without the field-control registry.
+```
+
+Checks:
+
+```text
+every dictionary field type has a registered public field control entry
+
+every dictionary field type/control registration has a stable control id or component entrypoint
+
+the field control registry has no missing dictionary type mappings
+
+the field control registry has no orphan controls that claim a type that does not exist
+
+multiple dictionary types may delegate internally to the same generic implementation, but each type must expose its own registered control/wrapper
+
+component panels, inspectors, dialogs, property sheets, and bulk editors must render typed fields through the generic FieldEditor/FieldControlRenderer path
+
+UI panels must not import concrete field controls directly, except for the registry, tests, stories, or documented adapter modules
+
+UI panels must not import low-level generic picker controls for typed fields, such as token pickers, color pickers, icon pickers, enum dropdowns, media pickers, spacing editors, radius editors, or shadow editors
+
+UI panels must not switch on field.type to instantiate controls locally
+
+UI panels must not branch on field names to build custom inputs for typed values
+
+UI panels must not define local option lists for dictionary enum types
+
+UI panels must not duplicate parsing, formatting, validation, or serialization rules owned by dictionary field types
+```
+
+Allowed exceptions should be explicit and rare:
+
+```text
+field control registry
+field control test fixtures
+field control stories/examples
+legacy migration shims with removal notes
+shared generic control implementations used only by registered field controls
+```
+
+This check should cover any UI surface that edits a typed field, not only the main field editor.
+
+Suggested AST/import rules:
+
+```text
+Only field control modules may import shared generic picker implementations.
+Only the field control registry may map dictionary field type ids to controls.
+Only FieldEditor/FieldControlRenderer may resolve type -> control at runtime.
+Panels may import FieldEditor/FieldControlRenderer, but not concrete type controls.
+```
+
+Suggested naming rule:
+
+```text
+<typeName>FieldControl.tsx
+```
+
+Examples:
+
+```text
+ColorTokenFieldControl.tsx
+IconTokenFieldControl.tsx
+TypographyTokenFieldControl.tsx
+DictionaryEnumFieldControl.tsx
+MediaReferenceFieldControl.tsx
+SpacingFieldControl.tsx
+RadiusFieldControl.tsx
+ShadowFieldControl.tsx
+```
+
+Thin wrappers are acceptable if they preserve the boundary:
+
+```text
+ColorTokenFieldControl -> GenericTokenPicker
+IconTokenFieldControl -> GenericTokenPicker
+```
+
+The important point is that panels never depend on `GenericTokenPicker` directly for typed fields.
+
+---
+
+### 4. `check:preview-import-graph`
 
 Purpose: replace hardcoded import allowlists with AST/module graph rules.
 
@@ -834,7 +1093,7 @@ This is the most important long-term check.
 
 ---
 
-### 4. `check:paint-tree-schema`
+### 5. `check:paint-tree-schema`
 
 Purpose: ensure the component/renderable boundary stays clean.
 
@@ -884,7 +1143,7 @@ Forbidden example:
 
 ---
 
-### 5. `check:renderer-purity`
+### 6. `check:renderer-purity`
 
 Purpose: ensure the generic web renderer remains generic.
 
@@ -914,7 +1173,7 @@ Marks/bounds rendering is okay if generic.
 
 ---
 
-### 6. `check:payload-shape`
+### 7. `check:payload-shape`
 
 Purpose: keep the Avalonia-to-preview request free of component/device semantic leakage.
 
@@ -944,7 +1203,7 @@ If Status Bar, Navigation Bar, or Keyboard need those values, they should come f
 
 ---
 
-### 7. `check:asset-boundaries`
+### 8. `check:asset-boundaries`
 
 Purpose: prevent asset resolution from drifting into the renderer.
 
@@ -962,7 +1221,7 @@ only previewAssetResolver / previewIconResolver may read iconMappingJson or asse
 
 ---
 
-### 8. `check:override-semantics`
+### 9. `check:override-semantics`
 
 Purpose: protect the embedded override model.
 
@@ -982,7 +1241,7 @@ This protects one of the most important editor semantics.
 
 ---
 
-### 9. `check:component-migration-completeness`
+### 10. `check:component-migration-completeness`
 
 Purpose: prevent partial migrations.
 
@@ -1030,6 +1289,14 @@ Status Bar, Navigation Bar, and Keyboard are system component classes.
 They are system in category, not separate in architecture.
 ```
 
+And this:
+
+```text
+Typed fields are edited through their dictionary field type control.
+Panels and other UI surfaces compose fields; they do not invent controls for field types.
+The field control registry is the only source of truth for mapping dictionary field types to UI controls.
+```
+
 ---
 
 ## Recommended implementation order
@@ -1055,13 +1322,15 @@ I would prioritize the work like this:
 
 6. Add check:preview-manifest and check:preview-import-graph.
 
-7. Add check:paint-tree-schema and check:renderer-purity.
+7. Add check:field-control-boundaries so every dictionary field type has a registered public control and panels cannot recreate or directly select typed-field controls.
 
-8. Extract icon/asset resolution out of componentRenderableCommon.
+8. Add check:paint-tree-schema and check:renderer-purity.
 
-9. Add override semantics tests.
+9. Extract icon/asset resolution out of componentRenderableCommon.
 
-10. Before migrating Bubble, enforce migration completeness for Bubble and all owned subcomponents.
+10. Add override semantics tests.
+
+11. Before migrating Bubble, enforce migration completeness for Bubble and all owned subcomponents.
 ```
 
 The goal is not to slow implementation.

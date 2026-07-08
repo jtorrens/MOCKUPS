@@ -57,7 +57,7 @@ field `migrationStatus`.
 | `status_bar` | system | Structural/functional enough for current preview | Routed as a system component with its own resolver/renderable. Further device-specific variant work may refine it. |
 | `navigation_bar` | system | Structural/functional enough for current preview | Routed as a system component with its own resolver/renderable. Further device-specific variant work may refine it. |
 | `textInputBar` | system | Structurally migrated | Preview renders a screen-width bar with embedded `surface`, `textBox` and state-specific left/right `iconRow` slots. `idle` vs `typing` is derived from whether runtime text is empty. Icon token lists are variant data on each row state, not runtime preview inputs. Text content is runtime data passed into the embedded `textBox`; placeholder is fixed by the parent variant through generic input bindings. |
-| `keyboard` | system | Structurally migrated | Preview renders a generic keyboard surface, keys and bottom icons. Final keyboard layout model and interaction states still need definition. |
+| `keyboard` | system | Structurally migrated | Preview renders a generic keyboard surface, keys and bottom icons. It is the first component using component-level motion intent plus theme timing tokens; preview animation is still resolved as frame data before the generic web renderer paints it. Final keyboard layout model and interaction states still need definition. |
 | `video` | component | Structurally migrated | Preview renders an embedded `surface` variant, status row and play overlay. It currently declares a duration text runtime input; final media, timeline, controls and embedding semantics still need definition. |
 
 ## Legacy Runtime Paths Removed

@@ -532,6 +532,12 @@ internal static class ComponentClassFieldCatalog
             ["keyboard", "emojiScale"],
             "1.2",
             Number: new NumberDefinition(0.1m, 4, 0.05m, 2)),
+        ["component.keyboard.motion"] = new(
+            "component.keyboard.motion",
+            "Motion",
+            ValueKind.Motion,
+            ["keyboard", "motion"],
+            MotionVariantValue.Default.ToJsonString()),
         ["component.keyboard.iconRowPlacement"] = new("component.keyboard.iconRowPlacement", "Placement", ValueKind.OptionToken, ["keyboard", "iconRowPlacement"], "bottom", Options: KeyboardIconRowPlacementOptions),
         ["component.keyboard.iconRowsHeight"] = new("component.keyboard.iconRowsHeight", "Icon zone height", ValueKind.Integer, ["keyboard", "iconRowsHeight"], "52", Number: new NumberDefinition(0, 240, 1, 0)),
         ["component.keyboard.iconRowsEdgePadding"] = new("component.keyboard.iconRowsEdgePadding", "Edge padding", ValueKind.ThemeToken, ["keyboard", "iconRowsEdgePadding"], "theme.spacing.m", Options: SpacingTokenOptions),

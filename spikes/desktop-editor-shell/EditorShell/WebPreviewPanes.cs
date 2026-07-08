@@ -1,10 +1,16 @@
 using Avalonia.Controls;
 using Avalonia.Media;
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Net;
+using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -30,6 +36,38 @@ internal abstract class WebPreviewPane : Grid
         _webView.NavigateToString(html, new Uri("https://mockups.local/"));
     }
 
+    protected async Task<bool> ReplacePreviewBodyAsync(string bodyContent)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        var bodyJson = JsonSerializer.Serialize(bodyContent);
+        try
+        {
+            await _webView.InvokeScript($$"""
+                (() => {
+                  if (typeof window.mockupsSetPreviewBody !== "function") return false;
+                  window.mockupsSetPreviewBody({{bodyJson}});
+                  return true;
+                })();
+                """);
+            PreviewDebugLog.Write(
+                "preview.webview.dom-patch",
+                ("success", true),
+                ("ms", stopwatch.Elapsed.TotalMilliseconds),
+                ("bodyChars", bodyContent.Length));
+            return true;
+        }
+        catch (Exception error)
+        {
+            PreviewDebugLog.Write(
+                "preview.webview.dom-patch",
+                ("success", false),
+                ("ms", stopwatch.Elapsed.TotalMilliseconds),
+                ("bodyChars", bodyContent.Length),
+                ("error", error.Message));
+            return false;
+        }
+    }
+
     protected static string DeviceHtml(
         SpikeDatabase.DevicePreviewMetrics metrics,
         bool isDark,
@@ -38,7 +76,8 @@ internal abstract class WebPreviewPane : Grid
         string scaleMode,
         string previewMode,
         bool showDesignMarks,
-        string bodyContent)
+        string bodyContent,
+        string fontStyleHtml = "")
     {
         var width = Math.Max(1, metrics.CanvasWidth);
         var height = Math.Max(1, metrics.CanvasHeight);
@@ -227,6 +266,7 @@ internal abstract class WebPreviewPane : Grid
                   color: {{mutedText}};
                 }
               </style>
+              {{FontStylesHtml(fontStyleHtml)}}
             </head>
             <body>
               <main class="preview-viewport-host">
@@ -357,6 +397,10 @@ internal abstract class WebPreviewPane : Grid
                 const resizeObserver = new ResizeObserver(calculatePreviewFit);
                 resizeObserver.observe(host);
                 window.addEventListener("resize", calculatePreviewFit);
+                window.mockupsSetPreviewBody = (html) => {
+                  scaleLayer.innerHTML = html;
+                  requestAnimationFrame(calculatePreviewFit);
+                };
                 requestAnimationFrame(calculatePreviewFit);
               </script>
             </body>
@@ -409,6 +453,52 @@ internal abstract class WebPreviewPane : Grid
               """;
     }
 
+    private static string FontStylesHtml(string fontStyleHtml)
+    {
+        return string.IsNullOrWhiteSpace(fontStyleHtml)
+            ? ""
+            : InlineFontFileUris(fontStyleHtml);
+    }
+
+    private static string InlineFontFileUris(string fontStyleHtml)
+    {
+        return Regex.Replace(
+            fontStyleHtml,
+            "url\\(\"(?<url>file:[^\"]+)\"\\)",
+            (match) =>
+            {
+                try
+                {
+                    var fileUri = match.Groups["url"].Value;
+                    var localPath = new Uri(fileUri).LocalPath;
+                    if (string.IsNullOrWhiteSpace(localPath) || !File.Exists(localPath))
+                    {
+                        return match.Value;
+                    }
+
+                    var data = Convert.ToBase64String(File.ReadAllBytes(localPath));
+                    return $"url(\"data:{FontMimeType(localPath)};base64,{data}\")";
+                }
+                catch
+                {
+                    return match.Value;
+                }
+            },
+            RegexOptions.IgnoreCase);
+    }
+
+    private static string FontMimeType(string path)
+    {
+        return Path.GetExtension(path).ToLowerInvariant() switch
+        {
+            ".otf" => "font/otf",
+            ".ttf" or ".ttc" => "font/ttf",
+            ".woff" => "font/woff",
+            ".woff2" => "font/woff2",
+            _ => "application/octet-stream",
+        };
+    }
+
     protected static string Html(string value)
     {
         return WebUtility.HtmlEncode(value);
@@ -445,8 +535,33 @@ internal sealed class RuntimeWebPreviewPane : WebPreviewPane
 
 internal sealed class DesignWebPreviewPane : WebPreviewPane
 {
+    private const int MaxQueuedAnimationFrames = 240;
     private DesignPreviewUpdate? _pendingUpdate;
+    private DesignPreviewUpdate? _renderingUpdate;
+    private DesignPreviewUpdate? _lastRenderedUpdate;
+    private readonly Queue<DesignPreviewUpdate> _queuedAnimationUpdates = new();
     private bool _isRendering;
+
+    public void ShowLoading(
+        SpikeDatabase.DevicePreviewMetrics metrics,
+        bool isDark,
+        string themeName,
+        string themeMode,
+        string scaleMode,
+        bool showDesignMarks,
+        string message)
+    {
+        LoadHtml(DeviceHtml(
+            metrics,
+            isDark,
+            themeName,
+            themeMode,
+            scaleMode,
+            "Design preview",
+            showDesignMarks,
+            Placeholder("Preparing preview", message)));
+        _lastRenderedUpdate = null;
+    }
 
     public void Update(
         SpikeDatabase.DevicePreviewMetrics metrics,
@@ -468,11 +583,19 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             payload,
             messages);
 
-        if (_pendingUpdate is not null && nextUpdate.IsAnimationOnlyUpdateOf(_pendingUpdate))
+        if (_isRendering
+            && _renderingUpdate is not null
+            && nextUpdate.IsAnimationOnlyUpdateOf(_renderingUpdate))
         {
+            _queuedAnimationUpdates.Enqueue(nextUpdate);
+            while (_queuedAnimationUpdates.Count > MaxQueuedAnimationFrames)
+            {
+                _queuedAnimationUpdates.Dequeue();
+            }
             return;
         }
 
+        _queuedAnimationUpdates.Clear();
         _pendingUpdate = nextUpdate;
 
         if (!_isRendering)
@@ -492,14 +615,25 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             {
                 var update = _pendingUpdate;
                 _pendingUpdate = null;
+                _renderingUpdate = update;
                 await RenderUpdateAsync(update);
+                _renderingUpdate = null;
+                if (_queuedAnimationUpdates.Count > 0)
+                {
+                    _pendingUpdate = _queuedAnimationUpdates.Dequeue();
+                }
             }
         }
         finally
         {
+            _renderingUpdate = null;
             _isRendering = false;
-            if (_pendingUpdate is not null)
+            if (_pendingUpdate is not null || _queuedAnimationUpdates.Count > 0)
             {
+                if (_pendingUpdate is null && _queuedAnimationUpdates.Count > 0)
+                {
+                    _pendingUpdate = _queuedAnimationUpdates.Dequeue();
+                }
                 _ = ProcessPendingUpdatesAsync();
             }
         }
@@ -507,6 +641,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
 
     private async Task RenderUpdateAsync(DesignPreviewUpdate update)
     {
+        var stopwatch = Stopwatch.StartNew();
         if (update.Payload is null)
         {
             LoadHtml(DeviceHtml(
@@ -520,6 +655,12 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 Placeholder(
                     "Design WebView host",
                     "Select a component variant to preview it through the desktop component route.")));
+            _lastRenderedUpdate = update;
+            PreviewDebugLog.Write(
+                "preview.webview.update",
+                ("route", "full-load"),
+                ("reason", "empty-payload"),
+                ("ms", stopwatch.Elapsed.TotalMilliseconds));
             return;
         }
 
@@ -546,6 +687,25 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             update.Messages.Error("Design preview", renderError);
         }
 
+        var htmlParts = PreviewHtmlParts.Split(bodyContent);
+        var isAnimationOnlyUpdate = _lastRenderedUpdate is not null
+            && update.IsAnimationOnlyUpdateOf(_lastRenderedUpdate);
+        if (renderError is null
+            && isAnimationOnlyUpdate
+            && await ReplacePreviewBodyAsync(htmlParts.BodyHtml))
+        {
+            _lastRenderedUpdate = update;
+            PreviewDebugLog.Write(
+                "preview.webview.update",
+                ("route", "dom-patch"),
+                ("component", update.Payload.ComponentType),
+                ("name", update.Payload.Name),
+                ("ms", stopwatch.Elapsed.TotalMilliseconds),
+                ("bodyChars", htmlParts.BodyHtml.Length),
+                ("fontStyleChars", htmlParts.FontStyleHtml.Length));
+            return;
+        }
+
         LoadHtml(DeviceHtml(
             update.Metrics,
             update.IsDark,
@@ -554,7 +714,42 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             update.ScaleMode,
             "Design preview",
             update.ShowDesignMarks,
-            bodyContent));
+            htmlParts.BodyHtml,
+            htmlParts.FontStyleHtml));
+        _lastRenderedUpdate = update;
+        PreviewDebugLog.Write(
+            "preview.webview.update",
+            ("route", "full-load"),
+            ("component", update.Payload.ComponentType),
+            ("name", update.Payload.Name),
+            ("animationOnly", isAnimationOnlyUpdate),
+            ("renderError", renderError is not null),
+            ("ms", stopwatch.Elapsed.TotalMilliseconds),
+            ("bodyChars", htmlParts.BodyHtml.Length),
+            ("fontStyleChars", htmlParts.FontStyleHtml.Length));
+    }
+
+    private sealed record PreviewHtmlParts(string BodyHtml, string FontStyleHtml)
+    {
+        public static PreviewHtmlParts Split(string html)
+        {
+            var trimmed = html.TrimStart();
+            if (!trimmed.StartsWith("<style", StringComparison.OrdinalIgnoreCase))
+            {
+                return new PreviewHtmlParts(html, "");
+            }
+
+            var closeIndex = trimmed.IndexOf("</style>", StringComparison.OrdinalIgnoreCase);
+            if (closeIndex < 0)
+            {
+                return new PreviewHtmlParts(html, "");
+            }
+
+            var endIndex = closeIndex + "</style>".Length;
+            return new PreviewHtmlParts(
+                trimmed[endIndex..],
+                trimmed[..endIndex]);
+        }
     }
 
     private sealed record DesignPreviewUpdate(
@@ -600,6 +795,17 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             {
                 var preview = JsonNode.Parse(string.IsNullOrWhiteSpace(json) ? "{}" : json) as JsonObject ?? new JsonObject();
                 preview.Remove("currentTimeSeconds");
+                preview.Remove("motionTimeSeconds");
+                var animationTimeKey = AnimationTimeKey(preview);
+                if (!string.IsNullOrWhiteSpace(animationTimeKey))
+                {
+                    preview.Remove(animationTimeKey);
+                }
+                var animationPlayKey = AnimationPlayKey(preview);
+                if (!string.IsNullOrWhiteSpace(animationPlayKey))
+                {
+                    preview.Remove(animationPlayKey);
+                }
                 return preview.ToJsonString();
             }
             catch
@@ -615,12 +821,44 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             try
             {
                 var preview = JsonNode.Parse(string.IsNullOrWhiteSpace(payload.DesignPreviewJson) ? "{}" : payload.DesignPreviewJson) as JsonObject;
-                return preview?["currentTimeSeconds"]?.ToJsonString() ?? "";
+                if (preview is null)
+                {
+                    return "";
+                }
+
+                var animationTimeKey = AnimationTimeKey(preview);
+                if (!string.IsNullOrWhiteSpace(animationTimeKey)
+                    && preview[animationTimeKey] is not null)
+                {
+                    return preview[animationTimeKey]?.ToJsonString() ?? "";
+                }
+
+                return preview["currentTimeSeconds"]?.ToJsonString()
+                    ?? preview["motionTimeSeconds"]?.ToJsonString()
+                    ?? "";
             }
             catch
             {
                 return "";
             }
+        }
+
+        private static string AnimationTimeKey(JsonObject preview)
+        {
+            return preview["animation"] is JsonObject animation
+                && animation["timeJsonKey"] is JsonValue value
+                && value.TryGetValue<string>(out var key)
+                    ? key
+                    : "";
+        }
+
+        private static string AnimationPlayKey(JsonObject preview)
+        {
+            return preview["animation"] is JsonObject animation
+                && animation["playInputId"] is JsonValue value
+                && value.TryGetValue<string>(out var key)
+                    ? key
+                    : "";
         }
     }
 }

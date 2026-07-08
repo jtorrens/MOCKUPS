@@ -37,3 +37,17 @@ export interface IconSlotsContract {
   center: string[];
   right: string[];
 }
+
+export interface ComponentMotionContract {
+  transition: "none" | "slide" | "swipe" | "scale";
+  direction: "top" | "bottom" | "left" | "right";
+  bounds: "parent" | "screen";
+  fade: boolean;
+  translate: boolean;
+  scale: boolean;
+}
+
+export interface ComponentMotionFrameContract {
+  trigger: boolean;
+  timeSeconds: number;
+}

@@ -9,9 +9,11 @@ using Mockups.DesktopEditorShell.Data;
 using SukiUI.Controls;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Text.Json.Nodes;
+using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -23,6 +25,7 @@ internal sealed class ComponentInputsPanel : ContentControl
     private readonly SpikeDatabase _database;
     private readonly ComponentPreviewRecordInputResolver _recordInputResolver;
     private readonly Action _refreshPreview;
+    private readonly Func<Task>? _preparePlaybackFrames;
     private readonly Window _owner;
     private readonly DispatcherTimer _playbackTimer;
     private readonly Dictionary<string, string> _values = new(StringComparer.Ordinal);
@@ -33,19 +36,24 @@ internal sealed class ComponentInputsPanel : ContentControl
     private string _projectId = "";
     private string _inputSignature = "";
     private ComponentInputAnimation? _animation;
-    private DateTime _playbackStartedAtUtc;
-    private double _playbackStartSeconds;
     private bool _isUpdating;
+    private bool _isPreparingPlayback;
+    private int _playbackFrameRate = 25;
 
-    public ComponentInputsPanel(SpikeDatabase database, Action refreshPreview, Window owner)
+    public ComponentInputsPanel(
+        SpikeDatabase database,
+        Action refreshPreview,
+        Window owner,
+        Func<Task>? preparePlaybackFrames = null)
     {
         _database = database;
         _recordInputResolver = new ComponentPreviewRecordInputResolver(database);
         _refreshPreview = refreshPreview;
+        _preparePlaybackFrames = preparePlaybackFrames;
         _owner = owner;
         _playbackTimer = new DispatcherTimer
         {
-            Interval = TimeSpan.FromMilliseconds(80),
+            Interval = TimeSpan.FromMilliseconds(1000.0 / 50),
         };
         _playbackTimer.Tick += (_, _) => AdvancePlaybackFrame();
         IsVisible = false;
@@ -67,6 +75,7 @@ internal sealed class ComponentInputsPanel : ContentControl
                 return;
             }
 
+            ApplyProjectFrameRate(projectId);
             var preview = ParseJsonObject(payload.DesignPreviewJson);
             var config = ParseJsonObject(payload.ConfigJson);
             var inputs = ReadInputs(preview, config).ToList();
@@ -581,6 +590,9 @@ internal sealed class ComponentInputsPanel : ContentControl
 
     private void SetValue(ComponentInputDefinition input, string value)
     {
+        var startsPlayback = SupportsPlayback()
+            && input.Id == _animation!.PlayInputId
+            && StringToBool(value);
         if (SupportsPlayback() && input.Id == _animation!.PlayInputId)
         {
             SetPlaybackState(StringToBool(value));
@@ -594,6 +606,12 @@ internal sealed class ComponentInputsPanel : ContentControl
         {
             ClampCurrentPlaybackToDuration();
         }
+        if (startsPlayback)
+        {
+            _ = StartPlaybackAsync();
+            return;
+        }
+
         SyncPlaybackTimer();
         _refreshPreview();
     }
@@ -616,8 +634,6 @@ internal sealed class ComponentInputsPanel : ContentControl
         {
             if (!_playbackTimer.IsEnabled)
             {
-                _playbackStartSeconds = CurrentPlaybackSeconds();
-                _playbackStartedAtUtc = DateTime.UtcNow;
                 _playbackTimer.Start();
             }
             UpdatePlaybackButton();
@@ -628,14 +644,51 @@ internal sealed class ComponentInputsPanel : ContentControl
         UpdatePlaybackButton();
     }
 
+    private void ApplyProjectFrameRate(string projectId)
+    {
+        var projectFps = _database.GetProjectSettings(projectId).DefaultFps;
+        var previousFps = _playbackFrameRate;
+        var previousInterval = _playbackTimer.Interval;
+        var previewFps = PreviewPlaybackTiming.PreviewFrameRate(projectFps);
+        _playbackFrameRate = previewFps;
+        var interval = TimeSpan.FromMilliseconds(1000.0 / previewFps);
+        if (previousFps != previewFps || previousInterval != interval)
+        {
+            PreviewDebugLog.Write(
+                "preview.playback.fps",
+                ("projectId", projectId),
+                ("projectFps", projectFps),
+                ("previewFps", previewFps),
+                ("multiplier", PreviewPlaybackTiming.FrameRateMultiplier),
+                ("intervalMs", interval.TotalMilliseconds));
+        }
+        if (_playbackTimer.Interval != interval)
+        {
+            _playbackTimer.Interval = interval;
+        }
+    }
+
     private void TogglePlayback()
     {
         if (!SupportsPlayback()) return;
 
         var stateKey = PlaybackStateKey();
-        SetPlaybackState(!IsPlaying());
+        var startsPlayback = !IsPlaying();
+        PreviewDebugLog.Write(
+            "preview.playback.toggle",
+            ("scope", _scopeKey),
+            ("startsPlayback", startsPlayback),
+            ("fps", _playbackFrameRate),
+            ("durationSec", DurationSeconds()));
+        SetPlaybackState(startsPlayback);
 
         SyncBooleanInput(stateKey);
+        if (startsPlayback)
+        {
+            _ = StartPlaybackAsync();
+            return;
+        }
+
         SyncPlaybackTimer();
         _refreshPreview();
     }
@@ -644,7 +697,56 @@ internal sealed class ComponentInputsPanel : ContentControl
     {
         if (_playbackButton is null) return;
 
-        _playbackButton.Content = IsPlaying() ? "Pause" : "Play";
+        _playbackButton.Content = _isPreparingPlayback
+            ? "Loading"
+            : IsPlaying() ? "Pause" : "Play";
+    }
+
+    private async Task StartPlaybackAsync()
+    {
+        if (!SupportsPlayback()) return;
+
+        StopPlayback();
+        _isPreparingPlayback = true;
+        UpdatePlaybackButton();
+        var stopwatch = Stopwatch.StartNew();
+        PreviewDebugLog.Write(
+            "preview.playback.prepare.start",
+            ("scope", _scopeKey),
+            ("fps", _playbackFrameRate),
+            ("durationSec", DurationSeconds()),
+            ("timeKey", PlaybackAnimation().TimeJsonKey));
+        try
+        {
+            if (_preparePlaybackFrames is not null)
+            {
+                await _preparePlaybackFrames();
+            }
+        }
+        finally
+        {
+            _isPreparingPlayback = false;
+            PreviewDebugLog.Write(
+                "preview.playback.prepare.end",
+                ("scope", _scopeKey),
+                ("ms", stopwatch.Elapsed.TotalMilliseconds));
+        }
+
+        if (!SupportsPlayback() || !IsPlaying())
+        {
+            UpdatePlaybackButton();
+            return;
+        }
+
+        _values[PlaybackTimeKey()] = "0";
+        PreviewDebugLog.Write(
+            "preview.playback.start",
+            ("scope", _scopeKey),
+            ("fps", _playbackFrameRate),
+            ("durationSec", DurationSeconds()));
+        SyncPlaybackTimer();
+        UpdatePlaybackButton();
+        _refreshPreview();
     }
 
     private void StopPlayback()
@@ -652,6 +754,12 @@ internal sealed class ComponentInputsPanel : ContentControl
         if (!_playbackTimer.IsEnabled) return;
 
         _playbackTimer.Stop();
+        var hasPlayback = SupportsPlayback();
+        PreviewDebugLog.Write(
+            "preview.playback.stop",
+            ("scope", _scopeKey),
+            ("timeSec", hasPlayback ? CurrentPlaybackSeconds() : 0),
+            ("durationSec", hasPlayback ? DurationSeconds() : 0));
     }
 
     private void AdvancePlaybackFrame()
@@ -663,21 +771,34 @@ internal sealed class ComponentInputsPanel : ContentControl
             return;
         }
 
-        _values[PlaybackTimeKey()] = NormalizedPlaybackSeconds(CurrentPlaybackSeconds()).ToString(CultureInfo.InvariantCulture);
+        var current = NextPlaybackFrameSeconds();
+        _values[PlaybackTimeKey()] = current.ToString(CultureInfo.InvariantCulture);
+        PreviewDebugLog.Write(
+            "preview.playback.tick",
+            ("scope", _scopeKey),
+            ("timeSec", current),
+            ("durationSec", DurationSeconds()),
+            ("fps", _playbackFrameRate));
+        if (current >= DurationSeconds())
+        {
+            _values[PlaybackStateKey()] = "false";
+            SyncBooleanInput(PlaybackStateKey());
+            StopPlayback();
+            UpdatePlaybackButton();
+        }
+
         _refreshPreview();
     }
 
     private double CurrentPlaybackSeconds()
     {
-        var duration = DurationSeconds();
         var stored = ParseDouble(_values.GetValueOrDefault(PlaybackTimeKey(), "0"));
-        if (!_playbackTimer.IsEnabled)
-        {
-            return NormalizedPlaybackSeconds(stored);
-        }
+        return NormalizedPlaybackSeconds(stored);
+    }
 
-        var elapsed = (DateTime.UtcNow - _playbackStartedAtUtc).TotalSeconds;
-        return NormalizedPlaybackSeconds(_playbackStartSeconds + elapsed);
+    private double NextPlaybackFrameSeconds()
+    {
+        return NormalizedPlaybackSeconds(CurrentPlaybackSeconds() + 1.0 / Math.Max(1, _playbackFrameRate));
     }
 
     private void ClampCurrentPlaybackToDuration()
@@ -689,6 +810,12 @@ internal sealed class ComponentInputsPanel : ContentControl
 
     private double DurationSeconds()
     {
+        var animation = PlaybackAnimation();
+        if (animation.DurationSeconds > 0)
+        {
+            return animation.DurationSeconds;
+        }
+
         var key = PlaybackDurationKey();
         return Math.Max(1, ParseDouble(_values.GetValueOrDefault(key, InputDefault(key, "1"))));
     }
@@ -704,8 +831,8 @@ internal sealed class ComponentInputsPanel : ContentControl
         var stateKey = PlaybackStateKey();
         if (isPlaying)
         {
-            _playbackStartSeconds = NormalizedPlaybackSeconds(CurrentPlaybackSeconds());
-            _playbackStartedAtUtc = DateTime.UtcNow;
+            StopPlayback();
+            _values[PlaybackTimeKey()] = "0";
             _values[stateKey] = "true";
             return;
         }
@@ -716,7 +843,10 @@ internal sealed class ComponentInputsPanel : ContentControl
 
     private double NormalizedPlaybackSeconds(double seconds)
     {
-        return PositiveModulo(seconds, DurationSeconds());
+        var clamped = Math.Max(0, Math.Min(DurationSeconds(), seconds));
+        var frameRate = Math.Max(1, _playbackFrameRate);
+        var snapped = Math.Round(clamped * frameRate, MidpointRounding.AwayFromZero) / frameRate;
+        return Math.Max(0, Math.Min(DurationSeconds(), snapped));
     }
 
     private bool SupportsPlayback()
@@ -731,7 +861,10 @@ internal sealed class ComponentInputsPanel : ContentControl
 
     private string PlaybackDurationKey()
     {
-        return $"{_scopeKey}:{PlaybackAnimation().DurationInputId}";
+        var durationInputId = PlaybackAnimation().DurationInputId;
+        return string.IsNullOrWhiteSpace(durationInputId)
+            ? ""
+            : $"{_scopeKey}:{durationInputId}";
     }
 
     private string PlaybackTimeKey()
@@ -772,11 +905,22 @@ internal sealed class ComponentInputsPanel : ContentControl
             : 0;
     }
 
-    private static double PositiveModulo(double value, double divisor)
+    private static double JsonNumber(JsonObject owner, string key, double fallback)
     {
-        if (divisor <= 0) return 0;
-        var result = value % divisor;
-        return result < 0 ? result + divisor : result;
+        if (owner[key] is not JsonValue value)
+        {
+            return fallback;
+        }
+
+        if (value.TryGetValue<double>(out var number))
+        {
+            return number;
+        }
+
+        return value.TryGetValue<string>(out var text)
+            && double.TryParse(text.Replace(",", "."), NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
+                ? parsed
+                : fallback;
     }
 
     private static JsonObject ParseJsonObject(string json)
@@ -903,15 +1047,16 @@ internal sealed class ComponentInputsPanel : ContentControl
 
         var playInputId = JsonString(animation, "playInputId");
         var durationInputId = JsonString(animation, "durationInputId");
+        var durationSeconds = JsonNumber(animation, "durationSeconds", 0);
         var timeJsonKey = JsonString(animation, "timeJsonKey");
         if (string.IsNullOrWhiteSpace(playInputId)
-            || string.IsNullOrWhiteSpace(durationInputId)
+            || (string.IsNullOrWhiteSpace(durationInputId) && durationSeconds <= 0)
             || string.IsNullOrWhiteSpace(timeJsonKey))
         {
             return null;
         }
 
-        return new ComponentInputAnimation(playInputId, durationInputId, timeJsonKey);
+        return new ComponentInputAnimation(playInputId, durationInputId, durationSeconds, timeJsonKey);
     }
 
     private static IReadOnlyList<FieldOption> ReadOptions(JsonObject input)
@@ -1065,4 +1210,5 @@ internal sealed record ComponentInputDefinition(
 internal sealed record ComponentInputAnimation(
     string PlayInputId,
     string DurationInputId,
+    double DurationSeconds,
     string TimeJsonKey);

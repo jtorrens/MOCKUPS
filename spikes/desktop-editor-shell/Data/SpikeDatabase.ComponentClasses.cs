@@ -2477,6 +2477,34 @@ internal sealed partial class SpikeDatabase
         changed |= NormalizeKeyboardIconRowInputs(keyboard, "leftIconRowInputs", IconRowInputBindings(new JsonArray("app_language")));
         changed |= NormalizeKeyboardIconRowInputs(keyboard, "centerIconRowInputs", IconRowInputBindings());
         changed |= NormalizeKeyboardIconRowInputs(keyboard, "rightIconRowInputs", IconRowInputBindings(new JsonArray("media_mic")));
+        if (keyboard["motion"] is not JsonObject)
+        {
+            keyboard["motion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString());
+            changed = true;
+        }
+        else if (keyboard["motion"] is JsonObject motion)
+        {
+            if (motion["fade"] is null && motion["opacity"] is JsonValue opacityValue && opacityValue.TryGetValue<bool>(out var opacity))
+            {
+                motion["fade"] = opacity;
+                changed = true;
+            }
+            if (motion.Remove("opacity"))
+            {
+                changed = true;
+            }
+            if (motion["translate"] is null)
+            {
+                motion["translate"] = true;
+                changed = true;
+            }
+            if (motion["scale"] is null)
+            {
+                motion["scale"] = false;
+                changed = true;
+            }
+        }
+
         changed |= NormalizeComponentPresetString(connection, projectId, keyboard, ["iconButtonSlot", "presetId"], "buttonIcon");
         changed |= NormalizeComponentPresetString(connection, projectId, keyboard, ["leftIconRowSlot", "presetId"], "iconRow");
         changed |= NormalizeComponentPresetString(connection, projectId, keyboard, ["centerIconRowSlot", "presetId"], "iconRow");
@@ -2696,6 +2724,38 @@ internal sealed partial class SpikeDatabase
         }
 
         changed |= NormalizeComponentInputDefinitions(componentType, inputs, defaultInputs);
+        if (componentType == "keyboard")
+        {
+            changed |= RemoveUnknownComponentInputs(inputs, defaultInputs);
+        }
+        return changed;
+    }
+
+    private static bool RemoveUnknownComponentInputs(JsonArray inputs, JsonArray defaultInputs)
+    {
+        var defaultIds = defaultInputs
+            .OfType<JsonObject>()
+            .Select((input) => JsonPath.String(input, "id", ""))
+            .Where((id) => !string.IsNullOrWhiteSpace(id))
+            .ToHashSet(StringComparer.Ordinal);
+        var changed = false;
+        for (var index = inputs.Count - 1; index >= 0; index--)
+        {
+            if (inputs[index] is not JsonObject input)
+            {
+                continue;
+            }
+
+            var id = JsonPath.String(input, "id", "");
+            if (string.IsNullOrWhiteSpace(id) || defaultIds.Contains(id))
+            {
+                continue;
+            }
+
+            inputs.RemoveAt(index);
+            changed = true;
+        }
+
         return changed;
     }
 
@@ -2844,6 +2904,9 @@ internal sealed partial class SpikeDatabase
             ValueKind.AlignmentPlacement => node is JsonObject
                 ? node.ToJsonString()
                 : descriptor.DefaultValue,
+            ValueKind.Motion => node is JsonObject
+                ? node.ToJsonString()
+                : descriptor.DefaultValue,
             ValueKind.TypographyStyle => node is JsonObject
                 ? node.ToJsonString()
                 : descriptor.DefaultValue,
@@ -2870,6 +2933,8 @@ internal sealed partial class SpikeDatabase
             ValueKind.Alpha => NumberNode(value),
             ValueKind.AlignmentPlacement => JsonNode.Parse(value)
                 ?? throw new InvalidOperationException("Alignment placement value must be valid JSON."),
+            ValueKind.Motion => JsonNode.Parse(value)
+                ?? throw new InvalidOperationException("Motion value must be valid JSON."),
             ValueKind.TypographyStyle => JsonNode.Parse(value)
                 ?? throw new InvalidOperationException("Typography style value must be valid JSON."),
             ValueKind.IconTokenList => JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? "[]" : value)

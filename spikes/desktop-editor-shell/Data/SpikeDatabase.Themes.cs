@@ -25,6 +25,20 @@ internal sealed partial class SpikeDatabase
                 (token) => (token.LightAlphaPath!.ToArray(), token.DarkAlphaPath!.ToArray()),
                 StringComparer.Ordinal);
 
+    private static readonly Dictionary<string, string[]> ThemeMotionTimingPaths =
+        new[] { "fade", "slide", "swipe", "scale" }
+            .ToDictionary(
+                (transition) => $"theme.motion.{transition}",
+                (transition) => new[] { "motion", "transitions", transition },
+                StringComparer.Ordinal);
+
+    private static readonly Dictionary<string, string[]> ThemeMotionEasingPaths =
+        new[] { "fade", "slide", "swipe", "scale" }
+            .ToDictionary(
+                (transition) => $"theme.motion.{transition}.easing",
+                (transition) => new[] { "motion", "transitions", transition, "easing" },
+                StringComparer.Ordinal);
+
     public IReadOnlyList<FieldOption> GetThemeOptions(string projectId)
     {
         using var connection = OpenConnection();
@@ -118,6 +132,16 @@ internal sealed partial class SpikeDatabase
         if (ThemeNumericTokenCatalog.TryGet(fieldId, out var numericToken))
         {
             return JsonNumberString(tokens, numericToken.Path.ToArray());
+        }
+        if (ThemeMotionTimingPaths.TryGetValue(fieldId, out var timingPath))
+        {
+            return GetJsonValue(tokens, timingPath) is JsonObject timing
+                ? timing.ToJsonString()
+                : "{}";
+        }
+        if (ThemeMotionEasingPaths.TryGetValue(fieldId, out var easingPath))
+        {
+            return JsonString(tokens, easingPath);
         }
 
         return fieldId switch
@@ -333,6 +357,20 @@ internal sealed partial class SpikeDatabase
             Execute(connection, "UPDATE themes SET tokens_json = $tokensJson WHERE id = $id", ("$id", themeId), ("$tokensJson", tokens.ToJsonString()));
             return;
         }
+        if (ThemeMotionTimingPaths.TryGetValue(fieldId, out var timingPath))
+        {
+            var timing = JsonNode.Parse(value) as JsonObject
+                ?? throw new InvalidOperationException($"Theme motion field '{fieldId}' must be a JSON object.");
+            SetJsonValue(tokens, timingPath, timing);
+            Execute(connection, "UPDATE themes SET tokens_json = $tokensJson WHERE id = $id", ("$id", themeId), ("$tokensJson", tokens.ToJsonString()));
+            return;
+        }
+        if (ThemeMotionEasingPaths.TryGetValue(fieldId, out var easingPath))
+        {
+            SetJsonValue(tokens, easingPath, JsonValue.Create(value)!);
+            Execute(connection, "UPDATE themes SET tokens_json = $tokensJson WHERE id = $id", ("$id", themeId), ("$tokensJson", tokens.ToJsonString()));
+            return;
+        }
 
         switch (fieldId)
         {
@@ -440,6 +478,7 @@ internal sealed partial class SpikeDatabase
                     ["blur"] = 18,
                 },
             },
+            ["motion"] = ThemeMotionTokens(),
             ["modes"] = new JsonObject
             {
                 ["light"] = new JsonObject
@@ -563,5 +602,30 @@ internal sealed partial class SpikeDatabase
             },
         };
         return tokens.ToJsonString();
+    }
+
+    private static JsonObject ThemeMotionTokens()
+    {
+        return new JsonObject
+        {
+            ["transitions"] = new JsonObject
+            {
+                ["fade"] = MotionTiming(180, 0, "ease", 1),
+                ["slide"] = MotionTiming(260, 0, "ease-out", 1),
+                ["swipe"] = MotionTiming(220, 0, "ease-out", 1),
+                ["scale"] = MotionTiming(220, 0, "ease", 1),
+            },
+        };
+    }
+
+    private static JsonObject MotionTiming(int durationMs, int delayMs, string easing, double intensity)
+    {
+        return new JsonObject
+        {
+            ["durationMs"] = durationMs,
+            ["delayMs"] = delayMs,
+            ["easing"] = easing,
+            ["intensity"] = intensity,
+        };
     }
 }

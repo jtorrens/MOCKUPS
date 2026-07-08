@@ -30,6 +30,8 @@ internal enum ValueKind
     ComponentPreset,
     ComponentInputBindings,
     AlignmentPlacement,
+    Motion,
+    MotionTiming,
     Boolean,
 }
 

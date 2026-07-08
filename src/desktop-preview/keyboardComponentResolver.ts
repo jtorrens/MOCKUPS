@@ -21,6 +21,7 @@ import {
 } from "./componentResolverCommon.js";
 import { resolveIconRowComponentFromRecords } from "./iconRowComponentResolver.js";
 import type { TypographyStyleContract } from "./previewComponentContracts.js";
+import { requiredMotionContract } from "./previewMotionHelpers.js";
 
 export function resolveKeyboardComponent(
   payload: DesignPreviewPayload,
@@ -191,6 +192,15 @@ export function resolveKeyboardComponent(
     ),
     rows,
     surface: resolveSurfaceStyle(style),
+    motion: requiredMotionContract(
+      keyboard,
+      "motion",
+      "component.keyboard.motion",
+    ),
+    motionFrame: {
+      trigger: optionalBoolean(preview, "trigger"),
+      timeSeconds: optionalNumber(preview, "motionTimeSeconds", 0),
+    },
   };
 }
 
@@ -268,6 +278,11 @@ function optionalStringArray(
   }
 
   return fallback;
+}
+
+function optionalBoolean(value: Record<string, unknown>, key: string) {
+  const raw = value[key];
+  return typeof raw === "boolean" ? raw : false;
 }
 
 function keyboardExtraEmojis(fullText: string, currentCharacter: string) {

@@ -45,6 +45,14 @@ internal static class ThemeNumericTokenCatalog
         Token("theme.shadows.default.offsetX", ["shadows", "default", "offsetX"]),
         Token("theme.shadows.default.offsetY", ["shadows", "default", "offsetY"]),
         Token("theme.shadows.default.blur", ["shadows", "default", "blur"]),
+        Token("theme.motion.fade.durationMs", ["motion", "transitions", "fade", "durationMs"]),
+        Token("theme.motion.fade.delayMs", ["motion", "transitions", "fade", "delayMs"]),
+        Token("theme.motion.slide.durationMs", ["motion", "transitions", "slide", "durationMs"]),
+        Token("theme.motion.slide.delayMs", ["motion", "transitions", "slide", "delayMs"]),
+        Token("theme.motion.swipe.durationMs", ["motion", "transitions", "swipe", "durationMs"]),
+        Token("theme.motion.swipe.delayMs", ["motion", "transitions", "swipe", "delayMs"]),
+        Token("theme.motion.scale.durationMs", ["motion", "transitions", "scale", "durationMs"]),
+        Token("theme.motion.scale.delayMs", ["motion", "transitions", "scale", "delayMs"]),
     ];
 
     public static bool TryGet(string id, out ThemeNumericTokenPath token)

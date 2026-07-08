@@ -478,6 +478,29 @@ internal sealed partial class SpikeDatabase
               ]
             },
             {
+              "id": "motion",
+              "label": "Motion",
+              "subtitle": "Theme transition timing and easing",
+              "icon": "{{EditorIcons.Animation}}",
+              "order": 35,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                {
+                  "id": "transitions",
+                  "label": "Transitions",
+                  "order": 10,
+                  "visible": true,
+                  "fields": [
+                    { "id": "theme.motion.fade", "order": 10, "visible": true },
+                    { "id": "theme.motion.slide", "order": 20, "visible": true },
+                    { "id": "theme.motion.swipe", "order": 30, "visible": true },
+                    { "id": "theme.motion.scale", "order": 40, "visible": true }
+                  ]
+                }
+              ]
+            },
+            {
               "id": "typography",
               "label": "Typography",
               "subtitle": "Default text and emoji font tokens",
