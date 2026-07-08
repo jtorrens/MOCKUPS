@@ -147,23 +147,41 @@ internal static class EmbeddedComponentSlotCatalog
             "component.surface",
             ["media", "surfaceSlot"]),
         new(
-            "component.media.topIconBar.editor",
+            "component.media.inlineTopIconBar.editor",
             "iconBar",
-            "Top icon bar",
+            "Inline top icon bar",
             "component.iconBar",
-            ["media", "topIconBarSlot"]),
+            ["media", "inlineTopIconBarSlot"]),
         new(
-            "component.media.centerIconBar.editor",
+            "component.media.inlineCenterIconBar.editor",
             "iconBar",
-            "Center icon bar",
+            "Inline center icon bar",
             "component.iconBar",
-            ["media", "centerIconBarSlot"]),
+            ["media", "inlineCenterIconBarSlot"]),
         new(
-            "component.media.bottomIconBar.editor",
+            "component.media.inlineBottomIconBar.editor",
             "iconBar",
-            "Bottom icon bar",
+            "Inline bottom icon bar",
             "component.iconBar",
-            ["media", "bottomIconBarSlot"]),
+            ["media", "inlineBottomIconBarSlot"]),
+        new(
+            "component.media.fullScreenTopIconBar.editor",
+            "iconBar",
+            "Full screen top icon bar",
+            "component.iconBar",
+            ["media", "fullScreenTopIconBarSlot"]),
+        new(
+            "component.media.fullScreenCenterIconBar.editor",
+            "iconBar",
+            "Full screen center icon bar",
+            "component.iconBar",
+            ["media", "fullScreenCenterIconBarSlot"]),
+        new(
+            "component.media.fullScreenBottomIconBar.editor",
+            "iconBar",
+            "Full screen bottom icon bar",
+            "component.iconBar",
+            ["media", "fullScreenBottomIconBarSlot"]),
     ];
 
     public static bool TryGet(string fieldId, out EmbeddedComponentSlotDefinition slot)

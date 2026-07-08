@@ -56,7 +56,7 @@ export function resolveMediaComponent(
   const iconBarState = playbackState === "playing" ? "active" : "idle";
   const topIconBar = resolveMediaIconBar(
     media,
-    "topIconBarSlot",
+    displayState === "fullframe" ? "fullScreenTopIconBarSlot" : "inlineTopIconBarSlot",
     {
       state: iconBarState,
       size: `${viewportSize.first}|${controlBarHeight}`,
@@ -66,7 +66,7 @@ export function resolveMediaComponent(
   );
   const centerIconBar = resolveMediaIconBar(
     media,
-    "centerIconBarSlot",
+    displayState === "fullframe" ? "fullScreenCenterIconBarSlot" : "inlineCenterIconBarSlot",
     {
       state: iconBarState,
       size: `${viewportSize.first}|${viewportSize.second}`,
@@ -76,7 +76,7 @@ export function resolveMediaComponent(
   );
   const bottomIconBar = resolveMediaIconBar(
     media,
-    "bottomIconBarSlot",
+    displayState === "fullframe" ? "fullScreenBottomIconBarSlot" : "inlineBottomIconBarSlot",
     {
       state: iconBarState,
       size: `${viewportSize.first}|${controlBarHeight}`,

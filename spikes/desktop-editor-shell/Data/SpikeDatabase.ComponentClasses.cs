@@ -1688,9 +1688,12 @@ internal sealed partial class SpikeDatabase
         {
             ["surfaceSlot"] = video?["surfaceSlot"]?.DeepClone() ?? ComponentSurfaceSlot(DefaultComponentPresetId),
             ["controlBarHeight"] = 56,
-            ["topIconBarSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
-            ["centerIconBarSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
-            ["bottomIconBarSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+            ["inlineTopIconBarSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+            ["inlineCenterIconBarSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+            ["inlineBottomIconBarSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+            ["fullScreenTopIconBarSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+            ["fullScreenCenterIconBarSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+            ["fullScreenBottomIconBarSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
             ["controlsFadeDelayMs"] = 900,
             ["controlsFadeDurationMs"] = 180,
             ["motion"] = JsonNode.Parse(MediaMotionDefault().ToJsonString()),
@@ -2765,12 +2768,12 @@ internal sealed partial class SpikeDatabase
 
         var changed = false;
         changed |= NormalizeComponentSlot(media, "surfaceSlot", DefaultComponentPresetId);
-        changed |= NormalizeComponentSlot(media, "topIconBarSlot", DefaultComponentPresetId);
-        changed |= NormalizeComponentSlot(media, "centerIconBarSlot", DefaultComponentPresetId);
-        changed |= NormalizeComponentSlot(media, "bottomIconBarSlot", DefaultComponentPresetId);
-        changed |= NormalizeComponentPresetString(connection, projectId, media, ["topIconBarSlot", "presetId"], "iconBar");
-        changed |= NormalizeComponentPresetString(connection, projectId, media, ["centerIconBarSlot", "presetId"], "iconBar");
-        changed |= NormalizeComponentPresetString(connection, projectId, media, ["bottomIconBarSlot", "presetId"], "iconBar");
+        changed |= MigrateMediaIconBarSlots(media);
+        foreach (var key in MediaIconBarSlotKeys)
+        {
+            changed |= NormalizeComponentSlot(media, key, DefaultComponentPresetId);
+            changed |= NormalizeComponentPresetString(connection, projectId, media, [key, "presetId"], "iconBar");
+        }
         if (media["motion"] is not JsonObject)
         {
             media["motion"] = JsonNode.Parse(MediaMotionDefault().ToJsonString());
@@ -2778,6 +2781,38 @@ internal sealed partial class SpikeDatabase
         }
 
         return changed;
+    }
+
+    private static readonly string[] MediaIconBarSlotKeys =
+    [
+        "inlineTopIconBarSlot",
+        "inlineCenterIconBarSlot",
+        "inlineBottomIconBarSlot",
+        "fullScreenTopIconBarSlot",
+        "fullScreenCenterIconBarSlot",
+        "fullScreenBottomIconBarSlot",
+    ];
+
+    private static bool MigrateMediaIconBarSlots(JsonObject media)
+    {
+        var changed = false;
+        changed |= MoveMediaIconBarSlot(media, "topIconBarSlot", "inlineTopIconBarSlot", "fullScreenTopIconBarSlot");
+        changed |= MoveMediaIconBarSlot(media, "centerIconBarSlot", "inlineCenterIconBarSlot", "fullScreenCenterIconBarSlot");
+        changed |= MoveMediaIconBarSlot(media, "bottomIconBarSlot", "inlineBottomIconBarSlot", "fullScreenBottomIconBarSlot");
+        return changed;
+    }
+
+    private static bool MoveMediaIconBarSlot(JsonObject media, string legacyKey, string inlineKey, string fullScreenKey)
+    {
+        if (media[legacyKey] is not JsonObject legacySlot)
+        {
+            return false;
+        }
+
+        media[inlineKey] ??= legacySlot.DeepClone();
+        media[fullScreenKey] ??= legacySlot.DeepClone();
+        media.Remove(legacyKey);
+        return true;
     }
 
     private static bool NormalizeComponentSlot(JsonObject owner, string key, string preferredPresetName)

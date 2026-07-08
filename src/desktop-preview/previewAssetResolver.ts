@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import type { RenderableFontFace } from "../visual/renderable/types.js";
 import type {
   DesignPreviewFontFacePayload,
@@ -31,10 +31,16 @@ export function iconUriForToken(payload: DesignPreviewPayload, token: string) {
   return `data:image/svg+xml;base64,${svg.toString("base64")}`;
 }
 
-export function mediaUriForPath(payload: DesignPreviewPayload, source: string) {
+export function mediaImageUriForPath(payload: DesignPreviewPayload, source: string) {
   const trimmed = source.trim();
   if (!trimmed) return "";
-  if (/^(data:|file:|https?:)/i.test(trimmed)) return trimmed;
+  if (/^data:image\//i.test(trimmed)) return trimmed;
+  if (/^data:/i.test(trimmed)) return "";
+  if (/^https?:/i.test(trimmed)) return trimmed;
+
+  if (/^file:/i.test(trimmed)) {
+    return imageDataUri(fileURLToPath(trimmed)) ?? "";
+  }
 
   const candidates = path.isAbsolute(trimmed)
     ? [trimmed]
@@ -43,7 +49,26 @@ export function mediaUriForPath(payload: DesignPreviewPayload, source: string) {
         path.resolve(trimmed),
       ];
   const fullPath = candidates.find((candidate) => existsSync(candidate));
-  return fullPath ? pathToFileURL(fullPath).href : "";
+  return fullPath ? imageDataUri(fullPath) ?? "" : "";
+}
+
+function imageDataUri(fullPath: string) {
+  const mimeType = imageMimeType(fullPath);
+  if (!mimeType) return undefined;
+
+  const data = readFileSync(fullPath);
+  return `data:${mimeType};base64,${data.toString("base64")}`;
+}
+
+function imageMimeType(fullPath: string) {
+  const extension = path.extname(fullPath).toLowerCase();
+  if (extension === ".png") return "image/png";
+  if (extension === ".jpg" || extension === ".jpeg") return "image/jpeg";
+  if (extension === ".webp") return "image/webp";
+  if (extension === ".gif") return "image/gif";
+  if (extension === ".heic") return "image/heic";
+  if (extension === ".heif") return "image/heif";
+  return "";
 }
 
 export function fontFacesForPayload(

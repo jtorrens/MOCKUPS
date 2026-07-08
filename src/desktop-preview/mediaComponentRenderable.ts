@@ -9,7 +9,7 @@ import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { iconBarComponentToRenderableAt } from "./iconBarComponentRenderable.js";
 import type { IconBarDesignContract } from "./iconBarComponentContract.js";
 import type { MediaDesignContract, MediaRenderBoxes } from "./mediaComponentContract.js";
-import { mediaUriForPath } from "./previewAssetResolver.js";
+import { mediaImageUriForPath } from "./previewAssetResolver.js";
 import { motionFrameProgress } from "./previewMotionHelpers.js";
 import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
 
@@ -179,8 +179,8 @@ function mediaContent(
   media: MediaDesignContract,
   box: RenderableBox,
 ): RenderableNode {
-  const uri = mediaUriForPath(payload, media.sourceUri);
-  if (uri && media.mediaKind === "image") {
+  const uri = mediaImageUriForPath(payload, media.sourceUri);
+  if (uri) {
     return {
       id: `${media.id}.content`,
       type: "image",
@@ -202,7 +202,11 @@ function mediaContent(
     };
   }
 
-  return mediaPlaceholder(media, box, uri ? "Video frame pending" : "No media source");
+  return mediaPlaceholder(
+    media,
+    box,
+    media.sourceUri ? "Media frame pending" : "No media source",
+  );
 }
 
 function mediaPlaceholder(
