@@ -15,6 +15,7 @@ import {
   optionalNumber,
   optionalString,
   parseObject,
+  requiredBoolean,
   requiredNumber,
   requiredNumberPair,
   requiredString,
@@ -40,12 +41,14 @@ export function resolveMediaComponent(
     "mediaOffset",
     "component.media.input.mediaOffset",
   );
-  const playbackState = mediaPlaybackState(
-    requiredString(preview, "playbackState", "component.media.input.playbackState"),
+  const isPlaying = requiredBoolean(preview, "isPlaying", "component.media.input.isPlaying");
+  const isFullScreen = requiredBoolean(
+    preview,
+    "isFullScreen",
+    "component.media.input.isFullScreen",
   );
-  const displayState = mediaDisplayState(
-    requiredString(preview, "displayState", "component.media.input.displayState"),
-  );
+  const playbackState: MediaPlaybackState = isPlaying ? "playing" : "idle";
+  const displayState: MediaDisplayState = isFullScreen ? "fullframe" : "inline";
   const controlBarHeight = Math.max(
     1,
     requiredNumber(media, "controlBarHeight", "component.media.controlBarHeight"),
@@ -148,7 +151,7 @@ export function resolveMediaComponent(
     ),
     motion: requiredMotionContract(media, "motion", "component.media.motion"),
     motionFrame: {
-      trigger: optionalBoolean(preview, "trigger"),
+      trigger: isPlaying && isFullScreen,
       timeSeconds: optionalNumber(preview, "motionTimeSeconds", 0),
     },
   };
@@ -178,22 +181,7 @@ function mediaKind(value: string): MediaKind {
   throw new Error(`Unsupported media type ${value}`);
 }
 
-function mediaPlaybackState(value: string): MediaPlaybackState {
-  if (value === "idle" || value === "playing") return value;
-  throw new Error(`Unsupported media playback state ${value}`);
-}
-
-function mediaDisplayState(value: string): MediaDisplayState {
-  if (value === "inline" || value === "fullframe") return value;
-  throw new Error(`Unsupported media display state ${value}`);
-}
-
 function mediaFullframeOrientation(value: string): MediaFullframeOrientation {
   if (value === "portrait" || value === "landscape") return value;
   throw new Error(`Unsupported media fullframe orientation ${value}`);
-}
-
-function optionalBoolean(value: Record<string, unknown>, key: string) {
-  const raw = value[key];
-  return typeof raw === "boolean" ? raw : false;
 }

@@ -389,16 +389,16 @@ internal sealed partial class SpikeDatabase
             preview["viewportSize"] = "320|180";
             preview["mediaScale"] = 1;
             preview["mediaOffset"] = "0|0";
-            preview["playbackState"] = "idle";
+            preview["isPlaying"] = false;
             preview["currentTimeSeconds"] = 0;
             preview["durationSeconds"] = 12;
-            preview["displayState"] = "inline";
+            preview["isFullScreen"] = false;
             preview["fullframeOrientation"] = "portrait";
             preview["controlsElapsedMs"] = 0;
-            preview["trigger"] = false;
             preview["animation"] = new JsonObject
             {
-                ["playInputId"] = "trigger",
+                ["playInputId"] = "isPlaying",
+                ["activateInputIds"] = new JsonArray { "isFullScreen" },
                 ["durationMotionConfigPath"] = "media.motion",
                 ["timeJsonKey"] = "motionTimeSeconds",
             };
@@ -611,30 +611,10 @@ internal sealed partial class SpikeDatabase
                     "0|0",
                     pairFirstLabel: "X",
                     pairSecondLabel: "Y"),
-                ComponentInput(
-                    "playbackState",
-                    "Playback",
-                    "playbackState",
-                    "option",
-                    "idle",
-                    options:
-                    [
-                        new FieldOption("idle", "Idle"),
-                        new FieldOption("playing", "Playing"),
-                    ]),
+                ComponentInput("isPlaying", "Play/Pause", "isPlaying", ValueKind.Boolean, "false"),
                 ComponentInput("currentTimeSeconds", "Current time", "currentTimeSeconds", ValueKind.Decimal, "0", minimum: 0, maximum: 86400, increment: 0.1m),
                 ComponentInput("durationSeconds", "Duration", "durationSeconds", ValueKind.Decimal, "12", minimum: 0, maximum: 86400, increment: 0.1m),
-                ComponentInput(
-                    "displayState",
-                    "Display",
-                    "displayState",
-                    "option",
-                    "inline",
-                    options:
-                    [
-                        new FieldOption("inline", "Inline"),
-                        new FieldOption("fullframe", "Fullframe"),
-                    ]),
+                ComponentInput("isFullScreen", "Full screen", "isFullScreen", ValueKind.Boolean, "false"),
                 ComponentInput(
                     "fullframeOrientation",
                     "Fullframe orientation",
@@ -647,7 +627,6 @@ internal sealed partial class SpikeDatabase
                         new FieldOption("landscape", "Landscape"),
                     ]),
                 ComponentInput("controlsElapsedMs", "Controls elapsed ms", "controlsElapsedMs", ValueKind.Integer, "0", minimum: 0, maximum: 60000, increment: 10),
-                ComponentInput("trigger", "Trigger", "trigger", "boolean", "false"),
             ],
             _ => [],
         };

@@ -699,6 +699,10 @@ internal sealed class ComponentInputsPanel : ContentControl
         SyncBooleanInput(stateKey);
         if (startsPlayback)
         {
+            SyncActivatedPlaybackInputs();
+        }
+        if (startsPlayback)
+        {
             _ = StartPlaybackAsync();
             return;
         }
@@ -848,6 +852,10 @@ internal sealed class ComponentInputsPanel : ContentControl
             StopPlayback();
             _values[PlaybackTimeKey()] = "0";
             _values[stateKey] = "true";
+            foreach (var key in ActivatedPlaybackInputKeys())
+            {
+                _values[key] = "true";
+            }
             return;
         }
 
@@ -884,6 +892,22 @@ internal sealed class ComponentInputsPanel : ContentControl
     private string PlaybackTimeKey()
     {
         return $"{_scopeKey}:{PlaybackAnimation().TimeJsonKey}";
+    }
+
+    private IEnumerable<string> ActivatedPlaybackInputKeys()
+    {
+        return PlaybackAnimation()
+            .ActivateInputIds
+            .Where((id) => !string.IsNullOrWhiteSpace(id))
+            .Select((id) => $"{_scopeKey}:{id}");
+    }
+
+    private void SyncActivatedPlaybackInputs()
+    {
+        foreach (var key in ActivatedPlaybackInputKeys())
+        {
+            SyncBooleanInput(key);
+        }
     }
 
     private ComponentInputAnimation PlaybackAnimation()
@@ -1070,7 +1094,26 @@ internal sealed class ComponentInputsPanel : ContentControl
             return null;
         }
 
-        return new ComponentInputAnimation(playInputId, durationInputId, durationSeconds, timeJsonKey);
+        return new ComponentInputAnimation(
+            playInputId,
+            durationInputId,
+            durationSeconds,
+            timeJsonKey,
+            JsonStringArray(animation, "activateInputIds"));
+    }
+
+    private static IReadOnlyList<string> JsonStringArray(JsonObject owner, string key)
+    {
+        if (owner[key] is not JsonArray values)
+        {
+            return [];
+        }
+
+        return values
+            .OfType<JsonValue>()
+            .Select((value) => value.TryGetValue<string>(out var text) ? text : "")
+            .Where((text) => !string.IsNullOrWhiteSpace(text))
+            .ToList();
     }
 
     private static IReadOnlyList<FieldOption> ReadOptions(JsonObject input)
@@ -1225,4 +1268,5 @@ internal sealed record ComponentInputAnimation(
     string PlayInputId,
     string DurationInputId,
     double DurationSeconds,
-    string TimeJsonKey);
+    string TimeJsonKey,
+    IReadOnlyList<string> ActivateInputIds);

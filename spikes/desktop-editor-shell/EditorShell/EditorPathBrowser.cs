@@ -178,7 +178,7 @@ internal sealed class EditorPathBrowser
         if (files.Count == 0) return null;
 
         var selectedPath = files[0].Path.LocalPath;
-        return ProjectPathService.RelativePathIfInsideMediaRoot(selectedPath, mediaRoot);
+        return ProjectPathService.RelativePathIfInsideMediaRoot(selectedPath, mediaRoot) ?? selectedPath;
     }
 
     private static ProjectTreeNode ProjectAncestor(ProjectTreeNode node)
