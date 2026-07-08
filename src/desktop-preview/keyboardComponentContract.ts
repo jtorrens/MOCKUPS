@@ -38,6 +38,7 @@ export interface KeyboardDesignContract {
   rows: KeyboardKeyContract[][];
   iconRowPlacement: "top" | "bottom";
   iconRowsHeight: number;
+  iconEdgePaddingToken: string;
   iconBar: IconBarDesignContract;
   surface: SurfaceStyleContract;
   motion: ComponentMotionContract;

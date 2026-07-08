@@ -1876,6 +1876,7 @@ internal sealed partial class SpikeDatabase
         changed |= NormalizeSpacingToken(config, ["textInput", "iconGap"]);
         changed |= NormalizeSpacingToken(config, ["textInput", "textBoxInputs", "iconGap"]);
         changed |= NormalizeSpacingToken(config, ["textInput", "textBoxInputs", "iconRowGap"]);
+        changed |= NormalizeSpacingToken(config, ["keyboard", "iconEdgePadding"]);
         changed |= NormalizeSpacingToken(config, ["iconRow", "gap"]);
         changed |= NormalizeSpacingToken(config, ["iconBar", "edgePadding"]);
         changed |= NormalizeSpacingToken(config, ["iconBar", "idleLeftIconRowInputs", "gap"]);
@@ -2577,6 +2578,11 @@ internal sealed partial class SpikeDatabase
         }
 
         changed |= NormalizeComponentSlot(keyboard, "iconBarSlot", DefaultComponentPresetId);
+        if (JsonPath.Get(keyboard, ["iconEdgePadding"]) is null)
+        {
+            keyboard["iconEdgePadding"] = "theme.spacing.none";
+            changed = true;
+        }
         changed |= RemoveJsonProperties(
             keyboard,
             "iconRowsEdgePadding",

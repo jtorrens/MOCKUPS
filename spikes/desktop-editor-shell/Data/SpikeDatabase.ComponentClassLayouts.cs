@@ -314,7 +314,8 @@ internal sealed partial class SpikeDatabase
                 { "id": "iconRows", "label": "Icon bar", "order": 20, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": false, "fields": [
                   { "id": "component.keyboard.iconRowPlacement", "order": 10, "visible": true },
                   { "id": "component.keyboard.iconRowsHeight", "order": 20, "visible": true },
-                  { "id": "component.keyboard.iconBar.editor", "order": 30, "visible": true }
+                  { "id": "component.keyboard.iconEdgePadding", "order": 30, "visible": true },
+                  { "id": "component.keyboard.iconBar.editor", "order": 40, "visible": true }
                 ] }
               ]
             }

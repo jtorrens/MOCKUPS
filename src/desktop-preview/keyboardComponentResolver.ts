@@ -157,6 +157,11 @@ export function resolveKeyboardComponent(
       "iconRowsHeight",
       "component.keyboard.iconRowsHeight",
     ),
+    iconEdgePaddingToken: requiredString(
+      keyboard,
+      "iconEdgePadding",
+      "component.keyboard.iconEdgePadding",
+    ),
     iconBar: resolveIconBarComponentFromRecords(
       embeddedIconBarConfig,
       {

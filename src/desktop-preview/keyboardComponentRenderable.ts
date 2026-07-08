@@ -426,14 +426,16 @@ function keyboardIconBarNodes(
 ): RenderableNode[] {
   if (iconRowsHeight <= 0) return [];
 
+  const scale = renderScale(payload);
+  const edgePadding = Math.max(0, numberToken(payload, keyboard.iconEdgePaddingToken) * scale);
   const y = keyboard.iconRowPlacement === "top"
     ? keyboardBox.y
     : keyboardBox.y + keyboardBox.height - iconRowsHeight;
   return [
     iconBarComponentToRenderableAt(payload, keyboard.iconBar, {
-      x: keyboardBox.x,
+      x: keyboardBox.x + edgePadding,
       y,
-      width: keyboardBox.width,
+      width: Math.max(1, keyboardBox.width - edgePadding * 2),
       height: iconRowsHeight,
     }),
   ];

@@ -208,6 +208,7 @@ internal sealed partial class SpikeDatabase
                     ["typography"] = JsonNode.Parse(TypographyStyleValue.CreateDefault("theme.typography.sizes.s")),
                     ["iconRowPlacement"] = "bottom",
                     ["iconRowsHeight"] = 52,
+                    ["iconEdgePadding"] = "theme.spacing.none",
                     ["iconBarSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
                     ["motion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString()),
                 };
