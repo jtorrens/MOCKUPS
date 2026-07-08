@@ -1396,7 +1396,7 @@ function resolveDefaultAudioMessageComponent(
   };
 }
 
-function resolveDefaultVideoMessageComponent(
+function resolveDefaultMediaMessageComponent(
   repository: DomainRepository,
   productionId: string,
   iconTheme:
@@ -1411,9 +1411,9 @@ function resolveDefaultVideoMessageComponent(
 ) {
   const component =
     repository
-      .getComponentClasses(productionId, "video")
-      .find((entry) => entry.name === "Default video message") ??
-    repository.getComponentClasses(productionId, "video")[0];
+      .getComponentClasses(productionId, "media")
+      .find((entry) => entry.name === "Default media message") ??
+    repository.getComponentClasses(productionId, "media")[0];
   const tokens = isObject(component?.tokens_json) ? component.tokens_json : {};
   const shadows = isObject(themeTokens.shadows) ? themeTokens.shadows : {};
   const surfaceRelief = isObject(themeTokens.surfaceRelief)
@@ -1433,8 +1433,8 @@ function resolveDefaultVideoMessageComponent(
 
   return {
     id: component?.id ?? null,
-    name: component?.name ?? "Default video message",
-    componentType: "video",
+    name: component?.name ?? "Default media message",
+    componentType: "media",
     cornerRadius: numberValue(tokens.cornerRadius, 18) * renderScale,
     borderWidth: numberValue(tokens.borderWidth, 0) * renderScale,
     borderColor: themeColor(themeTokens, palette, borderColorToken, "#D1D1D6"),
@@ -2671,7 +2671,7 @@ export function resolveChatScreen({
     themeTokens,
     palette,
   );
-  const videoMessageComponent = resolveDefaultVideoMessageComponent(
+  const videoMessageComponent = resolveDefaultMediaMessageComponent(
     repository,
     theme.production_id,
     iconTheme,

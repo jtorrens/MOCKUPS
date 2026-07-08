@@ -141,11 +141,29 @@ internal static class EmbeddedComponentSlotCatalog
             "component.buttonIcon",
             ["audio", "badgeSlot"]),
         new(
-            "component.video.surface.editor",
+            "component.media.surface.editor",
             "surface",
             "Surface",
             "component.surface",
-            ["video", "surfaceSlot"]),
+            ["media", "surfaceSlot"]),
+        new(
+            "component.media.topIconBar.editor",
+            "iconBar",
+            "Top icon bar",
+            "component.iconBar",
+            ["media", "topIconBarSlot"]),
+        new(
+            "component.media.centerIconBar.editor",
+            "iconBar",
+            "Center icon bar",
+            "component.iconBar",
+            ["media", "centerIconBarSlot"]),
+        new(
+            "component.media.bottomIconBar.editor",
+            "iconBar",
+            "Bottom icon bar",
+            "component.iconBar",
+            ["media", "bottomIconBarSlot"]),
     ];
 
     public static bool TryGet(string fieldId, out EmbeddedComponentSlotDefinition slot)

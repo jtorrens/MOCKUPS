@@ -30,8 +30,8 @@ import { textBoxComponentToRenderable } from "./textBoxComponentRenderable.js";
 import { resolveTextBoxComponent } from "./textBoxComponentResolver.js";
 import { textInputBarComponentToRenderable } from "./textInputBarComponentRenderable.js";
 import { resolveTextInputBarComponent } from "./textInputBarComponentResolver.js";
-import { videoComponentToRenderable } from "./videoComponentRenderable.js";
-import { resolveVideoComponent } from "./videoComponentResolver.js";
+import { mediaComponentToRenderable } from "./mediaComponentRenderable.js";
+import { resolveMediaComponent } from "./mediaComponentResolver.js";
 
 type ComponentRenderableFactory = (payload: DesignPreviewPayload) => RenderableNode;
 
@@ -55,7 +55,7 @@ export const componentRenderableFactories = {
     textInputBarComponentToRenderable(payload, resolveTextInputBarComponent(payload)),
   keyboard: (payload) =>
     keyboardComponentToRenderable(payload, resolveKeyboardComponent(payload)),
-  video: (payload) => videoComponentToRenderable(payload, resolveVideoComponent(payload)),
+  media: (payload) => mediaComponentToRenderable(payload, resolveMediaComponent(payload)),
   status_bar: (payload) =>
     statusBarComponentToRenderable(payload, resolveStatusBarComponent(payload)),
   navigation_bar: (payload) =>

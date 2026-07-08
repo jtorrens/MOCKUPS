@@ -59,6 +59,7 @@ internal sealed partial class SpikeDatabase
         SeedActorsIfEmpty(connection);
         SeedProductionFontsIfEmpty(connection);
         SeedRenderPresetsIfEmpty(connection);
+        MigrateVideoComponentClassesToMedia(connection);
         SeedComponentClassesIfEmpty(connection);
         EnsureComponentClassConfigDefaults(connection);
         EnsureComponentClassRecordClassIds(connection);

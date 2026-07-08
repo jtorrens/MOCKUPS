@@ -99,13 +99,13 @@ export const desktopPreviewComponents = {
     renderable: "./keyboardComponentRenderable",
     embeds: ["iconBar"],
   },
-  video: {
+  media: {
     category: "component",
     migrationStatus: "structural",
-    contract: "./videoComponentContract",
-    resolver: "./videoComponentResolver",
-    renderable: "./videoComponentRenderable",
-    embeds: ["surface"],
+    contract: "./mediaComponentContract",
+    resolver: "./mediaComponentResolver",
+    renderable: "./mediaComponentRenderable",
+    embeds: ["surface", "iconBar"],
   },
   status_bar: {
     category: "system",

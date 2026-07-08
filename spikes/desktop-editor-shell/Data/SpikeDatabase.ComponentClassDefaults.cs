@@ -27,7 +27,7 @@ internal sealed partial class SpikeDatabase
             "buttonIcon" => "Button icon component",
             "label" => "Label component",
             "audio" => "Audio component",
-            "video" => "Video component",
+            "media" => "Media component",
             _ => componentType,
         };
     }
@@ -303,16 +303,17 @@ internal sealed partial class SpikeDatabase
                 return DefaultStatusBarConfigJson();
             case "navigation_bar":
                 return DefaultNavigationBarConfigJson();
-            case "video":
-                config["video"] = new JsonObject
+            case "media":
+                config["media"] = new JsonObject
                 {
                     ["surfaceSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
-                    ["statusVisible"] = true,
-                    ["statusHeight"] = 24,
-                    ["statusIconSlots"] = JsonNode.Parse("""{"left":["app_camera"],"center":[],"right":[]}"""),
-                    ["statusTextColorToken"] = "theme.colors.textPrimary",
-                    ["playOverlayVisible"] = true,
-                    ["playColorToken"] = "theme.icons.accent",
+                    ["controlBarHeight"] = 56,
+                    ["topIconBarSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["centerIconBarSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["bottomIconBarSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["controlsFadeDelayMs"] = 900,
+                    ["controlsFadeDurationMs"] = 180,
+                    ["motion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString()),
                 };
                 break;
         }
@@ -331,7 +332,7 @@ internal sealed partial class SpikeDatabase
                 "textBox" => "Message",
                 "textInputBar" => "Message",
                 "audio" => "0:05",
-                "video" => "0:12",
+                "media" => "",
                 _ => "Sample",
             },
             ["sampleSubtext"] = componentType is "label" or "avatar" or "buttonIcon" ? "Subtitle" : "",
@@ -378,6 +379,27 @@ internal sealed partial class SpikeDatabase
             {
                 ["playInputId"] = "trigger",
                 ["durationMotionConfigPath"] = "keyboard.motion",
+                ["timeJsonKey"] = "motionTimeSeconds",
+            };
+        }
+        if (componentType == "media")
+        {
+            preview["mediaSource"] = "";
+            preview["mediaType"] = "image";
+            preview["viewportSize"] = "320|180";
+            preview["mediaScale"] = 1;
+            preview["mediaOffset"] = "0|0";
+            preview["playbackState"] = "idle";
+            preview["currentTimeSeconds"] = 0;
+            preview["durationSeconds"] = 12;
+            preview["displayState"] = "inline";
+            preview["fullframeOrientation"] = "portrait";
+            preview["controlsElapsedMs"] = 0;
+            preview["trigger"] = false;
+            preview["animation"] = new JsonObject
+            {
+                ["playInputId"] = "trigger",
+                ["durationMotionConfigPath"] = "media.motion",
                 ["timeJsonKey"] = "motionTimeSeconds",
             };
         }
@@ -558,9 +580,74 @@ internal sealed partial class SpikeDatabase
                     tableId: "actors",
                     resolvedJsonKey: "actor"),
             ],
-            "video" =>
+            "media" =>
             [
-                ComponentInput("durationText", "Duration", "sampleText", "text", "0:12"),
+                ComponentInput("mediaSource", "Source", "mediaSource", "text", ""),
+                ComponentInput(
+                    "mediaType",
+                    "Type",
+                    "mediaType",
+                    "option",
+                    "image",
+                    options:
+                    [
+                        new FieldOption("image", "Image"),
+                        new FieldOption("video", "Video"),
+                    ]),
+                ComponentInput(
+                    "viewportSize",
+                    "Viewport",
+                    "viewportSize",
+                    "integerPair",
+                    "320|180",
+                    pairFirstLabel: "W",
+                    pairSecondLabel: "H"),
+                ComponentInput("mediaScale", "Scale", "mediaScale", ValueKind.Decimal, "1", minimum: 0.05m, maximum: 16, increment: 0.05m),
+                ComponentInput(
+                    "mediaOffset",
+                    "Offset",
+                    "mediaOffset",
+                    "integerPair",
+                    "0|0",
+                    pairFirstLabel: "X",
+                    pairSecondLabel: "Y"),
+                ComponentInput(
+                    "playbackState",
+                    "Playback",
+                    "playbackState",
+                    "option",
+                    "idle",
+                    options:
+                    [
+                        new FieldOption("idle", "Idle"),
+                        new FieldOption("playing", "Playing"),
+                    ]),
+                ComponentInput("currentTimeSeconds", "Current time", "currentTimeSeconds", ValueKind.Decimal, "0", minimum: 0, maximum: 86400, increment: 0.1m),
+                ComponentInput("durationSeconds", "Duration", "durationSeconds", ValueKind.Decimal, "12", minimum: 0, maximum: 86400, increment: 0.1m),
+                ComponentInput(
+                    "displayState",
+                    "Display",
+                    "displayState",
+                    "option",
+                    "inline",
+                    options:
+                    [
+                        new FieldOption("inline", "Inline"),
+                        new FieldOption("fullframe", "Fullframe"),
+                    ]),
+                ComponentInput(
+                    "fullframeOrientation",
+                    "Fullframe orientation",
+                    "fullframeOrientation",
+                    "option",
+                    "portrait",
+                    options:
+                    [
+                        new FieldOption("portrait", "Portrait"),
+                        new FieldOption("landscape", "Landscape"),
+                    ]),
+                ComponentInput("controlsElapsedMs", "Controls elapsed ms", "controlsElapsedMs", ValueKind.Integer, "0", minimum: 0, maximum: 60000, increment: 10),
+                ComponentInput("trigger", "Trigger", "trigger", "boolean", "false"),
             ],
             _ => [],
         };
@@ -794,6 +881,6 @@ internal sealed partial class SpikeDatabase
         NewComponentSeed("buttonIcon", "component.buttonIcon", "Default Button Icon"),
         NewComponentSeed("label", "component.label", "Default Label"),
         NewComponentSeed("audio", "component.audio", "Default Audio"),
-        NewComponentSeed("video", "component.video", "Default Video"),
+        NewComponentSeed("media", "component.media", "Default Media"),
     ];
 }

@@ -59,7 +59,7 @@ field `migrationStatus`.
 | `navigation_bar` | system | Structural/functional enough for current preview | Routed as a system component with its own resolver/renderable. Further device-specific variant work may refine it. |
 | `textInputBar` | system | Structurally migrated | Preview renders a screen-width bar with embedded `surface`, `textBox` and one `iconBar` slot. `idle` vs `typing` is derived from whether runtime text is empty. Icon token lists are variant data inside the embedded `iconBar`, not runtime preview inputs. Text content is runtime data passed into the embedded `textBox`; placeholder is fixed by the parent variant through generic input bindings. |
 | `keyboard` | system | Structurally migrated | Preview renders a generic keyboard surface, keys and bottom icons. It is the first component using component-level motion intent plus theme timing tokens; preview animation is still resolved as frame data before the generic web renderer paints it. Final keyboard layout model and interaction states still need definition. |
-| `video` | component | Structurally migrated | Preview renders an embedded `surface` variant, status row and play overlay. It currently declares a duration text runtime input; final media, timeline, controls and embedding semantics still need definition. |
+| `media` | component | Structurally migrated | Replaces the old desktop `video` component route. Preview renders an embedded `surface` variant plus top/center/bottom `iconBar` overlays. Runtime inputs cover image/video source type, viewport size, media scale/offset, playback state, current/duration time, inline/fullframe state and fullframe orientation. Video asset frame extraction is still pending; image sources render through the generic image primitive. |
 
 ## Legacy Runtime Paths Removed
 
@@ -79,7 +79,7 @@ When chat/screen module rendering is rebuilt, use the previous React app only as
 an external reference for behavior and visual parity. Do not restore old runtime
 modules or `message_bubble_*`, `text_input_bar`, `keyboard_key`,
 `status_bar_item`, or `navigation_bar_item` render nodes. In particular, the
-bubble migration must move bubble, labels, avatar, media, audio, video, icon
+bubble migration must move bubble, labels, avatar, media, audio, icon
 button, tail/chrome and status pieces as one planned phase, not as mixed
 legacy/new fragments.
 
@@ -138,6 +138,7 @@ Compatibility note:
    migrated component.
 3. Define `keyboard` after text input, because it has more internal layout but
    few embedded dependencies.
-4. Define `video` after deciding how media inputs, status row and play controls
-   should compose with bubble/runtime data.
+4. Define `media` behavior after validating viewport/fullframe controls and
+   deciding how media source/frame extraction should compose with bubble/runtime
+   data.
 5. Defer bubble migration until its full owned component graph is ready.

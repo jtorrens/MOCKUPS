@@ -1586,6 +1586,122 @@ internal sealed partial class SpikeDatabase
         }
     }
 
+    private static void MigrateVideoComponentClassesToMedia(SqliteConnection connection)
+    {
+        foreach (var row in QueryComponentClassRows(connection).Where((candidate) => candidate.ComponentType == "video"))
+        {
+            var mediaId = row.Id.EndsWith("_video", StringComparison.Ordinal)
+                ? row.Id[..^"_video".Length] + "_media"
+                : row.Id + "_media";
+            if (ScalarLong(connection, "SELECT COUNT(*) FROM component_classes WHERE id = $id", ("$id", mediaId)) > 0)
+            {
+                mediaId = row.Id;
+            }
+
+            var config = ParseJsonObject(row.ConfigJson);
+            MigrateVideoConfigObjectToMedia(config);
+            var designPreview = ParseJsonObject(DefaultComponentDesignPreviewJson("media"));
+            var metadata = ParseJsonObject(row.MetadataJson);
+            MigrateVideoPresetConfigsToMedia(metadata);
+
+            var name = row.Name.Equals("Default Video", StringComparison.Ordinal)
+                ? "Default Media"
+                : row.Name.Replace("Video", "Media", StringComparison.Ordinal);
+            Execute(
+                connection,
+                """
+                UPDATE component_classes
+                SET id = $nextId,
+                    component_type = 'media',
+                    record_class_id = 'component.media',
+                    name = $name,
+                    notes = $notes,
+                    config_json = $configJson,
+                    design_preview_json = $designPreviewJson,
+                    metadata_json = $metadataJson
+                WHERE id = $id
+                """,
+                ("$id", row.Id),
+                ("$nextId", mediaId),
+                ("$name", string.IsNullOrWhiteSpace(name) ? "Default Media" : name),
+                ("$notes", ComponentTypeLabel("media")),
+                ("$configJson", config.ToJsonString()),
+                ("$designPreviewJson", designPreview.ToJsonString()),
+                ("$metadataJson", metadata.ToJsonString()));
+
+            if (!mediaId.Equals(row.Id, StringComparison.Ordinal))
+            {
+                ReplaceComponentPresetReferencePrefix(connection, row.Id, mediaId);
+            }
+        }
+    }
+
+    private static void ReplaceComponentPresetReferencePrefix(
+        SqliteConnection connection,
+        string previousComponentClassId,
+        string nextComponentClassId)
+    {
+        var previousPrefix = previousComponentClassId + "::preset::";
+        var nextPrefix = nextComponentClassId + "::preset::";
+        Execute(
+            connection,
+            """
+            UPDATE component_classes
+            SET config_json = replace(config_json, $previousPrefix, $nextPrefix),
+                design_preview_json = replace(design_preview_json, $previousPrefix, $nextPrefix),
+                metadata_json = replace(metadata_json, $previousPrefix, $nextPrefix)
+            """,
+            ("$previousPrefix", previousPrefix),
+            ("$nextPrefix", nextPrefix));
+    }
+
+    private static bool MigrateVideoPresetConfigsToMedia(JsonObject metadata)
+    {
+        var changed = false;
+        if (metadata["presets"] is not JsonArray presets)
+        {
+            return false;
+        }
+
+        foreach (var preset in presets.OfType<JsonObject>())
+        {
+            if (preset["config"] is JsonObject config)
+            {
+                changed |= MigrateVideoConfigObjectToMedia(config);
+            }
+        }
+
+        return changed;
+    }
+
+    private static bool MigrateVideoConfigObjectToMedia(JsonObject config)
+    {
+        if (config["media"] is JsonObject)
+        {
+            config.Remove("video");
+            config.Remove("style");
+            return false;
+        }
+
+        var video = config["video"] as JsonObject;
+        var media = new JsonObject
+        {
+            ["surfaceSlot"] = video?["surfaceSlot"]?.DeepClone() ?? ComponentSurfaceSlot(DefaultComponentPresetId),
+            ["controlBarHeight"] = 56,
+            ["topIconBarSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+            ["centerIconBarSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+            ["bottomIconBarSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+            ["controlsFadeDelayMs"] = 900,
+            ["controlsFadeDurationMs"] = 180,
+            ["motion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString()),
+        };
+        config["media"] = media;
+        config.Remove("video");
+        config.Remove("textInput");
+        config.Remove("style");
+        return true;
+    }
+
     private static void EnsureComponentClassRecordClassIds(SqliteConnection connection)
     {
         foreach (var seed in ComponentSeedRows)
@@ -1751,6 +1867,7 @@ internal sealed partial class SpikeDatabase
         changed |= NormalizeComponentSlots(componentType, config);
         changed |= NormalizeTextInputBarSlots(connection, projectId, componentType, config);
         changed |= NormalizeKeyboardSlots(connection, projectId, componentType, config);
+        changed |= NormalizeMediaSlots(connection, projectId, componentType, config);
         changed |= NormalizeEmbeddedSlotPresetIds(connection, projectId, config);
         changed |= NormalizeComponentInputBindingPresetIds(connection, projectId, config);
         changed |= NormalizeComponentTypographyStyles(config);
@@ -2473,7 +2590,7 @@ internal sealed partial class SpikeDatabase
             "buttonIcon" => (new[] { "buttonIcon" }, "IconButton"),
             "textBox" => (new[] { "textBox" }, "InputBox"),
             "audio" => (new[] { "audio" }, DefaultComponentPresetId),
-            "video" => (new[] { "video" }, DefaultComponentPresetId),
+            "media" => (new[] { "media" }, DefaultComponentPresetId),
             _ => (Array.Empty<string>(), ""),
         };
         if (ownerPath.Length == 0 || JsonPath.Get(config, ownerPath) is not JsonObject owner)
@@ -2628,6 +2745,35 @@ internal sealed partial class SpikeDatabase
 
         if (keyboard.Remove("keyCornerRadius"))
         {
+            changed = true;
+        }
+
+        return changed;
+    }
+
+    private static bool NormalizeMediaSlots(
+        SqliteConnection connection,
+        string projectId,
+        string componentType,
+        JsonObject config)
+    {
+        if (componentType != "media"
+            || JsonPath.Get(config, ["media"]) is not JsonObject media)
+        {
+            return false;
+        }
+
+        var changed = false;
+        changed |= NormalizeComponentSlot(media, "surfaceSlot", DefaultComponentPresetId);
+        changed |= NormalizeComponentSlot(media, "topIconBarSlot", DefaultComponentPresetId);
+        changed |= NormalizeComponentSlot(media, "centerIconBarSlot", DefaultComponentPresetId);
+        changed |= NormalizeComponentSlot(media, "bottomIconBarSlot", DefaultComponentPresetId);
+        changed |= NormalizeComponentPresetString(connection, projectId, media, ["topIconBarSlot", "presetId"], "iconBar");
+        changed |= NormalizeComponentPresetString(connection, projectId, media, ["centerIconBarSlot", "presetId"], "iconBar");
+        changed |= NormalizeComponentPresetString(connection, projectId, media, ["bottomIconBarSlot", "presetId"], "iconBar");
+        if (media["motion"] is not JsonObject)
+        {
+            media["motion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString());
             changed = true;
         }
 
@@ -2791,7 +2937,7 @@ internal sealed partial class SpikeDatabase
         }
 
         changed |= NormalizeComponentInputDefinitions(componentType, inputs, defaultInputs);
-        if (componentType == "keyboard")
+        if (componentType is "keyboard" or "media")
         {
             changed |= RemoveUnknownComponentInputs(inputs, defaultInputs);
         }

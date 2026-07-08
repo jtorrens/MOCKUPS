@@ -229,6 +229,7 @@ assertNoTerms("src/desktop-preview/renderDesignPreviewHtml.tsx", [
   "textBox",
   "textInputBar",
   "keyboard",
+  "media",
   "video",
   "statusBar",
   "navigationBar",
@@ -239,6 +240,7 @@ assertNoTerms("src/desktop-preview/renderDesignPreviewHtml.tsx", [
   "component_text_box",
   "component_text_input",
   "component_keyboard",
+  "component_media",
   "component_video",
   "status_bar",
   "navigation_bar",
@@ -338,6 +340,7 @@ assertNoTerms("src/desktop-preview/componentRenderableCommon.ts", [
   "textBox",
   "textInputBar",
   "keyboard",
+  "media",
   "video",
   "statusBar",
   "navigationBar",
@@ -350,6 +353,7 @@ assertNoTerms("src/desktop-preview/componentRenderableCommon.ts", [
   "component_text_box",
   "component_text_input",
   "component_keyboard",
+  "component_media",
   "component_video",
 ]);
 assertContains(
@@ -1015,8 +1019,8 @@ assertContains(
 );
 assertContains(
   "src/desktop-preview/desktopPreviewComponents.ts",
-  "video: {",
-  "desktop preview component manifest must route video as an owning component module",
+  "media: {",
+  "desktop preview component manifest must route media as an owning component module",
 );
 assertContains(
   "src/desktop-preview/componentClassRenderableRegistry.ts",
@@ -1045,8 +1049,8 @@ assertContains(
 );
 assertContains(
   "src/desktop-preview/componentClassRenderableRegistry.ts",
-  "video: (payload)",
-  "component renderable registry must route the current video component type",
+  "media: (payload)",
+  "component renderable registry must route the current media component type",
 );
 assertDoesNotContain(
   "src/desktop-preview/desktopPreviewComponents.ts",
@@ -1181,7 +1185,7 @@ assertNoTerms("spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
   "\"status_bar\"",
   "\"textInputBar\"",
   "\"keyboard\"",
-  "\"video\"",
+  "\"media\"",
 ]);
 assertContains(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",

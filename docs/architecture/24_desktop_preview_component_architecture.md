@@ -635,7 +635,7 @@ export const desktopPreviewComponents = {
     contract: "./textInputBarComponentContract",
     resolver: "./textInputBarComponentResolver",
     renderable: "./textInputBarComponentRenderable",
-    embeds: ["surface", "iconRow"]
+    embeds: ["surface", "textBox", "iconBar"]
   },
 
   keyboard: {
@@ -644,16 +644,16 @@ export const desktopPreviewComponents = {
     contract: "./keyboardComponentContract",
     resolver: "./keyboardComponentResolver",
     renderable: "./keyboardComponentRenderable",
-    embeds: []
+    embeds: ["iconBar"]
   },
 
-  video: {
+  media: {
     category: "component",
     migrationStatus: "structural",
-    contract: "./videoComponentContract",
-    resolver: "./videoComponentResolver",
-    renderable: "./videoComponentRenderable",
-    embeds: []
+    contract: "./mediaComponentContract",
+    resolver: "./mediaComponentResolver",
+    renderable: "./mediaComponentRenderable",
+    embeds: ["surface", "iconBar"]
   },
 
   status_bar: {
@@ -689,7 +689,7 @@ Current migrated component routes:
   ordered icon token list remains runtime data supplied by preview/screen input.
 - `status_bar` and `navigation_bar` are system components in the same manifest
   route.
-- `textInputBar`, `keyboard` and `video` are structurally migrated: they have
+- `textInputBar`, `keyboard` and `media` are structurally migrated: they have
   contracts, resolvers, renderables, registry entries and dictionary-backed
   fields, but their final runtime behavior is intentionally deferred to later
   feature phases.
@@ -1038,7 +1038,7 @@ Tasks:
   - audio;
   - textInputBar;
   - keyboard;
-  - video;
+  - media;
   - status_bar;
   - navigation_bar;
 - include `category`, `contract`, `resolver`, `renderable`, `embeds`;

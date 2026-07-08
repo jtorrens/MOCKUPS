@@ -648,13 +648,14 @@ internal static class ComponentClassFieldCatalog
         ["component.navigationBar.gesture.height"] = new("component.navigationBar.gesture.height", "Height", ValueKind.Integer, ["gesture", "height"], "5"),
         ["component.navigationBar.gesture.cornerRadius"] = new("component.navigationBar.gesture.cornerRadius", "Corner radius", ValueKind.Integer, ["gesture", "cornerRadius"], "999"),
 
-        ["component.video.surface.editor"] = new("component.video.surface.editor", "Surface", ValueKind.ComponentPreset, ["video", "surfaceSlot", "presetId"], "default"),
-        ["component.video.statusVisible"] = new("component.video.statusVisible", "Show status", ValueKind.Boolean, ["video", "statusVisible"], "true"),
-        ["component.video.statusHeight"] = new("component.video.statusHeight", "Status height", ValueKind.Integer, ["video", "statusHeight"], "24"),
-        ["component.video.statusIconSlots"] = new("component.video.statusIconSlots", "Status icons", ValueKind.IconSlots, ["video", "statusIconSlots"], """{"left":["app_camera"],"center":[],"right":[]}"""),
-        ["component.video.statusTextColorToken"] = new("component.video.statusTextColorToken", "Status text", ValueKind.ThemeToken, ["video", "statusTextColorToken"], "theme.colors.textPrimary", Options: ThemeColorOptions),
-        ["component.video.playOverlayVisible"] = new("component.video.playOverlayVisible", "Play overlay", ValueKind.Boolean, ["video", "playOverlayVisible"], "true"),
-        ["component.video.playColorToken"] = new("component.video.playColorToken", "Play color", ValueKind.ThemeToken, ["video", "playColorToken"], "theme.icons.accent", Options: ThemeColorOptions),
+        ["component.media.surface.editor"] = new("component.media.surface.editor", "Surface", ValueKind.ComponentPreset, ["media", "surfaceSlot", "presetId"], "default"),
+        ["component.media.controlBarHeight"] = new("component.media.controlBarHeight", "Control bar height", ValueKind.Integer, ["media", "controlBarHeight"], "56", Number: new NumberDefinition(1, 512, 1, 0)),
+        ["component.media.topIconBar.editor"] = new("component.media.topIconBar.editor", "Top icon bar", ValueKind.ComponentPreset, ["media", "topIconBarSlot", "presetId"], "default"),
+        ["component.media.centerIconBar.editor"] = new("component.media.centerIconBar.editor", "Center icon bar", ValueKind.ComponentPreset, ["media", "centerIconBarSlot", "presetId"], "default"),
+        ["component.media.bottomIconBar.editor"] = new("component.media.bottomIconBar.editor", "Bottom icon bar", ValueKind.ComponentPreset, ["media", "bottomIconBarSlot", "presetId"], "default"),
+        ["component.media.controlsFadeDelayMs"] = new("component.media.controlsFadeDelayMs", "Fade delay ms", ValueKind.Integer, ["media", "controlsFadeDelayMs"], "900", Number: new NumberDefinition(0, 10000, 10, 0)),
+        ["component.media.controlsFadeDurationMs"] = new("component.media.controlsFadeDurationMs", "Fade duration ms", ValueKind.Integer, ["media", "controlsFadeDurationMs"], "180", Number: new NumberDefinition(0, 10000, 10, 0)),
+        ["component.media.motion"] = new("component.media.motion", "Motion", ValueKind.Motion, ["media", "motion"], MotionVariantValue.Default.ToJsonString()),
     };
 
     public static ComponentClassFieldDescriptor Get(string fieldId)

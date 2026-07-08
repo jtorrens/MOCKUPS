@@ -10,12 +10,12 @@ export const ComponentClassTypeSchema = z.enum([
   "iconRow",
   "keyboard",
   "label",
+  "media",
   "navigation_bar",
   "status_bar",
   "surface",
   "textBox",
   "textInputBar",
-  "video",
 ]);
 
 export const ComponentClassSchema = z.object({

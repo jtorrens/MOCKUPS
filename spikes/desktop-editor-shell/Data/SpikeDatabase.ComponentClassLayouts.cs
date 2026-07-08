@@ -426,25 +426,27 @@ internal sealed partial class SpikeDatabase
               ]
             }
             """,
-            "component.video" => $$"""
+            "component.media" => $$"""
             ,
             {
-              "id": "video",
-              "label": "Video",
-              "subtitle": "Video status bar and play overlay defaults",
+              "id": "media",
+              "label": "Media",
+              "subtitle": "Image/video viewport, overlays and fullframe behavior",
               "icon": "{{EditorIcons.Video}}",
               "order": 20,
               "visible": true,
               "defaultOpen": false,
               "groups": [
-                { "id": "video", "label": "Video", "order": 10, "visible": true, "fields": [
-                  { "id": "component.video.surface.editor", "order": 10, "visible": true },
-                  { "id": "component.video.statusVisible", "order": 30, "visible": true },
-                  { "id": "component.video.statusHeight", "order": 40, "visible": true },
-                  { "id": "component.video.statusIconSlots", "order": 50, "visible": true },
-                  { "id": "component.video.statusTextColorToken", "order": 60, "visible": true },
-                  { "id": "component.video.playOverlayVisible", "order": 70, "visible": true },
-                  { "id": "component.video.playColorToken", "order": 80, "visible": true }
+                { "id": "media", "label": "Media", "order": 10, "visible": true, "fields": [
+                  { "id": "component.media.surface.editor", "order": 10, "visible": true }
+                ] },
+                { "id": "mediaControls", "label": "Controls", "order": 20, "visible": true, "fields": [
+                  { "id": "component.media.controlBarHeight", "order": 10, "visible": true },
+                  { "id": "component.media.topIconBar.editor", "order": 20, "visible": true },
+                  { "id": "component.media.centerIconBar.editor", "order": 30, "visible": true },
+                  { "id": "component.media.bottomIconBar.editor", "order": 40, "visible": true },
+                  { "id": "component.media.controlsFadeDelayMs", "order": 50, "visible": true },
+                  { "id": "component.media.controlsFadeDurationMs", "order": 60, "visible": true }
                 ] }
               ]
             }
@@ -479,7 +481,7 @@ internal sealed partial class SpikeDatabase
         }
         """;
 
-        var behavior = recordClassId == "component.keyboard"
+        var behavior = recordClassId is "component.keyboard" or "component.media"
             ? $$"""
         ,
         {
@@ -492,7 +494,7 @@ internal sealed partial class SpikeDatabase
           "defaultOpen": false,
           "groups": [
             { "id": "motion", "label": "Motion", "order": 10, "visible": true, "fields": [
-              { "id": "component.keyboard.motion", "order": 10, "visible": true }
+              { "id": "{{(recordClassId == "component.media" ? "component.media.motion" : "component.keyboard.motion")}}", "order": 10, "visible": true }
             ] }
           ]
         }

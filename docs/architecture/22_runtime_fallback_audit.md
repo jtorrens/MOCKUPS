@@ -61,11 +61,13 @@ Active component class preview routes:
 | `avatar` | migrated | `resolveAvatarComponent` -> `avatarComponentToRenderable` -> embedded label renderable |
 | `buttonIcon` | migrated | `resolveButtonIconComponent` -> `buttonIconComponentToRenderable` -> embedded surface/label renderables |
 | `audio` | migrated/evolving | `resolveAudioComponent` -> `audioComponentToRenderable` -> embedded surface/avatar/button icon renderables |
+| `iconRow` | structurally migrated | `resolveIconRowComponent` -> `iconRowComponentToRenderable` -> embedded button icon renderables |
+| `iconBar` | structurally migrated | `resolveIconBarComponent` -> `iconBarComponentToRenderable` -> embedded icon row renderables |
 | `status_bar` | migrated | `resolveStatusBarComponent` -> `statusBarComponentToRenderable` -> web renderer |
 | `navigation_bar` | migrated | `resolveNavigationBarComponent` -> `navigationBarComponentToRenderable` -> web renderer |
 | `textInputBar` | structurally migrated | `resolveTextInputBarComponent` -> `textInputBarComponentToRenderable` -> web renderer |
 | `keyboard` | structurally migrated | `resolveKeyboardComponent` -> `keyboardComponentToRenderable` -> web renderer |
-| `video` | structurally migrated | `resolveVideoComponent` -> `videoComponentToRenderable` -> web renderer |
+| `media` | structurally migrated | `resolveMediaComponent` -> `mediaComponentToRenderable` -> embedded surface/icon bar renderables |
 
 Known component classes must route through the manifest and
 `componentClassRenderableRegistry.ts`. The magenta unsupported surface is only a

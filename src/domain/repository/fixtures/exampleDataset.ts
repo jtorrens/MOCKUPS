@@ -667,14 +667,14 @@ export function createExampleDataset(): RepositoryDataset {
     },
     metadata_json: { source: "seed" },
   });
-  const videoMessageComponentClass = ComponentClassSchema.parse({
-    id: `${production.id}:video_default`,
+  const mediaMessageComponentClass = ComponentClassSchema.parse({
+    id: `${production.id}:media_default`,
     production_id: production.id,
-    component_type: "video",
-    name: "Default video message",
+    component_type: "media",
+    name: "Default media message",
     tokens_json: {
       schemaVersion: 1,
-      componentType: "video",
+      componentType: "media",
       playOverlayEnabled: true,
       playCircleSize: 44,
       playCircleColorToken: "icons.accent",
@@ -802,7 +802,7 @@ export function createExampleDataset(): RepositoryDataset {
       audioMessageComponentClass,
       buttonIconComponentClass,
       labelComponentClass,
-      videoMessageComponentClass,
+      mediaMessageComponentClass,
       statusBarComponentClass,
       navigationBarComponentClass,
       textInputBarComponentClass,

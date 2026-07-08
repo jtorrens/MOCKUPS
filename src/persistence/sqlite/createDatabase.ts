@@ -1006,8 +1006,9 @@ function normalizeComponentSemanticColorTokens(tokens: Record<string, unknown>) 
       next[key] = replacements[value];
     }
   }
-  if (next.componentType === "video") {
+  if (next.componentType === "video" || next.componentType === "media") {
     return {
+      componentType: "media",
       statusVisible: true,
       statusIconToken: "media_video",
       statusColorToken: "icons.secondary",
@@ -1582,10 +1583,10 @@ function defaultAudioComponentTokens() {
   });
 }
 
-function defaultVideoComponentTokens() {
+function defaultMediaComponentTokens() {
   return JSON.stringify({
     schemaVersion: 1,
-    componentType: "video",
+    componentType: "media",
     cornerRadius: 18,
     borderWidth: 0,
     borderColorToken: "borders.primary",
@@ -1767,10 +1768,10 @@ function seedDefaultComponentClasses(database: SQLiteDatabase): void {
         tokens: defaultAudioComponentTokens(),
       },
       {
-        id: `${production.id}:video_default`,
-        type: "video",
-        name: "Default video message",
-        tokens: defaultVideoComponentTokens(),
+        id: `${production.id}:media_default`,
+        type: "media",
+        name: "Default media message",
+        tokens: defaultMediaComponentTokens(),
       },
       {
         id: `${production.id}:status_bar_default`,
@@ -2756,7 +2757,7 @@ const CURRENT_COMPONENT_TYPE_BY_LEGACY: Record<string, string> = {
   audio_message: "audio",
   button_icon: "buttonIcon",
   text_input_bar: "textInputBar",
-  video_message: "video",
+  video_message: "media",
 };
 
 function currentComponentType(value: unknown): string | undefined {

@@ -31,6 +31,21 @@ export function iconUriForToken(payload: DesignPreviewPayload, token: string) {
   return `data:image/svg+xml;base64,${svg.toString("base64")}`;
 }
 
+export function mediaUriForPath(payload: DesignPreviewPayload, source: string) {
+  const trimmed = source.trim();
+  if (!trimmed) return "";
+  if (/^(data:|file:|https?:)/i.test(trimmed)) return trimmed;
+
+  const candidates = path.isAbsolute(trimmed)
+    ? [trimmed]
+    : [
+        path.resolve(payload.projectMediaRoot ?? "", trimmed),
+        path.resolve(trimmed),
+      ];
+  const fullPath = candidates.find((candidate) => existsSync(candidate));
+  return fullPath ? pathToFileURL(fullPath).href : "";
+}
+
 export function fontFacesForPayload(
   payload: DesignPreviewPayload,
 ): RenderableFontFace[] {
