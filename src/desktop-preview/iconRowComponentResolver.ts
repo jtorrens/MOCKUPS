@@ -8,7 +8,6 @@ import {
   optionalNumber,
   optionalString,
   parseObject,
-  requiredNumber,
   requiredString,
 } from "./componentResolverCommon.js";
 import { resolveButtonIconComponentFromRecords } from "./buttonIconComponentResolver.js";
@@ -55,7 +54,7 @@ export function resolveIconRowComponentFromRecords(
     ),
     asRecord(inputs.buttonIconOverrides),
   );
-  const size = requiredNumber(inputs, "size", "component.iconRow.input.size");
+  const sizeToken = requiredString(inputs, "size", "component.iconRow.input.size");
   const icons = requiredStringArray(inputs, "icons", "component.iconRow.input.icons");
   const highlight = optionalHighlight(inputs);
   const buttons = icons.map((iconToken, index) => {
@@ -65,7 +64,7 @@ export function resolveIconRowComponentFromRecords(
     return resolveButtonIconComponentFromRecords(
       mergeComponentDefaults(baseButtonIconConfig, {
         buttonIcon: {
-          size,
+          iconSizeToken: sizeToken,
           iconToken,
           labelSlot: {
             showLabel: false,
@@ -84,7 +83,7 @@ export function resolveIconRowComponentFromRecords(
     id,
     orientation,
     gapToken: requiredString(inputs, "gap", "component.iconRow.input.gap"),
-    size,
+    sizeToken,
     icons,
     highlight,
     buttons,

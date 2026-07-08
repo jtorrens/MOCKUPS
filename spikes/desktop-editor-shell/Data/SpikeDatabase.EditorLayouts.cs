@@ -431,17 +431,6 @@ internal sealed partial class SpikeDatabase
                   ]
                 },
                 {
-                  "id": "iconColors",
-                  "label": "Icon colors",
-                  "order": 80,
-                  "visible": true,
-                  "fields": [
-                    { "id": "theme.icons.primary", "order": 10, "visible": true },
-                    { "id": "theme.icons.secondary", "order": 20, "visible": true },
-                    { "id": "theme.icons.accent", "order": 30, "visible": true }
-                  ]
-                },
-                {
                   "id": "keyboard",
                   "label": "Keyboard",
                   "order": 90,
@@ -496,6 +485,41 @@ internal sealed partial class SpikeDatabase
                     { "id": "theme.motion.slide", "order": 20, "visible": true },
                     { "id": "theme.motion.swipe", "order": 30, "visible": true },
                     { "id": "theme.motion.scale", "order": 40, "visible": true }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "icons",
+              "label": "Icons",
+              "subtitle": "Shared icon colors and glyph sizes",
+              "icon": "{{EditorIcons.Icon}}",
+              "order": 38,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                {
+                  "id": "iconColors",
+                  "label": "Icon colors",
+                  "order": 10,
+                  "visible": true,
+                  "fields": [
+                    { "id": "theme.icons.primary", "order": 10, "visible": true },
+                    { "id": "theme.icons.secondary", "order": 20, "visible": true },
+                    { "id": "theme.icons.accent", "order": 30, "visible": true }
+                  ]
+                },
+                {
+                  "id": "iconSizes",
+                  "label": "Icon sizes",
+                  "order": 20,
+                  "visible": true,
+                  "fields": [
+                    { "id": "theme.iconSizes.xs", "order": 10, "visible": true },
+                    { "id": "theme.iconSizes.s", "order": 20, "visible": true },
+                    { "id": "theme.iconSizes.m", "order": 30, "visible": true },
+                    { "id": "theme.iconSizes.l", "order": 40, "visible": true },
+                    { "id": "theme.iconSizes.xl", "order": 50, "visible": true }
                   ]
                 }
               ]

@@ -11,7 +11,7 @@ export interface IconRowDesignContract {
   id: string;
   orientation: "horizontal" | "vertical";
   gapToken: string;
-  size: number;
+  sizeToken: string;
   icons: string[];
   highlight?: IconRowHighlightContract;
   buttons: ButtonIconDesignContract[];

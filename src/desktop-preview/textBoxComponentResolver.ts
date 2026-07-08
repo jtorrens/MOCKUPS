@@ -166,11 +166,9 @@ function resolveOptionalIconRowComponentFromRecords(
   if (!hasIcons) {
     return {
       id,
-      orientation: iconRowInputs.orientation === "vertical" ? "vertical" as const : "horizontal" as const,
-      gapToken: typeof iconRowInputs.gap === "string" ? iconRowInputs.gap : "theme.spacing.s",
-      size: typeof iconRowInputs.size === "number" && Number.isFinite(iconRowInputs.size)
-        ? iconRowInputs.size
-        : 36,
+      orientation: requiredIconRowOrientation(iconRowInputs),
+      gapToken: requiredString(iconRowInputs, "gap", "component.textBox.input.iconRow.gap"),
+      sizeToken: requiredString(iconRowInputs, "size", "component.textBox.input.iconRow.size"),
       icons: [],
       buttons: [],
     };
@@ -216,9 +214,9 @@ function textBoxIconRowInputs(inputs: Record<string, unknown>, side: "left" | "r
 
   const icons = inputs[`${side}Icons`];
   return {
-    size: optionalNumber(inputs, "iconRowSize", 36),
-    gap: optionalString(inputs, "iconRowGap") || "theme.spacing.s",
-    orientation: optionalString(inputs, "iconRowOrientation") || "horizontal",
+    size: requiredString(inputs, "iconRowSize", "component.textBox.input.iconRowSize"),
+    gap: requiredString(inputs, "iconRowGap", "component.textBox.input.iconRowGap"),
+    orientation: requiredString(inputs, "iconRowOrientation", "component.textBox.input.iconRowOrientation"),
     icons: Array.isArray(icons) && icons.every((entry) => typeof entry === "string")
       ? icons
       : [],
@@ -227,6 +225,15 @@ function textBoxIconRowInputs(inputs: Record<string, unknown>, side: "left" | "r
     actionBackgroundColor: optionalString(inputs, `${side}ActionBackgroundColor`),
     actionIconColor: optionalString(inputs, `${side}ActionIconColor`),
   };
+}
+
+function requiredIconRowOrientation(value: Record<string, unknown>): "horizontal" | "vertical" {
+  const orientation = requiredString(value, "orientation", "component.textBox.input.iconRow.orientation");
+  if (orientation === "horizontal" || orientation === "vertical") {
+    return orientation;
+  }
+
+  throw new Error(`Unsupported icon row orientation ${orientation}`);
 }
 
 function iconRowInputsFromParent(

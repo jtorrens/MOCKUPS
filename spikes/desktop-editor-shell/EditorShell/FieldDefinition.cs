@@ -74,7 +74,9 @@ internal sealed record ComponentInputBindingDefinition(
     string DefaultValue = "",
     IReadOnlyList<FieldOption>? Options = null,
     NumberDefinition? Number = null,
-    string ComponentType = "");
+    string ComponentType = "",
+    string UiGroupId = "",
+    string UiGroupLabel = "");
 
 internal enum ImagePreviewMode
 {

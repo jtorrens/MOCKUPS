@@ -191,7 +191,7 @@ function iconRowInputsForTextBox(
     `component.textInput.textBox.${side}Icons`,
   );
   return {
-    size: requiredNumber(
+    size: requiredString(
       textBoxInputs,
       "iconRowSize",
       "component.textInput.textBox.iconRowSize",

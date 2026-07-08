@@ -97,6 +97,70 @@ internal sealed partial class SpikeDatabase
               "groups": []
             }
             """,
+            "component.iconBar" => $$"""
+            ,
+            {
+              "id": "iconBar",
+              "label": "Icon Bar",
+              "subtitle": "Three aligned icon rows with two states",
+              "icon": "{{EditorIcons.Icon}}",
+              "order": 20,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "iconBar", "label": "Icon bar", "order": 10, "visible": true, "fields": [
+                  { "id": "component.iconBar.edgePadding", "order": 10, "visible": true },
+                  { "id": "component.iconBar.iconButton.editor", "order": 20, "visible": true }
+                ] }
+              ]
+            },
+            {
+              "id": "iconBarIdle",
+              "label": "Idle",
+              "subtitle": "Icon rows used by the idle state",
+              "icon": "{{EditorIcons.Icon}}",
+              "order": 30,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "idleLeft", "label": "Left", "order": 10, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": true, "fields": [
+                  { "id": "component.iconBar.idleLeftIconRow.editor", "order": 10, "visible": true },
+                  { "id": "component.iconBar.idleLeftIconRow.inputs", "order": 20, "visible": true }
+                ] },
+                { "id": "idleCenter", "label": "Center", "order": 20, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": false, "fields": [
+                  { "id": "component.iconBar.idleCenterIconRow.editor", "order": 10, "visible": true },
+                  { "id": "component.iconBar.idleCenterIconRow.inputs", "order": 20, "visible": true }
+                ] },
+                { "id": "idleRight", "label": "Right", "order": 30, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": false, "fields": [
+                  { "id": "component.iconBar.idleRightIconRow.editor", "order": 10, "visible": true },
+                  { "id": "component.iconBar.idleRightIconRow.inputs", "order": 20, "visible": true }
+                ] }
+              ]
+            },
+            {
+              "id": "iconBarActive",
+              "label": "Active",
+              "subtitle": "Icon rows used by the active state",
+              "icon": "{{EditorIcons.Icon}}",
+              "order": 40,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "activeLeft", "label": "Left", "order": 10, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": true, "fields": [
+                  { "id": "component.iconBar.activeLeftIconRow.editor", "order": 10, "visible": true },
+                  { "id": "component.iconBar.activeLeftIconRow.inputs", "order": 20, "visible": true }
+                ] },
+                { "id": "activeCenter", "label": "Center", "order": 20, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": false, "fields": [
+                  { "id": "component.iconBar.activeCenterIconRow.editor", "order": 10, "visible": true },
+                  { "id": "component.iconBar.activeCenterIconRow.inputs", "order": 20, "visible": true }
+                ] },
+                { "id": "activeRight", "label": "Right", "order": 30, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": false, "fields": [
+                  { "id": "component.iconBar.activeRightIconRow.editor", "order": 10, "visible": true },
+                  { "id": "component.iconBar.activeRightIconRow.inputs", "order": 20, "visible": true }
+                ] }
+              ]
+            }
+            """,
             "component.avatar" => $$"""
             ,
             {
@@ -296,10 +360,12 @@ internal sealed partial class SpikeDatabase
               "defaultOpen": false,
               "groups": [
                 { "id": "buttonIcon", "label": "Button icon", "order": 10, "visible": true, "fields": [
-                  { "id": "component.buttonIcon.size", "order": 10, "visible": true },
-                  { "id": "component.buttonIcon.iconPadding", "order": 20, "visible": true },
-                  { "id": "component.buttonIcon.surface.editor", "order": 30, "visible": true },
-                  { "id": "component.buttonIcon.iconColorToken", "order": 50, "visible": true }
+                  { "id": "component.buttonIcon.sizeMode", "order": 10, "visible": true },
+                  { "id": "component.buttonIcon.size", "order": 20, "visible": true },
+                  { "id": "component.buttonIcon.iconSizeToken", "order": 30, "visible": true },
+                  { "id": "component.buttonIcon.iconPadding", "order": 40, "visible": true },
+                  { "id": "component.buttonIcon.surface.editor", "order": 50, "visible": true },
+                  { "id": "component.buttonIcon.iconColorToken", "order": 60, "visible": true }
                 ] },
                 { "id": "buttonIconLabel", "label": "Label", "order": 20, "visible": true, "fields": [
                   { "id": "component.buttonIcon.label.showLabel", "order": 10, "visible": true },

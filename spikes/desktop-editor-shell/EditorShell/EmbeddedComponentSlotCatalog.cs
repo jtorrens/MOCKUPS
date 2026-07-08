@@ -87,6 +87,48 @@ internal static class EmbeddedComponentSlotCatalog
             "component.buttonIcon",
             ["iconRow", "buttonIconSlot"]),
         new(
+            "component.iconBar.iconButton.editor",
+            "buttonIcon",
+            "Button icon",
+            "component.buttonIcon",
+            ["iconBar", "iconButtonSlot"]),
+        new(
+            "component.iconBar.idleLeftIconRow.editor",
+            "iconRow",
+            "Idle left row",
+            "component.iconRow",
+            ["iconBar", "idleLeftIconRowSlot"]),
+        new(
+            "component.iconBar.idleCenterIconRow.editor",
+            "iconRow",
+            "Idle center row",
+            "component.iconRow",
+            ["iconBar", "idleCenterIconRowSlot"]),
+        new(
+            "component.iconBar.idleRightIconRow.editor",
+            "iconRow",
+            "Idle right row",
+            "component.iconRow",
+            ["iconBar", "idleRightIconRowSlot"]),
+        new(
+            "component.iconBar.activeLeftIconRow.editor",
+            "iconRow",
+            "Active left row",
+            "component.iconRow",
+            ["iconBar", "activeLeftIconRowSlot"]),
+        new(
+            "component.iconBar.activeCenterIconRow.editor",
+            "iconRow",
+            "Active center row",
+            "component.iconRow",
+            ["iconBar", "activeCenterIconRowSlot"]),
+        new(
+            "component.iconBar.activeRightIconRow.editor",
+            "iconRow",
+            "Active right row",
+            "component.iconRow",
+            ["iconBar", "activeRightIconRowSlot"]),
+        new(
             "component.keyboard.leftIconRow.editor",
             "iconRow",
             "Left row",

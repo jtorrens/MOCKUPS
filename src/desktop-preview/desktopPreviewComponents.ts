@@ -51,6 +51,14 @@ export const desktopPreviewComponents = {
     renderable: "./iconRowComponentRenderable",
     embeds: ["buttonIcon"],
   },
+  iconBar: {
+    category: "atom",
+    migrationStatus: "structural",
+    contract: "./iconBarComponentContract",
+    resolver: "./iconBarComponentResolver",
+    renderable: "./iconBarComponentRenderable",
+    embeds: ["iconRow"],
+  },
   avatar: {
     category: "component",
     migrationStatus: "functional",

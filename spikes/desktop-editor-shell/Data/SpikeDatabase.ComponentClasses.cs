@@ -1746,6 +1746,7 @@ internal sealed partial class SpikeDatabase
     {
         var changed = NormalizeAvatarLabelPlacement(componentType, config);
         changed |= NormalizeButtonIconLabelSlot(componentType, config);
+        changed |= NormalizeButtonIconSizing(componentType, config);
         changed |= NormalizeAudioEmbeddedSlots(componentType, config);
         changed |= NormalizeComponentSlots(componentType, config);
         changed |= NormalizeTextInputBarSlots(connection, projectId, componentType, config);
@@ -1757,6 +1758,7 @@ internal sealed partial class SpikeDatabase
         changed |= NormalizeEmbeddedSlotPresetIds(connection, projectId, config);
         changed |= NormalizeComponentInputBindingPresetIds(connection, projectId, config);
         changed |= NormalizeComponentSpacingTokens(config);
+        changed |= NormalizeComponentIconSizeTokens(config);
         changed |= NormalizeReliefIntensity(config, "reliefTopIntensity");
         changed |= NormalizeReliefIntensity(config, "reliefBottomIntensity");
         return changed;
@@ -1906,6 +1908,13 @@ internal sealed partial class SpikeDatabase
         changed |= NormalizeSpacingToken(config, ["textInput", "textBoxInputs", "iconGap"]);
         changed |= NormalizeSpacingToken(config, ["textInput", "textBoxInputs", "iconRowGap"]);
         changed |= NormalizeSpacingToken(config, ["iconRow", "gap"]);
+        changed |= NormalizeSpacingToken(config, ["iconBar", "edgePadding"]);
+        changed |= NormalizeSpacingToken(config, ["iconBar", "idleLeftIconRowInputs", "gap"]);
+        changed |= NormalizeSpacingToken(config, ["iconBar", "idleCenterIconRowInputs", "gap"]);
+        changed |= NormalizeSpacingToken(config, ["iconBar", "idleRightIconRowInputs", "gap"]);
+        changed |= NormalizeSpacingToken(config, ["iconBar", "activeLeftIconRowInputs", "gap"]);
+        changed |= NormalizeSpacingToken(config, ["iconBar", "activeCenterIconRowInputs", "gap"]);
+        changed |= NormalizeSpacingToken(config, ["iconBar", "activeRightIconRowInputs", "gap"]);
         changed |= NormalizeSpacingToken(config, ["keyboard", "keyPadding"]);
         changed |= NormalizeSpacingToken(config, ["buttonIcon", "iconPadding"]);
         changed |= NormalizeSpacingPair(config, ["label", "padding"]);
@@ -1929,6 +1938,110 @@ internal sealed partial class SpikeDatabase
         }
 
         return changed;
+    }
+
+    private static bool NormalizeComponentIconSizeTokens(JsonObject config)
+    {
+        var changed = false;
+        changed |= NormalizeIconSizeToken(config, ["textInput", "idleLeftIconRowInputs", "size"]);
+        changed |= NormalizeIconSizeToken(config, ["textInput", "idleRightIconRowInputs", "size"]);
+        changed |= NormalizeIconSizeToken(config, ["textInput", "typingLeftIconRowInputs", "size"]);
+        changed |= NormalizeIconSizeToken(config, ["textInput", "typingRightIconRowInputs", "size"]);
+        changed |= NormalizeIconSizeToken(config, ["textInput", "textBoxInputs", "iconRowSize"]);
+        changed |= NormalizeIconSizeToken(config, ["iconRow", "size"]);
+        changed |= NormalizeIconSizeToken(config, ["iconBar", "idleLeftIconRowInputs", "size"]);
+        changed |= NormalizeIconSizeToken(config, ["iconBar", "idleCenterIconRowInputs", "size"]);
+        changed |= NormalizeIconSizeToken(config, ["iconBar", "idleRightIconRowInputs", "size"]);
+        changed |= NormalizeIconSizeToken(config, ["iconBar", "activeLeftIconRowInputs", "size"]);
+        changed |= NormalizeIconSizeToken(config, ["iconBar", "activeCenterIconRowInputs", "size"]);
+        changed |= NormalizeIconSizeToken(config, ["iconBar", "activeRightIconRowInputs", "size"]);
+        changed |= NormalizeIconSizeToken(config, ["keyboard", "leftIconRowInputs", "size"]);
+        changed |= NormalizeIconSizeToken(config, ["keyboard", "centerIconRowInputs", "size"]);
+        changed |= NormalizeIconSizeToken(config, ["keyboard", "rightIconRowInputs", "size"]);
+        if (JsonPath.Get(config, ["iconRow", "buttonIconSlot", "overrides", "buttonIcon"]) is JsonObject buttonIconOverrides
+            && buttonIconOverrides.Remove("size"))
+        {
+            changed = true;
+        }
+
+        foreach (var child in config.Select((pair) => pair.Value).OfType<JsonObject>())
+        {
+            changed |= NormalizeComponentIconSizeTokens(child);
+        }
+
+        foreach (var child in config.Select((pair) => pair.Value).OfType<JsonArray>())
+        {
+            foreach (var item in child.OfType<JsonObject>())
+            {
+                changed |= NormalizeComponentIconSizeTokens(item);
+            }
+        }
+
+        return changed;
+    }
+
+    private static bool NormalizeIconSizeToken(JsonObject config, string[] path)
+    {
+        var node = JsonPath.Get(config, path);
+        if (node is null)
+        {
+            return false;
+        }
+
+        if (node is not JsonValue value)
+        {
+            return false;
+        }
+
+        if (value.TryGetValue<string>(out var text))
+        {
+            if (IsIconSizeToken(text))
+            {
+                return false;
+            }
+
+            if (!decimal.TryParse(
+                    text.Replace(",", "."),
+                    System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out var textNumber))
+            {
+                return false;
+            }
+
+            JsonPath.Set(config, path, JsonValue.Create(ClosestIconSizeToken(textNumber))!);
+            return true;
+        }
+
+        if (!value.TryGetValue<decimal>(out var number))
+        {
+            return false;
+        }
+
+        JsonPath.Set(config, path, JsonValue.Create(ClosestIconSizeToken(number))!);
+        return true;
+    }
+
+    private static bool IsIconSizeToken(string value)
+    {
+        return value.StartsWith("theme.iconSizes.", StringComparison.Ordinal);
+    }
+
+    private static string ClosestIconSizeToken(decimal value)
+    {
+        (string Token, decimal Value)[] candidates =
+        [
+            ("theme.iconSizes.xs", 12m),
+            ("theme.iconSizes.s", 16m),
+            ("theme.iconSizes.m", 20m),
+            ("theme.iconSizes.l", 24m),
+            ("theme.iconSizes.xl", 32m),
+        ];
+
+        return candidates
+            .OrderBy((candidate) => Math.Abs(candidate.Value - value))
+            .First()
+            .Token;
     }
 
     private static bool NormalizeComponentTypographyStyles(JsonObject config)
@@ -2211,6 +2324,35 @@ internal sealed partial class SpikeDatabase
             ["overrides"] = new JsonObject(),
         };
         return true;
+    }
+
+    private static bool NormalizeButtonIconSizing(string componentType, JsonObject config)
+    {
+        if (componentType != "buttonIcon")
+        {
+            return false;
+        }
+
+        var buttonIcon = JsonPath.Get(config, ["buttonIcon"]) as JsonObject;
+        if (buttonIcon is null)
+        {
+            return false;
+        }
+
+        var changed = false;
+        if (string.IsNullOrWhiteSpace(JsonPath.String(buttonIcon, "sizeMode", "")))
+        {
+            buttonIcon["sizeMode"] = "fixed";
+            changed = true;
+        }
+
+        if (string.IsNullOrWhiteSpace(JsonPath.String(buttonIcon, "iconSizeToken", "")))
+        {
+            buttonIcon["iconSizeToken"] = "theme.iconSizes.xl";
+            changed = true;
+        }
+
+        return changed;
     }
 
     private static bool NormalizeAudioEmbeddedSlots(string componentType, JsonObject config)

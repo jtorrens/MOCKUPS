@@ -21,6 +21,7 @@ internal sealed partial class SpikeDatabase
             "cursor" => "Cursor component",
             "textBox" => "Text box component",
             "iconRow" => "Icon row component",
+            "iconBar" => "Icon bar component",
             "textInputBar" => "Text input bar component",
             "keyboard" => "Keyboard component",
             "buttonIcon" => "Button icon component",
@@ -138,19 +139,32 @@ internal sealed partial class SpikeDatabase
                 config["iconRow"] = new JsonObject
                 {
                     ["orientation"] = "horizontal",
-                    ["size"] = 36,
+                    ["size"] = "theme.iconSizes.xl",
                     ["gap"] = "theme.spacing.s",
                     ["buttonIconSlot"] = new JsonObject
                     {
                         ["presetId"] = DefaultComponentPresetId,
-                        ["overrides"] = new JsonObject
-                        {
-                            ["buttonIcon"] = new JsonObject
-                            {
-                                ["size"] = 36,
-                            },
-                        },
+                        ["overrides"] = new JsonObject(),
                     },
+                };
+                break;
+            case "iconBar":
+                config["iconBar"] = new JsonObject
+                {
+                    ["edgePadding"] = "theme.spacing.m",
+                    ["iconButtonSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["idleLeftIconRowSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["idleLeftIconRowInputs"] = IconRowInputBindings(new JsonArray("media_camera")),
+                    ["idleCenterIconRowSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["idleCenterIconRowInputs"] = IconRowInputBindings(new JsonArray("media_play"), actionIconNumber: 1),
+                    ["idleRightIconRowSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["idleRightIconRowInputs"] = IconRowInputBindings(new JsonArray("nav_more_horizontal")),
+                    ["activeLeftIconRowSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["activeLeftIconRowInputs"] = IconRowInputBindings(new JsonArray("media_camera")),
+                    ["activeCenterIconRowSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["activeCenterIconRowInputs"] = IconRowInputBindings(new JsonArray("media_pause"), actionIconNumber: 1),
+                    ["activeRightIconRowSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["activeRightIconRowInputs"] = IconRowInputBindings(new JsonArray("nav_more_horizontal")),
                 };
                 break;
             case "textInputBar":
@@ -218,7 +232,9 @@ internal sealed partial class SpikeDatabase
             case "buttonIcon":
                 config["buttonIcon"] = new JsonObject
                 {
+                    ["sizeMode"] = "fixed",
                     ["size"] = 48,
+                    ["iconSizeToken"] = "theme.iconSizes.xl",
                     ["iconToken"] = "media_mic",
                     ["iconPadding"] = "theme.spacing.m",
                     ["surfaceSlot"] = ComponentSurfaceSlot("IconButton"),
@@ -352,6 +368,11 @@ internal sealed partial class SpikeDatabase
         {
             preview["height"] = 32;
         }
+        if (componentType == "iconBar")
+        {
+            preview["size"] = "360|56";
+            preview["state"] = "idle";
+        }
         if (componentType == "textInputBar")
         {
             preview.Remove("leftIcons");
@@ -408,7 +429,7 @@ internal sealed partial class SpikeDatabase
                 ComponentInput("rightIcons", "Icons", "rightIcons", "iconList", "[]", uiOrigin: "embedded", uiGroupId: "rightIconRow", uiGroupLabel: "Right icon row"),
                 ComponentInput("buttonIconPresetId", "Variant", "buttonIconPresetId", "componentPreset", "buttonIcon::preset::default", componentType: "buttonIcon", uiOrigin: "embedded", uiGroupId: "buttonIcon", uiGroupLabel: "Icon button", uiParentGroupId: "iconRowShared"),
                 ComponentInput("iconGap", "Gap to text", "iconGap", "themeToken", "theme.spacing.m", options: ComponentClassFieldCatalog.SpacingTokenOptions, uiOrigin: "embedded", uiGroupId: "iconRowShared", uiGroupLabel: "Icon row shared"),
-                ComponentInput("iconRowSize", "Size", "iconRowSize", "number", "36", minimum: 1, maximum: 9999, increment: 1, uiOrigin: "embedded", uiGroupId: "iconRowShared", uiGroupLabel: "Icon row shared"),
+                ComponentInput("iconRowSize", "Icon size", "iconRowSize", ValueKind.ThemeToken, "theme.iconSizes.xl", options: ComponentClassFieldCatalog.IconSizeTokenOptions, uiOrigin: "embedded", uiGroupId: "iconRowShared", uiGroupLabel: "Icon row shared"),
                 ComponentInput("iconRowGap", "Gap", "iconRowGap", "themeToken", "theme.spacing.s", options: ComponentClassFieldCatalog.SpacingTokenOptions, uiOrigin: "embedded", uiGroupId: "iconRowShared", uiGroupLabel: "Icon row shared"),
                 ComponentInput(
                     "iconRowOrientation",
@@ -458,7 +479,7 @@ internal sealed partial class SpikeDatabase
             ],
             "iconRow" =>
             [
-                ComponentInput("size", "Size", "size", "number", "36", minimum: 1, maximum: 9999, increment: 1),
+                ComponentInput("size", "Size", "size", ValueKind.ThemeToken, "theme.iconSizes.xl", options: ComponentClassFieldCatalog.IconSizeTokenOptions),
                 ComponentInput(
                     "gap",
                     "Gap",
@@ -489,6 +510,28 @@ internal sealed partial class SpikeDatabase
                     "",
                     componentType: "buttonIcon"),
                 ComponentInput("icons", "Icons", "icons", "iconList", """["media_mic","chat_send"]"""),
+            ],
+            "iconBar" =>
+            [
+                ComponentInput(
+                    "state",
+                    "State",
+                    "state",
+                    "option",
+                    "idle",
+                    options:
+                    [
+                        new FieldOption("idle", "Idle"),
+                        new FieldOption("active", "Active"),
+                    ]),
+                ComponentInput(
+                    "size",
+                    "Size",
+                    "size",
+                    "integerPair",
+                    "360|56",
+                    pairFirstLabel: "W",
+                    pairSecondLabel: "H"),
             ],
             "avatar" =>
             [
@@ -709,7 +752,7 @@ internal sealed partial class SpikeDatabase
     {
         return new JsonObject
         {
-            ["size"] = 44,
+            ["size"] = "theme.iconSizes.xl",
             ["gap"] = "theme.spacing.m",
             ["orientation"] = "horizontal",
             ["icons"] = icons ?? [],
@@ -732,7 +775,7 @@ internal sealed partial class SpikeDatabase
             ["rightIcons"] = new JsonArray(),
             ["buttonIconSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
             ["iconGap"] = "theme.spacing.m",
-            ["iconRowSize"] = 36,
+            ["iconRowSize"] = "theme.iconSizes.xl",
             ["iconRowGap"] = "theme.spacing.s",
             ["iconRowOrientation"] = "horizontal",
         };
@@ -762,6 +805,7 @@ internal sealed partial class SpikeDatabase
         NewComponentSeed("cursor", "component.cursor", "Default Cursor"),
         NewComponentSeed("textBox", "component.textBox", "Default Text Box"),
         NewComponentSeed("iconRow", "component.iconRow", "Default Icon Row"),
+        NewComponentSeed("iconBar", "component.iconBar", "Default Icon Bar"),
         NewComponentSeed("status_bar", "component.status_bar", "Default Status Bar"),
         NewComponentSeed("navigation_bar", "component.navigation_bar", "Default Navigation Bar"),
         NewComponentSeed("textInputBar", "component.textInputBar", "Default Text Input Bar"),

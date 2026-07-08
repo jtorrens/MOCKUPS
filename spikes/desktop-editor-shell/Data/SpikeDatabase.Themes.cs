@@ -453,6 +453,14 @@ internal sealed partial class SpikeDatabase
                 ["xl"] = 16,
                 ["xxl"] = 24,
             },
+            ["iconSizes"] = new JsonObject
+            {
+                ["xs"] = 12,
+                ["s"] = 16,
+                ["m"] = 20,
+                ["l"] = 24,
+                ["xl"] = 32,
+            },
             ["radii"] = new JsonObject
             {
                 ["none"] = 0,

@@ -79,6 +79,21 @@ internal static class ComponentClassFieldCatalog
         new("theme.typography.sizes.xl", "typography.sizes.xl"),
     ];
 
+    internal static readonly FieldOption[] IconSizeTokenOptions =
+    [
+        new("theme.iconSizes.xs", "iconSizes.xs"),
+        new("theme.iconSizes.s", "iconSizes.s"),
+        new("theme.iconSizes.m", "iconSizes.m"),
+        new("theme.iconSizes.l", "iconSizes.l"),
+        new("theme.iconSizes.xl", "iconSizes.xl"),
+    ];
+
+    private static readonly FieldOption[] ButtonIconSizeModeOptions =
+    [
+        new("fixed", "Fixed"),
+        new("iconSize", "Icon size + padding"),
+    ];
+
     internal static readonly FieldOption[] SpacingTokenOptions =
     [
         new("theme.spacing.none", "spacing.none"),
@@ -154,10 +169,10 @@ internal static class ComponentClassFieldCatalog
             "size",
             "Size",
             "size",
-            ValueKind.Decimal,
+            ValueKind.ThemeToken,
             ComponentInputBindingSource.Variant,
-            "36",
-            Number: new NumberDefinition(1, 9999, 1, 2)),
+            "theme.iconSizes.xl",
+            Options: IconSizeTokenOptions),
         new(
             "gap",
             "Gap",
@@ -181,7 +196,9 @@ internal static class ComponentClassFieldCatalog
             ValueKind.Integer,
             ComponentInputBindingSource.Variant,
             "0",
-            Number: new NumberDefinition(0, 10, 1, 0)),
+            Number: new NumberDefinition(0, 10, 1, 0),
+            UiGroupId: "actionIcon",
+            UiGroupLabel: "Action icon"),
         new(
             "actionBackgroundAlpha",
             "Action bg alpha",
@@ -189,21 +206,27 @@ internal static class ComponentClassFieldCatalog
             ValueKind.Alpha,
             ComponentInputBindingSource.Variant,
             "1",
-            Number: new NumberDefinition(0, 1, 0.05m, 2, true)),
+            Number: new NumberDefinition(0, 1, 0.05m, 2, true),
+            UiGroupId: "actionIcon",
+            UiGroupLabel: "Action icon"),
         new(
             "actionBackgroundColor",
             "Action bg color",
             "actionBackgroundColor",
             ValueKind.PaletteColorToken,
             ComponentInputBindingSource.Variant,
-            "aqua_green"),
+            "aqua_green",
+            UiGroupId: "actionIcon",
+            UiGroupLabel: "Action icon"),
         new(
             "actionIconColor",
             "Action icon color",
             "actionIconColor",
             ValueKind.PaletteColorToken,
             ComponentInputBindingSource.Variant,
-            "gray_100"),
+            "gray_100",
+            UiGroupId: "actionIcon",
+            UiGroupLabel: "Action icon"),
         new(
             "buttonIconPresetId",
             "Button icon",
@@ -300,10 +323,10 @@ internal static class ComponentClassFieldCatalog
             "iconRowSize",
             "Icon size",
             "iconRowSize",
-            ValueKind.Decimal,
+            ValueKind.ThemeToken,
             ComponentInputBindingSource.Variant,
-            "36",
-            Number: new NumberDefinition(1, 9999, 1, 2)),
+            "theme.iconSizes.xl",
+            Options: IconSizeTokenOptions),
         new(
             "iconRowGap",
             "Icon row gap",
@@ -446,9 +469,60 @@ internal static class ComponentClassFieldCatalog
         ["component.textBox.cursor.editor"] = new("component.textBox.cursor.editor", "Cursor", ValueKind.ComponentPreset, ["textBox", "cursorSlot", "presetId"], "default"),
 
         ["component.iconRow.orientation"] = new("component.iconRow.orientation", "Orientation", ValueKind.OptionToken, ["iconRow", "orientation"], "horizontal", Options: IconRowOrientationOptions),
-        ["component.iconRow.size"] = new("component.iconRow.size", "Size", ValueKind.Integer, ["iconRow", "size"], "36"),
+        ["component.iconRow.size"] = new("component.iconRow.size", "Size", ValueKind.ThemeToken, ["iconRow", "size"], "theme.iconSizes.xl", Options: IconSizeTokenOptions),
         ["component.iconRow.gap"] = new("component.iconRow.gap", "Gap", ValueKind.ThemeToken, ["iconRow", "gap"], "theme.spacing.s", Options: SpacingTokenOptions),
         ["component.iconRow.buttonIcon.editor"] = new("component.iconRow.buttonIcon.editor", "Button icon", ValueKind.ComponentPreset, ["iconRow", "buttonIconSlot", "presetId"], "default"),
+
+        ["component.iconBar.edgePadding"] = new("component.iconBar.edgePadding", "Edge padding", ValueKind.ThemeToken, ["iconBar", "edgePadding"], "theme.spacing.m", Options: SpacingTokenOptions),
+        ["component.iconBar.iconButton.editor"] = new("component.iconBar.iconButton.editor", "Button icon", ValueKind.ComponentPreset, ["iconBar", "iconButtonSlot", "presetId"], "default"),
+        ["component.iconBar.idleLeftIconRow.editor"] = new("component.iconBar.idleLeftIconRow.editor", "Idle left row", ValueKind.ComponentPreset, ["iconBar", "idleLeftIconRowSlot", "presetId"], "default"),
+        ["component.iconBar.idleLeftIconRow.inputs"] = new(
+            "component.iconBar.idleLeftIconRow.inputs",
+            "Idle left settings",
+            ValueKind.ComponentInputBindings,
+            ["iconBar", "idleLeftIconRowInputs"],
+            """{"size":"theme.iconSizes.xl","gap":"theme.spacing.m","orientation":"horizontal","icons":["media_camera"]}""",
+            ComponentInputBindings: IconRowParentInputBindings),
+        ["component.iconBar.idleCenterIconRow.editor"] = new("component.iconBar.idleCenterIconRow.editor", "Idle center row", ValueKind.ComponentPreset, ["iconBar", "idleCenterIconRowSlot", "presetId"], "default"),
+        ["component.iconBar.idleCenterIconRow.inputs"] = new(
+            "component.iconBar.idleCenterIconRow.inputs",
+            "Idle center settings",
+            ValueKind.ComponentInputBindings,
+            ["iconBar", "idleCenterIconRowInputs"],
+            """{"size":"theme.iconSizes.xl","gap":"theme.spacing.m","orientation":"horizontal","icons":["media_play"],"actionIconNumber":1,"actionBackgroundAlpha":1,"actionBackgroundColor":"aqua_green","actionIconColor":"gray_100"}""",
+            ComponentInputBindings: IconRowParentInputBindings),
+        ["component.iconBar.idleRightIconRow.editor"] = new("component.iconBar.idleRightIconRow.editor", "Idle right row", ValueKind.ComponentPreset, ["iconBar", "idleRightIconRowSlot", "presetId"], "default"),
+        ["component.iconBar.idleRightIconRow.inputs"] = new(
+            "component.iconBar.idleRightIconRow.inputs",
+            "Idle right settings",
+            ValueKind.ComponentInputBindings,
+            ["iconBar", "idleRightIconRowInputs"],
+            """{"size":"theme.iconSizes.xl","gap":"theme.spacing.m","orientation":"horizontal","icons":["nav_more_horizontal"]}""",
+            ComponentInputBindings: IconRowParentInputBindings),
+        ["component.iconBar.activeLeftIconRow.editor"] = new("component.iconBar.activeLeftIconRow.editor", "Active left row", ValueKind.ComponentPreset, ["iconBar", "activeLeftIconRowSlot", "presetId"], "default"),
+        ["component.iconBar.activeLeftIconRow.inputs"] = new(
+            "component.iconBar.activeLeftIconRow.inputs",
+            "Active left settings",
+            ValueKind.ComponentInputBindings,
+            ["iconBar", "activeLeftIconRowInputs"],
+            """{"size":"theme.iconSizes.xl","gap":"theme.spacing.m","orientation":"horizontal","icons":["media_camera"]}""",
+            ComponentInputBindings: IconRowParentInputBindings),
+        ["component.iconBar.activeCenterIconRow.editor"] = new("component.iconBar.activeCenterIconRow.editor", "Active center row", ValueKind.ComponentPreset, ["iconBar", "activeCenterIconRowSlot", "presetId"], "default"),
+        ["component.iconBar.activeCenterIconRow.inputs"] = new(
+            "component.iconBar.activeCenterIconRow.inputs",
+            "Active center settings",
+            ValueKind.ComponentInputBindings,
+            ["iconBar", "activeCenterIconRowInputs"],
+            """{"size":"theme.iconSizes.xl","gap":"theme.spacing.m","orientation":"horizontal","icons":["media_pause"],"actionIconNumber":1,"actionBackgroundAlpha":1,"actionBackgroundColor":"aqua_green","actionIconColor":"gray_100"}""",
+            ComponentInputBindings: IconRowParentInputBindings),
+        ["component.iconBar.activeRightIconRow.editor"] = new("component.iconBar.activeRightIconRow.editor", "Active right row", ValueKind.ComponentPreset, ["iconBar", "activeRightIconRowSlot", "presetId"], "default"),
+        ["component.iconBar.activeRightIconRow.inputs"] = new(
+            "component.iconBar.activeRightIconRow.inputs",
+            "Active right settings",
+            ValueKind.ComponentInputBindings,
+            ["iconBar", "activeRightIconRowInputs"],
+            """{"size":"theme.iconSizes.xl","gap":"theme.spacing.m","orientation":"horizontal","icons":["nav_more_horizontal"]}""",
+            ComponentInputBindings: IconRowParentInputBindings),
 
         ["component.avatar.defaultSize"] = new("component.avatar.defaultSize", "Default size", ValueKind.Integer, ["avatar", "defaultSize"], "48"),
         ["component.avatar.cornerRadiusToken"] = new("component.avatar.cornerRadiusToken", "Avatar radius", ValueKind.ThemeToken, ["avatar", "cornerRadiusToken"], "theme.radii.avatar", Options: RadiusTokenOptions),
@@ -477,7 +551,7 @@ internal static class ComponentClassFieldCatalog
             "Idle left row settings",
             ValueKind.ComponentInputBindings,
             ["textInput", "idleLeftIconRowInputs"],
-            """{"size":44,"gap":"theme.spacing.m","orientation":"horizontal","icons":[]}""",
+            """{"size":"theme.iconSizes.xl","gap":"theme.spacing.m","orientation":"horizontal","icons":[]}""",
             ComponentInputBindings: IconRowParentInputBindings),
         ["component.textInput.idleRightIconRow.editor"] = new("component.textInput.idleRightIconRow.editor", "Idle right row variant", ValueKind.ComponentPreset, ["textInput", "idleRightIconRowSlot", "presetId"], "default"),
         ["component.textInput.idleRightIconRow.inputs"] = new(
@@ -485,7 +559,7 @@ internal static class ComponentClassFieldCatalog
             "Idle right row settings",
             ValueKind.ComponentInputBindings,
             ["textInput", "idleRightIconRowInputs"],
-            """{"size":44,"gap":"theme.spacing.m","orientation":"horizontal","icons":["media_mic"]}""",
+            """{"size":"theme.iconSizes.xl","gap":"theme.spacing.m","orientation":"horizontal","icons":["media_mic"]}""",
             ComponentInputBindings: IconRowParentInputBindings),
         ["component.textInput.typingLeftIconRow.editor"] = new("component.textInput.typingLeftIconRow.editor", "Typing left row variant", ValueKind.ComponentPreset, ["textInput", "typingLeftIconRowSlot", "presetId"], "default"),
         ["component.textInput.typingLeftIconRow.inputs"] = new(
@@ -493,7 +567,7 @@ internal static class ComponentClassFieldCatalog
             "Typing left row settings",
             ValueKind.ComponentInputBindings,
             ["textInput", "typingLeftIconRowInputs"],
-            """{"size":44,"gap":"theme.spacing.m","orientation":"horizontal","icons":[]}""",
+            """{"size":"theme.iconSizes.xl","gap":"theme.spacing.m","orientation":"horizontal","icons":[]}""",
             ComponentInputBindings: IconRowParentInputBindings),
         ["component.textInput.typingRightIconRow.editor"] = new("component.textInput.typingRightIconRow.editor", "Typing right row variant", ValueKind.ComponentPreset, ["textInput", "typingRightIconRowSlot", "presetId"], "default"),
         ["component.textInput.typingRightIconRow.inputs"] = new(
@@ -501,7 +575,7 @@ internal static class ComponentClassFieldCatalog
             "Typing right row settings",
             ValueKind.ComponentInputBindings,
             ["textInput", "typingRightIconRowInputs"],
-            """{"size":44,"gap":"theme.spacing.m","orientation":"horizontal","icons":["chat_send"],"actionIconNumber":1,"actionBackgroundAlpha":1,"actionBackgroundColor":"aqua_green","actionIconColor":"gray_100"}""",
+            """{"size":"theme.iconSizes.xl","gap":"theme.spacing.m","orientation":"horizontal","icons":["chat_send"],"actionIconNumber":1,"actionBackgroundAlpha":1,"actionBackgroundColor":"aqua_green","actionIconColor":"gray_100"}""",
             ComponentInputBindings: IconRowParentInputBindings),
 
         ["component.keyboard.language"] = new("component.keyboard.language", "Language", ValueKind.OptionToken, ["keyboard", "language"], "es", Options: KeyboardLanguageOptions),
@@ -548,7 +622,7 @@ internal static class ComponentClassFieldCatalog
             "Left row settings",
             ValueKind.ComponentInputBindings,
             ["keyboard", "leftIconRowInputs"],
-            """{"size":44,"gap":"theme.spacing.m","orientation":"horizontal","icons":["app_language"]}""",
+            """{"size":"theme.iconSizes.xl","gap":"theme.spacing.m","orientation":"horizontal","icons":["app_language"]}""",
             ComponentInputBindings: IconRowStyleInputBindings),
         ["component.keyboard.centerIconRow.editor"] = new("component.keyboard.centerIconRow.editor", "Center row variant", ValueKind.ComponentPreset, ["keyboard", "centerIconRowSlot", "presetId"], "default"),
         ["component.keyboard.centerIconRow.inputs"] = new(
@@ -556,7 +630,7 @@ internal static class ComponentClassFieldCatalog
             "Center row settings",
             ValueKind.ComponentInputBindings,
             ["keyboard", "centerIconRowInputs"],
-            """{"size":44,"gap":"theme.spacing.m","orientation":"horizontal","icons":[]}""",
+            """{"size":"theme.iconSizes.xl","gap":"theme.spacing.m","orientation":"horizontal","icons":[]}""",
             ComponentInputBindings: IconRowStyleInputBindings),
         ["component.keyboard.rightIconRow.editor"] = new("component.keyboard.rightIconRow.editor", "Right row variant", ValueKind.ComponentPreset, ["keyboard", "rightIconRowSlot", "presetId"], "default"),
         ["component.keyboard.rightIconRow.inputs"] = new(
@@ -564,10 +638,12 @@ internal static class ComponentClassFieldCatalog
             "Right row settings",
             ValueKind.ComponentInputBindings,
             ["keyboard", "rightIconRowInputs"],
-            """{"size":44,"gap":"theme.spacing.m","orientation":"horizontal","icons":["media_mic"]}""",
+            """{"size":"theme.iconSizes.xl","gap":"theme.spacing.m","orientation":"horizontal","icons":["media_mic"]}""",
             ComponentInputBindings: IconRowStyleInputBindings),
 
-        ["component.buttonIcon.size"] = new("component.buttonIcon.size", "Button size", ValueKind.Integer, ["buttonIcon", "size"], "48"),
+        ["component.buttonIcon.sizeMode"] = new("component.buttonIcon.sizeMode", "Size mode", ValueKind.OptionToken, ["buttonIcon", "sizeMode"], "fixed", Options: ButtonIconSizeModeOptions),
+        ["component.buttonIcon.size"] = new("component.buttonIcon.size", "Fixed size", ValueKind.Integer, ["buttonIcon", "size"], "48"),
+        ["component.buttonIcon.iconSizeToken"] = new("component.buttonIcon.iconSizeToken", "Icon size", ValueKind.ThemeToken, ["buttonIcon", "iconSizeToken"], "theme.iconSizes.xl", Options: IconSizeTokenOptions),
         ["component.buttonIcon.iconToken"] = new("component.buttonIcon.iconToken", "Icon", ValueKind.IconToken, ["buttonIcon", "iconToken"], "media_mic"),
         ["component.buttonIcon.iconPadding"] = new("component.buttonIcon.iconPadding", "Icon padding", ValueKind.ThemeToken, ["buttonIcon", "iconPadding"], "theme.spacing.m", Options: SpacingTokenOptions),
         ["component.buttonIcon.surface.editor"] = new("component.buttonIcon.surface.editor", "Surface", ValueKind.ComponentPreset, ["buttonIcon", "surfaceSlot", "presetId"], "IconButton"),

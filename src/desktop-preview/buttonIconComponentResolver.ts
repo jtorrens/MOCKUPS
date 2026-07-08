@@ -73,7 +73,20 @@ export function resolveButtonIconComponentFromRecords(
     componentPresetConfig(componentBaseConfigs, "label", labelSlot.presetId),
     overrides,
   );
+  const sizeMode = requiredString(
+    buttonIcon,
+    "sizeMode",
+    "component.buttonIcon.sizeMode",
+  );
+  if (sizeMode !== "fixed" && sizeMode !== "iconSize") {
+    throw new Error(`Unsupported button icon size mode ${sizeMode}`);
+  }
   const buttonSize = requiredNumber(buttonIcon, "size", "component.buttonIcon.size");
+  const iconSizeToken = requiredString(
+    buttonIcon,
+    "iconSizeToken",
+    "component.buttonIcon.iconSizeToken",
+  );
   const iconPaddingToken = requiredString(
     buttonIcon,
     "iconPadding",
@@ -86,7 +99,9 @@ export function resolveButtonIconComponentFromRecords(
 
   return {
     id,
+    sizeMode,
     buttonSize,
+    iconSizeToken,
     iconPaddingToken,
     iconToken: optionalInputStringOrConfiguredValue(
       preview,

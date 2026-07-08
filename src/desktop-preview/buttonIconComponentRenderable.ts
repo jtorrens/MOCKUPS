@@ -28,14 +28,12 @@ export function buttonIconComponentToRenderable(
   buttonIcon: ButtonIconDesignContract,
 ): RenderableNode {
   const scale = renderScale(payload);
-  const iconPadding = numberToken(payload, buttonIcon.iconPaddingToken) * scale;
-  const surfaceSize = buttonIcon.buttonSize * scale;
-  const iconSize = Math.max(1, surfaceSize - iconPadding * 2);
+  const metrics = buttonIconMetrics(payload, buttonIcon);
   const iconShadow = buttonIcon.surface.surface.shadowEnabled ? shadow(payload) : undefined;
   const labelSize = buttonIcon.labelSlot.label
     ? measureLabelComponent(buttonIcon.labelSlot.label, payload)
     : undefined;
-  const buttonLocalBox = { x: 0, y: 0, width: surfaceSize, height: surfaceSize };
+  const buttonLocalBox = { x: 0, y: 0, width: metrics.buttonSize, height: metrics.buttonSize };
   const labelLocalBox = labelSize
     ? placeChild(
         buttonLocalBox,
@@ -62,10 +60,10 @@ export function buttonIconComponentToRenderable(
   const buttonBox = translateBox(buttonLocalBox, contentOrigin);
   const labelBox = labelLocalBox ? translateBox(labelLocalBox, contentOrigin) : undefined;
   const iconBox = {
-    x: buttonBox.x + iconPadding,
-    y: buttonBox.y + iconPadding,
-    width: iconSize,
-    height: iconSize,
+    x: buttonBox.x + (buttonBox.width - metrics.iconSize) * 0.5,
+    y: buttonBox.y + (buttonBox.height - metrics.iconSize) * 0.5,
+    width: metrics.iconSize,
+    height: metrics.iconSize,
   };
 
   return buttonIconRenderableNode(
@@ -84,8 +82,7 @@ export function buttonIconComponentToRenderableAt(
   buttonBox: RenderableBox,
 ): RenderableNode {
   const scale = renderScale(payload);
-  const iconPadding = numberToken(payload, buttonIcon.iconPaddingToken) * scale;
-  const iconSize = Math.max(1, buttonBox.width - iconPadding * 2);
+  const metrics = buttonIconMetrics(payload, buttonIcon, buttonBox);
   const iconShadow = buttonIcon.surface.surface.shadowEnabled ? shadow(payload) : undefined;
   const labelSize = buttonIcon.labelSlot.label
     ? measureLabelComponent(buttonIcon.labelSlot.label, payload)
@@ -106,10 +103,10 @@ export function buttonIconComponentToRenderableAt(
   ]);
   const groupBox = expandBox(contentBounds, visualPadding);
   const iconBox = {
-    x: buttonBox.x + iconPadding,
-    y: buttonBox.y + iconPadding,
-    width: iconSize,
-    height: iconSize,
+    x: buttonBox.x + (buttonBox.width - metrics.iconSize) * 0.5,
+    y: buttonBox.y + (buttonBox.height - metrics.iconSize) * 0.5,
+    width: metrics.iconSize,
+    height: metrics.iconSize,
   };
 
   return buttonIconRenderableNode(
@@ -120,6 +117,34 @@ export function buttonIconComponentToRenderableAt(
     iconBox,
     labelBox,
   );
+}
+
+function buttonIconMetrics(
+  payload: DesignPreviewPayload,
+  buttonIcon: ButtonIconDesignContract,
+  buttonBox?: RenderableBox,
+) {
+  const scale = renderScale(payload);
+  const iconPadding = numberToken(payload, buttonIcon.iconPaddingToken) * scale;
+  if (buttonIcon.sizeMode === "iconSize") {
+    const iconSize = Math.max(1, numberToken(payload, buttonIcon.iconSizeToken) * scale);
+    return {
+      buttonSize: buttonBox
+        ? Math.max(1, Math.min(buttonBox.width, buttonBox.height))
+        : iconSize + iconPadding * 2,
+      iconSize,
+      iconPadding,
+    };
+  }
+
+  const buttonSize = buttonBox
+    ? Math.max(1, Math.min(buttonBox.width, buttonBox.height))
+    : buttonIcon.buttonSize * scale;
+  return {
+    buttonSize,
+    iconSize: Math.max(1, buttonSize - iconPadding * 2),
+    iconPadding,
+  };
 }
 
 function buttonIconRenderableNode(

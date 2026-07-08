@@ -1,4 +1,5 @@
 import type { RenderableBox, RenderableNode } from "../visual/renderable/types.js";
+import type { ButtonIconDesignContract } from "./buttonIconComponentContract.js";
 import {
   boundedCenterBox,
   numberToken,
@@ -14,14 +15,15 @@ export function measureIconRowComponent(
 ) {
   const scale = renderScale(payload);
   const count = iconRow.buttons.length;
-  const buttonSize = Math.max(1, iconRow.size * scale);
+  const buttonSizes = iconRow.buttons.map((button) => iconRowButtonSize(payload, iconRow.sizeToken, button));
+  const maxButtonSize = buttonSizes.length > 0 ? Math.max(...buttonSizes) : 0;
   const gap = Math.max(0, numberToken(payload, iconRow.gapToken) * scale);
   const length = count === 0
     ? 0
-    : count * buttonSize + Math.max(0, count - 1) * gap;
+    : buttonSizes.reduce((sum, value) => sum + value, 0) + Math.max(0, count - 1) * gap;
   return iconRow.orientation === "vertical"
-    ? { width: buttonSize, height: length, buttonSize, gap }
-    : { width: length, height: buttonSize, buttonSize, gap };
+    ? { width: maxButtonSize, height: length, buttonSizes, gap }
+    : { width: length, height: maxButtonSize, buttonSizes, gap };
 }
 
 export function iconRowComponentToRenderable(
@@ -42,21 +44,23 @@ export function iconRowComponentToRenderableAt(
   box: RenderableBox,
 ): RenderableNode {
   const size = measureIconRowComponent(payload, iconRow);
+  let cursor = 0;
   const children = iconRow.buttons.map((button, index) => {
-    const offset = index * (size.buttonSize + size.gap);
+    const buttonSize = size.buttonSizes[index] ?? 0;
     const buttonBox = iconRow.orientation === "vertical"
       ? {
-          x: box.x,
-          y: box.y + offset,
-          width: size.buttonSize,
-          height: size.buttonSize,
+          x: box.x + (box.width - buttonSize) * 0.5,
+          y: box.y + cursor,
+          width: buttonSize,
+          height: buttonSize,
         }
       : {
-          x: box.x + offset,
-          y: box.y,
-          width: size.buttonSize,
-          height: size.buttonSize,
+          x: box.x + cursor,
+          y: box.y + (box.height - buttonSize) * 0.5,
+          width: buttonSize,
+          height: buttonSize,
         };
+    cursor += buttonSize + size.gap;
     return buttonIconComponentToRenderableAt(payload, button, buttonBox);
   });
 
@@ -70,4 +74,18 @@ export function iconRowComponentToRenderableAt(
     },
     children,
   };
+}
+
+function iconRowButtonSize(
+  payload: DesignPreviewPayload,
+  sizeToken: string,
+  button: ButtonIconDesignContract,
+) {
+  const scale = renderScale(payload);
+  const tokenSize = Math.max(1, numberToken(payload, sizeToken) * scale);
+  if (button.sizeMode === "iconSize") {
+    return tokenSize + Math.max(0, numberToken(payload, button.iconPaddingToken) * scale) * 2;
+  }
+
+  return tokenSize;
 }

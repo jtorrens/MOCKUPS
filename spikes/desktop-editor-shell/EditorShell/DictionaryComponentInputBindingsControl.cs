@@ -151,9 +151,9 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
             }
         }
 
-        foreach (var input in topLevelInputs)
+        foreach (var control in CreateInputControls(topLevelInputs))
         {
-            _rows.Children.Add(CreateInputField(input));
+            _rows.Children.Add(control);
         }
 
         foreach (var group in groups)
@@ -174,9 +174,9 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
         {
             Spacing = 8,
         };
-        foreach (var input in inputs)
+        foreach (var control in CreateInputControls(inputs))
         {
-            groupRows.Children.Add(CreateInputField(input));
+            groupRows.Children.Add(control);
         }
 
         var header = new StackPanel
@@ -192,6 +192,82 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
         header.Children.Add(new TextBlock
         {
             Text = $"{DisplayValue(embeddedInput)} · Embedded inputs",
+            FontSize = 12,
+            Opacity = 0.64,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+        });
+
+        return new CompactInputCard(header, groupRows);
+    }
+
+    private IReadOnlyList<Control> CreateInputControls(
+        IReadOnlyList<ComponentInputBindingDefinition> inputs)
+    {
+        var controls = new List<Control>();
+        var currentGroupId = "";
+        var currentGroup = new List<ComponentInputBindingDefinition>();
+
+        void FlushGroup()
+        {
+            if (currentGroup.Count == 0)
+            {
+                return;
+            }
+
+            controls.Add(CreateCollapsedInputGroup(currentGroup));
+            currentGroup.Clear();
+            currentGroupId = "";
+        }
+
+        foreach (var input in inputs)
+        {
+            if (string.IsNullOrWhiteSpace(input.UiGroupId))
+            {
+                FlushGroup();
+                controls.Add(CreateInputField(input));
+                continue;
+            }
+
+            if (!currentGroupId.Equals(input.UiGroupId, StringComparison.Ordinal))
+            {
+                FlushGroup();
+                currentGroupId = input.UiGroupId;
+            }
+
+            currentGroup.Add(input);
+        }
+
+        FlushGroup();
+        return controls;
+    }
+
+    private Control CreateCollapsedInputGroup(IReadOnlyList<ComponentInputBindingDefinition> inputs)
+    {
+        var groupRows = new StackPanel
+        {
+            Spacing = 8,
+        };
+        foreach (var input in inputs)
+        {
+            groupRows.Children.Add(CreateInputField(input));
+        }
+
+        var label = inputs
+            .Select((input) => input.UiGroupLabel)
+            .FirstOrDefault((value) => !string.IsNullOrWhiteSpace(value)) ?? "Inputs";
+        var header = new StackPanel
+        {
+            Spacing = 1,
+        };
+        header.Children.Add(new TextBlock
+        {
+            Text = label,
+            FontWeight = FontWeight.SemiBold,
+            FontSize = 13,
+        });
+        header.Children.Add(new TextBlock
+        {
+            Text = string.Join(" · ", inputs.Select((input) => $"{input.Label}: {DisplayValue(input)}")),
             FontSize = 12,
             Opacity = 0.64,
             TextTrimming = TextTrimming.CharacterEllipsis,
@@ -422,6 +498,7 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
             Background = new SolidColorBrush(Color.FromArgb(24, 255, 255, 255));
             BorderBrush = new SolidColorBrush(Color.FromArgb(36, 255, 255, 255));
             HorizontalAlignment = HorizontalAlignment.Stretch;
+            ClipToBounds = true;
 
             var root = new Grid
             {
@@ -469,6 +546,7 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
             _contentHost = new Border
             {
                 Padding = new Thickness(10, 0, 10, 10),
+                ClipToBounds = true,
                 Child = content,
             };
             Grid.SetRow(_contentHost, 1);

@@ -16,6 +16,8 @@ import { labelComponentToRenderable } from "./labelComponentRenderable.js";
 import { resolveLabelComponent } from "./labelComponentResolver.js";
 import { keyboardComponentToRenderable } from "./keyboardComponentRenderable.js";
 import { resolveKeyboardComponent } from "./keyboardComponentResolver.js";
+import { iconBarComponentToRenderable } from "./iconBarComponentRenderable.js";
+import { resolveIconBarComponent } from "./iconBarComponentResolver.js";
 import { iconRowComponentToRenderable } from "./iconRowComponentRenderable.js";
 import { resolveIconRowComponent } from "./iconRowComponentResolver.js";
 import { navigationBarComponentToRenderable } from "./navigationBarComponentRenderable.js";
@@ -43,6 +45,8 @@ export const componentRenderableFactories = {
     textBoxComponentToRenderable(payload, resolveTextBoxComponent(payload)),
   iconRow: (payload) =>
     iconRowComponentToRenderable(payload, resolveIconRowComponent(payload)),
+  iconBar: (payload) =>
+    iconBarComponentToRenderable(payload, resolveIconBarComponent(payload)),
   avatar: (payload) => avatarComponentToRenderable(payload, resolveAvatarComponent(payload)),
   audio: (payload) => audioComponentToRenderable(payload, resolveAudioComponent(payload)),
   buttonIcon: (payload) =>
