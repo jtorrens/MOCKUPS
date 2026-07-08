@@ -1,5 +1,7 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { existsSync, mkdirSync, readFileSync, statSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import type { RenderableFontFace } from "../visual/renderable/types.js";
@@ -84,48 +86,66 @@ function localMediaFrameUri(fullPath: string, timeSeconds: number) {
     return { uri: "", error: `Unsupported media file type: ${path.extname(fullPath)}` };
   }
 
-  return videoFrameDataUri(fullPath, timeSeconds);
+  return videoFrameFileUri(fullPath, timeSeconds);
 }
 
-function videoFrameDataUri(fullPath: string, timeSeconds: number) {
+function videoFrameFileUri(fullPath: string, timeSeconds: number) {
   const normalizedTime = Math.max(0, Number.isFinite(timeSeconds) ? timeSeconds : 0);
   const cacheKey = `${fullPath}#${normalizedTime.toFixed(3)}`;
   const cached = videoFrameCache.get(cacheKey);
   if (cached) return { uri: cached };
 
   try {
-    const frame = execFileSync(
-      ffmpegExecutable(),
-      [
-        "-hide_banner",
-        "-loglevel",
-        "error",
-        "-ss",
-        normalizedTime.toFixed(3),
-        "-i",
-        fullPath,
-        "-frames:v",
-        "1",
-        "-f",
-        "image2pipe",
-        "-vcodec",
-        "png",
-        "pipe:1",
-      ],
-      {
-        maxBuffer: 64 * 1024 * 1024,
-      },
-    );
-    if (frame.length === 0) {
+    const framePath = cachedVideoFramePath(fullPath, normalizedTime);
+    if (!existingNonEmptyFile(framePath)) {
+      mkdirSync(path.dirname(framePath), { recursive: true });
+      execFileSync(
+        ffmpegExecutable(),
+        [
+          "-hide_banner",
+          "-loglevel",
+          "error",
+          "-ss",
+          normalizedTime.toFixed(3),
+          "-i",
+          fullPath,
+          "-frames:v",
+          "1",
+          "-q:v",
+          "4",
+          "-y",
+          framePath,
+        ],
+        {
+          maxBuffer: 8 * 1024 * 1024,
+        },
+      );
+    }
+
+    if (!existingNonEmptyFile(framePath)) {
       return { uri: "", error: `No video frame at ${normalizedTime.toFixed(3)}s` };
     }
 
-    const uri = `data:image/png;base64,${frame.toString("base64")}`;
+    const uri = pathToFileURL(framePath).href;
     cacheVideoFrame(cacheKey, uri);
     return { uri };
   } catch (error) {
     const message = videoFrameErrorMessage(error);
     return { uri: "", error: `Video frame extraction failed: ${message}` };
+  }
+}
+
+function cachedVideoFramePath(fullPath: string, timeSeconds: number) {
+  const key = `${fullPath}#${timeSeconds.toFixed(3)}`;
+  const hash = createHash("sha1").update(key).digest("hex");
+  return path.join(os.tmpdir(), "mockups-video-frames", `${hash}.jpg`);
+}
+
+function existingNonEmptyFile(fullPath: string) {
+  try {
+    return existsSync(fullPath) && statSync(fullPath).size > 0;
+  } catch {
+    return false;
   }
 }
 

@@ -582,7 +582,8 @@ The preview action contract lives under `designPreviewJson.actions`:
   "playInputId": "fullScreenTransition",
   "activateInputIds": ["isFullScreen"],
   "durationMotionConfigPath": "media.motion",
-  "timeJsonKey": "motionTimeSeconds"
+  "timeJsonKey": "motionTimeSeconds",
+  "prewarmFrames": true
 }
 ```
 
@@ -596,6 +597,10 @@ Rules:
 - `activateInputIds` may turn on ordinary runtime inputs before playback, for
   example moving a component to its target state before resolving transition
   frames;
+- `prewarmFrames` controls whether the preview shell prepares the full action
+  frame sequence before playback. Keep it enabled for short deterministic
+  transitions such as keyboard entrance or media full-screen motion; disable it
+  for long runtime playback such as audio/video progress;
 - the resolver interprets the resulting input values for each frame;
 - the web renderer still receives only final resolved paint primitives.
 

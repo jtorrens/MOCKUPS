@@ -799,31 +799,43 @@ internal sealed class ComponentInputsPanel : ContentControl
     {
         StopPlayback();
         _activeActionId = action.Id;
-        _preparingActionId = action.Id;
-        UpdateActionButtons();
-        var stopwatch = Stopwatch.StartNew();
-        PreviewDebugLog.Write(
-            "preview.playback.prepare.start",
-            ("scope", _scopeKey),
-            ("action", action.Id),
-            ("fps", _playbackFrameRate),
-            ("durationSec", DurationSeconds(action)),
-            ("timeKey", action.TimeJsonKey));
-        try
+        if (action.PrewarmFrames)
         {
-            if (_preparePlaybackFrames is not null)
+            _preparingActionId = action.Id;
+            UpdateActionButtons();
+            var stopwatch = Stopwatch.StartNew();
+            PreviewDebugLog.Write(
+                "preview.playback.prepare.start",
+                ("scope", _scopeKey),
+                ("action", action.Id),
+                ("fps", _playbackFrameRate),
+                ("durationSec", DurationSeconds(action)),
+                ("timeKey", action.TimeJsonKey));
+            try
             {
-                await _preparePlaybackFrames();
+                if (_preparePlaybackFrames is not null)
+                {
+                    await _preparePlaybackFrames();
+                }
+            }
+            finally
+            {
+                _preparingActionId = "";
+                PreviewDebugLog.Write(
+                    "preview.playback.prepare.end",
+                    ("scope", _scopeKey),
+                    ("action", action.Id),
+                    ("ms", stopwatch.Elapsed.TotalMilliseconds));
             }
         }
-        finally
+        else
         {
             _preparingActionId = "";
             PreviewDebugLog.Write(
-                "preview.playback.prepare.end",
+                "preview.playback.prepare.skip",
                 ("scope", _scopeKey),
                 ("action", action.Id),
-                ("ms", stopwatch.Elapsed.TotalMilliseconds));
+                ("reason", "prewarm-disabled"));
         }
 
         if (!SupportsPlayback() || !IsPlaying(action))
@@ -1168,6 +1180,7 @@ internal sealed class ComponentInputsPanel : ContentControl
             action.DurationInputId,
             action.DurationSeconds.ToString(CultureInfo.InvariantCulture),
             action.TimeJsonKey,
+            action.PrewarmFrames.ToString(CultureInfo.InvariantCulture),
             string.Join(",", action.ActivateInputIds));
     }
 

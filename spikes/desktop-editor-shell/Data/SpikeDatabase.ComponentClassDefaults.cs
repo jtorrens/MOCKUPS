@@ -378,6 +378,7 @@ internal sealed partial class SpikeDatabase
                     ["playInputId"] = "isPlaying",
                     ["durationInputId"] = "durationSeconds",
                     ["timeJsonKey"] = "currentTimeSeconds",
+                    ["prewarmFrames"] = false,
                 },
             };
         }
@@ -418,6 +419,7 @@ internal sealed partial class SpikeDatabase
                     ["playInputId"] = "isPlaying",
                     ["durationInputId"] = "durationSeconds",
                     ["timeJsonKey"] = "currentTimeSeconds",
+                    ["prewarmFrames"] = false,
                 },
                 new JsonObject
                 {

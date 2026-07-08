@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text.Json.Nodes;
+using Mockups.DesktopEditorShell.Common;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -61,6 +62,7 @@ internal static class ComponentPreviewActions
             durationInputId,
             durationSeconds,
             timeJsonKey,
+            JsonBoolean(action, "prewarmFrames", true),
             JsonStringArray(action, "activateInputIds"));
     }
 
@@ -102,6 +104,23 @@ internal static class ComponentPreviewActions
                 ? parsed
                 : fallback;
     }
+
+    private static bool JsonBoolean(JsonObject owner, string key, bool fallback)
+    {
+        if (owner[key] is not JsonValue value)
+        {
+            return fallback;
+        }
+
+        if (value.TryGetValue<bool>(out var boolean))
+        {
+            return boolean;
+        }
+
+        return value.TryGetValue<string>(out var text)
+            ? BooleanText.Parse(text)
+            : fallback;
+    }
 }
 
 internal sealed record ComponentPreviewActionDefinition(
@@ -111,4 +130,5 @@ internal sealed record ComponentPreviewActionDefinition(
     string DurationInputId,
     double DurationSeconds,
     string TimeJsonKey,
+    bool PrewarmFrames,
     IReadOnlyList<string> ActivateInputIds);
