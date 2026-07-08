@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -9,6 +10,9 @@ import type {
 import { previewFontFaceFamily } from "./previewFontHelpers.js";
 import { asRecord, parseObject } from "./previewJsonHelpers.js";
 import { stringValue } from "./previewValueHelpers.js";
+
+const videoFrameCache = new Map<string, string>();
+const maxVideoFrameCacheEntries = 240;
 
 export function iconUriForToken(payload: DesignPreviewPayload, token: string) {
   const mapping = parseObject(payload.iconMappingJson ?? "{}");
@@ -31,15 +35,25 @@ export function iconUriForToken(payload: DesignPreviewPayload, token: string) {
   return `data:image/svg+xml;base64,${svg.toString("base64")}`;
 }
 
-export function mediaImageUriForPath(payload: DesignPreviewPayload, source: string) {
+export function mediaFrameUriForPath(
+  payload: DesignPreviewPayload,
+  source: string,
+  timeSeconds: number,
+) {
   const trimmed = source.trim();
-  if (!trimmed) return "";
-  if (/^data:image\//i.test(trimmed)) return trimmed;
-  if (/^data:/i.test(trimmed)) return "";
-  if (/^https?:/i.test(trimmed)) return trimmed;
+  if (!trimmed) return { uri: "", error: "No media source" };
+  if (/^data:image\//i.test(trimmed)) return { uri: trimmed };
+  if (/^data:/i.test(trimmed)) {
+    return { uri: "", error: "Unsupported data URI media source" };
+  }
+  if (/^https?:/i.test(trimmed)) {
+    return videoMimeType(trimmed)
+      ? { uri: "", error: "Remote video frame extraction is not supported" }
+      : { uri: trimmed };
+  }
 
   if (/^file:/i.test(trimmed)) {
-    return imageDataUri(fileURLToPath(trimmed)) ?? "";
+    return localMediaFrameUri(fileURLToPath(trimmed), timeSeconds);
   }
 
   const candidates = path.isAbsolute(trimmed)
@@ -49,7 +63,9 @@ export function mediaImageUriForPath(payload: DesignPreviewPayload, source: stri
         path.resolve(trimmed),
       ];
   const fullPath = candidates.find((candidate) => existsSync(candidate));
-  return fullPath ? imageDataUri(fullPath) ?? "" : "";
+  return fullPath
+    ? localMediaFrameUri(fullPath, timeSeconds)
+    : { uri: "", error: `Media source not found: ${trimmed}` };
 }
 
 function imageDataUri(fullPath: string) {
@@ -60,6 +76,100 @@ function imageDataUri(fullPath: string) {
   return `data:${mimeType};base64,${data.toString("base64")}`;
 }
 
+function localMediaFrameUri(fullPath: string, timeSeconds: number) {
+  const imageUri = imageDataUri(fullPath);
+  if (imageUri) return { uri: imageUri };
+
+  if (!videoMimeType(fullPath)) {
+    return { uri: "", error: `Unsupported media file type: ${path.extname(fullPath)}` };
+  }
+
+  return videoFrameDataUri(fullPath, timeSeconds);
+}
+
+function videoFrameDataUri(fullPath: string, timeSeconds: number) {
+  const normalizedTime = Math.max(0, Number.isFinite(timeSeconds) ? timeSeconds : 0);
+  const cacheKey = `${fullPath}#${normalizedTime.toFixed(3)}`;
+  const cached = videoFrameCache.get(cacheKey);
+  if (cached) return { uri: cached };
+
+  try {
+    const frame = execFileSync(
+      ffmpegExecutable(),
+      [
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-ss",
+        normalizedTime.toFixed(3),
+        "-i",
+        fullPath,
+        "-frames:v",
+        "1",
+        "-f",
+        "image2pipe",
+        "-vcodec",
+        "png",
+        "pipe:1",
+      ],
+      {
+        maxBuffer: 64 * 1024 * 1024,
+      },
+    );
+    if (frame.length === 0) {
+      return { uri: "", error: `No video frame at ${normalizedTime.toFixed(3)}s` };
+    }
+
+    const uri = `data:image/png;base64,${frame.toString("base64")}`;
+    cacheVideoFrame(cacheKey, uri);
+    return { uri };
+  } catch (error) {
+    const message = videoFrameErrorMessage(error);
+    return { uri: "", error: `Video frame extraction failed: ${message}` };
+  }
+}
+
+function videoFrameErrorMessage(error: unknown) {
+  if (isExecError(error) && Buffer.isBuffer(error.stderr) && error.stderr.length > 0) {
+    return oneLine(error.stderr.toString("utf8"));
+  }
+
+  return oneLine(error instanceof Error ? error.message : String(error));
+}
+
+function isExecError(error: unknown): error is { stderr?: unknown } {
+  return typeof error === "object" && error !== null && "stderr" in error;
+}
+
+function oneLine(value: string) {
+  return value.replace(/\s+/g, " ").trim().slice(0, 180);
+}
+
+function cacheVideoFrame(key: string, uri: string) {
+  if (videoFrameCache.size >= maxVideoFrameCacheEntries) {
+    const firstKey = videoFrameCache.keys().next().value;
+    if (firstKey) videoFrameCache.delete(firstKey);
+  }
+
+  videoFrameCache.set(key, uri);
+}
+
+function ffmpegExecutable() {
+  const candidates = [
+    process.env.MOCKUPS_FFMPEG,
+    process.env.FFMPEG_PATH,
+    "/opt/homebrew/bin/ffmpeg",
+    "/usr/local/bin/ffmpeg",
+    "/usr/bin/ffmpeg",
+    "ffmpeg",
+    "ffmpeg.exe",
+  ].filter(Boolean) as string[];
+
+  return candidates.find((candidate) =>
+    path.isAbsolute(candidate) ? existsSync(candidate) : true,
+  ) ?? "ffmpeg";
+}
+
 function imageMimeType(fullPath: string) {
   const extension = path.extname(fullPath).toLowerCase();
   if (extension === ".png") return "image/png";
@@ -68,6 +178,15 @@ function imageMimeType(fullPath: string) {
   if (extension === ".gif") return "image/gif";
   if (extension === ".heic") return "image/heic";
   if (extension === ".heif") return "image/heif";
+  return "";
+}
+
+function videoMimeType(fullPath: string) {
+  const extension = path.extname(fullPath).toLowerCase();
+  if (extension === ".mp4") return "video/mp4";
+  if (extension === ".mov") return "video/quicktime";
+  if (extension === ".m4v") return "video/x-m4v";
+  if (extension === ".webm") return "video/webm";
   return "";
 }
 
