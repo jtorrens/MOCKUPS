@@ -16,13 +16,18 @@ internal static class DictionaryTextBoxFactory
                 ? TextWrapping.Wrap
                 : TextWrapping.NoWrap,
             MinHeight = definition.ValueKind == ValueKind.StringMultiline ? 88 : 36,
-            PlaceholderText = definition.ValueKind == ValueKind.DirectoryPath ? "Select folder..." : null,
+            PlaceholderText = definition.ValueKind switch
+            {
+                ValueKind.DirectoryPath => "Select folder...",
+                ValueKind.MediaFilePath => "Select media...",
+                _ => null,
+            },
             VerticalContentAlignment = definition.ValueKind == ValueKind.StringMultiline
                 ? VerticalAlignment.Top
                 : VerticalAlignment.Center,
         };
         EditorTextBoxBehavior.Configure(textBox);
-        if (definition.ValueKind == ValueKind.ImageFilePath)
+        if (definition.ValueKind is ValueKind.ImageFilePath or ValueKind.MediaFilePath)
         {
             textBox.MaxWidth = 420;
             textBox.HorizontalAlignment = HorizontalAlignment.Stretch;

@@ -25,9 +25,12 @@ internal sealed class EditorPathBrowser
 
     public Task<string?> BrowsePath(string currentPath, ValueKind valueKind)
     {
-        return valueKind == ValueKind.ImageFilePath
-            ? BrowseImageFile(currentPath, SelectedProjectMediaRoot())
-            : BrowseDirectory(currentPath);
+        return valueKind switch
+        {
+            ValueKind.ImageFilePath => BrowseImageFile(_storageProvider, currentPath, SelectedProjectMediaRoot()),
+            ValueKind.MediaFilePath => BrowseMediaFile(_storageProvider, currentPath, SelectedProjectMediaRoot()),
+            _ => BrowseDirectory(currentPath),
+        };
     }
 
     public async Task<string?> BrowseSvgFile()
@@ -96,7 +99,10 @@ internal sealed class EditorPathBrowser
         return _database.GetProjectSettings(project.Id).MediaRoot;
     }
 
-    private async Task<string?> BrowseImageFile(string currentPath, string? mediaRoot)
+    public static async Task<string?> BrowseImageFile(
+        IStorageProvider storageProvider,
+        string currentPath,
+        string? mediaRoot)
     {
         var options = new FilePickerOpenOptions
         {
@@ -123,11 +129,52 @@ internal sealed class EditorPathBrowser
             var parent = Path.GetDirectoryName(fullPath);
             if (!string.IsNullOrWhiteSpace(parent) && Directory.Exists(parent))
             {
-                options.SuggestedStartLocation = await _storageProvider.TryGetFolderFromPathAsync(parent);
+                options.SuggestedStartLocation = await storageProvider.TryGetFolderFromPathAsync(parent);
             }
         }
 
-        var files = await _storageProvider.OpenFilePickerAsync(options);
+        var files = await storageProvider.OpenFilePickerAsync(options);
+        if (files.Count == 0) return null;
+
+        var selectedPath = files[0].Path.LocalPath;
+        return ProjectPathService.RelativePathIfInsideMediaRoot(selectedPath, mediaRoot);
+    }
+
+    public static async Task<string?> BrowseMediaFile(
+        IStorageProvider storageProvider,
+        string currentPath,
+        string? mediaRoot)
+    {
+        var options = new FilePickerOpenOptions
+        {
+            Title = "Select media file",
+            AllowMultiple = false,
+            FileTypeFilter =
+            [
+                new FilePickerFileType("Media")
+                {
+                    Patterns = ["*.png", "*.jpg", "*.jpeg", "*.webp", "*.heic", "*.mp4", "*.mov", "*.m4v", "*.webm"],
+                    AppleUniformTypeIdentifiers = ["public.image", "public.movie", "public.video"],
+                    MimeTypes = ["image/png", "image/jpeg", "image/webp", "video/mp4", "video/quicktime", "video/webm"],
+                },
+            ],
+        };
+
+        if (!string.IsNullOrWhiteSpace(currentPath))
+        {
+            var fullPath = Path.IsPathFullyQualified(currentPath)
+                ? currentPath
+                : !string.IsNullOrWhiteSpace(mediaRoot)
+                    ? Path.GetFullPath(Path.Combine(ProjectPathService.ResolveProjectPath(mediaRoot), currentPath))
+                    : ProjectPathService.ResolveProjectPath(currentPath);
+            var parent = Path.GetDirectoryName(fullPath);
+            if (!string.IsNullOrWhiteSpace(parent) && Directory.Exists(parent))
+            {
+                options.SuggestedStartLocation = await storageProvider.TryGetFolderFromPathAsync(parent);
+            }
+        }
+
+        var files = await storageProvider.OpenFilePickerAsync(options);
         if (files.Count == 0) return null;
 
         var selectedPath = files[0].Path.LocalPath;

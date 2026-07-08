@@ -416,6 +416,7 @@ internal sealed class ComponentInputsPanel : ContentControl
     private DictionaryFieldServices CreateDictionaryServices(string projectId)
     {
         return new DictionaryFieldServices(
+            BrowsePath: (currentValue, valueKind) => BrowseInputPath(projectId, currentValue, valueKind),
             ShowIconTokenPicker: (currentValue, allowMultiple) =>
                 new IconTokenPickerDialog(_owner, _database).Show(projectId, currentValue, allowMultiple),
             ShowThemeTokenPicker: (currentValue, allowedOptions) =>
@@ -426,6 +427,19 @@ internal sealed class ComponentInputsPanel : ContentControl
                 _database.GetPaletteColorOptions(projectId),
             GetComponentPresetOptions: (componentType) =>
                 _database.GetComponentPresetReferenceOptionsByType(projectId, componentType));
+    }
+
+    private Task<string?> BrowseInputPath(string projectId, string currentValue, ValueKind valueKind)
+    {
+        var mediaRoot = string.IsNullOrWhiteSpace(projectId)
+            ? ""
+            : _database.GetProjectSettings(projectId).MediaRoot;
+        return valueKind switch
+        {
+            ValueKind.ImageFilePath => EditorPathBrowser.BrowseImageFile(_owner.StorageProvider, currentValue, mediaRoot),
+            ValueKind.MediaFilePath => EditorPathBrowser.BrowseMediaFile(_owner.StorageProvider, currentValue, mediaRoot),
+            _ => Task.FromResult<string?>(null),
+        };
     }
 
     private void EnsureValue(ComponentInputDefinition input, JsonObject preview)

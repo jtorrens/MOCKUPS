@@ -10,7 +10,7 @@ import { iconBarComponentToRenderableAt } from "./iconBarComponentRenderable.js"
 import type { IconBarDesignContract } from "./iconBarComponentContract.js";
 import type { MediaDesignContract, MediaRenderBoxes } from "./mediaComponentContract.js";
 import { mediaUriForPath } from "./previewAssetResolver.js";
-import { wrapMotionFrame } from "./previewMotionHelpers.js";
+import { motionFrameProgress } from "./previewMotionHelpers.js";
 import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
 
 export function mediaComponentToRenderable(
@@ -37,17 +37,7 @@ export function mediaComponentToRenderable(
     },
     children,
   } satisfies RenderableNode;
-  const motionBounds = media.motion.bounds === "screen"
-    ? previewScreenBox(payload)
-    : boxes.root;
-  return wrapMotionFrame(
-    payload,
-    node,
-    media.motion,
-    media.motionFrame,
-    boxes.root,
-    motionBounds,
-  );
+  return node;
 }
 
 function mediaContentClipNode(
@@ -73,20 +63,28 @@ function mediaBoxes(
   payload: DesignPreviewPayload,
   media: MediaDesignContract,
 ): MediaRenderBoxes {
-  const scale = renderScale(payload);
-  if (media.displayState === "fullframe") {
-    const root = previewScreenBox(payload);
-    return {
-      root,
-      media: fitAspect(
-        root,
-        media.fullframeOrientation === "landscape"
-          ? Math.max(root.width, root.height) / Math.min(root.width, root.height)
-          : root.width / root.height,
-      ),
-    };
+  const inline = inlineMediaBoxes(payload, media);
+  if (media.displayState !== "fullframe") {
+    return inline;
   }
 
+  const fullframe = fullframeMediaBoxes(payload, media);
+  const progress = motionFrameProgress(payload, media.motion, media.motionFrame);
+  if (!media.motionFrame.trigger || progress >= 1) {
+    return fullframe;
+  }
+
+  return {
+    root: interpolateBox(inline.root, fullframe.root, media, progress),
+    media: interpolateBox(inline.media, fullframe.media, media, progress),
+  };
+}
+
+function inlineMediaBoxes(
+  payload: DesignPreviewPayload,
+  media: MediaDesignContract,
+): MediaRenderBoxes {
+  const scale = renderScale(payload);
   const width = media.viewport.width * scale;
   const height = media.viewport.height * scale;
   const mediaBox = boundedCenterBox(payload, width, height);
@@ -94,6 +92,43 @@ function mediaBoxes(
     root: mediaBox,
     media: mediaBox,
   };
+}
+
+function fullframeMediaBoxes(
+  payload: DesignPreviewPayload,
+  media: MediaDesignContract,
+): MediaRenderBoxes {
+  const root = previewScreenBox(payload);
+  return {
+    root,
+    media: fitAspect(
+      root,
+      media.fullframeOrientation === "landscape"
+        ? Math.max(root.width, root.height) / Math.min(root.width, root.height)
+        : root.width / root.height,
+    ),
+  };
+}
+
+function interpolateBox(
+  start: RenderableBox,
+  end: RenderableBox,
+  media: MediaDesignContract,
+  progress: number,
+): RenderableBox {
+  const clamped = Math.max(0, Math.min(1, progress));
+  const positionProgress = media.motion.translate ? clamped : 1;
+  const sizeProgress = media.motion.scale ? clamped : 1;
+  return {
+    x: lerp(start.x, end.x, positionProgress),
+    y: lerp(start.y, end.y, positionProgress),
+    width: lerp(start.width, end.width, sizeProgress),
+    height: lerp(start.height, end.height, sizeProgress),
+  };
+}
+
+function lerp(start: number, end: number, amount: number) {
+  return start + (end - start) * amount;
 }
 
 function fitAspect(box: RenderableBox, aspect: number): RenderableBox {

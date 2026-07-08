@@ -74,6 +74,25 @@ export function wrapMotionFrame(
   };
 }
 
+export function motionFrameProgress(
+  payload: DesignPreviewPayload,
+  motion: ComponentMotionContract,
+  frame: ComponentMotionFrameContract,
+) {
+  if (!frame.trigger || (motion.transition === "none" && !motion.fade)) {
+    return 1;
+  }
+
+  const timing = motionTiming(payload, motion.transition === "none" ? "fade" : motion.transition);
+  if (timing.durationMs <= 0) {
+    return 1;
+  }
+
+  const elapsedMs = frame.timeSeconds * 1000;
+  const linearProgress = linearMotionProgress(elapsedMs, timing);
+  return easingProgress(timing.easing, linearProgress, timing.intensity);
+}
+
 export function requiredMotionContract(
   value: Record<string, unknown>,
   key: string,

@@ -313,7 +313,7 @@ internal sealed partial class SpikeDatabase
                     ["bottomIconBarSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
                     ["controlsFadeDelayMs"] = 900,
                     ["controlsFadeDurationMs"] = 180,
-                    ["motion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString()),
+                    ["motion"] = JsonNode.Parse(MediaMotionDefault().ToJsonString()),
                 };
                 break;
         }
@@ -582,7 +582,7 @@ internal sealed partial class SpikeDatabase
             ],
             "media" =>
             [
-                ComponentInput("mediaSource", "Source", "mediaSource", "text", ""),
+                ComponentInput("mediaSource", "Source", "mediaSource", ValueKind.MediaFilePath, ""),
                 ComponentInput(
                     "mediaType",
                     "Type",
@@ -784,6 +784,7 @@ internal sealed partial class SpikeDatabase
         {
             ValueKind.Decimal or ValueKind.Integer or ValueKind.Alpha => "number",
             ValueKind.IntegerPair => "integerPair",
+            ValueKind.MediaFilePath => "mediaFilePath",
             ValueKind.Boolean => "boolean",
             ValueKind.OptionToken => "option",
             ValueKind.RecordReference => "recordReference",
@@ -802,6 +803,7 @@ internal sealed partial class SpikeDatabase
         {
             "number" => ValueKind.Decimal.ToString(),
             "integerpair" or "integer_pair" or "size" => ValueKind.IntegerPair.ToString(),
+            "mediafilepath" or "media_file_path" => ValueKind.MediaFilePath.ToString(),
             "boolean" => ValueKind.Boolean.ToString(),
             "option" => ValueKind.OptionToken.ToString(),
             "recordreference" or "record_reference" => ValueKind.RecordReference.ToString(),
@@ -883,4 +885,9 @@ internal sealed partial class SpikeDatabase
         NewComponentSeed("audio", "component.audio", "Default Audio"),
         NewComponentSeed("media", "component.media", "Default Media"),
     ];
+
+    private static MotionVariantValue MediaMotionDefault()
+    {
+        return MotionVariantValue.Default with { Scale = true };
+    }
 }

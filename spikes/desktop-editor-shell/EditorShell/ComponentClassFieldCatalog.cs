@@ -655,7 +655,7 @@ internal static class ComponentClassFieldCatalog
         ["component.media.bottomIconBar.editor"] = new("component.media.bottomIconBar.editor", "Bottom icon bar", ValueKind.ComponentPreset, ["media", "bottomIconBarSlot", "presetId"], "default"),
         ["component.media.controlsFadeDelayMs"] = new("component.media.controlsFadeDelayMs", "Fade delay ms", ValueKind.Integer, ["media", "controlsFadeDelayMs"], "900", Number: new NumberDefinition(0, 10000, 10, 0)),
         ["component.media.controlsFadeDurationMs"] = new("component.media.controlsFadeDurationMs", "Fade duration ms", ValueKind.Integer, ["media", "controlsFadeDurationMs"], "180", Number: new NumberDefinition(0, 10000, 10, 0)),
-        ["component.media.motion"] = new("component.media.motion", "Motion", ValueKind.Motion, ["media", "motion"], MotionVariantValue.Default.ToJsonString()),
+        ["component.media.motion"] = new("component.media.motion", "Motion", ValueKind.Motion, ["media", "motion"], (MotionVariantValue.Default with { Scale = true }).ToJsonString()),
     };
 
     public static ComponentClassFieldDescriptor Get(string fieldId)

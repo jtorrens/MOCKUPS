@@ -693,6 +693,9 @@ Current migrated component routes:
   contracts, resolvers, renderables, registry entries and dictionary-backed
   fields, but their final runtime behavior is intentionally deferred to later
   feature phases.
+- `media` uses component motion for the inline-to-fullframe state transition.
+  It must not reuse component-entrance motion as if the media card were appearing
+  from offscreen.
 
 Allowed registry responsibility:
 

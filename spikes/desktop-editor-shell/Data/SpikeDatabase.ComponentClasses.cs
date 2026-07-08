@@ -1693,7 +1693,7 @@ internal sealed partial class SpikeDatabase
             ["bottomIconBarSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
             ["controlsFadeDelayMs"] = 900,
             ["controlsFadeDurationMs"] = 180,
-            ["motion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString()),
+            ["motion"] = JsonNode.Parse(MediaMotionDefault().ToJsonString()),
         };
         config["media"] = media;
         config.Remove("video");
@@ -2773,7 +2773,7 @@ internal sealed partial class SpikeDatabase
         changed |= NormalizeComponentPresetString(connection, projectId, media, ["bottomIconBarSlot", "presetId"], "iconBar");
         if (media["motion"] is not JsonObject)
         {
-            media["motion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString());
+            media["motion"] = JsonNode.Parse(MediaMotionDefault().ToJsonString());
             changed = true;
         }
 

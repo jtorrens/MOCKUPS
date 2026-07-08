@@ -13,6 +13,7 @@ internal enum ValueKind
     IntegerPair,
     DirectoryPath,
     ImageFilePath,
+    MediaFilePath,
     OptionToken,
     RecordReference,
     ThemeToken,
