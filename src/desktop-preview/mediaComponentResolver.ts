@@ -9,6 +9,8 @@ import type {
   MediaFullframeOrientation,
   MediaKind,
   MediaPlaybackState,
+  MediaTextOverlayContract,
+  MediaTextOverlayMode,
 } from "./mediaComponentContract.js";
 import {
   asRecord,
@@ -18,7 +20,9 @@ import {
   requiredBoolean,
   requiredNumber,
   requiredNumberPair,
+  requiredPlacement,
   requiredString,
+  requiredTypographyStyle,
 } from "./componentResolverCommon.js";
 import { resolveIconBarComponentFromRecords } from "./iconBarComponentResolver.js";
 import { requiredMotionContract } from "./previewMotionHelpers.js";
@@ -54,6 +58,15 @@ export function resolveMediaComponent(
   );
   const playbackState: MediaPlaybackState = isPlaying ? "playing" : "idle";
   const displayState: MediaDisplayState = isFullScreen ? "fullframe" : "inline";
+  const currentTimeSeconds = requiredNumber(
+    preview,
+    "currentTimeSeconds",
+    "component.media.input.currentTimeSeconds",
+  );
+  const durationSeconds = Math.max(
+    0,
+    requiredNumber(preview, "durationSeconds", "component.media.input.durationSeconds"),
+  );
   const controlBarHeight = Math.max(
     1,
     requiredNumber(media, "controlBarHeight", "component.media.controlBarHeight"),
@@ -104,15 +117,8 @@ export function resolveMediaComponent(
     sourceUri: optionalString(preview, "mediaSource"),
     mediaKind: mediaKind(requiredString(preview, "mediaType", "component.media.input.mediaType")),
     playbackState,
-    currentTimeSeconds: requiredNumber(
-      preview,
-      "currentTimeSeconds",
-      "component.media.input.currentTimeSeconds",
-    ),
-    durationSeconds: Math.max(
-      0,
-      requiredNumber(preview, "durationSeconds", "component.media.input.durationSeconds"),
-    ),
+    currentTimeSeconds,
+    durationSeconds,
     displayState,
     fullframeOrientation: mediaFullframeOrientation(
       requiredString(
@@ -142,6 +148,13 @@ export function resolveMediaComponent(
     topIconBar,
     centerIconBar,
     bottomIconBar,
+    textOverlay: resolveMediaTextOverlay(
+      media,
+      playbackState === "playing" ? "playText" : "idleText",
+      playbackState,
+      currentTimeSeconds,
+      durationSeconds,
+    ),
     controlsFadeDelayMs: Math.max(
       0,
       requiredNumber(media, "controlsFadeDelayMs", "component.media.controlsFadeDelayMs"),
@@ -160,6 +173,81 @@ export function resolveMediaComponent(
       timeSeconds: optionalNumber(preview, "motionTimeSeconds", 0),
     },
   };
+}
+
+function resolveMediaTextOverlay(
+  media: Record<string, unknown>,
+  key: string,
+  playbackState: MediaPlaybackState,
+  currentTimeSeconds: number,
+  durationSeconds: number,
+): MediaTextOverlayContract | null {
+  const overlay = asRecord(media[key]);
+  const enabled = requiredBoolean(overlay, "enabled", `component.media.${key}.enabled`);
+  const mode = mediaTextOverlayMode(
+    requiredString(overlay, "mode", `component.media.${key}.mode`),
+  );
+  const text = optionalString(overlay, "text");
+  const targetSeconds = Math.max(
+    0,
+    requiredNumber(overlay, "targetSeconds", `component.media.${key}.targetSeconds`),
+  );
+  const resolvedText = mediaOverlayText(
+    mode,
+    text,
+    targetSeconds,
+    currentTimeSeconds,
+    durationSeconds,
+  );
+
+  return {
+    id: `component.media.${playbackState}.text`,
+    enabled,
+    mode,
+    text,
+    resolvedText,
+    targetSeconds,
+    textColorToken: requiredString(
+      overlay,
+      "textColorToken",
+      `component.media.${key}.textColorToken`,
+    ),
+    typography: requiredTypographyStyle(
+      overlay,
+      "typography",
+      `component.media.${key}.typography`,
+    ),
+    placement: requiredPlacement(
+      overlay,
+      "placement",
+      `component.media.${key}.placement`,
+    ),
+    textAlign: mediaTextAlign(
+      requiredString(overlay, "textAlign", `component.media.${key}.textAlign`),
+    ),
+  };
+}
+
+function mediaOverlayText(
+  mode: MediaTextOverlayMode,
+  text: string,
+  targetSeconds: number,
+  currentTimeSeconds: number,
+  durationSeconds: number,
+) {
+  if (mode === "free") return text;
+  const target = targetSeconds > 0 ? targetSeconds : durationSeconds;
+  const seconds = mode === "countUp"
+    ? Math.min(target, Math.max(0, currentTimeSeconds))
+    : Math.max(0, target - Math.max(0, currentTimeSeconds));
+  return formatClock(seconds);
+}
+
+function formatClock(value: number) {
+  const totalSeconds = Math.max(0, Math.round(value));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
 function resolveMediaIconBar(
@@ -189,4 +277,14 @@ function mediaKind(value: string): MediaKind {
 function mediaFullframeOrientation(value: string): MediaFullframeOrientation {
   if (value === "portrait" || value === "landscape") return value;
   throw new Error(`Unsupported media fullframe orientation ${value}`);
+}
+
+function mediaTextOverlayMode(value: string): MediaTextOverlayMode {
+  if (value === "free" || value === "countUp" || value === "countDown") return value;
+  throw new Error(`Unsupported media text overlay mode ${value}`);
+}
+
+function mediaTextAlign(value: string): "left" | "center" | "right" {
+  if (value === "left" || value === "center" || value === "right") return value;
+  throw new Error(`Unsupported media text overlay alignment ${value}`);
 }

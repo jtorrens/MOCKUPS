@@ -86,6 +86,7 @@ internal sealed partial class SpikeDatabase
     public sealed record IconThemeTokenSvg(string Token, string File, string SvgText);
     public sealed record IconThemeRefreshResult(int ThemeCount, int CommonTokenCount, int OmittedTokenCount);
     public sealed record IconThemeReplaceSvgResult(string Token, string File);
+    public sealed record IconThemeWriteAllSvgResult(string Token, int WrittenFileCount, IconThemeRefreshResult RefreshResult);
     public sealed record IconThemeSearchCandidate(string Provider, string SourceName, string PreviewUrl);
     public sealed record IconThemeSearchResult(
         IReadOnlyList<IconThemeSearchCandidate> Lucide,

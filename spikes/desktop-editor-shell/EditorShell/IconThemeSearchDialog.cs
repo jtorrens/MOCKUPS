@@ -7,6 +7,7 @@ using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using SukiUI.Controls;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -62,7 +63,6 @@ internal sealed class IconThemeSearchDialog
             TextWrapping = TextWrapping.Wrap,
             IsVisible = false,
         };
-
         void SetError(string message)
         {
             errorText.Text = message;
@@ -70,35 +70,99 @@ internal sealed class IconThemeSearchDialog
         }
 
         var searchButton = new Button { Content = "Search", MinWidth = 90 };
-        searchButton.Click += (_, _) =>
+        var generateButton = new Button { Content = "Generate", MinWidth = 100 };
+        var busyArea = EditorBusyOverlay.Create(new Border());
+        CancellationTokenSource? activeOperation = null;
+        var isDialogClosed = false;
+
+        CancellationTokenSource BeginBusy(string message)
+        {
+            activeOperation?.Cancel();
+            activeOperation?.Dispose();
+            var cancellation = new CancellationTokenSource();
+            activeOperation = cancellation;
+            searchButton.IsEnabled = false;
+            generateButton.IsEnabled = false;
+            EditorBusyOverlay.SetBusy(busyArea, true, message);
+            return cancellation;
+        }
+
+        void EndBusy(CancellationTokenSource cancellation)
+        {
+            if (activeOperation != cancellation)
+            {
+                return;
+            }
+
+            activeOperation = null;
+            cancellation.Dispose();
+            if (isDialogClosed)
+            {
+                return;
+            }
+
+            searchButton.IsEnabled = true;
+            generateButton.IsEnabled = true;
+            EditorBusyOverlay.SetBusy(busyArea, false);
+        }
+
+        searchButton.Click += async (_, _) =>
         {
             SetError("");
+            var query = queryBox.Text ?? "";
+            var cancellation = BeginBusy("Searching icon providers...");
+            PreviewDebugLog.Write("icon.search.start", ("query", query));
             try
             {
-                var result = _database.SearchIconThemeSources(queryBox.Text ?? "");
+                var result = await Task.Run(
+                    () => _database.SearchIconThemeSources(query, cancellation.Token),
+                    cancellation.Token);
+                if (cancellation.IsCancellationRequested || isDialogClosed)
+                {
+                    return;
+                }
+
                 lucideList.ItemsSource = result.Lucide;
                 materialList.ItemsSource = result.Material;
                 lucideList.SelectedIndex = result.Lucide.Count > 0 ? 0 : -1;
                 materialList.SelectedIndex = result.Material.Count > 0 ? 0 : -1;
+                PreviewDebugLog.Write(
+                    "icon.search.end",
+                    ("query", query),
+                    ("lucide", result.Lucide.Count),
+                    ("material", result.Material.Count));
                 if (string.IsNullOrWhiteSpace(tokenBox.Text))
                 {
-                    tokenBox.Text = TokenFromText(queryBox.Text ?? "");
+                    tokenBox.Text = TokenFromText(query);
                 }
                 if (string.IsNullOrWhiteSpace(categoryBox.Text))
                 {
                     categoryBox.Text = CategoryFromToken(tokenBox.Text ?? "");
                 }
             }
+            catch (OperationCanceledException)
+            {
+                PreviewDebugLog.Write("icon.search.cancelled", ("query", query));
+            }
             catch (Exception exception)
             {
+                PreviewDebugLog.Write("icon.search.error", ("message", exception.Message));
                 SetError(exception.Message);
+            }
+            finally
+            {
+                EndBusy(cancellation);
             }
         };
 
-        var generateButton = new Button { Content = "Generate", MinWidth = 100 };
         generateButton.Click += async (_, _) =>
         {
             SetError("");
+            var token = tokenBox.Text ?? "";
+            var category = categoryBox.Text ?? "";
+            var description = descriptionBox.Text ?? "";
+            var cancellation = BeginBusy("Generating icon token in every icon set...");
+            PreviewDebugLog.Write("icon.generate.start", ("token", token));
             try
             {
                 var lucide = lucideList.SelectedItem as SpikeDatabase.IconThemeSearchCandidate;
@@ -109,25 +173,56 @@ internal sealed class IconThemeSearchDialog
                     return;
                 }
 
-                var result = _database.GenerateIconThemeToken(
+                var result = await Task.Run(() => _database.GenerateIconThemeToken(
                     node.Id,
-                    TokenFromText(tokenBox.Text ?? ""),
-                    TokenFromText(categoryBox.Text ?? ""),
-                    descriptionBox.Text ?? "",
+                    TokenFromText(token),
+                    TokenFromText(category),
+                    description,
                     lucide.SourceName,
-                    material.SourceName);
+                    material.SourceName,
+                    cancellation.Token),
+                    cancellation.Token);
+                if (cancellation.IsCancellationRequested || isDialogClosed)
+                {
+                    return;
+                }
+
+                PreviewDebugLog.Write(
+                    "icon.generate.end",
+                    ("token", result.Token),
+                    ("written", result.WrittenFileCount),
+                    ("themes", result.RefreshResult.ThemeCount),
+                    ("common", result.RefreshResult.CommonTokenCount));
                 dialog.Close();
                 await _showInfo("Generate complete", $"Generated “{result.Token}” in {result.WrittenFileCount} set(s). Refreshed {result.RefreshResult.CommonTokenCount} common token(s).");
                 _reloadAndSelect(node);
             }
+            catch (OperationCanceledException)
+            {
+                PreviewDebugLog.Write("icon.generate.cancelled", ("token", token));
+            }
             catch (Exception exception)
             {
+                PreviewDebugLog.Write("icon.generate.error", ("message", exception.Message));
                 SetError(exception.Message);
+            }
+            finally
+            {
+                EndBusy(cancellation);
             }
         };
 
         var cancelButton = new Button { Content = "Cancel", MinWidth = 92 };
-        cancelButton.Click += (_, _) => dialog.Close();
+        cancelButton.Click += (_, _) =>
+        {
+            activeOperation?.Cancel();
+            dialog.Close();
+        };
+        dialog.Closed += (_, _) =>
+        {
+            isDialogClosed = true;
+            activeOperation?.Cancel();
+        };
 
         var actionRow = new StackPanel
         {
@@ -173,16 +268,17 @@ internal sealed class IconThemeSearchDialog
                 errorText,
             },
         };
+        busyArea.Content = new ScrollViewer
+        {
+            Content = contentStack,
+        };
         var dialogGrid = new Grid
         {
             RowDefinitions = new RowDefinitions("*,Auto"),
             RowSpacing = 14,
             Children =
             {
-                new ScrollViewer
-                {
-                    Content = contentStack,
-                },
+                busyArea,
                 actionRow,
             },
         };

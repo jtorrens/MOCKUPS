@@ -52,6 +52,25 @@ internal sealed partial class SpikeDatabase
         };
     }
 
+    private static JsonObject MediaTextOverlayDefault(
+        bool enabled,
+        string mode,
+        string text,
+        string placement)
+    {
+        return new JsonObject
+        {
+            ["enabled"] = enabled,
+            ["mode"] = mode,
+            ["text"] = text,
+            ["targetSeconds"] = 0,
+            ["textColorToken"] = "theme.colors.textPrimary",
+            ["typography"] = JsonNode.Parse(TypographyStyleValue.CreateDefault("theme.typography.sizes.s")),
+            ["placement"] = JsonNode.Parse(placement),
+            ["textAlign"] = "center",
+        };
+    }
+
     private static string DefaultComponentClassConfigJson(string componentType)
     {
         var config = new JsonObject
@@ -314,6 +333,16 @@ internal sealed partial class SpikeDatabase
                     ["fullScreenTopIconBarSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
                     ["fullScreenCenterIconBarSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
                     ["fullScreenBottomIconBarSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["idleText"] = MediaTextOverlayDefault(
+                        false,
+                        "free",
+                        "",
+                        """{"mode":"center","alignX":0.5,"alignY":0.5,"offsetX":0,"offsetY":0}"""),
+                    ["playText"] = MediaTextOverlayDefault(
+                        true,
+                        "countDown",
+                        "",
+                        """{"mode":"center","alignX":0.5,"alignY":1,"offsetX":0,"offsetY":-18}"""),
                     ["controlsFadeDelayMs"] = 900,
                     ["controlsFadeDurationMs"] = 180,
                     ["motion"] = JsonNode.Parse(MediaMotionDefault().ToJsonString()),
@@ -419,7 +448,7 @@ internal sealed partial class SpikeDatabase
                     ["playInputId"] = "isPlaying",
                     ["durationInputId"] = "durationSeconds",
                     ["timeJsonKey"] = "currentTimeSeconds",
-                    ["prewarmFrames"] = false,
+                    ["prewarmFrames"] = true,
                 },
                 new JsonObject
                 {

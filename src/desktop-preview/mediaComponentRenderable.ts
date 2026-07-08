@@ -2,8 +2,11 @@ import type { RenderableBox, RenderableNode } from "../visual/renderable/types.j
 import {
   boundedCenterBox,
   numberToken,
+  placeChild,
   previewScreenBox,
   renderScale,
+  scalePlacement,
+  selectedColor,
 } from "./componentRenderableCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { iconBarComponentToRenderableAt } from "./iconBarComponentRenderable.js";
@@ -11,6 +14,10 @@ import type { IconBarDesignContract } from "./iconBarComponentContract.js";
 import type { MediaDesignContract, MediaRenderBoxes } from "./mediaComponentContract.js";
 import { mediaFrameUriForPath } from "./previewAssetResolver.js";
 import { motionFrameProgress } from "./previewMotionHelpers.js";
+import {
+  approximateMultilineTextSize,
+  resolveTypographyStyle,
+} from "./previewTextHelpers.js";
 import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
 
 export function mediaComponentToRenderable(
@@ -280,6 +287,7 @@ function mediaControlNodes(
         iconBarNode(payload, media.topIconBar, topBox),
         iconBarNode(payload, media.centerIconBar, centerBox),
         iconBarNode(payload, media.bottomIconBar, bottomBox),
+        ...mediaTextOverlayNodes(payload, media, mediaBox),
       ],
     },
   ];
@@ -302,4 +310,54 @@ function controlsOpacity(media: MediaDesignContract) {
     (media.controlsElapsedMs - media.controlsFadeDelayMs) /
     media.controlsFadeDurationMs;
   return Math.max(0, Math.min(1, 1 - fadeProgress));
+}
+
+function mediaTextOverlayNodes(
+  payload: DesignPreviewPayload,
+  media: MediaDesignContract,
+  mediaBox: RenderableBox,
+): RenderableNode[] {
+  const overlay = media.textOverlay;
+  if (!overlay?.enabled || overlay.resolvedText.trim().length === 0) {
+    return [];
+  }
+
+  const scale = renderScale(payload);
+  const typography = resolveTypographyStyle(payload, overlay.typography, scale);
+  const textSize = approximateMultilineTextSize(
+    overlay.resolvedText,
+    typography.fontSize,
+    typography.lineHeight,
+  );
+  const childSize = {
+    width: Math.min(mediaBox.width, Math.max(1, textSize.width)),
+    height: Math.max(1, textSize.height),
+  };
+  const box = placeChild(
+    mediaBox,
+    childSize,
+    scalePlacement(overlay.placement, scale),
+  );
+
+  return [
+    {
+      id: overlay.id,
+      type: "text",
+      frame: 0,
+      box,
+      text: overlay.resolvedText,
+      style: {
+        display: "block",
+        fontFamily: typography.fontFamily,
+        fontSize: typography.fontSize,
+        fontStyle: typography.fontStyle,
+        fontWeight: typography.fontWeight,
+        lineHeight: typography.lineHeight,
+        overflow: "visible",
+        textAlign: overlay.textAlign,
+        textColor: selectedColor(payload, overlay.textColorToken),
+        whiteSpace: "pre-line",
+      },
+    },
+  ];
 }

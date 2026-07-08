@@ -174,6 +174,47 @@ internal sealed partial class SpikeDatabase
         return new IconThemeReplaceSvgResult(token, file);
     }
 
+    public IconThemeWriteAllSvgResult WriteIconThemeTokenSvgToAllSets(
+        string iconThemeId,
+        string token,
+        string svgText,
+        string description)
+    {
+        token = token.Trim();
+        svgText = SvgReplacementService.Validate(svgText);
+        if (!ValidIconTokenRegex().IsMatch(token))
+        {
+            throw new InvalidOperationException("Icon token must be lower_snake_case.");
+        }
+
+        using var connection = OpenConnection();
+        var projectId = ProjectIdForIconTheme(connection, iconThemeId);
+        var mediaRoot = ResolveProjectPath(GetProjectSettings(projectId).MediaRoot);
+        var rows = QueryIconThemeRows(connection).Where((row) => row.ProjectId == projectId).ToList();
+        if (rows.Count == 0)
+        {
+            throw new InvalidOperationException("Refresh icon sets before saving tokens.");
+        }
+
+        foreach (var row in rows)
+        {
+            var targetDirectory = Path.Combine(mediaRoot, row.AssetRoot);
+            Directory.CreateDirectory(targetDirectory);
+            File.WriteAllText(Path.Combine(targetDirectory, $"{token}.svg"), svgText);
+        }
+
+        var refresh = RefreshIconThemeSets(connection, projectId);
+        UpdateIconThemeTokenMetadata(
+            connection,
+            projectId,
+            token,
+            IconTokenCategory(token),
+            description,
+            "manual-svg-transform",
+            "manual-svg-transform");
+        return new IconThemeWriteAllSvgResult(token, rows.Count, refresh);
+    }
+
     public IconThemeReplaceSvgResult ReplaceIconThemeTokenSvgFromFile(string iconThemeId, string token, string sourcePath)
     {
         if (string.IsNullOrWhiteSpace(sourcePath) || !File.Exists(sourcePath))

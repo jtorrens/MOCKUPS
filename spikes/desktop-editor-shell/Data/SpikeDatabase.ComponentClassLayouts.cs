@@ -431,7 +431,7 @@ internal sealed partial class SpikeDatabase
             {
               "id": "media",
               "label": "Media",
-              "subtitle": "Image/video viewport, overlays and fullframe behavior",
+              "subtitle": "Surface and shared media controls",
               "icon": "{{EditorIcons.Video}}",
               "order": 20,
               "visible": true,
@@ -444,16 +444,80 @@ internal sealed partial class SpikeDatabase
                   { "id": "component.media.controlBarHeight", "order": 10, "visible": true },
                   { "id": "component.media.controlsFadeDelayMs", "order": 20, "visible": true },
                   { "id": "component.media.controlsFadeDurationMs", "order": 30, "visible": true }
-                ] },
-                { "id": "mediaInlineControls", "label": "Inline controls", "order": 30, "visible": true, "fields": [
+                ] }
+              ]
+            },
+            {
+              "id": "mediaInlineControls",
+              "label": "Inline controls",
+              "subtitle": "Icon bars shown in inline media state",
+              "icon": "{{EditorIcons.Icon}}",
+              "order": 30,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "mediaInlineControls", "label": "Inline controls", "order": 10, "visible": true, "fields": [
                   { "id": "component.media.inlineTopIconBar.editor", "order": 10, "visible": true },
                   { "id": "component.media.inlineCenterIconBar.editor", "order": 20, "visible": true },
                   { "id": "component.media.inlineBottomIconBar.editor", "order": 30, "visible": true }
-                ] },
-                { "id": "mediaFullScreenControls", "label": "Full screen controls", "order": 40, "visible": true, "fields": [
+                ] }
+              ]
+            },
+            {
+              "id": "mediaFullScreenControls",
+              "label": "Full screen controls",
+              "subtitle": "Icon bars shown in full screen media state",
+              "icon": "{{EditorIcons.Icon}}",
+              "order": 40,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "mediaFullScreenControls", "label": "Full screen controls", "order": 10, "visible": true, "fields": [
                   { "id": "component.media.fullScreenTopIconBar.editor", "order": 10, "visible": true },
                   { "id": "component.media.fullScreenCenterIconBar.editor", "order": 20, "visible": true },
                   { "id": "component.media.fullScreenBottomIconBar.editor", "order": 30, "visible": true }
+                ] }
+              ]
+            },
+            {
+              "id": "mediaIdleText",
+              "label": "Idle text",
+              "subtitle": "Text overlay shown while media is idle",
+              "icon": "{{EditorIcons.TextInput}}",
+              "order": 50,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "mediaIdleText", "label": "Idle text", "order": 10, "visible": true, "fields": [
+                  { "id": "component.media.idleText.enabled", "order": 10, "visible": true },
+                  { "id": "component.media.idleText.mode", "order": 20, "visible": true },
+                  { "id": "component.media.idleText.text", "order": 30, "visible": true },
+                  { "id": "component.media.idleText.targetSeconds", "order": 40, "visible": true },
+                  { "id": "component.media.idleText.textColorToken", "order": 50, "visible": true },
+                  { "id": "component.media.idleText.typography", "order": 60, "visible": true },
+                  { "id": "component.media.idleText.placement", "order": 70, "visible": true },
+                  { "id": "component.media.idleText.textAlign", "order": 80, "visible": true }
+                ] }
+              ]
+            },
+            {
+              "id": "mediaPlayText",
+              "label": "Play text",
+              "subtitle": "Text overlay shown during playback",
+              "icon": "{{EditorIcons.TextInput}}",
+              "order": 60,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "mediaPlayText", "label": "Play text", "order": 10, "visible": true, "fields": [
+                  { "id": "component.media.playText.enabled", "order": 10, "visible": true },
+                  { "id": "component.media.playText.mode", "order": 20, "visible": true },
+                  { "id": "component.media.playText.text", "order": 30, "visible": true },
+                  { "id": "component.media.playText.targetSeconds", "order": 40, "visible": true },
+                  { "id": "component.media.playText.textColorToken", "order": 50, "visible": true },
+                  { "id": "component.media.playText.typography", "order": 60, "visible": true },
+                  { "id": "component.media.playText.placement", "order": 70, "visible": true },
+                  { "id": "component.media.playText.textAlign", "order": 80, "visible": true }
                 ] }
               ]
             }

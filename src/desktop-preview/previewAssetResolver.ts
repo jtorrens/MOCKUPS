@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, statSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, statSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -14,6 +14,8 @@ import { asRecord, parseObject } from "./previewJsonHelpers.js";
 import { stringValue } from "./previewValueHelpers.js";
 
 const videoFrameCache = new Map<string, string>();
+const lastVideoFrameByPath = new Map<string, string>();
+const videoDurationCache = new Map<string, number>();
 const maxVideoFrameCacheEntries = 240;
 
 export function iconUriForToken(payload: DesignPreviewPayload, token: string) {
@@ -91,12 +93,25 @@ function localMediaFrameUri(fullPath: string, timeSeconds: number) {
 
 function videoFrameFileUri(fullPath: string, timeSeconds: number) {
   const normalizedTime = Math.max(0, Number.isFinite(timeSeconds) ? timeSeconds : 0);
-  const cacheKey = `${fullPath}#${normalizedTime.toFixed(3)}`;
+  const duration = videoDurationSeconds(fullPath);
+  const effectiveTime =
+    duration > 0 ? Math.min(normalizedTime, Math.max(0, duration - 0.001)) : normalizedTime;
+  const cacheKey = `${fullPath}#${effectiveTime.toFixed(3)}`;
   const cached = videoFrameCache.get(cacheKey);
-  if (cached) return { uri: cached };
+  if (cached) {
+    debugVideoFrame("cache-hit", {
+      source: fullPath,
+      requested: normalizedTime,
+      effective: effectiveTime,
+      duration,
+      uriChars: cached.length,
+    });
+    return { uri: cached };
+  }
 
   try {
-    const framePath = cachedVideoFramePath(fullPath, normalizedTime);
+    const framePath = cachedVideoFramePath(fullPath, effectiveTime);
+    const hadFrame = existingNonEmptyFile(framePath);
     if (!existingNonEmptyFile(framePath)) {
       mkdirSync(path.dirname(framePath), { recursive: true });
       execFileSync(
@@ -106,7 +121,7 @@ function videoFrameFileUri(fullPath: string, timeSeconds: number) {
           "-loglevel",
           "error",
           "-ss",
-          normalizedTime.toFixed(3),
+          effectiveTime.toFixed(3),
           "-i",
           fullPath,
           "-frames:v",
@@ -123,15 +138,102 @@ function videoFrameFileUri(fullPath: string, timeSeconds: number) {
     }
 
     if (!existingNonEmptyFile(framePath)) {
-      return { uri: "", error: `No video frame at ${normalizedTime.toFixed(3)}s` };
+      debugVideoFrame("empty", {
+        source: fullPath,
+        requested: normalizedTime,
+        effective: effectiveTime,
+        duration,
+        framePath,
+      });
+      return lastVideoFrameOrError(
+        fullPath,
+        `No video frame at ${effectiveTime.toFixed(3)}s`,
+      );
     }
 
-    const uri = pathToFileURL(framePath).href;
+    const uri = imageDataUri(framePath);
+    if (!uri) {
+      debugVideoFrame("unsupported", {
+        source: fullPath,
+        requested: normalizedTime,
+        effective: effectiveTime,
+        duration,
+        framePath,
+        bytes: fileSize(framePath),
+      });
+      return lastVideoFrameOrError(
+        fullPath,
+        `Unsupported extracted video frame: ${framePath}`,
+      );
+    }
+
     cacheVideoFrame(cacheKey, uri);
+    lastVideoFrameByPath.set(fullPath, uri);
+    debugVideoFrame(hadFrame ? "disk-hit" : "extract", {
+      source: fullPath,
+      requested: normalizedTime,
+      effective: effectiveTime,
+      duration,
+      framePath,
+      bytes: fileSize(framePath),
+      uriChars: uri.length,
+    });
     return { uri };
   } catch (error) {
     const message = videoFrameErrorMessage(error);
-    return { uri: "", error: `Video frame extraction failed: ${message}` };
+    debugVideoFrame("error", {
+      source: fullPath,
+      requested: normalizedTime,
+      effective: effectiveTime,
+      duration,
+      error: message,
+    });
+    return lastVideoFrameOrError(
+      fullPath,
+      `Video frame extraction failed: ${message}`,
+    );
+  }
+}
+
+function lastVideoFrameOrError(fullPath: string, error: string) {
+  const lastFrame = lastVideoFrameByPath.get(fullPath);
+  debugVideoFrame(lastFrame ? "last-frame" : "missing", {
+    source: fullPath,
+    error,
+    uriChars: lastFrame?.length ?? 0,
+  });
+  return lastFrame ? { uri: lastFrame, error } : { uri: "", error };
+}
+
+function videoDurationSeconds(fullPath: string) {
+  const cached = videoDurationCache.get(fullPath);
+  if (cached !== undefined) return cached;
+
+  try {
+    const output = execFileSync(
+      ffprobeExecutable(),
+      [
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "default=noprint_wrappers=1:nokey=1",
+        fullPath,
+      ],
+      {
+        encoding: "utf8",
+        maxBuffer: 1024 * 1024,
+        timeout: 5000,
+      },
+    );
+    const duration = Number.parseFloat(output.trim());
+    const safeDuration = Number.isFinite(duration) && duration > 0 ? duration : 0;
+    videoDurationCache.set(fullPath, safeDuration);
+    return safeDuration;
+  } catch {
+    videoDurationCache.set(fullPath, 0);
+    return 0;
   }
 }
 
@@ -147,6 +249,34 @@ function existingNonEmptyFile(fullPath: string) {
   } catch {
     return false;
   }
+}
+
+function fileSize(fullPath: string) {
+  try {
+    return statSync(fullPath).size;
+  } catch {
+    return 0;
+  }
+}
+
+function debugVideoFrame(event: string, details: Record<string, unknown>) {
+  try {
+    mkdirSync("logs", { recursive: true });
+    const fields = Object.entries(details)
+      .map(([key, value]) => `${key}=${debugValue(value)}`)
+      .join("\t");
+    appendFileSync(
+      path.resolve("logs", "desktop-preview-debug.log"),
+      `${new Date().toISOString()}\tpreview.asset.video-frame\tevent=${event}\t${fields}\n`,
+    );
+  } catch {
+  }
+}
+
+function debugValue(value: unknown) {
+  if (typeof value === "number") return Number.isFinite(value) ? value.toFixed(3) : String(value);
+  if (typeof value === "string") return JSON.stringify(value);
+  return JSON.stringify(value);
 }
 
 function videoFrameErrorMessage(error: unknown) {
@@ -188,6 +318,22 @@ function ffmpegExecutable() {
   return candidates.find((candidate) =>
     path.isAbsolute(candidate) ? existsSync(candidate) : true,
   ) ?? "ffmpeg";
+}
+
+function ffprobeExecutable() {
+  const candidates = [
+    process.env.MOCKUPS_FFPROBE,
+    process.env.FFPROBE_PATH,
+    "/opt/homebrew/bin/ffprobe",
+    "/usr/local/bin/ffprobe",
+    "/usr/bin/ffprobe",
+    "ffprobe",
+    "ffprobe.exe",
+  ].filter(Boolean) as string[];
+
+  return candidates.find((candidate) =>
+    path.isAbsolute(candidate) ? existsSync(candidate) : true,
+  ) ?? "ffprobe";
 }
 
 function imageMimeType(fullPath: string) {

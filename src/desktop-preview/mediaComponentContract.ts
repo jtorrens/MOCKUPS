@@ -3,6 +3,8 @@ import type { IconBarDesignContract } from "./iconBarComponentContract.js";
 import type {
   ComponentMotionContract,
   ComponentMotionFrameContract,
+  AlignmentPlacementContract,
+  TypographyStyleContract,
 } from "./previewComponentContracts.js";
 import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
 
@@ -19,6 +21,21 @@ export interface MediaViewportContract {
   offsetY: number;
 }
 
+export type MediaTextOverlayMode = "free" | "countUp" | "countDown";
+
+export interface MediaTextOverlayContract {
+  id: string;
+  enabled: boolean;
+  mode: MediaTextOverlayMode;
+  text: string;
+  resolvedText: string;
+  targetSeconds: number;
+  textColorToken: string;
+  typography: TypographyStyleContract;
+  placement: AlignmentPlacementContract;
+  textAlign: "left" | "center" | "right";
+}
+
 export interface MediaDesignContract {
   id: string;
   sourceUri: string;
@@ -33,6 +50,7 @@ export interface MediaDesignContract {
   topIconBar: IconBarDesignContract;
   centerIconBar: IconBarDesignContract;
   bottomIconBar: IconBarDesignContract;
+  textOverlay: MediaTextOverlayContract | null;
   controlsFadeDelayMs: number;
   controlsFadeDurationMs: number;
   controlsElapsedMs: number;

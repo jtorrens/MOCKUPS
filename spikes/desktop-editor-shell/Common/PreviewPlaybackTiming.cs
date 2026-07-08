@@ -4,7 +4,7 @@ namespace Mockups.DesktopEditorShell.Common;
 
 internal static class PreviewPlaybackTiming
 {
-    public const int FrameRateMultiplier = 2;
+    public const int FrameRateMultiplier = 1;
     private const int MinimumFrameRate = 1;
     private const int MaximumFrameRate = 120;
 

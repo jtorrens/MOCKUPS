@@ -9,16 +9,15 @@ import {
   optionalString,
   parseObject,
   requiredBoolean,
-  requiredFontFamilyId,
   requiredNumber,
   requiredNumberPair,
   requiredString,
   requiredStringPair,
+  requiredTypographyStyle,
 } from "./componentResolverCommon.js";
 import { resolveCursorComponentAtHeight } from "./cursorComponentResolver.js";
 import { resolveIconRowComponentFromRecords } from "./iconRowComponentResolver.js";
 import type { TextBoxDesignContract } from "./textBoxComponentContract.js";
-import type { TypographyStyleContract } from "./previewComponentContracts.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
 
 export function resolveTextBoxComponent(
@@ -244,32 +243,5 @@ function iconRowInputsFromParent(
     ...parentInputs,
     buttonIconPresetId: buttonIconSlot.presetId,
     buttonIconOverrides: buttonIconSlot.overrides,
-  };
-}
-
-function requiredTypographyStyle(
-  value: Record<string, unknown>,
-  key: string,
-  path: string,
-): TypographyStyleContract {
-  const typography = asRecord(value[key]);
-  const lineHeight = typography.lineHeight;
-  if (
-    typeof lineHeight !== "string" &&
-    !(typeof lineHeight === "number" && Number.isFinite(lineHeight))
-  ) {
-    throw new Error(`Missing line height value ${path}.lineHeight`);
-  }
-
-  return {
-    fontFamilyId: requiredFontFamilyId(
-      typography,
-      "fontFamilyId",
-      `${path}.fontFamilyId`,
-    ),
-    weight: requiredString(typography, "weight", `${path}.weight`),
-    style: requiredString(typography, "style", `${path}.style`),
-    sizeToken: requiredString(typography, "sizeToken", `${path}.sizeToken`),
-    lineHeight,
   };
 }

@@ -2,6 +2,7 @@ import type {
   AlignmentPlacementContract,
   IconSlotsContract,
   SurfaceStyleContract,
+  TypographyStyleContract,
 } from "./previewComponentContracts.js";
 import { asRecord } from "./previewJsonHelpers.js";
 
@@ -212,6 +213,33 @@ function requiredStringArray(
   }
 
   throw new Error(`Missing string array value ${path}`);
+}
+
+export function requiredTypographyStyle(
+  value: Record<string, unknown>,
+  key: string,
+  path: string,
+): TypographyStyleContract {
+  const typography = asRecord(value[key]);
+  const lineHeight = typography.lineHeight;
+  if (
+    typeof lineHeight !== "string" &&
+    !(typeof lineHeight === "number" && Number.isFinite(lineHeight))
+  ) {
+    throw new Error(`Missing line height value ${path}.lineHeight`);
+  }
+
+  return {
+    fontFamilyId: requiredFontFamilyId(
+      typography,
+      "fontFamilyId",
+      `${path}.fontFamilyId`,
+    ),
+    weight: requiredString(typography, "weight", `${path}.weight`),
+    style: requiredString(typography, "style", `${path}.style`),
+    sizeToken: requiredString(typography, "sizeToken", `${path}.sizeToken`),
+    lineHeight,
+  };
 }
 
 function clamp01(value: number) {

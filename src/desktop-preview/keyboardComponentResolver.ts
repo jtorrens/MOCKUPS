@@ -17,10 +17,10 @@ import {
   optionalNumber,
   requiredNumber,
   requiredString,
+  requiredTypographyStyle,
   resolveSurfaceStyle,
 } from "./componentResolverCommon.js";
 import { resolveIconBarComponentFromRecords } from "./iconBarComponentResolver.js";
-import type { TypographyStyleContract } from "./previewComponentContracts.js";
 import { requiredMotionContract } from "./previewMotionHelpers.js";
 
 export function resolveKeyboardComponent(
@@ -186,28 +186,6 @@ export function resolveKeyboardComponent(
       trigger: optionalBoolean(preview, "trigger"),
       timeSeconds: optionalNumber(preview, "motionTimeSeconds", 0),
     },
-  };
-}
-
-function requiredTypographyStyle(
-  value: Record<string, unknown>,
-  key: string,
-  path: string,
-): TypographyStyleContract {
-  const typography = asRecord(value[key]);
-  const lineHeight = typography.lineHeight;
-  return {
-    fontFamilyId: requiredString(
-      typography,
-      "fontFamilyId",
-      `${path}.fontFamilyId`,
-    ),
-    weight: requiredString(typography, "weight", `${path}.weight`),
-    style: requiredString(typography, "style", `${path}.style`),
-    sizeToken: requiredString(typography, "sizeToken", `${path}.sizeToken`),
-    lineHeight: typeof lineHeight === "number"
-      ? lineHeight
-      : requiredString(typography, "lineHeight", `${path}.lineHeight`),
   };
 }
 

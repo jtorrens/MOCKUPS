@@ -2,16 +2,20 @@ using Microsoft.Data.Sqlite;
 using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Threading;
 
 namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SpikeDatabase
 {
-    public IconThemeSearchResult SearchIconThemeSources(string query)
+    private const int IconThemeScriptTimeoutMilliseconds = 30_000;
+
+    public IconThemeSearchResult SearchIconThemeSources(string query, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(query))
         {
@@ -23,7 +27,7 @@ internal sealed partial class SpikeDatabase
             "search",
             "--query",
             query.Trim(),
-        ]);
+        ], cancellationToken);
         var root = parsed.AsObject();
         return new IconThemeSearchResult(
             IconThemeCandidates(root, "lucide"),
@@ -36,7 +40,8 @@ internal sealed partial class SpikeDatabase
         string category,
         string description,
         string lucideSource,
-        string materialSource)
+        string materialSource,
+        CancellationToken cancellationToken = default)
     {
         token = token.Trim();
         if (!ValidIconTokenRegex().IsMatch(token))
@@ -82,7 +87,7 @@ internal sealed partial class SpikeDatabase
             "generate",
             "--request",
             requestPath,
-        ]);
+        ], cancellationToken);
         var refresh = RefreshIconThemeSets(connection, projectId);
         UpdateIconThemeTokenMetadata(connection, projectId, token, category, description, lucideSource, materialSource);
         return new IconThemeGenerateResult(token, JsonInt(parsed, ["writtenFileCount"], rows.Count), refresh);
@@ -101,7 +106,7 @@ internal sealed partial class SpikeDatabase
             .ToList();
     }
 
-    private static JsonNode RunIconThemeScript(string[] arguments)
+    private static JsonNode RunIconThemeScript(string[] arguments, CancellationToken cancellationToken)
     {
         var scriptCandidates = new[]
         {
@@ -123,15 +128,50 @@ internal sealed partial class SpikeDatabase
 
         using var process = System.Diagnostics.Process.Start(startInfo)
             ?? throw new InvalidOperationException("Could not start icon theme script.");
-        var stdout = process.StandardOutput.ReadToEnd();
-        var stderr = process.StandardError.ReadToEnd();
-        process.WaitForExit();
+        var stdoutTask = process.StandardOutput.ReadToEndAsync();
+        var stderrTask = process.StandardError.ReadToEndAsync();
+        var stopwatch = Stopwatch.StartNew();
+        while (!process.WaitForExit(100))
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                KillProcessTree(process);
+                throw new OperationCanceledException(cancellationToken);
+            }
+
+            if (stopwatch.ElapsedMilliseconds >= IconThemeScriptTimeoutMilliseconds)
+            {
+                KillProcessTree(process);
+                throw new InvalidOperationException("Icon theme script timed out after 30 seconds.");
+            }
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        var stdout = stdoutTask.GetAwaiter().GetResult();
+        var stderr = stderrTask.GetAwaiter().GetResult();
         if (process.ExitCode != 0)
         {
             throw new InvalidOperationException(string.IsNullOrWhiteSpace(stderr) ? "Icon theme script failed." : stderr.Trim());
         }
 
         return JsonNode.Parse(stdout) ?? new JsonObject();
+    }
+
+    private static void KillProcessTree(Process process)
+    {
+        try
+        {
+            if (!process.HasExited)
+            {
+                process.Kill(entireProcessTree: true);
+            }
+
+            process.WaitForExit(2_000);
+        }
+        catch
+        {
+            // A stuck provider process should not keep the editor blocked.
+        }
     }
 
     private static int JsonInt(JsonNode node, IReadOnlyList<string> path, int fallback)

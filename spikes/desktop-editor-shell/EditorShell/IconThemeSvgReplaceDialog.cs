@@ -2,12 +2,14 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Platform.Storage;
 using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using SukiUI.Controls;
 using System;
 using System.Globalization;
 using System.IO;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -66,14 +68,23 @@ internal sealed class IconThemeSvgReplaceDialog
         {
             AcceptsReturn = true,
             TextWrapping = TextWrapping.NoWrap,
-            MinHeight = 190,
+            MinHeight = 150,
             Text = original.SvgText,
             PlaceholderText = "<svg viewBox=\"0 0 24 24\">...</svg>",
+        });
+        var transformedSvgBox = EditorTextBoxBehavior.Configure(new TextBox
+        {
+            AcceptsReturn = true,
+            IsReadOnly = true,
+            TextWrapping = TextWrapping.NoWrap,
+            MinHeight = 150,
+            PlaceholderText = "Transformed SVG output",
         });
         var modeOptions = new[]
         {
             new FieldOption("positive", "Positive SVG"),
             new FieldOption("negative", "Negative / cutout SVG"),
+            new FieldOption("fill", "Fill SVG"),
         };
         var modeBox = new EditorInstantComboBox
         {
@@ -85,6 +96,13 @@ internal sealed class IconThemeSvgReplaceDialog
         {
             Content = "Open SVG file",
             MinWidth = 120,
+            HorizontalAlignment = HorizontalAlignment.Right,
+        };
+        var saveFileButton = new Button
+        {
+            Content = "Save as SVG file",
+            MinWidth = 136,
+            IsEnabled = false,
             HorizontalAlignment = HorizontalAlignment.Right,
         };
         var padding = CreateNumber(DefaultPadding, 0, 999, 0.25m);
@@ -150,15 +168,19 @@ internal sealed class IconThemeSvgReplaceDialog
                 var newPreviewGeometry = SvgReplacementService.TryGeometry(svgBox.Text ?? "");
                 newPreview.SetSvg(transformedSvg, originalPreviewGeometry, currentPadding);
                 newGeometry.Text = newPreviewGeometry?.Label ?? "Unknown size";
+                transformedSvgBox.Text = transformedSvg;
                 acceptButton.IsEnabled = true;
+                saveFileButton.IsEnabled = true;
                 SetError("");
             }
             catch (Exception exception)
             {
                 transformedSvg = "";
+                transformedSvgBox.Text = "";
                 newPreview.SetMessage(exception.Message);
                 newGeometry.Text = "";
                 acceptButton.IsEnabled = false;
+                saveFileButton.IsEnabled = false;
                 SetError(exception.Message);
             }
         }
@@ -249,6 +271,54 @@ internal sealed class IconThemeSvgReplaceDialog
                 SetError(exception.Message);
             }
         };
+        saveFileButton.Click += async (_, _) =>
+        {
+            try
+            {
+                var svgText = SvgReplacementService.Validate(transformedSvg);
+                var choice = await ShowSaveAsChoice(dialog, token, SelectedMode());
+                if (choice is null) return;
+
+                if (choice.SaveToAllIconSets)
+                {
+                    var confirmed = await ConfirmSaveToAllIconSets(dialog, choice.Token);
+                    if (!confirmed) return;
+
+                    _database.WriteIconThemeTokenSvgToAllSets(
+                        node.Id,
+                        choice.Token,
+                        svgText,
+                        $"Derived from {token} with {SelectedMode()} transform.");
+                    _reloadAndSelect(node);
+                    return;
+                }
+
+                var file = await _owner.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+                {
+                    Title = "Save transformed SVG",
+                    SuggestedFileName = $"{choice.Token}.svg",
+                    DefaultExtension = "svg",
+                    FileTypeChoices =
+                    [
+                        new FilePickerFileType("SVG")
+                        {
+                            Patterns = ["*.svg"],
+                            AppleUniformTypeIdentifiers = ["public.svg-image"],
+                            MimeTypes = ["image/svg+xml"],
+                        },
+                    ],
+                });
+                if (file is null) return;
+
+                await using var stream = await file.OpenWriteAsync();
+                await using var writer = new StreamWriter(stream);
+                await writer.WriteAsync(svgText);
+            }
+            catch (Exception exception)
+            {
+                SetError(exception.Message);
+            }
+        };
         acceptButton.Click += (_, _) =>
         {
             try
@@ -315,19 +385,33 @@ internal sealed class IconThemeSvgReplaceDialog
 
         string SelectedMode()
         {
-            return modeBox.SelectedItem?.Value == "negative" ? "negative" : "positive";
+            return modeBox.SelectedItem?.Value switch
+            {
+                "negative" => "negative",
+                "fill" => "fill",
+                _ => "positive",
+            };
         }
 
         var svgHeader = new Grid
         {
-            ColumnDefinitions = new ColumnDefinitions("*,Auto"),
+            ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto"),
+            ColumnSpacing = 10,
             Children =
             {
                 new TextBlock { Text = "SVG markup", FontWeight = FontWeight.SemiBold, VerticalAlignment = VerticalAlignment.Center },
                 loadFileButton,
+                saveFileButton,
             },
         };
         Grid.SetColumn(loadFileButton, 1);
+        Grid.SetColumn(saveFileButton, 2);
+        var transformedSvgHeader = new TextBlock
+        {
+            Text = "Transformed SVG markup",
+            FontWeight = FontWeight.SemiBold,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
 
         var actions = new StackPanel
         {
@@ -355,6 +439,8 @@ internal sealed class IconThemeSvgReplaceDialog
                             controls,
                             svgHeader,
                             svgBox,
+                            transformedSvgHeader,
+                            transformedSvgBox,
                             errorText,
                         },
                     },
@@ -372,6 +458,195 @@ internal sealed class IconThemeSvgReplaceDialog
 
         UpdatePreview();
         await dialog.ShowDialog(_owner);
+    }
+
+    private sealed record SaveAsChoice(string Token, bool SaveToAllIconSets);
+
+    private async Task<SaveAsChoice?> ShowSaveAsChoice(Window owner, string token, string mode)
+    {
+        var suggestedToken = SuggestedToken(token, mode);
+        var dialog = new SukiWindow
+        {
+            Title = "Save transformed SVG",
+            Width = 500,
+            Height = 250,
+            MinWidth = 500,
+            MinHeight = 250,
+            CanResize = false,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            IsMenuVisible = false,
+            BackgroundAnimationEnabled = false,
+            BackgroundTransitionsEnabled = false,
+            BackgroundTransitionTime = 0.05,
+        };
+        EditorSukiWindowTheme.ApplyDialogChrome(dialog, _owner);
+
+        var tokenBox = EditorTextBoxBehavior.Configure(new TextBox
+        {
+            Text = suggestedToken,
+            PlaceholderText = "icon_token_name",
+            MinHeight = 36,
+        });
+        var error = new TextBlock
+        {
+            Foreground = new SolidColorBrush(Color.Parse("#E8A1A8")),
+            TextWrapping = TextWrapping.Wrap,
+            IsVisible = false,
+        };
+        var cancel = new Button { Content = "Cancel", MinWidth = 92 };
+        var saveDisk = new Button { Content = "Save to disk", MinWidth = 116 };
+        var saveAll = new Button { Content = "Save to all icon sets", MinWidth = 164 };
+
+        string? ValidToken()
+        {
+            var next = tokenBox.Text?.Trim() ?? "";
+            if (!Regex.IsMatch(next, "^[a-z][a-z0-9_]*(?:\\.[a-z0-9_]+)*$"))
+            {
+                error.Text = "Icon token must be lower_snake_case.";
+                error.IsVisible = true;
+                return null;
+            }
+
+            error.Text = "";
+            error.IsVisible = false;
+            return next;
+        }
+
+        cancel.Click += (_, _) => dialog.Close(null);
+        saveDisk.Click += (_, _) =>
+        {
+            var next = ValidToken();
+            if (next is not null) dialog.Close(new SaveAsChoice(next, false));
+        };
+        saveAll.Click += (_, _) =>
+        {
+            var next = ValidToken();
+            if (next is not null) dialog.Close(new SaveAsChoice(next, true));
+        };
+
+        var actions = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Spacing = 10,
+            Children = { cancel, saveDisk, saveAll },
+        };
+        var content = new Grid
+        {
+            RowDefinitions = new RowDefinitions("*,Auto"),
+            RowSpacing = 18,
+            Children =
+            {
+                new StackPanel
+                {
+                    Spacing = 10,
+                    Children =
+                    {
+                        new TextBlock
+                        {
+                            Text = "Name",
+                            FontWeight = FontWeight.SemiBold,
+                        },
+                        tokenBox,
+                        new TextBlock
+                        {
+                            Text = "Save to disk writes one SVG file. Save to all icon sets creates or overwrites this token in every icon set for the project.",
+                            Opacity = 0.75,
+                            TextWrapping = TextWrapping.Wrap,
+                        },
+                        error,
+                    },
+                },
+                actions,
+            },
+        };
+        Grid.SetRow(actions, 1);
+        dialog.Content = new Border
+        {
+            Padding = new Thickness(18),
+            Child = content,
+        };
+
+        return await dialog.ShowDialog<SaveAsChoice?>(owner);
+    }
+
+    private async Task<bool> ConfirmSaveToAllIconSets(Window owner, string token)
+    {
+        var dialog = new SukiWindow
+        {
+            Title = "Save to all icon sets",
+            Width = 460,
+            Height = 230,
+            MinWidth = 460,
+            MinHeight = 230,
+            CanResize = false,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            IsMenuVisible = false,
+            BackgroundAnimationEnabled = false,
+            BackgroundTransitionsEnabled = false,
+            BackgroundTransitionTime = 0.05,
+        };
+        EditorSukiWindowTheme.ApplyDialogChrome(dialog, _owner);
+
+        var cancel = new Button { Content = "Cancel", MinWidth = 92 };
+        var save = new Button { Content = "Save to all", MinWidth = 112 };
+        cancel.Click += (_, _) => dialog.Close(false);
+        save.Click += (_, _) => dialog.Close(true);
+        var actions = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Spacing = 10,
+            Children = { cancel, save },
+        };
+        var content = new Grid
+        {
+            RowDefinitions = new RowDefinitions("*,Auto"),
+            RowSpacing = 18,
+            Children =
+            {
+                new StackPanel
+                {
+                    Spacing = 8,
+                    Children =
+                    {
+                        new TextBlock
+                        {
+                            Text = $"Create or overwrite \"{token}\" in every icon set?",
+                            FontSize = 17,
+                            FontWeight = FontWeight.Bold,
+                            TextWrapping = TextWrapping.Wrap,
+                        },
+                        new TextBlock
+                        {
+                            Text = "This writes the transformed SVG to all icon theme folders and refreshes icon usage metadata.",
+                            TextWrapping = TextWrapping.Wrap,
+                            Opacity = 0.78,
+                        },
+                    },
+                },
+                actions,
+            },
+        };
+        Grid.SetRow(actions, 1);
+        dialog.Content = new Border
+        {
+            Padding = new Thickness(22),
+            Child = content,
+        };
+        return await dialog.ShowDialog<bool>(owner);
+    }
+
+    private static string SuggestedToken(string token, string mode)
+    {
+        var suffix = mode switch
+        {
+            "fill" => "fill",
+            "negative" => "negative",
+            _ => "outline",
+        };
+        var clean = IconTokenRules.TokenFromText(token);
+        return clean.EndsWith($"_{suffix}", StringComparison.Ordinal) ? clean : $"{clean}_{suffix}";
     }
 
     private static Control LabeledControl(string label, Control control, int column = 0, int row = 0)

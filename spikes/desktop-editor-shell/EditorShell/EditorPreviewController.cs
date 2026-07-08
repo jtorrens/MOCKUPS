@@ -1,5 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Media;
+using Avalonia.Threading;
 using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using SukiUI.Controls;
@@ -9,13 +11,21 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Text.Json.Nodes;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class EditorPreviewController
 {
-    private const int LoadingPreviewFrameThreshold = 30;
+    private const int LoadingPreviewFrameThreshold = 0;
+    private const int InitialPlaybackPreloadFrames = 32;
+    private const int AheadPlaybackPreloadFrames = 16;
+    private static readonly IBrush PreviewStatusIdleBrush = Brushes.Transparent;
+    private static readonly IBrush PreviewStatusIdleBorder = new SolidColorBrush(Color.FromArgb(150, 210, 220, 232));
+    private static readonly IBrush PreviewStatusLoadingBrush = new SolidColorBrush(Color.Parse("#2F80ED"));
+    private static readonly IBrush PreviewStatusGoodBrush = new SolidColorBrush(Color.Parse("#2ECC71"));
+    private static readonly IBrush PreviewStatusSlowBrush = new SolidColorBrush(Color.Parse("#E74C3C"));
     private readonly SpikeDatabase _database;
     private readonly EditorInstantComboBox _deviceComboBox;
     private readonly EditorInstantComboBox _themeComboBox;
@@ -40,6 +50,18 @@ internal sealed class EditorPreviewController
     private readonly RuntimeWebPreviewPane _runtimePreviewPane = new();
     private readonly DesignWebPreviewPane _designPreviewPane = new();
     private readonly ComponentInputsPanel _designInputsPanel;
+    private readonly ContentControl _previewBusyHost;
+    private readonly EditorLoadingScrim _previewLoadingScrim = new();
+    private readonly Border _previewPerformanceDot = new()
+    {
+        Width = 10,
+        Height = 10,
+        CornerRadius = new CornerRadius(5),
+        Background = PreviewStatusIdleBrush,
+        BorderBrush = PreviewStatusIdleBorder,
+        BorderThickness = new Thickness(1),
+        VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+    };
     private string? _projectId;
     private string? _selectedThemeId;
     private PreviewNodeKey? _lastDesignPreviewNode;
@@ -52,6 +74,10 @@ internal sealed class EditorPreviewController
     private bool _isDesignPreviewContextLocked;
     private bool _isRefreshingOptions;
     private bool? _renderedLockState;
+    private CancellationTokenSource? _previewLoadingCancellation;
+    private CancellationTokenSource? _aheadPreloadCancellation;
+    private readonly HashSet<string> _aheadPreloadedFrameKeys = new(StringComparer.Ordinal);
+    private bool _isAheadPreloading;
 
     public EditorPreviewController(
         SpikeDatabase database,
@@ -62,6 +88,7 @@ internal sealed class EditorPreviewController
         IEditorShellMessageSink messages,
         ContentControl previewSetupHost,
         ContentControl previewInputsHost,
+        ContentControl previewBusyHost,
         ContentControl runtimePreviewHost,
         ContentControl designPreviewHost,
         TextBlock designContextText,
@@ -80,7 +107,11 @@ internal sealed class EditorPreviewController
         _selectedNode = selectedNode;
         _designContextText = designContextText;
         _designContextLockButton = designContextLockButton;
+        _previewBusyHost = previewBusyHost;
+        _previewBusyHost.Content = _previewLoadingScrim;
+        _previewBusyHost.IsVisible = false;
         _designInputsPanel = new ComponentInputsPanel(database, Refresh, owner, PreparePlaybackFramesAsync);
+        _designPreviewPane.FrameStatusChanged += OnDesignPreviewFrameStatusChanged;
 
         WrapPreviewSetup(previewSetupHost);
         previewInputsHost.Content = _designInputsPanel;
@@ -118,6 +149,8 @@ internal sealed class EditorPreviewController
         };
         actions.Children.Add(_scaleComboBox);
         actions.Children.Add(_marksToggle);
+        ToolTip.SetTip(_previewPerformanceDot, "Preview frame status");
+        actions.Children.Add(_previewPerformanceDot);
         Grid.SetColumn(actions, 1);
         header.Children.Add(actions);
 
@@ -316,6 +349,10 @@ internal sealed class EditorPreviewController
                 _showDesignMarks,
                 designPayload,
                 _messages);
+            if (designPayload is not null && _designInputsPanel.IsPlaybackActive)
+            {
+                SchedulePlaybackAheadPreload(metrics, designPayload);
+            }
             _messages.Clear();
         }
         catch (Exception exception)
@@ -324,23 +361,22 @@ internal sealed class EditorPreviewController
         }
     }
 
-    private async Task PreparePlaybackFramesAsync()
+    private async Task<bool> PreparePlaybackFramesAsync()
     {
         EnsureSelectedOptionsExist();
         if (string.IsNullOrWhiteSpace(SelectedDeviceId)
             || string.IsNullOrWhiteSpace(_projectId))
         {
-            return;
+            return true;
         }
 
         var designPayload = DesignPreviewPayloadForSelection();
         if (designPayload is null)
         {
-            return;
+            return true;
         }
 
         var metrics = ApplyPreviewOrientation(_database.GetDevicePreviewMetrics(SelectedDeviceId));
-        var themeName = _themeComboBox.SelectedItem?.Label ?? "No theme";
         var payload = _designInputsPanel.ApplyInputs(designPayload, _selectedMode, _projectId);
         var projectFps = _database.GetProjectSettings(_projectId).DefaultFps;
         var previewFps = PreviewPlaybackTiming.PreviewFrameRate(projectFps);
@@ -354,9 +390,17 @@ internal sealed class EditorPreviewController
                 ("projectFps", projectFps),
                 ("previewFps", previewFps),
                 ("reason", "no-frames"));
-            return;
+            return true;
         }
 
+        _previewLoadingCancellation?.Cancel();
+        _previewLoadingCancellation?.Dispose();
+        _aheadPreloadCancellation?.Cancel();
+        _aheadPreloadCancellation?.Dispose();
+        _aheadPreloadCancellation = null;
+        _aheadPreloadedFrameKeys.Clear();
+        var cancellation = new CancellationTokenSource();
+        _previewLoadingCancellation = cancellation;
         var totalStopwatch = Stopwatch.StartNew();
         PreviewDebugLog.Write(
             "preview.playback.frames.start",
@@ -371,40 +415,194 @@ internal sealed class EditorPreviewController
             ("marks", _showDesignMarks));
         if (frames.Count > LoadingPreviewFrameThreshold)
         {
-            _designPreviewPane.ShowLoading(
-                metrics,
-                _isDark(),
-                themeName,
-                _selectedMode,
-                _selectedScale,
-                _showDesignMarks,
-                $"Caching {frames.Count} frames at {PreviewPlaybackTiming.FrameRateMultiplier}x project FPS...");
+            ShowPreviewLoading(
+                $"Buffering {Math.Min(frames.Count, InitialPlaybackPreloadFrames)} of {frames.Count} frames...",
+                () =>
+                {
+                    PreviewDebugLog.Write(
+                        "preview.playback.frames.cancel.request",
+                        ("component", payload.ComponentType),
+                        ("name", payload.Name),
+                        ("frames", frames.Count));
+                    cancellation.Cancel();
+                });
+            await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
         }
 
-        WebDesignPreviewRenderer.ReserveFrameCacheCapacity(frames.Count);
+        try
+        {
+            WebDesignPreviewRenderer.ReserveFrameCacheCapacity(Math.Min(frames.Count, InitialPlaybackPreloadFrames + AheadPlaybackPreloadFrames));
+            var initialFrames = frames.Take(InitialPlaybackPreloadFrames).ToList();
+            foreach (var frame in initialFrames)
+            {
+                _aheadPreloadedFrameKeys.Add(PlaybackFrameKey(frame));
+            }
+
+            await PreloadPlaybackFramesAsync(
+                metrics,
+                payload,
+                initialFrames,
+                cancellation.Token,
+                "initial");
+            PreviewDebugLog.Write(
+                "preview.playback.frames.end",
+                ("component", payload.ComponentType),
+                ("name", payload.Name),
+                ("frames", initialFrames.Count),
+                ("totalFrames", frames.Count),
+                ("ms", totalStopwatch.Elapsed.TotalMilliseconds));
+            return true;
+        }
+        catch (OperationCanceledException)
+        {
+            PreviewDebugLog.Write(
+                "preview.playback.frames.cancelled",
+                ("component", payload.ComponentType),
+                ("name", payload.Name),
+                ("frames", frames.Count),
+                ("ms", totalStopwatch.Elapsed.TotalMilliseconds));
+            return false;
+        }
+        finally
+        {
+            if (ReferenceEquals(_previewLoadingCancellation, cancellation))
+            {
+                _previewLoadingCancellation = null;
+                HidePreviewLoading();
+            }
+
+            cancellation.Dispose();
+        }
+    }
+
+    private async Task PreloadPlaybackFramesAsync(
+        SpikeDatabase.DevicePreviewMetrics metrics,
+        DesignPreviewPayload ownerPayload,
+        IReadOnlyList<DesignPreviewPayload> frames,
+        CancellationToken cancellationToken,
+        string phase)
+    {
+        if (frames.Count == 0) return;
+
+        var imageSources = new HashSet<string>(StringComparer.Ordinal);
         for (var index = 0; index < frames.Count; index++)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var frameStopwatch = Stopwatch.StartNew();
             var frame = frames[index];
-            await WebDesignPreviewRenderer.PrewarmBodyAsync(
+            var bodyContent = await WebDesignPreviewRenderer.RenderBodyAsync(
                 metrics,
                 _selectedMode,
                 _showDesignMarks,
                 frame);
+            foreach (var source in DesignWebPreviewPane.ImageSourcesForPreload(bodyContent))
+            {
+                imageSources.Add(source);
+            }
             PreviewDebugLog.Write(
                 "preview.playback.frames.prewarm",
-                ("component", payload.ComponentType),
+                ("component", ownerPayload.ComponentType),
+                ("phase", phase),
                 ("frame", index + 1),
                 ("frames", frames.Count),
                 ("ms", frameStopwatch.Elapsed.TotalMilliseconds),
-                ("time", PlaybackFrameTime(frame)));
+                ("time", PlaybackFrameTime(frame)),
+                ("sources", imageSources.Count));
         }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        var loadedImages = await _designPreviewPane.PreloadFrameImagesAsync(imageSources, cancellationToken);
         PreviewDebugLog.Write(
-            "preview.playback.frames.end",
-            ("component", payload.ComponentType),
-            ("name", payload.Name),
+            "preview.playback.frames.images",
+            ("component", ownerPayload.ComponentType),
+            ("name", ownerPayload.Name),
+            ("phase", phase),
             ("frames", frames.Count),
-            ("ms", totalStopwatch.Elapsed.TotalMilliseconds));
+            ("sources", imageSources.Count),
+            ("loadedImages", loadedImages));
+    }
+
+    private void SchedulePlaybackAheadPreload(
+        SpikeDatabase.DevicePreviewMetrics metrics,
+        DesignPreviewPayload payload)
+    {
+        if (_isAheadPreloading || string.IsNullOrWhiteSpace(_projectId))
+        {
+            return;
+        }
+
+        var projectFps = _database.GetProjectSettings(_projectId).DefaultFps;
+        var frames = PlaybackAheadFramePayloads(payload, projectFps)
+            .Where((frame) => _aheadPreloadedFrameKeys.Add(PlaybackFrameKey(frame)))
+            .Take(AheadPlaybackPreloadFrames)
+            .ToList();
+        if (frames.Count == 0)
+        {
+            return;
+        }
+
+        _aheadPreloadCancellation ??= new CancellationTokenSource();
+        var token = _aheadPreloadCancellation.Token;
+        _isAheadPreloading = true;
+        _ = PreloadPlaybackFramesAsync(metrics, payload, frames, token, "ahead")
+            .ContinueWith((_) => _isAheadPreloading = false, TaskScheduler.FromCurrentSynchronizationContext());
+    }
+
+    private void ShowPreviewLoading(string message, Action cancel)
+    {
+        _designPreviewPane.IsVisible = false;
+        _previewBusyHost.IsVisible = true;
+        _previewLoadingScrim.Show(message, cancel);
+        SetPreviewPerformanceStatus(PreviewPerformanceStatus.Loading);
+    }
+
+    private void HidePreviewLoading()
+    {
+        _previewLoadingScrim.Hide();
+        _previewBusyHost.IsVisible = false;
+        _designPreviewPane.IsVisible = true;
+        if (!_designInputsPanel.IsPlaybackActive)
+        {
+            SetPreviewPerformanceStatus(PreviewPerformanceStatus.Idle);
+        }
+    }
+
+    private void OnDesignPreviewFrameStatusChanged(DesignWebPreviewPane.DesignPreviewFrameStatus status)
+    {
+        if (!_designInputsPanel.IsPlaybackActive)
+        {
+            SetPreviewPerformanceStatus(PreviewPerformanceStatus.Idle);
+            return;
+        }
+
+        var frameBudgetMs = 1000.0 / Math.Max(1, _designInputsPanel.PlaybackFrameRate);
+        var keepsFrameRate = status.RenderError is false
+            && status.IsAnimationOnly
+            && status.UsedDomPatch
+            && status.ElapsedMilliseconds <= frameBudgetMs;
+        SetPreviewPerformanceStatus(keepsFrameRate ? PreviewPerformanceStatus.Good : PreviewPerformanceStatus.Slow);
+    }
+
+    private void SetPreviewPerformanceStatus(PreviewPerformanceStatus status)
+    {
+        _previewPerformanceDot.Background = status switch
+        {
+            PreviewPerformanceStatus.Loading => PreviewStatusLoadingBrush,
+            PreviewPerformanceStatus.Good => PreviewStatusGoodBrush,
+            PreviewPerformanceStatus.Slow => PreviewStatusSlowBrush,
+            _ => PreviewStatusIdleBrush,
+        };
+        _previewPerformanceDot.BorderBrush = status == PreviewPerformanceStatus.Idle
+            ? PreviewStatusIdleBorder
+            : Brushes.Transparent;
+    }
+
+    private enum PreviewPerformanceStatus
+    {
+        Idle,
+        Loading,
+        Good,
+        Slow,
     }
 
     private static IEnumerable<DesignPreviewPayload> PlaybackFramePayloads(DesignPreviewPayload payload, int projectFps)
@@ -446,6 +644,54 @@ internal sealed class EditorPreviewController
             framePreview[action.PlayInputId] = true;
             yield return payload with { DesignPreviewJson = framePreview.ToJsonString() };
         }
+    }
+
+    private static IEnumerable<DesignPreviewPayload> PlaybackAheadFramePayloads(DesignPreviewPayload payload, int projectFps)
+    {
+        var fps = PreviewPlaybackTiming.PreviewFrameRate(projectFps);
+        if (JsonNode.Parse(string.IsNullOrWhiteSpace(payload.DesignPreviewJson) ? "{}" : payload.DesignPreviewJson) is not JsonObject preview)
+        {
+            yield break;
+        }
+
+        var action = PlaybackFrameAction(preview);
+        if (action is null || string.IsNullOrWhiteSpace(action.TimeJsonKey))
+        {
+            yield break;
+        }
+
+        var duration = action.DurationSeconds > 0
+            ? action.DurationSeconds
+            : Math.Max(0, JsonNumber(preview, action.DurationInputId, 0));
+        if (duration <= 0)
+        {
+            yield break;
+        }
+
+        var current = JsonNumber(preview, action.TimeJsonKey, 0);
+        for (var index = 1; index <= AheadPlaybackPreloadFrames * 2; index++)
+        {
+            var time = current + index / (double)fps;
+            if (time > duration)
+            {
+                yield break;
+            }
+
+            var framePreview = JsonNode.Parse(preview.ToJsonString()) as JsonObject ?? new JsonObject();
+            framePreview[action.TimeJsonKey] = time;
+            framePreview[action.PlayInputId] = true;
+            yield return payload with { DesignPreviewJson = framePreview.ToJsonString() };
+        }
+    }
+
+    private static string PlaybackFrameKey(DesignPreviewPayload payload)
+    {
+        return string.Join(
+            "\u001f",
+            payload.ComponentType,
+            payload.Name,
+            PlaybackFrameTime(payload),
+            payload.DesignPreviewJson.GetHashCode(StringComparison.Ordinal));
     }
 
     private static string PlaybackFrameTime(DesignPreviewPayload payload)

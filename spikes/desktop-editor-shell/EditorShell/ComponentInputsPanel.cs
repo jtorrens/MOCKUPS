@@ -25,7 +25,7 @@ internal sealed class ComponentInputsPanel : ContentControl
     private readonly SpikeDatabase _database;
     private readonly ComponentPreviewRecordInputResolver _recordInputResolver;
     private readonly Action _refreshPreview;
-    private readonly Func<Task>? _preparePlaybackFrames;
+    private readonly Func<Task<bool>>? _preparePlaybackFrames;
     private readonly Window _owner;
     private readonly DispatcherTimer _playbackTimer;
     private readonly Dictionary<string, string> _values = new(StringComparer.Ordinal);
@@ -45,7 +45,7 @@ internal sealed class ComponentInputsPanel : ContentControl
         SpikeDatabase database,
         Action refreshPreview,
         Window owner,
-        Func<Task>? preparePlaybackFrames = null)
+        Func<Task<bool>>? preparePlaybackFrames = null)
     {
         _database = database;
         _recordInputResolver = new ComponentPreviewRecordInputResolver(database);
@@ -123,6 +123,12 @@ internal sealed class ComponentInputsPanel : ContentControl
             _isUpdating = false;
         }
     }
+
+    public bool IsPlaybackActive => SupportsPlayback()
+        && ActiveAction() is { } activeAction
+        && IsPlaying(activeAction);
+
+    public int PlaybackFrameRate => _playbackFrameRate;
 
     private void RebuildCard(IReadOnlyList<ComponentInputDefinition> inputs, string projectId)
     {
@@ -290,7 +296,7 @@ internal sealed class ComponentInputsPanel : ContentControl
                     HorizontalAlignment = HorizontalAlignment.Right,
                     VerticalAlignment = VerticalAlignment.Center,
                     ClipToBounds = true,
-                    Content = CreateActionButtonContent(action, false),
+                    Content = CreateActionButtonContent(action, false, false),
                 };
                 ToolTip.SetTip(button, action.Label);
                 button.Click += (_, args) =>
@@ -309,7 +315,10 @@ internal sealed class ComponentInputsPanel : ContentControl
         return header;
     }
 
-    private static Control CreateActionButtonContent(ComponentPreviewActionDefinition action, bool isLoading)
+    private static Control CreateActionButtonContent(
+        ComponentPreviewActionDefinition action,
+        bool isLoading,
+        bool isPlaying)
     {
         var content = new Grid
         {
@@ -317,10 +326,10 @@ internal sealed class ComponentInputsPanel : ContentControl
             ColumnSpacing = 6,
             VerticalAlignment = VerticalAlignment.Center,
         };
-        content.Children.Add(EditorIcons.Create(EditorIcons.Play, 12));
+        content.Children.Add(EditorIcons.Create(isPlaying ? EditorIcons.Pause : EditorIcons.Play, 12));
         var label = new TextBlock
         {
-            Text = isLoading ? "Loading" : action.Label,
+            Text = isLoading ? "Loading" : isPlaying ? "Pause" : action.Label,
             TextTrimming = TextTrimming.CharacterEllipsis,
             VerticalAlignment = VerticalAlignment.Center,
         };
@@ -679,7 +688,13 @@ internal sealed class ComponentInputsPanel : ContentControl
         var startsPlayback = action is not null && StringToBool(value);
         if (action is not null)
         {
-            SetPlaybackState(action, StringToBool(value));
+            if (startsPlayback)
+            {
+                _ = StartPlaybackAsync(action);
+                return;
+            }
+
+            SetPlaybackState(action, false);
         }
         else
         {
@@ -690,12 +705,6 @@ internal sealed class ComponentInputsPanel : ContentControl
         {
             ClampCurrentPlaybackToDuration(durationAction);
         }
-        if (startsPlayback)
-        {
-            _ = StartPlaybackAsync(action!);
-            return;
-        }
-
         SyncPlaybackTimer();
         _refreshPreview();
     }
@@ -765,19 +774,14 @@ internal sealed class ComponentInputsPanel : ContentControl
             ("startsPlayback", startsPlayback),
             ("fps", _playbackFrameRate),
             ("durationSec", DurationSeconds(action)));
-        SetPlaybackState(action, startsPlayback);
-
-        SyncBooleanInput(stateKey);
-        if (startsPlayback)
-        {
-            SyncActivatedPlaybackInputs(action);
-        }
         if (startsPlayback)
         {
             _ = StartPlaybackAsync(action);
             return;
         }
 
+        SetPlaybackState(action, false);
+        SyncBooleanInput(stateKey);
         SyncPlaybackTimer();
         _refreshPreview();
     }
@@ -791,7 +795,7 @@ internal sealed class ComponentInputsPanel : ContentControl
                 continue;
             }
 
-            button.Content = CreateActionButtonContent(action, _preparingActionId == action.Id);
+            button.Content = CreateActionButtonContent(action, _preparingActionId == action.Id, IsPlaying(action));
         }
     }
 
@@ -799,6 +803,7 @@ internal sealed class ComponentInputsPanel : ContentControl
     {
         StopPlayback();
         _activeActionId = action.Id;
+        var prepared = true;
         if (action.PrewarmFrames)
         {
             _preparingActionId = action.Id;
@@ -813,9 +818,9 @@ internal sealed class ComponentInputsPanel : ContentControl
                 ("timeKey", action.TimeJsonKey));
             try
             {
-                if (_preparePlaybackFrames is not null)
+                if (_preparePlaybackFrames is not null && !await _preparePlaybackFrames())
                 {
-                    await _preparePlaybackFrames();
+                    prepared = false;
                 }
             }
             finally
@@ -826,6 +831,14 @@ internal sealed class ComponentInputsPanel : ContentControl
                     ("scope", _scopeKey),
                     ("action", action.Id),
                     ("ms", stopwatch.Elapsed.TotalMilliseconds));
+            }
+
+            if (!prepared)
+            {
+                SetPlaybackState(action, false);
+                SyncBooleanInput(ActionStateKey(action));
+                UpdateActionButtons();
+                return;
             }
         }
         else
@@ -838,12 +851,15 @@ internal sealed class ComponentInputsPanel : ContentControl
                 ("reason", "prewarm-disabled"));
         }
 
-        if (!SupportsPlayback() || !IsPlaying(action))
+        if (!SupportsPlayback())
         {
             UpdateActionButtons();
             return;
         }
 
+        SetPlaybackState(action, true);
+        SyncBooleanInput(ActionStateKey(action));
+        SyncActivatedPlaybackInputs(action);
         _values[ActionTimeKey(action)] = "0";
         PreviewDebugLog.Write(
             "preview.playback.start",

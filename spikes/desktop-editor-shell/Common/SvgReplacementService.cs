@@ -67,9 +67,11 @@ internal static class SvgReplacementService
 
     public static string Transform(string value, TransformOptions options)
     {
-        var source = Parts(NormalizePaintToBlack(value));
+        var mode = NormalizeMode(options.Mode);
+        var source = Parts(mode == "fill"
+            ? NormalizePaintToFillMaskWhite(value)
+            : NormalizePaintToBlack(value));
         var target = string.IsNullOrWhiteSpace(options.TargetSvgText) ? source : Parts(options.TargetSvgText);
-        var mode = options.Mode.Equals("negative", StringComparison.OrdinalIgnoreCase) ? "negative" : "positive";
         var scale = Clamp(options.Scale, 0.05, 8);
         var rotation = Trim(options.RotationDegrees);
         var padding = Math.Max(0, options.Padding);
@@ -87,12 +89,13 @@ internal static class SvgReplacementService
             $"translate({Trim(-source.Geometry.CenterX)} {Trim(-source.Geometry.CenterY)})",
         });
         var namespaces = string.IsNullOrWhiteSpace(source.NamespaceAttributes) ? "" : $" {source.NamespaceAttributes}";
+        var sourcePaint = mode == "fill" ? "#fff" : "#000";
         var presentationAttributes = strokeWidth == 0
-            ? EffectivePresentationAttributes(source.Attributes)
-            : OverrideStrokeWidth(EffectivePresentationAttributes(source.Attributes), strokeWidth);
-        var sourceSvg = $"<svg{namespaces} x=\"{Trim(source.Geometry.MinX)}\" y=\"{Trim(source.Geometry.MinY)}\" width=\"{Trim(source.Geometry.Width)}\" height=\"{Trim(source.Geometry.Height)}\" viewBox=\"{source.ViewBox}\" overflow=\"visible\" color=\"#000\"{presentationAttributes}>\n{source.Body.Trim()}\n    </svg>";
+            ? EffectivePresentationAttributes(source.Attributes, sourcePaint)
+            : OverrideStrokeWidth(EffectivePresentationAttributes(source.Attributes, sourcePaint), strokeWidth);
+        var sourceSvg = $"<svg{namespaces} x=\"{Trim(source.Geometry.MinX)}\" y=\"{Trim(source.Geometry.MinY)}\" width=\"{Trim(source.Geometry.Width)}\" height=\"{Trim(source.Geometry.Height)}\" viewBox=\"{source.ViewBox}\" overflow=\"visible\" color=\"{sourcePaint}\"{presentationAttributes}>\n{source.Body.Trim()}\n    </svg>";
 
-        if (mode == "negative")
+        if (mode is "negative" or "fill")
         {
             var backgroundX = Trim(target.Geometry.MinX + padding);
             var backgroundY = Trim(target.Geometry.MinY + padding);
@@ -100,16 +103,31 @@ internal static class SvgReplacementService
             var backgroundHeight = Trim(fitHeight);
             var radius = Trim(Math.Min(cornerRadius, Math.Min(fitWidth / 2, fitHeight / 2)));
             var radiusAttributes = radius == "0" ? "" : $" rx=\"{radius}\" ry=\"{radius}\"";
+            if (mode == "fill")
+            {
+                return $"<svg{target.Attributes}>\n" +
+                    "  <defs>\n" +
+                    $"    <mask id=\"mockups-fill-silhouette\" maskUnits=\"userSpaceOnUse\" x=\"{backgroundX}\" y=\"{backgroundY}\" width=\"{backgroundWidth}\" height=\"{backgroundHeight}\">\n" +
+                    $"      <rect x=\"{backgroundX}\" y=\"{backgroundY}\" width=\"{backgroundWidth}\" height=\"{backgroundHeight}\" fill=\"#000\" stroke=\"none\"/>\n" +
+                    $"      <g data-mockups-transform=\"fit-center-scale-rotate\" data-mockups-fit-scale=\"{Trim(fitScale)}\" data-mockups-padding=\"{Trim(padding)}\" transform=\"{transform}\">\n" +
+                    $"        {sourceSvg}\n" +
+                    "      </g>\n" +
+                    "    </mask>\n" +
+                    "  </defs>\n" +
+                    $"  <rect x=\"{backgroundX}\" y=\"{backgroundY}\" width=\"{backgroundWidth}\" height=\"{backgroundHeight}\" fill=\"#000\" stroke=\"none\" mask=\"url(#mockups-fill-silhouette)\"/>\n" +
+                    "</svg>";
+            }
+
             return $"<svg{target.Attributes}>\n" +
                 "  <defs>\n" +
                 $"    <mask id=\"mockups-negative-cutout\" maskUnits=\"userSpaceOnUse\" x=\"{backgroundX}\" y=\"{backgroundY}\" width=\"{backgroundWidth}\" height=\"{backgroundHeight}\">\n" +
-                $"      <rect x=\"{backgroundX}\" y=\"{backgroundY}\" width=\"{backgroundWidth}\" height=\"{backgroundHeight}\"{radiusAttributes} fill=\"#fff\"/>\n" +
+                $"      <rect x=\"{backgroundX}\" y=\"{backgroundY}\" width=\"{backgroundWidth}\" height=\"{backgroundHeight}\"{radiusAttributes} fill=\"#fff\" stroke=\"none\"/>\n" +
                 $"      <g data-mockups-transform=\"fit-center-scale-rotate\" data-mockups-fit-scale=\"{Trim(fitScale)}\" data-mockups-padding=\"{Trim(padding)}\" transform=\"{transform}\">\n" +
                 $"        {sourceSvg}\n" +
                 "      </g>\n" +
                 "    </mask>\n" +
                 "  </defs>\n" +
-                $"  <rect x=\"{backgroundX}\" y=\"{backgroundY}\" width=\"{backgroundWidth}\" height=\"{backgroundHeight}\"{radiusAttributes} fill=\"#000\" mask=\"url(#mockups-negative-cutout)\"/>\n" +
+                $"  <rect x=\"{backgroundX}\" y=\"{backgroundY}\" width=\"{backgroundWidth}\" height=\"{backgroundHeight}\"{radiusAttributes} fill=\"#000\" stroke=\"none\" mask=\"url(#mockups-negative-cutout)\"/>\n" +
                 "</svg>";
         }
 
@@ -118,6 +136,15 @@ internal static class SvgReplacementService
             $"    {sourceSvg}\n" +
             "  </g>\n" +
             "</svg>";
+    }
+
+    private static string NormalizeMode(string value)
+    {
+        return value.Equals("negative", StringComparison.OrdinalIgnoreCase)
+            ? "negative"
+            : value.Equals("fill", StringComparison.OrdinalIgnoreCase)
+                ? "fill"
+                : "positive";
     }
 
     public static string NormalizePaintToBlack(string value)
@@ -139,6 +166,52 @@ internal static class SvgReplacementService
                     match.Groups[2].Value,
                     "(^|;)\\s*(fill|stroke)\\s*:\\s*(?!none\\b|currentColor\\b)[^;]+",
                     (styleMatch) => $"{styleMatch.Groups[1].Value}{styleMatch.Groups[2].Value}:#000",
+                    RegexOptions.IgnoreCase);
+                return $"style={quote}{style}{quote}";
+            },
+            RegexOptions.IgnoreCase);
+        return NormalizeCompoundPathFillRules(normalized);
+    }
+
+    public static string NormalizePaintToFillMaskWhite(string value)
+    {
+        var svgText = Validate(value);
+        var normalized = RemoveNonSvgNamespacedAttributes(svgText);
+        normalized = Regex.Replace(
+            normalized,
+            "\\sfill\\s*=\\s*(['\"])[^'\"]*\\1",
+            " fill=\"#fff\"",
+            RegexOptions.IgnoreCase);
+        normalized = Regex.Replace(
+            normalized,
+            "\\sstroke\\s*=\\s*(['\"])[^'\"]*\\1",
+            " stroke=\"none\"",
+            RegexOptions.IgnoreCase);
+        normalized = Regex.Replace(
+            normalized,
+            "\\sstroke-width\\s*=\\s*(['\"]).*?\\1",
+            "",
+            RegexOptions.IgnoreCase);
+        normalized = Regex.Replace(
+            normalized,
+            "style\\s*=\\s*(['\"])(.*?)\\1",
+            (match) =>
+            {
+                var quote = match.Groups[1].Value;
+                var style = Regex.Replace(
+                    match.Groups[2].Value,
+                    "(^|;)\\s*fill\\s*:\\s*[^;]+",
+                    (styleMatch) => $"{styleMatch.Groups[1].Value}fill:#fff",
+                    RegexOptions.IgnoreCase);
+                style = Regex.Replace(
+                    style,
+                    "(^|;)\\s*stroke\\s*:\\s*[^;]+",
+                    (styleMatch) => $"{styleMatch.Groups[1].Value}stroke:none",
+                    RegexOptions.IgnoreCase);
+                style = Regex.Replace(
+                    style,
+                    "(^|;)\\s*stroke-width\\s*:\\s*[^;]+",
+                    "$1",
                     RegexOptions.IgnoreCase);
                 return $"style={quote}{style}{quote}";
             },
@@ -221,12 +294,12 @@ internal static class SvgReplacementService
         return string.Concat(names.Select((name) => AttributeMatch(attributes, name)));
     }
 
-    private static string EffectivePresentationAttributes(string attributes)
+    private static string EffectivePresentationAttributes(string attributes, string fillDefault = "#000")
     {
         var presentation = PresentationAttributes(attributes);
         if (!HasPaintValue(attributes, "fill"))
         {
-            presentation += " fill=\"#000\"";
+            presentation += $" fill=\"{fillDefault}\"";
         }
 
         if (!HasPaintValue(attributes, "stroke"))
