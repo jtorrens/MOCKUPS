@@ -273,7 +273,9 @@ function bubbleContentLayout(
   if (position === "top" || position === "bottom") {
     const width = Math.max(textGroup.width, mediaSize.width);
     const height = textGroup.height + verticalGap + mediaSize.height;
-    const textGroupX = padding.left + (width - textGroup.width) / 2;
+    const textGroupX = mediaSize.width > textGroup.width
+      ? padding.left
+      : padding.left + (width - textGroup.width) / 2;
     const textGroupY = position === "top"
       ? padding.top + mediaSize.height + verticalGap
       : padding.top;
