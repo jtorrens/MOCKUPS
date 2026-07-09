@@ -608,6 +608,45 @@ internal sealed partial class SpikeDatabase
                   { "id": "component.bubble.actorLabel.editor", "order": 40, "visible": true }
                 ] }
               ]
+            },
+            {
+              "id": "bubbleAvatar",
+              "label": "Avatar",
+              "subtitle": "Optional embedded actor avatar",
+              "icon": "{{EditorIcons.Avatar}}",
+              "order": 70,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "bubbleAvatar", "label": "Avatar", "order": 10, "visible": true, "fields": [
+                  { "id": "component.bubble.avatar.showAvatar", "order": 10, "visible": true },
+                  { "id": "component.bubble.avatar.placement", "order": 20, "visible": true },
+                  { "id": "component.bubble.avatar.editor", "order": 30, "visible": true }
+                ] }
+              ]
+            },
+            {
+              "id": "bubbleStatus",
+              "label": "Status",
+              "subtitle": "Message status text and state icons",
+              "icon": "{{EditorIcons.Status}}",
+              "order": 80,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "bubbleStatusSent", "label": "Sent", "order": 10, "visible": true, "fields": [
+                  { "id": "component.bubble.status.sent.icon", "order": 10, "visible": true },
+                  { "id": "component.bubble.status.sent.color", "order": 20, "visible": true }
+                ] },
+                { "id": "bubbleStatusDelivered", "label": "Delivered", "order": 20, "visible": true, "fields": [
+                  { "id": "component.bubble.status.delivered.icon", "order": 10, "visible": true },
+                  { "id": "component.bubble.status.delivered.color", "order": 20, "visible": true }
+                ] },
+                { "id": "bubbleStatusRead", "label": "Read", "order": 30, "visible": true, "fields": [
+                  { "id": "component.bubble.status.read.icon", "order": 10, "visible": true },
+                  { "id": "component.bubble.status.read.color", "order": 20, "visible": true }
+                ] }
+              ]
             }
             """,
             _ => "",

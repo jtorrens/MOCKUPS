@@ -369,6 +369,31 @@ internal sealed partial class SpikeDatabase
                         ["placement"] = JsonNode.Parse(AlignmentPlacementValue.FromDirectionalEdge("top", -4).ToJsonString()),
                         ["overrides"] = new JsonObject(),
                     },
+                    ["avatarSlot"] = new JsonObject
+                    {
+                        ["showAvatar"] = false,
+                        ["presetId"] = DefaultComponentPresetId,
+                        ["placement"] = JsonNode.Parse(AlignmentPlacementValue.FromDirectionalEdge("left", 8).ToJsonString()),
+                        ["overrides"] = new JsonObject(),
+                    },
+                    ["status"] = new JsonObject
+                    {
+                        ["sent"] = new JsonObject
+                        {
+                            ["iconToken"] = "system_check",
+                            ["colorToken"] = "theme.icons.secondary",
+                        },
+                        ["delivered"] = new JsonObject
+                        {
+                            ["iconToken"] = "system_check",
+                            ["colorToken"] = "theme.icons.secondary",
+                        },
+                        ["read"] = new JsonObject
+                        {
+                            ["iconToken"] = "system_check",
+                            ["colorToken"] = "theme.icons.accent",
+                        },
+                    },
                     ["incomingBackground"] = "gray_080|gray_020",
                     ["incomingText"] = "gray_010|gray_100",
                     ["systemBackground"] = "gray_080|gray_020",
@@ -431,6 +456,8 @@ internal sealed partial class SpikeDatabase
             preview["state"] = "incoming";
             preview["maxWidth"] = 260;
             preview["actorName"] = "Alex Q";
+            preview["statusText"] = "9:41";
+            preview["statusState"] = "read";
             preview.Remove("writeOnDurationSeconds");
             preview.Remove("writeOnTimeSeconds");
             preview["writeOnDurationFrames"] = 30;
@@ -795,7 +822,23 @@ internal sealed partial class SpikeDatabase
                 ComponentInput("sampleText", "Text", "sampleText", ValueKind.StringMultiline, "Message"),
                 ComponentInput("maxWidth", "Max width", "maxWidth", ValueKind.Integer, "260", minimum: 1, maximum: 2000, increment: 1),
                 ComponentInput("writeOnDurationFrames", "Write-on frames", "writeOnDurationFrames", ValueKind.Integer, "30", minimum: 1, maximum: 10000, increment: 1),
+                ComponentInput(
+                    "actorId",
+                    "Actor",
+                    "actorId",
+                    "recordReference",
+                    "",
+                    tableId: "actors",
+                    resolvedJsonKey: "actor"),
                 ComponentInput("actorName", "Actor name", "actorName", "text", "Alex Q"),
+                ComponentInput("statusText", "Status text", "statusText", "text", "9:41"),
+                ComponentInput(
+                    "statusState",
+                    "Status",
+                    "statusState",
+                    "option",
+                    "read",
+                    options: ComponentClassFieldCatalog.BubbleStatusStateOptions),
                 ComponentInput("mediaSource", "Media source", "mediaSource", ValueKind.MediaFilePath, ""),
                 ComponentInput(
                     "viewportSize",

@@ -27,7 +27,7 @@ internal sealed class DictionaryIconTokenControl : Grid, IDictionaryValueControl
         _showIconTokenPicker = showIconTokenPicker;
         _createIconPreview = createIconPreview;
 
-        ColumnDefinitions = new ColumnDefinitions("38,*,Auto");
+        ColumnDefinitions = new ColumnDefinitions("38,*,Auto,Auto");
         ColumnSpacing = 8;
 
         _previewBox = new Border
@@ -73,6 +73,25 @@ internal sealed class DictionaryIconTokenControl : Grid, IDictionaryValueControl
         Grid.SetColumn(pickButton, 2);
         Children.Add(pickButton);
 
+        var clearButton = new Button
+        {
+            Content = "Clear",
+            MinWidth = 54,
+            VerticalAlignment = VerticalAlignment.Center,
+            IsEnabled = _isEditable,
+        };
+        clearButton.Click += (_, _) =>
+        {
+            if (!_isEditable || string.IsNullOrWhiteSpace(_value)) return;
+
+            _value = "";
+            RefreshPreview();
+            ValueChanged?.Invoke(this, _value);
+            ValueCommitted?.Invoke(this, _value);
+        };
+        Grid.SetColumn(clearButton, 3);
+        Children.Add(clearButton);
+
         RefreshPreview();
     }
 
@@ -97,4 +116,3 @@ internal sealed class DictionaryIconTokenControl : Grid, IDictionaryValueControl
         _tokenText.Opacity = string.IsNullOrWhiteSpace(_value) ? 0.58 : 1;
     }
 }
-

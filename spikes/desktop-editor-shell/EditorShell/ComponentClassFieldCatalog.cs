@@ -119,6 +119,14 @@ internal static class ComponentClassFieldCatalog
         new("right", "Right"),
     ];
 
+    internal static readonly FieldOption[] BubbleStatusStateOptions =
+    [
+        new("none", "None"),
+        new("sent", "Sent"),
+        new("delivered", "Delivered"),
+        new("read", "Read"),
+    ];
+
     private static readonly FieldOption[] MediaTextOverlayModeOptions =
     [
         new("free", "Free text"),
@@ -720,6 +728,15 @@ internal static class ComponentClassFieldCatalog
         ["component.bubble.actorLabel.useActorColor"] = new("component.bubble.actorLabel.useActorColor", "Use actor color", ValueKind.Boolean, ["bubble", "actorLabelSlot", "useActorColor"], "false"),
         ["component.bubble.actorLabel.placement"] = new("component.bubble.actorLabel.placement", "Actor label placement", ValueKind.AlignmentPlacement, ["bubble", "actorLabelSlot", "placement"], """{"mode":"edge","alignX":0.5,"alignY":0,"offsetX":0,"offsetY":-4}"""),
         ["component.bubble.actorLabel.editor"] = new("component.bubble.actorLabel.editor", "Actor label", ValueKind.ComponentPreset, ["bubble", "actorLabelSlot", "presetId"], "default"),
+        ["component.bubble.avatar.showAvatar"] = new("component.bubble.avatar.showAvatar", "Show avatar", ValueKind.Boolean, ["bubble", "avatarSlot", "showAvatar"], "false"),
+        ["component.bubble.avatar.placement"] = new("component.bubble.avatar.placement", "Avatar placement", ValueKind.AlignmentPlacement, ["bubble", "avatarSlot", "placement"], """{"mode":"edge","alignX":0,"alignY":1,"offsetX":-8,"offsetY":0}"""),
+        ["component.bubble.avatar.editor"] = new("component.bubble.avatar.editor", "Avatar", ValueKind.ComponentPreset, ["bubble", "avatarSlot", "presetId"], "default"),
+        ["component.bubble.status.sent.icon"] = new("component.bubble.status.sent.icon", "Sent icon", ValueKind.IconToken, ["bubble", "status", "sent", "iconToken"], "system_check"),
+        ["component.bubble.status.sent.color"] = new("component.bubble.status.sent.color", "Sent color", ValueKind.ThemeToken, ["bubble", "status", "sent", "colorToken"], "theme.icons.secondary", Options: ThemeColorOptions),
+        ["component.bubble.status.delivered.icon"] = new("component.bubble.status.delivered.icon", "Delivered icon", ValueKind.IconToken, ["bubble", "status", "delivered", "iconToken"], "system_check"),
+        ["component.bubble.status.delivered.color"] = new("component.bubble.status.delivered.color", "Delivered color", ValueKind.ThemeToken, ["bubble", "status", "delivered", "colorToken"], "theme.icons.secondary", Options: ThemeColorOptions),
+        ["component.bubble.status.read.icon"] = new("component.bubble.status.read.icon", "Read icon", ValueKind.IconToken, ["bubble", "status", "read", "iconToken"], "system_check"),
+        ["component.bubble.status.read.color"] = new("component.bubble.status.read.color", "Read color", ValueKind.ThemeToken, ["bubble", "status", "read", "colorToken"], "theme.icons.accent", Options: ThemeColorOptions),
     };
 
     public static ComponentClassFieldDescriptor Get(string fieldId)

@@ -2842,12 +2842,14 @@ internal sealed partial class SpikeDatabase
         changed |= NormalizeComponentSlot(bubble, "videoMediaSlot", DefaultComponentPresetId);
         changed |= NormalizeComponentSlot(bubble, "audioSlot", DefaultComponentPresetId);
         changed |= NormalizeComponentSlot(bubble, "actorLabelSlot", DefaultComponentPresetId);
+        changed |= NormalizeComponentSlot(bubble, "avatarSlot", DefaultComponentPresetId);
         changed |= NormalizeComponentPresetString(connection, projectId, bubble, ["surfaceSlot", "presetId"], "surface");
         changed |= NormalizeComponentPresetString(connection, projectId, bubble, ["textBoxSlot", "presetId"], "textBox");
         changed |= NormalizeComponentPresetString(connection, projectId, bubble, ["imageMediaSlot", "presetId"], "media");
         changed |= NormalizeComponentPresetString(connection, projectId, bubble, ["videoMediaSlot", "presetId"], "media");
         changed |= NormalizeComponentPresetString(connection, projectId, bubble, ["audioSlot", "presetId"], "audio");
         changed |= NormalizeComponentPresetString(connection, projectId, bubble, ["actorLabelSlot", "presetId"], "label");
+        changed |= NormalizeComponentPresetString(connection, projectId, bubble, ["avatarSlot", "presetId"], "avatar");
         changed |= EnsureStringValue(bubble, ["mediaType"], "none");
         changed |= EnsureStringValue(bubble, ["mediaPosition"], "bottom");
         if (JsonPath.Get(bubble, ["actorLabelSlot", "showLabel"]) is null)
@@ -2868,6 +2870,37 @@ internal sealed partial class SpikeDatabase
                 JsonNode.Parse(AlignmentPlacementValue.FromDirectionalEdge("top", -4).ToJsonString())!);
             changed = true;
         }
+        if (JsonPath.Get(bubble, ["avatarSlot", "showAvatar"]) is null)
+        {
+            SetJsonValue(bubble, ["avatarSlot", "showAvatar"], JsonValue.Create(false)!);
+            changed = true;
+        }
+        if (JsonPath.Get(bubble, ["avatarSlot", "placement"]) is null)
+        {
+            SetJsonValue(
+                bubble,
+                ["avatarSlot", "placement"],
+                JsonNode.Parse(AlignmentPlacementValue.FromDirectionalEdge("left", 8).ToJsonString())!);
+            changed = true;
+        }
+        if (JsonPath.Get(bubble, ["status", "sent", "iconToken"]) is null)
+        {
+            SetJsonValue(bubble, ["status", "sent", "iconToken"], JsonValue.Create("system_check")!);
+            changed = true;
+        }
+        changed |= EnsureStringValue(bubble, ["status", "sent", "colorToken"], "theme.icons.secondary");
+        if (JsonPath.Get(bubble, ["status", "delivered", "iconToken"]) is null)
+        {
+            SetJsonValue(bubble, ["status", "delivered", "iconToken"], JsonValue.Create("system_check")!);
+            changed = true;
+        }
+        changed |= EnsureStringValue(bubble, ["status", "delivered", "colorToken"], "theme.icons.secondary");
+        if (JsonPath.Get(bubble, ["status", "read", "iconToken"]) is null)
+        {
+            SetJsonValue(bubble, ["status", "read", "iconToken"], JsonValue.Create("system_check")!);
+            changed = true;
+        }
+        changed |= EnsureStringValue(bubble, ["status", "read", "colorToken"], "theme.icons.accent");
         changed |= EnsureStringValue(bubble, ["incomingBackground"], "gray_080|gray_020");
         changed |= EnsureStringValue(bubble, ["incomingText"], "gray_010|gray_100");
         changed |= EnsureStringValue(bubble, ["systemBackground"], "gray_080|gray_020");

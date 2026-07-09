@@ -113,7 +113,7 @@ export const desktopPreviewComponents = {
     contract: "./bubbleComponentContract",
     resolver: "./bubbleComponentResolver",
     renderable: "./bubbleComponentRenderable",
-    embeds: ["surface", "textBox", "media", "audio", "label"],
+    embeds: ["surface", "textBox", "media", "audio", "label", "avatar"],
   },
   status_bar: {
     category: "system",

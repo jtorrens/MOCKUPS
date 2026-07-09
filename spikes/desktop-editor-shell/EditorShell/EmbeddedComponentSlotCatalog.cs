@@ -218,6 +218,12 @@ internal static class EmbeddedComponentSlotCatalog
             "Actor label",
             "component.label",
             ["bubble", "actorLabelSlot"]),
+        new(
+            "component.bubble.avatar.editor",
+            "avatar",
+            "Avatar",
+            "component.avatar",
+            ["bubble", "avatarSlot"]),
     ];
 
     public static bool TryGet(string fieldId, out EmbeddedComponentSlotDefinition slot)

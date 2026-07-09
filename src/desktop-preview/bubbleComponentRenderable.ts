@@ -8,13 +8,18 @@ import {
   measureAudioComponent,
 } from "./audioComponentRenderable.js";
 import {
+  avatarComponentToRenderableAt,
+} from "./avatarComponentRenderable.js";
+import {
   boundedCenterBox,
   boxEdgeIntrusionInsets,
   cssColorWithAlpha,
+  iconTokenStyle,
   placeChild,
   renderScale,
   numberToken,
   resolvePaletteColor,
+  selectedColor,
   scalePlacement,
   selectedPaletteColor,
   translateBox,
@@ -37,6 +42,10 @@ import {
   measureTextBoxComponent,
   textBoxComponentToRenderableAt,
 } from "./textBoxComponentRenderable.js";
+import {
+  approximateTextWidth,
+  resolveTypographyStyle,
+} from "./previewTextHelpers.js";
 
 export function bubbleComponentToRenderable(
   payload: DesignPreviewPayload,
@@ -55,6 +64,7 @@ export function bubbleComponentToRenderable(
     },
   };
   const measuredTextBox = measureTextBoxComponent(payload, textBoxForContent);
+  const statusSize = measureBubbleStatus(payload, bubble);
   const media = activeBubbleMedia(bubble);
   const mediaSize = media
     ? media.kind === "audio"
@@ -71,6 +81,7 @@ export function bubbleComponentToRenderable(
   };
   const baseContentLayout = bubbleContentLayout(
     { width: measuredTextBox.width, height: measuredTextBox.height },
+    statusSize,
     mediaSize,
     bubble.mediaSlot.position,
     basePadding,
@@ -99,6 +110,7 @@ export function bubbleComponentToRenderable(
   };
   const contentLayout = bubbleContentLayout(
     { width: measuredTextBox.width, height: measuredTextBox.height },
+    statusSize,
     mediaSize,
     bubble.mediaSlot.position,
     contentPadding,
@@ -114,6 +126,16 @@ export function bubbleComponentToRenderable(
         localSurfaceBox,
         measureLabelComponent(bubble.actorLabelSlot.label, payload),
         scalePlacement(bubble.actorLabelSlot.placement, scale),
+    )
+    : undefined;
+  const localAvatarBox = bubble.avatarSlot.avatar
+    ? placeChild(
+        localSurfaceBox,
+        {
+          width: bubble.avatarSlot.avatar.size * scale,
+          height: bubble.avatarSlot.avatar.size * scale,
+        },
+        scalePlacement(bubble.avatarSlot.placement, scale),
       )
     : undefined;
   const groupBox = boundedCenterBox(payload, localSurfaceBox.width, localSurfaceBox.height);
@@ -126,7 +148,11 @@ export function bubbleComponentToRenderable(
   const mediaBox = contentLayout.mediaBox
     ? translateBox(contentLayout.mediaBox, origin)
     : undefined;
+  const statusBox = contentLayout.statusBox
+    ? translateBox(contentLayout.statusBox, origin)
+    : undefined;
   const labelBox = localLabelBox ? translateBox(localLabelBox, origin) : undefined;
+  const avatarBox = localAvatarBox ? translateBox(localAvatarBox, origin) : undefined;
   const stateColors = bubble.colors[bubble.state];
   const surfaceColors = bubbleSurfaceColors(payload, stateColors.background, bubble.surface.backgroundAlpha);
   const textColor = selectedPalettePairColor(payload, stateColors.text);
@@ -165,6 +191,9 @@ export function bubbleComponentToRenderable(
               : mediaComponentToRenderableAt(payload, media.value, mediaBox),
           ]
         : []),
+      ...(statusBox
+        ? [bubbleStatusToRenderable(payload, bubble, statusBox, textColor)]
+        : []),
       ...(bubble.actorLabelSlot.label && labelBox
         ? [
             labelComponentToRenderableAt(
@@ -182,12 +211,16 @@ export function bubbleComponentToRenderable(
             ),
           ]
         : []),
+      ...(bubble.avatarSlot.avatar && avatarBox
+        ? [avatarComponentToRenderableAt(payload, bubble.avatarSlot.avatar, avatarBox)]
+        : []),
     ],
   };
 }
 
 function bubbleContentLayout(
   textSize: { width: number; height: number },
+  statusSize: { width: number; height: number } | undefined,
   mediaSize: { width: number; height: number } | undefined,
   position: BubbleDesignContract["mediaSlot"]["position"],
   padding: {
@@ -199,17 +232,38 @@ function bubbleContentLayout(
     gapY: number;
   },
 ) {
-  const textBox = {
-    x: padding.left,
-    y: padding.top,
-    width: textSize.width,
-    height: textSize.height,
+  const statusGap = statusSize
+    ? Math.max(2, Math.min(padding.gapY, statusSize.height * 0.45))
+    : 0;
+  const textGroupWidth = Math.max(textSize.width, statusSize?.width ?? 0);
+  const textGroupHeight = textSize.height
+    + (statusSize ? statusGap + statusSize.height : 0);
+  const textGroup = {
+    width: textGroupWidth,
+    height: textGroupHeight,
   };
-  if (!mediaSize) {
-    return {
+  const textGroupBoxes = (x: number, y: number) => ({
+    textBox: {
+      x,
+      y,
       width: textSize.width,
       height: textSize.height,
-      textBox,
+    },
+    statusBox: statusSize
+      ? {
+          x: x + textGroupWidth - statusSize.width,
+          y: y + textSize.height + statusGap,
+          width: statusSize.width,
+          height: statusSize.height,
+        }
+      : undefined,
+  });
+  if (!mediaSize) {
+    const boxes = textGroupBoxes(padding.left, padding.top);
+    return {
+      width: textGroup.width,
+      height: textGroup.height,
+      ...boxes,
       mediaBox: undefined,
     };
   }
@@ -217,42 +271,44 @@ function bubbleContentLayout(
   const verticalGap = padding.gapY;
   const horizontalGap = padding.gapX;
   if (position === "top" || position === "bottom") {
-    const width = Math.max(textSize.width, mediaSize.width);
-    const height = textSize.height + verticalGap + mediaSize.height;
+    const width = Math.max(textGroup.width, mediaSize.width);
+    const height = textGroup.height + verticalGap + mediaSize.height;
+    const textGroupX = padding.left + (width - textGroup.width) / 2;
+    const textGroupY = position === "top"
+      ? padding.top + mediaSize.height + verticalGap
+      : padding.top;
     const mediaBox = {
       x: padding.left + (width - mediaSize.width) / 2,
-      y: position === "top" ? padding.top : padding.top + textSize.height + verticalGap,
+      y: position === "top" ? padding.top : padding.top + textGroup.height + verticalGap,
       width: mediaSize.width,
       height: mediaSize.height,
     };
+    const boxes = textGroupBoxes(textGroupX, textGroupY);
     return {
       width,
       height,
-      textBox: {
-        ...textBox,
-        x: padding.left + (width - textSize.width) / 2,
-        y: position === "top" ? padding.top + mediaSize.height + verticalGap : padding.top,
-      },
+      ...boxes,
       mediaBox,
     };
   }
 
-  const width = textSize.width + horizontalGap + mediaSize.width;
-  const height = Math.max(textSize.height, mediaSize.height);
+  const width = textGroup.width + horizontalGap + mediaSize.width;
+  const height = Math.max(textGroup.height, mediaSize.height);
+  const textGroupX = position === "left"
+    ? padding.left + mediaSize.width + horizontalGap
+    : padding.left;
+  const textGroupY = padding.top + (height - textGroup.height) / 2;
   const mediaBox = {
-    x: position === "left" ? padding.left : padding.left + textSize.width + horizontalGap,
+    x: position === "left" ? padding.left : padding.left + textGroup.width + horizontalGap,
     y: padding.top + (height - mediaSize.height) / 2,
     width: mediaSize.width,
     height: mediaSize.height,
   };
+  const boxes = textGroupBoxes(textGroupX, textGroupY);
   return {
     width,
     height,
-    textBox: {
-      ...textBox,
-      x: position === "left" ? padding.left + mediaSize.width + horizontalGap : padding.left,
-      y: padding.top + (height - textSize.height) / 2,
-    },
+    ...boxes,
     mediaBox,
   };
 }
@@ -271,6 +327,114 @@ function activeBubbleMedia(bubble: BubbleDesignContract):
     return { kind: "media", value: bubble.mediaSlot.media };
   }
   return undefined;
+}
+
+function activeBubbleStatusIcon(bubble: BubbleDesignContract) {
+  if (bubble.status.state === "none") return undefined;
+  const icon = bubble.status.icons[bubble.status.state];
+  return icon.iconToken.trim().length > 0 && icon.iconToken !== "none"
+    ? icon
+    : undefined;
+}
+
+function measureBubbleStatus(
+  payload: DesignPreviewPayload,
+  bubble: BubbleDesignContract,
+) {
+  const text = bubble.status.text.trim();
+  const icon = activeBubbleStatusIcon(bubble);
+  if (!text && !icon) return undefined;
+
+  const scale = renderScale(payload);
+  const typography = resolveTypographyStyle(payload, bubble.textBox.typography, scale);
+  const fontSize = Math.max(1, typography.fontSize * 0.72);
+  const lineHeight = Math.max(fontSize, typography.lineHeight * 0.72);
+  const iconSize = icon ? Math.max(1, fontSize * 1.08) : 0;
+  const gap = text && icon ? Math.max(2, fontSize * 0.28) : 0;
+  return {
+    width: (text ? approximateTextWidth(text, fontSize) : 0) + gap + iconSize,
+    height: Math.max(lineHeight, iconSize),
+  };
+}
+
+function bubbleStatusToRenderable(
+  payload: DesignPreviewPayload,
+  bubble: BubbleDesignContract,
+  box: RenderableBox,
+  textColor: string,
+): RenderableNode {
+  const text = bubble.status.text.trim();
+  const icon = activeBubbleStatusIcon(bubble);
+  const scale = renderScale(payload);
+  const typography = resolveTypographyStyle(payload, bubble.textBox.typography, scale);
+  const fontSize = Math.max(1, typography.fontSize * 0.72);
+  const lineHeight = Math.max(fontSize, typography.lineHeight * 0.72);
+  const iconSize = icon ? Math.min(box.height, Math.max(1, fontSize * 1.08)) : 0;
+  const gap = text && icon ? Math.max(2, fontSize * 0.28) : 0;
+  const textWidth = text ? Math.max(1, box.width - iconSize - gap) : 0;
+
+  return {
+    id: `${bubble.id}.status`,
+    type: "group",
+    frame: 0,
+    box,
+    style: {
+      alignItems: "center",
+      display: "flex",
+      flexDirection: "row",
+      justifyContent: "flex-end",
+      overflow: "visible",
+    },
+    children: [
+      ...(text
+        ? [
+            {
+              id: `${bubble.id}.status.text`,
+              type: "text",
+              frame: 0,
+              box: {
+                x: box.x,
+                y: box.y,
+                width: textWidth,
+                height: box.height,
+              },
+              text,
+              style: {
+                display: "block",
+                fontFamily: typography.fontFamily,
+                fontSize,
+                fontStyle: typography.fontStyle,
+                fontWeight: typography.fontWeight,
+                lineHeight,
+                overflow: "visible",
+                textAlign: "right",
+                textColor,
+                whiteSpace: "nowrap",
+              },
+            } satisfies RenderableNode,
+          ]
+        : []),
+      ...(icon
+        ? [
+            {
+              id: `${bubble.id}.status.icon`,
+              type: "icon",
+              frame: 0,
+              box: {
+                x: box.x + box.width - iconSize,
+                y: box.y + (box.height - iconSize) * 0.5,
+                width: iconSize,
+                height: iconSize,
+              },
+              text: icon.iconToken,
+              style: {
+                ...iconTokenStyle(payload, icon.iconToken, selectedColor(payload, icon.colorToken)),
+              },
+            } satisfies RenderableNode,
+          ]
+        : []),
+    ],
+  };
 }
 
 function bubbleSurfaceColors(

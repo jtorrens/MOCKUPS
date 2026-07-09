@@ -20,8 +20,10 @@ import type {
   BubbleMediaType,
   BubblePalettePairContract,
   BubbleState,
+  BubbleStatusState,
 } from "./bubbleComponentContract.js";
 import { resolveAudioComponentFromRecords } from "./audioComponentResolver.js";
+import { resolveAvatarComponentFromRecords } from "./avatarComponentResolver.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { resolveLabelComponentFromRecords } from "./labelComponentResolver.js";
 import { resolveMediaComponentFromRecords } from "./mediaComponentResolver.js";
@@ -47,6 +49,9 @@ export function resolveBubbleComponent(
   const videoMediaSlot = asRecord(bubble.videoMediaSlot);
   const audioSlot = asRecord(bubble.audioSlot);
   const actorLabelSlot = asRecord(bubble.actorLabelSlot);
+  const avatarSlot = asRecord(bubble.avatarSlot);
+  const status = asRecord(bubble.status);
+  const actorPreview = resolveBubbleActorPreview(preview);
   const legacySize = optionalSize(preview);
   const maxWidth = Math.max(
     1,
@@ -174,6 +179,26 @@ export function resolveBubbleComponent(
         asRecord(actorLabelSlot.overrides),
       )
     : undefined;
+  const avatarVisible = state === "incoming"
+    && requiredBoolean(
+      avatarSlot,
+      "showAvatar",
+      "component.bubble.avatar.showAvatar",
+    );
+  const avatarConfig = avatarVisible
+    ? mergeComponentDefaults(
+        componentPresetConfig(
+          componentBaseConfigs,
+          "avatar",
+          requiredString(
+            avatarSlot,
+            "presetId",
+            "component.bubble.avatar.presetId",
+          ),
+        ),
+        asRecord(avatarSlot.overrides),
+      )
+    : undefined;
 
   return {
     id: "component.bubble",
@@ -217,7 +242,7 @@ export function resolveBubbleComponent(
       audio: audioConfig
         ? resolveAudioComponentFromRecords(
             audioConfig,
-            bubbleAudioInputs(preview),
+            bubbleAudioInputs(preview, actorPreview),
             componentBaseConfigs,
             "component.bubble.audio",
           )
@@ -231,19 +256,47 @@ export function resolveBubbleComponent(
         "component.bubble.actorLabel.placement",
       ),
       textColorOverride: actorLabelVisible && actorLabelUseActorColor
-        ? actorColorOverride(preview)
+        ? actorPreview.avatar.backgroundColor
         : undefined,
       label: actorLabelConfig
         ? resolveLabelComponentFromRecords(
             actorLabelConfig,
             {
-              sampleText: optionalString(preview, "actorName") || "Actor",
+              sampleText: actorPreview.displayName,
               sampleSubtext: "",
             },
             componentBaseConfigs,
             "component.bubble.actorLabel",
           )
         : undefined,
+    },
+    avatarSlot: {
+      showAvatar: avatarVisible,
+      placement: requiredPlacement(
+        avatarSlot,
+        "placement",
+        "component.bubble.avatar.placement",
+      ),
+      avatar: avatarConfig
+        ? resolveAvatarComponentFromRecords(
+            avatarConfig,
+            {
+              ...preview,
+              actor: actorPreview,
+            },
+            componentBaseConfigs,
+            "component.bubble.avatar",
+          )
+        : undefined,
+    },
+    status: {
+      text: optionalString(preview, "statusText"),
+      state: bubbleStatusState(optionalString(preview, "statusState") || "none"),
+      icons: {
+        sent: statusIcon(status, "sent", "component.bubble.status.sent"),
+        delivered: statusIcon(status, "delivered", "component.bubble.status.delivered"),
+        read: statusIcon(status, "read", "component.bubble.status.read"),
+      },
     },
     colors: {
       incoming: {
@@ -262,16 +315,46 @@ export function resolveBubbleComponent(
   };
 }
 
-function actorColorOverride(preview: Record<string, unknown>) {
+function resolveBubbleActorPreview(preview: Record<string, unknown>) {
   const actor = asRecord(
-    preview.actor ?? defaultActorPreview(optionalString(preview, "actorName") || "Actor"),
+    preview.actor ?? defaultActorPreview(optionalString(preview, "actorName") || "Alex Q"),
   );
   const avatar = asRecord(actor.avatar);
-  return requiredString(
-    avatar,
-    "backgroundColor",
-    "component.bubble.actorLabel.actorColor",
-  );
+  return {
+    id: requiredString(actor, "id", "component.bubble.actor.id"),
+    displayName: requiredString(actor, "displayName", "component.bubble.actor.displayName"),
+    shortName: optionalString(actor, "shortName"),
+    initials: requiredString(actor, "initials", "component.bubble.actor.initials"),
+    avatar: {
+      imageUri: optionalString(avatar, "imageUri"),
+      backgroundColor: requiredString(
+        avatar,
+        "backgroundColor",
+        "component.bubble.actor.avatar.backgroundColor",
+      ),
+      textColor: requiredString(
+        avatar,
+        "textColor",
+        "component.bubble.actor.avatar.textColor",
+      ),
+      scale: optionalNumber(avatar, "scale", 1),
+      offsetX: optionalNumber(avatar, "offsetX", 0),
+      offsetY: optionalNumber(avatar, "offsetY", 0),
+      baseSize: optionalNumber(avatar, "baseSize", 256),
+    },
+  };
+}
+
+function statusIcon(
+  status: Record<string, unknown>,
+  state: Exclude<BubbleStatusState, "none">,
+  path: string,
+) {
+  const raw = asRecord(status[state]);
+  return {
+    iconToken: optionalString(raw, "iconToken"),
+    colorToken: requiredString(raw, "colorToken", `${path}.colorToken`),
+  };
 }
 
 function optionalSize(value: Record<string, unknown>) {
@@ -304,6 +387,13 @@ function bubbleMediaPosition(value: string): BubbleMediaPosition {
   throw new Error(`Unsupported bubble media position ${value}`);
 }
 
+function bubbleStatusState(value: string): BubbleStatusState {
+  if (value === "none" || value === "sent" || value === "delivered" || value === "read") {
+    return value;
+  }
+  throw new Error(`Unsupported bubble status state ${value}`);
+}
+
 function bubbleMediaInputs(
   preview: Record<string, unknown>,
   mediaType: "image" | "video",
@@ -330,10 +420,13 @@ function bubbleMediaInputs(
   };
 }
 
-function bubbleAudioInputs(preview: Record<string, unknown>) {
+function bubbleAudioInputs(
+  preview: Record<string, unknown>,
+  actorPreview: ReturnType<typeof resolveBubbleActorPreview>,
+) {
   return {
     ...preview,
-    actor: preview.actor ?? defaultActorPreview(optionalString(preview, "actorName") || "Alex Q"),
+    actor: actorPreview,
     isPlaying: optionalBoolean(preview, "isPlaying"),
     durationSeconds: Math.max(1, optionalNumber(preview, "durationSeconds", 65)),
     currentTimeSeconds: optionalNumber(preview, "currentTimeSeconds", 0),
