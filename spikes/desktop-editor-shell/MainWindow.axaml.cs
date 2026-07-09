@@ -135,6 +135,7 @@ public partial class MainWindow : SukiWindow
             _embeddedEditors.OpenSlot,
             _embeddedEditors.OpenNested,
             _embeddedEditors.OpenNestedSlot,
+            OpenComponentPresetReference,
             _nodeCommands.ToggleComponentPresetLock,
             RefreshPreviewDevice);
         _embeddedUsageNavigator = new EditorEmbeddedUsageNavigator(
@@ -365,6 +366,16 @@ public partial class MainWindow : SukiWindow
         _editorViewState.RestoreState(viewState, _editorContent.Cards);
         ApplyUiTextScale();
         return true;
+    }
+
+    private System.Threading.Tasks.Task OpenComponentPresetReference(string presetReference)
+    {
+        if (!SelectNodeById(presetReference))
+        {
+            _messages.Warning("Open component variant", $"Could not find variant '{presetReference}'.");
+        }
+
+        return System.Threading.Tasks.Task.CompletedTask;
     }
 
     private void ApplyUiDensity(bool rebuildCards)

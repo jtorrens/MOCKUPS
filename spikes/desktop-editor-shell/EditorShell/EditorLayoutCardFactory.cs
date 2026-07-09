@@ -22,6 +22,7 @@ internal sealed class EditorLayoutCardFactory
     private readonly Func<ProjectTreeNode, EmbeddedComponentSlotDefinition, Task> _openEmbeddedComponentSlotEditor;
     private readonly Func<EditorEmbeddedContext, string, Task> _openNestedEmbeddedComponentEditor;
     private readonly Func<EditorEmbeddedContext, EmbeddedComponentSlotDefinition, Task> _openNestedEmbeddedComponentSlotEditor;
+    private readonly Func<string, Task> _openComponentPresetReference;
     private readonly Func<ProjectTreeNode, Task> _toggleVariantLock;
     private readonly Action _refreshPreview;
 
@@ -37,6 +38,7 @@ internal sealed class EditorLayoutCardFactory
         Func<ProjectTreeNode, EmbeddedComponentSlotDefinition, Task> openEmbeddedComponentSlotEditor,
         Func<EditorEmbeddedContext, string, Task> openNestedEmbeddedComponentEditor,
         Func<EditorEmbeddedContext, EmbeddedComponentSlotDefinition, Task> openNestedEmbeddedComponentSlotEditor,
+        Func<string, Task> openComponentPresetReference,
         Func<ProjectTreeNode, Task> toggleVariantLock,
         Action refreshPreview)
     {
@@ -51,6 +53,7 @@ internal sealed class EditorLayoutCardFactory
         _openEmbeddedComponentSlotEditor = openEmbeddedComponentSlotEditor;
         _openNestedEmbeddedComponentEditor = openNestedEmbeddedComponentEditor;
         _openNestedEmbeddedComponentSlotEditor = openNestedEmbeddedComponentSlotEditor;
+        _openComponentPresetReference = openComponentPresetReference;
         _toggleVariantLock = toggleVariantLock;
         _refreshPreview = refreshPreview;
     }
@@ -82,6 +85,7 @@ internal sealed class EditorLayoutCardFactory
                 var services = _dictionaryFieldServices.ForNode(
                     node,
                     (fieldId) => _activeFieldControls.ValueOrStored(fieldId, (id) => _fieldValues.CurrentStoredValue(node, id)),
+                    _openComponentPresetReference,
                     (fieldId) => _openEmbeddedComponentEditor(node, fieldId),
                     (definition, input) => _openEmbeddedComponentSlotEditor(node, ComponentInputSlot(definition, input)));
                 var control = new DictionaryFieldControl(
@@ -186,6 +190,7 @@ internal sealed class EditorLayoutCardFactory
                             context.OwnerNode,
                             context.Slots,
                             id).Value),
+                    _openComponentPresetReference,
                     (fieldId) => _openNestedEmbeddedComponentEditor(context, fieldId),
                     (definition, input) => _openNestedEmbeddedComponentSlotEditor(context, ComponentInputSlot(definition, input)));
                 var control = new DictionaryFieldControl(field, services);

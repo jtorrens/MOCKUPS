@@ -14,5 +14,6 @@ internal sealed record DictionaryFieldServices(
     Func<string, string>? GetFieldValue = null,
     Func<IReadOnlyList<FieldOption>>? GetPaletteColorOptions = null,
     Func<string, IReadOnlyList<FieldOption>>? GetComponentPresetOptions = null,
+    Func<string, Task>? OpenComponentPresetReference = null,
     Func<string, Task>? OpenEmbeddedComponent = null,
     Func<FieldDefinition, ComponentInputBindingDefinition, Task>? OpenComponentInputBinding = null);

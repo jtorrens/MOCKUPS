@@ -16,10 +16,11 @@ internal sealed class DictionaryComponentPresetControl : Grid, IDictionaryValueC
         FieldDefinition definition,
         string value,
         bool isHighlighted,
+        Func<string, Task>? openComponentPresetReference,
         Func<string, Task>? openEmbeddedComponent)
     {
         _definition = definition;
-        ColumnDefinitions = new ColumnDefinitions("*,Auto");
+        ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto");
         ColumnSpacing = 8;
 
         _comboBox = DictionaryOptionSelector.CreateComboBox(definition, value);
@@ -34,6 +35,39 @@ internal sealed class DictionaryComponentPresetControl : Grid, IDictionaryValueC
         };
         SetColumn(_comboBox, 0);
         Children.Add(_comboBox);
+
+        if (openComponentPresetReference is not null)
+        {
+            var openIcon = EditorIcons.Create(EditorIcons.Edit, 15);
+            var openButton = new Button
+            {
+                Content = openIcon,
+                Width = 32,
+                Height = 32,
+                Padding = new Avalonia.Thickness(0),
+                Background = Brushes.Transparent,
+                BorderBrush = Brushes.Transparent,
+                Foreground = Brushes.White,
+                HorizontalContentAlignment = HorizontalAlignment.Center,
+                VerticalContentAlignment = VerticalAlignment.Center,
+                IsEnabled = !string.IsNullOrWhiteSpace(DictionaryOptionSelector.Value(_comboBox)),
+            };
+            ToolTip.SetTip(openButton, "Open selected component variant");
+            openButton.Click += async (_, _) =>
+            {
+                var selectedReference = DictionaryOptionSelector.Value(_comboBox);
+                if (!string.IsNullOrWhiteSpace(selectedReference))
+                {
+                    await openComponentPresetReference(selectedReference);
+                }
+            };
+            _comboBox.SelectionChanged += (_, _) =>
+            {
+                openButton.IsEnabled = !string.IsNullOrWhiteSpace(DictionaryOptionSelector.Value(_comboBox));
+            };
+            SetColumn(openButton, 1);
+            Children.Add(openButton);
+        }
 
         if (openEmbeddedComponent is null)
         {
@@ -57,7 +91,7 @@ internal sealed class DictionaryComponentPresetControl : Grid, IDictionaryValueC
         {
             await openEmbeddedComponent(_definition.Id);
         };
-        SetColumn(button, 1);
+        SetColumn(button, 2);
         Children.Add(button);
     }
 
