@@ -15,6 +15,7 @@ internal sealed class EditorNodeCommandController
     private readonly Func<IReadOnlyList<ProjectTreeNode>> _treeRoots;
     private readonly Action _loadProjectTree;
     private readonly Action<ProjectTreeNode> _reloadAndSelect;
+    private readonly Action<ProjectTreeNode, EditorViewState?> _reloadAndSelectWithViewState;
     private readonly IEditorShellMessageSink _messages;
 
     public EditorNodeCommandController(
@@ -24,6 +25,7 @@ internal sealed class EditorNodeCommandController
         Func<IReadOnlyList<ProjectTreeNode>> treeRoots,
         Action loadProjectTree,
         Action<ProjectTreeNode> reloadAndSelect,
+        Action<ProjectTreeNode, EditorViewState?> reloadAndSelectWithViewState,
         IEditorShellMessageSink messages)
     {
         _owner = owner;
@@ -32,6 +34,7 @@ internal sealed class EditorNodeCommandController
         _treeRoots = treeRoots;
         _loadProjectTree = loadProjectTree;
         _reloadAndSelect = reloadAndSelect;
+        _reloadAndSelectWithViewState = reloadAndSelectWithViewState;
         _messages = messages;
     }
 
@@ -54,6 +57,40 @@ internal sealed class EditorNodeCommandController
         catch (Exception exception)
         {
             _messages.Error($"Save variant {node.Name}", exception);
+        }
+    }
+
+    public async Task RestoreComponentPresetSnapshot(ProjectTreeNode node, EditorVariantHistorySnapshot snapshot)
+    {
+        if (node.Kind != ProjectTreeNodeKind.ComponentPreset)
+        {
+            return;
+        }
+
+        if (node.IsLocked)
+        {
+            _messages.Warning("Restore variant", $"{node.Name} is locked.");
+            return;
+        }
+
+        var confirmed = await Dialogs().ConfirmAction(
+            "Restore variant",
+            $"Restore {node.Name}?",
+            $"This replaces the current variant values with the version saved at {snapshot.Label}.",
+            "Restore");
+        if (!confirmed)
+        {
+            return;
+        }
+
+        try
+        {
+            _database.ReplaceComponentPresetConfig(node, snapshot.ConfigJson);
+            _reloadAndSelectWithViewState(node, snapshot.ViewState);
+        }
+        catch (Exception exception)
+        {
+            _messages.Error($"Restore variant {node.Name}", exception);
         }
     }
 

@@ -506,7 +506,8 @@ internal sealed partial class SpikeDatabase
                   "fields": [
                     { "id": "theme.icons.primary", "order": 10, "visible": true },
                     { "id": "theme.icons.secondary", "order": 20, "visible": true },
-                    { "id": "theme.icons.accent", "order": 30, "visible": true }
+                    { "id": "theme.icons.alternate", "order": 30, "visible": true },
+                    { "id": "theme.icons.accent", "order": 40, "visible": true }
                   ]
                 },
                 {

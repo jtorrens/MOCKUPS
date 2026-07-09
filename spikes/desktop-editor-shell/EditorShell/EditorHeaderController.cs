@@ -22,6 +22,8 @@ internal sealed class EditorHeaderController
     private readonly Action<ProjectTreeNode, bool> _showNode;
     private readonly Action<EditorEmbeddedContext> _showEmbeddedContext;
     private readonly Func<ProjectTreeNode, Task> _savePreset;
+    private readonly Func<ProjectTreeNode, IReadOnlyList<EditorVariantHistorySnapshot>> _variantHistory;
+    private readonly Func<ProjectTreeNode, EditorVariantHistorySnapshot, Task> _restoreVariantSnapshot;
 
     public EditorHeaderController(
         Panel breadcrumbPanel,
@@ -33,7 +35,9 @@ internal sealed class EditorHeaderController
         EditorEmbeddedUsageNavigator embeddedUsageNavigator,
         Action<ProjectTreeNode, bool> showNode,
         Action<EditorEmbeddedContext> showEmbeddedContext,
-        Func<ProjectTreeNode, Task> savePreset)
+        Func<ProjectTreeNode, Task> savePreset,
+        Func<ProjectTreeNode, IReadOnlyList<EditorVariantHistorySnapshot>> variantHistory,
+        Func<ProjectTreeNode, EditorVariantHistorySnapshot, Task> restoreVariantSnapshot)
     {
         _breadcrumbPanel = breadcrumbPanel;
         _presetTextBlock = presetTextBlock;
@@ -45,6 +49,8 @@ internal sealed class EditorHeaderController
         _showNode = showNode;
         _showEmbeddedContext = showEmbeddedContext;
         _savePreset = savePreset;
+        _variantHistory = variantHistory;
+        _restoreVariantSnapshot = restoreVariantSnapshot;
     }
 
     public void SetRootTitle(string title)
@@ -150,9 +156,51 @@ internal sealed class EditorHeaderController
             Spacing = 6,
             Children =
             {
+                CreateHistoryComboBox(presetSourceNode),
                 CreateSavePresetButton(presetSourceNode),
             },
         };
+    }
+
+    private Control CreateHistoryComboBox(ProjectTreeNode node)
+    {
+        var snapshots = _variantHistory(node);
+        var placeholder = new FieldOption("", snapshots.Count == 0 ? "No history" : "Restore...");
+        var options = new List<FieldOption> { placeholder };
+        options.AddRange(snapshots.Select((snapshot) => new FieldOption(snapshot.Id, snapshot.Label)));
+
+        var combo = new EditorInstantComboBox
+        {
+            Width = 126,
+            Height = 34,
+            VerticalAlignment = VerticalAlignment.Center,
+            IsEnabled = snapshots.Count > 0 && !node.IsLocked,
+            Opacity = snapshots.Count > 0 && !node.IsLocked ? 1 : 0.42,
+        };
+        combo.ItemsSource = options;
+        combo.SelectedItem = placeholder;
+
+        var suppress = false;
+        combo.SelectionChanged += async (_, _) =>
+        {
+            if (suppress || combo.SelectedItem is not { } selected || string.IsNullOrWhiteSpace(selected.Value))
+            {
+                return;
+            }
+
+            var snapshot = snapshots.FirstOrDefault((item) => item.Id == selected.Value);
+            if (snapshot is null)
+            {
+                return;
+            }
+
+            await _restoreVariantSnapshot(node, snapshot);
+            suppress = true;
+            combo.SelectedItem = placeholder;
+            suppress = false;
+        };
+        ToolTip.SetTip(combo, node.IsLocked ? "Variant is locked" : "Restore a previous in-session version");
+        return combo;
     }
 
     private Button CreateSavePresetButton(ProjectTreeNode node)

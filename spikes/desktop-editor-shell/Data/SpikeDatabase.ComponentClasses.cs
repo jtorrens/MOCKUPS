@@ -305,6 +305,38 @@ internal sealed partial class SpikeDatabase
         }
     }
 
+    public void ReplaceComponentPresetConfig(ProjectTreeNode node, string configJson)
+    {
+        if (!TryParseComponentPresetNodeId(node.Id, out var componentClassId, out var presetId))
+        {
+            throw new InvalidOperationException($"Invalid component variant node id '{node.Id}'.");
+        }
+
+        var nextConfig = JsonNode.Parse(configJson) as JsonObject
+            ?? throw new InvalidOperationException("Variant snapshot is not a valid object.");
+
+        lock (WriteGate)
+        {
+            using var connection = OpenConnection();
+            var settings = GetComponentClassSettings(connection, componentClassId);
+            var metadata = ParseJsonObject(string.IsNullOrWhiteSpace(settings.MetadataJson) ? "{}" : settings.MetadataJson);
+            var presets = EnsurePresetArray(metadata);
+            var preset = FindPreset(presets, presetId)
+                ?? throw new InvalidOperationException($"Missing component variant '{presetId}'.");
+            if (ComponentPresetIsLocked(preset))
+            {
+                throw new InvalidOperationException($"Component variant '{presetId}' is locked.");
+            }
+
+            preset["config"] = nextConfig;
+            Execute(
+                connection,
+                "UPDATE component_classes SET metadata_json = $metadataJson WHERE id = $id",
+                ("$id", componentClassId),
+                ("$metadataJson", metadata.ToJsonString()));
+        }
+    }
+
     public IReadOnlyList<ComponentPresetReferenceUsage> GetComponentPresetReferenceUsageDetails(ProjectTreeNode node)
     {
         using var connection = OpenConnection();
@@ -2770,6 +2802,11 @@ internal sealed partial class SpikeDatabase
         var changed = false;
         changed |= NormalizeComponentSlot(media, "surfaceSlot", DefaultComponentPresetId);
         changed |= MigrateMediaIconBarSlots(media);
+        if (media["iconColorTokenOverride"] is null)
+        {
+            media["iconColorTokenOverride"] = "theme.icons.alternate";
+            changed = true;
+        }
         foreach (var key in MediaIconBarSlotKeys)
         {
             changed |= NormalizeComponentSlot(media, key, DefaultComponentPresetId);

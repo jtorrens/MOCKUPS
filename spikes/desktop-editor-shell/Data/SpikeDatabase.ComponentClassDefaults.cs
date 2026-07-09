@@ -327,6 +327,8 @@ internal sealed partial class SpikeDatabase
                 {
                     ["surfaceSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
                     ["controlBarHeight"] = 56,
+                    ["iconBarPadding"] = "theme.spacing.xl|theme.spacing.xl",
+                    ["iconColorTokenOverride"] = "theme.icons.alternate",
                     ["inlineTopIconBarSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
                     ["inlineCenterIconBarSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
                     ["inlineBottomIconBarSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),

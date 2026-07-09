@@ -196,6 +196,7 @@ internal static class RecordClassFieldCatalog
         ["theme.colors.accent"] = new("theme.colors.accent", "Accent", ValueKind.PaletteColorPair),
         ["theme.icons.primary"] = new("theme.icons.primary", "Icon primary", ValueKind.PaletteColorPair),
         ["theme.icons.secondary"] = new("theme.icons.secondary", "Icon secondary", ValueKind.PaletteColorPair),
+        ["theme.icons.alternate"] = new("theme.icons.alternate", "Icon alternate", ValueKind.PaletteColorPair),
         ["theme.icons.accent"] = new("theme.icons.accent", "Icon accent", ValueKind.PaletteColorPair),
         ["theme.borders.primary"] = new("theme.borders.primary", "Border primary", ValueKind.PaletteColorPair),
         ["theme.borders.secondary"] = new("theme.borders.secondary", "Border secondary", ValueKind.PaletteColorPair),

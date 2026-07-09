@@ -32,6 +32,7 @@ public partial class MainWindow : SukiWindow
     private readonly EditorEmbeddedEditorController _embeddedEditors;
     private readonly EditorEmbeddedUsageNavigator _embeddedUsageNavigator;
     private readonly EditorHeaderController _editorHeader;
+    private readonly EditorVariantHistoryService _variantHistory;
     private readonly EditorTreeExpansionState _treeExpansion = new();
     private readonly EditorNodeSelectionState _nodeSelection = new();
     private readonly EditorFieldCommitCoordinator _fieldCommitCoordinator = new();
@@ -48,12 +49,14 @@ public partial class MainWindow : SukiWindow
     {
         _database = new SpikeDatabase(databasePath);
         InitializeComponent();
+        _variantHistory = new EditorVariantHistoryService(_database);
         _coreFieldValues = new CoreFieldValueService(_database);
         _recordClassFieldValues = new RecordClassFieldValueService(_database);
         _componentClassFieldValues = new ComponentClassFieldValueService(_database);
         _themeController = new EditorThemeController(this, RootShell, RefreshShellTheme);
         _actorAvatarPreviews = new ActorAvatarPreviewController(_database, () => _themeController.IsDark);
         _messages = new EditorShellMessageSink(ShellMessagesTextBox);
+        _editorViewState = new EditorViewStateController(EditorScrollViewer);
         _previewController = new EditorPreviewController(
             _database,
             PreviewDeviceComboBox,
@@ -67,9 +70,13 @@ public partial class MainWindow : SukiWindow
             RuntimePreviewHost,
             DesignPreviewHost,
             PreviewContextTextBlock,
+            PreviewContextHistoryButton,
+            PreviewContextAddHistoryButton,
             PreviewContextLockButton,
             () => _themeController.IsDark,
             () => _selectedNode,
+            () => _editorViewState.CaptureState(_editorContent!.Cards),
+            SelectNodeById,
             this);
         _nodeCommands = new EditorNodeCommandController(
             this,
@@ -77,6 +84,7 @@ public partial class MainWindow : SukiWindow
             () => _themeController.IsDark,
             () => _treeRoots,
             LoadProjectTree,
+            ReloadAndSelect,
             ReloadAndSelect,
             _messages);
         _shellState = new EditorShellStateService(this, ShellColumns);
@@ -108,7 +116,6 @@ public partial class MainWindow : SukiWindow
             _pathBrowser.BrowseSvgFile,
             ReloadAndSelect);
         _dictionaryFieldServices = new EditorDictionaryFieldServices(_database, _pathBrowser, _domainDialogs);
-        _editorViewState = new EditorViewStateController(EditorScrollViewer);
         _embeddedEditors = new EditorEmbeddedEditorController(ShowEmbeddedContext, _messages);
         _fieldValues = new EditorFieldValueRouter(
             _coreFieldValues,
@@ -149,7 +156,9 @@ public partial class MainWindow : SukiWindow
             _embeddedUsageNavigator,
             ShowNode,
             ShowEmbeddedContext,
-            _nodeCommands.SaveCurrentComponentPreset);
+            _nodeCommands.SaveCurrentComponentPreset,
+            _variantHistory.Snapshots,
+            _nodeCommands.RestoreComponentPresetSnapshot);
         _collectionCards = new EditorCollectionCardFactory(
             _database,
             () => _themeController.IsDark,
@@ -169,9 +178,12 @@ public partial class MainWindow : SukiWindow
             _collectionCards);
         ShellSettingsButton.Content = EditorIcons.Create(EditorIcons.Settings, 18);
         _shellState.Restore();
+        _variantHistory.RestoreState(_shellState.SessionHistory.VariantHistory);
+        _previewController.RestoreDesignHistoryState(_shellState.SessionHistory.DesignPreviewHistory);
+        _nodeSelection.RestoreComponentPresetSelections(_shellState.SessionHistory.LastComponentVariantSelections);
         _themeController.SetState(_shellState.IsDark, _shellState.SukiColor);
         EditorUiDensity.Configure(_shellState.UiTextScale, _shellState.UiCardPaddingScale);
-        Closing += (_, _) => _shellState.Save();
+        Closing += (_, _) => _shellState.Save(CreateSessionHistoryState());
         _themeController.Apply();
         LoadProjectTree();
         InitializePreviewOptions();
@@ -269,12 +281,21 @@ public partial class MainWindow : SukiWindow
     {
         node = _nodeSelection.ResolveSelectionNode(node);
         var previousNode = _selectedNode;
+        var previousViewState = _editorViewState.CaptureState(_editorContent.Cards);
         var keepEditorViewState = _editorViewState.ShouldPreserve(previousNode, node);
         if (keepEditorViewState)
         {
             _editorViewState.Capture(previousNode, _editorContent.Cards);
         }
 
+        try
+        {
+            _variantHistory.TrackTransition(previousNode, node, previousViewState);
+        }
+        catch (Exception exception)
+        {
+            _messages.Warning("Variant history", exception.Message);
+        }
         _selectedNode = node;
         _nodeSelection.RememberComponentPresetSelection(node);
         _treeExpansion.ExpandAncestors(node);
@@ -314,13 +335,22 @@ public partial class MainWindow : SukiWindow
 
     private void ReloadAndSelect(ProjectTreeNode node)
     {
-        _selectedNode = node;
+        ReloadAndSelect(node, null);
+    }
+
+    private void ReloadAndSelect(ProjectTreeNode node, EditorViewState? viewState)
+    {
         LoadProjectTree();
         RefreshPreviewOptions();
-        SelectNodeById(node.Id);
+        SelectNodeById(node.Id, viewState);
     }
 
     private bool SelectNodeById(string nodeId)
+    {
+        return SelectNodeById(nodeId, null);
+    }
+
+    private bool SelectNodeById(string nodeId, EditorViewState? viewState)
     {
         var node = EditorNodeSelectionState.FindNodeById(_treeRoots, nodeId);
         if (node is null)
@@ -332,6 +362,8 @@ public partial class MainWindow : SukiWindow
         selectableNode = _nodeSelection.ResolveSelectionNode(selectableNode);
         _treeExpansion.ExpandAncestors(selectableNode);
         ShowNode(selectableNode, rebuildTree: true);
+        _editorViewState.RestoreState(viewState, _editorContent.Cards);
+        ApplyUiTextScale();
         return true;
     }
 
@@ -350,6 +382,19 @@ public partial class MainWindow : SukiWindow
     private void ApplyUiTextScale()
     {
         EditorUiTextScale.Apply(this, _shellState.UiTextScale, RuntimePreviewHost, DesignPreviewHost);
+    }
+
+    private EditorSessionHistoryState CreateSessionHistoryState()
+    {
+        return new EditorSessionHistoryState
+        {
+            VariantHistory = _variantHistory.ExportState(),
+            DesignPreviewHistory = _previewController.ExportDesignHistoryState().ToList(),
+            LastComponentVariantSelections = _nodeSelection.ExportComponentPresetSelections().ToDictionary(
+                (entry) => entry.Key,
+                (entry) => entry.Value,
+                StringComparer.Ordinal),
+        };
     }
 
 }

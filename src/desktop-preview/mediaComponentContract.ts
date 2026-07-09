@@ -21,6 +21,11 @@ export interface MediaViewportContract {
   offsetY: number;
 }
 
+export interface MediaIconBarPaddingContract {
+  xToken: string;
+  yToken: string;
+}
+
 export type MediaTextOverlayMode = "free" | "countUp" | "countDown";
 
 export interface MediaTextOverlayContract {
@@ -47,6 +52,7 @@ export interface MediaDesignContract {
   fullframeOrientation: MediaFullframeOrientation;
   viewport: MediaViewportContract;
   surface: SurfaceDesignContract;
+  iconBarPadding: MediaIconBarPaddingContract;
   topIconBar: IconBarDesignContract;
   centerIconBar: IconBarDesignContract;
   bottomIconBar: IconBarDesignContract;

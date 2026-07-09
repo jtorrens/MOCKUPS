@@ -39,6 +39,7 @@ internal static class ThemeColorTokenCatalog
         Token("theme.colors.accent", ["modes", "light", "colors", "accent"], ["modes", "dark", "colors", "accent"]),
         Token("theme.icons.primary", ["modes", "light", "colors", "icons.primary"], ["modes", "dark", "colors", "icons.primary"]),
         Token("theme.icons.secondary", ["modes", "light", "colors", "icons.secondary"], ["modes", "dark", "colors", "icons.secondary"]),
+        Token("theme.icons.alternate", ["modes", "light", "colors", "icons.alternate"], ["modes", "dark", "colors", "icons.alternate"]),
         Token("theme.icons.accent", ["modes", "light", "colors", "icons.accent"], ["modes", "dark", "colors", "icons.accent"]),
         Token("theme.borders.primary", ["modes", "light", "colors", "borders.primary"], ["modes", "dark", "colors", "borders.primary"]),
         Token("theme.borders.secondary", ["modes", "light", "colors", "borders.secondary"], ["modes", "dark", "colors", "borders.secondary"]),

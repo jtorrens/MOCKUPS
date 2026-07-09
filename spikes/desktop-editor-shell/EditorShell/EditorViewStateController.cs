@@ -24,14 +24,38 @@ internal sealed class EditorViewStateController
     {
         if (node is null || cards.Count == 0) return;
 
-        _statesByRecordClassId[node.RecordClassId] = new EditorViewState(
-            cards.Select((card) => card.IsExpanded).ToArray(),
-            _scrollViewer.Offset);
+        var state = CaptureState(cards);
+        if (state is not null)
+        {
+            _statesByRecordClassId[node.RecordClassId] = state;
+        }
     }
 
     public void Restore(ProjectTreeNode node, IReadOnlyList<InstantEditorCard> cards)
     {
         if (!_statesByRecordClassId.TryGetValue(node.RecordClassId, out var state))
+        {
+            return;
+        }
+
+        RestoreState(state, cards);
+    }
+
+    public EditorViewState? CaptureState(IReadOnlyList<InstantEditorCard> cards)
+    {
+        if (cards.Count == 0)
+        {
+            return null;
+        }
+
+        return new EditorViewState(
+            cards.Select((card) => card.IsExpanded).ToArray(),
+            _scrollViewer.Offset);
+    }
+
+    public void RestoreState(EditorViewState? state, IReadOnlyList<InstantEditorCard> cards)
+    {
+        if (state is null)
         {
             return;
         }

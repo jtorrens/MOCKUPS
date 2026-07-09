@@ -45,6 +45,7 @@ internal static class ComponentClassFieldCatalog
         new("theme.colors.accent", "colors.accent"),
         new("theme.icons.primary", "icons.primary"),
         new("theme.icons.secondary", "icons.secondary"),
+        new("theme.icons.alternate", "icons.alternate"),
         new("theme.icons.accent", "icons.accent"),
         new("theme.borders.primary", "borders.primary"),
         new("theme.borders.secondary", "borders.secondary"),
@@ -657,6 +658,8 @@ internal static class ComponentClassFieldCatalog
 
         ["component.media.surface.editor"] = new("component.media.surface.editor", "Surface", ValueKind.ComponentPreset, ["media", "surfaceSlot", "presetId"], "default"),
         ["component.media.controlBarHeight"] = new("component.media.controlBarHeight", "Control bar height", ValueKind.Integer, ["media", "controlBarHeight"], "56", Number: new NumberDefinition(1, 512, 1, 0)),
+        ["component.media.iconBarPadding"] = new("component.media.iconBarPadding", "Icon bar padding", ValueKind.ThemeTokenPair, ["media", "iconBarPadding"], "theme.spacing.xl|theme.spacing.xl", PairLabels: new PairFieldLabels("X", "Y"), Options: SpacingTokenOptions),
+        ["component.media.iconColorTokenOverride"] = new("component.media.iconColorTokenOverride", "Icon color override", ValueKind.ThemeToken, ["media", "iconColorTokenOverride"], "theme.icons.alternate", Options: ThemeColorOptions),
         ["component.media.inlineTopIconBar.editor"] = new("component.media.inlineTopIconBar.editor", "Top icon bar", ValueKind.ComponentPreset, ["media", "inlineTopIconBarSlot", "presetId"], "default"),
         ["component.media.inlineCenterIconBar.editor"] = new("component.media.inlineCenterIconBar.editor", "Center icon bar", ValueKind.ComponentPreset, ["media", "inlineCenterIconBarSlot", "presetId"], "default"),
         ["component.media.inlineBottomIconBar.editor"] = new("component.media.inlineBottomIconBar.editor", "Bottom icon bar", ValueKind.ComponentPreset, ["media", "inlineBottomIconBarSlot", "presetId"], "default"),

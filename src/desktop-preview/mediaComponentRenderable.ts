@@ -250,25 +250,29 @@ function mediaControlNodes(
 ): RenderableNode[] {
   const opacity = controlsOpacity(media);
   if (opacity <= 0) return [];
+  const scale = renderScale(payload);
+  const paddingX = Math.max(0, numberToken(payload, media.iconBarPadding.xToken) * scale);
+  const paddingY = Math.max(0, numberToken(payload, media.iconBarPadding.yToken) * scale);
   const topHeight = media.topIconBar.size.height * renderScale(payload);
   const bottomHeight = media.bottomIconBar.size.height * renderScale(payload);
   const controlsBox = mediaBox;
+  const paddedBox = insetBox(mediaBox, paddingX, paddingY);
   const topBox = {
-    x: mediaBox.x,
-    y: mediaBox.y,
-    width: mediaBox.width,
+    x: paddedBox.x,
+    y: paddedBox.y,
+    width: paddedBox.width,
     height: topHeight,
   };
   const centerBox = {
-    x: mediaBox.x,
-    y: mediaBox.y,
-    width: mediaBox.width,
-    height: mediaBox.height,
+    x: paddedBox.x,
+    y: paddedBox.y,
+    width: paddedBox.width,
+    height: paddedBox.height,
   };
   const bottomBox = {
-    x: mediaBox.x,
-    y: mediaBox.y + mediaBox.height - bottomHeight,
-    width: mediaBox.width,
+    x: paddedBox.x,
+    y: paddedBox.y + paddedBox.height - bottomHeight,
+    width: paddedBox.width,
     height: bottomHeight,
   };
   return [
@@ -299,6 +303,19 @@ function iconBarNode(
   box: RenderableBox,
 ) {
   return iconBarComponentToRenderableAt(payload, iconBar, box);
+}
+
+function insetBox(
+  box: RenderableBox,
+  paddingX: number,
+  paddingY: number,
+): RenderableBox {
+  return {
+    x: box.x + paddingX,
+    y: box.y + paddingY,
+    width: Math.max(1, box.width - paddingX * 2),
+    height: Math.max(1, box.height - paddingY * 2),
+  };
 }
 
 function controlsOpacity(media: MediaDesignContract) {

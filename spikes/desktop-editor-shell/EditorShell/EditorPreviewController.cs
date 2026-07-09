@@ -1,5 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
+using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Mockups.DesktopEditorShell.Common;
@@ -45,8 +47,14 @@ internal sealed class EditorPreviewController
     private readonly IEditorShellMessageSink _messages;
     private readonly Func<bool> _isDark;
     private readonly Func<ProjectTreeNode?> _selectedNode;
+    private readonly Func<EditorViewState?> _captureCurrentEditorViewState;
+    private readonly Func<string, EditorViewState?, bool> _selectNodeById;
     private readonly TextBlock _designContextText;
+    private readonly Button _designContextHistoryButton;
+    private readonly Button _designContextAddHistoryButton;
     private readonly Button _designContextLockButton;
+    private readonly Popup _designContextHistoryPopup;
+    private readonly StackPanel _designContextHistoryItems = new() { Spacing = 1 };
     private readonly RuntimeWebPreviewPane _runtimePreviewPane = new();
     private readonly DesignWebPreviewPane _designPreviewPane = new();
     private readonly ComponentInputsPanel _designInputsPanel;
@@ -67,6 +75,7 @@ internal sealed class EditorPreviewController
     private PreviewNodeKey? _lastDesignPreviewNode;
     private PreviewNodeKey? _activeDesignPreviewNode;
     private PreviewNodeKey? _lockedDesignPreviewNode;
+    private readonly List<DesignPreviewHistoryEntry> _designHistory = [];
     private string _selectedMode = "light";
     private string _selectedOrientation = "portrait";
     private string _selectedScale = "fit";
@@ -92,9 +101,13 @@ internal sealed class EditorPreviewController
         ContentControl runtimePreviewHost,
         ContentControl designPreviewHost,
         TextBlock designContextText,
+        Button designContextHistoryButton,
+        Button designContextAddHistoryButton,
         Button designContextLockButton,
         Func<bool> isDark,
         Func<ProjectTreeNode?> selectedNode,
+        Func<EditorViewState?> captureCurrentEditorViewState,
+        Func<string, EditorViewState?, bool> selectNodeById,
         Window owner)
     {
         _database = database;
@@ -105,8 +118,13 @@ internal sealed class EditorPreviewController
         _messages = messages;
         _isDark = isDark;
         _selectedNode = selectedNode;
+        _captureCurrentEditorViewState = captureCurrentEditorViewState;
+        _selectNodeById = selectNodeById;
         _designContextText = designContextText;
+        _designContextHistoryButton = designContextHistoryButton;
+        _designContextAddHistoryButton = designContextAddHistoryButton;
         _designContextLockButton = designContextLockButton;
+        _designContextHistoryPopup = CreateDesignContextHistoryPopup();
         _previewBusyHost = previewBusyHost;
         _previewBusyHost.Content = _previewLoadingScrim;
         _previewBusyHost.IsVisible = false;
@@ -118,8 +136,180 @@ internal sealed class EditorPreviewController
         runtimePreviewHost.Content = _runtimePreviewPane;
         designPreviewHost.Content = _designPreviewPane;
         AttachControlEvents();
+        _designContextText.Cursor = new Cursor(StandardCursorType.Hand);
+        _designContextText.PointerPressed += (_, _) => NavigateToActiveDesignContext();
+        _designContextHistoryButton.Click += (_, _) => ToggleDesignContextHistory();
+        _designContextAddHistoryButton.Click += (_, _) => AddCurrentDesignContextToHistory();
         _designContextLockButton.Click += (_, _) => ToggleDesignPreviewContextLock();
+        AttachDesignContextHistoryPopup();
         UpdateDesignContextChrome(null);
+    }
+
+    private void AddCurrentDesignContextToHistory()
+    {
+        var key = _activeDesignPreviewNode ?? _lockedDesignPreviewNode ?? _lastDesignPreviewNode;
+        if (key is null)
+        {
+            return;
+        }
+
+        var payload = DesignPreviewPayloadFactory.Create(_database, key.ToNode(), _selectedThemeId);
+        if (payload is null)
+        {
+            return;
+        }
+
+        var selected = _selectedNode();
+        var viewState = selected is not null && PreviewNodeKey.From(selected).Equals(key)
+            ? _captureCurrentEditorViewState()
+            : null;
+        AddDesignHistory(key, payload.Name, viewState);
+        RefreshDesignContextHistoryChrome();
+    }
+
+    private Popup CreateDesignContextHistoryPopup()
+    {
+        return new Popup
+        {
+            PlacementTarget = _designContextHistoryButton,
+            Placement = PlacementMode.Bottom,
+            IsLightDismissEnabled = true,
+            Child = new Border
+            {
+                MinWidth = 220,
+                MaxWidth = 320,
+                Padding = new Thickness(5),
+                CornerRadius = new CornerRadius(8),
+                Background = new SolidColorBrush(Color.Parse(_isDark() ? "#24262B" : "#F7F7F8")),
+                BorderBrush = new SolidColorBrush(Color.Parse(_isDark() ? "#46505E" : "#CDD3DC")),
+                BorderThickness = new Thickness(1),
+                Child = _designContextHistoryItems,
+            },
+        };
+    }
+
+    private void AttachDesignContextHistoryPopup()
+    {
+        if (_designContextHistoryButton.Parent is Panel parent
+            && !parent.Children.Contains(_designContextHistoryPopup))
+        {
+            parent.Children.Add(_designContextHistoryPopup);
+        }
+    }
+
+    private void ToggleDesignContextHistory()
+    {
+        if (_designHistory.Count == 0)
+        {
+            return;
+        }
+
+        RenderDesignContextHistoryItems();
+        _designContextHistoryPopup.IsOpen = !_designContextHistoryPopup.IsOpen;
+    }
+
+    private void RenderDesignContextHistoryItems()
+    {
+        _designContextHistoryItems.Children.Clear();
+        foreach (var entry in _designHistory)
+        {
+            var button = new Button
+            {
+                Content = new TextBlock
+                {
+                    Text = entry.Name,
+                    TextTrimming = TextTrimming.CharacterEllipsis,
+                },
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
+                HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Left,
+                MinHeight = 30,
+                Padding = new Thickness(8, 5),
+                Background = Brushes.Transparent,
+                BorderBrush = Brushes.Transparent,
+                Cursor = new Cursor(StandardCursorType.Hand),
+            };
+            button.Click += (_, _) =>
+            {
+                _designContextHistoryPopup.IsOpen = false;
+                MoveDesignHistoryToFront(entry.Key.Id);
+                _selectNodeById(entry.Key.Id, entry.ViewState);
+                RefreshDesignContextHistoryChrome();
+            };
+            _designContextHistoryItems.Children.Add(button);
+        }
+    }
+
+    private void MoveDesignHistoryToFront(string nodeId)
+    {
+        var index = _designHistory.FindIndex((entry) => entry.Key.Id.Equals(nodeId, StringComparison.Ordinal));
+        if (index <= 0)
+        {
+            return;
+        }
+
+        var entry = _designHistory[index];
+        _designHistory.RemoveAt(index);
+        _designHistory.Insert(0, entry);
+    }
+
+    private void AddDesignHistory(PreviewNodeKey key, string name, EditorViewState? viewState)
+    {
+        _designHistory.RemoveAll((entry) => entry.Key.Id.Equals(key.Id, StringComparison.Ordinal));
+        _designHistory.Insert(0, new DesignPreviewHistoryEntry(key, name, viewState));
+        if (_designHistory.Count > 10)
+        {
+            _designHistory.RemoveRange(10, _designHistory.Count - 10);
+        }
+    }
+
+    public IReadOnlyList<EditorDesignPreviewHistoryEntryState> ExportDesignHistoryState()
+    {
+        return _designHistory.Select((entry) => new EditorDesignPreviewHistoryEntryState
+        {
+            Kind = entry.Key.Kind,
+            Id = entry.Key.Id,
+            Name = entry.Name,
+            ViewState = entry.ViewState is null ? null : EditorViewStateSnapshot.From(entry.ViewState),
+        }).ToList();
+    }
+
+    public void RestoreDesignHistoryState(IReadOnlyList<EditorDesignPreviewHistoryEntryState>? entries)
+    {
+        _designHistory.Clear();
+        if (entries is null)
+        {
+            RefreshDesignContextHistoryChrome();
+            return;
+        }
+
+        foreach (var entry in entries
+                     .Where((entry) => !string.IsNullOrWhiteSpace(entry.Id))
+                     .Take(10))
+        {
+            var key = new PreviewNodeKey(entry.Kind, entry.Id);
+            _designHistory.Add(new DesignPreviewHistoryEntry(
+                key,
+                string.IsNullOrWhiteSpace(entry.Name) ? entry.Id : entry.Name,
+                entry.ViewState?.ToViewState()));
+        }
+        RefreshDesignContextHistoryChrome();
+    }
+
+    private void RefreshDesignContextHistoryChrome()
+    {
+        _designContextHistoryButton.IsEnabled = _designHistory.Count > 0;
+        _designContextHistoryButton.Opacity = _designHistory.Count > 0 ? 1 : 0.38;
+        var canAddCurrentContext = _activeDesignPreviewNode is not null
+            || _lockedDesignPreviewNode is not null
+            || _lastDesignPreviewNode is not null;
+        _designContextAddHistoryButton.IsEnabled = canAddCurrentContext;
+        _designContextAddHistoryButton.Opacity = canAddCurrentContext ? 1 : 0.38;
+        ToolTip.SetTip(
+            _designContextHistoryButton,
+            _designHistory.Count > 0 ? "Recent design contexts" : "No recent design contexts");
+        ToolTip.SetTip(
+            _designContextAddHistoryButton,
+            canAddCurrentContext ? "Add current design context to history" : "No design context to add");
     }
 
     private void WrapPreviewSetup(ContentControl previewSetupHost)
@@ -845,6 +1035,14 @@ internal sealed class EditorPreviewController
     {
         _designContextText.Text = payload?.Name ?? "";
         _designContextText.IsVisible = !string.IsNullOrWhiteSpace(_designContextText.Text);
+        _designContextText.Foreground = EditorNavigationVisuals.VariantLockBrush(true);
+        _designContextText.Opacity = 1;
+        RefreshDesignContextHistoryChrome();
+        ToolTip.SetTip(
+            _designContextText,
+            _activeDesignPreviewNode is not null
+                ? "Open this component variant in the editor"
+                : null);
 
         _designContextLockButton.IsEnabled = _activeDesignPreviewNode is not null
             || _lastDesignPreviewNode is not null
@@ -870,6 +1068,17 @@ internal sealed class EditorPreviewController
             _isDesignPreviewContextLocked
                 ? "Release design context"
                 : "Keep current design context");
+    }
+
+    private void NavigateToActiveDesignContext()
+    {
+        var node = _activeDesignPreviewNode ?? _lockedDesignPreviewNode ?? _lastDesignPreviewNode;
+        if (node is null)
+        {
+            return;
+        }
+
+        _selectNodeById(node.Id, null);
     }
 
     private void EnsureSelectedOptionsExist()
@@ -920,4 +1129,9 @@ internal sealed class EditorPreviewController
             return new ProjectTreeNode(Kind, Id, "", "", "");
         }
     }
+
+    private sealed record DesignPreviewHistoryEntry(
+        PreviewNodeKey Key,
+        string Name,
+        EditorViewState? ViewState);
 }

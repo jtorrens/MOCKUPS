@@ -442,8 +442,10 @@ internal sealed partial class SpikeDatabase
                 ] },
                 { "id": "mediaControls", "label": "Controls", "order": 20, "visible": true, "fields": [
                   { "id": "component.media.controlBarHeight", "order": 10, "visible": true },
-                  { "id": "component.media.controlsFadeDelayMs", "order": 20, "visible": true },
-                  { "id": "component.media.controlsFadeDurationMs", "order": 30, "visible": true }
+                  { "id": "component.media.iconBarPadding", "order": 20, "visible": true },
+                  { "id": "component.media.iconColorTokenOverride", "order": 30, "visible": true },
+                  { "id": "component.media.controlsFadeDelayMs", "order": 40, "visible": true },
+                  { "id": "component.media.controlsFadeDurationMs", "order": 50, "visible": true }
                 ] }
               ]
             },

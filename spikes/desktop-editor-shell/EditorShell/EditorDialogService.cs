@@ -63,6 +63,24 @@ internal sealed class EditorDialogService
             height: 220);
     }
 
+    public Task<bool> ConfirmAction(
+        string title,
+        string headline,
+        string body,
+        string actionLabel,
+        double width = 420,
+        double height = 220)
+    {
+        return Confirm(
+            title,
+            headline,
+            body,
+            actionLabel,
+            isDestructive: false,
+            width,
+            height);
+    }
+
     public Task<bool> ConfirmDelete(ProjectTreeNode node)
     {
         var message = node.Kind == ProjectTreeNodeKind.Episode
@@ -75,6 +93,8 @@ internal sealed class EditorDialogService
             $"Delete {node.Kind}",
             $"Delete {node.Name}?",
             message,
+            "Delete",
+            isDestructive: true,
             width: 420,
             height: 220);
     }
@@ -171,6 +191,8 @@ internal sealed class EditorDialogService
         string title,
         string headline,
         string? body = null,
+        string actionLabel = "Delete",
+        bool isDestructive = true,
         double width = 420,
         double height = 220)
     {
@@ -218,18 +240,24 @@ internal sealed class EditorDialogService
         };
         cancelButton.Click += (_, _) => dialog.Close(false);
 
-        var deleteButton = new Button
+        var confirmButton = new Button
         {
-            Content = "Delete",
+            Content = actionLabel,
             MinWidth = 92,
-            Background = new SolidColorBrush(Color.Parse(_isDark ? "#5a3435" : "#fff1f3")),
-            BorderBrush = new SolidColorBrush(Color.Parse(_isDark ? "#78565a" : "#ffd0d5")),
-            Foreground = new SolidColorBrush(Color.Parse(_isDark ? "#e8a1a8" : "#b4232e")),
+            Background = new SolidColorBrush(Color.Parse(isDestructive
+                ? (_isDark ? "#5a3435" : "#fff1f3")
+                : (_isDark ? "#283247" : "#eef3ff"))),
+            BorderBrush = new SolidColorBrush(Color.Parse(isDestructive
+                ? (_isDark ? "#78565a" : "#ffd0d5")
+                : (_isDark ? "#445675" : "#c9d8ff"))),
+            Foreground = new SolidColorBrush(Color.Parse(isDestructive
+                ? (_isDark ? "#e8a1a8" : "#b4232e")
+                : (_isDark ? "#d7e2ff" : "#23477f"))),
         };
-        deleteButton.Click += (_, _) => dialog.Close(true);
+        confirmButton.Click += (_, _) => dialog.Close(true);
 
         actions.Children.Add(cancelButton);
-        actions.Children.Add(deleteButton);
+        actions.Children.Add(confirmButton);
 
         Grid.SetRow(content, 0);
         Grid.SetRow(actions, 1);

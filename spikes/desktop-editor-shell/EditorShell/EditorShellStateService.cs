@@ -22,6 +22,7 @@ internal sealed class EditorShellStateService
     public string SukiColor { get; private set; } = "Blue";
     public double UiTextScale { get; private set; } = 1;
     public double UiCardPaddingScale { get; private set; } = 1;
+    public EditorSessionHistoryState SessionHistory { get; private set; } = new();
 
     public void Restore()
     {
@@ -59,6 +60,7 @@ internal sealed class EditorShellStateService
             SukiColor = string.IsNullOrWhiteSpace(state.SukiColor) ? "Blue" : state.SukiColor;
             UiTextScale = ClampScale(state.UiTextScale, 1, 0.5, 1.75);
             UiCardPaddingScale = ClampScale(state.UiCardPaddingScale, 1, 0.1, 1.5);
+            SessionHistory = state.SessionHistory ?? new EditorSessionHistoryState();
         }
         catch
         {
@@ -82,7 +84,7 @@ internal sealed class EditorShellStateService
         UiCardPaddingScale = ClampScale(value, 1, 0.1, 1.5);
     }
 
-    public void Save()
+    public void Save(EditorSessionHistoryState? sessionHistory = null)
     {
         try
         {
@@ -102,6 +104,7 @@ internal sealed class EditorShellStateService
                 SukiColor = SukiColor,
                 UiTextScale = UiTextScale,
                 UiCardPaddingScale = UiCardPaddingScale,
+                SessionHistory = sessionHistory ?? SessionHistory,
             };
 
             File.WriteAllText(path, JsonSerializer.Serialize(state, new JsonSerializerOptions
@@ -144,5 +147,6 @@ internal sealed class EditorShellStateService
         public string? SukiColor { get; init; }
         public double? UiTextScale { get; init; }
         public double? UiCardPaddingScale { get; init; }
+        public EditorSessionHistoryState? SessionHistory { get; init; }
     }
 }

@@ -22,6 +22,7 @@ import {
   requiredNumberPair,
   requiredPlacement,
   requiredString,
+  requiredStringPair,
   requiredTypographyStyle,
 } from "./componentResolverCommon.js";
 import { resolveIconBarComponentFromRecords } from "./iconBarComponentResolver.js";
@@ -71,13 +72,20 @@ export function resolveMediaComponent(
     1,
     requiredNumber(media, "controlBarHeight", "component.media.controlBarHeight"),
   );
+  const iconBarPadding = requiredStringPair(
+    media,
+    "iconBarPadding",
+    "component.media.iconBarPadding",
+  );
   const iconBarState = playbackState === "playing" ? "active" : "idle";
+  const iconColorTokenOverride = optionalString(media, "iconColorTokenOverride") || undefined;
   const topIconBar = resolveMediaIconBar(
     media,
     displayState === "fullframe" ? "fullScreenTopIconBarSlot" : "inlineTopIconBarSlot",
     {
       state: iconBarState,
       size: `${viewportSize.first}|${controlBarHeight}`,
+      iconColorTokenOverride,
     },
     componentBaseConfigs,
     "component.media.topIconBar",
@@ -88,6 +96,7 @@ export function resolveMediaComponent(
     {
       state: iconBarState,
       size: `${viewportSize.first}|${viewportSize.second}`,
+      iconColorTokenOverride,
     },
     componentBaseConfigs,
     "component.media.centerIconBar",
@@ -98,6 +107,7 @@ export function resolveMediaComponent(
     {
       state: iconBarState,
       size: `${viewportSize.first}|${controlBarHeight}`,
+      iconColorTokenOverride,
     },
     componentBaseConfigs,
     "component.media.bottomIconBar",
@@ -145,6 +155,10 @@ export function resolveMediaComponent(
       },
       "component.media.surface",
     ),
+    iconBarPadding: {
+      xToken: iconBarPadding.first,
+      yToken: iconBarPadding.second,
+    },
     topIconBar,
     centerIconBar,
     bottomIconBar,

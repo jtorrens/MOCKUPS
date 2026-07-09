@@ -132,6 +132,8 @@ Examples:
 
 Adding a new kind means adding its validation and its control in the dictionary layer, not inside a random editor.
 
+Padding and gap fields must use theme spacing tokens. Do not introduce raw numeric padding fields for component/editor values that represent visual spacing. If a spacing value needs X/Y axes, use a spacing-token pair.
+
 ## 4. Controls own their own visual invariants
 
 If a control comes from the dictionary, its visual invariants are owned by that control.

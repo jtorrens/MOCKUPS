@@ -44,6 +44,31 @@ internal sealed class EditorNodeSelectionState
         }
     }
 
+    public IReadOnlyDictionary<string, string> ExportComponentPresetSelections()
+    {
+        return new Dictionary<string, string>(_lastComponentPresetNodeIds, StringComparer.Ordinal);
+    }
+
+    public void RestoreComponentPresetSelections(IReadOnlyDictionary<string, string>? selections)
+    {
+        _lastComponentPresetNodeIds.Clear();
+        if (selections is null)
+        {
+            return;
+        }
+
+        foreach (var (componentClassId, presetNodeId) in selections)
+        {
+            if (string.IsNullOrWhiteSpace(componentClassId)
+                || string.IsNullOrWhiteSpace(presetNodeId))
+            {
+                continue;
+            }
+
+            _lastComponentPresetNodeIds[componentClassId] = presetNodeId;
+        }
+    }
+
     public static ProjectTreeNode EditorNodeForSelection(ProjectTreeNode node)
     {
         return node.Kind == ProjectTreeNodeKind.ComponentPreset && node.Parent is not null

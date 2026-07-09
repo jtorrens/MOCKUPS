@@ -39,6 +39,7 @@ export function resolveIconBarComponentFromRecords(
 ): IconBarDesignContract {
   const iconBar = asRecord(config.iconBar);
   const state = iconBarState(optionalString(inputs, "state") || "idle");
+  const iconColorTokenOverride = optionalString(inputs, "iconColorTokenOverride") || undefined;
   const sizePair = requiredNumberPair(inputs, "size", "component.iconBar.input.size");
   const iconButtonSlot = asRecord(iconBar.iconButtonSlot);
   const iconButtonPresetId = requiredString(
@@ -67,6 +68,7 @@ export function resolveIconBarComponentFromRecords(
         "left",
         iconButtonPresetId,
         iconButtonOverrides,
+        iconColorTokenOverride,
         componentBaseConfigs,
         `${id}.${state}.left`,
       ),
@@ -76,6 +78,7 @@ export function resolveIconBarComponentFromRecords(
         "center",
         iconButtonPresetId,
         iconButtonOverrides,
+        iconColorTokenOverride,
         componentBaseConfigs,
         `${id}.${state}.center`,
       ),
@@ -85,6 +88,7 @@ export function resolveIconBarComponentFromRecords(
         "right",
         iconButtonPresetId,
         iconButtonOverrides,
+        iconColorTokenOverride,
         componentBaseConfigs,
         `${id}.${state}.right`,
       ),
@@ -98,6 +102,7 @@ function resolveIconBarRow(
   zone: IconBarZone,
   iconButtonPresetId: string,
   iconButtonOverrides: Record<string, unknown>,
+  iconColorTokenOverride: string | undefined,
   componentBaseConfigs: Record<string, unknown>,
   id: string,
 ) {
@@ -108,6 +113,7 @@ function resolveIconBarRow(
     ...asRecord(iconBar[inputsKey]),
     buttonIconPresetId: iconButtonPresetId,
     buttonIconOverrides: iconButtonOverrides,
+    iconColorTokenOverride,
   };
   const config = mergeComponentDefaults(
     componentPresetConfig(

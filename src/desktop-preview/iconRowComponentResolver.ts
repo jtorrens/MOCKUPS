@@ -57,10 +57,13 @@ export function resolveIconRowComponentFromRecords(
   const sizeToken = requiredString(inputs, "size", "component.iconRow.input.size");
   const icons = requiredStringArray(inputs, "icons", "component.iconRow.input.icons");
   const highlight = optionalHighlight(inputs);
+  const iconColorTokenOverride = optionalString(inputs, "iconColorTokenOverride") || undefined;
   const buttons = icons.map((iconToken, index) => {
     const highlightOverrides = highlight && highlight.index === index
       ? iconButtonHighlightOverrides(highlight)
-      : {};
+      : iconColorTokenOverride
+        ? { iconColorToken: iconColorTokenOverride }
+        : {};
     return resolveButtonIconComponentFromRecords(
       mergeComponentDefaults(baseButtonIconConfig, {
         buttonIcon: {
