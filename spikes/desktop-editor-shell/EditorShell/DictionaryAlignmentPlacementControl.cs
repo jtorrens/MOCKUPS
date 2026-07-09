@@ -21,6 +21,8 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
     private readonly EditorInstantComboBox _modeCombo;
     private readonly Slider _alignXSlider;
     private readonly Slider _alignYSlider;
+    private readonly Slider _offsetXSlider;
+    private readonly Slider _offsetYSlider;
     private readonly TextBox _alignXBox;
     private readonly TextBox _alignYBox;
     private readonly TextBox _offsetXBox;
@@ -135,30 +137,33 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
         AddSliderRow(alignGrid, 1, "Align Y", _alignYSlider, _alignYBox);
         _content.Children.Add(alignGrid);
 
-        var bottomRow = new Grid
+        var offsetGrid = new Grid
         {
-            ColumnDefinitions = new ColumnDefinitions("160,Auto,90,Auto,90,*"),
-            ColumnSpacing = 8,
+            ColumnDefinitions = new ColumnDefinitions("160,*,78"),
+            RowDefinitions = new RowDefinitions("Auto,Auto"),
+            ColumnSpacing = 10,
+            RowSpacing = 6,
         };
-        bottomRow.Children.Add(Label("Offset"));
-        var offsetXLabel = SmallLabel("X");
-        Grid.SetColumn(offsetXLabel, 1);
-        bottomRow.Children.Add(offsetXLabel);
+        _offsetXSlider = CreateOffsetSlider(_value.OffsetX, definition.IsEditable);
+        _offsetYSlider = CreateOffsetSlider(_value.OffsetY, definition.IsEditable);
         _offsetXBox = DictionaryTextBoxFactory.CreateCompactPair(_value.OffsetX.ToString(CultureInfo.InvariantCulture));
         _offsetXBox.IsReadOnly = !definition.IsEditable;
-        Grid.SetColumn(_offsetXBox, 2);
-        bottomRow.Children.Add(_offsetXBox);
-        var offsetYLabel = SmallLabel("Y");
-        Grid.SetColumn(offsetYLabel, 3);
-        bottomRow.Children.Add(offsetYLabel);
         _offsetYBox = DictionaryTextBoxFactory.CreateCompactPair(_value.OffsetY.ToString(CultureInfo.InvariantCulture));
         _offsetYBox.IsReadOnly = !definition.IsEditable;
-        Grid.SetColumn(_offsetYBox, 4);
-        bottomRow.Children.Add(_offsetYBox);
+        AddSliderRow(offsetGrid, 0, "Offset X", _offsetXSlider, _offsetXBox);
+        AddSliderRow(offsetGrid, 1, "Offset Y", _offsetYSlider, _offsetYBox);
+        _content.Children.Add(offsetGrid);
+
+        var presetRow = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("160,*"),
+            ColumnSpacing = 10,
+        };
+        presetRow.Children.Add(Label("Anchors"));
         var preset = CreatePresetGrid(definition.IsEditable);
-        Grid.SetColumn(preset, 5);
-        bottomRow.Children.Add(preset);
-        _content.Children.Add(bottomRow);
+        Grid.SetColumn(preset, 1);
+        presetRow.Children.Add(preset);
+        _content.Children.Add(presetRow);
 
         Hook();
         ActualThemeVariantChanged += (_, _) => ApplyThemeBrushes();
@@ -194,6 +199,20 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
         };
         HookDecimalBox(_alignXBox, (number) => SetLocal(_value with { AlignX = Clamp01(number) }, commit: true));
         HookDecimalBox(_alignYBox, (number) => SetLocal(_value with { AlignY = Clamp01(number) }, commit: true));
+        _offsetXSlider.PropertyChanged += (_, args) =>
+        {
+            if (args.Property == RangeBase.ValueProperty && !_isUpdating)
+            {
+                SetLocal(_value with { OffsetX = SnapOffset(_offsetXSlider.Value) }, commit: true);
+            }
+        };
+        _offsetYSlider.PropertyChanged += (_, args) =>
+        {
+            if (args.Property == RangeBase.ValueProperty && !_isUpdating)
+            {
+                SetLocal(_value with { OffsetY = SnapOffset(_offsetYSlider.Value) }, commit: true);
+            }
+        };
         HookIntegerBox(_offsetXBox, (number) => SetLocal(_value with { OffsetX = number }, commit: true));
         HookIntegerBox(_offsetYBox, (number) => SetLocal(_value with { OffsetY = number }, commit: true));
     }
@@ -271,6 +290,8 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
         _alignYSlider.Value = _value.AlignY;
         _alignXBox.Text = FormatAlign(_value.AlignX);
         _alignYBox.Text = FormatAlign(_value.AlignY);
+        _offsetXSlider.Value = ClampOffset(_value.OffsetX);
+        _offsetYSlider.Value = ClampOffset(_value.OffsetY);
         _offsetXBox.Text = _value.OffsetX.ToString(CultureInfo.InvariantCulture);
         _offsetYBox.Text = _value.OffsetY.ToString(CultureInfo.InvariantCulture);
         _summary.Text = Summary(_value);
@@ -321,6 +342,21 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
             TickFrequency = 0.05,
             SmallChange = 0.05,
             LargeChange = 0.1,
+            IsEnabled = isEditable,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+    }
+
+    private static Slider CreateOffsetSlider(int value, bool isEditable)
+    {
+        return new Slider
+        {
+            Minimum = -200,
+            Maximum = 200,
+            Value = ClampOffset(value),
+            TickFrequency = 1,
+            SmallChange = 1,
+            LargeChange = 8,
             IsEnabled = isEditable,
             VerticalAlignment = VerticalAlignment.Center,
         };
@@ -429,6 +465,16 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
     private static double Clamp01(double value)
     {
         return Math.Clamp(value, 0, 1);
+    }
+
+    private static int SnapOffset(double value)
+    {
+        return (int)Math.Round(ClampOffset(value));
+    }
+
+    private static double ClampOffset(double value)
+    {
+        return Math.Clamp(value, -200, 200);
     }
 
     private static bool AreSamePreset(double left, double right)

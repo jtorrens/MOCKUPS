@@ -529,7 +529,7 @@ internal sealed partial class SpikeDatabase
             {
               "id": "bubble",
               "label": "Bubble",
-              "subtitle": "Message surface, text and actor label slot",
+              "subtitle": "Message surface and padding",
               "icon": "{{EditorIcons.Bubble}}",
               "order": 20,
               "visible": true,
@@ -538,26 +538,70 @@ internal sealed partial class SpikeDatabase
                 { "id": "bubbleSurface", "label": "Surface", "order": 10, "visible": true, "fields": [
                   { "id": "component.bubble.surface.editor", "order": 10, "visible": true },
                   { "id": "component.bubble.padding", "order": 20, "visible": true }
-                ] },
-                { "id": "bubbleText", "label": "Text", "order": 20, "visible": true, "fields": [
+                ] }
+              ]
+            },
+            {
+              "id": "bubbleText",
+              "label": "Text",
+              "subtitle": "Text box variant used by the message body",
+              "icon": "{{EditorIcons.TextInput}}",
+              "order": 30,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "bubbleText", "label": "Text", "order": 10, "visible": true, "fields": [
                   { "id": "component.bubble.textBox.editor", "order": 10, "visible": true }
-                ] },
-                { "id": "bubbleMedia", "label": "Media", "order": 30, "visible": true, "fields": [
+                ] }
+              ]
+            },
+            {
+              "id": "bubbleMedia",
+              "label": "Media",
+              "subtitle": "Optional media content and variants",
+              "icon": "{{EditorIcons.Media}}",
+              "order": 40,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "bubbleMedia", "label": "Media", "order": 10, "visible": true, "fields": [
                   { "id": "component.bubble.media.type", "order": 10, "visible": true },
                   { "id": "component.bubble.media.position", "order": 20, "visible": true },
                   { "id": "component.bubble.media.image.editor", "order": 30, "visible": true },
                   { "id": "component.bubble.media.video.editor", "order": 40, "visible": true },
                   { "id": "component.bubble.media.audio.editor", "order": 50, "visible": true }
-                ] },
-                { "id": "bubbleColors", "label": "Colors", "order": 40, "visible": true, "fields": [
+                ] }
+              ]
+            },
+            {
+              "id": "bubbleColors",
+              "label": "Colors",
+              "subtitle": "Incoming, system and outgoing palette colors",
+              "icon": "{{EditorIcons.Color}}",
+              "order": 50,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "bubbleColors", "label": "Colors", "order": 10, "visible": true, "fields": [
                   { "id": "component.bubble.incomingBackground", "order": 10, "visible": true },
                   { "id": "component.bubble.incomingText", "order": 20, "visible": true },
                   { "id": "component.bubble.systemBackground", "order": 30, "visible": true },
                   { "id": "component.bubble.systemText", "order": 40, "visible": true },
                   { "id": "component.bubble.outgoingBackground", "order": 50, "visible": true },
                   { "id": "component.bubble.outgoingText", "order": 60, "visible": true }
-                ] },
-                { "id": "bubbleActorLabel", "label": "Actor label", "order": 50, "visible": true, "fields": [
+                ] }
+              ]
+            },
+            {
+              "id": "bubbleActorLabel",
+              "label": "Actor label",
+              "subtitle": "Optional embedded actor label",
+              "icon": "{{EditorIcons.Label}}",
+              "order": 60,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "bubbleActorLabel", "label": "Actor label", "order": 10, "visible": true, "fields": [
                   { "id": "component.bubble.actorLabel.showLabel", "order": 10, "visible": true },
                   { "id": "component.bubble.actorLabel.placement", "order": 20, "visible": true },
                   { "id": "component.bubble.actorLabel.editor", "order": 30, "visible": true }
