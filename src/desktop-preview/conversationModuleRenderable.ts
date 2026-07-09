@@ -18,6 +18,7 @@ import { resolveNavigationBarComponent } from "./navigationBarComponentResolver.
 import {
   numberToken,
   previewScreenBox,
+  renderableVisualBounds,
   renderScale,
   selectedColor,
   translateRenderableNode,
@@ -182,20 +183,23 @@ function messageNodes(
     },
     (childPayload) => bubbleComponentToRenderable(childPayload, resolveBubbleComponent(childPayload)),
   ));
-  const totalHeight = nodes.reduce((sum, node) => sum + (node.box?.height ?? 0), 0)
+  const entries = nodes.map((node) => ({
+    node,
+    bounds: renderableVisualBounds(node),
+  }));
+  const totalHeight = entries.reduce((sum, entry) => sum + entry.bounds.height, 0)
     + Math.max(0, nodes.length - 1) * gap;
   let y = Math.max(top + gutter.y, bottom - gutter.y - totalHeight);
-  return nodes.map((node, index) => {
-    const box = node.box;
-    if (!box) return node;
+  return entries.map((entry, index) => {
+    const { node, bounds } = entry;
     const message = messages[index]!;
-    const x = message.state === "outgoing"
-      ? payload.previewFrame.screenX + payload.previewFrame.screenWidth - gutter.x - box.width
+    const offsetX = message.state === "outgoing"
+      ? payload.previewFrame.screenX + payload.previewFrame.screenWidth - gutter.x - (bounds.x + bounds.width)
       : message.state === "system"
-        ? payload.previewFrame.screenX + (payload.previewFrame.screenWidth - box.width) / 2
-        : payload.previewFrame.screenX + gutter.x;
-    const translated = translateRenderableNode(node, { x: x - box.x, y: y - box.y });
-    y += box.height + gap;
+        ? payload.previewFrame.screenX + payload.previewFrame.screenWidth / 2 - (bounds.x + bounds.width / 2)
+        : payload.previewFrame.screenX + gutter.x - bounds.x;
+    const translated = translateRenderableNode(node, { x: offsetX, y: y - bounds.y });
+    y += bounds.height + gap;
     return translated;
   });
 }

@@ -21,6 +21,7 @@ export {
   expandBoxXY,
   placeChild,
   previewScreenBox,
+  renderableVisualBounds,
   renderScale,
   scalePlacement,
   translateBox,

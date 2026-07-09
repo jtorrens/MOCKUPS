@@ -110,6 +110,24 @@ export function unionBoxes(boxes: RenderableBox[]): RenderableBox {
   };
 }
 
+export function renderableVisualBounds(node: RenderableNode): RenderableBox {
+  const boxes: RenderableBox[] = [];
+  collectRenderableBoxes(node, boxes);
+  if (boxes.length === 0) {
+    return { x: 0, y: 0, width: 0, height: 0 };
+  }
+  return boxes.length === 1 ? boxes[0]! : unionBoxes(boxes);
+}
+
+function collectRenderableBoxes(node: RenderableNode, boxes: RenderableBox[]) {
+  if (node.box) {
+    boxes.push(node.box);
+  }
+  for (const child of node.children ?? []) {
+    collectRenderableBoxes(child, boxes);
+  }
+}
+
 export function expandBox(box: RenderableBox, padding: number): RenderableBox {
   return {
     x: box.x - padding,

@@ -668,34 +668,102 @@ internal sealed partial class SpikeDatabase
               ]
             },
             {
-              "id": "components",
-              "label": "Components",
-              "subtitle": "Variants used by the conversation module",
-              "icon": "{{EditorIcons.Component}}",
+              "id": "status-bar",
+              "label": "Status Bar",
+              "subtitle": "System status component",
+              "icon": "{{EditorIcons.Status}}",
               "order": 30,
               "visible": true,
               "defaultOpen": true,
               "groups": [
                 {
-                  "id": "system",
-                  "label": "System",
+                  "id": "status-bar",
+                  "label": "Status Bar",
                   "order": 10,
                   "visible": true,
                   "fields": [
                     { "id": "module.conversation.showStatusBar", "order": 10, "visible": true },
-                    { "id": "module.conversation.statusBarVariant", "order": 20, "visible": true },
+                    { "id": "module.conversation.statusBarVariant", "order": 20, "visible": true }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "navigation-bar",
+              "label": "Navigation Bar",
+              "subtitle": "System navigation component",
+              "icon": "{{EditorIcons.Navigation}}",
+              "order": 40,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                {
+                  "id": "navigation-bar",
+                  "label": "Navigation Bar",
+                  "order": 10,
+                  "visible": true,
+                  "fields": [
                     { "id": "module.conversation.showNavigationBar", "order": 30, "visible": true },
-                    { "id": "module.conversation.navigationBarVariant", "order": 40, "visible": true },
+                    { "id": "module.conversation.navigationBarVariant", "order": 40, "visible": true }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "keyboard",
+              "label": "Keyboard",
+              "subtitle": "Keyboard component",
+              "icon": "{{EditorIcons.Keyboard}}",
+              "order": 50,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                {
+                  "id": "keyboard",
+                  "label": "Keyboard",
+                  "order": 10,
+                  "visible": true,
+                  "fields": [
                     { "id": "module.conversation.showKeyboard", "order": 50, "visible": true },
-                    { "id": "module.conversation.keyboardVariant", "order": 60, "visible": true },
+                    { "id": "module.conversation.keyboardVariant", "order": 60, "visible": true }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "text-input",
+              "label": "Text Input Bar",
+              "subtitle": "Input bar component",
+              "icon": "{{EditorIcons.TextInput}}",
+              "order": 60,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                {
+                  "id": "text-input",
+                  "label": "Text Input Bar",
+                  "order": 10,
+                  "visible": true,
+                  "fields": [
                     { "id": "module.conversation.showTextInputBar", "order": 70, "visible": true },
                     { "id": "module.conversation.textInputBarVariant", "order": 80, "visible": true }
                   ]
-                },
+                }
+              ]
+            },
+            {
+              "id": "bubble",
+              "label": "Bubble",
+              "subtitle": "Message bubble component",
+              "icon": "{{EditorIcons.Bubble}}",
+              "order": 70,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
                 {
-                  "id": "content",
-                  "label": "Content",
-                  "order": 20,
+                  "id": "bubble",
+                  "label": "Bubble",
+                  "order": 10,
                   "visible": true,
                   "fields": [
                     { "id": "module.conversation.bubbleVariant", "order": 10, "visible": true }
