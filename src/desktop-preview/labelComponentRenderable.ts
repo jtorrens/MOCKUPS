@@ -91,78 +91,87 @@ export function labelComponentToRenderableAt(
   const surfaceNode = options.surfaceColors
     ? surfaceComponentToRenderableAt(payload, label.surface, box, options.surfaceColors)
     : surfaceComponentToRenderableAt(payload, label.surface, box);
-  const surfaceColorModes = surfaceNode.style?.colorModes as
-    | Record<string, Record<string, unknown>>
-    | undefined;
 
   return {
-    ...surfaceNode,
     id: label.id,
+    type: "group",
+    frame: 0,
+    box,
     style: {
-      ...surfaceNode.style,
-      paddingX,
-      paddingY,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      flexDirection: "column",
-      whiteSpace: "nowrap",
       overflow: "visible",
-      colorModes: Object.fromEntries(
-        variants(payload).map((mode) => [
-          mode,
-          {
-            ...(surfaceColorModes?.[mode] ?? {}),
-            textColor: colorForMode(payload, label.textColorToken, mode),
-            subtextColor: colorForMode(payload, label.subtextColorToken, mode),
-          },
-        ]),
-      ),
     },
     children: [
+      surfaceNode,
       {
-        id: `${label.id}.text`,
-        type: "text",
+        id: `${label.id}.content`,
+        type: "group",
         frame: 0,
-          text: label.text,
-          style: {
-            textColor: selectedColor(payload, label.textColorToken),
-          fontSize: textTypography.fontSize,
-          fontFamily: textTypography.fontFamily,
-          lineHeight: size.lineHeight,
-          textAlign: label.textAlign,
-          display: "block",
-          width: "100%",
-          overflow: "hidden",
-          fontStyle: textTypography.fontStyle,
-          fontWeight: textTypography.fontWeight,
+        box,
+        style: {
+          alignItems: "center",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          overflow: "visible",
+          paddingX,
+          paddingY,
           whiteSpace: "nowrap",
-        },
-      },
-      ...(size.hasSubtext
-        ? [
-            {
-              id: `${label.id}.subtext`,
-              type: "text",
-              frame: 0,
-              text: label.subtext,
-              style: {
-                textColor: selectedColor(payload, label.subtextColorToken),
-                fontSize: subtextTypography.fontSize,
-                fontFamily: subtextTypography.fontFamily,
-                lineHeight: size.subtextLineHeight,
-                marginTop: label.textGap * scale,
-                textAlign: label.textAlign,
-                display: "block",
-                width: "100%",
-                overflow: "hidden",
-                fontStyle: subtextTypography.fontStyle,
-                fontWeight: subtextTypography.fontWeight,
-                whiteSpace: "nowrap",
+          colorModes: Object.fromEntries(
+            variants(payload).map((mode) => [
+              mode,
+              {
+                textColor: colorForMode(payload, label.textColorToken, mode),
+                subtextColor: colorForMode(payload, label.subtextColorToken, mode),
               },
-            } satisfies RenderableNode,
-          ]
-        : []),
+            ]),
+          ),
+        },
+        children: [
+          {
+            id: `${label.id}.text`,
+            type: "text",
+            frame: 0,
+            text: label.text,
+            style: {
+              textColor: selectedColor(payload, label.textColorToken),
+              fontSize: textTypography.fontSize,
+              fontFamily: textTypography.fontFamily,
+              lineHeight: size.lineHeight,
+              textAlign: label.textAlign,
+              display: "block",
+              width: "100%",
+              overflow: "hidden",
+              fontStyle: textTypography.fontStyle,
+              fontWeight: textTypography.fontWeight,
+              whiteSpace: "nowrap",
+            },
+          },
+          ...(size.hasSubtext
+            ? [
+                {
+                  id: `${label.id}.subtext`,
+                  type: "text",
+                  frame: 0,
+                  text: label.subtext,
+                  style: {
+                    textColor: selectedColor(payload, label.subtextColorToken),
+                    fontSize: subtextTypography.fontSize,
+                    fontFamily: subtextTypography.fontFamily,
+                    lineHeight: size.subtextLineHeight,
+                    marginTop: label.textGap * scale,
+                    textAlign: label.textAlign,
+                    display: "block",
+                    width: "100%",
+                    overflow: "hidden",
+                    fontStyle: subtextTypography.fontStyle,
+                    fontWeight: subtextTypography.fontWeight,
+                    whiteSpace: "nowrap",
+                  },
+                } satisfies RenderableNode,
+              ]
+            : []),
+        ],
+      },
     ],
   };
 }
