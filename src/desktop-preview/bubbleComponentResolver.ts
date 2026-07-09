@@ -257,7 +257,7 @@ function bubbleState(value: string): BubbleState {
 }
 
 function bubbleMediaType(value: string): BubbleMediaType {
-  if (value === "image" || value === "video" || value === "audio") {
+  if (value === "none" || value === "image" || value === "video" || value === "audio") {
     return value;
   }
   throw new Error(`Unsupported bubble media type ${value}`);
@@ -270,30 +270,60 @@ function bubbleMediaInputs(
 ) {
   const width = Math.max(1, optionalNumber(preview, "mediaWidth", Math.min(maxWidth, 240)));
   const height = Math.max(1, optionalNumber(preview, "mediaHeight", 160));
+  const viewportSize = optionalString(preview, "viewportSize") || `${width}|${height}`;
   return {
     ...preview,
     mediaType,
     mediaSource: optionalString(preview, "mediaSource"),
-    viewportSize: `${width}|${height}`,
+    viewportSize,
     mediaOffset: optionalString(preview, "mediaOffset") || "0|0",
     mediaScale: optionalNumber(preview, "mediaScale", 1),
     isPlaying: optionalBoolean(preview, "isPlaying"),
-    isFullScreen: false,
-    fullScreenTransition: false,
+    isFullScreen: optionalBoolean(preview, "isFullScreen"),
+    fullScreenTransition: optionalBoolean(preview, "fullScreenTransition"),
     currentTimeSeconds: optionalNumber(preview, "currentTimeSeconds", 0),
     durationSeconds: Math.max(1, optionalNumber(preview, "durationSeconds", 12)),
     fullframeOrientation: optionalString(preview, "fullframeOrientation") || "portrait",
     controlsElapsedMs: optionalNumber(preview, "controlsElapsedMs", 0),
-    motionTimeSeconds: 0,
+    motionTimeSeconds: optionalNumber(preview, "motionTimeSeconds", 0),
   };
 }
 
 function bubbleAudioInputs(preview: Record<string, unknown>) {
   return {
     ...preview,
+    actor: preview.actor ?? defaultActorPreview(optionalString(preview, "actorName") || "Alex Q"),
+    isPlaying: optionalBoolean(preview, "isPlaying"),
     durationSeconds: Math.max(1, optionalNumber(preview, "durationSeconds", 65)),
     currentTimeSeconds: optionalNumber(preview, "currentTimeSeconds", 0),
   };
+}
+
+function defaultActorPreview(displayName: string) {
+  return {
+    id: "preview_actor",
+    displayName,
+    shortName: displayName,
+    initials: initialsForName(displayName),
+    avatar: {
+      imageUri: "",
+      backgroundColor: "#cfd8e3",
+      textColor: "#263238",
+      scale: 1,
+      offsetX: 0,
+      offsetY: 0,
+      baseSize: 256,
+    },
+  };
+}
+
+function initialsForName(value: string) {
+  const parts = value
+    .trim()
+    .split(/\s+/)
+    .filter((part) => part.length > 0);
+  const initials = parts.slice(0, 2).map((part) => part[0]).join("");
+  return initials || "A";
 }
 
 function bubbleSurfaceForState(

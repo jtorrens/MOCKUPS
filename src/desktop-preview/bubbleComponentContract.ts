@@ -9,7 +9,7 @@ import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
 import type { TextBoxDesignContract } from "./textBoxComponentContract.js";
 
 export type BubbleState = "incoming" | "system" | "outgoing";
-export type BubbleMediaType = "image" | "video" | "audio";
+export type BubbleMediaType = "none" | "image" | "video" | "audio";
 
 export interface BubblePalettePairContract {
   light: string;

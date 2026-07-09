@@ -356,7 +356,7 @@ internal sealed partial class SpikeDatabase
                 {
                     ["surfaceSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
                     ["textBoxSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
-                    ["mediaType"] = "image",
+                    ["mediaType"] = "none",
                     ["imageMediaSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
                     ["videoMediaSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
                     ["audioSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
@@ -434,6 +434,17 @@ internal sealed partial class SpikeDatabase
             preview["writeOnDurationFrames"] = 30;
             preview["writeOnTrigger"] = false;
             preview["writeOnFrame"] = 0;
+            preview["mediaSource"] = "";
+            preview["viewportSize"] = "240|160";
+            preview["mediaScale"] = 1;
+            preview["mediaOffset"] = "0|0";
+            preview["isPlaying"] = false;
+            preview["currentTimeSeconds"] = 0;
+            preview["durationSeconds"] = 12;
+            preview["isFullScreen"] = false;
+            preview["fullScreenTransition"] = false;
+            preview["fullframeOrientation"] = "portrait";
+            preview["controlsElapsedMs"] = 0;
             preview["actions"] = new JsonArray
             {
                 new JsonObject
@@ -445,6 +456,25 @@ internal sealed partial class SpikeDatabase
                     ["timeJsonKey"] = "writeOnFrame",
                     ["timeUnit"] = "frames",
                     ["prewarmFrames"] = false,
+                },
+                new JsonObject
+                {
+                    ["id"] = "play",
+                    ["label"] = "Play",
+                    ["playInputId"] = "isPlaying",
+                    ["durationInputId"] = "durationSeconds",
+                    ["timeJsonKey"] = "currentTimeSeconds",
+                    ["prewarmFrames"] = true,
+                },
+                new JsonObject
+                {
+                    ["id"] = "fullScreen",
+                    ["label"] = "Full screen",
+                    ["playInputId"] = "fullScreenTransition",
+                    ["activateInputIds"] = new JsonArray { "isFullScreen" },
+                    ["durationSeconds"] = 0.3,
+                    ["durationMotionConfigPath"] = "media.motion",
+                    ["timeJsonKey"] = "motionTimeSeconds",
                 },
             };
         }
@@ -509,6 +539,7 @@ internal sealed partial class SpikeDatabase
                     ["label"] = "Full screen",
                     ["playInputId"] = "fullScreenTransition",
                     ["activateInputIds"] = new JsonArray { "isFullScreen" },
+                    ["durationSeconds"] = 0.3,
                     ["durationMotionConfigPath"] = "media.motion",
                     ["timeJsonKey"] = "motionTimeSeconds",
                 },
@@ -757,6 +788,40 @@ internal sealed partial class SpikeDatabase
                 ComponentInput("maxWidth", "Max width", "maxWidth", ValueKind.Integer, "260", minimum: 1, maximum: 2000, increment: 1),
                 ComponentInput("writeOnDurationFrames", "Write-on frames", "writeOnDurationFrames", ValueKind.Integer, "30", minimum: 1, maximum: 10000, increment: 1),
                 ComponentInput("actorName", "Actor name", "actorName", "text", "Alex Q"),
+                ComponentInput("mediaSource", "Media source", "mediaSource", ValueKind.MediaFilePath, ""),
+                ComponentInput(
+                    "viewportSize",
+                    "Media viewport",
+                    "viewportSize",
+                    "integerPair",
+                    "240|160",
+                    pairFirstLabel: "W",
+                    pairSecondLabel: "H"),
+                ComponentInput("mediaScale", "Media scale", "mediaScale", ValueKind.Decimal, "1", minimum: 0.05m, maximum: 16, increment: 0.05m),
+                ComponentInput(
+                    "mediaOffset",
+                    "Media offset",
+                    "mediaOffset",
+                    "integerPair",
+                    "0|0",
+                    pairFirstLabel: "X",
+                    pairSecondLabel: "Y"),
+                ComponentInput("isPlaying", "Play/Pause", "isPlaying", ValueKind.Boolean, "false"),
+                ComponentInput("currentTimeSeconds", "Current time", "currentTimeSeconds", ValueKind.Decimal, "0", minimum: 0, maximum: 86400, increment: 0.1m),
+                ComponentInput("durationSeconds", "Duration", "durationSeconds", ValueKind.Decimal, "12", minimum: 0, maximum: 86400, increment: 0.1m),
+                ComponentInput("isFullScreen", "Full screen", "isFullScreen", ValueKind.Boolean, "false"),
+                ComponentInput(
+                    "fullframeOrientation",
+                    "Fullframe orientation",
+                    "fullframeOrientation",
+                    "option",
+                    "portrait",
+                    options:
+                    [
+                        new FieldOption("portrait", "Portrait"),
+                        new FieldOption("landscape", "Landscape"),
+                    ]),
+                ComponentInput("controlsElapsedMs", "Controls elapsed ms", "controlsElapsedMs", ValueKind.Integer, "0", minimum: 0, maximum: 60000, increment: 10),
             ],
             _ => [],
         };

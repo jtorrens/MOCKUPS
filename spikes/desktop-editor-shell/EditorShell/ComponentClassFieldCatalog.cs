@@ -128,6 +128,7 @@ internal static class ComponentClassFieldCatalog
 
     private static readonly FieldOption[] MediaTypeOptions =
     [
+        new("none", "None"),
         new("image", "Image"),
         new("video", "Video"),
         new("audio", "Audio"),
@@ -696,7 +697,7 @@ internal static class ComponentClassFieldCatalog
         ["component.bubble.surface.editor"] = new("component.bubble.surface.editor", "Surface", ValueKind.ComponentPreset, ["bubble", "surfaceSlot", "presetId"], "default"),
         ["component.bubble.textBox.editor"] = new("component.bubble.textBox.editor", "Text box", ValueKind.ComponentPreset, ["bubble", "textBoxSlot", "presetId"], "default"),
         ["component.bubble.padding"] = new("component.bubble.padding", "Padding", ValueKind.ThemeTokenPair, ["bubble", "padding"], "theme.spacing.l|theme.spacing.m", PairLabels: new("X", "Y"), Options: SpacingTokenOptions),
-        ["component.bubble.media.type"] = new("component.bubble.media.type", "Media type", ValueKind.OptionToken, ["bubble", "mediaType"], "image", Options: MediaTypeOptions),
+        ["component.bubble.media.type"] = new("component.bubble.media.type", "Media type", ValueKind.OptionToken, ["bubble", "mediaType"], "none", Options: MediaTypeOptions),
         ["component.bubble.media.image.editor"] = new("component.bubble.media.image.editor", "Image variant", ValueKind.ComponentPreset, ["bubble", "imageMediaSlot", "presetId"], "default"),
         ["component.bubble.media.video.editor"] = new("component.bubble.media.video.editor", "Video variant", ValueKind.ComponentPreset, ["bubble", "videoMediaSlot", "presetId"], "default"),
         ["component.bubble.media.audio.editor"] = new("component.bubble.media.audio.editor", "Audio variant", ValueKind.ComponentPreset, ["bubble", "audioSlot", "presetId"], "default"),
