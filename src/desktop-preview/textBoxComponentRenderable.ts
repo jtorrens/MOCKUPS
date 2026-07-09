@@ -158,48 +158,56 @@ export function measureTextBoxComponent(
   }
 
   const maximumWidth = Math.max(1, textBox.size.width * scale);
-  const iconInsetAtMaximum = iconTextInset(
-    hasLeftIcons,
-    hasRightIcons,
-    leftIconSize.width,
-    rightIconSize.width,
-    iconGap,
-  );
+  let width = maximumWidth;
   let height = Math.max(1, contentSize.height + paddingY * 2);
-  let paddingX = basePaddingX + effectiveCornerTextInset(cornerRadius, maximumWidth, height);
-  let wrappedContentSize = approximateWrappedTextSize(
-    contentText,
-    typography.fontSize,
-    typography.lineHeight,
-    Math.max(1, maximumWidth - paddingX * 2 - iconInsetAtMaximum.total),
-  );
-  height = Math.max(
-    1,
-    wrappedContentSize.height + paddingY * 2,
-    Math.max(leftIconSize.height, rightIconSize.height) + paddingY * 2,
-  );
-  paddingX = basePaddingX + effectiveCornerTextInset(cornerRadius, maximumWidth, height);
-  const iconInset = iconTextInset(
+  let paddingX = basePaddingX + effectiveCornerTextInset(cornerRadius, width, height);
+  let iconInset = iconTextInset(
     hasLeftIcons,
     hasRightIcons,
     leftIconSize.width,
     rightIconSize.width,
     iconGap,
   );
-  wrappedContentSize = approximateWrappedTextSize(
-    contentText,
-    typography.fontSize,
-    typography.lineHeight,
-    Math.max(1, maximumWidth - paddingX * 2 - iconInset.total),
-  );
+  let naturalWidth = contentSize.width + paddingX * 2 + iconInset.total;
+  let wraps = naturalWidth > maximumWidth;
+  let measuredContentSize = wraps
+    ? approximateWrappedTextSize(
+        contentText,
+        typography.fontSize,
+        typography.lineHeight,
+        Math.max(1, maximumWidth - paddingX * 2 - iconInset.total),
+      )
+    : contentSize;
+
+  width = wraps ? maximumWidth : Math.max(1, naturalWidth);
   height = Math.max(
     1,
-    wrappedContentSize.height + paddingY * 2,
+    measuredContentSize.height + paddingY * 2,
     Math.max(leftIconSize.height, rightIconSize.height) + paddingY * 2,
   );
-  const width = Math.min(
-    maximumWidth,
-    Math.max(1, wrappedContentSize.width + paddingX * 2 + iconInset.total),
+  paddingX = basePaddingX + effectiveCornerTextInset(cornerRadius, width, height);
+  iconInset = iconTextInset(
+    hasLeftIcons,
+    hasRightIcons,
+    leftIconSize.width,
+    rightIconSize.width,
+    iconGap,
+  );
+  naturalWidth = contentSize.width + paddingX * 2 + iconInset.total;
+  wraps = naturalWidth > maximumWidth;
+  measuredContentSize = wraps
+    ? approximateWrappedTextSize(
+        contentText,
+        typography.fontSize,
+        typography.lineHeight,
+        Math.max(1, maximumWidth - paddingX * 2 - iconInset.total),
+      )
+    : contentSize;
+  width = wraps ? maximumWidth : Math.max(1, naturalWidth);
+  height = Math.max(
+    1,
+    measuredContentSize.height + paddingY * 2,
+    Math.max(leftIconSize.height, rightIconSize.height) + paddingY * 2,
   );
   return {
     width,
@@ -216,7 +224,7 @@ export function measureTextBoxComponent(
     hasRightIcons,
     iconInset,
     contentText,
-    contentTextHeight: wrappedContentSize.height,
+    contentTextHeight: measuredContentSize.height,
   };
 }
 
@@ -267,7 +275,7 @@ export function textBoxComponentToRenderableAt(
       : box.y + box.height - size.paddingY - iconHeight;
   const lineHeight = size.typography.lineHeight;
   const textContentHeight = Math.max(1, wrappedLines.length) * lineHeight;
-  const textOverflowsFrame = textContentHeight > textFrame.height;
+  const textOverflowsFrame = textContentHeight > textFrame.height + 0.5;
   const scrollAnchorsToBottom = textOverflowsFrame && textBox.overflowMode === "scroll";
   const textContentY = wrappedLines.length === 1
       ? textFrame.y + Math.max(0, (textFrame.height - textContentHeight) * 0.5)

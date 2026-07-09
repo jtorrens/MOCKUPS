@@ -40,6 +40,7 @@ export function bubbleComponentToRenderable(
   const textBoxForContent = {
     ...bubble.textBox,
     dimensionMode: "content" as const,
+    overflowMode: "clip" as const,
     size: {
       width: Math.max(1, bubble.maxWidth - (paddingX * 2) / scale),
       height: 1,
