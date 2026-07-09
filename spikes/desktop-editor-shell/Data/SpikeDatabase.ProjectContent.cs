@@ -53,8 +53,8 @@ internal sealed partial class SpikeDatabase
             Execute(
                 connection,
                 """
-                INSERT INTO modules (id, app_id, record_class_id, name, notes, sort_order, metadata_json)
-                VALUES ($id, $appId, $recordClassId, $name, $notes, $sortOrder, $metadataJson)
+                INSERT INTO modules (id, app_id, record_class_id, name, notes, sort_order, config_json, design_preview_json, metadata_json)
+                VALUES ($id, $appId, $recordClassId, $name, $notes, $sortOrder, $configJson, $designPreviewJson, $metadataJson)
                 """,
                 ("$id", $"module_{Guid.NewGuid():N}"),
                 ("$appId", targetAppId),
@@ -62,6 +62,8 @@ internal sealed partial class SpikeDatabase
                 ("$name", module.Name),
                 ("$notes", module.Notes),
                 ("$sortOrder", index),
+                ("$configJson", module.ConfigJson),
+                ("$designPreviewJson", module.DesignPreviewJson),
                 ("$metadataJson", module.MetadataJson));
         }
     }
@@ -187,7 +189,12 @@ internal sealed partial class SpikeDatabase
     {
         using var connection = OpenConnection();
         using var command = connection.CreateCommand();
-        command.CommandText = "SELECT record_class_id, sort_order, metadata_json FROM modules WHERE id = $id";
+        command.CommandText = """
+            SELECT a.project_id, m.record_class_id, m.sort_order, m.config_json, m.design_preview_json, m.metadata_json
+            FROM modules m
+            JOIN apps a ON a.id = m.app_id
+            WHERE m.id = $id
+            """;
         command.Parameters.AddWithValue("$id", moduleId);
         using var reader = command.ExecuteReader();
         if (!reader.Read())
@@ -197,13 +204,22 @@ internal sealed partial class SpikeDatabase
 
         return new ModuleSettings(
             reader.GetString(0),
-            reader.GetInt32(1),
-            ReadString(reader, 2));
+            reader.GetString(1),
+            reader.GetInt32(2),
+            ReadString(reader, 3),
+            ReadString(reader, 4),
+            ReadString(reader, 5));
     }
 
     public void UpdateModuleField(string moduleId, string fieldId, string value)
     {
         using var connection = OpenConnection();
+        if (fieldId.StartsWith("module.conversation.", StringComparison.Ordinal))
+        {
+            UpdateModuleConfigField(connection, moduleId, fieldId, value);
+            return;
+        }
+
         switch (fieldId)
         {
             case "module.sortOrder":
@@ -225,6 +241,29 @@ internal sealed partial class SpikeDatabase
             default:
                 throw new InvalidOperationException($"Unknown module field '{fieldId}'.");
         }
+    }
+
+    public string GetModuleConfigFieldValue(string moduleId, string fieldId)
+    {
+        var settings = GetModuleSettings(moduleId);
+        var config = ParseJsonObject(string.IsNullOrWhiteSpace(settings.ConfigJson) ? "{}" : settings.ConfigJson);
+        return fieldId switch
+        {
+            "module.conversation.showHeader" => JsonBoolString(config, ["conversation", "showHeader"], defaultValue: true),
+            "module.conversation.headerHeight" => JsonNumberString(config, ["conversation", "headerHeight"], "64"),
+            "module.conversation.showStatusBar" => JsonBoolString(config, ["conversation", "showStatusBar"], defaultValue: true),
+            "module.conversation.statusBarVariant" => JsonString(config, ["conversation", "statusBarVariant"]),
+            "module.conversation.showNavigationBar" => JsonBoolString(config, ["conversation", "showNavigationBar"], defaultValue: true),
+            "module.conversation.navigationBarVariant" => JsonString(config, ["conversation", "navigationBarVariant"]),
+            "module.conversation.showTextInputBar" => JsonBoolString(config, ["conversation", "showTextInputBar"], defaultValue: true),
+            "module.conversation.textInputBarVariant" => JsonString(config, ["conversation", "textInputBarVariant"]),
+            "module.conversation.showKeyboard" => JsonBoolString(config, ["conversation", "showKeyboard"], defaultValue: true),
+            "module.conversation.keyboardVariant" => JsonString(config, ["conversation", "keyboardVariant"]),
+            "module.conversation.bubbleVariant" => JsonString(config, ["conversation", "bubbleVariant"]),
+            "module.conversation.screenGutter" => JsonString(config, ["conversation", "screenGutter"]) is { Length: > 0 } gutter ? gutter : "theme.spacing.l|theme.spacing.l",
+            "module.conversation.messageGap" => JsonString(config, ["conversation", "messageGap"]) is { Length: > 0 } gap ? gap : "theme.spacing.m",
+            _ => throw new InvalidOperationException($"Unknown module config field '{fieldId}'."),
+        };
     }
 
     public void UpdateAppField(string appId, string fieldId, string value)
@@ -394,7 +433,7 @@ internal sealed partial class SpikeDatabase
     {
         var rows = new List<ModuleRow>();
         using var command = connection.CreateCommand();
-        command.CommandText = "SELECT id, app_id, record_class_id, name, notes, sort_order, metadata_json FROM modules ORDER BY sort_order, name";
+        command.CommandText = "SELECT id, app_id, record_class_id, name, notes, sort_order, config_json, design_preview_json, metadata_json FROM modules ORDER BY sort_order, name";
         using var reader = command.ExecuteReader();
         while (reader.Read())
         {
@@ -405,7 +444,9 @@ internal sealed partial class SpikeDatabase
                 reader.GetString(3),
                 ReadString(reader, 4),
                 reader.GetInt32(5),
-                ReadString(reader, 6)));
+                ReadString(reader, 6),
+                ReadString(reader, 7),
+                ReadString(reader, 8)));
         }
 
         return rows;
@@ -440,6 +481,198 @@ internal sealed partial class SpikeDatabase
             SET bundle_key = lower(replace(trim(name), ' ', '-'))
             WHERE trim(bundle_key) = ''
             """);
+    }
+
+    private static void EnsureModuleColumns(SqliteConnection connection)
+    {
+        AddColumnIfMissing(connection, "modules", "config_json", "TEXT NOT NULL DEFAULT '{}'");
+        AddColumnIfMissing(connection, "modules", "design_preview_json", "TEXT NOT NULL DEFAULT '{}'");
+        EnsureModuleConversationDefaults(connection);
+    }
+
+    private static void UpdateModuleConfigField(SqliteConnection connection, string moduleId, string fieldId, string value)
+    {
+        var config = ParseJsonObject(ScalarString(connection, "SELECT config_json FROM modules WHERE id = $id", ("$id", moduleId)) ?? "{}");
+        var projectId = ScalarString(
+            connection,
+            """
+            SELECT a.project_id
+            FROM modules m
+            JOIN apps a ON a.id = m.app_id
+            WHERE m.id = $id
+            """,
+            ("$id", moduleId)) ?? "";
+
+        switch (fieldId)
+        {
+            case "module.conversation.showHeader":
+                SetJsonValue(config, ["conversation", "showHeader"], JsonValue.Create(BoolFromText(value))!);
+                break;
+            case "module.conversation.headerHeight":
+                SetJsonValue(config, ["conversation", "headerHeight"], NumberNode(value));
+                break;
+            case "module.conversation.showStatusBar":
+                SetJsonValue(config, ["conversation", "showStatusBar"], JsonValue.Create(BoolFromText(value))!);
+                break;
+            case "module.conversation.statusBarVariant":
+                SetJsonValue(config, ["conversation", "statusBarVariant"], JsonValue.Create(NormalizeComponentPresetReference(connection, projectId, "status_bar", value))!);
+                break;
+            case "module.conversation.showNavigationBar":
+                SetJsonValue(config, ["conversation", "showNavigationBar"], JsonValue.Create(BoolFromText(value))!);
+                break;
+            case "module.conversation.navigationBarVariant":
+                SetJsonValue(config, ["conversation", "navigationBarVariant"], JsonValue.Create(NormalizeComponentPresetReference(connection, projectId, "navigation_bar", value))!);
+                break;
+            case "module.conversation.showTextInputBar":
+                SetJsonValue(config, ["conversation", "showTextInputBar"], JsonValue.Create(BoolFromText(value))!);
+                break;
+            case "module.conversation.textInputBarVariant":
+                SetJsonValue(config, ["conversation", "textInputBarVariant"], JsonValue.Create(NormalizeComponentPresetReference(connection, projectId, "textInputBar", value))!);
+                break;
+            case "module.conversation.showKeyboard":
+                SetJsonValue(config, ["conversation", "showKeyboard"], JsonValue.Create(BoolFromText(value))!);
+                break;
+            case "module.conversation.keyboardVariant":
+                SetJsonValue(config, ["conversation", "keyboardVariant"], JsonValue.Create(NormalizeComponentPresetReference(connection, projectId, "keyboard", value))!);
+                break;
+            case "module.conversation.bubbleVariant":
+                SetJsonValue(config, ["conversation", "bubbleVariant"], JsonValue.Create(NormalizeComponentPresetReference(connection, projectId, "bubble", value))!);
+                break;
+            case "module.conversation.screenGutter":
+                SetJsonValue(config, ["conversation", "screenGutter"], JsonValue.Create(value)!);
+                break;
+            case "module.conversation.messageGap":
+                SetJsonValue(config, ["conversation", "messageGap"], JsonValue.Create(value)!);
+                break;
+            default:
+                throw new InvalidOperationException($"Unknown module config field '{fieldId}'.");
+        }
+
+        Execute(connection, "UPDATE modules SET config_json = $configJson WHERE id = $id", ("$id", moduleId), ("$configJson", config.ToJsonString()));
+    }
+
+    private static void EnsureModuleConversationDefaults(SqliteConnection connection)
+    {
+        foreach (var row in ModuleRowsWithProject(connection))
+        {
+            var config = ParseJsonObject(string.IsNullOrWhiteSpace(row.ConfigJson) ? "{}" : row.ConfigJson);
+            var preview = ParseJsonObject(string.IsNullOrWhiteSpace(row.DesignPreviewJson) ? "{}" : row.DesignPreviewJson);
+            var changedConfig = EnsureConversationConfigDefaults(connection, row.ProjectId, config);
+            var changedPreview = JsonPath.MergeMissing(preview, DefaultConversationDesignPreviewJson());
+
+            if (changedConfig || changedPreview)
+            {
+                Execute(
+                    connection,
+                    "UPDATE modules SET config_json = $configJson, design_preview_json = $designPreviewJson WHERE id = $id",
+                    ("$id", row.Id),
+                    ("$configJson", config.ToJsonString()),
+                    ("$designPreviewJson", preview.ToJsonString()));
+            }
+        }
+    }
+
+    private static bool EnsureConversationConfigDefaults(SqliteConnection connection, string projectId, JsonObject config)
+    {
+        var changed = JsonPath.MergeMissing(config, DefaultConversationConfigJson());
+        changed |= NormalizeConversationPreset(config, connection, projectId, "statusBarVariant", "status_bar");
+        changed |= NormalizeConversationPreset(config, connection, projectId, "navigationBarVariant", "navigation_bar");
+        changed |= NormalizeConversationPreset(config, connection, projectId, "textInputBarVariant", "textInputBar");
+        changed |= NormalizeConversationPreset(config, connection, projectId, "keyboardVariant", "keyboard");
+        changed |= NormalizeConversationPreset(config, connection, projectId, "bubbleVariant", "bubble");
+        return changed;
+    }
+
+    private static bool NormalizeConversationPreset(JsonObject config, SqliteConnection connection, string projectId, string key, string componentType)
+    {
+        var current = JsonString(config, ["conversation", key]);
+        var normalized = NormalizeComponentPresetReference(connection, projectId, componentType, current);
+        if (current == normalized)
+        {
+            return false;
+        }
+
+        SetJsonValue(config, ["conversation", key], JsonValue.Create(normalized)!);
+        return true;
+    }
+
+    private static JsonObject DefaultConversationConfigJson()
+    {
+        return new JsonObject
+        {
+            ["conversation"] = new JsonObject
+            {
+                ["showHeader"] = true,
+                ["headerHeight"] = 64,
+                ["showStatusBar"] = true,
+                ["statusBarVariant"] = "default",
+                ["showNavigationBar"] = true,
+                ["navigationBarVariant"] = "default",
+                ["showTextInputBar"] = true,
+                ["textInputBarVariant"] = "default",
+                ["showKeyboard"] = true,
+                ["keyboardVariant"] = "default",
+                ["bubbleVariant"] = "default",
+                ["screenGutter"] = "theme.spacing.l|theme.spacing.l",
+                ["messageGap"] = "theme.spacing.m",
+            },
+        };
+    }
+
+    private static JsonObject DefaultConversationDesignPreviewJson()
+    {
+        return new JsonObject
+        {
+            ["headerTitle"] = "Alex Q",
+            ["headerSubtitle"] = "online",
+            ["inputText"] = "Message",
+            ["message1Text"] = "Tenias razon: ya podemos componer desde el modulo.",
+            ["message2Text"] = "Perfecto. El modulo solo elige variantes y datos runtime.",
+            ["message3Text"] = "Siguiente paso: instancias reales.",
+            ["inputs"] = new JsonArray
+            {
+                new JsonObject { ["id"] = "headerTitle", ["label"] = "Header title", ["jsonKey"] = "headerTitle", ["kind"] = "text", ["defaultValue"] = "Alex Q" },
+                new JsonObject { ["id"] = "headerSubtitle", ["label"] = "Header subtitle", ["jsonKey"] = "headerSubtitle", ["kind"] = "text", ["defaultValue"] = "online" },
+                new JsonObject { ["id"] = "message1Text", ["label"] = "Incoming text", ["jsonKey"] = "message1Text", ["kind"] = "multilineText", ["defaultValue"] = "Tenias razon: ya podemos componer desde el modulo.", ["uiOrigin"] = "embedded", ["uiGroupId"] = "messages", ["uiGroupLabel"] = "Messages" },
+                new JsonObject { ["id"] = "message2Text", ["label"] = "Outgoing text", ["jsonKey"] = "message2Text", ["kind"] = "multilineText", ["defaultValue"] = "Perfecto. El modulo solo elige variantes y datos runtime.", ["uiOrigin"] = "embedded", ["uiGroupId"] = "messages", ["uiGroupLabel"] = "Messages" },
+                new JsonObject { ["id"] = "message3Text", ["label"] = "System text", ["jsonKey"] = "message3Text", ["kind"] = "multilineText", ["defaultValue"] = "Siguiente paso: instancias reales.", ["uiOrigin"] = "embedded", ["uiGroupId"] = "messages", ["uiGroupLabel"] = "Messages" },
+                new JsonObject { ["id"] = "inputText", ["label"] = "Input text", ["jsonKey"] = "inputText", ["kind"] = "text", ["defaultValue"] = "Message", ["uiOrigin"] = "embedded", ["uiGroupId"] = "textInput", ["uiGroupLabel"] = "Text input" },
+            },
+        };
+    }
+
+    private static IReadOnlyList<(string Id, string ProjectId, string ConfigJson, string DesignPreviewJson)> ModuleRowsWithProject(SqliteConnection connection)
+    {
+        var rows = new List<(string Id, string ProjectId, string ConfigJson, string DesignPreviewJson)>();
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT m.id, a.project_id, m.config_json, m.design_preview_json
+            FROM modules m
+            JOIN apps a ON a.id = m.app_id
+            WHERE m.record_class_id = 'module.core.chat'
+            """;
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            rows.Add((reader.GetString(0), reader.GetString(1), ReadString(reader, 2), ReadString(reader, 3)));
+        }
+
+        return rows;
+    }
+
+    private static string JsonBoolString(JsonObject owner, string[] path, bool defaultValue)
+    {
+        var node = JsonPath.Get(owner, path);
+        return node is JsonValue value && value.TryGetValue<bool>(out var result)
+            ? result ? "true" : "false"
+            : defaultValue ? "true" : "false";
+    }
+
+    private static bool BoolFromText(string value)
+    {
+        return value.Equals("true", StringComparison.OrdinalIgnoreCase)
+            || value.Equals("1", StringComparison.OrdinalIgnoreCase)
+            || value.Equals("yes", StringComparison.OrdinalIgnoreCase);
     }
 
 }

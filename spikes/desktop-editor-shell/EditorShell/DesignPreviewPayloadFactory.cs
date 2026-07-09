@@ -54,8 +54,37 @@ internal static class DesignPreviewPayloadFactory
         {
             ProjectTreeNodeKind.ComponentClass => FromComponentClass(database, node, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces),
             ProjectTreeNodeKind.ComponentPreset => FromComponentPreset(database, node, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces),
+            ProjectTreeNodeKind.Module => FromModule(database, node, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces),
             _ => null,
         };
+    }
+
+    private static DesignPreviewPayload FromModule(
+        SpikeDatabase database,
+        ProjectTreeNode node,
+        string themeTokensJson,
+        IReadOnlyDictionary<string, string> paletteColors,
+        IReadOnlyDictionary<string, bool> paletteNeutralColors,
+        string projectMediaRoot,
+        SpikeDatabase.IconThemeSettings? iconTheme,
+        IReadOnlyList<SpikeDatabase.ProductionFontFace> fontFaces)
+    {
+        var settings = database.GetModuleSettings(node.Id);
+        var componentBaseConfigsJson = database.GetComponentClassBaseConfigsJson(settings.ProjectId);
+        return new DesignPreviewPayload(
+            "module",
+            node.Name,
+            settings.ConfigJson,
+            themeTokensJson,
+            paletteColors,
+            paletteNeutralColors,
+            projectMediaRoot,
+            iconTheme?.AssetRoot ?? "",
+            iconTheme?.MappingJson ?? "{}",
+            fontFaces,
+            settings.RecordClassId,
+            settings.DesignPreviewJson,
+            componentBaseConfigsJson);
     }
 
     private static DesignPreviewPayload FromComponentClass(

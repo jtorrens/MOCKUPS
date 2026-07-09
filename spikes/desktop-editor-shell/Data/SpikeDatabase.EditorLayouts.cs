@@ -641,6 +641,70 @@ internal sealed partial class SpikeDatabase
         var componentCards = recordClassId.StartsWith("component.", StringComparison.Ordinal)
             ? ComponentClassLayoutCardsJson(recordClassId)
             : "";
+        var moduleCards = recordClassId == "module.core.chat"
+            ? $$"""
+            ,
+            {
+              "id": "layout",
+              "label": "Layout",
+              "subtitle": "Conversation frame and spacing",
+              "icon": "{{EditorIcons.Layout}}",
+              "order": 20,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                {
+                  "id": "layout",
+                  "label": "Layout",
+                  "order": 10,
+                  "visible": true,
+                  "fields": [
+                    { "id": "module.conversation.showHeader", "order": 10, "visible": true },
+                    { "id": "module.conversation.headerHeight", "order": 20, "visible": true },
+                    { "id": "module.conversation.screenGutter", "order": 30, "visible": true },
+                    { "id": "module.conversation.messageGap", "order": 40, "visible": true }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "components",
+              "label": "Components",
+              "subtitle": "Variants used by the conversation module",
+              "icon": "{{EditorIcons.Component}}",
+              "order": 30,
+              "visible": true,
+              "defaultOpen": true,
+              "groups": [
+                {
+                  "id": "system",
+                  "label": "System",
+                  "order": 10,
+                  "visible": true,
+                  "fields": [
+                    { "id": "module.conversation.showStatusBar", "order": 10, "visible": true },
+                    { "id": "module.conversation.statusBarVariant", "order": 20, "visible": true },
+                    { "id": "module.conversation.showNavigationBar", "order": 30, "visible": true },
+                    { "id": "module.conversation.navigationBarVariant", "order": 40, "visible": true },
+                    { "id": "module.conversation.showKeyboard", "order": 50, "visible": true },
+                    { "id": "module.conversation.keyboardVariant", "order": 60, "visible": true },
+                    { "id": "module.conversation.showTextInputBar", "order": 70, "visible": true },
+                    { "id": "module.conversation.textInputBarVariant", "order": 80, "visible": true }
+                  ]
+                },
+                {
+                  "id": "content",
+                  "label": "Content",
+                  "order": 20,
+                  "visible": true,
+                  "fields": [
+                    { "id": "module.conversation.bubbleVariant", "order": 10, "visible": true }
+                  ]
+                }
+              ]
+            }
+            """
+            : "";
 
         return $$"""
         {
@@ -664,7 +728,7 @@ internal sealed partial class SpikeDatabase
                   ]
                 }
               ]
-            }{{appCards}}{{actorCards}}{{themeCards}}{{componentCards}}
+            }{{appCards}}{{actorCards}}{{themeCards}}{{moduleCards}}{{componentCards}}
           ]
         }
         """;

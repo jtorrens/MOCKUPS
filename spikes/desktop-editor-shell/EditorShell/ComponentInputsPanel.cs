@@ -66,7 +66,7 @@ internal sealed class ComponentInputsPanel : ContentControl
         _isUpdating = true;
         try
         {
-            if (payload is null || payload.Kind != "componentClass" || string.IsNullOrWhiteSpace(projectId))
+            if (payload is null || !SupportsInputs(payload) || string.IsNullOrWhiteSpace(projectId))
             {
                 IsVisible = false;
                 _scopeKey = "";
@@ -344,7 +344,7 @@ internal sealed class ComponentInputsPanel : ContentControl
 
     public DesignPreviewPayload ApplyInputs(DesignPreviewPayload payload, string themeMode, string? projectId)
     {
-        if (payload.Kind != "componentClass")
+        if (!SupportsInputs(payload))
         {
             return payload;
         }
@@ -413,6 +413,11 @@ internal sealed class ComponentInputsPanel : ContentControl
     private static string ScopeKey(DesignPreviewPayload payload)
     {
         return $"{payload.Kind}:{payload.ComponentType}:{payload.Name}";
+    }
+
+    private static bool SupportsInputs(DesignPreviewPayload payload)
+    {
+        return payload.Kind is "componentClass" or "module";
     }
 
     private Control CreateInputRow(ComponentInputDefinition input, string projectId)

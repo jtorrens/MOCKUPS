@@ -58,6 +58,7 @@ internal sealed class RecordClassFieldValueService
             ProjectTreeNodeKind.Theme => ThemeFieldOptions(node.Id, field),
             ProjectTreeNodeKind.Actor => ActorFieldOptions(node.Id, field),
             ProjectTreeNodeKind.App => AppFieldOptions(node.Id, field),
+            ProjectTreeNodeKind.Module => ModuleFieldOptions(node.Id, field),
             ProjectTreeNodeKind.Shot => ShotFieldOptions(node.Id, field),
             ProjectTreeNodeKind.RenderPreset => RenderPresetFieldOptions(field),
             ProjectTreeNodeKind.ProductionFont => ProductionFontFieldOptions(field),
@@ -155,6 +156,8 @@ internal sealed class RecordClassFieldValueService
             "module.recordClassId" => settings.RecordClassId,
             "module.sortOrder" => settings.SortOrder.ToString(),
             "module.metadata" => settings.MetadataJson,
+            _ when fieldId.StartsWith("module.conversation.", StringComparison.Ordinal) =>
+                _database.GetModuleConfigFieldValue(moduleId, fieldId),
             _ => throw new InvalidOperationException($"Unknown module field '{fieldId}'."),
         };
     }
@@ -307,6 +310,17 @@ internal sealed class RecordClassFieldValueService
             "shot.renderPresetId" => _database.GetRenderPresetOptions(settings.ProjectId),
             _ => field.Options,
         };
+    }
+
+    private IReadOnlyList<FieldOption>? ModuleFieldOptions(string moduleId, RecordClassFieldDescriptor field)
+    {
+        var settings = _database.GetModuleSettings(moduleId);
+        if (field.ValueKind == ValueKind.ComponentPreset && !string.IsNullOrWhiteSpace(field.ComponentPresetType))
+        {
+            return _database.GetComponentPresetReferenceOptionsByType(settings.ProjectId, field.ComponentPresetType);
+        }
+
+        return field.Options;
     }
 
     private static IReadOnlyList<FieldOption>? RenderPresetFieldOptions(RecordClassFieldDescriptor field)

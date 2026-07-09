@@ -12,10 +12,13 @@ internal sealed record RecordClassFieldDescriptor(
     PairFieldLabels? PairLabels = null,
     ImagePreviewDefinition? ImagePreview = null,
     NumberDefinition? Number = null,
-    RecordReferenceDefinition? RecordReference = null);
+    RecordReferenceDefinition? RecordReference = null,
+    string ComponentPresetType = "");
 
 internal static class RecordClassFieldCatalog
 {
+    private static readonly FieldOption[] SpacingTokenOptions = ComponentClassFieldCatalog.SpacingTokenOptions;
+
     private static readonly FieldOption[] MotionEasingOptions =
     [
         new("linear", "Linear"),
@@ -100,6 +103,52 @@ internal static class RecordClassFieldCatalog
             ]),
         ["module.sortOrder"] = new("module.sortOrder", "Sort Order", ValueKind.Integer),
         ["module.metadata"] = new("module.metadata", "Metadata", ValueKind.StringMultiline),
+        ["module.conversation.showHeader"] = new("module.conversation.showHeader", "Header", ValueKind.Boolean),
+        ["module.conversation.headerHeight"] = new(
+            "module.conversation.headerHeight",
+            "Header height",
+            ValueKind.Integer,
+            Number: new NumberDefinition(0, 240, 1, 0)),
+        ["module.conversation.showStatusBar"] = new("module.conversation.showStatusBar", "Status bar", ValueKind.Boolean),
+        ["module.conversation.statusBarVariant"] = new(
+            "module.conversation.statusBarVariant",
+            "Status bar variant",
+            ValueKind.ComponentPreset,
+            ComponentPresetType: "status_bar"),
+        ["module.conversation.showNavigationBar"] = new("module.conversation.showNavigationBar", "Navigation bar", ValueKind.Boolean),
+        ["module.conversation.navigationBarVariant"] = new(
+            "module.conversation.navigationBarVariant",
+            "Navigation variant",
+            ValueKind.ComponentPreset,
+            ComponentPresetType: "navigation_bar"),
+        ["module.conversation.showTextInputBar"] = new("module.conversation.showTextInputBar", "Text input bar", ValueKind.Boolean),
+        ["module.conversation.textInputBarVariant"] = new(
+            "module.conversation.textInputBarVariant",
+            "Text input variant",
+            ValueKind.ComponentPreset,
+            ComponentPresetType: "textInputBar"),
+        ["module.conversation.showKeyboard"] = new("module.conversation.showKeyboard", "Keyboard", ValueKind.Boolean),
+        ["module.conversation.keyboardVariant"] = new(
+            "module.conversation.keyboardVariant",
+            "Keyboard variant",
+            ValueKind.ComponentPreset,
+            ComponentPresetType: "keyboard"),
+        ["module.conversation.bubbleVariant"] = new(
+            "module.conversation.bubbleVariant",
+            "Bubble variant",
+            ValueKind.ComponentPreset,
+            ComponentPresetType: "bubble"),
+        ["module.conversation.screenGutter"] = new(
+            "module.conversation.screenGutter",
+            "Screen gutter",
+            ValueKind.ThemeTokenPair,
+            PairLabels: new("X", "Y"),
+            Options: SpacingTokenOptions),
+        ["module.conversation.messageGap"] = new(
+            "module.conversation.messageGap",
+            "Message gap",
+            ValueKind.ThemeToken,
+            Options: SpacingTokenOptions),
 
         ["renderPreset.width"] = new("renderPreset.width", "Width", ValueKind.Integer, IsEditable: false),
         ["renderPreset.height"] = new("renderPreset.height", "Height", ValueKind.Integer, IsEditable: false),

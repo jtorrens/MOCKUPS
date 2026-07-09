@@ -18,7 +18,7 @@ export interface DesignPreviewFontFacePayload {
 }
 
 export interface DesignPreviewPayload {
-  kind: "componentClass";
+  kind: "componentClass" | "module";
   componentType?: string;
   componentBaseConfigsJson?: string;
   configJson: string;

@@ -532,6 +532,19 @@ for (const [, entry] of manifestEntries) {
   }
 }
 
+allowedComponentImports["src/desktop-preview/conversationModuleRenderable.ts"] = new Set([
+  "./bubbleComponentRenderable.js",
+  "./bubbleComponentResolver.js",
+  "./keyboardComponentRenderable.js",
+  "./keyboardComponentResolver.js",
+  "./navigationBarComponentRenderable.js",
+  "./navigationBarComponentResolver.js",
+  "./statusBarComponentRenderable.js",
+  "./statusBarComponentResolver.js",
+  "./textInputBarComponentRenderable.js",
+  "./textInputBarComponentResolver.js",
+]);
+
 for (const filePath of walkFiles(previewRoot)) {
   const relativePath = relative(filePath);
   const source = readFileSync(filePath, "utf8");

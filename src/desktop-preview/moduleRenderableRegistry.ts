@@ -1,16 +1,10 @@
 import type { RenderableNode } from "../visual/renderable/types.js";
-import { componentClassToRenderable } from "./componentClassRenderableRegistry.js";
+import { conversationModuleToRenderable } from "./conversationModuleRenderable.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import { moduleToRenderable } from "./moduleRenderableRegistry.js";
 
-export function designPreviewPayloadToRenderable(
-  payload: DesignPreviewPayload,
-): RenderableNode {
-  if (payload.kind === "componentClass") {
-    return componentClassToRenderable(payload);
-  }
-  if (payload.kind === "module") {
-    return moduleToRenderable(payload);
+export function moduleToRenderable(payload: DesignPreviewPayload): RenderableNode {
+  if (payload.componentType === "module.core.chat") {
+    return conversationModuleToRenderable(payload);
   }
 
   const box = {
@@ -20,11 +14,11 @@ export function designPreviewPayloadToRenderable(
     height: 88,
   };
   return {
-    id: "design_preview.unsupported",
+    id: "module.preview.unsupported",
     type: "surface",
     frame: 0,
     box,
-    text: `Unsupported design preview: ${payload.kind}`,
+    text: `Unsupported module preview: ${payload.componentType}`,
     style: {
       alignItems: "center",
       backgroundColor: "#ff00ff",

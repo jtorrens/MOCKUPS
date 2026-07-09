@@ -23,6 +23,8 @@ internal sealed partial class SpikeDatabase
           slug TEXT NOT NULL DEFAULT '',
           notes TEXT NOT NULL DEFAULT '',
           sort_order INTEGER NOT NULL DEFAULT 0,
+          config_json TEXT NOT NULL DEFAULT '{}',
+          design_preview_json TEXT NOT NULL DEFAULT '{}',
           metadata_json TEXT NOT NULL DEFAULT '{}'
         );
 
