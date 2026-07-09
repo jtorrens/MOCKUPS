@@ -52,10 +52,14 @@ export function measureTextBoxComponent(
   const hasLeftIcons = textBox.leftIconRow.icons.length > 0;
   const hasRightIcons = textBox.rightIconRow.icons.length > 0;
   const contentText = visibleText(textBox);
-  const contentSize = approximateMultilineTextSize(
-    contentText,
-    typography.fontSize,
-    typography.lineHeight,
+  const cursorWidth = inlineCursorMeasuredWidth(textBox, typography.fontSize, scale);
+  const contentSize = withInlineCursorWidth(
+    approximateMultilineTextSize(
+      contentText,
+      typography.fontSize,
+      typography.lineHeight,
+    ),
+    cursorWidth,
   );
   const contentVisualHeight = textContentVisualHeight(contentSize.lineCount, typography);
   if (textBox.dimensionMode === "fixed") {
@@ -97,17 +101,20 @@ export function measureTextBoxComponent(
       width,
       minimumHeight,
     );
-    let wrappedContentSize = approximateWrappedTextSize(
-      contentText,
-      typography.fontSize,
-      typography.lineHeight,
-      safeWrapWidth(Math.max(1, width - paddingX * 2 - iconTextInset(
-        hasLeftIcons,
-        hasRightIcons,
-        leftIconSize.width,
-        rightIconSize.width,
-        iconGap,
-      ).total)),
+    let wrappedContentSize = withInlineCursorWidth(
+      approximateWrappedTextSize(
+        contentText,
+        typography.fontSize,
+        typography.lineHeight,
+        safeWrapWidth(Math.max(1, width - paddingX * 2 - iconTextInset(
+          hasLeftIcons,
+          hasRightIcons,
+          leftIconSize.width,
+          rightIconSize.width,
+          iconGap,
+        ).total)),
+      ),
+      cursorWidth,
     );
     let height = growingHeight(
       minimumHeight,
@@ -126,11 +133,14 @@ export function measureTextBoxComponent(
       rightIconSize.width,
       iconGap,
     );
-    wrappedContentSize = approximateWrappedTextSize(
-      contentText,
-      typography.fontSize,
-      typography.lineHeight,
-      safeWrapWidth(Math.max(1, width - paddingX * 2 - iconInset.total)),
+    wrappedContentSize = withInlineCursorWidth(
+      approximateWrappedTextSize(
+        contentText,
+        typography.fontSize,
+        typography.lineHeight,
+        safeWrapWidth(Math.max(1, width - paddingX * 2 - iconInset.total)),
+      ),
+      cursorWidth,
     );
     height = growingHeight(
       minimumHeight,
@@ -176,11 +186,14 @@ export function measureTextBoxComponent(
   let naturalWidth = conservativeTextWidth(contentSize.width) + paddingX * 2 + iconInset.total;
   let wraps = naturalWidth > maximumWidth;
   let measuredContentSize = wraps
-    ? approximateWrappedTextSize(
-        contentText,
-        typography.fontSize,
-        typography.lineHeight,
-        safeWrapWidth(Math.max(1, maximumWidth - paddingX * 2 - iconInset.total)),
+    ? withInlineCursorWidth(
+        approximateWrappedTextSize(
+          contentText,
+          typography.fontSize,
+          typography.lineHeight,
+          safeWrapWidth(Math.max(1, maximumWidth - paddingX * 2 - iconInset.total)),
+        ),
+        cursorWidth,
       )
     : contentSize;
 
@@ -201,11 +214,14 @@ export function measureTextBoxComponent(
   naturalWidth = conservativeTextWidth(contentSize.width) + paddingX * 2 + iconInset.total;
   wraps = naturalWidth > maximumWidth;
   measuredContentSize = wraps
-    ? approximateWrappedTextSize(
-        contentText,
-        typography.fontSize,
-        typography.lineHeight,
-        safeWrapWidth(Math.max(1, maximumWidth - paddingX * 2 - iconInset.total)),
+    ? withInlineCursorWidth(
+        approximateWrappedTextSize(
+          contentText,
+          typography.fontSize,
+          typography.lineHeight,
+          safeWrapWidth(Math.max(1, maximumWidth - paddingX * 2 - iconInset.total)),
+        ),
+        cursorWidth,
       )
     : contentSize;
   width = wraps ? maximumWidth : Math.max(1, naturalWidth);
@@ -268,8 +284,9 @@ export function textBoxComponentToRenderableAt(
     width: Math.max(1, box.width - paddingX * 2 - iconInset.total),
     height: Math.max(1, box.height - size.paddingY * 2),
   };
-  const textIsEmpty = textBox.text.trim().length === 0;
+  const textIsEmpty = textBox.text.length === 0;
   const cursorWidth = Math.max(1, textBox.cursor.width * scale);
+  const cursorMetadata = inlineCursorMetadata(payload, textBox, cursorWidth);
   const wrappedLines = approximateWrappedTextLines(
     size.contentText,
     size.typography.fontSize,
@@ -363,15 +380,7 @@ export function textBoxComponentToRenderableAt(
                   ...textStyle,
                   width: "100%",
                 },
-                metadata: textBox.cursorVisible && !textIsEmpty
-                  ? {
-                      inlineCursor: {
-                        color: selectedColor(payload, textBox.cursor.colorToken),
-                        width: cursorWidth,
-                        opacity: 1,
-                      },
-                    }
-                  : undefined,
+                metadata: cursorMetadata,
               }
             : {
                 id: `${textBox.id}.text`,
@@ -385,15 +394,7 @@ export function textBoxComponentToRenderableAt(
                 },
                 text: size.contentText,
                 style: textStyle,
-                metadata: textBox.cursorVisible && !textIsEmpty
-                  ? {
-                      inlineCursor: {
-                        color: selectedColor(payload, textBox.cursor.colorToken),
-                        width: cursorWidth,
-                        opacity: 1,
-                      },
-                    }
-                  : undefined,
+                metadata: cursorMetadata,
               },
         ],
       },
@@ -402,7 +403,48 @@ export function textBoxComponentToRenderableAt(
 }
 
 function visibleText(textBox: TextBoxDesignContract) {
-  return textBox.text.trim().length > 0 ? textBox.text : textBox.placeholder;
+  return textBox.text.length > 0 ? textBox.text : textBox.placeholder;
+}
+
+function inlineCursorShouldRender(textBox: TextBoxDesignContract) {
+  return textBox.cursorVisible
+    && (textBox.text.length > 0 || textBox.placeholder.length === 0);
+}
+
+function inlineCursorMeasuredWidth(
+  textBox: TextBoxDesignContract,
+  fontSize: number,
+  scale: number,
+) {
+  if (!inlineCursorShouldRender(textBox)) return 0;
+  return Math.max(1, textBox.cursor.width * scale) + Math.max(1, fontSize * 0.01);
+}
+
+function inlineCursorMetadata(
+  payload: DesignPreviewPayload,
+  textBox: TextBoxDesignContract,
+  cursorWidth: number,
+) {
+  return inlineCursorShouldRender(textBox)
+    ? {
+        inlineCursor: {
+          color: selectedColor(payload, textBox.cursor.colorToken),
+          width: cursorWidth,
+          opacity: 1,
+        },
+      }
+    : undefined;
+}
+
+function withInlineCursorWidth<T extends { width: number }>(
+  size: T,
+  cursorWidth: number,
+) {
+  if (cursorWidth <= 0) return size;
+  return {
+    ...size,
+    width: size.width + cursorWidth,
+  };
 }
 
 function effectiveCornerTextInset(cornerRadius: number, width: number, height: number) {
