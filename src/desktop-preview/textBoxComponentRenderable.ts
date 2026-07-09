@@ -57,6 +57,7 @@ export function measureTextBoxComponent(
     typography.fontSize,
     typography.lineHeight,
   );
+  const contentVisualHeight = textContentVisualHeight(contentSize.lineCount, typography);
   if (textBox.dimensionMode === "fixed") {
     const width = textBox.size.width * scale;
     const height = textBox.size.height * scale;
@@ -83,7 +84,8 @@ export function measureTextBoxComponent(
       hasRightIcons,
       iconInset,
       contentText,
-      contentTextHeight: contentSize.height,
+      contentTextHeight: contentVisualHeight,
+      contentLineCount: contentSize.lineCount,
     };
   }
 
@@ -111,8 +113,9 @@ export function measureTextBoxComponent(
       minimumHeight,
       paddingY,
       typography.lineHeight,
+      typography.fontSize,
       textBox.maxLines,
-      wrappedContentSize.height,
+      textContentVisualHeight(wrappedContentSize.lineCount, typography),
       Math.max(leftIconSize.height, rightIconSize.height),
     );
     paddingX = basePaddingX + effectiveCornerTextInset(cornerRadius, width, height);
@@ -133,8 +136,9 @@ export function measureTextBoxComponent(
       minimumHeight,
       paddingY,
       typography.lineHeight,
+      typography.fontSize,
       textBox.maxLines,
-      wrappedContentSize.height,
+      textContentVisualHeight(wrappedContentSize.lineCount, typography),
       Math.max(leftIconSize.height, rightIconSize.height),
     );
 
@@ -153,7 +157,8 @@ export function measureTextBoxComponent(
       hasRightIcons,
       iconInset,
       contentText,
-      contentTextHeight: wrappedContentSize.height,
+      contentTextHeight: textContentVisualHeight(wrappedContentSize.lineCount, typography),
+      contentLineCount: wrappedContentSize.lineCount,
     };
   }
 
@@ -182,7 +187,7 @@ export function measureTextBoxComponent(
   width = wraps ? maximumWidth : Math.max(1, naturalWidth);
   height = Math.max(
     1,
-    measuredContentSize.height + paddingY * 2,
+    textContentVisualHeight(measuredContentSize.lineCount, typography) + paddingY * 2,
     Math.max(leftIconSize.height, rightIconSize.height) + paddingY * 2,
   );
   paddingX = basePaddingX + effectiveCornerTextInset(cornerRadius, width, height);
@@ -206,7 +211,7 @@ export function measureTextBoxComponent(
   width = wraps ? maximumWidth : Math.max(1, naturalWidth);
   height = Math.max(
     1,
-    measuredContentSize.height + paddingY * 2,
+    textContentVisualHeight(measuredContentSize.lineCount, typography) + paddingY * 2,
     Math.max(leftIconSize.height, rightIconSize.height) + paddingY * 2,
   );
   return {
@@ -224,7 +229,8 @@ export function measureTextBoxComponent(
     hasRightIcons,
     iconInset,
     contentText,
-    contentTextHeight: measuredContentSize.height,
+    contentTextHeight: textContentVisualHeight(measuredContentSize.lineCount, typography),
+    contentLineCount: measuredContentSize.lineCount,
   };
 }
 
@@ -274,7 +280,8 @@ export function textBoxComponentToRenderableAt(
       ? box.y + Math.max(0, (box.height - iconHeight) * 0.5)
       : box.y + box.height - size.paddingY - iconHeight;
   const lineHeight = size.typography.lineHeight;
-  const textContentHeight = Math.max(1, wrappedLines.length) * lineHeight;
+  const textLineCount = Math.max(1, wrappedLines.length);
+  const textContentHeight = textContentVisualHeight(textLineCount, size.typography);
   const textOverflowsFrame = textContentHeight > textFrame.height + 0.5;
   const scrollAnchorsToBottom = textOverflowsFrame && textBox.overflowMode === "scroll";
   const textContentY = wrappedLines.length === 1
@@ -427,11 +434,26 @@ function growingHeight(
   minimumHeight: number,
   paddingY: number,
   lineHeight: number,
+  fontSize: number,
   maxLines: number,
   contentHeight: number,
   iconHeight: number,
 ) {
-  const maximumContentHeight = Math.max(1, Math.floor(maxLines)) * lineHeight;
+  const maximumContentHeight = textContentVisualHeight(
+    Math.max(1, Math.floor(maxLines)),
+    { fontSize, lineHeight },
+  );
   const visibleContentHeight = Math.min(contentHeight, maximumContentHeight);
   return Math.max(1, minimumHeight, visibleContentHeight + paddingY * 2, iconHeight + paddingY * 2);
+}
+
+function textContentVisualHeight(
+  lineCount: number,
+  typography: { fontSize: number; lineHeight: number },
+) {
+  return Math.max(1, Math.max(1, lineCount) * typography.lineHeight + textMetricSlack(typography.fontSize));
+}
+
+function textMetricSlack(fontSize: number) {
+  return Math.max(1, fontSize * 0.14);
 }

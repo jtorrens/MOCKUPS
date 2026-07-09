@@ -67,10 +67,7 @@ export function textInputBarComponentToRenderable(
     width: screenBox.width,
     height: fieldHeight + barPaddingY * 2,
   };
-  const textLineCount = Math.max(
-    1,
-    Math.ceil(measuredTextBoxSize.contentTextHeight / measuredTextBoxSize.typography.lineHeight),
-  );
+  const textLineCount = Math.max(1, measuredTextBoxSize.contentLineCount);
   const iconY = (iconHeight: number) =>
     textLineCount <= 1
       ? barBox.y + barPaddingY + Math.max(0, (fieldHeight - iconHeight) * 0.5)
