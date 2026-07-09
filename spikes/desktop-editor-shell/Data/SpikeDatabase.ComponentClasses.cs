@@ -1768,6 +1768,7 @@ internal sealed partial class SpikeDatabase
             designPreviewChanged |= EnsureComponentInputs(row.ComponentType, designPreview, designPreviewDefaults);
             designPreviewChanged |= EnsureComponentDesignPreviewText(row.ComponentType, designPreview);
             designPreviewChanged |= EnsureButtonIconPreviewSize(row.ComponentType, designPreview);
+            designPreviewChanged |= NormalizeBubbleWriteOnFrameInputs(row.ComponentType, designPreview);
             designPreviewChanged |= EnsureComponentPreviewActions(row.ComponentType, designPreview, designPreviewDefaults);
 
             var metadata = ParseJsonObject(string.IsNullOrWhiteSpace(row.MetadataJson) ? "{}" : row.MetadataJson);
@@ -3065,10 +3066,49 @@ internal sealed partial class SpikeDatabase
         }
 
         changed |= NormalizeComponentInputDefinitions(componentType, inputs, defaultInputs);
-        if (componentType is "keyboard" or "media")
+        if (componentType is "keyboard" or "media" or "bubble")
         {
             changed |= RemoveUnknownComponentInputs(inputs, defaultInputs);
         }
+        return changed;
+    }
+
+    private static bool NormalizeBubbleWriteOnFrameInputs(string componentType, JsonObject designPreview)
+    {
+        if (componentType != "bubble")
+        {
+            return false;
+        }
+
+        var changed = false;
+        if (designPreview["writeOnDurationFrames"] is null)
+        {
+            var seconds = JsonPath.Number(designPreview, "writeOnDurationSeconds", 0);
+            designPreview["writeOnDurationFrames"] = seconds > 0
+                ? Math.Max(1, (int)Math.Round(seconds * 25, MidpointRounding.AwayFromZero))
+                : 30;
+            changed = true;
+        }
+
+        if (designPreview["writeOnFrame"] is null)
+        {
+            var seconds = JsonPath.Number(designPreview, "writeOnTimeSeconds", 0);
+            designPreview["writeOnFrame"] = seconds > 0
+                ? Math.Max(0, (int)Math.Round(seconds * 25, MidpointRounding.AwayFromZero))
+                : 0;
+            changed = true;
+        }
+
+        if (designPreview.Remove("writeOnDurationSeconds"))
+        {
+            changed = true;
+        }
+
+        if (designPreview.Remove("writeOnTimeSeconds"))
+        {
+            changed = true;
+        }
+
         return changed;
     }
 

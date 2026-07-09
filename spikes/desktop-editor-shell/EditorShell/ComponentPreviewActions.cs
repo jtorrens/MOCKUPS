@@ -62,8 +62,16 @@ internal static class ComponentPreviewActions
             durationInputId,
             durationSeconds,
             timeJsonKey,
+            ParseTimeUnit(JsonString(action, "timeUnit")),
             JsonBoolean(action, "prewarmFrames", true),
             JsonStringArray(action, "activateInputIds"));
+    }
+
+    private static ComponentPreviewActionTimeUnit ParseTimeUnit(string value)
+    {
+        return value.Equals("frames", StringComparison.OrdinalIgnoreCase)
+            ? ComponentPreviewActionTimeUnit.Frames
+            : ComponentPreviewActionTimeUnit.Seconds;
     }
 
     private static IReadOnlyList<string> JsonStringArray(JsonObject owner, string key)
@@ -130,5 +138,12 @@ internal sealed record ComponentPreviewActionDefinition(
     string DurationInputId,
     double DurationSeconds,
     string TimeJsonKey,
+    ComponentPreviewActionTimeUnit TimeUnit,
     bool PrewarmFrames,
     IReadOnlyList<string> ActivateInputIds);
+
+internal enum ComponentPreviewActionTimeUnit
+{
+    Seconds,
+    Frames,
+}

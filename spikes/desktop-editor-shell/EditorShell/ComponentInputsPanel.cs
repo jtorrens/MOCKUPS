@@ -400,7 +400,7 @@ internal sealed class ComponentInputsPanel : ContentControl
         foreach (var action in _actions)
         {
             preview[action.PlayInputId] = IsPlaying(action);
-            preview[action.TimeJsonKey] = NormalizedPlaybackSeconds(action, CurrentPlaybackSeconds(action));
+            preview[action.TimeJsonKey] = PlaybackTimeValue(action);
         }
 
         return payload with { DesignPreviewJson = preview.ToJsonString() };
@@ -773,7 +773,9 @@ internal sealed class ComponentInputsPanel : ContentControl
             ("label", action.Label),
             ("startsPlayback", startsPlayback),
             ("fps", _playbackFrameRate),
-            ("durationSec", DurationSeconds(action)));
+            ("durationSec", DurationSeconds(action)),
+            ("durationFrames", DurationFrames(action)),
+            ("timeUnit", action.TimeUnit));
         if (startsPlayback)
         {
             _ = StartPlaybackAsync(action);
@@ -815,6 +817,8 @@ internal sealed class ComponentInputsPanel : ContentControl
                 ("action", action.Id),
                 ("fps", _playbackFrameRate),
                 ("durationSec", DurationSeconds(action)),
+                ("durationFrames", DurationFrames(action)),
+                ("timeUnit", action.TimeUnit),
                 ("timeKey", action.TimeJsonKey));
             try
             {
@@ -866,7 +870,9 @@ internal sealed class ComponentInputsPanel : ContentControl
             ("scope", _scopeKey),
             ("action", action.Id),
             ("fps", _playbackFrameRate),
-            ("durationSec", DurationSeconds(action)));
+            ("durationSec", DurationSeconds(action)),
+            ("durationFrames", DurationFrames(action)),
+            ("timeUnit", action.TimeUnit));
         SyncPlaybackTimer();
         UpdateActionButtons();
         _refreshPreview();
@@ -884,7 +890,8 @@ internal sealed class ComponentInputsPanel : ContentControl
             ("scope", _scopeKey),
             ("action", activeAction?.Id ?? ""),
             ("timeSec", hasPlayback && activeAction is not null ? CurrentPlaybackSeconds(activeAction) : 0),
-            ("durationSec", hasPlayback && activeAction is not null ? DurationSeconds(activeAction) : 0));
+            ("durationSec", hasPlayback && activeAction is not null ? DurationSeconds(activeAction) : 0),
+            ("frame", hasPlayback && activeAction is not null ? CurrentPlaybackFrame(activeAction) : 0));
     }
 
     private void AdvancePlaybackFrame()
@@ -905,7 +912,9 @@ internal sealed class ComponentInputsPanel : ContentControl
             ("scope", _scopeKey),
             ("action", activeAction.Id),
             ("timeSec", current),
+            ("frame", CurrentPlaybackFrame(activeAction)),
             ("durationSec", DurationSeconds(activeAction)),
+            ("durationFrames", DurationFrames(activeAction)),
             ("fps", _playbackFrameRate));
         if (current >= DurationSeconds(activeAction))
         {
@@ -938,6 +947,11 @@ internal sealed class ComponentInputsPanel : ContentControl
 
     private double DurationSeconds(ComponentPreviewActionDefinition action)
     {
+        if (action.TimeUnit == ComponentPreviewActionTimeUnit.Frames)
+        {
+            return DurationFrames(action) / (double)Math.Max(1, _playbackFrameRate);
+        }
+
         if (action.DurationSeconds > 0)
         {
             return action.DurationSeconds;
@@ -945,6 +959,30 @@ internal sealed class ComponentInputsPanel : ContentControl
 
         var key = ActionDurationKey(action);
         return Math.Max(1, ParseDouble(_values.GetValueOrDefault(key, InputDefault(key, "1"))));
+    }
+
+    private int DurationFrames(ComponentPreviewActionDefinition action)
+    {
+        if (action.TimeUnit != ComponentPreviewActionTimeUnit.Frames)
+        {
+            return Math.Max(1, (int)Math.Ceiling(DurationSeconds(action) * Math.Max(1, _playbackFrameRate)));
+        }
+
+        var key = ActionDurationKey(action);
+        return Math.Max(1, (int)Math.Round(ParseDouble(_values.GetValueOrDefault(key, InputDefault(key, "1"))), MidpointRounding.AwayFromZero));
+    }
+
+    private double PlaybackTimeValue(ComponentPreviewActionDefinition action)
+    {
+        return action.TimeUnit == ComponentPreviewActionTimeUnit.Frames
+            ? CurrentPlaybackFrame(action)
+            : NormalizedPlaybackSeconds(action, CurrentPlaybackSeconds(action));
+    }
+
+    private int CurrentPlaybackFrame(ComponentPreviewActionDefinition action)
+    {
+        var frame = (int)Math.Floor(CurrentPlaybackSeconds(action) * Math.Max(1, _playbackFrameRate) + 0.0001);
+        return Math.Max(0, Math.Min(DurationFrames(action), frame));
     }
 
     private bool IsPlaying(ComponentPreviewActionDefinition action)
@@ -1196,6 +1234,7 @@ internal sealed class ComponentInputsPanel : ContentControl
             action.DurationInputId,
             action.DurationSeconds.ToString(CultureInfo.InvariantCulture),
             action.TimeJsonKey,
+            action.TimeUnit,
             action.PrewarmFrames.ToString(CultureInfo.InvariantCulture),
             string.Join(",", action.ActivateInputIds));
     }

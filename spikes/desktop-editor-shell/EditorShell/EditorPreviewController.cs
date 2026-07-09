@@ -818,19 +818,18 @@ internal sealed class EditorPreviewController
             yield break;
         }
 
-        var duration = animationDurationSeconds > 0
-            ? animationDurationSeconds
-            : Math.Max(0, JsonNumber(preview, durationInputId, 0));
-        if (duration <= 0)
+        var frameCount = PlaybackDurationFrames(action, preview, fps);
+        if (frameCount <= 0)
         {
             yield break;
         }
 
-        var frameCount = Math.Max(1, (int)Math.Ceiling(duration * fps));
         for (var frame = 0; frame <= frameCount; frame++)
         {
             var framePreview = JsonNode.Parse(preview.ToJsonString()) as JsonObject ?? new JsonObject();
-            framePreview[timeJsonKey] = Math.Min(duration, frame / (double)fps);
+            framePreview[timeJsonKey] = action.TimeUnit == ComponentPreviewActionTimeUnit.Frames
+                ? frame
+                : frame / (double)fps;
             framePreview[action.PlayInputId] = true;
             yield return payload with { DesignPreviewJson = framePreview.ToJsonString() };
         }
@@ -850,28 +849,45 @@ internal sealed class EditorPreviewController
             yield break;
         }
 
-        var duration = action.DurationSeconds > 0
-            ? action.DurationSeconds
-            : Math.Max(0, JsonNumber(preview, action.DurationInputId, 0));
-        if (duration <= 0)
+        var durationFrames = PlaybackDurationFrames(action, preview, fps);
+        if (durationFrames <= 0)
         {
             yield break;
         }
 
-        var current = JsonNumber(preview, action.TimeJsonKey, 0);
+        var currentFrame = action.TimeUnit == ComponentPreviewActionTimeUnit.Frames
+            ? Math.Max(0, (int)Math.Floor(JsonNumber(preview, action.TimeJsonKey, 0)))
+            : Math.Max(0, (int)Math.Floor(JsonNumber(preview, action.TimeJsonKey, 0) * fps));
         for (var index = 1; index <= AheadPlaybackPreloadFrames * 2; index++)
         {
-            var time = current + index / (double)fps;
-            if (time > duration)
+            var frame = currentFrame + index;
+            if (frame > durationFrames)
             {
                 yield break;
             }
 
             var framePreview = JsonNode.Parse(preview.ToJsonString()) as JsonObject ?? new JsonObject();
-            framePreview[action.TimeJsonKey] = time;
+            framePreview[action.TimeJsonKey] = action.TimeUnit == ComponentPreviewActionTimeUnit.Frames
+                ? frame
+                : frame / (double)fps;
             framePreview[action.PlayInputId] = true;
             yield return payload with { DesignPreviewJson = framePreview.ToJsonString() };
         }
+    }
+
+    private static int PlaybackDurationFrames(ComponentPreviewActionDefinition action, JsonObject preview, int fps)
+    {
+        if (action.TimeUnit == ComponentPreviewActionTimeUnit.Frames)
+        {
+            return Math.Max(0, (int)Math.Round(JsonNumber(preview, action.DurationInputId, 0), MidpointRounding.AwayFromZero));
+        }
+
+        var duration = action.DurationSeconds > 0
+            ? action.DurationSeconds
+            : Math.Max(0, JsonNumber(preview, action.DurationInputId, 0));
+        return duration <= 0
+            ? 0
+            : Math.Max(1, (int)Math.Ceiling(duration * Math.Max(1, fps)));
     }
 
     private static string PlaybackFrameKey(DesignPreviewPayload payload)
