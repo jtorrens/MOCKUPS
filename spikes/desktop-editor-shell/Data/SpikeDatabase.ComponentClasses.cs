@@ -2849,6 +2849,7 @@ internal sealed partial class SpikeDatabase
         changed |= NormalizeComponentPresetString(connection, projectId, bubble, ["audioSlot", "presetId"], "audio");
         changed |= NormalizeComponentPresetString(connection, projectId, bubble, ["actorLabelSlot", "presetId"], "label");
         changed |= EnsureStringValue(bubble, ["mediaType"], "none");
+        changed |= EnsureStringValue(bubble, ["mediaPosition"], "bottom");
         if (JsonPath.Get(bubble, ["actorLabelSlot", "showLabel"]) is null)
         {
             SetJsonValue(bubble, ["actorLabelSlot", "showLabel"], JsonValue.Create(false)!);

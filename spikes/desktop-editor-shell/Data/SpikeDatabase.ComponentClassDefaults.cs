@@ -357,6 +357,7 @@ internal sealed partial class SpikeDatabase
                     ["surfaceSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
                     ["textBoxSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
                     ["mediaType"] = "none",
+                    ["mediaPosition"] = "bottom",
                     ["imageMediaSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
                     ["videoMediaSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
                     ["audioSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),

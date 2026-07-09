@@ -10,6 +10,7 @@ import type { TextBoxDesignContract } from "./textBoxComponentContract.js";
 
 export type BubbleState = "incoming" | "system" | "outgoing";
 export type BubbleMediaType = "none" | "image" | "video" | "audio";
+export type BubbleMediaPosition = "top" | "bottom" | "left" | "right";
 
 export interface BubblePalettePairContract {
   light: string;
@@ -29,6 +30,7 @@ export interface BubbleActorLabelSlotContract {
 
 export interface BubbleMediaSlotContract {
   mediaType: BubbleMediaType;
+  position: BubbleMediaPosition;
   media?: MediaDesignContract;
   audio?: AudioDesignContract;
 }

@@ -544,9 +544,10 @@ internal sealed partial class SpikeDatabase
                 ] },
                 { "id": "bubbleMedia", "label": "Media", "order": 30, "visible": true, "fields": [
                   { "id": "component.bubble.media.type", "order": 10, "visible": true },
-                  { "id": "component.bubble.media.image.editor", "order": 20, "visible": true },
-                  { "id": "component.bubble.media.video.editor", "order": 30, "visible": true },
-                  { "id": "component.bubble.media.audio.editor", "order": 40, "visible": true }
+                  { "id": "component.bubble.media.position", "order": 20, "visible": true },
+                  { "id": "component.bubble.media.image.editor", "order": 30, "visible": true },
+                  { "id": "component.bubble.media.video.editor", "order": 40, "visible": true },
+                  { "id": "component.bubble.media.audio.editor", "order": 50, "visible": true }
                 ] },
                 { "id": "bubbleColors", "label": "Colors", "order": 40, "visible": true, "fields": [
                   { "id": "component.bubble.incomingBackground", "order": 10, "visible": true },

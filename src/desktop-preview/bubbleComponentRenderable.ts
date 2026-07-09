@@ -61,21 +61,21 @@ export function bubbleComponentToRenderable(
       ? measureAudioComponent(payload, media.value)
       : measureMediaComponent(payload, media.value)
     : undefined;
-  const mediaGap = mediaSize ? paddingY : 0;
+  const contentLayout = bubbleContentLayout(
+    { width: measuredTextBox.width, height: measuredTextBox.height },
+    mediaSize,
+    bubble.mediaSlot.position,
+    {
+      x: paddingX,
+      y: paddingY,
+    },
+  );
   const localSurfaceBox = {
     x: 0,
     y: 0,
-    width: Math.max(measuredTextBox.width, mediaSize?.width ?? 0) + paddingX * 2,
-    height: measuredTextBox.height + (mediaSize?.height ?? 0) + mediaGap + paddingY * 2,
+    width: contentLayout.width + paddingX * 2,
+    height: contentLayout.height + paddingY * 2,
   };
-  const localMediaBox = mediaSize
-    ? {
-        x: paddingX,
-        y: paddingY + measuredTextBox.height + mediaGap,
-        width: mediaSize.width,
-        height: mediaSize.height,
-      }
-    : undefined;
   const localLabelBox = bubble.actorLabelSlot.label
     ? placeChild(
         localSurfaceBox,
@@ -93,7 +93,10 @@ export function bubbleComponentToRenderable(
     y: groupBox.y - localBounds.y,
   };
   const surfaceBox = translateBox(localSurfaceBox, origin);
-  const mediaBox = localMediaBox ? translateBox(localMediaBox, origin) : undefined;
+  const textBox = translateBox(contentLayout.textBox, origin);
+  const mediaBox = contentLayout.mediaBox
+    ? translateBox(contentLayout.mediaBox, origin)
+    : undefined;
   const labelBox = localLabelBox ? translateBox(localLabelBox, origin) : undefined;
   const stateColors = bubble.colors[bubble.state];
   const surfaceColors = bubbleSurfaceColors(payload, stateColors.background, bubble.surface.backgroundAlpha);
@@ -117,12 +120,7 @@ export function bubbleComponentToRenderable(
       textBoxComponentToRenderableAt(
         payload,
         textBoxForContent,
-        {
-          x: surfaceBox.x + paddingX,
-          y: surfaceBox.y + paddingY,
-          width: measuredTextBox.width,
-          height: measuredTextBox.height,
-        },
+        textBox,
         {
           surfaceVisible: false,
           textColors: {
@@ -142,6 +140,70 @@ export function bubbleComponentToRenderable(
         ? [labelComponentToRenderableAt(payload, bubble.actorLabelSlot.label, labelBox)]
         : []),
     ],
+  };
+}
+
+function bubbleContentLayout(
+  textSize: { width: number; height: number },
+  mediaSize: { width: number; height: number } | undefined,
+  position: BubbleDesignContract["mediaSlot"]["position"],
+  padding: { x: number; y: number },
+) {
+  const textBox = {
+    x: padding.x,
+    y: padding.y,
+    width: textSize.width,
+    height: textSize.height,
+  };
+  if (!mediaSize) {
+    return {
+      width: textSize.width,
+      height: textSize.height,
+      textBox,
+      mediaBox: undefined,
+    };
+  }
+
+  const verticalGap = padding.y;
+  const horizontalGap = padding.x;
+  if (position === "top" || position === "bottom") {
+    const width = Math.max(textSize.width, mediaSize.width);
+    const height = textSize.height + verticalGap + mediaSize.height;
+    const mediaBox = {
+      x: padding.x + (width - mediaSize.width) / 2,
+      y: position === "top" ? padding.y : padding.y + textSize.height + verticalGap,
+      width: mediaSize.width,
+      height: mediaSize.height,
+    };
+    return {
+      width,
+      height,
+      textBox: {
+        ...textBox,
+        x: padding.x + (width - textSize.width) / 2,
+        y: position === "top" ? padding.y + mediaSize.height + verticalGap : padding.y,
+      },
+      mediaBox,
+    };
+  }
+
+  const width = textSize.width + horizontalGap + mediaSize.width;
+  const height = Math.max(textSize.height, mediaSize.height);
+  const mediaBox = {
+    x: position === "left" ? padding.x : padding.x + textSize.width + horizontalGap,
+    y: padding.y + (height - mediaSize.height) / 2,
+    width: mediaSize.width,
+    height: mediaSize.height,
+  };
+  return {
+    width,
+    height,
+    textBox: {
+      ...textBox,
+      x: position === "left" ? padding.x + mediaSize.width + horizontalGap : padding.x,
+      y: padding.y + (height - textSize.height) / 2,
+    },
+    mediaBox,
   };
 }
 

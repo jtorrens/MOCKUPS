@@ -16,6 +16,7 @@ import {
 } from "./componentResolverCommon.js";
 import type {
   BubbleDesignContract,
+  BubbleMediaPosition,
   BubbleMediaType,
   BubblePalettePairContract,
   BubbleState,
@@ -183,6 +184,9 @@ export function resolveBubbleComponent(
     },
     mediaSlot: {
       mediaType,
+      position: bubbleMediaPosition(
+        requiredString(bubble, "mediaPosition", "component.bubble.mediaPosition"),
+      ),
       media: imageMediaConfig || videoMediaConfig
         ? resolveMediaComponentFromRecords(
             imageMediaConfig || videoMediaConfig!,
@@ -261,6 +265,13 @@ function bubbleMediaType(value: string): BubbleMediaType {
     return value;
   }
   throw new Error(`Unsupported bubble media type ${value}`);
+}
+
+function bubbleMediaPosition(value: string): BubbleMediaPosition {
+  if (value === "top" || value === "bottom" || value === "left" || value === "right") {
+    return value;
+  }
+  throw new Error(`Unsupported bubble media position ${value}`);
 }
 
 function bubbleMediaInputs(
