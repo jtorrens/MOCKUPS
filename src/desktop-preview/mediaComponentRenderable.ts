@@ -68,8 +68,7 @@ function mediaComponentToRenderableForBoxes(
   const children = [
     ...mediaBars(payload, media, boxes),
     mediaSurfaceNode,
-    mediaContentClipNode(payload, media, boxes.media, mediaContentNode),
-    ...controlNodes,
+    mediaVisualClipNode(payload, media, boxes.media, [mediaContentNode, ...controlNodes]),
   ];
   const node = {
     id: media.id,
@@ -84,14 +83,14 @@ function mediaComponentToRenderableForBoxes(
   return node;
 }
 
-function mediaContentClipNode(
+function mediaVisualClipNode(
   payload: DesignPreviewPayload,
   media: MediaDesignContract,
   box: RenderableBox,
-  content: RenderableNode,
+  children: RenderableNode[],
 ): RenderableNode {
   return {
-    id: `${media.id}.contentClip`,
+    id: `${media.id}.visualClip`,
     type: "group",
     frame: 0,
     box,
@@ -99,7 +98,7 @@ function mediaContentClipNode(
       borderRadius: numberToken(payload, media.surface.surface.cornerRadiusToken) * renderScale(payload),
       overflow: "hidden",
     },
-    children: [content],
+    children,
   };
 }
 
