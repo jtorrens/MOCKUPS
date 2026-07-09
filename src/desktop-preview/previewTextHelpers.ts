@@ -6,6 +6,7 @@ import {
   stringOrThemeToken,
 } from "./previewColorHelpers.js";
 import { fontFamilyForTypography } from "./previewFontHelpers.js";
+import { textGraphemes } from "./previewTextRevealHelpers.js";
 
 export interface ResolvedTypographyStyle {
   fontFamily: string;
@@ -15,38 +16,20 @@ export interface ResolvedTypographyStyle {
   fontWeight: number;
 }
 
-type GraphemeSegmenter = {
-  segment(value: string): Iterable<{ segment: string }>;
-};
-
-type GraphemeSegmenterConstructor = new (
-  locale: string | undefined,
-  options: { granularity: "grapheme" },
-) => GraphemeSegmenter;
-
-function textGraphemes(text: string) {
-  const segmenterConstructor = (Intl as typeof Intl & {
-    Segmenter?: GraphemeSegmenterConstructor;
-  }).Segmenter;
-  if (!segmenterConstructor) {
-    return Array.from(text);
-  }
-
-  return Array.from(
-    new segmenterConstructor(undefined, { granularity: "grapheme" }).segment(text),
-    (segment) => segment.segment,
-  );
-}
-
 function graphemeAdvance(grapheme: string) {
   if (!grapheme) return 0;
-  if (/^\s$/u.test(grapheme)) return 0.33;
+  if (grapheme === " ") return 0.26;
+  if (/^\s$/u.test(grapheme)) return 0.26;
   if (/\p{Extended_Pictographic}/u.test(grapheme)) return 1;
   if (/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(grapheme)) return 1;
-  if (/^[.,:;!¡?¿'"`´]$/u.test(grapheme)) return 0.28;
-  if (/^[ilI|]$/u.test(grapheme)) return 0.32;
-  if (/^[mwMW@#%&]$/u.test(grapheme)) return 0.78;
-  return 0.54;
+  if (/^[,.;:!?¡¿'"`´’‘“”()[\]{}]$/u.test(grapheme)) return 0.28;
+  if (/^[ilI|]$/u.test(grapheme)) return 0.28;
+  if (/^[fjrt]$/u.test(grapheme)) return 0.36;
+  if (/^[mwMW]$/u.test(grapheme)) return 0.72;
+  if (/^[A-ZÁÉÍÓÚÜÑ]$/u.test(grapheme)) return 0.58;
+  if (/^[0-9]$/u.test(grapheme)) return 0.5;
+  if ((grapheme.codePointAt(0) ?? 0) > 0xffff) return 1;
+  return 0.48;
 }
 
 export function approximateTextWidth(text: string, fontSize: number) {

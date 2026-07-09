@@ -22,6 +22,13 @@ export function simpleWriteOnVisibleCount(text: string, plan: SimpleWriteOnPlan)
   return Math.floor(characters.length * progress);
 }
 
+export function simpleWriteOnInProgress(text: string, plan: SimpleWriteOnPlan) {
+  if (!plan.enabled || plan.durationSeconds <= 0) return false;
+  const total = textGraphemes(text).length;
+  const visible = simpleWriteOnVisibleCount(text, plan);
+  return visible > 0 && visible < total;
+}
+
 export function textGraphemes(value: string) {
   const segmenterConstructor = (Intl as unknown as {
     Segmenter?: new (

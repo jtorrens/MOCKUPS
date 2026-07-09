@@ -24,7 +24,11 @@ import { resolveLabelComponentFromRecords } from "./labelComponentResolver.js";
 import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
 import { resolveTextBoxComponentFromRecords } from "./textBoxComponentResolver.js";
-import { simpleWriteOnText } from "./previewTextRevealHelpers.js";
+import {
+  simpleWriteOnInProgress,
+  simpleWriteOnText,
+  type SimpleWriteOnPlan,
+} from "./previewTextRevealHelpers.js";
 
 export function resolveBubbleComponent(
   payload: DesignPreviewPayload,
@@ -48,11 +52,12 @@ export function resolveBubbleComponent(
     "sampleText",
     "component.bubble.input.sampleText",
   );
-  const visibleText = simpleWriteOnText(fullText, {
+  const writeOnPlan: SimpleWriteOnPlan = {
     enabled: optionalBoolean(preview, "writeOnTrigger"),
     timeSeconds: optionalNumber(preview, "writeOnTimeSeconds", 0),
     durationSeconds: optionalNumber(preview, "writeOnDurationSeconds", 1.2),
-  });
+  };
+  const visibleText = simpleWriteOnText(fullText, writeOnPlan);
 
   const surfaceConfig = mergeComponentDefaults(
     componentPresetConfig(
@@ -120,12 +125,15 @@ export function resolveBubbleComponent(
       ),
       state,
     ),
-    textBox: resolveTextBoxComponentFromRecords(
-      textBoxConfig,
-      textBoxInputs,
-      componentBaseConfigs,
-      "component.bubble.textBox",
-    ),
+    textBox: {
+      ...resolveTextBoxComponentFromRecords(
+        textBoxConfig,
+        textBoxInputs,
+        componentBaseConfigs,
+        "component.bubble.textBox",
+      ),
+      cursorVisible: simpleWriteOnInProgress(fullText, writeOnPlan),
+    },
     actorLabelSlot: {
       showLabel: actorLabelVisible,
       placement: requiredPlacement(
