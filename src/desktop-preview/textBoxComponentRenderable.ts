@@ -101,13 +101,13 @@ export function measureTextBoxComponent(
       contentText,
       typography.fontSize,
       typography.lineHeight,
-      Math.max(1, width - paddingX * 2 - iconTextInset(
+      safeWrapWidth(Math.max(1, width - paddingX * 2 - iconTextInset(
         hasLeftIcons,
         hasRightIcons,
         leftIconSize.width,
         rightIconSize.width,
         iconGap,
-      ).total),
+      ).total)),
     );
     let height = growingHeight(
       minimumHeight,
@@ -130,7 +130,7 @@ export function measureTextBoxComponent(
       contentText,
       typography.fontSize,
       typography.lineHeight,
-      Math.max(1, width - paddingX * 2 - iconInset.total),
+      safeWrapWidth(Math.max(1, width - paddingX * 2 - iconInset.total)),
     );
     height = growingHeight(
       minimumHeight,
@@ -173,14 +173,14 @@ export function measureTextBoxComponent(
     rightIconSize.width,
     iconGap,
   );
-  let naturalWidth = contentSize.width + paddingX * 2 + iconInset.total;
+  let naturalWidth = conservativeTextWidth(contentSize.width) + paddingX * 2 + iconInset.total;
   let wraps = naturalWidth > maximumWidth;
   let measuredContentSize = wraps
     ? approximateWrappedTextSize(
         contentText,
         typography.fontSize,
         typography.lineHeight,
-        Math.max(1, maximumWidth - paddingX * 2 - iconInset.total),
+        safeWrapWidth(Math.max(1, maximumWidth - paddingX * 2 - iconInset.total)),
       )
     : contentSize;
 
@@ -198,14 +198,14 @@ export function measureTextBoxComponent(
     rightIconSize.width,
     iconGap,
   );
-  naturalWidth = contentSize.width + paddingX * 2 + iconInset.total;
+  naturalWidth = conservativeTextWidth(contentSize.width) + paddingX * 2 + iconInset.total;
   wraps = naturalWidth > maximumWidth;
   measuredContentSize = wraps
     ? approximateWrappedTextSize(
         contentText,
         typography.fontSize,
         typography.lineHeight,
-        Math.max(1, maximumWidth - paddingX * 2 - iconInset.total),
+        safeWrapWidth(Math.max(1, maximumWidth - paddingX * 2 - iconInset.total)),
       )
     : contentSize;
   width = wraps ? maximumWidth : Math.max(1, naturalWidth);
@@ -273,7 +273,7 @@ export function textBoxComponentToRenderableAt(
   const wrappedLines = approximateWrappedTextLines(
     size.contentText,
     size.typography.fontSize,
-    textFrame.width,
+    safeWrapWidth(textFrame.width),
   );
   const iconY = (iconHeight: number) =>
     wrappedLines.length <= 1
@@ -456,4 +456,12 @@ function textContentVisualHeight(
 
 function textMetricSlack(fontSize: number) {
   return Math.max(1, fontSize * 0.14);
+}
+
+function safeWrapWidth(width: number) {
+  return Math.max(1, width * 0.88);
+}
+
+function conservativeTextWidth(width: number) {
+  return Math.max(1, width / 0.88);
 }
