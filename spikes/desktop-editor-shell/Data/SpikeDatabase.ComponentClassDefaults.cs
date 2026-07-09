@@ -378,6 +378,7 @@ internal sealed partial class SpikeDatabase
                     },
                     ["status"] = new JsonObject
                     {
+                        ["sizeToken"] = "theme.iconSizes.s",
                         ["sent"] = new JsonObject
                         {
                             ["iconToken"] = "system_check",

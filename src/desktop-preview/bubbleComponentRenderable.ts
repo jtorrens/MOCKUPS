@@ -235,34 +235,40 @@ function bubbleContentLayout(
   const statusGap = statusSize
     ? Math.max(2, Math.min(padding.gapY, statusSize.height * 0.45))
     : 0;
-  const textGroupWidth = Math.max(textSize.width, statusSize?.width ?? 0);
-  const textGroupHeight = textSize.height
-    + (statusSize ? statusGap + statusSize.height : 0);
-  const textGroup = {
-    width: textGroupWidth,
-    height: textGroupHeight,
-  };
-  const textGroupBoxes = (x: number, y: number) => ({
+  const statusBlockHeight = statusSize ? statusGap + statusSize.height : 0;
+  const textAndStatusBoxes = (
+    textX: number,
+    textY: number,
+    contentWidth: number,
+    statusY: number,
+  ) => ({
     textBox: {
-      x,
-      y,
+      x: textX,
+      y: textY,
       width: textSize.width,
       height: textSize.height,
     },
     statusBox: statusSize
       ? {
-          x: x + textGroupWidth - statusSize.width,
-          y: y + textSize.height + statusGap,
+          x: padding.left + contentWidth - statusSize.width,
+          y: statusY,
           width: statusSize.width,
           height: statusSize.height,
         }
       : undefined,
   });
   if (!mediaSize) {
-    const boxes = textGroupBoxes(padding.left, padding.top);
+    const width = Math.max(textSize.width, statusSize?.width ?? 0);
+    const height = textSize.height + statusBlockHeight;
+    const boxes = textAndStatusBoxes(
+      padding.left,
+      padding.top,
+      width,
+      padding.top + height - (statusSize?.height ?? 0),
+    );
     return {
-      width: textGroup.width,
-      height: textGroup.height,
+      width,
+      height,
       ...boxes,
       mediaBox: undefined,
     };
@@ -271,21 +277,25 @@ function bubbleContentLayout(
   const verticalGap = padding.gapY;
   const horizontalGap = padding.gapX;
   if (position === "top" || position === "bottom") {
-    const width = Math.max(textGroup.width, mediaSize.width);
-    const height = textGroup.height + verticalGap + mediaSize.height;
-    const textGroupX = mediaSize.width > textGroup.width
+    const mediaGap = verticalGap;
+    const width = Math.max(textSize.width, statusSize?.width ?? 0, mediaSize.width);
+    const height = textSize.height + mediaGap + mediaSize.height + statusBlockHeight;
+    const textX = mediaSize.width > textSize.width
       ? padding.left
-      : padding.left + (width - textGroup.width) / 2;
-    const textGroupY = position === "top"
+      : padding.left + (width - textSize.width) / 2;
+    const textY = position === "top"
       ? padding.top + mediaSize.height + verticalGap
       : padding.top;
     const mediaBox = {
       x: padding.left + (width - mediaSize.width) / 2,
-      y: position === "top" ? padding.top : padding.top + textGroup.height + verticalGap,
+      y: position === "top"
+        ? padding.top
+        : padding.top + textSize.height + mediaGap,
       width: mediaSize.width,
       height: mediaSize.height,
     };
-    const boxes = textGroupBoxes(textGroupX, textGroupY);
+    const statusY = padding.top + height - (statusSize?.height ?? 0);
+    const boxes = textAndStatusBoxes(textX, textY, width, statusY);
     return {
       width,
       height,
@@ -294,19 +304,22 @@ function bubbleContentLayout(
     };
   }
 
-  const width = textGroup.width + horizontalGap + mediaSize.width;
-  const height = Math.max(textGroup.height, mediaSize.height);
-  const textGroupX = position === "left"
+  const rowWidth = textSize.width + horizontalGap + mediaSize.width;
+  const width = Math.max(rowWidth, statusSize?.width ?? 0);
+  const rowHeight = Math.max(textSize.height, mediaSize.height);
+  const height = rowHeight + statusBlockHeight;
+  const textX = position === "left"
     ? padding.left + mediaSize.width + horizontalGap
     : padding.left;
-  const textGroupY = padding.top + (height - textGroup.height) / 2;
+  const textY = padding.top + (rowHeight - textSize.height) / 2;
   const mediaBox = {
-    x: position === "left" ? padding.left : padding.left + textGroup.width + horizontalGap,
-    y: padding.top + (height - mediaSize.height) / 2,
+    x: position === "left" ? padding.left : padding.left + textSize.width + horizontalGap,
+    y: padding.top + (rowHeight - mediaSize.height) / 2,
     width: mediaSize.width,
     height: mediaSize.height,
   };
-  const boxes = textGroupBoxes(textGroupX, textGroupY);
+  const statusY = padding.top + height - (statusSize?.height ?? 0);
+  const boxes = textAndStatusBoxes(textX, textY, width, statusY);
   return {
     width,
     height,
@@ -348,13 +361,12 @@ function measureBubbleStatus(
   if (!text && !icon) return undefined;
 
   const scale = renderScale(payload);
-  const typography = resolveTypographyStyle(payload, bubble.textBox.typography, scale);
-  const fontSize = Math.max(1, typography.fontSize * 0.72);
-  const lineHeight = Math.max(fontSize, typography.lineHeight * 0.72);
-  const iconSize = icon ? Math.max(1, fontSize * 1.08) : 0;
-  const gap = text && icon ? Math.max(2, fontSize * 0.28) : 0;
+  const size = Math.max(1, numberToken(payload, bubble.status.sizeToken) * scale);
+  const lineHeight = Math.max(size, size * 1.15);
+  const iconSize = icon ? size : 0;
+  const gap = text && icon ? Math.max(2, size * 0.28) : 0;
   return {
-    width: (text ? approximateTextWidth(text, fontSize) : 0) + gap + iconSize,
+    width: (text ? approximateTextWidth(text, size) : 0) + gap + iconSize,
     height: Math.max(lineHeight, iconSize),
   };
 }
@@ -369,9 +381,9 @@ function bubbleStatusToRenderable(
   const icon = activeBubbleStatusIcon(bubble);
   const scale = renderScale(payload);
   const typography = resolveTypographyStyle(payload, bubble.textBox.typography, scale);
-  const fontSize = Math.max(1, typography.fontSize * 0.72);
-  const lineHeight = Math.max(fontSize, typography.lineHeight * 0.72);
-  const iconSize = icon ? Math.min(box.height, Math.max(1, fontSize * 1.08)) : 0;
+  const fontSize = Math.max(1, numberToken(payload, bubble.status.sizeToken) * scale);
+  const lineHeight = Math.max(fontSize, fontSize * 1.15);
+  const iconSize = icon ? Math.min(box.height, fontSize) : 0;
   const gap = text && icon ? Math.max(2, fontSize * 0.28) : 0;
   const textWidth = text ? Math.max(1, box.width - iconSize - gap) : 0;
 

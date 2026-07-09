@@ -731,6 +731,7 @@ internal static class ComponentClassFieldCatalog
         ["component.bubble.avatar.showAvatar"] = new("component.bubble.avatar.showAvatar", "Show avatar", ValueKind.Boolean, ["bubble", "avatarSlot", "showAvatar"], "false"),
         ["component.bubble.avatar.placement"] = new("component.bubble.avatar.placement", "Avatar placement", ValueKind.AlignmentPlacement, ["bubble", "avatarSlot", "placement"], """{"mode":"edge","alignX":0,"alignY":1,"offsetX":-8,"offsetY":0}"""),
         ["component.bubble.avatar.editor"] = new("component.bubble.avatar.editor", "Avatar", ValueKind.ComponentPreset, ["bubble", "avatarSlot", "presetId"], "default"),
+        ["component.bubble.status.size"] = new("component.bubble.status.size", "Status size", ValueKind.ThemeToken, ["bubble", "status", "sizeToken"], "theme.iconSizes.s", Options: IconSizeTokenOptions),
         ["component.bubble.status.sent.icon"] = new("component.bubble.status.sent.icon", "Sent icon", ValueKind.IconToken, ["bubble", "status", "sent", "iconToken"], "system_check"),
         ["component.bubble.status.sent.color"] = new("component.bubble.status.sent.color", "Sent color", ValueKind.ThemeToken, ["bubble", "status", "sent", "colorToken"], "theme.icons.secondary", Options: ThemeColorOptions),
         ["component.bubble.status.delivered.icon"] = new("component.bubble.status.delivered.icon", "Delivered icon", ValueKind.IconToken, ["bubble", "status", "delivered", "iconToken"], "system_check"),

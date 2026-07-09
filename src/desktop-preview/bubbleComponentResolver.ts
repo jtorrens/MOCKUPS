@@ -292,6 +292,7 @@ export function resolveBubbleComponent(
     status: {
       text: optionalString(preview, "statusText"),
       state: bubbleStatusState(optionalString(preview, "statusState") || "none"),
+      sizeToken: requiredString(status, "sizeToken", "component.bubble.status.sizeToken"),
       icons: {
         sent: statusIcon(status, "sent", "component.bubble.status.sent"),
         delivered: statusIcon(status, "delivered", "component.bubble.status.delivered"),

@@ -2076,6 +2076,7 @@ internal sealed partial class SpikeDatabase
         changed |= NormalizeIconSizeToken(config, ["iconBar", "activeLeftIconRowInputs", "size"]);
         changed |= NormalizeIconSizeToken(config, ["iconBar", "activeCenterIconRowInputs", "size"]);
         changed |= NormalizeIconSizeToken(config, ["iconBar", "activeRightIconRowInputs", "size"]);
+        changed |= NormalizeIconSizeToken(config, ["bubble", "status", "sizeToken"]);
         if (JsonPath.Get(config, ["iconRow", "buttonIconSlot", "overrides", "buttonIcon"]) is JsonObject buttonIconOverrides
             && buttonIconOverrides.Remove("size"))
         {
@@ -2883,6 +2884,7 @@ internal sealed partial class SpikeDatabase
                 JsonNode.Parse(AlignmentPlacementValue.FromDirectionalEdge("left", 8).ToJsonString())!);
             changed = true;
         }
+        changed |= EnsureStringValue(bubble, ["status", "sizeToken"], "theme.iconSizes.s");
         if (JsonPath.Get(bubble, ["status", "sent", "iconToken"]) is null)
         {
             SetJsonValue(bubble, ["status", "sent", "iconToken"], JsonValue.Create("system_check")!);

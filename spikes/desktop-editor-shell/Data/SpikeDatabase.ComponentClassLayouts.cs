@@ -634,15 +634,18 @@ internal sealed partial class SpikeDatabase
               "visible": true,
               "defaultOpen": false,
               "groups": [
-                { "id": "bubbleStatusSent", "label": "Sent", "order": 10, "visible": true, "fields": [
+                { "id": "bubbleStatusGeneral", "label": "General", "order": 10, "visible": true, "fields": [
+                  { "id": "component.bubble.status.size", "order": 10, "visible": true }
+                ] },
+                { "id": "bubbleStatusSent", "label": "Sent", "order": 20, "visible": true, "fields": [
                   { "id": "component.bubble.status.sent.icon", "order": 10, "visible": true },
                   { "id": "component.bubble.status.sent.color", "order": 20, "visible": true }
                 ] },
-                { "id": "bubbleStatusDelivered", "label": "Delivered", "order": 20, "visible": true, "fields": [
+                { "id": "bubbleStatusDelivered", "label": "Delivered", "order": 30, "visible": true, "fields": [
                   { "id": "component.bubble.status.delivered.icon", "order": 10, "visible": true },
                   { "id": "component.bubble.status.delivered.color", "order": 20, "visible": true }
                 ] },
-                { "id": "bubbleStatusRead", "label": "Read", "order": 30, "visible": true, "fields": [
+                { "id": "bubbleStatusRead", "label": "Read", "order": 40, "visible": true, "fields": [
                   { "id": "component.bubble.status.read.icon", "order": 10, "visible": true },
                   { "id": "component.bubble.status.read.color", "order": 20, "visible": true }
                 ] }
