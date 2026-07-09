@@ -37,6 +37,7 @@ internal sealed class ComponentInputsPanel : ContentControl
     private string _inputSignature = "";
     private IReadOnlyList<ComponentPreviewActionDefinition> _actions = [];
     private string _activeActionId = "";
+    private JsonObject _config = [];
     private bool _isUpdating;
     private string _preparingActionId = "";
     private int _playbackFrameRate = 25;
@@ -74,6 +75,7 @@ internal sealed class ComponentInputsPanel : ContentControl
                 Content = null;
                 _actions = [];
                 _activeActionId = "";
+                _config = [];
                 StopPlayback();
                 return;
             }
@@ -81,6 +83,7 @@ internal sealed class ComponentInputsPanel : ContentControl
             ApplyProjectFrameRate(projectId);
             var preview = ParseJsonObject(payload.DesignPreviewJson);
             var config = ParseJsonObject(payload.ConfigJson);
+            _config = config;
             var inputs = ReadInputs(preview, config).ToList();
             _actions = ComponentPreviewActions.Read(preview);
             if (inputs.Count == 0)
@@ -92,6 +95,7 @@ internal sealed class ComponentInputsPanel : ContentControl
                 _actions = [];
                 _activeActionId = "";
                 Content = null;
+                _config = [];
                 StopPlayback();
                 return;
             }
@@ -806,7 +810,7 @@ internal sealed class ComponentInputsPanel : ContentControl
         StopPlayback();
         _activeActionId = action.Id;
         var prepared = true;
-        if (action.PrewarmFrames)
+        if (ShouldPrewarmFrames(action))
         {
             _preparingActionId = action.Id;
             UpdateActionButtons();
@@ -852,7 +856,7 @@ internal sealed class ComponentInputsPanel : ContentControl
                 "preview.playback.prepare.skip",
                 ("scope", _scopeKey),
                 ("action", action.Id),
-                ("reason", "prewarm-disabled"));
+                ("reason", action.PrewarmFrames ? "prewarm-condition" : "prewarm-disabled"));
         }
 
         if (!SupportsPlayback())
@@ -1236,7 +1240,37 @@ internal sealed class ComponentInputsPanel : ContentControl
             action.TimeJsonKey,
             action.TimeUnit,
             action.PrewarmFrames.ToString(CultureInfo.InvariantCulture),
+            action.PrewarmWhenJsonKey,
+            action.PrewarmWhenConfigPath,
+            action.PrewarmWhenValue,
             string.Join(",", action.ActivateInputIds));
+    }
+
+    private bool ShouldPrewarmFrames(ComponentPreviewActionDefinition action)
+    {
+        if (!action.PrewarmFrames)
+        {
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(action.PrewarmWhenJsonKey)
+            && string.IsNullOrWhiteSpace(action.PrewarmWhenConfigPath))
+        {
+            return true;
+        }
+
+        if (!string.IsNullOrWhiteSpace(action.PrewarmWhenJsonKey))
+        {
+            return _values.TryGetValue(action.PrewarmWhenJsonKey, out var current)
+                && current.Equals(action.PrewarmWhenValue, StringComparison.Ordinal);
+        }
+
+        var configValue = JsonPath.Get(
+            _config,
+            action.PrewarmWhenConfigPath.Split('.', StringSplitOptions.RemoveEmptyEntries));
+        return configValue is JsonValue value
+            && value.TryGetValue<string>(out var text)
+            && text.Equals(action.PrewarmWhenValue, StringComparison.Ordinal);
     }
 
     private static IReadOnlyList<FieldOption> ReadOptions(JsonObject input)

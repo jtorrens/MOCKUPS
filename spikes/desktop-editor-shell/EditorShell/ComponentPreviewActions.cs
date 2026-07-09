@@ -64,6 +64,9 @@ internal static class ComponentPreviewActions
             timeJsonKey,
             ParseTimeUnit(JsonString(action, "timeUnit")),
             JsonBoolean(action, "prewarmFrames", true),
+            JsonString(action, "prewarmWhenJsonKey"),
+            JsonString(action, "prewarmWhenConfigPath"),
+            JsonString(action, "prewarmWhenValue"),
             JsonStringArray(action, "activateInputIds"));
     }
 
@@ -140,6 +143,9 @@ internal sealed record ComponentPreviewActionDefinition(
     string TimeJsonKey,
     ComponentPreviewActionTimeUnit TimeUnit,
     bool PrewarmFrames,
+    string PrewarmWhenJsonKey,
+    string PrewarmWhenConfigPath,
+    string PrewarmWhenValue,
     IReadOnlyList<string> ActivateInputIds);
 
 internal enum ComponentPreviewActionTimeUnit

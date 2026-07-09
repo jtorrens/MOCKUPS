@@ -466,6 +466,8 @@ internal sealed partial class SpikeDatabase
                     ["durationInputId"] = "durationSeconds",
                     ["timeJsonKey"] = "currentTimeSeconds",
                     ["prewarmFrames"] = true,
+                    ["prewarmWhenConfigPath"] = "bubble.mediaType",
+                    ["prewarmWhenValue"] = "video",
                 },
                 new JsonObject
                 {
@@ -476,6 +478,7 @@ internal sealed partial class SpikeDatabase
                     ["durationSeconds"] = 0.3,
                     ["durationMotionConfigPath"] = "media.motion",
                     ["timeJsonKey"] = "motionTimeSeconds",
+                    ["prewarmFrames"] = false,
                 },
             };
         }
@@ -533,6 +536,8 @@ internal sealed partial class SpikeDatabase
                     ["durationInputId"] = "durationSeconds",
                     ["timeJsonKey"] = "currentTimeSeconds",
                     ["prewarmFrames"] = true,
+                    ["prewarmWhenJsonKey"] = "mediaType",
+                    ["prewarmWhenValue"] = "video",
                 },
                 new JsonObject
                 {
@@ -543,6 +548,7 @@ internal sealed partial class SpikeDatabase
                     ["durationSeconds"] = 0.3,
                     ["durationMotionConfigPath"] = "media.motion",
                     ["timeJsonKey"] = "motionTimeSeconds",
+                    ["prewarmFrames"] = false,
                 },
             };
         }
