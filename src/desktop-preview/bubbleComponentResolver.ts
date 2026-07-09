@@ -27,6 +27,7 @@ import { resolveAvatarComponentFromRecords } from "./avatarComponentResolver.js"
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { resolveLabelComponentFromRecords } from "./labelComponentResolver.js";
 import { resolveMediaComponentFromRecords } from "./mediaComponentResolver.js";
+import { renderScale } from "./previewGeometryHelpers.js";
 import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
 import { resolveTextBoxComponentFromRecords } from "./textBoxComponentResolver.js";
@@ -52,11 +53,11 @@ export function resolveBubbleComponent(
   const avatarSlot = asRecord(bubble.avatarSlot);
   const status = asRecord(bubble.status);
   const actorPreview = resolveBubbleActorPreview(preview);
-  const legacySize = optionalSize(preview);
-  const maxWidth = Math.max(
-    1,
-    optionalNumber(preview, "maxWidth", legacySize?.first ?? 260),
+  const maxWidthPercent = Math.min(
+    100,
+    Math.max(1, optionalNumber(preview, "maxWidth", 66)),
   );
+  const maxWidth = screenPercentToDesignWidth(payload, maxWidthPercent);
   const padding = requiredStringPair(bubble, "padding", "component.bubble.padding");
   const state = bubbleState(requiredString(preview, "state", "component.bubble.input.state"));
   const fullText = requiredPossiblyEmptyString(
@@ -293,6 +294,7 @@ export function resolveBubbleComponent(
       text: optionalString(preview, "statusText"),
       state: bubbleStatusState(optionalString(preview, "statusState") || "none"),
       sizeToken: requiredString(status, "sizeToken", "component.bubble.status.sizeToken"),
+      textSizeToken: requiredString(status, "textSizeToken", "component.bubble.status.textSizeToken"),
       icons: {
         sent: statusIcon(status, "sent", "component.bubble.status.sent"),
         delivered: statusIcon(status, "delivered", "component.bubble.status.delivered"),
@@ -358,15 +360,6 @@ function statusIcon(
   };
 }
 
-function optionalSize(value: Record<string, unknown>) {
-  const raw = optionalString(value, "size");
-  if (!raw) return undefined;
-  const [first, second] = raw.split("|").map((part) => Number(part));
-  return Number.isFinite(first) && Number.isFinite(second)
-    ? { first, second }
-    : undefined;
-}
-
 function bubbleState(value: string): BubbleState {
   if (value === "incoming" || value === "system" || value === "outgoing") {
     return value;
@@ -379,6 +372,12 @@ function bubbleMediaType(value: string): BubbleMediaType {
     return value;
   }
   throw new Error(`Unsupported bubble media type ${value}`);
+}
+
+function screenPercentToDesignWidth(payload: DesignPreviewPayload, percent: number) {
+  const scale = renderScale(payload);
+  const screenDesignWidth = payload.previewFrame.screenWidth / scale;
+  return Math.max(1, screenDesignWidth * (percent / 100));
 }
 
 function bubbleMediaPosition(value: string): BubbleMediaPosition {

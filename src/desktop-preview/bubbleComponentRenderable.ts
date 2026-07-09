@@ -361,12 +361,13 @@ function measureBubbleStatus(
   if (!text && !icon) return undefined;
 
   const scale = renderScale(payload);
-  const size = Math.max(1, numberToken(payload, bubble.status.sizeToken) * scale);
-  const lineHeight = Math.max(size, size * 1.15);
-  const iconSize = icon ? size : 0;
-  const gap = text && icon ? Math.max(2, size * 0.28) : 0;
+  const iconSizeValue = Math.max(1, numberToken(payload, bubble.status.sizeToken) * scale);
+  const textSizeValue = Math.max(1, numberToken(payload, bubble.status.textSizeToken) * scale);
+  const lineHeight = Math.max(textSizeValue, textSizeValue * 1.15);
+  const iconSize = icon ? iconSizeValue : 0;
+  const gap = text && icon ? Math.max(2, Math.max(textSizeValue, iconSizeValue) * 0.28) : 0;
   return {
-    width: (text ? approximateTextWidth(text, size) : 0) + gap + iconSize,
+    width: (text ? approximateTextWidth(text, textSizeValue) : 0) + gap + iconSize,
     height: Math.max(lineHeight, iconSize),
   };
 }
@@ -381,10 +382,11 @@ function bubbleStatusToRenderable(
   const icon = activeBubbleStatusIcon(bubble);
   const scale = renderScale(payload);
   const typography = resolveTypographyStyle(payload, bubble.textBox.typography, scale);
-  const fontSize = Math.max(1, numberToken(payload, bubble.status.sizeToken) * scale);
+  const iconSizeValue = Math.max(1, numberToken(payload, bubble.status.sizeToken) * scale);
+  const fontSize = Math.max(1, numberToken(payload, bubble.status.textSizeToken) * scale);
   const lineHeight = Math.max(fontSize, fontSize * 1.15);
-  const iconSize = icon ? Math.min(box.height, fontSize) : 0;
-  const gap = text && icon ? Math.max(2, fontSize * 0.28) : 0;
+  const iconSize = icon ? Math.min(box.height, iconSizeValue) : 0;
+  const gap = text && icon ? Math.max(2, Math.max(fontSize, iconSizeValue) * 0.28) : 0;
   const textWidth = text ? Math.max(1, box.width - iconSize - gap) : 0;
 
   return {

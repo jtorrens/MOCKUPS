@@ -53,6 +53,7 @@ export interface BubbleStatusContract {
   text: string;
   state: BubbleStatusState;
   sizeToken: string;
+  textSizeToken: string;
   icons: Record<Exclude<BubbleStatusState, "none">, BubbleStatusIconContract>;
 }
 

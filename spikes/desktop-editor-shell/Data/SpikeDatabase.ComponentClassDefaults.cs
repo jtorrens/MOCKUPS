@@ -379,6 +379,7 @@ internal sealed partial class SpikeDatabase
                     ["status"] = new JsonObject
                     {
                         ["sizeToken"] = "theme.iconSizes.s",
+                        ["textSizeToken"] = "theme.iconSizes.s",
                         ["sent"] = new JsonObject
                         {
                             ["iconToken"] = "system_check",
@@ -455,7 +456,7 @@ internal sealed partial class SpikeDatabase
         if (componentType == "bubble")
         {
             preview["state"] = "incoming";
-            preview["maxWidth"] = 260;
+            preview["maxWidth"] = 66;
             preview["actorName"] = "Alex Q";
             preview["statusText"] = "9:41";
             preview["statusState"] = "read";
@@ -821,7 +822,7 @@ internal sealed partial class SpikeDatabase
                         new FieldOption("outgoing", "Outgoing"),
                     ]),
                 ComponentInput("sampleText", "Text", "sampleText", ValueKind.StringMultiline, "Message"),
-                ComponentInput("maxWidth", "Max width", "maxWidth", ValueKind.Integer, "260", minimum: 1, maximum: 2000, increment: 1),
+                ComponentInput("maxWidth", "Max width %", "maxWidth", ValueKind.Integer, "66", minimum: 1, maximum: 100, increment: 1),
                 ComponentInput("writeOnDurationFrames", "Write-on frames", "writeOnDurationFrames", ValueKind.Integer, "30", minimum: 1, maximum: 10000, increment: 1),
                 ComponentInput(
                     "actorId",
