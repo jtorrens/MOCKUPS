@@ -1,14 +1,13 @@
-import type { RenderableBox } from "../visual/renderable/types.js";
 import {
   componentPresetConfig,
   mergeComponentDefaults,
 } from "./componentPreviewDefaults.js";
 import {
   asRecord,
+  optionalNumber,
   optionalString,
   parseObject,
   requiredBoolean,
-  requiredNumberPair,
   requiredPlacement,
   requiredString,
   requiredStringPair,
@@ -34,7 +33,12 @@ export function resolveBubbleComponent(
   const surfaceSlot = asRecord(bubble.surfaceSlot);
   const textBoxSlot = asRecord(bubble.textBoxSlot);
   const actorLabelSlot = asRecord(bubble.actorLabelSlot);
-  const size = requiredNumberPair(preview, "size", "component.bubble.input.size");
+  const legacySize = optionalSize(preview);
+  const maxWidth = Math.max(
+    1,
+    optionalNumber(preview, "maxWidth", legacySize?.first ?? 260),
+  );
+  const padding = requiredStringPair(bubble, "padding", "component.bubble.padding");
   const state = bubbleState(requiredString(preview, "state", "component.bubble.input.state"));
 
   const surfaceConfig = mergeComponentDefaults(
@@ -54,12 +58,6 @@ export function resolveBubbleComponent(
     asRecord(textBoxSlot.overrides),
   );
 
-  const box: RenderableBox = {
-    x: 0,
-    y: 0,
-    width: Math.max(1, size.first),
-    height: Math.max(1, size.second),
-  };
   const textBoxInputs = {
     sampleText: optionalString(preview, "sampleText"),
     placeholder: "",
@@ -73,8 +71,8 @@ export function resolveBubbleComponent(
     iconRowSize: "theme.iconSizes.s",
     iconRowGap: "theme.spacing.none",
     iconRowOrientation: "horizontal",
-    size: `${box.width}|${box.height}`,
-    maxWidth: box.width,
+    size: `${maxWidth}|1`,
+    maxWidth,
   };
   const actorLabelVisible = requiredBoolean(
     actorLabelSlot,
@@ -99,9 +97,14 @@ export function resolveBubbleComponent(
   return {
     id: "component.bubble",
     state,
-    renderBox: box,
+    maxWidth,
+    padding: { xToken: padding.first, yToken: padding.second },
     surface: bubbleSurfaceForState(
-      resolveSurfaceComponentAtSize(surfaceConfig, box, "component.bubble.surface"),
+      resolveSurfaceComponentAtSize(
+        surfaceConfig,
+        { width: maxWidth, height: 1 },
+        "component.bubble.surface",
+      ),
       state,
     ),
     textBox: resolveTextBoxComponentFromRecords(
@@ -144,6 +147,15 @@ export function resolveBubbleComponent(
       },
     },
   };
+}
+
+function optionalSize(value: Record<string, unknown>) {
+  const raw = optionalString(value, "size");
+  if (!raw) return undefined;
+  const [first, second] = raw.split("|").map((part) => Number(part));
+  return Number.isFinite(first) && Number.isFinite(second)
+    ? { first, second }
+    : undefined;
 }
 
 function bubbleState(value: string): BubbleState {

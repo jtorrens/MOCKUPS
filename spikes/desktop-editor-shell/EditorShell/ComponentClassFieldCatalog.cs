@@ -688,6 +688,7 @@ internal static class ComponentClassFieldCatalog
 
         ["component.bubble.surface.editor"] = new("component.bubble.surface.editor", "Surface", ValueKind.ComponentPreset, ["bubble", "surfaceSlot", "presetId"], "default"),
         ["component.bubble.textBox.editor"] = new("component.bubble.textBox.editor", "Text box", ValueKind.ComponentPreset, ["bubble", "textBoxSlot", "presetId"], "default"),
+        ["component.bubble.padding"] = new("component.bubble.padding", "Padding", ValueKind.ThemeTokenPair, ["bubble", "padding"], "theme.spacing.l|theme.spacing.m", PairLabels: new("X", "Y"), Options: SpacingTokenOptions),
         ["component.bubble.incomingBackground"] = new("component.bubble.incomingBackground", "Incoming background", ValueKind.PaletteColorPair, ["bubble", "incomingBackground"], "gray_020|gray_080", PairLabels: new("Light", "Dark")),
         ["component.bubble.incomingText"] = new("component.bubble.incomingText", "Incoming text", ValueKind.PaletteColorPair, ["bubble", "incomingText"], "gray_010|gray_100", PairLabels: new("Light", "Dark")),
         ["component.bubble.systemBackground"] = new("component.bubble.systemBackground", "System background", ValueKind.PaletteColorPair, ["bubble", "systemBackground"], "gray_030|gray_070", PairLabels: new("Light", "Dark")),

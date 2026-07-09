@@ -2860,6 +2860,7 @@ internal sealed partial class SpikeDatabase
         changed |= EnsureStringValue(bubble, ["systemText"], "gray_010|gray_100");
         changed |= EnsureStringValue(bubble, ["outgoingBackground"], "aqua_green|aqua_green");
         changed |= EnsureStringValue(bubble, ["outgoingText"], "gray_100|gray_100");
+        changed |= EnsureStringValue(bubble, ["padding"], "theme.spacing.l|theme.spacing.m");
 
         return changed;
     }

@@ -8,6 +8,7 @@ import {
   cssColorWithAlpha,
   placeChild,
   renderScale,
+  numberToken,
   resolvePaletteColor,
   scalePlacement,
   selectedPaletteColor,
@@ -24,18 +25,32 @@ import {
   surfaceComponentToRenderableAtWithColors,
   type SurfaceColorOverride,
 } from "./surfaceComponentRenderable.js";
-import { textBoxComponentToRenderableAt } from "./textBoxComponentRenderable.js";
+import {
+  measureTextBoxComponent,
+  textBoxComponentToRenderableAt,
+} from "./textBoxComponentRenderable.js";
 
 export function bubbleComponentToRenderable(
   payload: DesignPreviewPayload,
   bubble: BubbleDesignContract,
 ): RenderableNode {
   const scale = renderScale(payload);
+  const paddingX = Math.max(0, numberToken(payload, bubble.padding.xToken) * scale);
+  const paddingY = Math.max(0, numberToken(payload, bubble.padding.yToken) * scale);
+  const textBoxForContent = {
+    ...bubble.textBox,
+    dimensionMode: "content" as const,
+    size: {
+      width: Math.max(1, bubble.maxWidth - (paddingX * 2) / scale),
+      height: 1,
+    },
+  };
+  const measuredTextBox = measureTextBoxComponent(payload, textBoxForContent);
   const localSurfaceBox = {
     x: 0,
     y: 0,
-    width: bubble.renderBox.width * scale,
-    height: bubble.renderBox.height * scale,
+    width: measuredTextBox.width + paddingX * 2,
+    height: measuredTextBox.height + paddingY * 2,
   };
   const localLabelBox = bubble.actorLabelSlot.label
     ? placeChild(
@@ -76,8 +91,13 @@ export function bubbleComponentToRenderable(
       ),
       textBoxComponentToRenderableAt(
         payload,
-        bubble.textBox,
-        surfaceBox,
+        textBoxForContent,
+        {
+          x: surfaceBox.x + paddingX,
+          y: surfaceBox.y + paddingY,
+          width: measuredTextBox.width,
+          height: measuredTextBox.height,
+        },
         {
           surfaceVisible: false,
           textColors: {

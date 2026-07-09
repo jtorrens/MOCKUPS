@@ -369,6 +369,7 @@ internal sealed partial class SpikeDatabase
                     ["systemText"] = "gray_010|gray_100",
                     ["outgoingBackground"] = "aqua_green|aqua_green",
                     ["outgoingText"] = "gray_100|gray_100",
+                    ["padding"] = "theme.spacing.l|theme.spacing.m",
                 };
                 break;
         }
@@ -422,7 +423,7 @@ internal sealed partial class SpikeDatabase
         if (componentType == "bubble")
         {
             preview["state"] = "incoming";
-            preview["size"] = "260|72";
+            preview["maxWidth"] = 260;
             preview["actorName"] = "Alex Q";
         }
 
@@ -731,14 +732,7 @@ internal sealed partial class SpikeDatabase
                         new FieldOption("outgoing", "Outgoing"),
                     ]),
                 ComponentInput("sampleText", "Text", "sampleText", ValueKind.StringMultiline, "Message"),
-                ComponentInput(
-                    "size",
-                    "Size",
-                    "size",
-                    "integerPair",
-                    "260|72",
-                    pairFirstLabel: "W",
-                    pairSecondLabel: "H"),
+                ComponentInput("maxWidth", "Max width", "maxWidth", ValueKind.Integer, "260", minimum: 1, maximum: 2000, increment: 1),
                 ComponentInput("actorName", "Actor name", "actorName", "text", "Alex Q"),
             ],
             _ => [],

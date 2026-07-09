@@ -536,7 +536,8 @@ internal sealed partial class SpikeDatabase
               "defaultOpen": false,
               "groups": [
                 { "id": "bubbleSurface", "label": "Surface", "order": 10, "visible": true, "fields": [
-                  { "id": "component.bubble.surface.editor", "order": 10, "visible": true }
+                  { "id": "component.bubble.surface.editor", "order": 10, "visible": true },
+                  { "id": "component.bubble.padding", "order": 20, "visible": true }
                 ] },
                 { "id": "bubbleText", "label": "Text", "order": 20, "visible": true, "fields": [
                   { "id": "component.bubble.textBox.editor", "order": 10, "visible": true }

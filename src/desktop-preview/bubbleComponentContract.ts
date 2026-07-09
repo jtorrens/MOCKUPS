@@ -1,5 +1,7 @@
-import type { RenderableBox } from "../visual/renderable/types.js";
-import type { AlignmentPlacementContract } from "./previewComponentContracts.js";
+import type {
+  AlignmentPlacementContract,
+  SpacingPairContract,
+} from "./previewComponentContracts.js";
 import type { LabelDesignContract } from "./labelComponentContract.js";
 import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
 import type { TextBoxDesignContract } from "./textBoxComponentContract.js";
@@ -29,5 +31,6 @@ export interface BubbleDesignContract {
   textBox: TextBoxDesignContract;
   actorLabelSlot: BubbleActorLabelSlotContract;
   colors: Record<BubbleState, BubbleStateColorContract>;
-  renderBox: RenderableBox;
+  maxWidth: number;
+  padding: SpacingPairContract;
 }
