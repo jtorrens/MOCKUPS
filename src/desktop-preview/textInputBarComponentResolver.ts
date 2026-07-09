@@ -8,6 +8,7 @@ import {
   asRecord,
   parseObject,
   requiredNumber,
+  requiredPossiblyEmptyString,
   requiredString,
   requiredStringPair,
 } from "./componentResolverCommon.js";
@@ -181,16 +182,6 @@ function iconRowInputsForTextBox(
 
 function toSpacingPair(pair: { first: string; second: string }) {
   return { xToken: pair.first, yToken: pair.second };
-}
-
-function requiredPossiblyEmptyString(
-  value: Record<string, unknown>,
-  key: string,
-  path: string,
-) {
-  const raw = value[key];
-  if (typeof raw === "string") return raw;
-  throw new Error(`Missing string value ${path}`);
 }
 
 function requiredIconList(

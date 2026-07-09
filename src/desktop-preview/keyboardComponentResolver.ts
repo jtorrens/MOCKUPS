@@ -10,6 +10,7 @@ import {
 } from "./componentPreviewDefaults.js";
 import {
   asRecord,
+  optionalBoolean,
   optionalString,
   parseObject,
   requiredAlpha,
@@ -22,6 +23,7 @@ import {
 } from "./componentResolverCommon.js";
 import { resolveIconBarComponentFromRecords } from "./iconBarComponentResolver.js";
 import { requiredMotionContract } from "./previewMotionHelpers.js";
+import { textGraphemes } from "./previewTextRevealHelpers.js";
 
 export function resolveKeyboardComponent(
   payload: DesignPreviewPayload,
@@ -202,38 +204,15 @@ function keyboardMode(pressedKey: string): KeyboardMode {
   return STANDARD_IOS_KEYBOARD_LAYOUT.defaultMode;
 }
 
-function optionalBoolean(value: Record<string, unknown>, key: string) {
-  const raw = value[key];
-  return typeof raw === "boolean" ? raw : false;
-}
-
 function keyboardExtraEmojis(fullText: string, currentCharacter: string) {
   const source = `${currentCharacter}${fullText}`;
-  return textCharacters(source).filter((entry) => /\p{Extended_Pictographic}/u.test(entry));
+  return textGraphemes(source).filter((entry) => /\p{Extended_Pictographic}/u.test(entry));
 }
 
 function characterAtPosition(fullText: string, position: number) {
-  const characters = textCharacters(fullText);
+  const characters = textGraphemes(fullText);
   const index = Math.max(0, Math.min(characters.length - 1, Math.floor(position) - 1));
   return characters[index] ?? "";
-}
-
-function textCharacters(value: string) {
-  const segmenterConstructor = (Intl as unknown as {
-    Segmenter?: new (
-      locale?: string,
-      options?: { granularity?: "grapheme" },
-    ) => { segment(input: string): Iterable<{ segment: string }> };
-  }).Segmenter;
-
-  if (segmenterConstructor) {
-    return Array.from(
-      new segmenterConstructor(undefined, { granularity: "grapheme" }).segment(value),
-      (entry) => entry.segment,
-    );
-  }
-
-  return Array.from(value);
 }
 
 function emojiHash(value: string) {

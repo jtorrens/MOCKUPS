@@ -3192,7 +3192,7 @@ internal sealed partial class SpikeDatabase
         JsonObject designPreview,
         JsonObject designPreviewDefaults)
     {
-        if (componentType is not ("audio" or "keyboard" or "media")
+        if (componentType is not ("audio" or "keyboard" or "media" or "bubble")
             || designPreviewDefaults["actions"] is not JsonArray defaultActions)
         {
             return false;

@@ -57,6 +57,16 @@ export function optionalString(value: Record<string, unknown>, key: string) {
   return typeof raw === "string" ? raw : "";
 }
 
+export function requiredPossiblyEmptyString(
+  value: Record<string, unknown>,
+  key: string,
+  path: string,
+) {
+  const raw = value[key];
+  if (typeof raw === "string") return raw;
+  throw new Error(`Missing string value ${path}`);
+}
+
 export function requiredBoolean(
   value: Record<string, unknown>,
   key: string,
@@ -65,6 +75,11 @@ export function requiredBoolean(
   const raw = value[key];
   if (typeof raw === "boolean") return raw;
   throw new Error(`Missing boolean value ${path}`);
+}
+
+export function optionalBoolean(value: Record<string, unknown>, key: string) {
+  const raw = value[key];
+  return typeof raw === "boolean" ? raw : false;
 }
 
 export function requiredNumber(

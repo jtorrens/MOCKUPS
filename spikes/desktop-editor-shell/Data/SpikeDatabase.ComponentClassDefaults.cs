@@ -425,6 +425,21 @@ internal sealed partial class SpikeDatabase
             preview["state"] = "incoming";
             preview["maxWidth"] = 260;
             preview["actorName"] = "Alex Q";
+            preview["writeOnDurationSeconds"] = 1.2;
+            preview["writeOnTrigger"] = false;
+            preview["writeOnTimeSeconds"] = 0;
+            preview["actions"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["id"] = "writeOn",
+                    ["label"] = "Write-on",
+                    ["playInputId"] = "writeOnTrigger",
+                    ["durationInputId"] = "writeOnDurationSeconds",
+                    ["timeJsonKey"] = "writeOnTimeSeconds",
+                    ["prewarmFrames"] = false,
+                },
+            };
         }
 
         if (componentType == "audio")
@@ -733,6 +748,7 @@ internal sealed partial class SpikeDatabase
                     ]),
                 ComponentInput("sampleText", "Text", "sampleText", ValueKind.StringMultiline, "Message"),
                 ComponentInput("maxWidth", "Max width", "maxWidth", ValueKind.Integer, "260", minimum: 1, maximum: 2000, increment: 1),
+                ComponentInput("writeOnDurationSeconds", "Write-on seconds", "writeOnDurationSeconds", ValueKind.Decimal, "1.2", minimum: 0, maximum: 60, increment: 0.1m),
                 ComponentInput("actorName", "Actor name", "actorName", "text", "Alex Q"),
             ],
             _ => [],

@@ -4,11 +4,13 @@ import {
 } from "./componentPreviewDefaults.js";
 import {
   asRecord,
+  optionalBoolean,
   optionalNumber,
   optionalString,
   parseObject,
   requiredBoolean,
   requiredPlacement,
+  requiredPossiblyEmptyString,
   requiredString,
   requiredStringPair,
 } from "./componentResolverCommon.js";
@@ -22,6 +24,7 @@ import { resolveLabelComponentFromRecords } from "./labelComponentResolver.js";
 import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
 import { resolveTextBoxComponentFromRecords } from "./textBoxComponentResolver.js";
+import { simpleWriteOnText } from "./previewTextRevealHelpers.js";
 
 export function resolveBubbleComponent(
   payload: DesignPreviewPayload,
@@ -40,6 +43,16 @@ export function resolveBubbleComponent(
   );
   const padding = requiredStringPair(bubble, "padding", "component.bubble.padding");
   const state = bubbleState(requiredString(preview, "state", "component.bubble.input.state"));
+  const fullText = requiredPossiblyEmptyString(
+    preview,
+    "sampleText",
+    "component.bubble.input.sampleText",
+  );
+  const visibleText = simpleWriteOnText(fullText, {
+    enabled: optionalBoolean(preview, "writeOnTrigger"),
+    timeSeconds: optionalNumber(preview, "writeOnTimeSeconds", 0),
+    durationSeconds: optionalNumber(preview, "writeOnDurationSeconds", 1.2),
+  });
 
   const surfaceConfig = mergeComponentDefaults(
     componentPresetConfig(
@@ -59,7 +72,7 @@ export function resolveBubbleComponent(
   );
 
   const textBoxInputs = {
-    sampleText: optionalString(preview, "sampleText"),
+    sampleText: visibleText,
     placeholder: "",
     maxLines: 12,
     leftIconRowSlot: {},

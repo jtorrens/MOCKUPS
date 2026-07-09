@@ -5,6 +5,7 @@ export type {
 export { asRecord, parseObject } from "./previewJsonHelpers.js";
 export {
   optionalNumber,
+  optionalBoolean,
   optionalString,
   requiredAlpha,
   requiredBoolean,
@@ -14,6 +15,7 @@ export {
   requiredNumberPair,
   requiredPlacement,
   requiredRecord,
+  requiredPossiblyEmptyString,
   requiredString,
   requiredStringPair,
   requiredTypographyStyle,
