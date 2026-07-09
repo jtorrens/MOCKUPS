@@ -85,7 +85,6 @@ export function resolveTextBoxComponentFromRecords(
     componentPresetConfig(componentBaseConfigs, "cursor", cursorSlot.presetId),
     asRecord(cursorSlot.overrides),
   );
-  const iconButtonSlot = componentInputSlot(inputs, "buttonIconSlot", "buttonIconPresetId");
   const leftIconRowInputs = textBoxIconRowInputs(inputs, "left");
   const rightIconRowInputs = textBoxIconRowInputs(inputs, "right");
 
@@ -132,18 +131,20 @@ export function resolveTextBoxComponentFromRecords(
     leftIconRow: resolveOptionalIconRowComponentFromRecords(
       inputs,
       leftIconRowInputs,
-      iconButtonSlot,
       "leftIconRowSlot",
       "leftIconRowPresetId",
+      "buttonIconSlot",
+      "buttonIconPresetId",
       componentBaseConfigs,
       `${id}.leftIcons`,
     ),
     rightIconRow: resolveOptionalIconRowComponentFromRecords(
       inputs,
       rightIconRowInputs,
-      iconButtonSlot,
       "rightIconRowSlot",
       "rightIconRowPresetId",
+      "buttonIconSlot",
+      "buttonIconPresetId",
       componentBaseConfigs,
       `${id}.rightIcons`,
     ),
@@ -153,9 +154,10 @@ export function resolveTextBoxComponentFromRecords(
 function resolveOptionalIconRowComponentFromRecords(
   parentInputs: Record<string, unknown>,
   iconRowInputs: Record<string, unknown>,
-  buttonIconSlot: { presetId: string; overrides: Record<string, unknown> },
   slotInputKey: string,
   legacyPresetInputKey: string,
+  buttonSlotInputKey: string,
+  legacyButtonPresetInputKey: string,
   componentBaseConfigs: Record<string, unknown>,
   id: string,
 ) {
@@ -173,6 +175,11 @@ function resolveOptionalIconRowComponentFromRecords(
     };
   }
 
+  const buttonIconSlot = componentInputSlot(
+    parentInputs,
+    buttonSlotInputKey,
+    legacyButtonPresetInputKey,
+  );
   const iconRowSlot = componentInputSlot(parentInputs, slotInputKey, legacyPresetInputKey);
   const iconRowConfig = componentPresetConfig(
     componentBaseConfigs,
