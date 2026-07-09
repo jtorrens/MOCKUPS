@@ -2854,6 +2854,12 @@ internal sealed partial class SpikeDatabase
                 JsonNode.Parse(AlignmentPlacementValue.FromDirectionalEdge("top", -4).ToJsonString())!);
             changed = true;
         }
+        changed |= EnsureStringValue(bubble, ["incomingBackground"], "gray_020|gray_080");
+        changed |= EnsureStringValue(bubble, ["incomingText"], "gray_010|gray_100");
+        changed |= EnsureStringValue(bubble, ["systemBackground"], "gray_030|gray_070");
+        changed |= EnsureStringValue(bubble, ["systemText"], "gray_010|gray_100");
+        changed |= EnsureStringValue(bubble, ["outgoingBackground"], "aqua_green|aqua_green");
+        changed |= EnsureStringValue(bubble, ["outgoingText"], "gray_100|gray_100");
 
         return changed;
     }
@@ -2943,6 +2949,17 @@ internal sealed partial class SpikeDatabase
         }
 
         SetJsonValue(owner, path, JsonValue.Create(normalizedValue)!);
+        return true;
+    }
+
+    private static bool EnsureStringValue(JsonObject owner, string[] path, string replacement)
+    {
+        if (JsonPath.String(owner, path) is { Length: > 0 })
+        {
+            return false;
+        }
+
+        SetJsonValue(owner, path, JsonValue.Create(replacement)!);
         return true;
     }
 

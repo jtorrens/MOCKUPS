@@ -363,6 +363,12 @@ internal sealed partial class SpikeDatabase
                         ["placement"] = JsonNode.Parse(AlignmentPlacementValue.FromDirectionalEdge("top", -4).ToJsonString()),
                         ["overrides"] = new JsonObject(),
                     },
+                    ["incomingBackground"] = "gray_020|gray_080",
+                    ["incomingText"] = "gray_010|gray_100",
+                    ["systemBackground"] = "gray_030|gray_070",
+                    ["systemText"] = "gray_010|gray_100",
+                    ["outgoingBackground"] = "aqua_green|aqua_green",
+                    ["outgoingText"] = "gray_100|gray_100",
                 };
                 break;
         }
@@ -418,12 +424,6 @@ internal sealed partial class SpikeDatabase
             preview["state"] = "incoming";
             preview["size"] = "260|72";
             preview["actorName"] = "Alex Q";
-            preview["incomingBackground"] = "gray_020|gray_080";
-            preview["incomingText"] = "gray_010|gray_100";
-            preview["systemBackground"] = "gray_030|gray_070";
-            preview["systemText"] = "gray_010|gray_100";
-            preview["outgoingBackground"] = "aqua_green|aqua_green";
-            preview["outgoingText"] = "gray_100|gray_100";
         }
 
         if (componentType == "audio")
@@ -740,12 +740,6 @@ internal sealed partial class SpikeDatabase
                     pairFirstLabel: "W",
                     pairSecondLabel: "H"),
                 ComponentInput("actorName", "Actor name", "actorName", "text", "Alex Q"),
-                ComponentInput("incomingBackground", "Incoming background", "incomingBackground", ValueKind.PaletteColorPair, "gray_020|gray_080", pairFirstLabel: "Light", pairSecondLabel: "Dark"),
-                ComponentInput("incomingText", "Incoming text", "incomingText", ValueKind.PaletteColorPair, "gray_010|gray_100", pairFirstLabel: "Light", pairSecondLabel: "Dark"),
-                ComponentInput("systemBackground", "System background", "systemBackground", ValueKind.PaletteColorPair, "gray_030|gray_070", pairFirstLabel: "Light", pairSecondLabel: "Dark"),
-                ComponentInput("systemText", "System text", "systemText", ValueKind.PaletteColorPair, "gray_010|gray_100", pairFirstLabel: "Light", pairSecondLabel: "Dark"),
-                ComponentInput("outgoingBackground", "Outgoing background", "outgoingBackground", ValueKind.PaletteColorPair, "aqua_green|aqua_green", pairFirstLabel: "Light", pairSecondLabel: "Dark"),
-                ComponentInput("outgoingText", "Outgoing text", "outgoingText", ValueKind.PaletteColorPair, "gray_100|gray_100", pairFirstLabel: "Light", pairSecondLabel: "Dark"),
             ],
             _ => [],
         };

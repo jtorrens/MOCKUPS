@@ -131,16 +131,16 @@ export function resolveBubbleComponent(
     },
     colors: {
       incoming: {
-        background: palettePair(preview, "incomingBackground", "component.bubble.input.incomingBackground"),
-        text: palettePair(preview, "incomingText", "component.bubble.input.incomingText"),
+        background: palettePair(bubble, "incomingBackground", "component.bubble.incomingBackground"),
+        text: palettePair(bubble, "incomingText", "component.bubble.incomingText"),
       },
       system: {
-        background: palettePair(preview, "systemBackground", "component.bubble.input.systemBackground"),
-        text: palettePair(preview, "systemText", "component.bubble.input.systemText"),
+        background: palettePair(bubble, "systemBackground", "component.bubble.systemBackground"),
+        text: palettePair(bubble, "systemText", "component.bubble.systemText"),
       },
       outgoing: {
-        background: palettePair(preview, "outgoingBackground", "component.bubble.input.outgoingBackground"),
-        text: palettePair(preview, "outgoingText", "component.bubble.input.outgoingText"),
+        background: palettePair(bubble, "outgoingBackground", "component.bubble.outgoingBackground"),
+        text: palettePair(bubble, "outgoingText", "component.bubble.outgoingText"),
       },
     },
   };

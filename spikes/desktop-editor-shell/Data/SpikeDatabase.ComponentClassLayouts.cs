@@ -541,7 +541,15 @@ internal sealed partial class SpikeDatabase
                 { "id": "bubbleText", "label": "Text", "order": 20, "visible": true, "fields": [
                   { "id": "component.bubble.textBox.editor", "order": 10, "visible": true }
                 ] },
-                { "id": "bubbleActorLabel", "label": "Actor label", "order": 30, "visible": true, "fields": [
+                { "id": "bubbleColors", "label": "Colors", "order": 30, "visible": true, "fields": [
+                  { "id": "component.bubble.incomingBackground", "order": 10, "visible": true },
+                  { "id": "component.bubble.incomingText", "order": 20, "visible": true },
+                  { "id": "component.bubble.systemBackground", "order": 30, "visible": true },
+                  { "id": "component.bubble.systemText", "order": 40, "visible": true },
+                  { "id": "component.bubble.outgoingBackground", "order": 50, "visible": true },
+                  { "id": "component.bubble.outgoingText", "order": 60, "visible": true }
+                ] },
+                { "id": "bubbleActorLabel", "label": "Actor label", "order": 40, "visible": true, "fields": [
                   { "id": "component.bubble.actorLabel.showLabel", "order": 10, "visible": true },
                   { "id": "component.bubble.actorLabel.placement", "order": 20, "visible": true },
                   { "id": "component.bubble.actorLabel.editor", "order": 30, "visible": true }
