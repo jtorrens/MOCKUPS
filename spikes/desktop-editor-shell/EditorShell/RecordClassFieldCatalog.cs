@@ -104,6 +104,7 @@ internal static class RecordClassFieldCatalog
         ["module.sortOrder"] = new("module.sortOrder", "Sort Order", ValueKind.Integer),
         ["module.metadata"] = new("module.metadata", "Metadata", ValueKind.StringMultiline),
         ["module.conversation.showHeader"] = new("module.conversation.showHeader", "Header", ValueKind.Boolean),
+        ["module.conversation.useAppWallpaper"] = new("module.conversation.useAppWallpaper", "Use app wallpaper", ValueKind.Boolean),
         ["module.conversation.headerTitle"] = new("module.conversation.headerTitle", "Title", ValueKind.StringSingleLine),
         ["module.conversation.headerSubtitle"] = new("module.conversation.headerSubtitle", "Subtitle", ValueKind.StringSingleLine),
         ["module.conversation.headerHeight"] = new(
@@ -146,21 +147,6 @@ internal static class RecordClassFieldCatalog
             "Max width %",
             ValueKind.Integer,
             Number: new NumberDefinition(1, 100, 1, 0)),
-        ["module.conversation.bubbleIncomingText"] = new("module.conversation.bubbleIncomingText", "Incoming text", ValueKind.StringMultiline),
-        ["module.conversation.bubbleOutgoingText"] = new("module.conversation.bubbleOutgoingText", "Outgoing text", ValueKind.StringMultiline),
-        ["module.conversation.bubbleSystemText"] = new("module.conversation.bubbleSystemText", "System text", ValueKind.StringMultiline),
-        ["module.conversation.bubbleOutgoingStatusState"] = new(
-            "module.conversation.bubbleOutgoingStatusState",
-            "Outgoing status",
-            ValueKind.OptionToken,
-            Options:
-            [
-                new FieldOption("none", "None"),
-                new FieldOption("sent", "Sent"),
-                new FieldOption("delivered", "Delivered"),
-                new FieldOption("read", "Read"),
-            ]),
-        ["module.conversation.bubbleOutgoingStatusText"] = new("module.conversation.bubbleOutgoingStatusText", "Outgoing status text", ValueKind.StringSingleLine),
         ["module.conversation.screenGutter"] = new(
             "module.conversation.screenGutter",
             "Screen gutter",

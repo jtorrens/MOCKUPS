@@ -660,11 +660,12 @@ internal sealed partial class SpikeDatabase
                   "visible": true,
                   "fields": [
                     { "id": "module.conversation.showHeader", "order": 10, "visible": true },
-                    { "id": "module.conversation.headerTitle", "order": 20, "visible": true },
-                    { "id": "module.conversation.headerSubtitle", "order": 30, "visible": true },
-                    { "id": "module.conversation.headerHeight", "order": 40, "visible": true },
-                    { "id": "module.conversation.screenGutter", "order": 50, "visible": true },
-                    { "id": "module.conversation.messageGap", "order": 60, "visible": true }
+                    { "id": "module.conversation.useAppWallpaper", "order": 20, "visible": true },
+                    { "id": "module.conversation.headerTitle", "order": 30, "visible": true },
+                    { "id": "module.conversation.headerSubtitle", "order": 40, "visible": true },
+                    { "id": "module.conversation.headerHeight", "order": 50, "visible": true },
+                    { "id": "module.conversation.screenGutter", "order": 60, "visible": true },
+                    { "id": "module.conversation.messageGap", "order": 70, "visible": true }
                   ]
                 }
               ]
@@ -770,12 +771,7 @@ internal sealed partial class SpikeDatabase
                   "visible": true,
                   "fields": [
                     { "id": "module.conversation.bubbleVariant", "order": 10, "visible": true },
-                    { "id": "module.conversation.bubbleMaxWidth", "order": 20, "visible": true },
-                    { "id": "module.conversation.bubbleIncomingText", "order": 30, "visible": true },
-                    { "id": "module.conversation.bubbleOutgoingText", "order": 40, "visible": true },
-                    { "id": "module.conversation.bubbleSystemText", "order": 50, "visible": true },
-                    { "id": "module.conversation.bubbleOutgoingStatusState", "order": 60, "visible": true },
-                    { "id": "module.conversation.bubbleOutgoingStatusText", "order": 70, "visible": true }
+                    { "id": "module.conversation.bubbleMaxWidth", "order": 20, "visible": true }
                   ]
                 }
               ]

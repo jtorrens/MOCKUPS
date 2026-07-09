@@ -211,6 +211,31 @@ internal sealed partial class SpikeDatabase
             ReadString(reader, 5));
     }
 
+    public AppSettings GetModuleAppSettings(string moduleId)
+    {
+        using var connection = OpenConnection();
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT a.project_id, a.bundle_key, a.app_type, a.config_json, a.metadata_json
+            FROM modules m
+            JOIN apps a ON a.id = m.app_id
+            WHERE m.id = $id
+            """;
+        command.Parameters.AddWithValue("$id", moduleId);
+        using var reader = command.ExecuteReader();
+        if (!reader.Read())
+        {
+            throw new InvalidOperationException($"Missing module '{moduleId}'.");
+        }
+
+        return new AppSettings(
+            reader.GetString(0),
+            ReadString(reader, 1),
+            ReadString(reader, 2),
+            ReadString(reader, 3),
+            ReadString(reader, 4));
+    }
+
     public void UpdateModuleField(string moduleId, string fieldId, string value)
     {
         using var connection = OpenConnection();
@@ -250,6 +275,7 @@ internal sealed partial class SpikeDatabase
         return fieldId switch
         {
             "module.conversation.showHeader" => JsonBoolString(config, ["conversation", "showHeader"], defaultValue: true),
+            "module.conversation.useAppWallpaper" => JsonBoolString(config, ["conversation", "useAppWallpaper"], defaultValue: true),
             "module.conversation.headerTitle" => JsonString(config, ["conversation", "headerTitle"]),
             "module.conversation.headerSubtitle" => JsonString(config, ["conversation", "headerSubtitle"]),
             "module.conversation.headerHeight" => JsonNumberString(config, ["conversation", "headerHeight"], "64"),
@@ -264,11 +290,6 @@ internal sealed partial class SpikeDatabase
             "module.conversation.keyboardVariant" => JsonString(config, ["conversation", "keyboardVariant"]),
             "module.conversation.bubbleVariant" => JsonString(config, ["conversation", "bubbleVariant"]),
             "module.conversation.bubbleMaxWidth" => JsonNumberString(config, ["conversation", "bubbleMaxWidth"], "66"),
-            "module.conversation.bubbleIncomingText" => JsonString(config, ["conversation", "bubbleIncomingText"]),
-            "module.conversation.bubbleOutgoingText" => JsonString(config, ["conversation", "bubbleOutgoingText"]),
-            "module.conversation.bubbleSystemText" => JsonString(config, ["conversation", "bubbleSystemText"]),
-            "module.conversation.bubbleOutgoingStatusState" => JsonString(config, ["conversation", "bubbleOutgoingStatusState"]),
-            "module.conversation.bubbleOutgoingStatusText" => JsonString(config, ["conversation", "bubbleOutgoingStatusText"]),
             "module.conversation.screenGutter" => JsonString(config, ["conversation", "screenGutter"]) is { Length: > 0 } gutter ? gutter : "theme.spacing.l|theme.spacing.l",
             "module.conversation.messageGap" => JsonString(config, ["conversation", "messageGap"]) is { Length: > 0 } gap ? gap : "theme.spacing.m",
             _ => throw new InvalidOperationException($"Unknown module config field '{fieldId}'."),
@@ -517,6 +538,9 @@ internal sealed partial class SpikeDatabase
             case "module.conversation.showHeader":
                 SetJsonValue(config, ["conversation", "showHeader"], JsonValue.Create(BoolFromText(value))!);
                 break;
+            case "module.conversation.useAppWallpaper":
+                SetJsonValue(config, ["conversation", "useAppWallpaper"], JsonValue.Create(BoolFromText(value))!);
+                break;
             case "module.conversation.headerTitle":
                 SetJsonValue(config, ["conversation", "headerTitle"], JsonValue.Create(value)!);
                 break;
@@ -558,21 +582,6 @@ internal sealed partial class SpikeDatabase
                 break;
             case "module.conversation.bubbleMaxWidth":
                 SetJsonValue(config, ["conversation", "bubbleMaxWidth"], NumberNode(value));
-                break;
-            case "module.conversation.bubbleIncomingText":
-                SetJsonValue(config, ["conversation", "bubbleIncomingText"], JsonValue.Create(value)!);
-                break;
-            case "module.conversation.bubbleOutgoingText":
-                SetJsonValue(config, ["conversation", "bubbleOutgoingText"], JsonValue.Create(value)!);
-                break;
-            case "module.conversation.bubbleSystemText":
-                SetJsonValue(config, ["conversation", "bubbleSystemText"], JsonValue.Create(value)!);
-                break;
-            case "module.conversation.bubbleOutgoingStatusState":
-                SetJsonValue(config, ["conversation", "bubbleOutgoingStatusState"], JsonValue.Create(value)!);
-                break;
-            case "module.conversation.bubbleOutgoingStatusText":
-                SetJsonValue(config, ["conversation", "bubbleOutgoingStatusText"], JsonValue.Create(value)!);
                 break;
             case "module.conversation.screenGutter":
                 SetJsonValue(config, ["conversation", "screenGutter"], JsonValue.Create(value)!);
@@ -639,6 +648,7 @@ internal sealed partial class SpikeDatabase
             ["conversation"] = new JsonObject
             {
                 ["showHeader"] = true,
+                ["useAppWallpaper"] = true,
                 ["headerTitle"] = "Alex Q",
                 ["headerSubtitle"] = "online",
                 ["headerHeight"] = 64,
@@ -653,11 +663,6 @@ internal sealed partial class SpikeDatabase
                 ["keyboardVariant"] = "default",
                 ["bubbleVariant"] = "default",
                 ["bubbleMaxWidth"] = 66,
-                ["bubbleIncomingText"] = "Tenias razon: ya podemos componer desde el modulo.",
-                ["bubbleOutgoingText"] = "Perfecto. El modulo solo elige variantes y datos runtime.",
-                ["bubbleSystemText"] = "Siguiente paso: instancias reales.",
-                ["bubbleOutgoingStatusState"] = "read",
-                ["bubbleOutgoingStatusText"] = "",
                 ["screenGutter"] = "theme.spacing.l|theme.spacing.l",
                 ["messageGap"] = "theme.spacing.m",
             },
@@ -674,6 +679,8 @@ internal sealed partial class SpikeDatabase
             ["message1Text"] = "Tenias razon: ya podemos componer desde el modulo.",
             ["message2Text"] = "Perfecto. El modulo solo elige variantes y datos runtime.",
             ["message3Text"] = "Siguiente paso: instancias reales.",
+            ["message2StatusState"] = "read",
+            ["message2StatusText"] = "",
             ["inputs"] = new JsonArray
             {
                 new JsonObject { ["id"] = "headerTitle", ["label"] = "Header title", ["jsonKey"] = "headerTitle", ["kind"] = "text", ["defaultValue"] = "Alex Q" },
@@ -681,6 +688,25 @@ internal sealed partial class SpikeDatabase
                 new JsonObject { ["id"] = "message1Text", ["label"] = "Incoming text", ["jsonKey"] = "message1Text", ["kind"] = "multilineText", ["defaultValue"] = "Tenias razon: ya podemos componer desde el modulo.", ["uiOrigin"] = "embedded", ["uiGroupId"] = "messages", ["uiGroupLabel"] = "Messages" },
                 new JsonObject { ["id"] = "message2Text", ["label"] = "Outgoing text", ["jsonKey"] = "message2Text", ["kind"] = "multilineText", ["defaultValue"] = "Perfecto. El modulo solo elige variantes y datos runtime.", ["uiOrigin"] = "embedded", ["uiGroupId"] = "messages", ["uiGroupLabel"] = "Messages" },
                 new JsonObject { ["id"] = "message3Text", ["label"] = "System text", ["jsonKey"] = "message3Text", ["kind"] = "multilineText", ["defaultValue"] = "Siguiente paso: instancias reales.", ["uiOrigin"] = "embedded", ["uiGroupId"] = "messages", ["uiGroupLabel"] = "Messages" },
+                new JsonObject
+                {
+                    ["id"] = "message2StatusState",
+                    ["label"] = "Outgoing status",
+                    ["jsonKey"] = "message2StatusState",
+                    ["kind"] = "option",
+                    ["defaultValue"] = "read",
+                    ["uiOrigin"] = "embedded",
+                    ["uiGroupId"] = "messages",
+                    ["uiGroupLabel"] = "Messages",
+                    ["options"] = new JsonArray
+                    {
+                        new JsonObject { ["value"] = "none", ["label"] = "None" },
+                        new JsonObject { ["value"] = "sent", ["label"] = "Sent" },
+                        new JsonObject { ["value"] = "delivered", ["label"] = "Delivered" },
+                        new JsonObject { ["value"] = "read", ["label"] = "Read" },
+                    },
+                },
+                new JsonObject { ["id"] = "message2StatusText", ["label"] = "Outgoing status text", ["jsonKey"] = "message2StatusText", ["kind"] = "text", ["defaultValue"] = "", ["uiOrigin"] = "embedded", ["uiGroupId"] = "messages", ["uiGroupLabel"] = "Messages" },
                 new JsonObject { ["id"] = "inputText", ["label"] = "Input text", ["jsonKey"] = "inputText", ["kind"] = "text", ["defaultValue"] = "Message", ["uiOrigin"] = "embedded", ["uiGroupId"] = "textInput", ["uiGroupLabel"] = "Text input" },
             },
         };

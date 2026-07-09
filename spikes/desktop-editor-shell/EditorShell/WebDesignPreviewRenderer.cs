@@ -126,6 +126,7 @@ internal static class WebDesignPreviewRenderer
             iconAssetRoot = payload.IconAssetRoot,
             iconMappingJson = payload.IconMappingJson,
             componentBaseConfigsJson = payload.ComponentBaseConfigsJson,
+            appConfigJson = payload.AppConfigJson,
             previewFrame = new
             {
                 canvasWidth = metrics.CanvasWidth,

@@ -1168,6 +1168,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 payload.ConfigJson,
                 payload.ThemeTokensJson,
                 payload.ComponentBaseConfigsJson,
+                payload.AppConfigJson,
                 StablePreviewJson(payload.DesignPreviewJson));
         }
 

@@ -21,8 +21,10 @@ import {
   renderableVisualBounds,
   renderScale,
   selectedColor,
+  selectedPaletteColor,
   translateRenderableNode,
 } from "./componentRenderableCommon.js";
+import { mediaFrameUriForPath } from "./previewAssetResolver.js";
 import { statusBarComponentToRenderable } from "./statusBarComponentRenderable.js";
 import { resolveStatusBarComponent } from "./statusBarComponentResolver.js";
 import { textInputBarComponentToRenderable } from "./textInputBarComponentRenderable.js";
@@ -38,6 +40,10 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
   const screen = previewScreenBox(payload);
   const scale = renderScale(payload);
   const children: RenderableNode[] = [];
+  const wallpaper = optionalBooleanDefault(conversation, "useAppWallpaper", true)
+    ? appWallpaperNode(payload, screen)
+    : undefined;
+  if (wallpaper) children.push(wallpaper);
 
   const status = optionalBooleanDefault(conversation, "showStatusBar", true)
     ? childRenderable(
@@ -153,6 +159,54 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
   };
 }
 
+function appWallpaperNode(
+  payload: DesignPreviewPayload,
+  screen: NonNullable<RenderableNode["box"]>,
+): RenderableNode | undefined {
+  const appConfig = parseObject(payload.appConfigJson ?? "{}");
+  const wallpaper = asRecord(appConfig.wallpaper);
+  const opacity = Math.max(0, Math.min(1, optionalNumber(wallpaper, "opacity", 1)));
+  if (opacity <= 0) return undefined;
+
+  const kind = optionalString(wallpaper, "kind") || "solid";
+  if (kind === "image") {
+    const image = asRecord(wallpaper.image);
+    const filePath = optionalString(image, "filePath");
+    const frame = mediaFrameUriForPath(payload, filePath, 0);
+    if (frame.uri) {
+      return {
+        id: "module.conversation.wallpaper.image",
+        type: "image",
+        frame: 0,
+        box: screen,
+        asset: {
+          type: "image",
+          uri: frame.uri,
+        },
+        style: {
+          objectFit: "cover",
+          opacity,
+        },
+      };
+    }
+  }
+
+  const modes = asRecord(appConfig.modes);
+  const mode = asRecord(modes[payload.themeMode || "light"]);
+  const modeWallpaper = asRecord(mode.wallpaper);
+  const colorToken = optionalString(modeWallpaper, "color");
+  if (!colorToken) return undefined;
+  return {
+    id: "module.conversation.wallpaper.color",
+    type: "surface",
+    frame: 0,
+    box: screen,
+    style: {
+      background: selectedPaletteColor(payload, colorToken, opacity),
+    },
+  };
+}
+
 function messageNodes(
   payload: DesignPreviewPayload,
   componentBaseConfigs: JsonRecord,
@@ -170,9 +224,9 @@ function messageNodes(
     "module.conversation.bubbleVariant",
   );
   const messages = [
-    { state: "incoming", text: conversationString(conversation, preview, "bubbleIncomingText", "message1Text") },
-    { state: "outgoing", text: conversationString(conversation, preview, "bubbleOutgoingText", "message2Text") },
-    { state: "system", text: conversationString(conversation, preview, "bubbleSystemText", "message3Text") },
+    { state: "incoming", text: optionalString(preview, "message1Text") },
+    { state: "outgoing", text: optionalString(preview, "message2Text") },
+    { state: "system", text: optionalString(preview, "message3Text") },
   ] as const;
   const nodes = messages.map((message, index) => childRenderable(
     payload,
@@ -187,10 +241,10 @@ function messageNodes(
       writeOnTrigger: false,
       writeOnFrame: 0,
       statusState: message.state === "outgoing"
-        ? optionalString(conversation, "bubbleOutgoingStatusState") || "read"
+        ? optionalString(preview, "message2StatusState") || "read"
         : "none",
       statusText: message.state === "outgoing"
-        ? optionalString(conversation, "bubbleOutgoingStatusText")
+        ? optionalString(preview, "message2StatusText")
         : "",
     },
     (childPayload) => bubbleComponentToRenderable(childPayload, resolveBubbleComponent(childPayload)),

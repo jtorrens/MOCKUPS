@@ -20,7 +20,8 @@ internal sealed record DesignPreviewPayload(
     IReadOnlyList<SpikeDatabase.ProductionFontFace> FontFaces,
     string ComponentType = "",
     string DesignPreviewJson = "",
-    string ComponentBaseConfigsJson = "{}");
+    string ComponentBaseConfigsJson = "{}",
+    string AppConfigJson = "{}");
 
 internal static class DesignPreviewPayloadFactory
 {
@@ -70,6 +71,7 @@ internal static class DesignPreviewPayloadFactory
         IReadOnlyList<SpikeDatabase.ProductionFontFace> fontFaces)
     {
         var settings = database.GetModuleSettings(node.Id);
+        var appSettings = database.GetModuleAppSettings(node.Id);
         var componentBaseConfigsJson = database.GetComponentClassBaseConfigsJson(settings.ProjectId);
         return new DesignPreviewPayload(
             "module",
@@ -84,7 +86,8 @@ internal static class DesignPreviewPayloadFactory
             fontFaces,
             settings.RecordClassId,
             settings.DesignPreviewJson,
-            componentBaseConfigsJson);
+            componentBaseConfigsJson,
+            appSettings.ConfigJson);
     }
 
     private static DesignPreviewPayload FromComponentClass(

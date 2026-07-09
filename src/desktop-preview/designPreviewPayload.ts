@@ -21,6 +21,7 @@ export interface DesignPreviewPayload {
   kind: "componentClass" | "module";
   componentType?: string;
   componentBaseConfigsJson?: string;
+  appConfigJson?: string;
   configJson: string;
   designPreviewJson?: string;
   previewFrame: PreviewFramePayload;
