@@ -168,10 +168,10 @@ function appWallpaperNode(
   const opacity = Math.max(0, Math.min(1, optionalNumber(wallpaper, "opacity", 1)));
   if (opacity <= 0) return undefined;
 
-  const kind = optionalString(wallpaper, "kind") || "solid";
+  const image = asRecord(wallpaper.image);
+  const filePath = optionalString(image, "filePath");
+  const kind = optionalString(wallpaper, "kind") || (filePath ? "image" : "solid");
   if (kind === "image") {
-    const image = asRecord(wallpaper.image);
-    const filePath = optionalString(image, "filePath");
     const frame = mediaFrameUriForPath(payload, filePath, 0);
     if (frame.uri) {
       return {
