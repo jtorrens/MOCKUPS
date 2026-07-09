@@ -44,17 +44,11 @@ export function mediaComponentToRenderableAt(
   media: MediaDesignContract,
   box: RenderableBox,
 ): RenderableNode {
-  const size = measureMediaComponent(payload, media);
-  const sizedBox = {
-    x: box.x,
-    y: box.y,
-    width: box.width || size.width,
-    height: box.height || size.height,
-  };
-  return mediaComponentToRenderableForBoxes(payload, media, {
-    root: sizedBox,
-    media: sizedBox,
-  });
+  return mediaComponentToRenderableForBoxes(
+    payload,
+    media,
+    mediaBoxesFromInlineBox(payload, media, sizedInlineMediaBox(payload, media, box)),
+  );
 }
 
 function mediaComponentToRenderableForBoxes(
@@ -106,7 +100,18 @@ function mediaBoxes(
   payload: DesignPreviewPayload,
   media: MediaDesignContract,
 ): MediaRenderBoxes {
-  const inline = inlineMediaBoxes(payload, media);
+  return mediaBoxesFromInlineBox(payload, media, inlineMediaBox(payload, media));
+}
+
+function mediaBoxesFromInlineBox(
+  payload: DesignPreviewPayload,
+  media: MediaDesignContract,
+  inlineBox: RenderableBox,
+): MediaRenderBoxes {
+  const inline = {
+    root: inlineBox,
+    media: inlineBox,
+  };
   if (media.displayState !== "fullframe") {
     return inline;
   }
@@ -118,22 +123,32 @@ function mediaBoxes(
   }
 
   return {
-    root: interpolateBox(inline.root, fullframe.root, media, progress),
-    media: interpolateBox(inline.media, fullframe.media, media, progress),
+    root: interpolateBox(inline.root, fullframe.root, progress),
+    media: interpolateBox(inline.media, fullframe.media, progress),
   };
 }
 
-function inlineMediaBoxes(
+function inlineMediaBox(
   payload: DesignPreviewPayload,
   media: MediaDesignContract,
-): MediaRenderBoxes {
+): RenderableBox {
   const scale = renderScale(payload);
   const width = media.viewport.width * scale;
   const height = media.viewport.height * scale;
-  const mediaBox = boundedCenterBox(payload, width, height);
+  return boundedCenterBox(payload, width, height);
+}
+
+function sizedInlineMediaBox(
+  payload: DesignPreviewPayload,
+  media: MediaDesignContract,
+  box: RenderableBox,
+): RenderableBox {
+  const size = measureMediaComponent(payload, media);
   return {
-    root: mediaBox,
-    media: mediaBox,
+    x: box.x,
+    y: box.y,
+    width: box.width || size.width,
+    height: box.height || size.height,
   };
 }
 
@@ -156,17 +171,14 @@ function fullframeMediaBoxes(
 function interpolateBox(
   start: RenderableBox,
   end: RenderableBox,
-  media: MediaDesignContract,
   progress: number,
 ): RenderableBox {
   const clamped = Math.max(0, Math.min(1, progress));
-  const positionProgress = media.motion.translate ? clamped : 1;
-  const sizeProgress = media.motion.scale ? clamped : 1;
   return {
-    x: lerp(start.x, end.x, positionProgress),
-    y: lerp(start.y, end.y, positionProgress),
-    width: lerp(start.width, end.width, sizeProgress),
-    height: lerp(start.height, end.height, sizeProgress),
+    x: lerp(start.x, end.x, clamped),
+    y: lerp(start.y, end.y, clamped),
+    width: lerp(start.width, end.width, clamped),
+    height: lerp(start.height, end.height, clamped),
   };
 }
 
