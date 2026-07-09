@@ -2,11 +2,14 @@ import type {
   AlignmentPlacementContract,
   SpacingPairContract,
 } from "./previewComponentContracts.js";
+import type { AudioDesignContract } from "./audioComponentContract.js";
 import type { LabelDesignContract } from "./labelComponentContract.js";
+import type { MediaDesignContract } from "./mediaComponentContract.js";
 import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
 import type { TextBoxDesignContract } from "./textBoxComponentContract.js";
 
 export type BubbleState = "incoming" | "system" | "outgoing";
+export type BubbleMediaType = "image" | "video" | "audio";
 
 export interface BubblePalettePairContract {
   light: string;
@@ -24,11 +27,18 @@ export interface BubbleActorLabelSlotContract {
   label?: LabelDesignContract;
 }
 
+export interface BubbleMediaSlotContract {
+  mediaType: BubbleMediaType;
+  media?: MediaDesignContract;
+  audio?: AudioDesignContract;
+}
+
 export interface BubbleDesignContract {
   id: string;
   state: BubbleState;
   surface: SurfaceDesignContract;
   textBox: TextBoxDesignContract;
+  mediaSlot: BubbleMediaSlotContract;
   actorLabelSlot: BubbleActorLabelSlotContract;
   colors: Record<BubbleState, BubbleStateColorContract>;
   maxWidth: number;

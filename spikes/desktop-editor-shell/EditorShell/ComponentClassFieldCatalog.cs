@@ -126,6 +126,13 @@ internal static class ComponentClassFieldCatalog
         new("countDown", "Count down"),
     ];
 
+    private static readonly FieldOption[] MediaTypeOptions =
+    [
+        new("image", "Image"),
+        new("video", "Video"),
+        new("audio", "Audio"),
+    ];
+
     private static readonly FieldOption[] DimensionModeOptions =
     [
         new("fixed", "Fixed size"),
@@ -689,6 +696,10 @@ internal static class ComponentClassFieldCatalog
         ["component.bubble.surface.editor"] = new("component.bubble.surface.editor", "Surface", ValueKind.ComponentPreset, ["bubble", "surfaceSlot", "presetId"], "default"),
         ["component.bubble.textBox.editor"] = new("component.bubble.textBox.editor", "Text box", ValueKind.ComponentPreset, ["bubble", "textBoxSlot", "presetId"], "default"),
         ["component.bubble.padding"] = new("component.bubble.padding", "Padding", ValueKind.ThemeTokenPair, ["bubble", "padding"], "theme.spacing.l|theme.spacing.m", PairLabels: new("X", "Y"), Options: SpacingTokenOptions),
+        ["component.bubble.media.type"] = new("component.bubble.media.type", "Media type", ValueKind.OptionToken, ["bubble", "mediaType"], "image", Options: MediaTypeOptions),
+        ["component.bubble.media.image.editor"] = new("component.bubble.media.image.editor", "Image variant", ValueKind.ComponentPreset, ["bubble", "imageMediaSlot", "presetId"], "default"),
+        ["component.bubble.media.video.editor"] = new("component.bubble.media.video.editor", "Video variant", ValueKind.ComponentPreset, ["bubble", "videoMediaSlot", "presetId"], "default"),
+        ["component.bubble.media.audio.editor"] = new("component.bubble.media.audio.editor", "Audio variant", ValueKind.ComponentPreset, ["bubble", "audioSlot", "presetId"], "default"),
         ["component.bubble.incomingBackground"] = new("component.bubble.incomingBackground", "Incoming background", ValueKind.PaletteColorPair, ["bubble", "incomingBackground"], "gray_080|gray_020", PairLabels: new("Light", "Dark")),
         ["component.bubble.incomingText"] = new("component.bubble.incomingText", "Incoming text", ValueKind.PaletteColorPair, ["bubble", "incomingText"], "gray_010|gray_100", PairLabels: new("Light", "Dark")),
         ["component.bubble.systemBackground"] = new("component.bubble.systemBackground", "System background", ValueKind.PaletteColorPair, ["bubble", "systemBackground"], "gray_080|gray_020", PairLabels: new("Light", "Dark")),

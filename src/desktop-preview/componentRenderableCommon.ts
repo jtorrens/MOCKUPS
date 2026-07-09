@@ -23,6 +23,7 @@ export {
   renderScale,
   scalePlacement,
   translateBox,
+  translateRenderableNode,
   unionBoxes,
 } from "./previewGeometryHelpers.js";
 export { iconTokenStyle } from "./previewIconHelpers.js";

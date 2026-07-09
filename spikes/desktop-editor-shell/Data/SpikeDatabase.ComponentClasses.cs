@@ -2838,10 +2838,17 @@ internal sealed partial class SpikeDatabase
         var changed = false;
         changed |= NormalizeComponentSlot(bubble, "surfaceSlot", DefaultComponentPresetId);
         changed |= NormalizeComponentSlot(bubble, "textBoxSlot", DefaultComponentPresetId);
+        changed |= NormalizeComponentSlot(bubble, "imageMediaSlot", DefaultComponentPresetId);
+        changed |= NormalizeComponentSlot(bubble, "videoMediaSlot", DefaultComponentPresetId);
+        changed |= NormalizeComponentSlot(bubble, "audioSlot", DefaultComponentPresetId);
         changed |= NormalizeComponentSlot(bubble, "actorLabelSlot", DefaultComponentPresetId);
         changed |= NormalizeComponentPresetString(connection, projectId, bubble, ["surfaceSlot", "presetId"], "surface");
         changed |= NormalizeComponentPresetString(connection, projectId, bubble, ["textBoxSlot", "presetId"], "textBox");
+        changed |= NormalizeComponentPresetString(connection, projectId, bubble, ["imageMediaSlot", "presetId"], "media");
+        changed |= NormalizeComponentPresetString(connection, projectId, bubble, ["videoMediaSlot", "presetId"], "media");
+        changed |= NormalizeComponentPresetString(connection, projectId, bubble, ["audioSlot", "presetId"], "audio");
         changed |= NormalizeComponentPresetString(connection, projectId, bubble, ["actorLabelSlot", "presetId"], "label");
+        changed |= EnsureStringValue(bubble, ["mediaType"], "image");
         if (JsonPath.Get(bubble, ["actorLabelSlot", "showLabel"]) is null)
         {
             SetJsonValue(bubble, ["actorLabelSlot", "showLabel"], JsonValue.Create(false)!);

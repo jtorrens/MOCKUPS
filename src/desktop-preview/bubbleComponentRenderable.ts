@@ -4,6 +4,10 @@ import type {
   BubblePalettePairContract,
 } from "./bubbleComponentContract.js";
 import {
+  audioComponentToRenderableAt,
+  measureAudioComponent,
+} from "./audioComponentRenderable.js";
+import {
   boundedCenterBox,
   cssColorWithAlpha,
   placeChild,
@@ -21,6 +25,10 @@ import {
   labelComponentToRenderableAt,
   measureLabelComponent,
 } from "./labelComponentRenderable.js";
+import {
+  measureMediaComponent,
+  mediaComponentToRenderableAt,
+} from "./mediaComponentRenderable.js";
 import {
   surfaceComponentToRenderableAtWithColors,
   type SurfaceColorOverride,
@@ -47,12 +55,27 @@ export function bubbleComponentToRenderable(
     },
   };
   const measuredTextBox = measureTextBoxComponent(payload, textBoxForContent);
+  const media = activeBubbleMedia(bubble);
+  const mediaSize = media
+    ? media.kind === "audio"
+      ? measureAudioComponent(payload, media.value)
+      : measureMediaComponent(payload, media.value)
+    : undefined;
+  const mediaGap = mediaSize ? paddingY : 0;
   const localSurfaceBox = {
     x: 0,
     y: 0,
-    width: measuredTextBox.width + paddingX * 2,
-    height: measuredTextBox.height + paddingY * 2,
+    width: Math.max(measuredTextBox.width, mediaSize?.width ?? 0) + paddingX * 2,
+    height: measuredTextBox.height + (mediaSize?.height ?? 0) + mediaGap + paddingY * 2,
   };
+  const localMediaBox = mediaSize
+    ? {
+        x: paddingX,
+        y: paddingY + measuredTextBox.height + mediaGap,
+        width: mediaSize.width,
+        height: mediaSize.height,
+      }
+    : undefined;
   const localLabelBox = bubble.actorLabelSlot.label
     ? placeChild(
         localSurfaceBox,
@@ -70,6 +93,7 @@ export function bubbleComponentToRenderable(
     y: groupBox.y - localBounds.y,
   };
   const surfaceBox = translateBox(localSurfaceBox, origin);
+  const mediaBox = localMediaBox ? translateBox(localMediaBox, origin) : undefined;
   const labelBox = localLabelBox ? translateBox(localLabelBox, origin) : undefined;
   const stateColors = bubble.colors[bubble.state];
   const surfaceColors = bubbleSurfaceColors(payload, stateColors.background, bubble.surface.backgroundAlpha);
@@ -107,11 +131,34 @@ export function bubbleComponentToRenderable(
           },
         },
       ),
+      ...(media && mediaBox
+        ? [
+            media.kind === "audio"
+              ? audioComponentToRenderableAt(payload, media.value, mediaBox)
+              : mediaComponentToRenderableAt(payload, media.value, mediaBox),
+          ]
+        : []),
       ...(bubble.actorLabelSlot.label && labelBox
         ? [labelComponentToRenderableAt(payload, bubble.actorLabelSlot.label, labelBox)]
         : []),
     ],
   };
+}
+
+function activeBubbleMedia(bubble: BubbleDesignContract):
+  | { kind: "media"; value: NonNullable<BubbleDesignContract["mediaSlot"]["media"]> }
+  | { kind: "audio"; value: NonNullable<BubbleDesignContract["mediaSlot"]["audio"]> }
+  | undefined {
+  if (bubble.textBox.cursorVisible) {
+    return undefined;
+  }
+  if (bubble.mediaSlot.mediaType === "audio" && bubble.mediaSlot.audio) {
+    return { kind: "audio", value: bubble.mediaSlot.audio };
+  }
+  if (bubble.mediaSlot.media) {
+    return { kind: "media", value: bubble.mediaSlot.media };
+  }
+  return undefined;
 }
 
 function bubbleSurfaceColors(

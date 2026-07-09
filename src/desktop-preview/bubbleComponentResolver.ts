@@ -16,11 +16,14 @@ import {
 } from "./componentResolverCommon.js";
 import type {
   BubbleDesignContract,
+  BubbleMediaType,
   BubblePalettePairContract,
   BubbleState,
 } from "./bubbleComponentContract.js";
+import { resolveAudioComponentFromRecords } from "./audioComponentResolver.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { resolveLabelComponentFromRecords } from "./labelComponentResolver.js";
+import { resolveMediaComponentFromRecords } from "./mediaComponentResolver.js";
 import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
 import { resolveTextBoxComponentFromRecords } from "./textBoxComponentResolver.js";
@@ -39,6 +42,9 @@ export function resolveBubbleComponent(
   const bubble = asRecord(config.bubble);
   const surfaceSlot = asRecord(bubble.surfaceSlot);
   const textBoxSlot = asRecord(bubble.textBoxSlot);
+  const imageMediaSlot = asRecord(bubble.imageMediaSlot);
+  const videoMediaSlot = asRecord(bubble.videoMediaSlot);
+  const audioSlot = asRecord(bubble.audioSlot);
   const actorLabelSlot = asRecord(bubble.actorLabelSlot);
   const legacySize = optionalSize(preview);
   const maxWidth = Math.max(
@@ -75,6 +81,47 @@ export function resolveBubbleComponent(
     ),
     asRecord(textBoxSlot.overrides),
   );
+  const mediaType = bubbleMediaType(
+    requiredString(bubble, "mediaType", "component.bubble.mediaType"),
+  );
+  const imageMediaConfig = mediaType === "image"
+    ? mergeComponentDefaults(
+        componentPresetConfig(
+          componentBaseConfigs,
+          "media",
+          requiredString(
+            imageMediaSlot,
+            "presetId",
+            "component.bubble.imageMediaSlot.presetId",
+          ),
+        ),
+        asRecord(imageMediaSlot.overrides),
+      )
+    : undefined;
+  const videoMediaConfig = mediaType === "video"
+    ? mergeComponentDefaults(
+        componentPresetConfig(
+          componentBaseConfigs,
+          "media",
+          requiredString(
+            videoMediaSlot,
+            "presetId",
+            "component.bubble.videoMediaSlot.presetId",
+          ),
+        ),
+        asRecord(videoMediaSlot.overrides),
+      )
+    : undefined;
+  const audioConfig = mediaType === "audio"
+    ? mergeComponentDefaults(
+        componentPresetConfig(
+          componentBaseConfigs,
+          "audio",
+          requiredString(audioSlot, "presetId", "component.bubble.audioSlot.presetId"),
+        ),
+        asRecord(audioSlot.overrides),
+      )
+    : undefined;
 
   const textBoxInputs = {
     sampleText: visibleText,
@@ -134,6 +181,29 @@ export function resolveBubbleComponent(
       ),
       cursorVisible: simpleWriteOnFrameInProgress(fullText, writeOnPlan),
     },
+    mediaSlot: {
+      mediaType,
+      media: imageMediaConfig || videoMediaConfig
+        ? resolveMediaComponentFromRecords(
+            imageMediaConfig || videoMediaConfig!,
+            bubbleMediaInputs(
+              preview,
+              mediaType === "video" ? "video" : "image",
+              maxWidth,
+            ),
+            componentBaseConfigs,
+            `component.bubble.${mediaType}`,
+          )
+        : undefined,
+      audio: audioConfig
+        ? resolveAudioComponentFromRecords(
+            audioConfig,
+            bubbleAudioInputs(preview),
+            componentBaseConfigs,
+            "component.bubble.audio",
+          )
+        : undefined,
+    },
     actorLabelSlot: {
       showLabel: actorLabelVisible,
       placement: requiredPlacement(
@@ -184,6 +254,46 @@ function bubbleState(value: string): BubbleState {
     return value;
   }
   throw new Error(`Unsupported bubble state ${value}`);
+}
+
+function bubbleMediaType(value: string): BubbleMediaType {
+  if (value === "image" || value === "video" || value === "audio") {
+    return value;
+  }
+  throw new Error(`Unsupported bubble media type ${value}`);
+}
+
+function bubbleMediaInputs(
+  preview: Record<string, unknown>,
+  mediaType: "image" | "video",
+  maxWidth: number,
+) {
+  const width = Math.max(1, optionalNumber(preview, "mediaWidth", Math.min(maxWidth, 240)));
+  const height = Math.max(1, optionalNumber(preview, "mediaHeight", 160));
+  return {
+    ...preview,
+    mediaType,
+    mediaSource: optionalString(preview, "mediaSource"),
+    viewportSize: `${width}|${height}`,
+    mediaOffset: optionalString(preview, "mediaOffset") || "0|0",
+    mediaScale: optionalNumber(preview, "mediaScale", 1),
+    isPlaying: optionalBoolean(preview, "isPlaying"),
+    isFullScreen: false,
+    fullScreenTransition: false,
+    currentTimeSeconds: optionalNumber(preview, "currentTimeSeconds", 0),
+    durationSeconds: Math.max(1, optionalNumber(preview, "durationSeconds", 12)),
+    fullframeOrientation: optionalString(preview, "fullframeOrientation") || "portrait",
+    controlsElapsedMs: optionalNumber(preview, "controlsElapsedMs", 0),
+    motionTimeSeconds: 0,
+  };
+}
+
+function bubbleAudioInputs(preview: Record<string, unknown>) {
+  return {
+    ...preview,
+    durationSeconds: Math.max(1, optionalNumber(preview, "durationSeconds", 65)),
+    currentTimeSeconds: optionalNumber(preview, "currentTimeSeconds", 0),
+  };
 }
 
 function bubbleSurfaceForState(

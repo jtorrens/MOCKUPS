@@ -1,4 +1,4 @@
-import type { RenderableBox } from "../visual/renderable/types.js";
+import type { RenderableBox, RenderableNode } from "../visual/renderable/types.js";
 import type { AlignmentPlacementContract } from "./previewComponentContracts.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 
@@ -138,5 +138,17 @@ export function translateBox(box: RenderableBox, origin: { x: number; y: number 
     y: box.y + origin.y,
     width: box.width,
     height: box.height,
+  };
+}
+
+export function translateRenderableNode(
+  node: RenderableNode,
+  origin: { x: number; y: number },
+  boxOverride?: RenderableBox,
+): RenderableNode {
+  return {
+    ...node,
+    box: boxOverride ?? (node.box ? translateBox(node.box, origin) : undefined),
+    children: node.children?.map((child) => translateRenderableNode(child, origin)),
   };
 }

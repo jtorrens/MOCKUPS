@@ -356,6 +356,10 @@ internal sealed partial class SpikeDatabase
                 {
                     ["surfaceSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
                     ["textBoxSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["mediaType"] = "image",
+                    ["imageMediaSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["videoMediaSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["audioSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
                     ["actorLabelSlot"] = new JsonObject
                     {
                         ["showLabel"] = false,

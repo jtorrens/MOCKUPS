@@ -35,38 +35,52 @@ export function resolveMediaComponent(
   const config = parseObject(payload.configJson);
   const preview = parseObject(payload.designPreviewJson);
   const componentBaseConfigs = parseObject(payload.componentBaseConfigsJson);
+  return resolveMediaComponentFromRecords(
+    config,
+    preview,
+    componentBaseConfigs,
+    "component.media",
+  );
+}
+
+export function resolveMediaComponentFromRecords(
+  config: Record<string, unknown>,
+  inputs: Record<string, unknown>,
+  componentBaseConfigs: Record<string, unknown>,
+  id: string,
+): MediaDesignContract {
   const media = asRecord(config.media);
   const viewportSize = requiredNumberPair(
-    preview,
+    inputs,
     "viewportSize",
     "component.media.input.viewportSize",
   );
   const mediaOffset = requiredNumberPair(
-    preview,
+    inputs,
     "mediaOffset",
     "component.media.input.mediaOffset",
   );
-  const isPlaying = requiredBoolean(preview, "isPlaying", "component.media.input.isPlaying");
+  const isPlaying = requiredBoolean(inputs, "isPlaying", "component.media.input.isPlaying");
   const isFullScreen = requiredBoolean(
-    preview,
+    inputs,
     "isFullScreen",
     "component.media.input.isFullScreen",
   );
   const fullScreenTransition = requiredBoolean(
-    preview,
+    inputs,
     "fullScreenTransition",
     "component.media.input.fullScreenTransition",
   );
   const playbackState: MediaPlaybackState = isPlaying ? "playing" : "idle";
   const displayState: MediaDisplayState = isFullScreen ? "fullframe" : "inline";
   const currentTimeSeconds = requiredNumber(
-    preview,
+    inputs,
     "currentTimeSeconds",
     "component.media.input.currentTimeSeconds",
   );
   const durationSeconds = Math.max(
     0,
-    requiredNumber(preview, "durationSeconds", "component.media.input.durationSeconds"),
+    requiredNumber(inputs, "durationSeconds", "component.media.input.durationSeconds"),
   );
   const controlBarHeight = Math.max(
     1,
@@ -123,16 +137,16 @@ export function resolveMediaComponent(
   );
 
   return {
-    id: "component.media",
-    sourceUri: optionalString(preview, "mediaSource"),
-    mediaKind: mediaKind(requiredString(preview, "mediaType", "component.media.input.mediaType")),
+    id,
+    sourceUri: optionalString(inputs, "mediaSource"),
+    mediaKind: mediaKind(requiredString(inputs, "mediaType", "component.media.input.mediaType")),
     playbackState,
     currentTimeSeconds,
     durationSeconds,
     displayState,
     fullframeOrientation: mediaFullframeOrientation(
       requiredString(
-        preview,
+        inputs,
         "fullframeOrientation",
         "component.media.input.fullframeOrientation",
       ),
@@ -142,7 +156,7 @@ export function resolveMediaComponent(
       height: Math.max(1, viewportSize.second),
       scale: Math.max(
         0.01,
-        requiredNumber(preview, "mediaScale", "component.media.input.mediaScale"),
+        requiredNumber(inputs, "mediaScale", "component.media.input.mediaScale"),
       ),
       offsetX: mediaOffset.first,
       offsetY: mediaOffset.second,
@@ -179,12 +193,12 @@ export function resolveMediaComponent(
     ),
     controlsElapsedMs: Math.max(
       0,
-      requiredNumber(preview, "controlsElapsedMs", "component.media.input.controlsElapsedMs"),
+      requiredNumber(inputs, "controlsElapsedMs", "component.media.input.controlsElapsedMs"),
     ),
     motion: requiredMotionContract(media, "motion", "component.media.motion"),
     motionFrame: {
       trigger: fullScreenTransition && isFullScreen,
-      timeSeconds: optionalNumber(preview, "motionTimeSeconds", 0),
+      timeSeconds: optionalNumber(inputs, "motionTimeSeconds", 0),
     },
   };
 }

@@ -11,6 +11,7 @@ import {
   renderScale,
   scalePlacement,
   selectedColor,
+  translateRenderableNode,
   translateBox,
   unionBoxes,
 } from "./componentRenderableCommon.js";
@@ -235,4 +236,43 @@ export function audioComponentToRenderable(
         : []),
     ],
   };
+}
+
+export function measureAudioComponent(
+  payload: DesignPreviewPayload,
+  audio: AudioDesignContract,
+): { width: number; height: number } {
+  const node = audioComponentToRenderable(payload, audio);
+  return {
+    width: node.box?.width ?? 1,
+    height: node.box?.height ?? 1,
+  };
+}
+
+export function audioComponentToRenderableAt(
+  payload: DesignPreviewPayload,
+  audio: AudioDesignContract,
+  box: RenderableBox,
+): RenderableNode {
+  const node = audioComponentToRenderable(payload, audio);
+  if (!node.box) {
+    return {
+      ...node,
+      box,
+    };
+  }
+
+  return translateRenderableNode(
+    node,
+    {
+      x: box.x - node.box.x,
+      y: box.y - node.box.y,
+    },
+    {
+      x: box.x,
+      y: box.y,
+      width: node.box.width,
+      height: node.box.height,
+    },
+  );
 }

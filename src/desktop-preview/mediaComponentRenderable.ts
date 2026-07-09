@@ -25,6 +25,43 @@ export function mediaComponentToRenderable(
   media: MediaDesignContract,
 ): RenderableNode {
   const boxes = mediaBoxes(payload, media);
+  return mediaComponentToRenderableForBoxes(payload, media, boxes);
+}
+
+export function measureMediaComponent(
+  payload: DesignPreviewPayload,
+  media: MediaDesignContract,
+): { width: number; height: number } {
+  const scale = renderScale(payload);
+  return {
+    width: Math.max(1, media.viewport.width * scale),
+    height: Math.max(1, media.viewport.height * scale),
+  };
+}
+
+export function mediaComponentToRenderableAt(
+  payload: DesignPreviewPayload,
+  media: MediaDesignContract,
+  box: RenderableBox,
+): RenderableNode {
+  const size = measureMediaComponent(payload, media);
+  const sizedBox = {
+    x: box.x,
+    y: box.y,
+    width: box.width || size.width,
+    height: box.height || size.height,
+  };
+  return mediaComponentToRenderableForBoxes(payload, media, {
+    root: sizedBox,
+    media: sizedBox,
+  });
+}
+
+function mediaComponentToRenderableForBoxes(
+  payload: DesignPreviewPayload,
+  media: MediaDesignContract,
+  boxes: MediaRenderBoxes,
+): RenderableNode {
   const mediaSurfaceNode = surfaceComponentToRenderableAt(payload, media.surface, boxes.media);
   const mediaContentNode = mediaContent(payload, media, boxes.media);
   const controlNodes = mediaControlNodes(payload, media, boxes.media);

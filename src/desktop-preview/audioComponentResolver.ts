@@ -23,6 +23,20 @@ export function resolveAudioComponent(
   const config = parseObject(payload.configJson);
   const preview = parseObject(payload.designPreviewJson);
   const componentBaseConfigs = parseObject(payload.componentBaseConfigsJson);
+  return resolveAudioComponentFromRecords(
+    config,
+    preview,
+    componentBaseConfigs,
+    "component.audio",
+  );
+}
+
+export function resolveAudioComponentFromRecords(
+  config: Record<string, unknown>,
+  inputs: Record<string, unknown>,
+  componentBaseConfigs: Record<string, unknown>,
+  id: string,
+): AudioDesignContract {
   const audio = asRecord(config.audio);
   const surfaceSlot = asRecord(audio.surfaceSlot);
   const avatarSlot = asRecord(audio.avatarSlot);
@@ -53,7 +67,7 @@ export function resolveAudioComponent(
     1,
     Math.round(
       requiredNumber(
-        preview,
+        inputs,
         "durationSeconds",
         "component.audio.preview.durationSeconds",
       ),
@@ -61,7 +75,7 @@ export function resolveAudioComponent(
   );
   const currentTimeSeconds = normalizePlaybackTime(
     requiredNumber(
-      preview,
+      inputs,
       "currentTimeSeconds",
       "component.audio.preview.currentTimeSeconds",
     ),
@@ -69,7 +83,7 @@ export function resolveAudioComponent(
   );
 
   return {
-    id: "component.audio",
+    id,
     playback: {
       durationSeconds,
       currentTimeSeconds,
@@ -158,7 +172,7 @@ export function resolveAudioComponent(
       avatar: showAvatar
         ? resolveAvatarComponentFromRecords(
             avatarConfig,
-            preview,
+            inputs,
             componentBaseConfigs,
             "component.audio.avatar",
           )
@@ -190,7 +204,7 @@ export function resolveAudioComponent(
         ? {
             ...resolveButtonIconComponentFromRecords(
               badgeConfig,
-              preview,
+              inputs,
               componentBaseConfigs,
               "component.audio.badge",
             ),

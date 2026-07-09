@@ -195,6 +195,24 @@ internal static class EmbeddedComponentSlotCatalog
             "component.textBox",
             ["bubble", "textBoxSlot"]),
         new(
+            "component.bubble.media.image.editor",
+            "media",
+            "Image media",
+            "component.media",
+            ["bubble", "imageMediaSlot"]),
+        new(
+            "component.bubble.media.video.editor",
+            "media",
+            "Video media",
+            "component.media",
+            ["bubble", "videoMediaSlot"]),
+        new(
+            "component.bubble.media.audio.editor",
+            "audio",
+            "Audio media",
+            "component.audio",
+            ["bubble", "audioSlot"]),
+        new(
             "component.bubble.actorLabel.editor",
             "label",
             "Actor label",
