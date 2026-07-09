@@ -117,7 +117,7 @@ function mediaBoxesFromInlineBox(
   }
 
   const fullframe = fullframeMediaBoxes(payload, media);
-  const progress = motionFrameProgress(payload, media.motion, media.motionFrame);
+  const progress = mediaFullframeTransitionProgress(payload, media);
   if (!media.motionFrame.trigger || progress >= 1) {
     return fullframe;
   }
@@ -214,6 +214,9 @@ function mediaBars(
   boxes: MediaRenderBoxes,
 ): RenderableNode[] {
   if (media.displayState !== "fullframe") return [];
+  const transitionProgress = mediaFullframeTransitionProgress(payload, media);
+  const isTransitioning = media.motionFrame.trigger && transitionProgress < 1;
+  const transitionRadius = numberToken(payload, media.surface.surface.cornerRadiusToken) * renderScale(payload);
   const bars: RenderableNode[] = [
     {
       id: `${media.id}.fullframeBackground`,
@@ -222,11 +225,20 @@ function mediaBars(
       box: boxes.root,
       style: {
         background: "#000000",
+        borderRadius: isTransitioning ? transitionRadius : 0,
+        overflow: "hidden",
       },
     },
   ];
 
   return bars;
+}
+
+function mediaFullframeTransitionProgress(
+  payload: DesignPreviewPayload,
+  media: MediaDesignContract,
+) {
+  return motionFrameProgress(payload, media.motion, media.motionFrame);
 }
 
 function mediaContent(
