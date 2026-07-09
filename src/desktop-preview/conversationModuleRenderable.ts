@@ -75,7 +75,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
         "keyboard",
         requiredString(conversation, "keyboardVariant", "module.conversation.keyboardVariant"),
         {
-          text: optionalString(preview, "inputText"),
+          text: conversationString(conversation, preview, "inputText"),
           currentCharacter: 1,
         },
         (childPayload) =>
@@ -93,7 +93,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
           "module.conversation.textInputBarVariant",
         ),
         {
-          sampleText: optionalString(preview, "inputText"),
+          sampleText: conversationString(conversation, preview, "inputText"),
         },
         (childPayload) =>
           textInputBarComponentToRenderable(
@@ -116,7 +116,13 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
 
   if (status) children.push(status);
   const header = optionalBooleanDefault(conversation, "showHeader", true)
-    ? headerNode(payload, preview, (status?.box?.height ?? 0), optionalNumber(conversation, "headerHeight", 64) * scale)
+    ? headerNode(
+        payload,
+        conversation,
+        preview,
+        (status?.box?.height ?? 0),
+        optionalNumber(conversation, "headerHeight", 64) * scale,
+      )
     : undefined;
   if (header) children.push(header);
 
@@ -164,9 +170,9 @@ function messageNodes(
     "module.conversation.bubbleVariant",
   );
   const messages = [
-    { state: "incoming", text: optionalString(preview, "message1Text") },
-    { state: "outgoing", text: optionalString(preview, "message2Text") },
-    { state: "system", text: optionalString(preview, "message3Text") },
+    { state: "incoming", text: conversationString(conversation, preview, "bubbleIncomingText", "message1Text") },
+    { state: "outgoing", text: conversationString(conversation, preview, "bubbleOutgoingText", "message2Text") },
+    { state: "system", text: conversationString(conversation, preview, "bubbleSystemText", "message3Text") },
   ] as const;
   const nodes = messages.map((message, index) => childRenderable(
     payload,
@@ -177,9 +183,15 @@ function messageNodes(
       state: message.state,
       sampleText: message.text,
       mediaType: "none",
+      maxWidth: optionalNumber(conversation, "bubbleMaxWidth", 66),
       writeOnTrigger: false,
       writeOnFrame: 0,
-      statusState: message.state === "outgoing" ? "read" : "none",
+      statusState: message.state === "outgoing"
+        ? optionalString(conversation, "bubbleOutgoingStatusState") || "read"
+        : "none",
+      statusText: message.state === "outgoing"
+        ? optionalString(conversation, "bubbleOutgoingStatusText")
+        : "",
     },
     (childPayload) => bubbleComponentToRenderable(childPayload, resolveBubbleComponent(childPayload)),
   ));
@@ -224,14 +236,15 @@ function childRenderable(
 
 function headerNode(
   payload: DesignPreviewPayload,
+  conversation: JsonRecord,
   preview: JsonRecord,
   offsetY: number,
   height: number,
 ): RenderableNode {
   const screen = previewScreenBox(payload);
   const scale = renderScale(payload);
-  const title = optionalString(preview, "headerTitle") || "Conversation";
-  const subtitle = optionalString(preview, "headerSubtitle") || "";
+  const title = conversationString(conversation, preview, "headerTitle") || "Conversation";
+  const subtitle = conversationString(conversation, preview, "headerSubtitle") || "";
   const titleHeight = subtitle ? height * 0.46 : height;
   return {
     id: "module.conversation.header",
@@ -305,6 +318,17 @@ function spacingPair(payload: DesignPreviewPayload, value: string) {
     x: numberToken(payload, xToken) * scale,
     y: numberToken(payload, yToken) * scale,
   };
+}
+
+function conversationString(
+  conversation: JsonRecord,
+  preview: JsonRecord,
+  key: string,
+  legacyPreviewKey = key,
+) {
+  return Object.hasOwn(conversation, key) && typeof conversation[key] === "string"
+    ? optionalString(conversation, key)
+    : optionalString(preview, legacyPreviewKey);
 }
 
 function optionalBooleanDefault(value: Record<string, unknown>, key: string, fallback: boolean) {

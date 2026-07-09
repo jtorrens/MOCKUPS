@@ -250,6 +250,8 @@ internal sealed partial class SpikeDatabase
         return fieldId switch
         {
             "module.conversation.showHeader" => JsonBoolString(config, ["conversation", "showHeader"], defaultValue: true),
+            "module.conversation.headerTitle" => JsonString(config, ["conversation", "headerTitle"]),
+            "module.conversation.headerSubtitle" => JsonString(config, ["conversation", "headerSubtitle"]),
             "module.conversation.headerHeight" => JsonNumberString(config, ["conversation", "headerHeight"], "64"),
             "module.conversation.showStatusBar" => JsonBoolString(config, ["conversation", "showStatusBar"], defaultValue: true),
             "module.conversation.statusBarVariant" => JsonString(config, ["conversation", "statusBarVariant"]),
@@ -257,9 +259,16 @@ internal sealed partial class SpikeDatabase
             "module.conversation.navigationBarVariant" => JsonString(config, ["conversation", "navigationBarVariant"]),
             "module.conversation.showTextInputBar" => JsonBoolString(config, ["conversation", "showTextInputBar"], defaultValue: true),
             "module.conversation.textInputBarVariant" => JsonString(config, ["conversation", "textInputBarVariant"]),
+            "module.conversation.inputText" => JsonString(config, ["conversation", "inputText"]),
             "module.conversation.showKeyboard" => JsonBoolString(config, ["conversation", "showKeyboard"], defaultValue: true),
             "module.conversation.keyboardVariant" => JsonString(config, ["conversation", "keyboardVariant"]),
             "module.conversation.bubbleVariant" => JsonString(config, ["conversation", "bubbleVariant"]),
+            "module.conversation.bubbleMaxWidth" => JsonNumberString(config, ["conversation", "bubbleMaxWidth"], "66"),
+            "module.conversation.bubbleIncomingText" => JsonString(config, ["conversation", "bubbleIncomingText"]),
+            "module.conversation.bubbleOutgoingText" => JsonString(config, ["conversation", "bubbleOutgoingText"]),
+            "module.conversation.bubbleSystemText" => JsonString(config, ["conversation", "bubbleSystemText"]),
+            "module.conversation.bubbleOutgoingStatusState" => JsonString(config, ["conversation", "bubbleOutgoingStatusState"]),
+            "module.conversation.bubbleOutgoingStatusText" => JsonString(config, ["conversation", "bubbleOutgoingStatusText"]),
             "module.conversation.screenGutter" => JsonString(config, ["conversation", "screenGutter"]) is { Length: > 0 } gutter ? gutter : "theme.spacing.l|theme.spacing.l",
             "module.conversation.messageGap" => JsonString(config, ["conversation", "messageGap"]) is { Length: > 0 } gap ? gap : "theme.spacing.m",
             _ => throw new InvalidOperationException($"Unknown module config field '{fieldId}'."),
@@ -508,6 +517,12 @@ internal sealed partial class SpikeDatabase
             case "module.conversation.showHeader":
                 SetJsonValue(config, ["conversation", "showHeader"], JsonValue.Create(BoolFromText(value))!);
                 break;
+            case "module.conversation.headerTitle":
+                SetJsonValue(config, ["conversation", "headerTitle"], JsonValue.Create(value)!);
+                break;
+            case "module.conversation.headerSubtitle":
+                SetJsonValue(config, ["conversation", "headerSubtitle"], JsonValue.Create(value)!);
+                break;
             case "module.conversation.headerHeight":
                 SetJsonValue(config, ["conversation", "headerHeight"], NumberNode(value));
                 break;
@@ -529,6 +544,9 @@ internal sealed partial class SpikeDatabase
             case "module.conversation.textInputBarVariant":
                 SetJsonValue(config, ["conversation", "textInputBarVariant"], JsonValue.Create(NormalizeComponentPresetReference(connection, projectId, "textInputBar", value))!);
                 break;
+            case "module.conversation.inputText":
+                SetJsonValue(config, ["conversation", "inputText"], JsonValue.Create(value)!);
+                break;
             case "module.conversation.showKeyboard":
                 SetJsonValue(config, ["conversation", "showKeyboard"], JsonValue.Create(BoolFromText(value))!);
                 break;
@@ -537,6 +555,24 @@ internal sealed partial class SpikeDatabase
                 break;
             case "module.conversation.bubbleVariant":
                 SetJsonValue(config, ["conversation", "bubbleVariant"], JsonValue.Create(NormalizeComponentPresetReference(connection, projectId, "bubble", value))!);
+                break;
+            case "module.conversation.bubbleMaxWidth":
+                SetJsonValue(config, ["conversation", "bubbleMaxWidth"], NumberNode(value));
+                break;
+            case "module.conversation.bubbleIncomingText":
+                SetJsonValue(config, ["conversation", "bubbleIncomingText"], JsonValue.Create(value)!);
+                break;
+            case "module.conversation.bubbleOutgoingText":
+                SetJsonValue(config, ["conversation", "bubbleOutgoingText"], JsonValue.Create(value)!);
+                break;
+            case "module.conversation.bubbleSystemText":
+                SetJsonValue(config, ["conversation", "bubbleSystemText"], JsonValue.Create(value)!);
+                break;
+            case "module.conversation.bubbleOutgoingStatusState":
+                SetJsonValue(config, ["conversation", "bubbleOutgoingStatusState"], JsonValue.Create(value)!);
+                break;
+            case "module.conversation.bubbleOutgoingStatusText":
+                SetJsonValue(config, ["conversation", "bubbleOutgoingStatusText"], JsonValue.Create(value)!);
                 break;
             case "module.conversation.screenGutter":
                 SetJsonValue(config, ["conversation", "screenGutter"], JsonValue.Create(value)!);
@@ -603,6 +639,8 @@ internal sealed partial class SpikeDatabase
             ["conversation"] = new JsonObject
             {
                 ["showHeader"] = true,
+                ["headerTitle"] = "Alex Q",
+                ["headerSubtitle"] = "online",
                 ["headerHeight"] = 64,
                 ["showStatusBar"] = true,
                 ["statusBarVariant"] = "default",
@@ -610,9 +648,16 @@ internal sealed partial class SpikeDatabase
                 ["navigationBarVariant"] = "default",
                 ["showTextInputBar"] = true,
                 ["textInputBarVariant"] = "default",
+                ["inputText"] = "Message",
                 ["showKeyboard"] = true,
                 ["keyboardVariant"] = "default",
                 ["bubbleVariant"] = "default",
+                ["bubbleMaxWidth"] = 66,
+                ["bubbleIncomingText"] = "Tenias razon: ya podemos componer desde el modulo.",
+                ["bubbleOutgoingText"] = "Perfecto. El modulo solo elige variantes y datos runtime.",
+                ["bubbleSystemText"] = "Siguiente paso: instancias reales.",
+                ["bubbleOutgoingStatusState"] = "read",
+                ["bubbleOutgoingStatusText"] = "",
                 ["screenGutter"] = "theme.spacing.l|theme.spacing.l",
                 ["messageGap"] = "theme.spacing.m",
             },
