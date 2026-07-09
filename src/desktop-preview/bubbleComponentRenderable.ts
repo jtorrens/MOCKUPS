@@ -9,6 +9,7 @@ import {
 } from "./audioComponentRenderable.js";
 import {
   boundedCenterBox,
+  boxEdgeIntrusionInsets,
   cssColorWithAlpha,
   placeChild,
   renderScale,
@@ -60,20 +61,53 @@ export function bubbleComponentToRenderable(
       ? measureAudioComponent(payload, media.value)
       : measureMediaComponent(payload, media.value)
     : undefined;
+  const basePadding = {
+    left: paddingX,
+    top: paddingY,
+    right: paddingX,
+    bottom: paddingY,
+    gapX: paddingX,
+    gapY: paddingY,
+  };
+  const baseContentLayout = bubbleContentLayout(
+    { width: measuredTextBox.width, height: measuredTextBox.height },
+    mediaSize,
+    bubble.mediaSlot.position,
+    basePadding,
+  );
+  const baseSurfaceBox = {
+    x: 0,
+    y: 0,
+    width: baseContentLayout.width + basePadding.left + basePadding.right,
+    height: baseContentLayout.height + basePadding.top + basePadding.bottom,
+  };
+  const baseLabelBox = bubble.actorLabelSlot.label
+    ? placeChild(
+        baseSurfaceBox,
+        measureLabelComponent(bubble.actorLabelSlot.label, payload),
+        scalePlacement(bubble.actorLabelSlot.placement, scale),
+      )
+    : undefined;
+  const labelIntrusion = boxEdgeIntrusionInsets(baseSurfaceBox, baseLabelBox);
+  const contentPadding = {
+    left: paddingX,
+    top: paddingY + labelIntrusion.top,
+    right: paddingX,
+    bottom: paddingY + labelIntrusion.bottom,
+    gapX: paddingX,
+    gapY: paddingY,
+  };
   const contentLayout = bubbleContentLayout(
     { width: measuredTextBox.width, height: measuredTextBox.height },
     mediaSize,
     bubble.mediaSlot.position,
-    {
-      x: paddingX,
-      y: paddingY,
-    },
+    contentPadding,
   );
   const localSurfaceBox = {
     x: 0,
     y: 0,
-    width: contentLayout.width + paddingX * 2,
-    height: contentLayout.height + paddingY * 2,
+    width: contentLayout.width + contentPadding.left + contentPadding.right,
+    height: contentLayout.height + contentPadding.top + contentPadding.bottom,
   };
   const localLabelBox = bubble.actorLabelSlot.label
     ? placeChild(
@@ -143,6 +177,7 @@ export function bubbleComponentToRenderable(
                   stateColors.background,
                   bubble.actorLabelSlot.label.surface.backgroundAlpha,
                 ),
+                textColor: bubble.actorLabelSlot.textColorOverride,
               },
             ),
           ]
@@ -155,11 +190,18 @@ function bubbleContentLayout(
   textSize: { width: number; height: number },
   mediaSize: { width: number; height: number } | undefined,
   position: BubbleDesignContract["mediaSlot"]["position"],
-  padding: { x: number; y: number },
+  padding: {
+    left: number;
+    top: number;
+    right: number;
+    bottom: number;
+    gapX: number;
+    gapY: number;
+  },
 ) {
   const textBox = {
-    x: padding.x,
-    y: padding.y,
+    x: padding.left,
+    y: padding.top,
     width: textSize.width,
     height: textSize.height,
   };
@@ -172,14 +214,14 @@ function bubbleContentLayout(
     };
   }
 
-  const verticalGap = padding.y;
-  const horizontalGap = padding.x;
+  const verticalGap = padding.gapY;
+  const horizontalGap = padding.gapX;
   if (position === "top" || position === "bottom") {
     const width = Math.max(textSize.width, mediaSize.width);
     const height = textSize.height + verticalGap + mediaSize.height;
     const mediaBox = {
-      x: padding.x + (width - mediaSize.width) / 2,
-      y: position === "top" ? padding.y : padding.y + textSize.height + verticalGap,
+      x: padding.left + (width - mediaSize.width) / 2,
+      y: position === "top" ? padding.top : padding.top + textSize.height + verticalGap,
       width: mediaSize.width,
       height: mediaSize.height,
     };
@@ -188,8 +230,8 @@ function bubbleContentLayout(
       height,
       textBox: {
         ...textBox,
-        x: padding.x + (width - textSize.width) / 2,
-        y: position === "top" ? padding.y + mediaSize.height + verticalGap : padding.y,
+        x: padding.left + (width - textSize.width) / 2,
+        y: position === "top" ? padding.top + mediaSize.height + verticalGap : padding.top,
       },
       mediaBox,
     };
@@ -198,8 +240,8 @@ function bubbleContentLayout(
   const width = textSize.width + horizontalGap + mediaSize.width;
   const height = Math.max(textSize.height, mediaSize.height);
   const mediaBox = {
-    x: position === "left" ? padding.x : padding.x + textSize.width + horizontalGap,
-    y: padding.y + (height - mediaSize.height) / 2,
+    x: position === "left" ? padding.left : padding.left + textSize.width + horizontalGap,
+    y: padding.top + (height - mediaSize.height) / 2,
     width: mediaSize.width,
     height: mediaSize.height,
   };
@@ -208,8 +250,8 @@ function bubbleContentLayout(
     height,
     textBox: {
       ...textBox,
-      x: position === "left" ? padding.x + mediaSize.width + horizontalGap : padding.x,
-      y: padding.y + (height - textSize.height) / 2,
+      x: position === "left" ? padding.left + mediaSize.width + horizontalGap : padding.left,
+      y: padding.top + (height - textSize.height) / 2,
     },
     mediaBox,
   };

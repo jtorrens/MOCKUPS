@@ -364,6 +364,7 @@ internal sealed partial class SpikeDatabase
                     ["actorLabelSlot"] = new JsonObject
                     {
                         ["showLabel"] = false,
+                        ["useActorColor"] = false,
                         ["presetId"] = DefaultComponentPresetId,
                         ["placement"] = JsonNode.Parse(AlignmentPlacementValue.FromDirectionalEdge("top", -4).ToJsonString()),
                         ["overrides"] = new JsonObject(),

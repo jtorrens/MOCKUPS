@@ -132,6 +132,34 @@ export function expandBoxXY(
   };
 }
 
+export function boxEdgeIntrusionInsets(
+  container: RenderableBox,
+  child: RenderableBox | undefined,
+) {
+  if (!child) {
+    return { left: 0, top: 0, right: 0, bottom: 0 };
+  }
+
+  const containerRight = container.x + container.width;
+  const containerBottom = container.y + container.height;
+  const childRight = child.x + child.width;
+  const childBottom = child.y + child.height;
+  return {
+    left: child.x < container.x && childRight > container.x
+      ? childRight - container.x
+      : 0,
+    top: child.y < container.y && childBottom > container.y
+      ? childBottom - container.y
+      : 0,
+    right: child.x < containerRight && childRight > containerRight
+      ? containerRight - child.x
+      : 0,
+    bottom: child.y < containerBottom && childBottom > containerBottom
+      ? containerBottom - child.y
+      : 0,
+  };
+}
+
 export function translateBox(box: RenderableBox, origin: { x: number; y: number }): RenderableBox {
   return {
     x: box.x + origin.x,

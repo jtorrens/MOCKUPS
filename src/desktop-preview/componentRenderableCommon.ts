@@ -15,6 +15,7 @@ export {
 } from "./previewValueHelpers.js";
 export {
   boundedCenterBox,
+  boxEdgeIntrusionInsets,
   centerBox,
   expandBox,
   expandBoxXY,

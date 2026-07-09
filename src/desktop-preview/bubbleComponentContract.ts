@@ -26,6 +26,7 @@ export interface BubbleActorLabelSlotContract {
   showLabel: boolean;
   placement: AlignmentPlacementContract;
   label?: LabelDesignContract;
+  textColorOverride?: string;
 }
 
 export interface BubbleMediaSlotContract {

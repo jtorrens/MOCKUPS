@@ -80,6 +80,8 @@ export function labelComponentToRenderableAt(
   box: RenderableBox,
   options: {
     surfaceColors?: SurfaceColorOverride;
+    textColor?: string;
+    subtextColor?: string;
   } = {},
 ): RenderableNode {
   const scale = renderScale(payload);
@@ -91,6 +93,8 @@ export function labelComponentToRenderableAt(
   const surfaceNode = options.surfaceColors
     ? surfaceComponentToRenderableAt(payload, label.surface, box, options.surfaceColors)
     : surfaceComponentToRenderableAt(payload, label.surface, box);
+  const textColor = options.textColor ?? selectedColor(payload, label.textColorToken);
+  const subtextColor = options.subtextColor ?? selectedColor(payload, label.subtextColorToken);
 
   return {
     id: label.id,
@@ -120,8 +124,9 @@ export function labelComponentToRenderableAt(
             variants(payload).map((mode) => [
               mode,
               {
-                textColor: colorForMode(payload, label.textColorToken, mode),
-                subtextColor: colorForMode(payload, label.subtextColorToken, mode),
+                textColor: options.textColor ?? colorForMode(payload, label.textColorToken, mode),
+                subtextColor: options.subtextColor
+                  ?? colorForMode(payload, label.subtextColorToken, mode),
               },
             ]),
           ),
@@ -133,7 +138,7 @@ export function labelComponentToRenderableAt(
             frame: 0,
             text: label.text,
             style: {
-              textColor: selectedColor(payload, label.textColorToken),
+              textColor,
               fontSize: textTypography.fontSize,
               fontFamily: textTypography.fontFamily,
               lineHeight: size.lineHeight,
@@ -154,7 +159,7 @@ export function labelComponentToRenderableAt(
                   frame: 0,
                   text: label.subtext,
                   style: {
-                    textColor: selectedColor(payload, label.subtextColorToken),
+                    textColor: subtextColor,
                     fontSize: subtextTypography.fontSize,
                     fontFamily: subtextTypography.fontFamily,
                     lineHeight: size.subtextLineHeight,

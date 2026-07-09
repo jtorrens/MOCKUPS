@@ -2855,6 +2855,11 @@ internal sealed partial class SpikeDatabase
             SetJsonValue(bubble, ["actorLabelSlot", "showLabel"], JsonValue.Create(false)!);
             changed = true;
         }
+        if (JsonPath.Get(bubble, ["actorLabelSlot", "useActorColor"]) is null)
+        {
+            SetJsonValue(bubble, ["actorLabelSlot", "useActorColor"], JsonValue.Create(false)!);
+            changed = true;
+        }
         if (JsonPath.Get(bubble, ["actorLabelSlot", "placement"]) is null)
         {
             SetJsonValue(

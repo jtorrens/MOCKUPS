@@ -603,8 +603,9 @@ internal sealed partial class SpikeDatabase
               "groups": [
                 { "id": "bubbleActorLabel", "label": "Actor label", "order": 10, "visible": true, "fields": [
                   { "id": "component.bubble.actorLabel.showLabel", "order": 10, "visible": true },
-                  { "id": "component.bubble.actorLabel.placement", "order": 20, "visible": true },
-                  { "id": "component.bubble.actorLabel.editor", "order": 30, "visible": true }
+                  { "id": "component.bubble.actorLabel.useActorColor", "order": 20, "visible": true },
+                  { "id": "component.bubble.actorLabel.placement", "order": 30, "visible": true },
+                  { "id": "component.bubble.actorLabel.editor", "order": 40, "visible": true }
                 ] }
               ]
             }

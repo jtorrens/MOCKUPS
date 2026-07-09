@@ -717,6 +717,7 @@ internal static class ComponentClassFieldCatalog
         ["component.bubble.outgoingBackground"] = new("component.bubble.outgoingBackground", "Outgoing background", ValueKind.PaletteColorPair, ["bubble", "outgoingBackground"], "aqua_green|aqua_green", PairLabels: new("Light", "Dark")),
         ["component.bubble.outgoingText"] = new("component.bubble.outgoingText", "Outgoing text", ValueKind.PaletteColorPair, ["bubble", "outgoingText"], "gray_100|gray_100", PairLabels: new("Light", "Dark")),
         ["component.bubble.actorLabel.showLabel"] = new("component.bubble.actorLabel.showLabel", "Show actor label", ValueKind.Boolean, ["bubble", "actorLabelSlot", "showLabel"], "false"),
+        ["component.bubble.actorLabel.useActorColor"] = new("component.bubble.actorLabel.useActorColor", "Use actor color", ValueKind.Boolean, ["bubble", "actorLabelSlot", "useActorColor"], "false"),
         ["component.bubble.actorLabel.placement"] = new("component.bubble.actorLabel.placement", "Actor label placement", ValueKind.AlignmentPlacement, ["bubble", "actorLabelSlot", "placement"], """{"mode":"edge","alignX":0.5,"alignY":0,"offsetX":0,"offsetY":-4}"""),
         ["component.bubble.actorLabel.editor"] = new("component.bubble.actorLabel.editor", "Actor label", ValueKind.ComponentPreset, ["bubble", "actorLabelSlot", "presetId"], "default"),
     };

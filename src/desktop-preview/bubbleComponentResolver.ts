@@ -155,6 +155,11 @@ export function resolveBubbleComponent(
       "showLabel",
       "component.bubble.actorLabel.showLabel",
     );
+  const actorLabelUseActorColor = requiredBoolean(
+    actorLabelSlot,
+    "useActorColor",
+    "component.bubble.actorLabel.useActorColor",
+  );
   const actorLabelConfig = actorLabelVisible
     ? mergeComponentDefaults(
         componentPresetConfig(
@@ -225,6 +230,9 @@ export function resolveBubbleComponent(
         "placement",
         "component.bubble.actorLabel.placement",
       ),
+      textColorOverride: actorLabelVisible && actorLabelUseActorColor
+        ? actorColorOverride(preview)
+        : undefined,
       label: actorLabelConfig
         ? resolveLabelComponentFromRecords(
             actorLabelConfig,
@@ -252,6 +260,18 @@ export function resolveBubbleComponent(
       },
     },
   };
+}
+
+function actorColorOverride(preview: Record<string, unknown>) {
+  const actor = asRecord(
+    preview.actor ?? defaultActorPreview(optionalString(preview, "actorName") || "Actor"),
+  );
+  const avatar = asRecord(actor.avatar);
+  return requiredString(
+    avatar,
+    "backgroundColor",
+    "component.bubble.actorLabel.actorColor",
+  );
 }
 
 function optionalSize(value: Record<string, unknown>) {
