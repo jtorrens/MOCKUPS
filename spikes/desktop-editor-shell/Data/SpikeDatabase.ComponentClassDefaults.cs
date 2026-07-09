@@ -28,6 +28,7 @@ internal sealed partial class SpikeDatabase
             "label" => "Label component",
             "audio" => "Audio component",
             "media" => "Media component",
+            "bubble" => "Bubble component",
             _ => componentType,
         };
     }
@@ -350,6 +351,20 @@ internal sealed partial class SpikeDatabase
                     ["motion"] = JsonNode.Parse(MediaMotionDefault().ToJsonString()),
                 };
                 break;
+            case "bubble":
+                config["bubble"] = new JsonObject
+                {
+                    ["surfaceSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["textBoxSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["actorLabelSlot"] = new JsonObject
+                    {
+                        ["showLabel"] = false,
+                        ["presetId"] = DefaultComponentPresetId,
+                        ["placement"] = JsonNode.Parse(AlignmentPlacementValue.FromDirectionalEdge("top", -4).ToJsonString()),
+                        ["overrides"] = new JsonObject(),
+                    },
+                };
+                break;
         }
 
         return config.ToJsonString();
@@ -367,6 +382,7 @@ internal sealed partial class SpikeDatabase
                 "textInputBar" => "Message",
                 "audio" => "0:05",
                 "media" => "",
+                "bubble" => "Message",
                 _ => "Sample",
             },
             ["sampleSubtext"] = componentType is "label" or "avatar" or "buttonIcon" ? "Subtitle" : "",
@@ -396,6 +412,18 @@ internal sealed partial class SpikeDatabase
         {
             preview.Remove("leftIcons");
             preview.Remove("rightIcons");
+        }
+        if (componentType == "bubble")
+        {
+            preview["state"] = "incoming";
+            preview["size"] = "260|72";
+            preview["actorName"] = "Alex Q";
+            preview["incomingBackground"] = "gray_020|gray_080";
+            preview["incomingText"] = "gray_010|gray_100";
+            preview["systemBackground"] = "gray_030|gray_070";
+            preview["systemText"] = "gray_010|gray_100";
+            preview["outgoingBackground"] = "aqua_green|aqua_green";
+            preview["outgoingText"] = "gray_100|gray_100";
         }
 
         if (componentType == "audio")
@@ -688,6 +716,37 @@ internal sealed partial class SpikeDatabase
                     ]),
                 ComponentInput("controlsElapsedMs", "Controls elapsed ms", "controlsElapsedMs", ValueKind.Integer, "0", minimum: 0, maximum: 60000, increment: 10),
             ],
+            "bubble" =>
+            [
+                ComponentInput(
+                    "state",
+                    "State",
+                    "state",
+                    "option",
+                    "incoming",
+                    options:
+                    [
+                        new FieldOption("incoming", "Incoming"),
+                        new FieldOption("system", "System"),
+                        new FieldOption("outgoing", "Outgoing"),
+                    ]),
+                ComponentInput("sampleText", "Text", "sampleText", ValueKind.StringMultiline, "Message"),
+                ComponentInput(
+                    "size",
+                    "Size",
+                    "size",
+                    "integerPair",
+                    "260|72",
+                    pairFirstLabel: "W",
+                    pairSecondLabel: "H"),
+                ComponentInput("actorName", "Actor name", "actorName", "text", "Alex Q"),
+                ComponentInput("incomingBackground", "Incoming background", "incomingBackground", ValueKind.PaletteColorPair, "gray_020|gray_080", pairFirstLabel: "Light", pairSecondLabel: "Dark"),
+                ComponentInput("incomingText", "Incoming text", "incomingText", ValueKind.PaletteColorPair, "gray_010|gray_100", pairFirstLabel: "Light", pairSecondLabel: "Dark"),
+                ComponentInput("systemBackground", "System background", "systemBackground", ValueKind.PaletteColorPair, "gray_030|gray_070", pairFirstLabel: "Light", pairSecondLabel: "Dark"),
+                ComponentInput("systemText", "System text", "systemText", ValueKind.PaletteColorPair, "gray_010|gray_100", pairFirstLabel: "Light", pairSecondLabel: "Dark"),
+                ComponentInput("outgoingBackground", "Outgoing background", "outgoingBackground", ValueKind.PaletteColorPair, "aqua_green|aqua_green", pairFirstLabel: "Light", pairSecondLabel: "Dark"),
+                ComponentInput("outgoingText", "Outgoing text", "outgoingText", ValueKind.PaletteColorPair, "gray_100|gray_100", pairFirstLabel: "Light", pairSecondLabel: "Dark"),
+            ],
             _ => [],
         };
     }
@@ -923,6 +982,7 @@ internal sealed partial class SpikeDatabase
         NewComponentSeed("label", "component.label", "Default Label"),
         NewComponentSeed("audio", "component.audio", "Default Audio"),
         NewComponentSeed("media", "component.media", "Default Media"),
+        NewComponentSeed("bubble", "component.bubble", "Default Bubble"),
     ];
 
     private static MotionVariantValue MediaMotionDefault()

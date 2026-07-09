@@ -3,6 +3,8 @@ import { audioComponentToRenderable } from "./audioComponentRenderable.js";
 import { resolveAudioComponent } from "./audioComponentResolver.js";
 import { avatarComponentToRenderable } from "./avatarComponentRenderable.js";
 import { resolveAvatarComponent } from "./avatarComponentResolver.js";
+import { bubbleComponentToRenderable } from "./bubbleComponentRenderable.js";
+import { resolveBubbleComponent } from "./bubbleComponentResolver.js";
 import { buttonIconComponentToRenderable } from "./buttonIconComponentRenderable.js";
 import { resolveButtonIconComponent } from "./buttonIconComponentResolver.js";
 import { cursorComponentToRenderable } from "./cursorComponentRenderable.js";
@@ -56,6 +58,7 @@ export const componentRenderableFactories = {
   keyboard: (payload) =>
     keyboardComponentToRenderable(payload, resolveKeyboardComponent(payload)),
   media: (payload) => mediaComponentToRenderable(payload, resolveMediaComponent(payload)),
+  bubble: (payload) => bubbleComponentToRenderable(payload, resolveBubbleComponent(payload)),
   status_bar: (payload) =>
     statusBarComponentToRenderable(payload, resolveStatusBarComponent(payload)),
   navigation_bar: (payload) =>

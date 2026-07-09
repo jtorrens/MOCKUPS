@@ -1904,6 +1904,7 @@ internal sealed partial class SpikeDatabase
         changed |= NormalizeTextInputBarSlots(connection, projectId, componentType, config);
         changed |= NormalizeKeyboardSlots(connection, projectId, componentType, config);
         changed |= NormalizeMediaSlots(connection, projectId, componentType, config);
+        changed |= NormalizeBubbleSlots(connection, projectId, componentType, config);
         changed |= NormalizeEmbeddedSlotPresetIds(connection, projectId, config);
         changed |= NormalizeComponentInputBindingPresetIds(connection, projectId, config);
         changed |= NormalizeComponentTypographyStyles(config);
@@ -2815,6 +2816,42 @@ internal sealed partial class SpikeDatabase
         if (media["motion"] is not JsonObject)
         {
             media["motion"] = JsonNode.Parse(MediaMotionDefault().ToJsonString());
+            changed = true;
+        }
+
+        return changed;
+    }
+
+    private static bool NormalizeBubbleSlots(
+        SqliteConnection connection,
+        string projectId,
+        string componentType,
+        JsonObject config)
+    {
+        if (componentType != "bubble"
+            || JsonPath.Get(config, ["bubble"]) is not JsonObject bubble)
+        {
+            return false;
+        }
+
+        var changed = false;
+        changed |= NormalizeComponentSlot(bubble, "surfaceSlot", DefaultComponentPresetId);
+        changed |= NormalizeComponentSlot(bubble, "textBoxSlot", DefaultComponentPresetId);
+        changed |= NormalizeComponentSlot(bubble, "actorLabelSlot", DefaultComponentPresetId);
+        changed |= NormalizeComponentPresetString(connection, projectId, bubble, ["surfaceSlot", "presetId"], "surface");
+        changed |= NormalizeComponentPresetString(connection, projectId, bubble, ["textBoxSlot", "presetId"], "textBox");
+        changed |= NormalizeComponentPresetString(connection, projectId, bubble, ["actorLabelSlot", "presetId"], "label");
+        if (JsonPath.Get(bubble, ["actorLabelSlot", "showLabel"]) is null)
+        {
+            SetJsonValue(bubble, ["actorLabelSlot", "showLabel"], JsonValue.Create(false)!);
+            changed = true;
+        }
+        if (JsonPath.Get(bubble, ["actorLabelSlot", "placement"]) is null)
+        {
+            SetJsonValue(
+                bubble,
+                ["actorLabelSlot", "placement"],
+                JsonNode.Parse(AlignmentPlacementValue.FromDirectionalEdge("top", -4).ToJsonString())!);
             changed = true;
         }
 

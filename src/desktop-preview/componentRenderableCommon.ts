@@ -3,6 +3,7 @@ export {
   cssColorWithAlpha,
   numberToken,
   numberOrThemeToken,
+  resolvePaletteColor,
   selectedColor,
   selectedPaletteColor,
   stringOrThemeToken,

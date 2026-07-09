@@ -685,6 +685,12 @@ internal static class ComponentClassFieldCatalog
         ["component.media.controlsFadeDelayMs"] = new("component.media.controlsFadeDelayMs", "Fade delay ms", ValueKind.Integer, ["media", "controlsFadeDelayMs"], "900", Number: new NumberDefinition(0, 10000, 10, 0)),
         ["component.media.controlsFadeDurationMs"] = new("component.media.controlsFadeDurationMs", "Fade duration ms", ValueKind.Integer, ["media", "controlsFadeDurationMs"], "180", Number: new NumberDefinition(0, 10000, 10, 0)),
         ["component.media.motion"] = new("component.media.motion", "Motion", ValueKind.Motion, ["media", "motion"], (MotionVariantValue.Default with { Scale = true }).ToJsonString()),
+
+        ["component.bubble.surface.editor"] = new("component.bubble.surface.editor", "Surface", ValueKind.ComponentPreset, ["bubble", "surfaceSlot", "presetId"], "default"),
+        ["component.bubble.textBox.editor"] = new("component.bubble.textBox.editor", "Text box", ValueKind.ComponentPreset, ["bubble", "textBoxSlot", "presetId"], "default"),
+        ["component.bubble.actorLabel.showLabel"] = new("component.bubble.actorLabel.showLabel", "Show actor label", ValueKind.Boolean, ["bubble", "actorLabelSlot", "showLabel"], "false"),
+        ["component.bubble.actorLabel.placement"] = new("component.bubble.actorLabel.placement", "Actor label placement", ValueKind.AlignmentPlacement, ["bubble", "actorLabelSlot", "placement"], """{"mode":"edge","alignX":0.5,"alignY":0,"offsetX":0,"offsetY":-4}"""),
+        ["component.bubble.actorLabel.editor"] = new("component.bubble.actorLabel.editor", "Actor label", ValueKind.ComponentPreset, ["bubble", "actorLabelSlot", "presetId"], "default"),
     };
 
     public static ComponentClassFieldDescriptor Get(string fieldId)

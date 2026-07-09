@@ -16,8 +16,23 @@ import {
   iconRowComponentToRenderableAt,
   measureIconRowComponent,
 } from "./iconRowComponentRenderable.js";
-import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
+import {
+  surfaceComponentToRenderableAt,
+  surfaceComponentToRenderableAtWithColors,
+  type SurfaceColorOverride,
+} from "./surfaceComponentRenderable.js";
 import type { TextBoxDesignContract } from "./textBoxComponentContract.js";
+
+export interface TextBoxColorOverride {
+  textColor?: string;
+  placeholderColor?: string;
+}
+
+export interface TextBoxRenderableOptions {
+  surfaceVisible?: boolean;
+  surfaceColors?: SurfaceColorOverride;
+  textColors?: TextBoxColorOverride;
+}
 
 export function measureTextBoxComponent(
   payload: DesignPreviewPayload,
@@ -221,6 +236,7 @@ export function textBoxComponentToRenderableAt(
   payload: DesignPreviewPayload,
   textBox: TextBoxDesignContract,
   box: RenderableBox,
+  options: TextBoxRenderableOptions = {},
 ): RenderableNode {
   const scale = renderScale(payload);
   const size = measureTextBoxComponent(payload, textBox);
@@ -257,10 +273,11 @@ export function textBoxComponentToRenderableAt(
       ? textFrame.y + Math.max(0, (textFrame.height - textContentHeight) * 0.5)
       : textFrame.y;
   const textStyle = {
-    textColor: selectedColor(
-      payload,
-      textIsEmpty ? textBox.placeholderColorToken : textBox.textColorToken,
-    ),
+    textColor: textIsEmpty
+      ? options.textColors?.placeholderColor
+        ?? selectedColor(payload, textBox.placeholderColorToken)
+      : options.textColors?.textColor
+        ?? selectedColor(payload, textBox.textColorToken),
     display: "block",
     fontSize: size.typography.fontSize,
     fontFamily: size.typography.fontFamily,
@@ -271,6 +288,16 @@ export function textBoxComponentToRenderableAt(
     textAlign: textBox.textAlign,
     whiteSpace: "pre-line",
   };
+  const surfaceNode = options.surfaceVisible === false
+    ? undefined
+    : options.surfaceColors
+      ? surfaceComponentToRenderableAtWithColors(
+          payload,
+          textBox.surface,
+          box,
+          options.surfaceColors,
+        )
+      : surfaceComponentToRenderableAt(payload, textBox.surface, box);
 
   return {
     id: textBox.id,
@@ -281,7 +308,7 @@ export function textBoxComponentToRenderableAt(
       overflow: "visible",
     },
     children: [
-      surfaceComponentToRenderableAt(payload, textBox.surface, box),
+      ...(surfaceNode ? [surfaceNode] : []),
       ...(size.hasLeftIcons
         ? [iconRowComponentToRenderableAt(payload, textBox.leftIconRow, {
             x: box.x + paddingX,

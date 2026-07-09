@@ -182,6 +182,24 @@ internal static class EmbeddedComponentSlotCatalog
             "Full screen bottom icon bar",
             "component.iconBar",
             ["media", "fullScreenBottomIconBarSlot"]),
+        new(
+            "component.bubble.surface.editor",
+            "surface",
+            "Surface",
+            "component.surface",
+            ["bubble", "surfaceSlot"]),
+        new(
+            "component.bubble.textBox.editor",
+            "textBox",
+            "Text box",
+            "component.textBox",
+            ["bubble", "textBoxSlot"]),
+        new(
+            "component.bubble.actorLabel.editor",
+            "label",
+            "Actor label",
+            "component.label",
+            ["bubble", "actorLabelSlot"]),
     ];
 
     public static bool TryGet(string fieldId, out EmbeddedComponentSlotDefinition slot)

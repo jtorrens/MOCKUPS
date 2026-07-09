@@ -4,6 +4,7 @@ import { IdSchema, JsonObjectSchema } from "./common.js";
 export const ComponentClassTypeSchema = z.enum([
   "avatar",
   "audio",
+  "bubble",
   "buttonIcon",
   "cursor",
   "iconBar",

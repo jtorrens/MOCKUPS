@@ -13,6 +13,12 @@ import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { surfaceShapeDataUri } from "./previewSurfaceShapeHelpers.js";
 import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
 
+export interface SurfaceColorOverride {
+  background: string;
+  borderColor?: string;
+  colorModes?: Record<string, { background: string; borderColor?: string }>;
+}
+
 export function surfaceComponentToRenderable(
   payload: DesignPreviewPayload,
   surface: SurfaceDesignContract,
@@ -34,12 +40,21 @@ export function surfaceComponentToRenderableAt(
   surface: SurfaceDesignContract,
   box: RenderableBox,
 ): RenderableNode {
+  return surfaceComponentToRenderableAtWithColors(payload, surface, box);
+}
+
+export function surfaceComponentToRenderableAtWithColors(
+  payload: DesignPreviewPayload,
+  surface: SurfaceDesignContract,
+  box: RenderableBox,
+  colors?: SurfaceColorOverride,
+): RenderableNode {
   if (surface.tail.enabled && surface.tail.width > 0 && surface.tail.height > 0) {
-    return surfaceComponentTailRenderable(payload, surface, box);
+    return surfaceComponentTailRenderable(payload, surface, box, colors);
   }
 
   const visualPadding = surfaceComponentVisualPadding(payload, surface);
-  const surfaceNode = surfaceComponentSurfaceNode(payload, surface, box);
+  const surfaceNode = surfaceComponentSurfaceNode(payload, surface, box, colors);
   if (visualPadding <= 0) {
     return surfaceNode;
   }
@@ -70,19 +85,14 @@ function surfaceComponentTailRenderable(
   payload: DesignPreviewPayload,
   surface: SurfaceDesignContract,
   box: RenderableBox,
+  colors?: SurfaceColorOverride,
 ): RenderableNode {
   const scale = renderScale(payload);
   const cornerRadius = numberToken(payload, surface.surface.cornerRadiusToken) * scale;
-  const background = selectedColor(
-    payload,
-    surface.backgroundColorToken,
-    surface.backgroundAlpha,
-  );
-  const borderColor = selectedColor(
-    payload,
-    surface.surface.borderColorToken,
-    surface.borderAlpha,
-  );
+  const background = colors?.background
+    ?? selectedColor(payload, surface.backgroundColorToken, surface.backgroundAlpha);
+  const borderColor = colors?.borderColor
+    ?? selectedColor(payload, surface.surface.borderColorToken, surface.borderAlpha);
   const surfaceShadow = surface.surface.shadowEnabled ? shadow(payload) : undefined;
   const surfaceRelief = surfaceComponentRelief(surface, scale);
   const shape = surfaceShapeDataUri({
@@ -110,25 +120,7 @@ function surfaceComponentTailRenderable(
     box,
     style: {
       overflow: "visible",
-      colorModes: Object.fromEntries(
-        variants(payload).map((mode) => [
-          mode,
-          {
-            background: colorForMode(
-              payload,
-              surface.backgroundColorToken,
-              mode,
-              surface.backgroundAlpha,
-            ),
-            borderColor: colorForMode(
-              payload,
-              surface.surface.borderColorToken,
-              mode,
-              surface.borderAlpha,
-            ),
-          },
-        ]),
-      ),
+      colorModes: colors?.colorModes ?? surfaceColorModes(payload, surface),
     },
     children: [
       {
@@ -154,6 +146,7 @@ function surfaceComponentSurfaceNode(
   payload: DesignPreviewPayload,
   surface: SurfaceDesignContract,
   box: RenderableBox,
+  colors?: SurfaceColorOverride,
 ): RenderableNode {
   const scale = renderScale(payload);
   const surfaceShadow = surface.surface.shadowEnabled ? shadow(payload) : undefined;
@@ -165,41 +158,42 @@ function surfaceComponentSurfaceNode(
     frame: 0,
     box,
     style: {
-      background: selectedColor(
-        payload,
-        surface.backgroundColorToken,
-        surface.backgroundAlpha,
-      ),
-      borderColor: selectedColor(
-        payload,
-        surface.surface.borderColorToken,
-        surface.borderAlpha,
-      ),
+      background: colors?.background
+        ?? selectedColor(payload, surface.backgroundColorToken, surface.backgroundAlpha),
+      borderColor: colors?.borderColor
+        ?? selectedColor(payload, surface.surface.borderColorToken, surface.borderAlpha),
       borderRadius: numberToken(payload, surface.surface.cornerRadiusToken) * scale,
       borderWidth: surface.surface.borderWidth * scale,
       shadow: surfaceShadow,
       surfaceRelief,
-      colorModes: Object.fromEntries(
-        variants(payload).map((mode) => [
-          mode,
-          {
-            background: colorForMode(
-              payload,
-              surface.backgroundColorToken,
-              mode,
-              surface.backgroundAlpha,
-            ),
-            borderColor: colorForMode(
-              payload,
-              surface.surface.borderColorToken,
-              mode,
-              surface.borderAlpha,
-            ),
-          },
-        ]),
-      ),
+      colorModes: colors?.colorModes ?? surfaceColorModes(payload, surface),
     },
   };
+}
+
+function surfaceColorModes(
+  payload: DesignPreviewPayload,
+  surface: SurfaceDesignContract,
+) {
+  return Object.fromEntries(
+    variants(payload).map((mode) => [
+      mode,
+      {
+        background: colorForMode(
+          payload,
+          surface.backgroundColorToken,
+          mode,
+          surface.backgroundAlpha,
+        ),
+        borderColor: colorForMode(
+          payload,
+          surface.surface.borderColorToken,
+          mode,
+          surface.borderAlpha,
+        ),
+      },
+    ]),
+  );
 }
 
 function surfaceComponentVisualPadding(

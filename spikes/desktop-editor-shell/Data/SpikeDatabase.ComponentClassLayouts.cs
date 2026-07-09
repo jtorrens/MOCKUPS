@@ -524,6 +524,31 @@ internal sealed partial class SpikeDatabase
               ]
             }
             """,
+            "component.bubble" => $$"""
+            ,
+            {
+              "id": "bubble",
+              "label": "Bubble",
+              "subtitle": "Message surface, text and actor label slot",
+              "icon": "{{EditorIcons.Bubble}}",
+              "order": 20,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "bubbleSurface", "label": "Surface", "order": 10, "visible": true, "fields": [
+                  { "id": "component.bubble.surface.editor", "order": 10, "visible": true }
+                ] },
+                { "id": "bubbleText", "label": "Text", "order": 20, "visible": true, "fields": [
+                  { "id": "component.bubble.textBox.editor", "order": 10, "visible": true }
+                ] },
+                { "id": "bubbleActorLabel", "label": "Actor label", "order": 30, "visible": true, "fields": [
+                  { "id": "component.bubble.actorLabel.showLabel", "order": 10, "visible": true },
+                  { "id": "component.bubble.actorLabel.placement", "order": 20, "visible": true },
+                  { "id": "component.bubble.actorLabel.editor", "order": 30, "visible": true }
+                ] }
+              ]
+            }
+            """,
             _ => "",
         };
 

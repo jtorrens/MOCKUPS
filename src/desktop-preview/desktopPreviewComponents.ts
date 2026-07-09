@@ -107,6 +107,14 @@ export const desktopPreviewComponents = {
     renderable: "./mediaComponentRenderable",
     embeds: ["surface", "iconBar"],
   },
+  bubble: {
+    category: "component",
+    migrationStatus: "structural",
+    contract: "./bubbleComponentContract",
+    resolver: "./bubbleComponentResolver",
+    renderable: "./bubbleComponentRenderable",
+    embeds: ["surface", "textBox", "label"],
+  },
   status_bar: {
     category: "system",
     migrationStatus: "functional",

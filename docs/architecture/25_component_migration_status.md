@@ -60,6 +60,7 @@ field `migrationStatus`.
 | `textInputBar` | system | Structurally migrated | Preview renders a screen-width bar with embedded `surface`, `textBox` and one `iconBar` slot. `idle` vs `typing` is derived from whether runtime text is empty. Icon token lists are variant data inside the embedded `iconBar`, not runtime preview inputs. Text content is runtime data passed into the embedded `textBox`; placeholder is fixed by the parent variant through generic input bindings. |
 | `keyboard` | system | Structurally migrated | Preview renders a generic keyboard surface, keys and bottom icons. It is the first component using component-level motion intent plus theme timing tokens; preview animation is resolved as frame data and launched from a generic preview action before the generic web renderer paints it. Final keyboard layout model and interaction states still need definition. |
 | `media` | component | Structurally migrated | Replaces the old desktop `video` component route. Preview renders an embedded `surface` variant plus separate inline and full-screen top/center/bottom `iconBar` overlays. Runtime inputs cover image/video source type, viewport size, decimal media scale/offset, play/pause, current/duration time, full screen on/off and fullframe orientation. Component motion is the inline-to-fullframe transition, not component entrance, and is launched through a separate generic `Full screen` preview action. Video playback is not owned by the web preview; local video sources are resolved at the requested time into cached frame files and then painted through the same generic image primitive used by still images. |
+| `bubble` | component | Structurally migrated | First text-only bubble phase. Embeds `surface`, `textBox` and optional actor `label`. Runtime inputs define state (`incoming`, `system`, `outgoing`), size, text, actor name and per-state light/dark palette color pairs. The parent will own message alignment. The bubble resolver owns state-to-tail mapping: incoming = left tail, system = no tail, outgoing = right tail; tail vertical/geometry stays in the selected surface variant. |
 
 ## Legacy Runtime Paths Removed
 
@@ -141,4 +142,4 @@ Compatibility note:
 4. Define `media` behavior after validating viewport/fullframe controls and
    deciding how media source/frame extraction should compose with bubble/runtime
    data.
-5. Defer bubble migration until its full owned component graph is ready.
+5. Continue bubble migration in phases: media/audio/status/avatar attachment can be added after the text bubble route is stable.
