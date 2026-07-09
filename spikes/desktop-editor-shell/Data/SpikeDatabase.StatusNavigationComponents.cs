@@ -312,12 +312,12 @@ internal sealed partial class SpikeDatabase
     {
         return NavigationBarItems(NavigationBarConfig(configJson)).Count;
     }
-    public IReadOnlyList<FieldOption> GetStatusBarOptions(string projectId)
+    public IReadOnlyList<FieldOption> GetStatusBarComponentPresetOptions(string projectId)
     {
         return GetComponentPresetReferenceOptionsByType(projectId, "status_bar", includeNone: true);
     }
 
-    public IReadOnlyList<FieldOption> GetNavigationBarOptions(string projectId)
+    public IReadOnlyList<FieldOption> GetNavigationBarComponentPresetOptions(string projectId)
     {
         return GetComponentPresetReferenceOptionsByType(projectId, "navigation_bar", includeNone: true);
     }

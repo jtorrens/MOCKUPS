@@ -132,9 +132,7 @@ export function resolveTextBoxComponentFromRecords(
       inputs,
       leftIconRowInputs,
       "leftIconRowSlot",
-      "leftIconRowPresetId",
       "buttonIconSlot",
-      "buttonIconPresetId",
       componentBaseConfigs,
       `${id}.leftIcons`,
     ),
@@ -142,9 +140,7 @@ export function resolveTextBoxComponentFromRecords(
       inputs,
       rightIconRowInputs,
       "rightIconRowSlot",
-      "rightIconRowPresetId",
       "buttonIconSlot",
-      "buttonIconPresetId",
       componentBaseConfigs,
       `${id}.rightIcons`,
     ),
@@ -155,9 +151,7 @@ function resolveOptionalIconRowComponentFromRecords(
   parentInputs: Record<string, unknown>,
   iconRowInputs: Record<string, unknown>,
   slotInputKey: string,
-  legacyPresetInputKey: string,
   buttonSlotInputKey: string,
-  legacyButtonPresetInputKey: string,
   componentBaseConfigs: Record<string, unknown>,
   id: string,
 ) {
@@ -178,9 +172,13 @@ function resolveOptionalIconRowComponentFromRecords(
   const buttonIconSlot = componentInputSlot(
     parentInputs,
     buttonSlotInputKey,
-    legacyButtonPresetInputKey,
+    `component.textBox.input.${buttonSlotInputKey}`,
   );
-  const iconRowSlot = componentInputSlot(parentInputs, slotInputKey, legacyPresetInputKey);
+  const iconRowSlot = componentInputSlot(
+    parentInputs,
+    slotInputKey,
+    `component.textBox.input.${slotInputKey}`,
+  );
   const iconRowConfig = componentPresetConfig(
     componentBaseConfigs,
     "iconRow",
@@ -200,14 +198,11 @@ function resolveOptionalIconRowComponentFromRecords(
 function componentInputSlot(
   inputs: Record<string, unknown>,
   slotKey: string,
-  legacyPresetKey: string,
+  path: string,
 ) {
   const slot = asRecord(inputs[slotKey]);
-  const presetId = typeof slot.presetId === "string"
-    ? slot.presetId
-    : requiredString(inputs, legacyPresetKey, `component.textBox.input.${legacyPresetKey}`);
   return {
-    presetId,
+    presetId: requiredString(slot, "presetId", `${path}.presetId`),
     overrides: asRecord(slot.overrides),
   };
 }

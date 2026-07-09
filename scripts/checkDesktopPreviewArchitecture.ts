@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
+import Database from "better-sqlite3";
 import {
   desktopPreviewComponents,
   type DesktopPreviewComponentManifestEntry,
@@ -146,6 +147,23 @@ function assertPropertyBlockDoesNotContain(
   }
   if (match[0].includes(term)) {
     addViolation(relativePath, message);
+  }
+}
+
+function assertDesktopDatabaseTableIsEmpty(tableName: string, message: string) {
+  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  if (!existsSync(databasePath)) {
+    return;
+  }
+
+  const database = new Database(databasePath, { readonly: true, fileMustExist: true });
+  try {
+    const row = database.prepare(`SELECT COUNT(*) AS count FROM ${tableName}`).get() as { count: number };
+    if (row.count > 0) {
+      addViolation("data/desktop-editor-spike.sqlite", `${message}; found ${row.count} row(s) in ${tableName}`);
+    }
+  } finally {
+    database.close();
   }
 }
 
@@ -958,6 +976,34 @@ assertDoesNotContain(
   "desktop database initialization must not seed legacy navigation_bars rows; use navigation_bar component presets",
 );
 assertDoesNotContain(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.Schema.cs",
+  "CREATE TABLE IF NOT EXISTS status_bars",
+  "desktop schema must not recreate legacy status_bars; use status_bar component variants",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.Schema.cs",
+  "CREATE TABLE IF NOT EXISTS navigation_bars",
+  "desktop schema must not recreate legacy navigation_bars; use navigation_bar component variants",
+);
+assertDesktopDatabaseTableIsEmpty(
+  "status_bars",
+  "desktop database must not contain legacy status_bars rows; use status_bar component variants",
+);
+assertDesktopDatabaseTableIsEmpty(
+  "navigation_bars",
+  "desktop database must not contain legacy navigation_bars rows; use navigation_bar component variants",
+);
+for (const legacyTextBoxComponentInput of [
+  "\"leftIconRowPresetId\"",
+  "\"rightIconRowPresetId\"",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassDefaults.cs",
+    legacyTextBoxComponentInput,
+    "text box embedded component inputs must use preset slots, not legacy preset id fields",
+  );
+}
+assertDoesNotContain(
   "spikes/desktop-editor-shell/Common/DeviceMetricRules.cs",
   "JsonPath.NumberAt(metrics,",
   "device preview metric reads must be strict; defaults belong in seed/import normalization, not preview rendering",
@@ -1320,13 +1366,13 @@ assertAnyContains(
   "GetComponentPresetReferenceOptionsByType(projectId, \"navigation_bar\"",
   "theme navigation bar selector must list component presets",
 );
-assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
+assertAnyContains(
+  spikeDatabaseDataPaths,
   "[\"id\"] = DefaultComponentPresetId",
   "component class normalization must create a Default preset",
 );
-assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
+assertAnyContains(
+  spikeDatabaseDataPaths,
   "[\"protected\"] = true",
   "Default component preset must be protected in stored metadata",
 );

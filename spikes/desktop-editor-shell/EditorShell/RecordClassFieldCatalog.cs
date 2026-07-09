@@ -307,27 +307,6 @@ internal static class RecordClassFieldCatalog
         ["iconTheme.tokenCount"] = new("iconTheme.tokenCount", "Token Count", ValueKind.StringReadOnly, IsEditable: false),
         ["iconTheme.metadata"] = new("iconTheme.metadata", "Metadata", ValueKind.StringMultiline, IsEditable: false),
 
-        ["statusBar.family"] = new("statusBar.family", "Family", ValueKind.StringSingleLine),
-        ["statusBar.layout.height"] = new("statusBar.layout.height", "Height", ValueKind.Integer),
-        ["statusBar.layout.itemSize"] = new("statusBar.layout.itemSize", "Item size", ValueKind.Integer),
-        ["statusBar.layout.gap"] = new("statusBar.layout.gap", "Gap", ValueKind.Integer),
-        ["statusBar.layout.sidePadding"] = new("statusBar.layout.sidePadding", "Side padding", ValueKind.Integer),
-
-        ["navigationBar.family"] = new("navigationBar.family", "Family", ValueKind.StringSingleLine),
-        ["navigationBar.type"] = new("navigationBar.type", "Style", ValueKind.OptionToken),
-        ["navigationBar.layout.height"] = new("navigationBar.layout.height", "Height", ValueKind.Integer),
-        ["navigationBar.layout.itemSize"] = new("navigationBar.layout.itemSize", "Item size", ValueKind.Integer),
-        ["navigationBar.layout.sidePadding"] = new("navigationBar.layout.sidePadding", "Side padding", ValueKind.Integer),
-        ["navigationBar.layout.strokeWidth"] = new(
-            "navigationBar.layout.strokeWidth",
-            "Stroke width",
-            ValueKind.Decimal,
-            Number: new NumberDefinition(0, 20, 0.5m, 2)),
-        ["navigationBar.layout.cornerRadius"] = new("navigationBar.layout.cornerRadius", "Corner radius", ValueKind.Integer),
-        ["navigationBar.layout.filled"] = new("navigationBar.layout.filled", "Filled", ValueKind.Boolean),
-        ["navigationBar.gesture.width"] = new("navigationBar.gesture.width", "Width", ValueKind.Integer),
-        ["navigationBar.gesture.height"] = new("navigationBar.gesture.height", "Height", ValueKind.Integer),
-        ["navigationBar.gesture.cornerRadius"] = new("navigationBar.gesture.cornerRadius", "Corner radius", ValueKind.Integer),
     };
 
     public static RecordClassFieldDescriptor Get(string fieldId)

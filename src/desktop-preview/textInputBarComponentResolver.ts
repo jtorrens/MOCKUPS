@@ -30,19 +30,16 @@ export function resolveTextInputBarComponent(
   const leftTextBoxIconRowSlot = componentInputSlot(
     textBoxInputs,
     "leftIconRowSlot",
-    "leftIconRowPresetId",
     "component.textInput.textBox.leftIconRowSlot",
   );
   const rightTextBoxIconRowSlot = componentInputSlot(
     textBoxInputs,
     "rightIconRowSlot",
-    "rightIconRowPresetId",
     "component.textInput.textBox.rightIconRowSlot",
   );
   const textBoxButtonIconSlot = componentInputSlot(
     textBoxInputs,
     "buttonIconSlot",
-    "buttonIconPresetId",
     "component.textInput.textBox.buttonIconSlot",
   );
   const sampleText = requiredPossiblyEmptyString(
@@ -136,15 +133,11 @@ export function resolveTextInputBarComponent(
 function componentInputSlot(
   inputs: Record<string, unknown>,
   slotKey: string,
-  legacyPresetKey: string,
   path: string,
 ) {
   const slot = asRecord(inputs[slotKey]);
-  const presetId = typeof slot.presetId === "string"
-    ? slot.presetId
-    : requiredString(inputs, legacyPresetKey, `${path}.presetId`);
   return {
-    presetId,
+    presetId: requiredString(slot, "presetId", `${path}.presetId`),
     overrides: asRecord(slot.overrides),
   };
 }

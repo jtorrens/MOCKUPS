@@ -116,26 +116,6 @@ internal sealed partial class SpikeDatabase
           UNIQUE(project_id, name)
         );
 
-        CREATE TABLE IF NOT EXISTS status_bars (
-          id TEXT PRIMARY KEY,
-          project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-          name TEXT NOT NULL,
-          family TEXT NOT NULL DEFAULT '',
-          config_json TEXT NOT NULL DEFAULT '{}',
-          metadata_json TEXT NOT NULL DEFAULT '{}',
-          UNIQUE(project_id, name)
-        );
-
-        CREATE TABLE IF NOT EXISTS navigation_bars (
-          id TEXT PRIMARY KEY,
-          project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-          name TEXT NOT NULL,
-          family TEXT NOT NULL DEFAULT '',
-          config_json TEXT NOT NULL DEFAULT '{}',
-          metadata_json TEXT NOT NULL DEFAULT '{}',
-          UNIQUE(project_id, name)
-        );
-
         CREATE TABLE IF NOT EXISTS render_presets (
           id TEXT PRIMARY KEY,
           project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,

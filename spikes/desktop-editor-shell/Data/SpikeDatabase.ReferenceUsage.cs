@@ -365,13 +365,11 @@ internal sealed partial class SpikeDatabase
             "episodes" => "Episode",
             "icon_themes" => "Icon Theme",
             "modules" => "Module",
-            "navigation_bars" => "Navigation Bar",
             "palette_colors" => "Palette Color",
             "production_fonts" => "Production Font",
             "render_presets" => "Render Preset",
             "projects" => "Project",
             "shots" => "Shot",
-            "status_bars" => "Status Bar",
             "themes" => "Theme",
             _ => table,
         };

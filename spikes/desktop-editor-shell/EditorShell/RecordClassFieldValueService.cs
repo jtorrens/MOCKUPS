@@ -334,8 +334,8 @@ internal sealed class RecordClassFieldValueService
                 new FieldOption("custom", "Custom"),
             ],
             "theme.iconThemeId" => _database.GetIconThemeOptions(settings.ProjectId),
-            "theme.statusBarId" => _database.GetStatusBarOptions(settings.ProjectId),
-            "theme.navigationBarId" => _database.GetNavigationBarOptions(settings.ProjectId),
+            "theme.statusBarId" => _database.GetStatusBarComponentPresetOptions(settings.ProjectId),
+            "theme.navigationBarId" => _database.GetNavigationBarComponentPresetOptions(settings.ProjectId),
             "theme.defaultMode" =>
             [
                 new FieldOption("light", "Light"),
