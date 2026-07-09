@@ -17,7 +17,6 @@ import {
   scalePlacement,
   selectedPaletteColor,
   translateBox,
-  unionBoxes,
   variants,
 } from "./componentRenderableCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
@@ -83,14 +82,10 @@ export function bubbleComponentToRenderable(
         scalePlacement(bubble.actorLabelSlot.placement, scale),
       )
     : undefined;
-  const localBounds = unionBoxes([
-    localSurfaceBox,
-    ...(localLabelBox ? [localLabelBox] : []),
-  ]);
-  const groupBox = boundedCenterBox(payload, localBounds.width, localBounds.height);
+  const groupBox = boundedCenterBox(payload, localSurfaceBox.width, localSurfaceBox.height);
   const origin = {
-    x: groupBox.x - localBounds.x,
-    y: groupBox.y - localBounds.y,
+    x: groupBox.x - localSurfaceBox.x,
+    y: groupBox.y - localSurfaceBox.y,
   };
   const surfaceBox = translateBox(localSurfaceBox, origin);
   const textBox = translateBox(contentLayout.textBox, origin);
@@ -137,7 +132,20 @@ export function bubbleComponentToRenderable(
           ]
         : []),
       ...(bubble.actorLabelSlot.label && labelBox
-        ? [labelComponentToRenderableAt(payload, bubble.actorLabelSlot.label, labelBox)]
+        ? [
+            labelComponentToRenderableAt(
+              payload,
+              bubble.actorLabelSlot.label,
+              labelBox,
+              {
+                surfaceColors: bubbleSurfaceColors(
+                  payload,
+                  stateColors.background,
+                  bubble.actorLabelSlot.label.surface.backgroundAlpha,
+                ),
+              },
+            ),
+          ]
         : []),
     ],
   };

@@ -14,6 +14,7 @@ import {
   resolveTypographyStyle,
 } from "./previewTextHelpers.js";
 import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
+import type { SurfaceColorOverride } from "./surfaceComponentRenderable.js";
 
 export function measureLabelComponent(
   label: LabelDesignContract,
@@ -77,6 +78,9 @@ export function labelComponentToRenderableAt(
   payload: DesignPreviewPayload,
   label: LabelDesignContract,
   box: RenderableBox,
+  options: {
+    surfaceColors?: SurfaceColorOverride;
+  } = {},
 ): RenderableNode {
   const scale = renderScale(payload);
   const textTypography = resolveTypographyStyle(payload, label.textTypography, scale);
@@ -84,7 +88,9 @@ export function labelComponentToRenderableAt(
   const paddingX = numberToken(payload, label.padding.xToken) * scale;
   const paddingY = numberToken(payload, label.padding.yToken) * scale;
   const size = labelSize(label, textTypography, subtextTypography, scale, payload);
-  const surfaceNode = surfaceComponentToRenderableAt(payload, label.surface, box);
+  const surfaceNode = options.surfaceColors
+    ? surfaceComponentToRenderableAt(payload, label.surface, box, options.surfaceColors)
+    : surfaceComponentToRenderableAt(payload, label.surface, box);
   const surfaceColorModes = surfaceNode.style?.colorModes as
     | Record<string, Record<string, unknown>>
     | undefined;

@@ -39,8 +39,9 @@ export function surfaceComponentToRenderableAt(
   payload: DesignPreviewPayload,
   surface: SurfaceDesignContract,
   box: RenderableBox,
+  colors?: SurfaceColorOverride,
 ): RenderableNode {
-  return surfaceComponentToRenderableAtWithColors(payload, surface, box);
+  return surfaceComponentToRenderableAtWithColors(payload, surface, box, colors);
 }
 
 export function surfaceComponentToRenderableAtWithColors(

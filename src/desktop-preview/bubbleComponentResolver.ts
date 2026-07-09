@@ -113,7 +113,7 @@ export function resolveBubbleComponent(
         asRecord(videoMediaSlot.overrides),
       )
     : undefined;
-  const audioConfig = mediaType === "audio"
+  let audioConfig = mediaType === "audio"
     ? mergeComponentDefaults(
         componentPresetConfig(
           componentBaseConfigs,
@@ -123,6 +123,15 @@ export function resolveBubbleComponent(
         asRecord(audioSlot.overrides),
       )
     : undefined;
+  if (audioConfig && state !== "incoming") {
+    audioConfig = mergeComponentDefaults(audioConfig, {
+      audio: {
+        avatarSlot: {
+          showAvatar: false,
+        },
+      },
+    });
+  }
 
   const textBoxInputs = {
     sampleText: visibleText,
@@ -140,11 +149,12 @@ export function resolveBubbleComponent(
     size: `${maxWidth}|1`,
     maxWidth,
   };
-  const actorLabelVisible = requiredBoolean(
-    actorLabelSlot,
-    "showLabel",
-    "component.bubble.actorLabel.showLabel",
-  );
+  const actorLabelVisible = state === "incoming"
+    && requiredBoolean(
+      actorLabelSlot,
+      "showLabel",
+      "component.bubble.actorLabel.showLabel",
+    );
   const actorLabelConfig = actorLabelVisible
     ? mergeComponentDefaults(
         componentPresetConfig(
