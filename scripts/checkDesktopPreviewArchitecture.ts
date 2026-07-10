@@ -905,6 +905,8 @@ assertNoTerms("spikes/desktop-editor-shell/MainWindow.axaml.cs", [
   "IconToken",
   "SvgReplace",
   "ColorPicker",
+  "ActorAvatar",
+  "actor.avatar",
 ]);
 {
   const mainWindowSource = readText("spikes/desktop-editor-shell/MainWindow.axaml.cs");
