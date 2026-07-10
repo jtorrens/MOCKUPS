@@ -2871,11 +2871,6 @@ internal sealed partial class SpikeDatabase
             changed = true;
         }
 
-        if (designPreview.Remove("animation"))
-        {
-            changed = true;
-        }
-
         if (componentType == "media" && designPreview["fullScreenTransition"] is null)
         {
             designPreview["fullScreenTransition"] = false;
