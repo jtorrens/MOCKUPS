@@ -53,6 +53,7 @@ internal sealed partial class SpikeDatabase
         {
             ValidateSchemaV1(connection);
             NormalizeRuntimeInputContracts(connection);
+            NormalizeEditorLayouts(connection);
             return;
         }
 
@@ -68,6 +69,7 @@ internal sealed partial class SpikeDatabase
         SeedComponentClassesIfEmpty(connection);
         SeedThemesIfEmpty(connection);
         NormalizeRuntimeInputContracts(connection);
+        NormalizeEditorLayouts(connection);
         ValidateSchemaV1(connection);
     }
 

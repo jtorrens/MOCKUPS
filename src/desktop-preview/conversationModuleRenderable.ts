@@ -195,15 +195,30 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
   const bottom = composerOpen
     ? lerp(closedBottom, composerBottom, motionProgress)
     : closedBottom;
-  children.push(...messageNodes(
-    payload,
-    componentBaseConfigs,
-    conversation,
-    preview,
-    top,
-    bottom,
-    Math.max(0, Math.floor(optionalNumber(preview, "conversationFrame", Number.MAX_SAFE_INTEGER))),
-  ));
+  const messageViewport = {
+    x: screen.x,
+    y: top,
+    width: screen.width,
+    height: Math.max(0, bottom - top),
+  };
+  children.push({
+    id: "module.conversation.messages",
+    type: "group",
+    frame: 0,
+    box: messageViewport,
+    style: {
+      overflow: "hidden",
+    },
+    children: messageNodes(
+      payload,
+      componentBaseConfigs,
+      conversation,
+      preview,
+      top,
+      bottom,
+      Math.max(0, Math.floor(optionalNumber(preview, "conversationFrame", Number.MAX_SAFE_INTEGER))),
+    ),
+  });
 
   if (textInputNode) children.push(textInputNode);
   if (keyboardNode) children.push(keyboardNode);
@@ -333,7 +348,7 @@ function messageNodes(
   }));
   const totalHeight = entries.reduce((sum, entry) => sum + entry.bounds.height, 0)
     + Math.max(0, nodes.length - 1) * gap;
-  let y = Math.max(top + gutter.y, bottom - gutter.y - totalHeight);
+  let y = bottom - gutter.y - totalHeight;
   return entries.map((entry, index) => {
     const { node, bounds } = entry;
     const message = messages[index]!;

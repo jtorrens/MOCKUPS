@@ -67,6 +67,23 @@ internal sealed partial class SpikeDatabase
         }
     }
 
+    private static void NormalizeEditorLayouts(SqliteConnection connection)
+    {
+        var audioLayout = ScalarString(
+            connection,
+            "SELECT layout_json FROM editor_layouts WHERE record_class_id = 'component.audio'");
+        if (string.IsNullOrWhiteSpace(audioLayout)
+            || !audioLayout.Contains("component.audio.waveformBarWidth", StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        Execute(
+            connection,
+            "UPDATE editor_layouts SET layout_json = $layoutJson WHERE record_class_id = 'component.audio'",
+            ("$layoutJson", MinimalEditorLayoutJson("component.audio")));
+    }
+
     private static string MinimalEditorLayoutJson(string recordClassId)
     {
         var generalFields = recordClassId.StartsWith("component.", StringComparison.Ordinal)
