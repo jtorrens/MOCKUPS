@@ -441,15 +441,19 @@ function visibleMessages(
   let cursor = 0;
   return messages.flatMap((message) => {
     const startFrame = cursor + message.delayAfterPreviousFrames;
-    const revealEndFrame = startFrame + message.writeOnDurationFrames;
+    const isSystemMessage = message.state === "system";
+    const effectiveWriteOnFrames = isSystemMessage ? 0 : message.writeOnDurationFrames;
+    const revealEndFrame = startFrame + effectiveWriteOnFrames;
     cursor = revealEndFrame;
-    const revealAfterWriteOn = (message.bubbleRevealMode || fallbackRevealMode) === "afterWriteOn";
+    const revealAfterWriteOn = !isSystemMessage
+      && (message.bubbleRevealMode || fallbackRevealMode) === "afterWriteOn";
     const visibleAt = revealAfterWriteOn ? revealEndFrame : startFrame;
     if (frame < visibleAt) return [];
     return [{
       ...message,
-      writeOnTrigger: !revealAfterWriteOn && message.writeOnDurationFrames > 0,
+      writeOnTrigger: !isSystemMessage && !revealAfterWriteOn && effectiveWriteOnFrames > 0,
       writeOnFrame: Math.max(0, frame - startFrame),
+      writeOnDurationFrames: effectiveWriteOnFrames,
     }];
   });
 }
