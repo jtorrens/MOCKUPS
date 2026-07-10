@@ -6,7 +6,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "check:architecture": "tsx scripts/checkDesktopPreviewArchitecture.ts",
-    "icon-theme:import": "tsx src/icon-themes/importDevelopmentIconTheme.ts",
+    "legacy:icon-theme:import": "tsx src/icon-themes/importDevelopmentIconTheme.ts",
     "legacy:validate:examples": "tsx src/domain/validation/validateExamples.ts",
     "legacy:validate:resolver": "tsx src/domain/validation/validateResolver.ts",
     "legacy:validate:sqlite": "tsx src/persistence/sqlite/validateSQLiteRepository.ts",
