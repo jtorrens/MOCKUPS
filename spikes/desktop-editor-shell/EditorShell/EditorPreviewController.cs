@@ -95,7 +95,6 @@ internal sealed class EditorPreviewController
         EditorInstantComboBox orientationComboBox,
         IEditorShellMessageSink messages,
         ContentControl previewSetupHost,
-        ContentControl previewInputsHost,
         ContentControl previewBusyHost,
         ContentControl designPreviewHost,
         TextBlock designContextText,
@@ -126,11 +125,10 @@ internal sealed class EditorPreviewController
         _previewBusyHost = previewBusyHost;
         _previewBusyHost.Content = _previewLoadingScrim;
         _previewBusyHost.IsVisible = false;
-        _designInputsPanel = new ComponentInputsPanel(database, Refresh, owner, PreparePlaybackFramesAsync);
+        _designInputsPanel = new ComponentInputsPanel(database, Refresh, PreparePlaybackFramesAsync);
         _designPreviewPane.FrameStatusChanged += OnDesignPreviewFrameStatusChanged;
 
         WrapPreviewSetup(previewSetupHost);
-        previewInputsHost.Content = _designInputsPanel;
         designPreviewHost.Content = _designPreviewPane;
         AttachControlEvents();
         _designContextText.Cursor = new Cursor(StandardCursorType.Hand);

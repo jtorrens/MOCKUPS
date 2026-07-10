@@ -1,12 +1,6 @@
-using Avalonia;
-using Avalonia.Controls;
-using Avalonia.Controls.Primitives;
-using Avalonia.Layout;
-using Avalonia.Media;
 using Avalonia.Threading;
 using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
-using SukiUI.Controls;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -17,18 +11,15 @@ using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed class ComponentInputsPanel : ContentControl
+internal sealed class ComponentInputsPanel
 {
     private readonly SpikeDatabase _database;
     private readonly ComponentPreviewRecordInputResolver _recordInputResolver;
     private readonly Action _refreshPreview;
     private readonly Func<Task<bool>>? _preparePlaybackFrames;
-    private readonly Window _owner;
     private readonly DispatcherTimer _playbackTimer;
     private readonly Dictionary<string, string> _values = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _inputDefaults = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, DictionaryFieldControl> _booleanInputs = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, Button> _actionButtons = new(StringComparer.Ordinal);
     private string _scopeKey = "";
     private string _projectId = "";
     private string _inputSignature = "";
@@ -36,101 +27,73 @@ internal sealed class ComponentInputsPanel : ContentControl
     private IReadOnlyList<ComponentPreviewActionDefinition> _actions = [];
     private string _activeActionId = "";
     private JsonObject _config = [];
-    private bool _isUpdating;
     private string _preparingActionId = "";
     private int _playbackFrameRate = 25;
 
     public ComponentInputsPanel(
         SpikeDatabase database,
         Action refreshPreview,
-        Window owner,
         Func<Task<bool>>? preparePlaybackFrames = null)
     {
         _database = database;
         _recordInputResolver = new ComponentPreviewRecordInputResolver(database);
         _refreshPreview = refreshPreview;
         _preparePlaybackFrames = preparePlaybackFrames;
-        _owner = owner;
         _playbackTimer = new DispatcherTimer
         {
             Interval = TimeSpan.FromMilliseconds(1000.0 / 50),
         };
         _playbackTimer.Tick += (_, _) => AdvancePlaybackFrame();
-        IsVisible = false;
     }
 
     public void UpdateForPayload(DesignPreviewPayload? payload, string? projectId)
     {
-        _isUpdating = true;
-        try
+        if (payload is null || !SupportsInputs(payload) || string.IsNullOrWhiteSpace(projectId))
         {
-            if (payload is null || !SupportsInputs(payload) || string.IsNullOrWhiteSpace(projectId))
-            {
-                IsVisible = false;
-                _scopeKey = "";
-                _projectId = "";
-                _inputSignature = "";
-                _testValuesSignature = "";
-                Content = null;
-                _actions = [];
-                _activeActionId = "";
-                _config = [];
-                StopPlayback();
-                return;
-            }
-
-            ApplyProjectFrameRate(projectId);
-            var preview = ParseJsonObject(payload.DesignPreviewJson);
-            var config = ParseJsonObject(payload.ConfigJson);
-            _config = config;
-            var inputs = ReadRuntimeInputs(preview, config);
-            _actions = ComponentPreviewActions.Read(preview);
-            if (inputs.Count == 0)
-            {
-                IsVisible = false;
-                _scopeKey = "";
-                _projectId = "";
-                _inputSignature = "";
-                _actions = [];
-                _activeActionId = "";
-                Content = null;
-                _config = [];
-                StopPlayback();
-                return;
-            }
-
-            IsVisible = true;
-            var scopeKey = ScopeKey(payload);
-            var inputSignature = string.Join("|", inputs.Select(InputSignature).Concat(_actions.Select(ActionSignature)));
-            var testValuesSignature = preview["testValues"]?.ToJsonString() ?? "";
-            if (scopeKey == _scopeKey && testValuesSignature != _testValuesSignature)
-            {
-                _values.Clear();
-            }
-            var shouldRebuild = scopeKey != _scopeKey
-                || projectId != _projectId
-                || inputSignature != _inputSignature
-                || Content is null;
-            _scopeKey = scopeKey;
-            _projectId = projectId;
-            _inputSignature = inputSignature;
-            _testValuesSignature = testValuesSignature;
-            foreach (var input in inputs)
-            {
-                EnsureValue(input, preview);
-            }
-            EnsureActionValues(preview);
-            EnsureRecordReferenceValues(inputs, projectId);
-            if (shouldRebuild)
-            {
-                RebuildCard(inputs, projectId);
-            }
-            SyncPlaybackTimer();
+            _scopeKey = "";
+            _projectId = "";
+            _inputSignature = "";
+            _testValuesSignature = "";
+            _actions = [];
+            _activeActionId = "";
+            _config = [];
+            StopPlayback();
+            return;
         }
-        finally
+
+        ApplyProjectFrameRate(projectId);
+        var preview = ParseJsonObject(payload.DesignPreviewJson);
+        var config = ParseJsonObject(payload.ConfigJson);
+        _config = config;
+        var inputs = ReadRuntimeInputs(preview, config);
+        _actions = ComponentPreviewActions.Read(preview);
+        if (inputs.Count == 0)
         {
-            _isUpdating = false;
+            _scopeKey = "";
+            _projectId = "";
+            _inputSignature = "";
+            _actions = [];
+            _activeActionId = "";
+            _config = [];
+            StopPlayback();
+            return;
         }
+
+        var scopeKey = ScopeKey(payload);
+        var inputSignature = string.Join("|", inputs.Select(InputSignature).Concat(_actions.Select(ActionSignature)));
+        var testValuesSignature = preview["testValues"]?.ToJsonString() ?? "";
+        if (scopeKey == _scopeKey && testValuesSignature != _testValuesSignature) _values.Clear();
+        _scopeKey = scopeKey;
+        _projectId = projectId;
+        _inputSignature = inputSignature;
+        _testValuesSignature = testValuesSignature;
+        foreach (var input in inputs)
+        {
+            EnsureValue(input, preview);
+        }
+        EnsureActionValues(preview);
+        EnsureRecordReferenceValues(inputs, projectId);
+        SyncPlaybackTimer();
     }
 
     public bool IsPlaybackActive => SupportsPlayback()
@@ -157,161 +120,6 @@ internal sealed class ComponentInputsPanel : ContentControl
 
         _values[$"{_scopeKey}:{jsonKey}"] = value;
         _refreshPreview();
-    }
-
-    private void RebuildCard(IReadOnlyList<ComponentInputDefinition> inputs, string projectId)
-    {
-        var contentPanel = new StackPanel
-        {
-            Spacing = 10,
-        };
-        _booleanInputs.Clear();
-
-        var ownInputs = ComponentInputGrouping.OwnInputs(inputs);
-        var embeddedGroups = ComponentInputGrouping.EmbeddedGroups(inputs);
-
-        if (ownInputs.Count > 0)
-        {
-            contentPanel.Children.Add(CreateInputRowsPanel(ownInputs, projectId, maxVisibleRows: 5));
-        }
-
-        foreach (var groupId in ComponentInputGrouping.TopLevelGroupIds(embeddedGroups))
-        {
-            contentPanel.Children.Add(CreateEmbeddedGroupCard(groupId, embeddedGroups, projectId));
-        }
-
-        var icon = EditorIcons.Create(EditorIcons.Design, 18);
-        Content = new GlassCard
-        {
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            Content = new InstantEditorCard(
-                CreateHeader(icon),
-                new Border
-                {
-                    Padding = new Thickness(10),
-                    Child = contentPanel,
-                },
-                isExpanded: true),
-        };
-        UpdateActionButtons();
-    }
-
-    private Control CreateEmbeddedGroupCard(
-        string groupId,
-        IReadOnlyDictionary<string, List<ComponentInputDefinition>> groupsById,
-        string projectId)
-    {
-        var groupInputs = groupsById[groupId];
-        var contentPanel = new StackPanel
-        {
-            Spacing = 10,
-        };
-        if (groupInputs.Count > 0)
-        {
-            contentPanel.Children.Add(CreateInputRowsPanel(groupInputs, projectId, maxVisibleRows: 5));
-        }
-
-        foreach (var childGroupId in ComponentInputGrouping.ChildGroupIds(groupId, groupsById))
-        {
-            contentPanel.Children.Add(CreateEmbeddedGroupCard(childGroupId, groupsById, projectId));
-        }
-
-        return EditorGroupBlock.CreateCollapsible(
-            EditorCardHeader.Create(ComponentInputGrouping.GroupLabel(groupInputs), "Embedded control inputs", EditorIcons.Create(EditorIcons.Component, 16)),
-            contentPanel);
-    }
-
-    private Control CreateInputRowsPanel(
-        IReadOnlyList<ComponentInputDefinition> inputs,
-        string projectId,
-        int maxVisibleRows)
-    {
-        var rowsPanel = new StackPanel
-        {
-            Spacing = 8,
-        };
-        foreach (var input in inputs)
-        {
-            rowsPanel.Children.Add(CreateInputRow(input, projectId));
-        }
-
-        return new ScrollViewer
-        {
-            MaxHeight = maxVisibleRows * 46,
-            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-            Content = rowsPanel,
-        };
-    }
-
-    private Control CreateHeader(Control icon)
-    {
-        var header = new Grid
-        {
-            ColumnDefinitions = new ColumnDefinitions("*,Auto"),
-            ColumnSpacing = 10,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        header.Children.Add(EditorCardHeader.Create("Inputs", "Component input values", icon));
-        _actionButtons.Clear();
-        if (SupportsPlayback())
-        {
-            var actions = new StackPanel
-            {
-                Orientation = Orientation.Horizontal,
-                Spacing = 6,
-                HorizontalAlignment = HorizontalAlignment.Right,
-                VerticalAlignment = VerticalAlignment.Center,
-            };
-
-            foreach (var action in _actions)
-            {
-                var button = new Button
-                {
-                    Width = 118,
-                    MinWidth = 118,
-                    HorizontalAlignment = HorizontalAlignment.Right,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    ClipToBounds = true,
-                    Content = CreateActionButtonContent(action, false, false),
-                };
-                ToolTip.SetTip(button, action.Label);
-                button.Click += (_, args) =>
-                {
-                    args.Handled = true;
-                    TogglePlayback(action);
-                };
-                _actionButtons[action.Id] = button;
-                actions.Children.Add(button);
-            }
-
-            Grid.SetColumn(actions, 1);
-            header.Children.Add(actions);
-        }
-
-        return header;
-    }
-
-    private static Control CreateActionButtonContent(
-        ComponentPreviewActionDefinition action,
-        bool isLoading,
-        bool isPlaying)
-    {
-        var content = new Grid
-        {
-            ColumnDefinitions = new ColumnDefinitions("Auto,*"),
-            ColumnSpacing = 6,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        content.Children.Add(EditorIcons.Create(isPlaying ? EditorIcons.Pause : EditorIcons.Play, 12));
-        var label = new TextBlock
-        {
-            Text = isLoading ? "Loading" : isPlaying ? "Pause" : action.Label,
-            TextTrimming = TextTrimming.CharacterEllipsis,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        Grid.SetColumn(label, 1);
-        content.Children.Add(label);
-        return content;
     }
 
     public DesignPreviewPayload ApplyInputs(DesignPreviewPayload payload, string themeMode, string? projectId)
@@ -390,88 +198,6 @@ internal sealed class ComponentInputsPanel : ContentControl
     private static bool SupportsInputs(DesignPreviewPayload payload)
     {
         return payload.Kind is "componentClass" or "module";
-    }
-
-    private Control CreateInputRow(ComponentInputDefinition input, string projectId)
-    {
-        return CreateDictionaryInput(input, projectId);
-    }
-
-    private Control CreateDictionaryInput(ComponentInputDefinition input, string projectId)
-    {
-        var field = new DictionaryFieldControl(
-            new FieldValue(
-                CreateFieldDefinition(input, projectId),
-                Value(input)),
-            CreateDictionaryServices(projectId));
-        if (input.Kind == ComponentInputKind.Boolean)
-        {
-            _booleanInputs[StorageKey(input)] = field;
-        }
-
-        field.ValueChanged += (_, value) =>
-        {
-            if (_isUpdating) return;
-            SetValue(input, value);
-        };
-        field.ValueCommitted += (_, value) =>
-        {
-            if (_isUpdating) return;
-            SetValue(input, value);
-        };
-        return field;
-    }
-
-    private FieldDefinition CreateFieldDefinition(ComponentInputDefinition input, string projectId)
-    {
-        return new FieldDefinition(
-            input.Id,
-            input.Label,
-            input.ValueKind,
-            DefaultValue: input.DefaultValue,
-            Options: input.ValueKind switch
-            {
-                ValueKind.RecordReference => RecordReferenceOptions(input, projectId),
-                ValueKind.ComponentPreset => ComponentPresetOptions(input, projectId),
-                ValueKind.PaletteColorToken => _database.GetPaletteColorOptions(projectId),
-                _ => input.Options,
-            },
-            PairLabels: input.ValueKind == ValueKind.IntegerPair ? input.PairLabels : null,
-            Number: input.ValueKind is ValueKind.Decimal or ValueKind.Integer or ValueKind.Alpha
-                ? new NumberDefinition(input.Minimum, input.Maximum, input.Increment, input.ValueKind == ValueKind.Integer ? 0 : 2)
-                : null,
-            RecordReference: input.ValueKind == ValueKind.RecordReference
-                ? new RecordReferenceDefinition(input.TableId)
-                : null);
-    }
-
-    private DictionaryFieldServices CreateDictionaryServices(string projectId)
-    {
-        return new DictionaryFieldServices(
-            BrowsePath: (currentValue, valueKind) => BrowseInputPath(projectId, currentValue, valueKind),
-            ShowIconTokenPicker: (currentValue, allowMultiple) =>
-                new IconTokenPickerDialog(_owner, _database).Show(projectId, currentValue, allowMultiple),
-            ShowThemeTokenPicker: (currentValue, allowedOptions) =>
-                new ThemeTokenPickerDialog(_owner, _database).Show(projectId, currentValue, allowedOptions),
-            CreateIconPreview: (token) =>
-                SvgIconPreview.CreateProjectIconTokenPreview(_database, projectId, token, 18),
-            GetPaletteColorOptions: () =>
-                _database.GetPaletteColorOptions(projectId),
-            GetComponentPresetOptions: (componentType) =>
-                _database.GetComponentPresetReferenceOptionsByType(projectId, componentType));
-    }
-
-    private Task<string?> BrowseInputPath(string projectId, string currentValue, ValueKind valueKind)
-    {
-        var mediaRoot = string.IsNullOrWhiteSpace(projectId)
-            ? ""
-            : _database.GetProjectSettings(projectId).MediaRoot;
-        return valueKind switch
-        {
-            ValueKind.ImageFilePath => EditorPathBrowser.BrowseImageFile(_owner.StorageProvider, currentValue, mediaRoot),
-            ValueKind.MediaFilePath => EditorPathBrowser.BrowseMediaFile(_owner.StorageProvider, currentValue, mediaRoot),
-            _ => Task.FromResult<string?>(null),
-        };
     }
 
     private void EnsureValue(ComponentInputDefinition input, JsonObject preview)
@@ -663,33 +389,6 @@ internal sealed class ComponentInputsPanel : ContentControl
         return _values.TryGetValue(StorageKey(input), out var value) ? value : input.DefaultValue;
     }
 
-    private void SetValue(ComponentInputDefinition input, string value)
-    {
-        var action = ActionForPlayInput(input.Id);
-        var startsPlayback = action is not null && StringToBool(value);
-        if (action is not null)
-        {
-            if (startsPlayback)
-            {
-                _ = StartPlaybackAsync(action);
-                return;
-            }
-
-            SetPlaybackState(action, false);
-        }
-        else
-        {
-            _values[StorageKey(input)] = value;
-        }
-
-        foreach (var durationAction in _actions.Where((candidate) => candidate.DurationInputId == input.Id))
-        {
-            ClampCurrentPlaybackToDuration(durationAction);
-        }
-        SyncPlaybackTimer();
-        _refreshPreview();
-    }
-
     private string StorageKey(ComponentInputDefinition input)
     {
         return $"{_scopeKey}:{input.JsonKey}";
@@ -769,18 +468,7 @@ internal sealed class ComponentInputsPanel : ContentControl
         _refreshPreview();
     }
 
-    private void UpdateActionButtons()
-    {
-        foreach (var action in _actions)
-        {
-            if (!_actionButtons.TryGetValue(action.Id, out var button))
-            {
-                continue;
-            }
-
-            button.Content = CreateActionButtonContent(action, _preparingActionId == action.Id, IsPlaying(action));
-        }
-    }
+    private static void UpdateActionButtons() { }
 
     private async Task StartPlaybackAsync(ComponentPreviewActionDefinition action)
     {
@@ -1057,30 +745,12 @@ internal sealed class ComponentInputsPanel : ContentControl
             ?? _actions.FirstOrDefault();
     }
 
-    private ComponentPreviewActionDefinition? ActionForPlayInput(string inputId)
-    {
-        return _actions.FirstOrDefault((action) => action.PlayInputId == inputId);
-    }
-
     private string InputDefault(string key, string defaultValue)
     {
         return _inputDefaults.GetValueOrDefault(key, defaultValue);
     }
 
-    private void SyncBooleanInput(string key)
-    {
-        if (!_booleanInputs.TryGetValue(key, out var input)) return;
-
-        _isUpdating = true;
-        try
-        {
-            input.SetValue(_values.GetValueOrDefault(key, InputDefault(key, "false")));
-        }
-        finally
-        {
-            _isUpdating = false;
-        }
-    }
+    private static void SyncBooleanInput(string key) { }
 
     private static double ParseDouble(string? value)
     {

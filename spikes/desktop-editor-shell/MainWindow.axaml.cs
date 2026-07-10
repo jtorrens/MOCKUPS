@@ -74,7 +74,6 @@ public partial class MainWindow : SukiWindow
             PreviewOrientationComboBox,
             _messages,
             PreviewSetupHost,
-            PreviewInputsHost,
             PreviewBusyHost,
             DesignPreviewHost,
             PreviewContextTextBlock,
