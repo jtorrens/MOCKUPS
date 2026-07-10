@@ -6,7 +6,7 @@
                  xmlns:suki="clr-namespace:SukiUI.Controls;assembly=SukiUI"
                  mc:Ignorable="d" d:DesignWidth="1440" d:DesignHeight="900"
                  x:Class="Mockups.DesktopEditorShell.MainWindow"
-        Title="Mockups Desktop Editor Shell · Design / Production · v0.316.3"
+        Title="Mockups Desktop Editor Shell · Design / Production · v0.316.4"
                  Width="1440"
                  Height="900"
                  MinWidth="1040"
@@ -22,26 +22,24 @@
                 Padding="18,12">
             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="18" VerticalAlignment="Center">
                 <StackPanel Grid.Column="0" Spacing="4">
-                    <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                        <TextBlock FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" Text="MOCKUPS DESKTOP EDITOR · v0.316.3" />
+                    <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
                         <Button x:Name="DesignWorkspaceButton"
                                 Content="Design"
                                 MinWidth="100"
-                                MinHeight="32"
-                                FontSize="15"
-                                FontWeight="SemiBold"
+                                MinHeight="34"
+                                FontSize="17"
+                                FontWeight="Bold"
                                 Padding="12,4"
                                 BorderThickness="1" />
                         <Button x:Name="ProductionWorkspaceButton"
                                 Content="Production"
                                 MinWidth="124"
-                                MinHeight="32"
-                                FontSize="15"
-                                FontWeight="SemiBold"
+                                MinHeight="34"
+                                FontSize="17"
+                                FontWeight="Bold"
                                 Padding="12,4"
                                 BorderThickness="1" />
                     </StackPanel>
-                    <TextBlock FontSize="17" FontWeight="Bold" Text="Design system and production workspace" />
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                     <Button x:Name="UsageRefreshButton"
@@ -82,24 +80,36 @@
                                         Width="30"
                                         Height="34"
                                         Padding="0"
+                                        BorderThickness="0"
+                                        Background="Transparent"
+                                        BorderBrush="Transparent"
                                         IsEnabled="False" />
                                 <Button x:Name="ProductionDuplicateButton"
                                         Grid.Column="3"
                                         Width="30"
                                         Height="34"
                                         Padding="0"
+                                        BorderThickness="0"
+                                        Background="Transparent"
+                                        BorderBrush="Transparent"
                                         IsEnabled="False" />
                                 <Button x:Name="ProductionDeleteButton"
                                         Grid.Column="4"
                                         Width="30"
                                         Height="34"
                                         Padding="0"
+                                        BorderThickness="0"
+                                        Background="Transparent"
+                                        BorderBrush="Transparent"
                                         IsEnabled="False" />
                                 <Button x:Name="ProductionEditButton"
                                         Grid.Column="1"
                                         Width="30"
                                         Height="34"
-                                        Padding="0" />
+                                        Padding="0"
+                                        BorderThickness="0"
+                                        Background="Transparent"
+                                        BorderBrush="Transparent" />
                             </Grid>
                         </StackPanel>
                     </Border>

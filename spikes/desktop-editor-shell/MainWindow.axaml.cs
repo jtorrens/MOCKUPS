@@ -1,6 +1,7 @@
 using Mockups.DesktopEditorShell.Data;
 using Mockups.DesktopEditorShell.EditorShell;
 using Mockups.DesktopEditorShell.Common;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using SukiUI.Controls;
@@ -467,7 +468,7 @@ public partial class MainWindow : SukiWindow
     private void UpdateWorkspaceButtons()
     {
         var activeBrush = new SolidColorBrush(Color.Parse(_themeController.IsDark ? "#F0B429" : "#A56600"));
-        var inactiveBrush = EditorSukiWindowTheme.AccentBrush();
+        var inactiveBrush = new SolidColorBrush(Color.Parse(_themeController.IsDark ? "#9CA3AF" : "#6B7280"));
         ApplyWorkspaceButton(DesignWorkspaceButton, _workspace == EditorWorkspace.Design, activeBrush, inactiveBrush);
         ApplyWorkspaceButton(ProductionWorkspaceButton, _workspace == EditorWorkspace.Production, activeBrush, inactiveBrush);
         ProductionPickerGrid.IsVisible = _workspace == EditorWorkspace.Production;
@@ -532,6 +533,7 @@ public partial class MainWindow : SukiWindow
         var brush = isActive ? activeBrush : inactiveBrush;
         button.Foreground = brush;
         button.BorderBrush = brush;
+        button.BorderThickness = new Thickness(1);
         button.Background = Brushes.Transparent;
     }
 
