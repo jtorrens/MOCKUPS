@@ -272,6 +272,18 @@ for (const removedLegacyPath of [
   }
 }
 
+for (const filePath of walkFiles(previewRoot)) {
+  const source = readFileSync(filePath, "utf8");
+  for (const legacyImport of ["../domain/", "../persistence/"]) {
+    if (source.includes(legacyImport)) {
+      addViolation(
+        relative(filePath),
+        `desktop preview must not import active behavior from historical ${legacyImport} code`,
+      );
+    }
+  }
+}
+
 assertNoTerms("src/desktop-preview/renderDesignPreviewHtml.tsx", [
   "label",
   "avatar",
