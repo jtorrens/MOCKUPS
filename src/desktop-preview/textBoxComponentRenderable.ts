@@ -290,7 +290,7 @@ export function textBoxComponentToRenderableAt(
   const wrappedLines = approximateWrappedTextLines(
     size.contentText,
     size.typography.fontSize,
-    Math.max(1, textFrame.width),
+    safeWrapWidth(textFrame.width),
   );
   const iconY = (iconHeight: number) =>
     wrappedLines.length <= 1
