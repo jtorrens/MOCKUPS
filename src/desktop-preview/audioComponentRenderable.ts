@@ -5,7 +5,6 @@ import { buttonIconComponentToRenderableAt } from "./buttonIconComponentRenderab
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
   boundedCenterBox,
-  expandBoxXY,
   numberToken,
   placeChild,
   renderScale,
@@ -41,9 +40,14 @@ export function audioComponentToRenderable(
   const playSize = Math.max(1, audio.playCircleSize * scale);
   const playIconPadding = Math.max(0, numberToken(payload, audio.playIconPaddingToken) * scale);
   const barCount = Math.max(4, Math.round(audio.waveformBarCount));
-  const waveformGap = Math.max(0, numberToken(payload, audio.waveformGapToken) * scale);
-  const barWidth = Math.max(1, audio.waveformBarWidth * scale);
-  const waveformWidth = barCount * barWidth + (barCount - 1) * waveformGap;
+  const availableWidth = Math.max(1, audio.availableWidth * scale);
+  const preferredWaveformGap = Math.max(0, numberToken(payload, audio.waveformGapToken) * scale);
+  const waveformWidth = Math.max(1, availableWidth - paddingX * 2 - playSize - paddingX);
+  const waveformGap = Math.min(
+    preferredWaveformGap,
+    waveformWidth / Math.max(1, barCount * 2 - 1),
+  );
+  const barWidth = Math.max(1, (waveformWidth - (barCount - 1) * waveformGap) / barCount);
   const minBarHeight = Math.max(1, audio.waveformMinHeight * scale);
   const maxBarHeight = Math.max(minBarHeight, audio.waveformMaxHeight * scale);
   const knobSize = audio.progressKnobSize * scale;
@@ -107,7 +111,12 @@ export function audioComponentToRenderable(
   if (avatarNodeLocal?.box) childBoxes.push(avatarNodeLocal.box);
   if (badgeNodeLocal?.box) childBoxes.push(badgeNodeLocal.box);
   const childrenBounds = unionBoxes(childBoxes);
-  const audioBoxLocal = expandBoxXY(childrenBounds, paddingX, paddingY);
+  const audioBoxLocal = {
+    x: 0,
+    y: childrenBounds.y - paddingY,
+    width: availableWidth,
+    height: childrenBounds.height + paddingY * 2,
+  };
   const localBounds = audioBoxLocal;
   const groupBox = boundedCenterBox(payload, localBounds.width, localBounds.height);
   const origin = {

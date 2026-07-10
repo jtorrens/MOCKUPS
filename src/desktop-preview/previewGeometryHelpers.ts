@@ -2,10 +2,19 @@ import type { RenderableBox, RenderableNode } from "../visual/renderable/types.j
 import type { AlignmentPlacementContract } from "./previewComponentContracts.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 
+export const referenceDesignWidth = 360;
+
 export function renderScale(payload: DesignPreviewPayload) {
-  const scale = payload.previewFrame.scaleToPixels;
-  return typeof scale === "number" && Number.isFinite(scale) && scale > 0
-    ? scale
+  const screenWidth = payload.previewFrame.screenWidth;
+  if (typeof screenWidth === "number" && Number.isFinite(screenWidth) && screenWidth > 0) {
+    return screenWidth / referenceDesignWidth;
+  }
+
+  const deviceToRenderScale = payload.previewFrame.scaleToPixels;
+  return typeof deviceToRenderScale === "number"
+    && Number.isFinite(deviceToRenderScale)
+    && deviceToRenderScale > 0
+    ? deviceToRenderScale
     : 1;
 }
 

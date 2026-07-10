@@ -8,6 +8,7 @@ import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
 
 export interface AudioDesignContract {
   id: string;
+  availableWidth: number;
   playback: {
     durationSeconds: number;
     currentTimeSeconds: number;

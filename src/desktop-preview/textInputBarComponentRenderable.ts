@@ -23,9 +23,13 @@ export function textInputBarComponentToRenderable(
   const scale = renderScale(payload);
   const height = Math.max(1, textInput.height * scale);
   const screenBox = previewScreenBox(payload);
+  const barWidth = Math.min(
+    screenBox.width,
+    Math.max(1, textInput.availableWidth * scale),
+  );
   const barPaddingX = Math.max(0, numberToken(payload, textInput.barPadding.xToken) * scale);
   const barPaddingY = Math.max(0, numberToken(payload, textInput.barPadding.yToken) * scale);
-  const width = Math.max(1, screenBox.width - barPaddingX * 2);
+  const width = Math.max(1, barWidth - barPaddingX * 2);
   const leftIconRow = textInput.iconBar.rows.left;
   const rightIconRow = textInput.iconBar.rows.right;
   const centerIconRow = textInput.iconBar.rows.center;
@@ -62,9 +66,9 @@ export function textInputBarComponentToRenderable(
     rightIconSize.height,
   );
   const barBox = {
-    x: screenBox.x,
+    x: screenBox.x + (screenBox.width - barWidth) / 2,
     y: screenBox.y + (screenBox.height - fieldHeight - barPaddingY * 2) / 2,
-    width: screenBox.width,
+    width: barWidth,
     height: fieldHeight + barPaddingY * 2,
   };
   const textLineCount = Math.max(1, measuredTextBoxSize.contentLineCount);

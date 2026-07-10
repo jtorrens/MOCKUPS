@@ -81,9 +81,14 @@ export function resolveAudioComponentFromRecords(
     ),
     durationSeconds,
   );
+  const availableWidth = Math.max(
+    1,
+    requiredNumber(inputs, "availableWidth", "component.audio.input.availableWidth"),
+  );
 
   return {
     id,
+    availableWidth,
     playback: {
       durationSeconds,
       currentTimeSeconds,
@@ -159,7 +164,7 @@ export function resolveAudioComponentFromRecords(
     ),
     surface: resolveSurfaceComponentAtSize(
       surfaceConfig,
-      { width: 240, height: 72 },
+      { width: availableWidth, height: 1 },
       "component.audio.surface",
     ),
     avatarSlot: {

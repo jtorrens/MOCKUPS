@@ -758,6 +758,7 @@ internal sealed partial class SpikeDatabase
             ],
             "textInputBar" =>
             [
+                ComponentInput("availableWidth", "Available width", "availableWidth", "number", "360", minimum: 1, maximum: 10000, increment: 1),
                 ComponentInput("sampleText", "Text", "sampleText", ValueKind.StringMultiline, "Message", uiOrigin: "embedded", uiGroupId: "textBox", uiGroupLabel: "Text box"),
             ],
             "keyboard" =>
@@ -768,6 +769,7 @@ internal sealed partial class SpikeDatabase
             ],
             "audio" =>
             [
+                ComponentInput("availableWidth", "Available width", "availableWidth", "number", "240", minimum: 1, maximum: 10000, increment: 1),
                 ComponentInput("isPlaying", "Playing", "isPlaying", "boolean", "false"),
                 ComponentInput("durationSeconds", "Duration", "durationSeconds", "number", "65", minimum: 1, maximum: 86400, increment: 1),
                 ComponentInput(

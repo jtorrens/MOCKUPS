@@ -5,6 +5,7 @@ import type { TextBoxDesignContract } from "./textBoxComponentContract.js";
 
 export interface TextInputBarDesignContract {
   id: string;
+  availableWidth: number;
   height: number;
   barPadding: SpacingPairContract;
   barSurface: SurfaceDesignContract;

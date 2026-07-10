@@ -47,6 +47,10 @@ export function resolveTextInputBarComponent(
     "sampleText",
     "component.textInput.preview.sampleText",
   );
+  const availableWidth = Math.max(
+    1,
+    requiredNumber(preview, "availableWidth", "component.textInputBar.input.availableWidth"),
+  );
   const isTyping = sampleText.trim().length > 0;
   const height = requiredNumber(textInput, "height", "component.textInput.height");
   const embeddedBarSurfaceConfig = mergeComponentDefaults(
@@ -68,6 +72,7 @@ export function resolveTextInputBarComponent(
 
   return {
     id: "component.textInputBar",
+    availableWidth,
     height,
     barPadding: toSpacingPair(requiredStringPair(
       textInput,
@@ -76,7 +81,7 @@ export function resolveTextInputBarComponent(
     )),
     barSurface: resolveSurfaceComponentAtSize(
       embeddedBarSurfaceConfig,
-      { width: 520, height },
+      { width: availableWidth, height },
       "component.textInputBar.barSurface",
     ),
     iconGapToken: requiredString(textInput, "iconGap", "component.textInput.iconGap"),
@@ -84,7 +89,7 @@ export function resolveTextInputBarComponent(
       embeddedIconBarConfig,
       {
         state: isTyping ? "active" : "idle",
-        size: `520|${height}`,
+        size: `${availableWidth}|${height}`,
       },
       componentBaseConfigs,
       "component.textInputBar.iconBar",
@@ -121,8 +126,8 @@ export function resolveTextInputBarComponent(
           "iconGap",
           "component.textInput.textBox.iconGap",
         ),
-        size: `520|${height}`,
-        maxWidth: 520,
+        size: `${availableWidth}|${height}`,
+        maxWidth: availableWidth,
       },
       componentBaseConfigs,
       "component.textInputBar.textBox",

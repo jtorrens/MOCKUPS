@@ -243,7 +243,7 @@ export function resolveBubbleComponent(
       audio: audioConfig
         ? resolveAudioComponentFromRecords(
             audioConfig,
-            bubbleAudioInputs(preview, actorPreview),
+            bubbleAudioInputs(preview, actorPreview, maxWidth),
             componentBaseConfigs,
             "component.bubble.audio",
           )
@@ -423,10 +423,12 @@ function bubbleMediaInputs(
 function bubbleAudioInputs(
   preview: Record<string, unknown>,
   actorPreview: ReturnType<typeof resolveBubbleActorPreview>,
+  availableWidth: number,
 ) {
   return {
     ...preview,
     actor: actorPreview,
+    availableWidth,
     isPlaying: optionalBoolean(preview, "isPlaying"),
     durationSeconds: Math.max(1, optionalNumber(preview, "durationSeconds", 65)),
     currentTimeSeconds: optionalNumber(preview, "currentTimeSeconds", 0),

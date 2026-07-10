@@ -126,6 +126,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
         ),
         {
           sampleText: optionalString(preview, "inputText"),
+          availableWidth: screen.width / scale,
         },
         (childPayload) =>
           textInputBarComponentToRenderable(
