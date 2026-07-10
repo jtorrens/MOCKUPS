@@ -102,6 +102,7 @@ internal sealed class ProjectTreeNode
         || (Kind == ProjectTreeNodeKind.ComponentPreset && !IsProtected);
     public bool CanDelete => Kind is ProjectTreeNodeKind.App
         or ProjectTreeNodeKind.Module
+        or ProjectTreeNodeKind.ModuleInstance
         or ProjectTreeNodeKind.Episode
         or ProjectTreeNodeKind.Shot
         or ProjectTreeNodeKind.PaletteColor

@@ -65,51 +65,15 @@ internal sealed class EditorNavigationRenderer
                 continue;
             }
 
-            if (workspace == EditorWorkspace.Production)
-            {
-                AddProductionEpisodes(target, project);
-            }
-            else
+            if (workspace != EditorWorkspace.Production)
             {
                 target.Children.Add(CreateNavigationRow(project, EditorIcons.ForTreeNode(project.Kind)));
             }
 
             foreach (var root in EditorWorkspaceNavigation.SectionRoots(project, workspace))
             {
-                if (workspace == EditorWorkspace.Production
-                    && root.Kind == ProjectTreeNodeKind.EpisodesRoot)
-                {
-                    continue;
-                }
-
                 AddNavigationSection(target, root);
             }
-        }
-    }
-
-    private Control CreateProjectNavigationContent(ProjectTreeNode project)
-    {
-        var panel = new StackPanel
-        {
-            Spacing = 7,
-            Margin = new Thickness(0, 6, 0, 0),
-        };
-
-        var episodesRoot = project.Children.FirstOrDefault((child) => child.Kind == ProjectTreeNodeKind.EpisodesRoot);
-        foreach (var episode in episodesRoot?.Children ?? [])
-        {
-            AddNavigationNode(panel, episode);
-        }
-
-        return panel;
-    }
-
-    private void AddProductionEpisodes(StackPanel target, ProjectTreeNode project)
-    {
-        var episodesRoot = project.Children.FirstOrDefault((child) => child.Kind == ProjectTreeNodeKind.EpisodesRoot);
-        foreach (var episode in episodesRoot?.Children ?? [])
-        {
-            AddNavigationNode(target, episode);
         }
     }
 

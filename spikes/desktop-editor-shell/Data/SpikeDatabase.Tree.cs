@@ -869,6 +869,36 @@ internal sealed partial class SpikeDatabase
             return new ProjectTreeNode(ProjectTreeNodeKind.Shot, id, $"{node.Name} copy", node.Notes, node.RecordClassId, node.Parent);
         }
 
+        if (node.Kind == ProjectTreeNodeKind.ModuleInstance)
+        {
+            var settings = GetModuleInstanceSettings(node.Id);
+            var id = $"module_instance_{Guid.NewGuid():N}";
+            var sortOrder = NextSortOrder(connection, "module_instances", "shot_id", settings.ShotId);
+            Execute(
+                connection,
+                """
+                INSERT INTO module_instances (
+                  id, shot_id, app_id, module_id, name, notes, sort_order, duration_frames,
+                  transition_json, content_json, behavior_json, animation_json, metadata_json)
+                SELECT $id, shot_id, app_id, module_id, $name, notes, $sortOrder, duration_frames,
+                       transition_json, content_json, behavior_json, animation_json, metadata_json
+                FROM module_instances
+                WHERE id = $sourceId
+                """,
+                ("$id", id),
+                ("$name", $"{node.Name} copy"),
+                ("$sortOrder", sortOrder),
+                ("$sourceId", node.Id));
+
+            return new ProjectTreeNode(
+                ProjectTreeNodeKind.ModuleInstance,
+                id,
+                $"{node.Name} copy",
+                node.Notes,
+                node.RecordClassId,
+                node.Parent);
+        }
+
         if (node.Kind == ProjectTreeNodeKind.App)
         {
             var id = $"app_{Guid.NewGuid():N}";
