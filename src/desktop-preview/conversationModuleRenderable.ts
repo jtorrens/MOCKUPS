@@ -323,7 +323,7 @@ function messageNodes(
     conversationFrame,
     optionalString(preview, "bubbleRevealMode") || "duringWriteOn",
   );
-  const nodes = messages.map((message) => childRenderable(
+  const bubbleNode = (message: ConversationPreviewMessage, writeOnTrigger: boolean) => childRenderable(
     payload,
     componentBaseConfigs,
     "bubble",
@@ -334,31 +334,35 @@ function messageNodes(
       actor: preview.actor,
       mediaType: "none",
       maxWidth: optionalNumber(conversation, "bubbleMaxWidth", 66),
-      writeOnTrigger: message.writeOnTrigger,
+      writeOnTrigger,
       writeOnFrame: message.writeOnFrame,
       writeOnDurationFrames: message.writeOnDurationFrames,
       statusState: message.statusState,
       statusText: message.statusText,
     },
     (childPayload) => bubbleComponentToRenderable(childPayload, resolveBubbleComponent(childPayload)),
-  ));
-  const entries = nodes.map((node) => ({
-    node,
-    bounds: renderableVisualBounds(node),
-  }));
-  const totalHeight = entries.reduce((sum, entry) => sum + entry.bounds.height, 0)
-    + Math.max(0, nodes.length - 1) * gap;
+  );
+  const entries = messages.map((message) => {
+    const node = bubbleNode(message, message.writeOnTrigger);
+    const bounds = renderableVisualBounds(node);
+    const finalBounds = message.state === "outgoing" && message.writeOnTrigger
+      ? renderableVisualBounds(bubbleNode(message, false))
+      : bounds;
+    return { node, bounds, finalBounds };
+  });
+  const totalHeight = entries.reduce((sum, entry) => sum + entry.finalBounds.height, 0)
+    + Math.max(0, entries.length - 1) * gap;
   let y = bottom - gutter.y - totalHeight;
   return entries.map((entry, index) => {
-    const { node, bounds } = entry;
+    const { node, bounds, finalBounds } = entry;
     const message = messages[index]!;
     const offsetX = message.state === "outgoing"
-      ? payload.previewFrame.screenX + payload.previewFrame.screenWidth - gutter.x - (bounds.x + bounds.width)
+      ? payload.previewFrame.screenX + payload.previewFrame.screenWidth - gutter.x - (finalBounds.x + finalBounds.width)
       : message.state === "system"
         ? payload.previewFrame.screenX + payload.previewFrame.screenWidth / 2 - (bounds.x + bounds.width / 2)
         : payload.previewFrame.screenX + gutter.x - bounds.x;
     const translated = translateRenderableNode(node, { x: offsetX, y: y - bounds.y });
-    y += bounds.height + gap;
+    y += finalBounds.height + gap;
     return translated;
   });
 }
