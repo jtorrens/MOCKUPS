@@ -37,7 +37,7 @@ internal sealed class RuntimeInputsCollectionEditor
         var owner = ResolveOwner(node);
         var preview = DesignPreviewTestValues.Parse(owner.DesignPreviewJson);
         var config = DesignPreviewTestValues.Parse(owner.ConfigJson);
-        var inputs = ComponentInputsPanel.ReadRuntimeInputs(preview, config);
+        var inputs = ComponentPreviewInputSession.ReadRuntimeInputs(preview, config);
         var actions = ComponentPreviewActions.Read(preview);
         var tabs = new TabControl
         {

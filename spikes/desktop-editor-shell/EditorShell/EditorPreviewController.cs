@@ -56,7 +56,7 @@ internal sealed class EditorPreviewController
     private readonly Popup _designContextHistoryPopup;
     private readonly StackPanel _designContextHistoryItems = new() { Spacing = 1 };
     private readonly DesignWebPreviewPane _designPreviewPane = new();
-    private readonly ComponentInputsPanel _designInputsPanel;
+    private readonly ComponentPreviewInputSession _designInputsPanel;
     private readonly ContentControl _previewBusyHost;
     private readonly EditorLoadingScrim _previewLoadingScrim = new();
     private readonly Border _previewPerformanceDot = new()
@@ -125,7 +125,7 @@ internal sealed class EditorPreviewController
         _previewBusyHost = previewBusyHost;
         _previewBusyHost.Content = _previewLoadingScrim;
         _previewBusyHost.IsVisible = false;
-        _designInputsPanel = new ComponentInputsPanel(database, Refresh, PreparePlaybackFramesAsync);
+        _designInputsPanel = new ComponentPreviewInputSession(database, Refresh, PreparePlaybackFramesAsync);
         _designPreviewPane.FrameStatusChanged += OnDesignPreviewFrameStatusChanged;
 
         WrapPreviewSetup(previewSetupHost);

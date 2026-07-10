@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed class ComponentInputsPanel
+internal sealed class ComponentPreviewInputSession
 {
     private readonly SpikeDatabase _database;
     private readonly ComponentPreviewRecordInputResolver _recordInputResolver;
@@ -30,7 +30,7 @@ internal sealed class ComponentInputsPanel
     private string _preparingActionId = "";
     private int _playbackFrameRate = 25;
 
-    public ComponentInputsPanel(
+    public ComponentPreviewInputSession(
         SpikeDatabase database,
         Action refreshPreview,
         Func<Task<bool>>? preparePlaybackFrames = null)
