@@ -12,11 +12,16 @@ internal sealed class ConversationMessagesCollectionEditor
 {
     private readonly SpikeDatabase _database;
     private readonly Action _onChanged;
+    private readonly Action<ProjectTreeNode> _reloadAndSelect;
 
-    public ConversationMessagesCollectionEditor(SpikeDatabase database, Action onChanged)
+    public ConversationMessagesCollectionEditor(
+        SpikeDatabase database,
+        Action onChanged,
+        Action<ProjectTreeNode> reloadAndSelect)
     {
         _database = database;
         _onChanged = onChanged;
+        _reloadAndSelect = reloadAndSelect;
     }
 
     public InstantEditorCard Create(ProjectTreeNode node)
@@ -33,6 +38,7 @@ internal sealed class ConversationMessagesCollectionEditor
         {
             _database.AddConversationMessage(node.Id);
             _onChanged();
+            _reloadAndSelect(node);
         };
         body.Children.Add(add);
 
@@ -47,7 +53,7 @@ internal sealed class ConversationMessagesCollectionEditor
     {
         var panel = new StackPanel { Spacing = 8 };
         var delete = new Button { Content = EditorIcons.Create(EditorIcons.Delete, 16), HorizontalAlignment = HorizontalAlignment.Right };
-        delete.Click += (_, _) => { _database.DeleteConversationMessage(node.Id, message.Id); _onChanged(); };
+        delete.Click += (_, _) => { _database.DeleteConversationMessage(node.Id, message.Id); _onChanged(); _reloadAndSelect(node); };
         panel.Children.Add(new DockPanel
         {
             Children =
@@ -65,7 +71,7 @@ internal sealed class ConversationMessagesCollectionEditor
         DictionaryFieldControl Field(string label, ValueKind kind, string value, FieldOption[]? options, Action<string> update)
         {
             var control = new DictionaryFieldControl(new FieldValue(new FieldDefinition($"conversation.messages.{message.Id}.{label}", label, kind, DefaultValue: value, Options: options), value), new DictionaryFieldServices());
-            control.ValueCommitted += (_, next) => { update(next); _database.UpdateConversationMessage(node.Id, message.Id, message); _onChanged(); };
+            control.ValueCommitted += (_, next) => { update(next); _database.UpdateConversationMessage(node.Id, message.Id, message); _onChanged(); _reloadAndSelect(node); };
             return control;
         }
     }

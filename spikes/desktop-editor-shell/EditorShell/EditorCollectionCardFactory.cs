@@ -51,7 +51,7 @@ internal sealed class EditorCollectionCardFactory
             ProjectTreeNodeKind.ComponentClass =>
                 CreateComponentClassCollectionCards(node),
             ProjectTreeNodeKind.ModuleInstance =>
-                [new ConversationMessagesCollectionEditor(_database, _onChanged).Create(node)],
+                [new ConversationMessagesCollectionEditor(_database, _onChanged, _reloadAndSelect).Create(node)],
             _ => [],
         };
     }
