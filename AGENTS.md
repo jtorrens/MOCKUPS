@@ -122,3 +122,11 @@ If a change appears to require `if componentType == ...` behavior in the bridge 
 ## When in doubt
 
 Stop and extract. Do not add a local exception to make one editor work.
+
+## Collaboration rule: questions are discussion, not execution
+
+When the user asks a question, answer it and use the turn to refine the
+concept, constraints or alternatives. Do not inspect broadly, edit files, run
+implementation commands or start a new phase merely because an answer suggests
+one. Begin implementation only when the user gives an explicit instruction to
+execute, such as "implement", "start", "continue", "apply" or equivalent.

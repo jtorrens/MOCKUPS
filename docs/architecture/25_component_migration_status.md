@@ -62,6 +62,13 @@ field `migrationStatus`.
 | `media` | component | Structurally migrated | Replaces the old desktop `video` component route. Preview renders an embedded `surface` variant plus separate inline and full-screen top/center/bottom `iconBar` overlays. Runtime inputs cover image/video source type, viewport size, decimal media scale/offset, play/pause, current/duration time, full screen on/off and fullframe orientation. Component motion is the inline-to-fullframe transition, not component entrance, and is launched through a separate generic `Full screen` preview action. Video playback is not owned by the web preview; local video sources are resolved at the requested time into cached frame files and then painted through the same generic image primitive used by still images. |
 | `bubble` | component | Structurally migrated | Embeds `surface`, `textBox`, optional actor `label`, optional actor `avatar`, and an optional selected media attachment slot. Variant data selects `none`, `image`, `video` or `audio`, stores one variant slot for each media kind, and chooses media position relative to text (`top`, `bottom`, `left`, `right`); image/video resolve through `media`, audio resolves through `audio`. Runtime inputs define state (`incoming`, `system`, `outgoing`), max text width as a screen-width percentage, text, actor, write-on timing in frames, status text/state, media source/viewport/playback and media actions. Variant data owns text padding, per-state light/dark palette color pairs, status icons/colors/icon-size token/text-size token, actor label placement and avatar placement. Status text and icons are composed as one bottom-right status block. The parent will own message alignment. The bubble resolver owns state-to-tail mapping: incoming = left tail, system = no tail, outgoing = right tail; tail vertical/geometry stays in the selected surface variant. Text reveal currently uses the shared simple write-on frame helper and is prepared for richer future typing plans. |
 
+## Known Preview Issues
+
+- Message text may occasionally differ between the Test Values control and the
+  rendered preview, especially around emoji or the final wrapped segment. Do
+  not hide it with a truncation fallback. Revisit the generic text measurement,
+  wrapping and clipping path together after the current Production UX pass.
+
 ## Legacy Runtime Paths Removed
 
 The React/debug/remotion runtime route has been removed from this repository.
