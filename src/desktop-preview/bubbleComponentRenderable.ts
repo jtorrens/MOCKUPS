@@ -16,6 +16,7 @@ import {
   cssColorWithAlpha,
   iconTokenStyle,
   placeChild,
+  previewScreenBox,
   renderScale,
   numberToken,
   resolvePaletteColor,
@@ -168,7 +169,7 @@ export function bubbleComponentToRenderable(
     ? mediaNode
     : undefined;
 
-  return {
+  const bubbleNode = {
     id: bubble.id,
     type: "group",
     frame: 0,
@@ -219,7 +220,24 @@ export function bubbleComponentToRenderable(
       ...(bubble.avatarSlot.avatar && avatarBox
         ? [avatarComponentToRenderableAt(payload, bubble.avatarSlot.avatar, avatarBox)]
         : []),
-      ...(fullframeMediaNode ? [fullframeMediaNode] : []),
+    ],
+  } satisfies RenderableNode;
+
+  if (!fullframeMediaNode) {
+    return bubbleNode;
+  }
+
+  return {
+    id: `${bubble.id}.fullframeOverlay`,
+    type: "group",
+    frame: 0,
+    box: previewScreenBox(payload),
+    style: {
+      overflow: "visible",
+    },
+    children: [
+      bubbleNode,
+      fullframeMediaNode,
     ],
   };
 }
