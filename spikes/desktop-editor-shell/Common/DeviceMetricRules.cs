@@ -14,6 +14,8 @@ internal sealed record DevicePreviewMetricValues(
     double ScreenWidth,
     double ScreenHeight,
     double CornerRadius,
+    double CornerRadiusCoefficient,
+    double DesignSafeMarginCoefficient,
     double StatusBarHeight,
     double SafeAreaBottom,
     double ScaleToPixels);
@@ -27,6 +29,8 @@ internal static class DeviceMetricRules
         int renderHeight,
         bool includeDynamicIsland,
         double? cornerRadius = null,
+        double? cornerRadiusCoefficient = null,
+        double? designSafeMarginCoefficient = null,
         string? source = null)
     {
         designWidth = Math.Max(1, designWidth);
@@ -50,6 +54,8 @@ internal static class DeviceMetricRules
             horizontalScale,
             includeDynamicIsland,
             cornerRadius,
+            cornerRadiusCoefficient,
+            designSafeMarginCoefficient,
             source);
     }
 
@@ -59,6 +65,8 @@ internal static class DeviceMetricRules
         double scale,
         bool includeDynamicIsland,
         double? cornerRadius = null,
+        double? cornerRadiusCoefficient = null,
+        double? designSafeMarginCoefficient = null,
         string? source = null)
     {
         width = Math.Max(1, width);
@@ -73,6 +81,8 @@ internal static class DeviceMetricRules
             scale,
             includeDynamicIsland,
             cornerRadius,
+            cornerRadiusCoefficient,
+            designSafeMarginCoefficient,
             source);
     }
 
@@ -84,6 +94,8 @@ internal static class DeviceMetricRules
         double scale,
         bool includeDynamicIsland,
         double? cornerRadius,
+        double? cornerRadiusCoefficient,
+        double? designSafeMarginCoefficient,
         string? source)
     {
         var statusBarHeight = StatusBarHeight(height);
@@ -107,6 +119,24 @@ internal static class DeviceMetricRules
             ["pixelRatio"] = scale,
             ["defaultScreenScale"] = 1,
         };
+
+        if (cornerRadiusCoefficient is > 0 and <= 0.5)
+        {
+            root["frame"] = new JsonObject
+            {
+                ["cornerRadiusCoefficient"] = cornerRadiusCoefficient.Value,
+                ["source"] = "profileFallback",
+            };
+        }
+
+        if (designSafeMarginCoefficient is > 0 and <= 0.5)
+        {
+            root["designGuides"] = new JsonObject
+            {
+                ["safeMarginCoefficient"] = designSafeMarginCoefficient.Value,
+                ["source"] = "profileFallback",
+            };
+        }
 
         if (includeDynamicIsland)
         {
@@ -136,6 +166,8 @@ internal static class DeviceMetricRules
         var screenWidth = RequiredPositiveNumber(metrics, ["screen", "width"]);
         var screenHeight = RequiredPositiveNumber(metrics, ["screen", "height"]);
         var cornerRadius = RequiredNumber(metrics, ["cornerRadius"]);
+        var cornerRadiusCoefficient = OptionalNonNegativeNumber(metrics, ["frame", "cornerRadiusCoefficient"]) ?? 0;
+        var designSafeMarginCoefficient = OptionalNonNegativeNumber(metrics, ["designGuides", "safeMarginCoefficient"]) ?? 0;
         var statusBarHeight = RequiredNumber(metrics, ["statusBar", "height"]);
         var safeAreaBottom = RequiredNumber(metrics, ["safeArea", "bottom"]);
         var scaleToPixels = RequiredPositiveNumber(metrics, ["scaleToPixels"]);
@@ -147,7 +179,9 @@ internal static class DeviceMetricRules
             screenY,
             screenWidth,
             screenHeight,
-            cornerRadius,
+            cornerRadiusCoefficient > 0 ? canvasWidth * cornerRadiusCoefficient : cornerRadius,
+            cornerRadiusCoefficient,
+            designSafeMarginCoefficient,
             statusBarHeight,
             safeAreaBottom,
             scaleToPixels);
@@ -249,6 +283,30 @@ internal static class DeviceMetricRules
             && double.TryParse(text, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsed)
             && double.IsFinite(parsed)
             && parsed > 0)
+        {
+            return parsed;
+        }
+
+        return null;
+    }
+
+    private static double? OptionalNonNegativeNumber(JsonObject metrics, IReadOnlyList<string> path)
+    {
+        var node = JsonPath.Get(metrics, path);
+        if (node is not JsonValue value)
+        {
+            return null;
+        }
+
+        if (value.TryGetValue<double>(out var number) && double.IsFinite(number) && number >= 0)
+        {
+            return number;
+        }
+
+        if (value.TryGetValue<string>(out var text)
+            && double.TryParse(text, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsed)
+            && double.IsFinite(parsed)
+            && parsed >= 0)
         {
             return parsed;
         }

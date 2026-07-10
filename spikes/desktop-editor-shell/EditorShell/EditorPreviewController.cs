@@ -991,6 +991,9 @@ internal sealed class EditorPreviewController
             ScreenY = metrics.ScreenX,
             ScreenWidth = metrics.ScreenHeight,
             ScreenHeight = metrics.ScreenWidth,
+            CornerRadius = metrics.CornerRadiusCoefficient > 0
+                ? metrics.CanvasHeight * metrics.CornerRadiusCoefficient
+                : metrics.CornerRadius,
         };
     }
 

@@ -55,6 +55,8 @@ internal sealed partial class SpikeDatabase
         double ScreenWidth,
         double ScreenHeight,
         double CornerRadius,
+        double CornerRadiusCoefficient,
+        double DesignSafeMarginCoefficient,
         double StatusBarHeight,
         double SafeAreaBottom,
         double ScaleToPixels);

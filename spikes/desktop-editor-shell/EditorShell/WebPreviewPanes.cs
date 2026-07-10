@@ -420,6 +420,15 @@ internal abstract class WebPreviewPane : Grid
                   background-size: 12px 1px;
                 }
 
+                .preview-design-safe-margin {
+                  position: absolute;
+                  z-index: 1;
+                  box-sizing: border-box;
+                  pointer-events: none;
+                  border: 1px solid rgba(48, 151, 255, .84);
+                  box-shadow: 0 0 0 1px rgba(48, 151, 255, .16);
+                }
+
                 .preview-placeholder {
                   width: 100%;
                   height: 100%;
@@ -483,7 +492,7 @@ internal abstract class WebPreviewPane : Grid
                   <div class="preview-scale" id="previewScale">
                     {{bodyContent}}
                   </div>
-                  {{DesignMarksHtml(showDesignMarks)}}
+                  {{DesignMarksHtml(showDesignMarks, width, height, metrics.DesignSafeMarginCoefficient)}}
                   <div aria-hidden="true" class="preview-phone-frame" id="previewPhoneFrame"></div>
                   {{PreviewMetaHtml(showDesignMarks, previewMode, metrics.Name, themeName, themeMode)}}
                 </section>
@@ -770,11 +779,27 @@ internal abstract class WebPreviewPane : Grid
             """;
     }
 
-    private static string DesignMarksHtml(bool showDesignMarks)
+    private static string DesignMarksHtml(
+        bool showDesignMarks,
+        double width,
+        double height,
+        double safeMarginCoefficient)
     {
-        return !showDesignMarks
+        if (!showDesignMarks)
+        {
+            return "";
+        }
+
+        var safeMargin = Math.Max(0, Math.Min(width * safeMarginCoefficient, Math.Min(width, height) * 0.5));
+        var safeInsetX = width <= 0 ? 0 : safeMargin / width * 100;
+        var safeInsetY = height <= 0 ? 0 : safeMargin / height * 100;
+        var safeMarginGuide = safeMargin < 0.5
             ? ""
-            : """
+            : $$"""
+                    <div aria-label="Design safe margin" class="preview-design-safe-margin" style="left:{{Number(safeInsetX)}}%; right:{{Number(safeInsetX)}}%; top:{{Number(safeInsetY)}}%; bottom:{{Number(safeInsetY)}}%"></div>
+                """;
+
+        return $$"""
                   <div aria-hidden="true" class="preview-design-marks">
                     <div class="preview-guide is-vertical is-dashed" style="left:25%"></div>
                     <div class="preview-guide is-vertical" style="left:50%"></div>
@@ -782,6 +807,7 @@ internal abstract class WebPreviewPane : Grid
                     <div class="preview-guide is-horizontal is-dashed" style="top:25%"></div>
                     <div class="preview-guide is-horizontal" style="top:50%"></div>
                     <div class="preview-guide is-horizontal is-dashed" style="top:75%"></div>
+                    {{safeMarginGuide}}
                   </div>
               """;
     }

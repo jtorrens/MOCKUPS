@@ -24,6 +24,8 @@ internal sealed partial class SpikeDatabase
             values.ScreenWidth,
             values.ScreenHeight,
             values.CornerRadius,
+            values.CornerRadiusCoefficient,
+            values.DesignSafeMarginCoefficient,
             values.StatusBarHeight,
             values.SafeAreaBottom,
             values.ScaleToPixels);

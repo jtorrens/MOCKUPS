@@ -187,7 +187,7 @@ internal sealed class DeviceImportDialog
 
             _statusText.Text = "Ready to create.";
             var scale = _selectedDetails.RenderWidth / (double)_selectedDetails.DesignWidth;
-            _previewText.Text = $"Design {_selectedDetails.DesignWidth} x {_selectedDetails.DesignHeight} · render {_selectedDetails.RenderWidth} x {_selectedDetails.RenderHeight} px · scale {scale:0.##} · {_selectedDetails.OsFamily}";
+            _previewText.Text = $"Design {_selectedDetails.DesignWidth} x {_selectedDetails.DesignHeight} · render {_selectedDetails.RenderWidth} x {_selectedDetails.RenderHeight} px · scale {scale:0.##} · {_selectedDetails.OsFamily}\nVisual guide (profile fallback): {DeviceImportMapper.DescribeVisualGuideProfile(_selectedDetails)}";
             _importButton.IsEnabled = true;
         }
         catch (Exception exception)
