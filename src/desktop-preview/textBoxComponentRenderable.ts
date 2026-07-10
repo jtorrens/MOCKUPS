@@ -304,6 +304,9 @@ export function textBoxComponentToRenderableAt(
   const textContentY = wrappedLines.length === 1
       ? textFrame.y + Math.max(0, (textFrame.height - textContentHeight) * 0.5)
       : textFrame.y;
+  const renderedTextY = scrollAnchorsToBottom
+    ? textFrame.y + textFrame.height - textContentHeight
+    : textContentY;
   const textStyle = {
     textColor: textIsEmpty
       ? options.textColors?.placeholderColor
@@ -318,8 +321,7 @@ export function textBoxComponentToRenderableAt(
     lineHeight: size.typography.lineHeight,
     overflow: "visible",
     textAlign: textBox.textAlign,
-    whiteSpace: "pre-line",
-    overflowWrap: "anywhere",
+    whiteSpace: "pre",
   };
   const surfaceNode = options.surfaceVisible === false
     ? undefined
@@ -370,34 +372,20 @@ export function textBoxComponentToRenderableAt(
           justifyContent: scrollAnchorsToBottom ? "flex-end" : undefined,
           overflow: "hidden",
         },
-        children: [
-          scrollAnchorsToBottom
-            ? {
-                id: `${textBox.id}.text`,
-                type: "text",
-                frame: 0,
-                text: size.contentText,
-                style: {
-                  ...textStyle,
-                  width: "100%",
-                },
-                metadata: cursorMetadata,
-              }
-            : {
-                id: `${textBox.id}.text`,
-                type: "text",
-                frame: 0,
-                box: {
-                  x: textFrame.x,
-                  y: textContentY,
-                  width: textFrame.width,
-                  height: Math.max(textFrame.height, textContentHeight),
-                },
-                text: size.contentText,
-                style: textStyle,
-                metadata: cursorMetadata,
-              },
-        ],
+        children: wrappedLines.map((line, index) => ({
+          id: `${textBox.id}.text.${index}`,
+          type: "text" as const,
+          frame: 0,
+          box: {
+            x: textFrame.x,
+            y: renderedTextY + index * lineHeight,
+            width: textFrame.width,
+            height: lineHeight,
+          },
+          text: line,
+          style: textStyle,
+          metadata: index === wrappedLines.length - 1 ? cursorMetadata : undefined,
+        })),
       },
     ],
   };

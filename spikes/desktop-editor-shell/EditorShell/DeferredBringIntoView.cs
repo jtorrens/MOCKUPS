@@ -4,26 +4,45 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using System;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal static class DeferredBringIntoView
 {
+    private static readonly ConditionalWeakTable<ScrollViewer, ScrollHostRequestState> LatestRequestByScrollHost = new();
+    private static long _nextRequestId;
+
     public static void Request(Control control)
     {
+        var requestId = Interlocked.Increment(ref _nextRequestId);
         EventHandler? afterLayout = null;
         afterLayout = (_, _) =>
         {
             control.LayoutUpdated -= afterLayout;
-            Dispatcher.UIThread.Post(() => EnsureVisible(control), DispatcherPriority.Render);
+            QueueEnsureVisible(control, requestId, DispatcherPriority.Render);
         };
         control.LayoutUpdated += afterLayout;
-        Dispatcher.UIThread.Post(() => EnsureVisible(control), DispatcherPriority.Background);
-        DispatcherTimer.RunOnce(() => EnsureVisible(control), TimeSpan.FromMilliseconds(50));
-        DispatcherTimer.RunOnce(() => EnsureVisible(control), TimeSpan.FromMilliseconds(150));
+        QueueEnsureVisible(control, requestId, DispatcherPriority.Background);
+
+        // Nested cards can cause an additional measure/arrange cycle after the
+        // first expansion. Re-check after those cycles settle, but let the most
+        // recently expanded card win when several cards share a scroll host.
+        DispatcherTimer.RunOnce(
+            () => QueueEnsureVisible(control, requestId, DispatcherPriority.Render),
+            TimeSpan.FromMilliseconds(50));
+        DispatcherTimer.RunOnce(
+            () => QueueEnsureVisible(control, requestId, DispatcherPriority.Render),
+            TimeSpan.FromMilliseconds(150));
     }
 
-    private static void EnsureVisible(Control control)
+    private static void QueueEnsureVisible(Control control, long requestId, DispatcherPriority priority)
+    {
+        Dispatcher.UIThread.Post(() => EnsureVisible(control, requestId), priority);
+    }
+
+    private static void EnsureVisible(Control control, long requestId)
     {
         // A card can live inside more than one scroll host. Move the nearest
         // host that can actually scroll vertically, not an outer shell host.
@@ -36,6 +55,13 @@ internal static class DeferredBringIntoView
             control.BringIntoView();
             return;
         }
+
+        var requestState = LatestRequestByScrollHost.GetValue(scrollViewer, static _ => new ScrollHostRequestState());
+        if (requestState.Id > requestId)
+        {
+            return;
+        }
+        requestState.Id = requestId;
 
         var transform = control.TransformToVisual(scrollViewer);
         if (transform is null)
@@ -77,5 +103,10 @@ internal static class DeferredBringIntoView
         var maximum = System.Math.Max(0, scrollViewer.Extent.Height - viewportHeight);
         var nextY = System.Math.Clamp(scrollViewer.Offset.Y + delta, 0, maximum);
         scrollViewer.Offset = new Vector(scrollViewer.Offset.X, nextY);
+    }
+
+    private sealed class ScrollHostRequestState
+    {
+        public long Id { get; set; }
     }
 }
