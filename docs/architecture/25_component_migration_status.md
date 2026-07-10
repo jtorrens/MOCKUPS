@@ -125,6 +125,12 @@ legacy/new fragments.
 - component runtime inputs use generic `recordReference` + `tableId`, not
   specialized record input kinds such as `ActorReference`.
 
+`npm run test` is the active desktop validation path. It builds the desktop
+preview bundle, runs TypeScript, runs this architecture check, and builds the
+Avalonia/Suki desktop editor. Older TypeScript domain, resolver and SQLite
+validations are still available under `legacy:` script names only as historical
+reference while their source files remain archived in place.
+
 Compatibility note:
 
 - schema v1 removes legacy `status_bars` and `navigation_bars` physical tables

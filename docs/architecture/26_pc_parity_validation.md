@@ -57,18 +57,21 @@ Test-Path assets/system/system_icons
 Run:
 
 ```powershell
+npm run desktop-preview:build
 npm run typecheck
 npm run check:architecture
-npm run validate:sqlite
 npm run app:check
 ```
 
 Expected result:
 
+- Desktop preview bundle builds.
 - TypeScript passes.
 - Desktop preview architecture boundaries pass.
-- SQLite validation passes using its isolated validation database.
 - The Avalonia/Suki desktop editor project builds.
+
+The old TypeScript SQLite/domain resolver validations are historical and keep a
+`legacy:` script prefix. They are not part of the current desktop parity path.
 
 Known warning:
 

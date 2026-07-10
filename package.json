@@ -5,16 +5,16 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "validate:examples": "tsx src/domain/validation/validateExamples.ts",
-    "validate:resolver": "tsx src/domain/validation/validateResolver.ts",
     "check:architecture": "tsx scripts/checkDesktopPreviewArchitecture.ts",
-    "db:init": "tsx src/persistence/sqlite/initializeDevelopmentDatabase.ts",
-    "db:seed": "tsx src/persistence/sqlite/seedDevelopmentDatabase.ts",
-    "db:reset": "tsx src/persistence/sqlite/resetDevelopmentDatabase.ts",
     "icon-theme:import": "tsx src/icon-themes/importDevelopmentIconTheme.ts",
-    "validate:sqlite": "tsx src/persistence/sqlite/validateSQLiteRepository.ts",
-    "audit:current-model": "tsx src/persistence/audit/auditCurrentModel.ts",
-    "db:normalize-current-model": "tsx src/persistence/audit/normalizeCurrentModel.ts",
+    "legacy:validate:examples": "tsx src/domain/validation/validateExamples.ts",
+    "legacy:validate:resolver": "tsx src/domain/validation/validateResolver.ts",
+    "legacy:validate:sqlite": "tsx src/persistence/sqlite/validateSQLiteRepository.ts",
+    "legacy:db:init": "tsx src/persistence/sqlite/initializeDevelopmentDatabase.ts",
+    "legacy:db:seed": "tsx src/persistence/sqlite/seedDevelopmentDatabase.ts",
+    "legacy:db:reset": "tsx src/persistence/sqlite/resetDevelopmentDatabase.ts",
+    "legacy:audit:current-model": "tsx src/persistence/audit/auditCurrentModel.ts",
+    "legacy:db:normalize-current-model": "tsx src/persistence/audit/normalizeCurrentModel.ts",
     "desktop-preview:build": "node scripts/buildDesktopPreview.mjs",
     "desktop": "dotnet run --project spikes/desktop-editor-shell/Mockups.DesktopEditorShell.csproj",
     "desktop:build": "dotnet build spikes/desktop-editor-shell/Mockups.DesktopEditorShell.csproj",
@@ -26,7 +26,7 @@
     "app": "npm run desktop",
     "app:check": "npm run desktop:build",
     "app:build": "npm run desktop:build",
-    "test": "npm run typecheck && npm run check:architecture && npm run validate:examples && npm run validate:resolver && npm run validate:sqlite"
+    "test": "npm run desktop-preview:build && npm run typecheck && npm run check:architecture && npm run desktop:build"
   },
   "dependencies": {
     "better-sqlite3": "^12.11.1",
