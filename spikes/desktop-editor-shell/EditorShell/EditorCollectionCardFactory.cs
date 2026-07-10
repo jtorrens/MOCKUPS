@@ -51,9 +51,16 @@ internal sealed class EditorCollectionCardFactory
             ProjectTreeNodeKind.ComponentClass =>
                 CreateComponentClassCollectionCards(node),
             ProjectTreeNodeKind.ModuleInstance =>
-                [new ConversationMessagesCollectionEditor(_database, _onChanged, _reloadAndSelect).Create(node)],
+                CreateModuleInstanceCollectionCards(node),
             _ => [],
         };
+    }
+
+    private IReadOnlyList<InstantEditorCard> CreateModuleInstanceCollectionCards(ProjectTreeNode node)
+    {
+        return _database.IsConversationModuleInstance(node.Id)
+            ? [new ConversationMessagesCollectionEditor(_database, _onChanged, _reloadAndSelect).Create(node)]
+            : [];
     }
 
     private IReadOnlyList<InstantEditorCard> CreateComponentClassCollectionCards(ProjectTreeNode node)

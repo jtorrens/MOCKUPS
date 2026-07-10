@@ -9,7 +9,7 @@ export function designPreviewPayloadToRenderable(
   if (payload.kind === "componentClass") {
     return componentClassToRenderable(payload);
   }
-  if (payload.kind === "module") {
+  if (payload.kind === "module" || payload.kind === "moduleInstance") {
     return moduleToRenderable(payload);
   }
 

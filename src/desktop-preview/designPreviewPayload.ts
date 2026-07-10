@@ -18,10 +18,11 @@ export interface DesignPreviewFontFacePayload {
 }
 
 export interface DesignPreviewPayload {
-  kind: "componentClass" | "module";
+  kind: "componentClass" | "module" | "moduleInstance";
   componentType?: string;
   componentBaseConfigsJson?: string;
   appConfigJson?: string;
+  instanceJson?: string;
   configJson: string;
   designPreviewJson?: string;
   previewFrame: PreviewFramePayload;

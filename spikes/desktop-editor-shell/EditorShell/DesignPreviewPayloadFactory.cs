@@ -21,19 +21,24 @@ internal sealed record DesignPreviewPayload(
     string ComponentType = "",
     string DesignPreviewJson = "",
     string ComponentBaseConfigsJson = "{}",
-    string AppConfigJson = "{}");
+    string AppConfigJson = "{}",
+    string InstanceJson = "{}");
 
 internal static class DesignPreviewPayloadFactory
 {
     public static DesignPreviewPayload? Create(
         SpikeDatabase database,
         ProjectTreeNode? node,
-        string? themeId)
+        string? themeId,
+        string themeMode = "light")
     {
-        if (node is null || string.IsNullOrWhiteSpace(themeId))
+        if (node is null)
         {
             return null;
         }
+
+        themeId = ResolveThemeId(database, node, themeId);
+        if (string.IsNullOrWhiteSpace(themeId)) return null;
 
         SpikeDatabase.ThemeSettings theme;
         try
@@ -56,8 +61,73 @@ internal static class DesignPreviewPayloadFactory
             ProjectTreeNodeKind.ComponentClass => FromComponentClass(database, node, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces),
             ProjectTreeNodeKind.ComponentPreset => FromComponentPreset(database, node, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces),
             ProjectTreeNodeKind.Module => FromModule(database, node, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces),
+            ProjectTreeNodeKind.ModuleInstance => FromModuleInstance(database, node, themeMode, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces),
             _ => null,
         };
+    }
+
+    private static string? ResolveThemeId(SpikeDatabase database, ProjectTreeNode node, string? selectedThemeId)
+    {
+        if (node.Kind != ProjectTreeNodeKind.ModuleInstance)
+        {
+            return selectedThemeId;
+        }
+
+        var instance = database.GetModuleInstanceSettings(node.Id);
+        var shot = database.GetShotSettings(instance.ShotId);
+        if (string.IsNullOrWhiteSpace(shot.OwnerActorId)) return selectedThemeId;
+
+        var actor = database.GetActorSettings(shot.OwnerActorId);
+        return string.IsNullOrWhiteSpace(actor.DefaultThemeId)
+            ? selectedThemeId
+            : actor.DefaultThemeId;
+    }
+
+    private static DesignPreviewPayload FromModuleInstance(
+        SpikeDatabase database,
+        ProjectTreeNode node,
+        string themeMode,
+        string themeTokensJson,
+        IReadOnlyDictionary<string, string> paletteColors,
+        IReadOnlyDictionary<string, bool> paletteNeutralColors,
+        string projectMediaRoot,
+        SpikeDatabase.IconThemeSettings? iconTheme,
+        IReadOnlyList<SpikeDatabase.ProductionFontFace> fontFaces)
+    {
+        var instance = database.GetModuleInstanceSettings(node.Id);
+        var module = database.GetModuleSettings(instance.ModuleId);
+        var app = database.GetAppSettings(instance.AppId);
+        var shot = database.GetShotSettings(instance.ShotId);
+        var ownerActor = string.IsNullOrWhiteSpace(shot.OwnerActorId)
+            ? ActorPreviewInputFactory.CreateSample()
+            : ActorPreviewInputFactory.Create(database, shot.OwnerActorId, themeMode, paletteColors);
+        var instanceJson = new JsonObject
+        {
+            ["content"] = JsonNode.Parse(instance.ContentJson) ?? new JsonObject(),
+            ["behavior"] = JsonNode.Parse(instance.BehaviorJson) ?? new JsonObject(),
+            ["animation"] = JsonNode.Parse(instance.AnimationJson) ?? new JsonObject(),
+            ["context"] = new JsonObject
+            {
+                ["shotId"] = instance.ShotId,
+                ["ownerActor"] = ownerActor,
+            },
+        };
+        return new DesignPreviewPayload(
+            "moduleInstance",
+            instance.Name,
+            module.ConfigJson,
+            themeTokensJson,
+            paletteColors,
+            paletteNeutralColors,
+            projectMediaRoot,
+            iconTheme?.AssetRoot ?? "",
+            iconTheme?.MappingJson ?? "{}",
+            fontFaces,
+            module.RecordClassId,
+            module.DesignPreviewJson,
+            database.GetComponentClassBaseConfigsJson(module.ProjectId),
+            app.ConfigJson,
+            instanceJson.ToJsonString());
     }
 
     private static DesignPreviewPayload FromModule(

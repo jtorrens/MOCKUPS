@@ -194,11 +194,18 @@ internal sealed class RecordClassFieldValueService
     private string ModuleInstanceFieldValue(string moduleInstanceId, string fieldId)
     {
         var settings = _database.GetModuleInstanceSettings(moduleInstanceId);
+        var module = _database.GetModuleSettings(settings.ModuleId);
         return fieldId switch
         {
             "moduleInstance.module" => _database.GetModuleInstanceModuleName(moduleInstanceId),
             "moduleInstance.sortOrder" => settings.SortOrder.ToString(),
-            "moduleInstance.durationFrames" => _database.GetResolvedModuleInstanceDurationFrames(moduleInstanceId).ToString(),
+            "moduleInstance.durationFrames" =>
+                (module.RecordClassId == "module.core.chat"
+                    ? ConversationModuleTiming.ResolveDurationFrames(
+                        settings.ContentJson,
+                        settings.BehaviorJson,
+                        settings.AnimationJson)
+                    : settings.DurationFrames).ToString(),
             "moduleInstance.transition" => _database.GetModuleInstanceTransitionType(moduleInstanceId),
             _ => throw new InvalidOperationException($"Unknown module instance field '{fieldId}'."),
         };

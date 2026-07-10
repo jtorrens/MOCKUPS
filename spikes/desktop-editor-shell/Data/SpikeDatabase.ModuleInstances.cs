@@ -1,6 +1,5 @@
 using Microsoft.Data.Sqlite;
 using Mockups.DesktopEditorShell.Common;
-using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -53,16 +52,10 @@ internal sealed partial class SpikeDatabase
         return transition["type"]?.GetValue<string>() ?? "cut";
     }
 
-    public int GetResolvedModuleInstanceDurationFrames(string moduleInstanceId)
+    public bool IsConversationModuleInstance(string moduleInstanceId)
     {
         var settings = GetModuleInstanceSettings(moduleInstanceId);
-        var module = GetModuleSettings(settings.ModuleId);
-        return module.RecordClassId == "module.core.chat"
-            ? ConversationModuleTiming.ResolveDurationFrames(
-                settings.ContentJson,
-                settings.BehaviorJson,
-                settings.AnimationJson)
-            : settings.DurationFrames;
+        return GetModuleSettings(settings.ModuleId).RecordClassId == "module.core.chat";
     }
 
     public void UpdateModuleInstanceField(string moduleInstanceId, string fieldId, string value)

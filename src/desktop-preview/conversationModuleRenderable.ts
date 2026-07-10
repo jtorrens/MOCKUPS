@@ -37,9 +37,12 @@ type JsonRecord = Record<string, unknown>;
 
 export function conversationModuleToRenderable(payload: DesignPreviewPayload): RenderableNode {
   const config = parseObject(payload.configJson);
-  const preview = parseObject(payload.designPreviewJson);
+  const preview = runtimePreview(payload);
   const componentBaseConfigs = parseObject(payload.componentBaseConfigsJson);
-  const conversation = asRecord(config.conversation);
+  const conversation = {
+    ...asRecord(config.conversation),
+    ...asRecord(parseObject(payload.instanceJson).behavior),
+  };
   const screen = previewScreenBox(payload);
   const scale = renderScale(payload);
   const children: RenderableNode[] = [];
@@ -188,6 +191,23 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
   };
 }
 
+function runtimePreview(payload: DesignPreviewPayload): JsonRecord {
+  const preview = parseObject(payload.designPreviewJson);
+  if (payload.kind !== "moduleInstance") return preview;
+
+  const instance = parseObject(payload.instanceJson);
+  const content = asRecord(instance.content);
+  const header = asRecord(content.header);
+  const context = asRecord(instance.context);
+  return {
+    ...preview,
+    actor: context.ownerActor,
+    headerTitle: optionalString(header, "title"),
+    headerSubtitle: optionalString(header, "subtitle"),
+    instanceMessages: content.messages,
+  };
+}
+
 function appWallpaperNode(
   payload: DesignPreviewPayload,
   screen: NonNullable<RenderableNode["box"]>,
@@ -252,11 +272,7 @@ function messageNodes(
     "bubbleVariant",
     "module.conversation.bubbleVariant",
   );
-  const messages = [
-    { state: "incoming", text: optionalString(preview, "message1Text") },
-    { state: "outgoing", text: optionalString(preview, "message2Text") },
-    { state: "system", text: optionalString(preview, "message3Text") },
-  ] as const;
+  const messages = instanceMessages(preview);
   const nodes = messages.map((message, index) => childRenderable(
     payload,
     componentBaseConfigs,
@@ -270,12 +286,8 @@ function messageNodes(
       maxWidth: optionalNumber(conversation, "bubbleMaxWidth", 66),
       writeOnTrigger: false,
       writeOnFrame: 0,
-      statusState: message.state === "outgoing"
-        ? optionalString(preview, "message2StatusState") || "read"
-        : "none",
-      statusText: message.state === "outgoing"
-        ? optionalString(preview, "message2StatusText")
-        : "",
+      statusState: message.statusState,
+      statusText: message.statusText,
     },
     (childPayload) => bubbleComponentToRenderable(childPayload, resolveBubbleComponent(childPayload)),
   ));
@@ -298,6 +310,51 @@ function messageNodes(
     y += bounds.height + gap;
     return translated;
   });
+}
+
+type ConversationPreviewMessage = {
+  state: string;
+  text: string;
+  statusState: string;
+  statusText: string;
+};
+
+function instanceMessages(preview: JsonRecord): ConversationPreviewMessage[] {
+  const messages = Array.isArray(preview.instanceMessages)
+    ? preview.instanceMessages.map(asRecord)
+    : [];
+  if (messages.length > 0) {
+    return messages.map((message) => {
+      const status = asRecord(message.status);
+      return {
+        state: optionalString(message, "direction") || "incoming",
+        text: optionalString(message, "text"),
+        statusState: optionalString(status, "deliveryStatus") || "none",
+        statusText: optionalString(status, "text"),
+      };
+    });
+  }
+
+  return [
+    {
+      state: "incoming",
+      text: optionalString(preview, "message1Text"),
+      statusState: "none",
+      statusText: "",
+    },
+    {
+      state: "outgoing",
+      text: optionalString(preview, "message2Text"),
+      statusState: optionalString(preview, "message2StatusState") || "read",
+      statusText: optionalString(preview, "message2StatusText"),
+    },
+    {
+      state: "system",
+      text: optionalString(preview, "message3Text"),
+      statusState: "none",
+      statusText: "",
+    },
+  ];
 }
 
 function childRenderable(

@@ -150,7 +150,7 @@ internal sealed class EditorPreviewController
             return;
         }
 
-        var payload = DesignPreviewPayloadFactory.Create(_database, key.ToNode(), _selectedThemeId);
+        var payload = DesignPreviewPayloadFactory.Create(_database, key.ToNode(), _selectedThemeId, _selectedMode);
         if (payload is null)
         {
             return;
@@ -988,7 +988,7 @@ internal sealed class EditorPreviewController
     {
         if (_isDesignPreviewContextLocked && _lockedDesignPreviewNode is not null)
         {
-            var lockedPayload = DesignPreviewPayloadFactory.Create(_database, _lockedDesignPreviewNode.ToNode(), _selectedThemeId);
+            var lockedPayload = DesignPreviewPayloadFactory.Create(_database, _lockedDesignPreviewNode.ToNode(), _selectedThemeId, _selectedMode);
             if (lockedPayload is not null)
             {
                 _activeDesignPreviewNode = _lockedDesignPreviewNode;
@@ -1000,7 +1000,7 @@ internal sealed class EditorPreviewController
         }
 
         var selectedNode = _selectedNode();
-        var selectedPayload = DesignPreviewPayloadFactory.Create(_database, selectedNode, _selectedThemeId);
+        var selectedPayload = DesignPreviewPayloadFactory.Create(_database, selectedNode, _selectedThemeId, _selectedMode);
         if (selectedPayload is not null && selectedNode is not null)
         {
             _lastDesignPreviewNode = PreviewNodeKey.From(selectedNode);
@@ -1014,7 +1014,7 @@ internal sealed class EditorPreviewController
             return null;
         }
 
-        var fallbackPayload = DesignPreviewPayloadFactory.Create(_database, _lastDesignPreviewNode.ToNode(), _selectedThemeId);
+        var fallbackPayload = DesignPreviewPayloadFactory.Create(_database, _lastDesignPreviewNode.ToNode(), _selectedThemeId, _selectedMode);
         _activeDesignPreviewNode = fallbackPayload is null ? null : _lastDesignPreviewNode;
         return fallbackPayload;
     }
