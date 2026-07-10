@@ -44,6 +44,11 @@ internal sealed class EditorPreviewController
         IsChecked = false,
         VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
     };
+    private readonly ToggleSwitch _canonicalFrameToggle = new()
+    {
+        IsChecked = false,
+        VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+    };
     private readonly IEditorShellMessageSink _messages;
     private readonly Func<bool> _isDark;
     private readonly Func<ProjectTreeNode?> _selectedNode;
@@ -79,6 +84,7 @@ internal sealed class EditorPreviewController
     private string _selectedOrientation = "portrait";
     private string _selectedScale = "fit";
     private bool _showDesignMarks;
+    private bool _showCanonicalFrame;
     private bool _isDesignPreviewContextLocked;
     private bool _isRefreshingOptions;
     private bool? _renderedLockState;
@@ -334,6 +340,18 @@ internal sealed class EditorPreviewController
         };
         actions.Children.Add(_scaleComboBox);
         actions.Children.Add(_marksToggle);
+        actions.Children.Add(new StackPanel
+        {
+            Orientation = Avalonia.Layout.Orientation.Horizontal,
+            Spacing = 4,
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+            Children =
+            {
+                new TextBlock { Text = "360", FontSize = 10, Opacity = 0.72, VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center },
+                _canonicalFrameToggle,
+            },
+        });
+        ToolTip.SetTip(_canonicalFrameToggle, "Show canonical 360 × 800 frame without the device layer");
         ToolTip.SetTip(_previewPerformanceDot, "Preview frame status");
         actions.Children.Add(_previewPerformanceDot);
         Grid.SetColumn(actions, 1);
@@ -416,6 +434,7 @@ internal sealed class EditorPreviewController
             _scaleComboBox.SelectedItem = scaleOptions.FirstOrDefault((option) => option.Value == _selectedScale) ?? scaleOptions[0];
             _selectedScale = _scaleComboBox.SelectedItem?.Value ?? "fit";
             _marksToggle.IsChecked = _showDesignMarks;
+            _canonicalFrameToggle.IsChecked = _showCanonicalFrame;
         }
         finally
         {
@@ -437,6 +456,13 @@ internal sealed class EditorPreviewController
             if (change.Property == ToggleSwitch.IsCheckedProperty)
             {
                 OnMarksChanged();
+            }
+        };
+        _canonicalFrameToggle.PropertyChanged += (_, change) =>
+        {
+            if (change.Property == ToggleSwitch.IsCheckedProperty)
+            {
+                OnCanonicalFrameChanged();
             }
         };
     }
@@ -505,6 +531,15 @@ internal sealed class EditorPreviewController
         }
     }
 
+    private void OnCanonicalFrameChanged()
+    {
+        _showCanonicalFrame = _canonicalFrameToggle.IsChecked == true;
+        if (!_isRefreshingOptions)
+        {
+            Refresh();
+        }
+    }
+
     public void Refresh()
     {
         try
@@ -518,7 +553,9 @@ internal sealed class EditorPreviewController
                 return;
             }
 
-            var metrics = ApplyPreviewOrientation(_database.GetDevicePreviewMetrics(deviceId));
+            var metrics = _showCanonicalFrame
+                ? CanonicalPreviewMetrics()
+                : ApplyPreviewOrientation(_database.GetDevicePreviewMetrics(deviceId));
             var themeName = _themeComboBox.SelectedItem?.Label ?? "No theme";
             _designInputsPanel.UpdateForPayload(designPayload, _projectId);
             designPayload = designPayload is null
@@ -532,6 +569,7 @@ internal sealed class EditorPreviewController
                 _selectedMode,
                 _selectedScale,
                 _showDesignMarks,
+                !_showCanonicalFrame,
                 designPayload,
                 _messages);
             if (designPayload is not null && _designInputsPanel.IsPlaybackActive)
@@ -995,6 +1033,24 @@ internal sealed class EditorPreviewController
                 ? metrics.CanvasHeight * metrics.CornerRadiusCoefficient
                 : metrics.CornerRadius,
         };
+    }
+
+    private static SpikeDatabase.DevicePreviewMetrics CanonicalPreviewMetrics()
+    {
+        return new SpikeDatabase.DevicePreviewMetrics(
+            "Canonical 360 × 800",
+            360,
+            800,
+            0,
+            0,
+            360,
+            800,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1);
     }
 
     private DesignPreviewPayload? DesignPreviewPayloadForSelection()

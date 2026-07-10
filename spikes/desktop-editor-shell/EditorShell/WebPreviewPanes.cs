@@ -285,6 +285,7 @@ internal abstract class WebPreviewPane : Grid
         string scaleMode,
         string previewMode,
         bool showDesignMarks,
+        bool showDeviceFrame,
         string bodyContent,
         string fontStyleHtml = "")
     {
@@ -493,7 +494,7 @@ internal abstract class WebPreviewPane : Grid
                     {{bodyContent}}
                   </div>
                   {{DesignMarksHtml(showDesignMarks, width, height, metrics.DesignSafeMarginCoefficient)}}
-                  <div aria-hidden="true" class="preview-phone-frame" id="previewPhoneFrame"></div>
+                  {{(showDeviceFrame ? "<div aria-hidden=\"true\" class=\"preview-phone-frame\" id=\"previewPhoneFrame\"></div>" : "")}}
                   {{PreviewMetaHtml(showDesignMarks, previewMode, metrics.Name, themeName, themeMode)}}
                 </section>
               </main>
@@ -561,10 +562,12 @@ internal abstract class WebPreviewPane : Grid
                   viewport.classList.toggle("is-draggable", explicitScale !== null);
                   scaleLayer.style.transform = `scale(${scale})`;
                   scaleLayer.style.borderRadius = `${cornerRadius}px`;
-                  frame.style.setProperty("--preview-frame-border", `${Math.max(1, 10 * scale)}px`);
-                  frame.style.setProperty("--preview-frame-radius", `${cornerRadius * scale}px`);
-                  frame.style.setProperty("--preview-frame-shadow-y", `${10 * scale}px`);
-                  frame.style.setProperty("--preview-frame-shadow-blur", `${28 * scale}px`);
+                  if (frame) {
+                    frame.style.setProperty("--preview-frame-border", `${Math.max(1, 10 * scale)}px`);
+                    frame.style.setProperty("--preview-frame-radius", `${cornerRadius * scale}px`);
+                    frame.style.setProperty("--preview-frame-shadow-y", `${10 * scale}px`);
+                    frame.style.setProperty("--preview-frame-shadow-blur", `${28 * scale}px`);
+                  }
                   if (explicitScale === null) {
                     translateX = 0;
                     translateY = 0;
@@ -939,6 +942,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         string themeMode,
         string scaleMode,
         bool showDesignMarks,
+        bool showDeviceFrame,
         DesignPreviewPayload? payload,
         IEditorShellMessageSink messages)
     {
@@ -949,6 +953,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             themeMode,
             scaleMode,
             showDesignMarks,
+            showDeviceFrame,
             payload,
             messages);
 
@@ -1021,6 +1026,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 update.ScaleMode,
                 "Design preview",
                 update.ShowDesignMarks,
+                update.ShowDeviceFrame,
                 Placeholder(
                     "Design WebView host",
                     "Select a component variant to preview it through the desktop component route.")));
@@ -1088,6 +1094,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             update.ScaleMode,
             "Design preview",
             update.ShowDesignMarks,
+            update.ShowDeviceFrame,
             htmlParts.BodyHtml,
             htmlParts.FontStyleHtml));
         _lastRenderedUpdate = update;
@@ -1144,6 +1151,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         string ThemeMode,
         string ScaleMode,
         bool ShowDesignMarks,
+        bool ShowDeviceFrame,
         DesignPreviewPayload? Payload,
         IEditorShellMessageSink Messages)
     {
@@ -1155,6 +1163,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 && ThemeMode == other.ThemeMode
                 && ScaleMode == other.ScaleMode
                 && ShowDesignMarks == other.ShowDesignMarks
+                && ShowDeviceFrame == other.ShowDeviceFrame
                 && StablePayloadSignature(Payload) == StablePayloadSignature(other.Payload)
                 && CurrentTimeSignature(Payload) != CurrentTimeSignature(other.Payload);
         }
