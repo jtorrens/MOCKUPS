@@ -104,7 +104,7 @@ internal sealed class DeviceImportDialog
             {
                 new TextBlock
                 {
-                    Text = "Search by brand and model, then create a device with basic physical and design dimensions.",
+                    Text = "Search by brand and model, then create a device with render and design dimensions.",
                     TextWrapping = TextWrapping.Wrap,
                     Opacity = 0.82,
                 },
@@ -186,7 +186,8 @@ internal sealed class DeviceImportDialog
             }
 
             _statusText.Text = "Ready to create.";
-            _previewText.Text = $"{_selectedDetails.RenderWidth} x {_selectedDetails.RenderHeight} px · scale {_selectedDetails.ScaleToPixels:0.#} · {_selectedDetails.OsFamily}";
+            var scale = _selectedDetails.RenderWidth / (double)_selectedDetails.DesignWidth;
+            _previewText.Text = $"Design {_selectedDetails.DesignWidth} x {_selectedDetails.DesignHeight} · render {_selectedDetails.RenderWidth} x {_selectedDetails.RenderHeight} px · scale {scale:0.##} · {_selectedDetails.OsFamily}";
             _importButton.IsEnabled = true;
         }
         catch (Exception exception)

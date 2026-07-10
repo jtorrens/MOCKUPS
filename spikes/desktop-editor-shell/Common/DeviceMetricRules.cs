@@ -21,6 +21,39 @@ internal sealed record DevicePreviewMetricValues(
 internal static class DeviceMetricRules
 {
     public static string CreateMetricsJson(
+        int designWidth,
+        int designHeight,
+        int renderWidth,
+        int renderHeight,
+        bool includeDynamicIsland,
+        double? cornerRadius = null,
+        string? source = null)
+    {
+        designWidth = Math.Max(1, designWidth);
+        designHeight = Math.Max(1, designHeight);
+        renderWidth = Math.Max(1, renderWidth);
+        renderHeight = Math.Max(1, renderHeight);
+
+        var horizontalScale = renderWidth / (double)designWidth;
+        var verticalScale = renderHeight / (double)designHeight;
+        if (Math.Abs(horizontalScale - verticalScale) > 0.0001)
+        {
+            throw new InvalidOperationException(
+                $"Design size {designWidth} x {designHeight} does not map uniformly to render size {renderWidth} x {renderHeight}.");
+        }
+
+        return CreateMetricsJsonCore(
+            designWidth,
+            designHeight,
+            renderWidth,
+            renderHeight,
+            horizontalScale,
+            includeDynamicIsland,
+            cornerRadius,
+            source);
+    }
+
+    public static string CreateMetricsJson(
         int width,
         int height,
         double scale,
@@ -32,14 +65,35 @@ internal static class DeviceMetricRules
         height = Math.Max(1, height);
         scale = scale > 0 ? scale : GuessScale(width, height, "");
 
+        return CreateMetricsJsonCore(
+            (int)Math.Round(width / scale),
+            (int)Math.Round(height / scale),
+            width,
+            height,
+            scale,
+            includeDynamicIsland,
+            cornerRadius,
+            source);
+    }
+
+    private static string CreateMetricsJsonCore(
+        int designWidth,
+        int designHeight,
+        int width,
+        int height,
+        double scale,
+        bool includeDynamicIsland,
+        double? cornerRadius,
+        string? source)
+    {
         var statusBarHeight = StatusBarHeight(height);
         var bottomInset = BottomInset(height);
         var root = new JsonObject
         {
             ["designSpace"] = new JsonObject
             {
-                ["width"] = (int)Math.Round(width / scale),
-                ["height"] = (int)Math.Round(height / scale),
+                ["width"] = designWidth,
+                ["height"] = designHeight,
                 ["unit"] = "logical",
             },
             ["renderSize"] = new JsonObject { ["width"] = width, ["height"] = height },

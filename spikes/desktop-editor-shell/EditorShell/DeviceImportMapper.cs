@@ -9,11 +9,11 @@ internal static class DeviceImportMapper
     {
         var width = Math.Max(1, details.RenderWidth);
         var height = Math.Max(1, details.RenderHeight);
-        var scale = details.ScaleToPixels > 0 ? details.ScaleToPixels : DeviceMetricRules.GuessScale(width, height, details.OsFamily);
         var metricsJson = DeviceMetricRules.CreateMetricsJson(
+            details.DesignWidth,
+            details.DesignHeight,
             width,
             height,
-            scale,
             includeDynamicIsland: false,
             cornerRadius: 0,
             source: details.Source);

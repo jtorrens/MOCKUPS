@@ -17,9 +17,10 @@ internal sealed record DeviceCatalogDetails(
     string Manufacturer,
     string Model,
     string OsFamily,
+    int DesignWidth,
+    int DesignHeight,
     int RenderWidth,
     int RenderHeight,
-    double ScaleToPixels,
     string Source);
 
 internal sealed record DeviceImportDraft(

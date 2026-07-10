@@ -60,7 +60,7 @@ internal sealed class EditorAddChildWorkflow
     {
         try
         {
-            var dialog = new DeviceImportDialog(_owner, new PhoneSpecsDeviceCatalogProvider());
+            var dialog = new DeviceImportDialog(_owner, new LabsViewportsDeviceCatalogProvider());
             var result = await dialog.ShowAsync();
             if (result is null) return null;
             if (result.CreateBlank) return _database.AddChild(devicesRoot);
