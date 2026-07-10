@@ -60,16 +60,48 @@ export function mediaFrameUriForPath(
     return localMediaFrameUri(fileURLToPath(trimmed), timeSeconds);
   }
 
-  const candidates = path.isAbsolute(trimmed)
-    ? [trimmed]
-    : [
-        path.resolve(payload.projectMediaRoot ?? "", trimmed),
-        path.resolve(trimmed),
-      ];
+  const candidates = mediaSourceCandidates(payload.projectMediaRoot ?? "", trimmed);
   const fullPath = candidates.find((candidate) => existsSync(candidate));
   return fullPath
     ? localMediaFrameUri(fullPath, timeSeconds)
     : { uri: "", error: `Media source not found: ${trimmed}` };
+}
+
+function mediaSourceCandidates(projectMediaRoot: string, source: string) {
+  if (path.isAbsolute(source)) return [source];
+
+  const candidates = [
+    path.resolve(projectMediaRoot, source),
+    path.resolve(source),
+  ];
+  const stripped = stripDuplicatedMediaRootPrefix(projectMediaRoot, source);
+  if (stripped && stripped !== source) {
+    candidates.unshift(path.resolve(projectMediaRoot, stripped));
+  }
+
+  return [...new Set(candidates)];
+}
+
+function stripDuplicatedMediaRootPrefix(projectMediaRoot: string, source: string) {
+  const rootParts = normalizePathParts(projectMediaRoot);
+  const sourceParts = normalizePathParts(source);
+  const max = Math.min(rootParts.length, sourceParts.length);
+  for (let length = max; length > 0; length -= 1) {
+    const rootSuffix = rootParts.slice(rootParts.length - length);
+    const sourcePrefix = sourceParts.slice(0, length);
+    if (rootSuffix.every((part, index) => part === sourcePrefix[index])) {
+      return sourceParts.slice(length).join("/");
+    }
+  }
+
+  return source;
+}
+
+function normalizePathParts(value: string) {
+  return value
+    .replace(/\\/g, "/")
+    .split("/")
+    .filter(Boolean);
 }
 
 function imageDataUri(fullPath: string) {

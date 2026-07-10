@@ -46,7 +46,7 @@ internal static class DesignPreviewPayloadFactory
         }
         var paletteColors = database.GetPaletteColorMap(theme.ProjectId);
         var paletteNeutralColors = database.GetPaletteNeutralMap(theme.ProjectId);
-        var projectMediaRoot = database.GetProjectSettings(theme.ProjectId).MediaRoot;
+        var projectMediaRoot = ProjectPathService.ResolveProjectPath(database.GetProjectSettings(theme.ProjectId).MediaRoot);
         var fontFaces = database.GetProductionFontFaces(theme.ProjectId);
         var iconTheme = !string.IsNullOrWhiteSpace(theme.IconThemeId)
             ? database.GetIconThemeSettings(theme.IconThemeId)
