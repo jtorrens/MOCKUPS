@@ -860,29 +860,6 @@ internal abstract class WebPreviewPane : Grid
     }
 }
 
-internal sealed class RuntimeWebPreviewPane : WebPreviewPane
-{
-    public void Update(
-        SpikeDatabase.DevicePreviewMetrics metrics,
-        bool isDark,
-        string themeName,
-        string themeMode,
-        string scaleMode)
-    {
-        LoadHtml(DeviceHtml(
-            metrics,
-            isDark,
-            themeName,
-            themeMode,
-            scaleMode,
-            "Runtime preview",
-            false,
-            Placeholder(
-                "Runtime WebView host",
-                "Next step: load the existing React preview runtime and feed it the resolver payload. No Avalonia duplicate renderer is used here.")));
-    }
-}
-
 internal sealed class DesignWebPreviewPane : WebPreviewPane
 {
     private const int MaxQueuedAnimationFrames = 240;

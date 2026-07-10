@@ -81,6 +81,16 @@ The desktop `Preview` / `Design` surface is a WebView displaying HTML/CSS.
 That makes the web result the preview truth for component design, not an
 Avalonia approximation.
 
+The desktop editor has one web preview surface, not separate runtime and design
+renderers. The selected context determines its payload:
+
+- component class or variant: isolated authoring context with sample runtime inputs;
+- module: module design context;
+- future module instance or shot: resolved runtime context and frame navigation.
+
+The previous runtime tab was a placeholder and must not return as a second
+renderer or a React compatibility host.
+
 Text rendering must therefore stay aligned with the web path. If native
 HTML/CSS font handling is not stable enough for a production use case, the
 candidate replacement is a generic shared text-rendering service, not a

@@ -55,7 +55,6 @@ internal sealed class EditorPreviewController
     private readonly Button _designContextLockButton;
     private readonly Popup _designContextHistoryPopup;
     private readonly StackPanel _designContextHistoryItems = new() { Spacing = 1 };
-    private readonly RuntimeWebPreviewPane _runtimePreviewPane = new();
     private readonly DesignWebPreviewPane _designPreviewPane = new();
     private readonly ComponentInputsPanel _designInputsPanel;
     private readonly ContentControl _previewBusyHost;
@@ -98,7 +97,6 @@ internal sealed class EditorPreviewController
         ContentControl previewSetupHost,
         ContentControl previewInputsHost,
         ContentControl previewBusyHost,
-        ContentControl runtimePreviewHost,
         ContentControl designPreviewHost,
         TextBlock designContextText,
         Button designContextHistoryButton,
@@ -133,7 +131,6 @@ internal sealed class EditorPreviewController
 
         WrapPreviewSetup(previewSetupHost);
         previewInputsHost.Content = _designInputsPanel;
-        runtimePreviewHost.Content = _runtimePreviewPane;
         designPreviewHost.Content = _designPreviewPane;
         AttachControlEvents();
         _designContextText.Cursor = new Cursor(StandardCursorType.Hand);
@@ -523,7 +520,6 @@ internal sealed class EditorPreviewController
 
             var metrics = ApplyPreviewOrientation(_database.GetDevicePreviewMetrics(SelectedDeviceId));
             var themeName = _themeComboBox.SelectedItem?.Label ?? "No theme";
-            _runtimePreviewPane.Update(metrics, _isDark(), themeName, _selectedMode, _selectedScale);
             var designPayload = DesignPreviewPayloadForSelection();
             _designInputsPanel.UpdateForPayload(designPayload, _projectId);
             designPayload = designPayload is null

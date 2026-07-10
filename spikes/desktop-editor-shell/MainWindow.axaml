@@ -114,7 +114,7 @@
                             Padding="18,16">
                         <StackPanel Spacing="4">
                             <TextBlock FontSize="11" FontWeight="SemiBold" Text="WEB PREVIEW" />
-                            <TextBlock FontSize="17" FontWeight="Bold" Text="Runtime stays web" />
+                            <TextBlock FontSize="17" FontWeight="Bold" Text="Web source of truth" />
                         </StackPanel>
                     </Border>
                     <Grid Margin="22"
@@ -167,29 +167,18 @@
                             </StackPanel>
                         </ContentControl>
                         <Grid Grid.Row="1">
-                            <TabControl SelectedIndex="1">
-                                <TabItem Header="Preview">
-                                    <Border Padding="12"
-                                            CornerRadius="12"
-                                            Background="#18000000">
-                                        <ContentControl x:Name="RuntimePreviewHost" />
-                                    </Border>
-                                </TabItem>
-                                <TabItem Header="Design">
-                                    <Border Padding="12"
-                                            CornerRadius="12"
-                                            Background="#18000000">
-                                        <Grid>
-                                            <ContentControl x:Name="DesignPreviewHost" />
-                                            <ContentControl x:Name="PreviewBusyHost"
-                                                            ZIndex="100"
-                                                            HorizontalAlignment="Stretch"
-                                                            VerticalAlignment="Stretch"
-                                                            IsVisible="False" />
-                                        </Grid>
-                                    </Border>
-                                </TabItem>
-                            </TabControl>
+                            <Border Padding="12"
+                                    CornerRadius="12"
+                                    Background="#18000000">
+                                <Grid>
+                                    <ContentControl x:Name="DesignPreviewHost" />
+                                    <ContentControl x:Name="PreviewBusyHost"
+                                                    ZIndex="100"
+                                                    HorizontalAlignment="Stretch"
+                                                    VerticalAlignment="Stretch"
+                                                    IsVisible="False" />
+                                </Grid>
+                            </Border>
                             <Border HorizontalAlignment="Right"
                                     VerticalAlignment="Top"
                                     Margin="0,3,8,0"

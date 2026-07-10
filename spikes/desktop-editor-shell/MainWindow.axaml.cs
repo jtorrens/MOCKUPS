@@ -68,7 +68,6 @@ public partial class MainWindow : SukiWindow
             PreviewSetupHost,
             PreviewInputsHost,
             PreviewBusyHost,
-            RuntimePreviewHost,
             DesignPreviewHost,
             PreviewContextTextBlock,
             PreviewContextHistoryButton,
@@ -409,7 +408,7 @@ public partial class MainWindow : SukiWindow
 
     private void ApplyUiTextScale()
     {
-        EditorUiTextScale.Apply(this, _shellState.UiTextScale, RuntimePreviewHost, DesignPreviewHost);
+        EditorUiTextScale.Apply(this, _shellState.UiTextScale, DesignPreviewHost);
     }
 
     private EditorSessionHistoryState CreateSessionHistoryState()
