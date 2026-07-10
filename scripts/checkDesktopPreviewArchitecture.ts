@@ -107,6 +107,16 @@ function assertDoesNotContain(relativePath: string, term: string, message: strin
   }
 }
 
+function assertPackageScriptDoesNotContain(scriptName: string, term: string, message: string) {
+  const packageJson = JSON.parse(readText("package.json")) as {
+    scripts?: Record<string, string>;
+  };
+  const script = packageJson.scripts?.[scriptName] ?? "";
+  if (script.includes(term)) {
+    addViolation("package.json", message);
+  }
+}
+
 function assertFilesDoNotContain(files: readonly string[], term: string, message: string) {
   for (const file of files) {
     const relativePath = relative(file);
@@ -291,6 +301,21 @@ assertDoesNotContain(
   "../visual/adapters/react/RenderableReactAdapter.js",
   "desktop design preview must use the clean desktop HTML adapter, not the legacy React renderable adapter",
 );
+for (const legacyScriptTerm of [
+  "validate:examples",
+  "validate:resolver",
+  "validate:sqlite",
+  "db:reset",
+  "db:seed",
+  "audit:current-model",
+  "db:normalize-current-model",
+]) {
+  assertPackageScriptDoesNotContain(
+    "test",
+    legacyScriptTerm,
+    `desktop test path must not call legacy script ${legacyScriptTerm}`,
+  );
+}
 assertNoTerms("src/desktop-preview/DesktopRenderableHtmlAdapter.tsx", [
   "component_preview_unsupported",
   "design_preview_surface",
