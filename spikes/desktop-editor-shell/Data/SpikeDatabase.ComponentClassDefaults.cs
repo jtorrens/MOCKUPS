@@ -35,13 +35,33 @@ internal sealed partial class SpikeDatabase
 
     private static ComponentSeedRow NewComponentSeed(string componentType, string recordClassId, string name)
     {
+        var configJson = DefaultComponentClassConfigJson(componentType);
         return new ComponentSeedRow(
             componentType,
             recordClassId,
             name,
-            DefaultComponentClassConfigJson(componentType),
+            configJson,
             DefaultComponentDesignPreviewJson(componentType),
-            JsonSerializer.Serialize(new { note = "Seeded reusable component class." }));
+            DefaultComponentMetadataJson(configJson));
+    }
+
+    private static string DefaultComponentMetadataJson(string configJson)
+    {
+        return new JsonObject
+        {
+            ["note"] = "Seeded reusable component class.",
+            ["presets"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["id"] = DefaultComponentPresetId,
+                    ["name"] = "Default",
+                    ["protected"] = true,
+                    ["locked"] = true,
+                    ["config"] = JsonNode.Parse(configJson),
+                },
+            },
+        }.ToJsonString();
     }
 
     private static JsonObject ComponentSurfaceSlot(string presetName)
