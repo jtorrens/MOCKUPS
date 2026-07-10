@@ -17,7 +17,9 @@ The canonical desktop editor database is:
 data/desktop-editor-spike.sqlite
 ```
 
-Do not rely on a locally generated empty database when validating PC parity. The app should open the committed desktop editor database and then run its non-destructive schema/default migrations on startup.
+Do not rely on a locally generated empty database when validating PC parity. The
+app should open the committed desktop editor database. Schema v1 is validated on
+startup; it does not run compatibility migrations or fill missing defaults.
 
 ## Required Windows tools
 
@@ -75,7 +77,11 @@ The old TypeScript SQLite/domain resolver validations are historical and keep a
 
 Known warning:
 
-- `SQLitePCLRaw.lib.e_sqlite3` may report `NU1903` during .NET restore/build. That warning is currently known and not a PC parity failure by itself.
+- `SQLitePCLRaw.lib.e_sqlite3` `2.1.11` reports `NU1903` during .NET
+  restore/build. The upstream package has no compatible patched release at the
+  time of this document. It is a tracked dependency risk, not a PC parity
+  failure by itself; replacing it requires a deliberate SQLite provider and
+  packaging decision.
 
 ## Run the desktop editor
 
