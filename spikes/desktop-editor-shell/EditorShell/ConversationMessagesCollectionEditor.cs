@@ -28,10 +28,14 @@ internal sealed class ConversationMessagesCollectionEditor
     {
         var messages = _database.GetConversationMessages(node.Id);
         var body = new StackPanel { Spacing = 10 };
+        var messageCards = new System.Collections.Generic.List<InstantEditorCard>();
         for (var index = 0; index < messages.Count; index++)
         {
-            body.Children.Add(CreateMessage(node, index, messages[index]));
+            var messageCard = CreateMessage(node, index, messages[index]);
+            messageCards.Add(messageCard);
+            body.Children.Add(messageCard);
         }
+        EditorGroupBlock.WireExclusiveCards(messageCards);
 
         var add = new Button { Content = "Add message", HorizontalAlignment = HorizontalAlignment.Left };
         add.Click += (_, _) =>
@@ -49,24 +53,29 @@ internal sealed class ConversationMessagesCollectionEditor
         { HorizontalAlignment = HorizontalAlignment.Stretch };
     }
 
-    private Control CreateMessage(ProjectTreeNode node, int index, SpikeDatabase.ConversationMessage message)
+    private InstantEditorCard CreateMessage(ProjectTreeNode node, int index, SpikeDatabase.ConversationMessage message)
     {
         var panel = new StackPanel { Spacing = 8 };
-        var delete = new Button { Content = EditorIcons.Create(EditorIcons.Delete, 16), HorizontalAlignment = HorizontalAlignment.Right };
-        delete.Click += (_, _) => { _database.DeleteConversationMessage(node.Id, message.Id); _onChanged(); _reloadAndSelect(node); };
-        panel.Children.Add(new DockPanel
+        var delete = new Button
         {
-            Children =
-            {
-                delete,
-                new TextBlock { Text = $"Message {index + 1}", FontWeight = Avalonia.Media.FontWeight.SemiBold },
-            },
-        });
+            Content = EditorIcons.Create(EditorIcons.Delete, 16),
+            Width = 30,
+            Height = 28,
+            Padding = new Thickness(0),
+            HorizontalAlignment = HorizontalAlignment.Right,
+        };
+        ToolTip.SetTip(delete, "Delete message");
+        delete.Click += (_, _) => { _database.DeleteConversationMessage(node.Id, message.Id); _onChanged(); _reloadAndSelect(node); };
         panel.Children.Add(Field("Direction", ValueKind.OptionToken, message.Direction, [new("incoming", "Incoming"), new("outgoing", "Outgoing"), new("system", "System")], (value) => message = message with { Direction = value }));
         panel.Children.Add(Field("Text", ValueKind.StringMultiline, message.Text, null, (value) => message = message with { Text = value }));
         panel.Children.Add(Field("Delay frames", ValueKind.Integer, message.DelayAfterPreviousFrames.ToString(), null, (value) => message = message with { DelayAfterPreviousFrames = NumericText.Int32(value, 0) }));
         panel.Children.Add(Field("Write-on frames", ValueKind.Integer, message.WriteOnDurationFrames.ToString(), null, (value) => message = message with { WriteOnDurationFrames = NumericText.Int32(value, 0) }));
-        return new Border { Padding = new Thickness(10), BorderThickness = new Thickness(1), Child = panel };
+        return new InstantEditorCard(
+            EditorCardHeader.Create($"Message {index + 1}", $"{message.Direction} · {MessageSummary(message.Text)}", EditorIcons.Create(EditorIcons.Bubble, 16)),
+            new Border { Padding = EditorUiDensity.CardThickness(10), Child = panel },
+            isExpanded: false,
+            headerTrailing: delete)
+        { HorizontalAlignment = HorizontalAlignment.Stretch };
 
         DictionaryFieldControl Field(string label, ValueKind kind, string value, FieldOption[]? options, Action<string> update)
         {
@@ -75,4 +84,8 @@ internal sealed class ConversationMessagesCollectionEditor
             return control;
         }
     }
+
+    private static string MessageSummary(string text) => string.IsNullOrWhiteSpace(text)
+        ? "Empty message"
+        : text.Replace('\n', ' ').Trim();
 }
