@@ -1,6 +1,8 @@
-# Schema v1 Candidate Validation
+# Schema v1 Cutover Validation Record
 
-Candidate generated from the committed pre-consolidation desktop database.
+Historical validation record for the schema v1 cutover. The candidate was
+generated from the committed pre-consolidation desktop database and promoted to
+the active desktop database by `e37312c2`.
 
 ```text
 Source: data/desktop-editor-spike.sqlite
@@ -50,8 +52,12 @@ The source Theme editor layout had a trailing comma and was invalid JSON. The
 layout source was corrected and the active DB was refreshed from that canonical
 layout before candidate creation. No authored project or component data changed.
 
-## Not Yet Active
+## Active Result
 
-The desktop app still opens `data/desktop-editor-spike.sqlite`. The candidate
-remains parallel until the next phase changes the startup path, field services
-and seed behavior to schema v1.
+The desktop app opens `data/desktop-editor-spike.sqlite`, which is now schema
+v1. Startup validates the canonical table set, `PRAGMA user_version = 1`, and
+the `shots.fps_override` shape before opening the editor; it does not apply
+historical migrations.
+
+`data/desktop-editor-spike.schema-v1.sqlite` remains versioned only as the
+validated cutover artifact. It is not a second active runtime database.
