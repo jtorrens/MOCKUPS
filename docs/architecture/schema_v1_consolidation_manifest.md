@@ -137,7 +137,7 @@ active implementation contract.
 - Visual IR proposals and handoffs;
 - old Screen Instance, Screen Template and module-theme-config decisions;
 - completed audits, exchange handoffs and superseded implementation plans;
-- `PROJECT_STATUS.md`, once its useful current-state material is extracted.
+- `docs/exchange/historical/PROJECT_STATUS_legacy.md`.
 
 Historical material remains versioned and readable. It must not be linked as a
 normative source from the active architecture index.
