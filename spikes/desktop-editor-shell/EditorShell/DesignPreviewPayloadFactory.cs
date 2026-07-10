@@ -102,7 +102,7 @@ internal static class DesignPreviewPayloadFactory
     {
         var settings = database.GetComponentClassSettings(node.Id);
         var componentBaseConfigsJson = database.GetComponentClassBaseConfigsJson(settings.ProjectId);
-        var configJson = database.NormalizeComponentPresetReferencesForPreview(settings.ProjectId, settings.ConfigJson);
+        var configJson = database.ValidateComponentPresetReferencesForPreview(settings.ProjectId, settings.ConfigJson);
         var designPreviewJson = ResolveActionDurationsJson(configJson, themeTokensJson, settings.DesignPreviewJson);
         return new DesignPreviewPayload(
             "componentClass",
@@ -132,7 +132,7 @@ internal static class DesignPreviewPayloadFactory
     {
         var settings = database.GetComponentPresetSettings(node);
         var componentBaseConfigsJson = database.GetComponentClassBaseConfigsJson(settings.ProjectId);
-        var configJson = database.NormalizeComponentPresetReferencesForPreview(settings.ProjectId, settings.ConfigJson);
+        var configJson = database.ValidateComponentPresetReferencesForPreview(settings.ProjectId, settings.ConfigJson);
         var designPreviewJson = ResolveActionDurationsJson(configJson, themeTokensJson, settings.DesignPreviewJson);
         return new DesignPreviewPayload(
             "componentClass",

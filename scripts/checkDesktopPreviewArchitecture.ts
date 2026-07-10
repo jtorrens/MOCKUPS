@@ -200,6 +200,74 @@ function assertDesktopDatabaseTableIsEmpty(tableName: string, message: string) {
   }
 }
 
+function assertDesktopComponentPresetReferencesAreCanonical() {
+  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  if (!existsSync(databasePath)) return;
+
+  const database = new Database(databasePath, { readonly: true, fileMustExist: true });
+  try {
+    const rows = database
+      .prepare("SELECT id, project_id, component_type, config_json, metadata_json FROM component_classes")
+      .all() as {
+        id: string;
+        project_id: string;
+        component_type: string;
+        config_json: string;
+        metadata_json: string;
+      }[];
+    const rowsById = new Map(rows.map((row) => [row.id, row]));
+    const variantsByClassId = new Map<string, Set<string>>();
+    for (const row of rows) {
+      const metadata = JSON.parse(row.metadata_json || "{}") as { presets?: unknown };
+      const presetIds = new Set(
+        Array.isArray(metadata.presets)
+          ? metadata.presets
+              .filter((preset): preset is { id?: unknown } => typeof preset === "object" && preset !== null)
+              .map((preset) => preset.id)
+              .filter((id): id is string => typeof id === "string" && id.length > 0)
+          : [],
+      );
+      variantsByClassId.set(row.id, presetIds);
+    }
+
+    const validateValue = (owner: (typeof rows)[number], value: unknown, pathLabel: string) => {
+      if (Array.isArray(value)) {
+        value.forEach((item, index) => validateValue(owner, item, `${pathLabel}[${index}]`));
+        return;
+      }
+      if (typeof value !== "object" || value === null) return;
+
+      for (const [key, child] of Object.entries(value)) {
+        const childPath = pathLabel ? `${pathLabel}.${key}` : key;
+        if (key === "presetId" && typeof child === "string") {
+          const match = /^(?<classId>.+)::preset::(?<presetId>.+)$/.exec(child);
+          const targetClassId = match?.groups?.classId ?? "";
+          const presetId = match?.groups?.presetId ?? "";
+          const target = rowsById.get(targetClassId);
+          if (!match || !target || target.project_id !== owner.project_id || !variantsByClassId.get(targetClassId)?.has(presetId)) {
+            addViolation(
+              "data/desktop-editor-spike.sqlite",
+              `component ${owner.id} has invalid full variant reference at ${childPath}: ${child}`,
+            );
+          }
+        }
+        validateValue(owner, child, childPath);
+      }
+    };
+
+    for (const row of rows) {
+      validateValue(row, JSON.parse(row.config_json || "{}"), "config");
+      const metadata = JSON.parse(row.metadata_json || "{}") as { presets?: unknown };
+      if (!Array.isArray(metadata.presets)) continue;
+      metadata.presets.forEach((preset, index) => validateValue(row, preset, `metadata.presets[${index}]`));
+    }
+  } finally {
+    database.close();
+  }
+}
+
+assertDesktopComponentPresetReferencesAreCanonical();
+
 function componentLayoutFieldIds(source: string) {
   const ids = new Set<string>();
   const pattern = /\{\s*"id"\s*:\s*"(component\.[^"]+)"/g;
@@ -260,6 +328,7 @@ for (const removedLegacyPath of [
   "src/desktop-preview/systemBarComponentContract.ts",
   "src/desktop-preview/systemBarPreviewResolver.ts",
   "src/desktop-preview/systemBarRenderables.ts",
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassNormalization.cs",
   "index.html",
   "remotion.config.ts",
   "vite.config.ts",
@@ -1345,8 +1414,8 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
-  "NormalizeComponentPresetReferencesForPreview",
-  "design preview payloads must normalize embedded preset references before web rendering",
+  "ValidateComponentPresetReferencesForPreview",
+  "design preview payloads must validate full embedded preset references before web rendering",
 );
 for (const embeddedPresetField of [
   "component.avatar.label.presetId",

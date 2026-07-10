@@ -189,7 +189,7 @@ internal sealed partial class SpikeDatabase
             var defaultConfig = ParseJsonObject(DefaultComponentPresetConfigJson(
                 classConfigJson,
                 metadataJson));
-            NormalizeEmbeddedSlotPresetIds(connection, projectId, defaultConfig);
+            ValidateEmbeddedSlotPresetReferences(connection, projectId, defaultConfig);
             configs[componentType] = defaultConfig;
         }
 
@@ -197,11 +197,11 @@ internal sealed partial class SpikeDatabase
         return configs.ToJsonString();
     }
 
-    public string NormalizeComponentPresetReferencesForPreview(string projectId, string configJson)
+    public string ValidateComponentPresetReferencesForPreview(string projectId, string configJson)
     {
         using var connection = OpenConnection();
         var config = ParseJsonObject(string.IsNullOrWhiteSpace(configJson) ? "{}" : configJson);
-        NormalizeEmbeddedSlotPresetIds(connection, projectId, config);
+        ValidateEmbeddedSlotPresetReferences(connection, projectId, config);
         return config.ToJsonString();
     }
 
@@ -213,8 +213,49 @@ internal sealed partial class SpikeDatabase
                 string.IsNullOrWhiteSpace(preset.ConfigJson) || preset.ConfigJson == "{}"
                     ? row.ConfigJson
                     : preset.ConfigJson);
-            NormalizeEmbeddedSlotPresetIds(connection, row.ProjectId, config);
+            ValidateEmbeddedSlotPresetReferences(connection, row.ProjectId, config);
             target[ComponentPresetNodeId(row.Id, preset.Id)] = config;
+        }
+    }
+
+    private static void ValidateEmbeddedSlotPresetReferences(
+        SqliteConnection connection,
+        string projectId,
+        JsonObject config)
+    {
+        var componentRows = QueryComponentClassRows(connection)
+            .Where((row) => row.ProjectId.Equals(projectId, StringComparison.Ordinal))
+            .ToList();
+
+        foreach (var slot in EmbeddedComponentSlotCatalog.All())
+        {
+            if (JsonPath.Get(config, slot.SlotPath) is not JsonObject slotNode)
+            {
+                continue;
+            }
+
+            var reference = JsonPath.String(slotNode, "presetId", "");
+            if (!TryParseComponentPresetNodeId(reference, out var componentClassId, out var presetId))
+            {
+                throw new InvalidOperationException(
+                    $"Embedded component slot '{slot.FieldId}' must use a full component variant reference.");
+            }
+
+            var componentClass = componentRows.FirstOrDefault((row) =>
+                row.Id.Equals(componentClassId, StringComparison.Ordinal)
+                && row.ComponentType.Equals(slot.EmbeddedComponentType, StringComparison.Ordinal));
+            if (componentClass is null)
+            {
+                throw new InvalidOperationException(
+                    $"Embedded component slot '{slot.FieldId}' references missing {slot.EmbeddedComponentType} class '{componentClassId}'.");
+            }
+
+            if (!ComponentClassPresetsOrDefault(componentClass)
+                    .Any((preset) => preset.Id.Equals(presetId, StringComparison.Ordinal)))
+            {
+                throw new InvalidOperationException(
+                    $"Embedded component slot '{slot.FieldId}' references missing variant '{presetId}' on '{componentClassId}'.");
+            }
         }
     }
 
