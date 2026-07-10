@@ -137,7 +137,7 @@ internal static class DesignPreviewPayloadFactory
             iconTheme?.MappingJson ?? "{}",
             fontFaces,
             module.RecordClassId,
-            module.DesignPreviewJson,
+            DesignPreviewTestValues.RuntimeJson(module.DesignPreviewJson),
             database.GetComponentClassBaseConfigsJson(module.ProjectId),
             app.ConfigJson,
             instanceJson.ToJsonString(),
@@ -170,7 +170,7 @@ internal static class DesignPreviewPayloadFactory
             iconTheme?.MappingJson ?? "{}",
             fontFaces,
             settings.RecordClassId,
-            settings.DesignPreviewJson,
+            DesignPreviewTestValues.RuntimeJson(settings.DesignPreviewJson),
             componentBaseConfigsJson,
             appSettings.ConfigJson);
     }
@@ -188,7 +188,10 @@ internal static class DesignPreviewPayloadFactory
         var settings = database.GetComponentClassSettings(node.Id);
         var componentBaseConfigsJson = database.GetComponentClassBaseConfigsJson(settings.ProjectId);
         var configJson = database.ValidateComponentPresetReferencesForPreview(settings.ProjectId, settings.ConfigJson);
-        var designPreviewJson = ResolveActionDurationsJson(configJson, themeTokensJson, settings.DesignPreviewJson);
+        var designPreviewJson = ResolveActionDurationsJson(
+            configJson,
+            themeTokensJson,
+            DesignPreviewTestValues.RuntimeJson(settings.DesignPreviewJson));
         return new DesignPreviewPayload(
             "componentClass",
             settings.Name,
@@ -218,7 +221,10 @@ internal static class DesignPreviewPayloadFactory
         var settings = database.GetComponentPresetSettings(node);
         var componentBaseConfigsJson = database.GetComponentClassBaseConfigsJson(settings.ProjectId);
         var configJson = database.ValidateComponentPresetReferencesForPreview(settings.ProjectId, settings.ConfigJson);
-        var designPreviewJson = ResolveActionDurationsJson(configJson, themeTokensJson, settings.DesignPreviewJson);
+        var designPreviewJson = ResolveActionDurationsJson(
+            configJson,
+            themeTokensJson,
+            DesignPreviewTestValues.RuntimeJson(settings.DesignPreviewJson));
         return new DesignPreviewPayload(
             "componentClass",
             settings.Name,
