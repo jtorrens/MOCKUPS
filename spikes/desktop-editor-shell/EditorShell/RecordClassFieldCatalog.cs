@@ -105,13 +105,16 @@ internal static class RecordClassFieldCatalog
         ["module.metadata"] = new("module.metadata", "Metadata", ValueKind.StringMultiline),
         ["module.conversation.showHeader"] = new("module.conversation.showHeader", "Header", ValueKind.Boolean),
         ["module.conversation.useAppWallpaper"] = new("module.conversation.useAppWallpaper", "Use app wallpaper", ValueKind.Boolean),
-        ["module.conversation.headerTitle"] = new("module.conversation.headerTitle", "Title", ValueKind.StringSingleLine),
-        ["module.conversation.headerSubtitle"] = new("module.conversation.headerSubtitle", "Subtitle", ValueKind.StringSingleLine),
         ["module.conversation.headerHeight"] = new(
             "module.conversation.headerHeight",
             "Header height",
             ValueKind.Integer,
             Number: new NumberDefinition(0, 240, 1, 0)),
+        ["module.conversation.headerAvatarVariant"] = new(
+            "module.conversation.headerAvatarVariant",
+            "Header avatar variant",
+            ValueKind.ComponentPreset,
+            ComponentPresetType: "avatar"),
         ["module.conversation.showStatusBar"] = new("module.conversation.showStatusBar", "Status bar", ValueKind.Boolean),
         ["module.conversation.statusBarVariant"] = new(
             "module.conversation.statusBarVariant",
@@ -130,7 +133,6 @@ internal static class RecordClassFieldCatalog
             "Text input variant",
             ValueKind.ComponentPreset,
             ComponentPresetType: "textInputBar"),
-        ["module.conversation.inputText"] = new("module.conversation.inputText", "Text", ValueKind.StringMultiline),
         ["module.conversation.showKeyboard"] = new("module.conversation.showKeyboard", "Keyboard", ValueKind.Boolean),
         ["module.conversation.keyboardVariant"] = new(
             "module.conversation.keyboardVariant",
@@ -267,10 +269,6 @@ internal static class RecordClassFieldCatalog
         ["theme.shadows.default.offsetX"] = new("theme.shadows.default.offsetX", "Offset X", ValueKind.Decimal),
         ["theme.shadows.default.offsetY"] = new("theme.shadows.default.offsetY", "Offset Y", ValueKind.Decimal),
         ["theme.shadows.default.blur"] = new("theme.shadows.default.blur", "Blur", ValueKind.Decimal),
-        ["theme.statusBar.foreground"] = new("theme.statusBar.foreground", "Foreground", ValueKind.PaletteColorPair),
-        ["theme.statusBar.background"] = new("theme.statusBar.background", "Background", ValueKind.PaletteColorAlphaPair),
-        ["theme.navigationBar.foreground"] = new("theme.navigationBar.foreground", "Foreground", ValueKind.PaletteColorPair),
-        ["theme.navigationBar.background"] = new("theme.navigationBar.background", "Background", ValueKind.PaletteColorAlphaPair),
         ["theme.keyboard.background"] = new("theme.keyboard.background", "Background", ValueKind.PaletteColorPair),
         ["theme.keyboard.keyBackground"] = new("theme.keyboard.keyBackground", "Key background", ValueKind.PaletteColorPair),
         ["theme.keyboard.specialKeyBackground"] = new("theme.keyboard.specialKeyBackground", "Special key background", ValueKind.PaletteColorPair),

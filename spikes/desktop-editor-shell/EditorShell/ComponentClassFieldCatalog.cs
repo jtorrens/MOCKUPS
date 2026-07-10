@@ -664,11 +664,17 @@ internal static class ComponentClassFieldCatalog
         ["component.audio.badge.presetId"] = new("component.audio.badge.presetId", "Variant", ValueKind.OptionToken, ["audio", "badgeSlot", "presetId"], "default"),
         ["component.audio.badge.editor"] = new("component.audio.badge.editor", "Badge", ValueKind.ComponentPreset, ["audio", "badgeSlot", "presetId"], "default"),
 
+        ["component.statusBar.foregroundColorToken"] = new("component.statusBar.foregroundColorToken", "Foreground", ValueKind.ThemeToken, ["foregroundColorToken"], "theme.icons.primary", Options: ThemeColorOptions),
+        ["component.statusBar.backgroundColorToken"] = new("component.statusBar.backgroundColorToken", "Background", ValueKind.ThemeToken, ["backgroundColorToken"], "theme.colors.background", Options: ThemeColorOptions),
+        ["component.statusBar.backgroundAlpha"] = new("component.statusBar.backgroundAlpha", "Background alpha", ValueKind.Alpha, ["backgroundAlpha"], "1"),
         ["component.statusBar.layout.height"] = new("component.statusBar.layout.height", "Height", ValueKind.Integer, ["layout", "height"], "54"),
         ["component.statusBar.layout.itemSize"] = new("component.statusBar.layout.itemSize", "Item size", ValueKind.Integer, ["layout", "itemSize"], "18"),
         ["component.statusBar.layout.gap"] = new("component.statusBar.layout.gap", "Gap", ValueKind.ThemeToken, ["layout", "gap"], "theme.spacing.m", Options: SpacingTokenOptions),
         ["component.statusBar.layout.sidePadding"] = new("component.statusBar.layout.sidePadding", "Side padding", ValueKind.ThemeToken, ["layout", "sidePadding"], "theme.spacing.xxl", Options: SpacingTokenOptions),
 
+        ["component.navigationBar.foregroundColorToken"] = new("component.navigationBar.foregroundColorToken", "Foreground", ValueKind.ThemeToken, ["foregroundColorToken"], "theme.icons.primary", Options: ThemeColorOptions),
+        ["component.navigationBar.backgroundColorToken"] = new("component.navigationBar.backgroundColorToken", "Background", ValueKind.ThemeToken, ["backgroundColorToken"], "theme.colors.background", Options: ThemeColorOptions),
+        ["component.navigationBar.backgroundAlpha"] = new("component.navigationBar.backgroundAlpha", "Background alpha", ValueKind.Alpha, ["backgroundAlpha"], "1"),
         ["component.navigationBar.type"] = new("component.navigationBar.type", "Type", ValueKind.OptionToken, ["type"], "buttons", Options: NavigationBarTypeOptions),
         ["component.navigationBar.layout.height"] = new("component.navigationBar.layout.height", "Height", ValueKind.Integer, ["layout", "height"], "34"),
         ["component.navigationBar.layout.itemSize"] = new("component.navigationBar.layout.itemSize", "Item size", ValueKind.Integer, ["layout", "itemSize"], "18"),

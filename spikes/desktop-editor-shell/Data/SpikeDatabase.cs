@@ -51,9 +51,11 @@ internal sealed partial class SpikeDatabase
         EnsureShotColumns(connection);
         EnsureAppColumns(connection);
         EnsureModuleColumns(connection);
+        EnsureModuleInstanceColumns(connection);
         EnsureComponentClassColumns(connection);
         SeedEditorLayouts(connection);
         SeedIfEmpty(connection);
+        SeedModuleInstancesIfEmpty(connection);
         SeedPaletteColorsIfEmpty(connection);
         SeedDevicesIfEmpty(connection);
         EnsureDeviceMetricDefaults(connection);

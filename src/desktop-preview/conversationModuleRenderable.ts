@@ -1,4 +1,6 @@
 import type { RenderableNode } from "../visual/renderable/types.js";
+import { avatarComponentToRenderableAt } from "./avatarComponentRenderable.js";
+import { resolveAvatarComponentFromRecords } from "./avatarComponentResolver.js";
 import { bubbleComponentToRenderable } from "./bubbleComponentRenderable.js";
 import { resolveBubbleComponent } from "./bubbleComponentResolver.js";
 import { componentPresetConfig } from "./componentPreviewDefaults.js";
@@ -81,7 +83,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
         "keyboard",
         requiredString(conversation, "keyboardVariant", "module.conversation.keyboardVariant"),
         {
-          text: conversationString(conversation, preview, "inputText"),
+          text: optionalString(preview, "inputText"),
           currentCharacter: 1,
         },
         (childPayload) =>
@@ -99,7 +101,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
           "module.conversation.textInputBarVariant",
         ),
         {
-          sampleText: conversationString(conversation, preview, "inputText"),
+          sampleText: optionalString(preview, "inputText"),
         },
         (childPayload) =>
           textInputBarComponentToRenderable(
@@ -120,10 +122,10 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
     ? translateRenderableNode(textInput, { x: 0, y: textInputTargetY - textInput.box.y })
     : textInput;
 
-  if (status) children.push(status);
   const header = optionalBooleanDefault(conversation, "showHeader", true)
     ? headerNode(
         payload,
+        componentBaseConfigs,
         conversation,
         preview,
         (status?.box?.height ?? 0),
@@ -131,6 +133,8 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
       )
     : undefined;
   if (header) children.push(header);
+  // The header surface bleeds behind Status Bar, but its layout box remains below it.
+  if (status) children.push(status);
 
   const top = screen.y + (status?.box?.height ?? 0) + (header?.box?.height ?? 0);
   const bottom = textInputNode?.box?.y ?? keyboardNode?.box?.y ?? (screen.y + screen.height - navHeight);
@@ -236,6 +240,7 @@ function messageNodes(
     {
       state: message.state,
       sampleText: message.text,
+      actor: preview.actor,
       mediaType: "none",
       maxWidth: optionalNumber(conversation, "bubbleMaxWidth", 66),
       writeOnTrigger: false,
@@ -290,6 +295,7 @@ function childRenderable(
 
 function headerNode(
   payload: DesignPreviewPayload,
+  componentBaseConfigs: JsonRecord,
   conversation: JsonRecord,
   preview: JsonRecord,
   offsetY: number,
@@ -297,9 +303,38 @@ function headerNode(
 ): RenderableNode {
   const screen = previewScreenBox(payload);
   const scale = renderScale(payload);
-  const title = conversationString(conversation, preview, "headerTitle") || "Conversation";
-  const subtitle = conversationString(conversation, preview, "headerSubtitle") || "";
+  const title = optionalString(preview, "headerTitle");
+  const subtitle = optionalString(preview, "headerSubtitle");
   const titleHeight = subtitle ? height * 0.46 : height;
+  const avatarSize = Math.max(0, height - 16 * scale);
+  const avatar = avatarComponentToRenderableAt(
+    payload,
+    resolveAvatarComponentFromRecords(
+      componentPresetConfig(
+        componentBaseConfigs,
+        "avatar",
+        requiredString(
+          conversation,
+          "headerAvatarVariant",
+          "module.conversation.headerAvatarVariant",
+        ),
+      ),
+      {
+        ...preview,
+        sampleSubtext: "",
+      },
+      componentBaseConfigs,
+      "module.conversation.header.avatar",
+    ),
+    {
+      x: screen.x + 12 * scale,
+      y: screen.y + offsetY + (height - avatarSize) / 2,
+      width: avatarSize,
+      height: avatarSize,
+    },
+  );
+  const textLeft = screen.x + 24 * scale + avatarSize;
+  const textWidth = Math.max(0, screen.width - (textLeft - screen.x) - 16 * scale);
   return {
     id: "module.conversation.header",
     type: "group",
@@ -311,12 +346,26 @@ function headerNode(
       height,
     },
     style: {
-      background: selectedColor(payload, "theme.colors.surface"),
     },
     children: [
-      textNode(payload, `${title}`, screen.x + 72 * scale, screen.y + offsetY + 10 * scale, screen.width - 144 * scale, titleHeight, 19 * scale, 700),
+      {
+        id: "module.conversation.header.bleed",
+        type: "surface",
+        frame: 0,
+        box: {
+          x: screen.x,
+          y: screen.y,
+          width: screen.width,
+          height: offsetY + height,
+        },
+        style: {
+          background: selectedColor(payload, "theme.colors.surface"),
+        },
+      },
+      avatar,
+      textNode(payload, `${title}`, textLeft, screen.y + offsetY + 10 * scale, textWidth, titleHeight, 19 * scale, 700),
       ...(subtitle
-        ? [textNode(payload, subtitle, screen.x + 72 * scale, screen.y + offsetY + 36 * scale, screen.width - 144 * scale, height * 0.34, 12 * scale, 500, "theme.colors.textSecondary")]
+        ? [textNode(payload, subtitle, textLeft, screen.y + offsetY + 36 * scale, textWidth, height * 0.34, 12 * scale, 500, "theme.colors.textSecondary")]
         : []),
       {
         id: "module.conversation.header.separator",
@@ -372,17 +421,6 @@ function spacingPair(payload: DesignPreviewPayload, value: string) {
     x: numberToken(payload, xToken) * scale,
     y: numberToken(payload, yToken) * scale,
   };
-}
-
-function conversationString(
-  conversation: JsonRecord,
-  preview: JsonRecord,
-  key: string,
-  legacyPreviewKey = key,
-) {
-  return Object.hasOwn(conversation, key) && typeof conversation[key] === "string"
-    ? optionalString(conversation, key)
-    : optionalString(preview, legacyPreviewKey);
 }
 
 function optionalBooleanDefault(value: Record<string, unknown>, key: string, fallback: boolean) {

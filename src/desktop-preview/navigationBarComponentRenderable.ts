@@ -14,8 +14,12 @@ export function navigationBarComponentToRenderable(
 ): RenderableNode {
   const scale = renderScale(payload);
   const tokens = {
-    foreground: selectedColor(payload, "theme.navigationBar.foreground"),
-    background: selectedColor(payload, "theme.navigationBar.background"),
+    foreground: selectedColor(payload, navigationBar.foregroundColorToken),
+    background: selectedColor(
+      payload,
+      navigationBar.backgroundColorToken,
+      navigationBar.backgroundAlpha,
+    ),
   };
   const layout = {
     height: navigationBar.layout.height * scale,
@@ -132,7 +136,7 @@ function navigationButtonNode(
       style: {
         color: foreground,
         fill: layout.filled ? "currentColor" : "none",
-        pathData: "M64 20 Q64 20 64 20 L28 50 L64 80",
+        pathData: "M64 20 L28 50 L64 80 Z",
         preserveAspectRatio: "xMidYMid meet",
         stroke: "currentColor",
         strokeLinecap: "round",

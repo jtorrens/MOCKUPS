@@ -14,6 +14,9 @@ export interface StatusBarItemContract {
 
 export interface StatusBarDesignContract {
   id: "statusBar";
+  foregroundColorToken: string;
+  backgroundColorToken: string;
+  backgroundAlpha: number;
   layout: {
     height: number;
     itemSize: number;

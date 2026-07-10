@@ -16,8 +16,12 @@ export function statusBarComponentToRenderable(
 ): RenderableNode {
   const scale = renderScale(payload);
   const tokens = {
-    foreground: selectedColor(payload, "theme.statusBar.foreground"),
-    background: selectedColor(payload, "theme.statusBar.background"),
+    foreground: selectedColor(payload, statusBar.foregroundColorToken),
+    background: selectedColor(
+      payload,
+      statusBar.backgroundColorToken,
+      statusBar.backgroundAlpha,
+    ),
   };
   const layout = {
     height: statusBar.layout.height * scale,

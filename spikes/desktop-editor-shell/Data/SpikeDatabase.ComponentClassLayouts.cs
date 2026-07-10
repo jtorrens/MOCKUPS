@@ -196,7 +196,12 @@ internal sealed partial class SpikeDatabase
               "visible": true,
               "defaultOpen": false,
               "groups": [
-                { "id": "layout", "label": "Layout", "order": 10, "visible": true, "fields": [
+                { "id": "appearance", "label": "Appearance", "order": 10, "visible": true, "fields": [
+                  { "id": "component.statusBar.foregroundColorToken", "order": 10, "visible": true },
+                  { "id": "component.statusBar.backgroundColorToken", "order": 20, "visible": true },
+                  { "id": "component.statusBar.backgroundAlpha", "order": 30, "visible": true }
+                ] },
+                { "id": "layout", "label": "Layout", "order": 20, "visible": true, "fields": [
                   { "id": "component.statusBar.layout.height", "order": 10, "visible": true },
                   { "id": "component.statusBar.layout.itemSize", "order": 20, "visible": true },
                   { "id": "component.statusBar.layout.gap", "order": 30, "visible": true },
@@ -216,7 +221,12 @@ internal sealed partial class SpikeDatabase
               "visible": true,
               "defaultOpen": false,
               "groups": [
-                { "id": "layout", "label": "Layout", "order": 10, "visible": true, "fields": [
+                { "id": "appearance", "label": "Appearance", "order": 10, "visible": true, "fields": [
+                  { "id": "component.navigationBar.foregroundColorToken", "order": 10, "visible": true },
+                  { "id": "component.navigationBar.backgroundColorToken", "order": 20, "visible": true },
+                  { "id": "component.navigationBar.backgroundAlpha", "order": 30, "visible": true }
+                ] },
+                { "id": "layout", "label": "Layout", "order": 20, "visible": true, "fields": [
                   { "id": "component.navigationBar.type", "order": 10, "visible": true },
                   { "id": "component.navigationBar.layout.height", "order": 20, "visible": true },
                   { "id": "component.navigationBar.layout.itemSize", "order": 30, "visible": true },
@@ -225,7 +235,7 @@ internal sealed partial class SpikeDatabase
                   { "id": "component.navigationBar.layout.cornerRadius", "order": 60, "visible": true },
                   { "id": "component.navigationBar.layout.filled", "order": 70, "visible": true }
                 ] },
-                { "id": "gesture", "label": "Gesture", "order": 20, "visible": true, "fields": [
+                { "id": "gesture", "label": "Gesture", "order": 30, "visible": true, "fields": [
                   { "id": "component.navigationBar.gesture.width", "order": 10, "visible": true },
                   { "id": "component.navigationBar.gesture.height", "order": 20, "visible": true },
                   { "id": "component.navigationBar.gesture.cornerRadius", "order": 30, "visible": true }

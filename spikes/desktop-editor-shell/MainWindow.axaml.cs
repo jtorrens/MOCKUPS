@@ -55,6 +55,7 @@ public partial class MainWindow : SukiWindow
         _componentClassFieldValues = new ComponentClassFieldValueService(_database);
         _themeController = new EditorThemeController(this, RootShell, RefreshShellTheme);
         _actorAvatarPreviews = new ActorAvatarPreviewController(_database, () => _themeController.IsDark);
+        EditorTextBoxBehavior.Configure(ShellMessagesTextBox);
         _messages = new EditorShellMessageSink(ShellMessagesTextBox);
         _editorViewState = new EditorViewStateController(EditorScrollViewer);
         _previewController = new EditorPreviewController(
@@ -93,7 +94,6 @@ public partial class MainWindow : SukiWindow
             () => _themeController.IsDark,
             _treeExpansion.IsExpanded,
             SelectTreeNode,
-            (node) => ShowNode(_nodeSelection.ResolveSelectionNode(node)),
             ToggleTreeGroup,
             _nodeCommands.AddChild,
             _nodeCommands.DuplicateNode,
@@ -257,13 +257,30 @@ public partial class MainWindow : SukiWindow
 
     private void SelectTreeNode(ProjectTreeNode node)
     {
-        if (!EditorNodeSelectionState.CanSelectTreeNode(node))
+        if (node.Children.Count > 0)
         {
+            if (EditorNodeSelectionState.CanSelectTreeNode(node))
+            {
+                var wasExpanded = _treeExpansion.IsExpanded(node);
+                ShowNode(node, rebuildTree: false);
+                if (!wasExpanded)
+                {
+                    RebuildNavigationCards();
+                    return;
+                }
+
+                ToggleTreeGroup(node);
+                return;
+            }
+
             ToggleTreeGroup(node);
             return;
         }
 
-        ShowNode(node);
+        if (EditorNodeSelectionState.CanSelectTreeNode(node))
+        {
+            ShowNode(node);
+        }
     }
 
     private void ToggleTreeGroup(ProjectTreeNode node)

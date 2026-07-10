@@ -8,6 +8,7 @@ import { asRecord, parseObject } from "./previewJsonHelpers.js";
 import {
   optionalNumber,
   optionalString,
+  requiredAlpha,
   requiredBoolean,
   requiredNumber,
   requiredString,
@@ -87,6 +88,21 @@ export function resolveNavigationBarComponent(
   return {
     id: "navigationBar",
     type,
+    foregroundColorToken: requiredString(
+      config,
+      "foregroundColorToken",
+      "navigationBar.foregroundColorToken",
+    ),
+    backgroundColorToken: requiredString(
+      config,
+      "backgroundColorToken",
+      "navigationBar.backgroundColorToken",
+    ),
+    backgroundAlpha: requiredAlpha(
+      config,
+      "backgroundAlpha",
+      "navigationBar.backgroundAlpha",
+    ),
     layout: {
       height: requiredNumber(layout, "height", "navigationBar.layout.height"),
       itemSize: requiredNumber(

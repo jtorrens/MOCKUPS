@@ -98,6 +98,7 @@ internal static class EditorIcons
             ProjectTreeNodeKind.EpisodesRoot => Episodes,
             ProjectTreeNodeKind.Episode => Episode,
             ProjectTreeNodeKind.Shot => Shot,
+            ProjectTreeNodeKind.ModuleInstance => Module,
             ProjectTreeNodeKind.PaletteColor => Color,
             ProjectTreeNodeKind.IconTheme => Icon,
             ProjectTreeNodeKind.RenderPreset => Render,

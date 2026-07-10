@@ -242,7 +242,9 @@ internal sealed partial class SpikeDatabase
         {
             var tokens = ParseJsonObject(string.IsNullOrWhiteSpace(theme.TokensJson) ? "{}" : theme.TokensJson);
             var defaults = ParseJsonObject(DefaultThemeTokensJson(theme.Family));
-            if (!MergeMissing(tokens, defaults))
+            var changed = MergeMissing(tokens, defaults);
+            changed |= RemoveLegacySystemBarThemeTokens(tokens);
+            if (!changed)
             {
                 continue;
             }
@@ -253,6 +255,28 @@ internal sealed partial class SpikeDatabase
                 ("$id", theme.Id),
                 ("$tokensJson", tokens.ToJsonString()));
         }
+    }
+
+    private static bool RemoveLegacySystemBarThemeTokens(JsonObject tokens)
+    {
+        var changed = false;
+        if (tokens["modes"] is not JsonObject modes)
+        {
+            return false;
+        }
+
+        foreach (var (_, node) in modes)
+        {
+            if (node is not JsonObject mode)
+            {
+                continue;
+            }
+
+            changed |= mode.Remove("statusBar");
+            changed |= mode.Remove("navigationBar");
+        }
+
+        return changed;
     }
 
     private static List<ThemeRow> QueryThemeRows(SqliteConnection connection)
@@ -521,24 +545,6 @@ internal sealed partial class SpikeDatabase
                         ["borders.alternate"] = "gray_060",
                         ["theme.cursor.color"] = isAndroid ? "purple" : "blue",
                     },
-                    ["statusBar"] = new JsonObject
-                    {
-                        ["foreground"] = "gray_010",
-                        ["background"] = new JsonObject
-                        {
-                            ["color"] = "gray_100",
-                            ["alpha"] = 1,
-                        },
-                    },
-                    ["navigationBar"] = new JsonObject
-                    {
-                        ["foreground"] = "gray_010",
-                        ["background"] = new JsonObject
-                        {
-                            ["color"] = "gray_100",
-                            ["alpha"] = 1,
-                        },
-                    },
                     ["keyboard"] = new JsonObject
                     {
                         ["background"] = "gray_090",
@@ -580,24 +586,6 @@ internal sealed partial class SpikeDatabase
                         ["borders.secondary"] = "gray_030",
                         ["borders.alternate"] = "gray_050",
                         ["theme.cursor.color"] = isAndroid ? "purple_tint" : "blue_bright",
-                    },
-                    ["statusBar"] = new JsonObject
-                    {
-                        ["foreground"] = "gray_100",
-                        ["background"] = new JsonObject
-                        {
-                            ["color"] = "gray_010",
-                            ["alpha"] = 1,
-                        },
-                    },
-                    ["navigationBar"] = new JsonObject
-                    {
-                        ["foreground"] = "gray_100",
-                        ["background"] = new JsonObject
-                        {
-                            ["color"] = "gray_010",
-                            ["alpha"] = 1,
-                        },
                     },
                     ["keyboard"] = new JsonObject
                     {

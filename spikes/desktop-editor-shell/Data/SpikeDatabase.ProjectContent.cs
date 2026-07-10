@@ -276,16 +276,14 @@ internal sealed partial class SpikeDatabase
         {
             "module.conversation.showHeader" => JsonBoolString(config, ["conversation", "showHeader"], defaultValue: true),
             "module.conversation.useAppWallpaper" => JsonBoolString(config, ["conversation", "useAppWallpaper"], defaultValue: true),
-            "module.conversation.headerTitle" => JsonString(config, ["conversation", "headerTitle"]),
-            "module.conversation.headerSubtitle" => JsonString(config, ["conversation", "headerSubtitle"]),
             "module.conversation.headerHeight" => JsonNumberString(config, ["conversation", "headerHeight"], "64"),
+            "module.conversation.headerAvatarVariant" => JsonString(config, ["conversation", "headerAvatarVariant"]),
             "module.conversation.showStatusBar" => JsonBoolString(config, ["conversation", "showStatusBar"], defaultValue: true),
             "module.conversation.statusBarVariant" => JsonString(config, ["conversation", "statusBarVariant"]),
             "module.conversation.showNavigationBar" => JsonBoolString(config, ["conversation", "showNavigationBar"], defaultValue: true),
             "module.conversation.navigationBarVariant" => JsonString(config, ["conversation", "navigationBarVariant"]),
             "module.conversation.showTextInputBar" => JsonBoolString(config, ["conversation", "showTextInputBar"], defaultValue: true),
             "module.conversation.textInputBarVariant" => JsonString(config, ["conversation", "textInputBarVariant"]),
-            "module.conversation.inputText" => JsonString(config, ["conversation", "inputText"]),
             "module.conversation.showKeyboard" => JsonBoolString(config, ["conversation", "showKeyboard"], defaultValue: true),
             "module.conversation.keyboardVariant" => JsonString(config, ["conversation", "keyboardVariant"]),
             "module.conversation.bubbleVariant" => JsonString(config, ["conversation", "bubbleVariant"]),
@@ -541,14 +539,11 @@ internal sealed partial class SpikeDatabase
             case "module.conversation.useAppWallpaper":
                 SetJsonValue(config, ["conversation", "useAppWallpaper"], JsonValue.Create(BoolFromText(value))!);
                 break;
-            case "module.conversation.headerTitle":
-                SetJsonValue(config, ["conversation", "headerTitle"], JsonValue.Create(value)!);
-                break;
-            case "module.conversation.headerSubtitle":
-                SetJsonValue(config, ["conversation", "headerSubtitle"], JsonValue.Create(value)!);
-                break;
             case "module.conversation.headerHeight":
                 SetJsonValue(config, ["conversation", "headerHeight"], NumberNode(value));
+                break;
+            case "module.conversation.headerAvatarVariant":
+                SetJsonValue(config, ["conversation", "headerAvatarVariant"], JsonValue.Create(NormalizeComponentPresetReference(connection, projectId, "avatar", value))!);
                 break;
             case "module.conversation.showStatusBar":
                 SetJsonValue(config, ["conversation", "showStatusBar"], JsonValue.Create(BoolFromText(value))!);
@@ -567,9 +562,6 @@ internal sealed partial class SpikeDatabase
                 break;
             case "module.conversation.textInputBarVariant":
                 SetJsonValue(config, ["conversation", "textInputBarVariant"], JsonValue.Create(NormalizeComponentPresetReference(connection, projectId, "textInputBar", value))!);
-                break;
-            case "module.conversation.inputText":
-                SetJsonValue(config, ["conversation", "inputText"], JsonValue.Create(value)!);
                 break;
             case "module.conversation.showKeyboard":
                 SetJsonValue(config, ["conversation", "showKeyboard"], JsonValue.Create(BoolFromText(value))!);
@@ -602,8 +594,10 @@ internal sealed partial class SpikeDatabase
         {
             var config = ParseJsonObject(string.IsNullOrWhiteSpace(row.ConfigJson) ? "{}" : row.ConfigJson);
             var preview = ParseJsonObject(string.IsNullOrWhiteSpace(row.DesignPreviewJson) ? "{}" : row.DesignPreviewJson);
+            var changedPreview = MoveConversationRuntimeValuesToPreview(config, preview);
+            changedPreview |= JsonPath.MergeMissing(preview, DefaultConversationDesignPreviewJson());
+            changedPreview |= EnsureConversationPreviewInputs(preview);
             var changedConfig = EnsureConversationConfigDefaults(connection, row.ProjectId, config);
-            var changedPreview = JsonPath.MergeMissing(preview, DefaultConversationDesignPreviewJson());
 
             if (changedConfig || changedPreview)
             {
@@ -625,6 +619,10 @@ internal sealed partial class SpikeDatabase
         changed |= NormalizeConversationPreset(config, connection, projectId, "textInputBarVariant", "textInputBar");
         changed |= NormalizeConversationPreset(config, connection, projectId, "keyboardVariant", "keyboard");
         changed |= NormalizeConversationPreset(config, connection, projectId, "bubbleVariant", "bubble");
+        changed |= NormalizeConversationPreset(config, connection, projectId, "headerAvatarVariant", "avatar");
+        changed |= JsonPath.Remove(config, ["conversation", "headerTitle"]);
+        changed |= JsonPath.Remove(config, ["conversation", "headerSubtitle"]);
+        changed |= JsonPath.Remove(config, ["conversation", "inputText"]);
         return changed;
     }
 
@@ -649,16 +647,14 @@ internal sealed partial class SpikeDatabase
             {
                 ["showHeader"] = true,
                 ["useAppWallpaper"] = true,
-                ["headerTitle"] = "Alex Q",
-                ["headerSubtitle"] = "online",
                 ["headerHeight"] = 64,
+                ["headerAvatarVariant"] = "default",
                 ["showStatusBar"] = true,
                 ["statusBarVariant"] = "default",
                 ["showNavigationBar"] = true,
                 ["navigationBarVariant"] = "default",
                 ["showTextInputBar"] = true,
                 ["textInputBarVariant"] = "default",
-                ["inputText"] = "Message",
                 ["showKeyboard"] = true,
                 ["keyboardVariant"] = "default",
                 ["bubbleVariant"] = "default",
@@ -675,6 +671,7 @@ internal sealed partial class SpikeDatabase
         {
             ["headerTitle"] = "Alex Q",
             ["headerSubtitle"] = "online",
+            ["actorId"] = "",
             ["inputText"] = "Message",
             ["message1Text"] = "Tenias razon: ya podemos componer desde el modulo.",
             ["message2Text"] = "Perfecto. El modulo solo elige variantes y datos runtime.",
@@ -683,6 +680,7 @@ internal sealed partial class SpikeDatabase
             ["message2StatusText"] = "",
             ["inputs"] = new JsonArray
             {
+                new JsonObject { ["id"] = "actor", ["label"] = "Actor", ["jsonKey"] = "actorId", ["kind"] = "recordReference", ["defaultValue"] = "", ["tableId"] = "actors", ["resolvedJsonKey"] = "actor" },
                 new JsonObject { ["id"] = "headerTitle", ["label"] = "Header title", ["jsonKey"] = "headerTitle", ["kind"] = "text", ["defaultValue"] = "Alex Q" },
                 new JsonObject { ["id"] = "headerSubtitle", ["label"] = "Header subtitle", ["jsonKey"] = "headerSubtitle", ["kind"] = "text", ["defaultValue"] = "online" },
                 new JsonObject { ["id"] = "message1Text", ["label"] = "Incoming text", ["jsonKey"] = "message1Text", ["kind"] = "multilineText", ["defaultValue"] = "Tenias razon: ya podemos componer desde el modulo.", ["uiOrigin"] = "embedded", ["uiGroupId"] = "messages", ["uiGroupLabel"] = "Messages" },
@@ -710,6 +708,36 @@ internal sealed partial class SpikeDatabase
                 new JsonObject { ["id"] = "inputText", ["label"] = "Input text", ["jsonKey"] = "inputText", ["kind"] = "text", ["defaultValue"] = "Message", ["uiOrigin"] = "embedded", ["uiGroupId"] = "textInput", ["uiGroupLabel"] = "Text input" },
             },
         };
+    }
+
+    private static bool MoveConversationRuntimeValuesToPreview(JsonObject config, JsonObject preview)
+    {
+        var changed = false;
+        foreach (var key in new[] { "headerTitle", "headerSubtitle", "inputText" })
+        {
+            var value = JsonPath.Get(config, ["conversation", key]);
+            if (value is null)
+            {
+                continue;
+            }
+
+            preview[key] = value.DeepClone();
+            changed = true;
+        }
+
+        return changed;
+    }
+
+    private static bool EnsureConversationPreviewInputs(JsonObject preview)
+    {
+        var defaults = DefaultConversationDesignPreviewJson()["inputs"] as JsonArray ?? [];
+        if (preview["inputs"] is not JsonArray inputs)
+        {
+            preview["inputs"] = defaults.DeepClone();
+            return true;
+        }
+
+        return JsonPath.MergeObjectArrayById(inputs, defaults);
     }
 
     private static IReadOnlyList<(string Id, string ProjectId, string ConfigJson, string DesignPreviewJson)> ModuleRowsWithProject(SqliteConnection connection)

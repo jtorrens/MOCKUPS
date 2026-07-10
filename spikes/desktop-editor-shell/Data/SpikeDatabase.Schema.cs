@@ -67,6 +67,25 @@ internal sealed partial class SpikeDatabase
           metadata_json TEXT NOT NULL DEFAULT '{}'
         );
 
+        CREATE TABLE IF NOT EXISTS module_instances (
+          id TEXT PRIMARY KEY,
+          shot_id TEXT NOT NULL REFERENCES shots(id) ON DELETE CASCADE,
+          app_id TEXT NOT NULL REFERENCES apps(id) ON DELETE RESTRICT,
+          module_id TEXT NOT NULL REFERENCES modules(id) ON DELETE RESTRICT,
+          name TEXT NOT NULL,
+          notes TEXT NOT NULL DEFAULT '',
+          sort_order INTEGER NOT NULL DEFAULT 0,
+          duration_frames INTEGER NOT NULL DEFAULT 240,
+          transition_json TEXT NOT NULL DEFAULT '{"type":"cut"}',
+          content_json TEXT NOT NULL DEFAULT '{}',
+          behavior_json TEXT NOT NULL DEFAULT '{}',
+          animation_json TEXT NOT NULL DEFAULT '{"schemaVersion":1,"tracks":[]}',
+          metadata_json TEXT NOT NULL DEFAULT '{}'
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_module_instances_shot
+          ON module_instances(shot_id, sort_order, id);
+
         CREATE TABLE IF NOT EXISTS palette_colors (
           id TEXT PRIMARY KEY,
           project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,

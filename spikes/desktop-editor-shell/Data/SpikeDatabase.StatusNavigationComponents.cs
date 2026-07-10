@@ -80,7 +80,10 @@ internal sealed partial class SpikeDatabase
     {
         var config = new JsonObject
         {
-            ["schemaVersion"] = 2,
+            ["schemaVersion"] = 3,
+            ["foregroundColorToken"] = "theme.icons.primary",
+            ["backgroundColorToken"] = "theme.colors.background",
+            ["backgroundAlpha"] = 1,
             ["layout"] = new JsonObject
             {
                 ["height"] = 54,
@@ -113,7 +116,10 @@ internal sealed partial class SpikeDatabase
         var parsed = ParseJsonObject(string.IsNullOrWhiteSpace(json) ? "{}" : json);
         var layout = parsed["layout"] as JsonObject ?? [];
         var fallbackLayout = fallback["layout"]!.AsObject();
-        parsed["schemaVersion"] ??= 2;
+        parsed["schemaVersion"] = 3;
+        parsed["foregroundColorToken"] ??= fallback["foregroundColorToken"]!.DeepClone();
+        parsed["backgroundColorToken"] ??= fallback["backgroundColorToken"]!.DeepClone();
+        parsed["backgroundAlpha"] ??= fallback["backgroundAlpha"]!.DeepClone();
         parsed["layout"] = new JsonObject
         {
             ["height"] = GetJsonValue(layout, ["height"])?.DeepClone() ?? fallbackLayout["height"]!.DeepClone(),
@@ -202,8 +208,11 @@ internal sealed partial class SpikeDatabase
     {
         var config = new JsonObject
         {
-            ["schemaVersion"] = 1,
+            ["schemaVersion"] = 2,
             ["type"] = "buttons",
+            ["foregroundColorToken"] = "theme.icons.primary",
+            ["backgroundColorToken"] = "theme.colors.background",
+            ["backgroundAlpha"] = 1,
             ["layout"] = new JsonObject
             {
                 ["height"] = 34,
@@ -242,8 +251,11 @@ internal sealed partial class SpikeDatabase
         var gesture = parsed["gesture"] as JsonObject ?? [];
         var fallbackLayout = fallback["layout"]!.AsObject();
         var fallbackGesture = fallback["gesture"]!.AsObject();
-        parsed["schemaVersion"] ??= 1;
+        parsed["schemaVersion"] = 2;
         parsed["type"] = JsonString(parsed, ["type"]) is "gestureBar" ? "gestureBar" : "buttons";
+        parsed["foregroundColorToken"] ??= fallback["foregroundColorToken"]!.DeepClone();
+        parsed["backgroundColorToken"] ??= fallback["backgroundColorToken"]!.DeepClone();
+        parsed["backgroundAlpha"] ??= fallback["backgroundAlpha"]!.DeepClone();
         parsed["layout"] = new JsonObject
         {
             ["height"] = GetJsonValue(layout, ["height"])?.DeepClone() ?? fallbackLayout["height"]!.DeepClone(),

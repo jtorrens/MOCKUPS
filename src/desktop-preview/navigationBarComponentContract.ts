@@ -15,6 +15,9 @@ export interface NavigationBarItemContract {
 export interface NavigationBarDesignContract {
   id: "navigationBar";
   type: "buttons" | "gestureBar";
+  foregroundColorToken: string;
+  backgroundColorToken: string;
+  backgroundAlpha: number;
   layout: {
     height: number;
     itemSize: number;

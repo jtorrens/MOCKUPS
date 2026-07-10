@@ -533,6 +533,8 @@ for (const [, entry] of manifestEntries) {
 }
 
 allowedComponentImports["src/desktop-preview/conversationModuleRenderable.ts"] = new Set([
+  "./avatarComponentRenderable.js",
+  "./avatarComponentResolver.js",
   "./bubbleComponentRenderable.js",
   "./bubbleComponentResolver.js",
   "./keyboardComponentRenderable.js",

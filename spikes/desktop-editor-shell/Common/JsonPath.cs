@@ -42,6 +42,33 @@ internal static class JsonPath
         return changed;
     }
 
+    public static bool MergeObjectArrayById(JsonArray target, JsonArray defaults, string idProperty = "id")
+    {
+        var changed = false;
+        foreach (var defaultNode in defaults.OfType<JsonObject>())
+        {
+            var id = String(defaultNode, idProperty, "");
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                continue;
+            }
+
+            var existing = target
+                .OfType<JsonObject>()
+                .FirstOrDefault((node) => string.Equals(String(node, idProperty, ""), id, StringComparison.Ordinal));
+            if (existing is null)
+            {
+                target.Add(defaultNode.DeepClone());
+                changed = true;
+                continue;
+            }
+
+            changed |= MergeMissing(existing, defaultNode);
+        }
+
+        return changed;
+    }
+
     public static JsonNode? Get(JsonObject root, IReadOnlyList<string> path)
     {
         JsonNode? current = root;

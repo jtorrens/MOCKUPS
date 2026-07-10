@@ -250,7 +250,7 @@ internal sealed partial class SpikeDatabase
                 changed = true;
             }
 
-            if (JsonPath.Get(presetNode, ["locked"]) is null)
+            if (!JsonBool(presetNode, ["locked"]))
             {
                 presetNode["locked"] = true;
                 changed = true;

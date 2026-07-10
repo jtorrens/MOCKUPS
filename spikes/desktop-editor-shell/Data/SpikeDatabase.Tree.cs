@@ -22,6 +22,7 @@ internal sealed partial class SpikeDatabase
         var projects = QueryProjectRows(connection);
         var episodes = QueryEpisodeRows(connection);
         var shots = QueryShotRows(connection);
+        var moduleInstances = QueryModuleInstanceRows(connection);
         var apps = QueryAppRows(connection);
         var modules = QueryModuleRows(connection);
         var paletteColors = QueryPaletteColorRows(connection);
@@ -62,6 +63,7 @@ internal sealed partial class SpikeDatabase
         var componentClassGroupNodes = new Dictionary<string, Dictionary<ComponentClassNavigationGroup, ProjectTreeNode>>();
         var episodeRootNodes = new Dictionary<string, ProjectTreeNode>();
         var episodeNodes = new Dictionary<string, ProjectTreeNode>();
+        var shotNodes = new Dictionary<string, ProjectTreeNode>();
         foreach (var project in projectNodes.Values)
         {
             var productionDataRoot = new ProjectTreeNode(
@@ -355,18 +357,47 @@ internal sealed partial class SpikeDatabase
         {
             if (!episodeNodes.TryGetValue(shot.EpisodeId, out var episode)) continue;
 
-            episode.AddChild(new ProjectTreeNode(
+            var shotNode = new ProjectTreeNode(
                 ProjectTreeNodeKind.Shot,
                 shot.Id,
                 shot.Name,
                 shot.Notes,
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Shot),
-                episode));
+                episode);
+            episode.AddChild(shotNode);
+            shotNodes[shot.Id] = shotNode;
+        }
+
+        foreach (var moduleInstance in moduleInstances)
+        {
+            if (!shotNodes.TryGetValue(moduleInstance.ShotId, out var shot)) continue;
+
+            shot.AddChild(new ProjectTreeNode(
+                ProjectTreeNodeKind.ModuleInstance,
+                moduleInstance.Id,
+                moduleInstance.Name,
+                $"{moduleInstance.ModuleName} · {moduleInstance.DurationFrames} frames · {ModuleTransitionLabel(moduleInstance.TransitionJson)}",
+                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ModuleInstance),
+                shot));
         }
 
         return projectNodes.Values
             .OrderBy((node) => node.Name)
             .ToList();
+    }
+
+    private static string ModuleTransitionLabel(string transitionJson)
+    {
+        try
+        {
+            var transition = JsonNode.Parse(transitionJson)?.AsObject();
+            var type = transition?["type"]?.GetValue<string>();
+            return string.IsNullOrWhiteSpace(type) ? "Cut" : char.ToUpperInvariant(type[0]) + type[1..];
+        }
+        catch (JsonException)
+        {
+            return "Invalid transition";
+        }
     }
 
     private static IReadOnlyList<ComponentClassNavigationGroup> ComponentClassNavigationGroups()

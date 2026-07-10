@@ -30,6 +30,19 @@ internal sealed partial class SpikeDatabase
         string ConfigJson,
         string DesignPreviewJson,
         string MetadataJson);
+    public sealed record ModuleInstanceSettings(
+        string ShotId,
+        string AppId,
+        string ModuleId,
+        string Name,
+        string Notes,
+        int SortOrder,
+        int DurationFrames,
+        string TransitionJson,
+        string ContentJson,
+        string BehaviorJson,
+        string AnimationJson,
+        string MetadataJson);
     public sealed record DeviceSettings(string Name, string Manufacturer, string Model, string OsFamily, string MetricsJson);
     public sealed record DevicePreviewMetrics(
         string Name,
@@ -145,6 +158,17 @@ internal sealed partial class SpikeDatabase
     private sealed record EpisodeRow(string Id, string ProjectId, string Name, string Slug, string Notes, int SortOrder);
     private sealed record AppRow(string Id, string ProjectId, string RecordClassId, string Name, string Notes, int SortOrder);
     private sealed record ModuleRow(string Id, string AppId, string RecordClassId, string Name, string Notes, int SortOrder, string ConfigJson, string DesignPreviewJson, string MetadataJson);
+    private sealed record ModuleInstanceRow(
+        string Id,
+        string ShotId,
+        string AppId,
+        string ModuleId,
+        string Name,
+        string Notes,
+        int SortOrder,
+        int DurationFrames,
+        string TransitionJson,
+        string ModuleName);
     private sealed record PaletteColorRow(string Id, string ProjectId, string Token, string ValueHex, string Note, bool IsNeutral, string MetadataJson);
     private sealed record DeviceRow(string Id, string ProjectId, string Name, string Manufacturer, string Model, string OsFamily, string MetricsJson);
     private sealed record ActorRow(string Id, string ProjectId, string DisplayName, string ShortName, string DefaultDeviceId, string DefaultThemeId, string MetadataJson);

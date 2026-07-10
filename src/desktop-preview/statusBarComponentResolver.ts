@@ -3,6 +3,7 @@ import { asRecord, parseObject } from "./previewJsonHelpers.js";
 import {
   optionalNumber,
   optionalString,
+  requiredAlpha,
   requiredBoolean,
   requiredNumber,
   requiredString,
@@ -80,6 +81,21 @@ export function resolveStatusBarComponent(
   const layout = asRecord(config.layout);
   return {
     id: "statusBar",
+    foregroundColorToken: requiredString(
+      config,
+      "foregroundColorToken",
+      "statusBar.foregroundColorToken",
+    ),
+    backgroundColorToken: requiredString(
+      config,
+      "backgroundColorToken",
+      "statusBar.backgroundColorToken",
+    ),
+    backgroundAlpha: requiredAlpha(
+      config,
+      "backgroundAlpha",
+      "statusBar.backgroundAlpha",
+    ),
     layout: {
       height: requiredNumber(layout, "height", "statusBar.layout.height"),
       itemSize: requiredNumber(layout, "itemSize", "statusBar.layout.itemSize"),

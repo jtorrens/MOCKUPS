@@ -1,8 +1,10 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.VisualTree;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,7 +18,6 @@ internal sealed class EditorNavigationRenderer
     private readonly Func<bool> _isDark;
     private readonly Func<ProjectTreeNode, bool> _isExpanded;
     private readonly Action<ProjectTreeNode> _selectNode;
-    private readonly Action<ProjectTreeNode> _showNode;
     private readonly Action<ProjectTreeNode> _toggleGroup;
     private readonly Func<ProjectTreeNode, Task> _addChild;
     private readonly Action<ProjectTreeNode> _duplicateNode;
@@ -29,7 +30,6 @@ internal sealed class EditorNavigationRenderer
         Func<bool> isDark,
         Func<ProjectTreeNode, bool> isExpanded,
         Action<ProjectTreeNode> selectNode,
-        Action<ProjectTreeNode> showNode,
         Action<ProjectTreeNode> toggleGroup,
         Func<ProjectTreeNode, Task> addChild,
         Action<ProjectTreeNode> duplicateNode,
@@ -41,7 +41,6 @@ internal sealed class EditorNavigationRenderer
         _isDark = isDark;
         _isExpanded = isExpanded;
         _selectNode = selectNode;
-        _showNode = showNode;
         _toggleGroup = toggleGroup;
         _addChild = addChild;
         _duplicateNode = duplicateNode;
@@ -177,6 +176,17 @@ internal sealed class EditorNavigationRenderer
         grid.Children.Add(titleButton);
         grid.Children.Add(actions);
         grid.Children.Add(toggle);
+        grid.PointerPressed += (_, args) =>
+        {
+            if (args.Source is not Visual source
+                || source.FindAncestorOfType<Button>() is not null)
+            {
+                return;
+            }
+
+            ActivateNavigationNode(node);
+            args.Handled = true;
+        };
 
         return grid;
     }
@@ -305,20 +315,14 @@ internal sealed class EditorNavigationRenderer
         button.Click += (_, e) =>
         {
             e.Handled = true;
-            if (node.Children.Count > 0)
-            {
-                if (node.CanOpenEditor)
-                {
-                    _showNode(node);
-                }
-
-                _toggleGroup(node);
-                return;
-            }
-
-            _selectNode(node);
+            ActivateNavigationNode(node);
         };
         return button;
+    }
+
+    private void ActivateNavigationNode(ProjectTreeNode node)
+    {
+        _selectNode(node);
     }
 
     private void ApplyNavigationSelectionBrush(Control control, ProjectTreeNode node)

@@ -23,6 +23,7 @@ internal enum ProjectTreeNodeKind
     Module,
     Episode,
     Shot,
+    ModuleInstance,
     PaletteColor,
     IconTheme,
     RenderPreset,
@@ -122,6 +123,7 @@ internal sealed class ProjectTreeNode
         and not ProjectTreeNodeKind.ThemesRoot
         and not ProjectTreeNodeKind.ProductionFontsRoot
         and not ProjectTreeNodeKind.EpisodesRoot
+        and not ProjectTreeNodeKind.ModuleInstance
         and not ProjectTreeNodeKind.ComponentPreset;
 
     public string Display => Name;
@@ -154,6 +156,7 @@ internal sealed class ProjectTreeNode
             ProjectTreeNodeKind.Module => "module.generic",
             ProjectTreeNodeKind.Episode => "episode",
             ProjectTreeNodeKind.Shot => "shot",
+            ProjectTreeNodeKind.ModuleInstance => "module_instance",
             ProjectTreeNodeKind.PaletteColor => "palette_color",
             ProjectTreeNodeKind.IconTheme => "icon_theme",
             ProjectTreeNodeKind.RenderPreset => "render_preset",
