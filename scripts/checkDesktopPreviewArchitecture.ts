@@ -1317,7 +1317,7 @@ assertContains(
   "embedded inherited values must apply ancestor overrides only, so reset restores the selected child preset",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassReferences.cs",
   "return GetComponentPresetReferenceOptionsByType(projectId, componentType);",
   "embedded component preset selectors must store full component preset references, not short preset ids",
 );
