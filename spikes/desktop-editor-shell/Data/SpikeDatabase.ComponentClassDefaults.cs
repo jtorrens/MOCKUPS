@@ -770,6 +770,7 @@ internal sealed partial class SpikeDatabase
             [
                 ComponentInput("availableWidth", "Available width", "availableWidth", "number", "240", minimum: 1, maximum: 10000, increment: 1),
                 ComponentInput("isPlaying", "Playing", "isPlaying", "boolean", "false"),
+                ComponentInput("currentTimeSeconds", "Current time", "currentTimeSeconds", "number", "0", minimum: 0, maximum: 86400, increment: 0.1m),
                 ComponentInput("durationSeconds", "Duration", "durationSeconds", "number", "65", minimum: 1, maximum: 86400, increment: 1),
                 ComponentInput(
                     "actorId",

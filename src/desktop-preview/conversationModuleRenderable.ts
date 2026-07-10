@@ -113,8 +113,6 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
         {
           text: optionalString(preview, "inputText"),
           currentCharacter: 1,
-          trigger: optionalBoolean(preview, "composerTransitionTrigger"),
-          motionTimeSeconds: optionalNumber(preview, "composerTransitionTimeSeconds", 0),
         },
         (childPayload) =>
           keyboardComponentToRenderable(childPayload, resolveKeyboardComponent(childPayload)),
