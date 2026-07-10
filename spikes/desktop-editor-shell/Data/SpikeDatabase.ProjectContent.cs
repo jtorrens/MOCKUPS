@@ -515,34 +515,34 @@ internal sealed partial class SpikeDatabase
                 SetJsonValue(config, ["conversation", "headerHeight"], NumberNode(value));
                 break;
             case "module.conversation.headerAvatarVariant":
-                SetJsonValue(config, ["conversation", "headerAvatarVariant"], JsonValue.Create(NormalizeComponentPresetReference(connection, projectId, "avatar", value))!);
+                SetJsonValue(config, ["conversation", "headerAvatarVariant"], JsonValue.Create(ValidateComponentPresetReference(connection, projectId, "avatar", value))!);
                 break;
             case "module.conversation.showStatusBar":
                 SetJsonValue(config, ["conversation", "showStatusBar"], JsonValue.Create(BoolFromText(value))!);
                 break;
             case "module.conversation.statusBarVariant":
-                SetJsonValue(config, ["conversation", "statusBarVariant"], JsonValue.Create(NormalizeComponentPresetReference(connection, projectId, "status_bar", value))!);
+                SetJsonValue(config, ["conversation", "statusBarVariant"], JsonValue.Create(ValidateComponentPresetReference(connection, projectId, "status_bar", value))!);
                 break;
             case "module.conversation.showNavigationBar":
                 SetJsonValue(config, ["conversation", "showNavigationBar"], JsonValue.Create(BoolFromText(value))!);
                 break;
             case "module.conversation.navigationBarVariant":
-                SetJsonValue(config, ["conversation", "navigationBarVariant"], JsonValue.Create(NormalizeComponentPresetReference(connection, projectId, "navigation_bar", value))!);
+                SetJsonValue(config, ["conversation", "navigationBarVariant"], JsonValue.Create(ValidateComponentPresetReference(connection, projectId, "navigation_bar", value))!);
                 break;
             case "module.conversation.showTextInputBar":
                 SetJsonValue(config, ["conversation", "showTextInputBar"], JsonValue.Create(BoolFromText(value))!);
                 break;
             case "module.conversation.textInputBarVariant":
-                SetJsonValue(config, ["conversation", "textInputBarVariant"], JsonValue.Create(NormalizeComponentPresetReference(connection, projectId, "textInputBar", value))!);
+                SetJsonValue(config, ["conversation", "textInputBarVariant"], JsonValue.Create(ValidateComponentPresetReference(connection, projectId, "textInputBar", value))!);
                 break;
             case "module.conversation.showKeyboard":
                 SetJsonValue(config, ["conversation", "showKeyboard"], JsonValue.Create(BoolFromText(value))!);
                 break;
             case "module.conversation.keyboardVariant":
-                SetJsonValue(config, ["conversation", "keyboardVariant"], JsonValue.Create(NormalizeComponentPresetReference(connection, projectId, "keyboard", value))!);
+                SetJsonValue(config, ["conversation", "keyboardVariant"], JsonValue.Create(ValidateComponentPresetReference(connection, projectId, "keyboard", value))!);
                 break;
             case "module.conversation.bubbleVariant":
-                SetJsonValue(config, ["conversation", "bubbleVariant"], JsonValue.Create(NormalizeComponentPresetReference(connection, projectId, "bubble", value))!);
+                SetJsonValue(config, ["conversation", "bubbleVariant"], JsonValue.Create(ValidateComponentPresetReference(connection, projectId, "bubble", value))!);
                 break;
             case "module.conversation.bubbleMaxWidth":
                 SetJsonValue(config, ["conversation", "bubbleMaxWidth"], NumberNode(value));

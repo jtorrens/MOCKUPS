@@ -195,8 +195,8 @@ internal sealed partial class SpikeDatabase
             }
 
             var iconThemeId = FirstId(connection, "icon_themes", projectId);
-            var statusBarId = NormalizeComponentPresetReference(connection, projectId, "status_bar", "");
-            var navigationBarId = NormalizeComponentPresetReference(connection, projectId, "navigation_bar", "");
+            var statusBarId = DefaultComponentPresetReference(connection, projectId, "status_bar");
+            var navigationBarId = DefaultComponentPresetReference(connection, projectId, "navigation_bar");
             Execute(
                 connection,
                 """
@@ -212,27 +212,6 @@ internal sealed partial class SpikeDatabase
                 ("$navigationBarId", navigationBarId),
                 ("$tokensJson", DefaultThemeTokensJson("ios")),
                 ("$metadataJson", JsonSerializer.Serialize(new { note = "Default iOS-style production theme." })));
-        }
-    }
-
-    private static void EnsureThemeComponentPresetReferences(SqliteConnection connection)
-    {
-        foreach (var theme in QueryThemeRows(connection))
-        {
-            var statusBarId = NormalizeComponentPresetReference(connection, theme.ProjectId, "status_bar", theme.StatusBarId);
-            var navigationBarId = NormalizeComponentPresetReference(connection, theme.ProjectId, "navigation_bar", theme.NavigationBarId);
-            if (statusBarId.Equals(theme.StatusBarId, StringComparison.Ordinal)
-                && navigationBarId.Equals(theme.NavigationBarId, StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            Execute(
-                connection,
-                "UPDATE themes SET status_bar_id = $statusBarId, navigation_bar_id = $navigationBarId WHERE id = $id",
-                ("$id", theme.Id),
-                ("$statusBarId", statusBarId),
-                ("$navigationBarId", navigationBarId));
         }
     }
 

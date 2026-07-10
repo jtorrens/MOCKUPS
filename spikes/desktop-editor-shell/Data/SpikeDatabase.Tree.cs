@@ -771,8 +771,8 @@ internal sealed partial class SpikeDatabase
             _ => $"Theme {index}",
         };
         var iconThemeId = FirstId(connection, "icon_themes", project.Id);
-        var statusBarId = NormalizeComponentPresetReference(connection, project.Id, "status_bar", "");
-        var navigationBarId = NormalizeComponentPresetReference(connection, project.Id, "navigation_bar", "");
+        var statusBarId = DefaultComponentPresetReference(connection, project.Id, "status_bar");
+        var navigationBarId = DefaultComponentPresetReference(connection, project.Id, "navigation_bar");
         Execute(
             connection,
             """

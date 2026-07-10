@@ -207,7 +207,7 @@ internal sealed partial class SpikeDatabase
 
     private static void AddComponentPresetConfigs(SqliteConnection connection, JsonObject target, ComponentClassRow row)
     {
-        foreach (var preset in ComponentClassPresetsOrDefault(row))
+        foreach (var preset in RequiredComponentClassPresets(row))
         {
             var config = ParseJsonObject(
                 string.IsNullOrWhiteSpace(preset.ConfigJson) || preset.ConfigJson == "{}"
@@ -250,7 +250,7 @@ internal sealed partial class SpikeDatabase
                     $"Embedded component slot '{slot.FieldId}' references missing {slot.EmbeddedComponentType} class '{componentClassId}'.");
             }
 
-            if (!ComponentClassPresetsOrDefault(componentClass)
+            if (!RequiredComponentClassPresets(componentClass)
                     .Any((preset) => preset.Id.Equals(presetId, StringComparison.Ordinal)))
             {
                 throw new InvalidOperationException(
@@ -289,7 +289,7 @@ internal sealed partial class SpikeDatabase
         var rows = ComponentClassRowsByType(connection, projectId, componentType);
         var showClassName = rows.Count > 1;
         var options = rows
-            .SelectMany((row) => ComponentClassPresetsOrDefault(row)
+            .SelectMany((row) => RequiredComponentClassPresets(row)
                 .Select((preset) => new FieldOption(
                     ComponentPresetNodeId(row.Id, preset.Id),
                     showClassName ? $"{row.Name} · {preset.Name}" : preset.Name)))
@@ -302,102 +302,72 @@ internal sealed partial class SpikeDatabase
         return options;
     }
 
-    public string NormalizeComponentPresetReferenceValue(
+    public string ValidateComponentPresetReferenceValue(
         string projectId,
         string componentType,
-        string currentValue)
+        string reference,
+        bool allowEmpty = false)
     {
         using var connection = OpenConnection();
-        return NormalizeComponentPresetReference(connection, projectId, componentType, currentValue);
+        return ValidateComponentPresetReference(connection, projectId, componentType, reference, allowEmpty);
     }
 
-    private static string FirstComponentClassIdByType(SqliteConnection connection, string projectId, string componentType)
+    private static string DefaultComponentPresetReference(
+        SqliteConnection connection,
+        string projectId,
+        string componentType)
     {
-        using var command = connection.CreateCommand();
-        command.CommandText = """
-            SELECT id
-            FROM component_classes
-            WHERE project_id = $projectId
-              AND component_type = $componentType
-            ORDER BY CASE WHEN id = 'component_' || $projectId || '_' || $componentType THEN 0 ELSE 1 END, name
-            LIMIT 1
-            """;
-        command.Parameters.AddWithValue("$projectId", projectId);
-        command.Parameters.AddWithValue("$componentType", componentType);
-        return command.ExecuteScalar() as string ?? "";
+        var rows = ComponentClassRowsByType(connection, projectId, componentType);
+        var componentClass = rows.FirstOrDefault()
+            ?? throw new InvalidOperationException(
+                $"Project '{projectId}' has no {componentType} component class.");
+        var preset = RequiredComponentClassPresets(componentClass)
+            .FirstOrDefault((candidate) => candidate.Id.Equals(DefaultComponentPresetId, StringComparison.Ordinal))
+            ?? throw new InvalidOperationException(
+                $"Component class '{componentClass.Id}' has no protected default variant.");
+        return ComponentPresetNodeId(componentClass.Id, preset.Id);
     }
 
-    private static string NormalizeComponentPresetReference(
+    private static string ValidateComponentPresetReference(
         SqliteConnection connection,
         string projectId,
         string componentType,
-        string currentValue)
+        string reference,
+        bool allowEmpty = false)
     {
-        var rows = ComponentClassRowsByType(connection, projectId, componentType);
-        if (rows.Count == 0)
+        if (string.IsNullOrWhiteSpace(reference))
         {
-            return "";
-        }
-
-        if (!string.IsNullOrWhiteSpace(currentValue)
-            && TryParseComponentPresetNodeId(currentValue, out var componentClassId, out var presetId))
-        {
-            var row = rows.FirstOrDefault((candidate) => candidate.Id.Equals(componentClassId, StringComparison.Ordinal));
-            if (row is not null && ComponentClassPresetsOrDefault(row).Any((preset) => preset.Id.Equals(presetId, StringComparison.Ordinal)))
+            if (allowEmpty)
             {
-                return currentValue;
-            }
-        }
-
-        if (!string.IsNullOrWhiteSpace(currentValue))
-        {
-            var rowByClassId = rows.FirstOrDefault((candidate) => candidate.Id.Equals(currentValue, StringComparison.Ordinal));
-            if (rowByClassId is not null)
-            {
-                return ComponentPresetNodeId(rowByClassId.Id, PreferredPresetId(rowByClassId));
+                return "";
             }
 
-            var rowByPresetId = rows.FirstOrDefault((candidate) =>
-                ComponentClassPresetsOrDefault(candidate).Any((preset) => preset.Id.Equals(currentValue, StringComparison.Ordinal)));
-            if (rowByPresetId is not null)
-            {
-                return ComponentPresetNodeId(rowByPresetId.Id, currentValue);
-            }
-
-            var normalizedLookup = ComponentPresetLookupKey(currentValue);
-            foreach (var row in rows)
-            {
-                var preset = ComponentClassPresetsOrDefault(row)
-                    .FirstOrDefault((candidate) => ComponentPresetMatchesLookup(candidate, normalizedLookup));
-                if (preset is not null)
-                {
-                    return ComponentPresetNodeId(row.Id, preset.Id);
-                }
-            }
+            throw new InvalidOperationException(
+                $"A {componentType} component variant reference is required.");
         }
 
-        var first = rows[0];
-        return ComponentPresetNodeId(first.Id, PreferredPresetId(first));
-    }
-
-    private static bool ComponentPresetMatchesLookup(ComponentClassPreset preset, string normalizedLookup)
-    {
-        if (string.IsNullOrWhiteSpace(normalizedLookup))
+        if (!TryParseComponentPresetNodeId(reference, out var componentClassId, out var presetId))
         {
-            return false;
+            throw new InvalidOperationException(
+                $"Component variant reference '{reference}' must use the full componentClassId::preset::presetId form.");
         }
 
-        return ComponentPresetLookupKey(preset.Id).Equals(normalizedLookup, StringComparison.Ordinal)
-            || ComponentPresetLookupKey(preset.Name).Equals(normalizedLookup, StringComparison.Ordinal)
-            || ComponentPresetLookupKey(preset.Name).EndsWith(normalizedLookup, StringComparison.Ordinal);
-    }
+        var componentClass = ComponentClassRowsByType(connection, projectId, componentType)
+            .FirstOrDefault((candidate) => candidate.Id.Equals(componentClassId, StringComparison.Ordinal));
+        if (componentClass is null)
+        {
+            throw new InvalidOperationException(
+                $"Component variant reference '{reference}' does not name a {componentType} class in project '{projectId}'.");
+        }
 
-    private static string ComponentPresetLookupKey(string value)
-    {
-        return new string(value
-            .Where(char.IsLetterOrDigit)
-            .Select(char.ToLowerInvariant)
-            .ToArray());
+        if (!RequiredComponentClassPresets(componentClass)
+                .Any((candidate) => candidate.Id.Equals(presetId, StringComparison.Ordinal)))
+        {
+            throw new InvalidOperationException(
+                $"Component variant reference '{reference}' names a missing variant on '{componentClassId}'.");
+        }
+
+        return reference;
     }
 
     private static List<ComponentClassRow> ComponentClassRowsByType(
@@ -413,17 +383,29 @@ internal sealed partial class SpikeDatabase
             .ToList();
     }
 
-    private static IReadOnlyList<ComponentClassPreset> ComponentClassPresetsOrDefault(ComponentClassRow row)
+    private static IReadOnlyList<ComponentClassPreset> RequiredComponentClassPresets(ComponentClassRow row)
     {
         var presets = ComponentClassPresets(row.MetadataJson);
-        return presets.Count > 0
-            ? presets
-            : [new ComponentClassPreset(DefaultComponentPresetId, "Default", true, true, row.ConfigJson)];
+        if (presets.Count == 0)
+        {
+            throw new InvalidOperationException(
+                $"Component class '{row.Id}' has no persisted variants.");
+        }
+
+        if (!presets.Any((preset) =>
+                preset.Id.Equals(DefaultComponentPresetId, StringComparison.Ordinal)
+                && preset.IsProtected))
+        {
+            throw new InvalidOperationException(
+                $"Component class '{row.Id}' must have a protected default variant.");
+        }
+
+        return presets;
     }
 
     private static string PreferredPresetId(ComponentClassRow row)
     {
-        var presets = ComponentClassPresetsOrDefault(row);
+        var presets = RequiredComponentClassPresets(row);
         return presets.FirstOrDefault((preset) => preset.Id.Equals(DefaultComponentPresetId, StringComparison.Ordinal))?.Id
             ?? presets[0].Id;
     }
@@ -434,41 +416,23 @@ internal sealed partial class SpikeDatabase
         string componentType,
         string presetReference)
     {
-        if (TryParseComponentPresetNodeId(presetReference, out var componentClassId, out var referencedPresetId))
+        if (!TryParseComponentPresetNodeId(presetReference, out var componentClassId, out var referencedPresetId))
         {
-            var referencedRow = QueryComponentClassRows(connection)
-                .FirstOrDefault((row) =>
-                    row.ProjectId.Equals(projectId, StringComparison.Ordinal)
-                    && row.Id.Equals(componentClassId, StringComparison.Ordinal)
-                    && row.ComponentType.Equals(componentType, StringComparison.Ordinal));
-            if (referencedRow is null)
-            {
-                throw new InvalidOperationException($"Missing component variant reference '{presetReference}'.");
-            }
-
-            return ComponentPresetConfigJson(referencedRow, referencedPresetId);
+            throw new InvalidOperationException(
+                $"Component variant reference '{presetReference}' must use the full componentClassId::preset::presetId form.");
         }
 
-        using var command = connection.CreateCommand();
-        command.CommandText = """
-            SELECT config_json, metadata_json
-            FROM component_classes
-            WHERE project_id = $projectId
-              AND component_type = $componentType
-            ORDER BY CASE WHEN id = 'component_' || $projectId || '_' || component_type THEN 0 ELSE 1 END, name
-            LIMIT 1
-            """;
-        command.Parameters.AddWithValue("$projectId", projectId);
-        command.Parameters.AddWithValue("$componentType", componentType);
-        using var reader = command.ExecuteReader();
-        if (!reader.Read())
+        var referencedRow = QueryComponentClassRows(connection)
+            .FirstOrDefault((row) =>
+                row.ProjectId.Equals(projectId, StringComparison.Ordinal)
+                && row.Id.Equals(componentClassId, StringComparison.Ordinal)
+                && row.ComponentType.Equals(componentType, StringComparison.Ordinal));
+        if (referencedRow is null)
         {
-            throw new InvalidOperationException($"Missing base component class '{componentType}' for project '{projectId}'.");
+            throw new InvalidOperationException($"Missing component variant reference '{presetReference}'.");
         }
 
-        var classConfigJson = ReadString(reader, 0);
-        var metadataJson = ReadString(reader, 1);
-        return ComponentPresetConfigJson(classConfigJson, metadataJson, presetReference);
+        return ComponentPresetConfigJson(referencedRow, referencedPresetId);
     }
 
     private static string ComponentPresetConfigJson(ComponentClassRow row, string presetId)
@@ -526,27 +490,14 @@ internal sealed partial class SpikeDatabase
                 return presetReference;
             }
 
-            var referencedPreset = ComponentClassPresetsOrDefault(row)
+            var referencedPreset = RequiredComponentClassPresets(row)
                 .FirstOrDefault((candidate) => candidate.Id.Equals(referencedPresetId, StringComparison.Ordinal));
             var presetName = string.IsNullOrWhiteSpace(referencedPreset?.Name) ? referencedPresetId : referencedPreset.Name;
             return $"{row.Name} · {presetName}";
         }
 
-        using var command = connection.CreateCommand();
-        command.CommandText = """
-            SELECT metadata_json
-            FROM component_classes
-            WHERE project_id = $projectId
-              AND component_type = $componentType
-            ORDER BY CASE WHEN id = 'component_' || $projectId || '_' || component_type THEN 0 ELSE 1 END, name
-            LIMIT 1
-            """;
-        command.Parameters.AddWithValue("$projectId", projectId);
-        command.Parameters.AddWithValue("$componentType", componentType);
-        var metadataJson = command.ExecuteScalar() as string ?? "";
-        var preset = ComponentClassPresets(metadataJson)
-            .FirstOrDefault((candidate) => candidate.Id.Equals(presetReference, StringComparison.Ordinal));
-        return string.IsNullOrWhiteSpace(preset?.Name) ? presetReference : preset.Name;
+        throw new InvalidOperationException(
+            $"Component variant reference '{presetReference}' must use the full componentClassId::preset::presetId form.");
     }
 
     private IReadOnlyList<FieldOption>? ComponentClassFieldOptions(
