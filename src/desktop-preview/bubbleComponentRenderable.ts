@@ -156,6 +156,17 @@ export function bubbleComponentToRenderable(
   const stateColors = bubble.colors[bubble.state];
   const surfaceColors = bubbleSurfaceColors(payload, stateColors.background, bubble.surface.backgroundAlpha);
   const textColor = selectedPalettePairColor(payload, stateColors.text);
+  const mediaNode = media && mediaBox
+    ? media.kind === "audio"
+      ? audioComponentToRenderableAt(payload, media.value, mediaBox)
+      : mediaComponentToRenderableAt(payload, media.value, mediaBox)
+    : undefined;
+  const inlineMediaNode = media?.kind === "media" && media.value.displayState === "fullframe"
+    ? undefined
+    : mediaNode;
+  const fullframeMediaNode = media?.kind === "media" && media.value.displayState === "fullframe"
+    ? mediaNode
+    : undefined;
 
   return {
     id: bubble.id,
@@ -184,13 +195,7 @@ export function bubbleComponentToRenderable(
           },
         },
       ),
-      ...(media && mediaBox
-        ? [
-            media.kind === "audio"
-              ? audioComponentToRenderableAt(payload, media.value, mediaBox)
-              : mediaComponentToRenderableAt(payload, media.value, mediaBox),
-          ]
-        : []),
+      ...(inlineMediaNode ? [inlineMediaNode] : []),
       ...(statusBox
         ? [bubbleStatusToRenderable(payload, bubble, statusBox, textColor)]
         : []),
@@ -214,6 +219,7 @@ export function bubbleComponentToRenderable(
       ...(bubble.avatarSlot.avatar && avatarBox
         ? [avatarComponentToRenderableAt(payload, bubble.avatarSlot.avatar, avatarBox)]
         : []),
+      ...(fullframeMediaNode ? [fullframeMediaNode] : []),
     ],
   };
 }
