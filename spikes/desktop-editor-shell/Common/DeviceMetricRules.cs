@@ -99,31 +99,6 @@ internal static class DeviceMetricRules
             scaleToPixels);
     }
 
-    public static bool EnsurePreviewMetricDefaults(JsonObject metrics, string osFamily)
-    {
-        var width = FirstPositiveNumber(
-            metrics,
-            ["canvas", "width"],
-            ["renderSize", "width"],
-            ["screen", "width"]) ?? 1080;
-        var height = FirstPositiveNumber(
-            metrics,
-            ["canvas", "height"],
-            ["renderSize", "height"],
-            ["screen", "height"]) ?? 1920;
-        var scale = OptionalPositiveNumber(metrics, ["scaleToPixels"])
-            ?? OptionalPositiveNumber(metrics, ["pixelRatio"])
-            ?? GuessScale((int)Math.Round(width), (int)Math.Round(height), osFamily);
-        var includeDynamicIsland = JsonPath.Get(metrics, ["dynamicIsland"]) is JsonObject;
-        var defaults = JsonPath.ParseObject(CreateMetricsJson(
-            (int)Math.Round(width),
-            (int)Math.Round(height),
-            scale,
-            includeDynamicIsland));
-
-        return JsonPath.MergeMissing(metrics, defaults);
-    }
-
     public static double GuessScale(int width, int height, string osFamily)
     {
         if (osFamily.Equals("ios", StringComparison.OrdinalIgnoreCase))
