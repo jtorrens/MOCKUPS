@@ -2,7 +2,7 @@ import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
   STANDARD_IOS_KEYBOARD_LAYOUT,
   parseKeyboardRows,
-} from "../domain/keyboards/standardKeyboardLayout.js";
+} from "../shared/keyboard/standardKeyboardLayout.js";
 import type { KeyboardDesignContract, KeyboardMode } from "./keyboardComponentContract.js";
 import {
   componentPresetConfig,

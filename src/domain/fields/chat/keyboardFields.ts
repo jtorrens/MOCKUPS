@@ -1,4 +1,4 @@
-import { STANDARD_IOS_KEYBOARD_LAYOUT } from "../../keyboards/standardKeyboardLayout.js";
+import { STANDARD_IOS_KEYBOARD_LAYOUT } from "../../../shared/keyboard/standardKeyboardLayout.js";
 import {
   defineFields,
   type JsonFieldBinding,
