@@ -174,7 +174,9 @@ public partial class MainWindow : SukiWindow
             _domainDialogs,
             ReloadAndSelect,
             _pathBrowser.BrowsePath,
-            RefreshPreviewDevice);
+            RefreshPreviewDevice,
+            _dictionaryFieldServices,
+            _previewController.TriggerDesignPreviewAction);
         _editorContent = new EditorContentController(
             _database,
             EditorCardsPanel,

@@ -221,6 +221,16 @@ internal sealed partial class SpikeDatabase
             ReadString(reader, 5));
     }
 
+    public void UpdateModuleDesignPreviewJson(string moduleId, string designPreviewJson)
+    {
+        using var connection = OpenConnection();
+        Execute(
+            connection,
+            "UPDATE modules SET design_preview_json = $json WHERE id = $id",
+            ("$json", designPreviewJson),
+            ("$id", moduleId));
+    }
+
     public AppSettings GetModuleAppSettings(string moduleId)
     {
         using var connection = OpenConnection();

@@ -548,6 +548,11 @@ internal sealed class EditorPreviewController
         }
     }
 
+    public void TriggerDesignPreviewAction(string actionId)
+    {
+        _designInputsPanel.TriggerAction(actionId);
+    }
+
     private async Task<bool> PreparePlaybackFramesAsync()
     {
         EnsureSelectedOptionsExist();

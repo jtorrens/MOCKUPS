@@ -35,6 +35,7 @@ internal sealed class ComponentInputsPanel : ContentControl
     private string _scopeKey = "";
     private string _projectId = "";
     private string _inputSignature = "";
+    private string _testValuesSignature = "";
     private IReadOnlyList<ComponentPreviewActionDefinition> _actions = [];
     private string _activeActionId = "";
     private JsonObject _config = [];
@@ -72,6 +73,7 @@ internal sealed class ComponentInputsPanel : ContentControl
                 _scopeKey = "";
                 _projectId = "";
                 _inputSignature = "";
+                _testValuesSignature = "";
                 Content = null;
                 _actions = [];
                 _activeActionId = "";
@@ -84,7 +86,7 @@ internal sealed class ComponentInputsPanel : ContentControl
             var preview = ParseJsonObject(payload.DesignPreviewJson);
             var config = ParseJsonObject(payload.ConfigJson);
             _config = config;
-            var inputs = ReadInputs(preview, config).ToList();
+            var inputs = ReadRuntimeInputs(preview, config);
             _actions = ComponentPreviewActions.Read(preview);
             if (inputs.Count == 0)
             {
@@ -103,6 +105,11 @@ internal sealed class ComponentInputsPanel : ContentControl
             IsVisible = true;
             var scopeKey = ScopeKey(payload);
             var inputSignature = string.Join("|", inputs.Select(InputSignature).Concat(_actions.Select(ActionSignature)));
+            var testValuesSignature = preview["testValues"]?.ToJsonString() ?? "";
+            if (scopeKey == _scopeKey && testValuesSignature != _testValuesSignature)
+            {
+                _values.Clear();
+            }
             var shouldRebuild = scopeKey != _scopeKey
                 || projectId != _projectId
                 || inputSignature != _inputSignature
@@ -110,6 +117,7 @@ internal sealed class ComponentInputsPanel : ContentControl
             _scopeKey = scopeKey;
             _projectId = projectId;
             _inputSignature = inputSignature;
+            _testValuesSignature = testValuesSignature;
             foreach (var input in inputs)
             {
                 EnsureValue(input, preview);
@@ -133,6 +141,15 @@ internal sealed class ComponentInputsPanel : ContentControl
         && IsPlaying(activeAction);
 
     public int PlaybackFrameRate => _playbackFrameRate;
+
+    public void TriggerAction(string actionId)
+    {
+        var action = _actions.FirstOrDefault((candidate) => candidate.Id == actionId);
+        if (action is not null)
+        {
+            TogglePlayback(action);
+        }
+    }
 
     private void RebuildCard(IReadOnlyList<ComponentInputDefinition> inputs, string projectId)
     {
@@ -351,7 +368,7 @@ internal sealed class ComponentInputsPanel : ContentControl
 
         var preview = ParseJsonObject(payload.DesignPreviewJson);
         var config = ParseJsonObject(payload.ConfigJson);
-        var inputs = ReadInputs(preview, config).ToList();
+        var inputs = ReadRuntimeInputs(preview, config);
         _actions = ComponentPreviewActions.Read(preview);
         if (inputs.Count == 0)
         {
@@ -1129,11 +1146,12 @@ internal sealed class ComponentInputsPanel : ContentControl
         }
     }
 
-    private static IEnumerable<ComponentInputDefinition> ReadInputs(JsonObject preview, JsonObject config)
+    internal static IReadOnlyList<ComponentInputDefinition> ReadRuntimeInputs(JsonObject preview, JsonObject config)
     {
+        var definitions = new List<ComponentInputDefinition>();
         if (preview["inputs"] is not JsonArray inputs)
         {
-            yield break;
+            return definitions;
         }
 
         foreach (var item in inputs.OfType<JsonObject>())
@@ -1161,7 +1179,7 @@ internal sealed class ComponentInputsPanel : ContentControl
                 continue;
             }
 
-            yield return CreateInputDefinition(
+            definitions.Add(CreateInputDefinition(
                 id,
                 label,
                 jsonKey,
@@ -1182,8 +1200,10 @@ internal sealed class ComponentInputsPanel : ContentControl
                 ParseInputUiOrigin(JsonString(item, "uiOrigin")),
                 JsonString(item, "uiGroupId"),
                 JsonString(item, "uiGroupLabel"),
-                JsonString(item, "uiParentGroupId"));
+                JsonString(item, "uiParentGroupId")));
         }
+
+        return definitions;
     }
 
     private static bool InputIsVisible(JsonObject input, JsonObject config)

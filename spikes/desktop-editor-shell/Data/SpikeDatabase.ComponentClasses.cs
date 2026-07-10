@@ -24,6 +24,16 @@ internal sealed partial class SpikeDatabase
         return GetComponentPresetSettings(connection, presetNode);
     }
 
+    public void UpdateComponentClassDesignPreviewJson(string componentClassId, string designPreviewJson)
+    {
+        using var connection = OpenConnection();
+        Execute(
+            connection,
+            "UPDATE component_classes SET design_preview_json = $json WHERE id = $id",
+            ("$json", designPreviewJson),
+            ("$id", componentClassId));
+    }
+
     private static ComponentClassSettings GetComponentPresetSettings(SqliteConnection connection, ProjectTreeNode presetNode)
     {
         if (presetNode.Kind != ProjectTreeNodeKind.ComponentPreset

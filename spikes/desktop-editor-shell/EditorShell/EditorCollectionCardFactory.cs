@@ -14,6 +14,8 @@ internal sealed class EditorCollectionCardFactory
     private readonly Action<ProjectTreeNode> _reloadAndSelect;
     private readonly Func<string, ValueKind, Task<string?>> _browsePath;
     private readonly Action _onChanged;
+    private readonly EditorDictionaryFieldServices _dictionaryServices;
+    private readonly Action<string> _triggerPreviewAction;
 
     public EditorCollectionCardFactory(
         SpikeDatabase database,
@@ -22,7 +24,9 @@ internal sealed class EditorCollectionCardFactory
         EditorDomainDialogService domainDialogs,
         Action<ProjectTreeNode> reloadAndSelect,
         Func<string, ValueKind, Task<string?>> browsePath,
-        Action onChanged)
+        Action onChanged,
+        EditorDictionaryFieldServices dictionaryServices,
+        Action<string> triggerPreviewAction)
     {
         _database = database;
         _isDark = isDark;
@@ -31,6 +35,8 @@ internal sealed class EditorCollectionCardFactory
         _reloadAndSelect = reloadAndSelect;
         _browsePath = browsePath;
         _onChanged = onChanged;
+        _dictionaryServices = dictionaryServices;
+        _triggerPreviewAction = triggerPreviewAction;
     }
 
     public IReadOnlyList<InstantEditorCard> Create(ProjectTreeNode node)
@@ -52,6 +58,8 @@ internal sealed class EditorCollectionCardFactory
                 CreateComponentClassCollectionCards(node),
             ProjectTreeNodeKind.ModuleInstance =>
                 CreateModuleInstanceCollectionCards(node),
+            ProjectTreeNodeKind.Module or ProjectTreeNodeKind.ComponentPreset =>
+                [new RuntimeInputsCollectionEditor(_database, _dictionaryServices, _onChanged, _triggerPreviewAction).Create(node)],
             ProjectTreeNodeKind.Shot =>
                 [new ShotModuleInstancesCollectionEditor(_database, _onChanged, _reloadAndSelect).Create(node)],
             _ => [],
