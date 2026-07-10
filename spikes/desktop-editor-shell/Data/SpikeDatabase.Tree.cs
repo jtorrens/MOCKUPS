@@ -1066,6 +1066,7 @@ internal sealed partial class SpikeDatabase
             ProjectTreeNodeKind.Shot => "shots",
             ProjectTreeNodeKind.App => "apps",
             ProjectTreeNodeKind.Module => "modules",
+            ProjectTreeNodeKind.ModuleInstance => "module_instances",
             ProjectTreeNodeKind.PaletteColor => "palette_colors",
             ProjectTreeNodeKind.Device => "devices",
             ProjectTreeNodeKind.Actor => "actors",

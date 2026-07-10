@@ -20,6 +20,13 @@ internal sealed partial class SpikeDatabase
         string StatusText,
         string DeliveryStatus);
 
+    public sealed record ModuleInstanceSlot(
+        string Id,
+        string Name,
+        string ModuleName,
+        int SortOrder,
+        string TransitionType);
+
     public ModuleInstanceSettings GetModuleInstanceSettings(string moduleInstanceId)
     {
         using var connection = OpenConnection();
@@ -56,6 +63,61 @@ internal sealed partial class SpikeDatabase
     {
         var settings = GetModuleInstanceSettings(moduleInstanceId);
         return GetModuleSettings(settings.ModuleId).RecordClassId == "module.core.chat";
+    }
+
+    public IReadOnlyList<ModuleInstanceSlot> GetShotModuleInstanceSlots(string shotId)
+    {
+        using var connection = OpenConnection();
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT mi.id, mi.name, m.name, mi.sort_order, mi.transition_json
+            FROM module_instances mi
+            JOIN modules m ON m.id = mi.module_id
+            WHERE mi.shot_id = $shotId
+            ORDER BY mi.sort_order, mi.name, mi.id
+            """;
+        command.Parameters.AddWithValue("$shotId", shotId);
+        using var reader = command.ExecuteReader();
+        var slots = new List<ModuleInstanceSlot>();
+        while (reader.Read())
+        {
+            var transition = ParseJsonObject(ReadString(reader, 4));
+            slots.Add(new ModuleInstanceSlot(
+                reader.GetString(0),
+                reader.GetString(1),
+                reader.GetString(2),
+                reader.GetInt32(3),
+                transition["type"]?.GetValue<string>() ?? "cut"));
+        }
+
+        return slots;
+    }
+
+    public void MoveModuleInstance(string moduleInstanceId, int offset)
+    {
+        if (offset == 0) return;
+
+        var current = GetModuleInstanceSettings(moduleInstanceId);
+        var slots = GetShotModuleInstanceSlots(current.ShotId).ToList();
+        var currentIndex = slots.FindIndex((slot) => slot.Id == moduleInstanceId);
+        var targetIndex = currentIndex + offset;
+        if (currentIndex < 0 || targetIndex < 0 || targetIndex >= slots.Count) return;
+
+        var currentSlot = slots[currentIndex];
+        var targetSlot = slots[targetIndex];
+        using var connection = OpenConnection();
+        using var transaction = connection.BeginTransaction();
+        Execute(connection,
+            transaction,
+            "UPDATE module_instances SET sort_order = $sortOrder WHERE id = $id",
+            ("$sortOrder", targetSlot.SortOrder),
+            ("$id", currentSlot.Id));
+        Execute(connection,
+            transaction,
+            "UPDATE module_instances SET sort_order = $sortOrder WHERE id = $id",
+            ("$sortOrder", currentSlot.SortOrder),
+            ("$id", targetSlot.Id));
+        transaction.Commit();
     }
 
     public void UpdateModuleInstanceField(string moduleInstanceId, string fieldId, string value)

@@ -199,7 +199,17 @@ internal sealed partial class SpikeDatabase
 
     private static void Execute(SqliteConnection connection, string sql, params (string Key, object? Value)[] parameters)
     {
+        Execute(connection, transaction: null, sql, parameters);
+    }
+
+    private static void Execute(
+        SqliteConnection connection,
+        SqliteTransaction? transaction,
+        string sql,
+        params (string Key, object? Value)[] parameters)
+    {
         using var command = connection.CreateCommand();
+        command.Transaction = transaction;
         command.CommandText = sql;
         foreach (var (key, value) in parameters)
         {

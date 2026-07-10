@@ -52,6 +52,8 @@ internal sealed class EditorCollectionCardFactory
                 CreateComponentClassCollectionCards(node),
             ProjectTreeNodeKind.ModuleInstance =>
                 CreateModuleInstanceCollectionCards(node),
+            ProjectTreeNodeKind.Shot =>
+                [new ShotModuleInstancesCollectionEditor(_database, _onChanged, _reloadAndSelect).Create(node)],
             _ => [],
         };
     }
