@@ -1380,7 +1380,7 @@ assertContains(
   "first component class selection must prefer the protected Default preset",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassVariants.cs",
   "Component variants can only be saved from an active selected variant.",
   "component variant saving must reject ambiguous parent component class configs",
 );
