@@ -127,10 +127,9 @@ legacy/new fragments.
 
 Compatibility note:
 
-- legacy `status_bars` and `navigation_bars` physical tables still exist in the
-  TypeScript persistence/runtime compatibility layer. They are not part of the
-  desktop editor or desktop preview component route. Removing them belongs to a
-  future screen/module runtime rebuild, not to component preview cleanup.
+- schema v1 removes legacy `status_bars` and `navigation_bars` physical tables
+  from the committed desktop DB. Status/navigation are ordinary `system`
+  component classes and variants.
 
 ## Next Safe Work
 

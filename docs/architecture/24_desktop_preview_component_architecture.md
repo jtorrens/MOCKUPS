@@ -1191,8 +1191,7 @@ Non-preview follow-up resolved for the desktop spike:
 
 - the desktop editor no longer seeds, edits or queries legacy
   `status_bars`/`navigation_bars` rows;
-- the physical tables remain only as persistence/schema compatibility for
-  non-desktop/runtime code until that layer is redesigned;
+- schema v1 removes those physical tables from the committed desktop DB;
 - status/navigation editing and theme selection must go through component class
   variants.
 - component class record-class ids for migrated components use the current

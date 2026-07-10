@@ -1,11 +1,12 @@
 # Schema v1 Consolidation Manifest
 
-Status: proposed canonical baseline after checkpoint
-`pre-schema-v1-consolidation` / `42e4a047`.
+Status: active canonical baseline.
 
-This document defines the desktop editor data model that will be copied into a
-new database and then become schema v1. It is intentionally independent from
-the historical React persistence path.
+Recovery checkpoint before the cutover: `pre-schema-v1-consolidation` /
+`42e4a047`.
+
+This document defines the desktop editor data model committed as schema v1. It
+is intentionally independent from the historical React persistence path.
 
 ## Scope
 
@@ -52,9 +53,9 @@ content, behavior, animation and metadata. It does not store actor, device,
 theme, mode or device state. Those values resolve from shot/project context.
 Shots store a nullable `fps_override`; a null value inherits `projects.default_fps`.
 
-Schema v1 begins with `PRAGMA user_version = 1`. The existing desktop DB has
-`user_version = 0`; its column-normalization history must not become the new
-runtime startup path.
+Schema v1 begins with `PRAGMA user_version = 1`. The committed desktop DB uses
+that version. Historical column-normalization code is no longer part of normal
+startup.
 
 ## Data Preserved By The Converter
 
@@ -77,10 +78,11 @@ below:
 The converter must report and stop on ambiguous references. It must not invent
 plausible data for missing required current-model values.
 
-## Compatibility To Extract From Startup
+## Historical Compatibility Kept Out Of Startup
 
-These operations are useful only while importing an older desktop DB. They move
-into the offline schema-v1 converter and must not run during normal startup:
+These operations are useful only while importing an older desktop DB. They are
+handled by the explicit schema-v1 generator or archived historical references
+and must not run during normal startup:
 
 | Source compatibility | Canonical v1 result |
 | --- | --- |
@@ -112,8 +114,9 @@ It may not:
 
 ## Documentation Classification
 
-The documentation reorganization is a later file-move phase. The intended
-classification is already fixed here so that current work has one reference.
+The active architecture docs are the only normative references for new work.
+Historical material remains versioned for comparison but is not part of the
+active implementation contract.
 
 ### Normative After v1
 
@@ -136,13 +139,12 @@ classification is already fixed here so that current work has one reference.
 - completed audits, exchange handoffs and superseded implementation plans;
 - `PROJECT_STATUS.md`, once its useful current-state material is extracted.
 
-Historical material remains versioned and readable but will move under a
-clearly named archive path. It must not be linked as a normative source from
-the active architecture index.
+Historical material remains versioned and readable. It must not be linked as a
+normative source from the active architecture index.
 
 ## Audit Findings At The Checkpoint
 
-Desktop DB inventory at the checkpoint:
+Pre-cutover desktop DB inventory at the checkpoint:
 
 ```text
 projects: 1                 modules: 1
@@ -164,10 +166,9 @@ constraint. That route is outside the desktop v1 scope and is evidence for
 keeping React historical persistence isolated rather than reviving it as a
 desktop dependency.
 
-## Acceptance Criteria For The Next Phase
+## Accepted Schema v1 State
 
-The schema-v1 generator is accepted only when it creates a parallel database
-that has:
+The committed active DB and the schema-v1 candidate DB have:
 
 - exactly the canonical table set above;
 - `user_version = 1`;
@@ -176,3 +177,6 @@ that has:
 - no startup migration required to open it;
 - valid component variant references and JSON contracts;
 - matching assets available at their committed paths.
+
+The active app path validates schema v1 and refuses older physical schemas
+instead of applying hidden migrations.
