@@ -29,9 +29,11 @@ their subject.
 
 ## Historical Material
 
-`docs/exchange/` contains handoffs, completed tasks, external reviews and
-historical status records. It is useful for visual or behavioral comparison but
-does not define active implementation rules.
+`archive/react-legacy/` contains the archived TypeScript domain, SQLite and
+icon-import implementation from the removed React runtime. `docs/exchange/`
+contains handoffs, completed tasks, external reviews and historical status
+records. Both are useful for visual or behavioral comparison but do not define
+active implementation rules.
 
 Older architecture notes not listed above are retained for context. Before
 using one as a basis for a change, confirm that it does not conflict with the

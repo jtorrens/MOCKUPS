@@ -14,7 +14,7 @@ import {
   parseKeyboardRows,
   STANDARD_IOS_KEYBOARD_LAYOUT,
   type KeyboardMode,
-} from "../../shared/keyboard/standardKeyboardLayout.js";
+} from "../../../../../src/shared/keyboard/standardKeyboardLayout.js";
 import {
   fontStyleForProductionStyle,
   fontWeightForProductionStyle,

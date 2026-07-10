@@ -325,6 +325,9 @@ for (const removedLegacyPath of [
   "src/visual/layout",
   "src/visual/modules",
   "src/visual/validation",
+  "src/domain",
+  "src/persistence",
+  "src/icon-themes/importDevelopmentIconTheme.ts",
   "src/desktop-preview/systemBarComponentContract.ts",
   "src/desktop-preview/systemBarPreviewResolver.ts",
   "src/desktop-preview/systemBarRenderables.ts",
@@ -1025,12 +1028,12 @@ for (const forbiddenLegacyLayoutTerm of [
   );
 }
 assertMatches(
-  "src/domain/fields/themeFields.ts",
+  "archive/react-legacy/src/domain/fields/themeFields.ts",
   /statusBarId:[\s\S]*?tableId:\s*"component_presets"/,
   "theme status bar field must reference component presets, not legacy status_bars",
 );
 assertMatches(
-  "src/domain/fields/themeFields.ts",
+  "archive/react-legacy/src/domain/fields/themeFields.ts",
   /navigationBarId:[\s\S]*?tableId:\s*"component_presets"/,
   "theme navigation bar field must reference component presets, not legacy navigation_bars",
 );
@@ -1298,10 +1301,10 @@ assertDoesNotContain(
   "legacy video_message component type must not return to the preview registry",
 );
 for (const legacyComponentTypeFile of [
-  "src/domain/schemas/componentClass.ts",
-  "src/domain/fields/componentClassFields.ts",
-  "src/domain/repository/fixtures/exampleDataset.ts",
-  "src/domain/resolvers/resolveChatScreen.ts",
+  "archive/react-legacy/src/domain/schemas/componentClass.ts",
+  "archive/react-legacy/src/domain/fields/componentClassFields.ts",
+  "archive/react-legacy/src/domain/repository/fixtures/exampleDataset.ts",
+  "archive/react-legacy/src/domain/resolvers/resolveChatScreen.ts",
 ]) {
   for (const legacyComponentType of [
     "audio_message",
@@ -1323,24 +1326,24 @@ for (const legacySeededComponentType of [
   "video_message",
 ]) {
   assertDoesNotContain(
-    "src/persistence/sqlite/createDatabase.ts",
+    "archive/react-legacy/src/persistence/sqlite/createDatabase.ts",
     `componentType: "${legacySeededComponentType}"`,
     `legacy component type ${legacySeededComponentType} must not be seeded as componentType`,
   );
   assertDoesNotContain(
-    "src/persistence/sqlite/createDatabase.ts",
+    "archive/react-legacy/src/persistence/sqlite/createDatabase.ts",
     `type: "${legacySeededComponentType}"`,
     `legacy component type ${legacySeededComponentType} must not be seeded as component_type`,
   );
 }
 for (const componentType of Object.keys(desktopPreviewComponents)) {
   assertContains(
-    "src/domain/schemas/componentClass.ts",
+    "archive/react-legacy/src/domain/schemas/componentClass.ts",
     `"${componentType}"`,
     `component class schema must include manifest component type ${componentType}`,
   );
   assertContains(
-    "src/domain/fields/componentClassFields.ts",
+    "archive/react-legacy/src/domain/fields/componentClassFields.ts",
     `"${componentType}"`,
     `component class field options must include manifest component type ${componentType}`,
   );

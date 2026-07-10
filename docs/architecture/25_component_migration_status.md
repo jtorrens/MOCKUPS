@@ -129,7 +129,7 @@ legacy/new fragments.
 preview bundle, runs TypeScript, runs this architecture check, and builds the
 Avalonia/Suki desktop editor. Older TypeScript domain, resolver and SQLite
 validations are still available under `legacy:` script names only as historical
-reference while their source files remain archived in place.
+reference while their source files live under `archive/react-legacy/`.
 
 Compatibility note:
 
