@@ -84,7 +84,8 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.ThemesRoot
         or ProjectTreeNodeKind.ProductionFontsRoot
         or ProjectTreeNodeKind.EpisodesRoot
-        or ProjectTreeNodeKind.Episode;
+        or ProjectTreeNodeKind.Episode
+        or ProjectTreeNodeKind.Shot;
     public bool CanDuplicate => Kind is ProjectTreeNodeKind.App
         or ProjectTreeNodeKind.Module
         or ProjectTreeNodeKind.Episode
@@ -123,7 +124,6 @@ internal sealed class ProjectTreeNode
         and not ProjectTreeNodeKind.ThemesRoot
         and not ProjectTreeNodeKind.ProductionFontsRoot
         and not ProjectTreeNodeKind.EpisodesRoot
-        and not ProjectTreeNodeKind.ModuleInstance
         and not ProjectTreeNodeKind.ComponentPreset;
 
     public string Display => Name;
