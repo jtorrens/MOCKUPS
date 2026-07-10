@@ -8,6 +8,7 @@ import { resolveAvatarComponentFromRecords } from "./avatarComponentResolver.js"
 import { resolveButtonIconComponentFromRecords } from "./buttonIconComponentResolver.js";
 import {
   asRecord,
+  optionalNumber,
   parseObject,
   requiredBoolean,
   requiredNumber,
@@ -74,11 +75,7 @@ export function resolveAudioComponentFromRecords(
     ),
   );
   const currentTimeSeconds = normalizePlaybackTime(
-    requiredNumber(
-      inputs,
-      "currentTimeSeconds",
-      "component.audio.preview.currentTimeSeconds",
-    ),
+    optionalNumber(inputs, "currentTimeSeconds", 0),
     durationSeconds,
   );
   const availableWidth = Math.max(

@@ -145,7 +145,8 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
   const keyboardNode = keyboard?.box
     ? translateRenderableNode(keyboard, { x: 0, y: keyboardTargetY - keyboard.box.y })
     : keyboard;
-  const keyboardHeight = keyboardNode?.box?.height ?? 0;
+  const keyboardBounds = keyboardNode ? renderableVisualBounds(keyboardNode) : undefined;
+  const keyboardHeight = keyboardBounds?.height ?? 0;
   const textInputTargetY = screen.y + screen.height - navHeight - keyboardHeight - (textInput?.box?.height ?? 0);
   const textInputNode = textInput?.box
     ? translateRenderableNode(textInput, { x: 0, y: textInputTargetY - textInput.box.y })
@@ -171,7 +172,11 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
 
   const top = screen.y + (status?.box?.height ?? 0) + (header?.box?.height ?? 0);
   const closedBottom = screen.y + screen.height - navHeight;
-  const composerBottom = textInputNode?.box?.y ?? keyboardNode?.box?.y ?? closedBottom;
+  const composerBottom = textInputNode
+    ? renderableVisualBounds(textInputNode).y
+    : keyboardNode
+      ? renderableVisualBounds(keyboardNode).y
+      : closedBottom;
   const composerOpen = keyboardVisible || textInputVisible;
   const viewportMotion = conversation.messageViewportMotion
     ? requiredMotionContract(conversation, "messageViewportMotion", "module.conversation.messageViewportMotion")
