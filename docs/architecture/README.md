@@ -25,7 +25,8 @@ this index wins.
 `00_project_vision.md`, `01_data_model.md`, `05_decisions_log.md` and
 `15_target_system_architecture.md` remain supporting architecture references.
 They must be read alongside the normative documents above when a change touches
-their subject.
+their subject. They describe intent and accepted decisions, but never override
+the schema-v1, component, preview or shot/module contracts.
 
 ## Historical Material
 
@@ -35,6 +36,20 @@ contains handoffs, completed tasks, external reviews and historical status
 records. Both are useful for visual or behavioral comparison but do not define
 active implementation rules.
 
-Older architecture notes not listed above are retained for context. Before
-using one as a basis for a change, confirm that it does not conflict with the
-current schema-v1, component, preview and shot/module contracts.
+The following root-level notes are historical reference only and must not be
+treated as implementation instructions: `02_render_architecture.md`,
+`03_visual_modules.md`, `04_shot_builder.md`, `07_initial_data_schema.md`,
+`08_visual_tokens_layout_contract.md`, `09_foundational_module_contracts.md`,
+`10_module_theme_configs.md`, `11_ui_css_layers.md`,
+`12_editor_encapsulation_contract.md`, `13_keyboard_text_input_audit.md`,
+`14_data_model_consolidation_policy.md`, `16_theme_editor_dictionary_audit.md`,
+`22_runtime_fallback_audit.md`, `editor_architecture_diagnosis.md`,
+`editor_architecture_second_review_questions.md`,
+`editor_icon_theme_script_prompt.md`,
+`icon_theme_generator_implementation_plan.md` and
+`icon_theme_set_script_contract.md`.
+
+They remain in place because historical handoffs link to them. Before using one
+for visual or behavioral comparison, reconcile it with the active contracts
+above. New implementation rules belong in a normative document, never in this
+historical set.
