@@ -1429,6 +1429,16 @@ assertAnyContains(
   "[\"protected\"] = true",
   "Default component preset must be protected in stored metadata",
 );
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/MotionVariantValue.cs",
+  "legacyKey",
+  "motion parser must not accept legacy transition keys",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
+  "motion.Remove(\"opacity\")",
+  "component config normalization must not migrate legacy motion opacity",
+);
 
 if (violations.length > 0) {
   console.error("Desktop preview architecture check failed:");
