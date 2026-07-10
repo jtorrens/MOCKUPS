@@ -2403,7 +2403,6 @@ internal sealed partial class SpikeDatabase
 
         var changed = false;
         changed |= NormalizeComponentSlot(media, "surfaceSlot", DefaultComponentPresetId);
-        changed |= MigrateMediaIconBarSlots(media);
         if (media["iconColorTokenOverride"] is null)
         {
             media["iconColorTokenOverride"] = "theme.icons.alternate";
@@ -2523,28 +2522,6 @@ internal sealed partial class SpikeDatabase
         "fullScreenCenterIconBarSlot",
         "fullScreenBottomIconBarSlot",
     ];
-
-    private static bool MigrateMediaIconBarSlots(JsonObject media)
-    {
-        var changed = false;
-        changed |= MoveMediaIconBarSlot(media, "topIconBarSlot", "inlineTopIconBarSlot", "fullScreenTopIconBarSlot");
-        changed |= MoveMediaIconBarSlot(media, "centerIconBarSlot", "inlineCenterIconBarSlot", "fullScreenCenterIconBarSlot");
-        changed |= MoveMediaIconBarSlot(media, "bottomIconBarSlot", "inlineBottomIconBarSlot", "fullScreenBottomIconBarSlot");
-        return changed;
-    }
-
-    private static bool MoveMediaIconBarSlot(JsonObject media, string legacyKey, string inlineKey, string fullScreenKey)
-    {
-        if (media[legacyKey] is not JsonObject legacySlot)
-        {
-            return false;
-        }
-
-        media[inlineKey] ??= legacySlot.DeepClone();
-        media[fullScreenKey] ??= legacySlot.DeepClone();
-        media.Remove(legacyKey);
-        return true;
-    }
 
     private static bool NormalizeComponentSlot(JsonObject owner, string key, string preferredPresetName)
     {

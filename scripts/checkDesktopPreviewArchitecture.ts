@@ -1439,6 +1439,17 @@ assertDoesNotContain(
   "motion.Remove(\"opacity\")",
   "component config normalization must not migrate legacy motion opacity",
 );
+for (const legacyMediaIconBarSlot of [
+  "\"topIconBarSlot\"",
+  "\"centerIconBarSlot\"",
+  "\"bottomIconBarSlot\"",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
+    legacyMediaIconBarSlot,
+    `media icon bars must use explicit inline/fullscreen slots, not legacy ${legacyMediaIconBarSlot}`,
+  );
+}
 
 if (violations.length > 0) {
   console.error("Desktop preview architecture check failed:");
