@@ -512,15 +512,16 @@ internal sealed class EditorPreviewController
         try
         {
             EnsureSelectedOptionsExist();
-            if (string.IsNullOrWhiteSpace(SelectedDeviceId))
+            var designPayload = DesignPreviewPayloadForSelection();
+            var deviceId = PreviewDeviceId(designPayload);
+            if (string.IsNullOrWhiteSpace(deviceId))
             {
                 _messages.Warning("Preview", "No device selected.");
                 return;
             }
 
-            var metrics = ApplyPreviewOrientation(_database.GetDevicePreviewMetrics(SelectedDeviceId));
+            var metrics = ApplyPreviewOrientation(_database.GetDevicePreviewMetrics(deviceId));
             var themeName = _themeComboBox.SelectedItem?.Label ?? "No theme";
-            var designPayload = DesignPreviewPayloadForSelection();
             _designInputsPanel.UpdateForPayload(designPayload, _projectId);
             designPayload = designPayload is null
                 ? null
@@ -550,8 +551,7 @@ internal sealed class EditorPreviewController
     private async Task<bool> PreparePlaybackFramesAsync()
     {
         EnsureSelectedOptionsExist();
-        if (string.IsNullOrWhiteSpace(SelectedDeviceId)
-            || string.IsNullOrWhiteSpace(_projectId))
+        if (string.IsNullOrWhiteSpace(_projectId))
         {
             return true;
         }
@@ -562,9 +562,11 @@ internal sealed class EditorPreviewController
             return true;
         }
 
-        var metrics = ApplyPreviewOrientation(_database.GetDevicePreviewMetrics(SelectedDeviceId));
+        var deviceId = PreviewDeviceId(designPayload);
+        if (string.IsNullOrWhiteSpace(deviceId)) return true;
+        var metrics = ApplyPreviewOrientation(_database.GetDevicePreviewMetrics(deviceId));
         var payload = _designInputsPanel.ApplyInputs(designPayload, _selectedMode, _projectId);
-        var projectFps = _database.GetProjectSettings(_projectId).DefaultFps;
+        var projectFps = payload.FrameRate;
         var previewFps = PreviewPlaybackTiming.PreviewFrameRate(projectFps);
         var frames = PlaybackFramePayloads(payload, projectFps).ToList();
         if (frames.Count == 0)
@@ -717,7 +719,7 @@ internal sealed class EditorPreviewController
             return;
         }
 
-        var projectFps = _database.GetProjectSettings(_projectId).DefaultFps;
+        var projectFps = payload.FrameRate;
         var frames = PlaybackAheadFramePayloads(payload, projectFps)
             .Where((frame) => _aheadPreloadedFrameKeys.Add(PlaybackFrameKey(frame)))
             .Take(AheadPlaybackPreloadFrames)
@@ -1017,6 +1019,13 @@ internal sealed class EditorPreviewController
         var fallbackPayload = DesignPreviewPayloadFactory.Create(_database, _lastDesignPreviewNode.ToNode(), _selectedThemeId, _selectedMode);
         _activeDesignPreviewNode = fallbackPayload is null ? null : _lastDesignPreviewNode;
         return fallbackPayload;
+    }
+
+    private string PreviewDeviceId(DesignPreviewPayload? payload)
+    {
+        return !string.IsNullOrWhiteSpace(payload?.DeviceId)
+            ? payload.DeviceId
+            : SelectedDeviceId ?? "";
     }
 
     private void ToggleDesignPreviewContextLock()

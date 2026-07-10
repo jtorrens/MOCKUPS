@@ -22,7 +22,9 @@ internal sealed record DesignPreviewPayload(
     string DesignPreviewJson = "",
     string ComponentBaseConfigsJson = "{}",
     string AppConfigJson = "{}",
-    string InstanceJson = "{}");
+    string InstanceJson = "{}",
+    string DeviceId = "",
+    int FrameRate = 25);
 
 internal static class DesignPreviewPayloadFactory
 {
@@ -61,7 +63,7 @@ internal static class DesignPreviewPayloadFactory
             ProjectTreeNodeKind.ComponentClass => FromComponentClass(database, node, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces),
             ProjectTreeNodeKind.ComponentPreset => FromComponentPreset(database, node, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces),
             ProjectTreeNodeKind.Module => FromModule(database, node, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces),
-            ProjectTreeNodeKind.ModuleInstance => FromModuleInstance(database, node, themeMode, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces),
+            ProjectTreeNodeKind.ModuleInstance => FromModuleInstance(database, node, ResolveDeviceId(database, node), themeMode, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces),
             _ => null,
         };
     }
@@ -83,9 +85,20 @@ internal static class DesignPreviewPayloadFactory
             : actor.DefaultThemeId;
     }
 
+    private static string ResolveDeviceId(SpikeDatabase database, ProjectTreeNode node)
+    {
+        if (node.Kind != ProjectTreeNodeKind.ModuleInstance) return "";
+
+        var instance = database.GetModuleInstanceSettings(node.Id);
+        var shot = database.GetShotSettings(instance.ShotId);
+        if (string.IsNullOrWhiteSpace(shot.OwnerActorId)) return "";
+        return database.GetActorSettings(shot.OwnerActorId).DefaultDeviceId;
+    }
+
     private static DesignPreviewPayload FromModuleInstance(
         SpikeDatabase database,
         ProjectTreeNode node,
+        string deviceId,
         string themeMode,
         string themeTokensJson,
         IReadOnlyDictionary<string, string> paletteColors,
@@ -127,7 +140,9 @@ internal static class DesignPreviewPayloadFactory
             module.DesignPreviewJson,
             database.GetComponentClassBaseConfigsJson(module.ProjectId),
             app.ConfigJson,
-            instanceJson.ToJsonString());
+            instanceJson.ToJsonString(),
+            deviceId,
+            shot.Fps);
     }
 
     private static DesignPreviewPayload FromModule(

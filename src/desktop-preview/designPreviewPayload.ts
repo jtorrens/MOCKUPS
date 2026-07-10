@@ -23,6 +23,7 @@ export interface DesignPreviewPayload {
   componentBaseConfigsJson?: string;
   appConfigJson?: string;
   instanceJson?: string;
+  frameRate?: number;
   configJson: string;
   designPreviewJson?: string;
   previewFrame: PreviewFramePayload;
