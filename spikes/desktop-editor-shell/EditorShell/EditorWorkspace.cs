@@ -12,39 +12,19 @@ internal enum EditorWorkspace
 
 internal static class EditorWorkspaceNavigation
 {
-    private static readonly ProjectTreeNodeKind[] DesignSectionKinds =
-    [
-        ProjectTreeNodeKind.AppsRoot,
-        ProjectTreeNodeKind.ComponentClassesRoot,
-        ProjectTreeNodeKind.ThemesRoot,
-        ProjectTreeNodeKind.PaletteRoot,
-        ProjectTreeNodeKind.IconThemesRoot,
-        ProjectTreeNodeKind.ProductionFontsRoot,
-        ProjectTreeNodeKind.DevicesRoot,
-    ];
-
-    private static readonly ProjectTreeNodeKind[] ProductionSectionKinds =
-    [
-        ProjectTreeNodeKind.EpisodesRoot,
-        ProjectTreeNodeKind.ActorsRoot,
-        ProjectTreeNodeKind.RenderPresetsRoot,
-    ];
-
     public static IReadOnlyList<ProjectTreeNode> SectionRoots(ProjectTreeNode project, EditorWorkspace workspace)
     {
-        var kinds = workspace == EditorWorkspace.Design ? DesignSectionKinds : ProductionSectionKinds;
-        return kinds
-            .Select((kind) => FindFirst(project, kind))
-            .Where((node) => node is not null)
-            .Cast<ProjectTreeNode>()
+        return DescendantsAndSelf(project)
+            .Where((node) => EditorNavigationMetadata.IsWorkspaceSectionRoot(node.Kind))
+            .Where((node) => Includes(EditorNavigationMetadata.WorkspaceScope(node.Kind), workspace))
+            .OrderBy((node) => EditorNavigationMetadata.WorkspaceOrder(node.Kind))
             .ToList();
     }
 
     public static bool Contains(EditorWorkspace workspace, ProjectTreeNode node)
     {
         if (node.Kind == ProjectTreeNodeKind.Project) return true;
-        return SectionRoots(ProjectAncestor(node), workspace)
-            .Any((root) => root == node || IsAncestorOf(root, node));
+        return Includes(EditorNavigationMetadata.WorkspaceScope(node.Kind), workspace);
     }
 
     public static ProjectTreeNode? FirstSelectable(IReadOnlyList<ProjectTreeNode> treeRoots, EditorWorkspace workspace)
@@ -70,16 +50,6 @@ internal static class EditorWorkspaceNavigation
 
     public static string StorageValue(EditorWorkspace workspace) => workspace == EditorWorkspace.Design ? "design" : "production";
 
-    private static ProjectTreeNode ProjectAncestor(ProjectTreeNode node)
-    {
-        var current = node;
-        while (current.Parent is not null) current = current.Parent;
-        return current;
-    }
-
-    private static ProjectTreeNode? FindFirst(ProjectTreeNode node, ProjectTreeNodeKind kind) =>
-        DescendantsAndSelf(node).FirstOrDefault((candidate) => candidate.Kind == kind);
-
     private static IEnumerable<ProjectTreeNode> DescendantsAndSelf(ProjectTreeNode node)
     {
         yield return node;
@@ -89,13 +59,11 @@ internal static class EditorWorkspaceNavigation
         }
     }
 
-    private static bool IsAncestorOf(ProjectTreeNode ancestor, ProjectTreeNode node)
+    private static bool Includes(EditorWorkspaceScope scope, EditorWorkspace workspace)
     {
-        for (var current = node.Parent; current is not null; current = current.Parent)
-        {
-            if (current == ancestor) return true;
-        }
-
-        return false;
+        var target = workspace == EditorWorkspace.Design
+            ? EditorWorkspaceScope.Design
+            : EditorWorkspaceScope.Production;
+        return (scope & target) != 0;
     }
 }
