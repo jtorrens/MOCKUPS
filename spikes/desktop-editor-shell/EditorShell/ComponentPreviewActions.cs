@@ -21,12 +21,6 @@ internal static class ComponentPreviewActions
                 .ToList();
         }
 
-        if (preview["animation"] is JsonObject animation)
-        {
-            var legacy = ParseAction(animation);
-            return legacy is null ? [] : [legacy];
-        }
-
         return [];
     }
 

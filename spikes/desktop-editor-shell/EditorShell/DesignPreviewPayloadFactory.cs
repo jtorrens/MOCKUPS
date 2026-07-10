@@ -102,7 +102,7 @@ internal static class DesignPreviewPayloadFactory
     {
         var settings = database.GetComponentClassSettings(node.Id);
         var componentBaseConfigsJson = database.GetComponentClassBaseConfigsJson(settings.ProjectId);
-        var configJson = database.NormalizeComponentConfigJsonForPreview(settings.ProjectId, settings.ConfigJson);
+        var configJson = database.NormalizeComponentPresetReferencesForPreview(settings.ProjectId, settings.ConfigJson);
         var designPreviewJson = ResolveActionDurationsJson(configJson, themeTokensJson, settings.DesignPreviewJson);
         return new DesignPreviewPayload(
             "componentClass",
@@ -132,7 +132,7 @@ internal static class DesignPreviewPayloadFactory
     {
         var settings = database.GetComponentPresetSettings(node);
         var componentBaseConfigsJson = database.GetComponentClassBaseConfigsJson(settings.ProjectId);
-        var configJson = database.NormalizeComponentConfigJsonForPreview(settings.ProjectId, settings.ConfigJson);
+        var configJson = database.NormalizeComponentPresetReferencesForPreview(settings.ProjectId, settings.ConfigJson);
         var designPreviewJson = ResolveActionDurationsJson(configJson, themeTokensJson, settings.DesignPreviewJson);
         return new DesignPreviewPayload(
             "componentClass",
@@ -159,11 +159,6 @@ internal static class DesignPreviewPayloadFactory
         var changed = false;
         var config = JsonPath.ParseObject(configJson);
         var themeTokens = JsonPath.ParseObject(themeTokensJson);
-
-        if (preview["animation"] is JsonObject animation)
-        {
-            changed |= ResolveActionDuration(config, themeTokens, animation);
-        }
 
         if (preview["actions"] is JsonArray actions)
         {

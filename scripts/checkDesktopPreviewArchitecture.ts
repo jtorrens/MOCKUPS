@@ -1308,7 +1308,7 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
-  "NormalizeComponentConfigJsonForPreview",
+  "NormalizeComponentPresetReferencesForPreview",
   "design preview payloads must normalize embedded preset references before web rendering",
 );
 for (const embeddedPresetField of [

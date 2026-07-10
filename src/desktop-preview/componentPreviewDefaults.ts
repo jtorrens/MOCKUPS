@@ -13,7 +13,7 @@ export function componentPresetConfig(
   }
 
   if (!reference.includes("::preset::")) {
-    throw new Error(`Unsupported legacy component preset reference ${reference}`);
+    throw new Error(`Unsupported component preset reference ${reference}`);
   }
 
   const presets = asRecord(componentBaseConfigs.presets);

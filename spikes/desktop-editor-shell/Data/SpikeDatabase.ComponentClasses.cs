@@ -816,7 +816,7 @@ internal sealed partial class SpikeDatabase
         return configs.ToJsonString();
     }
 
-    public string NormalizeComponentConfigJsonForPreview(string projectId, string configJson)
+    public string NormalizeComponentPresetReferencesForPreview(string projectId, string configJson)
     {
         using var connection = OpenConnection();
         var config = ParseJsonObject(string.IsNullOrWhiteSpace(configJson) ? "{}" : configJson);
