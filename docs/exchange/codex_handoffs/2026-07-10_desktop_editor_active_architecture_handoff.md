@@ -632,6 +632,34 @@ changing.
 
 ## Development and Validation
 
+## Deferred: Device catalog coverage
+
+The current device importer uses the `labs-viewports` catalog as its primary
+source. It has good coverage for Apple, Samsung and Google, limited Xiaomi
+coverage, and no usable Motorola or ZTE entries.
+
+Do not add guessed device dimensions or scrape ad-hoc product pages. Resume
+this phase only after selecting a secondary source that provides, per device:
+
+- manufacturer and model;
+- physical screen width and height in pixels;
+- browser/design viewport width and height;
+- a stable public contract or an approved API/license.
+
+Keep Labs Viewports as the first source. The second source should be a fallback
+only when the primary search yields no usable device, and it must map through
+the existing `IDeviceCatalogProvider → DeviceImportMapper` route so imported
+devices retain the same canonical-width and visual-guide rules.
+
+## Next recommended phase
+
+Return to Conversation behavior polish before introducing another module type:
+
+1. verify message timeline edge cases (delays, write-on and after-write-on);
+2. define keyboard/text-input closing behavior and its reverse viewport motion;
+3. connect production shot frame selection to the Conversation timeline once a
+   shared shot-frame control exists.
+
 ### Required checks
 
 Run before completing a preview/component/editor phase:
