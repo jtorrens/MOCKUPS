@@ -243,7 +243,6 @@ internal sealed partial class SpikeDatabase
             var tokens = ParseJsonObject(string.IsNullOrWhiteSpace(theme.TokensJson) ? "{}" : theme.TokensJson);
             var defaults = ParseJsonObject(DefaultThemeTokensJson(theme.Family));
             var changed = MergeMissing(tokens, defaults);
-            changed |= RemoveLegacySystemBarThemeTokens(tokens);
             if (!changed)
             {
                 continue;
@@ -255,28 +254,6 @@ internal sealed partial class SpikeDatabase
                 ("$id", theme.Id),
                 ("$tokensJson", tokens.ToJsonString()));
         }
-    }
-
-    private static bool RemoveLegacySystemBarThemeTokens(JsonObject tokens)
-    {
-        var changed = false;
-        if (tokens["modes"] is not JsonObject modes)
-        {
-            return false;
-        }
-
-        foreach (var (_, node) in modes)
-        {
-            if (node is not JsonObject mode)
-            {
-                continue;
-            }
-
-            changed |= mode.Remove("statusBar");
-            changed |= mode.Remove("navigationBar");
-        }
-
-        return changed;
     }
 
     private static List<ThemeRow> QueryThemeRows(SqliteConnection connection)

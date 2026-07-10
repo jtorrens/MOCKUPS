@@ -107,31 +107,7 @@ internal sealed partial class SpikeDatabase
                     ("$exportJson", DefaultRenderPresetExportJson(seed.Format, seed.Codec)),
                     ("$metadataJson", JsonSerializer.Serialize(new { note = "Seed render preset from React desktop editor." })));
             }
-
-            MigrateLegacyVerticalRenderPreset(connection, projectId);
         }
-    }
-
-    private static void MigrateLegacyVerticalRenderPreset(SqliteConnection connection, string projectId)
-    {
-        var legacyId = $"render_preset_{projectId}_vertical_1080x1920";
-        Execute(
-            connection,
-            """
-            UPDATE shots
-            SET render_preset_id = ''
-            WHERE render_preset_id = $legacyId
-            """,
-            ("$legacyId", legacyId));
-        Execute(
-            connection,
-            """
-            DELETE FROM render_presets
-            WHERE id = $legacyId
-              AND name = 'Vertical 1080x1920'
-              AND NOT EXISTS (SELECT 1 FROM shots WHERE render_preset_id = $legacyId)
-            """,
-            ("$legacyId", legacyId));
     }
 
     private static List<RenderPresetRow> QueryRenderPresetRows(SqliteConnection connection)
