@@ -50,6 +50,7 @@ editor_layouts
 `module_instances` stores module reference, duration, transition declaration,
 content, behavior, animation and metadata. It does not store actor, device,
 theme, mode or device state. Those values resolve from shot/project context.
+Shots store a nullable `fps_override`; a null value inherits `projects.default_fps`.
 
 Schema v1 begins with `PRAGMA user_version = 1`. The existing desktop DB has
 `user_version = 0`; its column-normalization history must not become the new
@@ -70,6 +71,8 @@ below:
 - system-bar colors live in their own component variants, not in theme tokens;
 - render preset references use the current ids;
 - module instances use the direct Shot -> ModuleInstance relationship.
+- project media roots are project-relative whenever the source root is inside
+  the project, so the DB remains portable between Mac, PC and packaged copies.
 
 The converter must report and stop on ambiguous references. It must not invent
 plausible data for missing required current-model values.

@@ -18,6 +18,7 @@
     "desktop-preview:build": "node scripts/buildDesktopPreview.mjs",
     "desktop": "dotnet run --project spikes/desktop-editor-shell/Mockups.DesktopEditorShell.csproj",
     "desktop:build": "dotnet build spikes/desktop-editor-shell/Mockups.DesktopEditorShell.csproj",
+    "desktop:schema-v1:candidate": "dotnet run --project spikes/desktop-editor-shell/Mockups.DesktopEditorShell.csproj -- --create-schema-v1",
     "desktop:publish:mac": "npm run desktop-preview:build && dotnet publish spikes/desktop-editor-shell/Mockups.DesktopEditorShell.csproj -c Release -r osx-arm64 --self-contained true -o out/desktop/osx-arm64",
     "desktop:package:mac": "npm run desktop:publish:mac && node scripts/packageMacApp.mjs",
     "desktop:publish:win": "npm run desktop-preview:build && dotnet publish spikes/desktop-editor-shell/Mockups.DesktopEditorShell.csproj -c Release -r win-x64 --self-contained true -o out/desktop/win-x64",

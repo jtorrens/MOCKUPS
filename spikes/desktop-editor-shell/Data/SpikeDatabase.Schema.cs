@@ -2,7 +2,7 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SpikeDatabase
 {
-    private const string SchemaSql =
+    internal const string SchemaSql =
         """
         PRAGMA foreign_keys = ON;
 
@@ -23,8 +23,6 @@ internal sealed partial class SpikeDatabase
           slug TEXT NOT NULL DEFAULT '',
           notes TEXT NOT NULL DEFAULT '',
           sort_order INTEGER NOT NULL DEFAULT 0,
-          config_json TEXT NOT NULL DEFAULT '{}',
-          design_preview_json TEXT NOT NULL DEFAULT '{}',
           metadata_json TEXT NOT NULL DEFAULT '{}'
         );
 
@@ -64,6 +62,8 @@ internal sealed partial class SpikeDatabase
           name TEXT NOT NULL,
           notes TEXT NOT NULL DEFAULT '',
           sort_order INTEGER NOT NULL DEFAULT 0,
+          config_json TEXT NOT NULL DEFAULT '{}',
+          design_preview_json TEXT NOT NULL DEFAULT '{}',
           metadata_json TEXT NOT NULL DEFAULT '{}'
         );
 

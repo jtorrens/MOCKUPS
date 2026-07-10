@@ -443,7 +443,7 @@ internal sealed partial class SpikeDatabase
                     { "id": "theme.keyboard.popoverBackground", "order": 50, "visible": true },
                     { "id": "theme.keyboard.text", "order": 60, "visible": true }
                   ]
-                },
+                }
               ]
             },
             {

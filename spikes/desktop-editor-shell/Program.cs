@@ -1,5 +1,6 @@
 ﻿using Avalonia;
 using Mockups.DesktopEditorShell.Common;
+using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Linq;
 
@@ -13,6 +14,11 @@ class Program
     [STAThread]
     public static void Main(string[] args)
     {
+        if (SchemaV1DatabaseConsolidator.TryRun(args))
+        {
+            return;
+        }
+
         var avaloniaArgs = DesktopEditorLaunchOptions.Configure(args);
         if (args.Contains("--svg-tint-smoke", StringComparer.Ordinal))
         {
