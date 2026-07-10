@@ -21,6 +21,7 @@ internal sealed class RecordClassFieldValueService
             ProjectTreeNodeKind.Project => fieldId.StartsWith("project.", StringComparison.Ordinal),
             ProjectTreeNodeKind.App => fieldId.StartsWith("app.", StringComparison.Ordinal),
             ProjectTreeNodeKind.Module => fieldId.StartsWith("module.", StringComparison.Ordinal),
+            ProjectTreeNodeKind.ModuleInstance => fieldId.StartsWith("moduleInstance.", StringComparison.Ordinal),
             ProjectTreeNodeKind.Episode => fieldId.StartsWith("episode.", StringComparison.Ordinal),
             ProjectTreeNodeKind.Shot => fieldId.StartsWith("shot.", StringComparison.Ordinal),
             ProjectTreeNodeKind.RenderPreset => fieldId.StartsWith("renderPreset.", StringComparison.Ordinal),
@@ -42,6 +43,7 @@ internal sealed class RecordClassFieldValueService
             ProjectTreeNodeKind.Project => ProjectFieldValue(node.Id, field.Id),
             ProjectTreeNodeKind.App => AppFieldValue(node.Id, field.Id),
             ProjectTreeNodeKind.Module => ModuleFieldValue(node.Id, field.Id),
+            ProjectTreeNodeKind.ModuleInstance => ModuleInstanceFieldValue(node.Id, field.Id),
             ProjectTreeNodeKind.Episode => EpisodeFieldValue(node.Id, field.Id),
             ProjectTreeNodeKind.Shot => ShotFieldValue(node.Id, field.Id),
             ProjectTreeNodeKind.RenderPreset => RenderPresetFieldValue(node.Id, field.Id),
@@ -59,6 +61,7 @@ internal sealed class RecordClassFieldValueService
             ProjectTreeNodeKind.Actor => ActorFieldOptions(node.Id, field),
             ProjectTreeNodeKind.App => AppFieldOptions(node.Id, field),
             ProjectTreeNodeKind.Module => ModuleFieldOptions(node.Id, field),
+            ProjectTreeNodeKind.ModuleInstance => field.Options,
             ProjectTreeNodeKind.Shot => ShotFieldOptions(node.Id, field),
             ProjectTreeNodeKind.RenderPreset => RenderPresetFieldOptions(field),
             ProjectTreeNodeKind.ProductionFont => ProductionFontFieldOptions(field),
@@ -116,6 +119,9 @@ internal sealed class RecordClassFieldValueService
                 return;
             case ProjectTreeNodeKind.Module when fieldId.StartsWith("module.", StringComparison.Ordinal):
                 _database.UpdateModuleField(node.Id, fieldId, value);
+                return;
+            case ProjectTreeNodeKind.ModuleInstance when fieldId.StartsWith("moduleInstance.", StringComparison.Ordinal):
+                _database.UpdateModuleInstanceField(node.Id, fieldId, value);
                 return;
             case ProjectTreeNodeKind.Episode when fieldId.StartsWith("episode.", StringComparison.Ordinal):
                 _database.UpdateEpisodeField(node.Id, fieldId, value);
@@ -182,6 +188,19 @@ internal sealed class RecordClassFieldValueService
             _ when fieldId.StartsWith("module.conversation.", StringComparison.Ordinal) =>
                 _database.GetModuleConfigFieldValue(moduleId, fieldId),
             _ => throw new InvalidOperationException($"Unknown module field '{fieldId}'."),
+        };
+    }
+
+    private string ModuleInstanceFieldValue(string moduleInstanceId, string fieldId)
+    {
+        var settings = _database.GetModuleInstanceSettings(moduleInstanceId);
+        return fieldId switch
+        {
+            "moduleInstance.module" => _database.GetModuleInstanceModuleName(moduleInstanceId),
+            "moduleInstance.sortOrder" => settings.SortOrder.ToString(),
+            "moduleInstance.durationFrames" => settings.DurationFrames.ToString(),
+            "moduleInstance.transition" => _database.GetModuleInstanceTransitionType(moduleInstanceId),
+            _ => throw new InvalidOperationException($"Unknown module instance field '{fieldId}'."),
         };
     }
 

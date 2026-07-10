@@ -716,6 +716,30 @@ internal sealed partial class SpikeDatabase
                 parent);
         }
 
+        if (parent.Kind == ProjectTreeNodeKind.Shot)
+        {
+            var project = ProjectAncestor(parent);
+            var appId = ScalarString(connection, "SELECT id FROM apps WHERE project_id = $projectId ORDER BY sort_order, name LIMIT 1", ("$projectId", project.Id))
+                ?? throw new InvalidOperationException($"Project '{project.Id}' has no app for a module instance.");
+            var moduleId = ScalarString(connection, "SELECT id FROM modules WHERE app_id = $appId AND record_class_id = 'module.core.chat' ORDER BY sort_order, name LIMIT 1", ("$appId", appId))
+                ?? throw new InvalidOperationException($"App '{appId}' has no Conversation module.");
+            var index = NextSortOrder(connection, "module_instances", "shot_id", parent.Id);
+            var id = $"module_instance_{Guid.NewGuid():N}";
+            var name = $"Conversation {index + 1}";
+            Execute(
+                connection,
+                """
+                INSERT INTO module_instances (id, shot_id, app_id, module_id, name, notes, sort_order, duration_frames, transition_json, content_json, behavior_json, animation_json)
+                VALUES ($id, $shotId, $appId, $moduleId, $name, $notes, $sortOrder, 240, '{"type":"cut"}', $contentJson, $behaviorJson, $animationJson)
+                """,
+                ("$id", id), ("$shotId", parent.Id), ("$appId", appId), ("$moduleId", moduleId),
+                ("$name", name), ("$notes", "Conversation module instance."), ("$sortOrder", index),
+                ("$contentJson", DefaultConversationModuleContentJson()),
+                ("$behaviorJson", DefaultConversationModuleBehaviorJson()),
+                ("$animationJson", DefaultModuleAnimationJson()));
+            return new ProjectTreeNode(ProjectTreeNodeKind.ModuleInstance, id, name, "Conversation · 240 frames · Cut", ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ModuleInstance), parent);
+        }
+
         throw new InvalidOperationException($"Cannot add a child to {parent.Kind}.");
     }
 

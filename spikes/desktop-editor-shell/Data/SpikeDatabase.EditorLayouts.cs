@@ -42,6 +42,7 @@ internal sealed partial class SpikeDatabase
             "app.core.chat",
             "module.generic",
             "module.core.chat",
+            "module_instance",
             "episode",
             "shot",
             "palette_color",
@@ -117,6 +118,15 @@ internal sealed partial class SpikeDatabase
                     { "id": "module.sortOrder", "order": 30, "visible": true },
                     { "id": "core.notes", "order": 40, "visible": true },
                     { "id": "module.metadata", "order": 50, "visible": false }
+                  """
+            : recordClassId == "module_instance"
+                ? """
+                    { "id": "core.name", "order": 10, "visible": true },
+                    { "id": "moduleInstance.module", "order": 20, "visible": true },
+                    { "id": "moduleInstance.durationFrames", "order": 30, "visible": true },
+                    { "id": "moduleInstance.transition", "order": 40, "visible": true },
+                    { "id": "moduleInstance.sortOrder", "order": 50, "visible": false },
+                    { "id": "core.notes", "order": 60, "visible": true }
                   """
             : recordClassId == "render_preset"
                 ? """

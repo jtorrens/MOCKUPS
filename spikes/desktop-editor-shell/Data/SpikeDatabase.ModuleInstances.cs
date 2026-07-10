@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
 using System.Text.Json.Nodes;
@@ -7,6 +8,55 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SpikeDatabase
 {
+    public ModuleInstanceSettings GetModuleInstanceSettings(string moduleInstanceId)
+    {
+        using var connection = OpenConnection();
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT shot_id, app_id, module_id, name, notes, sort_order, duration_frames,
+                   transition_json, content_json, behavior_json, animation_json, metadata_json
+            FROM module_instances
+            WHERE id = $id
+            """;
+        command.Parameters.AddWithValue("$id", moduleInstanceId);
+        using var reader = command.ExecuteReader();
+        if (!reader.Read()) throw new InvalidOperationException($"Missing module instance '{moduleInstanceId}'.");
+        return new ModuleInstanceSettings(
+            reader.GetString(0), reader.GetString(1), reader.GetString(2), reader.GetString(3),
+            ReadString(reader, 4), reader.GetInt32(5), reader.GetInt32(6), ReadString(reader, 7),
+            ReadString(reader, 8), ReadString(reader, 9), ReadString(reader, 10), ReadString(reader, 11));
+    }
+
+    public string GetModuleInstanceModuleName(string moduleInstanceId)
+    {
+        using var connection = OpenConnection();
+        return ScalarString(connection, "SELECT m.name FROM module_instances mi JOIN modules m ON m.id = mi.module_id WHERE mi.id = $id", ("$id", moduleInstanceId))
+            ?? throw new InvalidOperationException($"Missing module instance '{moduleInstanceId}'.");
+    }
+
+    public string GetModuleInstanceTransitionType(string moduleInstanceId)
+    {
+        var transition = ParseJsonObject(GetModuleInstanceSettings(moduleInstanceId).TransitionJson);
+        return transition["type"]?.GetValue<string>() ?? "cut";
+    }
+
+    public void UpdateModuleInstanceField(string moduleInstanceId, string fieldId, string value)
+    {
+        using var connection = OpenConnection();
+        switch (fieldId)
+        {
+            case "moduleInstance.durationFrames":
+                Execute(
+                    connection,
+                    "UPDATE module_instances SET duration_frames = $value WHERE id = $id",
+                    ("$value", Math.Max(1, NumericText.Int32(value, 1))),
+                    ("$id", moduleInstanceId));
+                return;
+            default:
+                throw new InvalidOperationException($"Unknown module instance field '{fieldId}'.");
+        }
+    }
+
     private static void SeedModuleInstancesIfEmpty(SqliteConnection connection)
     {
         if (ScalarLong(connection, "SELECT COUNT(*) FROM module_instances") > 0)

@@ -161,6 +161,20 @@ internal static class RecordClassFieldCatalog
             ValueKind.ThemeToken,
             Options: SpacingTokenOptions),
 
+        ["moduleInstance.module"] = new("moduleInstance.module", "Module", ValueKind.StringReadOnly, IsEditable: false),
+        ["moduleInstance.sortOrder"] = new("moduleInstance.sortOrder", "Sort Order", ValueKind.Integer, IsEditable: false),
+        ["moduleInstance.durationFrames"] = new(
+            "moduleInstance.durationFrames",
+            "Duration frames",
+            ValueKind.Integer,
+            Number: new NumberDefinition(1, 100000, 1, 0)),
+        ["moduleInstance.transition"] = new(
+            "moduleInstance.transition",
+            "Transition",
+            ValueKind.OptionToken,
+            IsEditable: false,
+            Options: [new FieldOption("cut", "Cut")]),
+
         ["renderPreset.width"] = new("renderPreset.width", "Width", ValueKind.Integer, IsEditable: false),
         ["renderPreset.height"] = new("renderPreset.height", "Height", ValueKind.Integer, IsEditable: false),
         ["renderPreset.fps"] = new("renderPreset.fps", "FPS", ValueKind.Integer, IsEditable: false),
