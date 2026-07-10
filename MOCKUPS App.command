@@ -14,12 +14,6 @@ if [[ ! -d node_modules ]]; then
   npm install
 fi
 
-if [[ ! -f data/mockups-dev.sqlite ]]; then
-  echo "Creando y preparando la base de desarrollo..."
-  npm run db:init
-  npm run db:seed
-fi
-
 echo
 echo "Abriendo MOCKUPS Desktop Editor..."
 echo "Pulsa Ctrl+C para detener la app."
