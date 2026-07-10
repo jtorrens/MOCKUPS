@@ -17,6 +17,8 @@ this index wins.
   functional work.
 - `26_shot_module_instance_contract.md`: Project -> Episode -> Shot -> Module
   Instance model.
+- `27_design_production_ux_separation.md`: UX direction for separating design
+  system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.
 - `schema_v1_consolidation_manifest.md`: active database schema and startup
   rules.

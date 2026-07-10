@@ -39,6 +39,8 @@ public partial class MainWindow : SukiWindow
     private readonly EditorActiveFieldControls _activeFieldControls = new();
     private List<ProjectTreeNode> _treeRoots = [];
     private ProjectTreeNode? _selectedNode;
+    private EditorWorkspace _workspace = EditorWorkspace.Design;
+    private readonly Dictionary<EditorWorkspace, string> _workspaceSelections = [];
 
     public MainWindow()
         : this(SpikeDatabase.DefaultDatabasePath())
@@ -178,6 +180,10 @@ public partial class MainWindow : SukiWindow
             _collectionCards);
         ShellSettingsButton.Content = EditorIcons.Create(EditorIcons.Settings, 18);
         _shellState.Restore();
+        _workspace = EditorWorkspaceNavigation.Parse(_shellState.Workspace);
+        WorkspaceTabStrip.SelectedIndex = _workspace == EditorWorkspace.Design ? 0 : 1;
+        WorkspaceTabStrip.SelectionChanged += (_, _) => SetWorkspace(
+            WorkspaceTabStrip.SelectedIndex == 1 ? EditorWorkspace.Production : EditorWorkspace.Design);
         _variantHistory.RestoreState(_shellState.SessionHistory.VariantHistory);
         _previewController.RestoreDesignHistoryState(_shellState.SessionHistory.DesignPreviewHistory);
         _nodeSelection.RestoreComponentPresetSelections(_shellState.SessionHistory.LastComponentVariantSelections);
@@ -241,8 +247,23 @@ public partial class MainWindow : SukiWindow
             var selected = _selectedNode is not null
                 ? EditorNodeSelectionState.FindNodeById(_treeRoots, _selectedNode.Id)
                 : null;
-            selected = selected is not null && EditorNodeSelectionState.CanSelectTreeNode(selected) ? selected : null;
-            selected ??= _treeRoots.FirstOrDefault((node) => node.CanOpenEditor) ?? _treeRoots[0];
+            selected = selected is not null
+                && EditorNodeSelectionState.CanSelectTreeNode(selected)
+                && EditorWorkspaceNavigation.Contains(_workspace, selected)
+                ? selected
+                : null;
+            if (selected is null && _workspaceSelections.TryGetValue(_workspace, out var selectionId))
+            {
+                var remembered = EditorNodeSelectionState.FindNodeById(_treeRoots, selectionId);
+                selected = remembered is not null
+                    && EditorNodeSelectionState.CanSelectTreeNode(remembered)
+                    && EditorWorkspaceNavigation.Contains(_workspace, remembered)
+                    ? remembered
+                    : null;
+            }
+            selected ??= EditorWorkspaceNavigation.FirstSelectable(_treeRoots, _workspace)
+                ?? _treeRoots.FirstOrDefault((node) => node.CanOpenEditor)
+                ?? _treeRoots[0];
             selected = _nodeSelection.ResolveSelectionNode(selected);
 
             _treeExpansion.ExpandAncestors(selected);
@@ -290,7 +311,8 @@ public partial class MainWindow : SukiWindow
 
     private void RebuildNavigationCards()
     {
-        _navigationRenderer.Rebuild(NavigationCardsPanel, _treeRoots);
+        NavigationWorkspaceTextBlock.Text = EditorWorkspaceNavigation.Title(_workspace);
+        _navigationRenderer.Rebuild(NavigationCardsPanel, _treeRoots, _workspace);
         ApplyUiTextScale();
     }
 
@@ -314,6 +336,7 @@ public partial class MainWindow : SukiWindow
             _messages.Warning("Variant history", exception.Message);
         }
         _selectedNode = node;
+        _workspaceSelections[_workspace] = node.Id;
         _nodeSelection.RememberComponentPresetSelection(node);
         _treeExpansion.ExpandAncestors(node);
         var editorNode = EditorNodeSelectionState.EditorNodeForSelection(node);
@@ -409,6 +432,20 @@ public partial class MainWindow : SukiWindow
     private void ApplyUiTextScale()
     {
         EditorUiTextScale.Apply(this, _shellState.UiTextScale, DesignPreviewHost);
+    }
+
+    private void SetWorkspace(EditorWorkspace workspace)
+    {
+        if (_workspace == workspace) return;
+
+        if (_selectedNode is not null)
+        {
+            _workspaceSelections[_workspace] = _selectedNode.Id;
+        }
+
+        _workspace = workspace;
+        _shellState.SetWorkspace(workspace);
+        LoadProjectTree();
     }
 
     private EditorSessionHistoryState CreateSessionHistoryState()

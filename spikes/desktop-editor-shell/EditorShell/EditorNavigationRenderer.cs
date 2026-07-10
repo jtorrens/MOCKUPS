@@ -49,17 +49,25 @@ internal sealed class EditorNavigationRenderer
         _toggleVariantLock = toggleVariantLock;
     }
 
-    public void Rebuild(StackPanel target, IReadOnlyList<ProjectTreeNode> treeRoots)
+    public void Rebuild(
+        StackPanel target,
+        IReadOnlyList<ProjectTreeNode> treeRoots,
+        EditorWorkspace workspace)
     {
         target.Children.Clear();
 
         foreach (var project in treeRoots)
         {
-            AddNavigationCard(target, project, CreateProjectNavigationContent(project), EditorIcons.ForTreeNode(project.Kind));
+            if (workspace == EditorWorkspace.Production)
+            {
+                AddNavigationCard(target, project, CreateProjectNavigationContent(project), EditorIcons.ForTreeNode(project.Kind));
+            }
+            else
+            {
+                target.Children.Add(CreateNavigationRow(project, EditorIcons.ForTreeNode(project.Kind)));
+            }
 
-            foreach (var root in project.Children
-                         .Where(EditorNavigationMetadata.IsTopLevelSection)
-                         .OrderBy(EditorNavigationMetadata.RootOrder))
+            foreach (var root in EditorWorkspaceNavigation.SectionRoots(project, workspace))
             {
                 AddNavigationSection(target, root);
             }
