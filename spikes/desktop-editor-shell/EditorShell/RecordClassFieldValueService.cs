@@ -198,7 +198,7 @@ internal sealed class RecordClassFieldValueService
         {
             "moduleInstance.module" => _database.GetModuleInstanceModuleName(moduleInstanceId),
             "moduleInstance.sortOrder" => settings.SortOrder.ToString(),
-            "moduleInstance.durationFrames" => settings.DurationFrames.ToString(),
+            "moduleInstance.durationFrames" => _database.GetResolvedModuleInstanceDurationFrames(moduleInstanceId).ToString(),
             "moduleInstance.transition" => _database.GetModuleInstanceTransitionType(moduleInstanceId),
             _ => throw new InvalidOperationException($"Unknown module instance field '{fieldId}'."),
         };
