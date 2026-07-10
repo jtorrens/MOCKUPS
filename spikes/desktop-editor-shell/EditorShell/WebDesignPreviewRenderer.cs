@@ -33,7 +33,9 @@ internal static class WebDesignPreviewRenderer
         var stopwatch = Stopwatch.StartNew();
         var request = CreateRequest(metrics, themeMode, showMarks, payload);
         var requestJson = JsonSerializer.Serialize(request);
-        if (TryGetCachedFrame(requestJson, out var cachedHtml))
+        var renderer = ResolveRendererCommand();
+        var frameCacheKey = $"{renderer.Version}:{requestJson}";
+        if (TryGetCachedFrame(frameCacheKey, out var cachedHtml))
         {
             PreviewDebugLog.Write(
                 "preview.render.body",
@@ -48,9 +50,8 @@ internal static class WebDesignPreviewRenderer
             return cachedHtml;
         }
 
-        var renderer = ResolveRendererCommand();
         var html = await PersistentRenderer.RenderAsync(renderer, requestJson);
-        CacheFrame(requestJson, html);
+        CacheFrame(frameCacheKey, html);
         PreviewDebugLog.Write(
             "preview.render.body",
             ("route", "rendered"),
@@ -211,7 +212,8 @@ internal static class WebDesignPreviewRenderer
                 ResolveNodeExecutable(),
                 AppContext.BaseDirectory,
                 packagedRenderer,
-                File.Exists(packagedServer) ? packagedServer : "");
+                File.Exists(packagedServer) ? packagedServer : "",
+                RendererVersion(packagedRenderer, packagedServer));
         }
 
         var root = FindRepositoryRoot();
@@ -222,10 +224,16 @@ internal static class WebDesignPreviewRenderer
         var script = Path.Combine(root, "src", "desktop-preview", "renderDesignPreviewHtml.tsx");
         var serverScript = Path.Combine(root, "src", "desktop-preview", "renderDesignPreviewHtmlServer.ts");
 
-        return new RendererCommand(executable, root, script, serverScript);
+        return new RendererCommand(executable, root, script, serverScript, RendererVersion(script, serverScript));
     }
 
-    private sealed record RendererCommand(string Executable, string WorkingDirectory, string Script, string ServerScript);
+    private static string RendererVersion(string script, string serverScript)
+    {
+        static long Ticks(string path) => File.Exists(path) ? File.GetLastWriteTimeUtc(path).Ticks : 0;
+        return $"{Ticks(script)}:{Ticks(serverScript)}";
+    }
+
+    private sealed record RendererCommand(string Executable, string WorkingDirectory, string Script, string ServerScript, string Version);
 
     private sealed record FrameCacheEntry(string Key, string Html);
 
