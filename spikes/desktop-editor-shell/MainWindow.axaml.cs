@@ -1,5 +1,8 @@
 using Mockups.DesktopEditorShell.Data;
 using Mockups.DesktopEditorShell.EditorShell;
+using Mockups.DesktopEditorShell.Common;
+using Avalonia.Controls;
+using Avalonia.Media;
 using SukiUI.Controls;
 using System;
 using System.Collections.Generic;
@@ -181,9 +184,9 @@ public partial class MainWindow : SukiWindow
         ShellSettingsButton.Content = EditorIcons.Create(EditorIcons.Settings, 18);
         _shellState.Restore();
         _workspace = EditorWorkspaceNavigation.Parse(_shellState.Workspace);
-        WorkspaceTabStrip.SelectedIndex = _workspace == EditorWorkspace.Design ? 0 : 1;
-        WorkspaceTabStrip.SelectionChanged += (_, _) => SetWorkspace(
-            WorkspaceTabStrip.SelectedIndex == 1 ? EditorWorkspace.Production : EditorWorkspace.Design);
+        DesignWorkspaceButton.Click += (_, _) => SetWorkspace(EditorWorkspace.Design);
+        ProductionWorkspaceButton.Click += (_, _) => SetWorkspace(EditorWorkspace.Production);
+        UpdateWorkspaceButtons();
         _variantHistory.RestoreState(_shellState.SessionHistory.VariantHistory);
         _previewController.RestoreDesignHistoryState(_shellState.SessionHistory.DesignPreviewHistory);
         _nodeSelection.RestoreComponentPresetSelections(_shellState.SessionHistory.LastComponentVariantSelections);
@@ -227,6 +230,7 @@ public partial class MainWindow : SukiWindow
 
     private void RefreshShellTheme()
     {
+        UpdateWorkspaceButtons();
         RebuildNavigationCards();
         RefreshPreviewDevice();
         ApplyUiTextScale();
@@ -445,7 +449,24 @@ public partial class MainWindow : SukiWindow
 
         _workspace = workspace;
         _shellState.SetWorkspace(workspace);
+        UpdateWorkspaceButtons();
         LoadProjectTree();
+    }
+
+    private void UpdateWorkspaceButtons()
+    {
+        var activeBrush = new SolidColorBrush(Color.Parse(_themeController.IsDark ? "#F0B429" : "#A56600"));
+        var inactiveBrush = EditorSukiWindowTheme.AccentBrush();
+        ApplyWorkspaceButton(DesignWorkspaceButton, _workspace == EditorWorkspace.Design, activeBrush, inactiveBrush);
+        ApplyWorkspaceButton(ProductionWorkspaceButton, _workspace == EditorWorkspace.Production, activeBrush, inactiveBrush);
+    }
+
+    private static void ApplyWorkspaceButton(Button button, bool isActive, IBrush activeBrush, IBrush inactiveBrush)
+    {
+        var brush = isActive ? activeBrush : inactiveBrush;
+        button.Foreground = brush;
+        button.BorderBrush = brush;
+        button.Background = Brushes.Transparent;
     }
 
     private EditorSessionHistoryState CreateSessionHistoryState()

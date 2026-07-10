@@ -6,7 +6,7 @@
                  xmlns:suki="clr-namespace:SukiUI.Controls;assembly=SukiUI"
                  mc:Ignorable="d" d:DesignWidth="1440" d:DesignHeight="900"
                  x:Class="Mockups.DesktopEditorShell.MainWindow"
-        Title="Mockups Desktop Editor Shell · Design / Production · v0.316.1"
+        Title="Mockups Desktop Editor Shell · Design / Production · v0.316.2"
                  Width="1440"
                  Height="900"
                  MinWidth="1040"
@@ -20,23 +20,30 @@
     <Grid RowDefinitions="Auto,*">
         <Border Grid.Row="0"
                 Padding="18,12">
-            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="18" VerticalAlignment="Center">
-                <TabStrip x:Name="WorkspaceTabStrip"
-                          Grid.Column="0"
-                          VerticalAlignment="Center"
-                          MinWidth="280">
-                    <TabItem>
-                        <TextBlock FontSize="15" FontWeight="SemiBold" Text="Design" />
-                    </TabItem>
-                    <TabItem>
-                        <TextBlock FontSize="15" FontWeight="SemiBold" Text="Production" />
-                    </TabItem>
-                </TabStrip>
-                <StackPanel Grid.Column="1">
-                    <TextBlock FontSize="11" FontWeight="SemiBold" Text="MOCKUPS DESKTOP EDITOR · v0.316.1" />
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="18" VerticalAlignment="Center">
+                <StackPanel Grid.Column="0" Spacing="4">
+                    <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                        <TextBlock FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" Text="MOCKUPS DESKTOP EDITOR · v0.316.2" />
+                        <Button x:Name="DesignWorkspaceButton"
+                                Content="Design"
+                                MinWidth="100"
+                                MinHeight="32"
+                                FontSize="15"
+                                FontWeight="SemiBold"
+                                Padding="12,4"
+                                BorderThickness="1" />
+                        <Button x:Name="ProductionWorkspaceButton"
+                                Content="Production"
+                                MinWidth="124"
+                                MinHeight="32"
+                                FontSize="15"
+                                FontWeight="SemiBold"
+                                Padding="12,4"
+                                BorderThickness="1" />
+                    </StackPanel>
                     <TextBlock FontSize="17" FontWeight="Bold" Text="Design system and production workspace" />
                 </StackPanel>
-                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                     <Button x:Name="UsageRefreshButton"
                             Click="OnRefreshUsageClick"
                             Content="Update usage" />

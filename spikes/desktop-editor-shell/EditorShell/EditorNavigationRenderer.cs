@@ -69,6 +69,12 @@ internal sealed class EditorNavigationRenderer
 
             foreach (var root in EditorWorkspaceNavigation.SectionRoots(project, workspace))
             {
+                if (workspace == EditorWorkspace.Production
+                    && root.Kind == ProjectTreeNodeKind.EpisodesRoot)
+                {
+                    continue;
+                }
+
                 AddNavigationSection(target, root);
             }
         }
