@@ -44,6 +44,8 @@ public partial class MainWindow : SukiWindow
     private ProjectTreeNode? _selectedNode;
     private EditorWorkspace _workspace = EditorWorkspace.Design;
     private readonly Dictionary<EditorWorkspace, string> _workspaceSelections = [];
+    private string _selectedProductionId = "";
+    private bool _isUpdatingProductionPicker;
 
     public MainWindow()
         : this(SpikeDatabase.DefaultDatabasePath())
@@ -182,10 +184,17 @@ public partial class MainWindow : SukiWindow
             _layoutCards,
             _collectionCards);
         ShellSettingsButton.Content = EditorIcons.Create(EditorIcons.Settings, 18);
+        ProductionAddButton.Content = EditorIcons.Create(EditorIcons.Add, 15);
+        ProductionDuplicateButton.Content = EditorIcons.Create(EditorIcons.Duplicate, 15);
+        ProductionDeleteButton.Content = EditorIcons.Create(EditorIcons.Delete, 15);
+        ProductionEditButton.Content = EditorIcons.Create(EditorIcons.Edit, 15);
         _shellState.Restore();
         _workspace = EditorWorkspaceNavigation.Parse(_shellState.Workspace);
+        _selectedProductionId = _shellState.ProductionId;
         DesignWorkspaceButton.Click += (_, _) => SetWorkspace(EditorWorkspace.Design);
         ProductionWorkspaceButton.Click += (_, _) => SetWorkspace(EditorWorkspace.Production);
+        ProductionComboBox.SelectionChanged += (_, _) => SelectProductionFromPicker();
+        ProductionEditButton.Click += (_, _) => OpenSelectedProduction();
         UpdateWorkspaceButtons();
         _variantHistory.RestoreState(_shellState.SessionHistory.VariantHistory);
         _previewController.RestoreDesignHistoryState(_shellState.SessionHistory.DesignPreviewHistory);
@@ -244,6 +253,7 @@ public partial class MainWindow : SukiWindow
     private void LoadProjectTree()
     {
         _treeRoots = _database.LoadProjectTree();
+        EnsureSelectedProductionExists();
         _treeExpansion.EnsureInitial(_treeRoots);
 
         if (_treeRoots.Count > 0)
@@ -316,7 +326,8 @@ public partial class MainWindow : SukiWindow
     private void RebuildNavigationCards()
     {
         NavigationWorkspaceTextBlock.Text = EditorWorkspaceNavigation.Title(_workspace);
-        _navigationRenderer.Rebuild(NavigationCardsPanel, _treeRoots, _workspace);
+        RefreshProductionPicker();
+        _navigationRenderer.Rebuild(NavigationCardsPanel, _treeRoots, _workspace, _selectedProductionId);
         ApplyUiTextScale();
     }
 
@@ -459,6 +470,61 @@ public partial class MainWindow : SukiWindow
         var inactiveBrush = EditorSukiWindowTheme.AccentBrush();
         ApplyWorkspaceButton(DesignWorkspaceButton, _workspace == EditorWorkspace.Design, activeBrush, inactiveBrush);
         ApplyWorkspaceButton(ProductionWorkspaceButton, _workspace == EditorWorkspace.Production, activeBrush, inactiveBrush);
+        ProductionPickerGrid.IsVisible = _workspace == EditorWorkspace.Production;
+    }
+
+    private void EnsureSelectedProductionExists()
+    {
+        if (_treeRoots.Any((project) => project.Id == _selectedProductionId)) return;
+
+        _selectedProductionId = _treeRoots.FirstOrDefault()?.Id ?? "";
+        _shellState.SetProductionId(_selectedProductionId);
+    }
+
+    private void RefreshProductionPicker()
+    {
+        _isUpdatingProductionPicker = true;
+        try
+        {
+            var options = _treeRoots
+                .Select((project) => new FieldOption(project.Id, project.Name))
+                .ToList();
+            ProductionComboBox.ItemsSource = options;
+            ProductionComboBox.SelectedItem = options.FirstOrDefault((option) => option.Value == _selectedProductionId)
+                ?? options.FirstOrDefault();
+            ProductionEditButton.IsEnabled = ProductionComboBox.SelectedItem is not null;
+        }
+        finally
+        {
+            _isUpdatingProductionPicker = false;
+        }
+    }
+
+    private void SelectProductionFromPicker()
+    {
+        if (_isUpdatingProductionPicker || ProductionComboBox.SelectedItem is not { } selected) return;
+        if (string.Equals(_selectedProductionId, selected.Value, StringComparison.Ordinal)) return;
+
+        _selectedProductionId = selected.Value;
+        _shellState.SetProductionId(_selectedProductionId);
+        var project = _treeRoots.FirstOrDefault((candidate) => candidate.Id == _selectedProductionId);
+        var node = project is null
+            ? null
+            : EditorWorkspaceNavigation.FirstSelectable([project], EditorWorkspace.Production);
+        if (node is not null)
+        {
+            ShowNode(_nodeSelection.ResolveSelectionNode(node), rebuildTree: false);
+        }
+
+        RebuildNavigationCards();
+    }
+
+    private void OpenSelectedProduction()
+    {
+        var production = _treeRoots.FirstOrDefault((project) => project.Id == _selectedProductionId);
+        if (production is null) return;
+
+        ShowNode(production);
     }
 
     private static void ApplyWorkspaceButton(Button button, bool isActive, IBrush activeBrush, IBrush inactiveBrush)

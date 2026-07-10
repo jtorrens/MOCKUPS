@@ -6,7 +6,7 @@
                  xmlns:suki="clr-namespace:SukiUI.Controls;assembly=SukiUI"
                  mc:Ignorable="d" d:DesignWidth="1440" d:DesignHeight="900"
                  x:Class="Mockups.DesktopEditorShell.MainWindow"
-        Title="Mockups Desktop Editor Shell · Design / Production · v0.316.2"
+        Title="Mockups Desktop Editor Shell · Design / Production · v0.316.3"
                  Width="1440"
                  Height="900"
                  MinWidth="1040"
@@ -23,7 +23,7 @@
             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="18" VerticalAlignment="Center">
                 <StackPanel Grid.Column="0" Spacing="4">
                     <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                        <TextBlock FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" Text="MOCKUPS DESKTOP EDITOR · v0.316.2" />
+                        <TextBlock FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" Text="MOCKUPS DESKTOP EDITOR · v0.316.3" />
                         <Button x:Name="DesignWorkspaceButton"
                                 Content="Design"
                                 MinWidth="100"
@@ -69,6 +69,38 @@
                         <StackPanel Spacing="4">
                             <TextBlock FontSize="11" FontWeight="SemiBold" Text="NAVIGATION" />
                             <TextBlock x:Name="NavigationWorkspaceTextBlock" FontSize="17" FontWeight="Bold" Text="Design" />
+                            <Grid x:Name="ProductionPickerGrid"
+                                  ColumnDefinitions="*,Auto,Auto,Auto,Auto"
+                                  ColumnSpacing="6"
+                                  IsVisible="False"
+                                  Margin="0,8,0,0">
+                                <editor:EditorInstantComboBox x:Name="ProductionComboBox"
+                                                              Grid.Column="0"
+                                                              MinHeight="34" />
+                                <Button x:Name="ProductionAddButton"
+                                        Grid.Column="2"
+                                        Width="30"
+                                        Height="34"
+                                        Padding="0"
+                                        IsEnabled="False" />
+                                <Button x:Name="ProductionDuplicateButton"
+                                        Grid.Column="3"
+                                        Width="30"
+                                        Height="34"
+                                        Padding="0"
+                                        IsEnabled="False" />
+                                <Button x:Name="ProductionDeleteButton"
+                                        Grid.Column="4"
+                                        Width="30"
+                                        Height="34"
+                                        Padding="0"
+                                        IsEnabled="False" />
+                                <Button x:Name="ProductionEditButton"
+                                        Grid.Column="1"
+                                        Width="30"
+                                        Height="34"
+                                        Padding="0" />
+                            </Grid>
                         </StackPanel>
                     </Border>
                     <ScrollViewer Padding="10">

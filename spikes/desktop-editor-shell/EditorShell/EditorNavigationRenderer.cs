@@ -52,15 +52,22 @@ internal sealed class EditorNavigationRenderer
     public void Rebuild(
         StackPanel target,
         IReadOnlyList<ProjectTreeNode> treeRoots,
-        EditorWorkspace workspace)
+        EditorWorkspace workspace,
+        string productionId)
     {
         target.Children.Clear();
 
         foreach (var project in treeRoots)
         {
+            if (workspace == EditorWorkspace.Production
+                && !string.Equals(project.Id, productionId, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
             if (workspace == EditorWorkspace.Production)
             {
-                AddNavigationCard(target, project, CreateProjectNavigationContent(project), EditorIcons.ForTreeNode(project.Kind));
+                AddProductionEpisodes(target, project);
             }
             else
             {
@@ -95,6 +102,15 @@ internal sealed class EditorNavigationRenderer
         }
 
         return panel;
+    }
+
+    private void AddProductionEpisodes(StackPanel target, ProjectTreeNode project)
+    {
+        var episodesRoot = project.Children.FirstOrDefault((child) => child.Kind == ProjectTreeNodeKind.EpisodesRoot);
+        foreach (var episode in episodesRoot?.Children ?? [])
+        {
+            AddNavigationNode(target, episode);
+        }
     }
 
     private void AddNavigationSection(StackPanel parent, ProjectTreeNode sectionRoot)

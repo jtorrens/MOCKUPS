@@ -23,6 +23,7 @@ internal sealed class EditorShellStateService
     public double UiTextScale { get; private set; } = 1;
     public double UiCardPaddingScale { get; private set; } = 1;
     public string Workspace { get; private set; } = "design";
+    public string ProductionId { get; private set; } = "";
     public EditorSessionHistoryState SessionHistory { get; private set; } = new();
 
     public void Restore()
@@ -62,6 +63,7 @@ internal sealed class EditorShellStateService
             UiTextScale = ClampScale(state.UiTextScale, 1, 0.5, 1.75);
             UiCardPaddingScale = ClampScale(state.UiCardPaddingScale, 1, 0.1, 1.5);
             Workspace = string.IsNullOrWhiteSpace(state.Workspace) ? "design" : state.Workspace;
+            ProductionId = state.ProductionId ?? "";
             SessionHistory = state.SessionHistory ?? new EditorSessionHistoryState();
         }
         catch
@@ -91,6 +93,11 @@ internal sealed class EditorShellStateService
         Workspace = EditorWorkspaceNavigation.StorageValue(workspace);
     }
 
+    public void SetProductionId(string productionId)
+    {
+        ProductionId = productionId ?? "";
+    }
+
     public void Save(EditorSessionHistoryState? sessionHistory = null)
     {
         try
@@ -112,6 +119,7 @@ internal sealed class EditorShellStateService
                 UiTextScale = UiTextScale,
                 UiCardPaddingScale = UiCardPaddingScale,
                 Workspace = Workspace,
+                ProductionId = ProductionId,
                 SessionHistory = sessionHistory ?? SessionHistory,
             };
 
@@ -156,6 +164,7 @@ internal sealed class EditorShellStateService
         public double? UiTextScale { get; init; }
         public double? UiCardPaddingScale { get; init; }
         public string? Workspace { get; init; }
+        public string? ProductionId { get; init; }
         public EditorSessionHistoryState? SessionHistory { get; init; }
     }
 }
