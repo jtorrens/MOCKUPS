@@ -107,6 +107,8 @@ internal sealed partial class SpikeDatabase
     {
         return new JsonObject
         {
+            ["headFrames"] = 0,
+            ["tailFrames"] = 12,
             ["showHeader"] = true,
             ["showStatusBar"] = true,
             ["showNavigationBar"] = true,
