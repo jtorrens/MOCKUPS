@@ -490,22 +490,6 @@ internal sealed partial class SpikeDatabase
         return rows;
     }
 
-
-    private static void EnsureShotColumns(SqliteConnection connection)
-    {
-        throw new NotSupportedException("Schema v1 does not normalize shot columns at startup.");
-    }
-
-    private static void EnsureAppColumns(SqliteConnection connection)
-    {
-        throw new NotSupportedException("Schema v1 does not normalize app columns at startup.");
-    }
-
-    private static void EnsureModuleColumns(SqliteConnection connection)
-    {
-        throw new NotSupportedException("Schema v1 does not normalize module columns at startup.");
-    }
-
     private static void UpdateModuleConfigField(SqliteConnection connection, string moduleId, string fieldId, string value)
     {
         var config = ParseJsonObject(ScalarString(connection, "SELECT config_json FROM modules WHERE id = $id", ("$id", moduleId)) ?? "{}");

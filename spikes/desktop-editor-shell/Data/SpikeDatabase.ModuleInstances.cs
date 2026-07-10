@@ -7,48 +7,6 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SpikeDatabase
 {
-    private static void EnsureModuleInstanceColumns(SqliteConnection connection)
-    {
-        MigrateScreenInstancesToModuleInstances(connection);
-        AddColumnIfMissing(connection, "module_instances", "name", "TEXT NOT NULL DEFAULT ''");
-        AddColumnIfMissing(connection, "module_instances", "notes", "TEXT NOT NULL DEFAULT ''");
-        AddColumnIfMissing(connection, "module_instances", "sort_order", "INTEGER NOT NULL DEFAULT 0");
-        AddColumnIfMissing(connection, "module_instances", "duration_frames", "INTEGER NOT NULL DEFAULT 240");
-        AddColumnIfMissing(connection, "module_instances", "transition_json", "TEXT NOT NULL DEFAULT '{\"type\":\"cut\"}'");
-        AddColumnIfMissing(connection, "module_instances", "content_json", "TEXT NOT NULL DEFAULT '{}'");
-        AddColumnIfMissing(connection, "module_instances", "behavior_json", "TEXT NOT NULL DEFAULT '{}'");
-        AddColumnIfMissing(connection, "module_instances", "animation_json", "TEXT NOT NULL DEFAULT '{\"schemaVersion\":1,\"tracks\":[]}'");
-        AddColumnIfMissing(connection, "module_instances", "metadata_json", "TEXT NOT NULL DEFAULT '{}'");
-    }
-
-    private static void MigrateScreenInstancesToModuleInstances(SqliteConnection connection)
-    {
-        if (!TableExists(connection, "screen_instances"))
-        {
-            return;
-        }
-
-        Execute(connection, """
-            INSERT OR IGNORE INTO module_instances (
-              id, shot_id, app_id, module_id, name, notes,
-              sort_order, duration_frames, transition_json,
-              content_json, behavior_json, animation_json, metadata_json)
-            SELECT id, shot_id, app_id, module_id, name, notes,
-                   layer_order, MAX(1, end_frame - start_frame), '{"type":"cut"}',
-                   content_json, behavior_json, animation_json, metadata_json
-            FROM screen_instances
-            """);
-        Execute(connection, "DROP TABLE screen_instances");
-    }
-
-    private static bool TableExists(SqliteConnection connection, string tableName)
-    {
-        using var command = connection.CreateCommand();
-        command.CommandText = "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = $name LIMIT 1";
-        command.Parameters.AddWithValue("$name", tableName);
-        return command.ExecuteScalar() is not null;
-    }
-
     private static void SeedModuleInstancesIfEmpty(SqliteConnection connection)
     {
         if (ScalarLong(connection, "SELECT COUNT(*) FROM module_instances") > 0)

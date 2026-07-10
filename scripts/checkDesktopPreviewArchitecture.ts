@@ -55,6 +55,15 @@ function walkFiles(directory: string): string[] {
   });
 }
 
+function walkFilesByExtension(directory: string, extensions: readonly string[]): string[] {
+  return readdirSync(directory).flatMap((entry) => {
+    const fullPath = path.join(directory, entry);
+    const stats = statSync(fullPath);
+    if (stats.isDirectory()) return walkFilesByExtension(fullPath, extensions);
+    return extensions.some((extension) => entry.endsWith(extension)) ? [fullPath] : [];
+  });
+}
+
 function importTargets(source: string) {
   const targets: string[] = [];
   const importPattern = /import\s+(?:type\s+)?(?:[\s\S]*?)\s+from\s+["']([^"']+)["']/g;
@@ -95,6 +104,13 @@ function assertDoesNotContain(relativePath: string, term: string, message: strin
   const source = readText(relativePath);
   if (source.includes(term)) {
     addViolation(relativePath, message);
+  }
+}
+
+function assertFilesDoNotContain(files: readonly string[], term: string, message: string) {
+  for (const file of files) {
+    const relativePath = relative(file);
+    assertDoesNotContain(relativePath, term, message);
   }
 }
 
@@ -1007,6 +1023,21 @@ assertDoesNotContain(
   "CREATE TABLE IF NOT EXISTS navigation_bars",
   "desktop schema must not recreate legacy navigation_bars; use navigation_bar component variants",
 );
+for (const forbiddenSchemaMigrationTerm of [
+  "AddColumnIfMissing",
+  "EnsureShotColumns",
+  "EnsureAppColumns",
+  "EnsureModuleColumns",
+  "EnsureModuleInstanceColumns",
+  "EnsureComponentClassColumns",
+  "MigrateScreenInstancesToModuleInstances",
+]) {
+  assertFilesDoNotContain(
+    walkFilesByExtension(path.join(root, "spikes/desktop-editor-shell/Data"), [".cs"]),
+    forbiddenSchemaMigrationTerm,
+    `schema v1 startup must not keep historical schema migration helper ${forbiddenSchemaMigrationTerm}`,
+  );
+}
 assertDesktopDatabaseTableIsEmpty(
   "status_bars",
   "desktop database must not contain legacy status_bars rows; use status_bar component variants",

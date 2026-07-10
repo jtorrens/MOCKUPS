@@ -187,26 +187,6 @@ internal sealed partial class SpikeDatabase
         return JsonPath.NumberNode(value);
     }
 
-    private static void AddColumnIfMissing(
-        SqliteConnection connection,
-        string table,
-        string column,
-        string definition)
-    {
-        using var command = connection.CreateCommand();
-        command.CommandText = $"PRAGMA table_info({table})";
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            if (string.Equals(reader.GetString(1), column, StringComparison.OrdinalIgnoreCase))
-            {
-                return;
-            }
-        }
-
-        Execute(connection, $"ALTER TABLE {table} ADD COLUMN {column} {definition}");
-    }
-
     private static void ExecuteScript(SqliteConnection connection, string script)
     {
         using var command = connection.CreateCommand();

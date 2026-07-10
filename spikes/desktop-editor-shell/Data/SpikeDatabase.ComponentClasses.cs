@@ -2943,12 +2943,6 @@ internal sealed partial class SpikeDatabase
 
         return rows;
     }
-
-    private static void EnsureComponentClassColumns(SqliteConnection connection)
-    {
-        AddColumnIfMissing(connection, "component_classes", "notes", "TEXT NOT NULL DEFAULT ''");
-    }
-
     private static string ComponentConfigFieldValue(string configJson, ComponentClassFieldDescriptor descriptor)
     {
         if (descriptor.ValueKind == ValueKind.EmbeddedComponent)
