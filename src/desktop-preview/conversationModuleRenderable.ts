@@ -6,10 +6,11 @@ import { resolveBubbleComponent } from "./bubbleComponentResolver.js";
 import { componentPresetConfig } from "./componentPreviewDefaults.js";
 import {
   asRecord,
-  optionalBoolean,
   optionalNumber,
   optionalString,
   parseObject,
+  requiredBoolean,
+  requiredNumber,
   requiredString,
 } from "./componentResolverCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
@@ -42,12 +43,20 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
   const screen = previewScreenBox(payload);
   const scale = renderScale(payload);
   const children: RenderableNode[] = [];
-  const wallpaper = optionalBooleanDefault(conversation, "useAppWallpaper", true)
+  const wallpaper = requiredBoolean(
+    conversation,
+    "useAppWallpaper",
+    "module.conversation.useAppWallpaper",
+  )
     ? appWallpaperNode(payload, screen)
     : undefined;
   if (wallpaper) children.push(wallpaper);
 
-  const status = optionalBooleanDefault(conversation, "showStatusBar", true)
+  const status = requiredBoolean(
+    conversation,
+    "showStatusBar",
+    "module.conversation.showStatusBar",
+  )
     ? childRenderable(
         payload,
         componentBaseConfigs,
@@ -58,7 +67,11 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
           statusBarComponentToRenderable(childPayload, resolveStatusBarComponent(childPayload)),
       )
     : undefined;
-  const navigation = optionalBooleanDefault(conversation, "showNavigationBar", true)
+  const navigation = requiredBoolean(
+    conversation,
+    "showNavigationBar",
+    "module.conversation.showNavigationBar",
+  )
     ? childRenderable(
         payload,
         componentBaseConfigs,
@@ -76,7 +89,11 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
           ),
       )
     : undefined;
-  const keyboard = optionalBooleanDefault(conversation, "showKeyboard", true)
+  const keyboard = requiredBoolean(
+    conversation,
+    "showKeyboard",
+    "module.conversation.showKeyboard",
+  )
     ? childRenderable(
         payload,
         componentBaseConfigs,
@@ -90,7 +107,11 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
           keyboardComponentToRenderable(childPayload, resolveKeyboardComponent(childPayload)),
       )
     : undefined;
-  const textInput = optionalBooleanDefault(conversation, "showTextInputBar", true)
+  const textInput = requiredBoolean(
+    conversation,
+    "showTextInputBar",
+    "module.conversation.showTextInputBar",
+  )
     ? childRenderable(
         payload,
         componentBaseConfigs,
@@ -122,14 +143,18 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
     ? translateRenderableNode(textInput, { x: 0, y: textInputTargetY - textInput.box.y })
     : textInput;
 
-  const header = optionalBooleanDefault(conversation, "showHeader", true)
+  const header = requiredBoolean(
+    conversation,
+    "showHeader",
+    "module.conversation.showHeader",
+  )
     ? headerNode(
         payload,
         componentBaseConfigs,
         conversation,
         preview,
         (status?.box?.height ?? 0),
-        optionalNumber(conversation, "headerHeight", 64) * scale,
+        requiredNumber(conversation, "headerHeight", "module.conversation.headerHeight") * scale,
       )
     : undefined;
   if (header) children.push(header);
@@ -421,8 +446,4 @@ function spacingPair(payload: DesignPreviewPayload, value: string) {
     x: numberToken(payload, xToken) * scale,
     y: numberToken(payload, yToken) * scale,
   };
-}
-
-function optionalBooleanDefault(value: Record<string, unknown>, key: string, fallback: boolean) {
-  return Object.hasOwn(value, key) ? optionalBoolean(value, key) : fallback;
 }

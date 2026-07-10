@@ -133,7 +133,7 @@ internal sealed partial class SpikeDatabase
             ("$recordClassId", "module.core.chat"),
             ("$name", "Conversation"),
             ("$notes", "Seed conversation module linked to Chat app."),
-            ("$configJson", DefaultConversationConfigJson().ToJsonString()),
+            ("$configJson", DefaultConversationConfigJson("project_foqn_s2").ToJsonString()),
             ("$designPreviewJson", DefaultConversationDesignPreviewJson().ToJsonString()),
             ("$metadataJson", JsonSerializer.Serialize(new { note = "Seed module linked to Chat app." })));
     }

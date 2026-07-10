@@ -560,7 +560,7 @@ internal sealed partial class SpikeDatabase
         Execute(connection, "UPDATE modules SET config_json = $configJson WHERE id = $id", ("$id", moduleId), ("$configJson", config.ToJsonString()));
     }
 
-    private static JsonObject DefaultConversationConfigJson()
+    private static JsonObject DefaultConversationConfigJson(string projectId)
     {
         return new JsonObject
         {
@@ -569,21 +569,26 @@ internal sealed partial class SpikeDatabase
                 ["showHeader"] = true,
                 ["useAppWallpaper"] = true,
                 ["headerHeight"] = 64,
-                ["headerAvatarVariant"] = "default",
+                ["headerAvatarVariant"] = SeededComponentPresetReference(projectId, "avatar"),
                 ["showStatusBar"] = true,
-                ["statusBarVariant"] = "default",
+                ["statusBarVariant"] = SeededComponentPresetReference(projectId, "status_bar"),
                 ["showNavigationBar"] = true,
-                ["navigationBarVariant"] = "default",
+                ["navigationBarVariant"] = SeededComponentPresetReference(projectId, "navigation_bar"),
                 ["showTextInputBar"] = true,
-                ["textInputBarVariant"] = "default",
+                ["textInputBarVariant"] = SeededComponentPresetReference(projectId, "textInputBar"),
                 ["showKeyboard"] = true,
-                ["keyboardVariant"] = "default",
-                ["bubbleVariant"] = "default",
+                ["keyboardVariant"] = SeededComponentPresetReference(projectId, "keyboard"),
+                ["bubbleVariant"] = SeededComponentPresetReference(projectId, "bubble"),
                 ["bubbleMaxWidth"] = 66,
                 ["screenGutter"] = "theme.spacing.l|theme.spacing.l",
                 ["messageGap"] = "theme.spacing.m",
             },
         };
+    }
+
+    private static string SeededComponentPresetReference(string projectId, string componentType)
+    {
+        return ComponentPresetNodeId($"component_{projectId}_{componentType}", DefaultComponentPresetId);
     }
 
     private static JsonObject DefaultConversationDesignPreviewJson()
