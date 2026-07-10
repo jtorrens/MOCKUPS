@@ -560,57 +560,6 @@ internal sealed partial class SpikeDatabase
         Execute(connection, "UPDATE modules SET config_json = $configJson WHERE id = $id", ("$id", moduleId), ("$configJson", config.ToJsonString()));
     }
 
-    private static void EnsureModuleConversationDefaults(SqliteConnection connection)
-    {
-        foreach (var row in ModuleRowsWithProject(connection))
-        {
-            var config = ParseJsonObject(string.IsNullOrWhiteSpace(row.ConfigJson) ? "{}" : row.ConfigJson);
-            var preview = ParseJsonObject(string.IsNullOrWhiteSpace(row.DesignPreviewJson) ? "{}" : row.DesignPreviewJson);
-            var changedPreview = MoveConversationRuntimeValuesToPreview(config, preview);
-            changedPreview |= JsonPath.MergeMissing(preview, DefaultConversationDesignPreviewJson());
-            changedPreview |= EnsureConversationPreviewInputs(preview);
-            var changedConfig = EnsureConversationConfigDefaults(connection, row.ProjectId, config);
-
-            if (changedConfig || changedPreview)
-            {
-                Execute(
-                    connection,
-                    "UPDATE modules SET config_json = $configJson, design_preview_json = $designPreviewJson WHERE id = $id",
-                    ("$id", row.Id),
-                    ("$configJson", config.ToJsonString()),
-                    ("$designPreviewJson", preview.ToJsonString()));
-            }
-        }
-    }
-
-    private static bool EnsureConversationConfigDefaults(SqliteConnection connection, string projectId, JsonObject config)
-    {
-        var changed = JsonPath.MergeMissing(config, DefaultConversationConfigJson());
-        changed |= NormalizeConversationPreset(config, connection, projectId, "statusBarVariant", "status_bar");
-        changed |= NormalizeConversationPreset(config, connection, projectId, "navigationBarVariant", "navigation_bar");
-        changed |= NormalizeConversationPreset(config, connection, projectId, "textInputBarVariant", "textInputBar");
-        changed |= NormalizeConversationPreset(config, connection, projectId, "keyboardVariant", "keyboard");
-        changed |= NormalizeConversationPreset(config, connection, projectId, "bubbleVariant", "bubble");
-        changed |= NormalizeConversationPreset(config, connection, projectId, "headerAvatarVariant", "avatar");
-        changed |= JsonPath.Remove(config, ["conversation", "headerTitle"]);
-        changed |= JsonPath.Remove(config, ["conversation", "headerSubtitle"]);
-        changed |= JsonPath.Remove(config, ["conversation", "inputText"]);
-        return changed;
-    }
-
-    private static bool NormalizeConversationPreset(JsonObject config, SqliteConnection connection, string projectId, string key, string componentType)
-    {
-        var current = JsonString(config, ["conversation", key]);
-        var normalized = NormalizeComponentPresetReference(connection, projectId, componentType, current);
-        if (current == normalized)
-        {
-            return false;
-        }
-
-        SetJsonValue(config, ["conversation", key], JsonValue.Create(normalized)!);
-        return true;
-    }
-
     private static JsonObject DefaultConversationConfigJson()
     {
         return new JsonObject
@@ -680,55 +629,6 @@ internal sealed partial class SpikeDatabase
                 new JsonObject { ["id"] = "inputText", ["label"] = "Input text", ["jsonKey"] = "inputText", ["kind"] = "text", ["defaultValue"] = "Message", ["uiOrigin"] = "embedded", ["uiGroupId"] = "textInput", ["uiGroupLabel"] = "Text input" },
             },
         };
-    }
-
-    private static bool MoveConversationRuntimeValuesToPreview(JsonObject config, JsonObject preview)
-    {
-        var changed = false;
-        foreach (var key in new[] { "headerTitle", "headerSubtitle", "inputText" })
-        {
-            var value = JsonPath.Get(config, ["conversation", key]);
-            if (value is null)
-            {
-                continue;
-            }
-
-            preview[key] = value.DeepClone();
-            changed = true;
-        }
-
-        return changed;
-    }
-
-    private static bool EnsureConversationPreviewInputs(JsonObject preview)
-    {
-        var defaults = DefaultConversationDesignPreviewJson()["inputs"] as JsonArray ?? [];
-        if (preview["inputs"] is not JsonArray inputs)
-        {
-            preview["inputs"] = defaults.DeepClone();
-            return true;
-        }
-
-        return JsonPath.MergeObjectArrayById(inputs, defaults);
-    }
-
-    private static IReadOnlyList<(string Id, string ProjectId, string ConfigJson, string DesignPreviewJson)> ModuleRowsWithProject(SqliteConnection connection)
-    {
-        var rows = new List<(string Id, string ProjectId, string ConfigJson, string DesignPreviewJson)>();
-        using var command = connection.CreateCommand();
-        command.CommandText = """
-            SELECT m.id, a.project_id, m.config_json, m.design_preview_json
-            FROM modules m
-            JOIN apps a ON a.id = m.app_id
-            WHERE m.record_class_id = 'module.core.chat'
-            """;
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            rows.Add((reader.GetString(0), reader.GetString(1), ReadString(reader, 2), ReadString(reader, 3)));
-        }
-
-        return rows;
     }
 
     private static string JsonBoolString(JsonObject owner, string[] path, bool defaultValue)

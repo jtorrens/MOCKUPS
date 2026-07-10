@@ -125,14 +125,16 @@ internal sealed partial class SpikeDatabase
         Execute(
             connection,
             """
-            INSERT INTO modules (id, app_id, record_class_id, name, notes, sort_order, metadata_json)
-            VALUES ($id, $appId, $recordClassId, $name, $notes, 0, $metadataJson)
+            INSERT INTO modules (id, app_id, record_class_id, name, notes, sort_order, config_json, design_preview_json, metadata_json)
+            VALUES ($id, $appId, $recordClassId, $name, $notes, 0, $configJson, $designPreviewJson, $metadataJson)
             """,
             ("$id", "module_core_chat"),
             ("$appId", "app_core_chat"),
             ("$recordClassId", "module.core.chat"),
             ("$name", "Conversation"),
             ("$notes", "Seed conversation module linked to Chat app."),
+            ("$configJson", DefaultConversationConfigJson().ToJsonString()),
+            ("$designPreviewJson", DefaultConversationDesignPreviewJson().ToJsonString()),
             ("$metadataJson", JsonSerializer.Serialize(new { note = "Seed module linked to Chat app." })));
     }
 
