@@ -11,6 +11,7 @@ internal sealed partial class SpikeDatabase
         string Slug,
         int Version,
         int SortOrder,
+        int ProjectDefaultFps,
         int Fps,
         int? FpsOverride,
         int DurationFrames,

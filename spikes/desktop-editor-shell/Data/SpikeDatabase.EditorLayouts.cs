@@ -98,11 +98,10 @@ internal sealed partial class SpikeDatabase
                     { "id": "shot.version", "order": 30, "visible": true },
                     { "id": "shot.renderName", "order": 40, "visible": true },
                     { "id": "shot.durationFrames", "order": 50, "visible": true },
-                    { "id": "shot.useProjectFps", "order": 60, "visible": true },
-                    { "id": "shot.fps", "order": 70, "visible": true },
-                    { "id": "shot.ownerActorId", "order": 80, "visible": true },
-                    { "id": "shot.ownerDevice", "order": 90, "visible": true },
-                    { "id": "core.notes", "order": 100, "visible": true }
+                    { "id": "shot.fps", "order": 60, "visible": true },
+                    { "id": "shot.ownerActorId", "order": 70, "visible": true },
+                    { "id": "shot.ownerDevice", "order": 80, "visible": true },
+                    { "id": "core.notes", "order": 90, "visible": true }
                   """
             : recordClassId is "app.generic" or "app.core.chat"
                 ? """

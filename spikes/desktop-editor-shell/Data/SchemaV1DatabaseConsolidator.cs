@@ -117,15 +117,26 @@ internal static class SchemaV1DatabaseConsolidator
             Copy(connection, "projects", "id, name, slug, default_fps, notes, media_root, metadata_json");
             NormalizeProjectMediaRoots(connection, sourcePath);
             Copy(connection, "episodes", "id, project_id, name, slug, notes, sort_order, metadata_json");
-            Execute(connection, """
-                INSERT INTO shots (id, episode_id, name, slug, version, notes, sort_order, fps_override, duration_frames, owner_actor_id, render_preset_id, canvas_json, metadata_json)
-                SELECT s.id, s.episode_id, s.name, s.slug, s.version, s.notes, s.sort_order,
-                       CASE WHEN s.fps = p.default_fps THEN NULL ELSE s.fps END,
-                       s.duration_frames, s.owner_actor_id, s.render_preset_id, s.canvas_json, s.metadata_json
-                FROM source.shots s
-                JOIN source.episodes e ON e.id = s.episode_id
-                JOIN source.projects p ON p.id = e.project_id
-                """);
+            if (SourceHasColumn(connection, "shots", "fps_override"))
+            {
+                Execute(connection, """
+                    INSERT INTO shots (id, episode_id, name, slug, version, notes, sort_order, fps_override, duration_frames, owner_actor_id, render_preset_id, canvas_json, metadata_json)
+                    SELECT id, episode_id, name, slug, version, notes, sort_order, fps_override, duration_frames, owner_actor_id, render_preset_id, canvas_json, metadata_json
+                    FROM source.shots
+                    """);
+            }
+            else
+            {
+                Execute(connection, """
+                    INSERT INTO shots (id, episode_id, name, slug, version, notes, sort_order, fps_override, duration_frames, owner_actor_id, render_preset_id, canvas_json, metadata_json)
+                    SELECT s.id, s.episode_id, s.name, s.slug, s.version, s.notes, s.sort_order,
+                           CASE WHEN s.fps = p.default_fps THEN NULL ELSE s.fps END,
+                           s.duration_frames, s.owner_actor_id, s.render_preset_id, s.canvas_json, s.metadata_json
+                    FROM source.shots s
+                    JOIN source.episodes e ON e.id = s.episode_id
+                    JOIN source.projects p ON p.id = e.project_id
+                    """);
+            }
             Copy(connection, "apps", "id, project_id, record_class_id, name, bundle_key, app_type, notes, sort_order, config_json, metadata_json");
             Copy(connection, "modules", "id, app_id, record_class_id, name, notes, sort_order, config_json, design_preview_json, metadata_json");
             Copy(connection, "module_instances", "id, shot_id, app_id, module_id, name, notes, sort_order, duration_frames, transition_json, content_json, behavior_json, animation_json, metadata_json");
@@ -170,6 +181,15 @@ internal static class SchemaV1DatabaseConsolidator
         {
             Execute(connection, "UPDATE projects SET media_root = $mediaRoot WHERE id = $id", ("$mediaRoot", mediaRoot), ("$id", id));
         }
+    }
+
+    private static bool SourceHasColumn(SqliteConnection connection, string tableName, string columnName)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT COUNT(*) FROM source.pragma_table_info($tableName) WHERE name = $columnName";
+        command.Parameters.AddWithValue("$tableName", tableName);
+        command.Parameters.AddWithValue("$columnName", columnName);
+        return Convert.ToInt64(command.ExecuteScalar()) > 0;
     }
 
     private static void Copy(SqliteConnection connection, string table, string columns)

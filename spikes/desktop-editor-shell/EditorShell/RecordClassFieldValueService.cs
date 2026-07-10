@@ -65,6 +65,29 @@ internal sealed class RecordClassFieldValueService
             _ => field.Options,
         };
 
+        if (node.Kind == ProjectTreeNodeKind.Shot && field.Id == "shot.fps")
+        {
+            var settings = _database.GetShotSettings(node.Id);
+            var inheritedValue = settings.ProjectDefaultFps.ToString();
+            return new FieldValue(
+                new FieldDefinition(
+                    field.Id,
+                    field.Label,
+                    field.ValueKind,
+                    IsEditable: field.IsEditable,
+                    DefaultValue: inheritedValue,
+                    CommitAsDefault: false,
+                    CanInherit: true,
+                    InheritedValue: inheritedValue,
+                    Options: options,
+                    PairLabels: field.PairLabels,
+                    ImagePreview: field.ImagePreview,
+                    Number: field.Number,
+                    RecordReference: field.RecordReference),
+                settings.FpsOverride?.ToString() ?? inheritedValue,
+                IsInherited: settings.FpsOverride is null);
+        }
+
         return new FieldValue(
             new FieldDefinition(
                 field.Id,
@@ -171,7 +194,6 @@ internal sealed class RecordClassFieldValueService
             "shot.version" => settings.Version.ToString(),
             "shot.sortOrder" => settings.SortOrder.ToString(),
             "shot.durationFrames" => settings.DurationFrames.ToString(),
-            "shot.useProjectFps" => settings.FpsOverride is null ? "true" : "false",
             "shot.fps" => settings.Fps.ToString(),
             "shot.ownerActorId" => settings.OwnerActorId,
             "shot.ownerDevice" => _database.GetShotOwnerDeviceName(shotId),

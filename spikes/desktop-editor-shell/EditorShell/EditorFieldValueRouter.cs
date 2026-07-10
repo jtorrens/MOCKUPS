@@ -56,12 +56,13 @@ internal sealed class EditorFieldValueRouter
 
     public string CurrentStoredValue(ProjectTreeNode node, string fieldId)
     {
-        return fieldId switch
-        {
-            "core.name" => node.Name,
-            "core.notes" => node.Notes,
-            _ => Create(node, fieldId).Value,
-        };
+        if (fieldId == "core.name") return node.Name;
+        if (fieldId == "core.notes") return node.Notes;
+
+        var fieldValue = Create(node, fieldId);
+        return fieldValue.IsInherited
+            ? fieldValue.Definition.InheritedStorageValue
+            : fieldValue.Value;
     }
 
     public void Commit(ProjectTreeNode node, string fieldId, string value)

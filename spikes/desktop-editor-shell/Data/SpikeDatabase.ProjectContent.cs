@@ -73,7 +73,7 @@ internal sealed partial class SpikeDatabase
         using var connection = OpenConnection();
         using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT s.slug, s.version, s.sort_order, COALESCE(s.fps_override, p.default_fps), s.fps_override,
+            SELECT s.slug, s.version, s.sort_order, p.default_fps, COALESCE(s.fps_override, p.default_fps), s.fps_override,
                    s.duration_frames, s.owner_actor_id, s.render_preset_id, s.canvas_json, s.metadata_json, e.project_id
             FROM shots s
             JOIN episodes e ON e.id = s.episode_id
@@ -88,48 +88,26 @@ internal sealed partial class SpikeDatabase
         }
 
         return new ShotSettings(
-            ReadString(reader, 10),
+            ReadString(reader, 11),
             ReadString(reader, 0),
             reader.IsDBNull(1) ? 1 : reader.GetInt32(1),
             reader.IsDBNull(2) ? 0 : reader.GetInt32(2),
             reader.IsDBNull(3) ? 25 : reader.GetInt32(3),
-            reader.IsDBNull(4) ? null : reader.GetInt32(4),
-            reader.IsDBNull(5) ? 240 : reader.GetInt32(5),
-            ReadString(reader, 6),
+            reader.IsDBNull(4) ? 25 : reader.GetInt32(4),
+            reader.IsDBNull(5) ? null : reader.GetInt32(5),
+            reader.IsDBNull(6) ? 240 : reader.GetInt32(6),
             ReadString(reader, 7),
             ReadString(reader, 8),
-            ReadString(reader, 9));
+            ReadString(reader, 9),
+            ReadString(reader, 10));
     }
 
     public void UpdateShotField(string shotId, string fieldId, string value)
     {
         using var connection = OpenConnection();
-        if (fieldId == "shot.useProjectFps")
+        if (fieldId == "shot.fps" && value == "inherited")
         {
-            if (BoolFromText(value))
-            {
-                Execute(connection, "UPDATE shots SET fps_override = NULL WHERE id = $id", ("$id", shotId));
-            }
-            else
-            {
-                Execute(
-                    connection,
-                    """
-                    UPDATE shots
-                    SET fps_override = COALESCE(
-                        fps_override,
-                        (
-                            SELECT p.default_fps
-                            FROM episodes e
-                            JOIN projects p ON p.id = e.project_id
-                            WHERE e.id = shots.episode_id
-                        )
-                    )
-                    WHERE id = $id
-                    """,
-                    ("$id", shotId));
-            }
-
+            Execute(connection, "UPDATE shots SET fps_override = NULL WHERE id = $id", ("$id", shotId));
             return;
         }
 

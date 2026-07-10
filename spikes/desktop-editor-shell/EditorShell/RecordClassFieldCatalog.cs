@@ -42,8 +42,7 @@ internal static class RecordClassFieldCatalog
         ["shot.version"] = new("shot.version", "Version", ValueKind.Integer),
         ["shot.sortOrder"] = new("shot.sortOrder", "Sort Order", ValueKind.Integer),
         ["shot.durationFrames"] = new("shot.durationFrames", "Duration Frames", ValueKind.Integer, IsEditable: false),
-        ["shot.useProjectFps"] = new("shot.useProjectFps", "Use project FPS", ValueKind.Boolean),
-        ["shot.fps"] = new("shot.fps", "FPS Override", ValueKind.Integer),
+        ["shot.fps"] = new("shot.fps", "FPS", ValueKind.Integer),
         ["shot.ownerActorId"] = new(
             "shot.ownerActorId",
             "Owner Actor",
