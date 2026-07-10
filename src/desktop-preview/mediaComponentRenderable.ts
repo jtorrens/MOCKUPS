@@ -71,7 +71,7 @@ function mediaComponentToRenderableForBoxes(
     box: boxes.root,
     style: {
       overflow: "visible",
-      ...(media.displayState === "fullframe" ? { zIndex: 1000 } : {}),
+      ...(media.displayState === "fullframe" ? { rootOverlay: true, zIndex: 1000 } : {}),
     },
     children,
   } satisfies RenderableNode;

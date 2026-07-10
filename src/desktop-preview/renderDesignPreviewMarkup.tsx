@@ -7,9 +7,11 @@ import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { designPreviewPayloadToRenderable } from "./designPreviewRenderableRegistry.js";
 import { fontFacesForPayload } from "./previewAssetResolver.js";
 import { selectedColor } from "./previewColorHelpers.js";
+import { extractRootOverlays } from "./renderableRootOverlays.js";
 
 function renderableForPayload(payload: DesignPreviewPayload): RenderableNode {
   const child = designPreviewPayloadToRenderable(payload);
+  const extracted = extractRootOverlays(child);
 
   return RenderableNodeSchema.parse({
     id: "design_preview.surface",
@@ -27,7 +29,7 @@ function renderableForPayload(payload: DesignPreviewPayload): RenderableNode {
     metadata: {
       fontFaces: fontFacesForPayload(payload),
     },
-    children: [child],
+    children: [extracted.node, ...extracted.overlays],
   });
 }
 
