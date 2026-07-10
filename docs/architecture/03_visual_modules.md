@@ -5,7 +5,7 @@ Visual modules are independent versioned modules selected through a registry. A 
 ## Screen modules
 
 - `ChatScreen`
-- `LockScreen`
+- `AppScreen`
 - `NotificationStackScreen`
 - `IncomingCallScreen`
 - `InCallScreen`

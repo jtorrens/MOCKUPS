@@ -9,7 +9,7 @@ Reviewed the initial schema and all six examples against accepted decisions D001
 - `docs/architecture/04_shot_builder.md`
 - `docs/architecture/07_initial_data_schema.md`
 - `docs/examples/production_minimal.json`
-- `docs/examples/shot_lock_to_chat.json`
+- `docs/examples/shot_chat.json`
 - `docs/examples/theme_ios_light.json`
 - `docs/examples/device_iphone_generic.json`
 - `docs/examples/resolved_props_chat_screen.json`

@@ -56,7 +56,7 @@ Review current fixtures:
 
 ```text
 docs/examples/production_minimal.json
-docs/examples/shot_lock_to_chat.json
+docs/examples/shot_chat.json
 docs/examples/theme_ios_light.json
 docs/examples/device_iphone_generic.json
 docs/examples/resolved_props_chat_screen.json
@@ -113,7 +113,7 @@ Implement only:
 2. A fixture loader for the existing example data.
 3. A shot resolver that resolves active screen instances for a given shot frame.
 4. A screen-instance resolver that produces resolved props for the example `ChatScreen`.
-5. Optional minimal resolver support for the lock-screen instance if needed to keep the example coherent.
+5. Optional minimal resolver support for the screen instance if needed to keep the example coherent.
 6. Validation of resolver output with existing Zod resolved-props schemas.
 7. A test or validation script that proves the lock-to-chat fixture can be loaded and the chat screen props can be resolved.
 8. Update `PROJECT_STATUS.md`.
@@ -256,7 +256,7 @@ It should:
 
 For this task, only `chat` must produce fully validated `ResolvedChatScreenProps`.
 
-Other screen types may return a lightweight normalized object, unless lock-screen support is easy and useful.
+Other screen types may return a lightweight normalized object, unless screen support is easy and useful.
 
 ## Chat screen resolver requirements
 
@@ -373,7 +373,7 @@ Use meaningful frames based on the documented example.
 
 At minimum test:
 
-- a frame where the lock screen is active
+- a frame where the phone screen is active
 - a frame where the chat screen is active
 - a frame during or after message write-on
 

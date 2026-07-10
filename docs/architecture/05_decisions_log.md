@@ -24,7 +24,7 @@ Implications:
 
 Status: accepted
 
-Chat uses the same screen-instance and module model as lock screens, notifications, calls, home screens, custom apps, and future types.
+Chat uses the same screen-instance and module model as phone screens, notifications, calls, home screens, custom apps, and future types.
 
 Implications:
 - Chat-specific entities must not define the root architecture.
@@ -168,7 +168,10 @@ Fast structural layout may use approximate renderer-agnostic measurement. Previe
 
 Implications:
 - Preview/export cannot diverge in final line breaking.
-- Themes select installed font family and named weight variants; no production font whitelist/table is introduced.
+- Themes and apps select approved production font families. Named weight variants
+  are resolved from the copied files registered for that approved family.
+  Development-only system font discovery may be used only to import/copy a
+  family into the production root.
 - The renderer UI keeps one shared in-memory font catalog cache per session. All font pickers reuse the same lazy-loaded system-font list and the same in-flight load promise.
 
 ## D018 — Modules own animation interpretation and visual behavior
@@ -201,16 +204,23 @@ Implications:
 - One module document can be previewed in temporary contexts.
 - Themes contain light/dark modes and modules receive already merged tokens for the selected mode.
 
-## D021 — Chat participants are module-owned
+## D021 — Chat content references production actors directly
 
 Status: accepted
 
-Chat module data contains participants, and every message references `senderParticipantId`. Participants may reference reusable production actors.
+Chat module data references reusable production actors directly for header and
+message content. The earlier `participants` layer is deprecated for the current
+design because message direction already carries the incoming/outgoing/system
+role and production actors provide display names, avatars, devices, themes, and
+per-mode actor colors.
 
 Implications:
-- Group chats do not depend on a single owner/target pair.
-- `core.chat` schema version 1 uses `module_instances.content_json` as its canonical runtime source.
-- Central conversation/message tables may remain physically present but are deprecated and not read by Chat runtime.
+- Group chats can still be represented by assigning different actor IDs to
+  individual messages.
+- `core.chat` schema version 1 uses `module_instances.content_json` as its
+  canonical runtime source for header and message content.
+- Central conversation/message/participant tables may remain physically present
+  during the design phase, but are deprecated and not read by Chat runtime.
 
 ## D022 — Module schema versions are independent from app schema versions
 
@@ -269,7 +279,7 @@ Status: accepted
 A module theme config is selected by `theme_id`, `module_id`, and `module_schema_version`.
 
 Implications:
-- One theme can carry different module-specific defaults for Chat, lock screen, calls, home screen, and future modules.
+- One theme can carry different module-specific defaults for Chat, phone screen, calls, home screen, and future modules.
 - A theme/module pair may later have multiple named configs; the current resolver selects the seeded/default config deterministically.
 
 ## D028 — Module theme configs may inherit global theme tokens
@@ -343,7 +353,7 @@ Status: accepted
 Chat message `type` describes the message family, not an exclusive payload switch. A message may contain text and attached media together, such as an image/video with a caption or accompanying text.
 
 Implications:
-- `module_instances.content_json.messages[]` may include both `text` and `mediaAssetId`/`media`.
+- `module_instances.content_json.messages[]` may include both `text` and direct production-relative `media`.
 - The Chat editor must expose media fields as optional attachments, not as mutually exclusive alternatives to text.
 - Resolved Chat props preserve both `text`/`visibleText` and `media` when both are present.
 
@@ -351,7 +361,7 @@ Implications:
 
 Status: accepted
 
-The app shell should not present productions, episodes, shots, screen instances, and reusable resources as one flat row of tabs. The primary Project workspace presents the editorial hierarchy as `Production → Episode → Shot → Screen instance`; reusable entities such as actors, themes, devices, media assets, presets, apps, and module theme configs live in a separate Library workspace.
+The app shell should not present productions, episodes, shots, screen instances, and reusable resources as one flat row of tabs. The primary Project workspace presents the editorial hierarchy as `Production → Episode → Shot → Screen instance`; reusable entities such as actors, themes, devices, presets, apps, and module theme configs live in a separate Library workspace.
 
 Implications:
 - Creating/editing hierarchy records happens in context: episode under selected production, shot under selected episode.
@@ -365,7 +375,7 @@ Status: accepted
 The generic JSON tree editor remains a fallback surface. Module-specific UI hints are registered by `module_id` and `module_schema_version`, so each module can provide friendly labels, widgets, collapsed row summaries, and safe structural affordances without hardcoding module behavior into the generic tree.
 
 Implications:
-- `core.chat@1` can describe participants/messages without making the JSON editor Chat-specific.
+- `core.chat@1` can describe header/messages/actor references without making the JSON editor Chat-specific.
 - Future modules can add their own editor hints independently.
 - A specialized module editor may later replace the generic tree for a module while preserving the same canonical JSON storage.
 
@@ -405,7 +415,7 @@ Implications:
 - Production actions are grouped separately from the episode/shot tree.
 - Project navigation is organized as `Episodes -> Shots -> Screens -> per-screen module theme/data`.
 - Apps and module theme configs are production-owned library records, not global assets.
-- Other tables such as actors, themes, devices, device states, media assets, render presets, and animation presets are production-owned setup data.
+- Other tables such as actors, themes, devices, device states, render presets, and animation presets are production-owned setup data.
 - Future production duplication can copy the full production tree and its library/setup records.
 
 Superseded note: the earlier Screen Template layer has been removed from the active architecture. See D042.
@@ -502,8 +512,8 @@ Implications:
 - `Module Content` is not App data and should not be presented as App-level configuration.
 - `Screen Instance` remains responsible for placement, timing, transform, layer order, app/module reference, device/theme/mode context, and shot ownership.
 - `Module Instance` remains responsible for the module payload and behavior attached to that screen instance.
-- Chat participants and messages are edited through structured content cards, not as raw JSON strings.
-- Collapsed content rows should show useful summaries such as participant display name/role or message sender/type/text/timing.
+- Chat header and messages are edited through structured content cards, not as raw JSON strings.
+- Collapsed content rows should show useful summaries such as actor, direction, message type, text, and timing.
 - Major Project/App/Production Data areas use accordion sections with trees inside, avoiding mixed tab/tree metaphors.
 - Token and color editors use friendly group labels and logical icons; raw/internal token names remain useful only where they identify a token path.
 - Raw JSON remains a fallback/recovery surface, not the normal UI for module content.
@@ -523,7 +533,7 @@ module_instances.animation_json
 module_instances.metadata_json
 ```
 
-`content_json` stores shot-specific module data such as Chat participants, header copy, messages, timings, and media references. `behavior_json` stores per-shot behavior such as showing the header, showing the keyboard, status bar visibility, initial scroll, and message grouping. `animation_json` stores per-shot module parameter animation: timeline/keyframe changes to values such as header subtitle, message status, or message text.
+`content_json` stores shot-specific module data such as Chat header copy, actor references, message direction, messages, timings, and media references. `behavior_json` stores per-shot behavior such as showing the header, showing the keyboard, status bar visibility, initial scroll, and message grouping. `animation_json` stores per-shot module parameter animation: timeline/keyframe changes to values such as header subtitle, message status, or message text.
 
 `animation_json` is intentionally separate from `animation_presets`. Presets remain reserved for reusable visual entrances/exits/transitions if needed. Parameter animation changes what value a module field has on a frame; reveal modes such as `writeDown` change how an existing text value is displayed.
 
@@ -606,7 +616,7 @@ The generic authoring UI now covers the reusable production-level tables enough 
 
 This phase establishes:
 
-- Devices are production data records with user-facing `name`, `frame_asset_id`, and editable metrics. Manufacturer/model/OS family remain internal implementation fields for now.
+- Devices are production data records with user-facing `name` and editable metrics. Manufacturer/model/OS family remain internal implementation fields for now.
 - Development seed creates a small baseline device catalog: three iPhone models and three common Android models.
 - Shots expose an editable `Episode` dropdown so a duplicated shot can be moved between episodes.
 - Render Presets describe output/export behavior, not shot timing or dimensions. Width, height, and fps remain internal SQL placeholders until the schema is simplified; final values come from the Shot/render context.
@@ -657,7 +667,7 @@ Chat message layout uses `message.direction` to decide visual alignment:
 - `outgoing` aligns right;
 - `system` aligns center.
 
-`senderParticipantId` identifies who the message belongs to and may still drive labels, avatars, participant-specific state, and future metadata, but it no longer decides horizontal placement. This lets a conversation represent sent/received/system messages directly without coupling alignment to a participant role heuristic.
+`actorId` identifies who the message belongs to and may still drive labels, avatars, actor-specific state, and future metadata, but it does not decide horizontal placement. This lets a conversation represent sent/received/system messages directly without coupling alignment to a participant role heuristic.
 
 ## D053 — UI CSS is organized by ownership layers
 
@@ -669,3 +679,163 @@ Implications:
 - Future cleanup should consolidate selectors by layer rather than relying on late-file overrides.
 - Render surface styles must remain separate from preview shell chrome.
 - Shared field rows should become the default path for editor inputs.
+
+## D054 — Editor architecture phase 1 closes with explicit component boundaries
+
+Status: accepted
+
+The first editor-architecture refactor phase is closed on branch `refactor/editor-architecture-phase-1`. The goal of this phase was not to redesign the UI, but to reduce the amount of implicit behavior trapped inside `RecordEditor` and make future module-specific work safer.
+
+Current boundaries:
+
+- `src/debug-ui/editor-ui/` owns shared editor chrome primitives: editor headers, section/card wrappers, section buttons, section collections, and deferred text input behavior.
+- `src/debug-ui/editor-ui/EditorSubsectionAccordion.tsx` owns reusable nested accordion chrome used by App, Theme, Module, and Module Theme groups.
+- `src/debug-ui/editors/` owns entity-level editor shells such as App, Theme, Screen Instance, Module Instance, Module Theme Config, and the generic record fallback.
+- `src/debug-ui/editors/AppRecordEditor.tsx` owns App-specific editor composition: App icon fields, App token filtering, wallpaper editing, App color surfaces, notes, and App token override warnings.
+- `src/debug-ui/editors/ThemeRecordEditor.tsx` owns Theme-specific editor composition: Theme token normalization, token group editing, status/navigation chrome groups, and mode color editing.
+- `src/debug-ui/editors/ModuleThemeConfigRecordEditor.tsx` owns Module Theme Config composition: design token group accordions, inherited token warnings, mode colors, and settings/metadata fields.
+- `src/debug-ui/editors/ModuleInstanceRecordEditor.tsx` owns Module Instance composition: content group accordions, Chat content group editing, media browsing paths, exclusive row expansion, content warnings, and behavior fields.
+- `src/debug-ui/editors/ScreenInstanceRecordEditor.tsx` owns Screen Instance composition: general timing/app fields, transform JSON, transition fields, and device-state JSON.
+- `src/debug-ui/editors/RecordEditorDispatcher.tsx` owns table-to-editor dispatch. It receives prepared drafts, tab state, render services, media context, and routes each table to the correct editor composition component.
+- `src/debug-ui/editors/RecordFieldRenderer.tsx` owns base field rendering: plain inputs, relation dropdowns, readonly controls, and raw JSON tree entry points.
+- `src/debug-ui/editors/recordEditorRenderServices.tsx` owns shared field-render services: base field rendering, grouped field lists, generic field dispatch, flat JSON object editors, device metrics fields, and JSON draft writes.
+- `src/debug-ui/editors/useRecordDraftAutosave.ts` owns draft initialization, per-field validation, dirty/saving/saved/error state, and debounced persistence through the debug API.
+- `src/debug-ui/editors/useRecordEditorTabs.ts` owns editor tab/group state and reset behavior when the active table/record changes.
+- `src/debug-ui/editors/GenericFieldDispatcher.tsx` owns the fallback table/field dispatch rules for generic records.
+- `src/debug-ui/editors/FlatJsonFieldEditors.tsx` owns flat JSON object fields and device metric JSON paths.
+- `src/debug-ui/editors/ShotFields.tsx`, `RenderPresetFields.tsx`, `ProductionFields.tsx`, `ScreenInstanceFields.tsx`, `ActorFields.tsx`, `AppMediaFields.tsx`, `ThemeFields.tsx`, and `ModuleBehaviorFields.tsx` own their table-specific field exceptions.
+- `src/debug-ui/editors/MediaPreviews.tsx` owns reusable media preview components for avatars, app icons, and wallpaper images.
+- `src/debug-ui/editors/recordJsonUtils.ts`, `recordTokenUtils.ts`, and `recordProductionUtils.ts` own shared pure helpers for parsed JSON, normalized JSON values, token groups, App token filtering, and production media-root lookup.
+- `src/debug-ui/editors/jsonGroupDrafts.ts` owns draft read/write helpers for editing one JSON group inside a wider JSON column.
+- `src/debug-ui/editors/chat/` owns Chat module content editing and its content model helpers: header, messages, actor references, nested values, message media, array/card behavior, and content warning rules.
+- `src/debug-ui/components/RecordEditor.tsx` remains the central shell: it prepares draft/autosave state, tab state, media root, render services, JSON group helpers, and delegates table routing to `RecordEditorDispatcher`.
+
+This creates an OOP-like separation inside React without introducing an external plugin/module system yet. App/module-specific editors can vary in behavior while still reusing the same editor UI primitives and design tokens for analogous concepts.
+
+Verification used during the phase:
+
+- Each extraction microphase was checked with `npm run typecheck`.
+- Whitespace/patch sanity was checked with `git diff --check`.
+- The branch was committed and pushed after stable milestones.
+
+Remaining work for the next architecture pass:
+
+- Continue extracting the remaining top-level editor composition glue from `RecordEditor`, while keeping autosave inside `useRecordDraftAutosave` and shared field rendering inside `recordEditorRenderServices`.
+- Continue shrinking `renderGenericField` into a dispatcher over domain-specific handlers.
+- Keep new table-specific editors lightweight and prop-driven. They should receive records, drafts, and change callbacks rather than owning persistence.
+- Continue removing transitional CSS only after the owning component/layer is clear, so cleanup does not silently break panel styling again.
+
+## D055 — Editor-specific behavior must reuse shared editor UI primitives
+
+Status: accepted
+
+The debug editor keeps a fixed separation between shared visual language and
+domain-specific editor behavior.
+
+Shared primitives live in `src/debug-ui/editor-ui/` and own reusable editor
+chrome such as headers, cards, accordions, chevrons, glyph containers, deferred
+inputs, and shared row/field composition. Table, app, and module editors may
+decide which fields, groups, cards, rows, and actions exist, but they should not
+create new local visual systems for cards, fields, buttons, icons, or accordions.
+
+If a new visual pattern is needed by more than one editor, it should be promoted
+to the shared editor UI layer first. Editor-specific code should express domain
+meaning and update JSON/records; shared UI components and shared tokens should
+express how analogous controls look.
+
+Implications:
+- New Chat, App, Theme, Status Bar, Navigation Bar, Keyboard, Text Input, Icon
+  Theme, or future module editors must reuse shared editor UI primitives unless a
+  genuinely unique interaction requires a new primitive.
+- Colors, borders, shadows, radii, typography, selected states, override states,
+  icon chrome, scrollbars, and control styling must read from shared UI tokens.
+- Final preview/render behavior remains separate from debug editor UI. Values
+  that affect output must flow through schemas, resolvers, resolved props, and
+  visual modules.
+- Before adding UI, decide whether a value is content, behavior, a module
+  default, a theme token, device/state data, or renderer logic. Do not move
+  values between instance and module levels unless that placement rule requires
+  it.
+
+Reference docs:
+- `docs/architecture/12_editor_encapsulation_contract.md`
+- `docs/architecture/13_keyboard_text_input_audit.md`
+
+## D056 — Production font families are approved, copied, and referenced relatively
+
+Status: accepted
+
+Fonts used by render/preview should be production-approved assets, not implicit
+dependencies on whichever fonts are installed on the workstation. The app now
+has a production-scoped `production_fonts` table where each row approves a
+complete font family, not one weight at a time. Importing one font file scans
+the same source directory for the rest of that family, copies every detected
+variant into the production root, and stores relative paths under `files_json`.
+`source_path` remains optional provenance/debug information for the source
+directory.
+
+This keeps productions portable across Mac/PC and prepares the next pass:
+font pickers should list only approved production families, expose the copied
+variants/weights for the selected family, and text measurement for bubbles
+should use the same approved font files that final rendering uses.
+
+## D057 — Production palettes define primitive colors before semantic tokens
+
+Status: accepted
+
+Color governance follows the same approval pattern as production fonts, but the
+palette layer is intentionally lower-level than theme/app/module tokens. A
+production owns a `palette_colors` table of primitive RGB colors such as
+`gray_100`, `gray_000`, `blue`, or `pastel_mint`. Each row stores a token
+and a concrete `#RRGGBB` value.
+
+Theme, app, and module JSON will later store semantic roles that reference
+these primitive palette tokens, for example `text.alert = blue` or
+`header.background = gray_100`. The palette itself does not know about
+dark/light modes, components, or usage semantics. Fields that need transparency
+store the palette token separately from a numeric alpha value in the `0–1`
+range.
+
+Theme tokens are the first migrated consumer: direct HEX strings in theme JSON
+are converted to the closest primitive palette token. The `red` token is a real
+palette color and should remain only where a design explicitly needs red, such
+as error/failed states. The runtime resolver converts palette token strings
+back to HEX before preview/render.
+
+The editor color control now follows the same rule: mode-aware RGB color fields
+use a compact production-palette swatch selector and store the selected palette
+token. Swatches are visually contiguous to make small color differences easier
+to compare. Fields that still require transparency keep the same palette
+selection UI with an enabled `0–1` alpha slider.
+
+## D058 — Existing UI concepts are mandatory reuse points
+
+Status: accepted
+
+The debug editor must not introduce one-off visual formats for concepts that
+already exist. A concept such as inherited/override fields, restore actions,
+accordion cards, icon buttons, modal actions, selectors, color pickers, file
+pickers, table rows, or preview navigation has exactly one approved visual
+language unless we explicitly decide to replace it everywhere.
+
+Strict implementation rule:
+- Reuse the existing component, class, and token pattern for the concept.
+- Do not create a new CSS class, markup structure, or local format when an
+  equivalent concept already exists.
+- If the existing component does not fit, stop and ask for confirmation before
+  creating a new primitive or format.
+- If a new primitive is approved, document the concept it owns, the shared
+  tokens it consumes, and where it is allowed to be used.
+
+For inherited/override values, the required format is the established override
+editor: inherited value inside the field using inherited/placeholder styling,
+normal editable value when changed, amber override state, and the standard
+restore button.
+
+For bugs described as “does not update”, the required debug procedure is to
+trace the full chain before declaring a fix complete:
+
+`editor draft → autosave/API → SQLite row → resolver → resolved props/renderable
+payload → preview/renderer output`
+
+Verifying only one layer, such as the DB or editable payload, is not sufficient.

@@ -11,7 +11,7 @@ This contract assigns every visual/layout value to one canonical source. Resolve
 | `module_theme_configs.tokens_json` | Module-specific defaults for one theme + app + module + schema version, such as Chat bubble geometry, message spacing, Chat typography, header defaults, cursor behavior, and module-specific mode colors | Shot content, device geometry, live state, or one-off screen instance exceptions |
 | `device.metrics_json` | Logical design space, internal pixel render size, geometry, and scale mapping | Actor content, component styling, external plate placement |
 | `device_states.state_json` | Live status values displayed by the device | Base geometry or reusable style |
-| `module_instances.content_json` | Shot-specific module content such as Chat participants, header, messages, timings, and media references | Reusable visual defaults, device geometry, or render output |
+| `module_instances.content_json` | Shot-specific module content such as Chat header, messages, actor references, timings, and media references | Reusable visual defaults, device geometry, or render output |
 | `module_instances.behavior_json` | Module-owned behavior/visibility for one module instance | Shot placement, canonical theme values, reusable design defaults, or device geometry |
 | `module_instances.animation_json` | Per-frame changes to module parameter values | Visual token overrides, reusable transition presets, or base content |
 | Resolved props | Final values needed by a module for its frame | Database references that still require lookup |
@@ -43,9 +43,33 @@ theme base tokens
   → module theme config modes[selected theme_mode]
 ```
 
-The theme editor selects installed font families through a font picker. Weight fields are named variants exposed by the selected family, for example `Regular`, `Semibold`, or the closest family-specific equivalent. If a family changes and a previous variant no longer exists, the editor falls back to the first available variant. There is no production font whitelist/table; the project assumes selected fonts are installed on the render machines.
+The theme and app editors should select from approved production font families.
+Importing a family may use installed system fonts as a source, but the approved
+family is copied into the production root and registered in `production_fonts`.
+Weight fields are named variants exposed by that approved family, for example
+`Regular`, `Semibold`, `Bold`, or a variable-font entry. If a family changes and
+a previous variant no longer exists, the editor falls back to the first
+available variant from the copied family files.
 
-Mode-aware color values may exist in Theme, App, and Module defaults. The editor should keep both light and dark columns available at authoring time; the resolver collapses to one mode only for preview/render. Module-specific values belong in `module_theme_configs.tokens_json`. For Chat, this includes message list gutter, header height/background/separator, message spacing/grouping distances, message/header typography, bubble colors/padding/radius/tails/shadows, avatar sizes/gaps, cursor behavior, and future chat media defaults.
+Color authoring is moving toward the same approved-resource model. The
+production-scoped `palette_colors` table stores primitive RGB colors only:
+`token -> #RRGGBB`. Theme, app, and module tokens remain the semantic layer and
+should reference palette tokens rather than raw RGB values once the color-picker
+UI is migrated. Alpha is not part of the primitive palette; transparent fields
+store a palette token plus a separate numeric `0–1` alpha.
+
+Theme colors may already store palette tokens directly. The resolver replaces
+matching palette token strings with concrete HEX values after merging
+theme/app/module tokens and before visual scaling/rendering, so preview and
+render modules still receive paintable CSS color values.
+
+Before wider token conversion, persisted JSON colors are normalized so any
+direct physical HEX/RGB/RGBA color is converted to the closest primitive
+palette token. RGBA values are represented as a palette color token plus a
+numeric alpha in the `0–1` range, keeping transparency outside the primitive
+palette.
+
+Mode-aware color values may exist in Theme, App, and Module defaults. The editor should keep both light and dark columns available at authoring time; the resolver collapses to one mode only for preview/render. Module-specific values belong in `module_theme_configs.tokens_json`. For Chat, this includes message list gutter, header height/background/separator/icon/avatar defaults, message spacing/grouping distances, message/header typography, bubble colors/padding/radius/tails/shadows, bubble avatar size/gap, cursor behavior, and future chat media defaults.
 
 Before a module receives renderable props, the resolver scales design-unit token values to the selected device render space using `device.metrics_json.scaleToPixels`, or the render/design width ratio when needed. For the seeded iPhone fixture, 430 logical points render at 1290 pixels, so a Chat message `fontSize` of `17` resolves to `51px`. Numeric values that are not design units, such as `maxWidthRatio` and frame counts, are not scaled. Font weight variants are named font-face selections and are not scaled.
 
@@ -57,7 +81,7 @@ Before a module receives renderable props, the resolver scales design-unit token
 
 ## Module-instance content and behavior
 
-`module_instances.content_json` contains shot-specific module content. For Chat, this includes participants, header data, messages, text/media references, sender IDs, and frame timings.
+`module_instances.content_json` contains shot-specific module content. For Chat, this includes header data, messages, actor IDs, direction, text/media references, and frame timings.
 
 `module_instances.behavior_json` contains module behavior such as `showHeader`, `showKeyboard`, `showStatusBar`, `initialScroll`, `messageGrouping`, and debug flags. `module_instances.animation_json` is reserved for module parameter keyframes, such as changing text/status/subtitle values over time. `core.chat` reads only these canonical module-instance sources for content/behavior; it does not merge legacy `props_json`.
 
@@ -78,7 +102,7 @@ Device metrics and live device state remain separate inputs and are not replaced
 
 Resolved module input contains render-ready camelCase values derived from selected module JSON, theme/mode/overrides, device/state, owner actor, assets/icons, events, and local frame. Visual modules do not fetch storage rows, resolve file paths, or choose icon variants.
 
-`ResolvedChatScreenProps.theme` carries the relevant `fonts`, `colors`, `layout`, `header`, `messages`, `typography`, `chatBubbles`, `avatars`, `statusBar`, and `cursor` groups. `ResolvedMessageBubbleProps` carries the concrete style and layout values required by the atomic module, including font family, size, weight, line height, tail geometry, shadow, avatar sizing/gap, and maximum width.
+`ResolvedChatScreenProps.theme` carries the relevant `fonts`, `colors`, `layout`, `header`, `messages`, `typography`, `chatBubbles`, `statusBar`, and `cursor` groups. A legacy/resolved `avatars` compatibility group may still be present while older consumers are cleaned up, but canonical Chat avatar defaults now live under `header` for the header avatar and under `chatBubbles` for message avatars. `ResolvedMessageBubbleProps` carries the concrete style and layout values required by the atomic module, including font family, size, weight, line height, tail geometry, shadow, avatar sizing/gap, and maximum width.
 
 ## Renderable metadata
 

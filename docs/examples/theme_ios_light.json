@@ -6,51 +6,133 @@
   "version": "1.0.0",
   "tokens_json": {
     "defaultMode": "light",
+    "neutralTint": {
+      "hueDeg": 0,
+      "saturation": 0
+    },
     "modes": {
       "light": {
         "colors": {
-          "background": "#FFFFFF",
-          "textPrimary": "#000000",
-          "textSecondary": "#6E6E73",
-          "accent": "#007AFF"
+          "debug.red": "debug_red",
+          "background": "gray_100",
+          "surface": "gray_100",
+          "card": "gray_100",
+          "label": "gray_040",
+          "text": "gray_000",
+          "textPrimary": "gray_000",
+          "textSecondary": "gray_040",
+          "icon": "gray_000",
+          "button": "blue",
+          "field": "gray_100",
+          "checkbox": "blue",
+          "radio": "blue",
+          "switch": "blue",
+          "tab": "blue",
+          "menuItem": "gray_000",
+          "badge": "red",
+          "toast": "gray_020",
+          "divider": "gray_080",
+          "accent": "blue",
+          "icons.primary": "gray_000",
+          "icons.secondary": "gray_040",
+          "icons.accent": "blue",
+          "borders.primary": "gray_080",
+          "borders.secondary": "gray_070",
+          "borders.alternate": "gray_090"
         },
         "statusBar": {
           "type": "ios-default",
-          "foreground": "#000000",
-          "background": "rgba(255,255,255,0)"
+          "foreground": "gray_000",
+          "background": {
+            "color": "gray_100",
+            "alpha": 0
+          }
         },
         "navigationBar": {
           "type": "ios-home-indicator",
-          "foreground": "#000000",
-          "background": "rgba(255,255,255,0)"
+          "foreground": "gray_000",
+          "background": {
+            "color": "gray_100",
+            "alpha": 0
+          }
+        },
+        "keyboard": {
+          "background": "gray_080",
+          "keyBackground": "gray_100",
+          "specialKeyBackground": "gray_070",
+          "pressedKeyBackground": "gray_060",
+          "popoverBackground": "gray_100",
+          "text": "gray_000"
         },
         "notifications": {
-          "background": "rgba(245,245,247,0.92)",
-          "titleColor": "#000000",
-          "bodyColor": "#3A3A3C"
+          "background": {
+            "color": "gray_090",
+            "alpha": 0.92
+          },
+          "titleColor": "gray_000",
+          "bodyColor": "gray_020"
         }
       },
       "dark": {
         "colors": {
-          "background": "#000000",
-          "textPrimary": "#FFFFFF",
-          "textSecondary": "#98989D",
-          "accent": "#0A84FF"
+          "debug.red": "debug_red",
+          "background": "gray_000",
+          "surface": "gray_020",
+          "card": "gray_030",
+          "label": "gray_060",
+          "text": "gray_100",
+          "textPrimary": "gray_100",
+          "textSecondary": "gray_060",
+          "icon": "gray_100",
+          "button": "blue_bright",
+          "field": "gray_030",
+          "checkbox": "blue_bright",
+          "radio": "blue_bright",
+          "switch": "blue_bright",
+          "tab": "blue_bright",
+          "menuItem": "gray_100",
+          "badge": "red",
+          "toast": "gray_030",
+          "divider": "gray_040",
+          "accent": "blue_bright",
+          "icons.primary": "gray_000",
+          "icons.secondary": "gray_040",
+          "icons.accent": "blue",
+          "borders.primary": "gray_080",
+          "borders.secondary": "gray_070",
+          "borders.alternate": "gray_090"
         },
         "statusBar": {
           "type": "ios-default",
-          "foreground": "#FFFFFF",
-          "background": "rgba(0,0,0,0)"
+          "foreground": "gray_100",
+          "background": {
+            "color": "gray_000",
+            "alpha": 0
+          }
         },
         "navigationBar": {
           "type": "ios-home-indicator",
-          "foreground": "#FFFFFF",
-          "background": "rgba(0,0,0,0)"
+          "foreground": "gray_100",
+          "background": {
+            "color": "gray_000",
+            "alpha": 0
+          }
+        },
+        "keyboard": {
+          "background": "gray_020",
+          "keyBackground": "gray_040",
+          "specialKeyBackground": "gray_020",
+          "pressedKeyBackground": "gray_060",
+          "popoverBackground": "gray_040",
+          "text": "gray_100"
         },
         "notifications": {
-          "background": "rgba(44,44,46,0.92)",
-          "titleColor": "#FFFFFF",
-          "bodyColor": "#D1D1D6"
+          "background": {
+            "color": "gray_020",
+            "alpha": 0.92
+          },
+          "titleColor": "gray_100",
+          "bodyColor": "gray_080"
         }
       }
     },
@@ -60,45 +142,114 @@
       "bodyLineHeight": 21.25,
       "captionSize": 13,
       "weight": "Regular",
-      "source": "installed_system_font"
+      "source": "production_font"
+    },
+    "typography": {
+      "lineHeights": {
+        "tight": 1,
+        "compact": 1.1,
+        "normal": 1.2,
+        "relaxed": 1.35,
+        "loose": 1.5
+      }
     },
     "colors": {
-      "background": "#FFFFFF",
-      "textPrimary": "#000000",
-      "textSecondary": "#6E6E73",
-      "accent": "#007AFF"
+      "debug.red": "debug_red",
+      "background": "gray_100",
+      "surface": "gray_100",
+      "card": "gray_100",
+      "label": "gray_040",
+      "text": "gray_000",
+      "textPrimary": "gray_000",
+      "textSecondary": "gray_040",
+      "icon": "gray_000",
+      "button": "blue",
+      "field": "gray_100",
+      "checkbox": "blue",
+      "radio": "blue",
+      "switch": "blue",
+      "tab": "blue",
+      "menuItem": "gray_000",
+      "badge": "red",
+      "toast": "gray_020",
+      "divider": "gray_080",
+      "accent": "blue",
+      "icons.primary": "gray_000",
+      "icons.secondary": "gray_040",
+      "icons.accent": "blue",
+      "borders.primary": "gray_080",
+      "borders.secondary": "gray_070",
+      "borders.alternate": "gray_090"
     },
     "statusBar": {
       "type": "ios-default",
-      "foreground": "#000000",
-      "background": "rgba(255,255,255,0)",
+      "foreground": "gray_000",
+      "background": {
+        "color": "gray_100",
+        "alpha": 0
+      },
       "iconScale": 1
     },
     "navigationBar": {
       "type": "ios-home-indicator",
-      "foreground": "#000000",
-      "background": "rgba(255,255,255,0)",
+      "foreground": "gray_000",
+      "background": {
+        "color": "gray_100",
+        "alpha": 0
+      },
       "iconScale": 1
+    },
+    "keyboard": {
+      "background": "gray_080",
+      "keyBackground": "gray_100",
+      "specialKeyBackground": "gray_070",
+      "pressedKeyBackground": "gray_060",
+      "popoverBackground": "gray_100",
+      "text": "gray_000"
     },
     "notifications": {
       "backdropBlur": 24
     },
     "spacing": {
-      "xs": 4,
-      "sm": 8,
-      "md": 16,
-      "lg": 24
+      "none": 0,
+      "xs": 2,
+      "s": 4,
+      "m": 8,
+      "l": 12,
+      "xl": 16,
+      "xxl": 24
     },
     "radii": {
       "notification": 16,
       "card": 12
     },
     "shadows": {
-      "notification": {
-        "color": "rgba(0,0,0,0.18)",
+      "avatar": {
+        "color": {
+          "color": "gray_000",
+          "alpha": 0.18
+        },
         "offsetX": 0,
         "offsetY": 4,
         "blur": 18
+      },
+      "elevated": {
+        "color": {
+          "color": "gray_000",
+          "alpha": 0.18
+        },
+        "offsetX": 0,
+        "offsetY": 4,
+        "blur": 18
+      }
+    },
+    "surfaceRelief": {
+      "default": {
+        "angleDeg": -45,
+        "extension": 1,
+        "spread": 0,
+        "upperIntensity": 0.1,
+        "lowerIntensity": -0.08
       }
     }
   }

@@ -1,0 +1,25 @@
+<svg
+  class="lucide lucide-pause"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <defs>
+    <mask id="mockups-fill-silhouette" maskUnits="userSpaceOnUse" x="1" y="1" width="22" height="22">
+      <rect x="1" y="1" width="22" height="22" fill="#000" stroke="none"/>
+      <g data-mockups-transform="fit-center-scale-rotate" data-mockups-fit-scale="0.9167" data-mockups-padding="1" transform="translate(12 12) rotate(0) scale(1) scale(0.9167) translate(-12 -12)">
+        <svg xmlns="http://www.w3.org/2000/svg" x="0" y="0" width="24" height="24" viewBox="0 0 24 24" overflow="visible" color="#fff" fill="#fff" stroke="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="14" y="3" width="5" height="18" rx="1" />
+  <rect x="5" y="3" width="5" height="18" rx="1" />
+    </svg>
+      </g>
+    </mask>
+  </defs>
+  <rect x="1" y="1" width="22" height="22" fill="#000" stroke="none" mask="url(#mockups-fill-silhouette)"/>
+</svg>

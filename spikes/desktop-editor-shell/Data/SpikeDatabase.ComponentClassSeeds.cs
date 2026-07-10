@@ -1,0 +1,42 @@
+using Microsoft.Data.Sqlite;
+using System.Linq;
+
+namespace Mockups.DesktopEditorShell.Data;
+
+internal sealed partial class SpikeDatabase
+{
+    private static void SeedComponentClassesIfEmpty(SqliteConnection connection)
+    {
+        var projectIds = QueryProjectRows(connection).Select((project) => project.Id).ToList();
+        foreach (var projectId in projectIds)
+        {
+            foreach (var seed in ComponentSeedRows)
+            {
+                if (ScalarLong(
+                        connection,
+                        "SELECT COUNT(*) FROM component_classes WHERE project_id = $projectId AND component_type = $componentType",
+                        ("$projectId", projectId),
+                        ("$componentType", seed.ComponentType)) > 0)
+                {
+                    continue;
+                }
+
+                Execute(
+                    connection,
+                    """
+                    INSERT INTO component_classes (id, project_id, component_type, record_class_id, name, notes, config_json, design_preview_json, metadata_json)
+                    VALUES ($id, $projectId, $componentType, $recordClassId, $name, $notes, $configJson, $designPreviewJson, $metadataJson)
+                    """,
+                    ("$id", $"component_{projectId}_{seed.ComponentType}"),
+                    ("$projectId", projectId),
+                    ("$componentType", seed.ComponentType),
+                    ("$recordClassId", seed.RecordClassId),
+                    ("$name", seed.Name),
+                    ("$notes", ComponentTypeLabel(seed.ComponentType)),
+                    ("$configJson", seed.ConfigJson),
+                    ("$designPreviewJson", seed.DesignPreviewJson),
+                    ("$metadataJson", seed.MetadataJson));
+            }
+        }
+    }
+}

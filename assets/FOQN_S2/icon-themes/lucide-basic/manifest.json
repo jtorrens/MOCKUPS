@@ -1,0 +1,723 @@
+{
+  "name": "lucide-basic",
+  "source": "lucide-static",
+  "style": "lucide",
+  "stroke": 2,
+  "generatedAt": "2026-06-25T17:37:50.032Z",
+  "structure": "flat",
+  "count": 84,
+  "icons": [
+    {
+      "semanticName": "nav_home",
+      "lucideCandidates": [
+        "home"
+      ],
+      "file": "nav_home.svg",
+      "source": "icons/home.svg"
+    },
+    {
+      "semanticName": "nav_back",
+      "lucideCandidates": [
+        "arrow-left"
+      ],
+      "file": "nav_back.svg",
+      "source": "icons/arrow-left.svg"
+    },
+    {
+      "semanticName": "nav_forward",
+      "lucideCandidates": [
+        "arrow-right"
+      ],
+      "file": "nav_forward.svg",
+      "source": "icons/arrow-right.svg"
+    },
+    {
+      "semanticName": "nav_close",
+      "lucideCandidates": [
+        "x"
+      ],
+      "file": "nav_close.svg",
+      "source": "icons/x.svg"
+    },
+    {
+      "semanticName": "nav_menu",
+      "lucideCandidates": [
+        "menu"
+      ],
+      "file": "nav_menu.svg",
+      "source": "icons/menu.svg"
+    },
+    {
+      "semanticName": "nav_more_horizontal",
+      "lucideCandidates": [
+        "ellipsis"
+      ],
+      "file": "nav_more_horizontal.svg",
+      "source": "icons/ellipsis.svg"
+    },
+    {
+      "semanticName": "nav_more_vertical",
+      "lucideCandidates": [
+        "ellipsis-vertical"
+      ],
+      "file": "nav_more_vertical.svg",
+      "source": "icons/ellipsis-vertical.svg"
+    },
+    {
+      "semanticName": "nav_expand_more",
+      "lucideCandidates": [
+        "chevron-down"
+      ],
+      "file": "nav_expand_more.svg",
+      "source": "icons/chevron-down.svg"
+    },
+    {
+      "semanticName": "nav_chevron_left",
+      "lucideCandidates": [
+        "chevron-left"
+      ],
+      "file": "nav_chevron_left.svg",
+      "source": "icons/chevron-left.svg"
+    },
+    {
+      "semanticName": "nav_chevron_right",
+      "lucideCandidates": [
+        "chevron-right"
+      ],
+      "file": "nav_chevron_right.svg",
+      "source": "icons/chevron-right.svg"
+    },
+    {
+      "semanticName": "android_nav_back",
+      "lucideCandidates": [
+        "arrow-left",
+        "chevron-left"
+      ],
+      "file": "android_nav_back.svg",
+      "source": "icons/arrow-left.svg"
+    },
+    {
+      "semanticName": "android_nav_back_alt",
+      "lucideCandidates": [
+        "arrow-left"
+      ],
+      "file": "android_nav_back_alt.svg",
+      "source": "icons/arrow-left.svg"
+    },
+    {
+      "semanticName": "android_nav_home",
+      "lucideCandidates": [
+        "circle"
+      ],
+      "file": "android_nav_home.svg",
+      "source": "icons/circle.svg"
+    },
+    {
+      "semanticName": "android_nav_recents",
+      "lucideCandidates": [
+        "square"
+      ],
+      "file": "android_nav_recents.svg",
+      "source": "icons/square.svg"
+    },
+    {
+      "semanticName": "android_nav_gesture_bar",
+      "lucideCandidates": [
+        "minus"
+      ],
+      "file": "android_nav_gesture_bar.svg",
+      "source": "icons/minus.svg"
+    },
+    {
+      "semanticName": "android_nav_keyboard_hide",
+      "lucideCandidates": [
+        "keyboard",
+        "keyboard-off"
+      ],
+      "file": "android_nav_keyboard_hide.svg",
+      "source": "icons/keyboard.svg"
+    },
+    {
+      "semanticName": "system_settings",
+      "lucideCandidates": [
+        "settings"
+      ],
+      "file": "system_settings.svg",
+      "source": "icons/settings.svg"
+    },
+    {
+      "semanticName": "system_search",
+      "lucideCandidates": [
+        "search"
+      ],
+      "file": "system_search.svg",
+      "source": "icons/search.svg"
+    },
+    {
+      "semanticName": "system_notifications",
+      "lucideCandidates": [
+        "bell"
+      ],
+      "file": "system_notifications.svg",
+      "source": "icons/bell.svg"
+    },
+    {
+      "semanticName": "system_lock",
+      "lucideCandidates": [
+        "lock"
+      ],
+      "file": "system_lock.svg",
+      "source": "icons/lock.svg"
+    },
+    {
+      "semanticName": "system_unlock",
+      "lucideCandidates": [
+        "lock-open"
+      ],
+      "file": "system_unlock.svg",
+      "source": "icons/lock-open.svg"
+    },
+    {
+      "semanticName": "system_visibility",
+      "lucideCandidates": [
+        "eye"
+      ],
+      "file": "system_visibility.svg",
+      "source": "icons/eye.svg"
+    },
+    {
+      "semanticName": "system_visibility_off",
+      "lucideCandidates": [
+        "eye-off"
+      ],
+      "file": "system_visibility_off.svg",
+      "source": "icons/eye-off.svg"
+    },
+    {
+      "semanticName": "system_info",
+      "lucideCandidates": [
+        "info"
+      ],
+      "file": "system_info.svg",
+      "source": "icons/info.svg"
+    },
+    {
+      "semanticName": "system_warning",
+      "lucideCandidates": [
+        "triangle-alert",
+        "alert-triangle"
+      ],
+      "file": "system_warning.svg",
+      "source": "icons/triangle-alert.svg"
+    },
+    {
+      "semanticName": "system_error",
+      "lucideCandidates": [
+        "circle-alert",
+        "badge-alert"
+      ],
+      "file": "system_error.svg",
+      "source": "icons/circle-alert.svg"
+    },
+    {
+      "semanticName": "system_check",
+      "lucideCandidates": [
+        "check"
+      ],
+      "file": "system_check.svg",
+      "source": "icons/check.svg"
+    },
+    {
+      "semanticName": "system_add",
+      "lucideCandidates": [
+        "plus"
+      ],
+      "file": "system_add.svg",
+      "source": "icons/plus.svg"
+    },
+    {
+      "semanticName": "system_remove",
+      "lucideCandidates": [
+        "minus"
+      ],
+      "file": "system_remove.svg",
+      "source": "icons/minus.svg"
+    },
+    {
+      "semanticName": "system_edit",
+      "lucideCandidates": [
+        "pencil",
+        "edit"
+      ],
+      "file": "system_edit.svg",
+      "source": "icons/pencil.svg"
+    },
+    {
+      "semanticName": "system_delete",
+      "lucideCandidates": [
+        "trash-2",
+        "trash"
+      ],
+      "file": "system_delete.svg",
+      "source": "icons/trash-2.svg"
+    },
+    {
+      "semanticName": "status_wifi",
+      "lucideCandidates": [
+        "wifi"
+      ],
+      "file": "status_wifi.svg",
+      "source": "icons/wifi.svg"
+    },
+    {
+      "semanticName": "status_bluetooth",
+      "lucideCandidates": [
+        "bluetooth"
+      ],
+      "file": "status_bluetooth.svg",
+      "source": "icons/bluetooth.svg"
+    },
+    {
+      "semanticName": "status_signal",
+      "lucideCandidates": [
+        "signal"
+      ],
+      "file": "status_signal.svg",
+      "source": "icons/signal.svg"
+    },
+    {
+      "semanticName": "status_signal_0",
+      "lucideCandidates": [
+        "signal-zero",
+        "signal-low"
+      ],
+      "file": "status_signal_0.svg",
+      "source": "icons/signal-zero.svg"
+    },
+    {
+      "semanticName": "status_signal_1",
+      "lucideCandidates": [
+        "signal-low"
+      ],
+      "file": "status_signal_1.svg",
+      "source": "icons/signal-low.svg"
+    },
+    {
+      "semanticName": "status_signal_2",
+      "lucideCandidates": [
+        "signal-medium"
+      ],
+      "file": "status_signal_2.svg",
+      "source": "icons/signal-medium.svg"
+    },
+    {
+      "semanticName": "status_signal_3",
+      "lucideCandidates": [
+        "signal-high",
+        "signal-medium"
+      ],
+      "file": "status_signal_3.svg",
+      "source": "icons/signal-high.svg"
+    },
+    {
+      "semanticName": "status_signal_4",
+      "lucideCandidates": [
+        "signal"
+      ],
+      "file": "status_signal_4.svg",
+      "source": "icons/signal.svg"
+    },
+    {
+      "semanticName": "status_signal_off",
+      "lucideCandidates": [
+        "signal-zero",
+        "signal"
+      ],
+      "file": "status_signal_off.svg",
+      "source": "icons/signal-zero.svg"
+    },
+    {
+      "semanticName": "status_no_sim",
+      "lucideCandidates": [
+        "badge-alert",
+        "circle-alert"
+      ],
+      "file": "status_no_sim.svg",
+      "source": "icons/badge-alert.svg"
+    },
+    {
+      "semanticName": "status_battery_full",
+      "lucideCandidates": [
+        "battery-full",
+        "battery"
+      ],
+      "file": "status_battery_full.svg",
+      "source": "icons/battery-full.svg"
+    },
+    {
+      "semanticName": "status_battery_charging",
+      "lucideCandidates": [
+        "battery-charging"
+      ],
+      "file": "status_battery_charging.svg",
+      "source": "icons/battery-charging.svg"
+    },
+    {
+      "semanticName": "status_battery_alert",
+      "lucideCandidates": [
+        "battery-warning",
+        "battery-low"
+      ],
+      "file": "status_battery_alert.svg",
+      "source": "icons/battery-warning.svg"
+    },
+    {
+      "semanticName": "status_airplane",
+      "lucideCandidates": [
+        "plane"
+      ],
+      "file": "status_airplane.svg",
+      "source": "icons/plane.svg"
+    },
+    {
+      "semanticName": "status_do_not_disturb",
+      "lucideCandidates": [
+        "circle-minus",
+        "ban"
+      ],
+      "file": "status_do_not_disturb.svg",
+      "source": "icons/circle-minus.svg"
+    },
+    {
+      "semanticName": "phone_call",
+      "lucideCandidates": [
+        "phone",
+        "phone-call"
+      ],
+      "file": "phone_call.svg",
+      "source": "icons/phone.svg"
+    },
+    {
+      "semanticName": "phone_hangup",
+      "lucideCandidates": [
+        "phone-off"
+      ],
+      "file": "phone_hangup.svg",
+      "source": "icons/phone-off.svg"
+    },
+    {
+      "semanticName": "phone_in_talk",
+      "lucideCandidates": [
+        "phone-call",
+        "phone"
+      ],
+      "file": "phone_in_talk.svg",
+      "source": "icons/phone-call.svg"
+    },
+    {
+      "semanticName": "chat_bubble",
+      "lucideCandidates": [
+        "message-circle",
+        "message-square"
+      ],
+      "file": "chat_bubble.svg",
+      "source": "icons/message-circle.svg"
+    },
+    {
+      "semanticName": "chat_sms",
+      "lucideCandidates": [
+        "message-square",
+        "messages-square"
+      ],
+      "file": "chat_sms.svg",
+      "source": "icons/message-square.svg"
+    },
+    {
+      "semanticName": "chat_send",
+      "lucideCandidates": [
+        "send"
+      ],
+      "file": "chat_send.svg",
+      "source": "icons/send.svg"
+    },
+    {
+      "semanticName": "chat_attach",
+      "lucideCandidates": [
+        "paperclip"
+      ],
+      "file": "chat_attach.svg",
+      "source": "icons/paperclip.svg"
+    },
+    {
+      "semanticName": "chat_emoji",
+      "lucideCandidates": [
+        "smile"
+      ],
+      "file": "chat_emoji.svg",
+      "source": "icons/smile.svg"
+    },
+    {
+      "semanticName": "contact_person",
+      "lucideCandidates": [
+        "user"
+      ],
+      "file": "contact_person.svg",
+      "source": "icons/user.svg"
+    },
+    {
+      "semanticName": "contact_group",
+      "lucideCandidates": [
+        "users"
+      ],
+      "file": "contact_group.svg",
+      "source": "icons/users.svg"
+    },
+    {
+      "semanticName": "contact_contacts",
+      "lucideCandidates": [
+        "contact",
+        "contact-round",
+        "book-user"
+      ],
+      "file": "contact_contacts.svg",
+      "source": "icons/contact.svg"
+    },
+    {
+      "semanticName": "media_camera",
+      "lucideCandidates": [
+        "camera"
+      ],
+      "file": "media_camera.svg",
+      "source": "icons/camera.svg"
+    },
+    {
+      "semanticName": "media_image",
+      "lucideCandidates": [
+        "image"
+      ],
+      "file": "media_image.svg",
+      "source": "icons/image.svg"
+    },
+    {
+      "semanticName": "media_video",
+      "lucideCandidates": [
+        "video"
+      ],
+      "file": "media_video.svg",
+      "source": "icons/video.svg"
+    },
+    {
+      "semanticName": "media_mic",
+      "lucideCandidates": [
+        "mic"
+      ],
+      "file": "media_mic.svg",
+      "source": "icons/mic.svg"
+    },
+    {
+      "semanticName": "media_volume",
+      "lucideCandidates": [
+        "volume-2"
+      ],
+      "file": "media_volume.svg",
+      "source": "icons/volume-2.svg"
+    },
+    {
+      "semanticName": "media_volume_off",
+      "lucideCandidates": [
+        "volume-off"
+      ],
+      "file": "media_volume_off.svg",
+      "source": "icons/volume-off.svg"
+    },
+    {
+      "semanticName": "media_play",
+      "lucideCandidates": [
+        "play"
+      ],
+      "file": "media_play.svg",
+      "source": "icons/play.svg"
+    },
+    {
+      "semanticName": "media_pause",
+      "lucideCandidates": [
+        "pause"
+      ],
+      "file": "media_pause.svg",
+      "source": "icons/pause.svg"
+    },
+    {
+      "semanticName": "media_stop",
+      "lucideCandidates": [
+        "square"
+      ],
+      "file": "media_stop.svg",
+      "source": "icons/square.svg"
+    },
+    {
+      "semanticName": "app_calendar",
+      "lucideCandidates": [
+        "calendar-days",
+        "calendar"
+      ],
+      "file": "app_calendar.svg",
+      "source": "icons/calendar-days.svg"
+    },
+    {
+      "semanticName": "app_clock",
+      "lucideCandidates": [
+        "clock"
+      ],
+      "file": "app_clock.svg",
+      "source": "icons/clock.svg"
+    },
+    {
+      "semanticName": "app_mail",
+      "lucideCandidates": [
+        "mail"
+      ],
+      "file": "app_mail.svg",
+      "source": "icons/mail.svg"
+    },
+    {
+      "semanticName": "app_map",
+      "lucideCandidates": [
+        "map"
+      ],
+      "file": "app_map.svg",
+      "source": "icons/map.svg"
+    },
+    {
+      "semanticName": "app_location",
+      "lucideCandidates": [
+        "map-pin"
+      ],
+      "file": "app_location.svg",
+      "source": "icons/map-pin.svg"
+    },
+    {
+      "semanticName": "app_language",
+      "lucideCandidates": [
+        "languages"
+      ],
+      "file": "app_language.svg",
+      "source": "icons/languages.svg"
+    },
+    {
+      "semanticName": "app_folder",
+      "lucideCandidates": [
+        "folder"
+      ],
+      "file": "app_folder.svg",
+      "source": "icons/folder.svg"
+    },
+    {
+      "semanticName": "app_download",
+      "lucideCandidates": [
+        "download"
+      ],
+      "file": "app_download.svg",
+      "source": "icons/download.svg"
+    },
+    {
+      "semanticName": "app_upload",
+      "lucideCandidates": [
+        "upload"
+      ],
+      "file": "app_upload.svg",
+      "source": "icons/upload.svg"
+    },
+    {
+      "semanticName": "app_share",
+      "lucideCandidates": [
+        "share-2",
+        "share"
+      ],
+      "file": "app_share.svg",
+      "source": "icons/share-2.svg"
+    },
+    {
+      "semanticName": "network_5g",
+      "file": "network_5g.svg",
+      "source": "generated/5G"
+    },
+    {
+      "semanticName": "network_4g",
+      "file": "network_4g.svg",
+      "source": "generated/4G"
+    },
+    {
+      "semanticName": "network_4g_plus",
+      "file": "network_4g_plus.svg",
+      "source": "generated/4G+"
+    },
+    {
+      "semanticName": "network_3g",
+      "file": "network_3g.svg",
+      "source": "generated/3G"
+    },
+    {
+      "semanticName": "network_lte",
+      "file": "network_lte.svg",
+      "source": "generated/LTE"
+    },
+    {
+      "semanticName": "network_lte_plus",
+      "file": "network_lte_plus.svg",
+      "source": "generated/LTE+"
+    },
+    {
+      "semanticName": "network_edge",
+      "file": "network_edge.svg",
+      "source": "generated/E"
+    },
+    {
+      "semanticName": "network_gprs",
+      "file": "network_gprs.svg",
+      "source": "generated/G"
+    }
+  ],
+  "generated": [
+    {
+      "semanticName": "network_5g",
+      "file": "network_5g.svg",
+      "generatedFallback": "5G"
+    },
+    {
+      "semanticName": "network_4g",
+      "file": "network_4g.svg",
+      "generatedFallback": "4G"
+    },
+    {
+      "semanticName": "network_4g_plus",
+      "file": "network_4g_plus.svg",
+      "generatedFallback": "4G+"
+    },
+    {
+      "semanticName": "network_3g",
+      "file": "network_3g.svg",
+      "generatedFallback": "3G"
+    },
+    {
+      "semanticName": "network_lte",
+      "file": "network_lte.svg",
+      "generatedFallback": "LTE"
+    },
+    {
+      "semanticName": "network_lte_plus",
+      "file": "network_lte_plus.svg",
+      "generatedFallback": "LTE+"
+    },
+    {
+      "semanticName": "network_edge",
+      "file": "network_edge.svg",
+      "generatedFallback": "E"
+    },
+    {
+      "semanticName": "network_gprs",
+      "file": "network_gprs.svg",
+      "generatedFallback": "G"
+    }
+  ],
+  "missing": []
+}

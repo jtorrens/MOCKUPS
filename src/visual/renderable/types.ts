@@ -18,10 +18,41 @@ export interface RenderableAsset {
   uri: string;
 }
 
+export const renderableNodeTypes = [
+  "group",
+  "icon",
+  "image",
+  "path",
+  "surface",
+  "text",
+] as const;
+
+export type RenderableNodeType = (typeof renderableNodeTypes)[number];
+
+export interface RenderableFontFace {
+  family: string;
+  uri: string;
+  weight?: number | string;
+  style?: string;
+}
+
+export interface RenderableMetadata {
+  fontFaces?: RenderableFontFace[];
+  fallbackText?: string;
+  imageBaseSize?: number;
+  imageOffsetX?: number;
+  imageOffsetY?: number;
+  imageScale?: number;
+  inlineCursor?: {
+    color: string;
+    width: number;
+    opacity?: number;
+  };
+}
+
 export interface RenderableNode {
   id: string;
-  type: string;
-  role?: string;
+  type: RenderableNodeType;
   frame?: number;
   box?: RenderableBox;
   transform?: RenderableTransform;
@@ -29,5 +60,5 @@ export interface RenderableNode {
   text?: string;
   asset?: RenderableAsset;
   children?: RenderableNode[];
-  metadata?: Record<string, unknown>;
+  metadata?: RenderableMetadata;
 }

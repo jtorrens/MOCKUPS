@@ -1,0 +1,160 @@
+using Mockups.DesktopEditorShell.Data;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json.Nodes;
+
+namespace Mockups.DesktopEditorShell.EditorShell;
+
+internal sealed record EditorVariantHistorySnapshot(
+    string Id,
+    string Label,
+    DateTime CreatedAt,
+    string ConfigJson,
+    EditorViewState? ViewState);
+
+internal sealed class EditorVariantHistoryService
+{
+    private const int MaxSnapshotsPerVariant = 10;
+    private readonly SpikeDatabase _database;
+    private readonly Dictionary<string, string> _activeEntryConfigJsonByVariant = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, List<EditorVariantHistorySnapshot>> _snapshotsByVariant = new(StringComparer.Ordinal);
+    private int _sequence;
+
+    public EditorVariantHistoryService(SpikeDatabase database)
+    {
+        _database = database;
+    }
+
+    public void TrackTransition(ProjectTreeNode? previousNode, ProjectTreeNode nextNode, EditorViewState? previousViewState)
+    {
+        if (previousNode?.Id == nextNode.Id)
+        {
+            return;
+        }
+
+        if (previousNode?.Kind == ProjectTreeNodeKind.ComponentPreset)
+        {
+            Leave(previousNode, _database.GetComponentPresetSettings(previousNode).ConfigJson, previousViewState);
+        }
+
+        if (nextNode.Kind == ProjectTreeNodeKind.ComponentPreset)
+        {
+            Enter(nextNode, _database.GetComponentPresetSettings(nextNode).ConfigJson);
+        }
+    }
+
+    private void Enter(ProjectTreeNode node, string configJson)
+    {
+        if (node.Kind != ProjectTreeNodeKind.ComponentPreset)
+        {
+            return;
+        }
+
+        _activeEntryConfigJsonByVariant[node.Id] = Normalize(configJson);
+    }
+
+    private void Leave(ProjectTreeNode? node, string configJson, EditorViewState? viewState)
+    {
+        if (node?.Kind != ProjectTreeNodeKind.ComponentPreset)
+        {
+            return;
+        }
+
+        var nextConfig = Normalize(configJson);
+        if (_activeEntryConfigJsonByVariant.TryGetValue(node.Id, out var entryConfig)
+            && entryConfig.Equals(nextConfig, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        AddSnapshot(node.Id, nextConfig, viewState);
+        _activeEntryConfigJsonByVariant[node.Id] = nextConfig;
+    }
+
+    public IReadOnlyList<EditorVariantHistorySnapshot> Snapshots(ProjectTreeNode node)
+    {
+        return node.Kind == ProjectTreeNodeKind.ComponentPreset
+            && _snapshotsByVariant.TryGetValue(node.Id, out var snapshots)
+                ? snapshots
+                : [];
+    }
+
+    public EditorVariantHistoryStore ExportState()
+    {
+        return new EditorVariantHistoryStore
+        {
+            Sequence = _sequence,
+            SnapshotsByVariant = _snapshotsByVariant.ToDictionary(
+                (entry) => entry.Key,
+                (entry) => entry.Value.Select((snapshot) => new EditorVariantHistorySnapshotState
+                {
+                    Id = snapshot.Id,
+                    Label = snapshot.Label,
+                    CreatedAt = snapshot.CreatedAt,
+                    ConfigJson = snapshot.ConfigJson,
+                    ViewState = snapshot.ViewState is null ? null : EditorViewStateSnapshot.From(snapshot.ViewState),
+                }).ToList(),
+                StringComparer.Ordinal),
+        };
+    }
+
+    public void RestoreState(EditorVariantHistoryStore? state)
+    {
+        _snapshotsByVariant.Clear();
+        _sequence = Math.Max(0, state?.Sequence ?? 0);
+        if (state?.SnapshotsByVariant is null)
+        {
+            return;
+        }
+
+        foreach (var (nodeId, snapshots) in state.SnapshotsByVariant)
+        {
+            _snapshotsByVariant[nodeId] = snapshots
+                .Where((snapshot) => !string.IsNullOrWhiteSpace(snapshot.Id))
+                .Take(10)
+                .Select((snapshot) => new EditorVariantHistorySnapshot(
+                    snapshot.Id,
+                    snapshot.Label,
+                    snapshot.CreatedAt,
+                    string.IsNullOrWhiteSpace(snapshot.ConfigJson) ? "{}" : snapshot.ConfigJson,
+                    snapshot.ViewState?.ToViewState()))
+                .ToList();
+        }
+    }
+
+    private void AddSnapshot(string nodeId, string configJson, EditorViewState? viewState)
+    {
+        if (!_snapshotsByVariant.TryGetValue(nodeId, out var snapshots))
+        {
+            snapshots = [];
+            _snapshotsByVariant[nodeId] = snapshots;
+        }
+
+        var now = DateTime.Now;
+        var baseLabel = now.ToString("HH:mm:ss");
+        var duplicateCount = snapshots.Count((snapshot) => snapshot.Label == baseLabel || snapshot.Label.StartsWith($"{baseLabel} · ", StringComparison.Ordinal));
+        var label = duplicateCount == 0 ? baseLabel : $"{baseLabel} · {duplicateCount + 1}";
+        snapshots.Insert(0, new EditorVariantHistorySnapshot(
+            (++_sequence).ToString(),
+            label,
+            now,
+            configJson,
+            viewState));
+
+        if (snapshots.Count > MaxSnapshotsPerVariant)
+        {
+            snapshots.RemoveRange(MaxSnapshotsPerVariant, snapshots.Count - MaxSnapshotsPerVariant);
+        }
+    }
+
+    private static string Normalize(string configJson)
+    {
+        if (string.IsNullOrWhiteSpace(configJson))
+        {
+            return "{}";
+        }
+
+        return JsonNode.Parse(configJson)?.ToJsonString() ?? "{}";
+    }
+}

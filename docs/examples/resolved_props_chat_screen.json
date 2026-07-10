@@ -31,8 +31,26 @@
       "background": "rgba(255,255,255,0)",
       "iconScale": 1
     },
+    "navigationBar": {
+      "foreground": "#000000",
+      "background": "rgba(255,255,255,0)",
+      "height": 102,
+      "itemSize": 27,
+      "gap": 42,
+      "sidePadding": 42
+    },
     "layout": {
       "screenGutter": 24
+    },
+    "radii": {
+      "none": 0,
+      "control": 8,
+      "card": 12,
+      "panel": 16,
+      "surface": 12,
+      "pill": 999,
+      "avatar": 12,
+      "full": 9999
     },
     "header": {
       "height": 96,
@@ -140,7 +158,6 @@
       "visibleText": "Are you nearby?",
       "sender": {
         "id": "actor_sam",
-        "participantId": "participant_sam",
         "displayName": "Sam"
       },
       "media": {
@@ -171,7 +188,6 @@
       "visibleText": "Two minu",
       "sender": {
         "id": "actor_alex",
-        "participantId": "participant_alex",
         "displayName": "Alex"
       },
       "timing": {

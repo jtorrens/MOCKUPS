@@ -21,8 +21,11 @@
     "paddingX": 14,
     "paddingY": 9,
     "tailStyle": "rounded_wedge",
+    "tailVerticalPosition": "bottom",
     "tailWidth": 8,
     "tailHeight": 12,
+    "tailScale": 1,
+    "shadowEnabled": false,
     "shadow": {
       "color": "rgba(0,0,0,0)",
       "offsetX": 0,

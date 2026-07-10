@@ -144,7 +144,7 @@ Do not create or implement:
 - advanced animation system
 - advanced typography/text measurement
 - real phone-device frame
-- full lock screen renderer
+- full phone screen renderer
 - Instagram/custom app module
 
 This task is a minimal Remotion proof of concept only.

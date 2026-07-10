@@ -3,8 +3,15 @@
 node_modules/
 dist/
 out/
+bin/
+obj/
+assets/*/media/
 *.sqlite
 *.sqlite3
 *.db
 *.db-wal
 *.db-shm
+!data/desktop-editor-spike.sqlite
+!data/desktop-editor-spike.schema-v1.sqlite
+spikes/desktop-editor-shell/data/window-state.json
+logs/

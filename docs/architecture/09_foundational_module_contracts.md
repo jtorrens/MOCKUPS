@@ -91,24 +91,28 @@ Modules never query repositories or open files. Their output is pure and determi
 module input + frame/context → RenderableNode
 ```
 
-Renderer integrations such as Remotion only adapt the resulting tree.
+Renderer integrations only adapt the resulting tree. The removed React/Remotion
+prototype is historical reference, not an active integration path.
 
 ## Chat-owned data
 
-Chat module data contains participants, header data, messages, media references, message timings, and `senderParticipantId`. A participant may reference a reusable production actor but has module-local identity, so group chats do not depend on an owner/target pair.
+Chat module data contains header data, messages, media references, message
+timings, message direction, and direct production actor references. The previous
+module-local `participants` layer is deprecated for the current design:
+`direction` carries the visual role (`incoming`, `outgoing`, `system`) and
+`actorId` points to the production actor when a sender/contact is needed.
 
 ```text
 module_instances.content_json
-  participants[]
   header
-  messages[] → senderParticipantId, text, optional media attachment, timings
+  messages[] → actorId, direction, text, optional media attachment, timings
 
 module_instances.behavior_json
   showHeader, showKeyboard, initialScroll
   messageGrouping, debug, behavior defaults
 ```
 
-`core.chat` schema version 1 now resolves directly from this module JSON. Direction is derived from participant ownership: owner sender → outgoing, non-owner sender → incoming, and system type → system. Participants may reference actors or carry a module-local display name, so group chats are native. Optional media uses `mediaAssetId` plus a logical media window/transform and may coexist with message text, for example an image/video with a caption or accompanying text.
+`core.chat` schema version 1 now resolves directly from this module JSON. Direction is explicit per message. Non-system messages reference production actors through `actorId`; system messages may omit actor identity. Optional media uses a direct production-relative file path plus a logical media window/transform and may coexist with message text, for example an image/video with a caption or accompanying text.
 
 There is no runtime fallback to `data_ref_json`, `conversations`, `conversation_participants`, `messages`, or generic `props_json`. Those SQLite structures may remain until a later cleanup/migration task, but debug/editor tooling must not write them.
 
@@ -120,7 +124,7 @@ Normal output is the device render resolution. A render preset may change output
 
 ## Themes, text, assets, and icons
 
-A theme stores base global tokens, named modes such as `light` and `dark`, `defaultMode`, and the installed font family plus generic named weight selected through font pickers. Apps store generic app-level reusable defaults such as wallpaper/background roles, accent colors, direct app icon media/crop metadata, shared surfaces, and app-wide typography tokens. App wallpaper is either solid mode-aware color or direct image media rendered cover/center, with opacity stored as a decimal `0–1` layer value. Module theme configs store module-specific values such as Chat message/header typography roles, bubble geometry, message spacing, chat header defaults, cursor behavior, and future module-local design defaults. App and module color tokens can carry light and dark values; the resolver collapses them only for the selected render mode. The shot selects the owner actor; that actor supplies default device and theme for the plane. The screen instance may still select `theme_mode` from the selected theme's available modes, and may carry explicit context overrides when needed. Modules receive only the merged tokens. No production font whitelist/table is required.
+A theme stores base global tokens, named modes such as `light` and `dark`, `defaultMode`, and an approved production font family plus generic named weight selected through font pickers. Apps store generic app-level reusable defaults such as wallpaper/background roles, accent colors, direct app icon media/crop metadata, shared surfaces, and app-wide typography tokens. App wallpaper is either solid mode-aware color or direct image media rendered cover/center, with opacity stored as a decimal `0–1` layer value. Module theme configs store module-specific values such as Chat message/header typography roles, bubble geometry, message spacing, chat header defaults, cursor behavior, and future module-local design defaults. App and module color tokens can carry light and dark values; the resolver collapses them only for the selected render mode. The shot selects the owner actor; that actor supplies default device and theme for the plane. The screen instance may still select `theme_mode` from the selected theme's available modes, and may carry explicit context overrides when needed. Modules receive only the merged tokens. Font families used by preview/render should be registered in `production_fonts` and copied into the production root.
 
 Text measurement has two modes: an approximate renderer-agnostic mode for fast structural work, and a final renderer-assisted mode shared by preview and export. Manual line breaks are preserved before wrapping; reveal operations should segment grapheme clusters where possible.
 
@@ -136,6 +140,17 @@ The generic JSON tree editor is a fallback editing surface, not the final UX for
 
 The app/debug UI must show sources separately: project hierarchy, library resources, module-instance content, module-instance behavior, app tokens, module theme configs, reusable theme tokens, device metrics/state, and calculated renderable output. `RenderableNode` is derived output and is never directly edited. Shot-specific content belongs to a module editor; reusable global design belongs to a theme editor; app-wide defaults belong to an app editor; reusable module-specific design belongs to a module theme config editor.
 
-The initial local app shell now implements this boundary over SQLite. Its HTTP API owns persistence and validation, then routes saved records through `SQLiteRepository` and the existing resolvers/modules. The React preview and Remotion export both reuse the neutral `RenderableReactAdapter` from `src/visual/adapters/react/`; neither Remotion nor the browser is a source of truth. The preview shell may scale and overlay a device frame, but it must not change the renderable's internal size, padding, border, or coordinate system. Device chrome is an external overlay; the renderable viewport remains exactly the device render size, and final PNG output applies only the selected output scale. The current Project workspace can create productions, episodes, and shots with conservative defaults; deep duplicate/delete and screen-instance creation remain future workflow decisions.
+The Avalonia desktop shell now implements this boundary over SQLite. The desktop
+editor owns persistence and validation, then routes saved records through
+`SQLiteRepository` and the component resolver/renderable registry. The final web
+preview is the visual source of truth. The preview shell may scale and overlay a
+device frame, but it must not change the renderable's internal size, padding,
+border, or coordinate system. Device chrome is an external overlay; the
+renderable viewport remains exactly the device render size, and final export
+must apply only the selected output scale. The current Project workspace can
+create productions, episodes, and shots with conservative defaults; deep
+duplicate/delete and screen-instance creation remain future workflow decisions.
 
-`npm run render:frame` renders the shared Remotion composition at the canonical check frame to `out/current-frame.png`. This PNG is ignored by git and is intended as a quick parity check between the debug preview and the final render path. `npm run validate:preview` validates the preview sizing helper used by the debug shell.
+`npm run check:architecture` enforces the current preview boundaries. Removed
+React/debug/remotion routes must not be restored; future frame export checks must
+use the same final web route as the desktop preview.

@@ -1,0 +1,307 @@
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
+using Avalonia.Layout;
+using Avalonia.Media;
+using Avalonia.Styling;
+using Avalonia.Threading;
+using Mockups.DesktopEditorShell.Common;
+using Mockups.DesktopEditorShell.Data;
+using SukiUI.Controls;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace Mockups.DesktopEditorShell.EditorShell;
+
+internal sealed class IconTokenPickerDialog
+{
+    private readonly Window _owner;
+    private readonly SpikeDatabase _database;
+
+    public IconTokenPickerDialog(Window owner, SpikeDatabase database)
+    {
+        _owner = owner;
+        _database = database;
+    }
+
+    public async Task<string?> Show(string projectId, string currentValue, bool allowMultiple)
+    {
+        var iconThemes = _database.GetIconThemeOptions(projectId)
+            .Where((option) => !string.IsNullOrWhiteSpace(option.Value))
+            .ToList();
+        var selected = currentValue
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .ToList();
+        var selectedSet = selected.ToHashSet(StringComparer.Ordinal);
+        var selectedThemeId = iconThemes.FirstOrDefault()?.Value ?? "";
+        string query = "";
+        string? result = null;
+        var visibleButtons = new Dictionary<string, Button>(StringComparer.Ordinal);
+
+        var dialog = new SukiWindow
+        {
+            Title = allowMultiple ? "Select icon tokens" : "Select icon token",
+            Width = 720,
+            Height = 680,
+            MinWidth = 560,
+            MinHeight = 560,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            IsMenuVisible = false,
+            BackgroundAnimationEnabled = false,
+        };
+        EditorSukiWindowTheme.ApplyDialogChrome(dialog, _owner);
+
+        var themeCombo = new EditorInstantComboBox
+        {
+            MinWidth = 220,
+            ItemsSource = iconThemes,
+            SelectedItem = iconThemes.FirstOrDefault((option) => option.Value == selectedThemeId),
+        };
+        var searchBox = EditorTextBoxBehavior.Configure(new TextBox
+        {
+            PlaceholderText = "Search icons…",
+            MinWidth = 220,
+        });
+        var selectedText = new TextBlock
+        {
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = TextBrush(),
+            Opacity = 0.78,
+        };
+        var listPanel = new WrapPanel
+        {
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+        ScrollViewer? scroll = null;
+
+        void RefreshSelectedText()
+        {
+            selectedText.Foreground = TextBrush();
+            selectedText.Text = selected.Count == 0
+                ? "No icon selected"
+                : string.Join(", ", selected);
+        }
+
+        void ToggleToken(string token)
+        {
+            if (!allowMultiple)
+            {
+                selected.Clear();
+                selectedSet.Clear();
+                selected.Add(token);
+                selectedSet.Add(token);
+                RefreshSelectedText();
+                RefreshVisibleSelection();
+                return;
+            }
+
+            if (selectedSet.Contains(token))
+            {
+                selectedSet.Remove(token);
+                selected.RemoveAll((entry) => entry == token);
+            }
+            else
+            {
+                selectedSet.Add(token);
+                selected.Add(token);
+            }
+
+            RefreshSelectedText();
+            RefreshVisibleSelection();
+        }
+
+        void ApplyTokenButtonState(Button button, string token)
+        {
+            var isSelected = selectedSet.Contains(token);
+            button.BorderThickness = isSelected ? new Thickness(2) : new Thickness(1);
+            button.BorderBrush = isSelected
+                ? EditorSukiWindowTheme.AccentBrush()
+                : new SolidColorBrush(Color.Parse("#4B5F7A"));
+        }
+
+        void RefreshVisibleSelection()
+        {
+            foreach (var (token, button) in visibleButtons)
+            {
+                ApplyTokenButtonState(button, token);
+            }
+        }
+
+        void RefreshList()
+        {
+            listPanel.Children.Clear();
+            visibleButtons.Clear();
+            RefreshSelectedText();
+            if (string.IsNullOrWhiteSpace(selectedThemeId))
+            {
+                listPanel.Children.Add(new TextBlock { Text = "No icon themes available. Refresh icon sets first.", Opacity = 0.72 });
+                return;
+            }
+
+            var tokens = _database.GetIconThemeTokens(selectedThemeId)
+                .Where((token) => EditorSearchMatcher.Matches(query, token.Token, token.Category, token.File))
+                .OrderBy((token) => token.Token, StringComparer.Ordinal)
+                .ToList();
+
+            foreach (var token in tokens)
+            {
+                var content = new Grid
+                {
+                    ColumnDefinitions = new ColumnDefinitions("72,180"),
+                    ColumnSpacing = 10,
+                    MinHeight = 40,
+                };
+                var iconZone = new Border
+                {
+                    Width = 72,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Child = SvgIconPreview.CreateIconThemePreview(_database, selectedThemeId, token.File, 24),
+                };
+                content.Children.Add(iconZone);
+                var textZone = new StackPanel
+                {
+                    Spacing = 1,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Children =
+                        {
+                            new TextBlock
+                            {
+                                Text = token.Token,
+                                Foreground = TextBrush(),
+                                FontWeight = FontWeight.SemiBold,
+                                TextTrimming = TextTrimming.CharacterEllipsis,
+                                Width = 180,
+                            },
+                            new TextBlock
+                            {
+                                Text = token.Category,
+                                Foreground = TextBrush(),
+                                FontSize = 11,
+                                Opacity = 0.65,
+                                Width = 180,
+                                TextTrimming = TextTrimming.CharacterEllipsis,
+                            },
+                        },
+                };
+                Grid.SetColumn(textZone, 1);
+                content.Children.Add(textZone);
+
+                var button = new Button
+                {
+                    Content = content,
+                    Width = 285,
+                    MinHeight = 52,
+                    Margin = new Thickness(0, 0, 8, 8),
+                };
+                ApplyTokenButtonState(button, token.Token);
+                button.Click += (_, _) => ToggleToken(token.Token);
+                visibleButtons[token.Token] = button;
+                listPanel.Children.Add(button);
+            }
+
+            if (listPanel.Children.Count == 0)
+            {
+                listPanel.Children.Add(new TextBlock { Text = "No icons match the current search.", Opacity = 0.72 });
+            }
+
+            listPanel.InvalidateMeasure();
+            scroll?.InvalidateMeasure();
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (scroll is null) return;
+                scroll.Offset = new Vector(0, 0);
+                scroll.InvalidateMeasure();
+            }, DispatcherPriority.Background);
+        }
+
+        themeCombo.SelectionChanged += (_, _) =>
+        {
+            if (themeCombo.SelectedItem is FieldOption option)
+            {
+                selectedThemeId = option.Value;
+                RefreshList();
+            }
+        };
+        searchBox.TextChanged += (_, _) =>
+        {
+            query = searchBox.Text ?? "";
+            RefreshList();
+        };
+        dialog.ActualThemeVariantChanged += (_, _) => RefreshList();
+
+        var cancelButton = new Button { Content = "Cancel", MinWidth = 90 };
+        cancelButton.Click += (_, _) => dialog.Close();
+        var okButton = new Button { Content = "Apply", MinWidth = 90 };
+        okButton.Click += (_, _) =>
+        {
+            result = allowMultiple ? string.Join(",", selected) : selected.FirstOrDefault() ?? "";
+            dialog.Close();
+        };
+
+        var root = new Grid
+        {
+            RowDefinitions = new RowDefinitions("Auto,Auto,*,Auto"),
+            RowSpacing = 14,
+        };
+        var toolbar = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 12,
+            Children =
+            {
+                new StackPanel { Spacing = 4, Children = { new TextBlock { Text = "Icon theme" }, themeCombo } },
+                new StackPanel { Spacing = 4, Children = { new TextBlock { Text = "Search" }, searchBox } },
+            },
+        };
+        var actions = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Spacing = 10,
+            Children = { cancelButton, okButton },
+        };
+
+        Grid.SetRow(toolbar, 0);
+        root.Children.Add(toolbar);
+        Grid.SetRow(selectedText, 1);
+        root.Children.Add(selectedText);
+        Grid.SetRow(actions, 3);
+        root.Children.Add(actions);
+        scroll = new ScrollViewer
+        {
+            Content = listPanel,
+            ClipToBounds = true,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+        };
+        var scrollClip = new Border
+        {
+            ClipToBounds = true,
+            Child = scroll,
+        };
+        Grid.SetRow(scrollClip, 2);
+        root.Children.Add(scrollClip);
+
+        dialog.Content = new Border
+        {
+            Padding = new Thickness(18),
+            Child = root,
+        };
+
+        RefreshList();
+        await dialog.ShowDialog(_owner);
+        return result;
+
+        IBrush TextBrush()
+        {
+            return new SolidColorBrush(
+                dialog.ActualThemeVariant == ThemeVariant.Light
+                    ? Color.Parse("#172033")
+                    : Color.Parse("#F4F7FB"));
+        }
+    }
+}

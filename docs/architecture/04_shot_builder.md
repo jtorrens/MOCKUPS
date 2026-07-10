@@ -4,7 +4,7 @@
 
 Shots belong to episodes, and episodes belong to productions. The shot is the unit selected for frame resolution; the episode is editorial organization and does not change frame math.
 
-A shot has an owner actor. That actor supplies the default device and theme for the shot's screen instances through actor defaults. A screen instance references a screen module, device state, theme mode, timing, layer, and transform, and may still carry explicit context overrides when needed. Its module instance owns the selected module's content and behavior. Instances may use different resources and may appear sequentially or overlap. This allows one shot to show, for example, lock screen → notification → unlock → chat, or multiple screens at once.
+A shot has an owner actor. That actor supplies the default device and theme for the shot's screen instances through actor defaults. A screen instance references a screen module, device state, theme mode, timing, layer, and transform, and may still carry explicit context overrides when needed. Its module instance owns the selected module's content and behavior. Instances may use different resources and may appear sequentially or overlap. This allows one shot to show, for example, chat, or multiple screens at once.
 
 Versioned `module_instances.content_json`, `module_instances.behavior_json`, and `module_instances.animation_json` are the module-instance boundary. Chat no longer supports generic `dataRef`/props at runtime; other not-yet-refactored modules may still use legacy fields. Normal composition uses the device design space mapped to device render pixels. Visual design tokens are reusable Theme/App/Module Theme Config values, not per-shot visual overrides.
 
@@ -19,7 +19,7 @@ Example:
 
 ```text
 Shot 010_020_A
- ├─ ScreenInstance: LockScreen, frames 0–150
+ ├─ ScreenInstance: Chat, frames 0–150
  ├─ ScreenEvent: Notification appears at frame 75
  └─ ScreenInstance: ChatScreen, frames 150–300
 ```

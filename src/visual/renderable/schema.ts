@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { RenderableNode } from "./types.js";
+import { renderableNodeTypes, type RenderableNode } from "./types.js";
 
 const RenderableBoxSchema = z.object({
   x: z.number(),
@@ -21,11 +21,31 @@ const RenderableAssetSchema = z.object({
   uri: z.string().min(1),
 });
 
+const RenderableNodeTypeSchema = z.enum(renderableNodeTypes);
+
+const RenderableMetadataSchema = z.object({
+  fontFaces: z.array(z.object({
+    family: z.string().min(1),
+    uri: z.string().min(1),
+    weight: z.union([z.number(), z.string()]).optional(),
+    style: z.string().optional(),
+  }).strict()).optional(),
+  fallbackText: z.string().optional(),
+  imageBaseSize: z.number().optional(),
+  imageOffsetX: z.number().optional(),
+  imageOffsetY: z.number().optional(),
+  imageScale: z.number().optional(),
+  inlineCursor: z.object({
+    color: z.string().min(1),
+    width: z.number().positive(),
+    opacity: z.number().min(0).max(1).optional(),
+  }).strict().optional(),
+}).strict();
+
 export const RenderableNodeSchema: z.ZodType<RenderableNode> = z.lazy(() =>
   z.object({
     id: z.string().min(1),
-    type: z.string().min(1),
-    role: z.string().min(1).optional(),
+    type: RenderableNodeTypeSchema,
     frame: z.number().int().min(0).optional(),
     box: RenderableBoxSchema.optional(),
     transform: RenderableTransformSchema.optional(),
@@ -33,6 +53,6 @@ export const RenderableNodeSchema: z.ZodType<RenderableNode> = z.lazy(() =>
     text: z.string().optional(),
     asset: RenderableAssetSchema.optional(),
     children: z.array(RenderableNodeSchema).optional(),
-    metadata: z.record(z.string(), z.unknown()).optional(),
+    metadata: RenderableMetadataSchema.optional(),
   }),
 );

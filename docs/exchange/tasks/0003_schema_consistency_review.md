@@ -28,7 +28,7 @@ Also review these example files:
 
 ```text
 docs/examples/production_minimal.json
-docs/examples/shot_lock_to_chat.json
+docs/examples/shot_chat.json
 docs/examples/theme_ios_light.json
 docs/examples/device_iphone_generic.json
 docs/examples/resolved_props_chat_screen.json
@@ -193,7 +193,7 @@ Examples do not need to include every full related object, but references should
 Check that:
 
 - `production_minimal.json` is minimal but structurally valid.
-- `shot_lock_to_chat.json` clearly shows lock screen → notification → unlock → chat.
+- `shot_chat.json` clearly shows chat.
 - `theme_ios_light.json` contains useful tokens.
 - `device_iphone_generic.json` contains useful metrics.
 - resolved props examples are aligned with the visual module architecture.

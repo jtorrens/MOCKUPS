@@ -57,4 +57,4 @@ Shortcuts used for visibility: one composition, one fixture shot, fixed determin
 
 Remotion and `@remotion/cli` are pinned to 4.0.481. Zod was aligned from 4.4.3 to the exact 4.3.6 required by this Remotion release. The NodeNext `.js` import convention is preserved through a Remotion-only Webpack `extensionAlias`.
 
-No Electron, SQLite, migration, persistence, editor UI, final image/video export pipeline, device-frame implementation, advanced animation system, lock-screen renderer, or asset pipeline was added.
+No Electron, SQLite, migration, persistence, editor UI, final image/video export pipeline, device-frame implementation, advanced animation system, special screen renderer, or asset pipeline was added.

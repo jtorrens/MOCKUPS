@@ -1,0 +1,128 @@
+{
+  "production_id": "production_demo",
+  "shot": {
+    "id": "shot_chat",
+    "production_id": "production_demo",
+    "episode_id": "episode_demo_001",
+    "owner_actor_id": "actor_alex",
+    "name": "Chat insert",
+    "slug": "chat-insert",
+    "version": 1,
+    "duration_frames": 150,
+    "fps": 30
+  },
+  "screen_instances": [
+    {
+      "id": "screen_instance_chat",
+      "shot_id": "shot_chat",
+      "app_id": "app_messages",
+      "screen_type": "chat",
+      "module_id": "core.chat",
+      "module_schema_version": 1,
+      "owner_actor_id": "actor_alex",
+      "device_id": null,
+      "device_state_id": "device_state_chat_morning",
+      "device_state_json": {
+        "time": "09:41",
+        "batteryLevel": 0.86,
+        "batteryCharging": false,
+        "signalBars": 4,
+        "networkLabel": "5G",
+        "wifiEnabled": true,
+        "wifiIconState": "connected",
+        "orientation": "portrait",
+        "locked": false
+      },
+      "theme_id": null,
+      "theme_mode": "light",
+      "duration_frames": 150,
+      "start_frame": 0,
+      "end_frame": 150,
+      "layer_order": 0,
+      "data_ref_json": null,
+      "transform_json": {
+        "x": 0,
+        "y": 0,
+        "scale": 1,
+        "rotation_degrees": 0
+      },
+      "props_json": {},
+      "transition_in_json": null,
+      "transition_out_json": null
+    }
+  ],
+  "module_instances": [
+    {
+      "id": "screen_instance_chat:module",
+      "screen_instance_id": "screen_instance_chat",
+      "module_id": "core.chat",
+      "module_schema_version": 1,
+      "sort_order": 0,
+      "content_json": {
+        "schemaVersion": 1,
+        "header": {
+          "title": "Sam",
+          "subtitle": "online",
+          "actorId": "actor_sam",
+          "iconToken": "chat.header.contact",
+          "useContactColor": true
+        },
+        "messages": [
+          {
+            "id": "message_001",
+            "actorId": "actor_sam",
+            "direction": "incoming",
+            "type": "text",
+            "text": "Are you nearby?",
+            "media": {
+              "type": "image",
+              "filePath": "assets/conversations/sam-nearby.jpg",
+              "window": {
+                "width": 180,
+                "height": 120,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "transform": {
+                "scale": 1,
+                "translateX": 0,
+                "translateY": 0,
+                "rotationDegrees": 0
+              }
+            },
+            "delayAfterPreviousFrames": 15,
+            "enterDurationFrames": 10
+          },
+          {
+            "id": "message_002",
+            "actorId": "actor_alex",
+            "direction": "outgoing",
+            "type": "text",
+            "text": "Two minutes away.",
+            "delayAfterPreviousFrames": 30,
+            "enterDurationFrames": 10,
+            "textReveal": {
+              "mode": "simple_write_on",
+              "startFrame": 45,
+              "durationFrames": 30
+            }
+          }
+        ]
+      },
+      "behavior_json": {
+        "showHeader": true,
+        "showStatusBar": true,
+        "showKeyboard": false,
+        "initialScroll": "bottom",
+        "messageGrouping": "bySender",
+        "debugShowBounds": false
+      },
+      "animation_json": {
+        "schemaVersion": 1,
+        "tracks": []
+      },
+      "metadata_json": {}
+    }
+  ],
+  "screen_events": []
+}

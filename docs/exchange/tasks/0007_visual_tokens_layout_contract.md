@@ -56,7 +56,7 @@ Review current fixtures/examples:
 
 ```text
 docs/examples/production_minimal.json
-docs/examples/shot_lock_to_chat.json
+docs/examples/shot_chat.json
 docs/examples/theme_ios_light.json
 docs/examples/device_iphone_generic.json
 docs/examples/resolved_props_chat_screen.json
@@ -244,7 +244,7 @@ signal strength
 network label
 wifi enabled/icon state
 focus mode
-locked state
+device state
 ```
 
 ### Resolved props

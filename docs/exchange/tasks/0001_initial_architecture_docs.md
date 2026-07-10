@@ -6,7 +6,7 @@ Create the initial architecture documentation for the `MOCKUPS` project.
 
 This task is documentation-only. Do not implement application code yet.
 
-The project is a production-scoped system for generating final-render animated phone/app screens for audiovisual shots. It started from a chat JSON generator, but the architecture must support multiple screen types: chat, lock screen, notifications, incoming call, in-call, home screen, custom apps, and future screen types.
+The project is a production-scoped system for generating final-render animated phone/app screens for audiovisual shots. It started from a chat JSON generator, but the architecture must support multiple screen types: chat, phone screen, notifications, incoming call, in-call, home screen, custom apps, and future screen types.
 
 ## Core architecture decisions
 
@@ -60,7 +60,7 @@ Explain the project in practical terms:
 * It generates animated diegetic phone/app screens for shots.
 * A production contains reusable resources.
 * A shot instantiates one or more screens.
-* Screen types include chat, lock screen, notifications, calls, home screens and custom apps.
+* Screen types include chat, phone screen, notifications, calls, home screens and custom apps.
 * The system should support style packs, device packs and actor profiles.
 * The same underlying data model should be usable regardless of the final renderer.
 
@@ -169,7 +169,7 @@ Explain the visual module system.
 Screen modules:
 
 * ChatScreen
-* LockScreen
+* AppScreen
 * NotificationStackScreen
 * IncomingCallScreen
 * InCallScreen
@@ -216,7 +216,7 @@ Explain:
 * It does not draw individual UI details.
 * It resolves timing, layer order and transforms.
 * Multiple screens may appear in one shot.
-* A shot may include lock screen → notification → unlock → chat.
+* A shot may include chat.
 * Screen instances can overlap or be sequential.
 * A screen instance can reference a template, owner actor, device, theme, dataRef, props and transforms.
 
@@ -224,7 +224,7 @@ Example:
 
 ```text
 Shot 010_020_A
- ├─ ScreenInstance: LockScreen, frames 0–150
+ ├─ ScreenInstance: Chat, frames 0–150
  ├─ ScreenEvent: Notification appears at frame 75
  └─ ScreenInstance: ChatScreen, frames 150–300
 ```
