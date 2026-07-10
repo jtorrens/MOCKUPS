@@ -139,6 +139,10 @@ Compatibility note:
 
 ## Next Safe Work
 
+- Add `Promote variant to Default` beside `Save variant`: after confirmation,
+  copy the selected variant configuration into `Default` without deleting or
+  renaming the source variant.
+
 1. Keep strengthening architecture checks when a rule becomes concrete.
 2. Define `textInputBar` functionality first; it is the smallest structurally
    migrated component.

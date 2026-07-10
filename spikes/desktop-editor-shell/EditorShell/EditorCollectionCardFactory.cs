@@ -16,6 +16,8 @@ internal sealed class EditorCollectionCardFactory
     private readonly Action _onChanged;
     private readonly EditorDictionaryFieldServices _dictionaryServices;
     private readonly Action<string> _triggerPreviewAction;
+    private readonly Action<string, string> _setPreviewTestValue;
+    private readonly Func<string, bool> _navigateToNode;
 
     public EditorCollectionCardFactory(
         SpikeDatabase database,
@@ -26,7 +28,9 @@ internal sealed class EditorCollectionCardFactory
         Func<string, ValueKind, Task<string?>> browsePath,
         Action onChanged,
         EditorDictionaryFieldServices dictionaryServices,
-        Action<string> triggerPreviewAction)
+        Action<string> triggerPreviewAction,
+        Action<string, string> setPreviewTestValue,
+        Func<string, bool> navigateToNode)
     {
         _database = database;
         _isDark = isDark;
@@ -37,11 +41,13 @@ internal sealed class EditorCollectionCardFactory
         _onChanged = onChanged;
         _dictionaryServices = dictionaryServices;
         _triggerPreviewAction = triggerPreviewAction;
+        _setPreviewTestValue = setPreviewTestValue;
+        _navigateToNode = navigateToNode;
     }
 
     public IReadOnlyList<InstantEditorCard> Create(ProjectTreeNode node)
     {
-        return node.Kind switch
+        var cards = node.Kind switch
         {
             ProjectTreeNodeKind.IconTheme =>
             [
@@ -59,11 +65,20 @@ internal sealed class EditorCollectionCardFactory
             ProjectTreeNodeKind.ModuleInstance =>
                 CreateModuleInstanceCollectionCards(node),
             ProjectTreeNodeKind.Module or ProjectTreeNodeKind.ComponentPreset =>
-                [new RuntimeInputsCollectionEditor(_database, _dictionaryServices, _onChanged, _triggerPreviewAction).Create(node)],
+            [
+                new RuntimeInputsCollectionEditor(_database, _dictionaryServices, _onChanged, _triggerPreviewAction, _setPreviewTestValue).Create(node),
+            ],
             ProjectTreeNodeKind.Shot =>
                 [new ShotModuleInstancesCollectionEditor(_database, _onChanged, _reloadAndSelect).Create(node)],
             _ => [],
         };
+
+        if (node.CanOpenEditor || node.Kind == ProjectTreeNodeKind.ComponentPreset)
+        {
+            cards = [.. cards, new ReferenceUsageCollectionEditor(_database, _navigateToNode).Create(node)];
+        }
+
+        return cards;
     }
 
     private IReadOnlyList<InstantEditorCard> CreateModuleInstanceCollectionCards(ProjectTreeNode node)

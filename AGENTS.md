@@ -70,6 +70,13 @@ If a needed control does not exist, add or extend the dictionary value kind/cont
 
 Collection editors are allowed for structured lists, but simple fields inside those collections must still use dictionary definitions and dictionary controls.
 
+## Hard rule: use common UI surfaces
+
+Unless the user explicitly asks for a special treatment, new editor UI must use
+the existing shared cards, controls and layout helpers. Do not introduce local
+expanders, custom card chrome or one-off controls when an equivalent common
+surface exists. Extract a shared control before adding a reusable visual pattern.
+
 ## Hard rule: padding uses spacing tokens
 
 Padding and gap fields must use `theme.spacing.*` tokens. Do not add raw numeric padding fields for component/editor values that represent visual spacing. For X/Y spacing, use a spacing-token pair.

@@ -356,24 +356,6 @@ internal sealed class EditorLayoutCardFactory
 
     private static void WireExclusiveGroups(IReadOnlyList<InstantEditorCard> cards)
     {
-        foreach (var card in cards)
-        {
-            card.Expanded += (_, _) =>
-            {
-                foreach (var other in cards)
-                {
-                    if (!ReferenceEquals(other, card))
-                    {
-                        other.IsExpanded = false;
-                    }
-                }
-            };
-        }
-
-        var openCards = cards.Where((card) => card.IsExpanded).ToList();
-        foreach (var extraOpenCard in openCards.Skip(1))
-        {
-            extraOpenCard.IsExpanded = false;
-        }
+        EditorGroupBlock.WireExclusiveCards(cards);
     }
 }

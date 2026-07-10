@@ -176,7 +176,9 @@ public partial class MainWindow : SukiWindow
             _pathBrowser.BrowsePath,
             RefreshPreviewDevice,
             _dictionaryFieldServices,
-            _previewController.TriggerDesignPreviewAction);
+            _previewController.TriggerDesignPreviewAction,
+            _previewController.SetDesignPreviewTestValue,
+            SelectNodeById);
         _editorContent = new EditorContentController(
             _database,
             EditorCardsPanel,

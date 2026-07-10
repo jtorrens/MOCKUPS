@@ -553,6 +553,11 @@ internal sealed class EditorPreviewController
         _designInputsPanel.TriggerAction(actionId);
     }
 
+    public void SetDesignPreviewTestValue(string jsonKey, string value)
+    {
+        _designInputsPanel.SetExternalInputValue(jsonKey, value);
+    }
+
     private async Task<bool> PreparePlaybackFramesAsync()
     {
         EnsureSelectedOptionsExist();

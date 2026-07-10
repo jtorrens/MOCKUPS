@@ -52,6 +52,7 @@ internal sealed partial class SpikeDatabase
         if (HasUserTables(connection))
         {
             ValidateSchemaV1(connection);
+            NormalizeRuntimeInputContracts(connection);
             return;
         }
 
@@ -66,6 +67,7 @@ internal sealed partial class SpikeDatabase
         SeedRenderPresetsIfEmpty(connection);
         SeedComponentClassesIfEmpty(connection);
         SeedThemesIfEmpty(connection);
+        NormalizeRuntimeInputContracts(connection);
         ValidateSchemaV1(connection);
     }
 

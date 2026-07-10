@@ -410,8 +410,28 @@ internal sealed partial class SpikeDatabase
                     theme.Name,
                     "Navigation Bar",
                     theme.Id,
-                    null));
+                null));
             }
+        }
+
+        var targetReference = ComponentPresetNodeId(componentClassId, presetId);
+        var appProjectIds = QueryAppRows(connection)
+            .ToDictionary((app) => app.Id, (app) => app.ProjectId, StringComparer.Ordinal);
+        foreach (var module in QueryModuleRows(connection))
+        {
+            if (!appProjectIds.TryGetValue(module.AppId, out var projectId)
+                || !projectId.Equals(owner.ProjectId, StringComparison.Ordinal)
+                || !JsonContainsString(module.ConfigJson, targetReference))
+            {
+                continue;
+            }
+
+            usages.Add(new ComponentPresetReferenceUsage(
+                "Module",
+                module.Name,
+                "Component variant",
+                module.Id,
+                null));
         }
 
         return usages
@@ -505,6 +525,23 @@ internal sealed partial class SpikeDatabase
         }
 
         return value.Equals(presetId, StringComparison.Ordinal);
+    }
+
+    private static bool JsonContainsString(string json, string expected)
+    {
+        var node = JsonNode.Parse(string.IsNullOrWhiteSpace(json) ? "{}" : json);
+        return JsonContainsString(node, expected);
+    }
+
+    private static bool JsonContainsString(JsonNode? node, string expected)
+    {
+        return node switch
+        {
+            JsonValue value when value.TryGetValue<string>(out var text) => text.Equals(expected, StringComparison.Ordinal),
+            JsonObject obj => obj.Any((entry) => JsonContainsString(entry.Value, expected)),
+            JsonArray array => array.Any((item) => JsonContainsString(item, expected)),
+            _ => false,
+        };
     }
 
     private static JsonArray EnsurePresetArray(JsonObject metadata)

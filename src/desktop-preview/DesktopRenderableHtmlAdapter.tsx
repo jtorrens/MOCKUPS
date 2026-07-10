@@ -221,6 +221,7 @@ function nodeStyle(
     paddingRight: paddingX,
     paddingTop: paddingY,
     textAlign: optionalStringValue(style.textAlign) as CSSProperties["textAlign"],
+    overflowWrap: optionalStringValue(style.overflowWrap) as CSSProperties["overflowWrap"],
     transform: nodeTransform(node),
     transformOrigin: nodeTransform(node) ? "center center" : undefined,
     WebkitMaskImage: webkitMaskImage,

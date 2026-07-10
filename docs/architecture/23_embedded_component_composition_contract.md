@@ -83,8 +83,8 @@ Rules:
 - every component class must have a protected `Default` variant;
 - `Default` cannot be renamed or deleted;
 - duplicated variants can be renamed/deleted unless usage checks block deletion;
-- parent component classes may be renamed from the tree, but they must not be
-  duplicated or deleted;
+- parent component classes may be renamed from the tree for identification, but
+  they cannot be duplicated, deleted or edited as component configurations;
 - selecting a component class in the tree must resolve to a concrete variant;
 - if no variant has been selected for that component class in the current
   session, the editor selects `Default`;

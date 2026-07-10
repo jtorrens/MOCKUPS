@@ -319,6 +319,7 @@ export function textBoxComponentToRenderableAt(
     overflow: "visible",
     textAlign: textBox.textAlign,
     whiteSpace: "pre-line",
+    overflowWrap: "anywhere",
   };
   const surfaceNode = options.surfaceVisible === false
     ? undefined

@@ -16,17 +16,20 @@ internal sealed class RuntimeInputsCollectionEditor
     private readonly EditorDictionaryFieldServices _dictionaryServices;
     private readonly Action _onChanged;
     private readonly Action<string> _triggerAction;
+    private readonly Action<string, string> _setPreviewTestValue;
 
     public RuntimeInputsCollectionEditor(
         SpikeDatabase database,
         EditorDictionaryFieldServices dictionaryServices,
         Action onChanged,
-        Action<string> triggerAction)
+        Action<string> triggerAction,
+        Action<string, string> setPreviewTestValue)
     {
         _database = database;
         _dictionaryServices = dictionaryServices;
         _onChanged = onChanged;
         _triggerAction = triggerAction;
+        _setPreviewTestValue = setPreviewTestValue;
     }
 
     public InstantEditorCard Create(ProjectTreeNode node)
@@ -67,10 +70,12 @@ internal sealed class RuntimeInputsCollectionEditor
         }
 
         var groups = ComponentInputGrouping.EmbeddedGroups(inputs);
+        var groupCards = new List<InstantEditorCard>();
         foreach (var groupId in ComponentInputGrouping.TopLevelGroupIds(groups))
         {
-            panel.Children.Add(CreateApiGroupCard(groupId, groups));
+            panel.Children.Add(CreateApiGroupCard(groupId, groups, groupCards));
         }
+        EditorGroupBlock.WireExclusiveCards(groupCards);
 
         return panel;
     }
@@ -82,45 +87,56 @@ internal sealed class RuntimeInputsCollectionEditor
         IReadOnlyList<ComponentPreviewActionDefinition> actions)
     {
         var panel = new StackPanel { Spacing = 8, Margin = new Thickness(0, 8, 0, 0) };
-        if (actions.Count > 0)
+        var header = new Grid
         {
-            var header = new Grid
+            ColumnDefinitions = new ColumnDefinitions("*,Auto"),
+            ColumnSpacing = 8,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        header.Children.Add(new TextBlock
+        {
+            Text = "Test Values",
+            FontWeight = Avalonia.Media.FontWeight.SemiBold,
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        var buttons = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 6,
+            HorizontalAlignment = HorizontalAlignment.Right,
+        };
+        var saveDefaults = new Button
+        {
+            MinWidth = 124,
+            Content = "Save as defaults",
+        };
+        ToolTip.SetTip(saveDefaults, "Promote current test values to component defaults");
+        saveDefaults.Click += (_, args) =>
+        {
+            args.Handled = true;
+            DesignPreviewTestValues.PromoteToDefaults(preview, inputs);
+            owner.Save(preview.ToJsonString());
+            _onChanged();
+        };
+        buttons.Children.Add(saveDefaults);
+        foreach (var action in actions)
+        {
+            var button = new Button
             {
-                ColumnDefinitions = new ColumnDefinitions("*,Auto"),
-                ColumnSpacing = 8,
-                VerticalAlignment = VerticalAlignment.Center,
+                MinWidth = 92,
+                Content = CreateActionContent(action),
             };
-            header.Children.Add(new TextBlock
+            ToolTip.SetTip(button, action.Label);
+            button.Click += (_, args) =>
             {
-                Text = "Test Values",
-                FontWeight = Avalonia.Media.FontWeight.SemiBold,
-                VerticalAlignment = VerticalAlignment.Center,
-            });
-            var buttons = new StackPanel
-            {
-                Orientation = Orientation.Horizontal,
-                Spacing = 6,
-                HorizontalAlignment = HorizontalAlignment.Right,
+                args.Handled = true;
+                _triggerAction(action.Id);
             };
-            foreach (var action in actions)
-            {
-                var button = new Button
-                {
-                    MinWidth = 92,
-                    Content = CreateActionContent(action),
-                };
-                ToolTip.SetTip(button, action.Label);
-                button.Click += (_, args) =>
-                {
-                    args.Handled = true;
-                    _triggerAction(action.Id);
-                };
-                buttons.Children.Add(button);
-            }
-            Grid.SetColumn(buttons, 1);
-            header.Children.Add(buttons);
-            panel.Children.Add(header);
+            buttons.Children.Add(button);
         }
+        Grid.SetColumn(buttons, 1);
+        header.Children.Add(buttons);
+        panel.Children.Add(header);
         if (inputs.Count == 0)
         {
             panel.Children.Add(new TextBlock { Text = "No test values are required.", Opacity = 0.68 });
@@ -133,10 +149,12 @@ internal sealed class RuntimeInputsCollectionEditor
         }
 
         var groups = ComponentInputGrouping.EmbeddedGroups(inputs);
+        var groupCards = new List<InstantEditorCard>();
         foreach (var groupId in ComponentInputGrouping.TopLevelGroupIds(groups))
         {
-            panel.Children.Add(CreateTestValueGroupCard(owner, preview, groupId, groups));
+            panel.Children.Add(CreateTestValueGroupCard(owner, preview, groupId, groups, groupCards));
         }
+        EditorGroupBlock.WireExclusiveCards(groupCards);
 
         return panel;
     }
@@ -160,7 +178,8 @@ internal sealed class RuntimeInputsCollectionEditor
 
     private Control CreateApiGroupCard(
         string groupId,
-        IReadOnlyDictionary<string, List<ComponentInputDefinition>> groups)
+        IReadOnlyDictionary<string, List<ComponentInputDefinition>> groups,
+        List<InstantEditorCard> siblingCards)
     {
         var groupInputs = groups[groupId];
         var content = new StackPanel { Spacing = 6 };
@@ -168,11 +187,13 @@ internal sealed class RuntimeInputsCollectionEditor
         {
             content.Children.Add(CreateApiInputRow(input));
         }
+        var childCards = new List<InstantEditorCard>();
         foreach (var childId in ComponentInputGrouping.ChildGroupIds(groupId, groups))
         {
-            content.Children.Add(CreateApiGroupCard(childId, groups));
+            content.Children.Add(CreateApiGroupCard(childId, groups, childCards));
         }
-        return CreateEmbeddedCard(ComponentInputGrouping.GroupLabel(groupInputs), content);
+        EditorGroupBlock.WireExclusiveCards(childCards);
+        return CreateEmbeddedCard(ComponentInputGrouping.GroupLabel(groupInputs), content, siblingCards);
     }
 
     private Control CreateTestValueControl(
@@ -184,6 +205,7 @@ internal sealed class RuntimeInputsCollectionEditor
         var control = new DictionaryFieldControl(
             new FieldValue(CreateDefinition(owner.Node, input), value),
             _dictionaryServices.ForNode(owner.Node, (_) => ""));
+        control.ValueChanged += (_, next) => _setPreviewTestValue(input.JsonKey, next);
         control.ValueCommitted += (_, next) =>
         {
             DesignPreviewTestValues.SetValue(preview, input, next);
@@ -197,7 +219,8 @@ internal sealed class RuntimeInputsCollectionEditor
         RuntimeInputOwner owner,
         JsonObject preview,
         string groupId,
-        IReadOnlyDictionary<string, List<ComponentInputDefinition>> groups)
+        IReadOnlyDictionary<string, List<ComponentInputDefinition>> groups,
+        List<InstantEditorCard> siblingCards)
     {
         var groupInputs = groups[groupId];
         var content = new StackPanel { Spacing = 8 };
@@ -205,22 +228,26 @@ internal sealed class RuntimeInputsCollectionEditor
         {
             content.Children.Add(CreateTestValueControl(owner, preview, input));
         }
+        var childCards = new List<InstantEditorCard>();
         foreach (var childId in ComponentInputGrouping.ChildGroupIds(groupId, groups))
         {
-            content.Children.Add(CreateTestValueGroupCard(owner, preview, childId, groups));
+            content.Children.Add(CreateTestValueGroupCard(owner, preview, childId, groups, childCards));
         }
-        return CreateEmbeddedCard(ComponentInputGrouping.GroupLabel(groupInputs), content);
+        EditorGroupBlock.WireExclusiveCards(childCards);
+        return CreateEmbeddedCard(ComponentInputGrouping.GroupLabel(groupInputs), content, siblingCards);
     }
 
-    private static Control CreateEmbeddedCard(string label, Control content)
+    private static Control CreateEmbeddedCard(
+        string label,
+        Control content,
+        List<InstantEditorCard> siblingCards)
     {
-        return new InstantEditorCard(
+        var card = EditorGroupBlock.CreateCollapsible(
             EditorCardHeader.Create(label, "Embedded component inputs", EditorIcons.Create(EditorIcons.Component, 16)),
-            new Border { Padding = new Thickness(10), Child = content },
-            isExpanded: false)
-        {
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-        };
+            content,
+            out var groupCard);
+        siblingCards.Add(groupCard);
+        return card;
     }
 
     private static Control CreateActionContent(ComponentPreviewActionDefinition action)

@@ -2,6 +2,9 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -32,7 +35,12 @@ internal static class EditorGroupBlock
 
     public static Control Create(EditorLayoutGroup group, Control content)
     {
-        return GroupBorder(CreateHeaderedPanel(group, content));
+        return CreatePanel(group.Label, content);
+    }
+
+    public static Control CreatePanel(string label, Control content)
+    {
+        return GroupBorder(CreateHeaderedPanel(label, content));
     }
 
     public static Control CreateCollapsible(EditorLayoutGroup group, Control content, out InstantEditorCard card)
@@ -54,18 +62,66 @@ internal static class EditorGroupBlock
         return GroupBorder(card);
     }
 
+    public static Control CreateCollapsible(Control header, Control content, bool isExpanded = false)
+    {
+        return CreateCollapsible(header, content, out _, isExpanded);
+    }
+
+    public static Control CreateCollapsible(
+        Control header,
+        Control content,
+        out InstantEditorCard card,
+        bool isExpanded = false)
+    {
+        card = new InstantEditorCard(
+            header,
+            new Border { Padding = EditorUiDensity.CardThickness(10), Child = content },
+            isExpanded)
+        {
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+        return GroupBorder(card);
+    }
+
+    public static void WireExclusiveCards(IReadOnlyList<InstantEditorCard> cards)
+    {
+        foreach (var card in cards)
+        {
+            card.Expanded += (_, _) =>
+            {
+                foreach (var other in cards)
+                {
+                    if (!ReferenceEquals(other, card))
+                    {
+                        other.IsExpanded = false;
+                    }
+                }
+            };
+        }
+
+        foreach (var extraOpenCard in cards.Where((card) => card.IsExpanded).Skip(1))
+        {
+            extraOpenCard.IsExpanded = false;
+        }
+    }
+
     private static Control CreateHeaderedPanel(EditorLayoutGroup group, Control content)
+    {
+        return CreateHeaderedPanel(group.Label, content);
+    }
+
+    private static Control CreateHeaderedPanel(string label, Control content)
     {
         var panel = new StackPanel
         {
             Spacing = EditorUiDensity.Card(10),
         };
 
-        if (!string.IsNullOrWhiteSpace(group.Label))
+        if (!string.IsNullOrWhiteSpace(label))
         {
             panel.Children.Add(new TextBlock
             {
-                Text = group.Label,
+                Text = label,
                 FontSize = 13,
                 FontWeight = FontWeight.SemiBold,
                 Opacity = 0.82,

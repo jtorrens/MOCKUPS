@@ -19,9 +19,6 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class ComponentInputsPanel : ContentControl
 {
-    private static readonly IBrush EmbeddedInputCardBackground = new SolidColorBrush(Color.FromArgb(28, 255, 255, 255));
-    private static readonly IBrush EmbeddedInputCardBorder = new SolidColorBrush(Color.FromArgb(42, 255, 255, 255));
-
     private readonly SpikeDatabase _database;
     private readonly ComponentPreviewRecordInputResolver _recordInputResolver;
     private readonly Action _refreshPreview;
@@ -151,6 +148,17 @@ internal sealed class ComponentInputsPanel : ContentControl
         }
     }
 
+    public void SetExternalInputValue(string jsonKey, string value)
+    {
+        if (string.IsNullOrWhiteSpace(_scopeKey) || string.IsNullOrWhiteSpace(jsonKey))
+        {
+            return;
+        }
+
+        _values[$"{_scopeKey}:{jsonKey}"] = value;
+        _refreshPreview();
+    }
+
     private void RebuildCard(IReadOnlyList<ComponentInputDefinition> inputs, string projectId)
     {
         var contentPanel = new StackPanel
@@ -208,22 +216,9 @@ internal sealed class ComponentInputsPanel : ContentControl
             contentPanel.Children.Add(CreateEmbeddedGroupCard(childGroupId, groupsById, projectId));
         }
 
-        return new Border
-        {
-            Background = EmbeddedInputCardBackground,
-            BorderBrush = EmbeddedInputCardBorder,
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            Child = new InstantEditorCard(
-                EditorCardHeader.Create(ComponentInputGrouping.GroupLabel(groupInputs), "Embedded control inputs", EditorIcons.Create(EditorIcons.Component, 16)),
-                new Border
-                {
-                    Padding = new Thickness(10),
-                    Child = contentPanel,
-                },
-                isExpanded: false),
-        };
+        return EditorGroupBlock.CreateCollapsible(
+            EditorCardHeader.Create(ComponentInputGrouping.GroupLabel(groupInputs), "Embedded control inputs", EditorIcons.Create(EditorIcons.Component, 16)),
+            contentPanel);
     }
 
     private Control CreateInputRowsPanel(

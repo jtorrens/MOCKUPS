@@ -20,7 +20,8 @@ function graphemeAdvance(grapheme: string) {
   if (!grapheme) return 0;
   if (grapheme === " ") return 0.26;
   if (/^\s$/u.test(grapheme)) return 0.26;
-  if (/\p{Extended_Pictographic}/u.test(grapheme)) return 1;
+  // Color emoji glyphs are usually wider than the text font's em square.
+  if (/\p{Extended_Pictographic}/u.test(grapheme)) return 1.15;
   if (/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(grapheme)) return 1;
   if (/^[,.;:!?¡¿'"`´’‘“”()[\]{}]$/u.test(grapheme)) return 0.28;
   if (/^[ilI|]$/u.test(grapheme)) return 0.28;

@@ -193,8 +193,12 @@ FieldDefinition
   -> generic commit path
 ```
 
-Test values are preview fixtures. They must not mutate the component contract,
-component variant or production data.
+Test values are preview fixtures. Normal editing must not mutate the component
+contract, component variant or production data.
+
+The explicit `Save as defaults` command is the only exception: it deliberately
+promotes the current test-value set into the component or module input defaults.
+It remains separate from variant editing and never changes production data.
 
 ## Preview Responsibility
 
@@ -312,6 +316,13 @@ Recommended order:
 4. Route design preview test data through that card.
 5. Remove the duplicated runtime input panel from design preview.
 6. Add the detailed Usage card and keep the header Usage button as a shortcut.
+
+## Follow-up UI Work
+
+- When a nested standard editor card expands, keep its full bounds visible in
+  the owning editor scroll area when the viewport permits it. The current
+  deferred scroll helper needs one consolidated pass across editor, runtime
+  input and tree card hosts; do not add local scroll offsets per editor.
 7. Add production usage links once shot/module instance workflows are complete.
 
 The first useful milestone is not a complete production workflow. It is a clean

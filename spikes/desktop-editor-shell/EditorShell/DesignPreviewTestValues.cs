@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Text.Json.Nodes;
 using Mockups.DesktopEditorShell.Common;
 
@@ -55,6 +57,35 @@ internal static class DesignPreviewTestValues
         var testValues = preview["testValues"] as JsonObject ?? new JsonObject();
         preview["testValues"] = testValues;
         testValues[input.JsonKey] = ValueNode(input, value);
+    }
+
+    public static void PromoteToDefaults(
+        JsonObject preview,
+        IReadOnlyList<ComponentInputDefinition> inputs)
+    {
+        var contract = preview["inputs"] as JsonArray;
+        foreach (var input in inputs)
+        {
+            var value = Value(preview, input);
+            preview[input.JsonKey] = ValueNode(input, value);
+            if (contract is null)
+            {
+                continue;
+            }
+
+            var definition = contract
+                .OfType<JsonObject>()
+                .FirstOrDefault((candidate) =>
+                    candidate["id"] is JsonValue id
+                    && id.TryGetValue<string>(out var text)
+                    && text.Equals(input.Id, StringComparison.Ordinal));
+            if (definition is not null)
+            {
+                definition["defaultValue"] = value;
+            }
+        }
+
+        preview.Remove("testValues");
     }
 
     private static JsonNode? ValueNode(ComponentInputDefinition input, string value)

@@ -758,7 +758,7 @@ internal sealed partial class SpikeDatabase
             ],
             "textInputBar" =>
             [
-                ComponentInput("sampleText", "Text", "sampleText", ValueKind.StringMultiline, "Message"),
+                ComponentInput("sampleText", "Text", "sampleText", ValueKind.StringMultiline, "Message", uiOrigin: "embedded", uiGroupId: "textBox", uiGroupLabel: "Text box"),
             ],
             "keyboard" =>
             [
@@ -841,7 +841,7 @@ internal sealed partial class SpikeDatabase
                         new FieldOption("system", "System"),
                         new FieldOption("outgoing", "Outgoing"),
                     ]),
-                ComponentInput("sampleText", "Text", "sampleText", ValueKind.StringMultiline, "Message"),
+                ComponentInput("sampleText", "Text", "sampleText", ValueKind.StringMultiline, "Message", uiOrigin: "embedded", uiGroupId: "textBox", uiGroupLabel: "Text box"),
                 ComponentInput("maxWidth", "Max width %", "maxWidth", ValueKind.Integer, "66", minimum: 1, maximum: 100, increment: 1),
                 ComponentInput("writeOnDurationFrames", "Write-on frames", "writeOnDurationFrames", ValueKind.Integer, "30", minimum: 1, maximum: 10000, increment: 1),
                 ComponentInput(
@@ -850,9 +850,12 @@ internal sealed partial class SpikeDatabase
                     "actorId",
                     "recordReference",
                     "",
+                    uiOrigin: "embedded",
+                    uiGroupId: "avatar",
+                    uiGroupLabel: "Avatar",
                     tableId: "actors",
                     resolvedJsonKey: "actor"),
-                ComponentInput("actorName", "Actor name", "actorName", "text", "Alex Q"),
+                ComponentInput("actorName", "Actor name", "actorName", "text", "Alex Q", uiOrigin: "embedded", uiGroupId: "actorLabel", uiGroupLabel: "Actor label"),
                 ComponentInput("statusText", "Status text", "statusText", "text", "9:41"),
                 ComponentInput(
                     "statusState",
@@ -861,7 +864,7 @@ internal sealed partial class SpikeDatabase
                     "option",
                     "read",
                     options: ComponentClassFieldCatalog.BubbleStatusStateOptions),
-                ComponentInput("mediaSource", "Media source", "mediaSource", ValueKind.MediaFilePath, ""),
+                ComponentInput("mediaSource", "Media source", "mediaSource", ValueKind.MediaFilePath, "", uiOrigin: "embedded", uiGroupId: "media", uiGroupLabel: "Media"),
                 ComponentInput(
                     "viewportSize",
                     "Media viewport",
@@ -869,8 +872,11 @@ internal sealed partial class SpikeDatabase
                     "integerPair",
                     "240|160",
                     pairFirstLabel: "W",
-                    pairSecondLabel: "H"),
-                ComponentInput("mediaScale", "Media scale", "mediaScale", ValueKind.Decimal, "1", minimum: 0.05m, maximum: 16, increment: 0.05m),
+                    pairSecondLabel: "H",
+                    uiOrigin: "embedded",
+                    uiGroupId: "media",
+                    uiGroupLabel: "Media"),
+                ComponentInput("mediaScale", "Media scale", "mediaScale", ValueKind.Decimal, "1", minimum: 0.05m, maximum: 16, increment: 0.05m, uiOrigin: "embedded", uiGroupId: "media", uiGroupLabel: "Media"),
                 ComponentInput(
                     "mediaOffset",
                     "Media offset",
@@ -878,11 +884,14 @@ internal sealed partial class SpikeDatabase
                     "integerPair",
                     "0|0",
                     pairFirstLabel: "X",
-                    pairSecondLabel: "Y"),
-                ComponentInput("isPlaying", "Play/Pause", "isPlaying", ValueKind.Boolean, "false"),
-                ComponentInput("currentTimeSeconds", "Current time", "currentTimeSeconds", ValueKind.Decimal, "0", minimum: 0, maximum: 86400, increment: 0.1m),
-                ComponentInput("durationSeconds", "Duration", "durationSeconds", ValueKind.Decimal, "12", minimum: 0, maximum: 86400, increment: 0.1m),
-                ComponentInput("isFullScreen", "Full screen", "isFullScreen", ValueKind.Boolean, "false"),
+                    pairSecondLabel: "Y",
+                    uiOrigin: "embedded",
+                    uiGroupId: "media",
+                    uiGroupLabel: "Media"),
+                ComponentInput("isPlaying", "Play/Pause", "isPlaying", ValueKind.Boolean, "false", uiOrigin: "embedded", uiGroupId: "media", uiGroupLabel: "Media"),
+                ComponentInput("currentTimeSeconds", "Current time", "currentTimeSeconds", ValueKind.Decimal, "0", minimum: 0, maximum: 86400, increment: 0.1m, uiOrigin: "embedded", uiGroupId: "media", uiGroupLabel: "Media"),
+                ComponentInput("durationSeconds", "Duration", "durationSeconds", ValueKind.Decimal, "12", minimum: 0, maximum: 86400, increment: 0.1m, uiOrigin: "embedded", uiGroupId: "media", uiGroupLabel: "Media"),
+                ComponentInput("isFullScreen", "Full screen", "isFullScreen", ValueKind.Boolean, "false", uiOrigin: "embedded", uiGroupId: "media", uiGroupLabel: "Media"),
                 ComponentInput(
                     "fullframeOrientation",
                     "Fullframe orientation",
@@ -893,8 +902,11 @@ internal sealed partial class SpikeDatabase
                     [
                         new FieldOption("portrait", "Portrait"),
                         new FieldOption("landscape", "Landscape"),
-                    ]),
-                ComponentInput("controlsElapsedMs", "Controls elapsed ms", "controlsElapsedMs", ValueKind.Integer, "0", minimum: 0, maximum: 60000, increment: 10),
+                    ],
+                    uiOrigin: "embedded",
+                    uiGroupId: "media",
+                    uiGroupLabel: "Media"),
+                ComponentInput("controlsElapsedMs", "Controls elapsed ms", "controlsElapsedMs", ValueKind.Integer, "0", minimum: 0, maximum: 60000, increment: 10, uiOrigin: "embedded", uiGroupId: "media", uiGroupLabel: "Media"),
             ],
             _ => [],
         };
