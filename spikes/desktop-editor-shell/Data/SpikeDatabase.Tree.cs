@@ -697,8 +697,8 @@ internal sealed partial class SpikeDatabase
             Execute(
                 connection,
                 """
-                INSERT INTO shots (id, episode_id, name, slug, notes, sort_order, fps, duration_frames)
-                VALUES ($id, $episodeId, $name, $slug, $notes, $sortOrder, 25, 240)
+                INSERT INTO shots (id, episode_id, name, slug, notes, sort_order, duration_frames)
+                VALUES ($id, $episodeId, $name, $slug, $notes, $sortOrder, 240)
                 """,
                 ("$id", id),
                 ("$episodeId", parent.Id),
@@ -832,8 +832,8 @@ internal sealed partial class SpikeDatabase
             Execute(
                 connection,
                 """
-                INSERT INTO shots (id, episode_id, name, slug, version, notes, sort_order, fps, duration_frames, owner_actor_id, canvas_json, metadata_json)
-                SELECT $id, episode_id, $name, slug || '-copy', version, notes, $sortOrder, fps, duration_frames, owner_actor_id, canvas_json, metadata_json
+                INSERT INTO shots (id, episode_id, name, slug, version, notes, sort_order, fps_override, duration_frames, owner_actor_id, canvas_json, metadata_json)
+                SELECT $id, episode_id, $name, slug || '-copy', version, notes, $sortOrder, fps_override, duration_frames, owner_actor_id, canvas_json, metadata_json
                 FROM shots
                 WHERE id = $sourceId
                 """,

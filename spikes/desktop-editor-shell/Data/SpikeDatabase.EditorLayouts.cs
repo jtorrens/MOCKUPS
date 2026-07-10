@@ -21,7 +21,7 @@ internal sealed partial class SpikeDatabase
             ?? throw new InvalidOperationException($"Invalid editor layout JSON for record class '{recordClassId}'.");
     }
 
-    private static void SeedEditorLayouts(SqliteConnection connection)
+    internal static void SeedEditorLayouts(SqliteConnection connection)
     {
         var recordClassIds = new[]
         {
@@ -98,10 +98,11 @@ internal sealed partial class SpikeDatabase
                     { "id": "shot.version", "order": 30, "visible": true },
                     { "id": "shot.renderName", "order": 40, "visible": true },
                     { "id": "shot.durationFrames", "order": 50, "visible": true },
-                    { "id": "shot.fps", "order": 60, "visible": true },
-                    { "id": "shot.ownerActorId", "order": 70, "visible": true },
-                    { "id": "shot.ownerDevice", "order": 80, "visible": true },
-                    { "id": "core.notes", "order": 90, "visible": true }
+                    { "id": "shot.useProjectFps", "order": 60, "visible": true },
+                    { "id": "shot.fps", "order": 70, "visible": true },
+                    { "id": "shot.ownerActorId", "order": 80, "visible": true },
+                    { "id": "shot.ownerDevice", "order": 90, "visible": true },
+                    { "id": "core.notes", "order": 100, "visible": true }
                   """
             : recordClassId is "app.generic" or "app.core.chat"
                 ? """

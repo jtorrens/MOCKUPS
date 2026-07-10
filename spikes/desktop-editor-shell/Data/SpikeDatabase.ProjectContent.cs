@@ -22,8 +22,8 @@ internal sealed partial class SpikeDatabase
             Execute(
                 connection,
                 """
-                INSERT INTO shots (id, episode_id, name, slug, version, notes, sort_order, fps, duration_frames, owner_actor_id, canvas_json, metadata_json)
-                VALUES ($id, $episodeId, $name, $slug, $version, $notes, $sortOrder, $fps, $durationFrames, $ownerActorId, $canvasJson, $metadataJson)
+                INSERT INTO shots (id, episode_id, name, slug, version, notes, sort_order, fps_override, duration_frames, owner_actor_id, canvas_json, metadata_json)
+                VALUES ($id, $episodeId, $name, $slug, $version, $notes, $sortOrder, $fpsOverride, $durationFrames, $ownerActorId, $canvasJson, $metadataJson)
                 """,
                 ("$id", $"shot_{Guid.NewGuid():N}"),
                 ("$episodeId", targetEpisodeId),
@@ -32,7 +32,7 @@ internal sealed partial class SpikeDatabase
                 ("$version", shot.Version),
                 ("$notes", shot.Notes),
                 ("$sortOrder", index),
-                ("$fps", shot.Fps),
+                ("$fpsOverride", shot.FpsOverride),
                 ("$durationFrames", shot.DurationFrames),
                 ("$ownerActorId", shot.OwnerActorId),
                 ("$canvasJson", shot.CanvasJson),
@@ -73,9 +73,11 @@ internal sealed partial class SpikeDatabase
         using var connection = OpenConnection();
         using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT s.slug, s.version, s.sort_order, s.fps, s.duration_frames, s.owner_actor_id, s.render_preset_id, s.canvas_json, s.metadata_json, e.project_id
+            SELECT s.slug, s.version, s.sort_order, COALESCE(s.fps_override, p.default_fps), s.fps_override,
+                   s.duration_frames, s.owner_actor_id, s.render_preset_id, s.canvas_json, s.metadata_json, e.project_id
             FROM shots s
             JOIN episodes e ON e.id = s.episode_id
+            JOIN projects p ON p.id = e.project_id
             WHERE s.id = $id
             """;
         command.Parameters.AddWithValue("$id", shotId);
@@ -86,27 +88,57 @@ internal sealed partial class SpikeDatabase
         }
 
         return new ShotSettings(
-            ReadString(reader, 9),
+            ReadString(reader, 10),
             ReadString(reader, 0),
             reader.IsDBNull(1) ? 1 : reader.GetInt32(1),
             reader.IsDBNull(2) ? 0 : reader.GetInt32(2),
             reader.IsDBNull(3) ? 25 : reader.GetInt32(3),
-            reader.IsDBNull(4) ? 240 : reader.GetInt32(4),
-            ReadString(reader, 5),
+            reader.IsDBNull(4) ? null : reader.GetInt32(4),
+            reader.IsDBNull(5) ? 240 : reader.GetInt32(5),
             ReadString(reader, 6),
             ReadString(reader, 7),
-            ReadString(reader, 8));
+            ReadString(reader, 8),
+            ReadString(reader, 9));
     }
 
     public void UpdateShotField(string shotId, string fieldId, string value)
     {
         using var connection = OpenConnection();
+        if (fieldId == "shot.useProjectFps")
+        {
+            if (BoolFromText(value))
+            {
+                Execute(connection, "UPDATE shots SET fps_override = NULL WHERE id = $id", ("$id", shotId));
+            }
+            else
+            {
+                Execute(
+                    connection,
+                    """
+                    UPDATE shots
+                    SET fps_override = COALESCE(
+                        fps_override,
+                        (
+                            SELECT p.default_fps
+                            FROM episodes e
+                            JOIN projects p ON p.id = e.project_id
+                            WHERE e.id = shots.episode_id
+                        )
+                    )
+                    WHERE id = $id
+                    """,
+                    ("$id", shotId));
+            }
+
+            return;
+        }
+
         var column = fieldId switch
         {
             "shot.slug" => "slug",
             "shot.version" => "version",
             "shot.sortOrder" => "sort_order",
-            "shot.fps" => "fps",
+            "shot.fps" => "fps_override",
             "shot.durationFrames" => "duration_frames",
             "shot.ownerActorId" => "owner_actor_id",
             "shot.renderPresetId" => "render_preset_id",
@@ -414,7 +446,7 @@ internal sealed partial class SpikeDatabase
     {
         var rows = new List<ShotRow>();
         using var command = connection.CreateCommand();
-        command.CommandText = "SELECT id, episode_id, name, slug, version, notes, sort_order, fps, duration_frames, owner_actor_id, render_preset_id, canvas_json, metadata_json FROM shots ORDER BY sort_order, name";
+        command.CommandText = "SELECT id, episode_id, name, slug, version, notes, sort_order, fps_override, duration_frames, owner_actor_id, render_preset_id, canvas_json, metadata_json FROM shots ORDER BY sort_order, name";
         using var reader = command.ExecuteReader();
         while (reader.Read())
         {
@@ -426,7 +458,7 @@ internal sealed partial class SpikeDatabase
                 reader.GetInt32(4),
                 ReadString(reader, 5),
                 reader.GetInt32(6),
-                reader.GetInt32(7),
+                reader.IsDBNull(7) ? null : reader.GetInt32(7),
                 reader.GetInt32(8),
                 ReadString(reader, 9),
                 ReadString(reader, 10),
@@ -483,39 +515,17 @@ internal sealed partial class SpikeDatabase
 
     private static void EnsureShotColumns(SqliteConnection connection)
     {
-        AddColumnIfMissing(connection, "shots", "slug", "TEXT NOT NULL DEFAULT ''");
-        AddColumnIfMissing(connection, "shots", "version", "INTEGER NOT NULL DEFAULT 1");
-        AddColumnIfMissing(connection, "shots", "owner_actor_id", "TEXT NOT NULL DEFAULT ''");
-        AddColumnIfMissing(connection, "shots", "render_preset_id", "TEXT NOT NULL DEFAULT ''");
-        AddColumnIfMissing(connection, "shots", "canvas_json", "TEXT NOT NULL DEFAULT '{}'");
-        Execute(
-            connection,
-            """
-            UPDATE shots
-            SET slug = lower(replace(trim(name), ' ', '-'))
-            WHERE trim(slug) = ''
-            """);
+        throw new NotSupportedException("Schema v1 does not normalize shot columns at startup.");
     }
 
     private static void EnsureAppColumns(SqliteConnection connection)
     {
-        AddColumnIfMissing(connection, "apps", "bundle_key", "TEXT NOT NULL DEFAULT ''");
-        AddColumnIfMissing(connection, "apps", "app_type", "TEXT NOT NULL DEFAULT 'chat'");
-        AddColumnIfMissing(connection, "apps", "config_json", "TEXT NOT NULL DEFAULT '{}'");
-        Execute(
-            connection,
-            """
-            UPDATE apps
-            SET bundle_key = lower(replace(trim(name), ' ', '-'))
-            WHERE trim(bundle_key) = ''
-            """);
+        throw new NotSupportedException("Schema v1 does not normalize app columns at startup.");
     }
 
     private static void EnsureModuleColumns(SqliteConnection connection)
     {
-        AddColumnIfMissing(connection, "modules", "config_json", "TEXT NOT NULL DEFAULT '{}'");
-        AddColumnIfMissing(connection, "modules", "design_preview_json", "TEXT NOT NULL DEFAULT '{}'");
-        EnsureModuleConversationDefaults(connection);
+        throw new NotSupportedException("Schema v1 does not normalize module columns at startup.");
     }
 
     private static void UpdateModuleConfigField(SqliteConnection connection, string moduleId, string fieldId, string value)

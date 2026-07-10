@@ -158,6 +158,13 @@ function assertDesktopDatabaseTableIsEmpty(tableName: string, message: string) {
 
   const database = new Database(databasePath, { readonly: true, fileMustExist: true });
   try {
+    const table = database
+      .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?")
+      .get(tableName) as { name: string } | undefined;
+    if (!table) {
+      return;
+    }
+
     const row = database.prepare(`SELECT COUNT(*) AS count FROM ${tableName}`).get() as { count: number };
     if (row.count > 0) {
       addViolation("data/desktop-editor-spike.sqlite", `${message}; found ${row.count} row(s) in ${tableName}`);

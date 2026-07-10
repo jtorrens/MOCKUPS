@@ -141,8 +141,8 @@ internal sealed partial class SpikeDatabase
         Execute(
             connection,
             """
-            INSERT INTO shots (id, episode_id, name, notes, sort_order, fps, duration_frames)
-            VALUES ($id, $episodeId, $name, $notes, $sortOrder, 25, 240)
+            INSERT INTO shots (id, episode_id, name, notes, sort_order, duration_frames)
+            VALUES ($id, $episodeId, $name, $notes, $sortOrder, 240)
             """,
             ("$id", id),
             ("$episodeId", episodeId),
@@ -202,21 +202,4 @@ internal sealed partial class SpikeDatabase
             ReadString(reader, 2));
     }
 
-    private static void EnsureProjectColumns(SqliteConnection connection)
-    {
-        AddColumnIfMissing(connection, "projects", "slug", "TEXT NOT NULL DEFAULT ''");
-        AddColumnIfMissing(connection, "projects", "default_fps", "INTEGER NOT NULL DEFAULT 25");
-    }
-
-    private static void EnsureEpisodeColumns(SqliteConnection connection)
-    {
-        AddColumnIfMissing(connection, "episodes", "slug", "TEXT NOT NULL DEFAULT ''");
-        Execute(
-            connection,
-            """
-            UPDATE episodes
-            SET slug = lower(replace(trim(name), ' ', '-'))
-            WHERE trim(slug) = ''
-            """);
-    }
 }

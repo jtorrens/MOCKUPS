@@ -171,6 +171,7 @@ internal sealed class RecordClassFieldValueService
             "shot.version" => settings.Version.ToString(),
             "shot.sortOrder" => settings.SortOrder.ToString(),
             "shot.durationFrames" => settings.DurationFrames.ToString(),
+            "shot.useProjectFps" => settings.FpsOverride is null ? "true" : "false",
             "shot.fps" => settings.Fps.ToString(),
             "shot.ownerActorId" => settings.OwnerActorId,
             "shot.ownerDevice" => _database.GetShotOwnerDeviceName(shotId),

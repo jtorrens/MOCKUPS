@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace Mockups.DesktopEditorShell.Data;
 
@@ -36,6 +35,14 @@ internal static class SchemaV1DatabaseConsolidator
 
     public static bool TryRun(string[] args)
     {
+        if (args.Contains("--validate-schema-v1", StringComparer.Ordinal))
+        {
+            var path = OptionValue(args, "--source") ?? SpikeDatabase.DefaultDatabasePath();
+            _ = new SpikeDatabase(path);
+            Console.WriteLine($"Schema v1 database validated: {Path.GetFullPath(path)}");
+            return true;
+        }
+
         if (!args.Contains("--create-schema-v1", StringComparer.Ordinal)) return false;
 
         var sourcePath = OptionValue(args, "--source") ?? SpikeDatabase.DefaultDatabasePath();
@@ -99,16 +106,7 @@ internal static class SchemaV1DatabaseConsolidator
 
     private static string SchemaV1Sql()
     {
-        var schema = Regex.Replace(
-            SpikeDatabase.SchemaSql,
-            @"(?<=sort_order INTEGER NOT NULL DEFAULT 0,\s*)fps INTEGER NOT NULL DEFAULT 25,(?=\s*duration_frames)",
-            "fps_override INTEGER,");
-        if (string.Equals(schema, SpikeDatabase.SchemaSql, StringComparison.Ordinal))
-        {
-            throw new InvalidOperationException("Could not derive schema v1 shot FPS override column from the desktop schema.");
-        }
-
-        return schema + "\nPRAGMA user_version = 1;";
+        return SpikeDatabase.SchemaSql;
     }
 
     private static void CopyCanonicalData(SqliteConnection connection, string sourcePath)
@@ -140,6 +138,7 @@ internal static class SchemaV1DatabaseConsolidator
             Copy(connection, "component_classes", "id, project_id, component_type, record_class_id, name, notes, config_json, design_preview_json, metadata_json");
             Copy(connection, "themes", "id, project_id, name, family, icon_theme_id, status_bar_id, navigation_bar_id, tokens_json, metadata_json");
             Copy(connection, "editor_layouts", "record_class_id, layout_json");
+            SpikeDatabase.SeedEditorLayouts(connection);
             Execute(connection, "COMMIT");
         }
         catch

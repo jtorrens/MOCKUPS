@@ -34,7 +34,7 @@ internal sealed partial class SpikeDatabase
           version INTEGER NOT NULL DEFAULT 1,
           notes TEXT NOT NULL DEFAULT '',
           sort_order INTEGER NOT NULL DEFAULT 0,
-          fps INTEGER NOT NULL DEFAULT 25,
+          fps_override INTEGER,
           duration_frames INTEGER NOT NULL DEFAULT 240,
           owner_actor_id TEXT NOT NULL DEFAULT '',
           render_preset_id TEXT NOT NULL DEFAULT '',
@@ -183,6 +183,8 @@ internal sealed partial class SpikeDatabase
           record_class_id TEXT PRIMARY KEY,
           layout_json TEXT NOT NULL
         );
+
+        PRAGMA user_version = 1;
         """;
 
 }
