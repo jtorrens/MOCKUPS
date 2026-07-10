@@ -2367,15 +2367,6 @@ internal sealed partial class SpikeDatabase
         }
         else if (keyboard["motion"] is JsonObject motion)
         {
-            if (motion["fade"] is null && motion["opacity"] is JsonValue opacityValue && opacityValue.TryGetValue<bool>(out var opacity))
-            {
-                motion["fade"] = opacity;
-                changed = true;
-            }
-            if (motion.Remove("opacity"))
-            {
-                changed = true;
-            }
             if (motion["translate"] is null)
             {
                 motion["translate"] = true;

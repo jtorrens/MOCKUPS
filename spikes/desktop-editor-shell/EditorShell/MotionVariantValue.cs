@@ -46,7 +46,7 @@ internal sealed record MotionVariantValue(
             TransitionString(root),
             DirectionString(root),
             BoundsString(root),
-            Bool(root, "fade", legacyKey: "opacity"),
+            Bool(root, "fade"),
             Bool(root, "translate"),
             Bool(root, "scale"));
     }
@@ -100,12 +100,10 @@ internal sealed record MotionVariantValue(
             : throw new InvalidOperationException($"Motion bounds '{bounds}' is not supported.");
     }
 
-    private static bool Bool(JsonObject root, string key, string legacyKey = "")
+    private static bool Bool(JsonObject root, string key)
     {
         return root[key] is JsonValue value && value.TryGetValue<bool>(out var boolean)
             ? boolean
-            : legacyKey.Length > 0 && root[legacyKey] is JsonValue legacyValue && legacyValue.TryGetValue<bool>(out var legacyBoolean)
-                ? legacyBoolean
             : throw new InvalidOperationException($"Motion value is missing '{key}'.");
     }
 }
