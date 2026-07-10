@@ -16,8 +16,10 @@ internal sealed class DeviceImportDialog
 {
     private readonly Window _owner;
     private readonly IDeviceCatalogProvider _provider;
-    private readonly TextBox _manufacturerBox = new() { PlaceholderText = "Apple, Samsung, Google..." };
-    private readonly TextBox _modelBox = new() { PlaceholderText = "iPhone 15, Galaxy S24..." };
+    private readonly TextBox _manufacturerBox = EditorTextBoxBehavior.Configure(
+        new TextBox { PlaceholderText = "Apple, Samsung, Google..." });
+    private readonly TextBox _modelBox = EditorTextBoxBehavior.Configure(
+        new TextBox { PlaceholderText = "iPhone 15, Galaxy S24..." });
     private readonly Button _searchButton = new() { Content = "Search", MinWidth = 92 };
     private readonly Button _importButton = new() { Content = "Create from selected", MinWidth = 150, IsEnabled = false };
     private readonly Button _blankButton = new() { Content = "Blank device", MinWidth = 112 };
