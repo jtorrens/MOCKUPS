@@ -61,24 +61,15 @@ internal sealed class RuntimeInputsCollectionEditor
             return panel;
         }
 
-        foreach (var input in inputs)
+        foreach (var input in ComponentInputGrouping.OwnInputs(inputs))
         {
-            var origin = input.UiOrigin == ComponentInputUiOrigin.Embedded
-                ? $"Embedded: {input.UiGroupLabel}"
-                : "Own";
-            panel.Children.Add(new Border
-            {
-                Padding = new Thickness(8, 6),
-                Child = new StackPanel
-                {
-                    Spacing = 1,
-                    Children =
-                    {
-                        new TextBlock { Text = input.Id, FontWeight = Avalonia.Media.FontWeight.SemiBold },
-                        new TextBlock { Text = $"{origin} · {input.ValueKind} · {input.JsonKey}", FontSize = 11, Opacity = 0.7 },
-                    },
-                },
-            });
+            panel.Children.Add(CreateApiInputRow(input));
+        }
+
+        var groups = ComponentInputGrouping.EmbeddedGroups(inputs);
+        foreach (var groupId in ComponentInputGrouping.TopLevelGroupIds(groups))
+        {
+            panel.Children.Add(CreateApiGroupCard(groupId, groups));
         }
 
         return panel;
@@ -136,22 +127,100 @@ internal sealed class RuntimeInputsCollectionEditor
             return panel;
         }
 
-        foreach (var input in inputs)
+        foreach (var input in ComponentInputGrouping.OwnInputs(inputs))
         {
-            var value = DesignPreviewTestValues.Value(preview, input);
-            var control = new DictionaryFieldControl(
-                new FieldValue(CreateDefinition(owner.Node, input), value),
-                _dictionaryServices.ForNode(owner.Node, (_) => ""));
-            control.ValueCommitted += (_, next) =>
-            {
-                DesignPreviewTestValues.SetValue(preview, input, next);
-                owner.Save(preview.ToJsonString());
-                _onChanged();
-            };
-            panel.Children.Add(control);
+            panel.Children.Add(CreateTestValueControl(owner, preview, input));
+        }
+
+        var groups = ComponentInputGrouping.EmbeddedGroups(inputs);
+        foreach (var groupId in ComponentInputGrouping.TopLevelGroupIds(groups))
+        {
+            panel.Children.Add(CreateTestValueGroupCard(owner, preview, groupId, groups));
         }
 
         return panel;
+    }
+
+    private Control CreateApiInputRow(ComponentInputDefinition input)
+    {
+        return new Border
+        {
+            Padding = new Thickness(8, 6),
+            Child = new StackPanel
+            {
+                Spacing = 1,
+                Children =
+                {
+                    new TextBlock { Text = input.Id, FontWeight = Avalonia.Media.FontWeight.SemiBold },
+                    new TextBlock { Text = $"Runtime · {input.ValueKind} · {input.JsonKey}", FontSize = 11, Opacity = 0.7 },
+                },
+            },
+        };
+    }
+
+    private Control CreateApiGroupCard(
+        string groupId,
+        IReadOnlyDictionary<string, List<ComponentInputDefinition>> groups)
+    {
+        var groupInputs = groups[groupId];
+        var content = new StackPanel { Spacing = 6 };
+        foreach (var input in groupInputs)
+        {
+            content.Children.Add(CreateApiInputRow(input));
+        }
+        foreach (var childId in ComponentInputGrouping.ChildGroupIds(groupId, groups))
+        {
+            content.Children.Add(CreateApiGroupCard(childId, groups));
+        }
+        return CreateEmbeddedCard(ComponentInputGrouping.GroupLabel(groupInputs), content);
+    }
+
+    private Control CreateTestValueControl(
+        RuntimeInputOwner owner,
+        JsonObject preview,
+        ComponentInputDefinition input)
+    {
+        var value = DesignPreviewTestValues.Value(preview, input);
+        var control = new DictionaryFieldControl(
+            new FieldValue(CreateDefinition(owner.Node, input), value),
+            _dictionaryServices.ForNode(owner.Node, (_) => ""));
+        control.ValueCommitted += (_, next) =>
+        {
+            DesignPreviewTestValues.SetValue(preview, input, next);
+            owner.Save(preview.ToJsonString());
+            _onChanged();
+        };
+        return control;
+    }
+
+    private Control CreateTestValueGroupCard(
+        RuntimeInputOwner owner,
+        JsonObject preview,
+        string groupId,
+        IReadOnlyDictionary<string, List<ComponentInputDefinition>> groups)
+    {
+        var groupInputs = groups[groupId];
+        var content = new StackPanel { Spacing = 8 };
+        foreach (var input in groupInputs)
+        {
+            content.Children.Add(CreateTestValueControl(owner, preview, input));
+        }
+        foreach (var childId in ComponentInputGrouping.ChildGroupIds(groupId, groups))
+        {
+            content.Children.Add(CreateTestValueGroupCard(owner, preview, childId, groups));
+        }
+        return CreateEmbeddedCard(ComponentInputGrouping.GroupLabel(groupInputs), content);
+    }
+
+    private static Control CreateEmbeddedCard(string label, Control content)
+    {
+        return new InstantEditorCard(
+            EditorCardHeader.Create(label, "Embedded component inputs", EditorIcons.Create(EditorIcons.Component, 16)),
+            new Border { Padding = new Thickness(10), Child = content },
+            isExpanded: false)
+        {
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
     }
 
     private static Control CreateActionContent(ComponentPreviewActionDefinition action)

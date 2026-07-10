@@ -159,20 +159,15 @@ internal sealed class ComponentInputsPanel : ContentControl
         };
         _booleanInputs.Clear();
 
-        var ownInputs = inputs
-            .Where((input) => input.UiOrigin != ComponentInputUiOrigin.Embedded)
-            .ToList();
-        var embeddedGroups = inputs
-            .Where((input) => input.UiOrigin == ComponentInputUiOrigin.Embedded)
-            .GroupBy((input) => string.IsNullOrWhiteSpace(input.UiGroupId) ? input.Id : input.UiGroupId)
-            .ToDictionary((group) => group.Key, (group) => group.ToList(), StringComparer.Ordinal);
+        var ownInputs = ComponentInputGrouping.OwnInputs(inputs);
+        var embeddedGroups = ComponentInputGrouping.EmbeddedGroups(inputs);
 
         if (ownInputs.Count > 0)
         {
             contentPanel.Children.Add(CreateInputRowsPanel(ownInputs, projectId, maxVisibleRows: 5));
         }
 
-        foreach (var groupId in TopLevelGroupIds(embeddedGroups))
+        foreach (var groupId in ComponentInputGrouping.TopLevelGroupIds(embeddedGroups))
         {
             contentPanel.Children.Add(CreateEmbeddedGroupCard(groupId, embeddedGroups, projectId));
         }
@@ -208,7 +203,7 @@ internal sealed class ComponentInputsPanel : ContentControl
             contentPanel.Children.Add(CreateInputRowsPanel(groupInputs, projectId, maxVisibleRows: 5));
         }
 
-        foreach (var childGroupId in ChildGroupIds(groupId, groupsById))
+        foreach (var childGroupId in ComponentInputGrouping.ChildGroupIds(groupId, groupsById))
         {
             contentPanel.Children.Add(CreateEmbeddedGroupCard(childGroupId, groupsById, projectId));
         }
@@ -221,7 +216,7 @@ internal sealed class ComponentInputsPanel : ContentControl
             CornerRadius = new CornerRadius(8),
             HorizontalAlignment = HorizontalAlignment.Stretch,
             Child = new InstantEditorCard(
-                EditorCardHeader.Create(GroupLabel(groupInputs), "Embedded control inputs", EditorIcons.Create(EditorIcons.Component, 16)),
+                EditorCardHeader.Create(ComponentInputGrouping.GroupLabel(groupInputs), "Embedded control inputs", EditorIcons.Create(EditorIcons.Component, 16)),
                 new Border
                 {
                     Padding = new Thickness(10),
@@ -229,41 +224,6 @@ internal sealed class ComponentInputsPanel : ContentControl
                 },
                 isExpanded: false),
         };
-    }
-
-    private static IEnumerable<string> TopLevelGroupIds(
-        IReadOnlyDictionary<string, List<ComponentInputDefinition>> groupsById)
-    {
-        return groupsById
-            .Where((group) =>
-            {
-                var parent = GroupParentId(group.Value);
-                return string.IsNullOrWhiteSpace(parent) || !groupsById.ContainsKey(parent);
-            })
-            .Select((group) => group.Key);
-    }
-
-    private static IEnumerable<string> ChildGroupIds(
-        string parentGroupId,
-        IReadOnlyDictionary<string, List<ComponentInputDefinition>> groupsById)
-    {
-        return groupsById
-            .Where((group) => string.Equals(GroupParentId(group.Value), parentGroupId, StringComparison.Ordinal))
-            .Select((group) => group.Key);
-    }
-
-    private static string GroupParentId(IReadOnlyList<ComponentInputDefinition> groupInputs)
-    {
-        return groupInputs
-            .Select((input) => input.UiParentGroupId)
-            .FirstOrDefault((parent) => !string.IsNullOrWhiteSpace(parent)) ?? "";
-    }
-
-    private static string GroupLabel(IReadOnlyList<ComponentInputDefinition> groupInputs)
-    {
-        return groupInputs
-            .Select((input) => input.UiGroupLabel)
-            .FirstOrDefault((label) => !string.IsNullOrWhiteSpace(label)) ?? "Embedded inputs";
     }
 
     private Control CreateInputRowsPanel(
