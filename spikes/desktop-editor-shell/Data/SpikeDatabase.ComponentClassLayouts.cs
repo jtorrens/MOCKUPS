@@ -413,12 +413,11 @@ internal sealed partial class SpikeDatabase
                 ] },
                 { "id": "audioWaveform", "label": "Waveform", "order": 30, "visible": true, "fields": [
                   { "id": "component.audio.waveformBarCount", "order": 10, "visible": true },
-                  { "id": "component.audio.waveformBarWidth", "order": 20, "visible": true },
-                  { "id": "component.audio.waveformGap", "order": 30, "visible": true },
-                  { "id": "component.audio.waveformMinHeight", "order": 40, "visible": true },
-                  { "id": "component.audio.waveformMaxHeight", "order": 50, "visible": true },
-                  { "id": "component.audio.waveformColorToken", "order": 60, "visible": true },
-                  { "id": "component.audio.waveformPlayedColorToken", "order": 70, "visible": true }
+                  { "id": "component.audio.waveformGap", "order": 20, "visible": true },
+                  { "id": "component.audio.waveformMinHeight", "order": 30, "visible": true },
+                  { "id": "component.audio.waveformMaxHeight", "order": 40, "visible": true },
+                  { "id": "component.audio.waveformColorToken", "order": 50, "visible": true },
+                  { "id": "component.audio.waveformPlayedColorToken", "order": 60, "visible": true }
                 ] },
                 { "id": "audioAvatar", "label": "Avatar", "order": 40, "visible": true, "fields": [
                   { "id": "component.audio.avatar.showAvatar", "order": 10, "visible": true },

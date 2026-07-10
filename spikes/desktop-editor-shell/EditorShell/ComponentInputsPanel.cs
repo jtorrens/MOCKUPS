@@ -533,6 +533,7 @@ internal sealed class ComponentPreviewInputSession
         SetPlaybackState(action, true);
         SyncBooleanInput(ActionStateKey(action));
         SyncActivatedPlaybackInputs(action);
+        SyncDeactivatedPlaybackInputs(action);
         _values[ActionTimeKey(action)] = "0";
         PreviewDebugLog.Write(
             "preview.playback.start",
@@ -738,6 +739,16 @@ internal sealed class ComponentPreviewInputSession
         }
     }
 
+    private void SyncDeactivatedPlaybackInputs(ComponentPreviewActionDefinition action)
+    {
+        foreach (var inputId in action.DeactivateInputIds.Where((id) => !string.IsNullOrWhiteSpace(id)))
+        {
+            var key = $"{_scopeKey}:{inputId}";
+            _values[key] = "false";
+            SyncBooleanInput(key);
+        }
+    }
+
     private ComponentPreviewActionDefinition? ActiveAction()
     {
         return _actions.FirstOrDefault((action) => action.Id == _activeActionId)
@@ -893,7 +904,8 @@ internal sealed class ComponentPreviewInputSession
             action.PrewarmWhenJsonKey,
             action.PrewarmWhenConfigPath,
             action.PrewarmWhenValue,
-            string.Join(",", action.ActivateInputIds));
+            string.Join(",", action.ActivateInputIds),
+            string.Join(",", action.DeactivateInputIds));
     }
 
     private bool ShouldPrewarmFrames(ComponentPreviewActionDefinition action)

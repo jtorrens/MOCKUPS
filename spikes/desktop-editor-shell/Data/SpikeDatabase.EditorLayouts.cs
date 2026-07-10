@@ -654,7 +654,8 @@ internal sealed partial class SpikeDatabase
                     { "id": "module.conversation.headerHeight", "order": 30, "visible": true },
                     { "id": "module.conversation.headerAvatarVariant", "order": 40, "visible": true },
                     { "id": "module.conversation.screenGutter", "order": 60, "visible": true },
-                    { "id": "module.conversation.messageGap", "order": 70, "visible": true }
+                    { "id": "module.conversation.messageGap", "order": 70, "visible": true },
+                    { "id": "module.conversation.messageViewportMotion", "order": 80, "visible": true }
                   ]
                 }
               ]

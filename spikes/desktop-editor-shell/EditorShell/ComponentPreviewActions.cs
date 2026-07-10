@@ -61,7 +61,8 @@ internal static class ComponentPreviewActions
             JsonString(action, "prewarmWhenJsonKey"),
             JsonString(action, "prewarmWhenConfigPath"),
             JsonString(action, "prewarmWhenValue"),
-            JsonStringArray(action, "activateInputIds"));
+            JsonStringArray(action, "activateInputIds"),
+            JsonStringArray(action, "deactivateInputIds"));
     }
 
     private static ComponentPreviewActionTimeUnit ParseTimeUnit(string value)
@@ -140,7 +141,8 @@ internal sealed record ComponentPreviewActionDefinition(
     string PrewarmWhenJsonKey,
     string PrewarmWhenConfigPath,
     string PrewarmWhenValue,
-    IReadOnlyList<string> ActivateInputIds);
+    IReadOnlyList<string> ActivateInputIds,
+    IReadOnlyList<string> DeactivateInputIds);
 
 internal enum ComponentPreviewActionTimeUnit
 {

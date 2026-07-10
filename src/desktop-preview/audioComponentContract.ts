@@ -25,7 +25,6 @@ export interface AudioDesignContract {
   waveformColorToken: string;
   waveformPlayedColorToken: string;
   waveformBarCount: number;
-  waveformBarWidth: number;
   waveformGapToken: string;
   waveformMinHeight: number;
   waveformMaxHeight: number;

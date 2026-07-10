@@ -137,11 +137,6 @@ export function resolveAudioComponentFromRecords(
       "waveformBarCount",
       "component.audio.waveformBarCount",
     ),
-    waveformBarWidth: requiredNumber(
-      audio,
-      "waveformBarWidth",
-      "component.audio.waveformBarWidth",
-    ),
     waveformGapToken: requiredString(
       audio,
       "waveformGap",

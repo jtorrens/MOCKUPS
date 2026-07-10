@@ -70,6 +70,7 @@ internal sealed class ConversationMessagesCollectionEditor
         panel.Children.Add(Field("Text", ValueKind.StringMultiline, message.Text, null, (value) => message = message with { Text = value }));
         panel.Children.Add(Field("Delay frames", ValueKind.Integer, message.DelayAfterPreviousFrames.ToString(), null, (value) => message = message with { DelayAfterPreviousFrames = NumericText.Int32(value, 0) }));
         panel.Children.Add(Field("Write-on frames", ValueKind.Integer, message.WriteOnDurationFrames.ToString(), null, (value) => message = message with { WriteOnDurationFrames = NumericText.Int32(value, 0) }));
+        panel.Children.Add(Field("Bubble reveal", ValueKind.OptionToken, message.BubbleRevealMode, [new("duringWriteOn", "During write-on"), new("afterWriteOn", "After write-on")], (value) => message = message with { BubbleRevealMode = value }));
         return new InstantEditorCard(
             EditorCardHeader.Create($"Message {index + 1}", $"{message.Direction} · {MessageSummary(message.Text)}", EditorIcons.Create(EditorIcons.Bubble, 16)),
             new Border { Padding = EditorUiDensity.CardThickness(10), Child = panel },

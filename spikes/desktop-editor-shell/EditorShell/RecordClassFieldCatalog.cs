@@ -160,6 +160,10 @@ internal static class RecordClassFieldCatalog
             "Message gap",
             ValueKind.ThemeToken,
             Options: SpacingTokenOptions),
+        ["module.conversation.messageViewportMotion"] = new(
+            "module.conversation.messageViewportMotion",
+            "Message viewport motion",
+            ValueKind.Motion),
 
         ["moduleInstance.module"] = new("moduleInstance.module", "Module", ValueKind.StringReadOnly, IsEditable: false),
         ["moduleInstance.sortOrder"] = new("moduleInstance.sortOrder", "Sort Order", ValueKind.Integer, IsEditable: false),

@@ -302,7 +302,6 @@ internal sealed partial class SpikeDatabase
                     ["waveformColorToken"] = "theme.icons.primary",
                     ["waveformPlayedColorToken"] = "theme.icons.accent",
                     ["waveformBarCount"] = 28,
-                    ["waveformBarWidth"] = 3,
                     ["waveformGap"] = "theme.spacing.xs",
                     ["waveformMinHeight"] = 4,
                     ["waveformMaxHeight"] = 22,

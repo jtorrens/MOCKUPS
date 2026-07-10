@@ -18,7 +18,8 @@ internal sealed partial class SpikeDatabase
         int DelayAfterPreviousFrames,
         int WriteOnDurationFrames,
         string StatusText,
-        string DeliveryStatus);
+        string DeliveryStatus,
+        string BubbleRevealMode);
 
     public sealed record ModuleInstanceSlot(
         string Id,
@@ -150,7 +151,8 @@ internal sealed partial class SpikeDatabase
             message["delayAfterPreviousFrames"]?.GetValue<int>() ?? 0,
             (message["textReveal"] as JsonObject)?["durationFrames"]?.GetValue<int>() ?? 0,
             (message["status"] as JsonObject)?["text"]?.GetValue<string>() ?? "",
-            (message["status"] as JsonObject)?["deliveryStatus"]?.GetValue<string>() ?? "none")).ToList();
+            (message["status"] as JsonObject)?["deliveryStatus"]?.GetValue<string>() ?? "none",
+            message["bubbleRevealMode"]?.GetValue<string>() ?? "duringWriteOn")).ToList();
     }
 
     public void AddConversationMessage(string moduleInstanceId)
@@ -168,6 +170,7 @@ internal sealed partial class SpikeDatabase
                 ["text"] = "",
                 ["delayAfterPreviousFrames"] = 0,
                 ["textReveal"] = new JsonObject { ["durationFrames"] = 0 },
+                ["bubbleRevealMode"] = "duringWriteOn",
                 ["status"] = new JsonObject { ["text"] = "", ["deliveryStatus"] = "none" },
             });
         });
@@ -186,6 +189,7 @@ internal sealed partial class SpikeDatabase
             message["text"] = next.Text;
             message["delayAfterPreviousFrames"] = Math.Max(0, next.DelayAfterPreviousFrames);
             message["textReveal"] = new JsonObject { ["durationFrames"] = Math.Max(0, next.WriteOnDurationFrames) };
+            message["bubbleRevealMode"] = next.BubbleRevealMode is "afterWriteOn" ? "afterWriteOn" : "duringWriteOn";
             message["status"] = new JsonObject { ["text"] = next.StatusText, ["deliveryStatus"] = next.DeliveryStatus };
         });
     }

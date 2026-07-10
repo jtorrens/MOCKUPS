@@ -6,6 +6,7 @@ import { resolveBubbleComponent } from "./bubbleComponentResolver.js";
 import { componentPresetConfig } from "./componentPreviewDefaults.js";
 import {
   asRecord,
+  optionalBoolean,
   optionalNumber,
   optionalString,
   parseObject,
@@ -32,6 +33,7 @@ import { statusBarComponentToRenderable } from "./statusBarComponentRenderable.j
 import { resolveStatusBarComponent } from "./statusBarComponentResolver.js";
 import { textInputBarComponentToRenderable } from "./textInputBarComponentRenderable.js";
 import { resolveTextInputBarComponent } from "./textInputBarComponentResolver.js";
+import { motionFrameProgress, requiredMotionContract } from "./previewMotionHelpers.js";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -92,11 +94,17 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
           ),
       )
     : undefined;
-  const keyboard = requiredBoolean(
-    conversation,
-    "showKeyboard",
-    "module.conversation.showKeyboard",
-  )
+  const keyboardVisible = booleanPreviewValue(
+    preview,
+    "keyboardVisible",
+    requiredBoolean(conversation, "showKeyboard", "module.conversation.showKeyboard"),
+  );
+  const textInputVisible = booleanPreviewValue(
+    preview,
+    "textInputVisible",
+    requiredBoolean(conversation, "showTextInputBar", "module.conversation.showTextInputBar"),
+  );
+  const keyboard = keyboardVisible
     ? childRenderable(
         payload,
         componentBaseConfigs,
@@ -105,16 +113,14 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
         {
           text: optionalString(preview, "inputText"),
           currentCharacter: 1,
+          trigger: optionalBoolean(preview, "composerTransitionTrigger"),
+          motionTimeSeconds: optionalNumber(preview, "composerTransitionTimeSeconds", 0),
         },
         (childPayload) =>
           keyboardComponentToRenderable(childPayload, resolveKeyboardComponent(childPayload)),
       )
     : undefined;
-  const textInput = requiredBoolean(
-    conversation,
-    "showTextInputBar",
-    "module.conversation.showTextInputBar",
-  )
+  const textInput = textInputVisible
     ? childRenderable(
         payload,
         componentBaseConfigs,
@@ -166,7 +172,26 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
   if (status) children.push(status);
 
   const top = screen.y + (status?.box?.height ?? 0) + (header?.box?.height ?? 0);
-  const bottom = textInputNode?.box?.y ?? keyboardNode?.box?.y ?? (screen.y + screen.height - navHeight);
+  const closedBottom = screen.y + screen.height - navHeight;
+  const composerBottom = textInputNode?.box?.y ?? keyboardNode?.box?.y ?? closedBottom;
+  const composerOpen = keyboardVisible || textInputVisible;
+  const viewportMotion = conversation.messageViewportMotion
+    ? requiredMotionContract(conversation, "messageViewportMotion", "module.conversation.messageViewportMotion")
+    : {
+        transition: "slide" as const,
+        direction: "bottom" as const,
+        bounds: "parent" as const,
+        fade: false,
+        translate: true,
+        scale: false,
+      };
+  const motionProgress = motionFrameProgress(payload, viewportMotion, {
+    trigger: optionalBoolean(preview, "composerTransitionTrigger"),
+    timeSeconds: optionalNumber(preview, "composerTransitionTimeSeconds", 0),
+  });
+  const bottom = composerOpen
+    ? lerp(closedBottom, composerBottom, motionProgress)
+    : closedBottom;
   children.push(...messageNodes(
     payload,
     componentBaseConfigs,
@@ -174,6 +199,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
     preview,
     top,
     bottom,
+    Math.max(0, Math.floor(optionalNumber(preview, "conversationFrame", Number.MAX_SAFE_INTEGER))),
   ));
 
   if (textInputNode) children.push(textInputNode);
@@ -264,6 +290,7 @@ function messageNodes(
   preview: JsonRecord,
   top: number,
   bottom: number,
+  conversationFrame: number,
 ) {
   const gap = numberToken(payload, optionalString(conversation, "messageGap") || "theme.spacing.m")
     * renderScale(payload);
@@ -273,8 +300,12 @@ function messageNodes(
     "bubbleVariant",
     "module.conversation.bubbleVariant",
   );
-  const messages = instanceMessages(preview);
-  const nodes = messages.map((message, index) => childRenderable(
+  const messages = visibleMessages(
+    instanceMessages(preview),
+    conversationFrame,
+    optionalString(preview, "bubbleRevealMode") || "duringWriteOn",
+  );
+  const nodes = messages.map((message) => childRenderable(
     payload,
     componentBaseConfigs,
     "bubble",
@@ -285,8 +316,9 @@ function messageNodes(
       actor: preview.actor,
       mediaType: "none",
       maxWidth: optionalNumber(conversation, "bubbleMaxWidth", 66),
-      writeOnTrigger: false,
-      writeOnFrame: 0,
+      writeOnTrigger: message.writeOnTrigger,
+      writeOnFrame: message.writeOnFrame,
+      writeOnDurationFrames: message.writeOnDurationFrames,
       statusState: message.statusState,
       statusText: message.statusText,
     },
@@ -318,6 +350,11 @@ type ConversationPreviewMessage = {
   text: string;
   statusState: string;
   statusText: string;
+  delayAfterPreviousFrames: number;
+  writeOnDurationFrames: number;
+  writeOnTrigger: boolean;
+  writeOnFrame: number;
+  bubbleRevealMode: string;
 };
 
 function instanceMessages(preview: JsonRecord): ConversationPreviewMessage[] {
@@ -332,6 +369,11 @@ function instanceMessages(preview: JsonRecord): ConversationPreviewMessage[] {
         text: optionalString(message, "text"),
         statusState: optionalString(status, "deliveryStatus") || "none",
         statusText: optionalString(status, "text"),
+        delayAfterPreviousFrames: Math.max(0, Math.floor(optionalNumber(message, "delayAfterPreviousFrames", 0))),
+        writeOnDurationFrames: Math.max(0, Math.floor(optionalNumber(asRecord(message.textReveal), "durationFrames", 0))),
+        writeOnTrigger: false,
+        writeOnFrame: 0,
+        bubbleRevealMode: optionalString(message, "bubbleRevealMode") || "duringWriteOn",
       };
     });
   }
@@ -342,20 +384,64 @@ function instanceMessages(preview: JsonRecord): ConversationPreviewMessage[] {
       text: optionalString(preview, "message1Text"),
       statusState: "none",
       statusText: "",
+      delayAfterPreviousFrames: 0,
+      writeOnDurationFrames: 30,
+      writeOnTrigger: false,
+      writeOnFrame: 0,
+      bubbleRevealMode: optionalString(preview, "bubbleRevealMode") || "duringWriteOn",
     },
     {
       state: "outgoing",
       text: optionalString(preview, "message2Text"),
       statusState: optionalString(preview, "message2StatusState") || "read",
       statusText: optionalString(preview, "message2StatusText"),
+      delayAfterPreviousFrames: 0,
+      writeOnDurationFrames: 30,
+      writeOnTrigger: false,
+      writeOnFrame: 0,
+      bubbleRevealMode: optionalString(preview, "bubbleRevealMode") || "duringWriteOn",
     },
     {
       state: "system",
       text: optionalString(preview, "message3Text"),
       statusState: "none",
       statusText: "",
+      delayAfterPreviousFrames: 0,
+      writeOnDurationFrames: 30,
+      writeOnTrigger: false,
+      writeOnFrame: 0,
+      bubbleRevealMode: optionalString(preview, "bubbleRevealMode") || "duringWriteOn",
     },
   ];
+}
+
+function visibleMessages(
+  messages: ConversationPreviewMessage[],
+  frame: number,
+  fallbackRevealMode: string,
+) {
+  let cursor = 0;
+  return messages.flatMap((message) => {
+    const startFrame = cursor + message.delayAfterPreviousFrames;
+    const revealEndFrame = startFrame + message.writeOnDurationFrames;
+    cursor = revealEndFrame;
+    const revealAfterWriteOn = (message.bubbleRevealMode || fallbackRevealMode) === "afterWriteOn";
+    const visibleAt = revealAfterWriteOn ? revealEndFrame : startFrame;
+    if (frame < visibleAt) return [];
+    return [{
+      ...message,
+      writeOnTrigger: !revealAfterWriteOn && message.writeOnDurationFrames > 0,
+      writeOnFrame: Math.max(0, frame - startFrame),
+    }];
+  });
+}
+
+function booleanPreviewValue(preview: JsonRecord, key: string, fallback: boolean) {
+  return typeof preview[key] === "boolean" ? preview[key] : fallback;
+}
+
+function lerp(from: number, to: number, progress: number) {
+  return from + (to - from) * Math.max(0, Math.min(1, progress));
 }
 
 function childRenderable(

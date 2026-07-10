@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using Mockups.DesktopEditorShell.Common;
+using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -310,6 +311,8 @@ internal sealed partial class SpikeDatabase
             "module.conversation.bubbleMaxWidth" => JsonNumberString(config, ["conversation", "bubbleMaxWidth"], "66"),
             "module.conversation.screenGutter" => JsonString(config, ["conversation", "screenGutter"]) is { Length: > 0 } gutter ? gutter : "theme.spacing.l|theme.spacing.l",
             "module.conversation.messageGap" => JsonString(config, ["conversation", "messageGap"]) is { Length: > 0 } gap ? gap : "theme.spacing.m",
+            "module.conversation.messageViewportMotion" => JsonPath.Get(config, ["conversation", "messageViewportMotion"])?.ToJsonString()
+                ?? (MotionVariantValue.Default with { Bounds = MotionVariantValue.Parent }).ToJsonString(),
             _ => throw new InvalidOperationException($"Unknown module config field '{fieldId}'."),
         };
     }
@@ -563,6 +566,9 @@ internal sealed partial class SpikeDatabase
             case "module.conversation.messageGap":
                 SetJsonValue(config, ["conversation", "messageGap"], JsonValue.Create(value)!);
                 break;
+            case "module.conversation.messageViewportMotion":
+                SetJsonValue(config, ["conversation", "messageViewportMotion"], JsonNode.Parse(MotionVariantValue.Parse(value).ToJsonString())!);
+                break;
             default:
                 throw new InvalidOperationException($"Unknown module config field '{fieldId}'.");
         }
@@ -592,6 +598,7 @@ internal sealed partial class SpikeDatabase
                 ["bubbleMaxWidth"] = 66,
                 ["screenGutter"] = "theme.spacing.l|theme.spacing.l",
                 ["messageGap"] = "theme.spacing.m",
+                ["messageViewportMotion"] = JsonNode.Parse((MotionVariantValue.Default with { Bounds = MotionVariantValue.Parent }).ToJsonString()),
             },
         };
     }
@@ -614,6 +621,10 @@ internal sealed partial class SpikeDatabase
             ["message3Text"] = "Siguiente paso: instancias reales.",
             ["message2StatusState"] = "read",
             ["message2StatusText"] = "",
+            ["textInputVisible"] = true,
+            ["keyboardVisible"] = false,
+            ["bubbleRevealMode"] = "duringWriteOn",
+            ["conversationFrame"] = 240,
             ["inputs"] = new JsonArray
             {
                 new JsonObject { ["id"] = "actor", ["label"] = "Actor", ["jsonKey"] = "actorId", ["kind"] = "recordReference", ["defaultValue"] = "", ["tableId"] = "actors", ["resolvedJsonKey"] = "actor" },
@@ -641,7 +652,52 @@ internal sealed partial class SpikeDatabase
                     },
                 },
                 new JsonObject { ["id"] = "message2StatusText", ["label"] = "Outgoing status text", ["jsonKey"] = "message2StatusText", ["kind"] = "text", ["defaultValue"] = "", ["uiOrigin"] = "embedded", ["uiGroupId"] = "messages", ["uiGroupLabel"] = "Messages" },
+                new JsonObject
+                {
+                    ["id"] = "bubbleRevealMode",
+                    ["label"] = "Bubble reveal",
+                    ["jsonKey"] = "bubbleRevealMode",
+                    ["kind"] = "option",
+                    ["defaultValue"] = "duringWriteOn",
+                    ["uiOrigin"] = "embedded",
+                    ["uiGroupId"] = "messages",
+                    ["uiGroupLabel"] = "Messages",
+                    ["options"] = new JsonArray
+                    {
+                        new JsonObject { ["value"] = "duringWriteOn", ["label"] = "During write-on" },
+                        new JsonObject { ["value"] = "afterWriteOn", ["label"] = "After write-on" },
+                    },
+                },
+                new JsonObject { ["id"] = "conversationFrame", ["label"] = "Timeline frame", ["jsonKey"] = "conversationFrame", ["kind"] = "number", ["defaultValue"] = "240", ["minimum"] = 0, ["maximum"] = 100000, ["increment"] = 1, ["uiOrigin"] = "embedded", ["uiGroupId"] = "messages", ["uiGroupLabel"] = "Messages" },
                 new JsonObject { ["id"] = "inputText", ["label"] = "Input text", ["jsonKey"] = "inputText", ["kind"] = "text", ["defaultValue"] = "Message", ["uiOrigin"] = "embedded", ["uiGroupId"] = "textInput", ["uiGroupLabel"] = "Text input" },
+                new JsonObject { ["id"] = "textInputVisible", ["label"] = "Text input visible", ["jsonKey"] = "textInputVisible", ["kind"] = "boolean", ["defaultValue"] = "true", ["uiOrigin"] = "embedded", ["uiGroupId"] = "textInput", ["uiGroupLabel"] = "Text input" },
+                new JsonObject { ["id"] = "keyboardVisible", ["label"] = "Keyboard visible", ["jsonKey"] = "keyboardVisible", ["kind"] = "boolean", ["defaultValue"] = "false", ["uiOrigin"] = "embedded", ["uiGroupId"] = "textInput", ["uiGroupLabel"] = "Text input" },
+            },
+            ["actions"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["id"] = "textInput",
+                    ["label"] = "Text input",
+                    ["playInputId"] = "composerTransitionTrigger",
+                    ["durationSeconds"] = 0.3,
+                    ["durationMotionConfigPath"] = "conversation.messageViewportMotion",
+                    ["timeJsonKey"] = "composerTransitionTimeSeconds",
+                    ["prewarmFrames"] = false,
+                    ["activateInputIds"] = new JsonArray { "textInputVisible" },
+                    ["deactivateInputIds"] = new JsonArray { "keyboardVisible" },
+                },
+                new JsonObject
+                {
+                    ["id"] = "keyboard",
+                    ["label"] = "Keyboard",
+                    ["playInputId"] = "composerTransitionTrigger",
+                    ["durationSeconds"] = 0.3,
+                    ["durationMotionConfigPath"] = "conversation.messageViewportMotion",
+                    ["timeJsonKey"] = "composerTransitionTimeSeconds",
+                    ["prewarmFrames"] = false,
+                    ["activateInputIds"] = new JsonArray { "textInputVisible", "keyboardVisible" },
+                },
             },
         };
     }
