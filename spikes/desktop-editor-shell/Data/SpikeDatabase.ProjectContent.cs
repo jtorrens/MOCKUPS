@@ -625,6 +625,7 @@ internal sealed partial class SpikeDatabase
             ["keyboardVisible"] = false,
             ["bubbleRevealMode"] = "duringWriteOn",
             ["conversationFrame"] = 240,
+            ["conversationDurationFrames"] = 240,
             ["inputs"] = new JsonArray
             {
                 new JsonObject { ["id"] = "actor", ["label"] = "Actor", ["jsonKey"] = "actorId", ["kind"] = "recordReference", ["defaultValue"] = "", ["tableId"] = "actors", ["resolvedJsonKey"] = "actor" },
@@ -669,12 +670,23 @@ internal sealed partial class SpikeDatabase
                     },
                 },
                 new JsonObject { ["id"] = "conversationFrame", ["label"] = "Timeline frame", ["jsonKey"] = "conversationFrame", ["kind"] = "number", ["defaultValue"] = "240", ["minimum"] = 0, ["maximum"] = 100000, ["increment"] = 1, ["uiOrigin"] = "embedded", ["uiGroupId"] = "messages", ["uiGroupLabel"] = "Messages" },
+                new JsonObject { ["id"] = "conversationDurationFrames", ["label"] = "Timeline duration", ["jsonKey"] = "conversationDurationFrames", ["kind"] = "number", ["defaultValue"] = "240", ["minimum"] = 1, ["maximum"] = 100000, ["increment"] = 1, ["uiOrigin"] = "embedded", ["uiGroupId"] = "messages", ["uiGroupLabel"] = "Messages" },
                 new JsonObject { ["id"] = "inputText", ["label"] = "Input text", ["jsonKey"] = "inputText", ["kind"] = "text", ["defaultValue"] = "Message", ["uiOrigin"] = "embedded", ["uiGroupId"] = "textInput", ["uiGroupLabel"] = "Text input" },
                 new JsonObject { ["id"] = "textInputVisible", ["label"] = "Text input visible", ["jsonKey"] = "textInputVisible", ["kind"] = "boolean", ["defaultValue"] = "true", ["uiOrigin"] = "embedded", ["uiGroupId"] = "textInput", ["uiGroupLabel"] = "Text input" },
                 new JsonObject { ["id"] = "keyboardVisible", ["label"] = "Keyboard visible", ["jsonKey"] = "keyboardVisible", ["kind"] = "boolean", ["defaultValue"] = "false", ["uiOrigin"] = "embedded", ["uiGroupId"] = "textInput", ["uiGroupLabel"] = "Text input" },
             },
             ["actions"] = new JsonArray
             {
+                new JsonObject
+                {
+                    ["id"] = "playConversation",
+                    ["label"] = "Play messages",
+                    ["playInputId"] = "conversationPlayback",
+                    ["durationInputId"] = "conversationDurationFrames",
+                    ["timeJsonKey"] = "conversationFrame",
+                    ["timeUnit"] = "frames",
+                    ["prewarmFrames"] = false,
+                },
                 new JsonObject
                 {
                     ["id"] = "textInput",
