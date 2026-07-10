@@ -12,7 +12,7 @@ internal sealed class EditorContentController
     private readonly SpikeDatabase _database;
     private readonly EditorCardHostController _cardHost;
     private readonly EditorActiveFieldControls _activeFieldControls;
-    private readonly ActorAvatarPreviewController _actorAvatarPreviews;
+    private readonly IEditorInlinePreviewController _inlinePreviews;
     private readonly EditorLayoutCardFactory _layoutCards;
     private readonly EditorCollectionCardFactory _collectionCards;
 
@@ -22,14 +22,14 @@ internal sealed class EditorContentController
         Func<double>? availableWidth,
         Control? widthObserver,
         EditorActiveFieldControls activeFieldControls,
-        ActorAvatarPreviewController actorAvatarPreviews,
+        IEditorInlinePreviewController inlinePreviews,
         EditorLayoutCardFactory layoutCards,
         EditorCollectionCardFactory collectionCards)
     {
         _database = database;
         _cardHost = new EditorCardHostController(host, availableWidth, widthObserver);
         _activeFieldControls = activeFieldControls;
-        _actorAvatarPreviews = actorAvatarPreviews;
+        _inlinePreviews = inlinePreviews;
         _layoutCards = layoutCards;
         _collectionCards = collectionCards;
     }
@@ -73,6 +73,6 @@ internal sealed class EditorContentController
     {
         _cardHost.Clear();
         _activeFieldControls.Clear();
-        _actorAvatarPreviews.Reset();
+        _inlinePreviews.Reset();
     }
 }

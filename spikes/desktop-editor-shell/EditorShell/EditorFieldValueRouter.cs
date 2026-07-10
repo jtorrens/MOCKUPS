@@ -7,20 +7,20 @@ internal sealed class EditorFieldValueRouter
     private readonly CoreFieldValueService _coreFields;
     private readonly RecordClassFieldValueService _recordClassFields;
     private readonly ComponentClassFieldValueService _componentClassFields;
-    private readonly ActorAvatarPreviewController _actorAvatarPreviews;
+    private readonly IEditorInlinePreviewController _inlinePreviews;
     private readonly EditorFieldPostCommitEffects _postCommitEffects;
 
     public EditorFieldValueRouter(
         CoreFieldValueService coreFields,
         RecordClassFieldValueService recordClassFields,
         ComponentClassFieldValueService componentClassFields,
-        ActorAvatarPreviewController actorAvatarPreviews,
+        IEditorInlinePreviewController inlinePreviews,
         EditorFieldPostCommitEffects postCommitEffects)
     {
         _coreFields = coreFields;
         _recordClassFields = recordClassFields;
         _componentClassFields = componentClassFields;
-        _actorAvatarPreviews = actorAvatarPreviews;
+        _inlinePreviews = inlinePreviews;
         _postCommitEffects = postCommitEffects;
     }
 
@@ -46,12 +46,7 @@ internal sealed class EditorFieldValueRouter
 
     public string ToStorageValue(ProjectTreeNode node, string fieldId, string value)
     {
-        if (node.Kind == ProjectTreeNodeKind.Actor && fieldId == "actor.avatar.filePath")
-        {
-            return _actorAvatarPreviews.RelativeActorMediaPath(node.Id, value) ?? value;
-        }
-
-        return value;
+        return _inlinePreviews.ToStoragePath(node, fieldId, value);
     }
 
     public string CurrentStoredValue(ProjectTreeNode node, string fieldId)

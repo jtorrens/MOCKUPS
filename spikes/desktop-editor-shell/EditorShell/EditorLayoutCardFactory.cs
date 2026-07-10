@@ -13,7 +13,7 @@ internal sealed class EditorLayoutCardFactory
 {
     private readonly EditorFieldValueRouter _fieldValues;
     private readonly ComponentClassFieldValueService _componentClassFieldValues;
-    private readonly ActorAvatarPreviewController _actorAvatarPreviews;
+    private readonly IEditorInlinePreviewController _inlinePreviews;
     private readonly EditorDictionaryFieldServices _dictionaryFieldServices;
     private readonly EditorFieldCommitCoordinator _fieldCommitCoordinator;
     private readonly EditorActiveFieldControls _activeFieldControls;
@@ -29,7 +29,7 @@ internal sealed class EditorLayoutCardFactory
     public EditorLayoutCardFactory(
         EditorFieldValueRouter fieldValues,
         ComponentClassFieldValueService componentClassFieldValues,
-        ActorAvatarPreviewController actorAvatarPreviews,
+        IEditorInlinePreviewController inlinePreviews,
         EditorDictionaryFieldServices dictionaryFieldServices,
         EditorFieldCommitCoordinator fieldCommitCoordinator,
         EditorActiveFieldControls activeFieldControls,
@@ -44,7 +44,7 @@ internal sealed class EditorLayoutCardFactory
     {
         _fieldValues = fieldValues;
         _componentClassFieldValues = componentClassFieldValues;
-        _actorAvatarPreviews = actorAvatarPreviews;
+        _inlinePreviews = inlinePreviews;
         _dictionaryFieldServices = dictionaryFieldServices;
         _fieldCommitCoordinator = fieldCommitCoordinator;
         _activeFieldControls = activeFieldControls;
@@ -77,7 +77,7 @@ internal sealed class EditorLayoutCardFactory
                 Spacing = EditorUiDensity.Card(12),
             };
 
-            _actorAvatarPreviews.AddIfNeeded(node, layoutCard, groupPanel);
+            _inlinePreviews.AddIfNeeded(node, layoutCard, groupPanel);
 
             foreach (var layoutField in group.VisibleFields)
             {
@@ -103,7 +103,7 @@ internal sealed class EditorLayoutCardFactory
                             (draftValue) => _fieldValues.ToStorageValue(node, field.Definition.Id, draftValue),
                             () => _fieldValues.CurrentStoredValue(node, field.Definition.Id),
                             (storedValue) => _fieldValues.Commit(node, field.Definition.Id, storedValue));
-                        _actorAvatarPreviews.Refresh(node, _activeFieldControls.ControlsByFieldId);
+                        _inlinePreviews.Refresh(node, _activeFieldControls.ControlsByFieldId);
                         _activeFieldControls.RefreshPreviews();
                         _refreshPreview();
                     }
@@ -150,7 +150,7 @@ internal sealed class EditorLayoutCardFactory
             control.ValueChanged += (_, _) =>
             {
                 EditorCardHeader.SetOverrideState(headerIcon, controls);
-                _actorAvatarPreviews.Refresh(node, _activeFieldControls.ControlsByFieldId);
+                _inlinePreviews.Refresh(node, _activeFieldControls.ControlsByFieldId);
             };
         }
 

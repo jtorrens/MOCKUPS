@@ -13,7 +13,7 @@ public partial class MainWindow : SukiWindow
     private readonly CoreFieldValueService _coreFieldValues;
     private readonly RecordClassFieldValueService _recordClassFieldValues;
     private readonly ComponentClassFieldValueService _componentClassFieldValues;
-    private readonly ActorAvatarPreviewController _actorAvatarPreviews;
+    private readonly IEditorInlinePreviewController _inlinePreviews;
     private readonly EditorCollectionCardFactory _collectionCards;
     private readonly EditorPreviewController _previewController;
     private readonly IEditorShellMessageSink _messages;
@@ -54,7 +54,7 @@ public partial class MainWindow : SukiWindow
         _recordClassFieldValues = new RecordClassFieldValueService(_database);
         _componentClassFieldValues = new ComponentClassFieldValueService(_database);
         _themeController = new EditorThemeController(this, RootShell, RefreshShellTheme);
-        _actorAvatarPreviews = new ActorAvatarPreviewController(_database, () => _themeController.IsDark);
+        _inlinePreviews = EditorInlinePreviewControllerFactory.Create(_database, () => _themeController.IsDark);
         EditorTextBoxBehavior.Configure(ShellMessagesTextBox);
         _messages = new EditorShellMessageSink(ShellMessagesTextBox);
         _editorViewState = new EditorViewStateController(EditorScrollViewer);
@@ -120,12 +120,12 @@ public partial class MainWindow : SukiWindow
             _coreFieldValues,
             _recordClassFieldValues,
             _componentClassFieldValues,
-            _actorAvatarPreviews,
+            _inlinePreviews,
             _fieldPostCommitEffects);
         _layoutCards = new EditorLayoutCardFactory(
             _fieldValues,
             _componentClassFieldValues,
-            _actorAvatarPreviews,
+            _inlinePreviews,
             _dictionaryFieldServices,
             _fieldCommitCoordinator,
             _activeFieldControls,
@@ -173,7 +173,7 @@ public partial class MainWindow : SukiWindow
             () => Math.Max(1, EditorScrollViewer.Bounds.Width - EditorScrollViewer.Padding.Left - EditorScrollViewer.Padding.Right),
             EditorScrollViewer,
             _activeFieldControls,
-            _actorAvatarPreviews,
+            _inlinePreviews,
             _layoutCards,
             _collectionCards);
         ShellSettingsButton.Content = EditorIcons.Create(EditorIcons.Settings, 18);

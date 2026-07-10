@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed class ActorAvatarPreviewController
+internal sealed class ActorAvatarPreviewController : IEditorInlinePreviewController
 {
     private readonly ActorAvatarPreviewFactory _previewFactory;
     private readonly Func<bool> _isDark;
@@ -54,8 +54,13 @@ internal sealed class ActorAvatarPreviewController
         }
     }
 
-    public string? RelativeActorMediaPath(string actorId, string path)
+    public string ToStoragePath(ProjectTreeNode node, string fieldId, string path)
     {
-        return _previewFactory.RelativeActorMediaPath(actorId, path);
+        if (node.Kind != ProjectTreeNodeKind.Actor || fieldId != "actor.avatar.filePath")
+        {
+            return path;
+        }
+
+        return _previewFactory.RelativeActorMediaPath(node.Id, path) ?? path;
     }
 }
