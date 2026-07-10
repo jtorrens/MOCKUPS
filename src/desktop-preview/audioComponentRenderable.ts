@@ -41,8 +41,15 @@ export function audioComponentToRenderable(
   const playIconPadding = Math.max(0, numberToken(payload, audio.playIconPaddingToken) * scale);
   const barCount = Math.max(4, Math.round(audio.waveformBarCount));
   const availableWidth = Math.max(1, audio.availableWidth * scale);
+  const avatarSize = audio.avatarSlot.avatar
+    ? audio.avatarSlot.avatar.size * scale
+    : 0;
+  const avatarOnLeft = avatarSize > 0 && audio.avatarSlot.placement.alignX < 0.5;
+  const avatarReserve = avatarSize > 0 ? avatarSize + paddingX : 0;
+  const contentLeft = paddingX + (avatarOnLeft ? avatarReserve : 0);
+  const contentRight = availableWidth - paddingX - (avatarOnLeft ? 0 : avatarReserve);
   const preferredWaveformGap = Math.max(0, numberToken(payload, audio.waveformGapToken) * scale);
-  const waveformWidth = Math.max(1, availableWidth - paddingX * 2 - playSize - paddingX);
+  const waveformWidth = Math.max(1, contentRight - contentLeft - playSize - paddingX);
   const waveformGap = Math.min(
     preferredWaveformGap,
     waveformWidth / Math.max(1, barCount * 2 - 1),
@@ -57,9 +64,9 @@ export function audioComponentToRenderable(
   const textHeight = audio.textSize * scale * 1.25;
   const waveformColumnWidth = Math.max(waveformWidth, durationWidth);
   const verticalGap = Math.max(2 * scale, paddingY * 0.5);
-  const playbackHeight = Math.max(playSize, waveformHeight);
+  const playbackHeight = Math.max(playSize, waveformHeight, avatarSize);
   const playBoxLocal = {
-    x: 0,
+    x: contentLeft,
     y: (playbackHeight - playSize) / 2,
     width: playSize,
     height: playSize,
@@ -77,15 +84,13 @@ export function audioComponentToRenderable(
     width: durationWidth,
     height: textHeight,
   };
-  const avatarSize = audio.avatarSlot.avatar
-    ? audio.avatarSlot.avatar.size * scale
-    : 0;
   const avatarBoxLocal = audio.avatarSlot.avatar
-    ? placeChild(
-        playbackBoxLocal,
-        { width: avatarSize, height: avatarSize },
-        scalePlacement(audio.avatarSlot.placement, scale),
-      )
+    ? {
+        x: avatarOnLeft ? paddingX : availableWidth - paddingX - avatarSize,
+        y: (playbackHeight - avatarSize) / 2,
+        width: avatarSize,
+        height: avatarSize,
+      }
     : undefined;
   const badgeSurfaceSize = audio.badgeSlot.badge
     ? audio.badgeSlot.badge.buttonSize * scale
