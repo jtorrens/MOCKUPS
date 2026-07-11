@@ -243,7 +243,7 @@ function keyboardRowNodes(
           borderColor: keyBorderColor,
           borderRadius: Math.max(0, numberToken(payload, keyboard.keyCornerRadiusToken) * scale),
           borderWidth: keyBorderWidth,
-          shadow: keyShadow,
+          shadow: isSpecial ? undefined : keyShadow,
         },
       },
       usesEmojiIcon
@@ -252,8 +252,8 @@ function keyboardRowNodes(
             type: "icon",
             frame: 0,
             box: centeredSquareBox(box, Math.min(box.width, box.height) * 0.48),
-            text: "chat_emoji",
-            style: iconTokenStyle(payload, "chat_emoji", keyColor),
+            text: "system_emoji",
+            style: iconTokenStyle(payload, "system_emoji", keyColor),
           }
         : {
         id: `${keyboard.id}.key.${rowIndex}.${index}.text`,
@@ -287,6 +287,8 @@ function keyboardRowNodes(
         keyColor,
         fontSize * 1.2,
         typography,
+        keyShadow,
+        Math.max(0, numberToken(payload, keyboard.keyCornerRadiusToken) * scale),
       ));
     }
 
@@ -333,11 +335,12 @@ function keyboardPopoverNodes(
   color: string,
   fontSize: number,
   typography: ReturnType<typeof resolveTypographyStyle>,
+  keyShadow: Record<string, unknown> | undefined,
+  radius: number,
 ): RenderableNode[] {
   const popoverWidth = keyBox.width;
   const popoverHeight = keyBox.height;
   const gap = keyBox.height * 0.18;
-  const radius = Math.max(4, keyBox.height * 0.18);
   const box = {
     x: keyBox.x + keyBox.width / 2 - popoverWidth / 2,
     y: keyBox.y - popoverHeight - gap,
@@ -363,7 +366,7 @@ function keyboardPopoverNodes(
         alignItems: "center",
         background,
         borderRadius: radius,
-        boxShadow: "0 0.16em 0.34em rgba(0, 0, 0, 0.26)",
+        shadow: keyShadow,
         color,
         display: "flex",
         justifyContent: "center",

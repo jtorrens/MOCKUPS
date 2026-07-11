@@ -87,6 +87,7 @@ internal sealed partial class SpikeDatabase
         if (!string.IsNullOrWhiteSpace(themeLayout)
             && (!themeLayout.Contains("Keyboard dimensions and color tokens", StringComparison.Ordinal)
                 || !themeLayout.Contains("theme.keyboard.keyGap", StringComparison.Ordinal)
+                || themeLayout.Contains("theme.keyboard.popoverBackground", StringComparison.Ordinal)
                 || !IsValidLayoutJson(themeLayout)))
         {
             Execute(
@@ -94,6 +95,19 @@ internal sealed partial class SpikeDatabase
                 "UPDATE editor_layouts SET layout_json = $layoutJson WHERE record_class_id = 'theme'",
                 ("$layoutJson", MinimalEditorLayoutJson("theme")));
         }
+
+        var keyboardLayout = ScalarString(
+            connection,
+            "SELECT layout_json FROM editor_layouts WHERE record_class_id = 'component.keyboard'");
+        if (!string.IsNullOrWhiteSpace(keyboardLayout)
+            && keyboardLayout.Contains("component.keyboard.popoverBackgroundColorToken", StringComparison.Ordinal))
+        {
+            Execute(
+                connection,
+                "UPDATE editor_layouts SET layout_json = $layoutJson WHERE record_class_id = 'component.keyboard'",
+                ("$layoutJson", MinimalEditorLayoutJson("component.keyboard")));
+        }
+
     }
 
     private static bool IsValidLayoutJson(string layoutJson)
@@ -506,8 +520,7 @@ internal sealed partial class SpikeDatabase
                     { "id": "theme.keyboard.keyBackground", "order": 50, "visible": true },
                     { "id": "theme.keyboard.specialKeyBackground", "order": 60, "visible": true },
                     { "id": "theme.keyboard.pressedKeyBackground", "order": 70, "visible": true },
-                    { "id": "theme.keyboard.popoverBackground", "order": 80, "visible": true },
-                    { "id": "theme.keyboard.text", "order": 90, "visible": true }
+                    { "id": "theme.keyboard.text", "order": 80, "visible": true }
                   ]
                 }
               ]

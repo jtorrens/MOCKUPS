@@ -98,6 +98,7 @@ internal sealed partial class SpikeDatabase
             keyboard["rowGapToken"] = "theme.keyboard.rowGap";
             changed = true;
         }
+        if (keyboard.Remove("popoverBackgroundColorToken")) changed = true;
 
         return changed;
     }

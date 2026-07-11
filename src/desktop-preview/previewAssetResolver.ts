@@ -19,6 +19,9 @@ const videoDurationCache = new Map<string, number>();
 const maxVideoFrameCacheEntries = 240;
 
 export function iconUriForToken(payload: DesignPreviewPayload, token: string) {
+  const systemIcon = systemIconUri(token);
+  if (systemIcon) return systemIcon;
+
   const mapping = parseObject(payload.iconMappingJson ?? "{}");
   const tokens = asRecord(mapping.tokens);
   const iconToken = asRecord(tokens[token]);
@@ -31,6 +34,21 @@ export function iconUriForToken(payload: DesignPreviewPayload, token: string) {
     path.resolve("assets/FOQN_S2", assetRoot, file),
     path.resolve("assets", assetRoot, file),
     path.resolve(assetRoot, file),
+  ];
+  const fullPath = candidates.find((candidate) => existsSync(candidate));
+  if (!fullPath) return "";
+
+  const svg = readFileSync(fullPath);
+  return `data:image/svg+xml;base64,${svg.toString("base64")}`;
+}
+
+function systemIconUri(token: string) {
+  if (!/^system_[a-z0-9_]+$/i.test(token)) return "";
+
+  const file = `${token}.svg`;
+  const candidates = [
+    path.resolve("assets/system/system_icons", file),
+    path.resolve("assets", "system", "system_icons", file),
   ];
   const fullPath = candidates.find((candidate) => existsSync(candidate));
   if (!fullPath) return "";

@@ -221,7 +221,9 @@ internal sealed partial class SpikeDatabase
         {
             var tokens = ParseJsonObject(string.IsNullOrWhiteSpace(theme.TokensJson) ? "{}" : theme.TokensJson);
             var defaults = ParseJsonObject(DefaultThemeTokensJson(theme.Family));
-            var changed = MergeMissing(tokens, defaults);
+            var changed = RemoveJsonValue(tokens, ["modes", "light", "keyboard", "popoverBackground"])
+                | RemoveJsonValue(tokens, ["modes", "dark", "keyboard", "popoverBackground"])
+                | MergeMissing(tokens, defaults);
             if (!changed)
             {
                 continue;
@@ -513,7 +515,6 @@ internal sealed partial class SpikeDatabase
                         ["keyBackground"] = "gray_100",
                         ["specialKeyBackground"] = "gray_080",
                         ["pressedKeyBackground"] = "gray_070",
-                        ["popoverBackground"] = "gray_100",
                         ["text"] = "gray_010",
                     },
                 },
@@ -555,7 +556,6 @@ internal sealed partial class SpikeDatabase
                         ["keyBackground"] = "gray_030",
                         ["specialKeyBackground"] = "gray_040",
                         ["pressedKeyBackground"] = "gray_050",
-                        ["popoverBackground"] = "gray_030",
                         ["text"] = "gray_100",
                     },
                 },

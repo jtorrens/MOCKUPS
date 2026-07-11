@@ -55,7 +55,6 @@ internal static class ComponentClassFieldCatalog
         new("theme.keyboard.keyBackground", "keyboard.keyBackground"),
         new("theme.keyboard.specialKeyBackground", "keyboard.specialKeyBackground"),
         new("theme.keyboard.pressedKeyBackground", "keyboard.pressedKeyBackground"),
-        new("theme.keyboard.popoverBackground", "keyboard.popoverBackground"),
         new("theme.keyboard.text", "keyboard.text"),
     ];
 

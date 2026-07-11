@@ -6,7 +6,7 @@
                  xmlns:suki="clr-namespace:SukiUI.Controls;assembly=SukiUI"
                  mc:Ignorable="d" d:DesignWidth="1440" d:DesignHeight="900"
                  x:Class="Mockups.DesktopEditorShell.MainWindow"
-        Title="Mockups Desktop Editor Shell · Design / Production · v0.317.42"
+        Title="Mockups Desktop Editor Shell · Design / Production · v0.317.43"
                  Width="1440"
                  Height="900"
                  MinWidth="1040"
@@ -178,7 +178,7 @@
                         </StackPanel>
                     </Border>
                     <Grid Margin="22"
-                          RowDefinitions="Auto,*,Auto"
+                          RowDefinitions="Auto,Auto,*,Auto"
                           RowSpacing="14">
                         <ContentControl x:Name="PreviewSetupHost"
                                         Grid.Row="0">
@@ -225,7 +225,9 @@
                                 </Grid>
                             </StackPanel>
                         </ContentControl>
-                        <Grid Grid.Row="1"
+                        <ContentControl x:Name="PreviewControlsHost"
+                                        Grid.Row="1" />
+                        <Grid Grid.Row="2"
                               RowDefinitions="Auto,*"
                               RowSpacing="6">
                             <Border Padding="10,6"
@@ -286,7 +288,7 @@
                                 </Grid>
                             </Border>
                         </Grid>
-                        <Border Grid.Row="2"
+                        <Border Grid.Row="3"
                                 Padding="10,6"
                                 CornerRadius="8"
                                 Background="#14000000">

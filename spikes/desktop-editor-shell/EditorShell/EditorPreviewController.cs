@@ -60,9 +60,10 @@ internal sealed class EditorPreviewController
         MinWidth = 88,
         MinHeight = 32,
     };
-    private readonly Slider _referenceSwipeSlider = new() { Minimum = 0, Maximum = 1, Value = 0.5, Width = 68 };
-    private readonly Slider _referenceOpacitySlider = new() { Minimum = 0, Maximum = 1, Value = 1, Width = 68 };
-    private readonly Slider _referenceAngleSlider = new() { Minimum = -45, Maximum = 45, Value = 0, Width = 68 };
+    private readonly Slider _referenceSwipeSlider = new() { Minimum = 0, Maximum = 1, Value = 0.5, MinWidth = 72, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch };
+    private readonly Slider _referenceOpacitySlider = new() { Minimum = 0, Maximum = 1, Value = 1, MinWidth = 72, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch };
+    private readonly Slider _referenceAngleSlider = new() { Minimum = -45, Maximum = 45, Value = 0, MinWidth = 72, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch };
+    private readonly StackPanel _referenceSplitControls = new() { Spacing = 8, IsVisible = false };
     private readonly IEditorShellMessageSink _messages;
     private readonly Func<bool> _isDark;
     private readonly Func<ProjectTreeNode?> _selectedNode;
@@ -118,6 +119,7 @@ internal sealed class EditorPreviewController
         EditorInstantComboBox orientationComboBox,
         IEditorShellMessageSink messages,
         ContentControl previewSetupHost,
+        ContentControl previewControlsHost,
         ContentControl previewBusyHost,
         ContentControl designPreviewHost,
         TextBlock designContextText,
@@ -153,6 +155,7 @@ internal sealed class EditorPreviewController
         _designPreviewPane.FrameStatusChanged += OnDesignPreviewFrameStatusChanged;
 
         WrapPreviewSetup(previewSetupHost);
+        CreatePreviewControls(previewControlsHost);
         designPreviewHost.Content = _designPreviewPane;
         AttachControlEvents();
         _designContextText.Cursor = new Cursor(StandardCursorType.Hand);
@@ -356,22 +359,7 @@ internal sealed class EditorPreviewController
             Spacing = 10,
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
         };
-        actions.Children.Add(_scaleComboBox);
-        actions.Children.Add(_referenceButton);
-        actions.Children.Add(_marksToggle);
-        actions.Children.Add(new StackPanel
-        {
-            Orientation = Avalonia.Layout.Orientation.Horizontal,
-            Spacing = 4,
-            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-            Children =
-            {
-                new TextBlock { Text = "360", FontSize = 10, Opacity = 0.72, VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center },
-                _canonicalFrameToggle,
-            },
-        });
-        ToolTip.SetTip(_canonicalFrameToggle, "Show canonical 360 × 800 frame without the device layer");
-        ToolTip.SetTip(_previewPerformanceDot, "Preview frame status");
+        ToolTip.SetTip(_previewPerformanceDot, "Preview FPS and rendering status");
         actions.Children.Add(_previewPerformanceDot);
         Grid.SetColumn(actions, 1);
         header.Children.Add(actions);
@@ -385,32 +373,102 @@ internal sealed class EditorPreviewController
                     Padding = new Thickness(12, 0, 12, 12),
                     Child = new StackPanel
                     {
-                        Spacing = 10,
+                        Spacing = 0,
                         Children =
                         {
-                            new StackPanel
-                            {
-                                Orientation = Avalonia.Layout.Orientation.Horizontal,
-                                Spacing = 8,
-                                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                                Children =
-                                {
-                                    new TextBlock { Text = "Reference view", FontSize = 11, Opacity = 0.72, VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center },
-                                    _referenceViewComboBox,
-                                    new TextBlock { Text = "Swipe", FontSize = 11, Opacity = 0.72, VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center },
-                                    _referenceSwipeSlider,
-                                    new TextBlock { Text = "Opacity", FontSize = 11, Opacity = 0.72, VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center },
-                                    _referenceOpacitySlider,
-                                    new TextBlock { Text = "Angle", FontSize = 11, Opacity = 0.72, VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center },
-                                    _referenceAngleSlider,
-                                },
-                            },
                             setupContent,
                         },
                     },
                 },
                 isExpanded: true),
         };
+    }
+
+    private void CreatePreviewControls(ContentControl previewControlsHost)
+    {
+        ToolTip.SetTip(_marksToggle, "Show design markers");
+        ToolTip.SetTip(_canonicalFrameToggle, "Show canonical 360 × 800 frame without the device layer");
+
+        var primaryControls = new StackPanel
+        {
+            Orientation = Avalonia.Layout.Orientation.Horizontal,
+            Spacing = 10,
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+            Children =
+            {
+                _scaleComboBox,
+                LabeledToggle("Markers", _marksToggle),
+                LabeledToggle("360", _canonicalFrameToggle),
+                _referenceViewComboBox,
+            },
+        };
+
+        var splitGrid = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("Auto,*,*,*"),
+            ColumnSpacing = 12,
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+        };
+        splitGrid.Children.Add(_referenceButton);
+        AddReferenceSlider(splitGrid, 1, "Swipe", _referenceSwipeSlider);
+        AddReferenceSlider(splitGrid, 2, "Opacity", _referenceOpacitySlider);
+        AddReferenceSlider(splitGrid, 3, "Angle", _referenceAngleSlider);
+        _referenceSplitControls.Children.Add(splitGrid);
+
+        previewControlsHost.Content = new GlassCard
+        {
+            Content = new InstantEditorCard(
+                EditorCardHeader.Create(
+                    "Preview controls",
+                    "Display and reference",
+                    EditorIcons.Create(EditorIcons.Design, 18)),
+                new Border
+                {
+                    Padding = new Thickness(12, 0, 12, 12),
+                    Child = new StackPanel
+                    {
+                        Spacing = 8,
+                        Children =
+                        {
+                            primaryControls,
+                            _referenceSplitControls,
+                        },
+                    },
+                },
+                isExpanded: true),
+        };
+        UpdateReferenceControlsVisibility();
+    }
+
+    private static Control LabeledToggle(string label, ToggleSwitch toggle)
+    {
+        return new StackPanel
+        {
+            Orientation = Avalonia.Layout.Orientation.Horizontal,
+            Spacing = 5,
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+            Children =
+            {
+                new TextBlock { Text = label, FontSize = 11, Opacity = 0.72, VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center },
+                toggle,
+            },
+        };
+    }
+
+    private static void AddReferenceSlider(Grid host, int column, string label, Slider slider)
+    {
+        var control = new StackPanel
+        {
+            Spacing = 2,
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
+            Children =
+            {
+                new TextBlock { Text = label, FontSize = 10, Opacity = 0.72 },
+                slider,
+            },
+        };
+        Grid.SetColumn(control, column);
+        host.Children.Add(control);
     }
 
     public string? SelectedDeviceId { get; private set; }
@@ -486,6 +544,7 @@ internal sealed class EditorPreviewController
             _referenceViewComboBox.ItemsSource = referenceViewOptions;
             _referenceViewComboBox.SelectedItem = referenceViewOptions.FirstOrDefault((option) => option.Value == _referenceViewMode) ?? referenceViewOptions[0];
             _referenceViewMode = _referenceViewComboBox.SelectedItem?.Value ?? "preview";
+            UpdateReferenceControlsVisibility();
         }
         finally
         {
@@ -607,6 +666,7 @@ internal sealed class EditorPreviewController
         _referenceStartPreviewFrame = _designInputsPanel.CurrentPreviewFrame;
         _referenceViewMode = "split";
         _referenceViewComboBox.SelectedItem = (_referenceViewComboBox.ItemsSource as IEnumerable<FieldOption>)?.FirstOrDefault((option) => option.Value == "split");
+        UpdateReferenceControlsVisibility();
         ToolTip.SetTip(_referenceButton, _referenceSource);
         Refresh();
     }
@@ -615,7 +675,13 @@ internal sealed class EditorPreviewController
     {
         if (_referenceViewComboBox.SelectedItem is not { } option) return;
         _referenceViewMode = option.Value;
+        UpdateReferenceControlsVisibility();
         if (!_isRefreshingOptions) RefreshReferenceOverlay();
+    }
+
+    private void UpdateReferenceControlsVisibility()
+    {
+        _referenceSplitControls.IsVisible = _referenceViewMode == "split";
     }
 
     private void RefreshReferenceOverlay()
