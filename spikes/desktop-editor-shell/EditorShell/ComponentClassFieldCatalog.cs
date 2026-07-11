@@ -55,18 +55,19 @@ internal static class ComponentClassFieldCatalog
         new("theme.keyboard.keyBackground", "keyboard.keyBackground"),
         new("theme.keyboard.specialKeyBackground", "keyboard.specialKeyBackground"),
         new("theme.keyboard.pressedKeyBackground", "keyboard.pressedKeyBackground"),
+        new("theme.keyboard.keyBorder", "keyboard.keyBorder"),
         new("theme.keyboard.text", "keyboard.text"),
     ];
 
     private static readonly FieldOption[] RadiusTokenOptions =
     [
         new("theme.radii.none", "radii.none"),
-        new("theme.radii.control", "radii.control"),
-        new("theme.radii.card", "radii.card"),
-        new("theme.radii.panel", "radii.panel"),
-        new("theme.radii.surface", "radii.surface"),
-        new("theme.radii.pill", "radii.pill"),
-        new("theme.radii.avatar", "radii.avatar"),
+        new("theme.radii.xs", "radii.xs"),
+        new("theme.radii.s", "radii.s"),
+        new("theme.radii.m", "radii.m"),
+        new("theme.radii.l", "radii.l"),
+        new("theme.radii.xl", "radii.xl"),
+        new("theme.radii.xxl", "radii.xxl"),
         new("theme.radii.full", "radii.full"),
     ];
 
@@ -445,7 +446,7 @@ internal static class ComponentClassFieldCatalog
         ["component.style.reliefEnabled"] = new("component.style.reliefEnabled", "Relief", ValueKind.Boolean, ["style", "reliefEnabled"], "false"),
         ["component.style.borderWidth"] = new("component.style.borderWidth", "Border width", ValueKind.Integer, ["style", "borderWidth"], "0"),
         ["component.style.borderColorToken"] = new("component.style.borderColorToken", "Border color", ValueKind.ThemeToken, ["style", "borderColorToken"], "theme.borders.primary", Options: ThemeColorOptions),
-        ["component.style.cornerRadiusToken"] = new("component.style.cornerRadiusToken", "Corner radius", ValueKind.ThemeToken, ["style", "cornerRadiusToken"], "theme.radii.surface", Options: RadiusTokenOptions),
+        ["component.style.cornerRadiusToken"] = new("component.style.cornerRadiusToken", "Corner radius", ValueKind.ThemeToken, ["style", "cornerRadiusToken"], "theme.radii.xl", Options: RadiusTokenOptions),
         ["component.style.reliefAngle"] = new("component.style.reliefAngle", "Relief angle", ValueKind.Integer, ["style", "reliefAngle"], "-45"),
         ["component.style.reliefExtent"] = new(
             "component.style.reliefExtent",
@@ -566,7 +567,7 @@ internal static class ComponentClassFieldCatalog
             ComponentInputBindings: IconRowParentInputBindings),
 
         ["component.avatar.defaultSize"] = new("component.avatar.defaultSize", "Default size", ValueKind.Integer, ["avatar", "defaultSize"], "48"),
-        ["component.avatar.cornerRadiusToken"] = new("component.avatar.cornerRadiusToken", "Avatar radius", ValueKind.ThemeToken, ["avatar", "cornerRadiusToken"], "theme.radii.avatar", Options: RadiusTokenOptions),
+        ["component.avatar.cornerRadiusToken"] = new("component.avatar.cornerRadiusToken", "Avatar radius", ValueKind.ThemeToken, ["avatar", "cornerRadiusToken"], "theme.radii.full", Options: RadiusTokenOptions),
         ["component.avatar.label.showLabel"] = new("component.avatar.label.showLabel", "Show label", ValueKind.Boolean, ["avatar", "labelSlot", "showLabel"], "false"),
         ["component.avatar.label.showSubtext"] = new("component.avatar.label.showSubtext", "Show subtext", ValueKind.Boolean, ["avatar", "labelSlot", "showSubtext"], "false"),
         ["component.avatar.label.placement"] = new("component.avatar.label.placement", "Placement", ValueKind.AlignmentPlacement, ["avatar", "labelSlot", "placement"], """{"mode":"edge","alignX":1,"alignY":0.5,"offsetX":4,"offsetY":0}"""),
@@ -588,20 +589,13 @@ internal static class ComponentClassFieldCatalog
             ComponentInputBindings: TextBoxParentInputBindings),
 
         ["component.keyboard.language"] = new("component.keyboard.language", "Language", ValueKind.OptionToken, ["keyboard", "language"], "es", Options: KeyboardLanguageOptions),
-        ["component.keyboard.backgroundColorToken"] = new("component.keyboard.backgroundColorToken", "Background", ValueKind.ThemeToken, ["keyboard", "backgroundColorToken"], "theme.keyboard.background", Options: ThemeColorOptions),
-        ["component.keyboard.backgroundAlpha"] = new("component.keyboard.backgroundAlpha", "Background alpha", ValueKind.Alpha, ["keyboard", "backgroundAlpha"], "1"),
-        ["component.keyboard.keyBackgroundColorToken"] = new("component.keyboard.keyBackgroundColorToken", "Key background", ValueKind.ThemeToken, ["keyboard", "keyBackgroundColorToken"], "theme.keyboard.keyBackground", Options: ThemeColorOptions),
-        ["component.keyboard.specialKeyBackgroundColorToken"] = new("component.keyboard.specialKeyBackgroundColorToken", "Special key background", ValueKind.ThemeToken, ["keyboard", "specialKeyBackgroundColorToken"], "theme.keyboard.specialKeyBackground", Options: ThemeColorOptions),
-        ["component.keyboard.pressedKeyBackgroundColorToken"] = new("component.keyboard.pressedKeyBackgroundColorToken", "Pressed key background", ValueKind.ThemeToken, ["keyboard", "pressedKeyBackgroundColorToken"], "theme.keyboard.pressedKeyBackground", Options: ThemeColorOptions),
-        ["component.keyboard.keyTextColorToken"] = new("component.keyboard.keyTextColorToken", "Key text", ValueKind.ThemeToken, ["keyboard", "keyTextColorToken"], "theme.keyboard.text", Options: ThemeColorOptions),
         ["component.keyboard.heightToken"] = new("component.keyboard.heightToken", "Height", ValueKind.ThemeToken, ["keyboard", "heightToken"], "theme.keyboard.height", Options: KeyboardHeightTokenOptions),
         ["component.keyboard.keyGapToken"] = new("component.keyboard.keyGapToken", "Key gap", ValueKind.ThemeToken, ["keyboard", "keyGapToken"], "theme.keyboard.keyGap", Options: KeyboardKeyGapTokenOptions),
         ["component.keyboard.rowGapToken"] = new("component.keyboard.rowGapToken", "Row gap", ValueKind.ThemeToken, ["keyboard", "rowGapToken"], "theme.keyboard.rowGap", Options: KeyboardRowGapTokenOptions),
         ["component.keyboard.typography"] = new("component.keyboard.typography", "Typography", ValueKind.TypographyStyle, ["keyboard", "typography"], TypographyStyleValue.CreateDefault("theme.typography.sizes.s")),
         ["component.keyboard.keyPadding"] = new("component.keyboard.keyPadding", "Key padding", ValueKind.ThemeToken, ["keyboard", "keyPadding"], "theme.spacing.s", Options: SpacingTokenOptions),
-        ["component.keyboard.keyCornerRadiusToken"] = new("component.keyboard.keyCornerRadiusToken", "Key radius", ValueKind.ThemeToken, ["keyboard", "keyCornerRadiusToken"], "theme.radii.control", Options: RadiusTokenOptions),
+        ["component.keyboard.keyCornerRadiusToken"] = new("component.keyboard.keyCornerRadiusToken", "Key radius", ValueKind.ThemeToken, ["keyboard", "keyCornerRadiusToken"], "theme.radii.m", Options: RadiusTokenOptions),
         ["component.keyboard.keyBorderWidth"] = new("component.keyboard.keyBorderWidth", "Key border width", ValueKind.Decimal, ["keyboard", "keyBorderWidth"], "0", Number: new NumberDefinition(0, 32, 0.5m, 2)),
-        ["component.keyboard.keyBorderColorToken"] = new("component.keyboard.keyBorderColorToken", "Key border color", ValueKind.ThemeToken, ["keyboard", "keyBorderColorToken"], "theme.borders.secondary", Options: ThemeColorOptions),
         ["component.keyboard.keyShadowEnabled"] = new("component.keyboard.keyShadowEnabled", "Key shadow", ValueKind.Boolean, ["keyboard", "keyShadowEnabled"], "false"),
         ["component.keyboard.pressedEffect"] = new("component.keyboard.pressedEffect", "Pressed effect", ValueKind.OptionToken, ["keyboard", "pressedEffect"], "popup", Options: PressedEffectOptions),
         ["component.keyboard.specialKeyTextScale"] = new(

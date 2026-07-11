@@ -305,24 +305,17 @@ internal sealed partial class SpikeDatabase
               "groups": [
                 { "id": "keys", "label": "Keys", "order": 10, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": true, "fields": [
                   { "id": "component.keyboard.language", "order": 10, "visible": true },
-                  { "id": "component.keyboard.backgroundColorToken", "order": 20, "visible": true },
-                  { "id": "component.keyboard.backgroundAlpha", "order": 30, "visible": true },
-                  { "id": "component.keyboard.keyBackgroundColorToken", "order": 40, "visible": true },
-                  { "id": "component.keyboard.specialKeyBackgroundColorToken", "order": 50, "visible": true },
-                  { "id": "component.keyboard.pressedKeyBackgroundColorToken", "order": 60, "visible": true },
-                  { "id": "component.keyboard.keyTextColorToken", "order": 70, "visible": true },
-                  { "id": "component.keyboard.heightToken", "order": 80, "visible": true },
-                  { "id": "component.keyboard.keyGapToken", "order": 90, "visible": true },
-                  { "id": "component.keyboard.rowGapToken", "order": 100, "visible": true },
-                  { "id": "component.keyboard.typography", "order": 110, "visible": true },
-                  { "id": "component.keyboard.keyPadding", "order": 120, "visible": true },
-                  { "id": "component.keyboard.keyCornerRadiusToken", "order": 130, "visible": true },
-                  { "id": "component.keyboard.keyBorderWidth", "order": 140, "visible": true },
-                  { "id": "component.keyboard.keyBorderColorToken", "order": 150, "visible": true },
-                  { "id": "component.keyboard.keyShadowEnabled", "order": 160, "visible": true },
-                  { "id": "component.keyboard.pressedEffect", "order": 170, "visible": true },
-                  { "id": "component.keyboard.specialKeyTextScale", "order": 180, "visible": true },
-                  { "id": "component.keyboard.emojiScale", "order": 190, "visible": true }
+                  { "id": "component.keyboard.heightToken", "order": 20, "visible": true },
+                  { "id": "component.keyboard.keyGapToken", "order": 30, "visible": true },
+                  { "id": "component.keyboard.rowGapToken", "order": 40, "visible": true },
+                  { "id": "component.keyboard.typography", "order": 50, "visible": true },
+                  { "id": "component.keyboard.keyPadding", "order": 60, "visible": true },
+                  { "id": "component.keyboard.keyCornerRadiusToken", "order": 70, "visible": true },
+                  { "id": "component.keyboard.keyBorderWidth", "order": 80, "visible": true },
+                  { "id": "component.keyboard.keyShadowEnabled", "order": 90, "visible": true },
+                  { "id": "component.keyboard.pressedEffect", "order": 100, "visible": true },
+                  { "id": "component.keyboard.specialKeyTextScale", "order": 110, "visible": true },
+                  { "id": "component.keyboard.emojiScale", "order": 120, "visible": true }
                 ] },
                 { "id": "iconRows", "label": "Icon bar", "order": 20, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": false, "fields": [
                   { "id": "component.keyboard.iconRowPlacement", "order": 10, "visible": true },
@@ -715,7 +708,7 @@ internal sealed partial class SpikeDatabase
         """
             : "";
 
-        var ownsSurfaceStyle = recordClassId is "component.surface" or "component.avatar" or "component.keyboard";
+        var ownsSurfaceStyle = recordClassId is "component.surface" or "component.avatar";
         return ownsSurfaceStyle ? typeSpecific + style + behavior : typeSpecific + behavior;
     }
 }

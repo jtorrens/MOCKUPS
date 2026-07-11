@@ -13,13 +13,11 @@ import {
   optionalBoolean,
   optionalString,
   parseObject,
-  requiredAlpha,
   requiredBoolean,
   optionalNumber,
   requiredNumber,
   requiredString,
   requiredTypographyStyle,
-  resolveSurfaceStyle,
 } from "./componentResolverCommon.js";
 import { resolveIconBarComponentFromRecords } from "./iconBarComponentResolver.js";
 import { requiredMotionContract } from "./previewMotionHelpers.js";
@@ -32,7 +30,6 @@ export function resolveKeyboardComponent(
   const preview = parseObject(payload.designPreviewJson);
   const componentBaseConfigs = parseObject(payload.componentBaseConfigsJson);
   const keyboard = asRecord(config.keyboard);
-  const style = asRecord(config.style);
   const pressedEffect = requiredString(
     keyboard,
     "pressedEffect",
@@ -82,36 +79,12 @@ export function resolveKeyboardComponent(
     language,
     mode,
     pressedKey,
-    backgroundColorToken: requiredString(
-      keyboard,
-      "backgroundColorToken",
-      "component.keyboard.backgroundColorToken",
-    ),
-    backgroundAlpha: requiredAlpha(
-      keyboard,
-      "backgroundAlpha",
-      "component.keyboard.backgroundAlpha",
-    ),
-    keyBackgroundColorToken: requiredString(
-      keyboard,
-      "keyBackgroundColorToken",
-      "component.keyboard.keyBackgroundColorToken",
-    ),
-    specialKeyBackgroundColorToken: requiredString(
-      keyboard,
-      "specialKeyBackgroundColorToken",
-      "component.keyboard.specialKeyBackgroundColorToken",
-    ),
-    pressedKeyBackgroundColorToken: requiredString(
-      keyboard,
-      "pressedKeyBackgroundColorToken",
-      "component.keyboard.pressedKeyBackgroundColorToken",
-    ),
-    keyTextColorToken: requiredString(
-      keyboard,
-      "keyTextColorToken",
-      "component.keyboard.keyTextColorToken",
-    ),
+    backgroundColorToken: "theme.keyboard.background",
+    backgroundAlpha: 1,
+    keyBackgroundColorToken: "theme.keyboard.keyBackground",
+    specialKeyBackgroundColorToken: "theme.keyboard.specialKeyBackground",
+    pressedKeyBackgroundColorToken: "theme.keyboard.pressedKeyBackground",
+    keyTextColorToken: "theme.keyboard.text",
     heightToken: requiredString(
       keyboard,
       "heightToken",
@@ -137,11 +110,7 @@ export function resolveKeyboardComponent(
       "keyCornerRadiusToken",
       "component.keyboard.keyCornerRadiusToken",
     ),
-    keyBorderColorToken: requiredString(
-      keyboard,
-      "keyBorderColorToken",
-      "component.keyboard.keyBorderColorToken",
-    ),
+    keyBorderColorToken: "theme.keyboard.keyBorder",
     keyBorderWidth: requiredNumber(
       keyboard,
       "keyBorderWidth",
@@ -193,7 +162,6 @@ export function resolveKeyboardComponent(
       "component.keyboard.iconBar",
     ),
     rows,
-    surface: resolveSurfaceStyle(style),
     motion: requiredMotionContract(
       keyboard,
       "motion",

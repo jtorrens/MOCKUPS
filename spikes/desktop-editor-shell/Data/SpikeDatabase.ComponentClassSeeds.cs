@@ -41,14 +41,14 @@ internal sealed partial class SpikeDatabase
         }
     }
 
-    private static void EnsureKeyboardThemeMetricTokens(SqliteConnection connection)
+    private static void NormalizeKeyboardConfiguration(SqliteConnection connection)
     {
         foreach (var row in QueryComponentClassRows(connection)
                      .Where((candidate) => candidate.ComponentType == "keyboard"))
         {
             var config = ParseJsonObject(row.ConfigJson);
             var metadata = ParseJsonObject(row.MetadataJson);
-            var changed = EnsureKeyboardThemeMetricTokens(config);
+            var changed = NormalizeKeyboardConfiguration(config);
 
             if (metadata["presets"] is JsonArray presets)
             {
@@ -56,7 +56,7 @@ internal sealed partial class SpikeDatabase
                 {
                     if (preset["config"] is JsonObject presetConfig)
                     {
-                        changed |= EnsureKeyboardThemeMetricTokens(presetConfig);
+                        changed |= NormalizeKeyboardConfiguration(presetConfig);
                     }
                 }
             }
@@ -75,7 +75,7 @@ internal sealed partial class SpikeDatabase
         }
     }
 
-    private static bool EnsureKeyboardThemeMetricTokens(JsonObject config)
+    private static bool NormalizeKeyboardConfiguration(JsonObject config)
     {
         if (config["keyboard"] is not JsonObject keyboard)
         {
@@ -98,7 +98,21 @@ internal sealed partial class SpikeDatabase
             keyboard["rowGapToken"] = "theme.keyboard.rowGap";
             changed = true;
         }
-        if (keyboard.Remove("popoverBackgroundColorToken")) changed = true;
+        foreach (var key in new[]
+                 {
+                     "backgroundColorToken",
+                     "backgroundAlpha",
+                     "keyBackgroundColorToken",
+                     "specialKeyBackgroundColorToken",
+                     "pressedKeyBackgroundColorToken",
+                     "keyTextColorToken",
+                     "keyBorderColorToken",
+                     "popoverBackgroundColorToken",
+                 })
+        {
+            changed |= keyboard.Remove(key);
+        }
+        changed |= config.Remove("style");
 
         return changed;
     }

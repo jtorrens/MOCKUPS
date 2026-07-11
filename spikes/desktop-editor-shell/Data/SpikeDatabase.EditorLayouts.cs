@@ -87,7 +87,9 @@ internal sealed partial class SpikeDatabase
         if (!string.IsNullOrWhiteSpace(themeLayout)
             && (!themeLayout.Contains("Keyboard dimensions and color tokens", StringComparison.Ordinal)
                 || !themeLayout.Contains("theme.keyboard.keyGap", StringComparison.Ordinal)
+                || !themeLayout.Contains("theme.keyboard.keyBorder", StringComparison.Ordinal)
                 || themeLayout.Contains("theme.keyboard.popoverBackground", StringComparison.Ordinal)
+                || themeLayout.Contains("theme.radii.control", StringComparison.Ordinal)
                 || !IsValidLayoutJson(themeLayout)))
         {
             Execute(
@@ -100,12 +102,33 @@ internal sealed partial class SpikeDatabase
             connection,
             "SELECT layout_json FROM editor_layouts WHERE record_class_id = 'component.keyboard'");
         if (!string.IsNullOrWhiteSpace(keyboardLayout)
-            && keyboardLayout.Contains("component.keyboard.popoverBackgroundColorToken", StringComparison.Ordinal))
+            && (keyboardLayout.Contains("component.keyboard.popoverBackgroundColorToken", StringComparison.Ordinal)
+                || keyboardLayout.Contains("component.keyboard.backgroundColorToken", StringComparison.Ordinal)
+                || keyboardLayout.Contains("component.style.cornerRadiusToken", StringComparison.Ordinal)))
         {
             Execute(
                 connection,
                 "UPDATE editor_layouts SET layout_json = $layoutJson WHERE record_class_id = 'component.keyboard'",
                 ("$layoutJson", MinimalEditorLayoutJson("component.keyboard")));
+        }
+
+        foreach (var recordClassId in new[] { "module.generic", "module.core.chat" })
+        {
+            var moduleLayout = ScalarString(
+                connection,
+                "SELECT layout_json FROM editor_layouts WHERE record_class_id = $recordClassId",
+                ("$recordClassId", recordClassId));
+            if (string.IsNullOrWhiteSpace(moduleLayout)
+                || moduleLayout.Contains("module.appearanceMode", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            Execute(
+                connection,
+                "UPDATE editor_layouts SET layout_json = $layoutJson WHERE record_class_id = $recordClassId",
+                ("$recordClassId", recordClassId),
+                ("$layoutJson", MinimalEditorLayoutJson(recordClassId)));
         }
 
     }
@@ -172,8 +195,9 @@ internal sealed partial class SpikeDatabase
                     { "id": "core.name", "order": 10, "visible": true },
                     { "id": "module.recordClassId", "order": 20, "visible": false },
                     { "id": "module.sortOrder", "order": 30, "visible": true },
-                    { "id": "core.notes", "order": 40, "visible": true },
-                    { "id": "module.metadata", "order": 50, "visible": false }
+                    { "id": "module.appearanceMode", "order": 40, "visible": true },
+                    { "id": "core.notes", "order": 50, "visible": true },
+                    { "id": "module.metadata", "order": 60, "visible": false }
                   """
             : recordClassId == "module_instance"
                 ? """
@@ -520,7 +544,8 @@ internal sealed partial class SpikeDatabase
                     { "id": "theme.keyboard.keyBackground", "order": 50, "visible": true },
                     { "id": "theme.keyboard.specialKeyBackground", "order": 60, "visible": true },
                     { "id": "theme.keyboard.pressedKeyBackground", "order": 70, "visible": true },
-                    { "id": "theme.keyboard.text", "order": 80, "visible": true }
+                    { "id": "theme.keyboard.keyBorder", "order": 80, "visible": true },
+                    { "id": "theme.keyboard.text", "order": 90, "visible": true }
                   ]
                 }
               ]
@@ -660,12 +685,12 @@ internal sealed partial class SpikeDatabase
                   "visible": true,
                   "fields": [
                     { "id": "theme.radii.none", "order": 10, "visible": true },
-                    { "id": "theme.radii.control", "order": 20, "visible": true },
-                    { "id": "theme.radii.card", "order": 30, "visible": true },
-                    { "id": "theme.radii.panel", "order": 40, "visible": true },
-                    { "id": "theme.radii.surface", "order": 50, "visible": true },
-                    { "id": "theme.radii.pill", "order": 60, "visible": true },
-                    { "id": "theme.radii.avatar", "order": 70, "visible": true },
+                    { "id": "theme.radii.xs", "order": 20, "visible": true },
+                    { "id": "theme.radii.s", "order": 30, "visible": true },
+                    { "id": "theme.radii.m", "order": 40, "visible": true },
+                    { "id": "theme.radii.l", "order": 50, "visible": true },
+                    { "id": "theme.radii.xl", "order": 60, "visible": true },
+                    { "id": "theme.radii.xxl", "order": 70, "visible": true },
                     { "id": "theme.radii.full", "order": 80, "visible": true }
                   ]
                 }

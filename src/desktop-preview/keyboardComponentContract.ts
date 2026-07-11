@@ -1,7 +1,6 @@
 import type {
   ComponentMotionContract,
   ComponentMotionFrameContract,
-  SurfaceStyleContract,
   TypographyStyleContract,
 } from "./previewComponentContracts.js";
 import type { IconBarDesignContract } from "./iconBarComponentContract.js";
@@ -43,7 +42,6 @@ export interface KeyboardDesignContract {
   iconRowsHeight: number;
   iconEdgePaddingToken: string;
   iconBar: IconBarDesignContract;
-  surface: SurfaceStyleContract;
   motion: ComponentMotionContract;
   motionFrame: ComponentMotionFrameContract;
 }

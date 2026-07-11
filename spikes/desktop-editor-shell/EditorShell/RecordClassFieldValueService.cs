@@ -185,6 +185,8 @@ internal sealed class RecordClassFieldValueService
             "module.recordClassId" => settings.RecordClassId,
             "module.sortOrder" => settings.SortOrder.ToString(),
             "module.metadata" => settings.MetadataJson,
+            "module.appearanceMode" =>
+                _database.GetModuleConfigFieldValue(moduleId, fieldId),
             _ when fieldId.StartsWith("module.conversation.", StringComparison.Ordinal) =>
                 _database.GetModuleConfigFieldValue(moduleId, fieldId),
             _ => throw new InvalidOperationException($"Unknown module field '{fieldId}'."),

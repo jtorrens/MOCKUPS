@@ -102,7 +102,7 @@ internal sealed partial class SpikeDatabase
                 ["reliefEnabled"] = false,
                 ["borderWidth"] = 0,
                 ["borderColorToken"] = "theme.borders.primary",
-                ["cornerRadiusToken"] = componentType == "avatar" ? "theme.radii.avatar" : "theme.radii.surface",
+                ["cornerRadiusToken"] = componentType == "avatar" ? "theme.radii.full" : "theme.radii.xl",
                 ["reliefAngle"] = -45,
                 ["reliefExtent"] = 1,
                 ["reliefSpread"] = 0,
@@ -164,7 +164,7 @@ internal sealed partial class SpikeDatabase
                 config["avatar"] = new JsonObject
                 {
                     ["defaultSize"] = 48,
-                    ["cornerRadiusToken"] = "theme.radii.avatar",
+                    ["cornerRadiusToken"] = "theme.radii.full",
                     ["labelSlot"] = new JsonObject
                     {
                         ["showLabel"] = false,
@@ -228,21 +228,15 @@ internal sealed partial class SpikeDatabase
                 };
                 break;
             case "keyboard":
+                config.Remove("style");
                 config["keyboard"] = new JsonObject
                 {
                     ["language"] = "es",
-                    ["backgroundColorToken"] = "theme.keyboard.background",
-                    ["backgroundAlpha"] = 1,
-                    ["keyBackgroundColorToken"] = "theme.keyboard.keyBackground",
-                    ["specialKeyBackgroundColorToken"] = "theme.keyboard.specialKeyBackground",
-                    ["pressedKeyBackgroundColorToken"] = "theme.keyboard.pressedKeyBackground",
-                    ["keyTextColorToken"] = "theme.keyboard.text",
                     ["heightToken"] = "theme.keyboard.height",
                     ["keyGapToken"] = "theme.keyboard.keyGap",
                     ["rowGapToken"] = "theme.keyboard.rowGap",
                     ["keyPadding"] = "theme.spacing.s",
-                    ["keyCornerRadiusToken"] = "theme.radii.control",
-                    ["keyBorderColorToken"] = "theme.borders.secondary",
+                    ["keyCornerRadiusToken"] = "theme.radii.m",
                     ["keyBorderWidth"] = 0,
                     ["keyShadowEnabled"] = false,
                     ["pressedEffect"] = "popup",

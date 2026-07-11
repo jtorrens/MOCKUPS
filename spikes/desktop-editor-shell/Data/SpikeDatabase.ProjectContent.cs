@@ -260,7 +260,8 @@ internal sealed partial class SpikeDatabase
     public void UpdateModuleField(string moduleId, string fieldId, string value)
     {
         using var connection = OpenConnection();
-        if (fieldId.StartsWith("module.conversation.", StringComparison.Ordinal))
+        if (fieldId == "module.appearanceMode"
+            || fieldId.StartsWith("module.conversation.", StringComparison.Ordinal))
         {
             UpdateModuleConfigField(connection, moduleId, fieldId, value);
             return;
@@ -295,6 +296,7 @@ internal sealed partial class SpikeDatabase
         var config = ParseJsonObject(string.IsNullOrWhiteSpace(settings.ConfigJson) ? "{}" : settings.ConfigJson);
         return fieldId switch
         {
+            "module.appearanceMode" => JsonString(config, ["appearanceMode"]) is "light" or "dark" ? JsonString(config, ["appearanceMode"]) : "inherit",
             "module.conversation.showHeader" => JsonBoolString(config, ["conversation", "showHeader"], defaultValue: true),
             "module.conversation.useAppWallpaper" => JsonBoolString(config, ["conversation", "useAppWallpaper"], defaultValue: true),
             "module.conversation.headerHeight" => JsonNumberString(config, ["conversation", "headerHeight"], "64"),
@@ -518,6 +520,9 @@ internal sealed partial class SpikeDatabase
 
         switch (fieldId)
         {
+            case "module.appearanceMode":
+                SetJsonValue(config, ["appearanceMode"], JsonValue.Create(value is "light" or "dark" ? value : "inherit")!);
+                break;
             case "module.conversation.showHeader":
                 SetJsonValue(config, ["conversation", "showHeader"], JsonValue.Create(BoolFromText(value))!);
                 break;
@@ -580,6 +585,7 @@ internal sealed partial class SpikeDatabase
     {
         return new JsonObject
         {
+            ["appearanceMode"] = "inherit",
             ["conversation"] = new JsonObject
             {
                 ["showHeader"] = true,

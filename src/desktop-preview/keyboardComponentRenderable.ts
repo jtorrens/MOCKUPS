@@ -7,7 +7,6 @@ import {
   renderScale,
   selectedColor,
   shadow,
-  surfaceVisualPadding,
   variants,
 } from "./componentRenderableCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
@@ -26,32 +25,13 @@ export function keyboardComponentToRenderable(
   const scale = renderScale(payload);
   const width = payload.previewFrame.screenWidth;
   const height = Math.max(1, numberToken(payload, keyboard.heightToken) * scale);
-  const borderWidth = keyboard.surface.borderWidth * scale;
-  const keyboardRelief = keyboard.surface.reliefEnabled
-    ? {
-        angleDeg: keyboard.surface.reliefAngle,
-        extension: keyboard.surface.reliefExtent * scale,
-        spread: keyboard.surface.reliefSpread * scale,
-        upperIntensity: keyboard.surface.reliefTopIntensity * keyboard.backgroundAlpha,
-        lowerIntensity: keyboard.surface.reliefBottomIntensity * keyboard.backgroundAlpha,
-      }
-    : undefined;
-  const keyboardShadow = keyboard.surface.shadowEnabled ? shadow(payload) : undefined;
-  const visualPadding = surfaceVisualPadding(borderWidth, keyboardShadow, keyboardRelief);
-  const outerWidth = width + visualPadding * 2;
-  const outerHeight = height + visualPadding * 2;
-  const outerBox = {
-    x: payload.previewFrame.screenX + (payload.previewFrame.screenWidth - outerWidth) / 2,
-    y: payload.previewFrame.screenY + payload.previewFrame.screenHeight - outerHeight,
-    width: outerWidth,
-    height: outerHeight,
-  };
   const keyboardBox = {
-    x: outerBox.x + visualPadding,
-    y: outerBox.y + visualPadding,
+    x: payload.previewFrame.screenX,
+    y: payload.previewFrame.screenY + payload.previewFrame.screenHeight - height,
     width,
     height,
   };
+  const outerBox = keyboardBox;
 
   const keyPadding = numberToken(payload, keyboard.keyPaddingToken) * scale;
   const padding = Math.max(6 * scale, keyPadding);
@@ -124,11 +104,6 @@ export function keyboardComponentToRenderable(
             keyboard.backgroundColorToken,
             keyboard.backgroundAlpha,
           ),
-          borderColor: selectedColor(payload, keyboard.surface.borderColorToken),
-          borderRadius: numberToken(payload, keyboard.surface.cornerRadiusToken) * scale,
-          borderWidth,
-          shadow: keyboardShadow,
-          surfaceRelief: keyboardRelief,
           colorModes: Object.fromEntries(
             variants(payload).map((mode) => [
               mode,
@@ -138,11 +113,6 @@ export function keyboardComponentToRenderable(
                   keyboard.backgroundColorToken,
                   mode,
                   keyboard.backgroundAlpha,
-                ),
-                borderColor: colorForMode(
-                  payload,
-                  keyboard.surface.borderColorToken,
-                  mode,
                 ),
               },
             ]),

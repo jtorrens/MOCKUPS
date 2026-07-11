@@ -49,6 +49,7 @@ internal static class ThemeColorTokenCatalog
         Token("theme.keyboard.keyBackground", ["modes", "light", "keyboard", "keyBackground"], ["modes", "dark", "keyboard", "keyBackground"]),
         Token("theme.keyboard.specialKeyBackground", ["modes", "light", "keyboard", "specialKeyBackground"], ["modes", "dark", "keyboard", "specialKeyBackground"]),
         Token("theme.keyboard.pressedKeyBackground", ["modes", "light", "keyboard", "pressedKeyBackground"], ["modes", "dark", "keyboard", "pressedKeyBackground"]),
+        Token("theme.keyboard.keyBorder", ["modes", "light", "keyboard", "keyBorder"], ["modes", "dark", "keyboard", "keyBorder"]),
         Token("theme.keyboard.text", ["modes", "light", "keyboard", "text"], ["modes", "dark", "keyboard", "text"]),
     ];
 

@@ -110,7 +110,7 @@ internal static class WebDesignPreviewRenderer
             configJson = payload.ConfigJson,
             designPreviewJson = payload.DesignPreviewJson,
             showMarks,
-            themeMode = themeMode is "dark" ? "dark" : "light",
+            themeMode = payload.ThemeMode is "dark" ? "dark" : themeMode is "dark" ? "dark" : "light",
             themeTokensJson = payload.ThemeTokensJson,
             paletteColors = payload.PaletteColors,
             paletteNeutralColors = payload.PaletteNeutralColors,

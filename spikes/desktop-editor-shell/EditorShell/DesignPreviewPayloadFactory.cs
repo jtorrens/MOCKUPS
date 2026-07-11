@@ -24,7 +24,8 @@ internal sealed record DesignPreviewPayload(
     string AppConfigJson = "{}",
     string InstanceJson = "{}",
     string DeviceId = "",
-    int FrameRate = 25);
+    int FrameRate = 25,
+    string ThemeMode = "");
 
 internal static class DesignPreviewPayloadFactory
 {
@@ -62,7 +63,7 @@ internal static class DesignPreviewPayloadFactory
         {
             ProjectTreeNodeKind.ComponentClass => FromComponentClass(database, node, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces),
             ProjectTreeNodeKind.ComponentPreset => FromComponentPreset(database, node, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces),
-            ProjectTreeNodeKind.Module => FromModule(database, node, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces),
+            ProjectTreeNodeKind.Module => FromModule(database, node, themeMode, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces),
             ProjectTreeNodeKind.ModuleInstance => FromModuleInstance(database, node, ResolveDeviceId(database, node), themeMode, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces),
             _ => null,
         };
@@ -109,11 +110,12 @@ internal static class DesignPreviewPayloadFactory
     {
         var instance = database.GetModuleInstanceSettings(node.Id);
         var module = database.GetModuleSettings(instance.ModuleId);
+        var effectiveThemeMode = EffectiveThemeMode(module.ConfigJson, themeMode);
         var app = database.GetAppSettings(instance.AppId);
         var shot = database.GetShotSettings(instance.ShotId);
         var ownerActor = string.IsNullOrWhiteSpace(shot.OwnerActorId)
             ? ActorPreviewInputFactory.CreateSample()
-            : ActorPreviewInputFactory.Create(database, shot.OwnerActorId, themeMode, paletteColors);
+            : ActorPreviewInputFactory.Create(database, shot.OwnerActorId, effectiveThemeMode, paletteColors);
         var instanceJson = new JsonObject
         {
             ["content"] = JsonNode.Parse(instance.ContentJson) ?? new JsonObject(),
@@ -142,12 +144,14 @@ internal static class DesignPreviewPayloadFactory
             app.ConfigJson,
             instanceJson.ToJsonString(),
             deviceId,
-            shot.Fps);
+            shot.Fps,
+            effectiveThemeMode);
     }
 
     private static DesignPreviewPayload FromModule(
         SpikeDatabase database,
         ProjectTreeNode node,
+        string themeMode,
         string themeTokensJson,
         IReadOnlyDictionary<string, string> paletteColors,
         IReadOnlyDictionary<string, bool> paletteNeutralColors,
@@ -156,6 +160,7 @@ internal static class DesignPreviewPayloadFactory
         IReadOnlyList<SpikeDatabase.ProductionFontFace> fontFaces)
     {
         var settings = database.GetModuleSettings(node.Id);
+        var effectiveThemeMode = EffectiveThemeMode(settings.ConfigJson, themeMode);
         var appSettings = database.GetModuleAppSettings(node.Id);
         var componentBaseConfigsJson = database.GetComponentClassBaseConfigsJson(settings.ProjectId);
         return new DesignPreviewPayload(
@@ -172,7 +177,22 @@ internal static class DesignPreviewPayloadFactory
             settings.RecordClassId,
             DesignPreviewTestValues.RuntimeJson(settings.DesignPreviewJson),
             componentBaseConfigsJson,
-            appSettings.ConfigJson);
+            appSettings.ConfigJson,
+            ThemeMode: effectiveThemeMode);
+    }
+
+    private static string EffectiveThemeMode(string configJson, string selectedThemeMode)
+    {
+        var config = string.IsNullOrWhiteSpace(configJson)
+            ? new JsonObject()
+            : JsonNode.Parse(configJson) as JsonObject ?? new JsonObject();
+        var mode = config["appearanceMode"] is JsonValue modeValue
+                   && modeValue.TryGetValue<string>(out var parsedMode)
+            ? parsedMode
+            : "";
+        return mode is "light" or "dark"
+            ? mode
+            : selectedThemeMode is "dark" ? "dark" : "light";
     }
 
     private static DesignPreviewPayload FromComponentClass(
