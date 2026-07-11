@@ -1795,8 +1795,10 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         var htmlParts = PreviewHtmlParts.Split(bodyContent);
         var isAnimationOnlyUpdate = _lastRenderedUpdate is not null
             && update.IsAnimationOnlyUpdateOf(_lastRenderedUpdate);
+        var isMarksOnlyUpdate = _lastRenderedUpdate is not null
+            && update.IsMarksOnlyUpdateOf(_lastRenderedUpdate);
         if (renderError is null
-            && isAnimationOnlyUpdate
+            && (isAnimationOnlyUpdate || isMarksOnlyUpdate)
             && await ReplacePreviewBodyAsync(htmlParts.BodyHtml))
         {
             await UpdateReferenceOverlayAsync(reference);
@@ -1811,7 +1813,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 ("fontStyleChars", htmlParts.FontStyleHtml.Length));
             FrameStatusChanged?.Invoke(new DesignPreviewFrameStatus(
                 stopwatch.Elapsed.TotalMilliseconds,
-                IsAnimationOnly: true,
+                IsAnimationOnly: isAnimationOnlyUpdate,
                 UsedDomPatch: true,
                 RenderError: false));
             return;
@@ -1939,6 +1941,20 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 && Reference with { PreviewFrame = other.Reference.PreviewFrame } == other.Reference
                 && StablePayloadSignature(Payload) == StablePayloadSignature(other.Payload)
                 && CurrentTimeSignature(Payload) != CurrentTimeSignature(other.Payload);
+        }
+
+        public bool IsMarksOnlyUpdateOf(DesignPreviewUpdate other)
+        {
+            return ShowDesignMarks != other.ShowDesignMarks
+                && Metrics.Equals(other.Metrics)
+                && IsDark == other.IsDark
+                && ThemeName == other.ThemeName
+                && ThemeMode == other.ThemeMode
+                && ScaleMode == other.ScaleMode
+                && ShowDeviceFrame == other.ShowDeviceFrame
+                && Reference == other.Reference
+                && StablePayloadSignature(Payload) == StablePayloadSignature(other.Payload)
+                && CurrentTimeSignature(Payload) == CurrentTimeSignature(other.Payload);
         }
 
         private static string StablePayloadSignature(DesignPreviewPayload? payload)

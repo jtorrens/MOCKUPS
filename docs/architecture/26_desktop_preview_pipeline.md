@@ -325,8 +325,15 @@ residual playback scrim.
 Reference view mode, swipe, opacity and angle are overlay state. They update the
 resident WebView layer directly and coalesce rapid slider changes to the latest
 state; they do not regenerate component HTML. Design markers are likewise a
-resident generic overlay toggled in place, so neither operation blanks the
-current static frame or waits behind frame rendering.
+resident generic overlay toggled immediately. Enabling markers also renders the
+same payload with generic renderable bounds and patches that body into the
+resident document, so first activation gains element frames without blanking
+the current static preview.
+
+Renderable bounds use a repeating color palette keyed only by tree depth. This
+makes parent/child nesting legible without exposing component types or slot
+knowledge to the HTML adapter. Color is diagnostic and must never affect layout
+or become part of a component contract.
 
 The controller reserves frame-cache capacity for the initial and ahead window
 before prewarming.

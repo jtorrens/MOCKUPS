@@ -417,10 +417,12 @@ function RenderNode({
   node,
   parentOrigin,
   showBounds = false,
+  depth = 0,
 }: {
   node: RenderableNode;
   parentOrigin: { x: number; y: number };
   showBounds?: boolean;
+  depth?: number;
 }) {
   const currentOrigin = node.box
     ? { x: node.box.x, y: node.box.y }
@@ -434,7 +436,14 @@ function RenderNode({
         ...semanticStyle(node),
         ...(showBounds
           ? {
-              outline: "1px solid rgba(255, 0, 255, 0.72)",
+              outline: `1px solid ${[
+                "rgba(255, 0, 255, 0.82)",
+                "rgba(0, 210, 255, 0.86)",
+                "rgba(80, 220, 90, 0.88)",
+                "rgba(255, 170, 0, 0.9)",
+                "rgba(160, 90, 255, 0.9)",
+                "rgba(255, 70, 110, 0.88)",
+              ][depth % 6]}`,
               outlineOffset: "-1px",
             }
           : {}),
@@ -447,6 +456,7 @@ function RenderNode({
           node={child}
           parentOrigin={currentOrigin}
           showBounds={showBounds}
+          depth={depth + 1}
         />
       ))}
     </div>

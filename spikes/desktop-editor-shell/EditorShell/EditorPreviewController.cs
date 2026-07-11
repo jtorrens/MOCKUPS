@@ -682,6 +682,7 @@ internal sealed class EditorPreviewController
         if (!_isRefreshingOptions)
         {
             _ = _designPreviewPane.SetDesignMarksAsync(_showDesignMarks);
+            Refresh();
         }
     }
 
