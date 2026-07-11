@@ -297,7 +297,8 @@ function keyboardPopoverNodes(
     width: popoverWidth,
     height: popoverHeight,
   };
-  const tailWidth = Math.min(keyBox.width * 0.72, popoverWidth * 0.52);
+  const tailWidth = popoverWidth;
+  const tailTipWidth = Math.min(keyBox.width * 0.34, popoverWidth * 0.34);
   const shapeBox = {
     x: bodyBox.x,
     y: bodyBox.y,
@@ -308,6 +309,7 @@ function keyboardPopoverNodes(
     popoverWidth,
     popoverHeight,
     tailWidth,
+    tailTipWidth,
     tailHeight,
     radius,
   );
@@ -361,6 +363,7 @@ function popoverPathData(
   width: number,
   bodyHeight: number,
   tailWidth: number,
+  tailTipWidth: number,
   tailHeight: number,
   radius: number,
 ) {
@@ -368,7 +371,9 @@ function popoverPathData(
   const center = width / 2;
   const tailLeft = center - tailWidth / 2;
   const tailRight = center + tailWidth / 2;
-  const tailTipY = bodyHeight + tailHeight;
+  const tailTipLeft = center - tailTipWidth / 2;
+  const tailTipRight = center + tailTipWidth / 2;
+  const tailBottom = bodyHeight + tailHeight;
   return [
     `M${r} 0`,
     `H${width - r}`,
@@ -376,8 +381,9 @@ function popoverPathData(
     `V${bodyHeight - r}`,
     `Q${width} ${bodyHeight} ${width - r} ${bodyHeight}`,
     `H${tailRight}`,
-    `Q${center} ${bodyHeight} ${center} ${tailTipY}`,
-    `Q${center} ${bodyHeight} ${tailLeft} ${bodyHeight}`,
+    `L${tailTipRight} ${tailBottom}`,
+    `H${tailTipLeft}`,
+    `L${tailLeft} ${bodyHeight}`,
     `H${r}`,
     `Q0 ${bodyHeight} 0 ${bodyHeight - r}`,
     `V${r}`,
