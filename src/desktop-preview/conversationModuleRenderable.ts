@@ -346,8 +346,9 @@ function messageNodes(
       mediaScale: message.mediaScale,
       mediaOffset: message.mediaOffset,
       isPlaying: message.isPlaying,
-      currentTimeSeconds: message.currentTimeSeconds,
+      currentTimeSeconds: messagePlaybackTimeSeconds(message, payload.frameRate ?? 25),
       durationSeconds: message.durationSeconds,
+      playbackMode: message.playbackMode,
       isFullScreen: message.isFullScreen,
       fullScreenTransition: message.fullScreenTransition,
       fullframeOrientation: message.fullframeOrientation,
@@ -409,6 +410,9 @@ type ConversationPreviewMessage = {
   isPlaying: boolean;
   currentTimeSeconds: number;
   durationSeconds: number;
+  playbackMode: "once" | "loop";
+  playDurationFrames: number;
+  playbackFrame: number;
   isFullScreen: boolean;
   fullScreenTransition: boolean;
   fullframeOrientation: string;
@@ -495,6 +499,9 @@ function conversationMessages(preview: JsonRecord): ConversationPreviewMessage[]
         isPlaying: optionalBoolean(message, "isPlaying"),
         currentTimeSeconds: optionalNumber(message, "currentTimeSeconds", 0),
         durationSeconds: Math.max(1, optionalNumber(message, "durationSeconds", 12)),
+        playbackMode: playbackMode(optionalString(message, "playbackMode")),
+        playDurationFrames: Math.max(1, Math.floor(optionalNumber(message, "playDurationFrames", 72))),
+        playbackFrame: Math.max(0, Math.floor(optionalNumber(message, "playbackFrame", 0))),
         isFullScreen: optionalBoolean(message, "isFullScreen"),
         fullScreenTransition: optionalBoolean(message, "fullScreenTransition"),
         fullframeOrientation: optionalString(message, "fullframeOrientation") || "portrait",
@@ -561,13 +568,14 @@ function composerState(
     const effectiveWriteOnFrames = message.state === "system" ? 0 : message.writeOnDurationFrames;
     const endFrame = startFrame + effectiveWriteOnFrames;
     const holdEndFrame = endFrame + (message.state === "outgoing" ? message.postWriteOnHoldFrames : 0);
-    const writing = message.state === "outgoing"
+    const composerVisible = message.state === "outgoing"
       && effectiveWriteOnFrames > 0
       && frame >= startFrame
       && frame < holdEndFrame;
-    if (writing) {
+    if (composerVisible) {
       const graphemes = textGraphemes(message.text);
-      const textLength = frame < endFrame
+      const writeOnInProgress = frame < endFrame;
+      const textLength = writeOnInProgress
         ? simpleWriteOnFrameVisibleCount(message.text, {
             enabled: true,
             frame: frame - startFrame,
@@ -576,7 +584,9 @@ function composerState(
         : graphemes.length;
       return {
         text: graphemes.slice(0, textLength).join(""),
-        currentCharacter: textLength,
+        // The composer remains visible during the post-write-on hold, but the
+        // physical key is only down while a grapheme is actively being typed.
+        currentCharacter: writeOnInProgress ? textLength : 0,
         textInputVisible: timing.textInputVisible,
         keyboardVisible: timing.keyboardVisible,
       };
@@ -601,6 +611,20 @@ function messageMediaType(message: JsonRecord): ConversationPreviewMessage["medi
   return mediaType === "image" || mediaType === "video" || mediaType === "audio"
     ? mediaType
     : "none";
+}
+
+function playbackMode(value: string): ConversationPreviewMessage["playbackMode"] {
+  return value === "loop" ? "loop" : "once";
+}
+
+function messagePlaybackTimeSeconds(message: ConversationPreviewMessage, frameRate: number) {
+  const elapsedSeconds = message.playbackFrame > 0
+    ? message.playbackFrame / Math.max(1, frameRate)
+    : message.currentTimeSeconds;
+  if (message.playbackMode === "loop") {
+    return elapsedSeconds % message.durationSeconds;
+  }
+  return Math.min(message.durationSeconds, Math.max(0, elapsedSeconds));
 }
 
 function lerp(from: number, to: number, progress: number) {

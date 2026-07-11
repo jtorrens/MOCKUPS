@@ -178,6 +178,8 @@ public partial class MainWindow : SukiWindow
             _dictionaryFieldServices,
             _previewController.TriggerDesignPreviewAction,
             _previewController.SetDesignPreviewTestValue,
+            _previewController.SetDesignPreviewCollectionTestValue,
+            _previewController.ApplyDesignPreviewTransientTestValues,
             _previewController.PlaybackState,
             SelectNodeById);
         _editorContent = new EditorContentController(

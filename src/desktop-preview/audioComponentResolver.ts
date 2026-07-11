@@ -9,6 +9,7 @@ import { resolveButtonIconComponentFromRecords } from "./buttonIconComponentReso
 import {
   asRecord,
   optionalNumber,
+  optionalString,
   parseObject,
   requiredBoolean,
   requiredNumber,
@@ -77,6 +78,7 @@ export function resolveAudioComponentFromRecords(
   const currentTimeSeconds = normalizePlaybackTime(
     optionalNumber(inputs, "currentTimeSeconds", 0),
     durationSeconds,
+    optionalString(inputs, "playbackMode") === "loop",
   );
   const availableWidth = Math.max(
     1,
@@ -237,8 +239,9 @@ function formatDuration(totalSeconds: number) {
   return `${minutes}:${remainder.toString().padStart(2, "0")}`;
 }
 
-function normalizePlaybackTime(seconds: number, durationSeconds: number) {
+function normalizePlaybackTime(seconds: number, durationSeconds: number, loop: boolean) {
   if (durationSeconds <= 0) return 0;
+  if (!loop) return Math.min(durationSeconds, Math.max(0, seconds));
   const normalized = seconds % durationSeconds;
   return normalized < 0 ? normalized + durationSeconds : normalized;
 }

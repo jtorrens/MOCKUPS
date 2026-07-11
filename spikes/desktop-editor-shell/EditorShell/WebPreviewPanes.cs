@@ -1944,11 +1944,11 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 {
                     if (!string.IsNullOrWhiteSpace(action.TimeJsonKey))
                     {
-                        preview.Remove(action.TimeJsonKey);
+                        ComponentPreviewActions.RemoveValue(preview, action, action.TimeJsonKey);
                     }
                     if (!string.IsNullOrWhiteSpace(action.PlayInputId))
                     {
-                        preview.Remove(action.PlayInputId);
+                        ComponentPreviewActions.RemoveValue(preview, action, action.PlayInputId);
                     }
                 }
                 return preview.ToJsonString();
@@ -1973,8 +1973,8 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
 
                 var actionTimes = ComponentPreviewActions.Read(preview)
                     .Where((action) => !string.IsNullOrWhiteSpace(action.TimeJsonKey)
-                        && preview[action.TimeJsonKey] is not null)
-                    .Select((action) => $"{action.Id}:{preview[action.TimeJsonKey]?.ToJsonString() ?? ""}")
+                        && ComponentPreviewActions.Value(preview, action, action.TimeJsonKey) is not null)
+                    .Select((action) => $"{action.Id}:{ComponentPreviewActions.Value(preview, action, action.TimeJsonKey)?.ToJsonString() ?? ""}")
                     .ToList();
                 if (actionTimes.Count > 0)
                 {

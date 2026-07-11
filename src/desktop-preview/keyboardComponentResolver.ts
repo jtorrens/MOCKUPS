@@ -188,6 +188,7 @@ function keyboardExtraEmojis(fullText: string, currentCharacter: string) {
 }
 
 function characterAtPosition(fullText: string, position: number) {
+  if (position <= 0) return "";
   const characters = textGraphemes(fullText);
   const index = Math.max(0, Math.min(characters.length - 1, Math.floor(position) - 1));
   return characters[index] ?? "";

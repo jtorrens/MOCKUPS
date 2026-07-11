@@ -114,7 +114,13 @@ Text measurement currently uses an isolated average-glyph-width estimate. The co
 
 ## Future text reveal plans
 
-Message reveal currently uses deterministic simple write-on timing. A future advanced plan may express actions such as type → pause → delete → type again in flexible JSON, preferably `messages.animation_override_json` or a versioned animation/text-reveal preset. It must not add rigid SQL columns per action.
+Message reveal currently uses deterministic simple write-on timing. The general
+animation model will animate a text field from ordinary consecutive keyframes:
+the resolver finds their common grapheme prefix, deletes the old suffix and
+writes the new suffix over the keyframe interval. That covers natural edits
+such as `Hola Jorge` → `Hola Teresa` without storing per-character actions or
+rigid SQL columns. A future flexible plan/preset is only for additional
+semantics such as deliberate pauses or other non-derived typing behavior.
 
 The resolver/module host supplies timings and configuration; Chat owns interpretation of its animation plan and emits render-ready `visibleText`, optional `cursorState`, and diagnostic typing metadata. Reveal should operate on grapheme clusters where possible. `MessageBubble` only renders the resolved result.
 

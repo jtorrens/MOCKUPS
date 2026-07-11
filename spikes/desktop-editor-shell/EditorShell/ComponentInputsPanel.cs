@@ -37,6 +37,7 @@ internal sealed class ComponentPreviewInputSession
     private double _playbackStartedAtSeconds;
     private int _lastPlaybackRefreshFrame = -1;
     private readonly Dictionary<string, double> _playbackSecondsByActionId = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, JsonObject> _transientCollectionTestValuesByScope = new(StringComparer.Ordinal);
     private bool _presentEveryPlaybackFrame;
     private bool _awaitingPlaybackPresentation;
     private bool _stopAfterPlaybackPresentation;
@@ -105,10 +106,13 @@ internal sealed class ComponentPreviewInputSession
         }
 
         ApplyProjectFrameRate(projectId);
-        var preview = ParseJsonObject(payload.DesignPreviewJson);
-        _runtimePreview = preview;
         var config = ParseJsonObject(payload.ConfigJson);
         _config = config;
+        var preview = ApplyTransientTestValues(
+            ParseJsonObject(payload.DesignPreviewJson),
+            ScopeKey(payload),
+            config);
+        _runtimePreview = preview;
         var inputs = ReadRuntimeInputs(preview, config);
         _actions = ComponentPreviewActions.Read(preview);
         if (inputs.Count == 0)
@@ -127,7 +131,6 @@ internal sealed class ComponentPreviewInputSession
         var scopeKey = ScopeKey(payload);
         var inputSignature = string.Join("|", inputs.Select(InputSignature).Concat(_actions.Select(ActionSignature)));
         var testValuesSignature = preview["testValues"]?.ToJsonString() ?? "";
-        if (scopeKey == _scopeKey && testValuesSignature != _testValuesSignature) _values.Clear();
         _scopeKey = scopeKey;
         _projectId = projectId;
         _inputSignature = inputSignature;
@@ -179,6 +182,45 @@ internal sealed class ComponentPreviewInputSession
         _refreshPreview();
     }
 
+    public void SetExternalCollectionInputValue(
+        string collectionJsonKey,
+        string itemId,
+        ComponentInputDefinition input,
+        string value)
+    {
+        if (string.IsNullOrWhiteSpace(_scopeKey)
+            || string.IsNullOrWhiteSpace(collectionJsonKey)
+            || string.IsNullOrWhiteSpace(itemId))
+        {
+            return;
+        }
+
+        var testValues = _transientCollectionTestValuesByScope.GetValueOrDefault(_scopeKey);
+        if (testValues is null)
+        {
+            testValues = new JsonObject();
+            _transientCollectionTestValuesByScope[_scopeKey] = testValues;
+        }
+        var items = testValues[collectionJsonKey] as JsonArray ?? new JsonArray();
+        testValues[collectionJsonKey] = items;
+        var item = items.OfType<JsonObject>().FirstOrDefault((candidate) =>
+            candidate["id"] is JsonValue idValue
+            && idValue.TryGetValue<string>(out var candidateId)
+            && candidateId == itemId);
+        if (item is null)
+        {
+            item = new JsonObject { ["id"] = itemId };
+            items.Add(item);
+        }
+        item[input.JsonKey] = DesignPreviewTestValues.ValueNode(input, value);
+        _refreshPreview();
+    }
+
+    public JsonObject ApplyTransientTestValues(JsonObject preview)
+    {
+        return ApplyTransientTestValues(preview, _scopeKey, _config);
+    }
+
     public DesignPreviewPayload ApplyInputs(DesignPreviewPayload payload, string themeMode, string? projectId)
     {
         if (!SupportsInputs(payload))
@@ -186,9 +228,12 @@ internal sealed class ComponentPreviewInputSession
             return payload;
         }
 
-        var preview = ParseJsonObject(payload.DesignPreviewJson);
-        _runtimePreview = preview;
         var config = ParseJsonObject(payload.ConfigJson);
+        var preview = ApplyTransientTestValues(
+            ParseJsonObject(payload.DesignPreviewJson),
+            ScopeKey(payload),
+            config);
+        _runtimePreview = preview;
         var inputs = ReadRuntimeInputs(preview, config);
         _actions = ComponentPreviewActions.Read(preview);
         if (inputs.Count == 0)
@@ -241,8 +286,8 @@ internal sealed class ComponentPreviewInputSession
         }
         foreach (var action in _actions)
         {
-            preview[action.PlayInputId] = IsPlaying(action);
-            preview[action.TimeJsonKey] = PlaybackTimeValue(action);
+            ComponentPreviewActions.SetValue(preview, action, action.PlayInputId, IsPlaying(action));
+            ComponentPreviewActions.SetValue(preview, action, action.TimeJsonKey, PlaybackTimeValue(action));
         }
 
         return payload with { DesignPreviewJson = preview.ToJsonString() };
@@ -251,6 +296,35 @@ internal sealed class ComponentPreviewInputSession
     private static string ScopeKey(DesignPreviewPayload payload)
     {
         return $"{payload.Kind}:{payload.ComponentType}:{payload.Name}";
+    }
+
+    private JsonObject ApplyTransientTestValues(
+        JsonObject preview,
+        string scopeKey,
+        JsonObject config)
+    {
+        var envelope = preview.DeepClone() as JsonObject ?? new JsonObject();
+        if (!string.IsNullOrWhiteSpace(scopeKey)
+            && _transientCollectionTestValuesByScope.TryGetValue(scopeKey, out var collectionTestValues))
+        {
+            envelope["testValues"] = collectionTestValues.DeepClone();
+        }
+
+        var effective = ParseJsonObject(DesignPreviewTestValues.RuntimeJson(envelope.ToJsonString()));
+        if (string.IsNullOrWhiteSpace(scopeKey))
+        {
+            return effective;
+        }
+
+        foreach (var input in ReadRuntimeInputs(effective, config))
+        {
+            var key = $"{scopeKey}:{input.JsonKey}";
+            if (_values.TryGetValue(key, out var value))
+            {
+                DesignPreviewTestValues.SetValue(effective, input, value);
+            }
+        }
+        return ParseJsonObject(DesignPreviewTestValues.RuntimeJson(effective.ToJsonString()));
     }
 
     private static bool SupportsInputs(DesignPreviewPayload payload)
@@ -283,7 +357,7 @@ internal sealed class ComponentPreviewInputSession
             var stateKey = ActionStateKey(action);
             if (!_values.ContainsKey(stateKey))
             {
-                _values[stateKey] = preview[action.PlayInputId] switch
+                _values[stateKey] = ComponentPreviewActions.Value(preview, action, action.PlayInputId) switch
                 {
                     JsonValue jsonValue when jsonValue.TryGetValue<bool>(out var boolean) => boolean ? "true" : "false",
                     JsonValue jsonValue when jsonValue.TryGetValue<string>(out var text) => text,
@@ -294,7 +368,7 @@ internal sealed class ComponentPreviewInputSession
             var timeKey = ActionTimeKey(action);
             if (!_values.ContainsKey(timeKey))
             {
-                _values[timeKey] = preview[action.TimeJsonKey] switch
+                _values[timeKey] = ComponentPreviewActions.Value(preview, action, action.TimeJsonKey) switch
                 {
                     JsonValue jsonValue when jsonValue.TryGetValue<double>(out var number) => number.ToString(CultureInfo.InvariantCulture),
                     JsonValue jsonValue when jsonValue.TryGetValue<int>(out var integer) => integer.ToString(CultureInfo.InvariantCulture),
@@ -771,6 +845,11 @@ internal sealed class ComponentPreviewInputSession
             return action.DurationSeconds;
         }
 
+        if (action.IsCollectionItemAction)
+        {
+            return Math.Max(1, JsonNodeNumber(ComponentPreviewActions.Value(_runtimePreview, action, action.DurationInputId), 1));
+        }
+
         var key = ActionDurationKey(action);
         return Math.Max(1, ParseDouble(_values.GetValueOrDefault(key, InputDefault(key, "1"))));
     }
@@ -780,6 +859,12 @@ internal sealed class ComponentPreviewInputSession
         if (action.TimeUnit != ComponentPreviewActionTimeUnit.Frames)
         {
             return Math.Max(1, (int)Math.Ceiling(DurationSeconds(action) * Math.Max(1, _playbackFrameRate)));
+        }
+
+        if (action.IsCollectionItemAction)
+        {
+            return Math.Max(1, (int)Math.Ceiling(
+                JsonNodeNumber(ComponentPreviewActions.Value(_runtimePreview, action, action.DurationInputId), 1)));
         }
 
         if (!string.IsNullOrWhiteSpace(action.DurationCollectionJsonKey))
@@ -894,20 +979,17 @@ internal sealed class ComponentPreviewInputSession
 
     private string ActionStateKey(ComponentPreviewActionDefinition action)
     {
-        return $"{_scopeKey}:{action.PlayInputId}";
+        return $"{_scopeKey}:action:{action.Id}:state";
     }
 
     private string ActionDurationKey(ComponentPreviewActionDefinition action)
     {
-        var durationInputId = action.DurationInputId;
-        return string.IsNullOrWhiteSpace(durationInputId)
-            ? ""
-            : $"{_scopeKey}:{durationInputId}";
+        return $"{_scopeKey}:action:{action.Id}:duration";
     }
 
     private string ActionTimeKey(ComponentPreviewActionDefinition action)
     {
-        return $"{_scopeKey}:{action.TimeJsonKey}";
+        return $"{_scopeKey}:action:{action.Id}:time";
     }
 
     private IEnumerable<string> ActivatedPlaybackInputKeys(ComponentPreviewActionDefinition action)
@@ -954,6 +1036,22 @@ internal sealed class ComponentPreviewInputSession
         return double.TryParse((value ?? "").Replace(",", "."), NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
             ? parsed
             : 0;
+    }
+
+    private static double JsonNodeNumber(JsonNode? node, double fallback)
+    {
+        if (node is not JsonValue value)
+        {
+            return fallback;
+        }
+        if (value.TryGetValue<double>(out var number))
+        {
+            return number;
+        }
+        return value.TryGetValue<string>(out var text)
+            && double.TryParse(text.Replace(",", "."), NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
+                ? parsed
+                : fallback;
     }
 
     private static JsonObject ParseJsonObject(string json)
@@ -1187,7 +1285,9 @@ internal sealed class ComponentPreviewInputSession
             action.PrewarmWhenConfigPath,
             action.PrewarmWhenValue,
             string.Join(",", action.ActivateInputIds),
-            string.Join(",", action.DeactivateInputIds));
+            string.Join(",", action.DeactivateInputIds),
+            action.CollectionJsonKey,
+            action.CollectionItemId);
     }
 
     private bool ShouldPrewarmFrames(ComponentPreviewActionDefinition action)

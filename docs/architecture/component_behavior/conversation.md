@@ -75,12 +75,18 @@ recreate their internal rules.
   stable collection rather than separate hard-coded message fields.
 - In Design Test Values, `messages[]` is a sourced runtime collection:
   `sourceCollectionJsonKey` points at the base message array, each base item
-  has a stable `id`, and `testValues.messages[]` stores only id-matched
-  overrides. The preview payload receives the merged collection.
+  has a stable `id`, and the current editor session keeps only id-matched
+  in-memory overrides. The preview payload receives the merged collection.
+  Test Values never persist in the module record; `Save as defaults` is the
+  explicit operation that writes their current values to the base payload.
 - A message can have delay, write-on duration, post-write-on hold,
   state/direction, media playback state and status state. Per-message delay,
   write-on and hold remain part of the ordered sequence because they define the
   rhythm of each message.
+- Video and audio attachments additionally expose `playbackMode` (`once` or
+  `loop`) and `playDurationFrames`. `durationSeconds` remains the physical
+  source duration; it is not the duration of the timeline event. Design action
+  playback uses `playDurationFrames` and a local `playbackFrame`.
 - Outgoing bubble reveal policy, incoming reveal policy and composer visibility
   while writing are global Conversation runtime behavior. They are not repeated
   in each message item.
@@ -88,7 +94,9 @@ recreate their internal rules.
   or `typingIndicator`. System messages are centered and ignore write-on.
 - Outgoing messages use the global composer behavior. Text Input Bar and
   Keyboard remain visible through the message `postWriteOnHoldFrames` after the last
-  revealed grapheme before dismiss/reveal timing completes.
+  revealed grapheme before dismiss/reveal timing completes. The keyboard releases
+  its pressed key at the end of write-on; the hold shows completed text without a
+  stuck key.
 - Attachments/media do not appear during message write-on or typing-indicator
   phases; they enter with the completed message.
 - A message visible interval extends through its last animated event, not only
@@ -100,6 +108,9 @@ recreate their internal rules.
   and pressed key, never the first character.
 - Trigger buttons in Test Values invoke the same public runtime action data as
   a module instance. They do not define a preview-only animation protocol.
+- `Play video` and `Play audio` run only for their finite declared
+  `playDurationFrames`. A loop repeats the source inside that interval and
+  cannot create an unbounded preview run.
 
 ## Motion and shared time
 
@@ -124,8 +135,17 @@ data.
 - Current composition sets explicit z-order with Keyboard above Text Input Bar
   and anchors Text Input Bar from the Keyboard base/frame top. These canonical
   rules are implemented.
-- Current Conversation derives and passes the final revealed grapheme index and
-  shared module `motionTimeSeconds` to Keyboard.
+- Conversation passes the current revealed grapheme index to Keyboard only
+  while write-on is active; it passes no pressed grapheme during the post-write
+  hold while retaining the completed composer text.
+- A sourced collection can declare `itemActions`. The editor renders those
+  actions only on matching item cards and executes the payload-declared
+  callback/state fields. Conversation uses this for `Play video` and `Play
+  audio`; `Play messages` remains the module timeline action.
+- The future general animation evaluator will compute screen duration as the
+  maximum endpoint of the ordered message sequence and every finite property
+  event, including media `isPlaying` holds. It must not sum media loops into
+  the module duration.
 - Message editor grouping is declared by the runtime field metadata for the
   `messages[]` collection. Explicit hierarchy metadata on the message item
   itself remains optional while array order is the canonical sequence.

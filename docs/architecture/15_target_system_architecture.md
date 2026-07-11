@@ -901,8 +901,9 @@ Examples:
 For text fields:
 
 - `hold` switches instantly at the keyframe;
-- `linear` / `ease` can remove the differing suffix and type the new suffix
-  across the keyframe interval.
+- `writeOn` derives a deletion/rewrite sequence across the interval between two
+  text keyframes. It is resolver work, never a renderer timer or a set of
+  generated persistence keyframes.
 
 Example:
 
@@ -910,8 +911,29 @@ Example:
 Hola Jorge → Hola Juan
 ```
 
-The common prefix is `Hola J`. The animation deletes/replaces the differing
-characters instead of treating the entire string as unrelated.
+The resolver compares grapheme clusters, finds the common prefix (`Hola J`),
+then derives the minimum sequence:
+
+```text
+delete: orge
+type:   uan
+```
+
+The interval is divided proportionally over all delete and type operations.
+Deletion is the same write-on primitive applied to a decreasing suffix; typing
+uses it on an increasing suffix. No special "delete" keyframe is persisted.
+
+The two stored keyframes remain ordinary, readable text values:
+
+```text
+frame 0  → "Hola Jorge"
+frame 36 → "Hola Juan"
+```
+
+This avoids the hold-only text jumps common in editorial tools while keeping
+the editor and data model simple. The same field-level rule applies to Bubble,
+Text Input Bar, Label and future textual components. Explicit hold remains
+available where an instantaneous text change is intended.
 
 ### Timeline scale
 

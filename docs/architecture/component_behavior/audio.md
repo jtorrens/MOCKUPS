@@ -68,6 +68,6 @@ geometry, waveform sample shape, progress visuals and optional child placement.
 
 - Waveform heights are deterministic from component identity, allowing stable
   preview output without source audio analysis.
-- Current playback loops normalized time for preview contract values; a
-  production audio policy may choose clamping/terminal behavior at module
-  timeline level.
+- `once` clamps at the source duration; `loop` wraps source time. The parent
+  owns the finite playback hold, so an audio loop never creates an unbounded
+  module duration.

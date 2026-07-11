@@ -284,7 +284,7 @@ internal static class DesignPreviewTestValues
             : "";
     }
 
-    private static JsonNode? ValueNode(ComponentInputDefinition input, string value)
+    internal static JsonNode? ValueNode(ComponentInputDefinition input, string value)
     {
         return input.Kind switch
         {

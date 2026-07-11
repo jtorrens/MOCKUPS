@@ -88,9 +88,14 @@ export function resolveBubbleComponent(
     ),
     asRecord(textBoxSlot.overrides),
   );
-  const textBoxConfig = state === "system"
-    ? mergeComponentDefaults(textBoxBaseConfig, { textBox: { textAlign: "center" } })
-    : textBoxBaseConfig;
+  // A bubble owns the message's size and weight choices, but not its font
+  // family: message text always follows the active theme text face.
+  const textBoxConfig = mergeComponentDefaults(textBoxBaseConfig, {
+    textBox: {
+      typography: { fontFamilyId: "theme" },
+      ...(state === "system" ? { textAlign: "center" } : {}),
+    },
+  });
   const mediaType = bubbleMediaType(
     optionalString(preview, "mediaType")
       || requiredString(bubble, "mediaType", "component.bubble.mediaType"),
@@ -421,6 +426,7 @@ function bubbleMediaInputs(
     fullScreenTransition: optionalBoolean(preview, "fullScreenTransition"),
     currentTimeSeconds: optionalNumber(preview, "currentTimeSeconds", 0),
     durationSeconds: Math.max(1, optionalNumber(preview, "durationSeconds", 12)),
+    playbackMode: optionalString(preview, "playbackMode") || "once",
     fullframeOrientation: optionalString(preview, "fullframeOrientation") || "portrait",
     controlsElapsedMs: optionalNumber(preview, "controlsElapsedMs", 0),
     motionTimeSeconds: optionalNumber(preview, "motionTimeSeconds", 0),
@@ -439,6 +445,7 @@ function bubbleAudioInputs(
     isPlaying: optionalBoolean(preview, "isPlaying"),
     durationSeconds: Math.max(1, optionalNumber(preview, "durationSeconds", 65)),
     currentTimeSeconds: optionalNumber(preview, "currentTimeSeconds", 0),
+    playbackMode: optionalString(preview, "playbackMode") || "once",
   };
 }
 

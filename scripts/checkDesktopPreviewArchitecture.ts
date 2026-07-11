@@ -458,27 +458,41 @@ function assertDesktopPreviewActionsAreDeclarative() {
       .all() as { id: string; design_preview_json: string }[];
     for (const row of rows) {
       const preview = jsonRecord(jsonParse(row.design_preview_json));
-      for (const [index, action] of jsonArray(preview.actions).map(jsonRecord).entries()) {
+      const assertAction = (action: JsonRecord, path: string, isItemAction: boolean) => {
         const id = typeof action.id === "string" ? action.id : "";
         const label = typeof action.label === "string" ? action.label : "";
         const timeJsonKey = typeof action.timeJsonKey === "string" ? action.timeJsonKey : "";
         if (!id || !label) {
           addViolation(
             "data/desktop-editor-spike.sqlite",
-            `${row.id}.design_preview_json.actions[${index}] must declare id and label`,
+            `${row.id}.design_preview_json.${path} must declare id and label`,
+          );
+        }
+        if (isItemAction && (!timeJsonKey || typeof action.playInputId !== "string" || typeof action.durationInputId !== "string")) {
+          addViolation(
+            "data/desktop-editor-spike.sqlite",
+            `${row.id}.design_preview_json.${path} item action must declare playInputId, durationInputId and timeJsonKey`,
           );
         }
         if (("durationCollectionJsonKey" in action || "durationItemNumberKeys" in action) && !timeJsonKey) {
           addViolation(
             "data/desktop-editor-spike.sqlite",
-            `${row.id}.design_preview_json.actions[${index}] duration action must declare timeJsonKey`,
+            `${row.id}.design_preview_json.${path} duration action must declare timeJsonKey`,
           );
         }
         if ("durationCollectionJsonKey" in action && !Array.isArray(action.durationItemNumberKeys)) {
           addViolation(
             "data/desktop-editor-spike.sqlite",
-            `${row.id}.design_preview_json.actions[${index}] collection duration action must declare durationItemNumberKeys[]`,
+            `${row.id}.design_preview_json.${path} collection duration action must declare durationItemNumberKeys[]`,
           );
+        }
+      };
+      for (const [index, action] of jsonArray(preview.actions).map(jsonRecord).entries()) {
+        assertAction(action, `actions[${index}]`, false);
+      }
+      for (const [collectionIndex, collection] of jsonArray(preview.collections).map(jsonRecord).entries()) {
+        for (const [actionIndex, action] of jsonArray(collection.itemActions).map(jsonRecord).entries()) {
+          assertAction(action, `collections[${collectionIndex}].itemActions[${actionIndex}]`, true);
         }
       }
     }

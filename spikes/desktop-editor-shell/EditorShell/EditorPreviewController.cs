@@ -812,6 +812,20 @@ internal sealed class EditorPreviewController
         _designInputsPanel.SetExternalInputValue(jsonKey, value);
     }
 
+    public void SetDesignPreviewCollectionTestValue(
+        string collectionJsonKey,
+        string itemId,
+        ComponentInputDefinition input,
+        string value)
+    {
+        _designInputsPanel.SetExternalCollectionInputValue(collectionJsonKey, itemId, input, value);
+    }
+
+    public JsonObject ApplyDesignPreviewTransientTestValues(JsonObject preview)
+    {
+        return _designInputsPanel.ApplyTransientTestValues(preview);
+    }
+
     private async Task<bool> PreparePlaybackFramesAsync()
     {
         EnsureSelectedOptionsExist();
@@ -1433,7 +1447,7 @@ internal sealed class EditorPreviewController
                 return "";
             }
 
-            return preview[action.TimeJsonKey]?.ToJsonString() ?? "";
+            return ComponentPreviewActions.Value(preview, action, action.TimeJsonKey)?.ToJsonString() ?? "";
         }
         catch
         {
@@ -1444,13 +1458,13 @@ internal sealed class EditorPreviewController
     private static ComponentPreviewActionDefinition? PlaybackFrameAction(JsonObject preview)
     {
         var actions = ComponentPreviewActions.Read(preview);
-        return actions.FirstOrDefault((action) => JsonBoolean(preview, action.PlayInputId))
+        return actions.FirstOrDefault((action) => JsonBoolean(ComponentPreviewActions.Value(preview, action, action.PlayInputId)))
             ?? actions.FirstOrDefault();
     }
 
-    private static bool JsonBoolean(JsonObject owner, string key)
+    private static bool JsonBoolean(JsonNode? node)
     {
-        if (owner[key] is not JsonValue value)
+        if (node is not JsonValue value)
         {
             return false;
         }

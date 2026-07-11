@@ -18,6 +18,8 @@ internal sealed class RuntimeInputsCollectionEditor
     private readonly Action _onChanged;
     private readonly Action<string> _triggerAction;
     private readonly Action<string, string> _setPreviewTestValue;
+    private readonly Action<string, string, ComponentInputDefinition, string> _setPreviewCollectionTestValue;
+    private readonly Func<JsonObject, JsonObject> _applyTransientTestValues;
     private readonly PreviewPlaybackState _playbackState;
 
     public RuntimeInputsCollectionEditor(
@@ -26,6 +28,8 @@ internal sealed class RuntimeInputsCollectionEditor
         Action onChanged,
         Action<string> triggerAction,
         Action<string, string> setPreviewTestValue,
+        Action<string, string, ComponentInputDefinition, string> setPreviewCollectionTestValue,
+        Func<JsonObject, JsonObject> applyTransientTestValues,
         PreviewPlaybackState playbackState)
     {
         _database = database;
@@ -33,13 +37,15 @@ internal sealed class RuntimeInputsCollectionEditor
         _onChanged = onChanged;
         _triggerAction = triggerAction;
         _setPreviewTestValue = setPreviewTestValue;
+        _setPreviewCollectionTestValue = setPreviewCollectionTestValue;
+        _applyTransientTestValues = applyTransientTestValues;
         _playbackState = playbackState;
     }
 
     public InstantEditorCard Create(ProjectTreeNode node)
     {
         var owner = ResolveOwner(node);
-        var preview = DesignPreviewTestValues.Parse(owner.DesignPreviewJson);
+        var preview = _applyTransientTestValues(DesignPreviewTestValues.Parse(owner.DesignPreviewJson));
         var config = DesignPreviewTestValues.Parse(owner.ConfigJson);
         var inputs = ComponentPreviewInputSession.ReadRuntimeInputs(preview, config);
         var collections = ComponentPreviewInputSession.ReadRuntimeCollections(preview, config);
@@ -132,7 +138,7 @@ internal sealed class RuntimeInputsCollectionEditor
             _onChanged();
         };
         buttons.Children.Add(saveDefaults);
-        foreach (var action in actions)
+        foreach (var action in actions.Where((candidate) => !candidate.IsCollectionItemAction))
         {
             var button = new Button
             {
@@ -169,7 +175,7 @@ internal sealed class RuntimeInputsCollectionEditor
         }
         foreach (var collection in collections)
         {
-            panel.Children.Add(CreateTestValueCollectionCard(owner, preview, collection, out var card));
+            panel.Children.Add(CreateTestValueCollectionCard(owner, preview, collection, actions, out var card));
             groupCards.Add(card);
         }
         EditorGroupBlock.WireExclusiveCards(groupCards);
@@ -257,8 +263,6 @@ internal sealed class RuntimeInputsCollectionEditor
         control.ValueCommitted += (_, next) =>
         {
             DesignPreviewTestValues.SetValue(preview, input, next);
-            owner.Save(preview.ToJsonString());
-            _onChanged();
         };
         return control;
     }
@@ -267,6 +271,7 @@ internal sealed class RuntimeInputsCollectionEditor
         RuntimeInputOwner owner,
         JsonObject preview,
         RuntimeInputCollectionDefinition collection,
+        IReadOnlyList<ComponentPreviewActionDefinition> actions,
         out InstantEditorCard card)
     {
         var content = new StackPanel { Spacing = 8 };
@@ -279,7 +284,7 @@ internal sealed class RuntimeInputsCollectionEditor
         var itemCards = new List<InstantEditorCard>();
         for (var index = 0; index < items.Count; index++)
         {
-            content.Children.Add(CreateTestValueCollectionItemCard(owner, preview, collection, index, items[index], out var itemCard));
+            content.Children.Add(CreateTestValueCollectionItemCard(owner, preview, collection, actions, index, items[index], out var itemCard));
             itemCards.Add(itemCard);
         }
         EditorGroupBlock.WireExclusiveCards(itemCards);
@@ -295,14 +300,69 @@ internal sealed class RuntimeInputsCollectionEditor
         RuntimeInputOwner owner,
         JsonObject preview,
         RuntimeInputCollectionDefinition collection,
+        IReadOnlyList<ComponentPreviewActionDefinition> actions,
         int itemIndex,
         JsonObject item,
         out InstantEditorCard card)
     {
         var content = new StackPanel { Spacing = 8 };
+        var itemId = item["id"] is JsonValue idValue && idValue.TryGetValue<string>(out var id)
+            ? id
+            : "";
+        var itemActions = actions
+            .Where((action) => action.IsCollectionItemAction
+                && action.CollectionJsonKey == collection.JsonKey
+                && action.CollectionItemId == itemId)
+            .ToList();
+        StackPanel? actionRow = null;
+        var actionButtons = new List<(ComponentPreviewActionDefinition Action, Button Button)>();
+        void RefreshActionVisibility()
+        {
+            var currentItem = DesignPreviewTestValues.CollectionItems(preview, collection)
+                .ElementAtOrDefault(itemIndex) ?? item;
+            foreach (var (action, button) in actionButtons)
+            {
+                button.IsVisible = ComponentPreviewActions.AppliesToItem(action, currentItem);
+            }
+            if (actionRow is not null)
+            {
+                actionRow.IsVisible = actionButtons.Any((entry) => entry.Button.IsVisible);
+            }
+        }
+        if (itemActions.Count > 0)
+        {
+            actionRow = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = 6,
+            };
+            foreach (var action in itemActions)
+            {
+                var button = new Button
+                {
+                    MinWidth = 128,
+                    Height = 34,
+                    FontWeight = FontWeight.SemiBold,
+                    Background = EditorSukiWindowTheme.AccentBrush(0x24),
+                    BorderBrush = EditorSukiWindowTheme.AccentBrush(0x80),
+                    BorderThickness = new Thickness(1),
+                    Content = CreateActionContent(action),
+                };
+                ToolTip.SetTip(button, action.Label);
+                button.Click += (_, args) =>
+                {
+                    args.Handled = true;
+                    _triggerAction(action.Id);
+                };
+                actionButtons.Add((action, button));
+                actionRow.Children.Add(button);
+            }
+            RefreshActionVisibility();
+            content.Children.Add(actionRow);
+        }
         foreach (var input in ComponentInputGrouping.OwnInputs(collection.Fields))
         {
-            content.Children.Add(CreateTestValueCollectionControl(owner, preview, collection, itemIndex, item, input));
+            content.Children.Add(CreateTestValueCollectionControl(owner, preview, collection, itemIndex, item, input, RefreshActionVisibility));
         }
 
         var groups = ComponentInputGrouping.EmbeddedGroups(collection.Fields);
@@ -310,7 +370,7 @@ internal sealed class RuntimeInputsCollectionEditor
         foreach (var groupId in ComponentInputGrouping.TopLevelGroupIds(groups))
         {
             content.Children.Add(CreateTestValueCollectionGroupCard(
-                owner, preview, collection, itemIndex, item, groupId, groups, groupCards));
+                owner, preview, collection, itemIndex, item, groupId, groups, groupCards, RefreshActionVisibility));
         }
         EditorGroupBlock.WireExclusiveCards(groupCards);
 
@@ -327,7 +387,8 @@ internal sealed class RuntimeInputsCollectionEditor
         RuntimeInputCollectionDefinition collection,
         int itemIndex,
         JsonObject item,
-        ComponentInputDefinition input)
+        ComponentInputDefinition input,
+        Action? afterCommit = null)
     {
         var control = new DictionaryFieldControl(
             new FieldValue(CreateDefinition(owner.Node, input), DesignPreviewTestValues.CollectionValue(item, input)),
@@ -336,8 +397,11 @@ internal sealed class RuntimeInputsCollectionEditor
         control.ValueCommitted += (_, next) =>
         {
             DesignPreviewTestValues.SetCollectionValue(preview, collection, itemIndex, input, next);
-            owner.Save(preview.ToJsonString());
-            _onChanged();
+            var itemId = item["id"] is JsonValue idValue && idValue.TryGetValue<string>(out var id)
+                ? id
+                : "";
+            _setPreviewCollectionTestValue(collection.JsonKey, itemId, input, next);
+            afterCommit?.Invoke();
         };
         return control;
     }
@@ -350,7 +414,8 @@ internal sealed class RuntimeInputsCollectionEditor
         JsonObject item,
         string groupId,
         IReadOnlyDictionary<string, List<ComponentInputDefinition>> groups,
-        List<InstantEditorCard> siblingCards)
+        List<InstantEditorCard> siblingCards,
+        Action? afterCommit = null)
     {
         var groupInputs = groups[groupId];
         var content = new StackPanel { Spacing = 8 };
@@ -363,14 +428,14 @@ internal sealed class RuntimeInputsCollectionEditor
                 content.Children.Add(EditorGroupBlock.CreateInlineSection(input.UiSectionLabel));
                 sectionLabel = input.UiSectionLabel;
             }
-            content.Children.Add(CreateTestValueCollectionControl(owner, preview, collection, itemIndex, item, input));
+            content.Children.Add(CreateTestValueCollectionControl(owner, preview, collection, itemIndex, item, input, afterCommit));
         }
 
         var childCards = new List<InstantEditorCard>();
         foreach (var childId in ComponentInputGrouping.ChildGroupIds(groupId, groups))
         {
             content.Children.Add(CreateTestValueCollectionGroupCard(
-                owner, preview, collection, itemIndex, item, childId, groups, childCards));
+                owner, preview, collection, itemIndex, item, childId, groups, childCards, afterCommit));
         }
         EditorGroupBlock.WireExclusiveCards(childCards);
         var cardSurface = EditorGroupBlock.CreateCollapsible(

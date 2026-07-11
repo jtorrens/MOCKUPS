@@ -11,20 +11,132 @@ internal static class ComponentPreviewActions
 {
     public static IReadOnlyList<ComponentPreviewActionDefinition> Read(JsonObject preview)
     {
+        var definitions = new List<ComponentPreviewActionDefinition>();
         if (preview["actions"] is JsonArray actions)
         {
-            return actions
+            definitions.AddRange(actions
                 .OfType<JsonObject>()
-                .Select(ParseAction)
+                .Select((action) => ParseAction(action))
                 .Where((action) => action is not null)
-                .Cast<ComponentPreviewActionDefinition>()
-                .ToList();
+                .Cast<ComponentPreviewActionDefinition>());
         }
 
-        return [];
+        if (preview["collections"] is not JsonArray collections)
+        {
+            return definitions;
+        }
+
+        foreach (var collection in collections.OfType<JsonObject>())
+        {
+            var collectionJsonKey = JsonString(collection, "jsonKey");
+            if (string.IsNullOrWhiteSpace(collectionJsonKey)
+                || collection["itemActions"] is not JsonArray itemActions)
+            {
+                continue;
+            }
+
+            var items = DesignPreviewTestValues.CollectionItems(
+                preview,
+                new RuntimeInputCollectionDefinition(
+                    JsonString(collection, "id"),
+                    JsonString(collection, "label"),
+                    collectionJsonKey,
+                    string.IsNullOrWhiteSpace(JsonString(collection, "itemLabel"))
+                        ? "Item"
+                        : JsonString(collection, "itemLabel"),
+                    [],
+                    JsonString(collection, "sourceCollectionJsonKey")));
+            foreach (var item in items)
+            {
+                var itemId = JsonString(item, "id");
+                if (string.IsNullOrWhiteSpace(itemId))
+                {
+                    continue;
+                }
+
+                foreach (var itemAction in itemActions.OfType<JsonObject>())
+                {
+                    var action = itemAction.DeepClone() as JsonObject ?? new JsonObject();
+                    var baseId = JsonString(action, "id");
+                    if (string.IsNullOrWhiteSpace(baseId))
+                    {
+                        continue;
+                    }
+                    action["id"] = $"{baseId}:{itemId}";
+                    var parsed = ParseAction(action, collectionJsonKey, itemId);
+                    if (parsed is not null)
+                    {
+                        definitions.Add(parsed);
+                    }
+                }
+            }
+        }
+
+        return definitions;
     }
 
-    private static ComponentPreviewActionDefinition? ParseAction(JsonObject action)
+    public static JsonNode? Value(
+        JsonObject preview,
+        ComponentPreviewActionDefinition action,
+        string key)
+    {
+        return Target(preview, action)?[key];
+    }
+
+    public static void SetValue(
+        JsonObject preview,
+        ComponentPreviewActionDefinition action,
+        string key,
+        object value)
+    {
+        var target = Target(preview, action);
+        if (target is not null)
+        {
+            target[key] = JsonValue.Create(value);
+        }
+    }
+
+    public static void RemoveValue(
+        JsonObject preview,
+        ComponentPreviewActionDefinition action,
+        string key)
+    {
+        Target(preview, action)?.Remove(key);
+    }
+
+    public static bool AppliesToItem(ComponentPreviewActionDefinition action, JsonObject item)
+    {
+        if (string.IsNullOrWhiteSpace(action.VisibleWhenItemJsonKey)
+            || action.VisibleWhenItemValues is not { Count: > 0 })
+        {
+            return true;
+        }
+
+        var current = JsonString(item, action.VisibleWhenItemJsonKey);
+        return action.VisibleWhenItemValues.Contains(current, StringComparer.Ordinal);
+    }
+
+    private static JsonObject? Target(
+        JsonObject preview,
+        ComponentPreviewActionDefinition action)
+    {
+        if (!action.IsCollectionItemAction)
+        {
+            return preview;
+        }
+
+        return preview[action.CollectionJsonKey] is JsonArray items
+            ? items.OfType<JsonObject>().FirstOrDefault((item) =>
+                item["id"] is JsonValue value
+                && value.TryGetValue<string>(out var id)
+                && id == action.CollectionItemId)
+            : null;
+    }
+
+    private static ComponentPreviewActionDefinition? ParseAction(
+        JsonObject action,
+        string collectionJsonKey = "",
+        string collectionItemId = "")
     {
         var playInputId = JsonString(action, "playInputId");
         var durationInputId = JsonString(action, "durationInputId");
@@ -69,7 +181,11 @@ internal static class ComponentPreviewActions
             JsonString(action, "prewarmWhenConfigPath"),
             JsonString(action, "prewarmWhenValue"),
             JsonStringArray(action, "activateInputIds"),
-            JsonStringArray(action, "deactivateInputIds"));
+            JsonStringArray(action, "deactivateInputIds"),
+            collectionJsonKey,
+            collectionItemId,
+            JsonString(action, "visibleWhenItemJsonKey"),
+            JsonStringArray(action, "visibleWhenItemValues"));
     }
 
     private static ComponentPreviewActionTimeUnit ParseTimeUnit(string value)
@@ -153,7 +269,15 @@ internal sealed record ComponentPreviewActionDefinition(
     string PrewarmWhenConfigPath,
     string PrewarmWhenValue,
     IReadOnlyList<string> ActivateInputIds,
-    IReadOnlyList<string> DeactivateInputIds);
+    IReadOnlyList<string> DeactivateInputIds,
+    string CollectionJsonKey = "",
+    string CollectionItemId = "",
+    string VisibleWhenItemJsonKey = "",
+    IReadOnlyList<string>? VisibleWhenItemValues = null)
+{
+    public bool IsCollectionItemAction => !string.IsNullOrWhiteSpace(CollectionJsonKey)
+        && !string.IsNullOrWhiteSpace(CollectionItemId);
+}
 
 internal enum ComponentPreviewActionTimeUnit
 {

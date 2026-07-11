@@ -9,6 +9,7 @@ internal sealed partial class SpikeDatabase
 {
     private static void NormalizeRuntimeInputContracts(SqliteConnection connection)
     {
+        RemovePersistedDesignPreviewTestValues(connection);
         using var select = connection.CreateCommand();
         select.CommandText = "SELECT id, component_type, design_preview_json FROM component_classes";
         using var reader = select.ExecuteReader();
@@ -38,6 +39,36 @@ internal sealed partial class SpikeDatabase
         }
 
         NormalizeConversationRuntimeInputContracts(connection);
+    }
+
+    private static void RemovePersistedDesignPreviewTestValues(SqliteConnection connection)
+    {
+        foreach (var table in new[] { "component_classes", "modules" })
+        {
+            using var select = connection.CreateCommand();
+            select.CommandText = $"SELECT id, design_preview_json FROM {table}";
+            using var reader = select.ExecuteReader();
+            var updates = new List<(string Id, string Json)>();
+            while (reader.Read())
+            {
+                var preview = ParseJsonObject(ReadString(reader, 1));
+                if (!preview.Remove("testValues"))
+                {
+                    continue;
+                }
+                updates.Add((reader.GetString(0), preview.ToJsonString()));
+            }
+            reader.Close();
+
+            foreach (var update in updates)
+            {
+                Execute(
+                    connection,
+                    $"UPDATE {table} SET design_preview_json = $json WHERE id = $id",
+                    ("$json", update.Json),
+                    ("$id", update.Id));
+            }
+        }
     }
 
     private static void NormalizeConversationRuntimeInputContracts(SqliteConnection connection)
@@ -91,7 +122,8 @@ internal sealed partial class SpikeDatabase
             for (var index = 0; index < existingMessages.Count; index++)
             {
                 if (existingMessages[index] is not JsonObject existing
-                    || defaultMessages.ElementAtOrDefault(index) is not JsonObject defaultsForMessage)
+                    || (defaultMessages.ElementAtOrDefault(index) as JsonObject
+                        ?? defaultMessages.ElementAtOrDefault(0) as JsonObject) is not JsonObject defaultsForMessage)
                 {
                     continue;
                 }

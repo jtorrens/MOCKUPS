@@ -63,6 +63,8 @@ message.
 - State selects incoming/system/outgoing colors and tail behavior.
 - Write-on reveals text by grapheme/frame; cursor is visible only while the
   reveal remains active and disappears after completion.
+- Bubble forces its embedded Text Box font family to `theme`; the selected
+  Text Box/Bubble configuration can still choose text size, weight and style.
 - Media and audio runtime states are passed to their child contracts rather
   than interpreted by Bubble itself.
 

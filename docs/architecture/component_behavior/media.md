@@ -57,6 +57,9 @@ Audio is a separate component and is selected by Bubble, not by Media.
 - Play/pause and current time are runtime state. For video, the resolver or
   upstream frame provider supplies the appropriate frame; web preview paints
   it as media data and does not own playback.
+- A parent may also provide `playbackMode`: `once` clamps at the terminal
+  source frame; `loop` wraps source time. The parent owns the finite duration
+  of that active playback hold.
 - Overlay text can be free text, count-up or count-down and has idle/play
   variants.
 

@@ -54,6 +54,8 @@ It does not depend on Text Input Bar. The parent composes both as siblings.
 - Exactly one key can be pressed per frame.
 - **Canonical rule:** Conversation supplies the last revealed grapheme, not
   the first grapheme, to determine current mode and pressed key.
+- During Conversation's post-write-on hold, Keyboard receives the completed
+  text but no current grapheme, so no key stays pressed.
 
 ## Motion
 
@@ -70,6 +72,5 @@ pressed state, emoji substitutions and internal motion atoms.
 ## Defaults and limitations
 
 - Current resolver supports lower, shift, numeric, symbols and emoji modes.
-- Conversation currently supplies the final revealed grapheme index. It still
-  needs to forward the shared module `motionTimeSeconds` when Keyboard motion
-  is driven from the Conversation timeline.
+- Conversation supplies the current revealed grapheme index while typing and
+  shared module `motionTimeSeconds` for keyboard motion.

@@ -659,6 +659,33 @@ internal sealed partial class SpikeDatabase
                     ["itemLabel"] = "Message",
                     ["sourceCollectionJsonKey"] = "messages",
                     ["fields"] = ConversationPreviewMessageFields(),
+                    ["itemActions"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["id"] = "playVideo",
+                            ["label"] = "Play video",
+                            ["playInputId"] = "isPlaying",
+                            ["durationInputId"] = "playDurationFrames",
+                            ["timeJsonKey"] = "playbackFrame",
+                            ["timeUnit"] = "frames",
+                            ["prewarmFrames"] = false,
+                            ["visibleWhenItemJsonKey"] = "mediaType",
+                            ["visibleWhenItemValues"] = new JsonArray { "video" },
+                        },
+                        new JsonObject
+                        {
+                            ["id"] = "playAudio",
+                            ["label"] = "Play audio",
+                            ["playInputId"] = "isPlaying",
+                            ["durationInputId"] = "playDurationFrames",
+                            ["timeJsonKey"] = "playbackFrame",
+                            ["timeUnit"] = "frames",
+                            ["prewarmFrames"] = false,
+                            ["visibleWhenItemJsonKey"] = "mediaType",
+                            ["visibleWhenItemValues"] = new JsonArray { "audio" },
+                        },
+                    },
                 },
             },
             ["actions"] = new JsonArray
@@ -708,6 +735,9 @@ internal sealed partial class SpikeDatabase
             ["isPlaying"] = false,
             ["currentTimeSeconds"] = 0,
             ["durationSeconds"] = 12,
+            ["playbackMode"] = "once",
+            ["playDurationFrames"] = 72,
+            ["playbackFrame"] = 0,
             ["isFullScreen"] = false,
             ["fullScreenTransition"] = false,
             ["fullframeOrientation"] = "portrait",
@@ -734,7 +764,9 @@ internal sealed partial class SpikeDatabase
             new JsonObject { ["id"] = "mediaOffset", ["label"] = "Media offset", ["jsonKey"] = "mediaOffset", ["kind"] = "integerPair", ["defaultValue"] = "0|0", ["pairFirstLabel"] = "X", ["pairSecondLabel"] = "Y" },
             new JsonObject { ["id"] = "isPlaying", ["label"] = "Playing", ["jsonKey"] = "isPlaying", ["kind"] = "boolean", ["defaultValue"] = "false" },
             new JsonObject { ["id"] = "currentTime", ["label"] = "Current time", ["jsonKey"] = "currentTimeSeconds", ["kind"] = "number", ["defaultValue"] = "0", ["minimum"] = 0, ["maximum"] = 86400, ["increment"] = 0.01 },
-            new JsonObject { ["id"] = "duration", ["label"] = "Duration", ["jsonKey"] = "durationSeconds", ["kind"] = "number", ["defaultValue"] = "12", ["minimum"] = 1, ["maximum"] = 86400, ["increment"] = 0.01 },
+            new JsonObject { ["id"] = "duration", ["label"] = "Source duration", ["jsonKey"] = "durationSeconds", ["kind"] = "number", ["defaultValue"] = "12", ["minimum"] = 1, ["maximum"] = 86400, ["increment"] = 0.01, ["enabledWhenItemJsonKey"] = "mediaType", ["enabledWhenItemValues"] = new JsonArray { "video", "audio" } },
+            new JsonObject { ["id"] = "playbackMode", ["label"] = "Playback mode", ["jsonKey"] = "playbackMode", ["kind"] = "option", ["defaultValue"] = "once", ["options"] = new JsonArray { new JsonObject { ["value"] = "once", ["label"] = "Play once" }, new JsonObject { ["value"] = "loop", ["label"] = "Loop" } }, ["enabledWhenItemJsonKey"] = "mediaType", ["enabledWhenItemValues"] = new JsonArray { "video", "audio" } },
+            new JsonObject { ["id"] = "playDuration", ["label"] = "Playback frames", ["jsonKey"] = "playDurationFrames", ["kind"] = "number", ["defaultValue"] = "72", ["minimum"] = 1, ["maximum"] = 100000, ["increment"] = 1, ["enabledWhenItemJsonKey"] = "mediaType", ["enabledWhenItemValues"] = new JsonArray { "video", "audio" } },
             new JsonObject { ["id"] = "fullScreen", ["label"] = "Full screen", ["jsonKey"] = "isFullScreen", ["kind"] = "boolean", ["defaultValue"] = "false" },
             new JsonObject { ["id"] = "fullScreenTransition", ["label"] = "Full-screen transition", ["jsonKey"] = "fullScreenTransition", ["kind"] = "boolean", ["defaultValue"] = "false" },
             new JsonObject { ["id"] = "fullframeOrientation", ["label"] = "Fullframe orientation", ["jsonKey"] = "fullframeOrientation", ["kind"] = "option", ["defaultValue"] = "portrait", ["options"] = new JsonArray { new JsonObject { ["value"] = "portrait", ["label"] = "Portrait" }, new JsonObject { ["value"] = "landscape", ["label"] = "Landscape" } } },
@@ -750,7 +782,7 @@ internal sealed partial class SpikeDatabase
         SetRuntimeGroup(fields, ["statusVisible", "status", "statusText"], "delivery", "Delivery", 30);
         SetRuntimeGroup(fields, ["mediaType", "mediaSource"], "attachment", "Attachment", 40);
         SetRuntimeGroup(fields, ["viewport", "mediaScale", "mediaOffset"], "attachment", "Attachment", 50, sectionLabel: "Frame");
-        SetRuntimeGroup(fields, ["isPlaying", "currentTime", "duration", "controlsElapsed"], "attachment", "Attachment", 60, sectionLabel: "Playback");
+        SetRuntimeGroup(fields, ["isPlaying", "currentTime", "duration", "playbackMode", "playDuration", "controlsElapsed"], "attachment", "Attachment", 60, sectionLabel: "Playback");
         SetRuntimeGroup(fields, ["fullScreen", "fullScreenTransition", "fullframeOrientation"], "attachment", "Attachment", 70, sectionLabel: "Full screen");
     }
 
