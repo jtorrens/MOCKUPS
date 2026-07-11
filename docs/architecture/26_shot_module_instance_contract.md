@@ -54,16 +54,16 @@ This remains a future timeline phase. The present model stores `transition_json`
 so no schema redesign is needed when cut-only slots gain crossfade, slide or
 other transitions.
 
-## Future on-set compatibility intention
+## Future on-set raster package intention
 
 This section is a compatibility declaration, not an implementation phase or a
 complete mobile specification.
 
-In the future, an exported Shot plus its ordered ModuleInstance payloads and
-assets may be played by a local HTML/CSS runtime on an on-set mobile device.
-The only visual choice currently anticipated in that on-set runtime is the
-effective theme mode, `light` or `dark`. Play, pause and frame navigation are
-playback state, not edits to Shot or ModuleInstance data.
+In the future, an on-set mobile device may receive a pre-rendered raster package
+for a Shot instead of the original payload and HTML/CSS renderer. The package
+may contain both `light` and `dark` sequences so the operator can choose the
+effective mode before playback. Play, pause and frame navigation are playback
+state, not edits to Shot or ModuleInstance data.
 
 No package format, transfer protocol, mobile UI, persistence model or delivery
 schedule is defined yet. Current work must only avoid making that future route
@@ -73,10 +73,29 @@ impossible:
 - Shot/Module contracts do not depend on Avalonia, WebView invocation details,
   SQLite access during rendering, host-system fonts or live network assets;
 - production text and emoji fonts and all media are explicit contract resources;
+- a future package may carry shot-wide glyph usage and deterministic subsets of
+  those production fonts; subsets are packaging products, never system-font
+  fallbacks or per-frame font changes;
+- HTML/CSS remains a deterministic production stage used to generate preview,
+  raster frames and MOV output; it is not required on the on-set device;
 - desktop DOM morphing and `mockups-asset:` interning remain adapter-local
-  optimizations, not portable payload requirements;
+  optimizations, not portable raster-package requirements;
 - the effective light/dark mode is context supplied to resolution and is not a
   visual override stored by ModuleInstance.
+
+The intended portable frame vocabulary is generic:
+
+- `full`: a complete bitmap establishes a new base;
+- `tiles`: only fixed-grid tiles affected by changed resolved nodes are stored;
+- `hold`: no visual state changed and the preceding composited frame remains;
+- every bitmap asset is content-addressed and may be reused by either mode;
+- package manifests carry device resolution, FPS, mode, frame number and base
+  dependencies explicitly.
+
+Resolvers do not choose tiles. They provide stable node ids, final visual
+values and deterministic bounds. A generic comparator after resolution detects
+changed nodes, unions previous/current bounds, aligns dirty regions to tiles and
+falls back to a full frame above a configured changed-area threshold.
 
 Do not begin mobile runtime implementation from this declaration. A separate
 normative contract should be written only when that product phase starts.

@@ -911,6 +911,7 @@ const sharedPreviewHelperFiles = new Set([
 const filesystemAllowedPreviewFiles = new Set([
   "src/desktop-preview/previewAssetResolver.ts",
   "src/desktop-preview/renderDesignPreviewHtml.tsx",
+  "src/desktop-preview/renderPreviewRasterServer.ts",
 ]);
 
 const manifestEntries = Object.entries(desktopPreviewComponents);
@@ -1191,6 +1192,38 @@ assertContains(
   "spikes/desktop-editor-shell/EditorShell/WebDesignPreviewRenderer.cs",
   "previewFrame = new",
   "web design preview renderer must provide previewFrame geometry to the web renderer",
+);
+for (const componentType of Object.keys(desktopPreviewComponents)) {
+  assertDoesNotContain(
+    "src/visual/renderable/rasterFramePlan.ts",
+    componentType,
+    `generic raster frame planning must not contain component-specific knowledge (${componentType})`,
+  );
+}
+assertContains(
+  "src/visual/renderable/rasterFramePlan.ts",
+  'kind: "hold"',
+  "raster frame planning must represent visually unchanged frames without duplicate bitmaps",
+);
+assertContains(
+  "src/desktop-preview/renderDesignPreviewHtmlServer.ts",
+  "assets: compact.assets",
+  "the persistent renderer must return compact HTML with an incremental asset manifest",
+);
+assertContains(
+  "src/desktop-preview/renderPreviewRasterServer.ts",
+  'format: "webp"',
+  "the shared Chromium raster boundary must support WebP preview frames",
+);
+assertContains(
+  "src/desktop-preview/renderPreviewRasterServer.ts",
+  'type: "png"',
+  "the shared Chromium raster boundary must preserve a PNG lossless GFX path",
+);
+assertContains(
+  "src/visual/renderable/rasterFramePlan.ts",
+  'kind: "tiles"',
+  "raster frame planning must represent localized visual changes as tiles",
 );
 if (payloadSource.includes('"statusBar"') || payloadSource.includes('"navigationBar"')) {
   addViolation(

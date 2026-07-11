@@ -43,6 +43,18 @@ internal static partial class PreviewAssetRegistry
         }
     }
 
+    public static void Register(string key, string uri)
+    {
+        lock (Gate)
+        {
+            if (Assets.TryGetValue(key, out var existing) && !string.Equals(existing, uri, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException($"Preview asset hash collision for '{key}'.");
+            }
+            Assets[key] = uri;
+        }
+    }
+
     public static string Expand(string html)
     {
         return AssetKeyRegex().Replace(html, (match) =>

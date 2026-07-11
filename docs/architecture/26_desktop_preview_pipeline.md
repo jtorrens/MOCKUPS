@@ -512,6 +512,70 @@ production. Main cost centers to measure:
 
 These are design directions to evaluate separately:
 
+### Raster streaming route
+
+The accepted playback/export direction is a generic raster presentation cache
+above the deterministic HTML/CSS renderer:
+
+```text
+resolved renderable frames
+  -> generic node comparison
+  -> full / tiles / hold frame plan
+  -> interchangeable raster backend
+  -> buffered desktop playback / MOV / on-set package
+```
+
+`src/visual/renderable/rasterFramePlan.ts` owns the renderer-independent dirty
+region plan. It compares final nodes by stable id and visual value, includes
+both old and new bounds for moved/removed nodes, aligns changes to fixed tiles
+and promotes large changes to full frames. It contains no module/component
+names. Actual bitmap capture and streaming remain adapter responsibilities.
+
+The persistent Node renderer also interns data URI assets before writing its
+response. It returns compact HTML plus only newly observed `{ key, uri }`
+manifest entries. The desktop host registers those entries before caching the
+frame. One-shot rendering retains host-side compaction as a recovery path.
+
+The active raster checkpoint uses one persistent Playwright Chromium worker on
+macOS and Windows. It receives the same resolved HTML/CSS, production fonts and
+assets, fixes the viewport/device scale to the device canvas, waits for fonts
+and images, and captures the resolved root through Chrome DevTools Protocol.
+The worker loads the document head and embedded production font faces once. On
+later frames it parses and replaces only the resolved canvas from `body`; font
+data must never be reparsed per frame. Content-addressed media is registered
+once as stable browser blob URLs and reused by all following frame bodies.
+Preview frames are WebP quality 95 in a temporary disk cache. The GFX path uses
+PNG lossless from the same Chromium surface. Avalonia never renders HTML or
+recreates visual nodes; during playback it only decodes and presents the cached
+bitmap while the native WebView is hidden.
+
+The first integration still prepares the complete action under the existing
+cancellable loader. This validates fidelity, capture portability and
+presentation FPS before introducing a parallel producer. It is not the final
+package model: long-shot support must use content-addressed full/tiles/hold
+assets and streaming from the temporary disk cache. Desktop playback already
+uses a bounded decoded window (18 frames ahead and 2 behind) and releases
+evicted bitmaps instead of decoding on the presentation tick or retaining the
+whole shot in memory.
+The loading surface is a scrim above an active WebView. It must not make the
+WebView pane invisible because WebKit may suspend image/decode timers and stall
+frame commits or raster capture while hidden.
+The opaque in-WebView scrim reports completed/total raster frames from the
+generic declared action timeline; it must not use component-specific progress.
+The bounded streaming implementation must retain decoded bitmaps only for its
+active window and release them after eviction.
+
+Playback scheduling samples the monotonic project clock at twice the target
+frame rate and presents only when the logical project frame changes. This avoids
+platform dispatcher quantization (for example, a nominal 40 ms timer becoming
+roughly 52 ms) without building a late-frame queue or changing shot duration.
+
+Future portable shot packaging should declare the production font ids and the
+set of text/emoji glyphs used by the complete light/dark sequence. The packager
+may create deterministic font subsets once per package, including a small emoji
+subset, but it must never fall back to host-system fonts or change font faces
+during playback.
+
 1. Direct renderable delta instead of HTML string per frame.
    - Keep a persistent preview document.
    - Send compact frame deltas or final renderable JSON.

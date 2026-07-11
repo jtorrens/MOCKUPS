@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text.Json.Nodes;
 using System.Threading;
@@ -111,6 +112,11 @@ internal sealed class EditorPreviewController
     private CancellationTokenSource? _aheadPreloadCancellation;
     private readonly HashSet<string> _aheadPreloadedFrameKeys = new(StringComparer.Ordinal);
     private bool _isAheadPreloading;
+    private readonly Dictionary<string, string> _rasterPlaybackFrames = new(StringComparer.Ordinal);
+    private readonly List<string> _rasterPlaybackOrder = [];
+    private string _rasterPlaybackSignature = "";
+    private readonly ChromiumPreviewRasterizer _chromiumRasterizer = new();
+    private string _rasterCacheDirectory = "";
     private PlaybackPerformanceRun? _playbackPerformanceRun;
     private int _playbackSummaryGeneration;
 
@@ -717,6 +723,20 @@ internal sealed class EditorPreviewController
                 ? null
                 : _designInputsPanel.ApplyInputs(designPayload, _selectedMode, _projectId);
             UpdateDesignContextChrome(designPayload);
+            if (designPayload is not null
+                && _designInputsPanel.IsPlaybackActive
+                && _rasterPlaybackFrames.TryGetValue(PlaybackFrameKey(designPayload), out var rasterPath))
+            {
+                _designPreviewPane.ShowRasterFrame(rasterPath);
+                RecordPresentedPlaybackFrame(new DesignWebPreviewPane.DesignPreviewFrameStatus(
+                    ElapsedMilliseconds: 0,
+                    IsAnimationOnly: true,
+                    UsedDomPatch: false,
+                    RenderError: false));
+                _messages.Clear();
+                return;
+            }
+            _designPreviewPane.HideRasterFrame();
             _designPreviewPane.Update(
                 metrics,
                 _isDark(),
@@ -796,6 +816,19 @@ internal sealed class EditorPreviewController
                 ("reason", "no-frames"));
             return true;
         }
+        var rasterSignature = RasterPlaybackSignature(metrics, payload, frames);
+        if (_rasterPlaybackSignature == rasterSignature
+            && _rasterPlaybackOrder.Count == frames.Count
+            && frames.All((frame) => _rasterPlaybackFrames.ContainsKey(PlaybackFrameKey(frame))))
+        {
+            await _designPreviewPane.PrepareRasterPlaybackAsync(_rasterPlaybackOrder, CancellationToken.None);
+            PreviewDebugLog.Write(
+                "preview.playback.raster-cache-hit",
+                ("component", payload.ComponentType),
+                ("name", payload.Name),
+                ("frames", frames.Count));
+            return true;
+        }
 
         _previewLoadingCancellation?.Cancel();
         _previewLoadingCancellation?.Dispose();
@@ -820,7 +853,7 @@ internal sealed class EditorPreviewController
         if (frames.Count > LoadingPreviewFrameThreshold)
         {
             ShowPreviewLoading(
-                $"Buffering {Math.Min(frames.Count, InitialPlaybackPreloadFrames)} of {frames.Count} frames...",
+                $"Rasterizing {frames.Count} frames for playback...",
                 () =>
                 {
                     PreviewDebugLog.Write(
@@ -835,24 +868,44 @@ internal sealed class EditorPreviewController
 
         try
         {
-            WebDesignPreviewRenderer.ReserveFrameCacheCapacity(Math.Min(frames.Count, InitialPlaybackPreloadFrames + AheadPlaybackPreloadFrames));
-            var initialFrames = frames.Take(InitialPlaybackPreloadFrames).ToList();
-            foreach (var frame in initialFrames)
+            WebDesignPreviewRenderer.ReserveFrameCacheCapacity(frames.Count);
+            if (!string.IsNullOrWhiteSpace(_rasterCacheDirectory) && Directory.Exists(_rasterCacheDirectory))
             {
-                _aheadPreloadedFrameKeys.Add(PlaybackFrameKey(frame));
+                Directory.Delete(_rasterCacheDirectory, recursive: true);
             }
-
-            await PreloadPlaybackFramesAsync(
-                metrics,
-                payload,
-                initialFrames,
-                cancellation.Token,
-                "initial");
+            _rasterCacheDirectory = Path.Combine(Path.GetTempPath(), "mockups-preview-raster", Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(_rasterCacheDirectory);
+            _rasterPlaybackFrames.Clear();
+            _rasterPlaybackOrder.Clear();
+            UpdateRasterProgress(0, frames.Count);
+            for (var frameIndex = 0; frameIndex < frames.Count; frameIndex++)
+            {
+                var frame = frames[frameIndex];
+                UpdateRasterProgress(frameIndex, frames.Count);
+                _aheadPreloadedFrameKeys.Add(PlaybackFrameKey(frame));
+                cancellation.Token.ThrowIfCancellationRequested();
+                var rasterHtml = await _designPreviewPane.BuildRasterHtmlAsync(metrics, _selectedMode, frame);
+                var rasterPath = Path.Combine(_rasterCacheDirectory, $"frame-{frameIndex:D6}.webp");
+                await _chromiumRasterizer.RasterizeAsync(
+                    rasterHtml,
+                    Math.Max(1, (int)Math.Ceiling(metrics.CanvasWidth)),
+                    Math.Max(1, (int)Math.Ceiling(metrics.CanvasHeight)),
+                    rasterPath,
+                    "webp",
+                    quality: 95,
+                    captureScale: 1.0 / Math.Max(1, metrics.ScaleToPixels),
+                    cancellation.Token);
+                _rasterPlaybackFrames[PlaybackFrameKey(frame)] = rasterPath;
+                _rasterPlaybackOrder.Add(rasterPath);
+                UpdateRasterProgress(frameIndex + 1, frames.Count);
+            }
+            _rasterPlaybackSignature = rasterSignature;
+            await _designPreviewPane.PrepareRasterPlaybackAsync(_rasterPlaybackOrder, cancellation.Token);
             PreviewDebugLog.Write(
                 "preview.playback.frames.end",
                 ("component", payload.ComponentType),
                 ("name", payload.Name),
-                ("frames", initialFrames.Count),
+                ("frames", _rasterPlaybackFrames.Count),
                 ("totalFrames", frames.Count),
                 ("ms", totalStopwatch.Elapsed.TotalMilliseconds));
             return true;
@@ -865,6 +918,21 @@ internal sealed class EditorPreviewController
                 ("name", payload.Name),
                 ("frames", frames.Count),
                 ("ms", totalStopwatch.Elapsed.TotalMilliseconds));
+            return false;
+        }
+        catch (Exception error)
+        {
+            PreviewDebugLog.Write(
+                "preview.playback.frames.error",
+                ("component", payload.ComponentType),
+                ("name", payload.Name),
+                ("frames", _rasterPlaybackFrames.Count),
+                ("ms", totalStopwatch.Elapsed.TotalMilliseconds),
+                ("error", error.Message));
+            _messages.Error("Playback raster", error);
+            _rasterPlaybackFrames.Clear();
+            _rasterPlaybackOrder.Clear();
+            _rasterPlaybackSignature = "";
             return false;
         }
         finally
@@ -960,17 +1028,20 @@ internal sealed class EditorPreviewController
 
     private void ShowPreviewLoading(string message, Action cancel)
     {
-        _designPreviewPane.IsVisible = false;
-        _previewBusyHost.IsVisible = true;
-        _previewLoadingScrim.Show(message, cancel);
+        _designPreviewPane.SetRasterLoading(true, message);
         SetPreviewPerformanceStatus(PreviewPerformanceStatus.Loading);
+    }
+
+    private void UpdateRasterProgress(int completedFrames, int totalFrames)
+    {
+        var message = $"Rasterizing {completedFrames} / {totalFrames} frames…";
+        _designPreviewPane.SetRasterLoading(true, message);
+        _messages.Info("Playback", message);
     }
 
     private void HidePreviewLoading()
     {
-        _previewLoadingScrim.Hide();
-        _previewBusyHost.IsVisible = false;
-        _designPreviewPane.IsVisible = true;
+        _designPreviewPane.SetRasterLoading(false, "");
         if (!_designInputsPanel.IsPlaybackActive)
         {
             SetPreviewPerformanceStatus(PreviewPerformanceStatus.Idle);
@@ -998,11 +1069,39 @@ internal sealed class EditorPreviewController
     {
         _playbackSummaryGeneration++;
         _playbackPerformanceRun = new PlaybackPerformanceRun(run.TargetFrames, run.TargetFps, Stopwatch.GetTimestamp());
+        if (_rasterPlaybackOrder.Count > 0)
+        {
+            _designPreviewPane.PlayRasterFrames(_rasterPlaybackOrder, run.TargetFps);
+        }
+    }
+
+    private string RasterPlaybackSignature(
+        SpikeDatabase.DevicePreviewMetrics metrics,
+        DesignPreviewPayload payload,
+        IReadOnlyList<DesignPreviewPayload> frames)
+    {
+        return string.Join(
+            "\u001f",
+            payload.Kind,
+            payload.ComponentType,
+            payload.Name,
+            payload.ConfigJson,
+            payload.ThemeTokensJson,
+            payload.ComponentBaseConfigsJson,
+            payload.AppConfigJson,
+            payload.FrameRate,
+            _selectedMode,
+            _showDesignMarks,
+            metrics.CanvasWidth,
+            metrics.CanvasHeight,
+            frames.Count,
+            string.Join("|", frames.Select(PlaybackFrameKey)));
     }
 
     private void OnPlaybackStopped(ComponentPreviewInputSession.PlaybackRunInfo run)
     {
         if (_playbackPerformanceRun is null) return;
+        _playbackPerformanceRun.AcceptsPresentations = false;
         var generation = ++_playbackSummaryGeneration;
         DispatcherTimer.RunOnce(
             () =>
@@ -1015,7 +1114,7 @@ internal sealed class EditorPreviewController
     private void RecordPresentedPlaybackFrame(DesignWebPreviewPane.DesignPreviewFrameStatus status)
     {
         var run = _playbackPerformanceRun;
-        if (run is null || status.RenderError) return;
+        if (run is null || !run.AcceptsPresentations || status.RenderError) return;
         var now = Stopwatch.GetTimestamp();
         if (run.LastPresentedTimestamp != 0)
         {
@@ -1067,6 +1166,7 @@ internal sealed class EditorPreviewController
         public long StartedTimestamp { get; } = startedTimestamp;
         public long LastPresentedTimestamp { get; set; }
         public int PresentedFrames { get; set; }
+        public bool AcceptsPresentations { get; set; } = true;
         public List<double> PresentationFps { get; } = [];
     }
 

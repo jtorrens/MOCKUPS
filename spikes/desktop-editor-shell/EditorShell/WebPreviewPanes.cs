@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
 using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using System;
@@ -20,6 +21,23 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal abstract class WebPreviewPane : Grid
 {
     protected readonly NativeWebView WebView;
+    private readonly Image _nativeRasterFrame = new()
+    {
+        Stretch = Stretch.Uniform,
+        HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
+        VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch,
+        IsVisible = false,
+    };
+    private Bitmap? _nativeRasterBitmap;
+    private bool _nativeRasterBitmapIsBuffered;
+    private readonly object _rasterBufferGate = new();
+    private readonly Dictionary<string, Bitmap> _rasterBuffer = new(StringComparer.Ordinal);
+    private IReadOnlyList<string> _rasterPlaybackPaths = Array.Empty<string>();
+    private Dictionary<string, int> _rasterPlaybackIndexes = new(StringComparer.Ordinal);
+    private Task? _rasterBufferTask;
+    private CancellationTokenSource? _rasterBufferCancellation;
+    private const int RasterBufferAhead = 18;
+    private const int RasterBufferBehind = 2;
 
     protected WebPreviewPane()
     {
@@ -31,6 +49,110 @@ internal abstract class WebPreviewPane : Grid
         };
 
         Children.Add(WebView);
+        Children.Add(_nativeRasterFrame);
+    }
+
+    public void ShowRasterFrame(string rasterId)
+    {
+        if (!File.Exists(rasterId)) return;
+        Bitmap bitmap;
+        var isBuffered = false;
+        lock (_rasterBufferGate)
+        {
+            isBuffered = _rasterBuffer.TryGetValue(rasterId, out bitmap!);
+        }
+        bitmap ??= new Bitmap(rasterId);
+        var previous = _nativeRasterBitmap;
+        var disposePrevious = previous is not null && !_nativeRasterBitmapIsBuffered;
+        _nativeRasterBitmap = bitmap;
+        _nativeRasterBitmapIsBuffered = isBuffered;
+        _nativeRasterFrame.Source = bitmap;
+        _nativeRasterFrame.IsVisible = true;
+        if (disposePrevious) previous?.Dispose();
+        if (_rasterPlaybackIndexes.TryGetValue(rasterId, out var frameIndex)) ScheduleRasterBuffer(frameIndex);
+    }
+
+    public void HideRasterFrame()
+    {
+        _nativeRasterFrame.IsVisible = false;
+        WebView.IsVisible = true;
+    }
+
+    public void PlayRasterFrames(IReadOnlyList<string> rasterIds, int framesPerSecond)
+    {
+        if (rasterIds.Count == 0) return;
+        ShowRasterFrame(rasterIds[0]);
+        WebView.IsVisible = false;
+    }
+
+    public async Task PrepareRasterPlaybackAsync(IReadOnlyList<string> rasterIds, CancellationToken cancellationToken)
+    {
+        ResetRasterBuffer();
+        _rasterPlaybackPaths = rasterIds.ToArray();
+        _rasterPlaybackIndexes = rasterIds
+            .Select((path, index) => (path, index))
+            .ToDictionary((entry) => entry.path, (entry) => entry.index, StringComparer.Ordinal);
+        _rasterBufferCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        await DecodeRasterRangeAsync(0, Math.Min(RasterBufferAhead, rasterIds.Count), _rasterBufferCancellation.Token);
+    }
+
+    private void ScheduleRasterBuffer(int frameIndex)
+    {
+        if (_rasterBufferCancellation is null || (_rasterBufferTask is not null && !_rasterBufferTask.IsCompleted)) return;
+        var cancellationToken = _rasterBufferCancellation.Token;
+        _rasterBufferTask = DecodeRasterRangeAsync(
+            frameIndex + 1,
+            Math.Min(_rasterPlaybackPaths.Count, frameIndex + 1 + RasterBufferAhead),
+            cancellationToken);
+        var oldestIndex = Math.Max(0, frameIndex - RasterBufferBehind);
+        lock (_rasterBufferGate)
+        {
+            foreach (var path in _rasterBuffer.Keys
+                         .Where((path) => _rasterPlaybackIndexes.TryGetValue(path, out var index) && index < oldestIndex)
+                         .ToArray())
+            {
+                if (ReferenceEquals(_rasterBuffer[path], _nativeRasterBitmap)) continue;
+                _rasterBuffer.Remove(path, out var expired);
+                expired?.Dispose();
+            }
+        }
+    }
+
+    private async Task DecodeRasterRangeAsync(int startIndex, int endIndex, CancellationToken cancellationToken)
+    {
+        await Task.Run(() =>
+        {
+            for (var index = startIndex; index < endIndex; index++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var path = _rasterPlaybackPaths[index];
+                lock (_rasterBufferGate)
+                {
+                    if (_rasterBuffer.ContainsKey(path)) continue;
+                }
+                var bitmap = new Bitmap(path);
+                lock (_rasterBufferGate)
+                {
+                    if (!_rasterBuffer.TryAdd(path, bitmap)) bitmap.Dispose();
+                }
+            }
+        }, cancellationToken);
+    }
+
+    private void ResetRasterBuffer()
+    {
+        _rasterBufferCancellation?.Cancel();
+        _rasterBufferCancellation?.Dispose();
+        _rasterBufferCancellation = null;
+        lock (_rasterBufferGate)
+        {
+            foreach (var bitmap in _rasterBuffer.Values)
+            {
+                if (!ReferenceEquals(bitmap, _nativeRasterBitmap)) bitmap.Dispose();
+            }
+            _rasterBuffer.Clear();
+        }
+        _nativeRasterBitmapIsBuffered = false;
     }
 
     protected void LoadHtml(string html)
@@ -894,6 +1016,125 @@ internal abstract class WebPreviewPane : Grid
                   return JSON.stringify(result);
                 };
 
+                const previewRasterResults = new Map();
+                const previewRasterFrames = new Map();
+                let previewRasterSequence = 0;
+                window.mockupsCapturePreviewRaster = () => {
+                  const requestId = String(++previewRasterSequence);
+                  previewRasterResults.set(requestId, { done: false });
+                  Promise.resolve().then(async () => {
+                    try {
+                      if (document.fonts?.ready) await document.fonts.ready;
+                      const root = scaleLayer.firstElementChild;
+                      if (!root) throw new Error("Preview has no render root");
+                      const css = [...document.querySelectorAll("style")]
+                        .map((style) => style.textContent ?? "")
+                        .join("\n");
+                      const xhtmlNamespace = "http://www.w3.org/1999/xhtml";
+                      const wrapper = document.createElementNS(xhtmlNamespace, "div");
+                      wrapper.setAttribute("style", `position:relative;width:${renderWidth}px;height:${renderHeight}px;overflow:hidden`);
+                      const style = document.createElementNS(xhtmlNamespace, "style");
+                      style.textContent = css;
+                      wrapper.appendChild(style);
+                      wrapper.appendChild(root.cloneNode(true));
+                      const content = new XMLSerializer().serializeToString(wrapper);
+                      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${renderWidth}" height="${renderHeight}"><foreignObject width="100%" height="100%">${content}</foreignObject></svg>`;
+                      const blobUrl = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }));
+                      try {
+                        const image = new Image();
+                        await new Promise((resolve, reject) => {
+                          image.onload = resolve;
+                          image.onerror = () => reject(new Error("Raster SVG image failed to load"));
+                          image.src = blobUrl;
+                        });
+                        image.style.position = "absolute";
+                        image.style.inset = "0";
+                        image.style.width = `${renderWidth}px`;
+                        image.style.height = `${renderHeight}px`;
+                        image.style.display = "none";
+                        image.style.pointerEvents = "none";
+                        previewRasterDeck.appendChild(image);
+                        previewRasterFrames.set(requestId, { blobUrl, image });
+                        previewRasterResults.set(requestId, { done: true, rasterId: requestId });
+                      } catch (error) {
+                        URL.revokeObjectURL(blobUrl);
+                        throw error;
+                      }
+                    } catch (error) {
+                      previewRasterResults.set(requestId, { done: true, error: String(error) });
+                    }
+                  });
+                  return requestId;
+                };
+                window.mockupsPreviewRasterResult = (requestId) => {
+                  const key = String(requestId);
+                  const result = previewRasterResults.get(key);
+                  if (!result) return "";
+                  if (result.done) previewRasterResults.delete(key);
+                  return JSON.stringify(result);
+                };
+                const previewRasterDeck = document.createElement("div");
+                previewRasterDeck.id = "mockupsPreviewRasterPlayback";
+                previewRasterDeck.style.position = "absolute";
+                previewRasterDeck.style.inset = "0";
+                previewRasterDeck.style.width = `${renderWidth}px`;
+                previewRasterDeck.style.height = `${renderHeight}px`;
+                previewRasterDeck.style.zIndex = "900";
+                previewRasterDeck.style.display = "none";
+                previewRasterDeck.style.pointerEvents = "none";
+                scaleLayer.appendChild(previewRasterDeck);
+                let visibleRasterFrame = null;
+                window.mockupsShowPreviewRaster = (rasterId) => {
+                  const frame = previewRasterFrames.get(String(rasterId));
+                  if (!frame) return false;
+                  if (visibleRasterFrame && visibleRasterFrame !== frame.image) {
+                    visibleRasterFrame.style.display = "none";
+                  }
+                  frame.image.style.display = "block";
+                  visibleRasterFrame = frame.image;
+                  previewRasterDeck.style.display = "block";
+                  return true;
+                };
+                window.mockupsHidePreviewRaster = () => {
+                  previewRasterDeck.style.display = "none";
+                  return true;
+                };
+                let previewRasterAnimation = 0;
+                window.mockupsPlayPreviewRasters = (rasterIds, framesPerSecond) => {
+                  cancelAnimationFrame(previewRasterAnimation);
+                  const ids = Array.isArray(rasterIds) ? rasterIds.map(String) : [];
+                  if (ids.length === 0) return false;
+                  const fps = Math.max(1, Number(framesPerSecond) || 1);
+                  const startedAt = performance.now();
+                  let shownIndex = -1;
+                  const present = (now) => {
+                    const index = Math.min(ids.length - 1, Math.floor((now - startedAt) * fps / 1000));
+                    if (index !== shownIndex) {
+                      window.mockupsShowPreviewRaster(ids[index]);
+                      shownIndex = index;
+                    }
+                    if (index < ids.length - 1) previewRasterAnimation = requestAnimationFrame(present);
+                  };
+                  previewRasterAnimation = requestAnimationFrame(present);
+                  return true;
+                };
+
+                const previewRasterLoading = document.createElement("div");
+                previewRasterLoading.style.position = "absolute";
+                previewRasterLoading.style.inset = "0";
+                previewRasterLoading.style.zIndex = "1000";
+                previewRasterLoading.style.display = "none";
+                previewRasterLoading.style.placeItems = "center";
+                previewRasterLoading.style.background = "#0f172a";
+                previewRasterLoading.style.color = "#f8fafc";
+                previewRasterLoading.style.font = "600 14px sans-serif";
+                viewport.appendChild(previewRasterLoading);
+                window.mockupsSetRasterLoading = (visible, message) => {
+                  previewRasterLoading.textContent = String(message ?? "Preparing playback…");
+                  previewRasterLoading.style.display = visible ? "grid" : "none";
+                  return true;
+                };
+
                 const previewAssets = new Map();
                 window.mockupsRegisterPreviewAsset = (key, uri) => {
                   previewAssets.set(String(key), String(uri));
@@ -1016,7 +1257,7 @@ internal abstract class WebPreviewPane : Grid
                     return sequence;
                   }
 
-                  scaleLayer.appendChild(nextLayer);
+                  scaleLayer.insertBefore(nextLayer, previewRasterDeck);
 
                   const images = [...nextLayer.querySelectorAll("img")];
                   recordPatchEvent("request", {
@@ -1051,7 +1292,7 @@ internal abstract class WebPreviewPane : Grid
                     nextLayer.style.opacity = "1";
                     requestAnimationFrame(() => {
                       for (const child of [...scaleLayer.children]) {
-                        if (child !== nextLayer) child.remove();
+                        if (child !== nextLayer && child !== previewRasterDeck) child.remove();
                       }
                       calculatePreviewFit();
                       recordPatchEvent("commit", {
@@ -1140,6 +1381,37 @@ internal abstract class WebPreviewPane : Grid
             : InlineFontFileUris(fontStyleHtml);
     }
 
+    protected static string RasterDocumentHtml(
+        SpikeDatabase.DevicePreviewMetrics metrics,
+        string bodyContent,
+        string fontStyleHtml)
+    {
+        var width = Math.Max(1, metrics.CanvasWidth);
+        var height = Math.Max(1, metrics.CanvasHeight);
+        return $$"""
+            <!doctype html>
+            <html>
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1">
+              <style>
+                *, *::before, *::after { box-sizing: border-box; }
+                html, body {
+                  width: {{Number(width)}}px;
+                  height: {{Number(height)}}px;
+                  margin: 0;
+                  overflow: hidden;
+                  background: transparent;
+                }
+                body { visibility: hidden; }
+              </style>
+              {{FontStylesHtml(fontStyleHtml)}}
+            </head>
+            <body>{{bodyContent}}</body>
+            </html>
+            """;
+    }
+
     private static string InlineFontFileUris(string fontStyleHtml)
     {
         return Regex.Replace(
@@ -1203,6 +1475,31 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         CancellationToken cancellationToken)
     {
         return PreloadPreviewImagesAsync(imageSources, cancellationToken);
+    }
+
+    public async Task<string> BuildRasterHtmlAsync(
+        SpikeDatabase.DevicePreviewMetrics metrics,
+        string themeMode,
+        DesignPreviewPayload payload)
+    {
+        var bodyContent = await WebDesignPreviewRenderer.RenderBodyAsync(
+            metrics,
+            themeMode,
+            showMarks: false,
+            payload);
+        var htmlParts = PreviewHtmlParts.Split(bodyContent);
+        return RasterDocumentHtml(metrics, htmlParts.BodyHtml, htmlParts.FontStyleHtml);
+    }
+
+    public void SetRasterLoading(bool visible, string message)
+    {
+        var visibleJson = visible ? "true" : "false";
+        var messageJson = JsonSerializer.Serialize(message);
+        _ = WebView.InvokeScript($$"""
+            (() => typeof window.mockupsSetRasterLoading === "function"
+              ? window.mockupsSetRasterLoading({{visibleJson}}, {{messageJson}})
+              : false)();
+            """);
     }
 
     public static IReadOnlyList<string> ImageSourcesForPreload(string html)

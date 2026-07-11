@@ -126,6 +126,17 @@ The shared playback state disables the complete `Runtime Inputs → Test Values`
 surface while any declarative preview action is preparing or playing. This is
 generic action state; it does not branch on Conversation or component type.
 
+## Raster playback phase started after checkpoint
+
+Commit `25336725` was pushed before beginning this phase. Subsequent uncommitted
+work adds the generic `full / tiles / hold` planner and a persistent Chromium
+raster worker. The initial implementation rasterizes the complete declared
+action as WebP quality 95 behind the cancellable loader, then presents cached
+device-resolution bitmaps instead of invoking Node/DOM during playback. PNG
+lossless is the GFX master-frame path. It is a fidelity/performance
+checkpoint; replace the unbounded complete buffer with a bounded producer and
+content-addressed tile/hold assets before treating 30-second shots as supported.
+
 ## Production font and emoji contract
 
 The previous text stack explicitly appended host fonts:

@@ -371,12 +371,18 @@ internal static class WebDesignPreviewRenderer
                         throw new InvalidOperationException(response.Error ?? "Design preview renderer failed.");
                     }
 
+                    foreach (var asset in response.Assets ?? [])
+                    {
+                        PreviewAssetRegistry.Register(asset.Key, asset.Uri);
+                    }
+
                     var html = response.Html ?? "";
                     PreviewDebugLog.Write(
                         "preview.renderer.persistent",
                         ("id", id),
                         ("ms", stopwatch.Elapsed.TotalMilliseconds),
-                        ("htmlChars", html.Length));
+                        ("htmlChars", html.Length),
+                        ("newAssets", response.Assets?.Count ?? 0));
                     return html;
                 }
                 catch (Exception error)
@@ -458,7 +464,12 @@ internal static class WebDesignPreviewRenderer
         [property: JsonPropertyName("id")] string Id,
         [property: JsonPropertyName("ok")] bool Ok,
         [property: JsonPropertyName("html")] string? Html,
+        [property: JsonPropertyName("assets")] IReadOnlyList<RendererAsset>? Assets,
         [property: JsonPropertyName("error")] string? Error);
+
+    private sealed record RendererAsset(
+        [property: JsonPropertyName("key")] string Key,
+        [property: JsonPropertyName("uri")] string Uri);
 
     private static string ResolveNodeExecutable()
     {

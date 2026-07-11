@@ -35,6 +35,7 @@ internal sealed class ComponentPreviewInputSession
     private int _playbackFrameRate = 25;
     private long _playbackStartedTimestamp;
     private double _playbackStartedAtSeconds;
+    private int _lastPlaybackRefreshFrame = -1;
     private readonly Dictionary<string, double> _playbackSecondsByActionId = new(StringComparer.Ordinal);
 
     public ComponentPreviewInputSession(
@@ -448,7 +449,7 @@ internal sealed class ComponentPreviewInputSession
         var previousInterval = _playbackTimer.Interval;
         var previewFps = PreviewPlaybackTiming.PreviewFrameRate(projectFps);
         _playbackFrameRate = previewFps;
-        var interval = TimeSpan.FromMilliseconds(1000.0 / previewFps);
+        var interval = TimeSpan.FromMilliseconds(1000.0 / (previewFps * 2.0));
         if (previousFps != previewFps || previousInterval != interval)
         {
             PreviewDebugLog.Write(
@@ -457,7 +458,8 @@ internal sealed class ComponentPreviewInputSession
                 ("projectFps", projectFps),
                 ("previewFps", previewFps),
                 ("multiplier", PreviewPlaybackTiming.FrameRateMultiplier),
-                ("intervalMs", interval.TotalMilliseconds));
+                ("frameIntervalMs", 1000.0 / previewFps),
+                ("schedulerIntervalMs", interval.TotalMilliseconds));
         }
         if (_playbackTimer.Interval != interval)
         {
@@ -499,7 +501,7 @@ internal sealed class ComponentPreviewInputSession
         PlaybackBusyChanged?.Invoke(true);
         _activeActionId = action.Id;
         var prepared = true;
-        if (ShouldPrewarmFrames(action))
+        if (_preparePlaybackFrames is not null)
         {
             _preparingActionId = action.Id;
             UpdateActionButtons();
@@ -546,7 +548,7 @@ internal sealed class ComponentPreviewInputSession
                 "preview.playback.prepare.skip",
                 ("scope", _scopeKey),
                 ("action", action.Id),
-                ("reason", action.PrewarmFrames ? "prewarm-condition" : "prewarm-disabled"));
+                ("reason", "prepare-handler-unavailable"));
         }
 
         if (!SupportsPlayback())
@@ -563,6 +565,7 @@ internal sealed class ComponentPreviewInputSession
         _values[ActionTimeKey(action)] = "0";
         _playbackStartedAtSeconds = 0;
         _playbackStartedTimestamp = Stopwatch.GetTimestamp();
+        _lastPlaybackRefreshFrame = 0;
         PreviewDebugLog.Write(
             "preview.playback.start",
             ("scope", _scopeKey),
@@ -603,6 +606,7 @@ internal sealed class ComponentPreviewInputSession
         }
         _playbackStartedTimestamp = 0;
         _playbackStartedAtSeconds = 0;
+        _lastPlaybackRefreshFrame = -1;
         if (activeAction is not null && !IsPlaying(activeAction))
         {
             _playbackSecondsByActionId.Remove(activeAction.Id);
@@ -631,15 +635,22 @@ internal sealed class ComponentPreviewInputSession
         var current = NormalizedPlaybackSeconds(activeAction, _playbackStartedAtSeconds + elapsed);
         _playbackSecondsByActionId[activeAction.Id] = current;
         _values[ActionTimeKey(activeAction)] = PlaybackTimeStorageValue(activeAction, current);
+        var currentFrame = CurrentPlaybackFrame(activeAction);
         PreviewDebugLog.Write(
             "preview.playback.tick",
             ("scope", _scopeKey),
             ("action", activeAction.Id),
             ("timeSec", current),
-            ("frame", CurrentPlaybackFrame(activeAction)),
+            ("frame", currentFrame),
             ("durationSec", DurationSeconds(activeAction)),
             ("durationFrames", DurationFrames(activeAction)),
             ("fps", _playbackFrameRate));
+        if (currentFrame != _lastPlaybackRefreshFrame)
+        {
+            _lastPlaybackRefreshFrame = currentFrame;
+            _refreshPreview();
+        }
+
         if (current >= DurationSeconds(activeAction))
         {
             _values[ActionStateKey(activeAction)] = "false";
@@ -647,8 +658,6 @@ internal sealed class ComponentPreviewInputSession
             StopPlayback();
             UpdateActionButtons();
         }
-
-        _refreshPreview();
     }
 
     private double CurrentPlaybackSeconds(ComponentPreviewActionDefinition action)
