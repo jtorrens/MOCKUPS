@@ -623,9 +623,9 @@ internal sealed partial class SpikeDatabase
             ["actorId"] = "",
             ["messages"] = new JsonArray
             {
-                ConversationPreviewMessage("incoming", "Tenias razon: ya podemos componer desde el modulo.", 0, 30, "duringWriteOn", false, false, false, "none", ""),
-                ConversationPreviewMessage("outgoing", "Perfecto. El modulo solo elige variantes y datos runtime.", 12, 42, "duringWriteOn", true, true, true, "read", ""),
-                ConversationPreviewMessage("system", "Siguiente paso: instancias reales.", 12, 0, "duringWriteOn", false, false, false, "none", ""),
+                ConversationPreviewMessage("message_001", "incoming", "Tenias razon: ya podemos componer desde el modulo.", 0, 30, "duringWriteOn", false, false, false, "none", ""),
+                ConversationPreviewMessage("message_002", "outgoing", "Perfecto. El modulo solo elige variantes y datos runtime.", 12, 42, "duringWriteOn", true, true, true, "read", ""),
+                ConversationPreviewMessage("message_003", "system", "Siguiente paso: instancias reales.", 12, 0, "duringWriteOn", false, false, false, "none", ""),
             },
             ["conversationFrame"] = 0,
             ["inputs"] = new JsonArray
@@ -643,6 +643,7 @@ internal sealed partial class SpikeDatabase
                     ["label"] = "Messages",
                     ["jsonKey"] = "messages",
                     ["itemLabel"] = "Message",
+                    ["sourceCollectionJsonKey"] = "messages",
                     ["fields"] = ConversationPreviewMessageFields(),
                 },
             },
@@ -664,6 +665,7 @@ internal sealed partial class SpikeDatabase
     }
 
     private static JsonObject ConversationPreviewMessage(
+        string id,
         string direction,
         string text,
         int delayAfterPreviousFrames,
@@ -677,6 +679,7 @@ internal sealed partial class SpikeDatabase
     {
         return new JsonObject
         {
+            ["id"] = id,
             ["direction"] = direction,
             ["text"] = text,
             ["delayAfterPreviousFrames"] = delayAfterPreviousFrames,

@@ -958,7 +958,8 @@ internal sealed class ComponentPreviewInputSession
                     label,
                     jsonKey,
                     JsonString(collection, "itemLabel", "Item"),
-                    itemFields));
+                    itemFields,
+                    JsonString(collection, "sourceCollectionJsonKey")));
             }
         }
 
@@ -1232,4 +1233,5 @@ internal sealed record RuntimeInputCollectionDefinition(
     string Label,
     string JsonKey,
     string ItemLabel,
-    IReadOnlyList<ComponentInputDefinition> Fields);
+    IReadOnlyList<ComponentInputDefinition> Fields,
+    string SourceCollectionJsonKey = "");
