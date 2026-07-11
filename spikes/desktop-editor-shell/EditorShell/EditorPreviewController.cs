@@ -29,6 +29,7 @@ internal sealed class EditorPreviewController
     private static readonly IBrush PreviewStatusGoodBrush = new SolidColorBrush(Color.Parse("#2ECC71"));
     private static readonly IBrush PreviewStatusSlowBrush = new SolidColorBrush(Color.Parse("#E74C3C"));
     private readonly SpikeDatabase _database;
+    private readonly Window _owner;
     private readonly EditorInstantComboBox _deviceComboBox;
     private readonly EditorInstantComboBox _themeComboBox;
     private readonly EditorInstantComboBox _modeComboBox;
@@ -49,6 +50,19 @@ internal sealed class EditorPreviewController
         IsChecked = false,
         VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
     };
+    private readonly Button _referenceButton = new()
+    {
+        Content = "Reference",
+        MinHeight = 32,
+    };
+    private readonly EditorInstantComboBox _referenceViewComboBox = new()
+    {
+        MinWidth = 88,
+        MinHeight = 32,
+    };
+    private readonly Slider _referenceSwipeSlider = new() { Minimum = 0, Maximum = 1, Value = 0.5, Width = 68 };
+    private readonly Slider _referenceOpacitySlider = new() { Minimum = 0, Maximum = 1, Value = 1, Width = 68 };
+    private readonly Slider _referenceAngleSlider = new() { Minimum = -45, Maximum = 45, Value = 0, Width = 68 };
     private readonly IEditorShellMessageSink _messages;
     private readonly Func<bool> _isDark;
     private readonly Func<ProjectTreeNode?> _selectedNode;
@@ -85,6 +99,9 @@ internal sealed class EditorPreviewController
     private string _selectedScale = "fit";
     private bool _showDesignMarks;
     private bool _showCanonicalFrame;
+    private string _referenceSource = "";
+    private string _referenceViewMode = "preview";
+    private int _referenceStartPreviewFrame;
     private bool _isDesignPreviewContextLocked;
     private bool _isRefreshingOptions;
     private bool? _renderedLockState;
@@ -114,6 +131,7 @@ internal sealed class EditorPreviewController
         Window owner)
     {
         _database = database;
+        _owner = owner;
         _deviceComboBox = deviceComboBox;
         _themeComboBox = themeComboBox;
         _modeComboBox = modeComboBox;
@@ -339,6 +357,7 @@ internal sealed class EditorPreviewController
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
         };
         actions.Children.Add(_scaleComboBox);
+        actions.Children.Add(_referenceButton);
         actions.Children.Add(_marksToggle);
         actions.Children.Add(new StackPanel
         {
@@ -364,7 +383,31 @@ internal sealed class EditorPreviewController
                 new Border
                 {
                     Padding = new Thickness(12, 0, 12, 12),
-                    Child = setupContent,
+                    Child = new StackPanel
+                    {
+                        Spacing = 10,
+                        Children =
+                        {
+                            new StackPanel
+                            {
+                                Orientation = Avalonia.Layout.Orientation.Horizontal,
+                                Spacing = 8,
+                                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                                Children =
+                                {
+                                    new TextBlock { Text = "Reference view", FontSize = 11, Opacity = 0.72, VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center },
+                                    _referenceViewComboBox,
+                                    new TextBlock { Text = "Swipe", FontSize = 11, Opacity = 0.72, VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center },
+                                    _referenceSwipeSlider,
+                                    new TextBlock { Text = "Opacity", FontSize = 11, Opacity = 0.72, VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center },
+                                    _referenceOpacitySlider,
+                                    new TextBlock { Text = "Angle", FontSize = 11, Opacity = 0.72, VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center },
+                                    _referenceAngleSlider,
+                                },
+                            },
+                            setupContent,
+                        },
+                    },
                 },
                 isExpanded: true),
         };
@@ -435,6 +478,14 @@ internal sealed class EditorPreviewController
             _selectedScale = _scaleComboBox.SelectedItem?.Value ?? "fit";
             _marksToggle.IsChecked = _showDesignMarks;
             _canonicalFrameToggle.IsChecked = _showCanonicalFrame;
+            var referenceViewOptions = new[]
+            {
+                new FieldOption("preview", "Preview"),
+                new FieldOption("split", "Split"),
+            };
+            _referenceViewComboBox.ItemsSource = referenceViewOptions;
+            _referenceViewComboBox.SelectedItem = referenceViewOptions.FirstOrDefault((option) => option.Value == _referenceViewMode) ?? referenceViewOptions[0];
+            _referenceViewMode = _referenceViewComboBox.SelectedItem?.Value ?? "preview";
         }
         finally
         {
@@ -451,6 +502,11 @@ internal sealed class EditorPreviewController
         _modeComboBox.SelectionChanged += (_, _) => OnModeChanged();
         _orientationComboBox.SelectionChanged += (_, _) => OnOrientationChanged();
         _scaleComboBox.SelectionChanged += (_, _) => OnScaleChanged();
+        _referenceButton.Click += async (_, _) => await BrowseReferenceAsync();
+        _referenceViewComboBox.SelectionChanged += (_, _) => OnReferenceViewChanged();
+        _referenceSwipeSlider.PropertyChanged += (_, change) => { if (change.Property == RangeBase.ValueProperty) RefreshReferenceOverlay(); };
+        _referenceOpacitySlider.PropertyChanged += (_, change) => { if (change.Property == RangeBase.ValueProperty) RefreshReferenceOverlay(); };
+        _referenceAngleSlider.PropertyChanged += (_, change) => { if (change.Property == RangeBase.ValueProperty) RefreshReferenceOverlay(); };
         _marksToggle.PropertyChanged += (_, change) =>
         {
             if (change.Property == ToggleSwitch.IsCheckedProperty)
@@ -540,6 +596,33 @@ internal sealed class EditorPreviewController
         }
     }
 
+    private async Task BrowseReferenceAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_projectId)) return;
+        var mediaRoot = _database.GetProjectSettings(_projectId).MediaRoot;
+        var selected = await EditorPathBrowser.BrowseMediaFile(_owner.StorageProvider, _referenceSource, mediaRoot);
+        if (string.IsNullOrWhiteSpace(selected)) return;
+
+        _referenceSource = selected;
+        _referenceStartPreviewFrame = _designInputsPanel.CurrentPreviewFrame;
+        _referenceViewMode = "split";
+        _referenceViewComboBox.SelectedItem = (_referenceViewComboBox.ItemsSource as IEnumerable<FieldOption>)?.FirstOrDefault((option) => option.Value == "split");
+        ToolTip.SetTip(_referenceButton, _referenceSource);
+        Refresh();
+    }
+
+    private void OnReferenceViewChanged()
+    {
+        if (_referenceViewComboBox.SelectedItem is not { } option) return;
+        _referenceViewMode = option.Value;
+        if (!_isRefreshingOptions) RefreshReferenceOverlay();
+    }
+
+    private void RefreshReferenceOverlay()
+    {
+        if (!_isRefreshingOptions) Refresh();
+    }
+
     public void Refresh()
     {
         try
@@ -570,6 +653,15 @@ internal sealed class EditorPreviewController
                 _selectedScale,
                 _showDesignMarks,
                 !_showCanonicalFrame,
+                new PreviewReferenceState(
+                    _referenceSource,
+                    _referenceViewMode,
+                    _referenceSwipeSlider.Value,
+                    _referenceOpacitySlider.Value,
+                    _referenceAngleSlider.Value,
+                    Math.Max(0, _designInputsPanel.CurrentPreviewFrame - _referenceStartPreviewFrame),
+                    _designInputsPanel.PlaybackFrameRate,
+                    string.IsNullOrWhiteSpace(_projectId) ? "" : _database.GetProjectSettings(_projectId).MediaRoot),
                 designPayload,
                 _messages);
             if (designPayload is not null && _designInputsPanel.IsPlaybackActive)

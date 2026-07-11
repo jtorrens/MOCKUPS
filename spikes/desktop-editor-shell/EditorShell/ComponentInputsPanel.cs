@@ -106,6 +106,10 @@ internal sealed class ComponentPreviewInputSession
 
     public int PlaybackFrameRate => _playbackFrameRate;
 
+    public int CurrentPreviewFrame => ActiveAction() is { } action && SupportsPlayback()
+        ? CurrentPlaybackFrame(action)
+        : 0;
+
     public void TriggerAction(string actionId)
     {
         var action = _actions.FirstOrDefault((candidate) => candidate.Id == actionId);

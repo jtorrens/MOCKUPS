@@ -19,23 +19,23 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal abstract class WebPreviewPane : Grid
 {
-    private readonly NativeWebView _webView;
+    protected readonly NativeWebView WebView;
 
     protected WebPreviewPane()
     {
-        _webView = new NativeWebView
+        WebView = new NativeWebView
         {
             Background = Brushes.Transparent,
             HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch,
         };
 
-        Children.Add(_webView);
+        Children.Add(WebView);
     }
 
     protected void LoadHtml(string html)
     {
-        _webView.NavigateToString(html, new Uri("https://mockups.local/"));
+        WebView.NavigateToString(html, new Uri("https://mockups.local/"));
     }
 
     protected async Task<bool> ReplacePreviewBodyAsync(string bodyContent, bool waitForCommit = false)
@@ -44,7 +44,7 @@ internal abstract class WebPreviewPane : Grid
         var bodyJson = JsonSerializer.Serialize(bodyContent);
         try
         {
-            var result = await _webView.InvokeScript($$"""
+            var result = await WebView.InvokeScript($$"""
                 (() => {
                   if (typeof window.mockupsSetPreviewBody !== "function") return false;
                   return window.mockupsSetPreviewBody({{bodyJson}});
@@ -94,7 +94,7 @@ internal abstract class WebPreviewPane : Grid
                 cancellationToken.ThrowIfCancellationRequested();
                 var batchStopwatch = Stopwatch.StartNew();
                 var sourcesJson = JsonSerializer.Serialize(batch);
-                var result = await _webView.InvokeScript($$"""
+                var result = await WebView.InvokeScript($$"""
                     (() => {
                       if (typeof window.mockupsPreloadPreviewImages !== "function") return 0;
                       return window.mockupsPreloadPreviewImages({{sourcesJson}});
@@ -212,7 +212,7 @@ internal abstract class WebPreviewPane : Grid
     {
         try
         {
-            var result = await _webView.InvokeScript("""
+            var result = await WebView.InvokeScript("""
                 (() => {
                   if (typeof window.mockupsDrainPreviewPatchEvents !== "function") return "[]";
                   return window.mockupsDrainPreviewPatchEvents();
@@ -287,8 +287,10 @@ internal abstract class WebPreviewPane : Grid
         bool showDesignMarks,
         bool showDeviceFrame,
         string bodyContent,
-        string fontStyleHtml = "")
+        string fontStyleHtml = "",
+        PreviewReferenceOverlay? reference = null)
     {
+        reference ??= new PreviewReferenceOverlay("", "preview", 0.5, 1, 0);
         var width = Math.Max(1, metrics.CanvasWidth);
         var height = Math.Max(1, metrics.CanvasHeight);
         var cornerRadius = Math.Max(0, metrics.CornerRadius);
@@ -383,6 +385,28 @@ internal abstract class WebPreviewPane : Grid
                   border: var(--preview-frame-border) solid var(--preview-frame-border-color);
                   border-radius: var(--preview-frame-radius);
                   box-shadow: 0 var(--preview-frame-shadow-y) var(--preview-frame-shadow-blur) rgba(15, 23, 42, 0.28);
+                }
+
+                .preview-reference-layer {
+                  position: absolute;
+                  inset: 0;
+                  z-index: 15;
+                  overflow: hidden;
+                  pointer-events: none;
+                  background: var(--preview-screen-background);
+                  opacity: 0;
+                }
+
+                .preview-reference-layer.is-split {
+                  opacity: 1;
+                  clip-path: polygon(0 0, 50% 0, 50% 100%, 0 100%);
+                }
+
+                .preview-reference-layer img {
+                  width: 100%;
+                  height: 100%;
+                  display: block;
+                  object-fit: fill;
                 }
 
                 .preview-design-marks {
@@ -493,6 +517,7 @@ internal abstract class WebPreviewPane : Grid
                   <div class="preview-scale" id="previewScale">
                     {{bodyContent}}
                   </div>
+                  <div aria-hidden="true" class="preview-reference-layer" id="previewReferenceLayer"><img id="previewReferenceImage" alt=""></div>
                   {{DesignMarksHtml(showDesignMarks, width, height, metrics.DesignSafeMarginCoefficient)}}
                   {{(showDeviceFrame ? "<div aria-hidden=\"true\" class=\"preview-phone-frame\" id=\"previewPhoneFrame\"></div>" : "")}}
                   {{PreviewMetaHtml(showDesignMarks, previewMode, metrics.Name, themeName, themeMode)}}
@@ -503,6 +528,8 @@ internal abstract class WebPreviewPane : Grid
                 const viewport = document.getElementById("previewViewport");
                 const scaleLayer = document.getElementById("previewScale");
                 const frame = document.getElementById("previewPhoneFrame");
+                const referenceLayer = document.getElementById("previewReferenceLayer");
+                const referenceImage = document.getElementById("previewReferenceImage");
                 const renderWidth = {{Number(width)}};
                 const renderHeight = {{Number(height)}};
                 const cornerRadius = {{Number(cornerRadius)}};
@@ -515,6 +542,36 @@ internal abstract class WebPreviewPane : Grid
                 let startTranslateX = 0;
                 let startTranslateY = 0;
                 let isDragging = false;
+
+                function applyReferenceOverlay(state) {
+                  if (!referenceLayer || !referenceImage) return;
+                  const mode = state?.viewMode === "split" ? "split" : "preview";
+                  const rawSwipe = Number(state?.swipe);
+                  const rawOpacity = Number(state?.opacity);
+                  const rawAngle = Number(state?.angle);
+                  const swipe = Math.max(0, Math.min(1, Number.isFinite(rawSwipe) ? rawSwipe : 0.5));
+                  const opacity = Math.max(0, Math.min(1, Number.isFinite(rawOpacity) ? rawOpacity : 0));
+                  const angle = Math.max(-80, Math.min(80, Number.isFinite(rawAngle) ? rawAngle : 0));
+                  const slope = Math.tan(angle * Math.PI / 180) * 50;
+                  const top = Math.max(-30, Math.min(130, swipe * 100 - slope));
+                  const bottom = Math.max(-30, Math.min(130, swipe * 100 + slope));
+                  referenceLayer.classList.toggle("is-split", mode === "split");
+                  referenceLayer.style.opacity = mode === "split" ? String(opacity) : "0";
+                  referenceLayer.style.clipPath = `polygon(0 0, ${top}% 0, ${bottom}% 100%, 0 100%)`;
+                  referenceImage.src = state?.sourceUri || "";
+                }
+
+                window.mockupsSetReferenceOverlay = (state) => {
+                  applyReferenceOverlay(state);
+                  return true;
+                };
+                applyReferenceOverlay({
+                  sourceUri: "{{Html(reference.SourceUri)}}",
+                  viewMode: "{{Html(reference.ViewMode)}}",
+                  swipe: {{Number(reference.Swipe)}},
+                  opacity: {{Number(reference.Opacity)}},
+                  angle: {{Number(reference.Angle)}},
+                });
 
                 function fixedScale() {
                   if (scaleMode === "fit") return null;
@@ -943,6 +1000,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         string scaleMode,
         bool showDesignMarks,
         bool showDeviceFrame,
+        PreviewReferenceState reference,
         DesignPreviewPayload? payload,
         IEditorShellMessageSink messages)
     {
@@ -954,6 +1012,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             scaleMode,
             showDesignMarks,
             showDeviceFrame,
+            reference,
             payload,
             messages);
 
@@ -1016,6 +1075,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
     private async Task RenderUpdateAsync(DesignPreviewUpdate update)
     {
         var stopwatch = Stopwatch.StartNew();
+        var reference = PreviewReferenceOverlay.Resolve(update.Reference);
         if (update.Payload is null)
         {
             LoadHtml(DeviceHtml(
@@ -1029,7 +1089,8 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 update.ShowDeviceFrame,
                 Placeholder(
                     "Design WebView host",
-                    "Select a component variant to preview it through the desktop component route.")));
+                    "Select a component variant to preview it through the desktop component route."),
+                reference: reference));
             _lastRenderedUpdate = update;
             PreviewDebugLog.Write(
                 "preview.webview.update",
@@ -1069,6 +1130,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             && isAnimationOnlyUpdate
             && await ReplacePreviewBodyAsync(htmlParts.BodyHtml))
         {
+            await UpdateReferenceOverlayAsync(reference);
             _lastRenderedUpdate = update;
             PreviewDebugLog.Write(
                 "preview.webview.update",
@@ -1096,7 +1158,8 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             update.ShowDesignMarks,
             update.ShowDeviceFrame,
             htmlParts.BodyHtml,
-            htmlParts.FontStyleHtml));
+            htmlParts.FontStyleHtml,
+            reference));
         _lastRenderedUpdate = update;
         PreviewDebugLog.Write(
             "preview.webview.update",
@@ -1120,6 +1183,22 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         bool IsAnimationOnly,
         bool UsedDomPatch,
         bool RenderError);
+
+    private async Task UpdateReferenceOverlayAsync(PreviewReferenceOverlay reference)
+    {
+        try
+        {
+            var json = JsonSerializer.Serialize(reference, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+            await WebView.InvokeScript($$"""
+                (() => typeof window.mockupsSetReferenceOverlay === "function"
+                  ? window.mockupsSetReferenceOverlay({{json}})
+                  : false)();
+                """);
+        }
+        catch
+        {
+        }
+    }
 
     private sealed record PreviewHtmlParts(string BodyHtml, string FontStyleHtml)
     {
@@ -1152,6 +1231,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         string ScaleMode,
         bool ShowDesignMarks,
         bool ShowDeviceFrame,
+        PreviewReferenceState Reference,
         DesignPreviewPayload? Payload,
         IEditorShellMessageSink Messages)
     {
@@ -1164,6 +1244,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 && ScaleMode == other.ScaleMode
                 && ShowDesignMarks == other.ShowDesignMarks
                 && ShowDeviceFrame == other.ShowDeviceFrame
+                && Reference with { PreviewFrame = other.Reference.PreviewFrame } == other.Reference
                 && StablePayloadSignature(Payload) == StablePayloadSignature(other.Payload)
                 && CurrentTimeSignature(Payload) != CurrentTimeSignature(other.Payload);
         }
