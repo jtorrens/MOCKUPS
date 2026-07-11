@@ -238,6 +238,8 @@ internal sealed partial class SpikeDatabase
                     ["pressedKeyBackgroundColorToken"] = "theme.keyboard.pressedKeyBackground",
                     ["keyTextColorToken"] = "theme.keyboard.text",
                     ["heightToken"] = "theme.keyboard.height",
+                    ["keyGapToken"] = "theme.keyboard.keyGap",
+                    ["rowGapToken"] = "theme.keyboard.rowGap",
                     ["keyPadding"] = "theme.spacing.s",
                     ["keyCornerRadiusToken"] = "theme.radii.control",
                     ["keyBorderColorToken"] = "theme.borders.secondary",

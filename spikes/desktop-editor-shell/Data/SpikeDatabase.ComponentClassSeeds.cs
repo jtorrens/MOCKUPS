@@ -41,14 +41,14 @@ internal sealed partial class SpikeDatabase
         }
     }
 
-    private static void EnsureKeyboardHeightToken(SqliteConnection connection)
+    private static void EnsureKeyboardThemeMetricTokens(SqliteConnection connection)
     {
         foreach (var row in QueryComponentClassRows(connection)
                      .Where((candidate) => candidate.ComponentType == "keyboard"))
         {
             var config = ParseJsonObject(row.ConfigJson);
             var metadata = ParseJsonObject(row.MetadataJson);
-            var changed = EnsureKeyboardHeightToken(config);
+            var changed = EnsureKeyboardThemeMetricTokens(config);
 
             if (metadata["presets"] is JsonArray presets)
             {
@@ -56,7 +56,7 @@ internal sealed partial class SpikeDatabase
                 {
                     if (preset["config"] is JsonObject presetConfig)
                     {
-                        changed |= EnsureKeyboardHeightToken(presetConfig);
+                        changed |= EnsureKeyboardThemeMetricTokens(presetConfig);
                     }
                 }
             }
@@ -75,14 +75,30 @@ internal sealed partial class SpikeDatabase
         }
     }
 
-    private static bool EnsureKeyboardHeightToken(JsonObject config)
+    private static bool EnsureKeyboardThemeMetricTokens(JsonObject config)
     {
-        if (config["keyboard"] is not JsonObject keyboard || keyboard.ContainsKey("heightToken"))
+        if (config["keyboard"] is not JsonObject keyboard)
         {
             return false;
         }
 
-        keyboard["heightToken"] = "theme.keyboard.height";
-        return true;
+        var changed = false;
+        if (!keyboard.ContainsKey("heightToken"))
+        {
+            keyboard["heightToken"] = "theme.keyboard.height";
+            changed = true;
+        }
+        if (!keyboard.ContainsKey("keyGapToken"))
+        {
+            keyboard["keyGapToken"] = "theme.keyboard.keyGap";
+            changed = true;
+        }
+        if (!keyboard.ContainsKey("rowGapToken"))
+        {
+            keyboard["rowGapToken"] = "theme.keyboard.rowGap";
+            changed = true;
+        }
+
+        return changed;
     }
 }

@@ -402,6 +402,8 @@ internal sealed partial class SpikeDatabase
             ["keyboard"] = new JsonObject
             {
                 ["height"] = isAndroid ? 280 : 260,
+                ["keyGap"] = isAndroid ? 3 : 4,
+                ["rowGap"] = isAndroid ? 4 : 6,
             },
             ["typography"] = new JsonObject
             {

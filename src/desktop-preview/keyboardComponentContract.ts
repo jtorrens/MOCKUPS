@@ -27,6 +27,8 @@ export interface KeyboardDesignContract {
   pressedKeyBackgroundColorToken: string;
   keyTextColorToken: string;
   heightToken: string;
+  keyGapToken: string;
+  rowGapToken: string;
   keyPaddingToken: string;
   keyCornerRadiusToken: string;
   keyBorderColorToken: string;

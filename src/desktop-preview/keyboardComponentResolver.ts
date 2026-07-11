@@ -117,6 +117,16 @@ export function resolveKeyboardComponent(
       "heightToken",
       "component.keyboard.heightToken",
     ),
+    keyGapToken: requiredString(
+      keyboard,
+      "keyGapToken",
+      "component.keyboard.keyGapToken",
+    ),
+    rowGapToken: requiredString(
+      keyboard,
+      "rowGapToken",
+      "component.keyboard.rowGapToken",
+    ),
     keyPaddingToken: requiredString(
       keyboard,
       "keyPadding",

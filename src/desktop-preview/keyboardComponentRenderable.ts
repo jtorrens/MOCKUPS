@@ -55,7 +55,8 @@ export function keyboardComponentToRenderable(
 
   const keyPadding = numberToken(payload, keyboard.keyPaddingToken) * scale;
   const padding = Math.max(6 * scale, keyPadding);
-  const rowGap = 8 * scale;
+  const keyGap = Math.max(0, numberToken(payload, keyboard.keyGapToken) * scale);
+  const rowGap = Math.max(0, numberToken(payload, keyboard.rowGapToken) * scale);
   const iconRowsHeight = Math.max(keyboard.iconRowsHeight * scale, 0);
   const rowCount = Math.max(1, keyboard.rows.length);
   const rowHeight = Math.max(
@@ -90,6 +91,7 @@ export function keyboardComponentToRenderable(
       rowHeight,
       rowsStartY,
       padding,
+      keyGap,
       rowGap,
       keyBackground,
       specialKeyBackground,
@@ -178,6 +180,7 @@ function keyboardRowNodes(
   rowHeight: number,
   rowsStartY: number,
   padding: number,
+  keyGap: number,
   rowGap: number,
   keyBackground: string,
   specialKeyBackground: string,
@@ -189,12 +192,11 @@ function keyboardRowNodes(
   typography: ReturnType<typeof resolveTypographyStyle>,
 ): RenderableNode[] {
   const scale = renderScale(payload);
-  const gap = 6 * scale;
   const rowWidth = keyboardBox.width - padding * 2;
   const rowY = rowsStartY + rowIndex * (rowHeight + rowGap);
   const weights = row.map((key) => key.weight);
   const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
-  const keyUnitWidth = Math.max(1, (rowWidth - gap * (row.length - 1)) / totalWeight);
+  const keyUnitWidth = Math.max(1, (rowWidth - keyGap * (row.length - 1)) / totalWeight);
   let x = keyboardBox.x + padding;
 
   return row.flatMap((key, index) => {
@@ -205,7 +207,7 @@ function keyboardRowNodes(
       width,
       height: rowHeight,
     };
-    x += width + gap;
+    x += width + keyGap;
 
     const displayText = key.kind === "space" ? "" : key.label;
     const usesEmojiIcon = key.id === "emoji";

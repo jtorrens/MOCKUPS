@@ -86,6 +86,7 @@ internal sealed partial class SpikeDatabase
             "SELECT layout_json FROM editor_layouts WHERE record_class_id = 'theme'");
         if (!string.IsNullOrWhiteSpace(themeLayout)
             && (!themeLayout.Contains("Keyboard dimensions and color tokens", StringComparison.Ordinal)
+                || !themeLayout.Contains("theme.keyboard.keyGap", StringComparison.Ordinal)
                 || !IsValidLayoutJson(themeLayout)))
         {
             Execute(
@@ -499,12 +500,14 @@ internal sealed partial class SpikeDatabase
                   "visible": true,
                   "fields": [
                     { "id": "theme.keyboard.height", "order": 10, "visible": true },
-                    { "id": "theme.keyboard.background", "order": 20, "visible": true },
-                    { "id": "theme.keyboard.keyBackground", "order": 30, "visible": true },
-                    { "id": "theme.keyboard.specialKeyBackground", "order": 40, "visible": true },
-                    { "id": "theme.keyboard.pressedKeyBackground", "order": 50, "visible": true },
-                    { "id": "theme.keyboard.popoverBackground", "order": 60, "visible": true },
-                    { "id": "theme.keyboard.text", "order": 70, "visible": true }
+                    { "id": "theme.keyboard.keyGap", "order": 20, "visible": true },
+                    { "id": "theme.keyboard.rowGap", "order": 30, "visible": true },
+                    { "id": "theme.keyboard.background", "order": 40, "visible": true },
+                    { "id": "theme.keyboard.keyBackground", "order": 50, "visible": true },
+                    { "id": "theme.keyboard.specialKeyBackground", "order": 60, "visible": true },
+                    { "id": "theme.keyboard.pressedKeyBackground", "order": 70, "visible": true },
+                    { "id": "theme.keyboard.popoverBackground", "order": 80, "visible": true },
+                    { "id": "theme.keyboard.text", "order": 90, "visible": true }
                   ]
                 }
               ]

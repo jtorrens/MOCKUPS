@@ -288,6 +288,8 @@ internal static class RecordClassFieldCatalog
         ["theme.shadows.default.offsetY"] = new("theme.shadows.default.offsetY", "Offset Y", ValueKind.Decimal),
         ["theme.shadows.default.blur"] = new("theme.shadows.default.blur", "Blur", ValueKind.Decimal),
         ["theme.keyboard.height"] = new("theme.keyboard.height", "Height", ValueKind.Integer),
+        ["theme.keyboard.keyGap"] = new("theme.keyboard.keyGap", "Key gap", ValueKind.Integer),
+        ["theme.keyboard.rowGap"] = new("theme.keyboard.rowGap", "Row gap", ValueKind.Integer),
         ["theme.keyboard.background"] = new("theme.keyboard.background", "Background", ValueKind.PaletteColorPair),
         ["theme.keyboard.keyBackground"] = new("theme.keyboard.keyBackground", "Key background", ValueKind.PaletteColorPair),
         ["theme.keyboard.specialKeyBackground"] = new("theme.keyboard.specialKeyBackground", "Special key background", ValueKind.PaletteColorPair),

@@ -111,6 +111,16 @@ internal static class ComponentClassFieldCatalog
         new("theme.keyboard.height", "keyboard.height"),
     ];
 
+    private static readonly FieldOption[] KeyboardKeyGapTokenOptions =
+    [
+        new("theme.keyboard.keyGap", "keyboard.keyGap"),
+    ];
+
+    private static readonly FieldOption[] KeyboardRowGapTokenOptions =
+    [
+        new("theme.keyboard.rowGap", "keyboard.rowGap"),
+    ];
+
     private static readonly FieldOption[] TextStyleOptions =
     [
         new("normal", "Normal"),
@@ -586,6 +596,8 @@ internal static class ComponentClassFieldCatalog
         ["component.keyboard.pressedKeyBackgroundColorToken"] = new("component.keyboard.pressedKeyBackgroundColorToken", "Pressed key background", ValueKind.ThemeToken, ["keyboard", "pressedKeyBackgroundColorToken"], "theme.keyboard.pressedKeyBackground", Options: ThemeColorOptions),
         ["component.keyboard.keyTextColorToken"] = new("component.keyboard.keyTextColorToken", "Key text", ValueKind.ThemeToken, ["keyboard", "keyTextColorToken"], "theme.keyboard.text", Options: ThemeColorOptions),
         ["component.keyboard.heightToken"] = new("component.keyboard.heightToken", "Height", ValueKind.ThemeToken, ["keyboard", "heightToken"], "theme.keyboard.height", Options: KeyboardHeightTokenOptions),
+        ["component.keyboard.keyGapToken"] = new("component.keyboard.keyGapToken", "Key gap", ValueKind.ThemeToken, ["keyboard", "keyGapToken"], "theme.keyboard.keyGap", Options: KeyboardKeyGapTokenOptions),
+        ["component.keyboard.rowGapToken"] = new("component.keyboard.rowGapToken", "Row gap", ValueKind.ThemeToken, ["keyboard", "rowGapToken"], "theme.keyboard.rowGap", Options: KeyboardRowGapTokenOptions),
         ["component.keyboard.typography"] = new("component.keyboard.typography", "Typography", ValueKind.TypographyStyle, ["keyboard", "typography"], TypographyStyleValue.CreateDefault("theme.typography.sizes.s")),
         ["component.keyboard.keyPadding"] = new("component.keyboard.keyPadding", "Key padding", ValueKind.ThemeToken, ["keyboard", "keyPadding"], "theme.spacing.s", Options: SpacingTokenOptions),
         ["component.keyboard.keyCornerRadiusToken"] = new("component.keyboard.keyCornerRadiusToken", "Key radius", ValueKind.ThemeToken, ["keyboard", "keyCornerRadiusToken"], "theme.radii.control", Options: RadiusTokenOptions),
