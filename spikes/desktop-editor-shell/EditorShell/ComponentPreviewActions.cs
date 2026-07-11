@@ -116,6 +116,18 @@ internal static class ComponentPreviewActions
         return action.VisibleWhenItemValues.Contains(current, StringComparer.Ordinal);
     }
 
+    public static bool IsApplicable(JsonObject preview, ComponentPreviewActionDefinition action)
+    {
+        if (!action.IsCollectionItemAction) return true;
+        var item = Target(preview, action);
+        return item is not null && AppliesToItem(action, item);
+    }
+
+    public static IReadOnlyList<ComponentPreviewActionDefinition> ReadApplicable(JsonObject preview)
+    {
+        return Read(preview).Where((action) => IsApplicable(preview, action)).ToList();
+    }
+
     private static JsonObject? Target(
         JsonObject preview,
         ComponentPreviewActionDefinition action)

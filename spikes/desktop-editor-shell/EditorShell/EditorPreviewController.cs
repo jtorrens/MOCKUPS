@@ -826,7 +826,7 @@ internal sealed class EditorPreviewController
         return _designInputsPanel.ApplyTransientTestValues(preview);
     }
 
-    private async Task<bool> PreparePlaybackFramesAsync()
+    private async Task<bool> PreparePlaybackFramesAsync(ComponentPreviewActionDefinition requestedAction)
     {
         EnsureSelectedOptionsExist();
         if (string.IsNullOrWhiteSpace(_projectId))
@@ -846,7 +846,7 @@ internal sealed class EditorPreviewController
         var payload = _designInputsPanel.ApplyInputs(designPayload, _selectedMode, _projectId);
         var projectFps = payload.FrameRate;
         var previewFps = PreviewPlaybackTiming.PreviewFrameRate(projectFps);
-        var frames = PlaybackFramePayloads(payload, projectFps).ToList();
+        var frames = PlaybackFramePayloads(payload, projectFps, requestedAction).ToList();
         if (frames.Count == 0)
         {
             PreviewDebugLog.Write(
@@ -1298,7 +1298,10 @@ internal sealed class EditorPreviewController
         Slow,
     }
 
-    private static IEnumerable<DesignPreviewPayload> PlaybackFramePayloads(DesignPreviewPayload payload, int projectFps)
+    private static IEnumerable<DesignPreviewPayload> PlaybackFramePayloads(
+        DesignPreviewPayload payload,
+        int projectFps,
+        ComponentPreviewActionDefinition? requestedAction = null)
     {
         var fps = PreviewPlaybackTiming.PreviewFrameRate(projectFps);
         if (JsonNode.Parse(string.IsNullOrWhiteSpace(payload.DesignPreviewJson) ? "{}" : payload.DesignPreviewJson) is not JsonObject preview)
@@ -1306,7 +1309,9 @@ internal sealed class EditorPreviewController
             yield break;
         }
 
-        var action = PlaybackFrameAction(preview);
+        var action = requestedAction is not null && ComponentPreviewActions.IsApplicable(preview, requestedAction)
+            ? requestedAction
+            : PlaybackFrameAction(preview);
         if (action is null)
         {
             yield break;
@@ -1332,10 +1337,12 @@ internal sealed class EditorPreviewController
         for (var frame = 0; frame <= frameCount; frame++)
         {
             var framePreview = JsonNode.Parse(preview.ToJsonString()) as JsonObject ?? new JsonObject();
-            framePreview[timeJsonKey] = action.TimeUnit == ComponentPreviewActionTimeUnit.Frames
-                ? frame
-                : frame / (double)fps;
-            framePreview[action.PlayInputId] = true;
+            ComponentPreviewActions.SetValue(
+                framePreview,
+                action,
+                timeJsonKey,
+                action.TimeUnit == ComponentPreviewActionTimeUnit.Frames ? frame : frame / (double)fps);
+            ComponentPreviewActions.SetValue(framePreview, action, action.PlayInputId, true);
             yield return payload with { DesignPreviewJson = framePreview.ToJsonString() };
         }
     }
@@ -1361,8 +1368,8 @@ internal sealed class EditorPreviewController
         }
 
         var currentFrame = action.TimeUnit == ComponentPreviewActionTimeUnit.Frames
-            ? Math.Max(0, (int)Math.Floor(JsonNumber(preview, action.TimeJsonKey, 0)))
-            : Math.Max(0, (int)Math.Floor(JsonNumber(preview, action.TimeJsonKey, 0) * fps));
+            ? Math.Max(0, (int)Math.Floor(JsonNodeNumber(ComponentPreviewActions.Value(preview, action, action.TimeJsonKey), 0)))
+            : Math.Max(0, (int)Math.Floor(JsonNodeNumber(ComponentPreviewActions.Value(preview, action, action.TimeJsonKey), 0) * fps));
         for (var index = 1; index <= AheadPlaybackPreloadFrames * 2; index++)
         {
             var frame = currentFrame + index;
@@ -1372,10 +1379,12 @@ internal sealed class EditorPreviewController
             }
 
             var framePreview = JsonNode.Parse(preview.ToJsonString()) as JsonObject ?? new JsonObject();
-            framePreview[action.TimeJsonKey] = action.TimeUnit == ComponentPreviewActionTimeUnit.Frames
-                ? frame
-                : frame / (double)fps;
-            framePreview[action.PlayInputId] = true;
+            ComponentPreviewActions.SetValue(
+                framePreview,
+                action,
+                action.TimeJsonKey,
+                action.TimeUnit == ComponentPreviewActionTimeUnit.Frames ? frame : frame / (double)fps);
+            ComponentPreviewActions.SetValue(framePreview, action, action.PlayInputId, true);
             yield return payload with { DesignPreviewJson = framePreview.ToJsonString() };
         }
     }
@@ -1389,12 +1398,14 @@ internal sealed class EditorPreviewController
 
         if (action.TimeUnit == ComponentPreviewActionTimeUnit.Frames)
         {
-            return Math.Max(0, (int)Math.Round(JsonNumber(preview, action.DurationInputId, 0), MidpointRounding.AwayFromZero));
+            return Math.Max(0, (int)Math.Round(
+                JsonNodeNumber(ComponentPreviewActions.Value(preview, action, action.DurationInputId), 0),
+                MidpointRounding.AwayFromZero));
         }
 
         var duration = action.DurationSeconds > 0
             ? action.DurationSeconds
-            : Math.Max(0, JsonNumber(preview, action.DurationInputId, 0));
+            : Math.Max(0, JsonNodeNumber(ComponentPreviewActions.Value(preview, action, action.DurationInputId), 0));
         return duration <= 0
             ? 0
             : Math.Max(1, (int)Math.Ceiling(duration * Math.Max(1, fps)));
@@ -1457,7 +1468,7 @@ internal sealed class EditorPreviewController
 
     private static ComponentPreviewActionDefinition? PlaybackFrameAction(JsonObject preview)
     {
-        var actions = ComponentPreviewActions.Read(preview);
+        var actions = ComponentPreviewActions.ReadApplicable(preview);
         return actions.FirstOrDefault((action) => JsonBoolean(ComponentPreviewActions.Value(preview, action, action.PlayInputId)))
             ?? actions.FirstOrDefault();
     }
@@ -1498,8 +1509,18 @@ internal sealed class EditorPreviewController
 
         return value.TryGetValue<string>(out var text)
             && double.TryParse(text.Replace(",", "."), NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
-                ? parsed
-                : fallback;
+            ? parsed
+            : fallback;
+    }
+
+    private static double JsonNodeNumber(JsonNode? node, double fallback)
+    {
+        if (node is not JsonValue value) return fallback;
+        if (value.TryGetValue<double>(out var number)) return number;
+        return value.TryGetValue<string>(out var text)
+            && double.TryParse(text.Replace(",", "."), NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
+            ? parsed
+            : fallback;
     }
 
     private SpikeDatabase.DevicePreviewMetrics ApplyPreviewOrientation(SpikeDatabase.DevicePreviewMetrics metrics)

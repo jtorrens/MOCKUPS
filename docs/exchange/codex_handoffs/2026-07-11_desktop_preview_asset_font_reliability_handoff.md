@@ -268,3 +268,9 @@ Measured warm results for the 25 fps Conversation action are 138/138 at about
 and 138/138 at about 25 fps for raster. Cold HTML remains 14-19 fps; this is an
 accepted deferred WebKit/first-state cost. Do not reintroduce data-URI expansion
 per morph or component-specific logic in the bridge to pursue it.
+
+Nested media action follow-up: `playVideo` and `playAudio` share item fields, so
+only the action applicable to the item's `mediaType` may write them. The generic
+preparer now receives the requested action and targets the nested collection item.
+Video HTML is validated at 73/73 frames and about 24 fps; extraction diagnostics
+are routed to the repository-level preview log through the renderer environment.

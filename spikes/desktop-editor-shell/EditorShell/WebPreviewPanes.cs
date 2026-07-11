@@ -1940,7 +1940,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 var preview = JsonNode.Parse(string.IsNullOrWhiteSpace(json) ? "{}" : json) as JsonObject ?? new JsonObject();
                 preview.Remove("currentTimeSeconds");
                 preview.Remove("motionTimeSeconds");
-                foreach (var action in ComponentPreviewActions.Read(preview))
+                foreach (var action in ComponentPreviewActions.ReadApplicable(preview))
                 {
                     if (!string.IsNullOrWhiteSpace(action.TimeJsonKey))
                     {
@@ -1971,7 +1971,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                     return "";
                 }
 
-                var actionTimes = ComponentPreviewActions.Read(preview)
+                var actionTimes = ComponentPreviewActions.ReadApplicable(preview)
                     .Where((action) => !string.IsNullOrWhiteSpace(action.TimeJsonKey)
                         && ComponentPreviewActions.Value(preview, action, action.TimeJsonKey) is not null)
                     .Select((action) => $"{action.Id}:{ComponentPreviewActions.Value(preview, action, action.TimeJsonKey)?.ToJsonString() ?? ""}")

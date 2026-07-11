@@ -19,7 +19,7 @@ internal sealed class ComponentPreviewInputSession
     private readonly SpikeDatabase _database;
     private readonly ComponentPreviewRecordInputResolver _recordInputResolver;
     private readonly Action _refreshPreview;
-    private readonly Func<Task<bool>>? _preparePlaybackFrames;
+    private readonly Func<ComponentPreviewActionDefinition, Task<bool>>? _preparePlaybackFrames;
     private readonly DispatcherTimer _playbackTimer;
     private readonly Dictionary<string, string> _values = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _inputDefaults = new(StringComparer.Ordinal);
@@ -76,7 +76,7 @@ internal sealed class ComponentPreviewInputSession
     public ComponentPreviewInputSession(
         SpikeDatabase database,
         Action refreshPreview,
-        Func<Task<bool>>? preparePlaybackFrames = null)
+        Func<ComponentPreviewActionDefinition, Task<bool>>? preparePlaybackFrames = null)
     {
         _database = database;
         _recordInputResolver = new ComponentPreviewRecordInputResolver(database);
@@ -284,7 +284,7 @@ internal sealed class ComponentPreviewInputSession
                     break;
             }
         }
-        foreach (var action in _actions)
+        foreach (var action in _actions.Where((action) => ComponentPreviewActions.IsApplicable(preview, action)))
         {
             ComponentPreviewActions.SetValue(preview, action, action.PlayInputId, IsPlaying(action));
             ComponentPreviewActions.SetValue(preview, action, action.TimeJsonKey, PlaybackTimeValue(action));
@@ -642,7 +642,7 @@ internal sealed class ComponentPreviewInputSession
                 ("timeKey", action.TimeJsonKey));
             try
             {
-                if (_preparePlaybackFrames is not null && !await _preparePlaybackFrames())
+                if (_preparePlaybackFrames is not null && !await _preparePlaybackFrames(action))
                 {
                     prepared = false;
                 }

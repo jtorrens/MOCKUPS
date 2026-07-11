@@ -585,6 +585,14 @@ wall-clock playback becomes longer. `Raster · Every frame` prepares physical-re
 buffered player at the project FPS. Route policy belongs to the preview host;
 component resolvers and action contracts do not branch on it.
 
+Collection-item actions are filtered by their declared applicability before
+runtime values are written. Hidden sibling actions may share `playInputId` and
+`timeJsonKey`, but must never overwrite the applicable action. Frame preparation
+receives the concrete requested action and writes time/play values through its
+collection target; it must not assume top-level fields or select the first action.
+This is what allows message-scoped video/audio playback to use the same generic
+HTML/raster pipeline as a module timeline action.
+
 HTML routes prewarm the compact rendered-frame cache before playback. The WebView
 is not mutated during frame rendering; all referenced image assets are then
 decoded once in the WebView before the playback clock starts. DOM morphing compares interned assets by hash
@@ -607,6 +615,11 @@ The accepted desktop checkpoint after warmup is:
 - HTML FPS-priority: 135-137/138 frames, approximately 25 fps;
 - physical-resolution raster: 138/138 frames, no discarded frames,
   approximately 25 fps.
+
+A nested 73-frame video action is also validated at 73/73 frames with DOM patch
+updates around 10-12 ms and approximately 24 fps in HTML every-frame mode. The
+raster route prepares the same action-specific resolved frame sequence at final
+device resolution before playback.
 
 The first HTML play remains approximately 14-19 fps even after render-cache,
 image-decode and blob-asset prewarming. Measurements indicate a cold WebKit /

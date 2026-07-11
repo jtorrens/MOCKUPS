@@ -413,6 +413,7 @@ internal static class WebDesignPreviewRenderer
             _command = command;
             _stderr.Clear();
             var startInfo = DesktopChildProcess.CreateHiddenStartInfo(command.Executable, command.WorkingDirectory);
+            startInfo.Environment["MOCKUPS_PREVIEW_DEBUG_LOG"] = PreviewDebugLog.FilePath;
             startInfo.ArgumentList.Add(command.ServerScript);
             startInfo.RedirectStandardInput = true;
             var process = Process.Start(startInfo)

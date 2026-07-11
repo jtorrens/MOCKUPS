@@ -316,7 +316,7 @@ function debugVideoFrame(event: string, details: Record<string, unknown>) {
       .map(([key, value]) => `${key}=${debugValue(value)}`)
       .join("\t");
     appendFileSync(
-      path.resolve("logs", "desktop-preview-debug.log"),
+      process.env.MOCKUPS_PREVIEW_DEBUG_LOG || path.resolve("logs", "desktop-preview-debug.log"),
       `${new Date().toISOString()}\tpreview.asset.video-frame\tevent=${event}\t${fields}\n`,
     );
   } catch {
