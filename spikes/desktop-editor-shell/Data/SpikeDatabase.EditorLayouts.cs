@@ -85,12 +85,26 @@ internal sealed partial class SpikeDatabase
             connection,
             "SELECT layout_json FROM editor_layouts WHERE record_class_id = 'theme'");
         if (!string.IsNullOrWhiteSpace(themeLayout)
-            && !themeLayout.Contains("Keyboard dimensions and color tokens", StringComparison.Ordinal))
+            && (!themeLayout.Contains("Keyboard dimensions and color tokens", StringComparison.Ordinal)
+                || !IsValidLayoutJson(themeLayout)))
         {
             Execute(
                 connection,
                 "UPDATE editor_layouts SET layout_json = $layoutJson WHERE record_class_id = 'theme'",
                 ("$layoutJson", MinimalEditorLayoutJson("theme")));
+        }
+    }
+
+    private static bool IsValidLayoutJson(string layoutJson)
+    {
+        try
+        {
+            using var _ = JsonDocument.Parse(layoutJson);
+            return true;
+        }
+        catch (JsonException)
+        {
+            return false;
         }
     }
 
@@ -466,7 +480,7 @@ internal sealed partial class SpikeDatabase
                     { "id": "theme.cursor.width", "order": 20, "visible": true },
                     { "id": "theme.cursor.blinkFrames", "order": 30, "visible": true }
                   ]
-                },
+                }
               ]
             },
             {
