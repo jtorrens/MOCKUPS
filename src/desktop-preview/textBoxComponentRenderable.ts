@@ -104,7 +104,7 @@ export function measureTextBoxComponent(
       measuredWrappedTextSize(
         contentText,
         typography,
-        safeWrapWidth(Math.max(1, width - paddingX * 2 - iconTextInset(
+        resolvedWrapWidth(Math.max(1, width - paddingX * 2 - iconTextInset(
           hasLeftIcons,
           hasRightIcons,
           leftIconSize.width,
@@ -135,7 +135,7 @@ export function measureTextBoxComponent(
       measuredWrappedTextSize(
         contentText,
         typography,
-        safeWrapWidth(Math.max(1, width - paddingX * 2 - iconInset.total)),
+        resolvedWrapWidth(Math.max(1, width - paddingX * 2 - iconInset.total)),
       ),
       cursorWidth,
     );
@@ -180,14 +180,14 @@ export function measureTextBoxComponent(
     rightIconSize.width,
     iconGap,
   );
-  let naturalWidth = conservativeTextWidth(contentSize.width) + paddingX * 2 + iconInset.total;
+  let naturalWidth = measuredContentWidth(contentSize.width) + paddingX * 2 + iconInset.total;
   let wraps = naturalWidth > maximumWidth;
   let measuredContentSize = wraps
     ? withInlineCursorWidth(
         measuredWrappedTextSize(
           contentText,
           typography,
-          safeWrapWidth(Math.max(1, maximumWidth - paddingX * 2 - iconInset.total)),
+          resolvedWrapWidth(Math.max(1, maximumWidth - paddingX * 2 - iconInset.total)),
         ),
         cursorWidth,
       )
@@ -207,14 +207,14 @@ export function measureTextBoxComponent(
     rightIconSize.width,
     iconGap,
   );
-  naturalWidth = conservativeTextWidth(contentSize.width) + paddingX * 2 + iconInset.total;
+  naturalWidth = measuredContentWidth(contentSize.width) + paddingX * 2 + iconInset.total;
   wraps = naturalWidth > maximumWidth;
   measuredContentSize = wraps
     ? withInlineCursorWidth(
         measuredWrappedTextSize(
           contentText,
           typography,
-          safeWrapWidth(Math.max(1, maximumWidth - paddingX * 2 - iconInset.total)),
+          resolvedWrapWidth(Math.max(1, maximumWidth - paddingX * 2 - iconInset.total)),
         ),
         cursorWidth,
       )
@@ -285,7 +285,7 @@ export function textBoxComponentToRenderableAt(
   const wrappedLines = measuredWrappedTextLines(
     size.contentText,
     size.typography,
-    safeWrapWidth(textFrame.width),
+    resolvedWrapWidth(textFrame.width),
   );
   const iconY = (iconHeight: number) =>
     wrappedLines.length <= 1
@@ -585,10 +585,10 @@ function textMetricSlack(fontSize: number) {
   return Math.max(1, fontSize * 0.14);
 }
 
-function safeWrapWidth(width: number) {
-  return Math.max(1, width * 0.88);
+function resolvedWrapWidth(width: number) {
+  return Math.max(1, width);
 }
 
-function conservativeTextWidth(width: number) {
-  return Math.max(1, width / 0.88);
+function measuredContentWidth(width: number) {
+  return Math.max(1, width);
 }

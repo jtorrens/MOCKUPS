@@ -456,6 +456,12 @@ generic variation method for them. A requested weight is applied through
 `getVariation` only when the selected file declares a `wght` variation axis,
 clamped to that axis range.
 
+Measured wrapping uses the complete resolved text frame width. The retired
+heuristic's 12% safety contraction/inflation must not be restored: it produced
+early wraps that did not align with renderable bounds even when font shaping was
+exact. Status and sibling slots may size the parent surface but do not reduce a
+Text Box's declared wrapping width.
+
 Node initially emits data URIs, but the desktop renderer interns them before a
 frame enters the shared cache. Cached and transported frame bodies therefore
 contain stable `mockups-asset:<sha256>` references instead of repeated binary
