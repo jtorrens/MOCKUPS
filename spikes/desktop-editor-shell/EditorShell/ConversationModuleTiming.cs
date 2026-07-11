@@ -14,8 +14,6 @@ internal static class ConversationModuleTiming
         var animation = JsonNode.Parse(animationJson)?.AsObject()
             ?? throw new InvalidOperationException("Conversation animation must be a JSON object.");
 
-        var writeOnDurationFrames = NonNegativeInt(behavior["writeOnDurationFrames"]);
-        var postWriteOnHoldFrames = NonNegativeInt(behavior["postWriteOnHoldFrames"]);
         var cursor = NonNegativeInt(behavior["headFrames"]);
         foreach (var message in content["messages"]?.AsArray() ?? [])
         {
@@ -25,7 +23,9 @@ internal static class ConversationModuleTiming
             var isOutgoing = string.Equals(direction, "outgoing", StringComparison.Ordinal);
             cursor += NonNegativeInt(messageObject["delayAfterPreviousFrames"]);
             cursor = Math.Max(
-                cursor + (isSystem ? 0 : writeOnDurationFrames) + (isOutgoing ? postWriteOnHoldFrames : 0),
+                cursor
+                    + (isSystem ? 0 : NonNegativeInt(messageObject["writeOnDurationFrames"]))
+                    + (isOutgoing ? NonNegativeInt(messageObject["postWriteOnHoldFrames"]) : 0),
                 LastAnimationEndFrame(animation, messageObject["id"]?.GetValue<string>() ?? ""));
         }
 

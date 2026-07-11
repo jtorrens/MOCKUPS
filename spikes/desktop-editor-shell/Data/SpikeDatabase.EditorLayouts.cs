@@ -209,14 +209,12 @@ internal sealed partial class SpikeDatabase
                     { "id": "moduleInstance.module", "order": 20, "visible": true },
                     { "id": "moduleInstance.durationFrames", "order": 30, "visible": true },
                     { "id": "moduleInstance.transition", "order": 40, "visible": true },
-                    { "id": "moduleInstance.conversation.writeOnDurationFrames", "order": 50, "visible": true },
-                    { "id": "moduleInstance.conversation.postWriteOnHoldFrames", "order": 60, "visible": true },
-                    { "id": "moduleInstance.conversation.bubbleRevealMode", "order": 70, "visible": true },
-                    { "id": "moduleInstance.conversation.incomingRevealMode", "order": 80, "visible": true },
-                    { "id": "moduleInstance.conversation.textInputVisible", "order": 90, "visible": true },
-                    { "id": "moduleInstance.conversation.keyboardVisible", "order": 100, "visible": true },
-                    { "id": "moduleInstance.sortOrder", "order": 110, "visible": false },
-                    { "id": "core.notes", "order": 120, "visible": true }
+                    { "id": "moduleInstance.conversation.bubbleRevealMode", "order": 50, "visible": true },
+                    { "id": "moduleInstance.conversation.incomingRevealMode", "order": 60, "visible": true },
+                    { "id": "moduleInstance.conversation.textInputVisible", "order": 70, "visible": true },
+                    { "id": "moduleInstance.conversation.keyboardVisible", "order": 80, "visible": true },
+                    { "id": "moduleInstance.sortOrder", "order": 90, "visible": false },
+                    { "id": "core.notes", "order": 100, "visible": true }
                   """
             : recordClassId == "render_preset"
                 ? """

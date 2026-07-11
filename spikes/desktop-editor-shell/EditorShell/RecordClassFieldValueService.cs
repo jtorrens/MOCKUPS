@@ -210,8 +210,6 @@ internal sealed class RecordClassFieldValueService
                         settings.AnimationJson)
                     : settings.DurationFrames).ToString(),
             "moduleInstance.transition" => _database.GetModuleInstanceTransitionType(moduleInstanceId),
-            "moduleInstance.conversation.writeOnDurationFrames" => JsonNumberString(settings.BehaviorJson, "writeOnDurationFrames", "42"),
-            "moduleInstance.conversation.postWriteOnHoldFrames" => JsonNumberString(settings.BehaviorJson, "postWriteOnHoldFrames", "12"),
             "moduleInstance.conversation.bubbleRevealMode" => JsonString(settings.BehaviorJson, "bubbleRevealMode") is "afterWriteOn" ? "afterWriteOn" : "duringWriteOn",
             "moduleInstance.conversation.incomingRevealMode" => JsonString(settings.BehaviorJson, "incomingRevealMode") is "writeOn" or "typingIndicator" ? JsonString(settings.BehaviorJson, "incomingRevealMode") : "instant",
             "moduleInstance.conversation.textInputVisible" => JsonBoolString(settings.BehaviorJson, "textInputVisible", true),
@@ -492,23 +490,6 @@ internal sealed class RecordClassFieldValueService
         catch
         {
             return "";
-        }
-    }
-
-    private static string JsonNumberString(string json, string key, string fallback)
-    {
-        try
-        {
-            var owner = JsonNode.Parse(string.IsNullOrWhiteSpace(json) ? "{}" : json) as JsonObject;
-            if (owner?[key] is JsonValue value && value.TryGetValue<int>(out var integer))
-            {
-                return integer.ToString();
-            }
-            return fallback;
-        }
-        catch
-        {
-            return fallback;
         }
     }
 

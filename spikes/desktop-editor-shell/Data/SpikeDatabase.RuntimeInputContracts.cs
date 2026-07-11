@@ -132,19 +132,34 @@ internal sealed partial class SpikeDatabase
         JsonArray messages,
         ref bool changed)
     {
-        foreach (var message in messages.OfType<JsonObject>().OrderBy((message) =>
-            (message["direction"]?.GetValue<string>() ?? "") == "outgoing" ? 0 : 1))
+        foreach (var (message, index) in messages.OfType<JsonObject>().Select((message, index) => (message, index)))
         {
-            PromoteMessageValue(preview, message, "writeOnDurationFrames", ref changed);
-            if (message["textReveal"]?["durationFrames"] is JsonNode duration && preview["writeOnDurationFrames"] is null)
+            if (message["writeOnDurationFrames"] is null)
             {
-                preview["writeOnDurationFrames"] = duration.DeepClone();
+                var defaultMessage = (defaults["messages"] as JsonArray)?.ElementAtOrDefault(index) as JsonObject;
+                if (message["textReveal"]?["durationFrames"] is JsonNode duration)
+                {
+                    message["writeOnDurationFrames"] = duration.DeepClone();
+                }
+                else if (defaultMessage?["writeOnDurationFrames"] is JsonNode defaultWriteOn)
+                {
+                    message["writeOnDurationFrames"] = defaultWriteOn.DeepClone();
+                }
+                else
+                {
+                    message["writeOnDurationFrames"] = 0;
+                }
+                changed = true;
+            }
+            if (message["postWriteOnHoldFrames"] is null)
+            {
+                var defaultMessage = (defaults["messages"] as JsonArray)?.ElementAtOrDefault(index) as JsonObject;
+                message["postWriteOnHoldFrames"] = defaultMessage?["postWriteOnHoldFrames"]?.DeepClone() ?? 0;
                 changed = true;
             }
             PromoteMessageValue(preview, message, "bubbleRevealMode", ref changed);
             PromoteMessageValue(preview, message, "textInputVisible", ref changed);
             PromoteMessageValue(preview, message, "keyboardVisible", ref changed);
-            RemoveMessageTimingKey(message, "writeOnDurationFrames", ref changed);
             RemoveMessageTimingKey(message, "bubbleRevealMode", ref changed);
             RemoveMessageTimingKey(message, "textInputVisible", ref changed);
             RemoveMessageTimingKey(message, "keyboardVisible", ref changed);
@@ -156,8 +171,6 @@ internal sealed partial class SpikeDatabase
 
         foreach (var key in new[]
         {
-            "writeOnDurationFrames",
-            "postWriteOnHoldFrames",
             "bubbleRevealMode",
             "incomingRevealMode",
             "textInputVisible",
@@ -198,6 +211,8 @@ internal sealed partial class SpikeDatabase
             "message3Text",
             "message2StatusState",
             "message2StatusText",
+            "writeOnDurationFrames",
+            "postWriteOnHoldFrames",
         })
         {
             if (preview.Remove(key))

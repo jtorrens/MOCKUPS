@@ -493,11 +493,14 @@ function assertDesktopConversationPreviewDoesNotUseLegacyMessageKeys() {
     "message2StatusText",
   ]);
   const perMessageTimingKeys = new Set([
-    "writeOnDurationFrames",
     "bubbleRevealMode",
     "textInputVisible",
     "keyboardVisible",
     "textReveal",
+  ]);
+  const requiredMessageTimingKeys = new Set([
+    "writeOnDurationFrames",
+    "postWriteOnHoldFrames",
   ]);
 
   const database = new Database(databasePath, { readonly: true, fileMustExist: true });
@@ -516,6 +519,14 @@ function assertDesktopConversationPreviewDoesNotUseLegacyMessageKeys() {
         }
       }
       for (const [index, message] of jsonArray(preview.messages).map(jsonRecord).entries()) {
+        for (const key of requiredMessageTimingKeys) {
+          if (!(key in message)) {
+            addViolation(
+              "data/desktop-editor-spike.sqlite",
+              `${row.id}.design_preview_json.messages[${index}] is missing per-message timing key "${key}"`,
+            );
+          }
+        }
         for (const key of perMessageTimingKeys) {
           if (key in message) {
             addViolation(
@@ -533,6 +544,14 @@ function assertDesktopConversationPreviewDoesNotUseLegacyMessageKeys() {
     for (const row of instanceRows) {
       const content = jsonRecord(jsonParse(row.content_json));
       for (const [index, message] of jsonArray(content.messages).map(jsonRecord).entries()) {
+        for (const key of requiredMessageTimingKeys) {
+          if (!(key in message)) {
+            addViolation(
+              "data/desktop-editor-spike.sqlite",
+              `${row.id}.content_json.messages[${index}] is missing per-message timing key "${key}"`,
+            );
+          }
+        }
         for (const key of perMessageTimingKeys) {
           if (key in message) {
             addViolation(

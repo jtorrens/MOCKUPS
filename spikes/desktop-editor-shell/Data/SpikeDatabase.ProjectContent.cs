@@ -621,17 +621,15 @@ internal sealed partial class SpikeDatabase
             ["headerTitle"] = "Alex Q",
             ["headerSubtitle"] = "online",
             ["actorId"] = "",
-            ["writeOnDurationFrames"] = 42,
             ["bubbleRevealMode"] = "afterWriteOn",
             ["incomingRevealMode"] = "typingIndicator",
             ["textInputVisible"] = true,
             ["keyboardVisible"] = true,
-            ["postWriteOnHoldFrames"] = 12,
             ["messages"] = new JsonArray
             {
-                ConversationPreviewMessage("message_001", "incoming", "Tenias razon: ya podemos componer desde el modulo.", 0, false, "none", ""),
-                ConversationPreviewMessage("message_002", "outgoing", "Perfecto. El modulo solo elige variantes y datos runtime.", 12, true, "read", ""),
-                ConversationPreviewMessage("message_003", "system", "Siguiente paso: instancias reales.", 12, false, "none", ""),
+                ConversationPreviewMessage("message_001", "incoming", "Tenias razon: ya podemos componer desde el modulo.", 0, 30, 0, false, "none", ""),
+                ConversationPreviewMessage("message_002", "outgoing", "Perfecto. El modulo solo elige variantes y datos runtime.", 12, 42, 12, true, "read", ""),
+                ConversationPreviewMessage("message_003", "system", "Siguiente paso: instancias reales.", 12, 0, 0, false, "none", ""),
             },
             ["conversationFrame"] = 0,
             ["inputs"] = new JsonArray
@@ -640,8 +638,6 @@ internal sealed partial class SpikeDatabase
                 new JsonObject { ["id"] = "headerTitle", ["label"] = "Header title", ["jsonKey"] = "headerTitle", ["kind"] = "text", ["defaultValue"] = "Alex Q" },
                 new JsonObject { ["id"] = "headerSubtitle", ["label"] = "Header subtitle", ["jsonKey"] = "headerSubtitle", ["kind"] = "text", ["defaultValue"] = "online" },
                 new JsonObject { ["id"] = "conversationFrame", ["label"] = "Timeline frame", ["jsonKey"] = "conversationFrame", ["kind"] = "number", ["defaultValue"] = "0", ["minimum"] = 0, ["maximum"] = 100000, ["increment"] = 1 },
-                new JsonObject { ["id"] = "writeOn", ["label"] = "Write-on frames", ["jsonKey"] = "writeOnDurationFrames", ["kind"] = "number", ["defaultValue"] = "42", ["minimum"] = 0, ["maximum"] = 100000, ["increment"] = 1, ["groupId"] = "timing", ["groupLabel"] = "Timing", ["groupOrder"] = 20 },
-                new JsonObject { ["id"] = "postWriteOnHold", ["label"] = "Post write-on hold", ["jsonKey"] = "postWriteOnHoldFrames", ["kind"] = "number", ["defaultValue"] = "12", ["minimum"] = 0, ["maximum"] = 100000, ["increment"] = 1, ["groupId"] = "timing", ["groupLabel"] = "Timing", ["groupOrder"] = 20 },
                 new JsonObject { ["id"] = "bubbleReveal", ["label"] = "Outgoing bubble reveal", ["jsonKey"] = "bubbleRevealMode", ["kind"] = "option", ["defaultValue"] = "afterWriteOn", ["options"] = new JsonArray { new JsonObject { ["value"] = "duringWriteOn", ["label"] = "During write-on" }, new JsonObject { ["value"] = "afterWriteOn", ["label"] = "After write-on" } }, ["groupId"] = "timing", ["groupLabel"] = "Timing", ["groupOrder"] = 20 },
                 new JsonObject { ["id"] = "incomingReveal", ["label"] = "Incoming reveal", ["jsonKey"] = "incomingRevealMode", ["kind"] = "option", ["defaultValue"] = "typingIndicator", ["options"] = new JsonArray { new JsonObject { ["value"] = "instant", ["label"] = "Instant" }, new JsonObject { ["value"] = "writeOn", ["label"] = "Write-on" }, new JsonObject { ["value"] = "typingIndicator", ["label"] = "Typing indicator" } }, ["groupId"] = "timing", ["groupLabel"] = "Timing", ["groupOrder"] = 20 },
                 new JsonObject { ["id"] = "textInput", ["label"] = "Text input while writing", ["jsonKey"] = "textInputVisible", ["kind"] = "boolean", ["defaultValue"] = "true", ["groupId"] = "timing", ["groupLabel"] = "Timing", ["groupOrder"] = 20 },
@@ -667,8 +663,7 @@ internal sealed partial class SpikeDatabase
                     ["label"] = "Play messages",
                     ["playInputId"] = "conversationPlayback",
                     ["durationCollectionJsonKey"] = "messages",
-                    ["durationItemNumberKeys"] = new JsonArray { "delayAfterPreviousFrames" },
-                    ["durationCollectionMultiplierNumberKeys"] = new JsonArray { "writeOnDurationFrames", "postWriteOnHoldFrames" },
+                    ["durationItemNumberKeys"] = new JsonArray { "delayAfterPreviousFrames", "writeOnDurationFrames", "postWriteOnHoldFrames" },
                     ["timeJsonKey"] = "conversationFrame",
                     ["timeUnit"] = "frames",
                     ["prewarmFrames"] = false,
@@ -682,6 +677,8 @@ internal sealed partial class SpikeDatabase
         string direction,
         string text,
         int delayAfterPreviousFrames,
+        int writeOnDurationFrames,
+        int postWriteOnHoldFrames,
         bool statusVisible,
         string statusState,
         string statusText)
@@ -692,6 +689,8 @@ internal sealed partial class SpikeDatabase
             ["direction"] = direction,
             ["text"] = text,
             ["delayAfterPreviousFrames"] = delayAfterPreviousFrames,
+            ["writeOnDurationFrames"] = writeOnDurationFrames,
+            ["postWriteOnHoldFrames"] = postWriteOnHoldFrames,
             ["statusVisible"] = statusVisible,
             ["statusState"] = statusState,
             ["statusText"] = statusText,
@@ -717,6 +716,8 @@ internal sealed partial class SpikeDatabase
             new JsonObject { ["id"] = "direction", ["label"] = "Direction", ["jsonKey"] = "direction", ["kind"] = "option", ["defaultValue"] = "incoming", ["options"] = new JsonArray { new JsonObject { ["value"] = "incoming", ["label"] = "Incoming" }, new JsonObject { ["value"] = "outgoing", ["label"] = "Outgoing" }, new JsonObject { ["value"] = "system", ["label"] = "System" } } },
             new JsonObject { ["id"] = "text", ["label"] = "Text", ["jsonKey"] = "text", ["kind"] = "multilineText", ["defaultValue"] = "" },
             new JsonObject { ["id"] = "delay", ["label"] = "Delay", ["jsonKey"] = "delayAfterPreviousFrames", ["kind"] = "number", ["defaultValue"] = "0", ["minimum"] = 0, ["maximum"] = 100000, ["increment"] = 1 },
+            new JsonObject { ["id"] = "writeOn", ["label"] = "Write-on frames", ["jsonKey"] = "writeOnDurationFrames", ["kind"] = "number", ["defaultValue"] = "0", ["minimum"] = 0, ["maximum"] = 100000, ["increment"] = 1 },
+            new JsonObject { ["id"] = "postWriteOnHold", ["label"] = "Post write-on hold", ["jsonKey"] = "postWriteOnHoldFrames", ["kind"] = "number", ["defaultValue"] = "0", ["minimum"] = 0, ["maximum"] = 100000, ["increment"] = 1 },
             new JsonObject { ["id"] = "statusVisible", ["label"] = "Show delivery status", ["jsonKey"] = "statusVisible", ["kind"] = "boolean", ["defaultValue"] = "false" },
             new JsonObject { ["id"] = "status", ["label"] = "Status", ["jsonKey"] = "statusState", ["kind"] = "option", ["defaultValue"] = "none", ["options"] = new JsonArray { new JsonObject { ["value"] = "none", ["label"] = "None" }, new JsonObject { ["value"] = "sent", ["label"] = "Sent" }, new JsonObject { ["value"] = "delivered", ["label"] = "Delivered" }, new JsonObject { ["value"] = "read", ["label"] = "Read" } } },
             new JsonObject { ["id"] = "statusText", ["label"] = "Status text", ["jsonKey"] = "statusText", ["kind"] = "text", ["defaultValue"] = "" },
@@ -739,7 +740,7 @@ internal sealed partial class SpikeDatabase
 
     private static void ApplyConversationRuntimeGroups(JsonArray fields)
     {
-        SetRuntimeGroup(fields, ["delay"], "timing", "Timing", 20);
+        SetRuntimeGroup(fields, ["delay", "writeOn", "postWriteOnHold"], "timing", "Timing", 20);
         SetRuntimeGroup(fields, ["statusVisible", "status", "statusText"], "delivery", "Delivery", 30);
         SetRuntimeGroup(fields, ["mediaType", "mediaSource"], "attachment", "Attachment", 40);
         SetRuntimeGroup(fields, ["viewport", "mediaScale", "mediaOffset"], "attachment", "Attachment", 50, sectionLabel: "Frame");

@@ -184,16 +184,6 @@ internal static class RecordClassFieldCatalog
             ValueKind.OptionToken,
             IsEditable: false,
             Options: [new FieldOption("cut", "Cut")]),
-        ["moduleInstance.conversation.writeOnDurationFrames"] = new(
-            "moduleInstance.conversation.writeOnDurationFrames",
-            "Write-on frames",
-            ValueKind.Integer,
-            Number: new NumberDefinition(0, 100000, 1, 0)),
-        ["moduleInstance.conversation.postWriteOnHoldFrames"] = new(
-            "moduleInstance.conversation.postWriteOnHoldFrames",
-            "Post write-on hold",
-            ValueKind.Integer,
-            Number: new NumberDefinition(0, 100000, 1, 0)),
         ["moduleInstance.conversation.bubbleRevealMode"] = new(
             "moduleInstance.conversation.bubbleRevealMode",
             "Outgoing bubble reveal",

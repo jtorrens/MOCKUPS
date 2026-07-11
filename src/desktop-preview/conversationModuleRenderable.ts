@@ -393,6 +393,7 @@ type ConversationPreviewMessage = {
   statusText: string;
   delayAfterPreviousFrames: number;
   writeOnDurationFrames: number;
+  postWriteOnHoldFrames: number;
   writeOnTrigger: boolean;
   writeOnFrame: number;
   statusVisible: boolean;
@@ -413,12 +414,10 @@ type ConversationPreviewMessage = {
 type IncomingRevealMode = "instant" | "writeOn" | "typingIndicator";
 
 type ConversationTiming = {
-  writeOnDurationFrames: number;
   bubbleRevealMode: "duringWriteOn" | "afterWriteOn";
   incomingRevealMode: IncomingRevealMode;
   textInputVisible: boolean;
   keyboardVisible: boolean;
-  postWriteOnHoldFrames: number;
 };
 
 function conversationTiming(conversation: JsonRecord, preview: JsonRecord): ConversationTiming {
@@ -427,20 +426,12 @@ function conversationTiming(conversation: JsonRecord, preview: JsonRecord): Conv
   const bubbleRevealMode = optionalString(preview, "bubbleRevealMode")
     || optionalString(conversation, "bubbleRevealMode");
   return {
-    writeOnDurationFrames: Math.max(
-      0,
-      Math.floor(optionalNumber(preview, "writeOnDurationFrames", optionalNumber(conversation, "writeOnDurationFrames", 30))),
-    ),
     bubbleRevealMode: bubbleRevealMode === "afterWriteOn" ? "afterWriteOn" : "duringWriteOn",
     incomingRevealMode: incomingRevealMode === "writeOn" || incomingRevealMode === "typingIndicator"
       ? incomingRevealMode
       : "instant",
     textInputVisible: optionalBooleanWithFallback(preview, conversation, "textInputVisible", true),
     keyboardVisible: optionalBooleanWithFallback(preview, conversation, "keyboardVisible", true),
-    postWriteOnHoldFrames: Math.max(
-      0,
-      Math.floor(optionalNumber(preview, "postWriteOnHoldFrames", optionalNumber(conversation, "postWriteOnHoldFrames", 0))),
-    ),
   };
 }
 
@@ -468,7 +459,8 @@ function conversationMessages(preview: JsonRecord): ConversationPreviewMessage[]
         statusState: optionalString(message, "statusState") || optionalString(status, "deliveryStatus") || "none",
         statusText: optionalString(message, "statusText") || optionalString(status, "text"),
         delayAfterPreviousFrames: Math.max(0, Math.floor(optionalNumber(message, "delayAfterPreviousFrames", 0))),
-        writeOnDurationFrames: 0,
+        writeOnDurationFrames: Math.max(0, Math.floor(optionalNumber(message, "writeOnDurationFrames", 0))),
+        postWriteOnHoldFrames: Math.max(0, Math.floor(optionalNumber(message, "postWriteOnHoldFrames", 0))),
         writeOnTrigger: false,
         writeOnFrame: 0,
         statusVisible: optionalBoolean(message, "statusVisible") || optionalString(message, "statusState") !== "none",
@@ -502,8 +494,8 @@ function visibleMessages(
     const isSystemMessage = message.state === "system";
     const isOutgoingMessage = message.state === "outgoing";
     const isIncomingMessage = message.state === "incoming";
-    const effectiveWriteOnFrames = isSystemMessage ? 0 : timing.writeOnDurationFrames;
-    const holdFrames = isOutgoingMessage ? timing.postWriteOnHoldFrames : 0;
+    const effectiveWriteOnFrames = isSystemMessage ? 0 : message.writeOnDurationFrames;
+    const holdFrames = isOutgoingMessage ? message.postWriteOnHoldFrames : 0;
     const revealEndFrame = startFrame + effectiveWriteOnFrames;
     cursor = revealEndFrame + holdFrames;
     const revealAfterWriteOn = isOutgoingMessage && timing.bubbleRevealMode === "afterWriteOn";
@@ -516,9 +508,14 @@ function visibleMessages(
       && timing.incomingRevealMode === "writeOn"
       && effectiveWriteOnFrames > 0
       && frame < revealEndFrame;
+    const messageIsWriting = frame < revealEndFrame
+      && effectiveWriteOnFrames > 0
+      && (isOutgoingMessage || incomingWriteOn || incomingTyping);
     return [{
       ...message,
       text: incomingTyping ? "•••" : message.text,
+      mediaType: messageIsWriting ? "none" as const : message.mediaType,
+      mediaSource: messageIsWriting ? "" : message.mediaSource,
       writeOnTrigger: (isOutgoingMessage || incomingWriteOn)
         && !revealAfterWriteOn
         && effectiveWriteOnFrames > 0,
@@ -536,9 +533,9 @@ function composerState(
   let cursor = 0;
   for (const message of messages) {
     const startFrame = cursor + message.delayAfterPreviousFrames;
-    const effectiveWriteOnFrames = message.state === "system" ? 0 : timing.writeOnDurationFrames;
+    const effectiveWriteOnFrames = message.state === "system" ? 0 : message.writeOnDurationFrames;
     const endFrame = startFrame + effectiveWriteOnFrames;
-    const holdEndFrame = endFrame + (message.state === "outgoing" ? timing.postWriteOnHoldFrames : 0);
+    const holdEndFrame = endFrame + (message.state === "outgoing" ? message.postWriteOnHoldFrames : 0);
     const writing = message.state === "outgoing"
       && effectiveWriteOnFrames > 0
       && frame >= startFrame

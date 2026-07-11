@@ -16,6 +16,8 @@ internal sealed partial class SpikeDatabase
         string ActorId,
         string Text,
         int DelayAfterPreviousFrames,
+        int WriteOnDurationFrames,
+        int PostWriteOnHoldFrames,
         string StatusText,
         string DeliveryStatus,
         bool StatusVisible,
@@ -144,8 +146,6 @@ internal sealed partial class SpikeDatabase
                     ("$value", Math.Max(1, NumericText.Int32(value, 1))),
                     ("$id", moduleInstanceId));
                 return;
-            case "moduleInstance.conversation.writeOnDurationFrames":
-            case "moduleInstance.conversation.postWriteOnHoldFrames":
             case "moduleInstance.conversation.bubbleRevealMode":
             case "moduleInstance.conversation.incomingRevealMode":
             case "moduleInstance.conversation.textInputVisible":
@@ -172,12 +172,6 @@ internal sealed partial class SpikeDatabase
         var behavior = ParseJsonObject(settings.BehaviorJson);
         switch (fieldId)
         {
-            case "moduleInstance.conversation.writeOnDurationFrames":
-                behavior["writeOnDurationFrames"] = Math.Max(0, NumericText.Int32(value, 42));
-                break;
-            case "moduleInstance.conversation.postWriteOnHoldFrames":
-                behavior["postWriteOnHoldFrames"] = Math.Max(0, NumericText.Int32(value, 12));
-                break;
             case "moduleInstance.conversation.bubbleRevealMode":
                 behavior["bubbleRevealMode"] = value is "afterWriteOn" ? "afterWriteOn" : "duringWriteOn";
                 break;
@@ -210,6 +204,8 @@ internal sealed partial class SpikeDatabase
             message["actorId"]?.GetValue<string>() ?? "",
             message["text"]?.GetValue<string>() ?? "",
             message["delayAfterPreviousFrames"]?.GetValue<int>() ?? 0,
+            message["writeOnDurationFrames"]?.GetValue<int>() ?? (message["textReveal"] as JsonObject)?["durationFrames"]?.GetValue<int>() ?? 0,
+            message["postWriteOnHoldFrames"]?.GetValue<int>() ?? 0,
             (message["status"] as JsonObject)?["text"]?.GetValue<string>() ?? "",
             (message["status"] as JsonObject)?["deliveryStatus"]?.GetValue<string>() ?? "none",
             message["statusVisible"]?.GetValue<bool>()
@@ -242,6 +238,8 @@ internal sealed partial class SpikeDatabase
                 ["actorId"] = "",
                 ["text"] = "",
                 ["delayAfterPreviousFrames"] = 0,
+                ["writeOnDurationFrames"] = 0,
+                ["postWriteOnHoldFrames"] = 0,
                 ["statusVisible"] = false,
                 ["mediaType"] = "none",
                 ["mediaSource"] = "",
@@ -278,6 +276,8 @@ internal sealed partial class SpikeDatabase
             message["actorId"] = next.ActorId;
             message["text"] = next.Text;
             message["delayAfterPreviousFrames"] = Math.Max(0, next.DelayAfterPreviousFrames);
+            message["writeOnDurationFrames"] = Math.Max(0, next.WriteOnDurationFrames);
+            message["postWriteOnHoldFrames"] = Math.Max(0, next.PostWriteOnHoldFrames);
             message["statusVisible"] = next.StatusVisible;
             message["mediaType"] = next.MediaType is "image" or "video" or "audio" ? next.MediaType : "none";
             message["mediaSource"] = next.MediaSource;
@@ -377,8 +377,6 @@ internal sealed partial class SpikeDatabase
             ["showNavigationBar"] = true,
             ["showTextInputBar"] = true,
             ["showKeyboard"] = false,
-            ["writeOnDurationFrames"] = 42,
-            ["postWriteOnHoldFrames"] = 12,
             ["bubbleRevealMode"] = "afterWriteOn",
             ["incomingRevealMode"] = "typingIndicator",
             ["textInputVisible"] = true,
