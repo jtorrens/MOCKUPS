@@ -293,6 +293,7 @@ internal sealed class RuntimeInputsCollectionEditor
             var control = new DictionaryFieldControl(
                 new FieldValue(CreateDefinition(owner.Node, input), DesignPreviewTestValues.CollectionValue(item, input)),
                 _dictionaryServices.ForNode(owner.Node, (_) => ""));
+            control.IsEnabled = CollectionFieldIsEnabled(item, input);
             control.ValueCommitted += (_, next) =>
             {
                 DesignPreviewTestValues.SetCollectionValue(preview, collection, itemIndex, input, next);
@@ -307,6 +308,21 @@ internal sealed class RuntimeInputsCollectionEditor
             content,
             out card,
             isExpanded: true);
+    }
+
+    private static bool CollectionFieldIsEnabled(JsonObject item, ComponentInputDefinition input)
+    {
+        if (string.IsNullOrWhiteSpace(input.EnabledWhenItemJsonKey)
+            || input.EnabledWhenItemValues is not { Count: > 0 })
+        {
+            return true;
+        }
+
+        var current = item[input.EnabledWhenItemJsonKey] is JsonValue value
+            && value.TryGetValue<string>(out var text)
+            ? text
+            : "";
+        return input.EnabledWhenItemValues.Contains(current, StringComparer.Ordinal);
     }
 
     private Control CreateTestValueGroupCard(

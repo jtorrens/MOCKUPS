@@ -84,7 +84,7 @@ internal sealed class EditorCollectionCardFactory
     private IReadOnlyList<InstantEditorCard> CreateModuleInstanceCollectionCards(ProjectTreeNode node)
     {
         return _database.IsConversationModuleInstance(node.Id)
-            ? [new ConversationMessagesCollectionEditor(_database, _onChanged, _reloadAndSelect).Create(node)]
+            ? [new ConversationMessagesCollectionEditor(_database, _dictionaryServices, _onChanged, _reloadAndSelect).Create(node)]
             : [];
     }
 

@@ -932,7 +932,11 @@ internal sealed class ComponentPreviewInputSession
                     ComponentInputUiOrigin.Self,
                     "",
                     "",
-                    ""));
+                    "") with
+                {
+                    EnabledWhenItemJsonKey = JsonString(field, "enabledWhenItemJsonKey"),
+                    EnabledWhenItemValues = JsonStringArray(field, "enabledWhenItemValues"),
+                });
             }
 
             if (itemFields.Count > 0)
@@ -1056,6 +1060,20 @@ internal sealed class ComponentPreviewInputSession
             .OfType<JsonObject>()
             .Select((option) => new FieldOption(JsonString(option, "value"), JsonString(option, "label")))
             .Where((option) => !string.IsNullOrWhiteSpace(option.Value))
+            .ToList();
+    }
+
+    private static IReadOnlyList<string> JsonStringArray(JsonObject input, string key)
+    {
+        if (input[key] is not JsonArray values)
+        {
+            return [];
+        }
+
+        return values
+            .OfType<JsonValue>()
+            .Select((value) => value.TryGetValue<string>(out var text) ? text : "")
+            .Where((text) => !string.IsNullOrWhiteSpace(text))
             .ToList();
     }
 
@@ -1191,7 +1209,9 @@ internal sealed record ComponentInputDefinition(
     ComponentInputUiOrigin UiOrigin = ComponentInputUiOrigin.Self,
     string UiGroupId = "",
     string UiGroupLabel = "",
-    string UiParentGroupId = "");
+    string UiParentGroupId = "",
+    string EnabledWhenItemJsonKey = "",
+    IReadOnlyList<string>? EnabledWhenItemValues = null);
 
 internal sealed record RuntimeInputCollectionDefinition(
     string Id,

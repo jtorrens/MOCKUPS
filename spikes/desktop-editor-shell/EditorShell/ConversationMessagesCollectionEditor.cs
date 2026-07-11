@@ -11,15 +11,18 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class ConversationMessagesCollectionEditor
 {
     private readonly SpikeDatabase _database;
+    private readonly EditorDictionaryFieldServices _dictionaryServices;
     private readonly Action _onChanged;
     private readonly Action<ProjectTreeNode> _reloadAndSelect;
 
     public ConversationMessagesCollectionEditor(
         SpikeDatabase database,
+        EditorDictionaryFieldServices dictionaryServices,
         Action onChanged,
         Action<ProjectTreeNode> reloadAndSelect)
     {
         _database = database;
+        _dictionaryServices = dictionaryServices;
         _onChanged = onChanged;
         _reloadAndSelect = reloadAndSelect;
     }
@@ -77,7 +80,7 @@ internal sealed class ConversationMessagesCollectionEditor
         panel.Children.Add(Field("Delivery status", ValueKind.OptionToken, message.DeliveryStatus, [new("none", "None"), new("sent", "Sent"), new("delivered", "Delivered"), new("read", "Read")], (value) => message = message with { DeliveryStatus = value }));
         panel.Children.Add(Field("Status text", ValueKind.StringSingleLine, message.StatusText, null, (value) => message = message with { StatusText = value }));
         panel.Children.Add(Field("Attachment type", ValueKind.OptionToken, message.MediaType, [new("none", "None"), new("image", "Image"), new("video", "Video"), new("audio", "Audio")], (value) => message = message with { MediaType = value }));
-        panel.Children.Add(Field("Media source", ValueKind.StringSingleLine, message.MediaSource, null, (value) => message = message with { MediaSource = value }));
+        panel.Children.Add(Field("Media source", ValueKind.MediaFilePath, message.MediaSource, null, (value) => message = message with { MediaSource = value }, isEnabled: message.MediaType != "none"));
         panel.Children.Add(Field("Media viewport", ValueKind.IntegerPair, message.ViewportSize, null, (value) => message = message with { ViewportSize = value }, new("W", "H")));
         panel.Children.Add(Field("Media scale", ValueKind.Decimal, message.MediaScale.ToString(), null, (value) => message = message with { MediaScale = NumericText.Decimal(value, 1) }));
         panel.Children.Add(Field("Media offset", ValueKind.IntegerPair, message.MediaOffset, null, (value) => message = message with { MediaOffset = value }, new("X", "Y")));
@@ -96,9 +99,11 @@ internal sealed class ConversationMessagesCollectionEditor
             headerTrailing: delete)
         { HorizontalAlignment = HorizontalAlignment.Stretch };
 
-        DictionaryFieldControl Field(string label, ValueKind kind, string value, FieldOption[]? options, Action<string> update, PairFieldLabels? pairLabels = null)
+        DictionaryFieldControl Field(string label, ValueKind kind, string value, FieldOption[]? options, Action<string> update, PairFieldLabels? pairLabels = null, bool isEnabled = true)
         {
-            var control = new DictionaryFieldControl(new FieldValue(new FieldDefinition($"conversation.messages.{message.Id}.{label}", label, kind, DefaultValue: value, Options: options, PairLabels: pairLabels), value), new DictionaryFieldServices());
+            var control = new DictionaryFieldControl(
+                new FieldValue(new FieldDefinition($"conversation.messages.{message.Id}.{label}", label, kind, IsEditable: isEnabled, DefaultValue: value, Options: options, PairLabels: pairLabels), value),
+                _dictionaryServices.ForNode(node, (_) => ""));
             control.ValueCommitted += (_, next) => { update(next); _database.UpdateConversationMessage(node.Id, message.Id, message); _onChanged(); _reloadAndSelect(node); };
             return control;
         }
