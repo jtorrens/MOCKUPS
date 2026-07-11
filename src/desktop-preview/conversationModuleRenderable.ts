@@ -34,6 +34,7 @@ import { resolveStatusBarComponent } from "./statusBarComponentResolver.js";
 import { textInputBarComponentToRenderable } from "./textInputBarComponentRenderable.js";
 import { resolveTextInputBarComponent } from "./textInputBarComponentResolver.js";
 import { motionFrameProgress, requiredMotionContract } from "./previewMotionHelpers.js";
+import { textGraphemes } from "./previewTextRevealHelpers.js";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -108,7 +109,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
         requiredString(conversation, "keyboardVariant", "module.conversation.keyboardVariant"),
         {
           text: composer.text,
-          currentCharacter: 1,
+          currentCharacter: composer.currentCharacter,
         },
         (childPayload) =>
           keyboardComponentToRenderable(childPayload, resolveKeyboardComponent(childPayload)),
@@ -141,9 +142,9 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
   const keyboardNode = keyboard?.box
     ? translateRenderableNode(keyboard, { x: 0, y: keyboardTargetY - keyboard.box.y })
     : keyboard;
-  const keyboardBounds = keyboardNode ? renderableVisualBounds(keyboardNode) : undefined;
-  const keyboardHeight = keyboardBounds?.height ?? 0;
-  const textInputTargetY = screen.y + screen.height - navHeight - keyboardHeight - (textInput?.box?.height ?? 0);
+  const keyboardBaseTop = keyboardNode?.box?.y
+    ?? screen.y + screen.height - navHeight;
+  const textInputTargetY = keyboardBaseTop - (textInput?.box?.height ?? 0);
   const textInputNode = textInput?.box
     ? translateRenderableNode(textInput, { x: 0, y: textInputTargetY - textInput.box.y })
     : textInput;
@@ -169,9 +170,9 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
   const top = screen.y + (status?.box?.height ?? 0) + (header?.box?.height ?? 0);
   const closedBottom = screen.y + screen.height - navHeight;
   const composerBottom = textInputNode
-    ? renderableVisualBounds(textInputNode).y
+    ? textInputNode.box?.y ?? closedBottom
     : keyboardNode
-      ? renderableVisualBounds(keyboardNode).y
+      ? keyboardNode.box?.y ?? closedBottom
       : closedBottom;
   const composerOpen = keyboardVisible || textInputVisible;
   const viewportMotion = conversation.messageViewportMotion
@@ -217,8 +218,8 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
     ),
   });
 
-  if (textInputNode) children.push(textInputNode);
-  if (keyboardNode) children.push(keyboardNode);
+  if (textInputNode) children.push(withZIndex(textInputNode, 10));
+  if (keyboardNode) children.push(withZIndex(keyboardNode, 20));
   if (navigation) children.push(navigation);
 
   return {
@@ -561,19 +562,31 @@ function composerState(messages: ConversationPreviewMessage[], frame: number) {
       && frame >= startFrame
       && frame < endFrame;
     if (writing) {
+      const graphemes = textGraphemes(message.text);
       const textLength = Math.max(0, Math.min(
-        Array.from(message.text).length,
-        Math.floor(Array.from(message.text).length * (frame - startFrame) / Math.max(1, effectiveWriteOnFrames)),
+        graphemes.length,
+        Math.floor(graphemes.length * (frame - startFrame) / Math.max(1, effectiveWriteOnFrames)),
       ));
       return {
-        text: Array.from(message.text).slice(0, textLength).join(""),
+        text: graphemes.slice(0, textLength).join(""),
+        currentCharacter: textLength,
         textInputVisible: message.textInputVisible,
         keyboardVisible: message.keyboardVisible,
       };
     }
     cursor = endFrame;
   }
-  return { text: "", textInputVisible: false, keyboardVisible: false };
+  return { text: "", currentCharacter: 0, textInputVisible: false, keyboardVisible: false };
+}
+
+function withZIndex(node: RenderableNode, zIndex: number): RenderableNode {
+  return {
+    ...node,
+    style: {
+      ...node.style,
+      zIndex,
+    },
+  };
 }
 
 function messageMediaType(message: JsonRecord): ConversationPreviewMessage["mediaType"] {

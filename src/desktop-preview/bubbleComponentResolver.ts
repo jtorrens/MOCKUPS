@@ -80,7 +80,7 @@ export function resolveBubbleComponent(
     ),
     asRecord(surfaceSlot.overrides),
   );
-  const textBoxConfig = mergeComponentDefaults(
+  const textBoxBaseConfig = mergeComponentDefaults(
     componentPresetConfig(
       componentBaseConfigs,
       "textBox",
@@ -88,6 +88,9 @@ export function resolveBubbleComponent(
     ),
     asRecord(textBoxSlot.overrides),
   );
+  const textBoxConfig = state === "system"
+    ? mergeComponentDefaults(textBoxBaseConfig, { textBox: { textAlign: "center" } })
+    : textBoxBaseConfig;
   const mediaType = bubbleMediaType(
     optionalString(preview, "mediaType")
       || requiredString(bubble, "mediaType", "component.bubble.mediaType"),
