@@ -864,7 +864,11 @@ internal sealed class ComponentPreviewInputSession
                 ParseInputUiOrigin(JsonString(item, "uiOrigin")),
                 JsonString(item, "uiGroupId"),
                 JsonString(item, "uiGroupLabel"),
-                JsonString(item, "uiParentGroupId")));
+                JsonString(item, "uiParentGroupId")) with
+            {
+                UiOrder = (int)JsonDecimal(item, "uiOrder", 0),
+                UiSectionLabel = JsonString(item, "uiSectionLabel"),
+            });
         }
 
         return definitions;

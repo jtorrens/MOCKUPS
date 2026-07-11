@@ -607,7 +607,7 @@ internal sealed partial class SpikeDatabase
 
     private static JsonArray ComponentInputsForComponent(string componentType)
     {
-        return componentType switch
+        JsonArray inputs = componentType switch
         {
             "label" =>
             [
@@ -816,6 +816,7 @@ internal sealed partial class SpikeDatabase
                 ComponentInput("currentTimeSeconds", "Current time", "currentTimeSeconds", ValueKind.Decimal, "0", minimum: 0, maximum: 86400, increment: 0.1m),
                 ComponentInput("durationSeconds", "Duration", "durationSeconds", ValueKind.Decimal, "12", minimum: 0, maximum: 86400, increment: 0.1m),
                 ComponentInput("isFullScreen", "Full screen", "isFullScreen", ValueKind.Boolean, "false"),
+                ComponentInput("fullScreenTransition", "Full-screen transition", "fullScreenTransition", ValueKind.Boolean, "false"),
                 ComponentInput(
                     "fullframeOrientation",
                     "Fullframe orientation",
@@ -828,6 +829,7 @@ internal sealed partial class SpikeDatabase
                         new FieldOption("landscape", "Landscape"),
                     ]),
                 ComponentInput("controlsElapsedMs", "Controls elapsed ms", "controlsElapsedMs", ValueKind.Integer, "0", minimum: 0, maximum: 60000, increment: 10),
+                ComponentInput("motionTimeSeconds", "Motion time", "motionTimeSeconds", ValueKind.Decimal, "0", minimum: 0, maximum: 86400, increment: 0.01m, source: "calculated"),
             ],
             "bubble" =>
             [
@@ -846,6 +848,8 @@ internal sealed partial class SpikeDatabase
                 ComponentInput("sampleText", "Text", "sampleText", ValueKind.StringMultiline, "Message", uiOrigin: "embedded", uiGroupId: "textBox", uiGroupLabel: "Text box"),
                 ComponentInput("maxWidth", "Max width %", "maxWidth", ValueKind.Integer, "66", minimum: 1, maximum: 100, increment: 1),
                 ComponentInput("writeOnDurationFrames", "Write-on frames", "writeOnDurationFrames", ValueKind.Integer, "30", minimum: 1, maximum: 10000, increment: 1),
+                ComponentInput("writeOnTrigger", "Write-on trigger", "writeOnTrigger", ValueKind.Boolean, "false", source: "calculated"),
+                ComponentInput("writeOnFrame", "Write-on frame", "writeOnFrame", ValueKind.Integer, "0", minimum: 0, maximum: 10000, increment: 1, source: "calculated"),
                 ComponentInput(
                     "actorId",
                     "Actor",
@@ -866,6 +870,22 @@ internal sealed partial class SpikeDatabase
                     "option",
                     "read",
                     options: ComponentClassFieldCatalog.BubbleStatusStateOptions),
+                ComponentInput(
+                    "mediaType",
+                    "Media type",
+                    "mediaType",
+                    "option",
+                    "image",
+                    options:
+                    [
+                        new FieldOption("none", "None"),
+                        new FieldOption("image", "Image"),
+                        new FieldOption("video", "Video"),
+                        new FieldOption("audio", "Audio"),
+                    ],
+                    uiOrigin: "embedded",
+                    uiGroupId: "media",
+                    uiGroupLabel: "Media"),
                 ComponentInput("mediaSource", "Media source", "mediaSource", ValueKind.MediaFilePath, "", uiOrigin: "embedded", uiGroupId: "media", uiGroupLabel: "Media"),
                 ComponentInput(
                     "viewportSize",
@@ -894,6 +914,7 @@ internal sealed partial class SpikeDatabase
                 ComponentInput("currentTimeSeconds", "Current time", "currentTimeSeconds", ValueKind.Decimal, "0", minimum: 0, maximum: 86400, increment: 0.1m, uiOrigin: "embedded", uiGroupId: "media", uiGroupLabel: "Media"),
                 ComponentInput("durationSeconds", "Duration", "durationSeconds", ValueKind.Decimal, "12", minimum: 0, maximum: 86400, increment: 0.1m, uiOrigin: "embedded", uiGroupId: "media", uiGroupLabel: "Media"),
                 ComponentInput("isFullScreen", "Full screen", "isFullScreen", ValueKind.Boolean, "false", uiOrigin: "embedded", uiGroupId: "media", uiGroupLabel: "Media"),
+                ComponentInput("fullScreenTransition", "Full-screen transition", "fullScreenTransition", ValueKind.Boolean, "false", uiOrigin: "embedded", uiGroupId: "media", uiGroupLabel: "Media"),
                 ComponentInput(
                     "fullframeOrientation",
                     "Fullframe orientation",
@@ -909,9 +930,84 @@ internal sealed partial class SpikeDatabase
                     uiGroupId: "media",
                     uiGroupLabel: "Media"),
                 ComponentInput("controlsElapsedMs", "Controls elapsed ms", "controlsElapsedMs", ValueKind.Integer, "0", minimum: 0, maximum: 60000, increment: 10, uiOrigin: "embedded", uiGroupId: "media", uiGroupLabel: "Media"),
+                ComponentInput("motionTimeSeconds", "Motion time", "motionTimeSeconds", ValueKind.Decimal, "0", minimum: 0, maximum: 86400, increment: 0.01m, source: "calculated", uiOrigin: "embedded", uiGroupId: "media", uiGroupLabel: "Media"),
             ],
             _ => [],
         };
+        ApplyComponentInputLayout(componentType, inputs);
+        return inputs;
+    }
+
+    private static void ApplyComponentInputLayout(string componentType, JsonArray inputs)
+    {
+        switch (componentType)
+        {
+            case "textBox":
+                SetComponentInputGroup(inputs, ["sampleText", "placeholder", "maxLines"], "text", "Text", 10);
+                SetComponentInputGroup(inputs, ["fixedSize", "contentMaxWidth", "growSize"], "layout", "Layout", 20);
+                break;
+            case "iconRow":
+                SetComponentInputGroup(inputs, ["size", "gap", "orientation"], "layout", "Layout", 10);
+                SetComponentInputGroup(inputs, ["actionIconNumber", "actionBackgroundAlpha", "actionBackgroundColor", "actionIconColor"], "action", "Action", 20);
+                SetComponentInputGroup(inputs, ["buttonIconPresetId", "icons"], "content", "Content", 30);
+                break;
+            case "iconBar":
+                SetComponentInputGroup(inputs, ["state"], "state", "State", 10);
+                SetComponentInputGroup(inputs, ["size"], "layout", "Layout", 20);
+                break;
+            case "avatar":
+                SetComponentInputGroup(inputs, ["actorId", "sampleSubtext"], "identity", "Identity", 10);
+                break;
+            case "buttonIcon":
+                SetComponentInputGroup(inputs, ["iconToken", "sampleText", "sampleSubtext"], "content", "Content", 10);
+                break;
+            case "textInputBar":
+                SetComponentInputGroup(inputs, ["availableWidth"], "layout", "Layout", 10);
+                SetComponentInputGroup(inputs, ["sampleText"], "textBox", "Text box", 20);
+                break;
+            case "keyboard":
+                SetComponentInputGroup(inputs, ["text", "currentCharacter"], "input", "Input", 10);
+                SetComponentInputGroup(inputs, ["trigger"], "motion", "Motion", 20);
+                break;
+            case "audio":
+                SetComponentInputGroup(inputs, ["availableWidth"], "layout", "Layout", 10);
+                SetComponentInputGroup(inputs, ["isPlaying", "currentTimeSeconds", "durationSeconds"], "playback", "Playback", 20);
+                SetComponentInputGroup(inputs, ["actorId"], "identity", "Actor", 30);
+                break;
+            case "media":
+                SetComponentInputGroup(inputs, ["mediaSource", "mediaType"], "source", "Source", 10);
+                SetComponentInputGroup(inputs, ["viewportSize", "mediaScale", "mediaOffset"], "frame", "Frame", 20);
+                SetComponentInputGroup(inputs, ["isPlaying", "currentTimeSeconds", "durationSeconds", "controlsElapsedMs"], "playback", "Playback", 30);
+                SetComponentInputGroup(inputs, ["isFullScreen", "fullScreenTransition", "fullframeOrientation"], "fullScreen", "Full screen", 40);
+                break;
+            case "bubble":
+                SetComponentInputGroup(inputs, ["state", "sampleText", "maxWidth"], "message", "Message", 10);
+                SetComponentInputGroup(inputs, ["writeOnDurationFrames", "writeOnTrigger", "writeOnFrame"], "timing", "Timing", 20);
+                SetComponentInputGroup(inputs, ["statusText", "statusState"], "delivery", "Delivery", 30);
+                SetComponentInputGroup(inputs, ["actorId"], "avatar", "Avatar", 40);
+                SetComponentInputGroup(inputs, ["actorName"], "actorLabel", "Actor label", 50);
+                SetComponentInputGroup(inputs, ["mediaType", "mediaSource", "viewportSize", "mediaScale", "mediaOffset", "isPlaying", "currentTimeSeconds", "durationSeconds", "isFullScreen", "fullScreenTransition", "fullframeOrientation", "controlsElapsedMs", "motionTimeSeconds"], "media", "Media", 60);
+                break;
+        }
+    }
+
+    private static void SetComponentInputGroup(
+        JsonArray inputs,
+        string[] ids,
+        string groupId,
+        string groupLabel,
+        int groupOrder)
+    {
+        foreach (var id in ids)
+        {
+            var input = inputs.OfType<JsonObject>().FirstOrDefault((candidate) => candidate["id"]?.GetValue<string>() == id);
+            if (input is null) continue;
+            input["uiOrigin"] = "embedded";
+            input["uiGroupId"] = groupId;
+            input["uiGroupLabel"] = groupLabel;
+            input["uiParentGroupId"] = "";
+            input["uiOrder"] = groupOrder + Array.IndexOf(ids, id);
+        }
     }
 
     private static JsonObject ComponentInput(
