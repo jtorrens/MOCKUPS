@@ -45,8 +45,9 @@ import {
   textBoxComponentToRenderableAt,
 } from "./textBoxComponentRenderable.js";
 import {
-  approximateTextWidth,
+  measuredTextWidth,
   resolveTypographyStyle,
+  typographyAtFontSize,
 } from "./previewTextHelpers.js";
 
 export function bubbleComponentToRenderable(
@@ -405,10 +406,15 @@ function measureBubbleStatus(
   const iconSizeValue = Math.max(1, numberToken(payload, bubble.status.sizeToken) * scale);
   const textSizeValue = Math.max(1, numberToken(payload, bubble.status.textSizeToken) * scale);
   const lineHeight = Math.max(textSizeValue, textSizeValue * 1.15);
+  const typography = typographyAtFontSize(
+    resolveTypographyStyle(payload, bubble.textBox.typography, scale),
+    textSizeValue,
+    lineHeight,
+  );
   const iconSize = icon ? iconSizeValue : 0;
   const gap = text && icon ? Math.max(2, Math.max(textSizeValue, iconSizeValue) * 0.28) : 0;
   return {
-    width: (text ? approximateTextWidth(text, textSizeValue) : 0) + gap + iconSize,
+    width: (text ? measuredTextWidth(text, typography) : 0) + gap + iconSize,
     height: Math.max(lineHeight, iconSize),
   };
 }

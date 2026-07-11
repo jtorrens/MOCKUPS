@@ -1,3 +1,5 @@
+import path from "node:path";
+import * as fontkit from "fontkit";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import type { TypographyStyleContract } from "./previewComponentContracts.js";
 import {
@@ -5,7 +7,10 @@ import {
   numberToken,
   stringOrThemeToken,
 } from "./previewColorHelpers.js";
-import { fontFamilyForTypography } from "./previewFontHelpers.js";
+import {
+  fontFamilyForTypography,
+  fontIdsForTypography,
+} from "./previewFontHelpers.js";
 import { textGraphemes } from "./previewTextRevealHelpers.js";
 
 export interface ResolvedTypographyStyle {
@@ -14,6 +19,143 @@ export interface ResolvedTypographyStyle {
   lineHeight: number;
   fontStyle: "italic" | undefined;
   fontWeight: number;
+  measureTextWidth: (text: string) => number;
+}
+
+type ProductionFont = ReturnType<typeof fontkit.openSync> & {
+  getVariation?: (coordinates: Record<string, number>) => ProductionFont;
+  layout: (text: string) => { advanceWidth: number; glyphs: Array<{ id: number }> };
+  unitsPerEm: number;
+};
+
+const productionFontCache = new Map<string, ProductionFont>();
+const shapedAdvanceCache = new Map<string, number>();
+const graphemeFontCache = new Map<string, "primary" | "emoji">();
+
+function productionFont(
+  payload: DesignPreviewPayload,
+  fontId: string,
+  weight: number,
+  style: "normal" | "italic",
+) {
+  const faces = (payload.fontFaces ?? []).filter((face) => face.fontId === fontId);
+  const styledFaces = faces.filter((face) => face.style === style);
+  const candidates = styledFaces.length > 0 ? styledFaces : faces;
+  const face = candidates.sort((left, right) =>
+    Math.abs(left.weight - weight) - Math.abs(right.weight - weight))[0];
+  if (!face) throw new Error(`Required production font face is unavailable: ${fontId}`);
+  const fullPath = path.resolve(payload.projectMediaRoot ?? "", face.relativePath);
+  const cacheKey = `${fullPath}\u001f${weight}\u001f${style}`;
+  const cached = productionFontCache.get(cacheKey);
+  if (cached) return { font: cached, cacheKey };
+  const opened = fontkit.openSync(fullPath) as ProductionFont;
+  const varied = opened.getVariation
+    ? opened.getVariation({ wght: weight })
+    : opened;
+  productionFontCache.set(cacheKey, varied);
+  return { font: varied, cacheKey };
+}
+
+function typographyTextMeasurer(
+  payload: DesignPreviewPayload,
+  typography: TypographyStyleContract,
+  fontSize: number,
+  weight: number,
+  style: "normal" | "italic",
+) {
+  const { primaryFontId, emojiFontId } = fontIdsForTypography(payload, typography.fontFamilyId);
+  const primary = productionFont(payload, primaryFontId, weight, style);
+  const emoji = productionFont(payload, emojiFontId, weight, "normal");
+  const fontForGrapheme = (grapheme: string) => {
+    if (/\p{Extended_Pictographic}/u.test(grapheme)) return emoji;
+    const selectionKey = `${primary.cacheKey}\u001f${emoji.cacheKey}\u001f${grapheme}`;
+    const cached = graphemeFontCache.get(selectionKey);
+    if (cached) return cached === "primary" ? primary : emoji;
+    const run = primary.font.layout(grapheme);
+    const selected = run.glyphs.some((glyph) => glyph.id === 0) ? emoji : primary;
+    graphemeFontCache.set(selectionKey, selected === primary ? "primary" : "emoji");
+    return selected;
+  };
+  const runAdvance = (selected: typeof primary, text: string) => {
+    const key = `${selected.cacheKey}\u001f${text}`;
+    const cached = shapedAdvanceCache.get(key);
+    if (cached !== undefined) return cached;
+    const run = selected.font.layout(text);
+    const advance = run.advanceWidth / Math.max(1, selected.font.unitsPerEm);
+    shapedAdvanceCache.set(key, advance);
+    return advance;
+  };
+  return (text: string) => {
+    let width = 0;
+    let currentFont: typeof primary | undefined;
+    let currentText = "";
+    const commitRun = () => {
+      if (currentFont && currentText) width += runAdvance(currentFont, currentText);
+      currentText = "";
+    };
+    for (const grapheme of textGraphemes(text)) {
+      const selected = fontForGrapheme(grapheme);
+      if (currentFont && selected.cacheKey !== currentFont.cacheKey) commitRun();
+      currentFont = selected;
+      currentText += grapheme;
+    }
+    commitRun();
+    return width * fontSize;
+  };
+}
+
+export function measuredTextWidth(text: string, typography: ResolvedTypographyStyle) {
+  return typography.measureTextWidth(text);
+}
+
+export function typographyAtFontSize(
+  typography: ResolvedTypographyStyle,
+  fontSize: number,
+  lineHeight = Math.max(fontSize, typography.lineHeight * fontSize / typography.fontSize),
+): ResolvedTypographyStyle {
+  const scale = fontSize / Math.max(1, typography.fontSize);
+  return {
+    ...typography,
+    fontSize,
+    lineHeight,
+    measureTextWidth: (text) => typography.measureTextWidth(text) * scale,
+  };
+}
+
+export function measuredMultilineTextSize(
+  text: string,
+  typography: ResolvedTypographyStyle,
+) {
+  const lines = text.split(/\r\n|\r|\n/u);
+  return {
+    width: Math.max(1, ...lines.map((line) => measuredTextWidth(line, typography))),
+    height: Math.max(1, lines.length) * typography.lineHeight,
+    lineCount: Math.max(1, lines.length),
+  };
+}
+
+export function measuredWrappedTextLines(
+  text: string,
+  typography: ResolvedTypographyStyle,
+  maxWidth: number,
+) {
+  return wrappedTextLines(text, maxWidth, (value) => measuredTextWidth(value, typography));
+}
+
+export function measuredWrappedTextSize(
+  text: string,
+  typography: ResolvedTypographyStyle,
+  maxWidth: number,
+) {
+  const lines = measuredWrappedTextLines(text, typography, maxWidth);
+  return {
+    width: Math.min(
+      Math.max(1, maxWidth),
+      Math.max(1, ...lines.map((line) => measuredTextWidth(line, typography))),
+    ),
+    height: Math.max(1, lines.length) * typography.lineHeight,
+    lineCount: Math.max(1, lines.length),
+  };
 }
 
 function graphemeAdvance(grapheme: string) {
@@ -77,6 +219,14 @@ export function approximateWrappedTextLines(
   fontSize: number,
   maxWidth: number,
 ) {
+  return wrappedTextLines(text, maxWidth, (value) => approximateTextWidth(value, fontSize));
+}
+
+function wrappedTextLines(
+  text: string,
+  maxWidth: number,
+  measure: (text: string) => number,
+) {
   const wrapWidth = Math.max(1, maxWidth);
   return text.split(/\r\n|\r|\n/u).flatMap((sourceLine) => {
     const normalizedLine = sourceLine.replace(/[^\S\r\n]+/gu, " ").trim();
@@ -88,7 +238,7 @@ export function approximateWrappedTextLines(
     let current = "";
     for (const word of normalizedLine.split(" ")) {
       const candidate = current ? `${current} ${word}` : word;
-      if (approximateTextWidth(candidate, fontSize) <= wrapWidth) {
+      if (measure(candidate) <= wrapWidth) {
         current = candidate;
         continue;
       }
@@ -98,12 +248,12 @@ export function approximateWrappedTextLines(
         current = "";
       }
 
-      if (approximateTextWidth(word, fontSize) <= wrapWidth) {
+      if (measure(word) <= wrapWidth) {
         current = word;
         continue;
       }
 
-      const pieces = splitLongWord(word, fontSize, wrapWidth);
+      const pieces = splitLongWord(word, wrapWidth, measure);
       lines.push(...pieces.slice(0, -1));
       current = pieces.at(-1) ?? "";
     }
@@ -113,12 +263,12 @@ export function approximateWrappedTextLines(
   });
 }
 
-function splitLongWord(word: string, fontSize: number, maxWidth: number) {
+function splitLongWord(word: string, maxWidth: number, measure: (text: string) => number) {
   const lines: string[] = [];
   let current = "";
   for (const grapheme of textGraphemes(word)) {
     const candidate = `${current}${grapheme}`;
-    if (current && approximateTextWidth(candidate, fontSize) > maxWidth) {
+    if (current && measure(candidate) > maxWidth) {
       lines.push(current);
       current = grapheme;
       continue;
@@ -141,6 +291,7 @@ export function resolveTypographyStyle(
     throw new Error(`Unsupported typography style ${style}`);
   }
 
+  const fontWeight = numberOrThemeToken(payload, typography.weight);
   return {
     fontFamily: fontFamilyForTypography(payload, typography.fontFamilyId),
     fontSize,
@@ -149,6 +300,13 @@ export function resolveTypographyStyle(
       fontSize,
     ),
     fontStyle: style === "italic" ? "italic" : undefined,
-    fontWeight: numberOrThemeToken(payload, typography.weight),
+    fontWeight,
+    measureTextWidth: typographyTextMeasurer(
+      payload,
+      typography,
+      fontSize,
+      fontWeight,
+      style,
+    ),
   };
 }

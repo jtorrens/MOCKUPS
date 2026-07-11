@@ -17,6 +17,20 @@ function themeTypographyFontId(payload: DesignPreviewPayload, key: string) {
   return typeof value === "string" ? value : "";
 }
 
+export function fontIdsForTypography(
+  payload: DesignPreviewPayload,
+  fontFamilyId: string,
+) {
+  return {
+    primaryFontId: fontFamilyId === "theme"
+      ? themeTypographyFontId(payload, "fontFamilyId")
+      : fontFamilyId === "theme.system"
+        ? themeTypographyFontId(payload, "systemFontFamilyId")
+        : fontFamilyId,
+    emojiFontId: themeTypographyFontId(payload, "emojiFontFamilyId"),
+  };
+}
+
 function familyForFontId(payload: DesignPreviewPayload, fontId: string) {
   if (!fontId.trim()) return "";
   return payload.fontFaces?.some((face) => face.fontId === fontId)
@@ -28,12 +42,7 @@ export function fontFamilyForTypography(
   payload: DesignPreviewPayload,
   fontFamilyId: string,
 ) {
-  const primaryFontId = fontFamilyId === "theme"
-    ? themeTypographyFontId(payload, "fontFamilyId")
-    : fontFamilyId === "theme.system"
-      ? themeTypographyFontId(payload, "systemFontFamilyId")
-    : fontFamilyId;
-  const emojiFontId = themeTypographyFontId(payload, "emojiFontFamilyId");
+  const { primaryFontId, emojiFontId } = fontIdsForTypography(payload, fontFamilyId);
   const primaryFamily = familyForFontId(payload, primaryFontId);
   const emojiFamily = familyForFontId(payload, emojiFontId);
   if (!primaryFontId || !primaryFamily) {

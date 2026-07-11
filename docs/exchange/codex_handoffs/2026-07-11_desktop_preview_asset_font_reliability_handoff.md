@@ -254,6 +254,26 @@ Expected evidence:
 
 If a font fails, fix its `production_fonts` record/path/face metadata. Do not add
 a system fallback.
+
+## Typography measurement and action coverage closure
+
+The conservative character-width estimator is no longer used by production
+renderable layout. `previewTextHelpers.ts` now opens the payload's production
+font files with `fontkit`, shapes text with the requested face/weight/style and
+uses the declared production emoji face for emoji or missing glyphs. Parsing,
+glyph-face decisions and shaped advances are process caches. Wrapping keeps
+manual newlines and divides overlong words only between Unicode graphemes.
+
+Text Box, Label, Media text overlays and Bubble status measurement all use this
+common path. The HTML adapter remains paint-only and receives already measured
+boxes and explicit wrapped lines; no component-specific typography logic was
+added to the bridge or renderer.
+
+`checkDesktopPreviewArchitecture.ts` now rejects production preview consumers
+of the retired approximate helpers and validates the complete seeded Test
+Values action inventory, including the mutually applicable per-message video
+and audio actions. Keep new actions declarative in payload data and preserve
+stable collection item ids.
 # Final playback checkpoint
 
 Desktop design preview now exposes three generic playback routes: HTML priority

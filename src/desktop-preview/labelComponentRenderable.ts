@@ -10,7 +10,7 @@ import {
   variants,
 } from "./componentRenderableCommon.js";
 import {
-  approximateTextWidth,
+  measuredTextWidth,
   resolveTypographyStyle,
 } from "./previewTextHelpers.js";
 import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
@@ -38,8 +38,8 @@ function labelSize(
   const hasSubtext = label.subtext.trim().length > 0;
   const textGap = hasSubtext ? label.textGap * scale : 0;
   const contentWidth = Math.max(
-    approximateTextWidth(label.text, textTypography.fontSize),
-    hasSubtext ? approximateTextWidth(label.subtext, subtextTypography.fontSize) : 0,
+    measuredTextWidth(label.text, textTypography),
+    hasSubtext ? measuredTextWidth(label.subtext, subtextTypography) : 0,
   );
   const contentHeight =
     textTypography.lineHeight + (hasSubtext ? textGap + subtextTypography.lineHeight : 0);

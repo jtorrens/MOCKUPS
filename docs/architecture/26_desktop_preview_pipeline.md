@@ -296,6 +296,12 @@ Owner:
 Preview actions are declared in payload data. The editor does not know what a
 module-specific action means; it executes the action contract.
 
+The architecture check validates the seeded Test Values inventory: Conversation
+`Play messages`; Keyboard `In`; Audio/Media `Play`; Media `Full screen`; Bubble
+`Write-on`, `Play` and `Full screen`; plus Conversation message `Play video` and
+`Play audio`. Collection actions are addressed by the item's stable `id` and
+their `mediaType` applicability, never by array index or editor-owned rules.
+
 For frame playback:
 
 - `ComponentInputsPanel` triggers an action.
@@ -426,6 +432,15 @@ required faces or font files fail visibly before HTML rendering. This preserves
 glyph and metric parity across preview, deterministic export and future
 portable runtimes.
 
+Generic layout measurement uses the same production font files before creating
+renderable boxes. `fontkit` parses each face once per renderer process, selects
+the declared weight/style, shapes consecutive runs to retain kerning and
+ligatures, and switches to the declared emoji face only for emoji or missing
+glyphs. Wrapping preserves explicit line breaks and splits long content only on
+Unicode grapheme boundaries, so accents, combining sequences and joined emoji
+remain intact. Face selection and shaped advances are cached; components must
+not add their own width estimator or host-font fallback.
+
 Node initially emits data URIs, but the desktop renderer interns them before a
 frame enters the shared cache. Cached and transported frame bodies therefore
 contain stable `mockups-asset:<sha256>` references instead of repeated binary
@@ -484,10 +499,11 @@ production. Main cost centers to measure:
    - Cold ffmpeg extraction is not real-time.
    - Disk-hit frame reads still become base64 data URIs.
 
-4. Text layout and wrapper approximations.
-   - Current text layout is CPU-side approximation per frame.
-   - It is acceptable for correctness work but may need caching per text/style
-     tuple.
+4. Cold production-font shaping.
+   - Production faces, glyph-face choices and shaped advances are cached in the
+     persistent renderer process.
+   - A cold renderer still pays initial font parsing and shaping before steady
+     cache reuse.
 
 5. Structural WebView fallbacks.
    - Any update that is not detected as animation-only reloads the full

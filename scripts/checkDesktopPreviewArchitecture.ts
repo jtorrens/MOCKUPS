@@ -456,6 +456,7 @@ function assertDesktopPreviewActionsAreDeclarative() {
     const rows = database
       .prepare("SELECT id, design_preview_json FROM modules UNION ALL SELECT id, design_preview_json FROM component_classes")
       .all() as { id: string; design_preview_json: string }[];
+    const actionInventory = new Set<string>();
     for (const row of rows) {
       const preview = jsonRecord(jsonParse(row.design_preview_json));
       const assertAction = (action: JsonRecord, path: string, isItemAction: boolean) => {
@@ -489,11 +490,35 @@ function assertDesktopPreviewActionsAreDeclarative() {
       };
       for (const [index, action] of jsonArray(preview.actions).map(jsonRecord).entries()) {
         assertAction(action, `actions[${index}]`, false);
+        actionInventory.add(`root:${String(preview.componentType ?? "module")}:${String(action.id ?? "")}`);
       }
       for (const [collectionIndex, collection] of jsonArray(preview.collections).map(jsonRecord).entries()) {
         for (const [actionIndex, action] of jsonArray(collection.itemActions).map(jsonRecord).entries()) {
           assertAction(action, `collections[${collectionIndex}].itemActions[${actionIndex}]`, true);
+          const values = jsonArray(action.visibleWhenItemValues).join(",");
+          actionInventory.add(
+            `item:${String(collection.jsonKey ?? "")}:${String(action.id ?? "")}:${String(action.visibleWhenItemJsonKey ?? "")}:${values}`,
+          );
         }
+      }
+    }
+    for (const required of [
+      "root:module:playConversation",
+      "root:keyboard:in",
+      "root:audio:play",
+      "root:media:play",
+      "root:media:fullScreen",
+      "root:bubble:writeOn",
+      "root:bubble:play",
+      "root:bubble:fullScreen",
+      "item:messages:playVideo:mediaType:video",
+      "item:messages:playAudio:mediaType:audio",
+    ]) {
+      if (!actionInventory.has(required)) {
+        addViolation(
+          "data/desktop-editor-spike.sqlite",
+          `required declarative Test Values action is missing: ${required}`,
+        );
       }
     }
   } finally {
@@ -615,6 +640,13 @@ assertDesktopRuntimeCollectionsAreConsistent();
 assertDesktopPreviewActionsAreDeclarative();
 assertDesktopConversationPreviewDoesNotUseLegacyMessageKeys();
 assertGenericTextWrappingIsConservative();
+for (const filePath of walkFiles(previewRoot)) {
+  const file = relative(filePath);
+  if (file !== "src/desktop-preview/previewTextHelpers.ts"
+      && readFileSync(filePath, "utf8").includes("approximateText")) {
+    addViolation(file, "production preview layout must use resolved production-font measurement");
+  }
+}
 assertMatches(
   "src/desktop-preview/conversationModuleRenderable.ts",
   /childRenderable\(\s*payload,[\s\S]*?"keyboard"[\s\S]*?\{\s*text: composer\.text,[\s\S]*?currentCharacter: composer\.currentCharacter,[\s\S]*?motionTimeSeconds,/,

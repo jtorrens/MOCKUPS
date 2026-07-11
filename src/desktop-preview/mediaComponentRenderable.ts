@@ -15,7 +15,7 @@ import type { MediaDesignContract, MediaRenderBoxes } from "./mediaComponentCont
 import { mediaFrameUriForPath } from "./previewAssetResolver.js";
 import { motionFrameProgress } from "./previewMotionHelpers.js";
 import {
-  approximateMultilineTextSize,
+  measuredMultilineTextSize,
   resolveTypographyStyle,
 } from "./previewTextHelpers.js";
 import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
@@ -402,11 +402,7 @@ function mediaTextOverlayNodes(
 
   const scale = renderScale(payload);
   const typography = resolveTypographyStyle(payload, overlay.typography, scale);
-  const textSize = approximateMultilineTextSize(
-    overlay.resolvedText,
-    typography.fontSize,
-    typography.lineHeight,
-  );
+  const textSize = measuredMultilineTextSize(overlay.resolvedText, typography);
   const childSize = {
     width: Math.min(mediaBox.width, Math.max(1, textSize.width)),
     height: Math.max(1, textSize.height),

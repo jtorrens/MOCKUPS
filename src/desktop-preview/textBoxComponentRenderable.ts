@@ -7,11 +7,12 @@ import {
 } from "./componentRenderableCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
-  approximateMultilineTextSize,
-  approximateTextWidth,
-  approximateWrappedTextLines,
-  approximateWrappedTextSize,
+  measuredMultilineTextSize,
+  measuredTextWidth,
+  measuredWrappedTextLines,
+  measuredWrappedTextSize,
   resolveTypographyStyle,
+  type ResolvedTypographyStyle,
 } from "./previewTextHelpers.js";
 import { textGraphemes } from "./previewTextRevealHelpers.js";
 import {
@@ -56,11 +57,7 @@ export function measureTextBoxComponent(
   const contentText = visibleText(textBox);
   const cursorWidth = inlineCursorMeasuredWidth(textBox, typography.fontSize, scale);
   const contentSize = withInlineCursorWidth(
-    approximateMultilineTextSize(
-      contentText,
-      typography.fontSize,
-      typography.lineHeight,
-    ),
+    measuredMultilineTextSize(contentText, typography),
     cursorWidth,
   );
   const contentVisualHeight = textContentVisualHeight(contentSize.lineCount, typography);
@@ -104,10 +101,9 @@ export function measureTextBoxComponent(
       minimumHeight,
     );
     let wrappedContentSize = withInlineCursorWidth(
-      approximateWrappedTextSize(
+      measuredWrappedTextSize(
         contentText,
-        typography.fontSize,
-        typography.lineHeight,
+        typography,
         safeWrapWidth(Math.max(1, width - paddingX * 2 - iconTextInset(
           hasLeftIcons,
           hasRightIcons,
@@ -136,10 +132,9 @@ export function measureTextBoxComponent(
       iconGap,
     );
     wrappedContentSize = withInlineCursorWidth(
-      approximateWrappedTextSize(
+      measuredWrappedTextSize(
         contentText,
-        typography.fontSize,
-        typography.lineHeight,
+        typography,
         safeWrapWidth(Math.max(1, width - paddingX * 2 - iconInset.total)),
       ),
       cursorWidth,
@@ -189,10 +184,9 @@ export function measureTextBoxComponent(
   let wraps = naturalWidth > maximumWidth;
   let measuredContentSize = wraps
     ? withInlineCursorWidth(
-        approximateWrappedTextSize(
+        measuredWrappedTextSize(
           contentText,
-          typography.fontSize,
-          typography.lineHeight,
+          typography,
           safeWrapWidth(Math.max(1, maximumWidth - paddingX * 2 - iconInset.total)),
         ),
         cursorWidth,
@@ -217,10 +211,9 @@ export function measureTextBoxComponent(
   wraps = naturalWidth > maximumWidth;
   measuredContentSize = wraps
     ? withInlineCursorWidth(
-        approximateWrappedTextSize(
+        measuredWrappedTextSize(
           contentText,
-          typography.fontSize,
-          typography.lineHeight,
+          typography,
           safeWrapWidth(Math.max(1, maximumWidth - paddingX * 2 - iconInset.total)),
         ),
         cursorWidth,
@@ -289,9 +282,9 @@ export function textBoxComponentToRenderableAt(
   const textIsEmpty = textBox.text.length === 0;
   const cursorWidth = Math.max(1, textBox.cursor.width * scale);
   const cursorMetadata = inlineCursorMetadata(payload, textBox, cursorWidth);
-  const wrappedLines = approximateWrappedTextLines(
+  const wrappedLines = measuredWrappedTextLines(
     size.contentText,
-    size.typography.fontSize,
+    size.typography,
     safeWrapWidth(textFrame.width),
   );
   const iconY = (iconHeight: number) =>
@@ -385,6 +378,7 @@ export function textBoxComponentToRenderableAt(
             textFrame,
             y: renderedTextY + index * lineHeight,
             style: textStyle,
+            typography: size.typography,
             cursorMetadata: index === wrappedLines.length - 1 ? cursorMetadata : undefined,
           }),
         ),
@@ -403,6 +397,7 @@ function textLineRenderableNodes({
   textFrame,
   y,
   style,
+  typography,
   cursorMetadata,
 }: {
   id: string;
@@ -414,6 +409,7 @@ function textLineRenderableNodes({
   textFrame: RenderableBox;
   y: number;
   style: Record<string, unknown>;
+  typography: ResolvedTypographyStyle;
   cursorMetadata: RenderableNode["metadata"];
 }): RenderableNode[] {
   if (textBox.textAnimation.mode === "none" || line.length === 0) {
@@ -433,13 +429,13 @@ function textLineRenderableNodes({
     }];
   }
 
-  const fontSize = typeof style.fontSize === "number" ? style.fontSize : lineHeight;
+  const fontSize = typography.fontSize;
   const graphemes = textGraphemes(line);
-  let x = textFrame.x + lineStartOffset(line, textBox.textAlign, textFrame.width, fontSize);
+  let x = textFrame.x + lineStartOffset(line, textBox.textAlign, textFrame.width, typography);
   const cycle = Math.max(0, textBox.textAnimation.timeSeconds) * Math.PI * 2;
   const minimumOpacity = Math.max(0.35, Math.min(1, textBox.textAnimation.minimumOpacity));
   return graphemes.map((grapheme, graphemeIndex) => {
-    const width = Math.max(1, approximateTextWidth(grapheme, fontSize));
+    const width = Math.max(1, measuredTextWidth(grapheme, typography));
     const phase = cycle + graphemeIndex * 0.72 + lineIndex * 0.29;
     const wave = (Math.sin(phase) + 1) * 0.5;
     const opacity = minimumOpacity + (1 - minimumOpacity) * wave;
@@ -483,10 +479,10 @@ function lineStartOffset(
   line: string,
   textAlign: TextBoxDesignContract["textAlign"],
   frameWidth: number,
-  fontSize: number,
+  typography: ResolvedTypographyStyle,
 ) {
   if (textAlign === "left") return 0;
-  const lineWidth = approximateTextWidth(line, fontSize);
+  const lineWidth = measuredTextWidth(line, typography);
   if (textAlign === "center") return Math.max(0, (frameWidth - lineWidth) / 2);
   return Math.max(0, frameWidth - lineWidth);
 }
