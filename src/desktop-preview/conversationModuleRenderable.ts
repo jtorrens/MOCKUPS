@@ -99,6 +99,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
       )
     : undefined;
   const conversationFrame = Math.max(0, Math.floor(optionalNumber(preview, "conversationFrame", Number.MAX_SAFE_INTEGER)));
+  const motionTimeSeconds = conversationFrame / Math.max(1, payload.frameRate ?? 25);
   const composer = composerState(instanceMessages(preview), conversationFrame);
   const keyboardVisible = composer.keyboardVisible
     && requiredBoolean(conversation, "showKeyboard", "module.conversation.showKeyboard");
@@ -113,6 +114,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
         {
           text: composer.text,
           currentCharacter: composer.currentCharacter,
+          motionTimeSeconds,
         },
         (childPayload) =>
           keyboardComponentToRenderable(childPayload, resolveKeyboardComponent(childPayload)),
@@ -217,7 +219,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
       top,
       bottom,
       conversationFrame,
-      conversationFrame / Math.max(1, payload.frameRate ?? 25),
+      motionTimeSeconds,
     ),
   });
 

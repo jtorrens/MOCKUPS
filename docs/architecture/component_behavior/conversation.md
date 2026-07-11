@@ -112,9 +112,8 @@ data.
 - Current composition sets explicit z-order with Keyboard above Text Input Bar
   and anchors Text Input Bar from the Keyboard base/frame top. These canonical
   rules are implemented.
-- Current Conversation derives and passes the final revealed grapheme index to
-  Keyboard. The remaining temporal gap is that it does not yet forward the
-  shared module `motionTimeSeconds` to Keyboard's public runtime input.
+- Current Conversation derives and passes the final revealed grapheme index and
+  shared module `motionTimeSeconds` to Keyboard.
 - Message editor grouping is declared by the runtime field metadata for the
   `messages[]` collection. Explicit hierarchy metadata on the message item
   itself remains optional while array order is the canonical sequence.

@@ -3,18 +3,14 @@
 These are explicit discrepancies between the canonical behavior sheets and the
 active desktop-preview implementation as checked on 2026-07-11.
 
-1. **Conversation to Keyboard shared time:** Conversation now passes the final
-   revealed grapheme index, but does not yet pass shared module
-   `motionTimeSeconds` into Keyboard when its motion belongs to the module
-   timeline.
-2. **Legacy direct preview message compatibility:** Conversation Test Values
+1. **Legacy direct preview message compatibility:** Conversation Test Values
    now use sourced `messages[]` with id-matched overrides. The renderer still
    accepts legacy direct preview message fields as a compatibility route.
    Remove that once saved previews no longer need it.
-3. **Generic text fidelity:** Text/emoji wrapping, final-line clipping and
+2. **Generic text fidelity:** Text/emoji wrapping, final-line clipping and
    some write-on preview updates can differ from the Test Values control.
    Resolve this in common typography/measurement/frame code, never with a
    component-specific fallback.
-4. **Video preview:** Cold video playback can present late or blank frames.
+3. **Video preview:** Cold video playback can present late or blank frames.
    The stable solution is deterministic frame preloading/buffering upstream of
    generic Media paint.
