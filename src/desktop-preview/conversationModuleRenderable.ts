@@ -34,7 +34,10 @@ import { resolveStatusBarComponent } from "./statusBarComponentResolver.js";
 import { textInputBarComponentToRenderable } from "./textInputBarComponentRenderable.js";
 import { resolveTextInputBarComponent } from "./textInputBarComponentResolver.js";
 import { motionFrameProgress, requiredMotionContract } from "./previewMotionHelpers.js";
-import { textGraphemes } from "./previewTextRevealHelpers.js";
+import {
+  simpleWriteOnFrameVisibleCount,
+  textGraphemes,
+} from "./previewTextRevealHelpers.js";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -563,10 +566,11 @@ function composerState(messages: ConversationPreviewMessage[], frame: number) {
       && frame < endFrame;
     if (writing) {
       const graphemes = textGraphemes(message.text);
-      const textLength = Math.max(0, Math.min(
-        graphemes.length,
-        Math.floor(graphemes.length * (frame - startFrame) / Math.max(1, effectiveWriteOnFrames)),
-      ));
+      const textLength = simpleWriteOnFrameVisibleCount(message.text, {
+        enabled: true,
+        frame: frame - startFrame,
+        durationFrames: effectiveWriteOnFrames,
+      });
       return {
         text: graphemes.slice(0, textLength).join(""),
         currentCharacter: textLength,
