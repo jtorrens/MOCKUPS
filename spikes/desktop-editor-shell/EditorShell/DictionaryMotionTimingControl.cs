@@ -38,17 +38,40 @@ internal sealed class DictionaryMotionTimingControl : Grid, IDictionaryValueCont
         };
         _intensity = CreateIntensity(definition.IsEditable);
 
-        Children.Add(FieldShell("Duration", _duration, EditorUiDensity.TextAwareWidth(104)));
+        var durationDefinition = new FieldDefinition(
+            $"{definition.Id}.durationMs",
+            "Duration",
+            ValueKind.Integer,
+            IsEditable: definition.IsEditable,
+            Unit: "ms");
+        var delayDefinition = new FieldDefinition(
+            $"{definition.Id}.delayMs",
+            "Delay",
+            ValueKind.Integer,
+            IsEditable: definition.IsEditable,
+            Unit: "ms");
+        var easingDefinition = new FieldDefinition(
+            $"{definition.Id}.easing",
+            "Easing",
+            ValueKind.OptionToken,
+            IsEditable: definition.IsEditable);
+        var intensityDefinition = new FieldDefinition(
+            $"{definition.Id}.intensity",
+            "Intensity",
+            ValueKind.Decimal,
+            IsEditable: definition.IsEditable);
 
-        var delayShell = FieldShell("Delay", _delay, EditorUiDensity.TextAwareWidth(104));
+        Children.Add(FieldShell(durationDefinition, _duration, EditorUiDensity.TextAwareWidth(104)));
+
+        var delayShell = FieldShell(delayDefinition, _delay, EditorUiDensity.TextAwareWidth(104));
         Grid.SetColumn(delayShell, 1);
         Children.Add(delayShell);
 
-        var easingShell = FieldShell("Easing", _easing, 0);
+        var easingShell = FieldShell(easingDefinition, _easing, 0);
         Grid.SetColumn(easingShell, 2);
         Children.Add(easingShell);
 
-        var intensityShell = FieldShell("Intensity", _intensity, EditorUiDensity.TextAwareWidth(104));
+        var intensityShell = FieldShell(intensityDefinition, _intensity, EditorUiDensity.TextAwareWidth(104));
         Grid.SetColumn(intensityShell, 3);
         Children.Add(intensityShell);
 
@@ -143,7 +166,7 @@ internal sealed class DictionaryMotionTimingControl : Grid, IDictionaryValueCont
         });
     }
 
-    private static StackPanel FieldShell(string label, Control control, double width)
+    private static StackPanel FieldShell(FieldDefinition definition, Control control, double width)
     {
         if (width > 0)
         {
@@ -158,7 +181,7 @@ internal sealed class DictionaryMotionTimingControl : Grid, IDictionaryValueCont
             {
                 new TextBlock
                 {
-                    Text = label,
+                    Text = definition.DisplayLabel,
                     FontSize = 11,
                     Opacity = 0.72,
                 },

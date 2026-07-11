@@ -16,6 +16,9 @@ position remains seconds because media metadata and decoders use physical time.
 Field and runtime-input definitions carry a `unit` label (`frames`, `fps`, `s`
 or `ms`). The shared dictionary control renders it beside the logical label.
 Editors must not hardcode unit text into component-specific controls.
+Compound dictionary controls follow the same rule for their internal fields.
+For example, Motion Timing creates internal `FieldDefinition` values for
+Duration and Delay with unit `ms`, while Easing and Intensity remain unitless.
 
 This migration has no compatibility aliases. Retired fields are invalid:
 

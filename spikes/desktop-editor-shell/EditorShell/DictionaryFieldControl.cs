@@ -42,9 +42,7 @@ internal sealed class DictionaryFieldControl : Grid
 
         _label = new TextBlock
         {
-            Text = string.IsNullOrWhiteSpace(_definition.Unit)
-                ? _definition.Label
-                : $"{_definition.Label} ({_definition.Unit})",
+            Text = _definition.DisplayLabel,
             FontSize = 13,
             FontWeight = FontWeight.SemiBold,
             VerticalAlignment = DictionaryFieldLayoutRules.LabelVerticalAlignment(_definition.ValueKind),

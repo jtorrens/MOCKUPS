@@ -108,7 +108,12 @@ internal sealed record FieldDefinition(
     NumberDefinition? Number = null,
     RecordReferenceDefinition? RecordReference = null,
     IReadOnlyList<ComponentInputBindingDefinition>? ComponentInputBindings = null,
-    string Unit = "");
+    string Unit = "")
+{
+    public string DisplayLabel => string.IsNullOrWhiteSpace(Unit)
+        ? Label
+        : $"{Label} ({Unit})";
+}
 
 internal sealed record FieldValue(
     FieldDefinition Definition,

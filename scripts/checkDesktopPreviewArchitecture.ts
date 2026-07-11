@@ -2139,6 +2139,16 @@ assertContains(
   "Math.Max(0, delayMs) + durationMs",
   "motion action duration must include both declared delay and transition duration",
 );
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/DictionaryMotionTimingControl.cs",
+  "Unit: \"ms\"",
+  "Motion Timing duration and delay subfields must declare millisecond units",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/DictionaryMotionTimingControl.cs",
+  "definition.DisplayLabel",
+  "compound Motion Timing labels must use shared FieldDefinition unit formatting",
+);
 
 function assertDesktopSystemTypographyData() {
   const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
