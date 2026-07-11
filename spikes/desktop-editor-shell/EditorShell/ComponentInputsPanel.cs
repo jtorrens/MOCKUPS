@@ -670,6 +670,10 @@ internal sealed class ComponentPreviewInputSession
             {
                 total += (double)JsonDecimal(item, key, 0);
             }
+            foreach (var key in action.DurationCollectionMultiplierNumberKeys)
+            {
+                total += (double)JsonDecimal(preview, key, 0);
+            }
         }
         return Math.Max(1, (int)Math.Ceiling(total));
     }
@@ -1024,6 +1028,7 @@ internal sealed class ComponentPreviewInputSession
             action.DurationSeconds.ToString(CultureInfo.InvariantCulture),
             action.DurationCollectionJsonKey,
             string.Join(",", action.DurationItemNumberKeys),
+            string.Join(",", action.DurationCollectionMultiplierNumberKeys),
             action.DurationBaseFrames.ToString(CultureInfo.InvariantCulture),
             action.TimeJsonKey,
             action.TimeUnit,

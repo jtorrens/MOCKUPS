@@ -72,10 +72,6 @@ internal sealed class ConversationMessagesCollectionEditor
         panel.Children.Add(Field("Direction", ValueKind.OptionToken, message.Direction, [new("incoming", "Incoming"), new("outgoing", "Outgoing"), new("system", "System")], (value) => message = message with { Direction = value }));
         panel.Children.Add(Field("Text", ValueKind.StringMultiline, message.Text, null, (value) => message = message with { Text = value }));
         panel.Children.Add(Field("Delay frames", ValueKind.Integer, message.DelayAfterPreviousFrames.ToString(), null, (value) => message = message with { DelayAfterPreviousFrames = NumericText.Int32(value, 0) }));
-        panel.Children.Add(Field("Write-on frames", ValueKind.Integer, message.WriteOnDurationFrames.ToString(), null, (value) => message = message with { WriteOnDurationFrames = NumericText.Int32(value, 0) }));
-        panel.Children.Add(Field("Bubble reveal", ValueKind.OptionToken, message.BubbleRevealMode, [new("duringWriteOn", "During write-on"), new("afterWriteOn", "After write-on")], (value) => message = message with { BubbleRevealMode = value }));
-        panel.Children.Add(Field("Text input while writing", ValueKind.Boolean, message.TextInputVisible ? "true" : "false", null, (value) => message = message with { TextInputVisible = BooleanText.Parse(value) }));
-        panel.Children.Add(Field("Keyboard while writing", ValueKind.Boolean, message.KeyboardVisible ? "true" : "false", null, (value) => message = message with { KeyboardVisible = BooleanText.Parse(value) }));
         panel.Children.Add(Field("Show delivery status", ValueKind.Boolean, message.StatusVisible ? "true" : "false", null, (value) => message = message with { StatusVisible = BooleanText.Parse(value) }));
         panel.Children.Add(Field("Delivery status", ValueKind.OptionToken, message.DeliveryStatus, [new("none", "None"), new("sent", "Sent"), new("delivered", "Delivered"), new("read", "Read")], (value) => message = message with { DeliveryStatus = value }));
         panel.Children.Add(Field("Status text", ValueKind.StringSingleLine, message.StatusText, null, (value) => message = message with { StatusText = value }));

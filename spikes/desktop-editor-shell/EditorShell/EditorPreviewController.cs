@@ -1015,7 +1015,9 @@ internal sealed class EditorPreviewController
         var durationInputId = action.DurationInputId;
         var animationDurationSeconds = action.DurationSeconds;
         if (string.IsNullOrWhiteSpace(timeJsonKey)
-            || (string.IsNullOrWhiteSpace(durationInputId) && animationDurationSeconds <= 0))
+            || (string.IsNullOrWhiteSpace(durationInputId)
+                && string.IsNullOrWhiteSpace(action.DurationCollectionJsonKey)
+                && animationDurationSeconds <= 0))
         {
             yield break;
         }
@@ -1079,6 +1081,11 @@ internal sealed class EditorPreviewController
 
     private static int PlaybackDurationFrames(ComponentPreviewActionDefinition action, JsonObject preview, int fps)
     {
+        if (!string.IsNullOrWhiteSpace(action.DurationCollectionJsonKey))
+        {
+            return CollectionDurationFrames(preview, action);
+        }
+
         if (action.TimeUnit == ComponentPreviewActionTimeUnit.Frames)
         {
             return Math.Max(0, (int)Math.Round(JsonNumber(preview, action.DurationInputId, 0), MidpointRounding.AwayFromZero));
@@ -1090,6 +1097,28 @@ internal sealed class EditorPreviewController
         return duration <= 0
             ? 0
             : Math.Max(1, (int)Math.Ceiling(duration * Math.Max(1, fps)));
+    }
+
+    private static int CollectionDurationFrames(JsonObject preview, ComponentPreviewActionDefinition action)
+    {
+        if (preview[action.DurationCollectionJsonKey] is not JsonArray items)
+        {
+            return Math.Max(1, (int)Math.Round(action.DurationBaseFrames, MidpointRounding.AwayFromZero));
+        }
+
+        var total = action.DurationBaseFrames;
+        foreach (var item in items.OfType<JsonObject>())
+        {
+            foreach (var key in action.DurationItemNumberKeys)
+            {
+                total += JsonNumber(item, key, 0);
+            }
+            foreach (var key in action.DurationCollectionMultiplierNumberKeys)
+            {
+                total += JsonNumber(preview, key, 0);
+            }
+        }
+        return Math.Max(1, (int)Math.Ceiling(total));
     }
 
     private static string PlaybackFrameKey(DesignPreviewPayload payload)

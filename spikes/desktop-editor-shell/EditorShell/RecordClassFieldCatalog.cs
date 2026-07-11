@@ -184,6 +184,43 @@ internal static class RecordClassFieldCatalog
             ValueKind.OptionToken,
             IsEditable: false,
             Options: [new FieldOption("cut", "Cut")]),
+        ["moduleInstance.conversation.writeOnDurationFrames"] = new(
+            "moduleInstance.conversation.writeOnDurationFrames",
+            "Write-on frames",
+            ValueKind.Integer,
+            Number: new NumberDefinition(0, 100000, 1, 0)),
+        ["moduleInstance.conversation.postWriteOnHoldFrames"] = new(
+            "moduleInstance.conversation.postWriteOnHoldFrames",
+            "Post write-on hold",
+            ValueKind.Integer,
+            Number: new NumberDefinition(0, 100000, 1, 0)),
+        ["moduleInstance.conversation.bubbleRevealMode"] = new(
+            "moduleInstance.conversation.bubbleRevealMode",
+            "Outgoing bubble reveal",
+            ValueKind.OptionToken,
+            Options:
+            [
+                new FieldOption("duringWriteOn", "During write-on"),
+                new FieldOption("afterWriteOn", "After write-on"),
+            ]),
+        ["moduleInstance.conversation.incomingRevealMode"] = new(
+            "moduleInstance.conversation.incomingRevealMode",
+            "Incoming reveal",
+            ValueKind.OptionToken,
+            Options:
+            [
+                new FieldOption("instant", "Instant"),
+                new FieldOption("writeOn", "Write-on"),
+                new FieldOption("typingIndicator", "Typing indicator"),
+            ]),
+        ["moduleInstance.conversation.textInputVisible"] = new(
+            "moduleInstance.conversation.textInputVisible",
+            "Text input while writing",
+            ValueKind.Boolean),
+        ["moduleInstance.conversation.keyboardVisible"] = new(
+            "moduleInstance.conversation.keyboardVisible",
+            "Keyboard while writing",
+            ValueKind.Boolean),
 
         ["renderPreset.width"] = new("renderPreset.width", "Width", ValueKind.Integer, IsEditable: false),
         ["renderPreset.height"] = new("renderPreset.height", "Height", ValueKind.Integer, IsEditable: false),

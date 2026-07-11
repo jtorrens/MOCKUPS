@@ -2,6 +2,7 @@ using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -209,6 +210,12 @@ internal sealed class RecordClassFieldValueService
                         settings.AnimationJson)
                     : settings.DurationFrames).ToString(),
             "moduleInstance.transition" => _database.GetModuleInstanceTransitionType(moduleInstanceId),
+            "moduleInstance.conversation.writeOnDurationFrames" => JsonNumberString(settings.BehaviorJson, "writeOnDurationFrames", "42"),
+            "moduleInstance.conversation.postWriteOnHoldFrames" => JsonNumberString(settings.BehaviorJson, "postWriteOnHoldFrames", "12"),
+            "moduleInstance.conversation.bubbleRevealMode" => JsonString(settings.BehaviorJson, "bubbleRevealMode") is "afterWriteOn" ? "afterWriteOn" : "duringWriteOn",
+            "moduleInstance.conversation.incomingRevealMode" => JsonString(settings.BehaviorJson, "incomingRevealMode") is "writeOn" or "typingIndicator" ? JsonString(settings.BehaviorJson, "incomingRevealMode") : "instant",
+            "moduleInstance.conversation.textInputVisible" => JsonBoolString(settings.BehaviorJson, "textInputVisible", true),
+            "moduleInstance.conversation.keyboardVisible" => JsonBoolString(settings.BehaviorJson, "keyboardVisible", true),
             _ => throw new InvalidOperationException($"Unknown module instance field '{fieldId}'."),
         };
     }
@@ -474,6 +481,51 @@ internal sealed class RecordClassFieldValueService
     }
 
     private static string BoolToString(bool value) => BooleanText.Format(value);
+
+    private static string JsonString(string json, string key)
+    {
+        try
+        {
+            var owner = JsonNode.Parse(string.IsNullOrWhiteSpace(json) ? "{}" : json) as JsonObject;
+            return owner?[key]?.GetValue<string>() ?? "";
+        }
+        catch
+        {
+            return "";
+        }
+    }
+
+    private static string JsonNumberString(string json, string key, string fallback)
+    {
+        try
+        {
+            var owner = JsonNode.Parse(string.IsNullOrWhiteSpace(json) ? "{}" : json) as JsonObject;
+            if (owner?[key] is JsonValue value && value.TryGetValue<int>(out var integer))
+            {
+                return integer.ToString();
+            }
+            return fallback;
+        }
+        catch
+        {
+            return fallback;
+        }
+    }
+
+    private static string JsonBoolString(string json, string key, bool fallback)
+    {
+        try
+        {
+            var owner = JsonNode.Parse(string.IsNullOrWhiteSpace(json) ? "{}" : json) as JsonObject;
+            return owner?[key] is JsonValue value && value.TryGetValue<bool>(out var boolean)
+                ? BoolToString(boolean)
+                : BoolToString(fallback);
+        }
+        catch
+        {
+            return BoolToString(fallback);
+        }
+    }
 
     private static string ExportFfmpegArgs(string exportJson)
     {

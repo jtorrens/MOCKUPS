@@ -77,9 +77,19 @@ recreate their internal rules.
   `sourceCollectionJsonKey` points at the base message array, each base item
   has a stable `id`, and `testValues.messages[]` stores only id-matched
   overrides. The preview payload receives the merged collection.
-- A message can have delay, write-on duration, reveal policy, state/direction,
-  media playback state and status state. Its visible interval extends through
-  its last animated event, not only through write-on.
+- A message can have delay, state/direction, media playback state and status
+  state. Per-message delay remains part of the ordered sequence because it
+  defines rhythm between messages.
+- Write-on duration, outgoing bubble reveal policy, incoming reveal policy,
+  composer visibility while writing and post-write-on hold are global
+  Conversation runtime behavior. They are not repeated in each message item.
+- Incoming messages use the global `incomingRevealMode`: `instant`, `writeOn`
+  or `typingIndicator`. System messages are centered and ignore write-on.
+- Outgoing messages use the global composer behavior. Text Input Bar and
+  Keyboard remain visible through `postWriteOnHoldFrames` after the last
+  revealed grapheme before dismiss/reveal timing completes.
+- A message visible interval extends through its last animated event, not only
+  through write-on.
 - Conversation derives the revealed composer text from the active outgoing
   write-on message.
 - **Canonical rule:** Text Input Bar and Keyboard receive this same revealed

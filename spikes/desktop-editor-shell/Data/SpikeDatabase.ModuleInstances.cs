@@ -16,12 +16,8 @@ internal sealed partial class SpikeDatabase
         string ActorId,
         string Text,
         int DelayAfterPreviousFrames,
-        int WriteOnDurationFrames,
         string StatusText,
         string DeliveryStatus,
-        string BubbleRevealMode,
-        bool TextInputVisible,
-        bool KeyboardVisible,
         bool StatusVisible,
         string MediaType,
         string MediaSource,
@@ -148,9 +144,59 @@ internal sealed partial class SpikeDatabase
                     ("$value", Math.Max(1, NumericText.Int32(value, 1))),
                     ("$id", moduleInstanceId));
                 return;
+            case "moduleInstance.conversation.writeOnDurationFrames":
+            case "moduleInstance.conversation.postWriteOnHoldFrames":
+            case "moduleInstance.conversation.bubbleRevealMode":
+            case "moduleInstance.conversation.incomingRevealMode":
+            case "moduleInstance.conversation.textInputVisible":
+            case "moduleInstance.conversation.keyboardVisible":
+                UpdateConversationBehaviorField(connection, moduleInstanceId, fieldId, value);
+                return;
             default:
                 throw new InvalidOperationException($"Unknown module instance field '{fieldId}'.");
         }
+    }
+
+    private void UpdateConversationBehaviorField(
+        SqliteConnection connection,
+        string moduleInstanceId,
+        string fieldId,
+        string value)
+    {
+        var settings = GetModuleInstanceSettings(moduleInstanceId);
+        if (GetModuleSettings(settings.ModuleId).RecordClassId != "module.core.chat")
+        {
+            throw new InvalidOperationException("Conversation timing fields are only supported by Conversation module instances.");
+        }
+
+        var behavior = ParseJsonObject(settings.BehaviorJson);
+        switch (fieldId)
+        {
+            case "moduleInstance.conversation.writeOnDurationFrames":
+                behavior["writeOnDurationFrames"] = Math.Max(0, NumericText.Int32(value, 42));
+                break;
+            case "moduleInstance.conversation.postWriteOnHoldFrames":
+                behavior["postWriteOnHoldFrames"] = Math.Max(0, NumericText.Int32(value, 12));
+                break;
+            case "moduleInstance.conversation.bubbleRevealMode":
+                behavior["bubbleRevealMode"] = value is "afterWriteOn" ? "afterWriteOn" : "duringWriteOn";
+                break;
+            case "moduleInstance.conversation.incomingRevealMode":
+                behavior["incomingRevealMode"] = value is "writeOn" or "typingIndicator" ? value : "instant";
+                break;
+            case "moduleInstance.conversation.textInputVisible":
+                behavior["textInputVisible"] = BooleanText.Parse(value);
+                break;
+            case "moduleInstance.conversation.keyboardVisible":
+                behavior["keyboardVisible"] = BooleanText.Parse(value);
+                break;
+        }
+
+        Execute(
+            connection,
+            "UPDATE module_instances SET behavior_json = $behaviorJson WHERE id = $id",
+            ("$behaviorJson", behavior.ToJsonString()),
+            ("$id", moduleInstanceId));
     }
 
     public IReadOnlyList<ConversationMessage> GetConversationMessages(string moduleInstanceId)
@@ -164,12 +210,8 @@ internal sealed partial class SpikeDatabase
             message["actorId"]?.GetValue<string>() ?? "",
             message["text"]?.GetValue<string>() ?? "",
             message["delayAfterPreviousFrames"]?.GetValue<int>() ?? 0,
-            (message["textReveal"] as JsonObject)?["durationFrames"]?.GetValue<int>() ?? 0,
             (message["status"] as JsonObject)?["text"]?.GetValue<string>() ?? "",
             (message["status"] as JsonObject)?["deliveryStatus"]?.GetValue<string>() ?? "none",
-            message["bubbleRevealMode"]?.GetValue<string>() ?? "duringWriteOn",
-            message["textInputVisible"]?.GetValue<bool>() ?? false,
-            message["keyboardVisible"]?.GetValue<bool>() ?? false,
             message["statusVisible"]?.GetValue<bool>()
                 ?? DeliveryStatusVisible(message),
             message["mediaType"]?.GetValue<string>() ?? "none",
@@ -200,10 +242,6 @@ internal sealed partial class SpikeDatabase
                 ["actorId"] = "",
                 ["text"] = "",
                 ["delayAfterPreviousFrames"] = 0,
-                ["textReveal"] = new JsonObject { ["durationFrames"] = 0 },
-                ["bubbleRevealMode"] = "duringWriteOn",
-                ["textInputVisible"] = false,
-                ["keyboardVisible"] = false,
                 ["statusVisible"] = false,
                 ["mediaType"] = "none",
                 ["mediaSource"] = "",
@@ -240,10 +278,6 @@ internal sealed partial class SpikeDatabase
             message["actorId"] = next.ActorId;
             message["text"] = next.Text;
             message["delayAfterPreviousFrames"] = Math.Max(0, next.DelayAfterPreviousFrames);
-            message["textReveal"] = new JsonObject { ["durationFrames"] = Math.Max(0, next.WriteOnDurationFrames) };
-            message["bubbleRevealMode"] = next.BubbleRevealMode is "afterWriteOn" ? "afterWriteOn" : "duringWriteOn";
-            message["textInputVisible"] = next.TextInputVisible;
-            message["keyboardVisible"] = next.KeyboardVisible;
             message["statusVisible"] = next.StatusVisible;
             message["mediaType"] = next.MediaType is "image" or "video" or "audio" ? next.MediaType : "none";
             message["mediaSource"] = next.MediaSource;
@@ -343,6 +377,12 @@ internal sealed partial class SpikeDatabase
             ["showNavigationBar"] = true,
             ["showTextInputBar"] = true,
             ["showKeyboard"] = false,
+            ["writeOnDurationFrames"] = 42,
+            ["postWriteOnHoldFrames"] = 12,
+            ["bubbleRevealMode"] = "afterWriteOn",
+            ["incomingRevealMode"] = "typingIndicator",
+            ["textInputVisible"] = true,
+            ["keyboardVisible"] = true,
             ["initialScroll"] = "bottom",
         }.ToJsonString();
     }

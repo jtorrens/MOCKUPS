@@ -100,7 +100,8 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
     : undefined;
   const conversationFrame = Math.max(0, Math.floor(optionalNumber(preview, "conversationFrame", Number.MAX_SAFE_INTEGER)));
   const motionTimeSeconds = conversationFrame / Math.max(1, payload.frameRate ?? 25);
-  const composer = composerState(conversationMessages(preview), conversationFrame);
+  const timing = conversationTiming(conversation, preview);
+  const composer = composerState(conversationMessages(preview), conversationFrame, timing);
   const keyboardVisible = composer.keyboardVisible
     && requiredBoolean(conversation, "showKeyboard", "module.conversation.showKeyboard");
   const textInputVisible = composer.textInputVisible
@@ -220,6 +221,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
       bottom,
       conversationFrame,
       motionTimeSeconds,
+      timing,
     ),
   });
 
@@ -313,6 +315,7 @@ function messageNodes(
   bottom: number,
   conversationFrame: number,
   motionTimeSeconds: number,
+  timing: ConversationTiming,
 ) {
   const gap = numberToken(payload, optionalString(conversation, "messageGap") || "theme.spacing.m")
     * renderScale(payload);
@@ -325,7 +328,7 @@ function messageNodes(
   const messages = visibleMessages(
     conversationMessages(preview),
     conversationFrame,
-    "duringWriteOn",
+    timing,
   );
   const bubbleNode = (message: ConversationPreviewMessage, writeOnTrigger: boolean) => childRenderable(
     payload,
@@ -392,9 +395,6 @@ type ConversationPreviewMessage = {
   writeOnDurationFrames: number;
   writeOnTrigger: boolean;
   writeOnFrame: number;
-  bubbleRevealMode: string;
-  textInputVisible: boolean;
-  keyboardVisible: boolean;
   statusVisible: boolean;
   mediaType: "none" | "image" | "video" | "audio";
   mediaSource: string;
@@ -410,6 +410,51 @@ type ConversationPreviewMessage = {
   controlsElapsedMs: number;
 };
 
+type IncomingRevealMode = "instant" | "writeOn" | "typingIndicator";
+
+type ConversationTiming = {
+  writeOnDurationFrames: number;
+  bubbleRevealMode: "duringWriteOn" | "afterWriteOn";
+  incomingRevealMode: IncomingRevealMode;
+  textInputVisible: boolean;
+  keyboardVisible: boolean;
+  postWriteOnHoldFrames: number;
+};
+
+function conversationTiming(conversation: JsonRecord, preview: JsonRecord): ConversationTiming {
+  const incomingRevealMode = optionalString(preview, "incomingRevealMode")
+    || optionalString(conversation, "incomingRevealMode");
+  const bubbleRevealMode = optionalString(preview, "bubbleRevealMode")
+    || optionalString(conversation, "bubbleRevealMode");
+  return {
+    writeOnDurationFrames: Math.max(
+      0,
+      Math.floor(optionalNumber(preview, "writeOnDurationFrames", optionalNumber(conversation, "writeOnDurationFrames", 30))),
+    ),
+    bubbleRevealMode: bubbleRevealMode === "afterWriteOn" ? "afterWriteOn" : "duringWriteOn",
+    incomingRevealMode: incomingRevealMode === "writeOn" || incomingRevealMode === "typingIndicator"
+      ? incomingRevealMode
+      : "instant",
+    textInputVisible: optionalBooleanWithFallback(preview, conversation, "textInputVisible", true),
+    keyboardVisible: optionalBooleanWithFallback(preview, conversation, "keyboardVisible", true),
+    postWriteOnHoldFrames: Math.max(
+      0,
+      Math.floor(optionalNumber(preview, "postWriteOnHoldFrames", optionalNumber(conversation, "postWriteOnHoldFrames", 0))),
+    ),
+  };
+}
+
+function optionalBooleanWithFallback(
+  primary: JsonRecord,
+  secondary: JsonRecord,
+  key: string,
+  fallback: boolean,
+) {
+  if (typeof primary[key] === "boolean") return primary[key];
+  if (typeof secondary[key] === "boolean") return secondary[key];
+  return fallback;
+}
+
 function conversationMessages(preview: JsonRecord): ConversationPreviewMessage[] {
   const messages = Array.isArray(preview.messages)
     ? preview.messages.map(asRecord)
@@ -417,19 +462,15 @@ function conversationMessages(preview: JsonRecord): ConversationPreviewMessage[]
   if (messages.length > 0) {
     return messages.map((message) => {
       const status = asRecord(message.status);
-      const textReveal = asRecord(message.textReveal);
       return {
         state: optionalString(message, "direction") || "incoming",
         text: optionalString(message, "text"),
         statusState: optionalString(message, "statusState") || optionalString(status, "deliveryStatus") || "none",
         statusText: optionalString(message, "statusText") || optionalString(status, "text"),
         delayAfterPreviousFrames: Math.max(0, Math.floor(optionalNumber(message, "delayAfterPreviousFrames", 0))),
-        writeOnDurationFrames: Math.max(0, Math.floor(optionalNumber(message, "writeOnDurationFrames", optionalNumber(textReveal, "durationFrames", 0)))),
+        writeOnDurationFrames: 0,
         writeOnTrigger: false,
         writeOnFrame: 0,
-        bubbleRevealMode: optionalString(message, "bubbleRevealMode") || "duringWriteOn",
-        textInputVisible: optionalBoolean(message, "textInputVisible"),
-        keyboardVisible: optionalBoolean(message, "keyboardVisible"),
         statusVisible: optionalBoolean(message, "statusVisible") || optionalString(message, "statusState") !== "none",
         mediaType: messageMediaType(message),
         mediaSource: optionalString(message, "mediaSource"),
@@ -453,53 +494,72 @@ function conversationMessages(preview: JsonRecord): ConversationPreviewMessage[]
 function visibleMessages(
   messages: ConversationPreviewMessage[],
   frame: number,
-  fallbackRevealMode: string,
+  timing: ConversationTiming,
 ) {
   let cursor = 0;
   return messages.flatMap((message) => {
     const startFrame = cursor + message.delayAfterPreviousFrames;
     const isSystemMessage = message.state === "system";
-    const effectiveWriteOnFrames = isSystemMessage ? 0 : message.writeOnDurationFrames;
+    const isOutgoingMessage = message.state === "outgoing";
+    const isIncomingMessage = message.state === "incoming";
+    const effectiveWriteOnFrames = isSystemMessage ? 0 : timing.writeOnDurationFrames;
+    const holdFrames = isOutgoingMessage ? timing.postWriteOnHoldFrames : 0;
     const revealEndFrame = startFrame + effectiveWriteOnFrames;
-    cursor = revealEndFrame;
-    const revealAfterWriteOn = !isSystemMessage
-      && (message.bubbleRevealMode || fallbackRevealMode) === "afterWriteOn";
-    const visibleAt = revealAfterWriteOn ? revealEndFrame : startFrame;
+    cursor = revealEndFrame + holdFrames;
+    const revealAfterWriteOn = isOutgoingMessage && timing.bubbleRevealMode === "afterWriteOn";
+    const visibleAt = revealAfterWriteOn ? revealEndFrame + holdFrames : startFrame;
     if (frame < visibleAt) return [];
+    const incomingTyping = isIncomingMessage
+      && timing.incomingRevealMode === "typingIndicator"
+      && frame < revealEndFrame;
+    const incomingWriteOn = isIncomingMessage
+      && timing.incomingRevealMode === "writeOn"
+      && effectiveWriteOnFrames > 0
+      && frame < revealEndFrame;
     return [{
       ...message,
-      writeOnTrigger: !isSystemMessage && !revealAfterWriteOn && effectiveWriteOnFrames > 0,
+      text: incomingTyping ? "•••" : message.text,
+      writeOnTrigger: (isOutgoingMessage || incomingWriteOn)
+        && !revealAfterWriteOn
+        && effectiveWriteOnFrames > 0,
       writeOnFrame: Math.max(0, frame - startFrame),
       writeOnDurationFrames: effectiveWriteOnFrames,
     }];
   });
 }
 
-function composerState(messages: ConversationPreviewMessage[], frame: number) {
+function composerState(
+  messages: ConversationPreviewMessage[],
+  frame: number,
+  timing: ConversationTiming,
+) {
   let cursor = 0;
   for (const message of messages) {
     const startFrame = cursor + message.delayAfterPreviousFrames;
-    const effectiveWriteOnFrames = message.state === "system" ? 0 : message.writeOnDurationFrames;
+    const effectiveWriteOnFrames = message.state === "system" ? 0 : timing.writeOnDurationFrames;
     const endFrame = startFrame + effectiveWriteOnFrames;
+    const holdEndFrame = endFrame + (message.state === "outgoing" ? timing.postWriteOnHoldFrames : 0);
     const writing = message.state === "outgoing"
       && effectiveWriteOnFrames > 0
       && frame >= startFrame
-      && frame < endFrame;
+      && frame < holdEndFrame;
     if (writing) {
       const graphemes = textGraphemes(message.text);
-      const textLength = simpleWriteOnFrameVisibleCount(message.text, {
-        enabled: true,
-        frame: frame - startFrame,
-        durationFrames: effectiveWriteOnFrames,
-      });
+      const textLength = frame < endFrame
+        ? simpleWriteOnFrameVisibleCount(message.text, {
+            enabled: true,
+            frame: frame - startFrame,
+            durationFrames: effectiveWriteOnFrames,
+          })
+        : graphemes.length;
       return {
         text: graphemes.slice(0, textLength).join(""),
         currentCharacter: textLength,
-        textInputVisible: message.textInputVisible,
-        keyboardVisible: message.keyboardVisible,
+        textInputVisible: timing.textInputVisible,
+        keyboardVisible: timing.keyboardVisible,
       };
     }
-    cursor = endFrame;
+    cursor = holdEndFrame;
   }
   return { text: "", currentCharacter: 0, textInputVisible: false, keyboardVisible: false };
 }

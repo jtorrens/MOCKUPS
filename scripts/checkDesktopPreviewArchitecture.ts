@@ -491,9 +491,13 @@ function assertDesktopConversationPreviewDoesNotUseLegacyMessageKeys() {
     "message3Text",
     "message2StatusState",
     "message2StatusText",
+  ]);
+  const perMessageTimingKeys = new Set([
+    "writeOnDurationFrames",
     "bubbleRevealMode",
     "textInputVisible",
     "keyboardVisible",
+    "textReveal",
   ]);
 
   const database = new Database(databasePath, { readonly: true, fileMustExist: true });
@@ -509,6 +513,33 @@ function assertDesktopConversationPreviewDoesNotUseLegacyMessageKeys() {
             "data/desktop-editor-spike.sqlite",
             `${row.id}.design_preview_json still uses legacy direct conversation preview key "${key}"`,
           );
+        }
+      }
+      for (const [index, message] of jsonArray(preview.messages).map(jsonRecord).entries()) {
+        for (const key of perMessageTimingKeys) {
+          if (key in message) {
+            addViolation(
+              "data/desktop-editor-spike.sqlite",
+              `${row.id}.design_preview_json.messages[${index}] still uses per-message timing key "${key}"`,
+            );
+          }
+        }
+      }
+    }
+
+    const instanceRows = database
+      .prepare("SELECT id, content_json FROM module_instances")
+      .all() as { id: string; content_json: string }[];
+    for (const row of instanceRows) {
+      const content = jsonRecord(jsonParse(row.content_json));
+      for (const [index, message] of jsonArray(content.messages).map(jsonRecord).entries()) {
+        for (const key of perMessageTimingKeys) {
+          if (key in message) {
+            addViolation(
+              "data/desktop-editor-spike.sqlite",
+              `${row.id}.content_json.messages[${index}] still uses per-message timing key "${key}"`,
+            );
+          }
         }
       }
     }

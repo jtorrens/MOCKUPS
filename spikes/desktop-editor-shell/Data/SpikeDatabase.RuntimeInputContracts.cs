@@ -106,6 +106,7 @@ internal sealed partial class SpikeDatabase
                     changed = true;
                 }
             }
+            NormalizeConversationTiming(preview, defaults, existingMessages, ref changed);
             RemoveLegacyConversationPreviewKeys(preview, ref changed);
             return;
         }
@@ -119,12 +120,73 @@ internal sealed partial class SpikeDatabase
         CopyScalar(preview, "message3Text", third, "text");
         CopyScalar(preview, "message2StatusState", second, "statusState");
         CopyScalar(preview, "message2StatusText", second, "statusText");
-        CopyScalar(preview, "bubbleRevealMode", second, "bubbleRevealMode");
-        CopyScalar(preview, "textInputVisible", second, "textInputVisible");
-        CopyScalar(preview, "keyboardVisible", second, "keyboardVisible");
         preview["messages"] = messages;
+        NormalizeConversationTiming(preview, defaults, messages, ref changed);
         RemoveLegacyConversationPreviewKeys(preview, ref changed);
         changed = true;
+    }
+
+    private static void NormalizeConversationTiming(
+        JsonObject preview,
+        JsonObject defaults,
+        JsonArray messages,
+        ref bool changed)
+    {
+        foreach (var message in messages.OfType<JsonObject>().OrderBy((message) =>
+            (message["direction"]?.GetValue<string>() ?? "") == "outgoing" ? 0 : 1))
+        {
+            PromoteMessageValue(preview, message, "writeOnDurationFrames", ref changed);
+            if (message["textReveal"]?["durationFrames"] is JsonNode duration && preview["writeOnDurationFrames"] is null)
+            {
+                preview["writeOnDurationFrames"] = duration.DeepClone();
+                changed = true;
+            }
+            PromoteMessageValue(preview, message, "bubbleRevealMode", ref changed);
+            PromoteMessageValue(preview, message, "textInputVisible", ref changed);
+            PromoteMessageValue(preview, message, "keyboardVisible", ref changed);
+            RemoveMessageTimingKey(message, "writeOnDurationFrames", ref changed);
+            RemoveMessageTimingKey(message, "bubbleRevealMode", ref changed);
+            RemoveMessageTimingKey(message, "textInputVisible", ref changed);
+            RemoveMessageTimingKey(message, "keyboardVisible", ref changed);
+            if (message.Remove("textReveal"))
+            {
+                changed = true;
+            }
+        }
+
+        foreach (var key in new[]
+        {
+            "writeOnDurationFrames",
+            "postWriteOnHoldFrames",
+            "bubbleRevealMode",
+            "incomingRevealMode",
+            "textInputVisible",
+            "keyboardVisible",
+        })
+        {
+            if (preview[key] is null && defaults[key] is JsonNode defaultValue)
+            {
+                preview[key] = defaultValue.DeepClone();
+                changed = true;
+            }
+        }
+    }
+
+    private static void PromoteMessageValue(JsonObject preview, JsonObject message, string key, ref bool changed)
+    {
+        if (preview[key] is null && message[key] is JsonNode value)
+        {
+            preview[key] = value.DeepClone();
+            changed = true;
+        }
+    }
+
+    private static void RemoveMessageTimingKey(JsonObject message, string key, ref bool changed)
+    {
+        if (message.Remove(key))
+        {
+            changed = true;
+        }
     }
 
     private static void RemoveLegacyConversationPreviewKeys(JsonObject preview, ref bool changed)
@@ -136,9 +198,6 @@ internal sealed partial class SpikeDatabase
             "message3Text",
             "message2StatusState",
             "message2StatusText",
-            "bubbleRevealMode",
-            "textInputVisible",
-            "keyboardVisible",
         })
         {
             if (preview.Remove(key))
