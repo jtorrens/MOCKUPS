@@ -83,6 +83,27 @@ internal static class EditorGroupBlock
         return GroupBorder(card);
     }
 
+    public static Control CreateNestedCard(
+        Control header,
+        Control content,
+        out InstantEditorCard card,
+        bool isExpanded = false)
+    {
+        card = new InstantEditorCard(
+            header,
+            new Border { Padding = EditorUiDensity.CardThickness(10), Child = content },
+            isExpanded)
+        {
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+        return NestedCardSurface(card);
+    }
+
+    public static Control NestedCardSurface(InstantEditorCard card)
+    {
+        return GroupBorder(card);
+    }
+
     public static void WireExclusiveCards(IReadOnlyList<InstantEditorCard> cards)
     {
         foreach (var card in cards)
@@ -142,6 +163,7 @@ internal static class EditorGroupBlock
             Background = new SolidColorBrush(Color.FromArgb(28, 255, 255, 255)),
             BorderBrush = new SolidColorBrush(Color.FromArgb(42, 255, 255, 255)),
             BorderThickness = new Thickness(1),
+            BoxShadow = BoxShadows.Parse("0 3 8 0 #18000000"),
             Child = child,
         };
     }

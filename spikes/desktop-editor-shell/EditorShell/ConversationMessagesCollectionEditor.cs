@@ -33,7 +33,7 @@ internal sealed class ConversationMessagesCollectionEditor
         {
             var messageCard = CreateMessage(node, index, messages[index]);
             messageCards.Add(messageCard);
-            body.Children.Add(messageCard);
+            body.Children.Add(EditorGroupBlock.NestedCardSurface(messageCard));
         }
         EditorGroupBlock.WireExclusiveCards(messageCards);
 

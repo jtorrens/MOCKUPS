@@ -203,9 +203,10 @@ internal sealed class RuntimeInputsCollectionEditor
         {
             content.Children.Add(CreateApiInputRow(field));
         }
-        return new InstantEditorCard(
+        return EditorGroupBlock.CreateNestedCard(
             EditorCardHeader.Create(collection.Label, $"{collection.ItemLabel} contract", EditorIcons.Create(EditorIcons.Component, 16)),
             content,
+            out _,
             isExpanded: false);
     }
 
@@ -265,9 +266,10 @@ internal sealed class RuntimeInputsCollectionEditor
             content.Children.Add(CreateTestValueCollectionItemCard(owner, preview, collection, index, items[index]));
         }
 
-        return new InstantEditorCard(
+        return EditorGroupBlock.CreateNestedCard(
             EditorCardHeader.Create(collection.Label, $"{items.Count} active {collection.ItemLabel.ToLowerInvariant()} instance(s)", EditorIcons.Create(EditorIcons.Component, 16)),
             content,
+            out _,
             isExpanded: true);
     }
 
@@ -293,9 +295,10 @@ internal sealed class RuntimeInputsCollectionEditor
             content.Children.Add(control);
         }
 
-        return new InstantEditorCard(
+        return EditorGroupBlock.CreateNestedCard(
             EditorCardHeader.Create($"{collection.ItemLabel} {itemIndex + 1}", $"{collection.JsonKey}[{itemIndex}]", EditorIcons.Create(EditorIcons.Component, 14)),
             content,
+            out _,
             isExpanded: true);
     }
 
