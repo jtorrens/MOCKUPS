@@ -84,8 +84,10 @@ variant slots.
 When scrolling, the resolved text/caret must use the same scroll offset. Parent
 supplies available size; Text Box resolves text frame and internal children.
 
-**Known limitation.** System/SF font loading and emoji measurement can produce
-preview differences. Do not compensate in a specific parent.
+**Known limitation.** Exact browser measurement of the contract production text
+and emoji fonts can still differ from the conservative estimator. Runtime
+rendering must never substitute host-system text or emoji fonts to hide that
+difference. Do not compensate in a specific parent.
 
 ## Icon Row
 

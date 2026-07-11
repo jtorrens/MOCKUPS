@@ -25,6 +25,10 @@ and shared time.
 - Language/layout rows, key colors/alpha, typography, padding, radius, border,
   shadow and pressed effect.
 - Standard/special/emoji key scales and optional top/bottom Icon Bar variants.
+- Typography weight, style, size and line height are variant values. Font family
+  is not a Keyboard variant field: Keyboard always uses the Theme
+  `systemFontFamilyId` through the explicit `theme.system` selector, followed by
+  the Theme emoji font for emoji glyphs.
 - Keyboard Surface and motion configuration.
 
 ## Composition and dependencies

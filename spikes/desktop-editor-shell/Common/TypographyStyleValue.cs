@@ -14,13 +14,14 @@ internal static class TypographyStyleValue
 
     public static string CreateDefault(
         string sizeToken,
+        string fontFamilyId = "theme",
         string weight = "theme.typography.weight",
         string style = "theme.typography.style",
         string lineHeight = "theme.typography.lineHeights.normal")
     {
         return new JsonObject
         {
-            [FontFamilyId] = "theme",
+            [FontFamilyId] = fontFamilyId,
             [Weight] = weight,
             [Style] = style,
             [SizeToken] = sizeToken,

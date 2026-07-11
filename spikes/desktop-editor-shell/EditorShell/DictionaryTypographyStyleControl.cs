@@ -62,6 +62,7 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
     private readonly Button _headerButton;
     private readonly TextBlock _summaryText;
     private readonly Grid _contentGrid;
+    private readonly string _fixedFontFamilyId;
     private bool _isOpen;
     private bool _isUpdating;
 
@@ -69,9 +70,11 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
         FieldDefinition definition,
         string value,
         bool isInherited,
-        Func<string, IReadOnlyList<FieldOption>?, Task<string?>>? showThemeTokenPicker)
+        Func<string, IReadOnlyList<FieldOption>?, Task<string?>>? showThemeTokenPicker,
+        string fixedFontFamilyId = "")
     {
         _definition = definition;
+        _fixedFontFamilyId = fixedFontFamilyId;
         _inheritedValues = TypographyStyleValue.Parse(definition.InheritedValue);
         if (_inheritedValues.Count == 0)
         {
@@ -159,12 +162,16 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
             ApplyThemeBrushes();
         };
 
-        AddOptionRow(0, "Font", TypographyStyleValue.FontFamilyId, FontOptions(definition.Options), "theme");
-        AddOptionRow(1, "Weight", TypographyStyleValue.Weight, WeightOptions, "theme.typography.weight");
-        AddOptionRow(2, "Style", TypographyStyleValue.Style, StyleOptions, "theme.typography.style");
-        AddThemeTokenRow(3, "Size", TypographyStyleValue.SizeToken, showThemeTokenPicker);
+        var row = 0;
+        if (string.IsNullOrWhiteSpace(_fixedFontFamilyId))
+        {
+            AddOptionRow(row++, "Font", TypographyStyleValue.FontFamilyId, FontOptions(definition.Options), "theme");
+        }
+        AddOptionRow(row++, "Weight", TypographyStyleValue.Weight, WeightOptions, "theme.typography.weight");
+        AddOptionRow(row++, "Style", TypographyStyleValue.Style, StyleOptions, "theme.typography.style");
+        AddThemeTokenRow(row++, "Size", TypographyStyleValue.SizeToken, showThemeTokenPicker);
         AddThemeTokenRow(
-            4,
+            row,
             "Line",
             TypographyStyleValue.LineHeight,
             showThemeTokenPicker,
@@ -191,6 +198,7 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
         {
             _localValues[pair.Key] = pair.Value?.DeepClone();
         }
+        ApplyFixedFontFamily();
 
         RefreshRows();
         _isUpdating = false;
@@ -284,6 +292,10 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
 
     private string ValueFor(string key, string fallback)
     {
+        if (key == TypographyStyleValue.FontFamilyId && !string.IsNullOrWhiteSpace(_fixedFontFamilyId))
+        {
+            return _fixedFontFamilyId;
+        }
         var value = _localValues.ContainsKey(key)
             ? ValueString(_localValues, key, fallback)
             : ValueString(_inheritedValues, key, fallback);
@@ -327,6 +339,7 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
             return _localValues.Count == 0 ? _definition.InheritedStorageValue : _localValues.ToJsonString();
         }
 
+        ApplyFixedFontFamily();
         var value = new JsonObject();
         foreach (var key in new[]
                  {
@@ -343,6 +356,14 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
         }
 
         return value.ToJsonString();
+    }
+
+    private void ApplyFixedFontFamily()
+    {
+        if (!string.IsNullOrWhiteSpace(_fixedFontFamilyId))
+        {
+            _localValues[TypographyStyleValue.FontFamilyId] = JsonValue.Create(_fixedFontFamilyId);
+        }
     }
 
     private void RefreshRows()

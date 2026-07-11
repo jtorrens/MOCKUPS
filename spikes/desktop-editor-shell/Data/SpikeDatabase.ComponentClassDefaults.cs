@@ -241,7 +241,7 @@ internal sealed partial class SpikeDatabase
                     ["keyShadowEnabled"] = false,
                     ["pressedEffect"] = "popup",
                     ["emojiScale"] = "1.2",
-                    ["typography"] = JsonNode.Parse(TypographyStyleValue.CreateDefault("theme.typography.sizes.s")),
+                    ["typography"] = JsonNode.Parse(TypographyStyleValue.CreateDefault("theme.typography.sizes.s", "theme.system")),
                     ["iconRowPlacement"] = "bottom",
                     ["iconRowsHeight"] = 52,
                     ["iconEdgePadding"] = "theme.spacing.none",

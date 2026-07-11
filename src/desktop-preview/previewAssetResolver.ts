@@ -410,21 +410,28 @@ export function fontFacesForPayload(
   payload: DesignPreviewPayload,
 ): RenderableFontFace[] {
   const requirements = fontRequirementsForPayload(payload);
-  return (payload.fontFaces ?? []).flatMap((face) => {
-    const requirement = requirements.get(face.fontId);
-    if (!requirement) return [];
-    if (!fontFaceMatches(face, requirement)) return [];
+  const resolved: RenderableFontFace[] = [];
+  for (const [fontId, requirement] of requirements) {
+    const matchingFaces = (payload.fontFaces ?? []).filter((face) =>
+      face.fontId === fontId && fontFaceMatches(face, requirement));
+    if (matchingFaces.length === 0) {
+      throw new Error(`Required production font face is unavailable: ${fontId}`);
+    }
 
-    const fullPath = path.resolve(payload.projectMediaRoot ?? "", face.relativePath);
-    if (!existsSync(fullPath)) return [];
-
-    return [{
-      family: previewFontFaceFamily(face.fontId),
-      uri: fontFileUri(fullPath),
-      weight: fontFaceWeight(face),
-      style: face.style,
-    }];
-  });
+    for (const face of matchingFaces) {
+      const fullPath = path.resolve(payload.projectMediaRoot ?? "", face.relativePath);
+      if (!existsSync(fullPath)) {
+        throw new Error(`Required production font file is missing: ${face.relativePath}`);
+      }
+      resolved.push({
+        family: previewFontFaceFamily(face.fontId),
+        uri: fontFileUri(fullPath),
+        weight: fontFaceWeight(face),
+        style: face.style,
+      });
+    }
+  }
+  return resolved;
 }
 
 type FontRequirement = {
@@ -436,10 +443,17 @@ function fontRequirementsForPayload(payload: DesignPreviewPayload) {
   const requirements = new Map<string, FontRequirement>();
   const themeTypography = asRecord(parseObject(payload.themeTokensJson).typography);
   const themeFontId = stringValue(themeTypography.fontFamilyId).trim();
+  const themeSystemFontId = stringValue(themeTypography.systemFontFamilyId).trim();
   const themeEmojiFontId = stringValue(themeTypography.emojiFontFamilyId).trim();
   const themeWeight = numberOrStringValue(themeTypography.weight, 400);
   const themeStyle = fontStyleValue(themeTypography.style);
 
+  if (themeFontId) {
+    addFontRequirement(requirements, themeFontId, themeWeight, themeStyle);
+  }
+  if (themeSystemFontId) {
+    addFontRequirement(requirements, themeSystemFontId, themeWeight, themeStyle);
+  }
   if (themeEmojiFontId) {
     addFontRequirement(requirements, themeEmojiFontId, 400, "normal");
   }
@@ -452,6 +466,7 @@ function fontRequirementsForPayload(payload: DesignPreviewPayload) {
       root,
       requirements,
       themeFontId,
+      themeSystemFontId,
       themeWeight,
       themeStyle,
     );
@@ -464,12 +479,13 @@ function collectTypographyFontRequirements(
   value: unknown,
   requirements: Map<string, FontRequirement>,
   themeFontId: string,
+  themeSystemFontId: string,
   themeWeight: number,
   themeStyle: string,
 ) {
   if (Array.isArray(value)) {
     for (const entry of value) {
-      collectTypographyFontRequirements(entry, requirements, themeFontId, themeWeight, themeStyle);
+      collectTypographyFontRequirements(entry, requirements, themeFontId, themeSystemFontId, themeWeight, themeStyle);
     }
     return;
   }
@@ -478,7 +494,11 @@ function collectTypographyFontRequirements(
   const record = value as Record<string, unknown>;
   if ("fontFamilyId" in record) {
     const fontId = stringValue(record.fontFamilyId).trim();
-    const resolvedFontId = fontId === "theme" ? themeFontId : fontId === "system" ? "" : fontId;
+    const resolvedFontId = fontId === "theme"
+      ? themeFontId
+      : fontId === "theme.system"
+        ? themeSystemFontId
+        : fontId;
     if (resolvedFontId) {
       addFontRequirement(
         requirements,
@@ -490,7 +510,7 @@ function collectTypographyFontRequirements(
   }
 
   for (const child of Object.values(record)) {
-    collectTypographyFontRequirements(child, requirements, themeFontId, themeWeight, themeStyle);
+    collectTypographyFontRequirements(child, requirements, themeFontId, themeSystemFontId, themeWeight, themeStyle);
   }
 }
 

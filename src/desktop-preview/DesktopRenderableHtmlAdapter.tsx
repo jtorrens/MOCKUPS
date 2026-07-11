@@ -9,7 +9,6 @@ import {
   stringValue as commonStringValue,
 } from "./previewValueHelpers.js";
 import { asRecord } from "./previewJsonHelpers.js";
-import { previewTextFontFamily } from "./previewFontHelpers.js";
 
 export interface DesktopRenderableHtmlAdapterProps {
   tree: RenderableNode;
@@ -183,6 +182,11 @@ function nodeStyle(
   const width = optionalStringValue(style.width) ?? optionalNumberValue(style.width) ?? node.box?.width;
   const height = optionalStringValue(style.height) ?? optionalNumberValue(style.height) ?? node.box?.height;
 
+  const fontFamily = optionalStringValue(style.fontFamily);
+  if (node.type === "text" && !fontFamily) {
+    throw new Error(`Renderable text node '${node.id}' has no resolved production font family`);
+  }
+
   return {
     ...boxStyle(node.box, parentOrigin),
     alignItems: alignItems as CSSProperties["alignItems"],
@@ -200,7 +204,7 @@ function nodeStyle(
     display: display as CSSProperties["display"],
     flexDirection: flexDirection as CSSProperties["flexDirection"],
     filter,
-    fontFamily: optionalStringValue(style.fontFamily) ?? (node.type === "text" ? previewTextFontFamily : undefined),
+    fontFamily,
     fontSize: optionalNumberValue(style.fontSize),
     fontStyle: optionalStringValue(style.fontStyle) as CSSProperties["fontStyle"],
     fontWeight: cssFontWeight(style.fontWeight),
@@ -423,6 +427,7 @@ function RenderNode({
     : parentOrigin;
   return (
     <div
+      data-renderable-id={node.id}
       data-renderable-type={node.type}
       style={{
         ...nodeStyle(node, parentOrigin),

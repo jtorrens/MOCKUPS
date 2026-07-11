@@ -53,3 +53,30 @@ apply it directly to module slots:
 This remains a future timeline phase. The present model stores `transition_json`
 so no schema redesign is needed when cut-only slots gain crossfade, slide or
 other transitions.
+
+## Future on-set compatibility intention
+
+This section is a compatibility declaration, not an implementation phase or a
+complete mobile specification.
+
+In the future, an exported Shot plus its ordered ModuleInstance payloads and
+assets may be played by a local HTML/CSS runtime on an on-set mobile device.
+The only visual choice currently anticipated in that on-set runtime is the
+effective theme mode, `light` or `dark`. Play, pause and frame navigation are
+playback state, not edits to Shot or ModuleInstance data.
+
+No package format, transfer protocol, mobile UI, persistence model or delivery
+schedule is defined yet. Current work must only avoid making that future route
+impossible:
+
+- frame resolution remains deterministic and based on the project frame;
+- Shot/Module contracts do not depend on Avalonia, WebView invocation details,
+  SQLite access during rendering, host-system fonts or live network assets;
+- production text and emoji fonts and all media are explicit contract resources;
+- desktop DOM morphing and `mockups-asset:` interning remain adapter-local
+  optimizations, not portable payload requirements;
+- the effective light/dark mode is context supplied to resolution and is not a
+  visual override stored by ModuleInstance.
+
+Do not begin mobile runtime implementation from this declaration. A separate
+normative contract should be written only when that product phase starts.

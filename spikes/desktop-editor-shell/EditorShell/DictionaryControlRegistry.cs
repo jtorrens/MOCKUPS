@@ -46,6 +46,12 @@ internal static class DictionaryControlRegistry
                 request.Value,
                 request.IsInherited,
                 request.Services.ShowThemeTokenPicker),
+            [ValueKind.TypographySystemStyle] = (request) => new DictionaryTypographyStyleControl(
+                request.Definition,
+                request.Value,
+                request.IsInherited,
+                request.Services.ShowThemeTokenPicker,
+                "theme.system"),
             [ValueKind.Alpha] = (request) => new DictionaryAlphaControl(request.Value, request.Definition.IsEditable),
             [ValueKind.PaletteColorPair] = (request) => new DictionaryPalettePairControl(request.Definition, request.Value),
             [ValueKind.PaletteColorAlphaPair] = (request) => new DictionaryPaletteAlphaPairControl(request.Definition, request.Value),

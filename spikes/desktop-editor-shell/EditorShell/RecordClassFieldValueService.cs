@@ -415,6 +415,7 @@ internal sealed class RecordClassFieldValueService
                 new FieldOption("dark", "Dark"),
             ],
             "theme.typography.fontFamilyId" => _database.GetProductionFontOptions(settings.ProjectId, "text"),
+            "theme.typography.systemFontFamilyId" => _database.GetProductionFontOptions(settings.ProjectId, "text"),
             "theme.typography.emojiFontFamilyId" => _database.GetProductionFontOptions(settings.ProjectId, "emoji"),
             "theme.typography.weight" =>
             [

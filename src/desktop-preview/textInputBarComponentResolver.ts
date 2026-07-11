@@ -70,6 +70,45 @@ export function resolveTextInputBarComponent(
     asRecord(iconBarSlot.overrides),
   );
 
+  const resolvedTextBox = resolveTextBoxComponentFromRecords(
+    embeddedTextBoxConfig,
+    {
+      sampleText,
+      placeholder: requiredString(
+        textBoxInputs,
+        "placeholder",
+        "component.textInput.textBox.placeholder",
+      ),
+      maxLines: requiredNumber(
+        textBoxInputs,
+        "maxLines",
+        "component.textInput.textBox.maxLines",
+      ),
+      leftIconRowSlot: leftTextBoxIconRowSlot,
+      leftIconRowInputs: iconRowInputsForTextBox(
+        textBoxInputs,
+        "left",
+        textBoxButtonIconSlot.presetId,
+      ),
+      rightIconRowSlot: rightTextBoxIconRowSlot,
+      rightIconRowInputs: iconRowInputsForTextBox(
+        textBoxInputs,
+        "right",
+        textBoxButtonIconSlot.presetId,
+      ),
+      buttonIconSlot: textBoxButtonIconSlot,
+      iconGap: requiredString(
+        textBoxInputs,
+        "iconGap",
+        "component.textInput.textBox.iconGap",
+      ),
+      size: `${availableWidth}|${height}`,
+      maxWidth: availableWidth,
+    },
+    componentBaseConfigs,
+    "component.textInputBar.textBox",
+  );
+
   return {
     id: "component.textInputBar",
     availableWidth,
@@ -94,44 +133,13 @@ export function resolveTextInputBarComponent(
       componentBaseConfigs,
       "component.textInputBar.iconBar",
     ),
-    textBox: resolveTextBoxComponentFromRecords(
-      embeddedTextBoxConfig,
-      {
-        sampleText,
-        placeholder: requiredString(
-          textBoxInputs,
-          "placeholder",
-          "component.textInput.textBox.placeholder",
-        ),
-        maxLines: requiredNumber(
-          textBoxInputs,
-          "maxLines",
-          "component.textInput.textBox.maxLines",
-        ),
-        leftIconRowSlot: leftTextBoxIconRowSlot,
-        leftIconRowInputs: iconRowInputsForTextBox(
-          textBoxInputs,
-          "left",
-          textBoxButtonIconSlot.presetId,
-        ),
-        rightIconRowSlot: rightTextBoxIconRowSlot,
-        rightIconRowInputs: iconRowInputsForTextBox(
-          textBoxInputs,
-          "right",
-          textBoxButtonIconSlot.presetId,
-        ),
-        buttonIconSlot: textBoxButtonIconSlot,
-        iconGap: requiredString(
-          textBoxInputs,
-          "iconGap",
-          "component.textInput.textBox.iconGap",
-        ),
-        size: `${availableWidth}|${height}`,
-        maxWidth: availableWidth,
+    textBox: {
+      ...resolvedTextBox,
+      typography: {
+        ...resolvedTextBox.typography,
+        fontFamilyId: "theme.system",
       },
-      componentBaseConfigs,
-      "component.textInputBar.textBox",
-    ),
+    },
   };
 }
 

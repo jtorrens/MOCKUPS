@@ -14,6 +14,7 @@ export interface StatusBarItemContract {
 
 export interface StatusBarDesignContract {
   id: "statusBar";
+  fontFamilyId: "theme.system";
   foregroundColorToken: string;
   backgroundColorToken: string;
   backgroundAlpha: number;

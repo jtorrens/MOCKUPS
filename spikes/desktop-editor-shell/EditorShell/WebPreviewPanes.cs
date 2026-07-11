@@ -35,15 +35,47 @@ internal abstract class WebPreviewPane : Grid
 
     protected void LoadHtml(string html)
     {
-        WebView.NavigateToString(html, new Uri("https://mockups.local/"));
+        WebView.NavigateToString(PreviewAssetRegistry.Expand(html), new Uri("https://mockups.local/"));
     }
 
     protected async Task<bool> ReplacePreviewBodyAsync(string bodyContent, bool waitForCommit = false)
     {
         var stopwatch = Stopwatch.StartNew();
+        var assetKeys = PreviewAssetRegistry.Keys(bodyContent);
         var bodyJson = JsonSerializer.Serialize(bodyContent);
         try
         {
+            var assetKeysJson = JsonSerializer.Serialize(assetKeys);
+            var missingResult = await WebView.InvokeScript($$"""
+                (() => {
+                  if (typeof window.mockupsMissingPreviewAssets !== "function") return JSON.stringify({{assetKeysJson}});
+                  return window.mockupsMissingPreviewAssets({{assetKeysJson}});
+                })();
+                """);
+            var missingJson = missingResult?.ToString() ?? "[]";
+            var missingKeys = JsonNode.Parse(string.IsNullOrWhiteSpace(missingJson) ? "[]" : missingJson) is JsonArray missingArray
+                ? missingArray.Select((node) => node?.GetValue<string>() ?? "").Where((key) => key.Length > 0).ToHashSet(StringComparer.Ordinal)
+                : assetKeys.ToHashSet(StringComparer.Ordinal);
+            foreach (var key in assetKeys.Where(missingKeys.Contains))
+            {
+                if (!PreviewAssetRegistry.TryResolve(key, out var uri))
+                {
+                    throw new InvalidOperationException($"Preview asset registry has no value for '{key}'.");
+                }
+                var keyJson = JsonSerializer.Serialize(key);
+                var uriJson = JsonSerializer.Serialize(uri);
+                await WebView.InvokeScript($$"""
+                    (() => {
+                      if (typeof window.mockupsRegisterPreviewAsset !== "function") return false;
+                      return window.mockupsRegisterPreviewAsset({{keyJson}}, {{uriJson}});
+                    })();
+                    """);
+                PreviewDebugLog.Write(
+                    "preview.webview.asset.register",
+                    ("hash", key),
+                    ("mimeType", AssetMimeType(uri)),
+                    ("uriChars", uri.Length));
+            }
             var result = await WebView.InvokeScript($$"""
                 (() => {
                   if (typeof window.mockupsSetPreviewBody !== "function") return false;
@@ -56,6 +88,9 @@ internal abstract class WebPreviewPane : Grid
                 ("success", true),
                 ("ms", stopwatch.Elapsed.TotalMilliseconds),
                 ("bodyChars", bodyContent.Length),
+                ("originalBodyChars", bodyContent.Length),
+                ("assets", assetKeys.Count),
+                ("newAssets", missingKeys.Count),
                 ("patch", patchId),
                 ("wait", waitForCommit));
             if (waitForCommit)
@@ -78,6 +113,14 @@ internal abstract class WebPreviewPane : Grid
         }
     }
 
+    private static string AssetMimeType(string dataUri)
+    {
+        var separator = dataUri.IndexOfAny([';', ',']);
+        return separator > "data:".Length
+            ? dataUri["data:".Length..separator]
+            : "";
+    }
+
     protected async Task<int> PreloadPreviewImagesAsync(
         IReadOnlyCollection<string> imageSources,
         CancellationToken cancellationToken)
@@ -93,17 +136,16 @@ internal abstract class WebPreviewPane : Grid
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var batchStopwatch = Stopwatch.StartNew();
-                var sourcesJson = JsonSerializer.Serialize(batch);
+                var sourcesJson = JsonSerializer.Serialize(batch.Select(PreviewAssetRegistry.ExpandSource));
+                requestedTotal += batch.Length;
                 var result = await WebView.InvokeScript($$"""
                     (() => {
-                      if (typeof window.mockupsPreloadPreviewImages !== "function") return 0;
+                      if (typeof window.mockupsPreloadPreviewImages !== "function") return "";
                       return window.mockupsPreloadPreviewImages({{sourcesJson}});
                     })();
                     """);
-                var loaded = int.TryParse(result?.ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var count)
-                    ? count
-                    : 0;
-                requestedTotal += batch.Length;
+                var requestId = result?.ToString() ?? "";
+                var loaded = await WaitForPreviewImagePreloadAsync(requestId, cancellationToken);
                 loadedTotal += loaded;
                 PreviewDebugLog.Write(
                     "preview.webview.preload-images.batch",
@@ -134,6 +176,42 @@ internal abstract class WebPreviewPane : Grid
                 ("error", error.Message));
             return 0;
         }
+    }
+
+    private async Task<int> WaitForPreviewImagePreloadAsync(
+        string requestId,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(requestId)) return 0;
+
+        var stopwatch = Stopwatch.StartNew();
+        while (stopwatch.ElapsedMilliseconds < 5000)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            await Task.Delay(16, cancellationToken);
+            var requestJson = JsonSerializer.Serialize(requestId);
+            var result = await WebView.InvokeScript($$"""
+                (() => {
+                  if (typeof window.mockupsPreviewImagePreloadResult !== "function") return "";
+                  return window.mockupsPreviewImagePreloadResult({{requestJson}});
+                })();
+                """);
+            var resultJson = result?.ToString() ?? "";
+            if (string.IsNullOrWhiteSpace(resultJson)) continue;
+            if (JsonNode.Parse(resultJson) is not JsonObject state
+                || state["done"]?.GetValue<bool>() != true)
+            {
+                continue;
+            }
+
+            return state["loaded"]?.GetValue<int>() ?? 0;
+        }
+
+        PreviewDebugLog.Write(
+            "preview.webview.preload-images.timeout",
+            ("requestId", requestId),
+            ("ms", stopwatch.Elapsed.TotalMilliseconds));
+        return 0;
     }
 
     protected static IEnumerable<string> PreviewImageSources(string html)
@@ -234,7 +312,13 @@ internal abstract class WebPreviewPane : Grid
                     ("images", JsonText(node, "images")),
                     ("status", JsonText(node, "status")),
                     ("ms", JsonText(node, "ms")),
-                    ("srcChars", JsonText(node, "srcChars")));
+                    ("srcChars", JsonText(node, "srcChars")),
+                    ("renderableId", JsonText(node, "renderableId")),
+                    ("assetHash", JsonText(node, "assetHash")),
+                    ("srcKind", JsonText(node, "srcKind")),
+                    ("source", JsonText(node, "source")),
+                    ("naturalWidth", JsonText(node, "naturalWidth")),
+                    ("naturalHeight", JsonText(node, "naturalHeight")));
             }
 
             return parsed;
@@ -693,6 +777,26 @@ internal abstract class WebPreviewPane : Grid
                   window.mockupsPreviewPatchEvents = events.slice(-160);
                 }
 
+                function imageDescriptor(image) {
+                  const owner = image?.closest?.("[data-renderable-id]");
+                  const source = image?.getAttribute?.("src") ?? "";
+                  return {
+                    renderableId: owner?.getAttribute("data-renderable-id") ?? "",
+                    assetHash: image?.dataset?.previewAssetHash ?? "",
+                    srcKind: source.startsWith("data:")
+                      ? "data"
+                      : source.startsWith("blob:")
+                        ? "blob"
+                        : source.startsWith("mockups-asset:")
+                          ? "unresolved"
+                          : source.startsWith("http:") || source.startsWith("https:")
+                            ? "http"
+                            : source.startsWith("file:")
+                              ? "file"
+                              : source ? "other" : "empty",
+                  };
+                }
+
                 function imageLoadPromise(image, patchId, startedAt) {
                   if (!image || !image.src || image.complete && image.naturalWidth > 0) {
                     recordPatchEvent("image", {
@@ -700,6 +804,9 @@ internal abstract class WebPreviewPane : Grid
                       status: "ready",
                       ms: Math.round((performance.now() - startedAt) * 1000) / 1000,
                       srcChars: image?.src?.length ?? 0,
+                      naturalWidth: image?.naturalWidth ?? 0,
+                      naturalHeight: image?.naturalHeight ?? 0,
+                      ...imageDescriptor(image),
                     });
                     return Promise.resolve("ready");
                   }
@@ -714,20 +821,33 @@ internal abstract class WebPreviewPane : Grid
                         status,
                         ms: Math.round((performance.now() - startedAt) * 1000) / 1000,
                         srcChars: image.src.length,
+                        naturalWidth: image.naturalWidth,
+                        naturalHeight: image.naturalHeight,
+                        ...imageDescriptor(image),
                       });
                       resolve(status);
                     };
                     image.addEventListener("load", () => finish("load"), { once: true });
                     image.addEventListener("error", () => finish("error"), { once: true });
                     if (typeof image.decode === "function") {
-                      image.decode().then(() => finish("decode"), () => finish("decode-error"));
+                      image.decode().then(
+                        () => finish("decode"),
+                        () => recordPatchEvent("image-decode-rejected", {
+                          patch: patchId,
+                          ms: Math.round((performance.now() - startedAt) * 1000) / 1000,
+                          ...imageDescriptor(image),
+                        }),
+                      );
                     }
-                    setTimeout(() => finish("timeout"), 500);
+                    setTimeout(() => finish("timeout"), 1500);
                   });
                 }
 
-                window.mockupsPreloadPreviewImages = async (sources) => {
+                let previewImagePreloadSequence = 0;
+                const previewImagePreloadResults = new Map();
+                window.mockupsPreloadPreviewImages = (sources) => {
                   const startedAt = performance.now();
+                  const requestId = String(++previewImagePreloadSequence);
                   let pool = document.getElementById("mockupsPreviewImagePool");
                   if (!pool) {
                     pool = document.createElement("div");
@@ -753,14 +873,101 @@ internal abstract class WebPreviewPane : Grid
                     pool.appendChild(image);
                     return image;
                   });
-                  await Promise.all(images.map((image) => imageLoadPromise(image, "preload", startedAt)));
-                  recordPatchEvent("preload-images", {
-                    patch: "preload",
-                    images: images.length,
-                    ms: Math.round((performance.now() - startedAt) * 1000) / 1000,
+                  previewImagePreloadResults.set(requestId, { done: false, loaded: 0 });
+                  Promise.all(images.map((image) => imageLoadPromise(image, `preload:${requestId}`, startedAt))).then(() => {
+                    const loaded = images.filter((image) => image.complete && image.naturalWidth > 0).length;
+                    previewImagePreloadResults.set(requestId, { done: true, loaded });
+                    recordPatchEvent("preload-images", {
+                      patch: `preload:${requestId}`,
+                      images: images.length,
+                      loaded,
+                      ms: Math.round((performance.now() - startedAt) * 1000) / 1000,
+                    });
                   });
-                  return images.filter((image) => image.complete && image.naturalWidth > 0).length;
+                  return requestId;
                 };
+                window.mockupsPreviewImagePreloadResult = (requestId) => {
+                  const key = String(requestId);
+                  const result = previewImagePreloadResults.get(key);
+                  if (!result) return "";
+                  if (result.done) previewImagePreloadResults.delete(key);
+                  return JSON.stringify(result);
+                };
+
+                const previewAssets = new Map();
+                window.mockupsRegisterPreviewAsset = (key, uri) => {
+                  previewAssets.set(String(key), String(uri));
+                  return true;
+                };
+                window.mockupsMissingPreviewAssets = (keys) => JSON.stringify(
+                  (Array.isArray(keys) ? keys : []).filter((key) => !previewAssets.has(String(key))),
+                );
+
+                function hydratePreviewAssets(root) {
+                  const missing = [];
+                  for (const element of root.querySelectorAll("[src], [style]")) {
+                    if (element.hasAttribute("src")) {
+                      const source = element.getAttribute("src") ?? "";
+                      if (source.startsWith("mockups-asset:")) {
+                        const key = source.slice("mockups-asset:".length);
+                        const uri = previewAssets.get(key);
+                        if (uri) {
+                          element.setAttribute("src", uri);
+                          element.dataset.previewAssetHash = key;
+                        } else {
+                          missing.push({
+                            renderableId: element.closest("[data-renderable-id]")?.getAttribute("data-renderable-id") ?? "",
+                            assetHash: key,
+                            source: "src",
+                          });
+                        }
+                      }
+                    }
+                    const style = element.getAttribute("style") ?? "";
+                    if (style.includes("mockups-asset:")) {
+                      element.setAttribute("style", style.replace(/mockups-asset:([a-f0-9]{64})/g, (value, key) => {
+                        const uri = previewAssets.get(key);
+                        if (uri) return uri;
+                        missing.push({
+                          renderableId: element.closest("[data-renderable-id]")?.getAttribute("data-renderable-id") ?? "",
+                          assetHash: key,
+                          source: "style",
+                        });
+                        return value;
+                      }));
+                    }
+                  }
+                  return missing;
+                }
+
+                function syncElement(current, next) {
+                  if (current.tagName !== next.tagName) return false;
+                  const currentId = current.getAttribute("data-renderable-id");
+                  const nextId = next.getAttribute("data-renderable-id");
+                  if (currentId !== nextId) return false;
+                  for (const attribute of [...current.attributes]) {
+                    if (!next.hasAttribute(attribute.name)) current.removeAttribute(attribute.name);
+                  }
+                  for (const attribute of [...next.attributes]) {
+                    if (current.getAttribute(attribute.name) !== attribute.value) {
+                      current.setAttribute(attribute.name, attribute.value);
+                    }
+                  }
+                  const currentChildren = [...current.childNodes];
+                  const nextChildren = [...next.childNodes];
+                  if (currentChildren.length !== nextChildren.length) return false;
+                  for (let index = 0; index < currentChildren.length; index += 1) {
+                    const currentChild = currentChildren[index];
+                    const nextChild = nextChildren[index];
+                    if (currentChild.nodeType !== nextChild.nodeType) return false;
+                    if (currentChild.nodeType === Node.TEXT_NODE) {
+                      if (currentChild.nodeValue !== nextChild.nodeValue) currentChild.nodeValue = nextChild.nodeValue;
+                    } else if (currentChild.nodeType === Node.ELEMENT_NODE) {
+                      if (!syncElement(currentChild, nextChild)) return false;
+                    }
+                  }
+                  return true;
+                }
 
                 window.mockupsSetPreviewBody = (html) => {
                   const sequence = ++previewBodyPatchSequence;
@@ -773,6 +980,42 @@ internal abstract class WebPreviewPane : Grid
                   nextLayer.style.opacity = "0";
                   nextLayer.style.pointerEvents = "none";
                   nextLayer.innerHTML = html;
+                  const missingAssets = hydratePreviewAssets(nextLayer);
+                  if (missingAssets.length > 0) {
+                    for (const missing of missingAssets) {
+                      recordPatchEvent("asset-missing", {
+                        patch: sequence,
+                        ...missing,
+                      });
+                    }
+                    recordPatchEvent("skip", {
+                      patch: sequence,
+                      status: "asset-missing",
+                      images: missingAssets.length,
+                      ms: Math.round((performance.now() - startedAt) * 1000) / 1000,
+                    });
+                    return sequence;
+                  }
+
+                  const currentLayer = scaleLayer.firstElementChild;
+                  const currentRoot = currentLayer?.hasAttribute("data-renderable-id")
+                    ? currentLayer
+                    : currentLayer?.querySelector("[data-renderable-id]");
+                  const nextRoot = nextLayer.firstElementChild;
+                  if (currentLayer
+                    && currentRoot
+                    && nextRoot
+                    && syncElement(currentRoot, nextRoot)) {
+                    calculatePreviewFit();
+                    recordPatchEvent("commit", {
+                      patch: sequence,
+                      mode: "morph",
+                      images: currentRoot.querySelectorAll("img").length,
+                      ms: Math.round((performance.now() - startedAt) * 1000) / 1000,
+                    });
+                    return sequence;
+                  }
+
                   scaleLayer.appendChild(nextLayer);
 
                   const images = [...nextLayer.querySelectorAll("img")];
@@ -813,6 +1056,7 @@ internal abstract class WebPreviewPane : Grid
                       calculatePreviewFit();
                       recordPatchEvent("commit", {
                         patch: sequence,
+                        mode: "replace",
                         images: images.length,
                         ms: Math.round((performance.now() - startedAt) * 1000) / 1000,
                       });
@@ -948,11 +1192,9 @@ internal abstract class WebPreviewPane : Grid
 
 internal sealed class DesignWebPreviewPane : WebPreviewPane
 {
-    private const int MaxQueuedAnimationFrames = 240;
     private DesignPreviewUpdate? _pendingUpdate;
     private DesignPreviewUpdate? _renderingUpdate;
     private DesignPreviewUpdate? _lastRenderedUpdate;
-    private readonly Queue<DesignPreviewUpdate> _queuedAnimationUpdates = new();
     private bool _isRendering;
     public event Action<DesignPreviewFrameStatus>? FrameStatusChanged;
 
@@ -1020,15 +1262,10 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             && _renderingUpdate is not null
             && nextUpdate.IsAnimationOnlyUpdateOf(_renderingUpdate))
         {
-            _queuedAnimationUpdates.Enqueue(nextUpdate);
-            while (_queuedAnimationUpdates.Count > MaxQueuedAnimationFrames)
-            {
-                _queuedAnimationUpdates.Dequeue();
-            }
+            _pendingUpdate = nextUpdate;
             return;
         }
 
-        _queuedAnimationUpdates.Clear();
         _pendingUpdate = nextUpdate;
 
         if (!_isRendering)
@@ -1051,22 +1288,14 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 _renderingUpdate = update;
                 await RenderUpdateAsync(update);
                 _renderingUpdate = null;
-                if (_queuedAnimationUpdates.Count > 0)
-                {
-                    _pendingUpdate = _queuedAnimationUpdates.Dequeue();
-                }
             }
         }
         finally
         {
             _renderingUpdate = null;
             _isRendering = false;
-            if (_pendingUpdate is not null || _queuedAnimationUpdates.Count > 0)
+            if (_pendingUpdate is not null)
             {
-                if (_pendingUpdate is null && _queuedAnimationUpdates.Count > 0)
-                {
-                    _pendingUpdate = _queuedAnimationUpdates.Dequeue();
-                }
                 _ = ProcessPendingUpdatesAsync();
             }
         }

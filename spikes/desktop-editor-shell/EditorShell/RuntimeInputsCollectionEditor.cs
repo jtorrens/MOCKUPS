@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Collections.Generic;
@@ -17,19 +18,22 @@ internal sealed class RuntimeInputsCollectionEditor
     private readonly Action _onChanged;
     private readonly Action<string> _triggerAction;
     private readonly Action<string, string> _setPreviewTestValue;
+    private readonly PreviewPlaybackState _playbackState;
 
     public RuntimeInputsCollectionEditor(
         SpikeDatabase database,
         EditorDictionaryFieldServices dictionaryServices,
         Action onChanged,
         Action<string> triggerAction,
-        Action<string, string> setPreviewTestValue)
+        Action<string, string> setPreviewTestValue,
+        PreviewPlaybackState playbackState)
     {
         _database = database;
         _dictionaryServices = dictionaryServices;
         _onChanged = onChanged;
         _triggerAction = triggerAction;
         _setPreviewTestValue = setPreviewTestValue;
+        _playbackState = playbackState;
     }
 
     public InstantEditorCard Create(ProjectTreeNode node)
@@ -44,8 +48,8 @@ internal sealed class RuntimeInputsCollectionEditor
         {
             Items =
             {
-                new TabItem { Header = "Runtime API", Content = CreateApiTab(inputs, collections) },
                 new TabItem { Header = "Test Values", Content = CreateTestValuesTab(owner, preview, inputs, collections, actions) },
+                new TabItem { Header = "Runtime API", Content = CreateApiTab(inputs, collections) },
             },
         };
 
@@ -170,6 +174,14 @@ internal sealed class RuntimeInputsCollectionEditor
         }
         EditorGroupBlock.WireExclusiveCards(groupCards);
 
+        void UpdatePlaybackState()
+        {
+            panel.IsEnabled = !_playbackState.IsBusy;
+        }
+        void OnPlaybackStateChanged() => UpdatePlaybackState();
+        _playbackState.Changed += OnPlaybackStateChanged;
+        panel.DetachedFromVisualTree += (_, _) => _playbackState.Changed -= OnPlaybackStateChanged;
+        UpdatePlaybackState();
         return panel;
     }
 

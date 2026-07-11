@@ -8,6 +8,66 @@ The goal is operational. If preview playback is not close to real time, this is
 the map for profiling and replacing bottlenecks without breaking the component
 architecture.
 
+## Real-time update implemented 2026-07-11
+
+The desktop preview now uses a real-time-oriented update path while preserving
+the resolver/renderable boundaries described below.
+
+The implemented frame route is:
+
+```text
+monotonic project clock
+  -> requested project frame
+  -> component/module resolver
+  -> generic renderable tree with stable node ids
+  -> HTML for the resolved tree
+  -> repeated data assets replaced by short asset keys
+  -> generic WebView DOM morph by renderable id
+  -> latest frame presented; obsolete pending frames discarded
+```
+
+The important operational rules are:
+
+- playback time comes from elapsed monotonic time, not from the number of UI
+  timer ticks that happened to run;
+- the playback clock may be calculated internally in seconds, but action time
+  fields in the payload keep their declared unit; for example `Play messages`
+  writes `conversationFrame` as a frame number because its action declares
+  `timeUnit = frames`;
+- if rendering falls behind, the pending animation update is replaced by the
+  newest requested frame; playback does not replay a backlog in slow motion;
+- interactive rendering and prewarming use separate persistent Node processes
+  and share the rendered-frame cache;
+- every final renderable node exposes `data-renderable-id` from its existing
+  generic `RenderableNode.id`;
+- the WebView morphs matching generic element trees in place, synchronizing
+  attributes and text; a structural mismatch falls back to the full body-swap
+  path;
+- image/video data URIs are registered once per loaded WebView document and
+  subsequent frame bodies transport `mockups-asset:<sha256>` references;
+- asset compaction captures the complete data URI, including MIME parameters
+  and content after the comma; partial MIME-prefix replacement is invalid;
+- the renderer compacts assets before placing a frame in the shared cache; a
+  patch registers new assets before parsing that compact body and rejects any
+  unresolved `mockups-asset:` reference;
+- matching trees morph in place even when an image source changes because the
+  referenced asset is already resident in the document registry; only a real
+  structural mismatch uses the decode-gated layer replacement route;
+- before every patch the host asks the active document which referenced hashes
+  are missing and registers only those; C# must not assume its asset state is
+  synchronized with the lifetime of the JavaScript document;
+- the render cache key contains a SHA-256 request digest rather than retaining
+  the complete serialized request as the dictionary key.
+
+None of these mechanisms may branch on component type, component field, slot,
+module type or animation kind. Component resolvers remain the only owners of
+frame semantics. The WebView update layer only knows generic DOM elements,
+stable renderable ids and opaque asset values.
+
+Architecture enforcement in `scripts/checkDesktopPreviewArchitecture.ts`
+protects the stable node id, monotonic clock, latest-frame policy, asset
+registry and separate prewarm lane.
+
 ## Boundaries
 
 The desktop preview is not a second rendering engine. The Avalonia shell owns UI
@@ -244,11 +304,13 @@ For frame playback:
 - The first frames are pre-rendered before playback starts.
 - Additional frames are pre-rendered ahead while playback continues.
 
-Current constants:
+Prewarm window constants:
 
 - initial preload: 32 frames;
 - ahead preload: 16 frames;
-- max queued animation updates in WebView pane: 240.
+
+There is deliberately no animation-frame queue. At most one pending update is
+kept, and a newer animation update replaces it.
 
 The controller reserves frame-cache capacity for the initial and ahead window
 before prewarming.
@@ -262,7 +324,7 @@ Owner: `spikes/desktop-editor-shell/EditorShell/WebDesignPreviewRenderer.cs`
 Cache key:
 
 ```text
-renderer version + serialized render request
+renderer version + SHA-256(serialized render request)
 ```
 
 The serialized request includes all payload data and preview frame geometry.
@@ -278,6 +340,10 @@ Current capacity:
 This cache stores full rendered HTML strings. It helps when playback revisits
 the exact same frame payload, but it does not avoid the cost of producing new
 frames.
+
+The cache key is `renderer version + SHA-256(serialized request)`. The digest
+keeps dictionary keys bounded even when the request contains large configuration
+or theme payloads.
 
 ### Persistent Node renderer
 
@@ -297,8 +363,16 @@ HTML and calls:
 window.mockupsPreloadPreviewImages([...])
 ```
 
+The preload call returns a plain request id synchronously. The asynchronous
+browser load stores a serializable `{ done, loaded }` result that the host polls
+through `mockupsPreviewImagePreloadResult(...)`. Do not return a JavaScript
+`Promise` directly through `NativeWebView.InvokeScript`; the host bridge cannot
+marshal that result type.
+
 The WebView then asks the browser image cache to load those URIs before playback
-uses them.
+uses them. A rejected `HTMLImageElement.decode()` call is diagnostic rather
+than an immediate terminal failure: WebKit may reject decode before a valid
+data URI finishes and emits its authoritative load/error event.
 
 ### Video frame extraction cache
 
@@ -333,8 +407,33 @@ Icons and local images are currently converted to data URIs during render.
 Font faces are selected from requirements inferred from config and component
 base configs, then emitted as `@font-face` entries.
 
-Because data URIs are embedded in HTML, large local images can inflate frame
-HTML size and make DOM patching heavier.
+Renderable text may use only production font ids supplied by the payload. Theme
+typography declares three explicit production-font roles:
+
+- `fontFamilyId` for ordinary text;
+- `systemFontFamilyId` for text owned by System components;
+- `emojiFontFamilyId` for emoji glyphs.
+
+Typography uses the explicit selector `theme` or `theme.system`; generic font
+resolution never infers a font from component category. Keyboard does not expose
+its own font selector and always stores `theme.system`. Status Bar and Text Input
+Bar also declare `theme.system` in their owning resolver/composition route.
+
+The resolved CSS stack contains the selected production text/system font followed
+by the theme's production emoji font. It must not append `system-ui`, platform UI
+fonts, Apple/Segoe emoji fonts or any host-system fallback. Missing font ids,
+required faces or font files fail visibly before HTML rendering. This preserves
+glyph and metric parity across preview, deterministic export and future
+portable runtimes.
+
+Node initially emits data URIs, but the desktop renderer interns them before a
+frame enters the shared cache. Cached and transported frame bodies therefore
+contain stable `mockups-asset:<sha256>` references instead of repeated binary
+payloads.
+
+WebView asset interning is a desktop transport optimization. It is not part of
+the Shot/Module payload contract and must not become a requirement of future
+export or playback adapters.
 
 ## Reference overlay
 
@@ -366,19 +465,20 @@ window.mockupsSetReferenceOverlay(...)
 The current reference layer stretches to the device/screen preview area and sits
 above the generated preview when split/reference mode requires it.
 
-## Current real-time limitations
+## Remaining real-time limitations
 
 The current architecture is correct but not optimized for real-time frame
 production. Main cost centers to measure:
 
-1. Full HTML generation per frame.
+1. Full HTML generation still occurs in Node per uncached frame.
    - Every unique frame currently becomes a complete HTML body string.
    - Even with DOM patching, the body content is regenerated.
 
-2. Large embedded data URIs.
-   - Images, video frame JPEGs and SVG icons are embedded in the generated HTML.
-   - This increases string allocation, serialization, WebView script payload and
-     DOM update cost.
+2. Data URIs still exist transiently inside Node output.
+   - C# interns them once immediately after rendering and stores compact HTML in
+     the rendered-frame cache.
+   - A future asset-URI provider can remove the remaining transient Node/C#
+     allocation and hashing cost.
 
 3. Video frame extraction.
    - Cold ffmpeg extraction is not real-time.
@@ -389,27 +489,35 @@ production. Main cost centers to measure:
    - It is acceptable for correctness work but may need caching per text/style
      tuple.
 
-5. WebView full loads.
+5. Structural WebView fallbacks.
    - Any update that is not detected as animation-only reloads the full
      document.
-   - Real-time playback must stay on the DOM-patch path or a future direct
-     scene-update path.
+   - Matching trees morph in place. Frames that add/remove/reorder nodes fall
+     back to the compact full-body replacement path.
 
-6. JSON request hashing and cache key size.
-   - The frame cache key uses the entire serialized request.
-   - Large payloads make key construction and dictionary comparisons more
-     expensive.
+6. JSON serialization and hashing still happen for every request.
+   - Cache keys are now bounded digests, but constructing the serialized request
+     remains measurable work.
+
+7. The rendered-frame cache stores complete but asset-compacted HTML strings.
+   - Long timelines can still create managed-memory pressure from repeated DOM
+     structure, but no longer duplicate multi-megabyte image data per frame.
+
+8. Prewarming is action policy.
+   - An action with `prewarmFrames = false` must not launch either initial or
+     ahead-of-playback prewarming. Background rendering must not compete with
+     the interactive lane contrary to that declaration.
 
 ## Candidate directions for real-time playback
 
 These are design directions to evaluate separately:
 
-1. Scene graph diff instead of HTML string per frame.
+1. Direct renderable delta instead of HTML string per frame.
    - Keep a persistent preview document.
    - Send compact frame deltas or final renderable JSON.
    - Let the browser patch attributes/text/images directly.
 
-2. Asset URI indirection.
+2. Asset URI indirection before HTML generation.
    - Serve local assets through stable `mockups.local` URLs or file URLs.
    - Stop embedding repeated image/icon/video-frame data URIs in every frame.
 
@@ -425,10 +533,28 @@ These are design directions to evaluate separately:
    - Cache measured/wrapped lines by text, font id, size, line height and max
      width.
 
-6. Worker renderer pool.
-   - The current persistent renderer is serialized through one process.
-   - A pool can pre-render ahead frames in parallel, but only after asset access
-     and cache contention are controlled.
+6. Expand renderer concurrency only from measurements.
+   - Interactive and prewarm work already have isolated persistent processes.
+   - Add more prewarm workers only if Node frame production remains below the
+     required project FPS after the transport changes are measured.
+
+## Performance acceptance criteria
+
+Measure playback using `logs/desktop-preview-debug.log`. For a 25 fps project:
+
+- the requested frame must be derived from real elapsed time;
+- no pending-frame backlog may exist;
+- repeated frame `bodyChars` after asset compaction should be orders of
+  magnitude smaller than `originalBodyChars`;
+- steady matching frames should report patch event `mode=morph`;
+- median end-to-end frame time should be at most 25 ms and p95 at most 40 ms;
+- preview clock drift should remain below two project frames;
+- missed frames may be skipped, but must never be replayed late.
+
+For 50/60 fps projects, target 8-12 ms for the WebView morph portion and keep
+end-to-end p95 inside the project frame interval. These are acceptance targets,
+not claims that every current component already meets them; video extraction
+and structural frame changes still require measurement.
 
 ## Files that govern the pipeline
 

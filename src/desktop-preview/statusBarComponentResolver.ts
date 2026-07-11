@@ -81,6 +81,7 @@ export function resolveStatusBarComponent(
   const layout = asRecord(config.layout);
   return {
     id: "statusBar",
+    fontFamilyId: "theme.system",
     foregroundColorToken: requiredString(
       config,
       "foregroundColorToken",

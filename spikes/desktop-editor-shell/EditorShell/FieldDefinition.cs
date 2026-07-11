@@ -19,6 +19,7 @@ internal enum ValueKind
     ThemeToken,
     ThemeTokenPair,
     TypographyStyle,
+    TypographySystemStyle,
     HexColor,
     Alpha,
     PaletteColorToken,

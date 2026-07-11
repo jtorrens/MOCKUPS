@@ -623,7 +623,7 @@ internal sealed partial class SpikeDatabase
             {
               "id": "typography",
               "label": "Typography",
-              "subtitle": "Default text and emoji font tokens",
+              "subtitle": "Default text, system-component and emoji font tokens",
               "icon": "{{EditorIcons.Typography}}",
               "order": 40,
               "visible": true,
@@ -636,20 +636,21 @@ internal sealed partial class SpikeDatabase
                   "visible": true,
                   "fields": [
                     { "id": "theme.typography.fontFamilyId", "order": 10, "visible": true },
-                    { "id": "theme.typography.emojiFontFamilyId", "order": 20, "visible": true },
-                    { "id": "theme.typography.size", "order": 30, "visible": true },
-                    { "id": "theme.typography.sizes.xs", "order": 40, "visible": true },
-                    { "id": "theme.typography.sizes.s", "order": 50, "visible": true },
-                    { "id": "theme.typography.sizes.m", "order": 60, "visible": true },
-                    { "id": "theme.typography.sizes.l", "order": 70, "visible": true },
-                    { "id": "theme.typography.sizes.xl", "order": 80, "visible": true },
-                    { "id": "theme.typography.weight", "order": 90, "visible": true },
-                    { "id": "theme.typography.style", "order": 100, "visible": true },
-                    { "id": "theme.typography.lineHeights.tight", "order": 110, "visible": true },
-                    { "id": "theme.typography.lineHeights.compact", "order": 120, "visible": true },
-                    { "id": "theme.typography.lineHeights.normal", "order": 130, "visible": true },
-                    { "id": "theme.typography.lineHeights.relaxed", "order": 140, "visible": true },
-                    { "id": "theme.typography.lineHeights.loose", "order": 150, "visible": true }
+                    { "id": "theme.typography.systemFontFamilyId", "order": 20, "visible": true },
+                    { "id": "theme.typography.emojiFontFamilyId", "order": 30, "visible": true },
+                    { "id": "theme.typography.size", "order": 40, "visible": true },
+                    { "id": "theme.typography.sizes.xs", "order": 50, "visible": true },
+                    { "id": "theme.typography.sizes.s", "order": 60, "visible": true },
+                    { "id": "theme.typography.sizes.m", "order": 70, "visible": true },
+                    { "id": "theme.typography.sizes.l", "order": 80, "visible": true },
+                    { "id": "theme.typography.sizes.xl", "order": 90, "visible": true },
+                    { "id": "theme.typography.weight", "order": 100, "visible": true },
+                    { "id": "theme.typography.style", "order": 110, "visible": true },
+                    { "id": "theme.typography.lineHeights.tight", "order": 120, "visible": true },
+                    { "id": "theme.typography.lineHeights.compact", "order": 130, "visible": true },
+                    { "id": "theme.typography.lineHeights.normal", "order": 140, "visible": true },
+                    { "id": "theme.typography.lineHeights.relaxed", "order": 150, "visible": true },
+                    { "id": "theme.typography.lineHeights.loose", "order": 160, "visible": true }
                   ]
                 }
               ]

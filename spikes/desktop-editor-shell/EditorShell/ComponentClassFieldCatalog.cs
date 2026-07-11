@@ -592,7 +592,7 @@ internal static class ComponentClassFieldCatalog
         ["component.keyboard.heightToken"] = new("component.keyboard.heightToken", "Height", ValueKind.ThemeToken, ["keyboard", "heightToken"], "theme.keyboard.height", Options: KeyboardHeightTokenOptions),
         ["component.keyboard.keyGapToken"] = new("component.keyboard.keyGapToken", "Key gap", ValueKind.ThemeToken, ["keyboard", "keyGapToken"], "theme.keyboard.keyGap", Options: KeyboardKeyGapTokenOptions),
         ["component.keyboard.rowGapToken"] = new("component.keyboard.rowGapToken", "Row gap", ValueKind.ThemeToken, ["keyboard", "rowGapToken"], "theme.keyboard.rowGap", Options: KeyboardRowGapTokenOptions),
-        ["component.keyboard.typography"] = new("component.keyboard.typography", "Typography", ValueKind.TypographyStyle, ["keyboard", "typography"], TypographyStyleValue.CreateDefault("theme.typography.sizes.s")),
+        ["component.keyboard.typography"] = new("component.keyboard.typography", "Typography", ValueKind.TypographySystemStyle, ["keyboard", "typography"], TypographyStyleValue.CreateDefault("theme.typography.sizes.s", "theme.system")),
         ["component.keyboard.keyPadding"] = new("component.keyboard.keyPadding", "Key padding", ValueKind.ThemeToken, ["keyboard", "keyPadding"], "theme.spacing.s", Options: SpacingTokenOptions),
         ["component.keyboard.keyCornerRadiusToken"] = new("component.keyboard.keyCornerRadiusToken", "Key radius", ValueKind.ThemeToken, ["keyboard", "keyCornerRadiusToken"], "theme.radii.m", Options: RadiusTokenOptions),
         ["component.keyboard.keyBorderWidth"] = new("component.keyboard.keyBorderWidth", "Key border width", ValueKind.Decimal, ["keyboard", "keyBorderWidth"], "0", Number: new NumberDefinition(0, 32, 0.5m, 2)),

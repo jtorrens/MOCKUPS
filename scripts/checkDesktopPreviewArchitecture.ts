@@ -333,6 +333,12 @@ function assertDesktopDatabaseDoesNotContainRetiredTokens() {
       .all() as { id: string; component_type: string; config_json: string; metadata_json: string }[];
     for (const row of componentRows) {
       for (const [column, json] of [["config_json", row.config_json], ["metadata_json", row.metadata_json]] as const) {
+        if (json.includes("theme.typography.fontFamily")) {
+          addViolation(
+            "data/desktop-editor-spike.sqlite",
+            `${row.id}.${column} still uses retired typography font-family sentinel "theme.typography.fontFamily"; use "theme"`,
+          );
+        }
         walkJson(jsonParse(json), (value, pathLabel) => {
           if (typeof value === "string" && retiredRadiusTokens.has(value)) {
             addViolation(
@@ -1908,6 +1914,183 @@ for (const legacyMediaIconBarSlot of [
     `media icon bars must use explicit inline/fullscreen slots, not legacy ${legacyMediaIconBarSlot}`,
   );
 }
+
+assertContains(
+  "src/desktop-preview/DesktopRenderableHtmlAdapter.tsx",
+  "data-renderable-id={node.id}",
+  "desktop preview nodes must expose stable ids for generic incremental WebView updates",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/WebPreviewPanes.cs",
+  "window.mockupsRegisterPreviewAsset",
+  "animation frames must register repeated data assets once instead of transporting them in every body patch",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/WebPreviewPanes.cs",
+  "_pendingUpdate = nextUpdate;",
+  "animation playback must keep the latest pending frame instead of accumulating obsolete frames",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/WebPreviewPanes.cs",
+  "MaxQueuedAnimationFrames",
+  "animation playback must not restore a bounded backlog of obsolete frames",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "Stopwatch.GetElapsedTime(_playbackStartedTimestamp).TotalSeconds",
+  "preview playback time must derive from a monotonic elapsed clock instead of counting processed UI ticks",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/WebDesignPreviewRenderer.cs",
+  "PrewarmPersistentRenderer",
+  "preview prewarming must not serialize interactive frames through the same renderer process",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/WebPreviewPanes.cs",
+  "mockupsPreviewImagePreloadResult",
+  "WebView image preload must return a serializable request id and expose a synchronous result poll",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/WebPreviewPanes.cs",
+  "asset-missing",
+  "WebView patches must reject unresolved interned asset references before DOM mutation",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/WebPreviewPanes.cs",
+  "mockupsMissingPreviewAssets",
+  "the host must reconcile asset keys with the active WebView document before every patch",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/WebPreviewPanes.cs",
+  "[\\\\s\\\"'<>)]",
+  "data-URI compaction must not terminate generated SVG assets at literal parentheses",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/WebDesignPreviewRenderer.cs",
+  "PreviewAssetRegistry.Compact(originalHtml)",
+  "rendered frames must intern large assets before entering the shared frame cache",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/WebPreviewPanes.cs",
+  "PreviewAssetRegistry.Keys(bodyContent)",
+  "WebView patches must consume already compacted frame bodies",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/WebPreviewPanes.cs",
+  "imageSourcesChanged",
+  "resident registered assets must not force a decode-gated layer replacement on every animated image source change",
+);
+for (const forbiddenFontFallback of [
+  "system-ui",
+  "Apple Color Emoji",
+  "Segoe UI Emoji",
+  "Noto Color Emoji",
+  "fontId === \"system\"",
+]) {
+  assertDoesNotContain(
+    "src/desktop-preview/previewFontHelpers.ts",
+    forbiddenFontFallback,
+    `desktop render typography must not use host-system fallback '${forbiddenFontFallback}'`,
+  );
+}
+assertContains(
+  "src/desktop-preview/previewFontHelpers.ts",
+  "Required production emoji font is unavailable",
+  "missing contract emoji fonts must fail visibly instead of falling back to the host system",
+);
+assertContains(
+  "src/desktop-preview/previewAssetResolver.ts",
+  "Required production font file is missing",
+  "missing production font files must fail before web rendering",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/DictionaryControlRegistry.cs",
+  "ValueKind.TypographySystemStyle",
+  "system-component typography must use its registered dictionary control route",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassDefaults.cs",
+  "TypographyStyleValue.CreateDefault(\"theme.typography.sizes.s\", \"theme.system\")",
+  "new Keyboard variants must use the Theme system-font role",
+);
+assertContains(
+  "src/desktop-preview/textInputBarComponentResolver.ts",
+  "fontFamilyId: \"theme.system\"",
+  "Text Input Bar must bind its owned text surface to the Theme system-font role",
+);
+assertContains(
+  "src/desktop-preview/statusBarComponentResolver.ts",
+  "fontFamilyId: \"theme.system\"",
+  "Status Bar text must use the Theme system-font role",
+);
+assertContains(
+  "src/desktop-preview/conversationModuleRenderable.ts",
+  "fontFamilyForTypography(payload, \"theme\")",
+  "Conversation header text must resolve the Theme normal text font explicitly",
+);
+assertContains(
+  "src/desktop-preview/audioComponentRenderable.ts",
+  "fontFamilyForTypography(payload, \"theme\")",
+  "Audio text must resolve the Theme normal text font explicitly",
+);
+
+function assertDesktopSystemTypographyData() {
+  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  if (!existsSync(databasePath)) return;
+
+  const database = new Database(databasePath, { readonly: true, fileMustExist: true });
+  try {
+    const fonts = new Map(
+      (database.prepare("SELECT id, category FROM production_fonts").all() as { id: string; category: string }[])
+        .map((font) => [font.id, font.category]),
+    );
+    const themes = database.prepare("SELECT id, tokens_json FROM themes").all() as {
+      id: string;
+      tokens_json: string;
+    }[];
+    for (const theme of themes) {
+      const typography = jsonRecord(jsonRecord(jsonParse(theme.tokens_json)).typography);
+      const systemFontId = typeof typography.systemFontFamilyId === "string"
+        ? typography.systemFontFamilyId
+        : "";
+      if (!systemFontId || fonts.get(systemFontId) !== "text") {
+        addViolation(
+          "data/desktop-editor-spike.sqlite",
+          `theme ${theme.id} systemFontFamilyId must reference a text production font`,
+        );
+      }
+    }
+
+    const keyboards = database
+      .prepare("SELECT id, config_json, metadata_json FROM component_classes WHERE component_type = 'keyboard'")
+      .all() as { id: string; config_json: string; metadata_json: string }[];
+    for (const keyboard of keyboards) {
+      const configFont = jsonRecord(jsonRecord(jsonParse(keyboard.config_json)).keyboard).typography;
+      if (jsonRecord(configFont).fontFamilyId !== "theme.system") {
+        addViolation(
+          "data/desktop-editor-spike.sqlite",
+          `Keyboard ${keyboard.id} config must use theme.system`,
+        );
+      }
+      const presets = jsonArray(jsonRecord(jsonParse(keyboard.metadata_json)).presets).map(jsonRecord);
+      for (const [index, preset] of presets.entries()) {
+        const presetFont = jsonRecord(
+          jsonRecord(jsonRecord(jsonRecord(preset.config).keyboard).typography),
+        ).fontFamilyId;
+        if (presetFont !== "theme.system") {
+          addViolation(
+            "data/desktop-editor-spike.sqlite",
+            `Keyboard ${keyboard.id} variant ${index} must use theme.system`,
+          );
+        }
+      }
+    }
+  } finally {
+    database.close();
+  }
+}
+
+assertDesktopSystemTypographyData();
 
 if (violations.length > 0) {
   console.error("Desktop preview architecture check failed:");

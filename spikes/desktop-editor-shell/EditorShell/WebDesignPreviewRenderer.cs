@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -22,6 +23,7 @@ internal static class WebDesignPreviewRenderer
     private static readonly Dictionary<string, LinkedListNode<FrameCacheEntry>> FrameCache = new(StringComparer.Ordinal);
     private static readonly LinkedList<FrameCacheEntry> FrameCacheOrder = [];
     private static readonly PersistentPreviewRenderer PersistentRenderer = new();
+    private static readonly PersistentPreviewRenderer PrewarmPersistentRenderer = new();
     private static int _frameCacheCapacity = DefaultFrameCacheCapacity;
 
     public static async Task<string> RenderBodyAsync(
@@ -30,16 +32,38 @@ internal static class WebDesignPreviewRenderer
         bool showMarks,
         DesignPreviewPayload payload)
     {
+        return await RenderBodyAsync(metrics, themeMode, showMarks, payload, PersistentRenderer, "interactive");
+    }
+
+    public static async Task<string> RenderPrewarmBodyAsync(
+        SpikeDatabase.DevicePreviewMetrics metrics,
+        string themeMode,
+        bool showMarks,
+        DesignPreviewPayload payload)
+    {
+        return await RenderBodyAsync(metrics, themeMode, showMarks, payload, PrewarmPersistentRenderer, "prewarm");
+    }
+
+    private static async Task<string> RenderBodyAsync(
+        SpikeDatabase.DevicePreviewMetrics metrics,
+        string themeMode,
+        bool showMarks,
+        DesignPreviewPayload payload,
+        PersistentPreviewRenderer persistentRenderer,
+        string lane)
+    {
         var stopwatch = Stopwatch.StartNew();
         var request = CreateRequest(metrics, themeMode, showMarks, payload);
         var requestJson = JsonSerializer.Serialize(request);
         var renderer = ResolveRendererCommand();
-        var frameCacheKey = $"{renderer.Version}:{requestJson}";
+        var requestHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(requestJson)));
+        var frameCacheKey = $"{renderer.Version}:{requestHash}";
         if (TryGetCachedFrame(frameCacheKey, out var cachedHtml))
         {
             PreviewDebugLog.Write(
                 "preview.render.body",
                 ("route", "cache-hit"),
+                ("lane", lane),
                 ("component", payload.ComponentType),
                 ("name", payload.Name),
                 ("themeMode", themeMode),
@@ -50,17 +74,20 @@ internal static class WebDesignPreviewRenderer
             return cachedHtml;
         }
 
-        var html = await PersistentRenderer.RenderAsync(renderer, requestJson);
+        var originalHtml = await persistentRenderer.RenderAsync(renderer, requestJson);
+        var html = PreviewAssetRegistry.Compact(originalHtml);
         CacheFrame(frameCacheKey, html);
         PreviewDebugLog.Write(
             "preview.render.body",
             ("route", "rendered"),
+            ("lane", lane),
             ("component", payload.ComponentType),
             ("name", payload.Name),
             ("themeMode", themeMode),
             ("showMarks", showMarks),
             ("ms", stopwatch.Elapsed.TotalMilliseconds),
             ("htmlChars", html.Length),
+            ("originalHtmlChars", originalHtml.Length),
             ("cacheSize", CacheSize()));
         return html;
     }
@@ -71,7 +98,7 @@ internal static class WebDesignPreviewRenderer
         bool showMarks,
         DesignPreviewPayload payload)
     {
-        _ = await RenderBodyAsync(metrics, themeMode, showMarks, payload);
+        _ = await RenderPrewarmBodyAsync(metrics, themeMode, showMarks, payload);
     }
 
     public static void ReserveFrameCacheCapacity(int frameCount)

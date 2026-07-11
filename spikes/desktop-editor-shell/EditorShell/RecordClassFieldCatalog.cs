@@ -360,6 +360,11 @@ internal static class RecordClassFieldCatalog
             "Text font",
             ValueKind.RecordReference,
             RecordReference: new RecordReferenceDefinition("production_fonts")),
+        ["theme.typography.systemFontFamilyId"] = new(
+            "theme.typography.systemFontFamilyId",
+            "System components font",
+            ValueKind.RecordReference,
+            RecordReference: new RecordReferenceDefinition("production_fonts")),
         ["theme.typography.emojiFontFamilyId"] = new(
             "theme.typography.emojiFontFamilyId",
             "Emoji font",

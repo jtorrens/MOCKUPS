@@ -5,6 +5,7 @@ import { numberValue, stringValue } from "./previewValueHelpers.js";
 import { renderScale, previewScreenBox } from "./previewGeometryHelpers.js";
 import { numberToken } from "./componentRenderableCommon.js";
 import { iconTokenStyle } from "./previewIconHelpers.js";
+import { fontFamilyForTypography } from "./previewFontHelpers.js";
 import type {
   StatusBarDesignContract,
   StatusBarItemContract,
@@ -79,6 +80,7 @@ function boxedStatusItems(
         itemSize,
         foreground,
         payload,
+        statusBar.fontFamilyId,
       );
       x += width + gap;
       return node;
@@ -94,6 +96,7 @@ function statusBarItemNode(
   itemSize: number,
   foreground: string,
   payload: DesignPreviewPayload,
+  fontFamilyId: "theme.system",
 ): RenderableNode {
   if (kind === "generatedBattery") {
     return generatedBatteryRenderable(id, box, foreground, numberValue(item.value, 0), item.charging);
@@ -124,6 +127,7 @@ function statusBarItemNode(
       alignItems: "center",
       justifyContent: "center",
       fontSize: itemSize,
+      fontFamily: fontFamilyForTypography(payload, fontFamilyId),
       lineHeight: itemSize,
       textAlign: "center",
       whiteSpace: "nowrap",

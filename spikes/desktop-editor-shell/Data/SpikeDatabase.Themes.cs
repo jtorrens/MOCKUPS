@@ -155,6 +155,7 @@ internal sealed partial class SpikeDatabase
             "theme.neutralTint.saturation" => JsonNumberString(tokens, ["neutralTint", "saturation"]),
             "theme.shadows.default.color" => JsonString(tokens, ["shadows", "default", "color", "color"]),
             "theme.typography.fontFamilyId" => JsonString(tokens, ["typography", "fontFamilyId"]),
+            "theme.typography.systemFontFamilyId" => JsonString(tokens, ["typography", "systemFontFamilyId"]),
             "theme.typography.emojiFontFamilyId" => JsonString(tokens, ["typography", "emojiFontFamilyId"]),
             "theme.typography.style" => JsonString(tokens, ["typography", "style"]) is { Length: > 0 } style ? style : "normal",
             _ => throw new InvalidOperationException($"Unknown theme field '{fieldId}'."),
@@ -195,6 +196,14 @@ internal sealed partial class SpikeDatabase
             }
 
             var iconThemeId = FirstId(connection, "icon_themes", projectId);
+            var textFontId = ScalarString(
+                connection,
+                "SELECT id FROM production_fonts WHERE project_id = $projectId AND category = 'text' ORDER BY family_name, id LIMIT 1",
+                ("$projectId", projectId)) ?? "";
+            var emojiFontId = ScalarString(
+                connection,
+                "SELECT id FROM production_fonts WHERE project_id = $projectId AND category = 'emoji' ORDER BY family_name, id LIMIT 1",
+                ("$projectId", projectId)) ?? "";
             var statusBarId = DefaultComponentPresetReference(connection, projectId, "status_bar");
             var navigationBarId = DefaultComponentPresetReference(connection, projectId, "navigation_bar");
             Execute(
@@ -210,7 +219,7 @@ internal sealed partial class SpikeDatabase
                 ("$iconThemeId", iconThemeId),
                 ("$statusBarId", statusBarId),
                 ("$navigationBarId", navigationBarId),
-                ("$tokensJson", DefaultThemeTokensJson("ios")),
+                ("$tokensJson", DefaultThemeTokensJson("ios", textFontId, emojiFontId)),
                 ("$metadataJson", JsonSerializer.Serialize(new { note = "Default iOS-style production theme." })));
         }
     }
@@ -371,6 +380,9 @@ internal sealed partial class SpikeDatabase
             case "theme.typography.fontFamilyId":
                 SetJsonValue(tokens, ["typography", "fontFamilyId"], JsonValue.Create(value)!);
                 break;
+            case "theme.typography.systemFontFamilyId":
+                SetJsonValue(tokens, ["typography", "systemFontFamilyId"], JsonValue.Create(value)!);
+                break;
             case "theme.typography.emojiFontFamilyId":
                 SetJsonValue(tokens, ["typography", "emojiFontFamilyId"], JsonValue.Create(value)!);
                 break;
@@ -384,7 +396,10 @@ internal sealed partial class SpikeDatabase
         Execute(connection, "UPDATE themes SET tokens_json = $tokensJson WHERE id = $id", ("$id", themeId), ("$tokensJson", tokens.ToJsonString()));
     }
 
-    private static string DefaultThemeTokensJson(string family)
+    private static string DefaultThemeTokensJson(
+        string family,
+        string textFontFamilyId = "",
+        string emojiFontFamilyId = "")
     {
         var isAndroid = family.Equals("android", StringComparison.OrdinalIgnoreCase);
         var tokens = new JsonObject
@@ -409,8 +424,9 @@ internal sealed partial class SpikeDatabase
             },
             ["typography"] = new JsonObject
             {
-                ["fontFamilyId"] = "",
-                ["emojiFontFamilyId"] = "",
+                ["fontFamilyId"] = textFontFamilyId,
+                ["systemFontFamilyId"] = textFontFamilyId,
+                ["emojiFontFamilyId"] = emojiFontFamilyId,
                 ["size"] = isAndroid ? 15 : 16,
                 ["sizes"] = new JsonObject
                 {

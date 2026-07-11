@@ -89,6 +89,7 @@ internal sealed class EditorPreviewController
         BorderThickness = new Thickness(1),
         VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
     };
+    public PreviewPlaybackState PlaybackState { get; } = new();
     private string? _projectId;
     private string? _selectedThemeId;
     private PreviewNodeKey? _lastDesignPreviewNode;
@@ -110,6 +111,8 @@ internal sealed class EditorPreviewController
     private CancellationTokenSource? _aheadPreloadCancellation;
     private readonly HashSet<string> _aheadPreloadedFrameKeys = new(StringComparer.Ordinal);
     private bool _isAheadPreloading;
+    private PlaybackPerformanceRun? _playbackPerformanceRun;
+    private int _playbackSummaryGeneration;
 
     public EditorPreviewController(
         SpikeDatabase database,
@@ -153,6 +156,9 @@ internal sealed class EditorPreviewController
         _previewBusyHost.IsVisible = false;
         _designInputsPanel = new ComponentPreviewInputSession(database, Refresh, PreparePlaybackFramesAsync);
         _designPreviewPane.FrameStatusChanged += OnDesignPreviewFrameStatusChanged;
+        _designInputsPanel.PlaybackStarted += OnPlaybackStarted;
+        _designInputsPanel.PlaybackStopped += OnPlaybackStopped;
+        _designInputsPanel.PlaybackBusyChanged += PlaybackState.SetBusy;
 
         WrapPreviewSetup(previewSetupHost);
         CreatePreviewControls(previewControlsHost);
@@ -744,6 +750,12 @@ internal sealed class EditorPreviewController
 
     public void TriggerDesignPreviewAction(string actionId)
     {
+        if (_designInputsPanel.TriggerAction(actionId))
+        {
+            return;
+        }
+
+        Refresh();
         _designInputsPanel.TriggerAction(actionId);
     }
 
@@ -882,7 +894,7 @@ internal sealed class EditorPreviewController
             cancellationToken.ThrowIfCancellationRequested();
             var frameStopwatch = Stopwatch.StartNew();
             var frame = frames[index];
-            var bodyContent = await WebDesignPreviewRenderer.RenderBodyAsync(
+            var bodyContent = await WebDesignPreviewRenderer.RenderPrewarmBodyAsync(
                 metrics,
                 _selectedMode,
                 _showDesignMarks,
@@ -919,6 +931,12 @@ internal sealed class EditorPreviewController
         DesignPreviewPayload payload)
     {
         if (_isAheadPreloading || string.IsNullOrWhiteSpace(_projectId))
+        {
+            return;
+        }
+
+        if (JsonNode.Parse(string.IsNullOrWhiteSpace(payload.DesignPreviewJson) ? "{}" : payload.DesignPreviewJson) is not JsonObject preview
+            || PlaybackFrameAction(preview)?.PrewarmFrames != true)
         {
             return;
         }
@@ -961,6 +979,7 @@ internal sealed class EditorPreviewController
 
     private void OnDesignPreviewFrameStatusChanged(DesignWebPreviewPane.DesignPreviewFrameStatus status)
     {
+        RecordPresentedPlaybackFrame(status);
         if (!_designInputsPanel.IsPlaybackActive)
         {
             SetPreviewPerformanceStatus(PreviewPerformanceStatus.Idle);
@@ -973,6 +992,82 @@ internal sealed class EditorPreviewController
             && status.UsedDomPatch
             && status.ElapsedMilliseconds <= frameBudgetMs;
         SetPreviewPerformanceStatus(keepsFrameRate ? PreviewPerformanceStatus.Good : PreviewPerformanceStatus.Slow);
+    }
+
+    private void OnPlaybackStarted(ComponentPreviewInputSession.PlaybackRunInfo run)
+    {
+        _playbackSummaryGeneration++;
+        _playbackPerformanceRun = new PlaybackPerformanceRun(run.TargetFrames, run.TargetFps, Stopwatch.GetTimestamp());
+    }
+
+    private void OnPlaybackStopped(ComponentPreviewInputSession.PlaybackRunInfo run)
+    {
+        if (_playbackPerformanceRun is null) return;
+        var generation = ++_playbackSummaryGeneration;
+        DispatcherTimer.RunOnce(
+            () =>
+            {
+                if (generation == _playbackSummaryGeneration) FinalizePlaybackSummary();
+            },
+            TimeSpan.FromMilliseconds(750));
+    }
+
+    private void RecordPresentedPlaybackFrame(DesignWebPreviewPane.DesignPreviewFrameStatus status)
+    {
+        var run = _playbackPerformanceRun;
+        if (run is null || status.RenderError) return;
+        var now = Stopwatch.GetTimestamp();
+        if (run.LastPresentedTimestamp != 0)
+        {
+            var seconds = Stopwatch.GetElapsedTime(run.LastPresentedTimestamp, now).TotalSeconds;
+            if (seconds > 0) run.PresentationFps.Add(1.0 / seconds);
+        }
+        run.LastPresentedTimestamp = now;
+        run.PresentedFrames++;
+    }
+
+    private void FinalizePlaybackSummary()
+    {
+        var run = _playbackPerformanceRun;
+        if (run is null) return;
+        _playbackPerformanceRun = null;
+        var presented = Math.Min(run.TargetFrames, run.PresentedFrames);
+        var discarded = Math.Max(0, run.TargetFrames - presented);
+        var elapsedSeconds = run.LastPresentedTimestamp == 0
+            ? 0
+            : Stopwatch.GetElapsedTime(run.StartedTimestamp, run.LastPresentedTimestamp).TotalSeconds;
+        var averageFps = elapsedSeconds > 0 ? presented / elapsedSeconds : 0;
+        var minimumFps = run.PresentationFps.Count > 0 ? run.PresentationFps.Min() : averageFps;
+        var maximumFps = run.PresentationFps.Count > 0 ? run.PresentationFps.Max() : averageFps;
+        var summary = string.Format(
+            CultureInfo.CurrentCulture,
+            "Last play · {0}/{1} frames · {2} discarded · FPS avg {3:0.0} · min {4:0.0} · max {5:0.0}",
+            presented,
+            run.TargetFrames,
+            discarded,
+            averageFps,
+            minimumFps,
+            maximumFps);
+        _messages.Info("Playback", summary);
+        PreviewDebugLog.Write(
+            "preview.playback.summary",
+            ("targetFrames", run.TargetFrames),
+            ("presentedFrames", presented),
+            ("discardedFrames", discarded),
+            ("targetFps", run.TargetFps),
+            ("averageFps", averageFps),
+            ("minimumFps", minimumFps),
+            ("maximumFps", maximumFps));
+    }
+
+    private sealed class PlaybackPerformanceRun(int targetFrames, int targetFps, long startedTimestamp)
+    {
+        public int TargetFrames { get; } = targetFrames;
+        public int TargetFps { get; } = targetFps;
+        public long StartedTimestamp { get; } = startedTimestamp;
+        public long LastPresentedTimestamp { get; set; }
+        public int PresentedFrames { get; set; }
+        public List<double> PresentationFps { get; } = [];
     }
 
     private void SetPreviewPerformanceStatus(PreviewPerformanceStatus status)

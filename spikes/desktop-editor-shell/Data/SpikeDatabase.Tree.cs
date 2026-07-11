@@ -795,6 +795,14 @@ internal sealed partial class SpikeDatabase
             _ => $"Theme {index}",
         };
         var iconThemeId = FirstId(connection, "icon_themes", project.Id);
+        var textFontId = ScalarString(
+            connection,
+            "SELECT id FROM production_fonts WHERE project_id = $projectId AND category = 'text' ORDER BY family_name, id LIMIT 1",
+            ("$projectId", project.Id)) ?? "";
+        var emojiFontId = ScalarString(
+            connection,
+            "SELECT id FROM production_fonts WHERE project_id = $projectId AND category = 'emoji' ORDER BY family_name, id LIMIT 1",
+            ("$projectId", project.Id)) ?? "";
         var statusBarId = DefaultComponentPresetReference(connection, project.Id, "status_bar");
         var navigationBarId = DefaultComponentPresetReference(connection, project.Id, "navigation_bar");
         Execute(
@@ -810,7 +818,7 @@ internal sealed partial class SpikeDatabase
             ("$iconThemeId", iconThemeId),
             ("$statusBarId", statusBarId),
             ("$navigationBarId", navigationBarId),
-            ("$tokensJson", DefaultThemeTokensJson(family)),
+            ("$tokensJson", DefaultThemeTokensJson(family, textFontId, emojiFontId)),
             ("$metadataJson", JsonSerializer.Serialize(new { note = $"{family} preset production theme." })));
 
         return new ProjectTreeNode(

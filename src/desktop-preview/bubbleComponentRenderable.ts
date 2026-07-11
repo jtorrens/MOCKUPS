@@ -24,6 +24,7 @@ import {
   scalePlacement,
   selectedPaletteColor,
   translateBox,
+  unionBoxes,
   variants,
 } from "./componentRenderableCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
@@ -100,12 +101,23 @@ export function bubbleComponentToRenderable(
         scalePlacement(bubble.actorLabelSlot.placement, scale),
       )
     : undefined;
+  const baseAvatarBox = bubble.avatarSlot.avatar
+    ? placeChild(
+        baseSurfaceBox,
+        {
+          width: bubble.avatarSlot.avatar.size * scale,
+          height: bubble.avatarSlot.avatar.size * scale,
+        },
+        scalePlacement(bubble.avatarSlot.placement, scale),
+      )
+    : undefined;
   const labelIntrusion = boxEdgeIntrusionInsets(baseSurfaceBox, baseLabelBox);
+  const avatarIntrusion = boxEdgeIntrusionInsets(baseSurfaceBox, baseAvatarBox);
   const contentPadding = {
-    left: paddingX,
+    left: paddingX + avatarIntrusion.left,
     top: paddingY + labelIntrusion.top,
-    right: paddingX,
-    bottom: paddingY + labelIntrusion.bottom,
+    right: paddingX + avatarIntrusion.right,
+    bottom: paddingY + Math.max(labelIntrusion.bottom, avatarIntrusion.bottom),
     gapX: paddingX,
     gapY: paddingY,
   };
@@ -139,10 +151,15 @@ export function bubbleComponentToRenderable(
         scalePlacement(bubble.avatarSlot.placement, scale),
       )
     : undefined;
-  const groupBox = boundedCenterBox(payload, localSurfaceBox.width, localSurfaceBox.height);
+  const localBounds = unionBoxes([
+    localSurfaceBox,
+    ...(localLabelBox ? [localLabelBox] : []),
+    ...(localAvatarBox ? [localAvatarBox] : []),
+  ]);
+  const groupBox = boundedCenterBox(payload, localBounds.width, localBounds.height);
   const origin = {
-    x: groupBox.x - localSurfaceBox.x,
-    y: groupBox.y - localSurfaceBox.y,
+    x: groupBox.x - localBounds.x,
+    y: groupBox.y - localBounds.y,
   };
   const surfaceBox = translateBox(localSurfaceBox, origin);
   const textBox = translateBox(contentLayout.textBox, origin);

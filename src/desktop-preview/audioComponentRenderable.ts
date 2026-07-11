@@ -15,6 +15,7 @@ import {
   unionBoxes,
 } from "./componentRenderableCommon.js";
 import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
+import { fontFamilyForTypography } from "./previewFontHelpers.js";
 
 function hashString(value: string) {
   let hash = 2166136261;
@@ -227,6 +228,7 @@ export function audioComponentToRenderable(
         text: durationText,
         style: {
           color: selectedColor(payload, audio.textColorToken),
+          fontFamily: fontFamilyForTypography(payload, "theme"),
           fontSize: audio.textSize * scale,
           display: "block",
           lineHeight: textBox.height,

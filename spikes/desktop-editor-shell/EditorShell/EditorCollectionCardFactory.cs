@@ -1,3 +1,4 @@
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Collections.Generic;
@@ -17,6 +18,7 @@ internal sealed class EditorCollectionCardFactory
     private readonly EditorDictionaryFieldServices _dictionaryServices;
     private readonly Action<string> _triggerPreviewAction;
     private readonly Action<string, string> _setPreviewTestValue;
+    private readonly PreviewPlaybackState _previewPlaybackState;
     private readonly Func<string, bool> _navigateToNode;
 
     public EditorCollectionCardFactory(
@@ -30,6 +32,7 @@ internal sealed class EditorCollectionCardFactory
         EditorDictionaryFieldServices dictionaryServices,
         Action<string> triggerPreviewAction,
         Action<string, string> setPreviewTestValue,
+        PreviewPlaybackState previewPlaybackState,
         Func<string, bool> navigateToNode)
     {
         _database = database;
@@ -42,6 +45,7 @@ internal sealed class EditorCollectionCardFactory
         _dictionaryServices = dictionaryServices;
         _triggerPreviewAction = triggerPreviewAction;
         _setPreviewTestValue = setPreviewTestValue;
+        _previewPlaybackState = previewPlaybackState;
         _navigateToNode = navigateToNode;
     }
 
@@ -66,7 +70,7 @@ internal sealed class EditorCollectionCardFactory
                 CreateModuleInstanceCollectionCards(node),
             ProjectTreeNodeKind.Module or ProjectTreeNodeKind.ComponentPreset =>
             [
-                new RuntimeInputsCollectionEditor(_database, _dictionaryServices, _onChanged, _triggerPreviewAction, _setPreviewTestValue).Create(node),
+                new RuntimeInputsCollectionEditor(_database, _dictionaryServices, _onChanged, _triggerPreviewAction, _setPreviewTestValue, _previewPlaybackState).Create(node),
             ],
             ProjectTreeNodeKind.Shot =>
                 [new ShotModuleInstancesCollectionEditor(_database, _onChanged, _reloadAndSelect).Create(node)],

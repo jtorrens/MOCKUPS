@@ -13,6 +13,9 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class ComponentPreviewInputSession
 {
+    public event Action<PlaybackRunInfo>? PlaybackStarted;
+    public event Action<PlaybackRunInfo>? PlaybackStopped;
+    public event Action<bool>? PlaybackBusyChanged;
     private readonly SpikeDatabase _database;
     private readonly ComponentPreviewRecordInputResolver _recordInputResolver;
     private readonly Action _refreshPreview;
@@ -30,6 +33,9 @@ internal sealed class ComponentPreviewInputSession
     private JsonObject _runtimePreview = [];
     private string _preparingActionId = "";
     private int _playbackFrameRate = 25;
+    private long _playbackStartedTimestamp;
+    private double _playbackStartedAtSeconds;
+    private readonly Dictionary<string, double> _playbackSecondsByActionId = new(StringComparer.Ordinal);
 
     public ComponentPreviewInputSession(
         SpikeDatabase database,
@@ -110,13 +116,21 @@ internal sealed class ComponentPreviewInputSession
         ? CurrentPlaybackFrame(action)
         : 0;
 
-    public void TriggerAction(string actionId)
+    public bool TriggerAction(string actionId)
     {
         var action = _actions.FirstOrDefault((candidate) => candidate.Id == actionId);
         if (action is not null)
         {
             TogglePlayback(action);
+            return true;
         }
+
+        PreviewDebugLog.Write(
+            "preview.playback.action-missing",
+            ("scope", _scopeKey),
+            ("action", actionId),
+            ("availableActions", string.Join(",", _actions.Select((candidate) => candidate.Id))));
+        return false;
     }
 
     public void SetExternalInputValue(string jsonKey, string value)
@@ -482,6 +496,7 @@ internal sealed class ComponentPreviewInputSession
     private async Task StartPlaybackAsync(ComponentPreviewActionDefinition action)
     {
         StopPlayback();
+        PlaybackBusyChanged?.Invoke(true);
         _activeActionId = action.Id;
         var prepared = true;
         if (ShouldPrewarmFrames(action))
@@ -520,6 +535,7 @@ internal sealed class ComponentPreviewInputSession
                 SetPlaybackState(action, false);
                 SyncBooleanInput(ActionStateKey(action));
                 UpdateActionButtons();
+                PlaybackBusyChanged?.Invoke(false);
                 return;
             }
         }
@@ -536,6 +552,7 @@ internal sealed class ComponentPreviewInputSession
         if (!SupportsPlayback())
         {
             UpdateActionButtons();
+            PlaybackBusyChanged?.Invoke(false);
             return;
         }
 
@@ -544,6 +561,8 @@ internal sealed class ComponentPreviewInputSession
         SyncActivatedPlaybackInputs(action);
         SyncDeactivatedPlaybackInputs(action);
         _values[ActionTimeKey(action)] = "0";
+        _playbackStartedAtSeconds = 0;
+        _playbackStartedTimestamp = Stopwatch.GetTimestamp();
         PreviewDebugLog.Write(
             "preview.playback.start",
             ("scope", _scopeKey),
@@ -552,6 +571,7 @@ internal sealed class ComponentPreviewInputSession
             ("durationSec", DurationSeconds(action)),
             ("durationFrames", DurationFrames(action)),
             ("timeUnit", action.TimeUnit));
+        PlaybackStarted?.Invoke(new PlaybackRunInfo(DurationFrames(action) + 1, _playbackFrameRate));
         SyncPlaybackTimer();
         UpdateActionButtons();
         _refreshPreview();
@@ -559,19 +579,37 @@ internal sealed class ComponentPreviewInputSession
 
     private void StopPlayback()
     {
-        if (!_playbackTimer.IsEnabled) return;
-
-        _playbackTimer.Stop();
+        var wasEnabled = _playbackTimer.IsEnabled;
+        if (wasEnabled)
+        {
+            _playbackTimer.Stop();
+        }
         var hasPlayback = SupportsPlayback();
         var activeAction = ActiveAction();
-        PreviewDebugLog.Write(
-            "preview.playback.stop",
-            ("scope", _scopeKey),
-            ("action", activeAction?.Id ?? ""),
-            ("timeSec", hasPlayback && activeAction is not null ? CurrentPlaybackSeconds(activeAction) : 0),
-            ("durationSec", hasPlayback && activeAction is not null ? DurationSeconds(activeAction) : 0),
-            ("frame", hasPlayback && activeAction is not null ? CurrentPlaybackFrame(activeAction) : 0));
+        if (wasEnabled)
+        {
+            PreviewDebugLog.Write(
+                "preview.playback.stop",
+                ("scope", _scopeKey),
+                ("action", activeAction?.Id ?? ""),
+                ("timeSec", hasPlayback && activeAction is not null ? CurrentPlaybackSeconds(activeAction) : 0),
+                ("durationSec", hasPlayback && activeAction is not null ? DurationSeconds(activeAction) : 0),
+                ("frame", hasPlayback && activeAction is not null ? CurrentPlaybackFrame(activeAction) : 0));
+            if (activeAction is not null)
+            {
+                PlaybackStopped?.Invoke(new PlaybackRunInfo(DurationFrames(activeAction) + 1, _playbackFrameRate));
+            }
+            PlaybackBusyChanged?.Invoke(false);
+        }
+        _playbackStartedTimestamp = 0;
+        _playbackStartedAtSeconds = 0;
+        if (activeAction is not null && !IsPlaying(activeAction))
+        {
+            _playbackSecondsByActionId.Remove(activeAction.Id);
+        }
     }
+
+    public sealed record PlaybackRunInfo(int TargetFrames, int TargetFps);
 
     private void AdvancePlaybackFrame()
     {
@@ -584,8 +622,15 @@ internal sealed class ComponentPreviewInputSession
             return;
         }
 
-        var current = NextPlaybackFrameSeconds(activeAction);
-        _values[ActionTimeKey(activeAction)] = current.ToString(CultureInfo.InvariantCulture);
+        if (_playbackStartedTimestamp == 0)
+        {
+            _playbackStartedAtSeconds = CurrentPlaybackSeconds(activeAction);
+            _playbackStartedTimestamp = Stopwatch.GetTimestamp();
+        }
+        var elapsed = Stopwatch.GetElapsedTime(_playbackStartedTimestamp).TotalSeconds;
+        var current = NormalizedPlaybackSeconds(activeAction, _playbackStartedAtSeconds + elapsed);
+        _playbackSecondsByActionId[activeAction.Id] = current;
+        _values[ActionTimeKey(activeAction)] = PlaybackTimeStorageValue(activeAction, current);
         PreviewDebugLog.Write(
             "preview.playback.tick",
             ("scope", _scopeKey),
@@ -608,8 +653,17 @@ internal sealed class ComponentPreviewInputSession
 
     private double CurrentPlaybackSeconds(ComponentPreviewActionDefinition action)
     {
+        if (IsPlaying(action) && _playbackSecondsByActionId.TryGetValue(action.Id, out var seconds))
+        {
+            return NormalizedPlaybackSeconds(action, seconds);
+        }
+
         var stored = ParseDouble(_values.GetValueOrDefault(ActionTimeKey(action), "0"));
-        return NormalizedPlaybackSeconds(action, stored);
+        return NormalizedPlaybackSeconds(
+            action,
+            action.TimeUnit == ComponentPreviewActionTimeUnit.Frames
+                ? stored / Math.Max(1, _playbackFrameRate)
+                : stored);
     }
 
     private double NextPlaybackFrameSeconds(ComponentPreviewActionDefinition action)
@@ -621,7 +675,8 @@ internal sealed class ComponentPreviewInputSession
     {
         if (!SupportsPlayback()) return;
 
-        _values[ActionTimeKey(action)] = NormalizedPlaybackSeconds(action, CurrentPlaybackSeconds(action)).ToString(CultureInfo.InvariantCulture);
+        var seconds = NormalizedPlaybackSeconds(action, CurrentPlaybackSeconds(action));
+        _values[ActionTimeKey(action)] = PlaybackTimeStorageValue(action, seconds);
     }
 
     private double DurationSeconds(ComponentPreviewActionDefinition action)
@@ -715,6 +770,7 @@ internal sealed class ComponentPreviewInputSession
             }
 
             _activeActionId = action.Id;
+            _playbackSecondsByActionId[action.Id] = 0;
             _values[ActionTimeKey(action)] = "0";
             _values[stateKey] = "true";
             foreach (var key in ActivatedPlaybackInputKeys(action))
@@ -724,8 +780,22 @@ internal sealed class ComponentPreviewInputSession
             return;
         }
 
-        _values[ActionTimeKey(action)] = NormalizedPlaybackSeconds(action, CurrentPlaybackSeconds(action)).ToString(CultureInfo.InvariantCulture);
+        var seconds = NormalizedPlaybackSeconds(action, CurrentPlaybackSeconds(action));
+        _playbackSecondsByActionId.Remove(action.Id);
+        _values[ActionTimeKey(action)] = PlaybackTimeStorageValue(action, seconds);
         _values[stateKey] = "false";
+    }
+
+    private string PlaybackTimeStorageValue(ComponentPreviewActionDefinition action, double seconds)
+    {
+        if (action.TimeUnit == ComponentPreviewActionTimeUnit.Frames)
+        {
+            var frame = (int)Math.Floor(
+                NormalizedPlaybackSeconds(action, seconds) * Math.Max(1, _playbackFrameRate) + 0.0001);
+            return Math.Max(0, Math.Min(DurationFrames(action), frame)).ToString(CultureInfo.InvariantCulture);
+        }
+
+        return NormalizedPlaybackSeconds(action, seconds).ToString(CultureInfo.InvariantCulture);
     }
 
     private double NormalizedPlaybackSeconds(ComponentPreviewActionDefinition action, double seconds)

@@ -1,9 +1,6 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { asRecord, parseObject } from "./previewJsonHelpers.js";
 
-export const previewTextFontFamily =
-  "system-ui, -apple-system, BlinkMacSystemFont, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Noto Color Emoji\", sans-serif";
-
 export function previewFontFaceFamily(fontId: string) {
   const normalized = fontId.trim().replace(/[^a-zA-Z0-9_-]/g, "_");
   return normalized ? `MockupsFont_${normalized}` : "";
@@ -22,7 +19,6 @@ function themeTypographyFontId(payload: DesignPreviewPayload, key: string) {
 
 function familyForFontId(payload: DesignPreviewPayload, fontId: string) {
   if (!fontId.trim()) return "";
-  if (fontId === "system") return "";
   return payload.fontFaces?.some((face) => face.fontId === fontId)
     ? previewFontFaceFamily(fontId)
     : "";
@@ -34,16 +30,21 @@ export function fontFamilyForTypography(
 ) {
   const primaryFontId = fontFamilyId === "theme"
     ? themeTypographyFontId(payload, "fontFamilyId")
+    : fontFamilyId === "theme.system"
+      ? themeTypographyFontId(payload, "systemFontFamilyId")
     : fontFamilyId;
   const emojiFontId = themeTypographyFontId(payload, "emojiFontFamilyId");
-  const families = [
-    familyForFontId(payload, primaryFontId),
-    familyForFontId(payload, emojiFontId),
-  ]
-    .filter((family, index, list) => family && list.indexOf(family) === index)
-    .map(quoteFamily);
+  const primaryFamily = familyForFontId(payload, primaryFontId);
+  const emojiFamily = familyForFontId(payload, emojiFontId);
+  if (!primaryFontId || !primaryFamily) {
+    throw new Error(`Required production text font is unavailable: ${primaryFontId || "<empty>"}`);
+  }
+  if (!emojiFontId || !emojiFamily) {
+    throw new Error(`Required production emoji font is unavailable: ${emojiFontId || "<empty>"}`);
+  }
 
-  return families.length > 0
-    ? `${families.join(", ")}, ${previewTextFontFamily}`
-    : previewTextFontFamily;
+  return [primaryFamily, emojiFamily]
+    .filter((family, index, list) => family && list.indexOf(family) === index)
+    .map(quoteFamily)
+    .join(", ");
 }

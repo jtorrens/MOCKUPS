@@ -48,7 +48,7 @@ export function requiredFontFamilyId(
   path: string,
 ) {
   const raw = value[key];
-  if (typeof raw === "string") return raw.trim() ? raw : "system";
+  if (typeof raw === "string" && raw.trim()) return raw.trim();
   throw new Error(`Missing string value ${path}`);
 }
 

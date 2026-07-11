@@ -29,6 +29,7 @@ import {
   translateRenderableNode,
 } from "./componentRenderableCommon.js";
 import { mediaFrameUriForPath } from "./previewAssetResolver.js";
+import { fontFamilyForTypography } from "./previewFontHelpers.js";
 import { statusBarComponentToRenderable } from "./statusBarComponentRenderable.js";
 import { resolveStatusBarComponent } from "./statusBarComponentResolver.js";
 import { textInputBarComponentToRenderable } from "./textInputBarComponentRenderable.js";
@@ -737,6 +738,7 @@ function textNode(
       alignItems: "center",
       color: selectedColor(payload, colorToken),
       display: "flex",
+      fontFamily: fontFamilyForTypography(payload, "theme"),
       fontSize,
       fontWeight,
       overflow: "hidden",
