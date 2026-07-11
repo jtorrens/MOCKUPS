@@ -72,16 +72,26 @@ internal sealed partial class SpikeDatabase
         var audioLayout = ScalarString(
             connection,
             "SELECT layout_json FROM editor_layouts WHERE record_class_id = 'component.audio'");
-        if (string.IsNullOrWhiteSpace(audioLayout)
-            || !audioLayout.Contains("component.audio.waveformBarWidth", StringComparison.Ordinal))
+        if (!string.IsNullOrWhiteSpace(audioLayout)
+            && audioLayout.Contains("component.audio.waveformBarWidth", StringComparison.Ordinal))
         {
-            return;
+            Execute(
+                connection,
+                "UPDATE editor_layouts SET layout_json = $layoutJson WHERE record_class_id = 'component.audio'",
+                ("$layoutJson", MinimalEditorLayoutJson("component.audio")));
         }
 
-        Execute(
+        var themeLayout = ScalarString(
             connection,
-            "UPDATE editor_layouts SET layout_json = $layoutJson WHERE record_class_id = 'component.audio'",
-            ("$layoutJson", MinimalEditorLayoutJson("component.audio")));
+            "SELECT layout_json FROM editor_layouts WHERE record_class_id = 'theme'");
+        if (!string.IsNullOrWhiteSpace(themeLayout)
+            && !themeLayout.Contains("Keyboard dimensions and color tokens", StringComparison.Ordinal))
+        {
+            Execute(
+                connection,
+                "UPDATE editor_layouts SET layout_json = $layoutJson WHERE record_class_id = 'theme'",
+                ("$layoutJson", MinimalEditorLayoutJson("theme")));
+        }
     }
 
     private static string MinimalEditorLayoutJson(string recordClassId)
@@ -457,10 +467,21 @@ internal sealed partial class SpikeDatabase
                     { "id": "theme.cursor.blinkFrames", "order": 30, "visible": true }
                   ]
                 },
+              ]
+            },
+            {
+              "id": "keyboard",
+              "label": "Keyboard",
+              "subtitle": "Keyboard dimensions and color tokens",
+              "icon": "{{EditorIcons.Keyboard}}",
+              "order": 35,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
                 {
-                  "id": "keyboard",
+                  "id": "keyboardTokens",
                   "label": "Keyboard",
-                  "order": 90,
+                  "order": 10,
                   "visible": true,
                   "fields": [
                     { "id": "theme.keyboard.height", "order": 10, "visible": true },
@@ -479,7 +500,7 @@ internal sealed partial class SpikeDatabase
               "label": "Motion",
               "subtitle": "Theme transition timing and easing",
               "icon": "{{EditorIcons.Animation}}",
-              "order": 35,
+              "order": 40,
               "visible": true,
               "defaultOpen": false,
               "groups": [
