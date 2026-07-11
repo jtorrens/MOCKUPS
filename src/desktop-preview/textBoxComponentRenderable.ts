@@ -8,10 +8,12 @@ import {
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
   approximateMultilineTextSize,
+  approximateTextWidth,
   approximateWrappedTextLines,
   approximateWrappedTextSize,
   resolveTypographyStyle,
 } from "./previewTextHelpers.js";
+import { textGraphemes } from "./previewTextRevealHelpers.js";
 import {
   iconRowComponentToRenderableAt,
   measureIconRowComponent,
@@ -372,23 +374,121 @@ export function textBoxComponentToRenderableAt(
           justifyContent: scrollAnchorsToBottom ? "flex-end" : undefined,
           overflow: "hidden",
         },
-        children: wrappedLines.map((line, index) => ({
-          id: `${textBox.id}.text.${index}`,
-          type: "text" as const,
-          frame: 0,
-          box: {
-            x: textFrame.x,
+        children: wrappedLines.flatMap((line, index) =>
+          textLineRenderableNodes({
+            id: `${textBox.id}.text.${index}`,
+            textBox,
+            line,
+            lineIndex: index,
+            lineCount: wrappedLines.length,
+            lineHeight,
+            textFrame,
             y: renderedTextY + index * lineHeight,
-            width: textFrame.width,
-            height: lineHeight,
-          },
-          text: line,
-          style: textStyle,
-          metadata: index === wrappedLines.length - 1 ? cursorMetadata : undefined,
-        })),
+            style: textStyle,
+            cursorMetadata: index === wrappedLines.length - 1 ? cursorMetadata : undefined,
+          }),
+        ),
       },
     ],
   };
+}
+
+function textLineRenderableNodes({
+  id,
+  textBox,
+  line,
+  lineIndex,
+  lineCount,
+  lineHeight,
+  textFrame,
+  y,
+  style,
+  cursorMetadata,
+}: {
+  id: string;
+  textBox: TextBoxDesignContract;
+  line: string;
+  lineIndex: number;
+  lineCount: number;
+  lineHeight: number;
+  textFrame: RenderableBox;
+  y: number;
+  style: Record<string, unknown>;
+  cursorMetadata: RenderableNode["metadata"];
+}): RenderableNode[] {
+  if (textBox.textAnimation.mode === "none" || line.length === 0) {
+    return [{
+      id,
+      type: "text",
+      frame: 0,
+      box: {
+        x: textFrame.x,
+        y,
+        width: textFrame.width,
+        height: lineHeight,
+      },
+      text: line,
+      style,
+      metadata: cursorMetadata,
+    }];
+  }
+
+  const fontSize = typeof style.fontSize === "number" ? style.fontSize : lineHeight;
+  const graphemes = textGraphemes(line);
+  let x = textFrame.x + lineStartOffset(line, textBox.textAlign, textFrame.width, fontSize);
+  const cycle = Math.max(0, textBox.textAnimation.timeSeconds) * Math.PI * 2;
+  const minimumOpacity = Math.max(0.35, Math.min(1, textBox.textAnimation.minimumOpacity));
+  return graphemes.map((grapheme, graphemeIndex) => {
+    const width = Math.max(1, approximateTextWidth(grapheme, fontSize));
+    const phase = cycle + graphemeIndex * 0.72 + lineIndex * 0.29;
+    const wave = (Math.sin(phase) + 1) * 0.5;
+    const opacity = minimumOpacity + (1 - minimumOpacity) * wave;
+    const scale = textBox.textAnimation.mode === "pulsating"
+      ? 0.88 + 0.24 * wave
+      : 1;
+    const yOffset = textBox.textAnimation.mode === "wave"
+      ? (0.5 - wave) * fontSize * 0.28
+      : 0;
+    const node: RenderableNode = {
+      id: `${id}.${graphemeIndex}`,
+      type: "text",
+      frame: 0,
+      box: {
+        x,
+        y,
+        width,
+        height: lineHeight,
+      },
+      text: grapheme,
+      style: {
+        ...style,
+        display: "block",
+        textAlign: "left",
+      },
+      transform: {
+        y: yOffset,
+        scale,
+        opacity,
+      },
+      metadata: lineIndex === lineCount - 1 && graphemeIndex === graphemes.length - 1
+        ? cursorMetadata
+        : undefined,
+    };
+    x += width;
+    return node;
+  });
+}
+
+function lineStartOffset(
+  line: string,
+  textAlign: TextBoxDesignContract["textAlign"],
+  frameWidth: number,
+  fontSize: number,
+) {
+  if (textAlign === "left") return 0;
+  const lineWidth = approximateTextWidth(line, fontSize);
+  if (textAlign === "center") return Math.max(0, (frameWidth - lineWidth) / 2);
+  return Math.max(0, frameWidth - lineWidth);
 }
 
 function visibleText(textBox: TextBoxDesignContract) {

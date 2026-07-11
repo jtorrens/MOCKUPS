@@ -71,7 +71,7 @@ internal static class ComponentClassFieldCatalog
         new("theme.radii.full", "radii.full"),
     ];
 
-    private static readonly FieldOption[] TypographySizeOptions =
+    internal static readonly FieldOption[] TypographySizeOptions =
     [
         new("theme.typography.sizes.xs", "typography.sizes.xs"),
         new("theme.typography.sizes.s", "typography.sizes.s"),

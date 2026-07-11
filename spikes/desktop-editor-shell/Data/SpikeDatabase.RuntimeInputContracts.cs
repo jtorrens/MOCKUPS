@@ -175,6 +175,9 @@ internal sealed partial class SpikeDatabase
             "incomingRevealMode",
             "textInputVisible",
             "keyboardVisible",
+            "typingIndicatorText",
+            "typingIndicatorSizeToken",
+            "typingIndicatorAnimation",
         })
         {
             if (preview[key] is null && defaults[key] is JsonNode defaultValue)

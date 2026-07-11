@@ -625,6 +625,9 @@ internal sealed partial class SpikeDatabase
             ["incomingRevealMode"] = "typingIndicator",
             ["textInputVisible"] = true,
             ["keyboardVisible"] = true,
+            ["typingIndicatorText"] = "•••",
+            ["typingIndicatorSizeToken"] = "theme.typography.sizes.m",
+            ["typingIndicatorAnimation"] = "pulsating",
             ["messages"] = new JsonArray
             {
                 ConversationPreviewMessage("message_001", "incoming", "Tenias razon: ya podemos componer desde el modulo.", 0, 30, 0, false, "none", ""),
@@ -642,6 +645,9 @@ internal sealed partial class SpikeDatabase
                 new JsonObject { ["id"] = "incomingReveal", ["label"] = "Incoming reveal", ["jsonKey"] = "incomingRevealMode", ["kind"] = "option", ["defaultValue"] = "typingIndicator", ["options"] = new JsonArray { new JsonObject { ["value"] = "instant", ["label"] = "Instant" }, new JsonObject { ["value"] = "writeOn", ["label"] = "Write-on" }, new JsonObject { ["value"] = "typingIndicator", ["label"] = "Typing indicator" } }, ["groupId"] = "timing", ["groupLabel"] = "Timing", ["groupOrder"] = 20 },
                 new JsonObject { ["id"] = "textInput", ["label"] = "Text input while writing", ["jsonKey"] = "textInputVisible", ["kind"] = "boolean", ["defaultValue"] = "true", ["groupId"] = "timing", ["groupLabel"] = "Timing", ["groupOrder"] = 20 },
                 new JsonObject { ["id"] = "keyboard", ["label"] = "Keyboard while writing", ["jsonKey"] = "keyboardVisible", ["kind"] = "boolean", ["defaultValue"] = "true", ["groupId"] = "timing", ["groupLabel"] = "Timing", ["groupOrder"] = 20 },
+                new JsonObject { ["id"] = "typingIndicatorText", ["label"] = "Typing indicator text", ["jsonKey"] = "typingIndicatorText", ["kind"] = "text", ["defaultValue"] = "•••", ["groupId"] = "timing", ["groupLabel"] = "Timing", ["groupOrder"] = 20 },
+                new JsonObject { ["id"] = "typingIndicatorSize", ["label"] = "Typing indicator size", ["jsonKey"] = "typingIndicatorSizeToken", ["kind"] = "themeToken", ["defaultValue"] = "theme.typography.sizes.m", ["options"] = new JsonArray { new JsonObject { ["value"] = "theme.typography.sizes.xs", ["label"] = "typography.sizes.xs" }, new JsonObject { ["value"] = "theme.typography.sizes.s", ["label"] = "typography.sizes.s" }, new JsonObject { ["value"] = "theme.typography.sizes.m", ["label"] = "typography.sizes.m" }, new JsonObject { ["value"] = "theme.typography.sizes.l", ["label"] = "typography.sizes.l" }, new JsonObject { ["value"] = "theme.typography.sizes.xl", ["label"] = "typography.sizes.xl" } }, ["groupId"] = "timing", ["groupLabel"] = "Timing", ["groupOrder"] = 20 },
+                new JsonObject { ["id"] = "typingIndicatorAnimation", ["label"] = "Typing indicator animation", ["jsonKey"] = "typingIndicatorAnimation", ["kind"] = "option", ["defaultValue"] = "pulsating", ["options"] = new JsonArray { new JsonObject { ["value"] = "none", ["label"] = "None" }, new JsonObject { ["value"] = "pulsating", ["label"] = "Pulsating" }, new JsonObject { ["value"] = "wave", ["label"] = "Wave" } }, ["groupId"] = "timing", ["groupLabel"] = "Timing", ["groupOrder"] = 20 },
             },
             ["collections"] = new JsonArray
             {

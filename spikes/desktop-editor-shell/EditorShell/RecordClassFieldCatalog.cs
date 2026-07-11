@@ -18,6 +18,14 @@ internal sealed record RecordClassFieldDescriptor(
 internal static class RecordClassFieldCatalog
 {
     private static readonly FieldOption[] SpacingTokenOptions = ComponentClassFieldCatalog.SpacingTokenOptions;
+    private static readonly FieldOption[] TypographySizeOptions = ComponentClassFieldCatalog.TypographySizeOptions;
+
+    private static readonly FieldOption[] TypingIndicatorAnimationOptions =
+    [
+        new("none", "None"),
+        new("pulsating", "Pulsating"),
+        new("wave", "Wave"),
+    ];
 
     private static readonly FieldOption[] MotionEasingOptions =
     [
@@ -211,6 +219,20 @@ internal static class RecordClassFieldCatalog
             "moduleInstance.conversation.keyboardVisible",
             "Keyboard while writing",
             ValueKind.Boolean),
+        ["moduleInstance.conversation.typingIndicatorText"] = new(
+            "moduleInstance.conversation.typingIndicatorText",
+            "Typing indicator text",
+            ValueKind.StringSingleLine),
+        ["moduleInstance.conversation.typingIndicatorSizeToken"] = new(
+            "moduleInstance.conversation.typingIndicatorSizeToken",
+            "Typing indicator size",
+            ValueKind.ThemeToken,
+            Options: TypographySizeOptions),
+        ["moduleInstance.conversation.typingIndicatorAnimation"] = new(
+            "moduleInstance.conversation.typingIndicatorAnimation",
+            "Typing indicator animation",
+            ValueKind.OptionToken,
+            Options: TypingIndicatorAnimationOptions),
 
         ["renderPreset.width"] = new("renderPreset.width", "Width", ValueKind.Integer, IsEditable: false),
         ["renderPreset.height"] = new("renderPreset.height", "Height", ValueKind.Integer, IsEditable: false),

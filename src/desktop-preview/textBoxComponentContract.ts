@@ -25,4 +25,11 @@ export interface TextBoxDesignContract {
   iconGapToken: string;
   leftIconRow: IconRowDesignContract;
   rightIconRow: IconRowDesignContract;
+  textAnimation: TextBoxTextAnimationContract;
+}
+
+export interface TextBoxTextAnimationContract {
+  mode: "none" | "pulsating" | "wave";
+  timeSeconds: number;
+  minimumOpacity: number;
 }

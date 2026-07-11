@@ -214,6 +214,9 @@ internal sealed class RecordClassFieldValueService
             "moduleInstance.conversation.incomingRevealMode" => JsonString(settings.BehaviorJson, "incomingRevealMode") is "writeOn" or "typingIndicator" ? JsonString(settings.BehaviorJson, "incomingRevealMode") : "instant",
             "moduleInstance.conversation.textInputVisible" => JsonBoolString(settings.BehaviorJson, "textInputVisible", true),
             "moduleInstance.conversation.keyboardVisible" => JsonBoolString(settings.BehaviorJson, "keyboardVisible", true),
+            "moduleInstance.conversation.typingIndicatorText" => JsonString(settings.BehaviorJson, "typingIndicatorText") is { Length: > 0 } text ? text : "•••",
+            "moduleInstance.conversation.typingIndicatorSizeToken" => JsonString(settings.BehaviorJson, "typingIndicatorSizeToken") is { Length: > 0 } size ? size : "theme.typography.sizes.m",
+            "moduleInstance.conversation.typingIndicatorAnimation" => JsonString(settings.BehaviorJson, "typingIndicatorAnimation") is "none" or "wave" ? JsonString(settings.BehaviorJson, "typingIndicatorAnimation") : "pulsating",
             _ => throw new InvalidOperationException($"Unknown module instance field '{fieldId}'."),
         };
     }

@@ -353,6 +353,9 @@ function messageNodes(
       controlsElapsedMs: message.controlsElapsedMs,
       motionTimeSeconds,
       maxWidth: optionalNumber(conversation, "bubbleMaxWidth", 66),
+      textSizeToken: message.isTypingIndicator ? timing.typingIndicatorSizeToken : undefined,
+      textAnimationMode: message.isTypingIndicator ? timing.typingIndicatorAnimation : undefined,
+      textAnimationTimeSeconds: message.isTypingIndicator ? motionTimeSeconds : undefined,
       writeOnTrigger,
       writeOnFrame: message.writeOnFrame,
       writeOnDurationFrames: message.writeOnDurationFrames,
@@ -409,15 +412,20 @@ type ConversationPreviewMessage = {
   fullScreenTransition: boolean;
   fullframeOrientation: string;
   controlsElapsedMs: number;
+  isTypingIndicator: boolean;
 };
 
 type IncomingRevealMode = "instant" | "writeOn" | "typingIndicator";
+type TypingIndicatorAnimation = "none" | "pulsating" | "wave";
 
 type ConversationTiming = {
   bubbleRevealMode: "duringWriteOn" | "afterWriteOn";
   incomingRevealMode: IncomingRevealMode;
   textInputVisible: boolean;
   keyboardVisible: boolean;
+  typingIndicatorText: string;
+  typingIndicatorSizeToken: string;
+  typingIndicatorAnimation: TypingIndicatorAnimation;
 };
 
 function conversationTiming(conversation: JsonRecord, preview: JsonRecord): ConversationTiming {
@@ -432,7 +440,21 @@ function conversationTiming(conversation: JsonRecord, preview: JsonRecord): Conv
       : "instant",
     textInputVisible: optionalBooleanWithFallback(preview, conversation, "textInputVisible", true),
     keyboardVisible: optionalBooleanWithFallback(preview, conversation, "keyboardVisible", true),
+    typingIndicatorText: optionalString(preview, "typingIndicatorText")
+      || optionalString(conversation, "typingIndicatorText")
+      || "•••",
+    typingIndicatorSizeToken: optionalString(preview, "typingIndicatorSizeToken")
+      || optionalString(conversation, "typingIndicatorSizeToken")
+      || "theme.typography.sizes.m",
+    typingIndicatorAnimation: typingIndicatorAnimation(
+      optionalString(preview, "typingIndicatorAnimation")
+        || optionalString(conversation, "typingIndicatorAnimation"),
+    ),
   };
+}
+
+function typingIndicatorAnimation(value: string | undefined): TypingIndicatorAnimation {
+  return value === "none" || value === "wave" ? value : "pulsating";
 }
 
 function optionalBooleanWithFallback(
@@ -476,6 +498,7 @@ function conversationMessages(preview: JsonRecord): ConversationPreviewMessage[]
         fullScreenTransition: optionalBoolean(message, "fullScreenTransition"),
         fullframeOrientation: optionalString(message, "fullframeOrientation") || "portrait",
         controlsElapsedMs: optionalNumber(message, "controlsElapsedMs", 0),
+        isTypingIndicator: false,
       };
     });
   }
@@ -513,9 +536,10 @@ function visibleMessages(
       && (isOutgoingMessage || incomingWriteOn || incomingTyping);
     return [{
       ...message,
-      text: incomingTyping ? "•••" : message.text,
+      text: incomingTyping ? timing.typingIndicatorText : message.text,
       mediaType: messageIsWriting ? "none" as const : message.mediaType,
       mediaSource: messageIsWriting ? "" : message.mediaSource,
+      isTypingIndicator: incomingTyping,
       writeOnTrigger: (isOutgoingMessage || incomingWriteOn)
         && !revealAfterWriteOn
         && effectiveWriteOnFrames > 0,

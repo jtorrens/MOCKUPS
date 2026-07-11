@@ -4,6 +4,9 @@ import {
   mergeComponentDefaults,
 } from "./componentPreviewDefaults.js";
 import {
+  type TypographyStyleContract,
+} from "./previewComponentContracts.js";
+import {
   asRecord,
   optionalNumber,
   optionalString,
@@ -87,6 +90,14 @@ export function resolveTextBoxComponentFromRecords(
   );
   const leftIconRowInputs = textBoxIconRowInputs(inputs, "left");
   const rightIconRowInputs = textBoxIconRowInputs(inputs, "right");
+  const typography = typographyWithInputSizeOverride(
+    requiredTypographyStyle(
+      textBox,
+      "typography",
+      "component.textBox.typography",
+    ),
+    inputs,
+  );
 
   return {
     id,
@@ -109,11 +120,7 @@ export function resolveTextBoxComponentFromRecords(
       "placeholderColorToken",
       "component.textBox.placeholderColorToken",
     ),
-    typography: requiredTypographyStyle(
-      textBox,
-      "typography",
-      "component.textBox.typography",
-    ),
+    typography,
     textAlign,
     overflowMode,
     cursorVisible: requiredBoolean(
@@ -144,7 +151,24 @@ export function resolveTextBoxComponentFromRecords(
       componentBaseConfigs,
       `${id}.rightIcons`,
     ),
+    textAnimation: {
+      mode: textAnimationMode(optionalString(inputs, "textAnimationMode")),
+      timeSeconds: Math.max(0, optionalNumber(inputs, "textAnimationTimeSeconds", 0)),
+      minimumOpacity: 0.35,
+    },
   };
+}
+
+function typographyWithInputSizeOverride(
+  typography: TypographyStyleContract,
+  inputs: Record<string, unknown>,
+): TypographyStyleContract {
+  const sizeToken = optionalString(inputs, "textSizeToken");
+  return sizeToken ? { ...typography, sizeToken } : typography;
+}
+
+function textAnimationMode(value: string | undefined): TextBoxDesignContract["textAnimation"]["mode"] {
+  return value === "pulsating" || value === "wave" ? value : "none";
 }
 
 function resolveOptionalIconRowComponentFromRecords(

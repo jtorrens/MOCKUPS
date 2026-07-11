@@ -213,7 +213,10 @@ internal sealed partial class SpikeDatabase
                     { "id": "moduleInstance.conversation.incomingRevealMode", "order": 60, "visible": true },
                     { "id": "moduleInstance.conversation.textInputVisible", "order": 70, "visible": true },
                     { "id": "moduleInstance.conversation.keyboardVisible", "order": 80, "visible": true },
-                    { "id": "moduleInstance.sortOrder", "order": 90, "visible": false },
+                    { "id": "moduleInstance.conversation.typingIndicatorText", "order": 90, "visible": true },
+                    { "id": "moduleInstance.conversation.typingIndicatorSizeToken", "order": 100, "visible": true },
+                    { "id": "moduleInstance.conversation.typingIndicatorAnimation", "order": 110, "visible": true },
+                    { "id": "moduleInstance.sortOrder", "order": 120, "visible": false },
                     { "id": "core.notes", "order": 100, "visible": true }
                   """
             : recordClassId == "render_preset"

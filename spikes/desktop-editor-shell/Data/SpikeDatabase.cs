@@ -57,6 +57,7 @@ internal sealed partial class SpikeDatabase
             NormalizeModuleAppearanceModes(connection);
             NormalizeKeyboardConfiguration(connection);
             NormalizeRuntimeInputContracts(connection);
+            NormalizeConversationModuleInstanceBehavior(connection);
             NormalizeEditorLayouts(connection);
             return;
         }
@@ -77,6 +78,7 @@ internal sealed partial class SpikeDatabase
         NormalizeModuleAppearanceModes(connection);
         NormalizeKeyboardConfiguration(connection);
         NormalizeRuntimeInputContracts(connection);
+        NormalizeConversationModuleInstanceBehavior(connection);
         NormalizeEditorLayouts(connection);
         ValidateSchemaV1(connection);
     }

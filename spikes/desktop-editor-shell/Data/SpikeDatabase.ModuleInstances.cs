@@ -150,6 +150,9 @@ internal sealed partial class SpikeDatabase
             case "moduleInstance.conversation.incomingRevealMode":
             case "moduleInstance.conversation.textInputVisible":
             case "moduleInstance.conversation.keyboardVisible":
+            case "moduleInstance.conversation.typingIndicatorText":
+            case "moduleInstance.conversation.typingIndicatorSizeToken":
+            case "moduleInstance.conversation.typingIndicatorAnimation":
                 UpdateConversationBehaviorField(connection, moduleInstanceId, fieldId, value);
                 return;
             default:
@@ -183,6 +186,15 @@ internal sealed partial class SpikeDatabase
                 break;
             case "moduleInstance.conversation.keyboardVisible":
                 behavior["keyboardVisible"] = BooleanText.Parse(value);
+                break;
+            case "moduleInstance.conversation.typingIndicatorText":
+                behavior["typingIndicatorText"] = string.IsNullOrEmpty(value) ? "•••" : value;
+                break;
+            case "moduleInstance.conversation.typingIndicatorSizeToken":
+                behavior["typingIndicatorSizeToken"] = string.IsNullOrWhiteSpace(value) ? "theme.typography.sizes.m" : value;
+                break;
+            case "moduleInstance.conversation.typingIndicatorAnimation":
+                behavior["typingIndicatorAnimation"] = value is "none" or "wave" ? value : "pulsating";
                 break;
         }
 
@@ -381,8 +393,72 @@ internal sealed partial class SpikeDatabase
             ["incomingRevealMode"] = "typingIndicator",
             ["textInputVisible"] = true,
             ["keyboardVisible"] = true,
+            ["typingIndicatorText"] = "•••",
+            ["typingIndicatorSizeToken"] = "theme.typography.sizes.m",
+            ["typingIndicatorAnimation"] = "pulsating",
             ["initialScroll"] = "bottom",
         }.ToJsonString();
+    }
+
+    private static void NormalizeConversationModuleInstanceBehavior(SqliteConnection connection)
+    {
+        using var select = connection.CreateCommand();
+        select.CommandText = """
+            SELECT mi.id, mi.behavior_json
+            FROM module_instances mi
+            JOIN modules m ON m.id = mi.module_id
+            WHERE m.record_class_id = 'module.core.chat'
+            """;
+        using var reader = select.ExecuteReader();
+        var updates = new List<(string Id, string Json)>();
+        while (reader.Read())
+        {
+            var behavior = ParseJsonObject(ReadString(reader, 1));
+            var changed = false;
+            EnsureConversationBehaviorValue(behavior, "bubbleRevealMode", "afterWriteOn", ref changed);
+            EnsureConversationBehaviorValue(behavior, "incomingRevealMode", "typingIndicator", ref changed);
+            EnsureConversationBehaviorValue(behavior, "textInputVisible", true, ref changed);
+            EnsureConversationBehaviorValue(behavior, "keyboardVisible", true, ref changed);
+            EnsureConversationBehaviorValue(behavior, "typingIndicatorText", "•••", ref changed);
+            EnsureConversationBehaviorValue(behavior, "typingIndicatorSizeToken", "theme.typography.sizes.m", ref changed);
+            EnsureConversationBehaviorValue(behavior, "typingIndicatorAnimation", "pulsating", ref changed);
+            if (changed)
+            {
+                updates.Add((reader.GetString(0), behavior.ToJsonString()));
+            }
+        }
+        reader.Close();
+
+        foreach (var update in updates)
+        {
+            Execute(
+                connection,
+                "UPDATE module_instances SET behavior_json = $behaviorJson WHERE id = $id",
+                ("$behaviorJson", update.Json),
+                ("$id", update.Id));
+        }
+    }
+
+    private static void EnsureConversationBehaviorValue(
+        JsonObject behavior,
+        string key,
+        string value,
+        ref bool changed)
+    {
+        if (behavior[key] is not null) return;
+        behavior[key] = value;
+        changed = true;
+    }
+
+    private static void EnsureConversationBehaviorValue(
+        JsonObject behavior,
+        string key,
+        bool value,
+        ref bool changed)
+    {
+        if (behavior[key] is not null) return;
+        behavior[key] = value;
+        changed = true;
     }
 
     private static string DefaultModuleAnimationJson()
