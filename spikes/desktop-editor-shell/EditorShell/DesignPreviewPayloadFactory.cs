@@ -301,12 +301,16 @@ internal static class DesignPreviewPayloadFactory
             themeTokens,
             ["motion", "transitions", transition, "durationMs"],
             0);
+        var delayMs = JsonPath.NumberDouble(
+            themeTokens,
+            ["motion", "transitions", transition, "delayMs"],
+            0);
         if (durationMs <= 0)
         {
             return false;
         }
 
-        action["durationSeconds"] = durationMs / 1000.0;
+        action["durationSeconds"] = (Math.Max(0, delayMs) + durationMs) / 1000.0;
         return true;
     }
 }

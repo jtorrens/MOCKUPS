@@ -2112,6 +2112,16 @@ assertContains(
   "fontFamilyForTypography(payload, \"theme\")",
   "Audio text must resolve the Theme normal text font explicitly",
 );
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "ActionDurationInputValue(action, 1)",
+  "declarative playback clocks must read the action duration input instead of a private fallback",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
+  "Math.Max(0, delayMs) + durationMs",
+  "motion action duration must include both declared delay and transition duration",
+);
 
 function assertDesktopSystemTypographyData() {
   const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");

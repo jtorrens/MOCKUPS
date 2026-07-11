@@ -850,8 +850,7 @@ internal sealed class ComponentPreviewInputSession
             return Math.Max(1, JsonNodeNumber(ComponentPreviewActions.Value(_runtimePreview, action, action.DurationInputId), 1));
         }
 
-        var key = ActionDurationKey(action);
-        return Math.Max(1, ParseDouble(_values.GetValueOrDefault(key, InputDefault(key, "1"))));
+        return Math.Max(1, ActionDurationInputValue(action, 1));
     }
 
     private int DurationFrames(ComponentPreviewActionDefinition action)
@@ -872,8 +871,7 @@ internal sealed class ComponentPreviewInputSession
             return CollectionDurationFrames(_runtimePreview, action);
         }
 
-        var key = ActionDurationKey(action);
-        return Math.Max(1, (int)Math.Round(ParseDouble(_values.GetValueOrDefault(key, InputDefault(key, "1"))), MidpointRounding.AwayFromZero));
+        return Math.Max(1, (int)Math.Round(ActionDurationInputValue(action, 1), MidpointRounding.AwayFromZero));
     }
 
     private static int CollectionDurationFrames(JsonObject preview, ComponentPreviewActionDefinition action)
@@ -907,8 +905,32 @@ internal sealed class ComponentPreviewInputSession
 
     private int CurrentPlaybackFrame(ComponentPreviewActionDefinition action)
     {
+        if (CurrentPlaybackSeconds(action) >= DurationSeconds(action))
+        {
+            return DurationFrames(action);
+        }
         var frame = (int)Math.Floor(CurrentPlaybackSeconds(action) * Math.Max(1, _playbackFrameRate) + 0.0001);
         return Math.Max(0, Math.Min(DurationFrames(action), frame));
+    }
+
+    private double ActionDurationInputValue(ComponentPreviewActionDefinition action, double fallback)
+    {
+        if (string.IsNullOrWhiteSpace(action.DurationInputId)) return fallback;
+        if (action.IsCollectionItemAction)
+        {
+            return JsonNodeNumber(
+                ComponentPreviewActions.Value(_runtimePreview, action, action.DurationInputId),
+                fallback);
+        }
+
+        var inputKey = $"{_scopeKey}:{action.DurationInputId}";
+        if (_values.TryGetValue(inputKey, out var value))
+        {
+            return ParseDouble(value);
+        }
+        return JsonNodeNumber(
+            ComponentPreviewActions.Value(_runtimePreview, action, action.DurationInputId),
+            fallback);
     }
 
     private bool IsPlaying(ComponentPreviewActionDefinition action)
@@ -980,11 +1002,6 @@ internal sealed class ComponentPreviewInputSession
     private string ActionStateKey(ComponentPreviewActionDefinition action)
     {
         return $"{_scopeKey}:action:{action.Id}:state";
-    }
-
-    private string ActionDurationKey(ComponentPreviewActionDefinition action)
-    {
-        return $"{_scopeKey}:action:{action.Id}:duration";
     }
 
     private string ActionTimeKey(ComponentPreviewActionDefinition action)
