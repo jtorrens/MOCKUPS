@@ -37,6 +37,40 @@ internal sealed class ComponentPreviewInputSession
     private double _playbackStartedAtSeconds;
     private int _lastPlaybackRefreshFrame = -1;
     private readonly Dictionary<string, double> _playbackSecondsByActionId = new(StringComparer.Ordinal);
+    private bool _presentEveryPlaybackFrame;
+    private bool _awaitingPlaybackPresentation;
+    private bool _stopAfterPlaybackPresentation;
+
+    public bool PresentEveryPlaybackFrame
+    {
+        get => _presentEveryPlaybackFrame;
+        set
+        {
+            if (_presentEveryPlaybackFrame == value) return;
+            _presentEveryPlaybackFrame = value;
+            UpdatePlaybackTimerInterval();
+        }
+    }
+
+    public void NotifyPlaybackFramePresented()
+    {
+        if (!_presentEveryPlaybackFrame || !_awaitingPlaybackPresentation) return;
+        _awaitingPlaybackPresentation = false;
+        if (_stopAfterPlaybackPresentation)
+        {
+            _stopAfterPlaybackPresentation = false;
+            var activeAction = ActiveAction();
+            if (activeAction is not null)
+            {
+                StopPlayback();
+                _values[ActionStateKey(activeAction)] = "false";
+                SyncBooleanInput(ActionStateKey(activeAction));
+            }
+            UpdateActionButtons();
+            return;
+        }
+        SyncPlaybackTimer();
+    }
 
     public ComponentPreviewInputSession(
         SpikeDatabase database,
@@ -430,6 +464,12 @@ internal sealed class ComponentPreviewInputSession
         var activeAction = ActiveAction();
         if (activeAction is not null && IsPlaying(activeAction))
         {
+            if (_awaitingPlaybackPresentation)
+            {
+                if (_playbackTimer.IsEnabled) _playbackTimer.Stop();
+                UpdateActionButtons();
+                return;
+            }
             if (!_playbackTimer.IsEnabled)
             {
                 _playbackTimer.Start();
@@ -449,7 +489,7 @@ internal sealed class ComponentPreviewInputSession
         var previousInterval = _playbackTimer.Interval;
         var previewFps = PreviewPlaybackTiming.PreviewFrameRate(projectFps);
         _playbackFrameRate = previewFps;
-        var interval = TimeSpan.FromMilliseconds(1000.0 / (previewFps * 2.0));
+        var interval = PlaybackTimerInterval(previewFps);
         if (previousFps != previewFps || previousInterval != interval)
         {
             PreviewDebugLog.Write(
@@ -465,6 +505,17 @@ internal sealed class ComponentPreviewInputSession
         {
             _playbackTimer.Interval = interval;
         }
+    }
+
+    private TimeSpan PlaybackTimerInterval(int previewFps)
+    {
+        return TimeSpan.FromMilliseconds(1000.0 / (previewFps * 2.0));
+    }
+
+    private void UpdatePlaybackTimerInterval()
+    {
+        var interval = PlaybackTimerInterval(Math.Max(1, _playbackFrameRate));
+        if (_playbackTimer.Interval != interval) _playbackTimer.Interval = interval;
     }
 
     private void TogglePlayback(ComponentPreviewActionDefinition action)
@@ -566,6 +617,7 @@ internal sealed class ComponentPreviewInputSession
         _playbackStartedAtSeconds = 0;
         _playbackStartedTimestamp = Stopwatch.GetTimestamp();
         _lastPlaybackRefreshFrame = 0;
+        _awaitingPlaybackPresentation = _presentEveryPlaybackFrame;
         PreviewDebugLog.Write(
             "preview.playback.start",
             ("scope", _scopeKey),
@@ -589,7 +641,8 @@ internal sealed class ComponentPreviewInputSession
         }
         var hasPlayback = SupportsPlayback();
         var activeAction = ActiveAction();
-        if (wasEnabled)
+        var wasPlaying = hasPlayback && activeAction is not null && IsPlaying(activeAction);
+        if (wasEnabled || wasPlaying)
         {
             PreviewDebugLog.Write(
                 "preview.playback.stop",
@@ -607,6 +660,8 @@ internal sealed class ComponentPreviewInputSession
         _playbackStartedTimestamp = 0;
         _playbackStartedAtSeconds = 0;
         _lastPlaybackRefreshFrame = -1;
+        _awaitingPlaybackPresentation = false;
+        _stopAfterPlaybackPresentation = false;
         if (activeAction is not null && !IsPlaying(activeAction))
         {
             _playbackSecondsByActionId.Remove(activeAction.Id);
@@ -632,10 +687,17 @@ internal sealed class ComponentPreviewInputSession
             _playbackStartedTimestamp = Stopwatch.GetTimestamp();
         }
         var elapsed = Stopwatch.GetElapsedTime(_playbackStartedTimestamp).TotalSeconds;
-        var current = NormalizedPlaybackSeconds(activeAction, _playbackStartedAtSeconds + elapsed);
+        var current = _presentEveryPlaybackFrame
+            ? NextPlaybackFrameSeconds(activeAction)
+            : NormalizedPlaybackSeconds(activeAction, _playbackStartedAtSeconds + elapsed);
         _playbackSecondsByActionId[activeAction.Id] = current;
         _values[ActionTimeKey(activeAction)] = PlaybackTimeStorageValue(activeAction, current);
         var currentFrame = CurrentPlaybackFrame(activeAction);
+        var completesPlayback = current >= DurationSeconds(activeAction);
+        if (_presentEveryPlaybackFrame && completesPlayback)
+        {
+            _stopAfterPlaybackPresentation = true;
+        }
         PreviewDebugLog.Write(
             "preview.playback.tick",
             ("scope", _scopeKey),
@@ -648,11 +710,20 @@ internal sealed class ComponentPreviewInputSession
         if (currentFrame != _lastPlaybackRefreshFrame)
         {
             _lastPlaybackRefreshFrame = currentFrame;
+            if (_presentEveryPlaybackFrame)
+            {
+                _awaitingPlaybackPresentation = true;
+                _playbackTimer.Stop();
+            }
             _refreshPreview();
         }
 
-        if (current >= DurationSeconds(activeAction))
+        if (completesPlayback)
         {
+            if (_presentEveryPlaybackFrame)
+            {
+                return;
+            }
             _values[ActionStateKey(activeAction)] = "false";
             SyncBooleanInput(ActionStateKey(activeAction));
             StopPlayback();

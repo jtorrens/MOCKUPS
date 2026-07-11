@@ -544,10 +544,16 @@ The worker loads the document head and embedded production font faces once. On
 later frames it parses and replaces only the resolved canvas from `body`; font
 data must never be reparsed per frame. Content-addressed media is registered
 once as stable browser blob URLs and reused by all following frame bodies.
-Preview frames are WebP quality 95 in a temporary disk cache. The GFX path uses
-PNG lossless from the same Chromium surface. Avalonia never renders HTML or
+Preview frames are WebP quality 95 at the final physical device resolution in a
+temporary disk cache. They are never downscaled during capture. Avalonia places
+the physical bitmap over the exact viewport rectangle calculated by the WebView
+and applies `fit` or the selected preview zoom only at presentation time; zoom
+changes therefore do not invalidate raster content. The GFX path uses PNG
+lossless from the same 1:1 Chromium surface. Avalonia never renders HTML or
 recreates visual nodes; during playback it only decodes and presents the cached
-bitmap while the native WebView is hidden.
+bitmap. The native WebView supplies the viewport geometry before playback and
+is hidden while bitmaps are presented because native-control airspace always
+paints above Avalonia siblings; it is restored on the next non-playback refresh.
 
 The first integration still prepares the complete action under the existing
 cancellable loader. This validates fidelity, capture portability and
@@ -569,6 +575,45 @@ Playback scheduling samples the monotonic project clock at twice the target
 frame rate and presents only when the logical project frame changes. This avoids
 platform dispatcher quantization (for example, a nominal 40 ms timer becoming
 roughly 52 ms) without building a late-frame queue or changing shot duration.
+
+The desktop playback-route selector is generic and offers three explicit
+policies. `HTML · Priority FPS` follows the monotonic project clock and may skip
+late frames. `HTML · Every frame` is the design-preview default and uses a
+commit handshake: it advances one logical project frame only after the WebView
+confirms presentation of the preceding frame, preserving order even when
+wall-clock playback becomes longer. `Raster · Every frame` prepares physical-resolution bitmaps and uses the
+buffered player at the project FPS. Route policy belongs to the preview host;
+component resolvers and action contracts do not branch on it.
+
+HTML routes prewarm the compact rendered-frame cache before playback. The WebView
+is not mutated during frame rendering; all referenced image assets are then
+decoded once in the WebView before the playback clock starts. DOM morphing compares interned assets by hash
+and reconciles child insertions/removals locally; a structural text/emoji change
+must not rebuild or decode unchanged wallpaper, avatar or media subtrees.
+Interned WebView assets are materialized once as stable browser blob URLs rather
+than retained as multi-megabyte `data:` attributes. Preload and morph use the
+same blob URL so a cold structural transition does not trigger a second decode.
+
+The preview-card cadence light uses a rolling presentation window shared by all
+routes: red means measured FPS is below the project target, green means it is
+within two percent of target, and blue means it is above target. Loading may use
+the same blue brush, but it is not included in playback performance summaries.
+
+### Measured checkpoint (2026-07-11, 25 fps Conversation action)
+
+The accepted desktop checkpoint after warmup is:
+
+- HTML every-frame: 138/138 frames, no discarded frames, approximately 27 fps;
+- HTML FPS-priority: 135-137/138 frames, approximately 25 fps;
+- physical-resolution raster: 138/138 frames, no discarded frames,
+  approximately 25 fps.
+
+The first HTML play remains approximately 14-19 fps even after render-cache,
+image-decode and blob-asset prewarming. Measurements indicate a cold WebKit /
+first-state cost rather than steady morph cost; stable hash-aware morphs are
+typically around 4-5 ms. Further cold-start work is deferred because the warm
+interactive and raster routes meet the current design-preview target and added
+renderer/process complexity is not justified by this checkpoint.
 
 Future portable shot packaging should declare the production font ids and the
 set of text/emoji glyphs used by the complete light/dark sequence. The packager

@@ -41,6 +41,12 @@ internal sealed class EditorPreviewController
         MinHeight = 36,
         VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
     };
+    private readonly EditorInstantComboBox _playbackRouteComboBox = new()
+    {
+        MinWidth = 190,
+        MinHeight = 36,
+        VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+    };
     private readonly ToggleSwitch _marksToggle = new()
     {
         IsChecked = false,
@@ -100,6 +106,7 @@ internal sealed class EditorPreviewController
     private string _selectedMode = "light";
     private string _selectedOrientation = "portrait";
     private string _selectedScale = "fit";
+    private string _selectedPlaybackRoute = "html-all";
     private bool _showDesignMarks;
     private bool _showCanonicalFrame;
     private string _referenceSource = "";
@@ -409,6 +416,7 @@ internal sealed class EditorPreviewController
             Children =
             {
                 _scaleComboBox,
+                _playbackRouteComboBox,
                 LabeledToggle("Markers", _marksToggle),
                 LabeledToggle("360", _canonicalFrameToggle),
                 _referenceViewComboBox,
@@ -546,6 +554,16 @@ internal sealed class EditorPreviewController
             _scaleComboBox.ItemsSource = scaleOptions;
             _scaleComboBox.SelectedItem = scaleOptions.FirstOrDefault((option) => option.Value == _selectedScale) ?? scaleOptions[0];
             _selectedScale = _scaleComboBox.SelectedItem?.Value ?? "fit";
+            var playbackRouteOptions = new[]
+            {
+                new FieldOption("html-fps", "HTML · Priority FPS"),
+                new FieldOption("html-all", "HTML · Every frame"),
+                new FieldOption("raster", "Raster · Every frame"),
+            };
+            _playbackRouteComboBox.ItemsSource = playbackRouteOptions;
+            _playbackRouteComboBox.SelectedItem = playbackRouteOptions.FirstOrDefault((option) => option.Value == _selectedPlaybackRoute) ?? playbackRouteOptions[2];
+            _selectedPlaybackRoute = _playbackRouteComboBox.SelectedItem?.Value ?? "raster";
+            _designInputsPanel.PresentEveryPlaybackFrame = _selectedPlaybackRoute == "html-all";
             _marksToggle.IsChecked = _showDesignMarks;
             _canonicalFrameToggle.IsChecked = _showCanonicalFrame;
             var referenceViewOptions = new[]
@@ -573,6 +591,7 @@ internal sealed class EditorPreviewController
         _modeComboBox.SelectionChanged += (_, _) => OnModeChanged();
         _orientationComboBox.SelectionChanged += (_, _) => OnOrientationChanged();
         _scaleComboBox.SelectionChanged += (_, _) => OnScaleChanged();
+        _playbackRouteComboBox.SelectionChanged += (_, _) => OnPlaybackRouteChanged();
         _referenceButton.Click += async (_, _) => await BrowseReferenceAsync();
         _referenceViewComboBox.SelectionChanged += (_, _) => OnReferenceViewChanged();
         _referenceSwipeSlider.PropertyChanged += (_, change) => { if (change.Property == RangeBase.ValueProperty) RefreshReferenceOverlay(); };
@@ -649,6 +668,14 @@ internal sealed class EditorPreviewController
         }
     }
 
+    private void OnPlaybackRouteChanged()
+    {
+        if (_playbackRouteComboBox.SelectedItem is not { } option) return;
+        _selectedPlaybackRoute = option.Value;
+        _designInputsPanel.PresentEveryPlaybackFrame = _selectedPlaybackRoute == "html-all";
+        if (!_isRefreshingOptions) Refresh();
+    }
+
     private void OnMarksChanged()
     {
         _showDesignMarks = _marksToggle.IsChecked == true;
@@ -723,12 +750,13 @@ internal sealed class EditorPreviewController
                 ? null
                 : _designInputsPanel.ApplyInputs(designPayload, _selectedMode, _projectId);
             UpdateDesignContextChrome(designPayload);
-            if (designPayload is not null
+            if (_selectedPlaybackRoute == "raster"
+                && designPayload is not null
                 && _designInputsPanel.IsPlaybackActive
                 && _rasterPlaybackFrames.TryGetValue(PlaybackFrameKey(designPayload), out var rasterPath))
             {
                 _designPreviewPane.ShowRasterFrame(rasterPath);
-                RecordPresentedPlaybackFrame(new DesignWebPreviewPane.DesignPreviewFrameStatus(
+                RecordAndUpdatePlaybackStatus(new DesignWebPreviewPane.DesignPreviewFrameStatus(
                     ElapsedMilliseconds: 0,
                     IsAnimationOnly: true,
                     UsedDomPatch: false,
@@ -816,12 +844,55 @@ internal sealed class EditorPreviewController
                 ("reason", "no-frames"));
             return true;
         }
+        if (_selectedPlaybackRoute != "raster")
+        {
+            var prewarmStopwatch = Stopwatch.StartNew();
+            ShowPreviewLoading($"Preparing HTML 0 / {frames.Count} frames…", () => { });
+            try
+            {
+                WebDesignPreviewRenderer.ReserveFrameCacheCapacity(frames.Count);
+                var imageSources = new HashSet<string>(StringComparer.Ordinal);
+                for (var frameIndex = 0; frameIndex < frames.Count; frameIndex++)
+                {
+                    var bodyContent = await WebDesignPreviewRenderer.RenderBodyAsync(
+                        metrics,
+                        _selectedMode,
+                        _showDesignMarks,
+                        frames[frameIndex]);
+                    foreach (var source in DesignWebPreviewPane.ImageSourcesForPreload(bodyContent))
+                    {
+                        imageSources.Add(source);
+                    }
+                    if ((frameIndex + 1) % 5 == 0 || frameIndex + 1 == frames.Count)
+                    {
+                        _designPreviewPane.SetRasterLoading(
+                            true,
+                            $"Preparing HTML {frameIndex + 1} / {frames.Count} frames…");
+                    }
+                }
+                _designPreviewPane.SetRasterLoading(true, $"Decoding HTML assets 0 / {imageSources.Count}…");
+                var loadedImages = await _designPreviewPane.PreloadFrameImagesAsync(imageSources, CancellationToken.None);
+                _designPreviewPane.SetRasterLoading(true, $"Decoding HTML assets {loadedImages} / {imageSources.Count}…");
+            }
+            finally
+            {
+                HidePreviewLoading();
+            }
+            PreviewDebugLog.Write(
+                "preview.playback.prepare.html",
+                ("route", _selectedPlaybackRoute),
+                ("frames", frames.Count),
+                ("fps", previewFps),
+                ("ms", prewarmStopwatch.Elapsed.TotalMilliseconds));
+            return true;
+        }
         var rasterSignature = RasterPlaybackSignature(metrics, payload, frames);
         if (_rasterPlaybackSignature == rasterSignature
             && _rasterPlaybackOrder.Count == frames.Count
             && frames.All((frame) => _rasterPlaybackFrames.ContainsKey(PlaybackFrameKey(frame))))
         {
             await _designPreviewPane.PrepareRasterPlaybackAsync(_rasterPlaybackOrder, CancellationToken.None);
+            await _designPreviewPane.SyncRasterViewportAsync();
             PreviewDebugLog.Write(
                 "preview.playback.raster-cache-hit",
                 ("component", payload.ComponentType),
@@ -893,7 +964,7 @@ internal sealed class EditorPreviewController
                     rasterPath,
                     "webp",
                     quality: 95,
-                    captureScale: 1.0 / Math.Max(1, metrics.ScaleToPixels),
+                    captureScale: 1,
                     cancellation.Token);
                 _rasterPlaybackFrames[PlaybackFrameKey(frame)] = rasterPath;
                 _rasterPlaybackOrder.Add(rasterPath);
@@ -901,6 +972,7 @@ internal sealed class EditorPreviewController
             }
             _rasterPlaybackSignature = rasterSignature;
             await _designPreviewPane.PrepareRasterPlaybackAsync(_rasterPlaybackOrder, cancellation.Token);
+            await _designPreviewPane.SyncRasterViewportAsync();
             PreviewDebugLog.Write(
                 "preview.playback.frames.end",
                 ("component", payload.ComponentType),
@@ -1050,26 +1122,37 @@ internal sealed class EditorPreviewController
 
     private void OnDesignPreviewFrameStatusChanged(DesignWebPreviewPane.DesignPreviewFrameStatus status)
     {
-        RecordPresentedPlaybackFrame(status);
+        RecordAndUpdatePlaybackStatus(status);
+    }
+
+    private void RecordAndUpdatePlaybackStatus(DesignWebPreviewPane.DesignPreviewFrameStatus status)
+    {
+        var actualFps = RecordPresentedPlaybackFrame(status);
+        _designInputsPanel.NotifyPlaybackFramePresented();
         if (!_designInputsPanel.IsPlaybackActive)
         {
             SetPreviewPerformanceStatus(PreviewPerformanceStatus.Idle);
             return;
         }
-
-        var frameBudgetMs = 1000.0 / Math.Max(1, _designInputsPanel.PlaybackFrameRate);
-        var keepsFrameRate = status.RenderError is false
-            && status.IsAnimationOnly
-            && status.UsedDomPatch
-            && status.ElapsedMilliseconds <= frameBudgetMs;
-        SetPreviewPerformanceStatus(keepsFrameRate ? PreviewPerformanceStatus.Good : PreviewPerformanceStatus.Slow);
+        if (actualFps is null)
+        {
+            SetPreviewPerformanceStatus(PreviewPerformanceStatus.Loading);
+            return;
+        }
+        var targetFps = Math.Max(1, _designInputsPanel.PlaybackFrameRate);
+        var tolerance = targetFps * 0.02;
+        SetPreviewPerformanceStatus(actualFps < targetFps - tolerance
+            ? PreviewPerformanceStatus.Slow
+            : actualFps > targetFps + tolerance
+                ? PreviewPerformanceStatus.Fast
+                : PreviewPerformanceStatus.Good);
     }
 
     private void OnPlaybackStarted(ComponentPreviewInputSession.PlaybackRunInfo run)
     {
         _playbackSummaryGeneration++;
         _playbackPerformanceRun = new PlaybackPerformanceRun(run.TargetFrames, run.TargetFps, Stopwatch.GetTimestamp());
-        if (_rasterPlaybackOrder.Count > 0)
+        if (_selectedPlaybackRoute == "raster" && _rasterPlaybackOrder.Count > 0)
         {
             _designPreviewPane.PlayRasterFrames(_rasterPlaybackOrder, run.TargetFps);
         }
@@ -1111,10 +1194,10 @@ internal sealed class EditorPreviewController
             TimeSpan.FromMilliseconds(750));
     }
 
-    private void RecordPresentedPlaybackFrame(DesignWebPreviewPane.DesignPreviewFrameStatus status)
+    private double? RecordPresentedPlaybackFrame(DesignWebPreviewPane.DesignPreviewFrameStatus status)
     {
         var run = _playbackPerformanceRun;
-        if (run is null || !run.AcceptsPresentations || status.RenderError) return;
+        if (run is null || !run.AcceptsPresentations || status.RenderError) return null;
         var now = Stopwatch.GetTimestamp();
         if (run.LastPresentedTimestamp != 0)
         {
@@ -1123,6 +1206,12 @@ internal sealed class EditorPreviewController
         }
         run.LastPresentedTimestamp = now;
         run.PresentedFrames++;
+        run.RecentPresentationTimestamps.Enqueue(now);
+        while (run.RecentPresentationTimestamps.Count > 13) run.RecentPresentationTimestamps.Dequeue();
+        if (run.RecentPresentationTimestamps.Count < 3) return null;
+        var first = run.RecentPresentationTimestamps.Peek();
+        var windowSeconds = Stopwatch.GetElapsedTime(first, now).TotalSeconds;
+        return windowSeconds > 0 ? (run.RecentPresentationTimestamps.Count - 1) / windowSeconds : null;
     }
 
     private void FinalizePlaybackSummary()
@@ -1168,6 +1257,7 @@ internal sealed class EditorPreviewController
         public int PresentedFrames { get; set; }
         public bool AcceptsPresentations { get; set; } = true;
         public List<double> PresentationFps { get; } = [];
+        public Queue<long> RecentPresentationTimestamps { get; } = [];
     }
 
     private void SetPreviewPerformanceStatus(PreviewPerformanceStatus status)
@@ -1175,6 +1265,7 @@ internal sealed class EditorPreviewController
         _previewPerformanceDot.Background = status switch
         {
             PreviewPerformanceStatus.Loading => PreviewStatusLoadingBrush,
+            PreviewPerformanceStatus.Fast => PreviewStatusLoadingBrush,
             PreviewPerformanceStatus.Good => PreviewStatusGoodBrush,
             PreviewPerformanceStatus.Slow => PreviewStatusSlowBrush,
             _ => PreviewStatusIdleBrush,
@@ -1188,6 +1279,7 @@ internal sealed class EditorPreviewController
     {
         Idle,
         Loading,
+        Fast,
         Good,
         Slow,
     }

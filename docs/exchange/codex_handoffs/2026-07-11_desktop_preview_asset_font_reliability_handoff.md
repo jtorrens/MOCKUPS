@@ -254,3 +254,17 @@ Expected evidence:
 
 If a font fails, fix its `production_fonts` record/path/face metadata. Do not add
 a system fallback.
+# Final playback checkpoint
+
+Desktop design preview now exposes three generic playback routes: HTML priority
+FPS, HTML every frame (default), and physical-resolution raster. HTML assets are
+interned as stable WebView blob URLs, structural morphs reconcile local children,
+and HTML preload warms render frames plus image decoding under a circular loader.
+Raster captures the final device resolution 1:1 and applies preview zoom only in
+Avalonia presentation.
+
+Measured warm results for the 25 fps Conversation action are 138/138 at about
+27 fps for HTML every-frame, 135-137/138 at about 25 fps for HTML FPS-priority,
+and 138/138 at about 25 fps for raster. Cold HTML remains 14-19 fps; this is an
+accepted deferred WebKit/first-state cost. Do not reintroduce data-URI expansion
+per morph or component-specific logic in the bridge to pursue it.

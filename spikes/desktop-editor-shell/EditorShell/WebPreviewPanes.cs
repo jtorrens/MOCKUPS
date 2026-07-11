@@ -23,9 +23,9 @@ internal abstract class WebPreviewPane : Grid
     protected readonly NativeWebView WebView;
     private readonly Image _nativeRasterFrame = new()
     {
-        Stretch = Stretch.Uniform,
-        HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
-        VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch,
+        Stretch = Stretch.Fill,
+        HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
+        VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top,
         IsVisible = false,
     };
     private Bitmap? _nativeRasterBitmap;
@@ -82,7 +82,41 @@ internal abstract class WebPreviewPane : Grid
     {
         if (rasterIds.Count == 0) return;
         ShowRasterFrame(rasterIds[0]);
+        // NativeWebView owns a platform airspace surface and always paints above
+        // Avalonia siblings. Geometry is sampled before this point; hide only the
+        // native surface while the native bitmap player is active.
         WebView.IsVisible = false;
+    }
+
+    public async Task SyncRasterViewportAsync()
+    {
+        try
+        {
+            var result = await WebView.InvokeScript("""
+                (() => {
+                  const viewport = document.getElementById("previewViewport");
+                  if (!viewport) return "";
+                  const bounds = viewport.getBoundingClientRect();
+                  return JSON.stringify({ x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height });
+                })();
+                """);
+            var json = result?.ToString();
+            if (string.IsNullOrWhiteSpace(json)) return;
+            var bounds = JsonNode.Parse(json)?.AsObject();
+            if (bounds is null) return;
+            var x = bounds["x"]?.GetValue<double>() ?? 0;
+            var y = bounds["y"]?.GetValue<double>() ?? 0;
+            var width = bounds["width"]?.GetValue<double>() ?? 0;
+            var height = bounds["height"]?.GetValue<double>() ?? 0;
+            if (width <= 0 || height <= 0) return;
+            _nativeRasterFrame.Width = width;
+            _nativeRasterFrame.Height = height;
+            _nativeRasterFrame.Margin = new Avalonia.Thickness(x, y, 0, 0);
+        }
+        catch (Exception error)
+        {
+            PreviewDebugLog.Write("preview.raster.viewport.error", ("error", error.Message));
+        }
     }
 
     public async Task PrepareRasterPlaybackAsync(IReadOnlyList<string> rasterIds, CancellationToken cancellationToken)
@@ -178,26 +212,7 @@ internal abstract class WebPreviewPane : Grid
             var missingKeys = JsonNode.Parse(string.IsNullOrWhiteSpace(missingJson) ? "[]" : missingJson) is JsonArray missingArray
                 ? missingArray.Select((node) => node?.GetValue<string>() ?? "").Where((key) => key.Length > 0).ToHashSet(StringComparer.Ordinal)
                 : assetKeys.ToHashSet(StringComparer.Ordinal);
-            foreach (var key in assetKeys.Where(missingKeys.Contains))
-            {
-                if (!PreviewAssetRegistry.TryResolve(key, out var uri))
-                {
-                    throw new InvalidOperationException($"Preview asset registry has no value for '{key}'.");
-                }
-                var keyJson = JsonSerializer.Serialize(key);
-                var uriJson = JsonSerializer.Serialize(uri);
-                await WebView.InvokeScript($$"""
-                    (() => {
-                      if (typeof window.mockupsRegisterPreviewAsset !== "function") return false;
-                      return window.mockupsRegisterPreviewAsset({{keyJson}}, {{uriJson}});
-                    })();
-                    """);
-                PreviewDebugLog.Write(
-                    "preview.webview.asset.register",
-                    ("hash", key),
-                    ("mimeType", AssetMimeType(uri)),
-                    ("uriChars", uri.Length));
-            }
+            await RegisterPreviewAssetsAsync(assetKeys.Where(missingKeys.Contains));
             var result = await WebView.InvokeScript($$"""
                 (() => {
                   if (typeof window.mockupsSetPreviewBody !== "function") return false;
@@ -235,6 +250,30 @@ internal abstract class WebPreviewPane : Grid
         }
     }
 
+    private async Task RegisterPreviewAssetsAsync(IEnumerable<string> keys)
+    {
+        foreach (var key in keys.Distinct(StringComparer.Ordinal))
+        {
+            if (!PreviewAssetRegistry.TryResolve(key, out var uri))
+            {
+                throw new InvalidOperationException($"Preview asset registry has no value for '{key}'.");
+            }
+            var keyJson = JsonSerializer.Serialize(key);
+            var uriJson = JsonSerializer.Serialize(uri);
+            await WebView.InvokeScript($$"""
+                (() => {
+                  if (typeof window.mockupsRegisterPreviewAsset !== "function") return false;
+                  return window.mockupsRegisterPreviewAsset({{keyJson}}, {{uriJson}});
+                })();
+                """);
+            PreviewDebugLog.Write(
+                "preview.webview.asset.register",
+                ("hash", key),
+                ("mimeType", AssetMimeType(uri)),
+                ("uriChars", uri.Length));
+        }
+    }
+
     private static string AssetMimeType(string dataUri)
     {
         var separator = dataUri.IndexOfAny([';', ',']);
@@ -254,11 +293,30 @@ internal abstract class WebPreviewPane : Grid
         var requestedTotal = 0;
         try
         {
+            var preloadAssetKeys = imageSources
+                .Where((source) => source.StartsWith("mockups-asset:", StringComparison.Ordinal))
+                .Select((source) => source["mockups-asset:".Length..])
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+            if (preloadAssetKeys.Length > 0)
+            {
+                var keysJson = JsonSerializer.Serialize(preloadAssetKeys);
+                var missingResult = await WebView.InvokeScript($$"""
+                    (() => typeof window.mockupsMissingPreviewAssets === "function"
+                      ? window.mockupsMissingPreviewAssets({{keysJson}})
+                      : JSON.stringify({{keysJson}}))();
+                    """);
+                var missingJson = missingResult?.ToString() ?? "[]";
+                var missingKeys = JsonNode.Parse(string.IsNullOrWhiteSpace(missingJson) ? "[]" : missingJson) is JsonArray missingArray
+                    ? missingArray.Select((node) => node?.GetValue<string>() ?? "").Where((key) => key.Length > 0)
+                    : preloadAssetKeys;
+                await RegisterPreviewAssetsAsync(missingKeys);
+            }
             foreach (var batch in imageSources.Chunk(10))
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var batchStopwatch = Stopwatch.StartNew();
-                var sourcesJson = JsonSerializer.Serialize(batch.Select(PreviewAssetRegistry.ExpandSource));
+                var sourcesJson = JsonSerializer.Serialize(batch);
                 requestedTotal += batch.Length;
                 var result = await WebView.InvokeScript($$"""
                     (() => {
@@ -986,7 +1044,13 @@ internal abstract class WebPreviewPane : Grid
                   }
 
                   pool.replaceChildren();
-                  const uniqueSources = [...new Set(Array.isArray(sources) ? sources : [])];
+                  const uniqueSources = [...new Set(Array.isArray(sources) ? sources : [])]
+                    .map((source) => {
+                      const value = String(source);
+                      return value.startsWith("mockups-asset:")
+                        ? previewAssets.get(value.slice("mockups-asset:".length)) ?? value
+                        : value;
+                    });
                   const images = uniqueSources.map((source) => {
                     const image = new Image();
                     image.decoding = "sync";
@@ -1128,16 +1192,47 @@ internal abstract class WebPreviewPane : Grid
                 previewRasterLoading.style.background = "#0f172a";
                 previewRasterLoading.style.color = "#f8fafc";
                 previewRasterLoading.style.font = "600 14px sans-serif";
+                const previewLoadingContent = document.createElement("div");
+                previewLoadingContent.style.display = "grid";
+                previewLoadingContent.style.justifyItems = "center";
+                previewLoadingContent.style.gap = "12px";
+                const previewLoadingSpinner = document.createElement("div");
+                previewLoadingSpinner.style.width = "34px";
+                previewLoadingSpinner.style.height = "34px";
+                previewLoadingSpinner.style.border = "3px solid rgba(248,250,252,.24)";
+                previewLoadingSpinner.style.borderTopColor = "#f8fafc";
+                previewLoadingSpinner.style.borderRadius = "50%";
+                previewLoadingSpinner.style.animation = "mockups-preview-spin .8s linear infinite";
+                const previewLoadingLabel = document.createElement("div");
+                const previewLoadingStyle = document.createElement("style");
+                previewLoadingStyle.textContent = "@keyframes mockups-preview-spin { to { transform: rotate(360deg); } }";
+                document.head.appendChild(previewLoadingStyle);
+                previewLoadingContent.append(previewLoadingSpinner, previewLoadingLabel);
+                previewRasterLoading.appendChild(previewLoadingContent);
                 viewport.appendChild(previewRasterLoading);
                 window.mockupsSetRasterLoading = (visible, message) => {
-                  previewRasterLoading.textContent = String(message ?? "Preparing playback…");
+                  previewLoadingLabel.textContent = String(message ?? "Preparing playback…");
                   previewRasterLoading.style.display = visible ? "grid" : "none";
                   return true;
                 };
 
                 const previewAssets = new Map();
+                function previewBlobUrl(uri) {
+                  const value = String(uri);
+                  if (!value.startsWith("data:")) return value;
+                  const comma = value.indexOf(",");
+                  if (comma < 0) return value;
+                  const header = value.slice(0, comma);
+                  const encoded = value.slice(comma + 1);
+                  const mime = /^data:([^;,]+)/.exec(header)?.[1] ?? "application/octet-stream";
+                  const bytes = header.includes(";base64")
+                    ? Uint8Array.from(atob(encoded), (character) => character.charCodeAt(0))
+                    : new TextEncoder().encode(decodeURIComponent(encoded));
+                  return URL.createObjectURL(new Blob([bytes], { type: mime }));
+                }
                 window.mockupsRegisterPreviewAsset = (key, uri) => {
-                  previewAssets.set(String(key), String(uri));
+                  const normalizedKey = String(key);
+                  if (!previewAssets.has(normalizedKey)) previewAssets.set(normalizedKey, previewBlobUrl(uri));
                   return true;
                 };
                 window.mockupsMissingPreviewAssets = (keys) => JSON.stringify(
@@ -1166,6 +1261,7 @@ internal abstract class WebPreviewPane : Grid
                     }
                     const style = element.getAttribute("style") ?? "";
                     if (style.includes("mockups-asset:")) {
+                      element.dataset.previewAssetStyle = style;
                       element.setAttribute("style", style.replace(/mockups-asset:([a-f0-9]{64})/g, (value, key) => {
                         const uri = previewAssets.get(key);
                         if (uri) return uri;
@@ -1187,25 +1283,67 @@ internal abstract class WebPreviewPane : Grid
                   const nextId = next.getAttribute("data-renderable-id");
                   if (currentId !== nextId) return false;
                   for (const attribute of [...current.attributes]) {
+                    if (attribute.name === "data-preview-asset-hash" || attribute.name === "data-preview-asset-style") continue;
                     if (!next.hasAttribute(attribute.name)) current.removeAttribute(attribute.name);
                   }
                   for (const attribute of [...next.attributes]) {
+                    if (attribute.name === "src" && attribute.value.startsWith("mockups-asset:")) {
+                      const key = attribute.value.slice("mockups-asset:".length);
+                      if (current.dataset.previewAssetHash === key) continue;
+                      const uri = previewAssets.get(key);
+                      if (!uri) return false;
+                      current.setAttribute("src", uri);
+                      current.dataset.previewAssetHash = key;
+                      continue;
+                    }
+                    if (attribute.name === "style" && attribute.value.includes("mockups-asset:")) {
+                      if (current.dataset.previewAssetStyle === attribute.value) continue;
+                      let unresolved = false;
+                      const resolvedStyle = attribute.value.replace(/mockups-asset:([a-f0-9]{64})/g, (value, key) => {
+                        const uri = previewAssets.get(key);
+                        if (!uri) unresolved = true;
+                        return uri ?? value;
+                      });
+                      if (unresolved) return false;
+                      current.setAttribute("style", resolvedStyle);
+                      current.dataset.previewAssetStyle = attribute.value;
+                      continue;
+                    }
                     if (current.getAttribute(attribute.name) !== attribute.value) {
                       current.setAttribute(attribute.name, attribute.value);
                     }
                   }
-                  const currentChildren = [...current.childNodes];
                   const nextChildren = [...next.childNodes];
-                  if (currentChildren.length !== nextChildren.length) return false;
-                  for (let index = 0; index < currentChildren.length; index += 1) {
-                    const currentChild = currentChildren[index];
+                  const hydratedClone = (node) => {
+                    const clone = document.importNode(node, true);
+                    if (clone.nodeType === Node.ELEMENT_NODE) {
+                      const holder = document.createElement("div");
+                      holder.appendChild(clone);
+                      hydratePreviewAssets(holder);
+                    }
+                    return clone;
+                  };
+                  for (let index = 0; index < nextChildren.length; index += 1) {
+                    const currentChild = current.childNodes[index];
                     const nextChild = nextChildren[index];
-                    if (currentChild.nodeType !== nextChild.nodeType) return false;
+                    if (!currentChild) {
+                      current.appendChild(hydratedClone(nextChild));
+                      continue;
+                    }
+                    if (currentChild.nodeType !== nextChild.nodeType) {
+                      current.replaceChild(hydratedClone(nextChild), currentChild);
+                      continue;
+                    }
                     if (currentChild.nodeType === Node.TEXT_NODE) {
                       if (currentChild.nodeValue !== nextChild.nodeValue) currentChild.nodeValue = nextChild.nodeValue;
                     } else if (currentChild.nodeType === Node.ELEMENT_NODE) {
-                      if (!syncElement(currentChild, nextChild)) return false;
+                      if (!syncElement(currentChild, nextChild)) {
+                        current.replaceChild(hydratedClone(nextChild), currentChild);
+                      }
                     }
+                  }
+                  while (current.childNodes.length > nextChildren.length) {
+                    current.lastChild?.remove();
                   }
                   return true;
                 }
@@ -1221,7 +1359,10 @@ internal abstract class WebPreviewPane : Grid
                   nextLayer.style.opacity = "0";
                   nextLayer.style.pointerEvents = "none";
                   nextLayer.innerHTML = html;
-                  const missingAssets = hydratePreviewAssets(nextLayer);
+                  const referencedAssetKeys = [...html.matchAll(/mockups-asset:([a-f0-9]{64})/g)].map((match) => match[1]);
+                  const missingAssets = [...new Set(referencedAssetKeys)]
+                    .filter((key) => !previewAssets.has(key))
+                    .map((key) => ({ renderableId: "", assetHash: key, source: "html" }));
                   if (missingAssets.length > 0) {
                     for (const missing of missingAssets) {
                       recordPatchEvent("asset-missing", {
@@ -1257,6 +1398,7 @@ internal abstract class WebPreviewPane : Grid
                     return sequence;
                   }
 
+                  hydratePreviewAssets(nextLayer);
                   scaleLayer.insertBefore(nextLayer, previewRasterDeck);
 
                   const images = [...nextLayer.querySelectorAll("img")];
