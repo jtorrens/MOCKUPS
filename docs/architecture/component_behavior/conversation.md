@@ -30,6 +30,9 @@ embedded children.
 
 - Selected concrete variants for Status Bar, Navigation Bar, Keyboard, Text
   Input Bar, Bubble and header Avatar.
+- `appearanceMode`: `inherit`, `light` or `dark`. `inherit` follows the
+  selected device/theme preview mode; a forced value becomes the effective
+  payload mode before any Conversation child resolves its variants.
 - Header visibility/layout, wallpaper usage, screen gutter, message gap,
   composer placement policy and message viewport motion configuration.
 - Default message behavior such as reveal policy and tail/head framing.
