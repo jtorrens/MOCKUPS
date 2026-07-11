@@ -289,7 +289,8 @@ function keyboardPopoverNodes(
 ): RenderableNode[] {
   const popoverWidth = keyBox.width;
   const popoverHeight = keyBox.height;
-  const gap = keyBox.height * 0.18;
+  const tailHeight = keyBox.height * 0.44;
+  const gap = tailHeight;
   const bodyBox = {
     x: keyBox.x + keyBox.width / 2 - popoverWidth / 2,
     y: keyBox.y - popoverHeight - gap,
@@ -297,7 +298,6 @@ function keyboardPopoverNodes(
     height: popoverHeight,
   };
   const tailWidth = Math.min(keyBox.width * 0.72, popoverWidth * 0.52);
-  const tailHeight = keyBox.height * 0.44;
   const shapeBox = {
     x: bodyBox.x,
     y: bodyBox.y,
