@@ -462,6 +462,12 @@ early wraps that did not align with renderable bounds even when font shaping was
 exact. Status and sibling slots may size the parent surface but do not reduce a
 Text Box's declared wrapping width.
 
+When a vertically composed media slot makes a Bubble wider than its text's
+natural width, Bubble performs a second normal Text Box measurement using that
+final interior width. This lets text reflow across the available Bubble width;
+the status remains a separately aligned sibling and never supplies the text
+wrap constraint.
+
 Node initially emits data URIs, but the desktop renderer interns them before a
 frame enters the shared cache. Cached and transported frame bodies therefore
 contain stable `mockups-asset:<sha256>` references instead of repeated binary

@@ -57,7 +57,7 @@ export function bubbleComponentToRenderable(
   const scale = renderScale(payload);
   const paddingX = Math.max(0, numberToken(payload, bubble.padding.xToken) * scale);
   const paddingY = Math.max(0, numberToken(payload, bubble.padding.yToken) * scale);
-  const textBoxForContent = {
+  let textBoxForContent: typeof bubble.textBox = {
     ...bubble.textBox,
     dimensionMode: "content" as const,
     overflowMode: "clip" as const,
@@ -66,7 +66,6 @@ export function bubbleComponentToRenderable(
       height: 1,
     },
   };
-  const measuredTextBox = measureTextBoxComponent(payload, textBoxForContent);
   const statusSize = measureBubbleStatus(payload, bubble);
   const media = activeBubbleMedia(bubble);
   const mediaSize = media
@@ -74,6 +73,20 @@ export function bubbleComponentToRenderable(
       ? measureAudioComponent(payload, media.value)
       : measureMediaComponent(payload, media.value)
     : undefined;
+  let measuredTextBox = measureTextBoxComponent(payload, textBoxForContent);
+  if (mediaSize
+      && (bubble.mediaSlot.position === "top" || bubble.mediaSlot.position === "bottom")
+      && mediaSize.width > measuredTextBox.width) {
+    textBoxForContent = {
+      ...textBoxForContent,
+      dimensionMode: "growVertical",
+      size: {
+        width: mediaSize.width / scale,
+        height: 1,
+      },
+    };
+    measuredTextBox = measureTextBoxComponent(payload, textBoxForContent);
+  }
   const basePadding = {
     left: paddingX,
     top: paddingY,
