@@ -318,6 +318,10 @@ Prewarm window constants:
 There is deliberately no animation-frame queue. At most one pending update is
 kept, and a newer animation update replaces it.
 
+The opaque preparation scrim belongs only to an active declarative playback.
+Static refreshes, including reference-image and design-marker changes, render
+the requested frame normally and clear any residual playback scrim.
+
 The controller reserves frame-cache capacity for the initial and ahead window
 before prewarming.
 
@@ -440,6 +444,11 @@ glyphs. Wrapping preserves explicit line breaks and splits long content only on
 Unicode grapheme boundaries, so accents, combining sequences and joined emoji
 remain intact. Face selection and shaped advances are cached; components must
 not add their own width estimator or host-font fallback.
+
+Static faces must be shaped directly even though the font library exposes a
+generic variation method for them. A requested weight is applied through
+`getVariation` only when the selected file declares a `wght` variation axis,
+clamped to that axis range.
 
 Node initially emits data URIs, but the desktop renderer interns them before a
 frame enters the shared cache. Cached and transported frame bodies therefore

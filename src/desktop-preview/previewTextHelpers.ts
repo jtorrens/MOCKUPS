@@ -23,6 +23,7 @@ export interface ResolvedTypographyStyle {
 }
 
 type ProductionFont = ReturnType<typeof fontkit.openSync> & {
+  variationAxes?: Partial<Record<string, { min: number; default: number; max: number }>>;
   getVariation?: (coordinates: Record<string, number>) => ProductionFont;
   layout: (text: string) => { advanceWidth: number; glyphs: Array<{ id: number }> };
   unitsPerEm: number;
@@ -49,8 +50,11 @@ function productionFont(
   const cached = productionFontCache.get(cacheKey);
   if (cached) return { font: cached, cacheKey };
   const opened = fontkit.openSync(fullPath) as ProductionFont;
-  const varied = opened.getVariation
-    ? opened.getVariation({ wght: weight })
+  const weightAxis = opened.variationAxes?.wght;
+  const varied = opened.getVariation && weightAxis
+    ? opened.getVariation({
+        wght: Math.max(weightAxis.min, Math.min(weightAxis.max, weight)),
+      })
     : opened;
   productionFontCache.set(cacheKey, varied);
   return { font: varied, cacheKey };

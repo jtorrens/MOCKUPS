@@ -732,6 +732,12 @@ internal sealed class EditorPreviewController
     {
         try
         {
+            // Static preview changes (including reference images and design marks)
+            // must never inherit a playback preparation overlay.
+            if (!_designInputsPanel.IsPlaybackActive)
+            {
+                HidePreviewLoading();
+            }
             EnsureSelectedOptionsExist();
             var designPayload = DesignPreviewPayloadForSelection();
             var deviceId = PreviewDeviceId(designPayload);
