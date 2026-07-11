@@ -538,6 +538,11 @@ If a field is missing because the current schema needs migration, migrate it.
 
 Do not add silent fallback paths that hide schema problems.
 
+This rule also applies to token vocabulary and persisted identifiers. Rename or
+replace them through one explicit data migration: map every old value, update
+all references, seeds and committed parity data, then remove the retired value.
+Do not preserve aliases or compatibility coercions unless explicitly approved.
+
 Do not add development-only fallbacks with plausible production values. Values
 such as `12`, `#FFFFFF`, `#111827`, `0`, `"normal"` or a hardcoded token are not
 acceptable inside runtime resolvers just to keep an incomplete payload rendering.

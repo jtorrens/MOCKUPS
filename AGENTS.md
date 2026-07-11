@@ -119,6 +119,15 @@ Component composition must reference concrete component presets, not parent comp
 
 If a change appears to require `if componentType == ...` behavior in the bridge or renderer, stop and move that responsibility to the component resolver or to a parameterized common helper.
 
+## Data migrations, not compatibility fallbacks
+
+When a persisted schema, token vocabulary, contract field, or identifier changes,
+make one explicit migration of the affected seeded data and committed desktop
+database. Update every reference and parity artifact in the same change, then
+remove the retired value. Do not retain aliases, silent coercions, or hidden
+compatibility paths for old values. Any exception requires explicit user
+direction.
+
 ## When in doubt
 
 Stop and extract. Do not add a local exception to make one editor work.
