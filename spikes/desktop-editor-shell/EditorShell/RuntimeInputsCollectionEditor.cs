@@ -78,12 +78,12 @@ internal sealed class RuntimeInputsCollectionEditor
         {
             panel.Children.Add(CreateApiGroupCard(groupId, groups, groupCards));
         }
-        EditorGroupBlock.WireExclusiveCards(groupCards);
-
         foreach (var collection in collections)
         {
-            panel.Children.Add(CreateApiCollectionCard(collection));
+            panel.Children.Add(CreateApiCollectionCard(collection, out var card));
+            groupCards.Add(card);
         }
+        EditorGroupBlock.WireExclusiveCards(groupCards);
 
         return panel;
     }
@@ -163,12 +163,12 @@ internal sealed class RuntimeInputsCollectionEditor
         {
             panel.Children.Add(CreateTestValueGroupCard(owner, preview, groupId, groups, groupCards));
         }
-        EditorGroupBlock.WireExclusiveCards(groupCards);
-
         foreach (var collection in collections)
         {
-            panel.Children.Add(CreateTestValueCollectionCard(owner, preview, collection));
+            panel.Children.Add(CreateTestValueCollectionCard(owner, preview, collection, out var card));
+            groupCards.Add(card);
         }
+        EditorGroupBlock.WireExclusiveCards(groupCards);
 
         return panel;
     }
@@ -190,7 +190,9 @@ internal sealed class RuntimeInputsCollectionEditor
         };
     }
 
-    private Control CreateApiCollectionCard(RuntimeInputCollectionDefinition collection)
+    private Control CreateApiCollectionCard(
+        RuntimeInputCollectionDefinition collection,
+        out InstantEditorCard card)
     {
         var content = new StackPanel { Spacing = 6 };
         content.Children.Add(new TextBlock
@@ -206,7 +208,7 @@ internal sealed class RuntimeInputsCollectionEditor
         return EditorGroupBlock.CreateNestedCard(
             EditorCardHeader.Create(collection.Label, $"{collection.ItemLabel} contract", EditorIcons.Create(EditorIcons.Component, 16)),
             content,
-            out _,
+            out card,
             isExpanded: false);
     }
 
@@ -252,7 +254,8 @@ internal sealed class RuntimeInputsCollectionEditor
     private Control CreateTestValueCollectionCard(
         RuntimeInputOwner owner,
         JsonObject preview,
-        RuntimeInputCollectionDefinition collection)
+        RuntimeInputCollectionDefinition collection,
+        out InstantEditorCard card)
     {
         var content = new StackPanel { Spacing = 8 };
         var items = DesignPreviewTestValues.CollectionItems(preview, collection);
@@ -261,15 +264,18 @@ internal sealed class RuntimeInputsCollectionEditor
             content.Children.Add(new TextBlock { Text = "No active instances in this design.", Opacity = 0.68 });
         }
 
+        var itemCards = new List<InstantEditorCard>();
         for (var index = 0; index < items.Count; index++)
         {
-            content.Children.Add(CreateTestValueCollectionItemCard(owner, preview, collection, index, items[index]));
+            content.Children.Add(CreateTestValueCollectionItemCard(owner, preview, collection, index, items[index], out var itemCard));
+            itemCards.Add(itemCard);
         }
+        EditorGroupBlock.WireExclusiveCards(itemCards);
 
         return EditorGroupBlock.CreateNestedCard(
             EditorCardHeader.Create(collection.Label, $"{items.Count} active {collection.ItemLabel.ToLowerInvariant()} instance(s)", EditorIcons.Create(EditorIcons.Component, 16)),
             content,
-            out _,
+            out card,
             isExpanded: true);
     }
 
@@ -278,7 +284,8 @@ internal sealed class RuntimeInputsCollectionEditor
         JsonObject preview,
         RuntimeInputCollectionDefinition collection,
         int itemIndex,
-        JsonObject item)
+        JsonObject item,
+        out InstantEditorCard card)
     {
         var content = new StackPanel { Spacing = 8 };
         foreach (var input in collection.Fields)
@@ -298,7 +305,7 @@ internal sealed class RuntimeInputsCollectionEditor
         return EditorGroupBlock.CreateNestedCard(
             EditorCardHeader.Create($"{collection.ItemLabel} {itemIndex + 1}", $"{collection.JsonKey}[{itemIndex}]", EditorIcons.Create(EditorIcons.Component, 14)),
             content,
-            out _,
+            out card,
             isExpanded: true);
     }
 
