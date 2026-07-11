@@ -43,6 +43,30 @@ internal static class EditorGroupBlock
         return GroupBorder(CreateHeaderedPanel(label, content));
     }
 
+    public static Control CreateInlineSection(string label)
+    {
+        return new StackPanel
+        {
+            Spacing = EditorUiDensity.Card(5),
+            Margin = EditorUiDensity.CardThickness(0, 6, 0, 0),
+            Children =
+            {
+                new Border
+                {
+                    Height = 1,
+                    Background = new SolidColorBrush(Color.FromArgb(42, 255, 255, 255)),
+                },
+                new TextBlock
+                {
+                    Text = label,
+                    FontSize = 11,
+                    FontWeight = FontWeight.SemiBold,
+                    Opacity = 0.66,
+                },
+            },
+        };
+    }
+
     public static Control CreateCollapsible(EditorLayoutGroup group, Control content, out InstantEditorCard card)
     {
         card = new InstantEditorCard(

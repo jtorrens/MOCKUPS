@@ -729,13 +729,12 @@ internal sealed partial class SpikeDatabase
 
     private static void ApplyConversationRuntimeGroups(JsonArray fields)
     {
-        SetRuntimeGroup(fields, ["direction", "text"], "message", "Message", 10);
         SetRuntimeGroup(fields, ["delay", "writeOn", "bubbleReveal", "textInput", "keyboard"], "timing", "Timing", 20);
         SetRuntimeGroup(fields, ["statusVisible", "status", "statusText"], "delivery", "Delivery", 30);
         SetRuntimeGroup(fields, ["mediaType", "mediaSource"], "attachment", "Attachment", 40);
-        SetRuntimeGroup(fields, ["viewport", "mediaScale", "mediaOffset"], "mediaFrame", "Frame", 50, "attachment");
-        SetRuntimeGroup(fields, ["isPlaying", "currentTime", "duration", "controlsElapsed"], "playback", "Playback", 60, "attachment");
-        SetRuntimeGroup(fields, ["fullScreen", "fullScreenTransition", "fullframeOrientation"], "fullframe", "Full screen", 70, "attachment");
+        SetRuntimeGroup(fields, ["viewport", "mediaScale", "mediaOffset"], "attachment", "Attachment", 50, sectionLabel: "Frame");
+        SetRuntimeGroup(fields, ["isPlaying", "currentTime", "duration", "controlsElapsed"], "attachment", "Attachment", 60, sectionLabel: "Playback");
+        SetRuntimeGroup(fields, ["fullScreen", "fullScreenTransition", "fullframeOrientation"], "attachment", "Attachment", 70, sectionLabel: "Full screen");
     }
 
     private static void SetRuntimeGroup(
@@ -744,7 +743,8 @@ internal sealed partial class SpikeDatabase
         string groupId,
         string groupLabel,
         int groupOrder,
-        string parentGroupId = "")
+        string parentGroupId = "",
+        string sectionLabel = "")
     {
         foreach (var id in ids)
         {
@@ -754,6 +754,7 @@ internal sealed partial class SpikeDatabase
             field["uiGroupLabel"] = groupLabel;
             field["uiParentGroupId"] = parentGroupId;
             field["uiOrder"] = groupOrder + Array.IndexOf(ids, id);
+            field["uiSectionLabel"] = sectionLabel;
         }
     }
 

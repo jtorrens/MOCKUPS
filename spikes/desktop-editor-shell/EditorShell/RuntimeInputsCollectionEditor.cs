@@ -342,8 +342,15 @@ internal sealed class RuntimeInputsCollectionEditor
     {
         var groupInputs = groups[groupId];
         var content = new StackPanel { Spacing = 8 };
+        var sectionLabel = "";
         foreach (var input in groupInputs)
         {
+            if (!string.IsNullOrWhiteSpace(input.UiSectionLabel)
+                && !string.Equals(sectionLabel, input.UiSectionLabel, StringComparison.Ordinal))
+            {
+                content.Children.Add(EditorGroupBlock.CreateInlineSection(input.UiSectionLabel));
+                sectionLabel = input.UiSectionLabel;
+            }
             content.Children.Add(CreateTestValueCollectionControl(owner, preview, collection, itemIndex, item, input));
         }
 

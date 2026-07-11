@@ -939,6 +939,7 @@ internal sealed class ComponentPreviewInputSession
                     EnabledWhenItemJsonKey = JsonString(field, "enabledWhenItemJsonKey"),
                     EnabledWhenItemValues = JsonStringArray(field, "enabledWhenItemValues"),
                     UiOrder = (int)JsonDecimal(field, "uiOrder", 0),
+                    UiSectionLabel = JsonString(field, "uiSectionLabel"),
                 });
             }
 
@@ -1215,7 +1216,8 @@ internal sealed record ComponentInputDefinition(
     string UiParentGroupId = "",
     string EnabledWhenItemJsonKey = "",
     IReadOnlyList<string>? EnabledWhenItemValues = null,
-    int UiOrder = 0);
+    int UiOrder = 0,
+    string UiSectionLabel = "");
 
 internal sealed record RuntimeInputCollectionDefinition(
     string Id,
