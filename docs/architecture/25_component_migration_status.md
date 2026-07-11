@@ -146,6 +146,16 @@ legacy/new fragments.
   folded into `textInputBar` until it is embedded as a normal component slot.
 - component runtime inputs use generic `recordReference` + `tableId`, not
   specialized record input kinds such as `ActorReference`.
+- retired radius tokens (`control`, `card`, `panel`, `surface`, `pill`,
+  `avatar`) do not remain in committed theme/component data.
+- retired keyboard-owned color/style fields do not remain in committed
+  keyboard component data; keyboard colors resolve from `theme.keyboard.*`.
+- runtime collections with `sourceCollectionJsonKey` have stable item ids,
+  reject stale test-value overrides, and keep the test payload synchronized
+  with the declared source collection.
+- preview actions are declarative payload data with required `id`, `label` and
+  timeline fields for duration-driven actions; the editor triggers the payload
+  action instead of knowing module-specific behavior.
 
 `npm run test` is the active desktop validation path. It builds the desktop
 preview bundle, runs TypeScript, runs this architecture check, and builds the

@@ -268,6 +268,219 @@ function assertDesktopComponentPresetReferencesAreCanonical() {
 
 assertDesktopComponentPresetReferencesAreCanonical();
 
+function jsonParse(value: string): unknown {
+  try {
+    return JSON.parse(value || "{}") as unknown;
+  } catch {
+    return {};
+  }
+}
+
+function jsonRecord(value: unknown): Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+}
+
+function jsonArray(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : [];
+}
+
+function walkJson(value: unknown, visit: (value: unknown, pathLabel: string) => void, pathLabel = "") {
+  visit(value, pathLabel);
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => walkJson(item, visit, `${pathLabel}[${index}]`));
+    return;
+  }
+  if (typeof value !== "object" || value === null) return;
+  for (const [key, child] of Object.entries(value)) {
+    walkJson(child, visit, pathLabel ? `${pathLabel}.${key}` : key);
+  }
+}
+
+function assertDesktopDatabaseDoesNotContainRetiredTokens() {
+  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  if (!existsSync(databasePath)) return;
+
+  const retiredRadiusTokens = new Set([
+    "theme.radii.control",
+    "theme.radii.card",
+    "theme.radii.panel",
+    "theme.radii.surface",
+    "theme.radii.pill",
+    "theme.radii.avatar",
+  ]);
+  const retiredKeyboardKeys = new Set([
+    "backgroundColorToken",
+    "backgroundAlpha",
+    "keyBackgroundColorToken",
+    "specialKeyBackgroundColorToken",
+    "pressedKeyBackgroundColorToken",
+    "keyTextColorToken",
+    "keyBorderColorToken",
+    "popoverBackgroundColorToken",
+    "specialKeyTextScale",
+  ]);
+
+  const database = new Database(databasePath, { readonly: true, fileMustExist: true });
+  try {
+    const componentRows = database
+      .prepare("SELECT id, component_type, config_json, metadata_json FROM component_classes")
+      .all() as { id: string; component_type: string; config_json: string; metadata_json: string }[];
+    for (const row of componentRows) {
+      for (const [column, json] of [["config_json", row.config_json], ["metadata_json", row.metadata_json]] as const) {
+        walkJson(jsonParse(json), (value, pathLabel) => {
+          if (typeof value === "string" && retiredRadiusTokens.has(value)) {
+            addViolation(
+              "data/desktop-editor-spike.sqlite",
+              `${row.id}.${column}.${pathLabel} still references retired radius token "${value}"`,
+            );
+          }
+        });
+      }
+      if (row.component_type === "keyboard") {
+        walkJson(jsonParse(row.config_json), (_value, pathLabel) => {
+          const key = pathLabel.split(".").pop()?.replace(/\[\d+\]$/, "") ?? "";
+          if (retiredKeyboardKeys.has(key)) {
+            addViolation(
+              "data/desktop-editor-spike.sqlite",
+              `${row.id}.config_json.${pathLabel} still uses retired keyboard-owned field "${key}"`,
+            );
+          }
+        });
+        walkJson(jsonParse(row.metadata_json), (_value, pathLabel) => {
+          const key = pathLabel.split(".").pop()?.replace(/\[\d+\]$/, "") ?? "";
+          if (retiredKeyboardKeys.has(key)) {
+            addViolation(
+              "data/desktop-editor-spike.sqlite",
+              `${row.id}.metadata_json.${pathLabel} still uses retired keyboard-owned field "${key}"`,
+            );
+          }
+        });
+      }
+    }
+
+    const themeRows = database
+      .prepare("SELECT id, tokens_json FROM themes")
+      .all() as { id: string; tokens_json: string }[];
+    for (const row of themeRows) {
+      const radii = jsonRecord(jsonRecord(jsonParse(row.tokens_json)).radii);
+      for (const retired of ["control", "card", "panel", "surface", "pill", "avatar"]) {
+        if (retired in radii) {
+          addViolation(
+            "data/desktop-editor-spike.sqlite",
+            `${row.id}.tokens_json.radii still contains retired radius key "${retired}"`,
+          );
+        }
+      }
+    }
+  } finally {
+    database.close();
+  }
+}
+
+function assertDesktopRuntimeCollectionsAreConsistent() {
+  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  if (!existsSync(databasePath)) return;
+
+  const database = new Database(databasePath, { readonly: true, fileMustExist: true });
+  try {
+    const rows = database
+      .prepare("SELECT id, design_preview_json FROM modules UNION ALL SELECT id, design_preview_json FROM component_classes")
+      .all() as { id: string; design_preview_json: string }[];
+    for (const row of rows) {
+      const preview = jsonRecord(jsonParse(row.design_preview_json));
+      const collections = jsonArray(preview.collections).map(jsonRecord);
+      for (const collection of collections) {
+        const jsonKey = typeof collection.jsonKey === "string" ? collection.jsonKey : "";
+        const sourceKey = typeof collection.sourceCollectionJsonKey === "string"
+          ? collection.sourceCollectionJsonKey
+          : "";
+        if (!sourceKey) continue;
+        const sourceItems = jsonArray(preview[sourceKey]).map(jsonRecord);
+        if (sourceItems.length === 0) {
+          addViolation(
+            "data/desktop-editor-spike.sqlite",
+            `${row.id}.design_preview_json collection "${jsonKey}" declares source "${sourceKey}" but source is empty or missing`,
+          );
+        }
+        const ids = new Set<string>();
+        for (const [index, item] of sourceItems.entries()) {
+          const id = typeof item.id === "string" ? item.id : "";
+          if (!id) {
+            addViolation(
+              "data/desktop-editor-spike.sqlite",
+              `${row.id}.design_preview_json.${sourceKey}[${index}] must have stable id for sourced runtime overrides`,
+            );
+          } else if (ids.has(id)) {
+            addViolation(
+              "data/desktop-editor-spike.sqlite",
+              `${row.id}.design_preview_json.${sourceKey} has duplicate item id "${id}"`,
+            );
+          }
+          ids.add(id);
+        }
+        const testValues = jsonRecord(preview.testValues);
+        for (const overrideItem of jsonArray(testValues[jsonKey]).map(jsonRecord)) {
+          const id = typeof overrideItem.id === "string" ? overrideItem.id : "";
+          if (id && !ids.has(id)) {
+            addViolation(
+              "data/desktop-editor-spike.sqlite",
+              `${row.id}.design_preview_json.testValues.${jsonKey} has stale override for missing source item "${id}"`,
+            );
+          }
+        }
+      }
+    }
+  } finally {
+    database.close();
+  }
+}
+
+function assertDesktopPreviewActionsAreDeclarative() {
+  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  if (!existsSync(databasePath)) return;
+
+  const database = new Database(databasePath, { readonly: true, fileMustExist: true });
+  try {
+    const rows = database
+      .prepare("SELECT id, design_preview_json FROM modules UNION ALL SELECT id, design_preview_json FROM component_classes")
+      .all() as { id: string; design_preview_json: string }[];
+    for (const row of rows) {
+      const preview = jsonRecord(jsonParse(row.design_preview_json));
+      for (const [index, action] of jsonArray(preview.actions).map(jsonRecord).entries()) {
+        const id = typeof action.id === "string" ? action.id : "";
+        const label = typeof action.label === "string" ? action.label : "";
+        const timeJsonKey = typeof action.timeJsonKey === "string" ? action.timeJsonKey : "";
+        if (!id || !label) {
+          addViolation(
+            "data/desktop-editor-spike.sqlite",
+            `${row.id}.design_preview_json.actions[${index}] must declare id and label`,
+          );
+        }
+        if (("durationCollectionJsonKey" in action || "durationItemNumberKeys" in action) && !timeJsonKey) {
+          addViolation(
+            "data/desktop-editor-spike.sqlite",
+            `${row.id}.design_preview_json.actions[${index}] duration action must declare timeJsonKey`,
+          );
+        }
+        if ("durationCollectionJsonKey" in action && !Array.isArray(action.durationItemNumberKeys)) {
+          addViolation(
+            "data/desktop-editor-spike.sqlite",
+            `${row.id}.design_preview_json.actions[${index}] collection duration action must declare durationItemNumberKeys[]`,
+          );
+        }
+      }
+    }
+  } finally {
+    database.close();
+  }
+}
+
+assertDesktopDatabaseDoesNotContainRetiredTokens();
+assertDesktopRuntimeCollectionsAreConsistent();
+assertDesktopPreviewActionsAreDeclarative();
+
 function componentLayoutFieldIds(source: string) {
   const ids = new Set<string>();
   const pattern = /\{\s*"id"\s*:\s*"(component\.[^"]+)"/g;
