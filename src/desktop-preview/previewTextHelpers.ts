@@ -18,19 +18,19 @@ export interface ResolvedTypographyStyle {
 
 function graphemeAdvance(grapheme: string) {
   if (!grapheme) return 0;
-  if (grapheme === " ") return 0.26;
-  if (/^\s$/u.test(grapheme)) return 0.26;
+  if (grapheme === " ") return 0.32;
+  if (/^\s$/u.test(grapheme)) return 0.32;
   // Color emoji glyphs are usually wider than the text font's em square.
-  if (/\p{Extended_Pictographic}/u.test(grapheme)) return 1.15;
+  if (/\p{Extended_Pictographic}/u.test(grapheme)) return 1.25;
   if (/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(grapheme)) return 1;
-  if (/^[,.;:!?¡¿'"`´’‘“”()[\]{}]$/u.test(grapheme)) return 0.28;
-  if (/^[ilI|]$/u.test(grapheme)) return 0.28;
-  if (/^[fjrt]$/u.test(grapheme)) return 0.36;
-  if (/^[mwMW]$/u.test(grapheme)) return 0.72;
-  if (/^[A-ZÁÉÍÓÚÜÑ]$/u.test(grapheme)) return 0.58;
-  if (/^[0-9]$/u.test(grapheme)) return 0.5;
+  if (/^[,.;:!?¡¿'"`´’‘“”()[\]{}]$/u.test(grapheme)) return 0.34;
+  if (/^[ilI|]$/u.test(grapheme)) return 0.34;
+  if (/^[fjrt]$/u.test(grapheme)) return 0.44;
+  if (/^[mwMW]$/u.test(grapheme)) return 0.82;
+  if (/^[A-ZÁÉÍÓÚÜÑ]$/u.test(grapheme)) return 0.66;
+  if (/^[0-9]$/u.test(grapheme)) return 0.58;
   if ((grapheme.codePointAt(0) ?? 0) > 0xffff) return 1;
-  return 0.48;
+  return 0.56;
 }
 
 export function approximateTextWidth(text: string, fontSize: number) {

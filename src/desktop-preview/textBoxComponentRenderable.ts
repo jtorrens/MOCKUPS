@@ -380,9 +380,7 @@ export function textBoxComponentToRenderableAt(
             x: textFrame.x,
             y: renderedTextY + index * lineHeight,
             width: textFrame.width,
-            height: index === wrappedLines.length - 1
-              ? textContentVisualHeight(1, size.typography)
-              : lineHeight,
+            height: lineHeight,
           },
           text: line,
           style: textStyle,

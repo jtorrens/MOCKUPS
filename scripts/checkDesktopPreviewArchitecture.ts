@@ -6,6 +6,10 @@ import {
   type DesktopPreviewComponentManifestEntry,
 } from "../src/desktop-preview/desktopPreviewComponents.js";
 import { componentRenderableFactories } from "../src/desktop-preview/componentClassRenderableRegistry.js";
+import {
+  approximateTextWidth,
+  approximateWrappedTextLines,
+} from "../src/desktop-preview/previewTextHelpers.js";
 import { renderableNodeTypes } from "../src/visual/renderable/types.js";
 
 const root = process.cwd();
@@ -513,10 +517,34 @@ function assertDesktopConversationPreviewDoesNotUseLegacyMessageKeys() {
   }
 }
 
+function assertGenericTextWrappingIsConservative() {
+  const sample = "Mensaje de prueba 😎😍 en dos líneas";
+  const fontSize = 18;
+  const maxWidth = 250;
+  const lines = approximateWrappedTextLines(sample, fontSize, maxWidth);
+  if (lines.length < 2) {
+    addViolation(
+      "src/desktop-preview/previewTextHelpers.ts",
+      "generic text wrapping must wrap latin text with emoji before it reaches the frame edge",
+    );
+    return;
+  }
+
+  for (const [index, line] of lines.entries()) {
+    if (approximateTextWidth(line, fontSize) > maxWidth) {
+      addViolation(
+        "src/desktop-preview/previewTextHelpers.ts",
+        `generic text wrapping produced over-wide line ${index + 1}: "${line}"`,
+      );
+    }
+  }
+}
+
 assertDesktopDatabaseDoesNotContainRetiredTokens();
 assertDesktopRuntimeCollectionsAreConsistent();
 assertDesktopPreviewActionsAreDeclarative();
 assertDesktopConversationPreviewDoesNotUseLegacyMessageKeys();
+assertGenericTextWrappingIsConservative();
 assertMatches(
   "src/desktop-preview/conversationModuleRenderable.ts",
   /childRenderable\(\s*payload,[\s\S]*?"keyboard"[\s\S]*?\{\s*text: composer\.text,[\s\S]*?currentCharacter: composer\.currentCharacter,[\s\S]*?motionTimeSeconds,/,
