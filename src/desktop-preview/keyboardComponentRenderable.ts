@@ -368,7 +368,7 @@ function popoverPathData(
   const center = width / 2;
   const tailLeft = center - tailWidth / 2;
   const tailRight = center + tailWidth / 2;
-  const tailCurveY = bodyHeight + tailHeight * 0.5;
+  const tailTipY = bodyHeight + tailHeight;
   return [
     `M${r} 0`,
     `H${width - r}`,
@@ -376,7 +376,8 @@ function popoverPathData(
     `V${bodyHeight - r}`,
     `Q${width} ${bodyHeight} ${width - r} ${bodyHeight}`,
     `H${tailRight}`,
-    `Q${center} ${tailCurveY} ${tailLeft} ${bodyHeight}`,
+    `Q${center} ${bodyHeight} ${center} ${tailTipY}`,
+    `Q${center} ${bodyHeight} ${tailLeft} ${bodyHeight}`,
     `H${r}`,
     `Q0 ${bodyHeight} 0 ${bodyHeight - r}`,
     `V${r}`,
