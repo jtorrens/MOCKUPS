@@ -288,26 +288,79 @@ internal sealed class RuntimeInputsCollectionEditor
         out InstantEditorCard card)
     {
         var content = new StackPanel { Spacing = 8 };
-        foreach (var input in collection.Fields)
+        foreach (var input in ComponentInputGrouping.OwnInputs(collection.Fields))
         {
-            var control = new DictionaryFieldControl(
-                new FieldValue(CreateDefinition(owner.Node, input), DesignPreviewTestValues.CollectionValue(item, input)),
-                _dictionaryServices.ForNode(owner.Node, (_) => ""));
-            control.IsEnabled = CollectionFieldIsEnabled(item, input);
-            control.ValueCommitted += (_, next) =>
-            {
-                DesignPreviewTestValues.SetCollectionValue(preview, collection, itemIndex, input, next);
-                owner.Save(preview.ToJsonString());
-                _onChanged();
-            };
-            content.Children.Add(control);
+            content.Children.Add(CreateTestValueCollectionControl(owner, preview, collection, itemIndex, item, input));
         }
+
+        var groups = ComponentInputGrouping.EmbeddedGroups(collection.Fields);
+        var groupCards = new List<InstantEditorCard>();
+        foreach (var groupId in ComponentInputGrouping.TopLevelGroupIds(groups))
+        {
+            content.Children.Add(CreateTestValueCollectionGroupCard(
+                owner, preview, collection, itemIndex, item, groupId, groups, groupCards));
+        }
+        EditorGroupBlock.WireExclusiveCards(groupCards);
 
         return EditorGroupBlock.CreateNestedCard(
             EditorCardHeader.Create($"{collection.ItemLabel} {itemIndex + 1}", $"{collection.JsonKey}[{itemIndex}]", EditorIcons.Create(EditorIcons.Component, 14)),
             content,
             out card,
             isExpanded: true);
+    }
+
+    private Control CreateTestValueCollectionControl(
+        RuntimeInputOwner owner,
+        JsonObject preview,
+        RuntimeInputCollectionDefinition collection,
+        int itemIndex,
+        JsonObject item,
+        ComponentInputDefinition input)
+    {
+        var control = new DictionaryFieldControl(
+            new FieldValue(CreateDefinition(owner.Node, input), DesignPreviewTestValues.CollectionValue(item, input)),
+            _dictionaryServices.ForNode(owner.Node, (_) => ""));
+        control.IsEnabled = CollectionFieldIsEnabled(item, input);
+        control.ValueCommitted += (_, next) =>
+        {
+            DesignPreviewTestValues.SetCollectionValue(preview, collection, itemIndex, input, next);
+            owner.Save(preview.ToJsonString());
+            _onChanged();
+        };
+        return control;
+    }
+
+    private Control CreateTestValueCollectionGroupCard(
+        RuntimeInputOwner owner,
+        JsonObject preview,
+        RuntimeInputCollectionDefinition collection,
+        int itemIndex,
+        JsonObject item,
+        string groupId,
+        IReadOnlyDictionary<string, List<ComponentInputDefinition>> groups,
+        List<InstantEditorCard> siblingCards)
+    {
+        var groupInputs = groups[groupId];
+        var content = new StackPanel { Spacing = 8 };
+        foreach (var input in groupInputs)
+        {
+            content.Children.Add(CreateTestValueCollectionControl(owner, preview, collection, itemIndex, item, input));
+        }
+
+        var childCards = new List<InstantEditorCard>();
+        foreach (var childId in ComponentInputGrouping.ChildGroupIds(groupId, groups))
+        {
+            content.Children.Add(CreateTestValueCollectionGroupCard(
+                owner, preview, collection, itemIndex, item, childId, groups, childCards));
+        }
+        EditorGroupBlock.WireExclusiveCards(childCards);
+        var cardSurface = EditorGroupBlock.CreateCollapsible(
+            EditorCardHeader.Create(ComponentInputGrouping.GroupLabel(groupInputs), "Runtime inputs", EditorIcons.Create(EditorIcons.Component, 14)),
+            content,
+            out var card,
+            isExpanded: false);
+        siblingCards.Add(card);
+        return cardSurface;
     }
 
     private static bool CollectionFieldIsEnabled(JsonObject item, ComponentInputDefinition input)

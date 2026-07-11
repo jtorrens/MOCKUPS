@@ -34,8 +34,7 @@ internal sealed partial class SpikeDatabase
         bool IsFullScreen,
         bool FullScreenTransition,
         string FullframeOrientation,
-        int ControlsElapsedMs,
-        decimal MotionTimeSeconds);
+        int ControlsElapsedMs);
 
     public sealed record ModuleInstanceSlot(
         string Id,
@@ -184,8 +183,7 @@ internal sealed partial class SpikeDatabase
             message["isFullScreen"]?.GetValue<bool>() ?? false,
             message["fullScreenTransition"]?.GetValue<bool>() ?? false,
             message["fullframeOrientation"]?.GetValue<string>() ?? "portrait",
-            message["controlsElapsedMs"]?.GetValue<int>() ?? 0,
-            message["motionTimeSeconds"]?.GetValue<decimal>() ?? 0)).ToList();
+            message["controlsElapsedMs"]?.GetValue<int>() ?? 0)).ToList();
     }
 
     public void AddConversationMessage(string moduleInstanceId)
@@ -219,7 +217,6 @@ internal sealed partial class SpikeDatabase
                 ["fullScreenTransition"] = false,
                 ["fullframeOrientation"] = "portrait",
                 ["controlsElapsedMs"] = 0,
-                ["motionTimeSeconds"] = 0,
                 ["status"] = new JsonObject { ["text"] = "", ["deliveryStatus"] = "none" },
             });
         });
@@ -260,7 +257,6 @@ internal sealed partial class SpikeDatabase
             message["fullScreenTransition"] = next.FullScreenTransition;
             message["fullframeOrientation"] = next.FullframeOrientation is "landscape" ? "landscape" : "portrait";
             message["controlsElapsedMs"] = Math.Max(0, next.ControlsElapsedMs);
-            message["motionTimeSeconds"] = Math.Max(0, next.MotionTimeSeconds);
             message["status"] = new JsonObject { ["text"] = next.StatusText, ["deliveryStatus"] = next.DeliveryStatus };
         });
     }

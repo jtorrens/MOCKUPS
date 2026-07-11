@@ -91,7 +91,6 @@ internal sealed class ConversationMessagesCollectionEditor
         panel.Children.Add(Field("Full-screen transition", ValueKind.Boolean, message.FullScreenTransition ? "true" : "false", null, (value) => message = message with { FullScreenTransition = BooleanText.Parse(value) }));
         panel.Children.Add(Field("Fullframe orientation", ValueKind.OptionToken, message.FullframeOrientation, [new("portrait", "Portrait"), new("landscape", "Landscape")], (value) => message = message with { FullframeOrientation = value }));
         panel.Children.Add(Field("Controls elapsed ms", ValueKind.Integer, message.ControlsElapsedMs.ToString(), null, (value) => message = message with { ControlsElapsedMs = NumericText.Int32(value, 0) }));
-        panel.Children.Add(Field("Motion time", ValueKind.Decimal, message.MotionTimeSeconds.ToString(), null, (value) => message = message with { MotionTimeSeconds = NumericText.Decimal(value, 0) }));
         return new InstantEditorCard(
             EditorCardHeader.Create($"Message {index + 1}", $"{message.Direction} · {MessageSummary(message.Text)}", EditorIcons.Create(EditorIcons.Bubble, 16)),
             new Border { Padding = EditorUiDensity.CardThickness(10), Child = panel },

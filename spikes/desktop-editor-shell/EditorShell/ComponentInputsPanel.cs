@@ -929,13 +929,16 @@ internal sealed class ComponentPreviewInputSession
                     new PairFieldLabels(
                         JsonString(field, "pairFirstLabel", "W"),
                         JsonString(field, "pairSecondLabel", "H")),
-                    ComponentInputUiOrigin.Self,
-                    "",
-                    "",
-                    "") with
+                    string.IsNullOrWhiteSpace(JsonString(field, "uiGroupId"))
+                        ? ComponentInputUiOrigin.Self
+                        : ComponentInputUiOrigin.Embedded,
+                    JsonString(field, "uiGroupId"),
+                    JsonString(field, "uiGroupLabel"),
+                    JsonString(field, "uiParentGroupId")) with
                 {
                     EnabledWhenItemJsonKey = JsonString(field, "enabledWhenItemJsonKey"),
                     EnabledWhenItemValues = JsonStringArray(field, "enabledWhenItemValues"),
+                    UiOrder = (int)JsonDecimal(field, "uiOrder", 0),
                 });
             }
 
@@ -1211,7 +1214,8 @@ internal sealed record ComponentInputDefinition(
     string UiGroupLabel = "",
     string UiParentGroupId = "",
     string EnabledWhenItemJsonKey = "",
-    IReadOnlyList<string>? EnabledWhenItemValues = null);
+    IReadOnlyList<string>? EnabledWhenItemValues = null,
+    int UiOrder = 0);
 
 internal sealed record RuntimeInputCollectionDefinition(
     string Id,

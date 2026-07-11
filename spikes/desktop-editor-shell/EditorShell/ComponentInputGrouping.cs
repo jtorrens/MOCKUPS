@@ -11,6 +11,7 @@ internal static class ComponentInputGrouping
     {
         return inputs
             .Where((input) => input.UiOrigin != ComponentInputUiOrigin.Embedded)
+            .OrderBy((input) => input.UiOrder)
             .ToList();
     }
 
@@ -20,7 +21,7 @@ internal static class ComponentInputGrouping
         return inputs
             .Where((input) => input.UiOrigin == ComponentInputUiOrigin.Embedded)
             .GroupBy((input) => string.IsNullOrWhiteSpace(input.UiGroupId) ? input.Id : input.UiGroupId)
-            .ToDictionary((group) => group.Key, (group) => group.ToList(), StringComparer.Ordinal);
+            .ToDictionary((group) => group.Key, (group) => group.OrderBy((input) => input.UiOrder).ToList(), StringComparer.Ordinal);
     }
 
     public static IEnumerable<string> TopLevelGroupIds(
@@ -32,6 +33,7 @@ internal static class ComponentInputGrouping
                 var parent = ParentGroupId(group.Value);
                 return string.IsNullOrWhiteSpace(parent) || !groupsById.ContainsKey(parent);
             })
+            .OrderBy((group) => GroupOrder(group.Value))
             .Select((group) => group.Key);
     }
 
@@ -41,6 +43,7 @@ internal static class ComponentInputGrouping
     {
         return groupsById
             .Where((group) => string.Equals(ParentGroupId(group.Value), parentGroupId, StringComparison.Ordinal))
+            .OrderBy((group) => GroupOrder(group.Value))
             .Select((group) => group.Key);
     }
 
@@ -56,5 +59,10 @@ internal static class ComponentInputGrouping
         return groupInputs
             .Select((input) => input.UiParentGroupId)
             .FirstOrDefault((parent) => !string.IsNullOrWhiteSpace(parent)) ?? "";
+    }
+
+    private static int GroupOrder(IReadOnlyList<ComponentInputDefinition> groupInputs)
+    {
+        return groupInputs.Count == 0 ? 0 : groupInputs.Min((input) => input.UiOrder);
     }
 }

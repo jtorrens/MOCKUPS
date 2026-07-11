@@ -693,13 +693,12 @@ internal sealed partial class SpikeDatabase
             ["fullScreenTransition"] = false,
             ["fullframeOrientation"] = "portrait",
             ["controlsElapsedMs"] = 0,
-            ["motionTimeSeconds"] = 0,
         };
     }
 
     private static JsonArray ConversationPreviewMessageFields()
     {
-        return new JsonArray
+        var fields = new JsonArray
         {
             new JsonObject { ["id"] = "direction", ["label"] = "Direction", ["jsonKey"] = "direction", ["kind"] = "option", ["defaultValue"] = "incoming", ["options"] = new JsonArray { new JsonObject { ["value"] = "incoming", ["label"] = "Incoming" }, new JsonObject { ["value"] = "outgoing", ["label"] = "Outgoing" }, new JsonObject { ["value"] = "system", ["label"] = "System" } } },
             new JsonObject { ["id"] = "text", ["label"] = "Text", ["jsonKey"] = "text", ["kind"] = "multilineText", ["defaultValue"] = "" },
@@ -723,8 +722,39 @@ internal sealed partial class SpikeDatabase
             new JsonObject { ["id"] = "fullScreenTransition", ["label"] = "Full-screen transition", ["jsonKey"] = "fullScreenTransition", ["kind"] = "boolean", ["defaultValue"] = "false" },
             new JsonObject { ["id"] = "fullframeOrientation", ["label"] = "Fullframe orientation", ["jsonKey"] = "fullframeOrientation", ["kind"] = "option", ["defaultValue"] = "portrait", ["options"] = new JsonArray { new JsonObject { ["value"] = "portrait", ["label"] = "Portrait" }, new JsonObject { ["value"] = "landscape", ["label"] = "Landscape" } } },
             new JsonObject { ["id"] = "controlsElapsed", ["label"] = "Controls elapsed ms", ["jsonKey"] = "controlsElapsedMs", ["kind"] = "number", ["defaultValue"] = "0", ["minimum"] = 0, ["maximum"] = 86400000, ["increment"] = 1 },
-            new JsonObject { ["id"] = "motionTime", ["label"] = "Motion time", ["jsonKey"] = "motionTimeSeconds", ["kind"] = "number", ["defaultValue"] = "0", ["minimum"] = 0, ["maximum"] = 86400, ["increment"] = 0.01 },
         };
+        ApplyConversationRuntimeGroups(fields);
+        return fields;
+    }
+
+    private static void ApplyConversationRuntimeGroups(JsonArray fields)
+    {
+        SetRuntimeGroup(fields, ["direction", "text"], "message", "Message", 10);
+        SetRuntimeGroup(fields, ["delay", "writeOn", "bubbleReveal", "textInput", "keyboard"], "timing", "Timing", 20);
+        SetRuntimeGroup(fields, ["statusVisible", "status", "statusText"], "delivery", "Delivery", 30);
+        SetRuntimeGroup(fields, ["mediaType", "mediaSource"], "attachment", "Attachment", 40);
+        SetRuntimeGroup(fields, ["viewport", "mediaScale", "mediaOffset"], "mediaFrame", "Frame", 50, "attachment");
+        SetRuntimeGroup(fields, ["isPlaying", "currentTime", "duration", "controlsElapsed"], "playback", "Playback", 60, "attachment");
+        SetRuntimeGroup(fields, ["fullScreen", "fullScreenTransition", "fullframeOrientation"], "fullframe", "Full screen", 70, "attachment");
+    }
+
+    private static void SetRuntimeGroup(
+        JsonArray fields,
+        string[] ids,
+        string groupId,
+        string groupLabel,
+        int groupOrder,
+        string parentGroupId = "")
+    {
+        foreach (var id in ids)
+        {
+            var field = fields.OfType<JsonObject>().FirstOrDefault((candidate) => candidate["id"]?.GetValue<string>() == id);
+            if (field is null) continue;
+            field["uiGroupId"] = groupId;
+            field["uiGroupLabel"] = groupLabel;
+            field["uiParentGroupId"] = parentGroupId;
+            field["uiOrder"] = groupOrder + Array.IndexOf(ids, id);
+        }
     }
 
     private static string JsonBoolString(JsonObject owner, string[] path, bool defaultValue)

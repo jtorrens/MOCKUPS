@@ -213,6 +213,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
       top,
       bottom,
       conversationFrame,
+      conversationFrame / Math.max(1, payload.frameRate ?? 25),
     ),
   });
 
@@ -305,6 +306,7 @@ function messageNodes(
   top: number,
   bottom: number,
   conversationFrame: number,
+  motionTimeSeconds: number,
 ) {
   const gap = numberToken(payload, optionalString(conversation, "messageGap") || "theme.spacing.m")
     * renderScale(payload);
@@ -340,7 +342,7 @@ function messageNodes(
       fullScreenTransition: message.fullScreenTransition,
       fullframeOrientation: message.fullframeOrientation,
       controlsElapsedMs: message.controlsElapsedMs,
-      motionTimeSeconds: message.motionTimeSeconds,
+      motionTimeSeconds,
       maxWidth: optionalNumber(conversation, "bubbleMaxWidth", 66),
       writeOnTrigger,
       writeOnFrame: message.writeOnFrame,
@@ -400,7 +402,6 @@ type ConversationPreviewMessage = {
   fullScreenTransition: boolean;
   fullframeOrientation: string;
   controlsElapsedMs: number;
-  motionTimeSeconds: number;
 };
 
 function instanceMessages(preview: JsonRecord): ConversationPreviewMessage[] {
@@ -438,7 +439,6 @@ function instanceMessages(preview: JsonRecord): ConversationPreviewMessage[] {
         fullScreenTransition: optionalBoolean(message, "fullScreenTransition"),
         fullframeOrientation: optionalString(message, "fullframeOrientation") || "portrait",
         controlsElapsedMs: optionalNumber(message, "controlsElapsedMs", 0),
-        motionTimeSeconds: optionalNumber(message, "motionTimeSeconds", 0),
       };
     });
   }
@@ -469,7 +469,6 @@ function instanceMessages(preview: JsonRecord): ConversationPreviewMessage[] {
       fullScreenTransition: false,
       fullframeOrientation: "portrait",
       controlsElapsedMs: 0,
-      motionTimeSeconds: 0,
     },
     {
       state: "outgoing",
@@ -496,7 +495,6 @@ function instanceMessages(preview: JsonRecord): ConversationPreviewMessage[] {
       fullScreenTransition: false,
       fullframeOrientation: "portrait",
       controlsElapsedMs: 0,
-      motionTimeSeconds: 0,
     },
     {
       state: "system",
@@ -523,7 +521,6 @@ function instanceMessages(preview: JsonRecord): ConversationPreviewMessage[] {
       fullScreenTransition: false,
       fullframeOrientation: "portrait",
       controlsElapsedMs: 0,
-      motionTimeSeconds: 0,
     },
   ];
 }
