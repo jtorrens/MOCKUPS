@@ -586,6 +586,7 @@ internal sealed partial class SpikeDatabase
     {
         return new JsonObject
         {
+            ["buttonPushedDurationMs"] = 120,
             ["transitions"] = new JsonObject
             {
                 ["fade"] = MotionTiming(180, 0, "ease", 1),

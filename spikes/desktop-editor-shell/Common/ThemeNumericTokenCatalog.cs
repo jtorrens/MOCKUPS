@@ -61,6 +61,7 @@ internal static class ThemeNumericTokenCatalog
         Token("theme.motion.swipe.delayMs", ["motion", "transitions", "swipe", "delayMs"]),
         Token("theme.motion.scale.durationMs", ["motion", "transitions", "scale", "durationMs"]),
         Token("theme.motion.scale.delayMs", ["motion", "transitions", "scale", "delayMs"]),
+        Token("theme.motion.buttonPushedDurationMs", ["motion", "buttonPushedDurationMs"]),
     ];
 
     public static bool TryGet(string id, out ThemeNumericTokenPath token)

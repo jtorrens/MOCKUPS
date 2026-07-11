@@ -96,6 +96,18 @@ internal static class ComponentClassFieldCatalog
         new("iconSize", "Icon size + padding"),
     ];
 
+    private static readonly FieldOption[] ButtonContentModeOptions =
+    [
+        new("icon", "Icon"),
+        new("text", "Text"),
+        new("iconText", "Icon + text"),
+    ];
+
+    private static readonly FieldOption[] ButtonPushedDurationTokenOptions =
+    [
+        new("theme.motion.buttonPushedDurationMs", "motion.buttonPushedDurationMs"),
+    ];
+
     internal static readonly FieldOption[] SpacingTokenOptions =
     [
         new("theme.spacing.none", "spacing.none"),
@@ -629,6 +641,31 @@ internal static class ComponentClassFieldCatalog
         ["component.buttonIcon.label.placement"] = new("component.buttonIcon.label.placement", "Placement", ValueKind.AlignmentPlacement, ["buttonIcon", "labelSlot", "placement"], """{"mode":"edge","alignX":0.5,"alignY":1,"offsetX":0,"offsetY":3}"""),
         ["component.buttonIcon.label.presetId"] = new("component.buttonIcon.label.presetId", "Variant", ValueKind.OptionToken, ["buttonIcon", "labelSlot", "presetId"], "default"),
         ["component.buttonIcon.label.editor"] = new("component.buttonIcon.label.editor", "Label", ValueKind.ComponentPreset, ["buttonIcon", "labelSlot", "presetId"], "default"),
+
+        ["component.button.contentMode"] = new("component.button.contentMode", "Content", ValueKind.OptionToken, ["button", "contentMode"], "text", Options: ButtonContentModeOptions),
+        ["component.button.dimensionMode"] = new("component.button.dimensionMode", "Dimension mode", ValueKind.OptionToken, ["button", "dimensionMode"], "content", Options: DimensionModeOptions),
+        ["component.button.size"] = new("component.button.size", "Fixed size", ValueKind.IntegerPair, ["button", "size"], "120|44", PairLabels: new("W", "H")),
+        ["component.button.padding"] = new("component.button.padding", "Padding", ValueKind.ThemeTokenPair, ["button", "padding"], "theme.spacing.l|theme.spacing.m", PairLabels: new("X", "Y"), Options: SpacingTokenOptions),
+        ["component.button.contentGapToken"] = new("component.button.contentGapToken", "Content gap", ValueKind.ThemeToken, ["button", "contentGapToken"], "theme.spacing.s", Options: SpacingTokenOptions),
+        ["component.button.iconToken"] = new("component.button.iconToken", "Default icon", ValueKind.IconToken, ["button", "iconToken"], "media_play_fill"),
+        ["component.button.iconSizeToken"] = new("component.button.iconSizeToken", "Icon size", ValueKind.ThemeToken, ["button", "iconSizeToken"], "theme.iconSizes.m", Options: IconSizeTokenOptions),
+        ["component.button.pushedDurationToken"] = new("component.button.pushedDurationToken", "Pushed duration", ValueKind.ThemeToken, ["button", "pushedDurationToken"], "theme.motion.buttonPushedDurationMs", Options: ButtonPushedDurationTokenOptions),
+        ["component.button.states.normal.surface.editor"] = new("component.button.states.normal.surface.editor", "Surface", ValueKind.ComponentPreset, ["button", "states", "normal", "surfaceSlot", "presetId"], "default"),
+        ["component.button.states.normal.label.editor"] = new("component.button.states.normal.label.editor", "Label", ValueKind.ComponentPreset, ["button", "states", "normal", "labelSlot", "presetId"], "default"),
+        ["component.button.states.normal.iconColorToken"] = new("component.button.states.normal.iconColorToken", "Icon color", ValueKind.ThemeToken, ["button", "states", "normal", "iconColorToken"], "theme.colors.icon", Options: ThemeColorOptions),
+        ["component.button.states.normal.opacity"] = new("component.button.states.normal.opacity", "Opacity", ValueKind.Alpha, ["button", "states", "normal", "opacity"], "1"),
+        ["component.button.states.active.surface.editor"] = new("component.button.states.active.surface.editor", "Surface", ValueKind.ComponentPreset, ["button", "states", "active", "surfaceSlot", "presetId"], "default"),
+        ["component.button.states.active.label.editor"] = new("component.button.states.active.label.editor", "Label", ValueKind.ComponentPreset, ["button", "states", "active", "labelSlot", "presetId"], "default"),
+        ["component.button.states.active.iconColorToken"] = new("component.button.states.active.iconColorToken", "Icon color", ValueKind.ThemeToken, ["button", "states", "active", "iconColorToken"], "theme.colors.accent", Options: ThemeColorOptions),
+        ["component.button.states.active.opacity"] = new("component.button.states.active.opacity", "Opacity", ValueKind.Alpha, ["button", "states", "active", "opacity"], "1"),
+        ["component.button.states.pushed.surface.editor"] = new("component.button.states.pushed.surface.editor", "Surface", ValueKind.ComponentPreset, ["button", "states", "pushed", "surfaceSlot", "presetId"], "default"),
+        ["component.button.states.pushed.label.editor"] = new("component.button.states.pushed.label.editor", "Label", ValueKind.ComponentPreset, ["button", "states", "pushed", "labelSlot", "presetId"], "default"),
+        ["component.button.states.pushed.iconColorToken"] = new("component.button.states.pushed.iconColorToken", "Icon color", ValueKind.ThemeToken, ["button", "states", "pushed", "iconColorToken"], "theme.colors.accent", Options: ThemeColorOptions),
+        ["component.button.states.pushed.opacity"] = new("component.button.states.pushed.opacity", "Opacity", ValueKind.Alpha, ["button", "states", "pushed", "opacity"], "0.72"),
+        ["component.button.states.disabled.surface.editor"] = new("component.button.states.disabled.surface.editor", "Surface", ValueKind.ComponentPreset, ["button", "states", "disabled", "surfaceSlot", "presetId"], "default"),
+        ["component.button.states.disabled.label.editor"] = new("component.button.states.disabled.label.editor", "Label", ValueKind.ComponentPreset, ["button", "states", "disabled", "labelSlot", "presetId"], "default"),
+        ["component.button.states.disabled.iconColorToken"] = new("component.button.states.disabled.iconColorToken", "Icon color", ValueKind.ThemeToken, ["button", "states", "disabled", "iconColorToken"], "theme.colors.icon", Options: ThemeColorOptions),
+        ["component.button.states.disabled.opacity"] = new("component.button.states.disabled.opacity", "Opacity", ValueKind.Alpha, ["button", "states", "disabled", "opacity"], "0.4"),
 
         ["component.label.dimensionMode"] = new("component.label.dimensionMode", "Dimension mode", ValueKind.OptionToken, ["label", "dimensionMode"], "content", Options: DimensionModeOptions),
         ["component.label.size"] = new("component.label.size", "Size", ValueKind.IntegerPair, ["label", "size"], "120|32", PairLabels: new("W", "H")),

@@ -357,6 +357,7 @@ internal static class RecordClassFieldCatalog
         ["theme.motion.slide"] = new("theme.motion.slide", "Slide", ValueKind.MotionTiming, Options: MotionEasingOptions),
         ["theme.motion.swipe"] = new("theme.motion.swipe", "Swipe", ValueKind.MotionTiming, Options: MotionEasingOptions),
         ["theme.motion.scale"] = new("theme.motion.scale", "Scale", ValueKind.MotionTiming, Options: MotionEasingOptions),
+        ["theme.motion.buttonPushedDurationMs"] = new("theme.motion.buttonPushedDurationMs", "Button pushed", ValueKind.Integer, Unit: "ms"),
         ["theme.typography.fontFamilyId"] = new(
             "theme.typography.fontFamilyId",
             "Text font",

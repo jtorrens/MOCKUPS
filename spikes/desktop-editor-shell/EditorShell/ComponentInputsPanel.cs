@@ -30,6 +30,7 @@ internal sealed class ComponentPreviewInputSession
     private IReadOnlyList<ComponentPreviewActionDefinition> _actions = [];
     private string _activeActionId = "";
     private JsonObject _config = [];
+    private JsonObject _themeTokens = [];
     private JsonObject _runtimePreview = [];
     private string _preparingActionId = "";
     private int _playbackFrameRate = 25;
@@ -100,6 +101,7 @@ internal sealed class ComponentPreviewInputSession
             _actions = [];
             _activeActionId = "";
             _config = [];
+            _themeTokens = [];
             _runtimePreview = [];
             StopPlayback();
             return;
@@ -108,6 +110,7 @@ internal sealed class ComponentPreviewInputSession
         ApplyProjectFrameRate(projectId);
         var config = ParseJsonObject(payload.ConfigJson);
         _config = config;
+        _themeTokens = ParseJsonObject(payload.ThemeTokensJson);
         var preview = ApplyTransientTestValues(
             ParseJsonObject(payload.DesignPreviewJson),
             ScopeKey(payload),
@@ -839,6 +842,16 @@ internal sealed class ComponentPreviewInputSession
 
     private double DurationSeconds(ComponentPreviewActionDefinition action)
     {
+        if (!string.IsNullOrWhiteSpace(action.DurationThemeToken))
+        {
+            var value = ThemeTokenNumber(action.DurationThemeToken, 1);
+            return action.TimeUnit switch
+            {
+                ComponentPreviewActionTimeUnit.Milliseconds => value / 1000.0,
+                ComponentPreviewActionTimeUnit.Frames => value / Math.Max(1, _playbackFrameRate),
+                _ => value,
+            };
+        }
         if (action.TimeUnit == ComponentPreviewActionTimeUnit.Frames)
         {
             return DurationFrames(action) / (double)Math.Max(1, _playbackFrameRate);
@@ -870,12 +883,27 @@ internal sealed class ComponentPreviewInputSession
                 JsonNodeNumber(ComponentPreviewActions.Value(_runtimePreview, action, action.DurationInputId), 1)));
         }
 
+        if (!string.IsNullOrWhiteSpace(action.DurationThemeToken))
+        {
+            return Math.Max(1, (int)Math.Round(ThemeTokenNumber(action.DurationThemeToken, 1), MidpointRounding.AwayFromZero));
+        }
+
         if (!string.IsNullOrWhiteSpace(action.DurationCollectionJsonKey))
         {
             return CollectionDurationFrames(_runtimePreview, action);
         }
 
         return Math.Max(1, (int)Math.Round(ActionDurationInputValue(action, 1), MidpointRounding.AwayFromZero));
+    }
+
+    private double ThemeTokenNumber(string token, double fallback)
+    {
+        JsonNode? current = _themeTokens;
+        foreach (var segment in token.Split('.', StringSplitOptions.RemoveEmptyEntries).SkipWhile((segment) => segment == "theme"))
+        {
+            current = current is JsonObject owner ? owner[segment] : null;
+        }
+        return JsonNodeNumber(current, fallback);
     }
 
     private static int CollectionDurationFrames(JsonObject preview, ComponentPreviewActionDefinition action)
@@ -1306,6 +1334,7 @@ internal sealed class ComponentPreviewInputSession
             action.DurationInputId,
             action.DurationSeconds.ToString(CultureInfo.InvariantCulture),
             action.DurationCollectionJsonKey,
+            action.DurationThemeToken,
             string.Join(",", action.DurationItemNumberKeys),
             string.Join(",", action.DurationCollectionMultiplierNumberKeys),
             action.DurationBaseFrames.ToString(CultureInfo.InvariantCulture),

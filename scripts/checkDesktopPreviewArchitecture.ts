@@ -480,6 +480,11 @@ function assertDesktopPreviewActionsAreDeclarative() {
         const id = typeof action.id === "string" ? action.id : "";
         const label = typeof action.label === "string" ? action.label : "";
         const timeJsonKey = typeof action.timeJsonKey === "string" ? action.timeJsonKey : "";
+        const hasDuration = typeof action.durationInputId === "string"
+          || typeof action.durationCollectionJsonKey === "string"
+          || typeof action.durationSeconds === "number"
+          || typeof action.durationThemeToken === "string"
+          || typeof action.durationMotionConfigPath === "string";
         if (!id || !label) {
           addViolation(
             "data/desktop-editor-spike.sqlite",
@@ -490,6 +495,19 @@ function assertDesktopPreviewActionsAreDeclarative() {
           addViolation(
             "data/desktop-editor-spike.sqlite",
             `${row.id}.design_preview_json.${path} item action must declare playInputId, durationInputId and timeJsonKey`,
+          );
+        }
+        if (!isItemAction && (typeof action.playInputId !== "string" || !timeJsonKey || !hasDuration)) {
+          addViolation(
+            "data/desktop-editor-spike.sqlite",
+            `${row.id}.design_preview_json.${path} must declare playInputId, a duration source and timeJsonKey`,
+          );
+        }
+        if ("durationThemeToken" in action
+          && (typeof action.durationThemeToken !== "string" || !action.durationThemeToken.startsWith("theme."))) {
+          addViolation(
+            "data/desktop-editor-spike.sqlite",
+            `${row.id}.design_preview_json.${path}.durationThemeToken must be a theme.* token`,
           );
         }
         if (("durationCollectionJsonKey" in action || "durationItemNumberKeys" in action) && !timeJsonKey) {

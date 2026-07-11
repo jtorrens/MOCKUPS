@@ -350,6 +350,58 @@ internal sealed partial class SpikeDatabase
               ]
             }
             """,
+            "component.button" => $$"""
+            ,
+            {
+              "id": "button",
+              "label": "Button",
+              "subtitle": "Reusable icon, text or combined action",
+              "icon": "{{EditorIcons.ButtonIcon}}",
+              "order": 20,
+              "visible": true,
+              "defaultOpen": true,
+              "groups": [
+                { "id": "content", "label": "Content", "order": 10, "visible": true, "fields": [
+                  { "id": "component.button.contentMode", "order": 10, "visible": true },
+                  { "id": "component.button.iconToken", "order": 20, "visible": true },
+                  { "id": "component.button.iconSizeToken", "order": 30, "visible": true },
+                  { "id": "component.button.contentGapToken", "order": 40, "visible": true }
+                ] },
+                { "id": "layout", "label": "Layout", "order": 20, "visible": true, "fields": [
+                  { "id": "component.button.dimensionMode", "order": 10, "visible": true },
+                  { "id": "component.button.size", "order": 20, "visible": true },
+                  { "id": "component.button.padding", "order": 30, "visible": true }
+                ] },
+                { "id": "interaction", "label": "Interaction", "order": 30, "visible": true, "fields": [
+                  { "id": "component.button.pushedDurationToken", "order": 10, "visible": true }
+                ] },
+                { "id": "normalState", "label": "Normal", "order": 40, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": true, "fields": [
+                  { "id": "component.button.states.normal.surface.editor", "order": 10, "visible": true },
+                  { "id": "component.button.states.normal.label.editor", "order": 20, "visible": true },
+                  { "id": "component.button.states.normal.iconColorToken", "order": 30, "visible": true },
+                  { "id": "component.button.states.normal.opacity", "order": 40, "visible": true }
+                ] },
+                { "id": "activeState", "label": "Active", "order": 50, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": false, "fields": [
+                  { "id": "component.button.states.active.surface.editor", "order": 10, "visible": true },
+                  { "id": "component.button.states.active.label.editor", "order": 20, "visible": true },
+                  { "id": "component.button.states.active.iconColorToken", "order": 30, "visible": true },
+                  { "id": "component.button.states.active.opacity", "order": 40, "visible": true }
+                ] },
+                { "id": "pushedState", "label": "Pushed", "order": 60, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": false, "fields": [
+                  { "id": "component.button.states.pushed.surface.editor", "order": 10, "visible": true },
+                  { "id": "component.button.states.pushed.label.editor", "order": 20, "visible": true },
+                  { "id": "component.button.states.pushed.iconColorToken", "order": 30, "visible": true },
+                  { "id": "component.button.states.pushed.opacity", "order": 40, "visible": true }
+                ] },
+                { "id": "disabledState", "label": "Disabled", "order": 70, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": false, "fields": [
+                  { "id": "component.button.states.disabled.surface.editor", "order": 10, "visible": true },
+                  { "id": "component.button.states.disabled.label.editor", "order": 20, "visible": true },
+                  { "id": "component.button.states.disabled.iconColorToken", "order": 30, "visible": true },
+                  { "id": "component.button.states.disabled.opacity", "order": 40, "visible": true }
+                ] }
+              ]
+            }
+            """,
             "component.label" => $$"""
             ,
             {

@@ -72,6 +72,29 @@ label variant.
 padding mode, size refers to glyph. It owns internal centering. **Motion.** No
 independent clock.
 
+## Button
+
+**Purpose/ownership.** Generic action atom with `icon`, `text` and `iconText`
+content modes. It is independent from Button Icon until the explicit migration
+phase.
+
+**Runtime inputs.** Text, icon token and persistent state: `normal`, `active`,
+`pushed` or `disabled`. **Variant/config.** Content mode, content/fixed sizing,
+spacing-token padding and gap, plus four visual state blocks. Every state block
+owns its Surface variant, Label variant, icon color and opacity. The variant
+also stores the `theme.motion.buttonPushedDurationMs` timing-token reference.
+
+**Layout.** Button owns horizontal icon/text composition and internal centering.
+Content mode hugs the resolved child bounds plus token padding; fixed mode uses
+the configured frame. The protected `Icon only` variant provides the migration
+target for existing Button Icon usages without changing those usages yet.
+
+**States/motion.** The resolver receives the state for the requested frame. The
+declarative `Push` Test Values action temporarily overrides it with `pushed`
+for `theme.motion.buttonPushedDurationMs`, then restores the previous state.
+The generic action session resolves that Theme duration in milliseconds;
+neither Button nor the web renderer starts a timer.
+
 ## Text Box
 
 **Purpose/ownership.** Text content frame with Surface, Typography, Cursor and

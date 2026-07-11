@@ -25,6 +25,7 @@ internal sealed partial class SpikeDatabase
             "textInputBar" => "Text input bar component",
             "keyboard" => "Keyboard component",
             "buttonIcon" => "Button icon component",
+            "button" => "Button component",
             "label" => "Label component",
             "audio" => "Audio component",
             "media" => "Media component",
@@ -42,7 +43,24 @@ internal sealed partial class SpikeDatabase
             name,
             configJson,
             DefaultComponentDesignPreviewJson(componentType),
-            DefaultComponentMetadataJson(configJson));
+            componentType == "button" ? DefaultButtonMetadataJson(configJson) : DefaultComponentMetadataJson(configJson));
+    }
+
+    private static string DefaultButtonMetadataJson(string configJson)
+    {
+        var iconConfig = JsonNode.Parse(configJson)!.AsObject().DeepClone().AsObject();
+        iconConfig["button"]!["contentMode"] = "icon";
+        iconConfig["button"]!["dimensionMode"] = "fixed";
+        iconConfig["button"]!["size"] = "44|44";
+        return new JsonObject
+        {
+            ["note"] = "Seeded reusable component class.",
+            ["presets"] = new JsonArray
+            {
+                new JsonObject { ["id"] = DefaultComponentPresetId, ["name"] = "Default", ["protected"] = true, ["locked"] = true, ["config"] = JsonNode.Parse(configJson) },
+                new JsonObject { ["id"] = "icon_only", ["name"] = "Icon only", ["protected"] = true, ["locked"] = true, ["config"] = iconConfig },
+            },
+        }.ToJsonString();
     }
 
     private static string DefaultComponentMetadataJson(string configJson)
@@ -70,6 +88,17 @@ internal sealed partial class SpikeDatabase
         {
             ["presetId"] = presetName,
             ["overrides"] = new JsonObject(),
+        };
+    }
+
+    private static JsonObject ButtonStateStyle(string iconColorToken, double opacity)
+    {
+        return new JsonObject
+        {
+            ["surfaceSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+            ["labelSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+            ["iconColorToken"] = iconColorToken,
+            ["opacity"] = opacity,
         };
     }
 
@@ -266,6 +295,26 @@ internal sealed partial class SpikeDatabase
                         ["presetId"] = DefaultComponentPresetId,
                         ["placement"] = JsonNode.Parse(AlignmentPlacementValue.FromDirectionalEdge("bottom", 3).ToJsonString()),
                         ["overrides"] = new JsonObject(),
+                    },
+                };
+                break;
+            case "button":
+                config["button"] = new JsonObject
+                {
+                    ["contentMode"] = "text",
+                    ["dimensionMode"] = "content",
+                    ["size"] = "120|44",
+                    ["padding"] = "theme.spacing.l|theme.spacing.m",
+                    ["contentGapToken"] = "theme.spacing.s",
+                    ["iconToken"] = "media_play_fill",
+                    ["iconSizeToken"] = "theme.iconSizes.m",
+                    ["pushedDurationToken"] = "theme.motion.buttonPushedDurationMs",
+                    ["states"] = new JsonObject
+                    {
+                        ["normal"] = ButtonStateStyle("theme.colors.icon", 1),
+                        ["active"] = ButtonStateStyle("theme.colors.accent", 1),
+                        ["pushed"] = ButtonStateStyle("theme.colors.accent", 0.72),
+                        ["disabled"] = ButtonStateStyle("theme.colors.icon", 0.4),
                     },
                 };
                 break;
@@ -544,6 +593,24 @@ internal sealed partial class SpikeDatabase
                 },
             };
         }
+        if (componentType == "button")
+        {
+            preview["pushTrigger"] = false;
+            preview["pushElapsedMs"] = 0;
+            preview["actions"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["id"] = "push",
+                    ["label"] = "Push",
+                    ["playInputId"] = "pushTrigger",
+                    ["durationThemeToken"] = "theme.motion.buttonPushedDurationMs",
+                    ["timeJsonKey"] = "pushElapsedMs",
+                    ["timeUnit"] = "milliseconds",
+                    ["prewarmFrames"] = false,
+                },
+            };
+        }
         if (componentType == "keyboard")
         {
             preview["actions"] = new JsonArray
@@ -754,6 +821,14 @@ internal sealed partial class SpikeDatabase
                 ComponentInput("sampleText", "Text", "sampleText", "text", "Action"),
                 ComponentInput("sampleSubtext", "Subtext", "sampleSubtext", "text", "Subtitle"),
             ],
+            "button" =>
+            [
+                ComponentInput("state", "State", "state", "option", "normal", options: [new("normal", "Normal"), new("active", "Active"), new("pushed", "Pushed"), new("disabled", "Disabled")]),
+                ComponentInput("sampleText", "Text", "sampleText", "text", "Action"),
+                ComponentInput("iconToken", "Icon", "iconToken", "icon", "media_play_fill"),
+                ComponentInput("pushTrigger", "Push", "pushTrigger", "boolean", "false", source: "calculated"),
+                ComponentInput("pushElapsedMs", "Push elapsed", "pushElapsedMs", ValueKind.Decimal, "0", minimum: 0, maximum: 60000, increment: 10, source: "calculated", unit: "ms"),
+            ],
             "textInputBar" =>
             [
                 ComponentInput("availableWidth", "Available width", "availableWidth", "number", "360", minimum: 1, maximum: 10000, increment: 1),
@@ -959,6 +1034,11 @@ internal sealed partial class SpikeDatabase
                 break;
             case "buttonIcon":
                 SetComponentInputGroup(inputs, ["iconToken", "sampleText", "sampleSubtext"], "content", "Content", 10);
+                break;
+            case "button":
+                SetComponentInputGroup(inputs, ["state"], "state", "State", 10);
+                SetComponentInputGroup(inputs, ["sampleText", "iconToken"], "content", "Content", 20);
+                SetComponentInputGroup(inputs, ["pushTrigger", "pushElapsedMs"], "action", "Action", 30);
                 break;
             case "textInputBar":
                 SetComponentInputGroup(inputs, ["availableWidth"], "layout", "Layout", 10);
@@ -1241,6 +1321,7 @@ internal sealed partial class SpikeDatabase
         NewComponentSeed("textInputBar", "component.textInputBar", "Default Text Input Bar"),
         NewComponentSeed("keyboard", "component.keyboard", "Default Keyboard"),
         NewComponentSeed("buttonIcon", "component.buttonIcon", "Default Button Icon"),
+        NewComponentSeed("button", "component.button", "Default Button"),
         NewComponentSeed("label", "component.label", "Default Label"),
         NewComponentSeed("audio", "component.audio", "Default Audio"),
         NewComponentSeed("media", "component.media", "Default Media"),

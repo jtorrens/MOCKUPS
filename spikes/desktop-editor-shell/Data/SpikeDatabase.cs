@@ -53,6 +53,7 @@ internal sealed partial class SpikeDatabase
         {
             ValidateSchemaV1(connection);
             EnsureThemeTokens(connection);
+            EnsureButtonComponentClasses(connection);
             NormalizeRadiusTokenVocabulary(connection);
             NormalizeModuleAppearanceModes(connection);
             NormalizeKeyboardConfiguration(connection);
@@ -72,6 +73,7 @@ internal sealed partial class SpikeDatabase
         SeedProductionFontsIfEmpty(connection);
         SeedRenderPresetsIfEmpty(connection);
         SeedComponentClassesIfEmpty(connection);
+        EnsureButtonComponentClasses(connection);
         SeedThemesIfEmpty(connection);
         EnsureThemeTokens(connection);
         NormalizeRadiusTokenVocabulary(connection);

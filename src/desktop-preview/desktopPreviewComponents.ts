@@ -75,6 +75,14 @@ export const desktopPreviewComponents = {
     renderable: "./buttonIconComponentRenderable",
     embeds: ["surface", "label"],
   },
+  button: {
+    category: "atom",
+    migrationStatus: "functional",
+    contract: "./buttonComponentContract",
+    resolver: "./buttonComponentResolver",
+    renderable: "./buttonComponentRenderable",
+    embeds: ["surface", "label"],
+  },
   audio: {
     category: "component",
     migrationStatus: "functional",
