@@ -73,6 +73,10 @@ recreate their internal rules.
 - Messages are an ordered runtime collection. Each message must declare its
   hierarchy/order and editor groups so the module/instance editor can expose a
   stable collection rather than separate hard-coded message fields.
+- In Design Test Values, `messages[]` is a sourced runtime collection:
+  `sourceCollectionJsonKey` points at the base message array, each base item
+  has a stable `id`, and `testValues.messages[]` stores only id-matched
+  overrides. The preview payload receives the merged collection.
 - A message can have delay, write-on duration, reveal policy, state/direction,
   media playback state and status state. Its visible interval extends through
   its last animated event, not only through write-on.
@@ -101,17 +105,16 @@ data.
 
 ## Defaults, limitations and discrepancies
 
-- Design Test Values must reproduce the same payload contract a module
-  instance uses in production. Current module-instance adaptation is close to
-  this model but still accepts legacy-shaped direct preview message fields when
-  no collection is supplied. This compatibility route must be retired after
-  the message-collection editor is complete.
+- Design Test Values now reproduce the same `messages[]` payload shape as a
+  module instance. The renderer still accepts legacy-shaped direct preview
+  message fields when no collection is supplied; that compatibility route must
+  be retired after all saved previews have migrated.
 - Current composition sets explicit z-order with Keyboard above Text Input Bar
   and anchors Text Input Bar from the Keyboard base/frame top. These canonical
   rules are implemented.
 - Current Conversation derives and passes the final revealed grapheme index to
   Keyboard. The remaining temporal gap is that it does not yet forward the
   shared module `motionTimeSeconds` to Keyboard's public runtime input.
-- Message hierarchy/group metadata is not yet explicit in the runtime message
-  schema. Current array order is preserved, but editor grouping needs formal
-  schema fields.
+- Message editor grouping is declared by the runtime field metadata for the
+  `messages[]` collection. Explicit hierarchy metadata on the message item
+  itself remains optional while array order is the canonical sequence.
