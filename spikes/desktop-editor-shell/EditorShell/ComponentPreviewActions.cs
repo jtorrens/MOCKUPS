@@ -28,10 +28,13 @@ internal static class ComponentPreviewActions
     {
         var playInputId = JsonString(action, "playInputId");
         var durationInputId = JsonString(action, "durationInputId");
+        var durationCollectionJsonKey = JsonString(action, "durationCollectionJsonKey");
         var durationSeconds = JsonNumber(action, "durationSeconds", 0);
         var timeJsonKey = JsonString(action, "timeJsonKey");
         if (string.IsNullOrWhiteSpace(playInputId)
-            || (string.IsNullOrWhiteSpace(durationInputId) && durationSeconds <= 0)
+            || (string.IsNullOrWhiteSpace(durationInputId)
+                && string.IsNullOrWhiteSpace(durationCollectionJsonKey)
+                && durationSeconds <= 0)
             || string.IsNullOrWhiteSpace(timeJsonKey))
         {
             return null;
@@ -55,6 +58,9 @@ internal static class ComponentPreviewActions
             playInputId,
             durationInputId,
             durationSeconds,
+            durationCollectionJsonKey,
+            JsonStringArray(action, "durationItemNumberKeys"),
+            JsonNumber(action, "durationBaseFrames", 0),
             timeJsonKey,
             ParseTimeUnit(JsonString(action, "timeUnit")),
             JsonBoolean(action, "prewarmFrames", true),
@@ -135,6 +141,9 @@ internal sealed record ComponentPreviewActionDefinition(
     string PlayInputId,
     string DurationInputId,
     double DurationSeconds,
+    string DurationCollectionJsonKey,
+    IReadOnlyList<string> DurationItemNumberKeys,
+    double DurationBaseFrames,
     string TimeJsonKey,
     ComponentPreviewActionTimeUnit TimeUnit,
     bool PrewarmFrames,

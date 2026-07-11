@@ -615,65 +615,30 @@ internal sealed partial class SpikeDatabase
             ["headerTitle"] = "Alex Q",
             ["headerSubtitle"] = "online",
             ["actorId"] = "",
-            ["inputText"] = "Message",
-            ["message1Text"] = "Tenias razon: ya podemos componer desde el modulo.",
-            ["message2Text"] = "Perfecto. El modulo solo elige variantes y datos runtime.",
-            ["message3Text"] = "Siguiente paso: instancias reales.",
-            ["message2StatusState"] = "read",
-            ["message2StatusText"] = "",
-            ["textInputVisible"] = true,
-            ["keyboardVisible"] = false,
-            ["bubbleRevealMode"] = "duringWriteOn",
-            ["conversationFrame"] = 240,
-            ["conversationDurationFrames"] = 240,
+            ["messages"] = new JsonArray
+            {
+                ConversationPreviewMessage("incoming", "Tenias razon: ya podemos componer desde el modulo.", 0, 30, "duringWriteOn", false, false, false, "none", ""),
+                ConversationPreviewMessage("outgoing", "Perfecto. El modulo solo elige variantes y datos runtime.", 12, 42, "duringWriteOn", true, true, true, "read", ""),
+                ConversationPreviewMessage("system", "Siguiente paso: instancias reales.", 12, 0, "duringWriteOn", false, false, false, "none", ""),
+            },
+            ["conversationFrame"] = 0,
             ["inputs"] = new JsonArray
             {
                 new JsonObject { ["id"] = "actor", ["label"] = "Actor", ["jsonKey"] = "actorId", ["kind"] = "recordReference", ["defaultValue"] = "", ["tableId"] = "actors", ["resolvedJsonKey"] = "actor" },
                 new JsonObject { ["id"] = "headerTitle", ["label"] = "Header title", ["jsonKey"] = "headerTitle", ["kind"] = "text", ["defaultValue"] = "Alex Q" },
                 new JsonObject { ["id"] = "headerSubtitle", ["label"] = "Header subtitle", ["jsonKey"] = "headerSubtitle", ["kind"] = "text", ["defaultValue"] = "online" },
-                new JsonObject { ["id"] = "message1Text", ["label"] = "Incoming text", ["jsonKey"] = "message1Text", ["kind"] = "multilineText", ["defaultValue"] = "Tenias razon: ya podemos componer desde el modulo.", ["uiOrigin"] = "embedded", ["uiGroupId"] = "messages", ["uiGroupLabel"] = "Messages" },
-                new JsonObject { ["id"] = "message2Text", ["label"] = "Outgoing text", ["jsonKey"] = "message2Text", ["kind"] = "multilineText", ["defaultValue"] = "Perfecto. El modulo solo elige variantes y datos runtime.", ["uiOrigin"] = "embedded", ["uiGroupId"] = "messages", ["uiGroupLabel"] = "Messages" },
-                new JsonObject { ["id"] = "message3Text", ["label"] = "System text", ["jsonKey"] = "message3Text", ["kind"] = "multilineText", ["defaultValue"] = "Siguiente paso: instancias reales.", ["uiOrigin"] = "embedded", ["uiGroupId"] = "messages", ["uiGroupLabel"] = "Messages" },
+                new JsonObject { ["id"] = "conversationFrame", ["label"] = "Timeline frame", ["jsonKey"] = "conversationFrame", ["kind"] = "number", ["defaultValue"] = "0", ["minimum"] = 0, ["maximum"] = 100000, ["increment"] = 1 },
+            },
+            ["collections"] = new JsonArray
+            {
                 new JsonObject
                 {
-                    ["id"] = "message2StatusState",
-                    ["label"] = "Outgoing status",
-                    ["jsonKey"] = "message2StatusState",
-                    ["kind"] = "option",
-                    ["defaultValue"] = "read",
-                    ["uiOrigin"] = "embedded",
-                    ["uiGroupId"] = "messages",
-                    ["uiGroupLabel"] = "Messages",
-                    ["options"] = new JsonArray
-                    {
-                        new JsonObject { ["value"] = "none", ["label"] = "None" },
-                        new JsonObject { ["value"] = "sent", ["label"] = "Sent" },
-                        new JsonObject { ["value"] = "delivered", ["label"] = "Delivered" },
-                        new JsonObject { ["value"] = "read", ["label"] = "Read" },
-                    },
+                    ["id"] = "messages",
+                    ["label"] = "Messages",
+                    ["jsonKey"] = "messages",
+                    ["itemLabel"] = "Message",
+                    ["fields"] = ConversationPreviewMessageFields(),
                 },
-                new JsonObject { ["id"] = "message2StatusText", ["label"] = "Outgoing status text", ["jsonKey"] = "message2StatusText", ["kind"] = "text", ["defaultValue"] = "", ["uiOrigin"] = "embedded", ["uiGroupId"] = "messages", ["uiGroupLabel"] = "Messages" },
-                new JsonObject
-                {
-                    ["id"] = "bubbleRevealMode",
-                    ["label"] = "Bubble reveal",
-                    ["jsonKey"] = "bubbleRevealMode",
-                    ["kind"] = "option",
-                    ["defaultValue"] = "duringWriteOn",
-                    ["uiOrigin"] = "embedded",
-                    ["uiGroupId"] = "messages",
-                    ["uiGroupLabel"] = "Messages",
-                    ["options"] = new JsonArray
-                    {
-                        new JsonObject { ["value"] = "duringWriteOn", ["label"] = "During write-on" },
-                        new JsonObject { ["value"] = "afterWriteOn", ["label"] = "After write-on" },
-                    },
-                },
-                new JsonObject { ["id"] = "conversationFrame", ["label"] = "Timeline frame", ["jsonKey"] = "conversationFrame", ["kind"] = "number", ["defaultValue"] = "240", ["minimum"] = 0, ["maximum"] = 100000, ["increment"] = 1, ["uiOrigin"] = "embedded", ["uiGroupId"] = "messages", ["uiGroupLabel"] = "Messages" },
-                new JsonObject { ["id"] = "conversationDurationFrames", ["label"] = "Timeline duration", ["jsonKey"] = "conversationDurationFrames", ["kind"] = "number", ["defaultValue"] = "240", ["minimum"] = 1, ["maximum"] = 100000, ["increment"] = 1, ["uiOrigin"] = "embedded", ["uiGroupId"] = "messages", ["uiGroupLabel"] = "Messages" },
-                new JsonObject { ["id"] = "inputText", ["label"] = "Input text", ["jsonKey"] = "inputText", ["kind"] = "text", ["defaultValue"] = "Message", ["uiOrigin"] = "embedded", ["uiGroupId"] = "textInput", ["uiGroupLabel"] = "Text input" },
-                new JsonObject { ["id"] = "textInputVisible", ["label"] = "Text input visible", ["jsonKey"] = "textInputVisible", ["kind"] = "boolean", ["defaultValue"] = "true", ["uiOrigin"] = "embedded", ["uiGroupId"] = "textInput", ["uiGroupLabel"] = "Text input" },
-                new JsonObject { ["id"] = "keyboardVisible", ["label"] = "Keyboard visible", ["jsonKey"] = "keyboardVisible", ["kind"] = "boolean", ["defaultValue"] = "false", ["uiOrigin"] = "embedded", ["uiGroupId"] = "textInput", ["uiGroupLabel"] = "Text input" },
             },
             ["actions"] = new JsonArray
             {
@@ -682,35 +647,57 @@ internal sealed partial class SpikeDatabase
                     ["id"] = "playConversation",
                     ["label"] = "Play messages",
                     ["playInputId"] = "conversationPlayback",
-                    ["durationInputId"] = "conversationDurationFrames",
+                    ["durationCollectionJsonKey"] = "messages",
+                    ["durationItemNumberKeys"] = new JsonArray { "delayAfterPreviousFrames", "writeOnDurationFrames" },
                     ["timeJsonKey"] = "conversationFrame",
                     ["timeUnit"] = "frames",
                     ["prewarmFrames"] = false,
                 },
-                new JsonObject
-                {
-                    ["id"] = "textInput",
-                    ["label"] = "Text input",
-                    ["playInputId"] = "composerTransitionTrigger",
-                    ["durationSeconds"] = 0.3,
-                    ["durationMotionConfigPath"] = "conversation.messageViewportMotion",
-                    ["timeJsonKey"] = "composerTransitionTimeSeconds",
-                    ["prewarmFrames"] = false,
-                    ["activateInputIds"] = new JsonArray { "textInputVisible" },
-                    ["deactivateInputIds"] = new JsonArray { "keyboardVisible" },
-                },
-                new JsonObject
-                {
-                    ["id"] = "keyboard",
-                    ["label"] = "Keyboard",
-                    ["playInputId"] = "composerTransitionTrigger",
-                    ["durationSeconds"] = 0.3,
-                    ["durationMotionConfigPath"] = "conversation.messageViewportMotion",
-                    ["timeJsonKey"] = "composerTransitionTimeSeconds",
-                    ["prewarmFrames"] = false,
-                    ["activateInputIds"] = new JsonArray { "textInputVisible", "keyboardVisible" },
-                },
             },
+        };
+    }
+
+    private static JsonObject ConversationPreviewMessage(
+        string direction,
+        string text,
+        int delayAfterPreviousFrames,
+        int writeOnDurationFrames,
+        string bubbleRevealMode,
+        bool textInputVisible,
+        bool keyboardVisible,
+        bool statusVisible,
+        string statusState,
+        string statusText)
+    {
+        return new JsonObject
+        {
+            ["direction"] = direction,
+            ["text"] = text,
+            ["delayAfterPreviousFrames"] = delayAfterPreviousFrames,
+            ["writeOnDurationFrames"] = writeOnDurationFrames,
+            ["bubbleRevealMode"] = bubbleRevealMode,
+            ["textInputVisible"] = textInputVisible,
+            ["keyboardVisible"] = keyboardVisible,
+            ["statusVisible"] = statusVisible,
+            ["statusState"] = statusState,
+            ["statusText"] = statusText,
+        };
+    }
+
+    private static JsonArray ConversationPreviewMessageFields()
+    {
+        return new JsonArray
+        {
+            new JsonObject { ["id"] = "direction", ["label"] = "Direction", ["jsonKey"] = "direction", ["kind"] = "option", ["defaultValue"] = "incoming", ["options"] = new JsonArray { new JsonObject { ["value"] = "incoming", ["label"] = "Incoming" }, new JsonObject { ["value"] = "outgoing", ["label"] = "Outgoing" }, new JsonObject { ["value"] = "system", ["label"] = "System" } } },
+            new JsonObject { ["id"] = "text", ["label"] = "Text", ["jsonKey"] = "text", ["kind"] = "multilineText", ["defaultValue"] = "" },
+            new JsonObject { ["id"] = "delay", ["label"] = "Delay", ["jsonKey"] = "delayAfterPreviousFrames", ["kind"] = "number", ["defaultValue"] = "0", ["minimum"] = 0, ["maximum"] = 100000, ["increment"] = 1 },
+            new JsonObject { ["id"] = "writeOn", ["label"] = "Write-on frames", ["jsonKey"] = "writeOnDurationFrames", ["kind"] = "number", ["defaultValue"] = "0", ["minimum"] = 0, ["maximum"] = 100000, ["increment"] = 1 },
+            new JsonObject { ["id"] = "bubbleReveal", ["label"] = "Bubble reveal", ["jsonKey"] = "bubbleRevealMode", ["kind"] = "option", ["defaultValue"] = "duringWriteOn", ["options"] = new JsonArray { new JsonObject { ["value"] = "duringWriteOn", ["label"] = "During write-on" }, new JsonObject { ["value"] = "afterWriteOn", ["label"] = "After write-on" } } },
+            new JsonObject { ["id"] = "textInput", ["label"] = "Text input visible while writing", ["jsonKey"] = "textInputVisible", ["kind"] = "boolean", ["defaultValue"] = "false" },
+            new JsonObject { ["id"] = "keyboard", ["label"] = "Keyboard visible while writing", ["jsonKey"] = "keyboardVisible", ["kind"] = "boolean", ["defaultValue"] = "false" },
+            new JsonObject { ["id"] = "statusVisible", ["label"] = "Show delivery status", ["jsonKey"] = "statusVisible", ["kind"] = "boolean", ["defaultValue"] = "false" },
+            new JsonObject { ["id"] = "status", ["label"] = "Status", ["jsonKey"] = "statusState", ["kind"] = "option", ["defaultValue"] = "none", ["options"] = new JsonArray { new JsonObject { ["value"] = "none", ["label"] = "None" }, new JsonObject { ["value"] = "sent", ["label"] = "Sent" }, new JsonObject { ["value"] = "delivered", ["label"] = "Delivered" }, new JsonObject { ["value"] = "read", ["label"] = "Read" } } },
+            new JsonObject { ["id"] = "statusText", ["label"] = "Status text", ["jsonKey"] = "statusText", ["kind"] = "text", ["defaultValue"] = "" },
         };
     }
 

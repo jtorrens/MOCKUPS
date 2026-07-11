@@ -94,16 +94,12 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
           ),
       )
     : undefined;
-  const keyboardVisible = booleanPreviewValue(
-    preview,
-    "keyboardVisible",
-    requiredBoolean(conversation, "showKeyboard", "module.conversation.showKeyboard"),
-  );
-  const textInputVisible = booleanPreviewValue(
-    preview,
-    "textInputVisible",
-    requiredBoolean(conversation, "showTextInputBar", "module.conversation.showTextInputBar"),
-  );
+  const conversationFrame = Math.max(0, Math.floor(optionalNumber(preview, "conversationFrame", Number.MAX_SAFE_INTEGER)));
+  const composer = composerState(instanceMessages(preview), conversationFrame);
+  const keyboardVisible = composer.keyboardVisible
+    && requiredBoolean(conversation, "showKeyboard", "module.conversation.showKeyboard");
+  const textInputVisible = composer.textInputVisible
+    && requiredBoolean(conversation, "showTextInputBar", "module.conversation.showTextInputBar");
   const keyboard = keyboardVisible
     ? childRenderable(
         payload,
@@ -111,7 +107,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
         "keyboard",
         requiredString(conversation, "keyboardVariant", "module.conversation.keyboardVariant"),
         {
-          text: optionalString(preview, "inputText"),
+          text: composer.text,
           currentCharacter: 1,
         },
         (childPayload) =>
@@ -129,7 +125,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
           "module.conversation.textInputBarVariant",
         ),
         {
-          sampleText: optionalString(preview, "inputText"),
+          sampleText: composer.text,
           availableWidth: screen.width / scale,
         },
         (childPayload) =>
@@ -216,7 +212,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
       preview,
       top,
       bottom,
-      Math.max(0, Math.floor(optionalNumber(preview, "conversationFrame", Number.MAX_SAFE_INTEGER))),
+      conversationFrame,
     ),
   });
 
@@ -249,7 +245,7 @@ function runtimePreview(payload: DesignPreviewPayload): JsonRecord {
     actor: context.ownerActor,
     headerTitle: optionalString(header, "title"),
     headerSubtitle: optionalString(header, "subtitle"),
-    instanceMessages: content.messages,
+    messages: content.messages,
   };
 }
 
@@ -337,7 +333,7 @@ function messageNodes(
       writeOnTrigger,
       writeOnFrame: message.writeOnFrame,
       writeOnDurationFrames: message.writeOnDurationFrames,
-      statusState: message.statusState,
+      statusState: message.statusVisible ? message.statusState : "none",
       statusText: message.statusText,
     },
     (childPayload) => bubbleComponentToRenderable(childPayload, resolveBubbleComponent(childPayload)),
@@ -377,25 +373,34 @@ type ConversationPreviewMessage = {
   writeOnTrigger: boolean;
   writeOnFrame: number;
   bubbleRevealMode: string;
+  textInputVisible: boolean;
+  keyboardVisible: boolean;
+  statusVisible: boolean;
 };
 
 function instanceMessages(preview: JsonRecord): ConversationPreviewMessage[] {
-  const messages = Array.isArray(preview.instanceMessages)
-    ? preview.instanceMessages.map(asRecord)
+  const messages = Array.isArray(preview.messages)
+    ? preview.messages.map(asRecord)
+    : Array.isArray(preview.instanceMessages)
+      ? preview.instanceMessages.map(asRecord)
     : [];
   if (messages.length > 0) {
     return messages.map((message) => {
       const status = asRecord(message.status);
+      const textReveal = asRecord(message.textReveal);
       return {
         state: optionalString(message, "direction") || "incoming",
         text: optionalString(message, "text"),
-        statusState: optionalString(status, "deliveryStatus") || "none",
-        statusText: optionalString(status, "text"),
+        statusState: optionalString(message, "statusState") || optionalString(status, "deliveryStatus") || "none",
+        statusText: optionalString(message, "statusText") || optionalString(status, "text"),
         delayAfterPreviousFrames: Math.max(0, Math.floor(optionalNumber(message, "delayAfterPreviousFrames", 0))),
-        writeOnDurationFrames: Math.max(0, Math.floor(optionalNumber(asRecord(message.textReveal), "durationFrames", 0))),
+        writeOnDurationFrames: Math.max(0, Math.floor(optionalNumber(message, "writeOnDurationFrames", optionalNumber(textReveal, "durationFrames", 0)))),
         writeOnTrigger: false,
         writeOnFrame: 0,
         bubbleRevealMode: optionalString(message, "bubbleRevealMode") || "duringWriteOn",
+        textInputVisible: optionalBoolean(message, "textInputVisible"),
+        keyboardVisible: optionalBoolean(message, "keyboardVisible"),
+        statusVisible: optionalBoolean(message, "statusVisible") || optionalString(message, "statusState") !== "none",
       };
     });
   }
@@ -411,6 +416,9 @@ function instanceMessages(preview: JsonRecord): ConversationPreviewMessage[] {
       writeOnTrigger: false,
       writeOnFrame: 0,
       bubbleRevealMode: optionalString(preview, "bubbleRevealMode") || "duringWriteOn",
+      textInputVisible: booleanPreviewValue(preview, "textInputVisible", false),
+      keyboardVisible: booleanPreviewValue(preview, "keyboardVisible", false),
+      statusVisible: false,
     },
     {
       state: "outgoing",
@@ -422,6 +430,9 @@ function instanceMessages(preview: JsonRecord): ConversationPreviewMessage[] {
       writeOnTrigger: false,
       writeOnFrame: 0,
       bubbleRevealMode: optionalString(preview, "bubbleRevealMode") || "duringWriteOn",
+      textInputVisible: booleanPreviewValue(preview, "textInputVisible", false),
+      keyboardVisible: booleanPreviewValue(preview, "keyboardVisible", false),
+      statusVisible: optionalString(preview, "message2StatusState") !== "none",
     },
     {
       state: "system",
@@ -433,6 +444,9 @@ function instanceMessages(preview: JsonRecord): ConversationPreviewMessage[] {
       writeOnTrigger: false,
       writeOnFrame: 0,
       bubbleRevealMode: optionalString(preview, "bubbleRevealMode") || "duringWriteOn",
+      textInputVisible: false,
+      keyboardVisible: false,
+      statusVisible: false,
     },
   ];
 }
@@ -460,6 +474,32 @@ function visibleMessages(
       writeOnDurationFrames: effectiveWriteOnFrames,
     }];
   });
+}
+
+function composerState(messages: ConversationPreviewMessage[], frame: number) {
+  let cursor = 0;
+  for (const message of messages) {
+    const startFrame = cursor + message.delayAfterPreviousFrames;
+    const effectiveWriteOnFrames = message.state === "system" ? 0 : message.writeOnDurationFrames;
+    const endFrame = startFrame + effectiveWriteOnFrames;
+    const writing = message.state === "outgoing"
+      && effectiveWriteOnFrames > 0
+      && frame >= startFrame
+      && frame < endFrame;
+    if (writing) {
+      const textLength = Math.max(0, Math.min(
+        Array.from(message.text).length,
+        Math.floor(Array.from(message.text).length * (frame - startFrame) / Math.max(1, effectiveWriteOnFrames)),
+      ));
+      return {
+        text: Array.from(message.text).slice(0, textLength).join(""),
+        textInputVisible: message.textInputVisible,
+        keyboardVisible: message.keyboardVisible,
+      };
+    }
+    cursor = endFrame;
+  }
+  return { text: "", textInputVisible: false, keyboardVisible: false };
 }
 
 function booleanPreviewValue(preview: JsonRecord, key: string, fallback: boolean) {

@@ -59,9 +59,55 @@ internal static class DesignPreviewTestValues
         testValues[input.JsonKey] = ValueNode(input, value);
     }
 
+    public static IReadOnlyList<JsonObject> CollectionItems(
+        JsonObject preview,
+        RuntimeInputCollectionDefinition collection)
+    {
+        var source = preview["testValues"] is JsonObject testValues
+            && testValues[collection.JsonKey] is JsonArray testItems
+            ? testItems
+            : preview[collection.JsonKey] as JsonArray;
+        return source?.OfType<JsonObject>().Select((item) => item.DeepClone() as JsonObject ?? new JsonObject()).ToList()
+            ?? [];
+    }
+
+    public static string CollectionValue(JsonObject item, ComponentInputDefinition input)
+    {
+        var value = item[input.JsonKey];
+        return value switch
+        {
+            JsonValue jsonValue when jsonValue.TryGetValue<string>(out var text) => text,
+            JsonValue jsonValue when jsonValue.TryGetValue<bool>(out var boolean) => boolean ? "true" : "false",
+            JsonValue jsonValue when jsonValue.TryGetValue<double>(out var number) => number.ToString(CultureInfo.InvariantCulture),
+            JsonValue jsonValue when jsonValue.TryGetValue<int>(out var integer) => integer.ToString(CultureInfo.InvariantCulture),
+            JsonArray array => array.ToJsonString(),
+            _ => input.DefaultValue,
+        };
+    }
+
+    public static void SetCollectionValue(
+        JsonObject preview,
+        RuntimeInputCollectionDefinition collection,
+        int itemIndex,
+        ComponentInputDefinition input,
+        string value)
+    {
+        var items = CollectionItems(preview, collection).Select((item) => item.DeepClone() as JsonObject ?? new JsonObject()).ToList();
+        if (itemIndex < 0 || itemIndex >= items.Count)
+        {
+            return;
+        }
+
+        items[itemIndex][input.JsonKey] = ValueNode(input, value);
+        var testValues = preview["testValues"] as JsonObject ?? new JsonObject();
+        preview["testValues"] = testValues;
+        testValues[collection.JsonKey] = new JsonArray(items.Select((item) => (JsonNode?)item).ToArray());
+    }
+
     public static void PromoteToDefaults(
         JsonObject preview,
-        IReadOnlyList<ComponentInputDefinition> inputs)
+        IReadOnlyList<ComponentInputDefinition> inputs,
+        IReadOnlyList<RuntimeInputCollectionDefinition>? collections = null)
     {
         var contract = preview["inputs"] as JsonArray;
         foreach (var input in inputs)
@@ -82,6 +128,15 @@ internal static class DesignPreviewTestValues
             if (definition is not null)
             {
                 definition["defaultValue"] = value;
+            }
+        }
+
+        foreach (var collection in collections ?? [])
+        {
+            if (preview["testValues"] is JsonObject values
+                && values[collection.JsonKey] is JsonArray items)
+            {
+                preview[collection.JsonKey] = items.DeepClone();
             }
         }
 

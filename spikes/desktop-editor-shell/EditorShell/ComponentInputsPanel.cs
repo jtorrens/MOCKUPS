@@ -27,6 +27,7 @@ internal sealed class ComponentPreviewInputSession
     private IReadOnlyList<ComponentPreviewActionDefinition> _actions = [];
     private string _activeActionId = "";
     private JsonObject _config = [];
+    private JsonObject _runtimePreview = [];
     private string _preparingActionId = "";
     private int _playbackFrameRate = 25;
 
@@ -57,12 +58,14 @@ internal sealed class ComponentPreviewInputSession
             _actions = [];
             _activeActionId = "";
             _config = [];
+            _runtimePreview = [];
             StopPlayback();
             return;
         }
 
         ApplyProjectFrameRate(projectId);
         var preview = ParseJsonObject(payload.DesignPreviewJson);
+        _runtimePreview = preview;
         var config = ParseJsonObject(payload.ConfigJson);
         _config = config;
         var inputs = ReadRuntimeInputs(preview, config);
@@ -75,6 +78,7 @@ internal sealed class ComponentPreviewInputSession
             _actions = [];
             _activeActionId = "";
             _config = [];
+            _runtimePreview = [];
             StopPlayback();
             return;
         }
@@ -130,6 +134,7 @@ internal sealed class ComponentPreviewInputSession
         }
 
         var preview = ParseJsonObject(payload.DesignPreviewJson);
+        _runtimePreview = preview;
         var config = ParseJsonObject(payload.ConfigJson);
         var inputs = ReadRuntimeInputs(preview, config);
         _actions = ComponentPreviewActions.Read(preview);
@@ -638,8 +643,31 @@ internal sealed class ComponentPreviewInputSession
             return Math.Max(1, (int)Math.Ceiling(DurationSeconds(action) * Math.Max(1, _playbackFrameRate)));
         }
 
+        if (!string.IsNullOrWhiteSpace(action.DurationCollectionJsonKey))
+        {
+            return CollectionDurationFrames(_runtimePreview, action);
+        }
+
         var key = ActionDurationKey(action);
         return Math.Max(1, (int)Math.Round(ParseDouble(_values.GetValueOrDefault(key, InputDefault(key, "1"))), MidpointRounding.AwayFromZero));
+    }
+
+    private static int CollectionDurationFrames(JsonObject preview, ComponentPreviewActionDefinition action)
+    {
+        if (preview[action.DurationCollectionJsonKey] is not JsonArray items)
+        {
+            return Math.Max(1, (int)Math.Round(action.DurationBaseFrames, MidpointRounding.AwayFromZero));
+        }
+
+        var total = action.DurationBaseFrames;
+        foreach (var item in items.OfType<JsonObject>())
+        {
+            foreach (var key in action.DurationItemNumberKeys)
+            {
+                total += (double)JsonDecimal(item, key, 0);
+            }
+        }
+        return Math.Max(1, (int)Math.Ceiling(total));
     }
 
     private double PlaybackTimeValue(ComponentPreviewActionDefinition action)
@@ -842,6 +870,85 @@ internal sealed class ComponentPreviewInputSession
         return definitions;
     }
 
+    internal static IReadOnlyList<RuntimeInputCollectionDefinition> ReadRuntimeCollections(JsonObject preview, JsonObject config)
+    {
+        if (preview["collections"] is not JsonArray collections)
+        {
+            return [];
+        }
+
+        var definitions = new List<RuntimeInputCollectionDefinition>();
+        foreach (var collection in collections.OfType<JsonObject>())
+        {
+            if (!InputIsVisible(collection, config))
+            {
+                continue;
+            }
+
+            var id = JsonString(collection, "id");
+            var label = JsonString(collection, "label");
+            var jsonKey = JsonString(collection, "jsonKey");
+            if (string.IsNullOrWhiteSpace(id)
+                || string.IsNullOrWhiteSpace(label)
+                || string.IsNullOrWhiteSpace(jsonKey)
+                || collection["fields"] is not JsonArray fields)
+            {
+                continue;
+            }
+
+            var itemFields = new List<ComponentInputDefinition>();
+            foreach (var field in fields.OfType<JsonObject>())
+            {
+                var fieldId = JsonString(field, "id");
+                var fieldLabel = JsonString(field, "label");
+                var fieldJsonKey = JsonString(field, "jsonKey");
+                var kind = JsonString(field, "kind");
+                if (string.IsNullOrWhiteSpace(fieldId)
+                    || string.IsNullOrWhiteSpace(fieldLabel)
+                    || string.IsNullOrWhiteSpace(fieldJsonKey)
+                    || string.IsNullOrWhiteSpace(kind))
+                {
+                    continue;
+                }
+
+                itemFields.Add(CreateInputDefinition(
+                    fieldId,
+                    fieldLabel,
+                    fieldJsonKey,
+                    kind,
+                    JsonString(field, "valueKind"),
+                    JsonString(field, "defaultValue"),
+                    ReadOptions(field),
+                    JsonDecimal(field, "minimum", 0),
+                    JsonDecimal(field, "maximum", 9999),
+                    JsonDecimal(field, "increment", 1),
+                    JsonString(field, "tableId"),
+                    JsonString(field, "resolvedJsonKey"),
+                    JsonString(field, "componentType"),
+                    ComponentInputSource.Runtime,
+                    new PairFieldLabels(
+                        JsonString(field, "pairFirstLabel", "W"),
+                        JsonString(field, "pairSecondLabel", "H")),
+                    ComponentInputUiOrigin.Self,
+                    "",
+                    "",
+                    ""));
+            }
+
+            if (itemFields.Count > 0)
+            {
+                definitions.Add(new RuntimeInputCollectionDefinition(
+                    id,
+                    label,
+                    jsonKey,
+                    JsonString(collection, "itemLabel", "Item"),
+                    itemFields));
+            }
+        }
+
+        return definitions;
+    }
+
     private static bool InputIsVisible(JsonObject input, JsonObject config)
     {
         var path = JsonString(input, "visibleWhenPath");
@@ -898,6 +1005,9 @@ internal sealed class ComponentPreviewInputSession
             action.PlayInputId,
             action.DurationInputId,
             action.DurationSeconds.ToString(CultureInfo.InvariantCulture),
+            action.DurationCollectionJsonKey,
+            string.Join(",", action.DurationItemNumberKeys),
+            action.DurationBaseFrames.ToString(CultureInfo.InvariantCulture),
             action.TimeJsonKey,
             action.TimeUnit,
             action.PrewarmFrames.ToString(CultureInfo.InvariantCulture),
@@ -1082,3 +1192,10 @@ internal sealed record ComponentInputDefinition(
     string UiGroupId = "",
     string UiGroupLabel = "",
     string UiParentGroupId = "");
+
+internal sealed record RuntimeInputCollectionDefinition(
+    string Id,
+    string Label,
+    string JsonKey,
+    string ItemLabel,
+    IReadOnlyList<ComponentInputDefinition> Fields);

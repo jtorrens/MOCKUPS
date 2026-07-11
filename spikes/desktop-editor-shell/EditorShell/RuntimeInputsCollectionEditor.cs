@@ -38,27 +38,30 @@ internal sealed class RuntimeInputsCollectionEditor
         var preview = DesignPreviewTestValues.Parse(owner.DesignPreviewJson);
         var config = DesignPreviewTestValues.Parse(owner.ConfigJson);
         var inputs = ComponentPreviewInputSession.ReadRuntimeInputs(preview, config);
+        var collections = ComponentPreviewInputSession.ReadRuntimeCollections(preview, config);
         var actions = ComponentPreviewActions.Read(preview);
         var tabs = new TabControl
         {
             Items =
             {
-                new TabItem { Header = "Runtime API", Content = CreateApiTab(inputs) },
-                new TabItem { Header = "Test Values", Content = CreateTestValuesTab(owner, preview, inputs, actions) },
+                new TabItem { Header = "Runtime API", Content = CreateApiTab(inputs, collections) },
+                new TabItem { Header = "Test Values", Content = CreateTestValuesTab(owner, preview, inputs, collections, actions) },
             },
         };
 
         return new InstantEditorCard(
-            EditorCardHeader.Create("Runtime Inputs", $"{inputs.Count} public input(s)", EditorIcons.Create(EditorIcons.Design, 18)),
+            EditorCardHeader.Create("Runtime Inputs", $"{inputs.Count} input(s) · {collections.Count} collection(s)", EditorIcons.Create(EditorIcons.Design, 18)),
             new Border { Padding = new Thickness(10), Child = tabs },
             isExpanded: false)
         { HorizontalAlignment = HorizontalAlignment.Stretch };
     }
 
-    private Control CreateApiTab(IReadOnlyList<ComponentInputDefinition> inputs)
+    private Control CreateApiTab(
+        IReadOnlyList<ComponentInputDefinition> inputs,
+        IReadOnlyList<RuntimeInputCollectionDefinition> collections)
     {
         var panel = new StackPanel { Spacing = 6, Margin = new Thickness(0, 8, 0, 0) };
-        if (inputs.Count == 0)
+        if (inputs.Count == 0 && collections.Count == 0)
         {
             panel.Children.Add(new TextBlock { Text = "This definition exposes no runtime inputs.", Opacity = 0.68 });
             return panel;
@@ -77,6 +80,11 @@ internal sealed class RuntimeInputsCollectionEditor
         }
         EditorGroupBlock.WireExclusiveCards(groupCards);
 
+        foreach (var collection in collections)
+        {
+            panel.Children.Add(CreateApiCollectionCard(collection));
+        }
+
         return panel;
     }
 
@@ -84,6 +92,7 @@ internal sealed class RuntimeInputsCollectionEditor
         RuntimeInputOwner owner,
         JsonObject preview,
         IReadOnlyList<ComponentInputDefinition> inputs,
+        IReadOnlyList<RuntimeInputCollectionDefinition> collections,
         IReadOnlyList<ComponentPreviewActionDefinition> actions)
     {
         var panel = new StackPanel { Spacing = 8, Margin = new Thickness(0, 8, 0, 0) };
@@ -114,7 +123,7 @@ internal sealed class RuntimeInputsCollectionEditor
         saveDefaults.Click += (_, args) =>
         {
             args.Handled = true;
-            DesignPreviewTestValues.PromoteToDefaults(preview, inputs);
+            DesignPreviewTestValues.PromoteToDefaults(preview, inputs, collections);
             owner.Save(preview.ToJsonString());
             _onChanged();
         };
@@ -137,7 +146,7 @@ internal sealed class RuntimeInputsCollectionEditor
         Grid.SetColumn(buttons, 1);
         header.Children.Add(buttons);
         panel.Children.Add(header);
-        if (inputs.Count == 0)
+        if (inputs.Count == 0 && collections.Count == 0)
         {
             panel.Children.Add(new TextBlock { Text = "No test values are required.", Opacity = 0.68 });
             return panel;
@@ -155,6 +164,11 @@ internal sealed class RuntimeInputsCollectionEditor
             panel.Children.Add(CreateTestValueGroupCard(owner, preview, groupId, groups, groupCards));
         }
         EditorGroupBlock.WireExclusiveCards(groupCards);
+
+        foreach (var collection in collections)
+        {
+            panel.Children.Add(CreateTestValueCollectionCard(owner, preview, collection));
+        }
 
         return panel;
     }
@@ -174,6 +188,25 @@ internal sealed class RuntimeInputsCollectionEditor
                 },
             },
         };
+    }
+
+    private Control CreateApiCollectionCard(RuntimeInputCollectionDefinition collection)
+    {
+        var content = new StackPanel { Spacing = 6 };
+        content.Children.Add(new TextBlock
+        {
+            Text = $"Runtime array · {collection.JsonKey}[]",
+            FontSize = 11,
+            Opacity = 0.7,
+        });
+        foreach (var field in collection.Fields)
+        {
+            content.Children.Add(CreateApiInputRow(field));
+        }
+        return new InstantEditorCard(
+            EditorCardHeader.Create(collection.Label, $"{collection.ItemLabel} contract", EditorIcons.Create(EditorIcons.Component, 16)),
+            content,
+            isExpanded: false);
     }
 
     private Control CreateApiGroupCard(
@@ -213,6 +246,57 @@ internal sealed class RuntimeInputsCollectionEditor
             _onChanged();
         };
         return control;
+    }
+
+    private Control CreateTestValueCollectionCard(
+        RuntimeInputOwner owner,
+        JsonObject preview,
+        RuntimeInputCollectionDefinition collection)
+    {
+        var content = new StackPanel { Spacing = 8 };
+        var items = DesignPreviewTestValues.CollectionItems(preview, collection);
+        if (items.Count == 0)
+        {
+            content.Children.Add(new TextBlock { Text = "No active instances in this design.", Opacity = 0.68 });
+        }
+
+        for (var index = 0; index < items.Count; index++)
+        {
+            content.Children.Add(CreateTestValueCollectionItemCard(owner, preview, collection, index, items[index]));
+        }
+
+        return new InstantEditorCard(
+            EditorCardHeader.Create(collection.Label, $"{items.Count} active {collection.ItemLabel.ToLowerInvariant()} instance(s)", EditorIcons.Create(EditorIcons.Component, 16)),
+            content,
+            isExpanded: true);
+    }
+
+    private Control CreateTestValueCollectionItemCard(
+        RuntimeInputOwner owner,
+        JsonObject preview,
+        RuntimeInputCollectionDefinition collection,
+        int itemIndex,
+        JsonObject item)
+    {
+        var content = new StackPanel { Spacing = 8 };
+        foreach (var input in collection.Fields)
+        {
+            var control = new DictionaryFieldControl(
+                new FieldValue(CreateDefinition(owner.Node, input), DesignPreviewTestValues.CollectionValue(item, input)),
+                _dictionaryServices.ForNode(owner.Node, (_) => ""));
+            control.ValueCommitted += (_, next) =>
+            {
+                DesignPreviewTestValues.SetCollectionValue(preview, collection, itemIndex, input, next);
+                owner.Save(preview.ToJsonString());
+                _onChanged();
+            };
+            content.Children.Add(control);
+        }
+
+        return new InstantEditorCard(
+            EditorCardHeader.Create($"{collection.ItemLabel} {itemIndex + 1}", $"{collection.JsonKey}[{itemIndex}]", EditorIcons.Create(EditorIcons.Component, 14)),
+            content,
+            isExpanded: true);
     }
 
     private Control CreateTestValueGroupCard(

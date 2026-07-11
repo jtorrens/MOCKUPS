@@ -51,14 +51,15 @@ internal sealed partial class SpikeDatabase
         {
             var preview = ParseJsonObject(ReadString(reader, 1));
             var changed = false;
-            foreach (var property in defaults.Where((property) => property.Key is not "inputs" and not "actions"))
+            MigrateConversationPreviewMessages(preview, defaults, ref changed);
+            foreach (var property in defaults.Where((property) => property.Key is not "inputs" and not "actions" and not "collections" and not "messages"))
             {
                 if (preview[property.Key] is not null) continue;
                 preview[property.Key] = property.Value?.DeepClone();
                 changed = true;
             }
 
-            foreach (var contractKey in new[] { "inputs", "actions" })
+            foreach (var contractKey in new[] { "inputs", "collections", "actions" })
             {
                 if (JsonNode.DeepEquals(preview[contractKey], defaults[contractKey])) continue;
                 preview[contractKey] = defaults[contractKey]?.DeepClone();
@@ -79,6 +80,56 @@ internal sealed partial class SpikeDatabase
                 "UPDATE modules SET design_preview_json = $json WHERE id = $id",
                 ("$json", update.Json),
                 ("$id", update.Id));
+        }
+    }
+
+    private static void MigrateConversationPreviewMessages(JsonObject preview, JsonObject defaults, ref bool changed)
+    {
+        if (preview["messages"] is JsonArray existingMessages)
+        {
+            var defaultMessages = defaults["messages"] as JsonArray ?? new JsonArray();
+            for (var index = 0; index < existingMessages.Count; index++)
+            {
+                if (existingMessages[index] is not JsonObject existing
+                    || defaultMessages.ElementAtOrDefault(index) is not JsonObject defaultsForMessage)
+                {
+                    continue;
+                }
+
+                foreach (var (key, value) in defaultsForMessage)
+                {
+                    if (existing[key] is not null)
+                    {
+                        continue;
+                    }
+                    existing[key] = value?.DeepClone();
+                    changed = true;
+                }
+            }
+            return;
+        }
+
+        var messages = defaults["messages"]?.DeepClone() as JsonArray ?? new JsonArray();
+        var first = messages.ElementAtOrDefault(0) as JsonObject;
+        var second = messages.ElementAtOrDefault(1) as JsonObject;
+        var third = messages.ElementAtOrDefault(2) as JsonObject;
+        CopyScalar(preview, "message1Text", first, "text");
+        CopyScalar(preview, "message2Text", second, "text");
+        CopyScalar(preview, "message3Text", third, "text");
+        CopyScalar(preview, "message2StatusState", second, "statusState");
+        CopyScalar(preview, "message2StatusText", second, "statusText");
+        CopyScalar(preview, "bubbleRevealMode", second, "bubbleRevealMode");
+        CopyScalar(preview, "textInputVisible", second, "textInputVisible");
+        CopyScalar(preview, "keyboardVisible", second, "keyboardVisible");
+        preview["messages"] = messages;
+        changed = true;
+    }
+
+    private static void CopyScalar(JsonObject source, string sourceKey, JsonObject? target, string targetKey)
+    {
+        if (target is not null && source[sourceKey] is JsonNode value)
+        {
+            target[targetKey] = value.DeepClone();
         }
     }
 }
