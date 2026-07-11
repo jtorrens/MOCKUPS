@@ -598,13 +598,6 @@ internal static class ComponentClassFieldCatalog
         ["component.keyboard.keyBorderWidth"] = new("component.keyboard.keyBorderWidth", "Key border width", ValueKind.Decimal, ["keyboard", "keyBorderWidth"], "0", Number: new NumberDefinition(0, 32, 0.5m, 2)),
         ["component.keyboard.keyShadowEnabled"] = new("component.keyboard.keyShadowEnabled", "Key shadow", ValueKind.Boolean, ["keyboard", "keyShadowEnabled"], "false"),
         ["component.keyboard.pressedEffect"] = new("component.keyboard.pressedEffect", "Pressed effect", ValueKind.OptionToken, ["keyboard", "pressedEffect"], "popup", Options: PressedEffectOptions),
-        ["component.keyboard.specialKeyTextScale"] = new(
-            "component.keyboard.specialKeyTextScale",
-            "Special key scale",
-            ValueKind.Decimal,
-            ["keyboard", "specialKeyTextScale"],
-            "0.65",
-            Number: new NumberDefinition(0.1m, 4, 0.05m, 2)),
         ["component.keyboard.emojiScale"] = new(
             "component.keyboard.emojiScale",
             "Emoji scale",

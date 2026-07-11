@@ -108,6 +108,7 @@ internal sealed partial class SpikeDatabase
                      "keyTextColorToken",
                      "keyBorderColorToken",
                      "popoverBackgroundColorToken",
+                     "specialKeyTextScale",
                  })
         {
             changed |= keyboard.Remove(key);

@@ -240,7 +240,6 @@ internal sealed partial class SpikeDatabase
                     ["keyBorderWidth"] = 0,
                     ["keyShadowEnabled"] = false,
                     ["pressedEffect"] = "popup",
-                    ["specialKeyTextScale"] = "0.65",
                     ["emojiScale"] = "1.2",
                     ["typography"] = JsonNode.Parse(TypographyStyleValue.CreateDefault("theme.typography.sizes.s")),
                     ["iconRowPlacement"] = "bottom",

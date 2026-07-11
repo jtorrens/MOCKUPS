@@ -104,6 +104,10 @@ internal sealed partial class SpikeDatabase
         if (!string.IsNullOrWhiteSpace(keyboardLayout)
             && (keyboardLayout.Contains("component.keyboard.popoverBackgroundColorToken", StringComparison.Ordinal)
                 || keyboardLayout.Contains("component.keyboard.backgroundColorToken", StringComparison.Ordinal)
+                || keyboardLayout.Contains("component.keyboard.heightToken", StringComparison.Ordinal)
+                || keyboardLayout.Contains("component.keyboard.keyGapToken", StringComparison.Ordinal)
+                || keyboardLayout.Contains("component.keyboard.rowGapToken", StringComparison.Ordinal)
+                || keyboardLayout.Contains("component.keyboard.specialKeyTextScale", StringComparison.Ordinal)
                 || keyboardLayout.Contains("component.style.cornerRadiusToken", StringComparison.Ordinal)))
         {
             Execute(

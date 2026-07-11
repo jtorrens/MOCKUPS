@@ -305,17 +305,13 @@ internal sealed partial class SpikeDatabase
               "groups": [
                 { "id": "keys", "label": "Keys", "order": 10, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": true, "fields": [
                   { "id": "component.keyboard.language", "order": 10, "visible": true },
-                  { "id": "component.keyboard.heightToken", "order": 20, "visible": true },
-                  { "id": "component.keyboard.keyGapToken", "order": 30, "visible": true },
-                  { "id": "component.keyboard.rowGapToken", "order": 40, "visible": true },
-                  { "id": "component.keyboard.typography", "order": 50, "visible": true },
-                  { "id": "component.keyboard.keyPadding", "order": 60, "visible": true },
-                  { "id": "component.keyboard.keyCornerRadiusToken", "order": 70, "visible": true },
-                  { "id": "component.keyboard.keyBorderWidth", "order": 80, "visible": true },
-                  { "id": "component.keyboard.keyShadowEnabled", "order": 90, "visible": true },
-                  { "id": "component.keyboard.pressedEffect", "order": 100, "visible": true },
-                  { "id": "component.keyboard.specialKeyTextScale", "order": 110, "visible": true },
-                  { "id": "component.keyboard.emojiScale", "order": 120, "visible": true }
+                  { "id": "component.keyboard.typography", "order": 20, "visible": true },
+                  { "id": "component.keyboard.keyPadding", "order": 30, "visible": true },
+                  { "id": "component.keyboard.keyCornerRadiusToken", "order": 40, "visible": true },
+                  { "id": "component.keyboard.keyBorderWidth", "order": 50, "visible": true },
+                  { "id": "component.keyboard.keyShadowEnabled", "order": 60, "visible": true },
+                  { "id": "component.keyboard.pressedEffect", "order": 70, "visible": true },
+                  { "id": "component.keyboard.emojiScale", "order": 80, "visible": true }
                 ] },
                 { "id": "iconRows", "label": "Icon bar", "order": 20, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": false, "fields": [
                   { "id": "component.keyboard.iconRowPlacement", "order": 10, "visible": true },

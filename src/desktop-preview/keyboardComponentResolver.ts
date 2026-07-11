@@ -122,11 +122,6 @@ export function resolveKeyboardComponent(
       "component.keyboard.keyShadowEnabled",
     ),
     pressedEffect,
-    specialKeyTextScale: requiredNumber(
-      keyboard,
-      "specialKeyTextScale",
-      "component.keyboard.specialKeyTextScale",
-    ),
     emojiScale: requiredNumber(
       keyboard,
       "emojiScale",

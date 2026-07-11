@@ -185,23 +185,15 @@ function keyboardRowNodes(
       || (key.kind === "character" && /\p{Extended_Pictographic}/u.test(key.label));
     const isSpecial = key.kind !== "character" && key.kind !== "space";
     const pressed = isPressedKey(key, keyboard.pressedKey);
-    const fontScale = isEmojiKey
-      ? keyboard.emojiScale
-      : isSpecial
-        ? keyboard.specialKeyTextScale
-        : 1;
+    const fontScale = isEmojiKey ? keyboard.emojiScale : 1;
     const pressedScale = keyboard.pressedEffect === "scale" && pressed ? 0.94 : 1;
-    const visualBaseBox = isCompactKeyboardKey(key) ? compactKeyBox(baseBox) : baseBox;
-    const box = pressedScale < 1 ? scaleBox(visualBaseBox, pressedScale) : visualBaseBox;
+    const box = pressedScale < 1 ? scaleBox(baseBox, pressedScale) : baseBox;
     const background = pressed && keyboard.pressedEffect !== "popup"
       ? pressedKeyBackground
       : isSpecial
         ? specialKeyBackground
         : keyBackground;
-    const compactGlyphSize = isCompactKeyboardKey(key)
-      ? Math.min(box.width, box.height) * 0.52
-      : 0;
-    const fontSize = Math.max(8, typography.fontSize * fontScale, compactGlyphSize);
+    const fontSize = Math.max(8, typography.fontSize * fontScale);
     const keyNodes: RenderableNode[] = [
       {
         id: `${keyboard.id}.key.${rowIndex}.${index}.background`,
@@ -213,7 +205,7 @@ function keyboardRowNodes(
           borderColor: keyBorderColor,
           borderRadius: Math.max(0, numberToken(payload, keyboard.keyCornerRadiusToken) * scale),
           borderWidth: keyBorderWidth,
-          shadow: isSpecial ? undefined : keyShadow,
+          shadow: keyShadow,
         },
       },
       usesEmojiIcon
@@ -238,7 +230,7 @@ function keyboardRowNodes(
           fontFamily: typography.fontFamily,
           fontSize,
           fontStyle: typography.fontStyle,
-          fontWeight: isSpecial || isEmojiKey ? 420 : typography.fontWeight,
+          fontWeight: typography.fontWeight,
           justifyContent: "center",
           lineHeight: box.height,
           textAlign: "center",
@@ -259,6 +251,8 @@ function keyboardRowNodes(
         typography,
         keyShadow,
         Math.max(0, numberToken(payload, keyboard.keyCornerRadiusToken) * scale),
+        keyBorderColor,
+        keyBorderWidth,
       ));
     }
 
@@ -268,23 +262,6 @@ function keyboardRowNodes(
 
 function isPressedKey(key: KeyboardKeyContract, pressedKey: string) {
   return pressedKey.length > 0 && (pressedKey === key.id || pressedKey === key.label);
-}
-
-function isCompactKeyboardKey(key: KeyboardKeyContract) {
-  return key.id === "shift"
-    || key.id === "backspace"
-    || key.id === "123"
-    || key.id === "numeric"
-    || key.id === "emoji";
-}
-
-function compactKeyBox(box: RenderableBox): RenderableBox {
-  const nextHeight = box.height * 0.74;
-  return {
-    ...box,
-    y: box.y + (box.height - nextHeight) / 2,
-    height: nextHeight,
-  };
 }
 
 function centeredSquareBox(box: RenderableBox, size: number): RenderableBox {
@@ -307,11 +284,13 @@ function keyboardPopoverNodes(
   typography: ReturnType<typeof resolveTypographyStyle>,
   keyShadow: Record<string, unknown> | undefined,
   radius: number,
+  borderColor: string,
+  borderWidth: number,
 ): RenderableNode[] {
   const popoverWidth = keyBox.width;
   const popoverHeight = keyBox.height;
   const gap = keyBox.height * 0.18;
-  const box = {
+  const bodyBox = {
     x: keyBox.x + keyBox.width / 2 - popoverWidth / 2,
     y: keyBox.y - popoverHeight - gap,
     width: popoverWidth,
@@ -319,28 +298,36 @@ function keyboardPopoverNodes(
   };
   const tailWidth = Math.min(keyBox.width * 0.72, popoverWidth * 0.52);
   const tailHeight = keyBox.height * 0.44;
-  const tailBox = {
-    x: keyBox.x + keyBox.width / 2 - tailWidth / 2,
-    y: box.y + box.height - 1,
-    width: tailWidth,
-    height: tailHeight,
+  const shapeBox = {
+    x: bodyBox.x,
+    y: bodyBox.y,
+    width: popoverWidth,
+    height: popoverHeight + tailHeight,
   };
+  const pathData = popoverPathData(
+    popoverWidth,
+    popoverHeight,
+    tailWidth,
+    tailHeight,
+    radius,
+  );
 
   return [
     {
       id: `${keyboard.id}.key.${idSuffix}.popover`,
-      type: "group",
+      type: "path",
       frame: 0,
-      box,
+      box: shapeBox,
       style: {
-        alignItems: "center",
-        background,
-        borderRadius: radius,
-        shadow: keyShadow,
-        color,
-        display: "flex",
-        justifyContent: "center",
+        fill: background,
+        filter: dropShadowFilter(keyShadow),
         overflow: "visible",
+        pathData,
+        preserveAspectRatio: "none",
+        stroke: borderWidth > 0 ? borderColor : undefined,
+        strokeWidth: borderWidth > 0 ? borderWidth : undefined,
+        vectorEffect: "non-scaling-stroke",
+        viewBox: `0 0 ${popoverWidth} ${popoverHeight + tailHeight}`,
         zIndex: 20,
       },
       children: [
@@ -348,7 +335,7 @@ function keyboardPopoverNodes(
           id: `${keyboard.id}.key.${idSuffix}.popover.text`,
           type: "text",
           frame: 0,
-          box,
+          box: bodyBox,
           text,
           style: {
             alignItems: "center",
@@ -362,24 +349,49 @@ function keyboardPopoverNodes(
             lineHeight: popoverHeight,
             textAlign: "center",
             whiteSpace: "nowrap",
+            zIndex: 21,
           },
         },
       ],
     },
-    {
-      id: `${keyboard.id}.key.${idSuffix}.popover.tail`,
-      type: "path",
-      frame: 0,
-      box: tailBox,
-      style: {
-        fill: background,
-        pathData: "M0 0 H100 V48 Q50 100 0 48 Z",
-        preserveAspectRatio: "none",
-        viewBox: "0 0 100 100",
-        zIndex: 19,
-      },
-    },
   ];
+}
+
+function popoverPathData(
+  width: number,
+  bodyHeight: number,
+  tailWidth: number,
+  tailHeight: number,
+  radius: number,
+) {
+  const r = Math.max(0, Math.min(radius, width / 2, bodyHeight / 2));
+  const center = width / 2;
+  const tailLeft = center - tailWidth / 2;
+  const tailRight = center + tailWidth / 2;
+  const tailCurveY = bodyHeight + tailHeight * 0.5;
+  return [
+    `M${r} 0`,
+    `H${width - r}`,
+    `Q${width} 0 ${width} ${r}`,
+    `V${bodyHeight - r}`,
+    `Q${width} ${bodyHeight} ${width - r} ${bodyHeight}`,
+    `H${tailRight}`,
+    `Q${center} ${tailCurveY} ${tailLeft} ${bodyHeight}`,
+    `H${r}`,
+    `Q0 ${bodyHeight} 0 ${bodyHeight - r}`,
+    `V${r}`,
+    `Q0 0 ${r} 0`,
+    "Z",
+  ].join(" ");
+}
+
+function dropShadowFilter(value: Record<string, unknown> | undefined) {
+  if (!value) return undefined;
+  const offsetX = typeof value.offsetX === "number" ? value.offsetX : 0;
+  const offsetY = typeof value.offsetY === "number" ? value.offsetY : 0;
+  const blur = typeof value.blur === "number" ? value.blur : 0;
+  const color = typeof value.color === "string" ? value.color : "";
+  return color ? `drop-shadow(${offsetX}px ${offsetY}px ${blur}px ${color})` : undefined;
 }
 
 function scaleBox(box: RenderableBox, amount: number): RenderableBox {

@@ -34,7 +34,6 @@ export interface KeyboardDesignContract {
   keyBorderWidth: number;
   keyShadowEnabled: boolean;
   pressedEffect: "popup" | "scale" | "none";
-  specialKeyTextScale: number;
   emojiScale: number;
   typography: TypographyStyleContract;
   rows: KeyboardKeyContract[][];
