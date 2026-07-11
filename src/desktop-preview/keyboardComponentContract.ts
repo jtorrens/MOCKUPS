@@ -26,6 +26,7 @@ export interface KeyboardDesignContract {
   specialKeyBackgroundColorToken: string;
   pressedKeyBackgroundColorToken: string;
   keyTextColorToken: string;
+  heightToken: string;
   keyPaddingToken: string;
   keyCornerRadiusToken: string;
   keyBorderColorToken: string;

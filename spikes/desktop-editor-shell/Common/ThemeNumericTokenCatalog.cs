@@ -14,6 +14,7 @@ internal static class ThemeNumericTokenCatalog
     [
         Token("theme.cursor.width", ["cursor", "width"]),
         Token("theme.cursor.blinkFrames", ["cursor", "blinkFrames"]),
+        Token("theme.keyboard.height", ["keyboard", "height"]),
         Token("theme.typography.size", ["typography", "size"]),
         Token("theme.typography.sizes.xs", ["typography", "sizes", "xs"]),
         Token("theme.typography.sizes.s", ["typography", "sizes", "s"]),

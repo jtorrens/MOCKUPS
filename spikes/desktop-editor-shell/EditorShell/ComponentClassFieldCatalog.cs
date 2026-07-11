@@ -106,6 +106,11 @@ internal static class ComponentClassFieldCatalog
         new("theme.spacing.xxl", "spacing.xxl"),
     ];
 
+    private static readonly FieldOption[] KeyboardHeightTokenOptions =
+    [
+        new("theme.keyboard.height", "keyboard.height"),
+    ];
+
     private static readonly FieldOption[] TextStyleOptions =
     [
         new("normal", "Normal"),
@@ -580,6 +585,7 @@ internal static class ComponentClassFieldCatalog
         ["component.keyboard.specialKeyBackgroundColorToken"] = new("component.keyboard.specialKeyBackgroundColorToken", "Special key background", ValueKind.ThemeToken, ["keyboard", "specialKeyBackgroundColorToken"], "theme.keyboard.specialKeyBackground", Options: ThemeColorOptions),
         ["component.keyboard.pressedKeyBackgroundColorToken"] = new("component.keyboard.pressedKeyBackgroundColorToken", "Pressed key background", ValueKind.ThemeToken, ["keyboard", "pressedKeyBackgroundColorToken"], "theme.keyboard.pressedKeyBackground", Options: ThemeColorOptions),
         ["component.keyboard.keyTextColorToken"] = new("component.keyboard.keyTextColorToken", "Key text", ValueKind.ThemeToken, ["keyboard", "keyTextColorToken"], "theme.keyboard.text", Options: ThemeColorOptions),
+        ["component.keyboard.heightToken"] = new("component.keyboard.heightToken", "Height", ValueKind.ThemeToken, ["keyboard", "heightToken"], "theme.keyboard.height", Options: KeyboardHeightTokenOptions),
         ["component.keyboard.typography"] = new("component.keyboard.typography", "Typography", ValueKind.TypographyStyle, ["keyboard", "typography"], TypographyStyleValue.CreateDefault("theme.typography.sizes.s")),
         ["component.keyboard.keyPadding"] = new("component.keyboard.keyPadding", "Key padding", ValueKind.ThemeToken, ["keyboard", "keyPadding"], "theme.spacing.s", Options: SpacingTokenOptions),
         ["component.keyboard.keyCornerRadiusToken"] = new("component.keyboard.keyCornerRadiusToken", "Key radius", ValueKind.ThemeToken, ["keyboard", "keyCornerRadiusToken"], "theme.radii.control", Options: RadiusTokenOptions),

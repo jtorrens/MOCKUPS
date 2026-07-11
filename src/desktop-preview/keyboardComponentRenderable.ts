@@ -25,7 +25,7 @@ export function keyboardComponentToRenderable(
 ): RenderableNode {
   const scale = renderScale(payload);
   const width = payload.previewFrame.screenWidth;
-  const height = Math.min(payload.previewFrame.screenHeight * 0.36, 290 * scale);
+  const height = Math.max(1, numberToken(payload, keyboard.heightToken) * scale);
   const borderWidth = keyboard.surface.borderWidth * scale;
   const keyboardRelief = keyboard.surface.reliefEnabled
     ? {

@@ -112,6 +112,11 @@ export function resolveKeyboardComponent(
       "keyTextColorToken",
       "component.keyboard.keyTextColorToken",
     ),
+    heightToken: requiredString(
+      keyboard,
+      "heightToken",
+      "component.keyboard.heightToken",
+    ),
     keyPaddingToken: requiredString(
       keyboard,
       "keyPadding",

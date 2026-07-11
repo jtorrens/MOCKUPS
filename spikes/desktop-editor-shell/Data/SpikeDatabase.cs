@@ -52,6 +52,8 @@ internal sealed partial class SpikeDatabase
         if (HasUserTables(connection))
         {
             ValidateSchemaV1(connection);
+            EnsureThemeTokens(connection);
+            EnsureKeyboardHeightToken(connection);
             NormalizeRuntimeInputContracts(connection);
             NormalizeEditorLayouts(connection);
             return;
@@ -68,6 +70,8 @@ internal sealed partial class SpikeDatabase
         SeedRenderPresetsIfEmpty(connection);
         SeedComponentClassesIfEmpty(connection);
         SeedThemesIfEmpty(connection);
+        EnsureThemeTokens(connection);
+        EnsureKeyboardHeightToken(connection);
         NormalizeRuntimeInputContracts(connection);
         NormalizeEditorLayouts(connection);
         ValidateSchemaV1(connection);

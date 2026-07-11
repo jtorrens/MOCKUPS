@@ -463,12 +463,13 @@ internal sealed partial class SpikeDatabase
                   "order": 90,
                   "visible": true,
                   "fields": [
-                    { "id": "theme.keyboard.background", "order": 10, "visible": true },
-                    { "id": "theme.keyboard.keyBackground", "order": 20, "visible": true },
-                    { "id": "theme.keyboard.specialKeyBackground", "order": 30, "visible": true },
-                    { "id": "theme.keyboard.pressedKeyBackground", "order": 40, "visible": true },
-                    { "id": "theme.keyboard.popoverBackground", "order": 50, "visible": true },
-                    { "id": "theme.keyboard.text", "order": 60, "visible": true }
+                    { "id": "theme.keyboard.height", "order": 10, "visible": true },
+                    { "id": "theme.keyboard.background", "order": 20, "visible": true },
+                    { "id": "theme.keyboard.keyBackground", "order": 30, "visible": true },
+                    { "id": "theme.keyboard.specialKeyBackground", "order": 40, "visible": true },
+                    { "id": "theme.keyboard.pressedKeyBackground", "order": 50, "visible": true },
+                    { "id": "theme.keyboard.popoverBackground", "order": 60, "visible": true },
+                    { "id": "theme.keyboard.text", "order": 70, "visible": true }
                   ]
                 }
               ]

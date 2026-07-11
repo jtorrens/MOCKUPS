@@ -399,6 +399,10 @@ internal sealed partial class SpikeDatabase
                 ["width"] = 2,
                 ["blinkFrames"] = 20,
             },
+            ["keyboard"] = new JsonObject
+            {
+                ["height"] = isAndroid ? 280 : 260,
+            },
             ["typography"] = new JsonObject
             {
                 ["fontFamilyId"] = "",

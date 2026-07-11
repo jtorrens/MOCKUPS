@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using System.Text.Json.Nodes;
 using System.Linq;
 
 namespace Mockups.DesktopEditorShell.Data;
@@ -38,5 +39,50 @@ internal sealed partial class SpikeDatabase
                     ("$metadataJson", seed.MetadataJson));
             }
         }
+    }
+
+    private static void EnsureKeyboardHeightToken(SqliteConnection connection)
+    {
+        foreach (var row in QueryComponentClassRows(connection)
+                     .Where((candidate) => candidate.ComponentType == "keyboard"))
+        {
+            var config = ParseJsonObject(row.ConfigJson);
+            var metadata = ParseJsonObject(row.MetadataJson);
+            var changed = EnsureKeyboardHeightToken(config);
+
+            if (metadata["presets"] is JsonArray presets)
+            {
+                foreach (var preset in presets.OfType<JsonObject>())
+                {
+                    if (preset["config"] is JsonObject presetConfig)
+                    {
+                        changed |= EnsureKeyboardHeightToken(presetConfig);
+                    }
+                }
+            }
+
+            if (!changed)
+            {
+                continue;
+            }
+
+            Execute(
+                connection,
+                "UPDATE component_classes SET config_json = $configJson, metadata_json = $metadataJson WHERE id = $id",
+                ("$id", row.Id),
+                ("$configJson", config.ToJsonString()),
+                ("$metadataJson", metadata.ToJsonString()));
+        }
+    }
+
+    private static bool EnsureKeyboardHeightToken(JsonObject config)
+    {
+        if (config["keyboard"] is not JsonObject keyboard || keyboard.ContainsKey("heightToken"))
+        {
+            return false;
+        }
+
+        keyboard["heightToken"] = "theme.keyboard.height";
+        return true;
     }
 }
