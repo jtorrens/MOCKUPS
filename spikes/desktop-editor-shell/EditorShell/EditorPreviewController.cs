@@ -681,7 +681,7 @@ internal sealed class EditorPreviewController
         _showDesignMarks = _marksToggle.IsChecked == true;
         if (!_isRefreshingOptions)
         {
-            Refresh();
+            _ = _designPreviewPane.SetDesignMarksAsync(_showDesignMarks);
         }
     }
 
@@ -707,7 +707,7 @@ internal sealed class EditorPreviewController
         _referenceViewComboBox.SelectedItem = (_referenceViewComboBox.ItemsSource as IEnumerable<FieldOption>)?.FirstOrDefault((option) => option.Value == "split");
         UpdateReferenceControlsVisibility();
         ToolTip.SetTip(_referenceButton, _referenceSource);
-        Refresh();
+        RefreshReferenceOverlay();
     }
 
     private void OnReferenceViewChanged()
@@ -725,8 +725,19 @@ internal sealed class EditorPreviewController
 
     private void RefreshReferenceOverlay()
     {
-        if (!_isRefreshingOptions) Refresh();
+        if (_isRefreshingOptions) return;
+        _ = _designPreviewPane.UpdateReferenceOverlayAsync(CurrentReferenceState());
     }
+
+    private PreviewReferenceState CurrentReferenceState() => new(
+        _referenceSource,
+        _referenceViewMode,
+        _referenceSwipeSlider.Value,
+        _referenceOpacitySlider.Value,
+        _referenceAngleSlider.Value,
+        Math.Max(0, _designInputsPanel.CurrentPreviewFrame - _referenceStartPreviewFrame),
+        _designInputsPanel.PlaybackFrameRate,
+        string.IsNullOrWhiteSpace(_projectId) ? "" : _database.GetProjectSettings(_projectId).MediaRoot);
 
     public void Refresh()
     {
@@ -779,15 +790,7 @@ internal sealed class EditorPreviewController
                 _selectedScale,
                 _showDesignMarks,
                 !_showCanonicalFrame,
-                new PreviewReferenceState(
-                    _referenceSource,
-                    _referenceViewMode,
-                    _referenceSwipeSlider.Value,
-                    _referenceOpacitySlider.Value,
-                    _referenceAngleSlider.Value,
-                    Math.Max(0, _designInputsPanel.CurrentPreviewFrame - _referenceStartPreviewFrame),
-                    _designInputsPanel.PlaybackFrameRate,
-                    string.IsNullOrWhiteSpace(_projectId) ? "" : _database.GetProjectSettings(_projectId).MediaRoot),
+                CurrentReferenceState(),
                 designPayload,
                 _messages);
             if (designPayload is not null && _designInputsPanel.IsPlaybackActive)

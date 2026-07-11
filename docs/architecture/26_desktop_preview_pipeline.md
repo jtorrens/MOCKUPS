@@ -319,8 +319,14 @@ There is deliberately no animation-frame queue. At most one pending update is
 kept, and a newer animation update replaces it.
 
 The opaque preparation scrim belongs only to an active declarative playback.
-Static refreshes, including reference-image and design-marker changes, render
-the requested frame normally and clear any residual playback scrim.
+Any static full refresh renders the requested frame normally and clears a
+residual playback scrim.
+
+Reference view mode, swipe, opacity and angle are overlay state. They update the
+resident WebView layer directly and coalesce rapid slider changes to the latest
+state; they do not regenerate component HTML. Design markers are likewise a
+resident generic overlay toggled in place, so neither operation blanks the
+current static frame or waits behind frame rendering.
 
 The controller reserves frame-cache capacity for the initial and ahead window
 before prewarming.

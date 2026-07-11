@@ -794,6 +794,8 @@ internal abstract class WebPreviewPane : Grid
                 const frame = document.getElementById("previewPhoneFrame");
                 const referenceLayer = document.getElementById("previewReferenceLayer");
                 const referenceImage = document.getElementById("previewReferenceImage");
+                const designMarks = document.querySelector(".preview-design-marks");
+                const previewMeta = document.querySelector(".preview-meta");
                 const renderWidth = {{Number(width)}};
                 const renderHeight = {{Number(height)}};
                 const cornerRadius = {{Number(cornerRadius)}};
@@ -827,6 +829,11 @@ internal abstract class WebPreviewPane : Grid
 
                 window.mockupsSetReferenceOverlay = (state) => {
                   applyReferenceOverlay(state);
+                  return true;
+                };
+                window.mockupsSetDesignMarks = (visible) => {
+                  if (designMarks) designMarks.style.display = visible ? "block" : "none";
+                  if (previewMeta) previewMeta.style.display = visible ? "block" : "none";
                   return true;
                 };
                 applyReferenceOverlay({
@@ -1472,11 +1479,6 @@ internal abstract class WebPreviewPane : Grid
         double height,
         double safeMarginCoefficient)
     {
-        if (!showDesignMarks)
-        {
-            return "";
-        }
-
         var safeMargin = Math.Max(0, Math.Min(width * safeMarginCoefficient, Math.Min(width, height) * 0.5));
         var safeInsetX = width <= 0 ? 0 : safeMargin / width * 100;
         var safeInsetY = height <= 0 ? 0 : safeMargin / height * 100;
@@ -1487,7 +1489,7 @@ internal abstract class WebPreviewPane : Grid
                 """;
 
         return $$"""
-                  <div aria-hidden="true" class="preview-design-marks">
+                  <div aria-hidden="true" class="preview-design-marks" style="display:{{(showDesignMarks ? "block" : "none")}}">
                     <div class="preview-guide is-vertical is-dashed" style="left:25%"></div>
                     <div class="preview-guide is-vertical" style="left:50%"></div>
                     <div class="preview-guide is-vertical is-dashed" style="left:75%"></div>
@@ -1506,10 +1508,8 @@ internal abstract class WebPreviewPane : Grid
         string themeName,
         string themeMode)
     {
-        return !showDesignMarks
-            ? ""
-            : $$"""
-                  <div class="preview-meta">
+        return $$"""
+                  <div class="preview-meta" style="display:{{(showDesignMarks ? "block" : "none")}}">
                     <strong>{{Html(previewMode)}}</strong>
                     <span> · {{Html(deviceName)}} · {{Html(themeName)}} · {{Html(themeMode)}}</span>
                   </div>
@@ -1606,6 +1606,7 @@ internal abstract class WebPreviewPane : Grid
 
 internal sealed class DesignWebPreviewPane : WebPreviewPane
 {
+    private int _referenceUpdateVersion;
     private DesignPreviewUpdate? _pendingUpdate;
     private DesignPreviewUpdate? _renderingUpdate;
     private DesignPreviewUpdate? _lastRenderedUpdate;
@@ -1851,6 +1852,29 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         bool IsAnimationOnly,
         bool UsedDomPatch,
         bool RenderError);
+
+    public async Task UpdateReferenceOverlayAsync(PreviewReferenceState state)
+    {
+        var version = Interlocked.Increment(ref _referenceUpdateVersion);
+        var reference = await Task.Run(() => PreviewReferenceOverlay.Resolve(state));
+        if (version != _referenceUpdateVersion) return;
+        await UpdateReferenceOverlayAsync(reference);
+    }
+
+    public async Task SetDesignMarksAsync(bool visible)
+    {
+        try
+        {
+            await WebView.InvokeScript($$"""
+                (() => typeof window.mockupsSetDesignMarks === "function"
+                  ? window.mockupsSetDesignMarks({{(visible ? "true" : "false")}})
+                  : false)();
+                """);
+        }
+        catch
+        {
+        }
+    }
 
     private async Task UpdateReferenceOverlayAsync(PreviewReferenceOverlay reference)
     {
