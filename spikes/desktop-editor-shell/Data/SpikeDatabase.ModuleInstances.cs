@@ -22,7 +22,20 @@ internal sealed partial class SpikeDatabase
         string BubbleRevealMode,
         bool TextInputVisible,
         bool KeyboardVisible,
-        bool StatusVisible);
+        bool StatusVisible,
+        string MediaType,
+        string MediaSource,
+        string ViewportSize,
+        decimal MediaScale,
+        string MediaOffset,
+        bool IsPlaying,
+        decimal CurrentTimeSeconds,
+        decimal DurationSeconds,
+        bool IsFullScreen,
+        bool FullScreenTransition,
+        string FullframeOrientation,
+        int ControlsElapsedMs,
+        decimal MotionTimeSeconds);
 
     public sealed record ModuleInstanceSlot(
         string Id,
@@ -159,7 +172,20 @@ internal sealed partial class SpikeDatabase
             message["textInputVisible"]?.GetValue<bool>() ?? false,
             message["keyboardVisible"]?.GetValue<bool>() ?? false,
             message["statusVisible"]?.GetValue<bool>()
-                ?? DeliveryStatusVisible(message))).ToList();
+                ?? DeliveryStatusVisible(message),
+            message["mediaType"]?.GetValue<string>() ?? "none",
+            message["mediaSource"]?.GetValue<string>() ?? "",
+            message["viewportSize"]?.GetValue<string>() ?? "240|160",
+            message["mediaScale"]?.GetValue<decimal>() ?? 1,
+            message["mediaOffset"]?.GetValue<string>() ?? "0|0",
+            message["isPlaying"]?.GetValue<bool>() ?? false,
+            message["currentTimeSeconds"]?.GetValue<decimal>() ?? 0,
+            message["durationSeconds"]?.GetValue<decimal>() ?? 12,
+            message["isFullScreen"]?.GetValue<bool>() ?? false,
+            message["fullScreenTransition"]?.GetValue<bool>() ?? false,
+            message["fullframeOrientation"]?.GetValue<string>() ?? "portrait",
+            message["controlsElapsedMs"]?.GetValue<int>() ?? 0,
+            message["motionTimeSeconds"]?.GetValue<decimal>() ?? 0)).ToList();
     }
 
     public void AddConversationMessage(string moduleInstanceId)
@@ -181,6 +207,19 @@ internal sealed partial class SpikeDatabase
                 ["textInputVisible"] = false,
                 ["keyboardVisible"] = false,
                 ["statusVisible"] = false,
+                ["mediaType"] = "none",
+                ["mediaSource"] = "",
+                ["viewportSize"] = "240|160",
+                ["mediaScale"] = 1,
+                ["mediaOffset"] = "0|0",
+                ["isPlaying"] = false,
+                ["currentTimeSeconds"] = 0,
+                ["durationSeconds"] = 12,
+                ["isFullScreen"] = false,
+                ["fullScreenTransition"] = false,
+                ["fullframeOrientation"] = "portrait",
+                ["controlsElapsedMs"] = 0,
+                ["motionTimeSeconds"] = 0,
                 ["status"] = new JsonObject { ["text"] = "", ["deliveryStatus"] = "none" },
             });
         });
@@ -209,6 +248,19 @@ internal sealed partial class SpikeDatabase
             message["textInputVisible"] = next.TextInputVisible;
             message["keyboardVisible"] = next.KeyboardVisible;
             message["statusVisible"] = next.StatusVisible;
+            message["mediaType"] = next.MediaType is "image" or "video" or "audio" ? next.MediaType : "none";
+            message["mediaSource"] = next.MediaSource;
+            message["viewportSize"] = next.ViewportSize;
+            message["mediaScale"] = Math.Max(0.01m, next.MediaScale);
+            message["mediaOffset"] = next.MediaOffset;
+            message["isPlaying"] = next.IsPlaying;
+            message["currentTimeSeconds"] = Math.Max(0, next.CurrentTimeSeconds);
+            message["durationSeconds"] = Math.Max(1, next.DurationSeconds);
+            message["isFullScreen"] = next.IsFullScreen;
+            message["fullScreenTransition"] = next.FullScreenTransition;
+            message["fullframeOrientation"] = next.FullframeOrientation is "landscape" ? "landscape" : "portrait";
+            message["controlsElapsedMs"] = Math.Max(0, next.ControlsElapsedMs);
+            message["motionTimeSeconds"] = Math.Max(0, next.MotionTimeSeconds);
             message["status"] = new JsonObject { ["text"] = next.StatusText, ["deliveryStatus"] = next.DeliveryStatus };
         });
     }

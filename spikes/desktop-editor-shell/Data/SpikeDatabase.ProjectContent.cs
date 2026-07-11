@@ -681,6 +681,19 @@ internal sealed partial class SpikeDatabase
             ["statusVisible"] = statusVisible,
             ["statusState"] = statusState,
             ["statusText"] = statusText,
+            ["mediaType"] = "none",
+            ["mediaSource"] = "",
+            ["viewportSize"] = "240|160",
+            ["mediaScale"] = 1,
+            ["mediaOffset"] = "0|0",
+            ["isPlaying"] = false,
+            ["currentTimeSeconds"] = 0,
+            ["durationSeconds"] = 12,
+            ["isFullScreen"] = false,
+            ["fullScreenTransition"] = false,
+            ["fullframeOrientation"] = "portrait",
+            ["controlsElapsedMs"] = 0,
+            ["motionTimeSeconds"] = 0,
         };
     }
 
@@ -698,6 +711,19 @@ internal sealed partial class SpikeDatabase
             new JsonObject { ["id"] = "statusVisible", ["label"] = "Show delivery status", ["jsonKey"] = "statusVisible", ["kind"] = "boolean", ["defaultValue"] = "false" },
             new JsonObject { ["id"] = "status", ["label"] = "Status", ["jsonKey"] = "statusState", ["kind"] = "option", ["defaultValue"] = "none", ["options"] = new JsonArray { new JsonObject { ["value"] = "none", ["label"] = "None" }, new JsonObject { ["value"] = "sent", ["label"] = "Sent" }, new JsonObject { ["value"] = "delivered", ["label"] = "Delivered" }, new JsonObject { ["value"] = "read", ["label"] = "Read" } } },
             new JsonObject { ["id"] = "statusText", ["label"] = "Status text", ["jsonKey"] = "statusText", ["kind"] = "text", ["defaultValue"] = "" },
+            new JsonObject { ["id"] = "mediaType", ["label"] = "Attachment type", ["jsonKey"] = "mediaType", ["kind"] = "option", ["defaultValue"] = "none", ["options"] = new JsonArray { new JsonObject { ["value"] = "none", ["label"] = "None" }, new JsonObject { ["value"] = "image", ["label"] = "Image" }, new JsonObject { ["value"] = "video", ["label"] = "Video" }, new JsonObject { ["value"] = "audio", ["label"] = "Audio" } } },
+            new JsonObject { ["id"] = "mediaSource", ["label"] = "Media source", ["jsonKey"] = "mediaSource", ["kind"] = "text", ["defaultValue"] = "" },
+            new JsonObject { ["id"] = "viewport", ["label"] = "Media viewport", ["jsonKey"] = "viewportSize", ["kind"] = "integerPair", ["defaultValue"] = "240|160", ["pairFirstLabel"] = "W", ["pairSecondLabel"] = "H" },
+            new JsonObject { ["id"] = "mediaScale", ["label"] = "Media scale", ["jsonKey"] = "mediaScale", ["kind"] = "number", ["defaultValue"] = "1", ["minimum"] = 0.01, ["maximum"] = 100, ["increment"] = 0.01 },
+            new JsonObject { ["id"] = "mediaOffset", ["label"] = "Media offset", ["jsonKey"] = "mediaOffset", ["kind"] = "integerPair", ["defaultValue"] = "0|0", ["pairFirstLabel"] = "X", ["pairSecondLabel"] = "Y" },
+            new JsonObject { ["id"] = "isPlaying", ["label"] = "Playing", ["jsonKey"] = "isPlaying", ["kind"] = "boolean", ["defaultValue"] = "false" },
+            new JsonObject { ["id"] = "currentTime", ["label"] = "Current time", ["jsonKey"] = "currentTimeSeconds", ["kind"] = "number", ["defaultValue"] = "0", ["minimum"] = 0, ["maximum"] = 86400, ["increment"] = 0.01 },
+            new JsonObject { ["id"] = "duration", ["label"] = "Duration", ["jsonKey"] = "durationSeconds", ["kind"] = "number", ["defaultValue"] = "12", ["minimum"] = 1, ["maximum"] = 86400, ["increment"] = 0.01 },
+            new JsonObject { ["id"] = "fullScreen", ["label"] = "Full screen", ["jsonKey"] = "isFullScreen", ["kind"] = "boolean", ["defaultValue"] = "false" },
+            new JsonObject { ["id"] = "fullScreenTransition", ["label"] = "Full-screen transition", ["jsonKey"] = "fullScreenTransition", ["kind"] = "boolean", ["defaultValue"] = "false" },
+            new JsonObject { ["id"] = "fullframeOrientation", ["label"] = "Fullframe orientation", ["jsonKey"] = "fullframeOrientation", ["kind"] = "option", ["defaultValue"] = "portrait", ["options"] = new JsonArray { new JsonObject { ["value"] = "portrait", ["label"] = "Portrait" }, new JsonObject { ["value"] = "landscape", ["label"] = "Landscape" } } },
+            new JsonObject { ["id"] = "controlsElapsed", ["label"] = "Controls elapsed ms", ["jsonKey"] = "controlsElapsedMs", ["kind"] = "number", ["defaultValue"] = "0", ["minimum"] = 0, ["maximum"] = 86400000, ["increment"] = 1 },
+            new JsonObject { ["id"] = "motionTime", ["label"] = "Motion time", ["jsonKey"] = "motionTimeSeconds", ["kind"] = "number", ["defaultValue"] = "0", ["minimum"] = 0, ["maximum"] = 86400, ["increment"] = 0.01 },
         };
     }
 

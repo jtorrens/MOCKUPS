@@ -76,6 +76,19 @@ internal sealed class ConversationMessagesCollectionEditor
         panel.Children.Add(Field("Show delivery status", ValueKind.Boolean, message.StatusVisible ? "true" : "false", null, (value) => message = message with { StatusVisible = BooleanText.Parse(value) }));
         panel.Children.Add(Field("Delivery status", ValueKind.OptionToken, message.DeliveryStatus, [new("none", "None"), new("sent", "Sent"), new("delivered", "Delivered"), new("read", "Read")], (value) => message = message with { DeliveryStatus = value }));
         panel.Children.Add(Field("Status text", ValueKind.StringSingleLine, message.StatusText, null, (value) => message = message with { StatusText = value }));
+        panel.Children.Add(Field("Attachment type", ValueKind.OptionToken, message.MediaType, [new("none", "None"), new("image", "Image"), new("video", "Video"), new("audio", "Audio")], (value) => message = message with { MediaType = value }));
+        panel.Children.Add(Field("Media source", ValueKind.StringSingleLine, message.MediaSource, null, (value) => message = message with { MediaSource = value }));
+        panel.Children.Add(Field("Media viewport", ValueKind.IntegerPair, message.ViewportSize, null, (value) => message = message with { ViewportSize = value }, new("W", "H")));
+        panel.Children.Add(Field("Media scale", ValueKind.Decimal, message.MediaScale.ToString(), null, (value) => message = message with { MediaScale = NumericText.Decimal(value, 1) }));
+        panel.Children.Add(Field("Media offset", ValueKind.IntegerPair, message.MediaOffset, null, (value) => message = message with { MediaOffset = value }, new("X", "Y")));
+        panel.Children.Add(Field("Playing", ValueKind.Boolean, message.IsPlaying ? "true" : "false", null, (value) => message = message with { IsPlaying = BooleanText.Parse(value) }));
+        panel.Children.Add(Field("Current time", ValueKind.Decimal, message.CurrentTimeSeconds.ToString(), null, (value) => message = message with { CurrentTimeSeconds = NumericText.Decimal(value, 0) }));
+        panel.Children.Add(Field("Duration", ValueKind.Decimal, message.DurationSeconds.ToString(), null, (value) => message = message with { DurationSeconds = NumericText.Decimal(value, 12) }));
+        panel.Children.Add(Field("Full screen", ValueKind.Boolean, message.IsFullScreen ? "true" : "false", null, (value) => message = message with { IsFullScreen = BooleanText.Parse(value) }));
+        panel.Children.Add(Field("Full-screen transition", ValueKind.Boolean, message.FullScreenTransition ? "true" : "false", null, (value) => message = message with { FullScreenTransition = BooleanText.Parse(value) }));
+        panel.Children.Add(Field("Fullframe orientation", ValueKind.OptionToken, message.FullframeOrientation, [new("portrait", "Portrait"), new("landscape", "Landscape")], (value) => message = message with { FullframeOrientation = value }));
+        panel.Children.Add(Field("Controls elapsed ms", ValueKind.Integer, message.ControlsElapsedMs.ToString(), null, (value) => message = message with { ControlsElapsedMs = NumericText.Int32(value, 0) }));
+        panel.Children.Add(Field("Motion time", ValueKind.Decimal, message.MotionTimeSeconds.ToString(), null, (value) => message = message with { MotionTimeSeconds = NumericText.Decimal(value, 0) }));
         return new InstantEditorCard(
             EditorCardHeader.Create($"Message {index + 1}", $"{message.Direction} · {MessageSummary(message.Text)}", EditorIcons.Create(EditorIcons.Bubble, 16)),
             new Border { Padding = EditorUiDensity.CardThickness(10), Child = panel },
@@ -83,9 +96,9 @@ internal sealed class ConversationMessagesCollectionEditor
             headerTrailing: delete)
         { HorizontalAlignment = HorizontalAlignment.Stretch };
 
-        DictionaryFieldControl Field(string label, ValueKind kind, string value, FieldOption[]? options, Action<string> update)
+        DictionaryFieldControl Field(string label, ValueKind kind, string value, FieldOption[]? options, Action<string> update, PairFieldLabels? pairLabels = null)
         {
-            var control = new DictionaryFieldControl(new FieldValue(new FieldDefinition($"conversation.messages.{message.Id}.{label}", label, kind, DefaultValue: value, Options: options), value), new DictionaryFieldServices());
+            var control = new DictionaryFieldControl(new FieldValue(new FieldDefinition($"conversation.messages.{message.Id}.{label}", label, kind, DefaultValue: value, Options: options, PairLabels: pairLabels), value), new DictionaryFieldServices());
             control.ValueCommitted += (_, next) => { update(next); _database.UpdateConversationMessage(node.Id, message.Id, message); _onChanged(); _reloadAndSelect(node); };
             return control;
         }

@@ -328,7 +328,19 @@ function messageNodes(
       state: message.state,
       sampleText: message.text,
       actor: preview.actor,
-      mediaType: "none",
+      mediaType: message.mediaType,
+      mediaSource: message.mediaSource,
+      viewportSize: message.viewportSize,
+      mediaScale: message.mediaScale,
+      mediaOffset: message.mediaOffset,
+      isPlaying: message.isPlaying,
+      currentTimeSeconds: message.currentTimeSeconds,
+      durationSeconds: message.durationSeconds,
+      isFullScreen: message.isFullScreen,
+      fullScreenTransition: message.fullScreenTransition,
+      fullframeOrientation: message.fullframeOrientation,
+      controlsElapsedMs: message.controlsElapsedMs,
+      motionTimeSeconds: message.motionTimeSeconds,
       maxWidth: optionalNumber(conversation, "bubbleMaxWidth", 66),
       writeOnTrigger,
       writeOnFrame: message.writeOnFrame,
@@ -376,6 +388,19 @@ type ConversationPreviewMessage = {
   textInputVisible: boolean;
   keyboardVisible: boolean;
   statusVisible: boolean;
+  mediaType: "none" | "image" | "video" | "audio";
+  mediaSource: string;
+  viewportSize: string;
+  mediaScale: number;
+  mediaOffset: string;
+  isPlaying: boolean;
+  currentTimeSeconds: number;
+  durationSeconds: number;
+  isFullScreen: boolean;
+  fullScreenTransition: boolean;
+  fullframeOrientation: string;
+  controlsElapsedMs: number;
+  motionTimeSeconds: number;
 };
 
 function instanceMessages(preview: JsonRecord): ConversationPreviewMessage[] {
@@ -401,6 +426,19 @@ function instanceMessages(preview: JsonRecord): ConversationPreviewMessage[] {
         textInputVisible: optionalBoolean(message, "textInputVisible"),
         keyboardVisible: optionalBoolean(message, "keyboardVisible"),
         statusVisible: optionalBoolean(message, "statusVisible") || optionalString(message, "statusState") !== "none",
+        mediaType: messageMediaType(message),
+        mediaSource: optionalString(message, "mediaSource"),
+        viewportSize: optionalString(message, "viewportSize") || "240|160",
+        mediaScale: optionalNumber(message, "mediaScale", 1),
+        mediaOffset: optionalString(message, "mediaOffset") || "0|0",
+        isPlaying: optionalBoolean(message, "isPlaying"),
+        currentTimeSeconds: optionalNumber(message, "currentTimeSeconds", 0),
+        durationSeconds: Math.max(1, optionalNumber(message, "durationSeconds", 12)),
+        isFullScreen: optionalBoolean(message, "isFullScreen"),
+        fullScreenTransition: optionalBoolean(message, "fullScreenTransition"),
+        fullframeOrientation: optionalString(message, "fullframeOrientation") || "portrait",
+        controlsElapsedMs: optionalNumber(message, "controlsElapsedMs", 0),
+        motionTimeSeconds: optionalNumber(message, "motionTimeSeconds", 0),
       };
     });
   }
@@ -419,6 +457,19 @@ function instanceMessages(preview: JsonRecord): ConversationPreviewMessage[] {
       textInputVisible: booleanPreviewValue(preview, "textInputVisible", false),
       keyboardVisible: booleanPreviewValue(preview, "keyboardVisible", false),
       statusVisible: false,
+      mediaType: "none",
+      mediaSource: "",
+      viewportSize: "240|160",
+      mediaScale: 1,
+      mediaOffset: "0|0",
+      isPlaying: false,
+      currentTimeSeconds: 0,
+      durationSeconds: 12,
+      isFullScreen: false,
+      fullScreenTransition: false,
+      fullframeOrientation: "portrait",
+      controlsElapsedMs: 0,
+      motionTimeSeconds: 0,
     },
     {
       state: "outgoing",
@@ -433,6 +484,19 @@ function instanceMessages(preview: JsonRecord): ConversationPreviewMessage[] {
       textInputVisible: booleanPreviewValue(preview, "textInputVisible", false),
       keyboardVisible: booleanPreviewValue(preview, "keyboardVisible", false),
       statusVisible: optionalString(preview, "message2StatusState") !== "none",
+      mediaType: "none",
+      mediaSource: "",
+      viewportSize: "240|160",
+      mediaScale: 1,
+      mediaOffset: "0|0",
+      isPlaying: false,
+      currentTimeSeconds: 0,
+      durationSeconds: 12,
+      isFullScreen: false,
+      fullScreenTransition: false,
+      fullframeOrientation: "portrait",
+      controlsElapsedMs: 0,
+      motionTimeSeconds: 0,
     },
     {
       state: "system",
@@ -447,6 +511,19 @@ function instanceMessages(preview: JsonRecord): ConversationPreviewMessage[] {
       textInputVisible: false,
       keyboardVisible: false,
       statusVisible: false,
+      mediaType: "none",
+      mediaSource: "",
+      viewportSize: "240|160",
+      mediaScale: 1,
+      mediaOffset: "0|0",
+      isPlaying: false,
+      currentTimeSeconds: 0,
+      durationSeconds: 12,
+      isFullScreen: false,
+      fullScreenTransition: false,
+      fullframeOrientation: "portrait",
+      controlsElapsedMs: 0,
+      motionTimeSeconds: 0,
     },
   ];
 }
@@ -500,6 +577,13 @@ function composerState(messages: ConversationPreviewMessage[], frame: number) {
     cursor = endFrame;
   }
   return { text: "", textInputVisible: false, keyboardVisible: false };
+}
+
+function messageMediaType(message: JsonRecord): ConversationPreviewMessage["mediaType"] {
+  const mediaType = optionalString(message, "mediaType");
+  return mediaType === "image" || mediaType === "video" || mediaType === "audio"
+    ? mediaType
+    : "none";
 }
 
 function booleanPreviewValue(preview: JsonRecord, key: string, fallback: boolean) {

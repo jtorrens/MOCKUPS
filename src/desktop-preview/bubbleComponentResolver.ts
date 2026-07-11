@@ -89,7 +89,8 @@ export function resolveBubbleComponent(
     asRecord(textBoxSlot.overrides),
   );
   const mediaType = bubbleMediaType(
-    requiredString(bubble, "mediaType", "component.bubble.mediaType"),
+    optionalString(preview, "mediaType")
+      || requiredString(bubble, "mediaType", "component.bubble.mediaType"),
   );
   const imageMediaConfig = mediaType === "image"
     ? mergeComponentDefaults(
