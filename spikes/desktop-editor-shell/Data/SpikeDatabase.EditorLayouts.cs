@@ -528,7 +528,7 @@ internal sealed partial class SpikeDatabase
                   "fields": [
                     { "id": "theme.cursor.color", "order": 10, "visible": true },
                     { "id": "theme.cursor.width", "order": 20, "visible": true },
-                    { "id": "theme.cursor.blinkFrames", "order": 30, "visible": true }
+                    { "id": "theme.cursor.blinkDurationMs", "order": 30, "visible": true }
                   ]
                 }
               ]

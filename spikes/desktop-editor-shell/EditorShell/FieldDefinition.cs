@@ -107,7 +107,8 @@ internal sealed record FieldDefinition(
     ImagePreviewDefinition? ImagePreview = null,
     NumberDefinition? Number = null,
     RecordReferenceDefinition? RecordReference = null,
-    IReadOnlyList<ComponentInputBindingDefinition>? ComponentInputBindings = null);
+    IReadOnlyList<ComponentInputBindingDefinition>? ComponentInputBindings = null,
+    string Unit = "");
 
 internal sealed record FieldValue(
     FieldDefinition Definition,

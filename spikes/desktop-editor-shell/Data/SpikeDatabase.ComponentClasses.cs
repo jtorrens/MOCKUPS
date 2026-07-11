@@ -151,7 +151,8 @@ internal sealed partial class SpikeDatabase
                 Options: options,
                 PairLabels: descriptor.PairLabels,
                 Number: descriptor.Number,
-                ComponentInputBindings: descriptor.ComponentInputBindings),
+                ComponentInputBindings: descriptor.ComponentInputBindings,
+                Unit: descriptor.Unit),
             value,
             IsHighlighted: isHighlighted);
     }
@@ -178,7 +179,8 @@ internal sealed partial class SpikeDatabase
                 Options: options,
                 PairLabels: descriptor.PairLabels,
                 Number: descriptor.Number,
-                ComponentInputBindings: descriptor.ComponentInputBindings),
+                ComponentInputBindings: descriptor.ComponentInputBindings,
+                Unit: descriptor.Unit),
             value,
             IsHighlighted: isHighlighted);
     }

@@ -164,7 +164,7 @@ export function resolveKeyboardComponent(
     ),
     motionFrame: {
       trigger: optionalBoolean(preview, "trigger"),
-      timeSeconds: optionalNumber(preview, "motionTimeSeconds", 0),
+      elapsedMs: optionalNumber(preview, "motionElapsedMs", 0),
     },
   };
 }

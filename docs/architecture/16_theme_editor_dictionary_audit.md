@@ -113,7 +113,7 @@ THEME_FIELDS
   theme.neutralTint.hueDeg
   theme.neutralTint.saturation
   theme.cursor.width
-  theme.cursor.blinkFrames
+  theme.cursor.blinkDurationMs
   theme.cursor.color.light
   theme.cursor.color.dark
   theme.surfaceRelief.default.angleDeg
@@ -208,7 +208,7 @@ Target:
 Fields:
 
 - `cursor.width`
-- `cursor.blinkFrames`
+- `cursor.blinkDurationMs`
 - mode color currently lives under `modes.light.cursor.color` /
   `modes.dark.cursor.color`.
 
@@ -220,7 +220,7 @@ Dictionary status:
 
 - catalogued in `THEME_FIELDS`:
   - `theme.cursor.width`, kind `integer`;
-  - `theme.cursor.blinkFrames`, kind `integer`.
+  - `theme.cursor.blinkDurationMs`, kind `integer`.
 
 Current cleanup state:
 

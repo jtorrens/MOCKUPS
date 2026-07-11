@@ -414,7 +414,7 @@ internal sealed partial class SpikeDatabase
             ["cursor"] = new JsonObject
             {
                 ["width"] = 2,
-                ["blinkFrames"] = 20,
+                ["blinkDurationMs"] = 800,
             },
             ["keyboard"] = new JsonObject
             {

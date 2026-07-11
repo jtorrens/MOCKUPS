@@ -13,7 +13,8 @@ internal sealed record RecordClassFieldDescriptor(
     ImagePreviewDefinition? ImagePreview = null,
     NumberDefinition? Number = null,
     RecordReferenceDefinition? RecordReference = null,
-    string ComponentPresetType = "");
+    string ComponentPresetType = "",
+    string Unit = "");
 
 internal static class RecordClassFieldCatalog
 {
@@ -49,8 +50,8 @@ internal static class RecordClassFieldCatalog
         ["shot.slug"] = new("shot.slug", "Slug", ValueKind.StringSingleLine),
         ["shot.version"] = new("shot.version", "Version", ValueKind.Integer),
         ["shot.sortOrder"] = new("shot.sortOrder", "Sort Order", ValueKind.Integer),
-        ["shot.durationFrames"] = new("shot.durationFrames", "Duration Frames", ValueKind.Integer, IsEditable: false),
-        ["shot.fps"] = new("shot.fps", "FPS", ValueKind.Integer),
+        ["shot.durationFrames"] = new("shot.durationFrames", "Duration", ValueKind.Integer, IsEditable: false, Unit: "frames"),
+        ["shot.fps"] = new("shot.fps", "Frame rate", ValueKind.Integer, Unit: "fps"),
         ["shot.ownerActorId"] = new(
             "shot.ownerActorId",
             "Owner Actor",
@@ -183,9 +184,10 @@ internal static class RecordClassFieldCatalog
         ["moduleInstance.sortOrder"] = new("moduleInstance.sortOrder", "Sort Order", ValueKind.Integer, IsEditable: false),
         ["moduleInstance.durationFrames"] = new(
             "moduleInstance.durationFrames",
-            "Duration frames",
+            "Duration",
             ValueKind.Integer,
-            Number: new NumberDefinition(1, 100000, 1, 0)),
+            Number: new NumberDefinition(1, 100000, 1, 0),
+            Unit: "frames"),
         ["moduleInstance.transition"] = new(
             "moduleInstance.transition",
             "Transition",
@@ -336,7 +338,7 @@ internal static class RecordClassFieldCatalog
         ["theme.borders.alternate"] = new("theme.borders.alternate", "Border alternate", ValueKind.PaletteColorPair),
         ["theme.cursor.color"] = new("theme.cursor.color", "Cursor color", ValueKind.PaletteColorPair),
         ["theme.cursor.width"] = new("theme.cursor.width", "Cursor width", ValueKind.Integer),
-        ["theme.cursor.blinkFrames"] = new("theme.cursor.blinkFrames", "Blink frames", ValueKind.Integer),
+        ["theme.cursor.blinkDurationMs"] = new("theme.cursor.blinkDurationMs", "Blink duration", ValueKind.Integer, Unit: "ms"),
         ["theme.shadows.default.color"] = new("theme.shadows.default.color", "Color", ValueKind.PaletteColorToken),
         ["theme.shadows.default.alpha"] = new("theme.shadows.default.alpha", "Alpha", ValueKind.Alpha),
         ["theme.shadows.default.offsetX"] = new("theme.shadows.default.offsetX", "Offset X", ValueKind.Decimal),

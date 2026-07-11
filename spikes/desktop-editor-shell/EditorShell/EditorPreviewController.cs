@@ -1351,7 +1351,11 @@ internal sealed class EditorPreviewController
                 framePreview,
                 action,
                 timeJsonKey,
-                action.TimeUnit == ComponentPreviewActionTimeUnit.Frames ? frame : frame / (double)fps);
+                action.TimeUnit == ComponentPreviewActionTimeUnit.Frames
+                    ? frame
+                    : action.TimeUnit == ComponentPreviewActionTimeUnit.Milliseconds
+                        ? frame / (double)fps * 1000
+                        : frame / (double)fps);
             ComponentPreviewActions.SetValue(framePreview, action, action.PlayInputId, true);
             yield return payload with { DesignPreviewJson = framePreview.ToJsonString() };
         }
@@ -1379,7 +1383,9 @@ internal sealed class EditorPreviewController
 
         var currentFrame = action.TimeUnit == ComponentPreviewActionTimeUnit.Frames
             ? Math.Max(0, (int)Math.Floor(JsonNodeNumber(ComponentPreviewActions.Value(preview, action, action.TimeJsonKey), 0)))
-            : Math.Max(0, (int)Math.Floor(JsonNodeNumber(ComponentPreviewActions.Value(preview, action, action.TimeJsonKey), 0) * fps));
+            : action.TimeUnit == ComponentPreviewActionTimeUnit.Milliseconds
+                ? Math.Max(0, (int)Math.Floor(JsonNodeNumber(ComponentPreviewActions.Value(preview, action, action.TimeJsonKey), 0) / 1000 * fps))
+                : Math.Max(0, (int)Math.Floor(JsonNodeNumber(ComponentPreviewActions.Value(preview, action, action.TimeJsonKey), 0) * fps));
         for (var index = 1; index <= AheadPlaybackPreloadFrames * 2; index++)
         {
             var frame = currentFrame + index;
@@ -1393,7 +1399,11 @@ internal sealed class EditorPreviewController
                 framePreview,
                 action,
                 action.TimeJsonKey,
-                action.TimeUnit == ComponentPreviewActionTimeUnit.Frames ? frame : frame / (double)fps);
+                action.TimeUnit == ComponentPreviewActionTimeUnit.Frames
+                    ? frame
+                    : action.TimeUnit == ComponentPreviewActionTimeUnit.Milliseconds
+                        ? frame / (double)fps * 1000
+                        : frame / (double)fps);
             ComponentPreviewActions.SetValue(framePreview, action, action.PlayInputId, true);
             yield return payload with { DesignPreviewJson = framePreview.ToJsonString() };
         }

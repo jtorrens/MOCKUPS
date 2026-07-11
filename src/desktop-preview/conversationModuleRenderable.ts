@@ -100,7 +100,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
       )
     : undefined;
   const conversationFrame = Math.max(0, Math.floor(optionalNumber(preview, "conversationFrame", Number.MAX_SAFE_INTEGER)));
-  const motionTimeSeconds = conversationFrame / Math.max(1, payload.frameRate ?? 25);
+  const motionElapsedMs = conversationFrame / Math.max(1, payload.frameRate ?? 25) * 1000;
   const timing = conversationTiming(conversation, preview);
   const composer = composerState(conversationMessages(preview), conversationFrame, timing);
   const keyboardVisible = composer.keyboardVisible
@@ -116,7 +116,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
         {
           text: composer.text,
           currentCharacter: composer.currentCharacter,
-          motionTimeSeconds,
+          motionElapsedMs,
         },
         (childPayload) =>
           keyboardComponentToRenderable(childPayload, resolveKeyboardComponent(childPayload)),
@@ -194,7 +194,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
       };
   const motionProgress = motionFrameProgress(payload, viewportMotion, {
     trigger: optionalBoolean(preview, "composerTransitionTrigger"),
-    timeSeconds: optionalNumber(preview, "composerTransitionTimeSeconds", 0),
+    elapsedMs: optionalNumber(preview, "composerTransitionElapsedMs", 0),
   });
   const bottom = composerOpen
     ? lerp(closedBottom, composerBottom, motionProgress)
@@ -221,7 +221,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
       top,
       bottom,
       conversationFrame,
-      motionTimeSeconds,
+      motionElapsedMs,
       timing,
     ),
   });
@@ -315,7 +315,7 @@ function messageNodes(
   top: number,
   bottom: number,
   conversationFrame: number,
-  motionTimeSeconds: number,
+  motionElapsedMs: number,
   timing: ConversationTiming,
 ) {
   const gap = numberToken(payload, optionalString(conversation, "messageGap") || "theme.spacing.m")
@@ -353,11 +353,11 @@ function messageNodes(
       fullScreenTransition: message.fullScreenTransition,
       fullframeOrientation: message.fullframeOrientation,
       controlsElapsedMs: message.controlsElapsedMs,
-      motionTimeSeconds,
+      motionElapsedMs,
       maxWidth: optionalNumber(conversation, "bubbleMaxWidth", 66),
       textSizeToken: message.isTypingIndicator ? timing.typingIndicatorSizeToken : undefined,
       textAnimationMode: message.isTypingIndicator ? timing.typingIndicatorAnimation : undefined,
-      textAnimationTimeSeconds: message.isTypingIndicator ? motionTimeSeconds : undefined,
+      textAnimationElapsedMs: message.isTypingIndicator ? motionElapsedMs : undefined,
       writeOnTrigger,
       writeOnFrame: message.writeOnFrame,
       writeOnDurationFrames: message.writeOnDurationFrames,

@@ -432,7 +432,7 @@ function textLineRenderableNodes({
   const fontSize = typography.fontSize;
   const graphemes = textGraphemes(line);
   let x = textFrame.x + lineStartOffset(line, textBox.textAlign, textFrame.width, typography);
-  const cycle = Math.max(0, textBox.textAnimation.timeSeconds) * Math.PI * 2;
+  const cycle = Math.max(0, textBox.textAnimation.elapsedMs) / 1000 * Math.PI * 2;
   const minimumOpacity = Math.max(0.35, Math.min(1, textBox.textAnimation.minimumOpacity));
   return graphemes.map((grapheme, graphemeIndex) => {
     const width = Math.max(1, measuredTextWidth(grapheme, typography));

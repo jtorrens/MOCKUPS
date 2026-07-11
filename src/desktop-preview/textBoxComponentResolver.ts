@@ -153,7 +153,7 @@ export function resolveTextBoxComponentFromRecords(
     ),
     textAnimation: {
       mode: textAnimationMode(optionalString(inputs, "textAnimationMode")),
-      timeSeconds: Math.max(0, optionalNumber(inputs, "textAnimationTimeSeconds", 0)),
+      elapsedMs: Math.max(0, optionalNumber(inputs, "textAnimationElapsedMs", 0)),
       minimumOpacity: 0.35,
     },
   };

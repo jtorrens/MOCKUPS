@@ -4,5 +4,5 @@ export interface CursorDesignContract {
   colorToken: string;
   width: number;
   minimumFade: number;
-  fadeFrames: number;
+  fadeDurationMs: number;
 }

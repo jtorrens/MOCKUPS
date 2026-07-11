@@ -29,10 +29,10 @@ export function resolveCursorComponentFromRecords(
     colorToken: requiredString(cursor, "colorToken", "component.cursor.colorToken"),
     width: requiredNumber(cursor, "width", "component.cursor.width"),
     minimumFade: requiredAlpha(cursor, "minimumFade", "component.cursor.minimumFade"),
-    fadeFrames: requiredNumber(
+    fadeDurationMs: requiredNumber(
       cursor,
-      "fadeFrames",
-      "component.cursor.fadeFrames",
+      "fadeDurationMs",
+      "component.cursor.fadeDurationMs",
     ),
   };
 }

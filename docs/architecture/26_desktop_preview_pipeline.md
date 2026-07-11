@@ -244,7 +244,7 @@ from values such as:
 
 - `conversationFrame`;
 - `writeOnFrame`;
-- `motionTimeSeconds`;
+- `motionElapsedMs`;
 - `currentTimeSeconds`;
 - action-provided time fields.
 

@@ -490,7 +490,8 @@ internal sealed class ComponentPreviewInputSession
         ComponentInputUiOrigin uiOrigin,
         string uiGroupId,
         string uiGroupLabel,
-        string uiParentGroupId)
+        string uiParentGroupId,
+        string unit)
     {
         var normalizedKind = ParseKind(kind);
         var normalizedValueKind = ParseValueKind(valueKind, normalizedKind);
@@ -513,7 +514,8 @@ internal sealed class ComponentPreviewInputSession
             uiOrigin,
             uiGroupId,
             uiGroupLabel,
-            uiParentGroupId);
+            uiParentGroupId,
+            Unit: unit);
     }
 
     private string Value(ComponentInputDefinition input)
@@ -817,6 +819,8 @@ internal sealed class ComponentPreviewInputSession
             action,
             action.TimeUnit == ComponentPreviewActionTimeUnit.Frames
                 ? stored / Math.Max(1, _playbackFrameRate)
+                : action.TimeUnit == ComponentPreviewActionTimeUnit.Milliseconds
+                    ? stored / 1000.0
                 : stored);
     }
 
@@ -900,6 +904,8 @@ internal sealed class ComponentPreviewInputSession
     {
         return action.TimeUnit == ComponentPreviewActionTimeUnit.Frames
             ? CurrentPlaybackFrame(action)
+            : action.TimeUnit == ComponentPreviewActionTimeUnit.Milliseconds
+                ? NormalizedPlaybackSeconds(action, CurrentPlaybackSeconds(action)) * 1000
             : NormalizedPlaybackSeconds(action, CurrentPlaybackSeconds(action));
     }
 
@@ -980,6 +986,12 @@ internal sealed class ComponentPreviewInputSession
             var frame = (int)Math.Floor(
                 NormalizedPlaybackSeconds(action, seconds) * Math.Max(1, _playbackFrameRate) + 0.0001);
             return Math.Max(0, Math.Min(DurationFrames(action), frame)).ToString(CultureInfo.InvariantCulture);
+        }
+
+        if (action.TimeUnit == ComponentPreviewActionTimeUnit.Milliseconds)
+        {
+            return (NormalizedPlaybackSeconds(action, seconds) * 1000)
+                .ToString(CultureInfo.InvariantCulture);
         }
 
         return NormalizedPlaybackSeconds(action, seconds).ToString(CultureInfo.InvariantCulture);
@@ -1137,7 +1149,8 @@ internal sealed class ComponentPreviewInputSession
                 ParseInputUiOrigin(JsonString(item, "uiOrigin")),
                 JsonString(item, "uiGroupId"),
                 JsonString(item, "uiGroupLabel"),
-                JsonString(item, "uiParentGroupId")) with
+                JsonString(item, "uiParentGroupId"),
+                JsonString(item, "unit")) with
             {
                 UiOrder = (int)JsonDecimal(item, "uiOrder", 0),
                 UiSectionLabel = JsonString(item, "uiSectionLabel"),
@@ -1211,7 +1224,8 @@ internal sealed class ComponentPreviewInputSession
                         : ComponentInputUiOrigin.Embedded,
                     JsonString(field, "uiGroupId"),
                     JsonString(field, "uiGroupLabel"),
-                    JsonString(field, "uiParentGroupId")) with
+                    JsonString(field, "uiParentGroupId"),
+                    JsonString(field, "unit")) with
                 {
                     EnabledWhenItemJsonKey = JsonString(field, "enabledWhenItemJsonKey"),
                     EnabledWhenItemValues = JsonStringArray(field, "enabledWhenItemValues"),
@@ -1498,7 +1512,8 @@ internal sealed record ComponentInputDefinition(
     string EnabledWhenItemJsonKey = "",
     IReadOnlyList<string>? EnabledWhenItemValues = null,
     int UiOrder = 0,
-    string UiSectionLabel = "");
+    string UiSectionLabel = "",
+    string Unit = "");
 
 internal sealed record RuntimeInputCollectionDefinition(
     string Id,

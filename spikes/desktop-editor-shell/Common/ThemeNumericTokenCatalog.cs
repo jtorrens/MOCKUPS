@@ -13,7 +13,7 @@ internal static class ThemeNumericTokenCatalog
     public static IReadOnlyList<ThemeNumericTokenPath> NumericTokens { get; } =
     [
         Token("theme.cursor.width", ["cursor", "width"]),
-        Token("theme.cursor.blinkFrames", ["cursor", "blinkFrames"]),
+        Token("theme.cursor.blinkDurationMs", ["cursor", "blinkDurationMs"]),
         Token("theme.keyboard.height", ["keyboard", "height"]),
         Token("theme.keyboard.keyGap", ["keyboard", "keyGap"]),
         Token("theme.keyboard.rowGap", ["keyboard", "rowGap"]),

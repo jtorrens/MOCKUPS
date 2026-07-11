@@ -592,7 +592,7 @@ The preview action contract lives under `designPreviewJson.actions`:
   "playInputId": "fullScreenTransition",
   "activateInputIds": ["isFullScreen"],
   "durationMotionConfigPath": "media.motion",
-  "timeJsonKey": "motionTimeSeconds",
+  "timeJsonKey": "motionElapsedMs",
   "prewarmFrames": true
 }
 ```

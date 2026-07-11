@@ -51,7 +51,7 @@ internal sealed partial class SpikeDatabase
                   { "id": "component.cursor.colorToken", "order": 10, "visible": true },
                   { "id": "component.cursor.width", "order": 20, "visible": true },
                   { "id": "component.cursor.minimumFade", "order": 30, "visible": true },
-                  { "id": "component.cursor.fadeFrames", "order": 40, "visible": true }
+                  { "id": "component.cursor.fadeDurationMs", "order": 40, "visible": true }
                 ] }
               ]
             }

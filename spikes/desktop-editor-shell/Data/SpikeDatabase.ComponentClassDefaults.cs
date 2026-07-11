@@ -136,7 +136,7 @@ internal sealed partial class SpikeDatabase
                     ["colorToken"] = "theme.cursor.color",
                     ["width"] = 2,
                     ["minimumFade"] = 0.15,
-                    ["fadeFrames"] = 12,
+                    ["fadeDurationMs"] = 480,
                 };
                 break;
             case "textBox":
@@ -224,7 +224,7 @@ internal sealed partial class SpikeDatabase
                     ["textSizeToken"] = "theme.typography.sizes.s",
                     ["cursorColorToken"] = "theme.cursor.color",
                     ["cursorWidth"] = 2,
-                    ["cursorBlinkFrames"] = 18,
+                    ["cursorBlinkDurationMs"] = 720,
                 };
                 break;
             case "keyboard":
@@ -522,7 +522,8 @@ internal sealed partial class SpikeDatabase
                     ["activateInputIds"] = new JsonArray { "isFullScreen" },
                     ["durationSeconds"] = 0.3,
                     ["durationMotionConfigPath"] = "media.motion",
-                    ["timeJsonKey"] = "motionTimeSeconds",
+                    ["timeJsonKey"] = "motionElapsedMs",
+                    ["timeUnit"] = "milliseconds",
                     ["prewarmFrames"] = false,
                 },
             };
@@ -553,7 +554,8 @@ internal sealed partial class SpikeDatabase
                     ["label"] = "In",
                     ["playInputId"] = "trigger",
                     ["durationMotionConfigPath"] = "keyboard.motion",
-                    ["timeJsonKey"] = "motionTimeSeconds",
+                    ["timeJsonKey"] = "motionElapsedMs",
+                    ["timeUnit"] = "milliseconds",
                 },
             };
         }
@@ -592,7 +594,8 @@ internal sealed partial class SpikeDatabase
                     ["activateInputIds"] = new JsonArray { "isFullScreen" },
                     ["durationSeconds"] = 0.3,
                     ["durationMotionConfigPath"] = "media.motion",
-                    ["timeJsonKey"] = "motionTimeSeconds",
+                    ["timeJsonKey"] = "motionElapsedMs",
+                    ["timeUnit"] = "milliseconds",
                     ["prewarmFrames"] = false,
                 },
             };
@@ -766,8 +769,8 @@ internal sealed partial class SpikeDatabase
             [
                 ComponentInput("availableWidth", "Available width", "availableWidth", "number", "240", minimum: 1, maximum: 10000, increment: 1),
                 ComponentInput("isPlaying", "Playing", "isPlaying", "boolean", "false"),
-                ComponentInput("currentTimeSeconds", "Current time", "currentTimeSeconds", "number", "0", minimum: 0, maximum: 86400, increment: 0.1m),
-                ComponentInput("durationSeconds", "Duration", "durationSeconds", "number", "65", minimum: 1, maximum: 86400, increment: 1),
+                ComponentInput("currentTimeSeconds", "Current time", "currentTimeSeconds", "number", "0", minimum: 0, maximum: 86400, increment: 0.1m, unit: "s"),
+                ComponentInput("durationSeconds", "Duration", "durationSeconds", "number", "65", minimum: 1, maximum: 86400, increment: 1, unit: "s"),
                 ComponentInput(
                     "actorId",
                     "Actor",
@@ -809,8 +812,8 @@ internal sealed partial class SpikeDatabase
                     pairFirstLabel: "X",
                     pairSecondLabel: "Y"),
                 ComponentInput("isPlaying", "Play/Pause", "isPlaying", ValueKind.Boolean, "false"),
-                ComponentInput("currentTimeSeconds", "Current time", "currentTimeSeconds", ValueKind.Decimal, "0", minimum: 0, maximum: 86400, increment: 0.1m),
-                ComponentInput("durationSeconds", "Duration", "durationSeconds", ValueKind.Decimal, "12", minimum: 0, maximum: 86400, increment: 0.1m),
+                ComponentInput("currentTimeSeconds", "Current time", "currentTimeSeconds", ValueKind.Decimal, "0", minimum: 0, maximum: 86400, increment: 0.1m, unit: "s"),
+                ComponentInput("durationSeconds", "Duration", "durationSeconds", ValueKind.Decimal, "12", minimum: 0, maximum: 86400, increment: 0.1m, unit: "s"),
                 ComponentInput("isFullScreen", "Full screen", "isFullScreen", ValueKind.Boolean, "false"),
                 ComponentInput("fullScreenTransition", "Full-screen transition", "fullScreenTransition", ValueKind.Boolean, "false"),
                 ComponentInput(
@@ -824,8 +827,8 @@ internal sealed partial class SpikeDatabase
                         new FieldOption("portrait", "Portrait"),
                         new FieldOption("landscape", "Landscape"),
                     ]),
-                ComponentInput("controlsElapsedMs", "Controls elapsed ms", "controlsElapsedMs", ValueKind.Integer, "0", minimum: 0, maximum: 60000, increment: 10),
-                ComponentInput("motionTimeSeconds", "Motion time", "motionTimeSeconds", ValueKind.Decimal, "0", minimum: 0, maximum: 86400, increment: 0.01m, source: "calculated"),
+                ComponentInput("controlsElapsedMs", "Controls elapsed", "controlsElapsedMs", ValueKind.Integer, "0", minimum: 0, maximum: 60000, increment: 10, unit: "ms"),
+                ComponentInput("motionElapsedMs", "Motion elapsed", "motionElapsedMs", ValueKind.Decimal, "0", minimum: 0, maximum: 86400000, increment: 10, source: "calculated", unit: "ms"),
             ],
             "bubble" =>
             [
@@ -843,9 +846,9 @@ internal sealed partial class SpikeDatabase
                     ]),
                 ComponentInput("sampleText", "Text", "sampleText", ValueKind.StringMultiline, "Message", uiOrigin: "embedded", uiGroupId: "textBox", uiGroupLabel: "Text box"),
                 ComponentInput("maxWidth", "Max width %", "maxWidth", ValueKind.Integer, "66", minimum: 1, maximum: 100, increment: 1),
-                ComponentInput("writeOnDurationFrames", "Write-on frames", "writeOnDurationFrames", ValueKind.Integer, "30", minimum: 1, maximum: 10000, increment: 1),
+                ComponentInput("writeOnDurationFrames", "Write-on duration", "writeOnDurationFrames", ValueKind.Integer, "30", minimum: 1, maximum: 10000, increment: 1, unit: "frames"),
                 ComponentInput("writeOnTrigger", "Write-on trigger", "writeOnTrigger", ValueKind.Boolean, "false", source: "calculated"),
-                ComponentInput("writeOnFrame", "Write-on frame", "writeOnFrame", ValueKind.Integer, "0", minimum: 0, maximum: 10000, increment: 1, source: "calculated"),
+                ComponentInput("writeOnFrame", "Write-on position", "writeOnFrame", ValueKind.Integer, "0", minimum: 0, maximum: 10000, increment: 1, source: "calculated", unit: "frames"),
                 ComponentInput(
                     "actorId",
                     "Actor",
@@ -907,8 +910,8 @@ internal sealed partial class SpikeDatabase
                     uiGroupId: "media",
                     uiGroupLabel: "Media"),
                 ComponentInput("isPlaying", "Play/Pause", "isPlaying", ValueKind.Boolean, "false", uiOrigin: "embedded", uiGroupId: "media", uiGroupLabel: "Media"),
-                ComponentInput("currentTimeSeconds", "Current time", "currentTimeSeconds", ValueKind.Decimal, "0", minimum: 0, maximum: 86400, increment: 0.1m, uiOrigin: "embedded", uiGroupId: "media", uiGroupLabel: "Media"),
-                ComponentInput("durationSeconds", "Duration", "durationSeconds", ValueKind.Decimal, "12", minimum: 0, maximum: 86400, increment: 0.1m, uiOrigin: "embedded", uiGroupId: "media", uiGroupLabel: "Media"),
+                ComponentInput("currentTimeSeconds", "Current time", "currentTimeSeconds", ValueKind.Decimal, "0", minimum: 0, maximum: 86400, increment: 0.1m, uiOrigin: "embedded", uiGroupId: "media", uiGroupLabel: "Media", unit: "s"),
+                ComponentInput("durationSeconds", "Duration", "durationSeconds", ValueKind.Decimal, "12", minimum: 0, maximum: 86400, increment: 0.1m, uiOrigin: "embedded", uiGroupId: "media", uiGroupLabel: "Media", unit: "s"),
                 ComponentInput("isFullScreen", "Full screen", "isFullScreen", ValueKind.Boolean, "false", uiOrigin: "embedded", uiGroupId: "media", uiGroupLabel: "Media"),
                 ComponentInput("fullScreenTransition", "Full-screen transition", "fullScreenTransition", ValueKind.Boolean, "false", uiOrigin: "embedded", uiGroupId: "media", uiGroupLabel: "Media"),
                 ComponentInput(
@@ -925,8 +928,8 @@ internal sealed partial class SpikeDatabase
                     uiOrigin: "embedded",
                     uiGroupId: "media",
                     uiGroupLabel: "Media"),
-                ComponentInput("controlsElapsedMs", "Controls elapsed ms", "controlsElapsedMs", ValueKind.Integer, "0", minimum: 0, maximum: 60000, increment: 10, uiOrigin: "embedded", uiGroupId: "media", uiGroupLabel: "Media"),
-                ComponentInput("motionTimeSeconds", "Motion time", "motionTimeSeconds", ValueKind.Decimal, "0", minimum: 0, maximum: 86400, increment: 0.01m, source: "calculated", uiOrigin: "embedded", uiGroupId: "media", uiGroupLabel: "Media"),
+                ComponentInput("controlsElapsedMs", "Controls elapsed", "controlsElapsedMs", ValueKind.Integer, "0", minimum: 0, maximum: 60000, increment: 10, uiOrigin: "embedded", uiGroupId: "media", uiGroupLabel: "Media", unit: "ms"),
+                ComponentInput("motionElapsedMs", "Motion elapsed", "motionElapsedMs", ValueKind.Decimal, "0", minimum: 0, maximum: 86400000, increment: 10, source: "calculated", uiOrigin: "embedded", uiGroupId: "media", uiGroupLabel: "Media", unit: "ms"),
             ],
             _ => [],
         };
@@ -982,7 +985,7 @@ internal sealed partial class SpikeDatabase
                 SetComponentInputGroup(inputs, ["statusText", "statusState"], "delivery", "Delivery", 30);
                 SetComponentInputGroup(inputs, ["actorId"], "avatar", "Avatar", 40);
                 SetComponentInputGroup(inputs, ["actorName"], "actorLabel", "Actor label", 50);
-                SetComponentInputGroup(inputs, ["mediaType", "mediaSource", "viewportSize", "mediaScale", "mediaOffset", "isPlaying", "currentTimeSeconds", "durationSeconds", "isFullScreen", "fullScreenTransition", "fullframeOrientation", "controlsElapsedMs", "motionTimeSeconds"], "media", "Media", 60);
+                SetComponentInputGroup(inputs, ["mediaType", "mediaSource", "viewportSize", "mediaScale", "mediaOffset", "isPlaying", "currentTimeSeconds", "durationSeconds", "isFullScreen", "fullScreenTransition", "fullframeOrientation", "controlsElapsedMs", "motionElapsedMs"], "media", "Media", 60);
                 break;
         }
     }
@@ -1027,7 +1030,8 @@ internal sealed partial class SpikeDatabase
         string uiOrigin = "",
         string uiGroupId = "",
         string uiGroupLabel = "",
-        string uiParentGroupId = "")
+        string uiParentGroupId = "",
+        string unit = "")
     {
         return ComponentInput(
             id,
@@ -1051,7 +1055,8 @@ internal sealed partial class SpikeDatabase
             uiOrigin,
             uiGroupId,
             uiGroupLabel,
-            uiParentGroupId);
+            uiParentGroupId,
+            unit);
     }
 
     private static JsonObject ComponentInput(
@@ -1076,7 +1081,8 @@ internal sealed partial class SpikeDatabase
         string uiOrigin = "",
         string uiGroupId = "",
         string uiGroupLabel = "",
-        string uiParentGroupId = "")
+        string uiParentGroupId = "",
+        string unit = "")
     {
         return new JsonObject
         {
@@ -1102,6 +1108,7 @@ internal sealed partial class SpikeDatabase
             ["uiGroupId"] = uiGroupId,
             ["uiGroupLabel"] = uiGroupLabel,
             ["uiParentGroupId"] = uiParentGroupId,
+            ["unit"] = unit,
         };
     }
 

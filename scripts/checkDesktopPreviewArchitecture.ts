@@ -16,6 +16,14 @@ const root = process.cwd();
 const previewRoot = path.join(root, "src", "desktop-preview");
 
 const violations: string[] = [];
+const retiredTimeFields = [
+  "fadeFrames",
+  "cursorBlinkFrames",
+  "blinkFrames",
+  "motionTimeSeconds",
+  "textAnimationTimeSeconds",
+  "composerTransitionTimeSeconds",
+];
 const desktopPreviewPaintNodeTypes = new Set([
   "group",
   "icon",
@@ -66,6 +74,15 @@ function walkFilesByExtension(directory: string, extensions: readonly string[]):
     if (stats.isDirectory()) return walkFilesByExtension(fullPath, extensions);
     return extensions.some((extension) => entry.endsWith(extension)) ? [fullPath] : [];
   });
+}
+
+for (const directory of ["src/desktop-preview", "spikes/desktop-editor-shell/Common", "spikes/desktop-editor-shell/Data", "spikes/desktop-editor-shell/EditorShell"]) {
+  for (const filePath of walkFilesByExtension(path.join(root, directory), [".ts", ".tsx", ".cs"])) {
+    const source = readFileSync(filePath, "utf8");
+    for (const retired of retiredTimeFields) {
+      if (source.includes(retired)) addViolation(relative(filePath), `retired time field remains: ${retired}`);
+    }
+  }
 }
 
 function importTargets(source: string) {
@@ -649,8 +666,8 @@ for (const filePath of walkFiles(previewRoot)) {
 }
 assertMatches(
   "src/desktop-preview/conversationModuleRenderable.ts",
-  /childRenderable\(\s*payload,[\s\S]*?"keyboard"[\s\S]*?\{\s*text: composer\.text,[\s\S]*?currentCharacter: composer\.currentCharacter,[\s\S]*?motionTimeSeconds,/,
-  "Conversation must pass shared module motionTimeSeconds to Keyboard runtime inputs",
+  /childRenderable\(\s*payload,[\s\S]*?"keyboard"[\s\S]*?\{\s*text: composer\.text,[\s\S]*?currentCharacter: composer\.currentCharacter,[\s\S]*?motionElapsedMs,/,
+  "Conversation must pass shared module motionElapsedMs to Keyboard runtime inputs",
 );
 for (const legacyConversationKey of [
   "message1Text",

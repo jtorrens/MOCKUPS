@@ -202,6 +202,10 @@ internal static class ComponentPreviewActions
 
     private static ComponentPreviewActionTimeUnit ParseTimeUnit(string value)
     {
+        if (value.Equals("milliseconds", StringComparison.OrdinalIgnoreCase))
+        {
+            return ComponentPreviewActionTimeUnit.Milliseconds;
+        }
         return value.Equals("frames", StringComparison.OrdinalIgnoreCase)
             ? ComponentPreviewActionTimeUnit.Frames
             : ComponentPreviewActionTimeUnit.Seconds;
@@ -295,4 +299,5 @@ internal enum ComponentPreviewActionTimeUnit
 {
     Seconds,
     Frames,
+    Milliseconds,
 }

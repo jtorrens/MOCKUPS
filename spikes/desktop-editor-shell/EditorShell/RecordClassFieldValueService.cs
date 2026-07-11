@@ -87,7 +87,8 @@ internal sealed class RecordClassFieldValueService
                     PairLabels: field.PairLabels,
                     ImagePreview: field.ImagePreview,
                     Number: field.Number,
-                    RecordReference: field.RecordReference),
+                    RecordReference: field.RecordReference,
+                    Unit: field.Unit),
                 settings.FpsOverride?.ToString() ?? inheritedValue,
                 IsInherited: settings.FpsOverride is null);
         }
@@ -104,7 +105,8 @@ internal sealed class RecordClassFieldValueService
                 PairLabels: field.PairLabels,
                 ImagePreview: field.ImagePreview,
                 Number: field.Number,
-                RecordReference: field.RecordReference),
+                RecordReference: field.RecordReference,
+                Unit: field.Unit),
             value);
     }
 

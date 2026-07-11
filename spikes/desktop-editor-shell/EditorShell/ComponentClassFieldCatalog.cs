@@ -16,7 +16,8 @@ internal sealed record ComponentClassFieldDescriptor(
     PairFieldLabels? PairLabels = null,
     NumberDefinition? Number = null,
     IReadOnlyList<ComponentInputBindingDefinition>? ComponentInputBindings = null,
-    string ComponentPresetType = "");
+    string ComponentPresetType = "",
+    string Unit = "");
 
 internal static class ComponentClassFieldCatalog
 {
@@ -496,7 +497,7 @@ internal static class ComponentClassFieldCatalog
         ["component.cursor.colorToken"] = new("component.cursor.colorToken", "Color", ValueKind.ThemeToken, ["cursor", "colorToken"], "theme.cursor.color", Options: ThemeColorOptions),
         ["component.cursor.width"] = new("component.cursor.width", "Width", ValueKind.Integer, ["cursor", "width"], "2"),
         ["component.cursor.minimumFade"] = new("component.cursor.minimumFade", "Minimum fade", ValueKind.Alpha, ["cursor", "minimumFade"], "0.15"),
-        ["component.cursor.fadeFrames"] = new("component.cursor.fadeFrames", "Fade frames", ValueKind.Integer, ["cursor", "fadeFrames"], "12"),
+        ["component.cursor.fadeDurationMs"] = new("component.cursor.fadeDurationMs", "Fade duration", ValueKind.Integer, ["cursor", "fadeDurationMs"], "480", Unit: "ms"),
 
         ["component.textBox.dimensionMode"] = new("component.textBox.dimensionMode", "Dimension mode", ValueKind.OptionToken, ["textBox", "dimensionMode"], "fixed", Options: TextBoxDimensionModeOptions),
         ["component.textBox.padding"] = new("component.textBox.padding", "Padding", ValueKind.ThemeTokenPair, ["textBox", "padding"], "theme.spacing.m|theme.spacing.s", PairLabels: new("X", "Y"), Options: SpacingTokenOptions),

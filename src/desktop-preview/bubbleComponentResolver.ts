@@ -154,7 +154,7 @@ export function resolveBubbleComponent(
     maxLines: 12,
     textSizeToken: optionalString(preview, "textSizeToken"),
     textAnimationMode: optionalString(preview, "textAnimationMode"),
-    textAnimationTimeSeconds: optionalNumber(preview, "textAnimationTimeSeconds", 0),
+    textAnimationElapsedMs: optionalNumber(preview, "textAnimationElapsedMs", 0),
     leftIconRowSlot: {},
     leftIcons: [],
     rightIconRowSlot: {},
@@ -429,7 +429,7 @@ function bubbleMediaInputs(
     playbackMode: optionalString(preview, "playbackMode") || "once",
     fullframeOrientation: optionalString(preview, "fullframeOrientation") || "portrait",
     controlsElapsedMs: optionalNumber(preview, "controlsElapsedMs", 0),
-    motionTimeSeconds: optionalNumber(preview, "motionTimeSeconds", 0),
+    motionElapsedMs: optionalNumber(preview, "motionElapsedMs", 0),
   };
 }
 

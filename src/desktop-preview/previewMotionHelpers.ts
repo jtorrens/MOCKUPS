@@ -31,7 +31,7 @@ export function wrapMotionFrame(
     return node;
   }
 
-  const elapsedMs = frame.timeSeconds * 1000;
+  const elapsedMs = frame.elapsedMs;
   const linearProgress = linearMotionProgress(elapsedMs, timing);
   const progress = easingProgress(timing.easing, linearProgress, timing.intensity);
   const startBox = motion.translate
@@ -88,7 +88,7 @@ export function motionFrameProgress(
     return 1;
   }
 
-  const elapsedMs = frame.timeSeconds * 1000;
+  const elapsedMs = frame.elapsedMs;
   const linearProgress = linearMotionProgress(elapsedMs, timing);
   return easingProgress(timing.easing, linearProgress, timing.intensity);
 }

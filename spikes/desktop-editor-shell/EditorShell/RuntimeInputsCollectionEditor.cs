@@ -540,7 +540,8 @@ internal sealed class RuntimeInputsCollectionEditor
                 : null,
             RecordReference: input.ValueKind == ValueKind.RecordReference
                 ? new RecordReferenceDefinition(input.TableId)
-                : null);
+                : null,
+            Unit: input.Unit);
     }
 
     private RuntimeInputOwner ResolveOwner(ProjectTreeNode node)

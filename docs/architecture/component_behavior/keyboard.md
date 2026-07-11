@@ -73,4 +73,4 @@ pressed state, emoji substitutions and internal motion atoms.
 
 - Current resolver supports lower, shift, numeric, symbols and emoji modes.
 - Conversation supplies the current revealed grapheme index while typing and
-  shared module `motionTimeSeconds` for keyboard motion.
+  shared module `motionElapsedMs` for keyboard motion.
