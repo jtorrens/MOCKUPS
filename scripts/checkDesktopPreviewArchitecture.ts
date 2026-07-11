@@ -2196,7 +2196,37 @@ function assertDesktopSystemTypographyData() {
   }
 }
 
+function assertDesktopDatabaseHasNoRetiredTimeFields() {
+  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  if (!existsSync(databasePath)) return;
+  const database = new Database(databasePath, { readonly: true, fileMustExist: true });
+  try {
+    const tables = database.prepare(
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'",
+    ).all() as { name: string }[];
+    for (const { name: table } of tables) {
+      const columns = (database.prepare(`PRAGMA table_info("${table}")`).all() as { name: string; type: string }[])
+        .filter((column) => column.type.toUpperCase().includes("TEXT"));
+      if (columns.length === 0) continue;
+      const quoted = columns.map((column) => `"${column.name}"`).join(", ");
+      for (const row of database.prepare(`SELECT ${quoted} FROM "${table}"`).all() as Record<string, unknown>[]) {
+        for (const column of columns) {
+          const value = String(row[column.name] ?? "");
+          for (const retired of retiredTimeFields) {
+            if (value.includes(retired)) {
+              addViolation("data/desktop-editor-spike.sqlite", `${table}.${column.name} contains retired time field ${retired}`);
+            }
+          }
+        }
+      }
+    }
+  } finally {
+    database.close();
+  }
+}
+
 assertDesktopSystemTypographyData();
+assertDesktopDatabaseHasNoRetiredTimeFields();
 
 if (violations.length > 0) {
   console.error("Desktop preview architecture check failed:");
