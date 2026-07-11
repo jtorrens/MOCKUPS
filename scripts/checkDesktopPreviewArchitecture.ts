@@ -480,6 +480,11 @@ function assertDesktopPreviewActionsAreDeclarative() {
 assertDesktopDatabaseDoesNotContainRetiredTokens();
 assertDesktopRuntimeCollectionsAreConsistent();
 assertDesktopPreviewActionsAreDeclarative();
+assertMatches(
+  "src/desktop-preview/conversationModuleRenderable.ts",
+  /childRenderable\(\s*payload,[\s\S]*?"keyboard"[\s\S]*?\{\s*text: composer\.text,[\s\S]*?currentCharacter: composer\.currentCharacter,[\s\S]*?motionTimeSeconds,/,
+  "Conversation must pass shared module motionTimeSeconds to Keyboard runtime inputs",
+);
 
 function componentLayoutFieldIds(source: string) {
   const ids = new Set<string>();
