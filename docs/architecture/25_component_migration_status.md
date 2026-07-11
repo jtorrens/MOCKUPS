@@ -6,6 +6,21 @@ It is intentionally operational: it records what is already on the new route,
 what is only structurally migrated, and what still depends on legacy runtime
 paths outside the desktop component preview.
 
+## Canonical Behavior Reference
+
+The concise migration state remains here. The canonical functional behavior,
+runtime/configuration boundary, composition, layout, timeline and known gaps
+for every active module/component is maintained in
+[component_behavior/README.md](component_behavior/README.md).
+
+Current summary:
+
+- Conversation, Bubble, Text Input Bar, Keyboard, Media and Audio are active
+  on the component resolver -> renderable -> generic renderer route.
+- The atoms and system bars are active on the same route.
+- The behavior reference records the remaining Conversation shared-time,
+  message-schema, generic text/emoji and video-preview limitations.
+
 ## Definitions
 
 ### Structurally Migrated
