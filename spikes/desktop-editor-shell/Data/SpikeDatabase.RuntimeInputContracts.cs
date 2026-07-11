@@ -106,6 +106,7 @@ internal sealed partial class SpikeDatabase
                     changed = true;
                 }
             }
+            RemoveLegacyConversationPreviewKeys(preview, ref changed);
             return;
         }
 
@@ -122,7 +123,29 @@ internal sealed partial class SpikeDatabase
         CopyScalar(preview, "textInputVisible", second, "textInputVisible");
         CopyScalar(preview, "keyboardVisible", second, "keyboardVisible");
         preview["messages"] = messages;
+        RemoveLegacyConversationPreviewKeys(preview, ref changed);
         changed = true;
+    }
+
+    private static void RemoveLegacyConversationPreviewKeys(JsonObject preview, ref bool changed)
+    {
+        foreach (var key in new[]
+        {
+            "message1Text",
+            "message2Text",
+            "message3Text",
+            "message2StatusState",
+            "message2StatusText",
+            "bubbleRevealMode",
+            "textInputVisible",
+            "keyboardVisible",
+        })
+        {
+            if (preview.Remove(key))
+            {
+                changed = true;
+            }
+        }
     }
 
     private static void CopyScalar(JsonObject source, string sourceKey, JsonObject? target, string targetKey)

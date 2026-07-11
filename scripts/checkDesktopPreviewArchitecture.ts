@@ -477,14 +477,65 @@ function assertDesktopPreviewActionsAreDeclarative() {
   }
 }
 
+function assertDesktopConversationPreviewDoesNotUseLegacyMessageKeys() {
+  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  if (!existsSync(databasePath)) return;
+
+  const legacyMessageKeys = new Set([
+    "message1Text",
+    "message2Text",
+    "message3Text",
+    "message2StatusState",
+    "message2StatusText",
+    "bubbleRevealMode",
+    "textInputVisible",
+    "keyboardVisible",
+  ]);
+
+  const database = new Database(databasePath, { readonly: true, fileMustExist: true });
+  try {
+    const rows = database
+      .prepare("SELECT id, design_preview_json FROM modules UNION ALL SELECT id, design_preview_json FROM component_classes")
+      .all() as { id: string; design_preview_json: string }[];
+    for (const row of rows) {
+      const preview = jsonRecord(jsonParse(row.design_preview_json));
+      for (const key of legacyMessageKeys) {
+        if (key in preview) {
+          addViolation(
+            "data/desktop-editor-spike.sqlite",
+            `${row.id}.design_preview_json still uses legacy direct conversation preview key "${key}"`,
+          );
+        }
+      }
+    }
+  } finally {
+    database.close();
+  }
+}
+
 assertDesktopDatabaseDoesNotContainRetiredTokens();
 assertDesktopRuntimeCollectionsAreConsistent();
 assertDesktopPreviewActionsAreDeclarative();
+assertDesktopConversationPreviewDoesNotUseLegacyMessageKeys();
 assertMatches(
   "src/desktop-preview/conversationModuleRenderable.ts",
   /childRenderable\(\s*payload,[\s\S]*?"keyboard"[\s\S]*?\{\s*text: composer\.text,[\s\S]*?currentCharacter: composer\.currentCharacter,[\s\S]*?motionTimeSeconds,/,
   "Conversation must pass shared module motionTimeSeconds to Keyboard runtime inputs",
 );
+for (const legacyConversationKey of [
+  "message1Text",
+  "message2Text",
+  "message3Text",
+  "message2StatusState",
+  "message2StatusText",
+  "instanceMessages",
+]) {
+  assertDoesNotContain(
+    "src/desktop-preview/conversationModuleRenderable.ts",
+    legacyConversationKey,
+    `Conversation renderer must consume the canonical messages[] runtime collection instead of legacy key "${legacyConversationKey}"`,
+  );
+}
 
 function componentLayoutFieldIds(source: string) {
   const ids = new Set<string>();

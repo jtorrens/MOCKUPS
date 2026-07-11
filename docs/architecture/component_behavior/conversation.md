@@ -105,10 +105,9 @@ data.
 
 ## Defaults, limitations and discrepancies
 
-- Design Test Values now reproduce the same `messages[]` payload shape as a
-  module instance. The renderer still accepts legacy-shaped direct preview
-  message fields when no collection is supplied; that compatibility route must
-  be retired after all saved previews have migrated.
+- Design Test Values reproduce the same `messages[]` payload shape as a module
+  instance. The renderer does not synthesize messages from legacy direct
+  preview fields.
 - Current composition sets explicit z-order with Keyboard above Text Input Bar
   and anchors Text Input Bar from the Keyboard base/frame top. These canonical
   rules are implemented.
