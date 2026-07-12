@@ -130,12 +130,11 @@ export function bubbleComponentToRenderable(
       )
     : undefined;
   const labelIntrusion = boxEdgeIntrusionInsets(baseSurfaceBox, baseLabelBox);
-  const avatarIntrusion = boxEdgeIntrusionInsets(baseSurfaceBox, baseAvatarBox);
   const contentPadding = {
-    left: paddingX + avatarIntrusion.left,
+    left: paddingX,
     top: paddingY + labelIntrusion.top,
-    right: paddingX + avatarIntrusion.right,
-    bottom: paddingY + Math.max(labelIntrusion.bottom, avatarIntrusion.bottom),
+    right: paddingX,
+    bottom: paddingY + labelIntrusion.bottom,
     gapX: paddingX,
     gapY: paddingY,
   };
@@ -306,7 +305,7 @@ function bubbleContentLayout(
     textBox: {
       x: textX,
       y: textY,
-      width: textSize.width,
+      width: Math.max(textSize.width, contentWidth - Math.max(0, textX - padding.left)),
       height: textSize.height,
     },
     statusBox: statusSize

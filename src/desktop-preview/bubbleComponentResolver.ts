@@ -233,7 +233,9 @@ export function resolveBubbleComponent(
     ),
     textBox: {
       ...resolvedTextBox,
-      textAlign: optionalBoolean(preview, "typingIndicator") ? "center" : resolvedTextBox.textAlign,
+      textAlign: optionalBoolean(preview, "typingIndicator") || state === "system"
+        ? "center"
+        : resolvedTextBox.textAlign,
       cursorVisible: simpleWriteOnFrameInProgress(fullText, writeOnPlan),
     },
     mediaSlot: {

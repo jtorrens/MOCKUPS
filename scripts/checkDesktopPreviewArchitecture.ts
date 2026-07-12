@@ -2226,8 +2226,13 @@ assertContains(
 );
 assertContains(
   "src/desktop-preview/bubbleComponentResolver.ts",
-  'optionalBoolean(preview, "typingIndicator") ? "center"',
-  "typing-indicator text must be centered by the Bubble resolver",
+  'optionalBoolean(preview, "typingIndicator") || state === "system"',
+  "typing-indicator and system text must be centered by the Bubble resolver",
+);
+assertDoesNotContain(
+  "src/desktop-preview/bubbleComponentRenderable.ts",
+  "avatarIntrusion",
+  "external Bubble avatars must not reserve internal content padding",
 );
 assertContains(
   "src/desktop-preview/bubbleComponentRenderable.ts",
