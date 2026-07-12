@@ -442,34 +442,40 @@ internal abstract class WebPreviewPane : Grid
         while (stopwatch.ElapsedMilliseconds < 5000)
         {
             await Task.Delay(16);
-            var events = await DrainPreviewPatchEventsOnceAsync();
-            foreach (var patchEvent in events)
+            string status;
+            try
             {
-                if (!PatchMatches(patchEvent, patchId))
-                {
-                    continue;
-                }
+                var result = await WebView.InvokeScript($$"""
+                    (() => typeof window.mockupsPreviewPatchStatus === "function"
+                      ? window.mockupsPreviewPatchStatus({{patchId}})
+                      : "")();
+                    """);
+                status = result?.ToString() ?? "";
+            }
+            catch
+            {
+                status = "";
+            }
 
-                var eventName = JsonString(patchEvent, "event");
-                if (eventName == "commit")
-                {
-                    PreviewDebugLog.Write(
-                        "preview.webview.dom-patch.wait",
-                        ("patch", patchId),
-                        ("result", "commit"),
-                        ("ms", stopwatch.Elapsed.TotalMilliseconds));
-                    return true;
-                }
+            _ = await DrainPreviewPatchEventsOnceAsync();
+            if (status == "commit")
+            {
+                PreviewDebugLog.Write(
+                    "preview.webview.dom-patch.wait",
+                    ("patch", patchId),
+                    ("result", "commit"),
+                    ("ms", stopwatch.Elapsed.TotalMilliseconds));
+                return true;
+            }
 
-                if (eventName is "skip" or "stale")
-                {
-                    PreviewDebugLog.Write(
-                        "preview.webview.dom-patch.wait",
-                        ("patch", patchId),
-                        ("result", eventName),
-                        ("ms", stopwatch.Elapsed.TotalMilliseconds));
-                    return false;
-                }
+            if (status is "skip" or "stale")
+            {
+                PreviewDebugLog.Write(
+                    "preview.webview.dom-patch.wait",
+                    ("patch", patchId),
+                    ("result", status),
+                    ("ms", stopwatch.Elapsed.TotalMilliseconds));
+                return false;
             }
         }
 
@@ -541,23 +547,6 @@ internal abstract class WebPreviewPane : Grid
         return int.TryParse(value?.ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var patchId)
             ? patchId
             : 0;
-    }
-
-    private static bool PatchMatches(JsonObject node, int patchId)
-    {
-        return node.TryGetPropertyValue("patch", out var value)
-            && value is JsonValue jsonValue
-            && jsonValue.TryGetValue<int>(out var currentPatchId)
-            && currentPatchId == patchId;
-    }
-
-    private static string JsonString(JsonObject owner, string key)
-    {
-        return owner.TryGetPropertyValue(key, out var value)
-            && value is JsonValue jsonValue
-            && jsonValue.TryGetValue<string>(out var text)
-            ? text
-            : "";
     }
 
     private static string JsonText(JsonObject owner, string key)
@@ -973,6 +962,8 @@ internal abstract class WebPreviewPane : Grid
                 window.addEventListener("resize", calculatePreviewFit);
                 let previewBodyPatchSequence = 0;
                 window.mockupsPreviewPatchEvents = [];
+                const previewPatchStatuses = new Map();
+                window.mockupsPreviewPatchStatus = (patch) => previewPatchStatuses.get(patch) ?? "";
                 window.mockupsDrainPreviewPatchEvents = () => {
                   const events = window.mockupsPreviewPatchEvents || [];
                   window.mockupsPreviewPatchEvents = [];
@@ -980,6 +971,13 @@ internal abstract class WebPreviewPane : Grid
                 };
 
                 function recordPatchEvent(event, detail = {}) {
+                  if ((event === "commit" || event === "skip" || event === "stale")
+                    && Number.isFinite(detail.patch)) {
+                    previewPatchStatuses.set(detail.patch, event);
+                    while (previewPatchStatuses.size > 160) {
+                      previewPatchStatuses.delete(previewPatchStatuses.keys().next().value);
+                    }
+                  }
                   const events = window.mockupsPreviewPatchEvents || [];
                   events.push({
                     event,
