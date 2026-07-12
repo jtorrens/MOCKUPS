@@ -66,7 +66,7 @@ internal sealed class RuntimeInputsCollectionEditor
         {
             Items =
             {
-                new TabItem { Header = owner.IsInstance ? "Valores de ejecución" : "Valores de prueba · temporales", Content = CreateTestValuesTab(owner, preview, persistedPreview, inputs, collections, actions) },
+                new TabItem { Header = owner.IsInstance ? "Runtime Values" : "Test Values", Content = CreateTestValuesTab(owner, preview, persistedPreview, inputs, collections, actions) },
                 new TabItem { Header = "Runtime API", Content = CreateApiTab(inputs, collections) },
             },
         };
@@ -130,7 +130,7 @@ internal sealed class RuntimeInputsCollectionEditor
         };
         header.Children.Add(new TextBlock
         {
-            Text = owner.IsInstance ? "Valores de ejecución" : "Valores de prueba · temporales",
+            Text = owner.IsInstance ? "Runtime Values" : "Test Values",
             FontWeight = Avalonia.Media.FontWeight.SemiBold,
             VerticalAlignment = VerticalAlignment.Center,
         });
@@ -145,7 +145,7 @@ internal sealed class RuntimeInputsCollectionEditor
             var reset = new Button
             {
                 MinWidth = 150,
-                Content = "Restablecer valores de prueba",
+                Content = "Reset test values",
             };
             ToolTip.SetTip(reset, "Descarta los cambios temporales de este Preview.");
             reset.Click += (_, args) =>
@@ -157,7 +157,7 @@ internal sealed class RuntimeInputsCollectionEditor
             var saveDefaults = new Button
             {
                 MinWidth = 170,
-                Content = "Guardar como valores predeterminados…",
+                Content = "Save as defaults…",
             };
             void RefreshSaveState()
             {
@@ -168,8 +168,8 @@ internal sealed class RuntimeInputsCollectionEditor
                 var currentDifferences = DesignPreviewTestValues.Differences(current, baseline, currentInputs, currentCollections);
                 saveDefaults.IsEnabled = currentDifferences.Count > 0;
                 ToolTip.SetTip(saveDefaults, currentDifferences.Count == 0
-                    ? "No hay diferencias respecto a los valores predeterminados."
-                    : $"Guarda {currentDifferences.Count} campo(s) como valores predeterminados.");
+                    ? "There are no differences from the default values."
+                    : $"Save {currentDifferences.Count} field(s) as default values.");
             }
             _testValuesChanged = RefreshSaveState;
             saveDefaults.Click += async (_, args) =>
@@ -208,7 +208,7 @@ internal sealed class RuntimeInputsCollectionEditor
         {
             panel.Children.Add(new TextBlock
             {
-                Text = "Estos valores afectan únicamente al Preview actual hasta que decidas guardarlos como predeterminados.",
+                Text = "These values affect only the current Preview until you choose to save them as defaults.",
                 FontSize = 11,
                 Opacity = 0.7,
                 TextWrapping = TextWrapping.Wrap,

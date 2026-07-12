@@ -40,10 +40,10 @@ internal sealed class EditorDomainDialogService
     {
         var fieldList = string.Join(", ", fields);
         return new EditorDialogService(_owner, _isDark()).ConfirmAction(
-            "Guardar valores predeterminados",
-            $"¿Guardar los valores de prueba en «{destination}»?",
-            $"Se actualizarán: {fieldList}.",
-            "Guardar valores predeterminados",
+            "Save default values",
+            $"Save the test values to \"{destination}\"?",
+            $"The following fields will be updated: {fieldList}.",
+            "Save default values",
             width: 500,
             height: 240);
     }
