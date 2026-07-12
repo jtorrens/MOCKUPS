@@ -1994,11 +1994,11 @@ internal sealed class EditorPreviewController
         var destination = FirstRenderableDescendant(selected);
         return new PreviewContextState(
             PreviewContextStateKind.NonRenderable,
-            selected is null ? "No hay una selección renderizable" : $"{selected.Name} no tiene preview directo",
+            selected is null ? "There is no renderable selection" : $"{selected.Name} has no direct preview",
             selected is null
-                ? "Selecciona un componente, módulo o Screen para ver su resultado resuelto."
-                : "Este objeto organiza o contiene otros elementos, pero no produce una imagen por sí mismo.",
-            destination is null ? "" : "Ver elementos renderizables",
+                ? "Select a component, module, or Screen to view its resolved result."
+                : "This object organizes or contains other elements, but does not produce an image by itself.",
+            destination is null ? "" : "View renderable items",
             destination?.Id ?? "");
     }
 

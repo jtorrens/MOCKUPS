@@ -2030,7 +2030,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 ShowResidentContextState(
                     "error",
                     "Preview no actualizado",
-                    "Se conserva el último resultado válido. Consulta Messages para ver el detalle.");
+                    "The last valid result is being retained. Check Messages for details.");
                 PreviewDebugLog.Write(
                     "preview.webview.update",
                     ("route", "retain-last-good"),
@@ -2049,7 +2049,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             LoadContextState(new PreviewContextState(
                 PreviewContextStateKind.Error,
                 "Preview no disponible",
-                "No se pudo generar un primer resultado. Consulta Messages y vuelve a intentarlo.",
+                "The first result could not be generated. Check Messages and try again.",
                 "Reintentar",
                 "__preview_retry__"), update);
             return;
@@ -2128,7 +2128,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             ShowResidentContextState(
                 "error",
                 "Preview no actualizado",
-                "Se conserva el último resultado válido. Consulta Messages para ver el detalle.");
+                "The last valid result is being retained. Check Messages for details.");
             PreviewDebugLog.Write(
                 "preview.webview.update",
                 ("route", "retain-last-good"),
