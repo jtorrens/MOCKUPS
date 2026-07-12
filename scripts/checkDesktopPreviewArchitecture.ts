@@ -2170,6 +2170,11 @@ assertContains(
   "module-instance duration must be evaluated generically from the declared runtime action",
 );
 assertContains(
+  "spikes/desktop-editor-shell/Common/RuntimeTimeline.cs",
+  "candidate[\"extendsModuleDuration\"]",
+  "finite collection-item actions must be able to extend module duration through their declarative contract",
+);
+assertContains(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.RuntimeInputContracts.cs",
   "SELECT SUM(mi.duration_frames)",
   "cut-only Shot duration must remain the sum of its ordered module-instance durations",
