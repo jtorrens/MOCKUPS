@@ -2468,6 +2468,20 @@ assertContains(
   "definition.DisplayLabel",
   "compound Motion Timing labels must use shared FieldDefinition unit formatting",
 );
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "_workspace == EditorWorkspace.Design",
+  "preview input processing must explicitly separate Design from Production",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "_productionRuntimeResolver.Resolve",
+  "Production preview must use the reference-only runtime resolver",
+);
+assertNoTerms(
+  "spikes/desktop-editor-shell/EditorShell/ProductionPreviewRuntimeResolver.cs",
+  ["ApplyTransientTestValues", "ComponentPreviewActions", "PlaybackTimeValue"],
+);
 
 function assertDesktopSystemTypographyData() {
   const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");

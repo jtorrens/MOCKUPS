@@ -90,6 +90,24 @@ visual result.
 
 ## Update classification
 
+## Design and Production input boundary
+
+Design preview may apply transient Test Values and declarative action clocks.
+Production preview must use only persisted Shot/Screen runtime state and the
+global-Shot-to-local-Screen frame selected by production navigation.
+
+Production payloads therefore pass through a generic reference-only runtime
+resolver. That resolver may materialize declared record references, including
+collection item references, but must not write scalar inputs, action state or
+action time fields. In particular, a Design `conversationFrame` value must
+never overwrite the local frame already resolved for a Production Screen.
+It removes transient Test Values and declarative Design actions from the
+Production envelope after using the input declarations to resolve references.
+
+The boundary applies equally to stopped frames and playback preparation.
+Diagnostics record Shot frame, Screen id, Screen start, Screen duration and the
+local frame before and after reference resolution.
+
 ### Static body updates
 
 These should normally use an in-place body patch and never blank the preview:

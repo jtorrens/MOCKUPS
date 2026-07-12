@@ -59,6 +59,12 @@ Relevant baseline commits:
 
 ## Required first phase: resident static updates
 
+Before resident updates, preserve the explicit input boundary now enforced by
+the preview controller: Design uses `ComponentPreviewInputSession` Test Values
+and actions; Production uses the reference-only runtime resolver and retains
+the persisted global-to-local Screen frame. Do not route Production through
+`ComponentPreviewInputSession.ApplyInputs`.
+
 Normal stopped edits must keep the last valid preview visible. Implement in
 this order:
 

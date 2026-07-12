@@ -122,6 +122,7 @@ internal sealed class EditorPreviewController
     private readonly ComponentPreviewInputSession _designInputsPanel;
     private readonly ContentControl _previewBusyHost;
     private readonly EditorLoadingScrim _previewLoadingScrim = new();
+    private readonly ProductionPreviewRuntimeResolver _productionRuntimeResolver;
     private readonly Border _previewPerformanceDot = new()
     {
         Width = 10,
@@ -217,6 +218,7 @@ internal sealed class EditorPreviewController
         _designContextLockButton = designContextLockButton;
         _designContextHistoryPopup = CreateDesignContextHistoryPopup();
         _previewBusyHost = previewBusyHost;
+        _productionRuntimeResolver = new ProductionPreviewRuntimeResolver(database);
         _previewBusyHost.Content = _previewLoadingScrim;
         _previewBusyHost.IsVisible = false;
         _designInputsPanel = new ComponentPreviewInputSession(database, Refresh, PreparePlaybackFramesAsync);
@@ -1059,10 +1061,7 @@ internal sealed class EditorPreviewController
                 ? CanonicalPreviewMetrics()
                 : ApplyPreviewOrientation(_database.GetDevicePreviewMetrics(deviceId));
             var themeName = _themeComboBox.SelectedItem?.Label ?? "No theme";
-            _designInputsPanel.UpdateForPayload(designPayload, _projectId);
-            designPayload = designPayload is null
-                ? null
-                : _designInputsPanel.ApplyInputs(designPayload, _selectedMode, _projectId);
+            designPayload = ProcessPreviewPayload(designPayload, "static");
             UpdateDesignContextChrome(designPayload);
             if (_selectedPlaybackRoute == "raster"
                 && designPayload is not null
@@ -1150,7 +1149,7 @@ internal sealed class EditorPreviewController
         var deviceId = PreviewDeviceId(designPayload);
         if (string.IsNullOrWhiteSpace(deviceId)) return true;
         var metrics = ApplyPreviewOrientation(_database.GetDevicePreviewMetrics(deviceId));
-        var payload = _designInputsPanel.ApplyInputs(designPayload, _selectedMode, _projectId);
+        var payload = ProcessPreviewPayload(designPayload, "playback-prepare") ?? designPayload;
         var projectFps = payload.FrameRate;
         var previewFps = PreviewPlaybackTiming.PreviewFrameRate(projectFps);
         var frames = _pendingPlaybackFramesOverride?.ToList()
@@ -2136,7 +2135,10 @@ internal sealed class EditorPreviewController
                 _selectedThemeId,
                 _selectedMode,
                 frame);
-            if (payload is not null) yield return payload;
+            if (payload is not null)
+            {
+                yield return ProcessPreviewPayload(payload, "shot-play-sequence", frame) ?? payload;
+            }
         }
     }
 
@@ -2340,6 +2342,85 @@ internal sealed class EditorPreviewController
         if (payload is null) return "";
         var instance = DesignPreviewTestValues.Parse(payload.InstanceJson);
         return (instance["context"] as JsonObject)?[key]?.GetValue<string>() ?? "";
+    }
+
+    private DesignPreviewPayload? ProcessPreviewPayload(
+        DesignPreviewPayload? payload,
+        string purpose,
+        int? productionShotFrame = null)
+    {
+        if (payload is null) return null;
+        if (_workspace == EditorWorkspace.Design)
+        {
+            _designInputsPanel.UpdateForPayload(payload, _projectId);
+            return _designInputsPanel.ApplyInputs(payload, _selectedMode, _projectId);
+        }
+
+        _designInputsPanel.UpdateForPayload(null, _projectId);
+        LogProductionFrameBoundary("before-runtime", purpose, payload, productionShotFrame);
+        var localFrameBefore = ResolvedTimelineFrame(payload);
+        var resolved = _productionRuntimeResolver.Resolve(payload, _selectedMode);
+        LogProductionFrameBoundary("after-runtime", purpose, resolved, productionShotFrame);
+        var localFrameAfter = ResolvedTimelineFrame(resolved);
+        if (localFrameAfter != localFrameBefore)
+        {
+            throw new InvalidOperationException(
+                $"Production runtime resolution changed local frame from {localFrameBefore} to {localFrameAfter}.");
+        }
+        return resolved;
+    }
+
+    private void LogProductionFrameBoundary(
+        string phase,
+        string purpose,
+        DesignPreviewPayload payload,
+        int? productionShotFrame)
+    {
+        var screenId = RuntimeContextValue(payload, "moduleInstanceId");
+        var localFrame = RuntimeContextNumber(payload, "localFrame");
+        var timelineFrame = ResolvedTimelineFrame(payload);
+        var startFrame = 0;
+        var durationFrames = 0;
+        var shotId = ProductionShotId();
+        if (!string.IsNullOrWhiteSpace(shotId) && !string.IsNullOrWhiteSpace(screenId))
+        {
+            foreach (var slot in _database.GetShotModuleInstanceSlots(shotId))
+            {
+                var duration = ModuleInstanceTimeline.DurationFrames(_database, slot.Id);
+                if (slot.Id == screenId)
+                {
+                    durationFrames = duration;
+                    break;
+                }
+                startFrame += duration;
+            }
+        }
+        PreviewDebugLog.Write(
+            "preview.production.frame-boundary",
+            ("phase", phase),
+            ("purpose", purpose),
+            ("shotFrame", productionShotFrame ?? _shotPreviewFrame),
+            ("screenId", screenId),
+            ("screenStartFrame", startFrame),
+            ("screenDurationFrames", durationFrames),
+            ("contextLocalFrame", localFrame),
+            ("payloadLocalFrame", timelineFrame));
+    }
+
+    private static int RuntimeContextNumber(DesignPreviewPayload payload, string key)
+    {
+        var instance = DesignPreviewTestValues.Parse(payload.InstanceJson);
+        return (instance["context"] as JsonObject)?[key]?.GetValue<int>() ?? 0;
+    }
+
+    private static int ResolvedTimelineFrame(DesignPreviewPayload payload)
+    {
+        var preview = DesignPreviewTestValues.Parse(payload.DesignPreviewJson);
+        var key = preview["timelineFrameJsonKey"]?.GetValue<string>() ?? "";
+        return !string.IsNullOrWhiteSpace(key) && preview[key] is JsonValue value
+            && value.TryGetValue<int>(out var frame)
+                ? frame
+                : 0;
     }
 
     private void UpdateProductionPreviewSetup()
