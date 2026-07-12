@@ -27,7 +27,7 @@ internal static class EditorBreadcrumbBar
             {
                 target.Children.Add(new TextBlock
                 {
-                    Text = ">",
+                    Text = "›",
                     FontSize = 17,
                     FontWeight = FontWeight.Bold,
                     Opacity = 0.55,

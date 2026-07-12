@@ -2127,6 +2127,33 @@ assertContains(
   "ReleaseFrameCacheReservation();",
   "playback must release its expanded frame-cache reservation",
 );
+for (const placeholderPlural of ["input(s)", "collection(s)", "instance(s)"]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+    placeholderPlural,
+    `runtime-input UI must use grammatical counts instead of ${placeholderPlural}`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "Payload key:",
+  "runtime API diagnostics must label persisted payload keys explicitly",
+);
+for (const dictionaryControl of [
+  "spikes/desktop-editor-shell/EditorShell/DictionaryEmbeddedComponentControl.cs",
+  "spikes/desktop-editor-shell/EditorShell/DictionaryComponentPresetControl.cs",
+]) {
+  assertDoesNotContain(
+    dictionaryControl,
+    "#D6A638",
+    "dictionary embedded action chrome must use the shared override visuals",
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorHeaderController.cs",
+  "$\"{componentLabel} / {slotPresetName}\"",
+  "embedded breadcrumbs must distinguish component class and concrete variant",
+);
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/WebPreviewPanes.cs",
   "mockupsPreviewImagePreloadResult",

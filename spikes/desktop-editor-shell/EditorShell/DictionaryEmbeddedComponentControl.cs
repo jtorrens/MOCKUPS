@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Threading.Tasks;
 
@@ -46,13 +47,11 @@ internal sealed class DictionaryEmbeddedComponentControl : Grid, IDictionaryValu
             Width = 40,
             Height = 32,
             Padding = new Avalonia.Thickness(0),
-            Background = new SolidColorBrush(Color.Parse("#24D6A638")),
-            BorderBrush = new SolidColorBrush(Color.Parse("#D6A638")),
-            Foreground = new SolidColorBrush(Color.Parse("#D6A638")),
             HorizontalContentAlignment = HorizontalAlignment.Center,
             VerticalContentAlignment = VerticalAlignment.Center,
             IsEnabled = definition.IsEditable,
         };
+        EditorOverrideVisuals.ApplyActionButton(button, isHighlighted);
         button.Click += async (_, _) =>
         {
             await openEmbeddedComponent(_definition.Id);
@@ -100,7 +99,7 @@ internal sealed class DictionaryEmbeddedComponentControl : Grid, IDictionaryValu
 
     private static IBrush LabelBrush()
     {
-        return new SolidColorBrush(Color.Parse("#D6A638"));
+        return EditorOverrideVisuals.Brush;
     }
 
     private void ApplyLabelBrush()

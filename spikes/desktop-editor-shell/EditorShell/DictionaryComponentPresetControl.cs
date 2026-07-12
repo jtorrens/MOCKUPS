@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Threading.Tasks;
 
@@ -79,13 +80,11 @@ internal sealed class DictionaryComponentPresetControl : Grid, IDictionaryValueC
             Width = 40,
             Height = 32,
             Padding = new Avalonia.Thickness(0),
-            Background = new SolidColorBrush(Color.Parse(isHighlighted ? "#38D6A638" : "#24D6A638")),
-            BorderBrush = new SolidColorBrush(Color.Parse("#D6A638")),
-            Foreground = new SolidColorBrush(Color.Parse("#D6A638")),
             HorizontalContentAlignment = HorizontalAlignment.Center,
             VerticalContentAlignment = VerticalAlignment.Center,
             IsEnabled = definition.IsEditable,
         };
+        EditorOverrideVisuals.ApplyActionButton(button, isHighlighted);
         button.Click += async (_, _) =>
         {
             await openEmbeddedComponent(_definition.Id);

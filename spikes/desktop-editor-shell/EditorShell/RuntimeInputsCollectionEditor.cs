@@ -60,7 +60,10 @@ internal sealed class RuntimeInputsCollectionEditor
         };
 
         return new InstantEditorCard(
-            EditorCardHeader.Create("Runtime Inputs", $"{inputs.Count} input(s) · {collections.Count} collection(s)", EditorIcons.Create(EditorIcons.Design, 18)),
+            EditorCardHeader.Create(
+                "Runtime Inputs",
+                $"{EditorUiText.Count(inputs.Count, "input")} · {EditorUiText.Count(collections.Count, "collection")}",
+                EditorIcons.Create(EditorIcons.Design, 18)),
             new Border { Padding = new Thickness(10), Child = tabs },
             isExpanded: false)
         { HorizontalAlignment = HorizontalAlignment.Stretch };
@@ -201,8 +204,8 @@ internal sealed class RuntimeInputsCollectionEditor
                 Spacing = 1,
                 Children =
                 {
-                    new TextBlock { Text = input.Id, FontWeight = Avalonia.Media.FontWeight.SemiBold },
-                    new TextBlock { Text = $"Runtime · {input.ValueKind} · {input.JsonKey}", FontSize = 11, Opacity = 0.7 },
+                    new TextBlock { Text = input.Label, FontWeight = Avalonia.Media.FontWeight.SemiBold },
+                    new TextBlock { Text = $"{input.ValueKind} · Payload key: {input.JsonKey}", FontSize = 11, Opacity = 0.7 },
                 },
             },
         };
@@ -215,7 +218,7 @@ internal sealed class RuntimeInputsCollectionEditor
         var content = new StackPanel { Spacing = 6 };
         content.Children.Add(new TextBlock
         {
-            Text = $"Runtime array · {collection.JsonKey}[]",
+            Text = $"Runtime array · Collection key: {collection.JsonKey}",
             FontSize = 11,
             Opacity = 0.7,
         });
@@ -290,7 +293,10 @@ internal sealed class RuntimeInputsCollectionEditor
         EditorGroupBlock.WireExclusiveCards(itemCards);
 
         return EditorGroupBlock.CreateNestedCard(
-            EditorCardHeader.Create(collection.Label, $"{items.Count} active {collection.ItemLabel.ToLowerInvariant()} instance(s)", EditorIcons.Create(EditorIcons.Component, 16)),
+            EditorCardHeader.Create(
+                collection.Label,
+                $"{items.Count} active {collection.ItemLabel.ToLowerInvariant()} {EditorUiText.Noun(items.Count, "instance")}",
+                EditorIcons.Create(EditorIcons.Component, 16)),
             content,
             out card,
             isExpanded: true);
@@ -375,7 +381,7 @@ internal sealed class RuntimeInputsCollectionEditor
         EditorGroupBlock.WireExclusiveCards(groupCards);
 
         return EditorGroupBlock.CreateNestedCard(
-            EditorCardHeader.Create($"{collection.ItemLabel} {itemIndex + 1}", $"{collection.JsonKey}[{itemIndex}]", EditorIcons.Create(EditorIcons.Component, 14)),
+            EditorCardHeader.Create($"{collection.ItemLabel} {itemIndex + 1}", $"Payload item {itemIndex + 1}", EditorIcons.Create(EditorIcons.Component, 14)),
             content,
             out card,
             isExpanded: true);

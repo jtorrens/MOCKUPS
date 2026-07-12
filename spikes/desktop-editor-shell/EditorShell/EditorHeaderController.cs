@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Collections.Generic;
@@ -76,9 +77,11 @@ internal sealed class EditorHeaderController
             var slotPresetName = _database.GetEmbeddedComponentPresetName(
                 context.OwnerNode,
                 context.Slots.Take(index + 1).ToArray());
+            items.Add(new EditorBreadcrumbItem($"{slot.Label} slot"));
+            var componentLabel = EditorUiText.IdentifierLabel(slot.EmbeddedComponentType);
             var label = string.IsNullOrWhiteSpace(slotPresetName)
-                ? slot.Label
-                : $"{slot.Label} · {slotPresetName}";
+                ? componentLabel
+                : $"{componentLabel} / {slotPresetName}";
             if (index == context.Slots.Count - 1)
             {
                 items.Add(new EditorBreadcrumbItem(label));
