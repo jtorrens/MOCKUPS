@@ -2235,6 +2235,21 @@ assertContains(
   "production transport must group Shot and Screen controls with shared UI chrome",
 );
 assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  'contextNode?.Kind == ProjectTreeNodeKind.ModuleInstance ? "screen" : "shot"',
+  "selecting a Production Screen must automatically activate its local navigation scope",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "navigationRow = new Border",
+  "production transport must retain its grouped separator layout",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorIcons.cs",
+  'TimelineShotStart => "M4 5H6V19H4Z',
+  "timeline boundary bars must be filled geometry rather than invisible open paths",
+);
+assertContains(
   "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
   "ModuleInstanceLocalFrame(database, node.Id, timelineFrame)",
   "module-instance production preview must translate the global Shot frame to a local frame",

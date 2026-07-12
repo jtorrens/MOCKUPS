@@ -627,11 +627,9 @@ internal sealed class EditorPreviewController
         var navigationRow = new Border
         {
             HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
-            Padding = new Thickness(8, 5),
-            CornerRadius = new CornerRadius(10),
-            Background = EditorSukiWindowTheme.SelectionBackgroundBrush(_isDark()),
-            BorderBrush = EditorSukiWindowTheme.AccentBrush(_isDark() ? (byte)0x55 : (byte)0x3C),
-            BorderThickness = new Thickness(1),
+            Padding = new Thickness(0),
+            Background = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
             Child = new StackPanel
             {
                 Orientation = Avalonia.Layout.Orientation.Horizontal,
@@ -652,9 +650,26 @@ internal sealed class EditorPreviewController
                 },
             },
         };
+        foreach (var button in new[]
+        {
+            _shotAbsoluteStartButton,
+            _shotPreviousSlotButton,
+            _shotStartButton,
+            _shotPreviousFrameButton,
+            _shotNextFrameButton,
+            _shotEndButton,
+            _shotNextSlotButton,
+            _shotAbsoluteEndButton,
+        })
+        {
+            button.Background = Brushes.Transparent;
+            button.BorderBrush = Brushes.Transparent;
+            button.BorderThickness = new Thickness(0);
+        }
         _shotPlayButton.Background = EditorSukiWindowTheme.AccentBrush();
         _shotPlayButton.Foreground = Brushes.White;
-        _shotPlayButton.BorderBrush = EditorSukiWindowTheme.AccentBrush();
+        _shotPlayButton.BorderBrush = Brushes.Transparent;
+        _shotPlayButton.BorderThickness = new Thickness(0);
         _shotTimelineControls.Children.Add(navigationRow);
         ToolTip.SetTip(_shotPreviousSlotButton, "Previous Screen");
         ToolTip.SetTip(_shotAbsoluteStartButton, "First Shot frame");
@@ -871,7 +886,7 @@ internal sealed class EditorPreviewController
         _shotNavigationScopeComboBox.SelectionChanged += (_, _) =>
         {
             if (_shotNavigationScopeComboBox.SelectedItem is not { } option || _isUpdatingShotTimeline) return;
-            _shotNavigationScope = option.Value;
+            SetShotNavigationScope(option.Value);
             StopShotPlayback();
             Refresh();
         };
@@ -1961,6 +1976,8 @@ internal sealed class EditorPreviewController
         {
             _shotTimelineShotId = shotId;
             _shotTimelineContextNodeId = contextNode?.Id ?? "";
+            SetShotNavigationScope(
+                contextNode?.Kind == ProjectTreeNodeKind.ModuleInstance ? "screen" : "shot");
             _shotPreviewFrame = contextNode?.Kind == ProjectTreeNodeKind.ModuleInstance
                 ? ModuleInstanceStartFrame(shotId, contextNode.Id)
                 : 0;
@@ -1982,6 +1999,18 @@ internal sealed class EditorPreviewController
         _shotNextSlotButton.IsEnabled = activeSlotIndex >= 0 && activeSlotIndex < slotCount - 1;
         _shotTimelineControls.IsVisible = true;
         _isUpdatingShotTimeline = false;
+    }
+
+    private void SetShotNavigationScope(string scope)
+    {
+        _shotNavigationScope = scope == "screen" ? "screen" : "shot";
+        if (_shotNavigationScopeComboBox.ItemsSource is not IEnumerable<FieldOption> options) return;
+        var selected = options.FirstOrDefault((option) => option.Value == _shotNavigationScope);
+        if (selected is null || ReferenceEquals(_shotNavigationScopeComboBox.SelectedItem, selected)) return;
+        var wasUpdating = _isUpdatingShotTimeline;
+        _isUpdatingShotTimeline = true;
+        _shotNavigationScopeComboBox.SelectedItem = selected;
+        _isUpdatingShotTimeline = wasUpdating;
     }
 
     private (int StartFrame, int EndFrame, int DurationFrames) NavigationFrameRange()
@@ -2046,6 +2075,7 @@ internal sealed class EditorPreviewController
         }
         StopShotPlayback();
         _shotPreviewFrame = start;
+        SetShotNavigationScope("screen");
         _selectNodeById(slots[target].Id, null);
     }
 
