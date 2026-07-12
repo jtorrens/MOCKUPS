@@ -49,7 +49,6 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
   const componentBaseConfigs = parseObject(payload.componentBaseConfigsJson);
   const conversation = {
     ...asRecord(config.conversation),
-    ...asRecord(parseObject(payload.instanceJson).behavior),
   };
   const screen = previewScreenBox(payload);
   const scale = renderScale(payload);
@@ -242,19 +241,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
 }
 
 function runtimePreview(payload: DesignPreviewPayload): JsonRecord {
-  const preview = parseObject(payload.designPreviewJson);
-  if (payload.kind !== "moduleInstance") return preview;
-
-  const instance = parseObject(payload.instanceJson);
-  const content = asRecord(instance.content);
-  const header = asRecord(content.header);
-  const context = asRecord(instance.context);
-  return {
-    ...preview,
-    actor: context.ownerActor,
-    headerSubtitle: optionalString(header, "subtitle"),
-    messages: content.messages,
-  };
+  return parseObject(payload.designPreviewJson);
 }
 
 function appWallpaperNode(

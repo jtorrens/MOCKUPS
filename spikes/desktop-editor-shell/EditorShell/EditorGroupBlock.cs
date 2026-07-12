@@ -95,12 +95,14 @@ internal static class EditorGroupBlock
         Control header,
         Control content,
         out InstantEditorCard card,
-        bool isExpanded = false)
+        bool isExpanded = false,
+        Control? headerTrailing = null)
     {
         card = new InstantEditorCard(
             header,
             new Border { Padding = EditorUiDensity.CardThickness(10), Child = content },
-            isExpanded)
+            isExpanded,
+            headerTrailing)
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
@@ -111,12 +113,14 @@ internal static class EditorGroupBlock
         Control header,
         Control content,
         out InstantEditorCard card,
-        bool isExpanded = false)
+        bool isExpanded = false,
+        Control? headerTrailing = null)
     {
         card = new InstantEditorCard(
             header,
             new Border { Padding = EditorUiDensity.CardThickness(10), Child = content },
-            isExpanded)
+            isExpanded,
+            headerTrailing)
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };

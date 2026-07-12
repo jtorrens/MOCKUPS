@@ -61,6 +61,7 @@ internal sealed partial class SpikeDatabase
             NormalizeKeyboardConfiguration(connection);
             NormalizeRuntimeInputContracts(connection);
             NormalizeConversationModuleInstanceBehavior(connection);
+            NormalizeModuleInstanceRuntimePayloads(connection);
             NormalizeConversationHeaderComposition(connection);
             NormalizeCalculatedLabelComposition(connection);
             NormalizeComponentSpacingTokens(connection);
@@ -89,6 +90,7 @@ internal sealed partial class SpikeDatabase
         NormalizeKeyboardConfiguration(connection);
         NormalizeRuntimeInputContracts(connection);
         NormalizeConversationModuleInstanceBehavior(connection);
+        NormalizeModuleInstanceRuntimePayloads(connection);
         NormalizeConversationHeaderComposition(connection);
         NormalizeCalculatedLabelComposition(connection);
         NormalizeComponentSpacingTokens(connection);

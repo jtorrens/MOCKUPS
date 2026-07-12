@@ -1,5 +1,7 @@
 using Microsoft.Data.Sqlite;
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text.Json.Nodes;
 
@@ -39,6 +41,77 @@ internal sealed partial class SpikeDatabase
         }
 
         NormalizeConversationRuntimeInputContracts(connection);
+    }
+
+    private static void NormalizeModuleInstanceRuntimePayloads(SqliteConnection connection)
+    {
+        using var select = connection.CreateCommand();
+        select.CommandText = "SELECT mi.id, mi.content_json, m.design_preview_json FROM module_instances mi JOIN modules m ON m.id = mi.module_id";
+        using var reader = select.ExecuteReader();
+        var updates = new List<(string Id, string Json)>();
+        while (reader.Read())
+        {
+            var original = ReadString(reader, 1);
+            var content = ParseJsonObject(original);
+            var contract = ParseJsonObject(ReadString(reader, 2));
+            foreach (var input in (contract["inputs"] as JsonArray)?.OfType<JsonObject>() ?? [])
+            {
+                if (!RuntimeInputDefinition(input)) continue;
+                var jsonKey = input["jsonKey"]?.GetValue<string>() ?? "";
+                if (string.IsNullOrWhiteSpace(jsonKey) || content[jsonKey] is not null) continue;
+                content[jsonKey] = RuntimeDefaultValue(input);
+            }
+
+            foreach (var collection in (contract["collections"] as JsonArray)?.OfType<JsonObject>() ?? [])
+            {
+                var sourceKey = collection["sourceCollectionJsonKey"]?.GetValue<string>()
+                    ?? collection["jsonKey"]?.GetValue<string>()
+                    ?? "";
+                if (string.IsNullOrWhiteSpace(sourceKey)) continue;
+                var items = content[sourceKey] as JsonArray ?? new JsonArray();
+                content[sourceKey] = items;
+                foreach (var (item, index) in items.OfType<JsonObject>().Select((item, index) => (item, index)))
+                {
+                    item["id"] ??= $"{sourceKey}_{index + 1:000}";
+                    foreach (var field in (collection["fields"] as JsonArray)?.OfType<JsonObject>() ?? [])
+                    {
+                        if (!RuntimeInputDefinition(field)) continue;
+                        var jsonKey = field["jsonKey"]?.GetValue<string>() ?? "";
+                        if (string.IsNullOrWhiteSpace(jsonKey) || item[jsonKey] is not null) continue;
+                        item[jsonKey] = RuntimeDefaultValue(field);
+                    }
+                }
+            }
+
+            var next = content.ToJsonString();
+            if (next != original) updates.Add((reader.GetString(0), next));
+        }
+        reader.Close();
+
+        foreach (var update in updates)
+        {
+            Execute(connection, "UPDATE module_instances SET content_json = $json WHERE id = $id",
+                ("$json", update.Json), ("$id", update.Id));
+        }
+    }
+
+    private static bool RuntimeInputDefinition(JsonObject definition)
+    {
+        var source = definition["source"]?.GetValue<string>() ?? "runtime";
+        return source == "runtime";
+    }
+
+    private static JsonNode RuntimeDefaultValue(JsonObject definition)
+    {
+        var value = definition["defaultValue"]?.GetValue<string>() ?? "";
+        return (definition["kind"]?.GetValue<string>() ?? "text") switch
+        {
+            "boolean" => JsonValue.Create(bool.TryParse(value, out var boolean) && boolean)!,
+            "number" when decimal.TryParse(value.Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out var number)
+                => JsonValue.Create(number)!,
+            "iconList" => JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? "[]" : value) ?? new JsonArray(),
+            _ => JsonValue.Create(value)!,
+        };
     }
 
     private static void RemovePersistedDesignPreviewTestValues(SqliteConnection connection)

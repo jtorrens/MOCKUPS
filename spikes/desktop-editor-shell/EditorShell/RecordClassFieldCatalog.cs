@@ -187,6 +187,7 @@ internal static class RecordClassFieldCatalog
             "moduleInstance.durationFrames",
             "Duration",
             ValueKind.Integer,
+            IsEditable: false,
             Number: new NumberDefinition(1, 100000, 1, 0),
             Unit: "frames"),
         ["moduleInstance.transition"] = new(
@@ -195,48 +196,6 @@ internal static class RecordClassFieldCatalog
             ValueKind.OptionToken,
             IsEditable: false,
             Options: [new FieldOption("cut", "Cut")]),
-        ["moduleInstance.conversation.bubbleRevealMode"] = new(
-            "moduleInstance.conversation.bubbleRevealMode",
-            "Outgoing bubble reveal",
-            ValueKind.OptionToken,
-            Options:
-            [
-                new FieldOption("duringWriteOn", "During write-on"),
-                new FieldOption("afterWriteOn", "After write-on"),
-            ]),
-        ["moduleInstance.conversation.incomingRevealMode"] = new(
-            "moduleInstance.conversation.incomingRevealMode",
-            "Incoming reveal",
-            ValueKind.OptionToken,
-            Options:
-            [
-                new FieldOption("instant", "Instant"),
-                new FieldOption("writeOn", "Write-on"),
-                new FieldOption("typingIndicator", "Typing indicator"),
-            ]),
-        ["moduleInstance.conversation.textInputVisible"] = new(
-            "moduleInstance.conversation.textInputVisible",
-            "Text input while writing",
-            ValueKind.Boolean),
-        ["moduleInstance.conversation.keyboardVisible"] = new(
-            "moduleInstance.conversation.keyboardVisible",
-            "Keyboard while writing",
-            ValueKind.Boolean),
-        ["moduleInstance.conversation.typingIndicatorText"] = new(
-            "moduleInstance.conversation.typingIndicatorText",
-            "Typing indicator text",
-            ValueKind.StringSingleLine),
-        ["moduleInstance.conversation.typingIndicatorSizeToken"] = new(
-            "moduleInstance.conversation.typingIndicatorSizeToken",
-            "Typing indicator size",
-            ValueKind.ThemeToken,
-            Options: TypographySizeOptions),
-        ["moduleInstance.conversation.typingIndicatorAnimation"] = new(
-            "moduleInstance.conversation.typingIndicatorAnimation",
-            "Typing indicator animation",
-            ValueKind.OptionToken,
-            Options: TypingIndicatorAnimationOptions),
-
         ["renderPreset.width"] = new("renderPreset.width", "Width", ValueKind.Integer, IsEditable: false),
         ["renderPreset.height"] = new("renderPreset.height", "Height", ValueKind.Integer, IsEditable: false),
         ["renderPreset.fps"] = new("renderPreset.fps", "FPS", ValueKind.Integer, IsEditable: false),

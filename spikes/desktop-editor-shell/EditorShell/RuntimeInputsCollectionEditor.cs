@@ -21,6 +21,7 @@ internal sealed class RuntimeInputsCollectionEditor
     private readonly Action<string, string, ComponentInputDefinition, string> _setPreviewCollectionTestValue;
     private readonly Func<JsonObject, JsonObject> _applyTransientTestValues;
     private readonly PreviewPlaybackState _playbackState;
+    private readonly Action<ProjectTreeNode>? _reloadAndSelect;
 
     public RuntimeInputsCollectionEditor(
         SpikeDatabase database,
@@ -30,7 +31,8 @@ internal sealed class RuntimeInputsCollectionEditor
         Action<string, string> setPreviewTestValue,
         Action<string, string, ComponentInputDefinition, string> setPreviewCollectionTestValue,
         Func<JsonObject, JsonObject> applyTransientTestValues,
-        PreviewPlaybackState playbackState)
+        PreviewPlaybackState playbackState,
+        Action<ProjectTreeNode>? reloadAndSelect = null)
     {
         _database = database;
         _dictionaryServices = dictionaryServices;
@@ -40,6 +42,7 @@ internal sealed class RuntimeInputsCollectionEditor
         _setPreviewCollectionTestValue = setPreviewCollectionTestValue;
         _applyTransientTestValues = applyTransientTestValues;
         _playbackState = playbackState;
+        _reloadAndSelect = reloadAndSelect;
     }
 
     public InstantEditorCard Create(ProjectTreeNode node)
@@ -54,7 +57,7 @@ internal sealed class RuntimeInputsCollectionEditor
         {
             Items =
             {
-                new TabItem { Header = "Test Values", Content = CreateTestValuesTab(owner, preview, inputs, collections, actions) },
+                new TabItem { Header = owner.IsInstance ? "Runtime Values" : "Test Values", Content = CreateTestValuesTab(owner, preview, inputs, collections, actions) },
                 new TabItem { Header = "Runtime API", Content = CreateApiTab(inputs, collections) },
             },
         };
@@ -117,7 +120,7 @@ internal sealed class RuntimeInputsCollectionEditor
         };
         header.Children.Add(new TextBlock
         {
-            Text = "Test Values",
+            Text = owner.IsInstance ? "Runtime Values" : "Test Values",
             FontWeight = Avalonia.Media.FontWeight.SemiBold,
             VerticalAlignment = VerticalAlignment.Center,
         });
@@ -127,20 +130,23 @@ internal sealed class RuntimeInputsCollectionEditor
             Spacing = 6,
             HorizontalAlignment = HorizontalAlignment.Right,
         };
-        var saveDefaults = new Button
+        if (!owner.IsInstance)
         {
-            MinWidth = 124,
-            Content = "Save as defaults",
-        };
-        ToolTip.SetTip(saveDefaults, "Promote current test values to component defaults");
-        saveDefaults.Click += (_, args) =>
-        {
-            args.Handled = true;
-            DesignPreviewTestValues.PromoteToDefaults(preview, inputs, collections);
-            owner.Save(preview.ToJsonString());
-            _onChanged();
-        };
-        buttons.Children.Add(saveDefaults);
+            var saveDefaults = new Button
+            {
+                MinWidth = 124,
+                Content = "Save as defaults",
+            };
+            ToolTip.SetTip(saveDefaults, "Promote current test values to component defaults");
+            saveDefaults.Click += (_, args) =>
+            {
+                args.Handled = true;
+                DesignPreviewTestValues.PromoteToDefaults(preview, inputs, collections);
+                owner.Save(preview.ToJsonString());
+                _onChanged();
+            };
+            buttons.Children.Add(saveDefaults);
+        }
         foreach (var action in actions.Where((candidate) => !candidate.IsCollectionItemAction))
         {
             var button = new Button
@@ -265,7 +271,15 @@ internal sealed class RuntimeInputsCollectionEditor
         control.ValueChanged += (_, next) => _setPreviewTestValue(input.JsonKey, next);
         control.ValueCommitted += (_, next) =>
         {
-            DesignPreviewTestValues.SetValue(preview, input, next);
+            if (owner.IsInstance)
+            {
+                _database.UpdateModuleInstanceRuntimeValue(owner.Node.Id, input.JsonKey, DesignPreviewTestValues.ValueNode(input, next));
+                _onChanged();
+            }
+            else
+            {
+                DesignPreviewTestValues.SetValue(preview, input, next);
+            }
         };
         return control;
     }
@@ -291,6 +305,23 @@ internal sealed class RuntimeInputsCollectionEditor
             itemCards.Add(itemCard);
         }
         EditorGroupBlock.WireExclusiveCards(itemCards);
+
+        if (owner.IsInstance)
+        {
+            var add = new Button { Content = $"Add {collection.ItemLabel.ToLowerInvariant()}", HorizontalAlignment = HorizontalAlignment.Left };
+            add.Click += (_, _) =>
+            {
+                var item = new JsonObject { ["id"] = $"{collection.Id}_{Guid.NewGuid():N}" };
+                foreach (var field in collection.Fields)
+                {
+                    item[field.JsonKey] = DesignPreviewTestValues.ValueNode(field, field.DefaultValue);
+                }
+                _database.AddModuleInstanceRuntimeCollectionItem(owner.Node.Id, StorageCollectionKey(collection), item);
+                _onChanged();
+                _reloadAndSelect?.Invoke(owner.Node);
+            };
+            content.Children.Add(add);
+        }
 
         return EditorGroupBlock.CreateNestedCard(
             EditorCardHeader.Create(
@@ -320,6 +351,26 @@ internal sealed class RuntimeInputsCollectionEditor
                 && action.CollectionJsonKey == collection.JsonKey
                 && action.CollectionItemId == itemId)
             .ToList();
+        Button? delete = null;
+        if (owner.IsInstance)
+        {
+            delete = new Button
+            {
+                Content = EditorIcons.Create(EditorIcons.Delete, 14),
+                Width = 30,
+                Height = 28,
+                Padding = new Thickness(0),
+            };
+            delete.Click += (_, _) =>
+            {
+                _database.DeleteModuleInstanceRuntimeCollectionItem(
+                    owner.Node.Id,
+                    StorageCollectionKey(collection),
+                    itemId);
+                _onChanged();
+                _reloadAndSelect?.Invoke(owner.Node);
+            };
+        }
         StackPanel? actionRow = null;
         var actionButtons = new List<(ComponentPreviewActionDefinition Action, Button Button)>();
         void RefreshActionVisibility()
@@ -384,7 +435,8 @@ internal sealed class RuntimeInputsCollectionEditor
             EditorCardHeader.Create($"{collection.ItemLabel} {itemIndex + 1}", $"Payload item {itemIndex + 1}", EditorIcons.Create(EditorIcons.Component, 14)),
             content,
             out card,
-            isExpanded: true);
+            isExpanded: true,
+            headerTrailing: delete);
     }
 
     private Control CreateTestValueCollectionControl(
@@ -402,10 +454,23 @@ internal sealed class RuntimeInputsCollectionEditor
         control.IsEnabled = CollectionFieldIsEnabled(item, input);
         control.ValueCommitted += (_, next) =>
         {
-            DesignPreviewTestValues.SetCollectionValue(preview, collection, itemIndex, input, next);
             var itemId = item["id"] is JsonValue idValue && idValue.TryGetValue<string>(out var id)
                 ? id
                 : "";
+            if (owner.IsInstance)
+            {
+                _database.UpdateModuleInstanceRuntimeCollectionValue(
+                    owner.Node.Id,
+                    StorageCollectionKey(collection),
+                    itemId,
+                    input.JsonKey,
+                    DesignPreviewTestValues.ValueNode(input, next));
+                _onChanged();
+            }
+            else
+            {
+                DesignPreviewTestValues.SetCollectionValue(preview, collection, itemIndex, input, next);
+            }
             _setPreviewCollectionTestValue(collection.JsonKey, itemId, input, next);
             afterCommit?.Invoke();
         };
@@ -556,14 +621,26 @@ internal sealed class RuntimeInputsCollectionEditor
         {
             var settings = _database.GetModuleSettings(node.Id);
             return new RuntimeInputOwner(node, settings.ConfigJson, settings.DesignPreviewJson,
-                (json) => _database.UpdateModuleDesignPreviewJson(node.Id, json));
+                (json) => _database.UpdateModuleDesignPreviewJson(node.Id, json), false);
         }
 
         if (node.Kind == ProjectTreeNodeKind.ComponentPreset && node.Parent is not null)
         {
             var settings = _database.GetComponentPresetSettings(node);
             return new RuntimeInputOwner(node, settings.ConfigJson, settings.DesignPreviewJson,
-                (json) => _database.UpdateComponentClassDesignPreviewJson(node.Parent.Id, json));
+                (json) => _database.UpdateComponentClassDesignPreviewJson(node.Parent.Id, json), false);
+        }
+
+        if (node.Kind == ProjectTreeNodeKind.ModuleInstance)
+        {
+            var instance = _database.GetModuleInstanceSettings(node.Id);
+            var module = _database.GetModuleSettings(instance.ModuleId);
+            return new RuntimeInputOwner(
+                node,
+                module.ConfigJson,
+                _database.GetModuleInstanceRuntimePreviewJson(node.Id),
+                (_) => { },
+                true);
         }
 
         throw new InvalidOperationException($"Runtime inputs are not supported by '{node.Kind}'.");
@@ -580,9 +657,15 @@ internal sealed class RuntimeInputsCollectionEditor
         return current;
     }
 
+    private static string StorageCollectionKey(RuntimeInputCollectionDefinition collection) =>
+        string.IsNullOrWhiteSpace(collection.SourceCollectionJsonKey)
+            ? collection.JsonKey
+            : collection.SourceCollectionJsonKey;
+
     private sealed record RuntimeInputOwner(
         ProjectTreeNode Node,
         string ConfigJson,
         string DesignPreviewJson,
-        Action<string> Save);
+        Action<string> Save,
+        bool IsInstance);
 }

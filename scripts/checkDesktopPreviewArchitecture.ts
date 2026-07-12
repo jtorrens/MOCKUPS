@@ -2127,6 +2127,38 @@ assertContains(
   "ReleaseFrameCacheReservation();",
   "playback must release its expanded frame-cache reservation",
 );
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorCollectionCardFactory.cs",
+  "ProjectTreeNodeKind.Module or ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.ModuleInstance",
+  "module instances must use the same declarative runtime-input editor as module Test Values",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "payload.Kind is \"componentClass\" or \"module\" or \"moduleInstance\"",
+  "module-instance actions must use the generic preview input session",
+);
+for (const retiredInstanceEditorTerm of [
+  "moduleInstance.conversation.bubbleRevealMode",
+  "moduleInstance.conversation.incomingRevealMode",
+  "ConversationMessagesCollectionEditor",
+]) {
+  for (const file of [
+    "spikes/desktop-editor-shell/EditorShell/RecordClassFieldCatalog.cs",
+    "spikes/desktop-editor-shell/Data/SpikeDatabase.EditorLayouts.cs",
+    "spikes/desktop-editor-shell/EditorShell/EditorCollectionCardFactory.cs",
+  ]) {
+    assertDoesNotContain(
+      file,
+      retiredInstanceEditorTerm,
+      `module instances must not restore the retired Conversation-specific editor route (${retiredInstanceEditorTerm})`,
+    );
+  }
+}
+assertDoesNotContain(
+  "src/desktop-preview/conversationModuleRenderable.ts",
+  "parseObject(payload.instanceJson).behavior",
+  "module renderables must consume the canonical runtime preview payload instead of a second instance behavior channel",
+);
 for (const placeholderPlural of ["input(s)", "collection(s)", "instance(s)"]) {
   assertDoesNotContain(
     "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",

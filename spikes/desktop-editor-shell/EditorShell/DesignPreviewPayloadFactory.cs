@@ -122,13 +122,14 @@ internal static class DesignPreviewPayloadFactory
         var effectiveThemeMode = EffectiveThemeMode(module.ConfigJson, themeMode);
         var app = database.GetAppSettings(instance.AppId);
         var shot = database.GetShotSettings(instance.ShotId);
-        var content = JsonNode.Parse(instance.ContentJson) as JsonObject ?? new JsonObject();
-        var headerActorId = (content["header"] as JsonObject)?["actorId"]?.GetValue<string>();
-        var ownerActorId = string.IsNullOrWhiteSpace(headerActorId) ? shot.OwnerActorId : headerActorId;
+        var runtimePreview = DesignPreviewTestValues.Parse(database.GetModuleInstanceRuntimePreviewJson(node.Id));
+        var runtimeActorId = runtimePreview["actorId"]?.GetValue<string>();
+        var ownerActorId = string.IsNullOrWhiteSpace(runtimeActorId) ? shot.OwnerActorId : runtimeActorId;
         var ownerActor = string.IsNullOrWhiteSpace(ownerActorId)
             ? ActorPreviewInputFactory.CreateSample()
             : ActorPreviewInputFactory.Create(database, ownerActorId, effectiveThemeMode, paletteColors);
-        if (content["messages"] is JsonArray messages)
+        runtimePreview["actor"] = ownerActor;
+        if (runtimePreview["messages"] is JsonArray messages)
         {
             foreach (var message in messages.OfType<JsonObject>())
             {
@@ -140,13 +141,10 @@ internal static class DesignPreviewPayloadFactory
         }
         var instanceJson = new JsonObject
         {
-            ["content"] = content,
-            ["behavior"] = JsonNode.Parse(instance.BehaviorJson) ?? new JsonObject(),
             ["animation"] = JsonNode.Parse(instance.AnimationJson) ?? new JsonObject(),
             ["context"] = new JsonObject
             {
                 ["shotId"] = instance.ShotId,
-                ["ownerActor"] = ownerActor,
             },
         };
         return new DesignPreviewPayload(
@@ -161,7 +159,7 @@ internal static class DesignPreviewPayloadFactory
             iconTheme?.MappingJson ?? "{}",
             fontFaces,
             module.RecordClassId,
-            DesignPreviewTestValues.RuntimeJson(module.DesignPreviewJson),
+            runtimePreview.ToJsonString(),
             database.GetComponentClassBaseConfigsJson(module.ProjectId),
             app.ConfigJson,
             instanceJson.ToJsonString(),

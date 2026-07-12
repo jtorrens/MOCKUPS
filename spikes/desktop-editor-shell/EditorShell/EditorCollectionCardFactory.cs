@@ -73,11 +73,9 @@ internal sealed class EditorCollectionCardFactory
             ],
             ProjectTreeNodeKind.ComponentClass =>
                 CreateComponentClassCollectionCards(node),
-            ProjectTreeNodeKind.ModuleInstance =>
-                CreateModuleInstanceCollectionCards(node),
-            ProjectTreeNodeKind.Module or ProjectTreeNodeKind.ComponentPreset =>
+            ProjectTreeNodeKind.Module or ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.ModuleInstance =>
             [
-                new RuntimeInputsCollectionEditor(_database, _dictionaryServices, _onChanged, _triggerPreviewAction, _setPreviewTestValue, _setPreviewCollectionTestValue, _applyPreviewTransientTestValues, _previewPlaybackState).Create(node),
+                new RuntimeInputsCollectionEditor(_database, _dictionaryServices, _onChanged, _triggerPreviewAction, _setPreviewTestValue, _setPreviewCollectionTestValue, _applyPreviewTransientTestValues, _previewPlaybackState, _reloadAndSelect).Create(node),
             ],
             ProjectTreeNodeKind.Shot =>
                 [new ShotModuleInstancesCollectionEditor(_database, _onChanged, _reloadAndSelect).Create(node)],
@@ -90,13 +88,6 @@ internal sealed class EditorCollectionCardFactory
         }
 
         return cards;
-    }
-
-    private IReadOnlyList<InstantEditorCard> CreateModuleInstanceCollectionCards(ProjectTreeNode node)
-    {
-        return _database.IsConversationModuleInstance(node.Id)
-            ? [new ConversationMessagesCollectionEditor(_database, _dictionaryServices, _onChanged, _reloadAndSelect).Create(node)]
-            : [];
     }
 
     private IReadOnlyList<InstantEditorCard> CreateComponentClassCollectionCards(ProjectTreeNode node)

@@ -9,7 +9,7 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SpikeDatabase
 {
-    public sealed record ConversationMessage(
+    private sealed record ConversationMessage(
         string Id,
         string Type,
         string Direction,
@@ -73,10 +73,69 @@ internal sealed partial class SpikeDatabase
         return transition["type"]?.GetValue<string>() ?? "cut";
     }
 
-    public bool IsConversationModuleInstance(string moduleInstanceId)
+    public string GetModuleInstanceRuntimePreviewJson(string moduleInstanceId)
     {
-        var settings = GetModuleInstanceSettings(moduleInstanceId);
-        return GetModuleSettings(settings.ModuleId).RecordClassId == "module.core.chat";
+        var instance = GetModuleInstanceSettings(moduleInstanceId);
+        var module = GetModuleSettings(instance.ModuleId);
+        var preview = ParseJsonObject(module.DesignPreviewJson);
+        var runtime = ParseJsonObject(instance.ContentJson);
+        foreach (var (key, value) in runtime)
+        {
+            if (key == "schemaVersion") continue;
+            preview[key] = value?.DeepClone();
+        }
+        preview.Remove("testValues");
+        return preview.ToJsonString();
+    }
+
+    public void UpdateModuleInstanceRuntimeValue(string moduleInstanceId, string jsonKey, JsonNode? value)
+    {
+        if (string.IsNullOrWhiteSpace(jsonKey)) throw new InvalidOperationException("Runtime input key cannot be empty.");
+        var content = ParseJsonObject(GetModuleInstanceSettings(moduleInstanceId).ContentJson);
+        content[jsonKey] = value?.DeepClone();
+        SaveModuleInstanceRuntimeContent(moduleInstanceId, content);
+    }
+
+    public void UpdateModuleInstanceRuntimeCollectionValue(
+        string moduleInstanceId,
+        string collectionJsonKey,
+        string itemId,
+        string fieldJsonKey,
+        JsonNode? value)
+    {
+        var content = ParseJsonObject(GetModuleInstanceSettings(moduleInstanceId).ContentJson);
+        var item = (content[collectionJsonKey] as JsonArray)?.OfType<JsonObject>()
+            .FirstOrDefault((candidate) => candidate["id"]?.GetValue<string>() == itemId)
+            ?? throw new InvalidOperationException($"Missing runtime collection item '{itemId}'.");
+        item[fieldJsonKey] = value?.DeepClone();
+        SaveModuleInstanceRuntimeContent(moduleInstanceId, content);
+    }
+
+    public void AddModuleInstanceRuntimeCollectionItem(string moduleInstanceId, string collectionJsonKey, JsonObject item)
+    {
+        var content = ParseJsonObject(GetModuleInstanceSettings(moduleInstanceId).ContentJson);
+        var items = content[collectionJsonKey] as JsonArray ?? new JsonArray();
+        content[collectionJsonKey] = items;
+        items.Add(item.DeepClone());
+        SaveModuleInstanceRuntimeContent(moduleInstanceId, content);
+    }
+
+    public void DeleteModuleInstanceRuntimeCollectionItem(string moduleInstanceId, string collectionJsonKey, string itemId)
+    {
+        var content = ParseJsonObject(GetModuleInstanceSettings(moduleInstanceId).ContentJson);
+        var items = content[collectionJsonKey] as JsonArray
+            ?? throw new InvalidOperationException($"Missing runtime collection '{collectionJsonKey}'.");
+        var item = items.OfType<JsonObject>().FirstOrDefault((candidate) => candidate["id"]?.GetValue<string>() == itemId)
+            ?? throw new InvalidOperationException($"Missing runtime collection item '{itemId}'.");
+        items.Remove(item);
+        SaveModuleInstanceRuntimeContent(moduleInstanceId, content);
+    }
+
+    private void SaveModuleInstanceRuntimeContent(string moduleInstanceId, JsonObject content)
+    {
+        using var connection = OpenConnection();
+        Execute(connection, "UPDATE module_instances SET content_json = $contentJson WHERE id = $id",
+            ("$contentJson", content.ToJsonString()), ("$id", moduleInstanceId));
     }
 
     public IReadOnlyList<ModuleInstanceSlot> GetShotModuleInstanceSlots(string shotId)
@@ -146,15 +205,6 @@ internal sealed partial class SpikeDatabase
                     ("$value", Math.Max(1, NumericText.Int32(value, 1))),
                     ("$id", moduleInstanceId));
                 return;
-            case "moduleInstance.conversation.bubbleRevealMode":
-            case "moduleInstance.conversation.incomingRevealMode":
-            case "moduleInstance.conversation.textInputVisible":
-            case "moduleInstance.conversation.keyboardVisible":
-            case "moduleInstance.conversation.typingIndicatorText":
-            case "moduleInstance.conversation.typingIndicatorSizeToken":
-            case "moduleInstance.conversation.typingIndicatorAnimation":
-                UpdateConversationBehaviorField(connection, moduleInstanceId, fieldId, value);
-                return;
             default:
                 throw new InvalidOperationException($"Unknown module instance field '{fieldId}'.");
         }
@@ -172,7 +222,7 @@ internal sealed partial class SpikeDatabase
             throw new InvalidOperationException("Conversation timing fields are only supported by Conversation module instances.");
         }
 
-        var behavior = ParseJsonObject(settings.BehaviorJson);
+        var behavior = ParseJsonObject(settings.ContentJson);
         switch (fieldId)
         {
             case "moduleInstance.conversation.bubbleRevealMode":
@@ -200,12 +250,12 @@ internal sealed partial class SpikeDatabase
 
         Execute(
             connection,
-            "UPDATE module_instances SET behavior_json = $behaviorJson WHERE id = $id",
+            "UPDATE module_instances SET content_json = $behaviorJson WHERE id = $id",
             ("$behaviorJson", behavior.ToJsonString()),
             ("$id", moduleInstanceId));
     }
 
-    public IReadOnlyList<ConversationMessage> GetConversationMessages(string moduleInstanceId)
+    private IReadOnlyList<ConversationMessage> GetConversationMessages(string moduleInstanceId)
     {
         var content = ParseJsonObject(GetModuleInstanceSettings(moduleInstanceId).ContentJson);
         var messages = content["messages"] as JsonArray ?? [];
@@ -218,8 +268,8 @@ internal sealed partial class SpikeDatabase
             message["delayAfterPreviousFrames"]?.GetValue<int>() ?? 0,
             message["writeOnDurationFrames"]?.GetValue<int>() ?? (message["textReveal"] as JsonObject)?["durationFrames"]?.GetValue<int>() ?? 0,
             message["postWriteOnHoldFrames"]?.GetValue<int>() ?? 0,
-            (message["status"] as JsonObject)?["text"]?.GetValue<string>() ?? "",
-            (message["status"] as JsonObject)?["deliveryStatus"]?.GetValue<string>() ?? "none",
+            message["statusText"]?.GetValue<string>() ?? "",
+            message["statusState"]?.GetValue<string>() ?? "none",
             message["statusVisible"]?.GetValue<bool>()
                 ?? DeliveryStatusVisible(message),
             message["mediaType"]?.GetValue<string>() ?? "none",
@@ -236,7 +286,7 @@ internal sealed partial class SpikeDatabase
             message["controlsElapsedMs"]?.GetValue<int>() ?? 0)).ToList();
     }
 
-    public void AddConversationMessage(string moduleInstanceId)
+    private void AddConversationMessage(string moduleInstanceId)
     {
         UpdateConversationContent(moduleInstanceId, (content) =>
         {
@@ -253,6 +303,8 @@ internal sealed partial class SpikeDatabase
                 ["writeOnDurationFrames"] = 0,
                 ["postWriteOnHoldFrames"] = 0,
                 ["statusVisible"] = false,
+                ["statusText"] = "",
+                ["statusState"] = "none",
                 ["mediaType"] = "none",
                 ["mediaSource"] = "",
                 ["viewportSize"] = "240|160",
@@ -265,18 +317,17 @@ internal sealed partial class SpikeDatabase
                 ["fullScreenTransition"] = false,
                 ["fullframeOrientation"] = "portrait",
                 ["controlsElapsedMs"] = 0,
-                ["status"] = new JsonObject { ["text"] = "", ["deliveryStatus"] = "none" },
             });
         });
     }
 
     private static bool DeliveryStatusVisible(JsonObject message)
     {
-        return (message["status"] as JsonObject)?["deliveryStatus"]?.GetValue<string>() is string status
+        return message["statusState"]?.GetValue<string>() is string status
             && status != "none";
     }
 
-    public void UpdateConversationMessage(string moduleInstanceId, string messageId, ConversationMessage next)
+    private void UpdateConversationMessage(string moduleInstanceId, string messageId, ConversationMessage next)
     {
         UpdateConversationContent(moduleInstanceId, (content) =>
         {
@@ -303,11 +354,12 @@ internal sealed partial class SpikeDatabase
             message["fullScreenTransition"] = next.FullScreenTransition;
             message["fullframeOrientation"] = next.FullframeOrientation is "landscape" ? "landscape" : "portrait";
             message["controlsElapsedMs"] = Math.Max(0, next.ControlsElapsedMs);
-            message["status"] = new JsonObject { ["text"] = next.StatusText, ["deliveryStatus"] = next.DeliveryStatus };
+            message["statusText"] = next.StatusText;
+            message["statusState"] = next.DeliveryStatus;
         });
     }
 
-    public void DeleteConversationMessage(string moduleInstanceId, string messageId)
+    private void DeleteConversationMessage(string moduleInstanceId, string messageId)
     {
         UpdateConversationContent(moduleInstanceId, (content) =>
         {
@@ -368,12 +420,15 @@ internal sealed partial class SpikeDatabase
         return new JsonObject
         {
             ["schemaVersion"] = 1,
-            ["header"] = new JsonObject
-            {
-                ["actorId"] = "",
-                ["title"] = "Alex Q",
-                ["subtitle"] = "online",
-            },
+            ["actorId"] = "",
+            ["headerSubtitle"] = "online",
+            ["bubbleRevealMode"] = "afterWriteOn",
+            ["incomingRevealMode"] = "typingIndicator",
+            ["textInputVisible"] = true,
+            ["keyboardVisible"] = true,
+            ["typingIndicatorText"] = "•••",
+            ["typingIndicatorSizeToken"] = "theme.typography.sizes.m",
+            ["typingIndicatorAnimation"] = "pulsating",
             ["messages"] = new JsonArray(),
         }.ToJsonString();
     }
@@ -384,19 +439,6 @@ internal sealed partial class SpikeDatabase
         {
             ["headFrames"] = 0,
             ["tailFrames"] = 12,
-            ["showHeader"] = true,
-            ["showStatusBar"] = true,
-            ["showNavigationBar"] = true,
-            ["showTextInputBar"] = true,
-            ["showKeyboard"] = false,
-            ["bubbleRevealMode"] = "afterWriteOn",
-            ["incomingRevealMode"] = "typingIndicator",
-            ["textInputVisible"] = true,
-            ["keyboardVisible"] = true,
-            ["typingIndicatorText"] = "•••",
-            ["typingIndicatorSizeToken"] = "theme.typography.sizes.m",
-            ["typingIndicatorAnimation"] = "pulsating",
-            ["initialScroll"] = "bottom",
         }.ToJsonString();
     }
 
@@ -404,27 +446,46 @@ internal sealed partial class SpikeDatabase
     {
         using var select = connection.CreateCommand();
         select.CommandText = """
-            SELECT mi.id, mi.behavior_json
+            SELECT mi.id, mi.content_json, mi.behavior_json
             FROM module_instances mi
             JOIN modules m ON m.id = mi.module_id
             WHERE m.record_class_id = 'module.core.chat'
             """;
         using var reader = select.ExecuteReader();
-        var updates = new List<(string Id, string Json)>();
+        var updates = new List<(string Id, string ContentJson, string BehaviorJson)>();
         while (reader.Read())
         {
-            var behavior = ParseJsonObject(ReadString(reader, 1));
-            var changed = false;
-            EnsureConversationBehaviorValue(behavior, "bubbleRevealMode", "afterWriteOn", ref changed);
-            EnsureConversationBehaviorValue(behavior, "incomingRevealMode", "typingIndicator", ref changed);
-            EnsureConversationBehaviorValue(behavior, "textInputVisible", true, ref changed);
-            EnsureConversationBehaviorValue(behavior, "keyboardVisible", true, ref changed);
-            EnsureConversationBehaviorValue(behavior, "typingIndicatorText", "•••", ref changed);
-            EnsureConversationBehaviorValue(behavior, "typingIndicatorSizeToken", "theme.typography.sizes.m", ref changed);
-            EnsureConversationBehaviorValue(behavior, "typingIndicatorAnimation", "pulsating", ref changed);
-            if (changed)
+            var originalContent = ReadString(reader, 1);
+            var originalBehavior = ReadString(reader, 2);
+            var content = ParseJsonObject(originalContent);
+            var behavior = ParseJsonObject(originalBehavior);
+            if (content["header"] is JsonObject header)
             {
-                updates.Add((reader.GetString(0), behavior.ToJsonString()));
+                content["actorId"] = header["actorId"]?.DeepClone() ?? "";
+                content["headerSubtitle"] = header["subtitle"]?.DeepClone() ?? "online";
+                content.Remove("header");
+            }
+            foreach (var (key, defaultValue) in ConversationRuntimeDefaults())
+            {
+                content[key] = content[key]?.DeepClone() ?? behavior[key]?.DeepClone() ?? defaultValue.DeepClone();
+            }
+            foreach (var message in (content["messages"] as JsonArray)?.OfType<JsonObject>() ?? [])
+            {
+                if (message["status"] is not JsonObject status) continue;
+                message["statusText"] = status["text"]?.DeepClone() ?? "";
+                message["statusState"] = status["deliveryStatus"]?.DeepClone() ?? "none";
+                message.Remove("status");
+            }
+            var timingBehavior = new JsonObject
+            {
+                ["headFrames"] = behavior["headFrames"]?.DeepClone() ?? 0,
+                ["tailFrames"] = behavior["tailFrames"]?.DeepClone() ?? 12,
+            };
+            var nextContent = content.ToJsonString();
+            var nextBehavior = timingBehavior.ToJsonString();
+            if (nextContent != originalContent || nextBehavior != originalBehavior)
+            {
+                updates.Add((reader.GetString(0), nextContent, nextBehavior));
             }
         }
         reader.Close();
@@ -433,11 +494,26 @@ internal sealed partial class SpikeDatabase
         {
             Execute(
                 connection,
-                "UPDATE module_instances SET behavior_json = $behaviorJson WHERE id = $id",
-                ("$behaviorJson", update.Json),
+                "UPDATE module_instances SET content_json = $contentJson, behavior_json = $behaviorJson WHERE id = $id",
+                ("$contentJson", update.ContentJson),
+                ("$behaviorJson", update.BehaviorJson),
                 ("$id", update.Id));
         }
     }
+
+    private static IReadOnlyDictionary<string, JsonNode> ConversationRuntimeDefaults() =>
+        new Dictionary<string, JsonNode>(StringComparer.Ordinal)
+        {
+            ["actorId"] = JsonValue.Create("")!,
+            ["headerSubtitle"] = JsonValue.Create("online")!,
+            ["bubbleRevealMode"] = JsonValue.Create("afterWriteOn")!,
+            ["incomingRevealMode"] = JsonValue.Create("typingIndicator")!,
+            ["textInputVisible"] = JsonValue.Create(true)!,
+            ["keyboardVisible"] = JsonValue.Create(true)!,
+            ["typingIndicatorText"] = JsonValue.Create("•••")!,
+            ["typingIndicatorSizeToken"] = JsonValue.Create("theme.typography.sizes.m")!,
+            ["typingIndicatorAnimation"] = JsonValue.Create("pulsating")!,
+        };
 
     private static void EnsureConversationBehaviorValue(
         JsonObject behavior,

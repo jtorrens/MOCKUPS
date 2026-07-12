@@ -360,7 +360,7 @@ internal sealed class ComponentPreviewInputSession
 
     private static bool SupportsInputs(DesignPreviewPayload payload)
     {
-        return payload.Kind is "componentClass" or "module";
+        return payload.Kind is "componentClass" or "module" or "moduleInstance";
     }
 
     private void EnsureValue(ComponentInputDefinition input, JsonObject preview)
