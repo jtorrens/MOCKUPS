@@ -1655,6 +1655,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
     private DesignPreviewUpdate? _pendingUpdate;
     private DesignPreviewUpdate? _renderingUpdate;
     private DesignPreviewUpdate? _lastRenderedUpdate;
+    private string _lastRenderedFontStyleHtml = "";
     private long _latestUpdateSequence;
     private bool _isRendering;
     public event Action<DesignPreviewFrameStatus>? FrameStatusChanged;
@@ -1731,6 +1732,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         bool showDeviceFrame,
         PreviewReferenceState reference,
         DesignPreviewPayload? payload,
+        bool isPlaybackUpdate,
         IEditorShellMessageSink messages)
     {
         var nextUpdate = new DesignPreviewUpdate(
@@ -1744,6 +1746,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             showDeviceFrame,
             reference,
             payload,
+            isPlaybackUpdate,
             messages);
 
         if (_isRendering
@@ -1856,7 +1859,8 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             }
         }
 
-        if (update.Sequence != Volatile.Read(ref _latestUpdateSequence))
+        if (!update.IsPlaybackUpdate
+            && update.Sequence != Volatile.Read(ref _latestUpdateSequence))
         {
             PreviewDebugLog.Write(
                 "preview.webview.update",
@@ -1870,15 +1874,21 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
 
         var htmlParts = PreviewHtmlParts.Split(bodyContent);
         var isAnimationOnlyUpdate = _lastRenderedUpdate is not null
-            && update.IsAnimationOnlyUpdateOf(_lastRenderedUpdate);
+            && (update.IsPlaybackUpdate || update.IsAnimationOnlyUpdateOf(_lastRenderedUpdate));
         var isMarksOnlyUpdate = _lastRenderedUpdate is not null
             && update.IsMarksOnlyUpdateOf(_lastRenderedUpdate);
         var isResidentCompatible = _lastRenderedUpdate is not null
             && update.IsResidentShellCompatibleWith(_lastRenderedUpdate);
         if (renderError is null && isResidentCompatible)
         {
-            var fontsCommitted = await ReplacePreviewFontStylesAsync(htmlParts.FontStyleHtml);
-            if (update.Sequence != Volatile.Read(ref _latestUpdateSequence))
+            var fontsChanged = !string.Equals(
+                htmlParts.FontStyleHtml,
+                _lastRenderedFontStyleHtml,
+                StringComparison.Ordinal);
+            var fontsCommitted = !fontsChanged
+                || await ReplacePreviewFontStylesAsync(htmlParts.FontStyleHtml);
+            if (!update.IsPlaybackUpdate
+                && update.Sequence != Volatile.Read(ref _latestUpdateSequence))
             {
                 PreviewDebugLog.Write(
                     "preview.webview.update",
@@ -1895,6 +1905,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             {
                 await UpdateReferenceOverlayAsync(reference);
                 _lastRenderedUpdate = update;
+                _lastRenderedFontStyleHtml = htmlParts.FontStyleHtml;
                 PreviewDebugLog.Write(
                     "preview.webview.update",
                     ("route", "dom-patch"),
@@ -1943,6 +1954,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             htmlParts.FontStyleHtml,
             reference));
         _lastRenderedUpdate = update;
+        _lastRenderedFontStyleHtml = htmlParts.FontStyleHtml;
         PreviewDebugLog.Write(
             "preview.webview.update",
             ("route", "full-load"),
@@ -2040,6 +2052,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         bool ShowDeviceFrame,
         PreviewReferenceState Reference,
         DesignPreviewPayload? Payload,
+        bool IsPlaybackUpdate,
         IEditorShellMessageSink Messages)
     {
         public bool IsResidentShellCompatibleWith(DesignPreviewUpdate other)

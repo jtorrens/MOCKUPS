@@ -1088,6 +1088,7 @@ internal sealed class EditorPreviewController
                 !_showCanonicalFrame,
                 CurrentReferenceState(),
                 designPayload,
+                IsPreviewPlaybackActive,
                 _messages);
             if (designPayload is not null && _designInputsPanel.IsPlaybackActive)
             {
