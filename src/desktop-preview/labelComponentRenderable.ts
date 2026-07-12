@@ -36,7 +36,7 @@ function labelSize(
   const paddingX = numberToken(payload, label.padding.xToken) * scale;
   const paddingY = numberToken(payload, label.padding.yToken) * scale;
   const hasSubtext = label.subtext.trim().length > 0;
-  const textGap = hasSubtext ? label.textGap * scale : 0;
+  const textGap = hasSubtext ? numberToken(payload, label.textGapToken) * scale : 0;
   const contentWidth = Math.max(
     measuredTextWidth(label.text, textTypography),
     hasSubtext ? measuredTextWidth(label.subtext, subtextTypography) : 0,
@@ -163,7 +163,7 @@ export function labelComponentToRenderableAt(
                     fontSize: subtextTypography.fontSize,
                     fontFamily: subtextTypography.fontFamily,
                     lineHeight: size.subtextLineHeight,
-                    marginTop: label.textGap * scale,
+                    marginTop: numberToken(payload, label.textGapToken) * scale,
                     textAlign: label.textAlign,
                     display: "block",
                     width: "100%",

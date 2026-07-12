@@ -104,7 +104,7 @@ export function resolveLabelComponentFromRecords(
         : {}),
     },
     textAlign,
-    textGap: requiredNumber(label, "textGap", "component.label.textGap"),
+    textGapToken: requiredString(label, "textGapToken", "component.label.textGapToken"),
     subtextColorToken: requiredString(
       label,
       "subtextColorToken",

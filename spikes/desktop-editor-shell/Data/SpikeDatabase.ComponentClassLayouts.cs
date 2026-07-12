@@ -397,7 +397,7 @@ internal sealed partial class SpikeDatabase
                   { "id": "component.label.textAlign", "order": 120, "visible": true }
                 ] },
                 { "id": "labelSubtext", "label": "Subtext", "order": 20, "visible": true, "fields": [
-                  { "id": "component.label.textGap", "order": 10, "visible": true },
+                  { "id": "component.label.textGapToken", "order": 10, "visible": true },
                   { "id": "component.label.subtextColorToken", "order": 20, "visible": true },
                   { "id": "component.label.subtextTypography", "order": 30, "visible": true }
                 ] },

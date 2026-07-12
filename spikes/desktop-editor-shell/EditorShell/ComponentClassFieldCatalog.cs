@@ -596,7 +596,7 @@ internal static class ComponentClassFieldCatalog
         ["component.label.textColorToken"] = new("component.label.textColorToken", "Text color", ValueKind.ThemeToken, ["label", "textColorToken"], "theme.colors.textPrimary", Options: ThemeColorOptions),
         ["component.label.textTypography"] = new("component.label.textTypography", "Text typography", ValueKind.TypographyStyle, ["label", "textTypography"], TypographyStyleValue.CreateDefault("theme.typography.sizes.s")),
         ["component.label.textAlign"] = new("component.label.textAlign", "Text align", ValueKind.OptionToken, ["label", "textAlign"], "center", Options: TextAlignOptions),
-        ["component.label.textGap"] = new("component.label.textGap", "Text gap", ValueKind.Decimal, ["label", "textGap"], "2", Number: new NumberDefinition(-64, 64, 0.5m, 2)),
+        ["component.label.textGapToken"] = new("component.label.textGapToken", "Text gap", ValueKind.ThemeToken, ["label", "textGapToken"], "theme.spacing.xs", Options: SpacingTokenOptions),
         ["component.label.subtextColorToken"] = new("component.label.subtextColorToken", "Subtext color", ValueKind.ThemeToken, ["label", "subtextColorToken"], "theme.colors.textSecondary", Options: ThemeColorOptions),
         ["component.label.subtextTypography"] = new("component.label.subtextTypography", "Subtext typography", ValueKind.TypographyStyle, ["label", "subtextTypography"], TypographyStyleValue.CreateDefault("theme.typography.sizes.xs")),
 

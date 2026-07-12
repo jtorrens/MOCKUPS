@@ -1940,6 +1940,11 @@ assertDoesNotContain(
   "NativeWebView",
   "editor icon thumbnails must use lightweight vector controls instead of one web view per icon",
 );
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldCatalog.cs",
+  "component.label.textGap\"",
+  "Label text separation must use the canonical spacing-token field",
+);
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
   "ValidateComponentPresetReferencesForPreview",

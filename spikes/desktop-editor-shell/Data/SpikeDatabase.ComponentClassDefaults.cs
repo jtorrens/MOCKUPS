@@ -337,7 +337,7 @@ internal sealed partial class SpikeDatabase
                     ["textColorToken"] = "theme.colors.textPrimary",
                     ["textTypography"] = JsonNode.Parse(TypographyStyleValue.CreateDefault("theme.typography.sizes.s")),
                     ["textAlign"] = "center",
-                    ["textGap"] = 2,
+                    ["textGapToken"] = "theme.spacing.xs",
                     ["subtextColorToken"] = "theme.colors.textSecondary",
                     ["subtextTypography"] = JsonNode.Parse(TypographyStyleValue.CreateDefault("theme.typography.sizes.xs")),
                 };

@@ -110,6 +110,17 @@ internal sealed partial class SpikeDatabase
                 ("$layoutJson", MinimalEditorLayoutJson("component.audio")));
         }
 
+        var labelLayout = ScalarString(
+            connection,
+            "SELECT layout_json FROM editor_layouts WHERE record_class_id = 'component.label'");
+        if (!string.IsNullOrWhiteSpace(labelLayout)
+            && labelLayout.Contains("component.label.textGap", StringComparison.Ordinal))
+        {
+            Execute(connection,
+                "UPDATE editor_layouts SET layout_json = $layoutJson WHERE record_class_id = 'component.label'",
+                ("$layoutJson", MinimalEditorLayoutJson("component.label")));
+        }
+
         var mediaLayout = ScalarString(
             connection,
             "SELECT layout_json FROM editor_layouts WHERE record_class_id = 'component.media'");

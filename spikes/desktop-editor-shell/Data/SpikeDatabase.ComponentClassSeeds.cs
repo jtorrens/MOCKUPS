@@ -114,6 +114,48 @@ internal sealed partial class SpikeDatabase
         }
     }
 
+    private static void NormalizeComponentSpacingTokens(SqliteConnection connection)
+    {
+        foreach (var row in QueryComponentClassRows(connection))
+        {
+            var config = ParseJsonObject(row.ConfigJson);
+            var metadata = ParseJsonObject(row.MetadataJson);
+            NormalizeComponentSpacingTokenNodes(config);
+            NormalizeComponentSpacingTokenNodes(metadata);
+            var configJson = config.ToJsonString();
+            var metadataJson = metadata.ToJsonString();
+            if (configJson == row.ConfigJson && metadataJson == row.MetadataJson) continue;
+            Execute(connection,
+                "UPDATE component_classes SET config_json = $configJson, metadata_json = $metadataJson WHERE id = $id",
+                ("$id", row.Id), ("$configJson", configJson), ("$metadataJson", metadataJson));
+        }
+    }
+
+    private static void NormalizeComponentSpacingTokenNodes(JsonNode? node)
+    {
+        if (node is JsonArray array)
+        {
+            foreach (var child in array.ToList()) NormalizeComponentSpacingTokenNodes(child);
+            return;
+        }
+        if (node is not JsonObject obj) return;
+        if (obj["label"] is JsonObject label && label["textGap"] is JsonValue gapValue)
+        {
+            var gap = gapValue.GetValue<double>();
+            label["textGapToken"] = gap <= 0 ? "theme.spacing.none"
+                : gap <= 2 ? "theme.spacing.xs"
+                : gap <= 6 ? "theme.spacing.s"
+                : gap <= 10 ? "theme.spacing.m"
+                : "theme.spacing.l";
+            label.Remove("textGap");
+        }
+        if (obj["avatar"]?["labelSlot"] is JsonObject labelSlot)
+        {
+            labelSlot.Remove("gap");
+        }
+        foreach (var child in obj.Select((entry) => entry.Value).ToList()) NormalizeComponentSpacingTokenNodes(child);
+    }
+
     private static void NormalizeCalculatedLabelNodes(JsonNode? node, string labelClassId, string surfaceClassId)
     {
         if (node is JsonArray array)
