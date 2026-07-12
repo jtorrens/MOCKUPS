@@ -18,14 +18,14 @@ internal static class DesignPreviewTestValues
         IReadOnlyList<RuntimeInputCollectionDefinition> collections)
     {
         var differences = inputs
-            .Where((input) => !string.Equals(Value(effectivePreview, input), input.DefaultValue, StringComparison.Ordinal))
+            .Where((input) => !string.Equals(Value(effectivePreview, input), Value(persistedPreview, input), StringComparison.Ordinal))
             .Select((input) => new Difference(input.Id, input.Label))
             .ToList();
 
         foreach (var collection in collections)
         {
             var current = CollectionItems(effectivePreview, collection);
-            var baseline = BaselineCollectionItems(persistedPreview, collection);
+            var baseline = CollectionItems(persistedPreview, collection);
             if (!JsonNode.DeepEquals(
                     new JsonArray(current.Select((item) => (JsonNode?)item.DeepClone()).ToArray()),
                     new JsonArray(baseline.Select((item) => (JsonNode?)item.DeepClone()).ToArray())))
@@ -106,16 +106,6 @@ internal static class DesignPreviewTestValues
             ? testItems
             : preview[collection.JsonKey] as JsonArray;
         return source?.OfType<JsonObject>().Select(CloneObject).ToList() ?? [];
-    }
-
-    private static IReadOnlyList<JsonObject> BaselineCollectionItems(
-        JsonObject preview,
-        RuntimeInputCollectionDefinition collection)
-    {
-        var key = string.IsNullOrWhiteSpace(collection.SourceCollectionJsonKey)
-            ? collection.JsonKey
-            : collection.SourceCollectionJsonKey;
-        return (preview[key] as JsonArray)?.OfType<JsonObject>().Select(CloneObject).ToList() ?? [];
     }
 
     public static string CollectionValue(JsonObject item, ComponentInputDefinition input)

@@ -151,7 +151,9 @@ internal sealed class RuntimeInputsCollectionEditor
             reset.Click += (_, args) =>
             {
                 args.Handled = true;
-                if (_resetTestValues()) _onChanged();
+                if (!_resetTestValues()) return;
+                _onChanged();
+                _reloadAndSelect?.Invoke(owner.Node);
             };
             buttons.Children.Add(reset);
             var saveDefaults = new Button
